@@ -1,1 +1,1 @@
-﻿worker: python parallel_training.py
+worker: python parallel_training.py
