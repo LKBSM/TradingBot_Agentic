@@ -1,4 +1,4 @@
-import os
+﻿import os
 import sys
 import pandas as pd
 import numpy as np
@@ -606,6 +606,47 @@ def generate_comprehensive_report(df_results: pd.DataFrame, duration: float):
     prod_path = os.path.join(config.MODEL_DIR, "MODEL_PRODUCTION_BEST.zip")
     shutil.copy(best_bot['model_path'], prod_path)
     console.print(f"\n[bold cyan]✅ Best model copied to: {prod_path}[/bold cyan]\n")
+
+    # ═══════════════════════════════════════════════════════════════════════
+    # DISCORD NOTIFICATION
+    # ═══════════════════════════════════════════════════════════════════════
+    discord_webhook = os.getenv('DISCORD_WEBHOOK_URL')
+    if discord_webhook:
+        console.print("\n[cyan]📤 Sending results to Discord...[/cyan]")
+        try:
+            from discord_uploader import send_discord_notification
+            
+            # Prepare results summary
+            results_summary = {
+                'total_bots': n_bots,
+                'profitable_bots': int(n_profitable),
+                'approved_bots': int(n_approved),
+                'best_bot_id': int(best_bot['bot_id']),
+                'best_sharpe': float(best_bot['test_sharpe']),
+                'best_return': float(best_bot['test_return'] * 100),
+                'best_drawdown': float(best_bot['test_max_dd'] * 100),
+                'best_profit': float(best_bot['test_profit_usd']),
+                'avg_sharpe': float(df_results['test_sharpe'].mean()),
+                'avg_profit': float(df_results['test_profit_usd'].mean()),
+                'win_rate': float(n_profitable / n_bots * 100) if n_bots > 0 else 0.0,
+                'duration_hours': duration / 3600
+            }
+            
+            # Send to Discord
+            send_discord_notification(
+                webhook_url=discord_webhook,
+                results_summary=results_summary,
+                csv_path=csv_path,
+                model_path=prod_path
+            )
+            
+            console.print("[bold green]✅ Results sent to Discord![/bold green]")
+        except Exception as e:
+            console.print(f"[yellow]⚠️ Discord upload failed: {e}[/yellow]")
+            console.print(f"[yellow]   Results are still saved locally in: {config.RESULTS_DIR}[/yellow]")
+    else:
+        console.print("\n[yellow]⚠️ DISCORD_WEBHOOK_URL not set - skipping Discord notification[/yellow]")
+        console.print(f"[yellow]   Results saved locally in: {config.RESULTS_DIR}[/yellow]")
 
 
 # ═════════════════════════════════════════════════════════════════════════════

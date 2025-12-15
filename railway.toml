@@ -1,0 +1,10 @@
+﻿[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "python parallel_training.py"
+restartPolicyType = "never"
+
+[[deploy.volumes]]
+name = "results-volume"
+mountPath = "/app/persistent_results"
