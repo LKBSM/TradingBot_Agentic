@@ -117,138 +117,122 @@ class SmartMoneyEngine:
         self.df['BODY_SIZE'] = abs(self.df['open'] - self.df['close'])
 
     def _add_smc_base_features(self) -> None:
-        """
-        Détection CAUSALE des Fractals (Swing Points) et du Fair Value Gap (FVG).
-        VERSION CORRIGÉE: Aucun data leakage - Utilise uniquement les données passées.
-
-        Principe:
-        - Un fractal ne peut être confirmé qu'APRÈS avoir observé N bars de confirmation
-        - Le FVG est déjà causal (compare bar actuelle avec 2 bars en arrière)
-        """
-
-        N = self.config.FRACTAL_WINDOW  # e.g., 2
-
-        # Initialize columns
-        self.df['UP_FRACTAL'] = np.nan
-        self.df['DOWN_FRACTAL'] = np.nan
-
-        # We need 2*N bars of history to confirm a fractal
-        for i in range(2 * N, len(self.df)):
-            # Check if bar i-N was a fractal (N bars ago)
-            # We can only confirm this NOW after seeing N more bars
-
-            # Window for checking: [i-2N to i]
-            if i >= 2 * N:
-                high_window = self.df['high'].iloc[i - 2 * N:i + 1]
-                low_window = self.df['low'].iloc[i - 2 * N:i + 1]
-
-                # Check if the middle bar (N bars ago) was a peak/trough
-                middle_idx = i - N
-                if middle_idx >= 0:
-                    # High fractal check
-                    high_vals = high_window.values
-                    if len(high_vals) == 2 * N + 1:
-                        if high_vals[N] == np.max(high_vals):
-                            self.df.loc[i, 'UP_FRACTAL'] = self.df.loc[middle_idx, 'high']
-
-                    # Low fractal check
-                    low_vals = low_window.values
-                    if len(low_vals) == 2 * N + 1:
-                        if low_vals[N] == np.min(low_vals):
-                            self.df.loc[i, 'DOWN_FRACTAL'] = self.df.loc[middle_idx, 'low']
-
-        # Étape 4: Stocker le prix du fractal (NaN si pas de fractal)
-
-        # --- DOWN_FRACTAL (Swing Low) ---
-        # Même logique que UP_FRACTAL mais pour les lows
-
-        rolling_min = self.df['low'].rolling(window=2 * N + 1, center=False).min()
-        rolling_min_shifted = rolling_min.shift(N)
-        is_down_fractal = (self.df['low'] == rolling_min_shifted)
-
-
-        # =========================================================================
-        # 2. FAIR VALUE GAP (FVG) - DÉJÀ CAUSAL, PAS DE MODIFICATION
-        # =========================================================================
-
-        # Le FVG compare la bar ACTUELLE avec une bar 2 positions EN ARRIÈRE
-        # → Pas de données futures utilisées → Déjà causal ✅
-
-        # Bullish FVG: Le low de la bar actuelle > high de la bar d'il y a 2 périodes
-        # (Il y a un "gap" non comblé entre les deux)
-        bullish_fvg_size = np.where(
-            self.df['low'] > self.df['high'].shift(2),
-            self.df['low'] - self.df['high'].shift(2),
-            0.0
-        )
-
-        # Bearish FVG: Le high de la bar actuelle < low de la bar d'il y a 2 périodes
-        bearish_fvg_size = np.where(
-            self.df['high'] < self.df['low'].shift(2),
-            self.df['low'].shift(2) - self.df['high'],
-            0.0
-        )
-
-        # Taille totale du FVG (bullish ou bearish)
-        self.df['FVG_SIZE'] = bullish_fvg_size + bearish_fvg_size
-
-        # Direction du FVG: +1 (bullish), -1 (bearish), 0 (aucun)
-        self.df['FVG_DIR'] = np.where(
-            bullish_fvg_size > 0, 1,
-            np.where(bearish_fvg_size > 0, -1, 0)
-        )
-
-        # Normalisation par l'ATR (pour rendre le signal indépendant de la volatilité)
-        self.df['FVG_SIZE_NORM'] = np.where(
-            self.df['ATR'] > 0,
-            self.df['FVG_SIZE'] / self.df['ATR'],
-            0.0
-        )
-
-        # Signal FVG final: Seulement si la taille normalisée dépasse le threshold
-        self.df['FVG_SIGNAL'] = np.where(
-            np.abs(self.df['FVG_SIZE_NORM']) > self.config.FVG_THRESHOLD,
-            self.df['FVG_DIR'],
-            0
-        )
-
-        # =========================================================================
-        # 3. VALIDATION ET RAPPORT (OPTIONNEL MAIS RECOMMANDÉ)
-        # =========================================================================
-
-        # Compter les fractals détectés
-        n_up_fractals = self.df['UP_FRACTAL'].notna().sum()
-        n_down_fractals = self.df['DOWN_FRACTAL'].notna().sum()
-        n_fvg_signals = (self.df['FVG_SIGNAL'] != 0).sum()
-
-        # Rapport de détection
-        print(f"\n{'=' * 60}")
-        print(f"📊 SMC BASE FEATURES - Rapport de Détection (CAUSAL)")
-        print(f"{'=' * 60}")
-        print(f"✅ UP_FRACTAL détectés:    {n_up_fractals:>6} ({n_up_fractals / len(self.df) * 100:.2f}%)")
-        print(f"✅ DOWN_FRACTAL détectés:  {n_down_fractals:>6} ({n_down_fractals / len(self.df) * 100:.2f}%)")
-        print(f"✅ FVG_SIGNAL détectés:    {n_fvg_signals:>6} ({n_fvg_signals / len(self.df) * 100:.2f}%)")
-
-        # Avertissement si trop peu de fractals (peut indiquer un problème)
-        if n_up_fractals < 10 or n_down_fractals < 10:
-            print(f"\n⚠️  WARNING: Très peu de fractals détectés!")
-            print(f"    → Considérez réduire FRACTAL_WINDOW (actuellement: {N})")
-            print(f"    → Ou vérifiez que vos données ont assez de volatilité")
-
-        # Vérification du data leakage: Les N dernières bars ne doivent PAS avoir de fractals
-        last_n_up = self.df['UP_FRACTAL'].iloc[-N:].notna().sum()
-        last_n_down = self.df['DOWN_FRACTAL'].iloc[-N:].notna().sum()
-
-        if last_n_up > 0 or last_n_down > 0:
-            print(f"\n🚨 ERREUR CRITIQUE: Data leakage détecté!")
-            print(f"   {last_n_up} UP_FRACTAL dans les {N} dernières bars")
-            print(f"   {last_n_down} DOWN_FRACTAL dans les {N} dernières bars")
-            print(f"   → Les fractals doivent être NaN dans les {N} dernières bars")
-            raise ValueError("Data leakage dans la détection de fractals!")
-        else:
-            print(f"✅ Validation: Pas de fractals dans les {N} dernières bars (causal OK)")
-
-        print(f"{'=' * 60}\n")
+    """
+    Détection CAUSALE des Fractals (Swing Points) et du Fair Value Gap (FVG).
+    VERSION CORRIGÉE: Aucun data leakage - Utilise uniquement les données passées.
+    """
+    
+    N = self.config.FRACTAL_WINDOW  # e.g., 2
+    
+    # Initialize columns
+    self.df['UP_FRACTAL'] = np.nan
+    self.df['DOWN_FRACTAL'] = np.nan
+    
+    # =========================================================================
+    # 1. FRACTAL DETECTION (CORRECTED - NO DATA LEAKAGE)
+    # =========================================================================
+    
+    # We need 2*N bars of history to confirm a fractal
+    # The fractal is at position (i-N), confirmed at position i
+    for i in range(2 * N, len(self.df)):
+        # Window for checking: [i-2N to i] (inclusive)
+        center_idx = i - N  # The potential fractal bar
+        
+        high_window = self.df['high'].iloc[i - 2*N : i + 1]
+        low_window = self.df['low'].iloc[i - 2*N : i + 1]
+        
+        # Verify window size
+        if len(high_window) == 2*N + 1 and len(low_window) == 2*N + 1:
+            # UP FRACTAL: center bar has highest high
+            if high_window.iloc[N] == high_window.max():
+                self.df.iloc[center_idx, self.df.columns.get_loc('UP_FRACTAL')] = self.df.iloc[center_idx]['high']
+            
+            # DOWN FRACTAL: center bar has lowest low
+            if low_window.iloc[N] == low_window.min():
+                self.df.iloc[center_idx, self.df.columns.get_loc('DOWN_FRACTAL')] = self.df.iloc[center_idx]['low']
+    
+    # ✅ CRITICAL: Force last N bars to NaN (can't be confirmed yet)
+    self.df.iloc[-N:, self.df.columns.get_loc('UP_FRACTAL')] = np.nan
+    self.df.iloc[-N:, self.df.columns.get_loc('DOWN_FRACTAL')] = np.nan
+    
+    # =========================================================================
+    # 2. FAIR VALUE GAP (FVG) - DÉJÀ CAUSAL
+    # =========================================================================
+    
+    # Bullish FVG: Le low de la bar actuelle > high de la bar d'il y a 2 périodes
+    bullish_fvg_size = np.where(
+        self.df['low'] > self.df['high'].shift(2),
+        self.df['low'] - self.df['high'].shift(2),
+        0.0
+    )
+    
+    # Bearish FVG: Le high de la bar actuelle < low de la bar d'il y a 2 périodes
+    bearish_fvg_size = np.where(
+        self.df['high'] < self.df['low'].shift(2),
+        self.df['low'].shift(2) - self.df['high'],
+        0.0
+    )
+    
+    # Taille totale du FVG (bullish ou bearish)
+    self.df['FVG_SIZE'] = bullish_fvg_size + bearish_fvg_size
+    
+    # Direction du FVG: +1 (bullish), -1 (bearish), 0 (aucun)
+    self.df['FVG_DIR'] = np.where(
+        bullish_fvg_size > 0, 1,
+        np.where(bearish_fvg_size > 0, -1, 0)
+    )
+    
+    # Normalisation par l'ATR
+    self.df['FVG_SIZE_NORM'] = np.where(
+        self.df['ATR'] > 0,
+        self.df['FVG_SIZE'] / self.df['ATR'],
+        0.0
+    )
+    
+    # Signal FVG final
+    self.df['FVG_SIGNAL'] = np.where(
+        np.abs(self.df['FVG_SIZE_NORM']) > self.config.FVG_THRESHOLD,
+        self.df['FVG_DIR'],
+        0
+    )
+    
+    # =========================================================================
+    # 3. VALIDATION ET RAPPORT
+    # =========================================================================
+    
+    # Compter les fractals détectés
+    n_up_fractals = self.df['UP_FRACTAL'].notna().sum()
+    n_down_fractals = self.df['DOWN_FRACTAL'].notna().sum()
+    n_fvg_signals = (self.df['FVG_SIGNAL'] != 0).sum()
+    
+    # Rapport de détection
+    print(f"\n{'=' * 60}")
+    print(f"📊 SMC BASE FEATURES - Rapport de Détection (CAUSAL)")
+    print(f"{'=' * 60}")
+    print(f"✅ UP_FRACTAL détectés:    {n_up_fractals:>6} ({n_up_fractals / len(self.df) * 100:.2f}%)")
+    print(f"✅ DOWN_FRACTAL détectés:  {n_down_fractals:>6} ({n_down_fractals / len(self.df) * 100:.2f}%)")
+    print(f"✅ FVG_SIGNAL détectés:    {n_fvg_signals:>6} ({n_fvg_signals / len(self.df) * 100:.2f}%)")
+    
+    # Avertissement si trop peu de fractals
+    if n_up_fractals < 10 or n_down_fractals < 10:
+        print(f"\n⚠️  WARNING: Très peu de fractals détectés!")
+        print(f"    → Considérez réduire FRACTAL_WINDOW (actuellement: {N})")
+        print(f"    → Ou vérifiez que vos données ont assez de volatilité")
+    
+    # Vérification du data leakage
+    last_n_up = self.df['UP_FRACTAL'].iloc[-N:].notna().sum()
+    last_n_down = self.df['DOWN_FRACTAL'].iloc[-N:].notna().sum()
+    
+    if last_n_up > 0 or last_n_down > 0:
+        print(f"\n🚨 ERREUR CRITIQUE: Data leakage détecté!")
+        print(f"   {last_n_up} UP_FRACTAL dans les {N} dernières bars")
+        print(f"   {last_n_down} DOWN_FRACTAL dans les {N} dernières bars")
+        print(f"   → Les fractals doivent être NaN dans les {N} dernières bars")
+        raise ValueError("Data leakage dans la détection de fractals!")
+    else:
+        print(f"✅ Validation: Pas de fractals dans les {N} dernières bars (causal OK)")
+    
+    print(f"{'=' * 60}\n")
 
     def _calculate_structure_iterative(self) -> None:
         """
