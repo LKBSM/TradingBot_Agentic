@@ -1,4 +1,4 @@
-import pandas as pd
+﻿import pandas as pd
 import numpy as np
 from stable_baselines3 import PPO
 import os
@@ -243,8 +243,8 @@ class AgentTrainer:
 
             callbacks.append(EarlyStoppingCallback(
                 eval_env=env_val,
-                eval_freq=5000,
-                patience=3,
+                eval_freq=50000,  # Less frequent eval
+                patience=20,  # More patience for Railway
                 min_delta=0.05,
                 verbose=1
             ))
@@ -621,3 +621,5 @@ if __name__ == '__main__':
         timesteps_per_run=20000,
         cumulative=True  # Apprentissage cumulatif
     )
+
+
