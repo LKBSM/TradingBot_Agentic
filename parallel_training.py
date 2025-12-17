@@ -256,7 +256,7 @@ def train_single_bot(
         # Train with early stopping
         agent = trainer.train_offline(
             total_timesteps=config.TOTAL_TIMESTEPS_PER_BOT,
-            use_early_stopping=True,
+            use_early_stopping=False  # Disabled for full training on Railway,
             seed=config.RANDOM_SEED + bot_id
         )
 
@@ -655,3 +655,4 @@ def generate_comprehensive_report(df_results: pd.DataFrame, duration: float):
 
 if __name__ == "__main__":
     run_parallel_training()
+
