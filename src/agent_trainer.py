@@ -244,7 +244,7 @@ class AgentTrainer:
             callbacks.append(EarlyStoppingCallback(
                 eval_env=env_val,
                 eval_freq=50000,  # Less frequent eval
-                patience=20,  # More patience for Railway
+                patience=50,  # Maximum patience for Railway training
                 min_delta=0.05,
                 verbose=1
             ))
@@ -621,5 +621,6 @@ if __name__ == '__main__':
         timesteps_per_run=20000,
         cumulative=True  # Apprentissage cumulatif
     )
+
 
 
