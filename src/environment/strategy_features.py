@@ -235,17 +235,17 @@ class SmartMoneyEngine:
         initial_swings = self.df.loc[self.df['UP_FRACTAL'].notna() | self.df['DOWN_FRACTAL'].notna()].head(2)
 
         if len(initial_swings) >= 2:
-            current_high_structure = initial_swings['high'].max().item()
-            current_low_structure = initial_swings['low'].min().item()
+            current_high_structure = float(initial_swings['high'].max())
+            current_low_structure = float(initial_swings['low'].min())
         elif len(self.df) > 0:
             current_high_structure = self.df.iloc[0]['high'].item()
             current_low_structure = self.df.iloc[0]['low'].item()
 
         # State machine for structure tracking
         for i in range(1, len(self.df)):
-            current_close = self.df.iloc[i]['close'].item()
-            current_high = self.df.iloc[i]['high'].item()
-            current_low = self.df.iloc[i]['low'].item()
+            current_close = float(self.df.iloc[i]['close'])
+            current_high = float(self.df.iloc[i]['high'])
+            current_low = float(self.df.iloc[i]['low'])
 
             # --- CHOCH (Change of Character) ---
             if bos_signal[i - 1] == -1 and not np.isnan(

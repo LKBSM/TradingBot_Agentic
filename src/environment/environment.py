@@ -41,10 +41,10 @@ except ImportError:
     print("WARNING: Could not import from src.config. Using default environment parameters.")
     # --- Default Environment Configuration (Fallback) ---
     TRAIN_END_DATE = "2025-05-15 23:59:00"
-    INITIAL_BALANCE = 500.0
-    TRANSACTION_FEE_PERCENTAGE = 0.000075
-    SLIPPAGE_PERCENTAGE = 0.00002
-    TRADE_COMMISSION_PER_TRADE = 0.00
+    INITIAL_BALANCE = 1000.0
+    TRANSACTION_FEE_PERCENTAGE = 0.0005  # 0.05%
+    SLIPPAGE_PERCENTAGE = 0.0001
+    TRADE_COMMISSION_PER_TRADE = 0.0005
     LOOKBACK_WINDOW_SIZE = 60
     OHLCV_COLUMNS = {
         "timestamp": "Date",
@@ -56,17 +56,17 @@ except ImportError:
     }
     SMC_CONFIG = {"RSI_WINDOW": 7, "MACD_FAST": 8, "MACD_SLOW": 17, "MACD_SIGNAL": 9, "BB_WINDOW": 20, "ATR_WINDOW": 7,
                   "FRACTAL_WINDOW": 2, "FVG_THRESHOLD": 0.0}
-    RISK_PERCENTAGE_PER_TRADE = 0.005
+    RISK_PERCENTAGE_PER_TRADE = 0.01
     TAKE_PROFIT_PERCENTAGE = 0.02
     STOP_LOSS_PERCENTAGE = 0.01
     TSL_START_PROFIT_MULTIPLIER = 1.0
     TSL_TRAIL_DISTANCE_MULTIPLIER = 0.5
-    ALLOW_NEGATIVE_REVENUE_SELL = True
+    ALLOW_NEGATIVE_REVENUE_SELL = False
     ALLOW_NEGATIVE_BALANCE = False
-    MINIMUM_ALLOWED_BALANCE = -0.01
+    MINIMUM_ALLOWED_BALANCE = 100
     REWARD_SCALING_FACTOR = 500.0
     ACTION_SPACE_TYPE = "discrete"
-    MIN_TRADE_QUANTITY = 0.0001
+    MIN_TRADE_QUANTITY = 0.01
     DOWNSIDE_PENALTY_MULTIPLIER = 5.0
     OVERNIGHT_HOLDING_PENALTY = 0.0
     HOLD_PENALTY_FACTOR = 0.005
@@ -94,13 +94,12 @@ except ImportError:
         'OB_STRENGTH_NORM'
     ]    # --- NEW REWARD HYPERPARAMETERS (Defaults for Fallback) ---
     MAX_LEVERAGE = 2.0  # Max 2:1 leverage limit
-    MAX_DURATION_STEPS = 8  # Max 2 hours holding time (8 * 15 min steps)
     W_RETURN = 1.0
-    W_DRAWDOWN = 5.0  # High weight to penalize risk
-    W_FRICTION = 1.0
-    W_LEVERAGE = 10.0  # Very high weight to enforce compliance
-    W_TURNOVER = 0.2
-    W_DURATION = 0.5
+    W_DRAWDOWN = 2.0
+    W_FRICTION = 0.8
+    W_LEVERAGE = 2.0
+    W_TURNOVER = 0.1
+    W_DURATION = 0.3
 
 
 class TradingEnv(gym.Env):
@@ -776,9 +775,9 @@ class TradingEnv(gym.Env):
 
         # --- LECTURE CRITIQUE DES DONNÉES (Extraction des floats) ---
         current_row = self.df.iloc[self.current_step]
-        current_market_price = current_row['Close'].item()
-        current_atr = current_row['ATR'].item()
-        bos_signal = current_row['BOS_SIGNAL'].item()
+        current_market_price = float(current_row['Close'])
+        current_atr = float(current_row['ATR'])
+        bos_signal = float(current_row['BOS_SIGNAL'])
 
         is_long_position = self.stock_quantity > 0
 
