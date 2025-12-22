@@ -196,7 +196,7 @@ N_PARALLEL_BOTS = 50  # Train 50 bots, pick the best
 # RTX 3080/3090: 4 workers
 # RTX 4090: 6-8 workers
 # V100/A100: 8-10 workers
-MAX_WORKERS_GPU = 2 # Train 4 bots simultaneously
+MAX_WORKERS_GPU = 10# Train 4 bots simultaneously
 
 # Selection metric for best model
 EVALUATION_METRIC = 'sharpe_ratio'  # Options: 'sharpe_ratio', 'calmar_ratio', 'profit'

@@ -234,25 +234,15 @@ def train_single_bot(
         df_test: pd.DataFrame,
         verbose: bool = False
 ) -> Dict:
-    """
-    Trains a single bot with given hyperparameters.
-
-    Returns comprehensive metrics including:
-    - Training performance
-    - Validation performance (for early stopping)
-    - Test performance (out-of-sample, unseen)
-    - Profit in USD
-    - Commercial viability assessment
-    """
+    """Trains a single bot with given hyperparameters."""
     try:
-        import sys  # <--- AJOUTEZ CETTE LIGNE ICI (Sécurité Multiprocessing)
+        # ✅ AJOUTÉ: Import sys pour multiprocessing
+        import sys
         import os
-        # ═══════════════════════════════════════════════════════════════
-        # LOGS DÉTAILLÉS POUR COLAB
-        # ═══════════════════════════════════════════════════════════════
         from datetime import datetime
+
         start_time_detailed = datetime.now()
-        
+
         print("\n" + "=" * 70)
         print(f"🤖 BOT {bot_id}/50 - DÉMARRAGE")
         print("=" * 70)
@@ -263,54 +253,45 @@ def train_single_bot(
         print(f"   Batch Size: {hyperparams['batch_size']}")
         print(f"   N Steps: {hyperparams['n_steps']}")
         print("=" * 70)
+
         start_time = datetime.now()
 
-        # Update config with bot's hyperparameters
         config.MODEL_HYPERPARAMETERS.update(hyperparams)
-
-        # Create trainer
         trainer = AgentTrainer(df_historical=df_train)
 
-        # Train with early stopping
         agent = trainer.train_offline(
             total_timesteps=config.TOTAL_TIMESTEPS_PER_BOT,
-            use_early_stopping=False,  # Disabled for full training on Railway,
+            use_early_stopping=False,
             seed=config.RANDOM_SEED + bot_id
         )
 
         training_duration = (datetime.now() - start_time).total_seconds()
-        
-        # Log de fin de training
-        print(f"\n✅ BOT {bot_id} - TRAINING TERMINÉ!")
-        print(f"   Durée: {training_duration/60:.1f} minutes")
-        print(f"   Timesteps: {config.TOTAL_TIMESTEPS_PER_BOT:,}")
 
-        # Save model
+        print(f"\n✅ BOT {bot_id} - TRAINING TERMINÉ!")
+        print(f"   Durée: {training_duration / 60:.1f} minutes")
+
         model_filename = f"bot_{bot_id:03d}_lr{hyperparams['learning_rate']:.0e}_g{hyperparams['gamma']}.zip"
         model_path = os.path.join(config.MODEL_DIR, model_filename)
         agent.save(model_path)
 
-        # Evaluate on all three sets
+        # ✅ ORDRE CORRIGÉ: Évaluation AVANT utilisation de test_profit
         train_metrics = evaluate_agent(agent, df_train)
         val_metrics = evaluate_agent(agent, df_val)
         test_metrics = evaluate_agent(agent, df_test)
-        
-        # Log après évaluation
+
+        initial_capital = config.INITIAL_BALANCE
+        train_profit = initial_capital * train_metrics[0]
+        val_profit = initial_capital * val_metrics[0]
+        test_profit = initial_capital * test_metrics[0]  # ✅ DÉFINI ICI
+
+        # ✅ MAINTENANT on peut logger
         print(f"\n📊 BOT {bot_id} - ÉVALUATION TERMINÉE")
         print(f"   Train Sharpe: {train_metrics[1]:.2f}")
         print(f"   Val Sharpe: {val_metrics[1]:.2f}")
         print(f"   Test Sharpe: {test_metrics[1]:.2f}")
-        print(f"   Test Return: {test_metrics[0]*100:.2f}%")
+        print(f"   Test Return: {test_metrics[0] * 100:.2f}%")
         print(f"   Test Profit: ${test_profit:.2f}")
 
-        # Calculate profits
-        initial_capital = config.INITIAL_BALANCE
-
-        train_profit = initial_capital * train_metrics[0]
-        val_profit = initial_capital * val_metrics[0]
-        test_profit = initial_capital * test_metrics[0]
-
-        # Detect overfitting
         train_sharpe = train_metrics[1]
         val_sharpe = val_metrics[1]
         test_sharpe = test_metrics[1]
@@ -327,23 +308,12 @@ def train_single_bot(
         else:
             overfit_status = "GOOD_FIT"
 
-        # Commercial viability check
         is_profitable = test_profit > 0
         meets_sharpe = test_sharpe >= config.MIN_ACCEPTABLE_SHARPE
         meets_calmar = test_metrics[3] >= config.MIN_ACCEPTABLE_CALMAR
         meets_dd = test_metrics[4] < config.MAX_ACCEPTABLE_DD
 
         commercial_score = sum([is_profitable, meets_sharpe, meets_calmar, meets_dd])
-        
-        # Log du statut commercial
-        end_time_detailed = datetime.now()
-        total_duration = (end_time_detailed - start_time_detailed).total_seconds()
-        
-        print(f"\n🎯 BOT {bot_id} - RÉSULTAT FINAL")
-        print(f"   Statut Commercial: {commercial_status}")
-        print(f"   Score: {commercial_score}/4")
-        print(f"   Durée Totale: {total_duration/60:.1f} minutes")
-        print("=" * 70 + "\n")
 
         if commercial_score >= 3:
             commercial_status = "APPROVED"
@@ -352,44 +322,41 @@ def train_single_bot(
         else:
             commercial_status = "REJECTED"
 
-        # Compile results
+        # ✅ MAINTENANT commercial_status est défini
+        end_time_detailed = datetime.now()
+        total_duration = (end_time_detailed - start_time_detailed).total_seconds()
+
+        print(f"\n🎯 BOT {bot_id} - RÉSULTAT FINAL")
+        print(f"   Statut Commercial: {commercial_status}")
+        print(f"   Score: {commercial_score}/4")
+        print(f"   Durée Totale: {total_duration / 60:.1f} minutes")
+        print("=" * 70 + "\n")
+
         result = {
             'bot_id': bot_id,
             'model_path': model_path,
             'training_duration_sec': training_duration,
-
-            # Hyperparameters
             'learning_rate': hyperparams['learning_rate'],
             'n_steps': hyperparams['n_steps'],
             'batch_size': hyperparams['batch_size'],
             'gamma': hyperparams['gamma'],
             'ent_coef': hyperparams['ent_coef'],
             'clip_range': hyperparams['clip_range'],
-
-            # Train metrics
             'train_return': train_metrics[0],
             'train_sharpe': train_metrics[1],
             'train_profit_usd': train_profit,
-
-            # Validation metrics
             'val_return': val_metrics[0],
             'val_sharpe': val_metrics[1],
             'val_profit_usd': val_profit,
-
-            # Test metrics (MOST IMPORTANT - out-of-sample)
             'test_return': test_metrics[0],
             'test_sharpe': test_metrics[1],
             'test_sortino': test_metrics[2],
             'test_calmar': test_metrics[3],
             'test_max_dd': test_metrics[4],
             'test_profit_usd': test_profit,
-
-            # Quality metrics
             'overfit_status': overfit_status,
             'sharpe_gap_train_val': sharpe_gap_train_val,
             'sharpe_gap_val_test': sharpe_gap_val_test,
-
-            # Commercial assessment
             'is_profitable': is_profitable,
             'meets_sharpe_target': meets_sharpe,
             'meets_calmar_target': meets_calmar,
@@ -399,17 +366,12 @@ def train_single_bot(
             'overall_score': (test_sharpe + test_metrics[3]) / 2
         }
 
-        if verbose:
-            console.print(f"[green]✅ Bot {bot_id}: Complete![/green]")
-            console.print(f"   Test Sharpe: {test_sharpe:.2f}")
-            console.print(f"   Test Profit: ${test_profit:.2f}")
-            console.print(f"   Status: {commercial_status}")
-            console.print(f"   Duration: {training_duration:.0f}s\n")
-
         return result
 
     except Exception as e:
         console.print(f"[red]❌ Bot {bot_id}: FAILED - {str(e)}[/red]")
+        import traceback
+        traceback.print_exc()
         return {
             'bot_id': bot_id,
             'error': str(e),

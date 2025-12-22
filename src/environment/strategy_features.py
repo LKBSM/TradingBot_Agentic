@@ -7,7 +7,6 @@ from ta.momentum import RSIIndicator
 from ta.trend import MACD
 from ta.volatility import BollingerBands, AverageTrueRange
 
-from src.agent_trainer import AgentTrainer
 
 # Configure le logging pour un usage commercial
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -121,94 +120,94 @@ class SmartMoneyEngine:
         Détection CAUSALE des Fractals (Swing Points) et du Fair Value Gap (FVG).
         VERSION CORRIGÉE: Aucun data leakage - Utilise uniquement les données passées.
         """
-        
+
         N = self.config.FRACTAL_WINDOW  # e.g., 2
-        
+
         # Initialize columns
         self.df['UP_FRACTAL'] = np.nan
         self.df['DOWN_FRACTAL'] = np.nan
-        
+
         # =========================================================================
         # 1. FRACTAL DETECTION (CORRECTED - NO DATA LEAKAGE)
         # =========================================================================
-        
+
         # We need 2*N bars of history to confirm a fractal
         for i in range(2 * N, len(self.df)):
             center_idx = i - N
-            
+
             high_window = self.df['high'].iloc[i - 2*N : i + 1]
             low_window = self.df['low'].iloc[i - 2*N : i + 1]
-            
+
             if len(high_window) == 2*N + 1 and len(low_window) == 2*N + 1:
                 # UP FRACTAL
                 if high_window.iloc[N] == high_window.max():
                     self.df.iloc[center_idx, self.df.columns.get_loc('UP_FRACTAL')] = self.df.iloc[center_idx]['high']
-                
+
                 # DOWN FRACTAL
                 if low_window.iloc[N] == low_window.min():
                     self.df.iloc[center_idx, self.df.columns.get_loc('DOWN_FRACTAL')] = self.df.iloc[center_idx]['low']
-        
+
         # Force last N bars to NaN
         self.df.iloc[-N:, self.df.columns.get_loc('UP_FRACTAL')] = np.nan
         self.df.iloc[-N:, self.df.columns.get_loc('DOWN_FRACTAL')] = np.nan
-        
+
         # =========================================================================
         # 2. FAIR VALUE GAP (FVG)
         # =========================================================================
-        
+
         bullish_fvg_size = np.where(
             self.df['low'] > self.df['high'].shift(2),
             self.df['low'] - self.df['high'].shift(2),
             0.0
         )
-        
+
         bearish_fvg_size = np.where(
             self.df['high'] < self.df['low'].shift(2),
             self.df['low'].shift(2) - self.df['high'],
             0.0
         )
-        
+
         self.df['FVG_SIZE'] = bullish_fvg_size + bearish_fvg_size
-        
+
         self.df['FVG_DIR'] = np.where(
             bullish_fvg_size > 0, 1,
             np.where(bearish_fvg_size > 0, -1, 0)
         )
-        
+
         self.df['FVG_SIZE_NORM'] = np.where(
             self.df['ATR'] > 0,
             self.df['FVG_SIZE'] / self.df['ATR'],
             0.0
         )
-        
+
         self.df['FVG_SIGNAL'] = np.where(
             np.abs(self.df['FVG_SIZE_NORM']) > self.config.FVG_THRESHOLD,
             self.df['FVG_DIR'],
             0
         )
-        
+
         # =========================================================================
         # 3. VALIDATION
         # =========================================================================
-        
+
         n_up_fractals = self.df['UP_FRACTAL'].notna().sum()
         n_down_fractals = self.df['DOWN_FRACTAL'].notna().sum()
         n_fvg_signals = (self.df['FVG_SIGNAL'] != 0).sum()
-        
+
         print(f"\n{'=' * 60}")
         print(f"📊 SMC BASE FEATURES - Rapport de Détection (CAUSAL)")
         print(f"{'=' * 60}")
         print(f"✅ UP_FRACTAL détectés:    {n_up_fractals:>6} ({n_up_fractals / len(self.df) * 100:.2f}%)")
         print(f"✅ DOWN_FRACTAL détectés:  {n_down_fractals:>6} ({n_down_fractals / len(self.df) * 100:.2f}%)")
         print(f"✅ FVG_SIGNAL détectés:    {n_fvg_signals:>6} ({n_fvg_signals / len(self.df) * 100:.2f}%)")
-        
+
         if n_up_fractals < 10 or n_down_fractals < 10:
             print(f"\n⚠️  WARNING: Très peu de fractals détectés!")
             print(f"    → Considérez réduire FRACTAL_WINDOW (actuellement: {N})")
-        
+
         last_n_up = self.df['UP_FRACTAL'].iloc[-N:].notna().sum()
         last_n_down = self.df['DOWN_FRACTAL'].iloc[-N:].notna().sum()
-        
+
         if last_n_up > 0 or last_n_down > 0:
             print(f"\n🚨 ERREUR CRITIQUE: Data leakage détecté!")
             print(f"   {last_n_up} UP_FRACTAL dans les {N} dernières bars")
@@ -216,7 +215,7 @@ class SmartMoneyEngine:
             raise ValueError("Data leakage dans la détection de fractals!")
         else:
             print(f"✅ Validation: Pas de fractals dans les {N} dernières bars (causal OK)")
-        
+
         print(f"{'=' * 60}\n")
 
     def _calculate_structure_iterative(self) -> None:
@@ -361,22 +360,15 @@ class SmartMoneyEngine:
 
 
 if __name__ == '__main__':
-
-    # --- CORRECTION FINALE : IMPORTATION LOCALE DE LA CLASSE D'ENTRAÎNEMENT ---
-    # Cette étape est CRITIQUE. Elle retarde l'importation de la classe AgentTrainer
-    # jusqu'au moment où toutes ses dépendances (comme TradingEnv) sont chargées.
-    # ---------------------------------------------
-
-    # Correction pour l'importation de config et l'ajout au sys.path
     import sys
     import os
 
-    # Ajoute le dossier parent au chemin pour trouver 'src' et donc 'config'
     sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+    # ✅ IMPORT LOCAL (évite l'importation circulaire)
+    from src.agent_trainer import AgentTrainer
     import config
 
-    # 0. Data Preparation (Mock Data)
-    # NOTE: Utilisez vos vraies données (XAU_15M_2019_2024_FILTRE.csv) ici.
     data_points = 10000
     prices = 100 + np.cumsum(np.random.randn(data_points) * 0.1)
     df_data = pd.DataFrame({
@@ -388,36 +380,22 @@ if __name__ == '__main__':
         'Volume': np.random.randint(100, 1000, data_points)
     }).set_index('Date')
 
-    # Split data: Training (80%) and Testing (20%)
     split_index = int(len(df_data) * 0.8)
     df_train = df_data.iloc[:split_index].copy()
-    df_test = df_data.iloc[split_index:].copy()
 
     if df_train.empty or len(df_train) < config.LOOKBACK_WINDOW_SIZE * 2:
-        raise ValueError("Le DataFrame d'entraînement est trop petit pour l'initialisation.")
+        raise ValueError("Le DataFrame d'entraînement est trop petit.")
 
-    # --- NOUVEAU : ENTRAÎNEMENT HORS LIGNE EN BOUCLE (Utilisation de TRAINING_TIMESTEPS) ---
-    n_sessions = 10  # Entraînement en 3 sessions pour plus de stabilité
-
-    # L'initialisation de l'AgentTrainer est possible grâce à l'importation locale
+    n_sessions = 10
     trainer = AgentTrainer(df_historical=df_train)
+    total_timesteps_per_session = config.TOTAL_TIMESTEPS_PER_BOT // n_sessions
 
-    # Définition des pas de temps par session
-    total_timesteps_per_session = config.TRAINING_TIMESTEPS // n_sessions
-
-    # 1. Entraînement initial (Création du premier modèle)
     trained_agent = trainer.train_offline(total_timesteps=total_timesteps_per_session)
 
-    # 2. Sessions suivantes d'entraînement en continu
     for i in range(1, n_sessions):
-        # Sauvegarde de la session précédente pour le chargement
         model_name = f"model_offline_session_{i}"
         trainer.agent.save(os.path.join(config.MODEL_DIR, f"{model_name}.zip"))
-
-        # Continuer l'entraînement à partir du modèle précédemment sauvegardé
         trained_agent = trainer.continue_training(
-            model_name=model_name,
-            total_timesteps=total_timesteps_per_session
+            model_path=os.path.join(config.MODEL_DIR, f"{model_name}.zip"),
+            additional_timesteps=total_timesteps_per_session
         )
-
-    # Évaluation de l'agent final

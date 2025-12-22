@@ -1,62 +1,69 @@
 import traceback
+import sys  # ✅ AJOUTÉ ICI
+import os  # ✅ AJOUTÉ ICI
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
-import math  # For math.isclose
-from collections import deque  # For trade history summary
+import math
+from collections import deque
 import warnings
 from ta.volatility import average_true_range
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
 import ta
-from src.environment.risk_manager import DynamicRiskManager as RiskManager
-# Assurez-vous que les fichiers strategy_features.py et risk_manager.py sont dans le bon chemin
-from src.tests.monitor_training import TradeLogger
+
+# ✅ MAINTENANT ON PEUT UTILISER sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
+from src.environment.risk_manager import DynamicRiskManager as RiskManager
+from src.tests.monitor_training import TradeLogger
 from src.environment.strategy_features import SmartMoneyEngine
 
-# IMPORTANT: Import constants from config.py.
-# Ces paramètres sont cruciaux pour le bon fonctionnement.
+# IMPORTANT: Import constants from config.py
 try:
     from src.config import (
         LOOKBACK_WINDOW_SIZE, INITIAL_BALANCE, TRANSACTION_FEE_PERCENTAGE,
         TRADE_COMMISSION_PER_TRADE, SLIPPAGE_PERCENTAGE, REWARD_SCALING_FACTOR,
         ALLOW_NEGATIVE_REVENUE_SELL, ALLOW_NEGATIVE_BALANCE, MINIMUM_ALLOWED_BALANCE,
-        MIN_TRADE_QUANTITY,ACTION_SPACE_TYPE, FEATURES, OHLCV_COLUMNS,
+        MIN_TRADE_QUANTITY, ACTION_SPACE_TYPE, FEATURES, OHLCV_COLUMNS,
         DOWNSIDE_PENALTY_MULTIPLIER, OVERNIGHT_HOLDING_PENALTY, HOLD_PENALTY_FACTOR,
         WINNING_TRADE_BONUS, LOSING_TRADE_PENALTY, FAILED_TRADE_ATTEMPT_PENALTY,
         TRADE_COOLDOWN_STEPS, RAPID_TRADE_PENALTY, TRAIN_END_DATE, SMC_CONFIG,
         RISK_PERCENTAGE_PER_TRADE, TAKE_PROFIT_PERCENTAGE, STOP_LOSS_PERCENTAGE,
         TSL_START_PROFIT_MULTIPLIER, TSL_TRAIL_DISTANCE_MULTIPLIER,
-        MAX_LEVERAGE, MAX_DURATION_STEPS,  # <--- VERIFIEZ CETTE LIGNE
+        MAX_LEVERAGE, MAX_DURATION_STEPS,
         W_RETURN, W_DRAWDOWN, W_FRICTION, W_LEVERAGE, W_TURNOVER, W_DURATION
     )
 except ImportError:
     print("WARNING: Could not import from config. Using production fallback parameters.")
-    # --- Production Fallback (Mirrors config.py exactly) ---
+
+    # ✅ FALLBACK COMPLET CORRIGÉ
+    TRAIN_END_DATE = "2023-06-30 23:59:00"
     INITIAL_BALANCE = 1000.0
-    TRANSACTION_FEE_PERCENTAGE = 0.0005  # 0.05%
+    TRANSACTION_FEE_PERCENTAGE = 0.0005
     SLIPPAGE_PERCENTAGE = 0.0001
     TRADE_COMMISSION_PER_TRADE = 0.0005
-
     LOOKBACK_WINDOW_SIZE = 60
-    RISK_PERCENTAGE_PER_TRADE = 0.01  # 1%
+    RISK_PERCENTAGE_PER_TRADE = 0.01
     TAKE_PROFIT_PERCENTAGE = 0.02
     STOP_LOSS_PERCENTAGE = 0.01
-
     TSL_START_PROFIT_MULTIPLIER = 1.0
     TSL_TRAIL_DISTANCE_MULTIPLIER = 0.5
-
     ALLOW_NEGATIVE_REVENUE_SELL = False
     ALLOW_NEGATIVE_BALANCE = False
     MINIMUM_ALLOWED_BALANCE = 100.0
     MIN_TRADE_QUANTITY = 0.01
 
-    # Reward Weights (Balanced for safety)
+    # ✅ AJOUTÉ: Variables manquantes
+    ACTION_SPACE_TYPE = 'discrete'
+    OVERNIGHT_HOLDING_PENALTY = 0.0
+    HOLD_PENALTY_FACTOR = 0.005
+    FAILED_TRADE_ATTEMPT_PENALTY = 0.0
+
+    # Reward Weights
     REWARD_SCALING_FACTOR = 100.0
     W_RETURN = 1.0
     W_DRAWDOWN = 2.0
@@ -72,7 +79,7 @@ except ImportError:
     TRADE_COOLDOWN_STEPS = 5
     RAPID_TRADE_PENALTY = 5.0
     MAX_LEVERAGE = 1.5
-    MAX_DURATION_STEPS = 12[cite: 1]
+    MAX_DURATION_STEPS = 12  # ✅ CORRIGÉ: Supprimé [cite: 1
 
     OHLCV_COLUMNS = {
         "timestamp": "Date",
