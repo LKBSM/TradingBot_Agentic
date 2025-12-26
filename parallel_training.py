@@ -1,5 +1,15 @@
 ﻿# ═════════════════════════════════════════════════════════════════════════════
-# 🏢 PARALLEL TRAINING - VERSION PRODUCTION AVEC CHECKPOINTS & GOOGLE DRIVE
+# 🏢 PARALLEL TRAINING - PRODUCTION VERSION WITH AUTO-DRIVE & CHECKPOINTS
+# ═════════════════════════════════════════════════════════════════════════════
+#
+# Features:
+# - ✅ Auto-mount Google Drive (no manual intervention)
+# - ✅ Checkpoint resume capability (survive Colab disconnections)
+# - ✅ Automatic model backups to Drive
+# - ✅ Intelligent hyperparameter search
+# - ✅ Multi-worker GPU training
+# - ✅ Comprehensive reporting
+#
 # ═════════════════════════════════════════════════════════════════════════════
 
 import multiprocessing
@@ -7,7 +17,7 @@ import multiprocessing
 try:
     multiprocessing.set_start_method('spawn', force=True)
 except RuntimeError:
-    pass  # Déjà défini (ignore)
+    pass  # Already set
 
 import os
 import sys
@@ -20,22 +30,20 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from itertools import product
 import warnings
 
 warnings.filterwarnings('ignore')
 
-# Rich console for beautiful output
+# Rich console
 from rich.console import Console
 from rich.table import Table
 from rich.progress import Progress, SpinnerColumn, BarColumn, TextColumn, TimeElapsedColumn, TaskProgressColumn
 from rich.panel import Panel
 from rich import box
 
-# Add project root to path
+# Add project root
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-# Import project modules
 import config
 from src.agent_trainer import AgentTrainer, evaluate_agent
 
@@ -43,37 +51,82 @@ console = Console()
 
 
 # ═════════════════════════════════════════════════════════════════════════════
-# 🔄 CHECKPOINT & BACKUP SYSTEM
+# 🔧 GOOGLE DRIVE AUTO-MOUNT
 # ═════════════════════════════════════════════════════════════════════════════
 
-def setup_google_drive_backup():
-    """Monte Google Drive et configure les backups automatiques."""
+def setup_google_drive():
+    """
+    Automatically mounts Google Drive if running on Colab.
+    Creates backup folder structure.
+
+    Returns:
+        str: Backup root path if successful, None otherwise
+    """
+    # Detect if running on Colab
     try:
-        from google.colab import drive
-        drive.mount('/content/drive', force_remount=False)
+        import google.colab
+        is_colab = True
+    except ImportError:
+        is_colab = False
 
-        # Créer dossiers backup
+    if not is_colab:
+        console.print("[cyan]ℹ️  Not running on Colab - Drive mount skipped[/cyan]")
+        return None
+
+    # Check if already mounted
+    if os.path.exists('/content/drive/MyDrive'):
+        console.print("[green]✅ Google Drive already mounted[/green]")
+    else:
+        # Mount Drive
+        try:
+            console.print("[cyan]☁️  Mounting Google Drive...[/cyan]")
+            from google.colab import drive
+            drive.mount('/content/drive', force_remount=False)
+
+            if os.path.exists('/content/drive/MyDrive'):
+                console.print("[green]✅ Google Drive mounted successfully![/green]")
+            else:
+                console.print("[yellow]⚠️  Drive mounted but not accessible[/yellow]")
+                return None
+        except Exception as e:
+            console.print(f"[yellow]⚠️  Drive mount failed: {e}[/yellow]")
+            console.print("[yellow]   → Local save only[/yellow]")
+            return None
+
+    # Create folder structure
+    try:
         backup_root = '/content/drive/MyDrive/TradingBot_Results'
-        os.makedirs(f'{backup_root}/models', exist_ok=True)
-        os.makedirs(f'{backup_root}/checkpoints', exist_ok=True)
-        os.makedirs(f'{backup_root}/results', exist_ok=True)
+        folders = [
+            backup_root,
+            os.path.join(backup_root, 'checkpoints'),
+            os.path.join(backup_root, 'models'),
+            os.path.join(backup_root, 'results'),
+            os.path.join(backup_root, 'logs')
+        ]
 
-        console.print("[green]✅ Google Drive monté et configuré[/green]")
+        for folder in folders:
+            os.makedirs(folder, exist_ok=True)
+
+        console.print(f"[green]✅ Drive folders ready: {backup_root}[/green]")
         return backup_root
+
     except Exception as e:
-        console.print(f"[yellow]⚠️ Google Drive non disponible: {e}[/yellow]")
-        console.print("[yellow]   Sauvegarde locale uniquement[/yellow]")
+        console.print(f"[yellow]⚠️  Folder creation failed: {e}[/yellow]")
         return None
 
 
+# ═════════════════════════════════════════════════════════════════════════════
+# 💾 CHECKPOINT SYSTEM
+# ═════════════════════════════════════════════════════════════════════════════
+
 def save_checkpoint(completed_bots: int, results: List[Dict], backup_root: Optional[str] = None):
     """
-    Sauvegarde checkpoint local + backup Google Drive.
+    Saves training checkpoint to local and Drive.
 
     Args:
-        completed_bots: Nombre de bots terminés
-        results: Liste des résultats
-        backup_root: Chemin racine du backup Drive (None si Drive indisponible)
+        completed_bots: Number of bots completed
+        results: List of bot results
+        backup_root: Drive backup path (None if unavailable)
     """
     checkpoint = {
         'timestamp': datetime.now().isoformat(),
@@ -83,7 +136,7 @@ def save_checkpoint(completed_bots: int, results: List[Dict], backup_root: Optio
         'results': results
     }
 
-    # 1️⃣ Sauvegarde locale (toujours)
+    # 1. Local save (always)
     checkpoint_dir = os.path.join(config.RESULTS_DIR, 'checkpoints')
     os.makedirs(checkpoint_dir, exist_ok=True)
 
@@ -92,70 +145,89 @@ def save_checkpoint(completed_bots: int, results: List[Dict], backup_root: Optio
         json.dump(checkpoint, f, indent=2)
 
     console.print(
-        f"[green]✅ Checkpoint local: {completed_bots}/{config.N_PARALLEL_BOTS} bots ({checkpoint['progress_pct']:.0f}%)[/green]")
+        f"[green]✅ Checkpoint: {completed_bots}/{config.N_PARALLEL_BOTS} "
+        f"({checkpoint['progress_pct']:.0f}%)[/green]"
+    )
 
-    # 2️⃣ Backup Google Drive (si disponible)
+    # 2. Drive backup (if available)
     if backup_root:
         try:
-            drive_checkpoint_path = f'{backup_root}/checkpoints/checkpoint_latest.json'
-            shutil.copy(checkpoint_path, drive_checkpoint_path)
+            drive_checkpoint = os.path.join(backup_root, 'checkpoints', 'checkpoint_latest.json')
+            shutil.copy(checkpoint_path, drive_checkpoint)
 
-            # Aussi sauvegarder avec timestamp (historique)
+            # Also timestamped backup
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            drive_checkpoint_backup = f'{backup_root}/checkpoints/checkpoint_{timestamp}.json'
-            shutil.copy(checkpoint_path, drive_checkpoint_backup)
+            drive_backup = os.path.join(backup_root, 'checkpoints', f'checkpoint_{timestamp}.json')
+            shutil.copy(checkpoint_path, drive_backup)
 
-            console.print(f"[green]💾 Checkpoint Drive: {drive_checkpoint_path}[/green]")
+            console.print(f"[green]💾 Drive checkpoint saved[/green]")
         except Exception as e:
-            console.print(f"[yellow]⚠️ Backup Drive échoué: {e}[/yellow]")
+            console.print(f"[yellow]⚠️  Drive backup failed: {e}[/yellow]")
 
 
 def load_checkpoint(backup_root: Optional[str] = None) -> Optional[Dict]:
     """
-    Charge le dernier checkpoint (Drive prioritaire, sinon local).
+    Loads checkpoint from Drive (priority) or local.
 
     Args:
-        backup_root: Chemin racine du backup Drive
+        backup_root: Drive backup path
 
     Returns:
-        Dict du checkpoint ou None si inexistant
+        Checkpoint dict or None
     """
-    checkpoint_loaded = None
-
-    # 1️⃣ Essayer Google Drive en priorité
+    # Try Drive first
     if backup_root:
-        drive_checkpoint_path = f'{backup_root}/checkpoints/checkpoint_latest.json'
-        if os.path.exists(drive_checkpoint_path):
+        drive_checkpoint = os.path.join(backup_root, 'checkpoints', 'checkpoint_latest.json')
+        if os.path.exists(drive_checkpoint):
             try:
-                with open(drive_checkpoint_path, 'r') as f:
-                    checkpoint_loaded = json.load(f)
+                with open(drive_checkpoint, 'r') as f:
+                    checkpoint = json.load(f)
                 console.print(
-                    f"[green]✅ Checkpoint chargé depuis Drive: {checkpoint_loaded['completed_bots']}/{checkpoint_loaded['total_bots']} bots[/green]")
-                return checkpoint_loaded
+                    f"[green]✅ Checkpoint loaded from Drive: "
+                    f"{checkpoint['completed_bots']}/{checkpoint['total_bots']}[/green]"
+                )
+                return checkpoint
             except Exception as e:
-                console.print(f"[yellow]⚠️ Erreur lecture Drive: {e}[/yellow]")
+                console.print(f"[yellow]⚠️  Drive checkpoint read error: {e}[/yellow]")
 
-    # 2️⃣ Fallback: Checkpoint local
-    local_checkpoint_path = os.path.join(config.RESULTS_DIR, 'checkpoints', 'checkpoint_latest.json')
-    if os.path.exists(local_checkpoint_path):
+    # Fallback to local
+    local_checkpoint = os.path.join(config.RESULTS_DIR, 'checkpoints', 'checkpoint_latest.json')
+    if os.path.exists(local_checkpoint):
         try:
-            with open(local_checkpoint_path, 'r') as f:
-                checkpoint_loaded = json.load(f)
+            with open(local_checkpoint, 'r') as f:
+                checkpoint = json.load(f)
             console.print(
-                f"[green]✅ Checkpoint local trouvé: {checkpoint_loaded['completed_bots']}/{checkpoint_loaded['total_bots']} bots[/green]")
-            return checkpoint_loaded
+                f"[green]✅ Local checkpoint: "
+                f"{checkpoint['completed_bots']}/{checkpoint['total_bots']}[/green]"
+            )
+            return checkpoint
         except Exception as e:
-            console.print(f"[yellow]⚠️ Erreur lecture local: {e}[/yellow]")
+            console.print(f"[yellow]⚠️  Local checkpoint read error: {e}[/yellow]")
 
     return None
 
 
 # ═════════════════════════════════════════════════════════════════════════════
-# 1. INTELLIGENT HYPERPARAMETER GENERATION
+# 🧠 INTELLIGENT HYPERPARAMETER GENERATION
 # ═════════════════════════════════════════════════════════════════════════════
 
 def generate_intelligent_hyperparam_sets(n_bots: int = 50) -> List[Dict]:
-    """Generates hyperparameter sets using INTELLIGENT STRATIFIED SAMPLING."""
+    """
+    Generates hyperparameter sets using stratified sampling.
+
+    Strategy:
+    1. Baseline (FinRL defaults)
+    2. LR × Gamma grid (most important)
+    3. Architecture variations
+    4. Exploration parameters
+    5. Random diversity
+
+    Args:
+        n_bots: Number of configurations to generate
+
+    Returns:
+        List of hyperparameter dicts
+    """
     console.print("\n[bold cyan]🧠 Generating Intelligent Hyperparameter Sets[/bold cyan]")
     console.print(f"   Target: {n_bots} unique configurations\n")
 
@@ -170,8 +242,12 @@ def generate_intelligent_hyperparam_sets(n_bots: int = 50) -> List[Dict]:
 
     # STRATEGY 1: Baseline
     baseline = {
-        'learning_rate': 3e-5, 'n_steps': 2048, 'batch_size': 128,
-        'gamma': 0.99, 'ent_coef': 0.01, 'clip_range': 0.2
+        'learning_rate': 3e-5,
+        'n_steps': 2048,
+        'batch_size': 128,
+        'gamma': 0.99,
+        'ent_coef': 0.01,
+        'clip_range': 0.2
     }
     hyperparam_sets.append(baseline)
     console.print("   ✅ Added baseline (FinRL research)")
@@ -182,11 +258,15 @@ def generate_intelligent_hyperparam_sets(n_bots: int = 50) -> List[Dict]:
         for gamma in gamma_space:
             if len(hyperparam_sets) >= 16:
                 break
-            if lr == 3e-5 and gamma == 0.99:
+            if lr == 3e-5 and gamma == 0.99:  # Skip baseline duplicate
                 continue
             hyperparam_sets.append({
-                'learning_rate': lr, 'n_steps': 2048, 'batch_size': 128,
-                'gamma': gamma, 'ent_coef': 0.01, 'clip_range': 0.2
+                'learning_rate': lr,
+                'n_steps': 2048,
+                'batch_size': 128,
+                'gamma': gamma,
+                'ent_coef': 0.01,
+                'clip_range': 0.2
             })
             priority_count += 1
         if len(hyperparam_sets) >= 16:
@@ -199,13 +279,18 @@ def generate_intelligent_hyperparam_sets(n_bots: int = 50) -> List[Dict]:
         for batch_size in batch_space:
             if len(hyperparam_sets) >= 28:
                 break
-            if batch_size > n_steps:
+            if batch_size > n_steps:  # Constraint
                 continue
-            if any(hp['n_steps'] == n_steps and hp['batch_size'] == batch_size for hp in hyperparam_sets):
+            if any(hp['n_steps'] == n_steps and hp['batch_size'] == batch_size
+                   for hp in hyperparam_sets):
                 continue
             hyperparam_sets.append({
-                'learning_rate': 3e-5, 'n_steps': n_steps, 'batch_size': batch_size,
-                'gamma': 0.99, 'ent_coef': 0.01, 'clip_range': 0.2
+                'learning_rate': 3e-5,
+                'n_steps': n_steps,
+                'batch_size': batch_size,
+                'gamma': 0.99,
+                'ent_coef': 0.01,
+                'clip_range': 0.2
             })
             arch_count += 1
         if len(hyperparam_sets) >= 28:
@@ -218,11 +303,15 @@ def generate_intelligent_hyperparam_sets(n_bots: int = 50) -> List[Dict]:
         for clip in clip_space:
             if len(hyperparam_sets) >= 37:
                 break
-            if ent == 0.01 and clip == 0.2:
+            if ent == 0.01 and clip == 0.2:  # Skip baseline
                 continue
             hyperparam_sets.append({
-                'learning_rate': 3e-5, 'n_steps': 2048, 'batch_size': 128,
-                'gamma': 0.99, 'ent_coef': ent, 'clip_range': clip
+                'learning_rate': 3e-5,
+                'n_steps': 2048,
+                'batch_size': 128,
+                'gamma': 0.99,
+                'ent_coef': ent,
+                'clip_range': clip
             })
             explore_count += 1
         if len(hyperparam_sets) >= 37:
@@ -247,7 +336,8 @@ def generate_intelligent_hyperparam_sets(n_bots: int = 50) -> List[Dict]:
         }
         if candidate['batch_size'] > candidate['n_steps']:
             continue
-        if any(all(hp[k] == candidate[k] for k in candidate.keys()) for hp in hyperparam_sets):
+        if any(all(hp[k] == candidate[k] for k in candidate.keys())
+               for hp in hyperparam_sets):
             continue
         hyperparam_sets.append(candidate)
         random_count += 1
@@ -261,7 +351,7 @@ def generate_intelligent_hyperparam_sets(n_bots: int = 50) -> List[Dict]:
 
 
 # ═════════════════════════════════════════════════════════════════════════════
-# 2. SINGLE BOT TRAINING FUNCTION (AVEC BACKUP)
+# 🤖 SINGLE BOT TRAINING
 # ═════════════════════════════════════════════════════════════════════════════
 
 def train_single_bot(
@@ -273,7 +363,21 @@ def train_single_bot(
         backup_root: Optional[str] = None,
         verbose: bool = False
 ) -> Dict:
-    """Trains a single bot with automatic Drive backup."""
+    """
+    Trains a single bot with given hyperparameters.
+
+    Args:
+        bot_id: Bot number (1-indexed)
+        hyperparams: Hyperparameter dict
+        df_train: Training data
+        df_val: Validation data
+        df_test: Test data
+        backup_root: Drive backup path
+        verbose: Print detailed logs
+
+    Returns:
+        Results dict with metrics
+    """
     try:
         start_time = datetime.now()
 
@@ -284,8 +388,10 @@ def train_single_bot(
         print(f"🎯 LR: {hyperparams['learning_rate']:.2e} | Gamma: {hyperparams['gamma']}")
         print(f"{'=' * 70}")
 
-        # Training
+        # Update config
         config.MODEL_HYPERPARAMETERS.update(hyperparams)
+
+        # Train
         trainer = AgentTrainer(df_historical=df_train)
         agent = trainer.train_offline(
             total_timesteps=config.TOTAL_TIMESTEPS_PER_BOT,
@@ -296,21 +402,21 @@ def train_single_bot(
         training_duration = (datetime.now() - start_time).total_seconds()
         print(f"✅ Training: {training_duration / 60:.1f} min")
 
-        # Save model locally
+        # Save model
         model_filename = f"bot_{bot_id:03d}_lr{hyperparams['learning_rate']:.0e}_g{hyperparams['gamma']}.zip"
         model_path = os.path.join(config.MODEL_DIR, model_filename)
         agent.save(model_path)
 
-        # ⭐ BACKUP GOOGLE DRIVE
+        # Backup to Drive
         if backup_root:
             try:
-                drive_model_path = f'{backup_root}/models/{model_filename}'
+                drive_model_path = os.path.join(backup_root, 'models', model_filename)
                 shutil.copy(model_path, drive_model_path)
                 print(f"💾 Drive backup: OK")
             except Exception as e:
-                print(f"⚠️ Drive backup failed: {e}")
+                print(f"⚠️  Drive backup failed: {e}")
 
-        # Evaluation
+        # Evaluate
         train_metrics = evaluate_agent(agent, df_train)
         val_metrics = evaluate_agent(agent, df_val)
         test_metrics = evaluate_agent(agent, df_test)
@@ -318,17 +424,20 @@ def train_single_bot(
         initial_capital = config.INITIAL_BALANCE
         test_profit = initial_capital * test_metrics[0]
 
-        print(
-            f"📊 Test Sharpe: {test_metrics[1]:.2f} | Return: {test_metrics[0] * 100:.2f}% | Profit: ${test_profit:.2f}")
+        print(f"📊 Test Sharpe: {test_metrics[1]:.2f} | "
+              f"Return: {test_metrics[0] * 100:.2f}% | "
+              f"Profit: ${test_profit:.2f}")
 
         # Overfitting detection
         sharpe_gap = train_metrics[1] - val_metrics[1]
-        overfit_status = (
-            "SEVERE_OVERFIT" if sharpe_gap > 1.5 else
-            "MILD_OVERFIT" if sharpe_gap > 0.8 else
-            "UNDERFIT" if sharpe_gap < -0.5 else
-            "GOOD_FIT"
-        )
+        if sharpe_gap > 1.5:
+            overfit_status = "SEVERE_OVERFIT"
+        elif sharpe_gap > 0.8:
+            overfit_status = "MILD_OVERFIT"
+        elif sharpe_gap < -0.5:
+            overfit_status = "UNDERFIT"
+        else:
+            overfit_status = "GOOD_FIT"
 
         # Commercial viability
         is_profitable = test_profit > 0
@@ -336,7 +445,13 @@ def train_single_bot(
         meets_calmar = test_metrics[3] >= config.MIN_ACCEPTABLE_CALMAR
         meets_dd = test_metrics[4] < config.MAX_ACCEPTABLE_DD
         commercial_score = sum([is_profitable, meets_sharpe, meets_calmar, meets_dd])
-        commercial_status = "APPROVED" if commercial_score >= 3 else "CONDITIONAL" if commercial_score == 2 else "REJECTED"
+
+        if commercial_score >= 3:
+            commercial_status = "APPROVED"
+        elif commercial_score == 2:
+            commercial_status = "CONDITIONAL"
+        else:
+            commercial_status = "REJECTED"
 
         print(f"🎯 Status: {commercial_status} ({commercial_score}/4)")
         print(f"{'=' * 70}\n")
@@ -391,11 +506,11 @@ def train_single_bot(
 
 
 # ═════════════════════════════════════════════════════════════════════════════
-# 3. MAIN TRAINING ORCHESTRATOR (AVEC CHECKPOINTS)
+# 🚀 MAIN TRAINING ORCHESTRATOR
 # ═════════════════════════════════════════════════════════════════════════════
 
 def run_parallel_training():
-    """Main training pipeline with checkpoint resume capability."""
+    """Main training pipeline with checkpoint resume."""
 
     console.print(Panel.fit(
         "[bold white]🏢 XAU TRADING BOT - PRODUCTION TRAINING[/bold white]\n"
@@ -408,11 +523,11 @@ def run_parallel_training():
     # ═══════════════════════════════════════════════════════════════════════
     # STEP 0: Setup Google Drive
     # ═══════════════════════════════════════════════════════════════════════
-    console.print("\n[cyan]☁️ Step 0: Google Drive Setup[/cyan]")
-    backup_root = setup_google_drive_backup()
+    console.print("\n[cyan]☁️  Step 0: Google Drive Setup[/cyan]")
+    backup_root = setup_google_drive()
 
     # ═══════════════════════════════════════════════════════════════════════
-    # STEP 0.5: Check for existing checkpoint
+    # STEP 0.5: Check for checkpoint
     # ═══════════════════════════════════════════════════════════════════════
     console.print("\n[cyan]🔄 Checking for existing checkpoint...[/cyan]")
     checkpoint = load_checkpoint(backup_root)
@@ -422,21 +537,19 @@ def run_parallel_training():
         previous_results = checkpoint['results']
 
         console.print(Panel.fit(
-            f"[bold yellow]🔄 REPRISE DÉTECTÉE![/bold yellow]\n\n"
-            f"Progression: {completed_bots}/{config.N_PARALLEL_BOTS} bots ({checkpoint['progress_pct']:.0f}%)\n"
-            f"Date checkpoint: {checkpoint['timestamp']}\n"
-            f"Bots restants: {config.N_PARALLEL_BOTS - completed_bots}",
+            f"[bold yellow]🔄 RESUME DETECTED![/bold yellow]\n\n"
+            f"Progress: {completed_bots}/{config.N_PARALLEL_BOTS} bots ({checkpoint['progress_pct']:.0f}%)\n"
+            f"Timestamp: {checkpoint['timestamp']}\n"
+            f"Remaining: {config.N_PARALLEL_BOTS - completed_bots} bots",
             box=box.HEAVY,
             style="yellow"
         ))
 
-        # Ask user confirmation
-        console.print("\n[bold yellow]Voulez-vous reprendre depuis ce checkpoint? (o/n)[/bold yellow]")
-        # Auto-accept in Colab (headless)
+        # Auto-resume in Colab
+        console.print("[green]✅ Auto-resume enabled[/green]")
         resume = True
-        console.print("[green]✅ Reprise automatique activée[/green]")
     else:
-        console.print("[cyan]ℹ️ Aucun checkpoint trouvé - Nouveau training[/cyan]")
+        console.print("[cyan]ℹ️  Aucun checkpoint trouvé - Nouveau training[/cyan]")
         completed_bots = 0
         previous_results = []
         resume = False
@@ -448,9 +561,9 @@ def run_parallel_training():
 
     try:
         df_full = pd.read_csv(config.HISTORICAL_DATA_FILE)
-        console.print(f"[green]✅ Loaded {len(df_full):,} bars[/green]")
+        console.print(f"[green]✅ Loaded {len(df_full):,} bars from {config.HISTORICAL_DATA_FILE}[/green]")
     except FileNotFoundError:
-        console.print(f"[yellow]⚠️ Using mock data[/yellow]")
+        console.print(f"[yellow]⚠️  Using mock data[/yellow]")
         n_points = 20000
         prices = 1800 + np.cumsum(np.random.randn(n_points) * 2)
         df_full = pd.DataFrame({
@@ -488,22 +601,22 @@ def run_parallel_training():
         gpu_memory = torch.cuda.get_device_properties(0).total_memory / 1e9
         console.print(f"[green]✅ GPU: {gpu_name} ({gpu_memory:.1f} GB)[/green]")
     else:
-        console.print("[yellow]⚠️ No GPU - using CPU[/yellow]")
+        console.print("[yellow]⚠️  No GPU - using CPU[/yellow]")
 
     # ═══════════════════════════════════════════════════════════════════════
-    # STEP 4: Parallel Training (AVEC CHECKPOINTS)
+    # STEP 4: Parallel Training
     # ═══════════════════════════════════════════════════════════════════════
     console.print("\n[cyan]🚀 Step 4: Parallel Training[/cyan]")
 
     # Determine which bots to train
     if resume:
         bots_to_train = list(range(completed_bots, config.N_PARALLEL_BOTS))
-        console.print(f"[yellow]🔄 Reprise: Training bots {completed_bots + 1} à {config.N_PARALLEL_BOTS}[/yellow]")
+        console.print(f"[yellow]🆕 Nouveau: Training bots {completed_bots + 1} à {config.N_PARALLEL_BOTS}[/yellow]")
     else:
         bots_to_train = list(range(config.N_PARALLEL_BOTS))
         console.print(f"[cyan]🆕 Nouveau: Training bots 1 à {config.N_PARALLEL_BOTS}[/cyan]")
 
-    results = previous_results.copy()  # Start with previous results if resuming
+    results = previous_results.copy()
     start_time = datetime.now()
 
     with Progress(
@@ -529,7 +642,7 @@ def run_parallel_training():
                     df_train,
                     df_val,
                     df_test,
-                    backup_root  # ⭐ Pass backup_root
+                    backup_root
                 ): i for i in bots_to_train
             }
 
@@ -537,7 +650,7 @@ def run_parallel_training():
                 result = future.result()
                 results.append(result)
 
-                # ⭐ SAVE CHECKPOINT APRÈS CHAQUE BOT
+                # Save checkpoint after each bot
                 current_completed = len(results)
                 save_checkpoint(current_completed, results, backup_root)
 
@@ -569,11 +682,11 @@ def run_parallel_training():
 
 
 # ═════════════════════════════════════════════════════════════════════════════
-# 4. COMPREHENSIVE REPORTING (AVEC BACKUP)
+# 📊 COMPREHENSIVE REPORTING
 # ═════════════════════════════════════════════════════════════════════════════
 
 def generate_comprehensive_report(df_results: pd.DataFrame, duration: float, backup_root: Optional[str] = None):
-    """Generates reports with Drive backup."""
+    """Generates comprehensive reports with Drive backup."""
 
     n_bots = len(df_results)
     n_profitable = df_results['is_profitable'].sum()
@@ -629,14 +742,14 @@ def generate_comprehensive_report(df_results: pd.DataFrame, duration: float, bac
     df_results.to_csv(csv_path, index=False)
     console.print(f"\n[green]✅ CSV: {csv_path}[/green]")
 
-    # ⭐ BACKUP CSV TO DRIVE
+    # Backup CSV to Drive
     if backup_root:
         try:
-            drive_csv_path = f'{backup_root}/results/results_{timestamp}.csv'
-            shutil.copy(csv_path, drive_csv_path)
-            console.print(f"[green]💾 Drive CSV: {drive_csv_path}[/green]")
+            drive_csv = os.path.join(backup_root, 'results', f'results_{timestamp}.csv')
+            shutil.copy(csv_path, drive_csv)
+            console.print(f"[green]💾 Drive CSV: {drive_csv}[/green]")
         except Exception as e:
-            console.print(f"[yellow]⚠️ Drive CSV backup failed: {e}[/yellow]")
+            console.print(f"[yellow]⚠️  Drive CSV backup failed: {e}[/yellow]")
 
     # Best model
     best_bot = df_results.iloc[0]
@@ -651,39 +764,14 @@ def generate_comprehensive_report(df_results: pd.DataFrame, duration: float, bac
     shutil.copy(best_bot['model_path'], prod_path)
     console.print(f"\n[bold cyan]✅ Best model: {prod_path}[/bold cyan]\n")
 
-    # ⭐ BACKUP BEST MODEL TO DRIVE
+    # Backup best model to Drive
     if backup_root:
         try:
-            drive_best_path = f'{backup_root}/models/MODEL_PRODUCTION_BEST.zip'
-            shutil.copy(prod_path, drive_best_path)
-            console.print(f"[green]💾 Drive best model: {drive_best_path}[/green]")
+            drive_best = os.path.join(backup_root, 'models', 'MODEL_PRODUCTION_BEST.zip')
+            shutil.copy(prod_path, drive_best)
+            console.print(f"[green]💾 Drive best model: {drive_best}[/green]")
         except Exception as e:
-            console.print(f"[yellow]⚠️ Drive best model backup failed: {e}[/yellow]")
-
-    # Discord notification (si configuré)
-    discord_webhook = os.getenv('DISCORD_WEBHOOK_URL')
-    if discord_webhook:
-        console.print("\n[cyan]📤 Sending to Discord...[/cyan]")
-        try:
-            from discord_uploader import send_discord_notification
-
-            results_summary = {
-                'total_bots': n_bots,
-                'profitable_bots': int(n_profitable),
-                'approved_bots': int(n_approved),
-                'best_bot_id': int(best_bot['bot_id']),
-                'best_sharpe': float(best_bot['test_sharpe']),
-                'best_return': float(best_bot['test_return'] * 100),
-                'best_profit': float(best_bot['test_profit_usd']),
-                'avg_sharpe': float(df_results['test_sharpe'].mean()),
-                'win_rate': float(n_profitable / n_bots * 100) if n_bots > 0 else 0.0,
-                'duration_hours': duration / 3600
-            }
-
-            send_discord_notification(discord_webhook, results_summary, csv_path, prod_path)
-            console.print("[bold green]✅ Discord notification sent![/bold green]")
-        except Exception as e:
-            console.print(f"[yellow]⚠️ Discord failed: {e}[/yellow]")
+            console.print(f"[yellow]⚠️  Drive best model backup failed: {e}[/yellow]")
 
 
 # ═════════════════════════════════════════════════════════════════════════════
