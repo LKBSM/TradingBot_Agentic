@@ -176,7 +176,7 @@ RENDER_MODE = "none"  # No visual rendering during training
 # - At 1.5M timesteps: Agent sees each pattern 75 times (learning)
 # - Research shows overfitting starts beyond 2M for trading bots
 # - Academic papers use 100K-2M for similar setups
-TOTAL_TIMESTEPS_PER_BOT = 15_000_000
+TOTAL_TIMESTEPS_PER_BOT = 1500000
 # Early stopping (prevent wasted training)
 EARLY_STOPPING_PATIENCE = 5  # Stop if no improvement after 5 evaluations
 EVAL_FREQ = 10_000  # Evaluate every 10K timesteps
@@ -196,7 +196,7 @@ N_PARALLEL_BOTS = 50  # Train 50 bots, pick the best
 # RTX 3080/3090: 4 workers
 # RTX 4090: 6-8 workers
 # V100/A100: 8-10 workers
-MAX_WORKERS_GPU = 10# Train 4 bots simultaneously
+MAX_WORKERS_GPU = 2# Train 4 bots simultaneously
 
 # Selection metric for best model
 EVALUATION_METRIC = 'sharpe_ratio'  # Options: 'sharpe_ratio', 'calmar_ratio', 'profit'
