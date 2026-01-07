@@ -1,5 +1,15 @@
 import numpy as np
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, Optional
+import warnings
+
+# Try to import arch for GARCH modeling
+try:
+    from arch import arch_model
+    ARCH_AVAILABLE = True
+except ImportError:
+    ARCH_AVAILABLE = False
+    warnings.warn("arch library not installed. Using fallback volatility estimation. "
+                  "Install with: pip install arch")
 
 
 class DynamicRiskManager:
@@ -26,6 +36,12 @@ class DynamicRiskManager:
         self.current_take_profit = np.nan
         self.tsl_activated = False
         self.is_long_position = True
+
+        # GARCH model state
+        self._garch_model = None
+        self._garch_fitted = None
+        self._last_garch_update = 0
+        self.garch_update_frequency = config.get('GARCH_UPDATE_FREQUENCY', 100)  # Update every N steps
 
     # --- Helper Functions for Regime Adaptation ---
 
@@ -112,14 +128,117 @@ class DynamicRiskManager:
 
     # --- Strategic Market State Updates (Input Feeds) ---
 
-    def calculate_garch_volatility(self, historical_data):
+    def calculate_garch_volatility(self, returns: np.ndarray, force_update: bool = False) -> float:
         """
-        Simulates update from an external GARCH model. (Placeholder implementation)
+        Calculates forward-looking volatility using GARCH(1,1) model.
+
+        GARCH(1,1) models volatility as:
+            σ²(t) = ω + α·ε²(t-1) + β·σ²(t-1)
+
+        Where:
+            - ω (omega): Long-run average variance weight
+            - α (alpha): Reaction to recent returns (ARCH term)
+            - β (beta): Persistence of volatility (GARCH term)
+
+        Args:
+            returns: Array of historical returns (e.g., log returns or pct returns)
+            force_update: If True, refit the model even if not due
+
+        Returns:
+            Forecasted 1-step ahead volatility (sigma, not variance)
         """
-        if np.mean(historical_data[-50:]) > 0.005:
-            self.market_state['garch_sigma'] = 0.02
+        # Need at least 100 observations for GARCH to be meaningful
+        if len(returns) < 100:
+            # Fallback: simple rolling volatility
+            self.market_state['garch_sigma'] = float(np.std(returns[-20:])) if len(returns) >= 20 else 0.01
+            return self.market_state['garch_sigma']
+
+        # Check if we should update the model
+        self._last_garch_update += 1
+        should_update = force_update or (self._last_garch_update >= self.garch_update_frequency)
+
+        if not should_update and self._garch_fitted is not None:
+            # Use existing model for forecast
+            try:
+                forecast = self._garch_fitted.forecast(horizon=1, reindex=False)
+                variance_forecast = forecast.variance.values[-1, 0]
+                self.market_state['garch_sigma'] = float(np.sqrt(variance_forecast))
+                return self.market_state['garch_sigma']
+            except Exception:
+                pass  # Fall through to refit
+
+        # Fit or refit the GARCH model
+        if ARCH_AVAILABLE:
+            try:
+                # Scale returns to percentage for numerical stability
+                scaled_returns = returns * 100
+
+                # GARCH(1,1) with normal distribution
+                model = arch_model(
+                    scaled_returns,
+                    vol='Garch',
+                    p=1,  # GARCH lag
+                    q=1,  # ARCH lag
+                    mean='Zero',  # Assume zero mean for returns
+                    rescale=False
+                )
+
+                # Fit with suppressed output
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    self._garch_fitted = model.fit(disp='off', show_warning=False)
+
+                self._garch_model = model
+                self._last_garch_update = 0
+
+                # Forecast 1-step ahead variance
+                forecast = self._garch_fitted.forecast(horizon=1, reindex=False)
+                variance_forecast = forecast.variance.values[-1, 0]
+
+                # Convert back from percentage scale
+                sigma = np.sqrt(variance_forecast) / 100
+                self.market_state['garch_sigma'] = float(sigma)
+
+            except Exception as e:
+                # Fallback on any error
+                self.market_state['garch_sigma'] = float(np.std(returns[-20:]))
         else:
-            self.market_state['garch_sigma'] = 0.005
+            # Fallback: Exponentially weighted moving average (EWMA) volatility
+            # This is similar to GARCH with α=0.06, β=0.94 (RiskMetrics approach)
+            lambda_decay = 0.94
+            weights = np.array([(1 - lambda_decay) * (lambda_decay ** i) for i in range(min(75, len(returns)))])
+            weights = weights[::-1]  # Reverse so most recent has highest weight
+            weights = weights / weights.sum()
+
+            recent_returns = returns[-len(weights):]
+            ewma_variance = np.sum(weights * (recent_returns ** 2))
+            self.market_state['garch_sigma'] = float(np.sqrt(ewma_variance))
+
+        return self.market_state['garch_sigma']
+
+    def get_volatility_forecast(self, returns: np.ndarray, horizon: int = 1) -> np.ndarray:
+        """
+        Get multi-step volatility forecast.
+
+        Args:
+            returns: Historical returns array
+            horizon: Number of steps to forecast
+
+        Returns:
+            Array of forecasted volatilities for each step
+        """
+        if not ARCH_AVAILABLE or self._garch_fitted is None:
+            # Fallback: constant volatility forecast
+            current_vol = self.market_state.get('garch_sigma', 0.01)
+            return np.full(horizon, current_vol)
+
+        try:
+            forecast = self._garch_fitted.forecast(horizon=horizon, reindex=False)
+            variances = forecast.variance.values[-1, :]
+            return np.sqrt(variances) / 100  # Convert from percentage scale
+        except Exception:
+            current_vol = self.market_state.get('garch_sigma', 0.01)
+            return np.full(horizon, current_vol)
 
     def get_regime_state(self, historical_returns):
         """
@@ -226,11 +345,14 @@ class DynamicRiskManager:
     def reset(self) -> None:
         """
         Resets the internal state for a new episode.
+        Note: GARCH model is preserved between episodes (expensive to refit)
         """
         self.current_stop_loss = np.nan
         self.current_take_profit = np.nan
         self.tsl_activated = False
         self.is_long_position = True
+        # Reset GARCH update counter but keep the fitted model
+        self._last_garch_update = 0
 
     def calculate_adaptive_position_size(self, client_id: str, account_equity: float, atr_stop_distance: float,
                                          win_prob: float,

@@ -63,7 +63,7 @@ EVAL_END_DATE = "2024-12-31 23:59:00"
 # ═════════════════════════════════════════════════════════════════════════════
 
 ACTION_SPACE_TYPE = 'discrete'  # 5 actions for long/short trading
-LOOKBACK_WINDOW_SIZE = 60  # 60 bars = 15 hours of history
+LOOKBACK_WINDOW_SIZE = 30  # 30 bars = 7.5 hours of history (reduced from 60 for faster training)
 
 # -----------------------------------------------------------------------------
 # EPISODE LENGTH CONFIGURATION (Critical for PPO stability)
@@ -173,6 +173,9 @@ RISK_TO_REWARD_RATIO = TAKE_PROFIT_PERCENTAGE / STOP_LOSS_PERCENTAGE
 # Trailing Stop Loss
 TSL_START_PROFIT_MULTIPLIER = 1.0  # Activate TSL at 1× ATR profit
 TSL_TRAIL_DISTANCE_MULTIPLIER = 0.5  # Trail at 0.5× ATR distance
+
+# GARCH Volatility Model
+GARCH_UPDATE_FREQUENCY = 100  # Refit GARCH model every N steps (expensive operation)
 
 # ═════════════════════════════════════════════════════════════════════════════
 # SHORT SELLING CONFIGURATION
