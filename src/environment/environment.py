@@ -35,7 +35,11 @@ try:
         RISK_PERCENTAGE_PER_TRADE, TAKE_PROFIT_PERCENTAGE, STOP_LOSS_PERCENTAGE,
         TSL_START_PROFIT_MULTIPLIER, TSL_TRAIL_DISTANCE_MULTIPLIER,
         MAX_LEVERAGE, MAX_DURATION_STEPS,
-        W_RETURN, W_DRAWDOWN, W_FRICTION, W_LEVERAGE, W_TURNOVER, W_DURATION
+        W_RETURN, W_DRAWDOWN, W_FRICTION, W_LEVERAGE, W_TURNOVER, W_DURATION,
+        # NEW: Long/Short action constants
+        NUM_ACTIONS, ACTION_NAMES, ACTION_HOLD, ACTION_OPEN_LONG, ACTION_CLOSE_LONG,
+        ACTION_OPEN_SHORT, ACTION_CLOSE_SHORT, POSITION_FLAT, POSITION_LONG, POSITION_SHORT,
+        ENABLE_SHORT_SELLING, SHORT_BORROWING_FEE_DAILY, SHORT_OVERNIGHT_SWAP_PCT
     )
 except ImportError:
     print("WARNING: Could not import from config. Using production fallback parameters.")
@@ -62,6 +66,21 @@ except ImportError:
     OVERNIGHT_HOLDING_PENALTY = 0.0
     HOLD_PENALTY_FACTOR = 0.005
     FAILED_TRADE_ATTEMPT_PENALTY = 0.0
+
+    # NEW: Long/Short action constants (fallback)
+    NUM_ACTIONS = 5
+    ACTION_NAMES = {0: 'HOLD', 1: 'OPEN_LONG', 2: 'CLOSE_LONG', 3: 'OPEN_SHORT', 4: 'CLOSE_SHORT'}
+    ACTION_HOLD = 0
+    ACTION_OPEN_LONG = 1
+    ACTION_CLOSE_LONG = 2
+    ACTION_OPEN_SHORT = 3
+    ACTION_CLOSE_SHORT = 4
+    POSITION_FLAT = 0
+    POSITION_LONG = 1
+    POSITION_SHORT = -1
+    ENABLE_SHORT_SELLING = True
+    SHORT_BORROWING_FEE_DAILY = 0.0001
+    SHORT_OVERNIGHT_SWAP_PCT = 0.0002
 
     # Reward Weights
     REWARD_SCALING_FACTOR = 100.0
@@ -223,7 +242,12 @@ class TradingEnv(gym.Env):
         self.last_trade_step = -np.inf
         self.recent_trade_attempts_steps = deque(maxlen=self.lookback_window_size)
 
-        self.scaler = MinMaxScaler()
+        # SCALER CONFIGURATION
+        # Use MinMaxScaler with clip=True to handle out-of-distribution values
+        # This prevents values outside [0,1] during validation/test
+        # The scaler is fit on ALL available data (not just training) to avoid data leakage
+        # At inference time, clip=True ensures observations stay in valid range
+        self.scaler = MinMaxScaler(clip=True)  # clip=True prevents out-of-range values
         valid_rows = self.df[self.features].dropna()
 
         if not valid_rows.empty:
@@ -233,9 +257,18 @@ class TradingEnv(gym.Env):
             self.scaler = None
         action_space_type = kwargs.get('action_space_type', ACTION_SPACE_TYPE)
         if action_space_type == "discrete":
-            self.action_space = spaces.Discrete(3)
+            # NEW: 5 actions for long/short trading
+            # 0=HOLD, 1=OPEN_LONG, 2=CLOSE_LONG, 3=OPEN_SHORT, 4=CLOSE_SHORT
+            self.action_space = spaces.Discrete(NUM_ACTIONS)
         else:
             raise ValueError(f"Type d'espace d'action invalide: {action_space_type}")
+
+        # NEW: Position tracking for long/short
+        # POSITION_FLAT=0, POSITION_LONG=1, POSITION_SHORT=-1
+        self.position_type = POSITION_FLAT
+        self.enable_short_selling = kwargs.get('enable_short_selling', ENABLE_SHORT_SELLING)
+        self.short_borrowing_fee_daily = kwargs.get('short_borrowing_fee_daily', SHORT_BORROWING_FEE_DAILY)
+        self.short_overnight_swap_pct = kwargs.get('short_overnight_swap_pct', SHORT_OVERNIGHT_SWAP_PCT)
 
         num_features_per_step = len(self.features)
         expected_obs_size = num_features_per_step * self.lookback_window_size + 3
@@ -763,6 +796,21 @@ class TradingEnv(gym.Env):
         return trade_success, effective_trade_value, commission, pnl_abs, pnl_pct
 
     def step(self, action: int):
+        """
+        Execute one step in the environment with LONG/SHORT support.
+
+        NEW ACTION SPACE (5 actions):
+            0 = HOLD         : Do nothing
+            1 = OPEN_LONG    : Buy to open long position
+            2 = CLOSE_LONG   : Sell to close long position
+            3 = OPEN_SHORT   : Sell to open short position
+            4 = CLOSE_SHORT  : Buy to cover short position
+
+        Position States:
+            FLAT (0)  : No position - can OPEN_LONG or OPEN_SHORT
+            LONG (1)  : Holding long - can HOLD or CLOSE_LONG
+            SHORT (-1): Holding short - can HOLD or CLOSE_SHORT
+        """
         # --- 1. Track previous state for reward calculation ---
         previous_net_worth = self.net_worth
         self.previous_drawdown_level = self.peak_nav - previous_net_worth
@@ -773,191 +821,131 @@ class TradingEnv(gym.Env):
         done = False
         truncated = False
 
-        # --- End of episode condition ---
-        if self.current_step >= self.max_steps:
-            truncated = True
-            done = True
-            if self.stock_quantity > self.min_trade_quantity:
-                action = 2  # force sell if still holding
-            else:
-                action = 0  # hold
-
-        # --- LECTURE CRITIQUE DES DONNÉES (Extraction des floats) ---
+        # --- LECTURE CRITIQUE DES DONNÉES ---
         current_row = self.df.iloc[self.current_step]
         current_market_price = float(current_row['Close'])
         current_atr = float(current_row['ATR'])
         bos_signal = float(current_row['BOS_SIGNAL'])
 
-        is_long_position = self.stock_quantity > 0
-
         # --- Update risk manager regime ---
         regime_state = 0 if bos_signal != 0 else 1
         self.risk_manager.market_state['current_regime'] = regime_state
 
-        # --- FILTRE DE CONFIANCE STRATÉGIQUE (DÉSACTIVÉ POUR ENCOURAGER L'EXPLORATION) ---
-        # ANCIEN CODE: Ce veto bloquait TOUS les achats en régime de chaos (regime_state=1),
-        # ce qui empêchait le bot d'apprendre à trader. Commenté pour permettre l'apprentissage.
-        # if action == 1 and regime_state == 1 and not is_long_position:
-        #     action = 0
-        #     self.actual_action_executed = 6
-        #     self.trade_details['trade_type'] = 'buy_veto_low_confidence'
-        # elif action == 0 and regime_state == 0 and not is_long_position:
-        #     pass
+        # --- End of episode: Force close any position ---
+        if self.current_step >= self.max_steps:
+            truncated = True
+            done = True
+            # Force close any open position
+            if self.position_type == POSITION_LONG and self.stock_quantity > self.min_trade_quantity:
+                action = ACTION_CLOSE_LONG
+            elif self.position_type == POSITION_SHORT and abs(self.stock_quantity) > self.min_trade_quantity:
+                action = ACTION_CLOSE_SHORT
+            else:
+                action = ACTION_HOLD
 
         # --- Initialize trade details ---
         self.trade_details = {
             'trade_pnl_abs': 0.0, 'trade_pnl_pct': 0.0, 'trade_type': 'hold',
-            'trade_success': False, 'trade_value': 0.0, 'commission': 0.0
+            'trade_success': False, 'trade_value': 0.0, 'commission': 0.0,
+            'position_type': self.position_type
         }
         self.last_action = action
         self.actual_action_executed = action
 
-        # --- Check for active position and potential exit (SL/TP/TSL) ---
-        if not done and self.stock_quantity > 1e-9 and not np.isnan(self.entry_price):
+        # --- ACTION VALIDATION: Convert invalid actions to HOLD ---
+        # Can only OPEN_LONG or OPEN_SHORT when FLAT
+        # Can only CLOSE_LONG when LONG
+        # Can only CLOSE_SHORT when SHORT
+        original_action = action
+        if action == ACTION_OPEN_LONG and self.position_type != POSITION_FLAT:
+            action = ACTION_HOLD
+            self.trade_details['trade_type'] = 'invalid_already_in_position'
+        elif action == ACTION_OPEN_SHORT and self.position_type != POSITION_FLAT:
+            action = ACTION_HOLD
+            self.trade_details['trade_type'] = 'invalid_already_in_position'
+        elif action == ACTION_OPEN_SHORT and not self.enable_short_selling:
+            action = ACTION_HOLD
+            self.trade_details['trade_type'] = 'short_selling_disabled'
+        elif action == ACTION_CLOSE_LONG and self.position_type != POSITION_LONG:
+            action = ACTION_HOLD
+            self.trade_details['trade_type'] = 'invalid_no_long_position'
+        elif action == ACTION_CLOSE_SHORT and self.position_type != POSITION_SHORT:
+            action = ACTION_HOLD
+            self.trade_details['trade_type'] = 'invalid_no_short_position'
+
+        # --- Check for SL/TP/TSL on active positions ---
+        if not done and self.position_type != POSITION_FLAT and not np.isnan(self.entry_price):
             self.current_hold_duration += 1
-            self.risk_manager.update_trailing_stop(self.entry_price, current_market_price, current_atr, is_long=True)
-            exit_signal = self.risk_manager.check_trade_exit(current_market_price, is_long=True)
+            is_long = (self.position_type == POSITION_LONG)
+
+            self.risk_manager.update_trailing_stop(
+                self.entry_price, current_market_price, current_atr, is_long=is_long
+            )
+            exit_signal = self.risk_manager.check_trade_exit(current_market_price, is_long=is_long)
+
             if exit_signal == 'TP':
-                action = 2
-                self.actual_action_executed = 3
+                action = ACTION_CLOSE_LONG if is_long else ACTION_CLOSE_SHORT
+                self.actual_action_executed = 10  # TP exit code
             elif exit_signal == 'SL':
-                action = 2
-                self.actual_action_executed = 4
-        else:
+                action = ACTION_CLOSE_LONG if is_long else ACTION_CLOSE_SHORT
+                self.actual_action_executed = 11  # SL exit code
+        elif self.position_type == POSITION_FLAT:
             self.current_hold_duration = 0
 
         # --- Cooldown enforcement ---
-        if action in [1, 2]:
+        if action in [ACTION_OPEN_LONG, ACTION_CLOSE_LONG, ACTION_OPEN_SHORT, ACTION_CLOSE_SHORT]:
             if (self.current_step - self.last_trade_step) < self.trade_cooldown_steps:
-                self.actual_action_executed = 0
+                self.actual_action_executed = ACTION_HOLD
                 self.trade_details['trade_type'] = 'hold_cooldown'
-                action = 0
+                action = ACTION_HOLD
+
+        # --- Apply borrowing fees for short positions ---
+        if self.position_type == POSITION_SHORT and abs(self.stock_quantity) > 0:
+            borrowing_fee = abs(self.stock_quantity) * current_market_price * self.short_borrowing_fee_daily
+            self.balance -= borrowing_fee
+            self.total_fees_paid_episode += borrowing_fee
 
         # --- Execute trade logic ---
         trade_executed = False
         if not done:
-            # =======================
-            # BUY (Action == 1)
-            # =======================
-            if action == 1:
-                sl_distance_abs = self.risk_manager.set_trade_orders(current_market_price, current_atr, is_long=True)
+            # ========================================
+            # OPEN LONG (Action == 1)
+            # ========================================
+            if action == ACTION_OPEN_LONG:
+                trade_executed = self._execute_open_long(current_market_price, current_atr)
 
-                trade_quantity_calc = self.risk_manager.calculate_adaptive_position_size(
-                    client_id=getattr(self, "_risk_client_id", "default_client"),
-                    account_equity=self.balance,
-                    atr_stop_distance=sl_distance_abs,
-                    win_prob=0.5,
-                    risk_reward_ratio=1.0
-                )
+            # ========================================
+            # CLOSE LONG (Action == 2)
+            # ========================================
+            elif action == ACTION_CLOSE_LONG:
+                trade_executed = self._execute_close_long(current_market_price)
 
-                try:
-                    trade_quantity_calc = float(trade_quantity_calc)
-                except Exception:
-                    trade_quantity_calc = 0.0
+            # ========================================
+            # OPEN SHORT (Action == 3)
+            # ========================================
+            elif action == ACTION_OPEN_SHORT:
+                trade_executed = self._execute_open_short(current_market_price, current_atr)
 
-                if trade_quantity_calc < self.min_trade_quantity:
-                    trade_quantity_calc = 0.0
+            # ========================================
+            # CLOSE SHORT (Action == 4)
+            # ========================================
+            elif action == ACTION_CLOSE_SHORT:
+                trade_executed = self._execute_close_short(current_market_price)
 
-                estimated_cost = current_market_price * trade_quantity_calc * (
-                        1 + self.transaction_fee_percentage + self.slippage_percentage
-                )
-                if estimated_cost > self.balance and estimated_cost > 0:
-                    scale = self.balance / estimated_cost
-                    trade_quantity_calc *= scale
-
-                if trade_quantity_calc < self.min_trade_quantity:
-                    trade_quantity_calc = 0.0
-
-                if trade_quantity_calc > 0:
-                    trade_success, value, commission, pnl_abs, pnl_pct = self._execute_trade(
-                        'buy', current_market_price, trade_quantity=trade_quantity_calc
-                    )
-                    if trade_success:
-                        trade_executed = True
-                        self.last_trade_step = self.current_step
-                        self.trade_details.update({
-                            'trade_success': True, 'trade_type': 'buy',
-                            'trade_value': value, 'commission': commission,
-                            'trade_pnl_abs': pnl_abs, 'trade_pnl_pct': pnl_pct,
-                            'quantity': trade_quantity_calc
-                        })
-                        self.current_hold_duration = 1
-
-                        # --- NOUVEAU: Logger le trade BUY ---
-                        if self.trade_logger:
-                            self.trade_id_counter += 1
-                            self.trade_logger.log_trade({
-                                'trade_id': self.trade_id_counter,
-                                'trade_type': 'buy',
-                                'step': self.current_step,
-                                'price': current_market_price,
-                                'quantity': trade_quantity_calc,
-                                'balance': self.balance,
-                                'net_worth': self.net_worth
-                            })
-                    else:
-                        self.trade_details['trade_type'] = 'buy_failed'
-                        self.actual_action_executed = 0
-                else:
-                    self.trade_details['trade_type'] = 'buy_failed'
-                    self.actual_action_executed = 0
-
-            # =======================
-            # SELL (Action == 2)
-            # =======================
-            elif action == 2:
-                if self.stock_quantity > self.min_trade_quantity:
-                    trade_success, value, commission, pnl_abs, pnl_pct = self._execute_trade(
-                        'sell', current_market_price, self.stock_quantity
-                    )
-                    if trade_success:
-                        trade_executed = True
-                        self.last_trade_step = self.current_step
-                        self.trade_history_summary.append({
-                            'step': self.current_step,
-                            'pnl_abs': pnl_abs, 'pnl_pct': pnl_pct, 'type': 'sell'
-                        })
-                        self.total_trades += 1
-                        if pnl_abs > 0:
-                            self.winning_trades += 1
-                        else:
-                            self.losing_trades += 1
-                        self.current_hold_duration = 0
-
-                        # --- NOUVEAU: Logger le trade SELL ---
-                        if self.trade_logger:
-                            self.trade_logger.log_trade({
-                                'trade_id': self.trade_id_counter,
-                                'trade_type': 'sell',
-                                'step': self.current_step,
-                                'price': current_market_price,
-                                'quantity': self.stock_quantity,
-                                'pnl_abs': pnl_abs,
-                                'pnl_pct': pnl_pct,
-                                'balance': self.balance,
-                                'net_worth': self.net_worth,
-                                'duration_bars': self.current_hold_duration
-                            })
-                    else:
-                        self.trade_details['trade_type'] = 'sell_failed'
-                else:
-                    self.actual_action_executed = 0
-                    self.trade_details['trade_type'] = 'hold_no_stock_to_sell'
-
-            # =======================
+            # ========================================
             # HOLD (Action == 0)
-            # =======================
+            # ========================================
             else:
                 self.trade_details['trade_type'] = 'hold'
-                self.actual_action_executed = 0
+                self.actual_action_executed = ACTION_HOLD
 
-        # --- Portfolio update ---
-        self.net_worth = self.balance + (self.stock_quantity * current_market_price)
+        # --- Portfolio update (handles both long and short) ---
+        self._update_portfolio_value(current_market_price)
 
         # --- Update Drawdown and Leverage Trackers ---
         self.peak_nav = max(self.peak_nav, self.net_worth)
 
-        position_value = self.stock_quantity * current_market_price
+        position_value = abs(self.stock_quantity) * current_market_price
         if self.net_worth > 1e-9:
             self.current_leverage = position_value / self.net_worth
         else:
@@ -968,14 +956,323 @@ class TradingEnv(gym.Env):
 
         # --- Calculate reward ---
         reward = self._calculate_reward(previous_net_worth)
-        self.episode_reward += reward  # NOUVEAU: Accumuler le reward de l’épisode
+        self.episode_reward += reward
 
         observation = self._get_obs()
         info = self._get_info()
+        info['position_type'] = self.position_type
+        info['position_type_name'] = {POSITION_FLAT: 'FLAT', POSITION_LONG: 'LONG', POSITION_SHORT: 'SHORT'}[self.position_type]
 
         self.previous_nav = self.net_worth
 
         return observation, reward, done, truncated, info
+
+    def _execute_open_long(self, current_price: float, current_atr: float) -> bool:
+        """Execute OPEN_LONG action (buy to open long position)."""
+        sl_distance_abs = self.risk_manager.set_trade_orders(current_price, current_atr, is_long=True)
+
+        # Calculate position size with HARD LEVERAGE ENFORCEMENT
+        # The risk manager now caps position size to prevent exceeding max_leverage_limit
+        trade_quantity_calc = self.risk_manager.calculate_adaptive_position_size(
+            client_id=getattr(self, "_risk_client_id", "default_client"),
+            account_equity=self.balance,
+            atr_stop_distance=sl_distance_abs,
+            win_prob=0.5,
+            risk_reward_ratio=1.0,
+            current_price=current_price,  # NEW: Pass price for leverage calc
+            max_leverage=self.max_leverage_limit,  # NEW: Hard leverage limit
+            is_long=True
+        )
+
+        try:
+            trade_quantity_calc = float(trade_quantity_calc)
+        except Exception:
+            trade_quantity_calc = 0.0
+
+        if trade_quantity_calc < self.min_trade_quantity:
+            trade_quantity_calc = 0.0
+
+        estimated_cost = current_price * trade_quantity_calc * (
+            1 + self.transaction_fee_percentage + self.slippage_percentage
+        )
+        if estimated_cost > self.balance and estimated_cost > 0:
+            scale = self.balance / estimated_cost
+            trade_quantity_calc *= scale
+
+        if trade_quantity_calc < self.min_trade_quantity:
+            self.trade_details['trade_type'] = 'open_long_failed'
+            self.actual_action_executed = ACTION_HOLD
+            return False
+
+        trade_success, value, commission, _, _ = self._execute_trade(
+            'buy', current_price, trade_quantity=trade_quantity_calc
+        )
+
+        if trade_success:
+            self.position_type = POSITION_LONG
+            self.last_trade_step = self.current_step
+            self.trade_details.update({
+                'trade_success': True, 'trade_type': 'open_long',
+                'trade_value': value, 'commission': commission,
+                'quantity': trade_quantity_calc
+            })
+            self.current_hold_duration = 1
+
+            if self.trade_logger:
+                self.trade_id_counter += 1
+                self.trade_logger.log_trade({
+                    'trade_id': self.trade_id_counter,
+                    'trade_type': 'open_long',
+                    'step': self.current_step,
+                    'price': current_price,
+                    'quantity': trade_quantity_calc,
+                    'balance': self.balance,
+                    'net_worth': self.net_worth
+                })
+            return True
+        else:
+            self.trade_details['trade_type'] = 'open_long_failed'
+            self.actual_action_executed = ACTION_HOLD
+            return False
+
+    def _execute_close_long(self, current_price: float) -> bool:
+        """Execute CLOSE_LONG action (sell to close long position)."""
+        if self.stock_quantity <= self.min_trade_quantity:
+            self.actual_action_executed = ACTION_HOLD
+            self.trade_details['trade_type'] = 'close_long_no_position'
+            return False
+
+        trade_success, value, commission, pnl_abs, pnl_pct = self._execute_trade(
+            'sell', current_price, self.stock_quantity
+        )
+
+        if trade_success:
+            self.position_type = POSITION_FLAT
+            self.last_trade_step = self.current_step
+            self.trade_history_summary.append({
+                'step': self.current_step,
+                'pnl_abs': pnl_abs, 'pnl_pct': pnl_pct, 'type': 'close_long'
+            })
+            self.total_trades += 1
+            if pnl_abs > 0:
+                self.winning_trades += 1
+            else:
+                self.losing_trades += 1
+            self.current_hold_duration = 0
+
+            self.trade_details.update({
+                'trade_success': True, 'trade_type': 'close_long',
+                'trade_value': value, 'commission': commission,
+                'trade_pnl_abs': pnl_abs, 'trade_pnl_pct': pnl_pct
+            })
+
+            if self.trade_logger:
+                self.trade_logger.log_trade({
+                    'trade_id': self.trade_id_counter,
+                    'trade_type': 'close_long',
+                    'step': self.current_step,
+                    'price': current_price,
+                    'pnl_abs': pnl_abs,
+                    'pnl_pct': pnl_pct,
+                    'balance': self.balance,
+                    'net_worth': self.net_worth,
+                    'duration_bars': self.current_hold_duration
+                })
+            return True
+        else:
+            self.trade_details['trade_type'] = 'close_long_failed'
+            return False
+
+    def _execute_open_short(self, current_price: float, current_atr: float) -> bool:
+        """
+        Execute OPEN_SHORT action (sell to open short position).
+
+        Short selling mechanics:
+        1. Borrow asset from broker
+        2. Sell at current price (receive cash)
+        3. Later: buy back to return to broker
+        4. Profit if price goes DOWN, loss if price goes UP
+        """
+        sl_distance_abs = self.risk_manager.set_trade_orders(current_price, current_atr, is_long=False)
+
+        # Calculate position size with HARD LEVERAGE ENFORCEMENT
+        # The risk manager now caps position size to prevent exceeding max_leverage_limit
+        trade_quantity_calc = self.risk_manager.calculate_adaptive_position_size(
+            client_id=getattr(self, "_risk_client_id", "default_client"),
+            account_equity=self.balance,
+            atr_stop_distance=sl_distance_abs,
+            win_prob=0.5,
+            risk_reward_ratio=1.0,
+            current_price=current_price,  # NEW: Pass price for leverage calc
+            max_leverage=self.max_leverage_limit,  # NEW: Hard leverage limit
+            is_long=False  # Short position
+        )
+
+        try:
+            trade_quantity_calc = float(trade_quantity_calc)
+        except Exception:
+            trade_quantity_calc = 0.0
+
+        if trade_quantity_calc < self.min_trade_quantity:
+            self.trade_details['trade_type'] = 'open_short_failed'
+            self.actual_action_executed = ACTION_HOLD
+            return False
+
+        # For shorts, we receive cash when opening (sell borrowed asset)
+        # Apply spread and slippage (unfavorable for seller)
+        price_with_spread = current_price * (1 - self.transaction_fee_percentage)
+        effective_sell_price = price_with_spread * (1 - self.slippage_percentage)
+        gross_value = effective_sell_price * trade_quantity_calc
+
+        # Calculate commission
+        commission_pct_trade = getattr(self, 'trade_commission_pct_of_trade', 0.0005)
+        commission = gross_value * commission_pct_trade
+
+        # Short position: negative stock quantity, cash increases
+        self.balance += (gross_value - commission)
+        self.stock_quantity = -trade_quantity_calc  # Negative = short position
+        self.entry_price = current_price
+        self.position_type = POSITION_SHORT
+        self.last_trade_step = self.current_step
+
+        self.total_fees_paid_episode += commission
+        self.transaction_cost_incurred_step = commission
+        self.traded_value_step = current_price * trade_quantity_calc
+
+        self.trade_details.update({
+            'trade_success': True, 'trade_type': 'open_short',
+            'trade_value': gross_value, 'commission': commission,
+            'quantity': trade_quantity_calc
+        })
+        self.current_hold_duration = 1
+
+        if self.trade_logger:
+            self.trade_id_counter += 1
+            self.trade_logger.log_trade({
+                'trade_id': self.trade_id_counter,
+                'trade_type': 'open_short',
+                'step': self.current_step,
+                'price': current_price,
+                'quantity': trade_quantity_calc,
+                'balance': self.balance,
+                'net_worth': self.net_worth
+            })
+        return True
+
+    def _execute_close_short(self, current_price: float) -> bool:
+        """
+        Execute CLOSE_SHORT action (buy to cover short position).
+
+        Closing a short:
+        1. Buy back the asset at current price
+        2. Return to broker
+        3. P&L = entry_price - exit_price (profit if price went down)
+        """
+        if abs(self.stock_quantity) <= self.min_trade_quantity or self.position_type != POSITION_SHORT:
+            self.actual_action_executed = ACTION_HOLD
+            self.trade_details['trade_type'] = 'close_short_no_position'
+            return False
+
+        quantity_to_cover = abs(self.stock_quantity)
+
+        # Buy to cover: pay current price + spread + slippage
+        price_with_spread = current_price * (1 + self.transaction_fee_percentage)
+        effective_buy_price = price_with_spread * (1 + self.slippage_percentage)
+        gross_cost = effective_buy_price * quantity_to_cover
+
+        # Calculate commission
+        commission_pct_trade = getattr(self, 'trade_commission_pct_of_trade', 0.0005)
+        commission = gross_cost * commission_pct_trade
+
+        total_cost = gross_cost + commission
+
+        # Check if we can afford to close
+        if total_cost > self.balance:
+            self.trade_details['trade_type'] = 'close_short_insufficient_funds'
+            return False
+
+        # Calculate P&L for short: profit if price went DOWN
+        # P&L = (entry_price - exit_price) * quantity
+        pnl_abs = (self.entry_price - current_price) * quantity_to_cover - commission
+        if self.entry_price > 0:
+            pnl_pct = ((self.entry_price - current_price) / self.entry_price) * 100
+        else:
+            pnl_pct = 0.0
+
+        # Execute: pay to cover, clear position
+        self.balance -= total_cost
+        self.stock_quantity = 0.0
+        self.position_type = POSITION_FLAT
+        self.last_trade_step = self.current_step
+        self.entry_price = np.nan
+
+        self.total_fees_paid_episode += commission
+        self.transaction_cost_incurred_step = commission
+        self.traded_value_step = current_price * quantity_to_cover
+
+        # Record trade
+        self.trade_history_summary.append({
+            'step': self.current_step,
+            'pnl_abs': pnl_abs, 'pnl_pct': pnl_pct, 'type': 'close_short'
+        })
+        self.total_trades += 1
+        if pnl_abs > 0:
+            self.winning_trades += 1
+        else:
+            self.losing_trades += 1
+        self.current_hold_duration = 0
+
+        self.trade_details.update({
+            'trade_success': True, 'trade_type': 'close_short',
+            'trade_value': gross_cost, 'commission': commission,
+            'trade_pnl_abs': pnl_abs, 'trade_pnl_pct': pnl_pct
+        })
+
+        if self.trade_logger:
+            self.trade_logger.log_trade({
+                'trade_id': self.trade_id_counter,
+                'trade_type': 'close_short',
+                'step': self.current_step,
+                'price': current_price,
+                'pnl_abs': pnl_abs,
+                'pnl_pct': pnl_pct,
+                'balance': self.balance,
+                'net_worth': self.net_worth,
+                'duration_bars': self.current_hold_duration
+            })
+        return True
+
+    def _update_portfolio_value(self, current_price: float) -> None:
+        """
+        Update net worth accounting for both long and short positions.
+
+        For LONG positions:
+            net_worth = balance + (quantity * price)
+
+        For SHORT positions:
+            net_worth = balance - (quantity * price) + (entry_quantity * entry_price)
+            Simplified: net_worth = balance + unrealized_pnl
+            where unrealized_pnl = (entry_price - current_price) * |quantity|
+        """
+        if self.position_type == POSITION_LONG:
+            # Long: we own the asset, value increases with price
+            self.net_worth = self.balance + (self.stock_quantity * current_price)
+
+        elif self.position_type == POSITION_SHORT:
+            # Short: we owe the asset, value increases when price decreases
+            # unrealized P&L = (entry_price - current_price) * quantity
+            quantity = abs(self.stock_quantity)
+            if not np.isnan(self.entry_price):
+                unrealized_pnl = (self.entry_price - current_price) * quantity
+            else:
+                unrealized_pnl = 0.0
+            # When we opened short, we received: entry_price * quantity
+            # To close, we need to pay: current_price * quantity
+            # Net worth = what we have - what we owe = balance + unrealized_pnl
+            self.net_worth = self.balance + unrealized_pnl
+
+        else:  # FLAT
+            self.net_worth = self.balance
 
     def _calculate_reward(self, previous_net_worth: float) -> float:
         """
@@ -1085,8 +1382,10 @@ class TradingEnv(gym.Env):
         # Helps the agent learn faster by rewarding good decisions
         bonus = 0.0
 
-        # Check if a trade was just closed (SELL action completed)
-        if self.trade_details.get('trade_type') == 'sell' and self.trade_details.get('trade_success'):
+        # Check if a trade was just closed (any CLOSE action completed)
+        # NEW: Support both old 'sell' and new 'close_long'/'close_short' trade types
+        closed_trade_types = ['sell', 'close_long', 'close_short']
+        if self.trade_details.get('trade_type') in closed_trade_types and self.trade_details.get('trade_success'):
             trade_pnl_abs = self.trade_details.get('trade_pnl_abs', 0.0)
             trade_pnl_pct = self.trade_details.get('trade_pnl_pct', 0.0)
 
@@ -1239,6 +1538,7 @@ class TradingEnv(gym.Env):
         self.net_worth = float(self.initial_balance)
         self.stock_quantity = 0.0
         self.entry_price = np.nan
+        self.position_type = POSITION_FLAT  # NEW: Reset position type for long/short
 
         # --- 2️⃣ Reset Risk Manager and statistics ---
         if hasattr(self, "risk_manager") and self.risk_manager is not None:

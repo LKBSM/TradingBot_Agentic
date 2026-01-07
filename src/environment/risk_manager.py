@@ -234,11 +234,28 @@ class DynamicRiskManager:
 
     def calculate_adaptive_position_size(self, client_id: str, account_equity: float, atr_stop_distance: float,
                                          win_prob: float,
-                                         risk_reward_ratio: float) -> float:
+                                         risk_reward_ratio: float,
+                                         current_price: float = None,
+                                         max_leverage: float = 1.0,
+                                         is_long: bool = True) -> float:
         """
-        Calculates the optimal trade size using a dual constraint system:
+        Calculates the optimal trade size using a TRIPLE constraint system:
         1. Fixed Risk Limit (Risk Neutral)
         2. Dynamic Risk Appetite (Kelly Criterion, scaled by regime)
+        3. HARD LEVERAGE LIMIT (NEW - prevents overleveraged positions)
+
+        Args:
+            client_id: Client identifier for profile lookup
+            account_equity: Current account equity
+            atr_stop_distance: Stop loss distance in price units
+            win_prob: Estimated win probability (0-1)
+            risk_reward_ratio: Expected R:R ratio
+            current_price: Current asset price (needed for leverage calc)
+            max_leverage: Maximum allowed leverage (default 1.0 = no leverage)
+            is_long: True for long positions, False for shorts
+
+        Returns:
+            Position size capped by all three constraints
         """
         profile = self.client_profiles.get(client_id)
         regime = self.market_state['current_regime']
@@ -263,5 +280,22 @@ class DynamicRiskManager:
         # Size = Capital Allocated / Risk per Unit (if ATR distance is used as a proxy for price)
         size_fk = capital_alloc_kelly / atr_stop_distance
 
-        # The final position size is the most conservative result from both methods.
-        return min(size_rn, size_fk)
+        # --- 3. HARD LEVERAGE LIMIT (NEW) ---
+        # This ensures position value never exceeds max_leverage × equity
+        # Formula: max_position_value = max_leverage × equity
+        #          max_quantity = max_position_value / price
+        if current_price is not None and current_price > 0:
+            max_position_value = max_leverage * account_equity
+            size_leverage_limit = max_position_value / current_price
+        else:
+            # If no price provided, skip leverage check (backward compatible)
+            size_leverage_limit = float('inf')
+
+        # The final position size is the MOST CONSERVATIVE result from ALL methods
+        final_size = min(size_rn, size_fk, size_leverage_limit)
+
+        # Ensure minimum trade quantity
+        if final_size < self.min_trade_quantity:
+            return 0.0
+
+        return final_size

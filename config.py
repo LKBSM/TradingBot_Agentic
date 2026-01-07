@@ -9,8 +9,9 @@ LOGGING_LEVEL = logging.INFO
 TRADING_DAYS_YEAR = 252  # Used for Sharpe Ratio annualization
 RISK_FREE_RATE = 0.02  # 2% annual risk-free rate (US Treasury)
 
-# Project structure
-PROJECT_ROOT = r"C:\MyPythonProjects\TradingBotNew"
+# Project structure - Use dynamic path detection for portability
+# This automatically finds the correct root whether running locally or on Colab
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))  # Auto-detect project root
 SRC_DIR = os.path.join(PROJECT_ROOT, 'src')
 DATA_DIR = os.path.join(PROJECT_ROOT, 'data')
 MODEL_DIR = os.path.join(PROJECT_ROOT, 'trained_models')
@@ -31,7 +32,9 @@ for directory in [DATA_DIR, MODEL_DIR, LOG_DIR, RESULTS_DIR, REPORTS_DIR,
 # 2. DATA CONFIGURATION
 # ═════════════════════════════════════════════════════════════════════════════
 
-HISTORICAL_DATA_FILE = r"C:\MyPythonProjects\TradingBotNew\data\XAU_15MIN_2019_2024.csv"
+# Data file path - now uses DATA_DIR for portability
+# Place your CSV in the 'data' folder of the project
+HISTORICAL_DATA_FILE = os.path.join(DATA_DIR, "XAU_15MIN_2019_2024.csv")
 
 # Column mapping (adjust if your CSV uses different names)
 OHLCV_COLUMNS = {
@@ -59,8 +62,54 @@ EVAL_END_DATE = "2024-12-31 23:59:00"
 # 3. ENVIRONMENT & FEATURES
 # ═════════════════════════════════════════════════════════════════════════════
 
-ACTION_SPACE_TYPE = 'discrete'  # 3 actions: Hold, Buy, Sell
+ACTION_SPACE_TYPE = 'discrete'  # 5 actions for long/short trading
 LOOKBACK_WINDOW_SIZE = 60  # 60 bars = 15 hours of history
+
+# ═════════════════════════════════════════════════════════════════════════════
+# ACTION SPACE DEFINITION (Professional Long/Short Trading)
+# ═════════════════════════════════════════════════════════════════════════════
+# The bot can now trade both LONG and SHORT positions like a professional trader
+#
+# Action Space:
+#   0 = HOLD         : Do nothing, maintain current position
+#   1 = OPEN_LONG    : Buy to open a long position (profit when price goes UP)
+#   2 = CLOSE_LONG   : Sell to close long position (exit long trade)
+#   3 = OPEN_SHORT   : Sell to open a short position (profit when price goes DOWN)
+#   4 = CLOSE_SHORT  : Buy to cover short position (exit short trade)
+#
+# Position States:
+#   FLAT  : No position (can OPEN_LONG or OPEN_SHORT)
+#   LONG  : Holding long position (can HOLD or CLOSE_LONG)
+#   SHORT : Holding short position (can HOLD or CLOSE_SHORT)
+#
+# Invalid Actions (will be converted to HOLD):
+#   - OPEN_LONG when already LONG or SHORT
+#   - OPEN_SHORT when already LONG or SHORT
+#   - CLOSE_LONG when not LONG
+#   - CLOSE_SHORT when not SHORT
+
+NUM_ACTIONS = 5  # Total number of discrete actions
+
+# Action name mapping for logging and debugging
+ACTION_NAMES = {
+    0: 'HOLD',
+    1: 'OPEN_LONG',
+    2: 'CLOSE_LONG',
+    3: 'OPEN_SHORT',
+    4: 'CLOSE_SHORT'
+}
+
+# Action constants for cleaner code
+ACTION_HOLD = 0
+ACTION_OPEN_LONG = 1
+ACTION_CLOSE_LONG = 2
+ACTION_OPEN_SHORT = 3
+ACTION_CLOSE_SHORT = 4
+
+# Position type constants
+POSITION_FLAT = 0
+POSITION_LONG = 1
+POSITION_SHORT = -1
 
 # Feature set (Technical Indicators + Smart Money Concepts)
 FEATURES = [
@@ -110,6 +159,34 @@ RISK_TO_REWARD_RATIO = TAKE_PROFIT_PERCENTAGE / STOP_LOSS_PERCENTAGE
 # Trailing Stop Loss
 TSL_START_PROFIT_MULTIPLIER = 1.0  # Activate TSL at 1× ATR profit
 TSL_TRAIL_DISTANCE_MULTIPLIER = 0.5  # Trail at 0.5× ATR distance
+
+# ═════════════════════════════════════════════════════════════════════════════
+# SHORT SELLING CONFIGURATION
+# ═════════════════════════════════════════════════════════════════════════════
+# Short selling allows profiting from price decreases - essential for day trading
+#
+# How it works:
+#   1. OPEN_SHORT: Borrow asset, sell at current price (entry)
+#   2. Price moves DOWN: You profit (buy back cheaper)
+#   3. Price moves UP: You lose (buy back more expensive)
+#   4. CLOSE_SHORT: Buy back asset to return to lender (exit)
+#
+# Risk note: Short positions have theoretically unlimited loss potential
+#            (price can go to infinity), so strict risk management is critical
+
+ENABLE_SHORT_SELLING = True  # Master switch for short selling
+
+# Short-specific costs (typically higher than long positions)
+SHORT_BORROWING_FEE_DAILY = 0.0001  # 0.01% daily borrowing cost (annualized ~3.65%)
+SHORT_MARGIN_REQUIREMENT = 1.0     # 100% margin required (no leverage for safety)
+
+# Short position limits (can be more conservative than long)
+SHORT_MAX_POSITION_SIZE_PCT = 0.20   # Maximum 20% of portfolio in shorts
+SHORT_MAX_HOLDING_DURATION = 40      # Max bars to hold short (same as long)
+
+# Overnight short fees (swap rates - common in forex/CFD)
+# Gold typically has negative swap for shorts (you pay to hold overnight)
+SHORT_OVERNIGHT_SWAP_PCT = 0.0002    # 0.02% per overnight hold
 
 # ⚠️ CRITICAL CHANGE: Reduced from 15% to 10% (safer for commercial use)
 MAX_DRAWDOWN_LIMIT_PCT = 10.0  # Maximum 10% account drawdown
