@@ -41,7 +41,11 @@ try:
         ACTION_OPEN_SHORT, ACTION_CLOSE_SHORT, POSITION_FLAT, POSITION_LONG, POSITION_SHORT,
         ENABLE_SHORT_SELLING, SHORT_BORROWING_FEE_DAILY, SHORT_OVERNIGHT_SWAP_PCT,
         # Fee constants (moved from hardcoded values)
-        TRADE_COMMISSION_PCT_OF_TRADE, TRADE_COMMISSION_MIN_PCT_CAPITAL
+        TRADE_COMMISSION_PCT_OF_TRADE, TRADE_COMMISSION_MIN_PCT_CAPITAL,
+        # Reward scaling hyperparameters
+        REWARD_TANH_SCALE, REWARD_OUTPUT_SCALE,
+        # Episode length configuration
+        FIXED_EPISODE_LENGTH, USE_FIXED_EPISODE_LENGTH
     )
 except ImportError:
     print("WARNING: Could not import from config. Using production fallback parameters.")
@@ -105,6 +109,14 @@ except ImportError:
     # Fee constants (fallback)
     TRADE_COMMISSION_PCT_OF_TRADE = 0.0005
     TRADE_COMMISSION_MIN_PCT_CAPITAL = 0.0001
+
+    # Reward scaling (fallback)
+    REWARD_TANH_SCALE = 0.3
+    REWARD_OUTPUT_SCALE = 5.0
+
+    # Episode length (fallback)
+    FIXED_EPISODE_LENGTH = 500
+    USE_FIXED_EPISODE_LENGTH = True
 
     OHLCV_COLUMNS = {
         "timestamp": "Date",
@@ -201,6 +213,14 @@ class TradingEnv(gym.Env):
             'trade_commission_min_pct_capital',
             TRADE_COMMISSION_MIN_PCT_CAPITAL  # From config.py
         )
+
+        # Reward scaling hyperparameters - tunable per bot for optimal learning
+        self.reward_tanh_scale = kwargs.get('reward_tanh_scale', REWARD_TANH_SCALE)
+        self.reward_output_scale = kwargs.get('reward_output_scale', REWARD_OUTPUT_SCALE)
+
+        # Episode length configuration - fixed length for stable PPO training
+        self.fixed_episode_length = kwargs.get('fixed_episode_length', FIXED_EPISODE_LENGTH)
+        self.use_fixed_episode_length = kwargs.get('use_fixed_episode_length', USE_FIXED_EPISODE_LENGTH)
 
         self.df_raw = df.copy()
 
@@ -1470,12 +1490,13 @@ class TradingEnv(gym.Env):
 
         combined_reward = raw_reward + bonus
 
-        # Scale factor 0.3: Controls sensitivity
-        # Lower = more compressed range, Higher = wider range
-        normalized_reward = np.tanh(combined_reward * 0.3)
+        # Reward scaling using hyperparameters (tunable per bot)
+        # reward_tanh_scale: Controls sensitivity (lower = compressed, higher = wider)
+        # reward_output_scale: Final multiplier for PPO-friendly range
+        normalized_reward = np.tanh(combined_reward * self.reward_tanh_scale)
 
-        # Map to target range: [-5, +5] for typical steps
-        scaled_reward = normalized_reward * 5.0
+        # Map to target range using output scale hyperparameter
+        scaled_reward = normalized_reward * self.reward_output_scale
 
         # =========================================================================
         # STEP 7: SPECIAL CASES (Terminal Conditions)
@@ -1635,23 +1656,48 @@ class TradingEnv(gym.Env):
 
         # --- 5️⃣ Episode boundaries ---
         min_possible_step = int(self.lookback_window_size - 1)
-        max_valid_start_idx_for_obs = int(len(self.df) - 1 - min_possible_step)
 
-        if max_valid_start_idx_for_obs <= min_possible_step:
-            raise ValueError(
-                f"❌ Not enough data to form a valid episode with the given lookback window "
-                f"({self.lookback_window_size}). Data length: {len(self.df)}"
+        if self.use_fixed_episode_length:
+            # FIXED EPISODE LENGTH MODE (Recommended for PPO stability)
+            # Ensures all episodes have the same length for consistent gradient estimates
+            episode_length = self.fixed_episode_length
+
+            # Calculate valid start range: must have enough room for fixed episode + lookback
+            max_valid_start = int(len(self.df) - 1 - episode_length)
+
+            if max_valid_start <= min_possible_step:
+                raise ValueError(
+                    f"❌ Not enough data for fixed episode length ({episode_length}) "
+                    f"with lookback ({self.lookback_window_size}). Data length: {len(self.df)}"
+                )
+
+            # Random start within valid range
+            self.start_idx = int(
+                self.np_random.integers(min_possible_step, max_valid_start + 1)
             )
 
-        # Use the Gymnasium RNG for reproducibility
-        self.start_idx = int(
-            self.np_random.integers(min_possible_step, max_valid_start_idx_for_obs + 1)
-        )
+            # Fixed episode length
+            self.max_steps = episode_length
+            self.end_idx = int(self.start_idx + self.max_steps)
+        else:
+            # VARIABLE EPISODE LENGTH MODE (Original behavior - not recommended)
+            max_valid_start_idx_for_obs = int(len(self.df) - 1 - min_possible_step)
+
+            if max_valid_start_idx_for_obs <= min_possible_step:
+                raise ValueError(
+                    f"❌ Not enough data to form a valid episode with the given lookback window "
+                    f"({self.lookback_window_size}). Data length: {len(self.df)}"
+                )
+
+            # Random start with variable length (original behavior)
+            self.start_idx = int(
+                self.np_random.integers(min_possible_step, max_valid_start_idx_for_obs + 1)
+            )
+            self.max_steps = int(len(self.df) - 1 - self.start_idx)
+            self.end_idx = int(self.start_idx + self.max_steps)
 
         # Ensure step indices are pure Python ints
         self.current_step = int(self.start_idx)
-        self.max_steps = int(len(self.df) - 1 - self.start_idx)
-        self.end_idx = int(self.start_idx + self.max_steps)
 
         # --- 6️⃣ Initial observation and info ---
         observation = self._get_obs()

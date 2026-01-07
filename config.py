@@ -65,6 +65,20 @@ EVAL_END_DATE = "2024-12-31 23:59:00"
 ACTION_SPACE_TYPE = 'discrete'  # 5 actions for long/short trading
 LOOKBACK_WINDOW_SIZE = 60  # 60 bars = 15 hours of history
 
+# -----------------------------------------------------------------------------
+# EPISODE LENGTH CONFIGURATION (Critical for PPO stability)
+# -----------------------------------------------------------------------------
+# PPO works best with consistent episode lengths. Random lengths cause:
+# - Noisy gradient estimates (mixing different market conditions)
+# - Inconsistent learning signal
+#
+# FIXED_EPISODE_LENGTH: Number of steps per episode
+#   - 500 steps = ~5 days of 15-min bars (good for day trading patterns)
+#   - Set to None for variable length (not recommended for training)
+#
+FIXED_EPISODE_LENGTH = 500  # Fixed episode length for stable PPO training
+USE_FIXED_EPISODE_LENGTH = True  # Set False to use variable length (not recommended)
+
 # ═════════════════════════════════════════════════════════════════════════════
 # ACTION SPACE DEFINITION (Professional Long/Short Trading)
 # ═════════════════════════════════════════════════════════════════════════════
@@ -220,6 +234,23 @@ ALLOW_NEGATIVE_REVENUE_SELL = False
 REWARD_SCALING_FACTOR = 100.0
 
 # -----------------------------------------------------------------------------
+# REWARD NORMALIZATION (Now Hyperparameters for tuning)
+# -----------------------------------------------------------------------------
+# These control how rewards are squashed and scaled before PPO sees them
+# Different hyperparameter combinations may work better with different scaling
+#
+# REWARD_TANH_SCALE: Controls sensitivity of tanh squashing
+#   - Lower (0.1-0.2): More compressed, agent less sensitive to reward differences
+#   - Higher (0.4-0.5): Wider range, agent more sensitive to reward differences
+#
+# REWARD_OUTPUT_SCALE: Final multiplier after tanh
+#   - Typical PPO rewards are in range [-1, +1] or [-10, +10]
+#   - This scales the normalized reward to your desired range
+#
+REWARD_TANH_SCALE = 0.3      # Default: 0.3 (tunable in hyperparameter search)
+REWARD_OUTPUT_SCALE = 5.0    # Default: 5.0 (tunable in hyperparameter search)
+
+# -----------------------------------------------------------------------------
 # PENALTIES & BONUSES (The "Lazy Agent" Fix)
 # -----------------------------------------------------------------------------
 # CRITICAL FIX: Removed the massive 5.0 penalty for losing.
@@ -316,10 +347,13 @@ HYPERPARAM_SEARCH_SPACE = {
     'batch_size': [64, 128, 256],  # 3 values
     'gamma': [0.99, 0.995, 0.999],  # 3 values (discount factor)
     'ent_coef': [0.02, 0.05, 0.10],  # 3 values (exploration) - INCREASED for more active trading
-    'clip_range': [0.1, 0.2, 0.3]  # 3 values (PPO clip)
+    'clip_range': [0.1, 0.2, 0.3],  # 3 values (PPO clip)
+    # NEW: Reward scaling parameters (interact with learning dynamics)
+    'reward_tanh_scale': [0.2, 0.3, 0.4],  # 3 values (sensitivity)
+    'reward_output_scale': [3.0, 5.0, 7.0]  # 3 values (final range)
 }
 
-# Total possible combinations: 4×3×3×3×3×3 = 972
+# Total possible combinations: 4×3×3×3×3×3×3×3 = 8,748
 # We intelligently sample 50 of these (not random, stratified)
 
 # Baseline hyperparameters (FinRL defaults - proven in research)
