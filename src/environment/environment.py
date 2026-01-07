@@ -39,7 +39,9 @@ try:
         # NEW: Long/Short action constants
         NUM_ACTIONS, ACTION_NAMES, ACTION_HOLD, ACTION_OPEN_LONG, ACTION_CLOSE_LONG,
         ACTION_OPEN_SHORT, ACTION_CLOSE_SHORT, POSITION_FLAT, POSITION_LONG, POSITION_SHORT,
-        ENABLE_SHORT_SELLING, SHORT_BORROWING_FEE_DAILY, SHORT_OVERNIGHT_SWAP_PCT
+        ENABLE_SHORT_SELLING, SHORT_BORROWING_FEE_DAILY, SHORT_OVERNIGHT_SWAP_PCT,
+        # Fee constants (moved from hardcoded values)
+        TRADE_COMMISSION_PCT_OF_TRADE, TRADE_COMMISSION_MIN_PCT_CAPITAL
     )
 except ImportError:
     print("WARNING: Could not import from config. Using production fallback parameters.")
@@ -98,7 +100,11 @@ except ImportError:
     TRADE_COOLDOWN_STEPS = 5
     RAPID_TRADE_PENALTY = 1.0
     MAX_LEVERAGE = 1.0
-    MAX_DURATION_STEPS = 40 # ✅ CORRIGÉ: Supprimé [cite: 1
+    MAX_DURATION_STEPS = 40
+
+    # Fee constants (fallback)
+    TRADE_COMMISSION_PCT_OF_TRADE = 0.0005
+    TRADE_COMMISSION_MIN_PCT_CAPITAL = 0.0001
 
     OHLCV_COLUMNS = {
         "timestamp": "Date",
@@ -186,14 +192,14 @@ class TradingEnv(gym.Env):
             kelly_fraction_limit=kwargs.get('kelly_fraction_limit', 0.1),  # 10% cap by default
             max_trade_risk_pct=kwargs.get('max_trade_risk_pct', 0.01)  # 1% per trade default
         )
+        # Fee constants - now from config.py (no more hardcoded defaults)
         self.trade_commission_pct_of_trade = kwargs.get(
             'trade_commission_pct_of_trade',
-            0.0005  # 0.05% du trade value (standard broker)
+            TRADE_COMMISSION_PCT_OF_TRADE  # From config.py
         )
-
         self.trade_commission_min_pct_capital = kwargs.get(
             'trade_commission_min_pct_capital',
-            0.0001  # 0.01% du capital initial minimum
+            TRADE_COMMISSION_MIN_PCT_CAPITAL  # From config.py
         )
 
         self.df_raw = df.copy()
@@ -241,6 +247,15 @@ class TradingEnv(gym.Env):
         self.actual_action_executed = 0
         self.last_trade_step = -np.inf
         self.recent_trade_attempts_steps = deque(maxlen=self.lookback_window_size)
+
+        # Invalid action tracking - helps understand agent behavior
+        self.invalid_action_count = 0
+        self.invalid_action_types = {
+            'already_in_position': 0,
+            'no_long_position': 0,
+            'no_short_position': 0,
+            'short_selling_disabled': 0
+        }
 
         # SCALER CONFIGURATION
         # Use MinMaxScaler with clip=True to handle out-of-distribution values
@@ -565,14 +580,15 @@ class TradingEnv(gym.Env):
                 f"⚠️ Observation shape mismatch: expected {expected_size}, got {observation.shape[0]}."
             )
 
+        # Handle NaN/Inf gracefully instead of crashing
         if np.isnan(observation).any() or np.isinf(observation).any():
             bad_cols = obs_df[self.features].columns[
                 np.isnan(obs_df[self.features].values).any(axis=0)
             ].tolist()
-            raise ValueError(
-                f"🚫 Observation contains NaN/Inf at step {self.current_step} "
-                f"in columns: {bad_cols}"
-            )
+            # Log warning but don't crash - replace with zeros
+            print(f"[WARNING] Observation contains NaN/Inf at step {self.current_step} in columns: {bad_cols}")
+            # Replace NaN/Inf with 0 to prevent training crash
+            observation = np.nan_to_num(observation, nan=0.0, posinf=0.0, neginf=0.0)
 
         return observation
 
@@ -659,11 +675,11 @@ class TradingEnv(gym.Env):
                 # b) Commission minimum basée sur le capital (pour éviter trades trop petits)
 
                 # a) Commission du trade (ex: 0.05% de $1,000 = $0.50)
-                commission_pct_trade = getattr(self, 'trade_commission_pct_of_trade', 0.0005)
+                commission_pct_trade = self.trade_commission_pct_of_trade
                 commission_from_trade = gross_trade_value * commission_pct_trade
 
                 # b) Commission minimum relative au capital (ex: 0.01% de $1,000 = $0.10)
-                commission_min_pct = getattr(self, 'trade_commission_min_pct_capital', 0.0001)
+                commission_min_pct = self.trade_commission_min_pct_capital
                 commission_minimum = self.initial_balance * commission_min_pct
 
                 # La commission finale est le MAXIMUM des deux (protège contre trades trop petits)
@@ -719,10 +735,10 @@ class TradingEnv(gym.Env):
                 gross_trade_value = effective_sell_price * trade_quantity
 
                 # --- 4. NOUVEAU: Calcul de la commission relative ---
-                commission_pct_trade = getattr(self, 'trade_commission_pct_of_trade', 0.0005)
+                commission_pct_trade = self.trade_commission_pct_of_trade
                 commission_from_trade = gross_trade_value * commission_pct_trade
 
-                commission_min_pct = getattr(self, 'trade_commission_min_pct_capital', 0.0001)
+                commission_min_pct = self.trade_commission_min_pct_capital
                 commission_minimum = self.initial_balance * commission_min_pct
 
                 commission = max(commission_from_trade, commission_minimum)
@@ -821,11 +837,21 @@ class TradingEnv(gym.Env):
         done = False
         truncated = False
 
-        # --- LECTURE CRITIQUE DES DONNÉES ---
-        current_row = self.df.iloc[self.current_step]
-        current_market_price = float(current_row['Close'])
-        current_atr = float(current_row['ATR'])
-        bos_signal = float(current_row['BOS_SIGNAL'])
+        # --- CRITICAL DATA ACCESS (with error handling) ---
+        try:
+            current_row = self.df.iloc[self.current_step]
+            current_market_price = float(current_row['Close'])
+            current_atr = float(current_row.get('ATR', 0.0))  # Default if missing
+            bos_signal = float(current_row.get('BOS_SIGNAL', 0.0))  # Default if missing
+        except (IndexError, KeyError) as e:
+            print(f"[ERROR] Data access error at step {self.current_step}: {e}")
+            # Return terminal state on data error
+            return self._get_obs(), -20.0, True, False, {'error': str(e)}
+
+        # Validate price data
+        if np.isnan(current_market_price) or current_market_price <= 0:
+            print(f"[ERROR] Invalid price {current_market_price} at step {self.current_step}")
+            return self._get_obs(), -20.0, True, False, {'error': 'invalid_price'}
 
         # --- Update risk manager regime ---
         regime_state = 0 if bos_signal != 0 else 1
@@ -857,21 +883,38 @@ class TradingEnv(gym.Env):
         # Can only CLOSE_LONG when LONG
         # Can only CLOSE_SHORT when SHORT
         original_action = action
+        invalid_reason = None
+
         if action == ACTION_OPEN_LONG and self.position_type != POSITION_FLAT:
             action = ACTION_HOLD
+            invalid_reason = 'already_in_position'
             self.trade_details['trade_type'] = 'invalid_already_in_position'
         elif action == ACTION_OPEN_SHORT and self.position_type != POSITION_FLAT:
             action = ACTION_HOLD
+            invalid_reason = 'already_in_position'
             self.trade_details['trade_type'] = 'invalid_already_in_position'
         elif action == ACTION_OPEN_SHORT and not self.enable_short_selling:
             action = ACTION_HOLD
+            invalid_reason = 'short_selling_disabled'
             self.trade_details['trade_type'] = 'short_selling_disabled'
         elif action == ACTION_CLOSE_LONG and self.position_type != POSITION_LONG:
             action = ACTION_HOLD
+            invalid_reason = 'no_long_position'
             self.trade_details['trade_type'] = 'invalid_no_long_position'
         elif action == ACTION_CLOSE_SHORT and self.position_type != POSITION_SHORT:
             action = ACTION_HOLD
+            invalid_reason = 'no_short_position'
             self.trade_details['trade_type'] = 'invalid_no_short_position'
+
+        # Log and count invalid actions
+        if invalid_reason is not None:
+            self.invalid_action_count += 1
+            self.invalid_action_types[invalid_reason] += 1
+            # Log every 100th invalid action to avoid spam (useful for debugging)
+            if self.invalid_action_count % 100 == 1:
+                print(f"[INVALID ACTION] Step {self.current_step}: "
+                      f"{ACTION_NAMES.get(original_action, original_action)} -> HOLD "
+                      f"(reason: {invalid_reason}, total: {self.invalid_action_count})")
 
         # --- Check for SL/TP/TSL on active positions ---
         if not done and self.position_type != POSITION_FLAT and not np.isnan(self.entry_price):
@@ -962,6 +1005,10 @@ class TradingEnv(gym.Env):
         info = self._get_info()
         info['position_type'] = self.position_type
         info['position_type_name'] = {POSITION_FLAT: 'FLAT', POSITION_LONG: 'LONG', POSITION_SHORT: 'SHORT'}[self.position_type]
+
+        # Invalid action tracking (helps monitor agent learning)
+        info['invalid_action_count'] = self.invalid_action_count
+        info['invalid_action_types'] = self.invalid_action_types.copy()
 
         self.previous_nav = self.net_worth
 
@@ -1125,7 +1172,7 @@ class TradingEnv(gym.Env):
         gross_value = effective_sell_price * trade_quantity_calc
 
         # Calculate commission
-        commission_pct_trade = getattr(self, 'trade_commission_pct_of_trade', 0.0005)
+        commission_pct_trade = self.trade_commission_pct_of_trade
         commission = gross_value * commission_pct_trade
 
         # Short position: negative stock quantity, cash increases
@@ -1181,7 +1228,7 @@ class TradingEnv(gym.Env):
         gross_cost = effective_buy_price * quantity_to_cover
 
         # Calculate commission
-        commission_pct_trade = getattr(self, 'trade_commission_pct_of_trade', 0.0005)
+        commission_pct_trade = self.trade_commission_pct_of_trade
         commission = gross_cost * commission_pct_trade
 
         total_cost = gross_cost + commission
@@ -1294,13 +1341,21 @@ class TradingEnv(gym.Env):
         Returns:
             float: Scaled reward for PPO training
         """
-
         # =========================================================================
-        # STEP 1: VALIDATION (Prevent Division by Zero)
+        # STEP 1: VALIDATION (Prevent Division by Zero and Invalid Values)
         # =========================================================================
         if previous_net_worth <= 1e-9 or self.net_worth <= 1e-9:
             # Critical failure: Account depleted
             return -20.0
+
+        # Check for NaN/Inf in net worth (robust error handling)
+        if np.isnan(self.net_worth) or np.isinf(self.net_worth):
+            print(f"[WARNING] Invalid net_worth: {self.net_worth} at step {self.current_step}")
+            return -20.0
+
+        if np.isnan(previous_net_worth) or np.isinf(previous_net_worth):
+            print(f"[WARNING] Invalid previous_net_worth: {previous_net_worth} at step {self.current_step}")
+            return 0.0
 
         # =========================================================================
         # STEP 2: CORE PROFITABILITY METRIC (Most Important Component)
@@ -1463,6 +1518,11 @@ class TradingEnv(gym.Env):
             print(f"  Net Worth: ${self.net_worth:.2f} (Δ {(self.net_worth / previous_net_worth - 1) * 100:+.2f}%)")
             print("-" * 50)
 
+        # Final NaN/Inf check (robust error handling)
+        if np.isnan(final_reward) or np.isinf(final_reward):
+            print(f"[WARNING] Invalid final_reward: {final_reward} at step {self.current_step}")
+            return 0.0
+
         return final_reward
 
 
@@ -1554,6 +1614,15 @@ class TradingEnv(gym.Env):
         # --- 3️⃣ Reset behavioral trackers ---
         self.last_action = 0
         self.actual_action_executed = 0
+
+        # Reset invalid action counters
+        self.invalid_action_count = 0
+        self.invalid_action_types = {
+            'already_in_position': 0,
+            'no_long_position': 0,
+            'no_short_position': 0,
+            'short_selling_disabled': 0
+        }
 
         # --- 4️⃣ Advanced reward trackers ---
         self.previous_nav = self.initial_balance

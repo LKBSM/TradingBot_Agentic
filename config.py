@@ -204,6 +204,11 @@ MIN_TRADE_QUANTITY = 0.01  # Minimum position size
 TRANSACTION_FEE_PERCENTAGE = 0.0005  # 0.05% spread
 SLIPPAGE_PERCENTAGE = 0.0001  # 0.01% slippage
 TRADE_COMMISSION_PER_TRADE = 0.0005  # $0.50 per $1000 traded
+
+# Commission structure (moved from hardcoded values in environment.py)
+TRADE_COMMISSION_PCT_OF_TRADE = 0.0005  # 0.05% of trade value (standard broker)
+TRADE_COMMISSION_MIN_PCT_CAPITAL = 0.0001  # 0.01% of initial capital (minimum fee)
+
 ALLOW_NEGATIVE_REVENUE_SELL = False
 
 # ═════════════════════════════════════════════════════════════════════════════
