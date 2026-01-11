@@ -259,7 +259,7 @@ REWARD_OUTPUT_SCALE = 5.0    # Default: 5.0 (tunable in hyperparameter search)
 # CRITICAL FIX: Removed the massive 5.0 penalty for losing.
 # The PnL itself is already negative; adding a fixed penalty causes "fear of trading".
 LOSING_TRADE_PENALTY = 0.0       # Was 5.0 (Too harsh, caused fear)
-WINNING_TRADE_BONUS = 0.5        # Was 2.0 (Small cookie to encourage closing green)
+WINNING_TRADE_BONUS = 2.0        # FIX "FEARFUL AGENT": Strong bonus for profitable trades
 
 # Friction: Fees are already subtracted from PnL.
 # We don't need a heavy extra penalty, or the bot won't enter trades.
@@ -281,7 +281,7 @@ W_DURATION = 0.1     # Was 0.3. Slight nudge to not hold forever.
 # -----------------------------------------------------------------------------
 DOWNSIDE_PENALTY_MULTIPLIER = 1.0  # Was 3.0. Standard linear punishment for losses.
 OVERNIGHT_HOLDING_PENALTY = 0.0    # N/A for 15m timeframe
-HOLD_PENALTY_FACTOR = 0.0          # Was 0.001. Don't punish patience.
+HOLD_PENALTY_FACTOR = 0.01         # FIX "FEARFUL AGENT": Small penalty to encourage trading
 FAILED_TRADE_ATTEMPT_PENALTY = 0.0 # No penalty for logic checks
 TRADE_COOLDOWN_STEPS = 2           # Was 5. Allow faster re-entry if signal is good.
 RAPID_TRADE_PENALTY = 1.0          # Was 5.0. Reduced.

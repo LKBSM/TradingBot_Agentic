@@ -927,6 +927,9 @@ class TradingEnv(gym.Env):
             self.trade_details['trade_type'] = 'invalid_no_short_position'
 
         # Log and count invalid actions
+        # FIX "FEARFUL AGENT": Track invalid actions for reward penalty
+        self.invalid_action_this_step = (invalid_reason is not None)
+
         if invalid_reason is not None:
             self.invalid_action_count += 1
             self.invalid_action_types[invalid_reason] += 1
@@ -1444,6 +1447,20 @@ class TradingEnv(gym.Env):
                 # Weight: 1.0 (moderate - some trading is necessary)
                 churn_penalty = (turnover_ratio - 0.5) * 1.0
                 total_penalty += churn_penalty
+
+        # --- Penalty F: Invalid Actions (FIX "FEARFUL AGENT") ---
+        # Penalize attempts to execute invalid actions (e.g., OPEN_LONG when already in position)
+        # This teaches the agent that invalid actions are NOT free fallbacks
+        if getattr(self, 'invalid_action_this_step', False):
+            invalid_action_penalty = 0.5  # Moderate penalty to discourage invalid attempts
+            total_penalty += invalid_action_penalty
+
+        # --- Penalty G: HOLD Penalty (FIX "FEARFUL AGENT") ---
+        # Small penalty for doing nothing - encourages the agent to explore trading
+        # Only apply when FLAT (no position) to avoid penalizing legitimate position holding
+        if self.position_type == POSITION_FLAT and self.trade_details.get('trade_type') == 'hold':
+            hold_penalty = 0.01  # Small but consistent pressure to act
+            total_penalty += hold_penalty
 
         # =========================================================================
         # STEP 4: COMPOSITE RAW REWARD (Before Normalization)
