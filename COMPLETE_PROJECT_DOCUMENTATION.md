@@ -711,7 +711,7 @@ This simulates real deployment where you periodically retrain.
 #### Issue #2: NO MARKET REGIME DETECTION
 **Problem:** HMM/regime detection is a placeholder. Bot doesn't know if market is trending or ranging.
 
-**Impact:** Bot applies same strategy in all conditions, leading to poor performance in adverse regimes.
+
 
 **Solution:**
 ```python

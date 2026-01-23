@@ -1,0 +1,307 @@
+# =============================================================================
+# PROMETHEUS ALERT RULES - Trading Bot
+# =============================================================================
+# Critical alerts for trading operations
+#
+# Severity levels:
+# - critical: Immediate action required (pages on-call)
+# - warning: Needs attention soon
+# - info: For awareness
+# =============================================================================
+
+groups:
+  # ===========================================================================
+  # TRADING PERFORMANCE ALERTS
+  # ===========================================================================
+  - name: trading_performance
+    interval: 30s
+    rules:
+      # -----------------------------------------------------------------------
+      # DRAWDOWN ALERTS
+      # -----------------------------------------------------------------------
+      - alert: HighDrawdown
+        expr: trading_drawdown_percent > 10
+        for: 5m
+        labels:
+          severity: warning
+          category: risk
+        annotations:
+          summary: "High drawdown detected"
+          description: "Current drawdown is {{ $value | printf \"%.1f\" }}% (threshold: 10%)"
+
+      - alert: CriticalDrawdown
+        expr: trading_drawdown_percent > 15
+        for: 1m
+        labels:
+          severity: critical
+          category: risk
+        annotations:
+          summary: "CRITICAL: Drawdown exceeds safety limit"
+          description: "Drawdown at {{ $value | printf \"%.1f\" }}%. Kill switch may activate."
+
+      # -----------------------------------------------------------------------
+      # DAILY LOSS ALERTS
+      # -----------------------------------------------------------------------
+      - alert: DailyLossWarning
+        expr: trading_daily_pnl_usd < -2000
+        for: 5m
+        labels:
+          severity: warning
+          category: risk
+        annotations:
+          summary: "Significant daily loss"
+          description: "Daily P&L is ${{ $value | printf \"%.0f\" }}"
+
+      - alert: DailyLossLimit
+        expr: trading_daily_pnl_usd < -5000
+        for: 1m
+        labels:
+          severity: critical
+          category: risk
+        annotations:
+          summary: "CRITICAL: Daily loss limit approached"
+          description: "Daily loss ${{ $value | printf \"%.0f\" }}. Trading may halt."
+
+      # -----------------------------------------------------------------------
+      # WIN RATE ALERTS
+      # -----------------------------------------------------------------------
+      - alert: LowWinRate
+        expr: trading_win_rate_percent < 40
+        for: 1h
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "Win rate below threshold"
+          description: "Win rate at {{ $value | printf \"%.1f\" }}% over last hour"
+
+  # ===========================================================================
+  # RISK ALERTS
+  # ===========================================================================
+  - name: risk_alerts
+    interval: 30s
+    rules:
+      # -----------------------------------------------------------------------
+      # VAR ALERTS
+      # -----------------------------------------------------------------------
+      - alert: VaRLimitWarning
+        expr: risk_var_95_percent > 8
+        for: 5m
+        labels:
+          severity: warning
+          category: risk
+        annotations:
+          summary: "VaR approaching limit"
+          description: "95% VaR is {{ $value | printf \"%.1f\" }}% of portfolio"
+
+      - alert: VaRLimitCritical
+        expr: risk_var_95_percent > 10
+        for: 1m
+        labels:
+          severity: critical
+          category: risk
+        annotations:
+          summary: "CRITICAL: VaR exceeds limit"
+          description: "VaR at {{ $value | printf \"%.1f\" }}%. Reduce positions."
+
+      # -----------------------------------------------------------------------
+      # EXPOSURE ALERTS
+      # -----------------------------------------------------------------------
+      - alert: HighExposure
+        expr: risk_total_exposure_percent > 80
+        for: 5m
+        labels:
+          severity: warning
+          category: risk
+        annotations:
+          summary: "High portfolio exposure"
+          description: "Total exposure at {{ $value | printf \"%.0f\" }}%"
+
+      - alert: CorrelationBreakdown
+        expr: risk_correlation_breakdown_count > 0
+        for: 1m
+        labels:
+          severity: warning
+          category: risk
+        annotations:
+          summary: "Correlation breakdown detected"
+          description: "{{ $value }} asset pairs showing correlation breakdown"
+
+  # ===========================================================================
+  # SYSTEM HEALTH ALERTS
+  # ===========================================================================
+  - name: system_health
+    interval: 15s
+    rules:
+      # -----------------------------------------------------------------------
+      # LATENCY ALERTS
+      # -----------------------------------------------------------------------
+      - alert: HighOrderLatency
+        expr: histogram_quantile(0.95, rate(trading_order_latency_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+          category: system
+        annotations:
+          summary: "High order latency"
+          description: "95th percentile latency is {{ $value | printf \"%.2f\" }}s"
+
+      - alert: CriticalOrderLatency
+        expr: histogram_quantile(0.95, rate(trading_order_latency_seconds_bucket[5m])) > 5
+        for: 1m
+        labels:
+          severity: critical
+          category: system
+        annotations:
+          summary: "CRITICAL: Order latency too high"
+          description: "Latency at {{ $value | printf \"%.2f\" }}s. Check connectivity."
+
+      # -----------------------------------------------------------------------
+      # ERROR RATE ALERTS
+      # -----------------------------------------------------------------------
+      - alert: HighErrorRate
+        expr: rate(trading_errors_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          category: system
+        annotations:
+          summary: "Elevated error rate"
+          description: "{{ $value | printf \"%.2f\" }} errors/second"
+
+      - alert: CriticalErrorRate
+        expr: rate(trading_errors_total[5m]) > 1
+        for: 1m
+        labels:
+          severity: critical
+          category: system
+        annotations:
+          summary: "CRITICAL: High error rate"
+          description: "{{ $value | printf \"%.2f\" }} errors/second. Check logs."
+
+      # -----------------------------------------------------------------------
+      # SERVICE HEALTH
+      # -----------------------------------------------------------------------
+      - alert: TradingBotDown
+        expr: up{job="trading-bot"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: system
+        annotations:
+          summary: "Trading bot is down"
+          description: "Trading bot instance has been down for more than 1 minute"
+
+      - alert: KillSwitchActivated
+        expr: trading_kill_switch_active == 1
+        for: 0s
+        labels:
+          severity: critical
+          category: risk
+        annotations:
+          summary: "KILL SWITCH ACTIVATED"
+          description: "Emergency stop triggered. All trading halted."
+
+  # ===========================================================================
+  # DATA SOURCE ALERTS
+  # ===========================================================================
+  - name: data_sources
+    interval: 30s
+    rules:
+      # -----------------------------------------------------------------------
+      # NEWS FEED ALERTS
+      # -----------------------------------------------------------------------
+      - alert: NewsFeedDown
+        expr: news_source_up == 0
+        for: 5m
+        labels:
+          severity: warning
+          category: data
+        annotations:
+          summary: "News feed unavailable"
+          description: "News source {{ $labels.source }} is down"
+
+      - alert: NoNewsUpdates
+        expr: time() - news_last_update_timestamp > 600
+        for: 5m
+        labels:
+          severity: warning
+          category: data
+        annotations:
+          summary: "No news updates"
+          description: "No news received in last 10 minutes"
+
+      # -----------------------------------------------------------------------
+      # MARKET DATA ALERTS
+      # -----------------------------------------------------------------------
+      - alert: StaleMarketData
+        expr: time() - market_data_last_update_timestamp > 60
+        for: 1m
+        labels:
+          severity: critical
+          category: data
+        annotations:
+          summary: "CRITICAL: Stale market data"
+          description: "Market data for {{ $labels.symbol }} is stale"
+
+      - alert: WebSocketDisconnected
+        expr: websocket_connected == 0
+        for: 1m
+        labels:
+          severity: warning
+          category: data
+        annotations:
+          summary: "WebSocket disconnected"
+          description: "Real-time data feed disconnected"
+
+  # ===========================================================================
+  # INFRASTRUCTURE ALERTS
+  # ===========================================================================
+  - name: infrastructure
+    interval: 30s
+    rules:
+      # -----------------------------------------------------------------------
+      # RESOURCE ALERTS
+      # -----------------------------------------------------------------------
+      - alert: HighMemoryUsage
+        expr: process_resident_memory_bytes / 1024 / 1024 / 1024 > 3
+        for: 5m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage at {{ $value | printf \"%.1f\" }}GB"
+
+      - alert: HighCPUUsage
+        expr: rate(process_cpu_seconds_total[5m]) > 1.5
+        for: 5m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage elevated"
+
+      # -----------------------------------------------------------------------
+      # REDIS ALERTS
+      # -----------------------------------------------------------------------
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "Redis is down"
+          description: "Redis cache is unavailable"
+
+      - alert: RedisHighMemory
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "Redis memory high"
+          description: "Redis using {{ $value | printf \"%.0f\" }}% of max memory"

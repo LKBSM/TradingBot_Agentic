@@ -1,0 +1,214 @@
+# =============================================================================
+# ALERTMANAGER CONFIGURATION - Trading Bot
+# =============================================================================
+# Routes alerts to appropriate channels based on severity
+#
+# Channels:
+# - PagerDuty: Critical alerts (drawdown, system down)
+# - Slack: Warning and info alerts
+# - Email: Daily summaries
+# =============================================================================
+
+global:
+  # Default settings
+  resolve_timeout: 5m
+
+  # Slack configuration
+  slack_api_url: '${SLACK_WEBHOOK_URL}'
+
+  # PagerDuty configuration
+  pagerduty_url: 'https://events.pagerduty.com/v2/enqueue'
+
+  # Email configuration (optional)
+  smtp_smarthost: 'smtp.gmail.com:587'
+  smtp_from: 'alerts@tradingbot.com'
+  smtp_auth_username: '${SMTP_USER}'
+  smtp_auth_password: '${SMTP_PASSWORD}'
+
+# =============================================================================
+# TEMPLATES
+# =============================================================================
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# =============================================================================
+# ROUTING
+# =============================================================================
+route:
+  # Default receiver
+  receiver: 'slack-warnings'
+
+  # Group alerts by these labels
+  group_by: ['alertname', 'category', 'severity']
+
+  # Wait before sending first notification for a group
+  group_wait: 30s
+
+  # Wait before sending notification about new alerts in group
+  group_interval: 5m
+
+  # Wait before resending notification
+  repeat_interval: 4h
+
+  # Child routes for specific handling
+  routes:
+    # -------------------------------------------------------------------------
+    # CRITICAL ALERTS -> PagerDuty + Slack
+    # -------------------------------------------------------------------------
+    - match:
+        severity: critical
+      receiver: 'pagerduty-critical'
+      continue: true  # Also send to Slack
+
+    - match:
+        severity: critical
+      receiver: 'slack-critical'
+      group_wait: 10s
+      repeat_interval: 1h
+
+    # -------------------------------------------------------------------------
+    # KILL SWITCH -> Immediate notification
+    # -------------------------------------------------------------------------
+    - match:
+        alertname: KillSwitchActivated
+      receiver: 'pagerduty-critical'
+      group_wait: 0s
+      repeat_interval: 15m
+
+    # -------------------------------------------------------------------------
+    # RISK ALERTS -> Dedicated channel
+    # -------------------------------------------------------------------------
+    - match:
+        category: risk
+      receiver: 'slack-risk'
+      group_wait: 1m
+      repeat_interval: 30m
+
+    # -------------------------------------------------------------------------
+    # WARNING ALERTS -> Slack
+    # -------------------------------------------------------------------------
+    - match:
+        severity: warning
+      receiver: 'slack-warnings'
+      group_wait: 1m
+      repeat_interval: 2h
+
+    # -------------------------------------------------------------------------
+    # INFO ALERTS -> Low priority
+    # -------------------------------------------------------------------------
+    - match:
+        severity: info
+      receiver: 'slack-info'
+      group_wait: 5m
+      repeat_interval: 12h
+
+# =============================================================================
+# INHIBITION RULES
+# =============================================================================
+inhibit_rules:
+  # If critical alert fires, suppress warnings for same alertname
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'category']
+
+  # If trading bot is down, suppress other trading alerts
+  - source_match:
+      alertname: 'TradingBotDown'
+    target_match_re:
+      alertname: 'trading_.*'
+
+  # If kill switch active, suppress other risk alerts
+  - source_match:
+      alertname: 'KillSwitchActivated'
+    target_match:
+      category: 'risk'
+
+# =============================================================================
+# RECEIVERS
+# =============================================================================
+receivers:
+  # ---------------------------------------------------------------------------
+  # PAGERDUTY - Critical Alerts
+  # ---------------------------------------------------------------------------
+  - name: 'pagerduty-critical'
+    pagerduty_configs:
+      - service_key: '${PAGERDUTY_SERVICE_KEY}'
+        severity: critical
+        description: '{{ template "pagerduty.default.description" . }}'
+        details:
+          firing: '{{ template "pagerduty.default.instances" .Alerts.Firing }}'
+          resolved: '{{ template "pagerduty.default.instances" .Alerts.Resolved }}'
+
+  # ---------------------------------------------------------------------------
+  # SLACK - Critical
+  # ---------------------------------------------------------------------------
+  - name: 'slack-critical'
+    slack_configs:
+      - channel: '#trading-alerts-critical'
+        username: 'Trading Bot Alert'
+        icon_emoji: ':rotating_light:'
+        color: '{{ if eq .Status "firing" }}danger{{ else }}good{{ end }}'
+        title: ':rotating_light: CRITICAL: {{ .CommonAnnotations.summary }}'
+        text: |
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Severity:* {{ .Labels.severity }}
+          {{ end }}
+        send_resolved: true
+
+  # ---------------------------------------------------------------------------
+  # SLACK - Risk Alerts
+  # ---------------------------------------------------------------------------
+  - name: 'slack-risk'
+    slack_configs:
+      - channel: '#trading-risk'
+        username: 'Risk Monitor'
+        icon_emoji: ':chart_with_downwards_trend:'
+        color: '{{ if eq .Status "firing" }}warning{{ else }}good{{ end }}'
+        title: ':warning: Risk Alert: {{ .CommonAnnotations.summary }}'
+        text: |
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          {{ end }}
+        send_resolved: true
+
+  # ---------------------------------------------------------------------------
+  # SLACK - Warnings
+  # ---------------------------------------------------------------------------
+  - name: 'slack-warnings'
+    slack_configs:
+      - channel: '#trading-alerts'
+        username: 'Trading Bot'
+        icon_emoji: ':robot_face:'
+        color: '{{ if eq .Status "firing" }}warning{{ else }}good{{ end }}'
+        title: '{{ .CommonAnnotations.summary }}'
+        text: |
+          {{ range .Alerts }}
+          {{ .Annotations.description }}
+          {{ end }}
+        send_resolved: true
+
+  # ---------------------------------------------------------------------------
+  # SLACK - Info
+  # ---------------------------------------------------------------------------
+  - name: 'slack-info'
+    slack_configs:
+      - channel: '#trading-info'
+        username: 'Trading Bot'
+        icon_emoji: ':information_source:'
+        title: '{{ .CommonAnnotations.summary }}'
+        send_resolved: false
+
+  # ---------------------------------------------------------------------------
+  # EMAIL - Daily Summary (optional)
+  # ---------------------------------------------------------------------------
+  - name: 'email-daily'
+    email_configs:
+      - to: 'trading-team@example.com'
+        send_resolved: true
+        headers:
+          Subject: 'Trading Bot Alert Summary'

@@ -27,13 +27,15 @@
 
 from enum import Enum, auto
 from dataclasses import dataclass, field
-from typing import Dict, Any, Optional, List, Callable, Union
-from datetime import datetime
+from typing import Dict, Any, Optional, List, Callable, Union, Set
+from datetime import datetime, timedelta
 import uuid
 import json
 import logging
-from threading import Lock
-from collections import defaultdict
+import os
+from threading import Lock, RLock
+from collections import defaultdict, deque
+from pathlib import Path
 
 # =============================================================================
 # ENUMS - Event Types and Decision Types
@@ -71,6 +73,33 @@ class EventType(Enum):
     REGIME_CHANGE = auto()        # Market regime shifted
     VOLATILITY_SPIKE = auto()     # Unusual volatility detected
     NEWS_ALERT = auto()           # Important news detected
+
+    # --- News Events (NEW) ---
+    NEWS_CALENDAR_UPDATE = auto()      # Economic calendar refreshed
+    NEWS_HIGH_IMPACT_IMMINENT = auto() # High-impact event within window
+    NEWS_SENTIMENT_UPDATE = auto()     # Sentiment score changed
+    TRADING_BLOCKED = auto()           # Trading blocked by news
+    TRADING_UNBLOCKED = auto()         # Trading resumed
+
+    # --- Orchestrator Events (NEW) ---
+    ORCHESTRATED_DECISION = auto()     # Final coordinated decision
+    AGENT_HEALTH_UPDATE = auto()       # Agent health changed
+
+    # --- Sprint 2: Intelligence Events (NEW) ---
+    SENTIMENT_UPDATED = auto()         # Sentiment analysis result available
+    SENTIMENT_SHIFT = auto()           # Significant sentiment change detected
+    REGIME_PREDICTED = auto()          # HMM regime prediction available
+    REGIME_TRANSITION = auto()         # Predicted regime transition
+    TIMEFRAME_ALIGNED = auto()         # Multi-timeframe alignment signal
+    TIMEFRAME_CONFLICT = auto()        # Timeframe conflict detected
+    ENSEMBLE_PREDICTION = auto()       # Ensemble model prediction ready
+    INTELLIGENCE_REPORT = auto()       # Unified intelligence report
+
+    # --- Sprint 3: Real-time Events (Prepared) ---
+    WEBSOCKET_CONNECTED = auto()       # WebSocket connection established
+    WEBSOCKET_DISCONNECTED = auto()    # WebSocket connection lost
+    REALTIME_NEWS = auto()             # Real-time news received
+    REALTIME_PRICE = auto()            # Real-time price tick received
 
     # --- System Events ---
     AGENT_STARTED = auto()        # Agent came online
@@ -355,6 +384,212 @@ class AgentDecision:
 
 
 # =============================================================================
+# SPRINT 2: INTELLIGENCE EVENT DATA CLASSES
+# =============================================================================
+
+
+@dataclass
+class SentimentEvent:
+    """
+    Sentiment analysis event from FinBERT analyzer.
+
+    Published when sentiment analysis completes on news/text.
+    """
+    event_id: str = field(default_factory=lambda: str(uuid.uuid4())[:12])
+    timestamp: datetime = field(default_factory=datetime.now)
+
+    # Sentiment data
+    score: float = 0.0                  # -1.0 (bearish) to +1.0 (bullish)
+    confidence: float = 0.5             # 0-1 confidence in the score
+    label: str = "NEUTRAL"              # BULLISH, BEARISH, NEUTRAL
+    source_count: int = 1               # Number of texts analyzed
+
+    # Context
+    asset: str = "XAU/USD"              # Asset this sentiment relates to
+    source_type: str = "news"           # news, twitter, rss, etc.
+    is_significant: bool = False        # True if sentiment shift is significant
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            'event_id': self.event_id,
+            'timestamp': self.timestamp.isoformat(),
+            'score': self.score,
+            'confidence': self.confidence,
+            'label': self.label,
+            'source_count': self.source_count,
+            'asset': self.asset,
+            'source_type': self.source_type,
+            'is_significant': self.is_significant
+        }
+
+
+@dataclass
+class RegimeEvent:
+    """
+    Market regime prediction event from HMM predictor.
+
+    Published when regime detection/prediction updates.
+    """
+    event_id: str = field(default_factory=lambda: str(uuid.uuid4())[:12])
+    timestamp: datetime = field(default_factory=datetime.now)
+
+    # Current regime
+    current_regime: str = "UNKNOWN"     # BULL, BEAR, SIDEWAYS, VOLATILE, etc.
+    regime_confidence: float = 0.5      # Confidence in current regime
+
+    # Prediction
+    predicted_regime: str = "UNKNOWN"   # Predicted next regime
+    transition_probability: float = 0.0 # Probability of transition
+    bars_in_regime: int = 0             # How long in current regime
+
+    # Risk implications
+    position_multiplier: float = 1.0    # Suggested position size multiplier
+    risk_level: RiskLevel = RiskLevel.MEDIUM
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            'event_id': self.event_id,
+            'timestamp': self.timestamp.isoformat(),
+            'current_regime': self.current_regime,
+            'regime_confidence': self.regime_confidence,
+            'predicted_regime': self.predicted_regime,
+            'transition_probability': self.transition_probability,
+            'bars_in_regime': self.bars_in_regime,
+            'position_multiplier': self.position_multiplier,
+            'risk_level': self.risk_level.name
+        }
+
+
+@dataclass
+class TimeframeAlignmentEvent:
+    """
+    Multi-timeframe alignment event.
+
+    Published when timeframe analysis detects alignment or conflict.
+    """
+    event_id: str = field(default_factory=lambda: str(uuid.uuid4())[:12])
+    timestamp: datetime = field(default_factory=datetime.now)
+
+    # Alignment scores
+    trend_alignment: float = 0.0        # -1 to +1 (all bearish to all bullish)
+    momentum_alignment: float = 0.0     # -1 to +1
+    overall_alignment: float = 0.5      # 0 to 1 (conflict to aligned)
+
+    # Signal
+    signal: str = "HOLD"                # BUY, SELL, HOLD
+    signal_strength: str = "WEAK"       # STRONG, MODERATE, WEAK
+    confidence: float = 0.5
+
+    # Conflict info
+    has_conflict: bool = False
+    conflict_description: str = ""
+
+    # Sizing recommendation
+    position_multiplier: float = 1.0
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            'event_id': self.event_id,
+            'timestamp': self.timestamp.isoformat(),
+            'trend_alignment': self.trend_alignment,
+            'momentum_alignment': self.momentum_alignment,
+            'overall_alignment': self.overall_alignment,
+            'signal': self.signal,
+            'signal_strength': self.signal_strength,
+            'confidence': self.confidence,
+            'has_conflict': self.has_conflict,
+            'conflict_description': self.conflict_description,
+            'position_multiplier': self.position_multiplier
+        }
+
+
+@dataclass
+class EnsemblePredictionEvent:
+    """
+    Ensemble model prediction event.
+
+    Published when ensemble risk model produces a prediction.
+    """
+    event_id: str = field(default_factory=lambda: str(uuid.uuid4())[:12])
+    timestamp: datetime = field(default_factory=datetime.now)
+
+    # Prediction
+    risk_score: float = 0.5             # 0-1 risk score
+    risk_category: str = "MEDIUM"       # LOW, MEDIUM, HIGH, CRITICAL
+    confidence: float = 0.5
+
+    # Model contributions
+    xgboost_score: float = 0.5
+    lstm_score: float = 0.5
+    mlp_score: float = 0.5
+
+    # Recommendation
+    suggested_action: str = "HOLD"      # BUY, SELL, HOLD, REDUCE
+    position_multiplier: float = 1.0
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            'event_id': self.event_id,
+            'timestamp': self.timestamp.isoformat(),
+            'risk_score': self.risk_score,
+            'risk_category': self.risk_category,
+            'confidence': self.confidence,
+            'xgboost_score': self.xgboost_score,
+            'lstm_score': self.lstm_score,
+            'mlp_score': self.mlp_score,
+            'suggested_action': self.suggested_action,
+            'position_multiplier': self.position_multiplier
+        }
+
+
+@dataclass
+class IntelligenceReportEvent:
+    """
+    Unified intelligence report combining all Sprint 2 components.
+
+    This is the main output that the orchestrator and trading system consume.
+    """
+    event_id: str = field(default_factory=lambda: str(uuid.uuid4())[:12])
+    timestamp: datetime = field(default_factory=datetime.now)
+
+    # Component summaries
+    sentiment: Optional[SentimentEvent] = None
+    regime: Optional[RegimeEvent] = None
+    timeframe: Optional[TimeframeAlignmentEvent] = None
+    ensemble: Optional[EnsemblePredictionEvent] = None
+
+    # Aggregated decision
+    overall_signal: str = "HOLD"        # BUY, SELL, HOLD
+    overall_confidence: float = 0.5
+    risk_level: RiskLevel = RiskLevel.MEDIUM
+
+    # Position sizing
+    recommended_position_pct: float = 0.0  # 0-100% of max position
+    position_multiplier: float = 1.0
+
+    # Trading recommendation
+    should_trade: bool = False
+    reasoning: List[str] = field(default_factory=list)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            'event_id': self.event_id,
+            'timestamp': self.timestamp.isoformat(),
+            'sentiment': self.sentiment.to_dict() if self.sentiment else None,
+            'regime': self.regime.to_dict() if self.regime else None,
+            'timeframe': self.timeframe.to_dict() if self.timeframe else None,
+            'ensemble': self.ensemble.to_dict() if self.ensemble else None,
+            'overall_signal': self.overall_signal,
+            'overall_confidence': self.overall_confidence,
+            'risk_level': self.risk_level.name,
+            'recommended_position_pct': self.recommended_position_pct,
+            'position_multiplier': self.position_multiplier,
+            'should_trade': self.should_trade,
+            'reasoning': self.reasoning
+        }
+
+
+# =============================================================================
 # EVENT BUS - Central Message Router
 # =============================================================================
 
@@ -385,23 +620,60 @@ class EventBus:
         bus.unsubscribe(EventType.TRADE_PROPOSED, my_handler)
     """
 
-    def __init__(self, enable_logging: bool = True):
+    def __init__(
+        self,
+        enable_logging: bool = True,
+        persist_events: bool = True,
+        event_log_dir: Optional[str] = None,
+        dedup_ttl_seconds: int = 300
+    ):
         """
         Initialize the event bus.
 
         Args:
             enable_logging: Whether to log all events (for audit)
+            persist_events: Whether to persist events to file (compliance)
+            event_log_dir: Directory for event logs (default: ./logs/events)
+            dedup_ttl_seconds: How long to remember event IDs for deduplication
         """
         # --- Subscription Storage ---
         # Maps event types to lists of handler functions
         # Example: {EventType.TRADE_PROPOSED: [handler1, handler2]}
         self._subscribers: Dict[EventType, List[Callable]] = defaultdict(list)
-        self._lock: Lock = Lock()
+        self._lock: RLock = RLock()
 
         # --- Event History ---
-        # Stores all events for audit purposes (limited size)
-        self._event_history: List[Dict[str, Any]] = []
+        # Stores recent events in memory (limited size)
+        # PERFORMANCE FIX: Use deque for O(1) trimming instead of O(n) list slicing
+        self._event_history: deque = deque(maxlen=10000)  # Auto-trim at 10k
         self._max_history_size: int = 10000  # Prevent memory bloat
+
+        # --- Event Deduplication ---
+        # SECURITY: Prevent duplicate/replay events
+        # Use OrderedDict for O(1) lookup + insertion order for cleanup
+        from collections import OrderedDict
+        self._processed_event_times: OrderedDict = OrderedDict()
+        self._dedup_ttl = timedelta(seconds=dedup_ttl_seconds)
+        self._max_dedup_entries = 100000  # Hard limit on dedup cache
+        self._last_cleanup = datetime.now()
+        self._cleanup_interval = timedelta(seconds=60)  # Cleanup every minute
+        # SECURITY FIX: Separate lock for dedup operations to ensure atomicity
+        self._dedup_lock: Lock = Lock()
+
+        # --- File Persistence (Compliance) ---
+        self._persist_events = persist_events
+        if persist_events:
+            self._event_log_dir = Path(event_log_dir or "./logs/events")
+            self._event_log_dir.mkdir(parents=True, exist_ok=True)
+            self._current_log_file: Optional[Path] = None
+            self._log_file_date: Optional[str] = None
+
+        # PERFORMANCE FIX: Buffered event persistence to reduce I/O blocking
+        self._persist_buffer: List[Dict[str, Any]] = []
+        self._persist_buffer_size = 100  # Flush after 100 events
+        self._persist_buffer_lock = Lock()
+        self._last_flush_time = datetime.now()
+        self._flush_interval = timedelta(seconds=5)  # Flush at least every 5 seconds
 
         # --- Logging ---
         self._enable_logging = enable_logging
@@ -446,6 +718,139 @@ class EventBus:
                     f"Unsubscribed handler from {event_type.name}"
                 )
 
+    def _is_duplicate(self, event_id: str, event_timestamp: Optional[datetime] = None) -> bool:
+        """
+        Check if event has already been processed (deduplication).
+
+        Security features:
+        - Rejects events with IDs already processed within TTL
+        - Rejects events with timestamps too far in the past (replay protection)
+        - Periodic cleanup prevents memory bloat
+        - Hard limit on cache size prevents DoS
+        - SECURITY FIX: Now uses dedicated lock for atomic check-and-insert
+        """
+        now = datetime.now()
+
+        # SECURITY: Reject events with timestamps too far in the past
+        if event_timestamp:
+            age = now - event_timestamp
+            if age > self._dedup_ttl * 2:  # Events older than 2x TTL are suspicious
+                self._logger.warning(
+                    f"Rejecting old event {event_id}: age={age.total_seconds():.0f}s"
+                )
+                return True
+
+        # SECURITY FIX: Atomic check-and-insert with dedicated dedup lock
+        with self._dedup_lock:
+            # Periodic cleanup (not on every call for performance)
+            if now - self._last_cleanup > self._cleanup_interval:
+                self._cleanup_expired_events(now)
+
+            # Check if already processed
+            if event_id in self._processed_event_times:
+                return True
+
+            # Mark as processed (OrderedDict maintains insertion order)
+            self._processed_event_times[event_id] = now
+
+            # Hard limit: remove oldest entries if over limit
+            while len(self._processed_event_times) > self._max_dedup_entries:
+                self._processed_event_times.popitem(last=False)  # Remove oldest
+
+        return False
+
+    def _cleanup_expired_events(self, now: datetime) -> None:
+        """Remove expired event IDs from dedup cache."""
+        self._last_cleanup = now
+        cutoff = now - self._dedup_ttl
+
+        # Find and remove expired entries (iterate from oldest)
+        expired_count = 0
+        keys_to_remove = []
+        for eid, ts in self._processed_event_times.items():
+            if ts < cutoff:
+                keys_to_remove.append(eid)
+                expired_count += 1
+            else:
+                break  # OrderedDict is ordered, so we can stop early
+
+        for eid in keys_to_remove:
+            del self._processed_event_times[eid]
+
+        if expired_count > 0:
+            self._logger.debug(f"Cleaned up {expired_count} expired event IDs")
+
+    def _persist_to_file(self, event: AgentEvent) -> None:
+        """
+        Persist event to rotated log file for compliance.
+
+        PERFORMANCE FIX: Now uses buffering to reduce I/O blocking.
+        Events are batched and written every 100 events or every 5 seconds.
+        """
+        if not self._persist_events:
+            return
+
+        try:
+            # Create event record
+            event_record = {
+                **event.to_dict(),
+                'persisted_at': datetime.now().isoformat()
+            }
+
+            # Add to buffer
+            with self._persist_buffer_lock:
+                self._persist_buffer.append(event_record)
+
+                # Check if we should flush
+                now = datetime.now()
+                should_flush = (
+                    len(self._persist_buffer) >= self._persist_buffer_size or
+                    now - self._last_flush_time >= self._flush_interval
+                )
+
+                if should_flush:
+                    self._flush_persist_buffer()
+
+        except Exception as e:
+            self._logger.error(f"Failed to buffer event for persistence: {e}")
+
+    def _flush_persist_buffer(self) -> None:
+        """
+        Flush buffered events to file.
+
+        MUST be called with _persist_buffer_lock held.
+        """
+        if not self._persist_buffer:
+            return
+
+        try:
+            today = datetime.now().strftime("%Y-%m-%d")
+
+            # Rotate log file daily
+            if self._log_file_date != today:
+                self._log_file_date = today
+                self._current_log_file = self._event_log_dir / f"events_{today}.jsonl"
+
+            # Write all buffered events in one I/O operation
+            with open(self._current_log_file, 'a', encoding='utf-8') as f:
+                for record in self._persist_buffer:
+                    f.write(json.dumps(record) + '\n')
+
+            self._persist_buffer.clear()
+            self._last_flush_time = datetime.now()
+
+        except Exception as e:
+            self._logger.error(f"Failed to flush event buffer: {e}")
+
+    def flush_events(self) -> None:
+        """
+        Manually flush all buffered events to file.
+
+        Call this before shutdown to ensure all events are persisted.
+        """
+        with self._persist_buffer_lock:
+            self._flush_persist_buffer()
+
     def publish(
         self,
         event: AgentEvent,
@@ -453,6 +858,11 @@ class EventBus:
     ) -> List[Optional[AgentEvent]]:
         """
         Publish an event to all subscribers.
+
+        Features:
+            - Event deduplication (prevents duplicate/replay attacks)
+            - File persistence (compliance requirement)
+            - Thread-safe handler invocation
 
         Args:
             event: The event to publish
@@ -463,25 +873,40 @@ class EventBus:
         """
         responses: List[Optional[AgentEvent]] = []
 
+        # SECURITY: Check for duplicate event (prevent replay)
+        # Pass event timestamp for age-based replay protection
+        if self._is_duplicate(event.event_id, event.timestamp):
+            self._logger.warning(
+                f"Duplicate event rejected: {event.event_id} ({event.event_type.name})"
+            )
+            return responses
+
+        # SECURITY FIX: Keep lock held while calling handlers to prevent race condition
+        # where handler is unsubscribed between copy and call. Use RLock if handlers
+        # need to publish events (re-entrant).
         with self._lock:
             handlers = self._subscribers.get(event.event_type, []).copy()
 
-        # Log the event
-        if self._enable_logging:
-            self._log_event(event)
+            # Log the event to memory (inside lock for consistency)
+            if self._enable_logging:
+                self._log_event(event)
 
-        # Call each handler
-        for handler in handlers:
-            try:
-                response = handler(event)
-                if wait_for_response:
-                    responses.append(response)
-            except Exception as e:
-                self._logger.error(
-                    f"Handler error for {event.event_type.name}: {e}"
-                )
-                if wait_for_response:
-                    responses.append(None)
+            # Persist to file for compliance (inside lock - consider async for performance)
+            self._persist_to_file(event)
+
+            # Call each handler INSIDE lock to prevent race condition
+            # CRITICAL FIX: Handlers called while lock held prevents unsubscribe race
+            for handler in handlers:
+                try:
+                    response = handler(event)
+                    if wait_for_response:
+                        responses.append(response)
+                except Exception as e:
+                    self._logger.error(
+                        f"Handler error for {event.event_type.name}: {e}"
+                    )
+                    if wait_for_response:
+                        responses.append(None)
 
         return responses
 
@@ -490,17 +915,15 @@ class EventBus:
         Log an event for audit purposes.
 
         Maintains a circular buffer of recent events.
+        PERFORMANCE FIX: Using deque with maxlen for automatic O(1) trimming.
         """
         event_record = {
             **event.to_dict(),
             'logged_at': datetime.now().isoformat()
         }
 
+        # Deque with maxlen automatically removes oldest items - O(1) operation
         self._event_history.append(event_record)
-
-        # Trim history if too large
-        if len(self._event_history) > self._max_history_size:
-            self._event_history = self._event_history[-self._max_history_size // 2:]
 
     def get_history(
         self,
@@ -517,7 +940,8 @@ class EventBus:
         Returns:
             List of event records (newest first)
         """
-        history = self._event_history.copy()
+        # Convert deque to list for processing
+        history = list(self._event_history)
 
         if event_type:
             history = [

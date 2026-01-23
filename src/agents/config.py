@@ -54,6 +54,34 @@ class AgentConfig:
     # --- Integration ---
     event_bus_enabled: bool = True      # Use event bus for communication?
 
+    def __post_init__(self) -> None:
+        """
+        Validate configuration after initialization.
+
+        SECURITY FIX: Validate all config values to prevent misconfiguration.
+        """
+        # Validate log_level
+        valid_log_levels = {'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'}
+        if self.log_level.upper() not in valid_log_levels:
+            raise ValueError(
+                f"Invalid log_level '{self.log_level}'. Must be one of: {valid_log_levels}"
+            )
+        self.log_level = self.log_level.upper()
+
+        # Validate numeric ranges
+        if self.max_retries < 0:
+            raise ValueError(f"max_retries must be >= 0, got {self.max_retries}")
+        if self.max_retries > 10:
+            raise ValueError(f"max_retries too high ({self.max_retries}), max is 10")
+
+        if self.timeout_ms < 100:
+            raise ValueError(f"timeout_ms must be >= 100ms, got {self.timeout_ms}")
+        if self.timeout_ms > 60000:
+            raise ValueError(f"timeout_ms too high ({self.timeout_ms}ms), max is 60000ms")
+
+        if self.metrics_interval_sec < 1:
+            raise ValueError(f"metrics_interval_sec must be >= 1, got {self.metrics_interval_sec}")
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert config to dictionary."""
         return {
@@ -203,6 +231,61 @@ class RiskSentinelConfig(AgentConfig):
     soft_violation_threshold: int = 2            # Max soft violations before reject
     enable_rule_explanations: bool = True        # Include reasoning in output
 
+    def __post_init__(self) -> None:
+        """
+        Validate RiskSentinelConfig values.
+
+        SECURITY FIX: Ensure all risk parameters are within safe bounds.
+        """
+        # Call parent validation
+        super().__post_init__()
+
+        # Validate percentages (must be 0-1)
+        percentage_fields = [
+            ('max_position_size_pct', 0.01, 0.50),
+            ('max_risk_per_trade_pct', 0.001, 0.05),
+            ('max_drawdown_pct', 0.01, 0.30),
+            ('drawdown_warning_pct', 0.01, 0.25),
+            ('daily_loss_limit_pct', 0.005, 0.10),
+            ('max_correlation_exposure', 0.10, 1.0),
+            ('max_spread_pct', 0.0001, 0.01),
+            ('high_volatility_reduction', 0.1, 1.0),
+        ]
+
+        for field_name, min_val, max_val in percentage_fields:
+            value = getattr(self, field_name)
+            if not isinstance(value, (int, float)):
+                raise TypeError(f"{field_name} must be numeric, got {type(value)}")
+            if value < min_val or value > max_val:
+                raise ValueError(
+                    f"{field_name} must be between {min_val} and {max_val}, got {value}"
+                )
+
+        # Validate drawdown_warning < max_drawdown
+        if self.drawdown_warning_pct >= self.max_drawdown_pct:
+            raise ValueError(
+                f"drawdown_warning_pct ({self.drawdown_warning_pct}) must be less than "
+                f"max_drawdown_pct ({self.max_drawdown_pct})"
+            )
+
+        # Validate leverage
+        if self.max_leverage < 1.0:
+            raise ValueError(f"max_leverage must be >= 1.0, got {self.max_leverage}")
+        if self.max_leverage > 10.0:
+            raise ValueError(f"max_leverage too high ({self.max_leverage}), max is 10.0 for safety")
+
+        # Validate integers
+        if self.max_open_positions < 1:
+            raise ValueError(f"max_open_positions must be >= 1, got {self.max_open_positions}")
+        if self.max_trades_per_day < 1:
+            raise ValueError(f"max_trades_per_day must be >= 1, got {self.max_trades_per_day}")
+        if self.cooldown_after_loss_steps < 0:
+            raise ValueError(f"cooldown_after_loss_steps must be >= 0, got {self.cooldown_after_loss_steps}")
+
+        # Validate risk/reward ratio
+        if self.min_risk_reward_ratio < 0.5:
+            raise ValueError(f"min_risk_reward_ratio must be >= 0.5, got {self.min_risk_reward_ratio}")
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert config to dictionary."""
         base = super().to_dict()
@@ -337,6 +420,150 @@ def get_risk_sentinel_config(preset: ConfigPreset = ConfigPreset.MODERATE) -> Ri
         return RiskSentinelConfig.backtesting()
     else:  # MODERATE (default)
         return RiskSentinelConfig()
+
+
+# =============================================================================
+# CONFIGURATION VALIDATION
+# =============================================================================
+
+
+# =============================================================================
+# NEWS AGENT CONFIGURATION (NEW v2.1)
+# =============================================================================
+
+
+@dataclass
+class NewsAgentConfig(AgentConfig):
+    """
+    Configuration for NewsAnalysisAgent.
+
+    The News Analysis Agent monitors economic calendars and news feeds to:
+    1. Block trading during high-impact events (FOMC, NFP, CPI)
+    2. Reduce position sizes during medium-impact events
+    3. Provide sentiment scores for trading decisions
+
+    === BLOCKING RULES ===
+    Attributes:
+        high_impact_block_minutes_before: Minutes before high-impact event to block
+        high_impact_block_minutes_after: Minutes after high-impact event to block
+        medium_impact_reduce_factor: Position size multiplier during medium impact
+
+    === API SETTINGS ===
+    Attributes:
+        newsapi_key: NewsAPI key (uses NEWSAPI_KEY env var if not provided)
+        calendar_fetch_interval_hours: How often to refresh economic calendar
+        news_fetch_interval_minutes: How often to fetch news headlines
+
+    === CURRENCIES ===
+    Attributes:
+        monitored_currencies: List of currencies to monitor for news
+    """
+    # === BLOCKING RULES ===
+    high_impact_block_minutes_before: int = 30
+    high_impact_block_minutes_after: int = 30
+    medium_impact_reduce_factor: float = 0.5
+    low_impact_reduce_factor: float = 0.8
+
+    # === API SETTINGS ===
+    newsapi_key: Optional[str] = None
+    calendar_fetch_interval_hours: float = 4.0
+    news_fetch_interval_minutes: int = 15
+
+    # === SENTIMENT ===
+    sentiment_weight_decay_hours: float = 6.0
+    min_sentiment_confidence: float = 0.3
+    sentiment_impact_on_sizing: float = 0.1
+
+    # === CURRENCIES ===
+    monitored_currencies: List[str] = None
+
+    def __post_init__(self):
+        if self.monitored_currencies is None:
+            self.monitored_currencies = ["USD", "EUR", "GBP", "JPY", "XAU"]
+
+    def to_dict(self) -> Dict[str, Any]:
+        base = super().to_dict()
+        base.update({
+            'high_impact_block_minutes_before': self.high_impact_block_minutes_before,
+            'high_impact_block_minutes_after': self.high_impact_block_minutes_after,
+            'medium_impact_reduce_factor': self.medium_impact_reduce_factor,
+            'low_impact_reduce_factor': self.low_impact_reduce_factor,
+            'calendar_fetch_interval_hours': self.calendar_fetch_interval_hours,
+            'news_fetch_interval_minutes': self.news_fetch_interval_minutes,
+            'sentiment_weight_decay_hours': self.sentiment_weight_decay_hours,
+            'min_sentiment_confidence': self.min_sentiment_confidence,
+            'sentiment_impact_on_sizing': self.sentiment_impact_on_sizing,
+            'monitored_currencies': self.monitored_currencies,
+        })
+        return base
+
+
+# =============================================================================
+# ORCHESTRATOR CONFIGURATION (NEW v2.1)
+# =============================================================================
+
+
+@dataclass
+class OrchestratorConfig(AgentConfig):
+    """
+    Configuration for TradingOrchestrator.
+
+    The Trading Orchestrator coordinates all agents with hierarchical
+    decision making and position size aggregation.
+
+    === DECISION RULES ===
+    Attributes:
+        require_unanimous_approval: If True, all agents must approve
+        allow_modified_trades: Accept MODIFY decisions
+
+    === POSITION SIZING ===
+    Attributes:
+        position_aggregation: How to combine agent recommendations
+            - "minimum": Use smallest (most conservative)
+            - "average": Use average of all
+            - "weighted": Weight by agent priority
+
+    === SAFETY ===
+    Attributes:
+        halt_on_critical_failure: Stop trading if critical agent fails
+        require_news_agent: Require news agent to be running
+        require_risk_agent: Require risk agent to be running
+    """
+    # === DECISION RULES ===
+    require_unanimous_approval: bool = False
+    allow_modified_trades: bool = True
+
+    # === POSITION SIZING ===
+    position_aggregation: str = "minimum"
+    min_position_multiplier: float = 0.1
+    max_position_multiplier: float = 1.5
+
+    # === HEALTH MONITORING ===
+    heartbeat_interval_sec: int = 30
+    agent_timeout_sec: int = 60
+    auto_disable_failed_agents: bool = True
+
+    # === SAFETY ===
+    halt_on_critical_failure: bool = True
+    require_news_agent: bool = True
+    require_risk_agent: bool = True
+
+    def to_dict(self) -> Dict[str, Any]:
+        base = super().to_dict()
+        base.update({
+            'require_unanimous_approval': self.require_unanimous_approval,
+            'allow_modified_trades': self.allow_modified_trades,
+            'position_aggregation': self.position_aggregation,
+            'min_position_multiplier': self.min_position_multiplier,
+            'max_position_multiplier': self.max_position_multiplier,
+            'heartbeat_interval_sec': self.heartbeat_interval_sec,
+            'agent_timeout_sec': self.agent_timeout_sec,
+            'auto_disable_failed_agents': self.auto_disable_failed_agents,
+            'halt_on_critical_failure': self.halt_on_critical_failure,
+            'require_news_agent': self.require_news_agent,
+            'require_risk_agent': self.require_risk_agent,
+        })
+        return base
 
 
 # =============================================================================

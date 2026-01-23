@@ -1,0 +1,200 @@
+# =============================================================================
+# DOCKER COMPOSE - Trading Bot Full Stack
+# =============================================================================
+# Includes:
+# - Trading Bot application
+# - Prometheus (metrics)
+# - Grafana (dashboards)
+# - Redis (caching)
+# - PostgreSQL (optional, for audit logs)
+#
+# Usage:
+#   Start:   docker-compose up -d
+#   Stop:    docker-compose down
+#   Logs:    docker-compose logs -f trading-bot
+#   Rebuild: docker-compose up -d --build
+# =============================================================================
+
+version: '3.8'
+
+services:
+  # ---------------------------------------------------------------------------
+  # TRADING BOT - Main Application
+  # ---------------------------------------------------------------------------
+  trading-bot:
+    build:
+      context: ..
+      dockerfile: infrastructure/Dockerfile
+      target: production
+    container_name: trading-bot
+    restart: unless-stopped
+    ports:
+      - "8080:8080"   # REST API
+      - "9090:9090"   # Metrics
+    environment:
+      - ENVIRONMENT=production
+      - LOG_LEVEL=INFO
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql://tradingbot:${DB_PASSWORD:-tradingbot}@postgres:5432/tradingbot
+      # API Keys (from .env file)
+      - NEWS_API_KEY=${NEWS_API_KEY:-}
+      - FINNHUB_API_KEY=${FINNHUB_API_KEY:-}
+      - TWITTER_BEARER_TOKEN=${TWITTER_BEARER_TOKEN:-}
+      - ALPHA_VANTAGE_KEY=${ALPHA_VANTAGE_KEY:-}
+    volumes:
+      - trading-data:/app/data
+      - trading-logs:/app/logs
+      - trading-models:/app/models
+    depends_on:
+      - redis
+      - postgres
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - trading-network
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+
+  # ---------------------------------------------------------------------------
+  # REDIS - Caching & Message Queue
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: trading-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - trading-network
+
+  # ---------------------------------------------------------------------------
+  # POSTGRESQL - Audit Logs & Historical Data
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:15-alpine
+    container_name: trading-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=tradingbot
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-tradingbot}
+      - POSTGRES_DB=tradingbot
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tradingbot"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - trading-network
+
+  # ---------------------------------------------------------------------------
+  # PROMETHEUS - Metrics Collection
+  # ---------------------------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: trading-prometheus
+    restart: unless-stopped
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./alert-rules.yml:/etc/prometheus/alert-rules.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    networks:
+      - trading-network
+
+  # ---------------------------------------------------------------------------
+  # GRAFANA - Dashboards & Visualization
+  # ---------------------------------------------------------------------------
+  grafana:
+    image: grafana/grafana:latest
+    container_name: trading-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+    networks:
+      - trading-network
+
+  # ---------------------------------------------------------------------------
+  # ALERTMANAGER - Alert Routing
+  # ---------------------------------------------------------------------------
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: trading-alertmanager
+    restart: unless-stopped
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager-data:/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    networks:
+      - trading-network
+
+# =============================================================================
+# VOLUMES
+# =============================================================================
+volumes:
+  trading-data:
+    name: trading-bot-data
+  trading-logs:
+    name: trading-bot-logs
+  trading-models:
+    name: trading-bot-models
+  redis-data:
+    name: trading-redis-data
+  postgres-data:
+    name: trading-postgres-data
+  prometheus-data:
+    name: trading-prometheus-data
+  grafana-data:
+    name: trading-grafana-data
+  alertmanager-data:
+    name: trading-alertmanager-data
+
+# =============================================================================
+# NETWORKS
+# =============================================================================
+networks:
+  trading-network:
+    name: trading-network
+    driver: bridge

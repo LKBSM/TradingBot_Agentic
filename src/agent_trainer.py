@@ -197,11 +197,24 @@ class AgentTrainer:
     - train_multiple_runs(): Entraînements multiples avec seeds différentes
     """
 
-    def __init__(self, df_historical: pd.DataFrame):
+    def __init__(self, df_historical: pd.DataFrame, train_ratio: float = 0.8):
         from src.environment.environment import TradingEnv
 
         self.model_dir = config.MODEL_DIR
-        self.env_train = TradingEnv(df=df_historical, enable_logging=True)
+        self.df_historical = df_historical
+        self.train_ratio = train_ratio
+
+        # Calculate training split index to prevent data leakage in scaler
+        self.train_split_idx = int(len(df_historical) * train_ratio)
+
+        # Create training environment with scaler fit ONLY on training portion
+        # This prevents data leakage - scaler doesn't see validation/test data
+        self.env_train = TradingEnv(
+            df=df_historical,
+            enable_logging=True,
+            scaler_fit_end_idx=self.train_split_idx
+        )
+
         os.makedirs(self.model_dir, exist_ok=True)
         self.agent = None
 
@@ -249,11 +262,14 @@ class AgentTrainer:
 
         # Ajouter early stopping si activé
         if use_early_stopping:
-            split_idx = int(len(self.env_train.df) * 0.8)
-            df_val = self.env_train.df.iloc[split_idx:].copy()
+            df_val = self.df_historical.iloc[self.train_split_idx:].copy()
 
             from src.environment.environment import TradingEnv
-            env_val = TradingEnv(df=df_val)
+            # CRITICAL: Use pre_fitted_scaler from training env to prevent data leakage
+            env_val = TradingEnv(
+                df=df_val,
+                pre_fitted_scaler=self.env_train.scaler
+            )
 
             callbacks.append(EarlyStoppingCallback(
                 eval_env=env_val,
@@ -325,7 +341,8 @@ class AgentTrainer:
 
     def fine_tune_online(self, df_new_data: pd.DataFrame,
                          base_model_path: str = None,
-                         fine_tune_timesteps: int = None) -> PPO:
+                         fine_tune_timesteps: int = None,
+                         use_original_scaler: bool = True) -> PPO:
         """
         Fine-tune un modèle pré-entraîné avec de nouvelles données.
         Utile pour adapter le bot à de nouvelles conditions de marché.
@@ -334,6 +351,7 @@ class AgentTrainer:
             df_new_data: Nouvelles données (ex: données récentes de 2025)
             base_model_path: Chemin du modèle de base (si None, cherche le dernier)
             fine_tune_timesteps: Steps de fine-tuning (défaut: config.TOTAL_TIMESTEPS_ONLINE)
+            use_original_scaler: If True, use scaler from original training (recommended)
 
         Returns:
             PPO: Agent fine-tuné
@@ -354,7 +372,19 @@ class AgentTrainer:
 
         # Créer un nouvel environnement avec les nouvelles données
         from src.environment.environment import TradingEnv
-        env_new = TradingEnv(df=df_new_data, enable_logging=True)
+
+        if use_original_scaler and self.env_train is not None and self.env_train.scaler is not None:
+            # Use original scaler to maintain consistent feature scaling
+            env_new = TradingEnv(
+                df=df_new_data,
+                enable_logging=True,
+                pre_fitted_scaler=self.env_train.scaler
+            )
+            logging.info("Using original training scaler for fine-tuning (no data leakage)")
+        else:
+            # Fit new scaler on all new data (acceptable for completely new regime)
+            logging.warning("Fitting new scaler on fine-tune data - ensure this is intentional")
+            env_new = TradingEnv(df=df_new_data, enable_logging=True)
 
         # Changer l'environnement de l'agent
         self.agent.set_env(env_new)
@@ -416,9 +446,8 @@ class AgentTrainer:
         results = []
         base_seed = getattr(config, 'RANDOM_SEED', 42)
 
-        # Préparer données de test (20% des données)
-        split_idx = int(len(self.env_train.df) * 0.8)
-        df_test = self.env_train.df.iloc[split_idx:].copy()
+        # Préparer données de test (uses consistent split from __init__)
+        df_test = self.df_historical.iloc[self.train_split_idx:].copy()
 
         for run in range(1, n_runs + 1):
             console.print(f"\n[bold yellow]{'=' * 70}[/bold yellow]")
@@ -466,7 +495,8 @@ class AgentTrainer:
 
             # Évaluer le modèle sur les données de test
             console.print(f"\n📊 Évaluation du Run {run}...")
-            metrics = evaluate_agent(self.agent, df_test)
+            # Pass the training scaler to prevent data leakage in evaluation
+            metrics = evaluate_agent(self.agent, df_test, pre_fitted_scaler=self.env_train.scaler)
 
             # Stocker les résultats
             run_results = {
@@ -553,9 +583,15 @@ class AgentTrainer:
 # FONCTION D'ÉVALUATION
 # ============================================================================
 
-def evaluate_agent(agent: PPO, df_test: pd.DataFrame) -> Tuple[float, float, float, float, float]:
+def evaluate_agent(agent: PPO, df_test: pd.DataFrame,
+                   pre_fitted_scaler=None) -> Tuple[float, float, float, float, float]:
     """
     Évalue l'agent et retourne les métriques clés.
+
+    Args:
+        agent: The trained PPO agent
+        df_test: Test data DataFrame
+        pre_fitted_scaler: Scaler fitted on training data (CRITICAL to prevent data leakage)
 
     Returns:
         tuple: (cumulative_return, sharpe_ratio, sortino_ratio, calmar_ratio, max_drawdown)
@@ -563,7 +599,14 @@ def evaluate_agent(agent: PPO, df_test: pd.DataFrame) -> Tuple[float, float, flo
     from src.environment.environment import TradingEnv
 
     df_test = df_test.reset_index(drop=True)
-    env_test = TradingEnv(df=df_test)
+
+    if pre_fitted_scaler is not None:
+        # Use training scaler to prevent data leakage
+        env_test = TradingEnv(df=df_test, pre_fitted_scaler=pre_fitted_scaler)
+    else:
+        # Legacy behavior with warning
+        logging.warning("evaluate_agent: No pre_fitted_scaler provided - potential data leakage!")
+        env_test = TradingEnv(df=df_test)
 
     obs, info = env_test.reset()
     done = False

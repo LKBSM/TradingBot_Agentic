@@ -19,13 +19,16 @@
 
 from abc import ABC, abstractmethod
 from enum import Enum, auto
-from typing import Dict, Any, Optional, List, Callable
+from typing import Dict, Any, Optional, List, Callable, Coroutine
 from dataclasses import dataclass, field
 from datetime import datetime
 import logging
 import uuid
 import json
+import asyncio
+import threading
 from threading import Lock
+from concurrent.futures import ThreadPoolExecutor
 
 # =============================================================================
 # ENUMS - Agent States and Capabilities
@@ -75,6 +78,8 @@ class AgentCapability(Enum):
     BACKTESTING = auto()          # Can run historical simulations
     SENTIMENT_ANALYSIS = auto()    # Can analyze news/social sentiment
     REGIME_DETECTION = auto()      # Can detect market regimes
+    NEWS_ANALYSIS = auto()         # Can analyze economic calendar/news (NEW)
+    ORCHESTRATION = auto()         # Can coordinate multiple agents (NEW)
 
 
 # =============================================================================
@@ -229,6 +234,7 @@ class BaseAgent(ABC):
         # --- Metrics ---
         # Performance tracking for monitoring and optimization.
         self._metrics: AgentMetrics = AgentMetrics()
+        self._metrics_lock = threading.Lock()  # Thread-safe metrics updates
         self._start_time: Optional[datetime] = None
 
         # --- Logging ---
@@ -472,21 +478,23 @@ class BaseAgent(ABC):
             # Call subclass implementation
             response = self.process_event(event)
 
-            # Update metrics
+            # Update metrics (thread-safe)
             elapsed_ms = (time.time() - start) * 1000
-            self._metrics.events_processed += 1
-            self._metrics.last_activity = datetime.now()
+            with self._metrics_lock:
+                self._metrics.events_processed += 1
+                self._metrics.last_activity = datetime.now()
 
-            # Update rolling average response time
-            n = self._metrics.events_processed
-            old_avg = self._metrics.avg_response_time_ms
-            self._metrics.avg_response_time_ms = old_avg + (elapsed_ms - old_avg) / n
+                # Update rolling average response time
+                n = self._metrics.events_processed
+                old_avg = self._metrics.avg_response_time_ms
+                self._metrics.avg_response_time_ms = old_avg + (elapsed_ms - old_avg) / n
 
             return response
 
         except Exception as e:
             self._logger.error(f"Error processing event: {e}")
-            self._metrics.error_count += 1
+            with self._metrics_lock:
+                self._metrics.error_count += 1
             return None
 
     # =========================================================================
@@ -495,18 +503,19 @@ class BaseAgent(ABC):
 
     def get_metrics(self) -> Dict[str, Any]:
         """
-        Get current agent metrics.
+        Get current agent metrics (thread-safe).
 
         Returns:
             Dictionary containing all performance metrics
         """
-        # Update uptime
-        if self._start_time:
-            self._metrics.uptime_seconds = (
-                datetime.now() - self._start_time
-            ).total_seconds()
+        with self._metrics_lock:
+            # Update uptime
+            if self._start_time:
+                self._metrics.uptime_seconds = (
+                    datetime.now() - self._start_time
+                ).total_seconds()
 
-        return self._metrics.to_dict()
+            return self._metrics.to_dict()
 
     def health_check(self) -> Dict[str, Any]:
         """
@@ -616,3 +625,125 @@ class BaseAgent(ABC):
     def __repr__(self) -> str:
         """String representation of the agent."""
         return f"<{self.__class__.__name__}(id={self.full_id}, state={self.state.name})>"
+
+    # =========================================================================
+    # ASYNC SUPPORT (Sprint 3: Real-time Data)
+    # =========================================================================
+
+    async def start_async(self) -> bool:
+        """
+        Async version of start() for real-time event loops.
+
+        Use this when integrating with asyncio-based systems like WebSocket feeds.
+
+        Returns:
+            True if agent started successfully, False otherwise
+        """
+        # Run synchronous start in thread pool to not block event loop
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, self.start)
+
+    async def stop_async(self) -> bool:
+        """
+        Async version of stop() for real-time event loops.
+
+        Returns:
+            True if agent stopped successfully, False otherwise
+        """
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, self.stop)
+
+    async def _handle_event_async(self, event: 'AgentEvent') -> Optional['AgentEvent']:
+        """
+        Async event handler wrapper for real-time processing.
+
+        This wraps the subclass's process_event_async() method (if available)
+        or falls back to process_event() in a thread pool.
+
+        Args:
+            event: The incoming event to process
+
+        Returns:
+            Response event from the agent, or None
+        """
+        import time
+
+        if self.state != AgentState.RUNNING:
+            self._logger.warning(f"Received event while in {self.state.name} state")
+            return None
+
+        start = time.time()
+        try:
+            # Check if subclass has async implementation
+            if hasattr(self, 'process_event_async') and callable(getattr(self, 'process_event_async')):
+                response = await self.process_event_async(event)
+            else:
+                # Fall back to sync version in thread pool
+                loop = asyncio.get_event_loop()
+                response = await loop.run_in_executor(None, self.process_event, event)
+
+            # Update metrics (thread-safe)
+            elapsed_ms = (time.time() - start) * 1000
+            with self._metrics_lock:
+                self._metrics.events_processed += 1
+                self._metrics.last_activity = datetime.now()
+
+                # Update rolling average response time
+                n = self._metrics.events_processed
+                old_avg = self._metrics.avg_response_time_ms
+                self._metrics.avg_response_time_ms = old_avg + (elapsed_ms - old_avg) / n
+
+            return response
+
+        except Exception as e:
+            self._logger.error(f"Error processing event (async): {e}")
+            with self._metrics_lock:
+                self._metrics.error_count += 1
+            return None
+
+    async def process_event_async(self, event: 'AgentEvent') -> Optional['AgentEvent']:
+        """
+        Async version of process_event for real-time processing.
+
+        Override this method in subclasses for native async support.
+        Default implementation wraps the sync process_event().
+
+        Args:
+            event: The incoming event to process
+
+        Returns:
+            Response event, or None if no response needed
+        """
+        # Default: wrap sync version
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, self.process_event, event)
+
+    async def health_check_async(self) -> Dict[str, Any]:
+        """
+        Async health check for use in async contexts.
+
+        Returns:
+            Dictionary with health status and details
+        """
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, self.health_check)
+
+    def run_in_event_loop(self, coro: Coroutine) -> Any:
+        """
+        Run a coroutine in the current event loop or create one.
+
+        Useful for calling async methods from sync code.
+
+        Args:
+            coro: Coroutine to run
+
+        Returns:
+            Result of the coroutine
+        """
+        try:
+            loop = asyncio.get_running_loop()
+            # If we're in an async context, schedule it
+            return asyncio.ensure_future(coro)
+        except RuntimeError:
+            # No running loop, create one
+            return asyncio.run(coro)
