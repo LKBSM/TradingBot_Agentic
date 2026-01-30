@@ -14,7 +14,7 @@
 # =============================================================================
 
 # =============================================================================
-# ⚙️ CONFIG - MODIFY THESE VALUES
+# CONFIG - MODIFY THESE VALUES
 # =============================================================================
 
 # Your GitHub Personal Access Token (with repo access)
@@ -25,10 +25,11 @@ GITHUB_TOKEN = "your_github_token_here"  # <-- REPLACE THIS
 GITHUB_USERNAME = "LKBSM"
 GITHUB_REPO = "TradingBot_Agentic"
 
-# Tag containing your Gold data (or "main" for latest)
-DATA_TAG = "GOLD 2019-24 Latest"  # Your data tag
+# Release info (your Gold data is stored as a release asset)
+RELEASE_TAG = "v1.0"  # The release tag
+DATA_FILENAME = "XAU_15MIN_2019_2024.csv"  # Asset filename
 
-# Path to Gold data file in the repo
+# Local path where data will be saved
 GOLD_DATA_PATH = "data/XAU_15MIN_2019_2024.csv"
 
 # Training configuration
@@ -72,43 +73,82 @@ for pkg in packages:
 print("\n✅ Packages installed!")
 
 # =============================================================================
-# 🚀 STEP 2: CLONE REPOSITORY
+# STEP 2: CLONE REPOSITORY AND DOWNLOAD DATA FROM RELEASE
 # =============================================================================
 print("\n" + "=" * 70)
-print("STEP 2: Cloning repository...")
+print("STEP 2: Cloning repository and downloading data...")
 print("=" * 70)
 
-# Clone with token authentication
+import requests
+
+# Clone with token authentication (main branch)
 repo_url = f"https://{GITHUB_TOKEN}@github.com/{GITHUB_USERNAME}/{GITHUB_REPO}.git"
 clone_dir = f"/content/{GITHUB_REPO}"
 
 if os.path.exists(clone_dir):
     print(f"  Repository already exists at {clone_dir}")
     os.chdir(clone_dir)
-    subprocess.run(["git", "fetch", "--all"], capture_output=True)
-    subprocess.run(["git", "checkout", DATA_TAG], capture_output=True)
+    subprocess.run(["git", "pull"], capture_output=True)
 else:
-    result = subprocess.run(
-        ["git", "clone", "--branch", DATA_TAG, repo_url, clone_dir],
-        capture_output=True, text=True
-    )
-    if result.returncode != 0:
-        # Try cloning main and then checkout tag
-        subprocess.run(["git", "clone", repo_url, clone_dir], capture_output=True)
-        os.chdir(clone_dir)
-        subprocess.run(["git", "checkout", DATA_TAG], capture_output=True)
-    else:
-        os.chdir(clone_dir)
+    subprocess.run(["git", "clone", repo_url, clone_dir], capture_output=True)
+    os.chdir(clone_dir)
 
-print(f"  ✅ Repository cloned to {clone_dir}")
-print(f"  ✅ Checked out: {DATA_TAG}")
+print(f"  Repository cloned to {clone_dir}")
+
+# Create data directory
+os.makedirs("data", exist_ok=True)
+
+# Download Gold data from GitHub Release
+print(f"\n  Downloading Gold data from release {RELEASE_TAG}...")
+
+# Get release assets via GitHub API
+api_url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{GITHUB_REPO}/releases/tags/{RELEASE_TAG}"
+headers = {
+    "Authorization": f"token {GITHUB_TOKEN}",
+    "Accept": "application/vnd.github.v3+json"
+}
+
+response = requests.get(api_url, headers=headers)
+if response.status_code == 200:
+    release_data = response.json()
+    assets = release_data.get("assets", [])
+
+    # Find the data file
+    data_asset = None
+    for asset in assets:
+        if asset["name"] == DATA_FILENAME:
+            data_asset = asset
+            break
+
+    if data_asset:
+        # Download the asset
+        download_url = data_asset["url"]
+        download_headers = {
+            "Authorization": f"token {GITHUB_TOKEN}",
+            "Accept": "application/octet-stream"
+        }
+
+        print(f"  Downloading {DATA_FILENAME} ({data_asset['size'] / 1024 / 1024:.1f} MB)...")
+        data_response = requests.get(download_url, headers=download_headers, stream=True)
+
+        if data_response.status_code == 200:
+            with open(GOLD_DATA_PATH, "wb") as f:
+                for chunk in data_response.iter_content(chunk_size=8192):
+                    f.write(chunk)
+            print(f"  Gold data downloaded to {GOLD_DATA_PATH}")
+        else:
+            print(f"  ERROR downloading: {data_response.status_code}")
+    else:
+        print(f"  ERROR: Asset {DATA_FILENAME} not found in release")
+else:
+    print(f"  ERROR getting release: {response.status_code}")
 
 # Verify Gold data exists
 if os.path.exists(GOLD_DATA_PATH):
-    print(f"  ✅ Gold data found: {GOLD_DATA_PATH}")
+    file_size = os.path.getsize(GOLD_DATA_PATH) / 1024 / 1024
+    print(f"  Gold data ready: {GOLD_DATA_PATH} ({file_size:.1f} MB)")
 else:
-    print(f"  ❌ Gold data NOT found at: {GOLD_DATA_PATH}")
-    print("     Please check DATA_TAG and GOLD_DATA_PATH in config")
+    print(f"  FAILED: Gold data NOT found at: {GOLD_DATA_PATH}")
 
 # =============================================================================
 # 🚀 STEP 3: IMPORTS
