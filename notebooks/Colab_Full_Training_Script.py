@@ -26,7 +26,7 @@ GITHUB_USERNAME = "LKBSM"
 GITHUB_REPO = "TradingBot_Agentic"
 
 # Tag containing your Gold data (or "main" for latest)
-DATA_TAG = "main"  # <-- REPLACE with your data tag if different
+DATA_TAG = "GOLD 2019-24 Latest"  # Your data tag
 
 # Path to Gold data file in the repo
 GOLD_DATA_PATH = "data/XAU_15MIN_2019_2024.csv"
