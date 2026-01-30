@@ -34,8 +34,8 @@ GOLD_DATA_PATH = "data/XAU_15MIN_2019_2024.csv"
 
 # Training configuration
 TOTAL_TIMESTEPS = 500_000  # Reduce to 100_000 for quick test
-EVAL_FREQ = 10_000
-EARLY_STOPPING_PATIENCE = 5
+EVAL_FREQ = 25_000  # Evaluate less frequently (every 25k steps)
+EARLY_STOPPING_PATIENCE = 15  # More patience - stop after 15 evals with no improvement
 
 # =============================================================================
 # 🚀 STEP 1: SETUP AND INSTALL
@@ -590,25 +590,27 @@ class TrainingCallback(BaseCallback):
         self.best_sharpe = -np.inf
         self.no_improve = 0
         self.results = []
+        self.min_steps_before_stopping = 100_000  # Don't stop before 100k steps
 
     def _on_step(self):
         if self.n_calls % self.eval_freq == 0:
             metrics = self._evaluate()
             self.results.append({'step': self.n_calls, **metrics})
 
-            print(f"\n📊 Step {self.n_calls:,}: Sharpe={metrics['sharpe']:.2f}, MaxDD={metrics['max_dd']:.1%}, WinRate={metrics['win_rate']:.1%}")
+            print(f"\nStep {self.n_calls:,}: Sharpe={metrics['sharpe']:.2f}, MaxDD={metrics['max_dd']:.1%}, WinRate={metrics['win_rate']:.1%}, Trades={metrics['trades']}")
 
             if metrics['sharpe'] > self.best_sharpe + 0.01:
                 self.best_sharpe = metrics['sharpe']
                 self.no_improve = 0
                 self.model.save('models/best_model')
-                print(f"   ⭐ New best! Sharpe: {self.best_sharpe:.2f}")
+                print(f"   New best! Sharpe: {self.best_sharpe:.2f}")
             else:
                 self.no_improve += 1
                 print(f"   No improvement ({self.no_improve}/{self.patience})")
 
-            if self.no_improve >= self.patience:
-                print(f"\n⚠️ Early stopping!")
+            # Only allow early stopping after minimum steps
+            if self.no_improve >= self.patience and self.n_calls >= self.min_steps_before_stopping:
+                print(f"\nEarly stopping at {self.n_calls:,} steps!")
                 return False
         return True
 
