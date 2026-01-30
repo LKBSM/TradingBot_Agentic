@@ -627,6 +627,269 @@ class BaseAgent(ABC):
         return f"<{self.__class__.__name__}(id={self.full_id}, state={self.state.name})>"
 
     # =========================================================================
+    # GRACEFUL DEGRADATION
+    # =========================================================================
+
+    def _init_degradation(
+        self,
+        error_budget: int = 5,
+        recovery_interval_sec: float = 60.0,
+        max_recovery_attempts: int = 3,
+    ) -> None:
+        """
+        Initialize graceful degradation tracking.
+
+        Call this in your subclass __init__ to enable degradation support.
+
+        Args:
+            error_budget: Number of errors before entering degraded mode
+            recovery_interval_sec: Seconds between recovery attempts
+            max_recovery_attempts: Max attempts before giving up
+        """
+        self._degradation_enabled = True
+        self._error_budget = error_budget
+        self._error_budget_remaining = error_budget
+        self._recovery_interval_sec = recovery_interval_sec
+        self._max_recovery_attempts = max_recovery_attempts
+        self._recovery_attempts = 0
+        self._is_degraded = False
+        self._degradation_reason = ""
+        self._degraded_since: Optional[datetime] = None
+        self._consecutive_errors = 0
+        self._last_error_time: Optional[datetime] = None
+
+    @property
+    def is_degraded(self) -> bool:
+        """Check if agent is operating in degraded mode."""
+        return getattr(self, '_is_degraded', False)
+
+    @property
+    def degradation_reason(self) -> str:
+        """Get reason for degradation."""
+        return getattr(self, '_degradation_reason', '')
+
+    def _record_operation_error(self, error: Exception) -> None:
+        """
+        Record an operation error for degradation tracking.
+
+        If the error budget is exhausted, the agent enters degraded mode.
+
+        Args:
+            error: The exception that occurred
+        """
+        if not getattr(self, '_degradation_enabled', False):
+            return
+
+        self._consecutive_errors += 1
+        self._last_error_time = datetime.now()
+
+        with self._metrics_lock:
+            self._metrics.error_count += 1
+
+        self._error_budget_remaining -= 1
+
+        self._logger.warning(
+            f"Operation error (budget: {self._error_budget_remaining}/"
+            f"{self._error_budget}): {error}"
+        )
+
+        if self._error_budget_remaining <= 0 and not self._is_degraded:
+            self._enter_degraded_mode(str(error))
+
+    def _record_operation_success(self) -> None:
+        """
+        Record a successful operation.
+
+        Resets consecutive error count and partially restores error budget.
+        """
+        if not getattr(self, '_degradation_enabled', False):
+            return
+
+        self._consecutive_errors = 0
+
+        # Slowly restore error budget on success
+        if self._error_budget_remaining < self._error_budget:
+            self._error_budget_remaining = min(
+                self._error_budget,
+                self._error_budget_remaining + 1
+            )
+
+    def _enter_degraded_mode(self, reason: str) -> None:
+        """
+        Enter degraded mode - reduce functionality rather than fail.
+
+        In degraded mode, the agent:
+        - Returns conservative fallback values
+        - Reduces processing frequency
+        - Logs all operations for audit
+        - Attempts periodic recovery
+
+        Args:
+            reason: Why the agent is degrading
+        """
+        self._is_degraded = True
+        self._degradation_reason = reason
+        self._degraded_since = datetime.now()
+
+        self._logger.warning(
+            f"DEGRADED MODE ACTIVATED: {reason}. "
+            f"Agent will use fallback behavior."
+        )
+
+        self._record_state_change(
+            self._state,
+            f"Degraded: {reason}"
+        )
+
+    def _exit_degraded_mode(self) -> None:
+        """Exit degraded mode after successful recovery."""
+        if not self._is_degraded:
+            return
+
+        self._is_degraded = False
+        self._degradation_reason = ""
+        self._recovery_attempts = 0
+        self._error_budget_remaining = self._error_budget
+        self._consecutive_errors = 0
+
+        duration = ""
+        if self._degraded_since:
+            elapsed = (datetime.now() - self._degraded_since).total_seconds()
+            duration = f" (was degraded for {elapsed:.0f}s)"
+            self._degraded_since = None
+
+        self._logger.info(
+            f"DEGRADED MODE EXITED: Agent recovered{duration}"
+        )
+
+    def attempt_recovery(self) -> bool:
+        """
+        Attempt to recover from degraded mode.
+
+        Override in subclasses to implement custom recovery logic
+        (reconnect to API, reload model, etc.)
+
+        Returns:
+            True if recovery successful
+        """
+        if not getattr(self, '_degradation_enabled', False):
+            return True
+
+        if not self._is_degraded:
+            return True
+
+        self._recovery_attempts += 1
+
+        if self._recovery_attempts > self._max_recovery_attempts:
+            self._logger.error(
+                f"Recovery failed after {self._max_recovery_attempts} attempts. "
+                f"Agent remains degraded."
+            )
+            return False
+
+        self._logger.info(
+            f"Recovery attempt {self._recovery_attempts}/"
+            f"{self._max_recovery_attempts}..."
+        )
+
+        try:
+            # Call subclass recovery hook
+            if self._on_recovery_attempt():
+                self._exit_degraded_mode()
+                return True
+            return False
+        except Exception as e:
+            self._logger.error(f"Recovery attempt failed: {e}")
+            return False
+
+    def _on_recovery_attempt(self) -> bool:
+        """
+        Hook for subclass recovery logic.
+
+        Override this to implement custom recovery (reconnect, reload, etc.)
+
+        Returns:
+            True if recovery was successful
+        """
+        # Default: just reset the error budget and try again
+        return True
+
+    def get_fallback_decision(self) -> Dict[str, Any]:
+        """
+        Get a safe fallback decision when degraded.
+
+        Override in subclasses for agent-specific fallback behavior.
+
+        Returns:
+            Conservative/safe decision dictionary
+        """
+        return {
+            'decision': 'REJECT',
+            'reason': f'Agent degraded: {self._degradation_reason}',
+            'confidence': 0.0,
+            'position_multiplier': 0.0,
+            'is_fallback': True,
+        }
+
+    def safe_execute(
+        self,
+        operation: Callable,
+        fallback_value: Any = None,
+        *args,
+        **kwargs
+    ) -> Any:
+        """
+        Execute an operation with degradation-aware error handling.
+
+        If the operation fails:
+        1. Records the error for budget tracking
+        2. Returns fallback value if degraded
+        3. Attempts recovery if needed
+
+        Args:
+            operation: Function to execute
+            fallback_value: Value to return on failure
+            *args, **kwargs: Arguments to pass to operation
+
+        Returns:
+            Operation result, or fallback_value on failure
+        """
+        try:
+            result = operation(*args, **kwargs)
+            self._record_operation_success()
+            return result
+        except Exception as e:
+            self._record_operation_error(e)
+            self._logger.error(
+                f"Operation failed ({operation.__name__}): {e}"
+            )
+
+            if self._is_degraded:
+                self._logger.info(
+                    f"Returning fallback value for {operation.__name__}"
+                )
+                return fallback_value
+
+            return fallback_value
+
+    def get_degradation_status(self) -> Dict[str, Any]:
+        """Get current degradation status."""
+        if not getattr(self, '_degradation_enabled', False):
+            return {'enabled': False}
+
+        return {
+            'enabled': True,
+            'is_degraded': self._is_degraded,
+            'reason': self._degradation_reason,
+            'error_budget': f"{self._error_budget_remaining}/{self._error_budget}",
+            'consecutive_errors': self._consecutive_errors,
+            'recovery_attempts': f"{self._recovery_attempts}/{self._max_recovery_attempts}",
+            'degraded_since': (
+                self._degraded_since.isoformat() if self._degraded_since else None
+            ),
+        }
+
+    # =========================================================================
     # ASYNC SUPPORT (Sprint 3: Real-time Data)
     # =========================================================================
 

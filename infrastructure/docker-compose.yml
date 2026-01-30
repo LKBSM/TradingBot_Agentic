@@ -8,6 +8,9 @@
 # - Redis (caching)
 # - PostgreSQL (optional, for audit logs)
 #
+# SECURITY: All passwords MUST be set via .env file. No defaults are provided
+# for production credentials. Copy .env.example to .env and fill in values.
+#
 # Usage:
 #   Start:   docker-compose up -d
 #   Stop:    docker-compose down
@@ -29,13 +32,14 @@ services:
     container_name: trading-bot
     restart: unless-stopped
     ports:
-      - "8080:8080"   # REST API
-      - "9090:9090"   # Metrics
+      - "127.0.0.1:8080:8080"   # REST API - bound to localhost only
+      - "127.0.0.1:9090:9090"   # Metrics  - bound to localhost only
     environment:
       - ENVIRONMENT=production
       - LOG_LEVEL=INFO
       - REDIS_URL=redis://redis:6379/0
-      - DATABASE_URL=postgresql://tradingbot:${DB_PASSWORD:-tradingbot}@postgres:5432/tradingbot
+      # SECURITY FIX: DB_PASSWORD is REQUIRED (no default)
+      - DATABASE_URL=postgresql://tradingbot:${DB_PASSWORD}@postgres:5432/tradingbot
       # API Keys (from .env file)
       - NEWS_API_KEY=${NEWS_API_KEY:-}
       - FINNHUB_API_KEY=${FINNHUB_API_KEY:-}
@@ -72,11 +76,13 @@ services:
     image: redis:7-alpine
     container_name: trading-redis
     restart: unless-stopped
-    ports:
-      - "6379:6379"
+    # SECURITY FIX: Do NOT expose Redis to host. Only accessible within Docker network.
+    # If you need external access for debugging, uncomment the ports below temporarily.
+    # ports:
+    #   - "127.0.0.1:6379:6379"
     volumes:
       - redis-data:/data
-    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru --requirepass ${REDIS_PASSWORD:-}
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -92,11 +98,14 @@ services:
     image: postgres:15-alpine
     container_name: trading-postgres
     restart: unless-stopped
-    ports:
-      - "5432:5432"
+    # SECURITY FIX: Do NOT expose PostgreSQL to host. Only accessible within Docker network.
+    # If you need external access for debugging, uncomment the ports below temporarily.
+    # ports:
+    #   - "127.0.0.1:5432:5432"
     environment:
       - POSTGRES_USER=tradingbot
-      - POSTGRES_PASSWORD=${DB_PASSWORD:-tradingbot}
+      # SECURITY FIX: DB_PASSWORD is REQUIRED (no insecure default)
+      - POSTGRES_PASSWORD=${DB_PASSWORD:?DB_PASSWORD must be set in .env file}
       - POSTGRES_DB=tradingbot
     volumes:
       - postgres-data:/var/lib/postgresql/data
@@ -116,8 +125,9 @@ services:
     image: prom/prometheus:latest
     container_name: trading-prometheus
     restart: unless-stopped
+    # SECURITY FIX: Bound to localhost only
     ports:
-      - "9091:9090"
+      - "127.0.0.1:9091:9090"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./alert-rules.yml:/etc/prometheus/alert-rules.yml:ro
@@ -137,11 +147,13 @@ services:
     image: grafana/grafana:latest
     container_name: trading-grafana
     restart: unless-stopped
+    # SECURITY FIX: Bound to localhost only
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     environment:
       - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      # SECURITY FIX: GRAFANA_PASSWORD is REQUIRED (no insecure "admin" default)
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:?GRAFANA_PASSWORD must be set in .env file}
       - GF_USERS_ALLOW_SIGN_UP=false
     volumes:
       - grafana-data:/var/lib/grafana
@@ -159,8 +171,9 @@ services:
     image: prom/alertmanager:latest
     container_name: trading-alertmanager
     restart: unless-stopped
+    # SECURITY FIX: Bound to localhost only
     ports:
-      - "9093:9093"
+      - "127.0.0.1:9093:9093"
     volumes:
       - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
       - alertmanager-data:/alertmanager

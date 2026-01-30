@@ -47,8 +47,136 @@ class PositionState(IntEnum):
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from src.environment.risk_manager import DynamicRiskManager as RiskManager
-from src.tests.monitor_training import TradeLogger
 from src.environment.strategy_features import SmartMoneyEngine
+
+# =============================================================================
+# SECURITY FIX: TradeLogger abstraction to decouple from test code
+# =============================================================================
+# Previously imported from src.tests.monitor_training which is a test module.
+# Now we use a lightweight local implementation or optional import.
+
+class TradeLogger:
+    """
+    Lightweight trade logger for production use.
+
+    This replaces the import from test code (src.tests.monitor_training)
+    to properly decouple production code from test infrastructure.
+    """
+
+    def __init__(self):
+        self.trades = []
+        self.episode_logs = []
+        self._current_episode = 0
+
+    def log_trade(self, trade_id: int, action: str, entry_price: float,
+                  exit_price: float = None, pnl: float = 0.0, **kwargs):
+        """Log a trade event."""
+        self.trades.append({
+            'trade_id': trade_id,
+            'episode': self._current_episode,
+            'action': action,
+            'entry_price': entry_price,
+            'exit_price': exit_price,
+            'pnl': pnl,
+            **kwargs
+        })
+
+    def new_episode(self):
+        """Start a new episode."""
+        self._current_episode += 1
+
+    def get_trades(self) -> list:
+        """Get all logged trades."""
+        return self.trades.copy()
+
+    def get_summary(self) -> dict:
+        """Get trade summary statistics."""
+        if not self.trades:
+            return {'total_trades': 0, 'total_pnl': 0.0}
+
+        total_pnl = sum(t.get('pnl', 0.0) for t in self.trades)
+        winning = sum(1 for t in self.trades if t.get('pnl', 0.0) > 0)
+        losing = sum(1 for t in self.trades if t.get('pnl', 0.0) < 0)
+
+        return {
+            'total_trades': len(self.trades),
+            'winning_trades': winning,
+            'losing_trades': losing,
+            'total_pnl': total_pnl,
+            'win_rate': winning / len(self.trades) if self.trades else 0.0
+        }
+
+
+# =============================================================================
+# SECURITY FIX: DataFrame Validation Schema
+# =============================================================================
+
+class DataFrameValidationError(ValueError):
+    """Raised when DataFrame validation fails."""
+    pass
+
+
+def validate_trading_dataframe(df: pd.DataFrame, required_columns: list = None) -> None:
+    """
+    Validate a trading DataFrame meets minimum requirements.
+
+    Args:
+        df: DataFrame to validate
+        required_columns: List of required column names (case-insensitive)
+
+    Raises:
+        DataFrameValidationError: If validation fails
+    """
+    if df is None:
+        raise DataFrameValidationError("DataFrame cannot be None")
+
+    if not isinstance(df, pd.DataFrame):
+        raise DataFrameValidationError(f"Expected pandas DataFrame, got {type(df)}")
+
+    if len(df) == 0:
+        raise DataFrameValidationError("DataFrame is empty")
+
+    # Default required columns for OHLCV data
+    if required_columns is None:
+        required_columns = ['open', 'high', 'low', 'close', 'volume']
+
+    # Case-insensitive column check
+    df_cols_lower = [c.lower() for c in df.columns]
+    missing = [col for col in required_columns if col.lower() not in df_cols_lower]
+
+    if missing:
+        raise DataFrameValidationError(
+            f"Missing required columns: {missing}. "
+            f"Available columns: {list(df.columns)}"
+        )
+
+    # Check for price columns having valid values
+    price_cols = ['open', 'high', 'low', 'close']
+    for col in price_cols:
+        col_name = next((c for c in df.columns if c.lower() == col), None)
+        if col_name:
+            if df[col_name].isna().all():
+                raise DataFrameValidationError(f"Column '{col_name}' contains only NaN values")
+
+            non_null = df[col_name].dropna()
+            if len(non_null) > 0 and (non_null <= 0).any():
+                invalid_count = (non_null <= 0).sum()
+                raise DataFrameValidationError(
+                    f"Column '{col_name}' contains {invalid_count} non-positive values. "
+                    f"Price data must be positive."
+                )
+
+    # Check for sufficient data
+    if len(df) < 100:
+        warnings.warn(
+            f"DataFrame has only {len(df)} rows. "
+            f"Recommended minimum is 100 for reliable training."
+        )
+
+    # Check for duplicate indices
+    if df.index.duplicated().any():
+        dup_count = df.index.duplicated().sum()
+        warnings.warn(f"DataFrame has {dup_count} duplicate index values")
 
 # IMPORTANT: Import constants from config.py
 try:
@@ -75,105 +203,37 @@ try:
         # Episode length configuration
         FIXED_EPISODE_LENGTH, USE_FIXED_EPISODE_LENGTH
     )
-except ImportError:
-    print("WARNING: Could not import from config. Using production fallback parameters.")
-
-    # ✅ FALLBACK COMPLET CORRIGÉ
-    TRAIN_END_DATE = "2023-06-30 23:59:00"
-    INITIAL_BALANCE = 1000.0
-    TRANSACTION_FEE_PERCENTAGE = 0.0005
-    SLIPPAGE_PERCENTAGE = 0.0001
-    TRADE_COMMISSION_PER_TRADE = 0.0005
-    LOOKBACK_WINDOW_SIZE = 30  # Reduced from 60 for faster training
-    RISK_PERCENTAGE_PER_TRADE = 0.01
-    TAKE_PROFIT_PERCENTAGE = 0.02
-    STOP_LOSS_PERCENTAGE = 0.01
-    TSL_START_PROFIT_MULTIPLIER = 1.0
-    TSL_TRAIL_DISTANCE_MULTIPLIER = 0.5
-    ALLOW_NEGATIVE_REVENUE_SELL = False
-    ALLOW_NEGATIVE_BALANCE = False
-    MINIMUM_ALLOWED_BALANCE = 100.0
-    MIN_TRADE_QUANTITY = 0.01
-
-    # ✅ AJOUTÉ: Variables manquantes
-    ACTION_SPACE_TYPE = 'discrete'
-    OVERNIGHT_HOLDING_PENALTY = 0.0
-    HOLD_PENALTY_FACTOR = 0.005
-    FAILED_TRADE_ATTEMPT_PENALTY = 0.0
-
-    # NEW: Long/Short action constants (fallback)
-    NUM_ACTIONS = 5
-    ACTION_NAMES = {0: 'HOLD', 1: 'OPEN_LONG', 2: 'CLOSE_LONG', 3: 'OPEN_SHORT', 4: 'CLOSE_SHORT'}
-    ACTION_HOLD = 0
-    ACTION_OPEN_LONG = 1
-    ACTION_CLOSE_LONG = 2
-    ACTION_OPEN_SHORT = 3
-    ACTION_CLOSE_SHORT = 4
-    POSITION_FLAT = 0
-    POSITION_LONG = 1
-    POSITION_SHORT = -1
-    ENABLE_SHORT_SELLING = True
-    SHORT_BORROWING_FEE_DAILY = 0.0001
-    SHORT_OVERNIGHT_SWAP_PCT = 0.0002
-
-    # Reward Weights
-    REWARD_SCALING_FACTOR = 100.0
-    W_RETURN = 1.0
-    W_DRAWDOWN = 0.5
-    W_FRICTION = 0.1
-    W_LEVERAGE = 1.0
-    W_TURNOVER = 0.0
-    W_DURATION = 0.1
-
-    # Penalties and Bonuses
-    DOWNSIDE_PENALTY_MULTIPLIER = 1.0
-    WINNING_TRADE_BONUS = 2.0
-    LOSING_TRADE_PENALTY = 5.0
-    TRADE_COOLDOWN_STEPS = 5
-    RAPID_TRADE_PENALTY = 1.0
-    MAX_LEVERAGE = 1.0
-    MAX_DURATION_STEPS = 40
-
-    # Fee constants (fallback)
-    TRADE_COMMISSION_PCT_OF_TRADE = 0.0005
-    TRADE_COMMISSION_MIN_PCT_CAPITAL = 0.0001
-
-    # Reward scaling (fallback)
-    REWARD_TANH_SCALE = 0.3
-    REWARD_OUTPUT_SCALE = 5.0
-
-    # Episode length (fallback)
-    FIXED_EPISODE_LENGTH = 500
-    USE_FIXED_EPISODE_LENGTH = True
-
-    OHLCV_COLUMNS = {
-        "timestamp": "Date",
-        "open": "Open",
-        "high": "High",
-        "low": "Low",
-        "close": "Close",
-        "volume": "Volume"
-    }
-
-    SMC_CONFIG = {
-        "RSI_WINDOW": 7,
-        "MACD_FAST": 8,
-        "MACD_SLOW": 17,
-        "MACD_SIGNAL": 9,
-        "BB_WINDOW": 20,
-        "ATR_WINDOW": 7,
-        "FRACTAL_WINDOW": 2,
-        "FVG_THRESHOLD": 0.0,
-    }
-
-    FEATURES = [
-        'Open', 'High', 'Low', 'Close', 'Volume',
-        'RSI', 'MACD_Diff', 'MACD_line', 'MACD_signal',
-        'BB_L', 'BB_M', 'BB_H', 'ATR', 'SPREAD', 'BODY_SIZE',
-        'UP_FRACTAL', 'DOWN_FRACTAL', 'FVG_SIGNAL', 'FVG_SIZE_NORM',
-        'BOS_SIGNAL', 'CHOCH_SIGNAL', 'BULLISH_OB_HIGH', 'BULLISH_OB_LOW',
-        'BEARISH_OB_HIGH', 'BEARISH_OB_LOW', 'OB_STRENGTH_NORM'
-    ]
+except ImportError as _config_import_error:
+    # ==========================================================================
+    # SECURITY FIX: FAIL-FAST instead of silent fallback.
+    #
+    # PROBLEM: The previous fallback silently used DIFFERENT values than config.py:
+    #   - LOOKBACK_WINDOW_SIZE: fallback=30 vs config=20
+    #   - LOSING_TRADE_PENALTY: fallback=5.0 vs config=0.0
+    #   - HOLD_PENALTY_FACTOR: fallback=0.005 vs config=0.01
+    #   - FEATURES: fallback=26 features vs config=15 features
+    #
+    # IMPACT: If config import fails (e.g., wrong PYTHONPATH, missing file),
+    # the bot would silently train/trade with completely different parameters,
+    # leading to unpredictable behavior and potential financial losses.
+    #
+    # FIX: Raise immediately with a clear error message explaining how to fix.
+    # ==========================================================================
+    import logging as _logging
+    _logger = _logging.getLogger(__name__)
+    _logger.critical(
+        "FATAL: Cannot import from config.py. The trading environment CANNOT "
+        "operate with fallback parameters because they differ from the validated "
+        "configuration. This would cause silent behavior changes.\n"
+        "Original error: %s\n"
+        "Fix: Ensure config.py is importable. Run: pip install -e . "
+        "from the project root, or verify your PYTHONPATH includes the project root.",
+        _config_import_error
+    )
+    raise ImportError(
+        f"TradingEnv requires config.py to be importable. Silent fallback is disabled "
+        f"to prevent parameter mismatch. Original error: {_config_import_error}"
+    ) from _config_import_error
 
 class TradingEnv(gym.Env):
     metadata = {"render_modes": ["human", "none"], "render_fps": 30}
@@ -247,6 +307,14 @@ class TradingEnv(gym.Env):
     def __init__(self, df: pd.DataFrame, render_mode: str = "none", **kwargs):
         super().__init__()
         self.render_mode = render_mode
+
+        # =====================================================================
+        # SECURITY FIX: Validate DataFrame before any processing
+        # =====================================================================
+        try:
+            validate_trading_dataframe(df)
+        except DataFrameValidationError as e:
+            raise ValueError(f"Invalid trading data: {e}")
 
         self.lookback_window_size = kwargs.get('lookback_window_size', LOOKBACK_WINDOW_SIZE)
         self.initial_balance = kwargs.get('initial_balance', INITIAL_BALANCE)
@@ -370,20 +438,26 @@ class TradingEnv(gym.Env):
             'short_selling_disabled': 0
         }
 
-        # SCALER CONFIGURATION - FIXED DATA LEAKAGE
-        # Use MinMaxScaler with clip=True to handle out-of-distribution values
+        # =====================================================================
+        # SCALER CONFIGURATION - DATA LEAKAGE PREVENTION
+        # =====================================================================
         # CRITICAL: Scaler must be fit ONLY on training data to prevent data leakage
-        # Options:
-        #   1. Pass scaler_fit_end_idx to limit fitting to training portion
-        #   2. Pass pre_fitted_scaler to use same scaler across train/val/test
-        #   3. If neither provided, fits on all data (legacy behavior with warning)
+        # Data leakage = fitting scaler on future data that wouldn't be available
+        # in live trading, which leads to overly optimistic backtest results.
+        #
+        # Options (in order of preference):
+        #   1. Pass pre_fitted_scaler (recommended for val/test environments)
+        #   2. Pass scaler_fit_end_idx to limit fitting to training portion
+        #   3. Set strict_mode=False to allow legacy behavior (NOT RECOMMENDED)
 
         pre_fitted_scaler = kwargs.get('pre_fitted_scaler', None)
         scaler_fit_end_idx = kwargs.get('scaler_fit_end_idx', None)
+        strict_mode = kwargs.get('strict_scaler_mode', True)  # Default: strict
 
         if pre_fitted_scaler is not None:
             # Use externally fitted scaler (recommended for val/test environments)
             self.scaler = pre_fitted_scaler
+            self._scaler_source = "pre_fitted"
         else:
             self.scaler = MinMaxScaler(clip=True)  # clip=True prevents out-of-range values
 
@@ -392,22 +466,43 @@ class TradingEnv(gym.Env):
                 train_data = self.df[self.features].iloc[:scaler_fit_end_idx].dropna()
                 if not train_data.empty:
                     self.scaler.fit(train_data.values)
+                    self._scaler_source = f"training_data[:{scaler_fit_end_idx}]"
                 else:
-                    warnings.warn("No valid training rows for scaling.")
-                    self.scaler = None
-            else:
-                # Legacy behavior - fit on all data (NOT RECOMMENDED)
-                valid_rows = self.df[self.features].dropna()
-                if not valid_rows.empty:
-                    warnings.warn(
-                        "SCALER WARNING: Fitting on ALL data. This causes data leakage! "
-                        "Pass 'scaler_fit_end_idx' (training end index) or 'pre_fitted_scaler' "
-                        "to fix this issue."
+                    raise ValueError(
+                        "No valid training rows for scaler fitting. "
+                        "Check that scaler_fit_end_idx points to valid data."
                     )
-                    self.scaler.fit(valid_rows.values)
+            else:
+                # SECURITY FIX: In strict mode, refuse to fit on all data
+                if strict_mode:
+                    raise ValueError(
+                        "DATA LEAKAGE ERROR: No scaler configuration provided. "
+                        "Fitting scaler on all data causes data leakage and inflated backtest results. "
+                        "Solutions:\n"
+                        "  1. Pass 'pre_fitted_scaler' (fit on training data only)\n"
+                        "  2. Pass 'scaler_fit_end_idx' (index where training data ends)\n"
+                        "  3. Set 'strict_scaler_mode=False' to allow legacy behavior (NOT RECOMMENDED)\n"
+                        "\nExample:\n"
+                        "  # Fit scaler on training data only\n"
+                        "  train_end_idx = int(len(df) * 0.7)\n"
+                        "  env = TradingEnv(df, scaler_fit_end_idx=train_end_idx)"
+                    )
                 else:
-                    warnings.warn("No valid rows for scaling. Check feature generation pipeline.")
-                    self.scaler = None
+                    # Legacy behavior - fit on all data (NOT RECOMMENDED)
+                    valid_rows = self.df[self.features].dropna()
+                    if not valid_rows.empty:
+                        warnings.warn(
+                            "SCALER WARNING: Fitting on ALL data. This causes data leakage! "
+                            "Pass 'scaler_fit_end_idx' (training end index) or 'pre_fitted_scaler' "
+                            "to fix this issue. Set strict_scaler_mode=True to enforce this.",
+                            category=UserWarning
+                        )
+                        self.scaler.fit(valid_rows.values)
+                        self._scaler_source = "all_data_LEAKY"
+                    else:
+                        raise ValueError(
+                            "No valid rows for scaling. Check feature generation pipeline."
+                        )
         action_space_type = kwargs.get('action_space_type', ACTION_SPACE_TYPE)
         if action_space_type == "discrete":
             # NEW: 5 actions for long/short trading
@@ -718,28 +813,77 @@ class TradingEnv(gym.Env):
                 f"⚠️ Observation shape mismatch: expected {expected_size}, got {observation.shape[0]}."
             )
 
-        # PERFORMANCE FIX: Optimized NaN/Inf handling
-        # Instead of checking every step (O(n) per step), we:
-        # 1. Use np.nan_to_num unconditionally (faster than check + replace)
-        # 2. Only log warnings occasionally to avoid console spam
-        # This reduces overhead from ~1ms to ~0.1ms per step
-        observation = np.nan_to_num(observation, nan=0.0, posinf=0.0, neginf=0.0)
+        # =====================================================================
+        # SECURITY FIX: Intelligent NaN/Inf handling
+        # =====================================================================
+        # Problem: Replacing NaN with 0.0 corrupts indicator semantics
+        #   - RSI=0 means "extremely oversold" (wrong signal)
+        #   - RSI=NaN means "not enough data" (different meaning)
+        #
+        # Solution: Context-aware replacement
+        #   - Portfolio metrics (balance, etc.): Use actual calculated values
+        #   - Technical indicators: Use last known value (forward-fill logic)
+        #   - Only fall back to neutral values if no history available
 
-        # Debug validation: Only check at episode start or every N steps
-        if hasattr(self, '_last_nan_check_step'):
-            steps_since_check = self.current_step - self._last_nan_check_step
-            should_check = steps_since_check >= 100  # Check every 100 steps
-        else:
-            should_check = True
+        # Track NaN locations before any modification
+        has_nan = np.isnan(observation).any()
+        has_inf = np.isinf(observation).any()
 
-        if should_check:
-            self._last_nan_check_step = self.current_step
-            # Quick check if we just cleaned any NaN/Inf
-            if np.isnan(scaled_features).any() or np.isinf(scaled_features).any():
-                bad_cols = obs_df[self.features].columns[
-                    np.isnan(obs_df[self.features].values).any(axis=0)
-                ].tolist()
-                print(f"[WARNING] Features contain NaN/Inf at step {self.current_step} in columns: {bad_cols}")
+        if has_nan or has_inf:
+            # Split observation into feature window and portfolio state
+            feature_size = len(self.features) * self.lookback_window_size
+            feature_part = observation[:feature_size]
+            portfolio_part = observation[feature_size:]  # [balance, stock_qty, net_worth]
+
+            # For features: use forward-fill from previous observation if available
+            if has_nan or has_inf:
+                if hasattr(self, '_last_valid_features') and self._last_valid_features is not None:
+                    # Replace NaN/Inf with last known valid values
+                    nan_mask = np.isnan(feature_part) | np.isinf(feature_part)
+                    if nan_mask.any():
+                        feature_part[nan_mask] = self._last_valid_features[nan_mask]
+
+                # Final cleanup: any remaining NaN/Inf get neutral values
+                # Use feature-specific neutral values based on typical ranges
+                feature_part = np.nan_to_num(
+                    feature_part,
+                    nan=0.5,     # Neutral value for normalized features
+                    posinf=1.0,  # Max for normalized features
+                    neginf=0.0   # Min for normalized features
+                )
+
+            # For portfolio state: these should never be NaN (calculated values)
+            # If they are, it indicates a bug - use safe defaults and log
+            if np.isnan(portfolio_part).any() or np.isinf(portfolio_part).any():
+                warnings.warn(
+                    f"Portfolio state contains NaN/Inf at step {self.current_step}. "
+                    f"This may indicate a calculation error. Values: {portfolio_part}"
+                )
+                portfolio_part = np.nan_to_num(
+                    portfolio_part,
+                    nan=1.0,    # Neutral: normalized balance = 1.0
+                    posinf=10.0,  # Cap extreme values
+                    neginf=0.0
+                )
+
+            observation = np.concatenate([feature_part, portfolio_part])
+
+            # Log warning periodically (not every step to avoid spam)
+            if not hasattr(self, '_nan_warning_count'):
+                self._nan_warning_count = 0
+            self._nan_warning_count += 1
+
+            if self._nan_warning_count <= 5 or self._nan_warning_count % 100 == 0:
+                warnings.warn(
+                    f"[Step {self.current_step}] Observation contained NaN/Inf values "
+                    f"(occurrence #{self._nan_warning_count}). Applied intelligent fill."
+                )
+
+        # Store valid features for forward-fill in next step
+        feature_size = len(self.features) * self.lookback_window_size
+        current_features = observation[:feature_size]
+        if not (np.isnan(current_features).any() or np.isinf(current_features).any()):
+            self._last_valid_features = current_features.copy()
 
         return observation
 

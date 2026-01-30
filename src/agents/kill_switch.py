@@ -54,6 +54,27 @@ from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 from collections import deque
 import logging
 
+# =============================================================================
+# PERSISTENCE INTEGRATION
+# =============================================================================
+# Import persistence module for SQLite-backed state storage
+# This ensures Kill Switch state survives bot restarts/crashes
+
+try:
+    from src.persistence.kill_switch_store import (
+        KillSwitchStore,
+        KillSwitchState,
+        BreakerRecord,
+        HaltEventRecord
+    )
+    PERSISTENCE_AVAILABLE = True
+except ImportError:
+    PERSISTENCE_AVAILABLE = False
+    KillSwitchStore = None
+    KillSwitchState = None
+    BreakerRecord = None
+    HaltEventRecord = None
+
 
 # =============================================================================
 # ENUMS AND TYPES
@@ -648,7 +669,9 @@ class KillSwitch:
         self,
         config: Optional[KillSwitchConfig] = None,
         admin_key: Optional[str] = None,
-        initial_equity: float = 100.0
+        initial_equity: float = 100.0,
+        persistence_path: Optional[str] = None,
+        enable_persistence: bool = True
     ):
         """
         Initialize kill switch.
@@ -658,9 +681,43 @@ class KillSwitch:
             admin_key: Admin key for emergency overrides
             initial_equity: Initial account equity for drawdown tracking
                            SECURITY FIX: Defaults to 100.0 to ensure drawdown is tracked
+            persistence_path: Path to SQLite database for state persistence
+            enable_persistence: Whether to enable state persistence (recommended)
         """
         self.config = config or KillSwitchConfig()
         self._initial_equity = max(initial_equity, 1.0)  # Floor at 1.0 to prevent issues
+
+        # =====================================================================
+        # PERSISTENCE SETUP
+        # =====================================================================
+        self._persistence_enabled = enable_persistence and PERSISTENCE_AVAILABLE
+        self._store: Optional[KillSwitchStore] = None
+
+        if self._persistence_enabled:
+            db_path = persistence_path or "./data/kill_switch.db"
+            try:
+                self._store = KillSwitchStore(db_path=db_path)
+
+                # Check for previous crash
+                crash_info = self._store.check_previous_crash()
+                if crash_info:
+                    logging.getLogger("kill_switch.main").warning(
+                        f"PREVIOUS CRASH DETECTED! Last heartbeat: {crash_info['last_heartbeat']}, "
+                        f"PID: {crash_info['previous_pid']}, "
+                        f"Time since: {crash_info['time_since_seconds']:.0f}s"
+                    )
+
+            except Exception as e:
+                logging.getLogger("kill_switch.main").error(
+                    f"Failed to initialize persistence: {e}. "
+                    f"Kill Switch will operate without persistence (NOT RECOMMENDED)."
+                )
+                self._persistence_enabled = False
+        elif enable_persistence and not PERSISTENCE_AVAILABLE:
+            logging.getLogger("kill_switch.main").warning(
+                "Persistence requested but module not available. "
+                "Kill Switch state will NOT survive restarts!"
+            )
 
         # SECURITY: Validate admin key
         raw_key = admin_key or os.environ.get("KILL_SWITCH_ADMIN_KEY", "")
@@ -712,7 +769,18 @@ class KillSwitch:
         # Initialize circuit breakers
         self._init_circuit_breakers()
 
-        self._logger.info("Kill Switch initialized")
+        # =====================================================================
+        # LOAD PERSISTED STATE (if available)
+        # =====================================================================
+        if self._persistence_enabled and self._store:
+            self._load_persisted_state()
+            # Start heartbeat
+            self._store.update_heartbeat()
+
+        self._logger.info(
+            f"Kill Switch initialized "
+            f"(persistence={'enabled' if self._persistence_enabled else 'disabled'})"
+        )
 
     def _init_circuit_breakers(self) -> None:
         """Initialize all circuit breakers."""
@@ -770,6 +838,151 @@ class KillSwitch:
 
         for cfg in breaker_configs:
             self._breakers[cfg.name] = CircuitBreaker(cfg)
+
+    # =========================================================================
+    # PERSISTENCE METHODS
+    # =========================================================================
+
+    def _load_persisted_state(self) -> None:
+        """Load previously persisted state from database."""
+        if not self._store:
+            return
+
+        try:
+            state = self._store.load_state()
+            if state is None:
+                self._logger.info("No persisted state found - starting fresh")
+                return
+
+            # Restore halt state
+            self._halt_level = HaltLevel(state.halt_level)
+            self._halt_reason = HaltReason(state.halt_reason) if state.halt_reason else None
+            self._halt_message = state.halt_message
+            self._halt_time = (
+                datetime.fromisoformat(state.halt_time)
+                if state.halt_time else None
+            )
+            self._is_manually_halted = state.is_manually_halted
+
+            # Restore tracking state
+            self._equity = state.equity
+            self._peak_equity = state.peak_equity
+            self._daily_pnl = state.daily_pnl
+            self._weekly_pnl = state.weekly_pnl
+            self._consecutive_losses = state.consecutive_losses
+
+            # Load breaker states
+            breakers = self._store.load_breakers()
+            for breaker_record in breakers:
+                if breaker_record.name in self._breakers:
+                    breaker = self._breakers[breaker_record.name]
+                    breaker.state = BreakerState(breaker_record.state)
+                    breaker.trip_count = breaker_record.trip_count
+                    breaker.last_trip_time = (
+                        datetime.fromisoformat(breaker_record.last_trip_time)
+                        if breaker_record.last_trip_time else None
+                    )
+                    breaker.recovery_time = (
+                        datetime.fromisoformat(breaker_record.recovery_time)
+                        if breaker_record.recovery_time else None
+                    )
+
+            # Log restoration
+            if self._halt_level != HaltLevel.NONE:
+                self._logger.warning(
+                    f"RESTORED HALT STATE from persistence: "
+                    f"level={self._halt_level.name}, reason={self._halt_reason}, "
+                    f"is_manual={self._is_manually_halted}"
+                )
+            else:
+                self._logger.info(
+                    f"Restored state from persistence: equity={self._equity:.2f}, "
+                    f"peak={self._peak_equity:.2f}"
+                )
+
+        except Exception as e:
+            self._logger.error(f"Failed to load persisted state: {e}")
+
+    def _save_state_to_store(self) -> None:
+        """Save current state to persistence store."""
+        if not self._store or not self._persistence_enabled:
+            return
+
+        try:
+            state = KillSwitchState(
+                halt_level=self._halt_level.value,
+                halt_reason=self._halt_reason.value if self._halt_reason else None,
+                halt_message=self._halt_message,
+                halt_time=self._halt_time.isoformat() if self._halt_time else None,
+                is_manually_halted=self._is_manually_halted,
+                equity=self._equity,
+                peak_equity=self._peak_equity,
+                daily_pnl=self._daily_pnl,
+                weekly_pnl=self._weekly_pnl,
+                consecutive_losses=self._consecutive_losses,
+                last_updated=datetime.utcnow().isoformat()
+            )
+            self._store.save_state(state)
+
+            # Also update heartbeat
+            self._store.update_heartbeat()
+
+        except Exception as e:
+            self._logger.error(f"Failed to save state to store: {e}")
+
+    def _save_breakers_to_store(self) -> None:
+        """Save circuit breaker states to persistence store."""
+        if not self._store or not self._persistence_enabled:
+            return
+
+        try:
+            for name, breaker in self._breakers.items():
+                record = BreakerRecord(
+                    name=name,
+                    state=breaker.state.value,
+                    trip_count=breaker.trip_count,
+                    last_trip_time=(
+                        breaker.last_trip_time.isoformat()
+                        if breaker.last_trip_time else None
+                    ),
+                    recovery_time=(
+                        breaker.recovery_time.isoformat()
+                        if breaker.recovery_time else None
+                    ),
+                    threshold=breaker.config.threshold
+                )
+                self._store.save_breaker(record)
+        except Exception as e:
+            self._logger.error(f"Failed to save breakers to store: {e}")
+
+    def _record_halt_event_to_store(self, halt_event: HaltEvent) -> None:
+        """Record halt event to persistence store for audit trail."""
+        if not self._store or not self._persistence_enabled:
+            return
+
+        try:
+            record = HaltEventRecord(
+                halt_id=halt_event.halt_id,
+                reason=halt_event.reason.value,
+                level=halt_event.level.value,
+                timestamp=halt_event.timestamp.isoformat(),
+                trigger_value=halt_event.trigger_value,
+                threshold=halt_event.threshold,
+                message=halt_event.message,
+                auto_recovery=halt_event.auto_recovery,
+                recovery_time=(
+                    halt_event.recovery_time.isoformat()
+                    if halt_event.recovery_time else None
+                ),
+                recovered=halt_event.recovered,
+                recovery_timestamp=(
+                    halt_event.recovery_timestamp.isoformat()
+                    if halt_event.recovery_timestamp else None
+                )
+            )
+            self._store.record_halt_event(record)
+        except Exception as e:
+            self._logger.error(f"Failed to record halt event: {e}")
 
     # =========================================================================
     # MAIN UPDATE AND CHECK METHODS
@@ -942,6 +1155,9 @@ class KillSwitch:
                         f"Connectivity lost for {disconnect_duration:.0f}s"
                     )
 
+            # PERSISTENCE: Save state after update
+            self._save_state_to_store()
+
             return self._halt_level
 
     def record_trade_result(self, pnl: float, pnl_pct: float) -> None:
@@ -1039,6 +1255,11 @@ class KillSwitch:
         # Start recovery process if not emergency
         if level != HaltLevel.EMERGENCY:
             self._recovery_manager.start_recovery(halt_event)
+
+        # PERSISTENCE: Save halt event and breaker states
+        self._record_halt_event_to_store(halt_event)
+        self._save_breakers_to_store()
+        self._save_state_to_store()
 
         self._logger.critical(
             f"TRADING HALTED | Level: {level.name} | Reason: {reason.value} | "

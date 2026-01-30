@@ -19,7 +19,7 @@
 #
 # =============================================================================
 
-from typing import Dict, Any, Optional, List, Tuple, Set
+from typing import Dict, Any, Optional, List, Tuple, Set, Protocol, runtime_checkable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum, auto
@@ -36,6 +36,29 @@ from src.agents.events import (
     TradeProposal, RiskAssessment
 )
 from src.agents.config import AgentConfig
+
+
+# =============================================================================
+# AGENT QUERY PROTOCOLS - Formal interfaces for agent capabilities
+# =============================================================================
+# Using Protocol (PEP 544) for structural subtyping: agents don't need to
+# explicitly inherit from these protocols, they just need to implement
+# the required methods. This is checked at registration time.
+
+@runtime_checkable
+class NewsEvaluator(Protocol):
+    """Protocol for agents that can evaluate news impact on trades."""
+    def evaluate_news_impact(self, proposal: TradeProposal) -> Any: ...
+
+@runtime_checkable
+class TradeEvaluator(Protocol):
+    """Protocol for agents that can evaluate trade proposals for risk."""
+    def evaluate_trade(self, proposal: TradeProposal) -> Any: ...
+
+@runtime_checkable
+class MarketAnalyzer(Protocol):
+    """Protocol for agents that analyze market conditions."""
+    def analyze(self, market_data: Any) -> Any: ...
 
 
 # =============================================================================
@@ -278,6 +301,14 @@ class TradingOrchestrator:
         self._circuit_failure_threshold = 5  # Open circuit after N failures
         self._circuit_reset_timeout = timedelta(minutes=2)  # Reset after this time
 
+        # === SHARED THREAD POOL ===
+        # FIX: Use a shared ThreadPoolExecutor instead of creating one per _query_agent call.
+        # This avoids thread creation/destruction overhead in high-frequency trading.
+        self._query_executor = ThreadPoolExecutor(
+            max_workers=self._config.max_agents if hasattr(self._config, 'max_agents') else 8,
+            thread_name_prefix="orchestrator-agent-query"
+        )
+
         # === STATISTICS ===
         self._total_decisions: int = 0
         self._decisions_by_outcome: Dict[str, int] = defaultdict(int)
@@ -407,6 +438,13 @@ class TradingOrchestrator:
                 all_stopped = False
 
         self._is_running = False
+
+        # FIX: Shutdown the shared thread pool executor on stop
+        try:
+            self._query_executor.shutdown(wait=True, cancel_futures=False)
+        except Exception as e:
+            self._logger.error(f"Error shutting down query executor: {e}")
+
         return all_stopped
 
     # =========================================================================
@@ -701,29 +739,30 @@ class TradingOrchestrator:
         timeout_sec = self._config.agent_timeout_sec
 
         def _do_query():
-            # Try different evaluation methods based on agent type
-            # News agent
-            if hasattr(agent, 'evaluate_news_impact'):
+            # Use Protocol-based dispatch for type-safe agent querying.
+            # Each agent is checked against formal Protocols defined at module
+            # level, replacing fragile hasattr() duck-typing.
+            if isinstance(agent, NewsEvaluator):
                 assessment = agent.evaluate_news_impact(proposal)
                 return assessment.to_dict() if hasattr(assessment, 'to_dict') else assessment
 
-            # Risk sentinel
-            if hasattr(agent, 'evaluate_trade'):
+            if isinstance(agent, TradeEvaluator):
                 assessment = agent.evaluate_trade(proposal)
                 return assessment.to_dict() if hasattr(assessment, 'to_dict') else assessment
 
-            # Regime agent
-            if hasattr(agent, 'analyze'):
+            if isinstance(agent, MarketAnalyzer):
                 # Regime agent needs market data, not trade proposal
                 return None
 
+            self._logger.warning(
+                f"Agent {agent.full_id} does not implement any known evaluator protocol "
+                f"(NewsEvaluator, TradeEvaluator, MarketAnalyzer). Skipping."
+            )
             return None
 
         try:
-            # Use ThreadPoolExecutor for timeout support
-            with ThreadPoolExecutor(max_workers=1) as executor:
-                future = executor.submit(_do_query)
-                return future.result(timeout=timeout_sec)
+            future = self._query_executor.submit(_do_query)
+            return future.result(timeout=timeout_sec)
         except FuturesTimeoutError:
             self._logger.error(
                 f"Agent {agent.full_id} query timed out after {timeout_sec}s"
@@ -1104,7 +1143,11 @@ class TradingOrchestrator:
             if not news_texts:
                 return None
 
-            analyzer = create_sentiment_analyzer()
+            # FIX: Cache analyzer instance to avoid recreation on every call.
+            # Analyzers are stateless so a single instance is safe to reuse.
+            if not hasattr(self, '_cached_sentiment_analyzer') or self._cached_sentiment_analyzer is None:
+                self._cached_sentiment_analyzer = create_sentiment_analyzer()
+            analyzer = self._cached_sentiment_analyzer
             results = [analyzer.analyze(text) for text in news_texts]
 
             if not results:
@@ -1141,7 +1184,10 @@ class TradingOrchestrator:
             if not market_data or 'prices' not in market_data:
                 return None
 
-            predictor = create_regime_predictor()
+            # FIX: Cache predictor instance to avoid recreation on every call.
+            if not hasattr(self, '_cached_regime_predictor') or self._cached_regime_predictor is None:
+                self._cached_regime_predictor = create_regime_predictor()
+            predictor = self._cached_regime_predictor
             prices = market_data.get('prices', [])
             volumes = market_data.get('volumes', [1000] * len(prices))
 

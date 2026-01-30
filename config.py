@@ -320,6 +320,20 @@ FAILED_TRADE_ATTEMPT_PENALTY = 0.0 # No penalty for logic checks
 TRADE_COOLDOWN_STEPS = 2           # Was 5. Allow faster re-entry if signal is good.
 RAPID_TRADE_PENALTY = 1.0          # Was 5.0. Reduced.
 
+# -----------------------------------------------------------------------------
+# CREDIT ASSIGNMENT FIX: Risk Sentinel Rejection Penalties
+# -----------------------------------------------------------------------------
+# When Risk Sentinel rejects an action, we need PPO to learn "that action was bad"
+# not "HOLD was neutral". These penalties provide the correct learning signal.
+#
+# CRITICAL: This fixes the credit assignment bug where PPO associated the reward
+# from executing HOLD with the original (rejected) action.
+RISK_REJECTION_PENALTY = 2.0       # Penalty when action is fully rejected by risk system
+RISK_MODIFICATION_PENALTY = 0.5    # Small penalty when position size is significantly reduced
+NEWS_BLOCK_PENALTY = 1.0           # Penalty when blocked by high-impact news event
+MODIFICATION_THRESHOLD = 0.5      # Position size reduction threshold to trigger penalty
+                                   # (e.g., 0.5 = 50% reduction triggers modification penalty)
+
 # Position limits (Keep safety hard-limits)
 MAX_LEVERAGE = 1.0                 # Safe baseline
 MAX_DURATION_STEPS = 40            # Increased from 12 (3h) to 40 (10h).
@@ -522,29 +536,93 @@ NEWS_FILTER_CONFIG = {
 # 12. SYSTEM VALIDATION & CHECKS
 # ═════════════════════════════════════════════════════════════════════════════
 
-def validate_configuration():
+def validate_configuration(strict_mode: bool = False):
     """
-    Validates configuration for common mistakes.
+    Validates configuration for common mistakes and security issues.
     Call this at startup to catch issues early.
+
+    Args:
+        strict_mode: If True, raise errors for warnings in production environments
+
+    Raises:
+        ValueError: If critical configuration errors are found
     """
     errors = []
     warnings = []
 
+    # =========================================================================
+    # SECURITY: Validate placeholder values are replaced
+    # =========================================================================
+    placeholder_checks = [
+        (EMERGENCY_CONTACT_EMAIL, "your_email@example.com", "EMERGENCY_CONTACT_EMAIL"),
+    ]
+
+    for value, placeholder, name in placeholder_checks:
+        if value == placeholder:
+            if strict_mode:
+                errors.append(
+                    f"SECURITY ERROR: {name} contains placeholder value '{placeholder}'. "
+                    f"Set this to a real value in production."
+                )
+            else:
+                warnings.append(
+                    f"SECURITY WARNING: {name} contains placeholder value. "
+                    f"Set this before production deployment."
+                )
+
+    # =========================================================================
+    # SECURITY: Validate critical numeric bounds
+    # =========================================================================
+
+    # Risk percentage must be positive and reasonable
+    if RISK_PERCENTAGE_PER_TRADE <= 0:
+        errors.append(f"RISK_PERCENTAGE_PER_TRADE must be positive, got {RISK_PERCENTAGE_PER_TRADE}")
+    elif RISK_PERCENTAGE_PER_TRADE > 0.1:
+        errors.append(
+            f"RISK_PERCENTAGE_PER_TRADE ({RISK_PERCENTAGE_PER_TRADE:.1%}) is dangerously high. "
+            f"Maximum allowed: 10%"
+        )
+    elif RISK_PERCENTAGE_PER_TRADE > 0.02:
+        warnings.append(
+            f"RISK_PERCENTAGE_PER_TRADE ({RISK_PERCENTAGE_PER_TRADE:.1%}) is aggressive. "
+            f"Professional standard: 1%"
+        )
+
+    # Initial balance must be positive
+    if INITIAL_BALANCE <= 0:
+        errors.append(f"INITIAL_BALANCE must be positive, got {INITIAL_BALANCE}")
+
+    # Leverage must be positive and bounded
+    if MAX_LEVERAGE <= 0:
+        errors.append(f"MAX_LEVERAGE must be positive, got {MAX_LEVERAGE}")
+    elif MAX_LEVERAGE > 10:
+        warnings.append(f"MAX_LEVERAGE ({MAX_LEVERAGE}) is very high. Consider reducing for safety.")
+
+    # Drawdown limit must be between 0 and 100
+    if MAX_DRAWDOWN_LIMIT_PCT <= 0 or MAX_DRAWDOWN_LIMIT_PCT > 100:
+        errors.append(f"MAX_DRAWDOWN_LIMIT_PCT must be between 0 and 100, got {MAX_DRAWDOWN_LIMIT_PCT}")
+    elif MAX_DRAWDOWN_LIMIT_PCT > 20:
+        warnings.append(
+            f"MAX_DRAWDOWN_LIMIT_PCT ({MAX_DRAWDOWN_LIMIT_PCT}%) is high. "
+            f"Commercial standard: 10-15%"
+        )
+
+    # =========================================================================
+    # TRAINING: Validate hyperparameters
+    # =========================================================================
+
     # Critical validations
     if TOTAL_TIMESTEPS_PER_BOT > 5_000_000:
-        errors.append(f"⚠️ CRITICAL: TOTAL_TIMESTEPS_PER_BOT ({TOTAL_TIMESTEPS_PER_BOT:,}) ")
+        errors.append(
+            f"TOTAL_TIMESTEPS_PER_BOT ({TOTAL_TIMESTEPS_PER_BOT:,}) is too high. "
+            f"This causes severe overfitting. Maximum: 5,000,000"
+        )
 
     if N_PARALLEL_BOTS < 20:
-        warnings.append(f"⚠️ N_PARALLEL_BOTS ({N_PARALLEL_BOTS}) is low. "
-                        f"Recommended: 50+ for good hyperparameter coverage")
-
-    if RISK_PERCENTAGE_PER_TRADE > 0.02:
-        warnings.append(f"⚠️ RISK_PERCENTAGE_PER_TRADE ({RISK_PERCENTAGE_PER_TRADE:.1%}) "
-                        f"is aggressive. Professional standard: 1%")
-
-    if MAX_DRAWDOWN_LIMIT_PCT > 15:
-        warnings.append(f"⚠️ MAX_DRAWDOWN_LIMIT_PCT ({MAX_DRAWDOWN_LIMIT_PCT}%) "
-                        f"is high for commercial use. Recommended: 10%")
+        warnings.append(
+            f"N_PARALLEL_BOTS ({N_PARALLEL_BOTS}) is low. "
+            f"Recommended: 50+ for good hyperparameter coverage"
+        )
 
     # Hyperparameter validations
     for key, values in HYPERPARAM_SEARCH_SPACE.items():
@@ -558,13 +636,42 @@ def validate_configuration():
     if max_batch > min_steps:
         errors.append(f"❌ batch_size ({max_batch}) cannot exceed n_steps ({min_steps})")
 
+    # =========================================================================
+    # ADDITIONAL BOUNDS CHECKING
+    # =========================================================================
+
+    # Episode length must be positive
+    if FIXED_EPISODE_LENGTH is not None and FIXED_EPISODE_LENGTH <= 0:
+        errors.append(f"FIXED_EPISODE_LENGTH must be positive, got {FIXED_EPISODE_LENGTH}")
+
+    # Lookback window must be positive and reasonable
+    if LOOKBACK_WINDOW_SIZE <= 0:
+        errors.append(f"LOOKBACK_WINDOW_SIZE must be positive, got {LOOKBACK_WINDOW_SIZE}")
+    elif LOOKBACK_WINDOW_SIZE > 200:
+        warnings.append(
+            f"LOOKBACK_WINDOW_SIZE ({LOOKBACK_WINDOW_SIZE}) is very large. "
+            f"This increases training time significantly."
+        )
+
+    # Fee percentages must be non-negative
+    fee_params = [
+        ("TRANSACTION_FEE_PERCENTAGE", TRANSACTION_FEE_PERCENTAGE),
+        ("SLIPPAGE_PERCENTAGE", SLIPPAGE_PERCENTAGE),
+        ("TRADE_COMMISSION_PCT_OF_TRADE", TRADE_COMMISSION_PCT_OF_TRADE),
+    ]
+    for name, value in fee_params:
+        if value < 0:
+            errors.append(f"{name} must be non-negative, got {value}")
+        elif value > 0.1:  # 10%
+            warnings.append(f"{name} ({value:.2%}) seems unusually high")
+
     # Print results
     if errors:
         print("\n" + "=" * 70)
-        print("❌ CONFIGURATION ERRORS (MUST FIX):")
+        print("CONFIGURATION ERRORS (MUST FIX):")
         print("=" * 70)
         for error in errors:
-            print(error)
+            print(f"  [ERROR] {error}")
         print("=" * 70)
         raise ValueError("Configuration has critical errors. Fix them before training!")
 

@@ -675,6 +675,14 @@ class EventBus:
         self._last_flush_time = datetime.now()
         self._flush_interval = timedelta(seconds=5)  # Flush at least every 5 seconds
 
+        # --- Rate Limiting (per source_agent_id) ---
+        # FIX: Prevent a malfunctioning agent from flooding the bus with events.
+        # Each agent is limited to _rate_limit_max_events within _rate_limit_window.
+        self._rate_limit_window = timedelta(seconds=10)  # 10 second window
+        self._rate_limit_max_events = 500  # Max 500 events per 10s per agent
+        self._rate_limit_counters: Dict[str, List[datetime]] = defaultdict(list)
+        self._rate_limit_lock = Lock()
+
         # --- Logging ---
         self._enable_logging = enable_logging
         self._logger = logging.getLogger("event_bus")
@@ -717,6 +725,32 @@ class EventBus:
                 self._logger.debug(
                     f"Unsubscribed handler from {event_type.name}"
                 )
+
+    def _is_rate_limited(self, source_id: str) -> bool:
+        """
+        Check if a source agent has exceeded its event publishing rate limit.
+
+        Uses a sliding window: only events within the last _rate_limit_window
+        seconds are counted. If the count exceeds _rate_limit_max_events,
+        the event is dropped.
+
+        This prevents a malfunctioning or compromised agent from flooding
+        the event bus and causing denial-of-service to other agents.
+        """
+        now = datetime.now()
+        cutoff = now - self._rate_limit_window
+
+        with self._rate_limit_lock:
+            timestamps = self._rate_limit_counters[source_id]
+            # Remove expired timestamps (sliding window)
+            while timestamps and timestamps[0] < cutoff:
+                timestamps.pop(0)
+            # Check limit
+            if len(timestamps) >= self._rate_limit_max_events:
+                return True
+            # Record this event
+            timestamps.append(now)
+            return False
 
     def _is_duplicate(self, event_id: str, event_timestamp: Optional[datetime] = None) -> bool:
         """
@@ -873,6 +907,16 @@ class EventBus:
         """
         responses: List[Optional[AgentEvent]] = []
 
+        # SECURITY: Rate limit per source agent to prevent bus flooding
+        source_id = event.source_agent_id if hasattr(event, 'source_agent_id') else "unknown"
+        if self._is_rate_limited(source_id):
+            self._logger.warning(
+                f"Rate limited: agent {source_id} exceeded {self._rate_limit_max_events} "
+                f"events/{self._rate_limit_window.total_seconds()}s. "
+                f"Event {event.event_id} ({event.event_type.name}) dropped."
+            )
+            return responses
+
         # SECURITY: Check for duplicate event (prevent replay)
         # Pass event timestamp for age-based replay protection
         if self._is_duplicate(event.event_id, event.timestamp):
@@ -881,9 +925,13 @@ class EventBus:
             )
             return responses
 
-        # SECURITY FIX: Keep lock held while calling handlers to prevent race condition
-        # where handler is unsubscribed between copy and call. Use RLock if handlers
-        # need to publish events (re-entrant).
+        # FIX: Copy handlers under lock, then release lock BEFORE calling handlers.
+        # Previous code held the lock during handler execution, which caused:
+        #   1. Deadlock risk if a handler tries to subscribe/unsubscribe
+        #   2. Priority inversion: slow handlers block all other publishers
+        #   3. Reduced throughput under high-frequency event publishing
+        # The trade-off: a handler could be unsubscribed between copy and call,
+        # but that's a benign race (handler executes one extra time at worst).
         with self._lock:
             handlers = self._subscribers.get(event.event_type, []).copy()
 
@@ -891,22 +939,21 @@ class EventBus:
             if self._enable_logging:
                 self._log_event(event)
 
-            # Persist to file for compliance (inside lock - consider async for performance)
+            # Persist to file for compliance
             self._persist_to_file(event)
 
-            # Call each handler INSIDE lock to prevent race condition
-            # CRITICAL FIX: Handlers called while lock held prevents unsubscribe race
-            for handler in handlers:
-                try:
-                    response = handler(event)
-                    if wait_for_response:
-                        responses.append(response)
-                except Exception as e:
-                    self._logger.error(
-                        f"Handler error for {event.event_type.name}: {e}"
-                    )
-                    if wait_for_response:
-                        responses.append(None)
+        # Call handlers OUTSIDE the lock to prevent deadlocks and priority inversion
+        for handler in handlers:
+            try:
+                response = handler(event)
+                if wait_for_response:
+                    responses.append(response)
+            except Exception as e:
+                self._logger.error(
+                    f"Handler error for {event.event_type.name}: {e}"
+                )
+                if wait_for_response:
+                    responses.append(None)
 
         return responses
 

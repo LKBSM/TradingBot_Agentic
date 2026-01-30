@@ -76,20 +76,23 @@ from src.agents.config import RiskSentinelConfig, ConfigPreset, get_risk_sentine
 # Import the original environment
 from src.environment.environment import TradingEnv
 
-# Import action constants
+# Import action constants and credit assignment penalties
 try:
     from src.config import (
         ACTION_HOLD, ACTION_OPEN_LONG, ACTION_CLOSE_LONG,
         ACTION_OPEN_SHORT, ACTION_CLOSE_SHORT,
         POSITION_FLAT, POSITION_LONG, POSITION_SHORT,
-        ACTION_NAMES, NUM_ACTIONS
+        ACTION_NAMES, NUM_ACTIONS,
+        # Credit assignment fix penalties
+        RISK_REJECTION_PENALTY, RISK_MODIFICATION_PENALTY,
+        NEWS_BLOCK_PENALTY, MODIFICATION_THRESHOLD
     )
-except ImportError:
-    ACTION_HOLD, ACTION_OPEN_LONG, ACTION_CLOSE_LONG = 0, 1, 2
-    ACTION_OPEN_SHORT, ACTION_CLOSE_SHORT = 3, 4
-    POSITION_FLAT, POSITION_LONG, POSITION_SHORT = 0, 1, -1
-    ACTION_NAMES = {0: 'HOLD', 1: 'OPEN_LONG', 2: 'CLOSE_LONG', 3: 'OPEN_SHORT', 4: 'CLOSE_SHORT'}
-    NUM_ACTIONS = 5
+except ImportError as _e:
+    raise ImportError(
+        f"OrchestratedTradingEnv requires config.py to be importable. "
+        f"Silent fallback is disabled to prevent parameter mismatch. "
+        f"Fix: pip install -e . from the project root. Original error: {_e}"
+    ) from _e
 
 
 # =============================================================================
@@ -342,6 +345,12 @@ class OrchestratedTradingEnv(gym.Wrapper):
         3. Regime Agent (provides context)
         4. Orchestrator aggregates all decisions
 
+        CREDIT ASSIGNMENT FIX:
+        When an action is rejected/modified by the risk system, we apply a penalty
+        to the reward so PPO learns "that action was bad in this state" rather than
+        incorrectly learning "HOLD was neutral". This fixes the bug where PPO
+        associated rewards from executing HOLD with the original (rejected) action.
+
         Args:
             action: Action from RL agent (0-4)
 
@@ -358,20 +367,42 @@ class OrchestratedTradingEnv(gym.Wrapper):
         # === ORCHESTRATED DECISION ===
         risk_actions = [ACTION_OPEN_LONG, ACTION_OPEN_SHORT]
 
+        # Credit assignment tracking
+        credit_assignment_penalty = 0.0
+        rejection_type = None  # 'news_block', 'risk_rejection', 'modification', None
+        original_position_size = 0.0
+        final_position_size = 0.0
+
         if action in risk_actions:
             # Create trade proposal
             proposal = self._create_proposal(action)
             self._total_proposals += 1
+            original_position_size = proposal.quantity
 
             # Get orchestrated decision from all agents
             decision = self._orchestrator.coordinate_decision(proposal)
             self._last_orchestrated_decision = decision
+            final_position_size = decision.final_position_size
 
             if decision.is_approved():
                 if decision.final_decision == DecisionType.APPROVE:
                     self._total_approvals += 1
                 else:
                     self._total_modifications += 1
+
+                    # CREDIT ASSIGNMENT FIX: Check if modification is significant
+                    if original_position_size > 0:
+                        reduction_ratio = 1.0 - (final_position_size / original_position_size)
+                        if reduction_ratio >= MODIFICATION_THRESHOLD:
+                            # Significant reduction - apply modification penalty
+                            credit_assignment_penalty = RISK_MODIFICATION_PENALTY * reduction_ratio
+                            rejection_type = 'modification'
+
+                            if self._enable_logging:
+                                self._logger.debug(
+                                    f"Credit assignment: modification penalty {credit_assignment_penalty:.3f} "
+                                    f"(reduction: {reduction_ratio:.1%})"
+                                )
 
                 approved_action = action
 
@@ -393,15 +424,21 @@ class OrchestratedTradingEnv(gym.Wrapper):
                 self._total_rejections += 1
                 approved_action = ACTION_HOLD
 
-                # Check if blocked by news
+                # CREDIT ASSIGNMENT FIX: Determine rejection type and apply penalty
                 if decision.blocking_agent and 'News' in decision.blocking_agent:
                     self._total_blocks += 1
+                    credit_assignment_penalty = NEWS_BLOCK_PENALTY
+                    rejection_type = 'news_block'
+                else:
+                    credit_assignment_penalty = RISK_REJECTION_PENALTY
+                    rejection_type = 'risk_rejection'
 
                 if self._enable_logging:
                     reason = decision.reasoning[0] if decision.reasoning else "Unknown"
                     self._logger.info(
                         f"Trade REJECTED: {ACTION_NAMES.get(action, 'UNKNOWN')} | "
-                        f"Blocked by: {decision.blocking_agent or 'Unknown'} | {reason}"
+                        f"Blocked by: {decision.blocking_agent or 'Unknown'} | {reason} | "
+                        f"Credit penalty: {credit_assignment_penalty:.2f}"
                     )
         else:
             approved_action = action
@@ -409,6 +446,18 @@ class OrchestratedTradingEnv(gym.Wrapper):
 
         # === EXECUTE ACTION ===
         obs, reward, done, truncated, info = self._base_env.step(approved_action)
+
+        # === CREDIT ASSIGNMENT FIX: Apply rejection/modification penalty ===
+        # This ensures PPO learns "the original action was bad" not "HOLD was neutral"
+        original_reward = reward
+        if credit_assignment_penalty > 0:
+            reward = reward - credit_assignment_penalty
+
+            if self._enable_logging:
+                self._logger.debug(
+                    f"Credit assignment applied: reward {original_reward:.4f} -> {reward:.4f} "
+                    f"(penalty: -{credit_assignment_penalty:.4f}, type: {rejection_type})"
+                )
 
         # === LEARN FROM TRADE OUTCOME ===
         if info.get('trade_details', {}).get('trade_success'):
@@ -437,6 +486,19 @@ class OrchestratedTradingEnv(gym.Wrapper):
         info['raw_action'] = raw_action
         info['approved_action'] = approved_action
         info['action_approved'] = (raw_action == approved_action)
+
+        # CREDIT ASSIGNMENT FIX: Add info for custom training callbacks
+        # These fields allow advanced users to implement buffer correction if needed
+        info['credit_assignment'] = {
+            'penalty_applied': credit_assignment_penalty,
+            'rejection_type': rejection_type,
+            'original_reward': original_reward,
+            'adjusted_reward': reward,
+            'original_position_size': original_position_size,
+            'final_position_size': final_position_size,
+            'action_was_rejected': rejection_type in ['news_block', 'risk_rejection'],
+            'action_was_modified': rejection_type == 'modification'
+        }
 
         # Regime info
         if self._current_regime:

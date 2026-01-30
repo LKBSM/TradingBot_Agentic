@@ -3,8 +3,9 @@ import numpy as np
 from stable_baselines3 import PPO
 import os
 import logging
-from typing import Tuple, List, Dict
+from typing import Tuple, List, Dict, Optional, Any
 import sys
+from enum import Enum, auto
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import config
@@ -578,6 +579,175 @@ class AgentTrainer:
 
         return results
 
+    # ========================================================================
+    # MÉTHODE 5: Entraînement Sophistiqué (NOUVEAU - MAXIMUM PERFORMANCE)
+    # ========================================================================
+
+    def train_sophisticated(
+        self,
+        strategy: str = "full_pipeline",
+        total_timesteps: Optional[int] = None,
+        use_curriculum: bool = True,
+        use_ensemble: bool = True,
+        use_meta_learning: bool = True,
+        n_ensemble_models: int = 5,
+        seed: Optional[int] = None
+    ) -> Tuple[PPO, Dict[str, Any]]:
+        """
+        Entraînement sophistiqué utilisant le nouveau système avancé.
+
+        Ce système combine:
+        1. CURRICULUM LEARNING: Apprentissage progressif en 4 phases
+           - BASE: Apprend les patterns de marché de base
+           - ENRICHED: Intègre les signaux des agents comme observations
+           - SOFT: Penalties douces pour actions rejetées
+           - PRODUCTION: Contraintes dures identiques à la production
+
+        2. ENSEMBLE TRAINING: Diversité des modèles pour robustesse
+           - Hyperparamètres diversifiés
+           - Objectifs diversifiés (Sharpe vs Sortino vs Calmar)
+           - Combinaison pondérée par performance
+
+        3. META-LEARNING: Adaptation rapide aux régimes de marché
+           - MAML-inspired pour initialisation optimale
+           - Adaptation online aux changements de régime
+           - Détection automatique des régimes
+
+        AVANTAGE CRITIQUE: Résout le problème de domain shift!
+        L'environnement d'entraînement est identique à la production.
+
+        Args:
+            strategy: Stratégie d'entraînement
+                - "curriculum_only": Seulement curriculum learning
+                - "ensemble_only": Seulement ensemble training
+                - "meta_only": Seulement meta-learning
+                - "curriculum_ensemble": Curriculum + Ensemble
+                - "curriculum_meta": Curriculum + Meta
+                - "full_pipeline": Tous les composants (recommandé)
+            total_timesteps: Total timesteps (défaut: config.TRAINING_TIMESTEPS)
+            use_curriculum: Activer curriculum learning
+            use_ensemble: Activer ensemble training
+            use_meta_learning: Activer meta-learning
+            n_ensemble_models: Nombre de modèles dans l'ensemble
+            seed: Seed pour reproductibilité
+
+        Returns:
+            Tuple[PPO, Dict]: (meilleur modèle, résumé d'entraînement)
+        """
+        from src.training.sophisticated_trainer import (
+            SophisticatedTrainer,
+            SophisticatedTrainerConfig,
+            TrainingStrategy
+        )
+        from src.training.ensemble_trainer import EnsembleConfig
+        from src.training.curriculum_trainer import CurriculumConfig
+        from src.training.meta_learner import MetaLearnerConfig
+
+        if total_timesteps is None:
+            total_timesteps = config.TOTAL_TIMESTEPS_PER_BOT
+
+        logging.info(f"Starting Sophisticated Training ({total_timesteps:,} timesteps)...")
+        logging.info(f"Strategy: {strategy}")
+
+        # Map string strategy to enum
+        strategy_map = {
+            "curriculum_only": TrainingStrategy.CURRICULUM_ONLY,
+            "ensemble_only": TrainingStrategy.ENSEMBLE_ONLY,
+            "meta_only": TrainingStrategy.META_ONLY,
+            "curriculum_ensemble": TrainingStrategy.CURRICULUM_ENSEMBLE,
+            "curriculum_meta": TrainingStrategy.CURRICULUM_META,
+            "full_pipeline": TrainingStrategy.FULL_PIPELINE
+        }
+        training_strategy = strategy_map.get(strategy.lower(), TrainingStrategy.FULL_PIPELINE)
+
+        # Calculate allocations based on enabled components
+        n_components = sum([use_curriculum, use_ensemble, use_meta_learning])
+        if n_components == 0:
+            logging.warning("No components enabled, defaulting to curriculum_only")
+            training_strategy = TrainingStrategy.CURRICULUM_ONLY
+            curriculum_fraction = 1.0
+            ensemble_fraction = 0.0
+            meta_fraction = 0.0
+        else:
+            curriculum_fraction = 0.4 if use_curriculum else 0.0
+            ensemble_fraction = 0.35 if use_ensemble else 0.0
+            meta_fraction = 0.25 if use_meta_learning else 0.0
+
+            # Normalize
+            total = curriculum_fraction + ensemble_fraction + meta_fraction
+            curriculum_fraction /= total
+            ensemble_fraction /= total
+            meta_fraction /= total
+
+        # Create configuration
+        trainer_config = SophisticatedTrainerConfig(
+            strategy=training_strategy,
+            total_timesteps=total_timesteps,
+            curriculum_fraction=curriculum_fraction,
+            ensemble_fraction=ensemble_fraction,
+            meta_fraction=meta_fraction,
+            base_hyperparams=config.MODEL_HYPERPARAMETERS,
+            base_save_dir=os.path.join(self.model_dir, 'sophisticated'),
+            tensorboard_log_dir=os.path.join(self.model_dir, 'sophisticated', 'logs'),
+            verbose=1
+        )
+
+        # Update ensemble config if needed
+        if use_ensemble:
+            trainer_config.ensemble_config.n_models = n_ensemble_models
+
+        # Split data into train/val/test
+        total_len = len(self.df_historical)
+        train_end = int(total_len * config.TRAIN_RATIO)
+        val_end = int(total_len * (config.TRAIN_RATIO + config.VAL_RATIO))
+
+        df_train = self.df_historical.iloc[:train_end].copy()
+        df_val = self.df_historical.iloc[train_end:val_end].copy()
+        df_test = self.df_historical.iloc[val_end:].copy()
+
+        logging.info(f"Data splits: Train={len(df_train)}, Val={len(df_val)}, Test={len(df_test)}")
+
+        # Create trainer
+        trainer = SophisticatedTrainer(
+            df_train=df_train,
+            df_val=df_val,
+            df_test=df_test,
+            config=trainer_config
+        )
+
+        # Run training
+        results = trainer.train(seed=seed)
+
+        # Load best model
+        best_model = PPO.load(results.best_model_path, env=self.env_train)
+
+        # Store the agent
+        self.agent = best_model
+
+        # Create summary
+        summary = {
+            'strategy': results.strategy,
+            'total_timesteps': results.total_timesteps,
+            'training_duration_hours': results.training_duration_seconds / 3600,
+            'final_sharpe': results.final_sharpe,
+            'final_win_rate': results.final_win_rate,
+            'final_max_drawdown': results.final_max_drawdown,
+            'final_cumulative_return': results.final_cumulative_return,
+            'best_model_path': results.best_model_path,
+            'has_ensemble': results.has_ensemble,
+            'has_meta_adapter': results.has_meta_adapter,
+            'curriculum_results': results.curriculum_results,
+            'ensemble_results': results.ensemble_results,
+            'meta_results': results.meta_results
+        }
+
+        logging.info(f"✅ Sophisticated Training Complete!")
+        logging.info(f"   Final Sharpe: {results.final_sharpe:.2f}")
+        logging.info(f"   Final Win Rate: {results.final_win_rate:.1%}")
+        logging.info(f"   Best Model: {results.best_model_path}")
+
+        return best_model, summary
+
 
 # ============================================================================
 # FONCTION D'ÉVALUATION
@@ -678,6 +848,29 @@ if __name__ == '__main__':
         timesteps_per_run=20000,
         cumulative=True  # Apprentissage cumulatif
     )
+
+    # ========================================================================
+    # EXEMPLE 3: Entraînement Sophistiqué (NOUVEAU - MAXIMUM PERFORMANCE)
+    # ========================================================================
+    print("\n" + "=" * 70)
+    print("EXEMPLE 3: Entraînement Sophistiqué (Full Pipeline)")
+    print("=" * 70)
+    print("Ce système combine curriculum learning, ensemble training, et meta-learning")
+    print("pour maximiser la performance sur les marchés financiers.")
+    print("=" * 70)
+
+    # Uncomment to run sophisticated training:
+    # trainer = AgentTrainer(df_historical=df_train)
+    # agent, summary = trainer.train_sophisticated(
+    #     strategy="full_pipeline",
+    #     total_timesteps=500000,  # Reduced for demo
+    #     use_curriculum=True,
+    #     use_ensemble=True,
+    #     use_meta_learning=True,
+    #     n_ensemble_models=3,  # Reduced for demo
+    #     seed=42
+    # )
+    # print(f"Training Summary: {summary}")
 
 
 

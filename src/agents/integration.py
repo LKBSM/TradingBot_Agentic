@@ -58,26 +58,22 @@ from src.agents.config import RiskSentinelConfig, ConfigPreset, get_risk_sentine
 # Import the original environment
 from src.environment.environment import TradingEnv
 
-# Import action constants for long/short trading
+# Import action constants for long/short trading and credit assignment penalties
 try:
     from src.config import (
         ACTION_HOLD, ACTION_OPEN_LONG, ACTION_CLOSE_LONG,
         ACTION_OPEN_SHORT, ACTION_CLOSE_SHORT,
         POSITION_FLAT, POSITION_LONG, POSITION_SHORT,
-        ACTION_NAMES, NUM_ACTIONS
+        ACTION_NAMES, NUM_ACTIONS,
+        # Credit assignment fix penalties
+        RISK_REJECTION_PENALTY
     )
-except ImportError:
-    # Fallback definitions
-    ACTION_HOLD = 0
-    ACTION_OPEN_LONG = 1
-    ACTION_CLOSE_LONG = 2
-    ACTION_OPEN_SHORT = 3
-    ACTION_CLOSE_SHORT = 4
-    POSITION_FLAT = 0
-    POSITION_LONG = 1
-    POSITION_SHORT = -1
-    ACTION_NAMES = {0: 'HOLD', 1: 'OPEN_LONG', 2: 'CLOSE_LONG', 3: 'OPEN_SHORT', 4: 'CLOSE_SHORT'}
-    NUM_ACTIONS = 5
+except ImportError as _e:
+    raise ImportError(
+        f"AgenticTradingEnv requires config.py to be importable. "
+        f"Silent fallback is disabled to prevent parameter mismatch. "
+        f"Fix: pip install -e . from the project root. Original error: {_e}"
+    ) from _e
 
 
 # =============================================================================
@@ -277,6 +273,12 @@ class AgenticTradingEnv(gym.Wrapper):
         If approved, the original action is executed.
         If rejected, HOLD (action=0) is executed instead.
 
+        CREDIT ASSIGNMENT FIX:
+        When an action is rejected by the risk system, we apply a penalty
+        to the reward so PPO learns "that action was bad in this state" rather than
+        incorrectly learning "HOLD was neutral". This fixes the bug where PPO
+        associated rewards from executing HOLD with the original (rejected) action.
+
         NEW ACTION SPACE (5 actions):
             0 = HOLD         : Do nothing
             1 = OPEN_LONG    : Buy to open long position
@@ -291,6 +293,10 @@ class AgenticTradingEnv(gym.Wrapper):
             Tuple of (observation, reward, done, truncated, info)
         """
         self._last_raw_action = action
+
+        # Credit assignment tracking
+        credit_assignment_penalty = 0.0
+        rejection_type = None  # 'risk_rejection' or None
 
         # === RISK GATE ===
         # Only evaluate OPEN actions (CLOSE and HOLD are safe)
@@ -314,6 +320,10 @@ class AgenticTradingEnv(gym.Wrapper):
                 self._total_rejections += 1
                 approved_action = 0  # HOLD
 
+                # CREDIT ASSIGNMENT FIX: Apply rejection penalty
+                credit_assignment_penalty = RISK_REJECTION_PENALTY
+                rejection_type = 'risk_rejection'
+
                 # Track rejection reason
                 if assessment.violations:
                     reason = assessment.violations[0].rule_description
@@ -325,7 +335,7 @@ class AgenticTradingEnv(gym.Wrapper):
                     self._logger.info(
                         f"Step {self._base_env.current_step}: "
                         f"Action {action} REJECTED -> HOLD | "
-                        f"Reason: {reason}"
+                        f"Reason: {reason} | Credit penalty: {credit_assignment_penalty:.2f}"
                     )
         else:
             # HOLD action or Risk Sentinel disabled
@@ -336,6 +346,18 @@ class AgenticTradingEnv(gym.Wrapper):
 
         # === EXECUTE ACTION ===
         obs, reward, done, truncated, info = self._base_env.step(approved_action)
+
+        # === CREDIT ASSIGNMENT FIX: Apply rejection penalty ===
+        # This ensures PPO learns "the original action was bad" not "HOLD was neutral"
+        original_reward = reward
+        if credit_assignment_penalty > 0:
+            reward = reward - credit_assignment_penalty
+
+            if self._enable_logging:
+                self._logger.debug(
+                    f"Credit assignment applied: reward {original_reward:.4f} -> {reward:.4f} "
+                    f"(penalty: -{credit_assignment_penalty:.4f}, type: {rejection_type})"
+                )
 
         # === SYNC STATE AFTER STEP ===
         self._sync_agent_state()
@@ -352,6 +374,15 @@ class AgenticTradingEnv(gym.Wrapper):
         info['risk_raw_action'] = self._last_raw_action
         info['risk_approved_action'] = approved_action
         info['risk_approved'] = (self._last_raw_action == approved_action)
+
+        # CREDIT ASSIGNMENT FIX: Add info for custom training callbacks
+        info['credit_assignment'] = {
+            'penalty_applied': credit_assignment_penalty,
+            'rejection_type': rejection_type,
+            'original_reward': original_reward,
+            'adjusted_reward': reward,
+            'action_was_rejected': rejection_type == 'risk_rejection'
+        }
 
         if self._last_assessment:
             info['risk_decision'] = self._last_assessment.decision.name
