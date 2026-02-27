@@ -17,6 +17,7 @@ from rich.table import Table
 
 # Configuration du logging
 logging.basicConfig(level=config.LOGGING_LEVEL, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 
 # ============================================================================
@@ -103,7 +104,7 @@ class RichProgressBarCallback(BaseCallback):
         
         # Log tous les 50k steps
         if self.num_timesteps % 50000 == 0 and self.num_timesteps > 0:
-            print(f"\n📊 Checkpoint: {self.num_timesteps:,} steps | Progress: {(self.num_timesteps/self.total_timesteps)*100:.1f}%")
+            logger.info(f"Checkpoint: {self.num_timesteps:,} steps | Progress: {(self.num_timesteps/self.total_timesteps)*100:.1f}%")
         
         if self.model is not None and hasattr(self.model, 'ep_info_buffer') and self.model.ep_info_buffer:
             last_ep_reward = self.model.ep_info_buffer[-1]['r']
@@ -140,7 +141,7 @@ class EarlyStoppingCallback(BaseCallback):
         sharpe = self._evaluate_sharpe()
 
         if self.verbose > 0:
-            print(f"\nStep {self.n_calls}: Validation Sharpe = {sharpe:.2f} (Best: {self.best_sharpe:.2f})")
+            logger.info(f"Step {self.n_calls}: Validation Sharpe = {sharpe:.2f} (Best: {self.best_sharpe:.2f})")
 
         if sharpe > self.best_sharpe + self.min_delta:
             self.best_sharpe = sharpe
@@ -148,17 +149,16 @@ class EarlyStoppingCallback(BaseCallback):
             self.best_model_path = os.path.join(config.MODEL_DIR, f"best_model_sharpe_{sharpe:.2f}.zip")
             self.model.save(self.best_model_path)
             if self.verbose > 0:
-                print(f"✅ Nouveau meilleur modèle sauvegardé: {self.best_model_path}")
+                logger.info(f"Nouveau meilleur modele sauvegarde: {self.best_model_path}")
         else:
             self.wait += 1
             if self.verbose > 0:
-                print(f"⚠️ Pas d'amélioration ({self.wait}/{self.patience})")
+                logger.warning(f"Pas d'amelioration ({self.wait}/{self.patience})")
 
         if self.wait >= self.patience:
             self.stopped_step = self.n_calls
             if self.verbose > 0:
-                print(f"\n🛑 Early Stopping à step {self.stopped_step}")
-                print(f"   Meilleur Sharpe: {self.best_sharpe:.2f}")
+                logger.warning(f"Early Stopping a step {self.stopped_step} | Meilleur Sharpe: {self.best_sharpe:.2f}")
             return False
 
         return True
@@ -237,14 +237,14 @@ class AgentTrainer:
             PPO: Agent entraîné
         """
 
-        logging.info(f"Starting Offline Training ({total_timesteps:,} timesteps)...")
+        logger.info(f"Starting Offline Training ({total_timesteps:,} timesteps)...")
 
         # Définir la seed si fournie
         if seed is not None:
             np.random.seed(seed)
             import torch
             torch.manual_seed(seed)
-            logging.info(f"🎲 Seed définie: {seed}")
+            logger.info(f"Seed definie: {seed}")
 
         # Créer l'agent PPO avec hyperparamètres du config
         self.agent = PPO(
@@ -286,7 +286,7 @@ class AgentTrainer:
         # Sauvegarder le modèle final
         model_path = os.path.join(self.model_dir, f"model_offline_final.zip")
         self.agent.save(model_path)
-        logging.info(f"✅ Training complete. Model saved to: {model_path}")
+        logger.info(f"Training complete. Model saved to: {model_path}")
 
         return self.agent
 
@@ -312,12 +312,12 @@ class AgentTrainer:
         if not os.path.exists(model_path):
             raise FileNotFoundError(f"❌ Modèle introuvable: {model_path}")
 
-        logging.info(f"📥 Chargement du modèle: {model_path}")
+        logger.info(f"Chargement du modele: {model_path}")
 
         # Charger le modèle existant
         self.agent = PPO.load(model_path, env=self.env_train)
 
-        logging.info(f"🔄 Continuation de l'entraînement ({additional_timesteps:,} steps supplémentaires)...")
+        logger.info(f"Continuation de l'entrainement ({additional_timesteps:,} steps supplementaires)...")
 
         # Créer callback
         callbacks = [RichProgressBarCallback(total_timesteps=additional_timesteps)]
@@ -332,7 +332,7 @@ class AgentTrainer:
         # Sauvegarder le modèle continué
         new_model_path = model_path.replace('.zip', '_continued.zip')
         self.agent.save(new_model_path)
-        logging.info(f"✅ Modèle continué sauvegardé: {new_model_path}")
+        logger.info(f"Modele continue sauvegarde: {new_model_path}")
 
         return self.agent
 
@@ -368,7 +368,7 @@ class AgentTrainer:
         if not os.path.exists(base_model_path):
             raise FileNotFoundError(f"❌ Modèle de base introuvable: {base_model_path}")
 
-        logging.info(f"📥 Chargement du modèle de base: {base_model_path}")
+        logger.info(f"Chargement du modele de base: {base_model_path}")
         self.agent = PPO.load(base_model_path)
 
         # Créer un nouvel environnement avec les nouvelles données
@@ -381,17 +381,16 @@ class AgentTrainer:
                 enable_logging=True,
                 pre_fitted_scaler=self.env_train.scaler
             )
-            logging.info("Using original training scaler for fine-tuning (no data leakage)")
+            logger.info("Using original training scaler for fine-tuning (no data leakage)")
         else:
             # Fit new scaler on all new data (acceptable for completely new regime)
-            logging.warning("Fitting new scaler on fine-tune data - ensure this is intentional")
+            logger.warning("Fitting new scaler on fine-tune data - ensure this is intentional")
             env_new = TradingEnv(df=df_new_data, enable_logging=True)
 
         # Changer l'environnement de l'agent
         self.agent.set_env(env_new)
 
-        logging.info(f"🎯 Fine-tuning sur nouvelles données ({fine_tune_timesteps:,} steps)...")
-        logging.info(f"   Nouvelles données: {len(df_new_data)} bars")
+        logger.info(f"Fine-tuning sur nouvelles donnees ({fine_tune_timesteps:,} steps) | Nouvelles donnees: {len(df_new_data)} bars")
 
         # Fine-tuning
         callbacks = [RichProgressBarCallback(total_timesteps=fine_tune_timesteps)]
@@ -404,7 +403,7 @@ class AgentTrainer:
         # Sauvegarder le modèle fine-tuné
         fine_tuned_path = os.path.join(self.model_dir, "model_fine_tuned.zip")
         self.agent.save(fine_tuned_path)
-        logging.info(f"✅ Modèle fine-tuné sauvegardé: {fine_tuned_path}")
+        logger.info(f"Modele fine-tune sauvegarde: {fine_tuned_path}")
 
         return self.agent
 
@@ -437,12 +436,12 @@ class AgentTrainer:
         if timesteps_per_run is None:
             timesteps_per_run = config.TRAINING_TIMESTEPS // n_runs
 
-        console = Console()
-        console.print(f"\n[bold cyan]🚀 Lancement de {n_runs} Runs d'Entraînement[/bold cyan]")
-        console.print(
-            f"   Mode: {'Cumulatif (chaque run continue le précédent)' if cumulative else 'Indépendant (chaque run repart de zéro)'}")
-        console.print(f"   Timesteps par run: {timesteps_per_run:,}")
-        console.print(f"   Total timesteps: {timesteps_per_run * n_runs:,}\n")
+        logger.info(
+            f"Lancement de {n_runs} Runs d'Entrainement | "
+            f"Mode: {'Cumulatif (chaque run continue le precedent)' if cumulative else 'Independent (chaque run repart de zero)'} | "
+            f"Timesteps par run: {timesteps_per_run:,} | "
+            f"Total timesteps: {timesteps_per_run * n_runs:,}"
+        )
 
         results = []
         base_seed = getattr(config, 'RANDOM_SEED', 42)
@@ -451,9 +450,7 @@ class AgentTrainer:
         df_test = self.df_historical.iloc[self.train_split_idx:].copy()
 
         for run in range(1, n_runs + 1):
-            console.print(f"\n[bold yellow]{'=' * 70}[/bold yellow]")
-            console.print(f"[bold yellow]🎯 RUN {run}/{n_runs}[/bold yellow]")
-            console.print(f"[bold yellow]{'=' * 70}[/bold yellow]\n")
+            logger.info(f"{'=' * 70}\nRUN {run}/{n_runs}\n{'=' * 70}")
 
             # Seed différente pour chaque run
             current_seed = base_seed + run
@@ -465,7 +462,7 @@ class AgentTrainer:
                     f"model_run_{run - 1}_seed_{base_seed + run - 1}.zip"
                 )
 
-                console.print(f"📥 Chargement du modèle du run précédent...")
+                logger.info(f"Chargement du modele du run precedent...")
                 self.agent = PPO.load(previous_model_path, env=self.env_train)
 
                 # Changer la seed pour l'exploration
@@ -495,7 +492,7 @@ class AgentTrainer:
             self.agent.save(run_model_path)
 
             # Évaluer le modèle sur les données de test
-            console.print(f"\n📊 Évaluation du Run {run}...")
+            logger.info(f"Evaluation du Run {run}...")
             # Pass the training scaler to prevent data leakage in evaluation
             metrics = evaluate_agent(self.agent, df_test, pre_fitted_scaler=self.env_train.scaler)
 
@@ -513,69 +510,53 @@ class AgentTrainer:
             }
             results.append(run_results)
 
-            console.print(f"✅ Run {run} terminé:")
-            console.print(f"   Sharpe Ratio: {metrics[1]:.2f}")
-            console.print(f"   Max Drawdown: {metrics[4]:.2%}")
+            logger.info(f"Run {run} termine: Sharpe Ratio: {metrics[1]:.2f} | Max Drawdown: {metrics[4]:.2%}")
 
         # ====================================================================
         # RAPPORT FINAL
         # ====================================================================
 
-        console.print(f"\n[bold green]{'=' * 70}[/bold green]")
-        console.print(f"[bold green]🏆 RAPPORT FINAL DES {n_runs} RUNS[/bold green]")
-        console.print(f"[bold green]{'=' * 70}[/bold green]\n")
+        logger.info(f"{'=' * 70}\nRAPPORT FINAL DES {n_runs} RUNS\n{'=' * 70}")
 
         df_results = pd.DataFrame(results)
 
-        # Créer tableau de comparaison
-        table = Table(title=f"Comparaison des {n_runs} Runs", show_header=True)
-        table.add_column("Run", style="cyan")
-        table.add_column("Seed", style="yellow")
-        table.add_column("Sharpe", justify="right", style="green")
-        table.add_column("Sortino", justify="right", style="blue")
-        table.add_column("MDD", justify="right", style="red")
-        table.add_column("Return", justify="right", style="magenta")
-
+        table_lines = [f"Comparaison des {n_runs} Runs:"]
+        table_lines.append(f"{'Run':>4} | {'Seed':>6} | {'Sharpe':>7} | {'Sortino':>7} | {'MDD':>8} | {'Return':>8}")
+        table_lines.append("-" * 55)
         for _, row in df_results.iterrows():
-            table.add_row(
-                str(int(row['run'])),
-                str(int(row['seed'])),
-                f"{row['sharpe_ratio']:.2f}",
-                f"{row['sortino_ratio']:.2f}",
-                f"{row['max_drawdown']:.2%}",
-                f"{row['cumulative_return']:.2%}"
+            table_lines.append(
+                f"{int(row['run']):>4} | {int(row['seed']):>6} | {row['sharpe_ratio']:>7.2f} | "
+                f"{row['sortino_ratio']:>7.2f} | {row['max_drawdown']:>7.2%} | {row['cumulative_return']:>7.2%}"
             )
+        logger.info("\n".join(table_lines))
 
-        console.print(table)
-
-        # Statistiques globales
-        console.print(f"\n[bold cyan]📈 STATISTIQUES GLOBALES:[/bold cyan]")
-        console.print(
-            f"   Sharpe Moyen:    {df_results['sharpe_ratio'].mean():.2f} (±{df_results['sharpe_ratio'].std():.2f})")
-        console.print(
-            f"   Meilleur Sharpe: {df_results['sharpe_ratio'].max():.2f} (Run {df_results['sharpe_ratio'].idxmax() + 1})")
-        console.print(
-            f"   Pire Sharpe:     {df_results['sharpe_ratio'].min():.2f} (Run {df_results['sharpe_ratio'].idxmin() + 1})")
+        logger.info(
+            f"STATISTIQUES GLOBALES: "
+            f"Sharpe Moyen: {df_results['sharpe_ratio'].mean():.2f} (+/-{df_results['sharpe_ratio'].std():.2f}) | "
+            f"Meilleur Sharpe: {df_results['sharpe_ratio'].max():.2f} (Run {df_results['sharpe_ratio'].idxmax() + 1}) | "
+            f"Pire Sharpe: {df_results['sharpe_ratio'].min():.2f} (Run {df_results['sharpe_ratio'].idxmin() + 1})"
+        )
 
         # Identifier le meilleur modèle
         best_run_idx = df_results['sharpe_ratio'].idxmax()
         best_model_path = df_results.loc[best_run_idx, 'model_path']
 
-        console.print(f"\n[bold green]🏆 MEILLEUR MODÈLE:[/bold green]")
-        console.print(f"   Run: {df_results.loc[best_run_idx, 'run']}")
-        console.print(f"   Sharpe: {df_results.loc[best_run_idx, 'sharpe_ratio']:.2f}")
-        console.print(f"   Chemin: {best_model_path}")
+        logger.info(
+            f"MEILLEUR MODELE: Run: {df_results.loc[best_run_idx, 'run']} | "
+            f"Sharpe: {df_results.loc[best_run_idx, 'sharpe_ratio']:.2f} | "
+            f"Chemin: {best_model_path}"
+        )
 
         # Sauvegarder le meilleur modèle séparément
         best_model_production_path = os.path.join(self.model_dir, "model_BEST_production.zip")
         import shutil
         shutil.copy(best_model_path, best_model_production_path)
-        console.print(f"\n✅ Meilleur modèle copié vers: {best_model_production_path}")
+        logger.info(f"Meilleur modele copie vers: {best_model_production_path}")
 
         # Sauvegarder les résultats en CSV
         results_csv_path = os.path.join(config.RESULTS_DIR, 'multiple_runs_results.csv')
         df_results.to_csv(results_csv_path, index=False)
-        console.print(f"✅ Résultats sauvegardés: {results_csv_path}\n")
+        logger.info(f"Resultats sauvegardes: {results_csv_path}")
 
         return results
 
@@ -646,8 +627,7 @@ class AgentTrainer:
         if total_timesteps is None:
             total_timesteps = config.TOTAL_TIMESTEPS_PER_BOT
 
-        logging.info(f"Starting Sophisticated Training ({total_timesteps:,} timesteps)...")
-        logging.info(f"Strategy: {strategy}")
+        logger.info(f"Starting Sophisticated Training ({total_timesteps:,} timesteps) | Strategy: {strategy}")
 
         # Map string strategy to enum
         strategy_map = {
@@ -663,7 +643,7 @@ class AgentTrainer:
         # Calculate allocations based on enabled components
         n_components = sum([use_curriculum, use_ensemble, use_meta_learning])
         if n_components == 0:
-            logging.warning("No components enabled, defaulting to curriculum_only")
+            logger.warning("No components enabled, defaulting to curriculum_only")
             training_strategy = TrainingStrategy.CURRICULUM_ONLY
             curriculum_fraction = 1.0
             ensemble_fraction = 0.0
@@ -705,7 +685,7 @@ class AgentTrainer:
         df_val = self.df_historical.iloc[train_end:val_end].copy()
         df_test = self.df_historical.iloc[val_end:].copy()
 
-        logging.info(f"Data splits: Train={len(df_train)}, Val={len(df_val)}, Test={len(df_test)}")
+        logger.info(f"Data splits: Train={len(df_train)}, Val={len(df_val)}, Test={len(df_test)}")
 
         # Create trainer
         trainer = SophisticatedTrainer(
@@ -741,10 +721,12 @@ class AgentTrainer:
             'meta_results': results.meta_results
         }
 
-        logging.info(f"✅ Sophisticated Training Complete!")
-        logging.info(f"   Final Sharpe: {results.final_sharpe:.2f}")
-        logging.info(f"   Final Win Rate: {results.final_win_rate:.1%}")
-        logging.info(f"   Best Model: {results.best_model_path}")
+        logger.info(
+            f"Sophisticated Training Complete! "
+            f"Final Sharpe: {results.final_sharpe:.2f} | "
+            f"Final Win Rate: {results.final_win_rate:.1%} | "
+            f"Best Model: {results.best_model_path}"
+        )
 
         return best_model, summary
 
@@ -775,7 +757,7 @@ def evaluate_agent(agent: PPO, df_test: pd.DataFrame,
         env_test = TradingEnv(df=df_test, pre_fitted_scaler=pre_fitted_scaler)
     else:
         # Legacy behavior with warning
-        logging.warning("evaluate_agent: No pre_fitted_scaler provided - potential data leakage!")
+        logger.warning("evaluate_agent: No pre_fitted_scaler provided - potential data leakage!")
         env_test = TradingEnv(df=df_test)
 
     obs, info = env_test.reset()

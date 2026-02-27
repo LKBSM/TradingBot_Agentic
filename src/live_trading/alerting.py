@@ -712,17 +712,76 @@ class AlertManager:
         trades: int,
         profit: float,
         win_rate: float,
-        max_dd: float
+        max_dd: float,
+        var_95: float = None,
+        correlation_regime: str = None,
+        kill_switch_status: str = None,
     ):
-        """Send daily trading summary."""
+        """Send daily trading summary with optional observability fields."""
+        parts = [
+            f"Trades: {trades}",
+            f"P&L: ${profit:+.2f}",
+            f"Win Rate: {win_rate:.1%}",
+        ]
+        extra = {
+            "trades": trades,
+            "profit": f"${profit:+.2f}",
+            "win_rate": f"{win_rate:.1%}",
+            "max_drawdown": f"{max_dd:.2%}",
+        }
+        if var_95 is not None:
+            parts.append(f"VaR95: {var_95:.2%}")
+            extra["var_95"] = f"{var_95:.2%}"
+        if correlation_regime is not None:
+            parts.append(f"Corr: {correlation_regime}")
+            extra["correlation_regime"] = correlation_regime
+        if kill_switch_status is not None:
+            parts.append(f"KS: {kill_switch_status}")
+            extra["kill_switch_status"] = kill_switch_status
+
+        self.info("Daily Summary", " | ".join(parts), **extra)
+
+    def signal_generated(
+        self,
+        signal_id: str,
+        action: str,
+        symbol: str,
+        entry: float,
+        sl: float,
+        tp: float,
+        rr: float,
+    ):
+        """Alert when a new trading signal is generated."""
         self.info(
-            "Daily Summary",
-            f"Trades: {trades} | P&L: ${profit:+.2f} | Win Rate: {win_rate:.1%}",
-            trades=trades,
-            profit=f"${profit:+.2f}",
-            win_rate=f"{win_rate:.1%}",
-            max_drawdown=f"{max_dd:.2%}",
+            "Signal Generated",
+            f"{action} {symbol} @ {entry:.2f} | SL: {sl:.2f} | TP: {tp:.2f} | RR: {rr:.1f}",
+            signal_id=signal_id,
+            action=action,
+            symbol=symbol,
+            entry=entry,
+            stop_loss=sl,
+            take_profit=tp,
+            rr_ratio=rr,
         )
+
+    def signal_closed(self, signal_id: str, outcome: str, pnl_pips: float):
+        """Alert when a signal is closed with outcome."""
+        if outcome == "WIN":
+            self.info(
+                "Signal Closed - WIN",
+                f"Signal {signal_id} won {pnl_pips:+.1f} pips",
+                signal_id=signal_id,
+                outcome=outcome,
+                pnl_pips=pnl_pips,
+            )
+        else:
+            self.warning(
+                "Signal Closed - LOSS",
+                f"Signal {signal_id} lost {pnl_pips:+.1f} pips",
+                signal_id=signal_id,
+                outcome=outcome,
+                pnl_pips=pnl_pips,
+            )
 
     # =========================================================================
     # STATISTICS

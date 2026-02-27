@@ -53,18 +53,25 @@ route:
   # Child routes for specific handling
   routes:
     # -------------------------------------------------------------------------
-    # CRITICAL ALERTS -> PagerDuty + Slack
+    # CRITICAL ALERTS -> PagerDuty + Slack + Telegram
     # -------------------------------------------------------------------------
     - match:
         severity: critical
       receiver: 'pagerduty-critical'
-      continue: true  # Also send to Slack
+      continue: true  # Also send to Slack and Telegram
 
     - match:
         severity: critical
       receiver: 'slack-critical'
       group_wait: 10s
       repeat_interval: 1h
+      continue: true  # Also send to Telegram
+
+    - match:
+        severity: critical
+      receiver: 'telegram-critical'
+      group_wait: 0s
+      repeat_interval: 15m
 
     # -------------------------------------------------------------------------
     # KILL SWITCH -> Immediate notification
@@ -202,6 +209,22 @@ receivers:
         icon_emoji: ':information_source:'
         title: '{{ .CommonAnnotations.summary }}'
         send_resolved: false
+
+  # ---------------------------------------------------------------------------
+  # TELEGRAM - Critical Alerts (Sprint 13)
+  # ---------------------------------------------------------------------------
+  - name: 'telegram-critical'
+    telegram_configs:
+      - bot_token: '${TELEGRAM_BOT_TOKEN}'
+        chat_id: ${TELEGRAM_CHAT_ID}
+        parse_mode: 'HTML'
+        message: |
+          <b>{{ .CommonAnnotations.summary }}</b>
+          {{ range .Alerts }}
+          {{ .Annotations.description }}
+          Severity: {{ .Labels.severity }}
+          {{ end }}
+        send_resolved: true
 
   # ---------------------------------------------------------------------------
   # EMAIL - Daily Summary (optional)

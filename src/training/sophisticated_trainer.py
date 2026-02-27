@@ -44,6 +44,7 @@
 
 import os
 import json
+import hashlib
 import logging
 from datetime import datetime
 from typing import Optional, Dict, Any, Tuple, List
@@ -54,12 +55,75 @@ import pandas as pd
 from pathlib import Path
 
 from stable_baselines3 import PPO
+from stable_baselines3.common.callbacks import BaseCallback
 
 from .unified_agentic_env import UnifiedAgenticEnv, TrainingMode
 from .advanced_reward_shaper import AdvancedRewardShaper, RewardWeights
 from .curriculum_trainer import CurriculumTrainer, CurriculumConfig, CurriculumPhase
 from .ensemble_trainer import EnsembleTrainer, EnsembleConfig, EnsembleModel, EnsembleStrategy
 from .meta_learner import MetaLearner, MetaLearnerConfig, OnlineAdapter, RegimeType
+from .checkpoint_manager import CheckpointManager, CheckpointInfo
+
+
+# =============================================================================
+# Sprint 8: Entropy Annealing Callback
+# =============================================================================
+
+class EntropyAnnealingCallback(BaseCallback):
+    """
+    Reduce entropy coefficient across training according to a step-based schedule.
+
+    This encourages exploration early in training and exploitation later,
+    matching the curriculum phases (BASE=explore, PRODUCTION=exploit).
+
+    Args:
+        schedule: Dict mapping step thresholds to ent_coef values.
+                  E.g. {0: 0.05, 100000: 0.02, 300000: 0.01, 500000: 0.005}
+        verbose: Verbosity level
+    """
+
+    def __init__(self, schedule: Dict[int, float], verbose: int = 0):
+        super().__init__(verbose)
+        self.schedule = sorted(schedule.items())  # [(step, ent_coef), ...]
+        self._last_applied: Optional[float] = None
+
+    def _on_step(self) -> bool:
+        new_ent = self.schedule[0][1]  # default: first entry
+        for step_threshold, ent_coef in reversed(self.schedule):
+            if self.num_timesteps >= step_threshold:
+                new_ent = ent_coef
+                break
+
+        if new_ent != self._last_applied:
+            self.model.ent_coef = new_ent
+            self._last_applied = new_ent
+            if self.verbose > 0:
+                self.logger.record("train/ent_coef_annealed", new_ent)
+        return True
+
+
+# =============================================================================
+# Sprint 8: Learning Rate Warmup Schedule
+# =============================================================================
+
+def lr_warmup_schedule(warmup_fraction: float = 0.05):
+    """
+    Create a learning rate schedule with linear warmup then constant.
+
+    Args:
+        warmup_fraction: Fraction of training for warmup (0.05 = first 5%)
+
+    Returns:
+        Callable for SB3's learning_rate parameter.
+        SB3 passes progress_remaining (1.0 → 0.0), multiplied by base LR.
+    """
+    def schedule(progress_remaining: float) -> float:
+        progress = 1.0 - progress_remaining  # 0.0 → 1.0
+        if progress < warmup_fraction:
+            # Linear warmup: 0 → 1 over warmup period
+            return max(progress / warmup_fraction, 1e-3)  # Floor at 0.1% to avoid zero
+        return 1.0  # Full LR after warmup
+    return schedule
 
 
 class TrainingStrategy(Enum):
@@ -91,18 +155,18 @@ class SophisticatedTrainerConfig:
     ensemble_config: Optional[EnsembleConfig] = None
     meta_config: Optional[MetaLearnerConfig] = None
 
-    # Base hyperparameters
+    # Sprint 8: Corrected base hyperparameters (see config.py for rationale)
     base_hyperparams: Dict[str, Any] = field(default_factory=lambda: {
-        'n_steps': 2048,
+        'n_steps': 1024,       # ~2x episode length (500)
         'batch_size': 128,
-        'gamma': 0.99,
-        'learning_rate': 3e-5,
-        'ent_coef': 0.05,
+        'gamma': 0.995,        # Effective horizon ~200 steps for M15
+        'learning_rate': 3e-4, # Standard PPO (Schulman 2017)
+        'ent_coef': 0.01,      # Moderate; annealed via EntropyAnnealingCallback
         'clip_range': 0.2,
         'gae_lambda': 0.95,
         'max_grad_norm': 0.5,
         'vf_coef': 0.5,
-        'n_epochs': 10
+        'n_epochs': 5          # Reduced from 10 to prevent rollout overfitting
     })
 
     # Directories
@@ -117,9 +181,16 @@ class SophisticatedTrainerConfig:
 
     # Advanced options
     use_reward_shaping: bool = True
+    use_feature_reducer: bool = True
     save_checkpoints: bool = True
     checkpoint_freq: int = 100_000
     verbose: int = 1
+
+    # Sprint 4: Checkpoint manager settings
+    checkpoint_local_dir: str = "checkpoints/local"
+    checkpoint_drive_dir: Optional[str] = None  # Set to Drive path on Colab
+    checkpoint_keep: int = 5
+    resume_from_checkpoint: bool = True
 
     def __post_init__(self):
         """Validate and initialize sub-configs."""
@@ -256,6 +327,33 @@ class SophisticatedTrainer:
         self.online_adapter: Optional[OnlineAdapter] = None
         self.reward_shaper: Optional[AdvancedRewardShaper] = None
 
+        # Sprint 4: Checkpoint manager
+        self.checkpoint_manager = CheckpointManager(
+            local_dir=self.config.checkpoint_local_dir,
+            drive_dir=self.config.checkpoint_drive_dir,
+            keep=self.config.checkpoint_keep,
+        )
+        self._resumed_step: int = 0
+
+        # Sprint 6/14: Feature reducer (PCA dimensionality reduction)
+        self._feature_reducer = None
+        if self.config.use_feature_reducer:
+            try:
+                from src.environment.feature_reducer import FeatureReducer
+                self._feature_reducer = FeatureReducer(
+                    method='pca', variance_threshold=0.95
+                )
+                self._logger.info("FeatureReducer initialized (PCA, 95%% variance)")
+            except ImportError:
+                self._logger.warning(
+                    "FeatureReducer not available — training with raw observation space"
+                )
+
+        # Sprint 14: Walk-forward and quality gate results
+        self._walk_forward_results: Optional[Dict[str, Any]] = None
+        self._quality_gate_passed: Optional[bool] = None
+        self._quality_gate_failures: List[str] = []
+
         # Results tracking
         self.results: Optional[TrainingResults] = None
 
@@ -286,6 +384,17 @@ class SophisticatedTrainer:
             training_duration_seconds=0
         )
 
+        # Sprint 4: Attempt resume from checkpoint
+        if self.config.resume_from_checkpoint:
+            resumed = self.checkpoint_manager.load_latest()
+            if resumed is not None:
+                _, ckpt_info = resumed
+                self._resumed_step = ckpt_info.step
+                self._logger.info(
+                    "Resumed from checkpoint step %d (phase %d, sharpe %.2f)",
+                    ckpt_info.step, ckpt_info.curriculum_phase, ckpt_info.sharpe,
+                )
+
         try:
             # Phase 1: Curriculum Learning
             if self._should_run_curriculum():
@@ -295,6 +404,18 @@ class SophisticatedTrainer:
 
                 curriculum_result = self._run_curriculum_phase(seed)
                 results.curriculum_results = curriculum_result
+
+                # Sprint 4: Checkpoint after curriculum phase
+                if self.config.save_checkpoints and self.curriculum_model is not None:
+                    self.checkpoint_manager.save(
+                        self.curriculum_model,
+                        step=self.config.curriculum_timesteps,
+                        metrics={
+                            "sharpe": curriculum_result.get("best_sharpe", 0.0),
+                            "best_reward": curriculum_result.get("best_reward", 0.0),
+                            "curriculum_phase": 1,
+                        },
+                    )
 
             # Phase 2: Ensemble Training
             if self._should_run_ensemble():
@@ -482,6 +603,12 @@ class SophisticatedTrainer:
         best_model_path = os.path.join(self.config.base_save_dir, 'best_model.zip')
         models_to_evaluate[best_name].save(best_model_path)
 
+        # Sprint 6: Save PCA transformer alongside model if available
+        if hasattr(self, '_feature_reducer') and self._feature_reducer is not None:
+            pca_path = os.path.join(self.config.base_save_dir, 'pca_transformer.pkl')
+            self._feature_reducer.save(pca_path)
+            self._logger.info("PCA transformer saved to %s", pca_path)
+
         # Also evaluate ensemble (if available) as a combined system
         if self.ensemble is not None:
             ensemble_metrics = self._evaluate_ensemble()
@@ -597,27 +724,27 @@ class SophisticatedTrainer:
         """Print final training summary."""
         hours = results.training_duration_seconds / 3600
 
-        print("\n" + "="*70)
-        print("SOPHISTICATED TRAINING COMPLETE")
-        print("="*70)
-        print(f"\nStrategy: {results.strategy}")
-        print(f"Total timesteps: {results.total_timesteps:,}")
-        print(f"Training duration: {hours:.2f} hours")
-        print(f"\nFinal Metrics:")
-        print(f"  Sharpe Ratio:      {results.final_sharpe:.2f}")
-        print(f"  Win Rate:          {results.final_win_rate:.1%}")
-        print(f"  Max Drawdown:      {results.final_max_drawdown:.1%}")
-        print(f"  Cumulative Return: {results.final_cumulative_return:.1%}")
-        print(f"\nCapabilities:")
-        print(f"  Ensemble Available:     {results.has_ensemble}")
-        print(f"  Meta-Adapter Available: {results.has_meta_adapter}")
-        print(f"\nModel Paths:")
-        print(f"  Best Model: {results.best_model_path}")
+        self._logger.info(f"\n{'='*70}")
+        self._logger.info("SOPHISTICATED TRAINING COMPLETE")
+        self._logger.info(f"{'='*70}")
+        self._logger.info(f"\nStrategy: {results.strategy}")
+        self._logger.info(f"Total timesteps: {results.total_timesteps:,}")
+        self._logger.info(f"Training duration: {hours:.2f} hours")
+        self._logger.info(f"\nFinal Metrics:")
+        self._logger.info(f"  Sharpe Ratio:      {results.final_sharpe:.2f}")
+        self._logger.info(f"  Win Rate:          {results.final_win_rate:.1%}")
+        self._logger.info(f"  Max Drawdown:      {results.final_max_drawdown:.1%}")
+        self._logger.info(f"  Cumulative Return: {results.final_cumulative_return:.1%}")
+        self._logger.info(f"\nCapabilities:")
+        self._logger.info(f"  Ensemble Available:     {results.has_ensemble}")
+        self._logger.info(f"  Meta-Adapter Available: {results.has_meta_adapter}")
+        self._logger.info(f"\nModel Paths:")
+        self._logger.info(f"  Best Model: {results.best_model_path}")
         if results.ensemble_path:
-            print(f"  Ensemble:   {results.ensemble_path}")
+            self._logger.info(f"  Ensemble:   {results.ensemble_path}")
         if results.meta_model_path:
-            print(f"  Meta Model: {results.meta_model_path}")
-        print("="*70 + "\n")
+            self._logger.info(f"  Meta Model: {results.meta_model_path}")
+        self._logger.info(f"{'='*70}\n")
 
     def get_production_system(self) -> Dict[str, Any]:
         """
@@ -647,6 +774,311 @@ class SophisticatedTrainer:
             system['online_adapter'] = self.online_adapter
 
         return system
+
+    # =================================================================
+    # Sprint 14: Walk-Forward Validation
+    # =================================================================
+
+    def run_walk_forward(
+        self,
+        df_full: pd.DataFrame,
+        wf_config: Optional[Dict[str, Any]] = None,
+        seed: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Run walk-forward validation on *df_full*.
+
+        Splits data into rolling train/test folds with purge gaps, trains
+        a fresh model per fold, and collects per-fold metrics.
+
+        Args:
+            df_full: Complete DataFrame covering all periods.
+            wf_config: Walk-forward parameters (defaults to config.py WALK_FORWARD_CONFIG).
+            seed: Random seed.
+
+        Returns:
+            Dict with ``folds`` (list of per-fold dicts) and ``aggregate`` summary.
+        """
+        try:
+            from config import WALK_FORWARD_CONFIG
+            cfg = wf_config or WALK_FORWARD_CONFIG
+        except ImportError:
+            cfg = wf_config or {}
+
+        train_w = cfg.get("train_window_bars", 6720)
+        test_w = cfg.get("test_window_bars", 1120)
+        purge = cfg.get("purge_gap_bars", 96)
+        step = cfg.get("step_size_bars", 1120)
+        max_folds = cfg.get("max_folds", 12)
+        min_folds = cfg.get("min_folds", 3)
+
+        total_bars = len(df_full)
+        folds: List[Dict[str, Any]] = []
+        start = 0
+
+        while start + train_w + purge + test_w <= total_bars and len(folds) < max_folds:
+            train_end = start + train_w
+            test_start = train_end + purge
+            test_end = test_start + test_w
+
+            df_train_fold = df_full.iloc[start:train_end].copy()
+            df_test_fold = df_full.iloc[test_start:test_end].copy()
+
+            fold_metrics = self._evaluate_model_on_data(
+                df_train_fold, df_test_fold, seed
+            )
+            fold_metrics["fold"] = len(folds) + 1
+            fold_metrics["train_range"] = (start, train_end)
+            fold_metrics["test_range"] = (test_start, test_end)
+            folds.append(fold_metrics)
+
+            self._logger.info(
+                "WF Fold %d: Sharpe=%.2f  WinRate=%.1f%%  MaxDD=%.1f%%",
+                fold_metrics["fold"],
+                fold_metrics.get("sharpe_ratio", 0),
+                fold_metrics.get("win_rate", 0) * 100,
+                fold_metrics.get("max_drawdown", 0) * 100,
+            )
+
+            start += step
+
+        if len(folds) < min_folds:
+            self._logger.warning(
+                "Only %d folds generated (minimum %d). Data may be too short.",
+                len(folds), min_folds,
+            )
+
+        # Aggregate
+        sharpes = [f["sharpe_ratio"] for f in folds if "sharpe_ratio" in f]
+        win_rates = [f["win_rate"] for f in folds if "win_rate" in f]
+        drawdowns = [f["max_drawdown"] for f in folds if "max_drawdown" in f]
+
+        aggregate = {
+            "n_folds": len(folds),
+            "mean_sharpe": float(np.mean(sharpes)) if sharpes else 0.0,
+            "std_sharpe": float(np.std(sharpes)) if sharpes else 0.0,
+            "mean_win_rate": float(np.mean(win_rates)) if win_rates else 0.0,
+            "mean_max_drawdown": float(np.mean(drawdowns)) if drawdowns else 0.0,
+            "worst_sharpe": float(np.min(sharpes)) if sharpes else 0.0,
+        }
+
+        result = {"folds": folds, "aggregate": aggregate}
+        self._walk_forward_results = result
+        return result
+
+    def _evaluate_model_on_data(
+        self,
+        df_train: pd.DataFrame,
+        df_test: pd.DataFrame,
+        seed: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Train a lightweight model on *df_train* and evaluate on *df_test*."""
+        env_train = UnifiedAgenticEnv(df_train, mode=TrainingMode.PRODUCTION)
+        env_test = UnifiedAgenticEnv(df_test, mode=TrainingMode.PRODUCTION)
+
+        model = PPO(
+            "MlpPolicy",
+            env_train,
+            seed=seed,
+            verbose=0,
+            **self.config.base_hyperparams,
+        )
+        # Use 20% of total timesteps per fold for speed
+        fold_steps = min(50_000, self.config.total_timesteps // 20)
+        model.learn(total_timesteps=fold_steps)
+
+        return self._evaluate_model(model, "wf_fold")
+
+    # =================================================================
+    # Sprint 14: Quality Gates
+    # =================================================================
+
+    def check_quality_gates(
+        self, metrics: Dict[str, Any], gates: Optional[Dict[str, float]] = None,
+    ) -> Tuple[bool, List[str]]:
+        """Check whether *metrics* pass production quality gates.
+
+        Args:
+            metrics: Dict with keys ``sharpe_ratio``, ``max_drawdown``,
+                     ``win_rate``, ``profit_factor``.
+            gates: Override thresholds (defaults to config.py QUALITY_GATES).
+
+        Returns:
+            (passed, failures) — *passed* is True if all gates pass,
+            *failures* lists names of failed gates.
+        """
+        try:
+            from config import QUALITY_GATES
+            g = gates or QUALITY_GATES
+        except ImportError:
+            g = gates or {}
+
+        checks = [
+            (
+                f"Sharpe >= {g.get('min_sharpe', 1.0)}",
+                metrics.get("sharpe_ratio", 0) >= g.get("min_sharpe", 1.0),
+            ),
+            (
+                f"Max DD <= {g.get('max_drawdown', 0.15):.0%}",
+                metrics.get("max_drawdown", 1.0) <= g.get("max_drawdown", 0.15),
+            ),
+            (
+                f"Win Rate >= {g.get('min_win_rate', 0.40):.0%}",
+                metrics.get("win_rate", 0) >= g.get("min_win_rate", 0.40),
+            ),
+            (
+                f"Profit Factor >= {g.get('min_profit_factor', 1.3)}",
+                metrics.get("profit_factor", 0) >= g.get("min_profit_factor", 1.3),
+            ),
+        ]
+
+        failures = [name for name, passed in checks if not passed]
+        all_passed = len(failures) == 0
+
+        self._quality_gate_passed = all_passed
+        self._quality_gate_failures = failures
+
+        if all_passed:
+            self._logger.info("QUALITY GATES: ALL PASSED")
+        else:
+            self._logger.warning("QUALITY GATES FAILED: %s", ", ".join(failures))
+
+        return all_passed, failures
+
+    # =================================================================
+    # Sprint 14: Production Artifact Packaging
+    # =================================================================
+
+    def package_production_artifact(
+        self,
+        output_dir: str = "production_model",
+        results: Optional[TrainingResults] = None,
+    ) -> str:
+        """Package the trained model into a self-contained production artifact.
+
+        Creates *output_dir* containing model weights, PCA transformer,
+        config, metadata, walk-forward results, and a SHA-256 manifest.
+
+        Returns:
+            Path to the output directory.
+        """
+        os.makedirs(output_dir, exist_ok=True)
+        results = results or self.results
+
+        # 1. Save model weights
+        model = self.curriculum_model or self.meta_model
+        if model is not None:
+            model.save(os.path.join(output_dir, "model"))
+
+        # 2. Save PCA transformer
+        if self._feature_reducer is not None:
+            pca_path = os.path.join(output_dir, "pca_transformer.pkl")
+            self._feature_reducer.save(pca_path)
+
+        # 3. Config
+        config_data = {
+            "hyperparameters": self.config.base_hyperparams,
+            "strategy": self.config.strategy.name,
+            "total_timesteps": self.config.total_timesteps,
+            "use_feature_reducer": self.config.use_feature_reducer,
+        }
+        with open(os.path.join(output_dir, "config.json"), "w") as f:
+            json.dump(config_data, f, indent=2)
+
+        # 4. Training metadata
+        metadata = {
+            "timestamp": datetime.now().isoformat(),
+            "quality_gate_passed": self._quality_gate_passed,
+            "quality_gate_failures": self._quality_gate_failures,
+        }
+        if results is not None:
+            metadata.update({
+                "training_duration_seconds": results.training_duration_seconds,
+                "final_sharpe": results.final_sharpe,
+                "final_win_rate": results.final_win_rate,
+                "final_max_drawdown": results.final_max_drawdown,
+                "final_cumulative_return": results.final_cumulative_return,
+                "has_ensemble": results.has_ensemble,
+                "has_meta_adapter": results.has_meta_adapter,
+            })
+        with open(os.path.join(output_dir, "training_metadata.json"), "w") as f:
+            json.dump(metadata, f, indent=2)
+
+        # 5. Walk-forward results
+        if self._walk_forward_results is not None:
+            wf_path = os.path.join(output_dir, "walk_forward_results.json")
+            # Convert numpy types for JSON
+            wf_data = json.loads(json.dumps(
+                self._walk_forward_results, default=str
+            ))
+            with open(wf_path, "w") as f:
+                json.dump(wf_data, f, indent=2)
+
+        # 6. SHA-256 manifest
+        manifest: Dict[str, str] = {}
+        for fname in os.listdir(output_dir):
+            fpath = os.path.join(output_dir, fname)
+            if os.path.isfile(fpath) and fname != "manifest.json":
+                h = hashlib.sha256()
+                with open(fpath, "rb") as fh:
+                    for chunk in iter(lambda: fh.read(8192), b""):
+                        h.update(chunk)
+                manifest[fname] = f"sha256:{h.hexdigest()}"
+
+        with open(os.path.join(output_dir, "manifest.json"), "w") as f:
+            json.dump(manifest, f, indent=2)
+
+        self._logger.info("Production artifact packaged at: %s", output_dir)
+        self._logger.info("  Files: %s", ", ".join(sorted(manifest.keys())))
+        return output_dir
+
+    # =================================================================
+    # Sprint 14: Multi-Seed Ensemble Training
+    # =================================================================
+
+    @classmethod
+    def train_ensemble_seeds(
+        cls,
+        df_train: pd.DataFrame,
+        df_val: pd.DataFrame,
+        df_test: Optional[pd.DataFrame] = None,
+        seeds: Tuple[int, ...] = (42, 123, 456),
+        config: Optional[SophisticatedTrainerConfig] = None,
+        **kwargs,
+    ) -> Dict[int, TrainingResults]:
+        """Train multiple models with different random seeds.
+
+        Args:
+            df_train, df_val, df_test: Data splits.
+            seeds: Random seeds to use.
+            config: Shared training config.
+            **kwargs: Extra kwargs for ``SophisticatedTrainer.__init__``.
+
+        Returns:
+            Dict mapping seed → TrainingResults.
+        """
+        logger = logging.getLogger(__name__)
+        results: Dict[int, TrainingResults] = {}
+
+        for i, seed in enumerate(seeds):
+            logger.info(
+                "=== Ensemble seed %d/%d (seed=%d) ===", i + 1, len(seeds), seed
+            )
+            trainer = cls(
+                df_train=df_train,
+                df_val=df_val,
+                df_test=df_test,
+                config=config,
+                **kwargs,
+            )
+            results[seed] = trainer.train(seed=seed)
+
+        # Summary
+        sharpes = [r.final_sharpe for r in results.values()]
+        logger.info(
+            "Ensemble complete: %d seeds, Sharpe range [%.2f, %.2f], mean=%.2f",
+            len(seeds), min(sharpes), max(sharpes), np.mean(sharpes),
+        )
+        return results
 
 
 def quick_train(

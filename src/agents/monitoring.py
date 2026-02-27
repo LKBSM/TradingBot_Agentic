@@ -29,6 +29,7 @@ from collections import deque
 import json
 import csv
 import io
+import logging
 
 try:
     from rich.console import Console
@@ -41,6 +42,8 @@ try:
     RICH_AVAILABLE = True
 except ImportError:
     RICH_AVAILABLE = False
+
+logger = logging.getLogger(__name__)
 
 
 # =============================================================================
@@ -394,24 +397,24 @@ class AgentMonitor:
         """Print dashboard using plain text (no Rich)."""
         stats = self.get_stats()
 
-        print("\n" + "=" * 70)
-        print("         AGENTIC AI TRADING SYSTEM - RISK MONITOR")
-        print("=" * 70)
+        logger.info("\n" + "=" * 70)
+        logger.info("         AGENTIC AI TRADING SYSTEM - RISK MONITOR")
+        logger.info("=" * 70)
 
-        print(f"\nUptime: {stats.get('monitor_uptime', 'N/A')}")
-        print(f"Agents Active: {stats.get('agents_monitored', 0)}")
-        print(f"Decisions Tracked: {stats.get('total_decisions_recorded', 0)}")
+        logger.info(f"\nUptime: {stats.get('monitor_uptime', 'N/A')}")
+        logger.info(f"Agents Active: {stats.get('agents_monitored', 0)}")
+        logger.info(f"Decisions Tracked: {stats.get('total_decisions_recorded', 0)}")
 
         for agent_id, agent_stats in stats.get('agents', {}).items():
-            print(f"\n--- {agent_id} ---")
+            logger.info(f"\n--- {agent_id} ---")
             for key, value in agent_stats.items():
-                print(f"  {key}: {value}")
+                logger.info(f"  {key}: {value}")
 
         if 'recent_approval_rate' in stats:
-            print(f"\nRecent Approval Rate: {stats['recent_approval_rate']}")
-            print(f"Avg Risk Score: {stats.get('avg_risk_score', 0):.1f}/100")
+            logger.info(f"\nRecent Approval Rate: {stats['recent_approval_rate']}")
+            logger.info(f"Avg Risk Score: {stats.get('avg_risk_score', 0):.1f}/100")
 
-        print("\n" + "=" * 70)
+        logger.info("\n" + "=" * 70)
 
     # =========================================================================
     # EXPORT

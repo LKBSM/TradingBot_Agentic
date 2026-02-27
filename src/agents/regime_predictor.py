@@ -33,6 +33,8 @@
 from __future__ import annotations
 
 import logging
+
+logger = logging.getLogger(__name__)
 import warnings
 from abc import ABC, abstractmethod
 from collections import deque
@@ -610,9 +612,9 @@ class RegimePredictor:
         # Get prediction
         prediction = predictor.predict()
 
-        print(f"Current regime: {prediction.current_regime.name}")
-        print(f"P(transition): {prediction.transition_probability:.1%}")
-        print(f"Next regime likely: {prediction.most_likely_next_regime.name}")
+        logger.info(f"Current regime: {prediction.current_regime.name}")
+        logger.info(f"P(transition): {prediction.transition_probability:.1%}")
+        logger.info(f"Next regime likely: {prediction.most_likely_next_regime.name}")
     """
 
     def __init__(self, config: Optional[RegimePredictorConfig] = None):

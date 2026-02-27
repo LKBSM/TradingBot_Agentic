@@ -54,6 +54,8 @@ from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 from collections import deque
 import logging
 
+logger = logging.getLogger(__name__)
+
 # =============================================================================
 # PERSISTENCE INTEGRATION
 # =============================================================================
@@ -261,7 +263,7 @@ class CircuitBreaker:
 
         # Check condition
         if breaker.check(current_daily_loss, threshold=0.03):
-            print("Breaker tripped!")
+            logger.warning("Breaker tripped!")
     """
 
     def __init__(self, config: CircuitBreakerConfig):
@@ -429,6 +431,29 @@ class WebhookAlertCallback(AlertCallback):
 
         except Exception as e:
             self._logger.error(f"Webhook alert failed: {e}")
+            return False
+
+
+class TelegramAlertCallback(AlertCallback):
+    """Bridge kill switch halt events to Telegram via live_trading alerting.
+
+    Wraps the live_trading AlertManager so that every kill switch state
+    change is forwarded as a Telegram notification.
+    """
+
+    def __init__(self, alerting_manager):
+        self._alerting = alerting_manager
+        self._logger = logging.getLogger("kill_switch.alerts.telegram")
+
+    def send(self, halt_event: HaltEvent) -> bool:
+        try:
+            self._alerting.kill_switch_triggered(
+                reason=f"{halt_event.reason.value}: {halt_event.message}",
+                equity=halt_event.trigger_value,
+            )
+            return True
+        except Exception as e:
+            self._logger.error(f"Telegram alert callback failed: {e}")
             return False
 
 
@@ -659,7 +684,7 @@ class KillSwitch:
             # Execute trade
             pass
         else:
-            print(f"Trading halted: {kill_switch.halt_reason}")
+            logger.warning(f"Trading halted: {kill_switch.halt_reason}")
 
     CRITICAL: This class is designed to FAIL SAFE.
     When in doubt about any condition, it will HALT trading.
@@ -671,7 +696,8 @@ class KillSwitch:
         admin_key: Optional[str] = None,
         initial_equity: float = 100.0,
         persistence_path: Optional[str] = None,
-        enable_persistence: bool = True
+        enable_persistence: bool = True,
+        alerting_manager=None,
     ):
         """
         Initialize kill switch.
@@ -683,6 +709,7 @@ class KillSwitch:
                            SECURITY FIX: Defaults to 100.0 to ensure drawdown is tracked
             persistence_path: Path to SQLite database for state persistence
             enable_persistence: Whether to enable state persistence (recommended)
+            alerting_manager: Optional live_trading AlertManager for Telegram notifications
         """
         self.config = config or KillSwitchConfig()
         self._initial_equity = max(initial_equity, 1.0)  # Floor at 1.0 to prevent issues
@@ -753,6 +780,10 @@ class KillSwitch:
         # Components
         self._breakers: Dict[str, CircuitBreaker] = {}
         self._alert_manager = AlertManager()
+        if alerting_manager is not None:
+            self._alert_manager.add_callback(
+                TelegramAlertCallback(alerting_manager)
+            )
         self._recovery_manager = RecoveryManager(
             cooldown_seconds=self.config.default_cooldown_seconds,
             require_confirmation=self.config.require_manual_reset
@@ -760,6 +791,12 @@ class KillSwitch:
 
         # History
         self._halt_history: deque = deque(maxlen=100)
+
+        # Execution failure tracking for escalation (Sprint 3)
+        self._consecutive_close_failures = 0
+        self._max_close_failures_before_escalation = 3
+        self._close_failure_window = timedelta(seconds=60)
+        self._close_failure_timestamps: deque = deque(maxlen=20)
 
         # Thread safety
         self._lock = threading.RLock()
@@ -996,7 +1033,8 @@ class KillSwitch:
         weekly_pnl: Optional[float] = None,
         var_pct: Optional[float] = None,
         gross_exposure_pct: Optional[float] = None,
-        is_connected: bool = True
+        is_connected: bool = True,
+        correlation_z_score: Optional[float] = None,
     ) -> HaltLevel:
         """
         Update kill switch with current portfolio state.
@@ -1012,6 +1050,7 @@ class KillSwitch:
             var_pct: Current VaR as percentage
             gross_exposure_pct: Current gross exposure as percentage
             is_connected: Whether connected to broker/data
+            correlation_z_score: Sprint 5 — max |z-score| from correlation tracker
 
         Returns:
             Current halt level
@@ -1154,6 +1193,16 @@ class KillSwitch:
                         self.config.max_disconnect_seconds,
                         f"Connectivity lost for {disconnect_duration:.0f}s"
                     )
+
+            # 9. Sprint 5: Correlation breakdown check
+            if correlation_z_score is not None and abs(correlation_z_score) >= 3.0:
+                self._trigger_halt(
+                    HaltReason.CORRELATION_BREAKDOWN,
+                    HaltLevel.REDUCED,
+                    abs(correlation_z_score),
+                    3.0,
+                    f"Correlation breakdown: z-score={correlation_z_score:.2f}"
+                )
 
             # PERSISTENCE: Save state after update
             self._save_state_to_store()
@@ -1546,6 +1595,103 @@ class KillSwitch:
 
             if "weekly_loss" in self._breakers:
                 self._breakers["weekly_loss"].reset(force=True)
+
+    # =========================================================================
+    # ESCALATION (Sprint 3)
+    # =========================================================================
+
+    def escalate(self, reason: str) -> HaltLevel:
+        """
+        Ratchet up the halt level by one step. Never ratchets down.
+
+        Escalation path:
+            NONE → CAUTION → REDUCED → NEW_ONLY → CLOSE_ONLY → FULL_HALT → EMERGENCY
+
+        This is the safety net for when the current halt level is insufficient
+        (e.g., CLOSE_ONLY but MT5 can't execute closes).
+
+        Args:
+            reason: Why the escalation is happening.
+
+        Returns:
+            The new HaltLevel after escalation.
+        """
+        with self._lock:
+            current = self._halt_level
+            if current.value >= HaltLevel.EMERGENCY.value:
+                self._logger.warning(
+                    "Escalation requested but already at EMERGENCY level"
+                )
+                return current
+
+            new_level = HaltLevel(current.value + 1)
+
+            self._logger.critical(
+                "Kill switch ESCALATING",
+                extra={
+                    'previous_level': current.name,
+                    'new_level': new_level.name,
+                    'reason': reason,
+                    'consecutive_close_failures': self._consecutive_close_failures,
+                }
+            )
+
+            self._trigger_halt(
+                HaltReason.EXECUTION_ERROR,
+                new_level,
+                float(self._consecutive_close_failures),
+                float(self._max_close_failures_before_escalation),
+                f"Escalation: {reason} (from {current.name} to {new_level.name})"
+            )
+
+            return self._halt_level
+
+    def record_close_failure(self, reason: str = "MT5 close execution failed") -> HaltLevel:
+        """
+        Record a failed close attempt. After max_close_failures_before_escalation
+        failures within close_failure_window, auto-escalate the halt level.
+
+        Call this when a position close order fails (e.g., MT5 timeout, rejected).
+
+        Args:
+            reason: Description of the failure.
+
+        Returns:
+            Current HaltLevel (may be escalated).
+        """
+        with self._lock:
+            now = datetime.now()
+            self._close_failure_timestamps.append(now)
+
+            # Count failures within the window
+            cutoff = now - self._close_failure_window
+            recent_failures = sum(
+                1 for ts in self._close_failure_timestamps if ts >= cutoff
+            )
+            self._consecutive_close_failures = recent_failures
+
+            self._logger.warning(
+                "Close execution failure recorded: %s "
+                "(%d/%d within %ds window)",
+                reason, recent_failures,
+                self._max_close_failures_before_escalation,
+                int(self._close_failure_window.total_seconds())
+            )
+
+            # Auto-escalate if threshold reached
+            if recent_failures >= self._max_close_failures_before_escalation:
+                self._logger.critical(
+                    "Close failure threshold reached — auto-escalating kill switch"
+                )
+                # Reset counter to avoid immediate re-escalation
+                self._close_failure_timestamps.clear()
+                self._consecutive_close_failures = 0
+                return self.escalate(
+                    f"{recent_failures} close failures in "
+                    f"{int(self._close_failure_window.total_seconds())}s: {reason}"
+                )
+
+            return self._halt_level
 
     # =========================================================================
     # STATUS AND REPORTING

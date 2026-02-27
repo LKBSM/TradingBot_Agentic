@@ -35,6 +35,8 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+
+logger = logging.getLogger(__name__)
 import re
 import threading
 import time
@@ -695,7 +697,7 @@ class SentimentAnalyzer:
 
         # Single text
         result = analyzer.analyze("Fed signals hawkish stance on rates")
-        print(f"Sentiment: {result.label.value}, Score: {result.score}")
+        logger.info(f"Sentiment: {result.label.value}, Score: {result.score}")
 
         # Multiple texts with aggregation
         texts = [
@@ -704,8 +706,8 @@ class SentimentAnalyzer:
             "Gold rallies as investors seek safety"
         ]
         aggregated = analyzer.analyze_batch(texts)
-        print(f"Overall: {aggregated.overall_label.value}")
-        print(f"USD score: {aggregated.entity_scores.get('USD', 0)}")
+        logger.info(f"Overall: {aggregated.overall_label.value}")
+        logger.info(f"USD score: {aggregated.entity_scores.get('USD', 0)}")
     """
 
     def __init__(self, config: Optional[SentimentConfig] = None):

@@ -90,6 +90,8 @@ class CurriculumConfig:
         total = self.total_timesteps
 
         return [
+            # Sprint 8: Entropy multipliers produce correct annealed values
+            # with base ent_coef=0.01: 5.0→0.05, 2.0→0.02, 1.0→0.01, 0.5→0.005
             PhaseConfig(
                 mode=TrainingMode.BASE,
                 timesteps=int(total * 0.20),  # 20% for basics
@@ -99,7 +101,7 @@ class CurriculumConfig:
                 min_win_rate_to_advance=0.40,
                 soft_penalty_scale=0.0,
                 learning_rate_multiplier=1.0,
-                entropy_coef_multiplier=1.5,  # High exploration
+                entropy_coef_multiplier=5.0,   # 0.01 * 5.0 = 0.05 (high exploration)
                 description="BASE: Pure market learning"
             ),
             PhaseConfig(
@@ -111,7 +113,7 @@ class CurriculumConfig:
                 min_win_rate_to_advance=0.45,
                 soft_penalty_scale=0.0,
                 learning_rate_multiplier=0.8,
-                entropy_coef_multiplier=1.2,
+                entropy_coef_multiplier=2.0,   # 0.01 * 2.0 = 0.02
                 description="ENRICHED: Signal awareness"
             ),
             PhaseConfig(
@@ -123,7 +125,7 @@ class CurriculumConfig:
                 min_win_rate_to_advance=0.48,
                 soft_penalty_scale=1.0,
                 learning_rate_multiplier=0.6,
-                entropy_coef_multiplier=1.0,
+                entropy_coef_multiplier=1.0,   # 0.01 * 1.0 = 0.01
                 description="SOFT: Soft constraints"
             ),
             PhaseConfig(
@@ -135,7 +137,7 @@ class CurriculumConfig:
                 min_win_rate_to_advance=0.50,
                 soft_penalty_scale=1.0,
                 learning_rate_multiplier=0.4,
-                entropy_coef_multiplier=0.8,  # Less exploration
+                entropy_coef_multiplier=0.5,   # 0.01 * 0.5 = 0.005 (exploit)
                 description="PRODUCTION: Full integration"
             )
         ]
@@ -345,18 +347,18 @@ class CurriculumTrainer:
         self.economic_calendar = economic_calendar
         self.verbose = verbose
 
-        # Default hyperparams if not provided
+        # Sprint 8: Updated default hyperparams to match corrected config
         self.base_hyperparams = base_hyperparams or {
-            'n_steps': 2048,
+            'n_steps': 1024,
             'batch_size': 128,
-            'gamma': 0.99,
-            'learning_rate': 3e-5,
-            'ent_coef': 0.05,
+            'gamma': 0.995,
+            'learning_rate': 3e-4,
+            'ent_coef': 0.01,
             'clip_range': 0.2,
             'gae_lambda': 0.95,
             'max_grad_norm': 0.5,
             'vf_coef': 0.5,
-            'n_epochs': 10
+            'n_epochs': 5
         }
 
         self._logger = logging.getLogger(__name__)

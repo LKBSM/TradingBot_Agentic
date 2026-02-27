@@ -590,4 +590,50 @@ def create_trading_metrics(
         'news_blocks': reg.counter(
             'news_blocks_total', 'Trades blocked by news events'
         ),
+
+        # Sprint 5: Correlation risk gauges
+        'gold_dxy_correlation': reg.gauge(
+            'gold_dxy_correlation', 'Gold-DXY rolling correlation'
+        ),
+        'gold_us10y_correlation': reg.gauge(
+            'gold_us10y_correlation', 'Gold-US10Y rolling correlation'
+        ),
+        'correlation_regime': reg.gauge(
+            'correlation_regime', 'Correlation regime (0=STABLE,1=ELEVATED,2=BREAKDOWN,3=DECORRELATED)'
+        ),
+        'correlation_risk_multiplier': reg.gauge(
+            'correlation_risk_multiplier', 'Position size multiplier from correlation risk'
+        ),
+
+        # Sprint 11: Signal performance metrics
+        'signals_published': reg.counter(
+            'signals_published_total', 'Total signals emitted'
+        ),
+        'signals_closed_win': reg.counter(
+            'signals_closed_win_total', 'Signals closed with profit'
+        ),
+        'signals_closed_loss': reg.counter(
+            'signals_closed_loss_total', 'Signals closed with loss'
+        ),
+        'current_win_rate_30d': reg.gauge(
+            'current_win_rate_30d', 'Rolling 30-day win rate'
+        ),
+        'current_sharpe_30d': reg.gauge(
+            'current_sharpe_30d', 'Rolling 30-day Sharpe ratio'
+        ),
+        'current_profit_factor_30d': reg.gauge(
+            'current_profit_factor_30d', 'Rolling 30-day profit factor'
+        ),
+        'current_cumulative_pnl': reg.gauge(
+            'current_cumulative_pnl', 'Cumulative PnL in pips'
+        ),
+        'signal_pnl_pips': reg.histogram(
+            'signal_pnl_pips', 'Signal PnL distribution in pips',
+            buckets=(-100, -50, -20, -10, 0, 10, 20, 50, 100, 200, float('inf'))
+        ),
+
+        # Kill switch observability (Sprint 13)
+        'kill_switch_level': reg.gauge(
+            'kill_switch_level', 'Current kill switch halt level (0=NONE, 6=EMERGENCY)'
+        ),
     }

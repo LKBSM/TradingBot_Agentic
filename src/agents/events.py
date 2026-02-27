@@ -680,7 +680,7 @@ class EventBus:
         # Each agent is limited to _rate_limit_max_events within _rate_limit_window.
         self._rate_limit_window = timedelta(seconds=10)  # 10 second window
         self._rate_limit_max_events = 500  # Max 500 events per 10s per agent
-        self._rate_limit_counters: Dict[str, List[datetime]] = defaultdict(list)
+        self._rate_limit_counters: Dict[str, deque] = defaultdict(deque)
         self._rate_limit_lock = Lock()
 
         # --- Logging ---
@@ -726,7 +726,14 @@ class EventBus:
                     f"Unsubscribed handler from {event_type.name}"
                 )
 
-    def _is_rate_limited(self, source_id: str) -> bool:
+    # Sprint 3: Critical events that must NEVER be rate-limited or dropped
+    CRITICAL_EVENT_TYPES = frozenset({
+        EventType.RISK_ALERT,
+        EventType.DRAWDOWN_BREACH,
+        EventType.DRAWDOWN_WARNING,
+    })
+
+    def _is_rate_limited(self, source_id: str, event_type: EventType = None) -> bool:
         """
         Check if a source agent has exceeded its event publishing rate limit.
 
@@ -734,17 +741,28 @@ class EventBus:
         seconds are counted. If the count exceeds _rate_limit_max_events,
         the event is dropped.
 
+        Sprint 3 fix: Critical safety events (RISK_ALERT, DRAWDOWN_BREACH,
+        DRAWDOWN_WARNING) bypass rate limiting entirely — they must never
+        be silently dropped.
+
+        Sprint 3 fix: Uses deque.popleft() for O(1) removal instead of O(n).
+
         This prevents a malfunctioning or compromised agent from flooding
         the event bus and causing denial-of-service to other agents.
         """
+        # SAFETY: Critical events are NEVER rate-limited
+        if event_type is not None and event_type in self.CRITICAL_EVENT_TYPES:
+            return False
+
         now = datetime.now()
         cutoff = now - self._rate_limit_window
 
         with self._rate_limit_lock:
             timestamps = self._rate_limit_counters[source_id]
             # Remove expired timestamps (sliding window)
+            # Sprint 3 fix: deque.popleft() is O(1)
             while timestamps and timestamps[0] < cutoff:
-                timestamps.pop(0)
+                timestamps.popleft()
             # Check limit
             if len(timestamps) >= self._rate_limit_max_events:
                 return True
@@ -908,8 +926,10 @@ class EventBus:
         responses: List[Optional[AgentEvent]] = []
 
         # SECURITY: Rate limit per source agent to prevent bus flooding
+        # Sprint 3: Pass event_type so critical events bypass rate limiting
         source_id = event.source_agent_id if hasattr(event, 'source_agent_id') else "unknown"
-        if self._is_rate_limited(source_id):
+        event_type = event.event_type if hasattr(event, 'event_type') else None
+        if self._is_rate_limited(source_id, event_type=event_type):
             self._logger.warning(
                 f"Rate limited: agent {source_id} exceeded {self._rate_limit_max_events} "
                 f"events/{self._rate_limit_window.total_seconds()}s. "

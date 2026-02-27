@@ -48,6 +48,8 @@ from typing import Dict, Any, Optional, List, Tuple
 from dataclasses import dataclass, field
 from collections import deque
 import logging
+
+logger = logging.getLogger(__name__)
 import numpy as np
 
 # Import base classes and events
@@ -68,7 +70,7 @@ from src.agents.config import RiskSentinelConfig
 
 # Import action constants for long/short trading
 try:
-    from src.config import (
+    from config import (
         ACTION_HOLD, ACTION_OPEN_LONG, ACTION_CLOSE_LONG,
         ACTION_OPEN_SHORT, ACTION_CLOSE_SHORT,
         POSITION_FLAT, POSITION_LONG, POSITION_SHORT,
@@ -164,7 +166,7 @@ class RiskSentinelAgent(BaseAgent):
         pass
     else:
         # Log rejection reason
-        print(assessment.reasoning)
+        logger.info(assessment.reasoning)
     ```
 
     === INTEGRATION ===

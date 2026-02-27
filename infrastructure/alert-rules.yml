@@ -75,6 +75,19 @@ groups:
           summary: "Win rate below threshold"
           description: "Win rate at {{ $value | printf \"%.1f\" }}% over last hour"
 
+      # -----------------------------------------------------------------------
+      # SIGNAL GENERATION ALERTS (Sprint 13)
+      # -----------------------------------------------------------------------
+      - alert: NoSignalGenerated
+        expr: increase(trading_signals_published_total[2h]) == 0
+        for: 10m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "No signals generated in 2 hours"
+          description: "Bot may be stuck or model not producing actionable signals during market hours"
+
   # ===========================================================================
   # RISK ALERTS
   # ===========================================================================
@@ -178,6 +191,23 @@ groups:
         annotations:
           summary: "CRITICAL: High error rate"
           description: "{{ $value | printf \"%.2f\" }} errors/second. Check logs."
+
+      # -----------------------------------------------------------------------
+      # API ERROR RATE (Sprint 13)
+      # -----------------------------------------------------------------------
+      - alert: APIHighErrorRate
+        expr: |
+          (
+            rate(trading_http_request_duration_seconds_count{status=~"5.."}[5m])
+            / rate(trading_http_request_duration_seconds_count[5m])
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          category: system
+        annotations:
+          summary: "API error rate exceeds 5%"
+          description: "{{ $value | printf \"%.1f\" }}% of API requests returning 5xx errors"
 
       # -----------------------------------------------------------------------
       # SERVICE HEALTH

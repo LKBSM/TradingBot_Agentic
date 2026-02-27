@@ -536,18 +536,20 @@ class SmartMoneyEngine:
         )
 
         if self.verbose:
-            print(f"\n{'='*60}")
-            print(f"📊 SMC Analysis Performance Report")
-            print(f"{'='*60}")
-            print(f"  Input rows:     {initial_rows:,}")
-            print(f"  Output rows:    {len(self.df):,} ({rows_dropped} dropped)")
-            print(f"  TA Indicators:  {self._timing['ta_indicators']*1000:.1f}ms")
-            print(f"  SMC Features:   {self._timing['smc_features']*1000:.1f}ms")
-            print(f"  BOS/CHOCH:      {self._timing['structure']*1000:.1f}ms")
-            print(f"  Data Cleaning:  {self._timing['cleaning']*1000:.1f}ms")
-            print(f"  TOTAL:          {self._timing['total']*1000:.1f}ms")
-            print(f"  Numba JIT:      {'✅ Enabled' if NUMBA_AVAILABLE else '❌ Disabled (install numba)'}")
-            print(f"{'='*60}\n")
+            logger.info(
+                f"\n{'='*60}\n"
+                f"SMC Analysis Performance Report\n"
+                f"{'='*60}\n"
+                f"  Input rows:     {initial_rows:,}\n"
+                f"  Output rows:    {len(self.df):,} ({rows_dropped} dropped)\n"
+                f"  TA Indicators:  {self._timing['ta_indicators']*1000:.1f}ms\n"
+                f"  SMC Features:   {self._timing['smc_features']*1000:.1f}ms\n"
+                f"  BOS/CHOCH:      {self._timing['structure']*1000:.1f}ms\n"
+                f"  Data Cleaning:  {self._timing['cleaning']*1000:.1f}ms\n"
+                f"  TOTAL:          {self._timing['total']*1000:.1f}ms\n"
+                f"  Numba JIT:      {'Enabled' if NUMBA_AVAILABLE else 'Disabled (install numba)'}\n"
+                f"{'='*60}"
+            )
 
         if len(self.df) < self.config.BB_WINDOW * 2:
             logger.warning(f"Cleaning left very few rows ({len(self.df)}). Check data quality.")
@@ -557,6 +559,32 @@ class SmartMoneyEngine:
     def get_timing_report(self) -> Dict[str, float]:
         """Get performance timing breakdown."""
         return self._timing.copy()
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# SPRINT 6: VIF MULTICOLLINEARITY DETECTION
+# ═════════════════════════════════════════════════════════════════════════════
+
+def compute_feature_vif(df: pd.DataFrame, feature_columns: list) -> pd.DataFrame:
+    """
+    Compute VIF for feature columns in a DataFrame.
+
+    Delegates to feature_reducer.compute_vif for the actual calculation.
+
+    Args:
+        df: DataFrame with feature columns.
+        feature_columns: List of column names to check.
+
+    Returns:
+        DataFrame with ['feature', 'VIF'] sorted by VIF descending.
+    """
+    from src.environment.feature_reducer import compute_vif
+    valid_cols = [c for c in feature_columns if c in df.columns]
+    data = df[valid_cols].dropna().values
+    if len(data) < 10:
+        logger.warning("Not enough data for VIF calculation (%d rows)", len(data))
+        return pd.DataFrame({"feature": valid_cols, "VIF": [1.0] * len(valid_cols)})
+    return compute_vif(data, valid_cols)
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -641,7 +669,7 @@ def preprocess_dataframes_parallel(
 
     if JOBLIB_AVAILABLE and len(dataframes) > 1:
         if verbose:
-            print(f"🚀 Parallel preprocessing: {len(dataframes)} DataFrames with {n_jobs} jobs")
+            logger.info(f"Parallel preprocessing: {len(dataframes)} DataFrames with {n_jobs} jobs")
 
         def process_single(df):
             engine = SmartMoneyEngine(data=df, config=config, verbose=False)
@@ -652,7 +680,7 @@ def preprocess_dataframes_parallel(
         )
 
         if verbose:
-            print(f"✅ Parallel preprocessing complete")
+            logger.info(f"Parallel preprocessing complete")
 
         return results
     else:
@@ -751,23 +779,29 @@ if __name__ == '__main__':
 
 def run_benchmark():
     """Run performance benchmark and print results."""
-    print("\n" + "=" * 60)
-    print("🚀 SmartMoneyEngine Performance Benchmark")
-    print("=" * 60)
+    logger.info(
+        f"\n{'=' * 60}\n"
+        f"SmartMoneyEngine Performance Benchmark\n"
+        f"{'=' * 60}"
+    )
 
     # Test different data sizes
     for n_rows in [5000, 10000, 20000]:
         results = benchmark_preprocessing(n_rows=n_rows, n_iterations=3)
 
-        print(f"\n📊 {n_rows:,} rows:")
-        print(f"   Mean time:   {results['mean_time']*1000:.1f}ms")
-        print(f"   Std time:    {results['std_time']*1000:.1f}ms")
-        print(f"   Throughput:  {results['rows_per_second']:,.0f} rows/sec")
-        print(f"   Numba JIT:   {'✅ Enabled' if results['numba_enabled'] else '❌ Disabled'}")
+        logger.info(
+            f"\n{n_rows:,} rows:\n"
+            f"   Mean time:   {results['mean_time']*1000:.1f}ms\n"
+            f"   Std time:    {results['std_time']*1000:.1f}ms\n"
+            f"   Throughput:  {results['rows_per_second']:,.0f} rows/sec\n"
+            f"   Numba JIT:   {'Enabled' if results['numba_enabled'] else 'Disabled'}"
+        )
 
-    print("\n" + "=" * 60)
-    print("✅ Benchmark complete")
-    print("=" * 60 + "\n")
+    logger.info(
+        f"\n{'=' * 60}\n"
+        f"Benchmark complete\n"
+        f"{'=' * 60}"
+    )
 
 
 if __name__ == '__main__':
@@ -783,4 +817,4 @@ if __name__ == '__main__':
         run_benchmark()
     else:
         # Original test code
-        print("Run with --benchmark to test performance")
+        logger.info("Run with --benchmark to test performance")

@@ -24,6 +24,7 @@ import numpy as np
 
 from .mt5_connector import MT5Connector, AccountInfo, PositionInfo
 from .alerting import AlertManager, AlertLevel
+from src.risk.var_engine import VaREngine
 
 
 # =============================================================================
@@ -93,6 +94,10 @@ class RiskMetrics:
     trades_today: int = 0
     consecutive_losses: int = 0
 
+    # VaR
+    var_95: float = 0.0
+    cvar_95: float = 0.0
+
     # Risk status
     is_kill_switch_active: bool = False
     risk_level: str = "LOW"  # LOW, MEDIUM, HIGH, CRITICAL
@@ -115,6 +120,8 @@ class RiskMetrics:
             'current_leverage': self.current_leverage,
             'trades_today': self.trades_today,
             'consecutive_losses': self.consecutive_losses,
+            'var_95': self.var_95,
+            'cvar_95': self.cvar_95,
             'is_kill_switch_active': self.is_kill_switch_active,
             'risk_level': self.risk_level,
         }
@@ -198,6 +205,14 @@ class LiveRiskManager:
         # Monitoring thread
         self._running = False
         self._monitor_thread: Optional[Thread] = None
+
+        # VaR engine for real-time Value-at-Risk computation
+        self._var_engine = VaREngine(
+            confidence=0.95,
+            window=252,
+            method='cornish_fisher',
+        )
+        self._last_equity_for_var: Optional[float] = None
 
         # Callbacks
         self._on_kill_switch: List[Callable] = []
@@ -288,6 +303,17 @@ class LiveRiskManager:
                 total_exposure = sum(p.volume * p.price_current for p in positions)
                 current_leverage = total_exposure / account.equity if account.equity > 0 else 0.0
 
+                # Update VaR engine with equity return
+                if self._last_equity_for_var is not None and self._last_equity_for_var > 0:
+                    equity_return = (account.equity - self._last_equity_for_var) / self._last_equity_for_var
+                    self._var_engine.update(equity_return)
+                self._last_equity_for_var = account.equity
+
+                # Compute VaR
+                var_result = self._var_engine.compute()
+                var_95 = var_result.var_95
+                cvar_95 = var_result.cvar_95
+
                 # Determine risk level
                 risk_level = self._calculate_risk_level(drawdown_pct, daily_pnl_pct)
 
@@ -309,6 +335,8 @@ class LiveRiskManager:
                     current_leverage=current_leverage,
                     trades_today=self._trades_today,
                     consecutive_losses=self._consecutive_losses,
+                    var_95=var_95,
+                    cvar_95=cvar_95,
                     is_kill_switch_active=self._kill_switch_active,
                     risk_level=risk_level,
                 )
@@ -372,6 +400,13 @@ class LiveRiskManager:
         if metrics.weekly_pnl_pct <= -self.config.weekly_loss_limit_pct:
             self._activate_kill_switch(
                 f"Weekly loss limit exceeded: {metrics.weekly_pnl_pct:.1f}%"
+            )
+            return
+
+        # Check VaR limit (2% default)
+        if metrics.var_95 > 0.02:
+            self._activate_kill_switch(
+                f"VaR limit breached: {metrics.var_95:.2%} > 2.00%"
             )
             return
 

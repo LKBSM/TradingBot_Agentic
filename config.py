@@ -1,5 +1,7 @@
-import os
 import logging
+import os
+
+logger = logging.getLogger(__name__)
 
 # ═════════════════════════════════════════════════════════════════════════════
 # 1. CORE SYSTEM SETTINGS
@@ -75,6 +77,15 @@ ACTION_SPACE_TYPE = 'discrete'  # 5 actions for long/short trading
 # Original: 30 bars × 21 features + 3 state = 633 dims
 # Optimized: 20 bars × 15 features + 3 state = 303 dims
 LOOKBACK_WINDOW_SIZE = 20  # Reduced from 30 - 5 hours of history is sufficient
+
+# Sprint 6: Observation space dimensionality reduction
+USE_PCA_REDUCTION = True            # Enable PCA-based dimensionality reduction
+PCA_VARIANCE_THRESHOLD = 0.95       # Retain 95% of explained variance
+USE_DECORRELATED_FEATURES = True    # Replace OHLC with log_return, hl_range, close_position
+
+# Sprint 7: Async GARCH & Incremental Features
+USE_ASYNC_GARCH = True              # Non-blocking GARCH refit in background thread
+USE_INCREMENTAL_FEATURES = False    # Incremental TA engine (enable for live trading)
 
 # -----------------------------------------------------------------------------
 # EPISODE LENGTH CONFIGURATION (Critical for PPO stability)
@@ -211,6 +222,12 @@ TSL_TRAIL_DISTANCE_MULTIPLIER = 0.5  # Trail at 0.5× ATR distance
 # This reduces overhead by 5x while maintaining volatility accuracy.
 GARCH_UPDATE_FREQUENCY = 500  # Refit GARCH model every N steps (was 100)
 
+# Value at Risk (VaR) Engine
+VAR_CONFIDENCE_LEVEL = 0.95           # 95% confidence for primary VaR
+VAR_ROLLING_WINDOW = 252              # 252 trading days (~1 year) lookback
+VAR_METHOD = 'cornish_fisher'         # Default: 'cornish_fisher' | 'historical' | 'parametric' | 'monte_carlo'
+VAR_MAX_PCT = 0.02                    # 2% portfolio VaR limit (triggers kill switch)
+
 # ═════════════════════════════════════════════════════════════════════════════
 # SHORT SELLING CONFIGURATION
 # ═════════════════════════════════════════════════════════════════════════════
@@ -290,35 +307,32 @@ REWARD_OUTPUT_SCALE = 5.0    # Default: 5.0 (tunable in hyperparameter search)
 # -----------------------------------------------------------------------------
 # PENALTIES & BONUSES (The "Lazy Agent" Fix)
 # -----------------------------------------------------------------------------
-# CRITICAL FIX: Removed the massive 5.0 penalty for losing.
-# The PnL itself is already negative; adding a fixed penalty causes "fear of trading".
-LOSING_TRADE_PENALTY = 0.0       # Was 5.0 (Too harsh, caused fear)
-WINNING_TRADE_BONUS = 2.0        # FIX "FEARFUL AGENT": Strong bonus for profitable trades
+# Sprint 2: Reward restructuring — risk-adjusted, anti-churning design.
+# OLD values kept as comments for audit trail.
+LOSING_TRADE_PENALTY = 0.5       # Was 0.0 (Sprint 2: mild penalty for losses)
+WINNING_TRADE_BONUS = 0.0        # Was 2.0 (Sprint 2: replaced by RR-based bonus in reward fn)
 
-# Friction: Fees are already subtracted from PnL.
-# We don't need a heavy extra penalty, or the bot won't enter trades.
-W_FRICTION = 0.1                 # Was 0.8 (Reduced to prevent entry paralysis)
+# Friction: penalize transaction costs to discourage churning
+W_FRICTION = 0.3                 # Was 0.1 (Sprint 2: respect transaction costs)
 
 # -----------------------------------------------------------------------------
 # RISK CONTROL WEIGHTS
 # -----------------------------------------------------------------------------
-# We still punish bad behavior, but proportionally.
-
 W_RETURN = 1.0       # Primary driver: Make Money
-W_DRAWDOWN = 0.5     # Was 2.0. Reduced so the bot isn't terrified of normal volatility.
-W_LEVERAGE = 1.0     # Enforce limits, but don't kill exploration.
-W_TURNOVER = 0.0     # Was 0.1. Let it trade as much as needed initially.
-W_DURATION = 0.1     # Was 0.3. Slight nudge to not hold forever.
+W_DRAWDOWN = 1.0     # Was 0.5 (Sprint 2: restore drawdown awareness)
+W_LEVERAGE = 1.0     # Enforce limits
+W_TURNOVER = 0.3     # Was 0.0 (Sprint 2: penalize excessive trading)
+W_DURATION = 0.0     # Was 0.1 (Sprint 2: removed — let winners run)
 
 # -----------------------------------------------------------------------------
 # MISC PENALTIES
 # -----------------------------------------------------------------------------
-DOWNSIDE_PENALTY_MULTIPLIER = 1.0  # Was 3.0. Standard linear punishment for losses.
+DOWNSIDE_PENALTY_MULTIPLIER = 1.0  # Standard linear punishment for losses.
 OVERNIGHT_HOLDING_PENALTY = 0.0    # N/A for 15m timeframe
-HOLD_PENALTY_FACTOR = 0.01         # FIX "FEARFUL AGENT": Small penalty to encourage trading
+HOLD_PENALTY_FACTOR = 0.0          # Was 0.01 (Sprint 2: holding is NEUTRAL, not penalized)
 FAILED_TRADE_ATTEMPT_PENALTY = 0.0 # No penalty for logic checks
-TRADE_COOLDOWN_STEPS = 2           # Was 5. Allow faster re-entry if signal is good.
-RAPID_TRADE_PENALTY = 1.0          # Was 5.0. Reduced.
+TRADE_COOLDOWN_STEPS = 2           # Allow faster re-entry if signal is good.
+RAPID_TRADE_PENALTY = 1.0          # Reduced from 5.0.
 
 # -----------------------------------------------------------------------------
 # CREDIT ASSIGNMENT FIX: Risk Sentinel Rejection Penalties
@@ -392,34 +406,45 @@ MAX_ACCEPTABLE_DD = 0.15  # Maximum 15% drawdown
 
 # Based on FinRL framework and academic research for PPO in finance
 # These ranges have been validated in multiple trading papers
+# Sprint 8: Corrected search space — removed extreme values that cause training instability
 HYPERPARAM_SEARCH_SPACE = {
-    'learning_rate': [1e-5, 3e-5, 5e-5, 1e-4],  # 4 values
-    'n_steps': [1024, 2048, 4096],  # 3 values (must be >= batch_size)
-    'batch_size': [64, 128, 256],  # 3 values
-    'gamma': [0.99, 0.995, 0.999],  # 3 values (discount factor)
-    'ent_coef': [0.02, 0.05, 0.10],  # 3 values (exploration) - INCREASED for more active trading
-    'clip_range': [0.1, 0.2, 0.3],  # 3 values (PPO clip)
-    # NEW: Reward scaling parameters (interact with learning dynamics)
-    'reward_tanh_scale': [0.2, 0.3, 0.4],  # 3 values (sensitivity)
-    'reward_output_scale': [3.0, 5.0, 7.0]  # 3 values (final range)
+    'learning_rate': [1e-4, 3e-4, 5e-4],          # Removed 1e-5 (too slow to converge)
+    'n_steps': [1024, 2048, 4096],                 # Must be >= batch_size
+    'batch_size': [64, 128, 256],                  # Unchanged
+    'gamma': [0.99, 0.995, 0.998],                 # Added 0.998, removed 0.999 (too long horizon)
+    'ent_coef': [0.005, 0.01, 0.02],              # Removed 0.05/0.10 (excess randomness)
+    'clip_range': [0.1, 0.2, 0.3],                # Unchanged
+    'n_epochs': [3, 5, 7],                         # Reduced from max=10 (overfitting risk)
+    'reward_tanh_scale': [0.2, 0.3, 0.4],         # Unchanged
+    'reward_output_scale': [3.0, 5.0, 7.0]        # Unchanged
 }
 
-# Total possible combinations: 4×3×3×3×3×3×3×3 = 8,748
-# We intelligently sample 50 of these (not random, stratified)
-
-# Baseline hyperparameters (FinRL defaults - proven in research)
+# Sprint 8: Corrected baseline hyperparameters
+# Reference: Schulman et al. 2017 (PPO paper), FinRL benchmark suite
 MODEL_HYPERPARAMETERS = {
-    "n_steps": 2048,  # Rollout buffer size
-    "batch_size": 128,  # Minibatch size for updates
-    "gamma": 0.99,  # Discount factor
-    "learning_rate": 3e-5,  # Adam learning rate (conservative)
-    "ent_coef": 0.05,  # Entropy coefficient - INCREASED from 0.01 to encourage exploration
-    "clip_range": 0.2,  # PPO clipping parameter
-    "gae_lambda": 0.95,  # GAE lambda for advantage estimation
-    "max_grad_norm": 0.5,  # Gradient clipping (stability)
-    "vf_coef": 0.5,  # Value function coefficient
-    "n_epochs": 10  # Number of epochs per update
+    "n_steps": 1024,       # ~2x episode length (500); shorter rollouts = fresher gradients
+    "batch_size": 128,     # Standard PPO minibatch
+    "gamma": 0.995,        # Effective horizon ~200 steps (suitable for M15 intraday)
+    "learning_rate": 3e-4, # Standard PPO LR (Schulman 2017); was 3e-5 (10x too low)
+    "ent_coef": 0.01,      # Moderate exploration; was 0.05 (too random for exploitation)
+    "clip_range": 0.2,     # Standard PPO clip
+    "gae_lambda": 0.95,    # Standard GAE lambda for advantage estimation
+    "max_grad_norm": 0.5,  # Gradient clipping for stability
+    "vf_coef": 0.5,        # Value function loss weight
+    "n_epochs": 5          # Was 10; fewer epochs = less overfitting to rollout buffer
 }
+
+# Sprint 8: Entropy annealing schedule (step_threshold -> ent_coef)
+# Starts with higher exploration, gradually shifts to exploitation
+ENTROPY_ANNEALING_SCHEDULE = {
+    0:       0.05,   # Phase 1 (BASE): High exploration
+    100_000: 0.02,   # Phase 2 (ENRICHED): Moderate exploration
+    300_000: 0.01,   # Phase 3 (SOFT): Standard
+    500_000: 0.005,  # Phase 4 (PRODUCTION): Exploit learned policy
+}
+
+# Sprint 8: LR warmup fraction (linear warmup over first N% of training)
+LR_WARMUP_FRACTION = 0.05  # 5% of total steps
 
 # ═════════════════════════════════════════════════════════════════════════════
 # 10. LOGGING & MONITORING
@@ -454,6 +479,21 @@ LIVE_MAX_DAILY_TRADES = 10  # Limit daily activity
 
 
 # ═════════════════════════════════════════════════════════════════════════════
+# 11.1 QUALITY GATES & ENSEMBLE SEEDS (SPRINT 14)
+# ═════════════════════════════════════════════════════════════════════════════
+# These thresholds must be met before a model is promoted to production.
+
+QUALITY_GATES = {
+    'min_sharpe': 1.0,            # Minimum annualised Sharpe ratio
+    'max_drawdown': 0.15,         # Maximum drawdown (15 %)
+    'min_win_rate': 0.40,         # Minimum win rate (40 %)
+    'min_profit_factor': 1.3,     # Minimum profit factor (gross profit / gross loss)
+}
+
+# Seeds for multi-seed ensemble training (SophisticatedTrainer.train_ensemble_seeds)
+ENSEMBLE_SEEDS = (42, 123, 456)
+
+# ═════════════════════════════════════════════════════════════════════════════
 # 11.5 WALK-FORWARD VALIDATION CONFIGURATION (SPRINT 3)
 # ═════════════════════════════════════════════════════════════════════════════
 
@@ -472,7 +512,7 @@ WALK_FORWARD_CONFIG = {
 
     # Fold limits
     'min_folds': 3,                  # Minimum for statistical validity
-    'max_folds': 12,                 # Maximum to limit compute time
+    'max_folds': 6,                  # Maximum to limit compute time (6 is statistically sufficient)
 
     # Strategy: 'rolling', 'expanding', or 'anchored'
     # - rolling: Fixed-size moving window (recommended for non-stationary)
@@ -665,59 +705,42 @@ def validate_configuration(strict_mode: bool = False):
         elif value > 0.1:  # 10%
             warnings.append(f"{name} ({value:.2%}) seems unusually high")
 
-    # Print results
     if errors:
-        print("\n" + "=" * 70)
-        print("CONFIGURATION ERRORS (MUST FIX):")
-        print("=" * 70)
         for error in errors:
-            print(f"  [ERROR] {error}")
-        print("=" * 70)
+            logger.error("Config error: %s", error)
         raise ValueError("Configuration has critical errors. Fix them before training!")
 
     if warnings:
-        print("\n" + "=" * 70)
-        print("⚠️  CONFIGURATION WARNINGS (REVIEW RECOMMENDED):")
-        print("=" * 70)
         for warning in warnings:
-            print(warning)
-        print("=" * 70)
+            logger.warning("Config warning: %s", warning)
 
-    # Success message
     if not errors and not warnings:
-        print("\n" + "=" * 70)
-        print("✅ CONFIGURATION VALIDATED SUCCESSFULLY")
-        print("=" * 70)
-        print(f"✅ Training: {N_PARALLEL_BOTS} bots × {TOTAL_TIMESTEPS_PER_BOT:,} timesteps")
-        print(f"✅ Total compute: {N_PARALLEL_BOTS * TOTAL_TIMESTEPS_PER_BOT:,} timesteps")
-        print(f"✅ GPU workers: {MAX_WORKERS_GPU}")
-        print(
-            f"✅ Expected time: ~{(N_PARALLEL_BOTS * TOTAL_TIMESTEPS_PER_BOT) / (MAX_WORKERS_GPU * 200_000):.1f} hours")
-        print("=" * 70 + "\n")
+        logger.info(
+            "Configuration validated successfully — %d bots x %s steps, %d GPU workers",
+            N_PARALLEL_BOTS, f"{TOTAL_TIMESTEPS_PER_BOT:,}", MAX_WORKERS_GPU,
+        )
 
 
 # ═════════════════════════════════════════════════════════════════════════════
 # 13. STARTUP BANNER
 # ═════════════════════════════════════════════════════════════════════════════
 
-def print_startup_banner():
-    """Prints configuration summary on startup"""
-    print("\n" + "=" * 70)
-    print("    XAU TRADING BOT - PRODUCTION CONFIGURATION")
-    print("=" * 70)
-    print(f"Version:           2.0.0 (PRODUCTION)")
-    print(f"Model:             {MODEL_NAME}")
-    print(f"Training timesteps: {TOTAL_TIMESTEPS_PER_BOT:,} per bot")
-    print(f"Parallel bots:     {N_PARALLEL_BOTS}")
-    print(f"GPU workers:       {MAX_WORKERS_GPU}")
-    print(f"Risk per trade:    {RISK_PERCENTAGE_PER_TRADE:.1%}")
-    print(f"Max drawdown:      {MAX_DRAWDOWN_LIMIT_PCT}%")
-    print(f"Data split:        {TRAIN_RATIO:.0%} train / {VAL_RATIO:.0%} val / {TEST_RATIO:.0%} test")
-    print("=" * 70)
-    print(f"Reports:           {REPORTS_DIR}")
-    print(f"Models:            {MODEL_DIR}")
-    print(f"Logs:              {LOG_DIR}")
-    print("=" * 70 + "\n")
+def log_startup_banner():
+    """Log configuration summary on startup."""
+    logger.info(
+        "XAU TRADING BOT — Version 2.0.0 (PRODUCTION) | Model: %s | "
+        "%s steps/bot | %d bots | %d GPU workers | Risk: %s | Max DD: %s%% | "
+        "Split: %s/%s/%s | Reports: %s | Models: %s | Logs: %s",
+        MODEL_NAME, f"{TOTAL_TIMESTEPS_PER_BOT:,}", N_PARALLEL_BOTS,
+        MAX_WORKERS_GPU, f"{RISK_PERCENTAGE_PER_TRADE:.1%}",
+        MAX_DRAWDOWN_LIMIT_PCT,
+        f"{TRAIN_RATIO:.0%}", f"{VAL_RATIO:.0%}", f"{TEST_RATIO:.0%}",
+        REPORTS_DIR, MODEL_DIR, LOG_DIR,
+    )
+
+
+# Keep old name as alias for backward compatibility
+print_startup_banner = log_startup_banner
 
 
 

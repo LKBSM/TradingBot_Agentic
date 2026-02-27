@@ -15,6 +15,9 @@ from rich.console import Console
 from rich.table import Table
 from rich.text import Text
 import ta
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 # =============================================================================
@@ -180,7 +183,7 @@ def validate_trading_dataframe(df: pd.DataFrame, required_columns: list = None) 
 
 # IMPORTANT: Import constants from config.py
 try:
-    from src.config import (
+    from config import (
         LOOKBACK_WINDOW_SIZE, INITIAL_BALANCE, TRANSACTION_FEE_PERCENTAGE,
         TRADE_COMMISSION_PER_TRADE, SLIPPAGE_PERCENTAGE, REWARD_SCALING_FACTOR,
         ALLOW_NEGATIVE_REVENUE_SELL, ALLOW_NEGATIVE_BALANCE, MINIMUM_ALLOWED_BALANCE,
@@ -388,6 +391,13 @@ class TradingEnv(gym.Env):
         self.processed_data = self._process_data(self.df_raw)
         self.df = self.processed_data
         self.features = [col for col in self.features_config if col in self.df.columns]
+
+        # Sprint 6: Feature reducer (set by trainer, None = disabled)
+        self._feature_reducer = kwargs.get('feature_reducer', None)
+
+        # Sprint 7: Incremental feature engine (for live mode, None = use batch)
+        self._incremental_engine = kwargs.get('incremental_engine', None)
+
         if 'Close' not in self.df.columns and 'close' in self.df.columns:
             self.df.rename(columns={'close': 'Close'}, inplace=True)
         if 'Close' not in self.df.columns:
@@ -519,7 +529,12 @@ class TradingEnv(gym.Env):
         self.short_overnight_swap_pct = kwargs.get('short_overnight_swap_pct', SHORT_OVERNIGHT_SWAP_PCT)
 
         num_features_per_step = len(self.features)
-        expected_obs_size = num_features_per_step * self.lookback_window_size + 3
+        raw_obs_size = num_features_per_step * self.lookback_window_size + 3
+        # Sprint 6: If a fitted FeatureReducer is attached, observation space shrinks
+        if self._feature_reducer is not None and self._feature_reducer.is_fitted:
+            expected_obs_size = self._feature_reducer.n_components + 3  # PCA dims + 3 state
+        else:
+            expected_obs_size = raw_obs_size
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(expected_obs_size,), dtype=np.float32)
 
         self.reset()
@@ -560,9 +575,9 @@ class TradingEnv(gym.Env):
         try:
             engine = SmartMoneyEngine(data=df, config=self.smc_config)
             df_processed = engine.analyze()
-            print(f"✅ SmartMoneyEngine: {len(df_processed)} lignes générées")
+            logger.info(f"SmartMoneyEngine: {len(df_processed)} lignes generees")
         except Exception as e:
-            print(f"❌ Erreur SmartMoneyEngine: {e}")
+            logger.error(f"Erreur SmartMoneyEngine: {e}")
             raise
 
         # =========================================================================
@@ -584,7 +599,7 @@ class TradingEnv(gym.Env):
             if 'atr' in df_processed.columns:
                 df_processed.rename(columns={'atr': 'ATR'}, inplace=True)
             else:
-                print("⚠️ WARNING: ATR manquant. Calcul de fallback...")
+                logger.warning("ATR manquant. Calcul de fallback...")
                 df_processed['ATR'] = ta.volatility.average_true_range(
                     df_processed['High'],
                     df_processed['Low'],
@@ -597,17 +612,17 @@ class TradingEnv(gym.Env):
         # =========================================================================
 
         df_processed.replace([np.inf, -np.inf], np.nan, inplace=True)
-        print(f"🧹 Infinités remplacées par NaN")
+        logger.info(f"Infinites remplacees par NaN")
 
         # =========================================================================
         # ÉTAPE 5: GESTION INTELLIGENTE DES NaN (CRITIQUE!)
         # =========================================================================
 
-        print("\n🔍 Analyse des NaN avant nettoyage:")
+        logger.info("Analyse des NaN avant nettoyage:")
         nan_summary = df_processed.isna().sum()
         nan_summary = nan_summary[nan_summary > 0].sort_values(ascending=False)
         if not nan_summary.empty:
-            print(nan_summary)
+            logger.info(f"\n{nan_summary}")
 
         # --- 5.1: SUPPRESSION DES LIGNES AVEC NaN CRITIQUES ---
         # Ces colonnes ne peuvent PAS contenir de NaN (risque de crash)
@@ -626,7 +641,7 @@ class TradingEnv(gym.Env):
         rows_dropped = rows_before - len(df_processed)
 
         if rows_dropped > 0:
-            print(f"⚠️ {rows_dropped} lignes supprimées (NaN dans colonnes critiques)")
+            logger.warning(f"{rows_dropped} lignes supprimees (NaN dans colonnes critiques)")
 
         # Validation post-suppression
         if len(df_processed) < self.lookback_window_size * 2:
@@ -649,7 +664,7 @@ class TradingEnv(gym.Env):
                 # Backward fill pour les premières valeurs (si nécessaire)
                 df_processed[col] = df_processed[col].bfill()
 
-        print(f"✅ Indicateurs lents interpolés: {slow_indicators}")
+        logger.info(f"Indicateurs lents interpoles: {slow_indicators}")
 
         # --- 5.3: REMPLISSAGE PAR 0 POUR SIGNAUX SMC ---
         # Ces colonnes sont des signaux événementiels: NaN = "Pas de signal" = 0
@@ -671,8 +686,8 @@ class TradingEnv(gym.Env):
             if col in df_processed.columns:
                 df_processed[col] = df_processed[col].fillna(0.0)
 
-        print(
-            f"✅ Signaux SMC initialisés à 0: {len([c for c in smc_signal_cols if c in df_processed.columns])} colonnes")
+        logger.info(
+            f"Signaux SMC initialises a 0: {len([c for c in smc_signal_cols if c in df_processed.columns])} colonnes")
 
         # --- 5.4: REMPLISSAGE PAR MÉDIANE POUR LE VOLUME ---
         # Le volume peut varier énormément, la médiane est plus robuste que 0
@@ -681,14 +696,14 @@ class TradingEnv(gym.Env):
             nan_count = df_processed['Volume'].isna().sum()
             if nan_count > 0:
                 df_processed['Volume'] = df_processed['Volume'].fillna(volume_median)
-                print(f"✅ Volume: {nan_count} NaN remplacés par médiane ({volume_median:.0f})")
+                logger.info(f"Volume: {nan_count} NaN remplaces par mediane ({volume_median:.0f})")
 
         # --- 5.5: REMPLISSAGE FINAL (SÉCURITÉ) ---
         # Si des colonnes ont encore des NaN, on remplace par 0 (dernier recours)
         remaining_cols_with_nan = df_processed.columns[df_processed.isna().any()].tolist()
 
         if remaining_cols_with_nan:
-            print(f"⚠️ Colonnes avec NaN restants: {remaining_cols_with_nan}")
+            logger.warning(f"Colonnes avec NaN restants: {remaining_cols_with_nan}")
             df_processed[remaining_cols_with_nan] = df_processed[remaining_cols_with_nan].fillna(0.0)
 
         # =========================================================================
@@ -714,7 +729,7 @@ class TradingEnv(gym.Env):
         price_changes = df_processed['Close'].pct_change().abs()
         extreme_moves = (price_changes > 0.2).sum()  # Mouvements >20%
         if extreme_moves > 0:
-            print(f"⚠️ WARNING: {extreme_moves} mouvements de prix >20% détectés (vérifier données)")
+            logger.warning(f"{extreme_moves} mouvements de prix >20% detectes (verifier donnees)")
 
         # Reset index pour un DataFrame propre
         df_processed.reset_index(drop=True, inplace=True)
@@ -723,14 +738,16 @@ class TradingEnv(gym.Env):
         # ÉTAPE 7: RAPPORT FINAL
         # =========================================================================
 
-        print("\n" + "=" * 70)
-        print("📊 RAPPORT DE TRAITEMENT DES DONNÉES")
-        print("=" * 70)
-        print(f"✅ Lignes finales:        {len(df_processed)}")
-        print(f"✅ Colonnes totales:      {len(df_processed.columns)}")
-        print(f"✅ NaN restants:          {df_processed.isna().sum().sum()}")
-        print(f"✅ Valeurs infinies:      {np.isinf(df_processed.select_dtypes(include=[np.number])).sum().sum()}")
-        print(f"✅ Période couverte:      {df_processed.index[0]} → {df_processed.index[-1]}")
+        logger.info(
+            f"\n{'=' * 70}\n"
+            f"RAPPORT DE TRAITEMENT DES DONNEES\n"
+            f"{'=' * 70}\n"
+            f"Lignes finales:        {len(df_processed)}\n"
+            f"Colonnes totales:      {len(df_processed.columns)}\n"
+            f"NaN restants:          {df_processed.isna().sum().sum()}\n"
+            f"Valeurs infinies:      {np.isinf(df_processed.select_dtypes(include=[np.number])).sum().sum()}\n"
+            f"Periode couverte:      {df_processed.index[0]} -> {df_processed.index[-1]}"
+        )
 
         # Afficher les features disponibles
         feature_categories = {
@@ -740,12 +757,12 @@ class TradingEnv(gym.Env):
             'SMC Zones': ['BULLISH_OB_HIGH', 'BULLISH_OB_LOW', 'BEARISH_OB_HIGH', 'BEARISH_OB_LOW']
         }
 
-        print("\n📋 Features disponibles par catégorie:")
+        features_report = "Features disponibles par categorie:\n"
         for category, features in feature_categories.items():
             available = [f for f in features if f in df_processed.columns]
-            print(f"  {category}: {len(available)}/{len(features)} → {available}")
-
-        print("=" * 70 + "\n")
+            features_report += f"  {category}: {len(available)}/{len(features)} -> {available}\n"
+        features_report += "=" * 70
+        logger.info(f"\n{features_report}")
 
         return df_processed
 
@@ -781,6 +798,13 @@ class TradingEnv(gym.Env):
 
         flat_obs = scaled_features.flatten()
 
+        # --- 3b. Sprint 6: Apply PCA dimensionality reduction ---
+        if self._feature_reducer is not None and self._feature_reducer.is_fitted:
+            try:
+                flat_obs = self._feature_reducer.transform(flat_obs)
+            except Exception:
+                pass  # Fall back to raw features if transform fails
+
         # --- 4. Portfolio state extraction ---
         # Force scalar conversion to avoid ambiguous truth values
         # --- 4. Portfolio state extraction ---
@@ -807,7 +831,10 @@ class TradingEnv(gym.Env):
         )
 
         # --- 8. Shape and value validation ---
-        expected_size = len(self.features) * self.lookback_window_size + 3
+        if self._feature_reducer is not None and self._feature_reducer.is_fitted:
+            expected_size = self._feature_reducer.n_components + 3
+        else:
+            expected_size = len(self.features) * self.lookback_window_size + 3
         if observation.shape[0] != expected_size:
             warnings.warn(
                 f"⚠️ Observation shape mismatch: expected {expected_size}, got {observation.shape[0]}."
@@ -1062,8 +1089,8 @@ class TradingEnv(gym.Env):
 
                 # --- 8. Logging optionnel ---
                 if hasattr(self, 'verbose') and self.verbose:
-                    print(f"✅ BUY Executed: {trade_quantity:.4f} @ ${trade_price:,.2f} | "
-                          f"Cost: ${total_cost:,.2f} (Commission: ${commission:.2f})")
+                    logger.info(f"BUY Executed: {trade_quantity:.4f} @ ${trade_price:,.2f} | "
+                               f"Cost: ${total_cost:,.2f} (Commission: ${commission:.2f})")
 
             # =====================================================================
             # SELL LOGIC
@@ -1133,8 +1160,8 @@ class TradingEnv(gym.Env):
                 # --- 10. Logging optionnel ---
                 if hasattr(self, 'verbose') and self.verbose:
                     pnl_symbol = "+" if pnl_abs >= 0 else ""
-                    print(f"✅ SELL Executed: {trade_quantity:.4f} @ ${trade_price:,.2f} | "
-                          f"Revenue: ${total_revenue:,.2f} | P&L: {pnl_symbol}${pnl_abs:.2f} ({pnl_pct:+.2f}%)")
+                    logger.info(f"SELL Executed: {trade_quantity:.4f} @ ${trade_price:,.2f} | "
+                               f"Revenue: ${total_revenue:,.2f} | P&L: {pnl_symbol}${pnl_abs:.2f} ({pnl_pct:+.2f}%)")
 
             else:
                 # Type de trade invalide
@@ -1144,8 +1171,8 @@ class TradingEnv(gym.Env):
             # =====================================================================
             # GESTION DES ERREURS - WITH TRANSACTION ROLLBACK
             # =====================================================================
-            print(f"❌ ERROR _EXECUTE_TRADE: An error occurred during {trade_type.upper()} execution: {e}")
-            traceback.print_exc()
+            logger.error(f"ERROR _EXECUTE_TRADE: An error occurred during {trade_type.upper()} execution: {e}",
+                         exc_info=True)
 
             # SECURITY FIX: Rollback state to pre-trade snapshot
             self._restore_state_snapshot(state_snapshot)
@@ -1195,13 +1222,13 @@ class TradingEnv(gym.Env):
             current_atr = float(current_row.get('ATR', 0.0))  # Default if missing
             bos_signal = float(current_row.get('BOS_SIGNAL', 0.0))  # Default if missing
         except (IndexError, KeyError) as e:
-            print(f"[ERROR] Data access error at step {self.current_step}: {e}")
+            logger.error(f"Data access error at step {self.current_step}: {e}")
             # Return terminal state on data error
             return self._get_obs(), -20.0, True, False, {'error': str(e)}
 
         # Validate price data
         if np.isnan(current_market_price) or current_market_price <= 0:
-            print(f"[ERROR] Invalid price {current_market_price} at step {self.current_step}")
+            logger.error(f"Invalid price {current_market_price} at step {self.current_step}")
             return self._get_obs(), -20.0, True, False, {'error': 'invalid_price'}
 
         # --- Update risk manager regime ---
@@ -1266,9 +1293,9 @@ class TradingEnv(gym.Env):
             self.invalid_action_types[invalid_reason] += 1
             # Log every 100th invalid action to avoid spam (useful for debugging)
             if self.invalid_action_count % 100 == 1:
-                print(f"[INVALID ACTION] Step {self.current_step}: "
-                      f"{ACTION_NAMES.get(original_action, original_action)} -> HOLD "
-                      f"(reason: {invalid_reason}, total: {self.invalid_action_count})")
+                logger.info(f"[INVALID ACTION] Step {self.current_step}: "
+                            f"{ACTION_NAMES.get(original_action, original_action)} -> HOLD "
+                            f"(reason: {invalid_reason}, total: {self.invalid_action_count})")
 
         # --- Check for SL/TP/TSL on active positions ---
         if not done and self.position_type != POSITION_FLAT and not np.isnan(self.entry_price):
@@ -1677,17 +1704,15 @@ class TradingEnv(gym.Env):
 
     def _calculate_reward(self, previous_net_worth: float) -> float:
         """
-        PRODUCTION-GRADE REWARD FUNCTION FOR PPO TRADING BOT
-        =====================================================
+        RISK-ADJUSTED REWARD FUNCTION (Sprint 2 Restructuring)
+        ======================================================
 
-        Research-backed design for stable learning and commercial viability.
-
-        Key Improvements:
-        - Consistent scaling (no extreme values like -5M)
-        - Smooth gradients for stable PPO learning
-        - Non-redundant penalties
-        - Risk-adjusted profitability focus
-        - Commercial viability optimization
+        Fixes from audit:
+        - Holding flat is NEUTRAL (0.0), not penalized
+        - Holding profitable positions is REWARDED (let winners run)
+        - Losses get CONVEX penalty (bigger losses hurt exponentially more)
+        - Trade quality measured by risk-reward ratio, not flat bonus
+        - Turnover and friction are penalized to prevent churning
 
         Expected reward range: [-20, +20]
         Typical rewards: [-5, +5]
@@ -1695,201 +1720,170 @@ class TradingEnv(gym.Env):
         Returns:
             float: Scaled reward for PPO training
         """
+        import logging
+        _logger = logging.getLogger(__name__)
+
         # =========================================================================
-        # STEP 1: VALIDATION (Prevent Division by Zero and Invalid Values)
+        # STEP 1: VALIDATION
         # =========================================================================
         if previous_net_worth <= 1e-9 or self.net_worth <= 1e-9:
-            # Critical failure: Account depleted
             return -20.0
 
-        # Check for NaN/Inf in net worth (robust error handling)
         if np.isnan(self.net_worth) or np.isinf(self.net_worth):
-            print(f"[WARNING] Invalid net_worth: {self.net_worth} at step {self.current_step}")
+            _logger.warning("Invalid net_worth: %s at step %d", self.net_worth, self.current_step)
             return -20.0
 
         if np.isnan(previous_net_worth) or np.isinf(previous_net_worth):
-            print(f"[WARNING] Invalid previous_net_worth: {previous_net_worth} at step {self.current_step}")
+            _logger.warning("Invalid previous_net_worth: %s at step %d", previous_net_worth, self.current_step)
             return 0.0
 
         # =========================================================================
-        # STEP 2: CORE PROFITABILITY METRIC (Most Important Component)
+        # STEP 2: CORE PROFITABILITY (log-return scaled to 1% = 1.0)
         # =========================================================================
-        # Use logarithmic returns for numerical stability (research-backed)
-        # log(1.01) ≈ 0.01 for small changes, but stable for large changes
         log_return = np.log(self.net_worth / previous_net_worth)
-
-        # Scale to interpretable range: 1% gain = ~1.0 reward
-        # This provides strong signal for profitable actions
         profitability_reward = log_return * 100.0
 
         # =========================================================================
-        # STEP 3: RISK-ADJUSTED PENALTIES (Prevent Reckless Trading)
+        # STEP 3: RISK-ADJUSTED PENALTIES
         # =========================================================================
         total_penalty = 0.0
+        dd_penalty = 0.0
+        friction_penalty = 0.0
+        leverage_penalty = 0.0
+        turnover_penalty = 0.0
 
-        # --- Penalty A: Drawdown Increase (ONLY when WORSENING) ---
-        # KEY INSIGHT: Only penalize NEW drawdown, not existing drawdown
-        # This prevents the agent from being punished for market conditions
+        # --- Penalty A: Drawdown Increase (ONLY new drawdown) ---
         current_drawdown = self.peak_nav - self.net_worth
         drawdown_increase = max(0.0, current_drawdown - self.previous_drawdown_level)
 
         if drawdown_increase > 0:
-            # Penalty scaled by severity of new drawdown
-            # Weight: 5.0 (high priority on capital preservation)
-            dd_penalty = (drawdown_increase / self.initial_balance) * 5.0
+            dd_penalty = (drawdown_increase / self.initial_balance) * 10.0
             total_penalty += dd_penalty
 
         # --- Penalty B: Transaction Costs (Friction) ---
-        # Penalize the direct cost of trading (commission + spread + slippage)
-        # This encourages the agent to be selective about trades
         if self.transaction_cost_incurred_step > 0:
-            # Weight: 2.0 (moderate - costs are part of business)
-            friction_penalty = (self.transaction_cost_incurred_step / self.initial_balance) * 2.0
+            friction_penalty = (self.transaction_cost_incurred_step / self.initial_balance) * 3.0
             total_penalty += friction_penalty
 
-        # --- Penalty C: Leverage Violation (Hard Constraint) ---
-        # CRITICAL: Enforce risk management rules
-        # Quadratic penalty for exceeding maximum allowed leverage
+        # --- Penalty C: Leverage Violation (Quadratic) ---
         leverage_excess = max(0.0, self.current_leverage - self.max_leverage_limit)
-
         if leverage_excess > 0:
-            # Weight: 10.0 (very high - this is a compliance issue)
-            # Quadratic scaling: Small violations = small penalty, large = huge
             leverage_penalty = (leverage_excess ** 2) * 10.0
             total_penalty += leverage_penalty
 
-        # --- Penalty D: Excessive Holding Duration ---
-        # For daytrading strategy, positions held too long are risky
-        # Gentle penalty after exceeding target holding period
-        if self.current_hold_duration > self.max_duration_steps:
-            duration_excess = self.current_hold_duration - self.max_duration_steps
-            # Weight: 0.5 (low - this is a soft constraint)
-            duration_penalty = (duration_excess / self.max_duration_steps) * 0.5
-            total_penalty += duration_penalty
-
-        # --- Penalty E: Churning (Over-Trading) ---
-        # Penalize excessive turnover (trading too frequently)
-        # This prevents the agent from becoming a "gambler"
+        # --- Penalty D: Turnover (anti-churning) ---
         if self.traded_value_step > 0:
-            turnover_ratio = self.traded_value_step / self.net_worth
+            turnover_ratio = self.traded_value_step / max(self.net_worth, 1.0)
+            if turnover_ratio > 0.3:
+                turnover_penalty = (turnover_ratio - 0.3) * 3.0
+                total_penalty += turnover_penalty
 
-            # Only penalize if turnover exceeds 50% of account in single step
-            if turnover_ratio > 0.5:
-                # Weight: 1.0 (moderate - some trading is necessary)
-                churn_penalty = (turnover_ratio - 0.5) * 1.0
-                total_penalty += churn_penalty
-
-        # --- Penalty F: Invalid Actions (FIX "FEARFUL AGENT") ---
-        # Penalize attempts to execute invalid actions (e.g., OPEN_LONG when already in position)
-        # This teaches the agent that invalid actions are NOT free fallbacks
+        # --- Penalty E: Invalid Actions ---
         if getattr(self, 'invalid_action_this_step', False):
-            invalid_action_penalty = 0.5  # Moderate penalty to discourage invalid attempts
-            total_penalty += invalid_action_penalty
+            total_penalty += 0.5
 
-        # --- Penalty G: HOLD Penalty (FIX "FEARFUL AGENT") ---
-        # Small penalty for doing nothing - encourages the agent to explore trading
-        # Only apply when FLAT (no position) to avoid penalizing legitimate position holding
-        if self.position_type == POSITION_FLAT and self.trade_details.get('trade_type') == 'hold':
-            hold_penalty = 0.01  # Small but consistent pressure to act
-            total_penalty += hold_penalty
+        # NOTE: No hold penalty. Holding flat = reward 0.0 (neutral).
+        # NOTE: No duration penalty. Removed to let winners run.
 
         # =========================================================================
-        # STEP 4: COMPOSITE RAW REWARD (Before Normalization)
+        # STEP 4: POSITION HOLDING BONUS/PENALTY (unrealized P&L feedback)
         # =========================================================================
-        raw_reward = profitability_reward - total_penalty
+        hold_reward = 0.0
+
+        if self.position_type != POSITION_FLAT and not np.isnan(self.entry_price):
+            # Calculate unrealized P&L
+            if self.position_type == POSITION_LONG:
+                current_price = self.net_worth - self.balance
+                if self.stock_quantity > 0:
+                    current_price = current_price / self.stock_quantity
+                else:
+                    current_price = self.entry_price
+                unrealized_pnl = (current_price - self.entry_price) * self.stock_quantity
+            else:  # SHORT
+                quantity = abs(self.stock_quantity)
+                # For short: unrealized_pnl already computed in net_worth
+                unrealized_pnl = self.net_worth - self.balance
+
+            unrealized_pnl_pct = unrealized_pnl / self.initial_balance
+
+            if unrealized_pnl > 0:
+                # Profitable hold: reward to encourage letting winners run
+                hold_reward = min(0.5, unrealized_pnl_pct * 100)
+            else:
+                # Losing hold: convex penalty (bigger losses hurt more)
+                loss_pct = abs(unrealized_pnl_pct)
+                hold_reward = max(-5.0, -(loss_pct * 100) ** 1.5)
 
         # =========================================================================
-        # STEP 5: SHAPING BONUSES (Learning Signal for Trade Outcomes)
+        # STEP 5: TRADE CLOSE BONUS (Risk-Reward Based)
         # =========================================================================
-        # These bonuses provide immediate feedback on trade quality
-        # Helps the agent learn faster by rewarding good decisions
-        bonus = 0.0
+        trade_bonus = 0.0
 
-        # Check if a trade was just closed (any CLOSE action completed)
-        # NEW: Support both old 'sell' and new 'close_long'/'close_short' trade types
         closed_trade_types = ['sell', 'close_long', 'close_short']
         if self.trade_details.get('trade_type') in closed_trade_types and self.trade_details.get('trade_success'):
             trade_pnl_abs = self.trade_details.get('trade_pnl_abs', 0.0)
             trade_pnl_pct = self.trade_details.get('trade_pnl_pct', 0.0)
 
             if trade_pnl_abs > 0:
-                # === WINNING TRADE ===
-                # Bonus scaled by percentage profit (max +2.0)
-                win_bonus = min(2.0, (trade_pnl_pct / 100.0) * 10.0)
-                bonus += win_bonus
-
-                # Extra bonus for high-quality wins (>1.5% profit)
-                # This encourages the agent to wait for good setups
-                if trade_pnl_pct > 1.5:
-                    bonus += 1.0
+                # Winning trade: reward proportional to risk-reward quality
+                # Use pnl_pct as proxy for RR (SL is ~1% per config)
+                actual_rr = abs(trade_pnl_pct) / max(self.stop_loss_percentage * 100, 0.1)
+                trade_bonus = min(3.0, actual_rr)
             else:
-                # === LOSING TRADE ===
-                # Small negative feedback (already penalized by profitability)
-                # This helps the agent learn to avoid bad trades
-                loss_feedback = max(-1.0, (trade_pnl_pct / 100.0) * 5.0)
-                bonus += loss_feedback
+                # Losing trade: fixed mild penalty (PnL itself already negative)
+                trade_bonus = -0.5
 
         # =========================================================================
-        # STEP 6: NORMALIZATION (Tanh Squashing)
+        # STEP 6: COMPOSITE + NORMALIZATION (Tanh Squashing)
         # =========================================================================
-        # Apply smooth squashing function to prevent extreme values
-        # Tanh maps (-∞, +∞) to (-1, +1) with smooth gradients
-        # This is CRITICAL for PPO stability
+        raw_reward = profitability_reward - total_penalty + hold_reward + trade_bonus
+        combined_reward = raw_reward
 
-        combined_reward = raw_reward + bonus
-
-        # Reward scaling using hyperparameters (tunable per bot)
-        # reward_tanh_scale: Controls sensitivity (lower = compressed, higher = wider)
-        # reward_output_scale: Final multiplier for PPO-friendly range
         normalized_reward = np.tanh(combined_reward * self.reward_tanh_scale)
-
-        # Map to target range using output scale hyperparameter
         scaled_reward = normalized_reward * self.reward_output_scale
 
         # =========================================================================
         # STEP 7: SPECIAL CASES (Terminal Conditions)
         # =========================================================================
-
-        # === CRITICAL FAILURE: Account Below Minimum ===
-        # This should trigger episode termination with strong penalty
         if self.net_worth <= self.minimum_allowed_balance:
             return -20.0
 
-        # === SEVERE DRAWDOWN: Emergency Risk Management ===
-        # If drawdown exceeds 15%, apply additional penalty
         if current_drawdown > 0:
             dd_ratio = current_drawdown / self.peak_nav
-            if dd_ratio > 0.15:  # 15% total drawdown
-                scaled_reward -= 5.0  # Extra penalty
+            if dd_ratio > 0.15:
+                scaled_reward -= 5.0
 
         # =========================================================================
         # STEP 8: FINAL SAFETY CLIPPING
         # =========================================================================
-        # Hard limits to prevent any extreme values that might destabilize training
-        # Range: [-20, +20] with most values in [-5, +5]
         final_reward = np.clip(scaled_reward, -20.0, 20.0)
 
         # =========================================================================
-        # STEP 9: OPTIONAL DEBUG LOGGING
+        # STEP 9: REWARD COMPONENT TRACKING (for TensorBoard logging)
         # =========================================================================
-        # Enable this during development to understand reward components
-        # DISABLE in production for performance
-        if hasattr(self, 'debug_rewards') and self.debug_rewards:
-            print(f"[REWARD DEBUG] Step {self.current_step}")
-            print(f"  Profitability: {profitability_reward:+.3f}")
-            print(f"  Total Penalty: {total_penalty:.3f}")
-            print(f"    - Drawdown: {dd_penalty if drawdown_increase > 0 else 0:.3f}")
-            print(f"    - Friction: {friction_penalty if self.transaction_cost_incurred_step > 0 else 0:.3f}")
-            print(f"    - Leverage: {leverage_penalty if leverage_excess > 0 else 0:.3f}")
-            print(f"  Bonus: {bonus:+.3f}")
-            print(f"  Raw Reward: {raw_reward:+.3f}")
-            print(f"  Final Reward: {final_reward:+.3f}")
-            print(f"  Net Worth: ${self.net_worth:.2f} (Δ {(self.net_worth / previous_net_worth - 1) * 100:+.2f}%)")
-            print("-" * 50)
+        self._last_reward_components = {
+            'profitability': profitability_reward,
+            'dd_penalty': dd_penalty,
+            'friction_penalty': friction_penalty,
+            'leverage_penalty': leverage_penalty,
+            'turnover_penalty': turnover_penalty,
+            'hold_reward': hold_reward,
+            'trade_bonus': trade_bonus,
+            'raw_reward': raw_reward,
+            'final_reward': final_reward,
+        }
 
-        # Final NaN/Inf check (robust error handling)
+        # Optional debug logging (via logger, not print)
+        if hasattr(self, 'debug_rewards') and self.debug_rewards:
+            _logger.debug(
+                "REWARD Step %d | pnl=%.3f dd=%.3f fric=%.3f hold=%.3f trade=%.3f -> %.3f",
+                self.current_step, profitability_reward, dd_penalty,
+                friction_penalty, hold_reward, trade_bonus, final_reward
+            )
+
+        # Final NaN/Inf check
         if np.isnan(final_reward) or np.isinf(final_reward):
-            print(f"[WARNING] Invalid final_reward: {final_reward} at step {self.current_step}")
+            _logger.warning("Invalid final_reward: %s at step %d", final_reward, self.current_step)
             return 0.0
 
         return final_reward
@@ -1953,7 +1947,7 @@ class TradingEnv(gym.Env):
         console.print(table)
 
     def close(self):
-        print("DEBUG ENV: Environment closed.")
+        logger.info("DEBUG ENV: Environment closed.")
 
     def reset(self, seed: int = None, options: dict = None):
         """

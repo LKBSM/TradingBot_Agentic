@@ -205,6 +205,44 @@ class VectorizedRiskCalculator:
         var = -np.percentile(simulated_returns, (1 - confidence) * 100)
         return max(0.0, var)
 
+    def var_cornish_fisher(
+        self,
+        returns: np.ndarray,
+        confidence: float = 0.95
+    ) -> float:
+        """
+        Cornish-Fisher VaR with skewness and kurtosis adjustment.
+
+        More accurate than parametric VaR for non-normal distributions
+        (e.g., Gold/XAUUSD returns which exhibit fat tails and negative skew).
+
+        The Cornish-Fisher expansion adjusts the z-score:
+            z_cf = z + (z²-1)·S/6 + (z³-3z)·K/24 - (2z³-5z)·S²/36
+
+        Args:
+            returns: Array of returns
+            confidence: Confidence level (e.g., 0.95)
+
+        Returns:
+            VaR as positive number (potential loss)
+        """
+        if len(returns) < 10:
+            return self.var_parametric(returns, confidence)
+
+        from scipy import stats
+
+        z = stats.norm.ppf(1 - confidence)
+        s = stats.skew(returns)
+        k = stats.kurtosis(returns)
+
+        # Cornish-Fisher expansion
+        z_cf = (z + (z**2 - 1) * s / 6
+                + (z**3 - 3 * z) * k / 24
+                - (2 * z**3 - 5 * z) * s**2 / 36)
+
+        var = -(np.mean(returns) + z_cf * np.std(returns, ddof=1))
+        return max(0.0, float(var))
+
     def cvar(
         self,
         returns: np.ndarray,

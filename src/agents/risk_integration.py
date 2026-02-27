@@ -36,6 +36,8 @@
 from __future__ import annotations
 
 import logging
+
+logger = logging.getLogger(__name__)
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -291,7 +293,7 @@ class IntegratedRiskManager:
             # Execute with adjusted quantity
             execute_trade(quantity=result.approved_quantity)
         else:
-            print(f"Trade rejected: {result.violations}")
+            logger.warning(f"Trade rejected: {result.violations}")
 
         # Record outcome for learning
         manager.record_trade_outcome(pnl=250, pnl_pct=0.0025)

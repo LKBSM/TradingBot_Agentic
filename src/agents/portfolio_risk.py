@@ -44,6 +44,8 @@ from datetime import datetime, timedelta
 from enum import Enum, auto
 from collections import deque
 import logging
+
+logger = logging.getLogger(__name__)
 import warnings
 from abc import ABC, abstractmethod
 
@@ -999,7 +1001,7 @@ class ExposureManager:
         ])
 
         report = manager.get_exposure_report()
-        print(f"Net exposure: {report.net_exposure}")
+        logger.info(f"Net exposure: {report.net_exposure}")
     """
 
     def __init__(

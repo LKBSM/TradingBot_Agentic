@@ -61,25 +61,26 @@ class RewardWeights:
         """
         Get phase-appropriate weights for curriculum learning.
 
-        Phase 1 (BASE): Focus on profit and exploration
-        Phase 2 (ENRICHED): Add Sharpe optimization
-        Phase 3 (SOFT): Add risk-adjusted metrics
-        Phase 4 (PRODUCTION): Full multi-objective
+        Sprint 2 restructuring:
+        Phase 1 (BASE): Profit + exploration, minimal penalties
+        Phase 2 (ENRICHED): Add Sharpe + risk-reward focus
+        Phase 3 (SOFT): Add drawdown control, reduce exploration
+        Phase 4 (PRODUCTION): Full risk-adjusted, low exploration
         """
         progress = phase / total_phases
 
         return cls(
-            profit=1.0,  # Always important
-            sharpe=0.3 + 0.5 * progress,  # Increases
-            sortino=0.1 + 0.4 * progress,
-            calmar=0.1 + 0.3 * progress,
-            win_rate=0.3 - 0.1 * progress,  # Decreases (less hand-holding)
-            profit_factor=0.1 + 0.2 * progress,
-            risk_reward=0.1 + 0.2 * progress,
-            exploration=0.3 - 0.25 * progress,  # High early, low late
-            timing=0.1 + 0.2 * progress,
-            regime_adaptation=0.1 + 0.3 * progress,
-            drawdown_penalty=0.3 + 0.4 * progress,  # Stricter over time
+            profit=1.0,                             # Always the primary signal
+            sharpe=0.2 + 0.6 * progress,            # Grows: risk-adjusted becomes dominant
+            sortino=0.1 + 0.5 * progress,           # Grows: downside awareness
+            calmar=0.1 + 0.4 * progress,            # Grows: drawdown-adjusted returns
+            win_rate=0.2 - 0.15 * progress,         # Shrinks: less hand-holding late
+            profit_factor=0.1 + 0.3 * progress,     # Grows: gross profit/loss ratio
+            risk_reward=0.2 + 0.3 * progress,       # Grows: Sprint 2 RR-based bonus
+            exploration=0.2 - 0.18 * progress,      # High early, near-zero late
+            timing=0.1 + 0.2 * progress,            # Entry/exit quality
+            regime_adaptation=0.1 + 0.3 * progress, # Adapt to vol regimes
+            drawdown_penalty=0.5 + 0.5 * progress,  # Sprint 2: stricter (was 0.3+0.4)
             volatility_penalty=0.1 + 0.2 * progress
         )
 

@@ -37,6 +37,8 @@ from datetime import datetime
 from enum import Enum, auto
 import logging
 
+logger = logging.getLogger(__name__)
+
 # Import base classes
 from src.agents.base_agent import BaseAgent, AgentState, AgentCapability
 from src.agents.events import AgentEvent, EventType
@@ -326,9 +328,9 @@ class MarketRegimeAgent(BaseAgent):
         volumes=volume_array
     )
 
-    print(f"Regime: {analysis.regime.value}")
-    print(f"Strategy: {analysis.recommended_strategy}")
-    print(f"Size multiplier: {analysis.position_size_multiplier}")
+    logger.info(f"Regime: {analysis.regime.value}")
+    logger.info(f"Strategy: {analysis.recommended_strategy}")
+    logger.info(f"Size multiplier: {analysis.position_size_multiplier}")
     ```
     """
 

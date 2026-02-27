@@ -78,7 +78,7 @@ from src.environment.environment import TradingEnv
 
 # Import action constants and credit assignment penalties
 try:
-    from src.config import (
+    from config import (
         ACTION_HOLD, ACTION_OPEN_LONG, ACTION_CLOSE_LONG,
         ACTION_OPEN_SHORT, ACTION_CLOSE_SHORT,
         POSITION_FLAT, POSITION_LONG, POSITION_SHORT,
@@ -798,12 +798,12 @@ class OrchestratedTradingEnv(gym.Wrapper):
 
     def print_dashboard(self) -> None:
         """Print comprehensive dashboard from all agents."""
-        print(self._orchestrator.get_dashboard())
+        self._logger.info(self._orchestrator.get_dashboard())
 
         if self._news_agent:
-            print(self._news_agent.get_news_dashboard())
+            self._logger.info(self._news_agent.get_news_dashboard())
 
-        print(self._risk_sentinel.get_risk_dashboard())
+        self._logger.info(self._risk_sentinel.get_risk_dashboard())
 
     def is_trading_blocked(self) -> Tuple[bool, Optional[str]]:
         """Check if trading is currently blocked by any agent."""
@@ -872,9 +872,9 @@ def create_orchestrated_env(
         env = create_orchestrated_env(df, risk_preset="moderate")
         obs, info = env.reset()
 
-        print(f"Regime: {info['regime']}")
-        print(f"News blocked: {info.get('news_blocked', False)}")
-        print(f"Agents: {info['agents_registered']}")
+        logger.info(f"Regime: {info['regime']}")
+        logger.info(f"News blocked: {info.get('news_blocked', False)}")
+        logger.info(f"Agents: {info['agents_registered']}")
 
         obs, reward, done, truncated, info = env.step(action)
     """

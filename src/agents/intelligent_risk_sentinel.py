@@ -59,7 +59,7 @@ from src.agents.config import RiskSentinelConfig, validate_risk_config
 
 # Import action constants
 try:
-    from src.config import (
+    from config import (
         ACTION_HOLD, ACTION_OPEN_LONG, ACTION_CLOSE_LONG,
         ACTION_OPEN_SHORT, ACTION_CLOSE_SHORT,
         POSITION_FLAT, POSITION_LONG, POSITION_SHORT

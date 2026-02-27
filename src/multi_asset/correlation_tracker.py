@@ -103,15 +103,24 @@ class CorrelationTrackerConfig:
     """Configuration for correlation tracker."""
     # Rolling windows
     short_window: int = 20
-    medium_window: int = 50
+    medium_window: int = 60      # Sprint 5: 60-bar for Gold-DXY/US10Y
     long_window: int = 100
 
     # Historical lookback for regime detection
     historical_window: int = 252  # ~1 year of daily data
 
     # Regime thresholds
-    breakdown_z_threshold: float = 2.0      # Z-score for breakdown detection
+    breakdown_z_threshold: float = 3.0      # Sprint 5: z-score for kill switch trigger
     elevated_z_threshold: float = 1.5       # Z-score for elevated correlation
+
+    # Sprint 5: Position multipliers by regime
+    multiplier_stable: float = 1.0
+    multiplier_elevated: float = 0.7
+    multiplier_breakdown: float = 0.3
+
+    # Sprint 5: Absolute correlation thresholds for regime classification
+    corr_stable_threshold: float = 0.7      # |corr| > 0.7 = STABLE
+    corr_elevated_threshold: float = 0.4    # 0.4 < |corr| < 0.7 = ELEVATED
 
     # Update frequency
     min_update_interval_sec: int = 60
@@ -327,22 +336,34 @@ class CorrelationTracker:
             return 0.0
 
     def _determine_regime(self, pair: CorrelationPair) -> CorrelationRegime:
-        """Determine correlation regime for a pair."""
-        z = pair.z_score
+        """
+        Determine correlation regime for a pair.
 
-        # Check for breakdown (correlation moving away from historical norm)
-        if abs(z) >= self.config.breakdown_z_threshold:
+        Sprint 5: Uses absolute correlation thresholds first, z-score for sudden shifts.
+        - STABLE:  |corr| > 0.7 (normal correlation structure intact)
+        - ELEVATED: 0.4 < |corr| < 0.7 (weakening, reduce position size)
+        - BREAKDOWN: |corr| < 0.4 after being > 0.7, or z-score > 3.0
+        - DECORRELATED: |corr| < 0.2 (assets moving independently)
+        """
+        z = abs(pair.z_score)
+
+        # Sudden decorrelation event (z-score based)
+        if z >= self.config.breakdown_z_threshold:
             return CorrelationRegime.BREAKDOWN
 
-        # Check for elevated correlation
-        if z >= self.config.elevated_z_threshold:
+        # Absolute correlation thresholds
+        if pair.correlation_abs >= self.config.corr_stable_threshold:
+            return CorrelationRegime.STABLE
+
+        if pair.correlation_abs >= self.config.corr_elevated_threshold:
             return CorrelationRegime.ELEVATED
 
-        # Check for decorrelation
+        # Below 0.4 — either DECORRELATED or BREAKDOWN
         if pair.correlation_abs < 0.2:
             return CorrelationRegime.DECORRELATED
 
-        return CorrelationRegime.STABLE
+        # Between 0.2 and 0.4 — treat as breakdown (was likely correlated before)
+        return CorrelationRegime.BREAKDOWN
 
     def _update_matrix(self) -> None:
         """Update the full correlation matrix."""
@@ -483,6 +504,59 @@ class CorrelationTracker:
             return 1.0 - reduction
 
         return 1.0
+
+    def get_risk_adjustment(self) -> float:
+        """
+        Sprint 5: Get position size multiplier based on worst correlation regime.
+
+        Scans all tracked pairs and returns the most conservative multiplier:
+        - STABLE:       1.0 (full size)
+        - ELEVATED:     0.7 (reduce 30%)
+        - BREAKDOWN:    0.3 (reduce 70%)
+        - DECORRELATED: 0.3 (treat same as breakdown for safety)
+
+        Returns:
+            Position size multiplier (0.3 to 1.0)
+        """
+        if not self._pairs:
+            return 1.0
+
+        worst_multiplier = 1.0
+
+        for pair in self._pairs.values():
+            regime = pair.regime
+            if regime == CorrelationRegime.STABLE:
+                m = self.config.multiplier_stable
+            elif regime == CorrelationRegime.ELEVATED:
+                m = self.config.multiplier_elevated
+            elif regime in (CorrelationRegime.BREAKDOWN, CorrelationRegime.DECORRELATED):
+                m = self.config.multiplier_breakdown
+            else:
+                m = 1.0
+
+            worst_multiplier = min(worst_multiplier, m)
+
+        if worst_multiplier != 1.0:
+            logger.info(
+                "Correlation risk adjustment: multiplier=%.2f, regimes=%s",
+                worst_multiplier,
+                {k: v.regime.name for k, v in self._pairs.items()},
+            )
+
+        return worst_multiplier
+
+    def get_breakdown_z_scores(self) -> Dict[str, float]:
+        """
+        Sprint 5: Get z-scores for all pairs, for kill switch evaluation.
+
+        Returns:
+            Dict of {pair_key: z_score} for pairs with |z| > 0.
+        """
+        return {
+            k: pair.z_score
+            for k, pair in self._pairs.items()
+            if abs(pair.z_score) > 0
+        }
 
     def get_status(self) -> Dict[str, Any]:
         """Get tracker status."""

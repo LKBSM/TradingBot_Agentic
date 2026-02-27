@@ -44,6 +44,8 @@ from typing import Dict, Any, Optional, List, Tuple
 from datetime import datetime
 import logging
 
+logger = logging.getLogger(__name__)
+
 # Import our agent system
 from src.agents.base_agent import AgentState
 from src.agents.events import (
@@ -60,7 +62,7 @@ from src.environment.environment import TradingEnv
 
 # Import action constants for long/short trading and credit assignment penalties
 try:
-    from src.config import (
+    from config import (
         ACTION_HOLD, ACTION_OPEN_LONG, ACTION_CLOSE_LONG,
         ACTION_OPEN_SHORT, ACTION_CLOSE_SHORT,
         POSITION_FLAT, POSITION_LONG, POSITION_SHORT,
@@ -130,9 +132,9 @@ class AgenticTradingEnv(gym.Wrapper):
 
     # Check if action was approved
     if info.get('risk_approved'):
-        print("Trade executed!")
+        logger.info("Trade executed!")
     else:
-        print(f"Trade rejected: {info.get('risk_reason')}")
+        logger.warning(f"Trade rejected: {info.get('risk_reason')}")
     ```
     """
 
@@ -625,18 +627,18 @@ class AgenticTradingEnv(gym.Wrapper):
     def print_risk_summary(self) -> None:
         """Print a summary of risk decisions this episode."""
         stats = self.get_agent_stats()
-        print("\n" + "=" * 60)
-        print("RISK SENTINEL EPISODE SUMMARY")
-        print("=" * 60)
-        print(f"Total Proposals:    {stats['episode_proposals']}")
-        print(f"Approved:           {stats['episode_approvals']}")
-        print(f"Rejected:           {stats['episode_rejections']}")
-        print(f"Approval Rate:      {stats['episode_approval_rate']:.1%}")
-        print("-" * 60)
-        print("Top Rejection Reasons:")
+        logger.info("\n" + "=" * 60)
+        logger.info("RISK SENTINEL EPISODE SUMMARY")
+        logger.info("=" * 60)
+        logger.info(f"Total Proposals:    {stats['episode_proposals']}")
+        logger.info(f"Approved:           {stats['episode_approvals']}")
+        logger.info(f"Rejected:           {stats['episode_rejections']}")
+        logger.info(f"Approval Rate:      {stats['episode_approval_rate']:.1%}")
+        logger.info("-" * 60)
+        logger.info("Top Rejection Reasons:")
         for reason, count in stats['top_rejection_reasons'].items():
-            print(f"  - {reason}: {count}")
-        print("=" * 60 + "\n")
+            logger.info(f"  - {reason}: {count}")
+        logger.info("=" * 60 + "\n")
 
     @property
     def risk_sentinel(self) -> RiskSentinelAgent:

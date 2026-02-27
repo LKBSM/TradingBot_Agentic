@@ -32,6 +32,7 @@
 
 import json
 import logging
+import logging.handlers
 import os
 import sys
 import time
@@ -271,9 +272,15 @@ def setup_structured_logging(
     console_handler.setFormatter(formatter)
     root_logger.addHandler(console_handler)
 
-    # File handler (always JSON for machine processing)
+    # File handler with rotation (always JSON for machine processing)
     if log_file:
-        file_handler = logging.FileHandler(log_file, encoding='utf-8')
+        os.makedirs(os.path.dirname(log_file) or ".", exist_ok=True)
+        file_handler = logging.handlers.RotatingFileHandler(
+            log_file,
+            maxBytes=100 * 1024 * 1024,  # 100 MB per file
+            backupCount=10,               # keep 10 rotated files
+            encoding='utf-8',
+        )
         file_handler.setFormatter(StructuredJsonFormatter(
             include_source=True,
         ))

@@ -49,6 +49,8 @@ from typing import Dict, Any, Optional, List, Tuple
 from datetime import datetime
 import logging
 
+logger = logging.getLogger(__name__)
+
 # Import our intelligent agents
 from src.agents.intelligent_risk_sentinel import (
     IntelligentRiskSentinel,
@@ -69,7 +71,7 @@ from src.environment.environment import TradingEnv
 
 # Import action constants and credit assignment penalties
 try:
-    from src.config import (
+    from config import (
         ACTION_HOLD, ACTION_OPEN_LONG, ACTION_CLOSE_LONG,
         ACTION_OPEN_SHORT, ACTION_CLOSE_SHORT,
         POSITION_FLAT, POSITION_LONG, POSITION_SHORT,
@@ -631,12 +633,12 @@ class IntelligentAgenticEnv(gym.Wrapper):
 
     def print_dashboard(self) -> None:
         """Print comprehensive dashboard from all agents."""
-        print(self._risk_sentinel.get_risk_dashboard())
+        logger.info(self._risk_sentinel.get_risk_dashboard())
 
         stats = self.get_agent_stats()
         regime = stats['regime_agent']
 
-        print(f"""
+        logger.info(f"""
 ╔══════════════════════════════════════════════════════════════════════╗
 ║                    MARKET REGIME AGENT STATUS                        ║
 ╠══════════════════════════════════════════════════════════════════════╣
@@ -686,8 +688,8 @@ def create_intelligent_env(
         env = create_intelligent_env(df, risk_preset="moderate")
         obs, info = env.reset()
 
-        print(f"Regime: {info['regime']}")
-        print(f"Recommended strategy: {info['recommended_strategy']}")
+        logger.info(f"Regime: {info['regime']}")
+        logger.info(f"Recommended strategy: {info['recommended_strategy']}")
 
         obs, reward, done, truncated, info = env.step(action)
     """
