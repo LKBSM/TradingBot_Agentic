@@ -423,8 +423,8 @@ class UnifiedAgenticEnv(gym.Env):
         total_dim = base_obs_shape + self.AGENT_SIGNAL_DIM
 
         self.observation_space = spaces.Box(
-            low=-np.inf,
-            high=np.inf,
+            low=-10.0,
+            high=10.0,
             shape=(total_dim,),
             dtype=np.float32
         )

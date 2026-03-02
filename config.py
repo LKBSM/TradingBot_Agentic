@@ -173,8 +173,22 @@ FEATURES = [
     'FVG_SIGNAL',       # Fair Value Gaps - institutional footprint
     'BOS_SIGNAL',       # Break of Structure - trend direction
     'CHOCH_SIGNAL',     # Change of Character - reversals
-    'OB_STRENGTH_NORM'  # Order Block strength - key SMC signal
+    'OB_STRENGTH_NORM', # Order Block strength - key SMC signal
+
+    # Gap Detection (1 feature)
+    'WEEKEND_GAP',      # Weekend/holiday gap size for Gold
 ]
+
+# Multi-Timeframe Features (14 features) - Higher timeframe context for Gold
+# These are computed by MultiTimeframeFeatures and added dynamically in _process_data()
+MTF_FEATURES = [
+    'HTF_TREND_1H', 'HTF_STRENGTH_1H', 'HTF_RSI_1H',
+    'PRICE_VS_SMA20_1H', 'PRICE_VS_SMA50_1H',
+    'HTF_TREND_4H', 'HTF_STRENGTH_4H', 'HTF_RSI_4H',
+    'PRICE_VS_SMA20_4H', 'PRICE_VS_SMA50_4H',
+    'SESSION', 'DAY_OF_WEEK', 'HOUR_SIN', 'HOUR_COS'
+]
+ENABLE_MTF_FEATURES = True
 
 # Full feature set (for backward compatibility or experimentation)
 FEATURES_FULL = [

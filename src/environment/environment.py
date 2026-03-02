@@ -16,6 +16,7 @@ from rich.table import Table
 from rich.text import Text
 import ta
 import logging
+from src.environment.multi_timeframe_features import add_mtf_features_to_df
 
 logger = logging.getLogger(__name__)
 
@@ -388,9 +389,19 @@ class TradingEnv(gym.Env):
 
         self.df_raw = df.copy()
 
+        # MTF flag must be set BEFORE _process_data() which uses it
+        from config import ENABLE_MTF_FEATURES, MTF_FEATURES
+        self._enable_mtf = kwargs.get('enable_mtf', ENABLE_MTF_FEATURES)
+
         self.processed_data = self._process_data(self.df_raw)
         self.df = self.processed_data
         self.features = [col for col in self.features_config if col in self.df.columns]
+
+        # Add MTF features if enabled and available in processed data
+        if self._enable_mtf:
+            for f in MTF_FEATURES:
+                if f in self.df.columns and f not in self.features:
+                    self.features.append(f)
 
         # Sprint 6: Feature reducer (set by trainer, None = disabled)
         self._feature_reducer = kwargs.get('feature_reducer', None)
@@ -535,7 +546,7 @@ class TradingEnv(gym.Env):
             expected_obs_size = self._feature_reducer.n_components + 3  # PCA dims + 3 state
         else:
             expected_obs_size = raw_obs_size
-        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(expected_obs_size,), dtype=np.float32)
+        self.observation_space = spaces.Box(low=-10.0, high=10.0, shape=(expected_obs_size,), dtype=np.float32)
 
         self.reset()
 
@@ -613,6 +624,44 @@ class TradingEnv(gym.Env):
 
         df_processed.replace([np.inf, -np.inf], np.nan, inplace=True)
         logger.info(f"Infinites remplacees par NaN")
+
+        # =========================================================================
+        # ETAPE 4a: WEEKEND GAP DETECTION (Gold-specific)
+        # =========================================================================
+        if 'Original_Timestamp' in df_processed.columns:
+            try:
+                ts = pd.to_datetime(df_processed['Original_Timestamp'])
+                time_diff = ts.diff()
+                # Gap = time difference > 6 hours (normal 15min interval)
+                gap_mask = time_diff > pd.Timedelta(hours=6)
+                df_processed['WEEKEND_GAP'] = 0.0
+                if gap_mask.any():
+                    # Calculate gap size as % of Close price
+                    gap_returns = df_processed['Close'].pct_change()
+                    df_processed.loc[gap_mask, 'WEEKEND_GAP'] = gap_returns[gap_mask].clip(-0.05, 0.05)
+                    gap_count = gap_mask.sum()
+                    logger.info(f"Weekend gaps detected: {gap_count}")
+            except Exception as e:
+                df_processed['WEEKEND_GAP'] = 0.0
+                logger.warning(f"Weekend gap detection failed (non-fatal): {e}")
+        else:
+            df_processed['WEEKEND_GAP'] = 0.0
+            logger.warning("No timestamp column for gap detection")
+
+        # =========================================================================
+        # ETAPE 4b: MULTI-TIMEFRAME FEATURES
+        # =========================================================================
+        if getattr(self, '_enable_mtf', True):
+            try:
+                df_processed = add_mtf_features_to_df(
+                    df_processed,
+                    include_1h=True,
+                    include_4h=True,
+                    include_session=True
+                )
+                logger.info("MTF features added: 14 columns")
+            except Exception as e:
+                logger.warning(f"MTF features failed (non-fatal): {e}")
 
         # =========================================================================
         # ÉTAPE 5: GESTION INTELLIGENTE DES NaN (CRITIQUE!)
@@ -776,11 +825,13 @@ class TradingEnv(gym.Env):
         start_idx = self.current_step - self.lookback_window_size + 1
         obs_df = self.df.iloc[max(0, start_idx):self.current_step + 1].copy()
 
-        # Padding (if the window is smaller than required)
+        # Padding: edge-value replication instead of zero-padding
+        # Zero-padding creates phantom signals (e.g., RSI=0 = "extremely oversold")
+        # Edge replication means "no change yet" which is semantically correct
         if len(obs_df) < self.lookback_window_size:
             padding_needed = self.lookback_window_size - len(obs_df)
-            padded_data = np.zeros((padding_needed, len(self.df.columns)))
-            padded_df = pd.DataFrame(padded_data, columns=self.df.columns)
+            first_row = obs_df.iloc[[0]]
+            padded_df = pd.concat([first_row] * padding_needed, ignore_index=True)
             obs_df = pd.concat([padded_df, obs_df], ignore_index=True)
 
         # Keep the last lookback_window_size rows only
@@ -829,6 +880,9 @@ class TradingEnv(gym.Env):
         observation = np.append(
             flat_obs, [normalized_balance, normalized_stock_quantity, normalized_net_worth]
         )
+
+        # --- 7b. Clip to observation space bounds for PPO stability ---
+        observation = np.clip(observation, -10.0, 10.0)
 
         # --- 8. Shape and value validation ---
         if self._feature_reducer is not None and self._feature_reducer.is_fitted:
