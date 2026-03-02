@@ -364,8 +364,8 @@ class UnifiedAgenticEnv(gym.Env):
     Unified environment that maintains constant observation space across all
     training modes while progressively introducing agent constraints.
 
-    Observation Space: 323 dimensions
-    - 303 from base TradingEnv (20 lookback × 15 features + 3 state)
+    Observation Space: 623 dimensions (with MTF enabled)
+    - 603 from base TradingEnv (20 lookback × 30 features + 3 state)
     - 20 from agent signals
 
     This solves the domain shift problem by ensuring the model always sees
@@ -408,6 +408,11 @@ class UnifiedAgenticEnv(gym.Env):
         self._logger = logging.getLogger(__name__)
 
         # Create base environment
+        # Default scaler to fit on all data (safe because training pipeline
+        # already splits train/val/test before creating environments)
+        if 'scaler_fit_end_idx' not in kwargs and 'pre_fitted_scaler' not in kwargs:
+            kwargs['scaler_fit_end_idx'] = len(df)
+
         self._base_env = TradingEnv(
             df=df,
             render_mode=render_mode,

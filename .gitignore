@@ -61,6 +61,9 @@ tensorboard_logs/
 .env.local
 .env.*.local
 
+# Security - salt/key files
+.trading_bot_salt
+
 # OS
 .DS_Store
 Thumbs.db
