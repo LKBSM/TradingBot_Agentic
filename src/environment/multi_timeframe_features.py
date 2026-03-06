@@ -180,8 +180,8 @@ class MultiTimeframeFeatures:
         df['ATR'] = tr.rolling(14).mean()
 
         # Fill NaN with forward fill then backward fill
-        df.fillna(method='ffill', inplace=True)
-        df.fillna(method='bfill', inplace=True)
+        df.ffill(inplace=True)
+        df.bfill(inplace=True)
 
     def _build_feature_names(self) -> None:
         """Build list of feature names."""

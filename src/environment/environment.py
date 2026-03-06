@@ -426,6 +426,7 @@ class TradingEnv(gym.Env):
         self.total_fees_paid = 0.0
         self.current_step = self.lookback_window_size
         self.max_steps = len(self.df) - 1
+        self.end_idx = self.max_steps  # Will be properly set in reset()
         self.entry_price = np.nan
 
         # --- NEW: State tracking variables for advanced reward function ---
@@ -1303,7 +1304,7 @@ class TradingEnv(gym.Env):
         self.risk_manager.market_state['current_regime'] = regime_state
 
         # --- End of episode: Force close any position ---
-        if self.current_step >= self.max_steps:
+        if self.current_step >= self.end_idx:
             truncated = True
             done = True
             # Force close any open position
