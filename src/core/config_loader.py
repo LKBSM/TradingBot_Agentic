@@ -313,7 +313,7 @@ def initialize_config(
         _config.REPORTS_DIR = os.path.join(_config.RESULTS_DIR, 'training_reports')
         _config.TENSORBOARD_LOG_DIR = os.path.join(_config.LOG_DIR, 'tensorboard')
         _config.CHARTS_DIR = os.path.join(_config.RESULTS_DIR, 'performance_charts')
-        _config.HISTORICAL_DATA_FILE = os.path.join(_config.DATA_DIR, "XAU_15MIN_2019_2024.csv")
+        _config.HISTORICAL_DATA_FILE = os.path.join(_config.DATA_DIR, "XAU_15MIN_2019_2025.csv")
 
         # Apply overrides
         if overrides:

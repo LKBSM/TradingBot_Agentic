@@ -147,13 +147,13 @@ print()
 # STEP 4: DOWNLOAD DATASET
 # ═══════════════════════════════════════════════════════════════════════════════
 
-print("📊 STEP 4/8: Downloading dataset (141K+ bars)")
+print("📊 STEP 4/8: Downloading dataset (170K+ bars)")
 print("-" * 80)
 
 import urllib.request
 
-dataset_url = "https://github.com/LKBSM/TradingBotNew/releases/download/v1.0/XAU_15MIN_2019_2024.csv"
-dataset_path = os.path.join(repo_path, 'data', 'XAU_15MIN_2019_2024.csv')
+dataset_url = "https://github.com/LKBSM/TradingBot_Agentic/releases/latest/download/XAU_15MIN_2019_2025.csv"
+dataset_path = os.path.join(repo_path, 'data', 'XAU_15MIN_2019_2025.csv')
 
 os.makedirs(os.path.join(repo_path, 'data'), exist_ok=True)
 
@@ -168,12 +168,12 @@ else:
         print(f"✅ Dataset downloaded: {file_size:.2f} MB")
     except Exception as e:
         print(f"❌ Download failed: {e}")
-        print("   Please manually upload XAU_15MIN_2019_2024.csv to data/ folder")
+        print("   Please manually upload XAU_15MIN_2019_2025.csv to data/ folder")
 
 # Backup to Drive
 if drive_root and os.path.exists(dataset_path):
     try:
-        drive_dataset = os.path.join(drive_root, 'data', 'XAU_15MIN_2019_2024.csv')
+        drive_dataset = os.path.join(drive_root, 'data', 'XAU_15MIN_2019_2025.csv')
         if not os.path.exists(drive_dataset):
             shutil.copy(dataset_path, drive_dataset)
             print(f"✅ Backup to Drive: {drive_dataset}")
@@ -198,7 +198,7 @@ required_files = [
     'src/environment/environment.py',
     'src/environment/risk_manager.py',
     'src/agents/base_agent.py',
-    'data/XAU_15MIN_2019_2024.csv',
+    'data/XAU_15MIN_2019_2025.csv',
 ]
 
 all_good = True

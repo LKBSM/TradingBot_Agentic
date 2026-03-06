@@ -324,7 +324,8 @@ class TradingOrchestrator:
         self,
         agent: BaseAgent,
         priority: AgentPriority = AgentPriority.NORMAL,
-        is_critical: bool = False
+        is_critical: bool = False,
+        fallback_decision: DecisionType = DecisionType.REJECT
     ) -> bool:
         """
         Register an agent with the orchestrator.
@@ -333,6 +334,7 @@ class TradingOrchestrator:
             agent: Agent instance to register
             priority: Decision priority level
             is_critical: If True, failure halts trading
+            fallback_decision: Decision when agent fails (default: REJECT = fail-safe)
 
         Returns:
             True if registration successful
@@ -348,7 +350,8 @@ class TradingOrchestrator:
                 agent=agent,
                 priority=priority,
                 capabilities=agent.get_capabilities(),
-                is_critical=is_critical
+                is_critical=is_critical,
+                fallback_decision=fallback_decision
             )
 
             self._agents[agent_id] = registration

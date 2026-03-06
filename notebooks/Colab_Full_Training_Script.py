@@ -26,11 +26,11 @@ GITHUB_USERNAME = "LKBSM"
 GITHUB_REPO = "TradingBot_Agentic"
 GITHUB_TOKEN = ""  # <-- PASTE YOUR GITHUB TOKEN HERE (required for private repos)
 RELEASE_TAG = "v1.0"
-DATA_FILENAME = "XAU_15MIN_2019_2024.csv"
-GOLD_DATA_PATH = "data/XAU_15MIN_2019_2024.csv"
+DATA_FILENAME = "XAU_15MIN_2019_2025.csv"
+GOLD_DATA_PATH = "data/XAU_15MIN_2019_2025.csv"
 
 # Training overrides (set to None to use defaults from config.py)
-TOTAL_TIMESTEPS = 1_500_000       # None → config.TOTAL_TIMESTEPS_PER_BOT
+TOTAL_TIMESTEPS = 2_000_000       # None → config.TOTAL_TIMESTEPS_PER_BOT
 TRAINING_STRATEGY = "FULL_PIPELINE"  # CURRICULUM_ONLY | FULL_PIPELINE | etc.
 ENSEMBLE_SEEDS = (42, 123, 456)   # Seeds for multi-seed ensemble
 

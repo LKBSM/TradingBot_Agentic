@@ -620,19 +620,38 @@ class RuleBasedModel(BaseSentimentModel):
 
 class SentimentCache:
     """
-    LRU cache for sentiment results to avoid re-processing.
+    LRU cache with TTL for sentiment results.
+
+    Uses OrderedDict for O(1) LRU eviction and periodic TTL cleanup
+    to prevent unbounded memory growth in production.
     """
 
     def __init__(self, max_size: int = 10000, ttl_seconds: int = 3600):
         self._max_size = max_size
         self._ttl_seconds = ttl_seconds
-        self._cache: Dict[str, Tuple[SentimentResult, datetime]] = {}
+        from collections import OrderedDict
+        self._cache: OrderedDict = OrderedDict()
+        self._timestamps: Dict[str, datetime] = {}
         self._lock = threading.Lock()
+        self._last_cleanup = datetime.now()
+        self._cleanup_interval = timedelta(seconds=300)  # Cleanup every 5 min
+        self._evictions = 0
 
     def _hash_text(self, text: str) -> str:
         """Create hash key for text using SHA256 (cryptographically secure)."""
-        # SECURITY: MD5 is cryptographically broken, use SHA256
         return hashlib.sha256(text.encode()).hexdigest()
+
+    def _cleanup_expired(self) -> None:
+        """Remove all expired entries. Called periodically under lock."""
+        now = datetime.now()
+        expired_keys = [
+            k for k, ts in self._timestamps.items()
+            if (now - ts).total_seconds() > self._ttl_seconds
+        ]
+        for key in expired_keys:
+            self._cache.pop(key, None)
+            self._timestamps.pop(key, None)
+            self._evictions += 1
 
     def get(self, text: str) -> Optional[SentimentResult]:
         """Get cached result if available and not expired."""
@@ -642,31 +661,49 @@ class SentimentCache:
             if key not in self._cache:
                 return None
 
-            result, timestamp = self._cache[key]
-
             # Check expiry
-            if (datetime.now() - timestamp).total_seconds() > self._ttl_seconds:
-                del self._cache[key]
+            ts = self._timestamps.get(key)
+            if ts and (datetime.now() - ts).total_seconds() > self._ttl_seconds:
+                self._cache.pop(key, None)
+                self._timestamps.pop(key, None)
                 return None
 
-            return result
+            # Move to end (most recently used)
+            self._cache.move_to_end(key)
+            return self._cache[key]
 
     def put(self, text: str, result: SentimentResult) -> None:
-        """Store result in cache."""
+        """Store result in cache with O(1) LRU eviction."""
         key = self._hash_text(text)
+        now = datetime.now()
 
         with self._lock:
-            # Evict oldest if at capacity
-            if len(self._cache) >= self._max_size:
-                oldest_key = min(self._cache.keys(), key=lambda k: self._cache[k][1])
-                del self._cache[oldest_key]
+            # Periodic cleanup of expired entries
+            if now - self._last_cleanup > self._cleanup_interval:
+                self._cleanup_expired()
+                self._last_cleanup = now
 
-            self._cache[key] = (result, datetime.now())
+            # If key exists, update and move to end
+            if key in self._cache:
+                self._cache.move_to_end(key)
+                self._cache[key] = result
+                self._timestamps[key] = now
+                return
+
+            # Evict oldest (first item in OrderedDict) if at capacity
+            while len(self._cache) >= self._max_size:
+                evicted_key, _ = self._cache.popitem(last=False)
+                self._timestamps.pop(evicted_key, None)
+                self._evictions += 1
+
+            self._cache[key] = result
+            self._timestamps[key] = now
 
     def clear(self) -> None:
         """Clear all cached entries."""
         with self._lock:
             self._cache.clear()
+            self._timestamps.clear()
 
     def stats(self) -> Dict[str, Any]:
         """Get cache statistics."""
@@ -674,7 +711,8 @@ class SentimentCache:
             return {
                 "size": len(self._cache),
                 "max_size": self._max_size,
-                "ttl_seconds": self._ttl_seconds
+                "ttl_seconds": self._ttl_seconds,
+                "evictions": self._evictions
             }
 
 

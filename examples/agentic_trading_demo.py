@@ -35,7 +35,7 @@ from src.agents.monitoring import AgentMonitor, create_monitor_for_env
 try:
     from config import HISTORICAL_DATA_FILE, FEATURES
 except ImportError:
-    HISTORICAL_DATA_FILE = r"C:\MyPythonProjects\TradingBotNew\data\XAU_15MIN_2019_2024.csv"
+    HISTORICAL_DATA_FILE = r"C:\MyPythonProjects\TradingBotNew\data\XAU_15MIN_2019_2025.csv"
     FEATURES = ['Open', 'High', 'Low', 'Close', 'Volume']
 
 

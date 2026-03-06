@@ -132,7 +132,7 @@ class AgentMonitor:
         self._agents: Dict[str, Any] = {}
         self._decision_history: deque = deque(maxlen=history_size)
         self._snapshots: deque = deque(maxlen=100)
-        self._alerts: List[Dict[str, Any]] = []
+        self._alerts: deque = deque(maxlen=500)
         self._start_time = datetime.now()
 
         # Alert thresholds

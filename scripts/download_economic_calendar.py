@@ -8,7 +8,7 @@
 #   python scripts/download_economic_calendar.py
 #
 # Output:
-#   data/economic_calendar_2019_2024.csv
+#   data/economic_calendar_2019_2025.csv
 # =============================================================================
 
 import os
@@ -107,7 +107,7 @@ class EconomicCalendarDownloader:
         self.output_dir = output_dir
         os.makedirs(output_dir, exist_ok=True)
 
-    def download_all(self, start_year: int = 2019, end_year: int = 2024) -> pd.DataFrame:
+    def download_all(self, start_year: int = 2019, end_year: int = 2025) -> pd.DataFrame:
         """
         Télécharge l'economic calendar complet.
 
@@ -129,51 +129,51 @@ class EconomicCalendarDownloader:
         df = None
 
         # Source 1: Essayer Forex Factory
-        print("📡 Tentative 1: Forex Factory...")
+        print("[1/3] Tentative 1: Forex Factory...")
         try:
             df = self._download_forex_factory(start_year, end_year)
             if df is not None and len(df) > 100:
-                print(f"   ✅ Succès! {len(df)} événements téléchargés")
+                print(f"   [OK] Succes! {len(df)} evenements telecharges")
             else:
                 df = None
-                print("   ❌ Pas assez de données")
+                print("   [--] Pas assez de donnees")
         except Exception as e:
-            print(f"   ❌ Erreur: {e}")
+            print(f"   [ERR] Erreur: {e}")
             df = None
 
         # Source 2: Essayer Investing.com
         if df is None:
-            print("\n📡 Tentative 2: Investing.com...")
+            print("\n[2/3] Tentative 2: Investing.com...")
             try:
                 df = self._download_investing_com(start_year, end_year)
                 if df is not None and len(df) > 100:
-                    print(f"   ✅ Succès! {len(df)} événements téléchargés")
+                    print(f"   [OK] Succes! {len(df)} evenements telecharges")
                 else:
                     df = None
-                    print("   ❌ Pas assez de données")
+                    print("   [--] Pas assez de donnees")
             except Exception as e:
-                print(f"   ❌ Erreur: {e}")
+                print(f"   [ERR] Erreur: {e}")
                 df = None
 
-        # Source 3: Générer basé sur patterns connus (toujours fiable)
+        # Source 3: Generer base sur patterns connus (toujours fiable)
         if df is None:
-            print("\n📡 Tentative 3: Génération basée sur patterns historiques...")
+            print("\n[3/3] Tentative 3: Generation basee sur patterns historiques...")
             df = self._generate_from_patterns(start_year, end_year)
-            print(f"   ✅ Généré! {len(df)} événements créés")
+            print(f"   [OK] Genere! {len(df)} evenements crees")
 
         # Filtrer pour HIGH IMPACT seulement (le plus important pour Gold)
         df_high = df[df['Impact'].str.upper() == 'HIGH'].copy()
-        print(f"\n📊 Événements HIGH IMPACT: {len(df_high)}")
+        print(f"\nEvenements HIGH IMPACT: {len(df_high)}")
 
         # Sauvegarder
         output_path = os.path.join(self.output_dir, f"economic_calendar_{start_year}_{end_year}.csv")
         df.to_csv(output_path, index=False)
-        print(f"\n💾 Sauvegardé: {output_path}")
+        print(f"\nSaved: {output_path}")
 
         # Aussi sauvegarder version HIGH IMPACT seulement
         output_path_high = os.path.join(self.output_dir, f"economic_calendar_HIGH_IMPACT_{start_year}_{end_year}.csv")
         df_high.to_csv(output_path_high, index=False)
-        print(f"💾 Sauvegardé: {output_path_high}")
+        print(f"Saved: {output_path_high}")
 
         # Stats
         self._print_stats(df)
@@ -525,16 +525,15 @@ def verify_data_alignment(gold_path: str, calendar_path: str):
     calendar = pd.read_csv(calendar_path, parse_dates=['Date'])
 
     # Stats Gold
-    print(f"📊 DONNÉES GOLD:")
+    print(f"DONNEES GOLD:")
     print(f"   Période: {gold['Date'].min()} à {gold['Date'].max()}")
     print(f"   Nombre de barres: {len(gold):,}")
 
     # Stats Calendar
-    print(f"\n📅 ECONOMIC CALENDAR:")
-    print(f"   Période: {calendar['Date'].min()} à {calendar['Date'].max()}")
-    print(f"   Nombre d'événements: {len(calendar):,}")
+    print(f"\nECONOMIC CALENDAR:")
+    print(f"   Period: {calendar['Date'].min()} to {calendar['Date'].max()}")
+    print(f"   Events: {len(calendar):,}")
 
-    # Vérifier le chevauchement
     gold_start = gold['Date'].min()
     gold_end = gold['Date'].max()
 
@@ -543,15 +542,13 @@ def verify_data_alignment(gold_path: str, calendar_path: str):
         (calendar['Date'] <= gold_end)
     ]
 
-    print(f"\n✅ ALIGNEMENT:")
-    print(f"   Événements dans la période Gold: {len(calendar_in_range):,}")
+    print(f"\nALIGNMENT:")
+    print(f"   Events in Gold period: {len(calendar_in_range):,}")
 
-    # Événements HIGH IMPACT dans la période
     high_impact = calendar_in_range[calendar_in_range['Impact'] == 'HIGH']
-    print(f"   Événements HIGH IMPACT: {len(high_impact):,}")
+    print(f"   HIGH IMPACT events: {len(high_impact):,}")
 
-    # Vérifier quelques événements clés
-    print(f"\n📌 ÉVÉNEMENTS CLÉS DÉTECTÉS:")
+    print(f"\nKEY EVENTS DETECTED:")
 
     key_events = ['Non-Farm Payrolls', 'FOMC Statement', 'CPI m/m', 'Federal Funds Rate']
     for event in key_events:
@@ -566,17 +563,17 @@ def verify_data_alignment(gold_path: str, calendar_path: str):
 if __name__ == "__main__":
     # Télécharger le calendar
     downloader = EconomicCalendarDownloader(output_dir="data")
-    calendar_df = downloader.download_all(start_year=2019, end_year=2024)
+    calendar_df = downloader.download_all(start_year=2019, end_year=2025)
 
     # Vérifier l'alignement avec les données Gold
-    gold_path = "data/XAU_15MIN_2019_2024.csv"
-    calendar_path = "data/economic_calendar_2019_2024.csv"
+    gold_path = "data/XAU_15MIN_2019_2025.csv"
+    calendar_path = "data/economic_calendar_2019_2025.csv"
 
     if os.path.exists(gold_path) and os.path.exists(calendar_path):
         aligned_calendar = verify_data_alignment(gold_path, calendar_path)
 
-        print("\n✅ PRÊT POUR L'ENTRAÎNEMENT!")
+        print("\nPRET POUR L'ENTRAINEMENT!")
         print("   Tu peux maintenant utiliser:")
-        print("   - data/XAU_15MIN_2019_2024.csv (prix)")
-        print("   - data/economic_calendar_2019_2024.csv (événements)")
+        print("   - data/XAU_15MIN_2019_2025.csv (prix)")
+        print("   - data/economic_calendar_2019_2025.csv (événements)")
         print("   - data/economic_calendar_HIGH_IMPACT_2019_2024.csv (événements majeurs)")

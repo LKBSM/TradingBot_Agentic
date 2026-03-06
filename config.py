@@ -36,7 +36,7 @@ for directory in [DATA_DIR, MODEL_DIR, LOG_DIR, RESULTS_DIR, REPORTS_DIR,
 
 # Data file path - now uses DATA_DIR for portability
 # Place your CSV in the 'data' folder of the project
-HISTORICAL_DATA_FILE = os.path.join(DATA_DIR, "XAU_15MIN_2019_2024.csv")
+HISTORICAL_DATA_FILE = os.path.join(DATA_DIR, "XAU_15MIN_2019_2025.csv")
 
 # Column mapping (adjust if your CSV uses different names)
 OHLCV_COLUMNS = {
@@ -54,11 +54,11 @@ VAL_RATIO = 0.15  # 15% for validation (early stopping)
 TEST_RATIO = 0.15  # 15% for final evaluation (out-of-sample)
 
 # Legacy date settings (kept for compatibility, but ratios above take precedence)
-TRAIN_END_DATE = "2023-06-30 23:59:00"
-VAL_START_DATE = "2023-07-01 00:00:00"
-VAL_END_DATE = "2023-12-31 23:59:00"
-EVAL_START_DATE = "2024-01-01 00:00:00"
-EVAL_END_DATE = "2024-12-31 23:59:00"
+TRAIN_END_DATE = "2024-06-30 23:59:00"
+VAL_START_DATE = "2024-07-01 00:00:00"
+VAL_END_DATE = "2025-03-31 23:59:00"
+EVAL_START_DATE = "2025-04-01 00:00:00"
+EVAL_END_DATE = "2025-12-31 23:59:00"
 
 # ═════════════════════════════════════════════════════════════════════════════
 # 3. ENVIRONMENT & FEATURES
@@ -67,16 +67,14 @@ EVAL_END_DATE = "2024-12-31 23:59:00"
 ACTION_SPACE_TYPE = 'discrete'  # 5 actions for long/short trading
 
 # ═════════════════════════════════════════════════════════════════════════════
-# OPTIMIZED OBSERVATION SPACE (Commercial Performance Update)
+# OBSERVATION SPACE (Updated for MTF + Gap features)
 # ═════════════════════════════════════════════════════════════════════════════
-# Reduced from 633 dimensions to 303 dimensions for:
-# - 2x faster training
-# - Smaller neural network (less overfitting)
-# - Removed sparse/redundant features
+# Base: 20 bars × 30 features + 3 state = 603 dims
+# With agent signals (UnifiedAgenticEnv): 603 + 20 = 623 dims
 #
-# Original: 30 bars × 21 features + 3 state = 633 dims
-# Optimized: 20 bars × 15 features + 3 state = 303 dims
-LOOKBACK_WINDOW_SIZE = 20  # Reduced from 30 - 5 hours of history is sufficient
+# Features: 16 base (OHLCV + TA + SMC + WEEKEND_GAP) + 14 MTF
+# Bounded: Box(-10, 10) with np.clip for PPO stability
+LOOKBACK_WINDOW_SIZE = 20  # 5 hours of history at M15
 
 # Sprint 6: Observation space dimensionality reduction
 USE_PCA_REDUCTION = True            # Enable PCA-based dimensionality reduction
@@ -374,20 +372,18 @@ MODEL_NAME = "PPO_XAU_DayTrader_Production_v2"
 RANDOM_SEED = 42
 RENDER_MODE = "none"  # No visual rendering during training
 
-# ⚠️⚠️⚠️ CRITICAL CHANGE: TIMESTEPS ⚠️⚠️⚠️
-# OLD VALUE: 20,000,000 (CAUSES SEVERE OVERFITTING)
-# NEW VALUE: 1,500,000 (RESEARCH-BACKED OPTIMAL)
+# ⚠️⚠️⚠️ CRITICAL: TIMESTEPS CALIBRATED FOR 2019-2025 DATASET ⚠️⚠️⚠️
 #
-# WHY THIS CHANGE IS CRITICAL:
-# - Your data: ~20,000 bars
-# - At 20M timesteps: Agent sees each pattern 1,000+ times (memorization)
-# - At 1.5M timesteps: Agent sees each pattern 75 times (learning)
-# - Research shows overfitting starts beyond 2M for trading bots
-# - Academic papers use 100K-2M for similar setups
-TOTAL_TIMESTEPS_PER_BOT = 1500000
+# Dataset: ~170K M15 bars (7 years of Gold data)
+# At 2M timesteps: Agent sees each pattern ~12× (healthy generalization)
+# At 3M timesteps: ~18× per pattern (upper bound before overfitting)
+# Colab T4 budget: ~2M steps in ~4-6h with 623-dim obs space
+#
+# Strategy: 2M base + early stopping catches the sweet spot
+TOTAL_TIMESTEPS_PER_BOT = 2_000_000
 # Early stopping (prevent wasted training)
-EARLY_STOPPING_PATIENCE = 5  # Stop if no improvement after 5 evaluations
-EVAL_FREQ = 10_000  # Evaluate every 10K timesteps
+EARLY_STOPPING_PATIENCE = 8  # More patience with larger dataset (was 5)
+EVAL_FREQ = 20_000  # Evaluate every 20K steps (less overhead at 623 dims)
 N_EVAL_EPISODES = 5  # Run 5 episodes per evaluation
 
 # Evaluation paths
@@ -398,13 +394,13 @@ EVAL_RESULTS_PATH = os.path.join(RESULTS_DIR, 'evaluation_results')
 # ═════════════════════════════════════════════════════════════════════════════
 
 # How many different bots to train with different hyperparameters
-N_PARALLEL_BOTS = 50  # Train 50 bots, pick the best
+N_PARALLEL_BOTS = 3  # Reduced from 50: 3 seeds is sufficient with curriculum learning
 
 # GPU capacity control (adjust based on your GPU)
-# RTX 3080/3090: 4 workers
-# RTX 4090: 6-8 workers
-# V100/A100: 8-10 workers
-MAX_WORKERS_GPU = 2# Train 4 bots simultaneously
+# Colab T4: 1 worker (15.4GB VRAM shared, 623-dim obs = ~2GB per model)
+# RTX 3080/3090: 2 workers
+# V100/A100: 4 workers
+MAX_WORKERS_GPU = 1  # Safe default for Colab T4
 
 # Selection metric for best model
 EVALUATION_METRIC = 'sharpe_ratio'  # Options: 'sharpe_ratio', 'calmar_ratio', 'profit'
@@ -422,39 +418,54 @@ MAX_ACCEPTABLE_DD = 0.15  # Maximum 15% drawdown
 # These ranges have been validated in multiple trading papers
 # Sprint 8: Corrected search space — removed extreme values that cause training instability
 HYPERPARAM_SEARCH_SPACE = {
-    'learning_rate': [1e-4, 3e-4, 5e-4],          # Removed 1e-5 (too slow to converge)
-    'n_steps': [1024, 2048, 4096],                 # Must be >= batch_size
-    'batch_size': [64, 128, 256],                  # Unchanged
-    'gamma': [0.99, 0.995, 0.998],                 # Added 0.998, removed 0.999 (too long horizon)
-    'ent_coef': [0.005, 0.01, 0.02],              # Removed 0.05/0.10 (excess randomness)
+    'learning_rate': [1e-4, 2e-4, 3e-4],          # Lower range for 623-dim obs space
+    'n_steps': [2048, 4096],                       # Larger rollouts for wider obs space
+    'batch_size': [128, 256, 512],                 # Larger batches for 623-dim gradients
+    'gamma': [0.99, 0.995, 0.998],                 # Unchanged
+    'ent_coef': [0.005, 0.01, 0.02],              # Unchanged
     'clip_range': [0.1, 0.2, 0.3],                # Unchanged
-    'n_epochs': [3, 5, 7],                         # Reduced from max=10 (overfitting risk)
+    'n_epochs': [3, 5, 7],                         # Unchanged
     'reward_tanh_scale': [0.2, 0.3, 0.4],         # Unchanged
     'reward_output_scale': [3.0, 5.0, 7.0]        # Unchanged
 }
 
-# Sprint 8: Corrected baseline hyperparameters
-# Reference: Schulman et al. 2017 (PPO paper), FinRL benchmark suite
+# Baseline hyperparameters — optimized for 623-dim obs space on Colab T4
+# Reference: Schulman et al. 2017 (PPO), FinRL benchmarks, 7yr Gold dataset
 MODEL_HYPERPARAMETERS = {
-    "n_steps": 1024,       # ~2x episode length (500); shorter rollouts = fresher gradients
-    "batch_size": 128,     # Standard PPO minibatch
-    "gamma": 0.995,        # Effective horizon ~200 steps (suitable for M15 intraday)
-    "learning_rate": 3e-4, # Standard PPO LR (Schulman 2017); was 3e-5 (10x too low)
-    "ent_coef": 0.01,      # Moderate exploration; was 0.05 (too random for exploitation)
+    "n_steps": 2048,       # Doubled from 1024: larger obs needs more diverse rollouts
+    "batch_size": 256,     # Doubled from 128: better gradient estimates for 623 dims
+    "gamma": 0.995,        # Effective horizon ~200 steps (good for M15 intraday Gold)
+    "learning_rate": 2e-4, # Slightly lower than 3e-4: larger network needs gentler LR
+    "ent_coef": 0.01,      # Moderate exploration
     "clip_range": 0.2,     # Standard PPO clip
-    "gae_lambda": 0.95,    # Standard GAE lambda for advantage estimation
+    "gae_lambda": 0.95,    # Standard GAE lambda
     "max_grad_norm": 0.5,  # Gradient clipping for stability
     "vf_coef": 0.5,        # Value function loss weight
-    "n_epochs": 5          # Was 10; fewer epochs = less overfitting to rollout buffer
+    "n_epochs": 5,         # Standard; avoids overfitting to rollout buffer
+    # policy_kwargs set separately below (requires torch import)
 }
 
-# Sprint 8: Entropy annealing schedule (step_threshold -> ent_coef)
-# Starts with higher exploration, gradually shifts to exploitation
+# Network architecture for 623-dim observation space
+# Wider layers capture richer feature interactions (MTF + SMC + TA)
+# Tanh activation matches bounded obs space [-10, 10]
+try:
+    import torch
+    POLICY_KWARGS = {
+        "net_arch": [512, 256],
+        "activation_fn": torch.nn.Tanh,
+    }
+    MODEL_HYPERPARAMETERS["policy_kwargs"] = POLICY_KWARGS
+except ImportError:
+    # torch not available (e.g., data-only scripts) — will be set at training time
+    POLICY_KWARGS = {"net_arch": [512, 256]}
+
+# Entropy annealing schedule (step_threshold -> ent_coef)
+# Adjusted thresholds for 2M total timesteps
 ENTROPY_ANNEALING_SCHEDULE = {
-    0:       0.05,   # Phase 1 (BASE): High exploration
-    100_000: 0.02,   # Phase 2 (ENRICHED): Moderate exploration
-    300_000: 0.01,   # Phase 3 (SOFT): Standard
-    500_000: 0.005,  # Phase 4 (PRODUCTION): Exploit learned policy
+    0:         0.05,    # Phase 1 (BASE): High exploration
+    200_000:   0.02,    # Phase 2 (ENRICHED): Moderate exploration
+    600_000:   0.01,    # Phase 3 (SOFT): Standard
+    1_000_000: 0.005,   # Phase 4 (PRODUCTION): Exploit learned policy
 }
 
 # Sprint 8: LR warmup fraction (linear warmup over first N% of training)
@@ -517,16 +528,16 @@ USE_WALK_FORWARD = True  # Set to False for legacy single-split training
 
 # Walk-Forward Parameters
 WALK_FORWARD_CONFIG = {
-    # Window sizes (in 15-minute bars)
-    'train_window_bars': 6720,      # ~6 months training data
-    'validation_window_bars': 2240,  # ~2 months validation
-    'test_window_bars': 1120,        # ~1 month out-of-sample test
-    'step_size_bars': 1120,          # Slide forward by 1 month each fold
+    # Window sizes (in 15-minute bars) — calibrated for 7yr / 170K bar dataset
+    'train_window_bars': 13440,     # ~12 months training (was 6mo — more data = better generalization)
+    'validation_window_bars': 3360,  # ~3 months validation (was 2mo)
+    'test_window_bars': 2240,        # ~2 months out-of-sample test (was 1mo)
+    'step_size_bars': 2240,          # Slide forward by 2 months each fold (was 1mo)
     'purge_gap_bars': 96,            # 1-day gap to prevent look-ahead bias
 
     # Fold limits
     'min_folds': 3,                  # Minimum for statistical validity
-    'max_folds': 6,                  # Maximum to limit compute time (6 is statistically sufficient)
+    'max_folds': 8,                  # Increased from 6 — 7yr dataset supports more folds
 
     # Strategy: 'rolling', 'expanding', or 'anchored'
     # - rolling: Fixed-size moving window (recommended for non-stationary)
@@ -579,7 +590,7 @@ NEWS_FILTER_CONFIG = {
     ],
 
     # Calendar data file (historical events for backtesting)
-    'calendar_file': os.path.join(DATA_DIR, 'economic_calendar_2019_2024.csv'),
+    'calendar_file': os.path.join(DATA_DIR, 'economic_calendar_2019_2025.csv'),
 
     # Currency filter (only care about events affecting XAU/USD)
     'relevant_currencies': ['USD', 'EUR', 'GBP', 'JPY', 'CHF'],

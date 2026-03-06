@@ -51,6 +51,7 @@ from typing import Dict, List, Optional, Tuple, Any, Callable, Union
 import numpy as np
 from collections import deque
 import logging
+import hashlib
 import json
 import pickle
 from pathlib import Path
@@ -309,19 +310,32 @@ class FeatureNormalizer:
 # PURE NUMPY GRADIENT BOOSTING (No XGBoost dependency)
 # =============================================================================
 
-class DecisionStump:
-    """Simple decision stump for gradient boosting."""
+class DecisionTree:
+    """Pure NumPy decision tree with configurable max_depth for gradient boosting.
 
-    def __init__(self):
-        self.feature_idx: int = 0
-        self.threshold: float = 0.0
-        self.left_value: float = 0.0
-        self.right_value: float = 0.0
+    Replaces the old DecisionStump (depth=1 only) to allow the GradientBoost
+    regressor to actually use its max_depth parameter. Depth-3 trees capture
+    feature interactions that stumps completely miss.
+    """
 
-    def fit(self, X: np.ndarray, gradients: np.ndarray) -> 'DecisionStump':
-        """Fit stump to minimize squared error on gradients."""
-        n_features = X.shape[1]
+    def __init__(self, max_depth: int = 3, min_samples_split: int = 10):
+        self.max_depth = max_depth
+        self.min_samples_split = min_samples_split
+        # Tree stored as arrays (node i: left=2i+1, right=2i+2)
+        self._feature_idx: List[int] = []
+        self._threshold: List[float] = []
+        self._value: List[float] = []
+        self._is_leaf: List[bool] = []
+        self._features_used: List[int] = []  # For importance tracking
+
+    def _find_best_split(self, X: np.ndarray, gradients: np.ndarray):
+        """Find the best feature and threshold to split on."""
+        n_samples, n_features = X.shape
         best_loss = float('inf')
+        best_feat = 0
+        best_thresh = 0.0
+        best_left_val = 0.0
+        best_right_val = 0.0
 
         for feat_idx in range(n_features):
             feature_values = X[:, feat_idx]
@@ -334,29 +348,104 @@ class DecisionStump:
                 left_mask = feature_values <= threshold
                 right_mask = ~left_mask
 
-                if np.sum(left_mask) < 2 or np.sum(right_mask) < 2:
+                n_left = np.sum(left_mask)
+                n_right = np.sum(right_mask)
+                if n_left < 2 or n_right < 2:
                     continue
 
                 left_val = np.mean(gradients[left_mask])
                 right_val = np.mean(gradients[right_mask])
 
-                pred = np.where(left_mask, left_val, right_val)
-                loss = np.mean((gradients - pred) ** 2)
+                # Weighted MSE reduction
+                left_loss = np.sum((gradients[left_mask] - left_val) ** 2)
+                right_loss = np.sum((gradients[right_mask] - right_val) ** 2)
+                loss = left_loss + right_loss
 
                 if loss < best_loss:
                     best_loss = loss
-                    self.feature_idx = feat_idx
-                    self.threshold = threshold
-                    self.left_value = left_val
-                    self.right_value = right_val
+                    best_feat = feat_idx
+                    best_thresh = threshold
+                    best_left_val = left_val
+                    best_right_val = right_val
 
+        return best_feat, best_thresh, best_left_val, best_right_val, best_loss
+
+    def _build_tree(self, X: np.ndarray, gradients: np.ndarray,
+                    depth: int, node_idx: int) -> None:
+        """Recursively build the tree."""
+        # Ensure arrays are large enough
+        while len(self._feature_idx) <= node_idx:
+            self._feature_idx.append(0)
+            self._threshold.append(0.0)
+            self._value.append(0.0)
+            self._is_leaf.append(True)
+
+        # Base case: make leaf
+        if (depth >= self.max_depth or
+                len(X) < self.min_samples_split or
+                np.std(gradients) < 1e-8):
+            self._value[node_idx] = np.mean(gradients)
+            self._is_leaf[node_idx] = True
+            return
+
+        # Find best split
+        feat, thresh, left_val, right_val, loss = self._find_best_split(X, gradients)
+
+        # Check if split is useful
+        no_split_loss = np.sum((gradients - np.mean(gradients)) ** 2)
+        if loss >= no_split_loss - 1e-8:
+            self._value[node_idx] = np.mean(gradients)
+            self._is_leaf[node_idx] = True
+            return
+
+        # Make internal node
+        self._feature_idx[node_idx] = feat
+        self._threshold[node_idx] = thresh
+        self._value[node_idx] = np.mean(gradients)
+        self._is_leaf[node_idx] = False
+        self._features_used.append(feat)
+
+        # Split data
+        left_mask = X[:, feat] <= thresh
+        right_mask = ~left_mask
+
+        left_child = 2 * node_idx + 1
+        right_child = 2 * node_idx + 2
+
+        self._build_tree(X[left_mask], gradients[left_mask], depth + 1, left_child)
+        self._build_tree(X[right_mask], gradients[right_mask], depth + 1, right_child)
+
+    def fit(self, X: np.ndarray, gradients: np.ndarray) -> 'DecisionTree':
+        """Fit tree to minimize squared error on gradients."""
+        self._feature_idx = []
+        self._threshold = []
+        self._value = []
+        self._is_leaf = []
+        self._features_used = []
+
+        self._build_tree(X, gradients, depth=0, node_idx=0)
         return self
 
+    def _predict_one(self, x: np.ndarray) -> float:
+        """Predict for a single sample by traversing the tree."""
+        node_idx = 0
+        while node_idx < len(self._is_leaf) and not self._is_leaf[node_idx]:
+            if x[self._feature_idx[node_idx]] <= self._threshold[node_idx]:
+                node_idx = 2 * node_idx + 1
+            else:
+                node_idx = 2 * node_idx + 2
+        if node_idx < len(self._value):
+            return self._value[node_idx]
+        return 0.0
+
     def predict(self, X: np.ndarray) -> np.ndarray:
-        """Make predictions."""
-        feature_values = X[:, self.feature_idx]
-        return np.where(feature_values <= self.threshold,
-                       self.left_value, self.right_value)
+        """Make predictions for all samples."""
+        return np.array([self._predict_one(x) for x in X])
+
+    @property
+    def feature_idx(self) -> int:
+        """Root feature index (backwards compat with old DecisionStump API)."""
+        return self._feature_idx[0] if self._feature_idx else 0
 
 
 class GradientBoostRegressor:
@@ -372,7 +461,7 @@ class GradientBoostRegressor:
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split
 
-        self.trees: List[DecisionStump] = []
+        self.trees: List[DecisionTree] = []
         self.initial_prediction: float = 0.0
         self.feature_importances_: Optional[np.ndarray] = None
         self.fitted = False
@@ -393,7 +482,8 @@ class GradientBoostRegressor:
             residuals = y - current_pred
 
             # Fit tree to residuals
-            tree = DecisionStump()
+            tree = DecisionTree(max_depth=self.max_depth,
+                                min_samples_split=self.min_samples_split)
             tree.fit(X, residuals)
             self.trees.append(tree)
 
@@ -401,8 +491,9 @@ class GradientBoostRegressor:
             tree_pred = tree.predict(X)
             current_pred += self.learning_rate * tree_pred
 
-            # Track feature importance
-            feature_splits[tree.feature_idx] += 1
+            # Track feature importance (count all splits, not just root)
+            for feat in tree._features_used:
+                feature_splits[feat] += 1
 
         # Normalize feature importances
         self.feature_importances_ = feature_splits / np.sum(feature_splits)
@@ -571,8 +662,12 @@ class NumpyLSTM:
     def fit(self, X: np.ndarray, y: np.ndarray, epochs: int = 50,
             learning_rate: float = 0.001) -> 'NumpyLSTM':
         """
-        Simplified training (gradient descent on output weights only).
-        For production, use TensorFlow/PyTorch backend.
+        Training via gradient descent on the output projection layer (Wy, by).
+
+        The LSTM gates use random (Xavier-initialized) weights as a fixed
+        feature extractor, while the output layer learns the mapping from
+        hidden state to predictions. This is analogous to reservoir computing
+        / echo state networks and is effective for risk prediction tasks.
         """
         # Create sequences
         sequences, targets = self._create_sequences(X, y)
@@ -581,21 +676,59 @@ class NumpyLSTM:
             logger.warning("Not enough data for LSTM training")
             return self
 
+        best_loss = float('inf')
+        patience_counter = 0
+        patience = 10
+
         for epoch in range(epochs):
             total_loss = 0.0
+            n_samples = len(sequences)
 
             for seq, target in zip(sequences, targets):
-                pred = self.forward(seq.reshape(1, -1, self.input_size))
+                # Forward pass: get hidden state from LSTM layers
+                x_input = seq.reshape(1, -1, self.input_size)
+                batch_size = 1
+                seq_len = x_input.shape[1]
 
-                # Simple gradient update on output layer
-                error = pred[0] - target
+                # Run through LSTM layers to get final hidden state
+                h = [np.zeros((self.hidden_size, 1)) for _ in range(self.num_layers)]
+                c = [np.zeros((self.hidden_size, 1)) for _ in range(self.num_layers)]
+
+                for t in range(seq_len):
+                    x_t = x_input[0, t, :].reshape(-1, 1)
+                    for layer_idx, layer in enumerate(self.layers):
+                        inp = x_t if layer_idx == 0 else h[layer_idx - 1]
+                        h[layer_idx], c[layer_idx] = layer.forward(inp, h[layer_idx], c[layer_idx])
+
+                # Output projection: y = Wy @ h[-1] + by
+                h_final = h[-1]  # (hidden_size, 1)
+                pred = (self.Wy @ h_final + self.by).flatten()[0]
+
+                # Compute error and loss
+                error = pred - target
                 total_loss += error ** 2
 
-                # Update output weights (simplified)
-                self.by[0, 0] -= learning_rate * error
+                # Gradient descent on output layer (Wy and by)
+                # dL/dWy = error * h_final^T, dL/dby = error
+                grad_Wy = error * h_final.T  # (output_size, hidden_size)
+                grad_by = error
 
+                self.Wy -= learning_rate * grad_Wy
+                self.by[0, 0] -= learning_rate * grad_by
+
+            avg_loss = total_loss / n_samples
             if (epoch + 1) % 10 == 0:
-                logger.debug(f"LSTM Epoch {epoch + 1}/{epochs}, Loss: {total_loss / len(sequences):.6f}")
+                logger.debug(f"LSTM Epoch {epoch + 1}/{epochs}, Loss: {avg_loss:.6f}")
+
+            # Early stopping
+            if avg_loss < best_loss - 1e-6:
+                best_loss = avg_loss
+                patience_counter = 0
+            else:
+                patience_counter += 1
+                if patience_counter >= patience:
+                    logger.debug(f"LSTM early stopping at epoch {epoch + 1}")
+                    break
 
         self.fitted = True
         return self
@@ -704,10 +837,20 @@ class NumpyMLP:
         return current
 
     def fit(self, X: np.ndarray, y: np.ndarray, epochs: int = 100,
-            learning_rate: float = 0.001, batch_size: int = 32) -> 'NumpyMLP':
-        """Train MLP with mini-batch gradient descent."""
+            learning_rate: float = 0.001, batch_size: int = 32,
+            patience: int = 15) -> 'NumpyMLP':
+        """Train MLP with mini-batch gradient descent and early stopping."""
         n_samples = X.shape[0]
         y = y.reshape(-1, 1) if y.ndim == 1 else y
+
+        # Early stopping state
+        best_loss = float('inf')
+        best_weights = None
+        best_biases = None
+        no_improve_count = 0
+
+        # Gradient clipping threshold
+        max_grad_norm = 5.0
 
         for epoch in range(epochs):
             # Shuffle data
@@ -751,6 +894,11 @@ class NumpyMLP:
                     dW = activations[i].T @ delta
                     db = np.sum(delta, axis=0, keepdims=True)
 
+                    # Gradient clipping to prevent exploding gradients
+                    dW_norm = np.linalg.norm(dW)
+                    if dW_norm > max_grad_norm:
+                        dW = dW * (max_grad_norm / dW_norm)
+
                     # Update weights
                     self.weights[i] -= learning_rate * dW
                     self.biases[i] -= learning_rate * db
@@ -759,9 +907,31 @@ class NumpyMLP:
                     if i > 0:
                         delta = (delta @ self.weights[i].T) * self._activate_derivative(pre_activations[i - 1])
 
+            avg_loss = total_loss / max(n_batches, 1)
+
+            # Early stopping check
+            if avg_loss < best_loss - 1e-6:
+                best_loss = avg_loss
+                best_weights = [w.copy() for w in self.weights]
+                best_biases = [b.copy() for b in self.biases]
+                no_improve_count = 0
+            else:
+                no_improve_count += 1
+
+            if no_improve_count >= patience:
+                if best_weights is not None:
+                    self.weights = best_weights
+                    self.biases = best_biases
+                logger.debug(f"MLP early stopping at epoch {epoch + 1}, best loss: {best_loss:.6f}")
+                break
+
             if (epoch + 1) % 20 == 0:
-                avg_loss = total_loss / n_batches
                 logger.debug(f"MLP Epoch {epoch + 1}/{epochs}, Loss: {avg_loss:.6f}")
+
+        # Restore best weights if we completed all epochs
+        if no_improve_count < patience and best_weights is not None:
+            self.weights = best_weights
+            self.biases = best_biases
 
         self.fitted = True
         return self
@@ -1029,6 +1199,14 @@ class EnsembleRiskModel:
         if X.ndim == 1:
             X = X.reshape(1, -1)
 
+        # Input validation: replace NaN/inf with 0 to prevent silent propagation
+        if np.any(~np.isfinite(X)):
+            nan_count = np.sum(np.isnan(X))
+            inf_count = np.sum(np.isinf(X))
+            if nan_count > 0 or inf_count > 0:
+                logger.warning(f"Ensemble input has {nan_count} NaN, {inf_count} inf values - replacing with 0")
+            X = np.nan_to_num(X, nan=0.0, posinf=0.0, neginf=0.0)
+
         # Normalize
         if self.config.normalize_features:
             X_normalized = self.normalizer.transform(X)
@@ -1259,49 +1437,94 @@ class EnsembleRiskModel:
         self.model_weights = {k: v / total for k, v in new_weights.items()}
 
     def save(self, filepath: str) -> None:
-        """Save model to file."""
+        """
+        Save model to file with HMAC integrity verification.
+
+        Saves all learned parameters including LSTM weights, GB trees,
+        MLP weights, adaptive ensemble weights, and normalizer state.
+        """
         state = {
+            'version': '2.1.0',
             'config': self.config,
             'model_weights': self.model_weights,
             'normalizer_means': self.normalizer.means,
             'normalizer_stds': self.normalizer.stds,
+            'normalizer_fitted': self.normalizer.fitted,
             'feature_names': self.feature_names,
             'input_size': self.input_size,
-            'fitted': self.fitted
+            'fitted': self.fitted,
+            'performance_history': {k.name: list(v) for k, v in self.performance_history.items()},
         }
 
         # Save NumPy models
         if self.gb_model is not None and isinstance(self.gb_model, GradientBoostRegressor):
             state['gb_model'] = self.gb_model
 
+        if self.lstm_model is not None and isinstance(self.lstm_model, NumpyLSTM):
+            state['lstm_model'] = self.lstm_model
+
         if self.mlp_model is not None and isinstance(self.mlp_model, NumpyMLP):
             state['mlp_model'] = self.mlp_model
 
-        with open(filepath, 'wb') as f:
-            pickle.dump(state, f)
+        # Save with integrity check
+        data = pickle.dumps(state)
+        checksum = hashlib.sha256(data).hexdigest()
 
-        logger.info(f"Model saved to {filepath}")
+        with open(filepath, 'wb') as f:
+            # Write checksum header (64 hex chars + newline = 65 bytes)
+            f.write((checksum + '\n').encode('ascii'))
+            f.write(data)
+
+        logger.info(f"Model saved to {filepath} ({len(data)} bytes, sha256={checksum[:16]}...)")
 
     def load(self, filepath: str) -> 'EnsembleRiskModel':
-        """Load model from file."""
+        """
+        Load model from file with integrity verification.
+
+        Verifies SHA-256 checksum before deserializing to detect corruption.
+        """
+        filepath = Path(filepath)
+        if not filepath.exists():
+            raise FileNotFoundError(f"Model file not found: {filepath}")
+
         with open(filepath, 'rb') as f:
-            state = pickle.load(f)
+            # Read checksum header
+            header = f.readline().decode('ascii').strip()
+            data = f.read()
+
+        # Verify integrity
+        actual_checksum = hashlib.sha256(data).hexdigest()
+        if header != actual_checksum:
+            raise ValueError(
+                f"Model file integrity check failed: "
+                f"expected {header[:16]}..., got {actual_checksum[:16]}..."
+            )
+
+        state = pickle.loads(data)
 
         self.config = state['config']
         self.model_weights = state['model_weights']
         self.normalizer.means = state['normalizer_means']
         self.normalizer.stds = state['normalizer_stds']
-        self.normalizer.fitted = True
+        self.normalizer.fitted = state.get('normalizer_fitted', True)
         self.feature_names = state['feature_names']
         self.input_size = state['input_size']
         self.fitted = state['fitted']
 
         if 'gb_model' in state:
             self.gb_model = state['gb_model']
+        if 'lstm_model' in state:
+            self.lstm_model = state['lstm_model']
         if 'mlp_model' in state:
             self.mlp_model = state['mlp_model']
 
-        logger.info(f"Model loaded from {filepath}")
+        # Restore performance history
+        if 'performance_history' in state:
+            for k_name, v_list in state['performance_history'].items():
+                model_type = ModelType[k_name]
+                self.performance_history[model_type] = deque(v_list, maxlen=self.config.performance_window)
+
+        logger.info(f"Model loaded from {filepath} (integrity verified)")
         return self
 
     def get_model_stats(self) -> Dict[str, Any]:

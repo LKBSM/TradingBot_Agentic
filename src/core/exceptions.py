@@ -403,5 +403,7 @@ def wrap_exception(
     elif any(x in lower_msg for x in ['rate limit', 'too many requests']):
         return RateLimitError(message, cause=error, context=context)
     else:
-        # Default to TransientError for unknown errors
-        return TransientError(message, cause=error, context=context)
+        # Conservative default: unknown errors should not be auto-retried
+        return PermanentError(
+            message, recoverable=True, cause=error, context=context
+        )

@@ -34,7 +34,7 @@ import json
 import logging
 import os
 from threading import Lock, RLock
-from collections import defaultdict, deque
+from collections import defaultdict, deque, OrderedDict
 from pathlib import Path
 
 # =============================================================================
@@ -651,7 +651,6 @@ class EventBus:
         # --- Event Deduplication ---
         # SECURITY: Prevent duplicate/replay events
         # Use OrderedDict for O(1) lookup + insertion order for cleanup
-        from collections import OrderedDict
         self._processed_event_times: OrderedDict = OrderedDict()
         self._dedup_ttl = timedelta(seconds=dedup_ttl_seconds)
         self._max_dedup_entries = 100000  # Hard limit on dedup cache

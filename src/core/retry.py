@@ -219,8 +219,8 @@ async def retry_with_backoff(
             if config.on_retry:
                 try:
                     config.on_retry(attempt, e, delay)
-                except Exception:
-                    pass  # Don't let callback errors affect retry logic
+                except Exception as cb_err:
+                    logger.warning(f"Retry callback failed: {cb_err}")
 
             # Wait before retry
             await asyncio.sleep(delay)
@@ -265,8 +265,8 @@ def retry_sync(
             if config.on_retry:
                 try:
                     config.on_retry(attempt, e, delay)
-                except Exception:
-                    pass
+                except Exception as cb_err:
+                    logger.warning(f"Retry callback failed: {cb_err}")
 
             time.sleep(delay)
 

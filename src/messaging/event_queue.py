@@ -30,7 +30,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum, auto
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Set
-from collections import defaultdict
+from collections import defaultdict, deque
 
 logger = logging.getLogger(__name__)
 
@@ -356,7 +356,7 @@ class DeadLetterQueue:
             maxsize: Maximum number of failed events to keep
             name: Queue name for logging
         """
-        self._records: List[DeadLetterRecord] = []
+        self._records: deque = deque(maxlen=maxsize)
         self._maxsize = maxsize
         self._name = name
         self._lock = asyncio.Lock()
@@ -391,13 +391,7 @@ class DeadLetterQueue:
             )
 
             self._records.append(record)
-
-            # Trim if over capacity
-            if len(self._records) > self._maxsize:
-                removed = self._records.pop(0)
-                self._logger.warning(
-                    f"DLQ overflow, removed oldest: {removed.event.event_id}"
-                )
+            # deque(maxlen=N) auto-evicts oldest when full - O(1)
 
             self._logger.error(
                 f"Event added to DLQ: {event.event_type.name} "
@@ -450,7 +444,7 @@ class DeadLetterQueue:
                     if event.can_retry():
                         event.mark_retry(record.failure_reason)
                         await target_queue.put(event)
-                        self._records.pop(i)
+                        del self._records[i]
                         self._logger.info(
                             f"Retrying event: {event.event_id[:8]} "
                             f"(attempt {event.retry_count}/{event.max_retries})"

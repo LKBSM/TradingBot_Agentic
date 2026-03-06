@@ -341,7 +341,10 @@ class ResourcePool(Generic[T]):
         try:
             self._available.put_nowait(pooled)
         except asyncio.QueueFull:
-            # Pool is full, destroy excess resource
+            self._logger.warning(
+                f"Pool '{self._name}' queue full, "
+                f"destroying excess resource #{pooled.resource_id}"
+            )
             await self._destroy_resource(pooled)
 
     # =========================================================================
@@ -353,14 +356,13 @@ class ResourcePool(Generic[T]):
         for attempt in range(self._config.max_create_retries):
             try:
                 resource = await self._factory()
-                self._resource_counter += 1
-
-                pooled = PooledResource(
-                    resource=resource,
-                    resource_id=self._resource_counter
-                )
 
                 async with self._lock:
+                    self._resource_counter += 1
+                    pooled = PooledResource(
+                        resource=resource,
+                        resource_id=self._resource_counter
+                    )
                     self._all_resources[pooled.resource_id] = pooled
                     self._total_created += 1
 
@@ -442,9 +444,16 @@ class ResourcePool(Generic[T]):
         while not self._closed:
             try:
                 await asyncio.sleep(self._config.health_check_interval)
-                await self._run_health_check()
+                await asyncio.wait_for(
+                    self._run_health_check(),
+                    timeout=self._config.health_check_interval / 2
+                )
             except asyncio.CancelledError:
                 break
+            except asyncio.TimeoutError:
+                self._logger.error(
+                    f"Health check timeout for pool '{self._name}'"
+                )
             except Exception as e:
                 self._logger.error(f"Health check error: {e}")
 

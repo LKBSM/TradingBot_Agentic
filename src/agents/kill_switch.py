@@ -521,6 +521,8 @@ class RecoveryManager:
         self.position_multiplier = 0.0  # 0 = no trading, 1 = full trading
 
         self._confirmation_token: Optional[str] = None
+        self._token_created_at: Optional[datetime] = None
+        self._token_ttl_seconds: int = 300  # Token expires after 5 minutes
         self._logger = logging.getLogger("kill_switch.recovery")
 
     def start_recovery(self, halt_event: HaltEvent) -> None:
@@ -578,10 +580,18 @@ class RecoveryManager:
         return self.state
 
     def _generate_confirmation_token(self) -> str:
-        """Generate a confirmation token for manual reset."""
+        """Generate a confirmation token for manual reset (expires in 5 minutes)."""
         import secrets
         self._confirmation_token = secrets.token_hex(16)
+        self._token_created_at = datetime.now()
         return self._confirmation_token
+
+    def _is_token_expired(self) -> bool:
+        """Check if the current confirmation token has expired."""
+        if self._token_created_at is None:
+            return True
+        elapsed = (datetime.now() - self._token_created_at).total_seconds()
+        return elapsed > self._token_ttl_seconds
 
     def confirm_recovery(self, token: str) -> bool:
         """
@@ -597,6 +607,12 @@ class RecoveryManager:
             self._logger.warning("Cannot confirm: not in CONFIRMATION_PENDING state")
             return False
 
+        if self._is_token_expired():
+            self._confirmation_token = None
+            self._token_created_at = None
+            self._logger.warning("Confirmation token expired (TTL=5min). Generate a new one.")
+            return False
+
         if token != self._confirmation_token:
             self._logger.warning("Invalid confirmation token")
             return False
@@ -606,6 +622,7 @@ class RecoveryManager:
         self.current_step = 1
         self.position_multiplier = 1 / self.gradual_steps
         self._confirmation_token = None
+        self._token_created_at = None
 
         self._logger.info("Recovery confirmed. Starting gradual restart.")
         return True
@@ -628,6 +645,7 @@ class RecoveryManager:
         self.state = RecoveryState.RECOVERED
         self.position_multiplier = 1.0
         self._confirmation_token = None
+        self._token_created_at = None
 
         self._logger.warning("FORCE RECOVERY executed by admin")
         return True
@@ -637,6 +655,7 @@ class RecoveryManager:
         self.state = RecoveryState.NOT_STARTED
         self.position_multiplier = 0.0
         self._confirmation_token = None
+        self._token_created_at = None
         self._logger.info("Recovery aborted")
 
     def get_status(self) -> Dict[str, Any]:
