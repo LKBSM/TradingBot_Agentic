@@ -1,6 +1,7 @@
 import traceback
-import sys  # ✅ AJOUTÉ ICI
-import os  # ✅ AJOUTÉ ICI
+import sys
+import os
+from typing import Any, Dict
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
