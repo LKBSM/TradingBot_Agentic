@@ -64,16 +64,21 @@ print("=" * 70)
 REPO_URL = "https://github.com/LKBSM/TradingBot_Agentic.git"
 REPO_DIR = "TradingBot_Agentic"
 
-if os.path.exists(REPO_DIR):
+# Detect if we're already inside the repo (re-run scenario)
+if os.path.exists('config.py') and os.path.exists('src/environment/environment.py'):
+    print(f"Already inside repository at {os.getcwd()}, pulling latest...")
+    subprocess.run(["git", "pull", "--ff-only"], check=False)
+elif os.path.exists(REPO_DIR):
     print(f"Repository already exists at {REPO_DIR}, pulling latest...")
     subprocess.run(["git", "-C", REPO_DIR, "pull", "--ff-only"], check=False)
+    os.chdir(REPO_DIR)
 else:
     print(f"Cloning from {REPO_URL}...")
     subprocess.check_call(["git", "clone", "--depth", "1", REPO_URL])
+    os.chdir(REPO_DIR)
 
 # Add repo to Python path so imports work
-sys.path.insert(0, os.path.abspath(REPO_DIR))
-os.chdir(REPO_DIR)
+sys.path.insert(0, os.getcwd())
 
 print(f"Working directory: {os.getcwd()}")
 print("Repository ready!\n")
