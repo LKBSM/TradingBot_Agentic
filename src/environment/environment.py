@@ -629,9 +629,17 @@ class TradingEnv(gym.Env):
         # =========================================================================
         # ETAPE 4a: WEEKEND GAP DETECTION (Gold-specific)
         # =========================================================================
+        # Try to find timestamps: column 'Original_Timestamp', or DatetimeIndex
+        ts = None
         if 'Original_Timestamp' in df_processed.columns:
+            ts = pd.to_datetime(df_processed['Original_Timestamp'])
+        elif isinstance(df_processed.index, pd.DatetimeIndex):
+            ts = df_processed.index.to_series()
+        elif 'Date' in df_processed.columns:
+            ts = pd.to_datetime(df_processed['Date'])
+
+        if ts is not None:
             try:
-                ts = pd.to_datetime(df_processed['Original_Timestamp'])
                 time_diff = ts.diff()
                 # Gap = time difference > 6 hours (normal 15min interval)
                 gap_mask = time_diff > pd.Timedelta(hours=6)
