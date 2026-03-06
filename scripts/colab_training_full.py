@@ -380,6 +380,93 @@ print()
 
 
 # =========================================================================
+# TRAINING PROGRESS CALLBACK (detailed live logs)
+# =========================================================================
+class TrainingProgressCallback(BaseCallback):
+    """Logs detailed training progress: steps, %, ETA, speed, phase, reward."""
+
+    def __init__(
+        self,
+        total_timesteps: int,
+        log_freq: int = 10_000,
+        verbose: int = 1,
+    ):
+        super().__init__(verbose)
+        self.total_timesteps = total_timesteps
+        self.log_freq = log_freq
+        self._start_time = None
+        self._last_log_step = 0
+        self._last_log_time = None
+
+    def _on_training_start(self) -> None:
+        self._start_time = time.time()
+        self._last_log_time = self._start_time
+        print()
+        print(f"{'Step':>10} | {'Progress':>8} | {'Speed':>12} | {'Elapsed':>10} | {'ETA':>10} | {'Avg Reward':>10} | Phase")
+        print("-" * 90)
+
+    def _on_step(self) -> bool:
+        if self.num_timesteps - self._last_log_step >= self.log_freq:
+            now = time.time()
+            elapsed = now - self._start_time
+            interval = now - self._last_log_time
+
+            # Speed (steps per second)
+            steps_in_interval = self.num_timesteps - self._last_log_step
+            speed = steps_in_interval / interval if interval > 0 else 0
+
+            # Progress
+            pct = self.num_timesteps / self.total_timesteps * 100
+            remaining_steps = self.total_timesteps - self.num_timesteps
+
+            # ETA
+            if speed > 0:
+                eta_seconds = remaining_steps / speed
+                eta_h = int(eta_seconds // 3600)
+                eta_m = int((eta_seconds % 3600) // 60)
+                eta_s = int(eta_seconds % 60)
+                eta_str = f"{eta_h}h{eta_m:02d}m{eta_s:02d}s"
+            else:
+                eta_str = "calculating"
+
+            # Elapsed
+            el_h = int(elapsed // 3600)
+            el_m = int((elapsed % 3600) // 60)
+            el_s = int(elapsed % 60)
+            elapsed_str = f"{el_h}h{el_m:02d}m{el_s:02d}s"
+
+            # Average reward from recent episodes
+            avg_reward = 0.0
+            if hasattr(self.model, 'ep_info_buffer') and len(self.model.ep_info_buffer) > 0:
+                recent = list(self.model.ep_info_buffer)[-10:]
+                avg_reward = np.mean([ep['r'] for ep in recent])
+
+            # Current phase (from curriculum callback if available)
+            phase_str = "---"
+            if hasattr(self, '_curriculum_cb') and self._curriculum_cb is not None:
+                cb = self._curriculum_cb
+                phase_idx = cb.current_phase_idx + 1
+                phase_name = cb.current_phase.mode.name
+                phase_pct = cb.phase_timesteps / cb.current_phase.timesteps * 100 if cb.current_phase.timesteps > 0 else 0
+                phase_str = f"P{phase_idx}/{len(cb.config.phases)} {phase_name} ({phase_pct:.0f}%)"
+
+            print(
+                f"{self.num_timesteps:>10,} | "
+                f"{pct:>6.1f}%  | "
+                f"{speed:>8,.0f} st/s | "
+                f"{elapsed_str:>10} | "
+                f"{eta_str:>10} | "
+                f"{avg_reward:>+10.2f} | "
+                f"{phase_str}"
+            )
+
+            self._last_log_step = self.num_timesteps
+            self._last_log_time = now
+
+        return True
+
+
+# =========================================================================
 # GOOGLE DRIVE CHECKPOINT CALLBACK (saves every N steps)
 # =========================================================================
 class DriveCheckpointCallback(BaseCallback):
@@ -423,7 +510,7 @@ class DriveCheckpointCallback(BaseCallback):
                 f.write(f"time={time.strftime('%Y-%m-%d %H:%M:%S')}\n")
 
             if self.verbose > 0:
-                print(f"  [DRIVE] Checkpoint saved: {self.num_timesteps:,} steps -> {checkpoint_path}")
+                print(f"  >> SAVED TO DRIVE: {self.num_timesteps:,} steps -> Google Drive")
 
         return True
 
@@ -522,6 +609,14 @@ if resume_from != "COMPLETE":
         verbose=1,
     )
 
+    progress_cb = TrainingProgressCallback(
+        total_timesteps=TOTAL_TIMESTEPS,
+        log_freq=10_000,  # Log every 10K steps
+        verbose=1,
+    )
+    # Link progress callback to curriculum callback for phase info
+    progress_cb._curriculum_cb = curriculum_callback
+
     # Validation environment
     from stable_baselines3.common.callbacks import EvalCallback
     env_val = trainer._create_env(df_val, TrainingMode.PRODUCTION)
@@ -534,7 +629,7 @@ if resume_from != "COMPLETE":
         n_eval_episodes=curriculum_config.eval_episodes,
         deterministic=True,
         render=False,
-        verbose=1
+        verbose=0  # Quiet - progress_cb handles logging
     )
 
     # Train with all callbacks
@@ -551,7 +646,7 @@ if resume_from != "COMPLETE":
 
     trainer.model.learn(
         total_timesteps=remaining_steps,
-        callback=[curriculum_callback, drive_checkpoint_cb, eval_callback],
+        callback=[curriculum_callback, progress_cb, drive_checkpoint_cb, eval_callback],
         reset_num_timesteps=resume_from is None,
     )
 
