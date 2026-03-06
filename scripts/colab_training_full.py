@@ -198,11 +198,20 @@ calendar_df = None
 if os.path.exists(econ_calendar_filepath):
     try:
         calendar_df = pd.read_csv(econ_calendar_filepath)
-        if 'datetime' in calendar_df.columns:
-            calendar_df['datetime'] = pd.to_datetime(calendar_df['datetime'])
-        elif 'date' in calendar_df.columns:
-            calendar_df['datetime'] = pd.to_datetime(calendar_df['date'])
+        # Normalize column names to lowercase
+        calendar_df.columns = [c.lower() for c in calendar_df.columns]
+        # Find the datetime column (could be 'date', 'datetime', etc.)
+        date_col = None
+        for col in ['datetime', 'date', 'time']:
+            if col in calendar_df.columns:
+                date_col = col
+                break
+        if date_col:
+            calendar_df['datetime'] = pd.to_datetime(calendar_df[date_col])
+        else:
+            raise ValueError(f"No date column found in: {list(calendar_df.columns)}")
         print(f"Economic calendar loaded: {len(calendar_df)} events")
+        print(f"  Columns: {list(calendar_df.columns)}")
     except Exception as e:
         print(f"Warning: Could not load economic calendar: {e}")
         calendar_df = None
@@ -249,11 +258,12 @@ def add_news_features(df: pd.DataFrame, calendar: pd.DataFrame,
             merged_count += 1
             df.loc[mask, 'news_event'] = 1
             impact_val = 1.0
-            if 'impact' in event:
-                impact_val = 1.0 if event['impact'] == 'HIGH' else 0.5
+            if 'impact' in event.index:
+                impact_str = str(event['impact']).upper()
+                impact_val = 1.0 if impact_str == 'HIGH' else 0.5
             df.loc[mask, 'news_impact'] = impact_val
 
-            surprise = event.get('surprise', 0.0)
+            surprise = event.get('surprise', 0.0) if 'surprise' in event.index else 0.0
             if pd.notna(surprise):
                 df.loc[mask, 'news_surprise'] = float(surprise)
 
