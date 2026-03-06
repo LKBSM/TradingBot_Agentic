@@ -6,12 +6,17 @@
 # 1. Open Google Colab: https://colab.research.google.com/
 # 2. Create a new notebook
 # 3. In a cell, run:
-#      !wget -q https://raw.githubusercontent.com/LKBSM/TradingBot_Agentic/main/scripts/colab_training_full.py
+#      %cd /content
+#      !rm -rf /content/TradingBot_Agentic
+#      !rm -f colab_training_full.py
+#      !wget --no-cache -q https://raw.githubusercontent.com/LKBSM/TradingBot_Agentic/main/scripts/colab_training_full.py
 #      %run colab_training_full.py
-# 4. Or copy-paste this ENTIRE script into a single cell and run
 #
 # IMPORTANT: Enable GPU before running!
 # Runtime -> Change runtime type -> GPU (T4)
+#
+# CRASH-SAFE: All checkpoints and results are saved to Google Drive.
+# If Colab crashes, re-run the cell - training resumes from last checkpoint.
 #
 # Training: 4-phase curriculum (BASE -> ENRICHED -> SOFT -> PRODUCTION)
 # Total timesteps: 1.5M (configurable)
@@ -22,6 +27,31 @@ import os
 import sys
 import subprocess
 import time
+import shutil
+
+# =============================================================================
+# STEP 0: MOUNT GOOGLE DRIVE (crash-safe storage)
+# =============================================================================
+print("=" * 70)
+print("STEP 0: Mounting Google Drive for crash-safe storage...")
+print("=" * 70)
+
+from google.colab import drive
+drive.mount('/content/drive', force_remount=False)
+
+# Create persistent directory on Google Drive
+DRIVE_BASE = '/content/drive/MyDrive/TradingBot_Training'
+DRIVE_MODELS = os.path.join(DRIVE_BASE, 'models')
+DRIVE_CHECKPOINTS = os.path.join(DRIVE_BASE, 'checkpoints')
+DRIVE_RESULTS = os.path.join(DRIVE_BASE, 'results')
+DRIVE_LOGS = os.path.join(DRIVE_BASE, 'logs')
+
+for d in [DRIVE_BASE, DRIVE_MODELS, DRIVE_CHECKPOINTS, DRIVE_RESULTS, DRIVE_LOGS]:
+    os.makedirs(d, exist_ok=True)
+
+print(f"Google Drive mounted!")
+print(f"All training outputs saved to: {DRIVE_BASE}")
+print()
 
 # =============================================================================
 # STEP 1: INSTALL PACKAGES
@@ -102,11 +132,14 @@ warnings.filterwarnings('ignore')
 
 import torch
 from stable_baselines3 import PPO
+from stable_baselines3.common.callbacks import BaseCallback
 
 # Import project modules
 import config
 from src.training.unified_agentic_env import UnifiedAgenticEnv, TrainingMode
-from src.training.curriculum_trainer import CurriculumTrainer, CurriculumConfig
+from src.training.curriculum_trainer import (
+    CurriculumTrainer, CurriculumConfig, CurriculumCallback
+)
 
 # Check GPU
 print(f"PyTorch version: {torch.__version__}")
@@ -229,14 +262,7 @@ print("=" * 70)
 
 def add_news_features(df: pd.DataFrame, calendar: pd.DataFrame,
                       window_before: int = 60, window_after: int = 120) -> pd.DataFrame:
-    """Add news event features to price data.
-
-    For each economic event, marks bars within a time window with:
-    - news_event: 1 if within window, 0 otherwise
-    - news_impact: 1.0 for HIGH impact, 0.5 for medium
-    - news_surprise: surprise factor
-    - minutes_to_news: signed minutes until event
-    """
+    """Add news event features to price data."""
     df = df.copy()
     df['news_event'] = 0
     df['news_impact'] = 0.0
@@ -304,10 +330,10 @@ print(f"  Test:       {len(df_test):>8,} bars ({df_test.index.min().date()} -> {
 print()
 
 # =============================================================================
-# STEP 8: 4-PHASE CURRICULUM TRAINING
+# STEP 8: 4-PHASE CURRICULUM TRAINING (CRASH-SAFE with Google Drive)
 # =============================================================================
 print("=" * 70)
-print("STEP 8: Starting 4-phase Curriculum Training...")
+print("STEP 8: Starting 4-phase Curriculum Training (CRASH-SAFE)...")
 print("=" * 70)
 print()
 print("Training Phases:")
@@ -316,14 +342,17 @@ print("  Phase 2 - ENRICHED:   Agent signals as observation (no constraints)")
 print("  Phase 3 - SOFT:       Soft penalties for rejected actions")
 print("  Phase 4 - PRODUCTION: Full agent integration with hard constraints")
 print()
+print(f"All checkpoints saved to Google Drive: {DRIVE_BASE}")
+print()
 
 # Configure curriculum
 TOTAL_TIMESTEPS = 1_500_000  # 1.5M total steps across all phases
 
+# Use Google Drive for model storage (crash-safe)
 curriculum_config = CurriculumConfig(
     total_timesteps=TOTAL_TIMESTEPS,
-    model_save_dir=os.path.join(config.MODEL_DIR, 'curriculum'),
-    tensorboard_log_dir=os.path.join(config.LOG_DIR, 'curriculum'),
+    model_save_dir=DRIVE_MODELS,
+    tensorboard_log_dir=DRIVE_LOGS,
     eval_episodes=10,
     patience=3,
 )
@@ -349,40 +378,220 @@ print(f"Observation space: 30 features x 20 lookback + 3 state + 20 agent signal
 print(f"Action space: 5 actions (HOLD, OPEN_LONG, CLOSE_LONG, OPEN_SHORT, CLOSE_SHORT)")
 print()
 
-# Create trainer
-trainer = CurriculumTrainer(
-    df_train=df_train,
-    df_val=df_val,
-    config=curriculum_config,
-    base_hyperparams=base_hyperparams,
-    economic_calendar=calendar_df,
-    verbose=1,
-)
 
-# Train
-print("Starting training...")
-print("=" * 70)
-start_time = time.time()
+# =========================================================================
+# GOOGLE DRIVE CHECKPOINT CALLBACK (saves every N steps)
+# =========================================================================
+class DriveCheckpointCallback(BaseCallback):
+    """Saves model checkpoints to Google Drive every N steps.
 
-model, summary = trainer.train(seed=42)
+    If Colab crashes, training can resume from the last checkpoint.
+    """
 
-elapsed = time.time() - start_time
-hours = int(elapsed // 3600)
-minutes = int((elapsed % 3600) // 60)
+    def __init__(
+        self,
+        save_freq: int = 50_000,
+        drive_path: str = DRIVE_CHECKPOINTS,
+        verbose: int = 1,
+    ):
+        super().__init__(verbose)
+        self.save_freq = save_freq
+        self.drive_path = drive_path
+        self._last_save_step = 0
+        os.makedirs(drive_path, exist_ok=True)
+
+    def _on_step(self) -> bool:
+        if self.num_timesteps - self._last_save_step >= self.save_freq:
+            self._last_save_step = self.num_timesteps
+
+            # Save checkpoint to Google Drive
+            checkpoint_path = os.path.join(
+                self.drive_path,
+                f"checkpoint_{self.num_timesteps:07d}.zip"
+            )
+            self.model.save(checkpoint_path)
+
+            # Also save as "latest" for easy resume
+            latest_path = os.path.join(self.drive_path, "latest_checkpoint.zip")
+            self.model.save(latest_path)
+
+            # Save progress info
+            progress_path = os.path.join(self.drive_path, "progress.txt")
+            with open(progress_path, 'w') as f:
+                f.write(f"timesteps={self.num_timesteps}\n")
+                f.write(f"checkpoint={checkpoint_path}\n")
+                f.write(f"time={time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+
+            if self.verbose > 0:
+                print(f"  [DRIVE] Checkpoint saved: {self.num_timesteps:,} steps -> {checkpoint_path}")
+
+        return True
+
+
+# =========================================================================
+# CHECK FOR EXISTING CHECKPOINT (resume after crash)
+# =========================================================================
+resume_from = None
+latest_checkpoint = os.path.join(DRIVE_CHECKPOINTS, "latest_checkpoint.zip")
+progress_file = os.path.join(DRIVE_CHECKPOINTS, "progress.txt")
+
+if os.path.exists(latest_checkpoint):
+    saved_steps = 0
+    if os.path.exists(progress_file):
+        with open(progress_file, 'r') as f:
+            for line in f:
+                if line.startswith('timesteps='):
+                    saved_steps = int(line.strip().split('=')[1])
+
+    if saved_steps > 0 and saved_steps < TOTAL_TIMESTEPS:
+        print(f"CRASH RECOVERY: Found checkpoint at {saved_steps:,} / {TOTAL_TIMESTEPS:,} steps")
+        print(f"  Resuming training from: {latest_checkpoint}")
+        resume_from = latest_checkpoint
+    elif saved_steps >= TOTAL_TIMESTEPS:
+        print(f"TRAINING ALREADY COMPLETE ({saved_steps:,} steps). Skipping to evaluation.")
+        resume_from = "COMPLETE"
+    else:
+        print("Found checkpoint but no progress info. Starting fresh.")
+else:
+    print("No previous checkpoint found. Starting fresh training.")
 
 print()
-print("=" * 70)
-print(f"CURRICULUM TRAINING COMPLETE! ({hours}h {minutes}m)")
-print("=" * 70)
-print()
 
-# Print phase summary
-if 'phases_completed' in summary:
-    for phase in summary['phases_completed']:
-        print(f"  Phase {phase['phase']+1} ({phase['mode']}): "
-              f"Best Sharpe = {phase.get('best_sharpe', 0):.2f}")
 
-print()
+# =========================================================================
+# CREATE TRAINER AND RUN
+# =========================================================================
+if resume_from != "COMPLETE":
+    # Create trainer
+    trainer = CurriculumTrainer(
+        df_train=df_train,
+        df_val=df_val,
+        config=curriculum_config,
+        base_hyperparams=base_hyperparams,
+        economic_calendar=calendar_df,
+        verbose=1,
+    )
+
+    # Train (with resume support)
+    print("Starting training...")
+    print("=" * 70)
+    start_time = time.time()
+
+    # Override trainer.train() to add our Drive checkpoint callback
+    # and resume support
+    import logging
+    _logger = logging.getLogger(__name__)
+
+    # Create environment
+    trainer.env = trainer._create_env(df_train, TrainingMode.BASE)
+
+    # Create reward shaper
+    from src.training.advanced_reward_shaper import AdvancedRewardShaper
+    trainer.reward_shaper = AdvancedRewardShaper(
+        initial_balance=trainer.env._base_env.initial_balance,
+        weights=curriculum_config.phases[0].reward_weights
+    )
+
+    # Create or load model
+    if resume_from and resume_from != "COMPLETE":
+        print(f"Loading model from checkpoint: {resume_from}")
+        trainer.model = PPO.load(resume_from, env=trainer.env, device=device)
+    else:
+        trainer.model = PPO(
+            'MlpPolicy',
+            trainer.env,
+            verbose=0,
+            seed=42,
+            device=device,
+            tensorboard_log=DRIVE_LOGS,
+            **base_hyperparams
+        )
+
+    # Create callbacks
+    curriculum_callback = CurriculumCallback(
+        curriculum_config=curriculum_config,
+        env=trainer.env,
+        reward_shaper=trainer.reward_shaper,
+        base_hyperparams=base_hyperparams,
+        verbose=1
+    )
+
+    drive_checkpoint_cb = DriveCheckpointCallback(
+        save_freq=50_000,  # Save to Drive every 50K steps
+        drive_path=DRIVE_CHECKPOINTS,
+        verbose=1,
+    )
+
+    # Validation environment
+    from stable_baselines3.common.callbacks import EvalCallback
+    env_val = trainer._create_env(df_val, TrainingMode.PRODUCTION)
+
+    eval_callback = EvalCallback(
+        env_val,
+        best_model_save_path=os.path.join(DRIVE_MODELS, 'best'),
+        log_path=os.path.join(DRIVE_LOGS, 'eval'),
+        eval_freq=25_000,
+        n_eval_episodes=curriculum_config.eval_episodes,
+        deterministic=True,
+        render=False,
+        verbose=1
+    )
+
+    # Train with all callbacks
+    remaining_steps = TOTAL_TIMESTEPS
+    if resume_from and resume_from != "COMPLETE":
+        # Read how many steps were already done
+        if os.path.exists(progress_file):
+            with open(progress_file, 'r') as f:
+                for line in f:
+                    if line.startswith('timesteps='):
+                        done_steps = int(line.strip().split('=')[1])
+                        remaining_steps = TOTAL_TIMESTEPS - done_steps
+                        print(f"Remaining steps: {remaining_steps:,}")
+
+    trainer.model.learn(
+        total_timesteps=remaining_steps,
+        callback=[curriculum_callback, drive_checkpoint_cb, eval_callback],
+        reset_num_timesteps=resume_from is None,
+    )
+
+    # Save final model to Google Drive
+    final_path = os.path.join(DRIVE_MODELS, 'final_curriculum_model.zip')
+    trainer.model.save(final_path)
+    print(f"Final model saved to Google Drive: {final_path}")
+
+    # Save completion marker
+    with open(os.path.join(DRIVE_CHECKPOINTS, "progress.txt"), 'w') as f:
+        f.write(f"timesteps={TOTAL_TIMESTEPS}\n")
+        f.write(f"status=COMPLETE\n")
+        f.write(f"time={time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+
+    model = trainer.model
+    summary = curriculum_callback.get_training_summary()
+
+    elapsed = time.time() - start_time
+    hours = int(elapsed // 3600)
+    minutes = int((elapsed % 3600) // 60)
+
+    print()
+    print("=" * 70)
+    print(f"CURRICULUM TRAINING COMPLETE! ({hours}h {minutes}m)")
+    print("=" * 70)
+    print()
+
+    # Print phase summary
+    if 'phases_completed' in summary:
+        for phase in summary['phases_completed']:
+            print(f"  Phase {phase['phase']+1} ({phase['mode']}): "
+                  f"Best Sharpe = {phase.get('best_sharpe', 0):.2f}")
+    print()
+
+else:
+    elapsed = 0
+    hours = 0
+    minutes = 0
+    print("Training was already completed. Loading final model...")
+
 
 # =============================================================================
 # STEP 9: FINAL EVALUATION ON TEST DATA
@@ -399,14 +608,21 @@ test_env = UnifiedAgenticEnv(
     enable_logging=False,
 )
 
-# Load best model
-best_model_path = os.path.join(config.MODEL_DIR, 'curriculum', 'best', 'best_model.zip')
+# Load best model from Google Drive
+best_model_path = os.path.join(DRIVE_MODELS, 'best', 'best_model.zip')
+final_model_path = os.path.join(DRIVE_MODELS, 'final_curriculum_model.zip')
+
 if os.path.exists(best_model_path):
     best_model = PPO.load(best_model_path)
     print(f"Loaded best model from: {best_model_path}")
-else:
+elif os.path.exists(final_model_path):
+    best_model = PPO.load(final_model_path)
+    print(f"Loaded final model from: {final_model_path}")
+elif resume_from != "COMPLETE":
     best_model = model
-    print("Using final model for evaluation")
+    print("Using final model from training")
+else:
+    raise FileNotFoundError(f"No model found in {DRIVE_MODELS}")
 
 # Run evaluation
 obs, info = test_env.reset()
@@ -502,7 +718,7 @@ else:
 print()
 
 # =============================================================================
-# STEP 10: VISUALIZATIONS
+# STEP 10: VISUALIZATIONS (saved to Google Drive)
 # =============================================================================
 print("=" * 70)
 print("STEP 10: Creating visualizations...")
@@ -544,18 +760,18 @@ for bar, count in zip(bars, action_values):
 
 plt.tight_layout()
 
-results_dir = config.RESULTS_DIR
-plt.savefig(os.path.join(results_dir, 'test_results.png'), dpi=150, bbox_inches='tight')
+# Save to Google Drive
+chart_path = os.path.join(DRIVE_RESULTS, 'test_results.png')
+plt.savefig(chart_path, dpi=150, bbox_inches='tight')
 plt.show()
-
-print(f"Visualization saved to {results_dir}/test_results.png")
+print(f"Visualization saved to Google Drive: {chart_path}")
 print()
 
 # =============================================================================
-# STEP 11: SAVE AND DOWNLOAD
+# STEP 11: SAVE ALL RESULTS TO GOOGLE DRIVE
 # =============================================================================
 print("=" * 70)
-print("STEP 11: Saving results and preparing download...")
+print("STEP 11: Saving all results to Google Drive...")
 print("=" * 70)
 
 # Save final metrics
@@ -571,39 +787,40 @@ metrics_dict = {
     'profit_loss': pv[-1] - pv[0],
     'total_trades': trade_count,
     'total_timesteps': TOTAL_TIMESTEPS,
-    'training_time_minutes': elapsed / 60,
+    'training_time_minutes': elapsed / 60 if elapsed else 0,
     'device': device,
 }
 
 metrics_df = pd.DataFrame([metrics_dict])
-metrics_df.to_csv(os.path.join(results_dir, 'final_metrics.csv'), index=False)
-print(f"Final metrics saved to {results_dir}/final_metrics.csv")
+metrics_path = os.path.join(DRIVE_RESULTS, 'final_metrics.csv')
+metrics_df.to_csv(metrics_path, index=False)
+print(f"Metrics saved: {metrics_path}")
 
-# Save model paths
-model_dir = os.path.join(config.MODEL_DIR, 'curriculum')
-print(f"Models saved in: {model_dir}/")
-for f in os.listdir(model_dir) if os.path.exists(model_dir) else []:
-    fpath = os.path.join(model_dir, f)
-    if os.path.isfile(fpath):
-        size = os.path.getsize(fpath) / 1024 / 1024
-        print(f"  {f}: {size:.1f} MB")
+# Save portfolio values for later analysis
+portfolio_df = pd.DataFrame({
+    'step': range(len(pv)),
+    'portfolio_value': pv,
+})
+portfolio_path = os.path.join(DRIVE_RESULTS, 'portfolio_values.csv')
+portfolio_df.to_csv(portfolio_path, index=False)
+print(f"Portfolio values saved: {portfolio_path}")
 
-# Download files in Colab
-try:
-    import shutil
-    shutil.make_archive('trading_bot_results', 'zip', '.', model_dir)
+# List all saved files
+print()
+print("=" * 70)
+print(f"ALL FILES SAVED TO GOOGLE DRIVE: {DRIVE_BASE}")
+print("=" * 70)
+print()
 
-    from google.colab import files
-    print("\nDownloading files...")
-    files.download('trading_bot_results.zip')
-    files.download(os.path.join(results_dir, 'test_results.png'))
-    files.download(os.path.join(results_dir, 'final_metrics.csv'))
-    print("Files downloaded!")
-except ImportError:
-    print("\nNot running on Colab - files saved locally")
-except Exception as e:
-    print(f"\nCould not auto-download: {e}")
-    print(f"Files are in: {model_dir}/ and {results_dir}/")
+for root, dirs, files in os.walk(DRIVE_BASE):
+    level = root.replace(DRIVE_BASE, '').count(os.sep)
+    indent = '  ' * level
+    folder = os.path.basename(root)
+    print(f"{indent}{folder}/")
+    for file in sorted(files):
+        filepath = os.path.join(root, file)
+        size = os.path.getsize(filepath) / 1024 / 1024
+        print(f"{indent}  {file} ({size:.1f} MB)")
 
 print()
 print("=" * 70)
@@ -611,16 +828,21 @@ print("                    TRAINING COMPLETE!")
 print("=" * 70)
 print(f"""
 Summary:
-- Training: 4-phase curriculum ({TOTAL_TIMESTEPS:,} steps, {hours}h {minutes}m)
-- Best Model: {model_dir}/best/best_model.zip
-- Final Model: {model_dir}/final_curriculum_model.zip
-- Results: {results_dir}/test_results.png
-- Metrics: {results_dir}/final_metrics.csv
+- Training: 4-phase curriculum ({TOTAL_TIMESTEPS:,} steps)
+- All models saved to: {DRIVE_MODELS}
+- All checkpoints saved to: {DRIVE_CHECKPOINTS}
+- Results saved to: {DRIVE_RESULTS}
+- TensorBoard logs: {DRIVE_LOGS}
+
+Google Drive Location: MyDrive/TradingBot_Training/
 
 Key Results:
 - Sharpe Ratio: {sharpe:.2f}
 - Max Drawdown: {max_dd:.1%}
 - Cumulative Return: {cum_return:.1%}
+
+CRASH RECOVERY: If Colab crashed during training, just re-run this cell.
+Training will automatically resume from the last checkpoint on Google Drive.
 
 Next Steps:
 1. If Sharpe > 1.0 and MaxDD < 15%: Start paper trading
