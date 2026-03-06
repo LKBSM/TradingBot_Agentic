@@ -633,10 +633,14 @@ class TradingEnv(gym.Env):
         ts = None
         if 'Original_Timestamp' in df_processed.columns:
             ts = pd.to_datetime(df_processed['Original_Timestamp'])
+        elif 'original_timestamp' in df_processed.columns:
+            ts = pd.to_datetime(df_processed['original_timestamp'])
         elif isinstance(df_processed.index, pd.DatetimeIndex):
             ts = df_processed.index.to_series()
         elif 'Date' in df_processed.columns:
             ts = pd.to_datetime(df_processed['Date'])
+        elif 'date' in df_processed.columns:
+            ts = pd.to_datetime(df_processed['date'])
 
         if ts is not None:
             try:
