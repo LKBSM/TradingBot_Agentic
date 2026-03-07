@@ -346,7 +346,7 @@ print(f"All checkpoints saved to Google Drive: {DRIVE_BASE}")
 print()
 
 # Configure curriculum
-TOTAL_TIMESTEPS = 1_500_000  # 1.5M total steps across all phases
+TOTAL_TIMESTEPS = 3_000_000  # 3M total steps across all phases
 
 # Use Google Drive for model storage (crash-safe)
 curriculum_config = CurriculumConfig(
@@ -357,23 +357,28 @@ curriculum_config = CurriculumConfig(
     patience=3,
 )
 
-# PPO hyperparameters optimized for Gold M15
+# PPO hyperparameters optimized for Gold M15 (623-dim obs space)
 base_hyperparams = {
-    'n_steps': 1024,
-    'batch_size': 128,
+    'n_steps': 2048,          # Larger rollouts for 623-dim obs space
+    'batch_size': 256,        # Larger batches for stable gradients
     'gamma': 0.995,
-    'learning_rate': 3e-4,
+    'learning_rate': 2e-4,    # Gentler LR for larger network
     'ent_coef': 0.01,
     'clip_range': 0.2,
     'gae_lambda': 0.95,
     'max_grad_norm': 0.5,
     'vf_coef': 0.5,
     'n_epochs': 5,
+    'policy_kwargs': {
+        'net_arch': [512, 256],          # Must match 623-dim input (default [64,64] is way too small)
+        'activation_fn': torch.nn.Tanh,  # Matches bounded obs space [-10, 10]
+    },
 }
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(f"Device: {device.upper()}")
 print(f"Total timesteps: {TOTAL_TIMESTEPS:,}")
+print(f"Network architecture: [512, 256] with Tanh activation")
 print(f"Observation space: 30 features x 20 lookback + 3 state + 20 agent signals = 623 dims")
 print(f"Action space: 5 actions (HOLD, OPEN_LONG, CLOSE_LONG, OPEN_SHORT, CLOSE_SHORT)")
 print()
@@ -518,19 +523,36 @@ class DriveCheckpointCallback(BaseCallback):
 # =========================================================================
 # CHECK FOR EXISTING CHECKPOINT (resume after crash)
 # =========================================================================
+# IMPORTANT: v2 marks models trained with the fixed reward function.
+# Old v1 checkpoints (trained with broken rewards) must NOT be resumed.
+TRAINING_VERSION = "v2_reward_fix"
 resume_from = None
 latest_checkpoint = os.path.join(DRIVE_CHECKPOINTS, "latest_checkpoint.zip")
 progress_file = os.path.join(DRIVE_CHECKPOINTS, "progress.txt")
 
 if os.path.exists(latest_checkpoint):
     saved_steps = 0
+    saved_version = None
     if os.path.exists(progress_file):
         with open(progress_file, 'r') as f:
             for line in f:
                 if line.startswith('timesteps='):
                     saved_steps = int(line.strip().split('=')[1])
+                if line.startswith('version='):
+                    saved_version = line.strip().split('=')[1]
 
-    if saved_steps > 0 and saved_steps < TOTAL_TIMESTEPS:
+    if saved_version != TRAINING_VERSION:
+        print(f"OLD CHECKPOINT DETECTED (version={saved_version}). Clearing and starting fresh.")
+        print(f"  Reason: Reward function was fixed — old model is incompatible.")
+        # Clear old checkpoints
+        for f in os.listdir(DRIVE_CHECKPOINTS):
+            os.remove(os.path.join(DRIVE_CHECKPOINTS, f))
+        # Clear old models
+        for f in os.listdir(DRIVE_MODELS):
+            fpath = os.path.join(DRIVE_MODELS, f)
+            if os.path.isfile(fpath):
+                os.remove(fpath)
+    elif saved_steps > 0 and saved_steps < TOTAL_TIMESTEPS:
         print(f"CRASH RECOVERY: Found checkpoint at {saved_steps:,} / {TOTAL_TIMESTEPS:,} steps")
         print(f"  Resuming training from: {latest_checkpoint}")
         resume_from = latest_checkpoint

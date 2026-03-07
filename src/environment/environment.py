@@ -1474,9 +1474,9 @@ class TradingEnv(gym.Env):
             account_equity=self.balance,
             atr_stop_distance=sl_distance_abs,
             win_prob=0.5,
-            risk_reward_ratio=1.0,
-            current_price=current_price,  # NEW: Pass price for leverage calc
-            max_leverage=self.max_leverage_limit,  # NEW: Hard leverage limit
+            risk_reward_ratio=TAKE_PROFIT_PERCENTAGE / STOP_LOSS_PERCENTAGE,  # Config R:R (2.0)
+            current_price=current_price,
+            max_leverage=self.max_leverage_limit,
             is_long=True
         )
 
@@ -1488,11 +1488,15 @@ class TradingEnv(gym.Env):
         if trade_quantity_calc < self.min_trade_quantity:
             trade_quantity_calc = 0.0
 
-        estimated_cost = current_price * trade_quantity_calc * (
-            1 + self.transaction_fee_percentage + self.slippage_percentage
-        )
+        # Estimate total cost including spread, slippage AND commission
+        effective_price = current_price * (1 + self.transaction_fee_percentage) * (1 + self.slippage_percentage)
+        gross_value = effective_price * trade_quantity_calc
+        commission_est = max(gross_value * self.trade_commission_pct_of_trade,
+                            self.initial_balance * self.trade_commission_min_pct_capital)
+        estimated_cost = gross_value + commission_est
+
         if estimated_cost > self.balance and estimated_cost > 0:
-            scale = self.balance / estimated_cost
+            scale = self.balance / estimated_cost * 0.999  # 0.1% safety margin
             trade_quantity_calc *= scale
 
         if trade_quantity_calc < self.min_trade_quantity:
@@ -1598,9 +1602,9 @@ class TradingEnv(gym.Env):
             account_equity=self.balance,
             atr_stop_distance=sl_distance_abs,
             win_prob=0.5,
-            risk_reward_ratio=1.0,
-            current_price=current_price,  # NEW: Pass price for leverage calc
-            max_leverage=self.max_leverage_limit,  # NEW: Hard leverage limit
+            risk_reward_ratio=TAKE_PROFIT_PERCENTAGE / STOP_LOSS_PERCENTAGE,  # Config R:R (2.0)
+            current_price=current_price,
+            max_leverage=self.max_leverage_limit,
             is_long=False  # Short position
         )
 
@@ -1840,15 +1844,17 @@ class TradingEnv(gym.Env):
             total_penalty += leverage_penalty
 
         # --- Penalty D: Turnover (anti-churning) ---
+        # With 1x leverage on Gold, a single trade uses ~100% of capital (ratio≈1.0)
+        # Only penalize if trading MORE than full capital (rapid re-trading/churning)
         if self.traded_value_step > 0:
             turnover_ratio = self.traded_value_step / max(self.net_worth, 1.0)
-            if turnover_ratio > 0.3:
-                turnover_penalty = (turnover_ratio - 0.3) * 3.0
+            if turnover_ratio > 1.5:  # Was 0.3 — too low for concentrated Gold trading
+                turnover_penalty = (turnover_ratio - 1.5) * 2.0
                 total_penalty += turnover_penalty
 
-        # --- Penalty E: Invalid Actions ---
+        # --- Penalty E: Invalid Actions (mild - agent needs exploration room) ---
         if getattr(self, 'invalid_action_this_step', False):
-            total_penalty += 0.5
+            total_penalty += 0.05
 
         # NOTE: No hold penalty. Holding flat = reward 0.0 (neutral).
         # NOTE: No duration penalty. Removed to let winners run.
@@ -1880,7 +1886,7 @@ class TradingEnv(gym.Env):
             else:
                 # Losing hold: convex penalty (bigger losses hurt more)
                 loss_pct = abs(unrealized_pnl_pct)
-                hold_reward = max(-5.0, -(loss_pct * 100) ** 1.5)
+                hold_reward = max(-2.0, -(loss_pct * 100) ** 1.2)
 
         # =========================================================================
         # STEP 5: TRADE CLOSE BONUS (Risk-Reward Based)
@@ -1895,20 +1901,28 @@ class TradingEnv(gym.Env):
             if trade_pnl_abs > 0:
                 # Winning trade: reward proportional to risk-reward quality
                 # Use pnl_pct as proxy for RR (SL is ~1% per config)
-                actual_rr = abs(trade_pnl_pct) / max(self.stop_loss_percentage * 100, 0.1)
+                actual_rr = abs(trade_pnl_pct) / max(STOP_LOSS_PERCENTAGE * 100, 0.1)
                 trade_bonus = min(3.0, actual_rr)
             else:
                 # Losing trade: fixed mild penalty (PnL itself already negative)
                 trade_bonus = -0.5
 
         # =========================================================================
-        # STEP 6: COMPOSITE + NORMALIZATION (Tanh Squashing)
+        # STEP 5b: TRADE OPEN BONUS (encourages agent to actually trade)
         # =========================================================================
-        raw_reward = profitability_reward - total_penalty + hold_reward + trade_bonus
-        combined_reward = raw_reward
+        open_bonus = 0.0
+        if self.trade_details.get('trade_type') in ['open_long', 'open_short']:
+            if self.trade_details.get('trade_success'):
+                open_bonus = 0.3  # Small incentive to enter positions from FLAT
 
-        normalized_reward = np.tanh(combined_reward * self.reward_tanh_scale)
-        scaled_reward = normalized_reward * self.reward_output_scale
+        # =========================================================================
+        # STEP 6: COMPOSITE + LINEAR SCALING (no tanh - preserves gradient signal)
+        # =========================================================================
+        raw_reward = profitability_reward - total_penalty + hold_reward + trade_bonus + open_bonus
+
+        # Linear clip instead of tanh squashing
+        # Tanh was killing the reward signal: a +2% trade ≈ 0.03 after tanh vs 0.5 penalty
+        scaled_reward = np.clip(raw_reward, -10.0, 10.0)
 
         # =========================================================================
         # STEP 7: SPECIAL CASES (Terminal Conditions)
@@ -1918,8 +1932,12 @@ class TradingEnv(gym.Env):
 
         if current_drawdown > 0:
             dd_ratio = current_drawdown / self.peak_nav
-            if dd_ratio > 0.15:
-                scaled_reward -= 5.0
+            # Gradual drawdown penalty instead of cliff at 15%
+            # Old: flat -5.0 once DD > 15% → killed ALL reward signals during exploration
+            # New: scales from 0 at 10% DD to -3.0 at 30% DD (proportional, not cliff)
+            if dd_ratio > 0.10:
+                dd_excess = dd_ratio - 0.10  # How far past 10%
+                scaled_reward -= min(3.0, dd_excess * 15.0)  # 15% DD → -0.75, 20% → -1.5, 30% → -3.0
 
         # =========================================================================
         # STEP 8: FINAL SAFETY CLIPPING
@@ -1937,6 +1955,7 @@ class TradingEnv(gym.Env):
             'turnover_penalty': turnover_penalty,
             'hold_reward': hold_reward,
             'trade_bonus': trade_bonus,
+            'open_bonus': open_bonus,
             'raw_reward': raw_reward,
             'final_reward': final_reward,
         }

@@ -612,7 +612,9 @@ class DynamicRiskManager:
         # Apply regime scaling to the Kelly limit (less aggressive in Chaos regime)
         kelly_fraction_limit = profile['kelly_fraction_limit'] * self._get_regime_scaling(regime)
 
-        effective_kelly_fraction = min(full_kelly_fraction, kelly_fraction_limit)
+        # Floor: Kelly=0 means "no edge" but we still allow small positions
+        # so the RL agent can explore. Without this, Kelly=0 blocks ALL trades.
+        effective_kelly_fraction = max(0.02, min(full_kelly_fraction, kelly_fraction_limit))
         capital_alloc_kelly = account_equity * effective_kelly_fraction
 
         # Size = Capital Allocated / Risk per Unit (if ATR distance is used as a proxy for price)

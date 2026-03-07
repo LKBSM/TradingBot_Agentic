@@ -313,8 +313,8 @@ REWARD_SCALING_FACTOR = 100.0
 #   - Typical PPO rewards are in range [-1, +1] or [-10, +10]
 #   - This scales the normalized reward to your desired range
 #
-REWARD_TANH_SCALE = 0.3      # Default: 0.3 (tunable in hyperparameter search)
-REWARD_OUTPUT_SCALE = 5.0    # Default: 5.0 (tunable in hyperparameter search)
+REWARD_TANH_SCALE = 1.0      # Disabled: linear clip replaces tanh squashing in reward fn
+REWARD_OUTPUT_SCALE = 1.0    # Disabled: linear clip replaces output scaling in reward fn
 
 # -----------------------------------------------------------------------------
 # PENALTIES & BONUSES (The "Lazy Agent" Fix)
