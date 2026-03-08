@@ -273,13 +273,10 @@ class TradingEnv(gym.Env):
         if value < 0 and not getattr(self, 'allow_negative_balance', False):
             raise ValueError(f"Balance cannot be negative: {value}. Set allow_negative_balance=True to override.")
 
-        # Check minimum balance threshold
-        min_balance = getattr(self, 'minimum_allowed_balance', 0.0)
-        if value < min_balance and value > 0:
-            import logging
-            logging.getLogger(__name__).warning(
-                f"Balance {value:.2f} is below minimum threshold {min_balance:.2f}"
-            )
+        # Note: Cash balance is expected to be low when a position is open
+        # (nearly all capital is in the asset). The real protection is the
+        # net_worth check in step() which terminates the episode if net_worth
+        # drops below minimum_allowed_balance.
 
         self._balance = value
     # =========================================================================
