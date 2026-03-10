@@ -129,6 +129,9 @@ from datetime import datetime, timedelta
 from typing import Dict, Optional
 import warnings
 warnings.filterwarnings('ignore')
+import logging
+logging.getLogger('jupyter_client').setLevel(logging.CRITICAL)
+logging.getLogger('src.environment.environment').setLevel(logging.ERROR)
 
 import torch
 from stable_baselines3 import PPO
