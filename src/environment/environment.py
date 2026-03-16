@@ -205,6 +205,10 @@ try:
         TRADE_COMMISSION_PCT_OF_TRADE, TRADE_COMMISSION_MIN_PCT_CAPITAL,
         # Reward scaling hyperparameters
         REWARD_TANH_SCALE, REWARD_OUTPUT_SCALE,
+        # Deferred entry bonus threshold (Sprint 2: anti-churning)
+        MIN_HOLD_FOR_BONUS,
+        # Reward caps (Sprint 3: rebalanced close/hold ratio)
+        HOLD_REWARD_CAP, CLOSE_BONUS_CAP,
         # Episode length configuration
         FIXED_EPISODE_LENGTH, USE_FIXED_EPISODE_LENGTH
     )
@@ -344,6 +348,55 @@ class TradingEnv(gym.Env):
         self.trade_id_counter = 0
         self.episode_count = 0
         self.episode_reward = 0.0
+
+        # Sprint 5: Training mode flag — controls Kelly floor behavior
+        # True (default): Kelly floor at 0.02 for exploration during training
+        # False: Kelly=0 means no trade (live/eval mode)
+        self.training_mode = kwargs.get('training_mode', True)
+
+        # Sprint 10: Dynamic slippage model — ATR-proportional
+        from config import USE_DYNAMIC_SLIPPAGE, SLIPPAGE_ATR_SCALE
+        self._use_dynamic_slippage = kwargs.get('use_dynamic_slippage', USE_DYNAMIC_SLIPPAGE)
+        if self._use_dynamic_slippage:
+            from src.environment.execution_model import DynamicSlippageModel
+            self._slippage_model = DynamicSlippageModel(
+                base_slippage=self.slippage_percentage,
+                atr_scale_factor=kwargs.get('slippage_atr_scale', SLIPPAGE_ATR_SCALE)
+            )
+        else:
+            self._slippage_model = None
+        self._median_atr = None  # Computed in _process_data
+
+        # Sprint 11: Dynamic spread model — session-dependent
+        from config import USE_DYNAMIC_SPREAD, SPREAD_NEWS_MULTIPLIER
+        self._use_dynamic_spread = kwargs.get('use_dynamic_spread', USE_DYNAMIC_SPREAD)
+        if self._use_dynamic_spread:
+            from src.environment.execution_model import DynamicSpreadModel
+            self._spread_model = DynamicSpreadModel(
+                news_multiplier=kwargs.get('spread_news_multiplier', SPREAD_NEWS_MULTIPLIER)
+            )
+        else:
+            self._spread_model = None
+
+        # Sprint 12: VaR engine — rolling Cornish-Fisher VaR for risk monitoring
+        from config import VAR_CONFIDENCE_LEVEL, VAR_ROLLING_WINDOW, VAR_METHOD
+        self._use_var_engine = kwargs.get('use_var_engine', True)
+        if self._use_var_engine:
+            from src.risk.var_engine import VaREngine
+            self._var_engine = VaREngine(
+                confidence=kwargs.get('var_confidence', VAR_CONFIDENCE_LEVEL),
+                window=kwargs.get('var_window', VAR_ROLLING_WINDOW),
+                method=kwargs.get('var_method', VAR_METHOD),
+            )
+        else:
+            self._var_engine = None
+
+        # Sprint 6: Rolling win rate for Kelly position sizing
+        # Replaces hardcoded win_prob=0.5 with empirical win rate
+        from config import ROLLING_WIN_RATE_WINDOW, ROLLING_WIN_RATE_MIN_TRADES
+        self._rolling_win_rate = 0.5  # Uninformative prior
+        self._win_rate_window = deque(maxlen=ROLLING_WIN_RATE_WINDOW)
+        self._win_rate_min_trades = ROLLING_WIN_RATE_MIN_TRADES
 
         # --- NEW: Reward Weights and Limits (Hyperparameters) ---
         self.max_leverage_limit = kwargs.get('max_leverage_limit', MAX_LEVERAGE)
@@ -675,6 +728,20 @@ class TradingEnv(gym.Env):
                 logger.warning(f"MTF features failed (non-fatal): {e}")
 
         # =========================================================================
+        # ETAPE 4c: DECORRELATED FEATURES (Sprint 8)
+        # Replace non-stationary OHLC with stationary log_return, hl_range,
+        # close_position. Only when USE_DECORRELATED_FEATURES is enabled.
+        # =========================================================================
+        from config import USE_DECORRELATED_FEATURES
+        if USE_DECORRELATED_FEATURES:
+            try:
+                from src.environment.feature_reducer import compute_decorrelated_ohlcv
+                df_processed = compute_decorrelated_ohlcv(df_processed)
+                logger.info("Sprint 8: Decorrelated features: OHLC -> log_return, hl_range, close_position")
+            except Exception as e:
+                logger.warning(f"Decorrelated features failed (non-fatal, keeping raw OHLC): {e}")
+
+        # =========================================================================
         # ÉTAPE 5: GESTION INTELLIGENTE DES NaN (CRITIQUE!)
         # =========================================================================
 
@@ -793,6 +860,13 @@ class TradingEnv(gym.Env):
 
         # Reset index pour un DataFrame propre
         df_processed.reset_index(drop=True, inplace=True)
+
+        # =========================================================================
+        # ÉTAPE 6b: COMPUTE MEDIAN ATR (Sprint 10: for dynamic slippage)
+        # =========================================================================
+        if 'ATR' in df_processed.columns:
+            self._median_atr = float(df_processed['ATR'].median())
+            logger.info(f"Sprint 10: Median ATR = {self._median_atr:.4f}")
 
         # =========================================================================
         # ÉTAPE 7: RAPPORT FINAL
@@ -1003,6 +1077,14 @@ class TradingEnv(gym.Env):
             'actual_action_executed': self.actual_action_executed
         }
         info['trade_details'] = self.trade_details
+
+        # Sprint 12: Expose VaR metrics when engine has enough data
+        if self._var_engine is not None and self._var_engine.is_ready:
+            var_result = self._var_engine.compute()
+            info['var_95'] = var_result.var_95
+            info['var_99'] = var_result.var_99
+            info['cvar_95'] = var_result.cvar_95
+
         return info
 
     def _create_state_snapshot(self) -> Dict[str, Any]:
@@ -1055,19 +1137,62 @@ class TradingEnv(gym.Env):
         import logging
         logging.getLogger(__name__).warning("Trade state rolled back due to execution failure")
 
+    def _get_current_slippage(self) -> float:
+        """Sprint 10: Get slippage for the current bar (ATR-proportional or static)."""
+        if self._use_dynamic_slippage and self._slippage_model is not None:
+            current_atr = 0.0
+            try:
+                current_atr = float(self.df.iloc[self.current_step].get('ATR', 0.0))
+            except (IndexError, KeyError):
+                pass
+            return self._slippage_model.get_slippage(current_atr, self._median_atr)
+        return self.slippage_percentage
+
+    def _get_current_spread(self) -> float:
+        """Sprint 11: Get spread for the current bar (session-dependent or static)."""
+        if self._use_dynamic_spread and self._spread_model is not None:
+            try:
+                row = self.df.iloc[self.current_step]
+                # Extract UTC hour from index (DatetimeIndex) or Original_Timestamp column
+                if hasattr(row.name, 'hour'):
+                    hour_utc = int(row.name.hour)
+                elif 'Original_Timestamp' in self.df.columns:
+                    ts = pd.Timestamp(row['Original_Timestamp'])
+                    hour_utc = int(ts.hour)
+                elif 'SESSION' in self.df.columns:
+                    # SESSION feature: 0=Asian, 1=London, 2=NY — map to representative hour
+                    session_val = float(row.get('SESSION', 1))
+                    hour_utc = {0: 4, 1: 10, 2: 15}.get(int(session_val), 10)
+                else:
+                    hour_utc = 12  # Default to London session
+
+                # Check for news window via NEWS_IMPACT column if available
+                is_news = False
+                if 'NEWS_IMPACT' in self.df.columns:
+                    is_news = float(row.get('NEWS_IMPACT', 0.0)) > 0.5
+                elif 'HIGH_IMPACT_NEWS' in self.df.columns:
+                    is_news = float(row.get('HIGH_IMPACT_NEWS', 0.0)) > 0.5
+
+                return self._spread_model.get_spread(hour_utc, is_news_window=is_news)
+            except (IndexError, KeyError):
+                pass
+        return self.transaction_fee_percentage
+
     def _execute_trade(self, trade_type: str, trade_price: float, trade_quantity: float):
         """
-        Exécute un trade (BUY ou SELL) avec gestion des coûts de transaction.
+        Exécute un trade (BUY, SELL, SELL_TO_OPEN, BUY_TO_COVER) avec gestion
+        des coûts de transaction et rollback automatique en cas d'erreur.
 
-        VERSION CORRIGÉE - Capital-Agnostic:
+        VERSION CORRIGÉE - Capital-Agnostic + SHORT ROLLBACK FIX (Sprint 1):
         - Commission relative au capital (scalable de $100 à $100K+)
         - Frais proportionnels au trade value
         - Validation robuste des montants
         - Compatible avec tous les niveaux de capital
-        - SECURITY FIX: Transaction rollback on failure
+        - SECURITY FIX: Transaction rollback on failure for ALL trade types
+        - Sprint 1: Added 'sell_to_open' and 'buy_to_cover' for short positions
 
         Args:
-            trade_type (str): 'buy' ou 'sell'
+            trade_type (str): 'buy', 'sell', 'sell_to_open', or 'buy_to_cover'
             trade_price (float): Prix d'exécution actuel du marché
             trade_quantity (float): Quantité à trader (en lots)
 
@@ -1076,8 +1201,8 @@ class TradingEnv(gym.Env):
                 - trade_success (bool): True si le trade a été exécuté
                 - effective_trade_value (float): Valeur brute du trade
                 - commission (float): Commission totale payée
-                - pnl_abs (float): P&L absolu en $ (pour SELL uniquement)
-                - pnl_pct (float): P&L en % (pour SELL uniquement)
+                - pnl_abs (float): P&L absolu en $ (pour SELL/BUY_TO_COVER)
+                - pnl_pct (float): P&L en % (pour SELL/BUY_TO_COVER)
         """
         # SECURITY FIX: Create state snapshot for potential rollback
         state_snapshot = self._create_state_snapshot()
@@ -1095,15 +1220,20 @@ class TradingEnv(gym.Env):
         self.traded_value_step = 0.0
         self.transaction_cost_incurred_step = 0.0
 
+        # Sprint 10: Dynamic slippage for this bar
+        current_slippage = self._get_current_slippage()
+        # Sprint 11: Dynamic spread for this bar (session-dependent)
+        current_spread = self._get_current_spread()
+
         try:
             # =====================================================================
-            # BUY LOGIC
+            # BUY LOGIC (open long)
             # =====================================================================
             if trade_type == 'buy':
                 # --- 1. Calcul du prix effectif avec spread et slippage ---
                 # Le prix d'achat inclut le spread (défavorable pour l'acheteur)
-                price_with_spread = trade_price * (1 + self.transaction_fee_percentage)
-                effective_buy_price = price_with_spread * (1 + self.slippage_percentage)
+                price_with_spread = trade_price * (1 + current_spread)
+                effective_buy_price = price_with_spread * (1 + current_slippage)
 
                 # --- 2. Valeur brute du trade (avant commission) ---
                 gross_trade_value = effective_buy_price * trade_quantity
@@ -1158,7 +1288,7 @@ class TradingEnv(gym.Env):
                                f"Cost: ${total_cost:,.2f} (Commission: ${commission:.2f})")
 
             # =====================================================================
-            # SELL LOGIC
+            # SELL LOGIC (close long)
             # =====================================================================
             elif trade_type == 'sell':
                 # --- 1. Validation: Vérifier si on a assez de stock ---
@@ -1168,8 +1298,8 @@ class TradingEnv(gym.Env):
 
                 # --- 2. Calcul du prix effectif avec spread et slippage ---
                 # Le prix de vente subit le spread (défavorable pour le vendeur)
-                price_with_spread = trade_price * (1 - self.transaction_fee_percentage)
-                effective_sell_price = price_with_spread * (1 - self.slippage_percentage)
+                price_with_spread = trade_price * (1 - current_spread)
+                effective_sell_price = price_with_spread * (1 - current_slippage)
 
                 # --- 3. Valeur brute du trade ---
                 gross_trade_value = effective_sell_price * trade_quantity
@@ -1228,9 +1358,92 @@ class TradingEnv(gym.Env):
                     logger.info(f"SELL Executed: {trade_quantity:.4f} @ ${trade_price:,.2f} | "
                                f"Revenue: ${total_revenue:,.2f} | P&L: {pnl_symbol}${pnl_abs:.2f} ({pnl_pct:+.2f}%)")
 
+            # =====================================================================
+            # SELL_TO_OPEN LOGIC (open short — Sprint 1 fix)
+            # =====================================================================
+            elif trade_type == 'sell_to_open':
+                # --- 1. Sell borrowed asset at current price ---
+                price_with_spread = trade_price * (1 - current_spread)
+                effective_sell_price = price_with_spread * (1 - current_slippage)
+                gross_trade_value = effective_sell_price * trade_quantity
+
+                # --- 2. Commission ---
+                commission_from_trade = gross_trade_value * self.trade_commission_pct_of_trade
+                commission_minimum = self.initial_balance * self.trade_commission_min_pct_capital
+                commission = max(commission_from_trade, commission_minimum)
+
+                # --- 3. Execute: receive cash, hold negative position ---
+                self.balance += (gross_trade_value - commission)
+                self.stock_quantity = -trade_quantity  # Negative = short position
+                self.entry_price = trade_price
+
+                # --- 4. Update counters ---
+                self.total_fees_paid_episode += commission
+                self.transaction_cost_incurred_step = commission
+                effective_trade_value = trade_price * trade_quantity
+                self.traded_value_step = effective_trade_value
+
+                trade_success = True
+
+                if hasattr(self, 'verbose') and self.verbose:
+                    logger.info(f"SELL_TO_OPEN Executed: {trade_quantity:.4f} @ ${trade_price:,.2f} | "
+                               f"Proceeds: ${gross_trade_value - commission:,.2f} (Commission: ${commission:.2f})")
+
+            # =====================================================================
+            # BUY_TO_COVER LOGIC (close short — Sprint 1 fix)
+            # =====================================================================
+            elif trade_type == 'buy_to_cover':
+                # --- 1. Buy back at current price + spread + slippage ---
+                price_with_spread = trade_price * (1 + current_spread)
+                effective_buy_price = price_with_spread * (1 + current_slippage)
+                gross_trade_value = effective_buy_price * trade_quantity
+
+                # --- 2. Commission ---
+                commission_from_trade = gross_trade_value * self.trade_commission_pct_of_trade
+                commission_minimum = self.initial_balance * self.trade_commission_min_pct_capital
+                commission = max(commission_from_trade, commission_minimum)
+
+                total_cost = gross_trade_value + commission
+
+                # --- 3. Validate: sufficient balance to cover ---
+                if total_cost > self.balance:
+                    self.transaction_cost_incurred_step = 0.0
+                    return False, 0.0, 0.0, 0.0, 0.0
+
+                # --- 4. Calculate P&L: profit if price went DOWN ---
+                if not np.isnan(self.entry_price) and self.entry_price > 0:
+                    pnl_abs = (self.entry_price - trade_price) * trade_quantity - commission
+                    pnl_pct = ((self.entry_price - trade_price) / self.entry_price) * 100
+                else:
+                    pnl_abs = 0.0
+                    pnl_pct = 0.0
+
+                # --- 5. Execute: pay to cover, clear position ---
+                self.balance -= total_cost
+                self.stock_quantity = 0.0
+                self.entry_price = np.nan
+
+                # Reset du risk manager (SL/TP)
+                if hasattr(self, 'risk_manager') and self.risk_manager is not None:
+                    self.risk_manager.reset()
+
+                # --- 6. Update counters ---
+                self.total_fees_paid_episode += commission
+                self.transaction_cost_incurred_step = commission
+                effective_trade_value = trade_price * trade_quantity
+                self.traded_value_step = effective_trade_value
+
+                trade_success = True
+
+                if hasattr(self, 'verbose') and self.verbose:
+                    pnl_symbol = "+" if pnl_abs >= 0 else ""
+                    logger.info(f"BUY_TO_COVER Executed: {trade_quantity:.4f} @ ${trade_price:,.2f} | "
+                               f"Cost: ${total_cost:,.2f} | P&L: {pnl_symbol}${pnl_abs:.2f} ({pnl_pct:+.2f}%)")
+
             else:
                 # Type de trade invalide
-                raise ValueError(f"Invalid trade_type: {trade_type}. Must be 'buy' or 'sell'.")
+                raise ValueError(f"Invalid trade_type: {trade_type}. "
+                                 f"Must be 'buy', 'sell', 'sell_to_open', or 'buy_to_cover'.")
 
         except Exception as e:
             # =====================================================================
@@ -1286,6 +1499,9 @@ class TradingEnv(gym.Env):
             current_market_price = float(current_row['Close'])
             current_atr = float(current_row.get('ATR', 0.0))  # Default if missing
             bos_signal = float(current_row.get('BOS_SIGNAL', 0.0))  # Default if missing
+            # Sprint 9: Extract High/Low for intra-bar SL/TP checking
+            current_high = float(current_row.get('High', current_market_price))
+            current_low = float(current_row.get('Low', current_market_price))
         except (IndexError, KeyError) as e:
             logger.error(f"Data access error at step {self.current_step}: {e}")
             # Return terminal state on data error
@@ -1367,17 +1583,26 @@ class TradingEnv(gym.Env):
             self.current_hold_duration += 1
             is_long = (self.position_type == POSITION_LONG)
 
+            # Sprint 9: Pass High/Low for intra-bar TSL advancement
             self.risk_manager.update_trailing_stop(
-                self.entry_price, current_market_price, current_atr, is_long=is_long
+                self.entry_price, current_market_price, current_atr, is_long=is_long,
+                high=current_high, low=current_low
             )
-            exit_signal = self.risk_manager.check_trade_exit(current_market_price, is_long=is_long)
+            # Sprint 9: Pass High/Low for intra-bar SL/TP detection
+            exit_signal, fill_price = self.risk_manager.check_trade_exit(
+                current_market_price, is_long=is_long,
+                high=current_high, low=current_low
+            )
 
             if exit_signal == 'TP':
                 action = ACTION_CLOSE_LONG if is_long else ACTION_CLOSE_SHORT
                 self.actual_action_executed = 10  # TP exit code
+                # Sprint 9: Use SL/TP fill price instead of Close for execution
+                current_market_price = fill_price
             elif exit_signal == 'SL':
                 action = ACTION_CLOSE_LONG if is_long else ACTION_CLOSE_SHORT
                 self.actual_action_executed = 11  # SL exit code
+                current_market_price = fill_price
         elif self.position_type == POSITION_FLAT:
             self.current_hold_duration = 0
 
@@ -1431,6 +1656,11 @@ class TradingEnv(gym.Env):
         # --- Portfolio update (handles both long and short) ---
         self._update_portfolio_value(current_market_price)
 
+        # --- Sprint 12: Feed portfolio return to VaR engine ---
+        if self._var_engine is not None and previous_net_worth > 1e-9:
+            step_return = (self.net_worth - previous_net_worth) / previous_net_worth
+            self._var_engine.update(step_return)
+
         # --- Update Drawdown and Leverage Trackers ---
         self.peak_nav = max(self.peak_nav, self.net_worth)
 
@@ -1470,11 +1700,12 @@ class TradingEnv(gym.Env):
             client_id=getattr(self, "_risk_client_id", "default_client"),
             account_equity=self.balance,
             atr_stop_distance=sl_distance_abs,
-            win_prob=0.5,
+            win_prob=self._rolling_win_rate,  # Sprint 6: empirical win rate (was 0.5)
             risk_reward_ratio=TAKE_PROFIT_PERCENTAGE / STOP_LOSS_PERCENTAGE,  # Config R:R (2.0)
             current_price=current_price,
             max_leverage=self.max_leverage_limit,
-            is_long=True
+            is_long=True,
+            training_mode=self.training_mode  # Sprint 5: conditional Kelly floor
         )
 
         try:
@@ -1486,7 +1717,8 @@ class TradingEnv(gym.Env):
             trade_quantity_calc = 0.0
 
         # Estimate total cost including spread, slippage AND commission
-        effective_price = current_price * (1 + self.transaction_fee_percentage) * (1 + self.slippage_percentage)
+        # Sprint 10/11: Use dynamic slippage and spread for cost estimation
+        effective_price = current_price * (1 + self._get_current_spread()) * (1 + self._get_current_slippage())
         gross_value = effective_price * trade_quantity_calc
         commission_est = max(gross_value * self.trade_commission_pct_of_trade,
                             self.initial_balance * self.trade_commission_min_pct_capital)
@@ -1557,6 +1789,11 @@ class TradingEnv(gym.Env):
                 self.losing_trades += 1
             self.current_hold_duration = 0
 
+            # Sprint 6: Update rolling win rate for Kelly position sizing
+            self._win_rate_window.append(1.0 if pnl_abs > 0 else 0.0)
+            if len(self._win_rate_window) >= self._win_rate_min_trades:
+                self._rolling_win_rate = float(np.mean(self._win_rate_window))
+
             self.trade_details.update({
                 'trade_success': True, 'trade_type': 'close_long',
                 'trade_value': value, 'commission': commission,
@@ -1581,28 +1818,24 @@ class TradingEnv(gym.Env):
             return False
 
     def _execute_open_short(self, current_price: float, current_atr: float) -> bool:
-        """
-        Execute OPEN_SHORT action (sell to open short position).
+        """Execute OPEN_SHORT action (sell to open short position).
 
-        Short selling mechanics:
-        1. Borrow asset from broker
-        2. Sell at current price (receive cash)
-        3. Later: buy back to return to broker
-        4. Profit if price goes DOWN, loss if price goes UP
+        Sprint 1 fix: Now routes through _execute_trade('sell_to_open', ...)
+        for consistent rollback protection on failure, matching the long-side pattern.
         """
         sl_distance_abs = self.risk_manager.set_trade_orders(current_price, current_atr, is_long=False)
 
         # Calculate position size with HARD LEVERAGE ENFORCEMENT
-        # The risk manager now caps position size to prevent exceeding max_leverage_limit
         trade_quantity_calc = self.risk_manager.calculate_adaptive_position_size(
             client_id=getattr(self, "_risk_client_id", "default_client"),
             account_equity=self.balance,
             atr_stop_distance=sl_distance_abs,
-            win_prob=0.5,
-            risk_reward_ratio=TAKE_PROFIT_PERCENTAGE / STOP_LOSS_PERCENTAGE,  # Config R:R (2.0)
+            win_prob=self._rolling_win_rate,  # Sprint 6: empirical win rate (was 0.5)
+            risk_reward_ratio=TAKE_PROFIT_PERCENTAGE / STOP_LOSS_PERCENTAGE,
             current_price=current_price,
             max_leverage=self.max_leverage_limit,
-            is_long=False  # Short position
+            is_long=False,
+            training_mode=self.training_mode  # Sprint 5: conditional Kelly floor
         )
 
         try:
@@ -1615,55 +1848,42 @@ class TradingEnv(gym.Env):
             self.actual_action_executed = ACTION_HOLD
             return False
 
-        # For shorts, we receive cash when opening (sell borrowed asset)
-        # Apply spread and slippage (unfavorable for seller)
-        price_with_spread = current_price * (1 - self.transaction_fee_percentage)
-        effective_sell_price = price_with_spread * (1 - self.slippage_percentage)
-        gross_value = effective_sell_price * trade_quantity_calc
+        trade_success, value, commission, _, _ = self._execute_trade(
+            'sell_to_open', current_price, trade_quantity=trade_quantity_calc
+        )
 
-        # Calculate commission
-        commission_pct_trade = self.trade_commission_pct_of_trade
-        commission = gross_value * commission_pct_trade
-
-        # Short position: negative stock quantity, cash increases
-        self.balance += (gross_value - commission)
-        self.stock_quantity = -trade_quantity_calc  # Negative = short position
-        self.entry_price = current_price
-        self.position_type = POSITION_SHORT
-        self.last_trade_step = self.current_step
-
-        self.total_fees_paid_episode += commission
-        self.transaction_cost_incurred_step = commission
-        self.traded_value_step = current_price * trade_quantity_calc
-
-        self.trade_details.update({
-            'trade_success': True, 'trade_type': 'open_short',
-            'trade_value': gross_value, 'commission': commission,
-            'quantity': trade_quantity_calc
-        })
-        self.current_hold_duration = 1
-
-        if self.trade_logger:
-            self.trade_id_counter += 1
-            self.trade_logger.log_trade({
-                'trade_id': self.trade_id_counter,
-                'trade_type': 'open_short',
-                'step': self.current_step,
-                'price': current_price,
-                'quantity': trade_quantity_calc,
-                'balance': self.balance,
-                'net_worth': self.net_worth
+        if trade_success:
+            self.position_type = POSITION_SHORT
+            self.last_trade_step = self.current_step
+            self.trade_details.update({
+                'trade_success': True, 'trade_type': 'open_short',
+                'trade_value': value, 'commission': commission,
+                'quantity': trade_quantity_calc
             })
-        return True
+            self.current_hold_duration = 1
+
+            if self.trade_logger:
+                self.trade_id_counter += 1
+                self.trade_logger.log_trade({
+                    'trade_id': self.trade_id_counter,
+                    'trade_type': 'open_short',
+                    'step': self.current_step,
+                    'price': current_price,
+                    'quantity': trade_quantity_calc,
+                    'balance': self.balance,
+                    'net_worth': self.net_worth
+                })
+            return True
+        else:
+            self.trade_details['trade_type'] = 'open_short_failed'
+            self.actual_action_executed = ACTION_HOLD
+            return False
 
     def _execute_close_short(self, current_price: float) -> bool:
-        """
-        Execute CLOSE_SHORT action (buy to cover short position).
+        """Execute CLOSE_SHORT action (buy to cover short position).
 
-        Closing a short:
-        1. Buy back the asset at current price
-        2. Return to broker
-        3. P&L = entry_price - exit_price (profit if price went down)
+        Sprint 1 fix: Now routes through _execute_trade('buy_to_cover', ...)
+        for consistent rollback protection on failure, matching the long-side pattern.
         """
         if abs(self.stock_quantity) <= self.min_trade_quantity or self.position_type != POSITION_SHORT:
             self.actual_action_executed = ACTION_HOLD
@@ -1672,72 +1892,51 @@ class TradingEnv(gym.Env):
 
         quantity_to_cover = abs(self.stock_quantity)
 
-        # Buy to cover: pay current price + spread + slippage
-        price_with_spread = current_price * (1 + self.transaction_fee_percentage)
-        effective_buy_price = price_with_spread * (1 + self.slippage_percentage)
-        gross_cost = effective_buy_price * quantity_to_cover
+        trade_success, value, commission, pnl_abs, pnl_pct = self._execute_trade(
+            'buy_to_cover', current_price, quantity_to_cover
+        )
 
-        # Calculate commission
-        commission_pct_trade = self.trade_commission_pct_of_trade
-        commission = gross_cost * commission_pct_trade
-
-        total_cost = gross_cost + commission
-
-        # Check if we can afford to close
-        if total_cost > self.balance:
-            self.trade_details['trade_type'] = 'close_short_insufficient_funds'
-            return False
-
-        # Calculate P&L for short: profit if price went DOWN
-        # P&L = (entry_price - exit_price) * quantity
-        pnl_abs = (self.entry_price - current_price) * quantity_to_cover - commission
-        if self.entry_price > 0:
-            pnl_pct = ((self.entry_price - current_price) / self.entry_price) * 100
-        else:
-            pnl_pct = 0.0
-
-        # Execute: pay to cover, clear position
-        self.balance -= total_cost
-        self.stock_quantity = 0.0
-        self.position_type = POSITION_FLAT
-        self.last_trade_step = self.current_step
-        self.entry_price = np.nan
-
-        self.total_fees_paid_episode += commission
-        self.transaction_cost_incurred_step = commission
-        self.traded_value_step = current_price * quantity_to_cover
-
-        # Record trade
-        self.trade_history_summary.append({
-            'step': self.current_step,
-            'pnl_abs': pnl_abs, 'pnl_pct': pnl_pct, 'type': 'close_short'
-        })
-        self.total_trades += 1
-        if pnl_abs > 0:
-            self.winning_trades += 1
-        else:
-            self.losing_trades += 1
-        self.current_hold_duration = 0
-
-        self.trade_details.update({
-            'trade_success': True, 'trade_type': 'close_short',
-            'trade_value': gross_cost, 'commission': commission,
-            'trade_pnl_abs': pnl_abs, 'trade_pnl_pct': pnl_pct
-        })
-
-        if self.trade_logger:
-            self.trade_logger.log_trade({
-                'trade_id': self.trade_id_counter,
-                'trade_type': 'close_short',
+        if trade_success:
+            self.position_type = POSITION_FLAT
+            self.last_trade_step = self.current_step
+            self.trade_history_summary.append({
                 'step': self.current_step,
-                'price': current_price,
-                'pnl_abs': pnl_abs,
-                'pnl_pct': pnl_pct,
-                'balance': self.balance,
-                'net_worth': self.net_worth,
-                'duration_bars': self.current_hold_duration
+                'pnl_abs': pnl_abs, 'pnl_pct': pnl_pct, 'type': 'close_short'
             })
-        return True
+            self.total_trades += 1
+            if pnl_abs > 0:
+                self.winning_trades += 1
+            else:
+                self.losing_trades += 1
+            self.current_hold_duration = 0
+
+            # Sprint 6: Update rolling win rate for Kelly position sizing
+            self._win_rate_window.append(1.0 if pnl_abs > 0 else 0.0)
+            if len(self._win_rate_window) >= self._win_rate_min_trades:
+                self._rolling_win_rate = float(np.mean(self._win_rate_window))
+
+            self.trade_details.update({
+                'trade_success': True, 'trade_type': 'close_short',
+                'trade_value': value, 'commission': commission,
+                'trade_pnl_abs': pnl_abs, 'trade_pnl_pct': pnl_pct
+            })
+
+            if self.trade_logger:
+                self.trade_logger.log_trade({
+                    'trade_id': self.trade_id_counter,
+                    'trade_type': 'close_short',
+                    'step': self.current_step,
+                    'price': current_price,
+                    'pnl_abs': pnl_abs,
+                    'pnl_pct': pnl_pct,
+                    'balance': self.balance,
+                    'net_worth': self.net_worth,
+                    'duration_bars': self.current_hold_duration
+                })
+            return True
+        else:
+            self.trade_details['trade_type'] = 'close_short_failed'
+            return False
 
     def _update_portfolio_value(self, current_price: float) -> None:
         """
@@ -1879,15 +2078,26 @@ class TradingEnv(gym.Env):
 
             if unrealized_pnl > 0:
                 # Profitable hold: reward to encourage letting winners run
-                hold_reward = min(0.5, unrealized_pnl_pct * 100)
+                # Sprint 3: cap raised from 0.5 → HOLD_REWARD_CAP (1.5)
+                # Old 6:1 close:hold ratio caused premature profit-taking
+                hold_reward = min(HOLD_REWARD_CAP, unrealized_pnl_pct * 100)
             else:
                 # Losing hold: convex penalty (bigger losses hurt more)
                 loss_pct = abs(unrealized_pnl_pct)
                 hold_reward = max(-2.0, -(loss_pct * 100) ** 1.2)
 
         # =========================================================================
-        # STEP 5: TRADE CLOSE BONUS (Risk-Reward Based)
+        # STEP 5: TRADE CLOSE QUALITY MULTIPLIER (Sprint 4: fix double-counting)
         # =========================================================================
+        # OLD: Additive trade_bonus up to 3.0 (then 2.0 after Sprint 3) on top of
+        #      profitability_reward. A +2% close earned ~2.0 log-return + ~2.0 bonus
+        #      = 4.0 total, while a -2% loss got -2.0 log-return + -0.5 = -2.5.
+        #      This asymmetry inflated winning signals and double-counted P&L.
+        #
+        # NEW: Winning trades get a quality MULTIPLIER on profitability_reward
+        #      (1.0x to 2.0x based on R:R ratio). No separate additive bonus.
+        #      A +2% close now earns 2.0 * 1.6x = 3.2 (not 4.0).
+        #      Losing trades keep a mild -0.5 penalty (log-return already negative).
         trade_bonus = 0.0
 
         closed_trade_types = ['sell', 'close_long', 'close_short']
@@ -1896,21 +2106,27 @@ class TradingEnv(gym.Env):
             trade_pnl_pct = self.trade_details.get('trade_pnl_pct', 0.0)
 
             if trade_pnl_abs > 0:
-                # Winning trade: reward proportional to risk-reward quality
-                # Use pnl_pct as proxy for RR (SL is ~1% per config)
+                # Quality multiplier: boost profitability_reward by R:R quality
                 actual_rr = abs(trade_pnl_pct) / max(STOP_LOSS_PERCENTAGE * 100, 0.1)
-                trade_bonus = min(3.0, actual_rr)
+                quality_multiplier = min(CLOSE_BONUS_CAP, 1.0 + actual_rr * 0.3)
+                profitability_reward *= quality_multiplier
+                # trade_bonus stays 0.0 — no separate additive component
             else:
-                # Losing trade: fixed mild penalty (PnL itself already negative)
+                # Losing trade: mild fixed penalty (log-return already negative)
                 trade_bonus = -0.5
 
         # =========================================================================
-        # STEP 5b: TRADE OPEN BONUS (encourages agent to actually trade)
+        # STEP 5b: DEFERRED ENTRY BONUS (Sprint 2: anti-churning fix)
         # =========================================================================
+        # OLD: Unconditional open_bonus=0.3 on every entry → churning exploit
+        #      (net +0.24/trade from open+close with zero hold).
+        # NEW: Bonus deferred until position survives MIN_HOLD_FOR_BONUS bars.
+        #      This forces the agent to hold at least 1 hour (4 bars on M15)
+        #      before collecting the entry reward, eliminating the churn exploit.
         open_bonus = 0.0
-        if self.trade_details.get('trade_type') in ['open_long', 'open_short']:
-            if self.trade_details.get('trade_success'):
-                open_bonus = 0.3  # Small incentive to enter positions from FLAT
+        if (self.position_type != POSITION_FLAT
+                and self.current_hold_duration == MIN_HOLD_FOR_BONUS):
+            open_bonus = 0.3  # Deferred entry bonus — survived MIN_HOLD_FOR_BONUS bars
 
         # =========================================================================
         # STEP 6: COMPOSITE + LINEAR SCALING (no tanh - preserves gradient signal)
@@ -2079,6 +2295,14 @@ class TradingEnv(gym.Env):
         self.current_hold_duration = 0
         self.transaction_cost_incurred_step = 0.0
         self.traded_value_step = 0.0
+
+        # Sprint 6: Reset rolling win rate tracker (keep uninformative prior)
+        self._rolling_win_rate = 0.5
+        self._win_rate_window.clear()
+
+        # Sprint 12: Reset VaR engine
+        if self._var_engine is not None:
+            self._var_engine.reset()
 
         # --- 5️⃣ Episode boundaries ---
         min_possible_step = int(self.lookback_window_size - 1)

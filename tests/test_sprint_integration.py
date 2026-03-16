@@ -71,8 +71,10 @@ def sample_news_texts():
 
 @pytest.fixture
 def temp_log_dir():
-    """Create temporary directory for logs."""
-    temp_dir = tempfile.mkdtemp()
+    """Create temporary directory for logs under allowed audit paths."""
+    log_base = Path("./logs/test_audit")
+    log_base.mkdir(parents=True, exist_ok=True)
+    temp_dir = tempfile.mkdtemp(dir=str(log_base))
     yield temp_dir
     shutil.rmtree(temp_dir, ignore_errors=True)
 
@@ -115,15 +117,16 @@ class TestSprint1Components:
 
     def test_kill_switch_creation(self):
         """Test kill switch can be created."""
-        from src.agents import KillSwitch, KillSwitchConfig, create_kill_switch
+        from src.agents import KillSwitch, KillSwitchConfig
 
+        # Create with persistence disabled to avoid loading production halt state
         config = KillSwitchConfig(
-            daily_loss_limit_pct=5.0,
-            total_drawdown_limit_pct=15.0,
-            max_positions=10
+            max_daily_loss_pct=0.05,
+            max_drawdown_pct=0.15,
+            max_consecutive_losses=10
         )
 
-        kill_switch = create_kill_switch(config)
+        kill_switch = KillSwitch(config=config, enable_persistence=False)
         assert kill_switch is not None
         assert not kill_switch.is_halted
 
@@ -131,20 +134,23 @@ class TestSprint1Components:
         """Test audit logger can be created."""
         from src.agents import create_audit_logger, AuditEventType
 
+        # create_audit_logger: session_id, log_directory, preset (no service_name)
         logger = create_audit_logger(
-            log_directory=temp_log_dir,
-            service_name="test_service"
+            log_directory=temp_log_dir
         )
 
         assert logger is not None
 
-        # Test logging a decision
+        # Test logging a decision using correct signature
         logger.log_decision(
             decision_id="test-001",
-            action_proposed="BUY XAUUSD 0.1",
-            agents_consulted=[],
+            proposal_id="prop-001",
+            proposed_action="BUY",
+            proposed_quantity=0.1,
+            proposed_symbol="XAUUSD",
             final_decision="APPROVE",
-            reasoning="Test decision"
+            agent_assessments=[],
+            reasoning=["Test decision"]
         )
 
 
@@ -263,7 +269,7 @@ class TestSprint1Sprint2Integration:
         from src.agents import (
             EventBus,
             EventType,
-            TradeProposal,
+            AgentEvent,
             create_audit_logger
         )
 
@@ -272,8 +278,7 @@ class TestSprint1Sprint2Integration:
 
         # Create audit logger to track events
         audit_logger = create_audit_logger(
-            log_directory=temp_log_dir,
-            service_name="integration_test"
+            log_directory=temp_log_dir
         )
 
         # Track received events
@@ -285,24 +290,19 @@ class TestSprint1Sprint2Integration:
         # Subscribe to trade proposals
         event_bus.subscribe(EventType.TRADE_PROPOSED, event_handler)
 
-        # Create a trade proposal (simulating PPO agent decision)
-        proposal = TradeProposal(
-            proposal_id="test-001",
-            symbol="XAUUSD",
-            action="BUY",
-            quantity=0.1,
-            price=1920.50,
-            timestamp=datetime.now(),
+        # Create an agent event for trade proposal
+        event = AgentEvent(
+            event_type=EventType.TRADE_PROPOSED,
             source_agent="PPO_Agent",
-            confidence=0.85
+            payload={"action": "BUY", "asset": "XAUUSD", "quantity": 0.1, "price": 1920.50}
         )
 
         # Publish the event
-        event_bus.publish(EventType.TRADE_PROPOSED, proposal)
+        event_bus.publish(event)
 
         # Verify event was received
         assert len(received_events) == 1
-        assert received_events[0].symbol == "XAUUSD"
+        assert received_events[0].payload["asset"] == "XAUUSD"
 
     def test_combined_decision_pipeline(self, sample_market_data, sample_news_texts, temp_log_dir):
         """Test complete decision pipeline with all components."""
@@ -320,14 +320,16 @@ class TestSprint1Sprint2Integration:
         sentiment_analyzer = create_sentiment_analyzer()
         regime_predictor = create_regime_predictor()
         var_calculator = VaRCalculator()
-        kill_switch = KillSwitch(KillSwitchConfig(
-            daily_loss_limit_pct=5.0,
-            total_drawdown_limit_pct=15.0,
-            max_positions=10
-        ))
+        kill_switch = KillSwitch(
+            config=KillSwitchConfig(
+                max_daily_loss_pct=0.05,
+                max_drawdown_pct=0.15,
+                max_consecutive_losses=10
+            ),
+            enable_persistence=False
+        )
         audit_logger = create_audit_logger(
-            log_directory=temp_log_dir,
-            service_name="combined_test"
+            log_directory=temp_log_dir
         )
 
         # Step 1: Analyze sentiment
@@ -364,22 +366,25 @@ class TestSprint1Sprint2Integration:
             'can_trade': not is_halted and var_result.var_pct < 0.1
         }
 
-        # Step 6: Log the decision
+        # Step 6: Log the decision using correct signature
         audit_logger.log_decision(
             decision_id="combined-001",
-            action_proposed="ANALYZE_MARKET",
-            agents_consulted=[
+            proposal_id="prop-combined-001",
+            proposed_action="ANALYZE_MARKET",
+            proposed_quantity=0.1,
+            proposed_symbol="XAUUSD",
+            final_decision="PROCEED" if decision['can_trade'] else "HALT",
+            agent_assessments=[
                 {"agent": "sentiment", "output": decision['sentiment']},
                 {"agent": "var", "output": f"VaR: {decision['var_pct']:.2%}"}
             ],
-            final_decision="PROCEED" if decision['can_trade'] else "HALT",
-            reasoning=f"Sentiment: {decision['sentiment']}, VaR: {decision['var_pct']:.2%}"
+            reasoning=[f"Sentiment: {decision['sentiment']}, VaR: {decision['var_pct']:.2%}"]
         )
 
         # Verify all components produced valid output
         assert isinstance(decision['sentiment_score'], float)
         assert decision['var_amount'] > 0
-        assert isinstance(decision['can_trade'], bool)
+        assert isinstance(decision['can_trade'], (bool, np.bool_))
 
 
 # =============================================================================
@@ -391,7 +396,7 @@ class TestStressIntegration:
 
     def test_high_volume_events(self, temp_log_dir):
         """Test system handles high volume of events."""
-        from src.agents import EventBus, EventType, TradeProposal
+        from src.agents import EventBus, EventType, AgentEvent
 
         event_bus = EventBus()
         received_count = [0]  # Use list for mutable counter
@@ -401,21 +406,21 @@ class TestStressIntegration:
 
         event_bus.subscribe(EventType.TRADE_PROPOSED, counter_handler)
 
-        # Send 1000 events
-        for i in range(1000):
-            proposal = TradeProposal(
-                proposal_id=f"stress-{i:04d}",
-                symbol="XAUUSD",
-                action="BUY" if i % 2 == 0 else "SELL",
-                quantity=0.1,
-                price=1920.50 + i * 0.01,
-                timestamp=datetime.now(),
+        # Send 500 events (EventBus rate limit is 500 events/10s)
+        for i in range(500):
+            event = AgentEvent(
+                event_type=EventType.TRADE_PROPOSED,
                 source_agent="StressTest",
-                confidence=0.5
+                payload={
+                    "action": "BUY" if i % 2 == 0 else "SELL",
+                    "asset": "XAUUSD",
+                    "quantity": 0.1,
+                    "price": 1920.50 + i * 0.01,
+                }
             )
-            event_bus.publish(EventType.TRADE_PROPOSED, proposal)
+            event_bus.publish(event)
 
-        assert received_count[0] == 1000
+        assert received_count[0] == 500
 
     def test_rapid_sentiment_analysis(self, sample_news_texts):
         """Test rapid sentiment analysis."""

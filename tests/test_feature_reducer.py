@@ -71,13 +71,14 @@ class TestDecorrelatedFeatures:
         df = make_ohlcv_df()
         result = compute_decorrelated_ohlcv(df)
 
-        # OHLC should be gone
-        assert "Open" not in result.columns
-        assert "High" not in result.columns
-        assert "Low" not in result.columns
-        assert "Close" not in result.columns
+        # OHLC is preserved (environment needs them for trade execution/SL/TP)
+        # but decorrelated features are added alongside
+        assert "Open" in result.columns
+        assert "High" in result.columns
+        assert "Low" in result.columns
+        assert "Close" in result.columns
 
-        # New features should exist
+        # New decorrelated features should exist
         assert "log_return" in result.columns
         assert "hl_range" in result.columns
         assert "close_position" in result.columns
@@ -107,12 +108,12 @@ class TestDecorrelatedFeatures:
         result = compute_decorrelated_ohlcv(df)
         assert (result["hl_range"] >= 0).all()
 
-    def test_reduces_feature_count(self):
+    def test_adds_3_decorrelated_features(self):
         df = make_ohlcv_df()
         original_count = len(df.columns)
         result = compute_decorrelated_ohlcv(df)
-        # Removed 4 (OHLC), added 3 → net -1
-        assert len(result.columns) == original_count - 1
+        # OHLC preserved, 3 decorrelated features added
+        assert len(result.columns) == original_count + 3
 
 
 # =============================================================================

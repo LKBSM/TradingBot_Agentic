@@ -486,17 +486,28 @@ class DynamicRiskManager:
         self.tsl_activated = False
         return sl_distance
 
-    def update_trailing_stop(self, entry_price: float, current_price: float, current_atr: float, is_long: bool):
+    def update_trailing_stop(self, entry_price: float, current_price: float,
+                             current_atr: float, is_long: bool,
+                             high: float = None, low: float = None):
         """
         Updates the Trailing Stop Loss if the position is in profit.
+
+        Sprint 9: Uses bar High (for longs) or Low (for shorts) as the best
+        price for TSL advancement, giving more accurate trailing behavior.
         """
         self.is_long_position = is_long
 
         if np.isnan(self.current_stop_loss) or np.isnan(entry_price) or current_atr <= 1e-9:
             return
 
-        # Calculate absolute profit
-        profit_abs = current_price - entry_price if self.is_long_position else entry_price - current_price
+        # Sprint 9: Use High for longs, Low for shorts as best intra-bar price
+        if self.is_long_position:
+            best_price = high if high is not None else current_price
+        else:
+            best_price = low if low is not None else current_price
+
+        # Calculate absolute profit using best intra-bar price
+        profit_abs = best_price - entry_price if self.is_long_position else entry_price - best_price
 
         # TSL activation threshold is based on a multiplier of current ATR
         tsl_activation_threshold = self.tsl_start_profit_multiplier * current_atr
@@ -509,36 +520,49 @@ class DynamicRiskManager:
 
             # Determine the new stop loss price
             if self.is_long_position:
-                new_sl = current_price - tsl_trail_distance
+                new_sl = best_price - tsl_trail_distance
                 # Only raise the SL (never lower it)
                 self.current_stop_loss = max(self.current_stop_loss, new_sl)
             else:
-                new_sl = current_price + tsl_trail_distance
+                new_sl = best_price + tsl_trail_distance
                 # Only lower the SL (never raise it)
                 self.current_stop_loss = min(self.current_stop_loss, new_sl)
 
-    def check_trade_exit(self, current_price: float, is_long: bool) -> str:
+    def check_trade_exit(self, current_price: float, is_long: bool,
+                         high: float = None, low: float = None) -> Tuple[str, float]:
         """
-        Checks if exit conditions (TP, SL) are met.
+        Checks if exit conditions (TP, SL) are met using intra-bar High/Low.
+
+        Sprint 9: Uses High and Low to detect SL/TP touches within the bar,
+        not just at Close. Returns (signal, fill_price) where fill_price is
+        the SL/TP level (not the Close), simulating realistic broker fills.
+
+        Returns:
+            Tuple of (exit_signal, fill_price):
+            - ('SL', sl_price) if stop loss was hit
+            - ('TP', tp_price) if take profit was hit
+            - ('none', current_price) if no exit
         """
         self.is_long_position = is_long
+        bar_high = high if high is not None else current_price
+        bar_low = low if low is not None else current_price
 
         if self.is_long_position:
-            # Check Stop Loss (price hits or crosses below SL)
-            if not np.isnan(self.current_stop_loss) and current_price <= self.current_stop_loss:
-                return 'SL'
-            # Check Take Profit (price hits or crosses above TP)
-            if not np.isnan(self.current_take_profit) and current_price >= self.current_take_profit:
-                return 'TP'
+            # Check Stop Loss: Low touches or crosses below SL
+            if not np.isnan(self.current_stop_loss) and bar_low <= self.current_stop_loss:
+                return 'SL', self.current_stop_loss
+            # Check Take Profit: High touches or crosses above TP
+            if not np.isnan(self.current_take_profit) and bar_high >= self.current_take_profit:
+                return 'TP', self.current_take_profit
         else:  # Short position
-            # Check Stop Loss (price hits or crosses above SL)
-            if not np.isnan(self.current_stop_loss) and current_price >= self.current_stop_loss:
-                return 'SL'
-            # Check Take Profit (price hits or crosses below TP)
-            if not np.isnan(self.current_take_profit) and current_price <= self.current_take_profit:
-                return 'TP'
+            # Check Stop Loss: High touches or crosses above SL
+            if not np.isnan(self.current_stop_loss) and bar_high >= self.current_stop_loss:
+                return 'SL', self.current_stop_loss
+            # Check Take Profit: Low touches or crosses below TP
+            if not np.isnan(self.current_take_profit) and bar_low <= self.current_take_profit:
+                return 'TP', self.current_take_profit
 
-        return 'none'
+        return 'none', current_price
 
     def reset(self) -> None:
         """
@@ -562,7 +586,8 @@ class DynamicRiskManager:
                                          risk_reward_ratio: float,
                                          current_price: float = None,
                                          max_leverage: float = 1.0,
-                                         is_long: bool = True) -> float:
+                                         is_long: bool = True,
+                                         training_mode: bool = True) -> float:
         """
         Calculates the optimal trade size using a TRIPLE constraint system:
         1. Fixed Risk Limit (Risk Neutral)
@@ -578,6 +603,8 @@ class DynamicRiskManager:
             current_price: Current asset price (needed for leverage calc)
             max_leverage: Maximum allowed leverage (default 1.0 = no leverage)
             is_long: True for long positions, False for shorts
+            training_mode: If True, apply Kelly floor for exploration.
+                          If False (eval/live), Kelly=0 → position_size=0 (no edge = no trade).
 
         Returns:
             Position size capped by all three constraints
@@ -612,9 +639,15 @@ class DynamicRiskManager:
         # Apply regime scaling to the Kelly limit (less aggressive in Chaos regime)
         kelly_fraction_limit = profile['kelly_fraction_limit'] * self._get_regime_scaling(regime)
 
-        # Floor: Kelly=0 means "no edge" but we still allow small positions
-        # so the RL agent can explore. Without this, Kelly=0 blocks ALL trades.
-        effective_kelly_fraction = max(0.02, min(full_kelly_fraction, kelly_fraction_limit))
+        # Sprint 5: Conditional Kelly floor based on training_mode
+        # Training: floor at 0.02 so the RL agent can explore even with no edge
+        # Live/Eval: respect Kelly=0 → no mathematical edge = no trade
+        if training_mode:
+            effective_kelly_fraction = max(0.02, min(full_kelly_fraction, kelly_fraction_limit))
+        else:
+            if full_kelly_fraction <= 0:
+                return 0.0  # No edge → no trade
+            effective_kelly_fraction = min(full_kelly_fraction, kelly_fraction_limit)
         capital_alloc_kelly = account_equity * effective_kelly_fraction
 
         # Size = Capital Allocated / Risk per Unit (if ATR distance is used as a proxy for price)
@@ -634,15 +667,10 @@ class DynamicRiskManager:
         # The final position size is the MOST CONSERVATIVE result from ALL methods
         final_size = min(size_rn, size_fk, size_leverage_limit)
 
-        # Sprint 5: Apply correlation risk adjustment
-        correlation_multiplier = self.market_state.get('correlation_multiplier', 1.0)
-        if correlation_multiplier < 1.0:
-            import logging
-            logging.getLogger(__name__).info(
-                "Position size adjusted by correlation multiplier: %.2f",
-                correlation_multiplier,
-            )
-        final_size *= correlation_multiplier
+        # Sprint 7: Removed dead correlation_multiplier code.
+        # Was always 1.0 (no-op) in single-asset (XAU/USD) backtesting.
+        # TODO: If multi-asset support is added, implement cross-asset correlation
+        # adjustment here using RiskIntegrationAgent output.
 
         # Ensure minimum trade quantity
         if final_size < self.min_trade_quantity:

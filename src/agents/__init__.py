@@ -318,7 +318,7 @@ except ImportError as e:
 FinBERTSentimentAnalyzer = None
 SentimentResult = None
 AggregatedSentiment = None
-SentimentCategory = None
+SentimentLabel = None
 SentimentConfig = None
 create_sentiment_analyzer = None
 
@@ -327,7 +327,7 @@ try:
         SentimentAnalyzer as FinBERTSentimentAnalyzer,
         SentimentResult,
         AggregatedSentiment,
-        SentimentCategory,
+        SentimentLabel,
         SentimentConfig,
         create_sentiment_analyzer
     )
@@ -345,8 +345,8 @@ try:
     from src.agents.regime_predictor import (
         RegimePredictor,
         RegimePrediction,
-        MarketRegime as HMMMarketRegime,
-        RegimeConfig,
+        PredictedRegime as HMMMarketRegime,
+        RegimePredictorConfig as RegimeConfig,
         create_regime_predictor
     )
 except ImportError as e:
@@ -597,7 +597,7 @@ __all__ = [
     'FinBERTSentimentAnalyzer',
     'SentimentResult',
     'AggregatedSentiment',
-    'SentimentCategory',
+    'SentimentLabel',
     'SentimentConfig',
     'create_sentiment_analyzer',
     'RegimePredictor',

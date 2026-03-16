@@ -59,10 +59,14 @@ def compute_decorrelated_ohlcv(df: pd.DataFrame) -> pd.DataFrame:
         / np.maximum(hl, 1e-8)
     )
 
-    # Drop raw OHLC (keep Volume)
-    for col in ["Open", "High", "Low", "Close"]:
-        if col in out.columns:
-            out.drop(columns=[col], inplace=True)
+    # NOTE: We do NOT drop OHLC from the DataFrame.
+    # The environment still needs Close, High, Low for:
+    #   - Trade execution (current_market_price = Close)
+    #   - SL/TP checking (High, Low for intra-bar checks)
+    #   - Portfolio valuation
+    # The FEATURES list in config.py controls which columns enter the obs space.
+    # OHLC is excluded from FEATURES when USE_DECORRELATED_FEATURES=True,
+    # so the decorrelated features replace OHLC in the observation only.
 
     return out
 

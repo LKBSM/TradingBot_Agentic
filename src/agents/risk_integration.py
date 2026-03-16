@@ -116,8 +116,8 @@ class IntegratedRiskResult:
     Complete risk evaluation result from all components.
     """
     # Decision
-    decision: RiskDecision
-    is_approved: bool
+    decision: RiskDecision = RiskDecision.APPROVE
+    is_approved: bool = True
     decision_id: str = field(default_factory=lambda: f"risk_{uuid.uuid4().hex[:12]}")
 
     # Position sizing

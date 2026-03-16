@@ -458,7 +458,8 @@ class DeadManSwitch:
             self._stats['heartbeats_sent'] += 1
             self._last_successful_heartbeat = datetime.utcnow()
             self._consecutive_failures = 0
-            self._status = HeartbeatStatus.HEALTHY
+            if self._status != HeartbeatStatus.STOPPED:
+                self._status = HeartbeatStatus.HEALTHY
         else:
             self._stats['heartbeats_failed'] += 1
             self._consecutive_failures += 1

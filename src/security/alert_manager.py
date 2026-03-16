@@ -400,6 +400,10 @@ class AlertManager:
                 # Synchronous delivery
                 result = self._deliver_to_channel(alert, channel)
                 results.append(result)
+                with self._lock:
+                    self._history.append(result)
+                    if len(self._history) > self._max_history:
+                        self._history = self._history[-self._max_history:]
 
         # Update rate limit tracking
         self._last_sent[alert.dedup_key] = datetime.utcnow()

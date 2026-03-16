@@ -154,6 +154,7 @@ class CurriculumCallback(BaseCallback):
         env: UnifiedAgenticEnv,
         reward_shaper: AdvancedRewardShaper,
         base_hyperparams: Dict[str, Any],
+        ewc_callback=None,
         verbose: int = 1
     ):
         super().__init__(verbose)
@@ -161,6 +162,9 @@ class CurriculumCallback(BaseCallback):
         self.env = env
         self.reward_shaper = reward_shaper
         self.base_hyperparams = base_hyperparams
+
+        # Sprint 14: EWC callback reference for phase-transition snapshots
+        self._ewc_callback = ewc_callback
 
         self.current_phase_idx = 0
         self.phase_start_timestep = 0
@@ -266,6 +270,14 @@ class CurriculumCallback(BaseCallback):
         self.model.save(checkpoint_path)
         self._logger.info(f"Phase {self.current_phase_idx + 1} checkpoint saved: {checkpoint_path}")
 
+        # Sprint 14: Take EWC snapshot before advancing (protects learned weights)
+        if self._ewc_callback is not None:
+            self._ewc_callback.snapshot(self.model)
+            self._logger.info(
+                f"EWC snapshot taken at phase transition "
+                f"(snapshot #{self._ewc_callback.n_snapshots})"
+            )
+
         # Advance to next phase
         self.current_phase_idx += 1
         self.phase_start_timestep = self.num_timesteps
@@ -298,9 +310,16 @@ class CurriculumCallback(BaseCallback):
             self.model.learning_rate = new_lr
 
             # Adjust entropy coefficient
-            new_ent = self.base_hyperparams.get('ent_coef', 0.05) * phase.entropy_coef_multiplier
+            # Sprint 13: Entropy is controlled here by phase multiplier.
+            # EntropyAnnealingCallback must NOT be used alongside CurriculumCallback.
+            base_ent = self.base_hyperparams.get('ent_coef', 0.05)
+            new_ent = base_ent * phase.entropy_coef_multiplier
             self.model.ent_coef = new_ent
 
+            self._logger.info(
+                f"Phase {phase.description}: ent_coef set to {new_ent:.4f} "
+                f"(base={base_ent:.4f} x multiplier={phase.entropy_coef_multiplier})"
+            )
             self._logger.info(
                 f"Phase config applied: mode={phase.mode.name}, "
                 f"lr={new_lr:.2e}, ent_coef={new_ent:.3f}"

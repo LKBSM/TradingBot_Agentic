@@ -152,8 +152,9 @@ class TestRiskAdjustment:
 # =============================================================================
 
 class TestPositionSizingIntegration:
-    def test_correlation_multiplier_applied(self):
-        """Verify risk_manager applies correlation_multiplier from market_state."""
+    def test_correlation_multiplier_ignored_after_sprint7(self):
+        """Sprint 7: correlation_multiplier removed from position sizing.
+        Setting it in market_state should have NO effect on position size."""
         from src.environment.risk_manager import DynamicRiskManager
 
         config = {
@@ -171,17 +172,16 @@ class TestPositionSizingIntegration:
             "test", 100000, 50.0, 0.55, 2.0, current_price=2000.0
         )
 
-        # Reduced size (breakdown)
+        # Same size even with breakdown multiplier (Sprint 7: removed)
         rm.market_state['correlation_multiplier'] = 0.3
-        size_reduced = rm.calculate_adaptive_position_size(
+        size_with_breakdown = rm.calculate_adaptive_position_size(
             "test", 100000, 50.0, 0.55, 2.0, current_price=2000.0
         )
 
         assert size_full > 0
-        assert size_reduced > 0
-        # Breakdown should reduce by ~70%
-        ratio = size_reduced / size_full
-        assert 0.25 <= ratio <= 0.35, f"Expected ~0.3 ratio, got {ratio:.3f}"
+        assert size_full == size_with_breakdown, (
+            "Sprint 7: correlation_multiplier should no longer affect sizing"
+        )
 
     def test_correlation_multiplier_defaults_to_1(self):
         """Without correlation_multiplier in market_state, size is unchanged."""
@@ -280,10 +280,11 @@ class TestPrometheusGauges:
 # =============================================================================
 
 class TestSyntheticIntegration:
-    def test_correlation_drop_reduces_position_70_percent(self):
+    def test_correlation_drop_no_longer_affects_sizing(self):
         """
-        Roadmap test: Feed data where Gold-DXY correlation drops from -0.8 to +0.2.
-        Verify position size decreases by ~70%.
+        Sprint 7: correlation_multiplier removed from position sizing.
+        Correlation changes are tracked by CorrelationTracker but no longer
+        directly scale position size in single-asset mode.
         """
         from src.environment.risk_manager import DynamicRiskManager
 
@@ -303,9 +304,9 @@ class TestSyntheticIntegration:
             "test", 100000, 50.0, 0.55, 2.0, current_price=2000.0
         )
 
-        reduction = 1.0 - (size_breakdown / size_stable)
-        assert 0.65 <= reduction <= 0.75, (
-            f"Expected ~70% reduction, got {reduction:.1%}"
+        # Sprint 7: sizes should be equal now
+        assert size_stable == size_breakdown, (
+            "Sprint 7: correlation_multiplier no longer affects position sizing"
         )
 
 

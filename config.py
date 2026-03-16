@@ -146,36 +146,61 @@ POSITION_LONG = 1
 POSITION_SHORT = -1
 
 # ═════════════════════════════════════════════════════════════════════════════
-# OPTIMIZED FEATURE SET (15 features - removed sparse/redundant)
+# OPTIMIZED FEATURE SET (Sprint 8: conditional OHLC vs decorrelated)
 # ═════════════════════════════════════════════════════════════════════════════
-# Removed features (low predictive value for RL):
-# - UP_FRACTAL, DOWN_FRACTAL: Sparse (mostly NaN), binary signals
-# - BULLISH_OB_HIGH/LOW, BEARISH_OB_HIGH/LOW: Sparse zone markers
-# - MACD_line, MACD_signal: Redundant with MACD_Diff
-# - BB_M: Redundant (just SMA, less useful than bands)
+# When USE_DECORRELATED_FEATURES=True:
+#   - Raw OHLC (4 features) replaced by log_return, hl_range, close_position (3)
+#   - Total: 14 base features (was 15) + 14 MTF = 28 per bar
+#   - Obs space: 20 bars × 28 + 3 state = 563 (+ 20 agent = 583)
+#   - REQUIRES RETRAIN — old models incompatible with new obs shape
 #
-# Impact: 2x faster training, reduced overfitting
-FEATURES = [
-    # OHLCV Base (5 features)
-    'Open', 'High', 'Low', 'Close', 'Volume',
+# When USE_DECORRELATED_FEATURES=False:
+#   - Original 15 features + 14 MTF = 29 per bar → 20×29+3 = 583 (+20 = 603)
+if USE_DECORRELATED_FEATURES:
+    FEATURES = [
+        # Decorrelated price features (3 features, replaces OHLC 4)
+        'log_return', 'hl_range', 'close_position',
+        'Volume',
 
-    # Technical Indicators (6 features)
-    'RSI',        # Momentum - key oscillator
-    'MACD_Diff',  # Trend - most useful MACD component
-    'BB_L',       # Volatility - lower band
-    'BB_H',       # Volatility - upper band
-    'ATR',        # Volatility - essential for risk
-    'SPREAD',     # Candle range - intraday volatility
+        # Technical Indicators (6 features)
+        'RSI',        # Momentum - key oscillator
+        'MACD_Diff',  # Trend - most useful MACD component
+        'BB_L',       # Volatility - lower band
+        'BB_H',       # Volatility - upper band
+        'ATR',        # Volatility - essential for risk
+        'SPREAD',     # Candle range - intraday volatility
 
-    # Smart Money Concepts (4 features)
-    'FVG_SIGNAL',       # Fair Value Gaps - institutional footprint
-    'BOS_SIGNAL',       # Break of Structure - trend direction
-    'CHOCH_SIGNAL',     # Change of Character - reversals
-    'OB_STRENGTH_NORM', # Order Block strength - key SMC signal
+        # Smart Money Concepts (4 features)
+        'FVG_SIGNAL',       # Fair Value Gaps - institutional footprint
+        'BOS_SIGNAL',       # Break of Structure - trend direction
+        'CHOCH_SIGNAL',     # Change of Character - reversals
+        'OB_STRENGTH_NORM', # Order Block strength - key SMC signal
 
-    # Gap Detection (1 feature)
-    'WEEKEND_GAP',      # Weekend/holiday gap size for Gold
-]
+        # Gap Detection (1 feature)
+        'WEEKEND_GAP',      # Weekend/holiday gap size for Gold
+    ]
+else:
+    FEATURES = [
+        # OHLCV Base (5 features)
+        'Open', 'High', 'Low', 'Close', 'Volume',
+
+        # Technical Indicators (6 features)
+        'RSI',        # Momentum - key oscillator
+        'MACD_Diff',  # Trend - most useful MACD component
+        'BB_L',       # Volatility - lower band
+        'BB_H',       # Volatility - upper band
+        'ATR',        # Volatility - essential for risk
+        'SPREAD',     # Candle range - intraday volatility
+
+        # Smart Money Concepts (4 features)
+        'FVG_SIGNAL',       # Fair Value Gaps - institutional footprint
+        'BOS_SIGNAL',       # Break of Structure - trend direction
+        'CHOCH_SIGNAL',     # Change of Character - reversals
+        'OB_STRENGTH_NORM', # Order Block strength - key SMC signal
+
+        # Gap Detection (1 feature)
+        'WEEKEND_GAP',      # Weekend/holiday gap size for Gold
+    ]
 
 # Multi-Timeframe Features (14 features) - Higher timeframe context for Gold
 # These are computed by MultiTimeframeFeatures and added dynamically in _process_data()
@@ -323,6 +348,17 @@ REWARD_OUTPUT_SCALE = 1.0    # Disabled: linear clip replaces output scaling in 
 # OLD values kept as comments for audit trail.
 LOSING_TRADE_PENALTY = 0.5       # Was 0.0 (Sprint 2: mild penalty for losses)
 WINNING_TRADE_BONUS = 0.0        # Was 2.0 (Sprint 2: replaced by RR-based bonus in reward fn)
+MIN_HOLD_FOR_BONUS = 4           # Deferred entry bonus: only pay after N bars (1 hour on M15)
+HOLD_REWARD_CAP = 1.5            # Sprint 3: was 0.5 — lets winners run with stronger hold signal
+CLOSE_BONUS_CAP = 2.0            # Sprint 3: was 3.0 — reduces premature profit-taking incentive
+KELLY_FLOOR_TRAINING = 0.02      # Sprint 5: minimum Kelly fraction during training (exploration)
+KELLY_FLOOR_LIVE = 0.0           # Sprint 5: no floor in live/eval — Kelly=0 means no trade
+ROLLING_WIN_RATE_WINDOW = 50     # Sprint 6: rolling window size for empirical win rate
+ROLLING_WIN_RATE_MIN_TRADES = 10 # Sprint 6: minimum trades before trusting empirical win rate
+USE_DYNAMIC_SLIPPAGE = True      # Sprint 10: ATR-proportional slippage model
+SLIPPAGE_ATR_SCALE = 1.0         # Sprint 10: exponent for ATR ratio (1.0 = linear)
+USE_DYNAMIC_SPREAD = True        # Sprint 11: session-dependent spread model
+SPREAD_NEWS_MULTIPLIER = 3.0     # Sprint 11: spread widens 3x near high-impact events
 
 # Friction: penalize transaction costs to discourage churning
 W_FRICTION = 0.3                 # Was 0.1 (Sprint 2: respect transaction costs)
@@ -461,6 +497,12 @@ except ImportError:
 
 # Entropy annealing schedule (step_threshold -> ent_coef)
 # Adjusted thresholds for 2M total timesteps
+#
+# Sprint 13 NOTE: When using CurriculumCallback, entropy is controlled by
+# PhaseConfig.entropy_coef_multiplier (curriculum_trainer.py), NOT this schedule.
+# This schedule is only used by SophisticatedTrainer / EntropyAnnealingCallback.
+# Do NOT use both CurriculumCallback and EntropyAnnealingCallback simultaneously
+# — they will conflict and produce unpredictable entropy behavior.
 ENTROPY_ANNEALING_SCHEDULE = {
     0:         0.05,    # Phase 1 (BASE): High exploration
     200_000:   0.02,    # Phase 2 (ENRICHED): Moderate exploration

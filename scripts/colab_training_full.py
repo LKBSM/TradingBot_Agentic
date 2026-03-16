@@ -85,27 +85,87 @@ for pkg in packages:
 print("Packages installed!\n")
 
 # =============================================================================
-# STEP 2: CLONE REPOSITORY
+# STEP 2: CLONE REPOSITORY (Sprint 15: Pinned to verified commit)
+# =============================================================================
+# SECURITY: Clone a specific verified commit to prevent supply-chain attacks.
+# After each release, update VERIFIED_COMMIT to the new commit hash.
+# The script will verify critical file checksums after checkout.
 # =============================================================================
 print("=" * 70)
-print("STEP 2: Cloning TradingBot_Agentic repository...")
+print("STEP 2: Cloning TradingBot_Agentic repository (pinned commit)...")
 print("=" * 70)
+
+import hashlib
 
 REPO_URL = "https://github.com/LKBSM/TradingBot_Agentic.git"
 REPO_DIR = "TradingBot_Agentic"
 
+# Sprint 15: Pin to a verified commit hash
+# UPDATE THIS after each release — run: git rev-parse HEAD
+VERIFIED_COMMIT = "b38c407"  # Last verified release commit
+
+# Sprint 15: SHA-256 checksums of critical files (update with each release)
+# Generate with: python -c "import hashlib; print(hashlib.sha256(open('file','rb').read()).hexdigest())"
+# Set to None to skip checksum verification (first-time setup)
+CRITICAL_FILE_CHECKSUMS = None  # Set to dict after first verified deployment
+# Example when configured:
+# CRITICAL_FILE_CHECKSUMS = {
+#     'config.py': 'abc123...',
+#     'src/environment/environment.py': 'def456...',
+#     'src/environment/risk_manager.py': 'ghi789...',
+# }
+
+def _verify_checksums(base_dir: str, checksums: dict) -> None:
+    """Verify SHA-256 checksums of critical files after checkout."""
+    if checksums is None:
+        print("  Checksum verification skipped (CRITICAL_FILE_CHECKSUMS=None)")
+        print("  To enable: run the checksum generator and update this script")
+        return
+
+    print(f"  Verifying {len(checksums)} critical file checksums...")
+    for filepath, expected_hash in checksums.items():
+        full_path = os.path.join(base_dir, filepath)
+        if not os.path.exists(full_path):
+            raise FileNotFoundError(f"SECURITY: Critical file missing: {filepath}")
+        actual = hashlib.sha256(open(full_path, 'rb').read()).hexdigest()
+        if actual != expected_hash:
+            raise RuntimeError(
+                f"SECURITY: File {filepath} has been tampered with!\n"
+                f"  Expected: {expected_hash}\n"
+                f"  Actual:   {actual}\n"
+                f"  This may indicate a supply-chain compromise."
+            )
+        print(f"  OK: {filepath}")
+    print("  All checksums verified!")
+
 # Detect if we're already inside the repo (re-run scenario)
 if os.path.exists('config.py') and os.path.exists('src/environment/environment.py'):
-    print(f"Already inside repository at {os.getcwd()}, pulling latest...")
-    subprocess.run(["git", "pull", "--ff-only"], check=False)
+    print(f"Already inside repository at {os.getcwd()}")
+    # Verify we're on the correct commit
+    current_commit = subprocess.check_output(
+        ["git", "rev-parse", "--short", "HEAD"], text=True
+    ).strip()
+    if not current_commit.startswith(VERIFIED_COMMIT[:7]):
+        print(f"  WARNING: Current commit {current_commit} != verified {VERIFIED_COMMIT}")
+        print(f"  Checking out verified commit...")
+        subprocess.check_call(["git", "fetch", "origin"])
+        subprocess.check_call(["git", "checkout", VERIFIED_COMMIT])
+    else:
+        print(f"  Commit verified: {current_commit}")
+    _verify_checksums(os.getcwd(), CRITICAL_FILE_CHECKSUMS)
 elif os.path.exists(REPO_DIR):
-    print(f"Repository already exists at {REPO_DIR}, pulling latest...")
-    subprocess.run(["git", "-C", REPO_DIR, "pull", "--ff-only"], check=False)
+    print(f"Repository already exists at {REPO_DIR}")
+    subprocess.check_call(["git", "-C", REPO_DIR, "fetch", "origin"])
+    subprocess.check_call(["git", "-C", REPO_DIR, "checkout", VERIFIED_COMMIT])
     os.chdir(REPO_DIR)
+    _verify_checksums(os.getcwd(), CRITICAL_FILE_CHECKSUMS)
 else:
     print(f"Cloning from {REPO_URL}...")
-    subprocess.check_call(["git", "clone", "--depth", "1", REPO_URL])
+    subprocess.check_call(["git", "clone", REPO_URL])
     os.chdir(REPO_DIR)
+    print(f"Checking out verified commit: {VERIFIED_COMMIT}")
+    subprocess.check_call(["git", "checkout", VERIFIED_COMMIT])
+    _verify_checksums(os.getcwd(), CRITICAL_FILE_CHECKSUMS)
 
 # Add repo to Python path so imports work
 sys.path.insert(0, os.getcwd())

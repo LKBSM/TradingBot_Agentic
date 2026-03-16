@@ -345,6 +345,15 @@ class FedWatchAdapter(BaseNewsAdapter):
             # Simulate decreasing certainty for further meetings
             certainty = 0.7 - (i * 0.15)
 
+            # Compute raw probabilities and normalize to sum to 1.0
+            raw_hike = max(0.10 - (i * 0.03), 0.0)
+            raw_cut = 0.20 + (i * 0.05)
+            raw_hold = certainty
+            prob_total = raw_hike + raw_cut + raw_hold
+            norm_hike = raw_hike / prob_total
+            norm_cut = raw_cut / prob_total
+            norm_hold = raw_hold / prob_total
+
             probabilities[meeting_key] = RateProbability(
                 meeting_date=meeting_date,
                 current_rate_bps=self._current_rate_bps,
@@ -356,9 +365,9 @@ class FedWatchAdapter(BaseNewsAdapter):
                 },
                 implied_rate_bps=self._current_rate_bps - 10 - (i * 5),
                 rate_change_probability=1 - certainty,
-                hike_probability=0.10 - (i * 0.03),
-                cut_probability=0.20 + (i * 0.05),
-                hold_probability=certainty
+                hike_probability=norm_hike,
+                cut_probability=norm_cut,
+                hold_probability=norm_hold
             )
 
         return probabilities

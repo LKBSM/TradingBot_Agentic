@@ -82,15 +82,17 @@ def sample_positions():
     """Create sample positions for testing."""
     return [
         Position("EURUSD", 100000, 1.1000, 1.1050, "EUR", "forex"),
-        Position("GBPUSD", 50000, 1.2500, 1.2480, "GBP", "forex"),
-        Position("XAUUSD", -20000, 1950.00, 1960.00, "USD", "commodity"),
+        Position("GBPUSD", -50000, 1.2500, 1.2480, "GBP", "forex"),
+        Position("XAUUSD", 10, 1950.00, 1960.00, "USD", "commodity"),
     ]
 
 
 @pytest.fixture
 def temp_log_dir():
-    """Create temporary directory for logs."""
-    temp_dir = tempfile.mkdtemp()
+    """Create temporary directory for logs under allowed audit paths."""
+    log_base = Path("./logs/test_audit")
+    log_base.mkdir(parents=True, exist_ok=True)
+    temp_dir = tempfile.mkdtemp(dir=str(log_base))
     yield temp_dir
     shutil.rmtree(temp_dir, ignore_errors=True)
 
@@ -182,7 +184,7 @@ class TestVaRCalculator:
             method=VaRMethod.HISTORICAL
         )
 
-        assert result.var_amount == 0
+        assert not result.is_valid
         assert result.sample_size == 0
 
 
@@ -506,7 +508,7 @@ class TestKillSwitch:
 
     def test_initialization(self):
         """Test kill switch initialization."""
-        ks = create_kill_switch(preset="moderate")
+        ks = KillSwitch(enable_persistence=False)
 
         assert not ks.is_halted
         assert ks.halt_level == HaltLevel.NONE
@@ -515,7 +517,7 @@ class TestKillSwitch:
     def test_daily_loss_trigger(self):
         """Test daily loss limit trigger."""
         config = KillSwitchConfig(max_daily_loss_pct=0.03)
-        ks = KillSwitch(config=config)
+        ks = KillSwitch(config=config, enable_persistence=False)
 
         # Update with loss exceeding limit
         ks.update(
@@ -530,7 +532,7 @@ class TestKillSwitch:
     def test_max_drawdown_trigger(self):
         """Test max drawdown trigger."""
         config = KillSwitchConfig(max_drawdown_pct=0.10)
-        ks = KillSwitch(config=config)
+        ks = KillSwitch(config=config, enable_persistence=False)
 
         # Update with drawdown exceeding limit
         ks.update(
@@ -544,7 +546,7 @@ class TestKillSwitch:
 
     def test_manual_halt(self):
         """Test manual halt."""
-        ks = KillSwitch()
+        ks = KillSwitch(enable_persistence=False)
 
         ks.manual_halt("Testing manual halt")
 
@@ -553,7 +555,7 @@ class TestKillSwitch:
 
     def test_emergency_halt(self):
         """Test emergency halt."""
-        ks = KillSwitch()
+        ks = KillSwitch(enable_persistence=False)
 
         ks.emergency_halt("Emergency!")
 
@@ -563,7 +565,7 @@ class TestKillSwitch:
 
     def test_position_multiplier(self):
         """Test position multiplier calculation."""
-        ks = KillSwitch()
+        ks = KillSwitch(enable_persistence=False)
 
         # Normal state
         assert ks.get_position_multiplier() == 1.0
@@ -575,7 +577,7 @@ class TestKillSwitch:
     def test_consecutive_losses(self):
         """Test consecutive losses tracking."""
         config = KillSwitchConfig(max_consecutive_losses=3)
-        ks = KillSwitch(config=config)
+        ks = KillSwitch(config=config, enable_persistence=False)
 
         # Record losses
         ks.record_trade_result(-100, -0.01)
@@ -587,7 +589,7 @@ class TestKillSwitch:
 
     def test_daily_reset(self):
         """Test daily counter reset."""
-        ks = KillSwitch()
+        ks = KillSwitch(enable_persistence=False)
 
         ks.record_trade_result(-100, -0.01)
         ks.record_trade_result(-100, -0.01)
@@ -774,7 +776,8 @@ class TestIntegratedRiskManager:
     def test_initialization(self, temp_log_dir):
         """Test manager initialization."""
         config = IntegratedRiskConfig(
-            audit_log_directory=temp_log_dir
+            audit_log_directory=temp_log_dir,
+            enable_kill_switch=False,
         )
         manager = IntegratedRiskManager(
             equity=100000,
@@ -791,7 +794,8 @@ class TestIntegratedRiskManager:
         config = IntegratedRiskConfig(
             max_drawdown=0.20,  # High limit to ensure approval
             enable_audit_logging=True,
-            audit_log_directory=temp_log_dir
+            audit_log_directory=temp_log_dir,
+            enable_kill_switch=False,
         )
         manager = IntegratedRiskManager(
             equity=100000,
@@ -816,7 +820,8 @@ class TestIntegratedRiskManager:
         """Test trade rejection due to drawdown."""
         config = IntegratedRiskConfig(
             max_drawdown=0.05,  # Low limit
-            enable_audit_logging=False
+            enable_audit_logging=False,
+            enable_kill_switch=False,
         )
         manager = IntegratedRiskManager(
             equity=100000,
@@ -843,7 +848,8 @@ class TestIntegratedRiskManager:
             max_drawdown=0.20,
             drawdown_warning=0.03,  # Low warning threshold
             enable_gradual_reduction=True,
-            enable_audit_logging=False
+            enable_audit_logging=False,
+            enable_kill_switch=False,
         )
         manager = IntegratedRiskManager(
             equity=100000,
@@ -868,13 +874,18 @@ class TestIntegratedRiskManager:
     def test_kill_switch_integration(self, temp_log_dir):
         """Test kill switch integration."""
         config = IntegratedRiskConfig(
-            enable_kill_switch=True,
+            enable_kill_switch=False,
             max_daily_loss=0.02,
-            enable_audit_logging=False
+            enable_audit_logging=False,
         )
         manager = IntegratedRiskManager(
             equity=100000,
             config=config
+        )
+        # Manually create kill switch without persistence for testing
+        manager._kill_switch = KillSwitch(
+            config=config.to_kill_switch_config(),
+            enable_persistence=False
         )
 
         # Trigger kill switch manually
@@ -894,7 +905,10 @@ class TestIntegratedRiskManager:
 
     def test_statistics(self, temp_log_dir):
         """Test statistics tracking."""
-        config = IntegratedRiskConfig(enable_audit_logging=False)
+        config = IntegratedRiskConfig(
+            enable_audit_logging=False,
+            enable_kill_switch=False,
+        )
         manager = IntegratedRiskManager(
             equity=100000,
             config=config
@@ -916,7 +930,10 @@ class TestIntegratedRiskManager:
 
     def test_risk_report(self, temp_log_dir):
         """Test comprehensive risk report."""
-        config = IntegratedRiskConfig(enable_audit_logging=False)
+        config = IntegratedRiskConfig(
+            enable_audit_logging=False,
+            enable_kill_switch=False,
+        )
         manager = IntegratedRiskManager(
             equity=100000,
             config=config
@@ -961,7 +978,8 @@ class TestIntegration:
             max_var_pct=0.03,
             max_drawdown=0.15,
             enable_audit_logging=True,
-            audit_log_directory=temp_log_dir
+            audit_log_directory=temp_log_dir,
+            enable_kill_switch=False,
         )
         manager = IntegratedRiskManager(
             equity=100000,
@@ -1009,7 +1027,8 @@ class TestIntegration:
             drawdown_warning=0.05,
             var_warning_threshold=0.01,
             enable_gradual_reduction=True,
-            enable_audit_logging=False
+            enable_audit_logging=False,
+            enable_kill_switch=False,
         )
         manager = IntegratedRiskManager(
             equity=100000,

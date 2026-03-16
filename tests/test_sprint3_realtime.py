@@ -538,12 +538,12 @@ class TestMultiAssetManager:
         manager = MultiAssetManager(assets=['XAUUSD'])
         manager.update_price('XAUUSD', bid=1950.00, ask=1950.50)
 
-        # Valid position
-        can_open, reason = manager.can_open_position('XAUUSD', 1, 0.5)
+        # Valid position (0.1 lots = $19,500 < 30% of $100k limit)
+        can_open, reason = manager.can_open_position('XAUUSD', 1, 0.1)
         assert can_open is True
 
         # Invalid - unknown asset
-        can_open, reason = manager.can_open_position('INVALID', 1, 0.5)
+        can_open, reason = manager.can_open_position('INVALID', 1, 0.1)
         assert can_open is False
         assert 'Unknown' in reason
 
@@ -592,18 +592,21 @@ class TestCorrelationTracker:
 
     def test_correlation_calculation(self):
         """Test correlation calculation."""
-        from src.multi_asset.correlation_tracker import CorrelationTracker
+        from src.multi_asset.correlation_tracker import CorrelationTracker, CorrelationTrackerConfig
 
-        tracker = CorrelationTracker()
+        config = CorrelationTrackerConfig(min_update_interval_sec=0)
+        tracker = CorrelationTracker(config=config)
         tracker.add_asset('ASSET1')
         tracker.add_asset('ASSET2')
 
-        # Add correlated prices (both going up)
+        # Add correlated prices: shared factor with small noise -> high correlation
         np.random.seed(42)
-        for i in range(50):
-            base = 100 + i
-            tracker.update_price('ASSET1', base + np.random.normal(0, 1))
-            tracker.update_price('ASSET2', base + np.random.normal(0, 1))
+        shared = np.cumsum(np.random.randn(100))
+        for i in range(100):
+            tracker.update_prices({
+                'ASSET1': 100 + shared[i] + np.random.normal(0, 0.1),
+                'ASSET2': 100 + shared[i] + np.random.normal(0, 0.1),
+            })
 
         corr = tracker.get_correlation('ASSET1', 'ASSET2')
 
@@ -777,15 +780,15 @@ class TestSprint3Integration:
 class TestAsyncFunctionality:
     """Tests for async functionality."""
 
-    @pytest.mark.asyncio
-    async def test_async_adapter_fetch(self):
+    def test_async_adapter_fetch(self):
         """Test async fetch on adapters."""
+        import asyncio
         from src.agents.news.sources.fed_watch_adapter import FedWatchAdapter
 
         adapter = FedWatchAdapter()
 
         # This will use mock data since no API key
-        articles = await adapter.fetch_async()
+        articles = asyncio.run(adapter.fetch_async())
 
         # Should return articles (even if mock)
         assert isinstance(articles, list)
