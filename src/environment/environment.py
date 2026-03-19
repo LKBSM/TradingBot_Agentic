@@ -1946,26 +1946,30 @@ class TradingEnv(gym.Env):
             net_worth = balance + (quantity * price)
 
         For SHORT positions:
-            net_worth = balance - (quantity * price) + (entry_quantity * entry_price)
-            Simplified: net_worth = balance + unrealized_pnl
-            where unrealized_pnl = (entry_price - current_price) * |quantity|
+            balance already includes short sale proceeds (entry_price * qty).
+            The liability is current_price * quantity (cost to buy back).
+            net_worth = balance - (current_price * quantity)
         """
         if self.position_type == POSITION_LONG:
             # Long: we own the asset, value increases with price
             self.net_worth = self.balance + (self.stock_quantity * current_price)
 
         elif self.position_type == POSITION_SHORT:
-            # Short: we owe the asset, value increases when price decreases
-            # unrealized P&L = (entry_price - current_price) * quantity
+            # Short: balance already includes short sale proceeds.
+            # We OWE qty units — that's a liability at current market price.
+            # net_worth = cash_on_hand - liability
+            #
+            # Example: $1000 initial, short 0.5 units at $2000
+            #   sell_to_open: balance += ~$1000 proceeds → balance ≈ $2000
+            #   liability: 0.5 × $2000 = $1000
+            #   net_worth = $2000 - $1000 = $1000 ✓ (correct: ~initial minus fees)
+            #
+            # FIX: Old formula was net_worth = balance + unrealized_pnl which
+            # double-counted short proceeds (balance already has them), inflating
+            # net_worth ~2x. This gave +10 reward on OPEN_SHORT and -10 on
+            # CLOSE_SHORT, teaching the agent "short = free money" → Sharpe -32.83
             quantity = abs(self.stock_quantity)
-            if not np.isnan(self.entry_price):
-                unrealized_pnl = (self.entry_price - current_price) * quantity
-            else:
-                unrealized_pnl = 0.0
-            # When we opened short, we received: entry_price * quantity
-            # To close, we need to pay: current_price * quantity
-            # Net worth = what we have - what we owe = balance + unrealized_pnl
-            self.net_worth = self.balance + unrealized_pnl
+            self.net_worth = self.balance - (current_price * quantity)
 
         else:  # FLAT
             self.net_worth = self.balance
@@ -2021,31 +2025,33 @@ class TradingEnv(gym.Env):
         turnover_penalty = 0.0
 
         # --- Penalty A: Drawdown Increase (ONLY new drawdown) ---
+        # Scaled by w_DD (curriculum can increase this in later phases)
         current_drawdown = self.peak_nav - self.net_worth
         drawdown_increase = max(0.0, current_drawdown - self.previous_drawdown_level)
 
         if drawdown_increase > 0:
-            dd_penalty = (drawdown_increase / self.initial_balance) * 10.0
+            dd_penalty = (drawdown_increase / self.initial_balance) * 10.0 * self.w_DD
             total_penalty += dd_penalty
 
         # --- Penalty B: Transaction Costs (Friction) ---
+        # Scaled by w_F (curriculum can control friction sensitivity)
         if self.transaction_cost_incurred_step > 0:
-            friction_penalty = (self.transaction_cost_incurred_step / self.initial_balance) * 3.0
+            friction_penalty = (self.transaction_cost_incurred_step / self.initial_balance) * 3.0 * self.w_F
             total_penalty += friction_penalty
 
         # --- Penalty C: Leverage Violation (Quadratic) ---
+        # Scaled by w_L
         leverage_excess = max(0.0, self.current_leverage - self.max_leverage_limit)
         if leverage_excess > 0:
-            leverage_penalty = (leverage_excess ** 2) * 10.0
+            leverage_penalty = (leverage_excess ** 2) * 10.0 * self.w_L
             total_penalty += leverage_penalty
 
         # --- Penalty D: Turnover (anti-churning) ---
-        # With 1x leverage on Gold, a single trade uses ~100% of capital (ratio≈1.0)
-        # Only penalize if trading MORE than full capital (rapid re-trading/churning)
+        # Scaled by w_T (curriculum can control churning sensitivity)
         if self.traded_value_step > 0:
             turnover_ratio = self.traded_value_step / max(self.net_worth, 1.0)
-            if turnover_ratio > 1.5:  # Was 0.3 — too low for concentrated Gold trading
-                turnover_penalty = (turnover_ratio - 1.5) * 2.0
+            if turnover_ratio > 1.5:
+                turnover_penalty = (turnover_ratio - 1.5) * 2.0 * self.w_T
                 total_penalty += turnover_penalty
 
         # --- Penalty E: Invalid Actions (mild - agent needs exploration room) ---
@@ -2061,18 +2067,13 @@ class TradingEnv(gym.Env):
         hold_reward = 0.0
 
         if self.position_type != POSITION_FLAT and not np.isnan(self.entry_price):
-            # Calculate unrealized P&L
+            # Calculate unrealized P&L using current market price directly
+            market_price = float(self.df.iloc[self.current_step]['Close'])
             if self.position_type == POSITION_LONG:
-                current_price = self.net_worth - self.balance
-                if self.stock_quantity > 0:
-                    current_price = current_price / self.stock_quantity
-                else:
-                    current_price = self.entry_price
-                unrealized_pnl = (current_price - self.entry_price) * self.stock_quantity
+                unrealized_pnl = (market_price - self.entry_price) * self.stock_quantity
             else:  # SHORT
                 quantity = abs(self.stock_quantity)
-                # For short: unrealized_pnl already computed in net_worth
-                unrealized_pnl = self.net_worth - self.balance
+                unrealized_pnl = (self.entry_price - market_price) * quantity
 
             unrealized_pnl_pct = unrealized_pnl / self.initial_balance
 

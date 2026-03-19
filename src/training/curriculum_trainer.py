@@ -187,13 +187,23 @@ class CurriculumCallback(BaseCallback):
         self._logger.info(f"Starting curriculum training: {self.current_phase.description}")
 
     def _on_step(self) -> bool:
-        """Check for phase transitions."""
+        """Check for phase transitions with quality gates."""
         self.phase_timesteps = self.num_timesteps - self.phase_start_timestep
 
-        # Check if current phase is complete
+        # Check if current phase timestep budget is reached
         if self.phase_timesteps >= self.current_phase.timesteps:
             if self.current_phase_idx < len(self.config.phases) - 1:
-                self._transition_to_next_phase()
+                # Quality gate: only advance if criteria met or patience exceeded
+                if self._should_advance_phase():
+                    self._transition_to_next_phase()
+                elif self.phase_timesteps >= self.current_phase.timesteps * 1.5:
+                    # Hard cap: advance after 1.5x budget even without quality gate
+                    self._logger.warning(
+                        f"Phase {self.current_phase_idx + 1} hard cap reached "
+                        f"({self.phase_timesteps:,} / {self.current_phase.timesteps:,} budget). "
+                        f"Advancing despite not meeting quality criteria."
+                    )
+                    self._transition_to_next_phase()
             else:
                 self._logger.info("Final phase complete. Training finished.")
                 return True  # Allow training to complete naturally
@@ -300,8 +310,19 @@ class CurriculumCallback(BaseCallback):
         self.env.set_mode(phase.mode)
         self.env.soft_penalty_scale = phase.soft_penalty_scale
 
-        # Update reward shaper weights
+        # Update reward shaper weights (for metrics tracking)
         self.reward_shaper.set_weights(phase.reward_weights)
+
+        # Wire curriculum reward weights to the base environment's _calculate_reward()
+        # This ensures penalty scaling follows the curriculum phase progression:
+        #   Phase 1 (BASE): Lower penalties (focus on exploration)
+        #   Phase 4 (PRODUCTION): Full penalties (focus on risk-adjusted returns)
+        base_env = self.env._base_env
+        rw = phase.reward_weights
+        base_env.w_DD = rw.drawdown_penalty   # Drawdown penalty scaling
+        base_env.w_F = rw.profit_factor       # Friction penalty (reuse profit_factor weight)
+        base_env.w_T = rw.volatility_penalty  # Turnover penalty (reuse volatility_penalty weight)
+        # w_L (leverage) stays at 1.0 — always enforce hard leverage limits
 
         # Update model hyperparameters (if supported)
         if self.model is not None:
@@ -322,7 +343,8 @@ class CurriculumCallback(BaseCallback):
             )
             self._logger.info(
                 f"Phase config applied: mode={phase.mode.name}, "
-                f"lr={new_lr:.2e}, ent_coef={new_ent:.3f}"
+                f"lr={new_lr:.2e}, ent_coef={new_ent:.3f}, "
+                f"w_DD={rw.drawdown_penalty:.2f}, w_F={rw.profit_factor:.2f}"
             )
 
     def get_training_summary(self) -> Dict[str, Any]:
@@ -389,13 +411,26 @@ class CurriculumTrainer:
         os.makedirs(self.config.model_save_dir, exist_ok=True)
         os.makedirs(self.config.tensorboard_log_dir, exist_ok=True)
 
-    def _create_env(self, df: pd.DataFrame, mode: TrainingMode) -> UnifiedAgenticEnv:
-        """Create a unified agentic environment."""
+    def _create_env(self, df: pd.DataFrame, mode: TrainingMode,
+                    pre_fitted_scaler=None) -> UnifiedAgenticEnv:
+        """Create a unified agentic environment.
+
+        Args:
+            df: OHLCV DataFrame
+            mode: Training mode
+            pre_fitted_scaler: Optional pre-fitted scaler (for val/test to avoid
+                              data leakage — scaler should be fit on training data only)
+        """
+        kwargs = {}
+        if pre_fitted_scaler is not None:
+            kwargs['pre_fitted_scaler'] = pre_fitted_scaler
+
         return UnifiedAgenticEnv(
             df=df,
             mode=mode,
             economic_calendar=self.economic_calendar,
-            enable_logging=self.verbose > 1
+            enable_logging=self.verbose > 1,
+            **kwargs
         )
 
     def train(

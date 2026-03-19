@@ -1,27 +1,4 @@
-# =============================================================================
-# TRADING BOT - FULL CURRICULUM TRAINING SCRIPT FOR GOOGLE COLAB
-# =============================================================================
-#
-# HOW TO USE ON GOOGLE COLAB:
-# 1. Open Google Colab: https://colab.research.google.com/
-# 2. Create a new notebook
-# 3. In a cell, run:
-#      %cd /content
-#      !rm -rf /content/TradingBot_Agentic
-#      !rm -f colab_training_full.py
-#      !wget --no-cache -q https://raw.githubusercontent.com/LKBSM/TradingBot_Agentic/main/scripts/colab_training_full.py
-#      %run colab_training_full.py
-#
-# IMPORTANT: Enable GPU before running!
-# Runtime -> Change runtime type -> GPU (T4)
-#
-# CRASH-SAFE: All checkpoints and results are saved to Google Drive.
-# If Colab crashes, re-run the cell - training resumes from last checkpoint.
-#
-# Training: 4-phase curriculum (BASE -> ENRICHED -> SOFT -> PRODUCTION)
-# Total timesteps: 1.5M (configurable)
-# Estimated time: ~3-5 hours on T4 GPU
-# =============================================================================
+
 
 import os
 import sys
@@ -409,7 +386,9 @@ print(f"All checkpoints saved to Google Drive: {DRIVE_BASE}")
 print()
 
 # Configure curriculum
-TOTAL_TIMESTEPS = 3_000_000  # 3M total steps across all phases
+# 2M steps: ~12x coverage of 170K-bar dataset. 3M caused overfitting with broken rewards.
+# With fixed short accounting, 2M is sufficient + early stopping catches sweet spot.
+TOTAL_TIMESTEPS = 2_000_000  # 2M total steps across all phases
 
 # Use Google Drive for model storage (crash-safe)
 curriculum_config = CurriculumConfig(
@@ -570,12 +549,13 @@ class DriveCheckpointCallback(BaseCallback):
             latest_path = os.path.join(self.drive_path, "latest_checkpoint.zip")
             self.model.save(latest_path)
 
-            # Save progress info
+            # Save progress info (include version for crash recovery validation)
             progress_path = os.path.join(self.drive_path, "progress.txt")
             with open(progress_path, 'w') as f:
                 f.write(f"timesteps={self.num_timesteps}\n")
                 f.write(f"checkpoint={checkpoint_path}\n")
                 f.write(f"time={time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+                f.write(f"version={TRAINING_VERSION}\n")
 
             if self.verbose > 0:
                 print(f"  >> SAVED TO DRIVE: {self.num_timesteps:,} steps -> Google Drive")
@@ -586,9 +566,10 @@ class DriveCheckpointCallback(BaseCallback):
 # =========================================================================
 # CHECK FOR EXISTING CHECKPOINT (resume after crash)
 # =========================================================================
-# IMPORTANT: v2 marks models trained with the fixed reward function.
-# Old v1 checkpoints (trained with broken rewards) must NOT be resumed.
-TRAINING_VERSION = "v2_reward_fix"
+# IMPORTANT: v3 marks models trained with fixed short position accounting + scaler pipeline.
+# v2 had catastrophic short net_worth double-counting (Sharpe -32.83).
+# Old v1/v2 checkpoints MUST NOT be resumed — they learned broken behavior.
+TRAINING_VERSION = "v3_short_accounting_fix"
 resume_from = None
 latest_checkpoint = os.path.join(DRIVE_CHECKPOINTS, "latest_checkpoint.zip")
 progress_file = os.path.join(DRIVE_CHECKPOINTS, "progress.txt")
@@ -654,8 +635,15 @@ if resume_from != "COMPLETE":
     import logging
     _logger = logging.getLogger(__name__)
 
-    # Create environment
+    # Create training environment
     trainer.env = trainer._create_env(df_train, TrainingMode.BASE)
+
+    # Extract the fitted scaler from training env for reuse by val/test
+    # CRITICAL: This prevents data leakage — scaler must be fit on train data ONLY.
+    # Previously, each env fitted its own scaler on its own data, causing distribution
+    # mismatch between train/val/test feature spaces.
+    train_scaler = trainer.env._base_env.scaler
+    print(f"Scaler fitted on training data (source: {trainer.env._base_env._scaler_source})")
 
     # Create reward shaper
     from src.training.advanced_reward_shaper import AdvancedRewardShaper
@@ -702,9 +690,11 @@ if resume_from != "COMPLETE":
     # Link progress callback to curriculum callback for phase info
     progress_cb._curriculum_cb = curriculum_callback
 
-    # Validation environment
+    # Validation environment — uses training scaler to avoid data leakage
+    # Also uses ENRICHED mode (not PRODUCTION) to avoid random mock agent constraints
     from stable_baselines3.common.callbacks import EvalCallback
-    env_val = trainer._create_env(df_val, TrainingMode.PRODUCTION)
+    env_val = trainer._create_env(df_val, TrainingMode.ENRICHED,
+                                  pre_fitted_scaler=train_scaler)
 
     eval_callback = EvalCallback(
         env_val,
@@ -740,11 +730,12 @@ if resume_from != "COMPLETE":
     trainer.model.save(final_path)
     print(f"Final model saved to Google Drive: {final_path}")
 
-    # Save completion marker
+    # Save completion marker (include version for crash recovery validation)
     with open(os.path.join(DRIVE_CHECKPOINTS, "progress.txt"), 'w') as f:
         f.write(f"timesteps={TOTAL_TIMESTEPS}\n")
         f.write(f"status=COMPLETE\n")
         f.write(f"time={time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+        f.write(f"version={TRAINING_VERSION}\n")
 
     model = trainer.model
     summary = curriculum_callback.get_training_summary()
@@ -780,12 +771,19 @@ print("=" * 70)
 print("STEP 9: Final evaluation on TEST data (never seen during training)...")
 print("=" * 70)
 
-# Create test environment in PRODUCTION mode (full agent integration)
+# Create test environment in ENRICHED mode (signals visible, no hard constraints)
+# FIX 1: Use ENRICHED instead of PRODUCTION — mock agents randomly block trades
+#         in PRODUCTION mode, degrading evaluation metrics unfairly.
+# FIX 2: Pass training scaler to prevent data leakage (test features must be
+#         scaled with the same min/max as training features).
+# FIX 3: training_mode=False so Kelly criterion properly gates trades (no floor).
 test_env = UnifiedAgenticEnv(
     df=df_test,
-    mode=TrainingMode.PRODUCTION,
+    mode=TrainingMode.ENRICHED,
     economic_calendar=calendar_df,
     enable_logging=False,
+    pre_fitted_scaler=train_scaler,
+    training_mode=False,
 )
 
 # Load best model from Google Drive
