@@ -508,7 +508,8 @@ class TradingEnv(gym.Env):
             'already_in_position': 0,
             'no_long_position': 0,
             'no_short_position': 0,
-            'short_selling_disabled': 0
+            'short_selling_disabled': 0,
+            'daily_loss_limit': 0,
         }
 
         # =====================================================================
@@ -592,10 +593,11 @@ class TradingEnv(gym.Env):
         self.short_overnight_swap_pct = kwargs.get('short_overnight_swap_pct', SHORT_OVERNIGHT_SWAP_PCT)
 
         num_features_per_step = len(self.features)
-        raw_obs_size = num_features_per_step * self.lookback_window_size + 3
+        # v4: 8 state vars (3 original + 5 Markov: entry_price_pct, hold_dur, unrealized_pnl, sl_dist, tp_dist)
+        raw_obs_size = num_features_per_step * self.lookback_window_size + 8
         # Sprint 6: If a fitted FeatureReducer is attached, observation space shrinks
         if self._feature_reducer is not None and self._feature_reducer.is_fitted:
-            expected_obs_size = self._feature_reducer.n_components + 3  # PCA dims + 3 state
+            expected_obs_size = self._feature_reducer.n_components + 8  # PCA dims + 8 state
         else:
             expected_obs_size = raw_obs_size
         self.observation_space = spaces.Box(low=-10.0, high=10.0, shape=(expected_obs_size,), dtype=np.float32)
@@ -793,6 +795,38 @@ class TradingEnv(gym.Env):
 
         logger.info(f"Indicateurs lents interpoles: {slow_indicators}")
 
+        # --- 5.2b: COMPUTE BB_pct (position within Bollinger Bands) ---
+        # Replaces raw BB_L/BB_H (non-stationary price levels that saturate MinMaxScaler)
+        # BB_pct = (Close - BB_L) / (BB_H - BB_L), bounded [0, 1]
+        if 'BB_L' in df_processed.columns and 'BB_H' in df_processed.columns:
+            bb_range = df_processed['BB_H'] - df_processed['BB_L']
+            bb_range = bb_range.replace(0, np.nan)  # Avoid division by zero
+            df_processed['BB_pct'] = (
+                (df_processed['Close'] - df_processed['BB_L']) / bb_range
+            ).clip(0.0, 1.0).fillna(0.5)  # Default to midband when range is zero
+            logger.info("BB_pct computed: position within Bollinger Bands [0, 1]")
+
+        # --- 5.2c: ROLLING Z-SCORE for non-stationary features ---
+        # Pre-normalize features whose absolute scale changes with price level
+        # (ATR, MACD_Diff, Volume grow as Gold goes from $1300 to $2800)
+        # After z-scoring, MinMaxScaler works correctly across all periods
+        #
+        # IMPORTANT: Save raw ATR before z-scoring — risk manager needs absolute
+        # ATR values for SL/TP distances. The z-scored ATR is only for observation features.
+        from config import ZSCORE_WINDOW
+        if 'ATR' in df_processed.columns:
+            df_processed['ATR_raw'] = df_processed['ATR'].copy()
+
+        zscore_features = ['ATR', 'MACD_Diff', 'Volume']
+        for col in zscore_features:
+            if col in df_processed.columns:
+                rolling_mean = df_processed[col].rolling(ZSCORE_WINDOW, min_periods=1).mean()
+                rolling_std = df_processed[col].rolling(ZSCORE_WINDOW, min_periods=1).std()
+                rolling_std = rolling_std.replace(0, 1.0)  # Avoid division by zero
+                df_processed[col] = (df_processed[col] - rolling_mean) / rolling_std
+                df_processed[col] = df_processed[col].fillna(0.0)
+        logger.info(f"Rolling z-score applied to: {zscore_features} (window={ZSCORE_WINDOW})")
+
         # --- 5.3: REMPLISSAGE PAR 0 POUR SIGNAUX SMC ---
         # Ces colonnes sont des signaux événementiels: NaN = "Pas de signal" = 0
         smc_signal_cols = [
@@ -864,9 +898,11 @@ class TradingEnv(gym.Env):
         # =========================================================================
         # ÉTAPE 6b: COMPUTE MEDIAN ATR (Sprint 10: for dynamic slippage)
         # =========================================================================
-        if 'ATR' in df_processed.columns:
-            self._median_atr = float(df_processed['ATR'].median())
-            logger.info(f"Sprint 10: Median ATR = {self._median_atr:.4f}")
+        # Use ATR_raw (pre-z-score) for median ATR — risk manager needs absolute values
+        atr_col = 'ATR_raw' if 'ATR_raw' in df_processed.columns else 'ATR'
+        if atr_col in df_processed.columns:
+            self._median_atr = float(df_processed[atr_col].median())
+            logger.info(f"Sprint 10: Median ATR = {self._median_atr:.4f} (from {atr_col})")
 
         # =========================================================================
         # ÉTAPE 7: RAPPORT FINAL
@@ -961,9 +997,34 @@ class TradingEnv(gym.Env):
         normalized_net_worth = float(current_equity / self.initial_balance)
         normalized_stock_quantity = float(total_position_value / self.initial_balance)
 
-        # --- 7. Concatenate into a single observation vector ---
+        # --- 7. Markov state variables (v4: 5 extra dimensions) ---
+        # These give the policy full information about the current position state
+        if self.position_type != POSITION_FLAT and not np.isnan(self.entry_price) and current_price > 0:
+            entry_price_pct = (self.entry_price / current_price) - 1.0
+            hold_duration_norm = self.current_hold_duration / MAX_DURATION_STEPS
+            unrealized_pnl_pct = 0.0
+            if self.position_type == POSITION_LONG:
+                unrealized_pnl_pct = ((current_price - self.entry_price) * self.stock_quantity) / self.initial_balance
+            elif self.position_type == POSITION_SHORT:
+                unrealized_pnl_pct = ((self.entry_price - current_price) * abs(self.stock_quantity)) / self.initial_balance
+            sl_distance_pct = 0.0
+            if not np.isnan(self.risk_manager.current_stop_loss):
+                sl_distance_pct = (self.risk_manager.current_stop_loss - current_price) / current_price
+            tp_distance_pct = 0.0
+            if not np.isnan(self.risk_manager.current_take_profit):
+                tp_distance_pct = (self.risk_manager.current_take_profit - current_price) / current_price
+        else:
+            entry_price_pct = 0.0
+            hold_duration_norm = 0.0
+            unrealized_pnl_pct = 0.0
+            sl_distance_pct = 0.0
+            tp_distance_pct = 0.0
+
+        # --- 7b. Concatenate into a single observation vector ---
         observation = np.append(
-            flat_obs, [normalized_balance, normalized_stock_quantity, normalized_net_worth]
+            flat_obs, [normalized_balance, normalized_stock_quantity, normalized_net_worth,
+                       entry_price_pct, hold_duration_norm, unrealized_pnl_pct,
+                       sl_distance_pct, tp_distance_pct]
         )
 
         # --- 7b. Clip to observation space bounds for PPO stability ---
@@ -971,9 +1032,9 @@ class TradingEnv(gym.Env):
 
         # --- 8. Shape and value validation ---
         if self._feature_reducer is not None and self._feature_reducer.is_fitted:
-            expected_size = self._feature_reducer.n_components + 3
+            expected_size = self._feature_reducer.n_components + 8
         else:
-            expected_size = len(self.features) * self.lookback_window_size + 3
+            expected_size = len(self.features) * self.lookback_window_size + 8
         if observation.shape[0] != expected_size:
             warnings.warn(
                 f"⚠️ Observation shape mismatch: expected {expected_size}, got {observation.shape[0]}."
@@ -1142,7 +1203,7 @@ class TradingEnv(gym.Env):
         if self._use_dynamic_slippage and self._slippage_model is not None:
             current_atr = 0.0
             try:
-                current_atr = float(self.df.iloc[self.current_step].get('ATR', 0.0))
+                current_atr = float(self.df.iloc[self.current_step].get('ATR_raw', self.df.iloc[self.current_step].get('ATR', 0.0)))
             except (IndexError, KeyError):
                 pass
             return self._slippage_model.get_slippage(current_atr, self._median_atr)
@@ -1497,7 +1558,8 @@ class TradingEnv(gym.Env):
         try:
             current_row = self.df.iloc[self.current_step]
             current_market_price = float(current_row['Close'])
-            current_atr = float(current_row.get('ATR', 0.0))  # Default if missing
+            # v4: Use ATR_raw (pre-z-score) for risk management — z-scored ATR is for obs features only
+            current_atr = float(current_row.get('ATR_raw', current_row.get('ATR', 0.0)))
             bos_signal = float(current_row.get('BOS_SIGNAL', 0.0))  # Default if missing
             # Sprint 9: Extract High/Low for intra-bar SL/TP checking
             current_high = float(current_row.get('High', current_market_price))
@@ -1515,6 +1577,16 @@ class TradingEnv(gym.Env):
         # --- Update risk manager regime ---
         regime_state = 0 if bos_signal != 0 else 1
         self.risk_manager.market_state['current_regime'] = regime_state
+
+        # --- v4: Intraday loss limit (reset every 96 bars = 24h forex) ---
+        from config import DAILY_LOSS_LIMIT
+        if self.current_step % 96 == 0:
+            self._daily_start_balance = self.net_worth
+            self._daily_trading_disabled = False
+        if self._daily_start_balance > 0:
+            daily_pnl_pct = (self.net_worth - self._daily_start_balance) / self._daily_start_balance
+            if daily_pnl_pct < DAILY_LOSS_LIMIT:
+                self._daily_trading_disabled = True
 
         # --- End of episode: Force close any position ---
         if self.current_step >= self.end_idx:
@@ -1543,6 +1615,12 @@ class TradingEnv(gym.Env):
         # Can only CLOSE_SHORT when SHORT
         original_action = action
         invalid_reason = None
+
+        # v4: Block entries (not exits) when daily loss limit hit
+        if self._daily_trading_disabled and action in [ACTION_OPEN_LONG, ACTION_OPEN_SHORT]:
+            action = ACTION_HOLD
+            invalid_reason = 'daily_loss_limit'
+            self.trade_details['trade_type'] = 'blocked_daily_loss_limit'
 
         if action == ACTION_OPEN_LONG and self.position_type != POSITION_FLAT:
             action = ACTION_HOLD
@@ -1613,9 +1691,10 @@ class TradingEnv(gym.Env):
                 self.trade_details['trade_type'] = 'hold_cooldown'
                 action = ACTION_HOLD
 
-        # --- Apply borrowing fees for short positions ---
+        # --- Apply borrowing fees for short positions (per bar, not per day) ---
+        # M15 = 96 bars/day. Old code charged daily rate per bar → 96x overcharge (350%/yr vs 3.65%)
         if self.position_type == POSITION_SHORT and abs(self.stock_quantity) > 0:
-            borrowing_fee = abs(self.stock_quantity) * current_market_price * self.short_borrowing_fee_daily
+            borrowing_fee = abs(self.stock_quantity) * current_market_price * self.short_borrowing_fee_daily / 96.0
             self.balance -= borrowing_fee
             self.total_fees_paid_episode += borrowing_fee
 
@@ -1696,12 +1775,15 @@ class TradingEnv(gym.Env):
 
         # Calculate position size with HARD LEVERAGE ENFORCEMENT
         # The risk manager now caps position size to prevent exceeding max_leverage_limit
+        # v4: Live R:R from ATR-based TP/SL distances (TP_ATR_MULTIPLIER / SL_ATR_MULTIPLIER)
+        from config import TP_ATR_MULTIPLIER
+        live_rr = TP_ATR_MULTIPLIER / max(self.risk_manager.atr_multiplier, 0.5)  # 4.0 / 2.0 = 2.0
         trade_quantity_calc = self.risk_manager.calculate_adaptive_position_size(
             client_id=getattr(self, "_risk_client_id", "default_client"),
             account_equity=self.balance,
             atr_stop_distance=sl_distance_abs,
             win_prob=self._rolling_win_rate,  # Sprint 6: empirical win rate (was 0.5)
-            risk_reward_ratio=TAKE_PROFIT_PERCENTAGE / STOP_LOSS_PERCENTAGE,  # Config R:R (2.0)
+            risk_reward_ratio=live_rr,
             current_price=current_price,
             max_leverage=self.max_leverage_limit,
             is_long=True,
@@ -1826,12 +1908,15 @@ class TradingEnv(gym.Env):
         sl_distance_abs = self.risk_manager.set_trade_orders(current_price, current_atr, is_long=False)
 
         # Calculate position size with HARD LEVERAGE ENFORCEMENT
+        # v4: Live R:R from ATR-based TP/SL distances
+        from config import TP_ATR_MULTIPLIER
+        live_rr = TP_ATR_MULTIPLIER / max(self.risk_manager.atr_multiplier, 0.5)
         trade_quantity_calc = self.risk_manager.calculate_adaptive_position_size(
             client_id=getattr(self, "_risk_client_id", "default_client"),
             account_equity=self.balance,
             atr_stop_distance=sl_distance_abs,
             win_prob=self._rolling_win_rate,  # Sprint 6: empirical win rate (was 0.5)
-            risk_reward_ratio=TAKE_PROFIT_PERCENTAGE / STOP_LOSS_PERCENTAGE,
+            risk_reward_ratio=live_rr,
             current_price=current_price,
             max_leverage=self.max_leverage_limit,
             is_long=False,
@@ -1976,25 +2061,25 @@ class TradingEnv(gym.Env):
 
     def _calculate_reward(self, previous_net_worth: float) -> float:
         """
-        RISK-ADJUSTED REWARD FUNCTION (Sprint 2 Restructuring)
-        ======================================================
+        DIFFERENTIAL SHARPE RATIO REWARD (v4 — Moody & Saffell 1998)
+        =============================================================
 
-        Fixes from audit:
-        - Holding flat is NEUTRAL (0.0), not penalized
-        - Holding profitable positions is REWARDED (let winners run)
-        - Losses get CONVEX penalty (bigger losses hurt exponentially more)
-        - Trade quality measured by risk-reward ratio, not flat bonus
-        - Turnover and friction are penalized to prevent churning
+        Replaces the 10-component additive reward with a single, dense,
+        risk-adjusted signal that naturally penalizes drawdowns and rewards
+        consistent returns without hand-tuned weights.
 
-        Expected reward range: [-20, +20]
-        Typical rewards: [-5, +5]
+        DSR_t = (B_{t-1} * dA_t - 0.5 * A_{t-1} * dB_t) / (B_{t-1} - A_{t-1}^2)^{3/2}
+
+        Where:
+          A_t = EMA of returns
+          B_t = EMA of squared returns
+          eta = decay factor (~0.004, 250-bar half-life)
+
+        Expected reward range: [-10, +10] (clipped for PPO)
 
         Returns:
-            float: Scaled reward for PPO training
+            float: Scaled DSR reward for PPO training
         """
-        import logging
-        _logger = logging.getLogger(__name__)
-
         # =========================================================================
         # STEP 1: VALIDATION
         # =========================================================================
@@ -2002,189 +2087,79 @@ class TradingEnv(gym.Env):
             return -20.0
 
         if np.isnan(self.net_worth) or np.isinf(self.net_worth):
-            _logger.warning("Invalid net_worth: %s at step %d", self.net_worth, self.current_step)
+            logger.warning("Invalid net_worth: %s at step %d", self.net_worth, self.current_step)
             return -20.0
 
         if np.isnan(previous_net_worth) or np.isinf(previous_net_worth):
-            _logger.warning("Invalid previous_net_worth: %s at step %d", previous_net_worth, self.current_step)
+            logger.warning("Invalid previous_net_worth: %s at step %d", previous_net_worth, self.current_step)
             return 0.0
 
         # =========================================================================
-        # STEP 2: CORE PROFITABILITY (log-return scaled to 1% = 1.0)
+        # STEP 2: STEP RETURN
         # =========================================================================
-        log_return = np.log(self.net_worth / previous_net_worth)
-        profitability_reward = log_return * 100.0
+        R_t = (self.net_worth - previous_net_worth) / previous_net_worth
 
         # =========================================================================
-        # STEP 3: RISK-ADJUSTED PENALTIES
+        # STEP 3: DIFFERENTIAL SHARPE RATIO
         # =========================================================================
-        total_penalty = 0.0
-        dd_penalty = 0.0
-        friction_penalty = 0.0
-        leverage_penalty = 0.0
-        turnover_penalty = 0.0
+        eta = self._dsr_eta
+        dA = R_t - self._dsr_A
+        dB = R_t ** 2 - self._dsr_B
 
-        # --- Penalty A: Drawdown Increase (ONLY new drawdown) ---
-        # Scaled by w_DD (curriculum can increase this in later phases)
-        current_drawdown = self.peak_nav - self.net_worth
-        drawdown_increase = max(0.0, current_drawdown - self.previous_drawdown_level)
+        denominator = self._dsr_B - self._dsr_A ** 2
+        if denominator > 1e-12:
+            dsr = (self._dsr_B * dA - 0.5 * self._dsr_A * dB) / (denominator ** 1.5)
+        else:
+            # Warm-up fallback: DSR undefined when variance ≈ 0
+            # Use scaled return to bootstrap learning
+            dsr = R_t * 100.0
 
-        if drawdown_increase > 0:
-            dd_penalty = (drawdown_increase / self.initial_balance) * 10.0 * self.w_DD
-            total_penalty += dd_penalty
+        # Update EMAs (after computing DSR, not before)
+        self._dsr_A += eta * dA
+        self._dsr_B += eta * dB
 
-        # --- Penalty B: Transaction Costs (Friction) ---
-        # Scaled by w_F (curriculum can control friction sensitivity)
-        if self.transaction_cost_incurred_step > 0:
-            friction_penalty = (self.transaction_cost_incurred_step / self.initial_balance) * 3.0 * self.w_F
-            total_penalty += friction_penalty
+        # Scale DSR to PPO-friendly range
+        reward = np.clip(dsr * 100.0, -10.0, 10.0)
 
-        # --- Penalty C: Leverage Violation (Quadratic) ---
-        # Scaled by w_L
-        leverage_excess = max(0.0, self.current_leverage - self.max_leverage_limit)
-        if leverage_excess > 0:
-            leverage_penalty = (leverage_excess ** 2) * 10.0 * self.w_L
-            total_penalty += leverage_penalty
-
-        # --- Penalty D: Turnover (anti-churning) ---
-        # Scaled by w_T (curriculum can control churning sensitivity)
-        if self.traded_value_step > 0:
-            turnover_ratio = self.traded_value_step / max(self.net_worth, 1.0)
-            if turnover_ratio > 1.5:
-                turnover_penalty = (turnover_ratio - 1.5) * 2.0 * self.w_T
-                total_penalty += turnover_penalty
-
-        # --- Penalty E: Invalid Actions (mild - agent needs exploration room) ---
+        # =========================================================================
+        # STEP 4: MINOR PENALTIES (only truly necessary ones)
+        # =========================================================================
+        # Invalid action: small penalty for exploration guidance
         if getattr(self, 'invalid_action_this_step', False):
-            total_penalty += 0.05
-
-        # NOTE: No hold penalty. Holding flat = reward 0.0 (neutral).
-        # NOTE: No duration penalty. Removed to let winners run.
+            reward -= 0.05
 
         # =========================================================================
-        # STEP 4: POSITION HOLDING BONUS/PENALTY (unrealized P&L feedback)
-        # =========================================================================
-        hold_reward = 0.0
-
-        if self.position_type != POSITION_FLAT and not np.isnan(self.entry_price):
-            # Calculate unrealized P&L using current market price directly
-            market_price = float(self.df.iloc[self.current_step]['Close'])
-            if self.position_type == POSITION_LONG:
-                unrealized_pnl = (market_price - self.entry_price) * self.stock_quantity
-            else:  # SHORT
-                quantity = abs(self.stock_quantity)
-                unrealized_pnl = (self.entry_price - market_price) * quantity
-
-            unrealized_pnl_pct = unrealized_pnl / self.initial_balance
-
-            if unrealized_pnl > 0:
-                # Profitable hold: reward to encourage letting winners run
-                # Sprint 3: cap raised from 0.5 → HOLD_REWARD_CAP (1.5)
-                # Old 6:1 close:hold ratio caused premature profit-taking
-                hold_reward = min(HOLD_REWARD_CAP, unrealized_pnl_pct * 100)
-            else:
-                # Losing hold: convex penalty (bigger losses hurt more)
-                loss_pct = abs(unrealized_pnl_pct)
-                hold_reward = max(-2.0, -(loss_pct * 100) ** 1.2)
-
-        # =========================================================================
-        # STEP 5: TRADE CLOSE QUALITY MULTIPLIER (Sprint 4: fix double-counting)
-        # =========================================================================
-        # OLD: Additive trade_bonus up to 3.0 (then 2.0 after Sprint 3) on top of
-        #      profitability_reward. A +2% close earned ~2.0 log-return + ~2.0 bonus
-        #      = 4.0 total, while a -2% loss got -2.0 log-return + -0.5 = -2.5.
-        #      This asymmetry inflated winning signals and double-counted P&L.
-        #
-        # NEW: Winning trades get a quality MULTIPLIER on profitability_reward
-        #      (1.0x to 2.0x based on R:R ratio). No separate additive bonus.
-        #      A +2% close now earns 2.0 * 1.6x = 3.2 (not 4.0).
-        #      Losing trades keep a mild -0.5 penalty (log-return already negative).
-        trade_bonus = 0.0
-
-        closed_trade_types = ['sell', 'close_long', 'close_short']
-        if self.trade_details.get('trade_type') in closed_trade_types and self.trade_details.get('trade_success'):
-            trade_pnl_abs = self.trade_details.get('trade_pnl_abs', 0.0)
-            trade_pnl_pct = self.trade_details.get('trade_pnl_pct', 0.0)
-
-            if trade_pnl_abs > 0:
-                # Quality multiplier: boost profitability_reward by R:R quality
-                actual_rr = abs(trade_pnl_pct) / max(STOP_LOSS_PERCENTAGE * 100, 0.1)
-                quality_multiplier = min(CLOSE_BONUS_CAP, 1.0 + actual_rr * 0.3)
-                profitability_reward *= quality_multiplier
-                # trade_bonus stays 0.0 — no separate additive component
-            else:
-                # Losing trade: mild fixed penalty (log-return already negative)
-                trade_bonus = -0.5
-
-        # =========================================================================
-        # STEP 5b: DEFERRED ENTRY BONUS (Sprint 2: anti-churning fix)
-        # =========================================================================
-        # OLD: Unconditional open_bonus=0.3 on every entry → churning exploit
-        #      (net +0.24/trade from open+close with zero hold).
-        # NEW: Bonus deferred until position survives MIN_HOLD_FOR_BONUS bars.
-        #      This forces the agent to hold at least 1 hour (4 bars on M15)
-        #      before collecting the entry reward, eliminating the churn exploit.
-        open_bonus = 0.0
-        if (self.position_type != POSITION_FLAT
-                and self.current_hold_duration == MIN_HOLD_FOR_BONUS):
-            open_bonus = 0.3  # Deferred entry bonus — survived MIN_HOLD_FOR_BONUS bars
-
-        # =========================================================================
-        # STEP 6: COMPOSITE + LINEAR SCALING (no tanh - preserves gradient signal)
-        # =========================================================================
-        raw_reward = profitability_reward - total_penalty + hold_reward + trade_bonus + open_bonus
-
-        # Linear clip instead of tanh squashing
-        # Tanh was killing the reward signal: a +2% trade ≈ 0.03 after tanh vs 0.5 penalty
-        scaled_reward = np.clip(raw_reward, -10.0, 10.0)
-
-        # =========================================================================
-        # STEP 7: SPECIAL CASES (Terminal Conditions)
+        # STEP 5: TERMINAL CONDITION
         # =========================================================================
         if self.net_worth <= self.minimum_allowed_balance:
             return -20.0
 
-        if current_drawdown > 0:
-            dd_ratio = current_drawdown / self.peak_nav
-            # Gradual drawdown penalty instead of cliff at 15%
-            # Old: flat -5.0 once DD > 15% → killed ALL reward signals during exploration
-            # New: scales from 0 at 10% DD to -3.0 at 30% DD (proportional, not cliff)
-            if dd_ratio > 0.10:
-                dd_excess = dd_ratio - 0.10  # How far past 10%
-                scaled_reward -= min(3.0, dd_excess * 15.0)  # 15% DD → -0.75, 20% → -1.5, 30% → -3.0
+        # =========================================================================
+        # STEP 6: FINAL SAFETY CLIPPING
+        # =========================================================================
+        final_reward = np.clip(reward, -20.0, 20.0)
 
         # =========================================================================
-        # STEP 8: FINAL SAFETY CLIPPING
-        # =========================================================================
-        final_reward = np.clip(scaled_reward, -20.0, 20.0)
-
-        # =========================================================================
-        # STEP 9: REWARD COMPONENT TRACKING (for TensorBoard logging)
+        # STEP 7: REWARD COMPONENT TRACKING (for TensorBoard logging)
         # =========================================================================
         self._last_reward_components = {
-            'profitability': profitability_reward,
-            'dd_penalty': dd_penalty,
-            'friction_penalty': friction_penalty,
-            'leverage_penalty': leverage_penalty,
-            'turnover_penalty': turnover_penalty,
-            'hold_reward': hold_reward,
-            'trade_bonus': trade_bonus,
-            'open_bonus': open_bonus,
-            'raw_reward': raw_reward,
+            'dsr': dsr,
+            'R_t': R_t,
+            'dsr_A': self._dsr_A,
+            'dsr_B': self._dsr_B,
             'final_reward': final_reward,
         }
 
-        # Optional debug logging (via logger, not print)
+        # Optional debug logging
         if hasattr(self, 'debug_rewards') and self.debug_rewards:
-            _logger.debug(
-                "REWARD Step %d | pnl=%.3f dd=%.3f fric=%.3f hold=%.3f trade=%.3f -> %.3f",
-                self.current_step, profitability_reward, dd_penalty,
-                friction_penalty, hold_reward, trade_bonus, final_reward
+            logger.debug(
+                "DSR Step %d | R_t=%.6f dsr=%.4f A=%.6f B=%.10f -> reward=%.3f",
+                self.current_step, R_t, dsr, self._dsr_A, self._dsr_B, final_reward
             )
 
         # Final NaN/Inf check
         if np.isnan(final_reward) or np.isinf(final_reward):
-            _logger.warning("Invalid final_reward: %s at step %d", final_reward, self.current_step)
+            logger.warning("Invalid final_reward: %s at step %d", final_reward, self.current_step)
             return 0.0
 
         return final_reward
@@ -2285,7 +2260,8 @@ class TradingEnv(gym.Env):
             'already_in_position': 0,
             'no_long_position': 0,
             'no_short_position': 0,
-            'short_selling_disabled': 0
+            'short_selling_disabled': 0,
+            'daily_loss_limit': 0,
         }
 
         # --- 4️⃣ Advanced reward trackers ---
@@ -2304,6 +2280,16 @@ class TradingEnv(gym.Env):
         # Sprint 12: Reset VaR engine
         if self._var_engine is not None:
             self._var_engine.reset()
+
+        # v4: Differential Sharpe Ratio state
+        from config import DSR_ETA
+        self._dsr_eta = DSR_ETA
+        self._dsr_A = 0.0       # EMA of returns
+        self._dsr_B = 1e-8      # EMA of squared returns (small epsilon for stability)
+
+        # v4: Intraday loss limit
+        self._daily_start_balance = self.initial_balance
+        self._daily_trading_disabled = False
 
         # --- 5️⃣ Episode boundaries ---
         min_possible_step = int(self.lookback_window_size - 1)

@@ -220,8 +220,8 @@ class TestConfigHyperparameters:
                      'vf_coef', 'n_epochs'}
         assert required.issubset(set(config.MODEL_HYPERPARAMETERS.keys()))
 
-    def test_n_steps_is_2048(self):
-        assert config.MODEL_HYPERPARAMETERS['n_steps'] == 2048
+    def test_n_steps_is_4096(self):
+        assert config.MODEL_HYPERPARAMETERS['n_steps'] == 4096
 
     def test_gamma_is_0995(self):
         assert config.MODEL_HYPERPARAMETERS['gamma'] == 0.995

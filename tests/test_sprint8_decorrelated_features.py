@@ -194,7 +194,8 @@ def test_obs_shape():
 
     n_features = len(env.features)
     lookback = env.lookback_window_size
-    state_dims = 3  # balance_ratio, position_type, hold_duration
+    # v4: 8 state dims (3 original + 5 Markov: entry_pct, hold_dur, unrealized_pnl, sl_dist, tp_dist)
+    state_dims = 8
     expected_dim = lookback * n_features + state_dims
 
     assert obs.shape == (expected_dim,), (

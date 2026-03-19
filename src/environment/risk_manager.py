@@ -476,12 +476,18 @@ class DynamicRiskManager:
         # 1. Calculate SL distance based on regime-adjusted ATR
         stop_loss_price, sl_distance = self.calculate_atr_stop_loss(entry_price, atr, is_long)
         self.current_stop_loss = stop_loss_price
+        # v4: Store ATR multiplier for live R:R calculation
+        regime = self.market_state.get('current_regime', 0)
+        self.atr_multiplier = self._get_regime_multiplier(regime)
 
-        # 2. Calculate fixed TP based on configured percentage
+        # 2. Calculate ATR-based TP (v4: proportional to ATR, symmetric with SL)
+        # TP_ATR_MULTIPLIER / SL_ATR_MULTIPLIER = R:R ratio (4.0 / 2.0 = 2:1)
+        from config import TP_ATR_MULTIPLIER
+        tp_distance = TP_ATR_MULTIPLIER * atr
         if self.is_long_position:
-            self.current_take_profit = entry_price * (1 + self.take_profit_percentage)
+            self.current_take_profit = entry_price + tp_distance
         else:
-            self.current_take_profit = entry_price * (1 - self.take_profit_percentage)
+            self.current_take_profit = entry_price - tp_distance
 
         self.tsl_activated = False
         return sl_distance
@@ -575,6 +581,7 @@ class DynamicRiskManager:
         self.current_take_profit = np.nan
         self.tsl_activated = False
         self.is_long_position = True
+        self.atr_multiplier = 2.0  # Default regime multiplier
         # Reset GARCH update counter but keep the fitted model and EWMA state
         self._last_garch_update = 0
         # Don't reset _ewma_variance - volatility is persistent across episodes

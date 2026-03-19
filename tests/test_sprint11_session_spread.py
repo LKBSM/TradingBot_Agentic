@@ -55,7 +55,7 @@ def _make_env(**kwargs):
 def test_config_constants():
     """USE_DYNAMIC_SPREAD and SPREAD_NEWS_MULTIPLIER should exist."""
     assert USE_DYNAMIC_SPREAD is True
-    assert SPREAD_NEWS_MULTIPLIER == 3.0
+    assert SPREAD_NEWS_MULTIPLIER == 6.0  # v4: increased from 3.0 (real Gold: 5-10x during NFP/FOMC)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

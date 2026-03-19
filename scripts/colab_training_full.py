@@ -401,7 +401,7 @@ curriculum_config = CurriculumConfig(
 
 # PPO hyperparameters optimized for Gold M15 (623-dim obs space)
 base_hyperparams = {
-    'n_steps': 2048,          # Larger rollouts for 623-dim obs space
+    'n_steps': 4096,          # v4: More episodes per rollout (4096/200 = ~20 episodes, was ~4)
     'batch_size': 256,        # Larger batches for stable gradients
     'gamma': 0.995,
     'learning_rate': 2e-4,    # Gentler LR for larger network
@@ -412,7 +412,7 @@ base_hyperparams = {
     'vf_coef': 0.5,
     'n_epochs': 5,
     'policy_kwargs': {
-        'net_arch': [512, 256],          # Must match 623-dim input (default [64,64] is way too small)
+        'net_arch': dict(pi=[256, 128], vf=[256, 128]),  # v4: Separate policy/value heads (was shared [512, 256])
         'activation_fn': torch.nn.Tanh,  # Matches bounded obs space [-10, 10]
     },
 }
@@ -420,8 +420,8 @@ base_hyperparams = {
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(f"Device: {device.upper()}")
 print(f"Total timesteps: {TOTAL_TIMESTEPS:,}")
-print(f"Network architecture: [512, 256] with Tanh activation")
-print(f"Observation space: 30 features x 20 lookback + 3 state + 20 agent signals = 623 dims")
+print(f"Network architecture: pi=[256,128] vf=[256,128] separate heads, Tanh")
+print(f"Observation space: 23 features x 20 lookback + 8 state + 20 agent signals = 488 dims")
 print(f"Action space: 5 actions (HOLD, OPEN_LONG, CLOSE_LONG, OPEN_SHORT, CLOSE_SHORT)")
 print()
 
@@ -569,7 +569,7 @@ class DriveCheckpointCallback(BaseCallback):
 # IMPORTANT: v3 marks models trained with fixed short position accounting + scaler pipeline.
 # v2 had catastrophic short net_worth double-counting (Sharpe -32.83).
 # Old v1/v2 checkpoints MUST NOT be resumed — they learned broken behavior.
-TRAINING_VERSION = "v3_short_accounting_fix"
+TRAINING_VERSION = "v4_dsr_reward"
 resume_from = None
 latest_checkpoint = os.path.join(DRIVE_CHECKPOINTS, "latest_checkpoint.zip")
 progress_file = os.path.join(DRIVE_CHECKPOINTS, "progress.txt")
@@ -667,12 +667,17 @@ if resume_from != "COMPLETE":
             **base_hyperparams
         )
 
+    # v4: EWC regularization — prevents catastrophic forgetting during phase transitions
+    from src.training.ewc_regularization import EWCCallback
+    ewc_callback = EWCCallback(ewc_lambda=1000.0, fisher_samples=2048, verbose=1)
+
     # Create callbacks
     curriculum_callback = CurriculumCallback(
         curriculum_config=curriculum_config,
         env=trainer.env,
         reward_shaper=trainer.reward_shaper,
         base_hyperparams=base_hyperparams,
+        ewc_callback=ewc_callback,
         verbose=1
     )
 

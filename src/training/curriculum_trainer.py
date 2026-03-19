@@ -92,33 +92,34 @@ class CurriculumConfig:
         return [
             # Sprint 8: Entropy multipliers produce correct annealed values
             # with base ent_coef=0.01: 5.0→0.05, 2.0→0.02, 1.0→0.01, 0.5→0.005
+            # v4: Rebalanced phase budgets (35/25/25/15) + reduced Phase 1 entropy
             PhaseConfig(
                 mode=TrainingMode.BASE,
-                timesteps=int(total * 0.20),  # 20% for basics
+                timesteps=int(total * 0.35),  # 35% (was 20%) — hardest learning phase
                 reward_weights=RewardWeights.for_phase(1, 4),
                 eval_freq=10_000,
                 min_sharpe_to_advance=0.3,
                 min_win_rate_to_advance=0.40,
                 soft_penalty_scale=0.0,
                 learning_rate_multiplier=1.0,
-                entropy_coef_multiplier=5.0,   # 0.01 * 5.0 = 0.05 (high exploration)
+                entropy_coef_multiplier=2.0,   # 0.01 * 2.0 = 0.02 (was 5.0→0.05 which dominated loss)
                 description="BASE: Pure market learning"
             ),
             PhaseConfig(
                 mode=TrainingMode.ENRICHED,
-                timesteps=int(total * 0.27),  # 27%
+                timesteps=int(total * 0.25),  # 25% (was 27%)
                 reward_weights=RewardWeights.for_phase(2, 4),
                 eval_freq=15_000,
                 min_sharpe_to_advance=0.5,
                 min_win_rate_to_advance=0.45,
                 soft_penalty_scale=0.0,
                 learning_rate_multiplier=0.8,
-                entropy_coef_multiplier=2.0,   # 0.01 * 2.0 = 0.02
+                entropy_coef_multiplier=1.5,   # 0.01 * 1.5 = 0.015
                 description="ENRICHED: Signal awareness"
             ),
             PhaseConfig(
                 mode=TrainingMode.SOFT,
-                timesteps=int(total * 0.27),  # 27%
+                timesteps=int(total * 0.25),  # 25% (was 27%)
                 reward_weights=RewardWeights.for_phase(3, 4),
                 eval_freq=20_000,
                 min_sharpe_to_advance=0.7,
@@ -130,7 +131,7 @@ class CurriculumConfig:
             ),
             PhaseConfig(
                 mode=TrainingMode.PRODUCTION,
-                timesteps=int(total * 0.26),  # 26%
+                timesteps=int(total * 0.15),  # 15% (was 26%) — only fine-tuning
                 reward_weights=RewardWeights.for_phase(4, 4),
                 eval_freq=25_000,
                 min_sharpe_to_advance=1.0,  # Final target

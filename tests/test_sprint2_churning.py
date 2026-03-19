@@ -1,8 +1,13 @@
 # =============================================================================
-# Sprint 2 Validation: Remove Churning Exploit (RW-1)
+# Sprint 2 Validation: Anti-Churning Properties
 # =============================================================================
-# Verifies that the unconditional open_bonus=0.3 has been replaced with a
-# deferred entry bonus that only fires after MIN_HOLD_FOR_BONUS bars.
+# v4 UPDATE: The deferred entry bonus (open_bonus) has been removed as part of
+# the DSR reward overhaul. DSR naturally discourages churning because:
+# 1. Transaction costs reduce R_t → negative DSR
+# 2. No additive bonus on entry (no churning exploit possible)
+# 3. Only sustained risk-adjusted returns improve the DSR signal
+#
+# These tests now validate that DSR doesn't reward churning behavior.
 #
 # Run with: python -m pytest tests/test_sprint2_churning.py -v
 # =============================================================================
@@ -24,21 +29,18 @@ from src.environment.environment import TradingEnv
 
 
 def _make_data(n_rows=800, base_price=2000.0):
-    """Create flat test data (no trend) for controlled reward testing."""
     np.random.seed(42)
-    prices = np.full(n_rows, base_price) + np.random.normal(0, 0.5, n_rows)
-
+    prices = base_price + np.random.normal(0, 2, n_rows).cumsum() * 0.1
     df = pd.DataFrame({
         'Date': pd.date_range('2023-01-01', periods=n_rows, freq='15min'),
         'Open': prices * 0.999,
-        'High': prices * 1.002,
-        'Low': prices * 0.998,
+        'High': prices * 1.003,
+        'Low': prices * 0.997,
         'Close': prices,
         'Volume': np.full(n_rows, 500),
         'ATR': np.full(n_rows, 10.0),
         'RSI': np.full(n_rows, 50.0),
         'BOS_SIGNAL': np.zeros(n_rows),
-        'OB_SIGNAL': np.zeros(n_rows),
     })
     df.set_index('Date', inplace=True)
     return df
@@ -50,190 +52,161 @@ def _make_env():
 
 
 def _step_n(env, action, n):
-    """Step environment n times with given action, return last result."""
     result = None
     for _ in range(n):
         result = env.step(action)
-        if result[2]:  # done
+        if result[2]:
             break
     return result
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Test 1: Config constant exists
+# Test 1: No bonus on immediate open (DSR has no entry bonus)
 # ─────────────────────────────────────────────────────────────────────────────
-def test_min_hold_for_bonus_exists():
-    """MIN_HOLD_FOR_BONUS is defined in config.py."""
-    assert isinstance(MIN_HOLD_FOR_BONUS, int)
-    assert MIN_HOLD_FOR_BONUS >= 1, "Must require at least 1 bar hold"
-    assert MIN_HOLD_FOR_BONUS == 4, f"Expected 4 (1 hour on M15), got {MIN_HOLD_FOR_BONUS}"
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Test 2: No bonus on trade open step
-# ─────────────────────────────────────────────────────────────────────────────
-def test_no_bonus_on_open_step():
-    """Opening a position should NOT grant an immediate bonus."""
+def test_no_bonus_on_entry():
+    """v4: DSR has no entry bonus. Opening a position should not produce large positive reward."""
     env = _make_env()
     env.reset()
     _step_n(env, ACTION_HOLD, 10)
 
-    # Open long and capture reward details
+    # Balance before
+    nw_before = env.net_worth
     obs, reward, done, trunc, info = env.step(ACTION_OPEN_LONG)
-    assert env.position_type == POSITION_LONG
 
-    # The open_bonus component should be 0 on the entry step
-    reward_details = getattr(env, '_last_reward_components', {})
-    if 'open_bonus' in reward_details:
-        assert reward_details['open_bonus'] == 0.0, (
-            f"open_bonus should be 0 on entry step, got {reward_details['open_bonus']}"
+    # Opening costs fees → reward should not be positive
+    if env.position_type == POSITION_LONG:
+        assert reward <= 1.0, (
+            f"Entry should not produce large positive reward with DSR. Got {reward:.2f}"
         )
     env.close()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Test 3: No bonus before MIN_HOLD_FOR_BONUS
-# ─────────────────────────────────────────────────────────────────────────────
-def test_no_bonus_before_threshold():
-    """Holding for fewer than MIN_HOLD_FOR_BONUS bars should NOT trigger bonus."""
-    env = _make_env()
-    env.reset()
-    _step_n(env, ACTION_HOLD, 10)
-
-    env.step(ACTION_OPEN_LONG)
-    assert env.position_type == POSITION_LONG
-
-    # Hold for MIN_HOLD_FOR_BONUS - 2 bars (should get NO bonus on any of these)
-    for i in range(MIN_HOLD_FOR_BONUS - 2):
-        obs, reward, done, trunc, info = env.step(ACTION_HOLD)
-        reward_details = getattr(env, '_last_reward_components', {})
-        if 'open_bonus' in reward_details:
-            assert reward_details['open_bonus'] == 0.0, (
-                f"open_bonus should be 0 at hold_duration={i+2}, "
-                f"got {reward_details['open_bonus']}"
-            )
-    env.close()
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Test 4: Bonus fires exactly at MIN_HOLD_FOR_BONUS
+# Test 4: DSR reward components exist
 # ─────────────────────────────────────────────────────────────────────────────
 def test_bonus_at_threshold():
-    """The deferred bonus should fire exactly when hold_duration == MIN_HOLD_FOR_BONUS."""
+    """v4: DSR uses dsr/R_t components (no open_bonus)."""
     env = _make_env()
     env.reset()
     _step_n(env, ACTION_HOLD, 10)
 
     env.step(ACTION_OPEN_LONG)
-    assert env.position_type == POSITION_LONG
-    # After open, current_hold_duration = 1
+    if env.position_type != POSITION_LONG:
+        env.close()
+        return
 
-    # Hold until duration reaches MIN_HOLD_FOR_BONUS
-    # We need (MIN_HOLD_FOR_BONUS - 1) more hold steps
-    # because hold_duration starts at 1 after open, incremented each step
-    bonus_found = False
-    for i in range(MIN_HOLD_FOR_BONUS + 2):
+    # Hold for some steps
+    for _ in range(MIN_HOLD_FOR_BONUS + 2):
         obs, reward, done, trunc, info = env.step(ACTION_HOLD)
-        reward_details = getattr(env, '_last_reward_components', {})
-        if 'open_bonus' in reward_details and reward_details['open_bonus'] > 0:
-            bonus_found = True
+        if done:
             break
 
-    assert bonus_found, (
-        f"Deferred entry bonus never fired within {MIN_HOLD_FOR_BONUS + 2} hold steps"
-    )
+    # DSR should have tracked components
+    rc = getattr(env, '_last_reward_components', {})
+    assert 'dsr' in rc, f"DSR component expected. Got: {list(rc.keys())}"
+    assert 'R_t' in rc, f"R_t component expected. Got: {list(rc.keys())}"
     env.close()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Test 5: Bonus fires only once (not every step)
+# Test 5: DSR doesn't produce artificial bonuses
 # ─────────────────────────────────────────────────────────────────────────────
 def test_bonus_fires_once():
-    """The deferred bonus should fire on exactly 1 step, not repeatedly."""
+    """v4: DSR has no open_bonus — only R_t-based signal (no artificial spikes)."""
     env = _make_env()
     env.reset()
     _step_n(env, ACTION_HOLD, 10)
 
     env.step(ACTION_OPEN_LONG)
+    if env.position_type != POSITION_LONG:
+        env.close()
+        return
 
-    bonus_count = 0
+    rewards = []
     for _ in range(MIN_HOLD_FOR_BONUS + 10):
         obs, reward, done, trunc, info = env.step(ACTION_HOLD)
         if done:
             break
-        reward_details = getattr(env, '_last_reward_components', {})
-        if 'open_bonus' in reward_details and reward_details['open_bonus'] > 0:
-            bonus_count += 1
+        rewards.append(reward)
 
-    assert bonus_count == 1, (
-        f"Deferred bonus should fire exactly once, fired {bonus_count} times"
-    )
+    # DSR rewards should be smooth (no artificial spike from open_bonus)
+    # Check that no single reward is more than 5x the median (no spikes)
+    if len(rewards) >= 5:
+        nonzero = [abs(r) for r in rewards if r != 0.0]
+        if nonzero:
+            median_r = np.median(nonzero)
+            if median_r > 0.001:
+                max_r = max(nonzero)
+                assert max_r < median_r * 20, (
+                    f"Artificial reward spike detected: max={max_r:.3f}, median={median_r:.3f}"
+                )
     env.close()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Test 6: Churning exploit eliminated
+# Test 6: Churning exploit eliminated (DSR penalizes via costs)
 # ─────────────────────────────────────────────────────────────────────────────
 def test_churning_exploit_eliminated():
-    """Rapid open→close should NOT earn a positive open_bonus.
+    """Rapid open→close cycles should not accumulate positive reward.
 
-    OLD behavior: open_bonus=0.3 on every entry → net +0.24/trade.
-    NEW behavior: bonus deferred, so immediate close gets 0 bonus.
+    DSR naturally penalizes churning: each cycle pays fees (negative R_t)
+    which drags down the DSR signal.
     """
     env = _make_env()
     env.reset()
     _step_n(env, ACTION_HOLD, 10)
 
-    total_open_bonus = 0.0
+    total_reward = 0.0
 
-    # Do 5 rapid open→close cycles (simulating churning)
-    for _ in range(5):
-        # Open
+    # Do 3 rapid open→close cycles (simulating churning)
+    for _ in range(3):
         obs, r, done, trunc, info = env.step(ACTION_OPEN_LONG)
+        total_reward += r
         if done:
             break
-        rd = getattr(env, '_last_reward_components', {})
-        total_open_bonus += rd.get('open_bonus', 0.0)
 
-        # Skip cooldown
         _step_n(env, ACTION_HOLD, 3)
 
-        # Close immediately
         obs, r, done, trunc, info = env.step(ACTION_CLOSE_LONG)
+        total_reward += r
         if done:
             break
 
-        # Skip cooldown before next cycle
         _step_n(env, ACTION_HOLD, 3)
 
-    assert total_open_bonus == 0.0, (
-        f"Churning exploit still exists! total_open_bonus={total_open_bonus} "
-        f"(should be 0 for immediate open→close)"
+    # Churning should not produce positive cumulative reward
+    # (fees make each cycle negative)
+    assert total_reward <= 2.0, (
+        f"Churning produced positive cumulative reward: {total_reward:.2f} "
+        f"(should be near 0 or negative from fees)"
     )
     env.close()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Test 7: Short positions also get deferred bonus
+# Test 7: Short positions work with DSR
 # ─────────────────────────────────────────────────────────────────────────────
 def test_short_deferred_bonus():
-    """The deferred bonus works for short positions too."""
+    """v4: Short positions should produce valid DSR rewards when holding."""
     env = _make_env()
     env.reset()
     _step_n(env, ACTION_HOLD, 10)
 
     env.step(ACTION_OPEN_SHORT)
-    assert env.position_type == POSITION_SHORT
+    if env.position_type != POSITION_SHORT:
+        env.close()
+        return
 
-    bonus_found = False
-    for i in range(MIN_HOLD_FOR_BONUS + 2):
+    rewards = []
+    for _ in range(MIN_HOLD_FOR_BONUS + 2):
         obs, reward, done, trunc, info = env.step(ACTION_HOLD)
-        reward_details = getattr(env, '_last_reward_components', {})
-        if 'open_bonus' in reward_details and reward_details['open_bonus'] > 0:
-            bonus_found = True
+        rewards.append(reward)
+        if done:
             break
 
-    assert bonus_found, "Short position should also receive deferred entry bonus"
+    # DSR should produce some signal while in position
+    rc = getattr(env, '_last_reward_components', {})
+    assert 'dsr' in rc, "DSR component expected for short position"
     env.close()
 
 

@@ -67,12 +67,13 @@ EVAL_END_DATE = "2025-12-31 23:59:00"
 ACTION_SPACE_TYPE = 'discrete'  # 5 actions for long/short trading
 
 # ═════════════════════════════════════════════════════════════════════════════
-# OBSERVATION SPACE (Updated for MTF + Gap features)
+# OBSERVATION SPACE (v4: reduced features + Markov state)
 # ═════════════════════════════════════════════════════════════════════════════
-# Base: 20 bars × 30 features + 3 state = 603 dims
-# With agent signals (UnifiedAgenticEnv): 603 + 20 = 623 dims
+# Decorrelated: 12 base + 11 MTF = 23 features × 20 bars + 8 state = 468 dims
+# With agent signals (UnifiedAgenticEnv): 468 + 20 = 488 dims
 #
-# Features: 16 base (OHLCV + TA + SMC + WEEKEND_GAP) + 14 MTF
+# State vars: balance, position_value, net_worth, entry_price_pct,
+#             hold_duration, unrealized_pnl_pct, sl_distance_pct, tp_distance_pct
 # Bounded: Box(-10, 10) with np.clip for PPO stability
 LOOKBACK_WINDOW_SIZE = 20  # 5 hours of history at M15
 
@@ -96,7 +97,7 @@ USE_INCREMENTAL_FEATURES = False    # Incremental TA engine (enable for live tra
 #   - 500 steps = ~5 days of 15-min bars (good for day trading patterns)
 #   - Set to None for variable length (not recommended for training)
 #
-FIXED_EPISODE_LENGTH = 500  # Fixed episode length for stable PPO training
+FIXED_EPISODE_LENGTH = 200  # Match gamma=0.995 effective horizon (~200 steps)
 USE_FIXED_EPISODE_LENGTH = True  # Set False to use variable length (not recommended)
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -154,21 +155,24 @@ POSITION_SHORT = -1
 #   - Obs space: 20 bars × 28 + 3 state = 563 (+ 20 agent = 583)
 #   - REQUIRES RETRAIN — old models incompatible with new obs shape
 #
-# When USE_DECORRELATED_FEATURES=False:
-#   - Original 15 features + 14 MTF = 29 per bar → 20×29+3 = 583 (+20 = 603)
+# v4 feature reduction: removed redundant/non-stationary features
+#   BB_L, BB_H (raw price levels, saturate at 1.0 on test data) → replaced with BB_pct
+#   SPREAD (duplicates ATR), HTF_RSI_1H (redundant with RSI + 4H RSI)
+#   SESSION, DAY_OF_WEEK (ordinal encoding of categorical data; HOUR_SIN/COS captures this)
+#
+# Decorrelated: 12 base + 11 MTF = 23 per bar → 20×23+8 state = 468 (+20 agent = 488)
+# Non-decorrelated: 13 base + 11 MTF = 24 per bar → 20×24+8 state = 488 (+20 agent = 508)
 if USE_DECORRELATED_FEATURES:
     FEATURES = [
         # Decorrelated price features (3 features, replaces OHLC 4)
         'log_return', 'hl_range', 'close_position',
         'Volume',
 
-        # Technical Indicators (6 features)
+        # Technical Indicators (4 features — removed BB_L, BB_H, SPREAD)
         'RSI',        # Momentum - key oscillator
         'MACD_Diff',  # Trend - most useful MACD component
-        'BB_L',       # Volatility - lower band
-        'BB_H',       # Volatility - upper band
-        'ATR',        # Volatility - essential for risk
-        'SPREAD',     # Candle range - intraday volatility
+        'ATR',        # Volatility - essential for risk sizing
+        'BB_pct',     # Position within Bollinger Bands [0,1] — replaces raw BB_L/BB_H
 
         # Smart Money Concepts (4 features)
         'FVG_SIGNAL',       # Fair Value Gaps - institutional footprint
@@ -184,13 +188,11 @@ else:
         # OHLCV Base (5 features)
         'Open', 'High', 'Low', 'Close', 'Volume',
 
-        # Technical Indicators (6 features)
+        # Technical Indicators (4 features — removed BB_L, BB_H, SPREAD)
         'RSI',        # Momentum - key oscillator
         'MACD_Diff',  # Trend - most useful MACD component
-        'BB_L',       # Volatility - lower band
-        'BB_H',       # Volatility - upper band
-        'ATR',        # Volatility - essential for risk
-        'SPREAD',     # Candle range - intraday volatility
+        'ATR',        # Volatility - essential for risk sizing
+        'BB_pct',     # Position within Bollinger Bands [0,1]
 
         # Smart Money Concepts (4 features)
         'FVG_SIGNAL',       # Fair Value Gaps - institutional footprint
@@ -202,14 +204,15 @@ else:
         'WEEKEND_GAP',      # Weekend/holiday gap size for Gold
     ]
 
-# Multi-Timeframe Features (14 features) - Higher timeframe context for Gold
-# These are computed by MultiTimeframeFeatures and added dynamically in _process_data()
+# Multi-Timeframe Features (11 features — removed HTF_RSI_1H, SESSION, DAY_OF_WEEK)
+# HTF_RSI_1H: redundant with 15-min RSI + 4H RSI
+# SESSION/DAY_OF_WEEK: ordinal encoding wrong for categories; HOUR_SIN/COS captures timing
 MTF_FEATURES = [
-    'HTF_TREND_1H', 'HTF_STRENGTH_1H', 'HTF_RSI_1H',
+    'HTF_TREND_1H', 'HTF_STRENGTH_1H',
     'PRICE_VS_SMA20_1H', 'PRICE_VS_SMA50_1H',
     'HTF_TREND_4H', 'HTF_STRENGTH_4H', 'HTF_RSI_4H',
     'PRICE_VS_SMA20_4H', 'PRICE_VS_SMA50_4H',
-    'SESSION', 'DAY_OF_WEEK', 'HOUR_SIN', 'HOUR_COS'
+    'HOUR_SIN', 'HOUR_COS'
 ]
 ENABLE_MTF_FEATURES = True
 
@@ -250,8 +253,8 @@ STOP_LOSS_PERCENTAGE = 0.01  # 1% SL (2:1 Risk:Reward ratio)
 RISK_TO_REWARD_RATIO = TAKE_PROFIT_PERCENTAGE / STOP_LOSS_PERCENTAGE
 
 # Trailing Stop Loss
-TSL_START_PROFIT_MULTIPLIER = 1.0  # Activate TSL at 1× ATR profit
-TSL_TRAIL_DISTANCE_MULTIPLIER = 0.5  # Trail at 0.5× ATR distance
+TSL_START_PROFIT_MULTIPLIER = 2.0  # Activate TSL at 2× ATR profit (was 1.0 — whipsawed)
+TSL_TRAIL_DISTANCE_MULTIPLIER = 1.0  # Trail at 1× ATR distance (was 0.5 — too tight)
 
 # GARCH Volatility Model
 # OPTIMIZED: Increased from 100 to 500 steps between refits
@@ -358,7 +361,7 @@ ROLLING_WIN_RATE_MIN_TRADES = 10 # Sprint 6: minimum trades before trusting empi
 USE_DYNAMIC_SLIPPAGE = True      # Sprint 10: ATR-proportional slippage model
 SLIPPAGE_ATR_SCALE = 1.0         # Sprint 10: exponent for ATR ratio (1.0 = linear)
 USE_DYNAMIC_SPREAD = True        # Sprint 11: session-dependent spread model
-SPREAD_NEWS_MULTIPLIER = 3.0     # Sprint 11: spread widens 3x near high-impact events
+SPREAD_NEWS_MULTIPLIER = 6.0     # Sprint 11: spread widens 6x near high-impact events (real Gold: 5-10x during NFP/FOMC)
 
 # Friction: penalize transaction costs to discourage churning
 W_FRICTION = 0.3                 # Was 0.1 (Sprint 2: respect transaction costs)
@@ -468,7 +471,7 @@ HYPERPARAM_SEARCH_SPACE = {
 # Baseline hyperparameters — optimized for 623-dim obs space on Colab T4
 # Reference: Schulman et al. 2017 (PPO), FinRL benchmarks, 7yr Gold dataset
 MODEL_HYPERPARAMETERS = {
-    "n_steps": 2048,       # Doubled from 1024: larger obs needs more diverse rollouts
+    "n_steps": 4096,       # v4: More episodes per rollout (4096/200 = ~20 episodes)
     "batch_size": 256,     # Doubled from 128: better gradient estimates for 623 dims
     "gamma": 0.995,        # Effective horizon ~200 steps (good for M15 intraday Gold)
     "learning_rate": 2e-4, # Slightly lower than 3e-4: larger network needs gentler LR
@@ -481,19 +484,19 @@ MODEL_HYPERPARAMETERS = {
     # policy_kwargs set separately below (requires torch import)
 }
 
-# Network architecture for 623-dim observation space
-# Wider layers capture richer feature interactions (MTF + SMC + TA)
+# Network architecture for 488-dim observation space
+# v4: Separate policy/value heads for better gradient flow
 # Tanh activation matches bounded obs space [-10, 10]
 try:
     import torch
     POLICY_KWARGS = {
-        "net_arch": [512, 256],
+        "net_arch": {"pi": [256, 128], "vf": [256, 128]},
         "activation_fn": torch.nn.Tanh,
     }
     MODEL_HYPERPARAMETERS["policy_kwargs"] = POLICY_KWARGS
 except ImportError:
     # torch not available (e.g., data-only scripts) — will be set at training time
-    POLICY_KWARGS = {"net_arch": [512, 256]}
+    POLICY_KWARGS = {"net_arch": {"pi": [256, 128], "vf": [256, 128]}}
 
 # Entropy annealing schedule (step_threshold -> ent_coef)
 # Adjusted thresholds for 2M total timesteps
@@ -811,6 +814,27 @@ print_startup_banner = log_startup_banner
 
 
 
+
+# ═════════════════════════════════════════════════════════════════════════════
+# 14. V4 DSR REWARD & PIPELINE PARAMETERS
+# ═════════════════════════════════════════════════════════════════════════════
+
+# Rolling z-score window for non-stationary features (ATR, MACD_Diff, Volume)
+# 500 bars = ~5 trading days at M15 — enough for stable mean/std estimation
+ZSCORE_WINDOW = 500
+
+# ATR-based Take Profit (replaces fixed TAKE_PROFIT_PERCENTAGE for TP calculation)
+# TP_ATR_MULTIPLIER / SL_ATR_MULTIPLIER determines R:R ratio
+# SL is 2× ATR (from risk_manager), TP is 4× ATR → 2:1 R:R
+TP_ATR_MULTIPLIER = 4.0
+
+# Intraday loss limit — blocks new entries (not exits) after -2% daily drawdown
+# Resets every 96 bars (24h of M15 bars for forex)
+DAILY_LOSS_LIMIT = -0.02
+
+# Differential Sharpe Ratio (Moody & Saffell 1998)
+# Decay factor: eta ~= 1/half_life. 0.004 → ~250 bar half-life
+DSR_ETA = 0.004
 
 # ═════════════════════════════════════════════════════════════════════════════
 # END OF CONFIGURATION

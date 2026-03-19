@@ -525,13 +525,16 @@ class UnifiedAgenticEnv(gym.Env):
         return signals
 
     def _build_observation(self, base_obs: np.ndarray, signals: AgentSignals) -> np.ndarray:
-        """Combine base observation with agent signals."""
-        if self.mode == TrainingMode.BASE:
-            # Zero out agent signals in BASE mode
-            agent_obs = np.zeros(self.AGENT_SIGNAL_DIM, dtype=np.float32)
-        else:
-            # Include real signals in other modes
-            agent_obs = signals.to_array()
+        """Combine base observation with agent signals.
+
+        v4: Force zeros in ALL training modes. Mock agent signals (from
+        MockOrchestrator, MockNewsAgent, etc.) are random noise that the
+        policy cannot learn to use. Real agent signals will only be present
+        in live deployment. During training, the 20-dim agent slot is a
+        constant-zero padding that the policy will learn to ignore.
+        """
+        # v4: Zero agent signals during training (mock signals are noise)
+        agent_obs = np.zeros(self.AGENT_SIGNAL_DIM, dtype=np.float32)
 
         return np.concatenate([base_obs, agent_obs]).astype(np.float32)
 
