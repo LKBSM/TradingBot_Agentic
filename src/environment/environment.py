@@ -354,6 +354,11 @@ class TradingEnv(gym.Env):
         # False: Kelly=0 means no trade (live/eval mode)
         self.training_mode = kwargs.get('training_mode', True)
 
+        # v5: Transaction cost curriculum — multiplier for commission/spread/slippage
+        # Phase 1: 0.0 (zero friction), Phase 2: 0.25, Phase 3: 0.75, Phase 4: 1.0
+        # Set by CurriculumCallback via _apply_phase_config()
+        self.cost_multiplier = kwargs.get('cost_multiplier', 1.0)
+
         # Sprint 10: Dynamic slippage model — ATR-proportional
         from config import USE_DYNAMIC_SLIPPAGE, SLIPPAGE_ATR_SCALE
         self._use_dynamic_slippage = kwargs.get('use_dynamic_slippage', USE_DYNAMIC_SLIPPAGE)
@@ -1282,9 +1287,10 @@ class TradingEnv(gym.Env):
         self.transaction_cost_incurred_step = 0.0
 
         # Sprint 10: Dynamic slippage for this bar
-        current_slippage = self._get_current_slippage()
+        # v5: Apply cost curriculum multiplier (Phase 1 = 0 friction)
+        current_slippage = self._get_current_slippage() * self.cost_multiplier
         # Sprint 11: Dynamic spread for this bar (session-dependent)
-        current_spread = self._get_current_spread()
+        current_spread = self._get_current_spread() * self.cost_multiplier
 
         try:
             # =====================================================================
@@ -1314,7 +1320,7 @@ class TradingEnv(gym.Env):
                 commission_minimum = self.initial_balance * commission_min_pct
 
                 # La commission finale est le MAXIMUM des deux (protège contre trades trop petits)
-                commission = max(commission_from_trade, commission_minimum)
+                commission = max(commission_from_trade, commission_minimum) * self.cost_multiplier
 
                 # --- 4. Coût total de l'achat ---
                 total_cost = gross_trade_value + commission
@@ -1372,7 +1378,7 @@ class TradingEnv(gym.Env):
                 commission_min_pct = self.trade_commission_min_pct_capital
                 commission_minimum = self.initial_balance * commission_min_pct
 
-                commission = max(commission_from_trade, commission_minimum)
+                commission = max(commission_from_trade, commission_minimum) * self.cost_multiplier
 
                 # --- 5. Revenu net après commission ---
                 total_revenue = gross_trade_value - commission
@@ -1431,7 +1437,7 @@ class TradingEnv(gym.Env):
                 # --- 2. Commission ---
                 commission_from_trade = gross_trade_value * self.trade_commission_pct_of_trade
                 commission_minimum = self.initial_balance * self.trade_commission_min_pct_capital
-                commission = max(commission_from_trade, commission_minimum)
+                commission = max(commission_from_trade, commission_minimum) * self.cost_multiplier
 
                 # --- 3. Execute: receive cash, hold negative position ---
                 self.balance += (gross_trade_value - commission)
@@ -1462,7 +1468,7 @@ class TradingEnv(gym.Env):
                 # --- 2. Commission ---
                 commission_from_trade = gross_trade_value * self.trade_commission_pct_of_trade
                 commission_minimum = self.initial_balance * self.trade_commission_min_pct_capital
-                commission = max(commission_from_trade, commission_minimum)
+                commission = max(commission_from_trade, commission_minimum) * self.cost_multiplier
 
                 total_cost = gross_trade_value + commission
 
@@ -1527,6 +1533,33 @@ class TradingEnv(gym.Env):
         # RETOUR
         # =========================================================================
         return trade_success, effective_trade_value, commission, pnl_abs, pnl_pct
+
+    def action_masks(self) -> np.ndarray:
+        """
+        Return boolean mask of valid actions for the current state.
+
+        Used by MaskablePPO (sb3-contrib) to prevent the agent from selecting
+        invalid actions. This eliminates the need for invalid action penalties
+        and doubles the effective exploration rate.
+
+        Returns:
+            np.ndarray: Boolean array of shape (5,) — True = action is valid.
+        """
+        mask = np.zeros(5, dtype=bool)
+        mask[ACTION_HOLD] = True  # Always valid
+
+        if self.position_type == POSITION_FLAT:
+            # Can open new positions (unless daily loss limit hit)
+            if not getattr(self, '_daily_trading_disabled', False):
+                mask[ACTION_OPEN_LONG] = True
+                if self.enable_short_selling:
+                    mask[ACTION_OPEN_SHORT] = True
+        elif self.position_type == POSITION_LONG:
+            mask[ACTION_CLOSE_LONG] = True
+        elif self.position_type == POSITION_SHORT:
+            mask[ACTION_CLOSE_SHORT] = True
+
+        return mask
 
     def step(self, action: int):
         """
@@ -2118,15 +2151,22 @@ class TradingEnv(gym.Env):
         self._dsr_A += eta * dA
         self._dsr_B += eta * dB
 
-        # Scale DSR to PPO-friendly range
-        reward = np.clip(dsr * 100.0, -10.0, 10.0)
+        # Scale DSR to PPO-friendly range (before bonus, clip after all additions)
+        reward = dsr * 100.0
 
         # =========================================================================
-        # STEP 4: MINOR PENALTIES (only truly necessary ones)
+        # STEP 4: ENTRY SIGNAL BONUS (v5: provides gradient when DSR = 0 for flat)
         # =========================================================================
-        # Invalid action: small penalty for exploration guidance
-        if getattr(self, 'invalid_action_this_step', False):
-            reward -= 0.05
+        # DSR = 0 when the agent is flat (net_worth doesn't change). This means
+        # the agent gets NO learning signal for entry decisions. The deferred entry
+        # bonus fires once after MIN_HOLD_FOR_BONUS bars to bootstrap entry exploration.
+        # Anti-churning: only fires once per trade, not on every hold step.
+        if (self.position_type != POSITION_FLAT and
+                self.current_hold_duration == MIN_HOLD_FOR_BONUS):
+            reward += 0.3
+
+        # v5: invalid action penalty REMOVED — action masking handles it.
+        # The old -0.05 penalty biased the agent toward "always hold."
 
         # =========================================================================
         # STEP 5: TERMINAL CONDITION
@@ -2135,9 +2175,9 @@ class TradingEnv(gym.Env):
             return -20.0
 
         # =========================================================================
-        # STEP 6: FINAL SAFETY CLIPPING
+        # STEP 6: FINAL SAFETY CLIPPING ([-10, 10] for PPO-friendly range)
         # =========================================================================
-        final_reward = np.clip(reward, -20.0, 20.0)
+        final_reward = np.clip(reward, -10.0, 10.0)
 
         # =========================================================================
         # STEP 7: REWARD COMPONENT TRACKING (for TensorBoard logging)

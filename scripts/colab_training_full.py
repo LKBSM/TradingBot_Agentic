@@ -42,6 +42,7 @@ def install(package):
 
 packages = [
     "stable-baselines3[extra]",
+    "sb3-contrib",  # v5: MaskablePPO for action masking
     "gymnasium",
     "pandas",
     "numpy",
@@ -171,7 +172,8 @@ logging.getLogger('jupyter_client').setLevel(logging.CRITICAL)
 logging.getLogger('src.environment.environment').setLevel(logging.ERROR)
 
 import torch
-from stable_baselines3 import PPO
+from sb3_contrib import MaskablePPO
+from sb3_contrib.common.wrappers import ActionMasker
 from stable_baselines3.common.callbacks import BaseCallback
 
 # Import project modules
@@ -386,9 +388,9 @@ print(f"All checkpoints saved to Google Drive: {DRIVE_BASE}")
 print()
 
 # Configure curriculum
-# 2M steps: ~12x coverage of 170K-bar dataset. 3M caused overfitting with broken rewards.
-# With fixed short accounting, 2M is sufficient + early stopping catches sweet spot.
-TOTAL_TIMESTEPS = 2_000_000  # 2M total steps across all phases
+# v5: 5M steps for 508-dim obs space (was 2M — insufficient for convergence).
+# With action masking + cost curriculum, the agent needs more time to learn patterns.
+TOTAL_TIMESTEPS = 5_000_000  # 5M total steps across all phases
 
 # Use Google Drive for model storage (crash-safe)
 curriculum_config = CurriculumConfig(
@@ -420,9 +422,11 @@ base_hyperparams = {
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(f"Device: {device.upper()}")
 print(f"Total timesteps: {TOTAL_TIMESTEPS:,}")
+print(f"Algorithm: MaskablePPO (sb3-contrib) — action masking eliminates invalid actions")
 print(f"Network architecture: pi=[256,128] vf=[256,128] separate heads, Tanh")
 print(f"Observation space: 23 features x 20 lookback + 8 state + 20 agent signals = 488 dims")
-print(f"Action space: 5 actions (HOLD, OPEN_LONG, CLOSE_LONG, OPEN_SHORT, CLOSE_SHORT)")
+print(f"Action space: 5 actions with masking (HOLD, OPEN_LONG, CLOSE_LONG, OPEN_SHORT, CLOSE_SHORT)")
+print(f"Cost curriculum: Phase 1=0%, Phase 2=25%, Phase 3=75%, Phase 4=100%")
 print()
 
 
@@ -569,7 +573,7 @@ class DriveCheckpointCallback(BaseCallback):
 # IMPORTANT: v3 marks models trained with fixed short position accounting + scaler pipeline.
 # v2 had catastrophic short net_worth double-counting (Sharpe -32.83).
 # Old v1/v2 checkpoints MUST NOT be resumed — they learned broken behavior.
-TRAINING_VERSION = "v4_dsr_reward"
+TRAINING_VERSION = "v5_action_masking"
 resume_from = None
 latest_checkpoint = os.path.join(DRIVE_CHECKPOINTS, "latest_checkpoint.zip")
 progress_file = os.path.join(DRIVE_CHECKPOINTS, "progress.txt")
@@ -652,12 +656,12 @@ if resume_from != "COMPLETE":
         weights=curriculum_config.phases[0].reward_weights
     )
 
-    # Create or load model
+    # Create or load model (v5: MaskablePPO — eliminates invalid action penalty bias)
     if resume_from and resume_from != "COMPLETE":
         print(f"Loading model from checkpoint: {resume_from}")
-        trainer.model = PPO.load(resume_from, env=trainer.env, device=device)
+        trainer.model = MaskablePPO.load(resume_from, env=trainer.env, device=device)
     else:
-        trainer.model = PPO(
+        trainer.model = MaskablePPO(
             'MlpPolicy',
             trainer.env,
             verbose=0,
@@ -796,10 +800,10 @@ best_model_path = os.path.join(DRIVE_MODELS, 'best', 'best_model.zip')
 final_model_path = os.path.join(DRIVE_MODELS, 'final_curriculum_model.zip')
 
 if os.path.exists(best_model_path):
-    best_model = PPO.load(best_model_path)
+    best_model = MaskablePPO.load(best_model_path)
     print(f"Loaded best model from: {best_model_path}")
 elif os.path.exists(final_model_path):
-    best_model = PPO.load(final_model_path)
+    best_model = MaskablePPO.load(final_model_path)
     print(f"Loaded final model from: {final_model_path}")
 elif resume_from != "COMPLETE":
     best_model = model
@@ -814,7 +818,9 @@ portfolio_values = [info.get('net_worth', config.INITIAL_BALANCE)]
 actions_taken = []
 
 while not done:
-    action, _ = best_model.predict(obs, deterministic=True)
+    # v5: MaskablePPO requires action_masks for prediction
+    masks = test_env.action_masks()
+    action, _ = best_model.predict(obs, deterministic=True, action_masks=masks)
     obs, reward, done, truncated, info = test_env.step(int(action))
     portfolio_values.append(info.get('net_worth', portfolio_values[-1]))
     actions_taken.append(int(action))

@@ -713,6 +713,10 @@ class UnifiedAgenticEnv(gym.Env):
             'agent_signal_dim': self.AGENT_SIGNAL_DIM
         }
 
+    def action_masks(self) -> np.ndarray:
+        """Delegate action masks to the base TradingEnv for MaskablePPO."""
+        return self._base_env.action_masks()
+
     @property
     def unwrapped(self):
         """Return the base environment."""

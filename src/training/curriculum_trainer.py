@@ -68,6 +68,7 @@ class PhaseConfig:
     soft_penalty_scale: float = 1.0
     learning_rate_multiplier: float = 1.0
     entropy_coef_multiplier: float = 1.0
+    cost_multiplier: float = 1.0  # v5: transaction cost curriculum (0.0 = no friction)
     description: str = ""
 
 
@@ -90,24 +91,25 @@ class CurriculumConfig:
         total = self.total_timesteps
 
         return [
-            # Sprint 8: Entropy multipliers produce correct annealed values
-            # with base ent_coef=0.01: 5.0→0.05, 2.0→0.02, 1.0→0.01, 0.5→0.005
-            # v4: Rebalanced phase budgets (35/25/25/15) + reduced Phase 1 entropy
+            # v5: Cost curriculum: 0.0 → 0.25 → 0.75 → 1.0
+            # Phase 1 has ZERO transaction costs so agent learns patterns first
+            # v5: Phase budgets rebalanced: 30/25/25/20 (more Phase 4)
             PhaseConfig(
                 mode=TrainingMode.BASE,
-                timesteps=int(total * 0.35),  # 35% (was 20%) — hardest learning phase
+                timesteps=int(total * 0.30),  # 30% (was 35%)
                 reward_weights=RewardWeights.for_phase(1, 4),
                 eval_freq=10_000,
                 min_sharpe_to_advance=0.3,
                 min_win_rate_to_advance=0.40,
                 soft_penalty_scale=0.0,
                 learning_rate_multiplier=1.0,
-                entropy_coef_multiplier=2.0,   # 0.01 * 2.0 = 0.02 (was 5.0→0.05 which dominated loss)
-                description="BASE: Pure market learning"
+                entropy_coef_multiplier=2.0,   # 0.01 * 2.0 = 0.02
+                cost_multiplier=0.0,           # v5: ZERO friction (learn patterns first)
+                description="BASE: Pure market learning (zero cost)"
             ),
             PhaseConfig(
                 mode=TrainingMode.ENRICHED,
-                timesteps=int(total * 0.25),  # 25% (was 27%)
+                timesteps=int(total * 0.25),  # 25%
                 reward_weights=RewardWeights.for_phase(2, 4),
                 eval_freq=15_000,
                 min_sharpe_to_advance=0.5,
@@ -115,11 +117,12 @@ class CurriculumConfig:
                 soft_penalty_scale=0.0,
                 learning_rate_multiplier=0.8,
                 entropy_coef_multiplier=1.5,   # 0.01 * 1.5 = 0.015
-                description="ENRICHED: Signal awareness"
+                cost_multiplier=0.25,          # v5: 25% friction
+                description="ENRICHED: Signal awareness (25% cost)"
             ),
             PhaseConfig(
                 mode=TrainingMode.SOFT,
-                timesteps=int(total * 0.25),  # 25% (was 27%)
+                timesteps=int(total * 0.25),  # 25%
                 reward_weights=RewardWeights.for_phase(3, 4),
                 eval_freq=20_000,
                 min_sharpe_to_advance=0.7,
@@ -127,19 +130,21 @@ class CurriculumConfig:
                 soft_penalty_scale=1.0,
                 learning_rate_multiplier=0.6,
                 entropy_coef_multiplier=1.0,   # 0.01 * 1.0 = 0.01
-                description="SOFT: Soft constraints"
+                cost_multiplier=0.75,          # v5: 75% friction
+                description="SOFT: Soft constraints (75% cost)"
             ),
             PhaseConfig(
                 mode=TrainingMode.PRODUCTION,
-                timesteps=int(total * 0.15),  # 15% (was 26%) — only fine-tuning
+                timesteps=int(total * 0.20),  # 20% (was 15%) — more exploitation time
                 reward_weights=RewardWeights.for_phase(4, 4),
                 eval_freq=25_000,
                 min_sharpe_to_advance=1.0,  # Final target
                 min_win_rate_to_advance=0.50,
                 soft_penalty_scale=1.0,
                 learning_rate_multiplier=0.4,
-                entropy_coef_multiplier=0.5,   # 0.01 * 0.5 = 0.005 (exploit)
-                description="PRODUCTION: Full integration"
+                entropy_coef_multiplier=0.8,   # v5: 0.008 (was 0.005 — prevent collapse)
+                cost_multiplier=1.0,           # v5: Full realistic costs
+                description="PRODUCTION: Full integration (100% cost)"
             )
         ]
 
@@ -324,6 +329,13 @@ class CurriculumCallback(BaseCallback):
         base_env.w_F = rw.profit_factor       # Friction penalty (reuse profit_factor weight)
         base_env.w_T = rw.volatility_penalty  # Turnover penalty (reuse volatility_penalty weight)
         # w_L (leverage) stays at 1.0 — always enforce hard leverage limits
+
+        # v5: Transaction cost curriculum — gradually introduce friction
+        base_env.cost_multiplier = phase.cost_multiplier
+        self._logger.info(
+            f"Cost multiplier set to {phase.cost_multiplier:.2f} "
+            f"(Phase {phase.description})"
+        )
 
         # Update model hyperparameters (if supported)
         if self.model is not None:

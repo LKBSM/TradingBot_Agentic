@@ -418,8 +418,8 @@ RENDER_MODE = "none"  # No visual rendering during training
 # At 3M timesteps: ~18× per pattern (upper bound before overfitting)
 # Colab T4 budget: ~2M steps in ~4-6h with 623-dim obs space
 #
-# Strategy: 2M base + early stopping catches the sweet spot
-TOTAL_TIMESTEPS_PER_BOT = 2_000_000
+# v5: 5M steps for 508-dim obs space (was 2M — insufficient for convergence)
+TOTAL_TIMESTEPS_PER_BOT = 5_000_000
 # Early stopping (prevent wasted training)
 EARLY_STOPPING_PATIENCE = 8  # More patience with larger dataset (was 5)
 EVAL_FREQ = 20_000  # Evaluate every 20K steps (less overhead at 623 dims)
@@ -722,10 +722,10 @@ def validate_configuration(strict_mode: bool = False):
     # =========================================================================
 
     # Critical validations
-    if TOTAL_TIMESTEPS_PER_BOT > 5_000_000:
+    if TOTAL_TIMESTEPS_PER_BOT > 10_000_000:
         errors.append(
             f"TOTAL_TIMESTEPS_PER_BOT ({TOTAL_TIMESTEPS_PER_BOT:,}) is too high. "
-            f"This causes severe overfitting. Maximum: 5,000,000"
+            f"This causes severe overfitting. Maximum: 10,000,000"
         )
 
     if N_PARALLEL_BOTS < 20:

@@ -390,7 +390,7 @@ class TestTrainingPipeline:
         assert FIXED_EPISODE_LENGTH == 200
 
     def test_phase_budgets_rebalanced(self):
-        """Phase budgets should be 35/25/25/15."""
+        """Phase budgets should be 30/25/25/20 (v5: more Phase 4)."""
         from src.training.curriculum_trainer import CurriculumConfig
         cfg = CurriculumConfig(total_timesteps=1_000_000)
         phases = cfg.phases
@@ -399,10 +399,10 @@ class TestTrainingPipeline:
         pcts = [p.timesteps / total * 100 for p in phases]
 
         # Allow 1% tolerance for rounding
-        assert abs(pcts[0] - 35) < 1.5, f"Phase 1 should be ~35%, got {pcts[0]:.1f}%"
+        assert abs(pcts[0] - 30) < 1.5, f"Phase 1 should be ~30%, got {pcts[0]:.1f}%"
         assert abs(pcts[1] - 25) < 1.5, f"Phase 2 should be ~25%, got {pcts[1]:.1f}%"
         assert abs(pcts[2] - 25) < 1.5, f"Phase 3 should be ~25%, got {pcts[2]:.1f}%"
-        assert abs(pcts[3] - 15) < 1.5, f"Phase 4 should be ~15%, got {pcts[3]:.1f}%"
+        assert abs(pcts[3] - 20) < 1.5, f"Phase 4 should be ~20%, got {pcts[3]:.1f}%"
 
     def test_phase1_entropy_reduced(self):
         """Phase 1 entropy multiplier should be 2.0 (was 5.0)."""
