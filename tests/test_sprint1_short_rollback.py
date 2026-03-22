@@ -225,10 +225,11 @@ def test_short_roundtrip_pnl():
 
     This is a regression test — we verify that the refactored code computes
     short P&L with the right sign (entry - exit) and that the position
-    lifecycle (SHORT → FLAT) works correctly. We don't assert profitability
-    because borrowing fees and commissions can exceed gross P&L in test data.
+    lifecycle (SHORT → FLAT) works correctly. Uses cost_multiplier=0 to
+    isolate P&L direction from transaction fee noise.
     """
-    env = _make_env(800, trend="down")
+    df = _make_data(800, trend="down")
+    env = TradingEnv(df, strict_scaler_mode=False, cost_multiplier=0.0)
     env.reset()
     _step_n(env, ACTION_HOLD, 10)
 
@@ -240,7 +241,7 @@ def test_short_roundtrip_pnl():
     quantity = abs(env.stock_quantity)
     assert quantity > 0, "Should have opened a position"
 
-    # Hold for a few bars (short hold to minimize borrowing fees)
+    # Hold for a few bars
     _step_n(env, ACTION_HOLD, 10)
 
     env.step(ACTION_CLOSE_SHORT)
@@ -254,12 +255,9 @@ def test_short_roundtrip_pnl():
     trade_record = env.trade_history_summary[0]
     assert trade_record['type'] == 'close_short'
 
-    # Verify P&L direction matches price movement
-    exit_price = env.df.iloc[env.current_step - 1]['Close']
-    if entry_price > exit_price:
-        # Price dropped — gross P&L should be positive
-        assert trade_record['pnl_abs'] > -quantity * abs(entry_price - exit_price), \
-            "Gross P&L direction wrong for profitable short"
+    # With zero costs and a downtrend, pnl_abs should be positive
+    assert trade_record['pnl_abs'] > 0, \
+        f"Short on downtrend with zero costs should be profitable, got pnl={trade_record['pnl_abs']:.4f}"
     env.close()
 
 
