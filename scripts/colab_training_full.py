@@ -80,7 +80,7 @@ REPO_DIR = "TradingBot_Agentic"
 
 # Sprint 15: Pin to a verified commit hash
 # UPDATE THIS after each release — run: git rev-parse HEAD
-VERIFIED_COMMIT = "ce848b7"  # v5: action masking + cost curriculum + 5M steps
+VERIFIED_COMMIT = "390086f"  # v6: flat penalty + entry bonus + maskable eval
 
 # Sprint 15: SHA-256 checksums of critical files (update with each release)
 # Generate with: python -c "import hashlib; print(hashlib.sha256(open('file','rb').read()).hexdigest())"
