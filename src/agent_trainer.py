@@ -170,7 +170,11 @@ class EarlyStoppingCallback(BaseCallback):
         portfolio_values = [float(info['net_worth'])]
 
         while not done:
-            action, _ = self.model.predict(obs, deterministic=True)
+            # v6: MaskablePPO requires action_masks for correct prediction
+            predict_kwargs = {'deterministic': True}
+            if hasattr(self.eval_env, 'action_masks'):
+                predict_kwargs['action_masks'] = self.eval_env.action_masks()
+            action, _ = self.model.predict(obs, **predict_kwargs)
             obs, reward, done, truncated, info = self.eval_env.step(int(action))
             portfolio_values.append(float(info['net_worth']))
             done = done or truncated

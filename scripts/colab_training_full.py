@@ -573,7 +573,7 @@ class DriveCheckpointCallback(BaseCallback):
 # IMPORTANT: v3 marks models trained with fixed short position accounting + scaler pipeline.
 # v2 had catastrophic short net_worth double-counting (Sharpe -32.83).
 # Old v1/v2 checkpoints MUST NOT be resumed — they learned broken behavior.
-TRAINING_VERSION = "v5_action_masking"
+TRAINING_VERSION = "v6_flat_penalty_entry_bonus"
 resume_from = None
 latest_checkpoint = os.path.join(DRIVE_CHECKPOINTS, "latest_checkpoint.zip")
 progress_file = os.path.join(DRIVE_CHECKPOINTS, "progress.txt")
@@ -701,18 +701,65 @@ if resume_from != "COMPLETE":
 
     # Validation environment — uses training scaler to avoid data leakage
     # Also uses ENRICHED mode (not PRODUCTION) to avoid random mock agent constraints
-    from stable_baselines3.common.callbacks import EvalCallback
+    from stable_baselines3.common.callbacks import BaseCallback
     env_val = trainer._create_env(df_val, TrainingMode.ENRICHED,
                                   pre_fitted_scaler=train_scaler)
 
-    eval_callback = EvalCallback(
+    # v6: MaskableEvalCallback — standard EvalCallback doesn't pass action_masks
+    class MaskableEvalCallback(BaseCallback):
+        """Eval callback that supports MaskablePPO action masks."""
+        def __init__(self, eval_env, best_model_save_path=None, log_path=None,
+                     eval_freq=25_000, n_eval_episodes=5, deterministic=True,
+                     verbose=0):
+            super().__init__(verbose)
+            self.eval_env = eval_env
+            self.best_model_save_path = best_model_save_path
+            self.log_path = log_path
+            self.eval_freq = eval_freq
+            self.n_eval_episodes = n_eval_episodes
+            self.deterministic = deterministic
+            self.best_mean_reward = -float('inf')
+            self.evaluations_results = []
+            self.evaluations_timesteps = []
+
+        def _on_step(self) -> bool:
+            if self.eval_freq > 0 and self.n_calls % self.eval_freq == 0:
+                episode_rewards = []
+                for _ in range(self.n_eval_episodes):
+                    obs, info = self.eval_env.reset()
+                    done = False
+                    ep_reward = 0.0
+                    while not done:
+                        masks = self.eval_env.action_masks() if hasattr(self.eval_env, 'action_masks') else None
+                        action, _ = self.model.predict(obs, deterministic=self.deterministic, action_masks=masks)
+                        obs, reward, done, truncated, info = self.eval_env.step(int(action))
+                        ep_reward += reward
+                        done = done or truncated
+                    episode_rewards.append(ep_reward)
+
+                mean_reward = np.mean(episode_rewards)
+                self.evaluations_results.append(episode_rewards)
+                self.evaluations_timesteps.append(self.num_timesteps)
+
+                if mean_reward > self.best_mean_reward:
+                    self.best_mean_reward = mean_reward
+                    if self.best_model_save_path:
+                        os.makedirs(self.best_model_save_path, exist_ok=True)
+                        self.model.save(os.path.join(self.best_model_save_path, 'best_model'))
+
+                if self.log_path:
+                    os.makedirs(self.log_path, exist_ok=True)
+                    np.savez(os.path.join(self.log_path, 'evaluations'),
+                             timesteps=self.evaluations_timesteps, results=self.evaluations_results)
+            return True
+
+    eval_callback = MaskableEvalCallback(
         env_val,
         best_model_save_path=os.path.join(DRIVE_MODELS, 'best'),
         log_path=os.path.join(DRIVE_LOGS, 'eval'),
         eval_freq=25_000,
         n_eval_episodes=curriculum_config.eval_episodes,
         deterministic=True,
-        render=False,
         verbose=0  # Quiet - progress_cb handles logging
     )
 

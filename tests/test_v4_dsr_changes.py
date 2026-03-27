@@ -405,13 +405,13 @@ class TestTrainingPipeline:
         assert abs(pcts[3] - 20) < 1.5, f"Phase 4 should be ~20%, got {pcts[3]:.1f}%"
 
     def test_phase1_entropy_reduced(self):
-        """Phase 1 entropy multiplier should be 2.0 (was 5.0)."""
+        """Phase 1 entropy multiplier should be 3.0 (v6, was 2.0 in v4/v5)."""
         from src.training.curriculum_trainer import CurriculumConfig
         cfg = CurriculumConfig(total_timesteps=1_000_000)
 
         phase1 = cfg.phases[0]
-        assert phase1.entropy_coef_multiplier == 2.0, (
-            f"Phase 1 entropy={phase1.entropy_coef_multiplier}, expected 2.0"
+        assert phase1.entropy_coef_multiplier == 3.0, (
+            f"Phase 1 entropy={phase1.entropy_coef_multiplier}, expected 3.0"
         )
 
     def test_zero_mock_agent_signals(self):

@@ -352,6 +352,13 @@ REWARD_OUTPUT_SCALE = 1.0    # Disabled: linear clip replaces output scaling in 
 LOSING_TRADE_PENALTY = 0.5       # Was 0.0 (Sprint 2: mild penalty for losses)
 WINNING_TRADE_BONUS = 0.0        # Was 2.0 (Sprint 2: replaced by RR-based bonus in reward fn)
 MIN_HOLD_FOR_BONUS = 4           # Deferred entry bonus: only pay after N bars (1 hour on M15)
+# V6: Flat inactivity penalty — breaks "always hold" zero-reward equilibrium
+FLAT_PENALTY_WARMUP = 10         # No penalty for first N flat bars (patience period)
+FLAT_PENALTY_PER_BAR = 0.02      # Penalty per bar after warmup (linear ramp)
+FLAT_PENALTY_CAP = 0.5           # Maximum penalty per step (prevents dominating DSR)
+# V6: Immediate entry bonus — provides gradient at the entry decision point
+ENTRY_BONUS_IMMEDIATE = 1.0      # Reward on OPEN action (+1.0, significant vs DSR range)
+ENTRY_BONUS_MIN_PREV_HOLD = 3    # Anti-churning: previous trade must hold >= N bars
 HOLD_REWARD_CAP = 1.5            # Sprint 3: was 0.5 — lets winners run with stronger hold signal
 CLOSE_BONUS_CAP = 2.0            # Sprint 3: was 3.0 — reduces premature profit-taking incentive
 KELLY_FLOOR_TRAINING = 0.02      # Sprint 5: minimum Kelly fraction during training (exploration)

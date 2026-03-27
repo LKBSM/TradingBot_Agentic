@@ -48,6 +48,81 @@ from .unified_agentic_env import UnifiedAgenticEnv, TrainingMode
 from .advanced_reward_shaper import AdvancedRewardShaper, RewardWeights
 
 
+class MaskableEvalCallback(BaseCallback):
+    """v6: Eval callback that supports MaskablePPO action masks.
+
+    Standard SB3 EvalCallback calls evaluate_policy() which doesn't pass
+    action_masks to model.predict(). This callback does mask-aware evaluation.
+    """
+
+    def __init__(self, eval_env, best_model_save_path=None, log_path=None,
+                 eval_freq=25_000, n_eval_episodes=5, deterministic=True,
+                 render=False, verbose=0):
+        super().__init__(verbose)
+        self.eval_env = eval_env
+        self.best_model_save_path = best_model_save_path
+        self.log_path = log_path
+        self.eval_freq = eval_freq
+        self.n_eval_episodes = n_eval_episodes
+        self.deterministic = deterministic
+        self.best_mean_reward = -np.inf
+        self.evaluations_results = []
+        self.evaluations_timesteps = []
+
+    def _on_step(self) -> bool:
+        if self.eval_freq > 0 and self.n_calls % self.eval_freq == 0:
+            episode_rewards = []
+            episode_lengths = []
+
+            for _ in range(self.n_eval_episodes):
+                obs, info = self.eval_env.reset()
+                done = False
+                ep_reward = 0.0
+                ep_length = 0
+
+                while not done:
+                    masks = self.eval_env.action_masks() if hasattr(self.eval_env, 'action_masks') else None
+                    action, _ = self.model.predict(
+                        obs, deterministic=self.deterministic, action_masks=masks
+                    )
+                    obs, reward, done, truncated, info = self.eval_env.step(int(action))
+                    ep_reward += reward
+                    ep_length += 1
+                    done = done or truncated
+
+                episode_rewards.append(ep_reward)
+                episode_lengths.append(ep_length)
+
+            mean_reward = np.mean(episode_rewards)
+            std_reward = np.std(episode_rewards)
+
+            self.evaluations_results.append(episode_rewards)
+            self.evaluations_timesteps.append(self.num_timesteps)
+
+            if self.verbose > 0:
+                print(f"Eval @ {self.num_timesteps}: mean_reward={mean_reward:.2f} +/- {std_reward:.2f}")
+
+            # Save best model
+            if mean_reward > self.best_mean_reward:
+                self.best_mean_reward = mean_reward
+                if self.best_model_save_path is not None:
+                    import os
+                    os.makedirs(self.best_model_save_path, exist_ok=True)
+                    self.model.save(os.path.join(self.best_model_save_path, 'best_model'))
+
+            # Save eval log
+            if self.log_path is not None:
+                import os
+                os.makedirs(self.log_path, exist_ok=True)
+                np.savez(
+                    os.path.join(self.log_path, 'evaluations'),
+                    timesteps=self.evaluations_timesteps,
+                    results=self.evaluations_results,
+                )
+
+        return True
+
+
 class CurriculumPhase(IntEnum):
     """Training curriculum phases."""
     BASE = 1
@@ -103,7 +178,7 @@ class CurriculumConfig:
                 min_win_rate_to_advance=0.40,
                 soft_penalty_scale=0.0,
                 learning_rate_multiplier=1.0,
-                entropy_coef_multiplier=2.0,   # 0.01 * 2.0 = 0.02
+                entropy_coef_multiplier=3.0,   # v6: 0.01 * 3.0 = 0.03 (more exploration in Phase 1)
                 cost_multiplier=0.0,           # v5: ZERO friction (learn patterns first)
                 description="BASE: Pure market learning (zero cost)"
             ),
@@ -142,7 +217,7 @@ class CurriculumConfig:
                 min_win_rate_to_advance=0.50,
                 soft_penalty_scale=1.0,
                 learning_rate_multiplier=0.4,
-                entropy_coef_multiplier=0.8,   # v5: 0.008 (was 0.005 — prevent collapse)
+                entropy_coef_multiplier=1.0,   # v6: 0.01 (was 0.008 — prevent entropy collapse)
                 cost_multiplier=1.0,           # v5: Full realistic costs
                 description="PRODUCTION: Full integration (100% cost)"
             )
@@ -499,17 +574,17 @@ class CurriculumTrainer:
         )
 
         # Create validation environment for evaluation
-        env_val = self._create_env(self.df_val, TrainingMode.PRODUCTION)
+        # v6: Use ENRICHED mode (not PRODUCTION) to avoid random mock agent blocks
+        env_val = self._create_env(self.df_val, TrainingMode.ENRICHED)
 
-        # Eval callback
-        eval_callback = EvalCallback(
+        # v6: MaskableEvalCallback passes action_masks during eval
+        eval_callback = MaskableEvalCallback(
             env_val,
             best_model_save_path=os.path.join(self.config.model_save_dir, 'best'),
             log_path=os.path.join(self.config.tensorboard_log_dir, 'eval'),
             eval_freq=25_000,
             n_eval_episodes=self.config.eval_episodes,
             deterministic=True,
-            render=False,
             verbose=self.verbose
         )
 
@@ -557,7 +632,11 @@ class CurriculumTrainer:
         actions_taken = []
 
         while not done:
-            action, _ = self.model.predict(obs, deterministic=True)
+            # v6: MaskablePPO requires action_masks for correct prediction
+            predict_kwargs = {'deterministic': True}
+            if hasattr(env, 'action_masks'):
+                predict_kwargs['action_masks'] = env.action_masks()
+            action, _ = self.model.predict(obs, **predict_kwargs)
             obs, reward, done, truncated, info = env.step(int(action))
             total_reward += reward
             portfolio_values.append(info.get('net_worth', portfolio_values[-1]))

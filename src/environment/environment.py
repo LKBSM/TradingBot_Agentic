@@ -207,6 +207,9 @@ try:
         REWARD_TANH_SCALE, REWARD_OUTPUT_SCALE,
         # Deferred entry bonus threshold (Sprint 2: anti-churning)
         MIN_HOLD_FOR_BONUS,
+        # V6: Flat inactivity penalty + immediate entry bonus
+        FLAT_PENALTY_WARMUP, FLAT_PENALTY_PER_BAR, FLAT_PENALTY_CAP,
+        ENTRY_BONUS_IMMEDIATE, ENTRY_BONUS_MIN_PREV_HOLD,
         # Reward caps (Sprint 3: rebalanced close/hold ratio)
         HOLD_REWARD_CAP, CLOSE_BONUS_CAP,
         # Episode length configuration
@@ -1716,6 +1719,7 @@ class TradingEnv(gym.Env):
                 current_market_price = fill_price
         elif self.position_type == POSITION_FLAT:
             self.current_hold_duration = 0
+            self._consecutive_flat_bars += 1  # v6: track flat duration for inactivity penalty
 
         # --- Cooldown enforcement ---
         if action in [ACTION_OPEN_LONG, ACTION_CLOSE_LONG, ACTION_OPEN_SHORT, ACTION_CLOSE_SHORT]:
@@ -1861,6 +1865,7 @@ class TradingEnv(gym.Env):
                 'quantity': trade_quantity_calc
             })
             self.current_hold_duration = 1
+            self._consecutive_flat_bars = 0  # v6: reset flat counter on trade open
 
             if self.trade_logger:
                 self.trade_id_counter += 1
@@ -1902,6 +1907,7 @@ class TradingEnv(gym.Env):
                 self.winning_trades += 1
             else:
                 self.losing_trades += 1
+            self._last_trade_hold_duration = self.current_hold_duration  # v6: record for anti-churning gate
             self.current_hold_duration = 0
 
             # Sprint 6: Update rolling win rate for Kelly position sizing
@@ -1979,6 +1985,7 @@ class TradingEnv(gym.Env):
                 'quantity': trade_quantity_calc
             })
             self.current_hold_duration = 1
+            self._consecutive_flat_bars = 0  # v6: reset flat counter on trade open
 
             if self.trade_logger:
                 self.trade_id_counter += 1
@@ -2026,6 +2033,7 @@ class TradingEnv(gym.Env):
                 self.winning_trades += 1
             else:
                 self.losing_trades += 1
+            self._last_trade_hold_duration = self.current_hold_duration  # v6: record for anti-churning gate
             self.current_hold_duration = 0
 
             # Sprint 6: Update rolling win rate for Kelly position sizing
@@ -2155,18 +2163,32 @@ class TradingEnv(gym.Env):
         reward = dsr * 100.0
 
         # =========================================================================
-        # STEP 4: ENTRY SIGNAL BONUS (v5: provides gradient when DSR = 0 for flat)
+        # STEP 4: IMMEDIATE ENTRY BONUS (v6: replaces v5 deferred bonus)
         # =========================================================================
-        # DSR = 0 when the agent is flat (net_worth doesn't change). This means
-        # the agent gets NO learning signal for entry decisions. The deferred entry
-        # bonus fires once after MIN_HOLD_FOR_BONUS bars to bootstrap entry exploration.
-        # Anti-churning: only fires once per trade, not on every hold step.
+        # DSR = 0 when flat (net_worth unchanged) → no gradient for entry decisions.
+        # V6 fix: +1.0 IMMEDIATELY on trade open (hold_duration == 1).
+        # Anti-churning gate: bonus only if previous trade held >= MIN_PREV_HOLD bars,
+        # OR if this is the very first trade (bootstrap).
+        entry_bonus = 0.0
         if (self.position_type != POSITION_FLAT and
-                self.current_hold_duration == MIN_HOLD_FOR_BONUS):
-            reward += 0.3
+                self.current_hold_duration == 1 and
+                (self._last_trade_hold_duration >= ENTRY_BONUS_MIN_PREV_HOLD or
+                 self.total_trades <= 1)):
+            entry_bonus = ENTRY_BONUS_IMMEDIATE
+            reward += entry_bonus
 
-        # v5: invalid action penalty REMOVED — action masking handles it.
-        # The old -0.05 penalty biased the agent toward "always hold."
+        # =========================================================================
+        # STEP 4B: FLAT INACTIVITY PENALTY (v6: breaks "always hold" equilibrium)
+        # =========================================================================
+        # Without this, E[reward|HOLD] = 0 (stable) > E[reward|OPEN] (noisy).
+        # PPO is risk-averse → converges to "never trade." Linear ramp after warmup
+        # makes always-hold deeply unprofitable (~-82.5/episode).
+        flat_penalty = 0.0
+        if (self.position_type == POSITION_FLAT and
+                self._consecutive_flat_bars > FLAT_PENALTY_WARMUP):
+            bars_over = self._consecutive_flat_bars - FLAT_PENALTY_WARMUP
+            flat_penalty = min(bars_over * FLAT_PENALTY_PER_BAR, FLAT_PENALTY_CAP)
+            reward -= flat_penalty
 
         # =========================================================================
         # STEP 5: TERMINAL CONDITION
@@ -2187,6 +2209,8 @@ class TradingEnv(gym.Env):
             'R_t': R_t,
             'dsr_A': self._dsr_A,
             'dsr_B': self._dsr_B,
+            'entry_bonus': entry_bonus,
+            'flat_penalty': flat_penalty,
             'final_reward': final_reward,
         }
 
@@ -2320,6 +2344,10 @@ class TradingEnv(gym.Env):
         # Sprint 12: Reset VaR engine
         if self._var_engine is not None:
             self._var_engine.reset()
+
+        # v6: Flat inactivity penalty + immediate entry bonus state
+        self._consecutive_flat_bars = 0       # Counts bars spent flat (resets on trade open)
+        self._last_trade_hold_duration = 0    # Duration of previous completed trade (anti-churning)
 
         # v4: Differential Sharpe Ratio state
         from config import DSR_ETA

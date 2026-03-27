@@ -173,50 +173,41 @@ class TestNoInvalidPenalty:
 class TestEntryBonus:
     """Test the deferred entry bonus that provides gradient signal."""
 
-    def test_entry_bonus_fires_at_threshold(self):
-        """Entry bonus should fire at exactly MIN_HOLD_FOR_BONUS bars."""
+    def test_entry_bonus_fires_immediately(self):
+        """v6: Entry bonus fires on the OPEN step (hold_duration == 1).
+
+        Flow: OPEN_LONG sets hold_duration=1 → _calculate_reward checks
+        hold_duration==1 → entry bonus fires on the OPEN step itself.
+        Subsequent HOLDs increment hold_duration to 2,3,... → no bonus.
+        """
+        from config import ENTRY_BONUS_IMMEDIATE
         env = _make_env()
         env.reset()
         for _ in range(5):
             env.step(ACTION_HOLD)
 
-        # Open long
-        env.step(ACTION_OPEN_LONG)
+        # OPEN step: hold_duration=1 → bonus should fire
+        _, open_reward, done, _, _ = env.step(ACTION_OPEN_LONG)
         assert env.position_type == POSITION_LONG
+        assert not done
+        open_bonus = env._last_reward_components.get('entry_bonus', 0.0)
+        assert open_bonus == ENTRY_BONUS_IMMEDIATE, \
+            f"Expected entry bonus {ENTRY_BONUS_IMMEDIATE} on OPEN step, got {open_bonus}"
 
-        # Collect rewards and hold_durations for each hold step
-        rewards = []
-        durations = []
-        for i in range(MIN_HOLD_FOR_BONUS + 2):
-            _, r, done, _, _ = env.step(ACTION_HOLD)
-            rewards.append(r)
-            durations.append(env.current_hold_duration)
-            if done:
-                break
-
-        # Find the step where hold_duration == MIN_HOLD_FOR_BONUS
-        # hold_duration starts at 1 on OPEN, then increments before reward calc,
-        # so duration reaches MIN_HOLD_FOR_BONUS at index MIN_HOLD_FOR_BONUS - 2
-        bonus_idx = MIN_HOLD_FOR_BONUS - 2  # 0-indexed
-        assert bonus_idx < len(rewards), f"Not enough steps collected"
-        assert durations[bonus_idx] == MIN_HOLD_FOR_BONUS, \
-            f"Expected duration {MIN_HOLD_FOR_BONUS} at idx {bonus_idx}, got {durations[bonus_idx]}"
-        # Verify the bonus step has noticeably higher reward than non-bonus steps
-        # by checking it's above the minimum of other rewards by at least 0.2
-        other_rewards = [r for i, r in enumerate(rewards) if i != bonus_idx]
-        min_other = min(other_rewards) if other_rewards else -10
-        assert rewards[bonus_idx] >= min_other - 0.1, \
-            f"Expected entry bonus at step {bonus_idx}: rewards={rewards}"
+        # Next HOLD: hold_duration=2 → no bonus
+        _, hold_reward, done, _, _ = env.step(ACTION_HOLD)
+        hold_bonus = env._last_reward_components.get('entry_bonus', 0.0)
+        assert hold_bonus == 0.0, \
+            f"Expected no entry bonus on HOLD step, got {hold_bonus}"
         env.close()
 
     def test_entry_bonus_fires_once_only(self):
-        """Entry bonus fires once: hold_duration is strictly monotonic during a trade.
+        """v6: Entry bonus fires once per trade (hold_duration == 1 only once).
 
-        Since hold_duration increments by exactly 1 per step and never decreases
-        during a position, the condition `hold_duration == MIN_HOLD_FOR_BONUS`
-        is guaranteed true for exactly one step per trade. This test verifies
-        that invariant plus confirms the bonus condition exists in the code.
+        Since hold_duration starts at 1 on OPEN and strictly increases,
+        hold_duration == 1 is true for exactly one step per trade.
         """
+        from config import ENTRY_BONUS_IMMEDIATE
         env = _make_env()
         env.reset()
         for _ in range(5):
@@ -224,27 +215,17 @@ class TestEntryBonus:
 
         env.step(ACTION_OPEN_LONG)
 
-        # Collect hold_durations for each step
-        durations = []
-        for _ in range(MIN_HOLD_FOR_BONUS + 10):
+        # Collect hold_durations and bonuses for each step
+        bonuses = []
+        for _ in range(15):
             _, _, done, _, _ = env.step(ACTION_HOLD)
-            durations.append(env.current_hold_duration)
+            bonuses.append(env._last_reward_components.get('entry_bonus', 0.0))
             if done:
                 break
 
-        # Filter durations while position was held (non-zero = in position)
-        in_position = [d for d in durations if d > 0]
-
-        # Verify hold_duration is strictly increasing during the trade
-        for i in range(1, len(in_position)):
-            assert in_position[i] == in_position[i - 1] + 1, \
-                f"Hold duration should increase by 1 each step, " \
-                f"got {in_position[i - 1]} → {in_position[i]}"
-
-        # Therefore, hold_duration == MIN_HOLD_FOR_BONUS can only be true once
-        bonus_hits = sum(1 for d in durations if d == MIN_HOLD_FOR_BONUS)
-        assert bonus_hits <= 1, \
-            f"Bonus condition should trigger at most once, triggered {bonus_hits} times"
+        # No bonus should fire on any HOLD step (only on OPEN step)
+        assert all(b == 0.0 for b in bonuses), \
+            f"Entry bonus should not fire on HOLD steps, got bonuses: {bonuses}"
         env.close()
 
 
@@ -338,12 +319,12 @@ class TestTrainingConfig:
         assert budgets == expected, f"Phase budgets should be {expected}, got {budgets}"
 
     def test_phase4_entropy_raised(self):
-        """Phase 4 entropy multiplier should be 0.8 (was 0.5)."""
+        """Phase 4 entropy multiplier should be 1.0 (v6, was 0.8 in v5)."""
         from src.training.curriculum_trainer import CurriculumConfig
         cfg = CurriculumConfig(total_timesteps=1_000_000)
         phase4 = cfg.phases[3]
-        assert phase4.entropy_coef_multiplier == 0.8, \
-            f"Phase 4 entropy multiplier should be 0.8, got {phase4.entropy_coef_multiplier}"
+        assert phase4.entropy_coef_multiplier == 1.0, \
+            f"Phase 4 entropy multiplier should be 1.0, got {phase4.entropy_coef_multiplier}"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
