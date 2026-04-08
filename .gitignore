@@ -41,7 +41,14 @@ env/
 data/*.csv
 data/*.parquet
 data/*.h5
+data/*.db
 !data/.gitkeep
+
+# Kronos model repo (cloned locally for POC)
+kronos_repo/
+
+# POC results
+poc_results/
 
 # Models (large files)
 models/
