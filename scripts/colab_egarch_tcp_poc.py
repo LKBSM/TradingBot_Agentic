@@ -147,7 +147,12 @@ for eval_num, idx in enumerate(eval_indices):
 
     # ---------- FORECAST ----------
     try:
-        fcast = last_res.forecast(horizon=PRED_HORIZON, reindex=False)
+        fcast = last_res.forecast(
+            horizon=PRED_HORIZON,
+            method="simulation",
+            simulations=500,
+            reindex=False,
+        )
         # fcast.variance is DataFrame with shape (1, horizon) or (T, horizon)
         pred_var = fcast.variance.values[-1]  # array of length PRED_HORIZON
         pred_vol_pct = np.sqrt(np.mean(pred_var))  # avg sigma in % per bar
