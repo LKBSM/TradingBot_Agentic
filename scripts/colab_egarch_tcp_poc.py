@@ -28,7 +28,7 @@ STEP_SIZE      = 20            # evaluate every 20 bars
 MAX_EVALS      = 300           # max evaluation points
 TEST_START     = "2024-07-01"  # out-of-sample start
 FIT_WINDOW     = 2000          # rolling window for EGARCH fit (bars)
-REFIT_EVERY    = 100           # refit EGARCH every N eval steps
+REFIT_EVERY    = 20            # refit EGARCH every N eval steps
 TCP_ALPHA      = 0.05          # target miscoverage (95% intervals)
 TCP_GAMMA      = 0.01          # TCP learning rate (Robbins-Monro)
 
@@ -92,6 +92,17 @@ print(f"  Test range: idx {test_start_idx} to {test_end_idx} ({test_end_idx - te
 print(f"  ATR mean:   {df['ATR_14'].mean():.4f}")
 print(f"  Returns std: {df['returns_pct'].std():.4f}%")
 
+# Calibrate vol-to-ATR ratio from training data
+# EGARCH predicts return volatility (sigma %). ATR = True Range average.
+# These are related but not identical: ATR ≈ k * sigma * close / 100
+# We compute k from training data so EGARCH predictions are in ATR units.
+train_returns_std = df.loc[:test_start_idx, "returns_pct"].std()
+train_atr_mean = df.loc[:test_start_idx, "ATR_14"].mean()
+train_close_mean = df.loc[:test_start_idx, "close"].mean()
+vol_to_atr_ratio = train_atr_mean / (train_returns_std * train_close_mean / 100.0)
+print(f"  Vol→ATR calibration: ratio={vol_to_atr_ratio:.4f} "
+      f"(train σ={train_returns_std:.4f}%, ATR={train_atr_mean:.4f}, close={train_close_mean:.1f})")
+
 # Build eval indices (every STEP_SIZE bars in test set)
 eval_indices = list(range(test_start_idx, test_end_idx, STEP_SIZE))[:MAX_EVALS]
 n_evals = len(eval_indices)
@@ -135,7 +146,7 @@ for eval_num, idx in enumerate(eval_indices):
                 dist="studentst",
                 mean="Constant",
             )
-            last_res = am.fit(disp="off")
+            last_res = am.fit(disp="off", show_warning=False)
             last_fit_step = eval_num
             fit_count += 1
         except Exception as e:
@@ -145,21 +156,24 @@ for eval_num, idx in enumerate(eval_indices):
                 skip_count += 1
                 continue
 
-    # ---------- FORECAST ----------
+    # ---------- FORECAST (analytic 1-step — reliable for EGARCH) ----------
     try:
-        fcast = last_res.forecast(
-            horizon=PRED_HORIZON,
-            method="simulation",
-            simulations=500,
-            reindex=False,
-        )
-        # fcast.variance is DataFrame with shape (1, horizon) or (T, horizon)
-        pred_var = fcast.variance.values[-1]  # array of length PRED_HORIZON
-        pred_vol_pct = np.sqrt(np.mean(pred_var))  # avg sigma in % per bar
+        fcast = last_res.forecast(horizon=1, reindex=False)
+        h1_var = fcast.variance.values[-1, 0]  # 1-step conditional variance (%²)
+        pred_vol_pct = np.sqrt(h1_var)          # conditional sigma (%)
 
-        # Convert % volatility to price-space ATR
+        # Convert to ATR units: sigma * close / 100 * calibration
         current_close = df["close"].values[idx]
-        egarch_atr = pred_vol_pct * current_close / 100.0
+        egarch_atr = pred_vol_pct * current_close / 100.0 * vol_to_atr_ratio
+
+        # Debug first eval point
+        if eval_num == 0:
+            actual_first = df["future_atr"].values[idx]
+            naive_first = df["ATR_14"].values[idx]
+            print(f"  [DEBUG] First forecast: h1_var={h1_var:.6f}, sigma={pred_vol_pct:.4f}%, "
+                  f"close={current_close:.1f}")
+            print(f"  [DEBUG]   egarch_atr={egarch_atr:.4f}, actual={actual_first:.4f}, "
+                  f"naive={naive_first:.4f}")
 
         if not np.isfinite(egarch_atr) or egarch_atr <= 0:
             skip_count += 1
