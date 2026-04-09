@@ -43,6 +43,10 @@ def _calculate_bos_choch_numba(
     This function is compiled to machine code for maximum performance.
     Achieves 50-100x speedup over pure Python implementation.
 
+    Structure tracking uses fractal swing levels (not bar highs/lows) for
+    accurate SMC structure identification. On CHOCH/BOS events, structures
+    reset to the last fractal swing level, not the triggering bar.
+
     Args:
         closes: Array of close prices
         highs: Array of high prices
@@ -61,44 +65,52 @@ def _calculate_bos_choch_numba(
     current_high_structure = highs[0]
     current_low_structure = lows[0]
 
+    # Track last fractal swing levels for structure resets
+    last_fractal_high = highs[0]
+    last_fractal_low = lows[0]
+
     # Find initial structure from first few fractals
     for i in range(min(50, n)):
         if not np.isnan(up_fractals[i]):
             current_high_structure = max(current_high_structure, highs[i])
+            last_fractal_high = highs[i]
         if not np.isnan(down_fractals[i]):
             current_low_structure = min(current_low_structure, lows[i])
+            last_fractal_low = lows[i]
 
     # Main loop - state machine for structure tracking
     for i in range(1, n):
         current_close = closes[i]
-        current_high = highs[i]
-        current_low = lows[i]
 
-        # Update structure points from fractals
+        # Update last fractal levels (always track the most recent fractal)
         if not np.isnan(up_fractals[i]):
+            last_fractal_high = highs[i]
             current_high_structure = max(current_high_structure, highs[i])
         if not np.isnan(down_fractals[i]):
+            last_fractal_low = lows[i]
             current_low_structure = min(current_low_structure, lows[i])
 
         # CHOCH (Change of Character) - trend reversal
+        # Reset structures to last fractal swings (not current bar)
         if bos_signal[i - 1] == -1 and current_close > current_high_structure:
             choch_signal[i] = 1
-            current_low_structure = current_low
-            current_high_structure = current_high
+            current_low_structure = last_fractal_low
+            current_high_structure = last_fractal_high
             bos_signal[i] = 1
         elif bos_signal[i - 1] == 1 and current_close < current_low_structure:
             choch_signal[i] = -1
-            current_high_structure = current_high
-            current_low_structure = current_low
+            current_high_structure = last_fractal_high
+            current_low_structure = last_fractal_low
             bos_signal[i] = -1
         # BOS (Break of Structure) - trend continuation
+        # Update structure to last fractal level (not bar high/low)
         elif choch_signal[i] == 0:
             if bos_signal[i - 1] >= 0 and current_close > current_high_structure:
                 bos_signal[i] = 1
-                current_high_structure = current_high
+                current_high_structure = last_fractal_high
             elif bos_signal[i - 1] <= 0 and current_close < current_low_structure:
                 bos_signal[i] = -1
-                current_low_structure = current_low
+                current_low_structure = last_fractal_low
             else:
                 bos_signal[i] = bos_signal[i - 1]
 
@@ -182,34 +194,34 @@ class SMCConfig(BaseModel):
     """Modèle de configuration validé pour le Smart Money Engine."""
     # Indicateurs Techniques
     RSI_WINDOW: int = Field(
-        default=10,
-        ge=5, le=14,
-        description="Fenêtre RSI réduite pour la sensibilité en daytrading."
+        default=14,
+        ge=5, le=21,
+        description="RSI period (Wilder standard=14). More stable on M15 than shorter periods."
     )
     MACD_FAST: int = Field(
-        default=8,
+        default=12,
         ge=5,
-        description="EMA rapide MACD."
+        description="MACD fast EMA (Appel standard=12). Industry standard for institutional use."
     )
     MACD_SLOW: int = Field(
-        default=17,
+        default=26,
         ge=10,
-        description="EMA lente MACD."
+        description="MACD slow EMA (Appel standard=26). Industry standard for institutional use."
     )
     MACD_SIGNAL: int = Field(
         default=9,
         ge=5,
-        description="EMA signal MACD."
+        description="MACD signal EMA (standard=9)."
     )
     BB_WINDOW: int = Field(
         default=20,
         ge=10,
-        description="Fenêtre Bollinger Bands."
+        description="Bollinger Bands period (standard=20)."
     )
     ATR_WINDOW: int = Field(
-        default=7,
-        ge=5, le=14,
-        description="Fenêtre ATR réduite pour le risque en temps réel."
+        default=14,
+        ge=5, le=21,
+        description="ATR period (Wilder standard=14). Smoother volatility estimate for SL/TP sizing."
     )
     FRACTAL_WINDOW: int = Field(
         default=2,
@@ -217,9 +229,18 @@ class SMCConfig(BaseModel):
         description="Périodes de chaque côté pour identifier un fractal (swing point). 2 = 5 bougies."
     )
     FVG_THRESHOLD: float = Field(
-        default=0.0,
+        default=0.1,
         ge=0.0,
-        description="Seuil minimal de FVG (en valeur absolue ou normalisée)."
+        description="Minimum FVG size as fraction of ATR. 0.1 = gap must be >= 10% of ATR to qualify. Filters spread-level noise."
+    )
+    OB_REQUIRE_FVG: bool = Field(
+        default=False,
+        description="If True, Order Blocks require adjacent FVG confirmation. If False, FVG adds a strength bonus instead."
+    )
+    OB_FVG_BONUS: float = Field(
+        default=0.2,
+        ge=0.0, le=1.0,
+        description="Strength bonus added to OB when FVG is present (only when OB_REQUIRE_FVG=False)."
     )
 
 
@@ -446,11 +467,14 @@ class SmartMoneyEngine:
 
     def _add_smc_order_blocks(self) -> None:
         """
-        Détecte les Order Blocks (OB) et définit leur zone (High/Low).
-        Optimisé pour inclure la validation du FVG pour une meilleure qualité de signal.
+        Detect Order Blocks (OB) and define their zones (High/Low).
+
+        When OB_REQUIRE_FVG=True (legacy): OBs require adjacent FVG confirmation.
+        When OB_REQUIRE_FVG=False (default): OBs detected independently;
+        FVG presence adds a strength bonus to OB_STRENGTH_NORM.
         """
 
-        # --- Étape 1: Conditions de base ---
+        # --- Step 1: Base candlestick pattern conditions ---
         bullish_ob_condition = (
                 (self.df['close'].shift(1) < self.df['open'].shift(1)) &
                 (self.df['close'] > self.df['open']) &
@@ -463,19 +487,25 @@ class SmartMoneyEngine:
                 (self.df['low'] < self.df['low'].shift(1))
         )
 
-        # --- Étape 2: Validation par FVG ---
-        fvg_confirmation = (self.df['FVG_SIGNAL'] != 0).shift(1).fillna(False)
+        # --- Step 2: FVG filtering (conditional) ---
+        fvg_present = (self.df['FVG_SIGNAL'] != 0).shift(1).fillna(False)
 
-        bullish_ob_final = bullish_ob_condition & fvg_confirmation
-        bearish_ob_final = bearish_ob_condition & fvg_confirmation
+        if self.config.OB_REQUIRE_FVG:
+            # Legacy mode: require FVG for OB detection
+            bullish_ob_final = bullish_ob_condition & fvg_present
+            bearish_ob_final = bearish_ob_condition & fvg_present
+        else:
+            # Default: detect OBs independently of FVG
+            bullish_ob_final = bullish_ob_condition
+            bearish_ob_final = bearish_ob_condition
 
-        # --- Étape 3: Définition des zones de l'Order Block ---
+        # --- Step 3: Define OB zones ---
         self.df['BULLISH_OB_HIGH'] = np.where(bullish_ob_final, self.df['high'].shift(1), np.nan)
         self.df['BULLISH_OB_LOW'] = np.where(bullish_ob_final, self.df['low'].shift(1), np.nan)
         self.df['BEARISH_OB_HIGH'] = np.where(bearish_ob_final, self.df['high'].shift(1), np.nan)
         self.df['BEARISH_OB_LOW'] = np.where(bearish_ob_final, self.df['low'].shift(1), np.nan)
 
-        # --- Étape 4: Calcul de la force OB normalisée ---
+        # --- Step 4: Calculate OB strength (body ratio / ATR) ---
         ob_size = np.where(
             self.df['BULLISH_OB_HIGH'].notna(),
             self.df['BULLISH_OB_HIGH'] - self.df['BULLISH_OB_LOW'],
@@ -486,7 +516,79 @@ class SmartMoneyEngine:
             )
         )
 
-        self.df['OB_STRENGTH_NORM'] = np.where(self.df['ATR'] > 0, ob_size / self.df['ATR'], 0.0)
+        base_strength = np.where(self.df['ATR'] > 0, ob_size / self.df['ATR'], 0.0)
+
+        # --- Step 5: FVG bonus (when not requiring FVG) ---
+        if not self.config.OB_REQUIRE_FVG:
+            has_ob = (self.df['BULLISH_OB_HIGH'].notna()) | (self.df['BEARISH_OB_HIGH'].notna())
+            fvg_bonus = np.where(has_ob & fvg_present, self.config.OB_FVG_BONUS, 0.0)
+            self.df['OB_STRENGTH_NORM'] = base_strength + fvg_bonus
+        else:
+            self.df['OB_STRENGTH_NORM'] = base_strength
+
+    def _detect_rsi_divergence(self, lookback: int = 5) -> None:
+        """
+        Detect RSI divergence at fractal swing points.
+
+        Bullish divergence: price makes lower low but RSI makes higher low.
+        Bearish divergence: price makes higher high but RSI makes lower high.
+
+        Uses fractal swings for comparison — compares current fractal to
+        the previous fractal of the same type within `lookback` fractals.
+
+        Adds column CHOCH_DIVERGENCE: 1 (bullish), -1 (bearish), 0 (none).
+        """
+        self.df['CHOCH_DIVERGENCE'] = 0
+
+        rsi = self.df['RSI'].values
+        lows = self.df['low'].values
+        highs = self.df['high'].values
+        up_fractals = self.df['UP_FRACTAL'].values
+        down_fractals = self.df['DOWN_FRACTAL'].values
+
+        # Track recent fractal swing points for comparison
+        recent_down_fractals = []  # (index, low_price, rsi_value)
+        recent_up_fractals = []    # (index, high_price, rsi_value)
+
+        divergence = np.zeros(len(self.df), dtype=np.int32)
+
+        for i in range(len(self.df)):
+            if np.isnan(rsi[i]):
+                continue
+
+            # Track down fractals (swing lows) for bullish divergence
+            if not np.isnan(down_fractals[i]):
+                current_low = lows[i]
+                current_rsi = rsi[i]
+
+                # Compare with previous swing lows
+                for prev_idx, prev_low, prev_rsi in recent_down_fractals[-lookback:]:
+                    # Bullish divergence: lower low in price, higher low in RSI
+                    if current_low < prev_low and current_rsi > prev_rsi:
+                        divergence[i] = 1
+                        break
+
+                recent_down_fractals.append((i, current_low, current_rsi))
+                if len(recent_down_fractals) > lookback:
+                    recent_down_fractals.pop(0)
+
+            # Track up fractals (swing highs) for bearish divergence
+            if not np.isnan(up_fractals[i]):
+                current_high = highs[i]
+                current_rsi = rsi[i]
+
+                # Compare with previous swing highs
+                for prev_idx, prev_high, prev_rsi in recent_up_fractals[-lookback:]:
+                    # Bearish divergence: higher high in price, lower high in RSI
+                    if current_high > prev_high and current_rsi < prev_rsi:
+                        divergence[i] = -1
+                        break
+
+                recent_up_fractals.append((i, current_high, current_rsi))
+                if len(recent_up_fractals) > lookback:
+                    recent_up_fractals.pop(0)
+
+        self.df['CHOCH_DIVERGENCE'] = divergence
 
     def analyze(self) -> pd.DataFrame:
         """
@@ -518,7 +620,10 @@ class SmartMoneyEngine:
         self._calculate_structure_iterative()
         self._timing['structure'] = time.perf_counter() - struct_start
 
-        # 4. Data Cleaning - Drop rows with NaN in critical columns
+        # 4. RSI Divergence Detection (after both RSI and fractals are available)
+        self._detect_rsi_divergence()
+
+        # 5. Data Cleaning - Drop rows with NaN in critical columns
         clean_start = time.perf_counter()
         initial_rows = len(self.df)
         self.df.dropna(subset=['RSI', 'MACD_line', 'ATR'], inplace=True)

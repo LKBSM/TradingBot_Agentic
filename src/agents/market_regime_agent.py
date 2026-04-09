@@ -183,58 +183,81 @@ class TechnicalIndicators:
     @staticmethod
     def adx(highs: np.ndarray, lows: np.ndarray, closes: np.ndarray, period: int = 14) -> Tuple[float, float, float]:
         """
-        Average Directional Index.
+        Average Directional Index using Wilder's smoothing method.
+
+        Wilder's smoothing: S[i] = S[i-1] - S[i-1]/period + value[i]
+        This is equivalent to an EMA with alpha = 1/period.
 
         Returns: (ADX, +DI, -DI)
         """
-        if len(closes) < period + 1:
+        n = len(closes)
+        if n < period + 1:
             return 0, 0, 0
 
-        # Calculate +DM and -DM
-        plus_dm = []
-        minus_dm = []
-        tr_list = []
+        # Step 1: Calculate True Range, +DM, -DM for all bars
+        tr_arr = np.zeros(n)
+        plus_dm_arr = np.zeros(n)
+        minus_dm_arr = np.zeros(n)
 
-        for i in range(1, min(period + 1, len(closes))):
-            up_move = highs[-i] - highs[-i-1]
-            down_move = lows[-i-1] - lows[-i]
+        for i in range(1, n):
+            high_low = highs[i] - lows[i]
+            high_close = abs(highs[i] - closes[i - 1])
+            low_close = abs(lows[i] - closes[i - 1])
+            tr_arr[i] = max(high_low, high_close, low_close)
+
+            up_move = highs[i] - highs[i - 1]
+            down_move = lows[i - 1] - lows[i]
 
             if up_move > down_move and up_move > 0:
-                plus_dm.append(up_move)
-            else:
-                plus_dm.append(0)
-
+                plus_dm_arr[i] = up_move
             if down_move > up_move and down_move > 0:
-                minus_dm.append(down_move)
+                minus_dm_arr[i] = down_move
+
+        # Step 2: Wilder's smoothing for TR, +DM, -DM (seed with SMA of first 'period' values)
+        smoothed_tr = np.sum(tr_arr[1:period + 1])
+        smoothed_plus_dm = np.sum(plus_dm_arr[1:period + 1])
+        smoothed_minus_dm = np.sum(minus_dm_arr[1:period + 1])
+
+        dx_values = []
+
+        for i in range(period + 1, n):
+            # Wilder's smoothing: subtract 1/period of previous, add new value
+            smoothed_tr = smoothed_tr - smoothed_tr / period + tr_arr[i]
+            smoothed_plus_dm = smoothed_plus_dm - smoothed_plus_dm / period + plus_dm_arr[i]
+            smoothed_minus_dm = smoothed_minus_dm - smoothed_minus_dm / period + minus_dm_arr[i]
+
+            if smoothed_tr == 0:
+                continue
+
+            plus_di = 100 * smoothed_plus_dm / smoothed_tr
+            minus_di = 100 * smoothed_minus_dm / smoothed_tr
+
+            di_sum = plus_di + minus_di
+            if di_sum == 0:
+                dx_values.append((0, plus_di, minus_di))
             else:
-                minus_dm.append(0)
+                dx = 100 * abs(plus_di - minus_di) / di_sum
+                dx_values.append((dx, plus_di, minus_di))
 
-            # True Range
-            high_low = highs[-i] - lows[-i]
-            high_close = abs(highs[-i] - closes[-i-1])
-            low_close = abs(lows[-i] - closes[-i-1])
-            tr_list.append(max(high_low, high_close, low_close))
-
-        # Average TR
-        avg_tr = np.mean(tr_list)
-        if avg_tr == 0:
+        if len(dx_values) == 0:
             return 0, 0, 0
 
-        # +DI and -DI
-        plus_di = 100 * np.mean(plus_dm) / avg_tr
-        minus_di = 100 * np.mean(minus_dm) / avg_tr
+        # Step 3: ADX = Wilder's smoothing of DX values (seed with SMA of first 'period' DX values)
+        if len(dx_values) < period:
+            # Not enough data for full ADX smoothing, use mean of available DX
+            last_dx, last_plus_di, last_minus_di = dx_values[-1]
+            avg_dx = np.mean([d[0] for d in dx_values])
+            return avg_dx, last_plus_di, last_minus_di
 
-        # DX
-        di_sum = plus_di + minus_di
-        if di_sum == 0:
-            return 0, plus_di, minus_di
+        # Seed ADX with SMA of first 'period' DX values
+        adx_val = np.mean([dx_values[i][0] for i in range(period)])
 
-        dx = 100 * abs(plus_di - minus_di) / di_sum
+        # Apply Wilder's smoothing for remaining DX values
+        for i in range(period, len(dx_values)):
+            adx_val = (adx_val * (period - 1) + dx_values[i][0]) / period
 
-        # ADX is smoothed DX (simplified)
-        adx = dx
-
-        return adx, plus_di, minus_di
+        last_dx, last_plus_di, last_minus_di = dx_values[-1]
+        return adx_val, last_plus_di, last_minus_di
 
     @staticmethod
     def bollinger_bands(prices: np.ndarray, period: int = 20, std_dev: float = 2.0) -> Tuple[float, float, float, float]:
