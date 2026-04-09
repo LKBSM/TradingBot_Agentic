@@ -11,6 +11,8 @@ Data auto-downloads from GitHub release v1.0-data.
 
 Replaces Kronos (scored 1/4). Uses:
   - EGARCH(1,1) with Student-t distribution for asymmetric volatility
+  - GARCH-adjusted ATR: anchors forecast to current ATR, uses EGARCH for
+    vol regime adjustment only (avoids static calibration errors)
   - Temporal Conformal Prediction (TCP) for calibrated intervals
 """
 
@@ -25,12 +27,12 @@ warnings.filterwarnings("ignore")
 # ==========================================================================
 PRED_HORIZON   = 5             # predict 5 bars ahead = 1h15
 STEP_SIZE      = 20            # evaluate every 20 bars
-MAX_EVALS      = 300           # max evaluation points
+MAX_EVALS      = 500           # max evaluation points
 TEST_START     = "2024-07-01"  # out-of-sample start
-FIT_WINDOW     = 2000          # rolling window for EGARCH fit (bars)
-REFIT_EVERY    = 20            # refit EGARCH every N eval steps
+FIT_WINDOW     = 5000          # rolling window for EGARCH fit (bars)
+REFIT_EVERY    = 1             # refit every eval step (EGARCH fits in ~10ms)
 TCP_ALPHA      = 0.05          # target miscoverage (95% intervals)
-TCP_GAMMA      = 0.01          # TCP learning rate (Robbins-Monro)
+TCP_GAMMA      = 0.05          # TCP learning rate (Robbins-Monro)
 
 DATA_URL = "https://github.com/LKBSM/TradingBot_Agentic/releases/download/v1.0-data/XAU_15MIN_2019_2025.csv"
 DATA_FILE = "XAU_15MIN_2019_2025.csv"
@@ -39,7 +41,7 @@ DATA_FILE = "XAU_15MIN_2019_2025.csv"
 # 1. SETUP
 # ==========================================================================
 print("=" * 70)
-print("  EGARCH + TCP VOLATILITY POC — Smart Sentinel AI")
+print("  EGARCH + TCP VOLATILITY POC v2 — Smart Sentinel AI")
 print("=" * 70)
 
 print("\n[1/4] Installing dependencies...")
@@ -92,21 +94,11 @@ print(f"  Test range: idx {test_start_idx} to {test_end_idx} ({test_end_idx - te
 print(f"  ATR mean:   {df['ATR_14'].mean():.4f}")
 print(f"  Returns std: {df['returns_pct'].std():.4f}%")
 
-# Calibrate vol-to-ATR ratio from training data
-# EGARCH predicts return volatility (sigma %). ATR = True Range average.
-# These are related but not identical: ATR ≈ k * sigma * close / 100
-# We compute k from training data so EGARCH predictions are in ATR units.
-train_returns_std = df.loc[:test_start_idx, "returns_pct"].std()
-train_atr_mean = df.loc[:test_start_idx, "ATR_14"].mean()
-train_close_mean = df.loc[:test_start_idx, "close"].mean()
-vol_to_atr_ratio = train_atr_mean / (train_returns_std * train_close_mean / 100.0)
-print(f"  Vol→ATR calibration: ratio={vol_to_atr_ratio:.4f} "
-      f"(train σ={train_returns_std:.4f}%, ATR={train_atr_mean:.4f}, close={train_close_mean:.1f})")
-
 # Build eval indices (every STEP_SIZE bars in test set)
 eval_indices = list(range(test_start_idx, test_end_idx, STEP_SIZE))[:MAX_EVALS]
 n_evals = len(eval_indices)
 print(f"  Eval points: {n_evals}")
+print(f"  Refit every: {REFIT_EVERY} step(s) | Fit window: {FIT_WINDOW} bars")
 
 # ==========================================================================
 # 3. WALK-FORWARD EVALUATION
@@ -114,7 +106,7 @@ print(f"  Eval points: {n_evals}")
 print(f"\n[3/4] Walk-forward evaluation ({n_evals} points)...")
 
 results = []
-tcp_width = 1.0  # Initial TCP interval half-width multiplier
+tcp_width = 0.5    # Initial TCP interval half-width multiplier
 start_time = time.time()
 fit_count = 0
 skip_count = 0
@@ -136,7 +128,7 @@ for eval_num, idx in enumerate(eval_indices):
         skip_count += 1
         continue
 
-    # ---------- EGARCH FIT (periodic refit) ----------
+    # ---------- EGARCH FIT (every step for freshest forecasts) ----------
     if eval_num - last_fit_step >= REFIT_EVERY or last_res is None:
         try:
             am = arch_model(
@@ -156,24 +148,38 @@ for eval_num, idx in enumerate(eval_indices):
                 skip_count += 1
                 continue
 
-    # ---------- FORECAST (analytic 1-step — reliable for EGARCH) ----------
+    # ---------- FORECAST (GARCH-adjusted ATR) ----------
+    # Instead of static calibration (sigma → ATR), we anchor to current ATR
+    # and use EGARCH only for the vol REGIME ADJUSTMENT:
+    #   egarch_atr = naive_atr × (conditional_vol / unconditional_vol)
+    # When vol_ratio=1: prediction = naive (average conditions)
+    # When vol_ratio>1: prediction > naive (vol spike detected)
+    # When vol_ratio<1: prediction < naive (calm period detected)
     try:
         fcast = last_res.forecast(horizon=1, reindex=False)
         h1_var = fcast.variance.values[-1, 0]  # 1-step conditional variance (%²)
-        pred_vol_pct = np.sqrt(h1_var)          # conditional sigma (%)
+        cond_vol = np.sqrt(h1_var)              # conditional sigma (%)
 
-        # Convert to ATR units: sigma * close / 100 * calibration
-        current_close = df["close"].values[idx]
-        egarch_atr = pred_vol_pct * current_close / 100.0 * vol_to_atr_ratio
+        # Unconditional vol = sample std of the fitted window
+        uncond_vol = np.std(returns_clean)
+
+        # Vol ratio: how current EGARCH-estimated vol compares to average
+        vol_ratio = cond_vol / uncond_vol if uncond_vol > 0 else 1.0
+
+        # Clamp to prevent extreme predictions (0.5x to 2.5x naive)
+        vol_ratio = np.clip(vol_ratio, 0.5, 2.5)
+
+        # GARCH-adjusted ATR: anchor to current ATR, scale by vol ratio
+        naive_atr = df["ATR_14"].values[idx]
+        egarch_atr = naive_atr * vol_ratio
 
         # Debug first eval point
         if eval_num == 0:
             actual_first = df["future_atr"].values[idx]
-            naive_first = df["ATR_14"].values[idx]
-            print(f"  [DEBUG] First forecast: h1_var={h1_var:.6f}, sigma={pred_vol_pct:.4f}%, "
-                  f"close={current_close:.1f}")
+            print(f"  [DEBUG] First forecast: cond_vol={cond_vol:.4f}%, "
+                  f"uncond_vol={uncond_vol:.4f}%, vol_ratio={vol_ratio:.4f}")
             print(f"  [DEBUG]   egarch_atr={egarch_atr:.4f}, actual={actual_first:.4f}, "
-                  f"naive={naive_first:.4f}")
+                  f"naive={naive_atr:.4f}")
 
         if not np.isfinite(egarch_atr) or egarch_atr <= 0:
             skip_count += 1
@@ -185,8 +191,7 @@ for eval_num, idx in enumerate(eval_indices):
         skip_count += 1
         continue
 
-    # ---------- BASELINES & ACTUAL ----------
-    naive_atr = df["ATR_14"].values[idx]
+    # ---------- ACTUAL ----------
     actual_atr = df["future_atr"].values[idx]
 
     if not (np.isfinite(naive_atr) and np.isfinite(actual_atr)):
@@ -194,16 +199,18 @@ for eval_num, idx in enumerate(eval_indices):
         continue
 
     # ---------- TCP CONFORMAL UPDATE ----------
+    # Interval centered on egarch_atr with adaptive width
     interval_lower = egarch_atr * (1 - tcp_width)
     interval_upper = egarch_atr * (1 + tcp_width)
     covered = interval_lower <= actual_atr <= interval_upper
 
-    # Robbins-Monro: expand if miss, shrink if hit
+    # Robbins-Monro: BIG expansion on miss, small shrink on hit
+    # This converges to (1-alpha) coverage = 95%
     if covered:
-        tcp_width -= TCP_GAMMA * (1 - TCP_ALPHA)
+        tcp_width -= TCP_GAMMA * TCP_ALPHA           # small shrink (-0.0025)
     else:
-        tcp_width += TCP_GAMMA * TCP_ALPHA
-    tcp_width = max(0.05, min(2.0, tcp_width))
+        tcp_width += TCP_GAMMA * (1 - TCP_ALPHA)     # big expansion (+0.0475)
+    tcp_width = max(0.05, min(3.0, tcp_width))
 
     # ---------- METRICS ----------
     e_err = abs(egarch_atr - actual_atr)
@@ -219,6 +226,7 @@ for eval_num, idx in enumerate(eval_indices):
         "actual_atr": actual_atr,
         "egarch_atr": egarch_atr,
         "naive_atr": naive_atr,
+        "vol_ratio": vol_ratio,
         "e_err": e_err,
         "n_err": n_err,
         "e_wins": e_err < n_err,
@@ -228,13 +236,16 @@ for eval_num, idx in enumerate(eval_indices):
         "covered": covered,
     })
 
-    if (eval_num + 1) % 50 == 0:
+    if (eval_num + 1) % 100 == 0:
         elapsed = time.time() - start_time
         cur_mae = np.mean([r["e_err"] for r in results])
         n_mae_cur = np.mean([r["n_err"] for r in results])
+        cur_wr = np.mean([r["e_wins"] for r in results]) * 100
+        cur_cov = np.mean([r["covered"] for r in results]) * 100
         print(f"  [{eval_num+1}/{n_evals}] {elapsed:.0f}s | "
-              f"EGARCH MAE={cur_mae:.4f} | Naive MAE={n_mae_cur:.4f} | "
-              f"fits={fit_count} | skipped={skip_count}")
+              f"MAE: E={cur_mae:.4f} N={n_mae_cur:.4f} | "
+              f"WR={cur_wr:.1f}% | Cov={cur_cov:.1f}% | "
+              f"fits={fit_count}")
 
 total_time = time.time() - start_time
 
@@ -263,6 +274,10 @@ e_dir_acc = rdf["dir_ok"].mean() * 100
 e_corr = np.corrcoef(rdf["actual_atr"], rdf["egarch_atr"])[0, 1]
 n_corr = np.corrcoef(rdf["actual_atr"], rdf["naive_atr"])[0, 1]
 
+# Vol ratio stats
+vr_mean = rdf["vol_ratio"].mean()
+vr_std = rdf["vol_ratio"].std()
+
 # TCP calibration
 tcp_coverage = rdf["covered"].mean() * 100
 tcp_avg_width = rdf["tcp_width"].mean()
@@ -273,11 +288,12 @@ vol_mask = abs(rdf["vol_chg_pct"]) > 20
 vol_n = vol_mask.sum()
 
 print("\n" + "=" * 70)
-print("  EGARCH + TCP VOLATILITY POC - FINAL RESULTS")
+print("  EGARCH + TCP VOLATILITY POC v2 - FINAL RESULTS")
 print("=" * 70)
-print(f"\n  Evaluations: {n} | Time: {total_time/60:.1f} min | EGARCH refits: {fit_count}")
+print(f"\n  Evaluations: {n} | Time: {total_time:.1f}s | EGARCH refits: {fit_count}")
 print(f"  Model: EGARCH(1,1) Student-t | Fit window: {FIT_WINDOW} bars")
 print(f"  Horizon: {PRED_HORIZON} bars ({PRED_HORIZON*15}min) | TCP alpha: {TCP_ALPHA}")
+print(f"  Method: GARCH-adjusted ATR (vol_ratio mean={vr_mean:.3f}, std={vr_std:.3f})")
 
 print(f"\n  {'METRIC':<40} {'EGARCH':>10} {'NAIVE':>10} {'WINNER':>10}")
 print(f"  {'-'*70}")
@@ -344,7 +360,7 @@ print("  EGARCH vs KRONOS COMPARISON")
 print(f"{'='*70}")
 print(f"  Kronos score:     1/4  (FAILED)")
 print(f"  EGARCH+TCP score: {passes}/5")
-print(f"  EGARCH fit time:  {total_time/60:.1f} min (CPU only, no GPU needed)")
+print(f"  EGARCH fit time:  {total_time:.1f}s (CPU only, no GPU needed)")
 print(f"  Inference:        ~{total_time/n*1000:.0f}ms per forecast")
 print(f"  Dependencies:     arch, scipy (vs torch, transformers for Kronos)")
 print(f"{'='*70}")
