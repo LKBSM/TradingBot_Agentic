@@ -28,6 +28,7 @@ STEP_SIZE      = 20            # evaluate every 20 bars
 MAX_EVALS      = 300           # max evaluation points
 TEST_START     = "2024-07-01"  # out-of-sample start
 FIT_WINDOW     = 2000          # rolling window for EGARCH fit (bars)
+REFIT_EVERY    = 100           # refit EGARCH every N eval steps
 TCP_ALPHA      = 0.05          # target miscoverage (95% intervals)
 TCP_GAMMA      = 0.01          # TCP learning rate (Robbins-Monro)
 
@@ -47,7 +48,6 @@ subprocess.run([sys.executable, "-m", "pip", "install", "-q",
 print("[OK] Dependencies installed")
 
 from arch import arch_model
-from scipy import stats
 
 # ==========================================================================
 # 2. DATA
@@ -55,7 +55,7 @@ from scipy import stats
 print("\n[2/4] Loading data...")
 
 if not os.path.exists(DATA_FILE):
-    print(f"  Downloading from GitHub release...")
+    print("  Downloading from GitHub release...")
     urllib.request.urlretrieve(DATA_URL, DATA_FILE)
 
 df = pd.read_csv(DATA_FILE, parse_dates=["Date"])
@@ -63,11 +63,10 @@ df.columns = ["timestamp", "open", "high", "low", "close", "volume"]
 df.sort_values("timestamp", inplace=True)
 df.reset_index(drop=True, inplace=True)
 
-# Compute returns and realized volatility
-df["log_return"] = np.log(df["close"] / df["close"].shift(1))
-df["returns_pct"] = df["log_return"] * 100  # EGARCH needs percentage returns
+# Compute log returns (percentage for EGARCH)
+df["returns_pct"] = np.log(df["close"] / df["close"].shift(1)) * 100
 
-# Compute ATR (True Range)
+# Compute True Range and ATR_14 (current ATR = naive baseline)
 df["tr"] = np.maximum(
     df["high"] - df["low"],
     np.maximum(
@@ -77,97 +76,115 @@ df["tr"] = np.maximum(
 )
 df["ATR_14"] = df["tr"].rolling(14).mean()
 
-# Future realized volatility (what we're predicting)
-df["future_atr"] = df["tr"].shift(-1).rolling(PRED_HORIZON).mean().shift(-(PRED_HORIZON - 1))
+# Future realized ATR: mean TR over the next PRED_HORIZON bars
+df["future_atr"] = df["tr"].rolling(PRED_HORIZON).mean().shift(-PRED_HORIZON)
 
+# Drop rows missing data, then reset index to clean 0..N
 df.dropna(subset=["ATR_14", "future_atr", "returns_pct"], inplace=True)
+df.reset_index(drop=True, inplace=True)
 
-test_mask = df["timestamp"] >= TEST_START
-test_indices = df.index[test_mask].tolist()
+# Split
+test_start_idx = df.index[df["timestamp"] >= TEST_START].min()
+test_end_idx = df.index.max()
 
 print(f"  Total bars: {len(df):,}")
-print(f"  Test bars:  {len(test_indices):,} (from {TEST_START})")
+print(f"  Test range: idx {test_start_idx} to {test_end_idx} ({test_end_idx - test_start_idx:,} bars)")
 print(f"  ATR mean:   {df['ATR_14'].mean():.4f}")
+print(f"  Returns std: {df['returns_pct'].std():.4f}%")
+
+# Build eval indices (every STEP_SIZE bars in test set)
+eval_indices = list(range(test_start_idx, test_end_idx, STEP_SIZE))[:MAX_EVALS]
+n_evals = len(eval_indices)
+print(f"  Eval points: {n_evals}")
 
 # ==========================================================================
 # 3. WALK-FORWARD EVALUATION
 # ==========================================================================
-print(f"\n[3/4] Walk-forward evaluation ({MAX_EVALS} points)...")
-
-eval_points = test_indices[::STEP_SIZE][:MAX_EVALS]
-n_evals = len(eval_points)
+print(f"\n[3/4] Walk-forward evaluation ({n_evals} points)...")
 
 results = []
-tcp_width = 1.0  # Initial TCP interval width multiplier (adapts online)
-
+tcp_width = 1.0  # Initial TCP interval half-width multiplier
 start_time = time.time()
 fit_count = 0
-last_model = None
-last_fit_idx = -FIT_WINDOW  # Force first fit
+skip_count = 0
+last_res = None
+last_fit_step = -REFIT_EVERY  # Force first fit
 
-for eval_num, idx in enumerate(eval_points):
-    # Get position in dataframe
-    pos = df.index.get_loc(idx) if isinstance(idx, int) and idx in df.index else idx
+for eval_num, idx in enumerate(eval_indices):
+    # Slice returns for EGARCH fitting (rolling window ending at idx)
+    win_start = max(0, idx - FIT_WINDOW)
+    returns_window = df["returns_pct"].values[win_start:idx]
 
-    # Rolling window of returns
-    window_start = max(0, pos - FIT_WINDOW)
-    returns_window = df["returns_pct"].iloc[window_start:pos].values
-
-    if len(returns_window) < 200:
+    if len(returns_window) < 500:
+        skip_count += 1
         continue
 
-    # ---------- EGARCH FIT (refit every 100 steps) ----------
-    if pos - last_fit_idx >= 100 or last_model is None:
+    # Remove any remaining NaN/inf
+    returns_clean = returns_window[np.isfinite(returns_window)]
+    if len(returns_clean) < 500:
+        skip_count += 1
+        continue
+
+    # ---------- EGARCH FIT (periodic refit) ----------
+    if eval_num - last_fit_step >= REFIT_EVERY or last_res is None:
         try:
             am = arch_model(
-                returns_window,
+                returns_clean,
                 vol="EGARCH",
                 p=1, o=1, q=1,
                 dist="studentst",
                 mean="Constant",
             )
-            res = am.fit(disp="off", show_warning=False)
-            last_model = res
-            last_fit_idx = pos
+            last_res = am.fit(disp="off")
+            last_fit_step = eval_num
             fit_count += 1
-        except Exception:
-            if last_model is None:
+        except Exception as e:
+            if eval_num == 0:
+                print(f"  [DEBUG] First fit failed: {e}")
+            if last_res is None:
+                skip_count += 1
                 continue
-            # Use last successful model
 
     # ---------- FORECAST ----------
     try:
-        forecast = last_model.forecast(
-            horizon=PRED_HORIZON,
-            reindex=False
-        )
-        # Conditional variance → conditional volatility (sigma per bar)
-        predicted_var = forecast.variance.values[-1]  # (horizon,) array
-        predicted_vol = np.sqrt(predicted_var)  # annualized-ish pct vol per bar
+        fcast = last_res.forecast(horizon=PRED_HORIZON, reindex=False)
+        # fcast.variance is DataFrame with shape (1, horizon) or (T, horizon)
+        pred_var = fcast.variance.values[-1]  # array of length PRED_HORIZON
+        pred_vol_pct = np.sqrt(np.mean(pred_var))  # avg sigma in % per bar
 
-        # Convert percentage vol to price-space ATR estimate
-        # sigma_pct * close / 100 ≈ expected bar range
-        current_close = df["close"].iloc[pos]
-        egarch_atr = np.mean(predicted_vol) * current_close / 100.0
+        # Convert % volatility to price-space ATR
+        current_close = df["close"].values[idx]
+        egarch_atr = pred_vol_pct * current_close / 100.0
 
-    except Exception:
+        if not np.isfinite(egarch_atr) or egarch_atr <= 0:
+            skip_count += 1
+            continue
+
+    except Exception as e:
+        if eval_num == 0:
+            print(f"  [DEBUG] First forecast failed: {e}")
+        skip_count += 1
         continue
 
-    # ---------- NAIVE BASELINE ----------
-    naive_atr = df["ATR_14"].iloc[pos]
+    # ---------- BASELINES & ACTUAL ----------
+    naive_atr = df["ATR_14"].values[idx]
+    actual_atr = df["future_atr"].values[idx]
 
-    # ---------- ACTUAL ----------
-    actual_atr = df["future_atr"].iloc[pos]
+    if not (np.isfinite(naive_atr) and np.isfinite(actual_atr)):
+        skip_count += 1
+        continue
 
     # ---------- TCP CONFORMAL UPDATE ----------
-    # Prediction interval: [egarch_atr - tcp_width*egarch_atr, egarch_atr + tcp_width*egarch_atr]
     interval_lower = egarch_atr * (1 - tcp_width)
     interval_upper = egarch_atr * (1 + tcp_width)
     covered = interval_lower <= actual_atr <= interval_upper
 
-    # Robbins-Monro update: shrink if covered, expand if not
-    tcp_width = tcp_width + TCP_GAMMA * (TCP_ALPHA - (0.0 if covered else 1.0))
-    tcp_width = max(0.05, min(2.0, tcp_width))  # Clamp
+    # Robbins-Monro: expand if miss, shrink if hit
+    if covered:
+        tcp_width -= TCP_GAMMA * (1 - TCP_ALPHA)
+    else:
+        tcp_width += TCP_GAMMA * TCP_ALPHA
+    tcp_width = max(0.05, min(2.0, tcp_width))
 
     # ---------- METRICS ----------
     e_err = abs(egarch_atr - actual_atr)
@@ -176,10 +193,10 @@ for eval_num, idx in enumerate(eval_points):
     vol_change = (actual_atr - naive_atr) / naive_atr * 100 if naive_atr > 0 else 0
     e_dir = np.sign(egarch_atr - naive_atr)
     a_dir = np.sign(actual_atr - naive_atr)
-    dir_correct = (e_dir == a_dir) if a_dir != 0 else False
+    dir_correct = bool(e_dir == a_dir) if a_dir != 0 else False
 
     results.append({
-        "timestamp": df["timestamp"].iloc[pos],
+        "timestamp": str(df["timestamp"].values[idx]),
         "actual_atr": actual_atr,
         "egarch_atr": egarch_atr,
         "naive_atr": naive_atr,
@@ -190,16 +207,15 @@ for eval_num, idx in enumerate(eval_points):
         "vol_chg_pct": vol_change,
         "tcp_width": tcp_width,
         "covered": covered,
-        "interval_lower": interval_lower,
-        "interval_upper": interval_upper,
     })
 
     if (eval_num + 1) % 50 == 0:
         elapsed = time.time() - start_time
+        cur_mae = np.mean([r["e_err"] for r in results])
+        n_mae_cur = np.mean([r["n_err"] for r in results])
         print(f"  [{eval_num+1}/{n_evals}] {elapsed:.0f}s | "
-              f"EGARCH MAE={np.mean([r['e_err'] for r in results]):.4f} | "
-              f"Naive MAE={np.mean([r['n_err'] for r in results]):.4f} | "
-              f"TCP width={tcp_width:.3f}")
+              f"EGARCH MAE={cur_mae:.4f} | Naive MAE={n_mae_cur:.4f} | "
+              f"fits={fit_count} | skipped={skip_count}")
 
 total_time = time.time() - start_time
 
@@ -209,8 +225,13 @@ total_time = time.time() - start_time
 rdf = pd.DataFrame(results)
 n = len(rdf)
 
+print(f"\n  Completed: {n} eval points | Skipped: {skip_count} | EGARCH refits: {fit_count}")
+
 if n < 10:
-    print(f"\nERROR: Only {n} evaluation points. Check data range.")
+    print(f"\n  ERROR: Only {n} evaluation points succeeded.")
+    print(f"  Skipped: {skip_count}")
+    print(f"  Check: returns_pct has {df['returns_pct'].isna().sum()} NaN")
+    print(f"  Check: test_start_idx = {test_start_idx}, FIT_WINDOW = {FIT_WINDOW}")
     sys.exit(1)
 
 # Core metrics
@@ -223,12 +244,12 @@ e_dir_acc = rdf["dir_ok"].mean() * 100
 e_corr = np.corrcoef(rdf["actual_atr"], rdf["egarch_atr"])[0, 1]
 n_corr = np.corrcoef(rdf["actual_atr"], rdf["naive_atr"])[0, 1]
 
-# TCP calibration metrics
+# TCP calibration
 tcp_coverage = rdf["covered"].mean() * 100
 tcp_avg_width = rdf["tcp_width"].mean()
 tcp_final_width = rdf["tcp_width"].iloc[-1]
 
-# High-volatility regime performance
+# High-vol regime
 vol_mask = abs(rdf["vol_chg_pct"]) > 20
 vol_n = vol_mask.sum()
 
@@ -245,6 +266,7 @@ print(f"  {'MAE (lower=better)':<40} {e_mae:>10.4f} {n_mae:>10.4f} {'EGARCH' if 
 print(f"  {'Correlation with actual':<40} {e_corr:>10.4f} {n_corr:>10.4f} {'EGARCH' if e_corr > n_corr else 'NAIVE':>10}")
 print(f"  {'Head-to-head win rate':<40} {e_wr:>9.1f}% {100-e_wr:>9.1f}%  {'EGARCH' if e_wr > 50 else 'NAIVE':>10}")
 print(f"  {'Vol direction accuracy':<40} {e_dir_acc:>9.1f}% {'50.0':>9}%  {'EGARCH' if e_dir_acc > 50 else 'COIN':>10}")
+print(f"  {'MAE improvement vs naive':<40} {imp:>9.1f}%")
 
 print(f"\n  --- TCP Conformal Prediction (target: {(1-TCP_ALPHA)*100:.0f}% coverage) ---")
 print(f"  {'Empirical coverage':<40} {tcp_coverage:>9.1f}%")
@@ -295,17 +317,13 @@ else:
 
 print("=" * 70)
 
-# Save results
 rdf.to_csv("egarch_tcp_poc_results.csv", index=False)
 print(f"\nResults saved: egarch_tcp_poc_results.csv")
 
-# ==========================================================================
-# COMPARISON WITH KRONOS
-# ==========================================================================
 print(f"\n{'='*70}")
 print("  EGARCH vs KRONOS COMPARISON")
 print(f"{'='*70}")
-print(f"  Kronos score:    1/4  (FAILED)")
+print(f"  Kronos score:     1/4  (FAILED)")
 print(f"  EGARCH+TCP score: {passes}/5")
 print(f"  EGARCH fit time:  {total_time/60:.1f} min (CPU only, no GPU needed)")
 print(f"  Inference:        ~{total_time/n*1000:.0f}ms per forecast")
