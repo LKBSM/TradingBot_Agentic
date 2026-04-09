@@ -58,7 +58,8 @@ if not os.path.exists(DATA_FILE):
     print(f"  Downloading from GitHub release...")
     urllib.request.urlretrieve(DATA_URL, DATA_FILE)
 
-df = pd.read_csv(DATA_FILE, parse_dates=["timestamp"])
+df = pd.read_csv(DATA_FILE, parse_dates=["Date"])
+df.columns = ["timestamp", "open", "high", "low", "close", "volume"]
 df.sort_values("timestamp", inplace=True)
 df.reset_index(drop=True, inplace=True)
 
