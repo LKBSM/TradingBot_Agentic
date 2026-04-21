@@ -35,6 +35,8 @@ MAX_EVALS        = 500          # max evaluation points
 TEST_START       = "2024-07-01" # out-of-sample start
 HAR_TRAIN_MIN    = 2200         # min bars to train HAR (need 2112 for monthly)
 HMM_N_STATES     = 3            # low / normal / high vol regimes
+DIURNAL_STRENGTH = 0.5          # dampen diurnal: 0=ignore, 1=full raw adjustment
+BLEND_GRID       = True         # calibrate HAR/naive blend weight on training data
 TCP_ALPHA        = 0.05         # target miscoverage (95% intervals)
 TCP_GAMMA        = 0.05         # TCP learning rate (Robbins-Monro)
 
@@ -211,6 +213,58 @@ for h in sorted(diurnal_profile.keys()):
     print(f"    {h:02d}:00 = {diurnal_profile[h]:.3f} {bar}{label}")
 
 # ==========================================================================
+# 4b. CALIBRATE BLEND WEIGHT (on training data)
+# ==========================================================================
+print("\n[4b/6] Calibrating HAR/naive blend weight...")
+
+# Fit a HAR model on first 80% of training, validate on last 20%
+calib_split = int(len(train_df) * 0.8)
+calib_train = train_df.iloc[:calib_split]
+calib_val = train_df.iloc[calib_split:]
+
+# Fit HAR on calibration training set
+calib_valid_mask = calib_train[["rv_daily", "rv_weekly", "rv_monthly", "ATR_14", "future_atr"]].notna().all(axis=1)
+calib_train_valid = calib_train[calib_valid_mask]
+calib_val_valid_mask = calib_val[["rv_daily", "rv_weekly", "rv_monthly", "ATR_14", "future_atr"]].notna().all(axis=1)
+calib_val_valid = calib_val[calib_val_valid_mask]
+
+blend_w = 0.5  # default
+if len(calib_train_valid) > 500 and len(calib_val_valid) > 100:
+    X_ct = calib_train_valid[["rv_daily", "rv_weekly", "rv_monthly", "ATR_14"]].values
+    y_ct = calib_train_valid["future_atr"].values
+    calib_har = LinearRegression().fit(X_ct, y_ct)
+
+    # Predict on validation set
+    X_cv = calib_val_valid[["rv_daily", "rv_weekly", "rv_monthly", "ATR_14"]].values
+    y_cv = calib_val_valid["future_atr"].values
+    har_pred_cv = calib_har.predict(X_cv).clip(min=0.01)
+    naive_cv = calib_val_valid["ATR_14"].values
+
+    # Apply dampened diurnal + calendar multipliers on validation set
+    hours_cv = calib_val_valid["hour"].values
+    cal_cv = calib_val_valid["event_mult"].values
+    diurnal_cv = np.array([1.0 + DIURNAL_STRENGTH * (diurnal_profile.get(int(h), 1.0) - 1.0)
+                           for h in hours_cv])
+    har_adj_cv = har_pred_cv * diurnal_cv * cal_cv
+
+    # Grid search for best blend weight
+    best_w, best_mae = 0.5, float('inf')
+    for w in np.arange(0.05, 0.96, 0.05):
+        blended = w * har_adj_cv + (1 - w) * naive_cv
+        mae = np.mean(np.abs(blended - y_cv))
+        if mae < best_mae:
+            best_mae = mae
+            best_w = w
+
+    blend_w = best_w
+    naive_mae_cv = np.mean(np.abs(naive_cv - y_cv))
+    print(f"  Best blend weight: {blend_w:.2f} (HAR) / {1-blend_w:.2f} (naive)")
+    print(f"  Validation MAE: blended={best_mae:.4f}, naive={naive_mae_cv:.4f}, "
+          f"improvement={((1 - best_mae/naive_mae_cv) * 100):.1f}%")
+else:
+    print(f"  Insufficient calibration data, using default blend_w={blend_w}")
+
+# ==========================================================================
 # 5. WALK-FORWARD EVALUATION
 # ==========================================================================
 print(f"\n[5/6] Walk-forward evaluation...")
@@ -253,7 +307,8 @@ for eval_num, idx in enumerate(eval_indices):
             train_valid = train_slice[valid_mask]
 
             if len(train_valid) > 500:
-                X_train = train_valid[["rv_daily", "rv_weekly", "rv_monthly"]].values
+                # Include ATR_14 as 4th feature — lets HAR learn optimal naive blend
+                X_train = train_valid[["rv_daily", "rv_weekly", "rv_monthly", "ATR_14"]].values
                 # Target: future realized volatility (use future_atr as proxy)
                 y_train = train_valid["future_atr"].values
 
@@ -267,6 +322,7 @@ for eval_num, idx in enumerate(eval_indices):
                           f"daily={har_model.coef_[0]:.4f}, "
                           f"weekly={har_model.coef_[1]:.4f}, "
                           f"monthly={har_model.coef_[2]:.4f}, "
+                          f"ATR_14={har_model.coef_[3]:.4f}, "
                           f"intercept={har_model.intercept_:.4f}")
         except Exception as e:
             if har_fit_count == 0:
@@ -331,11 +387,13 @@ for eval_num, idx in enumerate(eval_indices):
         continue
 
     # ---------- HAR-RV FORECAST ----------
+    naive_atr = df["ATR_14"].values[idx]
     try:
         har_features = np.array([[
             df["rv_daily"].values[idx],
             df["rv_weekly"].values[idx],
             df["rv_monthly"].values[idx],
+            naive_atr,
         ]])
         if not np.all(np.isfinite(har_features)):
             skip_count += 1
@@ -346,9 +404,11 @@ for eval_num, idx in enumerate(eval_indices):
         skip_count += 1
         continue
 
-    # ---------- DIURNAL MULTIPLIER ----------
+    # ---------- DIURNAL MULTIPLIER (dampened) ----------
     hour = int(df["hour"].values[idx])
-    diurnal_mult = diurnal_profile.get(hour, 1.0)
+    raw_diurnal = diurnal_profile.get(hour, 1.0)
+    # Shrink toward 1.0: avoid over-adjusting in calm sessions
+    diurnal_mult = 1.0 + DIURNAL_STRENGTH * (raw_diurnal - 1.0)
 
     # ---------- CALENDAR EVENT MULTIPLIER ----------
     cal_mult = df["event_mult"].values[idx]
@@ -367,12 +427,16 @@ for eval_num, idx in enumerate(eval_indices):
             regime_mult = 1.0
 
     # ---------- COMBINED FORECAST ----------
-    # vol_forecast = HAR_base * diurnal * calendar * regime
-    forecast_atr = har_base * diurnal_mult * cal_mult * regime_mult
+    # HAR-adjusted: base * dampened multipliers
+    har_adjusted = har_base * diurnal_mult * cal_mult * regime_mult
 
-    # Sanity clamp: forecast should be between 0.1x and 5x naive ATR
-    naive_atr = df["ATR_14"].values[idx]
-    forecast_atr = np.clip(forecast_atr, 0.1 * naive_atr, 5.0 * naive_atr)
+    # Blend with naive (Bates & Granger 1969 — forecast combination)
+    # blend_w calibrated from training data; preserves naive's calm-period
+    # accuracy while capturing HAR's event/regime advantage
+    forecast_atr = blend_w * har_adjusted + (1 - blend_w) * naive_atr
+
+    # Sanity clamp: forecast should be between 0.2x and 5x naive ATR
+    forecast_atr = np.clip(forecast_atr, 0.2 * naive_atr, 5.0 * naive_atr)
 
     if not np.isfinite(forecast_atr) or forecast_atr <= 0:
         skip_count += 1
@@ -503,10 +567,11 @@ print(f"  {'Vol direction accuracy':<40} {e_dir_acc:>9.1f}% {'50.0':>9}%  {'HAR-
 print(f"  {'MAE improvement vs naive':<40} {imp:>9.1f}%")
 
 print(f"\n  --- Component Activity ---")
-print(f"  {'Diurnal profile range':<40} {diurnal_range:>10.3f}")
+print(f"  {'Blend weight (HAR/naive)':<40} {blend_w:.2f} / {1-blend_w:.2f}")
+print(f"  {'Diurnal strength':<40} {DIURNAL_STRENGTH:.2f} (range: {diurnal_range:.3f})")
 print(f"  {'Bars near events':<40} {cal_active:>9.1f}%")
 print(f"  {'Regime multiplier std':<40} {regime_std:>10.3f}")
-print(f"  {'HAR coefficients':<40} d={har_model.coef_[0]:.3f} w={har_model.coef_[1]:.3f} m={har_model.coef_[2]:.3f}")
+print(f"  {'HAR coefficients':<40} d={har_model.coef_[0]:.1f} w={har_model.coef_[1]:.1f} m={har_model.coef_[2]:.1f} atr={har_model.coef_[3]:.3f}")
 
 print(f"\n  --- TCP Conformal Prediction (target: {(1-TCP_ALPHA)*100:.0f}% coverage) ---")
 print(f"  {'Empirical coverage':<40} {tcp_coverage:>9.1f}%")
