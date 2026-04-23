@@ -81,6 +81,7 @@ def build_system(
     anthropic_key: Optional[str] = None,
     telegram_token: Optional[str] = None,
     telegram_chat_id: Optional[str] = None,
+    discord_webhook_url: Optional[str] = None,
     calendar_path: Optional[str] = None,
     data_source: str = "csv",
     mt5_login: Optional[int] = None,
@@ -112,6 +113,7 @@ def build_system(
     from src.intelligence.data_providers import CSVDataProvider, MT5DataProvider
     from src.api.signal_store import SignalStore
     from src.delivery.telegram_notifier import TelegramNotifier
+    from src.delivery.discord_notifier import DiscordNotifier
     from src.api.dependencies import AppState
 
     # 1. Instrument registry
@@ -163,13 +165,22 @@ def build_system(
     cache = SemanticCache() if narrative_mode == "llm" else None
     signal_store = SignalStore(db_path=signal_db)
 
-    # 8. Telegram notifier
+    # 8. Notifier (Discord preferred when webhook URL is set, else Telegram)
     notifier = None
-    if telegram_token:
+    notifier_label = "none"
+    if discord_webhook_url:
+        notifier = DiscordNotifier(webhook_url=discord_webhook_url)
+        notifier_label = "discord"
+        logger.info("Notifier: Discord (webhook)")
+    elif telegram_token:
         notifier = TelegramNotifier(
             bot_token=telegram_token,
             default_chat_id=telegram_chat_id,
         )
+        notifier_label = "telegram"
+        logger.info("Notifier: Telegram")
+    else:
+        logger.info("Notifier: disabled (no DISCORD_WEBHOOK_URL or TELEGRAM_BOT_TOKEN)")
 
     # 8b. Circuit breakers for external services. LLM breaker only exists in
     # LLM mode — wrapping the template engine is pointless because it never
@@ -182,13 +193,13 @@ def build_system(
             recovery_timeout=60.0,
             success_threshold=1,
         )
-    telegram_breaker = CircuitBreaker(
-        name="telegram",
+    notifier_breaker = CircuitBreaker(
+        name=notifier_label,
         failure_threshold=5,
         recovery_timeout=120.0,
         success_threshold=1,
     )
-    circuit_breakers: Dict[str, CircuitBreaker] = {"telegram": telegram_breaker}
+    circuit_breakers: Dict[str, CircuitBreaker] = {notifier_label: notifier_breaker}
     if llm_breaker is not None:
         circuit_breakers["llm"] = llm_breaker
 
@@ -196,7 +207,7 @@ def build_system(
     health_checker = HealthChecker()
     if llm_breaker is not None:
         health_checker.register("llm_api", lambda: llm_breaker.state != CircuitState.OPEN)
-    health_checker.register("telegram", lambda: telegram_breaker.state != CircuitState.OPEN)
+    health_checker.register(notifier_label, lambda: notifier_breaker.state != CircuitState.OPEN)
     health_checker.register(
         "signal_store", lambda: signal_store is not None
     )
@@ -226,7 +237,7 @@ def build_system(
             symbol=symbols[0],
             timeframe=config.timeframe,
             llm_circuit_breaker=llm_breaker,
-            notifier_circuit_breaker=telegram_breaker,
+            notifier_circuit_breaker=notifier_breaker,
         )
     else:
         scanner = MultiSymbolScanner(
@@ -350,6 +361,7 @@ def main() -> None:
     anthropic_key = os.environ.get("ANTHROPIC_API_KEY")
     telegram_token = os.environ.get("TELEGRAM_BOT_TOKEN")
     telegram_chat_id = os.environ.get("TELEGRAM_CHAT_ID")
+    discord_webhook_url = os.environ.get("DISCORD_WEBHOOK_URL")
     calendar_path = os.environ.get("CALENDAR_PATH")
     api_port = int(os.environ.get("API_PORT", "8000"))
 
@@ -382,6 +394,7 @@ def main() -> None:
         anthropic_key=anthropic_key,
         telegram_token=telegram_token,
         telegram_chat_id=telegram_chat_id,
+        discord_webhook_url=discord_webhook_url,
         calendar_path=calendar_path,
         data_source=data_source,
         mt5_login=int(mt5_login) if mt5_login else None,

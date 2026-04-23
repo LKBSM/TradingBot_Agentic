@@ -59,7 +59,8 @@
       "Bash(powershell -Command:*)",
       "Bash(tasklist:*)",
       "Bash(tail -60 \"C:\\\\\\\\Users\\\\\\\\bessa\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\claude\\\\\\\\C--MyPythonProjects-TradingBOT-Agentic\\\\\\\\1e75dd72-1404-4a7d-8da7-997f7a8ac766\\\\\\\\tasks\\\\\\\\bgai4dux1.output\")",
-      "Bash(git check-ignore *)"
+      "Bash(git check-ignore *)",
+      "Bash(git stash *)"
     ]
   }
 }
