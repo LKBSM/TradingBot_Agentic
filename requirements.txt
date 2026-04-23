@@ -1,5 +1,5 @@
 # =============================================================================
-# TRADING BOT REQUIREMENTS - v4.1.0 (Pre-Sprint 3)
+# SMART SENTINEL AI — Requirements v2.0.0
 # =============================================================================
 
 --extra-index-url https://download.pytorch.org/whl/cpu
@@ -22,12 +22,9 @@ ta>=0.11.0                    # Technical indicators
 arch>=6.0.0                   # GARCH volatility modeling
 
 # =============================================================================
-# SPRINT 2: INTELLIGENCE ENHANCEMENT
+# SENTIMENT & ML
 # =============================================================================
-# FinBERT Sentiment Analysis (optional - heavy dependency)
-transformers>=4.30.0          # Hugging Face transformers
-# hmmlearn>=0.3.0             # Hidden Markov Model (optional)
-# xgboost>=2.0.0              # Gradient boosting (optional - ensemble uses numpy fallback)
+transformers>=4.30.0          # FinBERT sentiment analysis
 
 # =============================================================================
 # SPRINT 3: REAL-TIME DATA SOURCES (Prepared)
@@ -38,10 +35,24 @@ feedparser>=6.0.0             # RSS feed parsing
 python-dateutil>=2.8.0        # Date parsing for news
 
 # =============================================================================
-# API & NETWORKING
+# SMART SENTINEL AI — Core Intelligence
 # =============================================================================
+anthropic>=0.40.0             # Claude API (LLM narrative engine)
+lightgbm>=4.0.0               # LightGBM volatility meta-learner (Rank 2)
+hmmlearn>=0.3.0               # HMM regime detection (HAR-RV pipeline)
+
+# =============================================================================
+# API & WEB FRAMEWORK
+# =============================================================================
+fastapi>=0.104.0              # REST API framework
+uvicorn>=0.24.0               # ASGI server
 requests>=2.31.0              # HTTP requests
 httpx>=0.25.0                 # Modern async HTTP client
+
+# =============================================================================
+# DELIVERY
+# =============================================================================
+python-telegram-bot>=20.0     # Telegram signal notifications
 
 # =============================================================================
 # DATA STORAGE & CONFIG
@@ -77,9 +88,8 @@ pytest-asyncio>=0.21.0        # Async test support
 pytest-cov>=4.0.0             # Coverage reporting
 
 # =============================================================================
-# OPTIONAL: ADVANCED ML (Uncomment if needed)
+# OPTIONAL (Uncomment if needed)
 # =============================================================================
 # tensorflow>=2.14.0          # Alternative to PyTorch
-# xgboost>=2.0.0              # Gradient boosting
-# lightgbm>=4.0.0             # Light gradient boosting
-# hmmlearn>=0.3.0             # Hidden Markov Models
+# xgboost>=2.0.0              # Gradient boosting (ensemble uses numpy fallback)
+# MetaTrader5>=5.0.45         # MT5 live data (Windows only)

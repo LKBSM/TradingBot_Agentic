@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 from src.api.signal_store import SignalStore
 
@@ -20,3 +20,12 @@ class AppState:
     key_store: Optional[Any] = None       # KeyStore
     hmac_manager: Optional[Any] = None    # HMACKeyManager
     signal_tracker: Optional[Any] = None  # SignalTracker
+    # Smart Sentinel AI
+    tier_manager: Optional[Any] = None    # UserTierManager
+    llm_engine: Optional[Any] = None      # LLMNarrativeEngine
+    scanner: Optional[Any] = None         # SentinelScanner
+    vol_forecaster: Optional[Any] = None  # VolatilityForecaster
+    # Reliability
+    circuit_breakers: Dict[str, Any] = field(default_factory=dict)  # {name: CircuitBreaker}
+    health_checker: Optional[Any] = None  # HealthChecker
+    rate_limiter: Optional[Any] = None    # RateLimiter

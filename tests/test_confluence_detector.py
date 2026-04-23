@@ -63,7 +63,11 @@ class MockNewsAssessment:
 
 @pytest.fixture
 def detector():
-    return ConfluenceDetector()
+    # Use min_score=40 so tests can exercise signal logic (direction, SL/TP,
+    # serialization) without having to fully populate regime/news/volume.
+    # Production default is 60 (H3) — see tests/test_tier_threshold* for
+    # coverage of the higher bar.
+    return ConfluenceDetector(min_score=40.0)
 
 
 @pytest.fixture
@@ -390,7 +394,9 @@ class TestVolumeConfirmation:
         assert signal_low is not None
         assert signal_high.confluence_score > signal_low.confluence_score
 
-    def test_no_volume_gives_neutral(self, detector, bullish_smc, bullish_regime, bullish_news):
+    def test_no_volume_contributes_zero(self, detector, bullish_smc, bullish_regime, bullish_news):
+        # Post-H2: missing data contributes 0.0, not 50%. Prevents "I have no
+        # evidence" from scoring halfway to "evidence supports this signal."
         signal = detector.analyze(
             smc_features=bullish_smc,
             regime=bullish_regime,
@@ -402,7 +408,7 @@ class TestVolumeConfirmation:
         )
         assert signal is not None
         vol_comp = [c for c in signal.components if c.name == "Volume"][0]
-        assert vol_comp.weighted_score == pytest.approx(5.0, abs=0.01)  # 50% of 10
+        assert vol_comp.weighted_score == pytest.approx(0.0, abs=0.01)
 
 
 # ============================================================================

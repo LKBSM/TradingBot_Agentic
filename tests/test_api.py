@@ -457,5 +457,5 @@ class TestAppFactory:
         resp = client.get("/openapi.json")
         assert resp.status_code == 200
         schema = resp.json()
-        assert schema["info"]["title"] == "Trading Bot Signal API"
-        assert schema["info"]["version"] == "0.11.0"
+        assert schema["info"]["title"] == "Smart Sentinel AI"
+        assert schema["info"]["version"] == "1.0.0"

@@ -1,10 +1,13 @@
 # =============================================================================
-# TRADING BOT DOCKERFILE - Production Image
+# SMART SENTINEL AI — Production Dockerfile
 # =============================================================================
 # Multi-stage build for optimized production image
 #
-# Build: docker build -t trading-bot:latest .
-# Run:   docker run -d --name trading-bot -p 8080:8080 trading-bot:latest
+# Build: docker build -t smart-sentinel:latest -f infrastructure/Dockerfile .
+# Run:   docker run -d --name sentinel -p 8000:8000 \
+#          -e ANTHROPIC_API_KEY=sk-... \
+#          -e SENTINEL_TESTING_MODE=1 \
+#          smart-sentinel:latest
 # =============================================================================
 
 # -----------------------------------------------------------------------------
@@ -38,9 +41,9 @@ RUN pip install --no-cache-dir --upgrade pip && \
 FROM python:3.11-slim as production
 
 # Labels
-LABEL maintainer="Trading Bot Team"
-LABEL version="3.0.0"
-LABEL description="Agentic Trading Bot - Sprint 3"
+LABEL maintainer="Smart Sentinel AI"
+LABEL version="1.0.0"
+LABEL description="Smart Sentinel AI — Market Intelligence"
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -49,8 +52,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     TZ=UTC
 
 # Create non-root user for security
-RUN groupadd -r tradingbot && \
-    useradd -r -g tradingbot tradingbot
+RUN groupadd -r sentinel && \
+    useradd -r -g sentinel sentinel
 
 WORKDIR /app
 
@@ -65,26 +68,25 @@ COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 # Copy application code
-COPY --chown=tradingbot:tradingbot . .
+COPY --chown=sentinel:sentinel . .
 
 # Create directories for data and logs
 RUN mkdir -p /app/data /app/logs /app/models && \
-    chown -R tradingbot:tradingbot /app
+    chown -R sentinel:sentinel /app
 
 # Switch to non-root user
-USER tradingbot
+USER sentinel
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8080/health || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
 
 # Expose ports
-# 8080: REST API
-# 9090: Metrics (Prometheus)
-EXPOSE 8080 9090
+# 8000: REST API
+EXPOSE 8000
 
-# Default command
-CMD ["python", "-m", "src.main"]
+# Default command — Smart Sentinel AI entry point
+CMD ["python", "-m", "src.intelligence.main"]
 
 # -----------------------------------------------------------------------------
 # Stage 3: Development (optional)
@@ -103,7 +105,7 @@ RUN pip install --no-cache-dir \
     mypy \
     ipython
 
-USER tradingbot
+USER sentinel
 
 # Override command for development
 CMD ["python", "-m", "pytest", "tests/", "-v"]

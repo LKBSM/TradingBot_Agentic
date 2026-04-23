@@ -22,6 +22,14 @@ from src.api.signal_tracker import SignalTracker
 from src.performance.metrics import MetricsRegistry, create_trading_metrics
 
 
+# Disable TESTING_MODE for pipeline auth tests
+@pytest.fixture(autouse=True)
+def _disable_testing_mode():
+    with patch("src.api.auth.TESTING_MODE", False), \
+         patch("src.api.routes.health.TESTING_MODE", False):
+        yield
+
+
 # =============================================================================
 # FIXTURES
 # =============================================================================

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import os
 import secrets
 import sqlite3
 import threading
@@ -14,6 +15,11 @@ from typing import Any, Dict, List, Optional
 from fastapi import Header, HTTPException, Request
 
 logger = logging.getLogger(__name__)
+
+# When SENTINEL_TESTING_MODE=1 (default), all endpoints are accessible
+# without API keys and grant INSTITUTIONAL-level access for personal testing.
+# Set to "0" when ready to enforce tier-based authentication.
+TESTING_MODE = os.environ.get("SENTINEL_TESTING_MODE", "1") == "1"
 
 
 # =============================================================================
@@ -253,7 +259,18 @@ async def require_api_key(
 
     Returns subscriber dict on success.
     Raises 401 (invalid/revoked), 429 (rate-limited), 503 (no KeyStore).
+
+    In TESTING_MODE, skips auth and returns full-access subscriber.
     """
+    if TESTING_MODE:
+        return {
+            "key_id": 0,
+            "label": "testing",
+            "tier": "INSTITUTIONAL",
+            "user_id": 0,
+            "testing_mode": True,
+        }
+
     key_store: Optional[KeyStore] = getattr(
         request.app.state.app_state, "key_store", None
     )
@@ -272,6 +289,20 @@ async def require_api_key(
         raise HTTPException(status_code=429, detail="Rate limit exceeded (100 req/min)")
 
     key_store.record_usage(subscriber["key_id"], request.url.path)
+
+    # Enrich with tier info if UserTierManager is available
+    tier_manager = getattr(request.app.state.app_state, "tier_manager", None)
+    if tier_manager is not None:
+        user = tier_manager.get_user_by_api_key(subscriber["key_id"])
+        if user is not None:
+            subscriber["user_id"] = user["user_id"]
+            subscriber["tier"] = user["tier"]
+            subscriber["telegram_chat_id"] = user.get("telegram_chat_id")
+        else:
+            subscriber["tier"] = "FREE"
+    else:
+        subscriber["tier"] = "FREE"
+
     return subscriber
 
 

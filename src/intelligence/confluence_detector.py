@@ -11,9 +11,12 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 import numpy as np
+
+if TYPE_CHECKING:
+    from src.intelligence.volatility_forecaster import VolatilityForecast
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +64,11 @@ class ConfluenceSignal:
     reasoning: List[str] = field(default_factory=list)
     bar_timestamp: Optional[str] = None
     created_at: str = field(default_factory=lambda: datetime.now(tz=None).isoformat())
+    # Volatility forecast fields (Sprint 2)
+    vol_forecast_atr: Optional[float] = None
+    vol_regime: Optional[str] = None
+    vol_confidence_lower: Optional[float] = None
+    vol_confidence_upper: Optional[float] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -82,6 +90,10 @@ class ConfluenceSignal:
             "reasoning": self.reasoning,
             "bar_timestamp": self.bar_timestamp,
             "created_at": self.created_at,
+            "vol_forecast_atr": self.vol_forecast_atr,
+            "vol_regime": self.vol_regime,
+            "vol_confidence_lower": self.vol_confidence_lower,
+            "vol_confidence_upper": self.vol_confidence_upper,
         }
 
 
@@ -124,12 +136,25 @@ class ConfluenceDetector:
     def __init__(
         self,
         weights: Optional[Dict[str, float]] = None,
-        min_score: float = 40.0,
+        min_score: float = 60.0,
         symbol: str = "XAUUSD",
+        instrument_config: Optional[Any] = None,
     ):
         self.weights = weights or DEFAULT_WEIGHTS.copy()
         self.min_score = min_score
         self.symbol = symbol
+        self._instrument_config = instrument_config
+
+        # Use per-instrument SL/TP multipliers if config provided
+        if instrument_config is not None:
+            self._sl_atr_mult = getattr(instrument_config, "sl_atr_mult", SL_ATR_MULT)
+            self._tp_atr_mult = getattr(instrument_config, "tp_atr_mult", TP_ATR_MULT)
+            self._price_decimals = getattr(instrument_config, "price_decimals", 2)
+            self.symbol = getattr(instrument_config, "symbol", symbol)
+        else:
+            self._sl_atr_mult = SL_ATR_MULT
+            self._tp_atr_mult = TP_ATR_MULT
+            self._price_decimals = 2
 
         total = sum(self.weights.values())
         if abs(total - 100.0) > 0.01:
@@ -149,6 +174,7 @@ class ConfluenceDetector:
         volume: Optional[float] = None,
         volume_ma: Optional[float] = None,
         bar_timestamp: Optional[str] = None,
+        vol_forecast: Optional["VolatilityForecast"] = None,
     ) -> Optional[ConfluenceSignal]:
         """
         Run full confluence analysis.
@@ -159,10 +185,12 @@ class ConfluenceDetector:
             regime: RegimeAnalysis object (from MarketRegimeAgent.analyze()).
             news: NewsAssessment object (from NewsAnalysisAgent.evaluate_news_impact()).
             price: Current close price.
-            atr: Current ATR value.
+            atr: Current ATR value (naive ATR, used as fallback).
             volume: Current bar volume (optional).
             volume_ma: 20-bar volume moving average (optional).
             bar_timestamp: ISO timestamp of the bar being analyzed.
+            vol_forecast: VolatilityForecast from volatility forecaster (optional).
+                          When provided, uses forecast_atr for SL/TP sizing.
 
         Returns:
             ConfluenceSignal if score >= min_score, else None.
@@ -198,9 +226,28 @@ class ConfluenceDetector:
 
         tier = self._classify_tier(total_score)
 
-        # Calculate ATR-based entry/SL/TP
-        sl_distance = SL_ATR_MULT * atr
-        tp_distance = TP_ATR_MULT * atr
+        # Use vol_forecast for SL/TP sizing when available
+        sizing_atr = atr
+        vol_forecast_atr = None
+        vol_regime = None
+        vol_conf_lower = None
+        vol_conf_upper = None
+
+        if vol_forecast is not None:
+            sizing_atr = vol_forecast.forecast_atr
+            vol_forecast_atr = vol_forecast.forecast_atr
+            vol_regime = vol_forecast.regime_state
+            vol_conf_lower = vol_forecast.confidence_lower
+            vol_conf_upper = vol_forecast.confidence_upper
+
+        # Calculate ATR-based entry/SL/TP (uses per-instrument multipliers).
+        # In high-vol regime, widen only the stop — the target should NOT move
+        # further out (markets reach targets faster in high vol, so extending
+        # TP lowers the realized hit rate).
+        sl_distance = self._sl_atr_mult * sizing_atr
+        tp_distance = self._tp_atr_mult * sizing_atr
+        if vol_forecast is not None and vol_forecast.regime_state == "high":
+            sl_distance *= 1.5
 
         if signal_type == SignalType.LONG:
             entry = price
@@ -221,14 +268,18 @@ class ConfluenceDetector:
             signal_type=signal_type,
             confluence_score=total_score,
             tier=tier,
-            entry_price=round(entry, 2),
-            stop_loss=round(stop_loss, 2),
-            take_profit=round(take_profit, 2),
+            entry_price=round(entry, self._price_decimals),
+            stop_loss=round(stop_loss, self._price_decimals),
+            take_profit=round(take_profit, self._price_decimals),
             rr_ratio=round(rr_ratio, 2),
             atr=round(atr, 4),
             components=components,
             reasoning=reasoning,
             bar_timestamp=bar_timestamp,
+            vol_forecast_atr=round(vol_forecast_atr, 4) if vol_forecast_atr else None,
+            vol_regime=vol_regime,
+            vol_confidence_lower=round(vol_conf_lower, 4) if vol_conf_lower else None,
+            vol_confidence_upper=round(vol_conf_upper, 4) if vol_conf_upper else None,
         )
 
     # ------------------------------------------------------------------ #
@@ -313,7 +364,7 @@ class ConfluenceDetector:
         w = self.weights["regime"]
 
         if regime is None:
-            return ComponentScore("Regime", 0.0, w * 0.5, w, "No regime data — neutral weight")
+            return ComponentScore("Regime", 0.0, 0.0, w, "No regime data — zero contribution")
 
         regime_type = getattr(regime, "regime", None)
         trend_dir = getattr(regime, "trend_direction", None)
@@ -357,7 +408,7 @@ class ConfluenceDetector:
         w = self.weights["news"]
 
         if news is None:
-            return ComponentScore("News", 0.0, w * 0.5, w, "No news data — neutral weight")
+            return ComponentScore("News", 0.0, 0.0, w, "No news data — zero contribution")
 
         sentiment = getattr(news, "sentiment_score", 0.0)
         confidence = getattr(news, "sentiment_confidence", 0.5)
@@ -379,7 +430,7 @@ class ConfluenceDetector:
         w = self.weights["volume"]
 
         if volume is None or volume_ma is None or volume_ma <= 0:
-            return ComponentScore("Volume", 0.0, w * 0.5, w, "No volume data — neutral weight")
+            return ComponentScore("Volume", 0.0, 0.0, w, "No volume data — zero contribution")
 
         ratio = volume / volume_ma
         # 1.0x = baseline, 2.0x+ = full score, 0.5x = low score

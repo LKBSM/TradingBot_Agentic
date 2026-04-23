@@ -6,7 +6,8 @@ import time
 
 from fastapi import APIRouter, Request
 
-from src.api.models import HealthResponse, SystemStatus
+from src.api.auth import TESTING_MODE
+from src.api.models import ComponentHealth, HealthResponse, SystemStatus
 
 router = APIRouter(tags=["health"])
 
@@ -19,8 +20,9 @@ async def _build_health(request: Request) -> HealthResponse:
     status = SystemStatus.HEALTHY
     kill_switch_level = 0
     is_trading_active = True
+    components = []
 
-    # Health monitor
+    # Health monitor (legacy)
     monitor = app_state.health_monitor
     if monitor is not None:
         try:
@@ -38,11 +40,39 @@ async def _build_health(request: Request) -> HealthResponse:
         except Exception:
             pass
 
+    # Circuit breaker health
+    health_checker = getattr(app_state, "health_checker", None)
+    if health_checker is not None:
+        try:
+            result = health_checker.check_all()
+            for name, healthy in result.get("checks", {}).items():
+                components.append(ComponentHealth(name=name, healthy=healthy))
+            if not result.get("healthy", True):
+                status = SystemStatus.DEGRADED
+        except Exception:
+            pass
+
+    # Scanner status
+    scanner_running = False
+    signals_generated = 0
+    scanner = getattr(app_state, "scanner", None)
+    if scanner is not None:
+        try:
+            stats = scanner.get_stats()
+            scanner_running = stats.get("running", False)
+            signals_generated = stats.get("signals_generated", 0)
+        except Exception:
+            pass
+
     return HealthResponse(
         status=status,
         uptime_seconds=round(time.time() - _BOOT_TIME, 2),
         kill_switch_level=kill_switch_level,
         is_trading_active=is_trading_active,
+        testing_mode=TESTING_MODE,
+        components=components,
+        scanner_running=scanner_running,
+        signals_generated=signals_generated,
     )
 
 

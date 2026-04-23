@@ -32,6 +32,17 @@ class SignalRecord:
     outcome: Optional[str] = None
     pnl_pips: Optional[float] = None
     closed_at: Optional[str] = None
+    # Smart Sentinel narrative fields
+    confluence_score: Optional[float] = None
+    narrative: Optional[str] = None
+    validation_reason: Optional[str] = None
+    key_confluences: Optional[str] = None
+    risk_warnings: Optional[str] = None
+    market_context: Optional[str] = None
+    # Volatility forecast fields (schema v3)
+    vol_forecast_atr: Optional[float] = None
+    vol_regime: Optional[str] = None
+    vol_confidence: Optional[str] = None  # JSON: {"lower": x, "upper": y}
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -52,7 +63,7 @@ class SignalStore:
     ``src/persistence/kill_switch_store.py``.
     """
 
-    SCHEMA_VERSION = 1
+    SCHEMA_VERSION = 3
 
     def __init__(self, db_path: str = "./data/signals.db"):
         self._db_path = Path(db_path)
@@ -111,10 +122,37 @@ class SignalStore:
                 CREATE INDEX IF NOT EXISTS idx_signals_created
                     ON signals(created_at DESC);
             """)
-            conn.execute(
-                "INSERT OR REPLACE INTO schema_version (version) VALUES (?)",
-                (self.SCHEMA_VERSION,),
-            )
+        if from_v < 2:
+            # Smart Sentinel narrative columns
+            for col, col_type in [
+                ("confluence_score", "REAL"),
+                ("narrative", "TEXT"),
+                ("validation_reason", "TEXT"),
+                ("key_confluences", "TEXT"),
+                ("risk_warnings", "TEXT"),
+                ("market_context", "TEXT"),
+            ]:
+                try:
+                    conn.execute(f"ALTER TABLE signals ADD COLUMN {col} {col_type}")
+                except sqlite3.OperationalError:
+                    pass  # Column already exists
+
+        if from_v < 3:
+            # Volatility forecast columns
+            for col, col_type in [
+                ("vol_forecast_atr", "REAL"),
+                ("vol_regime", "TEXT"),
+                ("vol_confidence", "TEXT"),
+            ]:
+                try:
+                    conn.execute(f"ALTER TABLE signals ADD COLUMN {col} {col_type}")
+                except sqlite3.OperationalError:
+                    pass  # Column already exists
+
+        conn.execute(
+            "INSERT OR REPLACE INTO schema_version (version) VALUES (?)",
+            (self.SCHEMA_VERSION,),
+        )
 
     # --------------------------------------------------------------------- #
     # Public API
@@ -129,8 +167,11 @@ class SignalStore:
                 conn.execute(
                     "INSERT OR REPLACE INTO signals "
                     "(signal_id, action, symbol, entry_price, stop_loss, "
-                    " take_profit, rr_ratio, created_at, outcome, pnl_pips, closed_at) "
-                    "VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                    " take_profit, rr_ratio, created_at, outcome, pnl_pips, closed_at, "
+                    " confluence_score, narrative, validation_reason, "
+                    " key_confluences, risk_warnings, market_context, "
+                    " vol_forecast_atr, vol_regime, vol_confidence) "
+                    "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                     (
                         record.signal_id,
                         record.action,
@@ -143,6 +184,15 @@ class SignalStore:
                         record.outcome,
                         record.pnl_pips,
                         record.closed_at,
+                        record.confluence_score,
+                        record.narrative,
+                        record.validation_reason,
+                        record.key_confluences,
+                        record.risk_warnings,
+                        record.market_context,
+                        record.vol_forecast_atr,
+                        record.vol_regime,
+                        record.vol_confidence,
                     ),
                 )
             finally:
@@ -175,25 +225,54 @@ class SignalStore:
                     (page_size, offset),
                 )
                 rows = cur.fetchall()
-                records = [
-                    SignalRecord(
-                        signal_id=r["signal_id"],
-                        action=r["action"],
-                        symbol=r["symbol"],
-                        entry_price=r["entry_price"],
-                        stop_loss=r["stop_loss"],
-                        take_profit=r["take_profit"],
-                        rr_ratio=r["rr_ratio"],
-                        created_at=r["created_at"],
-                        outcome=r["outcome"],
-                        pnl_pips=r["pnl_pips"],
-                        closed_at=r["closed_at"],
-                    )
-                    for r in rows
-                ]
+                records = [self._row_to_record(r) for r in rows]
                 return records, total
             finally:
                 conn.close()
+
+    def get_by_id(self, signal_id: str) -> Optional[SignalRecord]:
+        """Retrieve a single signal by ID."""
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                cur = conn.execute(
+                    "SELECT * FROM signals WHERE signal_id = ?",
+                    (signal_id,),
+                )
+                row = cur.fetchone()
+                return self._row_to_record(row) if row else None
+            finally:
+                conn.close()
+
+    @staticmethod
+    def _row_to_record(r: Any) -> SignalRecord:
+        """Convert a sqlite3.Row to SignalRecord."""
+        # Handle both old (v1) and new (v2) schema
+        def _get(key: str, default=None):
+            try:
+                return r[key]
+            except (IndexError, KeyError):
+                return default
+
+        return SignalRecord(
+            signal_id=r["signal_id"],
+            action=r["action"],
+            symbol=r["symbol"],
+            entry_price=r["entry_price"],
+            stop_loss=r["stop_loss"],
+            take_profit=r["take_profit"],
+            rr_ratio=r["rr_ratio"],
+            created_at=r["created_at"],
+            outcome=r["outcome"],
+            pnl_pips=r["pnl_pips"],
+            closed_at=r["closed_at"],
+            confluence_score=_get("confluence_score"),
+            narrative=_get("narrative"),
+            validation_reason=_get("validation_reason"),
+            key_confluences=_get("key_confluences"),
+            risk_warnings=_get("risk_warnings"),
+            market_context=_get("market_context"),
+        )
 
     def update_outcome(
         self,

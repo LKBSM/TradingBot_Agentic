@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import logging
+import os
 import time
 from contextlib import asynccontextmanager
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,7 +14,7 @@ from fastapi.responses import JSONResponse
 
 from src.api.dependencies import AppState
 from src.api.models import ErrorResponse
-from src.api.routes import admin, dashboard, health, operator, prometheus, signals
+from src.api.routes import admin, dashboard, health, narratives, operator, prometheus, signals, state
 from src.api.signal_store import SignalStore
 
 logger = logging.getLogger(__name__)
@@ -29,6 +30,12 @@ def create_app(
     key_store: Any = None,
     hmac_manager: Any = None,
     signal_tracker: Any = None,
+    tier_manager: Any = None,
+    llm_engine: Any = None,
+    scanner: Any = None,
+    circuit_breakers: Optional[Dict[str, Any]] = None,
+    health_checker: Any = None,
+    rate_limiter: Any = None,
 ) -> FastAPI:
     """
     Build and return a fully-configured FastAPI application.
@@ -49,6 +56,12 @@ def create_app(
         key_store=key_store,
         hmac_manager=hmac_manager,
         signal_tracker=signal_tracker,
+        tier_manager=tier_manager,
+        llm_engine=llm_engine,
+        scanner=scanner,
+        circuit_breakers=circuit_breakers or {},
+        health_checker=health_checker,
+        rate_limiter=rate_limiter,
     )
 
     @asynccontextmanager
@@ -58,8 +71,8 @@ def create_app(
         logger.info("API shutting down")
 
     app = FastAPI(
-        title="Trading Bot Signal API",
-        version="0.11.0",
+        title="Smart Sentinel AI",
+        version="1.0.0",
         docs_url="/api/docs",
         redoc_url=None,
         lifespan=lifespan,
@@ -68,13 +81,48 @@ def create_app(
     # Store app_state so routes can access it via request.app.state
     app.state.app_state = app_state
 
-    # ── CORS ──────────────────────────────────────────────────────────────
+    # ── CORS (configurable from env) ──────────────────────────────────────
+    cors_origins_str = os.environ.get(
+        "CORS_ALLOWED_ORIGINS",
+        "http://localhost,http://localhost:3000",
+    )
+    cors_origins = [o.strip() for o in cors_origins_str.split(",") if o.strip()]
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost", "http://localhost:3000"],
+        allow_origins=cors_origins,
         allow_methods=["GET", "POST", "DELETE"],
         allow_headers=["*"],
     )
+
+    # ── Request size limit middleware (1 MB) ──────────────────────────────
+    MAX_BODY_SIZE = 1_048_576  # 1 MB
+
+    @app.middleware("http")
+    async def request_size_limit(request: Request, call_next):
+        content_length = request.headers.get("content-length")
+        if content_length and int(content_length) > MAX_BODY_SIZE:
+            return JSONResponse(
+                status_code=413,
+                content={"error": "payload_too_large", "detail": "Max body size is 1 MB"},
+            )
+        return await call_next(request)
+
+    # ── Per-IP rate limiter middleware ─────────────────────────────────────
+    @app.middleware("http")
+    async def rate_limit_middleware(request: Request, call_next):
+        if rate_limiter is not None:
+            client_ip = request.client.host if request.client else "unknown"
+            if not rate_limiter.allow(client_ip):
+                remaining = rate_limiter.remaining(client_ip)
+                return JSONResponse(
+                    status_code=429,
+                    content={
+                        "error": "rate_limit_exceeded",
+                        "detail": "Too many requests. Please slow down.",
+                    },
+                    headers={"Retry-After": "60", "X-RateLimit-Remaining": str(remaining)},
+                )
+        return await call_next(request)
 
     # ── Request logging middleware ────────────────────────────────────────
     @app.middleware("http")
@@ -109,16 +157,18 @@ def create_app(
             status_code=500,
             content=ErrorResponse(
                 error="internal_server_error",
-                detail=str(exc),
+                detail="Internal server error",
             ).model_dump(),
         )
 
     # ── Routers ───────────────────────────────────────────────────────────
     app.include_router(signals.router)
+    app.include_router(state.router)
     app.include_router(health.router)
     app.include_router(operator.router)
     app.include_router(prometheus.router)
     app.include_router(admin.router)
     app.include_router(dashboard.router)
+    app.include_router(narratives.router)
 
     return app

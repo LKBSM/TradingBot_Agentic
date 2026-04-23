@@ -69,26 +69,32 @@ def _calculate_bos_choch_numba(
     last_fractal_high = highs[0]
     last_fractal_low = lows[0]
 
-    # Find initial structure from first few fractals
+    # Find initial structure from first few fractals.
+    # up_fractals[i] / down_fractals[i] hold the actual pivot price (already
+    # shifted by N). Reading highs[i] / lows[i] here would read the confirmation
+    # bar (N bars after the pivot) — in trending markets that price is already
+    # past the real swing, so structure tracking lags and BOS misidentifies.
     for i in range(min(50, n)):
         if not np.isnan(up_fractals[i]):
-            current_high_structure = max(current_high_structure, highs[i])
-            last_fractal_high = highs[i]
+            pivot_high = up_fractals[i]
+            current_high_structure = max(current_high_structure, pivot_high)
+            last_fractal_high = pivot_high
         if not np.isnan(down_fractals[i]):
-            current_low_structure = min(current_low_structure, lows[i])
-            last_fractal_low = lows[i]
+            pivot_low = down_fractals[i]
+            current_low_structure = min(current_low_structure, pivot_low)
+            last_fractal_low = pivot_low
 
     # Main loop - state machine for structure tracking
     for i in range(1, n):
         current_close = closes[i]
 
-        # Update last fractal levels (always track the most recent fractal)
+        # Update last fractal levels (always track the most recent fractal pivot)
         if not np.isnan(up_fractals[i]):
-            last_fractal_high = highs[i]
-            current_high_structure = max(current_high_structure, highs[i])
+            last_fractal_high = up_fractals[i]
+            current_high_structure = max(current_high_structure, last_fractal_high)
         if not np.isnan(down_fractals[i]):
-            last_fractal_low = lows[i]
-            current_low_structure = min(current_low_structure, lows[i])
+            last_fractal_low = down_fractals[i]
+            current_low_structure = min(current_low_structure, last_fractal_low)
 
         # CHOCH (Change of Character) - trend reversal
         # Reset structures to last fractal swings (not current bar)
@@ -152,37 +158,44 @@ def _calculate_bos_choch_python(
 
     current_high_structure = highs[0]
     current_low_structure = lows[0]
+    last_fractal_high = highs[0]
+    last_fractal_low = lows[0]
 
-    # Find initial structure
+    # Find initial structure from pivot prices (shifted up_fractals/down_fractals),
+    # not confirmation-bar highs/lows.
     for i in range(min(50, n)):
         if not np.isnan(up_fractals[i]):
-            current_high_structure = max(current_high_structure, highs[i])
+            last_fractal_high = up_fractals[i]
+            current_high_structure = max(current_high_structure, last_fractal_high)
         if not np.isnan(down_fractals[i]):
-            current_low_structure = min(current_low_structure, lows[i])
+            last_fractal_low = down_fractals[i]
+            current_low_structure = min(current_low_structure, last_fractal_low)
 
     for i in range(1, n):
         if not np.isnan(up_fractals[i]):
-            current_high_structure = max(current_high_structure, highs[i])
+            last_fractal_high = up_fractals[i]
+            current_high_structure = max(current_high_structure, last_fractal_high)
         if not np.isnan(down_fractals[i]):
-            current_low_structure = min(current_low_structure, lows[i])
+            last_fractal_low = down_fractals[i]
+            current_low_structure = min(current_low_structure, last_fractal_low)
 
         if bos_signal[i - 1] == -1 and closes[i] > current_high_structure:
             choch_signal[i] = 1
-            current_low_structure = lows[i]
-            current_high_structure = highs[i]
+            current_low_structure = last_fractal_low
+            current_high_structure = last_fractal_high
             bos_signal[i] = 1
         elif bos_signal[i - 1] == 1 and closes[i] < current_low_structure:
             choch_signal[i] = -1
-            current_high_structure = highs[i]
-            current_low_structure = lows[i]
+            current_high_structure = last_fractal_high
+            current_low_structure = last_fractal_low
             bos_signal[i] = -1
         elif choch_signal[i] == 0:
             if bos_signal[i - 1] >= 0 and closes[i] > current_high_structure:
                 bos_signal[i] = 1
-                current_high_structure = highs[i]
+                current_high_structure = last_fractal_high
             elif bos_signal[i - 1] <= 0 and closes[i] < current_low_structure:
                 bos_signal[i] = -1
-                current_low_structure = lows[i]
+                current_low_structure = last_fractal_low
             else:
                 bos_signal[i] = bos_signal[i - 1]
 

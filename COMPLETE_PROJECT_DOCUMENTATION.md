@@ -6,7 +6,7 @@
 3. [Core Configuration (config.py)](#3-core-configuration-configpy)
 4. [Trading Environment (environment.py)](#4-trading-environment-environmentpy)
 5. [Risk Manager (risk_manager.py)](#5-risk-manager-risk_managerpy)
-6. [Smart Money Engine (strategy_features.py)](#6-smart-money-engine-strategy_featurespy)
+6. [Smart Mcclaconey Engine (strategy_features.py)](#6-smart-money-engine-strategy_featurespy)
 7. [Agent Trainer (agent_trainer.py)](#7-agent-trainer-agent_trainerpy)
 8. [Parallel Training (parallel_training.py)](#8-parallel-training-parallel_trainingpy)
 9. [Agentic System (agents/)](#9-agentic-system-agents)

@@ -14,6 +14,7 @@ from __future__ import annotations
 import hashlib
 import hmac as hmac_mod
 import time
+from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -22,6 +23,15 @@ from src.api.app import create_app
 from src.api.auth import KeyStore
 from src.api.signal_store import SignalRecord, SignalStore
 from src.performance.metrics import MetricsRegistry
+
+
+# Disable TESTING_MODE for auth tests — we need real auth enforcement
+@pytest.fixture(autouse=True)
+def _disable_testing_mode():
+    with patch("src.api.auth.TESTING_MODE", False), \
+         patch("src.api.routes.narratives.TESTING_MODE", False), \
+         patch("src.api.routes.health.TESTING_MODE", False):
+        yield
 
 
 # =============================================================================

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import math
 from datetime import datetime, timedelta
+from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -20,6 +21,14 @@ from src.api.auth import KeyStore
 from src.api.signal_store import SignalRecord, SignalStore
 from src.api.signal_tracker import SignalTracker
 from src.performance.metrics import MetricsRegistry, create_trading_metrics
+
+
+# Disable TESTING_MODE for dashboard auth tests
+@pytest.fixture(autouse=True)
+def _disable_testing_mode():
+    with patch("src.api.auth.TESTING_MODE", False), \
+         patch("src.api.routes.health.TESTING_MODE", False):
+        yield
 
 
 # =============================================================================
@@ -438,4 +447,4 @@ class TestSignalMetrics:
 class TestAppVersion:
     def test_version_bumped_to_0_11(self, client):
         resp = client.get("/openapi.json")
-        assert resp.json()["info"]["version"] == "0.11.0"
+        assert resp.json()["info"]["version"] == "1.0.0"
