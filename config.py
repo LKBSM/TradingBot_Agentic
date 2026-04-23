@@ -36,7 +36,10 @@ for directory in [DATA_DIR, MODEL_DIR, LOG_DIR, RESULTS_DIR, REPORTS_DIR,
 
 # Data file path - now uses DATA_DIR for portability
 # Place your CSV in the 'data' folder of the project
-HISTORICAL_DATA_FILE = os.path.join(DATA_DIR, "XAU_15MIN_2019_2025.csv")
+# NOTE: 2019-2025 file audited at 63% coverage (37% bars missing, session 20-23 UTC
+# truncated, distinct price feed from 2019-2024). Using 2019-2024 (97.6% coverage)
+# until Dukascopy or broker-MT5 export replaces it. See scripts/audit_data_quality.py.
+HISTORICAL_DATA_FILE = os.path.join(DATA_DIR, "XAU_15MIN_2019_2024.csv")
 
 # Column mapping (adjust if your CSV uses different names)
 OHLCV_COLUMNS = {

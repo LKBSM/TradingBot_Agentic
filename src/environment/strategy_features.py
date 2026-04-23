@@ -36,44 +36,39 @@ def _calculate_bos_choch_numba(
     lows: np.ndarray,
     up_fractals: np.ndarray,
     down_fractals: np.ndarray
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Numba-optimized BOS/CHOCH calculation.
-
-    This function is compiled to machine code for maximum performance.
-    Achieves 50-100x speedup over pure Python implementation.
 
     Structure tracking uses fractal swing levels (not bar highs/lows) for
     accurate SMC structure identification. On CHOCH/BOS events, structures
     reset to the last fractal swing level, not the triggering bar.
 
-    Args:
-        closes: Array of close prices
-        highs: Array of high prices
-        lows: Array of low prices
-        up_fractals: Array of up fractal values (NaN where no fractal)
-        down_fractals: Array of down fractal values (NaN where no fractal)
-
-    Returns:
-        Tuple of (bos_signal, choch_signal) arrays
+    Returns three arrays:
+      * ``bos_signal`` — *trend-state*: propagates forward once a direction
+        is established. Kept for backward compatibility with the legacy RL
+        features and agents that use it as a trend indicator.
+      * ``choch_signal`` — 1/-1 only on change-of-character bars.
+      * ``bos_event``   — *event*: 1/-1 ONLY on the bar where a break actually
+        occurs, 0 otherwise. This is the correct input for downstream signal
+        gating (ConfluenceDetector). Using ``bos_signal`` for that purpose
+        causes every bar to look like a break once the first direction
+        is set, which is the 100%-firing bug.
     """
     n = len(closes)
     bos_signal = np.zeros(n, dtype=np.int32)
     choch_signal = np.zeros(n, dtype=np.int32)
+    bos_event = np.zeros(n, dtype=np.int32)
 
-    # Initialize structure from first valid data
     current_high_structure = highs[0]
     current_low_structure = lows[0]
-
-    # Track last fractal swing levels for structure resets
     last_fractal_high = highs[0]
     last_fractal_low = lows[0]
 
-    # Find initial structure from first few fractals.
-    # up_fractals[i] / down_fractals[i] hold the actual pivot price (already
-    # shifted by N). Reading highs[i] / lows[i] here would read the confirmation
-    # bar (N bars after the pivot) — in trending markets that price is already
-    # past the real swing, so structure tracking lags and BOS misidentifies.
+    last_bos_up_level = -np.inf
+    last_bos_down_level = np.inf
+
+    # Seed from pivot prices, not confirmation-bar OHLC
     for i in range(min(50, n)):
         if not np.isnan(up_fractals[i]):
             pivot_high = up_fractals[i]
@@ -84,11 +79,9 @@ def _calculate_bos_choch_numba(
             current_low_structure = min(current_low_structure, pivot_low)
             last_fractal_low = pivot_low
 
-    # Main loop - state machine for structure tracking
     for i in range(1, n):
         current_close = closes[i]
 
-        # Update last fractal levels (always track the most recent fractal pivot)
         if not np.isnan(up_fractals[i]):
             last_fractal_high = up_fractals[i]
             current_high_structure = max(current_high_structure, last_fractal_high)
@@ -96,31 +89,40 @@ def _calculate_bos_choch_numba(
             last_fractal_low = down_fractals[i]
             current_low_structure = min(current_low_structure, last_fractal_low)
 
-        # CHOCH (Change of Character) - trend reversal
-        # Reset structures to last fractal swings (not current bar)
+        allow_bos_up = last_fractal_high > last_bos_up_level
+        allow_bos_down = last_fractal_low < last_bos_down_level
+
         if bos_signal[i - 1] == -1 and current_close > current_high_structure:
             choch_signal[i] = 1
             current_low_structure = last_fractal_low
             current_high_structure = last_fractal_high
             bos_signal[i] = 1
+            bos_event[i] = 1                     # actual break this bar
+            last_bos_up_level = current_close
         elif bos_signal[i - 1] == 1 and current_close < current_low_structure:
             choch_signal[i] = -1
             current_high_structure = last_fractal_high
             current_low_structure = last_fractal_low
             bos_signal[i] = -1
-        # BOS (Break of Structure) - trend continuation
-        # Update structure to last fractal level (not bar high/low)
+            bos_event[i] = -1
+            last_bos_down_level = current_close
         elif choch_signal[i] == 0:
-            if bos_signal[i - 1] >= 0 and current_close > current_high_structure:
+            if bos_signal[i - 1] >= 0 and current_close > current_high_structure and allow_bos_up:
                 bos_signal[i] = 1
+                bos_event[i] = 1                 # continuation break
                 current_high_structure = last_fractal_high
-            elif bos_signal[i - 1] <= 0 and current_close < current_low_structure:
-                bos_signal[i] = -1
                 current_low_structure = last_fractal_low
+                last_bos_up_level = current_close
+            elif bos_signal[i - 1] <= 0 and current_close < current_low_structure and allow_bos_down:
+                bos_signal[i] = -1
+                bos_event[i] = -1
+                current_low_structure = last_fractal_low
+                current_high_structure = last_fractal_high
+                last_bos_down_level = current_close
             else:
                 bos_signal[i] = bos_signal[i - 1]
 
-    return bos_signal, choch_signal
+    return bos_signal, choch_signal, bos_event
 
 
 def calculate_bos_choch_fast(
@@ -129,16 +131,18 @@ def calculate_bos_choch_fast(
     lows: np.ndarray,
     up_fractals: np.ndarray,
     down_fractals: np.ndarray
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Fast BOS/CHOCH calculation with Numba fallback.
 
-    Uses Numba if available, otherwise falls back to optimized Python.
+    Returns ``(bos_signal, choch_signal, bos_event)``. See
+    :func:`_calculate_bos_choch_numba` for semantics — ``bos_signal`` is the
+    propagating trend-state (legacy), ``bos_event`` only fires on actual
+    break bars.
     """
     if NUMBA_AVAILABLE:
         return _calculate_bos_choch_numba(closes, highs, lows, up_fractals, down_fractals)
     else:
-        # Fallback: optimized Python (still faster than original)
         return _calculate_bos_choch_python(closes, highs, lows, up_fractals, down_fractals)
 
 
@@ -148,21 +152,21 @@ def _calculate_bos_choch_python(
     lows: np.ndarray,
     up_fractals: np.ndarray,
     down_fractals: np.ndarray
-) -> Tuple[np.ndarray, np.ndarray]:
-    """
-    Optimized Python fallback for BOS/CHOCH (when Numba unavailable).
-    """
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Optimized Python fallback — same semantics as the Numba version."""
     n = len(closes)
     bos_signal = np.zeros(n, dtype=np.int32)
     choch_signal = np.zeros(n, dtype=np.int32)
+    bos_event = np.zeros(n, dtype=np.int32)
 
     current_high_structure = highs[0]
     current_low_structure = lows[0]
     last_fractal_high = highs[0]
     last_fractal_low = lows[0]
 
-    # Find initial structure from pivot prices (shifted up_fractals/down_fractals),
-    # not confirmation-bar highs/lows.
+    last_bos_up_level = -np.inf
+    last_bos_down_level = np.inf
+
     for i in range(min(50, n)):
         if not np.isnan(up_fractals[i]):
             last_fractal_high = up_fractals[i]
@@ -179,27 +183,40 @@ def _calculate_bos_choch_python(
             last_fractal_low = down_fractals[i]
             current_low_structure = min(current_low_structure, last_fractal_low)
 
+        allow_bos_up = last_fractal_high > last_bos_up_level
+        allow_bos_down = last_fractal_low < last_bos_down_level
+
         if bos_signal[i - 1] == -1 and closes[i] > current_high_structure:
             choch_signal[i] = 1
             current_low_structure = last_fractal_low
             current_high_structure = last_fractal_high
             bos_signal[i] = 1
+            bos_event[i] = 1
+            last_bos_up_level = closes[i]
         elif bos_signal[i - 1] == 1 and closes[i] < current_low_structure:
             choch_signal[i] = -1
             current_high_structure = last_fractal_high
             current_low_structure = last_fractal_low
             bos_signal[i] = -1
+            bos_event[i] = -1
+            last_bos_down_level = closes[i]
         elif choch_signal[i] == 0:
-            if bos_signal[i - 1] >= 0 and closes[i] > current_high_structure:
+            if bos_signal[i - 1] >= 0 and closes[i] > current_high_structure and allow_bos_up:
                 bos_signal[i] = 1
+                bos_event[i] = 1
                 current_high_structure = last_fractal_high
-            elif bos_signal[i - 1] <= 0 and closes[i] < current_low_structure:
-                bos_signal[i] = -1
                 current_low_structure = last_fractal_low
+                last_bos_up_level = closes[i]
+            elif bos_signal[i - 1] <= 0 and closes[i] < current_low_structure and allow_bos_down:
+                bos_signal[i] = -1
+                bos_event[i] = -1
+                current_low_structure = last_fractal_low
+                current_high_structure = last_fractal_high
+                last_bos_down_level = closes[i]
             else:
                 bos_signal[i] = bos_signal[i - 1]
 
-    return bos_signal, choch_signal
+    return bos_signal, choch_signal, bos_event
 
 
 # --- I. Configuration Management (Pydantic) ---
@@ -466,12 +483,13 @@ class SmartMoneyEngine:
         down_fractals = self.df['DOWN_FRACTAL'].values.astype(np.float64)
 
         # Use Numba-optimized function (or fallback)
-        bos_signal, choch_signal = calculate_bos_choch_fast(
+        bos_signal, choch_signal, bos_event = calculate_bos_choch_fast(
             closes, highs, lows, up_fractals, down_fractals
         )
 
-        self.df['BOS_SIGNAL'] = bos_signal
+        self.df['BOS_SIGNAL'] = bos_signal   # propagating trend-state (legacy)
         self.df['CHOCH_SIGNAL'] = choch_signal
+        self.df['BOS_EVENT'] = bos_event     # 1/-1 only on actual break bars
 
         if NUMBA_AVAILABLE:
             logger.debug("BOS/CHOCH calculated using Numba JIT (optimized)")

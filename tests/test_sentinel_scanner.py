@@ -29,12 +29,17 @@ from src.intelligence.semantic_cache import SemanticCache
 
 def make_ohlcv_df(n_bars: int = 200, base_price: float = 2400.0,
                   bos: float = 1.0, fvg: float = 1.0) -> pd.DataFrame:
-    """Create a mock enriched OHLCV DataFrame with SMC features."""
+    """Create a mock enriched OHLCV DataFrame with SMC features.
+
+    H/L are derived from max/min(O, C) + spread so the frame satisfies the
+    data-quality validator (H >= max(O,C), L <= min(O,C), H >= L).
+    """
     dates = pd.date_range("2025-06-01", periods=n_bars, freq="15min")
     close = base_price + np.cumsum(np.random.randn(n_bars) * 0.5)
-    high = close + np.random.rand(n_bars) * 2
-    low = close - np.random.rand(n_bars) * 2
     open_ = close + np.random.randn(n_bars) * 0.3
+    spread = np.abs(np.random.randn(n_bars)) * 1.0 + 0.5
+    high = np.maximum(open_, close) + spread
+    low = np.minimum(open_, close) - spread
     volume = np.random.randint(500, 2000, n_bars).astype(float)
 
     df = pd.DataFrame({
@@ -124,7 +129,10 @@ def mock_news_agent():
 
 @pytest.fixture
 def detector():
-    return ConfluenceDetector()
+    # Use min_score=40 so the scanner pipeline tests (publish/notify/cache)
+    # aren't gated by the production threshold (60). The threshold itself is
+    # covered by tests/test_confluence_detector.py::TestTierClassification.
+    return ConfluenceDetector(min_score=40.0)
 
 
 @pytest.fixture

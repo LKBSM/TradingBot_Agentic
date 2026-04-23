@@ -69,6 +69,10 @@ class ConfluenceSignal:
     vol_regime: Optional[str] = None
     vol_confidence_lower: Optional[float] = None
     vol_confidence_upper: Optional[float] = None
+    # Suggested position size multiplier, combining regime + news inputs.
+    # 1.0 = baseline risk; 0.5 = half size; 0.0 = do not trade.
+    position_multiplier: float = 1.0
+    position_reasoning: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -94,6 +98,8 @@ class ConfluenceSignal:
             "vol_regime": self.vol_regime,
             "vol_confidence_lower": self.vol_confidence_lower,
             "vol_confidence_upper": self.vol_confidence_upper,
+            "position_multiplier": round(self.position_multiplier, 3),
+            "position_reasoning": self.position_reasoning,
         }
 
 
@@ -200,10 +206,18 @@ class ConfluenceDetector:
             logger.debug("Signal blocked by news: %s", self._get_news_reasoning(news))
             return None
 
-        # Determine direction from BOS
+        # Direction is derived from the *trend state* (``BOS_SIGNAL``) not
+        # the one-bar event flag. Reason: the state machine re-evaluates the
+        # score on every bar during ARMING, and if we only returned a signal
+        # on fresh break bars, every arming would abort on bar 1 when the
+        # event flag resets to 0. ``BOS_EVENT`` is still consumed by
+        # ``_score_bos`` as a quality booster — fresh breaks score higher than
+        # continuations — but it's no longer a hard gate. This matches
+        # SMC practice: once structure is broken, continuation signals are
+        # legitimate as long as confluence holds.
         bos = smc_features.get("BOS_SIGNAL", 0.0)
-        if bos == 0.0:
-            return None  # No structural break, no signal
+        if not bos:
+            return None  # No established trend direction, no signal
 
         signal_type = SignalType.LONG if bos > 0 else SignalType.SHORT
 
@@ -262,6 +276,25 @@ class ConfluenceDetector:
 
         reasoning = [c.reasoning for c in components if c.weighted_score > 0]
 
+        # Compose suggested position sizing from the two agents that vote on
+        # it. Multiplicative combination means either side can veto (0.0) or
+        # dampen independently. Kill-switch/risk-manager layers are not
+        # consulted here — they live downstream of signal publication.
+        regime_mult = 1.0
+        if regime is not None:
+            raw = getattr(regime, "position_size_multiplier", None)
+            if raw is not None:
+                regime_mult = float(raw)
+        news_mult = 1.0
+        if news is not None:
+            raw = getattr(news, "position_multiplier", None)
+            if raw is not None:
+                news_mult = float(raw)
+        pos_mult = max(0.0, min(1.5, regime_mult * news_mult))
+        pos_reason = (
+            f"regime×news = {regime_mult:.2f} × {news_mult:.2f} = {pos_mult:.2f}"
+        )
+
         return ConfluenceSignal(
             signal_id=str(uuid.uuid4())[:12],
             symbol=self.symbol,
@@ -280,6 +313,8 @@ class ConfluenceDetector:
             vol_regime=vol_regime,
             vol_confidence_lower=round(vol_conf_lower, 4) if vol_conf_lower else None,
             vol_confidence_upper=round(vol_conf_upper, 4) if vol_conf_upper else None,
+            position_multiplier=round(pos_mult, 3),
+            position_reasoning=pos_reason,
         )
 
     # ------------------------------------------------------------------ #
@@ -287,25 +322,36 @@ class ConfluenceDetector:
     # ------------------------------------------------------------------ #
 
     def _score_bos(self, smc: Dict[str, float], direction: SignalType, atr: float = 0.0) -> ComponentScore:
-        """Break of Structure: graduated scoring based on CHOCH confirmation.
+        """Break of Structure: graduated scoring by event freshness + CHOCH.
 
-        Full weight when BOS aligns AND CHOCH confirms (trend reversal).
-        Base 60% weight for simple BOS alignment (trend continuation).
+        Quality tiers (per-direction, both long and short):
+          - CHOCH aligned (reversal)              → 100% weight
+          - Fresh BOS event this bar               → 85% weight
+          - Continuation (trend state only)        → 50% weight
+          - Direction mismatch                     → 0
         """
         w = self.weights["bos"]
         bos = smc.get("BOS_SIGNAL", 0.0)
+        event = smc.get("BOS_EVENT", 0.0)
         choch = smc.get("CHOCH_SIGNAL", 0.0)
 
         if direction == SignalType.LONG and bos > 0:
-            # CHOCH confirms reversal → full weight; simple BOS → 60%
-            quality = 1.0 if choch > 0 else 0.6
+            if choch > 0:
+                quality, label = 1.0, "BOS + CHOCH reversal"
+            elif event > 0:
+                quality, label = 0.85, "fresh BOS break"
+            else:
+                quality, label = 0.5, "BOS continuation"
             score = quality * w
-            label = "BOS + CHOCH" if choch > 0 else "BOS continuation"
             reason = f"Bullish {label} (quality={quality:.0%})"
         elif direction == SignalType.SHORT and bos < 0:
-            quality = 1.0 if choch < 0 else 0.6
+            if choch < 0:
+                quality, label = 1.0, "BOS + CHOCH reversal"
+            elif event < 0:
+                quality, label = 0.85, "fresh BOS break"
+            else:
+                quality, label = 0.5, "BOS continuation"
             score = quality * w
-            label = "BOS + CHOCH" if choch < 0 else "BOS continuation"
             reason = f"Bearish {label} (quality={quality:.0%})"
         else:
             score = 0.0

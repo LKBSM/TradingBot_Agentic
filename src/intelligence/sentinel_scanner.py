@@ -266,6 +266,7 @@ class SentinelScanner:
         # Extract SMC features from latest bar
         smc_features = {
             "BOS_SIGNAL": float(latest.get("BOS_SIGNAL", 0)),
+            "BOS_EVENT": float(latest.get("BOS_EVENT", 0)),
             "FVG_SIGNAL": float(latest.get("FVG_SIGNAL", 0)),
             "OB_STRENGTH_NORM": float(latest.get("OB_STRENGTH_NORM", 0)),
             "RSI": float(latest.get("RSI", 50)),

@@ -27,11 +27,20 @@ class TestGraduatedBOSScoring:
         assert result.weighted_score == pytest.approx(self.bos_weight, abs=0.01)
 
     def test_bos_without_choch_gets_partial_weight(self):
-        """BOS without CHOCH should get 60% of weight."""
-        smc = {"BOS_SIGNAL": 1.0, "CHOCH_SIGNAL": 0.0}
+        """BOS continuation (no CHOCH, no fresh event) should get 50% of weight."""
+        smc = {"BOS_SIGNAL": 1.0, "BOS_EVENT": 0.0, "CHOCH_SIGNAL": 0.0}
         result = self.detector._score_bos(smc, SignalType.LONG, atr=5.0)
-        expected = 0.6 * self.bos_weight
+        expected = 0.5 * self.bos_weight
         assert result.weighted_score == pytest.approx(expected, abs=0.01)
+
+    def test_fresh_bos_event_scores_higher_than_continuation(self):
+        """Fresh BOS_EVENT should score 85%, above plain continuation (50%)."""
+        smc_fresh = {"BOS_SIGNAL": 1.0, "BOS_EVENT": 1.0, "CHOCH_SIGNAL": 0.0}
+        smc_cont = {"BOS_SIGNAL": 1.0, "BOS_EVENT": 0.0, "CHOCH_SIGNAL": 0.0}
+        r_fresh = self.detector._score_bos(smc_fresh, SignalType.LONG, atr=5.0)
+        r_cont = self.detector._score_bos(smc_cont, SignalType.LONG, atr=5.0)
+        assert r_fresh.weighted_score == pytest.approx(0.85 * self.bos_weight, abs=0.01)
+        assert r_cont.weighted_score == pytest.approx(0.5 * self.bos_weight, abs=0.01)
 
     def test_bos_wrong_direction_gets_zero(self):
         """BOS opposing signal direction should get 0."""
@@ -46,10 +55,10 @@ class TestGraduatedBOSScoring:
         assert result.weighted_score == pytest.approx(self.bos_weight, abs=0.01)
 
     def test_bearish_bos_without_choch(self):
-        """Bearish BOS without CHOCH should get 60%."""
-        smc = {"BOS_SIGNAL": -1.0, "CHOCH_SIGNAL": 0.0}
+        """Bearish BOS continuation (no CHOCH, no fresh event) should get 50%."""
+        smc = {"BOS_SIGNAL": -1.0, "BOS_EVENT": 0.0, "CHOCH_SIGNAL": 0.0}
         result = self.detector._score_bos(smc, SignalType.SHORT, atr=5.0)
-        expected = 0.6 * self.bos_weight
+        expected = 0.5 * self.bos_weight
         assert result.weighted_score == pytest.approx(expected, abs=0.01)
 
     def test_bos_reason_mentions_choch(self):

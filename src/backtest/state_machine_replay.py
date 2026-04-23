@@ -461,6 +461,7 @@ class SignalReplay:
 
             smc_features = {
                 "BOS_SIGNAL": float(row.get("BOS_SIGNAL", 0) or 0),
+                "BOS_EVENT": float(row.get("BOS_EVENT", 0) or 0),
                 "FVG_SIGNAL": float(row.get("FVG_SIGNAL", 0) or 0),
                 "OB_STRENGTH_NORM": float(row.get("OB_STRENGTH_NORM", 0) or 0),
                 "RSI": float(row.get("RSI", 50) or 50),
@@ -473,7 +474,10 @@ class SignalReplay:
             regime = _regime_for(regime_tags.iloc[i], float(slope_bps.iloc[i] or 0))
             vol_regime = vol_tags.iloc[i] if isinstance(vol_tags.iloc[i], str) else None
 
-            if smc_features["BOS_SIGNAL"] != 0.0:
+            # Diagnostic counts BOS *events* (the gating input), not the
+            # propagating trend-state — the latter is 100% of bars by design
+            # after the first break and carries no information about cadence.
+            if smc_features["BOS_EVENT"] != 0.0:
                 bars_with_bos += 1
 
             signal: Optional[ConfluenceSignal] = None

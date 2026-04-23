@@ -400,7 +400,12 @@ class TestHealthCheckerIntegration:
 # =============================================================================
 
 def _build_system_for_test(tmpdir, env=None):
-    """Shared setup for build_system tests. Writes dummy OHLCV + builds system."""
+    """Shared setup for build_system tests. Writes dummy OHLCV + builds system.
+
+    A dummy TELEGRAM_BOT_TOKEN is injected so the notifier is wired under the
+    ``telegram`` label (the tests all assert on that label). Callers can
+    override via ``env`` — the explicit env wins over the defaults.
+    """
     import os
     from pathlib import Path
 
@@ -411,26 +416,35 @@ def _build_system_for_test(tmpdir, env=None):
     n = 3000
     ts = pd.date_range("2024-01-01", periods=n, freq="15min")
     close = 2000.0 + np.cumsum(rng.randn(n) * 0.5)
+    open_ = close + rng.randn(n) * 0.3
+    spread_up = rng.uniform(0.5, 3.0, n)
+    spread_dn = rng.uniform(0.5, 3.0, n)
     df = pd.DataFrame({
         "timestamp": ts,
-        "Open": close + rng.randn(n) * 0.3,
-        "High": close + rng.uniform(0.5, 3.0, n),
-        "Low": close - rng.uniform(0.5, 3.0, n),
+        "Open": open_,
+        "High": np.maximum(open_, close) + spread_up,
+        "Low": np.minimum(open_, close) - spread_dn,
         "Close": close,
         "Volume": rng.uniform(100, 10000, n),
     })
     df.to_csv(Path(tmpdir) / "XAUUSD_M15.csv", index=False)
     db_path = str(Path(tmpdir) / "signals.db")
 
+    merged_env = dict(env) if env else {}
+
     from src.intelligence.main import _NullAgent, build_system
-    with patch.dict(os.environ, env or {}, clear=False), \
+    with patch.dict(os.environ, merged_env, clear=False), \
          patch("src.intelligence.main._create_regime_agent", return_value=_NullAgent()), \
          patch("src.intelligence.main._create_news_agent", return_value=_NullAgent()):
+        # build_system takes telegram_token as a kwarg (not via env). Injecting
+        # a dummy token so the notifier gets wired under the ``telegram`` label
+        # — the tests all assert on that label.
         return build_system(
             symbols=["XAUUSD"],
             data_dir=tmpdir,
             signal_db=db_path,
             vol_mode="har",
+            telegram_token="dummy-for-test",
         )
 
 

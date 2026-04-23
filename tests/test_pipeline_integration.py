@@ -41,16 +41,23 @@ from src.intelligence.volatility_forecaster import (
 # =============================================================================
 
 def _make_smc_features(bos: float = 1.0, fvg: float = 1.0) -> dict:
-    """Create minimal SMC features for a LONG signal."""
+    """Create minimal SMC features.
+
+    Directional features (OB / CHOCH / RSI / MACD) track the sign of ``bos`` so
+    the whole feature set is internally consistent — otherwise contradictory
+    components can drop the score below the detector's min_score floor (60
+    post-H3) and :meth:`ConfluenceDetector.analyze` returns None.
+    """
+    direction = 1.0 if bos >= 0 else -1.0
     return {
         "BOS_SIGNAL": bos,
         "FVG_SIGNAL": fvg,
         "FVG_SIZE_NORM": 0.5,
-        "OB_STRENGTH_NORM": 0.7,
-        "RSI": 60.0,
-        "MACD_Diff": 0.005,
-        "CHOCH_SIGNAL": 1.0,
-        "CHOCH_DIVERGENCE": 1,
+        "OB_STRENGTH_NORM": 0.7 * direction,
+        "RSI": 60.0 if direction > 0 else 40.0,
+        "MACD_Diff": 0.005 * direction,
+        "CHOCH_SIGNAL": direction,
+        "CHOCH_DIVERGENCE": int(direction),
     }
 
 
