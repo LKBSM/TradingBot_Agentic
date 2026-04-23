@@ -349,7 +349,12 @@ class _NullAgent:
 
 def main() -> None:
     """Main entry point."""
-    # Parse environment
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+    except ImportError:
+        pass
+
     log_level = os.environ.get("LOG_LEVEL", "INFO")
     setup_logging(log_level)
 
