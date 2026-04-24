@@ -57,7 +57,7 @@ class TestCHOCHResetToFractal:
             highs=highs, lows=lows
         )
 
-        bos, choch = _calculate_bos_choch_numba(closes, highs, lows, up_fractals, down_fractals)
+        bos, choch, _evt, _brk = _calculate_bos_choch_numba(closes, highs, lows, up_fractals, down_fractals)
 
         # Find where CHOCH bullish triggers
         choch_bullish_bars = np.where(choch == 1)[0]
@@ -95,7 +95,7 @@ class TestCHOCHResetToFractal:
             highs=highs, lows=lows
         )
 
-        bos, choch = _calculate_bos_choch_numba(closes, highs, lows, up_fractals, down_fractals)
+        bos, choch, _evt, _brk = _calculate_bos_choch_numba(closes, highs, lows, up_fractals, down_fractals)
 
         # First BOS should be bullish (uptrend established)
         assert np.any(bos == 1), "Expected bullish BOS in uptrend phase"
@@ -142,7 +142,7 @@ class TestCHOCHResetToFractal:
             highs=highs, lows=lows
         )
 
-        bos, choch = _calculate_bos_choch_numba(closes, highs, lows, up_fractals, down_fractals)
+        bos, choch, _evt, _brk = _calculate_bos_choch_numba(closes, highs, lows, up_fractals, down_fractals)
 
         # Downtrend should produce BOS=-1 as price breaks below structure
         assert np.any(bos[50:85] == -1), "Expected bearish BOS in downtrend phase"
@@ -174,7 +174,7 @@ class TestBOSStructureUpdate:
             highs=highs, lows=lows
         )
 
-        bos, choch = _calculate_bos_choch_numba(closes, highs, lows, up_fractals, down_fractals)
+        bos, choch, _evt, _brk = _calculate_bos_choch_numba(closes, highs, lows, up_fractals, down_fractals)
 
         # Should detect BOS continuation signals
         assert np.any(bos == 1), "Expected bullish BOS in uptrend"
@@ -201,8 +201,8 @@ class TestBOSStructureUpdate:
         up_f_r, down_f_r = _make_fractal_arrays(n, frac_bars_h, frac_bars_l, highs_range, lows_range)
         up_f_t, down_f_t = _make_fractal_arrays(n, frac_bars_h, frac_bars_l, highs_trend, lows_trend)
 
-        _, choch_range = _calculate_bos_choch_numba(closes_range, highs_range, lows_range, up_f_r, down_f_r)
-        _, choch_trend = _calculate_bos_choch_numba(closes_trend, highs_trend, lows_trend, up_f_t, down_f_t)
+        _, choch_range, _evt_r, _brk_r = _calculate_bos_choch_numba(closes_range, highs_range, lows_range, up_f_r, down_f_r)
+        _, choch_trend, _evt_t, _brk_t = _calculate_bos_choch_numba(closes_trend, highs_trend, lows_trend, up_f_t, down_f_t)
 
         # Range market should have fewer or equal CHOCH signals than trend+reversal
         range_choch_count = np.sum(np.abs(choch_range))
@@ -230,7 +230,7 @@ class TestCHOCHFractalTracking:
             highs=highs, lows=lows
         )
 
-        bos, choch = _calculate_bos_choch_numba(closes, highs, lows, up_fractals, down_fractals)
+        bos, choch, _evt, _brk = _calculate_bos_choch_numba(closes, highs, lows, up_fractals, down_fractals)
 
         # Function should complete without error
         assert len(bos) == n
@@ -247,7 +247,7 @@ class TestCHOCHFractalTracking:
         up_fractals = np.full(n, np.nan)
         down_fractals = np.full(n, np.nan)
 
-        bos, choch = _calculate_bos_choch_numba(closes, highs, lows, up_fractals, down_fractals)
+        bos, choch, _evt, _brk = _calculate_bos_choch_numba(closes, highs, lows, up_fractals, down_fractals)
 
         assert len(bos) == n
         assert len(choch) == n
@@ -273,15 +273,17 @@ class TestCalculateBOSCHOCHFastWrapper:
             if i < n:
                 down_fractals[i] = lows[i]
 
-        bos_numba, choch_numba = _calculate_bos_choch_numba(
+        bos_numba, choch_numba, evt_numba, brk_numba = _calculate_bos_choch_numba(
             closes, highs, lows, up_fractals, down_fractals
         )
-        bos_fast, choch_fast = calculate_bos_choch_fast(
+        bos_fast, choch_fast, evt_fast, brk_fast = calculate_bos_choch_fast(
             closes, highs, lows, up_fractals, down_fractals
         )
 
         np.testing.assert_array_equal(bos_numba, bos_fast)
         np.testing.assert_array_equal(choch_numba, choch_fast)
+        np.testing.assert_array_equal(evt_numba, evt_fast)
+        np.testing.assert_array_equal(brk_numba, brk_fast, strict=False)
 
     def test_output_shape_matches_input(self):
         """Output arrays should have same length as input."""
@@ -292,7 +294,7 @@ class TestCalculateBOSCHOCHFastWrapper:
         up_fractals = np.full(n, np.nan)
         down_fractals = np.full(n, np.nan)
 
-        bos, choch = calculate_bos_choch_fast(closes, highs, lows, up_fractals, down_fractals)
+        bos, choch, _evt, _brk = calculate_bos_choch_fast(closes, highs, lows, up_fractals, down_fractals)
         assert bos.shape == (n,)
         assert choch.shape == (n,)
 
@@ -310,7 +312,7 @@ class TestCalculateBOSCHOCHFastWrapper:
         for i in range(3, n, 7):
             down_fractals[i] = lows[i]
 
-        bos, choch = calculate_bos_choch_fast(closes, highs, lows, up_fractals, down_fractals)
+        bos, choch, _evt, _brk = calculate_bos_choch_fast(closes, highs, lows, up_fractals, down_fractals)
 
         assert set(np.unique(bos)).issubset({-1, 0, 1})
         assert set(np.unique(choch)).issubset({-1, 0, 1})

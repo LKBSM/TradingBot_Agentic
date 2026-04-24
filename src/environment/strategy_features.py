@@ -36,7 +36,7 @@ def _calculate_bos_choch_numba(
     lows: np.ndarray,
     up_fractals: np.ndarray,
     down_fractals: np.ndarray
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Numba-optimized BOS/CHOCH calculation.
 
@@ -44,7 +44,7 @@ def _calculate_bos_choch_numba(
     accurate SMC structure identification. On CHOCH/BOS events, structures
     reset to the last fractal swing level, not the triggering bar.
 
-    Returns three arrays:
+    Returns four arrays:
       * ``bos_signal`` — *trend-state*: propagates forward once a direction
         is established. Kept for backward compatibility with the legacy RL
         features and agents that use it as a trend indicator.
@@ -54,11 +54,16 @@ def _calculate_bos_choch_numba(
         gating (ConfluenceDetector). Using ``bos_signal`` for that purpose
         causes every bar to look like a break once the first direction
         is set, which is the 100%-firing bug.
+      * ``bos_break_level`` — the structural swing level that was broken on
+        each event bar (previous swing high for BOS_UP, swing low for BOS_DOWN);
+        NaN on non-event bars. Used by the retest state machine to locate
+        the level that price is expected to pull back to.
     """
     n = len(closes)
     bos_signal = np.zeros(n, dtype=np.int32)
     choch_signal = np.zeros(n, dtype=np.int32)
     bos_event = np.zeros(n, dtype=np.int32)
+    bos_break_level = np.full(n, np.nan, dtype=np.float64)
 
     current_high_structure = highs[0]
     current_low_structure = lows[0]
@@ -94,6 +99,7 @@ def _calculate_bos_choch_numba(
 
         if bos_signal[i - 1] == -1 and current_close > current_high_structure:
             choch_signal[i] = 1
+            bos_break_level[i] = current_high_structure       # broken resistance
             current_low_structure = last_fractal_low
             current_high_structure = last_fractal_high
             bos_signal[i] = 1
@@ -101,6 +107,7 @@ def _calculate_bos_choch_numba(
             last_bos_up_level = current_close
         elif bos_signal[i - 1] == 1 and current_close < current_low_structure:
             choch_signal[i] = -1
+            bos_break_level[i] = current_low_structure        # broken support
             current_high_structure = last_fractal_high
             current_low_structure = last_fractal_low
             bos_signal[i] = -1
@@ -108,12 +115,14 @@ def _calculate_bos_choch_numba(
             last_bos_down_level = current_close
         elif choch_signal[i] == 0:
             if bos_signal[i - 1] >= 0 and current_close > current_high_structure and allow_bos_up:
+                bos_break_level[i] = current_high_structure
                 bos_signal[i] = 1
                 bos_event[i] = 1                 # continuation break
                 current_high_structure = last_fractal_high
                 current_low_structure = last_fractal_low
                 last_bos_up_level = current_close
             elif bos_signal[i - 1] <= 0 and current_close < current_low_structure and allow_bos_down:
+                bos_break_level[i] = current_low_structure
                 bos_signal[i] = -1
                 bos_event[i] = -1
                 current_low_structure = last_fractal_low
@@ -122,7 +131,7 @@ def _calculate_bos_choch_numba(
             else:
                 bos_signal[i] = bos_signal[i - 1]
 
-    return bos_signal, choch_signal, bos_event
+    return bos_signal, choch_signal, bos_event, bos_break_level
 
 
 def calculate_bos_choch_fast(
@@ -131,14 +140,15 @@ def calculate_bos_choch_fast(
     lows: np.ndarray,
     up_fractals: np.ndarray,
     down_fractals: np.ndarray
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Fast BOS/CHOCH calculation with Numba fallback.
 
-    Returns ``(bos_signal, choch_signal, bos_event)``. See
+    Returns ``(bos_signal, choch_signal, bos_event, bos_break_level)``. See
     :func:`_calculate_bos_choch_numba` for semantics — ``bos_signal`` is the
     propagating trend-state (legacy), ``bos_event`` only fires on actual
-    break bars.
+    break bars, ``bos_break_level`` is the broken structural level on event
+    bars (NaN otherwise).
     """
     if NUMBA_AVAILABLE:
         return _calculate_bos_choch_numba(closes, highs, lows, up_fractals, down_fractals)
@@ -152,12 +162,13 @@ def _calculate_bos_choch_python(
     lows: np.ndarray,
     up_fractals: np.ndarray,
     down_fractals: np.ndarray
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Optimized Python fallback — same semantics as the Numba version."""
     n = len(closes)
     bos_signal = np.zeros(n, dtype=np.int32)
     choch_signal = np.zeros(n, dtype=np.int32)
     bos_event = np.zeros(n, dtype=np.int32)
+    bos_break_level = np.full(n, np.nan, dtype=np.float64)
 
     current_high_structure = highs[0]
     current_low_structure = lows[0]
@@ -188,6 +199,7 @@ def _calculate_bos_choch_python(
 
         if bos_signal[i - 1] == -1 and closes[i] > current_high_structure:
             choch_signal[i] = 1
+            bos_break_level[i] = current_high_structure
             current_low_structure = last_fractal_low
             current_high_structure = last_fractal_high
             bos_signal[i] = 1
@@ -195,6 +207,7 @@ def _calculate_bos_choch_python(
             last_bos_up_level = closes[i]
         elif bos_signal[i - 1] == 1 and closes[i] < current_low_structure:
             choch_signal[i] = -1
+            bos_break_level[i] = current_low_structure
             current_high_structure = last_fractal_high
             current_low_structure = last_fractal_low
             bos_signal[i] = -1
@@ -202,12 +215,14 @@ def _calculate_bos_choch_python(
             last_bos_down_level = closes[i]
         elif choch_signal[i] == 0:
             if bos_signal[i - 1] >= 0 and closes[i] > current_high_structure and allow_bos_up:
+                bos_break_level[i] = current_high_structure
                 bos_signal[i] = 1
                 bos_event[i] = 1
                 current_high_structure = last_fractal_high
                 current_low_structure = last_fractal_low
                 last_bos_up_level = closes[i]
             elif bos_signal[i - 1] <= 0 and closes[i] < current_low_structure and allow_bos_down:
+                bos_break_level[i] = current_low_structure
                 bos_signal[i] = -1
                 bos_event[i] = -1
                 current_low_structure = last_fractal_low
@@ -216,7 +231,201 @@ def _calculate_bos_choch_python(
             else:
                 bos_signal[i] = bos_signal[i - 1]
 
-    return bos_signal, choch_signal, bos_event
+    return bos_signal, choch_signal, bos_event, bos_break_level
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# BOS RETEST STATE MACHINE
+# ═════════════════════════════════════════════════════════════════════════════
+# SMC theory: after a structural break, price commonly pulls back to retest
+# the broken level (now polarity-flipped support/resistance) before continuing
+# in the break direction. Entering on the break itself tends to chase tops/
+# bottoms and take SL hits when the move fades; waiting for the retest filters
+# out those failed breaks.
+#
+# State transitions for a LONG setup (BOS_UP event at bar N with broken
+# structure high L):
+#   AWAITING (state=+1):
+#     - bar i's low dips within retest_tol_atr × ATR of L → ARMED (state=+2)
+#     - close drops invalid_tol_atr × ATR below L          → IDLE (failed break)
+#     - awaiting_timeout bars elapse                       → IDLE (stale)
+#   ARMED (state=+2):
+#     - armed_window bars elapse                           → IDLE
+#     - close drops invalid_tol_atr × ATR below L          → IDLE (support lost)
+#     - otherwise                                          → stays ARMED, emits retest_armed=+1
+#
+# A new BOS event in either direction overrides any existing state.
+
+@jit(nopython=True, cache=True, parallel=False)
+def _calculate_bos_retest_numba(
+    closes: np.ndarray,
+    highs: np.ndarray,
+    lows: np.ndarray,
+    bos_event: np.ndarray,
+    bos_break_level: np.ndarray,
+    atr: np.ndarray,
+    retest_tol_atr: float,
+    invalid_tol_atr: float,
+    awaiting_timeout: int,
+    armed_window: int,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Numba-optimized retest state machine. Returns (retest_state, retest_armed)."""
+    n = len(closes)
+    retest_state = np.zeros(n, dtype=np.int32)
+    retest_armed = np.zeros(n, dtype=np.int32)
+
+    active = 0
+    level = 0.0
+    bars_in = 0
+
+    for i in range(n):
+        ev = bos_event[i]
+        if ev != 0:
+            lvl = bos_break_level[i]
+            if not np.isnan(lvl):
+                active = ev  # +1 or -1 (awaiting)
+                level = lvl
+                bars_in = 0
+                retest_state[i] = active
+                continue
+
+        bars_in += 1
+        a = atr[i] if (not np.isnan(atr[i]) and atr[i] > 0) else 0.0
+
+        if active == 1:
+            if lows[i] <= level + retest_tol_atr * a:
+                active = 2
+                bars_in = 0
+            elif closes[i] < level - invalid_tol_atr * a:
+                active = 0
+            elif bars_in > awaiting_timeout:
+                active = 0
+        elif active == -1:
+            if highs[i] >= level - retest_tol_atr * a:
+                active = -2
+                bars_in = 0
+            elif closes[i] > level + invalid_tol_atr * a:
+                active = 0
+            elif bars_in > awaiting_timeout:
+                active = 0
+        elif active == 2:
+            if closes[i] < level - invalid_tol_atr * a:
+                active = 0
+            elif bars_in > armed_window:
+                active = 0
+            else:
+                retest_armed[i] = 1
+        elif active == -2:
+            if closes[i] > level + invalid_tol_atr * a:
+                active = 0
+            elif bars_in > armed_window:
+                active = 0
+            else:
+                retest_armed[i] = -1
+
+        retest_state[i] = active
+
+    return retest_state, retest_armed
+
+
+def _calculate_bos_retest_python(
+    closes: np.ndarray,
+    highs: np.ndarray,
+    lows: np.ndarray,
+    bos_event: np.ndarray,
+    bos_break_level: np.ndarray,
+    atr: np.ndarray,
+    retest_tol_atr: float,
+    invalid_tol_atr: float,
+    awaiting_timeout: int,
+    armed_window: int,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Python fallback — semantics match the Numba version."""
+    n = len(closes)
+    retest_state = np.zeros(n, dtype=np.int32)
+    retest_armed = np.zeros(n, dtype=np.int32)
+
+    active = 0
+    level = 0.0
+    bars_in = 0
+
+    for i in range(n):
+        ev = bos_event[i]
+        if ev != 0:
+            lvl = bos_break_level[i]
+            if not np.isnan(lvl):
+                active = int(ev)
+                level = float(lvl)
+                bars_in = 0
+                retest_state[i] = active
+                continue
+
+        bars_in += 1
+        a = atr[i] if (not np.isnan(atr[i]) and atr[i] > 0) else 0.0
+
+        if active == 1:
+            if lows[i] <= level + retest_tol_atr * a:
+                active = 2
+                bars_in = 0
+            elif closes[i] < level - invalid_tol_atr * a:
+                active = 0
+            elif bars_in > awaiting_timeout:
+                active = 0
+        elif active == -1:
+            if highs[i] >= level - retest_tol_atr * a:
+                active = -2
+                bars_in = 0
+            elif closes[i] > level + invalid_tol_atr * a:
+                active = 0
+            elif bars_in > awaiting_timeout:
+                active = 0
+        elif active == 2:
+            if closes[i] < level - invalid_tol_atr * a:
+                active = 0
+            elif bars_in > armed_window:
+                active = 0
+            else:
+                retest_armed[i] = 1
+        elif active == -2:
+            if closes[i] > level + invalid_tol_atr * a:
+                active = 0
+            elif bars_in > armed_window:
+                active = 0
+            else:
+                retest_armed[i] = -1
+
+        retest_state[i] = active
+
+    return retest_state, retest_armed
+
+
+def calculate_bos_retest_fast(
+    closes: np.ndarray,
+    highs: np.ndarray,
+    lows: np.ndarray,
+    bos_event: np.ndarray,
+    bos_break_level: np.ndarray,
+    atr: np.ndarray,
+    retest_tol_atr: float = 0.5,
+    invalid_tol_atr: float = 1.0,
+    awaiting_timeout: int = 20,
+    armed_window: int = 5,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Fast BOS retest state machine with Numba fallback.
+
+    Returns ``(retest_state, retest_armed)``:
+      * ``retest_state`` — 0=idle, ±1=awaiting retest, ±2=armed (sign = direction)
+      * ``retest_armed`` — 1/-1 on bars where an armed setup is active, 0 otherwise
+    """
+    if NUMBA_AVAILABLE:
+        return _calculate_bos_retest_numba(
+            closes, highs, lows, bos_event, bos_break_level, atr,
+            retest_tol_atr, invalid_tol_atr, awaiting_timeout, armed_window,
+        )
+    return _calculate_bos_retest_python(
+        closes, highs, lows, bos_event, bos_break_level, atr,
+        retest_tol_atr, invalid_tol_atr, awaiting_timeout, armed_window,
+    )
 
 
 # --- I. Configuration Management (Pydantic) ---
@@ -271,6 +480,30 @@ class SMCConfig(BaseModel):
         default=0.2,
         ge=0.0, le=1.0,
         description="Strength bonus added to OB when FVG is present (only when OB_REQUIRE_FVG=False)."
+    )
+    # --- BOS retest state machine ---
+    RETEST_TOL_ATR: float = Field(
+        default=0.5,
+        ge=0.0,
+        description="Retest tolerance in ATR multiples. A bar whose low (for LONG) or high (for SHORT) "
+                    "comes within RETEST_TOL_ATR×ATR of the broken level counts as a pullback."
+    )
+    RETEST_INVALID_TOL_ATR: float = Field(
+        default=1.0,
+        ge=0.0,
+        description="Invalidation tolerance in ATR multiples. If price closes this many ATRs past the "
+                    "broken level in the wrong direction (e.g. below for LONG), the setup is voided."
+    )
+    RETEST_AWAITING_TIMEOUT: int = Field(
+        default=20,
+        ge=1,
+        description="Maximum bars to wait for a pullback after a BOS event before the setup goes stale."
+    )
+    RETEST_ARMED_WINDOW: int = Field(
+        default=5,
+        ge=1,
+        description="Bars an armed setup remains valid after a successful retest. After this window the "
+                    "setup expires and a new BOS event is required."
     )
 
 
@@ -483,13 +716,26 @@ class SmartMoneyEngine:
         down_fractals = self.df['DOWN_FRACTAL'].values.astype(np.float64)
 
         # Use Numba-optimized function (or fallback)
-        bos_signal, choch_signal, bos_event = calculate_bos_choch_fast(
+        bos_signal, choch_signal, bos_event, bos_break_level = calculate_bos_choch_fast(
             closes, highs, lows, up_fractals, down_fractals
         )
 
         self.df['BOS_SIGNAL'] = bos_signal   # propagating trend-state (legacy)
         self.df['CHOCH_SIGNAL'] = choch_signal
         self.df['BOS_EVENT'] = bos_event     # 1/-1 only on actual break bars
+        self.df['BOS_BREAK_LEVEL'] = bos_break_level  # broken structural level on event bars
+
+        # Retest state machine — requires ATR, which was computed in _add_ta_indicators
+        atr_arr = self.df['ATR'].values.astype(np.float64)
+        retest_state, retest_armed = calculate_bos_retest_fast(
+            closes, highs, lows, bos_event, bos_break_level, atr_arr,
+            retest_tol_atr=self.config.RETEST_TOL_ATR,
+            invalid_tol_atr=self.config.RETEST_INVALID_TOL_ATR,
+            awaiting_timeout=self.config.RETEST_AWAITING_TIMEOUT,
+            armed_window=self.config.RETEST_ARMED_WINDOW,
+        )
+        self.df['BOS_RETEST_STATE'] = retest_state
+        self.df['BOS_RETEST_ARMED'] = retest_armed
 
         if NUMBA_AVAILABLE:
             logger.debug("BOS/CHOCH calculated using Numba JIT (optimized)")

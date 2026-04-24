@@ -404,6 +404,16 @@ class VolatilityForecaster:
         df = self._normalize_columns(ohlcv_df.copy())
         stats: Dict[str, Any] = {}
 
+        if df.empty:
+            logger.warning("VolatilityForecaster.calibrate received empty DataFrame")
+            return {
+                "har_fitted": False,
+                "har_train_size": 0,
+                "calibrated": False,
+                "training_bars": 0,
+                "calendar_events": 0,
+            }
+
         # 1. Compute features
         df = self._add_features(df)
 

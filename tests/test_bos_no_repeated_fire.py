@@ -51,7 +51,7 @@ class TestBOSDoesNotFireEveryBar:
             lows[i] = price - 0.3
 
         up, down = _make_fractals_from_highs_lows(highs, lows)
-        bos_sig, choch_sig, bos_evt = calculate_bos_choch_fast(closes, highs, lows, up, down)
+        bos_sig, choch_sig, bos_evt, _brk = calculate_bos_choch_fast(closes, highs, lows, up, down)
 
         event_count = int((bos_evt != 0).sum())
         event_rate = event_count / n
@@ -71,7 +71,7 @@ class TestBOSDoesNotFireEveryBar:
         lows = closes - 0.1
 
         up, down = _make_fractals_from_highs_lows(highs, lows)
-        bos_sig, choch_sig, bos_evt = calculate_bos_choch_fast(closes, highs, lows, up, down)
+        bos_sig, choch_sig, bos_evt, _brk = calculate_bos_choch_fast(closes, highs, lows, up, down)
 
         event_count = int((bos_evt != 0).sum())
         assert event_count <= 2, (
@@ -99,7 +99,7 @@ class TestBOSDoesNotFireEveryBar:
             lows[i] = price - 0.3
 
         up, down = _make_fractals_from_highs_lows(highs, lows)
-        bos_sig, choch_sig, bos_evt = calculate_bos_choch_fast(closes, highs, lows, up, down)
+        bos_sig, choch_sig, bos_evt, _brk = calculate_bos_choch_fast(closes, highs, lows, up, down)
 
         event_rate = (bos_evt != 0).sum() / n
         assert event_rate < 0.15, (
