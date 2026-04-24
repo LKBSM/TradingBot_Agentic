@@ -125,6 +125,15 @@ class DiscordNotifier:
                 vol_value += f"\n95% CI: [{float(vol_lower):.2f}, {float(vol_upper):.2f}]"
             fields.append({"name": "Volatility", "value": vol_value, "inline": False})
 
+        pos_mult = getattr(signal, "position_multiplier", None)
+        if pos_mult is not None:
+            pos_pct = float(pos_mult) * 100.0
+            pos_value = f"**{pos_pct:.0f}%** of baseline risk"
+            pos_reason = getattr(signal, "position_reasoning", None)
+            if pos_reason:
+                pos_value += f"\n_{pos_reason}_"
+            fields.append({"name": "Suggested Size", "value": pos_value, "inline": False})
+
         description_parts = []
         if narrative_data:
             reason = narrative_data.get("validation_reason")

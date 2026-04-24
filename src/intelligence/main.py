@@ -281,6 +281,8 @@ def build_system(
         "data_provider": data_provider,
         "circuit_breakers": circuit_breakers,
         "health_checker": health_checker,
+        "notifier": notifier,
+        "notifier_label": notifier_label,
     }
 
 
@@ -409,9 +411,10 @@ def main() -> None:
 
     scanner = system["scanner"]
     api_app = system["api_app"]
+    notifier = system.get("notifier")
 
-    # Graceful shutdown
     shutdown_event = threading.Event()
+    scanner_crashed = threading.Event()
 
     def _signal_handler(sig, frame):
         logger.info("Shutdown signal received")
@@ -422,26 +425,88 @@ def main() -> None:
     signal_mod.signal(signal_mod.SIGINT, _signal_handler)
     signal_mod.signal(signal_mod.SIGTERM, _signal_handler)
 
-    # Start scanner in background thread
-    scanner_thread = threading.Thread(
-        target=lambda: scanner.start(blocking=True) if not shutdown_event.is_set() else None,
-        daemon=True,
-    )
+    def _ping_notifier(msg: str) -> None:
+        """Fire-and-forget Discord/Telegram ping on fatal events. Never raises."""
+        if notifier is None or not getattr(notifier, "is_configured", lambda: False)():
+            return
+        try:
+            if hasattr(notifier, "send_raw"):
+                notifier.send_raw(msg)
+        except Exception as e:
+            logger.warning("Notifier ping failed: %s", e)
+
+    def _run_scanner() -> None:
+        """Scanner thread entry. Logs full traceback on crash — previously
+        the daemon thread died silently, leaving operators guessing why
+        signals stopped."""
+        try:
+            if not shutdown_event.is_set():
+                scanner.start(blocking=True)
+        except Exception as e:
+            logger.exception("Scanner thread crashed: %s", e)
+            scanner_crashed.set()
+            _ping_notifier(
+                f":rotating_light: **Smart Sentinel CRASHED**\n"
+                f"Scanner thread died: `{type(e).__name__}: {str(e)[:300]}`\n"
+                f"API may still be up but no new signals will be published."
+            )
+
+    def _watchdog() -> None:
+        """Check scanner thread liveness every 30s. Fires one notification
+        if the thread dies while the process is still running (API thread
+        would otherwise keep the process alive and mask the failure)."""
+        fired = False
+        while not shutdown_event.is_set():
+            shutdown_event.wait(timeout=30.0)
+            if shutdown_event.is_set():
+                return
+            if not scanner_thread.is_alive() and not fired:
+                fired = True
+                if not scanner_crashed.is_set():
+                    logger.critical(
+                        "Scanner thread stopped without exception — likely "
+                        "a clean exit from inside scanner.start(). This "
+                        "should not happen in normal operation."
+                    )
+                    _ping_notifier(
+                        ":warning: Smart Sentinel scanner thread exited unexpectedly "
+                        "(no exception). Process still alive but no new signals."
+                    )
+
+    scanner_thread = threading.Thread(target=_run_scanner, name="sentinel-scanner", daemon=True)
     scanner_thread.start()
 
-    # Start API (blocking)
+    watchdog_thread = threading.Thread(target=_watchdog, name="sentinel-watchdog", daemon=True)
+    watchdog_thread.start()
+
+    _ping_notifier(
+        f":white_check_mark: Smart Sentinel online — symbols={symbols} "
+        f"source={data_source.upper()} vol={vol_mode}"
+    )
+
+    exit_code = 0
     try:
         import uvicorn
         uvicorn.run(api_app, host="0.0.0.0", port=api_port, log_level=log_level.lower())
     except ImportError:
-        logger.error("uvicorn not installed. Install with: pip install uvicorn")
-    except Exception:
-        logger.info("API server stopped")
+        logger.critical("uvicorn not installed. Install with: pip install uvicorn")
+        exit_code = 1
+    except KeyboardInterrupt:
+        logger.info("API server stopped by user")
+    except Exception as e:
+        logger.exception("API server crashed: %s", e)
+        _ping_notifier(
+            f":rotating_light: **Smart Sentinel CRASHED**\n"
+            f"API server died: `{type(e).__name__}: {str(e)[:300]}`"
+        )
+        exit_code = 1
     finally:
         shutdown_event.set()
         if hasattr(scanner, "shutdown"):
-            scanner.shutdown()
-        # Disconnect data provider (MT5 connections must be explicitly closed)
+            try:
+                scanner.shutdown()
+            except Exception as e:
+                logger.warning("Scanner shutdown error: %s", e)
         data_provider = system.get("data_provider")
         if data_provider is not None and hasattr(data_provider, "disconnect"):
             try:
@@ -449,6 +514,12 @@ def main() -> None:
                 logger.info("Data provider disconnected")
             except Exception as e:
                 logger.warning("Data provider disconnect error: %s", e)
+        if scanner_crashed.is_set() and exit_code == 0:
+            exit_code = 1
+
+    if exit_code != 0:
+        import sys
+        sys.exit(exit_code)
 
 
 if __name__ == "__main__":
