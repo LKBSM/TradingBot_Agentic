@@ -127,6 +127,10 @@ def build_system(
     from src.intelligence.circuit_breaker import CircuitBreaker, CircuitState, HealthChecker
     from src.intelligence.confluence_detector import ConfluenceDetector
     from src.intelligence.regime_filter import RegimeFilter
+    from src.intelligence.signal_state_machine import (
+        SignalStateMachine,
+        StateMachineConfig,
+    )
     from src.intelligence.llm_narrative_engine import LLMNarrativeEngine, NarrativeTier
     from src.intelligence.template_narrative_engine import TemplateNarrativeEngine
     from src.intelligence.security import RateLimiter
@@ -142,6 +146,7 @@ def build_system(
     from src.delivery.telegram_notifier import TelegramNotifier
     from src.delivery.discord_notifier import DiscordNotifier
     from src.api.dependencies import AppState
+    from src.risk.kill_switch import KillSwitch, KillSwitchConfig
 
     # 1. Instrument registry
     registry = get_instrument_registry()
@@ -242,6 +247,28 @@ def build_system(
     # 8d. Rate limiter (global, used by API middleware)
     rate_limiter = RateLimiter(max_requests=100, window_seconds=60.0)
 
+    # 8d-bis. Operational kill-switch (4 rules: streak / daily-DD / vol-spike /
+    # broker-disconnect). Configurable via env; defaults match the XAU M15
+    # personal-testing tier in baseline_2019_2025.md.
+    ks_starting_equity = float(os.environ.get("KILL_SWITCH_EQUITY", "1000"))
+    ks_max_streak = int(os.environ.get("KILL_SWITCH_MAX_LOSSES", "4"))
+    ks_dd_pct = float(os.environ.get("KILL_SWITCH_DAILY_DD_PCT", "0.05"))
+    ks_vol_z = float(os.environ.get("KILL_SWITCH_VOL_Z", "3.0"))
+    ks_heartbeat_s = float(os.environ.get("KILL_SWITCH_HEARTBEAT_MAX_S", "120"))
+    operational_kill_switch = KillSwitch(
+        config=KillSwitchConfig(
+            max_consecutive_losses=ks_max_streak,
+            daily_dd_limit_pct=ks_dd_pct,
+            vol_zscore_limit=ks_vol_z,
+            heartbeat_max_silence_s=ks_heartbeat_s,
+        ),
+        starting_equity=ks_starting_equity,
+    )
+    logger.info(
+        "Operational kill-switch armed: streak<=%d, DD<=%.0f%%, vol_z<=%.1fσ, heartbeat<=%.0fs",
+        ks_max_streak, ks_dd_pct * 100, ks_vol_z, ks_heartbeat_s,
+    )
+
     # 8e. Metrics registry — wired in so /metrics exposes the request_logging
     # histogram and any subsystem counters/gauges. Without this, /metrics
     # returns an empty body (eval 16 finding #1).
@@ -263,9 +290,41 @@ def build_system(
         )
         if regime_filter is not None:
             logger.info(
-                "Regime filter ON: skip_ny=%s, vol_pctl_max=%s",
-                regime_filter.skip_ny, regime_filter.vol_pctl_max,
+                "Regime filter ON: ny_mode=%s, vol_pctl_max=%s",
+                regime_filter.ny_mode, regime_filter.vol_pctl_max,
             )
+        # State machine — empirical thresholds from the post-RegimeFilter
+        # XAU 7-yr replay. The legacy 75/55 defaults were inherited from
+        # marketing copy and made the gate mathematically unreachable
+        # (see reports/audit/audit_report.md, score_max=55.5). 40/25 sits
+        # at p75/p25 of the post-filter score distribution and matches the
+        # config that produced PF 1.30 OOS in scripts/backtest_combo_E.py.
+        sm_enter = float(os.environ.get("STATE_MACHINE_ENTER_THRESHOLD", "40"))
+        sm_exit = float(os.environ.get("STATE_MACHINE_EXIT_THRESHOLD", "25"))
+        state_machine = (
+            SignalStateMachine(
+                StateMachineConfig(
+                    symbol=symbols[0],
+                    enter_threshold=sm_enter,
+                    exit_threshold=sm_exit,
+                )
+            )
+            if os.environ.get("STATE_MACHINE_ENABLED", "1") == "1"
+            else None
+        )
+        if state_machine is not None:
+            logger.info(
+                "State machine ON: enter=%.0f, exit=%.0f", sm_enter, sm_exit,
+            )
+
+        # Persistence — survive scanner restarts so a stale signal isn't
+        # re-emitted from cold start. Honours STATE_MACHINE_PERSIST_PATH;
+        # default sits next to the signal store DB.
+        sm_persist_path = os.environ.get(
+            "STATE_MACHINE_PERSIST_PATH",
+            os.path.join(os.path.dirname(signal_db) or ".", "state_machine.json"),
+        )
+
         scanner = SentinelScanner(
             data_provider=data_provider,
             smc_factory=smc_factory,
@@ -282,6 +341,9 @@ def build_system(
             llm_circuit_breaker=llm_breaker,
             notifier_circuit_breaker=notifier_breaker,
             regime_filter=regime_filter,
+            kill_switch=operational_kill_switch,
+            state_machine=state_machine,
+            persistence_path=sm_persist_path if state_machine is not None else None,
         )
     else:
         scanner = MultiSymbolScanner(
@@ -317,6 +379,7 @@ def build_system(
         health_checker=health_checker,
         rate_limiter=rate_limiter,
         metrics_registry=metrics_registry,
+        operational_kill_switch=operational_kill_switch,
     )
 
     return {
@@ -328,6 +391,7 @@ def build_system(
         "health_checker": health_checker,
         "notifier": notifier,
         "notifier_label": notifier_label,
+        "operational_kill_switch": operational_kill_switch,
     }
 
 
