@@ -9,7 +9,7 @@ Usage:
     #   TELEGRAM_CHAT_ID      — Default Telegram chat ID (optional)
     #   DATA_DIR              — Path to OHLCV CSV data (default: ./data)
     #   SIGNAL_DB_PATH        — SQLite path (default: ./data/signals.db)
-    #   VOL_MODE              — Forecaster mode: har/lgbm/hybrid (default: hybrid)
+    #   VOL_MODE              — Forecaster mode: har/lgbm/hybrid (default: har)
     #   SYMBOLS               — Comma-separated symbols (default: XAUUSD)
     #   API_PORT              — API port (default: 8000)
     #   LOG_LEVEL             — Logging level (default: INFO)
@@ -364,7 +364,7 @@ def main() -> None:
     symbols = [s.strip() for s in symbols_str.split(",") if s.strip()]
     data_dir = os.environ.get("DATA_DIR", "./data")
     signal_db = os.environ.get("SIGNAL_DB_PATH", "./data/signals.db")
-    vol_mode = os.environ.get("VOL_MODE", "hybrid")
+    vol_mode = os.environ.get("VOL_MODE", "har")
     anthropic_key = os.environ.get("ANTHROPIC_API_KEY")
     telegram_token = os.environ.get("TELEGRAM_BOT_TOKEN")
     telegram_chat_id = os.environ.get("TELEGRAM_CHAT_ID")
