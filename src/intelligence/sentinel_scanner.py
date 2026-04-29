@@ -32,7 +32,9 @@ from src.intelligence.llm_narrative_engine import (
     NarrativeTier,
     SignalNarrative,
 )
+from src.intelligence.regime_filter import RegimeFilter
 from src.intelligence.semantic_cache import SemanticCache
+from src.intelligence.template_narrative_engine import TemplateNarrativeEngine
 from src.intelligence.signal_state_machine import (
     BarInput,
     PublicState,
@@ -43,6 +45,7 @@ from src.intelligence.state_persistence import (
     load_state_machine,
     save_state_machine,
 )
+from src.risk.kill_switch import KillSwitch
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +58,7 @@ TIER_TO_NARRATIVE: Dict[str, NarrativeTier] = {
     "VISUAL": NarrativeTier.VISUAL,
     "VALIDATOR": NarrativeTier.VALIDATOR,
     "NARRATOR": NarrativeTier.NARRATOR,
+    "INSTITUTIONAL": NarrativeTier.INSTITUTIONAL,
 }
 
 
@@ -87,6 +91,8 @@ class SentinelScanner:
         state_machine: Optional[SignalStateMachine] = None,
         persistence_path: Optional[Any] = None,
         persistence_max_staleness_bars: int = 4,
+        kill_switch: Optional[KillSwitch] = None,
+        regime_filter: Optional[RegimeFilter] = None,
     ):
         self._data_provider = data_provider
         self._smc_factory = smc_factory
@@ -108,6 +114,24 @@ class SentinelScanner:
         self._llm_breaker = llm_circuit_breaker
         self._notifier_breaker = notifier_circuit_breaker
 
+        # Algorithmic fallback engine — used when LLM circuit opens or any
+        # narrative call raises. Sub-ms, $0, deterministic. Lazily reused.
+        self._fallback_engine = TemplateNarrativeEngine()
+        self._fallback_uses: int = 0
+
+        # Operational kill-switch — when supplied, gates _publish_signal,
+        # receives heartbeats from the data feed, and observes vol-forecast
+        # readings. ``None`` keeps the scanner backwards-compatible.
+        self._kill_switch = kill_switch
+        self._signals_blocked_by_kill_switch: int = 0
+
+        # Regime filter — drops signals from PF<1 buckets (NY session, top vol
+        # quartile). When None the scanner is unfiltered (legacy behaviour).
+        # Empirical lift on XAU M15 7-yr replay: PF 1.13 → 1.355 (see
+        # `reports/feature_filter_audit.md`).
+        self._regime_filter = regime_filter
+        self._signals_dropped_by_regime_filter = 0
+
         # Signal state machine — None means legacy passthrough (backward compat).
         self._state_machine = state_machine
         # Persistence (optional): save on shutdown, reload on start. Staleness
@@ -122,6 +146,14 @@ class SentinelScanner:
         self._running = False
         self._thread: Optional[threading.Thread] = None
         self._last_bar_ts: Optional[str] = None
+        # Last cache cleanup wall-clock time. The scanner runs cleanup_expired
+        # every CACHE_CLEANUP_INTERVAL_S (default 1h) so the narrative cache
+        # SQLite doesn't grow unbounded with TTL-expired zombies.
+        self._last_cache_cleanup_ts: float = time.time()
+        # Interruptible sleep for graceful shutdown. With time.sleep(60) the
+        # shutdown() call had to wait up to 60s for the loop to exit;
+        # _stop_event.wait(timeout) returns immediately when shutdown sets it.
+        self._stop_event = threading.Event()
 
         # Stats
         self._bars_scanned = 0
@@ -166,6 +198,7 @@ class SentinelScanner:
     def shutdown(self) -> None:
         """Graceful shutdown — persists state machine if configured."""
         self._running = False
+        self._stop_event.set()
         if self._thread and self._thread.is_alive():
             self._thread.join(timeout=10)
         self._persist_state_machine()
@@ -201,16 +234,40 @@ class SentinelScanner:
     # MAIN LOOP
     # ------------------------------------------------------------------ #
 
+    CACHE_CLEANUP_INTERVAL_S = 3600.0  # 1h — narrative cache TTL is 24h, sweep hourly
+
     def _run_loop(self) -> None:
-        while self._running:
+        while self._running and not self._stop_event.is_set():
             try:
                 self._scan_once()
             except Exception as e:
                 self._errors += 1
                 logger.error("Scanner error: %s", e, exc_info=True)
 
+            # Periodic narrative cache cleanup so the SQLite doesn't grow
+            # unbounded with TTL-expired entries (eval 06 finding).
+            self._maybe_cleanup_cache()
+
             if self._running:
-                time.sleep(self._poll_interval)
+                # Interruptible sleep — shutdown() sets _stop_event so we exit
+                # immediately rather than waiting for the next tick.
+                self._stop_event.wait(timeout=self._poll_interval)
+
+    def _maybe_cleanup_cache(self) -> None:
+        """Sweep narrative cache for TTL-expired entries every CACHE_CLEANUP_INTERVAL_S."""
+        if self._cache is None:
+            return
+        now = time.time()
+        if now - self._last_cache_cleanup_ts < self.CACHE_CLEANUP_INTERVAL_S:
+            return
+        try:
+            deleted = self._cache.cleanup_expired()
+            if deleted > 0:
+                logger.info("Narrative cache cleanup: removed %d expired entries", deleted)
+        except Exception as e:
+            logger.warning("Narrative cache cleanup failed: %s", e)
+        finally:
+            self._last_cache_cleanup_ts = now
 
     def scan_once(self) -> Optional[ConfluenceSignal]:
         """Public single-scan method for testing and manual invocation."""
@@ -231,6 +288,11 @@ class SentinelScanner:
         if df is None or len(df) < 50:
             logger.debug("Insufficient data (%s bars)", len(df) if df is not None else 0)
             return None
+
+        # 1a. Kill-switch heartbeat — a successful fetch proves the data feed
+        # is live, which is what the BROKER_DISCONNECT rule actually monitors.
+        if self._kill_switch is not None:
+            self._kill_switch.heartbeat()
 
         # 1b. Data quality gate — refuses structurally broken feeds, warns on
         # soft issues (gaps, stale data). Without this, broker-feed corruption
@@ -267,10 +329,13 @@ class SentinelScanner:
         smc_features = {
             "BOS_SIGNAL": float(latest.get("BOS_SIGNAL", 0)),
             "BOS_EVENT": float(latest.get("BOS_EVENT", 0)),
+            "BOS_RETEST_STATE": float(latest.get("BOS_RETEST_STATE", 0)),
+            "BOS_RETEST_ARMED": float(latest.get("BOS_RETEST_ARMED", 0)),
             "FVG_SIGNAL": float(latest.get("FVG_SIGNAL", 0)),
             "OB_STRENGTH_NORM": float(latest.get("OB_STRENGTH_NORM", 0)),
             "RSI": float(latest.get("RSI", 50)),
             "MACD_Diff": float(latest.get("MACD_Diff", 0)),
+            "CHOCH_SIGNAL": float(latest.get("CHOCH_SIGNAL", 0)),
         }
 
         # Volume
@@ -313,6 +378,9 @@ class SentinelScanner:
                     vol_forecast.forecast_atr, vol_forecast.naive_atr,
                     vol_forecast.regime_state,
                 )
+                # Feed the kill-switch's vol-spike z-score buffer.
+                if self._kill_switch is not None and vol_forecast is not None:
+                    self._kill_switch.update_volatility(vol_forecast.forecast_atr)
             except Exception as e:
                 logger.warning("Vol forecast failed (using naive ATR): %s", e)
 
@@ -328,6 +396,21 @@ class SentinelScanner:
             bar_timestamp=bar_ts,
             vol_forecast=vol_forecast,
         )
+
+        # 6b. Regime filter — drops signals in NY session and top-quartile vol.
+        # Validated on 7-yr XAU replay: PF 1.13 → 1.355 OOS without this gate
+        # the NY × Q4_high vol bucket alone drains −23R (PF 0.64 on 288 trades).
+        if signal is not None and self._regime_filter is not None:
+            atr_col = "ATR" if "ATR" in enriched.columns else None
+            atr_series = enriched[atr_col] if atr_col else None
+            decision = self._regime_filter.evaluate(bar_ts, atr_series)
+            if not decision.allowed:
+                self._signals_dropped_by_regime_filter += 1
+                logger.info(
+                    "Signal %s dropped by regime filter: %s",
+                    signal.signal_id, decision.reason,
+                )
+                signal = None
 
         # 7. State machine gating (optional). When configured, only signals
         # that survive hysteresis, confirmation, and lifetime rules are
@@ -374,17 +457,15 @@ class SentinelScanner:
 
         if narrative_data is None:
             narrative_data = self._generate_narrative_safe(signal)
-            if narrative_data is not None:
-                if self._cache is not None and cache_key is not None:
-                    self._cache.put(cache_key, narrative_data)
-                self._llm_calls += 1
-            else:
-                # LLM failed — use minimal fallback narrative
-                narrative_data = {
-                    "tier": self._narrative_tier.value,
-                    "summary": f"{signal.signal_type.value} {signal.symbol} — score {signal.confluence_score:.0f}",
-                    "fallback": True,
-                }
+            self._llm_calls += 1
+            # Cache successful primary-engine results only (skip template
+            # fallbacks so a transient LLM outage doesn't poison the cache).
+            if (
+                self._cache is not None
+                and cache_key is not None
+                and not narrative_data.get("fallback_used", False)
+            ):
+                self._cache.put(cache_key, narrative_data)
 
         # 9. Publish to signal store
         try:
@@ -496,10 +577,12 @@ class SentinelScanner:
     # CIRCUIT-BREAKER WRAPPERS
     # ------------------------------------------------------------------ #
 
-    def _generate_narrative_safe(self, signal: ConfluenceSignal) -> Optional[Dict]:
-        """Generate narrative with circuit breaker protection.
+    def _generate_narrative_safe(self, signal: ConfluenceSignal) -> Dict:
+        """Generate narrative with circuit-breaker protection + algo fallback.
 
-        Returns narrative dict on success, None on failure.
+        Always returns a dict. On LLM failure or open circuit, falls back to
+        the deterministic ``TemplateNarrativeEngine`` so notifications never
+        ship with a degraded "fallback:true" stub.
         """
         def _call_llm():
             narrative = self._llm_engine.generate_narrative(signal, self._narrative_tier)
@@ -512,14 +595,41 @@ class SentinelScanner:
         except CircuitOpenError:
             self._llm_failures += 1
             logger.warning(
-                "LLM circuit OPEN for signal %s — using fallback narrative",
+                "LLM circuit OPEN for signal %s — falling back to TemplateNarrativeEngine",
                 signal.signal_id,
             )
-            return None
+            return self._template_fallback(signal, reason="circuit_open")
         except Exception as e:
             self._llm_failures += 1
-            logger.error("LLM narrative failed for %s: %s", signal.signal_id, e)
-            return None
+            logger.error(
+                "LLM narrative failed for %s: %s — falling back to template",
+                signal.signal_id, e,
+            )
+            return self._template_fallback(signal, reason=f"llm_error:{type(e).__name__}")
+
+    def _template_fallback(self, signal: ConfluenceSignal, reason: str) -> Dict:
+        """Run the deterministic template engine; tag result so we can audit fallbacks."""
+        try:
+            narrative = self._fallback_engine.generate_narrative(
+                signal, self._narrative_tier
+            )
+            self._fallback_uses += 1
+            data = narrative.to_dict()
+            data["fallback_used"] = True
+            data["fallback_reason"] = reason
+            return data
+        except Exception as e:
+            # Last-resort minimal stub — only if even the template engine raises.
+            logger.error("Template fallback also failed for %s: %s", signal.signal_id, e)
+            return {
+                "tier": self._narrative_tier.value,
+                "summary": (
+                    f"{signal.signal_type.value} {signal.symbol} "
+                    f"— score {signal.confluence_score:.0f}"
+                ),
+                "fallback_used": True,
+                "fallback_reason": f"template_error:{type(e).__name__}",
+            }
 
     def _send_notification_safe(self, signal: ConfluenceSignal, narrative_data: Dict) -> None:
         """Send notification with circuit breaker protection."""
@@ -549,7 +659,26 @@ class SentinelScanner:
     # ------------------------------------------------------------------ #
 
     def _publish_signal(self, signal: ConfluenceSignal, narrative_data: Dict) -> None:
-        """Persist signal to the signal store."""
+        """Persist signal to the signal store.
+
+        Gated by the kill-switch when one is configured: a tripped switch
+        drops the signal and emits an audit log entry. The signal store
+        is not touched, so downstream consumers (dashboard, Telegram)
+        never see signals that the operator has paused.
+        """
+        # Kill-switch gate (operational risk): refuse to publish when any
+        # of the four hard rules has tripped (consecutive losses, daily DD,
+        # volatility spike, broker disconnect).
+        if self._kill_switch is not None and not self._kill_switch.check():
+            self._signals_blocked_by_kill_switch += 1
+            status = self._kill_switch.status()
+            logger.error(
+                "Kill-switch tripped (%s) — DROPPING signal %s [%s]: %s",
+                status.get("reason"), signal.signal_id, signal.symbol,
+                status.get("detail"),
+            )
+            return
+
         import json
         from src.api.signal_store import SignalRecord
 
@@ -589,6 +718,29 @@ class SentinelScanner:
         )
 
     # ------------------------------------------------------------------ #
+    # TRADE OUTCOME HOOK
+    # ------------------------------------------------------------------ #
+
+    def on_trade_closed(self, r_multiple: float, pnl_dollars: float = 0.0) -> None:
+        """Notify the kill-switch that a trade just closed.
+
+        Callable from the position-tracker, Telegram callback, or any
+        adapter that observes trade exits. ``r_multiple`` should be
+        signed (negative for losses, positive for wins). ``pnl_dollars``
+        feeds the daily-DD rule.
+
+        No-op when no kill-switch is configured.
+        """
+        if self._kill_switch is None:
+            return
+        try:
+            self._kill_switch.record_trade_outcome(
+                r_multiple=r_multiple, pnl_dollars=pnl_dollars,
+            )
+        except Exception as e:  # pragma: no cover — defensive
+            logger.error("kill_switch.record_trade_outcome failed: %s", e)
+
+    # ------------------------------------------------------------------ #
     # STATS
     # ------------------------------------------------------------------ #
 
@@ -614,6 +766,12 @@ class SentinelScanner:
             stats["llm_circuit"] = self._llm_breaker.state.value
         if self._notifier_breaker is not None:
             stats["telegram_circuit"] = self._notifier_breaker.state.value
+        if self._kill_switch is not None:
+            stats["kill_switch"] = self._kill_switch.status()
+            stats["signals_blocked_by_kill_switch"] = self._signals_blocked_by_kill_switch
+        if self._regime_filter is not None:
+            stats["regime_filter"] = self._regime_filter.stats()
+            stats["signals_dropped_by_regime_filter"] = self._signals_dropped_by_regime_filter
         if self._state_machine is not None:
             sm_stats = self._state_machine.get_stats()
             sm_snap = self._state_machine.snapshot()
@@ -692,6 +850,7 @@ class MultiSymbolScanner:
         self._thread: Optional[threading.Thread] = None
         self._poll_interval = poll_interval_seconds
         self._start_time: Optional[float] = None
+        self._stop_event = threading.Event()
         from pathlib import Path as _Path
         self._persistence_dir: Optional[_Path] = (
             _Path(state_persistence_dir) if state_persistence_dir else None
@@ -781,6 +940,7 @@ class MultiSymbolScanner:
     def shutdown(self) -> None:
         """Graceful shutdown — persists each per-symbol state machine."""
         self._running = False
+        self._stop_event.set()
         if self._thread and self._thread.is_alive():
             self._thread.join(timeout=15)
         # Persist state for every symbol whose scanner has a persistence path
@@ -789,10 +949,10 @@ class MultiSymbolScanner:
         logger.info("MultiSymbolScanner stopped. Stats: %s", self.get_stats())
 
     def _run_loop(self) -> None:
-        while self._running:
+        while self._running and not self._stop_event.is_set():
             self.scan_all_once()
             if self._running:
-                time.sleep(self._poll_interval)
+                self._stop_event.wait(timeout=self._poll_interval)
 
     # ------------------------------------------------------------------ #
     # SCANNING

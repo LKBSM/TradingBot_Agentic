@@ -14,7 +14,7 @@ Usage:
     #   API_PORT              — API port (default: 8000)
     #   LOG_LEVEL             — Logging level (default: INFO)
     #   LOG_FORMAT            — text or json (default: text)
-    #   SENTINEL_TESTING_MODE — 1=all features unlocked (default: 1)
+    #   SENTINEL_TESTING_MODE — 1=all features unlocked (default: 0, fail-closed)
     #   NARRATIVE_MODE        — template or llm (default: template — zero-cost, deterministic)
     #   DATA_SOURCE           — csv or mt5 (default: csv)
     #   MT5_LOGIN             — MT5 account number (when DATA_SOURCE=mt5)
@@ -73,6 +73,32 @@ def setup_logging(level: str = "INFO") -> None:
     logging.getLogger("hmmlearn").setLevel(logging.WARNING)
 
 
+def assert_safe_production_config() -> None:
+    """Refuse to start if production env still has the auth-bypass on.
+
+    Trip wire: ENVIRONMENT in {production, prod} + SENTINEL_TESTING_MODE=1
+    means every endpoint is accessible without an API key and grants
+    INSTITUTIONAL access. Shipping that to prod = giving the product away.
+    """
+    env = os.environ.get("ENVIRONMENT", "development").strip().lower()
+    testing = os.environ.get("SENTINEL_TESTING_MODE", "0").strip() == "1"
+    if env in ("production", "prod") and testing:
+        msg = (
+            "FATAL: SENTINEL_TESTING_MODE=1 in ENVIRONMENT=production. "
+            "Auth bypass is on; refusing to start. "
+            "Set SENTINEL_TESTING_MODE=0 (or unset ENVIRONMENT) to proceed."
+        )
+        logger.critical(msg)
+        sys.stderr.write(msg + "\n")
+        sys.exit(2)
+    if testing:
+        logger.warning(
+            "SENTINEL_TESTING_MODE=1 — auth bypass active "
+            "(ENVIRONMENT=%s). Do not deploy to production with this set.",
+            env,
+        )
+
+
 def build_system(
     symbols: List[str],
     data_dir: str,
@@ -100,6 +126,7 @@ def build_system(
     import pandas as pd
     from src.intelligence.circuit_breaker import CircuitBreaker, CircuitState, HealthChecker
     from src.intelligence.confluence_detector import ConfluenceDetector
+    from src.intelligence.regime_filter import RegimeFilter
     from src.intelligence.llm_narrative_engine import LLMNarrativeEngine, NarrativeTier
     from src.intelligence.template_narrative_engine import TemplateNarrativeEngine
     from src.intelligence.security import RateLimiter
@@ -215,6 +242,12 @@ def build_system(
     # 8d. Rate limiter (global, used by API middleware)
     rate_limiter = RateLimiter(max_requests=100, window_seconds=60.0)
 
+    # 8e. Metrics registry — wired in so /metrics exposes the request_logging
+    # histogram and any subsystem counters/gauges. Without this, /metrics
+    # returns an empty body (eval 16 finding #1).
+    from src.performance.metrics import MetricsRegistry
+    metrics_registry = MetricsRegistry(prefix="sentinel")
+
     # 9. Build scanner (single or multi-symbol)
     if len(symbols) == 1:
         config = registry.get(symbols[0], InstrumentConfig(symbol=symbols[0]))
@@ -223,6 +256,16 @@ def build_system(
             symbol=symbols[0],
             instrument_config=config,
         )
+        regime_filter = (
+            RegimeFilter.from_env()
+            if os.environ.get("REGIME_FILTER_ENABLED", "1") == "1"
+            else None
+        )
+        if regime_filter is not None:
+            logger.info(
+                "Regime filter ON: skip_ny=%s, vol_pctl_max=%s",
+                regime_filter.skip_ny, regime_filter.vol_pctl_max,
+            )
         scanner = SentinelScanner(
             data_provider=data_provider,
             smc_factory=smc_factory,
@@ -238,6 +281,7 @@ def build_system(
             timeframe=config.timeframe,
             llm_circuit_breaker=llm_breaker,
             notifier_circuit_breaker=notifier_breaker,
+            regime_filter=regime_filter,
         )
     else:
         scanner = MultiSymbolScanner(
@@ -272,6 +316,7 @@ def build_system(
         circuit_breakers=circuit_breakers,
         health_checker=health_checker,
         rate_limiter=rate_limiter,
+        metrics_registry=metrics_registry,
     )
 
     return {
@@ -284,6 +329,55 @@ def build_system(
         "notifier": notifier,
         "notifier_label": notifier_label,
     }
+
+
+def _check_coverage_or_abort(df: Any, symbol: str, timeframe: str, min_coverage: float = 0.95) -> None:
+    """Fail-fast if the OHLCV feed has < min_coverage of expected bars.
+
+    A 63%-coverage XAU feed (vs 97.6% for the same period from a different
+    source) caused BOS to fire on 100% of bars during 2026-04-23 — silently
+    corrupted every backtest. This gate blocks startup so the operator
+    can re-download a clean feed before any signal is published.
+
+    Bypass with COVERAGE_GATE=off when running on intentionally-sparse data
+    (smoke tests, single-day fixtures).
+    """
+    import os as _os
+    if _os.environ.get("COVERAGE_GATE", "on").lower() == "off":
+        return
+    if df is None or len(df) < 2:
+        return  # not enough rows to estimate coverage; let calibration error out instead
+    try:
+        import pandas as pd
+        from src.intelligence.data_quality import TIMEFRAME_MINUTES
+        tf_min = TIMEFRAME_MINUTES.get(timeframe)
+        if tf_min is None:
+            return
+        span_min = (df.index[-1] - df.index[0]) / pd.Timedelta(minutes=1)
+        expected = span_min / tf_min
+        if expected <= 0:
+            return
+        coverage = len(df) / expected
+        if coverage < min_coverage:
+            msg = (
+                f"FATAL: {symbol} {timeframe} coverage {coverage:.1%} < "
+                f"{min_coverage:.0%} threshold (got {len(df)} / expected ~{expected:.0f}). "
+                f"Re-download from a clean feed before starting. "
+                f"Bypass: COVERAGE_GATE=off."
+            )
+            logger.critical(msg)
+            sys.stderr.write(msg + "\n")
+            sys.exit(3)
+        logger.info(
+            "Coverage gate OK for %s %s: %.1f%% (%d / ~%.0f bars)",
+            symbol, timeframe, coverage * 100, len(df), expected,
+        )
+    except SystemExit:
+        raise
+    except Exception as e:
+        # Non-fatal if the index isn't a DatetimeIndex etc — calibration
+        # downstream will surface the real shape problem.
+        logger.warning("Coverage gate skipped for %s: %s", symbol, e)
 
 
 def _calibrate_system(
@@ -304,8 +398,11 @@ def _calibrate_system(
                 config = registry.get(symbol)
                 tf = config.timeframe if config else "M15"
                 df = data_provider.get_ohlcv(symbol, tf, 10000)
+                _check_coverage_or_abort(df, symbol, tf)
                 ohlcv_data[symbol] = df.reset_index()
                 logger.info("Loaded %d bars for %s calibration", len(df), symbol)
+            except SystemExit:
+                raise
             except Exception as e:
                 logger.warning("No calibration data for %s: %s", symbol, e)
         scanner.calibrate_forecasters(ohlcv_data, calendar_df)
@@ -315,8 +412,11 @@ def _calibrate_system(
             df = data_provider.get_ohlcv(
                 scanner._symbol, scanner._timeframe, 10000
             )
+            _check_coverage_or_abort(df, scanner._symbol, scanner._timeframe)
             scanner._vol_forecaster.calibrate(df.reset_index(), calendar_df)
             logger.info("Calibrated vol forecaster for %s", scanner._symbol)
+        except SystemExit:
+            raise
         except Exception as e:
             logger.warning("Vol calibration failed: %s", e)
 
@@ -359,6 +459,7 @@ def main() -> None:
 
     log_level = os.environ.get("LOG_LEVEL", "INFO")
     setup_logging(log_level)
+    assert_safe_production_config()
 
     symbols_str = os.environ.get("SYMBOLS", "XAUUSD")
     symbols = [s.strip() for s in symbols_str.split(",") if s.strip()]

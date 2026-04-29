@@ -55,7 +55,7 @@ def get_instrument_registry() -> Dict[str, "InstrumentConfig"]:
                 "GDP q/q", "Core PCE Price Index m/m", "Retail Sales m/m",
             ],
             sl_atr_mult=2.0,
-            tp_atr_mult=4.0,
+            tp_atr_mult=5.0,  # 5×ATR validated on 2019-2025 replay: PF 1.572 → 1.598 (+0.026) when combined with RegimeFilter. See reports/sweep_sl_tp.md and scripts/backtest_combo_E.py.
             price_decimals=2,
         ),
         "EURUSD": InstrumentConfig(

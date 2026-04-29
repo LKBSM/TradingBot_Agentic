@@ -31,10 +31,16 @@ class SignalType(str, Enum):
 
 
 class SignalTier(str, Enum):
-    PREMIUM = "PREMIUM"      # >= 80
-    STANDARD = "STANDARD"    # >= 60
-    WEAK = "WEAK"            # >= 40
-    INVALID = "INVALID"      # < 40
+    # Thresholds recalibrated 2026-04-29 against the post-RegimeFilter score
+    # distribution observed on the 2019-2025 XAU M15 replay (n=883 trades).
+    # Pre-recalibration tiers (80/60/40) were inherited from marketing copy,
+    # not data — only ~1% of empirically tradeable signals reached score≥60
+    # and PREMIUM (≥80) emitted 1 trade in 7 years. New cutpoints sit at
+    # roughly p90 / p50 / p10 of the post-filter distribution.
+    PREMIUM = "PREMIUM"      # >= 55  (was 80)
+    STANDARD = "STANDARD"    # >= 40  (was 60)
+    WEAK = "WEAK"            # >= 25  (was 40)
+    INVALID = "INVALID"      # < 25
 
 
 @dataclass
@@ -142,14 +148,23 @@ class ConfluenceDetector:
     def __init__(
         self,
         weights: Optional[Dict[str, float]] = None,
-        min_score: float = 60.0,
+        min_score: float = 25.0,  # was 60.0; recalibrated 2026-04-29 — RegimeFilter is now the primary gate (drops 60% of bars), this keeps the bottom of the WEAK tier.
         symbol: str = "XAUUSD",
         instrument_config: Optional[Any] = None,
+        require_retest: bool = True,
     ):
         self.weights = weights or DEFAULT_WEIGHTS.copy()
         self.min_score = min_score
         self.symbol = symbol
         self._instrument_config = instrument_config
+        # Retest gate: when True, a BOS must be followed by a pullback to the
+        # broken structural level before a signal is emitted. Entering directly
+        # on the break chases extended price and takes disproportionate SL hits
+        # (XAU 2024-25 replay: 16 invalidated × -1R dominated the loss column).
+        # SMC theory: wait for broken resistance/support to flip polarity and
+        # hold as new support/resistance before entering. Can be disabled for
+        # ablation studies or markets where breakout-continuation is preferred.
+        self.require_retest = require_retest
 
         # Use per-instrument SL/TP multipliers if config provided
         if instrument_config is not None:
@@ -221,6 +236,19 @@ class ConfluenceDetector:
 
         signal_type = SignalType.LONG if bos > 0 else SignalType.SHORT
 
+        # Pullback/retest gate — require price to have retested the broken
+        # structural level before firing. This suppresses entries on extended
+        # break bars (which take disproportionate SL hits) and aligns with
+        # SMC "broken-level-flips-polarity" practice. Disabled when
+        # ``require_retest=False`` so the engine can be used for pure-breakout
+        # strategies or ablation.
+        retest_armed = smc_features.get("BOS_RETEST_ARMED", 0.0)
+        if self.require_retest:
+            if signal_type == SignalType.LONG and retest_armed <= 0:
+                return None
+            if signal_type == SignalType.SHORT and retest_armed >= 0:
+                return None
+
         # Score each component
         components: List[ComponentScore] = []
         components.append(self._score_bos(smc_features, signal_type, atr))
@@ -232,7 +260,23 @@ class ConfluenceDetector:
         components.append(self._score_momentum(smc_features, signal_type))
         components.append(self._score_rsi_divergence(smc_features, signal_type))
 
+        # Renormalize when components have NO data (as opposed to a present-but-
+        # neutral reading). Without this, offline replay (news=None, volume=None)
+        # caps the score at 70/100 and makes any production seuil ≥75 impossible
+        # to trigger — the 7-year XAUUSD audit showed this bug produced 0 trades.
+        # Re-scaling on the sum of weights whose inputs were actually provided
+        # keeps the score in [0,100] regardless of data availability.
         total_score = sum(c.weighted_score for c in components)
+        absent_weight = 0.0
+        if news is None:
+            absent_weight += self.weights.get("news", 0.0)
+        if volume is None or volume_ma is None or volume_ma <= 0:
+            absent_weight += self.weights.get("volume", 0.0)
+        if regime is None:
+            absent_weight += self.weights.get("regime", 0.0)
+        present_weight = sum(self.weights.values()) - absent_weight
+        if absent_weight > 0 and present_weight > 0:
+            total_score = total_score * 100.0 / present_weight
         total_score = max(0.0, min(100.0, total_score))
 
         if total_score < self.min_score:
@@ -322,35 +366,53 @@ class ConfluenceDetector:
     # ------------------------------------------------------------------ #
 
     def _score_bos(self, smc: Dict[str, float], direction: SignalType, atr: float = 0.0) -> ComponentScore:
-        """Break of Structure: graduated scoring by event freshness + CHOCH.
+        """Break of Structure: graduated scoring.
 
-        Quality tiers (per-direction, both long and short):
-          - CHOCH aligned (reversal)              → 100% weight
-          - Fresh BOS event this bar               → 85% weight
-          - Continuation (trend state only)        → 50% weight
-          - Direction mismatch                     → 0
+        Tier ladder depends on ``require_retest``:
+          * require_retest=True (default): hard gate upstream only passes
+            armed bars, so the ladder is (CHOCH+armed=100%, armed=90%).
+            Non-armed cases are unreachable but retain defined scores for
+            ablation / transparency when the gate is manually disabled.
+          * require_retest=False: legacy ladder (CHOCH=100%, fresh event=85%,
+            continuation=50%) — preserved for backward compatibility and
+            ablation studies. Non-retest signals are not penalised extra.
         """
         w = self.weights["bos"]
         bos = smc.get("BOS_SIGNAL", 0.0)
         event = smc.get("BOS_EVENT", 0.0)
         choch = smc.get("CHOCH_SIGNAL", 0.0)
+        retest_armed = smc.get("BOS_RETEST_ARMED", 0.0)
+
+        def _quality_with_retest(aligned_choch: bool, aligned_event: bool, aligned_armed: bool):
+            if aligned_choch and aligned_armed:
+                return 1.0, "CHOCH reversal + retest"
+            if aligned_armed:
+                return 0.9, "BOS retest confirmed"
+            if aligned_choch:
+                return 0.7, "CHOCH reversal (no retest yet)"
+            if aligned_event:
+                return 0.4, "fresh BOS break (no retest)"
+            return 0.25, "BOS continuation"
+
+        def _quality_legacy(aligned_choch: bool, aligned_event: bool):
+            if aligned_choch:
+                return 1.0, "BOS + CHOCH reversal"
+            if aligned_event:
+                return 0.85, "fresh BOS break"
+            return 0.5, "BOS continuation"
 
         if direction == SignalType.LONG and bos > 0:
-            if choch > 0:
-                quality, label = 1.0, "BOS + CHOCH reversal"
-            elif event > 0:
-                quality, label = 0.85, "fresh BOS break"
+            if self.require_retest:
+                quality, label = _quality_with_retest(choch > 0, event > 0, retest_armed > 0)
             else:
-                quality, label = 0.5, "BOS continuation"
+                quality, label = _quality_legacy(choch > 0, event > 0)
             score = quality * w
             reason = f"Bullish {label} (quality={quality:.0%})"
         elif direction == SignalType.SHORT and bos < 0:
-            if choch < 0:
-                quality, label = 1.0, "BOS + CHOCH reversal"
-            elif event < 0:
-                quality, label = 0.85, "fresh BOS break"
+            if self.require_retest:
+                quality, label = _quality_with_retest(choch < 0, event < 0, retest_armed < 0)
             else:
-                quality, label = 0.5, "BOS continuation"
+                quality, label = _quality_legacy(choch < 0, event < 0)
             score = quality * w
             reason = f"Bearish {label} (quality={quality:.0%})"
         else:
@@ -558,11 +620,13 @@ class ConfluenceDetector:
 
     @staticmethod
     def _classify_tier(score: float) -> SignalTier:
-        if score >= 80:
+        # Cutpoints aligned with the post-RegimeFilter empirical distribution
+        # (XAU M15 2019-2025, n=883). See SignalTier docstring above.
+        if score >= 55:
             return SignalTier.PREMIUM
-        elif score >= 60:
-            return SignalTier.STANDARD
         elif score >= 40:
+            return SignalTier.STANDARD
+        elif score >= 25:
             return SignalTier.WEAK
         else:
             return SignalTier.INVALID

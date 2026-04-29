@@ -67,7 +67,9 @@ def detector():
     # serialization) without having to fully populate regime/news/volume.
     # Production default is 60 (H3) — see tests/test_tier_threshold* for
     # coverage of the higher bar.
-    return ConfluenceDetector(min_score=40.0)
+    # require_retest=False because these fixtures predate the retest gate and
+    # focus on scoring/SL/TP logic, not the pullback filter (covered separately).
+    return ConfluenceDetector(min_score=40.0, require_retest=False)
 
 
 @pytest.fixture
@@ -417,13 +419,15 @@ class TestVolumeConfirmation:
 
 class TestTierClassification:
     def test_tier_thresholds(self, detector):
+        # Cutpoints recalibrated 2026-04-29 against the post-RegimeFilter
+        # empirical score distribution (XAU M15 2019-2025, n=883).
         assert detector._classify_tier(85.0) == SignalTier.PREMIUM
-        assert detector._classify_tier(80.0) == SignalTier.PREMIUM
-        assert detector._classify_tier(79.9) == SignalTier.STANDARD
-        assert detector._classify_tier(60.0) == SignalTier.STANDARD
-        assert detector._classify_tier(59.9) == SignalTier.WEAK
-        assert detector._classify_tier(40.0) == SignalTier.WEAK
-        assert detector._classify_tier(39.9) == SignalTier.INVALID
+        assert detector._classify_tier(55.0) == SignalTier.PREMIUM
+        assert detector._classify_tier(54.9) == SignalTier.STANDARD
+        assert detector._classify_tier(40.0) == SignalTier.STANDARD
+        assert detector._classify_tier(39.9) == SignalTier.WEAK
+        assert detector._classify_tier(25.0) == SignalTier.WEAK
+        assert detector._classify_tier(24.9) == SignalTier.INVALID
 
 
 # ============================================================================
@@ -490,3 +494,86 @@ class TestEdgeCases:
         )
         assert signal is not None
         assert signal.bar_timestamp == ts
+
+
+# ============================================================================
+# TESTS: RENORMALIZATION WHEN COMPONENTS ARE ABSENT (P1)
+# ============================================================================
+
+class TestScoreRenormalization:
+    """When News/Volume/Regime input is None (data absent, not neutral),
+    their weight is removed from the denominator so the final score stays in
+    [0,100]. Without this, offline replay capped the score at 70/100 and the
+    production seuil of 75 was mathematically unreachable."""
+
+    def test_score_capped_at_100_when_all_components_present(
+        self, detector, bullish_smc, bullish_regime, bullish_news
+    ):
+        signal = detector.analyze(
+            smc_features=bullish_smc, regime=bullish_regime, news=bullish_news,
+            price=2400.0, atr=10.0, volume=2000.0, volume_ma=1000.0,
+        )
+        assert signal is not None
+        assert signal.confluence_score <= 100.0
+
+    def test_news_absent_triggers_renormalization(
+        self, detector, bullish_smc, bullish_regime
+    ):
+        """With news=None, the 20-pt weight is redistributed so full confluence
+        on the remaining components can still reach 100."""
+        signal = detector.analyze(
+            smc_features=bullish_smc, regime=bullish_regime, news=None,
+            price=2400.0, atr=10.0, volume=2000.0, volume_ma=1000.0,
+        )
+        assert signal is not None
+        # With news absent but all other components strong, the renormalized
+        # score should be materially higher than the naive "sum / 100" approach
+        # (which would cap at 80 with news=0). Premium tier (≥80) should be
+        # achievable.
+        assert signal.confluence_score >= 80.0
+
+    def test_volume_absent_triggers_renormalization(
+        self, detector, bullish_smc, bullish_regime, bullish_news
+    ):
+        signal = detector.analyze(
+            smc_features=bullish_smc, regime=bullish_regime, news=bullish_news,
+            price=2400.0, atr=10.0, volume=None, volume_ma=None,
+        )
+        assert signal is not None
+        # Volume removed from denominator → score unaffected by absence.
+        assert signal.confluence_score >= 80.0
+
+    def test_both_news_and_volume_absent_can_still_reach_premium(
+        self, detector, bullish_smc, bullish_regime
+    ):
+        """This is the XAU replay case — no news, no volume. With the fix,
+        a strong SMC/regime confluence can still score ≥80."""
+        signal = detector.analyze(
+            smc_features=bullish_smc, regime=bullish_regime, news=None,
+            price=2400.0, atr=10.0, volume=None, volume_ma=None,
+        )
+        assert signal is not None
+        assert signal.confluence_score >= 75.0
+
+    def test_no_renormalization_when_news_present_but_neutral(
+        self, detector, bullish_smc, bullish_regime
+    ):
+        """Present-but-neutral news (sentiment=0) must NOT trigger
+        renormalization — the component contributes its graduated value,
+        distinct from 'absent'."""
+        neutral_news = MockNewsAssessment(
+            decision=MockNewsDecision.ALLOW,
+            sentiment_score=0.0,
+            sentiment_confidence=0.5,
+        )
+        signal_neutral = detector.analyze(
+            smc_features=bullish_smc, regime=bullish_regime, news=neutral_news,
+            price=2400.0, atr=10.0, volume=2000.0, volume_ma=1000.0,
+        )
+        signal_absent = detector.analyze(
+            smc_features=bullish_smc, regime=bullish_regime, news=None,
+            price=2400.0, atr=10.0, volume=2000.0, volume_ma=1000.0,
+        )
+        assert signal_neutral is not None and signal_absent is not None
+        # Absent → renormalized → strictly higher than neutral-but-present.
+        assert signal_absent.confluence_score > signal_neutral.confluence_score
