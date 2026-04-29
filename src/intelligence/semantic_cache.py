@@ -1,9 +1,14 @@
 """Hash-based response deduplication for LLM narrative responses.
 
-If multiple users request the same signal (same asset + bar + SMC features),
-serve one cached response instead of N API calls.
+If multiple bars produce *similar* signals (same symbol + direction + tier +
+bucketed component scores), serve one cached response instead of N API calls.
 
-Cache key: SHA256(symbol + bar_ts + bos + fvg + ob + regime + news)[:16]
+Cache key: SHA256(symbol + dir + tier + bucketed components)[:16]
+
+NOTE: ``bar_timestamp`` is intentionally excluded — including it makes every
+bar a unique key and drives the live hit rate to ~0%. Component scores are
+bucketed to 5-point steps so two near-identical setups collide.
+
 Storage: SQLite WAL (same pattern as signal_store.py)
 TTL: 24 hours
 """
@@ -96,21 +101,58 @@ class SemanticCache:
     # Public API
     # ------------------------------------------------------------------ #
 
-    @staticmethod
-    def generate_cache_key(signal: Any) -> str:
-        """
-        Generate deterministic cache key from signal attributes.
+    SCORE_BUCKET_PTS = 10  # round component scores to nearest 10 points
+    # Empirical hit rate at bucket=5: 7.8 % on 1200 simulated XAU signals.
+    # Bucket=10 raises hit rate to 33.8 % (x4.3) at the cost of collapsing
+    # BOS=12 / BOS=15 distinctions — accepted since the tier gate is upstream.
+    # See reports/eval_06_empirical_findings_2026_04_29.md.
+    TIER_DEFAULT = "UNKNOWN"
 
-        Key = SHA256(symbol + bar_ts + bos + fvg + ob + regime_type + news_decision)[:16]
+    @staticmethod
+    def _bucket(value: float, step: float) -> float:
+        """Round ``value`` to the nearest ``step`` (e.g. 12.3 → 10.0 with step=5)."""
+        if step <= 0:
+            return float(value)
+        return round(float(value) / step) * step
+
+    @classmethod
+    def generate_cache_key(cls, signal: Any) -> str:
+        """Generate a fuzzy cache key from signal attributes.
+
+        Key inputs (deterministic, ordered):
+          - symbol
+          - signal direction (LONG / SHORT)
+          - tier (PREMIUM / STANDARD / BASIC)
+          - components, sorted by name, with weighted_score bucketed to
+            ``SCORE_BUCKET_PTS`` so near-identical setups collide.
+
+        ``bar_timestamp`` is deliberately NOT included; see module docstring.
         """
+        symbol = str(getattr(signal, "symbol", ""))
+        direction_attr = getattr(signal, "signal_type", "")
+        direction = (
+            getattr(direction_attr, "value", direction_attr)
+            if direction_attr is not None
+            else ""
+        )
+        tier_attr = getattr(signal, "tier", cls.TIER_DEFAULT)
+        tier = getattr(tier_attr, "value", tier_attr) if tier_attr is not None else cls.TIER_DEFAULT
+
         parts = [
-            str(getattr(signal, "symbol", "")),
-            str(getattr(signal, "bar_timestamp", "")),
+            f"sym={symbol}",
+            f"dir={direction}",
+            f"tier={tier}",
         ]
 
-        # Add component scores for determinism
-        for comp in getattr(signal, "components", []):
-            parts.append(f"{comp.name}={comp.weighted_score:.1f}")
+        # Sort components by name so reordering doesn't change the key.
+        components = list(getattr(signal, "components", []) or [])
+        components.sort(key=lambda c: getattr(c, "name", ""))
+        for comp in components:
+            score = cls._bucket(
+                getattr(comp, "weighted_score", 0.0),
+                cls.SCORE_BUCKET_PTS,
+            )
+            parts.append(f"{comp.name}={score:.1f}")
 
         raw = "|".join(parts)
         return hashlib.sha256(raw.encode()).hexdigest()[:16]

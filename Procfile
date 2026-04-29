@@ -1,1 +1,1 @@
-worker: python parallel_training.py
+web: python -m src.intelligence.main

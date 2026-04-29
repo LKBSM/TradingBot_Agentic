@@ -83,18 +83,19 @@ class TestCacheHitMiss:
         assert result["is_valid"] is True
         assert result["full_narrative"] == "Gold is testing resistance..."
 
-    def test_different_bar_is_cache_miss(self, cache, narrative_data):
+    def test_different_bar_same_signal_is_cache_HIT(self, cache, narrative_data):
+        """Bar timestamp is intentionally NOT part of the key — two bars with the
+        same symbol/dir/tier/components must collide, otherwise hit rate stays at 0."""
         signal_1 = MockSignal(bar_timestamp="2025-06-15T14:30:00")
         signal_2 = MockSignal(bar_timestamp="2025-06-15T14:45:00")
 
         key_1 = SemanticCache.generate_cache_key(signal_1)
         key_2 = SemanticCache.generate_cache_key(signal_2)
 
-        assert key_1 != key_2  # Different bar → different key
+        assert key_1 == key_2  # Same signal shape → same key, regardless of bar
 
         cache.put(key_1, narrative_data)
-        assert cache.get(key_1) is not None
-        assert cache.get(key_2) is None  # Miss
+        assert cache.get(key_2) is not None  # Hit on the "next" bar
 
     def test_same_signal_same_key(self, signal):
         key_1 = SemanticCache.generate_cache_key(signal)
@@ -186,9 +187,60 @@ class TestCacheKeyDeterminism:
         assert SemanticCache.generate_cache_key(sig_gold) != SemanticCache.generate_cache_key(sig_silver)
 
     def test_different_scores_different_keys(self):
-        sig_1 = MockSignal(components=[MockComponent("BOS", 15.0)])
+        # 20 and 10 are one full 10-pt bucket apart → different keys.
+        sig_1 = MockSignal(components=[MockComponent("BOS", 20.0)])
         sig_2 = MockSignal(components=[MockComponent("BOS", 10.0)])
         assert SemanticCache.generate_cache_key(sig_1) != SemanticCache.generate_cache_key(sig_2)
+
+    def test_close_scores_collide_via_bucketing(self):
+        """Scores within the 10-pt bucket window should collide (fuzzy match)."""
+        sig_1 = MockSignal(components=[MockComponent("BOS", 11.0)])
+        sig_2 = MockSignal(components=[MockComponent("BOS", 13.0)])
+        # Both round to 10 with step=10 → identical key
+        assert SemanticCache.generate_cache_key(sig_1) == SemanticCache.generate_cache_key(sig_2)
+
+    def test_component_order_does_not_matter(self):
+        """Components are sorted by name before hashing — order is irrelevant."""
+        sig_1 = MockSignal(components=[
+            MockComponent("BOS", 15.0),
+            MockComponent("FVG", 15.0),
+        ])
+        sig_2 = MockSignal(components=[
+            MockComponent("FVG", 15.0),
+            MockComponent("BOS", 15.0),
+        ])
+        assert SemanticCache.generate_cache_key(sig_1) == SemanticCache.generate_cache_key(sig_2)
+
+    def test_direction_changes_key(self):
+        @dataclass
+        class _Side:
+            value: str = "LONG"
+
+        @dataclass
+        class _SignalWithDir:
+            symbol: str = "XAUUSD"
+            signal_type: _Side = field(default_factory=_Side)
+            tier: str = "STANDARD"
+            components: List[MockComponent] = field(default_factory=lambda: [
+                MockComponent("BOS", 15.0),
+            ])
+
+        long_sig = _SignalWithDir()
+        short_sig = _SignalWithDir(signal_type=_Side(value="SHORT"))
+        assert (
+            SemanticCache.generate_cache_key(long_sig)
+            != SemanticCache.generate_cache_key(short_sig)
+        )
+
+    def test_tier_changes_key(self):
+        sig_premium = MockSignal()
+        sig_premium.tier = "PREMIUM"
+        sig_basic = MockSignal()
+        sig_basic.tier = "BASIC"
+        assert (
+            SemanticCache.generate_cache_key(sig_premium)
+            != SemanticCache.generate_cache_key(sig_basic)
+        )
 
 
 # ============================================================================
