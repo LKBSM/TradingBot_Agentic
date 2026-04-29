@@ -1,0 +1,81 @@
+{
+  "data_bars": 30000,
+  "modes": {
+    "har": {
+      "fit_seconds": 59.638849100039806,
+      "rss_mb_before": 77.28125,
+      "rss_mb_after": 140.953125,
+      "rss_mb_delta": 63.671875,
+      "state_total_bytes": 12462,
+      "state_files": [
+        {
+          "name": "state.pkl",
+          "bytes": 12462
+        }
+      ],
+      "forecast_latency_us": {
+        "p50": 55383.5,
+        "p95": 81733.98999999998,
+        "p99": 100732.88799999967,
+        "mean": 56879.511,
+        "n": 200
+      }
+    },
+    "lgbm": {
+      "fit_seconds": 55.24277340003755,
+      "rss_mb_before": 141.3828125,
+      "rss_mb_after": 156.0546875,
+      "rss_mb_delta": 14.671875,
+      "state_total_bytes": 148866,
+      "state_files": [
+        {
+          "name": "state.lgbm.meta.json",
+          "bytes": 1654
+        },
+        {
+          "name": "state.lgbm.txt",
+          "bytes": 134750
+        },
+        {
+          "name": "state.pkl",
+          "bytes": 12462
+        }
+      ],
+      "forecast_latency_us": {
+        "p50": 4454016.699999999,
+        "p95": 9165747.36,
+        "p99": 11408339.604999997,
+        "mean": 5314212.203000001,
+        "n": 200
+      }
+    },
+    "hybrid": {
+      "fit_seconds": 78.58318479999434,
+      "rss_mb_before": 156.26171875,
+      "rss_mb_after": 159.10546875,
+      "rss_mb_delta": 2.84375,
+      "state_total_bytes": 227761,
+      "state_files": [
+        {
+          "name": "state.lgbm.meta.json",
+          "bytes": 778
+        },
+        {
+          "name": "state.lgbm.txt",
+          "bytes": 214521
+        },
+        {
+          "name": "state.pkl",
+          "bytes": 12462
+        }
+      ],
+      "forecast_latency_us": {
+        "p50": 5251962.7,
+        "p95": 8750433.575,
+        "p99": 9817181.188,
+        "mean": 5501898.451,
+        "n": 200
+      }
+    }
+  }
+}

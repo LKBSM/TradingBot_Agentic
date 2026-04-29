@@ -20,6 +20,7 @@ from __future__ import annotations
 import logging
 import pickle
 import threading
+from collections import deque
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -359,7 +360,15 @@ class VolatilityForecaster:
         self._event_times: Optional[np.ndarray] = None  # calendar event timestamps
 
         # TCP conformal prediction state
+        #  * `_tcp_width`: symmetric multiplier (legacy Robbins-Monro online update).
+        #  * `_tcp_residuals`: rolling buffer of (actual - predicted) used to derive
+        #    empirical quantile-based asymmetric intervals (H5, Sprint 4).
         self._tcp_width: float = 0.5
+        self._tcp_alpha: float = 0.10          # central-coverage = 1 - 2*alpha = 80%
+        self._tcp_residual_maxlen: int = 500
+        self._tcp_residuals: deque = deque(maxlen=self._tcp_residual_maxlen)
+        self._tcp_q_lower: Optional[float] = None  # empirical alpha-quantile of residuals (<=0 typical)
+        self._tcp_q_upper: Optional[float] = None  # empirical (1-alpha)-quantile of residuals
 
         # Calibration state
         self._is_calibrated: bool = False
@@ -536,9 +545,17 @@ class VolatilityForecaster:
         if not np.isfinite(forecast_atr) or forecast_atr <= 0:
             return self._fallback_forecast(naive_atr)
 
-        # TCP intervals
-        lower = forecast_atr * (1 - self._tcp_width)
-        upper = forecast_atr * (1 + self._tcp_width)
+        # TCP intervals.
+        #   Prefer empirical-quantile (asymmetric) bands when the residual
+        #   buffer has been populated (Sprint 4 / H5). Otherwise fall back
+        #   to the symmetric `_tcp_width` multiplier (legacy path) so
+        #   existing serialised state and unit tests keep working.
+        if self._tcp_q_lower is not None and self._tcp_q_upper is not None:
+            lower = forecast_atr + self._tcp_q_lower   # q_lower is typically negative
+            upper = forecast_atr + self._tcp_q_upper
+        else:
+            lower = forecast_atr * (1 - self._tcp_width)
+            upper = forecast_atr * (1 + self._tcp_width)
 
         return VolatilityForecast(
             forecast_atr=forecast_atr,
@@ -574,9 +591,15 @@ class VolatilityForecaster:
     # ------------------------------------------------------------------ #
 
     def update_tcp(self, actual_atr: float, forecast: VolatilityForecast) -> None:
-        """Update TCP interval width based on observed actual ATR.
+        """Update TCP interval state based on observed actual ATR.
 
-        Robbins-Monro: big expansion on miss, small shrink on hit.
+        Two parallel mechanisms:
+          1. Robbins-Monro symmetric width (legacy) — big expansion on miss,
+             small shrink on hit. Preserved for compatibility and as a
+             guaranteed-present fallback when the quantile buffer is empty.
+          2. Rolling residual buffer (H5) — append ``actual - forecast`` and
+             periodically refresh empirical α/(1-α) quantiles used by
+             ``forecast()`` for asymmetric intervals.
         """
         with self._lock:
             covered = forecast.confidence_lower <= actual_atr <= forecast.confidence_upper
@@ -587,8 +610,13 @@ class VolatilityForecaster:
                 self._tcp_width -= gamma * alpha           # small shrink
             else:
                 self._tcp_width += gamma * (1 - alpha)     # big expansion
-
             self._tcp_width = max(0.05, min(3.0, self._tcp_width))
+
+            # H5: feed residual buffer, refresh quantiles every 20 updates.
+            if np.isfinite(actual_atr) and np.isfinite(forecast.forecast_atr):
+                self._tcp_residuals.append(float(actual_atr - forecast.forecast_atr))
+                if len(self._tcp_residuals) % 20 == 0:
+                    self._recompute_tcp_quantiles()
 
     # ------------------------------------------------------------------ #
     # FEATURE COMPUTATION
@@ -904,10 +932,35 @@ class VolatilityForecaster:
     # BLEND CALIBRATION
     # ------------------------------------------------------------------ #
 
-    def _calibrate_blend_weight(self, df: pd.DataFrame) -> Dict[str, Any]:
-        """Calibrate HAR/naive blend weight via grid search on validation split.
+    def _calibrate_blend_weight(
+        self,
+        df: pd.DataFrame,
+        n_folds: int = 5,
+        reg_lambda: float = 0.5,
+        reg_floor: float = 0.3,
+    ) -> Dict[str, Any]:
+        """Calibrate HAR/naive blend weight via walk-forward CV with regularisation.
 
-        Implements Bates & Granger (1969) forecast combination with shrinkage.
+        Implements Bates & Granger (1969) forecast combination with a penalty
+        that keeps blend_weight from collapsing toward 0 when HAR+naive error
+        surfaces are nearly flat (a single 80/20 split picked pathological
+        endpoints on quiet periods).
+
+        Procedure (Sprint 4 / H4):
+          * Expanding-window walk-forward CV with ``n_folds`` splits. Each
+            fold evaluates on a disjoint forward slice, training up to that
+            slice's start.
+          * On each fold, grid-search blend w minimising
+            ``loss = MAE + reg_lambda * max(0, reg_floor - w)``. The penalty
+            makes the HAR contribution structurally non-trivial while still
+            letting the data push w higher if HAR genuinely dominates.
+          * Final blend weight = mean of per-fold optimums; fold-averaged
+            MAE and naive-MAE are logged for comparability with the old
+            single-split number.
+
+        Also seeds ``_tcp_residuals`` from the blended forecasts on the
+        validation slices (H5), giving the forecaster an empirical
+        prediction-error distribution the moment calibration finishes.
         """
         if not self._config.blend_grid or self._har_model is None:
             self._blend_weight = 0.5
@@ -915,70 +968,150 @@ class VolatilityForecaster:
 
         features = ["rv_daily", "rv_weekly", "rv_monthly", "atr_14", "future_atr"]
         valid = df[features].notna().all(axis=1)
-        valid_df = df[valid]
+        valid_df = df[valid].reset_index(drop=True)
 
         if len(valid_df) < 200:
             self._blend_weight = 0.5
             return {"blend_weight": 0.5, "blend_calibrated": False}
 
-        # 80/20 train/val split
-        split = int(len(valid_df) * 0.8)
-        val_df = valid_df.iloc[split:]
+        # Build per-bar feature arrays once. HAR predictions are recomputed per
+        # fold using a model fitted strictly on data preceding the fold (P3 fix:
+        # avoids in-sample leakage that previously made improvement_pct optimistic).
+        from sklearn.linear_model import LinearRegression
 
-        if len(val_df) < 50:
-            self._blend_weight = 0.5
-            return {"blend_weight": 0.5, "blend_calibrated": False}
+        X = valid_df[["rv_daily", "rv_weekly", "rv_monthly", "atr_14"]].values
+        y = valid_df["future_atr"].values
+        naive = valid_df["atr_14"].values
 
-        # HAR predictions on validation
-        X_val = val_df[["rv_daily", "rv_weekly", "rv_monthly", "atr_14"]].values
-        y_val = val_df["future_atr"].values
-        har_pred = self._har_model.predict(X_val).clip(min=0.01)
-        naive_val = val_df["atr_14"].values
-
-        # Apply diurnal + calendar multipliers
-        if "hour" in val_df.columns:
-            hours = val_df["hour"].values
+        if "hour" in valid_df.columns:
+            hours = valid_df["hour"].values.astype(int)
             diurnal_mult = np.array([
                 1.0 + self._config.diurnal_strength * (self._diurnal_profile.get(int(h), 1.0) - 1.0)
                 for h in hours
             ])
         else:
-            diurnal_mult = np.ones(len(val_df))
+            diurnal_mult = np.ones(len(valid_df))
 
-        har_adj = har_pred * diurnal_mult
+        n = len(valid_df)
+        # Walk-forward split points. We hold the first 50% as warm-up training
+        # territory then evaluate n_folds equal slices across the remaining 50%.
+        warmup_end = n // 2
+        fold_size = (n - warmup_end) // n_folds
+        if fold_size < 50:
+            # Fall back to a single 80/20 split when data is too short for CV.
+            n_folds = 1
+            warmup_end = int(n * 0.8)
+            fold_size = n - warmup_end
 
-        # Grid search
-        best_w, best_mae = 0.5, float("inf")
-        for w in np.arange(0.05, 0.96, 0.05):
-            blended = w * har_adj + (1 - w) * naive_val
-            mae = float(np.mean(np.abs(blended - y_val)))
-            if mae < best_mae:
-                best_mae = mae
-                best_w = float(w)
+        grid = np.arange(0.05, 0.96, 0.05)
+        fold_best_w: List[float] = []
+        fold_best_mae: List[float] = []
+        fold_naive_mae: List[float] = []
+        seed_residuals: List[float] = []
 
-        self._blend_weight = best_w
-        naive_mae = float(np.mean(np.abs(naive_val - y_val)))
-        improvement = (1 - best_mae / naive_mae) * 100 if naive_mae > 0 else 0
+        for k in range(n_folds):
+            lo = warmup_end + k * fold_size
+            hi = lo + fold_size if k < n_folds - 1 else n
+            val_y = y[lo:hi]
+            val_naive = naive[lo:hi]
+            if len(val_y) < 30:
+                continue
+
+            # Fit HAR strictly on data before the fold (no leakage).
+            fold_har = LinearRegression()
+            fold_har.fit(X[:lo], y[:lo])
+            val_har_pred = fold_har.predict(X[lo:hi]).clip(min=0.01)
+            val_har = val_har_pred * diurnal_mult[lo:hi]
+
+            best_w, best_loss, best_mae = 0.5, float("inf"), float("inf")
+            for w in grid:
+                blended = w * val_har + (1 - w) * val_naive
+                mae = float(np.mean(np.abs(blended - val_y)))
+                penalty = reg_lambda * max(0.0, reg_floor - float(w))
+                loss = mae + penalty
+                if loss < best_loss:
+                    best_loss = loss
+                    best_mae = mae
+                    best_w = float(w)
+
+            fold_best_w.append(best_w)
+            fold_best_mae.append(best_mae)
+            fold_naive_mae.append(float(np.mean(np.abs(val_naive - val_y))))
+
+            # Seed TCP residual buffer (H5): use the fold's best blend.
+            blended_best = best_w * val_har + (1 - best_w) * val_naive
+            seed_residuals.extend((val_y - blended_best).tolist())
+
+        if not fold_best_w:
+            self._blend_weight = 0.5
+            return {"blend_weight": 0.5, "blend_calibrated": False}
+
+        self._blend_weight = float(np.mean(fold_best_w))
+        avg_mae = float(np.mean(fold_best_mae))
+        avg_naive_mae = float(np.mean(fold_naive_mae))
+        improvement = (1 - avg_mae / avg_naive_mae) * 100 if avg_naive_mae > 0 else 0.0
+
+        # Seed TCP residual buffer for H5 quantile intervals.
+        if seed_residuals:
+            # Keep the most recent `_tcp_residual_maxlen` residuals so the
+            # distribution reflects current-regime error shape.
+            tail = seed_residuals[-self._tcp_residual_maxlen:]
+            self._tcp_residuals = deque(tail, maxlen=self._tcp_residual_maxlen)
+            self._recompute_tcp_quantiles()
 
         logger.info(
-            "Blend calibrated: w=%.2f, val_MAE=%.4f, naive_MAE=%.4f, improvement=%.1f%%",
-            best_w, best_mae, naive_mae, improvement,
+            "Blend calibrated (walk-forward %d-fold, lambda=%.2f): w=%.2f, "
+            "avg_val_MAE=%.4f, avg_naive_MAE=%.4f, improvement=%.1f%%, "
+            "fold_ws=%s",
+            n_folds, reg_lambda, self._blend_weight, avg_mae, avg_naive_mae,
+            improvement, [round(w, 2) for w in fold_best_w],
         )
         return {
-            "blend_weight": best_w,
+            "blend_weight": self._blend_weight,
             "blend_calibrated": True,
-            "blend_val_mae": best_mae,
-            "blend_naive_mae": naive_mae,
+            "blend_val_mae": avg_mae,
+            "blend_naive_mae": avg_naive_mae,
             "blend_improvement_pct": improvement,
+            "blend_cv_folds": len(fold_best_w),
+            "blend_cv_fold_weights": [round(w, 3) for w in fold_best_w],
+            "tcp_residual_samples": len(self._tcp_residuals),
+            "tcp_q_lower": self._tcp_q_lower,
+            "tcp_q_upper": self._tcp_q_upper,
         }
+
+    def _recompute_tcp_quantiles(self) -> None:
+        """Refresh the empirical residual quantiles used for TCP intervals."""
+        if len(self._tcp_residuals) < 30:
+            self._tcp_q_lower = None
+            self._tcp_q_upper = None
+            return
+        arr = np.fromiter(self._tcp_residuals, dtype=float)
+        arr = arr[np.isfinite(arr)]
+        if arr.size < 30:
+            self._tcp_q_lower = None
+            self._tcp_q_upper = None
+            return
+        self._tcp_q_lower = float(np.quantile(arr, self._tcp_alpha))
+        self._tcp_q_upper = float(np.quantile(arr, 1.0 - self._tcp_alpha))
 
     # ------------------------------------------------------------------ #
     # PERSISTENCE
     # ------------------------------------------------------------------ #
 
+    # Bump when the state schema changes incompatibly. Loaders refuse a state
+    # whose major version differs from STATE_VERSION_MAJOR (silent corruption
+    # is harder to debug than a hard refusal at boot).
+    STATE_VERSION_MAJOR: int = 2
+    STATE_VERSION_MINOR: int = 0
+    HAR_FEATURE_NAMES: List[str] = ["rv_daily", "rv_weekly", "rv_monthly", "atr_14"]
+
     def save_state(self, path: str) -> None:
         """Save fitted model state to disk."""
         state = {
+            "_state_version_major": self.STATE_VERSION_MAJOR,
+            "_state_version_minor": self.STATE_VERSION_MINOR,
+            "_har_feature_names": list(self.HAR_FEATURE_NAMES),
+            "_class": type(self).__name__,
             "config": self._config,
             "har_model": self._har_model,
             "hmm_model": self._hmm_model,
@@ -988,6 +1121,11 @@ class VolatilityForecaster:
             "blend_weight": self._blend_weight,
             "event_times": self._event_times,
             "tcp_width": self._tcp_width,
+            "tcp_alpha": self._tcp_alpha,
+            "tcp_residuals": list(self._tcp_residuals),
+            "tcp_residual_maxlen": self._tcp_residual_maxlen,
+            "tcp_q_lower": self._tcp_q_lower,
+            "tcp_q_upper": self._tcp_q_upper,
             "is_calibrated": self._is_calibrated,
             "calibration_bars": self._calibration_bars,
         }
@@ -997,10 +1135,19 @@ class VolatilityForecaster:
         with open(p, "wb") as f:
             pickle.dump(state, f)
 
-        logger.info("VolatilityForecaster state saved to %s", path)
+        logger.info(
+            "VolatilityForecaster state saved (v%d.%d) to %s",
+            self.STATE_VERSION_MAJOR, self.STATE_VERSION_MINOR, path,
+        )
 
     def load_state(self, path: str) -> bool:
-        """Load fitted model state from disk. Returns True on success."""
+        """Load fitted model state from disk. Returns True on success.
+
+        Hard-refuses a state whose schema major version differs from the running
+        code's STATE_VERSION_MAJOR — silent shape mismatches are worse than a
+        loud refusal at startup. Older v1 states (no version key) are accepted
+        and migrated read-only as a one-shot compatibility shim.
+        """
         p = Path(path)
         if not p.exists():
             logger.warning("State file not found: %s", path)
@@ -1009,6 +1156,27 @@ class VolatilityForecaster:
         try:
             with open(p, "rb") as f:
                 state = pickle.load(f)
+
+            major = state.get("_state_version_major", 1)
+            minor = state.get("_state_version_minor", 0)
+            if major > self.STATE_VERSION_MAJOR:
+                logger.error(
+                    "Refusing state %s: schema v%d.%d > supported v%d.%d "
+                    "(running code is older than the snapshot)",
+                    path, major, minor, self.STATE_VERSION_MAJOR, self.STATE_VERSION_MINOR,
+                )
+                return False
+            if major < 1:
+                logger.error("Refusing state %s: invalid major %d", path, major)
+                return False
+
+            saved_features = state.get("_har_feature_names")
+            if saved_features is not None and saved_features != list(self.HAR_FEATURE_NAMES):
+                logger.error(
+                    "Refusing state %s: HAR feature schema mismatch (saved=%s, code=%s)",
+                    path, saved_features, self.HAR_FEATURE_NAMES,
+                )
+                return False
 
             self._config = state["config"]
             self._har_model = state["har_model"]
@@ -1021,8 +1189,25 @@ class VolatilityForecaster:
             self._tcp_width = state["tcp_width"]
             self._is_calibrated = state["is_calibrated"]
             self._calibration_bars = state["calibration_bars"]
+            # H5 (Sprint 4) — older state files predate these keys; preserve
+            # defaults when absent so legacy snapshots keep loading cleanly.
+            self._tcp_alpha = state.get("tcp_alpha", self._tcp_alpha)
+            self._tcp_residual_maxlen = state.get(
+                "tcp_residual_maxlen", self._tcp_residual_maxlen
+            )
+            self._tcp_residuals = deque(
+                state.get("tcp_residuals", []),
+                maxlen=self._tcp_residual_maxlen,
+            )
+            self._tcp_q_lower = state.get("tcp_q_lower")
+            self._tcp_q_upper = state.get("tcp_q_upper")
 
-            logger.info("VolatilityForecaster state loaded from %s", path)
+            if major < self.STATE_VERSION_MAJOR:
+                logger.warning(
+                    "Loaded legacy state v%d.%d (current schema v%d.%d) — re-save to upgrade",
+                    major, minor, self.STATE_VERSION_MAJOR, self.STATE_VERSION_MINOR,
+                )
+            logger.info("VolatilityForecaster state loaded from %s (v%d.%d)", path, major, minor)
             return True
 
         except Exception as e:
@@ -1181,19 +1366,30 @@ class HybridForecaster(VolatilityForecaster):
         if len(valid_df) < 500:
             return {"trained": False, "valid_bars": len(valid_df)}
 
-        # HAR predictions
-        X_har = valid_df[har_features].values
-        har_preds = self._har_model.predict(X_har).clip(min=0.01)
+        # P3 fix: refit HAR strictly on the train slice so residuals are out-of-sample
+        # for the validation slice. Previously har_preds was in-sample everywhere,
+        # making the LGBM target artificially small and improvement_pct optimistic.
+        from sklearn.linear_model import LinearRegression
 
-        # Residual target = actual - HAR
-        residuals = valid_df[target_col].values - har_preds
+        X = valid_df[feature_cols].values
+        X_har = valid_df[har_features].values
+        y_target = valid_df[target_col].values
+
+        split_idx = int(len(X) * 0.8)
+
+        train_har_model = LinearRegression()
+        train_har_model.fit(X_har[:split_idx], y_target[:split_idx])
+        har_preds_train = train_har_model.predict(X_har[:split_idx]).clip(min=0.01)
+        har_preds_val = train_har_model.predict(X_har[split_idx:]).clip(min=0.01)
+        har_preds = np.concatenate([har_preds_train, har_preds_val])
+
+        # Residual target = actual - HAR (HAR fitted on train only)
+        residuals = y_target - har_preds
         valid_df["_residual_target"] = residuals
 
         # Train LightGBM on residuals
-        X = valid_df[feature_cols].values
-        y = valid_df["_residual_target"].values
+        y = residuals
 
-        split_idx = int(len(X) * 0.8)
         X_train, X_val = X[:split_idx], X[split_idx:]
         y_train, y_val = y[:split_idx], y[split_idx:]
 

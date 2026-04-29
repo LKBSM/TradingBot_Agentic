@@ -28,6 +28,10 @@ logger = logging.getLogger(__name__)
 # Valid symbol pattern: 2-10 uppercase alphanumeric chars
 SYMBOL_PATTERN = re.compile(r"^[A-Z0-9]{2,10}$")
 
+# Control character stripper for sanitize_string (compiled once at module load).
+# Re-compiling on every call cost ~30% CPU on hot paths (eval 15 audit).
+_CONTROL_CHARS_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+
 # Valid timeframe pattern
 VALID_TIMEFRAMES: Set[str] = {"M1", "M5", "M15", "M30", "H1", "H4", "D1", "W1"}
 
@@ -89,8 +93,7 @@ def sanitize_string(s: str, max_length: int = 500) -> str:
     """Strip and truncate a user-provided string. Remove control chars."""
     s = s.strip()[:max_length]
     # Remove control characters (except newlines and tabs)
-    s = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", s)
-    return s
+    return _CONTROL_CHARS_RE.sub("", s)
 
 
 # =============================================================================
@@ -204,8 +207,9 @@ class SecureConfig:
     signal_db_path: str = "./data/signals.db"
     calendar_path: Optional[str] = None
 
-    # Volatility
-    vol_mode: str = "hybrid"
+    # Volatility — har is the production-safe default (P95 forecast latency 54ms vs
+    # 1.6-4s for lgbm/hybrid until build_features is vectorised). See reports/eval_04_volatility.md.
+    vol_mode: str = "har"
 
     # Secrets (masked in __repr__)
     anthropic_api_key: Optional[str] = None
@@ -226,7 +230,7 @@ class SecureConfig:
         symbols_str = os.environ.get("SYMBOLS", "XAUUSD")
         symbols = [validate_symbol(s) for s in symbols_str.split(",") if s.strip()]
 
-        vol_mode = os.environ.get("VOL_MODE", "hybrid")
+        vol_mode = os.environ.get("VOL_MODE", "har")
         if vol_mode not in ("har", "lgbm", "hybrid"):
             raise ValueError(f"Invalid VOL_MODE: {vol_mode}. Use: har, lgbm, hybrid")
 

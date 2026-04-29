@@ -147,24 +147,21 @@ class LGBMVolForecaster:
             for name in self._config.session_hours:
                 df[f"session_{name}"] = 0.0
 
-        # --- Calendar proximity ---
+        # --- Calendar proximity (P1: vectorised, was O(N x E) per-row apply) ---
+        max_window = float(self._config.event_window_hours)
         if calendar_df is not None and "timestamp" in df.columns:
             event_times = forecaster._parse_calendar(calendar_df)
-            df["event_proximity_hours"] = df["timestamp"].apply(
-                lambda ts: self._compute_event_proximity(pd.Timestamp(ts), event_times)
+            df["event_proximity_hours"] = self._vectorized_event_proximity(
+                df["timestamp"].values, event_times, max_window,
             )
         else:
-            df["event_proximity_hours"] = float("inf")
+            df["event_proximity_hours"] = max_window
 
-        # Cap event proximity at window size (no signal beyond window)
-        max_window = float(self._config.event_window_hours)
-        df["event_proximity_hours"] = df["event_proximity_hours"].clip(upper=max_window)
-
-        # --- HMM regime features ---
+        # --- HMM regime features (P1: single batched lookup, was O(N) HMM predicts) ---
         if forecaster._hmm_model is not None:
-            df["regime_state_ord"], df["regime_multiplier"] = zip(
-                *[self._get_regime_features(forecaster, df, i) for i in range(len(df))]
-            )
+            ord_arr, mult_arr = self._vectorized_regime_features(forecaster, df)
+            df["regime_state_ord"] = ord_arr
+            df["regime_multiplier"] = mult_arr
         else:
             df["regime_state_ord"] = 1.0  # normal
             df["regime_multiplier"] = 1.0
@@ -180,7 +177,7 @@ class LGBMVolForecaster:
     def _compute_event_proximity(
         ts: pd.Timestamp, event_times: np.ndarray
     ) -> float:
-        """Compute hours to nearest event."""
+        """Compute hours to nearest event (scalar form, kept for callers/tests)."""
         if len(event_times) == 0:
             return float("inf")
 
@@ -191,13 +188,103 @@ class LGBMVolForecaster:
         return float(hours)
 
     @staticmethod
+    def _vectorized_event_proximity(
+        timestamps: np.ndarray,
+        event_times: np.ndarray,
+        max_window: float,
+    ) -> np.ndarray:
+        """Hours to nearest event for every row, capped at ``max_window``.
+
+        Vectorised replacement for the per-row O(N x E) apply: sorts events once
+        and uses ``np.searchsorted`` so we only compare each timestamp to its
+        immediate left/right neighbours (O(N log E)).
+        """
+        if event_times is None or len(event_times) == 0:
+            return np.full(len(timestamps), max_window, dtype=float)
+
+        ts = pd.to_datetime(pd.Series(timestamps)).values.astype("datetime64[ns]")
+        events = np.sort(np.asarray(event_times, dtype="datetime64[ns]"))
+
+        pos = np.searchsorted(events, ts)
+        left_idx = np.clip(pos - 1, 0, len(events) - 1)
+        right_idx = np.clip(pos, 0, len(events) - 1)
+        # When pos == 0 the "left" neighbour is bogus; use the right one for both.
+        # When pos == len(events) the "right" neighbour is bogus; use the left.
+        left_valid = pos > 0
+        right_valid = pos < len(events)
+
+        big = np.timedelta64(2**62, "ns")
+        left_delta = np.where(left_valid, ts - events[left_idx], big)
+        right_delta = np.where(right_valid, events[right_idx] - ts, big)
+        nearest = np.minimum(np.abs(left_delta), np.abs(right_delta))
+        hours = nearest / np.timedelta64(1, "h")
+        return np.minimum(hours.astype(float), max_window)
+
+    @staticmethod
     def _get_regime_features(
         forecaster: VolatilityForecaster, df: pd.DataFrame, idx: int
     ) -> Tuple[float, float]:
-        """Extract regime ordinal + multiplier for a bar."""
+        """Extract regime ordinal + multiplier for a single bar (scalar fallback)."""
         mult, label = forecaster._get_regime_multiplier(df, idx)
         ordinal = {"low": 0.0, "normal": 1.0, "high": 2.0}.get(label, 1.0)
         return ordinal, mult
+
+    @staticmethod
+    def _vectorized_regime_features(
+        forecaster: VolatilityForecaster, df: pd.DataFrame,
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        """Vectorised regime ordinal + multiplier for every row.
+
+        Replaces the per-row HMM ``predict`` call. Reproduces the
+        isolated-observation semantic of the original code (each bar treated
+        as a 1-element sequence whose state = argmax over start-prob × emission).
+        Falls back to the row-by-row implementation if the internal HMM API
+        is unavailable.
+        """
+        n = len(df)
+        ord_default = np.full(n, 1.0)
+        mult_default = np.full(n, 1.0)
+
+        hmm = forecaster._hmm_model
+        if hmm is None or "returns_pct" not in df.columns or "rv_daily" not in df.columns:
+            return ord_default, mult_default
+
+        obs = np.column_stack([
+            df["returns_pct"].values.astype(float),
+            df["rv_daily"].values.astype(float),
+        ])
+        finite = np.isfinite(obs).all(axis=1)
+        if not finite.any():
+            return ord_default, mult_default
+
+        ord_arr = ord_default.copy()
+        mult_arr = mult_default.copy()
+
+        try:
+            log_emission = hmm._compute_log_likelihood(obs[finite])
+            log_start = np.log(np.maximum(hmm.startprob_, 1e-300))
+            states = np.argmax(log_emission + log_start, axis=1)
+        except Exception:
+            # Fallback: per-row predict (slow but correctness-preserving).
+            states = np.empty(int(finite.sum()), dtype=int)
+            obs_finite = obs[finite]
+            for i in range(len(obs_finite)):
+                try:
+                    states[i] = int(hmm.predict(obs_finite[i:i + 1])[0])
+                except Exception:
+                    states[i] = 1  # default normal
+
+        label_map = forecaster._regime_labels
+        mult_map = forecaster._regime_multipliers
+        ordinal_map = {"low": 0.0, "normal": 1.0, "high": 2.0}
+
+        finite_idx = np.flatnonzero(finite)
+        for i, st in zip(finite_idx, states):
+            label = label_map.get(int(st), "unknown")
+            ord_arr[i] = ordinal_map.get(label, 1.0)
+            mult_arr[i] = mult_map.get(int(st), 1.0)
+
+        return ord_arr, mult_arr
 
     @staticmethod
     def _compute_rsi(close: pd.Series, period: int = 14) -> pd.Series:

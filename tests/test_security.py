@@ -213,7 +213,7 @@ class TestSecureConfig:
     def test_default_config(self):
         config = SecureConfig()
         assert config.symbols == ["XAUUSD"]
-        assert config.vol_mode == "hybrid"
+        assert config.vol_mode == "har"
         assert config.api_port == 8000
 
     def test_from_env(self):
