@@ -119,14 +119,42 @@ def run(args: argparse.Namespace) -> int:
         cfg.enter_threshold, cfg.exit_threshold,
         cfg.confirm_bars, cfg.cooldown_bars, cfg.max_signal_age_bars,
     )
+    # Build detector explicitly so we can pass the retest toggle.
+    # IMPORTANT: pass instrument_config so SL/TP multipliers and price_decimals
+    # match the symbol. Without this, the XAU defaults (SL=2×ATR, TP=4×ATR)
+    # were applied to FX pairs, where ATR units are ~1000× smaller — produced
+    # PF ≈ 0 on EURUSD baseline (see reports/eurusd_subset_audit.md).
+    from src.intelligence.confluence_detector import ConfluenceDetector
+    from src.intelligence.volatility_forecaster import get_instrument_registry
+    registry = get_instrument_registry()
+    instrument_config = registry.get(args.symbol)
+    if instrument_config is None:
+        log.warning(
+            "No InstrumentConfig for %s; falling back to XAU defaults (SL=2×, TP=4×).",
+            args.symbol,
+        )
+    detector_min = (
+        float(args.detector_min_score) if args.detector_min_score is not None
+        else min(cfg.exit_threshold, cfg.enter_threshold)
+    )
+    detector = ConfluenceDetector(
+        symbol=args.symbol,
+        min_score=detector_min,
+        instrument_config=instrument_config,
+        require_retest=not args.no_retest,
+    )
+    log.info(
+        "Retest gate: %s",
+        "DISABLED (baseline)" if args.no_retest else "ENABLED (require pullback)",
+    )
     replay = SignalReplay(
         symbol=args.symbol,
         timeframe=args.timeframe,
         state_machine_config=cfg,
+        confluence_detector=detector,
         use_regime=not args.no_regime,
         use_vol_regime=not args.no_vol_regime,
         warmup_bars=args.warmup,
-        detector_min_score=args.detector_min_score,
     )
     log.info(
         "ConfluenceDetector min_score=%.1f  (state machine enter=%.1f exit=%.1f)",
@@ -196,6 +224,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--detector-min-score", type=float, default=None,
                    help="Floor applied inside ConfluenceDetector "
                         "(default: min(enter, exit) so state machine is the sole gate)")
+    p.add_argument("--no-retest", action="store_true",
+                   help="Disable BOS pullback/retest gate in ConfluenceDetector "
+                        "(pre-retest baseline for comparison).")
 
     # Output
     p.add_argument("--out", default="backtest_report.json",

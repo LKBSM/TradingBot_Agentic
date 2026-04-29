@@ -68,8 +68,8 @@ def fmt(v, spec=".3f") -> str:
 
 def main() -> int:
     csv_path = Path("data/EURUSD_15MIN_2019_2025.csv")
-    trades_path = Path("reports/eurusd_trades.csv")
-    out_path = Path("reports/eurusd_subset_audit.md")
+    trades_path = Path("reports/eurusd_trades_v2.csv")  # post wiring-fix
+    out_path = Path("reports/eurusd_subset_audit_v2.md")  # post wiring-fix
 
     df = pd.read_csv(csv_path, parse_dates=["Date"]).set_index("Date")
     df.columns = [c.lower() for c in df.columns]
