@@ -1,0 +1,17 @@
+[
+  {
+    "n_signals_simulated": 1200,
+    "n_symbols": 1,
+    "unique_keys": 1106,
+    "cardinality_pct": 92.17,
+    "stats_from_cache": {
+      "hits": 94,
+      "misses": 1106,
+      "hit_rate": 0.078,
+      "total_lookups": 1200
+    },
+    "manual_hit_rate": 0.078,
+    "hit_rate_after_first_50pct": 0.11,
+    "hit_rate_last_25pct": 0.123
+  }
+]
