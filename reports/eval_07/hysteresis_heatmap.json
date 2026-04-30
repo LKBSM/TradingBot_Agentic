@@ -1,0 +1,252 @@
+[
+  {
+    "enter": 65,
+    "exit": 40,
+    "n_trades": 0,
+    "win_rate": 0.0,
+    "profit_factor": 0.0,
+    "sharpe_per_trade": 0.0,
+    "total_pnl_r": 0.0,
+    "max_drawdown_r": 0.0
+  },
+  {
+    "enter": 65,
+    "exit": 45,
+    "n_trades": 0,
+    "win_rate": 0.0,
+    "profit_factor": 0.0,
+    "sharpe_per_trade": 0.0,
+    "total_pnl_r": 0.0,
+    "max_drawdown_r": 0.0
+  },
+  {
+    "enter": 65,
+    "exit": 50,
+    "n_trades": 0,
+    "win_rate": 0.0,
+    "profit_factor": 0.0,
+    "sharpe_per_trade": 0.0,
+    "total_pnl_r": 0.0,
+    "max_drawdown_r": 0.0
+  },
+  {
+    "enter": 65,
+    "exit": 55,
+    "n_trades": 0,
+    "win_rate": 0.0,
+    "profit_factor": 0.0,
+    "sharpe_per_trade": 0.0,
+    "total_pnl_r": 0.0,
+    "max_drawdown_r": 0.0
+  },
+  {
+    "enter": 65,
+    "exit": 60,
+    "n_trades": 0,
+    "win_rate": 0.0,
+    "profit_factor": 0.0,
+    "sharpe_per_trade": 0.0,
+    "total_pnl_r": 0.0,
+    "max_drawdown_r": 0.0
+  },
+  {
+    "enter": 70,
+    "exit": 40,
+    "n_trades": 0,
+    "win_rate": 0.0,
+    "profit_factor": 0.0,
+    "sharpe_per_trade": 0.0,
+    "total_pnl_r": 0.0,
+    "max_drawdown_r": 0.0
+  },
+  {
+    "enter": 70,
+    "exit": 45,
+    "n_trades": 0,
+    "win_rate": 0.0,
+    "profit_factor": 0.0,
+    "sharpe_per_trade": 0.0,
+    "total_pnl_r": 0.0,
+    "max_drawdown_r": 0.0
+  },
+  {
+    "enter": 70,
+    "exit": 50,
+    "n_trades": 0,
+    "win_rate": 0.0,
+    "profit_factor": 0.0,
+    "sharpe_per_trade": 0.0,
+    "total_pnl_r": 0.0,
+    "max_drawdown_r": 0.0
+  },
+  {
+    "enter": 70,
+    "exit": 55,
+    "n_trades": 0,
+    "win_rate": 0.0,
+    "profit_factor": 0.0,
+    "sharpe_per_trade": 0.0,
+    "total_pnl_r": 0.0,
+    "max_drawdown_r": 0.0
+  },
+  {
+    "enter": 70,
+    "exit": 60,
+    "n_trades": 0,
+    "win_rate": 0.0,
+    "profit_factor": 0.0,
+    "sharpe_per_trade": 0.0,
+    "total_pnl_r": 0.0,
+    "max_drawdown_r": 0.0
+  },
+  {
+    "enter": 75,
+    "exit": 40,
+    "n_trades": 0,
+    "win_rate": 0.0,
+    "profit_factor": 0.0,
+    "sharpe_per_trade": 0.0,
+    "total_pnl_r": 0.0,
+    "max_drawdown_r": 0.0
+  },
+  {
+    "enter": 75,
+    "exit": 45,
+    "n_trades": 0,
+    "win_rate": 0.0,
+    "profit_factor": 0.0,
+    "sharpe_per_trade": 0.0,
+    "total_pnl_r": 0.0,
+    "max_drawdown_r": 0.0
+  },
+  {
+    "enter": 75,
+    "exit": 50,
+    "n_trades": 0,
+    "win_rate": 0.0,
+    "profit_factor": 0.0,
+    "sharpe_per_trade": 0.0,
+    "total_pnl_r": 0.0,
+    "max_drawdown_r": 0.0
+  },
+  {
+    "enter": 75,
+    "exit": 55,
+    "n_trades": 0,
+    "win_rate": 0.0,
+    "profit_factor": 0.0,
+    "sharpe_per_trade": 0.0,
+    "total_pnl_r": 0.0,
+    "max_drawdown_r": 0.0
+  },
+  {
+    "enter": 75,
+    "exit": 60,
+    "n_trades": 0,
+    "win_rate": 0.0,
+    "profit_factor": 0.0,
+    "sharpe_per_trade": 0.0,
+    "total_pnl_r": 0.0,
+    "max_drawdown_r": 0.0
+  },
+  {
+    "enter": 80,
+    "exit": 40,
+    "n_trades": 0,
+    "win_rate": 0.0,
+    "profit_factor": 0.0,
+    "sharpe_per_trade": 0.0,
+    "total_pnl_r": 0.0,
+    "max_drawdown_r": 0.0
+  },
+  {
+    "enter": 80,
+    "exit": 45,
+    "n_trades": 0,
+    "win_rate": 0.0,
+    "profit_factor": 0.0,
+    "sharpe_per_trade": 0.0,
+    "total_pnl_r": 0.0,
+    "max_drawdown_r": 0.0
+  },
+  {
+    "enter": 80,
+    "exit": 50,
+    "n_trades": 0,
+    "win_rate": 0.0,
+    "profit_factor": 0.0,
+    "sharpe_per_trade": 0.0,
+    "total_pnl_r": 0.0,
+    "max_drawdown_r": 0.0
+  },
+  {
+    "enter": 80,
+    "exit": 55,
+    "n_trades": 0,
+    "win_rate": 0.0,
+    "profit_factor": 0.0,
+    "sharpe_per_trade": 0.0,
+    "total_pnl_r": 0.0,
+    "max_drawdown_r": 0.0
+  },
+  {
+    "enter": 80,
+    "exit": 60,
+    "n_trades": 0,
+    "win_rate": 0.0,
+    "profit_factor": 0.0,
+    "sharpe_per_trade": 0.0,
+    "total_pnl_r": 0.0,
+    "max_drawdown_r": 0.0
+  },
+  {
+    "enter": 85,
+    "exit": 40,
+    "n_trades": 0,
+    "win_rate": 0.0,
+    "profit_factor": 0.0,
+    "sharpe_per_trade": 0.0,
+    "total_pnl_r": 0.0,
+    "max_drawdown_r": 0.0
+  },
+  {
+    "enter": 85,
+    "exit": 45,
+    "n_trades": 0,
+    "win_rate": 0.0,
+    "profit_factor": 0.0,
+    "sharpe_per_trade": 0.0,
+    "total_pnl_r": 0.0,
+    "max_drawdown_r": 0.0
+  },
+  {
+    "enter": 85,
+    "exit": 50,
+    "n_trades": 0,
+    "win_rate": 0.0,
+    "profit_factor": 0.0,
+    "sharpe_per_trade": 0.0,
+    "total_pnl_r": 0.0,
+    "max_drawdown_r": 0.0
+  },
+  {
+    "enter": 85,
+    "exit": 55,
+    "n_trades": 0,
+    "win_rate": 0.0,
+    "profit_factor": 0.0,
+    "sharpe_per_trade": 0.0,
+    "total_pnl_r": 0.0,
+    "max_drawdown_r": 0.0
+  },
+  {
+    "enter": 85,
+    "exit": 60,
+    "n_trades": 0,
+    "win_rate": 0.0,
+    "profit_factor": 0.0,
+    "sharpe_per_trade": 0.0,
+    "total_pnl_r": 0.0,
+    "max_drawdown_r": 0.0
+  }
+]

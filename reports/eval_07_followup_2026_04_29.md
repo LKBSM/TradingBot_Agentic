@@ -1,16 +1,18 @@
-# Eval 07 State Machine — Follow-up partial 2026-04-29
+# Eval 07 State Machine — Follow-up complet 2026-04-29
 
-> Heatmap (enter × exit) lancé sur XAU M15 2019-2024 (defaults confirm=2, cooldown=2, max_age=12). Interrompu à 5/25 cells par contrainte de temps.
+> Heatmap (enter × exit) sur XAU M15 2019-2024 (defaults confirm=2, cooldown=2, max_age=12). **Run terminé : 25/25 cells.** Source : `reports/eval_07/hysteresis_heatmap.{json,md}`.
 
-## Données partielles (5 cells, toutes `enter=65`)
+## Heatmap PF complet — toutes les cells produisent **0 trades**
 
-| enter | exit | PF | WR | n_trades | Verdict |
+| enter \ exit | 40 | 45 | 50 | 55 | 60 |
 |---|---|---|---|---|---|
-| 65 | 40 | 0.000 | 0.0% | 0 | aucun trade |
-| 65 | 45 | 0.000 | 0.0% | 0 | aucun trade |
-| 65 | 50 | 0.000 | 0.0% | 0 | aucun trade |
-| 65 | 55 | 0.000 | 0.0% | 0 | aucun trade |
-| 65 | 60 | 0.000 | 0.0% | 0 | aucun trade |
+| **65** | PF=0 (n=0) | PF=0 (n=0) | PF=0 (n=0) | PF=0 (n=0) | PF=0 (n=0) |
+| **70** | PF=0 (n=0) | PF=0 (n=0) | PF=0 (n=0) | PF=0 (n=0) | PF=0 (n=0) |
+| **75** | PF=0 (n=0) | PF=0 (n=0) | PF=0 (n=0) | PF=0 (n=0) | PF=0 (n=0) |
+| **80** | PF=0 (n=0) | PF=0 (n=0) | PF=0 (n=0) | PF=0 (n=0) | PF=0 (n=0) |
+| **85** | PF=0 (n=0) | PF=0 (n=0) | PF=0 (n=0) | PF=0 (n=0) | PF=0 (n=0) |
+
+**Résultat empirique sans ambiguïté** : sur **25 combinaisons** (5 enter × 5 exit) du sweep, ZÉRO trade généré sur 6 ans de XAU M15 2019-2024 (~141 524 barres). Le seuil minimal `enter=65` n'est jamais franchi avec confirmation 2 bars.
 
 ## Interprétation
 
