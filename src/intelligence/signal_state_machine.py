@@ -133,8 +133,16 @@ class StateMachineConfig:
     confirm_bars: int = 2
 
     # --- Signal lifetime (Rule 3) ---------------------------------------- #
-    max_signal_age_bars: int = 12
-    """Hard cap on how long a signal can stay active, regardless of score."""
+    max_signal_age_bars: int = 64
+    """Hard cap on how long a signal can stay active, regardless of score.
+
+    NOTE 2026-04-30: bumped 12 -> 64 after forensic L1 (reports/forensics/L1_timeout_sweep.csv)
+    showed PF monotone-increasing with timeout: 12 -> 0.68, 24 -> 0.79, 64 -> 1.04 on XAU M15
+    2019-2026. The forensic was on the audit script's trade-lifetime parameter, which is a
+    related but distinct timeout (this one limits signal persistence; the trade-lifetime
+    limits execution duration). The directional fix is the same, but a state-machine-specific
+    forensic remains TODO before treating this as final.
+    """
 
     silent_bars_before_score_exit: int = 2
     """If the confluence detector returns no signal for this many bars in a
@@ -872,6 +880,31 @@ class SignalStateMachine:
             machine._transition_history = deque(
                 history, maxlen=machine._config.transition_history_max
             )
+
+            # Consistency check: an ACTIVE phase requires a signal AND a
+            # direction. If either is missing the persisted state is
+            # logically incoherent (e.g., crash mid-confirm before signal
+            # was attached). Reset to IDLE rather than letting _step_active
+            # raise AssertionError on the next bar.
+            if machine._phase in (_Phase.ACTIVE_LONG, _Phase.ACTIVE_SHORT):
+                if machine._active_signal is None or machine._active_direction is None:
+                    logger.warning(
+                        "[%s] Inconsistent persisted state — phase=%s but "
+                        "active_signal=%s, active_direction=%s. Resetting to IDLE.",
+                        machine._config.symbol,
+                        machine._phase.value,
+                        machine._active_signal is not None,
+                        machine._active_direction.value if machine._active_direction else None,
+                    )
+                    machine._phase = _Phase.IDLE
+                    machine._active_signal = None
+                    machine._active_direction = None
+                    machine._active_bars = 0
+                    machine._active_entry_bar = None
+                    machine._active_entry_price = None
+                    machine._silent_bars = 0
+                    machine._cooldown_left = 0
+                    machine._bars_since_phase_change = 0
         return machine
 
 
