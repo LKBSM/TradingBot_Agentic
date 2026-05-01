@@ -29,8 +29,8 @@
 
 | Sprint ID | Titre | Owner | Effort planned/actual | ETA | Last update | Status | Kill criterion | Blockers |
 |---|---|---|---|---|---|---|---|---|
-| DATA-1.1 | FRED macro ingestion | Marwan | 4h / 3h code | 2026-04-30 | 2026-04-30 | 🟡 | fredapi rate-limit casse ingest | KPI live blocké : pas de FRED_API_KEY (B-001) |
-| DATA-1.2 | CFTC COT ingestion | Marwan | 4h / __ | | | | format ZIP CFTC change | |
+| DATA-1.1 | FRED macro ingestion | Marwan | 4h / 3h code | 2026-04-30 | 2026-05-01 | 🟡 | fredapi rate-limit casse ingest | KPI live blocké : pas de FRED_API_KEY (B-001) |
+| DATA-1.2 | CFTC COT ingestion | Marwan | 4h / 2h | 2026-05-01 | 2026-05-01 | 🟢 | format ZIP CFTC change | aucun. 365 weeks 2019-2025 ingérés, 5/5 tests verts |
 | DATA-1.3 | GLD ETF flows | Marwan | 4h / __ | | | | SPDR JSON schema change | |
 | QUANT-1.1 | A1 feature matrix | Elena | 4h / __ | | | | NaN > 30% après ffill | dépend DATA-1.* |
 | QUANT-1.2 | CPCV harness | Elena | 6h / __ | | | | runtime > 4h | dépend QUANT-1.1 |
