@@ -154,6 +154,26 @@ DATA-1.1 [done mocked, live B-001] → DATA-1.2 [✅] → QUANT-1.1 [bloqué FRE
 
 **Heures dev cumulées (estimées) ** : ~4h sur 4h budget — STOP timer atteint.
 
+## Update 2026-05-01 08:25 ET — User a fourni clé FRED, "continue ad complete phase 1"
+
+- [08:24] FRED smoke run PASS : 5 séries × 7.32 ans × 0 NaN. BREAKEVEN_10Y virtual computed. T10Y2Y bascule fallback default-lag (3027 vintages > endpoint limit, conservative). **B-001 RESOLVED**.
+- [08:25] Sprint QUANT-1.1 démarré (Elena, 4h budget).
+- [08:27] `src/research/a1_features.py` écrit (~570 lignes) : load_price_csv, add_price_features (returns r_1/r_4/r_16, ATR Wilder 14+50, RSI 14, MACD hist, atr_ratio_14_50), add_intra_features (minute_of_day, dow, lunch_hour London+NY), add_macro_features (5 FRED vintage-aware via searchsorted O(N log M)), add_cot_features (mm_net_pct_z52 + producer_net_z52), add_calendar_features (proximity bidirectionnelle), add_target_columns (r_forward_4 + r_forward_16). 19 features ≥ 18 cible (compense GLD deferred via T10Y2Y + atr_ratio + producer_net_z52).
+- [08:28] Smoke run échoue : pyarrow non installé. pip install pyarrow (within "complete Phase 1" scope expansion). requirements.txt mis à jour.
+- [08:29] Smoke run PASS : 152,961 bars × 19 features, leak 100/100 OK, **KPI ALL GREEN**. Parquet sauvé.
+- [08:32] tests/test_a1_features.py 10 tests : price features sanity, ATR Wilder, RSI/MACD edge cases, intra lunch hour boundaries, vintaged lookup invariant 100 random, calendar proximity, target forward correctness, schema integrity. 10/10 verts.
+
+## Bilan post-clé-FRED
+
+**Sprints livrés Phase 1** : 8 sur 14 (~57%).
+- DATA-1.1 ✅ (KPI ✅ post-clé), DATA-1.2 ✅, DATA-1.3 ⏸ voie D
+- INFRA-1.1 ✅, COMM-1.1 ✅, REGIME-1.1 (a) ✅ partial
+- RISK-1.1 ✅ partial (board + script), **QUANT-1.1 ✅ KPI ALL GREEN**
+
+**Tests cumulés** : 33/35 verts (1 skip live FRED, 2 deselected). Coverage src/agents/data 81% + src/research nouveau.
+
+**Chemin critique débloqué** : QUANT-1.2 (CPCV harness, 6h) maintenant exécutable.
+
 **Sprints Phase 1 restants à exécuter dans des futures sessions** :
 - LLM-1.1 Aisha (6h) — eval harness 50 prompts (ROI haut, parallèle)
 - INFRA-1.2 Théo (3h) — Sentry + obs minimale (ROI moyen, touche 23 fichiers)

@@ -34,6 +34,7 @@ aiohttp>=3.9.0                # Async HTTP client
 feedparser>=6.0.0             # RSS feed parsing
 python-dateutil>=2.8.0        # Date parsing for news
 fredapi>=0.5.0                # FRED/ALFRED macro series (DATA-1.1)
+pyarrow>=15.0.0               # Parquet I/O for A1 feature matrix (QUANT-1.1)
 
 # =============================================================================
 # SMART SENTINEL AI — Core Intelligence

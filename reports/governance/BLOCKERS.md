@@ -101,13 +101,17 @@ pip install yfinance>=0.2.40
 
 ---
 
-## B-001 — FRED_API_KEY non fourni (DATA-1.1 KPI partiel)
-
-## B-001 — FRED_API_KEY non fourni (DATA-1.1 KPI partiel)
+## B-001 RESOLVED — FRED_API_KEY fournie 2026-05-01 08:24 ET
 
 **Sprint** : DATA-1.1 (FRED macro ingestion)
 **Détecté** : 2026-04-30 23:50 ET
-**Sévérité** : 🟡 medium — bloque la validation KPI live, pas la DoD
+**Résolu** : 2026-05-01 08:24 ET (clé fournie par user, smoke run passé)
+**KPI final** : ✅ PASS — 5 séries × 7.32 ans × 0 NaN, BREAKEVEN_10Y virtual OK
+**Note** : T10Y2Y bascule sur fallback `_fetch_with_default_lag` (3027 vintages dépassent limite 2000 endpoint `get_series_all_releases`). Conservative : default publication lag = 1 day. Acceptable Phase 1.
+
+### Contexte (historique)
+
+**Sévérité initiale** : 🟡 medium — bloque la validation KPI live, pas la DoD
 
 ### Contexte
 

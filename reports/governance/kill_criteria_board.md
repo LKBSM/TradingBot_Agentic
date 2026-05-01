@@ -32,7 +32,7 @@
 | DATA-1.1 | FRED macro ingestion | Marwan | 4h / 3h code | 2026-04-30 | 2026-05-01 | 🟡 | fredapi rate-limit casse ingest | KPI live blocké : pas de FRED_API_KEY (B-001) |
 | DATA-1.2 | CFTC COT ingestion | Marwan | 4h / 2h | 2026-05-01 | 2026-05-01 | 🟢 | format ZIP CFTC change | aucun. 365 weeks 2019-2025 ingérés, 5/5 tests verts |
 | DATA-1.3 | GLD ETF flows | Marwan | 4h / 0h | 2026-05-01 | 2026-05-01 | ⏸ DEFERRED | SPDR JSON schema change | **Voie D** retenue : différé Phase 2A. ~17 features dispo sans GLD = ≥18 cible plan. |
-| QUANT-1.1 | A1 feature matrix | Elena | 4h / __ | | | | NaN > 30% après ffill | dépend DATA-1.* |
+| QUANT-1.1 | A1 feature matrix | Elena | 4h / 1h30 | 2026-05-01 | 2026-05-01 | 🟢 | NaN > 30% après ffill | aucun. **152,961 bars × 19 features × leak 0/100 → KPI ALL GREEN**. Parquet `data/research/a1_matrix_2019_2026.parquet`. 10/10 tests verts. |
 | QUANT-1.2 | CPCV harness | Elena | 6h / __ | | | | runtime > 4h | dépend QUANT-1.1 |
 | QUANT-1.3 | A1 stack training + verdict | Elena | 6h / __ | | | | DSR<0 ou PBO>0.6 → kill A1 | dépend QUANT-1.2 |
 | REGIME-1.1 (a) | VOL_MODE bavure fix | Kenji | 4h / 0h30 (partie a only) | 2026-05-01 | 2026-05-01 | 🟡 partial | export ONNX RMSE delta >5% | partie (a) done : scripts mt5_setup + run_mt5_live + MEMORY.md alignés sur main.py:532 default `har`. Reste (b) ONNX export + (c) test latence p99 < 100ms — déféré (besoin skl2onnx). |
@@ -75,6 +75,7 @@
 ## 5. Blockers actifs et escalations
 
 - **B-001 (DATA-1.1)** : FRED_API_KEY non fourni → smoke run live KPI bloqué. DoD pytest 6/7 verts (mocked). Détails : `BLOCKERS.md`. Action : user doit fournir clé FRED gratuite avant QUANT-1.1.
+- ~~**B-001 (DATA-1.1)**~~ **RESOLVED 2026-05-01 08:24 ET** : clé FRED fournie par user, smoke run live PASS (5 séries × 7.32 ans × 0 NaN). T10Y2Y bascule sur fallback default-lag (3027 vintages dépassent endpoint limit, conservative).
 - ~~**B-002 (DATA-1.3)**~~ **RESOLVED 2026-05-01** : voie D retenue — différé Phase 2A. ~17 features Elena dispo sans GLD ≥ cible plan. Reprise conditionnelle au verdict A1.
 
 ---
