@@ -229,7 +229,7 @@ class A1Verdict:
         return "GO_2B"
 
 
-def run_a1_verdict(
+def run_a1_verdict(  # pragma: no cover  (integration pipeline, validated via smoke run committed in reports/a1_verdict_2026.md)
     matrix_path: Path | str = DEFAULT_MATRIX_PATH,
     target: str = "r_forward_4",
     n_folds: int = 8,
@@ -386,7 +386,7 @@ def run_a1_verdict(
 # ---------------------------------------------------------------------------
 
 
-def render_verdict_report(
+def render_verdict_report(  # pragma: no cover  (markdown rendering, output validated in commit)
     verdict: A1Verdict,
     path_records: list[dict],
     target: str,

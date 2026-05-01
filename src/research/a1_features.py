@@ -545,7 +545,7 @@ def leak_test_macro_at_bar(
 # ---------------------------------------------------------------------------
 
 
-def _main() -> None:  # pragma: no cover
+def _main() -> None:  # pragma: no cover  (CLI smoke runner, not unit-tested)
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
     )

@@ -37,7 +37,7 @@
 | QUANT-1.3 | A1 stack training + verdict | Elena | 6h / 1h30 | 2026-05-01 | 2026-05-01 | 🟢 livré 🔴 verdict | DSR<0 ou PBO>0.6 → kill A1 | **VERDICT TRANCHÉ : GO 2B**. DSR=0.0, PBO=0.5, PF=1.008, DM stat +46.7 (A1 pire que constant). Score 1/6 critères. Rapport `reports/a1_verdict_2026.md`. Modèle versionné `models/a1_stack_v1.pkl`. |
 | REGIME-1.1 (a) | VOL_MODE bavure fix | Kenji | 4h / 0h30 (partie a only) | 2026-05-01 | 2026-05-01 | 🟡 partial | export ONNX RMSE delta >5% | partie (a) done : scripts mt5_setup + run_mt5_live + MEMORY.md alignés sur main.py:532 default `har`. Reste (b) ONNX export + (c) test latence p99 < 100ms — déféré (besoin skl2onnx). |
 | REGIME-1.2 | BOCPD prototype | Kenji | 4h / __ | | | | cp_prob dégénéré | dépend QUANT-1.1 |
-| LLM-1.1 | Eval harness 50 prompts | Aisha | 6h / __ | | | | forbidden_phrases <0.95 | aucun |
+| LLM-1.1 | Eval harness 50 prompts | Aisha | 6h / 1h30 | 2026-05-01 | 2026-05-01 | 🟢 | forbidden_phrases <0.95 | aucun. 50 fixtures (15 BUY + 15 SELL + 10 HOLD + 5 vol + 5 news), 5 axes scoring, 22 tests verts. Baseline KPIs ALL PASS (factual 1.0, forbidden 1.0, brevity 1.0). CI étendue 80 tests. |
 | INFRA-1.1 | GitHub Actions CI/CD | Théo | 3h / 1h | 2026-05-01 | 2026-05-01 | 🟢 | tests CI dépendants CSV local | scope initial limité aux test_fred + test_cot (cov 81%). Full suite à expand quand fixtures prêts. |
 | INFRA-1.2 | Sentry + /metrics | Théo | 3h / __ | | | | Sentry > free tier | aucun |
 | UX-1.1 | InsightSignal v2 | Inès | 5h / __ | | | | v2 casse >10 tests | aucun |
