@@ -269,11 +269,16 @@ def build_system(
         ks_max_streak, ks_dd_pct * 100, ks_vol_z, ks_heartbeat_s,
     )
 
-    # 8e. Metrics registry — wired in so /metrics exposes the request_logging
-    # histogram and any subsystem counters/gauges. Without this, /metrics
-    # returns an empty body (eval 16 finding #1).
-    from src.performance.metrics import MetricsRegistry
-    metrics_registry = MetricsRegistry(prefix="sentinel")
+    # 8e. Observability bootstrap — Sentry (if SENTRY_DSN set) + metrics
+    # registry pre-populated with the three INFRA-1.2 standard metrics
+    # (signals_generated_total, llm_latency_seconds, circuit_breaker_open_total).
+    # Closes eval 16 finding #1: /metrics is now non-empty from boot.
+    from src.performance.observability import init_observability
+    metrics_registry = init_observability(
+        service="sentinel",
+        environment=os.environ.get("ENVIRONMENT", "dev"),
+        release=os.environ.get("RELEASE"),
+    )
 
     # 9. Build scanner (single or multi-symbol)
     if len(symbols) == 1:

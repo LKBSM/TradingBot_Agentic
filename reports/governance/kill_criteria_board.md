@@ -39,7 +39,7 @@
 | REGIME-1.2 | BOCPD prototype | Kenji | 4h / __ | | | | cp_prob dégénéré | dépend QUANT-1.1 |
 | LLM-1.1 | Eval harness 50 prompts | Aisha | 6h / 1h30 | 2026-05-01 | 2026-05-01 | 🟢 | forbidden_phrases <0.95 | aucun. 50 fixtures (15 BUY + 15 SELL + 10 HOLD + 5 vol + 5 news), 5 axes scoring, 22 tests verts. Baseline KPIs ALL PASS (factual 1.0, forbidden 1.0, brevity 1.0). CI étendue 80 tests. |
 | INFRA-1.1 | GitHub Actions CI/CD | Théo | 3h / 1h | 2026-05-01 | 2026-05-01 | 🟢 | tests CI dépendants CSV local | scope initial limité aux test_fred + test_cot (cov 81%). Full suite à expand quand fixtures prêts. |
-| INFRA-1.2 | Sentry + /metrics | Théo | 3h / __ | | | | Sentry > free tier | aucun |
+| INFRA-1.2 | Sentry + /metrics | Théo | 3h / 1h | 2026-05-01 | 2026-05-01 | 🟢 partial | Sentry > free tier | observability.py + 14 tests verts. 3 métriques standards instanciées au boot. Sentry opt-in via SENTRY_DSN. PII scrubber actif. Print() audit (109 occur 23 fichiers) déféré pour limiter risque. |
 | UX-1.1 | InsightSignal v2 + 4 mockups | Inès | 5h / 1h | 2026-05-01 | 2026-05-01 | 🟢 | v2 casse >10 tests | aucun. Pydantic v2 unifié, 30 tests verts (round-trip, validators directionnels, compliance UE 2024/2811). 4 mockups v2 auto-générés via scripts/generate_mockups_v2.py. |
 | COMM-1.1 | Positioning 2A+2B briefs | Karim | 5h / 1h30 | 2026-05-01 | 2026-05-01 | 🟢 | docs trop similaires | aucun. 2 briefs livrés AVANT verdict A1 (anti-biais ex-post). Sofia review checklist intégrée à chaque doc. |
 | RISK-1.1 | Kill criteria board + weekly_check | Sofia | 6h / 2h | 2026-04-30 | 2026-05-01 | 🟢 partial | 2 checkpoints ratés consec | board live + tools/governance/weekly_check.py + 11 tests verts. Reste : 8 weekly checks réels à mener S1-S8. |
