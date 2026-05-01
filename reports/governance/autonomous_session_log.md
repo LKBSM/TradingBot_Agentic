@@ -107,3 +107,31 @@ DATA-1.1 [done mocked, live B-001] → DATA-1.2 [✅] → QUANT-1.1 [bloqué FRE
 - RISK-1.1 Sofia (6h, ongoing process) — kill_criteria_board déjà initié
 
 **Heures dev cumulées** : ~3h30 sur 4h budget. STOP timer respecté.
+
+## Update 02:25 - REGIME-1.1 quick-win partie (a) après "go"
+
+- [02:20] Inspection codebase pour VOL_MODE : surprise — runtime default `har` déjà appliqué dans `src/intelligence/main.py:532` par commit antérieur `8552c79` "Eval 04 follow-up". Plan REGIME-1.1 spec partie (a) déjà partiellement fait.
+- [02:25] Cleanup résiduel détecté : `scripts/mt5_setup.py:361` (template .env généré) + `scripts/run_mt5_live.bat:26` (variable batch) écrivaient encore `VOL_MODE=hybrid`, ce qui faisait OVERRIDE le runtime default `har`. MEMORY.md ligne 49 disait "default: hybrid" (obsolète).
+- [02:30] 3 fichiers fixés : scripts FR commentaire + MEMORY.md note historique. Test `test_invalid_vol_mode_raises` pass. Commit prep.
+
+## Bilan vraiment final session (cumul 1+2+3+4)
+
+**Sprints livrés (5 commits + 1 prochain)** :
+- ✅ DATA-1.1 FRED (commit 432badc)
+- ✅ DATA-1.2 CFTC COT (commit cf7b03e)
+- ⏸ DATA-1.3 GLD voie D
+- ✅ INFRA-1.1 CI/CD (commit 6238aff)
+- ✅ COMM-1.1 Positioning briefs 2A+2B (commit 1d53b04)
+- 🟡 REGIME-1.1 (a) VOL_MODE cleanup (commit à venir)
+
+**Heures cumulées Phase 1 budget consommé : ~8h sur 64h.**
+
+**Sprints Phase 1 restants à exécuter dans des futures sessions** :
+- LLM-1.1 Aisha (6h) — eval harness 50 prompts (ROI haut, parallèle)
+- INFRA-1.2 Théo (3h) — Sentry + obs minimale (ROI moyen, touche 23 fichiers)
+- REGIME-1.1 partie (b)+(c) Kenji (3h) — ONNX export HAR-RV + test latence
+- REGIME-1.2 Kenji (4h) — BOCPD prototype (dépend QUANT-1.1)
+- UX-1.1 Inès (5h) — InsightSignal v2 + 4 mockups
+- QUANT-1.1 Elena (4h) — A1 feature matrix (BLOQUÉ B-001 FRED key)
+- QUANT-1.2 Elena (6h) — CPCV harness (bloqué Q1.1)
+- QUANT-1.3 Elena (6h) — A1 stack training + verdict (bloqué Q1.2)

@@ -358,7 +358,11 @@ MT5_SERVER={server}
 SYMBOLS=XAUUSD               # Comma-separated: XAUUSD,EURUSD,BTCUSD
 
 # === Volatility Forecaster ===
-VOL_MODE=hybrid              # har, lgbm, or hybrid
+# Per eval_04 (2026-04-29): VOL_MODE=har is the production-safe default.
+# `hybrid` and `lgbm` have 1.6-5 s/forecast latency vs ~190 ms for `har`,
+# and HAR is DM-significant vs naive (-12% RMSE). Switch to lgbm/hybrid
+# only after the B1+B2 fixes restore latency below the 50 ms target.
+VOL_MODE=har                 # har, lgbm, or hybrid
 
 # === Narrative Engine ===
 NARRATIVE_MODE=template      # template ($0) or llm (uses Claude API)

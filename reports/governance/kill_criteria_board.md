@@ -35,7 +35,7 @@
 | QUANT-1.1 | A1 feature matrix | Elena | 4h / __ | | | | NaN > 30% après ffill | dépend DATA-1.* |
 | QUANT-1.2 | CPCV harness | Elena | 6h / __ | | | | runtime > 4h | dépend QUANT-1.1 |
 | QUANT-1.3 | A1 stack training + verdict | Elena | 6h / __ | | | | DSR<0 ou PBO>0.6 → kill A1 | dépend QUANT-1.2 |
-| REGIME-1.1 | HAR-RV ONNX + bavure VOL_MODE | Kenji | 4h / __ | | | | export ONNX RMSE delta >5% | aucun |
+| REGIME-1.1 (a) | VOL_MODE bavure fix | Kenji | 4h / 0h30 (partie a only) | 2026-05-01 | 2026-05-01 | 🟡 partial | export ONNX RMSE delta >5% | partie (a) done : scripts mt5_setup + run_mt5_live + MEMORY.md alignés sur main.py:532 default `har`. Reste (b) ONNX export + (c) test latence p99 < 100ms — déféré (besoin skl2onnx). |
 | REGIME-1.2 | BOCPD prototype | Kenji | 4h / __ | | | | cp_prob dégénéré | dépend QUANT-1.1 |
 | LLM-1.1 | Eval harness 50 prompts | Aisha | 6h / __ | | | | forbidden_phrases <0.95 | aucun |
 | INFRA-1.1 | GitHub Actions CI/CD | Théo | 3h / 1h | 2026-05-01 | 2026-05-01 | 🟢 | tests CI dépendants CSV local | scope initial limité aux test_fred + test_cot (cov 81%). Full suite à expand quand fixtures prêts. |

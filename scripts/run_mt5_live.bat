@@ -23,7 +23,8 @@ set MT5_SERVER=
 
 REM === Scanning Configuration ===
 set SYMBOLS=XAUUSD
-set VOL_MODE=hybrid
+REM eval_04 (2026-04-29): har is production-safe default (latency ~190ms vs 1.6-5s for hybrid/lgbm)
+set VOL_MODE=har
 
 REM === Narrative Engine ===
 set NARRATIVE_MODE=template
