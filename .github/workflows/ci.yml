@@ -103,7 +103,7 @@ jobs:
             tests/test_eval_llm.py \
             tests/test_insight_signal_v2.py \
             tests/test_observability_init.py \
-            -m "not live" \
+            -m "not live and not benchmark" \
             --cov=src/agents/data \
             --cov=src/research \
             --cov=src/api/insight_signal_v2 \
