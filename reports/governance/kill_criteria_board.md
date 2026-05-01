@@ -41,7 +41,7 @@
 | INFRA-1.1 | GitHub Actions CI/CD | Théo | 3h / 1h | 2026-05-01 | 2026-05-01 | 🟢 | tests CI dépendants CSV local | scope initial limité aux test_fred + test_cot (cov 81%). Full suite à expand quand fixtures prêts. |
 | INFRA-1.2 | Sentry + /metrics | Théo | 3h / __ | | | | Sentry > free tier | aucun |
 | UX-1.1 | InsightSignal v2 | Inès | 5h / __ | | | | v2 casse >10 tests | aucun |
-| COMM-1.1 | Positioning 2A+2B briefs | Karim | 5h / __ | | | | docs trop similaires | aucun |
+| COMM-1.1 | Positioning 2A+2B briefs | Karim | 5h / 1h30 | 2026-05-01 | 2026-05-01 | 🟢 | docs trop similaires | aucun. 2 briefs livrés AVANT verdict A1 (anti-biais ex-post). Sofia review checklist intégrée à chaque doc. |
 | RISK-1.1 | Kill criteria board | Sofia | 6h / __ | | | | 2 checkpoints ratés consec | aucun |
 
 **Légende status** :

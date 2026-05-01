@@ -75,3 +75,35 @@
 **Heures dev cumulées** : ~3h sur 4h budget. STOP timer respecté.
 
 **Commits prévus pour cette extension** : 2 (gouvernance/voie-D + INFRA-1.1).
+
+## Update 01:35 - Sprint COMM-1.1 (Karim) après "continue next steps"
+
+- [01:35] Sprint COMM-1.1 démarré. Lecture parallèle évals 25 (PMF/ICP) + 27 (Pricing) + 28 (GTM) + 29 (Compliance) depuis memory.
+- [01:55] Brief 2A (edge confirmed) écrit : audience ICP A Marc primary + James prop firm secondary + B2B brokers wave 1, claims autorisés CPCV/DSR/PBO/Holm/audit-trail, claims interdits MiFID 2024/2811, pricing 29/79/199 + decoy + B2B 1500-3000, GTM SEO FR-first KD 14 wedge 3780 vol/mo, 5 concurrents (TradingView/Trade Ideas/LuxAlgo/Tickeron/FXPremiere), Sofia review checklist 6 items.
+- [02:10] Brief 2B (narrative-first) écrit à parité : audience apprenants + auto-dirigés + B2B copy-trading platforms, claims "intelligence contextuelle" + RAG sourcé + transparence radicale, claims interdits incluant "edge prouvé", pricing 19/39/99 + B2B 499-1500, GTM 10 cornerstone éducatifs + YouTube weekly market wrap (différenciation FR XAU intraday), 5 concurrents (BabyPips/Investopedia/TradingEconomics/Bloomberg/DailyFX), Sofia review checklist 7 items, table comparative 2A vs 2B.
+- [02:15] Self-review Sofia : claims conditionnels au verdict A1 (chaque doc commence par "À activer SI..."), forbidden_phrases respectés en contexte, asymétrie réglementaire 2B documentée. Commits prep.
+
+## Bilan final session autonome (cumul session 1+2+3)
+
+**Sprints livrés** :
+- ✅ DATA-1.1 FRED (commit 432badc) — DoD ok, KPI live blocked B-001
+- ✅ DATA-1.2 CFTC COT (commit cf7b03e) — KPI ✅ 365 weeks 2019-2025
+- ⏸ DATA-1.3 GLD — voie D retenue, déféré Phase 2A
+- ✅ INFRA-1.1 GitHub Actions CI/CD (commit 6238aff) — coverage 81%
+- ✅ COMM-1.1 Positioning briefs 2A+2B (commit à venir) — Sofia review pending
+
+**Chemin critique Phase 1** :
+```
+DATA-1.1 [done mocked, live B-001] → DATA-1.2 [✅] → QUANT-1.1 [bloqué FRED key]
+                                                  → QUANT-1.2 → QUANT-1.3 → CP-A1
+```
+
+**Sprints parallèles encore non démarrés** :
+- INFRA-1.2 Théo (3h) — Sentry + obs minimale
+- LLM-1.1 Aisha (6h) — eval harness 50 prompts
+- REGIME-1.1 Kenji (4h) — HAR-RV ONNX + bavure VOL_MODE
+- REGIME-1.2 Kenji (4h) — BOCPD prototype
+- UX-1.1 Inès (5h) — InsightSignal v2 + 4 mockups
+- RISK-1.1 Sofia (6h, ongoing process) — kill_criteria_board déjà initié
+
+**Heures dev cumulées** : ~3h30 sur 4h budget. STOP timer respecté.
