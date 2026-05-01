@@ -33,7 +33,7 @@
 | DATA-1.2 | CFTC COT ingestion | Marwan | 4h / 2h | 2026-05-01 | 2026-05-01 | 🟢 | format ZIP CFTC change | aucun. 365 weeks 2019-2025 ingérés, 5/5 tests verts |
 | DATA-1.3 | GLD ETF flows | Marwan | 4h / 0h | 2026-05-01 | 2026-05-01 | ⏸ DEFERRED | SPDR JSON schema change | **Voie D** retenue : différé Phase 2A. ~17 features dispo sans GLD = ≥18 cible plan. |
 | QUANT-1.1 | A1 feature matrix | Elena | 4h / 1h30 | 2026-05-01 | 2026-05-01 | 🟢 | NaN > 30% après ffill | aucun. **152,961 bars × 19 features × leak 0/100 → KPI ALL GREEN**. Parquet `data/research/a1_matrix_2019_2026.parquet`. 10/10 tests verts. |
-| QUANT-1.2 | CPCV harness | Elena | 6h / __ | | | | runtime > 4h | dépend QUANT-1.1 |
+| QUANT-1.2 | CPCV harness | Elena | 6h / 1h30 | 2026-05-01 | 2026-05-01 | 🟢 | runtime > 4h | aucun. **Runtime ~7 min sur 152k bars** (cible <30min PASS). 17/17 tests verts. CPCV 28 paths + DSR Bailey-LdP + PBO + Holm + DM tous opérationnels. |
 | QUANT-1.3 | A1 stack training + verdict | Elena | 6h / __ | | | | DSR<0 ou PBO>0.6 → kill A1 | dépend QUANT-1.2 |
 | REGIME-1.1 (a) | VOL_MODE bavure fix | Kenji | 4h / 0h30 (partie a only) | 2026-05-01 | 2026-05-01 | 🟡 partial | export ONNX RMSE delta >5% | partie (a) done : scripts mt5_setup + run_mt5_live + MEMORY.md alignés sur main.py:532 default `har`. Reste (b) ONNX export + (c) test latence p99 < 100ms — déféré (besoin skl2onnx). |
 | REGIME-1.2 | BOCPD prototype | Kenji | 4h / __ | | | | cp_prob dégénéré | dépend QUANT-1.1 |
