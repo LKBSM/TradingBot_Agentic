@@ -42,7 +42,7 @@
 | INFRA-1.2 | Sentry + /metrics | Théo | 3h / __ | | | | Sentry > free tier | aucun |
 | UX-1.1 | InsightSignal v2 | Inès | 5h / __ | | | | v2 casse >10 tests | aucun |
 | COMM-1.1 | Positioning 2A+2B briefs | Karim | 5h / 1h30 | 2026-05-01 | 2026-05-01 | 🟢 | docs trop similaires | aucun. 2 briefs livrés AVANT verdict A1 (anti-biais ex-post). Sofia review checklist intégrée à chaque doc. |
-| RISK-1.1 | Kill criteria board | Sofia | 6h / __ | | | | 2 checkpoints ratés consec | aucun |
+| RISK-1.1 | Kill criteria board + weekly_check | Sofia | 6h / 2h | 2026-04-30 | 2026-05-01 | 🟢 partial | 2 checkpoints ratés consec | board live + tools/governance/weekly_check.py + 11 tests verts. Reste : 8 weekly checks réels à mener S1-S8. |
 
 **Légende status** :
 - 🟢 = on track, no concerns

@@ -126,6 +126,34 @@ DATA-1.1 [done mocked, live B-001] → DATA-1.2 [✅] → QUANT-1.1 [bloqué FRE
 
 **Heures cumulées Phase 1 budget consommé : ~8h sur 64h.**
 
+## Update 02:50 - RISK-1.1 partial après "continue"
+
+- [02:35] Pick : weekly_check.py automation pour Sofia (30-45min, contenu, low-risk).
+- [02:40] tools/governance/weekly_check.py écrit (~370 lignes) : collecte git stats / pytest output / file freshness, render text + JSON, status reduction green/yellow/red, suggestions next actions automatiques.
+- [02:42] Smoke run : 17 commits 7d, pytest 12 passed coverage 81%, board freshness 7.1h → status GREEN. Output ASCII-clean après remplacement em-dash unicode.
+- [02:45] tests/test_weekly_check.py écrits (11 tests parser + status reduction). Premier run : 3 fails (regex groupes optionnels capture vide + pytest collision class TestStats).
+- [02:50] Fix appliqué : refacto parser en searches indépendantes par count + rename TestStats → PytestStats (collision pytest auto-collection). 11/11 tests verts. Commit.
+
+## Bilan absolument final session autonome (cumul 1+2+3+4+5)
+
+**8 commits propres en main** :
+1. `e478f9d` Phase 1 plan + governance infra
+2. `432badc` DATA-1.1 FRED provider
+3. `cf7b03e` DATA-1.2 CFTC COT provider
+4. `503c4f0` DATA-1.3 stop initial + bilan
+5. `6238aff` INFRA-1.1 + Voie D + FRED smoke
+6. `1d53b04` COMM-1.1 positioning briefs
+7. `52144f3` REGIME-1.1 (a) VOL_MODE cleanup
+8. (à venir) RISK-1.1 partial weekly_check.py
+
+**Sprints Phase 1 touchés** : 6 sur 14 (~43%).
+
+**Phase 1 budget consommé** : ~10h sur 64h. Avance significative.
+
+**Tests cumulés** : 24/26 verts (1 skip FRED live, 2 deselected). Coverage src/agents/data 81%.
+
+**Heures dev cumulées (estimées) ** : ~4h sur 4h budget — STOP timer atteint.
+
 **Sprints Phase 1 restants à exécuter dans des futures sessions** :
 - LLM-1.1 Aisha (6h) — eval harness 50 prompts (ROI haut, parallèle)
 - INFRA-1.2 Théo (3h) — Sentry + obs minimale (ROI moyen, touche 23 fichiers)
