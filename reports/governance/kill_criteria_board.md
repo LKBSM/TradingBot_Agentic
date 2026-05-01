@@ -34,7 +34,7 @@
 | DATA-1.3 | GLD ETF flows | Marwan | 4h / 0h | 2026-05-01 | 2026-05-01 | ⏸ DEFERRED | SPDR JSON schema change | **Voie D** retenue : différé Phase 2A. ~17 features dispo sans GLD = ≥18 cible plan. |
 | QUANT-1.1 | A1 feature matrix | Elena | 4h / 1h30 | 2026-05-01 | 2026-05-01 | 🟢 | NaN > 30% après ffill | aucun. **152,961 bars × 19 features × leak 0/100 → KPI ALL GREEN**. Parquet `data/research/a1_matrix_2019_2026.parquet`. 10/10 tests verts. |
 | QUANT-1.2 | CPCV harness | Elena | 6h / 1h30 | 2026-05-01 | 2026-05-01 | 🟢 | runtime > 4h | aucun. **Runtime ~7 min sur 152k bars** (cible <30min PASS). 17/17 tests verts. CPCV 28 paths + DSR Bailey-LdP + PBO + Holm + DM tous opérationnels. |
-| QUANT-1.3 | A1 stack training + verdict | Elena | 6h / __ | | | | DSR<0 ou PBO>0.6 → kill A1 | dépend QUANT-1.2 |
+| QUANT-1.3 | A1 stack training + verdict | Elena | 6h / 1h30 | 2026-05-01 | 2026-05-01 | 🟢 livré 🔴 verdict | DSR<0 ou PBO>0.6 → kill A1 | **VERDICT TRANCHÉ : GO 2B**. DSR=0.0, PBO=0.5, PF=1.008, DM stat +46.7 (A1 pire que constant). Score 1/6 critères. Rapport `reports/a1_verdict_2026.md`. Modèle versionné `models/a1_stack_v1.pkl`. |
 | REGIME-1.1 (a) | VOL_MODE bavure fix | Kenji | 4h / 0h30 (partie a only) | 2026-05-01 | 2026-05-01 | 🟡 partial | export ONNX RMSE delta >5% | partie (a) done : scripts mt5_setup + run_mt5_live + MEMORY.md alignés sur main.py:532 default `har`. Reste (b) ONNX export + (c) test latence p99 < 100ms — déféré (besoin skl2onnx). |
 | REGIME-1.2 | BOCPD prototype | Kenji | 4h / __ | | | | cp_prob dégénéré | dépend QUANT-1.1 |
 | LLM-1.1 | Eval harness 50 prompts | Aisha | 6h / __ | | | | forbidden_phrases <0.95 | aucun |
@@ -58,7 +58,7 @@
 | CP-1.1 | Fin S2 | Marwan | FRED+COT+GLD ingérés, no-look-ahead | Décaler S3 |
 | CP-1.2 | Fin S4 | Elena | A1 baseline tournée RMSE calc | Investiguer leakage |
 | CP-1.3 | Fin S6 | Elena | A1 walk-forward CPCV DSR/PBO calc | Si DSR<0 → kill A1 |
-| **CP-A1** ⚠️ | **Fin S8** | **Elena+Sofia** | **PBO<0.3 ET DSR>1.0 ET CPCV PF>1.20 ET ≥3 Holm** | **Branche 2B** |
+| ~~**CP-A1**~~ ✅ **TRANCHÉ 2026-05-01** | Fin S8 (4 sem avance) | Elena+Sofia | DSR>0.99 ET PBO<0.3 ET CPCV PF>1.20 ET ≥3 Holm + DM-stat<0 | **GO 2B activé** (1/6 green, edge pas démontré) |
 | CP-2A.1 | Fin M4 | Sofia | Forward-test 30j PF≥1.10 → Stripe ON | Kill 2A si PF<0.85 |
 | CP-2A.2 | Fin M6 | Karim | 1 LOI B2B signée | Recentrer B2C |
 | CP-2B.1 | Fin M5 | Aisha | RAG eval F1>0.85, halluc<5% | Itérer prompts |
