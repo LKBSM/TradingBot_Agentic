@@ -216,6 +216,61 @@ def test_vintage_date_helper_handles_dst_correctly():
 
 
 # ---------------------------------------------------------------------------
+# Persistence round-trip + parse_zip helper coverage
+# ---------------------------------------------------------------------------
+
+
+def test_save_to_csv_then_load_from_csv_roundtrip(tmp_path):
+    """Round-trip a small COT frame through CSV: types and values must match."""
+    raw = _make_synthetic_raw(num_weeks=30)
+    df = CotProvider.compute_features(raw)
+
+    out = CotProvider.save_to_csv(df, tmp_path / "cot.csv")
+    assert out.exists()
+    loaded = CotProvider.load_from_csv(out)
+
+    assert loaded.columns.tolist() == OUTPUT_COLUMNS
+    pd.testing.assert_frame_equal(
+        loaded.reset_index(drop=True),
+        df.reset_index(drop=True),
+        check_exact=False,
+        rtol=1e-9,
+    )
+
+
+def test_parse_zip_and_fetch_year_with_synthetic_zip(tmp_path, monkeypatch):
+    """Cover the zip parsing and fetch_year filtering paths without network.
+
+    Builds a tiny synthetic CFTC-shaped zip with one Gold row and one
+    non-Gold row, then verifies fetch_year filters to Gold and returns
+    the right shape.
+    """
+    import zipfile
+
+    # Minimal CFTC-style CSV (just enough columns for our parser).
+    csv_text = (
+        "Report_Date_as_YYYY-MM-DD,CFTC_Contract_Market_Code,Open_Interest_All,"
+        "Prod_Merc_Positions_Long_All,Prod_Merc_Positions_Short_All,"
+        "M_Money_Positions_Long_All,M_Money_Positions_Short_All\n"
+        f"2024-01-02,{GOLD_CFTC_CODE},500000,100000,200000,150000,50000\n"
+        "2024-01-02,001602,100000,20000,15000,30000,10000\n"
+    )
+    zip_path = tmp_path / "fut_disagg_txt_2024.zip"
+    with zipfile.ZipFile(zip_path, "w") as z:
+        z.writestr("f_year.txt", csv_text)
+
+    p = CotProvider(cache_dir=tmp_path)
+    # Force the cache hit path (don't download).
+    raw = p.fetch_year(2024)
+    assert len(raw) == 1
+    assert str(raw["CFTC_Contract_Market_Code"].iloc[0]) == GOLD_CFTC_CODE
+
+    df = CotProvider.compute_features(raw)
+    assert len(df) == 1
+    assert df.columns.tolist() == OUTPUT_COLUMNS
+
+
+# ---------------------------------------------------------------------------
 # Live smoke test
 # ---------------------------------------------------------------------------
 

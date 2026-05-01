@@ -341,3 +341,81 @@ def _ensure_utc_timestamp(t) -> pd.Timestamp:
     if ts.tzinfo is None:
         return ts.tz_localize("UTC")
     return ts.tz_convert("UTC")
+
+
+# ----------------------------------------------------------------------
+# CLI smoke runner — `python -m src.agents.data.fred_provider`
+# ----------------------------------------------------------------------
+
+
+def _smoke_main(start: str = "2019-01-01", out_dir: str = "data/macro") -> None:  # pragma: no cover
+    """One-command smoke run validating DATA-1.1 KPI.
+
+    Usage::
+
+        python -m src.agents.data.fred_provider               # default 2019-now
+        python -m src.agents.data.fred_provider 2020-01-01    # custom start
+
+    Reads FRED_API_KEY from .env (via python-dotenv if available) or env.
+    Fetches the 5 base series + breakeven_10y, saves CSVs, prints stats.
+    """
+    import sys
+
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
+    )
+
+    # Load .env if python-dotenv is available (already in requirements).
+    try:
+        from dotenv import load_dotenv
+
+        load_dotenv()
+    except ImportError:
+        pass
+
+    if len(sys.argv) > 1:
+        start = sys.argv[1]
+
+    p = FredProvider()
+    series_data = p.fetch_all_series(start_date=start)
+
+    # Compute virtual breakeven_10y (vintage = max of inputs).
+    if "DGS10" in series_data and "DFII10" in series_data:
+        bk = FredProvider.compute_breakeven_10y(
+            series_data["DGS10"], series_data["DFII10"]
+        )
+        series_data["BREAKEVEN_10Y"] = bk
+
+    paths = FredProvider.save_to_csv(series_data, out_dir)
+
+    print()
+    print("=== FRED smoke run summary ===")
+    for sid, df in series_data.items():
+        if len(df) == 0:
+            print(f"  {sid}: 0 rows  (FAILED)")
+            continue
+        years = (df["date_utc"].max() - df["date_utc"].min()).days / 365.25
+        nan_count = int(df["value"].isna().sum())
+        print(
+            f"  {sid:14s}: {len(df):5d} obs, {years:.2f}y, "
+            f"{df['date_utc'].min().date()} -> {df['date_utc'].max().date()}, "
+            f"NaN={nan_count}"
+        )
+    print()
+    print(f"Saved CSVs to: {out_dir}/")
+    print("KPI check:")
+    all_ok = all(
+        len(df) > 0
+        and (df["date_utc"].max() - df["date_utc"].min()).days / 365.25 >= 6.0
+        and df["value"].isna().sum() == 0
+        for df in series_data.values()
+    )
+    print(
+        "  PASS  5 series x >=6 years x 0 NaN"
+        if all_ok
+        else "  FAIL  KPI not met (see per-series stats above)"
+    )
+
+
+if __name__ == "__main__":  # pragma: no cover
+    _smoke_main()

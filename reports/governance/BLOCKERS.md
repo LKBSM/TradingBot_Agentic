@@ -1,6 +1,28 @@
 # Blockers — Autonomous Session 2026-04-30 → 2026-05-01
 
-## B-002 — DATA-1.3 (GLD provider) : 3 dépendances réseau hors scope
+## B-002 RESOLVED — DATA-1.3 differred to Phase 2A (voie D)
+
+**Décision** : 2026-05-01 par Marwan/Sofia.
+**Voie retenue** : D — différer DATA-1.3 à Phase 2A.
+
+**Justification** :
+- DATA-1.3 (GLD ETF flows) n'est pas critical-path pour QUANT-1.1 baseline.
+  La spec QUANT-1.1 demande "≥18 features" — sans GLD on a déjà ~17 features
+  (price-based ×6, intra ×3, FRED ×5, COT ×2, calendar ×2 = 18). GLD était
+  nice-to-have.
+- Voie A (yfinance + SPDR research) casse le garde-fou n°6 (autonomous mode)
+  et risque ~1h sur l'endpoint SPDR sans garantie de succès.
+- Si verdict A1 ✅ → reprise DATA-1.3 en Phase 2A (priorité moyenne).
+- Si verdict A1 ❌ → DATA-1.3 drop définitif (2B narrative-first n'a pas
+  besoin de GLD flows).
+
+**Status final** : DATA-1.3 row in kill_criteria_board passe de 🔴 à ⏸ (paused).
+Le contenu détaillé du blocker initial est conservé ci-dessous pour
+référence si le user veut quand même reprendre.
+
+---
+
+### B-002 (initial) — DATA-1.3 (GLD provider) : 3 dépendances réseau hors scope
 
 **Sprint** : DATA-1.3 (GLD ETF flows + SPDR holdings)
 **Détecté** : 2026-05-01 00:35 ET

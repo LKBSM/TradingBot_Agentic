@@ -152,7 +152,13 @@ class CotProvider:
 
     @staticmethod
     def _parse_zip(zip_path: Path) -> pd.DataFrame:
-        """Extract and parse the f_year.txt CSV inside the CFTC ZIP."""
+        """Extract and parse the f_year.txt CSV inside the CFTC ZIP.
+
+        Note: ``CFTC_Contract_Market_Code`` is forced to string dtype because
+        Gold's code "088691" otherwise loses its leading zero when pandas
+        infers int (real CFTC files happen to have non-numeric codes too,
+        masking this issue, but synthetic zips trigger it).
+        """
         with zipfile.ZipFile(zip_path) as z:
             names = z.namelist()
             if not names:
@@ -162,7 +168,11 @@ class CotProvider:
             with z.open(txt_name) as f:
                 # Read all bytes (one year ~2-5MB) then parse — simpler than
                 # streaming and dataset is small.
-                df = pd.read_csv(io.BytesIO(f.read()), low_memory=False)
+                df = pd.read_csv(
+                    io.BytesIO(f.read()),
+                    low_memory=False,
+                    dtype={"CFTC_Contract_Market_Code": str},
+                )
         return df
 
     def fetch_year(self, year: int) -> pd.DataFrame:

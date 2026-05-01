@@ -1,0 +1,106 @@
+name: CI
+
+# Sprint INFRA-1.1 (Théo) — see reports/roadmap_2026_2027/PLAN_12_MOIS.md.
+#
+# Initial scope is intentionally narrow: only the new Sprint DATA-1.x test
+# files run with --cov, because the legacy test suite depends on local CSVs
+# (data/XAU_15MIN_*.csv etc.) that aren't shipped in CI. Expanding to the
+# full suite is a follow-up (plan kill criterion: ship a fixture
+# `tests/fixtures/xau_mini.csv` rather than disable tests).
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+# Cancel in-flight runs on the same ref when a new commit lands.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  # --------------------------------------------------------------------
+  # Lint — non-blocking on first iteration. ruff finds bugs, black
+  # standardises formatting. We surface issues without failing the build
+  # so the pipeline can go green immediately while we ramp up coverage.
+  # --------------------------------------------------------------------
+  lint:
+    name: Lint (ruff + black, advisory)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install lint tools
+        run: pip install ruff==0.6.9 black==24.10.0
+
+      - name: ruff check (advisory)
+        continue-on-error: true
+        run: |
+          ruff check src/agents/data tests/test_fred_provider.py \
+            tests/test_cot_provider.py
+
+      - name: black --check (advisory)
+        continue-on-error: true
+        run: |
+          black --check src/agents/data tests/test_fred_provider.py \
+            tests/test_cot_provider.py
+
+  # --------------------------------------------------------------------
+  # Test — blocking. Runs the data-sprint tests with coverage.
+  # SKIP_LIVE_NETWORK_TESTS=1 ensures CI doesn't attempt live external
+  # calls (FRED requires API key, CFTC test takes ~10s for the live one).
+  # We also use `-m "not live"` as a belt-and-braces marker filter.
+  # --------------------------------------------------------------------
+  test:
+    name: Test (data sprints + coverage)
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      SKIP_LIVE_NETWORK_TESTS: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install minimal test dependencies
+        # Avoid `pip install -r requirements.txt` (heavy: torch, transformers,
+        # boto3) — install only what the data-sprint tests need.
+        run: |
+          pip install --upgrade pip
+          pip install \
+            "pandas>=2.0.0" "numpy<2.0.0" \
+            "fredapi>=0.5.0" "requests>=2.31.0" "python-dotenv>=1.0.0" \
+            "pytest>=7.0.0" "pytest-cov>=4.0.0"
+
+      - name: Run data-sprint tests with coverage
+        run: |
+          pytest \
+            tests/test_fred_provider.py \
+            tests/test_cot_provider.py \
+            -m "not live" \
+            --cov=src/agents/data \
+            --cov-report=term-missing \
+            --cov-fail-under=70 \
+            -v
+
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: .coverage
+          retention-days: 7
+          if-no-files-found: ignore

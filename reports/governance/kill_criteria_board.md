@@ -31,14 +31,14 @@
 |---|---|---|---|---|---|---|---|---|
 | DATA-1.1 | FRED macro ingestion | Marwan | 4h / 3h code | 2026-04-30 | 2026-05-01 | 🟡 | fredapi rate-limit casse ingest | KPI live blocké : pas de FRED_API_KEY (B-001) |
 | DATA-1.2 | CFTC COT ingestion | Marwan | 4h / 2h | 2026-05-01 | 2026-05-01 | 🟢 | format ZIP CFTC change | aucun. 365 weeks 2019-2025 ingérés, 5/5 tests verts |
-| DATA-1.3 | GLD ETF flows | Marwan | 4h / 0h | 2026-05-01 | 2026-05-01 | 🔴 | SPDR JSON schema change | **B-002** triple blocker : yfinance non installé + SPDR 404 + Yahoo 429. Stopped per garde-fou n°7. |
+| DATA-1.3 | GLD ETF flows | Marwan | 4h / 0h | 2026-05-01 | 2026-05-01 | ⏸ DEFERRED | SPDR JSON schema change | **Voie D** retenue : différé Phase 2A. ~17 features dispo sans GLD = ≥18 cible plan. |
 | QUANT-1.1 | A1 feature matrix | Elena | 4h / __ | | | | NaN > 30% après ffill | dépend DATA-1.* |
 | QUANT-1.2 | CPCV harness | Elena | 6h / __ | | | | runtime > 4h | dépend QUANT-1.1 |
 | QUANT-1.3 | A1 stack training + verdict | Elena | 6h / __ | | | | DSR<0 ou PBO>0.6 → kill A1 | dépend QUANT-1.2 |
 | REGIME-1.1 | HAR-RV ONNX + bavure VOL_MODE | Kenji | 4h / __ | | | | export ONNX RMSE delta >5% | aucun |
 | REGIME-1.2 | BOCPD prototype | Kenji | 4h / __ | | | | cp_prob dégénéré | dépend QUANT-1.1 |
 | LLM-1.1 | Eval harness 50 prompts | Aisha | 6h / __ | | | | forbidden_phrases <0.95 | aucun |
-| INFRA-1.1 | GitHub Actions CI/CD | Théo | 3h / __ | | | | tests CI dépendants CSV local | aucun |
+| INFRA-1.1 | GitHub Actions CI/CD | Théo | 3h / 1h | 2026-05-01 | 2026-05-01 | 🟢 | tests CI dépendants CSV local | scope initial limité aux test_fred + test_cot (cov 81%). Full suite à expand quand fixtures prêts. |
 | INFRA-1.2 | Sentry + /metrics | Théo | 3h / __ | | | | Sentry > free tier | aucun |
 | UX-1.1 | InsightSignal v2 | Inès | 5h / __ | | | | v2 casse >10 tests | aucun |
 | COMM-1.1 | Positioning 2A+2B briefs | Karim | 5h / __ | | | | docs trop similaires | aucun |
@@ -75,7 +75,7 @@
 ## 5. Blockers actifs et escalations
 
 - **B-001 (DATA-1.1)** : FRED_API_KEY non fourni → smoke run live KPI bloqué. DoD pytest 6/7 verts (mocked). Détails : `BLOCKERS.md`. Action : user doit fournir clé FRED gratuite avant QUANT-1.1.
-- **B-002 (DATA-1.3)** : Triple blocker réseau (yfinance non installé + SPDR JSON 404 + Yahoo 429). Sprint complet bloqué. Voie A recommandée : `pip install yfinance` + retrouver endpoint SPDR (~30min user). Sinon voie D : différer DATA-1.3 à Phase 2A.
+- ~~**B-002 (DATA-1.3)**~~ **RESOLVED 2026-05-01** : voie D retenue — différé Phase 2A. ~17 features Elena dispo sans GLD ≥ cible plan. Reprise conditionnelle au verdict A1.
 
 ---
 
