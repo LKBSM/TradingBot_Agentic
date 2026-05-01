@@ -5,9 +5,9 @@
 > Référence plan : `reports/roadmap_2026_2027/PLAN_12_MOIS.md`.
 
 **Dernière mise à jour** : 2026-04-30 23:55 ET
-**Phase active** : 1
-**Mois en cours** : M1 (semaine S1)
-**Heures dev cumulées vs plan** : ~3h / 64h (DATA-1.1 quasi-livré)
+**Phase active** : 1 → 2B (verdict A1 = GO 2B)
+**Mois en cours** : M1 (semaine S1) — **Phase 1 essentiellement terminée**
+**Heures dev cumulées vs plan** : ~22h / 64h (14 sprints touchés sur 14, économie ~66%)
 
 ---
 
@@ -36,7 +36,7 @@
 | QUANT-1.2 | CPCV harness | Elena | 6h / 1h30 | 2026-05-01 | 2026-05-01 | 🟢 | runtime > 4h | aucun. **Runtime ~7 min sur 152k bars** (cible <30min PASS). 17/17 tests verts. CPCV 28 paths + DSR Bailey-LdP + PBO + Holm + DM tous opérationnels. |
 | QUANT-1.3 | A1 stack training + verdict | Elena | 6h / 1h30 | 2026-05-01 | 2026-05-01 | 🟢 livré 🔴 verdict | DSR<0 ou PBO>0.6 → kill A1 | **VERDICT TRANCHÉ : GO 2B**. DSR=0.0, PBO=0.5, PF=1.008, DM stat +46.7 (A1 pire que constant). Score 1/6 critères. Rapport `reports/a1_verdict_2026.md`. Modèle versionné `models/a1_stack_v1.pkl`. |
 | REGIME-1.1 (a)+(c) | VOL_MODE + latency test | Kenji | 4h / 1h | 2026-05-01 | 2026-05-01 | 🟢 partial | export ONNX RMSE delta >5% | (a) scripts/MEMORY alignés sur default `har`. (c) `tests/test_vol_latency.py` mesure p99 ≈ 116ms (cible 100ms manquée, mais sous 200ms kill-criterion). Marker `benchmark` opt-in en CI. (b) ONNX export déféré : profiling montre que latence est dominée par DataFrame slicing dans `forecast()`, pas par la régression — un export ONNX du LinearRegression seul gagnerait <1ms. Refactor du forecaster requis pour atteindre p99<100ms ; out of scope Phase 1. |
-| REGIME-1.2 | BOCPD prototype | Kenji | 4h / __ | | | | cp_prob dégénéré | dépend QUANT-1.1 |
+| REGIME-1.2 | BOCPD prototype | Kenji | 4h / 1h | 2026-05-01 | 2026-05-01 | 🟢 | cp_prob dégénéré | aucun. Adams-MacKay 2007 implementation pure Python ~250 lignes (NIG conjugate Gaussian + log-sumexp stable). 8/8 tests verts. Step-change détecté à t=100 avec cp_prob 0.677 vs steady 0.001 (×500 ratio). Latence 0.83ms/step << 100ms cible. Reste utile en 2B pour narrative régime context (LLM-2B.1). |
 | LLM-1.1 | Eval harness 50 prompts | Aisha | 6h / 1h30 | 2026-05-01 | 2026-05-01 | 🟢 | forbidden_phrases <0.95 | aucun. 50 fixtures (15 BUY + 15 SELL + 10 HOLD + 5 vol + 5 news), 5 axes scoring, 22 tests verts. Baseline KPIs ALL PASS (factual 1.0, forbidden 1.0, brevity 1.0). CI étendue 80 tests. |
 | INFRA-1.1 | GitHub Actions CI/CD | Théo | 3h / 1h | 2026-05-01 | 2026-05-01 | 🟢 | tests CI dépendants CSV local | scope initial limité aux test_fred + test_cot (cov 81%). Full suite à expand quand fixtures prêts. |
 | INFRA-1.2 | Sentry + /metrics | Théo | 3h / 1h | 2026-05-01 | 2026-05-01 | 🟢 partial | Sentry > free tier | observability.py + 14 tests verts. 3 métriques standards instanciées au boot. Sentry opt-in via SENTRY_DSN. PII scrubber actif. Print() audit (109 occur 23 fichiers) déféré pour limiter risque. |
