@@ -1,0 +1,85 @@
+{
+  "_comment": "MOCKUP v2.0.0 — B2B Webhook POST. Broker registers a callback URL via /api/v2/webhooks/subscribe; we POST every new insight.",
+  "_http_request": {
+    "method": "POST",
+    "url": "<broker_callback_url_registered_at_subscribe>",
+    "headers": {
+      "Content-Type": "application/json",
+      "User-Agent": "SmartSentinel-Webhook/2.0",
+      "X-Sentinel-Insight-Id": "ins_2026_05_01_xau_m15_001",
+      "X-Sentinel-Schema-Version": "2.0.0",
+      "X-Sentinel-Event": "insight.created",
+      "X-Sentinel-Timestamp": "<unix_ts>",
+      "X-Sentinel-Signature": "sha256=<HMAC_SHA256(secret, ts.body)>"
+    },
+    "_signature_recipe": "Verify: sha256= + HMAC_SHA256(broker_webhook_secret, X-Sentinel-Timestamp + '.' + raw_request_body). Replay protection: reject if abs(now - X-Sentinel-Timestamp) > 300s."
+  },
+  "event": "insight.created",
+  "delivery_id": "wh_dlv_01HKL3M2N6P9R7V8X4Y0Z1A2B",
+  "delivery_attempt": 1,
+  "occurred_at": "2026-05-01T12:00:00+00:00",
+  "subscription": {
+    "webhook_id": "wh_01HKL2ABCDEF3456",
+    "tier": "BROKER_STANDARD",
+    "white_label": true
+  },
+  "insight": {
+    "schema_version": "2.0.0",
+    "id": "ins_2026_05_01_xau_m15_001",
+    "instrument": "XAUUSD",
+    "timeframe": "M15",
+    "direction": "BULLISH_SETUP",
+    "conviction_0_100": 72,
+    "levels": {
+      "entry": 2350.0,
+      "stop": 2340.0,
+      "target_1": 2370.0,
+      "target_2": 2390.0,
+      "invalidation": 2335.0
+    },
+    "volatility": {
+      "regime": "normal",
+      "forecast_atr_pct": 0.42,
+      "naive_atr_pct": 0.38
+    },
+    "narrative_short": "Setup haussier XAU M15. Cassure de structure confirmée + retest du FVG 2348-2350. Régime vol normal (forecast +10% vs naïve). Pas de news bloquante. Analyse algorithmique éducative.",
+    "narrative_long": "Lecture de marché : Smart Money structure haussière sur XAU/USD M15. La cassure de structure au-dessus de 2348 a été confirmée par un retest du Fair Value Gap entre 2348 et 2350. Le forecast HAR-RV anticipe une volatilité +10% vs la moyenne ATR14, conforme au régime normal. Le niveau d'invalidation structurel se situe à 2335 (sous le FVG inférieur). Première zone de prise partielle 2370, extension 2390 si la session NY soutient le momentum. Pas de blackout news actif sur les 30 prochaines minutes. Cette analyse est algorithmique et éducative ; elle ne constitue pas un conseil en investissement.",
+    "narrative_language": "fr",
+    "sources_cited": [
+      {
+        "type": "paper",
+        "ref": "https://onlinelibrary.wiley.com/doi/10.1002/9781119482086.ch7",
+        "label": "López de Prado, AFML ch. 7 (CPCV)",
+        "quoted_excerpt": "Combinatorial purged cross-validation generates 28 paths for N=8, k=2."
+      },
+      {
+        "type": "data",
+        "ref": "https://www.cftc.gov/dea/newcot/deafutu.txt",
+        "label": "CFTC COT Gold (088691) 2026-04-29 release",
+        "quoted_excerpt": null
+      },
+      {
+        "type": "report",
+        "ref": "https://www.lbma.org.uk/quarterly-report-2026-q1",
+        "label": "LBMA Q1 2026 quarterly review",
+        "quoted_excerpt": null
+      }
+    ],
+    "compliance": {
+      "disclaimer_lang": "fr",
+      "jurisdiction_blocked": [
+        "US",
+        "CA-QC",
+        "GB"
+      ],
+      "edge_claim": false,
+      "is_paper_demo": true
+    },
+    "created_at_utc": "2026-05-01T12:00:00Z",
+    "valid_until_utc": "2026-05-01T16:00:00Z",
+    "extras": {
+      "session": "london",
+      "rr_ratio_displayed": true
+    }
+  }
+}

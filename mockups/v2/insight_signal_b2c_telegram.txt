@@ -1,0 +1,16 @@
+================================================================
+MOCKUP v2.0.0 — Telegram B2C — generated from InsightSignalV2
+parse_mode=HTML, ≤ 800 chars, UE 2024/2811 compliant
+================================================================
+
+<b>Smart Sentinel — Analyse algorithmique</b>
+<b>Setup :</b> 🟢 SETUP HAUSSIER
+<b>Actif :</b> XAUUSD · M15
+<b>Conviction :</b> STRONG
+<b>Entrée :</b> 2350.0
+<b>Stop :</b> 2340.0
+<b>Cible :</b> 2370.0
+
+Setup haussier XAU M15. Cassure de structure confirmée + retest du FVG 2348-2350. Régime vol normal (forecast +10% vs naïve). Pas de news bloquante. Analyse algorithmique éducative.
+
+<i>Analyse éducative algorithmique. Pas un conseil en investissement.</i>

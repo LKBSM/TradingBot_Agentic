@@ -98,9 +98,11 @@ jobs:
             tests/test_a1_train.py \
             tests/test_weekly_check.py \
             tests/test_eval_llm.py \
+            tests/test_insight_signal_v2.py \
             -m "not live" \
             --cov=src/agents/data \
             --cov=src/research \
+            --cov=src/api/insight_signal_v2 \
             --cov=tools/governance \
             --cov=tests/eval_llm \
             --cov-report=term-missing \

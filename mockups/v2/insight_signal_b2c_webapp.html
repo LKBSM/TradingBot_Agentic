@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Smart Sentinel — XAUUSD M15</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 680px; margin: 2rem auto; padding: 0 1rem; color: #1a1a1a; }
+    .mockup-tag { font-size: 0.75rem; color: #6b7280; }
+    .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 0.4rem; font-size: 0.85rem; font-weight: 600; }
+    .badge.bull { background: #dcfce7; color: #166534; }
+    .badge.bear { background: #fee2e2; color: #991b1b; }
+    .badge.neutral { background: #e5e7eb; color: #374151; }
+    .levels-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; margin: 1rem 0; font-variant-numeric: tabular-nums; }
+    .levels-grid div { padding: 0.5rem; background: #f9fafb; border-radius: 0.3rem; }
+    .levels-grid b { display: block; color: #6b7280; font-size: 0.75rem; text-transform: uppercase; }
+    .sources li { margin: 0.3rem 0; }
+    .disclaimer { margin-top: 2rem; padding: 0.8rem; background: #fef3c7; border-left: 4px solid #f59e0b; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <p class="mockup-tag">MOCKUP v2.0.0 — rendered from InsightSignalV2 + UI adapter</p>
+  <h1>XAUUSD — M15</h1>
+  <p>
+    <span class="badge bull">SETUP HAUSSIER</span>
+    Conviction <b>STRONG</b>
+    (72/100)
+  </p>
+  <div class="levels-grid">
+    <div><b>Entrée</b>2350.0</div>
+    <div><b>Stop</b>2340.0</div>
+    <div><b>Cible 1</b>2370.0</div>
+    <div><b>Cible 2</b>2390.0</div>
+    <div><b>Invalidation</b>2335.0</div>
+    <div><b>R:R</b>2.0</div>
+  </div>
+  <h2>Lecture du marché</h2>
+  <p>Lecture de marché : Smart Money structure haussière sur XAU/USD M15. La cassure de structure au-dessus de 2348 a été confirmée par un retest du Fair Value Gap entre 2348 et 2350. Le forecast HAR-RV anticipe une volatilité +10% vs la moyenne ATR14, conforme au régime normal. Le niveau d'invalidation structurel se situe à 2335 (sous le FVG inférieur). Première zone de prise partielle 2370, extension 2390 si la session NY soutient le momentum. Pas de blackout news actif sur les 30 prochaines minutes. Cette analyse est algorithmique et éducative ; elle ne constitue pas un conseil en investissement.</p>
+  <h2>Sources citées</h2>
+  <ul class="sources">
+    <li><a href="https://onlinelibrary.wiley.com/doi/10.1002/9781119482086.ch7" rel="noopener">[paper] López de Prado, AFML ch. 7 (CPCV)</a></li>
+    <li><a href="https://www.cftc.gov/dea/newcot/deafutu.txt" rel="noopener">[data] CFTC COT Gold (088691) 2026-04-29 release</a></li>
+    <li><a href="https://www.lbma.org.uk/quarterly-report-2026-q1" rel="noopener">[report] LBMA Q1 2026 quarterly review</a></li>
+  </ul>
+  <div class="disclaimer">
+    <strong>Démonstration paper-trading.</strong> Smart Sentinel ne prétend pas
+    posséder un edge prédictif. Cette analyse algorithmique est éducative et ne
+    constitue pas un conseil en investissement. Performances passées n'indiquent
+    pas les performances futures.
+  </div>
+</body>
+</html>
