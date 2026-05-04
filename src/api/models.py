@@ -290,7 +290,7 @@ class ChatResponse(BaseModel):
 class QARequest(BaseModel):
     """Body for /api/v1/qa — open-ended question over the curated corpus."""
     query: str = Field(..., min_length=3, max_length=1000)
-    language: str = Field(default="en", pattern=r"^(fr|en)$")
+    language: str = Field(default="en", pattern=r"^(fr|en|de|es)$")
     top_k: int = Field(default=5, ge=1, le=10)
 
 

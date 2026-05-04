@@ -161,9 +161,33 @@ def test_qa_too_short_query_rejected(client_stub):
 def test_qa_invalid_language_rejected(client_stub):
     resp = client_stub.post(
         "/api/v1/qa",
-        json={"query": "What is gold?", "language": "de"},
+        json={"query": "What is gold?", "language": "zz"},
     )
     assert resp.status_code == 422
+
+
+@pytest.mark.parametrize(
+    "lang,stub_marker",
+    [
+        ("fr", "Synthèse"),
+        ("en", "Summary"),
+        ("de", "Zusammenfassung"),
+        ("es", "Resumen"),
+    ],
+)
+def test_qa_supports_all_four_languages(client_stub, lang, stub_marker):
+    """LLM-2B.4: stub answer header is rendered in the requested language."""
+    resp = client_stub.post(
+        "/api/v1/qa",
+        json={"query": "What is the VIX index?", "language": lang},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["language"] == lang
+    assert stub_marker in body["answer"], (
+        f"expected '{stub_marker}' in {lang} stub, got: {body['answer'][:120]}"
+    )
+    assert body["disclaimer"]
 
 
 def test_qa_top_k_out_of_range_rejected(client_stub):

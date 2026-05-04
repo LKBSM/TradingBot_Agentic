@@ -45,6 +45,21 @@ router = APIRouter(prefix="/api/v1", tags=["qa"])
 LLM_TIERS = {"STRATEGIST", "INSTITUTIONAL"}
 
 
+_STUB_INSUFFICIENT = {
+    "fr": "Information insuffisante pour répondre.",
+    "en": "Insufficient information to answer.",
+    "de": "Unzureichende Informationen für eine Antwort.",
+    "es": "Información insuficiente para responder.",
+}
+
+_STUB_HEADER = {
+    "fr": "Synthèse à partir de {n} sources curées :\n\n",
+    "en": "Summary from {n} curated sources:\n\n",
+    "de": "Zusammenfassung aus {n} kuratierten Quellen:\n\n",
+    "es": "Resumen a partir de {n} fuentes seleccionadas:\n\n",
+}
+
+
 def _stub_answer(query: str, retrieved: list, language: str) -> str:
     """Build a deterministic stub answer from retrieved chunk metadata.
 
@@ -53,14 +68,10 @@ def _stub_answer(query: str, retrieved: list, language: str) -> str:
     retrieval working without paying for tokens.
     """
     if not retrieved:
-        if language == "fr":
-            return "Information insuffisante pour répondre."
-        return "Insufficient information to answer."
+        return _STUB_INSUFFICIENT.get(language, _STUB_INSUFFICIENT["en"])
 
-    if language == "fr":
-        header = f"Synthèse à partir de {len(retrieved)} sources curées :\n\n"
-    else:
-        header = f"Summary from {len(retrieved)} curated sources:\n\n"
+    template = _STUB_HEADER.get(language, _STUB_HEADER["en"])
+    header = template.format(n=len(retrieved))
 
     body_lines = []
     for rc in retrieved[:3]:
