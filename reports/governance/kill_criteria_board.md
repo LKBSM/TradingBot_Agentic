@@ -4,10 +4,10 @@
 > Tout sprint actif a un status (🟢/🟡/🔴), un kill criterion explicite, et un blocker tracké.
 > Référence plan : `reports/roadmap_2026_2027/PLAN_12_MOIS.md`.
 
-**Dernière mise à jour** : 2026-05-03 17:30 ET
-**Phase active** : **2B, Sprints LLM-2B.1+2+3+4+5 livrés (RAG architecture + 50 sources + eval harness RAGAS + Q&A endpoint + multi-langue FR/EN/DE/ES)**
+**Dernière mise à jour** : 2026-05-03 18:30 ET
+**Phase active** : **2B, Sprints LLM-2B.1+2+3+4+5 + INFRA-2B.5 livrés (RAG full-stack + Q&A B2C + /enrich B2B + 4 langues)**
 **Mois en cours** : M3 effective (Phase 1 entièrement bouclée 2026-05-01)
-**Heures dev cumulées vs plan** : ~27h / 108h (17 sprints touchés sur 17, économie ~75%)
+**Heures dev cumulées vs plan** : ~28h / 116h (18 sprints touchés sur 18, économie ~76%)
 
 ---
 
@@ -46,6 +46,7 @@
 | LLM-2B.3 | RAG eval harness 50 fixtures + RAGAS metrics | Aisha | 10h / 1h30 | 2026-05-03 | 2026-05-03 | 🟢 | recall<0.85 ou precision<0.15 | aucun. 50 fixtures (15 paper + 10 data + 5 report + 10 concept + 10 macro), 4 métriques (recall/precision/faithfulness/relevancy), KPI gate **recall=98% & precision=20% PASS**. 22 tests verts. CI étendue 12 fichiers. |
 | LLM-2B.5 | Q&A endpoint /api/v1/qa over RAG corpus | Aisha | 12h / 1h | 2026-05-03 | 2026-05-03 | 🟢 | latence p99 > 1s OU stub mode casse | aucun. POST `/api/v1/qa` accepte query+language+top_k, route via RAGPipeline, retourne answer (LLM réel STRATEGIST+ ou stub déterministe FREE/ANALYST), sources citées + elapsed_ms. 13 tests verts (happy path + edge cases + state-isolation). Hors CI faute de httpx/TestClient deps — tests locaux green. |
 | LLM-2B.4 | RAG multi-langue FR/EN/DE/ES | Aisha | 12h / 1h | 2026-05-03 | 2026-05-03 | 🟢 | prompt DE/ES casse hard rules ou compliance | aucun. SYSTEM_PROMPT_DE + SYSTEM_PROMPT_ES ajoutés, dispatch table `SYSTEM_PROMPTS`, fallback EN sur tag inconnu. QARequest enum élargi à fr/en/de/es. Stub answer headers traduits 4 langues. 16 tests prompt + 4 tests endpoint paramétrés (Synthèse/Summary/Zusammenfassung/Resumen). CI étendue 13 fichiers. |
+| INFRA-2B.5 | B2B endpoint /api/v1/enrich | Théo | 8h / 1h | 2026-05-03 | 2026-05-03 | 🟢 | InsightSignalV2 contract drift OU broker erreur > 5% 422 | aucun. POST `/api/v1/enrich` accepte EnrichRequest (instrument+TF+direction+levels+broker_context+lang), exécute RAG retrieve, retourne `InsightSignalV2` complet (narrative_short localisé, narrative_long stub-ou-LLM, sources_cited 8 chunks, conviction heuristique RR-based, compliance edge_claim=False/is_paper_demo=True). Pre-validation directionnelle stop<entry → 422 propre. NEUTRAL strip levels. client_request_id echo. 16 tests verts. |
 
 **Légende status** :
 - 🟢 = on track, no concerns

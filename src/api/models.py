@@ -318,6 +318,32 @@ class QAResponse(BaseModel):
     disclaimer: str = ""
 
 
+# =============================================================================
+# B2B Enrich — Sprint INFRA-2B.5
+# =============================================================================
+
+
+class EnrichRequest(BaseModel):
+    """Body for /api/v1/enrich — broker submits a partial signal context.
+
+    Levels are optional (NEUTRAL setups omit them). ``broker_context`` is a
+    natural-language hint from the broker's own scanner that gets blended
+    into the RAG query.
+    """
+    instrument: str = Field(..., min_length=2, max_length=12)
+    timeframe: str = Field(..., pattern=r"^(M1|M5|M15|M30|H1|H4|D1|W1)$")
+    direction: str = Field(
+        ..., pattern=r"^(BULLISH_SETUP|BEARISH_SETUP|NEUTRAL)$"
+    )
+    entry: Optional[float] = Field(default=None, gt=0)
+    stop: Optional[float] = Field(default=None, gt=0)
+    target_1: Optional[float] = Field(default=None, gt=0)
+    target_2: Optional[float] = Field(default=None, gt=0)
+    broker_context: Optional[str] = Field(default=None, max_length=1000)
+    language: str = Field(default="en", pattern=r"^(fr|en|de|es)$")
+    client_request_id: Optional[str] = Field(default=None, max_length=64)
+
+
 class ScannerStatusResponse(BaseModel):
     """Scanner health and stats."""
     running: bool = False
