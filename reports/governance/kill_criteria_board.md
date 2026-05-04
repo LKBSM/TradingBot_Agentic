@@ -5,7 +5,7 @@
 > Référence plan : `reports/roadmap_2026_2027/PLAN_12_MOIS.md`.
 
 **Dernière mise à jour** : 2026-04-30 23:55 ET
-**Phase active** : **2B (verdict A1 = GO 2B), Sprint #1 LLM-2B.1 livré**
+**Phase active** : **2B, Sprints LLM-2B.1 + LLM-2B.2 livrés (RAG architecture + 50 sources curées)**
 **Mois en cours** : M3 effective (Phase 1 entièrement bouclée 2026-05-01)
 **Heures dev cumulées vs plan** : ~22h / 64h (14 sprints touchés sur 14, économie ~66%)
 

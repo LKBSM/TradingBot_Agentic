@@ -105,6 +105,7 @@ jobs:
             tests/test_observability_init.py \
             tests/test_bocpd.py \
             tests/test_rag_pipeline.py \
+            tests/test_rag_sources.py \
             -m "not live and not benchmark" \
             --cov=src/agents/data \
             --cov=src/research \
