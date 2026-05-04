@@ -109,12 +109,14 @@ jobs:
             tests/test_rag_eval_harness.py \
             tests/test_rag_prompts_multilang.py \
             tests/test_rag_cache.py \
+            tests/test_hash_chain_ledger.py \
             -m "not live and not benchmark" \
             --cov=src/agents/data \
             --cov=src/research \
             --cov=src/api/insight_signal_v2 \
             --cov=src/performance/observability \
             --cov=src/intelligence/rag \
+            --cov=src/audit \
             --cov=tools/governance \
             --cov=tests/eval_llm \
             --cov-report=term-missing \

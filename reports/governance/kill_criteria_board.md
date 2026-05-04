@@ -4,10 +4,10 @@
 > Tout sprint actif a un status (🟢/🟡/🔴), un kill criterion explicite, et un blocker tracké.
 > Référence plan : `reports/roadmap_2026_2027/PLAN_12_MOIS.md`.
 
-**Dernière mise à jour** : 2026-05-03 19:30 ET
-**Phase active** : **2B, Sprints LLM-2B.1+2+3+4+5+8 + INFRA-2B.5 livrés (RAG full-stack + Q&A B2C + /enrich B2B + 4 langues + cache & cost tracker)**
+**Dernière mise à jour** : 2026-05-04 09:00 ET
+**Phase active** : **2B, Sprints LLM-2B.1+2+3+4+5+8 + INFRA-2B.5 + DATA-2B.4 livrés**
 **Mois en cours** : M3 effective (Phase 1 entièrement bouclée 2026-05-01)
-**Heures dev cumulées vs plan** : ~30h / 126h (19 sprints touchés sur 19, économie ~76%)
+**Heures dev cumulées vs plan** : ~31h / 134h (20 sprints touchés sur 20, économie ~77%)
 
 ---
 
@@ -48,6 +48,7 @@
 | LLM-2B.4 | RAG multi-langue FR/EN/DE/ES | Aisha | 12h / 1h | 2026-05-03 | 2026-05-03 | 🟢 | prompt DE/ES casse hard rules ou compliance | aucun. SYSTEM_PROMPT_DE + SYSTEM_PROMPT_ES ajoutés, dispatch table `SYSTEM_PROMPTS`, fallback EN sur tag inconnu. QARequest enum élargi à fr/en/de/es. Stub answer headers traduits 4 langues. 16 tests prompt + 4 tests endpoint paramétrés (Synthèse/Summary/Zusammenfassung/Resumen). CI étendue 13 fichiers. |
 | INFRA-2B.5 | B2B endpoint /api/v1/enrich | Théo | 8h / 1h | 2026-05-03 | 2026-05-03 | 🟢 | InsightSignalV2 contract drift OU broker erreur > 5% 422 | aucun. POST `/api/v1/enrich` accepte EnrichRequest (instrument+TF+direction+levels+broker_context+lang), exécute RAG retrieve, retourne `InsightSignalV2` complet (narrative_short localisé, narrative_long stub-ou-LLM, sources_cited 8 chunks, conviction heuristique RR-based, compliance edge_claim=False/is_paper_demo=True). Pre-validation directionnelle stop<entry → 422 propre. NEUTRAL strip levels. client_request_id echo. 16 tests verts. |
 | LLM-2B.8 | Cost optimization (cache + tracker) | Aisha | 10h / 1h30 | 2026-05-03 | 2026-05-03 | 🟢 | hit-ratio < 30% sur trafic répétitif | aucun. `QueryEmbeddingCache` + `AnswerCache` TTL+LRU thread-safe, normalisation case+whitespace. RAGPipeline opt-in (`embedding_cache=`, `answer_cache=`). Short-circuit LLM sur (query, lang, top_k, corpus_fp) hit. `CostTracker` accumule LLM + embedding USD avec tarif 2026-Q2 (Haiku $1/$5, Sonnet $3/$15, Opus $15/$75, Voyage-3-large $0.18/1M). 24 tests verts. CI étendue 14 fichiers. |
+| DATA-2B.4 | Audit trail hash chain | Marwan | 8h / 1h | 2026-05-04 | 2026-05-04 | 🟢 | tampering non détectable OU collision SHA-256 | aucun. SQLite WAL append-only, schéma (seq, ts, insight_id, canonical_json, prev_hash, entry_hash). `HashChainLedger.append()` accepte Pydantic v2 / dict, `verify()` walk en O(N) détecte body-tamper / prev-hash break / seq missing. Thread-safe (8 threads × 25 appends → chain intacte). Persistance reopen-safe. 24 tests verts. CI étendue 15 fichiers. |
 
 **Légende status** :
 - 🟢 = on track, no concerns
