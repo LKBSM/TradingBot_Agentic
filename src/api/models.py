@@ -316,6 +316,11 @@ class QAResponse(BaseModel):
     sources: List[QASource] = Field(default_factory=list)
     elapsed_ms: Dict[str, float] = Field(default_factory=dict)
     disclaimer: str = ""
+    citation_violations: List[Dict[str, str]] = Field(
+        default_factory=list,
+        description="Sentences flagged by the LLM-2B.6 citation guard "
+        "(empty when the answer is fully sourced).",
+    )
 
 
 # =============================================================================

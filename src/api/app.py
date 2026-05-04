@@ -41,6 +41,7 @@ def create_app(
     operational_kill_switch: Any = None,
     rag_pipeline: Any = None,
     rag_llm: Any = None,
+    audit_ledger: Any = None,
 ) -> FastAPI:
     """
     Build and return a fully-configured FastAPI application.
@@ -70,6 +71,7 @@ def create_app(
         operational_kill_switch=operational_kill_switch,
         rag_pipeline=rag_pipeline,
         rag_llm=rag_llm,
+        audit_ledger=audit_ledger,
     )
 
     @asynccontextmanager

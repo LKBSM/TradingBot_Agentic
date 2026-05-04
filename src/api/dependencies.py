@@ -36,3 +36,6 @@ class AppState:
     # RAG (LLM-2B.5)
     rag_pipeline: Optional[Any] = None    # src.intelligence.rag.RAGPipeline
     rag_llm: Optional[Any] = None         # callable(system, user) -> str
+    # Audit ledger (DATA-2B.4) — optional. /enrich appends each delivered
+    # InsightSignalV2 to the chain when this is wired in.
+    audit_ledger: Optional[Any] = None    # src.audit.HashChainLedger

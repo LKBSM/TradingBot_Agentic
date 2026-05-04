@@ -33,6 +33,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from src.api.auth import TESTING_MODE, require_api_key
 from src.api.disclaimers import get_disclaimer
 from src.api.models import QARequest, QAResponse, QASource
+from src.intelligence.rag.citation_guard import enforce_citations
 from src.intelligence.security import sanitize_string
 
 logger = logging.getLogger(__name__)
@@ -128,6 +129,18 @@ async def qa(
     if stub_mode:
         answer = _stub_answer(sanitized_query, response.retrieved, body.language)
 
+    # LLM-2B.6 guard: strip uncited factual claims from real-LLM answers.
+    # Stub answers are deterministic [source:]-anchored so they pass; we
+    # still run the guard for consistency and to populate the violations
+    # extras that B2B clients may consume.
+    retrieved_ids = [rc.chunk.chunk_id for rc in response.retrieved]
+    guard_result = enforce_citations(
+        answer,
+        retrieved_chunk_ids=retrieved_ids,
+        policy="strip" if not stub_mode else "flag",
+    )
+    answer = guard_result.answer
+
     sources = []
     for rc in response.retrieved:
         meta = rc.chunk.metadata or {}
@@ -154,6 +167,10 @@ async def qa(
         sources=sources,
         elapsed_ms=elapsed_ms,
         disclaimer=disclaimer,
+        citation_violations=[
+            {"sentence": v.sentence, "reason": v.reason}
+            for v in guard_result.violations
+        ],
     )
 
 

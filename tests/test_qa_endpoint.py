@@ -56,11 +56,20 @@ def client_stub(populated_pipeline):
 
 @pytest.fixture
 def client_with_llm(populated_pipeline):
-    """App with a deterministic stub-LLM injected via rag_llm."""
+    """App with a deterministic stub-LLM injected via rag_llm.
+
+    The stub produces a sentence with no factual tokens AND a
+    properly-formatted citation, so the LLM-2B.6 guard does not strip it.
+    """
 
     def stub_llm(system: str, user: str) -> str:
-        # Echo a predictable phrase so faithfulness/relevancy tests can detect it.
-        return "TEST-LLM answer derived from retrieved sources."
+        # Pull a real chunk_id out of the assembled prompt so the citation
+        # guard has something valid to match.
+        import re
+
+        m = re.search(r"\[source:([A-Za-z0-9_\-]+)\]", user)
+        cid = m.group(1) if m else "unknown"
+        return f"This is a stub answer. The retrieval is fine. [source:{cid}]"
 
     app = create_app(rag_pipeline=populated_pipeline, rag_llm=stub_llm)
     return TestClient(app)
@@ -103,7 +112,10 @@ def test_qa_uses_real_llm_when_configured(client_with_llm):
     assert resp.status_code == 200
     body = resp.json()
     assert body["stub_mode"] is False
-    assert "TEST-LLM" in body["answer"]
+    assert "stub answer" in body["answer"]
+    # The stub LLM emits a single sentence with no factual tokens, so the
+    # citation guard finds nothing to strip.
+    assert body["citation_violations"] == []
 
 
 def test_qa_french_language_uses_french_disclaimer(client_stub):
@@ -225,6 +237,40 @@ def test_qa_sanitizes_query(client_stub):
     assert "\x01" not in body["query"]
     # Whitespace is trimmed
     assert body["query"] == body["query"].strip()
+
+
+def test_qa_response_carries_citation_violations_field(client_stub):
+    resp = client_stub.post(
+        "/api/v1/qa",
+        json={"query": "What is the VIX?", "language": "en"},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "citation_violations" in body
+    # Stub answer is fully [source:]-anchored ⇒ no violations.
+    assert isinstance(body["citation_violations"], list)
+
+
+def test_qa_strip_policy_filters_unsourced_real_llm_claims(populated_pipeline):
+    """Real LLM answer that contains an unsourced fact gets stripped."""
+    def chatty_llm(system: str, user: str) -> str:
+        # Mention an unsourced fact (DGS10 hit 4.50) — guard should strip it.
+        return (
+            "DGS10 hit 4.50 today and trended higher. "
+            "The retrieved sources confirm this. [source:fred_dgs10_unknown_xyz]"
+        )
+
+    app = create_app(rag_pipeline=populated_pipeline, rag_llm=chatty_llm)
+    client = TestClient(app)
+    resp = client.post(
+        "/api/v1/qa",
+        json={"query": "What is the 10-year yield?", "language": "en"},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    # DGS10 fact had no [source:], should be stripped.
+    assert "DGS10 hit 4.50" not in body["answer"]
+    assert len(body["citation_violations"]) >= 1
 
 
 def test_qa_returns_top_source_relevant_to_query(client_stub):

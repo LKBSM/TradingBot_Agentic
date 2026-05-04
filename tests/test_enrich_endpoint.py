@@ -225,3 +225,48 @@ def test_enrich_does_not_leak_pipeline_state(client_stub, populated_pipeline):
 
     assert populated_pipeline.language == original_lang
     assert populated_pipeline.final_k == original_k
+
+
+# ---------------------------------------------------------------------------
+# Audit ledger wiring (LLM-2B.7)
+# ---------------------------------------------------------------------------
+
+
+def test_enrich_appends_to_audit_ledger_when_configured(populated_pipeline):
+    from src.audit import HashChainLedger
+
+    ledger = HashChainLedger()
+    app = create_app(rag_pipeline=populated_pipeline, audit_ledger=ledger)
+    client = TestClient(app)
+
+    resp = client.post("/api/v1/enrich", json=_BULLISH_PAYLOAD)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["extras"]["audit_seq"] == 1
+    assert len(body["extras"]["audit_entry_hash"]) == 64
+    assert ledger.size == 1
+    assert ledger.verify().ok
+
+
+def test_enrich_chain_remains_intact_across_calls(populated_pipeline):
+    from src.audit import HashChainLedger
+
+    ledger = HashChainLedger()
+    app = create_app(rag_pipeline=populated_pipeline, audit_ledger=ledger)
+    client = TestClient(app)
+
+    seqs = []
+    for i in range(3):
+        payload = dict(_BULLISH_PAYLOAD, client_request_id=f"req-{i}")
+        resp = client.post("/api/v1/enrich", json=payload)
+        seqs.append(resp.json()["extras"]["audit_seq"])
+    assert seqs == [1, 2, 3]
+    assert ledger.verify().ok
+
+
+def test_enrich_works_without_audit_ledger(client_stub):
+    """Endpoint must remain functional when the ledger is absent."""
+    resp = client_stub.post("/api/v1/enrich", json=_BULLISH_PAYLOAD)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "audit_seq" not in body["extras"]

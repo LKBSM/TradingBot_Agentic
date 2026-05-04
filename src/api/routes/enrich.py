@@ -294,4 +294,17 @@ async def enrich(
             "client_request_id": body.client_request_id,
         },
     )
+
+    # DATA-2B.4 hash-chain: append the delivered insight to the audit ledger
+    # if one is configured. The seq + entry_hash bubble back as extras so
+    # the broker can store a verifiable receipt alongside their order.
+    ledger = getattr(request.app.state.app_state, "audit_ledger", None)
+    if ledger is not None:
+        try:
+            entry = ledger.append(payload)
+            payload.extras["audit_seq"] = entry.seq
+            payload.extras["audit_entry_hash"] = entry.entry_hash
+        except Exception as exc:  # pragma: no cover — defensive
+            logger.warning("audit ledger append failed: %s", exc)
+
     return payload
