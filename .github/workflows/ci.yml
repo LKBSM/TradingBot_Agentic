@@ -113,6 +113,7 @@ jobs:
             tests/test_rag_metrics_bridge.py \
             tests/test_citation_guard.py \
             tests/test_webhook_signer.py \
+            tests/test_cost_quota.py \
             -m "not live and not benchmark" \
             --cov=src/agents/data \
             --cov=src/research \
