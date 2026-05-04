@@ -111,6 +111,7 @@ jobs:
             tests/test_rag_cache.py \
             tests/test_hash_chain_ledger.py \
             tests/test_rag_metrics_bridge.py \
+            tests/test_citation_guard.py \
             -m "not live and not benchmark" \
             --cov=src/agents/data \
             --cov=src/research \
