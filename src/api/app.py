@@ -10,11 +10,13 @@ from typing import Any, Dict, Optional
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 
 from src.api.dependencies import AppState
+from src.api.middleware.geo_block import GeoBlockMiddleware
 from src.api.models import ErrorResponse
-from src.api.routes import admin, dashboard, health, narratives, operator, prometheus, signals, state
+from src.api.routes import admin, dashboard, health, legal, narratives, operator, prometheus, qa, signals, state
 from src.api.signal_store import SignalStore
 
 logger = logging.getLogger(__name__)
@@ -36,6 +38,9 @@ def create_app(
     circuit_breakers: Optional[Dict[str, Any]] = None,
     health_checker: Any = None,
     rate_limiter: Any = None,
+    operational_kill_switch: Any = None,
+    rag_pipeline: Any = None,
+    rag_llm: Any = None,
 ) -> FastAPI:
     """
     Build and return a fully-configured FastAPI application.
@@ -62,6 +67,9 @@ def create_app(
         circuit_breakers=circuit_breakers or {},
         health_checker=health_checker,
         rate_limiter=rate_limiter,
+        operational_kill_switch=operational_kill_switch,
+        rag_pipeline=rag_pipeline,
+        rag_llm=rag_llm,
     )
 
     @asynccontextmanager
@@ -94,6 +102,12 @@ def create_app(
         allow_headers=["*"],
     )
 
+    # ── Gzip compression (≥1KB) — −60-70% bandwidth /metrics, /equity-curve
+    app.add_middleware(GZipMiddleware, minimum_size=1024)
+
+    # ── Geo-block (US/QC/UK + OFAC SDN) — P29 compliance ──────────────────
+    app.add_middleware(GeoBlockMiddleware)
+
     # ── Request size limit middleware (1 MB) ──────────────────────────────
     MAX_BODY_SIZE = 1_048_576  # 1 MB
 
@@ -123,6 +137,35 @@ def create_app(
                     headers={"Retry-After": "60", "X-RateLimit-Remaining": str(remaining)},
                 )
         return await call_next(request)
+
+    # ── Security headers (HSTS, CSP, X-Frame, X-Content-Type, Referrer) ──
+    # Defence-in-depth against clickjacking, MIME sniffing, downgrade attacks
+    # and over-eager referrers. Eval 15 finding #1 (no security headers).
+    @app.middleware("http")
+    async def security_headers(request: Request, call_next):
+        response = await call_next(request)
+        response.headers.setdefault(
+            "Strict-Transport-Security",
+            "max-age=63072000; includeSubDomains",
+        )
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        # Tight CSP — JSON API has no inline scripts/styles. /api/docs Swagger
+        # UI loads from cdn.jsdelivr.net + fastapi.tiangolo.com favicon.
+        response.headers.setdefault(
+            "Content-Security-Policy",
+            "default-src 'none'; "
+            "script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; "
+            "style-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; "
+            "img-src 'self' data: https://fastapi.tiangolo.com; "
+            "connect-src 'self'; "
+            "frame-ancestors 'none'",
+        )
+        response.headers.setdefault(
+            "Permissions-Policy", "geolocation=(), microphone=(), camera=()"
+        )
+        return response
 
     # ── Request logging middleware ────────────────────────────────────────
     @app.middleware("http")
@@ -170,5 +213,7 @@ def create_app(
     app.include_router(admin.router)
     app.include_router(dashboard.router)
     app.include_router(narratives.router)
+    app.include_router(legal.router)
+    app.include_router(qa.router)
 
     return app

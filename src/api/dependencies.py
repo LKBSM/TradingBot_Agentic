@@ -14,7 +14,11 @@ class AppState:
     signal_store: SignalStore
     metrics_registry: Any = None          # MetricsRegistry
     health_monitor: Any = None            # HealthMonitor
-    kill_switch: Optional[Any] = None     # KillSwitch
+    kill_switch: Optional[Any] = None     # KillSwitch (legacy, src/agents/kill_switch.py)
+    # New operational kill-switch (src/risk/kill_switch.py) used by the
+    # SentinelScanner. Surfaced via /health and /admin/operational-resume.
+    # Kept alongside the legacy one to avoid breaking operator.py callers.
+    operational_kill_switch: Optional[Any] = None
     var_engine: Optional[Any] = None      # VaREngine
     live_risk_manager: Optional[Any] = None  # LiveRiskManager
     key_store: Optional[Any] = None       # KeyStore
@@ -29,3 +33,6 @@ class AppState:
     circuit_breakers: Dict[str, Any] = field(default_factory=dict)  # {name: CircuitBreaker}
     health_checker: Optional[Any] = None  # HealthChecker
     rate_limiter: Optional[Any] = None    # RateLimiter
+    # RAG (LLM-2B.5)
+    rag_pipeline: Optional[Any] = None    # src.intelligence.rag.RAGPipeline
+    rag_llm: Optional[Any] = None         # callable(system, user) -> str

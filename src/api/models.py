@@ -6,7 +6,21 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
+
+
+# UE 2024/2811: convert internal direction codes to neutral setup labels
+# for any user-facing surface. ``OPEN_LONG`` and ``LONG`` both map to a
+# bullish setup, ``OPEN_SHORT`` / ``SHORT`` to a bearish setup.
+def _derive_setup_label(action: Optional[str]) -> Optional[str]:
+    if not action:
+        return None
+    code = action.upper()
+    if "LONG" in code:
+        return "BULLISH SETUP"
+    if "SHORT" in code:
+        return "BEARISH SETUP"
+    return None
 
 
 # =============================================================================
@@ -89,6 +103,14 @@ class HealthResponse(BaseModel):
     components: List[ComponentHealth] = Field(default_factory=list)
     scanner_running: bool = False
     signals_generated: int = 0
+    # Narrative cache observability — driven by SemanticCache.get_stats().
+    cache_hits: int = 0
+    cache_misses: int = 0
+    cache_hit_rate: float = 0.0
+    cache_size: int = 0
+    # Operational kill-switch (src/risk/kill_switch.py): status snapshot
+    # from KillSwitch.status(). Absent (None) when not configured.
+    operational_kill_switch: Optional[Dict[str, Any]] = None
 
 
 # =============================================================================
@@ -210,10 +232,17 @@ class EquityCurveResponse(BaseModel):
 # =============================================================================
 
 class NarrativeResponse(BaseModel):
-    """Tier-gated narrative for a signal."""
+    """Tier-gated narrative for an algorithmic analysis."""
     signal_id: str
     symbol: str
-    action: str
+    action: str = Field(
+        description="Internal direction code (OPEN_LONG/OPEN_SHORT). Use 'setup' for user display.",
+    )
+    setup: Optional[str] = Field(
+        default=None,
+        description="UE 2024/2811 user-facing label: BULLISH SETUP / BEARISH SETUP. "
+        "Auto-derived from ``action`` when omitted.",
+    )
     entry_price: float
     stop_loss: float
     take_profit: float
@@ -229,6 +258,14 @@ class NarrativeResponse(BaseModel):
     vol_regime: Optional[str] = None
     vol_confidence_lower: Optional[float] = None
     vol_confidence_upper: Optional[float] = None
+    # P29 compliance — risk-disclosure footer (multi-language).
+    disclaimer: Optional[str] = None
+
+    @model_validator(mode="after")
+    def _fill_setup_from_action(self) -> "NarrativeResponse":
+        if self.setup is None:
+            self.setup = _derive_setup_label(self.action)
+        return self
 
 
 class ChatRequest(BaseModel):
@@ -243,6 +280,42 @@ class ChatResponse(BaseModel):
     question: str
     answer: str
     cost_usd: float = 0.0
+
+
+# =============================================================================
+# RAG Q&A — Sprint LLM-2B.5
+# =============================================================================
+
+
+class QARequest(BaseModel):
+    """Body for /api/v1/qa — open-ended question over the curated corpus."""
+    query: str = Field(..., min_length=3, max_length=1000)
+    language: str = Field(default="en", pattern=r"^(fr|en)$")
+    top_k: int = Field(default=5, ge=1, le=10)
+
+
+class QASource(BaseModel):
+    """One cited source surfaced by the RAG pipeline."""
+    source_id: str
+    label: str
+    type: str
+    ref: str
+    authority_score: int = 5
+    fused_score: float = 0.0
+
+
+class QAResponse(BaseModel):
+    """Answer + cited sources from the RAG endpoint."""
+    query: str
+    language: str
+    answer: str
+    stub_mode: bool = Field(
+        description="True when no production LLM was wired in and the answer "
+        "is a deterministic stub built from retrieved context.",
+    )
+    sources: List[QASource] = Field(default_factory=list)
+    elapsed_ms: Dict[str, float] = Field(default_factory=dict)
+    disclaimer: str = ""
 
 
 class ScannerStatusResponse(BaseModel):

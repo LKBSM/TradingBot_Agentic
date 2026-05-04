@@ -4,10 +4,10 @@
 > Tout sprint actif a un status (🟢/🟡/🔴), un kill criterion explicite, et un blocker tracké.
 > Référence plan : `reports/roadmap_2026_2027/PLAN_12_MOIS.md`.
 
-**Dernière mise à jour** : 2026-05-03 14:00 ET
-**Phase active** : **2B, Sprints LLM-2B.1 + LLM-2B.2 + LLM-2B.3 livrés (RAG architecture + 50 sources + eval harness RAGAS)**
+**Dernière mise à jour** : 2026-05-03 16:00 ET
+**Phase active** : **2B, Sprints LLM-2B.1 + LLM-2B.2 + LLM-2B.3 + LLM-2B.5 livrés (RAG architecture + 50 sources + eval harness RAGAS + Q&A endpoint)**
 **Mois en cours** : M3 effective (Phase 1 entièrement bouclée 2026-05-01)
-**Heures dev cumulées vs plan** : ~24h / 84h (15 sprints touchés sur 15, économie ~71%)
+**Heures dev cumulées vs plan** : ~26h / 96h (16 sprints touchés sur 16, économie ~73%)
 
 ---
 
@@ -44,6 +44,7 @@
 | COMM-1.1 | Positioning 2A+2B briefs | Karim | 5h / 1h30 | 2026-05-01 | 2026-05-01 | 🟢 | docs trop similaires | aucun. 2 briefs livrés AVANT verdict A1 (anti-biais ex-post). Sofia review checklist intégrée à chaque doc. |
 | RISK-1.1 | Kill criteria board + weekly_check | Sofia | 6h / 2h | 2026-04-30 | 2026-05-01 | 🟢 partial | 2 checkpoints ratés consec | board live + tools/governance/weekly_check.py + 11 tests verts. Reste : 8 weekly checks réels à mener S1-S8. |
 | LLM-2B.3 | RAG eval harness 50 fixtures + RAGAS metrics | Aisha | 10h / 1h30 | 2026-05-03 | 2026-05-03 | 🟢 | recall<0.85 ou precision<0.15 | aucun. 50 fixtures (15 paper + 10 data + 5 report + 10 concept + 10 macro), 4 métriques (recall/precision/faithfulness/relevancy), KPI gate **recall=98% & precision=20% PASS**. 22 tests verts. CI étendue 12 fichiers. |
+| LLM-2B.5 | Q&A endpoint /api/v1/qa over RAG corpus | Aisha | 12h / 1h | 2026-05-03 | 2026-05-03 | 🟢 | latence p99 > 1s OU stub mode casse | aucun. POST `/api/v1/qa` accepte query+language+top_k, route via RAGPipeline, retourne answer (LLM réel STRATEGIST+ ou stub déterministe FREE/ANALYST), sources citées + elapsed_ms. 13 tests verts (happy path + edge cases + state-isolation). Hors CI faute de httpx/TestClient deps — tests locaux green. |
 
 **Légende status** :
 - 🟢 = on track, no concerns
