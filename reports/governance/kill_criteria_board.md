@@ -4,10 +4,10 @@
 > Tout sprint actif a un status (🟢/🟡/🔴), un kill criterion explicite, et un blocker tracké.
 > Référence plan : `reports/roadmap_2026_2027/PLAN_12_MOIS.md`.
 
-**Dernière mise à jour** : 2026-05-04 09:00 ET
-**Phase active** : **2B, Sprints LLM-2B.1+2+3+4+5+8 + INFRA-2B.5 + DATA-2B.4 livrés**
+**Dernière mise à jour** : 2026-05-04 14:30 ET
+**Phase active** : **2B, Sprints LLM-2B.1+2+3+4+5+6+7+8 + INFRA-2B.5 + DATA-2B.4 + DATA-2B.5 + OBS-2B.1 + UX-2B.1 (slice) livrés**
 **Mois en cours** : M3 effective (Phase 1 entièrement bouclée 2026-05-01)
-**Heures dev cumulées vs plan** : ~31h / 134h (20 sprints touchés sur 20, économie ~77%)
+**Heures dev cumulées vs plan** : ~36h / 196h (25 sprints touchés sur 25, économie ~82%)
 
 ---
 
@@ -49,6 +49,11 @@
 | INFRA-2B.5 | B2B endpoint /api/v1/enrich | Théo | 8h / 1h | 2026-05-03 | 2026-05-03 | 🟢 | InsightSignalV2 contract drift OU broker erreur > 5% 422 | aucun. POST `/api/v1/enrich` accepte EnrichRequest (instrument+TF+direction+levels+broker_context+lang), exécute RAG retrieve, retourne `InsightSignalV2` complet (narrative_short localisé, narrative_long stub-ou-LLM, sources_cited 8 chunks, conviction heuristique RR-based, compliance edge_claim=False/is_paper_demo=True). Pre-validation directionnelle stop<entry → 422 propre. NEUTRAL strip levels. client_request_id echo. 16 tests verts. |
 | LLM-2B.8 | Cost optimization (cache + tracker) | Aisha | 10h / 1h30 | 2026-05-03 | 2026-05-03 | 🟢 | hit-ratio < 30% sur trafic répétitif | aucun. `QueryEmbeddingCache` + `AnswerCache` TTL+LRU thread-safe, normalisation case+whitespace. RAGPipeline opt-in (`embedding_cache=`, `answer_cache=`). Short-circuit LLM sur (query, lang, top_k, corpus_fp) hit. `CostTracker` accumule LLM + embedding USD avec tarif 2026-Q2 (Haiku $1/$5, Sonnet $3/$15, Opus $15/$75, Voyage-3-large $0.18/1M). 24 tests verts. CI étendue 14 fichiers. |
 | DATA-2B.4 | Audit trail hash chain | Marwan | 8h / 1h | 2026-05-04 | 2026-05-04 | 🟢 | tampering non détectable OU collision SHA-256 | aucun. SQLite WAL append-only, schéma (seq, ts, insight_id, canonical_json, prev_hash, entry_hash). `HashChainLedger.append()` accepte Pydantic v2 / dict, `verify()` walk en O(N) détecte body-tamper / prev-hash break / seq missing. Thread-safe (8 threads × 25 appends → chain intacte). Persistance reopen-safe. 24 tests verts. CI étendue 15 fichiers. |
+| OBS-2B.1 | Bridge cache + cost → /metrics | Théo | 4h / 30min | 2026-05-04 | 2026-05-04 | 🟢 | metric absent du Prometheus scrape | aucun. `metrics_bridge.py`: register_rag_metrics + snapshot pull-based, gauges `rag_cache_*` `rag_cost_usd_total` `rag_llm_calls`. Labels `cache=answer/embedding`, `kind=llm/embedding/all`. 8 tests verts. |
+| LLM-2B.6 | Citation enforcement guard | Aisha | 8h / 1h | 2026-05-04 | 2026-05-04 | 🟢 | hallucination passe sans flag | aucun. `enforce_citations(answer, retrieved_ids, policy=flag/strip)`: split sentences (orphan-citation reattach), is_factual heuristic (digit OU proper noun non-stopword), match `[source:chunk_id]` → retrieved set. Stopwords couvrent narrative-frame + tickers (XAU/EURUSD/etc). 13 tests verts. |
+| LLM-2B.7 | Wire guard + ledger into endpoints | Théo | 6h / 30min | 2026-05-04 | 2026-05-04 | 🟢 | endpoint cassé sans guard/ledger | aucun. /qa: guard strip-policy real-LLM, flag-policy stub, `citation_violations` field. /enrich: ledger.append → extras `audit_seq` `audit_entry_hash`. AppState.audit_ledger optional. 5 nouveaux tests, 38/38 endpoint tests verts. |
+| DATA-2B.5 | Audit /verify + /entry endpoints | Marwan | 4h / 30min | 2026-05-04 | 2026-05-04 | 🟢 | broker peut pas vérifier seul | aucun. GET /audit/verify (chain integrity), GET /audit/entry/{seq} (full record), GET /audit/by-insight/{id} (lookup). 503 sans ledger, 404 missing, 400 invalid. 10 tests verts. |
+| UX-2B.1 (slice) | Webapp insight preview server-side | Inès | 18h plan / 1h slice | 2026-05-04 | 2026-05-04 | 🟢 partial | XSS leak OU disclaimer absent | aucun (slice 4h plan, livré en 1h). GET /api/v1/insights/preview rend HTML5 zero-JS, inline CSS WCAG AA, accent palette bull/bear/neutral, dark-mode media query, FR/EN/DE/ES localisé, html.escape sur tout user input. 14 tests verts (XSS escape / no script / 4 langues / NEUTRAL drop levels / 503 / 422 validation). Reste 14h pour SPA full-feature. |
 
 **Légende status** :
 - 🟢 = on track, no concerns
