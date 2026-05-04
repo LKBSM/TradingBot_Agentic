@@ -4,10 +4,10 @@
 > Tout sprint actif a un status (🟢/🟡/🔴), un kill criterion explicite, et un blocker tracké.
 > Référence plan : `reports/roadmap_2026_2027/PLAN_12_MOIS.md`.
 
-**Dernière mise à jour** : 2026-05-04 14:30 ET
-**Phase active** : **2B, Sprints LLM-2B.1+2+3+4+5+6+7+8 + INFRA-2B.5 + DATA-2B.4 + DATA-2B.5 + OBS-2B.1 + UX-2B.1 (slice) livrés**
+**Dernière mise à jour** : 2026-05-04 17:30 ET
+**Phase active** : **2B largement bouclée (16/17 sprints + UX slice). Production-ready core : RAG + audit + cost-quota + webhook signer + eval gate.**
 **Mois en cours** : M3 effective (Phase 1 entièrement bouclée 2026-05-01)
-**Heures dev cumulées vs plan** : ~36h / 196h (25 sprints touchés sur 25, économie ~82%)
+**Heures dev cumulées vs plan** : ~39h / 226h (30 sprints touchés sur 30, économie ~83%)
 
 ---
 
@@ -54,6 +54,11 @@
 | LLM-2B.7 | Wire guard + ledger into endpoints | Théo | 6h / 30min | 2026-05-04 | 2026-05-04 | 🟢 | endpoint cassé sans guard/ledger | aucun. /qa: guard strip-policy real-LLM, flag-policy stub, `citation_violations` field. /enrich: ledger.append → extras `audit_seq` `audit_entry_hash`. AppState.audit_ledger optional. 5 nouveaux tests, 38/38 endpoint tests verts. |
 | DATA-2B.5 | Audit /verify + /entry endpoints | Marwan | 4h / 30min | 2026-05-04 | 2026-05-04 | 🟢 | broker peut pas vérifier seul | aucun. GET /audit/verify (chain integrity), GET /audit/entry/{seq} (full record), GET /audit/by-insight/{id} (lookup). 503 sans ledger, 404 missing, 400 invalid. 10 tests verts. |
 | UX-2B.1 (slice) | Webapp insight preview server-side | Inès | 18h plan / 1h slice | 2026-05-04 | 2026-05-04 | 🟢 partial | XSS leak OU disclaimer absent | aucun (slice 4h plan, livré en 1h). GET /api/v1/insights/preview rend HTML5 zero-JS, inline CSS WCAG AA, accent palette bull/bear/neutral, dark-mode media query, FR/EN/DE/ES localisé, html.escape sur tout user input. 14 tests verts (XSS escape / no script / 4 langues / NEUTRAL drop levels / 503 / 422 validation). Reste 14h pour SPA full-feature. |
+| INFRA-2B.6 | Webhook HMAC signer | Théo | 6h / 30min | 2026-05-04 | 2026-05-04 | 🟢 | replay attack non détecté OU timing leak | aucun. `sign_payload`/`verify_payload` Stripe-style HMAC-SHA256(secret, ts.body), header X-Sentinel-Signature `t=<ts>,v1=<sig>`, replay window 5min, hmac.compare_digest. `generate_webhook_secret` 32-byte CSPRNG. 21 tests verts. |
+| INFRA-2B.7 | Per-tier rolling-24h cost quota | Théo | 6h / 30min | 2026-05-04 | 2026-05-04 | 🟢 | cap dépassé sous load concurrent | aucun. `CostQuotaEnforcer` deque per-tier, lazy purge expired, `check_and_record` atomique → `QuotaExceeded`. Defaults: FREE $0.05 / ANALYST $0.50 / STRATEGIST $5 / INSTITUTIONAL $50. 8 threads × 50 racing calls → cap respecté. 18 tests verts. |
+| DATA-2B.6 | Streaming CSV/JSONL ledger export | Marwan | 4h / 30min | 2026-05-04 | 2026-05-04 | 🟢 | export incohérent vs verify | aucun. `to_csv` / `to_jsonl` générateurs row-by-row, filter min_seq/max_seq/since_iso/until_iso, unicode + comma round-trip via csv.QUOTE_MINIMAL. Stable column order. 14 tests verts. |
+| LLM-2B.9 | Eval regression CI gate | Aisha | 6h / 30min | 2026-05-04 | 2026-05-04 | 🟢 | quality drift silent | aucun. `tests/eval_llm/rag_baseline.json` floors (recall 0.95, precision 0.18, per-cat) + tolerance 5pp. `compare(summary, baseline)` flag drops. CLI `--update` workflow pour bump délibéré. Live integration test contre corpus 50-source. 12 tests verts. |
+| MARKETING-2B.1 | Phase 2B positioning brief refresh | Karim | 4h / 30min | 2026-05-04 | 2026-05-04 | 🟢 | claim non vérifiable OU compliance drift | aucun. `reports/positioning/positioning_2B_status_2026_05_04.md` documente delta plan vs livré (16/17 sprints), proof points B2B/B2C/transparence avec endpoints concrets, pricing révisé €29/€99/€499, asks Sofia compliance, prochains 30j (~44h ciblant first paying customer M3). |
 
 **Légende status** :
 - 🟢 = on track, no concerns
