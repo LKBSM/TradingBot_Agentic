@@ -23,6 +23,7 @@ from typing import Callable, Iterable, Optional
 import numpy as np
 
 from src.intelligence.rag.bm25 import BM25Index, BM25Hit
+from src.intelligence.rag.cache import AnswerCache, CachedAnswer, QueryEmbeddingCache
 from src.intelligence.rag.chunking import Chunk
 from src.intelligence.rag.embedders import Embedder
 from src.intelligence.rag.prompts import RAGPromptBundle, build_prompt_bundle
@@ -130,6 +131,8 @@ class RAGPipeline:
         final_k: int = 5,
         max_context_chars: int = 6000,
         language: str = "fr",
+        embedding_cache: Optional[QueryEmbeddingCache] = None,
+        answer_cache: Optional[AnswerCache] = None,
     ):
         self.embedder = embedder
         self.bm25_k = bm25_k
@@ -137,6 +140,8 @@ class RAGPipeline:
         self.final_k = final_k
         self.max_context_chars = max_context_chars
         self.language = language
+        self.embedding_cache = embedding_cache
+        self.answer_cache = answer_cache
 
         self._bm25 = BM25Index()
         self._vector_store = InMemoryVectorStore(dimension=embedder.dimension)
@@ -166,10 +171,26 @@ class RAGPipeline:
     # Query
     # ------------------------------------------------------------------
 
+    def _corpus_fingerprint(self) -> str:
+        """Stable identifier for the answer-cache key. Tied to corpus size;
+        on every ``ingest()`` the size changes, so cached answers from a
+        previous corpus are naturally bypassed."""
+        return f"size={self.size}"
+
+    def _embed_query(self, query: str) -> np.ndarray:
+        if self.embedding_cache is not None:
+            cached = self.embedding_cache.get(query)
+            if cached is not None:
+                return cached
+        embedding = self.embedder.embed([query])[0]
+        if self.embedding_cache is not None:
+            self.embedding_cache.put(query, embedding)
+        return embedding
+
     def retrieve(self, query: str) -> list[RetrievedChunk]:
         """Hybrid retrieval only — no LLM call."""
         bm25_hits = self._bm25.search(query, k=self.bm25_k)
-        query_embedding = self.embedder.embed([query])[0]
+        query_embedding = self._embed_query(query)
         dense_hits = self._vector_store.search(query_embedding, k=self.dense_k)
         fused = reciprocal_rank_fusion(bm25_hits, dense_hits)
         return fused[: self.final_k]
@@ -180,8 +201,45 @@ class RAGPipeline:
         llm: Optional[LLMCallable] = None,
     ) -> RAGResponse:
         """Run the full RAG pipeline. ``llm`` is optional: when None, the
-        response carries the prompt bundle for inspection but no answer."""
+        response carries the prompt bundle for inspection but no answer.
+
+        When an :class:`AnswerCache` is configured, identical
+        ``(query, language, top_k)`` triples short-circuit the BM25 +
+        dense + LLM stack and replay the cached answer + chunk IDs.
+        ``elapsed_seconds`` then carries a single ``cache_hit`` entry so
+        observability can distinguish hits from cold runs.
+        """
         timings: dict[str, float] = {}
+
+        # ─── Answer cache short-circuit ────────────────────────────────
+        if self.answer_cache is not None and llm is not None:
+            t0 = time.perf_counter()
+            cached = self.answer_cache.get(
+                query, self.language, self.final_k, self._corpus_fingerprint()
+            )
+            timings["cache_lookup"] = time.perf_counter() - t0
+            if cached is not None:
+                # Rehydrate retrieved chunks from cached IDs by querying the
+                # corpus. We need the texts back for the prompt bundle to
+                # stay coherent — at this point the BM25 index is the
+                # authoritative source of chunk content.
+                retrieved = self._rehydrate_cached(cached)
+                ctx = [
+                    (rc.chunk.chunk_id, rc.chunk.text, rc.chunk.metadata)
+                    for rc in retrieved
+                ]
+                prompt = build_prompt_bundle(
+                    query, ctx, language=self.language,
+                    max_context_chars=self.max_context_chars,
+                )
+                timings["cache_hit"] = 1.0  # marker for observability
+                return RAGResponse(
+                    query=query,
+                    retrieved=retrieved,
+                    prompt_bundle=prompt,
+                    answer=cached.answer,
+                    elapsed_seconds=timings,
+                )
 
         t0 = time.perf_counter()
         retrieved = self.retrieve(query)
@@ -202,6 +260,22 @@ class RAGPipeline:
             answer = llm(prompt.system, prompt.user)
             timings["llm"] = time.perf_counter() - t0
 
+            # Only cache real LLM answers — stub paths are deterministic
+            # and cheap enough that caching adds noise without saving cost.
+            if self.answer_cache is not None and answer:
+                self.answer_cache.put(
+                    query,
+                    self.language,
+                    self.final_k,
+                    self._corpus_fingerprint(),
+                    CachedAnswer(
+                        answer=answer,
+                        retrieved_chunk_ids=[rc.chunk.chunk_id for rc in retrieved],
+                        retrieved_chunks_text=[rc.chunk.text for rc in retrieved],
+                        extras={"source_ids": [rc.chunk.source_id for rc in retrieved]},
+                    ),
+                )
+
         return RAGResponse(
             query=query,
             retrieved=retrieved,
@@ -209,3 +283,22 @@ class RAGPipeline:
             answer=answer,
             elapsed_seconds=timings,
         )
+
+    def _rehydrate_cached(self, cached: "CachedAnswer") -> list["RetrievedChunk"]:
+        """Reconstruct ``RetrievedChunk`` objects from a cache entry.
+
+        Looks the chunks up by chunk_id in the BM25 index. Falls back to
+        synthesising a Chunk from the cached text when the corpus has
+        rotated (rare — should not happen due to the corpus fingerprint
+        invalidation, but defensive).
+        """
+        out: list[RetrievedChunk] = []
+        index = {c.chunk_id: c for c in self._bm25.chunks}
+        for chunk_id, text in zip(
+            cached.retrieved_chunk_ids, cached.retrieved_chunks_text
+        ):
+            chunk = index.get(chunk_id)
+            if chunk is None:
+                chunk = Chunk(text=text, source_id=chunk_id, chunk_index=0)
+            out.append(RetrievedChunk(chunk=chunk, fused_score=0.0))
+        return out

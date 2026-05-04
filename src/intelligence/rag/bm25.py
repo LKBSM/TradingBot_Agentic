@@ -56,6 +56,11 @@ class BM25Index:
     def size(self) -> int:
         return len(self._chunks)
 
+    @property
+    def chunks(self) -> list[Chunk]:
+        """Read-only view of the indexed chunks (used by cache rehydration)."""
+        return self._chunks
+
     def add(self, chunks: list[Chunk]) -> None:
         for c in chunks:
             tokens = _tokenize(c.text)

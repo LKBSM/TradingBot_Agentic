@@ -108,6 +108,7 @@ jobs:
             tests/test_rag_sources.py \
             tests/test_rag_eval_harness.py \
             tests/test_rag_prompts_multilang.py \
+            tests/test_rag_cache.py \
             -m "not live and not benchmark" \
             --cov=src/agents/data \
             --cov=src/research \

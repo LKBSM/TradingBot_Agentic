@@ -15,7 +15,19 @@ Architecture
 """
 
 from src.intelligence.rag.bm25 import BM25Index
+from src.intelligence.rag.cache import (
+    AnswerCache,
+    CachedAnswer,
+    CacheStats,
+    QueryEmbeddingCache,
+)
 from src.intelligence.rag.chunking import Chunk, chunk_text
+from src.intelligence.rag.cost_tracker import (
+    CostSummary,
+    CostTracker,
+    EmbeddingCallRecord,
+    LLMCallRecord,
+)
 from src.intelligence.rag.embedders import (
     Embedder,
     HashEmbedder,
@@ -25,14 +37,22 @@ from src.intelligence.rag.pipeline import RAGPipeline, RAGResponse, RetrievedChu
 from src.intelligence.rag.vector_store import InMemoryVectorStore
 
 __all__ = [
+    "AnswerCache",
     "BM25Index",
+    "CacheStats",
+    "CachedAnswer",
     "Chunk",
     "chunk_text",
+    "CostSummary",
+    "CostTracker",
     "Embedder",
+    "EmbeddingCallRecord",
     "HashEmbedder",
-    "VoyageEmbedder",
     "InMemoryVectorStore",
+    "LLMCallRecord",
+    "QueryEmbeddingCache",
     "RAGPipeline",
     "RAGResponse",
     "RetrievedChunk",
+    "VoyageEmbedder",
 ]
