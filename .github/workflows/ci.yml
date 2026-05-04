@@ -106,6 +106,7 @@ jobs:
             tests/test_bocpd.py \
             tests/test_rag_pipeline.py \
             tests/test_rag_sources.py \
+            tests/test_rag_eval_harness.py \
             -m "not live and not benchmark" \
             --cov=src/agents/data \
             --cov=src/research \

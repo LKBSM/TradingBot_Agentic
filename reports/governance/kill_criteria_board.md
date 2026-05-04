@@ -4,10 +4,10 @@
 > Tout sprint actif a un status (🟢/🟡/🔴), un kill criterion explicite, et un blocker tracké.
 > Référence plan : `reports/roadmap_2026_2027/PLAN_12_MOIS.md`.
 
-**Dernière mise à jour** : 2026-04-30 23:55 ET
-**Phase active** : **2B, Sprints LLM-2B.1 + LLM-2B.2 livrés (RAG architecture + 50 sources curées)**
+**Dernière mise à jour** : 2026-05-03 14:00 ET
+**Phase active** : **2B, Sprints LLM-2B.1 + LLM-2B.2 + LLM-2B.3 livrés (RAG architecture + 50 sources + eval harness RAGAS)**
 **Mois en cours** : M3 effective (Phase 1 entièrement bouclée 2026-05-01)
-**Heures dev cumulées vs plan** : ~22h / 64h (14 sprints touchés sur 14, économie ~66%)
+**Heures dev cumulées vs plan** : ~24h / 84h (15 sprints touchés sur 15, économie ~71%)
 
 ---
 
@@ -21,7 +21,7 @@
 | Erreurs Sentry 7j | <10 | >50 | __ | 🟢/🟡/🔴 |
 | LLM cost / revenue (Phase 2) | <40% | >60% | __% | 🟢/🟡/🔴 |
 | Forward-test PF rolling 30j (Phase 2A) | ≥1.10 | <0.85 | __ | 🟢/🟡/🔴 |
-| RAG faithfulness (Phase 2B) | ≥0.90 | <0.80 | __ | 🟢/🟡/🔴 |
+| RAG faithfulness (Phase 2B) | ≥0.90 | <0.80 | n/a (no LLM yet, recall=98% / precision=20%) | 🟢 |
 
 ---
 
@@ -43,6 +43,7 @@
 | UX-1.1 | InsightSignal v2 + 4 mockups | Inès | 5h / 1h | 2026-05-01 | 2026-05-01 | 🟢 | v2 casse >10 tests | aucun. Pydantic v2 unifié, 30 tests verts (round-trip, validators directionnels, compliance UE 2024/2811). 4 mockups v2 auto-générés via scripts/generate_mockups_v2.py. |
 | COMM-1.1 | Positioning 2A+2B briefs | Karim | 5h / 1h30 | 2026-05-01 | 2026-05-01 | 🟢 | docs trop similaires | aucun. 2 briefs livrés AVANT verdict A1 (anti-biais ex-post). Sofia review checklist intégrée à chaque doc. |
 | RISK-1.1 | Kill criteria board + weekly_check | Sofia | 6h / 2h | 2026-04-30 | 2026-05-01 | 🟢 partial | 2 checkpoints ratés consec | board live + tools/governance/weekly_check.py + 11 tests verts. Reste : 8 weekly checks réels à mener S1-S8. |
+| LLM-2B.3 | RAG eval harness 50 fixtures + RAGAS metrics | Aisha | 10h / 1h30 | 2026-05-03 | 2026-05-03 | 🟢 | recall<0.85 ou precision<0.15 | aucun. 50 fixtures (15 paper + 10 data + 5 report + 10 concept + 10 macro), 4 métriques (recall/precision/faithfulness/relevancy), KPI gate **recall=98% & precision=20% PASS**. 22 tests verts. CI étendue 12 fichiers. |
 
 **Légende status** :
 - 🟢 = on track, no concerns
