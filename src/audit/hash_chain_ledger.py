@@ -323,6 +323,60 @@ class HashChainLedger:
         for row in cursor:
             yield LedgerEntry(*row)
 
+    def paginate(
+        self,
+        *,
+        cursor: Optional[int] = None,
+        limit: int = 50,
+        insight_id: Optional[str] = None,
+        since_iso: Optional[str] = None,
+        until_iso: Optional[str] = None,
+    ) -> tuple[list[LedgerEntry], Optional[int]]:
+        """Cursor-paginated read of the ledger, newest-first.
+
+        ``cursor`` — return entries with ``seq < cursor`` (None ⇒ from head).
+        ``limit``  — page size, clamped to [1, 500].
+        Filters apply at the SQL layer so a 1M-row ledger paginates in ms.
+
+        Returns ``(entries, next_cursor)``. ``next_cursor`` is the smallest
+        seq in the page (caller passes it back to fetch the next page) or
+        None when the page exhausted the table.
+        """
+        if limit < 1:
+            raise ValueError("limit must be >= 1")
+        limit = min(limit, 500)
+
+        clauses = []
+        params: list[Any] = []
+        if cursor is not None:
+            if cursor < 1:
+                raise ValueError("cursor must be >= 1")
+            clauses.append("seq < ?")
+            params.append(cursor)
+        if insight_id is not None:
+            clauses.append("insight_id = ?")
+            params.append(insight_id)
+        if since_iso is not None:
+            clauses.append("inserted_at_utc >= ?")
+            params.append(since_iso)
+        if until_iso is not None:
+            clauses.append("inserted_at_utc <= ?")
+            params.append(until_iso)
+
+        where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
+        # +1 to know if there is a next page without a second COUNT query.
+        params.append(limit + 1)
+        sql = (
+            "SELECT seq, inserted_at_utc, insight_id, canonical_json, "
+            "prev_hash, entry_hash FROM ledger "
+            f"{where} ORDER BY seq DESC LIMIT ?"
+        )
+        rows = self._writer_conn.execute(sql, params).fetchall()
+        has_more = len(rows) > limit
+        entries = [LedgerEntry(*r) for r in rows[:limit]]
+        next_cursor = entries[-1].seq if has_more and entries else None
+        return entries, next_cursor
+
     # ------------------------------------------------------------------
     # Verification
     # ------------------------------------------------------------------

@@ -16,7 +16,7 @@ from fastapi.responses import JSONResponse
 from src.api.dependencies import AppState
 from src.api.middleware.geo_block import GeoBlockMiddleware
 from src.api.models import ErrorResponse
-from src.api.routes import admin, audit, dashboard, enrich, health, legal, narratives, operator, prometheus, qa, signals, state, webapp
+from src.api.routes import admin, audit, dashboard, enrich, health, insight_history, legal, narratives, operator, prometheus, qa, signals, state, webapp
 from src.api.signal_store import SignalStore
 
 logger = logging.getLogger(__name__)
@@ -219,6 +219,7 @@ def create_app(
     app.include_router(qa.router)
     app.include_router(enrich.router)
     app.include_router(audit.router)
+    app.include_router(insight_history.router)
     app.include_router(webapp.router)
 
     return app
