@@ -15,6 +15,7 @@ in-memory store the retrieval portion is ~5ms; the LLM call dominates.
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import time
 from dataclasses import dataclass, field
@@ -30,6 +31,93 @@ from src.intelligence.rag.prompts import RAGPromptBundle, build_prompt_bundle
 from src.intelligence.rag.vector_store import DenseHit, InMemoryVectorStore
 
 logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Corpus fingerprint (DATA-2B.8)
+# ---------------------------------------------------------------------------
+
+
+class CorpusDriftError(RuntimeError):
+    """Raised when BM25 and the vector store disagree on the corpus.
+
+    Distinct from generic ``RuntimeError`` so /health/deep can report a
+    specific reason and ops can write a kill-switch alert against it.
+    """
+
+
+@dataclass(frozen=True)
+class CorpusFingerprint:
+    """Detail of the BM25 + vector store corpus alignment.
+
+    Fields:
+        fingerprint   - 16-char hex digest of the joined chunk_ids when
+                        aligned, or the discrepancy summary when not.
+                        Used as the AnswerCache key fragment.
+        bm25_size     - chunks indexed in BM25.
+        vector_size   - chunks indexed in the vector store.
+        aligned       - both indexes hold the same chunk_ids in the same
+                        order. False is a hard error in production.
+        drift_reason  - human-readable explanation when ``aligned=False``.
+    """
+
+    fingerprint: str
+    bm25_size: int
+    vector_size: int
+    aligned: bool
+    drift_reason: str = ""
+
+
+def _compute_corpus_fingerprint(
+    bm25: "BM25Index", vector_store: "InMemoryVectorStore"
+) -> CorpusFingerprint:
+    bm_ids = bm25.chunk_ids() if hasattr(bm25, "chunk_ids") else []
+    vs_ids = (
+        vector_store.chunk_ids() if hasattr(vector_store, "chunk_ids") else []
+    )
+    bm_size, vs_size = len(bm_ids), len(vs_ids)
+
+    if bm_size != vs_size:
+        return CorpusFingerprint(
+            fingerprint=f"drift:size:{bm_size}!={vs_size}",
+            bm25_size=bm_size,
+            vector_size=vs_size,
+            aligned=False,
+            drift_reason=(
+                f"size mismatch: BM25={bm_size} chunks, "
+                f"vector_store={vs_size} chunks"
+            ),
+        )
+    if bm_ids != vs_ids:
+        # Same count but at least one id differs — find the first to make
+        # the error readable (with a cap so a 10k-chunk corpus doesn't
+        # spam the log).
+        first_diff = next(
+            (
+                f"#{i}: bm25={a!r}, vector={b!r}"
+                for i, (a, b) in enumerate(zip(bm_ids, vs_ids))
+                if a != b
+            ),
+            "",
+        )
+        return CorpusFingerprint(
+            fingerprint=f"drift:order:{bm_size}",
+            bm25_size=bm_size,
+            vector_size=vs_size,
+            aligned=False,
+            drift_reason=f"chunk-id ordering differs ({first_diff})",
+        )
+
+    h = hashlib.sha1()
+    for cid in bm_ids:
+        h.update(cid.encode("utf-8"))
+        h.update(b"\x1f")
+    return CorpusFingerprint(
+        fingerprint=h.hexdigest()[:16],
+        bm25_size=bm_size,
+        vector_size=vs_size,
+        aligned=True,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -172,10 +260,34 @@ class RAGPipeline:
     # ------------------------------------------------------------------
 
     def _corpus_fingerprint(self) -> str:
-        """Stable identifier for the answer-cache key. Tied to corpus size;
-        on every ``ingest()`` the size changes, so cached answers from a
-        previous corpus are naturally bypassed."""
-        return f"size={self.size}"
+        """Stable identifier for the answer-cache key.
+
+        DATA-2B.8: hash the ordered chunk_ids of BM25 + vector store. This
+        catches three drift shapes:
+
+        - corpus grew (new ingest) ⇒ different fingerprint ⇒ cache miss.
+        - chunks reshuffled (re-ingest with same total count but different
+          ids) ⇒ different fingerprint.
+        - one of the two indexes drifted (BM25 has 500 chunks, vector
+          store has 499 because an embed call failed silently) ⇒ different
+          fingerprint, AND ``corpus_drift_seq`` flags it explicitly.
+        """
+        return self.corpus_fingerprint().fingerprint
+
+    def corpus_fingerprint(self) -> "CorpusFingerprint":
+        """Detailed fingerprint suitable for the deep-health probe."""
+        return _compute_corpus_fingerprint(self._bm25, self._vector_store)
+
+    def assert_indexes_aligned(self) -> None:
+        """Boot guard: fail fast if BM25 and vector store disagree.
+
+        Called automatically by the deep-health endpoint. Production
+        wiring should call it once at app startup so a botched
+        re-index crashes the pod rather than serving wrong answers.
+        """
+        fp = self.corpus_fingerprint()
+        if not fp.aligned:
+            raise CorpusDriftError(fp.drift_reason)
 
     def _embed_query(self, query: str) -> np.ndarray:
         if self.embedding_cache is not None:

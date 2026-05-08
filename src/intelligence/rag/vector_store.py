@@ -36,6 +36,10 @@ class InMemoryVectorStore:
     def size(self) -> int:
         return len(self._chunks)
 
+    def chunk_ids(self) -> list[str]:
+        """Ordered chunk_ids for the corpus fingerprint guard (DATA-2B.8)."""
+        return [c.chunk_id for c in self._chunks]
+
     def add(self, chunks: list[Chunk], embeddings: np.ndarray) -> None:
         if embeddings.shape[0] != len(chunks):
             raise ValueError(

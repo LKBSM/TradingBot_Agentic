@@ -79,12 +79,25 @@ def _check_rag_pipeline(pipeline: Any) -> dict:
         # should return at least one hit. Empty result ⇒ index empty
         # or BM25 broken.
         retrieved = pipeline.retrieve("market structure")
-        return {
+        result = {
             "configured": True,
             "ok": len(retrieved) > 0,
             "retrieved_count": len(retrieved),
             "duration_ms": round((time.perf_counter() - t0) * 1000, 2),
         }
+        # DATA-2B.8: corpus fingerprint + alignment status. Fail the
+        # whole rag check if BM25 and vector store have drifted; serving
+        # results from a misaligned corpus is worse than 503.
+        if hasattr(pipeline, "corpus_fingerprint"):
+            fp = pipeline.corpus_fingerprint()
+            result["corpus_fingerprint"] = fp.fingerprint
+            result["corpus_aligned"] = fp.aligned
+            result["bm25_size"] = fp.bm25_size
+            result["vector_size"] = fp.vector_size
+            if not fp.aligned:
+                result["ok"] = False
+                result["drift_reason"] = fp.drift_reason
+        return result
     except Exception as exc:
         return {
             "configured": True,

@@ -61,6 +61,11 @@ class BM25Index:
         """Read-only view of the indexed chunks (used by cache rehydration)."""
         return self._chunks
 
+    def chunk_ids(self) -> list[str]:
+        """Ordered chunk_ids — used by the corpus fingerprint guard
+        (DATA-2B.8) to detect drift between BM25 and the vector store."""
+        return [c.chunk_id for c in self._chunks]
+
     def add(self, chunks: list[Chunk]) -> None:
         for c in chunks:
             tokens = _tokenize(c.text)
