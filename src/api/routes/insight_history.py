@@ -1,10 +1,11 @@
-"""Insight history endpoint — Sprint API-2B.1.
+"""Insight history + by-id endpoints — Sprints API-2B.1 + API-2B.3.
 
 Paginated, B2B-facing read view over the audit ledger built in DATA-2B.4.
 The audit routes (DATA-2B.5) expose verification + per-seq + by-insight
-lookup, but a broker reconciling delivery history needs to *list* — give
-me the last 50 deliveries since 09:00 UTC, optionally filtered by
-``insight_id`` for replay scenarios.
+lookup, but a broker reconciling delivery history needs to *list* (one
+of /history) and *replay one* (one of /by-id) — give me the last 50
+deliveries since 09:00 UTC, or "fetch the canonical body for insight
+abc-123 with proper ETag/304 conditional caching".
 
 Cursor pagination (seq descending) keeps the contract stable as the
 ledger grows: pages are append-only relative to a frozen cursor, so a
@@ -19,12 +20,13 @@ short-circuits the gate so dev exercises it without keys.
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
+from fastapi.responses import JSONResponse, Response
 
 from src.api.auth import require_api_key
 
@@ -139,5 +141,100 @@ async def insight_history(
         headers={
             "ETag": f'W/"{head_hash[:16]}-{head_seq}"',
             "X-Ledger-Head-Seq": str(head_seq),
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
+# Single-lookup endpoint — Sprint API-2B.3
+# ---------------------------------------------------------------------------
+
+
+def _etag_for(entry_hash: str) -> str:
+    """Strong ETag — entry_hash is content-derived and immutable."""
+    return f'"{entry_hash}"'
+
+
+@router.get(
+    "/{insight_id}",
+    responses={
+        304: {"description": "Not modified — entry_hash matches If-None-Match"},
+        403: {"description": "Tier insufficient"},
+        404: {"description": "Insight not found"},
+        503: {"description": "Ledger not configured"},
+    },
+)
+async def get_insight_by_id(
+    insight_id: str,
+    request: Request,
+    if_none_match: Optional[str] = Header(None, alias="If-None-Match"),
+    subscriber: dict = Depends(require_api_key),
+):
+    """Fetch the canonical InsightSignalV2 body that was sealed in the
+    ledger under ``insight_id``.
+
+    A broker reconciling a single delivery cares about the body, not the
+    list — this is the lookup path. Conditional caching is supported:
+    the response carries a strong ``ETag`` derived from the immutable
+    ``entry_hash``, so a client storing it can ``If-None-Match: <etag>``
+    and we'll return 304 Not Modified instead of re-shipping the body.
+
+    Multi-match policy: an ``insight_id`` may legally appear more than
+    once if the broker re-submitted with the same ``client_request_id``.
+    We return the *latest* (highest seq) — that's the one currently
+    active for delivery. The /audit/by-insight/{id} endpoint exposes
+    the full history for forensics.
+    """
+    _check_tier(subscriber)
+    ledger = _get_ledger(request)
+
+    if not insight_id or len(insight_id) > 64:
+        raise HTTPException(status_code=400, detail="invalid insight_id")
+
+    entries = ledger.find_by_insight_id(insight_id)
+    if not entries:
+        raise HTTPException(
+            status_code=404, detail=f"no ledger entry for insight {insight_id}"
+        )
+
+    # Latest = highest seq. find_by_insight_id is asc by seq.
+    entry = entries[-1]
+    etag = _etag_for(entry.entry_hash)
+
+    # Conditional GET — strong-ETag match short-circuits with 304.
+    if if_none_match and if_none_match.strip() == etag:
+        return Response(
+            status_code=304,
+            headers={
+                "ETag": etag,
+                "X-Ledger-Seq": str(entry.seq),
+            },
+        )
+
+    # canonical_json was the exact serialised body that was hashed —
+    # parse it back so the response is JSON, not a string.
+    try:
+        body = json.loads(entry.canonical_json)
+    except json.JSONDecodeError as exc:  # pragma: no cover — corrupted ledger
+        logger.exception("ledger entry %s has malformed canonical_json", entry.seq)
+        raise HTTPException(
+            status_code=500, detail="ledger entry corrupted"
+        ) from exc
+
+    return JSONResponse(
+        content={
+            "insight": body,
+            "audit": {
+                "seq": entry.seq,
+                "inserted_at_utc": entry.inserted_at_utc,
+                "entry_hash": entry.entry_hash,
+                "prev_hash": entry.prev_hash,
+            },
+            "is_latest_of": len(entries),
+        },
+        headers={
+            "ETag": etag,
+            "X-Ledger-Seq": str(entry.seq),
+            "Cache-Control": "private, max-age=300",
         },
     )
