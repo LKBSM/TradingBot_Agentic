@@ -17,7 +17,7 @@ from src.api.dependencies import AppState
 from src.api.middleware.access_log import StructuredAccessLogMiddleware
 from src.api.middleware.geo_block import GeoBlockMiddleware
 from src.api.models import ErrorResponse
-from src.api.routes import admin, audit, dashboard, enrich, health, health_deep, insight_history, legal, narratives, operator, prometheus, qa, signals, state, webapp
+from src.api.routes import admin, admin_audit, audit, dashboard, enrich, health, health_deep, insight_history, legal, narratives, operator, prometheus, qa, signals, state, webapp
 from src.api.signal_store import SignalStore
 
 logger = logging.getLogger(__name__)
@@ -48,6 +48,7 @@ def create_app(
     webhook_queue: Any = None,
     embedder: Any = None,
     idempotency_store: Any = None,
+    admin_action_log: Any = None,
 ) -> FastAPI:
     """
     Build and return a fully-configured FastAPI application.
@@ -83,6 +84,7 @@ def create_app(
         webhook_queue=webhook_queue,
         embedder=embedder,
         idempotency_store=idempotency_store,
+        admin_action_log=admin_action_log,
     )
 
     @asynccontextmanager
@@ -229,6 +231,7 @@ def create_app(
     app.include_router(operator.router)
     app.include_router(prometheus.router)
     app.include_router(admin.router)
+    app.include_router(admin_audit.router)
     app.include_router(dashboard.router)
     app.include_router(narratives.router)
     app.include_router(legal.router)

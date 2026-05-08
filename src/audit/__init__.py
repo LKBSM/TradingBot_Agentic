@@ -5,6 +5,11 @@ client. Designed so that B2B compliance auditors can independently verify
 that the historical sequence of insights has not been tampered with.
 """
 
+from src.audit.admin_action_log import (
+    AdminActionLog,
+    AdminActionRecord,
+    payload_digest,
+)
 from src.audit.hash_chain_ledger import (
     HashChainLedger,
     LedgerEntry,
@@ -13,8 +18,11 @@ from src.audit.hash_chain_ledger import (
 )
 
 __all__ = [
+    "AdminActionLog",
+    "AdminActionRecord",
     "HashChainLedger",
     "LedgerEntry",
     "VerificationResult",
     "canonical_json",
+    "payload_digest",
 ]
