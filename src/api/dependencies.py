@@ -45,3 +45,4 @@ class AppState:
     tier_rate_limiter: Optional[Any] = None # src.intelligence.rag.tier_rate_limiter.TierRateLimiter
     webhook_queue: Optional[Any] = None     # src.delivery.webhook_queue.WebhookDeliveryQueue
     embedder: Optional[Any] = None          # src.intelligence.rag.embedders.Embedder (DATA-2B.7)
+    idempotency_store: Optional[Any] = None # src.api.idempotency_store.IdempotencyStore (API-2B.2)

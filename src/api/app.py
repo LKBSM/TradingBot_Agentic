@@ -46,6 +46,7 @@ def create_app(
     tier_rate_limiter: Any = None,
     webhook_queue: Any = None,
     embedder: Any = None,
+    idempotency_store: Any = None,
 ) -> FastAPI:
     """
     Build and return a fully-configured FastAPI application.
@@ -80,6 +81,7 @@ def create_app(
         tier_rate_limiter=tier_rate_limiter,
         webhook_queue=webhook_queue,
         embedder=embedder,
+        idempotency_store=idempotency_store,
     )
 
     @asynccontextmanager

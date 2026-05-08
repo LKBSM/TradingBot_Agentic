@@ -34,10 +34,12 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from fastapi.responses import JSONResponse
 
 from src.api.auth import TESTING_MODE, require_api_key
 from src.api.disclaimers import get_disclaimer
+from src.api.idempotency_store import IdempotencyResult, _hash_body
 from src.api.insight_signal_v2 import (
     ComplianceMeta,
     InsightSignalV2,
@@ -181,11 +183,14 @@ def _to_sources(retrieved: list) -> list[Source]:
     return out
 
 
+_IDEMPOTENCY_KEY_MAX = 255
+
+
 @router.post(
     "/enrich",
-    response_model=InsightSignalV2,
     responses={
         400: {"description": "Invalid payload"},
+        409: {"description": "Idempotency-Key reused with a different body"},
         503: {"description": "RAG service unavailable"},
     },
 )
@@ -193,7 +198,40 @@ async def enrich(
     body: EnrichRequest,
     request: Request,
     subscriber: dict = Depends(require_api_key),
-) -> InsightSignalV2:
+    idempotency_key: Optional[str] = Header(
+        None,
+        alias="Idempotency-Key",
+        max_length=_IDEMPOTENCY_KEY_MAX,
+        description=(
+            "Stripe-style replay-safe key; same key+body within 24h replays "
+            "the original response, same key+different body returns 409."
+        ),
+    ),
+):
+    # ── Idempotency replay short-circuit ──────────────────────────────
+    idem_store = getattr(request.app.state.app_state, "idempotency_store", None)
+    body_hash: Optional[str] = None
+    if idempotency_key and idem_store is not None:
+        body_hash = _hash_body(body)
+        api_key_id = str(subscriber.get("key_id", "anonymous"))
+        result = idem_store.lookup(api_key_id, idempotency_key, body_hash)
+        if result.status == IdempotencyResult.CLASH:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "Idempotency-Key already used with a different body. "
+                    "Choose a fresh key for new payloads."
+                ),
+            )
+        if result.status == IdempotencyResult.HIT:
+            return JSONResponse(
+                content=result.response,
+                headers={
+                    "Idempotent-Replay": "true",
+                    "Idempotent-Original-At": str(int(result.stored_at or 0)),
+                },
+            )
+
     pipeline = getattr(request.app.state.app_state, "rag_pipeline", None)
     if pipeline is None:
         raise HTTPException(status_code=503, detail="RAG pipeline not configured")
@@ -307,4 +345,10 @@ async def enrich(
         except Exception as exc:  # pragma: no cover — defensive
             logger.warning("audit ledger append failed: %s", exc)
 
-    return payload
+    # ── Idempotency cache write ───────────────────────────────────────
+    response_body = payload.model_dump(mode="json")
+    if idempotency_key and idem_store is not None and body_hash is not None:
+        api_key_id = str(subscriber.get("key_id", "anonymous"))
+        idem_store.store(api_key_id, idempotency_key, body_hash, response_body)
+
+    return JSONResponse(content=response_body)
