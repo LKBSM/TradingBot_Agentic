@@ -118,6 +118,7 @@ jobs:
             tests/test_ledger_export.py \
             tests/test_rag_regression_gate.py \
             tests/test_tier_rate_limiter.py \
+            tests/test_webhook_drain_worker.py \
             -m "not live and not benchmark" \
             --cov=src/agents/data \
             --cov=src/research \
