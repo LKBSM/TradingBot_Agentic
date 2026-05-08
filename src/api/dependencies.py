@@ -39,3 +39,8 @@ class AppState:
     # Audit ledger (DATA-2B.4) — optional. /enrich appends each delivered
     # InsightSignalV2 to the chain when this is wired in.
     audit_ledger: Optional[Any] = None    # src.audit.HashChainLedger
+    # Phase 2B production guards — surfaced in the /health/deep probe
+    # (OBS-2B.2) so ops can see quota/limit/queue state at a glance.
+    cost_quota: Optional[Any] = None        # src.intelligence.rag.cost_quota.CostQuotaEnforcer
+    tier_rate_limiter: Optional[Any] = None # src.intelligence.rag.tier_rate_limiter.TierRateLimiter
+    webhook_queue: Optional[Any] = None     # src.delivery.webhook_queue.WebhookDeliveryQueue
