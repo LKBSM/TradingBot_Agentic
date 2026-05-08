@@ -14,6 +14,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 
 from src.api.dependencies import AppState
+from src.api.middleware.access_log import StructuredAccessLogMiddleware
 from src.api.middleware.geo_block import GeoBlockMiddleware
 from src.api.models import ErrorResponse
 from src.api.routes import admin, audit, dashboard, enrich, health, health_deep, insight_history, legal, narratives, operator, prometheus, qa, signals, state, webapp
@@ -116,6 +117,10 @@ def create_app(
 
     # ── Gzip compression (≥1KB) — −60-70% bandwidth /metrics, /equity-curve
     app.add_middleware(GZipMiddleware, minimum_size=1024)
+
+    # ── Structured access log — outermost, so it sees final status codes
+    # and total latency through every other middleware (OBS-2B.3).
+    app.add_middleware(StructuredAccessLogMiddleware)
 
     # ── Geo-block (US/QC/UK + OFAC SDN) — P29 compliance ──────────────────
     app.add_middleware(GeoBlockMiddleware)
