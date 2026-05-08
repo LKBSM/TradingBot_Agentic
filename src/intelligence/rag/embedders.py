@@ -9,6 +9,10 @@ Two implementations:
   initialised lazily so missing API keys don't break imports.
 
 Both implement the same `Embedder` Protocol so the pipeline is agnostic.
+
+DATA-2B.7 also adds ``embed_health_check(embedder)``: a smoke probe used
+both at boot (fail fast on dimension mismatch with the configured vector
+store) and by the OBS-2B.2 deep health endpoint.
 """
 
 from __future__ import annotations
@@ -17,6 +21,7 @@ import hashlib
 import logging
 import math
 import os
+import time
 from typing import Iterable, Protocol, runtime_checkable
 
 import numpy as np
@@ -134,3 +139,96 @@ class VoyageEmbedder:
         norms = np.linalg.norm(out, axis=1, keepdims=True)
         norms[norms == 0] = 1.0
         return out / norms
+
+
+# ---------------------------------------------------------------------------
+# Health check (DATA-2B.7)
+# ---------------------------------------------------------------------------
+
+
+# Two probe strings deliberately chosen to be:
+# - non-empty (so HashEmbedder produces non-zero vectors)
+# - vocabulary-disjoint (so the cosine between them stays well below 1.0,
+#   confirming the embedder isn't returning a constant vector)
+_PROBE_TEXTS: tuple[str, str] = (
+    "gold price market structure liquidity sweep",
+    "central bank policy rate decision macro narrative",
+)
+
+
+class EmbedderHealthError(RuntimeError):
+    """Raised when a probe detects a contract violation.
+
+    Distinct from generic ``RuntimeError`` so callers can ``except
+    EmbedderHealthError`` without catching unrelated bugs.
+    """
+
+
+def embed_health_check(
+    embedder: Embedder,
+    *,
+    expected_dimension: int | None = None,
+    rtol: float = 1e-3,
+) -> dict:
+    """Probe an embedder and verify its output contract.
+
+    Checks performed:
+
+    - shape is ``(2, dimension)``
+    - both rows are L2-normalised within ``rtol``
+    - rows are not identical (would indicate a constant-vector bug)
+    - if ``expected_dimension`` is given, asserts ``dimension`` matches
+
+    Returns a dict suitable for direct embedding in the deep-health JSON
+    body. Raises :class:`EmbedderHealthError` only when the contract is
+    violated (the OBS-2B.2 wrapper catches and downgrades to ok=False).
+    """
+    if embedder is None:
+        return {"configured": False, "ok": True}
+
+    declared_dim = int(getattr(embedder, "dimension", 0))
+    if declared_dim < 16:
+        raise EmbedderHealthError(
+            f"declared dimension {declared_dim} < 16 (collision tolerance floor)"
+        )
+    if expected_dimension is not None and declared_dim != expected_dimension:
+        raise EmbedderHealthError(
+            f"dimension mismatch: embedder={declared_dim}, "
+            f"expected={expected_dimension}"
+        )
+
+    t0 = time.perf_counter()
+    vectors = embedder.embed(list(_PROBE_TEXTS))
+    elapsed_ms = round((time.perf_counter() - t0) * 1000, 2)
+
+    if vectors.shape != (2, declared_dim):
+        raise EmbedderHealthError(
+            f"embed() shape {vectors.shape} != (2, {declared_dim})"
+        )
+
+    norms = np.linalg.norm(vectors, axis=1)
+    if not np.all(np.isfinite(norms)):
+        raise EmbedderHealthError("non-finite norms in embedding output")
+    if not np.allclose(norms, 1.0, rtol=rtol, atol=rtol):
+        raise EmbedderHealthError(
+            f"vectors are not L2-normalised: norms={norms.tolist()}"
+        )
+
+    cos = float(np.dot(vectors[0], vectors[1]))
+    # Vocab-disjoint probe should map to clearly different vectors.
+    # 0.99 is a paranoid ceiling; identical vectors give 1.0.
+    if cos > 0.99:
+        raise EmbedderHealthError(
+            f"probe vectors collinear (cos={cos:.4f}) — embedder may be "
+            "returning a constant vector"
+        )
+
+    return {
+        "configured": True,
+        "ok": True,
+        "dimension": declared_dim,
+        "embedder_class": type(embedder).__name__,
+        "sample_norms": [round(float(n), 6) for n in norms],
+        "sample_cosine": round(cos, 6),
+        "duration_ms": elapsed_ms,
+    }

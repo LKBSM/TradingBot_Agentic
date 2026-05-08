@@ -151,6 +151,28 @@ def _check_webhook_queue(queue: Any) -> dict:
         }
 
 
+def _check_embedder(embedder: Any) -> dict:
+    if embedder is None:
+        return {"configured": False, "ok": True}
+    # Local import keeps the health module free of numpy at import time
+    # for deployments that don't ship the RAG stack.
+    from src.intelligence.rag.embedders import (
+        EmbedderHealthError,
+        embed_health_check,
+    )
+
+    try:
+        return embed_health_check(embedder)
+    except EmbedderHealthError as exc:
+        return {"configured": True, "ok": False, "error": str(exc)}
+    except Exception as exc:
+        return {
+            "configured": True,
+            "ok": False,
+            "error": f"embed_health_check raised: {type(exc).__name__}",
+        }
+
+
 def _check_tier_rate_limiter(limiter: Any) -> dict:
     if limiter is None:
         return {"configured": False, "ok": True}
@@ -201,6 +223,7 @@ async def health_deep(request: Request):
         "tier_rate_limiter": _check_tier_rate_limiter(
             getattr(app_state, "tier_rate_limiter", None)
         ),
+        "embedder": _check_embedder(getattr(app_state, "embedder", None)),
     }
 
     overall_ok = all(c["ok"] for c in checks.values())
