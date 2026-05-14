@@ -40,6 +40,30 @@ def _get_tracker(request: Request) -> Any:
 
 
 @router.get(
+    "/narrative-quality",
+    responses={
+        503: {"description": "Narrative quality tracker not configured"},
+    },
+)
+async def get_narrative_quality(
+    request: Request,
+    _: bool = Depends(require_admin),
+):
+    """LLM-2B.7 dashboard surface — 7d faithfulness + hallucination
+    rate + cost + latency + worst-5 review queue + per-language slice.
+    """
+    tracker = getattr(
+        request.app.state.app_state, "narrative_quality_tracker", None
+    )
+    if tracker is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Narrative quality tracker not configured",
+        )
+    return tracker.summary()
+
+
+@router.get(
     "/webhook-drain",
     responses={
         503: {"description": "Webhook drain worker not configured"},
