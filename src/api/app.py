@@ -19,9 +19,60 @@ from src.api.middleware.access_log import StructuredAccessLogMiddleware
 from src.api.middleware.geo_block import GeoBlockMiddleware
 from src.api.models import ErrorResponse
 from src.api.routes import admin, admin_audit, audit, dashboard, enrich, health, health_deep, insight_history, legal, metrics_latency, narratives, operator, prometheus, qa, signals, state, webapp
+from src.api.shutdown import GracefulShutdownCoordinator
 from src.api.signal_store import SignalStore
 
 logger = logging.getLogger(__name__)
+
+
+def _auto_register_default_handlers(
+    coord: GracefulShutdownCoordinator, app_state: AppState
+) -> None:
+    """Wire each shutdown-capable subsystem on app_state into the coordinator.
+
+    Called from the lifespan after every subsystem is in place. Only
+    registers a handler when (a) the subsystem exists, and (b) no
+    handler with the same name was already registered (so a caller can
+    override with custom budgets).
+
+    Shutdown order is deliberately:
+
+    1. **Pollers/workers first** — sentinel scanner, webhook drain
+       worker. They must stop *before* their downstream stores close
+       so a final cycle doesn't write into a closed handle.
+    2. **Stores last** — audit ledger, admin action log, SignalStore.
+       Close after every writer has stopped so the WAL flushes cleanly.
+
+    All registrations are no-ops if the subsystem is None.
+    """
+    already = {r.name for r in coord._registrations}  # noqa: SLF001
+
+    def _add(name: str, fn, *, budget_s: float) -> None:
+        if name in already:
+            return
+        coord.register(name, fn, budget_s=budget_s)
+
+    # Pollers / workers
+    scanner = app_state.scanner
+    if scanner is not None and hasattr(scanner, "stop"):
+        _add("sentinel-scanner", scanner.stop, budget_s=5.0)
+
+    # The drain worker isn't stored on AppState today — callers that
+    # wire it call coord.register("webhook-drain", worker.stop) before
+    # startup. Nothing auto here.
+
+    # Stores
+    ledger = app_state.audit_ledger
+    if ledger is not None and hasattr(ledger, "close"):
+        _add("audit-ledger", ledger.close, budget_s=2.0)
+
+    admin_log = app_state.admin_action_log
+    if admin_log is not None and hasattr(admin_log, "close"):
+        _add("admin-action-log", admin_log.close, budget_s=2.0)
+
+    signal_store = app_state.signal_store
+    if signal_store is not None and hasattr(signal_store, "close"):
+        _add("signal-store", signal_store.close, budget_s=2.0)
 
 
 def create_app(
@@ -51,6 +102,7 @@ def create_app(
     idempotency_store: Any = None,
     admin_action_log: Any = None,
     latency_tracker: Any = None,
+    shutdown_coordinator: Any = None,
 ) -> FastAPI:
     """
     Build and return a fully-configured FastAPI application.
@@ -65,6 +117,8 @@ def create_app(
     # even when the caller didn't wire one in.
     if latency_tracker is None:
         latency_tracker = LatencyTracker()
+    if shutdown_coordinator is None:
+        shutdown_coordinator = GracefulShutdownCoordinator()
 
     app_state = AppState(
         signal_store=signal_store,
@@ -93,13 +147,27 @@ def create_app(
         idempotency_store=idempotency_store,
         admin_action_log=admin_action_log,
         latency_tracker=latency_tracker,
+        shutdown_coordinator=shutdown_coordinator,
     )
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         logger.info("API starting up")
-        yield
-        logger.info("API shutting down")
+        # INFRA-2B.11: auto-register any wired subsystems that expose a
+        # shutdown surface. Caller can register more *before* startup —
+        # we only add the ones not already registered by name. Order
+        # matters: workers stop first, ledgers/stores close last so
+        # in-flight log writes complete.
+        coord: GracefulShutdownCoordinator = app_state.shutdown_coordinator
+        _auto_register_default_handlers(coord, app_state)
+        try:
+            yield
+        finally:
+            logger.info("API shutting down — running %d handlers", len(coord._registrations))  # noqa: SLF001
+            try:
+                await coord.run()
+            except Exception:
+                logger.exception("shutdown coordinator failed")
 
     app = FastAPI(
         title="Smart Sentinel AI",

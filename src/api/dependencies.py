@@ -48,3 +48,4 @@ class AppState:
     idempotency_store: Optional[Any] = None # src.api.idempotency_store.IdempotencyStore (API-2B.2)
     admin_action_log: Optional[Any] = None  # src.audit.AdminActionLog (SECURITY-2B.1)
     latency_tracker: Optional[Any] = None   # src.api.latency_tracker.LatencyTracker (OBS-2B.4)
+    shutdown_coordinator: Optional[Any] = None  # src.api.shutdown.GracefulShutdownCoordinator (INFRA-2B.11)
