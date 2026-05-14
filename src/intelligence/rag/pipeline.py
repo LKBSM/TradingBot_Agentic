@@ -264,6 +264,67 @@ class RAGPipeline:
         logger.info("RAG ingested %d chunks (corpus size: %d)", len(chunk_list), self.size)
         return len(chunk_list)
 
+    # ------------------------------------------------------------------
+    # Idempotent rebuild — DATA-2B.10
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def rebuild_token(chunks: Iterable[Chunk]) -> str:
+        """Compute a deterministic token for a *proposed* chunk set.
+
+        Two callers that ingest the same chunks in the same order get
+        the same token. Uses the same byte-stream layout as
+        ``_compute_corpus_fingerprint`` (each chunk_id followed by
+        ``\\x1f``), so a post-ingest fingerprint comparison against
+        the pre-ingest token confirms the index landed correctly.
+        """
+        import hashlib
+        h = hashlib.sha1()
+        for c in chunks:
+            h.update(c.chunk_id.encode("utf-8"))
+            h.update(b"\x1f")
+        return h.hexdigest()[:16]
+
+    def ingest_idempotent(self, chunks: Iterable[Chunk]) -> dict:
+        """Ingest only if the current corpus doesn't already match.
+
+        DATA-2B.10: a crashed rebuild that left the corpus
+        half-populated can re-run this without producing a duplicated
+        chunk set. Compares the rebuild_token of the proposed chunks
+        against the current corpus fingerprint:
+
+        - **match** → no-op, return ``{"status": "no_op", ...}``.
+        - **empty corpus or different fingerprint** → ingest as normal,
+          return ``{"status": "ingested", "n": N, ...}``.
+
+        The current implementation isn't atomic: a partial ingest
+        that crashes mid-flight will produce a third state where the
+        BM25 and vector indexes disagree. That state is caught by
+        ``assert_indexes_aligned()`` (DATA-2B.8) — callers building
+        production pipelines should run that immediately after
+        ``ingest_idempotent`` to fail fast.
+        """
+        chunk_list = list(chunks)
+        token = self.rebuild_token(chunk_list)
+        current_fp = self.corpus_fingerprint()
+        if current_fp.aligned and current_fp.fingerprint == token:
+            return {
+                "status": "no_op",
+                "token": token,
+                "n": 0,
+                "size_before": self.size,
+                "size_after": self.size,
+            }
+        size_before = self.size
+        n = self.ingest(chunk_list)
+        return {
+            "status": "ingested",
+            "token": token,
+            "n": n,
+            "size_before": size_before,
+            "size_after": self.size,
+        }
+
     @property
     def size(self) -> int:
         return self._bm25.size
