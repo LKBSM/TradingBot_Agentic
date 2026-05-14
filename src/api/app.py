@@ -14,10 +14,11 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 
 from src.api.dependencies import AppState
+from src.api.latency_tracker import LatencyTracker
 from src.api.middleware.access_log import StructuredAccessLogMiddleware
 from src.api.middleware.geo_block import GeoBlockMiddleware
 from src.api.models import ErrorResponse
-from src.api.routes import admin, admin_audit, audit, dashboard, enrich, health, health_deep, insight_history, legal, narratives, operator, prometheus, qa, signals, state, webapp
+from src.api.routes import admin, admin_audit, audit, dashboard, enrich, health, health_deep, insight_history, legal, metrics_latency, narratives, operator, prometheus, qa, signals, state, webapp
 from src.api.signal_store import SignalStore
 
 logger = logging.getLogger(__name__)
@@ -49,6 +50,7 @@ def create_app(
     embedder: Any = None,
     idempotency_store: Any = None,
     admin_action_log: Any = None,
+    latency_tracker: Any = None,
 ) -> FastAPI:
     """
     Build and return a fully-configured FastAPI application.
@@ -58,6 +60,11 @@ def create_app(
     """
     if signal_store is None:
         signal_store = SignalStore(db_path="./data/signals.db")
+    # Latency tracker is cheap (~1MB max @ default caps) and always
+    # useful; default-instantiate so /api/v1/metrics/latency is live
+    # even when the caller didn't wire one in.
+    if latency_tracker is None:
+        latency_tracker = LatencyTracker()
 
     app_state = AppState(
         signal_store=signal_store,
@@ -85,6 +92,7 @@ def create_app(
         embedder=embedder,
         idempotency_store=idempotency_store,
         admin_action_log=admin_action_log,
+        latency_tracker=latency_tracker,
     )
 
     @asynccontextmanager
@@ -122,7 +130,11 @@ def create_app(
 
     # ── Structured access log — outermost, so it sees final status codes
     # and total latency through every other middleware (OBS-2B.3).
-    app.add_middleware(StructuredAccessLogMiddleware)
+    # Latency tracker (OBS-2B.4) lives inside the middleware so each
+    # request feeds the rolling p50/p95/p99 window.
+    app.add_middleware(
+        StructuredAccessLogMiddleware, latency_tracker=latency_tracker
+    )
 
     # ── Geo-block (US/QC/UK + OFAC SDN) — P29 compliance ──────────────────
     app.add_middleware(GeoBlockMiddleware)
@@ -239,6 +251,7 @@ def create_app(
     app.include_router(enrich.router)
     app.include_router(audit.router)
     app.include_router(insight_history.router)
+    app.include_router(metrics_latency.router)
     app.include_router(webapp.router)
 
     return app

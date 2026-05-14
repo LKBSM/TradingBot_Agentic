@@ -104,10 +104,15 @@ class StructuredAccessLogMiddleware(BaseHTTPMiddleware):
         *,
         log_prefix: str = DEFAULT_LOG_PREFIX,
         access_logger: Optional[logging.Logger] = None,
+        latency_tracker: Optional[Any] = None,
     ):
         super().__init__(app)
         self._log_prefix = log_prefix
         self._logger = access_logger or logger
+        # Optional rolling-window latency tracker (OBS-2B.4). When wired,
+        # every request feeds the tracker so /api/v1/metrics/latency can
+        # serve p50/p95/p99 without needing a Prometheus side-car.
+        self._latency_tracker = latency_tracker
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         path = request.url.path
@@ -142,11 +147,19 @@ class StructuredAccessLogMiddleware(BaseHTTPMiddleware):
                 _last4((subscriber or {}).get("key_id")) if subscriber else "-"
             )
 
+            # Route template (e.g. ``/api/v1/insights/{insight_id}``) is
+            # set on the scope by Starlette's Router during dispatch;
+            # using it keeps high-cardinality ids out of the tracker.
+            # Falls back to the raw path when no route matched (404).
+            route = request.scope.get("route")
+            route_path = getattr(route, "path", None) or path
+
             entry = {
                 "evt": "http_access",
                 "request_id": request_id,
                 "method": request.method,
                 "path": path,
+                "route": route_path,
                 "status": status,
                 "latency_ms": latency_ms,
                 "client_ip": client_ip,
@@ -157,6 +170,18 @@ class StructuredAccessLogMiddleware(BaseHTTPMiddleware):
             # JSON in the message body keeps log shippers happy even when
             # the formatter isn't JSON-aware (LOG_FORMAT=text deployments).
             self._logger.info(json.dumps(entry, ensure_ascii=False, default=str))
+
+            # OBS-2B.4: feed the rolling-window latency tracker so
+            # /api/v1/metrics/latency stays current without a separate
+            # Prometheus side-car. Bucket by route template to keep
+            # cardinality bounded under arbitrary path params.
+            if self._latency_tracker is not None:
+                try:
+                    self._latency_tracker.record(
+                        route_path, latency_ms, status
+                    )
+                except Exception:  # pragma: no cover — tracker bug ≠ user 500
+                    logger.exception("latency_tracker.record failed")
 
             # Attach the id to the response for client correlation. When
             # the downstream raised, ``response`` may be None — Starlette

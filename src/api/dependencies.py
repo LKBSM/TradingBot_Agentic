@@ -47,3 +47,4 @@ class AppState:
     embedder: Optional[Any] = None          # src.intelligence.rag.embedders.Embedder (DATA-2B.7)
     idempotency_store: Optional[Any] = None # src.api.idempotency_store.IdempotencyStore (API-2B.2)
     admin_action_log: Optional[Any] = None  # src.audit.AdminActionLog (SECURITY-2B.1)
+    latency_tracker: Optional[Any] = None   # src.api.latency_tracker.LatencyTracker (OBS-2B.4)
