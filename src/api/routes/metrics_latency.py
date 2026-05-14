@@ -40,6 +40,35 @@ def _get_tracker(request: Request) -> Any:
 
 
 @router.get(
+    "/error-budget",
+    responses={
+        503: {"description": "Error budget watcher not configured"},
+    },
+)
+async def get_error_budget(
+    request: Request,
+    _: bool = Depends(require_admin),
+):
+    """Returns currently-firing SLO breaches + last 50 fire/clear events.
+
+    The watcher (OBS-2B.5) polls the LatencyTracker every 30s and
+    fires alerts via its sink. This endpoint surfaces *state* — what's
+    breaching right now — so an on-call dashboard can render it without
+    parsing the alert log.
+    """
+    watcher = getattr(request.app.state.app_state, "error_budget_watcher", None)
+    if watcher is None:
+        raise HTTPException(
+            status_code=503, detail="Error budget watcher not configured"
+        )
+    return {
+        "firing": watcher.firing_routes(),
+        "recent_events": watcher.recent_events(limit=50),
+        "running": watcher.is_running,
+    }
+
+
+@router.get(
     "/latency",
     responses={
         503: {"description": "Latency tracker not configured"},
