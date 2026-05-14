@@ -26,7 +26,7 @@ import os
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import JSONResponse, Response, StreamingResponse
 
 from src.api.auth import require_api_key
 
@@ -141,6 +141,108 @@ async def insight_history(
         headers={
             "ETag": f'W/"{head_hash[:16]}-{head_seq}"',
             "X-Ledger-Head-Seq": str(head_seq),
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
+# Bulk export — Sprint API-2B.6
+# ---------------------------------------------------------------------------
+
+
+DEFAULT_EXPORT_CAP = 50_000
+
+
+@router.get(
+    "/export",
+    responses={
+        400: {"description": "Invalid filter parameters"},
+        403: {"description": "Tier insufficient"},
+        503: {"description": "Ledger not configured"},
+    },
+)
+async def export_insights(
+    request: Request,
+    since: Optional[str] = Query(
+        None, max_length=40, description="ISO-8601 lower bound on inserted_at_utc"
+    ),
+    until: Optional[str] = Query(
+        None, max_length=40, description="ISO-8601 upper bound on inserted_at_utc"
+    ),
+    insight_id: Optional[str] = Query(None, max_length=64),
+    limit: int = Query(
+        DEFAULT_EXPORT_CAP,
+        ge=1,
+        le=DEFAULT_EXPORT_CAP,
+        description="Hard cap on rows streamed.",
+    ),
+    subscriber: dict = Depends(require_api_key),
+):
+    """Stream the ledger as NDJSON (one JSON object per line).
+
+    Every row carries ``{seq, insight_id, inserted_at_utc, entry_hash,
+    prev_hash, insight}`` — the full canonical body, not just the
+    metadata as ``/history`` exposes. Use this when reconciling a
+    broker's local store against ours after a multi-day outage.
+
+    Streams as ``application/x-ndjson`` so a Python client can
+    ``response.iter_lines()`` without buffering the full payload in
+    memory. The ``limit`` query param caps the export at 50k entries
+    by default to prevent accidental gigabyte downloads — paginate via
+    ``since=`` for larger ranges.
+    """
+    _check_tier(subscriber)
+    ledger = _get_ledger(request)
+
+    # Use paginate() chunked — the ledger's paginate handles filters
+    # well and gives us a natural batch size for backpressure.
+    chunk_size = min(500, limit)
+
+    def _stream():
+        emitted = 0
+        cursor = None
+        while emitted < limit:
+            try:
+                entries, next_cursor = ledger.paginate(
+                    cursor=cursor,
+                    limit=min(chunk_size, limit - emitted),
+                    insight_id=insight_id,
+                    since_iso=since,
+                    until_iso=until,
+                )
+            except ValueError as exc:
+                # paginate() validates the cursor + ISO bounds; surface
+                # as a final NDJSON error line so client streaming
+                # parsers see *something* before EOF.
+                yield (json.dumps({"error": str(exc)}) + "\n").encode("utf-8")
+                return
+            if not entries:
+                return
+            for e in entries:
+                row = {
+                    "seq": e.seq,
+                    "insight_id": e.insight_id,
+                    "inserted_at_utc": e.inserted_at_utc,
+                    "entry_hash": e.entry_hash,
+                    "prev_hash": e.prev_hash,
+                    "insight": json.loads(e.canonical_json),
+                }
+                yield (json.dumps(row, ensure_ascii=False) + "\n").encode("utf-8")
+                emitted += 1
+                if emitted >= limit:
+                    return
+            if next_cursor is None:
+                return
+            cursor = next_cursor
+
+    head_hash = ledger.head_hash
+    return StreamingResponse(
+        _stream(),
+        media_type="application/x-ndjson",
+        headers={
+            "X-Ledger-Head-Hash": head_hash,
+            "X-Ledger-Head-Seq": str(ledger.size),
+            "Content-Disposition": 'attachment; filename="insights_export.ndjson"',
         },
     )
 
