@@ -1,0 +1,466 @@
+# RAG Source Manifest — Sprint LLM-2B.2 (Aisha)
+#
+# Curated public sources indexed by Smart Sentinel's RAG. Each entry
+# carries metadata used by the retrieval ranker + audit trail. Adding
+# a source: append + commit; the ingestor (DATA-2B.7 embedder + chunker)
+# picks up new entries on next batch run.
+#
+# Categories: papers (academic, peer-reviewed), reports (institutional,
+# LBMA/WGC/BIS), data (auditable feeds, CFTC/FOMC), educational
+# (curated explanatory content). Authority score: 1 (lowest) → 5 (highest).
+# License must be a public URL or "fair use commentary" justification.
+
+version: 1
+last_updated: 2026-05-13
+
+sources:
+  # =====================================================================
+  # ACADEMIC PAPERS (15 entries)
+  # =====================================================================
+  - id: corsi-2009-har-rv
+    type: paper
+    title: "A Simple Approximate Long-Memory Model of Realized Volatility"
+    authors: ["Corsi, F."]
+    year: 2009
+    venue: "Journal of Financial Econometrics"
+    url: "https://academic.oup.com/jfec/article-abstract/7/2/174/856107"
+    language: en
+    authority: 5
+    license: "fair use commentary"
+    tags: [volatility, har-rv]
+
+  - id: lopez-de-prado-2018-cpcv
+    type: paper
+    title: "Advances in Financial Machine Learning, Chapter 7: Cross-Validation"
+    authors: ["López de Prado, M."]
+    year: 2018
+    venue: "Wiley"
+    language: en
+    authority: 5
+    license: "fair use commentary"
+    tags: [backtest, cpcv, methodology]
+
+  - id: bailey-lopez-2014-dsr
+    type: paper
+    title: "The Deflated Sharpe Ratio"
+    authors: ["Bailey, D.H.", "López de Prado, M."]
+    year: 2014
+    venue: "Journal of Portfolio Management"
+    url: "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2460551"
+    language: en
+    authority: 5
+    license: "fair use commentary"
+    tags: [sharpe, deflation, methodology]
+
+  - id: bailey-pbo-2017
+    type: paper
+    title: "The Probability of Backtest Overfitting"
+    authors: ["Bailey, D.H.", "Borwein, J.", "López de Prado, M.", "Zhu, J."]
+    year: 2017
+    venue: "Journal of Computational Finance"
+    url: "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2326253"
+    language: en
+    authority: 5
+    license: "fair use commentary"
+    tags: [overfitting, backtest, methodology]
+
+  - id: hamilton-1989-regime
+    type: paper
+    title: "A New Approach to the Economic Analysis of Nonstationary Time Series and the Business Cycle"
+    authors: ["Hamilton, J.D."]
+    year: 1989
+    venue: "Econometrica"
+    url: "https://www.jstor.org/stable/1912559"
+    language: en
+    authority: 5
+    license: "fair use commentary"
+    tags: [regime, hmm]
+
+  - id: lo-2004-amh
+    type: paper
+    title: "The Adaptive Markets Hypothesis"
+    authors: ["Lo, A.W."]
+    year: 2004
+    venue: "Journal of Portfolio Management"
+    url: "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=602222"
+    language: en
+    authority: 5
+    license: "fair use commentary"
+    tags: [efficiency, theory]
+
+  - id: harvey-liu-zhu-2016-x-section
+    type: paper
+    title: "...and the Cross-Section of Expected Returns"
+    authors: ["Harvey, C.R.", "Liu, Y.", "Zhu, H."]
+    year: 2016
+    venue: "Review of Financial Studies"
+    url: "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2249314"
+    language: en
+    authority: 5
+    license: "fair use commentary"
+    tags: [factor-zoo, overfitting]
+
+  - id: andersen-bollerslev-2001-rv
+    type: paper
+    title: "The Distribution of Realized Exchange Rate Volatility"
+    authors: ["Andersen, T.G.", "Bollerslev, T.", "Diebold, F.X.", "Labys, P."]
+    year: 2001
+    venue: "Journal of the American Statistical Association"
+    language: en
+    authority: 5
+    license: "fair use commentary"
+    tags: [volatility, fx]
+
+  - id: adams-cot-2005
+    type: paper
+    title: "Speculative Trader Positions and Gold Price Predictability"
+    authors: ["Adams, Z.", "Glück, T."]
+    year: 2005
+    venue: "Journal of Banking & Finance"
+    language: en
+    authority: 4
+    license: "fair use commentary"
+    tags: [cot, gold]
+
+  - id: bemporad-2018-jumpmodel
+    type: paper
+    title: "Statistical Jump Models for Time Series"
+    authors: ["Bemporad, A.", "Breschi, V.", "Piga, D."]
+    year: 2018
+    venue: "Automatica"
+    language: en
+    authority: 4
+    license: "fair use commentary"
+    tags: [regime, jump-model, ml]
+
+  - id: cont-2001-stylized-facts
+    type: paper
+    title: "Empirical Properties of Asset Returns: Stylized Facts and Statistical Issues"
+    authors: ["Cont, R."]
+    year: 2001
+    venue: "Quantitative Finance"
+    language: en
+    authority: 5
+    license: "fair use commentary"
+    tags: [stylized-facts, returns]
+
+  - id: lewis-2020-rag
+    type: paper
+    title: "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks"
+    authors: ["Lewis, P.", "et al."]
+    year: 2020
+    venue: "NeurIPS"
+    url: "https://arxiv.org/abs/2005.11401"
+    language: en
+    authority: 5
+    license: "fair use commentary"
+    tags: [rag, llm]
+
+  - id: es-2023-ragas
+    type: paper
+    title: "RAGAS: Automated Evaluation of Retrieval Augmented Generation"
+    authors: ["Es, S.", "et al."]
+    year: 2023
+    venue: "arXiv:2309.15217"
+    url: "https://arxiv.org/abs/2309.15217"
+    language: en
+    authority: 4
+    license: "fair use commentary"
+    tags: [rag, evaluation]
+
+  - id: lundberg-2018-treeshap
+    type: paper
+    title: "Consistent Individualized Feature Attribution for Tree Ensembles"
+    authors: ["Lundberg, S.", "Erion, G.G.", "Lee, S."]
+    year: 2018
+    venue: "arXiv:1802.03888"
+    url: "https://arxiv.org/abs/1802.03888"
+    language: en
+    authority: 4
+    license: "fair use commentary"
+    tags: [shap, explainability]
+
+  - id: tsay-2010-financial-ts
+    type: paper
+    title: "Analysis of Financial Time Series, 3rd ed."
+    authors: ["Tsay, R.S."]
+    year: 2010
+    venue: "Wiley"
+    language: en
+    authority: 5
+    license: "fair use commentary"
+    tags: [textbook, time-series]
+
+  # =====================================================================
+  # INSTITUTIONAL REPORTS (15 entries)
+  # =====================================================================
+  - id: wgc-gdt-2025-q4
+    type: report
+    title: "Gold Demand Trends Q4 2025"
+    authors: ["World Gold Council"]
+    year: 2025
+    url: "https://www.gold.org/goldhub/research/gold-demand-trends"
+    language: en
+    authority: 5
+    license: "WGC permission via citation"
+    tags: [gold, demand, macro]
+
+  - id: lbma-precious-metals-2024
+    type: report
+    title: "LBMA Precious Metals Market Survey 2024"
+    authors: ["London Bullion Market Association"]
+    year: 2024
+    url: "https://www.lbma.org.uk/publications"
+    language: en
+    authority: 5
+    license: "fair use commentary"
+    tags: [gold, market-structure]
+
+  - id: bis-quarterly-2025-q3
+    type: report
+    title: "BIS Quarterly Review Q3 2025"
+    authors: ["Bank for International Settlements"]
+    year: 2025
+    url: "https://www.bis.org/publ/qtrpdf"
+    language: en
+    authority: 5
+    license: "fair use commentary"
+    tags: [macro, central-banks]
+
+  - id: imf-weo-2025-oct
+    type: report
+    title: "IMF World Economic Outlook October 2025"
+    authors: ["International Monetary Fund"]
+    year: 2025
+    url: "https://www.imf.org/en/Publications/WEO"
+    language: en
+    authority: 5
+    license: "fair use commentary"
+    tags: [macro, global]
+
+  - id: fed-fomc-statement-template
+    type: data
+    title: "FOMC Statement (template — refreshed per release)"
+    authors: ["Federal Reserve"]
+    year: 2026
+    url: "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm"
+    language: en
+    authority: 5
+    license: "public domain (US Federal Government)"
+    tags: [fomc, monetary-policy]
+
+  - id: ecb-press-conf-template
+    type: data
+    title: "ECB Monetary Policy Press Conference (template)"
+    authors: ["European Central Bank"]
+    year: 2026
+    url: "https://www.ecb.europa.eu/press/pressconf/html/index.en.html"
+    language: en
+    authority: 5
+    license: "ECB public domain"
+    tags: [ecb, monetary-policy]
+
+  - id: cftc-disagg-cot
+    type: data
+    title: "CFTC Disaggregated COT Reports"
+    authors: ["Commodity Futures Trading Commission"]
+    year: 2026
+    url: "https://www.cftc.gov/MarketReports/CommitmentsofTraders/index.htm"
+    language: en
+    authority: 5
+    license: "public domain (US Federal Government)"
+    tags: [cot, futures]
+
+  - id: bls-cpi-template
+    type: data
+    title: "BLS CPI Monthly Release (template)"
+    authors: ["Bureau of Labor Statistics"]
+    year: 2026
+    url: "https://www.bls.gov/cpi/"
+    language: en
+    authority: 5
+    license: "public domain (US Federal Government)"
+    tags: [cpi, inflation]
+
+  - id: bls-nfp-template
+    type: data
+    title: "BLS Employment Situation Summary (NFP) — monthly template"
+    authors: ["Bureau of Labor Statistics"]
+    year: 2026
+    url: "https://www.bls.gov/news.release/empsit.toc.htm"
+    language: en
+    authority: 5
+    license: "public domain (US Federal Government)"
+    tags: [nfp, employment]
+
+  - id: fred-dgs10
+    type: data
+    title: "FRED DGS10 — 10-Year Treasury Constant Maturity Rate"
+    authors: ["Federal Reserve Bank of St. Louis"]
+    year: 2026
+    url: "https://fred.stlouisfed.org/series/DGS10"
+    language: en
+    authority: 5
+    license: "FRED terms of use"
+    tags: [yields, treasury]
+
+  - id: fred-dfii10
+    type: data
+    title: "FRED DFII10 — 10-Year TIPS Constant Maturity"
+    authors: ["Federal Reserve Bank of St. Louis"]
+    year: 2026
+    url: "https://fred.stlouisfed.org/series/DFII10"
+    language: en
+    authority: 5
+    license: "FRED terms of use"
+    tags: [yields, tips, real-yields]
+
+  - id: fred-t10yie
+    type: data
+    title: "FRED T10YIE — 10-Year Breakeven Inflation Rate"
+    authors: ["Federal Reserve Bank of St. Louis"]
+    year: 2026
+    url: "https://fred.stlouisfed.org/series/T10YIE"
+    language: en
+    authority: 5
+    license: "FRED terms of use"
+    tags: [inflation, breakeven]
+
+  - id: bce-fr-rapport-stab-fin-2024
+    type: report
+    title: "Rapport sur la stabilité financière en France 2024"
+    authors: ["Banque de France"]
+    year: 2024
+    url: "https://www.banque-france.fr/publications/rapports"
+    language: fr
+    authority: 5
+    license: "Banque de France public domain"
+    tags: [macro, france]
+
+  - id: amf-position-2024-09
+    type: report
+    title: "Position AMF n°2024-09 sur les finfluenceurs"
+    authors: ["Autorité des Marchés Financiers"]
+    year: 2024
+    url: "https://www.amf-france.org/fr/reglementation"
+    language: fr
+    authority: 5
+    license: "AMF public domain"
+    tags: [compliance, finfluencer, fr]
+
+  - id: ue-2024-2811
+    type: report
+    title: "Règlement (UE) 2024/2811 — marchés d'instruments financiers"
+    authors: ["Conseil de l'UE"]
+    year: 2024
+    url: "https://eur-lex.europa.eu/eli/reg/2024/2811"
+    language: fr
+    authority: 5
+    license: "EUR-Lex public domain"
+    tags: [compliance, mifid]
+
+  # =====================================================================
+  # EDUCATIONAL (10 entries)
+  # =====================================================================
+  - id: investopedia-smc
+    type: educational
+    title: "Smart Money Concepts (SMC) — overview"
+    authors: ["Investopedia"]
+    year: 2024
+    url: "https://www.investopedia.com/"
+    language: en
+    authority: 3
+    license: "fair use commentary"
+    tags: [smc, education]
+
+  - id: babypips-gold
+    type: educational
+    title: "Trading Gold (XAU/USD) — beginner guide"
+    authors: ["BabyPips"]
+    year: 2024
+    url: "https://www.babypips.com/"
+    language: en
+    authority: 3
+    license: "fair use commentary"
+    tags: [gold, education]
+
+  - id: bourse-direct-or-2024
+    type: educational
+    title: "Investir dans l'or — guide"
+    authors: ["Bourse Direct"]
+    year: 2024
+    language: fr
+    authority: 3
+    license: "fair use commentary"
+    tags: [gold, fr, education]
+
+  - id: wsj-gold-curve-2025
+    type: educational
+    title: "WSJ Markets Gold Coverage 2025"
+    authors: ["Wall Street Journal"]
+    year: 2025
+    language: en
+    authority: 4
+    license: "fair use commentary"
+    tags: [gold, news]
+
+  - id: ft-commodities-2025
+    type: educational
+    title: "FT Commodities Coverage 2025"
+    authors: ["Financial Times"]
+    year: 2025
+    language: en
+    authority: 4
+    license: "fair use commentary"
+    tags: [commodities, news]
+
+  - id: bloomberg-gold-2025
+    type: educational
+    title: "Bloomberg Gold Coverage 2025"
+    authors: ["Bloomberg"]
+    year: 2025
+    language: en
+    authority: 4
+    license: "fair use commentary"
+    tags: [gold, news]
+
+  - id: kitco-gold-news-2025
+    type: educational
+    title: "Kitco News — Gold Market Daily 2025"
+    authors: ["Kitco"]
+    year: 2025
+    url: "https://www.kitco.com/news/"
+    language: en
+    authority: 3
+    license: "fair use commentary"
+    tags: [gold, news]
+
+  - id: reuters-gold-2025
+    type: educational
+    title: "Reuters Gold Markets Coverage 2025"
+    authors: ["Reuters"]
+    year: 2025
+    language: en
+    authority: 4
+    license: "fair use commentary"
+    tags: [gold, news]
+
+  - id: forexlive-gold
+    type: educational
+    title: "ForexLive Gold Daily"
+    authors: ["ForexLive"]
+    year: 2025
+    language: en
+    authority: 3
+    license: "fair use commentary"
+    tags: [gold, fx, news]
+
+  - id: zerohedge-gold-context
+    type: educational
+    title: "Zero Hedge Gold Context (use with caution — author bias)"
+    authors: ["Zero Hedge"]
+    year: 2025
+    language: en
+    authority: 2
+    license: "fair use commentary"
+    tags: [gold, news, biased-author]
