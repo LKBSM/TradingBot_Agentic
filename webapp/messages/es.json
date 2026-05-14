@@ -1,0 +1,49 @@
+{
+  "nav": {
+    "dashboard": "Panel", "narratives": "Análisis", "transparency": "Transparencia",
+    "glossary": "Glosario", "pricing": "Precios", "chat": "Chat IA",
+    "login": "Iniciar sesión", "language": "Idioma"
+  },
+  "landing": {
+    "hero_title": "Comprende el mercado del oro sin que te digan qué hacer.",
+    "hero_subtitle": "Smart Sentinel AI genera análisis contextuales con fuentes para XAU/USD — transparente por diseño.",
+    "hero_cta_primary": "Empieza gratis", "hero_cta_secondary": "Ver transparencia",
+    "value_1_title": "Narrativa de IA con fuentes",
+    "value_1_body": "Cada análisis cita sus fuentes. Sin alucinación, sin recomendación.",
+    "value_2_title": "Transparencia radical",
+    "value_2_body": "Curva de paper-trading publicada en vivo, drawdowns incluidos. Sin reclamar edge.",
+    "value_3_title": "Contexto multicapa",
+    "value_3_body": "Régimen de volatilidad, correlaciones cross-asset, calendario macro — para comprender, no para operar."
+  },
+  "disclaimer": {
+    "short": "Análisis algorítmico educativo. No es asesoramiento de inversión.",
+    "long": "Smart Sentinel AI produce análisis editoriales contextuales, no recomendaciones personalizadas. Cumple UE 2024/2811 y la regulación de finfluencers de marzo de 2026."
+  },
+  "transparency": {
+    "title": "Transparencia radical",
+    "subtitle": "Nuestra curva de paper-trading en vivo, drawdowns incluidos.",
+    "disclaimer": "Demostración de paper-trading. Smart Sentinel NO pretende poseer un edge. Esta curva es educativa.",
+    "stats_title": "Estadísticas acumuladas",
+    "n_trades": "Operaciones", "win_rate": "Tasa de aciertos", "total_r": "R acumulado",
+    "max_dd": "Drawdown máx.", "sharpe": "Sharpe por operación"
+  },
+  "glossary": {
+    "title": "Glosario",
+    "subtitle": "50 términos técnicos usados en los análisis, explicados de forma sencilla."
+  },
+  "pricing": {
+    "title": "Precios simples y transparentes",
+    "subtitle": "Prueba de 14 días sin tarjeta en LITE y PRO.",
+    "free_title": "FREE", "lite_title": "LITE", "pro_title": "PRO", "pro_plus_title": "PRO+",
+    "billed_monthly": "/mes", "cta_signup": "Empezar", "cta_contact": "Contáctanos"
+  },
+  "chat": {
+    "title": "Chat IA",
+    "placeholder": "Haz una pregunta sobre el mercado XAU...",
+    "send": "Enviar", "sources_label": "Fuentes citadas"
+  },
+  "footer": {
+    "copyright": "© 2026 Smart Sentinel AI. Todos los derechos reservados.",
+    "terms": "Términos", "privacy": "Privacidad", "contact": "Contacto"
+  }
+}
