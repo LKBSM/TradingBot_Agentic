@@ -378,6 +378,64 @@ class HashChainLedger:
         return entries, next_cursor
 
     # ------------------------------------------------------------------
+    # Restore (DATA-2B.9)
+    # ------------------------------------------------------------------
+
+    def restore_from_entries(self, entries: Iterable[LedgerEntry]) -> int:
+        """Bulk-load pre-hashed entries from a snapshot archive.
+
+        DATA-2B.9: the snapshot CLI exports the chain to JSONL and this
+        method re-ingests it. Unlike ``append()`` which mints a fresh
+        seq/timestamp/hash, ``restore_from_entries`` preserves the
+        original fields verbatim — so the chain reproduces bit-for-bit
+        on the new DB and ``verify()`` still passes.
+
+        Refuses to run against a non-empty DB to avoid silent
+        corruption (use a fresh path or :memory: target).
+
+        Returns the number of entries inserted. Calls ``verify()`` at
+        the end and raises ``ValueError`` if the rehydrated chain
+        doesn't pass — that means the archive was tampered with.
+        """
+        with self._lock:
+            existing = self._writer_conn.execute(
+                "SELECT COUNT(*) FROM ledger"
+            ).fetchone()[0]
+        if existing:
+            raise ValueError(
+                f"cannot restore into non-empty ledger ({existing} entries "
+                "already present); use a fresh DB path"
+            )
+
+        inserted = 0
+        with self._lock:
+            for e in entries:
+                self._writer_conn.execute(
+                    """
+                    INSERT INTO ledger
+                      (seq, inserted_at_utc, insight_id, canonical_json,
+                       prev_hash, entry_hash)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        e.seq, e.inserted_at_utc, e.insight_id,
+                        e.canonical_json, e.prev_hash, e.entry_hash,
+                    ),
+                )
+                self._last_hash = e.entry_hash
+                inserted += 1
+
+        # Re-verify the rebuilt chain end-to-end. If the archive was
+        # tampered with between snapshot and restore, this catches it.
+        result = self.verify()
+        if not result.ok:
+            raise ValueError(
+                f"restored chain failed verification at seq "
+                f"{result.broken_at_seq}: {result.reason}"
+            )
+        return inserted
+
+    # ------------------------------------------------------------------
     # Verification
     # ------------------------------------------------------------------
 
