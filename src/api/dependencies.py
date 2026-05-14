@@ -52,3 +52,4 @@ class AppState:
     error_budget_watcher: Optional[Any] = None   # src.api.error_budget_watcher.ErrorBudgetWatcher (OBS-2B.5)
     webhook_drain_worker: Optional[Any] = None   # src.delivery.webhook_drain_worker.WebhookDrainWorker (OBS-2B.6)
     narrative_quality_tracker: Optional[Any] = None  # src.intelligence.narrative_quality.NarrativeQualityTracker (LLM-2B.7)
+    stripe_client: Optional[Any] = None              # src.billing.stripe_client.StripeClient (INFRA-2B.3)
