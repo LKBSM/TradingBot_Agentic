@@ -40,6 +40,40 @@ def _get_tracker(request: Request) -> Any:
 
 
 @router.get(
+    "/webhook-drain",
+    responses={
+        503: {"description": "Webhook drain worker not configured"},
+    },
+)
+async def get_webhook_drain_stats(
+    request: Request,
+    _: bool = Depends(require_admin),
+):
+    """Surface the WebhookDrainWorker stats — cycles_run, successes,
+    retried, dead_lettered, skipped_not_due, last_cycle_at, queue
+    pending + dead_letter sizes.
+
+    OBS-2B.6: this is the read-only view ops needs to spot a
+    misbehaving subscriber. Sample interpretations:
+
+    - ``dead_lettered > 0`` increasing every cycle → the subscriber's
+      endpoint is broken; check ``queue.dead_letter()`` body for
+      ``last_error`` and either fix the subscriber or
+      ``requeue_dead_letter()`` after they confirm a fix.
+    - ``retried`` much greater than ``successes`` → flap; investigate
+      transport timeouts.
+    - ``running=False`` after boot → the worker died at startup and
+      every webhook is queueing indefinitely.
+    """
+    worker = getattr(request.app.state.app_state, "webhook_drain_worker", None)
+    if worker is None:
+        raise HTTPException(
+            status_code=503, detail="Webhook drain worker not configured"
+        )
+    return worker.stats()
+
+
+@router.get(
     "/error-budget",
     responses={
         503: {"description": "Error budget watcher not configured"},

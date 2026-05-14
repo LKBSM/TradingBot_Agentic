@@ -106,6 +106,7 @@ def create_app(
     latency_tracker: Any = None,
     shutdown_coordinator: Any = None,
     error_budget_watcher: Any = None,
+    webhook_drain_worker: Any = None,
 ) -> FastAPI:
     """
     Build and return a fully-configured FastAPI application.
@@ -152,6 +153,7 @@ def create_app(
         latency_tracker=latency_tracker,
         shutdown_coordinator=shutdown_coordinator,
         error_budget_watcher=error_budget_watcher,
+        webhook_drain_worker=webhook_drain_worker,
     )
 
     @asynccontextmanager

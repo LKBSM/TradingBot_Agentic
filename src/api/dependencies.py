@@ -50,3 +50,4 @@ class AppState:
     latency_tracker: Optional[Any] = None   # src.api.latency_tracker.LatencyTracker (OBS-2B.4)
     shutdown_coordinator: Optional[Any] = None  # src.api.shutdown.GracefulShutdownCoordinator (INFRA-2B.11)
     error_budget_watcher: Optional[Any] = None   # src.api.error_budget_watcher.ErrorBudgetWatcher (OBS-2B.5)
+    webhook_drain_worker: Optional[Any] = None   # src.delivery.webhook_drain_worker.WebhookDrainWorker (OBS-2B.6)
