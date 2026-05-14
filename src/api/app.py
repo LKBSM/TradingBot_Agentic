@@ -17,6 +17,7 @@ from src.api.dependencies import AppState
 from src.api.latency_tracker import LatencyTracker
 from src.api.middleware.access_log import StructuredAccessLogMiddleware
 from src.api.middleware.geo_block import GeoBlockMiddleware
+from src.api.middleware.rate_limit_headers import RateLimitHeadersMiddleware
 from src.api.models import ErrorResponse
 from src.api.routes import admin, admin_audit, audit, dashboard, enrich, health, health_deep, insight_history, legal, metrics_latency, narratives, operator, prometheus, qa, signals, state, webapp
 from src.api.shutdown import GracefulShutdownCoordinator
@@ -202,6 +203,14 @@ def create_app(
     # request feeds the rolling p50/p95/p99 window.
     app.add_middleware(
         StructuredAccessLogMiddleware, latency_tracker=latency_tracker
+    )
+
+    # ── Rate-limit response headers (API-2B.4) — appends X-RateLimit-*
+    # to every authenticated /api/v1/* response so clients can
+    # self-throttle before they hit 429. No-op when the tier limiter
+    # isn't wired.
+    app.add_middleware(
+        RateLimitHeadersMiddleware, tier_rate_limiter=tier_rate_limiter
     )
 
     # ── Geo-block (US/QC/UK + OFAC SDN) — P29 compliance ──────────────────

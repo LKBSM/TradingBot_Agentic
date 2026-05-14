@@ -16,10 +16,17 @@ from fastapi import Header, HTTPException, Request
 
 logger = logging.getLogger(__name__)
 
-# When SENTINEL_TESTING_MODE=1 (default), all endpoints are accessible
-# without API keys and grant INSTITUTIONAL-level access for personal testing.
-# Set to "0" when ready to enforce tier-based authentication.
-TESTING_MODE = os.environ.get("SENTINEL_TESTING_MODE", "1") == "1"
+# Auth gate. SENTINEL_TESTING_MODE=1 bypasses API keys and grants
+# INSTITUTIONAL-level access for personal testing/dev. Default is now "0"
+# (fail-closed) — a deployment without explicit env var configuration
+# will require valid API keys, eliminating the silent open-prod risk.
+# Flip to "1" only on local dev or in CI where auth bypass is intentional.
+TESTING_MODE = os.environ.get("SENTINEL_TESTING_MODE", "0") == "1"
+if TESTING_MODE:
+    logger.warning(
+        "SENTINEL_TESTING_MODE=1 — auth bypassed, all endpoints grant "
+        "INSTITUTIONAL access. DO NOT enable in production."
+    )
 
 
 # =============================================================================
@@ -37,13 +44,25 @@ class KeyStore:
 
     SCHEMA_VERSION = 1
 
+    # In-memory verify_key cache (key_hash → (subscriber_dict, expiry_ts)).
+    # Eliminates ~70% of SQL SELECT api_keys hits on every authenticated
+    # request (eval 11). Invalidated on create_key / revoke_key. 60s TTL
+    # keeps revocation lag bounded; tune lower for stricter security.
+    _CACHE_TTL_S = 60.0
+
     def __init__(self, db_path: str = "./data/api_keys.db"):
         self._db_path = Path(db_path)
         self._lock = threading.RLock()
+        self._verify_cache: Dict[str, tuple[Optional[Dict[str, Any]], float]] = {}
 
         self._db_path.parent.mkdir(parents=True, exist_ok=True)
         self._init_database()
         logger.info("KeyStore initialised at %s", self._db_path)
+
+    def _cache_invalidate(self) -> None:
+        """Drop the entire verify cache. Called on key create/revoke."""
+        with self._lock:
+            self._verify_cache.clear()
 
     # --------------------------------------------------------------------- #
     # SQLite helpers
@@ -129,14 +148,29 @@ class KeyStore:
                 key_id = cur.lastrowid
             finally:
                 conn.close()
-
+        self._cache_invalidate()
         return {"key_id": key_id, "api_key": raw_key, "label": label}
 
     def verify_key(self, raw_key: str) -> Optional[Dict[str, Any]]:
-        """Verify a raw API key. Returns subscriber dict or None."""
-        key_hash = self._hash_key(raw_key)
+        """Verify a raw API key. Returns subscriber dict or None.
 
+        Cached for ``_CACHE_TTL_S`` seconds (60s default) to avoid hitting
+        SQLite on every authenticated request. Cache is invalidated on
+        create_key / revoke_key, so revocation lag is bounded by TTL.
+        """
+        key_hash = self._hash_key(raw_key)
+        now = time.time()
+
+        # Cache lookup
         with self._lock:
+            cached = self._verify_cache.get(key_hash)
+            if cached is not None:
+                subscriber, expiry = cached
+                if now < expiry:
+                    return subscriber
+                # expired — fall through to DB
+                self._verify_cache.pop(key_hash, None)
+
             conn = self._get_connection()
             try:
                 cur = conn.execute(
@@ -148,16 +182,15 @@ class KeyStore:
             finally:
                 conn.close()
 
-        if row is None:
-            return None
-        if not row["is_active"]:
-            return None
-
-        return {
-            "key_id": row["id"],
-            "label": row["label"],
-            "created_at": row["created_at"],
-        }
+            subscriber: Optional[Dict[str, Any]] = None
+            if row is not None and row["is_active"]:
+                subscriber = {
+                    "key_id": row["id"],
+                    "label": row["label"],
+                    "created_at": row["created_at"],
+                }
+            self._verify_cache[key_hash] = (subscriber, now + self._CACHE_TTL_S)
+            return subscriber
 
     def revoke_key(self, key_id: int) -> bool:
         """Soft-delete a key (is_active=0). Returns True if found."""
@@ -168,9 +201,11 @@ class KeyStore:
                     "UPDATE api_keys SET is_active = 0 WHERE id = ?",
                     (key_id,),
                 )
-                return cur.rowcount > 0
+                found = cur.rowcount > 0
             finally:
                 conn.close()
+        self._cache_invalidate()
+        return found
 
     def list_keys(self) -> List[Dict[str, Any]]:
         """List all keys — metadata only, never exposes hashes."""
@@ -263,13 +298,17 @@ async def require_api_key(
     In TESTING_MODE, skips auth and returns full-access subscriber.
     """
     if TESTING_MODE:
-        return {
+        subscriber = {
             "key_id": 0,
             "label": "testing",
             "tier": "INSTITUTIONAL",
             "user_id": 0,
             "testing_mode": True,
+            "api_key": "testing",
         }
+        # Surface for downstream middleware (access log, rate-limit headers)
+        request.state.subscriber = subscriber
+        return subscriber
 
     key_store: Optional[KeyStore] = getattr(
         request.app.state.app_state, "key_store", None
@@ -298,11 +337,33 @@ async def require_api_key(
             subscriber["user_id"] = user["user_id"]
             subscriber["tier"] = user["tier"]
             subscriber["telegram_chat_id"] = user.get("telegram_chat_id")
+            # Daily quota gate (eval 11 finding: tier_manager.check_rate_limit
+            # was implemented but never called — FREE could spend 144 000
+            # calls/day via the per-minute KeyStore ceiling). This wires the
+            # tier-quotas advertised on the pricing grid.
+            try:
+                if not tier_manager.check_rate_limit(user["user_id"]):
+                    raise HTTPException(
+                        status_code=429,
+                        detail=f"Daily quota exceeded for tier {user['tier']}",
+                    )
+                tier_manager.record_usage(user["user_id"], request.url.path)
+            except HTTPException:
+                raise
+            except Exception as exc:
+                # Tier check failure must NOT crash auth — log + continue.
+                logger.warning("tier rate-limit check failed for user %s: %s", user["user_id"], exc)
         else:
             subscriber["tier"] = "FREE"
     else:
         subscriber["tier"] = "FREE"
 
+    # Keep the raw key around for downstream middleware that needs to
+    # key into per-tier counters (rate-limit headers, etc). It's already
+    # in memory at this point; stashing it on the request lets us avoid
+    # re-deriving from the X-API-Key header in three different places.
+    subscriber["api_key"] = x_api_key
+    request.state.subscriber = subscriber
     return subscriber
 
 
