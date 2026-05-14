@@ -250,6 +250,44 @@ class WebhookDeliveryQueue:
                 return None
             return min(d.next_attempt_at for d in self._pending)
 
+    def cancel(self, delivery_id: str) -> str:
+        """Drop a delivery — broker confirmed receipt (API-2B.5).
+
+        Returns one of:
+            "pending"    — found in pending queue and removed,
+            "dead"       — found in dead-letter list and removed,
+            "not_found"  — no delivery with that id (already acked,
+                            never existed, or successfully delivered
+                            and pruned in a prior drain).
+
+        Idempotent: a second ack on the same id returns ``not_found``
+        without raising. Brokers can safely retry the ack if their
+        own request times out.
+        """
+        if not delivery_id:
+            raise ValueError("delivery_id is required")
+        with self._lock:
+            for i, d in enumerate(self._pending):
+                if d.delivery_id == delivery_id:
+                    self._pending.pop(i)
+                    return "pending"
+            for i, d in enumerate(self._dead):
+                if d.delivery_id == delivery_id:
+                    self._dead.pop(i)
+                    return "dead"
+        return "not_found"
+
+    def find(self, delivery_id: str) -> Optional[WebhookDelivery]:
+        """Look up a delivery in pending or dead-letter, or None."""
+        with self._lock:
+            for d in self._pending:
+                if d.delivery_id == delivery_id:
+                    return d
+            for d in self._dead:
+                if d.delivery_id == delivery_id:
+                    return d
+        return None
+
     def requeue_dead_letter(self, delivery_id: str) -> bool:
         """Move one dead-letter delivery back to the pending queue with
         a fresh attempt counter. Returns True if found."""

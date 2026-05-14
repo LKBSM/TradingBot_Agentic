@@ -19,7 +19,7 @@ from src.api.middleware.access_log import StructuredAccessLogMiddleware
 from src.api.middleware.geo_block import GeoBlockMiddleware
 from src.api.middleware.rate_limit_headers import RateLimitHeadersMiddleware
 from src.api.models import ErrorResponse
-from src.api.routes import admin, admin_audit, audit, dashboard, enrich, health, health_deep, insight_history, legal, metrics_latency, narratives, operator, prometheus, qa, signals, state, webapp
+from src.api.routes import admin, admin_audit, audit, dashboard, enrich, health, health_deep, insight_history, legal, metrics_latency, narratives, operator, prometheus, qa, signals, state, webapp, webhook_ack
 from src.api.shutdown import GracefulShutdownCoordinator
 from src.api.signal_store import SignalStore
 
@@ -329,6 +329,7 @@ def create_app(
     app.include_router(audit.router)
     app.include_router(insight_history.router)
     app.include_router(metrics_latency.router)
+    app.include_router(webhook_ack.router)
     app.include_router(webapp.router)
 
     return app
