@@ -210,6 +210,72 @@ def _check_tier_rate_limiter(limiter: Any) -> dict:
 # ---------------------------------------------------------------------------
 
 
+# INFRA-2B.12 — per-app response cache. A watchdog hitting
+# /health/deep every 5s × per-pod replica × 4 zones can easily issue
+# >100 SQLite verify() walks per minute. The probe content is
+# meaningful for ~30s; serving the same body inside that window
+# protects the subsystems being probed from probe-induced load.
+#
+# The cache lives on app_state (not module-level) so test fixtures
+# that create fresh apps don't leak state across tests.
+_CACHE_TTL_SECONDS = 30.0
+_CACHE_ATTR = "_health_deep_cache"
+
+
+def _now() -> float:
+    return time.monotonic()
+
+
+def _get_cache(app_state: Any) -> dict:
+    cache = getattr(app_state, _CACHE_ATTR, None)
+    if cache is None:
+        cache = {"body": None, "status": 200, "expires_at": 0.0}
+        try:
+            setattr(app_state, _CACHE_ATTR, cache)
+        except Exception:
+            # AppState is a dataclass — setattr may fail on frozen
+            # variants. In that case fall through to module-level
+            # so the cache still works (just not test-isolated).
+            pass
+    return cache
+
+
+def _build_body(app_state: Any) -> tuple[dict, int]:
+    started = time.perf_counter()
+    checks = {
+        "audit_ledger": _check_audit_ledger(getattr(app_state, "audit_ledger", None)),
+        "rag_pipeline": _check_rag_pipeline(getattr(app_state, "rag_pipeline", None)),
+        "cost_quota": _check_cost_quota(getattr(app_state, "cost_quota", None)),
+        "webhook_queue": _check_webhook_queue(getattr(app_state, "webhook_queue", None)),
+        "tier_rate_limiter": _check_tier_rate_limiter(
+            getattr(app_state, "tier_rate_limiter", None)
+        ),
+        "embedder": _check_embedder(getattr(app_state, "embedder", None)),
+    }
+    overall_ok = all(c["ok"] for c in checks.values())
+    body = {
+        "ok": overall_ok,
+        "checked_at_utc": datetime.now(timezone.utc)
+        .isoformat(timespec="seconds")
+        .replace("+00:00", "Z"),
+        "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+        "checks": checks,
+    }
+    return body, (200 if overall_ok else 503)
+
+
+def _reset_cache_for_tests(app_state: Any = None) -> None:
+    """Public for tests — drop the cached probe so the next call recomputes.
+
+    Pass an explicit app_state to clear that app's cache; pass None
+    to clear the module-level fallback (legacy behaviour).
+    """
+    if app_state is not None:
+        cache = _get_cache(app_state)
+        cache["body"] = None
+        cache["expires_at"] = 0.0
+
+
 @router.get(
     "/api/v1/health/deep",
     responses={
@@ -224,29 +290,38 @@ async def health_deep(request: Request):
     that aren't wired in are skipped (``configured=False``). 503 when
     any configured probe fails. The body always carries every check so
     dashboards can pinpoint the failed subsystem.
+
+    Response is cached for ``_CACHE_TTL_SECONDS`` (30s) — a noisy
+    watchdog can't DoS our SQLite + RAG retrieval. The
+    ``X-Health-Cache`` response header reports ``hit`` or ``miss`` so
+    operators can verify caching is actually happening.
     """
     app_state = request.app.state.app_state
-    started = time.perf_counter()
+    cache = _get_cache(app_state)
+    now = _now()
 
-    checks = {
-        "audit_ledger": _check_audit_ledger(getattr(app_state, "audit_ledger", None)),
-        "rag_pipeline": _check_rag_pipeline(getattr(app_state, "rag_pipeline", None)),
-        "cost_quota": _check_cost_quota(getattr(app_state, "cost_quota", None)),
-        "webhook_queue": _check_webhook_queue(getattr(app_state, "webhook_queue", None)),
-        "tier_rate_limiter": _check_tier_rate_limiter(
-            getattr(app_state, "tier_rate_limiter", None)
-        ),
-        "embedder": _check_embedder(getattr(app_state, "embedder", None)),
-    }
+    cached_body = cache.get("body")
+    if cached_body is not None and now < cache["expires_at"]:
+        return JSONResponse(
+            content=cached_body,
+            status_code=cache["status"],
+            headers={
+                "X-Health-Cache": "hit",
+                "X-Health-Cache-Expires-In": str(
+                    round(cache["expires_at"] - now, 2)
+                ),
+            },
+        )
 
-    overall_ok = all(c["ok"] for c in checks.values())
-    body = {
-        "ok": overall_ok,
-        "checked_at_utc": datetime.now(timezone.utc)
-        .isoformat(timespec="seconds")
-        .replace("+00:00", "Z"),
-        "duration_ms": round((time.perf_counter() - started) * 1000, 2),
-        "checks": checks,
-    }
-    status_code = 200 if overall_ok else 503
-    return JSONResponse(content=body, status_code=status_code)
+    body, status_code = _build_body(app_state)
+    cache["body"] = body
+    cache["status"] = status_code
+    cache["expires_at"] = now + _CACHE_TTL_SECONDS
+    return JSONResponse(
+        content=body,
+        status_code=status_code,
+        headers={
+            "X-Health-Cache": "miss",
+            "X-Health-Cache-Expires-In": str(_CACHE_TTL_SECONDS),
+        },
+    )
