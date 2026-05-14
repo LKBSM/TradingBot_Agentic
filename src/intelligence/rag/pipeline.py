@@ -19,7 +19,7 @@ import hashlib
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import Callable, Iterable, Optional
+from typing import Any, Callable, Iterable, Optional
 
 import numpy as np
 
@@ -144,6 +144,13 @@ class RAGResponse:
     prompt_bundle: RAGPromptBundle
     answer: str = ""
     elapsed_seconds: dict[str, float] = field(default_factory=dict)
+    # LLM-2B.11 — frozen audit metadata for the prompt template that was
+    # used to render this response. ``None`` only if the prompt registry
+    # wasn't configured (legacy paths, unit-test stubs). When wired,
+    # this is the {template_id, version, sha256} triple the audit
+    # ledger entry can stamp so a post-hoc regression analysis can pin
+    # the exact prompt version that generated each insight.
+    prompt_audit: Optional[dict] = None
 
 
 # ---------------------------------------------------------------------------
@@ -221,6 +228,7 @@ class RAGPipeline:
         language: str = "fr",
         embedding_cache: Optional[QueryEmbeddingCache] = None,
         answer_cache: Optional[AnswerCache] = None,
+        prompt_registry: Optional[Any] = None,
     ):
         self.embedder = embedder
         self.bm25_k = bm25_k
@@ -230,6 +238,11 @@ class RAGPipeline:
         self.language = language
         self.embedding_cache = embedding_cache
         self.answer_cache = answer_cache
+        # LLM-2B.11: when wired, the registry stamps a frozen
+        # {template_id, version, sha256} triple onto every RAGResponse
+        # so the audit ledger can track *which* prompt version
+        # generated *which* insight.
+        self.prompt_registry = prompt_registry
 
         self._bm25 = BM25Index()
         self._vector_store = InMemoryVectorStore(dimension=embedder.dimension)
@@ -288,6 +301,27 @@ class RAGPipeline:
         fp = self.corpus_fingerprint()
         if not fp.aligned:
             raise CorpusDriftError(fp.drift_reason)
+
+    def _prompt_audit(self) -> Optional[dict]:
+        """Resolve the {template_id, version, sha256} for the active language.
+
+        Returns ``None`` (legacy behaviour) when no registry is wired.
+        When the registry knows the prompt but the active language tag
+        isn't registered (e.g. exotic Accept-Language), falls back to
+        the English template — same fallback ``build_prompt_bundle``
+        uses, so audit and prompt stay aligned.
+        """
+        if self.prompt_registry is None:
+            return None
+        primary = f"rag.system.{self.language}"
+        fallback = "rag.system.en"
+        try:
+            return self.prompt_registry.to_audit_dict(primary)
+        except KeyError:
+            try:
+                return self.prompt_registry.to_audit_dict(fallback)
+            except KeyError:
+                return None
 
     def _embed_query(self, query: str) -> np.ndarray:
         if self.embedding_cache is not None:
@@ -351,6 +385,7 @@ class RAGPipeline:
                     prompt_bundle=prompt,
                     answer=cached.answer,
                     elapsed_seconds=timings,
+                    prompt_audit=self._prompt_audit(),
                 )
 
         t0 = time.perf_counter()
@@ -394,6 +429,7 @@ class RAGPipeline:
             prompt_bundle=prompt,
             answer=answer,
             elapsed_seconds=timings,
+            prompt_audit=self._prompt_audit(),
         )
 
     def _rehydrate_cached(self, cached: "CachedAnswer") -> list["RetrievedChunk"]:

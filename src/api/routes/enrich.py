@@ -330,6 +330,15 @@ async def enrich(
             },
             "disclaimer": get_disclaimer(body.language),
             "client_request_id": body.client_request_id,
+            # LLM-2B.11 — frozen prompt-template fingerprint. When the
+            # registry is wired this stamps {template_id, version, sha256}
+            # so the audit ledger entry can pin the exact prompt used to
+            # render this insight; absent (None) on legacy paths.
+            **(
+                {"prompt_audit": rag_response.prompt_audit}
+                if rag_response.prompt_audit is not None
+                else {}
+            ),
         },
     )
 
