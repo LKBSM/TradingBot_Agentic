@@ -175,11 +175,27 @@ class KeyInfo(BaseModel):
     label: str
     created_at: str
     is_active: bool
+    superseded_at: Optional[float] = None  # Unix ts; non-null when in grace window
+    superseded_by: Optional[int] = None    # successor key id
 
 
 class KeyListResponse(BaseModel):
     """List of all keys."""
     keys: List[KeyInfo]
+
+
+class KeyRotateRequest(BaseModel):
+    """Body for POST /admin/keys/{id}/rotate — SECURITY-2B.2."""
+    grace_seconds: Optional[float] = None  # None → KeyStore default (24h)
+
+
+class KeyRotateResponse(BaseModel):
+    old_key_id: int
+    new_key_id: int
+    new_api_key: str
+    superseded_at: float
+    grace_seconds: float
+    label: str
 
 
 class UsageStat(BaseModel):

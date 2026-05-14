@@ -42,7 +42,7 @@ class KeyStore:
     is shown only once at creation time.
     """
 
-    SCHEMA_VERSION = 1
+    SCHEMA_VERSION = 2  # v2 adds superseded_at for SECURITY-2B.2 key rotation
 
     # In-memory verify_key cache (key_hash → (subscriber_dict, expiry_ts)).
     # Eliminates ~70% of SQL SELECT api_keys hits on every authenticated
@@ -111,10 +111,31 @@ class KeyStore:
                 CREATE INDEX IF NOT EXISTS idx_usage_key_ts
                     ON api_usage(key_id, timestamp);
             """)
-            conn.execute(
-                "INSERT OR REPLACE INTO schema_version (version) VALUES (?)",
-                (self.SCHEMA_VERSION,),
+        if from_v < 2:
+            # SECURITY-2B.2: rotation flow — superseded_at is the wall-clock
+            # Unix timestamp after which a superseded key STOPS verifying.
+            # NULL = key has never been rotated. Adding via ALTER preserves
+            # every existing row.
+            cur = conn.execute(
+                "SELECT 1 FROM pragma_table_info('api_keys') "
+                "WHERE name = 'superseded_at'"
             )
+            if cur.fetchone() is None:
+                conn.execute(
+                    "ALTER TABLE api_keys ADD COLUMN superseded_at REAL"
+                )
+            cur = conn.execute(
+                "SELECT 1 FROM pragma_table_info('api_keys') "
+                "WHERE name = 'superseded_by'"
+            )
+            if cur.fetchone() is None:
+                conn.execute(
+                    "ALTER TABLE api_keys ADD COLUMN superseded_by INTEGER"
+                )
+        conn.execute(
+            "INSERT OR REPLACE INTO schema_version (version) VALUES (?)",
+            (self.SCHEMA_VERSION,),
+        )
 
     # --------------------------------------------------------------------- #
     # Helpers
@@ -174,8 +195,9 @@ class KeyStore:
             conn = self._get_connection()
             try:
                 cur = conn.execute(
-                    "SELECT id, label, created_at, is_active FROM api_keys "
-                    "WHERE key_hash = ?",
+                    "SELECT id, label, created_at, is_active, "
+                    "       superseded_at, superseded_by "
+                    "FROM api_keys WHERE key_hash = ?",
                     (key_hash,),
                 )
                 row = cur.fetchone()
@@ -184,13 +206,111 @@ class KeyStore:
 
             subscriber: Optional[Dict[str, Any]] = None
             if row is not None and row["is_active"]:
-                subscriber = {
-                    "key_id": row["id"],
-                    "label": row["label"],
-                    "created_at": row["created_at"],
-                }
+                # SECURITY-2B.2: a rotated key keeps verifying until the
+                # grace deadline so brokers can swap key material without
+                # a hard cutover. After the deadline it's effectively
+                # revoked even if is_active remained 1.
+                superseded_at = row["superseded_at"]
+                if superseded_at is None or now < superseded_at:
+                    subscriber = {
+                        "key_id": row["id"],
+                        "label": row["label"],
+                        "created_at": row["created_at"],
+                    }
+                    if superseded_at is not None:
+                        subscriber["superseded_at"] = superseded_at
+                        subscriber["superseded_by"] = row["superseded_by"]
             self._verify_cache[key_hash] = (subscriber, now + self._CACHE_TTL_S)
             return subscriber
+
+    def rotate_key(
+        self, key_id: int, *, grace_seconds: float = 86400.0
+    ) -> Optional[Dict[str, Any]]:
+        """Issue a new key that supersedes ``key_id``.
+
+        SECURITY-2B.2 — graceful key rotation:
+
+        - mint a fresh raw key + insert a new row with the same label
+          plus a "(rotated YYYY-MM-DD)" suffix,
+        - mark the old key with ``superseded_at = now + grace_seconds``
+          and ``superseded_by = new_key_id``,
+        - both keys verify successfully until the grace window expires;
+          after that the old key stops authenticating and only the new
+          one works.
+
+        Returns ``{old_key_id, new_key_id, new_api_key, superseded_at,
+        label}`` on success, ``None`` if the old key doesn't exist
+        (404 in the calling route).
+
+        ``grace_seconds`` must be in [0, 30 days]. 24h is a reasonable
+        default for brokers running daily deploys; 0 = immediate
+        revocation (handy for "the key just leaked" emergency
+        rotations); 30 days is the safety ceiling so a forgotten
+        rotation can't leave an old key valid forever.
+        """
+        if grace_seconds < 0:
+            raise ValueError("grace_seconds must be >= 0")
+        if grace_seconds > 30 * 86400:
+            raise ValueError("grace_seconds capped at 30 days")
+
+        now = time.time()
+        deadline = now + grace_seconds
+        new_raw = self._generate_raw_key()
+        new_hash = self._hash_key(new_raw)
+        created_at = time.strftime("%Y-%m-%dT%H:%M:%S")
+
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                cur = conn.execute(
+                    "SELECT id, label, is_active, superseded_at "
+                    "FROM api_keys WHERE id = ?",
+                    (key_id,),
+                )
+                row = cur.fetchone()
+                if row is None:
+                    return None
+                if not row["is_active"]:
+                    raise ValueError(
+                        f"key {key_id} is already revoked; cannot rotate"
+                    )
+                # Don't double-rotate: if the key is already inside its
+                # grace window, refuse rather than silently extending.
+                if row["superseded_at"] is not None:
+                    raise ValueError(
+                        f"key {key_id} has already been rotated (grace "
+                        f"window in progress)"
+                    )
+
+                old_label = row["label"]
+                today = time.strftime("%Y-%m-%d")
+                new_label = f"{old_label} (rotated {today})"
+
+                cur = conn.execute(
+                    "INSERT INTO api_keys "
+                    "(key_hash, label, created_at, is_active) "
+                    "VALUES (?, ?, ?, 1)",
+                    (new_hash, new_label, created_at),
+                )
+                new_id = cur.lastrowid
+
+                conn.execute(
+                    "UPDATE api_keys "
+                    "SET superseded_at = ?, superseded_by = ? "
+                    "WHERE id = ?",
+                    (deadline, new_id, key_id),
+                )
+            finally:
+                conn.close()
+        self._cache_invalidate()
+        return {
+            "old_key_id": key_id,
+            "new_key_id": new_id,
+            "new_api_key": new_raw,
+            "superseded_at": deadline,
+            "grace_seconds": grace_seconds,
+            "label": new_label,
+        }
 
     def revoke_key(self, key_id: int) -> bool:
         """Soft-delete a key (is_active=0). Returns True if found."""
@@ -213,8 +333,9 @@ class KeyStore:
             conn = self._get_connection()
             try:
                 cur = conn.execute(
-                    "SELECT id, label, created_at, is_active FROM api_keys "
-                    "ORDER BY id"
+                    "SELECT id, label, created_at, is_active, "
+                    "       superseded_at, superseded_by "
+                    "FROM api_keys ORDER BY id"
                 )
                 return [
                     {
@@ -222,6 +343,8 @@ class KeyStore:
                         "label": r["label"],
                         "created_at": r["created_at"],
                         "is_active": bool(r["is_active"]),
+                        "superseded_at": r["superseded_at"],
+                        "superseded_by": r["superseded_by"],
                     }
                     for r in cur.fetchall()
                 ]
