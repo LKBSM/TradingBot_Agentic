@@ -1,9 +1,9 @@
 {
   "symbol": "XAUUSD",
   "timeframe": "M15",
-  "bars_processed": 172749,
+  "bars_processed": 19875,
   "date_range": [
-    "2019-01-03 14:15:00",
+    "2025-06-26 02:45:00",
     "2026-04-29 23:45:00"
   ],
   "state_machine_config": {
@@ -44,15 +44,15 @@
     "arms_aborted": 0,
     "confirmation_rate": null,
     "avg_signal_lifetime_bars_machine": 0.0,
-    "bars_with_bos": 5457,
-    "signals_produced_by_detector": 192,
-    "score_max": 72.61,
+    "bars_with_bos": 623,
+    "signals_produced_by_detector": 85,
+    "score_max": 69.01,
     "score_percentiles": {
-      "p50": 57.43,
-      "p75": 60.96,
-      "p90": 63.26,
-      "p95": 66.54,
-      "p99": 69.5
+      "p50": 57.52,
+      "p75": 60.29,
+      "p90": 62.06,
+      "p95": 64.86,
+      "p99": 67.32
     }
   },
   "trades": [],

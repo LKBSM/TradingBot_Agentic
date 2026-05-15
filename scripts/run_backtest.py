@@ -147,6 +147,21 @@ def run(args: argparse.Namespace) -> int:
         "Retest gate: %s",
         "DISABLED (baseline)" if args.no_retest else "ENABLED (require pullback)",
     )
+    # Sprint 3 batch 3.X (audit P0-6): wire DynamicSpread/Slippage so backtest
+    # is no longer cost-free. Audit `section_3_8_backtest_engine.md` flagged
+    # commission=$0 + no slippage as P0 — strat-tear-sheet PF will drop but
+    # this is the honest number. --no-costs flag preserves the legacy cost-free
+    # behaviour for compat with older reports.
+    spread_model = None
+    slippage_model = None
+    if not args.no_costs:
+        from src.environment.execution_model import DynamicSlippageModel, DynamicSpreadModel
+        spread_model = DynamicSpreadModel()
+        slippage_model = DynamicSlippageModel(base_slippage=0.0001)
+        log.info("Costs ENABLED: dynamic spread + slippage models active")
+    else:
+        log.info("Costs DISABLED (--no-costs flag): legacy cost-free backtest")
+
     replay = SignalReplay(
         symbol=args.symbol,
         timeframe=args.timeframe,
@@ -155,6 +170,8 @@ def run(args: argparse.Namespace) -> int:
         use_regime=not args.no_regime,
         use_vol_regime=not args.no_vol_regime,
         warmup_bars=args.warmup,
+        spread_model=spread_model,
+        slippage_model=slippage_model,
     )
     log.info(
         "ConfluenceDetector min_score=%.1f  (state machine enter=%.1f exit=%.1f)",
@@ -227,6 +244,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--no-retest", action="store_true",
                    help="Disable BOS pullback/retest gate in ConfluenceDetector "
                         "(pre-retest baseline for comparison).")
+    p.add_argument("--no-costs", action="store_true",
+                   help="Disable dynamic spread + slippage models (legacy "
+                        "cost-free backtest, default since Sprint 3 = costs ON).")
 
     # Output
     p.add_argument("--out", default="backtest_report.json",
