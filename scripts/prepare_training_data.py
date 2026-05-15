@@ -23,7 +23,7 @@ warnings.filterwarnings('ignore')
 # CONFIGURATION
 # =============================================================================
 
-INPUT_GOLD_FILE = "data/XAU_15MIN_2019_2025.csv"
+INPUT_GOLD_FILE = "data/XAU_15MIN_2019_2026.csv"
 OUTPUT_DIR = "data/prepared"
 
 # Splits

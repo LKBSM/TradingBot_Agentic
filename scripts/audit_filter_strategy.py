@@ -54,7 +54,7 @@ def fmt(v, spec=".3f"):
 
 
 def main():
-    df = pd.read_csv("data/XAU_15MIN_2019_2025.csv", parse_dates=["Date"]).set_index("Date")
+    df = pd.read_csv("data/XAU_15MIN_2019_2026.csv", parse_dates=["Date"]).set_index("Date")
     df.columns = [c.lower() for c in df.columns]
     enriched = SmartMoneyEngine(data=df, config={}, verbose=False).analyze()
     enriched["hour"] = enriched.index.hour

@@ -110,7 +110,7 @@ def simulate(trades, ohlc_idx, highs, lows, closes, sl_mult, tp_mult):
 
 
 def main():
-    csv_path = Path("data/XAU_15MIN_2019_2025.csv")
+    csv_path = Path("data/XAU_15MIN_2019_2026.csv")
     trades_path = Path("reports/audit/trades_combined.csv")
     out_path = Path("reports/sweep_sl_tp.md")
 

@@ -8,7 +8,7 @@ and verify it survives an out-of-sample split (train 2019-2022, test
 
 Usage:
     python scripts/audit_feature_edge.py \\
-        --csv data/XAU_15MIN_2019_2025.csv \\
+        --csv data/XAU_15MIN_2019_2026.csv \\
         --trades reports/audit/trades_combined.csv \\
         --out reports/feature_edge_audit.md
 """
@@ -270,7 +270,7 @@ def audit(
 
 def main() -> int:
     p = argparse.ArgumentParser()
-    p.add_argument("--csv", default="data/XAU_15MIN_2019_2025.csv")
+    p.add_argument("--csv", default="data/XAU_15MIN_2019_2026.csv")
     p.add_argument("--trades", default="reports/audit/trades_combined.csv")
     p.add_argument("--out", default="reports/feature_edge_audit.md")
     p.add_argument("--cutoff", default="2023-01-01",

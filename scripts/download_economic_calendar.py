@@ -566,7 +566,7 @@ if __name__ == "__main__":
     calendar_df = downloader.download_all(start_year=2019, end_year=2025)
 
     # Vérifier l'alignement avec les données Gold
-    gold_path = "data/XAU_15MIN_2019_2025.csv"
+    gold_path = "data/XAU_15MIN_2019_2026.csv"
     calendar_path = "data/economic_calendar_2019_2025.csv"
 
     if os.path.exists(gold_path) and os.path.exists(calendar_path):
@@ -574,6 +574,6 @@ if __name__ == "__main__":
 
         print("\nPRET POUR L'ENTRAINEMENT!")
         print("   Tu peux maintenant utiliser:")
-        print("   - data/XAU_15MIN_2019_2025.csv (prix)")
+        print("   - data/XAU_15MIN_2019_2026.csv (prix)")
         print("   - data/economic_calendar_2019_2025.csv (événements)")
         print("   - data/economic_calendar_HIGH_IMPACT_2019_2024.csv (événements majeurs)")

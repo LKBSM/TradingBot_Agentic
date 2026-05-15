@@ -27,7 +27,7 @@ from sklearn.metrics import roc_auc_score
 
 from src.environment.strategy_features import SmartMoneyEngine
 
-CSV = Path("data/XAU_15MIN_2019_2025.csv")
+CSV = Path("data/XAU_15MIN_2019_2026.csv")
 TRADES = Path("reports/audit/trades_combined.csv")
 MODEL_OUT = Path("models/scoring_v2.lgb")
 REPORT_OUT = Path("reports/scoring_v2_lgbm.md")

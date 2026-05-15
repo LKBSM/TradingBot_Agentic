@@ -36,10 +36,11 @@ for directory in [DATA_DIR, MODEL_DIR, LOG_DIR, RESULTS_DIR, REPORTS_DIR,
 
 # Data file path - now uses DATA_DIR for portability
 # Place your CSV in the 'data' folder of the project
-# NOTE: 2019-2025 file audited at 63% coverage (37% bars missing, session 20-23 UTC
-# truncated, distinct price feed from 2019-2024). Using 2019-2024 (97.6% coverage)
-# until Dukascopy or broker-MT5 export replaces it. See scripts/audit_data_quality.py.
-HISTORICAL_DATA_FILE = os.path.join(DATA_DIR, "XAU_15MIN_2019_2024.csv")
+# Source XAU primaire : XAU_15MIN_2019_2026.csv (98.72% coverage 2019-2025, fraîcheur ~15j).
+# Décision A actée Sprint 0 — voir audits/2026-Q2/sprint_0_decisions.md + data_layer_pre_flight.md.
+# Le CSV 2019_2025 (63% coverage broken) est interdit en source primaire (test garde-fou :
+# tests/test_data_quality_bos_regression.py). Le 2019_2024 (97.6%) reste un backup figé.
+HISTORICAL_DATA_FILE = os.path.join(DATA_DIR, "XAU_15MIN_2019_2026.csv")
 
 # Column mapping (adjust if your CSV uses different names)
 OHLCV_COLUMNS = {

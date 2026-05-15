@@ -51,7 +51,7 @@ def evaluate_mode(trades: pd.DataFrame, atr_series: pd.Series, label: str, **kw)
 
 
 def main():
-    df = pd.read_csv("data/XAU_15MIN_2019_2025.csv", parse_dates=["Date"]).set_index("Date")
+    df = pd.read_csv("data/XAU_15MIN_2019_2026.csv", parse_dates=["Date"]).set_index("Date")
     df.columns = [c.lower() for c in df.columns]
     print("enriching...")
     enr = SmartMoneyEngine(data=df, config={}, verbose=False).analyze()

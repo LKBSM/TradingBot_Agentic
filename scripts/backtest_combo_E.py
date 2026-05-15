@@ -86,7 +86,7 @@ def report(name: str, trades: pd.DataFrame) -> dict:
 
 def main():
     print("loading XAU OHLCV...")
-    df = pd.read_csv("data/XAU_15MIN_2019_2025.csv", parse_dates=["Date"]).set_index("Date")
+    df = pd.read_csv("data/XAU_15MIN_2019_2026.csv", parse_dates=["Date"]).set_index("Date")
     df.columns = [c.lower() for c in df.columns]
     print(f"enriching {len(df)} bars (one-shot, reused for all TP runs)...")
     enriched = SmartMoneyEngine(data=df, config={}, verbose=False).analyze()

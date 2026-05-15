@@ -11,7 +11,7 @@ Usage
 
     # Full 6-year Gold M15 baseline
     python scripts/run_backtest.py \\
-        --csv data/XAU_15MIN_2019_2025.csv \\
+        --csv data/XAU_15MIN_2019_2026.csv \\
         --symbol XAUUSD --timeframe M15 \\
         --out reports/baseline_2019_2024.json
 
@@ -198,8 +198,8 @@ def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         description="Institutional backtest harness for Smart Sentinel AI",
     )
-    p.add_argument("--csv", default="data/XAU_15MIN_2019_2025.csv",
-                   help="Path to OHLCV CSV (default: Gold M15 2019-2025)")
+    p.add_argument("--csv", default="data/XAU_15MIN_2019_2026.csv",
+                   help="Path to OHLCV CSV (default: Gold M15 2019-2026, 98.72% coverage)")
     p.add_argument("--symbol", default="XAUUSD")
     p.add_argument("--timeframe", default="M15",
                    help="Bar cadence (used to annualise Sharpe/Sortino)")
