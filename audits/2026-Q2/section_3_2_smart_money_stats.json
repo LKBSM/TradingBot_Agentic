@@ -1,0 +1,437 @@
+{
+  "meta": {
+    "csv_xau": "XAU_15MIN_2019_2026.csv",
+    "csv_eur": "EURUSD_15MIN_2019_2025.csv",
+    "numba_available": false,
+    "generated_at": "2026-05-15T19:50:27.045849+00:00"
+  },
+  "xau_20k": {
+    "n_bars": 20000,
+    "stats": {
+      "n_bars": 19975,
+      "bos_event_up": 334,
+      "bos_event_down": 291,
+      "bos_event_total": 625,
+      "bos_signal_up_bars": 9624,
+      "bos_signal_down_bars": 10318,
+      "choch_up": 118,
+      "choch_down": 118,
+      "fvg_up": 1820,
+      "fvg_down": 1687,
+      "fvg_dir_up_raw": 2268,
+      "fvg_dir_down_raw": 2155,
+      "ob_bullish": 2345,
+      "ob_bearish": 2313,
+      "retest_armed_up_bars": 2923,
+      "retest_armed_down_bars": 2540,
+      "retest_state_awaiting_up": 825,
+      "retest_state_awaiting_down": 621,
+      "retest_state_armed_up": 2923,
+      "retest_state_armed_down": 2540,
+      "up_fractals": 2779,
+      "down_fractals": 2840,
+      "divergence_bull": 965,
+      "divergence_bear": 1036,
+      "bos_event_pct": 3.129,
+      "fvg_signal_pct": 17.557,
+      "fvg_dir_pct_unfiltered": 22.143,
+      "ob_pct": 23.319,
+      "retest_armed_pct": 27.349
+    },
+    "timing": {
+      "ta_indicators": 0.2901,
+      "smc_features": 0.0405,
+      "structure": 0.2145,
+      "cleaning": 0.0141,
+      "total": 0.7152
+    },
+    "latency": {
+      "bos_up": {
+        "n": 334,
+        "mean": 4.64,
+        "median": 4.0,
+        "p25": 2.0,
+        "p75": 6.0,
+        "max": 17
+      },
+      "bos_down": {
+        "n": 291,
+        "mean": 4.45,
+        "median": 4.0,
+        "p25": 2.0,
+        "p75": 6.0,
+        "max": 25
+      }
+    },
+    "ob_anchor": {
+      "bullish_within_20_bars_of_bos": {
+        "ob_count": 2345,
+        "near_bos_count": 1374,
+        "near_bos_pct": 58.6
+      },
+      "bearish_within_20_bars_of_bos": {
+        "ob_count": 2313,
+        "near_bos_count": 1333,
+        "near_bos_pct": 57.6
+      },
+      "n_bos_events": 625
+    },
+    "reproducibility": {
+      "BOS_EVENT": true,
+      "BOS_SIGNAL": true,
+      "BOS_BREAK_LEVEL": true,
+      "CHOCH_SIGNAL": true,
+      "FVG_SIGNAL": true,
+      "FVG_SIZE": true,
+      "FVG_SIZE_NORM": true,
+      "BULLISH_OB_HIGH": true,
+      "BEARISH_OB_HIGH": true,
+      "OB_STRENGTH_NORM": true,
+      "BOS_RETEST_STATE": true,
+      "BOS_RETEST_ARMED": true,
+      "CHOCH_DIVERGENCE": true,
+      "RSI": true,
+      "ATR": true,
+      "all_match": true
+    }
+  },
+  "xau_5k": {
+    "parity": {
+      "bos_signal": true,
+      "choch_signal": true,
+      "bos_event": true,
+      "bos_break_level_close": true,
+      "all_parity": true,
+      "retest_state_match": false,
+      "retest_armed_match": false
+    }
+  },
+  "xau_sensitivity": {
+    "fvg_threshold_sweep": {
+      "0.0": {
+        "n_fvg": 2264,
+        "fvg_per_1k_bars": 226.97
+      },
+      "0.1": {
+        "n_fvg": 1829,
+        "fvg_per_1k_bars": 183.36
+      },
+      "0.2": {
+        "n_fvg": 1415,
+        "fvg_per_1k_bars": 141.85
+      },
+      "0.3": {
+        "n_fvg": 1100,
+        "fvg_per_1k_bars": 110.28
+      },
+      "0.4": {
+        "n_fvg": 842,
+        "fvg_per_1k_bars": 84.41
+      },
+      "0.5": {
+        "n_fvg": 643,
+        "fvg_per_1k_bars": 64.46
+      },
+      "0.7": {
+        "n_fvg": 385,
+        "fvg_per_1k_bars": 38.6
+      },
+      "1.0": {
+        "n_fvg": 172,
+        "fvg_per_1k_bars": 17.24
+      }
+    },
+    "retest_tol_sweep": {
+      "0.1": {
+        "armed_up_bars": 1369,
+        "armed_down_bars": 1225,
+        "armed_per_1k_bars": 260.05
+      },
+      "0.25": {
+        "armed_up_bars": 1468,
+        "armed_down_bars": 1328,
+        "armed_per_1k_bars": 280.3
+      },
+      "0.5": {
+        "armed_up_bars": 1634,
+        "armed_down_bars": 1588,
+        "armed_per_1k_bars": 323.01
+      },
+      "0.75": {
+        "armed_up_bars": 1742,
+        "armed_down_bars": 1630,
+        "armed_per_1k_bars": 338.05
+      },
+      "1.0": {
+        "armed_up_bars": 1828,
+        "armed_down_bars": 1751,
+        "armed_per_1k_bars": 358.8
+      }
+    },
+    "fractal_window_sweep": {
+      "2": {
+        "up_fractals": 1378,
+        "down_fractals": 1410,
+        "bos_events": 370
+      },
+      "3": {
+        "up_fractals": 1005,
+        "down_fractals": 1009,
+        "bos_events": 292
+      },
+      "4": {
+        "up_fractals": 790,
+        "down_fractals": 789,
+        "bos_events": 242
+      },
+      "5": {
+        "up_fractals": 649,
+        "down_fractals": 647,
+        "bos_events": 212
+      }
+    },
+    "ob_require_fvg_sweep": {
+      "False": {
+        "ob_bullish": 1224,
+        "ob_bearish": 1179
+      },
+      "True": {
+        "ob_bullish": 232,
+        "ob_bearish": 235
+      }
+    }
+  },
+  "xau_full": {
+    "n_bars": 172874,
+    "stats": {
+      "n_bars": 172849,
+      "bos_event_up": 2970,
+      "bos_event_down": 2491,
+      "bos_event_total": 5461,
+      "bos_signal_up_bars": 84339,
+      "bos_signal_down_bars": 88477,
+      "choch_up": 1039,
+      "choch_down": 1039,
+      "fvg_up": 14623,
+      "fvg_down": 12985,
+      "fvg_dir_up_raw": 18746,
+      "fvg_dir_down_raw": 16840,
+      "ob_bullish": 21442,
+      "ob_bearish": 21178,
+      "retest_armed_up_bars": 27261,
+      "retest_armed_down_bars": 22651,
+      "retest_state_awaiting_up": 6449,
+      "retest_state_awaiting_down": 5387,
+      "retest_state_armed_up": 27261,
+      "retest_state_armed_down": 22651,
+      "up_fractals": 23585,
+      "down_fractals": 23856,
+      "divergence_bull": 7776,
+      "divergence_bear": 8988,
+      "bos_event_pct": 3.159,
+      "fvg_signal_pct": 15.972,
+      "fvg_dir_pct_unfiltered": 20.588,
+      "ob_pct": 24.657,
+      "retest_armed_pct": 28.876
+    },
+    "timing": {
+      "ta_indicators": 4.2013,
+      "smc_features": 0.2842,
+      "structure": 4.7078,
+      "cleaning": 0.1185,
+      "total": 12.1199
+    },
+    "latency": {
+      "bos_up": {
+        "n": 2970,
+        "mean": 4.63,
+        "median": 4.0,
+        "p25": 2.0,
+        "p75": 6.0,
+        "max": 25
+      },
+      "bos_down": {
+        "n": 2491,
+        "mean": 4.72,
+        "median": 4.0,
+        "p25": 2.0,
+        "p75": 6.0,
+        "max": 25
+      }
+    },
+    "ob_anchor": {
+      "bullish_within_20_bars_of_bos": {
+        "ob_count": 21442,
+        "near_bos_count": 12765,
+        "near_bos_pct": 59.5
+      },
+      "bearish_within_20_bars_of_bos": {
+        "ob_count": 21178,
+        "near_bos_count": 12564,
+        "near_bos_pct": 59.3
+      },
+      "n_bos_events": 5461
+    },
+    "per_year": {
+      "2019": {
+        "bars": 23450,
+        "bos_up": 385,
+        "bos_down": 325,
+        "choch_up": 133,
+        "choch_down": 132,
+        "fvg_up": 2127,
+        "fvg_down": 1946,
+        "ob_bullish": 2785,
+        "ob_bearish": 2718
+      },
+      "2020": {
+        "bars": 23611,
+        "bos_up": 386,
+        "bos_down": 278,
+        "choch_up": 128,
+        "choch_down": 129,
+        "fvg_up": 1815,
+        "fvg_down": 1621,
+        "ob_bullish": 2959,
+        "ob_bearish": 2956
+      },
+      "2021": {
+        "bars": 23581,
+        "bos_up": 386,
+        "bos_down": 354,
+        "choch_up": 145,
+        "choch_down": 144,
+        "fvg_up": 1995,
+        "fvg_down": 1827,
+        "ob_bullish": 2859,
+        "ob_bearish": 2863
+      },
+      "2022": {
+        "bars": 23653,
+        "bos_up": 435,
+        "bos_down": 415,
+        "choch_up": 158,
+        "choch_down": 158,
+        "fvg_up": 1955,
+        "fvg_down": 1911,
+        "ob_bullish": 2941,
+        "ob_bearish": 2937
+      },
+      "2023": {
+        "bars": 23558,
+        "bos_up": 354,
+        "bos_down": 353,
+        "choch_up": 142,
+        "choch_down": 143,
+        "fvg_up": 1917,
+        "fvg_down": 1762,
+        "ob_bullish": 2914,
+        "ob_bearish": 2878
+      },
+      "2024": {
+        "bars": 23734,
+        "bos_up": 395,
+        "bos_down": 326,
+        "choch_up": 137,
+        "choch_down": 136,
+        "fvg_up": 1962,
+        "fvg_down": 1721,
+        "ob_bullish": 3035,
+        "ob_bearish": 2905
+      },
+      "2025": {
+        "bars": 23638,
+        "bos_up": 507,
+        "bos_down": 340,
+        "choch_up": 152,
+        "choch_down": 153,
+        "fvg_up": 2175,
+        "fvg_down": 1683,
+        "ob_bullish": 3018,
+        "ob_bearish": 2933
+      },
+      "2026": {
+        "bars": 7624,
+        "bos_up": 122,
+        "bos_down": 100,
+        "choch_up": 44,
+        "choch_down": 44,
+        "fvg_up": 677,
+        "fvg_down": 514,
+        "ob_bullish": 931,
+        "ob_bearish": 988
+      }
+    }
+  },
+  "eur_20k": {
+    "n_bars": 20000,
+    "stats": {
+      "n_bars": 19975,
+      "bos_event_up": 294,
+      "bos_event_down": 298,
+      "bos_event_total": 592,
+      "bos_signal_up_bars": 10196,
+      "bos_signal_down_bars": 9747,
+      "choch_up": 121,
+      "choch_down": 121,
+      "fvg_up": 1555,
+      "fvg_down": 1558,
+      "fvg_dir_up_raw": 2013,
+      "fvg_dir_down_raw": 1994,
+      "ob_bullish": 2435,
+      "ob_bearish": 2493,
+      "retest_armed_up_bars": 2533,
+      "retest_armed_down_bars": 2714,
+      "retest_state_awaiting_up": 616,
+      "retest_state_awaiting_down": 685,
+      "retest_state_armed_up": 2533,
+      "retest_state_armed_down": 2714,
+      "up_fractals": 2848,
+      "down_fractals": 2854,
+      "divergence_bull": 1027,
+      "divergence_bear": 1024,
+      "bos_event_pct": 2.964,
+      "fvg_signal_pct": 15.584,
+      "fvg_dir_pct_unfiltered": 20.06,
+      "ob_pct": 24.671,
+      "retest_armed_pct": 26.268
+    },
+    "timing": {
+      "ta_indicators": 0.4491,
+      "smc_features": 0.0647,
+      "structure": 0.4685,
+      "cleaning": 0.0236,
+      "total": 1.2965
+    },
+    "ob_anchor": {
+      "bullish_within_20_bars_of_bos": {
+        "ob_count": 2435,
+        "near_bos_count": 1368,
+        "near_bos_pct": 56.2
+      },
+      "bearish_within_20_bars_of_bos": {
+        "ob_count": 2493,
+        "near_bos_count": 1453,
+        "near_bos_pct": 58.3
+      },
+      "n_bos_events": 592
+    }
+  },
+  "perf_20k": {
+    "n_bars": 20000,
+    "wall_clock_runs_s": [
+      1.235,
+      1.513,
+      1.769
+    ],
+    "median_wall_clock_s": 1.513,
+    "median_breakdown_s": {
+      "ta_indicators": 0.4968,
+      "smc_features": 0.0723,
+      "structure": 0.5399,
+      "cleaning": 0.0295,
+      "total": 1.5065
+    },
+    "numba_available": false
+  }
+}
