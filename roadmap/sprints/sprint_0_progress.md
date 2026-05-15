@@ -109,3 +109,56 @@ Append-only log, un bloc par batch. Statut ✅ ok / ⚠️ partiel / ❌ bloqué
 **Consolidation** : `algo_audit_institutional.md` à composer en fin de batch.
 
 ---
+
+## Batch 0.3 (suite & clôture) — ✅ ok
+
+**Date** : 2026-05-15
+**Charge effective** : ~30 min Claude + 4 × ~10 min agents parallèles
+
+**Sections audit Phase 1 — 8/8 livrées** :
+- ✅ `section_3_1_data_layer.md` — 5.0/10 (Claude)
+- ✅ `section_3_2_smart_money.md` — 6.0/10 (agent sub, 661 lignes)
+- ✅ `section_3_3_confluence.md` — 3.0/10 (agent sub, 625 lignes)
+- ✅ `section_3_4_volatility.md` — 5.5/10 (agent sub, 609 lignes)
+- ✅ `section_3_5_regime.md` — 6.5/10 (Claude)
+- ✅ `section_3_6_conformal.md` — 7.0/10 (Claude)
+- ✅ `section_3_7_state_machine.md` — 8.0/10 (Claude)
+- ✅ `section_3_8_backtest_engine.md` — 3.5/10 (agent sub, 697 lignes)
+
+**Note globale Smart Sentinel AI : 5.61 / 10** (pondérée).
+
+**Plan P0/P1/P2 consolidé** : 21 P0 + 15 P1 + 7 P2 dans `algo_audit_institutional.md`.
+
+**Findings additionnels (par agents)** :
+- F-add1 : `InstrumentConfig.tcp_alpha=0.05` ignoré, hardcoded 0.10 (P0-18).
+- F-add2 : HMM train/serve skew 11% accord (P0-19).
+- F-add3 : PICP conformal 43.6% vs 80% cible (P0-20).
+- F-add4 : HAR perd vs naive sur QLIKE 2024 (P0-21).
+- F-add5 : Bug RSI Div + magic number retest (P0-15, P1-1).
+- F-add6 : CPCV/DSR/PBO existent mais non couplés au backtest (P0-17).
+- F-add7 : DynamicSpread/Slippage existent mais non wired (P0-6).
+- F-add8 : Look-ahead MTF latent `multi_timeframe_features.py:269` (P0-7).
+
+---
+
+## Gate Sprint 0 — ✅ PASSÉE (12/12)
+
+**Date** : 2026-05-15
+**Charge totale Sprint 0** : ~7 h productives (vs 66 h estimées — compression auto-mode + parallélisation)
+
+**Livrables** :
+- Tag `v0.9.0-pre-institutional` (pushé)
+- Branche `institutional-overhaul` (4 commits pushés)
+- 12 fichiers `audits/2026-Q2/`
+- 8 fichiers `reports/baseline/`
+- 3 fichiers `roadmap/sprints/`
+- 3 scripts utilitaires (audit_xau_coverage, audit_3_2_smart_money, run_baseline_sprint0)
+- 1 test régression (test_data_quality_bos_regression.py, 3/3 verts)
+- 3 fichiers racine (MISSION_ACK, OUT_OF_SCOPE, CHANGELOG)
+- 22 fichiers code patchés (config.py + scripts)
+- CI minimale (.github/workflows/algo_tests.yml)
+- 2 archives backups locales (gitignored)
+
+**Score audit Phase 1** : 5.61 / 10. **Sprint 1 démarrage en attente de validation user.**
+
+---
