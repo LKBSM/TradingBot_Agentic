@@ -6,6 +6,7 @@ Scores 0-100 based on SMC structure, regime, news, volume, and momentum.
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import uuid
 from dataclasses import dataclass, field
@@ -339,8 +340,20 @@ class ConfluenceDetector:
             f"regime×news = {regime_mult:.2f} × {news_mult:.2f} = {pos_mult:.2f}"
         )
 
+        # Fix P1 Sprint 1 (audit institutional 2026-05-15): deterministic signal_id
+        # so backtest replay is bit-for-bit reproducible. Hash content (symbol +
+        # bar timestamp + signal type + score) instead of uuid4. Collisions on
+        # the 12-hex prefix space (2^48) are negligible at our throughput.
+        if bar_timestamp is None:
+            _bts = "na"
+        elif hasattr(bar_timestamp, "isoformat"):
+            _bts = bar_timestamp.isoformat()
+        else:
+            _bts = str(bar_timestamp)
+        _sigid_seed = f"{self.symbol}|{_bts}|{signal_type.value}|{total_score:.4f}"
+        _sigid = hashlib.sha1(_sigid_seed.encode("utf-8")).hexdigest()[:12]
         return ConfluenceSignal(
-            signal_id=str(uuid.uuid4())[:12],
+            signal_id=_sigid,
             symbol=self.symbol,
             signal_type=signal_type,
             confluence_score=total_score,
@@ -606,12 +619,17 @@ class ConfluenceDetector:
 
     @staticmethod
     def _is_news_blocked(news: Any) -> bool:
-        """Check if news assessment blocks trading."""
+        """Check if news assessment blocks trading.
+
+        Compares case-insensitively because ``NewsDecision`` enum values
+        use lowercase (``'block'``) while older callers may pass strings
+        in uppercase. Either form is treated as blocking.
+        """
         decision = getattr(news, "decision", None)
         if decision is None:
             return False
         decision_val = decision.value if hasattr(decision, "value") else str(decision)
-        return decision_val == "BLOCK"
+        return str(decision_val).upper() == "BLOCK"
 
     @staticmethod
     def _get_news_reasoning(news: Any) -> str:
