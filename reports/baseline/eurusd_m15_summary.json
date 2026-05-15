@@ -1,0 +1,100 @@
+{
+  "symbol": "EURUSD",
+  "timeframe": "M15",
+  "bars_processed": 174381,
+  "date_range": [
+    "2019-01-03 05:15:00",
+    "2025-12-31 21:45:00"
+  ],
+  "state_machine_config": {
+    "enter_threshold": 75.0,
+    "exit_threshold": 55.0,
+    "confirm_bars": 2,
+    "cooldown_bars": 2,
+    "max_signal_age_bars": 12,
+    "silent_bars_before_score_exit": 2,
+    "high_vol_forces_exit": true
+  },
+  "open_trade_bars": 0,
+  "summary": {
+    "total_trades": 0,
+    "wins": 0,
+    "losses": 0,
+    "other_exits": 0,
+    "win_rate": 0.0,
+    "loss_rate": 0.0,
+    "exits_by_reason": {},
+    "avg_r": 0.0,
+    "median_r": 0.0,
+    "total_r": 0.0,
+    "best_r": 0.0,
+    "worst_r": 0.0,
+    "gross_win_r": 0.0,
+    "gross_loss_r": 0.0,
+    "profit_factor": 0.0,
+    "expectancy_r": 0.0,
+    "max_drawdown_r": 0.0,
+    "max_consecutive_losses": 0,
+    "sharpe_per_trade": 0.0,
+    "avg_bars_held": 0.0,
+    "median_bars_held": 0.0,
+    "signals_per_day": 0.0,
+    "arms_started": 0,
+    "arms_confirmed": 0,
+    "arms_aborted": 0,
+    "confirmation_rate": null,
+    "avg_signal_lifetime_bars_machine": 0.0,
+    "bars_with_bos": 5926,
+    "signals_produced_by_detector": 13,
+    "score_max": 74.97,
+    "score_percentiles": {
+      "p50": 56.93,
+      "p75": 61.28,
+      "p90": 64.68,
+      "p95": 69.23,
+      "p99": 73.82
+    }
+  },
+  "trades": [],
+  "institutional_metrics": {
+    "summary": {
+      "total_trades": 0,
+      "wins": 0,
+      "losses": 0,
+      "breakeven": 0,
+      "win_rate": 0.0,
+      "loss_rate": 0.0
+    },
+    "returns": {
+      "avg_r": 0.0,
+      "median_r": 0.0,
+      "stdev_r": 0.0,
+      "total_r": 0.0,
+      "expectancy_r": 0.0,
+      "best_r": 0.0,
+      "worst_r": 0.0,
+      "gross_win_r": 0.0,
+      "gross_loss_r": 0.0
+    },
+    "risk": {
+      "profit_factor": 0.0,
+      "payoff_ratio": 0.0,
+      "max_drawdown_r": 0.0,
+      "max_consecutive_losses": 0,
+      "max_consecutive_wins": 0
+    },
+    "risk_adjusted": {
+      "sharpe_per_trade": 0.0,
+      "sortino_per_trade": 0.0,
+      "calmar": 0.0,
+      "sharpe_annualised": null,
+      "sortino_annualised": null
+    },
+    "lifetime": {
+      "avg_bars_held": 0.0,
+      "median_bars_held": 0.0,
+      "trades_per_year": null
+    },
+    "by_tier": []
+  }
+}

@@ -130,16 +130,36 @@ def run_backtest(config: dict, last_n: int = 0) -> dict:
     }
 
 
-def bootstrap_pf_ci(trades_path: Path, n_iter: int = 10000, seed: int = SEED) -> dict:
-    """Bootstrap 95% CI on profit factor from trade-level returns."""
-    import pandas as pd
-    if not trades_path.exists():
-        return {"status": "no_trades_file"}
-    df = pd.read_csv(trades_path)
-    if "pnl" not in df.columns or len(df) == 0:
-        return {"status": "no_pnl_col_or_empty", "n_trades": int(len(df))}
+def bootstrap_pf_ci(trades_path: Path, summary_json: dict | None = None,
+                    n_iter: int = 10000, seed: int = SEED) -> dict:
+    """Bootstrap 95% CI on profit factor from trade-level returns.
 
-    pnls = df["pnl"].to_numpy()
+    Reads trade returns either from the per-trade CSV (preferred) or from
+    `summary_json["trades"]` as a fallback. Returns status "no_trades"
+    if the backtest produced zero trades (legitimate case on short windows).
+    """
+    import pandas as pd
+
+    pnls: np.ndarray | None = None
+    if trades_path.exists():
+        df = pd.read_csv(trades_path)
+        # Trades CSV may use 'pnl', 'pnl_r', 'r_multiple', 'realized_r' etc.
+        for col in ("pnl_r", "r_multiple", "realized_r", "pnl", "r"):
+            if col in df.columns:
+                pnls = df[col].to_numpy()
+                break
+        if pnls is None and len(df) > 0:
+            return {"status": "no_pnl_col", "columns": list(df.columns), "n_trades": int(len(df))}
+    elif summary_json is not None:
+        trades = summary_json.get("trades") or []
+        if trades:
+            for col in ("pnl_r", "r_multiple", "realized_r", "pnl", "r"):
+                if col in trades[0]:
+                    pnls = np.array([t.get(col, 0.0) for t in trades], dtype=float)
+                    break
+
+    if pnls is None or len(pnls) == 0:
+        return {"status": "no_trades"}
     n = len(pnls)
     rng = np.random.default_rng(seed)
 
@@ -184,6 +204,9 @@ def snapshot_config() -> dict:
         "python": sys.version.split()[0],
     }
 
+    # Inject project root into sys.path so `import config` resolves.
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
     try:
         import config as proj
         snap["config_py"] = {
@@ -256,18 +279,42 @@ def render_markdown(results: list[dict], cis: dict, snap: dict, mode: str) -> st
             lines.append(r.get("stderr_tail", "")[-800:])
             lines.append("```")
             continue
+
         summary = r.get("summary", {}) or {}
-        metrics = summary.get("metrics") or summary
-        # Robust access — schema may vary
-        def g(key, default="n/a"):
-            v = metrics.get(key) if isinstance(metrics, dict) else None
-            return v if v is not None else default
-        lines.append(f"- profit_factor : `{g('profit_factor')}`")
-        lines.append(f"- sharpe        : `{g('sharpe')}`  (annualized: `{g('sharpe_annualized')}`)")
-        lines.append(f"- sortino       : `{g('sortino')}`")
-        lines.append(f"- max_drawdown  : `{g('max_drawdown')}`")
-        lines.append(f"- win_rate      : `{g('win_rate')}`")
-        lines.append(f"- nb_trades     : `{g('trades_count')}` (or `{summary.get('trades_count')}`)")
+        # Real schema (from run_backtest.py → render_json):
+        #   summary["summary"]: top-level stats (profit_factor, win_rate, ...)
+        #   summary["institutional_metrics"]: nested risk_adjusted, returns, risk, etc.
+        s = summary.get("summary", {}) or {}
+        ins = summary.get("institutional_metrics", {}) or {}
+        risk_adj = ins.get("risk_adjusted", {}) or {}
+        risk = ins.get("risk", {}) or {}
+
+        bars_processed = summary.get("bars_processed")
+        date_range = summary.get("date_range") or []
+
+        def _fmt(v, kind="num"):
+            if v is None:
+                return "n/a"
+            if isinstance(v, float):
+                return f"{v:.4f}" if kind == "num" else str(v)
+            return str(v)
+
+        lines.append(f"- bars_processed : `{bars_processed}` "
+                     f"({date_range[0] if date_range else '?'} → {date_range[-1] if date_range else '?'})")
+        lines.append(f"- total_trades   : `{s.get('total_trades', 0)}` "
+                     f"(wins={s.get('wins', 0)}, losses={s.get('losses', 0)})")
+        lines.append(f"- profit_factor  : `{_fmt(risk.get('profit_factor', s.get('profit_factor')))}`")
+        lines.append(f"- sharpe_per_trade  : `{_fmt(risk_adj.get('sharpe_per_trade'))}`")
+        lines.append(f"- sharpe_annualised : `{_fmt(risk_adj.get('sharpe_annualised'))}`")
+        lines.append(f"- sortino_per_trade : `{_fmt(risk_adj.get('sortino_per_trade'))}`")
+        lines.append(f"- max_drawdown_r : `{_fmt(risk.get('max_drawdown_r', s.get('max_drawdown_r')))}`")
+        lines.append(f"- win_rate       : `{_fmt(s.get('win_rate'))}`")
+        lines.append(f"- expectancy_r   : `{_fmt(s.get('expectancy_r'))}`")
+        lines.append(f"- score_max      : `{_fmt(s.get('score_max'))}`")
+        lines.append(f"- arms_started/confirmed/aborted : "
+                     f"`{s.get('arms_started', 0)}` / `{s.get('arms_confirmed', 0)}` / "
+                     f"`{s.get('arms_aborted', 0)}`")
+
         ci = cis.get(r["name"], {})
         if ci.get("status") == "ok":
             lines.append(
@@ -275,10 +322,14 @@ def render_markdown(results: list[dict], cis: dict, snap: dict, mode: str) -> st
                 f"[`{ci['ci_low']:.3f}`, `{ci['ci_high']:.3f}`] "
                 f"(n_trades={ci['n_trades']}, {ci['n_iter']} resamples, finite={ci['n_finite_boots']})"
             )
+        elif ci.get("status") == "no_trades":
+            lines.append(f"- PF 95% CI bootstrap : ⚠️ no trades on this window (score max={s.get('score_max')})")
         else:
             lines.append(f"- PF 95% CI bootstrap : ⚠️ {ci.get('status', 'n/a')}")
+
         lines.append(f"- JSON: `{r.get('json_path')}` (sha256 `{(r.get('json_sha256') or '?')[:16]}…`)")
-        lines.append(f"- Trades: `{r.get('trades_path')}` (sha256 `{(r.get('trades_sha256') or '?')[:16]}…`)")
+        trades_sha = r.get("trades_sha256") or "(no file)"
+        lines.append(f"- Trades CSV: `{r.get('trades_path')}` (sha256 `{trades_sha[:16] if len(trades_sha) > 16 else trades_sha}…`)")
         lines.append("")
 
     lines.append("## Lib snapshot")
@@ -320,7 +371,10 @@ def main() -> int:
     cis: dict[str, dict] = {}
     for r in results:
         if r.get("status") == "ok":
-            cis[r["name"]] = bootstrap_pf_ci(ROOT / r["trades_path"])
+            cis[r["name"]] = bootstrap_pf_ci(
+                ROOT / r["trades_path"],
+                summary_json=r.get("summary"),
+            )
         else:
             cis[r["name"]] = {"status": "skipped_failed_run"}
 
