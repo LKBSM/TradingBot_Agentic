@@ -83,3 +83,6 @@ results/
 tmp/
 temp/
 *.tmp
+
+# Backups (Sprint 0 institutional overhaul)
+backups/
