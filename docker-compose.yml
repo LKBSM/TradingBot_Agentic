@@ -1,0 +1,64 @@
+# Root-level docker-compose.yml — convenience wrapper around
+# infrastructure/docker-compose.yml.
+#
+# Usage from repo root:
+#
+#   docker compose up -d           # Start full stack
+#   docker compose down            # Stop
+#   docker compose logs -f sentinel
+#   docker compose up -d --build   # Rebuild after code changes
+#
+# Replaces Railway deployment per user directive (post Sprint 0-7 review,
+# 2026-05-16). Railway config preserved in .deploy_legacy/ for rollback.
+
+services:
+  sentinel:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    image: smart-sentinel:institutional
+    container_name: smart-sentinel
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - LOG_FORMAT=${LOG_FORMAT:-json}
+      - SENTINEL_TESTING_MODE=${SENTINEL_TESTING_MODE:-1}
+      - VOL_MODE=${VOL_MODE:-har}
+      - SYMBOLS=${SYMBOLS:-XAUUSD,EURUSD}
+      - API_PORT=8000
+      - DATA_DIR=/app/data
+      - SIGNAL_DB_PATH=/app/data/signals.db
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
+    volumes:
+      - sentinel-data:/app/data
+      - sentinel-logs:/app/logs
+      - sentinel-models:/app/models
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+
+volumes:
+  sentinel-data:
+    name: smart-sentinel-data
+  sentinel-logs:
+    name: smart-sentinel-logs
+  sentinel-models:
+    name: smart-sentinel-models

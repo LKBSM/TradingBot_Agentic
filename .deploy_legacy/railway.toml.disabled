@@ -1,0 +1,14 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "infrastructure/Dockerfile"
+
+[deploy]
+startCommand = "python -m src.intelligence.main"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 5
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+
+[[deploy.volumes]]
+name = "sentinel-data"
+mountPath = "/app/data"

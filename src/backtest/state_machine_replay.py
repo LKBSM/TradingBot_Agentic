@@ -48,11 +48,15 @@ import statistics
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 
+from src.environment.execution_model import (
+    DynamicSlippageModel,
+    DynamicSpreadModel,
+)
 from src.intelligence.confluence_detector import (
     ConfluenceDetector,
     ConfluenceSignal,
@@ -158,7 +162,13 @@ def classify_vol_regime_series(
 
 @dataclass(frozen=True)
 class TradeRecord:
-    """One entry→exit round-trip. Aligned with one state-machine cycle."""
+    """One entry→exit round-trip. Aligned with one state-machine cycle.
+
+    ``pnl_price`` and ``r_multiple`` are *net* of execution costs when
+    cost models are wired into the replay (spread, slippage, commission).
+    The raw mid-price PnL — useful for diagnostics and unit tests — is
+    available as ``pnl_price_raw``.
+    """
 
     signal_id: str
     direction: str                     # "LONG" | "SHORT"
@@ -171,9 +181,20 @@ class TradeRecord:
     confluence_score: float
     exit_reason: str
     bars_held: int
-    pnl_price: float                   # in quote-currency (e.g., USD for XAU)
-    r_multiple: float                  # pnl / initial_risk
+    pnl_price: float                   # NET pnl in quote ccy after costs
+    r_multiple: float                  # pnl_price / initial_risk
     initial_risk: float                # |entry - stop_loss|
+    # Execution-cost components (zero when models are absent)
+    spread_cost: float = 0.0           # round-trip spread, in price units
+    slippage_cost: float = 0.0         # round-trip slippage, in price units
+    commission: float = 0.0            # round-turn commission, in price units
+    pnl_price_raw: float = 0.0         # mid-price pnl before any costs
+    # Per-component scores at signal-time (Sprint 4 refactor — post Action 3 verdict).
+    # Maps ComponentScore.name -> weighted_score. Empty when signal lacks
+    # components (legacy / dict-form signal). Used by scoring/logistic_l1 +
+    # scoring/lgbm_scorer to train on raw 8 components instead of the
+    # collapsed additive score (audit 3.3 P0-1).
+    components: Dict[str, float] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -189,8 +210,17 @@ class TradeRecord:
             "exit_reason": self.exit_reason,
             "bars_held": self.bars_held,
             "pnl_price": round(self.pnl_price, 4),
+            "pnl_price_raw": round(self.pnl_price_raw, 4),
             "r_multiple": round(self.r_multiple, 3),
             "initial_risk": round(self.initial_risk, 4),
+            "spread_cost": round(self.spread_cost, 4),
+            "slippage_cost": round(self.slippage_cost, 4),
+            "commission": round(self.commission, 4),
+            "components": {k: round(v, 3) for k, v in self.components.items()},
+            # Flat columns so they survive CSV round-trip (DataFrame.to_csv
+            # serialises the dict above as a Python repr string, useless for
+            # downstream ML training). Prefix to avoid collisions.
+            **{f"cmp_{k}": round(v, 3) for k, v in self.components.items()},
         }
 
 
@@ -381,10 +411,24 @@ class SignalReplay:
         use_vol_regime: bool = True,
         warmup_bars: int = 50,
         detector_min_score: Optional[float] = None,
+        news_provider: Optional[Callable[[Any], Any]] = None,
+        spread_model: Optional[DynamicSpreadModel] = None,
+        slippage_model: Optional[DynamicSlippageModel] = None,
     ):
         self.symbol = symbol
         self.timeframe = timeframe
         self.state_machine_config = state_machine_config or StateMachineConfig(symbol=symbol)
+        # ``news_provider(bar_timestamp)`` -> ``NewsAssessment`` | ``None``.
+        # When ``None`` is returned the detector renormalises over the
+        # remaining components (P1 fix), avoiding the 70-pt ceiling that
+        # made production-threshold backtests fire 0 signals over 7 years.
+        self.news_provider = news_provider
+        # Execution cost models. When ``None``, ``_build_trade`` returns the
+        # raw mid-price PnL (back-compat with existing tests). When supplied,
+        # round-trip spread + slippage are deducted from ``pnl_price`` and
+        # exposed as ``spread_cost`` / ``slippage_cost`` on the TradeRecord.
+        self.spread_model = spread_model
+        self.slippage_model = slippage_model
         # Replay lets the state machine be the sole gating layer. If no custom
         # detector is supplied we default the detector's own filter to a low
         # floor (or the caller's override) so the state machine sees the raw
@@ -462,6 +506,8 @@ class SignalReplay:
             smc_features = {
                 "BOS_SIGNAL": float(row.get("BOS_SIGNAL", 0) or 0),
                 "BOS_EVENT": float(row.get("BOS_EVENT", 0) or 0),
+                "BOS_RETEST_STATE": float(row.get("BOS_RETEST_STATE", 0) or 0),
+                "BOS_RETEST_ARMED": float(row.get("BOS_RETEST_ARMED", 0) or 0),
                 "FVG_SIGNAL": float(row.get("FVG_SIGNAL", 0) or 0),
                 "OB_STRENGTH_NORM": float(row.get("OB_STRENGTH_NORM", 0) or 0),
                 "RSI": float(row.get("RSI", 50) or 50),
@@ -480,12 +526,20 @@ class SignalReplay:
             if smc_features["BOS_EVENT"] != 0.0:
                 bars_with_bos += 1
 
+            news = None
+            if self.news_provider is not None:
+                try:
+                    news = self.news_provider(bar_ts)
+                except Exception as e:  # pragma: no cover — diagnostic
+                    logger.debug("news_provider failed at %s: %s", bar_ts, e)
+                    news = None
+
             signal: Optional[ConfluenceSignal] = None
             try:
                 signal = self.confluence.analyze(
                     smc_features=smc_features,
                     regime=regime,
-                    news=None,
+                    news=news,
                     price=close_v,
                     atr=atr,
                     volume=None,
@@ -514,8 +568,22 @@ class SignalReplay:
             if transition is not None:
                 transitions.append(transition)
 
-        # Build trades + metrics
-        trades, open_trade_bars = self._pair_trades(transitions, sm)
+        # Build trades + metrics. When cost models are present, compute a
+        # per-dataset median ATR once (used by the slippage model to scale
+        # base slippage by current vs typical volatility).
+        median_atr: Optional[float] = None
+        if self.slippage_model is not None and "ATR" in enriched_df.columns:
+            atr_series = enriched_df["ATR"].dropna()
+            if len(atr_series):
+                median_atr = float(atr_series.median())
+        trades, open_trade_bars = self._pair_trades(
+            transitions, sm,
+            df=enriched_df,
+            spread_model=self.spread_model,
+            slippage_model=self.slippage_model,
+            median_atr=median_atr,
+            news_provider=self.news_provider,
+        )
         results = ReplayResults(
             symbol=self.symbol,
             timeframe=self.timeframe,
@@ -561,12 +629,22 @@ class SignalReplay:
     def _pair_trades(
         transitions: List[StateTransition],
         sm: SignalStateMachine,
+        df: Optional[pd.DataFrame] = None,
+        spread_model: Optional[DynamicSpreadModel] = None,
+        slippage_model: Optional[DynamicSlippageModel] = None,
+        median_atr: Optional[float] = None,
+        news_provider: Optional[Callable[[Any], Any]] = None,
     ) -> Tuple[List[TradeRecord], int]:
         """Pair entry and exit transitions into :class:`TradeRecord` trades.
 
         Invariant: transitions alternate entry (HOLD→BUY/SELL) and exit
         (BUY/SELL→HOLD). A replay that ends mid-signal contributes to
         ``open_trade_bars`` but is not counted as a closed trade.
+
+        When ``df`` and the cost models are supplied, each trade's PnL is
+        computed net of round-trip spread + slippage (looked up at entry
+        and exit bars). All cost-related parameters default to ``None`` to
+        keep the static-method API back-compatible with existing tests.
         """
         trades: List[TradeRecord] = []
         open_bars = 0
@@ -590,7 +668,14 @@ class SignalReplay:
                     )
                     i += 1
                     continue
-                trades.append(_build_trade(entry, exit_t))
+                trades.append(_build_trade(
+                    entry, exit_t,
+                    df=df,
+                    spread_model=spread_model,
+                    slippage_model=slippage_model,
+                    median_atr=median_atr,
+                    news_provider=news_provider,
+                ))
                 i += 2
             else:
                 # Stray exit without entry — shouldn't happen, skip
@@ -672,8 +757,23 @@ class SignalReplay:
 # =============================================================================
 
 
-def _build_trade(entry: StateTransition, exit_t: StateTransition) -> TradeRecord:
-    """Assemble a TradeRecord from a paired (entry, exit) transition."""
+def _build_trade(
+    entry: StateTransition,
+    exit_t: StateTransition,
+    df: Optional[pd.DataFrame] = None,
+    spread_model: Optional[DynamicSpreadModel] = None,
+    slippage_model: Optional[DynamicSlippageModel] = None,
+    median_atr: Optional[float] = None,
+    news_provider: Optional[Callable[[Any], Any]] = None,
+) -> TradeRecord:
+    """Assemble a TradeRecord from a paired (entry, exit) transition.
+
+    When ``df`` + cost models are provided, ``pnl_price`` is the *net*
+    round-trip PnL (mid-price PnL minus spread + slippage at both legs).
+    The pre-cost mid-price PnL is preserved as ``pnl_price_raw`` for
+    diagnostics. With no cost models supplied, ``pnl_price ==
+    pnl_price_raw`` and the cost fields are all zero.
+    """
     sig = entry.active_signal
     direction = entry.direction.value if entry.direction else "LONG"
 
@@ -690,12 +790,57 @@ def _build_trade(entry: StateTransition, exit_t: StateTransition) -> TradeRecord
     take_profit = float(_get("take_profit", entry_price))
     confluence = float(_get("confluence_score", 0.0))
 
+    # Sprint 4 refactor: extract 8 component scores at signal-time so
+    # downstream training (LogisticL1Scorer / LGBMScorer) can fit on
+    # the raw components instead of the collapsed additive score.
+    components_dict: Dict[str, float] = {}
+    comps = _get("components", None)
+    if comps is not None:
+        for c in comps:
+            try:
+                if isinstance(c, dict):
+                    name = c.get("name")
+                    ws = c.get("weighted_score", 0.0)
+                else:
+                    name = getattr(c, "name", None)
+                    ws = getattr(c, "weighted_score", 0.0)
+                if name is not None:
+                    components_dict[str(name)] = float(ws)
+            except (TypeError, ValueError):
+                continue
+
     initial_risk = abs(entry_price - stop_loss)
     if direction == "LONG":
-        pnl = exit_price - entry_price
+        pnl_raw = exit_price - entry_price
     else:
-        pnl = entry_price - exit_price
-    r_mult = pnl / initial_risk if initial_risk > 0 else 0.0
+        pnl_raw = entry_price - exit_price
+
+    # ----- Execution costs (when models + df are provided) -----
+    spread_cost = 0.0
+    slippage_cost = 0.0
+    if df is not None and (spread_model is not None or slippage_model is not None):
+        entry_atr, entry_hour, entry_news = _lookup_bar_context(df, entry.at_bar, news_provider)
+        exit_atr, exit_hour, exit_news = _lookup_bar_context(df, exit_t.at_bar, news_provider)
+
+        if spread_model is not None:
+            # Cost of crossing the bid-ask is half the quoted spread per leg.
+            entry_spread_frac = spread_model.get_spread(entry_hour, entry_news)
+            exit_spread_frac = spread_model.get_spread(exit_hour, exit_news)
+            spread_cost = (
+                0.5 * entry_spread_frac * entry_price
+                + 0.5 * exit_spread_frac * exit_price
+            )
+
+        if slippage_model is not None:
+            entry_slip_frac = slippage_model.get_slippage(entry_atr, median_atr)
+            exit_slip_frac = slippage_model.get_slippage(exit_atr, median_atr)
+            slippage_cost = (
+                entry_slip_frac * entry_price
+                + exit_slip_frac * exit_price
+            )
+
+    pnl_net = pnl_raw - spread_cost - slippage_cost
+    r_mult = pnl_net / initial_risk if initial_risk > 0 else 0.0
 
     bars_held = _count_bars_between(entry.at_bar, exit_t.at_bar)
 
@@ -711,10 +856,55 @@ def _build_trade(entry: StateTransition, exit_t: StateTransition) -> TradeRecord
         confluence_score=confluence,
         exit_reason=exit_t.exit_reason.value if exit_t.exit_reason else "unknown",
         bars_held=bars_held,
-        pnl_price=pnl,
+        pnl_price=pnl_net,
         r_multiple=r_mult,
         initial_risk=initial_risk,
+        spread_cost=spread_cost,
+        slippage_cost=slippage_cost,
+        commission=0.0,
+        pnl_price_raw=pnl_raw,
+        components=components_dict,
     )
+
+
+def _lookup_bar_context(
+    df: pd.DataFrame,
+    bar_ts: str,
+    news_provider: Optional[Callable[[Any], Any]],
+) -> Tuple[float, int, bool]:
+    """Return ``(ATR, hour_utc, is_news_window)`` for the given bar.
+
+    Defensive: if the timestamp can't be located in ``df`` or ATR is
+    missing, returns sensible defaults so trade-building never crashes.
+    """
+    atr = 0.0
+    hour = 0
+    is_news = False
+    try:
+        ts = pd.Timestamp(bar_ts)
+    except Exception:
+        ts = None
+
+    if ts is not None:
+        try:
+            row = df.loc[ts]
+            if isinstance(row, pd.DataFrame):  # duplicate index — take last
+                row = row.iloc[-1]
+            atr = float(row.get("ATR", 0.0) or 0.0)
+        except KeyError:
+            atr = 0.0
+        try:
+            hour = int(ts.hour)
+        except Exception:
+            hour = 0
+
+    if news_provider is not None and ts is not None:
+        try:
+            is_news = news_provider(ts) is not None
+        except Exception:
+            is_news = False
+
+    return atr, hour, is_news
 
 
 def _count_bars_between(entry_ts: str, exit_ts: str) -> int:
