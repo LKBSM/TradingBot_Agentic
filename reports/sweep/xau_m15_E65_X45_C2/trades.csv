@@ -1,0 +1,2 @@
+signal_id,direction,entry_bar,exit_bar,entry_price,exit_price,stop_loss,take_profit,confluence_score,exit_reason,bars_held,pnl_price,pnl_price_raw,r_multiple,initial_risk,spread_cost,slippage_cost,commission
+1b0e52601773,SHORT,2026-02-01 23:15:00,2026-02-01 23:30:00,4729.96,4774.895,4853.94,4419.99,66.69298440992075,regime_shifted,1,-58.2187,-44.935,-0.47,123.98,3.8019,9.4818,0.0

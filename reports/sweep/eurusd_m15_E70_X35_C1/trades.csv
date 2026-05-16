@@ -1,0 +1,2 @@
+signal_id,direction,entry_bar,exit_bar,entry_price,exit_price,stop_loss,take_profit,confluence_score,exit_reason,bars_held,pnl_price,pnl_price_raw,r_multiple,initial_risk,spread_cost,slippage_cost,commission
+f55cbe2720e3,SHORT,2025-04-06 21:00:00,2025-04-06 21:15:00,1.08839,1.089095,1.09214,1.0809,74.96502083578213,regime_shifted,1,-0.0024,-0.0007,-0.637,0.0038,0.0009,0.0008,0.0

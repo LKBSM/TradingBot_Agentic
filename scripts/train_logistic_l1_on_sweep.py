@@ -52,6 +52,7 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
 SWEEP_DIR = ROOT / "reports" / "sweep"
 MODELS_DIR = ROOT / "models"
 MODELS_DIR.mkdir(parents=True, exist_ok=True)
@@ -172,58 +173,96 @@ def main() -> int:
         print(f"❌ Splits too small (train={len(X_tr)}, oos={len(X_te)})")
         return 3
 
-    from src.intelligence.scoring import LogisticL1Scorer
-    scorer = LogisticL1Scorer(
-        C=args.C,
-        component_names=FEATURE_NAMES,
-    )
-    scorer.fit(X_tr, y_tr)
-    p_tr = scorer.predict_p_win(X_tr)
-    p_te = scorer.predict_p_win(X_te)
+    from src.intelligence.scoring import LogisticL1Scorer, LGBMScorer
 
-    bs_tr = brier_skill(p_tr, y_tr)
-    bs_te = brier_skill(p_te, y_te)
-    coefs = scorer.coefficients()
-    nz = scorer.non_zero_components()
+    results = {}
+    for name, ctor in [
+        ("logistic_l1", lambda: LogisticL1Scorer(C=args.C, component_names=FEATURE_NAMES)),
+        ("lgbm", lambda: LGBMScorer(
+            num_leaves=15, learning_rate=0.05, n_estimators=200,
+            feature_names=FEATURE_NAMES,
+        )),
+    ]:
+        print(f"\n--- {name.upper()} ---")
+        scorer = ctor()
+        scorer.fit(X_tr, y_tr)
+        p_tr = scorer.predict_p_win(X_tr)
+        p_te = scorer.predict_p_win(X_te)
+        bs_tr = brier_skill(p_tr, y_tr)
+        bs_te = brier_skill(p_te, y_te)
+        print(f"  Brier skill IS  : {bs_tr:+.4f}")
+        print(f"  Brier skill OOS : {bs_te:+.4f}")
 
-    print(f"\nBrier skill IS  : {bs_tr:+.4f}")
-    print(f"Brier skill OOS : {bs_te:+.4f}")
-    print(f"Non-zero features (L1) : {nz}")
-    for k, v in coefs.items():
-        marker = "+" if abs(v) > 1e-8 else " "
-        print(f"  {marker} {k:18s}  {v:+.4f}")
+        if name == "logistic_l1":
+            coefs = scorer.coefficients()
+            for k, v in coefs.items():
+                marker = "+" if abs(v) > 1e-8 else " "
+                print(f"    {marker} {k:18s}  {v:+.4f}")
+            extra = {"coefficients": coefs}
+        else:
+            importance = scorer.feature_importance()
+            for k, v in sorted(importance.items(), key=lambda x: -x[1]):
+                print(f"    importance {k:18s}  {v}")
+            extra = {"feature_importance": importance}
 
-    model_path = MODELS_DIR / "scoring_v3_logistic_l1.pkl"
-    with model_path.open("wb") as f:
-        pickle.dump(scorer, f)
-    print(f"\nSaved model : {model_path}")
+        model_path = MODELS_DIR / f"scoring_v3_{name}.pkl"
+        with model_path.open("wb") as f:
+            pickle.dump(scorer, f)
+        print(f"  Saved : {model_path}")
+        results[name] = {
+            "bs_tr": bs_tr, "bs_te": bs_te,
+            "model_path": str(model_path.relative_to(ROOT)),
+            **extra,
+        }
+
+    # Pick winner = best OOS Brier skill
+    winner = max(results.items(), key=lambda kv: kv[1]["bs_te"])
+    print(f"\n🏆 Winner OOS : {winner[0]} (BS skill OOS = {winner[1]['bs_te']:+.4f})")
+
+    # For backward compat with older code, keep variables named after first scorer
+    bs_tr = results["logistic_l1"]["bs_tr"]
+    bs_te = results["logistic_l1"]["bs_te"]
+    coefs = results["logistic_l1"]["coefficients"]
+    nz = [k for k, v in coefs.items() if abs(v) > 1e-8]
 
     # Report
-    report = MODELS_DIR.parent / "reports" / "sweep" / "logistic_l1_report.md"
+    report = MODELS_DIR.parent / "reports" / "sweep" / "scoring_training_report.md"
     report.parent.mkdir(parents=True, exist_ok=True)
     lines = [
-        "# LogisticL1 — Action 3 training report",
+        "# Action 3 — Scoring training report (L1 vs LightGBM)",
         "",
         f"**Input** : {len(df)} trades aggregated from sweep cells.",
         f"**After feature build** : {len(X)} trades (drop breakevens |R| < 0.05).",
         f"**Train / OOS split** : {len(X_tr)} / {len(X_te)} (time-ordered).",
         f"**Base rate (P(win))** : {y.mean():.3f}",
+        f"**Winner OOS** : `{winner[0]}` (BS skill = {winner[1]['bs_te']:+.4f})",
         "",
-        "## Performance",
+        "## A/B comparison",
         "",
-        "| Set | Brier skill | Verdict |",
-        "| --- | --- | --- |",
-        f"| In-sample  | {bs_tr:+.4f} | {'✅ predictive' if bs_tr > 0.03 else '❌ weak'} |",
-        f"| OOS        | {bs_te:+.4f} | {'✅ predictive OOS' if bs_te > 0.03 else '❌ weak OOS — overfit ou noise'} |",
-        "",
-        "## Coefficients L1",
-        "",
-        "| Feature | Coef | Kept |",
-        "| --- | --- | --- |",
+        "| Model | BS skill IS | BS skill OOS | Verdict |",
+        "| --- | --- | --- | --- |",
     ]
+    for name, r in results.items():
+        verdict = "✅ predictive OOS" if r["bs_te"] > 0.03 else "❌ weak OOS"
+        lines.append(f"| `{name}` | {r['bs_tr']:+.4f} | {r['bs_te']:+.4f} | {verdict} |")
+
+    lines.append("")
+    lines.append("## Logistic L1 coefficients")
+    lines.append("")
+    lines.append("| Feature | Coef | Kept |")
+    lines.append("| --- | --- | --- |")
     for k, v in coefs.items():
         kept = "✅" if abs(v) > 1e-8 else "❌ dropped"
         lines.append(f"| `{k}` | {v:+.4f} | {kept} |")
+
+    if "feature_importance" in results.get("lgbm", {}):
+        lines.append("")
+        lines.append("## LightGBM feature importance")
+        lines.append("")
+        lines.append("| Feature | Importance |")
+        lines.append("| --- | --- |")
+        for k, v in sorted(results["lgbm"]["feature_importance"].items(), key=lambda x: -x[1]):
+            lines.append(f"| `{k}` | {v} |")
 
     lines.append("")
     lines.append("## Interprétation")
