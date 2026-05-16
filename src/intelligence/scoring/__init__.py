@@ -27,5 +27,6 @@ These are Sprint 4 work items.
 
 from src.intelligence.scoring.logistic_l1 import LogisticL1Scorer  # noqa: F401
 from src.intelligence.scoring.isotonic_recalibration import IsotonicRecalibrator  # noqa: F401
+from src.intelligence.scoring.lgbm_scorer import LGBMScorer  # noqa: F401
 
-__all__ = ["LogisticL1Scorer", "IsotonicRecalibrator"]
+__all__ = ["LogisticL1Scorer", "IsotonicRecalibrator", "LGBMScorer"]
