@@ -78,7 +78,25 @@
       "initial_risk": 10.81,
       "spread_cost": 0.9171,
       "slippage_cost": 0.6114,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 12.75,
+        "FVG": 10.445,
+        "OrderBlock": 0.0,
+        "Regime": 12.5,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 2.839,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 12.75,
+      "cmp_FVG": 10.445,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 12.5,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 2.839,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "1c385a0ef04e",
@@ -98,7 +116,25 @@
       "initial_risk": 27.14,
       "spread_cost": 2.3951,
       "slippage_cost": 1.3147,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 7.5,
+        "FVG": 15.0,
+        "OrderBlock": 0.0,
+        "Regime": 13.894,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 7.5,
+      "cmp_FVG": 15.0,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 13.894,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "4457f06d01b9",
@@ -118,7 +154,25 @@
       "initial_risk": 16.12,
       "spread_cost": 0.9195,
       "slippage_cost": 0.7962,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 7.5,
+        "FVG": 15.0,
+        "OrderBlock": 0.0,
+        "Regime": 14.098,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 7.5,
+      "cmp_FVG": 15.0,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 14.098,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "9e427ba56c8f",
@@ -138,7 +192,25 @@
       "initial_risk": 19.89,
       "spread_cost": 0.9226,
       "slippage_cost": 0.9782,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 12.75,
+        "FVG": 10.719,
+        "OrderBlock": 0.0,
+        "Regime": 12.661,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 12.75,
+      "cmp_FVG": 10.719,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 12.661,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "58ef00857ec1",
@@ -158,7 +230,25 @@
       "initial_risk": 13.38,
       "spread_cost": 2.6306,
       "slippage_cost": 0.6861,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 12.75,
+        "FVG": 9.72,
+        "OrderBlock": 0.0,
+        "Regime": 13.479,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 12.75,
+      "cmp_FVG": 9.72,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 13.479,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "033622410411",
@@ -178,7 +268,25 @@
       "initial_risk": 29.02,
       "spread_cost": 2.6616,
       "slippage_cost": 1.5576,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 12.75,
+        "FVG": 15.0,
+        "OrderBlock": 3.773,
+        "Regime": 15.061,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 12.75,
+      "cmp_FVG": 15.0,
+      "cmp_OrderBlock": 3.773,
+      "cmp_Regime": 15.061,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "15ffc5262a1d",
@@ -198,7 +306,25 @@
       "initial_risk": 18.46,
       "spread_cost": 2.6868,
       "slippage_cost": 1.0325,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 15.0,
+        "FVG": 15.0,
+        "OrderBlock": 0.0,
+        "Regime": 12.5,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 15.0,
+      "cmp_FVG": 15.0,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 12.5,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "9feda741da1a",
@@ -218,7 +344,25 @@
       "initial_risk": 17.44,
       "spread_cost": 0.9832,
       "slippage_cost": 0.9301,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 15.0,
+        "FVG": 14.062,
+        "OrderBlock": 0.0,
+        "Regime": 12.5,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 15.0,
+      "cmp_FVG": 14.062,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 12.5,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "135f2d29cdd3",
@@ -238,7 +382,25 @@
       "initial_risk": 11.74,
       "spread_cost": 2.5978,
       "slippage_cost": 0.6495,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 15.0,
+        "FVG": 11.761,
+        "OrderBlock": 0.0,
+        "Regime": 12.5,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 2.753,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 15.0,
+      "cmp_FVG": 11.761,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 12.5,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 2.753,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "54c604c762f2",
@@ -258,7 +420,25 @@
       "initial_risk": 16.76,
       "spread_cost": 2.6203,
       "slippage_cost": 0.8944,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 7.5,
+        "FVG": 15.0,
+        "OrderBlock": 10.0,
+        "Regime": 3.0,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 7.5,
+      "cmp_FVG": 15.0,
+      "cmp_OrderBlock": 10.0,
+      "cmp_Regime": 3.0,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "0e665084714a",
@@ -278,7 +458,25 @@
       "initial_risk": 20.42,
       "spread_cost": 2.6108,
       "slippage_cost": 1.065,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 12.75,
+        "FVG": 0.0,
+        "OrderBlock": 9.771,
+        "Regime": 13.396,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 12.75,
+      "cmp_FVG": 0.0,
+      "cmp_OrderBlock": 9.771,
+      "cmp_Regime": 13.396,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "f4c64236e91e",
@@ -298,7 +496,25 @@
       "initial_risk": 15.46,
       "spread_cost": 2.5918,
       "slippage_cost": 0.7797,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 7.5,
+        "FVG": 15.0,
+        "OrderBlock": 10.0,
+        "Regime": 3.0,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 7.5,
+      "cmp_FVG": 15.0,
+      "cmp_OrderBlock": 10.0,
+      "cmp_Regime": 3.0,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "2edceb7db832",
@@ -318,7 +534,25 @@
       "initial_risk": 9.76,
       "spread_cost": 1.6896,
       "slippage_cost": 0.6758,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 12.75,
+        "FVG": 11.748,
+        "OrderBlock": 0.0,
+        "Regime": 12.5,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 1.837,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 12.75,
+      "cmp_FVG": 11.748,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 12.5,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 1.837,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "01d11d469002",
@@ -338,7 +572,25 @@
       "initial_risk": 11.06,
       "spread_cost": 1.6382,
       "slippage_cost": 0.6553,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 12.75,
+        "FVG": 14.964,
+        "OrderBlock": 0.0,
+        "Regime": 12.5,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 12.75,
+      "cmp_FVG": 14.964,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 12.5,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "4c7a3121a6a6",
@@ -358,7 +610,25 @@
       "initial_risk": 10.03,
       "spread_cost": 2.8313,
       "slippage_cost": 0.7078,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 12.75,
+        "FVG": 12.374,
+        "OrderBlock": 0.0,
+        "Regime": 12.5,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 1.95,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 12.75,
+      "cmp_FVG": 12.374,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 12.5,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 1.95,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "938a4648c050",
@@ -378,7 +648,25 @@
       "initial_risk": 13.73,
       "spread_cost": 3.1388,
       "slippage_cost": 0.8385,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 12.75,
+        "FVG": 14.534,
+        "OrderBlock": 0.0,
+        "Regime": 12.5,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 12.75,
+      "cmp_FVG": 14.534,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 12.5,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "39b79661ab27",
@@ -398,7 +686,25 @@
       "initial_risk": 13.57,
       "spread_cost": 1.1837,
       "slippage_cost": 0.8593,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 12.75,
+        "FVG": 12.397,
+        "OrderBlock": 0.0,
+        "Regime": 12.5,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 1.95,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 12.75,
+      "cmp_FVG": 12.397,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 12.5,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 1.95,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "87c820258b97",
@@ -418,7 +724,25 @@
       "initial_risk": 20.39,
       "spread_cost": 3.3454,
       "slippage_cost": 1.3667,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 15.0,
+        "FVG": 10.552,
+        "OrderBlock": 0.0,
+        "Regime": 12.5,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 2.931,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 15.0,
+      "cmp_FVG": 10.552,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 12.5,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 2.931,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "748ce18dad6c",
@@ -438,7 +762,25 @@
       "initial_risk": 17.01,
       "spread_cost": 3.3539,
       "slippage_cost": 1.1425,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 12.75,
+        "FVG": 12.027,
+        "OrderBlock": 0.0,
+        "Regime": 12.5,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 1.751,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 12.75,
+      "cmp_FVG": 12.027,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 12.5,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 1.751,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "e9e16a1f4f12",
@@ -458,7 +800,25 @@
       "initial_risk": 26.91,
       "spread_cost": 3.4915,
       "slippage_cost": 1.9364,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 7.5,
+        "FVG": 15.0,
+        "OrderBlock": 0.0,
+        "Regime": 13.363,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 7.5,
+      "cmp_FVG": 15.0,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 13.363,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "5de39b39e506",
@@ -478,7 +838,25 @@
       "initial_risk": 31.74,
       "spread_cost": 1.267,
       "slippage_cost": 2.1362,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 7.5,
+        "FVG": 12.669,
+        "OrderBlock": 0.0,
+        "Regime": 15.764,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 7.5,
+      "cmp_FVG": 12.669,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 15.764,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "863e8cd271dd",
@@ -498,7 +876,25 @@
       "initial_risk": 38.12,
       "spread_cost": 1.2533,
       "slippage_cost": 2.5669,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 12.75,
+        "FVG": 0.0,
+        "OrderBlock": 10.0,
+        "Regime": 16.259,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 12.75,
+      "cmp_FVG": 0.0,
+      "cmp_OrderBlock": 10.0,
+      "cmp_Regime": 16.259,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "50c1c83587ab",
@@ -518,7 +914,25 @@
       "initial_risk": 51.12,
       "spread_cost": 1.2402,
       "slippage_cost": 3.357,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 7.5,
+        "FVG": 0.0,
+        "OrderBlock": 10.0,
+        "Regime": 18.24,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 7.5,
+      "cmp_FVG": 0.0,
+      "cmp_OrderBlock": 10.0,
+      "cmp_Regime": 18.24,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "e61a4704c03e",
@@ -538,7 +952,25 @@
       "initial_risk": 39.86,
       "spread_cost": 3.2343,
       "slippage_cost": 2.6174,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 12.75,
+        "FVG": 15.0,
+        "OrderBlock": 0.0,
+        "Regime": 13.898,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 12.75,
+      "cmp_FVG": 15.0,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 13.898,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "26f7b14379d6",
@@ -558,7 +990,25 @@
       "initial_risk": 46.81,
       "spread_cost": 1.2081,
       "slippage_cost": 3.0457,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 12.75,
+        "FVG": 12.064,
+        "OrderBlock": 0.0,
+        "Regime": 15.323,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 1.738,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 12.75,
+      "cmp_FVG": 12.064,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 15.323,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 1.738,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "ba75e2f20eaa",
@@ -578,7 +1028,25 @@
       "initial_risk": 27.57,
       "spread_cost": 2.0785,
       "slippage_cost": 1.8253,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 12.75,
+        "FVG": 11.364,
+        "OrderBlock": 0.0,
+        "Regime": 12.5,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 12.75,
+      "cmp_FVG": 11.364,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 12.5,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "92bdef456e8a",
@@ -598,7 +1066,25 @@
       "initial_risk": 29.95,
       "spread_cost": 1.2166,
       "slippage_cost": 1.9511,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 7.5,
+        "FVG": 15.0,
+        "OrderBlock": 0.0,
+        "Regime": 13.293,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 7.5,
+      "cmp_FVG": 15.0,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 13.293,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "4b73ac98ca77",
@@ -618,7 +1104,25 @@
       "initial_risk": 16.85,
       "spread_cost": 1.2339,
       "slippage_cost": 1.0822,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 12.75,
+        "FVG": 12.358,
+        "OrderBlock": 0.0,
+        "Regime": 12.5,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 12.75,
+      "cmp_FVG": 12.358,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 12.5,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "1487179c555a",
@@ -638,7 +1142,25 @@
       "initial_risk": 17.93,
       "spread_cost": 3.5973,
       "slippage_cost": 1.2897,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 15.0,
+        "FVG": 11.807,
+        "OrderBlock": 10.0,
+        "Regime": 3.0,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 2.734,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 15.0,
+      "cmp_FVG": 11.807,
+      "cmp_OrderBlock": 10.0,
+      "cmp_Regime": 3.0,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 2.734,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "c0fb40cdead2",
@@ -658,7 +1180,25 @@
       "initial_risk": 41.03,
       "spread_cost": 2.3868,
       "slippage_cost": 3.1711,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 12.75,
+        "FVG": 15.0,
+        "OrderBlock": 0.0,
+        "Regime": 12.5,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 12.75,
+      "cmp_FVG": 15.0,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 12.5,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "2abe803fd5d2",
@@ -678,7 +1218,25 @@
       "initial_risk": 20.22,
       "spread_cost": 2.4607,
       "slippage_cost": 1.5879,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 7.5,
+        "FVG": 15.0,
+        "OrderBlock": 0.0,
+        "Regime": 14.18,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 7.5,
+      "cmp_FVG": 15.0,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 14.18,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "d77db58f6216",
@@ -698,7 +1256,25 @@
       "initial_risk": 19.43,
       "spread_cost": 3.9507,
       "slippage_cost": 1.5939,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 7.5,
+        "FVG": 15.0,
+        "OrderBlock": 0.0,
+        "Regime": 14.703,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 1.95,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 7.5,
+      "cmp_FVG": 15.0,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 14.703,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 1.95,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "6a1913e495a4",
@@ -718,7 +1294,25 @@
       "initial_risk": 22.63,
       "spread_cost": 3.9604,
       "slippage_cost": 1.9143,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 7.5,
+        "FVG": 14.187,
+        "OrderBlock": 0.0,
+        "Regime": 14.721,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 7.5,
+      "cmp_FVG": 14.187,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 14.721,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "3aa678432cf6",
@@ -738,7 +1332,25 @@
       "initial_risk": 23.91,
       "spread_cost": 4.0163,
       "slippage_cost": 1.9597,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 12.75,
+        "FVG": 15.0,
+        "OrderBlock": 0.0,
+        "Regime": 12.5,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 12.75,
+      "cmp_FVG": 15.0,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 12.5,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "5afe4f4b5eec",
@@ -758,7 +1370,25 @@
       "initial_risk": 43.74,
       "spread_cost": 4.0064,
       "slippage_cost": 3.4535,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 12.75,
+        "FVG": 10.751,
+        "OrderBlock": 0.0,
+        "Regime": 12.5,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 2.905,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 12.75,
+      "cmp_FVG": 10.751,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 12.5,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 2.905,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "caba08a430a5",
@@ -778,7 +1408,25 @@
       "initial_risk": 49.82,
       "spread_cost": 4.3861,
       "slippage_cost": 4.3654,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 7.5,
+        "FVG": 15.0,
+        "OrderBlock": 0.0,
+        "Regime": 13.298,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 7.5,
+      "cmp_FVG": 15.0,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 13.298,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "ab4edccfba0f",
@@ -798,7 +1446,25 @@
       "initial_risk": 73.41,
       "spread_cost": 4.4273,
       "slippage_cost": 6.5335,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 7.5,
+        "FVG": 8.181,
+        "OrderBlock": 0.0,
+        "Regime": 20.791,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 7.5,
+      "cmp_FVG": 8.181,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 20.791,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "8fedb912f354",
@@ -818,7 +1484,25 @@
       "initial_risk": 101.04,
       "spread_cost": 1.5468,
       "slippage_cost": 8.9395,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 15.0,
+        "FVG": 15.0,
+        "OrderBlock": 0.0,
+        "Regime": 12.5,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 15.0,
+      "cmp_FVG": 15.0,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 12.5,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "c567db3c7e10",
@@ -838,7 +1522,25 @@
       "initial_risk": 111.43,
       "spread_cost": 2.6702,
       "slippage_cost": 9.3373,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 7.5,
+        "FVG": 0.0,
+        "OrderBlock": 9.207,
+        "Regime": 21.098,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 1.355,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 7.5,
+      "cmp_FVG": 0.0,
+      "cmp_OrderBlock": 9.207,
+      "cmp_Regime": 21.098,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 1.355,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "4179943f06c7",
@@ -858,7 +1560,25 @@
       "initial_risk": 83.24,
       "spread_cost": 2.8444,
       "slippage_cost": 6.869,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 7.5,
+        "FVG": 0.0,
+        "OrderBlock": 10.0,
+        "Regime": 19.949,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 1.453,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 7.5,
+      "cmp_FVG": 0.0,
+      "cmp_OrderBlock": 10.0,
+      "cmp_Regime": 19.949,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 1.453,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "9262b54d2297",
@@ -878,7 +1598,25 @@
       "initial_risk": 100.13,
       "spread_cost": 1.5008,
       "slippage_cost": 8.2588,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 7.5,
+        "FVG": 9.073,
+        "OrderBlock": 0.0,
+        "Regime": 20.27,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 7.5,
+      "cmp_FVG": 9.073,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 20.27,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "d8a0d9365fd9",
@@ -898,7 +1636,25 @@
       "initial_risk": 125.55,
       "spread_cost": 3.7891,
       "slippage_cost": 9.4558,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 7.5,
+        "FVG": 8.925,
+        "OrderBlock": 6.326,
+        "Regime": 21.25,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 2.901,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 7.5,
+      "cmp_FVG": 8.925,
+      "cmp_OrderBlock": 6.326,
+      "cmp_Regime": 21.25,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 2.901,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "7a3adf849f86",
@@ -918,7 +1674,25 @@
       "initial_risk": 130.69,
       "spread_cost": 3.8771,
       "slippage_cost": 10.0912,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 7.5,
+        "FVG": 0.0,
+        "OrderBlock": 8.586,
+        "Regime": 21.25,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 2.337,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 7.5,
+      "cmp_FVG": 0.0,
+      "cmp_OrderBlock": 8.586,
+      "cmp_Regime": 21.25,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 2.337,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "388b2b8437cb",
@@ -938,7 +1712,25 @@
       "initial_risk": 145.27,
       "spread_cost": 3.7366,
       "slippage_cost": 10.8333,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 12.75,
+        "FVG": 5.985,
+        "OrderBlock": 0.0,
+        "Regime": 21.142,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 2.912,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 12.75,
+      "cmp_FVG": 5.985,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 21.142,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 2.912,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "448a69dd1bd6",
@@ -958,7 +1750,25 @@
       "initial_risk": 126.22,
       "spread_cost": 3.7445,
       "slippage_cost": 9.4899,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 7.5,
+        "FVG": 0.0,
+        "OrderBlock": 8.24,
+        "Regime": 21.25,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 1.576,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 7.5,
+      "cmp_FVG": 0.0,
+      "cmp_OrderBlock": 8.24,
+      "cmp_Regime": 21.25,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 1.576,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "74190304ddb8",
@@ -978,7 +1788,25 @@
       "initial_risk": 118.79,
       "spread_cost": 3.6342,
       "slippage_cost": 8.6034,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 7.5,
+        "FVG": 15.0,
+        "OrderBlock": 0.0,
+        "Regime": 21.25,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 7.5,
+      "cmp_FVG": 15.0,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 21.25,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "601a4cc28ac6",
@@ -998,7 +1826,25 @@
       "initial_risk": 135.06,
       "spread_cost": 3.6172,
       "slippage_cost": 9.7836,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 7.5,
+        "FVG": 0.0,
+        "OrderBlock": 10.0,
+        "Regime": 21.25,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 2.933,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 7.5,
+      "cmp_FVG": 0.0,
+      "cmp_OrderBlock": 10.0,
+      "cmp_Regime": 21.25,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 2.933,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "c8b21f7ba558",
@@ -1018,7 +1864,25 @@
       "initial_risk": 59.79,
       "spread_cost": 3.9052,
       "slippage_cost": 4.6422,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 12.75,
+        "FVG": 8.446,
+        "OrderBlock": 0.0,
+        "Regime": 16.958,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 2.832,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 12.75,
+      "cmp_FVG": 8.446,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 16.958,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 2.832,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "8df57262d6a2",
@@ -1038,7 +1902,25 @@
       "initial_risk": 34.43,
       "spread_cost": 4.0265,
       "slippage_cost": 2.8118,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 7.5,
+        "FVG": 9.696,
+        "OrderBlock": 10.0,
+        "Regime": 12.5,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 7.5,
+      "cmp_FVG": 9.696,
+      "cmp_OrderBlock": 10.0,
+      "cmp_Regime": 12.5,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "586f51641b4d",
@@ -1058,7 +1940,25 @@
       "initial_risk": 29.64,
       "spread_cost": 2.9749,
       "slippage_cost": 2.4945,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 7.5,
+        "FVG": 14.903,
+        "OrderBlock": 0.0,
+        "Regime": 13.57,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 7.5,
+      "cmp_FVG": 14.903,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 13.57,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "92866f1b0884",
@@ -1078,7 +1978,25 @@
       "initial_risk": 79.65,
       "spread_cost": 1.5166,
       "slippage_cost": 6.5661,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 12.75,
+        "FVG": 5.588,
+        "OrderBlock": 0.0,
+        "Regime": 18.86,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 12.75,
+      "cmp_FVG": 5.588,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 18.86,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "77b906d6ed32",
@@ -1098,7 +2016,25 @@
       "initial_risk": 47.8,
       "spread_cost": 1.4051,
       "slippage_cost": 3.5978,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 12.75,
+        "FVG": 0.0,
+        "OrderBlock": 9.049,
+        "Regime": 16.578,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 12.75,
+      "cmp_FVG": 0.0,
+      "cmp_OrderBlock": 9.049,
+      "cmp_Regime": 16.578,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "631ef65b1ee7",
@@ -1118,7 +2054,25 @@
       "initial_risk": 48.42,
       "spread_cost": 1.3974,
       "slippage_cost": 3.5715,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 12.75,
+        "FVG": 0.0,
+        "OrderBlock": 6.56,
+        "Regime": 19.224,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 1.95,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 12.75,
+      "cmp_FVG": 0.0,
+      "cmp_OrderBlock": 6.56,
+      "cmp_Regime": 19.224,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 1.95,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "e56b2edd6dbe",
@@ -1138,7 +2092,25 @@
       "initial_risk": 59.17,
       "spread_cost": 1.367,
       "slippage_cost": 4.5336,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 7.5,
+        "FVG": 10.516,
+        "OrderBlock": 0.0,
+        "Regime": 21.196,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 7.5,
+      "cmp_FVG": 10.516,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 21.196,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "66310aa9edb8",
@@ -1158,7 +2130,25 @@
       "initial_risk": 76.04,
       "spread_cost": 1.3878,
       "slippage_cost": 5.5872,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 7.5,
+        "FVG": 0.0,
+        "OrderBlock": 9.694,
+        "Regime": 21.25,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 2.533,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 7.5,
+      "cmp_FVG": 0.0,
+      "cmp_OrderBlock": 9.694,
+      "cmp_Regime": 21.25,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 2.533,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "4c581d161e02",
@@ -1178,7 +2168,25 @@
       "initial_risk": 76.6,
       "spread_cost": 1.3802,
       "slippage_cost": 5.6143,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 7.5,
+        "FVG": 0.0,
+        "OrderBlock": 8.61,
+        "Regime": 21.25,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 1.446,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 7.5,
+      "cmp_FVG": 0.0,
+      "cmp_OrderBlock": 8.61,
+      "cmp_Regime": 21.25,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 1.446,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "4d80b9082cfe",
@@ -1198,7 +2206,25 @@
       "initial_risk": 40.35,
       "spread_cost": 3.7856,
       "slippage_cost": 2.9872,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 15.0,
+        "FVG": 11.199,
+        "OrderBlock": 0.0,
+        "Regime": 12.535,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 15.0,
+      "cmp_FVG": 11.199,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 12.535,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "1faba61a1ef9",
@@ -1218,7 +2244,25 @@
       "initial_risk": 42.56,
       "spread_cost": 1.3806,
       "slippage_cost": 3.2134,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 15.0,
+        "FVG": 0.0,
+        "OrderBlock": 10.0,
+        "Regime": 12.5,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 2.996,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 15.0,
+      "cmp_FVG": 0.0,
+      "cmp_OrderBlock": 10.0,
+      "cmp_Regime": 12.5,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 2.996,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "3715269d5932",
@@ -1238,7 +2282,25 @@
       "initial_risk": 48.37,
       "spread_cost": 2.2565,
       "slippage_cost": 3.6356,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 12.75,
+        "FVG": 6.176,
+        "OrderBlock": 0.0,
+        "Regime": 17.386,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 12.75,
+      "cmp_FVG": 6.176,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 17.386,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "606fe8a23da6",
@@ -1258,7 +2320,25 @@
       "initial_risk": 70.51,
       "spread_cost": 3.505,
       "slippage_cost": 5.2368,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 7.5,
+        "FVG": 14.303,
+        "OrderBlock": 0.0,
+        "Regime": 18.716,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 7.5,
+      "cmp_FVG": 14.303,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 18.716,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "d21bef07087d",
@@ -1278,7 +2358,25 @@
       "initial_risk": 59.04,
       "spread_cost": 3.4917,
       "slippage_cost": 4.0878,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 7.5,
+        "FVG": 0.0,
+        "OrderBlock": 9.096,
+        "Regime": 20.994,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 1.579,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 7.5,
+      "cmp_FVG": 0.0,
+      "cmp_OrderBlock": 9.096,
+      "cmp_Regime": 20.994,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 1.579,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "f4f79eb01e5a",
@@ -1298,7 +2396,25 @@
       "initial_risk": 59.84,
       "spread_cost": 3.4154,
       "slippage_cost": 4.2875,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 7.5,
+        "FVG": 8.02,
+        "OrderBlock": 0.0,
+        "Regime": 20.059,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 7.5,
+      "cmp_FVG": 8.02,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 20.059,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "af2b3ab00196",
@@ -1318,7 +2434,25 @@
       "initial_risk": 83.39,
       "spread_cost": 3.3067,
       "slippage_cost": 5.6076,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 7.5,
+        "FVG": 0.0,
+        "OrderBlock": 10.0,
+        "Regime": 21.25,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 7.5,
+      "cmp_FVG": 0.0,
+      "cmp_OrderBlock": 10.0,
+      "cmp_Regime": 21.25,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "2c63f02f4e95",
@@ -1338,7 +2472,25 @@
       "initial_risk": 93.41,
       "spread_cost": 1.272,
       "slippage_cost": 6.3283,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 7.5,
+        "FVG": 0.0,
+        "OrderBlock": 10.0,
+        "Regime": 21.25,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 2.49,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 7.5,
+      "cmp_FVG": 0.0,
+      "cmp_OrderBlock": 10.0,
+      "cmp_Regime": 21.25,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 2.49,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "fe9c05161216",
@@ -1358,7 +2510,25 @@
       "initial_risk": 94.5,
       "spread_cost": 1.3112,
       "slippage_cost": 6.544,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 7.5,
+        "FVG": 0.0,
+        "OrderBlock": 9.92,
+        "Regime": 21.238,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 0.998,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 7.5,
+      "cmp_FVG": 0.0,
+      "cmp_OrderBlock": 9.92,
+      "cmp_Regime": 21.238,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 0.998,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "c81f061f8653",
@@ -1378,7 +2548,25 @@
       "initial_risk": 40.22,
       "spread_cost": 3.6691,
       "slippage_cost": 2.8894,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 7.5,
+        "FVG": 0.0,
+        "OrderBlock": 10.0,
+        "Regime": 19.401,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 7.5,
+      "cmp_FVG": 0.0,
+      "cmp_OrderBlock": 10.0,
+      "cmp_Regime": 19.401,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "e1279c92ddd2",
@@ -1398,7 +2586,25 @@
       "initial_risk": 43.31,
       "spread_cost": 3.6701,
       "slippage_cost": 3.2916,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 7.5,
+        "FVG": 15.0,
+        "OrderBlock": 0.0,
+        "Regime": 16.399,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 7.5,
+      "cmp_FVG": 15.0,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 16.399,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "e8ef39d42122",
@@ -1418,7 +2624,25 @@
       "initial_risk": 36.05,
       "spread_cost": 3.8007,
       "slippage_cost": 2.9705,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 12.75,
+        "FVG": 6.489,
+        "OrderBlock": 6.123,
+        "Regime": 12.5,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 12.75,
+      "cmp_FVG": 6.489,
+      "cmp_OrderBlock": 6.123,
+      "cmp_Regime": 12.5,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "8a001c4eeb12",
@@ -1438,7 +2662,25 @@
       "initial_risk": 30.91,
       "spread_cost": 2.3474,
       "slippage_cost": 2.4177,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 7.5,
+        "FVG": 15.0,
+        "OrderBlock": 0.0,
+        "Regime": 14.002,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 2.933,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 7.5,
+      "cmp_FVG": 15.0,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 14.002,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 2.933,
+      "cmp_RSI_Divergence": 0.0
     },
     {
       "signal_id": "2aa6d366813b",
@@ -1458,7 +2700,25 @@
       "initial_risk": 23.63,
       "spread_cost": 1.3723,
       "slippage_cost": 1.8692,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 7.5,
+        "FVG": 15.0,
+        "OrderBlock": 0.0,
+        "Regime": 13.198,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 3.0,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 7.5,
+      "cmp_FVG": 15.0,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 13.198,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 3.0,
+      "cmp_RSI_Divergence": 0.0
     }
   ],
   "institutional_metrics": {

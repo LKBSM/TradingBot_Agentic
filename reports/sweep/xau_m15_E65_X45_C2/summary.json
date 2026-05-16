@@ -76,7 +76,25 @@
       "initial_risk": 123.98,
       "spread_cost": 3.8019,
       "slippage_cost": 9.4818,
-      "commission": 0.0
+      "commission": 0.0,
+      "components": {
+        "BOS": 7.5,
+        "FVG": 15.0,
+        "OrderBlock": 0.0,
+        "Regime": 21.25,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 2.935,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 7.5,
+      "cmp_FVG": 15.0,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 21.25,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 2.935,
+      "cmp_RSI_Divergence": 0.0
     }
   ],
   "institutional_metrics": {
