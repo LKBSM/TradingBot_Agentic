@@ -62,11 +62,19 @@ class FactorModelPredictor:
         self._model.fit(X_clean, y_clean, feature_name=list(self.feature_names))
         return self
 
-    def predict(self, X: pd.DataFrame) -> pd.Series:
+    def predict(self, X) -> pd.Series:
         if self._model is None:
             raise RuntimeError("FactorModelPredictor not fitted")
-        X_array = X.fillna(0).to_numpy(dtype=float)
-        return pd.Series(self._model.predict(X_array), index=X.index, name="expected_return")
+        if isinstance(X, pd.DataFrame):
+            X_array = X.fillna(0).to_numpy(dtype=float)
+            idx = X.index
+        else:
+            X_array = np.nan_to_num(np.asarray(X, dtype=float))
+            if X_array.ndim == 1:
+                X_array = X_array.reshape(1, -1)
+            idx = None
+        preds = self._model.predict(X_array)
+        return pd.Series(preds, index=idx, name="expected_return")
 
     def feature_importance(self) -> dict[str, float]:
         if self._model is None:
