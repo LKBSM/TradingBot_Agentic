@@ -1,0 +1,1159 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Smart Sentinel AI — Indicateur de marché (mockup)</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --surface-2: #243142;
+      --border: #2d3a4f;
+      --text: #e6edf3;
+      --text-dim: #8b96a8;
+      --text-muted: #5a6779;
+      --accent: #ffd866;
+      --bull: #4ade80;
+      --bear: #f87171;
+      --neutral: #a1a1aa;
+      --institutional: #c084fc;
+      --strong: #4ade80;
+      --moderate: #fbbf24;
+      --weak: #fb923c;
+      --warn-bg: #2d1f0f;
+      --warn-border: #d97706;
+      --info-bg: #0c2030;
+      --info-border: #3b82f6;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 0;
+      line-height: 1.55;
+      font-size: 15px;
+    }
+    .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+    header { border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; margin-bottom: 2rem; }
+    .brand { font-size: 1.3rem; font-weight: 700; letter-spacing: -0.01em; }
+    .brand span { color: var(--accent); }
+    .mockup-tag {
+      display: inline-block;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      background: var(--surface);
+      padding: 0.2rem 0.5rem;
+      border-radius: 0.3rem;
+      margin-top: 0.5rem;
+      font-family: ui-monospace, "SF Mono", monospace;
+    }
+    h2 {
+      font-size: 1.4rem;
+      margin-top: 3rem;
+      margin-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.4rem;
+    }
+    h2 .section-num {
+      color: var(--accent);
+      font-family: ui-monospace, monospace;
+      font-size: 0.95rem;
+      margin-right: 0.5rem;
+    }
+    h3 {
+      font-size: 1.05rem;
+      margin-top: 1.5rem;
+      margin-bottom: 0.6rem;
+      color: var(--text);
+    }
+    p.intro { color: var(--text-dim); max-width: 78ch; }
+
+    .positioning-banner {
+      background: linear-gradient(135deg, #0c2030 0%, #142540 100%);
+      border-left: 4px solid var(--info-border);
+      border-radius: 0 0.5rem 0.5rem 0;
+      padding: 1.1rem 1.4rem;
+      margin: 1rem 0 2rem;
+    }
+    .positioning-banner b { color: var(--accent); }
+    .positioning-banner .vs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-top: 0.8rem;
+      font-size: 0.9rem;
+    }
+    .positioning-banner .vs > div { background: rgba(255,255,255,0.03); padding: 0.7rem 0.9rem; border-radius: 0.35rem; }
+    .positioning-banner .vs .ok { border-left: 3px solid var(--bull); }
+    .positioning-banner .vs .ko { border-left: 3px solid var(--bear); }
+    .positioning-banner ul { margin: 0.3rem 0 0; padding-left: 1.1rem; }
+    .positioning-banner li { margin: 0.15rem 0; font-size: 0.88rem; }
+
+    .toc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      padding: 1rem 1.25rem;
+      margin-bottom: 2rem;
+    }
+    .toc h3 { margin: 0 0 0.5rem; font-size: 0.85rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.04em; }
+    .toc ol { margin: 0; padding-left: 1.25rem; columns: 2; column-gap: 2rem; }
+    .toc li { margin: 0.2rem 0; font-size: 0.92rem; }
+    .toc a { color: var(--text); text-decoration: none; }
+    .toc a:hover { color: var(--accent); }
+
+    .signal-card {
+      background: linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+      margin: 1rem 0;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.25rem 0.65rem;
+      border-radius: 0.4rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+    .badge.bull { background: rgba(74, 222, 128, 0.15); color: var(--bull); }
+    .badge.bear { background: rgba(248, 113, 113, 0.15); color: var(--bear); }
+    .badge.neutral { background: rgba(161, 161, 170, 0.15); color: var(--neutral); }
+    .badge.strong { background: rgba(74, 222, 128, 0.15); color: var(--strong); }
+    .badge.moderate { background: rgba(251, 191, 36, 0.15); color: var(--moderate); }
+    .badge.weak { background: rgba(251, 146, 60, 0.15); color: var(--weak); }
+    .badge.info { background: rgba(59, 130, 246, 0.15); color: #60a5fa; font-family: ui-monospace, monospace; font-size: 0.72rem; }
+
+    .signal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+    .signal-head .title { font-size: 1.4rem; font-weight: 700; margin: 0; }
+    .signal-head .tf { color: var(--text-dim); font-weight: 400; font-size: 0.9rem; margin-left: 0.5rem; }
+    .signal-meta { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+    /* Structure readout — descriptive levels, NOT trade orders */
+    .readout-block {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      padding: 1rem 1.2rem;
+      margin: 0.8rem 0;
+    }
+    .readout-block h4 {
+      margin: 0 0 0.6rem;
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .readout-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.45rem 0;
+      border-bottom: 1px dashed rgba(255,255,255,0.05);
+      font-size: 0.92rem;
+    }
+    .readout-row:last-child { border-bottom: none; }
+    .readout-row .key { color: var(--text-dim); }
+    .readout-row .val { font-variant-numeric: tabular-nums; font-weight: 500; }
+    .readout-row .val.dim { color: var(--text-muted); font-weight: 400; }
+    .readout-row .val.green { color: var(--bull); }
+    .readout-row .val.red { color: var(--bear); }
+    .readout-row .val.yellow { color: var(--moderate); }
+    .readout-row .val.zone { font-family: ui-monospace, monospace; font-size: 0.86rem; }
+
+    .conviction-bar { margin: 0.8rem 0 1.2rem; }
+    .conviction-bar .label-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      margin-bottom: 0.3rem;
+    }
+    .conviction-bar .bar {
+      position: relative;
+      height: 8px;
+      background: var(--bg);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .conviction-bar .fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--bear) 0%, var(--moderate) 50%, var(--bull) 100%);
+      border-radius: 4px;
+    }
+    .conviction-bar .interval-overlay {
+      position: relative;
+      height: 4px;
+      margin-top: 4px;
+      background: var(--bg);
+      border-radius: 2px;
+    }
+    .conviction-bar .interval {
+      position: absolute;
+      height: 100%;
+      background: rgba(96, 165, 250, 0.45);
+      border-left: 2px solid #60a5fa;
+      border-right: 2px solid #60a5fa;
+      border-radius: 2px;
+    }
+    .conviction-bar .ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+      font-family: ui-monospace, monospace;
+    }
+    .conviction-legend {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      margin-top: 0.5rem;
+    }
+    .conviction-legend .swatch {
+      display: inline-block; width: 10px; height: 10px; background: rgba(96,165,250,0.45);
+      border: 1px solid #60a5fa; border-radius: 2px; vertical-align: middle; margin-right: 0.3rem;
+    }
+
+    .narrative {
+      background: var(--bg);
+      border-left: 3px solid var(--accent);
+      padding: 0.9rem 1.1rem;
+      border-radius: 0 0.4rem 0.4rem 0;
+      margin: 1.2rem 0;
+      font-size: 0.95rem;
+      color: var(--text);
+    }
+    .narrative.long {
+      border-left-color: var(--info-border);
+      background: var(--info-bg);
+    }
+
+    .sources {
+      list-style: none;
+      padding: 0;
+      margin: 0.8rem 0;
+    }
+    .sources li {
+      padding: 0.5rem 0.8rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 0.4rem;
+      margin: 0.4rem 0;
+      font-size: 0.88rem;
+    }
+    .sources .source-type {
+      display: inline-block;
+      background: var(--surface-2);
+      color: var(--text-dim);
+      font-family: ui-monospace, monospace;
+      font-size: 0.7rem;
+      padding: 0.1rem 0.4rem;
+      border-radius: 0.25rem;
+      margin-right: 0.5rem;
+      text-transform: uppercase;
+    }
+    .sources a { color: #60a5fa; text-decoration: none; }
+    .sources a:hover { text-decoration: underline; }
+
+    .disclaimer {
+      background: var(--warn-bg);
+      border-left: 4px solid var(--warn-border);
+      padding: 0.9rem 1.2rem;
+      border-radius: 0 0.4rem 0.4rem 0;
+      font-size: 0.85rem;
+      color: var(--text);
+      margin: 1.5rem 0;
+    }
+    .disclaimer strong { color: var(--accent); }
+
+    .breakdown-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin: 0.8rem 0;
+    }
+    .breakdown-table th, .breakdown-table td {
+      text-align: left;
+      padding: 0.55rem 0.7rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .breakdown-table th {
+      color: var(--text-dim);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-size: 0.72rem;
+    }
+    .breakdown-table tbody tr:hover { background: var(--surface-2); }
+    .breakdown-table .num { font-variant-numeric: tabular-nums; text-align: right; }
+    .breakdown-table .score-bar {
+      position: relative;
+      width: 100px;
+      height: 6px;
+      background: var(--bg);
+      border-radius: 3px;
+      overflow: hidden;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .breakdown-table .score-bar .fill {
+      height: 100%;
+      background: var(--bull);
+      border-radius: 3px;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin: 1rem 0;
+    }
+    .three-col {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+    @media (max-width: 768px) {
+      .two-col, .three-col { grid-template-columns: 1fr; }
+    }
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      padding: 1.2rem;
+    }
+    .panel h4 {
+      margin: 0 0 0.6rem;
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .panel .big-num {
+      font-size: 1.4rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+    .panel .sub {
+      font-size: 0.82rem;
+      color: var(--text-dim);
+      margin-top: 0.3rem;
+    }
+
+    .visibility-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      margin: 1rem 0;
+    }
+    .visibility-table th, .visibility-table td {
+      text-align: left;
+      padding: 0.5rem 0.8rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .visibility-table th { color: var(--text-dim); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .visibility-table .yes { color: var(--bull); }
+    .visibility-table .no { color: var(--bear); }
+    .visibility-table .partial { color: var(--moderate); }
+    .visibility-table .interne { background: rgba(248, 113, 113, 0.05); }
+
+    .hidden-banner {
+      background: linear-gradient(135deg, #2d1f0f 0%, #1a1a2e 100%);
+      border: 1px solid #d97706;
+      border-radius: 0.6rem;
+      padding: 1.3rem;
+      margin: 1.5rem 0;
+    }
+    .hidden-banner h3 { margin: 0 0 0.6rem; color: var(--accent); }
+    .hidden-banner ul { margin: 0.6rem 0; padding-left: 1.3rem; color: var(--text); }
+    .hidden-banner li { margin: 0.3rem 0; }
+    .hidden-banner code {
+      font-family: ui-monospace, monospace;
+      background: var(--bg);
+      padding: 0.05rem 0.35rem;
+      border-radius: 0.25rem;
+      font-size: 0.85em;
+    }
+
+    .telegram-preview {
+      max-width: 380px;
+      background: #17212b;
+      border: 1px solid #2c3e50;
+      border-radius: 0.6rem;
+      padding: 1rem 1.2rem;
+      font-family: -apple-system, "Segoe UI", sans-serif;
+      font-size: 0.92rem;
+      line-height: 1.5;
+      color: #eaeaea;
+    }
+    .telegram-preview .tg-head {
+      font-size: 0.7rem;
+      color: #7a8794;
+      margin-bottom: 0.5rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .telegram-preview b { color: var(--accent); font-weight: 600; }
+    .telegram-preview i { color: #7a8794; font-size: 0.82rem; }
+    .telegram-preview .tg-time {
+      text-align: right;
+      font-size: 0.7rem;
+      color: #5a6470;
+      margin-top: 0.4rem;
+    }
+
+    .json-snippet {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 0.4rem;
+      padding: 1rem 1.2rem;
+      font-family: ui-monospace, "SF Mono", monospace;
+      font-size: 0.8rem;
+      overflow-x: auto;
+      line-height: 1.5;
+    }
+    .json-snippet .key { color: #93c5fd; }
+    .json-snippet .str { color: #fbbf24; }
+    .json-snippet .num { color: #4ade80; }
+    .json-snippet .bool { color: #c084fc; }
+    .json-snippet .null { color: var(--text-muted); }
+    .json-snippet .comment { color: var(--text-muted); font-style: italic; }
+
+    footer {
+      margin-top: 4rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .what-not-pill {
+      display: inline-block;
+      background: rgba(248, 113, 113, 0.15);
+      color: var(--bear);
+      font-size: 0.78rem;
+      padding: 0.15rem 0.55rem;
+      border-radius: 0.4rem;
+      margin: 0.15rem 0.3rem 0.15rem 0;
+      font-weight: 500;
+    }
+    .what-not-pill::before { content: "✗ "; }
+    .what-ok-pill {
+      display: inline-block;
+      background: rgba(74, 222, 128, 0.12);
+      color: var(--bull);
+      font-size: 0.78rem;
+      padding: 0.15rem 0.55rem;
+      border-radius: 0.4rem;
+      margin: 0.15rem 0.3rem 0.15rem 0;
+      font-weight: 500;
+    }
+    .what-ok-pill::before { content: "✓ "; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- ===================================================== HEADER -->
+  <header>
+    <div class="brand">Smart Sentinel <span>AI</span></div>
+    <div style="color: var(--text-dim); font-size: 0.9rem; margin-top: 0.25rem;">
+      Indicateur de marché conversationnel — XAU/USD, EUR/USD, BTC/USD
+    </div>
+    <div class="mockup-tag">MOCKUP UI — démonstration pédagogique de la lecture de marché délivrée</div>
+  </header>
+
+  <!-- ===================================================== POSITIONING BANNER -->
+  <div class="positioning-banner">
+    <div style="font-size: 1.05rem; font-weight: 600; margin-bottom: 0.4rem;">
+      📊 <b>Smart Sentinel est un indicateur, pas un service de signaux.</b>
+    </div>
+    <div style="font-size: 0.9rem; color: var(--text);">
+      Notre rôle&nbsp;: <em>décrire ce qui se passe sur le marché</em> et avec quelle confiance.
+      Le rôle du trader&nbsp;: <em>décider quoi faire</em> avec cette information.
+    </div>
+    <div class="vs">
+      <div class="ok">
+        <strong>Ce que l'indicateur dit ✓</strong>
+        <ul>
+          <li>Structure SMC détectée et niveaux structurels</li>
+          <li>Régime de marché + volatilité prévue + incertitude</li>
+          <li>Score de conviction + décomposition</li>
+          <li>Contexte news / session / event-driven</li>
+          <li>Statistiques historiques sur setups similaires</li>
+        </ul>
+      </div>
+      <div class="ko">
+        <strong>Ce que l'indicateur ne dit PAS ✗</strong>
+        <ul>
+          <li>Pas de prix d'entrée prescrit</li>
+          <li>Pas de niveau de stop-loss imposé</li>
+          <li>Pas de cible / take-profit</li>
+          <li>Pas de R:R ratio</li>
+          <li>Pas d'instruction « entrez/sortez maintenant »</li>
+        </ul>
+      </div>
+    </div>
+    <div style="font-size: 0.82rem; color: var(--text-dim); margin-top: 0.7rem;">
+      Posture cohérente avec le wording compliance UE 2024/2811 déjà codifié dans <code style="background: var(--bg); padding: 0 0.3rem; border-radius: 0.2rem;">SetupDirection.BULLISH_SETUP</code> et <code style="background: var(--bg); padding: 0 0.3rem; border-radius: 0.2rem;">edge_claim=False</code>.
+    </div>
+  </div>
+
+  <!-- ===================================================== TOC -->
+  <div class="toc">
+    <h3>Sommaire</h3>
+    <ol>
+      <li><a href="#explication">Explication — ce que reçoit le client (en français)</a></li>
+      <li><a href="#surface-telegram">Surface 1 — Aperçu Telegram</a></li>
+      <li><a href="#surface-webapp">Surface 2 — Webapp B2C (lecture complète)</a></li>
+      <li><a href="#surface-b2b">Surface 3 — API B2B (la plus riche)</a></li>
+      <li><a href="#visibilite">Tableau de visibilité — qui voit quoi</a></li>
+      <li><a href="#cache">Ce que le client NE voit PAS encore</a></li>
+    </ol>
+  </div>
+
+  <!-- ===================================================== §1 EXPLICATION -->
+  <section id="explication">
+    <h2><span class="section-num">§1</span>Tout ce que reçoit le client, expliqué simplement</h2>
+    <p class="intro">
+      Smart Sentinel publie des <strong>lectures de marché</strong> — paquets d'information descriptive sur l'état du
+      marché et le degré de confiance algorithmique associé. Le client utilise cette information pour former
+      <em>sa</em> thèse et prendre <em>ses</em> décisions de trading. Le contrat de fond est <code>InsightSignalV2</code>.
+    </p>
+
+    <h3>1. Identité de la lecture</h3>
+    <p>
+      <strong>ID</strong> (déterministe SHA-1), <strong>actif</strong>, <strong>timeframe</strong>,
+      <strong>horodatage UTC</strong>, <strong>durée de validité</strong>. La lecture périme automatiquement
+      passé un certain nombre de barres — au-delà, les conditions de marché ont changé et la lecture n'est plus
+      à jour.
+    </p>
+
+    <h3>2. Sens du setup détecté (descriptif, non prescriptif)</h3>
+    <p>
+      <code>direction</code> prend trois valeurs : <code>BULLISH_SETUP</code> (la structure suggère un biais haussier),
+      <code>BEARISH_SETUP</code> (biais baissier), <code>NEUTRAL</code> (aucun setup clair, le système attend une
+      cassure). Wording compliance UE 2024/2811 — <em>jamais</em> « BUY » / « SELL » / « achetez » / « vendez ».
+    </p>
+
+    <h3>3. Conviction algorithmique</h3>
+    <p>
+      Un <strong>score 0-100</strong> mesure la convergence simultanée de 8 composantes (structure SMC, régime, news,
+      volume, momentum, divergence RSI…). Traduit en label catégoriel : <code>weak</code> (0-39),
+      <code>moderate</code> (40-59), <code>strong</code> (60-79), <code>institutional</code> (80-100).
+      <strong>Important</strong> : ce score n'est pas une probabilité de gain — c'est une mesure de la confluence des
+      conditions techniques. L'intervalle de confiance conformel (Phase 2A) précise l'incertitude calibrée autour
+      du score.
+    </p>
+
+    <h3>4. Lecture de structure (descriptive)</h3>
+    <p>
+      Quelle structure SMC est détectée, à quel niveau, avec quelle qualité&nbsp;:
+    </p>
+    <ul>
+      <li><strong>Cassure de structure (BOS)</strong> — niveau cassé indiqué, fraîcheur (cassure de la barre courante ou continuation)</li>
+      <li><strong>Changement de caractère (CHOCH)</strong> — retournement de la structure récente</li>
+      <li><strong>Fair Value Gap (FVG)</strong> — zone et taille relative en multiples d'ATR</li>
+      <li><strong>Order Block (OB)</strong> — bornes haute/basse de la zone d'absorption institutionnelle</li>
+      <li><strong>État de retest</strong> — le prix est-il revenu valider le niveau cassé</li>
+      <li><strong>Niveau d'invalidation structurelle</strong> — sous/au-dessus duquel la thèse SMC tombe (c'est un fait
+        de marché descriptif, pas un ordre de stop)</li>
+    </ul>
+
+    <h3>5. Lecture du régime macro & volatilité</h3>
+    <p>
+      <strong>Régime HMM</strong> (low_vol_trending / low_vol_ranging / high_vol_stress, avec probabilité postérieure),
+      <strong>forecast ATR</strong> de la prochaine fenêtre (modèle HAR-RV + multiplicateurs diurnal/calendar),
+      <strong>intervalle de confiance</strong> du forecast (TCP — Transductive Conformal Prediction),
+      <strong>probabilité de changepoint imminente (BOCPD)</strong>, <strong>jump ratio</strong> (part de variance
+      attribuable aux sauts vs vol continue, Barndorff-Nielsen bipower variation), <strong>décision algorithmique
+      du régime gate</strong> (TRADE / REDUCE / BLOCK — descriptive, pas prescriptive).
+    </p>
+
+    <h3>6. Lecture event-driven (news + calendrier)</h3>
+    <p>
+      <strong>Blackout news</strong> actif ou non (fenêtre -30 min / +60 min autour d'un événement high-impact),
+      <strong>prochain événement</strong> + proximité temporelle, <strong>sentiment news</strong> + confidence,
+      <strong>session de marché</strong> courante (Asia / London / NY).
+    </p>
+
+    <h3>7. Lecture narrative</h3>
+    <p>
+      <strong>Narratif court</strong> (≤ 400 chars, Telegram-friendly), <strong>narratif long</strong> (webapp / B2B,
+      jusqu'à 2 000 chars), multi-langue (<code>fr</code> / <code>en</code> / <code>de</code> / <code>es</code>),
+      accompagné en Phase 2B de <strong>sources citées</strong> (papers académiques, reports LBMA, données CFTC COT).
+    </p>
+
+    <h3>8. Lecture statistique historique (track-record analytique)</h3>
+    <p>
+      Sur les <strong>setups historiquement similaires</strong> (mêmes composantes alignées, même régime),
+      hit rate observé, profit factor backtesté avec coûts, couverture conformelle empirique vs nominale.
+      <em>C'est de la statistique descriptive du passé — pas une promesse de futur.</em>
+    </p>
+
+    <h3>9. Bloc compliance</h3>
+    <p>
+      <code>disclaimer_lang</code>, <code>jurisdiction_blocked</code> (US, QC, UK, OFAC),
+      <code>edge_claim</code> (<strong>false</strong> par défaut tant que l'edge n'est pas validé empiriquement —
+      honnêteté radicale), <code>is_paper_demo</code>.
+    </p>
+
+    <h3>10. Pour le B2B uniquement</h3>
+    <p>
+      Décomposition complète des 8 composantes (chacune avec score pondéré + poids max + raisonnement),
+      régime HMM détaillé, scénarios alternatifs (principal + 2 alternatifs descriptifs des conditions qui
+      feraient évoluer la lecture), télémétrie session.
+    </p>
+
+    <h3>11. Ce qui n'apparaît PAS dans la lecture</h3>
+    <p>
+      <span class="what-not-pill">prix d'entrée</span>
+      <span class="what-not-pill">niveau de stop-loss</span>
+      <span class="what-not-pill">take-profit / cible</span>
+      <span class="what-not-pill">R:R ratio</span>
+      <span class="what-not-pill">instruction temporelle d'entrée</span>
+      <span class="what-not-pill">lot size suggéré</span>
+    </p>
+    <p style="font-size: 0.9rem; color: var(--text-dim);">
+      Ces éléments relèvent de la <strong>construction du trade par le trader</strong>, pas de la lecture du marché.
+      Smart Sentinel observe et décrit — le trader compose son trade à partir de la lecture.
+    </p>
+  </section>
+
+  <!-- ===================================================== §2 TELEGRAM -->
+  <section id="surface-telegram">
+    <h2><span class="section-num">§2</span>Surface 1 — Aperçu Telegram (compact, ≤ 800 chars)</h2>
+    <p class="intro">
+      Le client B2C abonné Telegram reçoit une lecture compacte. FR-first, compliance UE.
+    </p>
+
+    <div class="telegram-preview">
+      <div class="tg-head">Smart Sentinel AI — message Telegram</div>
+      <b>Smart Sentinel — Lecture de marché</b><br>
+      <b>Actif :</b> XAUUSD · M15<br>
+      <b>Setup détecté :</b> 🟢 STRUCTURE HAUSSIÈRE<br>
+      <b>Conviction :</b> STRONG<br>
+      <br>
+      Cassure de structure confirmée + retest du FVG 2 378-2 381.
+      Régime HMM : trend bullish (p=0,71). Vol forecast +10 % vs naïve.
+      Invalidation structurelle sous 2 374,50.
+      Pas de blackout news actif. Session NY.
+      <br><br>
+      <i>Lecture algorithmique éducative. Ne constitue ni un signal de trading ni un conseil en investissement.</i>
+      <div class="tg-time">11:47 · vu ✓✓</div>
+    </div>
+
+    <p style="margin-top: 1rem; color: var(--text-dim); font-size: 0.88rem;">
+      <strong>Présent :</strong> direction du setup, label conviction, structure détectée (niveaux descriptifs),
+      régime HMM, vol forecast, statut news, session.<br>
+      <strong>Absent par construction :</strong> entrée, stop, cible, R:R, instruction d'ordre.
+    </p>
+  </section>
+
+  <!-- ===================================================== §3 WEBAPP -->
+  <section id="surface-webapp">
+    <h2><span class="section-num">§3</span>Surface 2 — Webapp B2C (lecture complète)</h2>
+    <p class="intro">
+      Le client ouvre la webapp pour voir l'intégralité de la lecture. Structure organisée par couches descriptives
+      (structure → conviction → régime/vol → event → narrative → historique).
+    </p>
+
+    <div class="signal-card">
+
+      <!-- Header -->
+      <div class="signal-head">
+        <div>
+          <h3 class="title" style="margin: 0;">XAUUSD <span class="tf">· M15 · 2026-05-01 11:47 UTC</span></h3>
+        </div>
+        <div class="signal-meta">
+          <span class="badge bull">STRUCTURE HAUSSIÈRE</span>
+          <span class="badge strong">STRONG</span>
+          <span class="badge info">id 0193c7a4</span>
+        </div>
+      </div>
+
+      <!-- Conviction avec intervalle conformel -->
+      <div class="conviction-bar">
+        <div class="label-row">
+          <span>Conviction algorithmique <small style="color: var(--text-muted);">(convergence des conditions, ≠ probabilité de gain)</small></span>
+          <span style="color: var(--strong); font-weight: 600;">72 / 100</span>
+        </div>
+        <div class="bar"><div class="fill" style="width: 72%;"></div></div>
+        <div class="interval-overlay">
+          <!-- Conformal interval [54, 82] mapped to 0-100 scale -->
+          <div class="interval" style="left: 54%; width: 28%;"></div>
+        </div>
+        <div class="ticks">
+          <span>0</span><span>weak 40</span><span>moderate 60</span><span>strong 80</span><span>institutional 100</span>
+        </div>
+        <div class="conviction-legend">
+          <span class="swatch"></span> Intervalle de confiance conformel 90 % : [54&nbsp;;&nbsp;82] —
+          <em>garantie mathématique distribution-free, le score réel se situe dans cette plage avec couverture nominale 90 %.</em>
+        </div>
+      </div>
+
+      <!-- Lecture de structure -->
+      <div class="readout-block">
+        <h4>📐 Lecture de structure (Smart Money / ICT)</h4>
+        <div class="readout-row">
+          <span class="key">Biais structurel</span>
+          <span class="val green">Haussier — BOS confirmé</span>
+        </div>
+        <div class="readout-row">
+          <span class="key">Niveau cassé (BOS)</span>
+          <span class="val zone">2 391,50 <span class="dim">(il y a 2 barres)</span></span>
+        </div>
+        <div class="readout-row">
+          <span class="key">Fair Value Gap actif</span>
+          <span class="val zone">[2 378,00 ; 2 381,00] <span class="dim">— 0,42 × ATR</span></span>
+        </div>
+        <div class="readout-row">
+          <span class="key">Order Block haussier</span>
+          <span class="val zone">[2 375,00 ; 2 378,00] <span class="dim">— force 0,73</span></span>
+        </div>
+        <div class="readout-row">
+          <span class="key">État de retest</span>
+          <span class="val green">Armé — retest validé sur le FVG</span>
+        </div>
+        <div class="readout-row">
+          <span class="key">Niveau d'invalidation structurelle</span>
+          <span class="val zone">Sous 2 374,50 <span class="dim">(plancher du FVG)</span></span>
+        </div>
+        <div class="readout-row">
+          <span class="key">Zone de liquidité haute</span>
+          <span class="val zone">[2 398,50 ; 2 401,20]</span>
+        </div>
+      </div>
+
+      <!-- Lecture régime & volatilité -->
+      <div class="two-col">
+        <div class="readout-block">
+          <h4>📊 Régime de marché (HMM)</h4>
+          <div class="readout-row">
+            <span class="key">État HMM</span>
+            <span class="val green">Trend bullish</span>
+          </div>
+          <div class="readout-row">
+            <span class="key">Probabilité postérieure</span>
+            <span class="val">0,71</span>
+          </div>
+          <div class="readout-row">
+            <span class="key">Changepoint imminent (BOCPD)</span>
+            <span class="val">3 % <span class="dim">(seuil reduce 5 %)</span></span>
+          </div>
+          <div class="readout-row">
+            <span class="key">Jump ratio</span>
+            <span class="val">0,12 <span class="dim">(faible activité de saut)</span></span>
+          </div>
+          <div class="readout-row">
+            <span class="key">Décision regime gate</span>
+            <span class="val green">TRADE</span>
+          </div>
+        </div>
+        <div class="readout-block">
+          <h4>📉 Volatilité prévisionnelle</h4>
+          <div class="readout-row">
+            <span class="key">Régime vol</span>
+            <span class="val yellow">Normal</span>
+          </div>
+          <div class="readout-row">
+            <span class="key">Forecast ATR (HAR-RV)</span>
+            <span class="val">8,7 pips</span>
+          </div>
+          <div class="readout-row">
+            <span class="key">ATR naïf (référence)</span>
+            <span class="val dim">7,9 pips</span>
+          </div>
+          <div class="readout-row">
+            <span class="key">Écart forecast vs naïf</span>
+            <span class="val">+10 %</span>
+          </div>
+          <div class="readout-row">
+            <span class="key">Intervalle conformel 90 %</span>
+            <span class="val zone">[7,2 ; 10,4] pips</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lecture event-driven -->
+      <div class="readout-block">
+        <h4>📰 Contexte event-driven</h4>
+        <div class="readout-row">
+          <span class="key">Blackout news</span>
+          <span class="val green">Inactif</span>
+        </div>
+        <div class="readout-row">
+          <span class="key">Prochain événement high-impact</span>
+          <span class="val">FOMC Minutes <span class="dim">dans 18 h 03 min</span></span>
+        </div>
+        <div class="readout-row">
+          <span class="key">Sentiment news courant</span>
+          <span class="val">Légèrement haussier (+0,3) <span class="dim">— confidence 0,7</span></span>
+        </div>
+        <div class="readout-row">
+          <span class="key">Session de marché</span>
+          <span class="val">New York <span class="dim">(vol historique +18 % vs Asia)</span></span>
+        </div>
+      </div>
+
+      <!-- Lecture historique -->
+      <div class="readout-block">
+        <h4>📚 Statistiques historiques sur setups similaires</h4>
+        <div class="readout-row">
+          <span class="key">Setups SMC + retest + régime trending observés <span class="dim">(XAU M15, 2019-2025)</span></span>
+          <span class="val">329 occurrences</span>
+        </div>
+        <div class="readout-row">
+          <span class="key">Hit rate observé (audité)</span>
+          <span class="val">31,9 %</span>
+        </div>
+        <div class="readout-row">
+          <span class="key">Profit factor backtesté <span class="dim">(coûts inclus)</span></span>
+          <span class="val">1,30 [IC 95 % : 1,12 — 1,49]</span>
+        </div>
+        <div class="readout-row">
+          <span class="key">Couverture conformelle empirique (rolling)</span>
+          <span class="val">91 % <span class="dim">vs nominal 90 %</span></span>
+        </div>
+        <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.6rem; font-style: italic;">
+          ⚠ Statistique descriptive du passé — n'engage pas le futur. <code>edge_claim=false</code>.
+        </div>
+      </div>
+
+      <!-- Narratif -->
+      <h3 style="margin-top: 1.5rem;">Lecture narrative du marché</h3>
+      <div class="narrative long">
+        La structure Smart Money sur XAU/USD M15 s'est inversée à la hausse suite à une cassure confirmée
+        au-dessus du swing à 2 391,50. Le prix est revenu retester le Fair Value Gap formé entre 2 378 et 2 381,
+        où la liquidité institutionnelle est susceptible d'être défendue selon les modèles ICT classiques.
+        <br><br>
+        Le modèle de régime HMM classe l'environnement comme « trend bullish » avec une probabilité postérieure
+        de 0,71. Le détecteur BOCPD estime à 3 % la probabilité de changepoint imminent (faible — le régime
+        actuel semble stable). Le forecast HAR-RV anticipe une volatilité modérée (+10 % vs ATR naïf),
+        cohérente avec l'activité de la session New York.
+        <br><br>
+        Le niveau d'invalidation structurelle est défini à 2 374,50 (plancher du FVG) — au-delà, la lecture
+        haussière tombe. La zone de liquidité haute identifiée par notre détection structurelle se situe
+        entre 2 398,50 et 2 401,20.
+        <br><br>
+        <strong>Cette lecture est descriptive et algorithmique. Aucune instruction d'entrée, de stop, ni de
+          cible n'est fournie — la composition du trade revient au trader.</strong>
+      </div>
+
+      <!-- Sources -->
+      <h3>Sources citées (Phase 2B RAG)</h3>
+      <ul class="sources">
+        <li>
+          <span class="source-type">paper</span>
+          <a href="#" rel="noopener">López de Prado — <em>Advances in Financial ML</em>, ch. 7 (Combinatorial Purged CV)</a>
+        </li>
+        <li>
+          <span class="source-type">paper</span>
+          <a href="#" rel="noopener">Barndorff-Nielsen &amp; Shephard 2004 — Power and Bipower Variation</a>
+        </li>
+        <li>
+          <span class="source-type">data</span>
+          <a href="#" rel="noopener">CFTC COT Gold (088691) — release 2026-04-29</a>
+        </li>
+        <li>
+          <span class="source-type">report</span>
+          <a href="#" rel="noopener">LBMA Quarterly Gold Review — Q1 2026</a>
+        </li>
+        <li>
+          <span class="source-type">internal</span>
+          <a href="#" rel="noopener">Smart Sentinel walk-forward XAU M15 2019-2025 — replay v3</a>
+        </li>
+      </ul>
+
+      <!-- Disclaimer -->
+      <div class="disclaimer">
+        <strong>⚠️ Démonstration paper-trading.</strong>
+        Smart Sentinel publie des lectures de marché algorithmiques à but informatif. <code>edge_claim = false</code>
+        — aucun edge prédictif validé empiriquement n'est revendiqué. Cette lecture <strong>ne constitue ni un
+        signal de trading ni un conseil en investissement</strong>. <strong>74-89 % des comptes CFD retail
+        perdent de l'argent.</strong> Conformité <strong>UE 2024/2811</strong>. Livraison bloquée :
+        🚫 US, QC, UK, OFAC.
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================== §4 B2B -->
+  <section id="surface-b2b">
+    <h2><span class="section-num">§4</span>Surface 3 — API B2B (la plus riche)</h2>
+    <p class="intro">
+      Pour un broker partenaire qui consomme l'API B2B, on ajoute la <strong>décomposition complète</strong> du score
+      de conviction et les <strong>scénarios alternatifs descriptifs</strong>.
+    </p>
+
+    <h3>Décomposition des 8 composantes de conviction</h3>
+    <table class="breakdown-table">
+      <thead>
+        <tr>
+          <th>Composante</th>
+          <th class="num">Contribution</th>
+          <th class="num">Poids max</th>
+          <th>Visuel</th>
+          <th>Lecture</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>BOS</strong></td><td class="num">13,5</td><td class="num">15,0</td>
+          <td><div class="score-bar"><div class="fill" style="width: 90%; background: var(--bull);"></div></div></td>
+          <td>Cassure de structure confirmée au-dessus de 2 391,5 (il y a 2 barres)</td>
+        </tr>
+        <tr>
+          <td><strong>FVG</strong></td><td class="num">12,8</td><td class="num">15,0</td>
+          <td><div class="score-bar"><div class="fill" style="width: 85%; background: var(--bull);"></div></div></td>
+          <td>FVG frais 2 378-2 381, retesté une fois, prix tient au-dessus du milieu de zone</td>
+        </tr>
+        <tr>
+          <td><strong>Order Block</strong></td><td class="num">7,5</td><td class="num">10,0</td>
+          <td><div class="score-bar"><div class="fill" style="width: 75%; background: var(--bull);"></div></div></td>
+          <td>OB haussier à 2 375-2 378 (engulfing + déplacement) aligné avec le FVG</td>
+        </tr>
+        <tr>
+          <td><strong>Régime</strong></td><td class="num">18,2</td><td class="num">25,0</td>
+          <td><div class="score-bar"><div class="fill" style="width: 73%; background: var(--bull);"></div></div></td>
+          <td>HMM trend bullish, posterior 0,71 (&gt; seuil 0,6)</td>
+        </tr>
+        <tr>
+          <td><strong>News</strong></td><td class="num">0,0</td><td class="num">20,0</td>
+          <td><div class="score-bar"><div class="fill" style="width: 0%;"></div></div></td>
+          <td>Aucun événement high-impact dans la fenêtre -30 / +60 min</td>
+        </tr>
+        <tr>
+          <td><strong>Volume</strong></td><td class="num">7,0</td><td class="num">10,0</td>
+          <td><div class="score-bar"><div class="fill" style="width: 70%; background: var(--bull);"></div></div></td>
+          <td>Volume sur la barre de cassure 1,4× la moyenne 20-barres</td>
+        </tr>
+        <tr>
+          <td><strong>Momentum</strong></td><td class="num">2,4</td><td class="num">3,0</td>
+          <td><div class="score-bar"><div class="fill" style="width: 80%; background: var(--bull);"></div></div></td>
+          <td>RSI(14) en remontée de 42 à 58 sur les 6 dernières barres</td>
+        </tr>
+        <tr>
+          <td><strong>RSI Div.</strong></td><td class="num">0,6</td><td class="num">2,0</td>
+          <td><div class="score-bar"><div class="fill" style="width: 30%; background: var(--moderate);"></div></div></td>
+          <td>Divergence haussière cachée modérée sur les 12 dernières barres</td>
+        </tr>
+        <tr style="font-weight: 700; border-top: 2px solid var(--accent);">
+          <td>TOTAL</td><td class="num" style="color: var(--accent);">62,0 / 100</td>
+          <td class="num">100,0</td>
+          <td colspan="2" style="color: var(--text-dim);">Label : <span class="badge strong">STRONG</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Scénarios projetés (descriptifs — conditions de marché possibles)</h3>
+    <table class="breakdown-table">
+      <thead><tr><th>Scénario</th><th>Condition observable</th><th>Évolution attendue de la lecture</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong style="color: var(--bull);">Principal</strong></td>
+          <td>Le prix rebondit sur le FVG 2 378-2 381 et clôture M15 au-dessus de 2 385</td>
+          <td>Continuité de la lecture haussière. Zone de liquidité 2 398-2 401 devient prioritaire dans la lecture.</td>
+        </tr>
+        <tr>
+          <td><strong style="color: var(--bear);">Alternatif 1</strong></td>
+          <td>Clôture M15 nette sous 2 374,50</td>
+          <td>Lecture haussière invalidée structurellement. La lecture bascule vers range/baissier — nouvelle évaluation à la prochaine cassure.</td>
+        </tr>
+        <tr>
+          <td><strong style="color: var(--neutral);">Alternatif 2</strong></td>
+          <td>Consolidation choppy 2 381-2 392 pendant 4+ barres</td>
+          <td>Lecture expire à 13:15 UTC. Le système publiera une nouvelle lecture après réévaluation de la structure.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Aperçu JSON brut (extrait API)</h3>
+    <pre class="json-snippet">{
+  <span class="key">"insight_id"</span>: <span class="str">"0193c7a4-2f1b-7c3d-9e8a-5b2c1d4e7f89"</span>,
+  <span class="key">"asset"</span>: <span class="str">"XAUUSD"</span>, <span class="key">"timeframe"</span>: <span class="str">"M15"</span>,
+  <span class="key">"generated_at"</span>: <span class="str">"2026-05-01T11:47:00Z"</span>,
+  <span class="key">"expires_at"</span>: <span class="str">"2026-05-01T15:47:00Z"</span>,
+
+  <span class="key">"structure_bias"</span>: <span class="str">"bullish"</span>,
+  <span class="key">"conviction_0_100"</span>: <span class="num">72</span>,
+  <span class="key">"conviction_label"</span>: <span class="str">"strong"</span>,
+  <span class="key">"conviction_interval"</span>: { <span class="key">"lower"</span>: <span class="num">54</span>, <span class="key">"upper"</span>: <span class="num">82</span>, <span class="key">"alpha"</span>: <span class="num">0.10</span> },
+
+  <span class="key">"structure_readout"</span>: {
+    <span class="key">"bos_level"</span>: <span class="num">2391.50</span>,         <span class="comment"># niveau cassé — descriptif</span>
+    <span class="key">"fvg_zone"</span>: [<span class="num">2378.00</span>, <span class="num">2381.00</span>],
+    <span class="key">"fvg_size_atr"</span>: <span class="num">0.42</span>,
+    <span class="key">"ob_zone"</span>: [<span class="num">2375.00</span>, <span class="num">2378.00</span>],
+    <span class="key">"retest_state"</span>: <span class="str">"armed"</span>,
+    <span class="key">"structural_invalidation"</span>: <span class="num">2374.50</span>,
+    <span class="key">"liquidity_zone_upper"</span>: [<span class="num">2398.50</span>, <span class="num">2401.20</span>]
+  },
+
+  <span class="key">"regime_readout"</span>: {
+    <span class="key">"hmm_label"</span>: <span class="str">"trend_bullish"</span>,
+    <span class="key">"hmm_posterior"</span>: <span class="num">0.71</span>,
+    <span class="key">"bocpd_changepoint_prob"</span>: <span class="num">0.03</span>,
+    <span class="key">"jump_ratio"</span>: <span class="num">0.12</span>,
+    <span class="key">"regime_gate_decision"</span>: <span class="str">"TRADE"</span>
+  },
+
+  <span class="key">"volatility_readout"</span>: {
+    <span class="key">"regime"</span>: <span class="str">"normal"</span>,
+    <span class="key">"forecast_atr_pips"</span>: <span class="num">8.7</span>,
+    <span class="key">"naive_atr_pips"</span>: <span class="num">7.9</span>,
+    <span class="key">"forecast_vs_naive_pct"</span>: <span class="num">10.0</span>,
+    <span class="key">"confidence_interval_pips"</span>: [<span class="num">7.2</span>, <span class="num">10.4</span>]
+  },
+
+  <span class="key">"event_readout"</span>: {
+    <span class="key">"news_blackout_active"</span>: <span class="bool">false</span>,
+    <span class="key">"next_event"</span>: <span class="str">"FOMC Minutes"</span>,
+    <span class="key">"next_event_in_minutes"</span>: <span class="num">1083</span>,
+    <span class="key">"sentiment_score"</span>: <span class="num">0.3</span>,
+    <span class="key">"sentiment_confidence"</span>: <span class="num">0.7</span>,
+    <span class="key">"session"</span>: <span class="str">"new_york"</span>
+  },
+
+  <span class="key">"historical_stats"</span>: {
+    <span class="key">"similar_setups_n"</span>: <span class="num">329</span>,
+    <span class="key">"hit_rate_observed"</span>: <span class="num">0.319</span>,
+    <span class="key">"profit_factor"</span>: <span class="num">1.30</span>,
+    <span class="key">"profit_factor_ci95"</span>: [<span class="num">1.12</span>, <span class="num">1.49</span>],
+    <span class="key">"empirical_coverage"</span>: <span class="num">0.91</span>
+  },
+
+  <span class="key">"narrative_short"</span>: <span class="str">"…"</span>,
+  <span class="key">"narrative_long"</span>: <span class="str">"…"</span>,
+  <span class="key">"sources_cited"</span>: [<span class="comment">/* … */</span>],
+
+  <span class="key">"compliance"</span>: {
+    <span class="key">"edge_claim"</span>: <span class="bool">false</span>,
+    <span class="key">"is_paper_demo"</span>: <span class="bool">true</span>,
+    <span class="key">"jurisdiction_blocked"</span>: [<span class="str">"US"</span>, <span class="str">"QC"</span>, <span class="str">"UK"</span>, <span class="str">"OFAC"</span>]
+  }
+
+  <span class="comment">// Volontairement absent : entry_price, stop_loss, take_profit, rr_ratio</span>
+  <span class="comment">// → la construction du trade revient au trader/broker partenaire.</span>
+}</pre>
+  </section>
+
+  <!-- ===================================================== §5 VISIBILITE -->
+  <section id="visibilite">
+    <h2><span class="section-num">§5</span>Tableau de visibilité — qui voit quoi</h2>
+    <p class="intro">
+      Récap synthétique : ce que voit chaque surface (Telegram B2C / Webapp B2C / API B2B), et ce qui reste en interne.
+    </p>
+
+    <table class="visibility-table">
+      <thead>
+        <tr>
+          <th>Information</th>
+          <th>Telegram B2C</th>
+          <th>Webapp B2C</th>
+          <th>API B2B</th>
+          <th>🔒 Interne</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Identité (ID, actif, TF, timestamp)</strong></td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td>—</td></tr>
+        <tr><td><strong>Direction du setup (BULLISH/BEARISH/NEUTRAL)</strong></td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td>—</td></tr>
+        <tr><td><strong>Score de conviction 0-100</strong></td><td class="partial">label seul</td><td class="yes">✓</td><td class="yes">✓</td><td>—</td></tr>
+        <tr><td><strong>Intervalle conformel autour du score</strong></td><td class="no">✗</td><td class="yes">✓</td><td class="yes">✓</td><td>—</td></tr>
+        <tr class="interne"><td><strong>Décomposition 8-composantes du score</strong></td><td class="no">✗</td><td class="no">✗</td><td class="yes">✓</td><td>aussi</td></tr>
+        <tr><td><strong>BOS niveau cassé</strong></td><td class="partial">prose</td><td class="yes">✓</td><td class="yes">✓</td><td>—</td></tr>
+        <tr><td><strong>Zone FVG + taille relative ATR</strong></td><td class="partial">prose</td><td class="yes">✓</td><td class="yes">✓</td><td>—</td></tr>
+        <tr><td><strong>Zone Order Block + force</strong></td><td class="no">✗</td><td class="yes">✓</td><td class="yes">✓</td><td>—</td></tr>
+        <tr><td><strong>État de retest</strong></td><td class="no">✗</td><td class="yes">✓</td><td class="yes">✓</td><td>—</td></tr>
+        <tr><td><strong>Niveau d'invalidation structurelle</strong></td><td class="partial">prose</td><td class="yes">✓</td><td class="yes">✓</td><td>—</td></tr>
+        <tr><td><strong>Zone de liquidité haute/basse</strong></td><td class="no">✗</td><td class="yes">✓</td><td class="yes">✓</td><td>—</td></tr>
+        <tr><td><strong>Régime HMM + posterior</strong></td><td class="partial">label</td><td class="yes">✓</td><td class="yes">✓</td><td>—</td></tr>
+        <tr><td><strong>Changepoint BOCPD</strong></td><td class="no">✗</td><td class="yes">✓</td><td class="yes">✓</td><td>—</td></tr>
+        <tr><td><strong>Jump ratio (Barndorff-Nielsen)</strong></td><td class="no">✗</td><td class="yes">✓</td><td class="yes">✓</td><td>—</td></tr>
+        <tr><td><strong>Décision regime gate (TRADE/REDUCE/BLOCK)</strong></td><td class="no">✗</td><td class="yes">✓</td><td class="yes">✓</td><td>—</td></tr>
+        <tr><td><strong>Régime vol + forecast ATR + naïf</strong></td><td class="partial">résumé</td><td class="yes">✓</td><td class="yes">✓</td><td>—</td></tr>
+        <tr><td><strong>Intervalle de confiance du forecast vol</strong></td><td class="no">✗</td><td class="yes">✓</td><td class="yes">✓</td><td>—</td></tr>
+        <tr><td><strong>Blackout news + prochain événement</strong></td><td class="partial">résumé</td><td class="yes">✓</td><td class="yes">✓</td><td>—</td></tr>
+        <tr><td><strong>Sentiment news + confidence</strong></td><td class="no">✗</td><td class="yes">✓</td><td class="yes">✓</td><td>—</td></tr>
+        <tr><td><strong>Session de marché</strong></td><td class="partial">résumé</td><td class="yes">✓</td><td class="yes">✓</td><td>—</td></tr>
+        <tr><td><strong>Statistiques historiques setups similaires</strong></td><td class="no">✗</td><td class="yes">✓</td><td class="yes">✓</td><td>—</td></tr>
+        <tr><td><strong>Couverture conformelle empirique (rolling)</strong></td><td class="no">✗</td><td class="yes">✓</td><td class="yes">✓</td><td>—</td></tr>
+        <tr><td><strong>Narratif court</strong></td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td>—</td></tr>
+        <tr><td><strong>Narratif long + sources citées</strong></td><td class="no">✗</td><td class="yes">✓</td><td class="yes">✓</td><td>—</td></tr>
+        <tr><td><strong>Multi-langue (FR/EN/DE/ES)</strong></td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td>—</td></tr>
+        <tr><td><strong>Scénarios alternatifs descriptifs</strong></td><td class="no">✗</td><td class="partial">résumé</td><td class="yes">✓</td><td>—</td></tr>
+        <tr><td><strong>Compliance (disclaimer + geo-block + flags)</strong></td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td>—</td></tr>
+        <tr style="background: rgba(248,113,113,0.07);">
+          <td><strong>❌ Entry / Stop / TP / R:R</strong></td>
+          <td class="no" colspan="4" style="text-align: center; font-weight: 600; color: var(--bear);">
+            Volontairement absent partout — pas le rôle d'un indicateur
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ===================================================== §6 CACHE -->
+  <section id="cache">
+    <h2><span class="section-num">§6</span>Ce que le client NE voit PAS encore</h2>
+
+    <div class="hidden-banner">
+      <h3>🔒 Quelques outputs internes encore non exposés</h3>
+      <p>
+        Le pipeline calcule encore quelques informations utiles que la webapp pourrait afficher sans changer la
+        nature « indicateur » du produit.
+      </p>
+      <ul>
+        <li>
+          <strong>État détaillé du state machine</strong> de la lecture : combien de barres depuis l'émission,
+          quand la lecture expire, raison de fin de la précédente lecture (target structurel atteint, invalidation,
+          changement de régime, expiration temporelle).
+        </li>
+        <li>
+          <strong>Run-length attendu du régime BOCPD</strong> (combien de barres avant un possible changement
+          de régime, sous l'hypothèse du modèle).
+        </li>
+        <li>
+          <strong>Multiplicateurs vol orthogonaux</strong> : diurnal (saisonnalité intraday), calendar
+          (proximité événement), HMM regime — utile pour expliquer le forecast vol composé.
+        </li>
+        <li>
+          <strong>Empirical coverage par strate</strong> (par instrument, par régime) — l'ACI Mondrian calcule
+          déjà ça pour le monitoring interne.
+        </li>
+        <li>
+          <strong>Composantes brutes</strong> : valeurs scalaires des indicateurs (RSI, MACD, BB, ATR multi-horizon).
+          Le breakdown B2B donne la contribution pondérée, pas la valeur brute.
+        </li>
+      </ul>
+      <p style="margin-top: 0.7rem;">
+        Tous ces éléments restent <strong>descriptifs</strong> — aucun ne franchit la ligne vers la prescription.
+      </p>
+    </div>
+  </section>
+
+  <footer>
+    <p>
+      Mockup HTML pédagogique généré pour démonstration du repositionnement « indicateur, pas signal ».
+      Données illustratives. Voir <code>docs/value/information_value_map.md</code> pour l'inventaire technique
+      complet (73 fiches, 13 catégories, 26 lignes comparatives).
+    </p>
+  </footer>
+</div>
+</body>
+</html>

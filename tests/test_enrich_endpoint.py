@@ -83,7 +83,8 @@ def test_enrich_returns_insight_signal_v2(client_stub):
     resp = client_stub.post("/api/v1/enrich", json=_BULLISH_PAYLOAD)
     assert resp.status_code == 200, resp.text
     body = resp.json()
-    assert body["schema_version"] == "2.0.0"
+    # Bumped 2.0.0 → 2.1.0 in Sprint 1 (uncertainty + readouts + breakdown).
+    assert body["schema_version"] == "2.1.0"
     assert body["instrument"] == "XAUUSD"
     assert body["timeframe"] == "M15"
     assert body["direction"] == "BULLISH_SETUP"

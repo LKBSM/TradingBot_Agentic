@@ -34,7 +34,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Optional
+from typing import Any, List, Optional
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -173,7 +173,12 @@ class ComplianceMeta(BaseModel):
 
 
 class VolatilityContext(BaseModel):
-    """Optional volatility regime context for narrative enrichment."""
+    """Optional volatility regime context for narrative enrichment.
+
+    Kept for backward compatibility with 2.0.0 consumers. New consumers should
+    use :class:`VolatilityReadout` (2.1.0+) which adds the conformal interval
+    and naïve baseline comparison.
+    """
 
     regime: Optional[str] = Field(default=None, description="low / normal / high")
     forecast_atr_pct: Optional[float] = None
@@ -181,11 +186,266 @@ class VolatilityContext(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# 2.1.0 enrichment sub-models (Sprint 1 — expose buried alpha)
+# ---------------------------------------------------------------------------
+
+
+class UncertaintyContext(BaseModel):
+    """Conformal prediction interval around the conviction score.
+
+    Distribution-free coverage guarantee (Angelopoulos & Bates 2024).
+    Computed by ``SplitConformalScorer`` or ``AdaptiveConformalScorer``
+    in ``src/intelligence/conformal_wrapper.py``.
+
+    Semantics
+    ---------
+    - ``conformal_lower`` and ``conformal_upper`` bound the predicted P(win)
+      with marginal coverage ≥ 1 − ``coverage_alpha`` on exchangeable data.
+    - Under ACI (Adaptive Conformal Inference), the wrapper tracks
+      empirical miscoverage online and adjusts the radius to maintain the
+      target coverage even under distribution drift (Gibbs & Candès 2021).
+    - The ``empirical_coverage`` field surfaces the realised long-run
+      coverage as a transparency / monitoring signal.
+    """
+
+    conformal_lower: float = Field(
+        ge=0.0, le=100.0,
+        description="Lower bound of conformal interval, on the same 0-100 scale as conviction",
+    )
+    conformal_upper: float = Field(
+        ge=0.0, le=100.0,
+        description="Upper bound of conformal interval (0-100 scale)",
+    )
+    coverage_alpha: float = Field(
+        gt=0.0, lt=0.5,
+        description="Nominal miscoverage. 0.10 ⇒ 90% interval.",
+    )
+    n_calibration: int = Field(
+        ge=0,
+        description="Calibration set size used to fit the conformal wrapper",
+    )
+    empirical_coverage: Optional[float] = Field(
+        default=None, ge=0.0, le=1.0,
+        description="Long-run empirical coverage (ACI online). None until enough observations.",
+    )
+
+    @model_validator(mode="after")
+    def _bounds_ordered(self) -> "UncertaintyContext":
+        if self.conformal_upper < self.conformal_lower:
+            raise ValueError("conformal_upper must be ≥ conformal_lower")
+        return self
+
+    def width(self) -> float:
+        return self.conformal_upper - self.conformal_lower
+
+
+class StructureReadout(BaseModel):
+    """Descriptive Smart Money / ICT market structure readout.
+
+    All fields are *descriptive of the current market structure* — they are
+    facts about the chart, NOT trade orders. The structural invalidation
+    level is the price beyond which the SMC read breaks, distinct from
+    any trader-chosen stop-loss.
+    """
+
+    bos_level: Optional[float] = Field(default=None, description="Price level broken by BOS (descriptive)")
+    bos_event_age_bars: Optional[int] = Field(default=None, ge=0, description="How many bars since the BOS event bar")
+    choch_present: bool = Field(default=False, description="Whether a Change-of-Character was detected on this read")
+    fvg_zone: Optional[List[float]] = Field(default=None, description="Fair Value Gap [low, high] if present")
+    fvg_size_atr: Optional[float] = Field(default=None, ge=0.0, description="FVG size in multiples of ATR")
+    ob_zone: Optional[List[float]] = Field(default=None, description="Order Block [low, high] if present")
+    ob_strength: Optional[float] = Field(default=None, ge=0.0, le=1.0, description="OB strength normalized to [0, 1]")
+    retest_state: Optional[str] = Field(
+        default=None,
+        description="State machine: 'idle' / 'awaiting' / 'armed' / 'consumed'",
+    )
+    structural_invalidation: Optional[float] = Field(
+        default=None,
+        description="Price beyond which the SMC read is invalidated (descriptive fact, not a stop-loss order)",
+    )
+    liquidity_zone_upper: Optional[List[float]] = Field(
+        default=None,
+        description="Upper liquidity zone [low, high] (descriptive — where institutional liquidity likely sits)",
+    )
+    liquidity_zone_lower: Optional[List[float]] = Field(
+        default=None,
+        description="Lower liquidity zone [low, high]",
+    )
+
+    @model_validator(mode="after")
+    def _zones_ordered(self) -> "StructureReadout":
+        for name in ("fvg_zone", "ob_zone", "liquidity_zone_upper", "liquidity_zone_lower"):
+            z = getattr(self, name)
+            if z is not None:
+                if len(z) != 2:
+                    raise ValueError(f"{name} must have exactly 2 elements [low, high]")
+                if z[0] > z[1]:
+                    raise ValueError(f"{name}[0] must be ≤ {name}[1]")
+        return self
+
+
+class RegimeReadout(BaseModel):
+    """Descriptive market regime readout.
+
+    Combines:
+      - HMM regime classification (3 states: trend_bullish / trend_bearish / ranging / stress)
+      - BOCPD changepoint probability (Adams & MacKay 2007)
+      - Jump ratio (Barndorff-Nielsen bipower variation)
+      - Regime gate decision (TRADE / REDUCE / BLOCK — descriptive, the system's
+        own categorical assessment, not a trader instruction)
+    """
+
+    hmm_label: Optional[str] = Field(
+        default=None,
+        description="HMM state label: trend_bullish / trend_bearish / range_low_vol / range_high_vol / stress",
+    )
+    hmm_posterior: Optional[float] = Field(
+        default=None, ge=0.0, le=1.0,
+        description="Posterior probability of the chosen HMM state",
+    )
+    bocpd_changepoint_prob: Optional[float] = Field(
+        default=None, ge=0.0, le=1.0,
+        description="BOCPD posterior probability of changepoint at current bar",
+    )
+    expected_run_length: Optional[float] = Field(
+        default=None, ge=0.0,
+        description="Expected run length under BOCPD posterior (bars)",
+    )
+    jump_ratio: Optional[float] = Field(
+        default=None, ge=0.0, le=1.0,
+        description="Share of variance attributable to jumps (vs continuous vol). Barndorff-Nielsen 2004.",
+    )
+    regime_gate_decision: Optional[str] = Field(
+        default=None,
+        description="System's categorical assessment: TRADE / REDUCE / BLOCK (descriptive)",
+    )
+
+    @field_validator("regime_gate_decision")
+    @classmethod
+    def _validate_gate(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        if v not in ("TRADE", "REDUCE", "BLOCK"):
+            raise ValueError(f"regime_gate_decision must be TRADE/REDUCE/BLOCK, got {v}")
+        return v
+
+
+class VolatilityReadout(BaseModel):
+    """Full volatility forecast readout — supersedes VolatilityContext.
+
+    Adds forecast vs naïve comparison and a conformal interval on the
+    forecast (TCP — Transductive Conformal Prediction).
+    """
+
+    regime: Optional[str] = Field(default=None, description="low / normal / high")
+    forecast_atr_pips: Optional[float] = Field(default=None, ge=0.0, description="HAR-RV forecast in pips")
+    naive_atr_pips: Optional[float] = Field(default=None, ge=0.0, description="Naive ATR(14) baseline in pips")
+    forecast_vs_naive_pct: Optional[float] = Field(
+        default=None,
+        description="(forecast - naive) / naive * 100. Positive ⇒ expansion expected.",
+    )
+    confidence_interval_pips: Optional[List[float]] = Field(
+        default=None,
+        description="TCP conformal interval [lower, upper] in pips on the forecast",
+    )
+    is_fallback: bool = Field(
+        default=False,
+        description="True if the forecast fell back to naive ATR (model unavailable). UI must label this clearly.",
+    )
+
+    @model_validator(mode="after")
+    def _ci_ordered(self) -> "VolatilityReadout":
+        ci = self.confidence_interval_pips
+        if ci is not None:
+            if len(ci) != 2:
+                raise ValueError("confidence_interval_pips must have 2 elements [lower, upper]")
+            if ci[0] > ci[1]:
+                raise ValueError("confidence_interval_pips[0] must be ≤ [1]")
+        return self
+
+
+class EventReadout(BaseModel):
+    """News and calendar event context."""
+
+    news_blackout_active: bool = Field(default=False, description="True if currently inside a high-impact event window")
+    next_event_label: Optional[str] = Field(default=None, description="e.g. 'FOMC Minutes', 'NFP'")
+    next_event_in_minutes: Optional[int] = Field(default=None, description="Minutes until next high-impact event (None if unknown)")
+    sentiment_score: Optional[float] = Field(
+        default=None, ge=-1.0, le=1.0,
+        description="News sentiment in [-1, 1]. Positive ⇒ bullish.",
+    )
+    sentiment_confidence: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    session: Optional[str] = Field(
+        default=None,
+        description="Trading session: 'asian' / 'london' / 'ny_overlap' / 'ny_afternoon' / 'after_hours'",
+    )
+
+
+class ComponentBreakdown(BaseModel):
+    """One row of the conviction score breakdown.
+
+    Per the IP arbitrage in eval_26 / improvement_roadmap §3, ``weight_max``
+    is exposed at B2B granularity but consumers MAY redact it for B2C
+    presentation by setting it to None.
+    """
+
+    name: str = Field(description="Component name (e.g. 'bos', 'fvg', 'regime')")
+    contribution: float = Field(description="Weighted contribution to the total score")
+    weight_max: Optional[float] = Field(
+        default=None,
+        description="Maximum possible weight. May be redacted for B2C surfaces.",
+    )
+    reasoning: str = Field(description="One-line human-readable reason for this contribution")
+
+    @property
+    def score_pct(self) -> Optional[float]:
+        """Contribution as % of max weight. None if weight_max redacted."""
+        if self.weight_max is None or self.weight_max == 0:
+            return None
+        return round(100.0 * self.contribution / self.weight_max, 1)
+
+
+class HistoricalStats(BaseModel):
+    """Descriptive statistics on similar past setups.
+
+    Always presented as 'past statistics, not future promise'. The
+    ``edge_claim=False`` compliance flag must remain consistent: even if
+    these stats look good, the system never claims a validated edge.
+    """
+
+    similar_setups_n: Optional[int] = Field(default=None, ge=0, description="Number of historically similar setups in the audit window")
+    hit_rate_observed: Optional[float] = Field(default=None, ge=0.0, le=1.0, description="Observed hit rate on similar setups")
+    profit_factor: Optional[float] = Field(default=None, ge=0.0, description="Backtested PF including transaction costs")
+    profit_factor_ci95: Optional[List[float]] = Field(
+        default=None,
+        description="Bootstrap 95% CI for PF: [lower, upper]",
+    )
+    empirical_coverage: Optional[float] = Field(
+        default=None, ge=0.0, le=1.0,
+        description="Rolling empirical coverage of conformal intervals (ACI tracking)",
+    )
+    backtest_window: Optional[str] = Field(
+        default=None,
+        description="Human label of the backtest window, e.g. '2019-2025 walk-forward'",
+    )
+
+    @model_validator(mode="after")
+    def _pf_ci_ordered(self) -> "HistoricalStats":
+        ci = self.profit_factor_ci95
+        if ci is not None:
+            if len(ci) != 2:
+                raise ValueError("profit_factor_ci95 must have 2 elements")
+            if ci[0] > ci[1]:
+                raise ValueError("profit_factor_ci95[0] must be ≤ [1]")
+        return self
+
+
+# ---------------------------------------------------------------------------
 # Top-level v2 model
 # ---------------------------------------------------------------------------
 
 
-SCHEMA_VERSION = "2.0.0"
+SCHEMA_VERSION = "2.1.0"
 
 
 class InsightSignalV2(BaseModel):
@@ -212,6 +472,39 @@ class InsightSignalV2(BaseModel):
     conviction_0_100: int = Field(ge=0, le=100)
     levels: SignalLevels = Field(default_factory=SignalLevels)
     volatility: Optional[VolatilityContext] = None
+
+    # ---- 2.1.0 enrichment: indicator readouts (descriptive, not prescriptive) ----
+    # These fields expose what the pipeline already computes but previously left
+    # internal. The product stance is "indicator, not signal service" — every
+    # field below describes a market state or model output, never an order.
+    uncertainty: Optional[UncertaintyContext] = Field(
+        default=None,
+        description="Conformal interval around conviction_0_100",
+    )
+    structure_readout: Optional[StructureReadout] = Field(
+        default=None,
+        description="Descriptive Smart Money / ICT structure detected",
+    )
+    regime_readout: Optional[RegimeReadout] = Field(
+        default=None,
+        description="HMM regime + BOCPD changepoint + jump ratio + gate decision",
+    )
+    volatility_readout: Optional[VolatilityReadout] = Field(
+        default=None,
+        description="Full vol forecast with conformal CI — supersedes legacy `volatility`",
+    )
+    event_readout: Optional[EventReadout] = Field(
+        default=None,
+        description="News blackout, next event, sentiment, session",
+    )
+    breakdown_components: List[ComponentBreakdown] = Field(
+        default_factory=list,
+        description="8-component conviction decomposition. May be empty for B2C surfaces.",
+    )
+    historical_stats: Optional[HistoricalStats] = Field(
+        default=None,
+        description="Descriptive statistics on similar past setups (audited backtest)",
+    )
 
     # Narrative + provenance
     narrative_short: str = Field(
@@ -242,7 +535,7 @@ class InsightSignalV2(BaseModel):
         "json_schema_extra": {
             "examples": [
                 {
-                    "schema_version": "2.0.0",
+                    "schema_version": "2.1.0",
                     "id": "0193c7a4-2f1b-7c3d-9e8a-5b2c1d4e7f89",
                     "instrument": "XAUUSD",
                     "timeframe": "M15",
@@ -465,31 +758,96 @@ def _default_narrative(
 
 
 def to_telegram_b2c(signal: InsightSignalV2) -> str:
-    """Compact Telegram message (≤800 chars). HTML parse_mode."""
+    """Compact Telegram message (≤800 chars). HTML parse_mode.
+
+    2.1.0 update — indicator stance, NOT signal service
+    ---------------------------------------------------
+    The renderer no longer surfaces entry/stop/target levels. Those still
+    exist on the underlying ``InsightSignalV2`` for backward compatibility
+    with v2.0.0 consumers, but the Telegram B2C surface is now strictly
+    descriptive (structure + regime + vol + event context). The trader
+    composes the trade themselves — Smart Sentinel describes the market.
+
+    This is consistent with the product stance verbalised in
+    ``docs/value/improvement_roadmap.md`` §0 and the compliance posture
+    codified by ``edge_claim=False``.
+    """
     direction_label = {
-        SetupDirection.BULLISH_SETUP: "🟢 SETUP HAUSSIER",
-        SetupDirection.BEARISH_SETUP: "🔴 SETUP BAISSIER",
+        SetupDirection.BULLISH_SETUP: "🟢 STRUCTURE HAUSSIÈRE",
+        SetupDirection.BEARISH_SETUP: "🔴 STRUCTURE BAISSIÈRE",
         SetupDirection.NEUTRAL: "⚪ NEUTRE",
     }[signal.direction]
-    label = signal.conviction_label.value.upper()
+    conviction = signal.conviction_label.value.upper()
 
     parts = [
-        f"<b>Smart Sentinel — Analyse algorithmique</b>",
-        f"<b>Setup :</b> {direction_label}",
+        "<b>Smart Sentinel — Lecture de marché</b>",
         f"<b>Actif :</b> {signal.instrument} · {signal.timeframe.value}",
-        f"<b>Conviction :</b> {label}",
+        f"<b>Setup détecté :</b> {direction_label}",
+        f"<b>Conviction :</b> {conviction}",
     ]
-    L = signal.levels
-    if L.entry is not None:
-        parts.append(f"<b>Entrée :</b> {L.entry}")
-    if L.stop is not None:
-        parts.append(f"<b>Stop :</b> {L.stop}")
-    if L.target_1 is not None:
-        parts.append(f"<b>Cible :</b> {L.target_1}")
+
+    # Structure readout (descriptive only — niveaux structurels, pas ordres)
+    s = signal.structure_readout
+    if s is not None:
+        struct_bits = []
+        if s.bos_level is not None:
+            struct_bits.append(f"BOS {s.bos_level:g}")
+        if s.fvg_zone is not None:
+            struct_bits.append(f"FVG {s.fvg_zone[0]:g}-{s.fvg_zone[1]:g}")
+        if s.retest_state == "armed":
+            struct_bits.append("retest armé")
+        if s.structural_invalidation is not None:
+            struct_bits.append(f"invalidation {s.structural_invalidation:g}")
+        if struct_bits:
+            parts.append(f"<b>Structure :</b> {' · '.join(struct_bits)}")
+
+    # Regime readout
+    r = signal.regime_readout
+    if r is not None:
+        regime_bits = []
+        if r.hmm_label:
+            regime_bits.append(r.hmm_label.replace("_", " "))
+        if r.bocpd_changepoint_prob is not None:
+            regime_bits.append(f"changepoint {int(round(r.bocpd_changepoint_prob * 100))}%")
+        if r.regime_gate_decision:
+            regime_bits.append(f"gate {r.regime_gate_decision}")
+        if regime_bits:
+            parts.append(f"<b>Régime :</b> {' · '.join(regime_bits)}")
+
+    # Volatility readout
+    v = signal.volatility_readout
+    if v is not None:
+        vol_bits = []
+        if v.regime:
+            vol_bits.append(f"vol {v.regime}")
+        if v.forecast_vs_naive_pct is not None:
+            sign = "+" if v.forecast_vs_naive_pct >= 0 else ""
+            vol_bits.append(f"forecast {sign}{v.forecast_vs_naive_pct:.0f}% vs naïve")
+        if vol_bits:
+            parts.append(f"<b>Volatilité :</b> {' · '.join(vol_bits)}")
+
+    # Event readout
+    e = signal.event_readout
+    if e is not None:
+        ev_bits = []
+        if e.news_blackout_active:
+            ev_bits.append("⚠ blackout news actif")
+        elif e.next_event_label and e.next_event_in_minutes is not None:
+            hrs = e.next_event_in_minutes / 60
+            if hrs < 24:
+                ev_bits.append(f"{e.next_event_label} dans {hrs:.1f}h")
+        if e.session:
+            ev_bits.append(f"session {e.session.replace('_', ' ')}")
+        if ev_bits:
+            parts.append(f"<b>Event :</b> {' · '.join(ev_bits)}")
+
     parts.append("")
     parts.append(signal.narrative_short)
     parts.append("")
-    parts.append("<i>Analyse éducative algorithmique. Pas un conseil en investissement.</i>")
+    parts.append(
+        "<i>Lecture algorithmique éducative. Ne constitue ni un signal de "
+        "trading ni un conseil en investissement.</i>"
+    )
     msg = "\n".join(parts)
     return msg[:800]
 

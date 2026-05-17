@@ -95,8 +95,9 @@ def hold_signal() -> InsightSignalV2:
 # ---------------------------------------------------------------------------
 
 
-def test_schema_version_is_2_0_0():
-    assert SCHEMA_VERSION == "2.0.0"
+def test_schema_version_is_2_1_0():
+    """Bumped to 2.1.0 on Sprint 1 enrichment (uncertainty + readouts + breakdown)."""
+    assert SCHEMA_VERSION == "2.1.0"
 
 
 def test_id_must_be_non_empty():
@@ -314,15 +315,27 @@ def test_round_trip_via_dict(bullish_signal):
 # ---------------------------------------------------------------------------
 
 
-def test_to_telegram_b2c_uses_bullish_setup_label_not_buy(bullish_signal):
+def test_to_telegram_b2c_uses_structure_label_not_buy(bullish_signal):
+    """2.1.0 renderer: 'STRUCTURE HAUSSIÈRE' descriptive, never BUY/ACHETEZ."""
     msg = to_telegram_b2c(bullish_signal)
-    assert "SETUP HAUSSIER" in msg
+    assert "STRUCTURE HAUSSIÈRE" in msg
     # UE 2024/2811 compliance: NEVER raw "ACHETEZ" / "BUY" anywhere
     assert "BUY" not in msg.upper()
     assert "ACHETEZ" not in msg.upper()
     assert "VENDEZ" not in msg.upper()
     # Length cap
     assert len(msg) <= 800
+
+
+def test_to_telegram_b2c_no_entry_stop_target_visible(bullish_signal):
+    """2.1.0: the Telegram surface NEVER renders entry/stop/target_1 as
+    explicit values. Indicator stance — trader composes the trade."""
+    msg = to_telegram_b2c(bullish_signal)
+    # The fixture has entry=2350, stop=2340, target_1=2370 — those numbers
+    # must NOT appear as labelled trade instructions.
+    assert "Entrée :" not in msg
+    assert "Stop :" not in msg
+    assert "Cible :" not in msg
 
 
 def test_to_telegram_b2c_bearish(bullish_signal):
@@ -332,7 +345,7 @@ def test_to_telegram_b2c_bearish(bullish_signal):
     bullish_signal_dict["levels"]["target_1"] = 2330.0
     bear = InsightSignalV2.model_validate(bullish_signal_dict)
     msg = to_telegram_b2c(bear)
-    assert "SETUP BAISSIER" in msg
+    assert "STRUCTURE BAISSIÈRE" in msg
 
 
 def test_to_b2b_dict_includes_schema_version(bullish_signal):
