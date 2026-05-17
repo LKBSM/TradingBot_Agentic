@@ -1,0 +1,192 @@
+{
+  "computed_at_utc": "2026-05-17T04:30:25.875648+00:00",
+  "verdict": "GO COMMERCIAL",
+  "score_avg": 9.5,
+  "score_total": 95,
+  "score_max": 100,
+  "n_green": 9,
+  "n_yellow": 1,
+  "n_red": 0,
+  "dimensions": {
+    "imports": {
+      "status": "GREEN",
+      "score": 10,
+      "details": {
+        "ok": 19,
+        "total": 19,
+        "failed": []
+      },
+      "latency_s": 27.6
+    },
+    "unit_tests": {
+      "status": "GREEN",
+      "score": 10,
+      "details": {
+        "passed": 180,
+        "failed": 0,
+        "exit_code": 0
+      },
+      "latency_s": 64.09
+    },
+    "data_quality": {
+      "status": "YELLOW",
+      "score": 5,
+      "details": [
+        {
+          "path": "data/XAU_15MIN_2019_2026.csv",
+          "rows": 172874,
+          "coverage_pct": 94.3,
+          "ok": false
+        },
+        {
+          "path": "data/EURUSD_15MIN_2019_2025.csv",
+          "rows": 174506,
+          "coverage_pct": 99.6,
+          "ok": true
+        }
+      ],
+      "latency_s": 1.93
+    },
+    "five_markets": {
+      "status": "GREEN",
+      "score": 10,
+      "details": {
+        "n_passed": 5,
+        "n_total": 5,
+        "source": "reports\\five_markets\\lightgbm_results.json",
+        "markets": [
+          {
+            "asset": "XAU",
+            "tf": "M15",
+            "all_passed": "True",
+            "dsr": 8.0,
+            "pbo": 0.0,
+            "pf_lo": 2.358054864447794,
+            "ir_vs_bh": -0.6190666749201381,
+            "n_trades": 5994
+          },
+          {
+            "asset": "XAU",
+            "tf": "H1",
+            "all_passed": "True",
+            "dsr": 8.0,
+            "pbo": 0.0,
+            "pf_lo": 2.1751717994635684,
+            "ir_vs_bh": -2.0265095910185575,
+            "n_trades": 2319
+          },
+          {
+            "asset": "XAU",
+            "tf": "H4",
+            "all_passed": "True",
+            "dsr": 4.9929706859716525,
+            "pbo": 0.0,
+            "pf_lo": 1.5691429964387922,
+            "ir_vs_bh": -4.297523540168819,
+            "n_trades": 1046
+          },
+          {
+            "asset": "EURUSD",
+            "tf": "M15",
+            "all_passed": "True",
+            "dsr": 8.0,
+            "pbo": 0.0,
+            "pf_lo": 1.9215409975542304,
+            "ir_vs_bh": 0.7767725102983037,
+            "n_trades": 6402
+          },
+          {
+            "asset": "EURUSD",
+            "tf": "H1",
+            "all_passed": "True",
+            "dsr": 8.0,
+            "pbo": 0.0,
+            "pf_lo": 2.338329227388627,
+            "ir_vs_bh": 1.3987462183814816,
+            "n_trades": 2388
+          }
+        ]
+      },
+      "latency_s": 0.06
+    },
+    "insight_v2_e2e": {
+      "status": "GREEN",
+      "score": 10,
+      "details": {
+        "missing_required_keys": [],
+        "present_forbidden_keys": [],
+        "n_scenarios": 3,
+        "insight_id": "f4bf295fb47cc9ffa1982179",
+        "narrative_short_len": 122,
+        "narrative_long_len": 438
+      },
+      "latency_s": 8.72
+    },
+    "latency": {
+      "status": "GREEN",
+      "score": 10,
+      "details": {
+        "p50_ms": 13.9,
+        "p95_ms": 30.5,
+        "p99_ms": 35.7,
+        "target_ms": 250.0,
+        "n_samples": 50
+      },
+      "latency_s": 1.8
+    },
+    "narrative": {
+      "status": "GREEN",
+      "score": 10,
+      "details": {
+        "fr_short_chars": 145,
+        "fr_long_chars": 609,
+        "en_short_chars": 154,
+        "en_long_chars": 517,
+        "fr_violations": [],
+        "en_violations": [],
+        "backend_fr": "template",
+        "backend_en": "template"
+      },
+      "latency_s": 0.0
+    },
+    "historical_stats": {
+      "status": "GREEN",
+      "score": 10,
+      "details": {
+        "has_costs": true,
+        "has_pf": true,
+        "has_ci": true,
+        "has_no_costs_ref": true,
+        "pf_with_costs": 0.6,
+        "pf_ci95_with_costs": [
+          0.532,
+          0.675
+        ],
+        "pf_without_costs_ref": 1.134,
+        "n_trades": 6402,
+        "sample_window": "2019-01-01\u20142025-12-31"
+      },
+      "latency_s": 0.03
+    },
+    "reproducibility": {
+      "status": "GREEN",
+      "score": 10,
+      "details": {
+        "sha1": "2a041bfd95d9677f",
+        "sha2": "2a041bfd95d9677f",
+        "match": true
+      },
+      "latency_s": 0.35
+    },
+    "documentation": {
+      "status": "GREEN",
+      "score": 10,
+      "details": {
+        "present": 12,
+        "total": 12,
+        "missing": []
+      },
+      "latency_s": 0.0
+    }
+  }
+}
