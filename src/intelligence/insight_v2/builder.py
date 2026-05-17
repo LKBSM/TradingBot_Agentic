@@ -58,6 +58,7 @@ class InsightV2Builder:
         bar_minutes: int = 15,
         disclaimer_lang: str = "fr",
         historical_stats_loader: Optional[object] = None,  # callable() -> HistoricalStats
+        narrative_generator: Optional[object] = None,      # InsightV2NarrativeGenerator
     ):
         self.asset = asset
         self.timeframe = timeframe
@@ -68,6 +69,7 @@ class InsightV2Builder:
         self.bar_minutes = int(bar_minutes)
         self.disclaimer_lang = disclaimer_lang
         self.historical_stats_loader = historical_stats_loader
+        self.narrative_generator = narrative_generator
 
     # ------------------------------------------------------------------ #
     # Build sections
@@ -313,7 +315,7 @@ class InsightV2Builder:
         scoring = self._score(features_for_scoring, regime_label=regime_ro.hmm_label)
         scenarios = build_scenarios(structure, expires_iso=exp_iso)
 
-        return InsightSignalV2(
+        insight = InsightSignalV2(
             insight_id=insight_id,
             asset=self.asset,
             timeframe=self.timeframe,
@@ -335,6 +337,20 @@ class InsightV2Builder:
             sources_cited=sources_cited or [],
             compliance=compliance,
         )
+
+        # Auto-generate narrative if generator wired and no explicit text passed
+        if self.narrative_generator is not None and (narrative_short is None or narrative_long is None):
+            try:
+                out = self.narrative_generator.generate(insight, lang=narrative_lang)
+                if narrative_short is None:
+                    insight.narrative_short = out.short
+                if narrative_long is None:
+                    insight.narrative_long = out.long
+                insight.narrative_lang = out.lang
+            except Exception as exc:
+                logger.warning("narrative_generator failed: %s", exc)
+
+        return insight
 
 
 __all__ = ["InsightV2Builder"]

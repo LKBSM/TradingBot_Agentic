@@ -22,5 +22,15 @@ passed 5/5 institutional gates (DSR/PBO/PF_lo/DM/n_trades).
 from src.intelligence.insight_v2.builder import InsightV2Builder  # noqa: F401
 from src.intelligence.insight_v2.contract import InsightSignalV2  # noqa: F401
 from src.intelligence.insight_v2.scenarios import build_scenarios  # noqa: F401
+from src.intelligence.insight_v2.narrative import (  # noqa: F401
+    InsightV2NarrativeGenerator,
+    NarrativeOutput,
+)
 
-__all__ = ["InsightV2Builder", "InsightSignalV2", "build_scenarios"]
+__all__ = [
+    "InsightV2Builder",
+    "InsightSignalV2",
+    "build_scenarios",
+    "InsightV2NarrativeGenerator",
+    "NarrativeOutput",
+]
