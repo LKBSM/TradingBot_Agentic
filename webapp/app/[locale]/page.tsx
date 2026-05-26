@@ -1,40 +1,39 @@
-import { MarketReadingCard } from '@/components/insight/MarketReadingCard';
+import { InsightGallery } from '@/components/insight/InsightGallery';
 import { SAMPLE_SIGNALS } from '@/lib/mocks';
 
 /**
- * Sprint F2 demo gallery — renders the three mocked signals through the
- * MarketReadingCard hero layer. The proper landing (hero + how-it-works +
- * pricing + footer) is built in F5.
+ * Sprint F4 demo — three mocked signals + a chatbot pilier accessible from
+ * each card's "Demander à Sentinel" CTA. The proper landing (hero + how-it-
+ * works + pricing + footer) is rebuilt in F5.
  */
 export default function LandingPage() {
+  // Demo aid: open the History section on the first card so the PF + IC95%
+  // hero differentiator is visible without interaction.
+  const defaultOpenByIndex = new Map<
+    number,
+    ReadonlyArray<'history'>
+  >([[0, ['history']]]);
+
   return (
     <div className="container-prose space-y-12 py-10 sm:py-16">
       <header className="space-y-3">
         <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          Sprint F3 · démo hero + sections collapsibles
+          Sprint F4 · hero + sections + chatbot pilier
         </p>
         <h1 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
           Smart Sentinel — Lecture de marché
         </h1>
         <p className="max-w-2xl text-pretty text-muted-foreground">
           Trois lectures algorithmiques mockées. Hero permanent + cinq sections
-          dépliables (Structure / Régime / Volatilité / Événements / Historique).
-          Le chatbot pilier arrive au sprint F4.
+          dépliables + chatbot contextualisé sur chaque lecture (5 questions
+          suggérées par signal, incluant un refus pédagogique).
         </p>
       </header>
 
-      <section className="space-y-6">
-        {SAMPLE_SIGNALS.map((signal, idx) => (
-          <MarketReadingCard
-            key={signal.id}
-            signal={signal}
-            // Démo F3 : la première carte ouvre l'historique par défaut pour
-            // exposer le hero différenciateur (PF + IC95%). Les deux autres
-            // restent toutes collapsées (état "neuf" attendu en prod).
-            defaultOpenSections={idx === 0 ? ['history'] : undefined}
-          />
-        ))}
-      </section>
+      <InsightGallery
+        signals={SAMPLE_SIGNALS}
+        defaultOpenByIndex={defaultOpenByIndex}
+      />
     </div>
   );
 }

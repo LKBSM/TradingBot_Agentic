@@ -5,6 +5,8 @@ import { notFound } from 'next/navigation';
 import '../globals.css';
 import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
+import { ChatPanel } from '@/components/chat/ChatPanel';
+import { ChatProvider } from '@/components/chat/ChatProvider';
 import { ThemeProvider } from '@/components/theme-provider';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { SUPPORTED_LOCALES } from '../../i18n';
@@ -48,9 +50,12 @@ export default async function LocaleLayout({
         >
           <NextIntlClientProvider messages={messages}>
             <TooltipProvider delayDuration={200}>
-              <Nav />
-              <main className="min-h-[calc(100vh-160px)]">{children}</main>
-              <Footer />
+              <ChatProvider>
+                <Nav />
+                <main className="min-h-[calc(100vh-160px)]">{children}</main>
+                <Footer />
+                <ChatPanel />
+              </ChatProvider>
             </TooltipProvider>
           </NextIntlClientProvider>
         </ThemeProvider>

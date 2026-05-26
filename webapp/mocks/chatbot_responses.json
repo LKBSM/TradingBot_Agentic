@@ -1,0 +1,94 @@
+{
+  "0193c7a42f1b": {
+    "instrument_label": "XAU/USD",
+    "questions": [
+      {
+        "id": "why-this-score",
+        "text": "Pourquoi seulement 72 ?",
+        "reply": "Sur les 8 composantes du moteur, la cassure de structure et le retest armé apportent 15 points sur 15. Le déséquilibre FVG aligné apporte 8.91 sur 15 (zone modeste : 0.42 × ATR). L'Order Block contribue 7.3 sur 10. Le régime de tendance haussière n'apporte « que » 17.5 sur 25 parce que sa certitude (posterior HMM 71 %) n'est pas maximale — un régime plus net donnerait 22-25. Les news, le volume et le momentum apportent ensemble 18 points. Total agrégé ≈ 67-72 selon la calibration. La marge d'erreur conformelle 54-82 signifie que sur des conditions techniquement comparables, la probabilité réelle observée se situe statistiquement dans cet intervalle 90 % du temps."
+      },
+      {
+        "id": "armed-retest",
+        "text": "C'est quoi un retest armé ?",
+        "reply": "Quand le prix casse un swing high (BOS), il revient souvent toucher le niveau cassé avant de continuer dans le sens de la cassure. Cette « visite » s'appelle un retest. Le moteur passe par 4 états : idle (aucune cassure), awaiting (cassure faite, en attente de retour du prix), armed (le prix est revenu toucher le niveau et a rebondi — la zone tient), consumed (le prix a dépassé le niveau dans l'autre sens — la zone ne tient plus). « Armé » = c'est le moment historiquement le plus probant pour une continuation du mouvement. Mais probable ne veut pas dire certain : c'est une description, pas une instruction."
+      },
+      {
+        "id": "fomc-impact",
+        "text": "Le FOMC change quoi ?",
+        "reply": "Les FOMC Minutes sont publiées dans environ 18 heures. C'est un événement à fort impact pour l'or : historiquement, la volatilité réalisée sur XAU/USD dans la fenêtre [-30 min, +60 min] autour des Minutes est 2 à 3 fois supérieure à la normale. La lecture actuelle est encore hors blackout, mais ça veut dire deux choses : (1) tout setup engagé maintenant va vivre l'événement, (2) le moteur passera automatiquement en blackout au moment T-30 min, ce qui suspendra les nouvelles lectures. Si tu veux comprendre l'impact directionnel possible, il faudrait croiser avec les attentes de marché — ce que le moteur ne fait pas encore (V2)."
+      },
+      {
+        "id": "historical-comparison",
+        "text": "Ça ressemble à quoi historiquement ?",
+        "reply": "Sur 7 ans de données XAU M15 walk-forward, 329 setups ont partagé une signature comparable : direction haussière, BOS + CHOCH + retest armé, régime de tendance, événement majeur dans 1-24 heures. Sur ces 329 cas, le profit factor a été de 1.30 — pour 1 € perdu, le panier a généré 1.30 € en moyenne. L'intervalle de confiance 95 % bootstrap est [1.12, 1.49] : sur des resamples du jeu, le PF reste positif avec une marge solide. Le taux de réussite brut est de 31.9 % — c'est faible en apparence mais cohérent avec un asymétrique R:R favorable (les gains sont plus gros que les pertes). Aucun edge n'est revendiqué — ces stats restent un historique observé, pas une promesse de performance future."
+      },
+      {
+        "id": "buy-or-not",
+        "text": "Donc je dois acheter ?",
+        "reply": "Non, je ne donne aucune instruction d'achat, de vente ou de timing. Mon rôle est de décrire la structure du marché et de calibrer une probabilité — pas de décider pour toi. Ce que je sais te dire : il y a une cassure haussière confirmée, un retest armé sur 2378-2381, une invalidation structurelle sous 2378, et 329 cas historiquement similaires avec un profit factor de 1.30. Ce que toi seul peut décider : si ta gestion du risque, ton horizon et ton allocation justifient un engagement, à quelle taille, avec quel stop, et à quel objectif. Smart Sentinel est un indicateur, pas un service de signaux."
+      }
+    ]
+  },
+
+  "0193c7a4ab51": {
+    "instrument_label": "EUR/USD",
+    "questions": [
+      {
+        "id": "why-this-score",
+        "text": "Pourquoi seulement 58 ?",
+        "reply": "Plusieurs composantes sont en-dessous de leur maximum. La cassure n'a pas encore été retestée (6 sur 15 pour BOS — 0.40 × 15). Le déséquilibre FVG est modeste (5.85 sur 15, gap 0.28 × ATR seulement). L'Order Block est moyen (intensité 0.45). Surtout, le régime n'est pas trending : le HMM identifie un range basse volatilité — alignement directionnel faible pour un setup baissier (7.5 sur 25). Les news baissières (–0.45) compensent un peu (11.9 sur 20). C'est exactement le genre de configuration où la marge d'erreur conformelle est large (41-70) : le système te dit honnêtement qu'il n'est pas très sûr."
+      },
+      {
+        "id": "armed-retest",
+        "text": "Et le retest, il est où dans cette lecture ?",
+        "reply": "Il est en attente. La cassure baissière à 1.08750 a eu lieu il y a 4 bougies H1, mais le prix n'est pas encore remonté toucher le niveau cassé. La zone à surveiller est 1.0860-1.0868 (FVG) et 1.0870-1.0885 (Order Block bearish). Tant que ce retest n'a pas eu lieu, la lecture reste fragile — beaucoup de cassures sans retest se transforment en faux signaux. C'est aussi pour ça que la décision interne du moteur est REDUCE plutôt que TRADE."
+      },
+      {
+        "id": "event-impact",
+        "text": "La BCE dans 3 heures, ça change quoi ?",
+        "reply": "Énormément. La décision BCE est un événement de classe HIGH pour EUR/USD : la volatilité réalisée explose dans la fenêtre [-30 min, +60 min] (typiquement ×3 à ×8 par rapport à la normale). Le système va automatiquement entrer en blackout à 2h30 du publication, ce qui suspendra toute nouvelle lecture. Tout setup engagé maintenant va vivre intégralement la décision — c'est précisément la raison pour laquelle le moteur a passé sa décision interne à REDUCE : le risque de gap directionnel est jugé trop élevé pour un setup non-confirmé (retest awaiting)."
+      },
+      {
+        "id": "historical-comparison",
+        "text": "Sur des cas similaires, qu'est-ce qui se passe ?",
+        "reply": "Sur 187 setups historiquement comparables (EUR H1, bearish, retest en attente, régime ranging, événement BCE/Fed dans les 6 heures), le profit factor a été 1.05. L'IC 95 % est [0.88, 1.22] — l'intervalle inclut 1.0, ce qui veut dire qu'on ne peut pas exclure statistiquement que le profit factor « vrai » soit inférieur à 1. Le taux de réussite brut est 26.5 %. Honnêtement, c'est une configuration où l'edge est marginal au mieux. C'est cohérent avec la conviction 58 affichée et la décision interne REDUCE."
+      },
+      {
+        "id": "buy-or-not",
+        "text": "Donc je dois vendre ?",
+        "reply": "Non, et je vais être encore plus net que d'habitude : sur cette lecture spécifique, le système lui-même est mitigé (conviction 58, IC large 41-70, décision interne REDUCE, événement BCE dans 3 heures). Il y a beaucoup de raisons techniques de rester à l'écart. Mais ce n'est pas à moi de prendre cette décision — c'est à toi de croiser : ta gestion du risque, ta tolérance au gap d'événement, ta lecture du contexte fondamental, ta position actuelle. Si tu veux comprendre pourquoi je suis tiède, demande-moi « explique-moi le jump ratio à 42 % »."
+      }
+    ]
+  },
+
+  "0193c7a5c8e2": {
+    "instrument_label": "XAU/USD H4",
+    "questions": [
+      {
+        "id": "why-this-score",
+        "text": "Pourquoi 42, c'est très bas ?",
+        "reply": "Parce que la plupart des composantes sont silencieuses. Aucune cassure récente (0 sur 15 pour BOS), pas d'Order Block significatif (0 sur 10), un Fair Value Gap présent mais sans direction confirmée (7.4 sur 15). Le régime ranging basse volatilité contribue modestement (9 sur 25 — alignement 0.3 quand on est neutre). Sentiment news quasi-nul avec confiance basse (2 sur 20). Le score 42 reflète honnêtement un marché en attente : il n'y a pas grand-chose à dire de directionnel. C'est la lecture la plus saine du moteur : si rien ne se passe, dire « rien ne se passe ». Marge d'erreur conformelle 25-55 — bande large parce que la situation est ambiguë."
+      },
+      {
+        "id": "armed-retest",
+        "text": "C'est quoi un retest armé ?",
+        "reply": "Le retest armé décrit le moment où, après une cassure, le prix est revenu toucher le niveau cassé puis a rebondi dans le sens de la cassure. Sur la lecture actuelle (H4 neutre), l'état est « awaiting » — il n'y a pas eu de cassure à retester. Le seul élément technique actif est un Fair Value Gap entre 2358 et 2362, toujours non touché. Le marché doit d'abord casser quelque chose (un swing high ou low) avant qu'on puisse parler de retest."
+      },
+      {
+        "id": "event-impact",
+        "text": "Les NFP dans 2 jours, ça change quoi ?",
+        "reply": "C'est trop loin pour impacter la lecture H4 actuelle, mais ça structure les 2 prochains jours. Pendant la fenêtre [-30 min, +60 min] autour des NFP, le moteur passera en blackout automatique. En H4, ça veut dire que 1-2 bougies vont être affectées. Si tu trades sur des horizons inférieurs au délai NFP, l'événement n'invalide rien d'actuel. Si tu prends une position H4 maintenant, elle vivra les NFP — typiquement +1 à +2 ATR de volatilité spike."
+      },
+      {
+        "id": "historical-comparison",
+        "text": "À quoi ressemble historiquement une consolidation comme celle-ci ?",
+        "reply": "Sur 94 cas H4 XAU similaires (pas de BOS, régime ranging basse volatilité, expected run-length > 200 bougies), le profit factor a été 1.18. L'IC 95 % est [0.92, 1.45] — l'intervalle inclut 1.0, donc on ne peut pas affirmer qu'il y a un edge significatif. Le taux de réussite brut est 34 %. C'est typique des marchés en attente : peu de signal, beaucoup de bruit. La meilleure décision sur ce genre de lecture est souvent l'absence de décision — observer, identifier les niveaux clés, attendre le déclencheur."
+      },
+      {
+        "id": "buy-or-not",
+        "text": "Donc je dois attendre ?",
+        "reply": "Encore une fois, je ne donne aucune instruction. Ce que je peux te dire factuellement : la lecture actuelle n'identifie aucun déclencheur technique fort (pas de cassure, pas d'OB significatif, régime sans tendance). 94 cas historiques similaires donnent un profit factor de 1.18 avec un IC qui inclut 1.0 — autrement dit, l'avantage statistique n'est pas démontré. Si ton style de trading recherche des entrées avec une justification structurelle claire, cette lecture est probablement à laisser passer. Mais c'est à toi de croiser ça avec ton contexte personnel."
+      }
+    ]
+  }
+}
