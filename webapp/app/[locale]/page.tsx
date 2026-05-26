@@ -1,42 +1,33 @@
-import { useTranslations } from 'next-intl';
-import Link from 'next/link';
+import { MarketReadingCard } from '@/components/insight/MarketReadingCard';
+import { SAMPLE_SIGNALS } from '@/lib/mocks';
 
+/**
+ * Sprint F2 demo gallery — renders the three mocked signals through the
+ * MarketReadingCard hero layer. The proper landing (hero + how-it-works +
+ * pricing + footer) is built in F5.
+ */
 export default function LandingPage() {
-  const t = useTranslations('landing');
-  const td = useTranslations('disclaimer');
   return (
-    <div className="container-prose py-16">
-      <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-        {t('hero_title')}
-      </h1>
-      <p className="mt-6 text-lg text-slate-600">{t('hero_subtitle')}</p>
-      <div className="mt-8 flex gap-4">
-        <Link
-          href="/dashboard"
-          className="rounded-full bg-sentinel-ink px-6 py-3 text-white"
-        >
-          {t('hero_cta_primary')}
-        </Link>
-        <Link
-          href="/transparency"
-          className="rounded-full border border-sentinel-ink px-6 py-3"
-        >
-          {t('hero_cta_secondary')}
-        </Link>
-      </div>
+    <div className="container-prose space-y-12 py-10 sm:py-16">
+      <header className="space-y-3">
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          Sprint F2 · démo card hero
+        </p>
+        <h1 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
+          Smart Sentinel — Lecture de marché
+        </h1>
+        <p className="max-w-2xl text-pretty text-muted-foreground">
+          Trois lectures algorithmiques mockées pour visualiser le hero layer.
+          Les sections détaillées (structure, régime, volatilité, événements,
+          historique) et le chatbot arrivent aux sprints F3 et F4.
+        </p>
+      </header>
 
-      <section className="mt-20 grid gap-6 sm:grid-cols-3">
-        {[1, 2, 3].map((n) => (
-          <div key={n} className="card">
-            <h3 className="font-semibold">{t(`value_${n}_title`)}</h3>
-            <p className="mt-2 text-sm text-slate-600">
-              {t(`value_${n}_body`)}
-            </p>
-          </div>
+      <section className="space-y-6">
+        {SAMPLE_SIGNALS.map((signal) => (
+          <MarketReadingCard key={signal.id} signal={signal} heroOnly />
         ))}
       </section>
-
-      <p className="mt-16 text-xs text-slate-500 italic">{td('long')}</p>
     </div>
   );
 }
