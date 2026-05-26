@@ -20,6 +20,10 @@ wheels/
 .installed.cfg
 *.egg
 
+# Re-include Next.js webapp lib/ (Python `lib/` rule above otherwise hides it)
+!/webapp/lib/
+!/webapp/lib/**
+
 # Virtual environments
 venv/
 ENV/
