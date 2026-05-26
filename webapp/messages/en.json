@@ -6,7 +6,7 @@
   },
   "landing": {
     "hero_title": "Understand the gold market without being told what to do.",
-    "hero_subtitle": "Smart Sentinel AI generates sourced contextual analyses for XAU/USD — transparent by design.",
+    "hero_subtitle": "M.I.A. Markets generates sourced contextual analyses for XAU/USD — transparent by design.",
     "hero_cta_primary": "Start free", "hero_cta_secondary": "See transparency",
     "value_1_title": "Sourced AI narrative",
     "value_1_body": "Every analysis cites its sources. No hallucination, no recommendation.",
@@ -17,12 +17,12 @@
   },
   "disclaimer": {
     "short": "Educational algorithmic analysis. Not investment advice.",
-    "long": "Smart Sentinel AI produces editorial contextual analyses, not personalised recommendations. Compliant with EU 2024/2811 and the March 2026 finfluencer regulation."
+    "long": "M.I.A. Markets produces editorial contextual analyses, not personalised recommendations. Compliant with EU 2024/2811 and the March 2026 finfluencer regulation."
   },
   "transparency": {
     "title": "Radical transparency",
     "subtitle": "Our live paper-trading curve, drawdowns included.",
-    "disclaimer": "Paper-trading demonstration. Smart Sentinel does NOT claim a trading edge. This curve is for educational purposes only.",
+    "disclaimer": "Paper-trading demonstration. M.I.A. Markets does NOT claim a trading edge. This curve is for educational purposes only.",
     "stats_title": "Cumulative statistics",
     "n_trades": "Trades", "win_rate": "Win rate", "total_r": "Cumulative R",
     "max_dd": "Max drawdown", "sharpe": "Sharpe per trade"
@@ -43,7 +43,7 @@
     "send": "Send", "sources_label": "Cited sources"
   },
   "footer": {
-    "copyright": "© 2026 Smart Sentinel AI. All rights reserved.",
+    "copyright": "© 2026 M.I.A. Markets. All rights reserved.",
     "terms": "Terms", "privacy": "Privacy", "contact": "Contact"
   }
 }

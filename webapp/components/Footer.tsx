@@ -23,7 +23,10 @@ export function Footer() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-1">
             <p className="text-sm font-semibold tracking-tight">
-              Smart Sentinel
+              M.I.A. Markets
+            </p>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground/80">
+              Multi-asset Intelligence Assistant for Markets
             </p>
             <p className="max-w-md text-xs text-muted-foreground">
               Indicateur de marché conversationnel. Posture éducative,
@@ -58,7 +61,8 @@ export function Footer() {
         </div>
 
         <p className="text-[11px] text-muted-foreground">
-          © {new Date().getFullYear()} Smart Sentinel — tous droits réservés.
+          © {new Date().getFullYear()} M.I.A. Markets — tous droits réservés. ·{' '}
+          <span className="font-mono">mia.markets</span>
         </p>
       </div>
     </footer>

@@ -6,8 +6,9 @@ const withNextIntl = createNextIntlPlugin('./i18n.ts');
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  // We render under a separate Vercel deployment; FastAPI backend stays on
-  // Railway at api.smartsentinel.ai. Rewrites send /api/* through to it.
+  // Vercel deployment fronts the FastAPI backend on Fly.io at
+  // api.mia.markets. Rewrites send /api/* through to it (set
+  // NEXT_PUBLIC_API_BASE for non-default targets).
   async rewrites() {
     return [
       {

@@ -1,8 +1,11 @@
-# Smart Sentinel AI — Webapp
+# M.I.A. Markets — Webapp
 
-Indicateur de marché conversationnel pour XAU/USD et FX. Stack : **Next.js 15
-(App Router) · TypeScript strict · Tailwind CSS · shadcn/ui (`new-york`) ·
-next-intl · next-themes**.
+**Multi-asset Intelligence Assistant for Markets** · indicateur de marché
+conversationnel pour XAU/USD et FX. Le chatbot porte le nom **Sentinel**
+(personnage assistant interne, c'est lui qui s'adresse à l'utilisateur).
+
+Stack : **Next.js 15 (App Router) · TypeScript strict · Tailwind CSS ·
+shadcn/ui (`new-york`) · next-intl · next-themes**.
 
 Architecture **progressive uniforme** (cf.
 `docs/governance/decision_gate_review_v2.md` Partie 2 Angle mort #1, révision

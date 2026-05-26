@@ -1,8 +1,8 @@
 {
-  "name": "smart-sentinel-webapp",
+  "name": "mia-markets-webapp",
   "version": "0.2.0",
   "private": true,
-  "description": "Smart Sentinel AI — frontend (architecture progressive uniforme, mobile-first).",
+  "description": "M.I.A. Markets — Multi-asset Intelligence Assistant for Markets · frontend (architecture progressive uniforme, mobile-first).",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

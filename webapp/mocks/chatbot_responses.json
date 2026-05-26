@@ -25,7 +25,7 @@
       {
         "id": "buy-or-not",
         "text": "Donc je dois acheter ?",
-        "reply": "Non, je ne donne aucune instruction d'achat, de vente ou de timing. Mon rôle est de décrire la structure du marché et de calibrer une probabilité — pas de décider pour toi. Ce que je sais te dire : il y a une cassure haussière confirmée, un retest armé sur 2378-2381, une invalidation structurelle sous 2378, et 329 cas historiquement similaires avec un profit factor de 1.30. Ce que toi seul peut décider : si ta gestion du risque, ton horizon et ton allocation justifient un engagement, à quelle taille, avec quel stop, et à quel objectif. Smart Sentinel est un indicateur, pas un service de signaux."
+        "reply": "Non, je ne donne aucune instruction d'achat, de vente ou de timing. Mon rôle est de décrire la structure du marché et de calibrer une probabilité — pas de décider pour toi. Ce que je sais te dire : il y a une cassure haussière confirmée, un retest armé sur 2378-2381, une invalidation structurelle sous 2378, et 329 cas historiquement similaires avec un profit factor de 1.30. Ce que toi seul peut décider : si ta gestion du risque, ton horizon et ton allocation justifient un engagement, à quelle taille, avec quel stop, et à quel objectif. M.I.A. Markets est un indicateur, pas un service de signaux."
       }
     ]
   },

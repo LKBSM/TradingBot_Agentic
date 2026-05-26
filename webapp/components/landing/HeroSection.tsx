@@ -35,9 +35,9 @@ export function HeroSection() {
       </h1>
 
       <p className="mt-6 max-w-2xl text-pretty text-lg text-muted-foreground">
-        Smart Sentinel lit l&apos;or, l&apos;euro et les indices avec les méthodes des
-        salles de marché institutionnelles — et un chatbot qui répond à toutes
-        vos questions, en français, en temps réel.
+        M.I.A. Markets lit l&apos;or, l&apos;euro et les indices avec les méthodes des
+        salles de marché institutionnelles — et un chatbot (Sentinel) qui
+        répond à toutes vos questions, en français, en temps réel.
       </p>
 
       <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">

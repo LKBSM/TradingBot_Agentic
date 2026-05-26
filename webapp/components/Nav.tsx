@@ -13,10 +13,16 @@ export function Nav() {
       <div className="container-prose flex h-14 items-center justify-between gap-4">
         <Link
           href="/"
-          className="text-sm font-semibold tracking-tight"
-          aria-label="Smart Sentinel — retour à l'accueil"
+          className="flex items-center gap-2 text-sm font-semibold tracking-tight"
+          aria-label="M.I.A. Markets — retour à l'accueil"
         >
-          Smart Sentinel
+          <span
+            aria-hidden
+            className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-amber-400 to-amber-600 text-xs font-bold text-white shadow-sm"
+          >
+            M
+          </span>
+          <span>M.I.A. Markets</span>
         </Link>
 
         <nav aria-label="Sections du site" className="hidden sm:block">

@@ -114,7 +114,7 @@ export function PricingSection() {
           by the legal terminal output (L.612-1 médiateur CM2C, Hamon 14j,
           MiFID disclosure). */}
       <p className="text-xs italic text-muted-foreground">
-        Démonstration paper-trading. Smart Sentinel produit des analyses
+        Démonstration paper-trading. M.I.A. Markets produit des analyses
         éditoriales contextuelles et non des recommandations personnalisées.
         Disponibilité géographique restreinte (US, Québec, Royaume-Uni et
         juridictions OFAC exclues).

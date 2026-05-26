@@ -12,9 +12,14 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { SUPPORTED_LOCALES } from '../../i18n';
 
 export const metadata: Metadata = {
-  title: 'Smart Sentinel AI — Indicateur de marché conversationnel',
+  title: {
+    default: 'M.I.A. Markets — Indicateur de marché conversationnel',
+    template: '%s · M.I.A. Markets',
+  },
   description:
-    "Lecture de marché XAU/USD et FX, expliquée par un quant. Analyses contextuelles sourcées, posture éducative, conforme UE 2024/2811.",
+    "M.I.A. Markets (Multi-asset Intelligence Assistant) — Lecture de marché XAU/USD et FX, expliquée par un quant. Analyses contextuelles sourcées, posture éducative, conforme UE 2024/2811.",
+  applicationName: 'M.I.A. Markets',
+  authors: [{ name: 'M.I.A. Markets' }],
   robots: { index: true, follow: true },
 };
 
