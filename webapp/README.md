@@ -36,34 +36,62 @@ Le backend n'est pas requis en V1 — toute la donnée vient de
 ```
 webapp/
 ├─ app/
-│  ├─ globals.css           # Variables CSS shadcn light + dark + sentinel-*
+│  ├─ globals.css                # Variables CSS shadcn light + dark + sentinel-*
 │  └─ [locale]/
-│     ├─ layout.tsx         # ThemeProvider + NextIntl + Tooltip + Nav/Footer
-│     └─ page.tsx           # Landing (réécrite en sprint F5)
+│     ├─ layout.tsx              # Theme + NextIntl + Tooltip + ChatProvider + Nav/Footer
+│     └─ page.tsx                # Landing : Hero + Demo + HowItWorks + Pricing
 ├─ components/
-│  ├─ ui/                   # shadcn primitives (Button, Card, Badge,
-│  │                        # Accordion, Dialog, Sheet, Tooltip, Tabs)
-│  ├─ theme-provider.tsx    # Wrapper next-themes
-│  ├─ theme-toggle.tsx      # Bouton dark/light (Sun/Moon)
-│  ├─ Nav.tsx               # (réécriture F5)
-│  └─ Footer.tsx            # (réécriture F5)
+│  ├─ ui/                        # shadcn primitives (Button, Card, Badge,
+│  │                             # Accordion, Dialog, Sheet, Tooltip, Tabs)
+│  ├─ theme-provider.tsx         # Wrapper next-themes
+│  ├─ theme-toggle.tsx           # Bouton dark/light (Sun/Moon)
+│  ├─ Nav.tsx                    # Sticky brand + anchors + theme toggle
+│  ├─ Footer.tsx                 # Compliance bandeau + 5 liens LEGAL-PENDING
+│  ├─ insight/                   # Cœur produit
+│  │  ├─ MarketReadingCard.tsx   # Orchestrateur couches 1 + 2
+│  │  ├─ InsightGallery.tsx      # Bridge useChat() (client)
+│  │  ├─ InsightSections.tsx     # Accordion des 5 sections
+│  │  ├─ VerdictHeader.tsx       # Couche 1
+│  │  ├─ ConvictionGauge.tsx     # Couche 1
+│  │  ├─ TemporalBadge.tsx       # Couche 1
+│  │  ├─ DisclaimerStub.tsx      # Couche 1 (LEGAL-PENDING)
+│  │  └─ sections/
+│  │     ├─ StructureSection.tsx
+│  │     ├─ RegimeSection.tsx
+│  │     ├─ VolatilitySection.tsx
+│  │     ├─ EventSection.tsx
+│  │     └─ HistorySection.tsx
+│  ├─ chat/                      # Pilier conversationnel (moat #1)
+│  │  ├─ ChatProvider.tsx        # Context isOpen / activeSignal / turns
+│  │  ├─ ChatPanel.tsx           # Sheet slide-over responsive
+│  │  ├─ ChatMessage.tsx         # Bulles user / assistant
+│  │  ├─ SuggestedQuestions.tsx  # Chips
+│  │  └─ ChatInputStub.tsx       # Input désactivé V1 (tooltip "bientôt")
+│  └─ landing/
+│     ├─ HeroSection.tsx         # Positioning + track-record honnête
+│     ├─ DemoSection.tsx         # 3 cards via InsightGallery
+│     ├─ HowItWorksSection.tsx   # 3 étapes verdict / sections / chatbot
+│     └─ PricingSection.tsx      # 4 tiers placeholder (LEGAL-PENDING)
 ├─ lib/
-│  ├─ utils.ts              # cn() = clsx + tailwind-merge
-│  └─ mocks.ts              # Loader typé des 3 signaux mockés
+│  ├─ utils.ts                   # cn() = clsx + tailwind-merge
+│  ├─ mocks.ts                   # Loader typé sample_signals.json
+│  ├─ chatbot.ts                 # Loader scripted responses + fallback
+│  └─ insight-formatters.ts      # Toutes les chaînes user-visible (FR)
 ├─ types/
-│  └─ insight.ts            # Mirror TS de InsightSignalV2 v2.1.0
+│  ├─ insight.ts                 # Mirror TS de InsightSignalV2 v2.1.0
+│  └─ chatbot.ts                 # ChatbotQuestion / ChatbotScript
 ├─ mocks/
-│  └─ sample_signals.json   # 3 signaux : XAU M15 bull, EURUSD H1 bear,
-│                           # XAU H4 neutral
+│  ├─ sample_signals.json        # 3 signaux mockés
+│  └─ chatbot_responses.json     # 15 paires Q/A scriptées
 ├─ content/
-│  └─ articles/fr/*.md      # Articles pédagogiques dormants (réutilisation V2)
+│  └─ articles/fr/*.md           # Articles pédagogiques dormants (V2)
 ├─ messages/
-│  └─ {fr,en,de,es}.json    # FR actif · EN/DE/ES dormants (302 → FR)
-├─ middleware.ts            # next-intl + 302 EN/DE/ES → FR équivalent
-├─ i18n.ts                  # Config locales
-├─ components.json          # shadcn config (style new-york, lucide)
-├─ tailwind.config.ts       # Theme étendu + sentinel-bull/bear/neutral/warn
-└─ tsconfig.json            # strict + noUncheckedIndexedAccess
+│  └─ {fr,en,de,es}.json         # FR actif · EN/DE/ES dormants (302 → FR)
+├─ middleware.ts                 # next-intl + 302 EN/DE/ES → FR équivalent
+├─ i18n.ts                       # Config locales (pattern next-intl 3.22+)
+├─ components.json               # shadcn config (style new-york, lucide)
+├─ tailwind.config.ts            # Theme étendu + sentinel-bull/bear/neutral/warn
+└─ tsconfig.json                 # strict + noUncheckedIndexedAccess
 ```
 
 ## Internationalisation
@@ -100,4 +128,26 @@ sprint d'intégration backend).
 
 Auth · Stripe · backend / API réelles · Telegram UI · wording légal
 définitif · Plausible / analytics · email automation. Voir
-`docs/frontend/TODO_NEXT_SPRINTS.md` (livré en F5).
+`docs/frontend/TODO_NEXT_SPRINTS.md` pour la roadmap complète des
+sprints suivants (passe légale, intégration backend, auth + Stripe,
+analytics, PWA mobile, RAG chatbot, pédagogie EXPERT, SEO, tests).
+
+## Composant inventory
+
+`docs/frontend/component_inventory.md` liste tous les composants livrés
+en F0→F5 avec leur statut (READY / PARTIAL / LEGAL-PENDING) et les
+marqueurs `LEGAL-PENDING` à grep avant chaque release tag.
+
+## Validation manuelle (avant tout merge prod)
+
+```bash
+cd webapp
+npm run typecheck           # tsc --noEmit
+npm run lint                # ESLint + next/typescript rules
+npm run build               # Next.js build production
+npm run dev                 # Smoke test runtime
+# Puis dans un second terminal :
+npx lighthouse http://localhost:3000 --view --preset=desktop
+npx lighthouse http://localhost:3000 --view --form-factor=mobile
+# Cible mobile : performance ≥ 90, accessibilité ≥ 90, best-practices ≥ 90
+```
