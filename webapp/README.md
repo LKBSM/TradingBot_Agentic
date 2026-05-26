@@ -68,8 +68,8 @@ webapp/
 │  │  ├─ ChatProvider.tsx        # Context isOpen / activeSignal / turns
 │  │  ├─ ChatPanel.tsx           # Sheet slide-over responsive
 │  │  ├─ ChatMessage.tsx         # Bulles user / assistant
-│  │  ├─ SuggestedQuestions.tsx  # Chips
-│  │  └─ ChatInputStub.tsx       # Input désactivé V1 (tooltip "bientôt")
+│  │  ├─ SuggestedQuestions.tsx  # Chips scripted (réponses pré-écrites)
+│  │  └─ ChatInput.tsx           # Saisie libre → POST /api/chat (Claude SSE)
 │  └─ landing/
 │     ├─ HeroSection.tsx         # Positioning + track-record honnête
 │     ├─ DemoSection.tsx         # 3 cards via InsightGallery

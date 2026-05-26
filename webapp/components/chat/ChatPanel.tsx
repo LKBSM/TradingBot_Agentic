@@ -10,7 +10,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import { ChatInputStub } from './ChatInputStub';
+import { ChatInput } from './ChatInput';
 import { ChatMessage } from './ChatMessage';
 import { useChat } from './ChatProvider';
 import { SuggestedQuestions } from './SuggestedQuestions';
@@ -23,17 +23,23 @@ import type { ChatbotQuestion } from '@/types/chatbot';
 
 /**
  * Slide-over chat panel — desktop ≥ 768px keeps the underlying card visible
- * (right-side sheet, ~480px wide). On mobile the sheet becomes a fullscreen
- * surface so the conversation has room to breathe.
+ * (right-side sheet, ~480-560px wide depending on viewport). On mobile the
+ * sheet becomes a fullscreen surface so the conversation has room to breathe.
  *
  * Rendered once at the layout level — opened/closed via the shared
- * ChatProvider context.
+ * ChatProvider context. Suggested questions hit the scripted fallback so
+ * answers stay deterministic and free. Free-text input goes through
+ * /api/chat (real Claude when ANTHROPIC_API_KEY is set, friendly error
+ * otherwise).
  */
 export function ChatPanel() {
   const {
     isOpen,
     activeSignal,
     turns,
+    isStreaming,
+    streamingText,
+    apiAvailable,
     close,
     appendExchange,
     resetTurns,
@@ -56,14 +62,20 @@ export function ChatPanel() {
     [turns],
   );
 
-  // Auto-scroll to the bottom whenever a new exchange lands.
+  // Auto-scroll to the bottom whenever a new exchange OR a streaming chunk
+  // lands.
   React.useEffect(() => {
     if (!scrollRef.current) return;
     scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [turns.length]);
+  }, [turns.length, streamingText]);
 
   function handlePick(q: ChatbotQuestion) {
-    appendExchange({ questionId: q.id, text: q.text, reply: q.reply });
+    appendExchange({
+      questionId: q.id,
+      text: q.text,
+      reply: q.reply,
+      source: 'scripted',
+    });
   }
 
   return (
@@ -96,13 +108,21 @@ export function ChatPanel() {
           ref={scrollRef}
           className="flex-1 space-y-4 overflow-y-auto px-5 py-4"
         >
-          <IntroBubble script={script} />
+          <IntroBubble script={script} apiAvailable={apiAvailable} />
 
           {turns.map((t) => (
             <ChatMessage key={t.id} role={t.role} text={t.text} />
           ))}
 
-          {turns.length > 0 && (
+          {isStreaming && (
+            <ChatMessage
+              key="streaming"
+              role="assistant"
+              text={streamingText || '…'}
+            />
+          )}
+
+          {turns.length > 0 && !isStreaming && (
             <Button
               type="button"
               size="sm"
@@ -116,19 +136,17 @@ export function ChatPanel() {
           )}
         </div>
 
-        <div className="border-t bg-background px-5 py-4">
+        <div className="space-y-3 border-t bg-background px-5 py-4">
           <SuggestedQuestions
             questions={script.questions}
             consumedIds={consumedIds}
             onPick={handlePick}
           />
-          <div className="mt-3">
-            <ChatInputStub />
-          </div>
+          <ChatInput />
           {/* LEGAL-PENDING: standalone compliance line at the bottom of the
-              chat panel — to be aligned with the legal terminal wording on
-              educational-use posture (UE 2024/2811). */}
-          <p className="mt-3 text-[11px] italic text-muted-foreground">
+              chat panel — aligned with legal terminal wording on
+              educational-use posture (UE 2024/2811 + MiFID II 03/2026). */}
+          <p className="text-[11px] italic text-muted-foreground">
             Sentinel répond à des questions sur la lecture algorithmique. Il
             ne donne ni signal de trading, ni recommandation personnalisée.
           </p>
@@ -140,8 +158,10 @@ export function ChatPanel() {
 
 function IntroBubble({
   script,
+  apiAvailable,
 }: {
   script: { instrument_label: string; questions: ReadonlyArray<ChatbotQuestion> };
+  apiAvailable: boolean | 'unknown';
 }) {
   return (
     <div className="rounded-2xl rounded-tl-sm bg-muted px-3.5 py-2.5 text-sm leading-relaxed">
@@ -155,7 +175,17 @@ function IntroBubble({
         comparer aux setups historiques similaires.
       </p>
       <p className="mt-2 text-xs italic text-muted-foreground">
-        Je ne donne ni signal d'achat ou de vente, ni conseil en investissement.
+        {apiAvailable === false ? (
+          <>
+            Mode scripted : utilise les suggestions ci-dessous. La saisie
+            libre nécessite la clef Anthropic côté serveur.
+          </>
+        ) : (
+          <>
+            Je ne donne ni signal d&apos;achat ou de vente, ni conseil en
+            investissement.
+          </>
+        )}
       </p>
     </div>
   );
