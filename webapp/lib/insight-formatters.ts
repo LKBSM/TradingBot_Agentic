@@ -1,7 +1,13 @@
 import type {
   ConvictionLabel,
   Direction,
+  HmmLabel,
   InsightSignalV2,
+  Instrument,
+  RegimeGateDecision,
+  RetestState,
+  Session,
+  VolatilityRegime,
 } from '@/types/insight';
 
 /**
@@ -174,3 +180,140 @@ export function formatNextEventCountdown(minutes: number | null): string | null 
   const remH = Math.floor((minutes % (60 * 24)) / 60);
   return remH === 0 ? `dans ${d}j` : `dans ${d}j${remH}h`;
 }
+
+// ─── Structure / SMC ────────────────────────────────────────────────────────
+
+const PRICE_DECIMALS: Record<Instrument, number> = {
+  XAUUSD: 2,
+  EURUSD: 5,
+  GBPUSD: 5,
+  USDJPY: 3,
+  US500: 1,
+  BTCUSD: 2,
+};
+
+/** Format a price level using the instrument's conventional precision. */
+export function formatPrice(value: number, instrument: Instrument): string {
+  return value.toLocaleString('fr-FR', {
+    minimumFractionDigits: PRICE_DECIMALS[instrument],
+    maximumFractionDigits: PRICE_DECIMALS[instrument],
+  });
+}
+
+export function formatZone(
+  zone: [number, number] | null,
+  instrument: Instrument,
+): string | null {
+  if (!zone) return null;
+  return `${formatPrice(zone[0], instrument)} – ${formatPrice(zone[1], instrument)}`;
+}
+
+const RETEST_LABEL: Record<RetestState, string> = {
+  idle: 'aucun retest en cours',
+  awaiting: 'en attente de retest',
+  armed: 'retest armé',
+  consumed: 'retest dépassé',
+};
+
+export function formatRetestState(state: RetestState): string {
+  return RETEST_LABEL[state];
+}
+
+// ─── Regime ─────────────────────────────────────────────────────────────────
+
+const HMM_LABEL: Record<HmmLabel, string> = {
+  trend_bullish: 'Tendance haussière',
+  trend_bearish: 'Tendance baissière',
+  range_low_vol: 'Consolidation calme',
+  high_vol_stress: 'Stress / forte volatilité',
+};
+
+export function formatHmmLabel(label: HmmLabel): string {
+  return HMM_LABEL[label];
+}
+
+const GATE_LABEL: Record<RegimeGateDecision, { label: string; tone: 'ok' | 'warn' | 'block' }> = {
+  TRADE: { label: 'Conditions favorables', tone: 'ok' },
+  REDUCE: { label: 'Conditions dégradées — exposition à réduire', tone: 'warn' },
+  BLOCK: { label: 'Conditions adverses — pause recommandée', tone: 'block' },
+};
+
+export function formatRegimeGate(decision: RegimeGateDecision): {
+  label: string;
+  tone: 'ok' | 'warn' | 'block';
+} {
+  return GATE_LABEL[decision];
+}
+
+/** Translate BOCPD changepoint probability into a human stability descriptor. */
+export function formatChangepointStability(cpProb: number): {
+  label: string;
+  tone: 'ok' | 'warn' | 'block';
+} {
+  if (cpProb >= 0.10) return { label: 'instable, retournement probable', tone: 'block' };
+  if (cpProb >= 0.05) return { label: 'à surveiller', tone: 'warn' };
+  return { label: 'stable', tone: 'ok' };
+}
+
+/** Translate jump ratio into a human descriptor. */
+export function formatJumpDescriptor(jumpRatio: number): {
+  label: string;
+  tone: 'ok' | 'warn' | 'block';
+} {
+  if (jumpRatio >= 0.40) return { label: 'marché à sauts dominants', tone: 'block' };
+  if (jumpRatio >= 0.25) return { label: 'sauts significatifs', tone: 'warn' };
+  return { label: 'vol continue (peu de sauts)', tone: 'ok' };
+}
+
+// ─── Volatility ─────────────────────────────────────────────────────────────
+
+const VOL_REGIME_LABEL: Record<VolatilityRegime, string> = {
+  low: 'Volatilité basse',
+  normal: 'Volatilité normale',
+  high: 'Volatilité élevée',
+};
+
+export function formatVolatilityRegime(regime: VolatilityRegime): string {
+  return VOL_REGIME_LABEL[regime];
+}
+
+export function formatPipsRange(
+  range: [number, number],
+): string {
+  const [lo, hi] = range;
+  return `${formatPips(lo)} – ${formatPips(hi)}`;
+}
+
+export function formatPips(value: number): string {
+  return `${value.toFixed(1).replace('.', ',')} pips`;
+}
+
+export function formatSignedPercent(value: number): string {
+  const sign = value >= 0 ? '+' : '−';
+  return `${sign}${Math.abs(value).toFixed(1).replace('.', ',')} %`;
+}
+
+// ─── Events / sessions ──────────────────────────────────────────────────────
+
+const SESSION_LABEL: Record<Session, string> = {
+  asian: 'Session asiatique',
+  london: 'Session Londres',
+  ny_overlap: 'Overlap Londres / New York',
+  ny_afternoon: 'Après-midi New York',
+  after_hours: 'Hors-séance',
+};
+
+export function formatSession(session: Session): string {
+  return SESSION_LABEL[session];
+}
+
+// ─── Historical stats ───────────────────────────────────────────────────────
+
+export function formatProfitFactor(pf: number): string {
+  return pf.toFixed(2).replace('.', ',');
+}
+
+export function formatHitRate(rate: number): string {
+  return `${Math.round(rate * 100)} %`;
+}
+

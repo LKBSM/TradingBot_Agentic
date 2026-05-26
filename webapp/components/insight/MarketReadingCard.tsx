@@ -3,40 +3,44 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ConvictionGauge } from './ConvictionGauge';
 import { DisclaimerStub } from './DisclaimerStub';
+import { InsightSections } from './InsightSections';
 import { TemporalBadge } from './TemporalBadge';
 import { VerdictHeader } from './VerdictHeader';
 import type { InsightSignalV2 } from '@/types/insight';
+
+type SectionKey = 'structure' | 'regime' | 'volatility' | 'events' | 'history';
 
 interface MarketReadingCardProps {
   signal: InsightSignalV2;
   /**
    * Optional handler for the "ask the chatbot" CTA. Wired in F4 once the
-   * ChatPanel exists. In F2 the button is rendered but inert.
+   * ChatPanel exists. In F2/F3 the button is rendered but inert.
    */
   onAskChatbot?: () => void;
-  /** Render only the hero layer (used during F2 demo). Default false. */
+  /** Render only the hero layer (skip the five collapsibles). Default false. */
   heroOnly?: boolean;
+  /** Section keys to expand on mount (default: all collapsed). */
+  defaultOpenSections?: ReadonlyArray<SectionKey>;
 }
 
 /**
- * The central product surface — architecture progressive uniforme.
+ * Central product surface — architecture progressive uniforme.
  *
- * F2 (this sprint) ships layer 1 only:
- *   - VerdictHeader (one-liner + instrument/timeframe badge)
- *   - ConvictionGauge (0-100 gauge + conformal band + label)
- *   - TemporalBadge (emitted X ago · valid for Y)
- *   - DisclaimerStub (LEGAL-PENDING placeholder)
- *   - "Demander à Sentinel" CTA (wired in F4)
+ *   Layer 1 (hero, always visible):
+ *     · VerdictHeader  · ConvictionGauge  · TemporalBadge
+ *     · DisclaimerStub · "Demander à Sentinel" CTA
  *
- * F3 will add layer 2 (5 collapsible sections: structure, regime, vol,
- * events, history) below the hero. F4 wires the chatbot. The `heroOnly`
- * prop lets us keep the card mounted as the F3 collapsibles are added
- * without breaking the F2 demo path.
+ *   Layer 2 (collapsible, default collapsed):
+ *     · 📐 Structure · 🌊 Régime · 📊 Volatilité · 📅 Événements
+ *     · 📈 Historique (visually highlighted — hero differentiator)
+ *
+ *   Layer 3 (chatbot, F4) — invoked from the CTA.
  */
 export function MarketReadingCard({
   signal,
   onAskChatbot,
-  heroOnly: _heroOnly = false,
+  heroOnly = false,
+  defaultOpenSections,
 }: MarketReadingCardProps) {
   return (
     <Card className="w-full max-w-2xl border-border/60 shadow-sm">
@@ -70,6 +74,10 @@ export function MarketReadingCard({
             Demander à Sentinel
           </Button>
         </div>
+
+        {!heroOnly && (
+          <InsightSections signal={signal} defaultOpen={defaultOpenSections} />
+        )}
       </CardContent>
     </Card>
   );

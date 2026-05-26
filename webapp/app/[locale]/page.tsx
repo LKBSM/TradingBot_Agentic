@@ -11,21 +11,28 @@ export default function LandingPage() {
     <div className="container-prose space-y-12 py-10 sm:py-16">
       <header className="space-y-3">
         <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          Sprint F2 · démo card hero
+          Sprint F3 · démo hero + sections collapsibles
         </p>
         <h1 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
           Smart Sentinel — Lecture de marché
         </h1>
         <p className="max-w-2xl text-pretty text-muted-foreground">
-          Trois lectures algorithmiques mockées pour visualiser le hero layer.
-          Les sections détaillées (structure, régime, volatilité, événements,
-          historique) et le chatbot arrivent aux sprints F3 et F4.
+          Trois lectures algorithmiques mockées. Hero permanent + cinq sections
+          dépliables (Structure / Régime / Volatilité / Événements / Historique).
+          Le chatbot pilier arrive au sprint F4.
         </p>
       </header>
 
       <section className="space-y-6">
-        {SAMPLE_SIGNALS.map((signal) => (
-          <MarketReadingCard key={signal.id} signal={signal} heroOnly />
+        {SAMPLE_SIGNALS.map((signal, idx) => (
+          <MarketReadingCard
+            key={signal.id}
+            signal={signal}
+            // Démo F3 : la première carte ouvre l'historique par défaut pour
+            // exposer le hero différenciateur (PF + IC95%). Les deux autres
+            // restent toutes collapsées (état "neuf" attendu en prod).
+            defaultOpenSections={idx === 0 ? ['history'] : undefined}
+          />
         ))}
       </section>
     </div>
