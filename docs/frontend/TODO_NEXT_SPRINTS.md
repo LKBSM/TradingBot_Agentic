@@ -1,9 +1,19 @@
 # Frontend — Sprints suivants
 
-**Date** : 2026-05-26
-**Contexte** : Sprint F0→F5 (architecture progressive uniforme V1) livré. Ce document liste tout ce qui a été **délibérément reporté** hors du scope V1, avec la justification et le déclencheur de réactivation.
+**Date** : 2026-05-26 · **Mis à jour** : 2026-05-27 (V2 livré)
+**Contexte** : Sprint F0→F5 (architecture progressive uniforme V1) + V2.0→V2.4 livrés. Ce document liste ce qui reste hors V1+V2, avec la justification et le déclencheur de réactivation.
 
-Ordre = à exécuter par priorité approximative. Chaque entrée mentionne l'item Decision Gate correspondant (cf. `docs/governance/decision_gate_review_v2.md`).
+## ✅ V2 livré (2026-05-27)
+
+| Sprint | Commit  | Description courte                                          |
+|--------|---------|-------------------------------------------------------------|
+| V2.0   | c8407f5 | Rebrand Smart Sentinel → M.I.A. Markets (dans webapp/)      |
+| V2.1   | 066eff0 | Real Claude chatbot via /api/chat SSE (Anthropic SDK)        |
+| V2.2   | 4e616af | Vitest 40 tests + Playwright E2E + Lighthouse CI scaffold   |
+| V2.3   | 3a598ce | PWA manifest + dynamic icons + iOS meta tags                |
+| V2.4   | 2a45967 | Pédagogie EXPERT (waterfall + conformal viz)                |
+
+Ordre ci-dessous = à exécuter par priorité approximative. Chaque entrée mentionne l'item Decision Gate correspondant (cf. `docs/governance/decision_gate_review_v2.md`).
 
 ---
 
