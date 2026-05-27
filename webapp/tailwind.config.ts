@@ -59,7 +59,13 @@ const config: Config = {
         sm: 'calc(var(--radius) - 4px)',
       },
       fontFamily: {
-        sans: ['ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: [
+          'var(--font-sans)',
+          'ui-sans-serif',
+          'system-ui',
+          '-apple-system',
+          'sans-serif',
+        ],
         mono: ['ui-monospace', 'SFMono-Regular', 'monospace'],
       },
       keyframes: {

@@ -23,7 +23,7 @@ export function Footer() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-1">
             <p className="text-sm font-semibold tracking-tight">
-              M.I.A. Markets
+              MIA Markets
             </p>
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground/80">
               Multi-asset Intelligence Assistant for Markets
@@ -61,7 +61,7 @@ export function Footer() {
         </div>
 
         <p className="text-[11px] text-muted-foreground">
-          © {new Date().getFullYear()} M.I.A. Markets — tous droits réservés. ·{' '}
+          © {new Date().getFullYear()} MIA Markets — tous droits réservés. ·{' '}
           <span className="font-mono">mia.markets</span>
         </p>
       </div>

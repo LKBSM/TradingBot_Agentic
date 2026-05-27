@@ -6,7 +6,7 @@
   },
   "landing": {
     "hero_title": "Den Goldmarkt verstehen, ohne dass jemand Ihnen sagt, was zu tun ist.",
-    "hero_subtitle": "M.I.A. Markets erzeugt belegte Kontextanalysen für XAU/USD — transparent von Grund auf.",
+    "hero_subtitle": "MIA Markets erzeugt belegte Kontextanalysen für XAU/USD — transparent von Grund auf.",
     "hero_cta_primary": "Kostenlos starten", "hero_cta_secondary": "Transparenz ansehen",
     "value_1_title": "Belegte KI-Erzählung",
     "value_1_body": "Jede Analyse zitiert ihre Quellen. Keine Halluzination, keine Empfehlung.",
@@ -17,12 +17,12 @@
   },
   "disclaimer": {
     "short": "Algorithmische Analyse zu Bildungszwecken. Keine Anlageberatung.",
-    "long": "M.I.A. Markets erstellt redaktionelle Kontextanalysen, keine personalisierten Empfehlungen. Gemäß EU 2024/2811 und der Finfluencer-Verordnung vom März 2026."
+    "long": "MIA Markets erstellt redaktionelle Kontextanalysen, keine personalisierten Empfehlungen. Gemäß EU 2024/2811 und der Finfluencer-Verordnung vom März 2026."
   },
   "transparency": {
     "title": "Radikale Transparenz",
     "subtitle": "Unsere Live-Paper-Trading-Kurve mit allen Drawdowns.",
-    "disclaimer": "Paper-Trading-Demonstration. M.I.A. Markets beansprucht KEINEN Trading-Edge. Diese Kurve dient ausschließlich Bildungszwecken.",
+    "disclaimer": "Paper-Trading-Demonstration. MIA Markets beansprucht KEINEN Trading-Edge. Diese Kurve dient ausschließlich Bildungszwecken.",
     "stats_title": "Kumulierte Statistiken",
     "n_trades": "Trades", "win_rate": "Gewinnrate", "total_r": "Kumuliertes R",
     "max_dd": "Maximaler Drawdown", "sharpe": "Sharpe pro Trade"
@@ -43,7 +43,7 @@
     "send": "Senden", "sources_label": "Zitierte Quellen"
   },
   "footer": {
-    "copyright": "© 2026 M.I.A. Markets. Alle Rechte vorbehalten.",
+    "copyright": "© 2026 MIA Markets. Alle Rechte vorbehalten.",
     "terms": "AGB", "privacy": "Datenschutz", "contact": "Kontakt"
   }
 }

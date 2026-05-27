@@ -1,4 +1,4 @@
-# M.I.A. Markets — Webapp
+# MIA Markets — Webapp
 
 **Multi-asset Intelligence Assistant for Markets** · indicateur de marché
 conversationnel pour XAU/USD et FX. Le chatbot porte le nom **Sentinel**

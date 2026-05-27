@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 
 /**
- * PWA manifest for M.I.A. Markets. Modern browsers (Chrome 109+, Edge,
+ * PWA manifest for MIA Markets. Modern browsers (Chrome 109+, Edge,
  * recent Firefox) accept SVG icons with sizes="any" and purpose="any
  * maskable" — keeps the icon source single-file. Older Android Chrome
  * needs PNG fallbacks (icon.tsx + apple-icon.tsx generate those at
@@ -9,10 +9,10 @@ import type { MetadataRoute } from 'next';
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'M.I.A. Markets — Indicateur de marché',
-    short_name: 'M.I.A.',
+    name: 'MIA Markets — Indicateur de marché',
+    short_name: 'MIA',
     description:
-      "M.I.A. Markets · Multi-asset Intelligence Assistant — indicateur de marché conversationnel pour XAU/USD et FX. Posture éducative.",
+      "MIA Markets · Multi-asset Intelligence Assistant — indicateur de marché conversationnel pour XAU/USD et FX. Posture éducative.",
     start_url: '/',
     scope: '/',
     display: 'standalone',

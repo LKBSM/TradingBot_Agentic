@@ -1,10 +1,12 @@
 import Link from 'next/link';
+import { LocaleToggle } from '@/components/LocaleToggle';
 import { ThemeToggle } from '@/components/theme-toggle';
 
 const ANCHORS = [
   { href: '#demo', label: 'Démo' },
-  { href: '#comment', label: 'Fonctionnement' },
+  { href: '#honnetete', label: 'Honnêteté' },
   { href: '#tarifs', label: 'Tarifs' },
+  { href: '#faq', label: 'FAQ' },
 ] as const;
 
 export function Nav() {
@@ -14,7 +16,7 @@ export function Nav() {
         <Link
           href="/"
           className="flex items-center gap-2 text-sm font-semibold tracking-tight"
-          aria-label="M.I.A. Markets — retour à l'accueil"
+          aria-label="MIA Markets — retour à l'accueil"
         >
           <span
             aria-hidden
@@ -22,7 +24,7 @@ export function Nav() {
           >
             M
           </span>
-          <span>M.I.A. Markets</span>
+          <span>MIA Markets</span>
         </Link>
 
         <nav aria-label="Sections du site" className="hidden sm:block">
@@ -40,7 +42,10 @@ export function Nav() {
           </ul>
         </nav>
 
-        <ThemeToggle />
+        <div className="flex items-center gap-2">
+          <LocaleToggle />
+          <ThemeToggle />
+        </div>
       </div>
     </header>
   );

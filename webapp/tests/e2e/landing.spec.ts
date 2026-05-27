@@ -4,7 +4,7 @@ test.describe('Landing — golden paths', () => {
   test('hero renders with brand + track-record + CTA', async ({ page }) => {
     await page.goto('/');
     // Brand visible in the nav.
-    await expect(page.getByRole('link', { name: /M\.I\.A\. Markets/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /MIA Markets/i })).toBeVisible();
     // Hero headline.
     await expect(
       page.getByRole('heading', { level: 1, name: /Comprenez le marché/i }),

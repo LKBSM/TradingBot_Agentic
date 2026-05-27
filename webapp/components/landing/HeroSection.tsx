@@ -35,7 +35,7 @@ export function HeroSection() {
       </h1>
 
       <p className="mt-6 max-w-2xl text-pretty text-lg text-muted-foreground">
-        M.I.A. Markets lit l&apos;or, l&apos;euro et les indices avec les méthodes des
+        MIA Markets lit l&apos;or, l&apos;euro et les indices avec les méthodes des
         salles de marché institutionnelles — et un chatbot (Sentinel) qui
         répond à toutes vos questions, en français, en temps réel.
       </p>

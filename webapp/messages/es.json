@@ -6,7 +6,7 @@
   },
   "landing": {
     "hero_title": "Comprende el mercado del oro sin que te digan qué hacer.",
-    "hero_subtitle": "M.I.A. Markets genera análisis contextuales con fuentes para XAU/USD — transparente por diseño.",
+    "hero_subtitle": "MIA Markets genera análisis contextuales con fuentes para XAU/USD — transparente por diseño.",
     "hero_cta_primary": "Empieza gratis", "hero_cta_secondary": "Ver transparencia",
     "value_1_title": "Narrativa de IA con fuentes",
     "value_1_body": "Cada análisis cita sus fuentes. Sin alucinación, sin recomendación.",
@@ -17,12 +17,12 @@
   },
   "disclaimer": {
     "short": "Análisis algorítmico educativo. No es asesoramiento de inversión.",
-    "long": "M.I.A. Markets produce análisis editoriales contextuales, no recomendaciones personalizadas. Cumple UE 2024/2811 y la regulación de finfluencers de marzo de 2026."
+    "long": "MIA Markets produce análisis editoriales contextuales, no recomendaciones personalizadas. Cumple UE 2024/2811 y la regulación de finfluencers de marzo de 2026."
   },
   "transparency": {
     "title": "Transparencia radical",
     "subtitle": "Nuestra curva de paper-trading en vivo, drawdowns incluidos.",
-    "disclaimer": "Demostración de paper-trading. M.I.A. Markets NO pretende poseer un edge. Esta curva es educativa.",
+    "disclaimer": "Demostración de paper-trading. MIA Markets NO pretende poseer un edge. Esta curva es educativa.",
     "stats_title": "Estadísticas acumuladas",
     "n_trades": "Operaciones", "win_rate": "Tasa de aciertos", "total_r": "R acumulado",
     "max_dd": "Drawdown máx.", "sharpe": "Sharpe por operación"
@@ -43,7 +43,7 @@
     "send": "Enviar", "sources_label": "Fuentes citadas"
   },
   "footer": {
-    "copyright": "© 2026 M.I.A. Markets. Todos los derechos reservados.",
+    "copyright": "© 2026 MIA Markets. Todos los derechos reservados.",
     "terms": "Términos", "privacy": "Privacidad", "contact": "Contacto"
   }
 }
