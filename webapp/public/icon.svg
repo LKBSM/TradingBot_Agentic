@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="M.I.A. Markets">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FBBF24"/>
+      <stop offset="100%" stop-color="#B45309"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#g)"/>
+  <path
+    d="M120 384 V128 h60 l76 132 76-132 h60 v256 h-60 V232 l-58 100 h-36 l-58-100 v152 z"
+    fill="#FFFFFF"
+  />
+</svg>

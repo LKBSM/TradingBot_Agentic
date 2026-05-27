@@ -21,11 +21,23 @@ export const metadata: Metadata = {
   applicationName: 'M.I.A. Markets',
   authors: [{ name: 'M.I.A. Markets' }],
   robots: { index: true, follow: true },
+  // PWA install: iOS Safari reads these to badge the home-screen icon and
+  // hide the browser chrome when launched standalone.
+  appleWebApp: {
+    capable: true,
+    title: 'M.I.A.',
+    statusBarStyle: 'black-translucent',
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  maximumScale: 5,
+  viewportFit: 'cover',
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#ffffff' },
     { media: '(prefers-color-scheme: dark)', color: '#0a0f1c' },
