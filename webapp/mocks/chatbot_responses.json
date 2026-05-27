@@ -20,12 +20,12 @@
       {
         "id": "historical-comparison",
         "text": "Ça ressemble à quoi historiquement ?",
-        "reply": "Sur 7 ans de données XAU M15 walk-forward, 329 setups ont partagé une signature comparable : direction haussière, BOS + CHOCH + retest armé, régime de tendance, événement majeur dans 1-24 heures. Sur ces 329 cas, le profit factor a été de 1.30 — pour 1 € perdu, le panier a généré 1.30 € en moyenne. L'intervalle de confiance 95 % bootstrap est [1.12, 1.49] : sur des resamples du jeu, le PF reste positif avec une marge solide. Le taux de réussite brut est de 31.9 % — c'est faible en apparence mais cohérent avec un asymétrique R:R favorable (les gains sont plus gros que les pertes). Aucun edge n'est revendiqué — ces stats restent un historique observé, pas une promesse de performance future."
+        "reply": "Notre validation statistique out-of-sample est encore en cours (Sprint 1 du plan dev). Plutôt que de te citer des chiffres in-sample non validés, je préfère être transparent : le scoring v1 rule-based actuel n'a pas démontré de pouvoir prédictif statistiquement significatif. Une refonte LightGBM + Isotonic + ACI est en cours. Quand les seuils Brier skill > +2 %, DSR > 1.0 et PBO < 0.5 seront atteints OOS, je pourrai te citer profit factor, intervalle de confiance et win rate avec leur méthodologie complète. En attendant, ce que je sais te dire : il existe 7 années de données historiques propres, un pipeline 5 briques scientifiques transparent (HAR-RV, HMM, BOCPD, ACI, Bipower), et une posture pédagogique assumée. La transparence avant la promesse — c'est précisément ce qui distingue MIA Markets."
       },
       {
         "id": "buy-or-not",
         "text": "Donc je dois acheter ?",
-        "reply": "Non, je ne donne aucune instruction d'achat, de vente ou de timing. Mon rôle est de décrire la structure du marché et de calibrer une probabilité — pas de décider pour toi. Ce que je sais te dire : il y a une cassure haussière confirmée, un retest armé sur 2378-2381, une invalidation structurelle sous 2378, et 329 cas historiquement similaires avec un profit factor de 1.30. Ce que toi seul peut décider : si ta gestion du risque, ton horizon et ton allocation justifient un engagement, à quelle taille, avec quel stop, et à quel objectif. MIA Markets est un indicateur, pas un service de signaux."
+        "reply": "Non, je ne donne aucune instruction d'achat, de vente ou de timing. Mon rôle est de décrire la structure du marché et de t'aider à comprendre les facteurs en présence — pas de décider pour toi. Ce que je sais te dire : il y a une cassure haussière confirmée, un retest armé sur 2378-2381, une invalidation structurelle sous 2378, et un contexte d'événement macro à 18 heures qui peut tout faire bouger. Ce que toi seul peut décider : si ta gestion du risque, ton horizon et ton allocation justifient un engagement, à quelle taille, avec quel stop, et à quel objectif. MIA Markets est un outil de compréhension augmentée, pas un service de signaux."
       }
     ]
   },
@@ -51,7 +51,7 @@
       {
         "id": "historical-comparison",
         "text": "Sur des cas similaires, qu'est-ce qui se passe ?",
-        "reply": "Sur 187 setups historiquement comparables (EUR H1, bearish, retest en attente, régime ranging, événement BCE/Fed dans les 6 heures), le profit factor a été 1.05. L'IC 95 % est [0.88, 1.22] — l'intervalle inclut 1.0, ce qui veut dire qu'on ne peut pas exclure statistiquement que le profit factor « vrai » soit inférieur à 1. Le taux de réussite brut est 26.5 %. Honnêtement, c'est une configuration où l'edge est marginal au mieux. C'est cohérent avec la conviction 58 affichée et la décision interne REDUCE."
+        "reply": "Notre validation statistique out-of-sample est encore en cours (Sprint 1). Sur des configurations EUR/USD H1 structurellement comparables, je ne peux pas te citer de profit factor, intervalle de confiance ou win rate tant que les seuils OOS (Brier > +2 %, DSR > 1.0, PBO < 0.5) ne sont pas atteints. Ce que je sais te dire : cette lecture combine plusieurs signaux faibles (retest pending, régime ranging, événement BCE imminent). C'est précisément le genre de configuration où la conviction reste modérée et où la décision interne du moteur reste REDUCE. La transparence avant la promesse."
       },
       {
         "id": "buy-or-not",

@@ -27,20 +27,20 @@ test.describe('Landing — golden paths', () => {
     await expect(page.getByText(/Lecture neutre sur l'or/i)).toBeVisible();
   });
 
-  test('first card exposes the History section by default (PF visible)', async ({ page }) => {
+  test('first card exposes the History section by default (methodology visible) — RÉVISÉ 2026-05-27', async ({ page }) => {
     await page.goto('/#demo');
-    // 329 setups + PF 1.30 should be visible without any interaction.
-    await expect(page.getByText(/329 setups/i)).toBeVisible();
-    await expect(page.getByText(/1,30/)).toBeVisible();
+    // Post pivot positioning (cf. docs/governance/decisions/2026-05-27_pivot_positioning_audit.md) :
+    // PF 1.30 + 329 setups retirés. La section History expose désormais la méthodologie + statut OOS pending.
+    await expect(page.getByText(/Méthodologie publique|validation OOS|7 ans/i)).toBeVisible();
   });
 
-  test('pricing section shows 4 tiers + decoy + recommended badges', async ({ page }) => {
+  test('pricing section shows 3 tiers FREE/9€/19€ post pivot 2026-05-27', async ({ page }) => {
     await page.goto('/#tarifs');
-    await expect(page.getByRole('heading', { name: /Trois formules retail/i })).toBeVisible();
-    await expect(page.getByText('Découverte')).toBeVisible();
-    await expect(page.getByText('Analyste')).toBeVisible();
-    await expect(page.getByText('Stratège')).toBeVisible();
-    await expect(page.getByText('Institutionnel')).toBeVisible();
+    await expect(page.getByText(/FREE/)).toBeVisible();
+    await expect(page.getByText(/Découverte/)).toBeVisible();
+    await expect(page.getByText(/Approfondie/)).toBeVisible();
+    // INSTITUTIONAL retiré grille publique → "Contact us" / Calendly link
+    await expect(page.getByText(/Réserver une démo|Contact/i)).toBeVisible();
     await expect(page.getByText(/Recommandé/)).toBeVisible();
   });
 });
