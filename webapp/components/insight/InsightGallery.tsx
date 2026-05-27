@@ -1,16 +1,14 @@
 'use client';
 
 import { MarketReadingCard } from './MarketReadingCard';
+import type { InsightSectionKey } from './InsightSections';
 import { useChat } from '@/components/chat/ChatProvider';
 import type { InsightSignalV2 } from '@/types/insight';
 
 interface InsightGalleryProps {
   signals: readonly InsightSignalV2[];
   /** Section keys to expand by default per signal index (F3 demo aid). */
-  defaultOpenByIndex?: ReadonlyMap<
-    number,
-    ReadonlyArray<'structure' | 'regime' | 'volatility' | 'events' | 'history'>
-  >;
+  defaultOpenByIndex?: ReadonlyMap<number, ReadonlyArray<InsightSectionKey>>;
 }
 
 /**

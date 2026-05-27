@@ -3,12 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ConvictionGauge } from './ConvictionGauge';
 import { DisclaimerStub } from './DisclaimerStub';
-import { InsightSections } from './InsightSections';
+import { InsightSections, type InsightSectionKey } from './InsightSections';
 import { TemporalBadge } from './TemporalBadge';
 import { VerdictHeader } from './VerdictHeader';
 import type { InsightSignalV2 } from '@/types/insight';
-
-type SectionKey = 'structure' | 'regime' | 'volatility' | 'events' | 'history';
 
 interface MarketReadingCardProps {
   signal: InsightSignalV2;
@@ -17,10 +15,10 @@ interface MarketReadingCardProps {
    * ChatPanel exists. In F2/F3 the button is rendered but inert.
    */
   onAskChatbot?: () => void;
-  /** Render only the hero layer (skip the five collapsibles). Default false. */
+  /** Render only the hero layer (skip the six collapsibles). Default false. */
   heroOnly?: boolean;
   /** Section keys to expand on mount (default: all collapsed). */
-  defaultOpenSections?: ReadonlyArray<SectionKey>;
+  defaultOpenSections?: ReadonlyArray<InsightSectionKey>;
 }
 
 /**

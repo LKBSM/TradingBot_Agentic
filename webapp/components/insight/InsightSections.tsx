@@ -6,18 +6,25 @@ import { RegimeSection } from './sections/RegimeSection';
 import { VolatilitySection } from './sections/VolatilitySection';
 import { EventSection } from './sections/EventSection';
 import { HistorySection } from './sections/HistorySection';
+import { ExpertSection } from './sections/ExpertSection';
 import type { InsightSignalV2 } from '@/types/insight';
+
+export type InsightSectionKey =
+  | 'structure'
+  | 'regime'
+  | 'volatility'
+  | 'events'
+  | 'history'
+  | 'expert';
 
 interface InsightSectionsProps {
   signal: InsightSignalV2;
   /**
    * Section keys collapsed by default = all closed. Pass an array of section
-   * IDs (`structure`, `regime`, `volatility`, `events`, `history`) to open
-   * them on mount, or omit to keep the F3 default (everything closed).
+   * IDs to open them on mount, or omit to keep the F3 default (everything
+   * closed).
    */
-  defaultOpen?: ReadonlyArray<
-    'structure' | 'regime' | 'volatility' | 'events' | 'history'
-  >;
+  defaultOpen?: ReadonlyArray<InsightSectionKey>;
 }
 
 /**
@@ -41,6 +48,7 @@ export function InsightSections({
       <VolatilitySection signal={signal} />
       <EventSection signal={signal} />
       <HistorySection signal={signal} />
+      <ExpertSection signal={signal} />
     </Accordion>
   );
 }
