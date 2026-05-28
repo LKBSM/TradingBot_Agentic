@@ -143,12 +143,18 @@ export function Footer() {
           className="rounded-md border border-dashed border-border/70 bg-card/50 px-3 py-2 text-[11px] italic leading-relaxed text-muted-foreground"
           data-legal-pending="footer-disclaimer"
         >
-          Démonstration paper-trading · Lecture algorithmique éducative ·
-          Ne constitue ni un signal de trading, ni un conseil en
-          investissement personnalisé · Performances passées non
-          indicatives des performances futures · Trading à effet de
-          levier comporte un risque élevé de perte.
+          Analyse éducative. Ne constitue ni un signal de trading, ni un
+          conseil en investissement personnalisé. Performances passées
+          non indicatives des performances futures.
         </div>
+        {/*
+          LEGAL-PENDING: la mention sur l'effet de levier a été retirée
+          le 2026-05-27 (décision utilisateur). Raison : MIA n'est pas
+          un service de trading et ne propose pas d'effet de levier ;
+          afficher cet avertissement brouillerait le positionnement
+          « indicateur descriptif ». À ré-évaluer avec le terminal légal
+          quand le statut de l'outil sera clarifié juridiquement.
+        */}
 
         <p className="text-[11px] text-muted-foreground">
           © {new Date().getFullYear()} MIA Markets — tous droits

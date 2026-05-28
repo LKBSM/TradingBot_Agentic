@@ -4,6 +4,15 @@ const createNextIntlPlugin = require('next-intl/plugin');
 const withNextIntl = createNextIntlPlugin('./i18n.ts');
 
 const isProd = process.env.NODE_ENV === 'production';
+// Test local d'un build prod : pas de HSTS sur localhost (sinon Chrome force
+// HTTPS et tombe sur un interstitial — Lighthouse plante. Cf. eval mobile
+// 2026-05-27 « Chrome prevented page load with an interstitial »).
+// On accepte deux signaux : NEXT_PUBLIC_SITE_URL contient localhost, OU
+// MIA_DISABLE_HSTS=1 (override explicite).
+const isLocalProdTest =
+  isProd &&
+  ((process.env.NEXT_PUBLIC_SITE_URL ?? '').includes('localhost') ||
+    process.env.MIA_DISABLE_HSTS === '1');
 
 /**
  * Content-Security-Policy — strict, but allows the bits Next.js + Anthropic
@@ -40,7 +49,9 @@ const securityHeaders = [
   // Don't leak the full referer on cross-origin navigations.
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
   // HSTS in prod only — applying in dev would break http://localhost.
-  ...(isProd
+  // Also skipped for local prod-build tests (Lighthouse) to avoid Chrome
+  // HSTS-pinning localhost across audit runs.
+  ...(isProd && !isLocalProdTest
     ? [
         {
           key: 'Strict-Transport-Security',
@@ -115,6 +126,15 @@ const nextConfig = {
   images: {
     remotePatterns: [],
   },
+  // Next.js 15 stream les balises <meta> en-dehors du <head> par défaut.
+  // Pour un site statique mono-page, ce gain de TTFB est négligeable face au
+  // coût SEO réel (Lighthouse / Pingdom / OpenGraph previewers et tout user
+  // agent non-bot tombent sur le HTML streamé et pensent que la meta
+  // description est absente — cf. eval Lighthouse 2026-05-27 : SEO 91/100
+  // avec streaming actif vs 100/100 attendu sans). On force donc le rendu
+  // bloquant des métadonnées pour tous les user-agents.
+  // doc : https://nextjs.org/docs/app/api-reference/file-conventions/metadata#streaming-metadata
+  htmlLimitedBots: /.*/i,
 };
 
 module.exports = withNextIntl(nextConfig);

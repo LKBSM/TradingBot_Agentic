@@ -7,9 +7,9 @@ import '../globals.css';
 import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
 import { SkipLink } from '@/components/a11y/SkipLink';
-import { ChatPanel } from '@/components/chat/ChatPanel';
+import { ChatPanelLazy } from '@/components/chat/ChatPanelLazy';
 import { ChatProvider } from '@/components/chat/ChatProvider';
-import { CookieBanner } from '@/components/compliance/CookieBanner';
+import { CookieBannerLazy } from '@/components/compliance/CookieBannerLazy';
 import { JsonLd, softwareApplicationLd } from '@/components/seo/JsonLd';
 import { ThemeProvider } from '@/components/theme-provider';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -117,8 +117,8 @@ export default async function LocaleLayout({
                   {children}
                 </main>
                 <Footer />
-                <ChatPanel />
-                <CookieBanner />
+                <ChatPanelLazy />
+                <CookieBannerLazy />
               </ChatProvider>
             </TooltipProvider>
           </NextIntlClientProvider>

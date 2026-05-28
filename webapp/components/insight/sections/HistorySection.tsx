@@ -19,6 +19,18 @@ import type { InsightSignalV2 } from '@/types/insight';
  */
 export function HistorySection({ signal }: { signal: InsightSignalV2 }) {
   const h = signal.historical_stats;
+  // Les mocks publient des stats partielles ({ profit_factor: null, ... })
+  // pour matérialiser la posture « validation OOS en cours » sans truquer
+  // de chiffres (cf. citation lock 2 + section Honnêteté conformelle).
+  // Tant que profit_factor / hit_rate / similar_setups_n ne sont pas
+  // tous trois renseignés, on affiche un message OOS-pending — pas de
+  // toFixed sur null en SSR.
+  const statsReady =
+    h !== null &&
+    h.profit_factor !== null &&
+    h.hit_rate_observed !== null &&
+    h.similar_setups_n !== null &&
+    h.profit_factor_ci95 !== null;
 
   return (
     <AccordionItem value="history">
@@ -26,7 +38,7 @@ export function HistorySection({ signal }: { signal: InsightSignalV2 }) {
         <span className="flex items-center gap-2">
           <TrendingUp className="h-4 w-4 text-sentinel-bull" aria-hidden />
           <span>Historique des setups similaires</span>
-          {h && (
+          {statsReady && (
             <Badge variant="bull" className="ml-1 text-[10px]">
               {h.similar_setups_n} cas
             </Badge>
@@ -40,6 +52,24 @@ export function HistorySection({ signal }: { signal: InsightSignalV2 }) {
             timeframe — le moteur n'a pas encore accumulé assez de cas
             comparables.
           </p>
+        ) : !statsReady ? (
+          <div className="space-y-3">
+            <p className="text-sm text-foreground">
+              Validation OOS en cours — aucun chiffre publié tant que la
+              méthodologie n&apos;a pas franchi les <em>gates</em> de
+              promotion (cf. section Honnêteté conformelle).
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Fenêtre cible :{' '}
+              <span className="font-mono">{h.backtest_window}</span>
+            </p>
+            <p className="text-xs italic text-muted-foreground">
+              Posture : compréhension augmentée du marché — pas une
+              performance financière. Les chiffres ne seront publiés
+              qu&apos;une fois la validation walk-forward indépendante
+              terminée.
+            </p>
+          </div>
         ) : (
           <div className="space-y-4">
             <div className="rounded-lg border bg-muted/30 p-4">
@@ -47,7 +77,7 @@ export function HistorySection({ signal }: { signal: InsightSignalV2 }) {
                 Sur {h.similar_setups_n} setups historiquement similaires
               </p>
               <p className="mt-2 text-2xl font-semibold tabular-nums">
-                {formatProfitFactor(h.profit_factor)}€{' '}
+                {formatProfitFactor(h.profit_factor!)}€{' '}
                 <span className="text-base font-normal text-muted-foreground">
                   gagnés pour 1 € perdu
                 </span>
@@ -55,7 +85,7 @@ export function HistorySection({ signal }: { signal: InsightSignalV2 }) {
               <p className="mt-1 text-xs text-muted-foreground">
                 Intervalle de confiance 95 % :{' '}
                 <span className="font-mono tabular-nums">
-                  {formatProfitFactor(h.profit_factor_ci95[0])} – {formatProfitFactor(h.profit_factor_ci95[1])}
+                  {formatProfitFactor(h.profit_factor_ci95![0])} – {formatProfitFactor(h.profit_factor_ci95![1])}
                 </span>
               </p>
             </div>
@@ -63,7 +93,7 @@ export function HistorySection({ signal }: { signal: InsightSignalV2 }) {
             <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Row
                 label="Taux de réussite observé"
-                value={formatHitRate(h.hit_rate_observed)}
+                value={formatHitRate(h.hit_rate_observed!)}
               />
               <Row
                 label="Couverture conformelle"

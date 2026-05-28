@@ -1,6 +1,6 @@
 import { MessageCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { ConversationReplayCard } from './ConversationReplayCard';
+import { ConversationReplayCardLazy as ConversationReplayCard } from './ConversationReplayCardLazy';
 import { getChatbotScript } from '@/lib/chatbot';
 import { getHeroSampleSignal, SAMPLE_SIGNALS } from '@/lib/mocks';
 

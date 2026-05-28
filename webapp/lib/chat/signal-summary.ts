@@ -96,10 +96,19 @@ export function buildSignalSummary(signal: InsightSignalV2): string {
     const h = s.historical_stats;
     lines.push('');
     lines.push('HISTORIQUE SETUPS SIMILAIRES');
-    lines.push(`  N=${h.similar_setups_n} · Hit rate observé: ${(h.hit_rate_observed * 100).toFixed(1)} %`);
-    lines.push(
-      `  Profit factor: ${h.profit_factor.toFixed(2)} · IC 95 % bootstrap: [${h.profit_factor_ci95[0].toFixed(2)} – ${h.profit_factor_ci95[1].toFixed(2)}]`,
-    );
+    if (
+      h.profit_factor !== null &&
+      h.hit_rate_observed !== null &&
+      h.similar_setups_n !== null &&
+      h.profit_factor_ci95 !== null
+    ) {
+      lines.push(`  N=${h.similar_setups_n} · Hit rate observé: ${(h.hit_rate_observed * 100).toFixed(1)} %`);
+      lines.push(
+        `  Profit factor: ${h.profit_factor.toFixed(2)} · IC 95 % bootstrap: [${h.profit_factor_ci95[0].toFixed(2)} – ${h.profit_factor_ci95[1].toFixed(2)}]`,
+      );
+    } else {
+      lines.push(`  Validation OOS en cours — aucun chiffre publié.`);
+    }
     lines.push(`  Couverture empirique: ${(h.empirical_coverage * 100).toFixed(0)} %`);
     lines.push(`  Fenêtre: ${h.backtest_window}`);
   }

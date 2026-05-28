@@ -155,15 +155,19 @@ export interface ComponentBreakdown {
 }
 
 // ─── J. Historical statistics ───────────────────────────────────────────────
+// Stats nullables tant que la validation OOS indépendante n'a pas franchi
+// les gates de promotion (cf. AUDIT_ALGO_2026_05_27 + section Honnêteté).
+// `backtest_window` reste toujours présent — soit fenêtre réelle, soit
+// libellé « OOS validation pending — Sprint X ».
 export interface HistoricalStats {
   /** Count of similar past setups in the backtest store. */
-  similar_setups_n: number;
+  similar_setups_n: number | null;
   /** Empirical win rate on similar setups [0, 1]. */
-  hit_rate_observed: number;
+  hit_rate_observed: number | null;
   /** Profit factor = gross gains / gross losses. */
-  profit_factor: number;
+  profit_factor: number | null;
   /** 95% bootstrap CI for the profit factor [low, high]. */
-  profit_factor_ci95: [number, number];
+  profit_factor_ci95: [number, number] | null;
   /** Conformal coverage observed on history (mirrors D.4). */
   empirical_coverage: number;
   /** Human label of the backtest window. */
