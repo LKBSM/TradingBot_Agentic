@@ -51,6 +51,16 @@ Ce fichier consigne les bugs, anomalies, points d'amélioration **détectés pen
 - **Source** : Batch 0.4 grep
 - **Description** : Les deux scripts d'audit gardent la référence au CSV 2019_2025 pour permettre la **comparaison** entre coverages (audit utility). C'est intentionnel — pas un bug.
 
+### 2026-05-27 — [docs] — `PROJET_VISION_INDICATEUR_CHATBOT.md` contient 2 références obsolètes (nom + pricing)
+
+- **Zone** : doc fondatrice racine
+- **Sévérité** : mineur (cohérence éditoriale, pas bloquant fonctionnel)
+- **Source** : vérification A pré-Lot 1 cleanup 2026-05-27 (cf. `docs/architecture/CLEANUP_AUDIT_LOT1.md`)
+- **Description** : Le document est vivant côté **substance** (Vision B narrative-first, dualité indicateur+chatbot, RAG, B2B porte de sortie) et reste à la racine intouché par le Lot 1. Mais il porte 2 références textuelles obsolètes :
+  1. Ancien nom **« Smart Sentinel »** (à rebrand → **« M.I.A. Markets »** per `rebrand_mia_markets_2026_05_26.md`)
+  2. Ancienne grille tarifaire **$29 / $79 / $1990 decoy** (devenue **FREE / 9€ / 19€** post-pivot 2026-05-27 per `decisions/2026-05-27_pivot_positioning_audit.md`)
+- **Suggestion** : Lot séparé à planifier — `docs(vision): align PROJET_VISION with pivot positioning + M.I.A. rebrand`. Effort ~30 min. À faire **après** les Lot 1 PR1 + PR2 mergés, pour éviter de mélanger les scopes.
+
 ---
 
 **Initialisé** : 2026-05-15

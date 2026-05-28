@@ -1,0 +1,108 @@
+{
+  "XAUUSD": {
+    "symbol": "XAUUSD",
+    "n_bars_oos": 54996,
+    "checks_passed": 7,
+    "checks_total": 7,
+    "checks": {
+      "atr_positive": {
+        "passed": true,
+        "n_nan": 0,
+        "n_nonpositive": 0,
+        "n": 54996
+      },
+      "bos_event_level_consistency": {
+        "passed": true,
+        "events_without_level": 0,
+        "levels_without_event": 0,
+        "n_events": 1790
+      },
+      "fvg_dir_domain": {
+        "passed": true,
+        "unique_values": [
+          -1,
+          0,
+          1
+        ]
+      },
+      "choch_signal_domain": {
+        "passed": true,
+        "unique_values": [
+          -1,
+          0,
+          1
+        ]
+      },
+      "ob_zone_consistency": {
+        "passed": true,
+        "bull_inversions": 0,
+        "bear_inversions": 0,
+        "n_bull_ob": 6984,
+        "n_bear_ob": 6826
+      },
+      "price_decimals_scale": {
+        "passed": true,
+        "expected_decimals": 2,
+        "median_price": 2916.94425
+      },
+      "bar_interval_consistency": {
+        "passed": true,
+        "rate": 1.0,
+        "n_intra_session_deltas": 54396
+      }
+    }
+  },
+  "EURUSD": {
+    "symbol": "EURUSD",
+    "n_bars_oos": 49898,
+    "checks_passed": 7,
+    "checks_total": 7,
+    "checks": {
+      "atr_positive": {
+        "passed": true,
+        "n_nan": 0,
+        "n_nonpositive": 0,
+        "n": 49898
+      },
+      "bos_event_level_consistency": {
+        "passed": true,
+        "events_without_level": 0,
+        "levels_without_event": 0,
+        "n_events": 1693
+      },
+      "fvg_dir_domain": {
+        "passed": true,
+        "unique_values": [
+          -1,
+          0,
+          1
+        ]
+      },
+      "choch_signal_domain": {
+        "passed": true,
+        "unique_values": [
+          -1,
+          0,
+          1
+        ]
+      },
+      "ob_zone_consistency": {
+        "passed": true,
+        "bull_inversions": 0,
+        "bear_inversions": 0,
+        "n_bull_ob": 6243,
+        "n_bear_ob": 6222
+      },
+      "price_decimals_scale": {
+        "passed": true,
+        "expected_decimals": 5,
+        "median_price": 1.091965
+      },
+      "bar_interval_consistency": {
+        "passed": true,
+        "rate": 0.999879493874272,
+        "n_intra_session_deltas": 49790
+      }
+    }
+  }
+}

@@ -1,0 +1,123 @@
+{
+  "_comment": "MOCKUP — Réponse B2B GET /api/v1/insights/latest?asset=XAUUSD&timeframe=M15. Toutes les sections du contrat InsightSignal sont exposées. Aucun champ tronqué — c'est l'intérêt B2B (audit + transparence broker).",
+
+  "insight_id": "0193c7a4-2f1b-7c3d-9e8a-5b2c1d4e7f89",
+  "generated_at": "2026-04-30T11:15:00.000Z",
+  "asset": "XAUUSD",
+  "timeframe": "M15",
+  "expires_at": "2026-04-30T13:15:00.000Z",
+  "version_schema": "1.0.0",
+
+  "structure_bias": "bullish",
+  "confluence_score": 62,
+  "confluence_score_label": "strong",
+
+  "key_levels": {
+    "support_zone": [2378.00, 2381.00],
+    "resistance_zone": [2398.50, 2401.20],
+    "structural_invalidation": 2374.50,
+    "first_target": 2401.00,
+    "second_target": 2412.00
+  },
+
+  "volatility_forecast": {
+    "next_hour_usd": 4.82,
+    "vs_atr14_pct": 18.0,
+    "regime_label": "normal"
+  },
+
+  "ml": null,
+
+  "narrative_short": "Bullish structure break on M15 with FVG retest at 2378-2381. HMM trend_bullish regime, volatility +18% vs ATR14. NY session, no news blackout.",
+  "narrative_full": "Smart Money structure on XAU/USD M15 has shifted bullish following a confirmed Break of Structure above the 2391.5 swing high. Price has subsequently retested the Fair Value Gap formed between 2378.00 and 2381.00, where institutional liquidity is most likely to be defended. The Hidden Markov Model classifies the current regime as trend_bullish (posterior probability 0.71), and the LightGBM volatility forecaster anticipates +18% versus the 14-period ATR — a moderate expansion consistent with NY-session activity. The structural invalidation sits at 2374.50, below the FVG floor; a clean break of this level would invalidate the bullish read and force re-evaluation. Immediate target zone is the resistance band 2398.50-2401.20, with extension to 2412.00 if volume supports continuation. No high-impact news blackout is currently active. This is an algorithmic market analysis, not a trading recommendation.",
+  "narrative_language": "en",
+  "narrative_model": "claude-sonnet",
+
+  "scenarios": [
+    {
+      "scenario_label": "main",
+      "condition": "Bounce off 2378-2381 FVG with M15 close back above 2385",
+      "expected_outcome": "Continuation toward 2401, extension 2412 if NY momentum sustains"
+    },
+    {
+      "scenario_label": "alternative_1",
+      "condition": "Clean M15 close below 2374.50",
+      "expected_outcome": "Bullish read invalidated; bias shifts to range/bearish, re-evaluate next BOS"
+    },
+    {
+      "scenario_label": "alternative_2",
+      "condition": "Choppy consolidation 2381-2392 for 4+ bars",
+      "expected_outcome": "Setup expires by 13:15 UTC without target reached; insight closes as expired"
+    }
+  ],
+
+  "components_active": [
+    "bos",
+    "fvg",
+    "order_block",
+    "regime",
+    "volume",
+    "momentum"
+  ],
+
+  "components_score_breakdown": [
+    {
+      "name": "bos",
+      "weighted_score": 13.5,
+      "weight": 15.0,
+      "reasoning": "Confirmed Break of Structure above 2391.5 swing high, 2 bars ago"
+    },
+    {
+      "name": "fvg",
+      "weighted_score": 12.8,
+      "weight": 15.0,
+      "reasoning": "Fresh FVG 2378-2381 retested once, holding above mid-zone"
+    },
+    {
+      "name": "order_block",
+      "weighted_score": 7.5,
+      "weight": 10.0,
+      "reasoning": "Bullish OB at 2375-2378 (engulfing + displacement) aligned with FVG"
+    },
+    {
+      "name": "regime",
+      "weighted_score": 18.2,
+      "weight": 25.0,
+      "reasoning": "HMM trend_bullish posterior 0.71 (>0.6 threshold)"
+    },
+    {
+      "name": "news",
+      "weighted_score": 0.0,
+      "weight": 20.0,
+      "reasoning": "No high-impact event within blackout window (-30/+60 min)"
+    },
+    {
+      "name": "volume",
+      "weighted_score": 7.0,
+      "weight": 10.0,
+      "reasoning": "Volume on BOS bar 1.4x 20-bar avg; healthy displacement"
+    },
+    {
+      "name": "momentum",
+      "weighted_score": 2.4,
+      "weight": 3.0,
+      "reasoning": "RSI(14) recovered from 42 to 58 over last 6 bars"
+    },
+    {
+      "name": "rsi_divergence",
+      "weighted_score": 0.6,
+      "weight": 2.0,
+      "reasoning": "Mild bullish hidden divergence on M15 last 12 bars"
+    }
+  ],
+
+  "regime_hmm": "trend_bullish",
+  "news_blackout_active": false,
+  "session": "new_york",
+
+  "compliance": {
+    "disclaimer_text": "Smart Sentinel AI publishes algorithmic market analyses for informational purposes only. This is not investment advice and Smart Sentinel AI is not a registered investment adviser. 74-89% of retail CFD accounts lose money. The recipient (broker) must propagate this disclaimer to its end users. UE 2024/2811 compliance.",
+    "jurisdiction_blocked": ["US", "QC", "UK", "OFAC"],
+    "regulatory_notice": "UE 2024/2811 — algorithmic analysis, not investment advice. Broker integration partners must surface this disclaimer to end users."
+  }
+}

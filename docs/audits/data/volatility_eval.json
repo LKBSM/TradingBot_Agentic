@@ -1,0 +1,64 @@
+{
+  "XAUUSD": {
+    "symbol": "XAUUSD",
+    "label": "XAUUSD M15 OOS 2024+",
+    "n_sampled": 800,
+    "min_history_bars": 2217,
+    "q1_point_forecast": {
+      "rmse_har_blended": 4.588553546982642,
+      "rmse_naive": 4.32754004980023,
+      "rmse_improvement_pct": -6.03145191445338,
+      "mape_har_blended": 0.3527611098866673,
+      "mape_naive": 0.3677244347258642,
+      "r2_har_blended": 0.6262133883920973,
+      "r2_naive": 0.6675285749134185,
+      "diebold_mariano_stat": 0.5763923851247084,
+      "dm_p_value_har_better": 0.7178250048512066,
+      "n": 800,
+      "definition": "future_atr = mean True Range over next 5 bars (M15); naive = ATR_14 at forecast time"
+    },
+    "q3_calibration_conformal": {
+      "nominal_coverage": 0.95,
+      "empirical_coverage_picp": 0.5125,
+      "picp_ci95_lo": 0.4775,
+      "picp_ci95_hi": 0.54625,
+      "mpiw": 2.5589841578360164,
+      "mpiw_relative_to_mean_atr": 0.41234250063926653,
+      "verdict": "\ud83d\udd34",
+      "n": 800,
+      "tcp_alpha": 0.05,
+      "definition": "TCP confidence interval coverage on sampled OOS bars"
+    }
+  },
+  "EURUSD": {
+    "symbol": "EURUSD",
+    "label": "EURUSD M15 OOS 2024+",
+    "n_sampled": 800,
+    "min_history_bars": 2217,
+    "q1_point_forecast": {
+      "rmse_har_blended": 0.0022403441566409164,
+      "rmse_naive": 0.00035750319415762635,
+      "rmse_improvement_pct": -526.6640951054352,
+      "mape_har_blended": 4.158597354327492,
+      "mape_naive": 0.39995378455880415,
+      "r2_har_blended": -22.84455602588578,
+      "r2_naive": 0.3928169830864412,
+      "diebold_mariano_stat": 29.31122216235706,
+      "dm_p_value_har_better": 1.0,
+      "n": 800,
+      "definition": "future_atr = mean True Range over next 5 bars (M15); naive = ATR_14 at forecast time"
+    },
+    "q3_calibration_conformal": {
+      "nominal_coverage": 0.95,
+      "empirical_coverage_picp": 0.38625,
+      "picp_ci95_lo": 0.35125,
+      "picp_ci95_hi": 0.42,
+      "mpiw": 0.00038173278239137556,
+      "mpiw_relative_to_mean_atr": 0.597813060304909,
+      "verdict": "\ud83d\udd34",
+      "n": 800,
+      "tcp_alpha": 0.05,
+      "definition": "TCP confidence interval coverage on sampled OOS bars"
+    }
+  }
+}
