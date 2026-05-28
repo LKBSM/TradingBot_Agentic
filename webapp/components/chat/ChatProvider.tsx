@@ -13,6 +13,19 @@ interface ChatTurn {
   text: string;
   /** Was this answer produced by the live LLM API or the scripted fallback? */
   source?: 'llm' | 'scripted' | 'fallback' | 'error';
+  /**
+   * DG-112 compliance metadata — set when the assistant turn went through
+   * one of the two gates (pre-LLM refusal or post-stream forbidden-token
+   * filter). The UI can render a small "filtré compliance" marker on the
+   * message bubble. ``undefined`` on the normal happy path.
+   */
+  compliance?: {
+    kind: 'refusal' | 'forbidden_token';
+    /** Category of the refusal, when known. */
+    category?: string;
+    /** The token that fired the post-process filter, when known. */
+    token?: string;
+  };
 }
 
 interface ChatContextValue {
@@ -137,7 +150,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
       try {
         let accumulated = '';
-        const { text } = await askSentinel({
+        const { text, refusal, forbidden_token } = await askSentinel({
           signal: activeSignal,
           question: trimmed,
           history: historyForApi,
@@ -147,10 +160,22 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           },
         });
         setApiAvailable(true);
-        // Convert streaming text into a final turn.
+        // Convert streaming text into a final turn. Carry over the
+        // DG-112 compliance metadata so the bubble can be marked.
+        const compliance: ChatTurn['compliance'] = refusal
+          ? { kind: 'refusal', category: refusal.category }
+          : forbidden_token
+            ? { kind: 'forbidden_token', token: forbidden_token.token }
+            : undefined;
         setTurns((prev) => [
           ...prev,
-          { id: nextId('asst'), role: 'assistant', text, source: 'llm' },
+          {
+            id: nextId('asst'),
+            role: 'assistant',
+            text,
+            source: 'llm',
+            compliance,
+          },
         ]);
       } catch (err) {
         if (err instanceof ChatApiUnavailableError) {

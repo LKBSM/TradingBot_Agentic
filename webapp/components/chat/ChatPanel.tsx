@@ -111,7 +111,12 @@ export function ChatPanel() {
           <IntroBubble script={script} apiAvailable={apiAvailable} />
 
           {turns.map((t) => (
-            <ChatMessage key={t.id} role={t.role} text={t.text} />
+            <ChatMessage
+              key={t.id}
+              role={t.role}
+              text={t.text}
+              compliance={t.compliance}
+            />
           ))}
 
           {isStreaming && (
