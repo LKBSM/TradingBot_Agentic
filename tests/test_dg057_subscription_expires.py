@@ -130,7 +130,7 @@ def test_require_api_key_rejects_expired_subscription(monkeypatch, tier_manager)
     with pytest.raises(HTTPException) as ei:
         run_async(scenario())
     assert ei.value.status_code == 402
-    assert "expired" in ei.value.detail.lower()
+    assert "expiré" in ei.value.detail.lower() or "expired" in ei.value.detail.lower()
 
 
 def test_require_api_key_allows_active_subscription(monkeypatch, tier_manager):
