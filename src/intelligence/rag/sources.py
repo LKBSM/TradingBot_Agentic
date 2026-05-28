@@ -377,6 +377,144 @@ PAPERS: list[CuratedSource] = [
             "compliance-sensitive deployments where hallucinations carry regulatory risk."
         ),
     ),
+    # ─── DG-058a additions (Sprint 5 — 2026-05-28) ─────────────────────────
+    CuratedSource(
+        source_id="paper_gibbs_candes_aci_2021",
+        type="paper",
+        label="Gibbs & Candès — Adaptive Conformal Inference Under Distribution Shift (2021)",
+        ref="https://arxiv.org/abs/2106.00170",
+        date="2021",
+        license="open_access",
+        authority_score=10,
+        keywords=["ACI", "conformal", "distribution shift", "online", "coverage"],
+        summary=(
+            "Adaptive Conformal Inference (ACI) is a sequential conformal prediction "
+            "scheme that keeps long-run coverage at the target 1-α even when the "
+            "data-generating distribution shifts over time. The key idea: update the "
+            "conformal quantile α_t online with the realised miscoverage in a sliding "
+            "window. The update rule α_{t+1} = α_t + γ · (α* - 1{Y_t ∈ I_t}) drives "
+            "empirical coverage toward α*. Used in MIA Markets to wrap the conviction "
+            "score in a 90% interval whose width grows when regime change is detected."
+        ),
+    ),
+    CuratedSource(
+        source_id="paper_angelopoulos_bates_conformal_tutorial_2021",
+        type="paper",
+        label="Angelopoulos & Bates — A Gentle Introduction to Conformal Prediction (2021)",
+        ref="https://arxiv.org/abs/2107.07511",
+        date="2021",
+        license="open_access",
+        authority_score=9,
+        keywords=["conformal prediction", "distribution-free", "uncertainty quantification", "tutorial"],
+        summary=(
+            "Conformal prediction is a distribution-free, finite-sample-valid method "
+            "for uncertainty quantification. Given a calibration set and a non-conformity "
+            "score, it constructs prediction intervals whose coverage is guaranteed to "
+            "be at least 1-α in expectation. Works as a wrapper on top of any black-box "
+            "predictor — no assumptions on the underlying model. The tutorial covers "
+            "split conformal, full conformal, and adaptive variants, with worked examples "
+            "in regression and classification. Foundational reading for MIA's conviction-"
+            "interval reporting."
+        ),
+    ),
+    CuratedSource(
+        source_id="paper_barndorff_nielsen_realized_variance_2004",
+        type="paper",
+        label="Barndorff-Nielsen & Shephard — Power and Bipower Variation with Stochastic Volatility and Jumps (2004)",
+        ref="https://academic.oup.com/jfec/article/2/1/1/823091",
+        date="2004",
+        license="permissive_citation",
+        authority_score=10,
+        keywords=["realized variance", "bipower variation", "jumps", "high-frequency"],
+        summary=(
+            "Decomposes the quadratic variation of an asset return process into a "
+            "continuous component (estimated by bipower variation BV) and a jump "
+            "component (RV − BV). When the BV/RV ratio falls below ~0.7, jumps explain "
+            "more than 30% of realised variance — a regime where naive volatility "
+            "forecasts under-react. The MIA jump_ratio surfaced in the regime readout "
+            "is the empirical implementation of this decomposition, used to trigger "
+            "regime-shift alerts and adjust position sizing."
+        ),
+    ),
+    CuratedSource(
+        source_id="paper_engle_arch_1982",
+        type="paper",
+        label="Engle — Autoregressive Conditional Heteroskedasticity with Estimates of UK Inflation (1982)",
+        ref="https://www.jstor.org/stable/1912773",
+        date="1982",
+        license="fair_use",
+        authority_score=10,
+        keywords=["ARCH", "GARCH", "heteroskedasticity", "volatility clustering"],
+        summary=(
+            "The foundational ARCH model (1982 Nobel Prize) formalises volatility "
+            "clustering: today's volatility depends on past squared innovations. "
+            "GARCH (Bollerslev 1986) extended this with an autoregressive lag on the "
+            "conditional variance itself, capturing volatility persistence. While "
+            "GARCH-family models are no longer state-of-the-art for high-frequency "
+            "forecasting (HAR-RV dominates per Corsi 2009), they remain the textbook "
+            "starting point for understanding why volatility is *not* iid and why "
+            "naive variance estimators systematically misprice tail risk."
+        ),
+    ),
+    CuratedSource(
+        source_id="paper_lo_adaptive_markets_2004",
+        type="paper",
+        label="Lo — The Adaptive Markets Hypothesis (2004)",
+        ref="https://www.aeaweb.org/articles?id=10.1257/0002828041464645",
+        date="2004",
+        license="fair_use",
+        authority_score=9,
+        keywords=["adaptive markets", "behavioural finance", "edge decay", "regime"],
+        summary=(
+            "The Adaptive Markets Hypothesis (AMH) frames markets as evolutionary "
+            "ecosystems: trading strategies' edges decay as participants learn and "
+            "adapt, but new edges emerge as the macro environment shifts. Empirically, "
+            "this explains why a backtested edge over 2010-2015 may vanish by 2020 "
+            "even with no overfitting in the original test. For MIA Markets, the AMH "
+            "is the theoretical grounding for the *non-stationary edge* assumption: "
+            "the system MUST be re-validated on rolling windows and any track-record "
+            "older than 2 years requires walk-forward confirmation."
+        ),
+    ),
+    CuratedSource(
+        source_id="paper_pedersen_efficiently_inefficient_2015",
+        type="paper",
+        label="Pedersen — Efficiently Inefficient (2015)",
+        ref="https://press.princeton.edu/books/hardcover/9780691166193/efficiently-inefficient",
+        date="2015",
+        license="fair_use",
+        authority_score=9,
+        keywords=["market microstructure", "liquidity", "edge", "frictions"],
+        summary=(
+            "Pedersen argues markets are efficiently inefficient: prices reflect "
+            "information to the extent that the marginal cost of arbitrage equals the "
+            "marginal expected gross profit. The corollary is that edges exist precisely "
+            "in segments where frictions (liquidity, execution, scarce attention) make "
+            "arbitrage costly. For MIA, this means we should target frictions: XAU/USD "
+            "M15 with hand-curated SMC structure has higher attention cost than "
+            "EURUSD spot which is fully arbitraged at sub-millisecond timescales. The "
+            "more measurable the friction, the more credible the edge claim."
+        ),
+    ),
+    CuratedSource(
+        source_id="paper_cont_long_memory_2001",
+        type="paper",
+        label="Cont — Empirical Properties of Asset Returns: Stylized Facts and Statistical Issues (2001)",
+        ref="https://www.tandfonline.com/doi/abs/10.1080/713665670",
+        date="2001",
+        license="permissive_citation",
+        authority_score=10,
+        keywords=["stylized facts", "fat tails", "long memory", "autocorrelation"],
+        summary=(
+            "Cont's canonical list of *stylized facts* on financial returns: heavy "
+            "tails, slow decay of return autocorrelations on the absolute scale (long "
+            "memory in volatility), volatility clustering, leverage effects, "
+            "aggregational gaussianity. Any production volatility model that ignores "
+            "long-memory will systematically under-forecast at horizons > 1 day. The "
+            "HAR-RV cascade used by MIA Markets is one of the rare specifications that "
+            "matches these stylized facts without over-parametrising."
+        ),
+    ),
 ]
 
 
@@ -1033,9 +1171,12 @@ def validate_registry() -> dict:
     for s in sources:
         by_type[s.type] += 1
 
-    # Plan distribution: 15+15+10+10
-    assert len(sources) == 50, f"expected 50 sources, got {len(sources)}"
-    assert by_type["paper"] == 15, f"expected 15 papers, got {by_type['paper']}"
+    # Plan distribution (DG-058a 2026-05-28): 22+15+10+10 = 57
+    # Was originally 15+15+10+10 = 50; 7 papers added in Sprint 5 to cover
+    # the brief's missing authors (Gibbs-Candès, Angelopoulos-Bates,
+    # Barndorff-Nielsen, Engle, Lo, Pedersen, Cont).
+    assert len(sources) == 57, f"expected 57 sources, got {len(sources)}"
+    assert by_type["paper"] == 22, f"expected 22 papers, got {by_type['paper']}"
     assert by_type["report"] == 15, f"expected 15 reports, got {by_type['report']}"
     assert by_type["data"] == 10, f"expected 10 data sources, got {by_type['data']}"
     assert by_type["education"] == 10, f"expected 10 education, got {by_type['education']}"

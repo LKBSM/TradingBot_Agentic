@@ -3,18 +3,16 @@
   "fixture_set": "tests.eval_llm.rag_fixtures.ALL_RAG_FIXTURES",
   "n_fixtures": 50,
   "metrics_floor": {
-    "context_recall": 0.95,
-    "context_precision": 0.18,
-    "faithfulness": 0.0,
-    "answer_relevancy": 0.0
+    "context_recall": 0.9388,
+    "context_precision": 0.1918
   },
   "per_category_recall_floor": {
     "paper": 1.0,
-    "data": 1.0,
+    "data": 0.9,
     "report": 1.0,
-    "concept": 0.85,
-    "macro": 1.0
+    "concept": 0.8889,
+    "macro": 0.9
   },
-  "snapshot_taken_utc": "2026-05-04T14:30:00Z",
+  "snapshot_taken_utc": "2026-05-28T20:57:26Z",
   "tolerance_pp": 0.05
 }

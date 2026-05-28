@@ -30,9 +30,12 @@ from src.intelligence.rag.sources import (
 
 
 def test_registry_validates():
+    # DG-058a (Sprint 5 2026-05-28) added 7 papers covering the brief's
+    # missing authors (Gibbs-Candès, Angelopoulos-Bates, Barndorff-Nielsen,
+    # Engle, Lo, Pedersen, Cont). New baseline: 22 papers / 57 total.
     diag = validate_registry()
-    assert diag["total"] == 50
-    assert diag["by_type"]["paper"] == 15
+    assert diag["total"] == 57
+    assert diag["by_type"]["paper"] == 22
     assert diag["by_type"]["report"] == 15
     assert diag["by_type"]["data"] == 10
     assert diag["by_type"]["education"] == 10
@@ -40,7 +43,7 @@ def test_registry_validates():
 
 
 def test_each_section_has_expected_count():
-    assert len(PAPERS) == 15
+    assert len(PAPERS) == 22
     assert len(REPORTS) == 15
     assert len(DATA_SOURCES) == 10
     assert len(EDUCATION) == 10
@@ -48,8 +51,20 @@ def test_each_section_has_expected_count():
 
 def test_sources_by_type_filters_correctly():
     papers = sources_by_type("paper")
-    assert len(papers) == 15
+    assert len(papers) == 22
     assert all(p.type == "paper" for p in papers)
+
+
+def test_dg058a_brief_authors_all_covered():
+    """DG-058a — verify the 12 author tags requested in the Sprint 3 brief."""
+    brief_authors = (
+        "lopez_de_prado", "corsi", "gibbs_candes", "barndorff_nielsen",
+        "adams_mackay", "angelopoulos_bates", "engle", "cont",
+        "lo_adaptive", "pedersen", "patton_sheppard",
+    )
+    ids = {p.source_id for p in PAPERS}
+    for author in brief_authors:
+        assert any(author in i for i in ids), f"DG-058a brief author missing: {author}"
 
 
 def test_all_source_ids_unique():
@@ -187,5 +202,6 @@ def test_retrieval_top_1_quality_at_least_70pct(populated_pipeline):
     assert score >= 0.70, f"top-1 quality {score:.0%} below 70% guard"
 
 
-def test_corpus_has_50_chunks_after_ingestion(populated_pipeline):
-    assert populated_pipeline.size == 50
+def test_corpus_has_57_chunks_after_ingestion(populated_pipeline):
+    # DG-058a (2026-05-28) bumped corpus from 50 → 57 chunks (7 new papers).
+    assert populated_pipeline.size == 57
