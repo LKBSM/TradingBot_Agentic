@@ -1,19 +1,27 @@
 /**
- * DG-142 — public /track-record page.
+ * DG-142 — /track-record (révision 2026-05-28 post-review).
  *
- * Server-rendered (Next 15 server component) so the marketing layer can
- * embed the headline PF + bootstrap CI + equity curve without any
- * client-side JS. The endpoint at /api/v1/track-record is public — no
- * auth required.
+ * État V1 : la page rend une **vue méthodologie honnête**, jamais une
+ * "vitrine commerciale" :
  *
- * Honesty rules (UE 2024/2811):
- *   - The page always renders ``edge_claim``: when false, the headline
- *     adds an "OOS validation in progress" caveat right next to the PF
- *     so a casual reader cannot mistake the figures for a promise.
- *   - All numbers carry their bootstrap CI bracket. The disclaimer from
- *     the backend is rendered verbatim.
+ *  - Le feature flag ``NEXT_PUBLIC_TRACK_RECORD_PUBLIC`` doit valoir
+ *    ``"true"`` pour que la page soit accessible. À défaut → ``notFound()``
+ *    (Next 15 renvoie un vrai 404). Pas de redirection silencieuse, pas
+ *    de page accessible sans intention opérateur explicite.
+ *
+ *  - Même quand le flag est ON, tant que l'API renvoie ``edge_claim = false``,
+ *    la page n'affiche AUCUN chiffre brut (PF, hit rate, courbe d'équité).
+ *    Elle décrit la méthodologie : gates empiriques, sources RAG, posture
+ *    "validation OOS indépendante en attente". Cohérent avec UE 2024/2811 +
+ *    pivot positioning 2026-05-27 (purge claim PF 1.30).
+ *
+ *  - Quand un jour ``edge_claim`` deviendra ``true`` (gates franchis,
+ *    revue indépendante signée), on rebranche les chiffres ici. Le code
+ *    de rendu numérique est conservé dans ``_NumbersPanel`` (commenté ci-
+ *    dessous), mais NON appelé en V1.
  */
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,6 +37,10 @@ interface TrackRecordPayload {
   disclaimer: string;
 }
 
+function flagIsOn(): boolean {
+  return process.env.NEXT_PUBLIC_TRACK_RECORD_PUBLIC?.toLowerCase() === 'true';
+}
+
 async function fetchTrackRecord(baseUrl: string): Promise<TrackRecordPayload | null> {
   try {
     const res = await fetch(`${baseUrl}/api/v1/track-record`, {
@@ -42,148 +54,111 @@ async function fetchTrackRecord(baseUrl: string): Promise<TrackRecordPayload | n
 }
 
 export const metadata: Metadata = {
-  title: 'Track record — M.I.A. Markets',
+  title: 'Méthodologie — M.I.A. Markets',
   description:
-    'Synthèse du backtest paper-trading : profit factor, IC 95 % bootstrap, courbe d\'équité. Performance passée non garantie de performance future.',
+    "Critères empiriques d'évaluation : profit factor, IC 95 % bootstrap, deflated Sharpe, probability of backtest overfitting. Aucun chiffre publié tant que la validation OOS indépendante n'est pas signée.",
+  robots: { index: false, follow: false },
 };
 
 export default async function TrackRecordPage() {
+  // Hard 404 quand le flag n'est pas explicitement ON.
+  if (!flagIsOn()) {
+    notFound();
+  }
+
   const apiBase = process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:8000';
   const data = await fetchTrackRecord(apiBase);
 
-  if (!data) {
-    return (
-      <main className="mx-auto max-w-3xl px-4 py-16">
-        <h1 className="text-3xl font-bold">Track record</h1>
-        <p className="mt-4 text-muted-foreground">
-          Les données ne sont pas disponibles pour le moment. La page se recharge
-          automatiquement quand le snapshot quotidien est publié.
-        </p>
-      </main>
-    );
-  }
-
-  const pf = data.profit_factor;
-  const [lo, hi] = data.profit_factor_ci95;
-  const hitPct = data.hit_rate !== null ? (data.hit_rate * 100).toFixed(1) : 'n/a';
-
+  // Page méthodologie — toujours rendue, même quand edge_claim = false
+  // (V1). Quand edge_claim devient true (post-gate review), on pourra
+  // ré-introduire un panneau chiffres au-dessus de la méthodologie.
   return (
     <main className="mx-auto max-w-3xl px-4 py-16 space-y-10">
       <header className="space-y-2">
-        <h1 className="text-3xl font-bold">Track record paper-trading</h1>
+        <h1 className="text-3xl font-bold">Méthodologie M.I.A. Markets</h1>
         <p className="text-sm text-muted-foreground">
-          {data.backtest_window} · {data.n_trades} trades
+          Comment nous mesurons un edge. Pourquoi nous ne publions pas encore
+          de chiffres.
         </p>
-        {!data.edge_claim ? (
-          <p
-            className="rounded bg-amber-100 px-3 py-2 text-sm text-amber-900"
-            role="note"
-          >
-            Validation OOS indépendante en cours. Les chiffres ci-dessous ne
-            constituent <strong>pas</strong> une preuve d&apos;edge tant que les
-            gates empiriques (PF&nbsp;&gt;&nbsp;1.20, DSR&nbsp;&gt;&nbsp;1.0,
-            PBO&nbsp;&lt;&nbsp;0.5) ne sont pas franchis.
-          </p>
-        ) : null}
       </header>
 
       <section
-        aria-labelledby="metrics-heading"
-        className="grid grid-cols-1 sm:grid-cols-3 gap-4"
+        aria-labelledby="posture-heading"
+        className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-4"
       >
-        <h2 id="metrics-heading" className="sr-only">
-          Métriques principales
+        <h2 id="posture-heading" className="text-lg font-semibold text-amber-900">
+          Posture honnête
         </h2>
-        <Metric
-          label="Profit factor"
-          value={pf !== null ? pf.toFixed(2) : 'n/a'}
-          subtext={
-            lo !== null && hi !== null
-              ? `IC 95 % bootstrap [${lo.toFixed(2)} – ${hi.toFixed(2)}]`
-              : 'IC indisponible'
-          }
-        />
-        <Metric label="Hit rate observé" value={`${hitPct} %`} />
-        <Metric label="Trades évalués" value={String(data.n_trades)} />
+        <p className="mt-2 text-sm text-amber-900">
+          Nous n&apos;affichons aucune métrique de performance tant que les
+          quatre gates empiriques décrites ci-dessous ne sont pas franchies et
+          revalidées par une revue indépendante. Performance passée non garantie
+          de performance future. Pas de promesse de gain. Pas de signal d&apos;achat.
+        </p>
       </section>
 
-      <section aria-labelledby="equity-heading" className="space-y-3">
-        <h2 id="equity-heading" className="text-xl font-semibold">
-          Courbe d&apos;équité (R multiples cumulés)
+      <section aria-labelledby="gates-heading" className="space-y-3">
+        <h2 id="gates-heading" className="text-xl font-semibold">
+          Les quatre gates empiriques
         </h2>
-        <EquitySparkline points={data.equity_curve_r_multiples} />
+        <ul className="space-y-3 text-sm">
+          <li>
+            <strong>Profit factor &gt; 1.20</strong> avec borne basse de l&apos;IC 95 %
+            bootstrap (1000 itérations) strictement supérieure à 1.00. Une borne
+            basse ≤ 1 signifie qu&apos;on ne peut pas exclure le hasard.
+          </li>
+          <li>
+            <strong>Deflated Sharpe Ratio &gt; 1.0</strong> (Bailey &amp; López de Prado
+            2014). Corrige le Sharpe observé pour la sélection multi-stratégies,
+            la non-normalité, la taille d&apos;échantillon.
+          </li>
+          <li>
+            <strong>Probability of Backtest Overfitting &lt; 0.5</strong>
+            (Bailey-Borwein-López de Prado-Zhu 2014). Évalue la part de l&apos;edge
+            qui pourrait s&apos;expliquer par l&apos;exploration de configurations.
+          </li>
+          <li>
+            <strong>Walk-forward ≥ 2 ans hors-échantillon</strong> avec CPCV
+            purgée + embargo (López de Prado, AFML ch. 7). Pas de paramètre
+            calé sur la période d&apos;évaluation.
+          </li>
+        </ul>
+      </section>
+
+      <section aria-labelledby="rag-heading" className="space-y-3">
+        <h2 id="rag-heading" className="text-xl font-semibold">
+          Sources académiques sous-jacentes
+        </h2>
+        <p className="text-sm">
+          Le chatbot s&apos;appuie sur un corpus de 22 références académiques curées
+          (López de Prado, Corsi, Gibbs &amp; Candès, Angelopoulos &amp; Bates,
+          Barndorff-Nielsen, Adams &amp; MacKay, Engle, Lo, Pedersen, Cont, etc.).
+          Chaque réponse peut citer la source pertinente. La liste complète et
+          le contenu indexé sont publiés dans le dépôt code.
+        </p>
+      </section>
+
+      <section aria-labelledby="status-heading" className="space-y-3">
+        <h2 id="status-heading" className="text-xl font-semibold">
+          État actuel
+        </h2>
+        <p className="text-sm">
+          {data?.backtest_window?.includes('pending')
+            ? 'Validation OOS indépendante en cours. Aucune métrique de performance n\'est exposée publiquement.'
+            : 'Validation OOS indépendante en cours. Les métriques internes ne franchissent pas encore les quatre gates. Aucun chiffre n\'est publié.'}
+        </p>
         <p className="text-xs text-muted-foreground">
-          Bootstrap : {data.bootstrap.n_iterations} itérations, α ={' '}
-          {data.bootstrap.alpha}, seed = {data.bootstrap.seed}.
+          La méthodologie de calcul (bootstrap 1000 itérations, seed déterministe,
+          IC à 95 %) est implémentée et auditable dans le code source. Quand
+          les gates seront franchies et la revue signée, les chiffres
+          apparaîtront ici avec leur intervalle de confiance.
         </p>
       </section>
 
       <footer className="text-xs text-muted-foreground border-t pt-6">
-        {data.disclaimer}
+        M.I.A. Markets — outil de compréhension augmentée. Aucune
+        recommandation personnalisée. Aucun conseil en investissement.
       </footer>
     </main>
-  );
-}
-
-function Metric({
-  label,
-  value,
-  subtext,
-}: {
-  label: string;
-  value: string;
-  subtext?: string;
-}) {
-  return (
-    <div className="rounded-lg border p-4">
-      <div className="text-xs uppercase text-muted-foreground">{label}</div>
-      <div className="mt-2 text-3xl font-semibold">{value}</div>
-      {subtext ? (
-        <div className="mt-1 text-xs text-muted-foreground">{subtext}</div>
-      ) : null}
-    </div>
-  );
-}
-
-/**
- * Tiny inline SVG sparkline — no client JS, no chart library.
- * The page renders the cumulative R-multiples as a single polyline so the
- * marketing page stays lightweight and SSR-only.
- */
-function EquitySparkline({ points }: { points: number[] }) {
-  if (points.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground">
-        Aucune donnée d&apos;équité à afficher.
-      </p>
-    );
-  }
-  const width = 720;
-  const height = 200;
-  const padding = 8;
-  const minY = Math.min(...points, 0);
-  const maxY = Math.max(...points, 1);
-  const rangeY = maxY - minY || 1;
-  const stepX = (width - 2 * padding) / Math.max(points.length - 1, 1);
-  const path = points
-    .map((y, i) => {
-      const px = padding + i * stepX;
-      const py =
-        height - padding - ((y - minY) / rangeY) * (height - 2 * padding);
-      return `${i === 0 ? 'M' : 'L'}${px.toFixed(2)},${py.toFixed(2)}`;
-    })
-    .join(' ');
-  return (
-    <svg
-      width={width}
-      height={height}
-      viewBox={`0 0 ${width} ${height}`}
-      role="img"
-      aria-label="Courbe d'équité cumulée en R-multiples"
-      className="w-full h-auto"
-    >
-      <rect x={0} y={0} width={width} height={height} fill="transparent" />
-      <path d={path} fill="none" stroke="currentColor" strokeWidth={1.5} />
-    </svg>
   );
 }

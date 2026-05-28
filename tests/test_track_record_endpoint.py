@@ -141,13 +141,50 @@ def test_load_trades_missing_file_returns_none(tmp_path):
 
 @pytest.fixture
 def authed_client(monkeypatch, temp_trades_csv, tmp_path):
-    """TestClient bound to the synthetic CSV via env override."""
+    """TestClient bound to the synthetic CSV via env override.
+
+    Forces ``TRACK_RECORD_PUBLIC=1`` so we can exercise the live-numbers
+    branch from the test. Default (flag off) is tested separately below.
+    """
     monkeypatch.setenv("TRACK_RECORD_CSV", str(temp_trades_csv))
+    monkeypatch.setenv("TRACK_RECORD_PUBLIC", "1")
     monkeypatch.setenv("SENTINEL_TESTING_MODE", "1")
     # Avoid the global default SignalStore writing into the real /data dir
     monkeypatch.setenv("SIGNAL_DB_PATH", str(tmp_path / "signals.db"))
     app = create_app()
     return TestClient(app)
+
+
+def test_endpoint_returns_placeholder_when_flag_off(monkeypatch, temp_trades_csv, tmp_path):
+    """DG-142 review 2026-05-28 — default OFF, raw numbers never reach the
+    public endpoint until the gate review is signed off."""
+    monkeypatch.setenv("TRACK_RECORD_CSV", str(temp_trades_csv))
+    monkeypatch.delenv("TRACK_RECORD_PUBLIC", raising=False)
+    monkeypatch.setenv("SENTINEL_TESTING_MODE", "1")
+    monkeypatch.setenv("SIGNAL_DB_PATH", str(tmp_path / "signals.db"))
+    app = create_app()
+    client = TestClient(app)
+    resp = client.get("/api/v1/track-record")
+    assert resp.status_code == 200
+    body = resp.json()
+    # Even though the CSV is present, the flag-off branch returns the
+    # placeholder unconditionally — the raw numbers MUST NOT leak.
+    assert body["n_trades"] == 0
+    assert body["profit_factor"] is None
+    assert body["edge_claim"] is False
+
+
+def test_endpoint_returns_placeholder_for_explicit_off(monkeypatch, temp_trades_csv, tmp_path):
+    """Strings 0/false/off all keep the flag closed."""
+    for falsy in ("0", "false", "off", "no", "  "):
+        monkeypatch.setenv("TRACK_RECORD_CSV", str(temp_trades_csv))
+        monkeypatch.setenv("TRACK_RECORD_PUBLIC", falsy)
+        monkeypatch.setenv("SENTINEL_TESTING_MODE", "1")
+        monkeypatch.setenv("SIGNAL_DB_PATH", str(tmp_path / "signals.db"))
+        app = create_app()
+        client = TestClient(app)
+        body = client.get("/api/v1/track-record").json()
+        assert body["n_trades"] == 0, f"flag value {falsy!r} should keep flag off"
 
 
 def test_endpoint_returns_pf_and_ci(authed_client):
@@ -170,6 +207,7 @@ def test_endpoint_returns_pf_and_ci(authed_client):
 
 def test_endpoint_placeholder_when_csv_missing(monkeypatch, tmp_path):
     monkeypatch.setenv("TRACK_RECORD_CSV", str(tmp_path / "nope.csv"))
+    monkeypatch.setenv("TRACK_RECORD_PUBLIC", "1")
     monkeypatch.setenv("SENTINEL_TESTING_MODE", "1")
     monkeypatch.setenv("SIGNAL_DB_PATH", str(tmp_path / "signals.db"))
     app = create_app()

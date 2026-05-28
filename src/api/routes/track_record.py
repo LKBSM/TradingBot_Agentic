@@ -190,13 +190,39 @@ def _load_trades(csv_path: Path) -> Optional[_TradesSnapshot]:
 # ---------------------------------------------------------------------------
 
 
+def _flag_is_on() -> bool:
+    """Feature flag — public track-record exposure.
+
+    Default off (post-pivot 2026-05-27 + audit_algo verdict 3/10). The
+    raw PF / hit-rate / equity-curve numbers MUST NOT reach the public
+    page until the empirical gates (PF > 1.20, DSR > 1.0, PBO < 0.5,
+    walk-forward ≥ 2y) have been crossed AND the figures have been
+    revalidated by an independent reviewer.
+
+    Operator flip: ``TRACK_RECORD_PUBLIC=1`` on the prod env once the
+    gate review is signed off. Anything else (unset, "0", "off",
+    "false") keeps the placeholder.
+    """
+    raw = os.environ.get("TRACK_RECORD_PUBLIC", "").strip().lower()
+    return raw in {"1", "true", "on", "yes"}
+
+
 @router.get("", summary="Public track-record snapshot")
 def get_track_record() -> Dict[str, Any]:
     """Public PF + bootstrap CI + equity curve + honesty metadata.
 
     Cached at the CDN layer when deployed; the underlying file changes
     only on the nightly cron tick.
+
+    GATE: when the feature flag ``TRACK_RECORD_PUBLIC`` is off (default),
+    the endpoint returns the placeholder payload only — the raw figures
+    are never reachable from the public network even if the CSV is on
+    disk. Internal callers needing the live numbers should call the
+    helpers directly (``_load_trades`` + ``_profit_factor`` + …).
     """
+    if not _flag_is_on():
+        return _placeholder_payload()
+
     csv_path = Path(os.environ.get("TRACK_RECORD_CSV", DEFAULT_TRADES_CSV))
     snap = _load_trades(csv_path)
     if snap is None:
