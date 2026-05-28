@@ -117,4 +117,26 @@ const nextConfig = {
   },
 };
 
-module.exports = withNextIntl(nextConfig);
+// DG-033 — Sentry wrapper. ``withSentryConfig`` uploads source maps to
+// Sentry at build-time when ``SENTRY_AUTH_TOKEN`` is set (CI runner). At
+// dev / preview it's a no-op so the local loop stays fast.
+const baseConfig = withNextIntl(nextConfig);
+
+const sentryEnabled =
+  process.env.SENTRY_DSN && process.env.SENTRY_AUTH_TOKEN;
+
+if (sentryEnabled) {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { withSentryConfig } = require('@sentry/nextjs');
+  module.exports = withSentryConfig(baseConfig, {
+    org: process.env.SENTRY_ORG,
+    project: process.env.SENTRY_PROJECT,
+    authToken: process.env.SENTRY_AUTH_TOKEN,
+    silent: !process.env.CI,
+    // Source maps only on prod build; never expose to public.
+    hideSourceMaps: true,
+    disableLogger: true,
+  });
+} else {
+  module.exports = baseConfig;
+}
