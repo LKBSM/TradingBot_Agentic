@@ -45,22 +45,14 @@ from src.agents.config import AgentConfig, RiskSentinelConfig, ConfigPreset
 # GYMNASIUM-DEPENDENT COMPONENTS (Optional)
 # =============================================================================
 
+# src.agents.integration archived 2026-05-27 (pivot Vision A→B, Lot 1 cleanup).
+# See _archive/2026-05-27_pivot_vision_b/ARCHIVE_NOTE.md. Gymnasium-wrapped
+# envs are no longer part of M.I.A. Markets — the pipeline is rule-based.
 _HAS_GYMNASIUM = False
 AgenticTradingEnv = None
 create_agentic_env = None
 wrap_existing_env = None
 AgentOrchestrator = None
-
-try:
-    from src.agents.integration import (
-        AgenticTradingEnv,
-        create_agentic_env,
-        wrap_existing_env,
-        AgentOrchestrator
-    )
-    _HAS_GYMNASIUM = True
-except ImportError as e:
-    logger.warning(f"Gymnasium not available, integration module disabled: {e}")
 
 
 # =============================================================================
@@ -107,19 +99,10 @@ except ImportError as e:
 # INTELLIGENT INTEGRATION (Gymnasium-dependent)
 # =============================================================================
 
+# src.agents.intelligent_integration archived 2026-05-27 (Lot 1).
 IntelligentAgenticEnv = None
 create_intelligent_env = None
 upgrade_to_intelligent = None
-
-if _HAS_GYMNASIUM:
-    try:
-        from src.agents.intelligent_integration import (
-            IntelligentAgenticEnv,
-            create_intelligent_env,
-            upgrade_to_intelligent
-        )
-    except ImportError as e:
-        logger.warning(f"IntelligentIntegration not available: {e}")
 
 # =============================================================================
 # NEWS ANALYSIS AGENT (v2.1)
@@ -165,19 +148,10 @@ except ImportError as e:
 # ORCHESTRATED INTEGRATION (Gymnasium-dependent)
 # =============================================================================
 
+# src.agents.orchestrated_integration archived 2026-05-27 (Lot 1).
 OrchestratedTradingEnv = None
 create_orchestrated_env = None
 upgrade_to_orchestrated = None
-
-if _HAS_GYMNASIUM:
-    try:
-        from src.agents.orchestrated_integration import (
-            OrchestratedTradingEnv,
-            create_orchestrated_env,
-            upgrade_to_orchestrated
-        )
-    except ImportError as e:
-        logger.warning(f"OrchestratedIntegration not available: {e}")
 
 # =============================================================================
 # NEWS MODULE COMPONENTS
@@ -292,23 +266,16 @@ except ImportError as e:
     get_audit_logger = None
     set_audit_logger = None
 
-try:
-    from src.agents.risk_integration import (
-        IntegratedRiskManager,
-        IntegratedRiskConfig,
-        IntegratedRiskResult,
-        RiskDecision,
-        RiskSentinelAdapter,
-        create_integrated_risk_manager
-    )
-except ImportError as e:
-    logger.warning(f"RiskIntegration not available: {e}")
-    IntegratedRiskManager = None
-    IntegratedRiskConfig = None
-    IntegratedRiskResult = None
-    RiskDecision = None
-    RiskSentinelAdapter = None
-    create_integrated_risk_manager = None
+# src.agents.risk_integration archived 2026-05-27 (Lot 1). Sub-components
+# (portfolio_risk, kill_switch, audit_logger) stay in src/agents/ and are
+# imported above. The orchestration layer is to be rebuilt only if a B2B-API
+# pivot reactivates the unified IntegratedRiskManager surface.
+IntegratedRiskManager = None
+IntegratedRiskConfig = None
+IntegratedRiskResult = None
+RiskDecision = None
+RiskSentinelAdapter = None
+create_integrated_risk_manager = None
 
 # =============================================================================
 # SPRINT 2: INTELLIGENCE ENHANCEMENT (v4.0)
