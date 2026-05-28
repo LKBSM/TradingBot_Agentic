@@ -1,0 +1,98 @@
+{
+  "XAUUSD": {
+    "symbol": "XAUUSD",
+    "label": "XAUUSD M15 OOS 2024+",
+    "n_events": 13810,
+    "n_bull": 6984,
+    "n_bear": 6826,
+    "median_strength_atr": 0.7902023794836335,
+    "q1_pattern_sanity": {
+      "value": 1.0,
+      "definition": "engulfing-like pattern conditions satisfied on event bar",
+      "n": 13810
+    },
+    "q1_zone_sanity": {
+      "value": 1.0,
+      "definition": "OB_HIGH > OB_LOW",
+      "n": 13810
+    },
+    "q1_strength_sanity": {
+      "value": 1.0,
+      "definition": "OB_STRENGTH_NORM = (high-low)/ATR within 0.21 (allows FVG bonus 0.2)",
+      "n": 13810
+    },
+    "q1_cross_method_f1": {
+      "f1_aggregated": 0.45706943746159434,
+      "precision": 0.2962346125995655,
+      "recall": 1.0,
+      "verdict": "\ud83d\udd34",
+      "tp": 4091,
+      "fp": 9719,
+      "fn": 0,
+      "bull_f1": 0.4570860488235944,
+      "bear_f1": 0.45705244122965644,
+      "window": 5,
+      "n_prod_events": 13810,
+      "n_ref_events": 4091,
+      "ref_method": "impulse OB (body > 0.8xATR + engulfing range)",
+      "note": "Prod OB has no impulse filter; ref requires >=0.8xATR impulse. Low F1 reflects definition strictness mismatch."
+    },
+    "q2_stability_16bars": {
+      "reaction_rate_on_retest": 0.7717595944967415,
+      "reaction_rate_ci95_lo": 0.7645908761766835,
+      "reaction_rate_ci95_hi": 0.7788559015206372,
+      "never_touched_rate": 0.07081824764663287,
+      "n": 13810,
+      "lifetime_bars": 16,
+      "definition": "reaction_rate = fraction where, after first touch of the OB zone, a subsequent close exits in OB direction within 16 bars"
+    }
+  },
+  "EURUSD": {
+    "symbol": "EURUSD",
+    "label": "EURUSD M15 OOS 2024+",
+    "n_events": 12465,
+    "n_bull": 6243,
+    "n_bear": 6222,
+    "median_strength_atr": 0.8037705075987847,
+    "q1_pattern_sanity": {
+      "value": 1.0,
+      "definition": "engulfing-like pattern conditions satisfied on event bar",
+      "n": 12465
+    },
+    "q1_zone_sanity": {
+      "value": 1.0,
+      "definition": "OB_HIGH > OB_LOW",
+      "n": 12465
+    },
+    "q1_strength_sanity": {
+      "value": 1.0,
+      "definition": "OB_STRENGTH_NORM = (high-low)/ATR within 0.21 (allows FVG bonus 0.2)",
+      "n": 12465
+    },
+    "q1_cross_method_f1": {
+      "f1_aggregated": 0.5029724373986668,
+      "precision": 0.3359807460890493,
+      "recall": 1.0,
+      "verdict": "\ud83d\udd34",
+      "tp": 4188,
+      "fp": 8277,
+      "fn": 0,
+      "bull_f1": 0.49275712216320616,
+      "bear_f1": 0.5130840004779544,
+      "window": 5,
+      "n_prod_events": 12465,
+      "n_ref_events": 4188,
+      "ref_method": "impulse OB (body > 0.8xATR + engulfing range)",
+      "note": "Prod OB has no impulse filter; ref requires >=0.8xATR impulse. Low F1 reflects definition strictness mismatch."
+    },
+    "q2_stability_16bars": {
+      "reaction_rate_on_retest": 0.7713414634146342,
+      "reaction_rate_ci95_lo": 0.7645198170731707,
+      "reaction_rate_ci95_hi": 0.7790456514762516,
+      "never_touched_rate": 0.0767811296534018,
+      "n": 12464,
+      "lifetime_bars": 16,
+      "definition": "reaction_rate = fraction where, after first touch of the OB zone, a subsequent close exits in OB direction within 16 bars"
+    }
+  }
+}

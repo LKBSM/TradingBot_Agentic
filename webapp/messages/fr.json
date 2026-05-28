@@ -11,7 +11,7 @@
   },
   "landing": {
     "hero_title": "Comprenez le marché XAU sans qu'on vous dise quoi faire.",
-    "hero_subtitle": "Smart Sentinel AI génère des analyses contextuelles sourcées pour l'or, en français, transparentes par construction.",
+    "hero_subtitle": "MIA Markets génère des analyses contextuelles sourcées pour l'or, en français, transparentes par construction.",
     "hero_cta_primary": "Commencer gratuitement",
     "hero_cta_secondary": "Voir la transparence",
     "value_1_title": "Narrative IA sourcée",
@@ -23,12 +23,12 @@
   },
   "disclaimer": {
     "short": "Analyse algorithmique éducative. Pas un conseil en investissement.",
-    "long": "Smart Sentinel AI produit des analyses éditoriales contextuelles, pas des recommandations personnalisées. Conformément à UE 2024/2811 et à la régulation finfluencer mars 2026."
+    "long": "MIA Markets produit des analyses éditoriales contextuelles, pas des recommandations personnalisées. Conformément à UE 2024/2811 et à la régulation finfluencer mars 2026."
   },
   "transparency": {
     "title": "Transparence radicale",
     "subtitle": "Notre courbe paper-trading en direct, drawdowns compris.",
-    "disclaimer": "Démonstration paper-trading. Smart Sentinel ne prétend PAS posséder un edge. Cette courbe est éducative.",
+    "disclaimer": "Démonstration paper-trading. MIA Markets ne prétend PAS posséder un edge. Cette courbe est éducative.",
     "stats_title": "Statistiques cumulées",
     "n_trades": "Trades", "win_rate": "Taux gagnant", "total_r": "R cumulés",
     "max_dd": "Drawdown max", "sharpe": "Sharpe par trade"
@@ -50,7 +50,7 @@
     "sources_label": "Sources citées"
   },
   "footer": {
-    "copyright": "© 2026 Smart Sentinel AI. Tous droits réservés.",
+    "copyright": "© 2026 MIA Markets. Tous droits réservés.",
     "terms": "CGU", "privacy": "Confidentialité", "contact": "Contact"
   }
 }

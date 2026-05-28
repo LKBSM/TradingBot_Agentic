@@ -1,0 +1,1043 @@
+================================================================================
+SMART SENTINEL AI — Tout ce que reçoit le client, et comment c'est calculé
+================================================================================
+
+Date : 2026-05-17
+Schéma de référence : InsightSignalV2 v2.1.0
+Branche : institutional-overhaul
+
+Ce document décrit, champ par champ, tout ce que le client reçoit, où ça vient
+dans le code, et la formule / l'algorithme exact qui le produit.
+
+Posture du produit : INDICATEUR, pas service de signaux.
+  • Smart Sentinel DÉCRIT le marché (structure, régime, vol, incertitude).
+  • Le trader DÉCIDE quoi en faire (entrée, stop, taille).
+
+
+================================================================================
+PARTIE 1 — LES TROIS SURFACES DU CLIENT
+================================================================================
+
+Le même contrat de fond (InsightSignalV2) alimente trois surfaces. La quantité
+d'info exposée diffère selon le destinataire.
+
+--------------------------------------------------------------------------------
+SURFACE 1 — Telegram B2C (compact, ≤ 800 chars)
+--------------------------------------------------------------------------------
+
+Ce que voit l'utilisateur :
+
+    Smart Sentinel — Lecture de marché
+    Actif : XAUUSD · M15
+    Setup détecté : 🟢 STRUCTURE HAUSSIÈRE
+    Conviction : STRONG
+    Structure : BOS 2391.5 · FVG 2378-2381 · retest armé · invalidation 2378
+    Régime : trend bullish · changepoint 3% · gate TRADE
+    Volatilité : vol normal · forecast +10% vs naïve
+    Event : FOMC Minutes dans 18.1h · session new york
+
+    Lecture haussière XAU M15.
+
+    Lecture algorithmique éducative. Ne constitue ni un signal de trading
+    ni un conseil en investissement.
+
+Ce qui est volontairement absent : aucun prix d'entrée, aucun stop, aucun
+take-profit, aucun R:R. La composition du trade revient au trader.
+
+Code : src/api/insight_signal_v2.py → fonction to_telegram_b2c()
+
+--------------------------------------------------------------------------------
+SURFACE 2 — Webapp B2C (lecture complète)
+--------------------------------------------------------------------------------
+
+Quand le client ouvre la webapp, il voit l'intégralité des sous-modèles :
+identité, conviction + intervalle conformel, lecture de structure SMC,
+régime de marché, volatilité prévisionnelle, contexte event-driven, statistiques
+historiques sur setups similaires, narratif long avec sources citées.
+
+Mockup : mockups/v2/client_view_full.html
+
+--------------------------------------------------------------------------------
+SURFACE 3 — API B2B (la plus riche, broker-grade)
+--------------------------------------------------------------------------------
+
+Pour les partenaires brokers : tout le contenu webapp + décomposition complète
+des 8 composantes du score (avec poids visibles) + scénarios alternatifs +
+télémétrie régime détaillée. Tout en JSON typé.
+
+Code : to_b2b_dict() → équivalent à signal.model_dump(mode="json")
+
+
+================================================================================
+PARTIE 2 — CHAQUE INFORMATION, EXPLIQUÉE EN DÉTAIL
+================================================================================
+
+
+--------------------------------------------------------------------------------
+A. IDENTITÉ DE LA LECTURE
+--------------------------------------------------------------------------------
+
+A.1 — id (identifiant unique de la lecture)
+    Exemple : "0193c7a4-2f1b-7c3d-9e8a-5b2c1d4e7f89"
+
+    CALCUL :
+    Empreinte SHA-1 déterministe sur (symbole + bar timestamp + direction +
+    score arrondi à 4 décimales). Les 12 premiers caractères hexadécimaux
+    sont conservés (espace de 2^48 collisions, négligeable au débit du
+    système).
+
+    Pourquoi déterministe et pas UUID v4 ? Pour que le même setup
+    ré-évalué pendant la phase ARMING du state machine produise le même
+    ID — sans ça le client recevrait N IDs pour un seul signal.
+
+    Code : src/intelligence/confluence_detector.py:354
+        _sigid_seed = f"{symbol}|{bar_ts}|{signal_type}|{score:.4f}"
+        _sigid = sha1(_sigid_seed.encode()).hexdigest()[:12]
+
+A.2 — instrument, timeframe
+    Exemple : "XAUUSD", "M15"
+
+    CALCUL : aucun — configuration du scanner. Les 6 instruments supportés
+    (XAUUSD, EURUSD, BTCUSD, US500, GBPUSD, USDJPY) sont définis dans
+    InstrumentConfig avec leurs paramètres (price_decimals, session hours,
+    calendrier événementiel).
+
+    Code : src/intelligence/volatility_forecaster.py:get_instrument_registry()
+
+A.3 — created_at_utc, valid_until_utc
+    Exemple : created_at_utc = "2026-05-16T11:47:00+00:00"
+              valid_until_utc = "2026-05-16T15:47:00+00:00"
+
+    CALCUL :
+    • created_at_utc : extrait du bar_timestamp de la barre qui a déclenché
+      l'analyse (clôture de la barre M15). Si absent : datetime.now(UTC).
+    • valid_until_utc : created_at_utc + 4 heures (16 barres M15). Au-delà,
+      les conditions de marché ont changé, la lecture est obsolète.
+
+    Code : src/intelligence/insight_assembler.py:_derive_created_at()
+
+
+--------------------------------------------------------------------------------
+B. DIRECTION DU SETUP
+--------------------------------------------------------------------------------
+
+B.1 — direction
+    Valeurs possibles : "BULLISH_SETUP" / "BEARISH_SETUP" / "NEUTRAL"
+
+    Volontairement PAS "BUY" / "SELL" / "achetez" / "vendez". Conformité
+    UE 2024/2811 sur les finfluenceurs : on parle d'analyse, jamais de
+    recommandation prescriptive.
+
+    CALCUL :
+    Dérivé du sens de la structure de marché (BOS_SIGNAL du moteur SMC) :
+        BOS_SIGNAL > 0  ⇒  signal_type = LONG   ⇒  BULLISH_SETUP
+        BOS_SIGNAL < 0  ⇒  signal_type = SHORT  ⇒  BEARISH_SETUP
+        BOS_SIGNAL = 0  ⇒  pas de signal       ⇒  NEUTRAL
+
+    BOS (Break of Structure) = cassure du dernier swing high/low :
+        UP_FRACTAL = pivot haut (Williams fractal 2-bar)
+        Si close > UP_FRACTAL le plus récent ⇒ BOS_SIGNAL = +1
+        Si close < DOWN_FRACTAL le plus récent ⇒ BOS_SIGNAL = -1
+
+    Code : src/environment/strategy_features.py (SmartMoneyEngine)
+           src/intelligence/confluence_detector.py:238
+
+
+--------------------------------------------------------------------------------
+C. CONVICTION ALGORITHMIQUE
+--------------------------------------------------------------------------------
+
+C.1 — conviction_0_100 (le chiffre principal)
+    Exemple : 72
+
+    CALCUL — DEUX MODES :
+
+    MODE A — Score brut (legacy, pas calibré)
+    -----------------------------------------
+    Somme pondérée des 8 composantes, normalisée à 100 :
+
+        score_brut = sum(contribution_i for i in 8 composantes)
+        si certaines composantes ont données absentes :
+            score_brut *= 100 / sum(poids_des_composantes_présentes)
+        score_brut = clip(score_brut, 0, 100)
+
+    Les 8 contributions sont calculées dans ComponentScore :
+      BOS contribution  = quality_BOS × 15     (max 15 si CHOCH + retest)
+      FVG contribution  = quality_FVG × 15     (max 15 si FVG > 1 × ATR)
+      OB contribution   = OB_STRENGTH_NORM × 10
+      Regime           = alignment × confidence × 25
+      News             = sentiment_alignment × confidence × 20
+      Volume           = min(1, (vol/MA - 0.5)/1.5) × 10
+      Momentum         = (rsi_score × 0.5 + macd_score × 0.5) × 3
+      RSI divergence   = présence_alignée × 2
+
+    Code : src/intelligence/confluence_detector.py:281
+
+    ⚠ Honnêteté empirique : ce score brut a Pearson −0.023 avec le P&L
+    réel sur 7 ans XAU M15 (eval_02). Il mesure la convergence des
+    conditions techniques, PAS la probabilité de gain. C'est pour ça
+    qu'on a ajouté le MODE B.
+
+    MODE B — Score calibré (LightGBM → Isotonic → Conformal)
+    --------------------------------------------------------
+    Le mode cible. Pipeline en 3 étages :
+
+      ÉTAGE 1 : LGBMScorer
+        Modèle Gradient Boosted Trees (LightGBM, 200 arbres, num_leaves=31,
+        learning_rate=0.05). Inputs : 8 features (les contributions des
+        composantes BOS, OB, FVG, retest, regime, vol_forecast, news,
+        momentum_rsi_div). Output : probabilité brute P(win) ∈ [0, 1].
+
+        Code : src/intelligence/scoring/lgbm_scorer.py
+
+      ÉTAGE 2 : IsotonicRecalibrator
+        Régression isotonique post-hoc qui aligne la probabilité brute
+        sur le hit rate empirique observé. Fittée sur les prédictions
+        out-of-fold du LGBM. Garantit que "P=0.72" signifie réellement
+        "sur les 100 setups historiques où le LGBM a dit 0.72, environ 72
+        ont gagné".
+
+        Code : src/intelligence/scoring/isotonic_recalibration.py
+
+      ÉTAGE 3 : AdaptiveConformalScorer (ACI Gibbs-Candès 2021)
+        Produit un intervalle de confiance autour de la probabilité
+        calibrée, avec garantie distribution-free (Angelopoulos & Bates
+        2024). Met à jour son rayon en ligne pour maintenir la couverture
+        nominale même sous régime drift (XAU = beaucoup de drift).
+
+        Code : src/intelligence/conformal_wrapper.py
+
+    Sortie finale :
+        conviction_0_100 = round(p_calibrée × 100)
+
+    Le mode actif dépend de la disponibilité du modèle entraîné. Si
+    models/calibrated_conviction_v1.pkl existe ⇒ mode B. Sinon fallback
+    automatique sur mode A.
+
+    Code : src/intelligence/scoring/calibrated_conviction.py
+    Training : scripts/train_calibrated_conviction.py
+
+C.2 — conviction_label (bucket sémantique)
+    Valeurs : "weak" / "moderate" / "strong" / "institutional"
+
+    CALCUL :
+        score < 40   ⇒ weak
+        40-59        ⇒ moderate
+        60-79        ⇒ strong
+        80-100       ⇒ institutional
+
+    Sert à protéger l'IP en surface compacte (Telegram) — le client voit
+    "STRONG" sans connaître la précision du score.
+
+    Code : src/api/insight_signal_v2.py:conviction_to_label()
+
+
+--------------------------------------------------------------------------------
+D. INCERTITUDE CALIBRÉE (UncertaintyContext)
+--------------------------------------------------------------------------------
+
+D.1 — uncertainty.conformal_lower, conformal_upper
+    Exemple : lower=54, upper=82 (sur l'échelle 0-100)
+
+    CALCUL :
+    Produit par l'étage 3 du pipeline calibré (Adaptive Conformal Inference).
+    Sur les outcomes historiques mémorisés (R-multiples du backtest), on
+    calcule les résidus de non-conformité :
+        scores = |outcome_i - point_estimate|
+
+    Le rayon (q_hat) est le quantile (1 - α_courant) de ces scores avec
+    correction finie de Angelopoulos & Bates §3.2 :
+        q_level = ceil((n + 1) × (1 - α_courant)) / n
+        q_hat = quantile(scores, q_level)
+
+    L'intervalle est centré sur la prédiction calibrée :
+        lower = (p_calibrée - q_hat) × 100
+        upper = (p_calibrée + q_hat) × 100
+
+    L'α_courant est mis à jour à chaque outcome observé (boucle ACI) :
+        Si la prédiction passée a raté l'outcome :
+            α_courant += γ × (α_cible - 1)   ⇒ rayon s'élargit
+        Sinon :
+            α_courant += γ × α_cible          ⇒ rayon se rétrécit
+        γ = 0.05 (Gibbs-Candès recommandé)
+
+    GARANTIE : sous l'hypothèse d'échangeabilité (ou drift sous ACI), la
+    probabilité que l'outcome réel se trouve dans l'intervalle est au moins
+    1 - α (par défaut 90 %). Distribution-free, valable pour TOUT modèle.
+
+    Code : src/intelligence/conformal_wrapper.py:AdaptiveConformalScorer
+
+D.2 — uncertainty.coverage_alpha
+    Exemple : 0.10 (intervalle 90 %)
+
+    CALCUL : configuration utilisateur. Par défaut 0.10.
+
+D.3 — uncertainty.n_calibration
+    Exemple : 2000
+
+    CALCUL : taille de la fenêtre de calibration (buffer rolling de
+    l'AdaptiveConformalScorer, default buffer_size=500). Plus grand =
+    intervalle plus stable mais moins réactif au drift.
+
+D.4 — uncertainty.empirical_coverage
+    Exemple : 0.91 (vs nominal 0.90)
+
+    CALCUL : moyenne mobile du taux de couverture observé sur les
+    intervalles passés :
+        empirical_coverage = 1 - mean(miscoverage_history)
+        où miscoverage_history[i] = 1 si outcome_i n'était PAS dans
+        l'intervalle prédit à l'étape i, 0 sinon.
+
+    Sert au monitoring : si empirical_coverage diverge fortement de 1-α,
+    l'ACI est mal calibré ou le marché a changé de régime.
+
+    Code : src/intelligence/conformal_wrapper.py:AdaptiveConformalScorer.empirical_coverage()
+
+
+--------------------------------------------------------------------------------
+E. LECTURE DE STRUCTURE SMC (StructureReadout)
+--------------------------------------------------------------------------------
+
+Toutes les valeurs sont DESCRIPTIVES — décrivent l'état de la structure
+de marché, jamais des ordres de trading.
+
+E.1 — structure_readout.bos_level
+    Exemple : 2391.50
+
+    CALCUL :
+    Prix du dernier swing high (UP_FRACTAL) cassé par close en cas de
+    BOS haussier, ou du dernier swing low (DOWN_FRACTAL) en cas de BOS
+    baissier.
+
+    Williams fractal 2-bar :
+        UP_FRACTAL[i] = high[i] si high[i] > max(high[i-2], high[i-1],
+                                                  high[i+1], high[i+2])
+        DOWN_FRACTAL[i] = low[i] si low[i] < min(low[i-2], low[i-1],
+                                                  low[i+1], low[i+2])
+
+    Code : src/environment/strategy_features.py (colonne BOS_BREAK_LEVEL)
+
+E.2 — structure_readout.bos_event_age_bars
+    Exemple : 2 (cassure il y a 2 barres)
+
+    CALCUL : nombre de barres écoulées depuis BOS_EVENT = ±1. Fresh break
+    = 0. Continuation après plusieurs barres = N.
+
+E.3 — structure_readout.choch_present
+    Valeurs : true / false
+
+    CALCUL :
+    CHOCH (Change of Character) = premier swing dans le sens opposé à la
+    tendance précédente. Détecté par :
+      Si tendance était haussière (BOS_SIGNAL=+1) et le prix forme un
+      DOWN_FRACTAL plus bas que le précédent swing low ⇒ CHOCH_SIGNAL = -1
+      Symétrique pour haussier.
+
+    Code : src/environment/strategy_features.py (colonne CHOCH_SIGNAL)
+
+E.4 — structure_readout.fvg_zone, fvg_size_atr
+    Exemple : fvg_zone = [2378.00, 2381.00], fvg_size_atr = 0.42
+
+    CALCUL :
+    Fair Value Gap (FVG) = gap de prix non rempli entre 3 barres
+    consécutives :
+      Bullish FVG : low[i+1] > high[i-1]  ⇒  gap = [high[i-1], low[i+1]]
+      Bearish FVG : high[i+1] < low[i-1]  ⇒  gap = [high[i+1], low[i-1]]
+
+    Taille normalisée :
+        FVG_SIZE = |gap_high - gap_low|
+        FVG_SIZE_NORM = FVG_SIZE / ATR_14
+
+    Code : src/environment/strategy_features.py (colonnes FVG_SIGNAL,
+           FVG_LOW, FVG_HIGH, FVG_SIZE_NORM)
+
+E.5 — structure_readout.ob_zone, ob_strength
+    Exemple : ob_zone = [2375.0, 2378.0], ob_strength = 0.73
+
+    CALCUL :
+    Order Block (OB) = dernière bougie de signe opposé avant un mouvement
+    institutionnel. Détecté par :
+      Bullish OB = dernière bougie baissière avant une cassure haussière,
+                   couvrant la zone [low, high] de cette bougie.
+      Engulfing exigé pour validité (la barre suivante doit faire >
+      bougie courante).
+
+    Force normalisée :
+        OB_STRENGTH_NORM = clamp((OB_HIGH - OB_LOW) / ATR_14, 0, 1)
+
+    Plus la zone est étendue (en multiples d'ATR), plus la liquidité
+    institutionnelle est présumée importante.
+
+    Code : src/environment/strategy_features.py (colonnes BULLISH_OB_*,
+           BEARISH_OB_*, OB_STRENGTH_NORM)
+
+E.6 — structure_readout.retest_state
+    Valeurs : "idle" / "awaiting" / "armed" / "consumed"
+
+    CALCUL :
+    Machine d'état à 4 valeurs qui suit le retest du niveau cassé :
+      idle      = aucune cassure en cours
+      awaiting  = BOS détecté, en attente du retour du prix sur le niveau
+      armed     = prix est revenu toucher le niveau et a rebondi (entrée
+                  serait validée techniquement)
+      consumed  = retest dépassé, niveau ne tient plus
+
+    Codé en BOS_RETEST_STATE (entier) et exposé en BOS_RETEST_ARMED
+    (booléen pour le scoring).
+
+    Code : src/environment/strategy_features.py (colonnes BOS_RETEST_*)
+
+E.7 — structure_readout.structural_invalidation
+    Exemple : 2378.0
+
+    CALCUL :
+    Le niveau au-delà duquel la thèse SMC est cassée. Détermination :
+      Si bullish setup et FVG présent : plancher du FVG (fvg_zone[0])
+      Si bullish setup et FVG absent mais OB présent : plancher OB (ob_zone[0])
+      Si bearish setup : plafond du FVG (fvg_zone[1]) ou plafond OB (ob_zone[1])
+
+    ⚠ Important : c'est un FAIT DE MARCHÉ descriptif, pas un ordre de
+    stop-loss. Le trader choisit son stop comme il veut — typiquement
+    sous ce niveau pour un long, mais c'est son arbitrage.
+
+    Code : src/intelligence/readout_mappers.py:map_structure_readout()
+
+E.8 — structure_readout.liquidity_zone_upper / lower
+    Exemple : liquidity_zone_upper = [2398.50, 2401.20]
+
+    CALCUL : pas encore implémenté côté algo (champ aspirationnel B2B-mock).
+    Reste à null en prod.
+
+
+--------------------------------------------------------------------------------
+F. LECTURE DU RÉGIME DE MARCHÉ (RegimeReadout)
+--------------------------------------------------------------------------------
+
+F.1 — regime_readout.hmm_label, hmm_posterior
+    Exemple : hmm_label = "trend_bullish", hmm_posterior = 0.71
+
+    CALCUL :
+    Hidden Markov Model à 3 états (GaussianHMM de hmmlearn) entraîné sur
+    les rendements log + variance roulante :
+
+      Inputs (features 2D) :
+        x_t = (log_return_t, rolling_std_20_t)
+      États cachés s_t ∈ {0, 1, 2}
+      Transitions : matrice 3×3 apprise par EM (Baum-Welch)
+      Émissions : gaussiennes multivariées
+
+    Post-fit, les états sont étiquetés selon leur variance + signe du
+    rendement moyen :
+        état avec plus grosse variance ⇒ "high_vol_stress" / "stress"
+        état avec variance basse + mean_return ≈ 0 ⇒ "range_low_vol"
+        état avec variance basse + mean_return > 0 ⇒ "trend_bullish"
+        (idem négatif ⇒ "trend_bearish")
+
+    hmm_posterior = P(s_t = état_choisi | observations jusqu'à t)
+    Calculé par forward-backward dans le HMM.
+
+    Code : src/intelligence/regime_classifier.py:RegimeClassifier
+
+F.2 — regime_readout.bocpd_changepoint_prob
+    Exemple : 0.03 (probabilité 3% de changepoint imminent)
+
+    CALCUL :
+    Bayesian Online Changepoint Detection (Adams & MacKay 2007).
+    Maintient une distribution sur la "run length" r_t (= nombre de barres
+    depuis le dernier changepoint).
+
+    Posterior incremental :
+        P(r_t | x_{1:t}) ∝ P(x_t | r_{t-1}, x_{1:t-1}) × P(r_t | r_{t-1})
+                                  ^prédictive postérieure       ^hazard
+
+    Hazard memoryless : 1/240 (1 changepoint par jour M15)
+    Distribution prédictive : Normal-Inverse-Gamma conjuguée
+
+    cp_prob = P(r_t = 0 | x_{1:t})
+            = probabilité que la run-length se réinitialise = changepoint
+              cette barre
+
+    Code : src/intelligence/bocpd.py:bocpd_step()
+
+F.3 — regime_readout.expected_run_length
+    Exemple : 180 (180 barres en moyenne avant le prochain changement)
+
+    CALCUL :
+        expected_run_length = sum(r × P(r_t = r | x_{1:t}) for r in 0..max_run_length)
+
+    Code : src/intelligence/bocpd.py / regime_gate.py
+
+F.4 — regime_readout.jump_ratio
+    Exemple : 0.12 (12% de la variance vient de sauts, 88% de vol continue)
+
+    CALCUL :
+    Décomposition Barndorff-Nielsen & Shephard 2004 — Bipower Variation.
+
+    Realized Variance (RV) :
+        RV_t = sum(r_i^2 for i in fenêtre)
+    Bipower Variation (BV) — robuste aux sauts :
+        BV_t = (π/2) × sum(|r_{i-1}| × |r_i| for i in fenêtre)
+
+    Jump component :
+        J_t = max(0, RV_t - BV_t)
+    Jump ratio :
+        jump_ratio = J_t / RV_t  ∈ [0, 1]
+
+    Interprétation :
+      jump_ratio ≈ 0    ⇒  vol continue, marché "normal"
+      jump_ratio > 0.40 ⇒  marché jump-heavy, dangereux pour mean-reversion
+
+    Code : src/intelligence/regime_gate.py (bipower computation)
+
+F.5 — regime_readout.regime_gate_decision
+    Valeurs : "TRADE" / "REDUCE" / "BLOCK"
+
+    CALCUL : décision combinée BOCPD + jump :
+        Si cp_prob > 0.10 OR jump_ratio > 0.40 :
+            decision = BLOCK
+        Sinon si cp_prob > 0.05 OR jump_ratio > 0.25 :
+            decision = REDUCE
+        Sinon :
+            decision = TRADE
+
+    ⚠ C'est la décision INTERNE du système, pas une instruction au trader.
+    Le trader voit "gate TRADE" comme info contextuelle.
+
+    Code : src/intelligence/regime_gate.py
+
+
+--------------------------------------------------------------------------------
+G. LECTURE DE VOLATILITÉ (VolatilityReadout)
+--------------------------------------------------------------------------------
+
+G.1 — volatility_readout.regime
+    Valeurs : "low" / "normal" / "high"
+
+    CALCUL : étiquette HMM à 3 états sur la dimension variance des
+    rendements. Identique à F.1 mais projeté sur l'axe vol uniquement.
+
+G.2 — volatility_readout.forecast_atr_pips
+    Exemple : 8.7
+
+    CALCUL :
+    Modèle composite HAR-RV + diurnal + calendar + HMM regime.
+
+      HAR-RV (Corsi 2009) — multi-scale persistence :
+          RV_daily   = somme des r_i^2 sur le dernier jour
+          RV_weekly  = moyenne RV_daily sur 5 jours
+          RV_monthly = moyenne RV_daily sur 22 jours
+
+          RV_t+1 = β_0 + β_d × RV_daily_t + β_w × RV_weekly_t + β_m × RV_monthly_t
+          (régression linéaire OLS)
+
+      HAR_base = sqrt(RV_t+1)  (volatilité, en pips)
+
+      Multiplicateur diurnal (par heure) :
+          diurnal_mult[h] = mean(realized_vol[h]) / mean(realized_vol)
+          (saisonnalité intraday, calibré sur historique)
+
+      Multiplicateur calendar (proximité événement) :
+          Si événement high-impact dans la fenêtre ±60 min :
+              calendar_mult = 1 + 1.5 × (1 - distance_minutes / 60)
+          Sinon : 1.0
+
+      Multiplicateur HMM regime :
+          regime_mult = factor learnt per HMM state (low=0.7, normal=1.0,
+                        high=1.5)
+
+      Forecast final blendé :
+          forecast_blend = HAR_base × diurnal_mult × calendar_mult × regime_mult
+          forecast_atr = blend_weight × forecast_blend + (1 - blend_weight) × ATR_14
+          blend_weight calibré sur set de validation (0.5 défaut, ~0.6 typique)
+
+    Code : src/intelligence/volatility_forecaster.py:VolatilityForecaster.forecast()
+
+G.3 — volatility_readout.naive_atr_pips
+    Exemple : 7.9
+
+    CALCUL :
+    ATR (Average True Range) classique de Wilder, 14 périodes :
+
+      TR_i = max(high_i - low_i,
+                 |high_i - close_{i-1}|,
+                 |low_i  - close_{i-1}|)
+
+      ATR_t = (ATR_{t-1} × 13 + TR_t) / 14   (lissage Wilder)
+
+    Sert de baseline pour mesurer la valeur ajoutée du modèle vol.
+
+G.4 — volatility_readout.forecast_vs_naive_pct
+    Exemple : +10.13 (forecast est 10% plus élevé que ATR naïf)
+
+    CALCUL :
+        forecast_vs_naive_pct = 100 × (forecast_atr - naive_atr) / naive_atr
+
+    Positif ⇒ expansion vol attendue. Négatif ⇒ contraction.
+
+G.5 — volatility_readout.confidence_interval_pips
+    Exemple : [7.2, 10.4]
+
+    CALCUL :
+    Transductive Conformal Prediction (TCP) sur les résidus de prévision
+    vol. Mêmes mathématiques que la conformal coverage de C/D, appliquées
+    aux résidus (actual_atr - forecast_atr) plutôt qu'aux résidus de P(win).
+
+      Buffer rolling des résidus : residuals = [actual_i - forecast_i for i in fenêtre]
+      q_hat = quantile finite-corrigé des |residuals|
+      lower = forecast_atr - q_hat
+      upper = forecast_atr + q_hat
+
+    Code : src/intelligence/volatility_forecaster.py (TCP state)
+
+G.6 — volatility_readout.is_fallback
+    Valeurs : true / false
+
+    CALCUL : true si le modèle vol n'a pas pu produire un forecast (modèle
+    non calibré, données insuffisantes, NaN détecté). Dans ce cas
+    forecast_atr = naive_atr et le client doit savoir qu'il regarde un
+    ATR brut, pas une prévision modèle.
+
+
+--------------------------------------------------------------------------------
+H. CONTEXTE EVENT-DRIVEN (EventReadout)
+--------------------------------------------------------------------------------
+
+H.1 — event_readout.news_blackout_active
+    Valeurs : true / false
+
+    CALCUL :
+    Fenêtre de blackout autour des événements high-impact (NFP, FOMC,
+    CPI, ECB Rate Decision, GDP, etc.) :
+
+      blackout_active = true si bar_timestamp ∈ [event_time - 30 min,
+                                                 event_time + 60 min]
+      pour un événement de classe HIGH dans le calendrier instrument.
+
+    Liste des événements high-impact par instrument :
+      InstrumentConfig.calendar_events
+      Exemple XAUUSD : NFP, Fed Funds Rate, CPI, FOMC, GDP, Core PCE,
+                        Retail Sales
+
+    Le calendrier est chargé depuis un CSV ForexFactory (en attente du
+    swap vers TradingEconomics API per improvement_roadmap C-6).
+
+    Code : src/agents/news/economic_calendar.py
+           src/agents/news_analysis_agent.py:NewsAnalysisAgent
+
+H.2 — event_readout.next_event_label, next_event_in_minutes
+    Exemple : "FOMC Minutes", 1083 (≈ 18h)
+
+    CALCUL :
+      next_event = premier événement HIGH dans le futur (timestamp > now)
+      next_event_in_minutes = (next_event.time - now).total_seconds() / 60
+
+H.3 — event_readout.sentiment_score, sentiment_confidence
+    Exemples : sentiment_score = 0.3, sentiment_confidence = 0.7
+
+    CALCUL :
+    NewsAnalysisAgent agrège les headlines + sentiment analysis sur les
+    24h glissantes :
+      Pour chaque article : sentiment_i ∈ [-1, 1]
+      Pour chaque article : confidence_i ∈ [0, 1] (basée sur la source +
+                                                  langue + cohérence
+                                                  cross-source)
+
+      sentiment_score = sum(sentiment_i × confidence_i) / sum(confidence_i)
+      sentiment_confidence = mean(confidence_i)
+
+    Sources : RSS Reuters / Bloomberg / Investing.com, sentiment via
+    embedding + classifier (TODO : Phase 2B remplacera par modèle dédié).
+
+H.4 — event_readout.session
+    Valeurs : "asian" / "london" / "ny_overlap" / "ny_afternoon" / "after_hours"
+
+    CALCUL :
+        bar_hour_utc = bar_timestamp.hour
+        session = lookup dans InstrumentConfig.session_hours :
+            XAU : asian=[0,8), london=[8,13), ny_overlap=[13,17),
+                  ny_afternoon=[17,21), after_hours=[21,24)
+
+    Code : src/intelligence/volatility_forecaster.py:InstrumentConfig
+
+
+--------------------------------------------------------------------------------
+I. DÉCOMPOSITION DES 8 COMPOSANTES (ComponentBreakdown[])
+--------------------------------------------------------------------------------
+
+Pour chaque composante, le client reçoit :
+  - name           : ex. "bos"
+  - contribution   : ex. 13.5 (score pondéré effectif)
+  - weight_max     : ex. 15.0 (poids alloué, peut être redacté en B2C)
+  - reasoning      : ex. "BOS retest confirmed"
+
+Les contributions individuelles :
+
+I.1 — BOS (poids max 15)
+    Échelle qualitative selon la fraîcheur + qualité :
+        CHOCH + retest armé           → contribution = 1.00 × 15 = 15.0
+        BOS retest armé sans CHOCH    → 0.90 × 15 = 13.5
+        CHOCH sans retest             → 0.70 × 15 = 10.5
+        Fresh BOS sans retest         → 0.40 × 15 = 6.0
+        BOS continuation (vieux)      → 0.25 × 15 = 3.75
+
+I.2 — FVG (poids max 15)
+    Graduation linéaire en fonction de la taille gap / ATR :
+        Si FVG aligné direction : contribution = clamp(0.3 + 0.7 × FVG_SIZE_NORM, 0, 1) × 15
+        Si FVG opposé direction : contribution = 0
+        Si pas de FVG           : contribution = 0
+
+    Exemple : FVG_SIZE_NORM = 0.42 → 0.3 + 0.7×0.42 = 0.594 → 8.91 (sur 15)
+
+I.3 — OrderBlock (poids max 10)
+    Proportionnel à OB_STRENGTH_NORM :
+        contribution = OB_STRENGTH_NORM × 10
+    Exemple : OB_STRENGTH_NORM = 0.73 → 7.3
+
+I.4 — Regime (poids max 25)
+    Alignment × confidence × trend_strength :
+        Si direction LONG et regime "uptrend"     → alignment = 1.0
+        Si direction LONG et regime "downtrend"   → alignment = 0.0
+        Si regime "ranging"                       → alignment = 0.3
+        Si regime ambigu                          → alignment = 0.4
+
+        quality = (max(confidence, 0.3) + max(trend_strength, 0.3)) / 2
+        contribution = alignment × quality × 25
+
+I.5 — News (poids max 20)
+    Sentiment aligné avec direction :
+        Si direction LONG  : alignment = (sentiment + 1) / 2  ∈ [0, 1]
+        Si direction SHORT : alignment = (1 - sentiment) / 2
+        contribution = alignment × max(confidence, 0.3) × 20
+
+I.6 — Volume (poids max 10)
+    Ratio volume / moyenne 20-bar :
+        ratio = volume_current / volume_MA_20
+        normalized = clamp((ratio - 0.5) / 1.5, 0, 1)
+        contribution = normalized × 10
+
+I.7 — Momentum (poids max 3)
+    Combiné RSI + MACD :
+        rsi_score = clamp((RSI - 30) / 40, 0, 1)  pour LONG
+                   = clamp((70 - RSI) / 40, 0, 1)  pour SHORT
+        macd_aligned = MACD_Diff > 0  pour LONG (ou < 0 pour SHORT)
+        macd_score = 1.0 si aligné, 0.3 sinon
+        combined = (rsi_score × 0.5) + (macd_score × 0.5)
+        contribution = combined × 3
+
+I.8 — RSI Divergence (poids max 2)
+    Présence d'une divergence régulière sur CHOCH :
+        Si direction LONG et CHOCH_DIVERGENCE > 0  : contribution = 2
+        Si direction SHORT et CHOCH_DIVERGENCE < 0 : contribution = 2
+        Sinon                                       : contribution = 0
+
+Code complet : src/intelligence/confluence_detector.py:_score_*()
+Projection sur ComponentBreakdown : src/intelligence/readout_mappers.py:map_breakdown_components()
+
+
+--------------------------------------------------------------------------------
+J. STATISTIQUES HISTORIQUES (HistoricalStats)
+--------------------------------------------------------------------------------
+
+J.1 — historical_stats.similar_setups_n
+    Exemple : 329
+
+    CALCUL :
+    Comptage en base SignalStore des setups historiques qui partagent les
+    mêmes caractéristiques que la lecture actuelle :
+      - même direction
+      - même instrument + timeframe
+      - composantes alignées (BOS armé, régime trending, etc.)
+      - sur la fenêtre 2019-2025 walk-forward
+
+    Job batch ou query SQLite qui itère sur SignalRecord persistés.
+
+J.2 — historical_stats.hit_rate_observed
+    Exemple : 0.319 (31.9%)
+
+    CALCUL :
+        hit_rate = count(setups où outcome == "win") / similar_setups_n
+
+J.3 — historical_stats.profit_factor, profit_factor_ci95
+    Exemple : 1.30 [1.12, 1.49]
+
+    CALCUL :
+        profit_factor = sum(pnl_pips où pnl_pips > 0) / abs(sum(pnl_pips où pnl_pips < 0))
+
+    IC 95% par bootstrap :
+        Resample 1000 fois avec replacement, calcule PF sur chaque
+        échantillon. Bornes IC = percentile(PF_bootstrap, [2.5, 97.5]).
+
+J.4 — historical_stats.empirical_coverage
+    Voir D.4 — même quantité, exposée dans le contexte historique.
+
+J.5 — historical_stats.backtest_window
+    Exemple : "XAU M15 2019-2025 walk-forward"
+
+    CALCUL : configuration. Indique la période + méthode de backtest.
+
+Code : src/intelligence/insight_assembler.py:_historical_stats_for()
+       (callback injecté par le scanner — implémentation effective : un
+        batch job nightly qui pré-calcule ces aggregates et les met dans
+        un store léger pour lecture rapide)
+
+
+--------------------------------------------------------------------------------
+K. NARRATIF & SOURCES
+--------------------------------------------------------------------------------
+
+K.1 — narrative_short (≤ 400 chars)
+    Exemple : "Lecture haussière XAU M15 : BOS + retest FVG + régime normal."
+
+    CALCUL :
+    Généré par LLMNarrativeEngine cascading :
+      Tier VISUAL       → template engine, < 1 ms, $0
+      Tier VALIDATOR    → Claude Haiku, ~500 ms, ~$0.0003
+      Tier NARRATOR     → Claude Sonnet, ~1.5 s, ~$0.003
+      Tier INSTITUTIONAL→ Claude Opus, ~3 s, ~$0.015
+
+    Tier sélectionné selon SignalTier interne (PREMIUM/STANDARD/WEAK).
+
+    Prompt structuré (system + context + instructions) :
+      system : compliance UE + style éducatif + interdiction tokens
+               prescriptifs (achetez, buy, garanti, etc.)
+      context : conviction + breakdown + structure + régime + vol + news
+                (le payload v2.1.0 sérialisé en summary)
+      instructions : longueur cible, langue, format
+
+    Garde-fou : src/intelligence/score_calibration.py:contains_forbidden_token()
+                rejette tout token interdit en post-génération.
+
+    Code : src/intelligence/llm_narrative_engine.py
+
+K.2 — narrative_long (jusqu'à 2000 chars)
+    Idem narrative_short mais avec contraintes assouplies + sources citées
+    (Phase 2B RAG, en cours).
+
+K.3 — narrative_language
+    Valeurs : "fr" / "en" / "de" / "es"
+
+    CALCUL : préférence client. Pour Telegram, lookup en SQLite via
+    TelegramLangStore (sprint W3). Pour webapp : Accept-Language ou
+    paramètre utilisateur.
+
+K.4 — sources_cited (Phase 2B, en cours)
+    Format :
+        type = "paper" / "report" / "data" / "education" / "internal"
+        ref = URL canonique
+        label = nom humain
+        quoted_excerpt (max 500 chars) = extrait textuel utilisé
+
+    CALCUL (Phase 2B) :
+    RAG sur base documentaire curée :
+      - Papers académiques (López de Prado AFML, Angelopoulos & Bates,
+                            Corsi 2009, Adams-MacKay 2007, etc.)
+      - Reports institutionnels (LBMA Quarterly, World Gold Council,
+                                  BIS, CFTC COT)
+      - Données primaires (FOMC minutes, ECB statements)
+
+    Pipeline :
+      1. Embedding du contexte signal (regime + structure + asset)
+      2. Top-K retrieval depuis vector store (Chroma / Qdrant)
+      3. Reranking par score de pertinence
+      4. Injection des sources dans le prompt LLM
+      5. Validation post-génération : chaque source citée doit apparaître
+         dans la base, sinon rejet (anti-hallucination)
+
+    Code : src/intelligence/rag/ (en cours d'implémentation)
+
+
+--------------------------------------------------------------------------------
+L. CONFORMITÉ RÉGLEMENTAIRE (ComplianceMeta)
+--------------------------------------------------------------------------------
+
+L.1 — compliance.disclaimer_lang
+    Idem K.3 — langue du disclaimer rendu.
+
+L.2 — compliance.jurisdiction_blocked
+    Exemple : ["US", "QC", "UK", "OFAC"]
+
+    CALCUL :
+    Liste fixe configurée par juridiction. Le middleware geo-block (sprint
+    W1-W3) compare l'IP du client à cette liste avant livraison :
+        Si IP géolocalisée ⊆ jurisdiction_blocked ⇒ 451 Unavailable For Legal Reasons
+
+    Code : src/intelligence/security.py + middleware geo-block
+
+L.3 — compliance.edge_claim
+    Valeurs : true / false (false par défaut)
+
+    CALCUL :
+    Drapeau d'honnêteté codifiée. Reste FALSE tant que :
+      - PF rolling 12 mois > 1.20 sur paper-demo public
+      - DSR > 1.0 (Probabilistic Sharpe Ratio)
+      - PBO < 0.5 (Probability of Backtest Overfitting)
+      - Walk-forward validé sur ≥ 2 ans hors-sample
+
+    Tant qu'un seul critère n'est pas franchi, edge_claim = FALSE et l'UI
+    a interdiction d'afficher "edge prouvé".
+
+    Le verdict A1 du 2026-05-01 a placé tous les critères en échec sur
+    le stack RL — d'où la bascule narrative-first Phase 2B.
+
+    Code : src/api/insight_signal_v2.py:ComplianceMeta
+           reports/governance/kill_criteria_board.md (critères)
+
+L.4 — compliance.is_paper_demo
+    Valeurs : true / false (true par défaut)
+
+    CALCUL :
+    True tant que la phase de monétisation live n'est pas validée. L'UI
+    doit labelliser explicitement "Démonstration paper-trading".
+
+
+================================================================================
+PARTIE 3 — CHAÎNE DE CALCUL COMPLÈTE (BAR M15 → INSIGHT CLIENT)
+================================================================================
+
+Pour une barre M15 qui clôture, voici le pipeline exact qui produit l'insight
+finalisé envoyé au client :
+
+ÉTAPE 1 — DataProvider
+    Reçoit OHLCV de la barre clôturée + barres historiques (lookback 200).
+    Code : src/intelligence/data_providers.py
+
+ÉTAPE 2 — SmartMoneyEngine.analyze()
+    Calcule sur le DataFrame OHLCV :
+      RSI(7), MACD(12,26,9), ATR(14), Bollinger(20, 2σ)
+      Williams fractals (UP_FRACTAL, DOWN_FRACTAL)
+      BOS_SIGNAL, BOS_EVENT, BOS_BREAK_LEVEL
+      CHOCH_SIGNAL, CHOCH_DIVERGENCE
+      FVG_SIGNAL, FVG_SIZE_NORM, FVG_LOW, FVG_HIGH
+      BULLISH/BEARISH_OB_LOW/HIGH, OB_STRENGTH_NORM
+      BOS_RETEST_STATE, BOS_RETEST_ARMED
+    Code : src/environment/strategy_features.py
+
+ÉTAPE 3 — VolatilityForecaster.forecast()
+    Sur les derniers 30 jours d'OHLCV :
+      HAR-RV(daily, weekly, monthly)
+      Multiplicateurs diurnal + calendar + HMM regime
+      Forecast blendé + TCP confidence interval
+    Output : VolatilityForecast(forecast_atr, naive_atr, confidence_lower,
+             confidence_upper, regime_state, is_fallback)
+    Code : src/intelligence/volatility_forecaster.py
+
+ÉTAPE 4 — RegimeGate.update() + RegimeClassifier.predict()
+    BOCPD step sur les rendements log
+    Bipower variation sur les rendements squared
+    HMM forward-backward pour posterior état caché
+    Output : RegimeGateOutput(decision, cp_prob, jump_ratio, expected_run_length)
+             + RegimeAnalysis(regime, confidence, trend_strength)
+    Code : src/intelligence/regime_gate.py + regime_classifier.py
+
+ÉTAPE 5 — NewsAnalysisAgent.evaluate_news_impact()
+    Consulte le calendrier économique (CSV ForexFactory) pour la fenêtre
+    ±60 min. Aggrège sentiment news 24h.
+    Output : NewsAssessment(decision, sentiment_score, sentiment_confidence,
+             blocking_events, position_multiplier, hours_to_next_high_impact)
+    Code : src/agents/news_analysis_agent.py
+
+ÉTAPE 6 — ConfluenceDetector.analyze()
+    Combine SMC features + regime + news + volume + momentum en
+    ConfluenceSignal(signal_id, signal_type, confluence_score, tier,
+                     components[], reasoning[], vol_forecast_atr, ...)
+    Code : src/intelligence/confluence_detector.py
+
+ÉTAPE 7 — CalibratedConvictionPipeline.score_one()  (si modèle chargé)
+    Pipe les contributions des 8 composantes dans LGBM → Isotonic → ACI
+    Output : CalibratedConviction(p_win_raw, p_win_calibrated,
+             conviction_0_100, interval (ConformalInterval),
+             feature_contributions, is_fallback)
+    Code : src/intelligence/scoring/calibrated_conviction.py
+
+ÉTAPE 8 — SignalStateMachine.on_bar()
+    Filtre hysteresis + cooldown. Décide si on publie (ACTIVE_LONG /
+    ACTIVE_SHORT) ou si on attend (ARMING / COOLDOWN / IDLE).
+    Code : src/intelligence/signal_state_machine.py
+
+ÉTAPE 9 — LLMNarrativeEngine.generate() OR TemplateNarrativeEngine
+    Génère narrative_short + narrative_long dans la langue du client.
+    Garde-fous : forbidden tokens, length cap, source validation (Phase 2B).
+    Code : src/intelligence/llm_narrative_engine.py + score_calibration.py
+
+ÉTAPE 10 — InsightAssembler.assemble()
+    Single integration point. Appelle tous les mappers :
+      map_structure_readout(confluence_signal, smc_features)
+      map_regime_readout(regime_analysis, regime_gate_output, direction_hint)
+      map_volatility_readout(volatility_forecast)
+      map_event_readout(news_assessment, session_label)
+      map_breakdown_components(confluence_signal)
+      map_uncertainty_context(calibrated_conviction)
+      map_historical_stats(callback)
+    Compose InsightSignalV2 v2.1.0 final.
+    Code : src/intelligence/insight_assembler.py
+
+ÉTAPE 11 — SignalStore.publish()
+    Persiste en SQLite (signals.db) pour audit + historique.
+    Code : src/api/signal_store.py
+
+ÉTAPE 12 — Renderers + livraison
+    to_telegram_b2c(signal) → message HTML ≤ 800 chars
+    to_b2b_dict(signal)     → JSON typé pour API B2B
+    Telegram notifier / webhook B2B / webapp poll
+    Code : src/api/insight_signal_v2.py + delivery/telegram_notifier.py
+
+
+================================================================================
+PARTIE 4 — RÉSUMÉ EN UNE PAGE
+================================================================================
+
+CE QUE LE CLIENT REÇOIT À CHAQUE LECTURE :
+    1. Identité  (id, instrument, TF, timestamps)
+    2. Direction (BULLISH_SETUP / BEARISH_SETUP / NEUTRAL)
+    3. Conviction (score 0-100 + label bucketé)
+    4. Incertitude (intervalle conformel, couverture empirique)
+    5. Structure  (BOS niveau, FVG zone, OB zone, retest état, invalidation)
+    6. Régime     (HMM label + posterior, BOCPD cp_prob, jump ratio, gate)
+    7. Volatilité (forecast + naïf + écart % + CI conformel)
+    8. Event      (blackout news, prochain événement, sentiment, session)
+    9. Breakdown  (8 composantes avec contribution + raisonnement)
+   10. Historique (similar_setups_n, hit_rate, PF avec IC, coverage empirique)
+   11. Narratif   (short + long, multi-langue, sources Phase 2B)
+   12. Compliance (disclaimer, geo-block, edge_claim, paper_demo)
+
+CE QUI N'EST JAMAIS DIT :
+   ✗ Prix d'entrée
+   ✗ Niveau de stop-loss
+   ✗ Take-profit / cible
+   ✗ R:R ratio
+   ✗ Instruction "entrez/sortez"
+   ✗ Lot size suggéré
+
+PILE TECHNIQUE :
+   • LightGBM (gradient boosting) pour le scoring P(win)
+   • Isotonic regression pour calibration empirique
+   • Adaptive Conformal Inference (Gibbs-Candès 2021) pour incertitude
+     avec garantie distribution-free
+   • Hidden Markov Model 3-états (GaussianHMM) pour régime
+   • Bayesian Online Changepoint Detection (Adams-MacKay 2007)
+   • Barndorff-Nielsen bipower variation pour jump detection
+   • HAR-RV (Corsi 2009) pour volatility forecast
+   • TCP (Transductive Conformal Prediction) pour CI vol
+   • Williams fractals + ICT-style SMC pour structure
+   • Claude Haiku/Sonnet/Opus cascade pour narratif
+   • Pydantic v2 pour le contrat client
+
+GARANTIES :
+   • Conformité UE 2024/2811 par construction (wording compliance-safe)
+   • Reproductibilité bit-pour-bit (signal_id déterministe SHA-1)
+   • Geo-blocking (US, QC, UK, OFAC)
+   • Couverture conformelle distribution-free
+   • Honnêteté codifiée (edge_claim = False tant que non validé empiriquement)
+   • Backward compatibility v2.0.0 ↔ v2.1.0
+
+POUR ALLER PLUS LOIN :
+   • docs/value/information_value_map.md       — inventaire 73 fiches
+   • docs/value/improvement_roadmap.md         — plan 90 jours
+   • docs/value/sprint_1_execution_report.md   — état d'avancement Sprint 1
+   • mockups/v2/client_view_full.html          — UI preview interactive
+   • src/api/insight_signal_v2.py              — contrat Pydantic source
+   • tests/test_sprint1_e2e_integration.py     — démo E2E chaîne complète
+
+================================================================================
+FIN DU DOCUMENT
+================================================================================

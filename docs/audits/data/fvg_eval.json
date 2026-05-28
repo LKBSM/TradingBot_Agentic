@@ -1,0 +1,82 @@
+{
+  "XAUUSD": {
+    "symbol": "XAUUSD",
+    "label": "XAUUSD M15 OOS 2024+",
+    "n_events": 8732,
+    "n_bull": 4814,
+    "n_bear": 3918,
+    "median_size_atr": 0.36053114374193795,
+    "q1_inequality_sanity": {
+      "value": 0.999885478699038,
+      "definition": "bullish FVG: low[i] > high[i-2]; bearish FVG: high[i] < low[i-2]",
+      "n": 8732
+    },
+    "q1_threshold_sanity": {
+      "value": 1.0,
+      "definition": "|FVG_SIZE_NORM| > 0.1",
+      "n": 8732
+    },
+    "q1_cross_method_f1": {
+      "f1": 0.8746306035562234,
+      "precision": 0.999885478699038,
+      "recall": 0.7772634202795335,
+      "verdict": "\ud83d\udfe2",
+      "tp": 8731,
+      "fp": 1,
+      "fn": 2502,
+      "n_prod_events": 8732,
+      "n_ref_events": 11233,
+      "ref_method": "textbook FVG, threshold-free (any 3-bar gap)",
+      "note": "Prod is a strict subset of ref by the ATR threshold. P=1 expected, R<1 reflects threshold cut."
+    },
+    "q2_stability_16bars": {
+      "mitigation_rate": 0.8143397090825794,
+      "mitigation_rate_ci95_lo": 0.8060903676554804,
+      "mitigation_rate_ci95_hi": 0.8224745160920858,
+      "median_time_to_mitigation_bars": 1.0,
+      "n": 8731,
+      "lifetime_bars": 16,
+      "definition": "mitigation = any next-16 bar range overlaps the FVG zone"
+    }
+  },
+  "EURUSD": {
+    "symbol": "EURUSD",
+    "label": "EURUSD M15 OOS 2024+",
+    "n_events": 8835,
+    "n_bull": 4537,
+    "n_bear": 4298,
+    "median_size_atr": 0.35708459586156355,
+    "q1_inequality_sanity": {
+      "value": 0.9997736276174307,
+      "definition": "bullish FVG: low[i] > high[i-2]; bearish FVG: high[i] < low[i-2]",
+      "n": 8835
+    },
+    "q1_threshold_sanity": {
+      "value": 1.0,
+      "definition": "|FVG_SIZE_NORM| > 0.1",
+      "n": 8835
+    },
+    "q1_cross_method_f1": {
+      "f1": 0.8841399329362896,
+      "precision": 0.9997736276174307,
+      "recall": 0.7924816077516598,
+      "verdict": "\ud83d\udfe2",
+      "tp": 8833,
+      "fp": 2,
+      "fn": 2313,
+      "n_prod_events": 8835,
+      "n_ref_events": 11146,
+      "ref_method": "textbook FVG, threshold-free (any 3-bar gap)",
+      "note": "Prod is a strict subset of ref by the ATR threshold. P=1 expected, R<1 reflects threshold cut."
+    },
+    "q2_stability_16bars": {
+      "mitigation_rate": 0.8245216800633987,
+      "mitigation_rate_ci95_lo": 0.8164836408921091,
+      "mitigation_rate_ci95_hi": 0.8325597192346881,
+      "median_time_to_mitigation_bars": 1.0,
+      "n": 8833,
+      "lifetime_bars": 16,
+      "definition": "mitigation = any next-16 bar range overlaps the FVG zone"
+    }
+  }
+}
