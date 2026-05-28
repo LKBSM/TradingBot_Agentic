@@ -8,12 +8,43 @@ export interface AskOptions {
   onDelta(textChunk: string): void;
 }
 
+export type RefusalCategory =
+  | 'prescriptive'
+  | 'guarantee'
+  | 'jailbreak'
+  | 'personal_advice'
+  | 'signal_request';
+
+export interface RefusalInfo {
+  /** Category from the DG-112 classifier (pre-LLM gate). */
+  category: RefusalCategory;
+  /** Language used for the safe-fallback text. */
+  language: 'fr' | 'en';
+  /** Source regex (telemetry / debug only — do NOT show to the user). */
+  pattern_source?: string;
+}
+
+export interface ForbiddenTokenInfo {
+  /** The offending token / phrase that slipped through the LLM. */
+  token: string;
+  /** Language the post-process filter detected. */
+  language: 'fr' | 'en';
+  /** Safe replacement text the UI should show in place of the streamed body. */
+  safe_fallback: string;
+}
+
 export interface AskResult {
   /** Fully concatenated assistant reply. */
   text: string;
   /** Token usage from Anthropic, if reported. */
   usage?: unknown;
   model?: string;
+  /** Set when the pre-LLM gate refused the request (DG-112). */
+  refusal?: RefusalInfo;
+  /** Set when the post-stream forbidden-token filter fired. */
+  forbidden_token?: ForbiddenTokenInfo;
+  /** Mirror of the server-side flag — true on either gate. */
+  compliance_filtered?: boolean;
 }
 
 export class ChatApiUnavailableError extends Error {
@@ -72,6 +103,9 @@ export async function askSentinel(opts: AskOptions): Promise<AskResult> {
   let usage: unknown = undefined;
   let model: string | undefined = undefined;
   let terminalError: string | null = null;
+  let refusal: RefusalInfo | undefined;
+  let forbidden: ForbiddenTokenInfo | undefined;
+  let complianceFiltered = false;
 
   while (true) {
     const { value, done } = await reader.read();
@@ -103,6 +137,15 @@ export async function askSentinel(opts: AskOptions): Promise<AskResult> {
       } else if (event === 'done' && isDone(parsed)) {
         usage = parsed.usage;
         model = parsed.model;
+        if ((parsed as { compliance_filtered?: boolean }).compliance_filtered) {
+          complianceFiltered = true;
+        }
+      } else if (event === 'refusal' && isRefusal(parsed)) {
+        refusal = parsed;
+        complianceFiltered = true;
+      } else if (event === 'forbidden_token' && isForbiddenToken(parsed)) {
+        forbidden = parsed;
+        complianceFiltered = true;
       } else if (event === 'error' && isError(parsed)) {
         terminalError = parsed.message;
       }
@@ -110,7 +153,14 @@ export async function askSentinel(opts: AskOptions): Promise<AskResult> {
   }
 
   if (terminalError) throw new Error(terminalError);
-  return { text: finalText, usage, model };
+  return {
+    text: finalText,
+    usage,
+    model,
+    refusal,
+    forbidden_token: forbidden,
+    compliance_filtered: complianceFiltered || undefined,
+  };
 }
 
 function isDelta(x: unknown): x is { text: string } {
@@ -124,5 +174,33 @@ function isDone(x: unknown): x is { usage?: unknown; model?: string } {
 function isError(x: unknown): x is { message: string } {
   return (
     typeof x === 'object' && x !== null && typeof (x as { message?: unknown }).message === 'string'
+  );
+}
+
+const REFUSAL_CATEGORIES = new Set<RefusalCategory>([
+  'prescriptive',
+  'guarantee',
+  'jailbreak',
+  'personal_advice',
+  'signal_request',
+]);
+
+function isRefusal(x: unknown): x is RefusalInfo {
+  if (typeof x !== 'object' || x === null) return false;
+  const o = x as Partial<RefusalInfo>;
+  return (
+    typeof o.category === 'string' &&
+    REFUSAL_CATEGORIES.has(o.category as RefusalCategory) &&
+    (o.language === 'fr' || o.language === 'en')
+  );
+}
+
+function isForbiddenToken(x: unknown): x is ForbiddenTokenInfo {
+  if (typeof x !== 'object' || x === null) return false;
+  const o = x as Partial<ForbiddenTokenInfo>;
+  return (
+    typeof o.token === 'string' &&
+    typeof o.safe_fallback === 'string' &&
+    (o.language === 'fr' || o.language === 'en')
   );
 }
