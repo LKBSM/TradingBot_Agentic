@@ -26,6 +26,14 @@ interface Tier {
  * Cap volontaire 50 abonnés (bootstrap legal) → mention "Early Access".
  * Refund 30 j + annulation 1 clic = défense MiFID II / UE 2024/2811.
  */
+// Quotas chatbot arbitrés 2026-05-28 (lock 1.A) : 5 / 30 / illimité.
+// Le chatbot est le pilier de valeur — sa disponibilité est gradée par tier
+// au lieu d'être uniformément « illimité dès 9 € » comme dans l'itération V1.
+//
+// Décomposition 8 composantes (lock 2.A) : la visualisation waterfall reste
+// premium au tier Intégrale, MAIS l'information est accessible à tous les
+// tiers via le chatbot (sur demande). C'est mentionné explicitement dans
+// les features Découverte et Approfondie.
 const TIERS: ReadonlyArray<Tier> = [
   {
     id: 'free',
@@ -36,7 +44,8 @@ const TIERS: ReadonlyArray<Tier> = [
     features: [
       '1 lecture XAU M15 par jour',
       'Verdict + jauge de conviction',
-      '3 questions chatbot par jour',
+      '5 questions chatbot par jour',
+      'Décomposition du score sur demande (via chatbot)',
       'Posture éducative, sans signaux',
     ],
     cta: 'Commencer',
@@ -50,7 +59,8 @@ const TIERS: ReadonlyArray<Tier> = [
     features: [
       'XAU + EUR · M15 / H1',
       'Sections collapsibles complètes',
-      'Chatbot illimité',
+      '30 questions chatbot par jour',
+      'Décomposition du score sur demande (via chatbot)',
       'Bannière event ≤ 4 h',
       'Annulation en un clic',
     ],
@@ -65,7 +75,8 @@ const TIERS: ReadonlyArray<Tier> = [
     pitch: 'Tout l’outil pour les power-users SMC + macro.',
     features: [
       'Tout Approfondie',
-      'Décomposition 8 composantes (waterfall)',
+      'Chatbot illimité',
+      'Waterfall 8 composantes (visualisation directe)',
       'Visualisation conformelle + sources RAG',
       'Historique 50 lectures + PnL paper individuel',
       'Accès anticipé futures fonctionnalités',
