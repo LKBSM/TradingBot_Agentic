@@ -7,6 +7,7 @@ import '../globals.css';
 import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
 import { SkipLink } from '@/components/a11y/SkipLink';
+import { PlausibleScript } from '@/components/analytics/PlausibleScript';
 import { ChatPanel } from '@/components/chat/ChatPanel';
 import { ChatProvider } from '@/components/chat/ChatProvider';
 import { CookieBanner } from '@/components/compliance/CookieBanner';
@@ -102,6 +103,7 @@ export default async function LocaleLayout({
     <html lang={locale} className={inter.variable} suppressHydrationWarning>
       <body className="min-h-screen bg-background font-sans antialiased">
         <SkipLink />
+        <PlausibleScript />
         <JsonLd data={softwareApplicationLd} />
         <ThemeProvider
           attribute="class"

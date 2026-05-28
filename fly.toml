@@ -1,0 +1,65 @@
+# DG-022 — Fly.io deployment manifest for M.I.A. Markets backend.
+#
+# Region : cdg (Paris) — closest to the EU-first launch jurisdictions
+# (FR + BE + CH + LU + UK + IE) per the legal bootstrap strategy.
+# Add additional regions only when latency p95 from a target market
+# crosses 300 ms (LBL only). US region intentionally excluded
+# pre-Phase-2 (legal posture).
+#
+# Operator deploy:
+#   $ fly launch --copy-config --name mia-markets-api --region cdg
+#   $ fly secrets set ANTHROPIC_API_KEY=... (see docs/governance/vague1_execution/configurations/fly_secrets.md)
+#   $ fly deploy
+#
+# DNS: point api.mia.markets → mia-markets-api.fly.dev via CNAME at the
+# registrar, then `fly certs create api.mia.markets`.
+
+app = "mia-markets-api"
+primary_region = "cdg"
+kill_signal = "SIGINT"
+kill_timeout = 30
+
+[build]
+  dockerfile = "infrastructure/Dockerfile"
+
+[env]
+  # NB: SECRET values go via `fly secrets set`, not here.
+  ENVIRONMENT = "prod"
+  LOG_FORMAT = "json"
+  LOG_LEVEL = "INFO"
+  # Compliance defaults — fail-closed.
+  SENTINEL_TESTING_MODE = "0"
+  ADMIN_NONCE_REQUIRED = "on"
+  DATA_QUALITY_STRICT = "on"
+  # Pricing tier default (per pivot 2026-05-27 cap 50 abonnés).
+  STRIPE_LIVE = "false"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "10s"
+    method = "GET"
+    path = "/health"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
+  cpu_kind = "shared"
+  cpus = 1
+
+[deploy]
+  strategy = "rolling"
+  release_command = "python -m scripts.migrate_db"
+
+# Filesystem mounts — none required at V1 (SignalStore + UserTierManager
+# write to SQLite in /app/data which is ephemeral per machine; we accept
+# the loss profile because the data is reconstructible from the source
+# of truth pipeline). Phase-2: add a volume for /app/data.
