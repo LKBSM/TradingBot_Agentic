@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 test.describe('Sections collapsibles — golden paths', () => {
   test('clicking the structure trigger reveals SMC fields', async ({ page }) => {
-    await page.goto('/#demo');
+    await page.goto('/#multi-marche');
     // First card's Structure trigger (using role+name).
     const structureTrigger = page
       .getByRole('button', { name: /Structure de marché/i })
@@ -14,7 +14,7 @@ test.describe('Sections collapsibles — golden paths', () => {
   });
 
   test('clicking the regime trigger reveals HMM + BOCPD info', async ({ page }) => {
-    await page.goto('/#demo');
+    await page.goto('/#multi-marche');
     const regimeTrigger = page
       .getByRole('button', { name: /Régime de marché/i })
       .first();
@@ -24,7 +24,7 @@ test.describe('Sections collapsibles — golden paths', () => {
   });
 
   test('expert section shows STRATEGIST badge and waterfall on click', async ({ page }) => {
-    await page.goto('/#demo');
+    await page.goto('/#multi-marche');
     const expertTrigger = page
       .getByRole('button', { name: /Détail expert/i })
       .first();

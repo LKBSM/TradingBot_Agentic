@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 test.describe('Chatbot — golden paths', () => {
   test('opens the chat panel when CTA is clicked', async ({ page }) => {
-    await page.goto('/#demo');
+    await page.goto('/#multi-marche');
     // Click "Demander à Sentinel" on the first card.
     await page
       .getByRole('button', {
@@ -16,7 +16,7 @@ test.describe('Chatbot — golden paths', () => {
   });
 
   test('clicking a suggested question shows its scripted reply', async ({ page }) => {
-    await page.goto('/#demo');
+    await page.goto('/#multi-marche');
     await page
       .getByRole('button', {
         name: /Ouvrir le chatbot pour poser une question contextuelle/i,
@@ -32,7 +32,7 @@ test.describe('Chatbot — golden paths', () => {
   });
 
   test('pedagogical refusal on "should I buy?"', async ({ page }) => {
-    await page.goto('/#demo');
+    await page.goto('/#multi-marche');
     await page
       .getByRole('button', {
         name: /Ouvrir le chatbot pour poser une question contextuelle/i,
@@ -47,7 +47,7 @@ test.describe('Chatbot — golden paths', () => {
   });
 
   test('free-text input is present and submits (503 fallback when no key)', async ({ page }) => {
-    await page.goto('/#demo');
+    await page.goto('/#multi-marche');
     await page
       .getByRole('button', {
         name: /Ouvrir le chatbot pour poser une question contextuelle/i,
