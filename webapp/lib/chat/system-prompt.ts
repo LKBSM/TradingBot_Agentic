@@ -26,6 +26,10 @@ Le produit MIA Markets est un INDICATEUR éducatif — pas un service de recomma
 
 3. **Mention systématique de l'incertitude** : quand tu cites une probabilité ou une statistique historique, mentionne l'intervalle de confiance (IC 95 %), la marge d'erreur conformelle, ou que la performance passée ne garantit pas la performance future.
 
+   *Comment expliquer un intervalle conformel (Gibbs-Candès / ACI)* : "La conviction affichée à X repose sur un intervalle conformel [lo–hi] à 90 %. Cela veut dire que sur les setups historiques similaires, la conviction réelle est tombée dans cet intervalle dans environ 90 % des cas. Plus l'intervalle est large, moins le modèle est sûr du score ponctuel."
+
+   *Comment expliquer le profit factor + IC95 bootstrap* : "Sur N setups similaires (fenêtre F), le profit factor observé est PF, avec un intervalle de confiance bootstrap à 95 % de [lo–hi]. Si la borne basse est ≤ 1, on ne peut pas dire que le système a un avantage prouvé sur l'échantillon — c'est compatible avec du hasard."
+
 4. **edge_claim=false** : MIA Markets ne revendique pas d'edge prouvé tant que les critères empiriques (PF > 1.20 sur 12 mois rolling, DSR > 1.0, PBO < 0.5, walk-forward 2+ ans hors-sample) ne sont pas franchis. Tu peux décrire l'historique observé, jamais le présenter comme une promesse de performance.
 
 5. **Démonstration paper-trading** : l'utilisateur regarde une démonstration éducative, pas un track-record live commercialisé. Mentionne-le si la question implique un engagement réel.
@@ -49,14 +53,44 @@ Le produit MIA Markets est un INDICATEUR éducatif — pas un service de recomma
 Tu commences directement par la réponse, sans préambule du type "Bonjour" ou "Voici ma réponse :".`;
 
 /**
- * Lightweight model tiering. V1 ships Haiku-only (cheap, fast, ~$0.0003 per
- * answer at typical context size + 300-token response). The cascade by client
- * tier will be re-enabled when auth + Stripe land (V3) and we can route
- * FREE/Analyst → Haiku, Strategist → Sonnet, Institutional → Opus.
+ * DG-042 — NARRATIVE_MODE tier-routed model selection.
+ *
+ * Tier → model map:
+ *   FREE          → Haiku 4.5  (cheap, fast, narrative-only)
+ *   STARTER       → Haiku 4.5  (same model, tier-gated rate-limit upstream)
+ *   PRO           → Sonnet 4.6 (richer reasoning + multi-turn coherence)
+ *   INSTITUTIONAL → Opus 4.7   (deepest reasoning for complex questions)
+ *
+ * The route reads the subscriber tier from the request (Stripe sub or auth
+ * cookie). When no tier info is available, falls back to Haiku as the
+ * cost-safe default.
  */
 export type SentinelModel =
   | 'claude-haiku-4-5-20251001'
   | 'claude-sonnet-4-6'
   | 'claude-opus-4-7';
 
+export type SentinelTier = 'FREE' | 'STARTER' | 'PRO' | 'INSTITUTIONAL';
+
+const TIER_MODEL_MAP: Record<SentinelTier, SentinelModel> = {
+  FREE: 'claude-haiku-4-5-20251001',
+  STARTER: 'claude-haiku-4-5-20251001',
+  PRO: 'claude-sonnet-4-6',
+  INSTITUTIONAL: 'claude-opus-4-7',
+};
+
 export const DEFAULT_MODEL: SentinelModel = 'claude-haiku-4-5-20251001';
+export const DEFAULT_TIER: SentinelTier = 'FREE';
+
+/**
+ * Resolve the model for a given tier string. Unknown or missing tiers
+ * fall back to ``DEFAULT_MODEL`` (cost-safe).
+ */
+export function modelForTier(tier: string | null | undefined): SentinelModel {
+  if (!tier) return DEFAULT_MODEL;
+  const upper = tier.toUpperCase();
+  if (upper in TIER_MODEL_MAP) {
+    return TIER_MODEL_MAP[upper as SentinelTier];
+  }
+  return DEFAULT_MODEL;
+}

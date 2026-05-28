@@ -28,6 +28,7 @@ recommendation, no probability claim, no edge claim).
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from typing import Optional
 
@@ -122,15 +123,39 @@ BUCKETS: list[BucketLabel] = [
 
 # These tokens must NEVER appear in a generated narrative regardless
 # of bucket — they would convert an educational analysis into an
-# unauthorised personalised recommendation under UE 2024/2811.
-FORBIDDEN_TOKENS_FR = (
-    "achetez", "vendez", "achète", "vends", "garanti", "100% sûr",
-    "edge prouvé", "signal d'achat", "signal de vente",
+# unauthorised personalised recommendation under UE 2024/2811 +
+# MiFID II finfluencer durcissement (mars 2026).
+#
+# Two forms are kept side by side:
+# - "phrase" forms (multi-word) are matched as substrings — they only
+#   appear in prescriptive contexts;
+# - "word" forms are matched on word boundaries so they don't trigger
+#   on legitimate prose ("buy" in "buyer", "vente" in "événement").
+FORBIDDEN_TOKENS_FR_WORDS = (
+    "achetez", "vendez", "achète", "vends", "garanti", "garantie",
+    "garanties", "tp", "sl",
 )
-FORBIDDEN_TOKENS_EN = (
-    "buy", "sell", "guaranteed", "100% sure", "proven edge",
-    "buy signal", "sell signal",
+FORBIDDEN_TOKENS_FR_PHRASES = (
+    "100% sûr", "100 % sûr", "edge prouvé", "edge prouvee",
+    "signal d'achat", "signal de vente", "signal d'entrée",
+    "stop-loss recommandé", "stop loss recommandé",
+    "objectif de prix", "profit garanti", "opportunité à saisir",
+    "ouvrez une position", "fermez votre position",
 )
+FORBIDDEN_TOKENS_EN_WORDS = (
+    "buy", "sell", "guaranteed", "tp", "sl",
+)
+FORBIDDEN_TOKENS_EN_PHRASES = (
+    "100% sure", "100 % sure", "proven edge", "buy signal",
+    "sell signal", "entry signal", "recommended stop-loss",
+    "recommended stop loss", "price target", "guaranteed profit",
+    "opportunity to seize", "open a long", "open a short",
+    "close your position",
+)
+
+# Backwards-compatible aliases — older callers import the flat tuple.
+FORBIDDEN_TOKENS_FR = FORBIDDEN_TOKENS_FR_WORDS + FORBIDDEN_TOKENS_FR_PHRASES
+FORBIDDEN_TOKENS_EN = FORBIDDEN_TOKENS_EN_WORDS + FORBIDDEN_TOKENS_EN_PHRASES
 
 
 def bucket_for(score: float) -> BucketLabel:
@@ -166,16 +191,25 @@ def narrative_for(
 def contains_forbidden_token(text: str, *, language: str = "fr") -> Optional[str]:
     """Return the first forbidden token found in ``text`` or None.
 
-    Use case: post-generation check that an LLM didn't slip a
-    "achetez" past us.
+    Words are matched on word boundaries so legitimate prose ("buyer",
+    "événement", "vente aux enchères") doesn't trigger; multi-word
+    phrases keep substring semantics because they only appear in
+    prescriptive contexts.
     """
     if not text:
         return None
     lowered = text.lower()
-    tokens = FORBIDDEN_TOKENS_FR if language.lower().startswith("fr") else FORBIDDEN_TOKENS_EN
-    for tok in tokens:
-        if tok in lowered:
-            return tok
+    is_fr = language.lower().startswith("fr")
+    words = FORBIDDEN_TOKENS_FR_WORDS if is_fr else FORBIDDEN_TOKENS_EN_WORDS
+    phrases = FORBIDDEN_TOKENS_FR_PHRASES if is_fr else FORBIDDEN_TOKENS_EN_PHRASES
+    for phr in phrases:
+        if phr in lowered:
+            return phr
+    for w in words:
+        # ``\b`` in re uses Unicode word semantics under re.UNICODE (default
+        # on Python 3) so this handles "achète"/"vendez" correctly.
+        if re.search(rf"\b{re.escape(w)}\b", lowered):
+            return w
     return None
 
 

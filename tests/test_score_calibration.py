@@ -95,7 +95,35 @@ def test_forbidden_token_detector_catches_french_buy():
 
 
 def test_forbidden_token_detector_catches_english_buy():
-    assert contains_forbidden_token("This is a clear BUY signal.", language="en") == "buy"
+    # Phrases are matched before bare words — the more specific match
+    # is more useful to the operator audit (DG-112 reporting).
+    assert contains_forbidden_token("This is a clear BUY signal.", language="en") == "buy signal"
+
+
+def test_forbidden_token_detector_catches_isolated_word_with_boundary():
+    """Bare 'buy' without trailing 'signal' must still trip the gate."""
+    assert contains_forbidden_token("You should buy now.", language="en") == "buy"
+
+
+def test_forbidden_token_detector_ignores_substring_inside_word():
+    """The word-boundary mode must not flag 'buyer' or 'sellable' as 'buy'/'sell'."""
+    assert contains_forbidden_token("The buyer's market.", language="en") is None
+    assert contains_forbidden_token("This is sellable.", language="en") is None
+
+
+def test_forbidden_token_detector_ignores_event_with_vente_substring():
+    """'événement' does not contain a forbidden French word."""
+    assert contains_forbidden_token("Un événement à venir.", language="fr") is None
+
+
+def test_forbidden_token_detector_catches_tp_sl_acronyms():
+    assert contains_forbidden_token("Place ton TP à 2400 et ton SL à 2340.", language="fr") in ("tp", "sl")
+    assert contains_forbidden_token("Set the TP at 2400.", language="en") == "tp"
+
+
+def test_forbidden_token_detector_catches_extended_phrases():
+    assert contains_forbidden_token("Une opportunité à saisir maintenant.", language="fr") == "opportunité à saisir"
+    assert contains_forbidden_token("This is a guaranteed profit.", language="en") == "guaranteed profit"
 
 
 def test_forbidden_token_detector_catches_guarantee():
