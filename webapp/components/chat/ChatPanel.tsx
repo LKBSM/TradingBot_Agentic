@@ -13,6 +13,7 @@ import {
 import { ChatInput } from './ChatInput';
 import { ChatMessage } from './ChatMessage';
 import { useChat } from './ChatProvider';
+import { DynamicSuggestedQuestions } from './DynamicSuggestedQuestions';
 import { SuggestedQuestions } from './SuggestedQuestions';
 import { FALLBACK_SCRIPT, getChatbotScript } from '@/lib/chatbot';
 import {
@@ -42,6 +43,7 @@ export function ChatPanel() {
     apiAvailable,
     close,
     appendExchange,
+    askFreeForm,
     resetTurns,
   } = useChat();
   const scrollRef = React.useRef<HTMLDivElement>(null);
@@ -142,6 +144,15 @@ export function ChatPanel() {
         </div>
 
         <div className="space-y-3 border-t bg-background px-5 py-4">
+          {activeSignal && apiAvailable !== false ? (
+            <DynamicSuggestedQuestions
+              signal={activeSignal}
+              onAsk={(q) => {
+                void askFreeForm(q);
+              }}
+              disabled={isStreaming}
+            />
+          ) : null}
           <SuggestedQuestions
             questions={script.questions}
             consumedIds={consumedIds}
