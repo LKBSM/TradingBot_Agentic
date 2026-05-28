@@ -4,6 +4,7 @@ import {
   DEFAULT_MODEL,
   SENTINEL_SYSTEM_PROMPT,
   modelForTier,
+  type SentinelTier,
 } from '@/lib/chat/system-prompt';
 import { buildSignalSummary } from '@/lib/chat/signal-summary';
 import {
@@ -25,9 +26,11 @@ interface ChatRequest {
   /**
    * Subscriber tier for DG-042 model routing. When omitted, defaults to
    * cost-safe Haiku. Resolved from auth/Stripe in V3; for now the client
-   * surfaces whatever is known.
+   * surfaces whatever is known. Accepts the public V1 tier names
+   * (Découverte/Approfondie/Intégrale) and the legacy aliases — see
+   * ``system-prompt.ts::TIER_ALIASES``.
    */
-  tier?: 'FREE' | 'STARTER' | 'PRO' | 'INSTITUTIONAL';
+  tier?: string;
 }
 
 // Hard limit on user-supplied question length — protects against abuse + caps
@@ -158,7 +161,12 @@ export async function POST(req: NextRequest) {
       };
 
       try {
-        const selectedModel = modelForTier(payload.tier);
+        // DG-042 — pass question + history length so the Intégrale tier
+        // can be upgraded to Sonnet on score-decomposition or long-conv.
+        const selectedModel = modelForTier(payload.tier, {
+          question: payload.question,
+          historyTurns: trimmedHistory.length,
+        });
         const streamResponse = await client.messages.stream({
           model: selectedModel,
           max_tokens: 1024,

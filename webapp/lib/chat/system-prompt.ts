@@ -53,44 +53,127 @@ Le produit MIA Markets est un INDICATEUR éducatif — pas un service de recomma
 Tu commences directement par la réponse, sans préambule du type "Bonjour" ou "Voici ma réponse :".`;
 
 /**
- * DG-042 — NARRATIVE_MODE tier-routed model selection.
+ * DG-042 — NARRATIVE_MODE tier-routed model selection (révision 2026-05-28
+ * post-pivot positioning 2026-05-27).
  *
- * Tier → model map:
- *   FREE          → Haiku 4.5  (cheap, fast, narrative-only)
- *   STARTER       → Haiku 4.5  (same model, tier-gated rate-limit upstream)
- *   PRO           → Sonnet 4.6 (richer reasoning + multi-turn coherence)
- *   INSTITUTIONAL → Opus 4.7   (deepest reasoning for complex questions)
+ * Grille pricing publique V1 (3 tiers, INSTITUTIONAL retiré → Calendly) :
  *
- * The route reads the subscriber tier from the request (Stripe sub or auth
- * cookie). When no tier info is available, falls back to Haiku as the
- * cost-safe default.
+ *   Découverte  (gratuit) → Haiku 4.5
+ *   Approfondie (9 €/mo)  → Haiku 4.5
+ *   Intégrale   (19 €/mo) → Haiku 4.5 par défaut, Sonnet 4.6 sur uplift
+ *
+ * Inactif V1 (gardé en commentaire pour activation future B2B) :
+ *
+ *   // Institutional (Calendly) → Opus 4.7
+ *
+ * Pourquoi Haiku par défaut sur les 3 tiers : Haiku tient bien sur le
+ * narratif court conditionné par un signal_summary structuré (~2840
+ * tokens de context). La différence Sonnet/Opus ne devient visible que
+ * sur les chaînes de raisonnement longues. Payer Sonnet 5×Haiku sur
+ * toutes les requêtes Intégrale ferait exploser la marge.
+ *
+ * Pourquoi un uplift Sonnet conditionnel sur Intégrale uniquement :
+ * deux situations bénéficient nettement de la capacité Sonnet :
+ *
+ *  1. Décomposition de score (waterfall des 8 composantes argumentée).
+ *     Détection lexicale via ``requiresSonnetUplift`` : la question
+ *     contient un trigger ("pourquoi", "décompose", "explique le score",
+ *     "breakdown", etc.). Sonnet sait tenir une chaîne argumentaire de
+ *     7-8 étapes sans dériver — Haiku rate ~15 % du temps sur ce type.
+ *
+ *  2. Conversation longue (cohérence multi-turn). Dès que l'historique
+ *     dépasse 3 turns, on bascule Sonnet pour préserver la cohérence
+ *     contextuelle. Haiku tend à oublier les contraintes établies tôt
+ *     dans la session.
+ *
+ * Les deux triggers sont gratuits à évaluer (regex + count) et ne
+ * laissent pas fuiter de signal personnel — pas de profilage.
  */
 export type SentinelModel =
   | 'claude-haiku-4-5-20251001'
   | 'claude-sonnet-4-6'
   | 'claude-opus-4-7';
 
-export type SentinelTier = 'FREE' | 'STARTER' | 'PRO' | 'INSTITUTIONAL';
+/** Public V1 tier identifiers. Use the canonical lowercase form. */
+export type SentinelTier = 'decouverte' | 'approfondie' | 'integrale';
 
-const TIER_MODEL_MAP: Record<SentinelTier, SentinelModel> = {
-  FREE: 'claude-haiku-4-5-20251001',
-  STARTER: 'claude-haiku-4-5-20251001',
-  PRO: 'claude-sonnet-4-6',
-  INSTITUTIONAL: 'claude-opus-4-7',
+/** Aliases — legacy / Stripe metadata strings the route may receive. */
+const TIER_ALIASES: Record<string, SentinelTier> = {
+  // Public canonical
+  decouverte: 'decouverte',
+  approfondie: 'approfondie',
+  integrale: 'integrale',
+  // Legacy English names from earlier auth/tier_manager schemas
+  free: 'decouverte',
+  starter: 'approfondie',
+  pro: 'integrale',
+  // INSTITUTIONAL is INTENTIONALLY NOT mapped here — public V1 grid no
+  // longer surfaces it (post-pivot 2026-05-27). B2B access is via
+  // Calendly and uses a dedicated server-side router (not this map).
+};
+
+const TIER_BASE_MODEL: Record<SentinelTier, SentinelModel> = {
+  decouverte: 'claude-haiku-4-5-20251001',
+  approfondie: 'claude-haiku-4-5-20251001',
+  integrale: 'claude-haiku-4-5-20251001',
 };
 
 export const DEFAULT_MODEL: SentinelModel = 'claude-haiku-4-5-20251001';
-export const DEFAULT_TIER: SentinelTier = 'FREE';
+export const DEFAULT_TIER: SentinelTier = 'decouverte';
+
+// ───────────────────────────────────────────────────────────────────────────
+// Commented out: future B2B Institutional path (Calendly-gated).
+// When re-enabled, route through a server-side proxy that re-checks the
+// Calendly-issued JWT before applying this mapping.
+//
+//   const TIER_INSTITUTIONAL_MODEL: SentinelModel = 'claude-opus-4-7';
+//
+// ───────────────────────────────────────────────────────────────────────────
+
+/** Trigger lexicon for the Haiku→Sonnet uplift (Intégrale tier only). */
+const SCORE_DECOMP_RE =
+  /\b(?:pourquoi|décompose|decompose|explique\s+(?:le|la|ce)\s+(?:score|conviction|note)|breakdown|décomposition|repartition)/i;
+
+/** History-length threshold for the cohérence multi-turn uplift. */
+const HISTORY_UPLIFT_TURNS = 3;
+
+export interface ModelSelectionContext {
+  /** Free-form user question text — used for the lexical uplift trigger. */
+  question?: string;
+  /** Count of prior user/assistant turns (excludes the current one). */
+  historyTurns?: number;
+}
+
+function normaliseTier(raw: string | null | undefined): SentinelTier | null {
+  if (!raw) return null;
+  const lower = raw.toLowerCase().trim();
+  return TIER_ALIASES[lower] ?? null;
+}
+
+export function requiresSonnetUplift(ctx: ModelSelectionContext): boolean {
+  const q = ctx.question ?? '';
+  const turns = ctx.historyTurns ?? 0;
+  if (turns > HISTORY_UPLIFT_TURNS) return true;
+  if (SCORE_DECOMP_RE.test(q)) return true;
+  return false;
+}
 
 /**
- * Resolve the model for a given tier string. Unknown or missing tiers
- * fall back to ``DEFAULT_MODEL`` (cost-safe).
+ * Resolve the LLM model for a given subscriber tier + request context.
+ *
+ * Unknown / missing tiers fall back to ``DEFAULT_MODEL`` (Haiku — cost
+ * safe). Intégrale tier may get a Sonnet uplift when the question or
+ * conversation length triggers it. See module header for the rationale.
  */
-export function modelForTier(tier: string | null | undefined): SentinelModel {
-  if (!tier) return DEFAULT_MODEL;
-  const upper = tier.toUpperCase();
-  if (upper in TIER_MODEL_MAP) {
-    return TIER_MODEL_MAP[upper as SentinelTier];
+export function modelForTier(
+  tier: string | null | undefined,
+  ctx: ModelSelectionContext = {},
+): SentinelModel {
+  const canonical = normaliseTier(tier);
+  if (!canonical) return DEFAULT_MODEL;
+  const base = TIER_BASE_MODEL[canonical];
+  if (canonical === 'integrale' && requiresSonnetUplift(ctx)) {
+    return 'claude-sonnet-4-6';
   }
-  return DEFAULT_MODEL;
+  return base;
 }
