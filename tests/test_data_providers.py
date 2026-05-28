@@ -28,15 +28,24 @@ from src.intelligence.main import _NullAgent, build_system
 # =============================================================================
 
 def _write_csv(tmpdir: Path, filename: str, n_bars: int = 500) -> Path:
-    """Write a synthetic OHLCV CSV file."""
+    """Write a synthetic OHLCV CSV file.
+
+    Respects the OHLC invariant ``Low <= min(Open, Close) <= max(Open, Close) <= High``
+    so the boot-time data-quality gate (DG-053) does not reject the fixture.
+    """
     rng = np.random.RandomState(42)
     ts = pd.date_range("2024-01-01", periods=n_bars, freq="15min")
     close = 2000.0 + np.cumsum(rng.randn(n_bars) * 0.5)
+    open_ = close + rng.randn(n_bars) * 0.3
+    body_hi = np.maximum(open_, close)
+    body_lo = np.minimum(open_, close)
+    high = body_hi + rng.uniform(0.5, 3.0, n_bars)
+    low = body_lo - rng.uniform(0.5, 3.0, n_bars)
     df = pd.DataFrame({
         "timestamp": ts,
-        "Open": close + rng.randn(n_bars) * 0.3,
-        "High": close + rng.uniform(0.5, 3.0, n_bars),
-        "Low": close - rng.uniform(0.5, 3.0, n_bars),
+        "Open": open_,
+        "High": high,
+        "Low": low,
         "Close": close,
         "Volume": rng.uniform(100, 10000, n_bars),
     })
