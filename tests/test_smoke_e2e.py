@@ -23,15 +23,21 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 
 def _make_ohlcv(n_bars: int = 300, symbol: str = "XAUUSD") -> pd.DataFrame:
-    """Generate synthetic OHLCV data resembling Gold M15."""
+    """Generate synthetic OHLCV data resembling Gold M15.
+
+    Respects the OHLC invariant ``Low <= min(Open, Close) <= max(Open, Close) <= High``
+    so the boot-time data-quality gate (DG-053) does not reject the fixture.
+    """
     np.random.seed(42)
     base_price = 2000.0
     returns = np.random.normal(0.0001, 0.002, n_bars)
     closes = base_price * np.exp(np.cumsum(returns))
-    highs = closes * (1 + np.abs(np.random.normal(0, 0.001, n_bars)))
-    lows = closes * (1 - np.abs(np.random.normal(0, 0.001, n_bars)))
     opens = (closes + np.roll(closes, 1)) / 2
     opens[0] = base_price
+    body_hi = np.maximum(opens, closes)
+    body_lo = np.minimum(opens, closes)
+    highs = body_hi * (1 + np.abs(np.random.normal(0, 0.001, n_bars)))
+    lows = body_lo * (1 - np.abs(np.random.normal(0, 0.001, n_bars)))
     volumes = np.random.lognormal(10, 0.5, n_bars)
 
     idx = pd.date_range("2024-01-01", periods=n_bars, freq="15min")
@@ -53,7 +59,9 @@ class TestSmokeEndToEnd(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             df = _make_ohlcv(300)
             csv_path = os.path.join(tmpdir, "XAUUSD_M15.csv")
-            df.to_csv(csv_path)
+            # Label the index column so the CSVDataProvider can restore
+            # the DatetimeIndex on read — the data-quality gate requires it.
+            df.to_csv(csv_path, index_label="timestamp")
 
             signal_db = os.path.join(tmpdir, "signals.db")
 
@@ -136,6 +144,7 @@ class TestSmokeEndToEnd(unittest.TestCase):
 
     def test_api_health_endpoint_in_testing_mode(self):
         """Health endpoint returns 200 with testing_mode=True."""
+        from unittest.mock import patch
         from fastapi.testclient import TestClient
         from src.api.app import create_app
         from src.api.signal_store import SignalStore
@@ -146,7 +155,13 @@ class TestSmokeEndToEnd(unittest.TestCase):
             app = create_app(signal_store=store)
             client = TestClient(app)
 
-            resp = client.get("/health")
+            # TESTING_MODE is evaluated at auth.py import time. conftest.py
+            # imports auth before this file's top-level os.environ assignment
+            # is honoured, so we patch the runtime value directly to keep this
+            # test independent of import order. (Sprint 1.2 changed the default
+            # from "1" to "0" — fail-closed.)
+            with patch("src.api.routes.health.TESTING_MODE", True):
+                resp = client.get("/health")
             self.assertEqual(resp.status_code, 200)
             body = resp.json()
             self.assertIn("status", body)
@@ -154,6 +169,7 @@ class TestSmokeEndToEnd(unittest.TestCase):
 
     def test_api_narratives_no_auth_in_testing_mode(self):
         """Narrative endpoints accessible without API key in testing mode."""
+        from unittest.mock import patch
         from fastapi.testclient import TestClient
         from src.api.app import create_app
         from src.api.signal_store import SignalStore
@@ -164,12 +180,17 @@ class TestSmokeEndToEnd(unittest.TestCase):
             app = create_app(signal_store=store)
             client = TestClient(app)
 
-            # Scanner status should work without key
-            resp = client.get("/api/v1/scanner/status")
+            # See note in test_api_health_endpoint_in_testing_mode — patch
+            # TESTING_MODE explicitly because auth.py was imported before the
+            # top-of-file env var assignment took effect.
+            with patch("src.api.auth.TESTING_MODE", True):
+                # Scanner status should work without key
+                resp = client.get("/api/v1/scanner/status")
             self.assertEqual(resp.status_code, 200)
 
     def test_api_chat_accessible_in_testing_mode(self):
         """Chat endpoint returns 404 (signal not found) not 403 (tier blocked)."""
+        from unittest.mock import patch
         from fastapi.testclient import TestClient
         from src.api.app import create_app
         from src.api.signal_store import SignalStore
@@ -180,10 +201,12 @@ class TestSmokeEndToEnd(unittest.TestCase):
             app = create_app(signal_store=store)
             client = TestClient(app)
 
-            resp = client.post(
-                "/api/v1/narratives/chat",
-                json={"signal_id": "abcdef12", "question": "What is the risk?"},
-            )
+            # Patch TESTING_MODE — see note above re: import order.
+            with patch("src.api.auth.TESTING_MODE", True):
+                resp = client.post(
+                    "/api/v1/narratives/chat",
+                    json={"signal_id": "abcdef12", "question": "What is the risk?"},
+                )
             # Should NOT be 403 (tier-blocked) — testing mode bypasses tier check
             # Will be 404 (signal not found) since the DB is empty
             self.assertNotEqual(resp.status_code, 403)

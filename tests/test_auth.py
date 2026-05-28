@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac as hmac_mod
+import secrets
 import time
 from unittest.mock import patch
 
@@ -58,11 +59,22 @@ class FakeHMACManager:
         return hmac_mod.compare_digest(expected, signature)
 
 
-def _admin_headers(hmac_mgr: FakeHMACManager) -> dict:
-    """Build valid admin headers."""
+_ADMIN_NONCE_COUNTER = 0
+
+
+def _admin_headers(hmac_mgr: FakeHMACManager, path: str = "/api/v1/admin/keys") -> dict:
+    """Build valid admin headers with DG-055 nonce + path-bound HMAC."""
+    global _ADMIN_NONCE_COUNTER
+    _ADMIN_NONCE_COUNTER += 1
     ts = str(time.time())
-    sig = hmac_mgr.sign(ts.encode()).signature
-    return {"X-Admin-Signature": sig, "X-Admin-Timestamp": ts}
+    nonce = f"test-nonce-{_ADMIN_NONCE_COUNTER}-{secrets.token_hex(4)}"
+    canonical = f"{ts}:{nonce}:{path}"
+    sig = hmac_mgr.sign(canonical.encode()).signature
+    return {
+        "X-Admin-Signature": sig,
+        "X-Admin-Timestamp": ts,
+        "X-Admin-Nonce": nonce,
+    }
 
 
 # =============================================================================
@@ -306,7 +318,7 @@ class TestPublicEndpoints:
 
 class TestAdminEndpoints:
     def test_create_key_via_admin(self, authed_client, hmac_mgr):
-        headers = _admin_headers(hmac_mgr)
+        headers = _admin_headers(hmac_mgr, "/api/v1/admin/keys")
         resp = authed_client.post(
             "/api/v1/admin/keys",
             json={"label": "new-sub"},
@@ -319,7 +331,7 @@ class TestAdminEndpoints:
         assert "key_id" in body
 
     def test_revoke_key_via_admin(self, authed_client, hmac_mgr):
-        headers = _admin_headers(hmac_mgr)
+        headers = _admin_headers(hmac_mgr, "/api/v1/admin/keys")
         # Create a key first
         resp = authed_client.post(
             "/api/v1/admin/keys",
@@ -329,9 +341,10 @@ class TestAdminEndpoints:
         key_id = resp.json()["key_id"]
 
         # Revoke it
-        headers = _admin_headers(hmac_mgr)
+        revoke_path = f"/api/v1/admin/keys/{key_id}"
+        headers = _admin_headers(hmac_mgr, revoke_path)
         resp = authed_client.delete(
-            f"/api/v1/admin/keys/{key_id}",
+            revoke_path,
             headers=headers,
         )
         assert resp.status_code == 200
@@ -339,20 +352,20 @@ class TestAdminEndpoints:
 
     def test_list_keys_via_admin(self, authed_client, hmac_mgr):
         # Create two keys
-        headers = _admin_headers(hmac_mgr)
+        headers = _admin_headers(hmac_mgr, "/api/v1/admin/keys")
         authed_client.post(
             "/api/v1/admin/keys",
             json={"label": "key-A"},
             headers=headers,
         )
-        headers = _admin_headers(hmac_mgr)
+        headers = _admin_headers(hmac_mgr, "/api/v1/admin/keys")
         authed_client.post(
             "/api/v1/admin/keys",
             json={"label": "key-B"},
             headers=headers,
         )
 
-        headers = _admin_headers(hmac_mgr)
+        headers = _admin_headers(hmac_mgr, "/api/v1/admin/keys")
         resp = authed_client.get("/api/v1/admin/keys", headers=headers)
         assert resp.status_code == 200
         # At least the 2 we just created (+ possibly fixture key)
@@ -368,9 +381,12 @@ class TestAdminEndpoints:
         # Query usage
         ks = authed_client.app.state.app_state.key_store
         sub = ks.verify_key(api_key)
-        headers = _admin_headers(hmac_mgr)
+        # require_admin matches against request.url.path, not the query
+        # string, so the canonical only needs the path.
+        usage_path = "/api/v1/admin/usage"
+        headers = _admin_headers(hmac_mgr, usage_path)
         resp = authed_client.get(
-            f"/api/v1/admin/usage?key_id={sub['key_id']}&days=1",
+            f"{usage_path}?key_id={sub['key_id']}&days=1",
             headers=headers,
         )
         assert resp.status_code == 200

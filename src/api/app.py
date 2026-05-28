@@ -20,7 +20,7 @@ from src.api.middleware.geo_block import GeoBlockMiddleware
 from src.api.middleware.rate_limit_headers import RateLimitHeadersMiddleware
 from src.api.models import ErrorResponse
 from src.api.openapi_enrichment import install_openapi_enrichment
-from src.api.routes import admin, admin_audit, audit, billing, dashboard, enrich, health, health_deep, insight_history, legal, metrics_latency, narratives, operator, prometheus, qa, signals, state, webapp, webhook_ack
+from src.api.routes import admin, admin_audit, audit, billing, dashboard, enrich, health, health_deep, insight_history, legal, metrics_latency, narratives, operator, prometheus, qa, signals, state, track_record, webapp, webhook_ack
 from src.api.shutdown import GracefulShutdownCoordinator
 from src.api.signal_store import SignalStore
 
@@ -86,6 +86,7 @@ def create_app(
     live_risk_manager: Any = None,
     key_store: Any = None,
     hmac_manager: Any = None,
+    nonce_store: Any = None,
     signal_tracker: Any = None,
     tier_manager: Any = None,
     llm_engine: Any = None,
@@ -125,6 +126,12 @@ def create_app(
         latency_tracker = LatencyTracker()
     if shutdown_coordinator is None:
         shutdown_coordinator = GracefulShutdownCoordinator()
+    # DG-055 — default-instantiate the nonce store so admin HMAC replay
+    # protection is on out of the box; tests and callers may pass their
+    # own (e.g. an SQLite-backed implementation for multi-worker prod).
+    if nonce_store is None:
+        from src.api.nonce_store import NonceStore
+        nonce_store = NonceStore()
 
     app_state = AppState(
         signal_store=signal_store,
@@ -135,6 +142,7 @@ def create_app(
         live_risk_manager=live_risk_manager,
         key_store=key_store,
         hmac_manager=hmac_manager,
+        nonce_store=nonce_store,
         signal_tracker=signal_tracker,
         tier_manager=tier_manager,
         llm_engine=llm_engine,
@@ -340,6 +348,7 @@ def create_app(
     app.include_router(metrics_latency.router)
     app.include_router(webhook_ack.router)
     app.include_router(billing.router)
+    app.include_router(track_record.router)  # DG-142 — public PF + bootstrap CI
     app.include_router(webapp.router)
 
     # API-2B.7 — enrich the OpenAPI spec with stable operationIds,

@@ -111,6 +111,7 @@ def run(args: argparse.Namespace) -> int:
         confirm_bars=args.confirm,
         cooldown_bars=args.cooldown,
         max_signal_age_bars=args.max_age,
+        silent_bars_before_score_exit=args.silent,
     )
 
     # 3. Run replay
@@ -263,6 +264,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--confirm", type=int, default=2)
     p.add_argument("--cooldown", type=int, default=2)
     p.add_argument("--max-age", type=int, default=12)
+    p.add_argument("--silent", type=int, default=2,
+                   help="Bars below exit threshold before score_decayed exit "
+                        "(StateMachineConfig.silent_bars_before_score_exit).")
 
     # Regime toggles
     p.add_argument("--no-regime", action="store_true",

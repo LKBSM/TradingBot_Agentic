@@ -9,8 +9,33 @@ import secrets
 import sqlite3
 import threading
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+
+
+def _subscription_is_expired(expires_raw: str, *, now: Optional[datetime] = None) -> bool:
+    """Return True iff ``expires_raw`` (ISO 8601) is in the past.
+
+    Tolerates both naive and aware timestamps — naive strings are
+    interpreted as UTC, matching how ``tier_manager.create_user``
+    writes ``datetime.now().isoformat()``. Any unparseable value is
+    treated as *not expired* so a malformed write does not lock the
+    user out (the operator audits the row instead).
+    """
+    if not expires_raw:
+        return False
+    try:
+        exp = datetime.fromisoformat(expires_raw)
+    except ValueError:
+        logger.warning("DG-057: unparseable subscription_expires=%r — treating as active", expires_raw)
+        return False
+    cur = now or datetime.now(tz=timezone.utc)
+    if exp.tzinfo is None:
+        exp = exp.replace(tzinfo=timezone.utc)
+    if cur.tzinfo is None:
+        cur = cur.replace(tzinfo=timezone.utc)
+    return exp <= cur
 
 from fastapi import Header, HTTPException, Request
 
@@ -457,9 +482,26 @@ async def require_api_key(
     if tier_manager is not None:
         user = tier_manager.get_user_by_api_key(subscriber["key_id"])
         if user is not None:
+            # DG-057 — subscription_expires was stored on the user row but
+            # never read on the auth path, so a lapsed subscriber kept
+            # paying-tier access indefinitely. Treat an expired timestamp
+            # as a hard 402 (Payment Required) and downgrade tier to FREE
+            # so the request continues only if downstream allows free use.
+            expires_raw = user.get("subscription_expires")
+            if expires_raw and _subscription_is_expired(expires_raw):
+                logger.info(
+                    "DG-057: subscription expired for user_id=%s (key=%s, tier=%s, expired_at=%s)",
+                    user["user_id"], subscriber["key_id"], user["tier"], expires_raw,
+                )
+                raise HTTPException(
+                    status_code=402,
+                    detail="Abonnement expiré — renouvelez pour rétablir l'accès",
+                )
+
             subscriber["user_id"] = user["user_id"]
             subscriber["tier"] = user["tier"]
             subscriber["telegram_chat_id"] = user.get("telegram_chat_id")
+            subscriber["subscription_expires"] = expires_raw
             # Daily quota gate (eval 11 finding: tier_manager.check_rate_limit
             # was implemented but never called — FREE could spend 144 000
             # calls/day via the per-minute KeyStore ceiling). This wires the
@@ -494,12 +536,29 @@ async def require_admin(
     request: Request,
     x_admin_signature: Optional[str] = Header(None),
     x_admin_timestamp: Optional[str] = Header(None),
+    x_admin_nonce: Optional[str] = Header(None),
 ) -> bool:
     """
     FastAPI dependency — validates HMAC-signed admin requests.
 
-    Reads X-Admin-Signature + X-Admin-Timestamp headers.
-    5-minute replay protection window.
+    DG-055 (Sprint 2 sécurité) :
+
+    - 5-minute timestamp window (replay attempts older than 300 s are
+      rejected even if their HMAC is valid).
+    - Per-request single-use nonce stored in ``AppState.nonce_store``.
+      Replaying a captured request inside the 5-min window now fails on
+      the nonce check.
+    - Canonical signed payload = ``"<timestamp>:<nonce>:<path>"`` so a
+      signature captured against one admin route cannot be replayed
+      against another (cross-route replay).
+
+    Backward compatibility
+    ----------------------
+    If ``X-Admin-Nonce`` is missing and ``ADMIN_NONCE_REQUIRED=off`` is
+    explicitly set, fall back to the legacy ``data = timestamp`` HMAC
+    behaviour with a deprecation warning. The default (and Sprint 2
+    target) is to *require* the nonce — admin clients are operator
+    tools and re-signing them is cheap.
     """
     hmac_manager = getattr(request.app.state.app_state, "hmac_manager", None)
 
@@ -509,7 +568,7 @@ async def require_admin(
     if not x_admin_signature or not x_admin_timestamp:
         raise HTTPException(status_code=401, detail="Missing admin signature headers")
 
-    # Replay protection — 5-minute window
+    # Replay protection — 5-minute timestamp window
     try:
         ts = float(x_admin_timestamp)
     except (ValueError, TypeError):
@@ -518,11 +577,38 @@ async def require_admin(
     if abs(time.time() - ts) > 300:
         raise HTTPException(status_code=401, detail="Timestamp expired (5-min window)")
 
-    # Verify HMAC: sign the timestamp bytes
-    data = x_admin_timestamp.encode()
-    is_valid = hmac_manager.verify(data, x_admin_signature)
+    nonce_required = os.environ.get("ADMIN_NONCE_REQUIRED", "on").strip().lower() != "off"
+    if nonce_required and not x_admin_nonce:
+        raise HTTPException(
+            status_code=401, detail="Missing X-Admin-Nonce header",
+        )
 
+    # Build canonical signed payload
+    if x_admin_nonce:
+        path = request.url.path
+        # Strict format — colon-separated, no quoting. Client must build
+        # the same string before signing.
+        canonical = f"{x_admin_timestamp}:{x_admin_nonce}:{path}"
+        data = canonical.encode()
+    else:
+        # Legacy path (only reached when ADMIN_NONCE_REQUIRED=off)
+        logger.warning(
+            "Admin request without nonce (ADMIN_NONCE_REQUIRED=off) — replay protection degraded.",
+        )
+        data = x_admin_timestamp.encode()
+
+    is_valid = hmac_manager.verify(data, x_admin_signature)
     if not is_valid:
         raise HTTPException(status_code=401, detail="Invalid admin signature")
+
+    # Replay protection — single-use nonce
+    if x_admin_nonce:
+        nonce_store = getattr(request.app.state.app_state, "nonce_store", None)
+        if nonce_store is not None:
+            fresh = nonce_store.check_and_record(x_admin_nonce)
+            if not fresh:
+                raise HTTPException(
+                    status_code=401, detail="Nonce already used (replay detected)",
+                )
 
     return True

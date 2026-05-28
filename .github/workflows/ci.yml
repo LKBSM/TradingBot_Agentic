@@ -24,6 +24,24 @@ env:
 
 jobs:
   # --------------------------------------------------------------------
+  # Security gate — DG-041. Refuses to merge any PR where
+  # SENTINEL_TESTING_MODE=1 is set in any tracked env file or workflow
+  # secret manifest. The auth bypass is for personal-testing builds only;
+  # shipping it to production gives the product away.
+  # --------------------------------------------------------------------
+  testing_mode_gate:
+    name: TESTING_MODE prod gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Fail if SENTINEL_TESTING_MODE=1 appears in tracked env files
+        run: python scripts/ci_testing_mode_gate.py
+
+  # --------------------------------------------------------------------
   # Lint — non-blocking on first iteration. ruff finds bugs, black
   # standardises formatting. We surface issues without failing the build
   # so the pipeline can go green immediately while we ramp up coverage.

@@ -23,6 +23,8 @@ class AppState:
     live_risk_manager: Optional[Any] = None  # LiveRiskManager
     key_store: Optional[Any] = None       # KeyStore
     hmac_manager: Optional[Any] = None    # HMACKeyManager
+    # DG-055 admin HMAC nonce-based replay protection
+    nonce_store: Optional[Any] = None     # src.api.nonce_store.NonceStore
     signal_tracker: Optional[Any] = None  # SignalTracker
     # Smart Sentinel AI
     tier_manager: Optional[Any] = None    # UserTierManager

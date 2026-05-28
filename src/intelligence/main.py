@@ -280,6 +280,76 @@ def build_system(
         release=os.environ.get("RELEASE"),
     )
 
+    # 8f. Calibrated scoring pipeline (DG-025).
+    # SCORING_VERSION env var controls whether the LGBM→Isotonic→ACI pipeline
+    # is plugged into the InsightAssembler:
+    #   - "v1" (default, safe) → uses raw confluence_score, no calibration.
+    #   - "v2"               → loads models/calibrated_conviction_v1.pkl and
+    #                          derives conviction_0_100 from the calibrated
+    #                          P(win). Falls back to v1 if loading fails.
+    # Default is v1 because the current Brier skill OOS is below the +5%
+    # acceptance gate (cf reports/scoring_v2_brier_validation.md). The
+    # pipeline is ready to flip once empirical edge is demonstrated.
+    scoring_version = os.environ.get("SCORING_VERSION", "v1").strip().lower()
+    calibrated_pipeline = None
+    if scoring_version == "v2":
+        from pathlib import Path as _Path
+        from src.intelligence.scoring.calibrated_conviction import (
+            CalibratedConvictionPipeline,
+        )
+        try:
+            from scripts.train_calibrated_conviction import (  # noqa: E402
+                load_calibrated_pipeline as _load_cc,
+            )
+        except ImportError:
+            _load_cc = None  # type: ignore[assignment]
+        model_path = _Path(
+            os.environ.get(
+                "CALIBRATED_CONVICTION_PATH",
+                "models/calibrated_conviction_v1.pkl",
+            )
+        )
+        if _load_cc is not None and model_path.exists():
+            try:
+                calibrated_pipeline = _load_cc(model_path)
+                logger.info(
+                    "Calibrated conviction pipeline loaded from %s (SCORING_VERSION=v2)",
+                    model_path,
+                )
+            except Exception as exc:
+                logger.warning(
+                    "Failed to load calibrated pipeline from %s: %s — "
+                    "falling back to raw confluence score.",
+                    model_path, exc,
+                )
+                calibrated_pipeline = CalibratedConvictionPipeline()
+        else:
+            logger.warning(
+                "SCORING_VERSION=v2 requested but %s missing or loader unavailable "
+                "— scoring will fall back to v1 raw confluence score.",
+                model_path,
+            )
+            calibrated_pipeline = CalibratedConvictionPipeline()
+    else:
+        logger.info(
+            "SCORING_VERSION=%s — using raw confluence score (no calibration layer)",
+            scoring_version,
+        )
+
+    # InsightAssembler factory — same instance reused per-symbol when the
+    # calibrated pipeline is shared. The assembler stays None when there is
+    # nothing to add beyond the raw score, since the scanner gracefully
+    # degrades when _insight_assembler is None.
+    insight_assembler = None
+    insight_assembler_factory = None
+    if calibrated_pipeline is not None:
+        from src.intelligence.insight_assembler import InsightAssembler
+        insight_assembler = InsightAssembler(
+            calibrated_pipeline=calibrated_pipeline,
+            backtest_window="XAU M15 2019-2026 walk-forward",
+        )
+        insight_assembler_factory = lambda _sym: insight_assembler  # noqa: E731
+
     # 9. Build scanner (single or multi-symbol)
     if len(symbols) == 1:
         config = registry.get(symbols[0], InstrumentConfig(symbol=symbols[0]))
@@ -349,6 +419,7 @@ def build_system(
             kill_switch=operational_kill_switch,
             state_machine=state_machine,
             persistence_path=sm_persist_path if state_machine is not None else None,
+            insight_assembler=insight_assembler,
         )
     else:
         scanner = MultiSymbolScanner(
@@ -363,6 +434,7 @@ def build_system(
             signal_store=signal_store,
             notifier=notifier,
             vol_forecaster_factory=vol_factory,
+            insight_assembler_factory=insight_assembler_factory,
         )
 
     # 10. Calibrate vol forecasters with available data
@@ -449,6 +521,51 @@ def _check_coverage_or_abort(df: Any, symbol: str, timeframe: str, min_coverage:
         logger.warning("Coverage gate skipped for %s: %s", symbol, e)
 
 
+def verify_data_quality_or_abort(df: Any, symbol: str, timeframe: str) -> None:
+    """Boot-time data quality gate. Refuses to start on structural corruption.
+
+    DG-053 (Sprint 1 — Cœur algorithmique) : combine coverage gate and
+    OHLCV structural validation (NaN, monotonicity, H/L, duplicates) in
+    a single fail-fast check called from :func:`_calibrate_system` for
+    every symbol at boot.
+
+    Bypasses
+    --------
+    - ``COVERAGE_GATE=off`` skips the coverage threshold portion.
+    - ``DATA_QUALITY_STRICT=off`` downgrades structural validation from
+      raise → warn (kept for emergency operations only).
+    """
+    import os as _os
+    _check_coverage_or_abort(df, symbol, timeframe)
+    if _os.environ.get("DATA_QUALITY_STRICT", "on").lower() == "off":
+        return
+    if df is None or len(df) < 2:
+        return
+    try:
+        from src.intelligence.data_quality import (
+            DataQualityError,
+            validate_ohlcv,
+        )
+    except Exception as e:
+        logger.warning("data_quality module unavailable, structural gate skipped: %s", e)
+        return
+    try:
+        report = validate_ohlcv(df, symbol=symbol, timeframe=timeframe, strict=True)
+        logger.info(
+            "OHLCV validation OK for %s %s: %s",
+            symbol, timeframe, report.summary(),
+        )
+    except DataQualityError as exc:
+        msg = (
+            f"FATAL: {symbol} {timeframe} OHLCV structural validation failed: {exc}. "
+            f"Re-download a clean feed before starting. "
+            f"Bypass: DATA_QUALITY_STRICT=off (NOT recommended)."
+        )
+        logger.critical(msg)
+        sys.stderr.write(msg + "\n")
+        sys.exit(4)
+
+
 def _calibrate_system(
     scanner: Any,
     data_provider: Any,
@@ -467,7 +584,7 @@ def _calibrate_system(
                 config = registry.get(symbol)
                 tf = config.timeframe if config else "M15"
                 df = data_provider.get_ohlcv(symbol, tf, 10000)
-                _check_coverage_or_abort(df, symbol, tf)
+                verify_data_quality_or_abort(df, symbol, tf)
                 ohlcv_data[symbol] = df.reset_index()
                 logger.info("Loaded %d bars for %s calibration", len(df), symbol)
             except SystemExit:
@@ -481,7 +598,7 @@ def _calibrate_system(
             df = data_provider.get_ohlcv(
                 scanner._symbol, scanner._timeframe, 10000
             )
-            _check_coverage_or_abort(df, scanner._symbol, scanner._timeframe)
+            verify_data_quality_or_abort(df, scanner._symbol, scanner._timeframe)
             scanner._vol_forecaster.calibrate(df.reset_index(), calendar_df)
             logger.info("Calibrated vol forecaster for %s", scanner._symbol)
         except SystemExit:
