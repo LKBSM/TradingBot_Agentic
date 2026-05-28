@@ -1,0 +1,92 @@
+{
+  "XAUUSD": {
+    "symbol": "XAUUSD",
+    "label": "XAUUSD M15 OOS 2024+",
+    "n_bars_oos": 54996,
+    "n_cal_events_oos": 249,
+    "block_window_min": {
+      "before": 30,
+      "after": 30
+    },
+    "doc_vs_code_note": "Doc claims 30/60; code uses 30/30 (news_analysis_agent.py:112-113).",
+    "q1_structural_sanity": {
+      "columns": [
+        "date",
+        "currency",
+        "event",
+        "impact",
+        "actual",
+        "forecast",
+        "previous"
+      ],
+      "duplicates_count": 0,
+      "nan_impact_count": 0,
+      "nan_currency_count": 0
+    },
+    "q1_coverage": {
+      "any_currency_coverage": 0.015128372972579823,
+      "per_currency": {
+        "USD": {
+          "n_events": 249,
+          "coverage": 0.015128372972579823
+        }
+      },
+      "n": 54996
+    },
+    "q1_vol_elevation": {
+      "median_abs_logret_blocked": 0.0005618220206915527,
+      "median_abs_logret_free": 0.0005038957453059698,
+      "ratio_blocked_over_free": 1.1149568654333637,
+      "ratio_ci95_lo": 1.0343268961540588,
+      "ratio_ci95_hi": 1.2381889553289442,
+      "n_blocked": 832,
+      "n_free": 54164,
+      "definition": "ratio of median |log return| on blocked vs unblocked bars; >1 means blackout periods are genuinely more volatile"
+    }
+  },
+  "EURUSD": {
+    "symbol": "EURUSD",
+    "label": "EURUSD M15 OOS 2024+",
+    "n_bars_oos": 49898,
+    "n_cal_events_oos": 249,
+    "block_window_min": {
+      "before": 30,
+      "after": 30
+    },
+    "doc_vs_code_note": "Doc claims 30/60; code uses 30/30 (news_analysis_agent.py:112-113).",
+    "q1_structural_sanity": {
+      "columns": [
+        "date",
+        "currency",
+        "event",
+        "impact",
+        "actual",
+        "forecast",
+        "previous"
+      ],
+      "duplicates_count": 0,
+      "nan_impact_count": 0,
+      "nan_currency_count": 0
+    },
+    "q1_coverage": {
+      "any_currency_coverage": 0.01677421940759149,
+      "per_currency": {
+        "USD": {
+          "n_events": 249,
+          "coverage": 0.01677421940759149
+        }
+      },
+      "n": 49898
+    },
+    "q1_vol_elevation": {
+      "median_abs_logret_blocked": 0.00032041765647235004,
+      "median_abs_logret_free": 0.00018766492254396595,
+      "ratio_blocked_over_free": 1.7073923678906104,
+      "ratio_ci95_lo": 1.558050192239708,
+      "ratio_ci95_hi": 1.8643055444009593,
+      "n_blocked": 837,
+      "n_free": 49061,
+      "definition": "ratio of median |log return| on blocked vs unblocked bars; >1 means blackout periods are genuinely more volatile"
+    }
+  }
+}

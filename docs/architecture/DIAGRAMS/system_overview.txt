@@ -1,0 +1,166 @@
+M.I.A. Markets — System Overview (architecture cible)
+Référence : docs/architecture/MIA_MARKETS_ARCHITECTURE.md Partie 2
+Version : 1.0 · 2026-05-27
+
+═══════════════════════════════════════════════════════════════════════════════════════════════
+                            M.I.A. MARKETS — VUE SYSTÈME COMPLÈTE
+═══════════════════════════════════════════════════════════════════════════════════════════════
+
+
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                                  CLIENT-FACING SURFACES                                  │
+│                                                                                          │
+│   V1 (mois 0-3)        V2 (mois 3-9)         V3 (mois 9-18)         V4 (mois 18+)        │
+│   ───────────          ────────────          ─────────────           ──────────          │
+│   🌐 Webapp SaaS       ✉️ Email digest        🔌 API REST B2B         🖥️  Desktop          │
+│   📱 PWA installable   🪝 TV webhook recv     🪝 Webhooks B2B         📈 Ninja/cTrader    │
+│   💬 Bot Telegram      🤖 Bot Discord         🧩 Extension nav        🔊 Alexa/Google     │
+│   📊 TradingView Pine  📱 Mobile RN+Expo      📦 Widget embed         🎙️  Audio podcast   │
+│                        🔔 Push web            📲 SMS premium                              │
+│                                               🪟 Plugin WordPress     ❌ NEVER : ⌚ Watch│
+│                                               🤖 ChatGPT/Claude tool                     │
+│                                               🏦 MT4/5 (cond.)                            │
+└──────────────────────────┬──────────────────────────┬────────────────────────────────────┘
+                           │                          │
+                  ┌────────┴───────────┐    ┌────────┴────────┐
+                  │ HTTPS / REST + SSE │    │ Bot APIs (poll) │
+                  │ Web Push           │    │ Webhooks (HMAC) │
+                  └────────┬───────────┘    └────────┬────────┘
+                           │                         │
+═══════════════════════════│═════════════════════════│════════════════════════════════════════
+   APPLICATION PERIMETER   │                         │
+                           ▼                         ▼
+              ┌────────────────────────────────────────────────────────┐
+              │            EDGE / GATEWAY LAYER                        │
+              │                                                        │
+              │     Cloudflare DNS+CDN+DDoS  ─►  Vercel (Next.js)       │
+              │                                  Fly.io Paris (FastAPI)│
+              │                                                        │
+              │     ▸ CORS                                             │
+              │     ▸ GeoBlock (US, QC, UK, OFAC — DG-045)              │
+              │     ▸ Rate-limit per tier (DG-006)                      │
+              │     ▸ Auth (Clerk JWT bearer)                          │
+              │     ▸ Compliance disclaimer injection                  │
+              │     ▸ X-Schema-Version header                           │
+              └─────────────────────────────┬──────────────────────────┘
+                                            │
+              ┌─────────────────────────────▼──────────────────────────┐
+              │              SERVICE LAYER (8 verbs)                   │
+              │                                                        │
+              │   InsightService   │  ChatService   │  DeliveryService │
+              │   BillingService   │  AccountService│  TrackRecordSvc  │
+              │   ComplianceSvc    │  AnalyticsSvc                     │
+              │                                                        │
+              │   Règle : routes API ≤ 30 lignes, pas de logique BL    │
+              └────┬─────────┬──────────────────┬──────────────────────┘
+                   │         │                  │
+            ┌──────┘         │                  └──────┐
+            ▼                ▼                         ▼
+┌─────────────────────┐  ┌──────────────────┐  ┌────────────────────────────┐
+│   CORE PIPELINE     │  │  NARRATIVE       │  │      DELIVERY ENGINE       │
+│   (read-only DAG)   │  │    ENGINE        │  │    (port / adapters)       │
+│                     │  │                  │  │                            │
+│ DataProvider        │  │ LLMRouter        │  │ IDeliveryChannel (port)    │
+│   ▼                 │  │  Tier cascade :  │  │  ├─ TelegramAdapter        │
+│ SmartMoneyEngine    │  │  Haiku/          │  │  ├─ DiscordAdapter         │
+│  (BOS,CHOCH,FVG,OB) │  │  Sonnet/         │  │  ├─ EmailAdapter           │
+│   ▼                 │  │  Opus            │  │  ├─ WebhookB2BAdapter      │
+│ VolatilityForecast. │  │                  │  │  ├─ TradingViewAdapter     │
+│  HAR+diurnal+cal+   │  │ TemplateEngine   │  │  ├─ MobilePushAdapter      │
+│  HMM mult, TCP CI   │  │  (fallback $0)   │  │  ├─ ExtensionOverlayAdpt   │
+│   ▼                 │  │                  │  │  └─ WebPushAdapter         │
+│ RegimeGate          │  │ Forbidden-token  │  │                            │
+│  HMM + BOCPD +      │  │   guard          │  │ Idempotency store          │
+│  jump_ratio         │  │                  │  │ Retry + exponential backoff│
+│   ▼                 │  │ RAG retrieve     │  │ HMAC signing               │
+│ ConfluenceDetector  │  │  → cite sources  │  │ DLQ + dead-letter handling │
+│  (8 components)     │  │                  │  │                            │
+│   ▼                 │  └────┬─────────────┘  └─────────┬──────────────────┘
+│ CalibratedConvic.   │       │                          │
+│  LGBM→Iso→ACI       │       │                          │
+│   ▼                 │       ▼                          ▼
+│ NewsAnalysisAgent   │  ┌─────────────────────────────────────┐
+│   ▼                 │  │   InsightSignalV2 (canonical full)  │
+│ SignalStateMachine  │──▶│   Pydantic v2 · v2.1.0 actuel       │
+│   ▼                 │  │   src/intelligence/insight_v2/      │
+│ InsightAssembler    │  └────┬────────────────────────────────┘
+└─────────────────────┘       │
+                              ▼
+                  ┌──────────────────────────────────┐
+                  │      RENDERERS (per-canal)       │
+                  │                                  │
+                  │  to_focus_card · to_copilot_card │
+                  │  to_expert_full                  │
+                  │  to_telegram_b2c                 │
+                  │  to_discord_embed                │
+                  │  to_email_digest                 │
+                  │  to_tradingview_alert            │
+                  │  to_b2b_json                     │
+                  │  to_mobile_push                  │
+                  │  to_extension_overlay            │
+                  └──────────────────────────────────┘
+                              │
+                              ▼
+              ┌─────────────────────────────────────────┐
+              │            SIGNAL STORE                 │
+              │                                         │
+              │  V1 : SQLite + WAL                      │
+              │  V2 : Postgres (MRR > $5k OU subs > 100)│
+              │                                         │
+              │  Tables : signals, outcomes, audits,    │
+              │  idempotency_keys, deliveries           │
+              └─────────────────────────────────────────┘
+
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│             TRANSVERSE SERVICES (cross-cutting concerns)                     │
+│                                                                              │
+│   🔐 Auth                  Clerk (JWT bearer, social, MFA, webhooks)         │
+│   💳 Billing               Stripe live + Customer Portal + Tax UE            │
+│   📊 Analytics             Plausible self-hosted (CNIL OK, no banner cookie) │
+│   📡 Observability         Sentry V1 / OTel + Tempo V3+                      │
+│   🧠 LLM Router            Anthropic SDK (Haiku/Sonnet/Opus tier-routed)     │
+│   ⚖️  Compliance Service   GeoIP, disclaimer, forbidden tokens, edge_claim   │
+│   🔑 Secrets               Fly.io natifs V1 / Doppler V3+                    │
+│   💾 Cache                 in-memory V1 / Redis Upstash V2+                  │
+│   🗃️  Vector Store         Chroma local V1 (12 papers) / Qdrant V2+          │
+│   🌍 i18n                  next-intl + JSON messages/ (FR + EN J1)           │
+│   📦 Backup                LiteFS + Cloudflare R2                            │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════════════════════════════
+                          PRINCIPES ARCHITECTURAUX NON-NÉGOCIABLES
+═══════════════════════════════════════════════════════════════════════════════════════════════
+
+  1. Découplage pipeline / livraison       — un seul moteur, N surfaces
+  2. Idempotence des publications          — clé (signal_id + channel + target)
+  3. Pas de logique business dans renderer — projection pure
+  4. Pas d'appel LLM hors LLMNarrativeEng. — single LLM router
+  5. Pas d'I/O direct depuis routes        — toujours via service layer (route ≤ 30 L)
+  6. Reproductibilité bit-à-bit            — signal_id SHA-1 déterministe
+  7. Compliance par construction           — ComplianceService injecte, jamais wrapped post-hoc
+  8. Mobile-first                          — < 200 ms cache-hit sur 375px
+  9. Bilingue FR + EN J1                   — tout contenu passe par i18n
+ 10. Un seul contrat source de vérité      — intelligence/insight_v2/ canonique
+ 11. Auditabilité                          — SignalStore immutable, replay = re-read
+ 12. edge_claim = False codifié            — interdit "edge prouvé" tant que critères non franchis
+
+
+═══════════════════════════════════════════════════════════════════════════════════════════════
+                                    LÉGENDE
+═══════════════════════════════════════════════════════════════════════════════════════════════
+
+  ──▶   flux de données (synchrone ou async via queue)
+  ◀──   appel inverse (rare, doit être audité)
+  │     dépendance ou composition
+  ▼     vers le bas du DAG
+  ═     périmètre application
+  ░░    couche externe (third-party : Cloudflare, Vercel, Stripe, Clerk, Anthropic, ...)
+  🟢    production
+  🟡    WIP / partiel
+  🔴    legacy à éliminer
+
+═══════════════════════════════════════════════════════════════════════════════════════════════
+                                       FIN DU DIAGRAMME
+═══════════════════════════════════════════════════════════════════════════════════════════════

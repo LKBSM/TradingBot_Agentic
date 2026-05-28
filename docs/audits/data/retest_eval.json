@@ -1,0 +1,76 @@
+{
+  "XAUUSD": {
+    "symbol": "XAUUSD",
+    "label": "XAUUSD M15 OOS 2024+",
+    "n_bos": 1790,
+    "n_assessed": 1790,
+    "q1_definitional_sanity": {
+      "value": 0.9600235155790712,
+      "definition": "on AWAITING->ARMED, bull: low <= level + 0.5xATR; bear: high >= level - 0.5xATR",
+      "n_transitions": 1701
+    },
+    "q1_conversion_rate": {
+      "value": 0.9502793296089386,
+      "definition": "fraction of BOS events that reach ARMED (retest occurred) within awaiting_timeout",
+      "n": 1790,
+      "awaiting_timeout_bars": 20
+    },
+    "q1_time_to_arm": {
+      "median_bars": 1.0,
+      "n_armed": 1701
+    },
+    "q2_armed_outcomes": {
+      "continuation_rate": 0.5983240223463687,
+      "continuation_ci95_lo": 0.575977653631285,
+      "continuation_ci95_hi": 0.6218016759776537,
+      "invalidation_rate": 0.3513966480446927,
+      "timeout_rate": 0.05027932960893855,
+      "n": 1790,
+      "armed_window_bars": 30,
+      "invalid_tol_atr": 1.0,
+      "definition": "outcome based on first close past level \u00b1 1xATR in either direction within armed_window; ties or no-move = timeout"
+    },
+    "armed_density": {
+      "armed_bars": 16950,
+      "total_bars": 54996,
+      "density": 0.30820423303512984
+    }
+  },
+  "EURUSD": {
+    "symbol": "EURUSD",
+    "label": "EURUSD M15 OOS 2024+",
+    "n_bos": 1693,
+    "n_assessed": 1693,
+    "q1_definitional_sanity": {
+      "value": 0.9583592293349906,
+      "definition": "on AWAITING->ARMED, bull: low <= level + 0.5xATR; bear: high >= level - 0.5xATR",
+      "n_transitions": 1609
+    },
+    "q1_conversion_rate": {
+      "value": 0.9503839338452451,
+      "definition": "fraction of BOS events that reach ARMED (retest occurred) within awaiting_timeout",
+      "n": 1693,
+      "awaiting_timeout_bars": 20
+    },
+    "q1_time_to_arm": {
+      "median_bars": 1.0,
+      "n_armed": 1609
+    },
+    "q2_armed_outcomes": {
+      "continuation_rate": 0.574719432959244,
+      "continuation_ci95_lo": 0.5510779681039575,
+      "continuation_ci95_hi": 0.5977554636739516,
+      "invalidation_rate": 0.37034849379799173,
+      "timeout_rate": 0.05493207324276432,
+      "n": 1693,
+      "armed_window_bars": 30,
+      "invalid_tol_atr": 1.0,
+      "definition": "outcome based on first close past level \u00b1 1xATR in either direction within armed_window; ties or no-move = timeout"
+    },
+    "armed_density": {
+      "armed_bars": 15291,
+      "total_bars": 49898,
+      "density": 0.30644514810212836
+    }
+  }
+}

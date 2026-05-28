@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Smart Sentinel AI — XAU/USD Insight (B2C STRATEGIST mockup)</title>
+<style>
+  :root {
+    --bg: #0b0e14;
+    --panel: #11151d;
+    --panel-2: #161b26;
+    --border: #222938;
+    --text: #e6e9ef;
+    --muted: #8a93a6;
+    --accent: #4ea1ff;
+    --bull: #26d07c;
+    --bear: #ff5964;
+    --warn: #ffb547;
+    --gold: #d4af37;
+    --mono: "JetBrains Mono", "SF Mono", Consolas, monospace;
+    --sans: -apple-system, "Segoe UI", Inter, Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; background:var(--bg); color:var(--text);
+               font-family:var(--sans); font-size:14px; line-height:1.5; }
+
+  /* Top bar */
+  .topbar { display:flex; align-items:center; justify-content:space-between;
+            padding:14px 24px; background:var(--panel); border-bottom:1px solid var(--border);
+            position:sticky; top:0; z-index:5; }
+  .brand { display:flex; align-items:center; gap:10px; }
+  .brand-mark { width:30px; height:30px; border-radius:7px;
+                background:linear-gradient(135deg,#4ea1ff 0%, #8b5cf6 100%);
+                display:grid; place-items:center; font-weight:700; }
+  .brand-name { font-weight:600; letter-spacing:0.2px; }
+  .tier-badge { background:linear-gradient(90deg,#d4af37,#f2c94c); color:#111;
+                font-weight:700; font-size:11px; padding:4px 10px; border-radius:4px;
+                letter-spacing:0.5px; }
+
+  .container { max-width:980px; margin:32px auto; padding:0 20px; }
+  .grid { display:grid; grid-template-columns: 320px 1fr; gap:24px; }
+  @media (max-width: 720px) { .grid { grid-template-columns:1fr; } }
+
+  .card { background:var(--panel); border:1px solid var(--border); border-radius:12px;
+          padding:20px; }
+  .card h3 { margin:0 0 14px; font-size:13px; text-transform:uppercase;
+             letter-spacing:1.2px; color:var(--muted); font-weight:600; }
+
+  /* Score ring */
+  .ring-wrap { display:flex; flex-direction:column; align-items:center; gap:14px; }
+  .ring { position:relative; width:180px; height:180px; }
+  .ring svg { transform: rotate(-90deg); }
+  .ring-bg { stroke: var(--panel-2); }
+  .ring-fg { stroke: var(--bull); transition: stroke-dashoffset 0.6s ease; }
+  .ring-label { position:absolute; inset:0; display:grid; place-items:center;
+                font-family:var(--mono); }
+  .ring-num { font-size:42px; font-weight:700; color:var(--bull); }
+  .ring-cap { font-size:11px; color:var(--muted); text-transform:uppercase;
+              letter-spacing:1.5px; margin-top:4px; }
+  .score-label-pill { background:rgba(38,208,124,0.15); color:var(--bull);
+                      padding:6px 14px; border-radius:999px; font-weight:600;
+                      font-size:13px; }
+
+  /* Bias header */
+  .bias-row { display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+              margin-bottom:16px; }
+  .bias-pill { padding:6px 14px; border-radius:6px; font-weight:700;
+               font-size:13px; letter-spacing:0.4px; }
+  .bias-bull { background:rgba(38,208,124,0.18); color:var(--bull); border:1px solid rgba(38,208,124,0.4); }
+  .bias-bear { background:rgba(255,89,100,0.18); color:var(--bear); border:1px solid rgba(255,89,100,0.4); }
+  .meta-chip { color:var(--muted); font-family:var(--mono); font-size:12px; }
+
+  /* Mini chart */
+  .mini-chart { background:var(--panel-2); border:1px solid var(--border);
+                border-radius:8px; padding:14px; margin-bottom:14px; }
+  .mini-chart svg { display:block; width:100%; height:200px; }
+
+  /* Levels */
+  .levels { display:grid; grid-template-columns:repeat(2, 1fr); gap:10px;
+            font-family:var(--mono); font-size:13px; }
+  .level-cell { background:var(--panel-2); padding:10px 12px; border-radius:6px;
+                border:1px solid var(--border); }
+  .level-cap { color:var(--muted); font-size:11px; text-transform:uppercase;
+               letter-spacing:1px; margin-bottom:4px; display:block; }
+  .level-val { color:var(--text); font-weight:600; }
+  .level-val.support { color:var(--bull); }
+  .level-val.resist  { color:var(--bear); }
+  .level-val.invalid { color:var(--warn); }
+  .level-val.target  { color:var(--accent); }
+
+  /* Narrative */
+  .narrative { font-size:14px; line-height:1.65; color:var(--text); }
+  .narrative p { margin:0 0 12px; }
+
+  /* Scenarios */
+  .scenario { padding:12px; background:var(--panel-2); border:1px solid var(--border);
+              border-radius:8px; margin-bottom:10px; }
+  .scenario-label { font-size:11px; text-transform:uppercase; letter-spacing:1.2px;
+                    color:var(--accent); font-weight:700; margin-bottom:6px; }
+  .scenario-cond { font-weight:600; margin-bottom:4px; }
+  .scenario-out { color:var(--muted); font-size:13px; }
+
+  /* Vol forecast */
+  .vol-row { display:flex; align-items:center; gap:14px; padding:12px;
+             background:var(--panel-2); border-radius:8px; border:1px solid var(--border); }
+  .vol-dot { width:10px; height:10px; border-radius:50%; background:var(--warn); }
+  .vol-dot.normal { background:var(--bull); }
+
+  /* Disclaimer footer (NON DISMISSIBLE) */
+  .disclaimer { background:#1a1108; border:1px solid #5a3a14; color:#fcd9a3;
+                padding:14px 18px; border-radius:8px; font-size:12px;
+                line-height:1.6; margin-top:32px; }
+  .disclaimer strong { color:#ffb547; }
+
+  /* Methodology link */
+  .methodology-link { display:inline-block; margin-top:12px;
+                      color:var(--accent); text-decoration:none; font-size:13px; }
+  .methodology-link:hover { text-decoration:underline; }
+
+  /* Tier-locked sections */
+  .tier-locked { position:relative; opacity:0.45; pointer-events:none; }
+  .tier-locked::after { content:"🔒 STRATEGIST"; position:absolute; top:8px; right:8px;
+                        background:var(--gold); color:#111; padding:2px 8px;
+                        border-radius:4px; font-size:10px; font-weight:700;
+                        letter-spacing:0.5px; }
+
+  /* Validity */
+  .validity { font-family:var(--mono); font-size:12px; color:var(--muted);
+              padding:8px 12px; background:var(--panel-2); border-radius:6px;
+              display:inline-block; margin-top:10px; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark">S</div>
+    <div>
+      <div class="brand-name">Smart Sentinel AI</div>
+      <div style="color:var(--muted); font-size:11px;">XAU/USD · M15 · Algorithmic Analysis</div>
+    </div>
+  </div>
+  <div class="tier-badge">STRATEGIST</div>
+</header>
+
+<main class="container">
+
+  <!-- Bias + score -->
+  <section class="bias-row">
+    <span class="bias-pill bias-bull">SETUP HAUSSIER</span>
+    <span class="meta-chip">Régime HMM : trend_bullish</span>
+    <span class="meta-chip">Session : New York</span>
+    <span class="meta-chip">Pas de blackout news</span>
+  </section>
+
+  <div class="grid">
+
+    <!-- LEFT — Score ring + key levels -->
+    <div>
+      <div class="card ring-wrap">
+        <h3>Score de confluence</h3>
+        <div class="ring">
+          <svg width="180" height="180" viewBox="0 0 180 180">
+            <circle class="ring-bg" cx="90" cy="90" r="78" stroke-width="14" fill="none" />
+            <!-- score 62 / 100 → dasharray = (62/100) * 2π * 78 ≈ 304 / circumference 490 -->
+            <circle class="ring-fg" cx="90" cy="90" r="78" stroke-width="14" fill="none"
+                    stroke-dasharray="304 490" stroke-linecap="round" />
+          </svg>
+          <div class="ring-label">
+            <div>
+              <div class="ring-num">62</div>
+              <div class="ring-cap">/ 100</div>
+            </div>
+          </div>
+        </div>
+        <span class="score-label-pill">Strong (palier 55–69)</span>
+        <span class="validity">⏱ Validité jusqu'au 30/04/2026 13:15 UTC</span>
+      </div>
+
+      <div class="card" style="margin-top:14px;">
+        <h3>Niveaux structurels</h3>
+        <div class="levels">
+          <div class="level-cell">
+            <span class="level-cap">Support</span>
+            <span class="level-val support">2 378.0 — 2 381.0</span>
+          </div>
+          <div class="level-cell">
+            <span class="level-cap">Résistance</span>
+            <span class="level-val resist">2 398.5 — 2 401.2</span>
+          </div>
+          <div class="level-cell">
+            <span class="level-cap">Invalidation</span>
+            <span class="level-val invalid">2 374.5</span>
+          </div>
+          <div class="level-cell">
+            <span class="level-cap">1er objectif</span>
+            <span class="level-val target">2 401.0</span>
+          </div>
+          <div class="level-cell" style="grid-column: span 2;">
+            <span class="level-cap">2e objectif</span>
+            <span class="level-val target">2 412.0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:14px;">
+        <h3>Volatilité prévue</h3>
+        <div class="vol-row">
+          <div class="vol-dot normal"></div>
+          <div>
+            <div style="font-weight:600;">Normale</div>
+            <div style="color:var(--muted); font-size:12px;">+18% vs ATR14 · Forecast 4.82 USD/h</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT — chart + narrative + scenarios -->
+    <div>
+      <div class="card">
+        <h3>Lecture structurelle</h3>
+        <div class="mini-chart">
+          <svg viewBox="0 0 600 200" preserveAspectRatio="none">
+            <!-- Background grid -->
+            <line x1="0" y1="40"  x2="600" y2="40"  stroke="#222938" stroke-dasharray="2,4" />
+            <line x1="0" y1="100" x2="600" y2="100" stroke="#222938" stroke-dasharray="2,4" />
+            <line x1="0" y1="160" x2="600" y2="160" stroke="#222938" stroke-dasharray="2,4" />
+
+            <!-- FVG support zone -->
+            <rect x="0" y="135" width="600" height="14" fill="rgba(38,208,124,0.12)" />
+            <text x="6" y="146" fill="#26d07c" font-size="10" font-family="JetBrains Mono">FVG support 2378-2381</text>
+
+            <!-- Resistance zone -->
+            <rect x="0" y="38" width="600" height="14" fill="rgba(255,89,100,0.12)" />
+            <text x="6" y="48" fill="#ff5964" font-size="10" font-family="JetBrains Mono">Resistance 2398.5-2401.2</text>
+
+            <!-- Invalidation line -->
+            <line x1="0" y1="172" x2="600" y2="172" stroke="#ffb547" stroke-dasharray="6,4" />
+            <text x="540" y="184" fill="#ffb547" font-size="10" font-family="JetBrains Mono">Inval 2374.5</text>
+
+            <!-- Target line -->
+            <line x1="0" y1="44" x2="600" y2="44" stroke="#4ea1ff" stroke-dasharray="6,4" />
+            <text x="540" y="36" fill="#4ea1ff" font-size="10" font-family="JetBrains Mono">Target 2401</text>
+
+            <!-- Stylized price path -->
+            <polyline fill="none" stroke="#e6e9ef" stroke-width="1.6"
+              points="10,150 50,148 90,158 130,165 170,152 210,140 250,128 290,142 330,138 370,118 410,102 450,90 490,80 530,72 570,68" />
+            <!-- BOS marker -->
+            <circle cx="370" cy="118" r="4" fill="#26d07c" stroke="#0b0e14" stroke-width="2" />
+            <text x="378" y="115" fill="#26d07c" font-size="10" font-family="JetBrains Mono">BOS</text>
+            <!-- Retest marker -->
+            <circle cx="290" cy="142" r="4" fill="#4ea1ff" stroke="#0b0e14" stroke-width="2" />
+            <text x="296" y="155" fill="#4ea1ff" font-size="10" font-family="JetBrains Mono">FVG retest</text>
+          </svg>
+        </div>
+        <div class="narrative">
+          <p>
+            Sur XAU/USD M15, la structure Smart Money est passée haussière après une cassure
+            de structure (BOS) confirmée au-dessus du sommet à 2391.5. Le prix est ensuite
+            retesté le Fair Value Gap formé entre 2378.0 et 2381.0, où la liquidité
+            institutionnelle est la plus susceptible d'être défendue.
+          </p>
+          <p>
+            Le HMM classe le régime actuel comme <strong>trend_bullish</strong>
+            (probabilité postérieure 0.71). Le forecaster LightGBM anticipe une
+            volatilité de +18% par rapport à l'ATR(14) — expansion modérée cohérente
+            avec l'activité de la session New York.
+          </p>
+          <p>
+            L'invalidation structurelle se situe à 2374.5, sous le plancher du FVG.
+            Une cassure nette de ce niveau invaliderait la lecture haussière et imposerait
+            une réévaluation. La zone immédiate de résistance est 2398.5–2401.2,
+            avec extension possible vers 2412.0 si le volume soutient la continuation.
+          </p>
+        </div>
+        <a class="methodology-link" href="/methodology">→ Voir la méthodologie de scoring</a>
+      </div>
+
+      <div class="card" style="margin-top:14px;">
+        <h3>Scénarios</h3>
+
+        <div class="scenario">
+          <div class="scenario-label">Scénario principal</div>
+          <div class="scenario-cond">Rebond sur 2378–2381 avec clôture M15 au-dessus de 2385</div>
+          <div class="scenario-out">→ Continuation vers 2401, extension possible 2412 si momentum NY soutient</div>
+        </div>
+
+        <div class="scenario">
+          <div class="scenario-label">Scénario alternatif #1</div>
+          <div class="scenario-cond">Clôture M15 nette sous 2374.5</div>
+          <div class="scenario-out">→ Lecture haussière invalidée ; biais bascule range/baissier, réévaluer prochain BOS</div>
+        </div>
+
+        <div class="scenario">
+          <div class="scenario-label">Scénario alternatif #2</div>
+          <div class="scenario-cond">Consolidation chaotique 2381–2392 sur 4+ bougies</div>
+          <div class="scenario-out">→ Setup expire à 13:15 UTC sans objectif atteint ; insight clôturé "scénario expiré"</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:14px;">
+        <h3>Composants du score (transparence STRATEGIST)</h3>
+        <div style="font-family:var(--mono); font-size:12px; line-height:2;">
+          <div>BOS              ················  13.5 / 15.0  ✓ Cassure 2391.5 confirmée</div>
+          <div>FVG              ················  12.8 / 15.0  ✓ FVG 2378–2381 retesté</div>
+          <div>Order Block       ···············   7.5 / 10.0  ✓ OB 2375–2378 aligné</div>
+          <div>Régime HMM        ···············  18.2 / 25.0  ✓ trend_bullish 0.71</div>
+          <div>News              ················   0.0 / 20.0  · Pas d'événement actif</div>
+          <div>Volume            ················   7.0 / 10.0  ✓ 1.4x avg sur bougie BOS</div>
+          <div>Momentum          ················   2.4 / 3.0   ✓ RSI 42→58</div>
+          <div>RSI Divergence    ················   0.6 / 2.0   · Légère div haussière</div>
+          <div style="border-top:1px solid var(--border); margin-top:6px; padding-top:6px;">
+            <strong>Total</strong>     ················  <strong>62.0 / 100</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Disclaimer NON DISMISSIBLE — toujours visible -->
+  <div class="disclaimer">
+    <strong>⚠️ Avertissement réglementaire (UE 2024/2811)</strong> — Smart Sentinel AI publie
+    des analyses algorithmiques à but informatif uniquement. Ce contenu n'est pas un
+    conseil en investissement personnalisé et Smart Sentinel AI n'est pas un conseiller
+    en investissement enregistré. <strong>74-89 % des comptes particuliers de CFD
+    perdent de l'argent.</strong> Les CFD sont des instruments complexes à effet de
+    levier ; vous risquez de perdre la totalité de votre capital. Service indisponible
+    pour les résidents US, Québec, Royaume-Uni et juridictions sous sanctions OFAC.
+    Consultez les <a href="/api/v1/terms" style="color:var(--accent);">CGU</a> et la
+    <a href="/api/v1/privacy" style="color:var(--accent);">politique de confidentialité</a>.
+  </div>
+
+</main>
+
+</body>
+</html>
