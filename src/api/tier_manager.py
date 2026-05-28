@@ -80,7 +80,7 @@ class UserTierManager:
     Same WAL pattern as KeyStore / SignalStore.
     """
 
-    SCHEMA_VERSION = 1
+    SCHEMA_VERSION = 2
 
     def __init__(self, db_path: str = "./data/users.db"):
         self._db_path = Path(db_path)
@@ -144,9 +144,48 @@ class UserTierManager:
                 CREATE INDEX IF NOT EXISTS idx_users_api_key
                     ON users(api_key_id);
             """)
+        if from_v < 2:
+            # DG-056 — enforce one-user-per-api-key. We use a partial unique
+            # index so multiple users may still have api_key_id = NULL
+            # (i.e. anonymous/free users without a generated key).
+            #
+            # If pre-existing rows already violate uniqueness, the CREATE
+            # raises sqlite3.IntegrityError; we coalesce them down to the
+            # lowest user_id (oldest), nulling out the duplicates, then
+            # retry. Operator gets a WARN log so they can investigate.
+            self._dedupe_api_key_links(conn)
+            conn.executescript("""
+                CREATE UNIQUE INDEX IF NOT EXISTS uq_users_api_key
+                    ON users(api_key_id) WHERE api_key_id IS NOT NULL;
+            """)
+        conn.execute(
+            "INSERT OR REPLACE INTO schema_version (version) VALUES (?)",
+            (self.SCHEMA_VERSION,),
+        )
+
+    @staticmethod
+    def _dedupe_api_key_links(conn: sqlite3.Connection) -> None:
+        """Null out duplicate api_key_id links, keeping the oldest user.
+
+        Idempotent: a fresh DB has no duplicates and this is a no-op.
+        """
+        cur = conn.execute(
+            "SELECT api_key_id, COUNT(*) AS n FROM users "
+            "WHERE api_key_id IS NOT NULL "
+            "GROUP BY api_key_id HAVING n > 1"
+        )
+        dups = [row[0] for row in cur.fetchall()]
+        for kid in dups:
+            logger.warning(
+                "DG-056 migration: api_key_id=%s linked to multiple users; "
+                "keeping oldest user and nulling out the rest.", kid,
+            )
             conn.execute(
-                "INSERT OR REPLACE INTO schema_version (version) VALUES (?)",
-                (self.SCHEMA_VERSION,),
+                "UPDATE users SET api_key_id = NULL "
+                "WHERE api_key_id = ? AND user_id NOT IN ("
+                "  SELECT MIN(user_id) FROM users WHERE api_key_id = ?"
+                ")",
+                (kid, kid),
             )
 
     # ------------------------------------------------------------------ #
@@ -165,11 +204,16 @@ class UserTierManager:
         with self._lock:
             conn = self._get_connection()
             try:
-                cur = conn.execute(
-                    "INSERT INTO users (email, tier, api_key_id, telegram_chat_id, "
-                    "created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
-                    (email, tier.value, api_key_id, telegram_chat_id, now, now),
-                )
+                try:
+                    cur = conn.execute(
+                        "INSERT INTO users (email, tier, api_key_id, telegram_chat_id, "
+                        "created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
+                        (email, tier.value, api_key_id, telegram_chat_id, now, now),
+                    )
+                except sqlite3.IntegrityError as exc:
+                    # Surface a clean error for both UNIQUE(email) and
+                    # DG-056 UNIQUE(api_key_id).
+                    raise ValueError(f"Cannot create user: {exc}") from exc
                 return {
                     "user_id": cur.lastrowid,
                     "email": email,
@@ -220,14 +264,46 @@ class UserTierManager:
                 conn.close()
 
     def link_api_key(self, user_id: int, api_key_id: int) -> bool:
-        """Link an API key to a user."""
+        """Link an API key to a user.
+
+        Returns ``False`` if the key is already linked to a different user
+        (DG-056: api_key_id is UNIQUE for non-null rows).
+        """
+        now = datetime.now(tz=None).isoformat()
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                try:
+                    cur = conn.execute(
+                        "UPDATE users SET api_key_id = ?, updated_at = ? "
+                        "WHERE user_id = ?",
+                        (api_key_id, now, user_id),
+                    )
+                except sqlite3.IntegrityError:
+                    logger.warning(
+                        "DG-056: refusing to link api_key_id=%s to user_id=%s — "
+                        "already owned by another user.", api_key_id, user_id,
+                    )
+                    return False
+                return cur.rowcount > 0
+            finally:
+                conn.close()
+
+    def set_subscription_expires(self, user_id: int, expires_iso: Optional[str]) -> bool:
+        """Write the ISO-8601 ``subscription_expires`` for a user.
+
+        ``expires_iso=None`` clears the field (perpetual / no expiry).
+        Called by the Stripe webhook handler when a payment intent
+        succeeds or a subscription is cancelled.
+        """
         now = datetime.now(tz=None).isoformat()
         with self._lock:
             conn = self._get_connection()
             try:
                 cur = conn.execute(
-                    "UPDATE users SET api_key_id = ?, updated_at = ? WHERE user_id = ?",
-                    (api_key_id, now, user_id),
+                    "UPDATE users SET subscription_expires = ?, updated_at = ? "
+                    "WHERE user_id = ?",
+                    (expires_iso, now, user_id),
                 )
                 return cur.rowcount > 0
             finally:

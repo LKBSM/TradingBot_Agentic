@@ -20,15 +20,24 @@ from src.delivery.webhook_queue import WebhookDeliveryQueue
 class _FakeHMAC:
     def __init__(self, secret: bytes = b"obs-test"):
         self._secret = secret
+        self._nonce_seq = 0
 
     def verify(self, data, signature, key_version=None):
         expected = hmac_mod.new(self._secret, data, hashlib.sha256).hexdigest()
         return hmac_mod.compare_digest(expected, signature)
 
-    def headers(self):
+    def headers(self, path: str = "/api/v1/metrics/webhook-drain"):
+        # DG-055 — canonical "ts:nonce:path" with a fresh nonce per call
         ts = str(time.time())
-        sig = hmac_mod.new(self._secret, ts.encode(), hashlib.sha256).hexdigest()
-        return {"X-Admin-Signature": sig, "X-Admin-Timestamp": ts}
+        self._nonce_seq += 1
+        nonce = f"drain-test-{self._nonce_seq}"
+        canonical = f"{ts}:{nonce}:{path}"
+        sig = hmac_mod.new(self._secret, canonical.encode(), hashlib.sha256).hexdigest()
+        return {
+            "X-Admin-Signature": sig,
+            "X-Admin-Timestamp": ts,
+            "X-Admin-Nonce": nonce,
+        }
 
 
 def _ok_transport(*_):

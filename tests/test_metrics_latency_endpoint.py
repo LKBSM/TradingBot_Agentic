@@ -19,15 +19,24 @@ from src.api.latency_tracker import LatencyTracker
 class _FakeHMAC:
     def __init__(self, secret: bytes = b"sentinel-obs-test"):
         self._secret = secret
+        self._nonce_seq = 0
 
     def verify(self, data: bytes, signature: str, key_version=None) -> bool:
         expected = hmac_mod.new(self._secret, data, hashlib.sha256).hexdigest()
         return hmac_mod.compare_digest(expected, signature)
 
-    def sign_now(self) -> dict:
+    def sign_now(self, path: str = "/api/v1/metrics/latency") -> dict:
+        # DG-055 — sign canonical "ts:nonce:path" with a fresh nonce per call
         ts = str(time.time())
-        sig = hmac_mod.new(self._secret, ts.encode(), hashlib.sha256).hexdigest()
-        return {"X-Admin-Signature": sig, "X-Admin-Timestamp": ts}
+        self._nonce_seq += 1
+        nonce = f"metrics-test-{self._nonce_seq}"
+        canonical = f"{ts}:{nonce}:{path}"
+        sig = hmac_mod.new(self._secret, canonical.encode(), hashlib.sha256).hexdigest()
+        return {
+            "X-Admin-Signature": sig,
+            "X-Admin-Timestamp": ts,
+            "X-Admin-Nonce": nonce,
+        }
 
 
 @pytest.fixture
