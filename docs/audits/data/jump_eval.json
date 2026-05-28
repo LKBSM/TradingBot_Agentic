@@ -1,0 +1,64 @@
+{
+  "XAUUSD": {
+    "symbol": "XAUUSD",
+    "n_oos_returns": 54995,
+    "n_valid": 54900,
+    "window": 96,
+    "q1_in_unit_interval": true,
+    "q1_distribution": {
+      "q01": 0.0,
+      "q25": 0.0,
+      "q50": 0.0611070988569776,
+      "q75": 0.1456147054724059,
+      "q95": 0.3079246277743602,
+      "q99": 0.43444162395065766,
+      "mean": 0.09273552228393306
+    },
+    "q1_extreme_alignment": {
+      "rate": 0.839344262295082,
+      "n_high_jump_bars": 2745,
+      "definition": "fraction of top-5% jump_ratio bars whose 96-bar window contains a |return| >= 99th percentile of OOS returns",
+      "extreme_threshold_logret": 0.005030742652589737
+    },
+    "q2_autocorrelation": {
+      "lag1": 0.9685904914806289,
+      "lag10": 0.8596992037444681,
+      "note": "96-bar rolling stats should have high lag-1 autocorr by construction"
+    },
+    "q2_run_length_above_q75": {
+      "median_run_bars": 1.0,
+      "n_runs": 947
+    }
+  },
+  "EURUSD": {
+    "symbol": "EURUSD",
+    "n_oos_returns": 49897,
+    "n_valid": 49802,
+    "window": 96,
+    "q1_in_unit_interval": true,
+    "q1_distribution": {
+      "q01": 0.0,
+      "q25": 0.0,
+      "q50": 0.05351920661491375,
+      "q75": 0.14699451113390358,
+      "q95": 0.367547930362887,
+      "q99": 0.6339108949345641,
+      "mean": 0.10091850931900279
+    },
+    "q1_extreme_alignment": {
+      "rate": 0.997591328783621,
+      "n_high_jump_bars": 2491,
+      "definition": "fraction of top-5% jump_ratio bars whose 96-bar window contains a |return| >= 99th percentile of OOS returns",
+      "extreme_threshold_logret": 0.0016039759727423338
+    },
+    "q2_autocorrelation": {
+      "lag1": 0.973830185574723,
+      "lag10": 0.86852616816048,
+      "note": "96-bar rolling stats should have high lag-1 autocorr by construction"
+    },
+    "q2_run_length_above_q75": {
+      "median_run_bars": 1.0,
+      "n_runs": 755
+    }
+  }
+}

@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Smart Sentinel AI — Live Client Dashboard</title>
+<style>
+  :root {
+    --bg: #0b0e14;
+    --panel: #11151d;
+    --panel-2: #161b26;
+    --border: #222938;
+    --text: #e6e9ef;
+    --muted: #8a93a6;
+    --accent: #4ea1ff;
+    --buy: #26d07c;
+    --sell: #ff5964;
+    --warn: #ffb547;
+    --gold: #d4af37;
+    --mono: "JetBrains Mono", "SF Mono", Consolas, monospace;
+    --sans: -apple-system, "Segoe UI", Inter, Roboto, sans-serif;
+    --serif: "Charter", "Georgia", "Iowan Old Style", serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; height:100%; background:var(--bg); color:var(--text);
+               font-family:var(--sans); font-size:14px; }
+  .app { display:grid; grid-template-rows:52px 1fr; height:100vh; }
+
+  /* Top bar */
+  .topbar { display:flex; align-items:center; justify-content:space-between;
+            padding:0 18px; background:var(--panel); border-bottom:1px solid var(--border); }
+  .brand { display:flex; align-items:center; gap:10px; }
+  .brand-mark { width:28px; height:28px; border-radius:6px;
+                background:linear-gradient(135deg,#4ea1ff 0%, #8b5cf6 100%);
+                display:grid; place-items:center; font-weight:700; font-size:14px; }
+  .brand-name { font-weight:600; letter-spacing:0.2px; }
+  .brand-sub { color:var(--muted); font-size:11px; margin-left:6px;
+               text-transform:uppercase; letter-spacing:1.5px; }
+  .tier-badge { background:linear-gradient(90deg,#d4af37,#f2c94c); color:#111;
+                font-weight:700; font-size:11px; padding:4px 10px; border-radius:4px;
+                letter-spacing:0.5px; }
+  .sym-label { font-family:var(--mono); font-size:12px; color:var(--muted); }
+  .user { display:flex; align-items:center; gap:12px; color:var(--muted); font-size:12px; }
+  .dot { width:8px; height:8px; border-radius:50%; display:inline-block;
+         background:var(--buy); box-shadow:0 0 8px var(--buy); }
+  .dot.stale { background:var(--warn); box-shadow:0 0 8px var(--warn); }
+
+  /* Main grid */
+  .main { display:grid; grid-template-columns:1fr 420px; min-height:0; }
+  .chart-wrap { position:relative; background:var(--panel);
+                border-right:1px solid var(--border); min-width:0; }
+  #tv_chart { position:absolute; inset:0; }
+
+  /* Floating state card (top-right of chart) */
+  .state-card { position:absolute; top:16px; right:16px; z-index:3; width:300px;
+                background:rgba(17,21,29,0.92); backdrop-filter:blur(8px);
+                border:1px solid var(--border); border-radius:10px; padding:16px;
+                box-shadow:0 10px 30px rgba(0,0,0,0.4);
+                transition:border-color 0.3s ease, box-shadow 0.3s ease; }
+  .state-card.buy  { border-color:rgba(38,208,124,0.55);  box-shadow:0 0 0 1px rgba(38,208,124,0.25), 0 10px 30px rgba(0,0,0,0.4); }
+  .state-card.sell { border-color:rgba(255,89,100,0.55);  box-shadow:0 0 0 1px rgba(255,89,100,0.25), 0 10px 30px rgba(0,0,0,0.4); }
+  .state-card.hold { border-color:rgba(78,161,255,0.30); }
+
+  .sc-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .sc-headline { display:flex; align-items:center; gap:10px; }
+  .pulse { width:10px; height:10px; border-radius:50%; background:var(--accent);
+           box-shadow:0 0 10px var(--accent); animation:pulse 1.6s infinite ease-in-out; }
+  .state-card.buy  .pulse { background:var(--buy);  box-shadow:0 0 10px var(--buy); }
+  .state-card.sell .pulse { background:var(--sell); box-shadow:0 0 10px var(--sell); }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(1.25)} }
+  .sc-banner { font-family:var(--mono); font-size:15px; font-weight:700; letter-spacing:2px; }
+  .sc-tf { color:var(--muted); font-size:11px; font-family:var(--mono); }
+
+  .sc-action { display:flex; align-items:center; gap:10px; margin:10px 0 12px; }
+  .action-chip { padding:6px 12px; border-radius:4px; font-weight:700;
+                 font-size:13px; letter-spacing:1px; }
+  .action-chip.buy  { background:rgba(38,208,124,0.15);  color:var(--buy);
+                      border:1px solid rgba(38,208,124,0.4); }
+  .action-chip.sell { background:rgba(255,89,100,0.15);  color:var(--sell);
+                      border:1px solid rgba(255,89,100,0.4); }
+  .action-chip.hold { background:rgba(78,161,255,0.10); color:var(--accent);
+                      border:1px solid rgba(78,161,255,0.4); }
+  .conf-score { margin-left:auto; text-align:right; }
+  .conf-val { font-family:var(--mono); font-size:22px; font-weight:700; color:var(--accent); }
+  .conf-lbl { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+
+  /* Levels row (only shown in BUY/SELL) */
+  .sc-levels { display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-bottom:10px; }
+  .lvl { background:var(--panel-2); border:1px solid var(--border); border-radius:4px;
+         padding:6px 8px; }
+  .lvl-lbl { font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+  .lvl-val { font-family:var(--mono); font-size:13px; margin-top:2px; }
+  .lvl-val.buy { color:var(--buy); }
+  .lvl-val.sell { color:var(--sell); }
+
+  .sc-detail { font-family:var(--serif); color:#d6d9e0; font-size:13px;
+               line-height:1.55; border-top:1px solid var(--border); padding-top:10px; }
+
+  /* HOLD helpers */
+  .hold-meta { display:flex; gap:10px; flex-wrap:wrap; margin-top:8px; }
+  .hold-pill { background:var(--panel-2); border:1px solid var(--border);
+               border-radius:12px; padding:3px 10px; font-size:11px; color:var(--muted);
+               font-family:var(--mono); }
+  .hold-pill b { color:var(--text); }
+
+  /* Progress bar for ARMING */
+  .arm-bar { height:6px; background:var(--panel-2); border-radius:3px; overflow:hidden;
+             margin-top:8px; }
+  .arm-fill { height:100%; background:linear-gradient(90deg,var(--accent),#8b5cf6);
+              transition:width 0.4s ease; }
+
+  /* Countdown bar for ACTIVE signals */
+  .expiry-bar { height:6px; background:var(--panel-2); border-radius:3px; overflow:hidden;
+                margin-top:8px; }
+  .expiry-fill { height:100%; transition:width 0.4s ease; }
+  .state-card.buy  .expiry-fill { background:linear-gradient(90deg,var(--buy),#0ea5e9); }
+  .state-card.sell .expiry-fill { background:linear-gradient(90deg,var(--sell),#b91c1c); }
+
+  /* Legend */
+  .chart-legend { position:absolute; top:16px; left:16px; z-index:3;
+                  background:rgba(17,21,29,0.92); backdrop-filter:blur(8px);
+                  border:1px solid var(--border); border-radius:6px; padding:8px 12px;
+                  font-size:11px; color:var(--muted); display:flex; gap:14px; }
+  .legend-item { display:flex; align-items:center; gap:6px; }
+  .legend-swatch { width:14px; height:2px; }
+
+  /* Right column */
+  .right-col { display:grid; grid-template-rows:auto auto 1fr auto; min-height:0;
+               background:var(--panel); }
+  .panel { border-bottom:1px solid var(--border); padding:14px 18px; }
+  .panel-title { font-size:11px; color:var(--muted); text-transform:uppercase;
+                 letter-spacing:1.5px; margin-bottom:8px;
+                 display:flex; justify-content:space-between; align-items:center; }
+
+  .kv-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .kv-cell { background:var(--panel-2); border:1px solid var(--border);
+             border-radius:4px; padding:8px; }
+  .kv-lbl { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+  .kv-val { font-family:var(--mono); font-size:15px; margin-top:3px; }
+
+  .narrative { overflow-y:auto; padding:14px 18px 18px; min-height:0; }
+  .narrative::-webkit-scrollbar { width:6px; }
+  .narrative::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+  .narr-body { font-family:var(--serif); font-size:14px; line-height:1.65; color:#d6d9e0; }
+  .narr-body p { margin:0 0 12px; }
+  .narr-body em { color:var(--accent); font-style:normal; }
+
+  .ai-badge { background:linear-gradient(90deg,#4ea1ff,#8b5cf6); color:white;
+              font-size:9px; padding:2px 6px; border-radius:3px;
+              font-weight:700; letter-spacing:0.5px; }
+
+  .history { border-top:1px solid var(--border); padding:10px 18px;
+             background:var(--panel-2); display:flex; justify-content:space-between;
+             align-items:center; font-size:12px; }
+  .hist-stat { display:flex; gap:16px; color:var(--muted); }
+  .hist-stat b { color:var(--text); font-family:var(--mono); }
+
+  .error-bar { position:absolute; bottom:10px; left:50%; transform:translateX(-50%);
+               z-index:10; background:rgba(255,181,71,0.15); color:var(--warn);
+               border:1px solid rgba(255,181,71,0.4); padding:6px 12px;
+               border-radius:20px; font-size:12px; display:none; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">S</div>
+      <div>
+        <span class="brand-name">Smart Sentinel AI</span>
+        <span class="brand-sub">Market Intelligence</span>
+      </div>
+      <span class="tier-badge" style="margin-left:14px;">INSTITUTIONAL</span>
+    </div>
+    <div class="sym-label" id="top-symbol">XAUUSD · 15m</div>
+    <div class="user">
+      <span class="dot" id="live-dot"></span> <span id="live-label">Connecting…</span>
+      <span style="color:#555;">|</span>
+      <span id="user-email">loukmanebessam@gmail.com</span>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- CHART -->
+    <div class="chart-wrap">
+      <div id="tv_chart"></div>
+
+      <div class="chart-legend">
+        <div class="legend-item"><div class="legend-swatch" style="background:#26d07c;"></div> Entry</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:#ff5964;"></div> Stop Loss</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:#4ea1ff;"></div> Take Profit</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:#d4af37;"></div> Smart Money Zone</div>
+      </div>
+
+      <!-- State card — rendered by JS -->
+      <div class="state-card hold" id="state-card">
+        <div class="sc-head">
+          <div class="sc-headline">
+            <div class="pulse"></div>
+            <div class="sc-banner" id="sc-banner">CONNECTING</div>
+          </div>
+          <div class="sc-tf" id="sc-tf">— · —</div>
+        </div>
+        <div class="sc-action">
+          <div class="action-chip hold" id="sc-action">— HOLD</div>
+          <div class="conf-score">
+            <div class="conf-val" id="sc-score">—</div>
+            <div class="conf-lbl" id="sc-score-lbl">Confluence</div>
+          </div>
+        </div>
+        <div class="sc-levels" id="sc-levels" style="display:none;">
+          <div class="lvl"><div class="lvl-lbl">Entry</div><div class="lvl-val" id="lvl-entry">—</div></div>
+          <div class="lvl"><div class="lvl-lbl">Stop</div><div class="lvl-val sell" id="lvl-stop">—</div></div>
+          <div class="lvl"><div class="lvl-lbl">Target</div><div class="lvl-val buy" id="lvl-target">—</div></div>
+        </div>
+        <div class="sc-detail" id="sc-detail">Waiting for first state snapshot…</div>
+        <div class="arm-bar" id="arm-bar" style="display:none;">
+          <div class="arm-fill" id="arm-fill" style="width:0%;"></div>
+        </div>
+        <div class="expiry-bar" id="expiry-bar" style="display:none;">
+          <div class="expiry-fill" id="expiry-fill" style="width:100%;"></div>
+        </div>
+        <div class="hold-meta" id="hold-meta"></div>
+      </div>
+
+      <div class="error-bar" id="error-bar">Connection lost — retrying…</div>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="right-col">
+      <div class="panel">
+        <div class="panel-title"><span>State Machine · Stability Layer</span></div>
+        <div class="kv-grid">
+          <div class="kv-cell"><div class="kv-lbl">Signals Emitted</div><div class="kv-val" id="stats-emitted">—</div></div>
+          <div class="kv-cell"><div class="kv-lbl">Avg Lifetime</div><div class="kv-val" id="stats-lifetime">—</div></div>
+          <div class="kv-cell"><div class="kv-lbl">Confirm Rate</div><div class="kv-val" id="stats-confirm">—</div></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title"><span>Last Exit Reason</span></div>
+        <div class="kv-grid">
+          <div class="kv-cell" style="grid-column:span 3;">
+            <div class="kv-lbl">Why the last signal ended</div>
+            <div class="kv-val" id="last-exit">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="narrative">
+        <div class="panel-title" style="margin-bottom:10px;">
+          <span>AI Narrative</span>
+          <span class="ai-badge">CLAUDE OPUS 4.7</span>
+        </div>
+        <div class="narr-body" id="narrative-body">
+          <p><em>Narrative will populate when a live signal is active.</em> While
+          in HOLD, the system is monitoring structure, smart-money flow, volatility
+          regime, and news calendar. A signal prints only when at least two
+          consecutive bars confirm ≥75 confluence in one direction.</p>
+        </div>
+      </div>
+
+      <div class="history">
+        <div class="hist-stat">
+          <span>Bars scanned <b id="stats-bars">0</b></span>
+          <span>Holds suppressed <b id="stats-held">0</b></span>
+          <span>Updated <b id="stats-updated">—</b></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TradingView public widget -->
+<script src="https://s3.tradingview.com/tv.js"></script>
+<script>
+  new TradingView.widget({
+    autosize: true, symbol: "OANDA:XAUUSD", interval: "15",
+    timezone: "Etc/UTC", theme: "dark", style: "1", locale: "en",
+    toolbar_bg: "#0b0e14", enable_publishing: false, allow_symbol_change: false,
+    container_id: "tv_chart",
+    studies: ["MASimple@tv-basicstudies", "Volume@tv-basicstudies"],
+    overrides: {
+      "paneProperties.background": "#0b0e14",
+      "paneProperties.vertGridProperties.color": "#161b26",
+      "paneProperties.horzGridProperties.color": "#161b26",
+      "scalesProperties.textColor": "#8a93a6"
+    }
+  });
+</script>
+
+<!-- Live state polling -->
+<script>
+(function () {
+  const POLL_MS = 2000;
+  const API_URL = "/api/v1/signals/state";
+
+  const els = {
+    card:      document.getElementById("state-card"),
+    banner:    document.getElementById("sc-banner"),
+    tf:        document.getElementById("sc-tf"),
+    action:    document.getElementById("sc-action"),
+    score:     document.getElementById("sc-score"),
+    scoreLbl:  document.getElementById("sc-score-lbl"),
+    levels:    document.getElementById("sc-levels"),
+    lvlEntry:  document.getElementById("lvl-entry"),
+    lvlStop:   document.getElementById("lvl-stop"),
+    lvlTarget: document.getElementById("lvl-target"),
+    detail:    document.getElementById("sc-detail"),
+    armBar:    document.getElementById("arm-bar"),
+    armFill:   document.getElementById("arm-fill"),
+    expBar:    document.getElementById("expiry-bar"),
+    expFill:   document.getElementById("expiry-fill"),
+    holdMeta:  document.getElementById("hold-meta"),
+    liveDot:   document.getElementById("live-dot"),
+    liveLbl:   document.getElementById("live-label"),
+    errorBar:  document.getElementById("error-bar"),
+    topSymbol: document.getElementById("top-symbol"),
+    statsEmitted: document.getElementById("stats-emitted"),
+    statsLifetime: document.getElementById("stats-lifetime"),
+    statsConfirm:  document.getElementById("stats-confirm"),
+    statsBars:     document.getElementById("stats-bars"),
+    statsHeld:     document.getElementById("stats-held"),
+    statsUpdated:  document.getElementById("stats-updated"),
+    lastExit:      document.getElementById("last-exit"),
+    narrative:     document.getElementById("narrative-body"),
+  };
+
+  const EXIT_BLURBS = {
+    "target_reached":  "Target reached — the setup played out as expected.",
+    "invalidated":     "Invalidated at stop-loss — structure broke against us.",
+    "time_expired":    "Time-expired — ran out of the window without target.",
+    "score_decayed":   "Confluence faded — the setup lost strength mid-flight.",
+    "regime_shifted":  "Volatility regime shifted — conditions changed, we stepped aside.",
+    "opposing_signal": "An opposing setup overrode it — reversing view.",
+  };
+
+  const FOREVER = "—";
+
+  async function poll() {
+    try {
+      const r = await fetch(API_URL, { cache: "no-store" });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const s = await r.json();
+      render(s);
+      markLive(true);
+    } catch (err) {
+      markLive(false);
+    }
+  }
+
+  function markLive(ok) {
+    els.liveDot.classList.toggle("stale", !ok);
+    els.liveLbl.textContent = ok ? "Live feed" : "Reconnecting…";
+    els.errorBar.style.display = ok ? "none" : "block";
+  }
+
+  function fmtNum(v, decimals) {
+    if (v === null || v === undefined) return FOREVER;
+    const n = Number(v);
+    if (!Number.isFinite(n)) return FOREVER;
+    return n.toFixed(decimals === undefined ? 2 : decimals);
+  }
+
+  function render(s) {
+    els.topSymbol.textContent = (s.symbol || "—") + " · 15m";
+    els.tf.textContent = (s.last_bar_processed || "—") + (s.last_bar_processed ? " UTC" : "");
+
+    const card = els.card;
+    card.classList.remove("buy", "sell", "hold");
+
+    if (s.state === "BUY" || s.state === "SELL") {
+      card.classList.add(s.state.toLowerCase());
+      renderActive(s);
+    } else {
+      card.classList.add("hold");
+      renderHold(s);
+    }
+
+    // Stats
+    const stats = s.stats || {};
+    els.statsEmitted.textContent = stats.signals_emitted ?? "—";
+    els.statsLifetime.textContent = stats.avg_signal_lifetime_bars != null
+      ? stats.avg_signal_lifetime_bars.toFixed(1) + " bars" : "—";
+    els.statsConfirm.textContent = stats.confirmation_rate != null
+      ? Math.round(stats.confirmation_rate * 100) + "%" : "—";
+    els.statsBars.textContent    = stats.bars_processed ?? 0;
+    els.statsHeld.textContent    = (stats.arms_aborted ?? 0);
+    els.statsUpdated.textContent = new Date(s.generated_at).toLocaleTimeString();
+
+    // Last exit
+    if (s.last_exit_reason) {
+      els.lastExit.textContent = EXIT_BLURBS[s.last_exit_reason] || s.last_exit_reason;
+    } else {
+      els.lastExit.textContent = "No prior exit this session.";
+    }
+  }
+
+  function renderActive(s) {
+    const sig = s.active_signal || {};
+    els.banner.textContent = s.state;
+    els.action.textContent = (s.state === "BUY" ? "▲ BUY " : "▼ SELL ") + (s.direction || "");
+    els.action.classList.remove("hold", "buy", "sell");
+    els.action.classList.add(s.state.toLowerCase());
+    els.score.textContent = fmtNum(sig.confluence_score, 0);
+    els.scoreLbl.textContent = "Confluence";
+
+    els.levels.style.display = "grid";
+    els.lvlEntry.textContent  = fmtNum(sig.entry_price, 2);
+    els.lvlStop.textContent   = fmtNum(sig.stop_loss, 2);
+    els.lvlTarget.textContent = fmtNum(sig.take_profit, 2);
+
+    els.detail.textContent = s.detail || "";
+
+    els.armBar.style.display = "none";
+
+    // Expiry progress bar
+    if (s.bars_remaining != null && s.bars_in_state != null) {
+      const total = s.bars_remaining + s.bars_in_state;
+      const pct = total > 0 ? (s.bars_remaining / total) * 100 : 100;
+      els.expBar.style.display = "block";
+      els.expFill.style.width = pct.toFixed(1) + "%";
+    } else {
+      els.expBar.style.display = "none";
+    }
+
+    els.holdMeta.innerHTML = "";
+    appendPill(els.holdMeta, "R:R",        fmtNum(sig.rr_ratio, 2));
+    appendPill(els.holdMeta, "Bars active", s.bars_in_state ?? 0);
+    if (s.bars_remaining != null)
+      appendPill(els.holdMeta, "Expires in", s.bars_remaining + " bars");
+    if (sig.vol_regime)
+      appendPill(els.holdMeta, "Regime", sig.vol_regime);
+
+    renderActiveNarrative(s, sig);
+  }
+
+  function renderHold(s) {
+    els.banner.textContent = s.headline || "WATCHING";
+    els.action.textContent = "● HOLD";
+    els.action.classList.remove("buy", "sell");
+    els.action.classList.add("hold");
+    els.score.textContent = "—";
+    els.scoreLbl.textContent = s.hold_sub_state ? s.hold_sub_state.toUpperCase() : "NO TRADE";
+
+    els.levels.style.display = "none";
+    els.expBar.style.display = "none";
+
+    els.detail.textContent = s.detail || "";
+
+    // Arming progress
+    if (s.hold_sub_state === "arming" && s.confirmation_progress) {
+      const [have, need] = s.confirmation_progress;
+      const pct = need > 0 ? (have / need) * 100 : 0;
+      els.armBar.style.display = "block";
+      els.armFill.style.width = pct.toFixed(1) + "%";
+    } else {
+      els.armBar.style.display = "none";
+    }
+
+    // Pills (concrete numbers the client can read at a glance)
+    els.holdMeta.innerHTML = "";
+    if (s.hold_sub_state === "arming" && s.confirmation_progress) {
+      appendPill(els.holdMeta, "Confirming",
+        s.confirmation_progress[0] + " / " + s.confirmation_progress[1] + " bars");
+    }
+    if (s.hold_sub_state === "cooldown" && s.cooldown_bars_remaining != null) {
+      appendPill(els.holdMeta, "Cooldown", s.cooldown_bars_remaining + " bars left");
+    }
+    if (s.bars_in_state != null) {
+      appendPill(els.holdMeta, "In HOLD", s.bars_in_state + " bars");
+    }
+    if (s.last_exit_reason) {
+      appendPill(els.holdMeta, "Last exit",
+        (EXIT_BLURBS[s.last_exit_reason] || s.last_exit_reason).split("—")[0].trim());
+    }
+
+    renderHoldNarrative(s);
+  }
+
+  function appendPill(parent, lbl, val) {
+    const el = document.createElement("div");
+    el.className = "hold-pill";
+    el.innerHTML = lbl + " <b>" + val + "</b>";
+    parent.appendChild(el);
+  }
+
+  function renderActiveNarrative(s, sig) {
+    const dirWord = s.direction === "LONG" ? "bullish" : "bearish";
+    els.narrative.innerHTML =
+      '<p><em>' + s.state + ' LIVE.</em> ' + s.detail + '</p>' +
+      '<p>The setup was confirmed over two consecutive bars at a confluence of ' +
+      '<b>' + fmtNum(sig.confluence_score, 0) + '/100</b>, entering near ' +
+      '<b>' + fmtNum(sig.entry_price, 2) + '</b> with a risk-to-reward of <b>1:' +
+      fmtNum(sig.rr_ratio, 2) + '</b>.</p>' +
+      '<p>The signal will auto-exit if price reaches the stop at <b>' + fmtNum(sig.stop_loss, 2) +
+      '</b>, the target at <b>' + fmtNum(sig.take_profit, 2) +
+      '</b>, structure breaks, or the confluence score falls below the exit threshold.</p>';
+  }
+
+  function renderHoldNarrative(s) {
+    let lead = "";
+    switch (s.hold_sub_state) {
+      case "arming":
+        lead = "<p><em>A setup is forming.</em> The system is watching a " +
+               "directional bias build across consecutive bars. No signal is " +
+               "published until the confirmation window completes — this " +
+               "protects you from single-bar fake-outs.</p>";
+        break;
+      case "cooldown":
+        lead = "<p><em>Mandatory cooldown after the last signal.</em> We do not " +
+               "allow immediate re-entries: they whipsaw. Standing aside until " +
+               "structure resets.</p>";
+        break;
+      case "post_exit":
+        lead = "<p><em>Signal just ended.</em> " +
+               (s.last_exit_reason
+                  ? (EXIT_BLURBS[s.last_exit_reason] || "")
+                  : "") + "</p>";
+        break;
+      default:
+        lead = "<p><em>Market is inconclusive.</em> No directional setup meets " +
+               "our confluence threshold. We only publish a signal when structure, " +
+               "smart-money flow, momentum, and volatility align in the same direction.</p>";
+    }
+    els.narrative.innerHTML = lead +
+      "<p>This is not inactivity — it is protection. The product's job is to tell " +
+      "you when to act <b>and</b> when not to. HOLD is a signal.</p>";
+  }
+
+  // Kick off
+  poll();
+  setInterval(poll, POLL_MS);
+})();
+</script>
+</body>
+</html>

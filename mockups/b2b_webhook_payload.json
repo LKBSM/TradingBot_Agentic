@@ -1,0 +1,110 @@
+{
+  "_comment": "MOCKUP — Webhook push broker. Exemple d'une requête HTTP POST envoyée à l'URL callback enregistrée par le broker (POST /api/v1/webhooks/subscribe).",
+
+  "_http_request": {
+    "method": "POST",
+    "url": "<broker_callback_url_registered_at_subscribe>",
+    "headers": {
+      "Content-Type": "application/json",
+      "User-Agent": "SmartSentinel-Webhook/1.0",
+      "X-Sentinel-Insight-Id": "0193c7a4-2f1b-7c3d-9e8a-5b2c1d4e7f89",
+      "X-Sentinel-Timestamp": "1745945700",
+      "X-Sentinel-Signature": "sha256=8fa1c3b7e5d2a946018cd2eef3b0c4d5a6f9b2e1d3c8a7f5e4b9c6d1a2f8e7b3",
+      "X-Sentinel-Event": "insight.created",
+      "X-Sentinel-Schema-Version": "1.0.0"
+    },
+    "_signature_recipe": "X-Sentinel-Signature = 'sha256=' + HMAC_SHA256(broker_webhook_secret, X-Sentinel-Timestamp + '.' + raw_request_body). Replay-attack guard: broker MUST reject if abs(now - X-Sentinel-Timestamp) > 300s."
+  },
+
+  "event": "insight.created",
+  "delivery_id": "wh_dlv_01HJ4F7Z3K2X8N9R6P4M1Y0E7B",
+  "delivery_attempt": 1,
+  "occurred_at": "2026-04-30T11:15:00.000Z",
+
+  "subscription": {
+    "webhook_id": "wh_01HJ4ABCDEF12345",
+    "key_id": 42,
+    "tier": "BROKER_STANDARD",
+    "white_label": true
+  },
+
+  "data": {
+    "insight_id": "0193c7a4-2f1b-7c3d-9e8a-5b2c1d4e7f89",
+    "generated_at": "2026-04-30T11:15:00.000Z",
+    "asset": "XAUUSD",
+    "timeframe": "M15",
+    "expires_at": "2026-04-30T13:15:00.000Z",
+    "version_schema": "1.0.0",
+
+    "structure_bias": "bullish",
+    "confluence_score": 62,
+    "confluence_score_label": "strong",
+
+    "key_levels": {
+      "support_zone": [2378.00, 2381.00],
+      "resistance_zone": [2398.50, 2401.20],
+      "structural_invalidation": 2374.50,
+      "first_target": 2401.00,
+      "second_target": 2412.00
+    },
+
+    "volatility_forecast": {
+      "next_hour_usd": 4.82,
+      "vs_atr14_pct": 18.0,
+      "regime_label": "normal"
+    },
+
+    "ml": null,
+
+    "narrative_short": "Bullish structure break on M15 with FVG retest at 2378-2381. Trend_bullish regime, vol +18% vs ATR14.",
+    "narrative_full": "Algorithmic market analysis on XAU/USD M15 — bullish bias confirmed by Break of Structure followed by Fair Value Gap retest at 2378-2381. HMM regime classifier indicates trend_bullish (posterior 0.71) and the volatility forecaster anticipates moderate expansion (+18% vs ATR14). Structural invalidation at 2374.50; immediate target 2398.50-2401.20 with extension to 2412 on continuation. No active news blackout. White-label note: this narrative is rendered without 'Smart Sentinel' branding for broker integration in their end-user UI.",
+    "narrative_language": "en",
+    "narrative_model": "claude-sonnet",
+
+    "scenarios": [
+      {
+        "scenario_label": "main",
+        "condition": "Bounce off 2378-2381 FVG with M15 close above 2385",
+        "expected_outcome": "Continuation toward 2401, extension 2412 if NY momentum sustains"
+      },
+      {
+        "scenario_label": "alternative_1",
+        "condition": "Clean M15 close below 2374.50",
+        "expected_outcome": "Bullish read invalidated; bias shifts to range/bearish"
+      }
+    ],
+
+    "components_active": ["bos", "fvg", "order_block", "regime", "volume", "momentum"],
+    "components_score_breakdown": [
+      {"name": "bos", "weighted_score": 13.5, "weight": 15.0, "reasoning": "Confirmed BOS above 2391.5"},
+      {"name": "fvg", "weighted_score": 12.8, "weight": 15.0, "reasoning": "Fresh FVG 2378-2381 retested"},
+      {"name": "order_block", "weighted_score": 7.5, "weight": 10.0, "reasoning": "Bullish OB 2375-2378"},
+      {"name": "regime", "weighted_score": 18.2, "weight": 25.0, "reasoning": "HMM trend_bullish posterior 0.71"},
+      {"name": "news", "weighted_score": 0.0, "weight": 20.0, "reasoning": "No high-impact event in window"},
+      {"name": "volume", "weighted_score": 7.0, "weight": 10.0, "reasoning": "Volume 1.4x avg on BOS bar"},
+      {"name": "momentum", "weighted_score": 2.4, "weight": 3.0, "reasoning": "RSI 42->58 last 6 bars"},
+      {"name": "rsi_divergence", "weighted_score": 0.6, "weight": 2.0, "reasoning": "Mild bullish hidden div"}
+    ],
+
+    "regime_hmm": "trend_bullish",
+    "news_blackout_active": false,
+    "session": "new_york",
+
+    "compliance": {
+      "disclaimer_text": "Algorithmic market analysis for informational purposes only. The broker recipient is contractually obligated to surface this disclaimer to end users in its UI.",
+      "jurisdiction_blocked": ["US", "QC", "UK", "OFAC"],
+      "regulatory_notice": "UE 2024/2811 — algorithmic analysis, not investment advice"
+    }
+  },
+
+  "_response_contract": {
+    "expected_status": [200, 201, 204],
+    "timeout_seconds": 10,
+    "retry_policy": {
+      "max_attempts": 3,
+      "backoff_seconds": [1, 4, 16]
+    },
+    "auto_disable_threshold": 10,
+    "auto_disable_action": "Webhook is disabled and an email notification is sent to the broker admin contact after 10 consecutive failures."
+  }
+}

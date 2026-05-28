@@ -1,0 +1,142 @@
+{
+  "XAUUSD": {
+    "symbol": "XAUUSD",
+    "label": "XAUUSD M15 OOS 2024+",
+    "n_events": 1790,
+    "n_bull": 1024,
+    "n_bear": 766,
+    "q1_sanity_close_vs_level": {
+      "value": 1.0,
+      "bull": 1.0,
+      "bear": 1.0,
+      "n": 1790
+    },
+    "q1_level_reality": {
+      "exact_match_rate": 0.9983240223463687,
+      "definition_exact": "bos_break_level matches a past OHLC extreme within 0.05xATR over past 500 bars",
+      "envelope_rate": 0.9983240223463687,
+      "definition_envelope": "bos_break_level inside [past_min, past_max] over past 500 bars",
+      "n": 1790
+    },
+    "q1_cross_method_f1": {
+      "headline_window_bars": 5,
+      "f1_w5": 0.24900432900432903,
+      "f1_w5_ci95_lo": 0.24005730016965973,
+      "f1_w5_ci95_hi": 0.2708209831766538,
+      "verdict_w5": "\ud83d\udd34",
+      "windows": {
+        "W2": {
+          "window": 2,
+          "tp": 543,
+          "fp": 1247,
+          "fn": 3442,
+          "precision": 0.30335195530726256,
+          "recall": 0.13626097867001255,
+          "f1": 0.18805194805194808
+        },
+        "W5": {
+          "window": 5,
+          "tp": 719,
+          "fp": 1071,
+          "fn": 3266,
+          "precision": 0.4016759776536313,
+          "recall": 0.18042659974905897,
+          "f1": 0.24900432900432903
+        },
+        "W10": {
+          "window": 10,
+          "tp": 910,
+          "fp": 880,
+          "fn": 3075,
+          "precision": 0.5083798882681564,
+          "recall": 0.22835633626097868,
+          "f1": 0.3151515151515151
+        }
+      },
+      "n_prod_events": 1790,
+      "n_ref_events": 3985,
+      "ref_method": "3-bar swing causal",
+      "note": "Prod uses 2-bar Williams fractal (more conservative); ref uses 3-bar swing (more permissive). Low F1 reflects definition divergence between two valid SMC implementations."
+    },
+    "q2_stability_16bars": {
+      "hold_rate_mean": 0.6073324022346369,
+      "hold_rate_ci95_lo": 0.5911295391061453,
+      "hold_rate_ci95_hi": 0.6254582751396648,
+      "median_time_to_recross_bars": 2.0,
+      "no_opposite_bos_rate": 0.7921787709497207,
+      "n": 1790,
+      "lifetime_bars": 16,
+      "definition": "hold_rate_mean = mean over events of (fraction of next-16-bar closes respecting BOS direction); no_opposite_bos_rate = fraction of events with no opposite-sign BOS_EVENT in next 16 bars"
+    }
+  },
+  "EURUSD": {
+    "symbol": "EURUSD",
+    "label": "EURUSD M15 OOS 2024+",
+    "n_events": 1693,
+    "n_bull": 865,
+    "n_bear": 828,
+    "q1_sanity_close_vs_level": {
+      "value": 1.0,
+      "bull": 1.0,
+      "bear": 1.0,
+      "n": 1693
+    },
+    "q1_level_reality": {
+      "exact_match_rate": 0.9982279976373302,
+      "definition_exact": "bos_break_level matches a past OHLC extreme within 0.05xATR over past 500 bars",
+      "envelope_rate": 0.9982279976373302,
+      "definition_envelope": "bos_break_level inside [past_min, past_max] over past 500 bars",
+      "n": 1693
+    },
+    "q1_cross_method_f1": {
+      "headline_window_bars": 5,
+      "f1_w5": 0.26412270856715303,
+      "f1_w5_ci95_lo": 0.25464436791142253,
+      "f1_w5_ci95_hi": 0.2857558857109438,
+      "verdict_w5": "\ud83d\udd34",
+      "windows": {
+        "W2": {
+          "window": 2,
+          "tp": 535,
+          "fp": 1158,
+          "fn": 3118,
+          "precision": 0.31600708800945065,
+          "recall": 0.14645496851902545,
+          "f1": 0.20014964459408902
+        },
+        "W5": {
+          "window": 5,
+          "tp": 706,
+          "fp": 987,
+          "fn": 2947,
+          "precision": 0.41701122268163027,
+          "recall": 0.19326580892417192,
+          "f1": 0.26412270856715303
+        },
+        "W10": {
+          "window": 10,
+          "tp": 914,
+          "fp": 779,
+          "fn": 2739,
+          "precision": 0.5398700531600709,
+          "recall": 0.25020531070353136,
+          "f1": 0.34193789749345305
+        }
+      },
+      "n_prod_events": 1693,
+      "n_ref_events": 3653,
+      "ref_method": "3-bar swing causal",
+      "note": "Prod uses 2-bar Williams fractal (more conservative); ref uses 3-bar swing (more permissive). Low F1 reflects definition divergence between two valid SMC implementations."
+    },
+    "q2_stability_16bars": {
+      "hold_rate_mean": 0.5926240401653868,
+      "hold_rate_ci95_lo": 0.57530917749557,
+      "hold_rate_ci95_hi": 0.6107547622563496,
+      "median_time_to_recross_bars": 2.0,
+      "no_opposite_bos_rate": 0.7406969875959835,
+      "n": 1693,
+      "lifetime_bars": 16,
+      "definition": "hold_rate_mean = mean over events of (fraction of next-16-bar closes respecting BOS direction); no_opposite_bos_rate = fraction of events with no opposite-sign BOS_EVENT in next 16 bars"
+    }
+  }
+}

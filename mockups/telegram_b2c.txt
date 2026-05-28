@@ -1,0 +1,94 @@
+================================================================
+MOCKUP — TELEGRAM B2C — STRATEGIST tier (FR)
+================================================================
+(Telegram parse_mode=HTML. < 800 chars. UE 2024/2811 compliant.
+ Pas de BUY/SELL. Pas de R-multiple. Score arrondi en label.)
+----------------------------------------------------------------
+
+🟢 <b>Smart Sentinel — Analyse algorithmique</b>
+
+<b>Setup :</b> SETUP HAUSSIER
+<b>Actif :</b> XAU/USD · M15
+<b>Score :</b> Strong (palier 55–69)
+<b>Régime :</b> Trend bullish · Session New York
+
+<b>Zones structurelles factuelles :</b>
+• Support : 2378.0 – 2381.0
+• Résistance : 2398.5 – 2401.2
+• Invalidation structurelle : 2374.5
+• Premier objectif : 2401.0
+• Second objectif : 2412.0
+
+🧠 <b>Lecture du marché :</b>
+Cassure de structure haussière confirmée sur M15 avec retest
+du Fair Value Gap 2378–2381. HMM en régime trend_bullish,
+volatilité prévue +18% vs ATR14 (normale). Pas de blackout
+news actif.
+
+📋 <b>Scénarios :</b>
+1. Principal : rebond zone 2378–2381 → continuation 2401
+2. Alternatif : cassure 2374.5 invalide le setup haussier
+
+⏱ Validité jusqu'au 30/04/2026 14:30 UTC.
+
+<i>⚠️ Smart Sentinel AI — Analyse algorithmique, pas un conseil
+en investissement. 74-89% des comptes particuliers en CFD perdent
+de l'argent.</i>
+
+----------------------------------------------------------------
+Char count: ~785 (within 800 limit)
+Tier check:
+  FREE       → narrative_short uniquement (5 lignes), pas de scenarios
+  ANALYST    → + lecture du marché courte
+  STRATEGIST → + scenarios + zones structurelles complètes (rendu ci-dessus)
+  (INSTITUTIONAL B2C deprecated, grandfathered only)
+
+================================================================
+MOCKUP — TELEGRAM B2C — FREE tier (EN)
+================================================================
+🟢 <b>Smart Sentinel — Algorithmic Analysis</b>
+
+<b>Setup:</b> BULLISH SETUP
+<b>Asset:</b> XAU/USD · M15
+<b>Score:</b> Strong
+
+🧠 Bullish bias confirmed on M15. Key support 2378–2381,
+key resistance 2398–2401. Structural invalidation: 2374.5.
+
+🔒 <i>Upgrade to Analyst ($14/mo) for full market read,
+scenarios and email digest.</i>
+
+⏱ Valid until 2026-04-30 14:30 UTC.
+
+<i>⚠️ Smart Sentinel AI — Algorithmic analysis, not investment
+advice. 74-89% of retail CFD accounts lose money.</i>
+
+----------------------------------------------------------------
+Char count: ~520
+================================================================
+MOCKUP — Telegram exit notification — ANALYST tier (FR)
+================================================================
+(Vocabulaire compliance : "objectif atteint" / "setup invalidé" /
+ "scénario expiré". Jamais USD ni R.)
+----------------------------------------------------------------
+
+✅ <b>Setup clôturé — Objectif atteint</b>
+
+<b>Actif :</b> XAU/USD · M15
+<b>Setup d'origine :</b> SETUP HAUSSIER
+<b>Score à l'ouverture :</b> Strong
+<b>Sortie :</b> Premier objectif (2401.0) atteint
+
+⏱ Durée du scénario : 3h 15m
+
+<i>⚠️ Analyse algorithmique. Pas un conseil en investissement.</i>
+
+----------------------------------------------------------------
+Variantes de raison de sortie :
+  ✅ Objectif atteint              (target hit)
+  ❌ Setup invalidé                (structural invalidation broken)
+  ⌛ Scénario expiré               (expires_at reached)
+
+================================================================
+END
+================================================================
