@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react';
+import { Check, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,20 +13,26 @@ interface Tier {
   features: ReadonlyArray<string>;
   cta: string;
   highlight?: boolean;
-  decoy?: boolean;
 }
 
-// LEGAL-PENDING: pricing labels, feature wording and CTAs are placeholders
-// pending the legal terminal's review on "analyses" vs "signaux" wording,
-// MiFID disclosure_mode=qualitative, refund policy phrasing, and dual-trial
-// presentation (DG-070 + DG-073 + DG-079 + DG-083 + DG-084).
+/**
+ * Section L5.1 — Pricing post-pivot 2026-05-27.
+ *
+ * Décision officielle : FREE / 9 € / 19 € (cf. `pivot_positioning_2026_05_27`
+ * + `decisions/2026-05-27_pivot_positioning_audit.md`). INSTITUTIONAL retiré
+ * de la grille publique, remplacé par un bloc "Réserver une démo" Calendly
+ * en bas de section.
+ *
+ * Cap volontaire 50 abonnés (bootstrap legal) → mention "Early Access".
+ * Refund 30 j + annulation 1 clic = défense MiFID II / UE 2024/2811.
+ */
 const TIERS: ReadonlyArray<Tier> = [
   {
     id: 'free',
     name: 'Découverte',
     price: 'Gratuit',
     cadence: '',
-    pitch: "Goûtez la lecture, sans CB, sans engagement.",
+    pitch: 'Goûtez la lecture, sans CB, sans engagement.',
     features: [
       '1 lecture XAU M15 par jour',
       'Verdict + jauge de conviction',
@@ -36,51 +42,35 @@ const TIERS: ReadonlyArray<Tier> = [
     cta: 'Commencer',
   },
   {
-    id: 'analyst',
-    name: 'Analyste',
-    price: '29 €',
+    id: 'approfondie',
+    name: 'Approfondie',
+    price: '9 €',
     cadence: '/ mois',
-    pitch: 'L’offre quotidienne du retail actif.',
+    pitch: 'Une lecture complète, chaque jour.',
     features: [
-      'XAU + EUR · M15 / H1 / H4',
+      'XAU + EUR · M15 / H1',
       'Sections collapsibles complètes',
       'Chatbot illimité',
-      'Track-record public mensuel',
-      'Essai 14 jours sans CB',
+      'Bannière event ≤ 4 h',
+      'Annulation en un clic',
     ],
     cta: "S'abonner",
     highlight: true,
   },
   {
-    id: 'strategist',
-    name: 'Stratège',
-    price: '79 €',
+    id: 'integrale',
+    name: 'Intégrale',
+    price: '19 €',
     cadence: '/ mois',
-    pitch: 'Pour les power-users SMC et macros.',
+    pitch: 'Tout l’outil pour les power-users SMC + macro.',
     features: [
-      'Tout Analyste',
+      'Tout Approfondie',
       'Décomposition 8 composantes (waterfall)',
       'Visualisation conformelle + sources RAG',
-      'Bannière event ≤ 4 h prioritaire',
       'Historique 50 lectures + PnL paper individuel',
+      'Accès anticipé futures fonctionnalités',
     ],
     cta: "S'abonner",
-  },
-  {
-    id: 'institutional',
-    name: 'Institutionnel',
-    price: '1 990 €',
-    cadence: '/ mois',
-    pitch: 'API B2B brokers + SLA + onboarding.',
-    features: [
-      'API REST + webhooks signés',
-      'SLA 99.5 % uptime',
-      'Onboarding accompagné',
-      'Volume illimité, multi-instruments',
-      'Démo personnalisée Calendly',
-    ],
-    cta: 'Demander une démo',
-    decoy: true,
   },
 ];
 
@@ -89,35 +79,73 @@ export function PricingSection() {
     <section
       id="tarifs"
       aria-labelledby="pricing-title"
-      className="container-prose space-y-8 py-12 sm:py-16"
+      className="container-wide space-y-10 py-16 sm:py-20"
     >
-      <header className="space-y-2">
+      <header className="max-w-2xl space-y-3">
+        <Badge
+          variant="outline"
+          className="border-sentinel-bull/40 text-[11px] uppercase tracking-wider text-sentinel-bull"
+        >
+          Early Access · 50 places
+        </Badge>
         <h2
           id="pricing-title"
           className="text-balance text-2xl font-semibold tracking-tight sm:text-3xl"
         >
-          Trois formules retail, une API institutionnelle.
+          Trois entrées. Annulation en un clic. Remboursement 30 jours.
         </h2>
-        <p className="max-w-2xl text-muted-foreground">
-          Essai 14 jours sans carte bancaire sur Analyste et Stratège.
-          Annulation en un clic, remboursement intégral sous 30 jours.
+        <p className="max-w-2xl text-pretty text-muted-foreground">
+          Pas d&apos;essai gratuit déguisé, pas de carte demandée sur le
+          tier Découverte. Les tarifs Early Access restent valables tant que
+          MIA n&apos;a pas atteint l&apos;edge mesurable (cf. section{' '}
+          <a href="#honnetete" className="underline-offset-2 hover:underline">
+            Honnêteté conformelle
+          </a>).
         </p>
       </header>
 
-      <div className="grid gap-4 lg:grid-cols-4">
+      <div className="grid gap-5 sm:gap-6 lg:grid-cols-3">
         {TIERS.map((tier) => (
           <TierCard key={tier.id} tier={tier} />
         ))}
       </div>
 
-      {/* LEGAL-PENDING: trial / refund / mediation wording — to be replaced
-          by the legal terminal output (L.612-1 médiateur CM2C, Hamon 14j,
-          MiFID disclosure). */}
+      {/* Bloc B2B / Institutional discret — pas dans la grille pour éviter le
+          decoy et l'effet "trop cher" sur les vrais tiers retail. */}
+      <aside className="rounded-2xl border border-dashed border-border/70 bg-muted/30 p-5 sm:p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="max-w-xl space-y-1">
+            <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+              Pour les équipes pro · API B2B
+            </p>
+            <p className="text-sm text-foreground">
+              Brokers, fonds, médias : intégration API REST + webhooks
+              signés, SLA et onboarding accompagné — tarif sur demande.
+            </p>
+          </div>
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="shrink-0"
+          >
+            <a
+              href="https://calendly.com/mia-markets/demo"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Réserver une démo
+              <ExternalLink className="ml-1.5 h-3.5 w-3.5" aria-hidden />
+            </a>
+          </Button>
+        </div>
+      </aside>
+
       <p className="text-xs italic text-muted-foreground">
         Démonstration paper-trading. MIA Markets produit des analyses
-        éditoriales contextuelles et non des recommandations personnalisées.
-        Disponibilité géographique restreinte (US, Québec, Royaume-Uni et
-        juridictions OFAC exclues).
+        éditoriales contextuelles et non des recommandations
+        personnalisées (UE 2024/2811). Disponibilité géographique
+        restreinte — voir bas de page.
       </p>
     </section>
   );
@@ -140,11 +168,6 @@ function TierCard({ tier }: { tier: Tier }) {
             {tier.highlight && (
               <Badge variant="default" className="text-[10px]">
                 Recommandé
-              </Badge>
-            )}
-            {tier.decoy && (
-              <Badge variant="secondary" className="text-[10px]">
-                B2B
               </Badge>
             )}
           </div>
@@ -175,7 +198,7 @@ function TierCard({ tier }: { tier: Tier }) {
           className="w-full"
           disabled
           aria-disabled="true"
-          title="Inscription disponible après l'intégration backend (V2)"
+          title="Inscription disponible après l'intégration backend"
         >
           {tier.cta}
         </Button>
