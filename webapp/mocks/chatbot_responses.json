@@ -82,12 +82,12 @@
       {
         "id": "historical-comparison",
         "text": "À quoi ressemble historiquement une consolidation comme celle-ci ?",
-        "reply": "Sur 94 cas H4 XAU similaires (pas de BOS, régime ranging basse volatilité, expected run-length > 200 bougies), le profit factor a été 1.18. L'IC 95 % est [0.92, 1.45] — l'intervalle inclut 1.0, donc on ne peut pas affirmer qu'il y a un edge significatif. Le taux de réussite brut est 34 %. C'est typique des marchés en attente : peu de signal, beaucoup de bruit. La meilleure décision sur ce genre de lecture est souvent l'absence de décision — observer, identifier les niveaux clés, attendre le déclencheur."
+        "reply": "Notre validation statistique out-of-sample est en cours (Sprint 1). Pour des configurations H4 ranging basse volatilité comme celle-ci, je ne peux pas te citer de profit factor ou IC tant que les seuils OOS ne sont pas atteints. Ce que je sais te dire structurellement : cette lecture n'identifie aucun déclencheur technique fort (pas de cassure, pas d'OB significatif, régime sans tendance). Sur ce genre de configurations, la meilleure décision est souvent l'absence de décision — observer, identifier les niveaux clés, attendre le déclencheur. C'est aussi pour ça que la conviction reste modeste."
       },
       {
         "id": "buy-or-not",
         "text": "Donc je dois attendre ?",
-        "reply": "Encore une fois, je ne donne aucune instruction. Ce que je peux te dire factuellement : la lecture actuelle n'identifie aucun déclencheur technique fort (pas de cassure, pas d'OB significatif, régime sans tendance). 94 cas historiques similaires donnent un profit factor de 1.18 avec un IC qui inclut 1.0 — autrement dit, l'avantage statistique n'est pas démontré. Si ton style de trading recherche des entrées avec une justification structurelle claire, cette lecture est probablement à laisser passer. Mais c'est à toi de croiser ça avec ton contexte personnel."
+        "reply": "Encore une fois, je ne donne aucune instruction. Ce que je peux te dire factuellement : la lecture actuelle n'identifie aucun déclencheur technique fort (pas de cassure, pas d'OB significatif, régime sans tendance). Si ton style de trading recherche des entrées avec une justification structurelle claire, cette lecture est probablement à laisser passer. Mais c'est à toi de croiser ça avec ton contexte personnel. Aucun chiffre de performance ne sera publié tant que la validation OOS n'est pas terminée — c'est une règle de transparence."
       }
     ]
   }

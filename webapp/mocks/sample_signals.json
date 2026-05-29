@@ -64,12 +64,12 @@
       { "name": "rsi_divergence", "contribution": 0, "weight_max": 2.0, "reasoning": "Aucune divergence régulière détectée." }
     ],
     "historical_stats": {
-      "similar_setups_n": 329,
-      "hit_rate_observed": 0.319,
-      "profit_factor": 1.30,
-      "profit_factor_ci95": [1.12, 1.49],
+      "similar_setups_n": null,
+      "hit_rate_observed": null,
+      "profit_factor": null,
+      "profit_factor_ci95": null,
       "empirical_coverage": 0.91,
-      "backtest_window": "XAU M15 2019-2025 walk-forward"
+      "backtest_window": "OOS validation pending — Sprint 1 (Blocker #3)"
     },
     "narrative_short": "Lecture haussière XAU M15 : cassure de structure confirmée par retest armé sur le déséquilibre 2378-2381, régime de tendance, événement majeur dans 18 heures.",
     "narrative_long": "Le marché XAU/USD vient de casser le swing high à 2391.5 après un changement de caractère récent, et le prix est revenu tester la zone de déséquilibre 2378-2381 où il a rebondi (retest armé). L'invalidation structurelle se situe sous 2378. Le HMM identifie un régime de tendance haussière avec posterior 0.71, la probabilité de changement de régime reste très faible (3%). La volatilité prévue est légèrement supérieure à la normale (+10% vs ATR naïf). Les FOMC Minutes sont attendues dans 18 heures — fenêtre de blackout pas encore active.",
@@ -148,12 +148,12 @@
       { "name": "rsi_divergence", "contribution": 2.0, "weight_max": 2.0, "reasoning": "Divergence régulière baissière détectée sur le dernier swing." }
     ],
     "historical_stats": {
-      "similar_setups_n": 187,
-      "hit_rate_observed": 0.265,
-      "profit_factor": 1.05,
-      "profit_factor_ci95": [0.88, 1.22],
+      "similar_setups_n": null,
+      "hit_rate_observed": null,
+      "profit_factor": null,
+      "profit_factor_ci95": null,
       "empirical_coverage": 0.88,
-      "backtest_window": "EURUSD H1 2019-2025 walk-forward"
+      "backtest_window": "OOS validation pending — Sprint 1 (Blocker #3)"
     },
     "narrative_short": "Lecture baissière EUR/USD H1 sous réserve : BOS confirmé mais retest en attente, régime ranging et jump ratio élevé (42%) — décision interne REDUCE.",
     "narrative_long": "Le pair EUR/USD a cassé son swing low à 1.08750 il y a 4 barres, mais le retest sur la zone FVG 1.0860-1.0868 n'a pas encore eu lieu. Le HMM diagnostique un régime de range basse volatilité avec posterior 0.62, ce qui réduit la fiabilité d'un setup directionnel. Le jump ratio à 0.42 indique que 42% de la variance vient de sauts — environnement défavorable aux setups mean-reversion comme aux trend-following. Décision de gate interne : REDUCE (probabilité de changement de régime 8%). La décision BCE attendue dans 3 heures peut accentuer le mouvement ou provoquer un changement de régime.",
@@ -232,12 +232,12 @@
       { "name": "rsi_divergence", "contribution": 0, "weight_max": 2.0, "reasoning": "Aucune divergence détectée." }
     ],
     "historical_stats": {
-      "similar_setups_n": 94,
-      "hit_rate_observed": 0.34,
-      "profit_factor": 1.18,
-      "profit_factor_ci95": [0.92, 1.45],
+      "similar_setups_n": null,
+      "hit_rate_observed": null,
+      "profit_factor": null,
+      "profit_factor_ci95": null,
       "empirical_coverage": 0.92,
-      "backtest_window": "XAU H4 2019-2025 walk-forward"
+      "backtest_window": "OOS validation pending — Sprint 1 (Blocker #3)"
     },
     "narrative_short": "Marché XAU H4 en consolidation : pas de cassure récente, régime ranging basse volatilité, en attente d'un retest sur la zone FVG 2358-2362.",
     "narrative_long": "Le marché XAU/USD en H4 traverse une phase de consolidation sans cassure de structure récente. Le seul élément technique notable est un Fair Value Gap à 2358-2362 (0.35 × ATR) toujours actif et en attente de test. Le HMM identifie un régime de range basse volatilité (posterior 0.55), avec un expected run-length confortable de 220 barres — pas de signal de retournement imminent. La volatilité prévue est même inférieure à la normale (-11% vs ATR naïf). Le sentiment news est proche de zéro avec une confiance basse (0.40). Les NFP sont prévues dans 48 heures.",
