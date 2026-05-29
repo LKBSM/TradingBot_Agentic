@@ -4,6 +4,7 @@ Inaugurates the ``src/storage/`` namespace (cf. architecture doc §3.4).
 Future stores (candles_cache, news_cache, …) should land here as siblings.
 """
 
+from src.storage.candles_cache_store import CandlesCacheStore
 from src.storage.market_readings_store import MarketReadingsStore
 
-__all__ = ["MarketReadingsStore"]
+__all__ = ["MarketReadingsStore", "CandlesCacheStore"]

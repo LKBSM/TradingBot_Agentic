@@ -103,3 +103,8 @@ backtest_trades.csv
 data/market_readings.db
 data/market_readings.db-shm
 data/market_readings.db-wal
+
+# Chantier 1 — CandlesCacheStore SQLite (WAL companions)
+data/candles.db
+data/candles.db-shm
+data/candles.db-wal
