@@ -55,6 +55,7 @@ from src.intelligence.readout_mappers import (
     map_breakdown_components,
     map_event_readout,
     map_historical_stats,
+    map_mtf_readout,
     map_regime_readout,
     map_structure_readout,
     map_uncertainty_context,
@@ -118,6 +119,7 @@ class InsightAssembler:
         regime_analysis: Optional[Any] = None,
         regime_gate_output: Optional[Any] = None,
         news_assessment: Optional[Any] = None,
+        htf_features: Optional[dict] = None,
         session_label: Optional[str] = None,
         narrative_short: str = "",
         narrative_long: str = "",
@@ -179,6 +181,7 @@ class InsightAssembler:
         regime = map_regime_readout(regime_analysis, regime_gate_output, direction_hint)
         volatility = map_volatility_readout(volatility_forecast)
         event = map_event_readout(news_assessment, session_label)
+        mtf = map_mtf_readout(htf_features, direction_hint)
         breakdown = map_breakdown_components(
             confluence_signal,
             expose_weights=self._defaults.expose_component_weights,
@@ -232,6 +235,7 @@ class InsightAssembler:
             regime_readout=regime,
             volatility_readout=volatility,
             event_readout=event,
+            mtf_readout=mtf,
             breakdown_components=breakdown,
             historical_stats=hist_stats,
             narrative_short=narrative_short or self._fallback_narrative(direction, narrative_language),

@@ -381,6 +381,71 @@ class EventReadout(BaseModel):
     )
 
 
+class MultiTimeframeReadout(BaseModel):
+    """Higher-timeframe context (descriptive, never prescriptive).
+
+    Wired Phase 1 (2026-05-21) as part of the MTF rewiring plan. Sourced
+    from :class:`src.environment.multi_timeframe_features.MultiTimeframeFeatures`
+    which resamples the base M15 frame to H1 + H4 using look-ahead-safe
+    causal masks (strict ``htf_df.index < current_ts``).
+
+    All fields are **descriptions of the current chart**, not orders.
+    Surfaced in the EXPERT view of the multi-view product UI; hidden in
+    FOCUS / CO-PILOT modes unless the user opts in.
+    """
+
+    h1_trend: Optional[str] = Field(
+        default=None,
+        description="H1 trend label: 'bullish' / 'bearish' / 'neutral'",
+    )
+    h4_trend: Optional[str] = Field(
+        default=None,
+        description="H4 trend label: 'bullish' / 'bearish' / 'neutral'",
+    )
+    h1_strength: Optional[float] = Field(
+        default=None, ge=0.0, le=1.0,
+        description="H1 trend strength in [0, 1] (distance SMA20-SMA50 normalised by close)",
+    )
+    h4_strength: Optional[float] = Field(
+        default=None, ge=0.0, le=1.0,
+        description="H4 trend strength in [0, 1]",
+    )
+    h1_rsi: Optional[float] = Field(
+        default=None, ge=0.0, le=100.0,
+        description="H1 RSI(14)",
+    )
+    h4_rsi: Optional[float] = Field(
+        default=None, ge=0.0, le=100.0,
+        description="H4 RSI(14)",
+    )
+    alignment_with_setup: Optional[str] = Field(
+        default=None,
+        description=(
+            "Qualitative alignment of HTF context with the current setup direction: "
+            "'aligned' / 'counter' / 'neutral' / 'na'. Descriptive — never a recommendation."
+        ),
+    )
+    alignment_score_0_1: Optional[float] = Field(
+        default=None, ge=0.0, le=1.0,
+        description="Quantitative alignment score in [0, 1]. Mirrors the scorer in ConfluenceDetector.",
+    )
+    session: Optional[str] = Field(
+        default=None,
+        description="Trading session derived from the base bar timestamp: 'asian' / 'london' / 'new_york'",
+    )
+
+    @field_validator("alignment_with_setup")
+    @classmethod
+    def _validate_alignment(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        if v not in ("aligned", "counter", "neutral", "na"):
+            raise ValueError(
+                f"alignment_with_setup must be aligned/counter/neutral/na, got {v}"
+            )
+        return v
+
+
 class ComponentBreakdown(BaseModel):
     """One row of the conviction score breakdown.
 
@@ -445,7 +510,7 @@ class HistoricalStats(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-SCHEMA_VERSION = "2.1.0"
+SCHEMA_VERSION = "2.2.0"
 
 
 class InsightSignalV2(BaseModel):
@@ -497,6 +562,13 @@ class InsightSignalV2(BaseModel):
         default=None,
         description="News blackout, next event, sentiment, session",
     )
+    mtf_readout: Optional[MultiTimeframeReadout] = Field(
+        default=None,
+        description=(
+            "Higher-timeframe (H1 + H4) descriptive context. "
+            "Wired Phase 1 (schema 2.2.0). Surfaced in EXPERT view only by default."
+        ),
+    )
     breakdown_components: List[ComponentBreakdown] = Field(
         default_factory=list,
         description="8-component conviction decomposition. May be empty for B2C surfaces.",
@@ -535,7 +607,7 @@ class InsightSignalV2(BaseModel):
         "json_schema_extra": {
             "examples": [
                 {
-                    "schema_version": "2.1.0",
+                    "schema_version": "2.2.0",
                     "id": "0193c7a4-2f1b-7c3d-9e8a-5b2c1d4e7f89",
                     "instrument": "XAUUSD",
                     "timeframe": "M15",
