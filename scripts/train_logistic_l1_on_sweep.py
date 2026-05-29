@@ -61,6 +61,14 @@ MODELS_DIR.mkdir(parents=True, exist_ok=True)
 FEATURE_NAMES = ("score_z", "is_long", "hour_sin", "hour_cos",
                  "bars_held_log", "exit_natural")
 
+# Sprint 4 refactor (post Action 3 verdict) : TradeRecord now persists the
+# 8 ConfluenceDetector components via cmp_<NAME> columns. Train on RAW
+# components when available — that's the audit 3.3 recommendation.
+COMPONENT_FEATURE_NAMES = (
+    "cmp_BOS", "cmp_FVG", "cmp_OB", "cmp_Regime",
+    "cmp_News", "cmp_Volume", "cmp_Momentum", "cmp_RSI_Divergence",
+)
+
 
 def gather_trades() -> pd.DataFrame:
     frames: list[pd.DataFrame] = []
@@ -88,8 +96,13 @@ def gather_trades() -> pd.DataFrame:
     return out
 
 
-def build_features(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray, pd.DataFrame]:
-    """Return (X, y, df_with_features). Drops breakevens and NaNs."""
+def build_features(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray, pd.DataFrame, tuple[str, ...]]:
+    """Return (X, y, df_with_features, feature_names).
+
+    Sprint 4 refactor : prefer RAW components (cmp_*) when available
+    (TradeRecord refactor persisted them). Fallback to derived features
+    when components absent (legacy CSVs).
+    """
     out = df.copy()
 
     # Target : win (R > 0). Drop breakevens.
@@ -98,27 +111,29 @@ def build_features(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray, pd.DataFra
     out = out[out["r_multiple"].abs() >= 0.05].copy()
     out["y"] = (out["r_multiple"] > 0).astype(int)
 
-    # Features
+    # ---- Sprint 4 refactor : raw components, if available ----
+    available_cmp = [c for c in COMPONENT_FEATURE_NAMES if c in out.columns]
+    if len(available_cmp) >= 3:
+        # Use components directly (raw weighted scores 0-w_max each)
+        out = out.dropna(subset=available_cmp, how="all").fillna({c: 0.0 for c in available_cmp})
+        X = out[available_cmp].to_numpy(dtype=float)
+        y = out["y"].to_numpy(dtype=int)
+        return X, y, out, tuple(available_cmp)
+
+    # ---- Legacy fallback : derived features (Action 3 minimum viable) ----
     out["score_z"] = (out["confluence_score"] - 50.0) / 25.0
     out["is_long"] = (out["direction"] == "LONG").astype(int)
-
-    # Hour
     out["entry_bar_ts"] = pd.to_datetime(out["entry_bar"], errors="coerce")
     hour = out["entry_bar_ts"].dt.hour.fillna(0).astype(float).to_numpy()
     out["hour_sin"] = np.sin(2 * np.pi * hour / 24)
     out["hour_cos"] = np.cos(2 * np.pi * hour / 24)
-
-    # Bars held
     out["bars_held_log"] = np.log1p(out["bars_held"].astype(float))
-
-    # Exit reason
     natural = {"take_profit", "signal_change", "max_age"}
     out["exit_natural"] = out["exit_reason"].astype(str).isin(natural).astype(int)
-
     out = out.dropna(subset=["score_z", "hour_sin", "hour_cos", "bars_held_log"])
     X = out[list(FEATURE_NAMES)].to_numpy(dtype=float)
     y = out["y"].to_numpy(dtype=int)
-    return X, y, out
+    return X, y, out, FEATURE_NAMES
 
 
 def time_split(df: pd.DataFrame, X: np.ndarray, y: np.ndarray,
@@ -163,8 +178,11 @@ def main() -> int:
               "Need more variety in sweep grid or full-data sweep.")
         return 2
 
-    X, y, df_feat = build_features(df)
+    X, y, df_feat, feat_names = build_features(df)
+    use_raw_components = feat_names[0].startswith("cmp_") if feat_names else False
     print(f"After feature build : {len(X)} trades  (base rate win={y.mean():.3f})")
+    print(f"Feature set : {'RAW components' if use_raw_components else 'derived (legacy)'} "
+          f"— {list(feat_names)}")
 
     X_tr, X_te, y_tr, y_te = time_split(df_feat, X, y, oos_frac=args.oos_frac)
     print(f"Train : {len(X_tr)}, OOS : {len(X_te)}")
@@ -177,10 +195,10 @@ def main() -> int:
 
     results = {}
     for name, ctor in [
-        ("logistic_l1", lambda: LogisticL1Scorer(C=args.C, component_names=FEATURE_NAMES)),
+        ("logistic_l1", lambda: LogisticL1Scorer(C=args.C, component_names=feat_names)),
         ("lgbm", lambda: LGBMScorer(
             num_leaves=15, learning_rate=0.05, n_estimators=200,
-            feature_names=FEATURE_NAMES,
+            feature_names=feat_names,
         )),
     ]:
         print(f"\n--- {name.upper()} ---")
