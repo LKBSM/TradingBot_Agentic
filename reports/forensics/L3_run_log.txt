@@ -1,0 +1,33 @@
+
+[L3] Decomposition complete:
+  periode  side    n     wr     pf  pf_ci_lo  pf_ci_hi    pnl_usd   avg_r  sharpe_monthly_ann  max_dd_pct
+2019-2023  Long  821 0.4239 0.8087    0.6577    0.9850 -2142.7500 -0.0523             -0.9826     -0.2245
+2019-2023 Short  796 0.3894 0.5613    0.4582    0.6832 -5525.1100 -0.1107             -2.2211     -0.5638
+2019-2023  BOTH 1617 0.4069 0.6778    0.5882    0.7781 -7667.8600 -0.0811             -2.3939     -0.7793
+2024-2026  Long  419 0.5513 1.5450    1.2080    1.9916  1469.3100  0.1279              2.2085     -0.0156
+2024-2026 Short  327 0.4740 0.9828    0.7212    1.2991   -46.9600  0.0032             -0.0284     -0.0420
+2024-2026  BOTH  746 0.5174 1.2622    1.0487    1.5229  1422.3500  0.0733              1.7481     -0.0259
+     FULL  Long 1240 0.4669 0.9515    0.8093    1.1141  -673.4400  0.0086             -0.1591     -0.2245
+     FULL Short 1123 0.4141 0.6363    0.5400    0.7522 -5572.0700 -0.0775             -1.5885     -0.5931
+     FULL  BOTH 2363 0.4418 0.7863    0.7008    0.8794 -6245.5100 -0.0323             -0.8597     -0.7793
+
+[L3] VERDICTS:
+
+Q1 - long-only deguise sur 2024-2026 ?
+  Long 2024-2026  : n=419, PF=1.545, PnL=1469
+  Short 2024-2026 : n=327, PF=0.983, PnL=-47
+  Ratio PnL Long/|Short| = 31.29
+  -> OUI - long-only deguise (Long PF>1.20, Short PF<1.05)
+
+Q2 - module Short casse ?
+  Short 2019-2023 : PF=0.561 CI=[0.458,0.683]
+  Short 2024-2026 : PF=0.983 CI=[0.721,1.299]
+  Short FULL      : PF=0.636 CI=[0.540,0.752]
+  -> Module Short structurellement casse (PF<1 dans tous regimes)
+
+Q3 - long-only sur 2019-2023 ?
+  Long 2019-2023  : PF=0.809 CI=[0.658,0.985]
+  PnL Long 2019-2023 : -2143 USD sur n=821 trades
+  -> Long-only 2019-2023 NON-profitable - pas d'edge directionnel
+
+[L3] DONE. Files: L3_decomp_side.csv, L3_decomp_side.json

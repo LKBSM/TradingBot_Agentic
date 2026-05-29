@@ -1,0 +1,152 @@
+=== Ledger: 2363 trades, 2019-01-02 18:45:00 -> 2026-04-29 13:30:00 ===
+Cols: ['id', 'ts_in', 'ts_out', 'side', 'entry', 'sl', 'tp', 'exit_price', 'exit_reason', 'lots', 'pnl_usd', 'r_realized', 'score_in', 'bars_held', 'regime', 'session', 'c_bos', 'c_choch', 'c_ob', 'c_fvg', 'c_retest', 'c_rsi_div', 'c_regime', 'c_news_ok']
+PF observe summary=0.7863
+PF recompute   =0.7863 (gw=22975, gl=29220)
+
+================================================================================
+LIVRABLE 1 - FALSIFICATION STATISTIQUE
+================================================================================
+
+A) Bootstrap PF 95% CI: [0.7008, 0.8794], median=0.7861
+   PF observe = 0.7863
+   P(PF_resample >= 1.0) = 0.0000
+   CI exclut 1.0 ? True
+
+B) Sharpe mensuel annualise = -1.3989 (T=88 mois)
+   Skewness mensuel: -0.942, Kurtosis: 4.336
+   DSR (N_trials=50, monthly): p-val=0.0000, E[max SR mensuel]=2.450
+   DSR (N_trials=100, monthly): p-val=0.0000, E[max SR mensuel]=2.688
+   DSR (N_trials=200, monthly): p-val=0.0000, E[max SR mensuel]=2.910
+
+   Sub-segment 2024-2026 (746 trades, 28 mois)
+   Sharpe mensuel annualise sub = 1.7163
+   Skewness sub: 0.501, Kurtosis sub: 3.109
+   DSR sub (N_trials=50, monthly): p-val=0.0000
+   DSR sub (N_trials=100, monthly): p-val=0.0000
+   DSR sub (N_trials=200, monthly): p-val=0.0000
+
+C) Test rupture 2024-01-01 (R par trade)
+   n_pre=1617, n_post=746
+   mean_pre=-0.0811, mean_post=0.0733
+   var_pre=0.3808, var_post=0.5776
+   Welch t-test: t=-4.856, p=0.0000
+   Levene var:   F=43.991, p=0.0000
+   Mann-Whitney: U=525174, p=0.0000
+
+D) Edge par composant (bootstrap 5000)
+component  n_on  n_off  edge_R   ci_lo  ci_hi  p_boot  p_welch
+    c_bos  2270     93  0.0147 -0.1205 0.1472  0.8048   0.8303
+  c_choch   995   1368 -0.0179 -0.0740 0.0371  0.5044   0.5229
+     c_ob  2308     55 -0.0063 -0.2103 0.1919  0.9796   0.9512
+    c_fvg  1901    462  0.0274 -0.0382 0.0927  0.4140   0.4205
+ c_retest  2186    177  0.0220 -0.0828 0.1257  0.6744   0.6791
+c_rsi_div   807   1556 -0.0203 -0.0760 0.0358  0.4912   0.4768
+ c_regime  1671    692  0.0121 -0.0458 0.0693  0.6944   0.6859
+c_news_ok  2361      2     NaN     NaN    NaN     NaN      NaN
+
+   Correction multiple (m=7):
+component  edge_R  p_welch  holm_alpha  reject_holm  reject_bonf
+    c_fvg  0.0274   0.4205      0.0071        False        False
+c_rsi_div -0.0203   0.4768      0.0083        False        False
+  c_choch -0.0179   0.5229      0.0100        False        False
+ c_retest  0.0220   0.6791      0.0125        False        False
+ c_regime  0.0121   0.6859      0.0167        False        False
+    c_bos  0.0147   0.8303      0.0250        False        False
+     c_ob -0.0063   0.9512      0.0500        False        False
+   Survivants Bonferroni: 0/7
+   Survivants Holm:        0/7
+
+================================================================================
+LIVRABLE 2 - FORENSICS
+================================================================================
+
+B) Calendar columns: ['Date', 'Currency', 'Event', 'Impact', 'Actual', 'Forecast', 'Previous']
+   Events: 875, Trades: 2363
+   Trades dans +/-15min d'un event: 2
+   Trades dans +/-60min d'un event: 61
+   Theorique: avec 875 events sur 365*7=2555 jours, prob qu'un trade
+   tombe dans +/-15min ~ 875*30min/(2555*1440min) = 0.0071 = 0.71%
+   Soit attendu = 17 trades en theorie (uniforme)
+
+C) Lookahead regime SMA200
+   XAU columns: ['Date', 'Open', 'High', 'Low', 'Close', 'Volume']...
+   Crosstab regime ledger vs recompute (count):
+regime_audit  bear  bull  na  range
+regime                             
+bear           838     0   0     79
+bull             0  1049   0    101
+range           20    12   1    263
+   bull_dummy: corr(label, fwd_50bars)=0.0298, corr(label, bwd_50bars)=0.3671
+      ratio |fwd|/|bwd| = 0.081 (>>1 = lookahead suspect)
+   bear_dummy: corr(label, fwd_50bars)=-0.0074, corr(label, bwd_50bars)=-0.3450
+      ratio |fwd|/|bwd| = 0.021 (>>1 = lookahead suspect)
+
+D) Verification ATR sur SL/TP
+   sl_tp_ratio - mean=0.6000, std=0.0003
+   sl_tp_ratio - p1=0.5992, p99=0.6008
+   Si SL/TP = 1.5/2.5 ATR fixe, ratio attendu = 0.6 (constant)
+   ratio = 0.6 ? mean=0.000227 (proche 0 = propre)
+
+E) Timeout overfit test - non testable depuis ledger seul
+   Le ledger ne contient pas les trades exits a 12/18/36/48 barres - serait a re-runner
+   exit_reason='timeout' sur 1634 trades (69.1%) suggere parametre tres impactant
+
+================================================================================
+LIVRABLE 4 - STRESS TEST ROADMAP
+================================================================================
+
+A) Crosstab CHOCH x RSI_div:
+c_rsi_div    0    1
+c_choch            
+0          756  612
+1          800  195
+   Phi (Pearson dichotomiques) = -0.2617
+
+   Matrice correlation composants:
+           c_bos  c_choch   c_ob  c_fvg  c_retest  c_rsi_div  c_regime  c_news_ok
+c_bos      1.000   -0.030 -0.031 -0.039    -0.033     -0.198    -0.073     -0.006
+c_choch   -0.030    1.000 -0.181 -0.096    -0.275     -0.262    -0.338     -0.005
+c_ob      -0.031   -0.181  1.000 -0.076     0.543     -0.214    -0.099     -0.004
+c_fvg     -0.039   -0.096 -0.076  1.000    -0.128     -0.311    -0.209     -0.014
+c_retest  -0.033   -0.275  0.543 -0.128     1.000     -0.121    -0.137     -0.008
+c_rsi_div -0.198   -0.262 -0.214 -0.311    -0.121      1.000    -0.162     -0.040
+c_regime  -0.073   -0.338 -0.099 -0.209    -0.137     -0.162     1.000      0.013
+c_news_ok -0.006   -0.005 -0.004 -0.014    -0.008     -0.040     0.013      1.000
+
+   Scenario 'CHOCH=0 ET RSI_div=0' (garder ces trades): n=756, PF=0.8286
+   Scenario 'au moins 5/6 des autres': n=2219, PF=0.7944
+
+B) Borne R^2 GBM (point-biserial sur R)
+component    r_pb  r2_indiv
+    c_bos  0.0043    0.0000
+  c_choch -0.0132    0.0002
+     c_ob -0.0014    0.0000
+    c_fvg  0.0162    0.0003
+ c_retest  0.0087    0.0001
+c_rsi_div -0.0144    0.0002
+ c_regime  0.0082    0.0001
+   Somme R^2 individuels (borne sup naive) = 0.0008
+   Pearson(score, R) global = -0.0010
+   R^2 global score = 0.0000
+   R^2 OLS multivar (8 composants) = 0.0007
+   -> borne sup pour GBM en lineaire. Avec interactions ~ 1.5-2x = ~0.0011
+
+================================================================================
+LIVRABLE 5 - SURVIVANCE 2024-2026
+================================================================================
+   Long: n=419, PnL=1469, PF=1.5450, WR=0.551
+   Short: n=327, PnL=-47, PF=0.9828, WR=0.474
+
+B) Beta vs alpha 2024-2026
+   Corr daily levels (equity vs XAU spot) = 0.9615
+   Corr daily returns                       = 0.0160
+   Beta equity vs XAU returns               = 27.3673
+
+C) Shorts only 2024-2026: n=327, PF=0.9828, PnL=-47
+   Bootstrap 95% CI sur PF shorts 2024-2026: [0.7212, 1.2991]
+   Bootstrap 95% CI sur PF 2024-2026 complet: [1.0487, 1.5229]
+   P(PF_sub >= 1.20 | bootstrap) = 0.6986
+   Pearson(score, R) 2024-2026 = 0.0173
+
+
+=== SAVED to C:\MyPythonProjects\TradingBOT_Agentic\reports\falsification ===

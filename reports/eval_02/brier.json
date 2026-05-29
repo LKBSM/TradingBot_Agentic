@@ -1,0 +1,7 @@
+{
+  "n_trades": 1597,
+  "base_rate_win": 0.46399499060738886,
+  "brier_score_as_prob_div100": 0.2541668679538405,
+  "brier_naive_mean": 0.24870363929863795,
+  "brier_skill_score": -0.021966822321576318
+}

@@ -1,0 +1,162 @@
+{
+  "production_default": {
+    "enter": 75,
+    "exit": 55,
+    "summary": {
+      "total_trades": 1,
+      "win_rate": 0.0,
+      "expectancy_r": -0.04234234234232467,
+      "total_r": -0.04234234234232467,
+      "profit_factor": 0.0,
+      "max_drawdown_r": 0.0,
+      "sharpe_annualised": null,
+      "sortino_annualised": -0.47656745973970766,
+      "trades_per_year": 0.22711654368275785
+    },
+    "exits_by_reason": {
+      "regime_shifted": 1
+    },
+    "score_max": 82.47298377168735
+  },
+  "relaxed_55": {
+    "enter": 55,
+    "exit": 40,
+    "summary": {
+      "total_trades": 136,
+      "win_rate": 0.3602941176470588,
+      "expectancy_r": -0.05552352934716189,
+      "total_r": -7.551199991214017,
+      "profit_factor": 0.8041843438778171,
+      "max_drawdown_r": 9.248489212834683,
+      "sharpe_annualised": -0.4275271108102982,
+      "sortino_annualised": -0.6820902734498381,
+      "trades_per_year": 30.88784994085507
+    },
+    "exits_by_reason": {
+      "score_decayed": 39,
+      "regime_shifted": 58,
+      "invalidated": 17,
+      "time_expired": 14,
+      "target_reached": 8
+    },
+    "score_max": 82.47298377168735
+  },
+  "relaxed_50": {
+    "enter": 50,
+    "exit": 35,
+    "summary": {
+      "total_trades": 421,
+      "win_rate": 0.4014251781472684,
+      "expectancy_r": -0.05313915959839848,
+      "total_r": -22.37158619092576,
+      "profit_factor": 0.8250292005017958,
+      "max_drawdown_r": 32.57915198827328,
+      "sharpe_annualised": -0.7148617691747732,
+      "sortino_annualised": -1.066005819491407,
+      "trades_per_year": 95.61606489044105
+    },
+    "exits_by_reason": {
+      "invalidated": 77,
+      "time_expired": 85,
+      "regime_shifted": 169,
+      "score_decayed": 74,
+      "target_reached": 16
+    },
+    "score_max": 82.47298377168735
+  },
+  "relaxed_45": {
+    "enter": 45,
+    "exit": 30,
+    "summary": {
+      "total_trades": 750,
+      "win_rate": 0.42933333333333334,
+      "expectancy_r": -0.026452373361100835,
+      "total_r": -19.839280020825626,
+      "profit_factor": 0.9054112866602925,
+      "max_drawdown_r": 33.73722384669226,
+      "sharpe_annualised": -0.4786435580152401,
+      "sortino_annualised": -0.7448537301020979,
+      "trades_per_year": 170.33740776206838
+    },
+    "exits_by_reason": {
+      "invalidated": 118,
+      "time_expired": 145,
+      "score_decayed": 178,
+      "regime_shifted": 276,
+      "target_reached": 33
+    },
+    "score_max": 82.47298377168735
+  },
+  "relaxed_40": {
+    "enter": 40,
+    "exit": 25,
+    "summary": {
+      "total_trades": 1582,
+      "win_rate": 0.4664981036662453,
+      "expectancy_r": 0.02444224077524984,
+      "total_r": 38.66762490644525,
+      "profit_factor": 1.086330641122856,
+      "max_drawdown_r": 18.79849030105627,
+      "sharpe_annualised": 0.5889029737835506,
+      "sortino_annualised": 0.9758990231931518,
+      "trades_per_year": 359.29837210612294
+    },
+    "exits_by_reason": {
+      "time_expired": 403,
+      "invalidated": 273,
+      "regime_shifted": 595,
+      "score_decayed": 218,
+      "target_reached": 89,
+      "opposing_signal": 4
+    },
+    "score_max": 82.47298377168735
+  },
+  "relaxed_35": {
+    "enter": 35,
+    "exit": 20,
+    "summary": {
+      "total_trades": 2363,
+      "win_rate": 0.4676258992805755,
+      "expectancy_r": 0.036978357701646626,
+      "total_r": 87.37985924899098,
+      "profit_factor": 1.130039840461139,
+      "max_drawdown_r": 21.054100629359354,
+      "sharpe_annualised": 1.0642248317580099,
+      "sortino_annualised": 1.8057412823775636,
+      "trades_per_year": 536.6763927223568
+    },
+    "exits_by_reason": {
+      "time_expired": 631,
+      "invalidated": 406,
+      "score_decayed": 380,
+      "regime_shifted": 781,
+      "opposing_signal": 8,
+      "target_reached": 157
+    },
+    "score_max": 82.47298377168735
+  },
+  "relaxed_30": {
+    "enter": 30,
+    "exit": 15,
+    "summary": {
+      "total_trades": 2556,
+      "win_rate": 0.46517996870109546,
+      "expectancy_r": 0.036166118648253684,
+      "total_r": 92.44059926493641,
+      "profit_factor": 1.1257119139436782,
+      "max_drawdown_r": 16.8594670055299,
+      "sharpe_annualised": 1.0748660391940135,
+      "sortino_annualised": 1.824816415114583,
+      "trades_per_year": 580.5098856531291
+    },
+    "exits_by_reason": {
+      "time_expired": 679,
+      "invalidated": 448,
+      "score_decayed": 430,
+      "target_reached": 172,
+      "regime_shifted": 816,
+      "opposing_signal": 11
+    },
+    "score_max": 82.47298377168735
+  }
+}

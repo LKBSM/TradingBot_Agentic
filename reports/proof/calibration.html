@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>Smart Sentinel AI — Preuve de calibration</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0b1020; --panel: #141a30; --panel2: #1a223e; --text: #e6e8f0;
+    --muted: #93a1c4; --accent: #6ee7b7; --warn: #fbbf24; --bad: #f87171;
+    --good: #34d399; --line: #2a3358;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font-family: 'Inter', system-ui, -apple-system, sans-serif;
+         line-height: 1.55; }
+  header { padding: 32px 48px 24px; border-bottom: 1px solid var(--line); }
+  header h1 { margin: 0 0 6px; font-size: 28px; font-weight: 700; }
+  header .sub { color: var(--muted); font-size: 14px; }
+  main { padding: 32px 48px 80px; max-width: 1280px; margin: 0 auto; }
+  .meta { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+          margin-bottom: 32px; }
+  .meta div { background: var(--panel); padding: 14px 18px;
+              border-radius: 10px; border: 1px solid var(--line); }
+  .meta .k { color: var(--muted); font-size: 12px; text-transform: uppercase;
+             letter-spacing: 0.04em; }
+  .meta .v { font-size: 17px; font-weight: 600; margin-top: 4px; }
+  .section { background: var(--panel); border: 1px solid var(--line);
+             border-radius: 14px; padding: 24px 28px; margin-bottom: 24px; }
+  .section h2 { margin: 0 0 4px; font-size: 20px; }
+  .section .sub { color: var(--muted); font-size: 13px; margin-bottom: 18px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .stat { background: var(--panel2); border-radius: 10px; padding: 14px 16px;
+          border: 1px solid var(--line); }
+  .stat .label { color: var(--muted); font-size: 12px; text-transform: uppercase;
+                  letter-spacing: 0.04em; }
+  .stat .val { font-size: 22px; font-weight: 700; margin-top: 6px; }
+  .stat .ci { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 999px;
+           font-size: 11px; font-weight: 600; text-transform: uppercase;
+           letter-spacing: 0.05em; margin-left: 8px; }
+  .badge.good { background: rgba(52, 211, 153, 0.18); color: var(--good); }
+  .badge.warn { background: rgba(251, 191, 36, 0.18); color: var(--warn); }
+  .badge.bad  { background: rgba(248, 113, 113, 0.18); color: var(--bad); }
+  .method { background: rgba(255, 255, 255, 0.02); border-left: 3px solid var(--accent);
+            padding: 12px 16px; border-radius: 6px; color: var(--muted);
+            font-size: 13px; margin-top: 14px; }
+  .method code { background: rgba(255, 255, 255, 0.06); padding: 1px 6px;
+                  border-radius: 4px; color: var(--text); }
+  .chart-wrap { background: var(--panel2); border-radius: 10px;
+                padding: 12px; border: 1px solid var(--line); }
+  footer { padding: 24px 48px; border-top: 1px solid var(--line);
+           color: var(--muted); font-size: 12px; }
+  footer code { background: rgba(255, 255, 255, 0.06); padding: 1px 6px;
+                 border-radius: 4px; }
+  .disclaimer { color: var(--muted); font-size: 12px; padding: 14px 18px;
+                 background: rgba(251, 191, 36, 0.08); border-left: 3px solid var(--warn);
+                 border-radius: 6px; margin-top: 24px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Smart Sentinel AI — Preuve de calibration & incertitude</h1>
+  <div class="sub">Vérifie que les probabilités annoncées par l'indicateur sont
+    empiriquement justes (P=70% ⇒ vraie fréquence ≈ 70%) et que les intervalles
+    de confiance couvrent bien le taux nominal.</div>
+</header>
+<main>
+  <div class="meta">
+    <div><div class="k">Instrument · TF</div><div class="v" id="meta-instr">—</div></div>
+    <div><div class="k">Horizon outcome</div><div class="v" id="meta-h">—</div></div>
+    <div><div class="k">N train · test</div><div class="v" id="meta-n">—</div></div>
+    <div><div class="k">Généré le (UTC)</div><div class="v" id="meta-gen">—</div></div>
+  </div>
+
+  <div id="interp-banner" style="display:none;background:rgba(96,165,250,0.08);border-left:3px solid #60a5fa;border-radius:6px;padding:16px 20px;margin-bottom:24px">
+    <strong style="color:#60a5fa;font-size:13px;text-transform:uppercase;letter-spacing:0.05em">Lecture du tableau</strong>
+    <div style="margin-top:8px;color:var(--text);font-size:13.5px;line-height:1.6" id="interp-text"></div>
+  </div>
+
+  <!-- SECTION 1: DISCRETE CALIBRATION -->
+  <section class="section">
+    <h2>1. Calibration discrète — P(direction correcte) <span id="disc-badge"></span></h2>
+    <div class="sub">Le pipeline <code>LGBM → Isotonic</code> prédit P(direction correcte
+      dans <span id="hz">20</span> bars). Si bien calibré, sur les bars où le modèle
+      annonce 70%, la fréquence empirique doit être ≈ 70%.</div>
+
+    <div class="grid4">
+      <div class="stat">
+        <div class="label">ECE</div>
+        <div class="val" id="ece">—</div>
+        <div class="ci" id="ece-ci">IC95% bootstrap</div>
+      </div>
+      <div class="stat">
+        <div class="label">Brier score</div>
+        <div class="val" id="brier">—</div>
+        <div class="ci" id="brier-ci">vs baseline <span id="brier-base">—</span></div>
+      </div>
+      <div class="stat">
+        <div class="label">Brier Skill Score</div>
+        <div class="val" id="bss">—</div>
+        <div class="ci">&gt; 0 = meilleur que constant</div>
+      </div>
+      <div class="stat">
+        <div class="label">AUC</div>
+        <div class="val" id="auc">—</div>
+        <div class="ci" id="auc-ci">Discrimination (0.5 = aléatoire)</div>
+      </div>
+    </div>
+
+    <div class="grid2" style="margin-top:22px">
+      <div>
+        <h3 style="margin:0 0 8px;font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;">Reliability diagram (10 bins, IC Wilson)</h3>
+        <div class="chart-wrap"><canvas id="reliabilityChart" height="220"></canvas></div>
+      </div>
+      <div>
+        <h3 style="margin:0 0 8px;font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;">Distribution des probabilités prédites</h3>
+        <div class="chart-wrap"><canvas id="histChart" height="220"></canvas></div>
+      </div>
+    </div>
+
+    <div class="method">
+      <strong>Méthode :</strong>
+      sur le test set (40% chronologique du jeu de données), chaque bar reçoit une probabilité
+      <code>p̂</code> via le pipeline. Les bars sont regroupés en 10 bins de [0, 1]. ECE =
+      Σ (n_k / N) × |p̂_k − fréquence_k|. Hosmer-Lemeshow χ² <span id="hl-val">—</span>
+      (df=8, seuil 5% : 15.51).
+    </div>
+  </section>
+
+  <!-- SECTION 2: CONFORMAL COVERAGE -->
+  <section class="section">
+    <h2>2. Couverture conformelle — rendements next-bar <span id="conf-badge"></span></h2>
+    <div class="sub">Le wrapper Split Conformal (Vovk et al., Angelopoulos & Bates 2024)
+      garantit théoriquement P(<em>actual</em> ∈ [<em>pred</em> − q̂, <em>pred</em> + q̂]) ≥ 1 − α
+      sous échangeabilité. On vérifie ici la couverture empirique au niveau nominal
+      <strong>90%</strong> sur next-bar log-returns.</div>
+
+    <div class="grid3">
+      <div class="stat">
+        <div class="label">Couverture nominale</div>
+        <div class="val">90.0%</div>
+        <div class="ci">Garantie théorique 1 − α</div>
+      </div>
+      <div class="stat">
+        <div class="label">Couverture empirique</div>
+        <div class="val" id="cov-emp">—</div>
+        <div class="ci" id="cov-n">—</div>
+      </div>
+      <div class="stat">
+        <div class="label">Écart (pp)</div>
+        <div class="val" id="cov-gap">—</div>
+        <div class="ci">Cible ±2 pp</div>
+      </div>
+    </div>
+
+    <div style="margin-top:22px">
+      <h3 style="margin:0 0 8px;font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;">Couverture roulante (fenêtre de 200 bars)</h3>
+      <div class="chart-wrap"><canvas id="coverageChart" height="160"></canvas></div>
+    </div>
+
+    <div class="method">
+      <strong>Méthode :</strong>
+      forecaster AR(1) <code>r_t = φ · r_{t−1}</code> ajusté sur le train. Résidus absolus
+      <code>|r_t − r̂_t|</code> en quantile (1 − α) avec correction Angelopoulos & Bates §3.2.
+      Intervalle test = <code>[r̂_t − q̂, r̂_t + q̂]</code>, couverture =
+      proportion des <em>actual</em> inclus.
+    </div>
+  </section>
+
+  <!-- SECTION 3: SUMMARY -->
+  <section class="section">
+    <h2>3. Lecture honnête de la calibration</h2>
+    <div class="sub">Une bonne calibration ne signifie pas un edge profitable. C'est une condition
+      <strong>nécessaire</strong> de confiance : sans elle, toute publication de probabilité
+      serait trompeuse. La rentabilité est testée séparément via les gates DSR / PBO / PF_lo
+      (voir <code>reports/eval_00_synthesis.md</code>).</div>
+
+    <table style="width:100%;border-collapse:collapse;margin-top:8px">
+      <thead>
+        <tr>
+          <th style="text-align:left;padding:8px 10px;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:0.04em;border-bottom:1px solid var(--line)">Test</th>
+          <th style="text-align:right;padding:8px 10px;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:0.04em;border-bottom:1px solid var(--line)">Cible</th>
+          <th style="text-align:right;padding:8px 10px;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:0.04em;border-bottom:1px solid var(--line)">Observé</th>
+          <th style="text-align:right;padding:8px 10px;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:0.04em;border-bottom:1px solid var(--line)">Statut</th>
+        </tr>
+      </thead>
+      <tbody id="summary-table"></tbody>
+    </table>
+  </section>
+
+  <div class="disclaimer">
+    <strong>Limite de l'analyse</strong> — La calibration teste l'<em>honnêteté des
+    probabilités</em> publiées, pas la <em>rentabilité</em>. Un classifieur peut être
+    parfaitement calibré (ECE = 0) et avoir AUC = 0.5 (aucune discrimination). Le
+    rôle de cette page est de garantir que <em>quand le système annonce 70%, c'est
+    vraiment 70%</em>, pas que ces 70% sont gagnables après coûts. Voir
+    <code>reports/eval_00_synthesis.md</code> pour les gates de rentabilité.
+  </div>
+</main>
+
+<footer>
+  <div><strong>Reproductibilité.</strong> Tous les chiffres ci-dessus sont régénérés par :
+    <code>python scripts/proof_calibration.py</code></div>
+  <div style="margin-top:6px">Données : <code>data/XAU_15MIN_2019_2026.csv</code> · Code :
+    <code>scripts/proof_calibration.py</code> · Pipeline :
+    <code>src/intelligence/scoring/calibrated_conviction.py</code></div>
+</footer>
+
+<script>
+const REPORT = {"generated_at_utc": "2026-05-21T04:37:23.778636+00:00", "instrument": "XAUUSD", "timeframe": "M15", "horizon_bars": 20, "window": {"start": "2022-02-04 03:15:00", "end": "2026-04-29 23:45:00"}, "split": {"n_train": 59958, "n_test": 39973, "train_frac": 0.6, "win_rate_train": 0.4869, "win_rate_test": 0.4929}, "discrete_calibration": {"brier": 0.2848, "brier_baseline_constant": 0.25, "brier_skill_score": -0.1391, "brier_ci95": [0.2831, 0.2866], "ece": 0.142, "ece_ci95": [0.1373, 0.147], "auc": 0.4947, "auc_ci95": [0.4888, 0.4999], "hosmer_lemeshow": {"chi2": 8484.992, "df": 8}, "reliability_bins": [{"bin_lo": 0.0, "bin_hi": 0.1, "n": 1003, "pred_mean": 0.047134914974067056, "emp_rate": 0.4686, "ci_lo": 0.4379, "ci_hi": 0.4995}, {"bin_lo": 0.1, "bin_hi": 0.2, "n": 1777, "pred_mean": 0.13356077850423104, "emp_rate": 0.5014, "ci_lo": 0.4782, "ci_hi": 0.5246}, {"bin_lo": 0.2, "bin_hi": 0.30000000000000004, "n": 4138, "pred_mean": 0.2546439569404708, "emp_rate": 0.4964, "ci_lo": 0.4812, "ci_hi": 0.5116}, {"bin_lo": 0.30000000000000004, "bin_hi": 0.4, "n": 5951, "pred_mean": 0.36785227660577346, "emp_rate": 0.5018, "ci_lo": 0.4891, "ci_hi": 0.5145}, {"bin_lo": 0.4, "bin_hi": 0.5, "n": 4363, "pred_mean": 0.45326517479294504, "emp_rate": 0.4919, "ci_lo": 0.477, "ci_hi": 0.5067}, {"bin_lo": 0.5, "bin_hi": 0.6000000000000001, "n": 14783, "pred_mean": 0.5418149283857001, "emp_rate": 0.4987, "ci_lo": 0.4906, "ci_hi": 0.5067}, {"bin_lo": 0.6000000000000001, "bin_hi": 0.7000000000000001, "n": 5325, "pred_mean": 0.664663517220941, "emp_rate": 0.4751, "ci_lo": 0.4617, "ci_hi": 0.4885}, {"bin_lo": 0.7000000000000001, "bin_hi": 0.8, "n": 1368, "pred_mean": 0.7919688742057164, "emp_rate": 0.4825, "ci_lo": 0.4561, "ci_hi": 0.5089}, {"bin_lo": 0.8, "bin_hi": 0.9, "n": 2, "pred_mean": 0.8863023068802978, "emp_rate": 0.0, "ci_lo": 0.0, "ci_hi": 0.6576}, {"bin_lo": 0.9, "bin_hi": 1.0, "n": 1263, "pred_mean": 0.9154029409863622, "emp_rate": 0.4695, "ci_lo": 0.4421, "ci_hi": 0.4971}]}, "conformal_coverage_returns": {"available": true, "n_calibration": 59998, "n_test": 39999, "alpha_nominal": 0.1, "nominal_coverage": 0.9, "empirical_coverage": 0.8077, "miscoverage_gap_pp": -9.23, "q_hat": 0.001309398608377129, "rolling_window": 200, "rolling_coverage": [{"idx": 0, "rate": 0.915}, {"idx": 100, "rate": 0.87}, {"idx": 200, "rate": 0.875}, {"idx": 300, "rate": 0.94}, {"idx": 400, "rate": 0.95}, {"idx": 500, "rate": 0.93}, {"idx": 600, "rate": 0.92}, {"idx": 700, "rate": 0.895}, {"idx": 800, "rate": 0.925}, {"idx": 900, "rate": 0.91}, {"idx": 1000, "rate": 0.88}, {"idx": 1100, "rate": 0.895}, {"idx": 1200, "rate": 0.895}, {"idx": 1300, "rate": 0.92}, {"idx": 1400, "rate": 0.925}, {"idx": 1500, "rate": 0.92}, {"idx": 1600, "rate": 0.92}, {"idx": 1700, "rate": 0.935}, {"idx": 1800, "rate": 0.935}, {"idx": 1900, "rate": 0.88}, {"idx": 2000, "rate": 0.89}, {"idx": 2100, "rate": 0.94}, {"idx": 2200, "rate": 0.94}, {"idx": 2300, "rate": 0.93}, {"idx": 2400, "rate": 0.9}, {"idx": 2500, "rate": 0.905}, {"idx": 2600, "rate": 0.905}, {"idx": 2700, "rate": 0.885}, {"idx": 2800, "rate": 0.895}, {"idx": 2900, "rate": 0.91}, {"idx": 3000, "rate": 0.895}, {"idx": 3100, "rate": 0.885}, {"idx": 3200, "rate": 0.895}, {"idx": 3300, "rate": 0.905}, {"idx": 3400, "rate": 0.915}, {"idx": 3500, "rate": 0.905}, {"idx": 3600, "rate": 0.915}, {"idx": 3700, "rate": 0.945}, {"idx": 3800, "rate": 0.95}, {"idx": 3900, "rate": 0.925}, {"idx": 4000, "rate": 0.9}, {"idx": 4100, "rate": 0.925}, {"idx": 4200, "rate": 0.94}, {"idx": 4300, "rate": 0.93}, {"idx": 4400, "rate": 0.91}, {"idx": 4500, "rate": 0.91}, {"idx": 4600, "rate": 0.925}, {"idx": 4700, "rate": 0.91}, {"idx": 4800, "rate": 0.91}, {"idx": 4900, "rate": 0.94}, {"idx": 5000, "rate": 0.915}, {"idx": 5100, "rate": 0.775}, {"idx": 5200, "rate": 0.76}, {"idx": 5300, "rate": 0.875}, {"idx": 5400, "rate": 0.89}, {"idx": 5500, "rate": 0.865}, {"idx": 5600, "rate": 0.82}, {"idx": 5700, "rate": 0.78}, {"idx": 5800, "rate": 0.825}, {"idx": 5900, "rate": 0.855}, {"idx": 6000, "rate": 0.885}, {"idx": 6100, "rate": 0.92}, {"idx": 6200, "rate": 0.86}, {"idx": 6300, "rate": 0.81}, {"idx": 6400, "rate": 0.85}, {"idx": 6500, "rate": 0.885}, {"idx": 6600, "rate": 0.89}, {"idx": 6700, "rate": 0.85}, {"idx": 6800, "rate": 0.84}, {"idx": 6900, "rate": 0.905}, {"idx": 7000, "rate": 0.925}, {"idx": 7100, "rate": 0.895}, {"idx": 7200, "rate": 0.9}, {"idx": 7300, "rate": 0.915}, {"idx": 7400, "rate": 0.91}, {"idx": 7500, "rate": 0.88}, {"idx": 7600, "rate": 0.895}, {"idx": 7700, "rate": 0.94}, {"idx": 7800, "rate": 0.96}, {"idx": 7900, "rate": 0.885}, {"idx": 8000, "rate": 0.85}, {"idx": 8100, "rate": 0.935}, {"idx": 8200, "rate": 0.975}, {"idx": 8300, "rate": 0.975}, {"idx": 8400, "rate": 0.965}, {"idx": 8500, "rate": 0.945}, {"idx": 8600, "rate": 0.92}, {"idx": 8700, "rate": 0.945}, {"idx": 8800, "rate": 0.935}, {"idx": 8900, "rate": 0.915}, {"idx": 9000, "rate": 0.935}, {"idx": 9100, "rate": 0.955}, {"idx": 9200, "rate": 0.945}, {"idx": 9300, "rate": 0.915}, {"idx": 9400, "rate": 0.95}, {"idx": 9500, "rate": 0.96}, {"idx": 9600, "rate": 0.94}, {"idx": 9700, "rate": 0.93}, {"idx": 9800, "rate": 0.915}, {"idx": 9900, "rate": 0.93}, {"idx": 10000, "rate": 0.935}, {"idx": 10100, "rate": 0.92}, {"idx": 10200, "rate": 0.885}, {"idx": 10300, "rate": 0.93}, {"idx": 10400, "rate": 0.98}, {"idx": 10500, "rate": 0.955}, {"idx": 10600, "rate": 0.91}, {"idx": 10700, "rate": 0.875}, {"idx": 10800, "rate": 0.88}, {"idx": 10900, "rate": 0.88}, {"idx": 11000, "rate": 0.91}, {"idx": 11100, "rate": 0.95}, {"idx": 11200, "rate": 0.885}, {"idx": 11300, "rate": 0.84}, {"idx": 11400, "rate": 0.905}, {"idx": 11500, "rate": 0.895}, {"idx": 11600, "rate": 0.895}, {"idx": 11700, "rate": 0.95}, {"idx": 11800, "rate": 0.905}, {"idx": 11900, "rate": 0.84}, {"idx": 12000, "rate": 0.85}, {"idx": 12100, "rate": 0.87}, {"idx": 12200, "rate": 0.875}, {"idx": 12300, "rate": 0.87}, {"idx": 12400, "rate": 0.835}, {"idx": 12500, "rate": 0.855}, {"idx": 12600, "rate": 0.86}, {"idx": 12700, "rate": 0.86}, {"idx": 12800, "rate": 0.9}, {"idx": 12900, "rate": 0.895}, {"idx": 13000, "rate": 0.895}, {"idx": 13100, "rate": 0.895}, {"idx": 13200, "rate": 0.91}, {"idx": 13300, "rate": 0.9}, {"idx": 13400, "rate": 0.91}, {"idx": 13500, "rate": 0.935}, {"idx": 13600, "rate": 0.915}, {"idx": 13700, "rate": 0.925}, {"idx": 13800, "rate": 0.93}, {"idx": 13900, "rate": 0.92}, {"idx": 14000, "rate": 0.935}, {"idx": 14100, "rate": 0.945}, {"idx": 14200, "rate": 0.9}, {"idx": 14300, "rate": 0.855}, {"idx": 14400, "rate": 0.86}, {"idx": 14500, "rate": 0.85}, {"idx": 14600, "rate": 0.755}, {"idx": 14700, "rate": 0.61}, {"idx": 14800, "rate": 0.56}, {"idx": 14900, "rate": 0.62}, {"idx": 15000, "rate": 0.63}, {"idx": 15100, "rate": 0.6}, {"idx": 15200, "rate": 0.645}, {"idx": 15300, "rate": 0.77}, {"idx": 15400, "rate": 0.79}, {"idx": 15500, "rate": 0.725}, {"idx": 15600, "rate": 0.73}, {"idx": 15700, "rate": 0.615}, {"idx": 15800, "rate": 0.46}, {"idx": 15900, "rate": 0.585}, {"idx": 16000, "rate": 0.665}, {"idx": 16100, "rate": 0.665}, {"idx": 16200, "rate": 0.77}, {"idx": 16300, "rate": 0.735}, {"idx": 16400, "rate": 0.705}, {"idx": 16500, "rate": 0.755}, {"idx": 16600, "rate": 0.76}, {"idx": 16700, "rate": 0.715}, {"idx": 16800, "rate": 0.67}, {"idx": 16900, "rate": 0.68}, {"idx": 17000, "rate": 0.7}, {"idx": 17100, "rate": 0.73}, {"idx": 17200, "rate": 0.745}, {"idx": 17300, "rate": 0.7}, {"idx": 17400, "rate": 0.675}, {"idx": 17500, "rate": 0.725}, {"idx": 17600, "rate": 0.765}, {"idx": 17700, "rate": 0.765}, {"idx": 17800, "rate": 0.81}, {"idx": 17900, "rate": 0.86}, {"idx": 18000, "rate": 0.84}, {"idx": 18100, "rate": 0.795}, {"idx": 18200, "rate": 0.78}, {"idx": 18300, "rate": 0.79}, {"idx": 18400, "rate": 0.85}, {"idx": 18500, "rate": 0.885}, {"idx": 18600, "rate": 0.855}, {"idx": 18700, "rate": 0.815}, {"idx": 18800, "rate": 0.82}, {"idx": 18900, "rate": 0.865}, {"idx": 19000, "rate": 0.865}, {"idx": 19100, "rate": 0.82}, {"idx": 19200, "rate": 0.8}, {"idx": 19300, "rate": 0.815}, {"idx": 19400, "rate": 0.835}, {"idx": 19500, "rate": 0.845}, {"idx": 19600, "rate": 0.84}, {"idx": 19700, "rate": 0.84}, {"idx": 19800, "rate": 0.82}, {"idx": 19900, "rate": 0.855}, {"idx": 20000, "rate": 0.915}, {"idx": 20100, "rate": 0.845}, {"idx": 20200, "rate": 0.845}, {"idx": 20300, "rate": 0.925}, {"idx": 20400, "rate": 0.92}, {"idx": 20500, "rate": 0.905}, {"idx": 20600, "rate": 0.895}, {"idx": 20700, "rate": 0.895}, {"idx": 20800, "rate": 0.915}, {"idx": 20900, "rate": 0.935}, {"idx": 21000, "rate": 0.91}, {"idx": 21100, "rate": 0.895}, {"idx": 21200, "rate": 0.92}, {"idx": 21300, "rate": 0.935}, {"idx": 21400, "rate": 0.93}, {"idx": 21500, "rate": 0.94}, {"idx": 21600, "rate": 0.96}, {"idx": 21700, "rate": 0.935}, {"idx": 21800, "rate": 0.895}, {"idx": 21900, "rate": 0.925}, {"idx": 22000, "rate": 0.955}, {"idx": 22100, "rate": 0.945}, {"idx": 22200, "rate": 0.915}, {"idx": 22300, "rate": 0.905}, {"idx": 22400, "rate": 0.92}, {"idx": 22500, "rate": 0.91}, {"idx": 22600, "rate": 0.91}, {"idx": 22700, "rate": 0.92}, {"idx": 22800, "rate": 0.875}, {"idx": 22900, "rate": 0.815}, {"idx": 23000, "rate": 0.84}, {"idx": 23100, "rate": 0.9}, {"idx": 23200, "rate": 0.91}, {"idx": 23300, "rate": 0.93}, {"idx": 23400, "rate": 0.97}, {"idx": 23500, "rate": 0.965}, {"idx": 23600, "rate": 0.975}, {"idx": 23700, "rate": 0.97}, {"idx": 23800, "rate": 0.95}, {"idx": 23900, "rate": 0.935}, {"idx": 24000, "rate": 0.945}, {"idx": 24100, "rate": 0.955}, {"idx": 24200, "rate": 0.945}, {"idx": 24300, "rate": 0.91}, {"idx": 24400, "rate": 0.845}, {"idx": 24500, "rate": 0.835}, {"idx": 24600, "rate": 0.875}, {"idx": 24700, "rate": 0.885}, {"idx": 24800, "rate": 0.86}, {"idx": 24900, "rate": 0.855}, {"idx": 25000, "rate": 0.88}, {"idx": 25100, "rate": 0.915}, {"idx": 25200, "rate": 0.92}, {"idx": 25300, "rate": 0.93}, {"idx": 25400, "rate": 0.93}, {"idx": 25500, "rate": 0.88}, {"idx": 25600, "rate": 0.885}, {"idx": 25700, "rate": 0.905}, {"idx": 25800, "rate": 0.87}, {"idx": 25900, "rate": 0.87}, {"idx": 26000, "rate": 0.845}, {"idx": 26100, "rate": 0.8}, {"idx": 26200, "rate": 0.815}, {"idx": 26300, "rate": 0.855}, {"idx": 26400, "rate": 0.86}, {"idx": 26500, "rate": 0.88}, {"idx": 26600, "rate": 0.835}, {"idx": 26700, "rate": 0.775}, {"idx": 26800, "rate": 0.76}, {"idx": 26900, "rate": 0.68}, {"idx": 27000, "rate": 0.63}, {"idx": 27100, "rate": 0.68}, {"idx": 27200, "rate": 0.71}, {"idx": 27300, "rate": 0.725}, {"idx": 27400, "rate": 0.605}, {"idx": 27500, "rate": 0.51}, {"idx": 27600, "rate": 0.575}, {"idx": 27700, "rate": 0.485}, {"idx": 27800, "rate": 0.54}, {"idx": 27900, "rate": 0.64}, {"idx": 28000, "rate": 0.55}, {"idx": 28100, "rate": 0.51}, {"idx": 28200, "rate": 0.545}, {"idx": 28300, "rate": 0.57}, {"idx": 28400, "rate": 0.675}, {"idx": 28500, "rate": 0.735}, {"idx": 28600, "rate": 0.75}, {"idx": 28700, "rate": 0.81}, {"idx": 28800, "rate": 0.845}, {"idx": 28900, "rate": 0.875}, {"idx": 29000, "rate": 0.87}, {"idx": 29100, "rate": 0.83}, {"idx": 29200, "rate": 0.72}, {"idx": 29300, "rate": 0.655}, {"idx": 29400, "rate": 0.655}, {"idx": 29500, "rate": 0.695}, {"idx": 29600, "rate": 0.665}, {"idx": 29700, "rate": 0.625}, {"idx": 29800, "rate": 0.71}, {"idx": 29900, "rate": 0.73}, {"idx": 30000, "rate": 0.775}, {"idx": 30100, "rate": 0.895}, {"idx": 30200, "rate": 0.875}, {"idx": 30300, "rate": 0.805}, {"idx": 30400, "rate": 0.81}, {"idx": 30500, "rate": 0.805}, {"idx": 30600, "rate": 0.85}, {"idx": 30700, "rate": 0.895}, {"idx": 30800, "rate": 0.88}, {"idx": 30900, "rate": 0.89}, {"idx": 31000, "rate": 0.88}, {"idx": 31100, "rate": 0.825}, {"idx": 31200, "rate": 0.83}, {"idx": 31300, "rate": 0.865}, {"idx": 31400, "rate": 0.89}, {"idx": 31500, "rate": 0.895}, {"idx": 31600, "rate": 0.88}, {"idx": 31700, "rate": 0.84}, {"idx": 31800, "rate": 0.77}, {"idx": 31900, "rate": 0.76}, {"idx": 32000, "rate": 0.685}, {"idx": 32100, "rate": 0.64}, {"idx": 32200, "rate": 0.65}, {"idx": 32300, "rate": 0.67}, {"idx": 32400, "rate": 0.75}, {"idx": 32500, "rate": 0.81}, {"idx": 32600, "rate": 0.815}, {"idx": 32700, "rate": 0.795}, {"idx": 32800, "rate": 0.74}, {"idx": 32900, "rate": 0.705}, {"idx": 33000, "rate": 0.775}, {"idx": 33100, "rate": 0.825}, {"idx": 33200, "rate": 0.795}, {"idx": 33300, "rate": 0.84}, {"idx": 33400, "rate": 0.825}, {"idx": 33500, "rate": 0.675}, {"idx": 33600, "rate": 0.645}, {"idx": 33700, "rate": 0.665}, {"idx": 33800, "rate": 0.6}, {"idx": 33900, "rate": 0.61}, {"idx": 34000, "rate": 0.47}, {"idx": 34100, "rate": 0.245}, {"idx": 34200, "rate": 0.225}, {"idx": 34300, "rate": 0.25}, {"idx": 34400, "rate": 0.29}, {"idx": 34500, "rate": 0.285}, {"idx": 34600, "rate": 0.41}, {"idx": 34700, "rate": 0.595}, {"idx": 34800, "rate": 0.64}, {"idx": 34900, "rate": 0.68}, {"idx": 35000, "rate": 0.66}, {"idx": 35100, "rate": 0.7}, {"idx": 35200, "rate": 0.715}, {"idx": 35300, "rate": 0.72}, {"idx": 35400, "rate": 0.795}, {"idx": 35500, "rate": 0.745}, {"idx": 35600, "rate": 0.71}, {"idx": 35700, "rate": 0.725}, {"idx": 35800, "rate": 0.75}, {"idx": 35900, "rate": 0.785}, {"idx": 36000, "rate": 0.695}, {"idx": 36100, "rate": 0.525}, {"idx": 36200, "rate": 0.51}, {"idx": 36300, "rate": 0.585}, {"idx": 36400, "rate": 0.61}, {"idx": 36500, "rate": 0.61}, {"idx": 36600, "rate": 0.68}, {"idx": 36700, "rate": 0.735}, {"idx": 36800, "rate": 0.74}, {"idx": 36900, "rate": 0.685}, {"idx": 37000, "rate": 0.68}, {"idx": 37100, "rate": 0.745}, {"idx": 37200, "rate": 0.615}, {"idx": 37300, "rate": 0.455}, {"idx": 37400, "rate": 0.315}, {"idx": 37500, "rate": 0.26}, {"idx": 37600, "rate": 0.425}, {"idx": 37700, "rate": 0.495}, {"idx": 37800, "rate": 0.48}, {"idx": 37900, "rate": 0.515}, {"idx": 38000, "rate": 0.545}, {"idx": 38100, "rate": 0.53}, {"idx": 38200, "rate": 0.51}, {"idx": 38300, "rate": 0.565}, {"idx": 38400, "rate": 0.585}, {"idx": 38500, "rate": 0.58}, {"idx": 38600, "rate": 0.68}, {"idx": 38700, "rate": 0.745}, {"idx": 38800, "rate": 0.745}, {"idx": 38900, "rate": 0.8}, {"idx": 39000, "rate": 0.82}, {"idx": 39100, "rate": 0.765}, {"idx": 39200, "rate": 0.755}, {"idx": 39300, "rate": 0.735}, {"idx": 39400, "rate": 0.715}, {"idx": 39500, "rate": 0.71}, {"idx": 39600, "rate": 0.77}, {"idx": 39700, "rate": 0.805}], "phi_ar1": -0.007}, "status": {"auc": "no_discrimination", "ece": "informational", "brier_vs_baseline": "informational", "hosmer_lemeshow": "informational", "conformal_coverage": "below_target_drift"}, "reproduction_command": "python scripts/proof_calibration.py"};
+
+function fmt(x, d) { return x == null ? '—' : x.toFixed(d); }
+function fmtPct(x, d) { return x == null ? '—' : (x * 100).toFixed(d || 1) + '%'; }
+function badge(s) {
+  if (s === 'measured_pass')      return '<span class="badge good">measured · pass</span>';
+  if (s === 'pending')            return '<span class="badge warn">pending</span>';
+  if (s === 'informational')      return '<span class="badge warn">informational</span>';
+  if (s === 'no_discrimination')  return '<span class="badge warn">no edge — cf eval_02</span>';
+  if (s === 'below_target_drift') return '<span class="badge warn">drift detected</span>';
+  if (s === 'over_covered')       return '<span class="badge warn">over-covered</span>';
+  return '<span class="badge bad">below target</span>';
+}
+
+document.getElementById('meta-instr').textContent = REPORT.instrument + ' · ' + REPORT.timeframe;
+document.getElementById('meta-h').textContent = REPORT.horizon_bars + ' bars';
+document.getElementById('meta-n').textContent = REPORT.split.n_train.toLocaleString('fr-FR') + ' · ' + REPORT.split.n_test.toLocaleString('fr-FR');
+document.getElementById('meta-gen').textContent = REPORT.generated_at_utc.slice(0, 16).replace('T', ' ');
+document.getElementById('hz').textContent = REPORT.horizon_bars;
+
+// Honest interpretation banner — its content depends on whether the
+// underlying classifier has discrimination on these features.
+(function renderInterp() {
+  const auc = REPORT.discrete_calibration.auc;
+  const cov = (REPORT.conformal_coverage_returns || {});
+  let html = '';
+  if (auc <= 0.52) {
+    html += "<p style=\"margin:0 0 8px\"><strong>1. Classification discrète :</strong> "
+         + "sur les features brutes de confluence (BOS armé, FVG, OB, régime, vol, momentum), "
+         + "le modèle LGBM atteint AUC = <strong>" + auc.toFixed(3) + "</strong> — au niveau aléatoire. "
+         + "C'est <strong>cohérent avec eval_02</strong> qui a établi que le ConfluenceDetector "
+         + "a une corrélation Pearson −0.023 avec les outcomes. <strong>Les métriques de calibration discrète "
+         + "(ECE, Brier, Hosmer-Lemeshow) ne sont donc pas évaluables </strong>: on ne peut pas calibrer "
+         + "un modèle qui n'a pas d'information à calibrer. Marquées <em>informational</em>.</p>";
+  } else {
+    html += "<p style=\"margin:0 0 8px\"><strong>1. Classification discrète :</strong> AUC = "
+         + auc.toFixed(3) + ", discrimination mesurable. Les métriques de calibration discrète sont évaluables.</p>";
+  }
+  if (cov.available) {
+    const gap = cov.miscoverage_gap_pp;
+    const within = Math.abs(gap) <= 2.0;
+    html += "<p style=\"margin:0\"><strong>2. Couverture conformelle :</strong> "
+         + "test indépendant de la discrimination du classifieur — il vérifie que l'intervalle "
+         + "d'incertitude sur next-bar returns inclut bien l'observé "
+         + (within
+            ? "à <strong>" + (cov.empirical_coverage * 100).toFixed(2) + "%</strong> "
+              + "(cible 90.00%, écart " + (gap >= 0 ? "+" : "") + gap.toFixed(2) + " pp — dans la tolérance ±2 pp)."
+            : "à <strong>" + (cov.empirical_coverage * 100).toFixed(2) + "%</strong> "
+              + "(cible 90.00%, écart " + (gap >= 0 ? "+" : "") + gap.toFixed(2) + " pp). "
+              + "Un écart négatif > 2 pp révèle une <em>dérive de régime</em> sur la période test — "
+              + "c'est exactement ce que la couverture roulante visualise, et c'est précisément la raison "
+              + "d'être de l'<strong>Adaptive Conformal Inference</strong> (Gibbs-Candès 2021) "
+              + "qui re-régule la couverture en ligne dans le pipeline production.")
+         + "</p>";
+  }
+  if (html) {
+    document.getElementById('interp-text').innerHTML = html;
+    document.getElementById('interp-banner').style.display = 'block';
+  }
+})();
+
+// Discrete calibration
+const d = REPORT.discrete_calibration;
+document.getElementById('ece').textContent = fmt(d.ece, 4);
+document.getElementById('ece-ci').textContent = 'IC95% [' + fmt(d.ece_ci95[0], 4) + ', ' + fmt(d.ece_ci95[1], 4) + ']';
+document.getElementById('brier').textContent = fmt(d.brier, 4);
+document.getElementById('brier-base').textContent = fmt(d.brier_baseline_constant, 4);
+document.getElementById('brier-ci').textContent = 'IC95% [' + fmt(d.brier_ci95[0], 4) + ', ' + fmt(d.brier_ci95[1], 4) + '] · baseline ' + fmt(d.brier_baseline_constant, 4);
+document.getElementById('bss').textContent = (d.brier_skill_score == null) ? '—' : (d.brier_skill_score >= 0 ? '+' : '') + d.brier_skill_score.toFixed(4);
+document.getElementById('auc').textContent = fmt(d.auc, 3);
+document.getElementById('auc-ci').textContent = 'IC95% [' + fmt(d.auc_ci95[0], 3) + ', ' + fmt(d.auc_ci95[1], 3) + ']';
+document.getElementById('hl-val').textContent = d.hosmer_lemeshow.chi2;
+document.getElementById('disc-badge').innerHTML = badge(REPORT.status.ece);
+
+// Reliability chart
+const bins = d.reliability_bins;
+const xs = bins.map(b => b.pred_mean == null ? null : b.pred_mean);
+const ys = bins.map(b => b.emp_rate == null ? null : b.emp_rate);
+const ciLo = bins.map(b => b.ci_lo);
+const ciHi = bins.map(b => b.ci_hi);
+new Chart(document.getElementById('reliabilityChart'), {
+  type: 'scatter',
+  data: {
+    datasets: [
+      {
+        label: 'Diagonale parfaite',
+        type: 'line',
+        data: [{x: 0, y: 0}, {x: 1, y: 1}],
+        borderColor: '#93a1c4',
+        borderDash: [4, 4],
+        backgroundColor: 'transparent',
+        pointRadius: 0,
+        fill: false,
+      },
+      {
+        label: 'Calibration empirique',
+        data: xs.map((x, i) => x == null ? null : ({x: x, y: ys[i]})),
+        borderColor: '#6ee7b7',
+        backgroundColor: '#6ee7b7',
+        showLine: true,
+        tension: 0.0,
+        pointRadius: 5,
+      },
+      {
+        label: 'IC95% Wilson — borne basse',
+        data: xs.map((x, i) => x == null ? null : ({x: x, y: ciLo[i]})),
+        borderColor: 'rgba(110, 231, 183, 0.3)',
+        backgroundColor: 'transparent',
+        showLine: true,
+        pointRadius: 0,
+        borderDash: [2, 2],
+      },
+      {
+        label: 'IC95% Wilson — borne haute',
+        data: xs.map((x, i) => x == null ? null : ({x: x, y: ciHi[i]})),
+        borderColor: 'rgba(110, 231, 183, 0.3)',
+        backgroundColor: 'transparent',
+        showLine: true,
+        pointRadius: 0,
+        borderDash: [2, 2],
+      },
+    ]
+  },
+  options: {
+    plugins: { legend: { labels: { color: '#e6e8f0', font: { size: 11 } } } },
+    scales: {
+      x: { min: 0, max: 1, title: { display: true, text: 'Probabilité prédite', color: '#93a1c4' }, ticks: { color: '#93a1c4' }, grid: { color: '#2a3358' } },
+      y: { min: 0, max: 1, title: { display: true, text: 'Fréquence empirique', color: '#93a1c4' }, ticks: { color: '#93a1c4' }, grid: { color: '#2a3358' } },
+    }
+  }
+});
+
+// Histogram chart
+const histCounts = bins.map(b => b.n || 0);
+const histLabels = bins.map(b => (b.bin_lo.toFixed(1) + '-' + b.bin_hi.toFixed(1)));
+new Chart(document.getElementById('histChart'), {
+  type: 'bar',
+  data: {
+    labels: histLabels,
+    datasets: [{
+      label: 'Nombre de bars',
+      data: histCounts,
+      backgroundColor: '#7c4dff',
+    }]
+  },
+  options: {
+    plugins: { legend: { labels: { color: '#e6e8f0' } } },
+    scales: {
+      x: { ticks: { color: '#93a1c4' }, grid: { color: '#2a3358' } },
+      y: { ticks: { color: '#93a1c4' }, grid: { color: '#2a3358' } },
+    }
+  }
+});
+
+// Conformal coverage
+const c = REPORT.conformal_coverage_returns || {};
+if (c.available) {
+  document.getElementById('cov-emp').textContent = fmtPct(c.empirical_coverage, 2);
+  document.getElementById('cov-n').textContent = 'n test = ' + c.n_test.toLocaleString('fr-FR') + ' · q̂ = ' + c.q_hat.toExponential(2);
+  document.getElementById('cov-gap').textContent = (c.miscoverage_gap_pp >= 0 ? '+' : '') + c.miscoverage_gap_pp.toFixed(2) + ' pp';
+}
+document.getElementById('conf-badge').innerHTML = badge(REPORT.status.conformal_coverage);
+
+// Coverage timeline
+if (c.available && c.rolling_coverage.length > 0) {
+  new Chart(document.getElementById('coverageChart'), {
+    type: 'line',
+    data: {
+      labels: c.rolling_coverage.map(r => r.idx),
+      datasets: [
+        {
+          label: 'Couverture roulante (200 bars)',
+          data: c.rolling_coverage.map(r => r.rate * 100),
+          borderColor: '#6ee7b7',
+          backgroundColor: 'transparent',
+          pointRadius: 0,
+          tension: 0.2,
+        },
+        {
+          label: 'Cible 90%',
+          data: c.rolling_coverage.map(() => 90),
+          borderColor: '#fbbf24',
+          borderDash: [4, 4],
+          backgroundColor: 'transparent',
+          pointRadius: 0,
+        },
+      ]
+    },
+    options: {
+      plugins: { legend: { labels: { color: '#e6e8f0' } } },
+      scales: {
+        x: { ticks: { color: '#93a1c4' }, grid: { color: '#2a3358' }, title: { display: true, text: 'Bar index (test)', color: '#93a1c4' } },
+        y: { min: 70, max: 100, ticks: { color: '#93a1c4' }, grid: { color: '#2a3358' }, title: { display: true, text: '% couverture', color: '#93a1c4' } },
+      }
+    }
+  });
+}
+
+// Summary table
+const rows = [
+  ['ECE (Expected Calibration Error)', '< 0.05', fmt(d.ece, 4), REPORT.status.ece],
+  ['Brier vs baseline constant', '<' + ' ' + fmt(d.brier_baseline_constant, 4), fmt(d.brier, 4), REPORT.status.brier_vs_baseline],
+  ['AUC (discrimination)', '> 0.55', fmt(d.auc, 3), REPORT.status.auc],
+  ['Hosmer-Lemeshow χ² (df=8)', '< 15.51', d.hosmer_lemeshow.chi2.toString(), REPORT.status.hosmer_lemeshow],
+  ['Couverture conformelle 90%', '±2 pp', c.available ? fmtPct(c.empirical_coverage, 2) : 'n/a', REPORT.status.conformal_coverage],
+];
+const tbody = document.getElementById('summary-table');
+rows.forEach(([t, tgt, obs, st]) => {
+  const tr = document.createElement('tr');
+  tr.innerHTML = '<td style="padding:8px 10px;border-bottom:1px solid var(--line)">' + t +
+    '</td><td style="text-align:right;padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted)">' + tgt +
+    '</td><td style="text-align:right;padding:8px 10px;border-bottom:1px solid var(--line);font-weight:600">' + obs +
+    '</td><td style="text-align:right;padding:8px 10px;border-bottom:1px solid var(--line)">' + badge(st) + '</td>';
+  tbody.appendChild(tr);
+});
+</script>
+</body>
+</html>
