@@ -1,12 +1,16 @@
 """Algorithmic narrative engine — deterministic, LLM-free replacement for LLMNarrativeEngine.
 
-Generates institutional-tone signal explanations using only the signal's own data
+Generates institutional-tone setup explanations using only the signal's own data
 (components, score, regime, volatility forecast, risk parameters).
 
 Drop-in compatible with LLMNarrativeEngine: same `generate_narrative(signal, tier)` and
 `get_stats()` interface, same `NarrativeTier` enum, same `SignalNarrative` result type.
 
 Cost per call: $0. Latency: sub-millisecond. Deterministic output.
+
+User-facing language follows UE Directive 2024/2811 (finfluencers, March 2026):
+no imperative "BUY"/"SELL" verbs in the rendered paragraphs. Direction is
+expressed as "long setup" / "short setup" or "bullish" / "bearish".
 """
 
 from __future__ import annotations
@@ -86,6 +90,27 @@ _COMPONENT_DESCRIPTIONS = {
     "Momentum": "momentum (RSI)",
     "RSI_Divergence": "RSI divergence",
 }
+
+
+# UE Directive 2024/2811: render direction as a setup/bias label, never as a
+# buy/sell instruction. Internal codes (LONG/SHORT) are kept untouched in the
+# data layer; only the rendered prose is rewritten.
+_SETUP_PHRASE = {
+    "LONG": "long setup",
+    "SHORT": "short setup",
+}
+_BIAS_PHRASE = {
+    "LONG": "bullish",
+    "SHORT": "bearish",
+}
+
+
+def _setup_phrase(direction: str) -> str:
+    return _SETUP_PHRASE.get(str(direction).upper(), f"{direction.lower()} setup")
+
+
+def _bias_phrase(direction: str) -> str:
+    return _BIAS_PHRASE.get(str(direction).upper(), direction.lower())
 
 
 # =============================================================================
@@ -191,8 +216,8 @@ class TemplateNarrativeEngine:
             f"{name} ({ratio*100:.0f}%)" for name, ratio, _ in dominant
         )
         return True, (
-            f"{direction} validated at score {score:.0f}, R:R {rr:.2f} — "
-            f"top confluences: {strong_list}"
+            f"{_setup_phrase(direction).capitalize()} validated at score "
+            f"{score:.0f}, R:R {rr:.2f} — top confluences: {strong_list}"
         )
 
     # ------------------------------------------------------------------ #
@@ -252,8 +277,9 @@ class TemplateNarrativeEngine:
         decimals = self._price_decimals(symbol)
 
         return (
-            f"**Market Setup.** {tier_headline} — a {tier_adj} {direction} on {symbol} "
-            f"prints with a confluence score of {score:.0f}/100. "
+            f"**Market Setup.** {tier_headline} — a {tier_adj} "
+            f"{_setup_phrase(direction)} on {symbol} prints with a confluence "
+            f"score of {score:.0f}/100. "
             f"{regime_phrase} "
             f"Price is working off {entry:.{decimals}f} against an ATR of {atr:.{decimals}f}. "
             f"{vol_phrase}"
@@ -271,7 +297,7 @@ class TemplateNarrativeEngine:
             )
 
         lines = [
-            f"**Key Confluences.** The {direction.lower()} case rests on "
+            f"**Key Confluences.** The {_bias_phrase(direction)} case rests on "
             f"{len(dominant)} dominant factor"
             f"{'s' if len(dominant) > 1 else ''}."
         ]
@@ -316,8 +342,8 @@ class TemplateNarrativeEngine:
             f"({sl_atr_mult:.1f}×ATR, {sl_distance:.{decimals}f} pts away); "
             f"target at {tp:.{decimals}f} ({tp_atr_mult:.1f}×ATR) for a {rr:.2f}:1 "
             f"reward/risk profile. {vol_guidance} "
-            f"A close {invalidation_direction} {sl:.{decimals}f} invalidates the thesis "
-            f"and the position should be exited without discretion."
+            f"A close {invalidation_direction} {sl:.{decimals}f} invalidates the "
+            f"setup and removes algorithmic support for any position."
         )
 
     # ------------------------------------------------------------------ #
@@ -372,10 +398,11 @@ class TemplateNarrativeEngine:
         ratio = self._component_ratio(regime_comp)
         reasoning = str(getattr(regime_comp, "reasoning", "")).strip()
 
+        bias = _bias_phrase(direction)
         if ratio >= 0.75:
-            lead = f"The regime aligns strongly with the {direction.lower()} thesis"
+            lead = f"The regime aligns strongly with the {bias} thesis"
         elif ratio >= 0.60:
-            lead = f"The regime is supportive of the {direction.lower()} thesis"
+            lead = f"The regime is supportive of the {bias} thesis"
         elif ratio >= 0.50:
             lead = f"The regime is neutrally permissive"
         else:

@@ -31,6 +31,7 @@ from src.api.insight_signal_v2 import (
     ComponentBreakdown,
     EventReadout,
     HistoricalStats,
+    MultiTimeframeReadout,
     RegimeReadout,
     StructureReadout,
     UncertaintyContext,
@@ -514,6 +515,135 @@ def map_historical_stats(
 
 
 # ---------------------------------------------------------------------------
+# MultiTimeframeReadout — from MultiTimeframeFeatures dict
+# ---------------------------------------------------------------------------
+
+
+def _trend_label(trend_value: Any) -> Optional[str]:
+    """Map numeric trend signal (-1 / 0 / +1) to a label."""
+    try:
+        v = float(trend_value)
+    except (TypeError, ValueError):
+        return None
+    if v > 0.5:
+        return "bullish"
+    if v < -0.5:
+        return "bearish"
+    return "neutral"
+
+
+def _session_label(session_norm: Any) -> Optional[str]:
+    """Map normalised session [0, 0.5, 1] to a label.
+
+    MultiTimeframeFeatures encodes session as ``session/2`` where session
+    ∈ {0=Asian, 1=London, 2=NY}. We invert that mapping defensively.
+    """
+    try:
+        v = float(session_norm)
+    except (TypeError, ValueError):
+        return None
+    if v < 0.25:
+        return "asian"
+    if v < 0.75:
+        return "london"
+    return "new_york"
+
+
+def map_mtf_readout(
+    htf_features: Optional[dict],
+    direction_hint: Optional[str] = None,
+) -> Optional[MultiTimeframeReadout]:
+    """Project a MultiTimeframeFeatures features dict onto MultiTimeframeReadout.
+
+    Parameters
+    ----------
+    htf_features : dict, optional
+        Output of ``MultiTimeframeFeatures.get_features(idx)``. Expected keys:
+        HTF_TREND_1H, HTF_TREND_4H, HTF_STRENGTH_1H, HTF_STRENGTH_4H,
+        HTF_RSI_1H (normalised 0-1), HTF_RSI_4H (normalised 0-1), SESSION.
+    direction_hint : str, optional
+        Setup direction ("LONG" / "SHORT") — used to populate
+        ``alignment_with_setup``. When unknown, the field is set to "na".
+
+    Returns
+    -------
+    MultiTimeframeReadout or None — None when no HTF data is available.
+    """
+    if not htf_features:
+        return None
+
+    trend_1h_raw = htf_features.get("HTF_TREND_1H")
+    trend_4h_raw = htf_features.get("HTF_TREND_4H")
+    strength_1h = htf_features.get("HTF_STRENGTH_1H")
+    strength_4h = htf_features.get("HTF_STRENGTH_4H")
+    rsi_1h_norm = htf_features.get("HTF_RSI_1H")
+    rsi_4h_norm = htf_features.get("HTF_RSI_4H")
+    session_norm = htf_features.get("SESSION")
+
+    # Convert normalised 0-1 RSI back to 0-100. The MTF module exposes
+    # ``HTF_RSI_*`` already divided by 100; we re-multiply for human-facing
+    # output (the contract expects the 0-100 range).
+    rsi_1h = float(rsi_1h_norm) * 100.0 if rsi_1h_norm is not None and _is_finite(rsi_1h_norm) else None
+    rsi_4h = float(rsi_4h_norm) * 100.0 if rsi_4h_norm is not None and _is_finite(rsi_4h_norm) else None
+
+    h1_trend = _trend_label(trend_1h_raw) if trend_1h_raw is not None else None
+    h4_trend = _trend_label(trend_4h_raw) if trend_4h_raw is not None else None
+
+    # Quantitative alignment score — same logic as
+    # ``ConfluenceDetector._score_htf_alignment`` (kept in sync for
+    # observability). Falls back to None when no direction is known.
+    alignment_label: Optional[str] = "na"
+    alignment_score: Optional[float] = None
+    if direction_hint in ("LONG", "SHORT"):
+        required = 1.0 if direction_hint == "LONG" else -1.0
+        try:
+            t4 = float(trend_4h_raw) if trend_4h_raw is not None else 0.0
+            t1 = float(trend_1h_raw) if trend_1h_raw is not None else 0.0
+            s4 = float(strength_4h) if strength_4h is not None else 0.0
+            s1 = float(strength_1h) if strength_1h is not None else 0.0
+        except (TypeError, ValueError):
+            t4 = t1 = s4 = s1 = 0.0
+        h4_aligned = t4 == required
+        h4_counter = t4 == -required
+        h1_aligned = t1 == required
+        both_neutral = t4 == 0.0 and t1 == 0.0
+        if h4_counter:
+            alignment_score = 0.0
+            alignment_label = "counter"
+        elif h4_aligned and h1_aligned:
+            alignment_score = 0.7 + 0.3 * min(1.0, max(s4, s1))
+            alignment_label = "aligned"
+        elif h4_aligned:
+            alignment_score = 0.5 + 0.2 * min(1.0, s4)
+            alignment_label = "aligned"
+        elif h1_aligned:
+            alignment_score = 0.4
+            alignment_label = "aligned"
+        elif both_neutral:
+            alignment_score = 0.3
+            alignment_label = "neutral"
+        else:
+            alignment_score = 0.0
+            alignment_label = "counter"
+
+    try:
+        return MultiTimeframeReadout(
+            h1_trend=h1_trend,
+            h4_trend=h4_trend,
+            h1_strength=float(strength_1h) if strength_1h is not None and _is_finite(strength_1h) else None,
+            h4_strength=float(strength_4h) if strength_4h is not None and _is_finite(strength_4h) else None,
+            h1_rsi=rsi_1h,
+            h4_rsi=rsi_4h,
+            alignment_with_setup=alignment_label,
+            alignment_score_0_1=alignment_score,
+            session=_session_label(session_norm),
+        )
+    except (ValueError, TypeError) as exc:
+        logger.warning("MultiTimeframeReadout construction failed: %s", exc)
+        return None
+
+
+# ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
@@ -534,4 +664,5 @@ __all__ = [
     "map_breakdown_components",
     "map_uncertainty_context",
     "map_historical_stats",
+    "map_mtf_readout",
 ]

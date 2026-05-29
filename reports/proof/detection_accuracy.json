@@ -1,0 +1,136 @@
+{
+  "generated_at_utc": "2026-05-21T04:23:37.805071+00:00",
+  "instrument": "XAUUSD",
+  "timeframe": "M15",
+  "sample_bars": 100000,
+  "window": {
+    "start": "2022-02-04 03:15:00",
+    "end": "2026-04-29 23:45:00"
+  },
+  "smc_real": {
+    "n_bars": 99975,
+    "bos_event_count": 3280,
+    "bos_armed_count": 30302,
+    "fvg_count": 15921,
+    "ob_count": 24940,
+    "choch_count": 1240,
+    "bos_event_rate_pct": 3.281,
+    "bos_armed_rate_pct": 30.31,
+    "fvg_rate_pct": 15.925,
+    "ob_rate_pct": 24.946,
+    "choch_rate_pct": 1.24
+  },
+  "smc_shuffle_baseline": {
+    "n_bars": 99975,
+    "bos_event_count": 3613,
+    "bos_armed_count": 31023,
+    "fvg_count": 32967,
+    "ob_count": 13444,
+    "choch_count": 1315,
+    "bos_event_rate_pct": 3.614,
+    "bos_armed_rate_pct": 31.031,
+    "fvg_rate_pct": 32.975,
+    "ob_rate_pct": 13.447,
+    "choch_rate_pct": 1.315
+  },
+  "smc_lift_over_random": {
+    "bos_event_lift": 0.91,
+    "bos_armed_lift": 0.98,
+    "fvg_lift": 0.48,
+    "ob_lift": 1.86
+  },
+  "smc_yearly_stability": {
+    "available": true,
+    "years": [
+      2022,
+      2023,
+      2024,
+      2025,
+      2026
+    ],
+    "bos_event_yearly_rate_pct": [
+      3.655,
+      3.001,
+      3.038,
+      3.583,
+      2.912
+    ],
+    "bos_event_cv": 0.109,
+    "fvg_yearly_rate_pct": [
+      16.386,
+      15.617,
+      15.518,
+      16.321,
+      15.622
+    ],
+    "fvg_cv": 0.027,
+    "ob_yearly_rate_pct": [
+      24.919,
+      24.586,
+      25.027,
+      25.176,
+      25.171
+    ],
+    "ob_cv": 0.01
+  },
+  "fvg_fill": {
+    "available": true,
+    "horizon_bars": 50,
+    "fvgs_sampled": 1999,
+    "fill_rate_pct": 81.04,
+    "median_bars_to_fill": 4.0
+  },
+  "bos_continuation": {
+    "available": true,
+    "horizon_bars": 20,
+    "events_sampled": 2000,
+    "continuation_rate_pct": 47.7,
+    "random_baseline_pct": 50.0
+  },
+  "volatility_forecast": {
+    "available": true,
+    "n_train": 57983,
+    "n_test": 40000,
+    "rmse_har": 1.6233790210390475e-05,
+    "rmse_naive": 1.761323774010139e-05,
+    "improvement_pct": 7.83,
+    "improvement_ci95": [
+      0.53,
+      23.59
+    ]
+  },
+  "regime_classification": {
+    "available": true,
+    "real_mean_dwell_bars": 55.1,
+    "shuffle_mean_dwell_bars": 30.05,
+    "lift_over_random": 1.83,
+    "state_distribution_pct": [
+      33.0,
+      33.0,
+      34.0
+    ]
+  },
+  "news_calendar_coverage": {
+    "available": true,
+    "total_events": 875,
+    "high_impact_events": 875,
+    "currencies_covered": [],
+    "date_min": "2019-01-01 14:00:00",
+    "date_max": "2025-12-26 12:30:00"
+  },
+  "status": {
+    "bos_event_lift_info": "informational",
+    "bos_armed_lift_info": "informational",
+    "fvg_lift_info": "informational",
+    "ob": "measured_pass",
+    "bos_stability": "measured_pass",
+    "fvg_stability": "measured_pass",
+    "regime_dwell": "measured_pass",
+    "vol_forecast": "measured_pass",
+    "fvg_fill_rate": "measured_pass",
+    "bos_continuation": "below_target",
+    "analyst_kappa_bos": "pending_annotation",
+    "analyst_kappa_fvg": "pending_annotation"
+  },
+  "reproduction_command": "python scripts/proof_detection_accuracy.py"
+}

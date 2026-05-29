@@ -27,6 +27,7 @@ from src.intelligence.confluence_detector import (
     ConfluenceSignal,
     SignalTier,
 )
+from src.intelligence.insight_assembler import InsightAssembler
 from src.intelligence.llm_narrative_engine import (
     LLMNarrativeEngine,
     NarrativeTier,
@@ -62,6 +63,44 @@ TIER_TO_NARRATIVE: Dict[str, NarrativeTier] = {
 }
 
 
+# Order must match DEFAULT_FEATURE_NAMES in scoring/lgbm_scorer.py:
+# ("smc_structure", "order_blocks", "fvg", "retest", "regime",
+#  "vol_forecast", "news", "momentum_rsi_div")
+# Map from ConfluenceSignal.components[i].name → feature index.
+_COMPONENT_NAME_TO_INDEX: Dict[str, int] = {
+    "bos": 0,            # smc_structure
+    "order_block": 1,    # order_blocks
+    "fvg": 2,            # fvg
+    # index 3 (retest) — not currently exposed as a separate component
+    "regime": 4,         # regime
+    # index 5 (vol_forecast) — not currently exposed as a separate component
+    "news": 6,           # news
+    "momentum": 7,       # momentum_rsi_div (combined with rsi_divergence)
+    "rsi_divergence": 7,
+}
+
+
+def _components_to_feature_vector(signal: ConfluenceSignal) -> np.ndarray:
+    """Map a ConfluenceSignal's components → 8-element numpy vector.
+
+    Returns an 8-element float vector in the order expected by
+    CalibratedConvictionPipeline. Missing components contribute 0.0,
+    matching the training-time placeholder convention (retest and
+    vol_forecast are not persisted as standalone components yet —
+    see reports/scoring_v2_brier_validation.md).
+    """
+    vec = np.zeros(8, dtype=float)
+    if signal is None or not getattr(signal, "components", None):
+        return vec
+    for comp in signal.components:
+        idx = _COMPONENT_NAME_TO_INDEX.get(getattr(comp, "name", ""))
+        if idx is None:
+            continue
+        # Two components map to index 7 — accumulate (momentum + rsi_div).
+        vec[idx] += float(getattr(comp, "weighted_score", 0.0) or 0.0)
+    return vec
+
+
 class SentinelScanner:
     """
     Main scanning loop: poll for M15 bars → run analysis → publish signals.
@@ -83,7 +122,10 @@ class SentinelScanner:
         vol_forecaster: Optional[Any] = None,
         symbol: str = "XAUUSD",
         timeframe: str = "M15",
-        lookback_bars: int = 200,
+        # Bumped 200→800 (2026-05-21) so the MTF resample yields ~200 H4 bars,
+        # enough warm-up for SMA50/RSI14 on the higher TF. See feedback memory
+        # ``feedback_multi_view_ux.md`` and the MTF Phase-1 rewiring plan.
+        lookback_bars: int = 800,
         narrative_tier: NarrativeTier = NarrativeTier.NARRATOR,
         poll_interval_seconds: float = 60.0,
         llm_circuit_breaker: Optional[CircuitBreaker] = None,
@@ -93,6 +135,7 @@ class SentinelScanner:
         persistence_max_staleness_bars: int = 4,
         kill_switch: Optional[KillSwitch] = None,
         regime_filter: Optional[RegimeFilter] = None,
+        insight_assembler: Optional[InsightAssembler] = None,
     ):
         self._data_provider = data_provider
         self._smc_factory = smc_factory
@@ -132,6 +175,18 @@ class SentinelScanner:
         self._regime_filter = regime_filter
         self._signals_dropped_by_regime_filter = 0
 
+        # Insight assembler — when wired, every published signal is also
+        # materialised as an InsightSignalV2 (v2.1.0 contract) and stored as
+        # ``latest_insight`` for B2B/B2C surfaces to read. Legacy passthrough
+        # when None — the scanner keeps emitting the v1 SignalRecord path
+        # unchanged so existing tests and consumers are not disturbed.
+        self._insight_assembler = insight_assembler
+        from src.api.insight_signal_v2 import InsightSignalV2 as _InsightV2  # local import to avoid heavy module load on cold paths
+        self._InsightSignalV2 = _InsightV2
+        self._latest_insight: Optional[_InsightV2] = None
+        self._insights_built: int = 0
+        self._insight_build_failures: int = 0
+
         # Signal state machine — None means legacy passthrough (backward compat).
         self._state_machine = state_machine
         # Persistence (optional): save on shutdown, reload on start. Staleness
@@ -155,6 +210,18 @@ class SentinelScanner:
         # _stop_event.wait(timeout) returns immediately when shutdown sets it.
         self._stop_event = threading.Event()
 
+        # Multi-timeframe features — fitted lazily on first scan (Phase 1
+        # rewiring, 2026-05-21). Uses ``MultiTimeframeFeatures`` from the
+        # environment package which already has the look-ahead-safe causal
+        # mask (l.272). Re-fit on every scan is cheap (~800 rows resampled
+        # to ~200 H4 bars) but we keep the instance reusable to avoid the
+        # allocator pressure of recreating the class every minute.
+        self._mtf = None
+        self._mtf_warmup_bars = 200  # need ≥200 H4 bars for SMA50 + RSI14 warm-up
+        self._mtf_warmup_complete = False
+        self._htf_features_computed: int = 0
+        self._htf_features_skipped: int = 0
+
         # Stats
         self._bars_scanned = 0
         self._signals_generated = 0
@@ -171,6 +238,11 @@ class SentinelScanner:
     def state_machine(self) -> Optional[SignalStateMachine]:
         """Expose the state machine for API reads / snapshots."""
         return self._state_machine
+
+    @property
+    def latest_insight(self):
+        """Most recent InsightSignalV2 produced by the assembler, if any."""
+        return self._latest_insight
 
     # ------------------------------------------------------------------ #
     # LIFECYCLE
@@ -384,6 +456,14 @@ class SentinelScanner:
             except Exception as e:
                 logger.warning("Vol forecast failed (using naive ATR): %s", e)
 
+        # 5b. Multi-timeframe context — Phase 1 wiring (2026-05-21).
+        # The HTF features are descriptive only at weight=0 in
+        # ConfluenceDetector for Phase 1; the empirical validation (Phase 2)
+        # decides whether to lift the weight in Phase 3. All failures fall
+        # back to ``None`` so the renormalisation logic still produces a
+        # well-scaled score.
+        htf_features = self._compute_htf_features_safe(enriched)
+
         # 6. Confluence scoring
         signal = self._confluence.analyze(
             smc_features=smc_features,
@@ -395,6 +475,7 @@ class SentinelScanner:
             volume_ma=volume_ma,
             bar_timestamp=bar_ts,
             vol_forecast=vol_forecast,
+            htf_features=htf_features,
         )
 
         # 6b. Regime filter — drops signals in NY session and top-quartile vol.
@@ -475,6 +556,20 @@ class SentinelScanner:
 
         # 10. Push notification (circuit-breaker protected)
         self._send_notification_safe(signal, narrative_data)
+
+        # 11. Assemble InsightSignalV2 (v2.1.0) for B2B/B2C surfaces. This
+        # never blocks the legacy v1 emission path: any failure is logged
+        # and counted, but the scanner returns the ConfluenceSignal as
+        # before. Skipped when no assembler is wired.
+        self._build_insight_safe(
+            signal=signal,
+            narrative_data=narrative_data,
+            smc_features=smc_features,
+            regime=regime,
+            news=news,
+            vol_forecast=vol_forecast,
+            htf_features=htf_features,
+        )
 
         return signal
 
@@ -718,6 +813,135 @@ class SentinelScanner:
         )
 
     # ------------------------------------------------------------------ #
+    # INSIGHT V2.1.0 ASSEMBLY
+    # ------------------------------------------------------------------ #
+
+    # ------------------------------------------------------------------ #
+    # MULTI-TIMEFRAME FEATURE COMPUTATION
+    # ------------------------------------------------------------------ #
+
+    def _compute_htf_features_safe(
+        self, enriched: pd.DataFrame
+    ) -> Optional[Dict[str, float]]:
+        """Compute HTF features for the latest bar. Defensive.
+
+        Returns ``None`` if (a) the dataframe is too short for the H4 SMA50
+        warm-up, (b) the MTF module is unavailable, or (c) any computation
+        raises. Phase 1: weight=0 in ConfluenceDetector, so missing HTF
+        features change neither tier nor the score (renormalisation handles
+        absence). Phase 2 validation harness reads this dict directly.
+        """
+        # Lazy import — keep cold-start fast and avoid coupling tests that
+        # don't touch the scanner directly to the MTF dependency tree.
+        if self._mtf is None:
+            try:
+                from src.environment.multi_timeframe_features import (
+                    MultiTimeframeFeatures,
+                )
+                # Base TF mapping — only M15 is currently supported in the
+                # MTF module; for other base TFs we degrade gracefully.
+                base_tf = "15min" if self._timeframe.upper() in ("M15", "15M", "15MIN") else None
+                if base_tf is None:
+                    logger.debug(
+                        "MTF disabled: unsupported base timeframe %s", self._timeframe
+                    )
+                    self._htf_features_skipped += 1
+                    return None
+                self._mtf = MultiTimeframeFeatures(
+                    base_timeframe=base_tf,
+                    include_1h=True,
+                    include_4h=True,
+                    include_session=True,
+                )
+            except Exception as exc:
+                logger.debug("MTF init failed: %s", exc)
+                self._htf_features_skipped += 1
+                return None
+
+        # Need enough M15 bars (200 H4 bars × 16 M15/H4) for stable H4 SMA50.
+        # We use a softer guard than ``lookback_bars`` since cold-start
+        # backtests can start with less. Below 800 M15 bars we return None
+        # and let the absent_weight renormalisation in ConfluenceDetector
+        # handle it; above 800 we mark warm-up complete.
+        if len(enriched) < 800:
+            if not self._mtf_warmup_complete:
+                self._htf_features_skipped += 1
+                return None
+            # Already warm: continue with whatever we have (live data can
+            # transiently shrink if a provider returns fewer bars).
+
+        try:
+            # The MTF module wants a DatetimeIndex; ``enriched`` from SMC
+            # carries either a DatetimeIndex (live) or a RangeIndex (some
+            # tests). The module handles both via the fit() branch.
+            self._mtf.fit(enriched)
+            self._mtf_warmup_complete = True
+            features = self._mtf.get_features(idx=len(enriched) - 1)
+            self._htf_features_computed += 1
+            return features
+        except Exception as exc:
+            logger.debug("MTF compute failed: %s", exc)
+            self._htf_features_skipped += 1
+            return None
+
+    def _build_insight_safe(
+        self,
+        signal: ConfluenceSignal,
+        narrative_data: Dict,
+        smc_features: Dict[str, float],
+        regime: Any,
+        news: Any,
+        vol_forecast: Any,
+        htf_features: Optional[Dict[str, float]] = None,
+    ) -> None:
+        """Compose an InsightSignalV2 from pipeline outputs. Defensive.
+
+        Stores the result on ``self._latest_insight`` so API/notifier
+        layers can read it. All failures are caught — the scanner must
+        never crash because of v2 assembly. The legacy v1 publish path is
+        unaffected.
+        """
+        if self._insight_assembler is None:
+            return
+        try:
+            narrative_short = (
+                narrative_data.get("summary")
+                or narrative_data.get("narrative_short")
+                or ""
+            )
+            narrative_long = (
+                narrative_data.get("full_narrative")
+                or narrative_data.get("narrative_long")
+                or narrative_data.get("market_context")
+                or ""
+            )
+            # Feature vector for the calibrated pipeline (LGBM input).
+            # Built from ConfluenceSignal.components, ordered to match
+            # DEFAULT_FEATURE_NAMES in scoring/lgbm_scorer.py.
+            feature_vector = _components_to_feature_vector(signal)
+            self._latest_insight = self._insight_assembler.assemble(
+                instrument=self._symbol,
+                timeframe=self._timeframe,
+                confluence_signal=signal,
+                smc_features=smc_features,
+                volatility_forecast=vol_forecast,
+                regime_analysis=regime,
+                news_assessment=news,
+                htf_features=htf_features,
+                narrative_short=str(narrative_short),
+                narrative_long=str(narrative_long),
+                feature_vector=feature_vector,
+                include_levels=False,
+            )
+            self._insights_built += 1
+        except Exception as exc:  # pragma: no cover — defensive
+            self._insight_build_failures += 1
+            logger.warning(
+                "InsightSignalV2 assembly failed for %s: %s",
+                getattr(signal, "signal_id", "?"), exc,
+            )
+
+    # ------------------------------------------------------------------ #
     # TRADE OUTCOME HOOK
     # ------------------------------------------------------------------ #
 
@@ -766,6 +990,12 @@ class SentinelScanner:
             stats["llm_circuit"] = self._llm_breaker.state.value
         if self._notifier_breaker is not None:
             stats["telegram_circuit"] = self._notifier_breaker.state.value
+        if self._insight_assembler is not None:
+            stats["insights_built"] = self._insights_built
+            stats["insight_build_failures"] = self._insight_build_failures
+            stats["latest_insight_id"] = (
+                self._latest_insight.id if self._latest_insight is not None else None
+            )
         if self._kill_switch is not None:
             stats["kill_switch"] = self._kill_switch.status()
             stats["signals_blocked_by_kill_switch"] = self._signals_blocked_by_kill_switch
@@ -842,6 +1072,7 @@ class MultiSymbolScanner:
         poll_interval_seconds: float = 60.0,
         state_machine_factory: Optional[Callable[[str], SignalStateMachine]] = None,
         state_persistence_dir: Optional[Any] = None,
+        insight_assembler_factory: Optional[Callable[[str], InsightAssembler]] = None,
     ):
         self._symbols = symbols
         self._registry = instrument_registry
@@ -874,6 +1105,16 @@ class MultiSymbolScanner:
             # Per-symbol state machine if factory provided
             sm = state_machine_factory(symbol) if state_machine_factory is not None else None
 
+            # Per-symbol insight assembler if factory provided. The factory
+            # signature receives the symbol so callers can wire
+            # symbol-specific historical_stats callbacks (e.g. EUR vs XAU
+            # backtest stats), or share a single instance by returning the
+            # same object every call.
+            assembler = (
+                insight_assembler_factory(symbol)
+                if insight_assembler_factory is not None else None
+            )
+
             # Per-symbol persistence path under the shared directory
             persistence_path = (
                 self._persistence_dir / f"state_{symbol}.json"
@@ -899,6 +1140,7 @@ class MultiSymbolScanner:
                 poll_interval_seconds=0,  # We manage polling at the multi level
                 state_machine=sm,
                 persistence_path=persistence_path,
+                insight_assembler=assembler,
             )
 
         logger.info(

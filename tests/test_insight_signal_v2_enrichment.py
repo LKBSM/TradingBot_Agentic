@@ -356,7 +356,7 @@ def _make_enriched_signal() -> InsightSignalV2:
 
 def test_signal_v2_accepts_all_new_subfields():
     sig = _make_enriched_signal()
-    assert sig.schema_version == "2.1.0"
+    assert sig.schema_version == "2.2.0"
     assert sig.uncertainty.conformal_lower == 54.0
     assert sig.structure_readout.retest_state == "armed"
     assert sig.regime_readout.hmm_label == "trend_bullish"
@@ -406,7 +406,7 @@ def test_enriched_signal_round_trip_json():
 def test_enriched_signal_b2b_dict_includes_all_readouts():
     sig = _make_enriched_signal()
     d = to_b2b_dict(sig)
-    assert d["schema_version"] == "2.1.0"
+    assert d["schema_version"] == "2.2.0"
     assert d["uncertainty"]["conformal_lower"] == 54.0
     assert d["structure_readout"]["bos_level"] == 2391.50
     assert d["regime_readout"]["regime_gate_decision"] == "TRADE"
@@ -429,7 +429,7 @@ def test_audit_row_remains_minimal_after_enrichment():
         "edge_claim", "is_paper_demo", "created_at_utc",
     }
     assert set(row.keys()) == expected_keys
-    assert row["schema_version"] == "2.1.0"
+    assert row["schema_version"] == "2.2.0"
 
 
 # ---------------------------------------------------------------------------

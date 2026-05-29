@@ -16,14 +16,40 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
 from enum import Enum
+from pathlib import Path
 import asyncio
 import aiohttp
+import csv
+import hashlib
 import logging
 import re
 from collections import deque
 import time
 
 logger = logging.getLogger(__name__)
+
+
+def _to_float(val: Any) -> Optional[float]:
+    """Best-effort parse of FF economic values like '250K', '3.2%', '1.5B'."""
+    if val is None:
+        return None
+    s = str(val).strip()
+    if not s:
+        return None
+    mult = 1.0
+    s_lower = s.lower().rstrip("%")
+    if s_lower.endswith("k"):
+        mult, s_lower = 1e3, s_lower[:-1]
+    elif s_lower.endswith("m"):
+        mult, s_lower = 1e6, s_lower[:-1]
+    elif s_lower.endswith("b"):
+        mult, s_lower = 1e9, s_lower[:-1]
+    elif s_lower.endswith("t"):
+        mult, s_lower = 1e12, s_lower[:-1]
+    try:
+        return float(s_lower) * mult
+    except ValueError:
+        return None
 
 
 class NewsImpact(Enum):
@@ -169,7 +195,8 @@ class EconomicCalendarFetcher:
         self,
         cache_hours: int = 4,
         rate_limit_seconds: int = 60,
-        user_agent: str = "TradingBot/1.0"
+        user_agent: str = "TradingBot/1.0",
+        csv_path: Optional[str] = None,
     ):
         """
         Initialize the calendar fetcher.
@@ -178,22 +205,29 @@ class EconomicCalendarFetcher:
             cache_hours: How long to cache calendar data
             rate_limit_seconds: Minimum seconds between fetches
             user_agent: User agent for HTTP requests
+            csv_path: Optional path to a CSV calendar (columns:
+                Date,Currency,Event,Impact,Actual,Forecast,Previous). When set,
+                ``fetch_calendar()`` prefers this source over the ForexFactory
+                HTML scraper — populate it with ``scripts/fetch_forexfactory_live.py``.
         """
         self._cache_hours = cache_hours
         self._rate_limit_seconds = rate_limit_seconds
         self._user_agent = user_agent
+        self._csv_path: Optional[Path] = Path(csv_path) if csv_path else None
 
         # Cache
         self._cached_events: List[EconomicEvent] = []
         self._last_fetch: Optional[datetime] = None
         self._cache_valid_until: Optional[datetime] = None
+        self._csv_mtime: Optional[float] = None
 
         # Rate limiting
         self._last_request_time: float = 0
 
         logger.info(
             f"EconomicCalendarFetcher initialized "
-            f"(cache: {cache_hours}h, rate limit: {rate_limit_seconds}s)"
+            f"(cache: {cache_hours}h, rate limit: {rate_limit_seconds}s, "
+            f"csv: {self._csv_path or 'none'})"
         )
 
     def _classify_impact(self, event_name: str) -> NewsImpact:
@@ -258,6 +292,12 @@ class EconomicCalendarFetcher:
         """
         Fetch economic calendar asynchronously.
 
+        Source priority:
+          1. CSV file (if ``csv_path`` was provided) — refreshed by
+             ``scripts/fetch_forexfactory_live.py``, reliable and real-time.
+          2. ForexFactory HTML scraping (fragile — placeholder timestamps).
+          3. Built-in fallback schedule.
+
         Args:
             days_ahead: How many days ahead to fetch
             currencies: Filter by currencies (None = all)
@@ -265,6 +305,17 @@ class EconomicCalendarFetcher:
         Returns:
             List of EconomicEvent objects
         """
+        # Source 1: CSV file (preferred when configured)
+        if self._csv_path is not None:
+            events = self._fetch_from_csv(days_ahead)
+            if events:
+                return self._filter_events(events, currencies)
+            # Only fall through if CSV is empty/missing — log clearly
+            logger.warning(
+                "CSV calendar %s unavailable or empty, falling back to scraping",
+                self._csv_path,
+            )
+
         # Check cache first
         if self._is_cache_valid():
             events = self._filter_events(self._cached_events, currencies)
@@ -294,6 +345,79 @@ class EconomicCalendarFetcher:
         events = self._get_builtin_events(days_ahead)
         logger.info(f"Using {len(events)} built-in events")
         return self._filter_events(events, currencies)
+
+    def _fetch_from_csv(self, days_ahead: int) -> List[EconomicEvent]:
+        """Load events from the configured CSV file.
+
+        Expected columns: Date, Currency, Event, Impact, Actual, Forecast, Previous.
+        Date is parsed as UTC-naive. Cache is invalidated automatically when the
+        file mtime changes — so ``fetch_forexfactory_live.py`` refreshes take
+        effect without restarting the bot.
+        """
+        if self._csv_path is None or not self._csv_path.exists():
+            return []
+
+        try:
+            mtime = self._csv_path.stat().st_mtime
+        except OSError:
+            return []
+
+        # Serve from cache if the file hasn't changed since last load.
+        if self._csv_mtime == mtime and self._cached_events:
+            pass  # fall through and re-apply the date window on cached list
+        else:
+            events: List[EconomicEvent] = []
+            try:
+                with self._csv_path.open("r", encoding="utf-8", newline="") as f:
+                    reader = csv.DictReader(f)
+                    for row in reader:
+                        date_str = (row.get("Date") or "").strip()
+                        name = (row.get("Event") or "").strip()
+                        currency = (row.get("Currency") or "").strip().upper()
+                        if not (date_str and name and currency):
+                            continue
+                        try:
+                            scheduled = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
+                        except ValueError:
+                            try:
+                                scheduled = datetime.fromisoformat(date_str)
+                            except ValueError:
+                                continue
+                        impact_raw = (row.get("Impact") or "").strip().lower()
+                        impact = {
+                            "high": NewsImpact.HIGH,
+                            "medium": NewsImpact.MEDIUM,
+                            "low": NewsImpact.LOW,
+                        }.get(impact_raw, self._classify_impact(name))
+
+                        eid = hashlib.md5(
+                            f"{date_str}|{currency}|{name}".encode("utf-8")
+                        ).hexdigest()[:12]
+
+                        events.append(EconomicEvent(
+                            event_id=f"csv_{eid}",
+                            name=name,
+                            currency=currency,
+                            impact=impact,
+                            scheduled_time=scheduled,
+                            actual_value=_to_float(row.get("Actual")),
+                            forecast_value=_to_float(row.get("Forecast")),
+                            previous_value=_to_float(row.get("Previous")),
+                            source="csv",
+                        ))
+            except OSError as e:
+                logger.warning("CSV calendar read failed: %s", e)
+                return []
+
+            self._cached_events = events
+            self._csv_mtime = mtime
+            self._last_fetch = datetime.now()
+            logger.info("Loaded %d events from CSV %s", len(events), self._csv_path)
+
+        # Apply forward-looking window so we don't return historical events
+        now = datetime.now()
+        cutoff = now + timedelta(days=days_ahead)
+        return [e for e in self._cached_events if now - timedelta(minutes=60) <= e.scheduled_time <= cutoff]
 
     def fetch_calendar(
         self,

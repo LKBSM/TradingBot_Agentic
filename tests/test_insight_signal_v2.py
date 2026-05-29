@@ -95,9 +95,9 @@ def hold_signal() -> InsightSignalV2:
 # ---------------------------------------------------------------------------
 
 
-def test_schema_version_is_2_1_0():
-    """Bumped to 2.1.0 on Sprint 1 enrichment (uncertainty + readouts + breakdown)."""
-    assert SCHEMA_VERSION == "2.1.0"
+def test_schema_version_is_2_2_0():
+    """Bumped to 2.2.0 on Phase 1 MTF rewiring (mtf_readout field)."""
+    assert SCHEMA_VERSION == "2.2.0"
 
 
 def test_id_must_be_non_empty():

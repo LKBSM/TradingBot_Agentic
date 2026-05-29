@@ -9,6 +9,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from src.api.auth import require_api_key, TESTING_MODE
+from src.api.disclaimers import detect_language_from_request, get_disclaimer
 from src.api.models import (
     NarrativeResponse,
     ChatRequest,
@@ -61,17 +62,21 @@ async def get_narrative(
 
     tier = subscriber.get("tier", "FREE")
 
-    # Base response (all tiers)
+    lang = detect_language_from_request(dict(request.headers))
+
+    # Base response (all tiers). NarrativeResponse derives ``setup`` from
+    # ``action`` automatically per UE 2024/2811.
     response = NarrativeResponse(
         signal_id=record.signal_id,
         symbol=record.symbol,
-        action=record.action,
+        action=str(getattr(record, "action", "") or ""),
         entry_price=record.entry_price,
         stop_loss=record.stop_loss,
         take_profit=record.take_profit,
         rr_ratio=record.rr_ratio,
         confluence_score=record.confluence_score,
         market_context=record.market_context,
+        disclaimer=get_disclaimer(lang),
     )
 
     # In testing mode or ANALYST+: add validation

@@ -123,6 +123,13 @@ DEFAULT_WEIGHTS: Dict[str, float] = {
     "volume": 10.0,
     "momentum": 3.0,
     "rsi_divergence": 2.0,
+    # Multi-timeframe alignment — wired Phase 1 (2026-05-21) at weight 0.0
+    # so the component is computed and surfaced (observability + descriptive
+    # readout) without changing the score distribution. Phase 2 empirical
+    # validation (reports/eval_mtf_alignment.md, 2026-05-23) REJECTED the
+    # gate: dropping H4-counter trades changed PF lo CI95 by -0.043 (gate
+    # required ≥ +0.050) on 134 XAU M15 trades 2019-2025. Keep at 0.0.
+    "htf_alignment": 0.0,
 }
 
 # ATR multipliers for SL/TP (mirrors risk_manager.py)
@@ -197,6 +204,7 @@ class ConfluenceDetector:
         volume_ma: Optional[float] = None,
         bar_timestamp: Optional[str] = None,
         vol_forecast: Optional["VolatilityForecast"] = None,
+        htf_features: Optional[Dict[str, float]] = None,
     ) -> Optional[ConfluenceSignal]:
         """
         Run full confluence analysis.
@@ -260,6 +268,7 @@ class ConfluenceDetector:
         components.append(self._score_volume(volume, volume_ma))
         components.append(self._score_momentum(smc_features, signal_type))
         components.append(self._score_rsi_divergence(smc_features, signal_type))
+        components.append(self._score_htf_alignment(htf_features, signal_type))
 
         # Renormalize when components have NO data (as opposed to a present-but-
         # neutral reading). Without this, offline replay (news=None, volume=None)
@@ -275,6 +284,8 @@ class ConfluenceDetector:
             absent_weight += self.weights.get("volume", 0.0)
         if regime is None:
             absent_weight += self.weights.get("regime", 0.0)
+        if htf_features is None:
+            absent_weight += self.weights.get("htf_alignment", 0.0)
         present_weight = sum(self.weights.values()) - absent_weight
         if absent_weight > 0 and present_weight > 0:
             total_score = total_score * 100.0 / present_weight
@@ -612,6 +623,72 @@ class ConfluenceDetector:
             reason = "RSI divergence opposes signal direction"
 
         return ComponentScore("RSI_Divergence", float(divergence), score, w, reason)
+
+    def _score_htf_alignment(
+        self,
+        htf_features: Optional[Dict[str, float]],
+        direction: SignalType,
+    ) -> ComponentScore:
+        """Higher-timeframe alignment score (Phase 1: weight=0, observability only).
+
+        Reads ``HTF_TREND_1H``, ``HTF_TREND_4H``, ``HTF_STRENGTH_1H``,
+        ``HTF_STRENGTH_4H`` from the features dict produced by
+        :class:`src.environment.multi_timeframe_features.MultiTimeframeFeatures`.
+
+        Scoring logic (applied even at weight=0 so the surfaced reasoning is
+        meaningful for the descriptive readout):
+          * Both H1 and H4 aligned with direction and strong → 100%
+          * H4 aligned (dominant TF) → 70%
+          * Only H1 aligned → 40%
+          * Both neutral → 30% (ranging HTF, no info)
+          * Counter-trend on H4 → 0% (the proverbial "do not fight the H4")
+        """
+        w = self.weights.get("htf_alignment", 0.0)
+
+        if htf_features is None:
+            return ComponentScore(
+                "HTF_Alignment", 0.0, 0.0, w,
+                "No HTF data — zero contribution",
+            )
+
+        trend_1h = float(htf_features.get("HTF_TREND_1H", 0.0))
+        trend_4h = float(htf_features.get("HTF_TREND_4H", 0.0))
+        strength_1h = float(htf_features.get("HTF_STRENGTH_1H", 0.0))
+        strength_4h = float(htf_features.get("HTF_STRENGTH_4H", 0.0))
+
+        required = 1.0 if direction == SignalType.LONG else -1.0
+        h4_aligned = trend_4h == required
+        h4_counter = trend_4h == -required
+        h1_aligned = trend_1h == required
+        both_neutral = trend_4h == 0.0 and trend_1h == 0.0
+
+        if h4_counter:
+            quality = 0.0
+            label = "counter-trend H4"
+        elif h4_aligned and h1_aligned:
+            # Strength booster: only at full quality when H4 has meaningful trend
+            quality = 0.7 + 0.3 * min(1.0, max(strength_4h, strength_1h))
+            label = "full HTF alignment (H1+H4)"
+        elif h4_aligned:
+            quality = 0.5 + 0.2 * min(1.0, strength_4h)
+            label = "H4 aligned"
+        elif h1_aligned:
+            quality = 0.4
+            label = "H1 aligned (H4 neutral)"
+        elif both_neutral:
+            quality = 0.3
+            label = "HTF ranging"
+        else:
+            quality = 0.0
+            label = "HTF misaligned"
+
+        score = quality * w
+        reason = (
+            f"{label} — H4 trend={int(trend_4h):+d} (strength={strength_4h:.2f}), "
+            f"H1 trend={int(trend_1h):+d} (strength={strength_1h:.2f}); "
+            f"quality={quality:.0%}"
+        )
+        return ComponentScore("HTF_Alignment", trend_4h, score, w, reason)
 
     # ------------------------------------------------------------------ #
     # HELPERS

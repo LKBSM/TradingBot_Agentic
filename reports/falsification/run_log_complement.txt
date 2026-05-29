@@ -1,0 +1,61 @@
+=== Beta vs alpha full sample ===
+FULL  corr levels: -0.4739, corr returns: -0.0138
+PRE   corr levels: -0.7838
+SUB(2024+) corr levels (reset): 0.9616
+
+=== Side decomp full sample ===
+  Long: n=1240, PnL=-673, PF=0.9515, WR=0.467
+  Short: n=1123, PnL=-5572, PF=0.6363, WR=0.414
+
+=== Stress Sprint 3 MTF ===
+  Trades align MTF (close vs EMA50_H4): 1673/2363 = 0.708
+  PF retained: 0.8144
+  PF removed:  0.7201
+  PnL retained: -3805
+  PnL removed:  -2441
+  --- 2024-2026 only ---
+  Filtered: n=525, PF=1.4077, PnL=1503
+  Removed:  n=221, PF=0.9539, PnL=-80
+
+=== PF par annee avec CI bootstrap ===
+  2019: n=310, PF=0.672, CI95=[0.497, 0.891]
+  2020: n=325, PF=0.743, CI95=[0.550, 0.985]
+  2021: n=336, PF=0.599, CI95=[0.435, 0.801]
+  2022: n=314, PF=0.673, CI95=[0.499, 0.904]
+  2023: n=332, PF=0.710, CI95=[0.534, 0.933]
+  2024: n=328, PF=1.199, CI95=[0.902, 1.611]
+  2025: n=314, PF=1.322, CI95=[0.995, 1.758]
+  2026: n=104, PF=1.248, CI95=[0.800, 1.893]
+
+=== PBO simplifie (CSCV 2 partitions) ===
+  Split temporel A (first half): n=1181, PF=0.6550
+  Split temporel B (second half): n=1182, PF=1.0936
+  -> divergence PF entre les deux moities = 0.4387
+
+  Ratio trades/features = 295 (>= 100 = OK pour GBM)
+  Mais R^2 OLS multivar = 0.0007 -> SNR effectif minuscule
+
+=== White-Reality-Check approximation: PF rolling 28-mois ===
+     start   n       pf
+2023-04-01 740 1.052639
+2023-05-01 739 1.044413
+2023-06-01 734 1.103594
+2023-07-01 734 1.119900
+2023-08-01 738 1.197844
+2023-09-01 738 1.251462
+2023-10-01 739 1.239031
+2023-11-01 736 1.258120
+2023-12-01 740 1.241760
+2024-01-01 746 1.262210
+
+  Max PF rolling 28-mois: 1.2622 (start=2024-01-01)
+  PF sub 2024-2026 = 1.275 -> rang centile 100.0%
+  Drop CHOCH+RSI_div, keep when sum(6 comps)>=4: n=2363, PF=0.7863, PnL=-6246
+  Drop CHOCH+RSI_div, keep when sum(6 comps)>=5: n=2219, PF=0.7944, PnL=-5647
+  Drop CHOCH+RSI_div, keep when sum(6 comps)>=6: n=1026, PF=0.8223, PnL=-2317
+
+=== P(PF_sub >= 1.20 | shuffled trades 2024+) ===
+  PF sub observe = 1.2622
+  Distribution PF sous H0 mean=0: median=0.9981, p99=1.2499
+  P(PF_H0 >= 1.20) = 0.0230  -> (faible = rejet H0)
+  P(PF_H0 >= PF_obs) = 0.0072

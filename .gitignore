@@ -90,3 +90,11 @@ temp/
 
 # Backups (Sprint 0 institutional overhaul)
 backups/
+
+# Stash recovery 2026-05-30 — ignore execution artefacts
+replay_*.json
+replay_*.csv
+.coverage
+*.coverage.*
+backtest_trades.csv
+.claude/scheduled_tasks.lock

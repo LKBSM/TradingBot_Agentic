@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Audit Trail — Smart Sentinel AI</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #0f1419;
+  --panel: #1a1f2e;
+  --border: #2a3142;
+  --text: #e6e9ef;
+  --muted: #8b94a8;
+  --green: #4ade80;
+  --red: #f87171;
+  --amber: #fbbf24;
+  --blue: #60a5fa;
+  --accent: #a78bfa;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  margin: 0; padding: 24px; line-height: 1.5;
+}
+h1 { font-size: 24px; margin: 0 0 4px 0; }
+h2 { font-size: 18px; margin: 24px 0 12px 0; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+.subtitle { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+.panel {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+  padding: 20px; margin-bottom: 20px;
+}
+.banner {
+  background: linear-gradient(90deg, rgba(167,139,250,0.10), rgba(96,165,250,0.05));
+  border-left: 3px solid var(--accent);
+}
+.grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.kpi { text-align: left; }
+.kpi-label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+.kpi-value { font-size: 22px; font-weight: 600; margin-top: 4px; word-break: break-all; }
+.kpi-sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
+.badge {
+  display: inline-block; padding: 3px 10px; border-radius: 4px;
+  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
+}
+.b-green { background: rgba(74,222,128,0.15); color: var(--green); border: 1px solid rgba(74,222,128,0.30); }
+.b-red   { background: rgba(248,113,113,0.15); color: var(--red); border: 1px solid rgba(248,113,113,0.30); }
+.b-amber { background: rgba(251,191,36,0.15); color: var(--amber); border: 1px solid rgba(251,191,36,0.30); }
+.mono { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12px; }
+.hash { color: var(--blue); word-break: break-all; }
+.hash-short { color: var(--blue); }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); }
+th { color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; font-size: 11px; }
+tr.tampered { background: rgba(248,113,113,0.08); }
+.chain-link {
+  display: flex; align-items: center; gap: 8px; padding: 10px 12px;
+  background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 6px;
+  margin-bottom: 6px;
+}
+.chain-link .arrow { color: var(--muted); }
+.chain-link .seq { color: var(--accent); font-weight: 600; width: 50px; }
+.body-diff {
+  background: #0a0d12; border: 1px solid var(--border); border-radius: 4px;
+  padding: 10px; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 11px;
+  white-space: pre-wrap; word-break: break-all; max-height: 180px; overflow-y: auto;
+}
+.body-original { border-left: 3px solid var(--green); }
+.body-mutated  { border-left: 3px solid var(--red); }
+.footer { color: var(--muted); font-size: 11px; margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--border); }
+.section-intro { color: var(--muted); font-size: 13px; margin-bottom: 14px; max-width: 850px; }
+canvas { max-height: 220px; }
+</style>
+</head>
+<body>
+
+<h1>Audit Trail — Hash-Chained Insight Ledger</h1>
+<div class="subtitle">
+  Tamper-evident proof that every delivered insight remains exactly as it was
+  emitted — Smart Sentinel AI · XAUUSD M15 · generated 2026-05-23 14:45 UTC
+</div>
+
+<div class="panel banner">
+  <strong>What this dashboard proves.</strong> Every <code>InsightSignalV2</code>
+  we deliver is appended to a SHA-256 hash-chained SQLite ledger. Each entry's
+  hash includes the previous entry's hash, so any post-hoc mutation cascades
+  forward and is caught in O(N) at audit time. The client can re-run
+  <code>verify()</code> at any point — either the chain is intact end-to-end,
+  or it returns the exact seq where the tamper occurred. <em>Note: this is a
+  structural integrity proof — it does not certify the truth of insight bodies,
+  only that the archive matches what was delivered.</em>
+</div>
+
+<!-- ============================================================ -->
+<h2>Chain Status — Clean Demo Ledger</h2>
+<div class="panel">
+  <div class="section-intro">
+    A fresh demo ledger built with 250 synthetic InsightSignalV2 entries
+    spanning the last 90 days. Statistics below are read directly from
+    SQLite after the build.
+  </div>
+  <div class="grid">
+    <div class="kpi">
+      <div class="kpi-label">Verification</div>
+      <div class="kpi-value"><span class="badge b-green">OK · INTACT</span></div>
+      <div class="kpi-sub">6.5 ms · 250 entries</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Chain head</div>
+      <div class="kpi-value mono hash-short" title="5e42b58dc164407aca37e00a5b8a38ac78f5465f21c36f93e046e460ad943582">5e42b58dc164407a…</div>
+      <div class="kpi-sub">SHA-256 · last entry</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">First entry</div>
+      <div class="kpi-value mono">2026-05-23T14:45:23Z</div>
+      <div class="kpi-sub">seq=1</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Last entry</div>
+      <div class="kpi-value mono">2026-05-23T14:45:23Z</div>
+      <div class="kpi-sub">seq=250</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2>Daily Delivery Volume</h2>
+<div class="panel">
+  <div class="section-intro">
+    Histogram of insights appended per UTC day in the demo window. A sudden
+    gap or spike would itself be a forensic signal — but the chain primitive
+    only guarantees that the entries you see here have not been altered.
+  </div>
+  <canvas id="chartDaily"></canvas>
+</div>
+
+<!-- ============================================================ -->
+<h2>Tamper-Detection Demo</h2>
+<div class="panel">
+  <div class="section-intro">
+    We forked the clean DB, mutated the body of <strong>seq=137</strong>
+    in-place (flipped direction + bumped conviction — the kind of "make the
+    call look better in hindsight" rewrite a bad actor would attempt), then
+    re-ran <code>verify()</code>. The chain caught the mutation at the
+    expected seq.
+  </div>
+
+  <div class="grid" style="margin-bottom: 16px;">
+    <div class="kpi">
+      <div class="kpi-label">Result</div>
+      <div class="kpi-value"><span class="badge b-red">TAMPER DETECTED</span></div>
+      <div class="kpi-sub">6.0 ms</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Broken at seq</div>
+      <div class="kpi-value">137</div>
+      <div class="kpi-sub">expected: 137</div>
+    </div>
+    <div class="kpi" style="grid-column: span 2;">
+      <div class="kpi-label">Reason</div>
+      <div class="kpi-value" style="font-size: 14px;">entry_hash mismatch — body was tampered</div>
+    </div>
+  </div>
+
+  <h3 style="font-size: 13px; color: var(--muted); margin-top: 18px;">ORIGINAL BODY (seq=137)</h3>
+  <div class="body-diff body-original">{
+  &quot;conviction&quot;: 0.1873,
+  &quot;conviction_band&quot;: &quot;low&quot;,
+  &quot;direction&quot;: &quot;BEARISH&quot;,
+  &quot;edge_claim&quot;: false,
+  &quot;emitted_at&quot;: &quot;2026-04-12T00:52:46.386349Z&quot;,
+  &quot;id&quot;: &quot;insight_000137_20260412T005246&quot;,
+  &quot;instrument&quot;: &quot;XAUUSD&quot;,
+  &quot;narrative_long&quot;: null,
+  &quot;narrative_short&quot;: &quot;Distribution detected at premium; sellers in control.&quot;,
+  &quot;price_ref&quot;: 2057.83,
+  &quot;schema_version&quot;: &quot;2.1.0&quot;,
+  &quot;smc&quot;: {
+    &quot;bos_armed&quot;: false,
+    &quot;bos_event&quot;: true,
+    &quot;choch&quot;: false,
+    &quot;fvg_active&quot;: false,
+    &quot;ob_active&quot;: false
+  },
+  &quot;tier_visible_for&quot;: [
+    &quot;FREE&quot;,
+    &quot;ANALYST&quot;,
+    &quot;STRATEGIST&quot;,
+    &quot;INSTITUTIONAL&quot;
+  ],
+  &quot;timeframe&quot;: &quot;M15&quot;,
+  &quot;volatility&quot;: {
+    &quot;atr_pct&quot;: 0.2328,
+    &quot;regime&quot;: &quot;elevated&quot;
+  }
+}</div>
+
+  <h3 style="font-size: 13px; color: var(--muted); margin-top: 14px;">MUTATED BODY — what an attacker wrote</h3>
+  <div class="body-diff body-mutated">{
+  &quot;conviction&quot;: 0.3873,
+  &quot;conviction_band&quot;: &quot;low&quot;,
+  &quot;direction&quot;: &quot;BULLISH&quot;,
+  &quot;edge_claim&quot;: false,
+  &quot;emitted_at&quot;: &quot;2026-04-12T00:52:46.386349Z&quot;,
+  &quot;id&quot;: &quot;insight_000137_20260412T005246&quot;,
+  &quot;instrument&quot;: &quot;XAUUSD&quot;,
+  &quot;narrative_long&quot;: null,
+  &quot;narrative_short&quot;: &quot;Distribution detected at premium; sellers in control.&quot;,
+  &quot;price_ref&quot;: 2057.83,
+  &quot;schema_version&quot;: &quot;2.1.0&quot;,
+  &quot;smc&quot;: {
+    &quot;bos_armed&quot;: false,
+    &quot;bos_event&quot;: true,
+    &quot;choch&quot;: false,
+    &quot;fvg_active&quot;: false,
+    &quot;ob_active&quot;: false
+  },
+  &quot;tier_visible_for&quot;: [
+    &quot;FREE&quot;,
+    &quot;ANALYST&quot;,
+    &quot;STRATEGIST&quot;,
+    &quot;INSTITUTIONAL&quot;
+  ],
+  &quot;timeframe&quot;: &quot;M15&quot;,
+  &quot;volatility&quot;: {
+    &quot;atr_pct&quot;: 0.2328,
+    &quot;regime&quot;: &quot;elevated&quot;
+  }
+}</div>
+
+  <h3 style="font-size: 13px; color: var(--muted); margin-top: 18px;">SURROUNDING CHAIN (seq=137±2)</h3>
+  <table>
+    <thead><tr><th>seq</th><th>inserted_at_utc</th><th>insight_id</th><th>entry_hash</th></tr></thead>
+    <tbody>
+      <tr><td class=mono>135</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000135_20260411T181509</td><td class='mono hash'>e464d1b8a72de122…</td></tr>
+      <tr><td class=mono>136</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000136_20260411T195121</td><td class='mono hash'>0ddb73a7f8030645…</td></tr>
+      <tr class="tampered"><td class=mono>137</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000137_20260412T005246</td><td class='mono hash'>1269f92766ce9382…</td></tr>
+      <tr><td class=mono>138</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000138_20260412T010331</td><td class='mono hash'>fb48186392ccf7c8…</td></tr>
+      <tr><td class=mono>139</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000139_20260412T070829</td><td class='mono hash'>c2408bf6fcb507ba…</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<h2>Chain Visualization — entry_hash → prev_hash</h2>
+<div class="panel">
+  <div class="section-intro">
+    Sample of 20 entries (oldest 5 + middle 10 + newest 5). Each row shows
+    how the entry's hash depends on the previous one. If any body in this
+    sequence was altered, the chain would unzip starting at that seq.
+  </div>
+  <div class='chain-link'><span class='seq'>#1</span><span class='mono hash' title='0000000000000000000000000000000000000000000000000000000000000000'>0000000000000000…</span><span class='arrow'>→</span><span class='mono hash' title='4133f1af7e74fd2ec96b8999ace527138daaa30c9bc55f895dbf1a271cc82df8'>4133f1af7e74fd2e…</span><span style='margin-left:auto;color:var(--muted);font-size:11px;'>2026-05-23T14:45:23Z</span></div>
+  <div class='chain-link'><span class='seq'>#2</span><span class='mono hash' title='4133f1af7e74fd2ec96b8999ace527138daaa30c9bc55f895dbf1a271cc82df8'>4133f1af7e74fd2e…</span><span class='arrow'>→</span><span class='mono hash' title='2b0521a2ebdfe673887efafcb879586e3199e1a431a25594350661d86ea02df2'>2b0521a2ebdfe673…</span><span style='margin-left:auto;color:var(--muted);font-size:11px;'>2026-05-23T14:45:23Z</span></div>
+  <div class='chain-link'><span class='seq'>#3</span><span class='mono hash' title='2b0521a2ebdfe673887efafcb879586e3199e1a431a25594350661d86ea02df2'>2b0521a2ebdfe673…</span><span class='arrow'>→</span><span class='mono hash' title='ec075e0741e6127bc46e1a0656b3de4ee4a5485760a272a16b73ab2fdbff6f4b'>ec075e0741e6127b…</span><span style='margin-left:auto;color:var(--muted);font-size:11px;'>2026-05-23T14:45:23Z</span></div>
+  <div class='chain-link'><span class='seq'>#4</span><span class='mono hash' title='ec075e0741e6127bc46e1a0656b3de4ee4a5485760a272a16b73ab2fdbff6f4b'>ec075e0741e6127b…</span><span class='arrow'>→</span><span class='mono hash' title='7185e17620930346488bbd1a887081a3117bae22b26adc0f393032b8dc60009c'>7185e17620930346…</span><span style='margin-left:auto;color:var(--muted);font-size:11px;'>2026-05-23T14:45:23Z</span></div>
+  <div class='chain-link'><span class='seq'>#5</span><span class='mono hash' title='7185e17620930346488bbd1a887081a3117bae22b26adc0f393032b8dc60009c'>7185e17620930346…</span><span class='arrow'>→</span><span class='mono hash' title='d9e7ddcf95a047877784f62b152df67d56c4c1ebbf144d35a0e3e6d31ffc6f84'>d9e7ddcf95a04787…</span><span style='margin-left:auto;color:var(--muted);font-size:11px;'>2026-05-23T14:45:23Z</span></div>
+  <div class='chain-link'><span class='seq'>#121</span><span class='mono hash' title='5cff0636934735657a68b958a595b4af70ffa98c7f8541ce5729cd1996606d2c'>5cff063693473565…</span><span class='arrow'>→</span><span class='mono hash' title='173941ffeedbd3ae38b979761cdbc7d3bfdc6289fd9ee9f7be11ef815ff4331d'>173941ffeedbd3ae…</span><span style='margin-left:auto;color:var(--muted);font-size:11px;'>2026-05-23T14:45:23Z</span></div>
+  <div class='chain-link'><span class='seq'>#122</span><span class='mono hash' title='173941ffeedbd3ae38b979761cdbc7d3bfdc6289fd9ee9f7be11ef815ff4331d'>173941ffeedbd3ae…</span><span class='arrow'>→</span><span class='mono hash' title='b6dbee9f476c02effe270c6279fb13a6995a7544cd14bf1bf35e86b344eb88fa'>b6dbee9f476c02ef…</span><span style='margin-left:auto;color:var(--muted);font-size:11px;'>2026-05-23T14:45:23Z</span></div>
+  <div class='chain-link'><span class='seq'>#123</span><span class='mono hash' title='b6dbee9f476c02effe270c6279fb13a6995a7544cd14bf1bf35e86b344eb88fa'>b6dbee9f476c02ef…</span><span class='arrow'>→</span><span class='mono hash' title='d97118ee06e378edae1cd2435d454a732f6c04d3ea8c69db85bf5724d4a5b347'>d97118ee06e378ed…</span><span style='margin-left:auto;color:var(--muted);font-size:11px;'>2026-05-23T14:45:23Z</span></div>
+  <div class='chain-link'><span class='seq'>#124</span><span class='mono hash' title='d97118ee06e378edae1cd2435d454a732f6c04d3ea8c69db85bf5724d4a5b347'>d97118ee06e378ed…</span><span class='arrow'>→</span><span class='mono hash' title='b45902b2ca6b451f426386f678f2d526f19c5517bc08c2d42f58608be016e79f'>b45902b2ca6b451f…</span><span style='margin-left:auto;color:var(--muted);font-size:11px;'>2026-05-23T14:45:23Z</span></div>
+  <div class='chain-link'><span class='seq'>#125</span><span class='mono hash' title='b45902b2ca6b451f426386f678f2d526f19c5517bc08c2d42f58608be016e79f'>b45902b2ca6b451f…</span><span class='arrow'>→</span><span class='mono hash' title='8b0601d07160399a876ddbc5ba025da1c14dba1708aec8fed77034060b6a57fe'>8b0601d07160399a…</span><span style='margin-left:auto;color:var(--muted);font-size:11px;'>2026-05-23T14:45:23Z</span></div>
+  <div class='chain-link'><span class='seq'>#126</span><span class='mono hash' title='8b0601d07160399a876ddbc5ba025da1c14dba1708aec8fed77034060b6a57fe'>8b0601d07160399a…</span><span class='arrow'>→</span><span class='mono hash' title='d4fcfe22a21760c97465e97562d2e6f0f7075912e8277c823ae8b33d0d903aac'>d4fcfe22a21760c9…</span><span style='margin-left:auto;color:var(--muted);font-size:11px;'>2026-05-23T14:45:23Z</span></div>
+  <div class='chain-link'><span class='seq'>#127</span><span class='mono hash' title='d4fcfe22a21760c97465e97562d2e6f0f7075912e8277c823ae8b33d0d903aac'>d4fcfe22a21760c9…</span><span class='arrow'>→</span><span class='mono hash' title='4d7a26a84f1c2f473b6b654bc80519ad9762883c5ef3cb09ff1377ff7a8ca93c'>4d7a26a84f1c2f47…</span><span style='margin-left:auto;color:var(--muted);font-size:11px;'>2026-05-23T14:45:23Z</span></div>
+  <div class='chain-link'><span class='seq'>#128</span><span class='mono hash' title='4d7a26a84f1c2f473b6b654bc80519ad9762883c5ef3cb09ff1377ff7a8ca93c'>4d7a26a84f1c2f47…</span><span class='arrow'>→</span><span class='mono hash' title='d3bc7f39db5377b67b42d43833a5ee15c247bbfde7cf47e3e27f489690abc340'>d3bc7f39db5377b6…</span><span style='margin-left:auto;color:var(--muted);font-size:11px;'>2026-05-23T14:45:23Z</span></div>
+  <div class='chain-link'><span class='seq'>#129</span><span class='mono hash' title='d3bc7f39db5377b67b42d43833a5ee15c247bbfde7cf47e3e27f489690abc340'>d3bc7f39db5377b6…</span><span class='arrow'>→</span><span class='mono hash' title='5bce8ce9336d522da37d8894b8fbee0ab189c3d5df4d7c02b6ede164022fd24a'>5bce8ce9336d522d…</span><span style='margin-left:auto;color:var(--muted);font-size:11px;'>2026-05-23T14:45:23Z</span></div>
+  <div class='chain-link'><span class='seq'>#130</span><span class='mono hash' title='5bce8ce9336d522da37d8894b8fbee0ab189c3d5df4d7c02b6ede164022fd24a'>5bce8ce9336d522d…</span><span class='arrow'>→</span><span class='mono hash' title='bb562312e5f464d8f6c275e84a6f3ff4021164093e1df6915f3e8e60152a857f'>bb562312e5f464d8…</span><span style='margin-left:auto;color:var(--muted);font-size:11px;'>2026-05-23T14:45:23Z</span></div>
+  <div class='chain-link'><span class='seq'>#246</span><span class='mono hash' title='0a71b3471fd93ab8634d23d19989a5e53effe7732e49a8921de8016d0a184516'>0a71b3471fd93ab8…</span><span class='arrow'>→</span><span class='mono hash' title='821c50d5ccde1f753e470fa486b83c8af06447098b7431605691683f79242466'>821c50d5ccde1f75…</span><span style='margin-left:auto;color:var(--muted);font-size:11px;'>2026-05-23T14:45:23Z</span></div>
+  <div class='chain-link'><span class='seq'>#247</span><span class='mono hash' title='821c50d5ccde1f753e470fa486b83c8af06447098b7431605691683f79242466'>821c50d5ccde1f75…</span><span class='arrow'>→</span><span class='mono hash' title='90ba748f3727af05f9d58408808d559acccc043bd6982a2afbad3e8ddd4d0d72'>90ba748f3727af05…</span><span style='margin-left:auto;color:var(--muted);font-size:11px;'>2026-05-23T14:45:23Z</span></div>
+  <div class='chain-link'><span class='seq'>#248</span><span class='mono hash' title='90ba748f3727af05f9d58408808d559acccc043bd6982a2afbad3e8ddd4d0d72'>90ba748f3727af05…</span><span class='arrow'>→</span><span class='mono hash' title='8027273568fbedafcdd27a9f2484db224167e66e4d7e3bc7ce4d150a0f9227b7'>8027273568fbedaf…</span><span style='margin-left:auto;color:var(--muted);font-size:11px;'>2026-05-23T14:45:23Z</span></div>
+  <div class='chain-link'><span class='seq'>#249</span><span class='mono hash' title='8027273568fbedafcdd27a9f2484db224167e66e4d7e3bc7ce4d150a0f9227b7'>8027273568fbedaf…</span><span class='arrow'>→</span><span class='mono hash' title='ebdd5775eea3ac83f287946df1527a0d9c440f696fc90fbe736fbff3bf956ab5'>ebdd5775eea3ac83…</span><span style='margin-left:auto;color:var(--muted);font-size:11px;'>2026-05-23T14:45:23Z</span></div>
+  <div class='chain-link'><span class='seq'>#250</span><span class='mono hash' title='ebdd5775eea3ac83f287946df1527a0d9c440f696fc90fbe736fbff3bf956ab5'>ebdd5775eea3ac83…</span><span class='arrow'>→</span><span class='mono hash' title='5e42b58dc164407aca37e00a5b8a38ac78f5465f21c36f93e046e460ad943582'>5e42b58dc164407a…</span><span style='margin-left:auto;color:var(--muted);font-size:11px;'>2026-05-23T14:45:23Z</span></div>
+</div>
+
+<!-- ============================================================ -->
+<h2>Latest 50 Entries</h2>
+<div class="panel">
+  <div class="section-intro">
+    Paginated read from the live ledger (newest-first). Each row is auditable
+    end-to-end by recomputing <code>SHA-256(seq | ts | body | prev_hash)</code>.
+  </div>
+  <div style="overflow-x: auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>seq</th>
+          <th>inserted_at_utc</th>
+          <th>insight_id</th>
+          <th>entry_hash</th>
+          <th>prev_hash</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class=mono>250</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000250_20260523T102700</td><td class='mono hash' title='5e42b58dc164407aca37e00a5b8a38ac78f5465f21c36f93e046e460ad943582'>5e42b58dc164407a…</td><td class='mono hash' title='ebdd5775eea3ac83f287946df1527a0d9c440f696fc90fbe736fbff3bf956ab5'>ebdd5775eea3ac83…</td></tr>
+        <tr><td class=mono>249</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000249_20260523T064052</td><td class='mono hash' title='ebdd5775eea3ac83f287946df1527a0d9c440f696fc90fbe736fbff3bf956ab5'>ebdd5775eea3ac83…</td><td class='mono hash' title='8027273568fbedafcdd27a9f2484db224167e66e4d7e3bc7ce4d150a0f9227b7'>8027273568fbedaf…</td></tr>
+        <tr><td class=mono>248</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000248_20260523T033719</td><td class='mono hash' title='8027273568fbedafcdd27a9f2484db224167e66e4d7e3bc7ce4d150a0f9227b7'>8027273568fbedaf…</td><td class='mono hash' title='90ba748f3727af05f9d58408808d559acccc043bd6982a2afbad3e8ddd4d0d72'>90ba748f3727af05…</td></tr>
+        <tr><td class=mono>247</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000247_20260523T020646</td><td class='mono hash' title='90ba748f3727af05f9d58408808d559acccc043bd6982a2afbad3e8ddd4d0d72'>90ba748f3727af05…</td><td class='mono hash' title='821c50d5ccde1f753e470fa486b83c8af06447098b7431605691683f79242466'>821c50d5ccde1f75…</td></tr>
+        <tr><td class=mono>246</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000246_20260523T013121</td><td class='mono hash' title='821c50d5ccde1f753e470fa486b83c8af06447098b7431605691683f79242466'>821c50d5ccde1f75…</td><td class='mono hash' title='0a71b3471fd93ab8634d23d19989a5e53effe7732e49a8921de8016d0a184516'>0a71b3471fd93ab8…</td></tr>
+        <tr><td class=mono>245</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000245_20260522T132213</td><td class='mono hash' title='0a71b3471fd93ab8634d23d19989a5e53effe7732e49a8921de8016d0a184516'>0a71b3471fd93ab8…</td><td class='mono hash' title='e0bf578380d3e9f3add7998f9ad5785653cdc62b64ae3c32e87162dd93f4581a'>e0bf578380d3e9f3…</td></tr>
+        <tr><td class=mono>244</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000244_20260522T041601</td><td class='mono hash' title='e0bf578380d3e9f3add7998f9ad5785653cdc62b64ae3c32e87162dd93f4581a'>e0bf578380d3e9f3…</td><td class='mono hash' title='5900a91afe4d8d272bb86434ddeda17acfa17ce55fc424e5c6b3902195cd89f9'>5900a91afe4d8d27…</td></tr>
+        <tr><td class=mono>243</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000243_20260522T014748</td><td class='mono hash' title='5900a91afe4d8d272bb86434ddeda17acfa17ce55fc424e5c6b3902195cd89f9'>5900a91afe4d8d27…</td><td class='mono hash' title='9bedcb954faede11043c1aae6520db2b1ab024fecbedc0fff5e34f6fbdbf6f90'>9bedcb954faede11…</td></tr>
+        <tr><td class=mono>242</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000242_20260521T015548</td><td class='mono hash' title='9bedcb954faede11043c1aae6520db2b1ab024fecbedc0fff5e34f6fbdbf6f90'>9bedcb954faede11…</td><td class='mono hash' title='ee7707cbf4015d98aac7f3ee6134b3cae621512147bb8955cb373d96c780c022'>ee7707cbf4015d98…</td></tr>
+        <tr><td class=mono>241</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000241_20260520T213145</td><td class='mono hash' title='ee7707cbf4015d98aac7f3ee6134b3cae621512147bb8955cb373d96c780c022'>ee7707cbf4015d98…</td><td class='mono hash' title='643db740b6fdbfa9c1d2c82d3e0198b82d565c1acf033863396caa3c7e0ed14d'>643db740b6fdbfa9…</td></tr>
+        <tr><td class=mono>240</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000240_20260520T170154</td><td class='mono hash' title='643db740b6fdbfa9c1d2c82d3e0198b82d565c1acf033863396caa3c7e0ed14d'>643db740b6fdbfa9…</td><td class='mono hash' title='3537b3ab5c5b39a8a5c1758ea502c421968fd5e25fb8b4fd7e589cbfe32e1ecb'>3537b3ab5c5b39a8…</td></tr>
+        <tr><td class=mono>239</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000239_20260520T162444</td><td class='mono hash' title='3537b3ab5c5b39a8a5c1758ea502c421968fd5e25fb8b4fd7e589cbfe32e1ecb'>3537b3ab5c5b39a8…</td><td class='mono hash' title='d1c576eaee886b01198deae3cac11395c1a4823dbd2c7c5135b7f7681e27e454'>d1c576eaee886b01…</td></tr>
+        <tr><td class=mono>238</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000238_20260519T231656</td><td class='mono hash' title='d1c576eaee886b01198deae3cac11395c1a4823dbd2c7c5135b7f7681e27e454'>d1c576eaee886b01…</td><td class='mono hash' title='181ea8916134e1ccb7ee72c4488947f2523db4bf78813b236b129ed3e9308009'>181ea8916134e1cc…</td></tr>
+        <tr><td class=mono>237</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000237_20260519T154821</td><td class='mono hash' title='181ea8916134e1ccb7ee72c4488947f2523db4bf78813b236b129ed3e9308009'>181ea8916134e1cc…</td><td class='mono hash' title='0ae71795b12d001752e76077178920386dca871a80c502439e84222ad322d4ec'>0ae71795b12d0017…</td></tr>
+        <tr><td class=mono>236</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000236_20260519T153448</td><td class='mono hash' title='0ae71795b12d001752e76077178920386dca871a80c502439e84222ad322d4ec'>0ae71795b12d0017…</td><td class='mono hash' title='751762cc0a441fc6effdd89b5d5368a00a2e1d3a883f95ad794164c9aac3d038'>751762cc0a441fc6…</td></tr>
+        <tr><td class=mono>235</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000235_20260519T081432</td><td class='mono hash' title='751762cc0a441fc6effdd89b5d5368a00a2e1d3a883f95ad794164c9aac3d038'>751762cc0a441fc6…</td><td class='mono hash' title='17b91ca8c3f38402fa53754d48433215640b6c161cb3fb8ed1a96b7e74d92a34'>17b91ca8c3f38402…</td></tr>
+        <tr><td class=mono>234</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000234_20260518T172438</td><td class='mono hash' title='17b91ca8c3f38402fa53754d48433215640b6c161cb3fb8ed1a96b7e74d92a34'>17b91ca8c3f38402…</td><td class='mono hash' title='8fda71bd8787279fbaf89e8c5a4e3cb218739ae7abb3fed26b86a6d916caa03c'>8fda71bd8787279f…</td></tr>
+        <tr><td class=mono>233</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000233_20260518T084105</td><td class='mono hash' title='8fda71bd8787279fbaf89e8c5a4e3cb218739ae7abb3fed26b86a6d916caa03c'>8fda71bd8787279f…</td><td class='mono hash' title='063c7aaa6d8a536b4a54f7d9beb250cbf639443aac1a3ccc161ef6be5907a34a'>063c7aaa6d8a536b…</td></tr>
+        <tr><td class=mono>232</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000232_20260517T191026</td><td class='mono hash' title='063c7aaa6d8a536b4a54f7d9beb250cbf639443aac1a3ccc161ef6be5907a34a'>063c7aaa6d8a536b…</td><td class='mono hash' title='7e57be3bad98fc9a9e26881fa773c18bc0428af7aaa800edcaf75779c4397ced'>7e57be3bad98fc9a…</td></tr>
+        <tr><td class=mono>231</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000231_20260517T164238</td><td class='mono hash' title='7e57be3bad98fc9a9e26881fa773c18bc0428af7aaa800edcaf75779c4397ced'>7e57be3bad98fc9a…</td><td class='mono hash' title='a5dcfeb0eafaecca894f2a8760f7e2b550a5d873fe9f495954b3935176606de5'>a5dcfeb0eafaecca…</td></tr>
+        <tr><td class=mono>230</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000230_20260517T145755</td><td class='mono hash' title='a5dcfeb0eafaecca894f2a8760f7e2b550a5d873fe9f495954b3935176606de5'>a5dcfeb0eafaecca…</td><td class='mono hash' title='aadf6ceda92a385362f212ceaf26892c3ec2060d9d23e7464dd79241da5801d7'>aadf6ceda92a3853…</td></tr>
+        <tr><td class=mono>229</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000229_20260517T025110</td><td class='mono hash' title='aadf6ceda92a385362f212ceaf26892c3ec2060d9d23e7464dd79241da5801d7'>aadf6ceda92a3853…</td><td class='mono hash' title='26409c22a31dc8b22697d3e52566cf62c1d4f9398b40564f544c2f1f289422d1'>26409c22a31dc8b2…</td></tr>
+        <tr><td class=mono>228</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000228_20260516T205709</td><td class='mono hash' title='26409c22a31dc8b22697d3e52566cf62c1d4f9398b40564f544c2f1f289422d1'>26409c22a31dc8b2…</td><td class='mono hash' title='2b5e41d09c2c05a8a35df779f8cbb7c0b6794e1ab954a9ac82449082e898210b'>2b5e41d09c2c05a8…</td></tr>
+        <tr><td class=mono>227</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000227_20260516T141513</td><td class='mono hash' title='2b5e41d09c2c05a8a35df779f8cbb7c0b6794e1ab954a9ac82449082e898210b'>2b5e41d09c2c05a8…</td><td class='mono hash' title='3a503b6943078f976587cc236e3a246718f63495fb756d8d47600a7291bb9c19'>3a503b6943078f97…</td></tr>
+        <tr><td class=mono>226</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000226_20260515T192522</td><td class='mono hash' title='3a503b6943078f976587cc236e3a246718f63495fb756d8d47600a7291bb9c19'>3a503b6943078f97…</td><td class='mono hash' title='b96444f21930d6f2eb63ac913c22bd5defc9ae683329dc8af8002617d23556e0'>b96444f21930d6f2…</td></tr>
+        <tr><td class=mono>225</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000225_20260515T151634</td><td class='mono hash' title='b96444f21930d6f2eb63ac913c22bd5defc9ae683329dc8af8002617d23556e0'>b96444f21930d6f2…</td><td class='mono hash' title='25fa1345e4210de48eef3269e86f611df1e0b58cb36482c045a4885df53ae9c7'>25fa1345e4210de4…</td></tr>
+        <tr><td class=mono>224</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000224_20260514T234226</td><td class='mono hash' title='25fa1345e4210de48eef3269e86f611df1e0b58cb36482c045a4885df53ae9c7'>25fa1345e4210de4…</td><td class='mono hash' title='8bde7d4bc4ac535a2a66818ebabbe955fab9dd9ef4fce7ac2d732b60337faffd'>8bde7d4bc4ac535a…</td></tr>
+        <tr><td class=mono>223</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000223_20260514T071750</td><td class='mono hash' title='8bde7d4bc4ac535a2a66818ebabbe955fab9dd9ef4fce7ac2d732b60337faffd'>8bde7d4bc4ac535a…</td><td class='mono hash' title='a6f832eed15df46ed070b1d4f0eb730b12026815a1d684aaa15639741728337f'>a6f832eed15df46e…</td></tr>
+        <tr><td class=mono>222</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000222_20260513T190628</td><td class='mono hash' title='a6f832eed15df46ed070b1d4f0eb730b12026815a1d684aaa15639741728337f'>a6f832eed15df46e…</td><td class='mono hash' title='f9010acfadea45b0e9f1da21a47998d6c86b65a102769b07bb25cd205d577bb9'>f9010acfadea45b0…</td></tr>
+        <tr><td class=mono>221</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000221_20260513T150114</td><td class='mono hash' title='f9010acfadea45b0e9f1da21a47998d6c86b65a102769b07bb25cd205d577bb9'>f9010acfadea45b0…</td><td class='mono hash' title='ecfd286c570498643610bdfa94cbed20a946e92e9f3ed31c9ccbb19e2a503b55'>ecfd286c57049864…</td></tr>
+        <tr><td class=mono>220</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000220_20260512T140221</td><td class='mono hash' title='ecfd286c570498643610bdfa94cbed20a946e92e9f3ed31c9ccbb19e2a503b55'>ecfd286c57049864…</td><td class='mono hash' title='3aaa6ffe181633872d6c64a452aad1fd0c6844cee5e0c5d06edf6d9dc326846f'>3aaa6ffe18163387…</td></tr>
+        <tr><td class=mono>219</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000219_20260512T123002</td><td class='mono hash' title='3aaa6ffe181633872d6c64a452aad1fd0c6844cee5e0c5d06edf6d9dc326846f'>3aaa6ffe18163387…</td><td class='mono hash' title='5d1546b057d0b010fbe772a13486bc9ec938d990f7f7781ff9df6fc8e92e7360'>5d1546b057d0b010…</td></tr>
+        <tr><td class=mono>218</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000218_20260512T085714</td><td class='mono hash' title='5d1546b057d0b010fbe772a13486bc9ec938d990f7f7781ff9df6fc8e92e7360'>5d1546b057d0b010…</td><td class='mono hash' title='a8dc82e60ce20530c0acc1add8bf1904b20df7e0b692e3d3a6af5520b10e4b35'>a8dc82e60ce20530…</td></tr>
+        <tr><td class=mono>217</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000217_20260512T075032</td><td class='mono hash' title='a8dc82e60ce20530c0acc1add8bf1904b20df7e0b692e3d3a6af5520b10e4b35'>a8dc82e60ce20530…</td><td class='mono hash' title='ef810179a601091bf31b1c30dce4bb7681f9329e94cfc77c5c4c138834d5a215'>ef810179a601091b…</td></tr>
+        <tr><td class=mono>216</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000216_20260512T002719</td><td class='mono hash' title='ef810179a601091bf31b1c30dce4bb7681f9329e94cfc77c5c4c138834d5a215'>ef810179a601091b…</td><td class='mono hash' title='45db7219949c73f43b79d737317dc1794659bdc1b6f949badb3fba1787efe83c'>45db7219949c73f4…</td></tr>
+        <tr><td class=mono>215</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000215_20260511T201912</td><td class='mono hash' title='45db7219949c73f43b79d737317dc1794659bdc1b6f949badb3fba1787efe83c'>45db7219949c73f4…</td><td class='mono hash' title='942d70d0e865e8c722c4b30c689eb8d84c771f604d24dfc50bf993bee9a998e0'>942d70d0e865e8c7…</td></tr>
+        <tr><td class=mono>214</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000214_20260511T011712</td><td class='mono hash' title='942d70d0e865e8c722c4b30c689eb8d84c771f604d24dfc50bf993bee9a998e0'>942d70d0e865e8c7…</td><td class='mono hash' title='092a8d5770a12f3a91f86dfc136206857f51d249533cb1448195c15fe5d8ff96'>092a8d5770a12f3a…</td></tr>
+        <tr><td class=mono>213</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000213_20260511T011245</td><td class='mono hash' title='092a8d5770a12f3a91f86dfc136206857f51d249533cb1448195c15fe5d8ff96'>092a8d5770a12f3a…</td><td class='mono hash' title='282fb55ceb63fc08c6977b0826822131fcf12fe6b7a57a4d4bc72a6259dcd087'>282fb55ceb63fc08…</td></tr>
+        <tr><td class=mono>212</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000212_20260511T003050</td><td class='mono hash' title='282fb55ceb63fc08c6977b0826822131fcf12fe6b7a57a4d4bc72a6259dcd087'>282fb55ceb63fc08…</td><td class='mono hash' title='e5ef6c9c4f7b0442f498eba0d2e4ed72238d7f8f9eb4282c9eeb1db5d5f14a33'>e5ef6c9c4f7b0442…</td></tr>
+        <tr><td class=mono>211</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000211_20260510T231702</td><td class='mono hash' title='e5ef6c9c4f7b0442f498eba0d2e4ed72238d7f8f9eb4282c9eeb1db5d5f14a33'>e5ef6c9c4f7b0442…</td><td class='mono hash' title='36f1cb720384441e3b643f907b8dd5b385cb1b002ba29860c018467fc62ad71e'>36f1cb720384441e…</td></tr>
+        <tr><td class=mono>210</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000210_20260510T204844</td><td class='mono hash' title='36f1cb720384441e3b643f907b8dd5b385cb1b002ba29860c018467fc62ad71e'>36f1cb720384441e…</td><td class='mono hash' title='f5b01719a3b404dc8a14a0349345036a6d892e092b28ba912d0fb49634f9a597'>f5b01719a3b404dc…</td></tr>
+        <tr><td class=mono>209</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000209_20260510T055229</td><td class='mono hash' title='f5b01719a3b404dc8a14a0349345036a6d892e092b28ba912d0fb49634f9a597'>f5b01719a3b404dc…</td><td class='mono hash' title='b51f497f86f104de6556caf9717d4d0fe81c34d161887eefbe4e6e5d9361ef44'>b51f497f86f104de…</td></tr>
+        <tr><td class=mono>208</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000208_20260509T211058</td><td class='mono hash' title='b51f497f86f104de6556caf9717d4d0fe81c34d161887eefbe4e6e5d9361ef44'>b51f497f86f104de…</td><td class='mono hash' title='d0c8c93dc87d9a9bae5ae8db83eee75c2018c4f90f48d48f3654d497c0daf83e'>d0c8c93dc87d9a9b…</td></tr>
+        <tr><td class=mono>207</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000207_20260509T183516</td><td class='mono hash' title='d0c8c93dc87d9a9bae5ae8db83eee75c2018c4f90f48d48f3654d497c0daf83e'>d0c8c93dc87d9a9b…</td><td class='mono hash' title='147269014105f9053aae616a23d539408f194a91cff2750764d3ff3f3b8b08d8'>147269014105f905…</td></tr>
+        <tr><td class=mono>206</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000206_20260509T083336</td><td class='mono hash' title='147269014105f9053aae616a23d539408f194a91cff2750764d3ff3f3b8b08d8'>147269014105f905…</td><td class='mono hash' title='8e12334558e8e593ab8881050a6f9a7a9a23d7cd6a4a388f9d6626acb863a3ba'>8e12334558e8e593…</td></tr>
+        <tr><td class=mono>205</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000205_20260508T174910</td><td class='mono hash' title='8e12334558e8e593ab8881050a6f9a7a9a23d7cd6a4a388f9d6626acb863a3ba'>8e12334558e8e593…</td><td class='mono hash' title='c080708eb940ad9005eed6800bf7464a7730b0a982bcb0e584e42f6175c75560'>c080708eb940ad90…</td></tr>
+        <tr><td class=mono>204</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000204_20260508T082351</td><td class='mono hash' title='c080708eb940ad9005eed6800bf7464a7730b0a982bcb0e584e42f6175c75560'>c080708eb940ad90…</td><td class='mono hash' title='f3450917f97a16ec2d2f67fe94ea6ee488b9b9c34dcffbc57e1d4188b5567d43'>f3450917f97a16ec…</td></tr>
+        <tr><td class=mono>203</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000203_20260508T033050</td><td class='mono hash' title='f3450917f97a16ec2d2f67fe94ea6ee488b9b9c34dcffbc57e1d4188b5567d43'>f3450917f97a16ec…</td><td class='mono hash' title='980fa099e34cf8116796d1470f3aba65edcc4449d197468e3be5d7661bf25b33'>980fa099e34cf811…</td></tr>
+        <tr><td class=mono>202</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000202_20260506T082211</td><td class='mono hash' title='980fa099e34cf8116796d1470f3aba65edcc4449d197468e3be5d7661bf25b33'>980fa099e34cf811…</td><td class='mono hash' title='f64cb66201104d52fe574db32c8fb25d16649e2225ad31990b18a5270e6dd493'>f64cb66201104d52…</td></tr>
+        <tr><td class=mono>201</td><td class=mono>2026-05-23T14:45:23Z</td><td class=mono>insight_000201_20260506T041136</td><td class='mono hash' title='f64cb66201104d52fe574db32c8fb25d16649e2225ad31990b18a5270e6dd493'>f64cb66201104d52…</td><td class='mono hash' title='32157ab77366accf8d036f3d7f002dbfc6bf24f6f3d6c442be77cf930bf36295'>32157ab77366accf…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="footer">
+  Generated by <code>scripts/proof_audit_trail.py</code> ·
+  Ledger source: <code>src/audit/hash_chain_ledger.py</code> ·
+  Raw JSON: <code>reports/proof/audit_trail.json</code> ·
+  Smart Sentinel AI · 2026-05-23 14:45 UTC
+</div>
+
+<script>
+const daily = [["2026-02-22", 1], ["2026-02-23", 2], ["2026-02-24", 3], ["2026-02-25", 2], ["2026-02-26", 2], ["2026-02-27", 4], ["2026-02-28", 4], ["2026-03-01", 2], ["2026-03-02", 4], ["2026-03-03", 4], ["2026-03-04", 2], ["2026-03-05", 2], ["2026-03-06", 2], ["2026-03-08", 4], ["2026-03-09", 3], ["2026-03-10", 1], ["2026-03-11", 3], ["2026-03-12", 3], ["2026-03-13", 5], ["2026-03-14", 6], ["2026-03-15", 8], ["2026-03-16", 4], ["2026-03-18", 8], ["2026-03-19", 3], ["2026-03-20", 1], ["2026-03-21", 3], ["2026-03-22", 4], ["2026-03-23", 1], ["2026-03-24", 2], ["2026-03-25", 2], ["2026-03-27", 2], ["2026-03-28", 4], ["2026-03-30", 5], ["2026-04-01", 7], ["2026-04-02", 3], ["2026-04-03", 2], ["2026-04-04", 3], ["2026-04-05", 1], ["2026-04-06", 2], ["2026-04-07", 2], ["2026-04-08", 3], ["2026-04-09", 1], ["2026-04-10", 2], ["2026-04-11", 4], ["2026-04-12", 5], ["2026-04-13", 4], ["2026-04-14", 2], ["2026-04-15", 2], ["2026-04-16", 5], ["2026-04-17", 3], ["2026-04-18", 2], ["2026-04-19", 3], ["2026-04-20", 2], ["2026-04-21", 7], ["2026-04-22", 1], ["2026-04-23", 2], ["2026-04-24", 4], ["2026-04-25", 1], ["2026-04-26", 2], ["2026-04-27", 1], ["2026-04-28", 2], ["2026-04-29", 5], ["2026-04-30", 1], ["2026-05-01", 1], ["2026-05-02", 2], ["2026-05-03", 2], ["2026-05-04", 3], ["2026-05-06", 4], ["2026-05-08", 3], ["2026-05-09", 3], ["2026-05-10", 3], ["2026-05-11", 4], ["2026-05-12", 5], ["2026-05-13", 2], ["2026-05-14", 2], ["2026-05-15", 2], ["2026-05-16", 2], ["2026-05-17", 4], ["2026-05-18", 2], ["2026-05-19", 4], ["2026-05-20", 3], ["2026-05-21", 1], ["2026-05-22", 3], ["2026-05-23", 5]];
+const labels = daily.map(d => d[0]);
+const counts = daily.map(d => d[1]);
+new Chart(document.getElementById('chartDaily'), {
+  type: 'bar',
+  data: { labels, datasets: [{
+    label: 'Insights per day',
+    data: counts,
+    backgroundColor: 'rgba(96, 165, 250, 0.6)',
+    borderColor: '#60a5fa',
+    borderWidth: 1,
+  }]},
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { ticks: { color: '#8b94a8', maxTicksLimit: 12 }, grid: { color: '#2a3142' } },
+      y: { ticks: { color: '#8b94a8' }, grid: { color: '#2a3142' }, beginAtZero: true }
+    }
+  }
+});
+</script>
+
+</body>
+</html>

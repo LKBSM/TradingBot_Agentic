@@ -1,14 +1,21 @@
-"""Discord webhook integration for Smart Sentinel AI signal delivery.
+"""Discord webhook integration for Smart Sentinel AI delivery.
 
 Mirrors TelegramNotifier's interface (`send_signal`, `send_exit`) but uses
 Discord webhooks — no bot account needed, just a webhook URL from a server
 channel's Integrations settings.
+
+User-facing language follows UE Directive 2024/2811 (finfluencers):
+  - "signal"     -> "algorithmic analysis"
+  - "BUY/SELL"   -> "BULLISH SETUP / BEARISH SETUP"
+  - Mandatory localised disclaimer footer.
 """
 
 from __future__ import annotations
 
 import logging
 from typing import Any, Dict, Optional
+
+from src.api.disclaimers import get_footer
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +27,11 @@ COLOR_EXIT_NEUTRAL = 0x95A5A6
 COLOR_INFO = 0x3498DB
 
 VOL_EMOJI = {"low": "\U0001f7e2", "normal": "\U0001f7e1", "high": "\U0001f534"}
+
+DIRECTION_LABEL = {
+    "LONG": "BULLISH SETUP",
+    "SHORT": "BEARISH SETUP",
+}
 
 
 class DiscordNotifier:
@@ -57,13 +69,14 @@ class DiscordNotifier:
         signal: Any,
         narrative_data: Optional[Dict[str, Any]] = None,
         tier: str = "INSTITUTIONAL",
+        lang: str = "en",
     ) -> bool:
-        """Send a ConfluenceSignal to Discord as a rich embed."""
+        """Send an algorithmic analysis to Discord as a rich embed."""
         if not self.is_configured():
-            logger.warning("Discord webhook not configured — signal not sent")
+            logger.warning("Discord webhook not configured — analysis not sent")
             return False
 
-        embed = self._build_signal_embed(signal, narrative_data, tier)
+        embed = self._build_signal_embed(signal, narrative_data, tier, lang)
         return self._post({"username": self._username, "embeds": [embed]})
 
     def send_exit(
@@ -91,6 +104,7 @@ class DiscordNotifier:
         signal: Any,
         narrative_data: Optional[Dict[str, Any]],
         tier: str,
+        lang: str = "en",
     ) -> Dict[str, Any]:
         signal_type = getattr(signal, "signal_type", "UNKNOWN")
         if hasattr(signal_type, "value"):
@@ -102,15 +116,16 @@ class DiscordNotifier:
             tier_value = tier_value.value
 
         direction_emoji = "\U0001f7e2" if signal_type == "LONG" else "\U0001f534"
+        direction_label = DIRECTION_LABEL.get(signal_type, signal_type)
         color = COLOR_LONG if signal_type == "LONG" else COLOR_SHORT
 
         fields = [
-            {"name": "Direction", "value": f"**{signal_type}**", "inline": True},
+            {"name": "Setup", "value": f"**{direction_label}**", "inline": True},
             {"name": "Symbol", "value": symbol, "inline": True},
             {"name": "Score", "value": f"{score:.0f}/100 ({tier_value})", "inline": True},
-            {"name": "Entry", "value": f"{float(getattr(signal, 'entry_price', 0)):.2f}", "inline": True},
-            {"name": "Stop Loss", "value": f"{float(getattr(signal, 'stop_loss', 0)):.2f}", "inline": True},
-            {"name": "Take Profit", "value": f"{float(getattr(signal, 'take_profit', 0)):.2f}", "inline": True},
+            {"name": "Entry zone", "value": f"{float(getattr(signal, 'entry_price', 0)):.2f}", "inline": True},
+            {"name": "Invalidation", "value": f"{float(getattr(signal, 'stop_loss', 0)):.2f}", "inline": True},
+            {"name": "Target", "value": f"{float(getattr(signal, 'take_profit', 0)):.2f}", "inline": True},
             {"name": "R:R Ratio", "value": f"{float(getattr(signal, 'rr_ratio', 0)):.1f} : 1", "inline": True},
         ]
 
@@ -148,10 +163,10 @@ class DiscordNotifier:
                 description_parts.append(f"\n**Analysis:**\n{narrative}")
 
         embed: Dict[str, Any] = {
-            "title": f"{direction_emoji} Smart Sentinel Signal — {signal_type} {symbol}",
+            "title": f"{direction_emoji} Smart Sentinel — Algorithmic Analysis ({direction_label}) — {symbol}",
             "color": color,
             "fields": fields,
-            "footer": {"text": "Smart Sentinel AI — Not financial advice"},
+            "footer": {"text": get_footer(lang)},
         }
 
         if description_parts:
@@ -205,7 +220,7 @@ class DiscordNotifier:
                 fields.append({"name": "P&L", "value": f"{pnl_pct:+.2f}%", "inline": True})
 
         return {
-            "title": f"{title_icon} Position Closed — {symbol} {signal_type}",
+            "title": f"{title_icon} Analysis Closed — {symbol} {DIRECTION_LABEL.get(signal_type, signal_type)}",
             "color": color,
             "fields": fields,
             "footer": {"text": "Smart Sentinel AI"},

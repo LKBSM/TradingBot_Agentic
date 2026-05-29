@@ -1,0 +1,179 @@
+{
+  "symbol": "XAUUSD",
+  "timeframe": "M15",
+  "bars_processed": 4875,
+  "date_range": [
+    "2025-08-29 09:15:00",
+    "2025-12-31 21:45:00"
+  ],
+  "state_machine_config": {
+    "enter_threshold": 40.0,
+    "exit_threshold": 25.0,
+    "confirm_bars": 2,
+    "cooldown_bars": 2,
+    "max_signal_age_bars": 12,
+    "silent_bars_before_score_exit": 2,
+    "high_vol_forces_exit": true
+  },
+  "open_trade_bars": 0,
+  "summary": {
+    "total_trades": 4,
+    "wins": 0,
+    "losses": 1,
+    "other_exits": 3,
+    "win_rate": 0.0,
+    "loss_rate": 0.25,
+    "exits_by_reason": {
+      "score_decayed": 2,
+      "regime_shifted": 1,
+      "invalidated": 1
+    },
+    "avg_r": -0.147,
+    "median_r": 0.052,
+    "total_r": -0.59,
+    "best_r": 0.307,
+    "worst_r": -1.0,
+    "gross_win_r": 0.448,
+    "gross_loss_r": -1.038,
+    "profit_factor": 0.432,
+    "expectancy_r": -0.147,
+    "max_drawdown_r": 1.038,
+    "max_consecutive_losses": 2,
+    "sharpe_per_trade": -0.252,
+    "avg_bars_held": 5.0,
+    "median_bars_held": 2.0,
+    "signals_per_day": 0.032,
+    "arms_started": 31,
+    "arms_confirmed": 4,
+    "arms_aborted": 27,
+    "confirmation_rate": 0.129,
+    "avg_signal_lifetime_bars_machine": 4.0,
+    "bars_with_bos": 192,
+    "signals_produced_by_detector": 977,
+    "score_max": 51.73,
+    "score_percentiles": {
+      "p50": 29.87,
+      "p75": 32.67,
+      "p90": 36.61,
+      "p95": 38.59,
+      "p99": 45.4
+    }
+  },
+  "trades": [
+    {
+      "signal_id": "96a33ec6-ff3",
+      "direction": "LONG",
+      "entry_bar": "2025-09-08 14:15:00",
+      "exit_bar": "2025-09-08 18:00:00",
+      "entry_price": 3629.9,
+      "exit_price": 3633.73,
+      "stop_loss": 3617.41,
+      "take_profit": 3654.89,
+      "confluence_score": 48.0,
+      "exit_reason": "score_decayed",
+      "bars_held": 15,
+      "pnl_price": 3.83,
+      "r_multiple": 0.307,
+      "initial_risk": 12.49
+    },
+    {
+      "signal_id": "c2f15b33-b04",
+      "direction": "SHORT",
+      "entry_bar": "2025-10-21 14:45:00",
+      "exit_bar": "2025-10-21 15:00:00",
+      "entry_price": 4138.47,
+      "exit_price": 4140.45,
+      "stop_loss": 4190.82,
+      "take_profit": 4033.78,
+      "confluence_score": 40.804974287245116,
+      "exit_reason": "regime_shifted",
+      "bars_held": 1,
+      "pnl_price": -1.98,
+      "r_multiple": -0.038,
+      "initial_risk": 52.35
+    },
+    {
+      "signal_id": "f1897b28-88b",
+      "direction": "SHORT",
+      "entry_bar": "2025-10-28 10:15:00",
+      "exit_bar": "2025-10-28 10:45:00",
+      "entry_price": 3905.01,
+      "exit_price": 3930.23,
+      "stop_loss": 3930.23,
+      "take_profit": 3854.57,
+      "confluence_score": 46.565694527747766,
+      "exit_reason": "invalidated",
+      "bars_held": 2,
+      "pnl_price": -25.22,
+      "r_multiple": -1.0,
+      "initial_risk": 25.22
+    },
+    {
+      "signal_id": "41dd7a94-125",
+      "direction": "LONG",
+      "entry_bar": "2025-11-10 06:15:00",
+      "exit_bar": "2025-11-10 06:45:00",
+      "entry_price": 4072.78,
+      "exit_price": 4074.86,
+      "stop_loss": 4058.05,
+      "take_profit": 4102.24,
+      "confluence_score": 45.95977120644146,
+      "exit_reason": "score_decayed",
+      "bars_held": 2,
+      "pnl_price": 2.08,
+      "r_multiple": 0.141,
+      "initial_risk": 14.73
+    }
+  ],
+  "institutional_metrics": {
+    "summary": {
+      "total_trades": 4,
+      "wins": 2,
+      "losses": 2,
+      "breakeven": 0,
+      "win_rate": 0.5,
+      "loss_rate": 0.5
+    },
+    "returns": {
+      "avg_r": -0.147,
+      "median_r": 0.052,
+      "stdev_r": 0.507,
+      "total_r": -0.59,
+      "expectancy_r": -0.147,
+      "best_r": 0.307,
+      "worst_r": -1.0,
+      "gross_win_r": 0.448,
+      "gross_loss_r": -1.038
+    },
+    "risk": {
+      "profit_factor": 0.432,
+      "payoff_ratio": 0.432,
+      "max_drawdown_r": 1.038,
+      "max_consecutive_losses": 2,
+      "max_consecutive_wins": 1
+    },
+    "risk_adjusted": {
+      "sharpe_per_trade": -0.291,
+      "sortino_per_trade": -0.295,
+      "calmar": -0.568,
+      "sharpe_annualised": -1.296,
+      "sortino_annualised": -1.313
+    },
+    "lifetime": {
+      "avg_bars_held": 5.0,
+      "median_bars_held": 2.0,
+      "trades_per_year": 19.85
+    },
+    "by_tier": [
+      {
+        "tier": "WEAK",
+        "trades": 4,
+        "win_rate": 0.5,
+        "expectancy_r": -0.147,
+        "total_r": -0.59,
+        "profit_factor": 0.432,
+        "avg_bars_held": 5.0
+      }
+    ]
+  }
+}

@@ -64,6 +64,38 @@ async def _build_health(request: Request) -> HealthResponse:
         except Exception:
             pass
 
+    # Narrative cache stats (LLM mode only — None when template engine is active).
+    cache_hits = 0
+    cache_misses = 0
+    cache_hit_rate = 0.0
+    cache_size = 0
+    cache = getattr(app_state, "cache", None) or (
+        getattr(scanner, "_cache", None) if scanner is not None else None
+    )
+    if cache is not None:
+        try:
+            stats = cache.get_stats()
+            cache_hits = int(stats.get("hits", 0))
+            cache_misses = int(stats.get("misses", 0))
+            cache_hit_rate = float(stats.get("hit_rate", 0.0))
+            cache_size = int(cache.size())
+        except Exception:
+            pass
+
+    # Operational kill-switch (src/risk/kill_switch.py): tripped status,
+    # streak count, daily DD, heartbeat age, audit-event count.
+    operational_kill_switch = None
+    op_ks = getattr(app_state, "operational_kill_switch", None)
+    if op_ks is not None:
+        try:
+            operational_kill_switch = op_ks.status()
+            # Degrade overall system health if the kill-switch is tripped.
+            if operational_kill_switch.get("tripped"):
+                status = SystemStatus.DEGRADED
+                is_trading_active = False
+        except Exception:
+            pass
+
     return HealthResponse(
         status=status,
         uptime_seconds=round(time.time() - _BOOT_TIME, 2),
@@ -73,6 +105,11 @@ async def _build_health(request: Request) -> HealthResponse:
         components=components,
         scanner_running=scanner_running,
         signals_generated=signals_generated,
+        cache_hits=cache_hits,
+        cache_misses=cache_misses,
+        cache_hit_rate=cache_hit_rate,
+        cache_size=cache_size,
+        operational_kill_switch=operational_kill_switch,
     )
 
 

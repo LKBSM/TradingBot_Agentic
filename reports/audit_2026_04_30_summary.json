@@ -1,0 +1,75 @@
+{
+  "period": [
+    "2019-01-02 06:00:00",
+    "2026-04-29 23:45:00"
+  ],
+  "n_bars": 172874,
+  "metrics": {
+    "n_trades": 1753.0,
+    "win_rate": 0.41015402167712495,
+    "profit_factor": 1.0374198281722102,
+    "sharpe": 0.2737352800932147,
+    "sortino": 0.4543584752402605,
+    "calmar": 0.30855490271667746,
+    "max_dd_pct": -0.48015716279704335,
+    "max_dd_usd": -5160.0774950772675,
+    "dd_dur_days": 1825.0,
+    "avg_rr": 1.4919222563700492,
+    "expectancy_r": 0.013323401784452831,
+    "final_capital": 11481.548466555576,
+    "return_pct": 0.14815484665555756,
+    "gross_win": 41074.15321442469,
+    "gross_loss": 39592.60474786919
+  },
+  "buy_hold": {
+    "buyhold_return_pct": 2.556009853368777,
+    "px_in": 1282.81,
+    "px_out": 4561.685
+  },
+  "pearson_score_vs_R": -0.007526692352531328,
+  "score_distribution": {
+    "p50": 50.0,
+    "p75": 62.5,
+    "p90": 62.5,
+    "p99": 87.5,
+    "max": 100.0
+  },
+  "config": {
+    "data_file": "C:\\MyPythonProjects\\TradingBOT_Agentic\\data\\XAU_15MIN_2019_2026.csv",
+    "calendar_file": "C:\\MyPythonProjects\\TradingBOT_Agentic\\data\\economic_calendar_HIGH_IMPACT_2019_2025.csv",
+    "start": "2019-01-01",
+    "end": "2026-04-30",
+    "spread_usd": 0.3,
+    "slippage_min": 0.1,
+    "slippage_max": 0.2,
+    "commission_per_lot_rt": 7.0,
+    "lot_size_oz": 100.0,
+    "initial_capital": 10000.0,
+    "risk_per_trade_pct": 0.01,
+    "max_lot": 5.0,
+    "atr_period": 14,
+    "har_rv_window_d": 1,
+    "har_rv_window_w": 5,
+    "har_rv_window_m": 22,
+    "sl_atr_mult": 1.5,
+    "tp_atr_mult": 2.5,
+    "enter_threshold": 65,
+    "exit_threshold": 40,
+    "cooldown_bars": 8,
+    "lockout_bars_opposite": 12,
+    "max_lifetime_bars": 64,
+    "blackout_minutes_before": 15,
+    "blackout_minutes_after": 15,
+    "weights": {
+      "bos": 12.5,
+      "choch": 12.5,
+      "ob": 12.5,
+      "fvg": 12.5,
+      "retest": 12.5,
+      "rsi_div": 12.5,
+      "regime": 12.5,
+      "news_ok": 12.5
+    },
+    "random_seed": 42
+  }
+}

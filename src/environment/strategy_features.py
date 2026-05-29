@@ -293,19 +293,25 @@ def _calculate_bos_retest_numba(
         a = atr[i] if (not np.isnan(atr[i]) and atr[i] > 0) else 0.0
 
         if active == 1:
-            if lows[i] <= level + retest_tol_atr * a:
+            # Invalidation takes precedence over retest — a bar that dips to
+            # the level AND closes well past it represents a failed break, not
+            # a pullback. Without this ordering, violent rejection bars would
+            # be mis-classified as confirmations.
+            if closes[i] < level - invalid_tol_atr * a:
+                active = 0
+            elif lows[i] <= level + retest_tol_atr * a:
                 active = 2
                 bars_in = 0
-            elif closes[i] < level - invalid_tol_atr * a:
-                active = 0
+                retest_armed[i] = 1
             elif bars_in > awaiting_timeout:
                 active = 0
         elif active == -1:
-            if highs[i] >= level - retest_tol_atr * a:
+            if closes[i] > level + invalid_tol_atr * a:
+                active = 0
+            elif highs[i] >= level - retest_tol_atr * a:
                 active = -2
                 bars_in = 0
-            elif closes[i] > level + invalid_tol_atr * a:
-                active = 0
+                retest_armed[i] = -1
             elif bars_in > awaiting_timeout:
                 active = 0
         elif active == 2:
@@ -364,19 +370,21 @@ def _calculate_bos_retest_python(
         a = atr[i] if (not np.isnan(atr[i]) and atr[i] > 0) else 0.0
 
         if active == 1:
-            if lows[i] <= level + retest_tol_atr * a:
+            if closes[i] < level - invalid_tol_atr * a:
+                active = 0
+            elif lows[i] <= level + retest_tol_atr * a:
                 active = 2
                 bars_in = 0
-            elif closes[i] < level - invalid_tol_atr * a:
-                active = 0
+                retest_armed[i] = 1
             elif bars_in > awaiting_timeout:
                 active = 0
         elif active == -1:
-            if highs[i] >= level - retest_tol_atr * a:
+            if closes[i] > level + invalid_tol_atr * a:
+                active = 0
+            elif highs[i] >= level - retest_tol_atr * a:
                 active = -2
                 bars_in = 0
-            elif closes[i] > level + invalid_tol_atr * a:
-                active = 0
+                retest_armed[i] = -1
             elif bars_in > awaiting_timeout:
                 active = 0
         elif active == 2:
@@ -500,10 +508,13 @@ class SMCConfig(BaseModel):
         description="Maximum bars to wait for a pullback after a BOS event before the setup goes stale."
     )
     RETEST_ARMED_WINDOW: int = Field(
-        default=5,
+        default=30,
         ge=1,
-        description="Bars an armed setup remains valid after a successful retest. After this window the "
-                    "setup expires and a new BOS event is required."
+        description="Bars an armed setup remains valid after a successful retest. Sized to cover a "
+                    "full trade lifetime (avg ~13 bars on XAU M15 per replay) so the detector keeps "
+                    "emitting signals for state-machine score tracking. Once the trend flips via "
+                    "CHOCH or a new BOS event, the window is overridden. Setting this too short "
+                    "causes premature SCORE_DECAYED exits on confirmed trades."
     )
 
 
