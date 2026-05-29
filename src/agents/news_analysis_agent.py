@@ -250,10 +250,16 @@ class NewsAnalysisAgent(BaseAgent):
             self._logger.info("  - Sentiment analyzer created")
 
             # Create calendar fetcher
+            import os
+            csv_path = os.environ.get("CALENDAR_PATH")
             self._calendar_fetcher = EconomicCalendarFetcher(
-                cache_hours=int(self._news_config.calendar_fetch_interval_hours)
+                cache_hours=int(self._news_config.calendar_fetch_interval_hours),
+                csv_path=csv_path,
             )
-            self._logger.info("  - Economic calendar fetcher created")
+            self._logger.info(
+                "  - Economic calendar fetcher created (csv=%s)",
+                csv_path or "none — using scraper fallback",
+            )
 
             # Create news fetcher
             if self._news_config.enable_news_headlines:
