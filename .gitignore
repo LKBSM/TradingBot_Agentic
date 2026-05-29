@@ -98,3 +98,8 @@ replay_*.csv
 *.coverage.*
 backtest_trades.csv
 .claude/scheduled_tasks.lock
+
+# Chantier 1 — MarketReadingsStore SQLite (WAL companions)
+data/market_readings.db
+data/market_readings.db-shm
+data/market_readings.db-wal
