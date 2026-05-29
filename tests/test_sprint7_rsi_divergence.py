@@ -161,7 +161,7 @@ class TestDivergenceIntegration:
     """Integration tests with full confluence pipeline."""
 
     def setup_method(self):
-        self.detector = ConfluenceDetector(min_score=0)
+        self.detector = ConfluenceDetector(min_score=0, require_retest=False)
 
     def test_divergence_adds_to_score(self):
         """Signal with divergence should score higher than without."""

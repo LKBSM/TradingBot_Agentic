@@ -255,13 +255,17 @@ class TestTelegramVolLine:
             signal, narrative_data=narrative_data, tier="STRATEGIST"
         )
 
-        # Verify all sections present
-        assert "Smart Sentinel Signal" in msg
-        assert "Direction:" in msg
-        assert "Entry:" in msg
+        # Verify all sections present.
+        # UE 2024/2811: "Signal" -> "Algorithmic Analysis";
+        # "Direction" -> "Setup"; "Entry" -> "Entry zone";
+        # "Not financial advice" -> localised footer "not investment advice".
+        assert "Smart Sentinel" in msg
+        assert "Algorithmic Analysis" in msg
+        assert "Setup:" in msg
+        assert "Entry zone:" in msg
         assert "Volatility:" in msg
         assert "High" in msg
         assert "95% CI" in msg
         assert "Validation:" in msg
         assert "Analysis:" in msg
-        assert "Not financial advice" in msg
+        assert "not investment advice" in msg.lower()

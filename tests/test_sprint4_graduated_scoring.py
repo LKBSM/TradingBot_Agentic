@@ -17,7 +17,9 @@ class TestGraduatedBOSScoring:
     """BOS scoring should vary based on CHOCH confirmation."""
 
     def setup_method(self):
-        self.detector = ConfluenceDetector()
+        # require_retest=False: these tests predate the retest gate and assert
+        # the legacy graduated ladder (CHOCH=100%, fresh=85%, continuation=50%).
+        self.detector = ConfluenceDetector(require_retest=False)
         self.bos_weight = self.detector.weights["bos"]
 
     def test_bos_with_choch_gets_full_weight(self):
@@ -77,7 +79,9 @@ class TestGraduatedFVGScoring:
     """FVG scoring should vary based on gap size relative to ATR."""
 
     def setup_method(self):
-        self.detector = ConfluenceDetector()
+        # require_retest=False: these tests predate the retest gate and assert
+        # the legacy graduated ladder (CHOCH=100%, fresh=85%, continuation=50%).
+        self.detector = ConfluenceDetector(require_retest=False)
         self.fvg_weight = self.detector.weights["fvg"]
 
     def test_large_fvg_gets_full_weight(self):
@@ -141,7 +145,7 @@ class TestGraduatedScoringIntegration:
     """Integration tests with full confluence analysis."""
 
     def setup_method(self):
-        self.detector = ConfluenceDetector(min_score=0)
+        self.detector = ConfluenceDetector(min_score=0, require_retest=False)
 
     def test_higher_quality_signals_score_higher(self):
         """Signal with CHOCH + large FVG should outscore BOS-only + small FVG."""

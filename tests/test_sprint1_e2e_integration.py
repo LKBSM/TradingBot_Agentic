@@ -142,8 +142,8 @@ def test_e2e_assemble_and_render(trained_pipeline):
         **outputs,
     )
 
-    # --- Assertions: the full v2.1.0 contract is populated ---
-    assert sig.schema_version == "2.1.0"
+    # --- Assertions: the full v2.2.0 contract is populated ---
+    assert sig.schema_version == "2.2.0"
     assert sig.direction == SetupDirection.BULLISH_SETUP
     assert 0 <= sig.conviction_0_100 <= 100
     assert sig.uncertainty is not None  # calibrated pipeline ⇒ interval
@@ -176,7 +176,7 @@ def test_e2e_assemble_and_render(trained_pipeline):
     assert "Cible :" not in telegram_msg
 
     b2b_payload = to_b2b_dict(sig)
-    assert b2b_payload["schema_version"] == "2.1.0"
+    assert b2b_payload["schema_version"] == "2.2.0"
     assert b2b_payload["structure_readout"]["bos_level"] == 2391.50
     assert b2b_payload["regime_readout"]["regime_gate_decision"] == "TRADE"
     assert b2b_payload["historical_stats"]["similar_setups_n"] == 329
@@ -195,7 +195,7 @@ def test_e2e_round_trip_json(trained_pipeline):
     payload = sig.model_dump_json()
     parsed = InsightSignalV2.model_validate_json(payload)
 
-    assert parsed.schema_version == "2.1.0"
+    assert parsed.schema_version == "2.2.0"
     assert parsed.uncertainty is not None
     assert parsed.structure_readout.fvg_zone == sig.structure_readout.fvg_zone
     assert parsed.regime_readout.bocpd_changepoint_prob == sig.regime_readout.bocpd_changepoint_prob

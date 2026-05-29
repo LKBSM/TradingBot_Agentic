@@ -52,6 +52,10 @@ def make_ohlcv_df(n_bars: int = 200, base_price: float = 2400.0,
         "RSI": np.full(n_bars, 55.0),
         "MACD_Diff": np.full(n_bars, 0.3),
         "BOS_SIGNAL": np.zeros(n_bars),
+        "BOS_EVENT": np.zeros(n_bars),
+        "BOS_RETEST_STATE": np.zeros(n_bars),
+        "BOS_RETEST_ARMED": np.zeros(n_bars),
+        "CHOCH_SIGNAL": np.zeros(n_bars),
         "FVG_SIGNAL": np.zeros(n_bars),
         "OB_STRENGTH_NORM": np.zeros(n_bars),
     }, index=dates)
@@ -59,6 +63,10 @@ def make_ohlcv_df(n_bars: int = 200, base_price: float = 2400.0,
     # Set last bar to have strong signals
     df.iloc[-1, df.columns.get_loc("BOS_SIGNAL")] = bos
     df.iloc[-1, df.columns.get_loc("FVG_SIGNAL")] = fvg
+    # Sign retest_armed with the same direction as bos so the retest gate
+    # added in confluence_detector (require_retest=True default) lets the
+    # signal through.
+    df.iloc[-1, df.columns.get_loc("BOS_RETEST_ARMED")] = bos
 
     return df
 
@@ -376,3 +384,107 @@ class TestLifecycle:
         time.sleep(0.3)
         scanner.shutdown()
         assert scanner._running is False
+
+
+# ============================================================================
+# TESTS: INSIGHT V2.1.0 ASSEMBLER WIRING (Sprint 1)
+# ============================================================================
+
+class TestInsightAssemblerWiring:
+    """The scanner must materialise an InsightSignalV2 alongside the legacy
+    SignalRecord publish whenever an assembler is injected. Failures in the
+    assembler must NEVER break the v1 emission path.
+    """
+
+    def _make_scanner_with_assembler(
+        self, mock_data_provider, mock_smc_factory, mock_regime_agent,
+        mock_news_agent, detector, llm_engine, cache, signal_store, notifier,
+    ):
+        from src.intelligence.insight_assembler import InsightAssembler
+        assembler = InsightAssembler()
+        scanner = SentinelScanner(
+            data_provider=mock_data_provider,
+            smc_factory=mock_smc_factory,
+            regime_agent=mock_regime_agent,
+            news_agent=mock_news_agent,
+            confluence=detector,
+            llm_engine=llm_engine,
+            cache=cache,
+            signal_store=signal_store,
+            notifier=notifier,
+            narrative_tier=NarrativeTier.VISUAL,
+            insight_assembler=assembler,
+        )
+        scanner._start_time = 0
+        return scanner, assembler
+
+    def test_assembler_produces_insight_on_publish(
+        self, mock_data_provider, mock_smc_factory, mock_regime_agent,
+        mock_news_agent, detector, llm_engine, cache, signal_store, notifier,
+    ):
+        scanner, _ = self._make_scanner_with_assembler(
+            mock_data_provider, mock_smc_factory, mock_regime_agent,
+            mock_news_agent, detector, llm_engine, cache, signal_store, notifier,
+        )
+        result = scanner.scan_once()
+
+        assert result is not None
+        assert scanner.latest_insight is not None
+        # v2.1.0 contract — symbol + timeframe present, conviction in [0, 100]
+        assert scanner.latest_insight.instrument == "XAUUSD"
+        assert 0 <= scanner.latest_insight.conviction_0_100 <= 100
+        # Indicator stance — no entry/stop/target leaked
+        assert scanner.latest_insight.levels.entry is None
+        assert scanner.latest_insight.levels.stop is None
+        # Compliance defaults — edge_claim must remain False
+        assert scanner.latest_insight.compliance.edge_claim is False
+        stats = scanner.get_stats()
+        assert stats["insights_built"] == 1
+        assert stats["insight_build_failures"] == 0
+        assert stats["latest_insight_id"] == scanner.latest_insight.id
+
+    def test_assembler_failure_does_not_break_v1_path(
+        self, mock_data_provider, mock_smc_factory, mock_regime_agent,
+        mock_news_agent, detector, llm_engine, cache, signal_store, notifier,
+    ):
+        from src.intelligence.insight_assembler import InsightAssembler
+
+        class _BrokenAssembler(InsightAssembler):
+            def assemble(self, *args, **kwargs):
+                raise RuntimeError("boom")
+
+        scanner = SentinelScanner(
+            data_provider=mock_data_provider,
+            smc_factory=mock_smc_factory,
+            regime_agent=mock_regime_agent,
+            news_agent=mock_news_agent,
+            confluence=detector,
+            llm_engine=llm_engine,
+            cache=cache,
+            signal_store=signal_store,
+            notifier=notifier,
+            narrative_tier=NarrativeTier.VISUAL,
+            insight_assembler=_BrokenAssembler(),
+        )
+        scanner._start_time = 0
+
+        # Legacy v1 publish must still succeed
+        result = scanner.scan_once()
+        assert result is not None
+        signal_store.publish.assert_called_once()
+        notifier.send_signal.assert_called_once()
+        # And the failure is counted, not raised
+        stats = scanner.get_stats()
+        assert stats["insight_build_failures"] == 1
+        assert stats["insights_built"] == 0
+        assert scanner.latest_insight is None
+
+    def test_no_assembler_means_no_insight(self, scanner):
+        """Backward-compat: scanner without assembler doesn't produce v2."""
+        scanner._start_time = 0
+        scanner.scan_once()
+        assert scanner.latest_insight is None
+        # Stats keys are gated on assembler presence — must be absent here.
+        stats = scanner.get_stats()
+        assert "insights_built" not in stats
+        assert "latest_insight_id" not in stats
