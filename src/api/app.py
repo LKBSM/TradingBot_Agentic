@@ -20,7 +20,7 @@ from src.api.middleware.geo_block import GeoBlockMiddleware
 from src.api.middleware.rate_limit_headers import RateLimitHeadersMiddleware
 from src.api.models import ErrorResponse
 from src.api.openapi_enrichment import install_openapi_enrichment
-from src.api.routes import admin, admin_audit, audit, billing, dashboard, enrich, health, health_deep, insight_history, legal, metrics_latency, narratives, operator, prometheus, qa, signals, state, webapp, webhook_ack
+from src.api.routes import admin, admin_audit, audit, billing, dashboard, enrich, health, health_deep, insight_history, legal, market_reading, metrics_latency, narratives, operator, prometheus, qa, signals, state, webapp, webhook_ack
 from src.api.shutdown import GracefulShutdownCoordinator
 from src.api.signal_store import SignalStore
 
@@ -109,6 +109,7 @@ def create_app(
     webhook_drain_worker: Any = None,
     narrative_quality_tracker: Any = None,
     stripe_client: Any = None,
+    market_reading_assembler: Any = None,
 ) -> FastAPI:
     """
     Build and return a fully-configured FastAPI application.
@@ -158,6 +159,7 @@ def create_app(
         webhook_drain_worker=webhook_drain_worker,
         narrative_quality_tracker=narrative_quality_tracker,
         stripe_client=stripe_client,
+        market_reading_assembler=market_reading_assembler,
     )
 
     @asynccontextmanager
@@ -341,6 +343,7 @@ def create_app(
     app.include_router(webhook_ack.router)
     app.include_router(billing.router)
     app.include_router(webapp.router)
+    app.include_router(market_reading.router)
 
     # API-2B.7 — enrich the OpenAPI spec with stable operationIds,
     # tag descriptions, and production servers list so generated
