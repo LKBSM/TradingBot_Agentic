@@ -254,20 +254,26 @@ Bénéfices :
 
 ### 3.2 Source de données
 
-Backend : OANDA API v20 (compte démo gratuit)
+**Backend** : **Twelve Data API (free tier)**
+
 Justification :
+- API REST moderne, documentation OpenAPI propre
+- Données XAU et EURUSD en quasi-temps réel
+- Free tier généreux : 800 requêtes/jour, 8 requêtes/minute
+- Inscription instantanée (email seulement, pas de KYC, pas de carte de crédit)
+- Pas de problème d'éligibilité géographique (alternative à OANDA qui n'offre plus de compte Demo au Canada)
+- Spécialisée dans la fourniture de données (pas une plateforme de trading), donc aucun risque de passer un ordre par erreur
 
-- API REST officielle, documentation propre, génération de client OpenAPI
-- Données XAU et EURUSD quasi-temps réel (latence ~1 seconde)
-- Compte démo gratuit avec accès illimité
-- Pas de problème légal contrairement aux APIs non-officielles type TradingView
+**Endpoint principal** : `GET /time_series` avec paramètres `symbol` (XAU/USD ou EUR/USD), `interval` (15min/1h/4h), et `apikey` dans le header ou query string.
 
-Endpoint principal : `GET /v3/instruments/{instrument}/candles` avec paramètres `granularity` (M15/H1/H4) et `count`.
+**Authentification** : API key passée dans le header `Authorization: Bearer {key}` ou en query string `?apikey={key}`.
 
-Polling :
-
-- À chaque candle close, le moteur appelle OANDA pour récupérer les dernières candles
+**Polling** :
+- À chaque candle close, le moteur appelle Twelve Data pour récupérer les dernières candles
 - Stockage local des candles dans SQLite pour reprocessing rapide
+- Respect strict de la limite 8 req/min via rate limiter côté backend
+
+**Évolution future** : si le volume de requêtes dépasse 800/jour (au-delà de ~50 utilisateurs actifs en mode hybride), upgrade vers le plan payant Twelve Data Basic ($79/mois pour 50k req/jour) ou migration vers OANDA Live data API si la situation géographique évolue.
 
 ### 3.3 Scheduler
 
