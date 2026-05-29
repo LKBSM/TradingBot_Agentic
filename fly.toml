@@ -1,0 +1,49 @@
+# MIA Markets — Fly.io deployment config V2
+# Cf. docs/architecture/MIA_MARKETS_V2_VISION.md Section 3.4
+
+app = "mia-markets-api"
+primary_region = "cdg"
+kill_signal = "SIGINT"
+kill_timeout = 30
+
+[build]
+  dockerfile = "infrastructure/Dockerfile"
+
+[env]
+  ENVIRONMENT = "prod"
+  LOG_FORMAT = "json"
+  LOG_LEVEL = "INFO"
+  SENTINEL_TESTING_MODE = "0"
+  DATA_QUALITY_STRICT = "on"
+  ADMIN_NONCE_REQUIRED = "on"
+  STRIPE_LIVE = "false"
+  SQLITE_DB_PATH = "/app/data/mia_markets.db"
+  MARKET_READINGS_DB_PATH = "/app/data/market_readings.db"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "10s"
+    method = "GET"
+    path = "/health"
+
+[[mounts]]
+  source = "mia_data"
+  destination = "/app/data"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
+  cpu_kind = "shared"
+  cpus = 1
+
+[deploy]
+  strategy = "rolling"
