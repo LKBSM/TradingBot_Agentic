@@ -282,3 +282,37 @@ class TestThreadSafety:
                 limit=N_PER_THREAD + 10,
             )
             assert len(history) == N_PER_THREAD
+
+
+# =============================================================================
+# Env-aware path resolution (Étape 4)
+# =============================================================================
+
+from pathlib import Path  # noqa: E402  (intentional late import — only used here)
+
+
+class TestEnvAwarePath:
+    def test_explicit_path_wins_over_env_var(self, tmp_path, monkeypatch):
+        env_path = tmp_path / "from_env.db"
+        explicit_path = tmp_path / "explicit.db"
+        monkeypatch.setenv("MARKET_READINGS_DB_PATH", str(env_path))
+        store = MarketReadingsStore(db_path=str(explicit_path))
+        assert store._db_path == explicit_path
+
+    def test_env_var_used_when_no_explicit_path(self, tmp_path, monkeypatch):
+        env_path = tmp_path / "from_env.db"
+        monkeypatch.setenv("MARKET_READINGS_DB_PATH", str(env_path))
+        store = MarketReadingsStore()
+        assert store._db_path == env_path
+
+    def test_fallback_to_default_when_no_arg_no_env(self, tmp_path, monkeypatch):
+        monkeypatch.delenv("MARKET_READINGS_DB_PATH", raising=False)
+        monkeypatch.chdir(tmp_path)
+        store = MarketReadingsStore()
+        assert store._db_path == Path("./data/market_readings.db")
+
+    def test_empty_env_var_treated_as_absent(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("MARKET_READINGS_DB_PATH", "")
+        monkeypatch.chdir(tmp_path)
+        store = MarketReadingsStore()
+        assert store._db_path == Path("./data/market_readings.db")

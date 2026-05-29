@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import sqlite3
 import threading
 from datetime import datetime, timezone
@@ -40,20 +41,37 @@ def _utc_iso(ts: Optional[datetime] = None) -> str:
 class MarketReadingsStore:
     """SQLite-backed persistence for MarketReadings and active combinations.
 
+    Path resolution priority:
+      1. Explicit ``db_path`` argument (wins over everything)
+      2. ``MARKET_READINGS_DB_PATH`` env var (if non-empty)
+      3. ``DEFAULT_DB_PATH`` (``./data/market_readings.db``)
+    An empty env var is treated as absent.
+
     Usage:
-        store = MarketReadingsStore()  # ./data/market_readings.db
+        store = MarketReadingsStore()  # uses env or default
         store.save_reading("XAUUSD", "M15", candle_ts, payload_dict)
         latest = store.get_latest_reading("XAUUSD", "M15")
     """
 
     SCHEMA_VERSION = 1
+    DEFAULT_DB_PATH = "./data/market_readings.db"
+    DB_PATH_ENV_VAR = "MARKET_READINGS_DB_PATH"
 
-    def __init__(self, db_path: str = "./data/market_readings.db") -> None:
-        self._db_path = Path(db_path)
+    def __init__(self, db_path: Optional[str] = None) -> None:
+        self._db_path = self._resolve_db_path(db_path)
         self._lock = threading.RLock()
         self._db_path.parent.mkdir(parents=True, exist_ok=True)
         self._init_database()
         logger.info("MarketReadingsStore initialised at %s", self._db_path)
+
+    @classmethod
+    def _resolve_db_path(cls, db_path: Optional[str]) -> Path:
+        if db_path:
+            return Path(db_path)
+        env_val = os.environ.get(cls.DB_PATH_ENV_VAR)
+        if env_val:
+            return Path(env_val)
+        return Path(cls.DEFAULT_DB_PATH)
 
     # ------------------------------------------------------------------ #
     # SQLite helpers
