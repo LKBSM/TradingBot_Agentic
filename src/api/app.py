@@ -27,6 +27,48 @@ from src.api.signal_store import SignalStore
 logger = logging.getLogger(__name__)
 
 
+def _maybe_bootstrap_market_reading(app_state: AppState) -> None:
+    """Env-gated runtime bootstrap of the MarketReading engine (Chantier 3).
+
+    When nothing was injected via ``create_app``, optionally build the
+    assembler + scheduler from environment configuration so production
+    (``BOOTSTRAP_ENABLED=true`` / ``SCHEDULER_ENABLED=true``) serves
+    ``/api/market-reading`` and runs the hybrid scheduler. A no-op when
+    the flags are off, so tests calling ``create_app()`` stay light (no
+    network, no Anthropic). The scheduler is built but NOT started here — the
+    lifespan starts it after its shutdown handler is registered.
+    """
+    from src.api.bootstrap import (
+        build_market_reading_assembler,
+        build_market_reading_scheduler,
+        env_flag,
+        is_bootstrap_enabled,
+    )
+
+    if app_state.market_reading_assembler is None and is_bootstrap_enabled():
+        try:
+            app_state.market_reading_assembler = build_market_reading_assembler()
+            logger.info("MarketReadingAssembler bootstrapped at startup")
+        except Exception:
+            logger.exception(
+                "MarketReading bootstrap failed — endpoint will return 503"
+            )
+
+    assembler = app_state.market_reading_assembler
+    if (
+        assembler is not None
+        and app_state.market_reading_scheduler is None
+        and env_flag("SCHEDULER_ENABLED", False)
+    ):
+        try:
+            app_state.market_reading_scheduler = build_market_reading_scheduler(
+                assembler
+            )
+            logger.info("MarketReadingScheduler built at startup")
+        except Exception:
+            logger.exception("MarketReadingScheduler build failed")
+
+
 def _auto_register_default_handlers(
     coord: GracefulShutdownCoordinator, app_state: AppState
 ) -> None:
@@ -174,6 +216,12 @@ def create_app(
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         logger.info("API starting up")
+        # MIA Markets V2 — Chantier 3 — env-gated runtime bootstrap. Builds
+        # the MarketReadingAssembler + scheduler from env when nothing was
+        # injected (production opts in via BOOTSTRAP_ENABLED + SCHEDULER_ENABLED).
+        # No-op otherwise so tests stay light. Runs BEFORE
+        # _auto_register_default_handlers so the scheduler's shutdown is wired.
+        _maybe_bootstrap_market_reading(app_state)
         # INFRA-2B.11: auto-register any wired subsystems that expose a
         # shutdown surface. Caller can register more *before* startup —
         # we only add the ones not already registered by name. Order
