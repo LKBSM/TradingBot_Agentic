@@ -55,3 +55,5 @@ class AppState:
     stripe_client: Optional[Any] = None              # src.billing.stripe_client.StripeClient (INFRA-2B.3)
     # MIA Markets V2 — Chantier 2
     market_reading_assembler: Optional[Any] = None   # src.intelligence.market_reading_assembler.MarketReadingAssembler
+    # MIA Markets V2 — Chantier 3
+    market_reading_scheduler: Optional[Any] = None   # src.intelligence.scheduler.MarketReadingScheduler

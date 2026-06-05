@@ -59,6 +59,13 @@ def _auto_register_default_handlers(
     if scanner is not None and hasattr(scanner, "stop"):
         _add("sentinel-scanner", scanner.stop, budget_s=5.0)
 
+    # MIA Markets V2 — Chantier 3 — MarketReading hybrid scheduler.
+    # Must stop before the readings store closes so the final tick
+    # doesn't write into a torn-down connection.
+    mr_scheduler = app_state.market_reading_scheduler
+    if mr_scheduler is not None and hasattr(mr_scheduler, "stop"):
+        _add("market-reading-scheduler", mr_scheduler.stop, budget_s=5.0)
+
     # The drain worker isn't stored on AppState today — callers that
     # wire it call coord.register("webhook-drain", worker.stop) before
     # startup. Nothing auto here.
@@ -110,6 +117,7 @@ def create_app(
     narrative_quality_tracker: Any = None,
     stripe_client: Any = None,
     market_reading_assembler: Any = None,
+    market_reading_scheduler: Any = None,
 ) -> FastAPI:
     """
     Build and return a fully-configured FastAPI application.
@@ -160,6 +168,7 @@ def create_app(
         narrative_quality_tracker=narrative_quality_tracker,
         stripe_client=stripe_client,
         market_reading_assembler=market_reading_assembler,
+        market_reading_scheduler=market_reading_scheduler,
     )
 
     @asynccontextmanager
@@ -172,6 +181,15 @@ def create_app(
         # in-flight log writes complete.
         coord: GracefulShutdownCoordinator = app_state.shutdown_coordinator
         _auto_register_default_handlers(coord, app_state)
+        # MIA Markets V2 — Chantier 3 — start the hybrid scheduler once the
+        # shutdown handler is registered. Failure to start is logged but does
+        # not abort startup so the rest of the API stays available.
+        mr_scheduler = app_state.market_reading_scheduler
+        if mr_scheduler is not None and hasattr(mr_scheduler, "start"):
+            try:
+                mr_scheduler.start()
+            except Exception:
+                logger.exception("market-reading-scheduler failed to start")
         try:
             yield
         finally:

@@ -37,6 +37,7 @@ from src.intelligence.market_reading_mappers import (
 from src.intelligence.market_reading_schema import (
     MarketReading,
     MarketReadingConditions,
+    MarketReadingEvents,
     MarketReadingHeader,
 )
 
@@ -141,6 +142,7 @@ class MarketReadingAssembler:
         candles_store: Any,
         smc_pipeline: Optional[SmcPipelineFn] = None,
         description_engine: Optional[Any] = None,
+        news_pipeline: Optional[Any] = None,
         lookback: int = DEFAULT_LOOKBACK,
         mtf_provider: Optional[Callable[[str, str], Mapping[str, Sequence[Any]]]] = None,
         clock: Callable[[], datetime] = lambda: datetime.now(timezone.utc),
@@ -150,9 +152,21 @@ class MarketReadingAssembler:
         self._candles_store = candles_store
         self._smc_pipeline: SmcPipelineFn = smc_pipeline or _default_smc_pipeline
         self._description_engine = description_engine
+        self._news_pipeline = news_pipeline
         self._lookback = lookback
         self._mtf_provider = mtf_provider
         self._clock = clock
+
+    # ------------------------------------------------------------------ #
+    # Public accessors (used by the Chantier 3 scheduler / bootstrap)
+    # ------------------------------------------------------------------ #
+    @property
+    def readings_store(self) -> Any:
+        return self._readings_store
+
+    @property
+    def candles_store(self) -> Any:
+        return self._candles_store
 
     # ------------------------------------------------------------------ #
     # Public API
@@ -245,7 +259,7 @@ class MarketReadingAssembler:
         ]
         regime = candles_to_regime(candle_dicts, mtf_candles_above=mtf_candles)
 
-        events = empty_events()
+        events = self._build_events()
 
         tags, fallback_description = tags_and_description(structure, regime)
         description, source = self._resolve_description(tags, regime, fallback_description)
@@ -268,6 +282,33 @@ class MarketReadingAssembler:
             regime=regime,
             events=events,
             conditions=conditions,
+        )
+
+    def _build_events(self) -> MarketReadingEvents:
+        """Fill ``news_upcoming`` / ``news_just_published`` from the pipeline.
+
+        Compat Chantier 2: when no news pipeline is wired, returns an empty
+        events block (identical to ``empty_events()``). News timing is
+        independent of candle cadence (architecture doc §3.6) so the wall
+        clock is used as the reference ``now``. ``technical_triggers_recent``
+        is left empty here — out of scope for Chantier 3.
+        """
+        if self._news_pipeline is None:
+            return empty_events()
+        now = self._clock()
+        try:
+            upcoming = self._news_pipeline.get_upcoming(
+                currency_filter=["USD", "EUR"], lookahead_minutes=240, now=now
+            )
+            published = self._news_pipeline.get_just_published(
+                currency_filter=["USD", "EUR"], lookback_minutes=60, now=now
+            )
+        except Exception as exc:  # pragma: no cover — defensive
+            logger.warning("news_pipeline failed: %s — emitting empty events", exc)
+            return empty_events()
+        return MarketReadingEvents(
+            news_upcoming=upcoming,
+            news_just_published=published,
         )
 
     def _resolve_description(
