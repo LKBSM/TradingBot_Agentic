@@ -20,7 +20,7 @@ from src.api.middleware.geo_block import GeoBlockMiddleware
 from src.api.middleware.rate_limit_headers import RateLimitHeadersMiddleware
 from src.api.models import ErrorResponse
 from src.api.openapi_enrichment import install_openapi_enrichment
-from src.api.routes import admin, admin_audit, audit, billing, dashboard, enrich, health, health_deep, insight_history, legal, market_reading, metrics_latency, narratives, operator, prometheus, qa, signals, state, webapp, webhook_ack
+from src.api.routes import admin, admin_audit, audit, billing, chatbot, dashboard, enrich, health, health_deep, insight_history, legal, market_reading, metrics_latency, narratives, operator, prometheus, qa, signals, state, webapp, webhook_ack
 from src.api.shutdown import GracefulShutdownCoordinator
 from src.api.signal_store import SignalStore
 
@@ -67,6 +67,23 @@ def _maybe_bootstrap_market_reading(app_state: AppState) -> None:
             logger.info("MarketReadingScheduler built at startup")
         except Exception:
             logger.exception("MarketReadingScheduler build failed")
+
+
+def _maybe_bootstrap_chatbot(app_state: AppState) -> None:
+    """Env-gated runtime bootstrap of the niveau 1.5 strict Chatbot (Chantier 4).
+
+    A no-op unless ``CHATBOT_ENABLED=true`` (default OFF so tests stay light).
+    Requires the MarketReadingAssembler bootstrapped first; misconfiguration
+    raises BootstrapConfigurationError. Callers in the lifespan wrap this so a
+    chatbot misconfig degrades the endpoint to 503 rather than aborting startup.
+    """
+    from src.api.bootstrap import build_chatbot, env_flag
+
+    if app_state.chatbot is not None:
+        return
+    if not env_flag("CHATBOT_ENABLED", default=False):
+        return
+    app_state.chatbot = build_chatbot(app_state.market_reading_assembler)
 
 
 def _auto_register_default_handlers(
@@ -222,6 +239,13 @@ def create_app(
         # No-op otherwise so tests stay light. Runs BEFORE
         # _auto_register_default_handlers so the scheduler's shutdown is wired.
         _maybe_bootstrap_market_reading(app_state)
+        # MIA Markets V2 — Chantier 4 — build the Chatbot (CHATBOT_ENABLED).
+        # Wrapped so a chatbot misconfig degrades POST /api/chatbot/message to
+        # 503 rather than aborting the whole API startup.
+        try:
+            _maybe_bootstrap_chatbot(app_state)
+        except Exception:
+            logger.exception("Chatbot bootstrap failed — endpoint will return 503")
         # INFRA-2B.11: auto-register any wired subsystems that expose a
         # shutdown surface. Caller can register more *before* startup —
         # we only add the ones not already registered by name. Order
@@ -410,6 +434,7 @@ def create_app(
     app.include_router(billing.router)
     app.include_router(webapp.router)
     app.include_router(market_reading.router)
+    app.include_router(chatbot.router)
 
     # API-2B.7 — enrich the OpenAPI spec with stable operationIds,
     # tag descriptions, and production servers list so generated
