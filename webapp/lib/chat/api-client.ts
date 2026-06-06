@@ -1,21 +1,50 @@
 import type { InsightSignalV2 } from '@/types/insight';
 
+/**
+ * Conversation turn exchanged with the backend chatbot. Mirrors the Pydantic
+ * `ConversationMessage` of the Chantier 4 endpoint
+ * (`src/api/routes/chatbot.py`): role + non-empty content (≤ 2000 chars).
+ */
+export interface ConversationMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 export interface AskOptions {
-  signal: InsightSignalV2;
+  /** Free-text user question. */
   question: string;
-  history?: ReadonlyArray<{ role: 'user' | 'assistant'; content: string }>;
+  /**
+   * Lecture de marché actuellement ouverte dans le panneau. Optional: when set,
+   * a stable, recognisable context preamble is prepended to `user_message` so
+   * the backend's Haiku layer can resolve `get_market_reading(instrument,
+   * timeframe)` for the right combo. See docs Chantier 5.A — Tension T1.
+   */
+  signal?: InsightSignalV2 | null;
+  /** Prior turns (already trimmed by the caller; backend caps at 20). */
+  history?: ReadonlyArray<ConversationMessage>;
+  /** Abort handle wired to the request lifecycle. */
   signal_abort?: AbortSignal;
-  onDelta(textChunk: string): void;
 }
 
 export interface AskResult {
-  /** Fully concatenated assistant reply. */
+  /** Assistant reply text — always present (LLM answer, refusal, or template). */
   text: string;
-  /** Token usage from Anthropic, if reported. */
-  usage?: unknown;
-  model?: string;
+  /**
+   * `null` on a normal answer; otherwise the reason a defence layer kicked in
+   * (adversarial category, `llm_error`, `output_contaminated_*`,
+   * `max_tool_turns_exceeded`). `content` already carries the user-facing
+   * template in that case — the frontend only uses this to show a discreet
+   * "redirected" badge.
+   */
+  blockedReason: string | null;
+  /** Tool calls the backend executed for this turn ({name, input}). */
+  toolCallsMade: ReadonlyArray<Record<string, unknown>>;
 }
 
+/**
+ * Backend not bootstrapped (HTTP 503 — `CHATBOT_ENABLED=false`). The caller
+ * should flip `apiAvailable=false` and fall back to scripted suggestions.
+ */
 export class ChatApiUnavailableError extends Error {
   readonly code: string;
   constructor(code: string, message: string) {
@@ -26,103 +55,125 @@ export class ChatApiUnavailableError extends Error {
 }
 
 /**
- * Stream a chatbot answer from /api/chat. Pushes incremental deltas through
- * `onDelta` and resolves with the final concatenated reply.
+ * Any non-503 failure (422 validation, 500 internal, network, malformed body).
+ * `status` is 0 for transport/parse errors with no HTTP response.
+ */
+export class ChatApiError extends Error {
+  readonly status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+    this.name = 'ChatApiError';
+  }
+}
+
+/** Backend route, proxied to FastAPI via the `/api/*` rewrite (next.config.js). */
+const CHATBOT_ENDPOINT = '/api/chatbot/message';
+
+interface ChatbotMessageResponse {
+  content: string;
+  blocked_reason: string | null;
+  tool_calls_made: Array<Record<string, unknown>>;
+}
+
+/**
+ * Chantier 5.A — Tension T1: stable, recognisable context preamble.
  *
- * Server returns a Server-Sent Events stream with events:
- *   - `delta` { text }       → token chunk
- *   - `done`  { usage, model, stop_reason } → end of stream
- *   - `error` { message }    → terminal error during generation
+ * Convention frontend ↔ backend: the panel is opened *for* a specific signal,
+ * but the backend endpoint is signal-agnostic ({user_message,
+ * conversation_history}). We surface the active instrument/timeframe to the
+ * backend by prepending this single line, so Haiku can call
+ * `get_market_reading(instrument, timeframe)` on the right combo.
  *
- * 503 → ChatApiUnavailableError (caller should fall back to scripted mode).
+ * Format is fixed (brackets + `Lecture en cours :` + space-separated codes)
+ * precisely so it can be detected/stripped later if the architecture evolves.
+ */
+function withSignalContext(question: string, signal?: InsightSignalV2 | null): string {
+  if (!signal) return question;
+  return `[Lecture en cours : ${signal.instrument} ${signal.timeframe}]\n${question}`;
+}
+
+/**
+ * Ask the Chantier 4 backend chatbot. Sends a synchronous JSON request to
+ * `POST /api/chatbot/message` and resolves with the full reply — no streaming.
+ *
+ * Every answer flows through the 3 niveau-1.5 defence layers server-side
+ * (adversarial input filter → Haiku tool use → output forbidden-tokens filter),
+ * so the webapp can never bypass them.
+ *
+ * @throws {ChatApiUnavailableError} on HTTP 503 (chatbot not bootstrapped).
+ * @throws {ChatApiError} on 422 / 500 / other HTTP errors and network/parse failures.
  */
 export async function askSentinel(opts: AskOptions): Promise<AskResult> {
-  const res = await fetch('/api/chat', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      signal: opts.signal,
-      question: opts.question,
-      history: opts.history,
-    }),
-    signal: opts.signal_abort,
-  });
+  const body = {
+    user_message: withSignalContext(opts.question, opts.signal),
+    conversation_history: (opts.history ?? []).map((h) => ({
+      role: h.role,
+      content: h.content,
+    })),
+  };
+
+  let res: Response;
+  try {
+    res = await fetch(CHATBOT_ENDPOINT, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: opts.signal_abort,
+    });
+  } catch (err) {
+    // Network failure / aborted / DNS — no HTTP response at all.
+    const message = err instanceof Error ? err.message : 'Erreur réseau';
+    throw new ChatApiError(0, `Connexion au service impossible : ${message}`);
+  }
 
   if (res.status === 503) {
-    const body = (await res.json().catch(() => ({}))) as {
-      error?: { code?: string; message?: string };
-    };
+    const detail = await readErrorDetail(res);
     throw new ChatApiUnavailableError(
-      body.error?.code ?? 'no_api_key',
-      body.error?.message ?? 'Chat API non disponible',
+      'chatbot_unavailable',
+      detail ?? "Le service de chat n'est pas disponible sur cet environnement.",
     );
   }
+
+  if (res.status === 422) {
+    throw new ChatApiError(
+      422,
+      'La question a été refusée par la validation du service (format ou longueur). Reformule plus court.',
+    );
+  }
+
   if (!res.ok) {
-    const body = (await res.json().catch(() => ({}))) as {
-      error?: { code?: string; message?: string };
-    };
-    throw new Error(body.error?.message ?? `HTTP ${res.status}`);
-  }
-  if (!res.body) throw new Error('Réponse sans corps depuis /api/chat');
-
-  const reader = res.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = '';
-  let finalText = '';
-  let usage: unknown = undefined;
-  let model: string | undefined = undefined;
-  let terminalError: string | null = null;
-
-  while (true) {
-    const { value, done } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-
-    // SSE messages are separated by a blank line.
-    const messages = buffer.split('\n\n');
-    buffer = messages.pop() ?? '';
-
-    for (const raw of messages) {
-      const lines = raw.split('\n');
-      let event = 'message';
-      let data = '';
-      for (const line of lines) {
-        if (line.startsWith('event: ')) event = line.slice(7);
-        else if (line.startsWith('data: ')) data += line.slice(6);
-      }
-      if (!data) continue;
-      let parsed: unknown;
-      try {
-        parsed = JSON.parse(data);
-      } catch {
-        continue;
-      }
-      if (event === 'delta' && isDelta(parsed)) {
-        finalText += parsed.text;
-        opts.onDelta(parsed.text);
-      } else if (event === 'done' && isDone(parsed)) {
-        usage = parsed.usage;
-        model = parsed.model;
-      } else if (event === 'error' && isError(parsed)) {
-        terminalError = parsed.message;
-      }
-    }
+    // 500 and anything else: never surface server internals.
+    throw new ChatApiError(
+      res.status,
+      'Le service a rencontré une erreur interne. Réessaie dans un instant.',
+    );
   }
 
-  if (terminalError) throw new Error(terminalError);
-  return { text: finalText, usage, model };
+  let parsed: ChatbotMessageResponse;
+  try {
+    parsed = (await res.json()) as ChatbotMessageResponse;
+  } catch {
+    throw new ChatApiError(res.status, 'Réponse du service illisible.');
+  }
+
+  if (typeof parsed?.content !== 'string') {
+    throw new ChatApiError(res.status, 'Réponse du service malformée.');
+  }
+
+  return {
+    text: parsed.content,
+    blockedReason: parsed.blocked_reason ?? null,
+    toolCallsMade: Array.isArray(parsed.tool_calls_made) ? parsed.tool_calls_made : [],
+  };
 }
 
-function isDelta(x: unknown): x is { text: string } {
-  return typeof x === 'object' && x !== null && typeof (x as { text?: unknown }).text === 'string';
-}
-
-function isDone(x: unknown): x is { usage?: unknown; model?: string } {
-  return typeof x === 'object' && x !== null;
-}
-
-function isError(x: unknown): x is { message: string } {
-  return (
-    typeof x === 'object' && x !== null && typeof (x as { message?: unknown }).message === 'string'
-  );
+/** Best-effort extraction of a FastAPI `{detail}` body; never throws. */
+async function readErrorDetail(res: Response): Promise<string | null> {
+  try {
+    const body = (await res.json()) as { detail?: unknown };
+    return typeof body?.detail === 'string' ? body.detail : null;
+  } catch {
+    return null;
+  }
 }
