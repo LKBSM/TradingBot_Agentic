@@ -27,8 +27,10 @@ from typing import Any, Optional
 from src.intelligence.chatbot.adversarial_filter import AdversarialFilter
 from src.intelligence.chatbot.constants import (
     LLM_ERROR_TEMPLATE,
+    OUTPUT_CONTAMINATED_TEMPLATE,
     REFUSAL_TEMPLATE,
 )
+from src.intelligence.chatbot.output_filter import OutputFilter
 from src.intelligence.chatbot.signal_summary_provider import SignalSummaryProvider
 
 logger = logging.getLogger(__name__)
@@ -123,6 +125,7 @@ class Chatbot:
         summary_provider: SignalSummaryProvider,
         assembler: Any,
         adversarial_filter: Optional[AdversarialFilter] = None,
+        output_filter: Optional[OutputFilter] = None,
         model: str = DEFAULT_MODEL,
         max_tokens: int = DEFAULT_MAX_TOKENS,
         max_tool_turns: int = MAX_TOOL_TURNS,
@@ -131,6 +134,7 @@ class Chatbot:
         self._summary_provider = summary_provider
         self._assembler = assembler
         self._adv_filter = adversarial_filter or AdversarialFilter()
+        self._output_filter = output_filter or OutputFilter()
         self._model = model
         self._max_tokens = max_tokens
         self._max_tool_turns = max_tool_turns
@@ -183,7 +187,18 @@ class Chatbot:
 
             if getattr(response, "stop_reason", None) != "tool_use":
                 text = self._extract_text(response.content)
-                # --- Couche 3 hook (Étape 5) : output filter à insérer ici. ---
+                # --- Couche 3 — output forbidden-tokens filter ---
+                output_check = self._output_filter.check(text)
+                if output_check.contaminated:
+                    logger.warning(
+                        "chatbot output contaminated (%s: %s) — fallback template",
+                        output_check.category, output_check.matched_tokens,
+                    )
+                    return ChatResponse(
+                        content=OUTPUT_CONTAMINATED_TEMPLATE,
+                        tool_calls_made=tool_calls_made,
+                        blocked_reason=f"output_contaminated_{output_check.category}",
+                    )
                 return ChatResponse(
                     content=text,
                     tool_calls_made=tool_calls_made,

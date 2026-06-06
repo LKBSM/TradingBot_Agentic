@@ -90,11 +90,20 @@ FORBIDDEN_TOKENS_ACTION_TRADING: frozenset[str] = frozenset({
 })
 
 # Catégorie B — Verbes de recommandation.
+# Bare verb forms are included so an intercalated pronoun does not bypass the
+# filter ("je TE recommande", "on recommande", "il VOUS conseille"). A bare verb
+# never matches its infinitive ("conseiller" / "recommander"), which is how a
+# compliant refusal phrase like "je ne peux pas te conseiller" stays clean.
 FORBIDDEN_TOKENS_RECOMMANDATION: frozenset[str] = frozenset({
     "je conseille", "je te conseille", "je vous conseille", "je conseillerais",
     "je déconseille", "je deconseille",
     "je recommande", "je ne recommande pas", "je recommanderais",
     "je suggère", "je suggere", "je préconise", "je preconise",
+    "recommande", "recommandes", "recommandons",
+    "conseille", "conseilles", "conseillons",
+    "déconseille", "deconseille", "deconseilles",
+    "suggère", "suggere", "suggères", "suggeres",
+    "préconise", "preconise", "préconises", "preconises",
     "tu devrais", "vous devriez", "tu ferais mieux", "vous feriez mieux",
     "mieux vaut",
     "il faut", "il faudrait",
