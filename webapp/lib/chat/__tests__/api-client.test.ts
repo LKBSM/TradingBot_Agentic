@@ -57,9 +57,9 @@ describe('askSentinel — happy path', () => {
     const result = await askSentinel({ question: 'Décris la structure.' });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    const [url, init] = fetchMock.mock.calls[0];
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toBe('/api/chatbot/message');
-    expect((init as RequestInit).method).toBe('POST');
+    expect(init.method).toBe('POST');
     expect(result.text).toBe('Le marché XAUUSD est en phase de consolidation.');
     expect(result.blockedReason).toBeNull();
     expect(result.toolCallsMade).toHaveLength(1);

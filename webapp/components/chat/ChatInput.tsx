@@ -13,13 +13,13 @@ interface ChatInputProps {
 const MAX_CHARS = 2000;
 
 /**
- * Free-text input for the chatbot. Submits to the LLM via
- * `useChat().askFreeForm()` which streams the answer back. Disabled while a
- * stream is in flight to prevent overlapping requests. Auto-grows the
- * textarea up to a reasonable max height.
+ * Free-text input for the chatbot. Submits to the backend via
+ * `useChat().askFreeForm()` (POST /api/chatbot/message, synchronous JSON).
+ * Disabled while a request is in flight to prevent overlapping calls.
+ * Auto-grows the textarea up to a reasonable max height.
  */
 export function ChatInput({ className }: ChatInputProps) {
-  const { askFreeForm, isStreaming, activeSignal, apiAvailable } = useChat();
+  const { askFreeForm, isLoading, activeSignal, apiAvailable } = useChat();
   const [value, setValue] = React.useState('');
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
@@ -32,7 +32,7 @@ export function ChatInput({ className }: ChatInputProps) {
   }, [value]);
 
   const canSubmit =
-    !isStreaming && value.trim().length > 0 && activeSignal !== null;
+    !isLoading && value.trim().length > 0 && activeSignal !== null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -85,9 +85,9 @@ export function ChatInput({ className }: ChatInputProps) {
         type="submit"
         size="icon"
         disabled={!canSubmit}
-        aria-label={isStreaming ? 'Réponse en cours…' : 'Envoyer la question'}
+        aria-label={isLoading ? 'Réponse en cours…' : 'Envoyer la question'}
       >
-        {isStreaming ? (
+        {isLoading ? (
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
         ) : (
           <SendHorizonal className="h-4 w-4" aria-hidden />

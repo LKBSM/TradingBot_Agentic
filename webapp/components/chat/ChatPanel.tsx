@@ -1,6 +1,6 @@
 'use client';
 
-import { Bot, MessageCircle, RotateCcw } from 'lucide-react';
+import { Bot, Loader2, MessageCircle, RotateCcw } from 'lucide-react';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -29,16 +29,15 @@ import type { ChatbotQuestion } from '@/types/chatbot';
  * Rendered once at the layout level — opened/closed via the shared
  * ChatProvider context. Suggested questions hit the scripted fallback so
  * answers stay deterministic and free. Free-text input goes through
- * /api/chat (real Claude when ANTHROPIC_API_KEY is set, friendly error
- * otherwise).
+ * POST /api/chatbot/message (FastAPI backend, 3 niveau-1.5 defence layers;
+ * friendly fallback when the backend is unavailable).
  */
 export function ChatPanel() {
   const {
     isOpen,
     activeSignal,
     turns,
-    isStreaming,
-    streamingText,
+    isLoading,
     apiAvailable,
     close,
     appendExchange,
@@ -62,12 +61,12 @@ export function ChatPanel() {
     [turns],
   );
 
-  // Auto-scroll to the bottom whenever a new exchange OR a streaming chunk
-  // lands.
+  // Auto-scroll to the bottom whenever a new exchange lands or the loader
+  // toggles.
   React.useEffect(() => {
     if (!scrollRef.current) return;
     scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [turns.length, streamingText]);
+  }, [turns.length, isLoading]);
 
   function handlePick(q: ChatbotQuestion) {
     appendExchange({
@@ -111,18 +110,26 @@ export function ChatPanel() {
           <IntroBubble script={script} apiAvailable={apiAvailable} />
 
           {turns.map((t) => (
-            <ChatMessage key={t.id} role={t.role} text={t.text} />
+            <ChatMessage
+              key={t.id}
+              role={t.role}
+              text={t.text}
+              blockedReason={t.blockedReason}
+            />
           ))}
 
-          {isStreaming && (
-            <ChatMessage
-              key="streaming"
-              role="assistant"
-              text={streamingText || '…'}
-            />
+          {isLoading && (
+            <div
+              className="flex items-center gap-2 px-1 text-sm text-muted-foreground"
+              role="status"
+              aria-live="polite"
+            >
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              Sentinel réfléchit…
+            </div>
           )}
 
-          {turns.length > 0 && !isStreaming && (
+          {turns.length > 0 && !isLoading && (
             <Button
               type="button"
               size="sm"
