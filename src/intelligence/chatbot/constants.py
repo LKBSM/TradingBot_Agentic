@@ -33,6 +33,18 @@ Design decisions
        ``ouvrir`` / ``fermez`` / ``fermer``.
    Matching in Couche 3 is accent-insensitive (via ``normalize_text``), so the
    accented and non-accented variants stored here both resolve correctly.
+
+   Homonym exclusion table (kept for future traceability — extend if Couche 1
+   surfaces more ambiguous pairs):
+
+     Homonyme exclu (sens descriptif)   | Formes gardées (sens directif)
+     -----------------------------------+--------------------------------------
+     entre   (= between)                | entrez, entrer, entry
+     place / placer (= se situe)        | placez (impératif)
+     risque  (nom = risk noun)          | risqué (jugement), "high/low risk"
+     sûr     (= certain, "bien sûr")    | "c'est sûr", "c'est safe"
+     ouvre / ouvres (= se passe)        | ouvrez, ouvrir (impératif/infinitif)
+     ferme / fermes (= ferme adj.)      | fermez, fermer (impératif/infinitif)
 """
 
 from __future__ import annotations
@@ -159,6 +171,9 @@ _TRADE_REQUEST_RAW: list[str] = [
     # "(est-ce que) je devrais/dois/peux trader/acheter/vendre/entrer/..."
     r"(est-?ce\s+que\s+)?\bje\s+(devrais|dois|peux|vais)\s+"
     r"(trader|acheter|vendre|entrer|sortir|prendre|miser|investir)",
+    # inverted interrogative "dois-je / devrais-je / puis-je acheter/vendre/..."
+    r"\b(dois|devrais|puis)-?je\s+"
+    r"(trader|acheter|vendre|entrer|sortir|prendre|miser|investir|y\s+aller)",
     # "donne-moi / envoie (un) signal/trade/setup/entree"
     r"\b(donne|envoie|file|balance|passe)\b[a-z-]*\s+(moi\s+)?(un\s+|une\s+)?"
     r"(signal|trade|setup|entree|position)",
