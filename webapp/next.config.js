@@ -6,13 +6,17 @@ const withNextIntl = createNextIntlPlugin('./i18n.ts');
 const isProd = process.env.NODE_ENV === 'production';
 
 /**
- * Content-Security-Policy — strict, but allows the bits Next.js + Anthropic
- * SDK need to work. `'unsafe-eval'` is enabled in dev only (HMR pipeline).
- * `'unsafe-inline'` for script and style is unavoidable today because
- * Next.js inlines critical hydration data and Tailwind generates inline
+ * Content-Security-Policy — strict. `'unsafe-eval'` is enabled in dev only
+ * (HMR pipeline). `'unsafe-inline'` for script and style is unavoidable today
+ * because Next.js inlines critical hydration data and Tailwind generates inline
  * style attributes on some components. The proper hardening (per-request
  * nonce via middleware) is filed in `docs/frontend/TODO_NEXT_SPRINTS.md`
  * under "harden CSP V3".
+ *
+ * Chantier 5.A (T5): `connect-src` is `'self'` only. The webapp no longer talks
+ * to api.anthropic.com directly — the Anthropic SDK was decommissioned and the
+ * chatbot now goes through the same-origin `/api/*` rewrite to the FastAPI
+ * backend (which holds the only Anthropic key). Defense in depth.
  */
 const cspDirectives = [
   "default-src 'self'",
@@ -22,7 +26,7 @@ const cspDirectives = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
-  "connect-src 'self' https://api.anthropic.com",
+  "connect-src 'self'",
   "frame-ancestors 'none'",
   "form-action 'self'",
   "base-uri 'self'",
