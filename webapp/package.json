@@ -18,7 +18,6 @@
     "test:lhci": "lhci autorun || echo 'Install @lhci/cli: npm i -D @lhci/cli'"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.98.0",
     "@radix-ui/react-accordion": "1.2.1",
     "@radix-ui/react-dialog": "1.1.2",
     "@radix-ui/react-slot": "1.1.0",
@@ -37,6 +36,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.60.0",
+    "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/node": "22.9.0",
