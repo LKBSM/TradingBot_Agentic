@@ -114,6 +114,38 @@ def build_market_reading_assembler(enable_news: Optional[bool] = None) -> Any:
     return assembler
 
 
+def build_chatbot(assembler: Any) -> Any:
+    """Instantiate the niveau 1.5 strict Chatbot (Chantier 4) from env config.
+
+    Requires the MarketReadingAssembler (for the signal_summary + the
+    get_market_reading tool) and ``ANTHROPIC_API_KEY``. Fail-fast — a missing
+    assembler or API key raises :class:`BootstrapConfigurationError` rather than
+    silently producing a half-wired chatbot.
+    """
+    if assembler is None:
+        raise BootstrapConfigurationError(
+            "CHATBOT_ENABLED requires the MarketReadingAssembler to be "
+            "bootstrapped first (set BOOTSTRAP_ENABLED=true)."
+        )
+
+    from src.intelligence.chatbot.adversarial_filter import AdversarialFilter
+    from src.intelligence.chatbot.chatbot import Chatbot
+    from src.intelligence.chatbot.output_filter import OutputFilter
+    from src.intelligence.chatbot.signal_summary_provider import SignalSummaryProvider
+
+    anthropic_client = _build_anthropic_client()  # raises if key/package missing
+
+    chatbot = Chatbot(
+        anthropic_client=anthropic_client,
+        summary_provider=SignalSummaryProvider(assembler=assembler),
+        assembler=assembler,
+        adversarial_filter=AdversarialFilter(),
+        output_filter=OutputFilter(),
+    )
+    logger.info("Chatbot (niveau 1.5 strict) built at startup")
+    return chatbot
+
+
 def build_market_reading_scheduler(assembler: Any) -> Any:
     """Instantiate the hybrid scheduler bound to an assembler's stores."""
     from src.intelligence.scheduler import MarketReadingScheduler
@@ -161,6 +193,7 @@ def _build_anthropic_client() -> Any:
 
 __all__ = [
     "BootstrapConfigurationError",
+    "build_chatbot",
     "build_market_reading_assembler",
     "build_market_reading_scheduler",
     "env_flag",
