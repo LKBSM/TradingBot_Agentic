@@ -281,11 +281,15 @@ ALL_ADVERSARIAL_PATTERNS: list[re.Pattern[str]] = [
 # (part of the refusal itself) does not trip Couche 3.
 
 # Couche 1 — pedagogical refusal when an adversarial pattern is intercepted (doc §4.5).
+# IMPORTANT: every template below is deliberately free of forbidden tokens so the
+# strong invariant "the chatbot never returns a forbidden token" holds even for
+# its own safety nets. (Earlier wording "recommandations de trade" / "tolérance
+# au risque" tripped the output filter on "trade" / "risque" — reworded.)
 REFUSAL_TEMPLATE: str = (
     "Je suis un outil de description des conditions de marché. Je ne donne pas "
-    "de recommandations de trade ni d'évaluations personnalisées. C'est à vous "
+    "de recommandations d'action ni d'évaluations personnalisées. C'est à vous "
     "d'évaluer si les conditions actuelles correspondent à votre méthode et à "
-    "votre tolérance au risque.\n\n"
+    "vos propres critères.\n\n"
     "Si vous voulez approfondir un élément précis (BOS, FVG, OB, news, régime), "
     "n'hésitez pas à me poser une question descriptive."
 )
