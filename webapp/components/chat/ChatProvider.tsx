@@ -13,20 +13,26 @@ interface ChatTurn {
   text: string;
   /** Was this answer produced by the live LLM API or the scripted fallback? */
   source?: 'llm' | 'scripted' | 'fallback' | 'error';
+  /**
+   * Set when a niveau-1.5 defence layer redirected the answer (adversarial
+   * category, `llm_error`, `output_contaminated_*`, …). `text` already carries
+   * the pedagogical template; the UI shows a discreet badge. Null on a normal
+   * answer.
+   */
+  blockedReason?: string | null;
 }
 
 interface ChatContextValue {
   isOpen: boolean;
   activeSignal: InsightSignalV2 | null;
   turns: ChatTurn[];
-  /** True while a streaming LLM response is being generated. */
-  isStreaming: boolean;
-  /** Partial text streamed so far (cleared once finalised into `turns`). */
-  streamingText: string;
+  /** True while a backend answer is in flight (synchronous JSON, no stream). */
+  isLoading: boolean;
   /**
-   * Whether the /api/chat backend is wired (`true` = LLM live, `false` =
-   * server returned 503, scripted fallback only, `'unknown'` before first
-   * call). Sticky once set to false to avoid spamming the endpoint.
+   * Whether the backend chatbot is reachable (`true` = answering, `false` =
+   * endpoint returned 503 / not bootstrapped, scripted fallback only,
+   * `'unknown'` before the first call). Sticky once set to false to avoid
+   * spamming the endpoint.
    */
   apiAvailable: boolean | 'unknown';
   openFor(signal: InsightSignalV2): void;
@@ -38,9 +44,9 @@ interface ChatContextValue {
     source?: ChatTurn['source'];
   }): void;
   /**
-   * Submit a free-form user question. Calls /api/chat with streaming, falls
-   * back to a friendly message if the API is unavailable. Throws if no
-   * activeSignal is set.
+   * Submit a free-form user question. Calls POST /api/chatbot/message (3 niveau-
+   * 1.5 defence layers server-side), falls back to a friendly message if the
+   * backend is unavailable. Throws if no activeSignal is set.
    */
   askFreeForm(question: string): Promise<void>;
   resetTurns(): void;
@@ -54,8 +60,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     null,
   );
   const [turns, setTurns] = React.useState<ChatTurn[]>([]);
-  const [isStreaming, setIsStreaming] = React.useState(false);
-  const [streamingText, setStreamingText] = React.useState('');
+  const [isLoading, setIsLoading] = React.useState(false);
   const [apiAvailable, setApiAvailable] = React.useState<boolean | 'unknown'>(
     'unknown',
   );
@@ -65,7 +70,6 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     setActiveSignal((current) => {
       if (current?.id !== signal.id) {
         setTurns([]);
-        setStreamingText('');
         seqRef.current = 0;
       }
       return signal;
@@ -107,7 +111,6 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
   const resetTurns = React.useCallback(() => {
     setTurns([]);
-    setStreamingText('');
     seqRef.current = 0;
   }, []);
 
@@ -126,31 +129,30 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         { id: userTurnId, role: 'user', text: trimmed },
       ]);
 
-      // Build history payload (last 6 turns, alternating).
+      // Build history payload (last 6 turns, alternating user/assistant).
       const historyForApi = turns.slice(-6).map((t) => ({
         role: t.role,
         content: t.text,
       }));
 
-      setIsStreaming(true);
-      setStreamingText('');
+      setIsLoading(true);
 
       try {
-        let accumulated = '';
-        const { text } = await askSentinel({
+        const { text, blockedReason } = await askSentinel({
           signal: activeSignal,
           question: trimmed,
           history: historyForApi,
-          onDelta: (chunk) => {
-            accumulated += chunk;
-            setStreamingText(accumulated);
-          },
         });
         setApiAvailable(true);
-        // Convert streaming text into a final turn.
         setTurns((prev) => [
           ...prev,
-          { id: nextId('asst'), role: 'assistant', text, source: 'llm' },
+          {
+            id: nextId('asst'),
+            role: 'assistant',
+            text,
+            source: 'llm',
+            blockedReason,
+          },
         ]);
       } catch (err) {
         if (err instanceof ChatApiUnavailableError) {
@@ -162,8 +164,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
               role: 'assistant',
               source: 'fallback',
               text:
-                "Le mode chatbot en direct n'est pas encore activé sur cet environnement. " +
-                "Utilise les questions suggérées ci-dessous — elles renvoient des réponses pré-écrites contextualisées sur cette lecture.",
+                "Le mode chatbot en direct n'est pas disponible sur cet environnement pour le moment. " +
+                'Utilise les questions suggérées ci-dessous — elles renvoient des réponses contextualisées sur cette lecture.',
             },
           ]);
         } else {
@@ -174,13 +176,12 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
               id: nextId('asst'),
               role: 'assistant',
               source: 'error',
-              text: `Désolé, une erreur a empêché la réponse : ${message}. Réessaie ou utilise une question suggérée.`,
+              text: `Désolé, une erreur a empêché la réponse : ${message} Réessaie ou utilise une question suggérée.`,
             },
           ]);
         }
       } finally {
-        setStreamingText('');
-        setIsStreaming(false);
+        setIsLoading(false);
       }
     },
     [activeSignal, turns, nextId],
@@ -191,8 +192,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       isOpen,
       activeSignal,
       turns,
-      isStreaming,
-      streamingText,
+      isLoading,
       apiAvailable,
       openFor,
       close,
@@ -204,8 +204,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       isOpen,
       activeSignal,
       turns,
-      isStreaming,
-      streamingText,
+      isLoading,
       apiAvailable,
       openFor,
       close,

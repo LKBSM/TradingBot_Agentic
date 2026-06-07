@@ -46,7 +46,23 @@ test.describe('Chatbot — golden paths', () => {
     ).toBeVisible();
   });
 
-  test('free-text input is present and submits (503 fallback when no key)', async ({ page }) => {
+  test('free-text input submits to the backend and renders the reply', async ({ page }) => {
+    // Chantier 5.A: free-text now goes to POST /api/chatbot/message (backend
+    // FastAPI, 3 defence layers). We mock the backend so the test is
+    // deterministic and needs no running FastAPI. The 503-fallback and the
+    // blocked_reason paths are covered in chatbot-backend-integration.spec.ts.
+    await page.route('**/api/chatbot/message', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          content: 'En bref : XAUUSD H1 consolide, pas d’événement HIGH imminent.',
+          blocked_reason: null,
+          tool_calls_made: [],
+        }),
+      }),
+    );
+
     await page.goto('/#multi-marche');
     await page
       .getByRole('button', {
@@ -60,12 +76,8 @@ test.describe('Chatbot — golden paths', () => {
     await expect(input).toBeVisible();
     await input.fill('Bonjour, en bref ?');
     await page.getByRole('button', { name: /Envoyer la question/i }).click();
-    // Either the LLM streams a reply (key present) or we see the friendly
-    // fallback message (no key) — both are acceptable.
     await expect(
-      page
-        .getByText(/Le mode chatbot en direct n'est pas encore activé/i)
-        .or(page.locator('text=/\\w+/').last()),
-    ).toBeVisible({ timeout: 15_000 });
+      page.getByText(/En bref : XAUUSD H1 consolide/i),
+    ).toBeVisible({ timeout: 10_000 });
   });
 });
