@@ -4,28 +4,28 @@
     "questions": [
       {
         "id": "why-this-score",
-        "text": "Pourquoi seulement 72 ?",
-        "reply": "Sur les 8 composantes du moteur, la cassure de structure et le retest armé apportent 15 points sur 15. Le déséquilibre FVG aligné apporte 8.91 sur 15 (zone modeste : 0.42 × ATR). L'Order Block contribue 7.3 sur 10. Le régime de tendance haussière n'apporte « que » 17.5 sur 25 parce que sa certitude (posterior HMM 71 %) n'est pas maximale — un régime plus net donnerait 22-25. Les news, le volume et le momentum apportent ensemble 18 points. Total agrégé ≈ 67-72 selon la calibration. La marge d'erreur conformelle 54-82 signifie que sur des conditions techniquement comparables, la probabilité réelle observée se situe statistiquement dans cet intervalle 90 % du temps."
+        "text": "Qu'est-ce que cette lecture me dit ?",
+        "reply": "Cette lecture décrit un marché plutôt haussier. Le prix a franchi un sommet récent (une cassure de structure), puis est revenu tester le niveau franchi avant de rebondir : c'est ce qu'on appelle un retest. Il y a aussi une zone de déséquilibre laissée par un mouvement rapide (un Fair Value Gap) entre 2378 et 2381, encore non comblée, et un Order Block actif juste en dessous. Le contexte général est une tendance haussière, avec une volatilité (l'amplitude moyenne des bougies) restée normale. Rien de tout ça n'est une consigne : c'est une photo de la structure actuelle, à toi d'en faire ce que tu veux."
       },
       {
         "id": "armed-retest",
-        "text": "C'est quoi un retest armé ?",
-        "reply": "Quand le prix casse un swing high (BOS), il revient souvent toucher le niveau cassé avant de continuer dans le sens de la cassure. Cette « visite » s'appelle un retest. Le moteur passe par 4 états : idle (aucune cassure), awaiting (cassure faite, en attente de retour du prix), armed (le prix est revenu toucher le niveau et a rebondi — la zone tient), consumed (le prix a dépassé le niveau dans l'autre sens — la zone ne tient plus). « Armé » = c'est le moment historiquement le plus probant pour une continuation du mouvement. Mais probable ne veut pas dire certain : c'est une description, pas une instruction."
+        "text": "C'est quoi un retest ?",
+        "reply": "Quand le prix casse un sommet ou un creux, il revient souvent toucher le niveau cassé avant de repartir : cette « visite » s'appelle un retest. La lecture suit l'état de ce retest : soit aucune cassure n'a eu lieu, soit la cassure est faite et on attend le retour du prix, soit le prix est revenu toucher le niveau et a tenu, soit il l'a traversé dans l'autre sens et la zone ne tient plus. C'est un repère de structure souvent observé, mais souvent observé ne veut pas dire certain : c'est une description du marché, pas une instruction d'entrée."
       },
       {
         "id": "fomc-impact",
         "text": "Le FOMC change quoi ?",
-        "reply": "Les FOMC Minutes sont publiées dans environ 18 heures. C'est un événement à fort impact pour l'or : historiquement, la volatilité réalisée sur XAU/USD dans la fenêtre [-30 min, +60 min] autour des Minutes est 2 à 3 fois supérieure à la normale. La lecture actuelle est encore hors blackout, mais ça veut dire deux choses : (1) tout setup engagé maintenant va vivre l'événement, (2) le moteur passera automatiquement en blackout au moment T-30 min, ce qui suspendra les nouvelles lectures. Si tu veux comprendre l'impact directionnel possible, il faudrait croiser avec les attentes de marché — ce que le moteur ne fait pas encore (V2)."
+        "reply": "Les minutes du FOMC sont publiées dans environ 18 heures. C'est un événement à fort impact pour l'or : historiquement, l'or bouge beaucoup plus que d'habitude dans la fenêtre qui entoure la publication (de 30 min avant à 1 h après). Concrètement, deux choses : (1) toute position ouverte maintenant traversera l'événement, (2) le moteur se met automatiquement en pause peu avant la publication et suspend les nouvelles lectures le temps que la volatilité retombe. Pour anticiper le sens du mouvement il faudrait croiser avec les attentes du marché — ce que le moteur ne fait pas encore."
       },
       {
         "id": "historical-comparison",
         "text": "Ça ressemble à quoi historiquement ?",
-        "reply": "Notre validation statistique out-of-sample est encore en cours (Sprint 1 du plan dev). Plutôt que de te citer des chiffres in-sample non validés, je préfère être transparent : le scoring v1 rule-based actuel n'a pas démontré de pouvoir prédictif statistiquement significatif. Une refonte LightGBM + Isotonic + ACI est en cours. Quand les seuils Brier skill > +2 %, DSR > 1.0 et PBO < 0.5 seront atteints OOS, je pourrai te citer profit factor, intervalle de confiance et win rate avec leur méthodologie complète. En attendant, ce que je sais te dire : il existe 7 années de données historiques propres, un pipeline 5 briques scientifiques transparent (HAR-RV, HMM, BOCPD, ACI, Bipower), et une posture pédagogique assumée. La transparence avant la promesse — c'est précisément ce qui distingue MIA Markets."
+        "reply": "Je préfère être franc : nos tests de fiabilité sur données passées ne sont pas encore terminés. Plutôt que de te citer des chiffres de performance non validés, je ne te donne aucun rendement, taux de réussite ni statistique tant que la validation n'est pas bouclée. Ce que je peux te dire aujourd'hui : il existe 7 années de données historiques propres et une méthode de description transparente, détaillée sur notre page Méthodologie. La transparence avant la promesse — c'est précisément ce qui distingue MIA Markets."
       },
       {
         "id": "buy-or-not",
         "text": "Donc je dois acheter ?",
-        "reply": "Non, je ne donne aucune instruction d'achat, de vente ou de timing. Mon rôle est de décrire la structure du marché et de t'aider à comprendre les facteurs en présence — pas de décider pour toi. Ce que je sais te dire : il y a une cassure haussière confirmée, un retest armé sur 2378-2381, une invalidation structurelle sous 2378, et un contexte d'événement macro à 18 heures qui peut tout faire bouger. Ce que toi seul peut décider : si ta gestion du risque, ton horizon et ton allocation justifient un engagement, à quelle taille, avec quel stop, et à quel objectif. MIA Markets est un outil de compréhension augmentée, pas un service de signaux."
+        "reply": "Non, je ne donne aucune instruction d'achat, de vente ou de timing. Mon rôle est de décrire la structure du marché et de t'aider à la comprendre — pas de décider à ta place. Ce que je peux décrire : il y a une cassure haussière confirmée, un retest qui tient autour de 2378-2381, une invalidation de cette structure si le prix repasse nettement sous 2378, et un événement macro dans 18 heures qui peut tout faire bouger. Ce que toi seul peux décider : si ta gestion du risque, ton horizon et ton allocation justifient une position. MIA Markets est un outil de compréhension, pas un service de signaux."
       }
     ]
   },
@@ -35,28 +35,28 @@
     "questions": [
       {
         "id": "why-this-score",
-        "text": "Pourquoi seulement 58 ?",
-        "reply": "Plusieurs composantes sont en-dessous de leur maximum. La cassure n'a pas encore été retestée (6 sur 15 pour BOS — 0.40 × 15). Le déséquilibre FVG est modeste (5.85 sur 15, gap 0.28 × ATR seulement). L'Order Block est moyen (intensité 0.45). Surtout, le régime n'est pas trending : le HMM identifie un range basse volatilité — alignement directionnel faible pour un setup baissier (7.5 sur 25). Les news baissières (–0.45) compensent un peu (11.9 sur 20). C'est exactement le genre de configuration où la marge d'erreur conformelle est large (41-70) : le système te dit honnêtement qu'il n'est pas très sûr."
+        "text": "Qu'est-ce que cette lecture me dit ?",
+        "reply": "Cette lecture décrit un marché peu lisible pour l'instant. Il y a bien eu une cassure baissière, mais le prix n'est pas encore revenu la tester : tant que ce retest n'a pas eu lieu, la structure reste fragile. La zone de déséquilibre (Fair Value Gap) est modeste, et le marché évolue surtout dans un range à faible volatilité — pas de tendance nette. Des nouvelles plutôt baissières pèsent un peu dans le même sens. En résumé : peu d'éléments alignés, donc une lecture prudente et une incertitude affichée plus large que d'habitude."
       },
       {
         "id": "armed-retest",
         "text": "Et le retest, il est où dans cette lecture ?",
-        "reply": "Il est en attente. La cassure baissière à 1.08750 a eu lieu il y a 4 bougies H1, mais le prix n'est pas encore remonté toucher le niveau cassé. La zone à surveiller est 1.0860-1.0868 (FVG) et 1.0870-1.0885 (Order Block bearish). Tant que ce retest n'a pas eu lieu, la lecture reste fragile — beaucoup de cassures sans retest se transforment en faux signaux. C'est aussi pour ça que la décision interne du moteur est REDUCE plutôt que TRADE."
+        "reply": "Il est encore attendu. La cassure baissière à 1.08750 a eu lieu il y a 4 bougies en 1 heure, mais le prix n'est pas encore remonté toucher le niveau cassé. Les zones à surveiller sont 1.0860-1.0868 (Fair Value Gap) et 1.0870-1.0885 (Order Block). Tant que ce retour n'a pas eu lieu, la lecture reste fragile : beaucoup de cassures sans retest se révèlent être de fausses cassures. C'est une description de la structure, pas une invitation à te positionner."
       },
       {
         "id": "event-impact",
         "text": "La BCE dans 3 heures, ça change quoi ?",
-        "reply": "Énormément. La décision BCE est un événement de classe HIGH pour EUR/USD : la volatilité réalisée explose dans la fenêtre [-30 min, +60 min] (typiquement ×3 à ×8 par rapport à la normale). Le système va automatiquement entrer en blackout à 2h30 du publication, ce qui suspendra toute nouvelle lecture. Tout setup engagé maintenant va vivre intégralement la décision — c'est précisément la raison pour laquelle le moteur a passé sa décision interne à REDUCE : le risque de gap directionnel est jugé trop élevé pour un setup non-confirmé (retest awaiting)."
+        "reply": "Beaucoup. La décision de la BCE est un événement à très fort impact pour l'EUR/USD : la volatilité (l'amplitude des bougies) explose typiquement dans la fenêtre qui entoure l'annonce. Le moteur se met automatiquement en pause peu avant la publication et suspend les nouvelles lectures. Toute position ouverte maintenant traversera intégralement la décision — c'est exactement le genre de contexte où la structure actuelle, déjà fragile (retest non encore réalisé), devient encore plus incertaine."
       },
       {
         "id": "historical-comparison",
         "text": "Sur des cas similaires, qu'est-ce qui se passe ?",
-        "reply": "Notre validation statistique out-of-sample est encore en cours (Sprint 1). Sur des configurations EUR/USD H1 structurellement comparables, je ne peux pas te citer de profit factor, intervalle de confiance ou win rate tant que les seuils OOS (Brier > +2 %, DSR > 1.0, PBO < 0.5) ne sont pas atteints. Ce que je sais te dire : cette lecture combine plusieurs signaux faibles (retest pending, régime ranging, événement BCE imminent). C'est précisément le genre de configuration où la conviction reste modérée et où la décision interne du moteur reste REDUCE. La transparence avant la promesse."
+        "reply": "Nos tests de fiabilité sur données passées sont encore en cours. Je ne te citerai donc ni rendement, ni taux de réussite, ni statistique tant que la validation n'est pas terminée. Ce que je peux décrire structurellement : cette lecture combine plusieurs éléments faibles (retest non réalisé, marché en range, décision BCE imminente). C'est typiquement une configuration où la lecture reste prudente. La transparence avant la promesse."
       },
       {
         "id": "buy-or-not",
         "text": "Donc je dois vendre ?",
-        "reply": "Non, et je vais être encore plus net que d'habitude : sur cette lecture spécifique, le système lui-même est mitigé (conviction 58, IC large 41-70, décision interne REDUCE, événement BCE dans 3 heures). Il y a beaucoup de raisons techniques de rester à l'écart. Mais ce n'est pas à moi de prendre cette décision — c'est à toi de croiser : ta gestion du risque, ta tolérance au gap d'événement, ta lecture du contexte fondamental, ta position actuelle. Si tu veux comprendre pourquoi je suis tiède, demande-moi « explique-moi le jump ratio à 42 % »."
+        "reply": "Non, et je vais être encore plus net que d'habitude : sur cette lecture, beaucoup d'éléments sont incertains (retest non réalisé, marché en range, incertitude large, décision BCE dans 3 heures). Il y a beaucoup de raisons techniques de rester prudent. Mais ce n'est pas à moi de prendre cette décision — c'est à toi de croiser ta gestion du risque, ta tolérance aux mouvements d'événement, ta lecture du contexte fondamental et ta position actuelle. Mon rôle s'arrête à décrire ce que je vois."
       }
     ]
   },
@@ -66,28 +66,28 @@
     "questions": [
       {
         "id": "why-this-score",
-        "text": "Pourquoi 42, c'est très bas ?",
-        "reply": "Parce que la plupart des composantes sont silencieuses. Aucune cassure récente (0 sur 15 pour BOS), pas d'Order Block significatif (0 sur 10), un Fair Value Gap présent mais sans direction confirmée (7.4 sur 15). Le régime ranging basse volatilité contribue modestement (9 sur 25 — alignement 0.3 quand on est neutre). Sentiment news quasi-nul avec confiance basse (2 sur 20). Le score 42 reflète honnêtement un marché en attente : il n'y a pas grand-chose à dire de directionnel. C'est la lecture la plus saine du moteur : si rien ne se passe, dire « rien ne se passe ». Marge d'erreur conformelle 25-55 — bande large parce que la situation est ambiguë."
+        "text": "Pourquoi cette lecture est-elle si calme ?",
+        "reply": "Parce que la plupart des éléments sont silencieux. Aucune cassure de structure récente, pas d'Order Block significatif, et un seul Fair Value Gap présent mais sans direction confirmée. Le marché est en range à faible volatilité (les bougies bougent peu). Les nouvelles sont quasi neutres. Cette lecture reflète honnêtement un marché en attente : il n'y a pas grand-chose à dire de directionnel. C'est aussi la lecture la plus saine du moteur — quand rien ne se passe, dire « rien ne se passe ». L'incertitude affichée est large, parce que la situation est ambiguë."
       },
       {
         "id": "armed-retest",
-        "text": "C'est quoi un retest armé ?",
-        "reply": "Le retest armé décrit le moment où, après une cassure, le prix est revenu toucher le niveau cassé puis a rebondi dans le sens de la cassure. Sur la lecture actuelle (H4 neutre), l'état est « awaiting » — il n'y a pas eu de cassure à retester. Le seul élément technique actif est un Fair Value Gap entre 2358 et 2362, toujours non touché. Le marché doit d'abord casser quelque chose (un swing high ou low) avant qu'on puisse parler de retest."
+        "text": "C'est quoi un retest ?",
+        "reply": "Un retest, c'est quand le prix, après avoir cassé un niveau, revient le toucher avant de repartir. Sur la lecture actuelle (H4 calme), aucune cassure n'a eu lieu, donc il n'y a rien à retester pour l'instant. Le seul élément technique actif est un Fair Value Gap entre 2358 et 2362, toujours non touché. Le marché doit d'abord casser quelque chose (un sommet ou un creux) avant qu'on puisse parler de retest."
       },
       {
         "id": "event-impact",
         "text": "Les NFP dans 2 jours, ça change quoi ?",
-        "reply": "C'est trop loin pour impacter la lecture H4 actuelle, mais ça structure les 2 prochains jours. Pendant la fenêtre [-30 min, +60 min] autour des NFP, le moteur passera en blackout automatique. En H4, ça veut dire que 1-2 bougies vont être affectées. Si tu trades sur des horizons inférieurs au délai NFP, l'événement n'invalide rien d'actuel. Si tu prends une position H4 maintenant, elle vivra les NFP — typiquement +1 à +2 ATR de volatilité spike."
+        "reply": "C'est trop loin pour impacter la lecture H4 actuelle, mais ça structure les 2 prochains jours. Autour de la publication des NFP, le moteur se mettra automatiquement en pause. En H4, cela veut dire que 1 à 2 bougies seront affectées. Si ton horizon est plus court que le délai d'ici là, l'événement n'invalide rien d'actuel. Si tu ouvres une position H4 maintenant, elle vivra les NFP — un moment où la volatilité (l'amplitude des bougies) grimpe fortement."
       },
       {
         "id": "historical-comparison",
         "text": "À quoi ressemble historiquement une consolidation comme celle-ci ?",
-        "reply": "Notre validation statistique out-of-sample est en cours (Sprint 1). Pour des configurations H4 ranging basse volatilité comme celle-ci, je ne peux pas te citer de profit factor ou IC tant que les seuils OOS ne sont pas atteints. Ce que je sais te dire structurellement : cette lecture n'identifie aucun déclencheur technique fort (pas de cassure, pas d'OB significatif, régime sans tendance). Sur ce genre de configurations, la meilleure décision est souvent l'absence de décision — observer, identifier les niveaux clés, attendre le déclencheur. C'est aussi pour ça que la conviction reste modeste."
+        "reply": "Nos tests de fiabilité sur données passées sont encore en cours. Pour une configuration calme comme celle-ci, je ne te citerai ni rendement ni statistique tant que la validation n'est pas terminée. Ce que je peux décrire : cette lecture n'identifie aucun déclencheur technique fort (pas de cassure, pas d'Order Block significatif, marché sans tendance). Dans ce genre de contexte, observer et repérer les niveaux clés est souvent plus parlant que d'agir. C'est aussi pour ça que la lecture reste prudente."
       },
       {
         "id": "buy-or-not",
         "text": "Donc je dois attendre ?",
-        "reply": "Encore une fois, je ne donne aucune instruction. Ce que je peux te dire factuellement : la lecture actuelle n'identifie aucun déclencheur technique fort (pas de cassure, pas d'OB significatif, régime sans tendance). Si ton style de trading recherche des entrées avec une justification structurelle claire, cette lecture est probablement à laisser passer. Mais c'est à toi de croiser ça avec ton contexte personnel. Aucun chiffre de performance ne sera publié tant que la validation OOS n'est pas terminée — c'est une règle de transparence."
+        "reply": "Encore une fois, je ne donne aucune instruction. Ce que je peux décrire factuellement : la lecture actuelle n'identifie aucun déclencheur technique fort (pas de cassure, pas d'Order Block significatif, marché sans tendance). Si ton approche cherche des entrées avec une justification structurelle claire, cette lecture en offre peu. Mais c'est à toi de croiser ça avec ton contexte personnel. Aucun chiffre de performance ne sera publié tant que nos tests de fiabilité ne sont pas terminés — c'est une règle de transparence."
       }
     ]
   }

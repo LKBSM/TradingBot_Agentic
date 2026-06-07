@@ -177,9 +177,9 @@ function IntroBubble({
         Sentinel · {script.instrument_label}
       </p>
       <p className="mt-2">
-        Pose-moi une question sur cette lecture. Je peux décomposer la
-        conviction, expliquer un terme, contextualiser un événement, ou
-        comparer aux setups historiques similaires.
+        Pose-moi une question sur cette lecture. Je peux t&apos;expliquer
+        ce qu&apos;elle décrit, vulgariser un terme technique, ou
+        contextualiser un événement à venir.
       </p>
       <p className="mt-2 text-xs italic text-muted-foreground">
         {apiAvailable === false ? (

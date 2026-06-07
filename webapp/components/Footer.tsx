@@ -40,7 +40,8 @@ const PRODUCT_LINKS = [
   { href: '#multi-marche', label: 'Multi-actifs' },
   { href: '#conversations', label: 'Chatbot Sentinel' },
   { href: '#avant-apres', label: 'Avant / Après' },
-  { href: '#honnetete', label: 'Honnêteté conformelle' },
+  { href: '#honnetete', label: 'Transparence' },
+  { href: '/methodology', label: 'Méthodologie' },
   { href: '#tarifs', label: 'Tarifs' },
   { href: '#faq', label: 'FAQ' },
 ] as const;

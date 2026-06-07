@@ -1,4 +1,5 @@
-import { HelpCircle } from 'lucide-react';
+import Link from 'next/link';
+import { HelpCircle, ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
   Accordion,
@@ -32,12 +33,12 @@ const FAQ: ReadonlyArray<FaqEntry> = [
     question: 'MIA est-il un service de signaux de trading ?',
     answer: (
       <>
-        Non. MIA Markets produit des <strong>analyses éditoriales
-        contextuelles</strong> structurées (verdict, conviction, blackout,
-        incertitude) sur un actif et une unité de temps. Le chatbot
-        refuse explicitement les questions de type «&nbsp;dois-je acheter ?&nbsp;»
-        (cf. règlement UE 2024/2811 et MiFID II sur les finfluencers).
-        Aucune recommandation personnalisée n&apos;est délivrée.
+        Non. MIA Markets produit des <strong>lectures de marché
+        descriptives</strong> (structure, régime, événements, synthèse) sur un
+        actif et une unité de temps. Le chatbot refuse explicitement les
+        questions de type «&nbsp;dois-je acheter ?&nbsp;» (cf. règlement UE
+        2024/2811 et MiFID II sur les finfluencers). Aucune recommandation
+        personnalisée n&apos;est délivrée.
       </>
     ),
   },
@@ -69,10 +70,10 @@ const FAQ: ReadonlyArray<FaqEntry> = [
       <>
         Sentinel est l&apos;assistant conversationnel de MIA Markets. Il
         utilise <strong>Claude (Anthropic)</strong> avec le contexte de
-        la lecture en cours injecté en système : verdict, composantes,
-        événements macro à venir, instrument et UT. Le prompt système
-        inclut les guard-rails compliance UE 2024/2811. Si la clé API
-        est absente, un fallback scripté pédagogique prend le relais —
+        la lecture en cours injecté en système : structure, régime,
+        événements macro à venir, instrument et unité de temps. Le prompt
+        système inclut les guard-rails compliance UE 2024/2811. Si la clé
+        API est absente, un fallback scripté pédagogique prend le relais —
         aucune réponse hallucinée ne sera servie.
       </>
     ),
@@ -164,6 +165,17 @@ export function FaqSection() {
           </AccordionItem>
         ))}
       </Accordion>
+
+      <p className="mt-8 text-sm text-muted-foreground">
+        Vous voulez creuser le fonctionnement&nbsp;?{' '}
+        <Link
+          href="/methodology"
+          className="inline-flex items-center gap-1 font-medium text-foreground underline-offset-4 hover:underline"
+        >
+          Comment notre indicateur décrit les structures de marché
+          <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+        </Link>
+      </p>
     </section>
   );
 }

@@ -12,7 +12,7 @@ import {
  *
  * Trois conversations scriptées rejouables avec effet typing. Chacune
  * démontre une facette du moat conversationnel :
- *   1. Décomposition pédagogique (Pourquoi 72 / 8 composantes)
+ *   1. Lecture vulgarisée (Qu'est-ce que cette lecture me dit ?)
  *   2. Contextualisation événementielle (Et si le FOMC ?)
  *   3. Refus pédagogique compliance (Donc je dois acheter ?)
  *
@@ -63,7 +63,7 @@ export function ConversationReplaySection() {
 
         <div className="grid gap-5 lg:grid-cols-3 lg:gap-6">
           <ConversationReplayCard
-            title="Décomposer un score"
+            title="Comprendre une lecture"
             kicker="Pédagogie"
             question={whyScore.text}
             answer={whyScore.reply}
