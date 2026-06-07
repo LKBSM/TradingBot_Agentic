@@ -1,5 +1,5 @@
 {
-  "_comment": "Chantier 5.C — i18n purgée des résidus pré-pivot : section 'transparency' (win_rate/sharpe/total_r/max_dd/courbe paper-trading) supprimée, tiers FREE/LITE/PRO/PRO+ → Découverte/Approfondie/Intégrale, 'value_2' reformulée sans paper-trading ni edge. NOTE : ces messages sont chargés par NextIntlClientProvider mais PAS encore consommés (les composants utilisent des strings FR en dur). TODO 5.D : valider/brancher ces clés lors des finitions copy, ou les retirer.",
+  "_comment": "Chantier 5.C — i18n purgée des résidus pré-pivot : section de stats de performance retirée, tiers alignés Découverte/Approfondie/Intégrale, accroches reformulées posture descriptive. NOTE : ces messages sont chargés par NextIntlClientProvider mais PAS encore consommés (les composants utilisent des strings FR en dur). TODO 5.D : valider/brancher ces clés lors des finitions copy, ou les retirer.",
   "nav": {
     "dashboard": "Tableau de bord",
     "narratives": "Analyses",

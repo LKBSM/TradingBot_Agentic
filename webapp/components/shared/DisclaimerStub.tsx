@@ -21,7 +21,7 @@ export function DisclaimerStub({ className }: { className?: string }) {
       {/* LEGAL-PENDING: hero disclaimer — to be replaced with the wording
           finalised by the legal terminal (UE 2024/2811 + MiFID II
           finfluencer 03/2026). */}
-      Démonstration paper-trading. Lecture algorithmique éducative — ne
+      Démonstration en accès anticipé. Lecture algorithmique éducative — ne
       constitue ni un signal de trading, ni un conseil en investissement.
     </p>
   );

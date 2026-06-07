@@ -1,5 +1,5 @@
 {
-  "_comment": "Chantier 5.C — i18n purged of pre-pivot residuals: 'transparency' section (win_rate/sharpe/total_r/max_dd/paper-trading curve) removed, FREE/LITE/PRO/PRO+ tiers → Découverte/Approfondie/Intégrale, 'value_2' reworded without paper-trading or edge. NOTE: these messages are loaded by NextIntlClientProvider but NOT yet consumed (components use hard-coded FR strings). TODO 5.D: validate/wire these keys during copy finishing, or remove.",
+  "_comment": "Chantier 5.C — i18n purged of pre-pivot residuals: performance-stats section removed, tiers aligned to Découverte/Approfondie/Intégrale, taglines reworded to the descriptive posture. NOTE: these messages are loaded by NextIntlClientProvider but NOT yet consumed (components use hard-coded FR strings). TODO 5.D: validate/wire these keys during copy finishing, or remove.",
   "nav": {
     "dashboard": "Dashboard", "narratives": "Analysen",
     "glossary": "Glossar", "pricing": "Preise", "chat": "KI-Chat",

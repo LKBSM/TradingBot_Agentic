@@ -9,7 +9,7 @@ import { ShieldCheck } from 'lucide-react';
  * V1 :
  *   - Badge "Early Access · 50 places" (cap bootstrap legal 2026-05-26)
  *   - Liste explicite des 9 pays Phase 1 (lock 4 utilisateur 2026-05-27)
- *   - Posture UE 2024/2811 + mention paper-trading
+ *   - Posture UE 2024/2811 + mention accès anticipé
  *   - Médiateur CM2C + DSAR RGPD placeholders
  *
  * Réseaux sociaux : placeholders pour ne pas perdre l'arbo, désactivés
@@ -143,7 +143,7 @@ export function Footer() {
           className="rounded-md border border-dashed border-border/70 bg-card/50 px-3 py-2 text-[11px] italic leading-relaxed text-muted-foreground"
           data-legal-pending="footer-disclaimer"
         >
-          Démonstration paper-trading · Lecture algorithmique éducative ·
+          Démonstration en accès anticipé · Lecture algorithmique éducative ·
           Ne constitue ni un signal de trading, ni un conseil en
           investissement personnalisé · Performances passées non
           indicatives des performances futures · Trading à effet de

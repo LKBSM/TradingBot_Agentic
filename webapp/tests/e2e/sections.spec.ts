@@ -1,37 +1,44 @@
 import { expect, test } from '@playwright/test';
 
+/**
+ * Sections collapsibles de la MarketReadingCard (Chantier 5.B) telles que
+ * rendues dans la galerie multi-marché de la landing. Mises à jour au
+ * Chantier 5.C : la landing consomme désormais la card market-reading native
+ * (Structure / Régime / Événements / Synthèse) — plus de section « Détail
+ * expert », plus de waterfall de score, plus de champ BOCPD.
+ */
 test.describe('Sections collapsibles — golden paths', () => {
-  test('clicking the structure trigger reveals SMC fields', async ({ page }) => {
+  test('clicking the structure trigger reveals SMC facts', async ({ page }) => {
     await page.goto('/#multi-marche');
-    // First card's Structure trigger (using role+name).
+    // First card's Structure trigger (XAU M15).
     const structureTrigger = page
       .getByRole('button', { name: /Structure de marché/i })
       .first();
     await structureTrigger.click();
-    // Content of the structure section becomes visible.
-    await expect(page.getByText(/Cassure de structure/i)).toBeVisible();
-    await expect(page.getByText(/Invalidation structurelle/i)).toBeVisible();
+    // BOS line of the XAU fixture (price · direction · validation).
+    await expect(page.getByText(/haussier · confirmée/i).first()).toBeVisible();
   });
 
-  test('clicking the regime trigger reveals HMM + BOCPD info', async ({ page }) => {
+  test('clicking the regime trigger reveals the MTF confluence map', async ({ page }) => {
     await page.goto('/#multi-marche');
     const regimeTrigger = page
       .getByRole('button', { name: /Régime de marché/i })
       .first();
     await regimeTrigger.click();
-    await expect(page.getByText(/Tendance haussière/i).first()).toBeVisible();
-    await expect(page.getByText(/Stabilité du régime/i)).toBeVisible();
+    await expect(
+      page.getByText(/Confluence multi-timeframe/i).first(),
+    ).toBeVisible();
   });
 
-  test('expert section shows STRATEGIST badge and waterfall on click', async ({ page }) => {
+  test('synthesis section shows the plain-language conditions on click', async ({ page }) => {
     await page.goto('/#multi-marche');
-    const expertTrigger = page
-      .getByRole('button', { name: /Détail expert/i })
+    const conditionsTrigger = page
+      .getByRole('button', { name: /Synthèse des conditions/i })
       .first();
-    await expect(expertTrigger).toBeVisible();
-    await expertTrigger.click();
+    await expect(conditionsTrigger).toBeVisible();
+    await conditionsTrigger.click();
     await expect(
-      page.getByText(/Décomposition du score/i).first(),
+      page.getByText(/Structure haussière confirmée/i).first(),
     ).toBeVisible();
   });
 });
