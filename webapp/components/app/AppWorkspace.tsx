@@ -4,21 +4,39 @@ import * as React from 'react';
 import { useChat } from '@/components/chat/ChatProvider';
 import { AppChatSidebar } from './AppChatSidebar';
 import { InstrumentSidebar } from './InstrumentSidebar';
+import { MobileWorkspace } from './MobileWorkspace';
 import { ReadingColumn } from './ReadingColumn';
+import { useIsMobile } from '@/lib/use-media-query';
 import { useMarketReading } from '@/lib/market-reading/hooks';
-import { ActiveComboProvider, useActiveCombo } from '@/lib/market-reading/store';
+import {
+  ActiveComboProvider,
+  useActiveCombo,
+  type Combo,
+} from '@/lib/market-reading/store';
+import type { MarketReading } from '@/types/market-reading';
 
 const POLL_MS = 60_000;
 
 /**
- * /app workspace — three columns on desktop:
- *   left   · instruments (6 combos, active + freshness)
- *   centre · the selected combo's detailed reading (+ loading/error/empty)
- *   right  · the permanent Sentinel chat sidebar
- *
- * The active combo lives in ActiveComboProvider; the reading is fetched +
- * polled (60s) via useMarketReading; the chat context is bound to the active
- * combo via openForCombo (no modal). Mobile tabs are layered on in 5.B.4.
+ * Shared shape handed to both the desktop and mobile layouts so the data /
+ * selection logic lives in exactly one place (WorkspaceInner).
+ */
+export interface WorkspaceViewProps {
+  combos: readonly Combo[];
+  active: Combo | null;
+  onSelect(combo: Combo): void;
+  reading: MarketReading | null;
+  isLoading: boolean;
+  isRefreshing: boolean;
+  error: Error | null;
+  onRetry(): void;
+}
+
+/**
+ * /app workspace. Desktop (≥768px) shows three columns; mobile (<768px) shows
+ * a tabbed layout (Marchés · Lecture · Chat). The active combo lives in
+ * ActiveComboProvider; the reading is fetched + polled (60s) via
+ * useMarketReading; the chat context follows the active combo via openForCombo.
  */
 export function AppWorkspace() {
   return (
@@ -31,6 +49,7 @@ export function AppWorkspace() {
 function WorkspaceInner() {
   const { active, select, combos } = useActiveCombo();
   const { openForCombo } = useChat();
+  const isMobile = useIsMobile();
 
   const { data, isLoading, isRefreshing, error, refresh } = useMarketReading(
     active?.instrument ?? null,
@@ -43,26 +62,54 @@ function WorkspaceInner() {
     if (active) openForCombo(active);
   }, [active, openForCombo]);
 
+  const view: WorkspaceViewProps = {
+    combos,
+    active,
+    onSelect: select,
+    reading: data,
+    isLoading,
+    isRefreshing,
+    error,
+    onRetry: refresh,
+  };
+
+  if (isMobile) {
+    return <MobileWorkspace {...view} />;
+  }
+
+  return <DesktopWorkspace {...view} />;
+}
+
+function DesktopWorkspace({
+  combos,
+  active,
+  onSelect,
+  reading,
+  isLoading,
+  isRefreshing,
+  error,
+  onRetry,
+}: WorkspaceViewProps) {
   return (
     <div className="container-wide py-6">
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[240px_minmax(0,1fr)_360px] lg:items-start">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-[240px_minmax(0,1fr)_360px] md:items-start">
         <InstrumentSidebar
           combos={combos}
           active={active}
-          onSelect={select}
-          activeCandleCloseTs={data?.header.candle_close_ts ?? null}
+          onSelect={onSelect}
+          activeCandleCloseTs={reading?.header.candle_close_ts ?? null}
         />
 
         <ReadingColumn
           active={active}
-          reading={data}
+          reading={reading}
           isLoading={isLoading}
           isRefreshing={isRefreshing}
           error={error}
-          onRetry={refresh}
+          onRetry={onRetry}
         />
 
-        <div className="lg:sticky lg:top-6 lg:h-[calc(100vh-7rem)]">
+        <div className="md:sticky md:top-6 md:h-[calc(100vh-7rem)]">
           <AppChatSidebar active={active} />
         </div>
       </div>
