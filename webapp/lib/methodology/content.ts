@@ -119,7 +119,7 @@ export const SCORE_FORMULAS: ReadonlyArray<MethodologyFormula> = [
     description:
       'L’écart de prix typiquement observé récemment autour de la lecture. C’est une mesure d’incertitude affichée honnêtement — pas une fourchette de prévision ni un objectif.',
     variables: [
-      'la dispersion récente des prix (volatilité réalisée)',
+      'la dispersion récente des prix, mesurée par l’ATR (Average True Range, la moyenne standard de l’amplitude des bougies)',
       'l’unité de temps de la lecture',
     ],
   },
