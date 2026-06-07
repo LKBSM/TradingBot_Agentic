@@ -4,6 +4,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
+import { formatTag } from '@/lib/market-reading/tag-labels';
 import type { MarketReadingConditions } from '@/types/market-reading';
 
 /**
@@ -39,7 +40,7 @@ export function ConditionsSection({
             <div className="flex flex-wrap gap-1.5">
               {conditions.tags.map((tag) => (
                 <Badge key={tag} variant="secondary" className="text-[10px]">
-                  {tag}
+                  {formatTag(tag)}
                 </Badge>
               ))}
             </div>

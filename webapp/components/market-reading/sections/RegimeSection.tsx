@@ -4,6 +4,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import {
   formatMarketPhase,
   formatMtfBias,
@@ -54,16 +55,22 @@ export function RegimeSection({ regime }: { regime: MarketReadingRegime }) {
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant={TONE_TO_VARIANT[trend.tone]}>{trend.label}</Badge>
-            <Badge variant={TONE_TO_VARIANT[volatility.tone]}>
-              {volatility.label}
-            </Badge>
-            <Badge variant={TONE_TO_VARIANT[phase.tone]}>{phase.label}</Badge>
+            <span className="inline-flex items-center gap-1">
+              <Badge variant={TONE_TO_VARIANT[volatility.tone]}>
+                {volatility.label}
+              </Badge>
+              <InfoTooltip termKey="volatility" iconOnly />
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <Badge variant={TONE_TO_VARIANT[phase.tone]}>{phase.label}</Badge>
+              <InfoTooltip termKey="market_phase" iconOnly />
+            </span>
           </div>
 
           {mtfEntries.length > 0 && (
             <div>
               <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
-                Confluence multi-timeframe
+                <InfoTooltip termKey="mtf">Confluence multi-timeframe</InfoTooltip>
               </p>
               <div className="flex flex-wrap gap-2">
                 {mtfEntries.map(({ key, bias }) => {

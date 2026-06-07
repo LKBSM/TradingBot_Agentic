@@ -23,11 +23,13 @@ test.describe('Chatbot — golden paths', () => {
       })
       .first()
       .click();
-    // Suggested question: "Pourquoi seulement 72 ?"
-    await page.getByRole('button', { name: /Pourquoi seulement 72/i }).click();
-    // Scripted reply contains "8 composantes" + "Pearson" or similar marker.
+    // Suggested question (5.D — descriptive, no synthetic score).
+    await page
+      .getByRole('button', { name: /Qu'est-ce que cette lecture me dit/i })
+      .click();
+    // Scripted reply describes the structure in plain language.
     await expect(
-      page.getByText(/Sur les 8 composantes du moteur/i),
+      page.getByText(/Cette lecture décrit un marché plutôt haussier/i),
     ).toBeVisible();
   });
 

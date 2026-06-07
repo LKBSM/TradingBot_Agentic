@@ -104,6 +104,26 @@ describe('StructureSection', () => {
     ).toBeInTheDocument();
   });
 
+  it('exposes a vulgarisation tooltip trigger for SMC terms (5.D)', () => {
+    render(
+      <Accordion type="multiple" defaultValue={['structure']}>
+        <StructureSection
+          structure={FIXTURE_XAU_M15.structure}
+          instrument="XAUUSD"
+        />
+      </Accordion>,
+    );
+    // Each SMC label becomes an accessible InfoTooltip button (term + ⓘ).
+    expect(
+      screen.getByRole('button', {
+        name: /Cassure de structure \(BOS\) — définition/i,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /Order Block — définition/i }),
+    ).toBeInTheDocument();
+  });
+
   it('shows an empty-state line when structure is bare', () => {
     render(
       <Accordion type="multiple" defaultValue={['structure']}>
@@ -129,7 +149,10 @@ describe('ConditionsSection', () => {
     expect(
       screen.getByText(/Structure haussière confirmée/),
     ).toBeInTheDocument();
-    expect(screen.getByText('trend')).toBeInTheDocument();
+    // Tags are vulgarised for display (5.D): raw `trend` → "Tendance établie",
+    // `retest_active` → "Retest en cours" (the snake_case code stays backend-side).
+    expect(screen.getByText('Tendance établie')).toBeInTheDocument();
+    expect(screen.getByText('Retest en cours')).toBeInTheDocument();
     expect(screen.getByText('Synthèse générée')).toBeInTheDocument();
   });
 

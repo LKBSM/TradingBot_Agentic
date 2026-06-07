@@ -40,8 +40,8 @@ test.describe('Landing — golden paths (architecture L1-L6 2026-05-27)', () => 
         name: /Sentinel répond aux vraies questions/i,
       }),
     ).toBeVisible();
-    // Three tile titles.
-    await expect(page.getByText(/Décomposer un score/i)).toBeVisible();
+    // Three tile titles (5.D — "score" reformulated to a descriptive reading).
+    await expect(page.getByText(/Comprendre une lecture/i)).toBeVisible();
     await expect(page.getByText(/Contextualiser un événement/i)).toBeVisible();
     await expect(page.getByText(/Refuser un ordre/i)).toBeVisible();
     // Compliance badge on the refusal tile.
@@ -62,6 +62,8 @@ test.describe('Landing — golden paths (architecture L1-L6 2026-05-27)', () => 
     await expect(page.getByText(/−318/)).toHaveCount(0);
     await expect(page.getByText(/Deflated Sharpe/i)).toHaveCount(0);
     await expect(page.getByText(/edge mesurable/i)).toHaveCount(0);
+    // Chantier 5.D : vulgarisation — plus de jargon "conformel(le)" visible.
+    await expect(page.getByText(/conformel/i)).toHaveCount(0);
   });
 
   test('pricing section shows 3 tiers FREE/9€/19€ post pivot 2026-05-27', async ({ page }) => {

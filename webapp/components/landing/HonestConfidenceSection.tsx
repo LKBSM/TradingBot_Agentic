@@ -1,4 +1,5 @@
-import { ShieldCheck, AlertTriangle } from 'lucide-react';
+import Link from 'next/link';
+import { ShieldCheck, AlertTriangle, ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
@@ -36,7 +37,7 @@ export function HonestConfidenceSection() {
             className="mb-3 border-sentinel-warn/40 text-[11px] uppercase tracking-wider text-sentinel-warn"
           >
             <ShieldCheck className="mr-1 h-3 w-3" aria-hidden />
-            Honnêteté conformelle
+            Transparence
           </Badge>
           <h2
             id="honest-confidence-title"
@@ -83,12 +84,22 @@ export function HonestConfidenceSection() {
             title={`Ce que nous faisons aujourd${'’'}hui`}
             items={[
               'Une lecture structurée du marché en temps réel.',
-              "Une incertitude affichée, jamais masquée.",
+              'Une plage d’incertitude observée, affichée.',
               'Un chatbot qui refuse les ordres de trade.',
-              'Une méthodologie publique et reproductible.',
+              'Une documentation technique transparente de nos algorithmes.',
             ]}
             tone="good"
           />
+        </div>
+
+        <div className="mt-8">
+          <Link
+            href="/methodology"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground underline-offset-4 hover:underline"
+          >
+            Comment notre indicateur décrit le marché
+            <ArrowRight className="h-4 w-4" aria-hidden />
+          </Link>
         </div>
       </div>
     </section>
