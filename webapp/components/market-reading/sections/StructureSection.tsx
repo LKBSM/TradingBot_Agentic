@@ -4,6 +4,8 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { cn } from '@/lib/utils';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
+import type { GlossaryKey } from '@/lib/glossary';
 import {
   formatBand,
   formatDirection,
@@ -55,6 +57,7 @@ export function StructureSection({
           <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Row
               label="Cassure de structure (BOS)"
+              termKey="bos"
               value={
                 bos
                   ? `${formatPrice(bos.level, instrument)} · ${formatDirection(bos.direction)} · ${formatValidationStatus(bos.validation_status)}`
@@ -63,6 +66,7 @@ export function StructureSection({
             />
             <Row
               label="Changement de caractère (CHOCH)"
+              termKey="choch"
               value={
                 choch
                   ? `${formatPrice(choch.level, instrument)} · ${formatDirection(choch.direction)} · ${formatValidationStatus(choch.validation_status)}`
@@ -71,6 +75,7 @@ export function StructureSection({
             />
             <Row
               label="Order Blocks"
+              termKey="order_block"
               value={
                 order_blocks.length > 0
                   ? order_blocks
@@ -85,6 +90,7 @@ export function StructureSection({
             />
             <Row
               label="Fair Value Gaps"
+              termKey="fvg"
               value={
                 fair_value_gaps.length > 0
                   ? fair_value_gaps
@@ -99,6 +105,7 @@ export function StructureSection({
             />
             <Row
               label="Retest en cours"
+              termKey="retest"
               value={
                 retest_in_progress
                   ? `${formatPrice(retest_in_progress.level, instrument)} · ${formatRetestType(retest_in_progress.type)}`
@@ -120,16 +127,19 @@ export function StructureSection({
 function Row({
   label,
   value,
+  termKey,
   className,
 }: {
   label: string;
   value: string;
+  /** When set, the label becomes a vulgarisation tooltip (ⓘ + /methodology link). */
+  termKey?: GlossaryKey;
   className?: string;
 }) {
   return (
     <div className={cn(className)}>
       <dt className="text-xs uppercase tracking-wide text-muted-foreground">
-        {label}
+        {termKey ? <InfoTooltip termKey={termKey}>{label}</InfoTooltip> : label}
       </dt>
       <dd className="mt-1 text-sm font-medium text-foreground">{value}</dd>
     </div>
