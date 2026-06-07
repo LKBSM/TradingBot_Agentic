@@ -108,3 +108,6 @@ data/market_readings.db-wal
 data/candles.db
 data/candles.db-shm
 data/candles.db-wal
+
+# Node — root-level node_modules (build/test caches, never tracked)
+node_modules/
