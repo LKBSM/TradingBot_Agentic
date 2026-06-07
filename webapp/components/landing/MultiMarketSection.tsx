@@ -1,8 +1,8 @@
 import { Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ComingSoonCard } from './ComingSoonCard';
-import { InsightGalleryClient } from './InsightGalleryClient';
-import { SAMPLE_SIGNALS } from '@/lib/mocks';
+import { MarketReadingGalleryClient } from './MarketReadingGalleryClient';
+import { LANDING_SAMPLES } from '@/lib/market-reading/landing-samples';
 
 /**
  * Section 2 — « MIA lit plusieurs marchés ».
@@ -14,8 +14,8 @@ import { SAMPLE_SIGNALS } from '@/lib/mocks';
  * Le visiteur scrolle, voit 3 cartes, comprend sans qu'on ait à le dire.
  */
 export function MultiMarketSection() {
-  const xau = SAMPLE_SIGNALS[0]; // XAU M15 bullish
-  const eur = SAMPLE_SIGNALS[1]; // EUR H1 bearish
+  const xau = LANDING_SAMPLES[0]; // XAU M15 bullish
+  const eur = LANDING_SAMPLES[1]; // EUR H1 ranging
 
   if (!xau || !eur) return null;
 
@@ -45,8 +45,8 @@ export function MultiMarketSection() {
         </p>
       </header>
 
-      <InsightGalleryClient
-        signals={[xau, eur]}
+      <MarketReadingGalleryClient
+        samples={[xau, eur]}
         renderAfter={<ComingSoonCard label="BTC/USD" subtitle="Bientôt" />}
         gridClassName="grid-cols-1 gap-5 sm:gap-6 lg:grid-cols-3"
       />

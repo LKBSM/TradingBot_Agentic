@@ -2,7 +2,10 @@ import { MessageCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ConversationReplayCard } from './ConversationReplayCard';
 import { getChatbotScript } from '@/lib/chatbot';
-import { getHeroSampleSignal, SAMPLE_SIGNALS } from '@/lib/mocks';
+import {
+  getHeroLandingSample,
+  LANDING_SAMPLES,
+} from '@/lib/market-reading/landing-samples';
 
 /**
  * Section 3 — « MIA répond aux vraies questions ».
@@ -16,8 +19,8 @@ import { getHeroSampleSignal, SAMPLE_SIGNALS } from '@/lib/mocks';
  * Le visiteur peut cliquer "Rejouer" pour relancer chaque conversation.
  */
 export function ConversationReplaySection() {
-  const xau = getHeroSampleSignal();
-  const eur = SAMPLE_SIGNALS[1];
+  const xau = getHeroLandingSample();
+  const eur = LANDING_SAMPLES[1];
   const xauScript = getChatbotScript(xau.id);
   const eurScript = eur ? getChatbotScript(eur.id) : null;
 
