@@ -36,6 +36,13 @@ interface ChatContextValue {
    */
   apiAvailable: boolean | 'unknown';
   openFor(signal: InsightSignalV2): void;
+  /**
+   * Bind the chat context to an (instrument, timeframe) combo WITHOUT opening
+   * the slide-over. Used by the permanent /app sidebar (Chantier 5.B), which
+   * renders its own inline panel and must not trigger the layout Sheet. Resets
+   * the conversation when the combo changes. Additive — `openFor` is unchanged.
+   */
+  openForCombo(combo: { instrument: string; timeframe: string }): void;
   close(): void;
   appendExchange(args: {
     questionId: string;
@@ -76,6 +83,27 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     });
     setIsOpen(true);
   }, []);
+
+  const openForCombo = React.useCallback(
+    (combo: { instrument: string; timeframe: string }) => {
+      // Minimal signal context: the chat path only reads id/instrument/
+      // timeframe (api-client preamble + labels). Same minimal shape the 5.A
+      // tests use. No isOpen toggle → the layout Sheet stays closed on /app.
+      const synthetic = {
+        id: `app:${combo.instrument}:${combo.timeframe}`,
+        instrument: combo.instrument,
+        timeframe: combo.timeframe,
+      } as unknown as InsightSignalV2;
+      setActiveSignal((current) => {
+        if (current?.id !== synthetic.id) {
+          setTurns([]);
+          seqRef.current = 0;
+        }
+        return synthetic;
+      });
+    },
+    [],
+  );
 
   const close = React.useCallback(() => setIsOpen(false), []);
 
@@ -195,6 +223,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       isLoading,
       apiAvailable,
       openFor,
+      openForCombo,
       close,
       appendExchange,
       askFreeForm,
@@ -207,6 +236,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       isLoading,
       apiAvailable,
       openFor,
+      openForCombo,
       close,
       appendExchange,
       askFreeForm,
