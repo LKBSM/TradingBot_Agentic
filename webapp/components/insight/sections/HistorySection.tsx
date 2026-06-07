@@ -20,13 +20,25 @@ import type { InsightSignalV2 } from '@/types/insight';
 export function HistorySection({ signal }: { signal: InsightSignalV2 }) {
   const h = signal.historical_stats;
 
+  // Post-pivot (2026-05-27) the stat *values* can be null even when the
+  // historical_stats object is present — quantitative claims (PF, win-rate,
+  // sample size, CI) were retired from client surfaces. Treat null-valued
+  // stats exactly like "no history" so the section degrades gracefully
+  // instead of crashing on `null.toFixed`.
+  const hasStats =
+    h != null &&
+    h.similar_setups_n != null &&
+    h.hit_rate_observed != null &&
+    h.profit_factor != null &&
+    h.profit_factor_ci95 != null;
+
   return (
     <AccordionItem value="history">
       <AccordionTrigger className="text-left text-sm">
         <span className="flex items-center gap-2">
           <TrendingUp className="h-4 w-4 text-sentinel-bull" aria-hidden />
           <span>Historique des setups similaires</span>
-          {h && (
+          {hasStats && h && (
             <Badge variant="bull" className="ml-1 text-[10px]">
               {h.similar_setups_n} cas
             </Badge>
@@ -34,7 +46,7 @@ export function HistorySection({ signal }: { signal: InsightSignalV2 }) {
         </span>
       </AccordionTrigger>
       <AccordionContent>
-        {!h ? (
+        {!h || !hasStats ? (
           <p className="text-sm text-muted-foreground">
             Aucun historique disponible pour cette combinaison instrument /
             timeframe — le moteur n'a pas encore accumulé assez de cas
