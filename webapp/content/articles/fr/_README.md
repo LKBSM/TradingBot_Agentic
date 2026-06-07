@@ -31,3 +31,17 @@ Plusieurs articles contiennent des résidus à corriger **avant** d'être routé
 > Tant que ces articles ne sont pas routés, ils ne créent pas d'exposition
 > client. Ne pas créer de route `/articles` sans avoir d'abord purgé le
 > branding et le positionnement ci-dessus.
+
+## Revue Chantier 5.D (2026-06-07) — maintien dormant confirmé
+
+Revérifié : toujours **aucune route**, aucun import de `content/articles/` dans
+`app/` / `components/` / `lib/` → **zéro exposition client**. Le 5.D n'a donc
+**pas** supprimé ces fichiers : ils représentent un travail rédactionnel
+réutilisable et leur dette (branding pré-pivot + positionnement) ne crée aucun
+risque tant qu'ils restent non routés. Décision cohérente avec l'Option B du 5.C.
+
+La page `/methodology` (créée en 5.D) couvre désormais le besoin pédagogique
+**in-app** essentiel (concepts SMC, calcul des éléments affichés, source de
+données) en niveau 1.5 strict. Ces articles restent une réserve éditoriale pour
+une future stratégie de contenu (blog SEO ou base de connaissances). Leur
+purge/réécriture reste à faire **avant** tout routage, comme indiqué ci-dessus.

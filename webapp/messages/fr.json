@@ -1,5 +1,5 @@
 {
-  "_comment": "Chantier 5.C — i18n purgée des résidus pré-pivot : section de stats de performance retirée, tiers alignés Découverte/Approfondie/Intégrale, accroches reformulées posture descriptive. NOTE : ces messages sont chargés par NextIntlClientProvider mais PAS encore consommés (les composants utilisent des strings FR en dur). TODO 5.D : valider/brancher ces clés lors des finitions copy, ou les retirer.",
+  "_comment": "Chantier 5.D (décision définitive 2026-06-07) — VALIDÉ comme infrastructure i18n DORMANTE. Vérifié par grep : aucun composant n'appelle useTranslations/getTranslations ; toute l'UI V1 utilise des strings FR en dur (choix d'architecture assumé, V1 = FR-only, middleware redirige en/de/es → fr). Ces clés ne sont donc PAS rendues client-facing. Résidus niveau-1.5 / pré-pivot purgés ici (ex-« Narrative IA sourcée », fausse mention « 50 termes »). À brancher OU retirer lors de l'activation effective de l'i18n multilingue (post-V1).",
   "nav": {
     "dashboard": "Tableau de bord",
     "narratives": "Analyses",
@@ -14,8 +14,8 @@
     "hero_subtitle": "MIA Markets génère des analyses contextuelles sourcées pour l'or, en français, transparentes par construction.",
     "hero_cta_primary": "Commencer gratuitement",
     "hero_cta_secondary": "Découvrir la méthode",
-    "value_1_title": "Narrative IA sourcée",
-    "value_1_body": "Chaque analyse cite ses sources. Pas d'hallucination, pas de recommandation.",
+    "value_1_title": "Lecture de marché sourcée",
+    "value_1_body": "Chaque lecture cite ses sources. Pas d'hallucination, pas de recommandation.",
     "value_2_title": "Posture honnête",
     "value_2_body": "Aucune promesse de gain, aucun edge revendiqué — un outil de compréhension, pas un système de trading.",
     "value_3_title": "Contexte multi-couches",
@@ -27,7 +27,7 @@
   },
   "glossary": {
     "title": "Glossaire",
-    "subtitle": "50 termes techniques utilisés dans les analyses, expliqués simplement."
+    "subtitle": "Les termes techniques de nos lectures, expliqués simplement — détaillés sur la page Méthodologie."
   },
   "pricing": {
     "title": "Tarification simple, transparente",
