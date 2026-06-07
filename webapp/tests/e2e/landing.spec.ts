@@ -48,16 +48,20 @@ test.describe('Landing — golden paths (architecture L1-L6 2026-05-27)', () => 
     await expect(page.getByText(/Compliance/).first()).toBeVisible();
   });
 
-  test('honest confidence section publishes the imposed citation + the bad numbers', async ({ page }) => {
+  test('honest confidence section keeps the imposed citation + engagement, drops pre-pivot backtest numbers', async ({ page }) => {
     await page.goto('/#honnetete');
-    // Imposed citation (lock 2 utilisateur 2026-05-27).
+    // Imposed citation (lock 2 utilisateur 2026-05-27) — conservée en 5.C.
     await expect(
       page.getByText(/Aucun indicateur de marché ne devrait promettre des gains/i),
     ).toBeVisible();
-    // PF 0,786 published.
-    await expect(page.getByText(/0,786/)).toBeVisible();
-    // Sub-perf vs buy-and-hold.
-    await expect(page.getByText(/−318/)).toBeVisible();
+    // « Ce que nous ne ferons jamais » column conservée.
+    await expect(page.getByText(/Ce que nous ne ferons jamais/i)).toBeVisible();
+    // Chantier 5.C : résidus positionnement pré-pivot retirés (backtest PF,
+    // sous-perf, DSR/PBO, colonne « edge mesurable »).
+    await expect(page.getByText(/0,786/)).toHaveCount(0);
+    await expect(page.getByText(/−318/)).toHaveCount(0);
+    await expect(page.getByText(/Deflated Sharpe/i)).toHaveCount(0);
+    await expect(page.getByText(/edge mesurable/i)).toHaveCount(0);
   });
 
   test('pricing section shows 3 tiers FREE/9€/19€ post pivot 2026-05-27', async ({ page }) => {

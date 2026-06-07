@@ -5,7 +5,7 @@ import {
   askSentinel,
   ChatApiUnavailableError,
 } from '@/lib/chat/api-client';
-import type { InsightSignalV2 } from '@/types/insight';
+import type { ChatSignalContext } from '@/lib/chat/types';
 
 interface ChatTurn {
   id: string;
@@ -24,7 +24,7 @@ interface ChatTurn {
 
 interface ChatContextValue {
   isOpen: boolean;
-  activeSignal: InsightSignalV2 | null;
+  activeSignal: ChatSignalContext | null;
   turns: ChatTurn[];
   /** True while a backend answer is in flight (synchronous JSON, no stream). */
   isLoading: boolean;
@@ -35,7 +35,7 @@ interface ChatContextValue {
    * spamming the endpoint.
    */
   apiAvailable: boolean | 'unknown';
-  openFor(signal: InsightSignalV2): void;
+  openFor(signal: ChatSignalContext): void;
   /**
    * Bind the chat context to an (instrument, timeframe) combo WITHOUT opening
    * the slide-over. Used by the permanent /app sidebar (Chantier 5.B), which
@@ -63,7 +63,7 @@ const ChatContext = React.createContext<ChatContextValue | null>(null);
 
 export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = React.useState(false);
-  const [activeSignal, setActiveSignal] = React.useState<InsightSignalV2 | null>(
+  const [activeSignal, setActiveSignal] = React.useState<ChatSignalContext | null>(
     null,
   );
   const [turns, setTurns] = React.useState<ChatTurn[]>([]);
@@ -73,7 +73,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   );
   const seqRef = React.useRef(0);
 
-  const openFor = React.useCallback((signal: InsightSignalV2) => {
+  const openFor = React.useCallback((signal: ChatSignalContext) => {
     setActiveSignal((current) => {
       if (current?.id !== signal.id) {
         setTurns([]);
@@ -87,13 +87,14 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const openForCombo = React.useCallback(
     (combo: { instrument: string; timeframe: string }) => {
       // Minimal signal context: the chat path only reads id/instrument/
-      // timeframe (api-client preamble + labels). Same minimal shape the 5.A
-      // tests use. No isOpen toggle → the layout Sheet stays closed on /app.
-      const synthetic = {
+      // timeframe (api-client preamble + labels). ChatSignalContext is exactly
+      // that shape, so no cast is needed anymore (Chantier 5.C). No isOpen
+      // toggle → the layout Sheet stays closed on /app.
+      const synthetic: ChatSignalContext = {
         id: `app:${combo.instrument}:${combo.timeframe}`,
         instrument: combo.instrument,
         timeframe: combo.timeframe,
-      } as unknown as InsightSignalV2;
+      };
       setActiveSignal((current) => {
         if (current?.id !== synthetic.id) {
           setTurns([]);

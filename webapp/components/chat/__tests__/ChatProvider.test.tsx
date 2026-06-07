@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ChatProvider, useChat } from '../ChatProvider';
-import type { InsightSignalV2 } from '@/types/insight';
+import type { ChatSignalContext } from '@/lib/chat/types';
 
 // Keep the real error classes; override only askSentinel.
 const askSentinelMock = vi.fn();
@@ -10,7 +10,7 @@ vi.mock('@/lib/chat/api-client', async (importActual) => {
   return { ...actual, askSentinel: (...args: unknown[]) => askSentinelMock(...args) };
 });
 
-const SIGNAL = { id: 'sig-1', instrument: 'XAUUSD', timeframe: 'H1' } as InsightSignalV2;
+const SIGNAL: ChatSignalContext = { id: 'sig-1', instrument: 'XAUUSD', timeframe: 'H1' };
 
 /** Minimal harness exercising the provider through its public hook. */
 function Harness() {
@@ -52,7 +52,7 @@ afterEach(() => {
 describe('ChatProvider.askFreeForm', () => {
   it('pushes the user turn and the assistant answer on success', async () => {
     askSentinelMock.mockResolvedValue({
-      text: 'Conviction 62/100, phase de consolidation.',
+      text: 'Le marché est en phase de consolidation.',
       blockedReason: null,
       toolCallsMade: [],
     });
@@ -62,7 +62,7 @@ describe('ChatProvider.askFreeForm', () => {
 
     expect(await screen.findByText('Quelle conviction ?')).toBeInTheDocument();
     expect(
-      await screen.findByText('Conviction 62/100, phase de consolidation.'),
+      await screen.findByText('Le marché est en phase de consolidation.'),
     ).toBeInTheDocument();
   });
 

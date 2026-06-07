@@ -1,17 +1,18 @@
 {
+  "_comment": "Chantier 5.C — i18n purged of pre-pivot residuals: performance-stats section removed, tiers aligned to Découverte/Approfondie/Intégrale, taglines reworded to the descriptive posture. NOTE: these messages are loaded by NextIntlClientProvider but NOT yet consumed (components use hard-coded FR strings). TODO 5.D: validate/wire these keys during copy finishing, or remove.",
   "nav": {
-    "dashboard": "Dashboard", "narratives": "Analyses", "transparency": "Transparency",
+    "dashboard": "Dashboard", "narratives": "Analyses",
     "glossary": "Glossary", "pricing": "Pricing", "chat": "AI Chat",
     "login": "Sign in", "language": "Language"
   },
   "landing": {
     "hero_title": "Understand the gold market without being told what to do.",
     "hero_subtitle": "MIA Markets generates sourced contextual analyses for XAU/USD — transparent by design.",
-    "hero_cta_primary": "Start free", "hero_cta_secondary": "See transparency",
+    "hero_cta_primary": "Start free", "hero_cta_secondary": "Discover the method",
     "value_1_title": "Sourced AI narrative",
     "value_1_body": "Every analysis cites its sources. No hallucination, no recommendation.",
-    "value_2_title": "Radical transparency",
-    "value_2_body": "Live paper-trading curve published with drawdowns. No edge claimed.",
+    "value_2_title": "Honest posture",
+    "value_2_body": "No promise of gain, no edge claimed — a tool for understanding, not a trading system.",
     "value_3_title": "Multi-layer context",
     "value_3_body": "Volatility regime, cross-asset correlations, macro calendar — to understand, not to trade."
   },
@@ -19,22 +20,14 @@
     "short": "Educational algorithmic analysis. Not investment advice.",
     "long": "MIA Markets produces editorial contextual analyses, not personalised recommendations. Compliant with EU 2024/2811 and the March 2026 finfluencer regulation."
   },
-  "transparency": {
-    "title": "Radical transparency",
-    "subtitle": "Our live paper-trading curve, drawdowns included.",
-    "disclaimer": "Paper-trading demonstration. MIA Markets does NOT claim a trading edge. This curve is for educational purposes only.",
-    "stats_title": "Cumulative statistics",
-    "n_trades": "Trades", "win_rate": "Win rate", "total_r": "Cumulative R",
-    "max_dd": "Max drawdown", "sharpe": "Sharpe per trade"
-  },
   "glossary": {
     "title": "Glossary",
     "subtitle": "50 technical terms used in the analyses, explained simply."
   },
   "pricing": {
     "title": "Simple, transparent pricing",
-    "subtitle": "14-day free trial without card on LITE and PRO.",
-    "free_title": "FREE", "lite_title": "LITE", "pro_title": "PRO", "pro_plus_title": "PRO+",
+    "subtitle": "No card on the Découverte tier.",
+    "free_title": "Découverte", "approfondie_title": "Approfondie", "integrale_title": "Intégrale",
     "billed_monthly": "/mo", "cta_signup": "Get started", "cta_contact": "Contact us"
   },
   "chat": {

@@ -126,7 +126,7 @@ function AfterCard() {
             id="after-card-title"
             className="mt-0.5 text-base font-semibold tracking-tight"
           >
-            Un verdict, une conviction, un cadre.
+            Un verdict, un cadre, rien de caché.
           </h3>
         </div>
         <Badge variant="default" className="text-[10px]">
@@ -144,7 +144,7 @@ function AfterCard() {
           />
           <span>
             <strong className="font-medium text-foreground">Biais haussier</strong>{' '}
-            — conviction modérée (62/100), 8 composantes alignées sur 11.
+            — structure et régime décrits, sans score directif.
           </span>
         </li>
         <li className="flex items-start gap-2">
@@ -163,8 +163,8 @@ function AfterCard() {
             aria-hidden
           />
           <span>
-            <strong className="font-medium text-foreground">Incertitude conformelle</strong>{' '}
-            ±0.8 % à 1 h — affichée, pas masquée.
+            <strong className="font-medium text-foreground">Zone d&apos;incertitude</strong>{' '}
+            — affichée, jamais masquée.
           </span>
         </li>
       </ul>
@@ -269,9 +269,9 @@ function BeforeChart() {
 }
 
 /**
- * Chart "après" : un seul prix propre, une zone de conviction haussière
- * teintée vert pâle, une zone d'incertitude conformelle gris-foncé. Pas de
- * faux indicateur — la lecture parle d'elle-même.
+ * Chart "après" : un seul prix propre, une zone haussière conditionnelle
+ * teintée vert pâle, une zone d'incertitude gris-foncé. Pas de faux
+ * indicateur, pas de score directif — la lecture parle d'elle-même.
  */
 function AfterChart() {
   return (
@@ -284,11 +284,11 @@ function AfterChart() {
       <title id="after-chart-title">Lecture MIA — biais haussier conditionnel</title>
       <desc id="after-chart-desc">
         Le même graphique avec une seule lecture : zone haussière conditionnelle
-        marquée, incertitude conformelle représentée par une bande grise autour
+        marquée, zone d&apos;incertitude représentée par une bande grise autour
         du prix.
       </desc>
 
-      {/* Cône d'incertitude conformelle */}
+      {/* Zone d'incertitude */}
       <path
         d="M 200 70 L 370 30 L 370 110 L 200 70 Z"
         fill="hsl(var(--muted-foreground) / 0.12)"
@@ -331,7 +331,7 @@ function AfterChart() {
         className="fill-[hsl(var(--sentinel-bull))] text-[9px] font-semibold"
         textAnchor="middle"
       >
-        Biais ↑ · 62
+        Biais ↑
       </text>
       <text
         x="370"
@@ -339,7 +339,7 @@ function AfterChart() {
         className="fill-muted-foreground text-[8px]"
         textAnchor="end"
       >
-        Incertitude ±0.8 % · 1 h
+        Zone d&apos;incertitude
       </text>
 
       {/* Marker blackout FOMC */}

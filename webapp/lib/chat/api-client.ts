@@ -1,4 +1,7 @@
-import type { InsightSignalV2 } from '@/types/insight';
+import type { ChatSignalContext } from '@/lib/chat/types';
+
+/** The api-client only needs the instrument/timeframe combo for the preamble. */
+type SignalContext = Pick<ChatSignalContext, 'instrument' | 'timeframe'>;
 
 /**
  * Conversation turn exchanged with the backend chatbot. Mirrors the Pydantic
@@ -19,7 +22,7 @@ export interface AskOptions {
    * the backend's Haiku layer can resolve `get_market_reading(instrument,
    * timeframe)` for the right combo. See docs Chantier 5.A — Tension T1.
    */
-  signal?: InsightSignalV2 | null;
+  signal?: SignalContext | null;
   /** Prior turns (already trimmed by the caller; backend caps at 20). */
   history?: ReadonlyArray<ConversationMessage>;
   /** Abort handle wired to the request lifecycle. */
@@ -88,7 +91,7 @@ interface ChatbotMessageResponse {
  * Format is fixed (brackets + `Lecture en cours :` + space-separated codes)
  * precisely so it can be detected/stripped later if the architecture evolves.
  */
-function withSignalContext(question: string, signal?: InsightSignalV2 | null): string {
+function withSignalContext(question: string, signal?: SignalContext | null): string {
   if (!signal) return question;
   return `[Lecture en cours : ${signal.instrument} ${signal.timeframe}]\n${question}`;
 }

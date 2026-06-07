@@ -7,10 +7,10 @@ import { Card } from '@/components/ui/card';
 import { useChat } from '@/components/chat/ChatProvider';
 import { getChatbotScript } from '@/lib/chatbot';
 import { cn } from '@/lib/utils';
-import type { InsightSignalV2 } from '@/types/insight';
+import type { LandingSample } from '@/lib/market-reading/landing-samples';
 
 interface HeroChatPreviewProps {
-  signal: InsightSignalV2;
+  sample: LandingSample;
   /** Delay (ms) before the intro bubble appears — synced with card composition. */
   introDelayMs?: number;
 }
@@ -26,13 +26,23 @@ interface HeroChatPreviewProps {
  * inline, then expands to a full panel for real interaction.
  */
 export function HeroChatPreview({
-  signal,
+  sample,
   introDelayMs = 1400,
 }: HeroChatPreviewProps) {
   const { openFor, appendExchange } = useChat();
   const [showIntro, setShowIntro] = React.useState(false);
 
-  const script = React.useMemo(() => getChatbotScript(signal.id), [signal.id]);
+  const { reading } = sample;
+  const chatContext = React.useMemo(
+    () => ({
+      id: sample.id,
+      instrument: reading.header.instrument,
+      timeframe: reading.header.timeframe,
+    }),
+    [sample.id, reading.header.instrument, reading.header.timeframe],
+  );
+
+  const script = React.useMemo(() => getChatbotScript(sample.id), [sample.id]);
   const previewQuestions = React.useMemo(
     () => script?.questions.slice(0, 3) ?? [],
     [script],
@@ -41,18 +51,18 @@ export function HeroChatPreview({
   React.useEffect(() => {
     // Delay the intro bubble so the card finishes its composition first,
     // creating the impression that Sentinel "just finished reading" the
-    // signal before greeting.
+    // reading before greeting.
     const t = window.setTimeout(() => setShowIntro(true), introDelayMs);
     return () => window.clearTimeout(t);
   }, [introDelayMs]);
 
   function handleQuestion(qid: string, text: string, reply: string) {
     appendExchange({ questionId: qid, text, reply, source: 'scripted' });
-    openFor(signal);
+    openFor(chatContext);
   }
 
   function handleOpenPanel() {
-    openFor(signal);
+    openFor(chatContext);
   }
 
   return (
@@ -67,7 +77,7 @@ export function HeroChatPreview({
         <div>
           <p className="text-sm font-semibold">Sentinel</p>
           <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
-            Assistant conversationnel · {signal.instrument}
+            Assistant conversationnel · {reading.header.instrument}
           </p>
         </div>
       </div>
@@ -79,11 +89,11 @@ export function HeroChatPreview({
           <div className="hero-stagger rounded-2xl rounded-tl-sm bg-muted px-4 py-3 text-sm leading-relaxed">
             <p>
               Salut, je suis Sentinel — l&apos;assistant de MIA Markets. Je
-              viens de lire le marché {signal.instrument} : la structure
+              viens de lire le marché {reading.header.instrument} : la structure
               indique une configuration{' '}
-              {signal.direction === 'BULLISH_SETUP'
+              {reading.regime.trend === 'bullish'
                 ? 'haussière'
-                : signal.direction === 'BEARISH_SETUP'
+                : reading.regime.trend === 'bearish'
                   ? 'baissière'
                   : 'neutre'}
               .

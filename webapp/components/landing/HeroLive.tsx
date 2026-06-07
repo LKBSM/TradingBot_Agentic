@@ -2,7 +2,7 @@ import { ShieldCheck, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { HeroChatPreview } from './HeroChatPreview';
 import { HeroMarketReading } from './HeroMarketReading';
-import { getHeroSampleSignal } from '@/lib/mocks';
+import { getHeroLandingSample } from '@/lib/market-reading/landing-samples';
 
 /**
  * Hero LIVE — la lecture XAU/M15 du jour est rendue en grand, animée pour
@@ -19,7 +19,7 @@ import { getHeroSampleSignal } from '@/lib/mocks';
  * badge donnent juste le cadre.
  */
 export function HeroLive() {
-  const signal = getHeroSampleSignal();
+  const sample = getHeroLandingSample();
 
   return (
     <section
@@ -55,8 +55,8 @@ export function HeroLive() {
       </h1>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:items-start lg:gap-8">
-        <HeroMarketReading signal={signal} />
-        <HeroChatPreview signal={signal} introDelayMs={1400} />
+        <HeroMarketReading sample={sample} />
+        <HeroChatPreview sample={sample} introDelayMs={1400} />
       </div>
 
       {/* Discreet CTA — pas en hero dominant comme demandé. */}

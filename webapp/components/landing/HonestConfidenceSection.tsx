@@ -1,22 +1,22 @@
-import { ShieldCheck, AlertTriangle, FileText } from 'lucide-react';
+import { ShieldCheck, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 /**
- * Section 5 — « Honnêteté Conformelle ».
+ * Section 5 — « Honnêteté » (Engagement public).
  *
  * Pleine largeur, fond sombre subtil. C'est le moat de MIA : on assume
- * publiquement nos chiffres défavorables.
+ * publiquement notre posture — un outil de compréhension, pas une promesse
+ * de gain.
  *
- *   - Profit Factor backtest 7 ans = 0,786 (sous PF=1)
- *   - Sous-performance vs buy-and-hold = −318 pp
- *   - A1 verdict 2026-05-01 : DSR=0,000 · PBO=0,500 · edge non détecté
- *   - edge_claim = false dans le contrat InsightSignal v2.1.0
+ * Post-pivot 2026-05-27 (Chantier 5.C) : retrait des chiffres de backtest
+ * (Profit Factor, Deflated Sharpe Ratio, PBO) et de la colonne « edge
+ * mesurable » — ces métriques relevaient du positionnement pré-pivot
+ * « système de trading » et n'ont pas leur place sur un indicateur descriptif
+ * (edge_claim=false, niveau 1.5 strict).
  *
- * + citation imposée par lock 2 :
- *   « Aucun indicateur de marché ne devrait promettre des gains. Nous n'en
- *    faisons pas. Ce que nous offrons, c'est une compréhension augmentée
- *    du marché — pas une performance financière. »
+ * Conservé : la citation « Engagement public » (lock 2) + les colonnes
+ * « Ce que nous ne ferons jamais » et « Ce que nous faisons aujourd'hui ».
  *
  * Cette section EXISTE parce qu'elle constitue la défense MIFID II / UE
  * 2024/2811 et le différenciateur "fini de mentir" face aux fournisseurs
@@ -42,52 +42,18 @@ export function HonestConfidenceSection() {
             id="honest-confidence-title"
             className="text-balance text-2xl font-semibold tracking-tight sm:text-3xl lg:text-4xl"
           >
-            Voici ce que notre backtest dit. Et il ne dit pas ce que vous
-            espérez entendre.
+            Un indicateur honnête commence par dire ce qu&apos;il ne fait pas.
           </h2>
           <p className="mt-4 max-w-2xl text-pretty text-muted-foreground">
-            Sur 7 ans d&apos;historique XAU/USD, le scoring actuel de MIA{' '}
-            <strong className="text-foreground">ne bat pas</strong> une
-            stratégie passive. Nous le publions — pas parce que c&apos;est
-            confortable, mais parce qu&apos;un indicateur honnête commence
-            par dire ce qu&apos;il ne sait pas faire.
+            MIA décrit le marché — la structure, le régime, les événements.
+            Elle ne promet aucun gain et ne se présente pas comme un système
+            de trading. Nous l&apos;assumons publiquement, parce que c&apos;est
+            la seule posture défendable pour un outil de compréhension.
           </p>
         </header>
 
-        {/* Quatre chiffres durs */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard
-            label="Profit Factor backtest"
-            value="0,786"
-            unit="sur 7 ans"
-            tone="bad"
-            footnote="Reference : XAU/USD M15 · 2019-01 → 2025-12 · coûts inclus."
-          />
-          <StatCard
-            label="Sous-performance vs buy & hold"
-            value="−318"
-            unit="points · 7 ans"
-            tone="bad"
-            footnote="Stratégie longue/short v. simple détention or."
-          />
-          <StatCard
-            label="Deflated Sharpe Ratio"
-            value="0,000"
-            unit="hypothèse multiple-testing"
-            tone="bad"
-            footnote="Verdict A1 stack 2026-05-01 · LightGBM 2 niveaux."
-          />
-          <StatCard
-            label="Probability of Backtest Overfitting"
-            value="0,50"
-            unit="cible &lt; 0,33"
-            tone="warn"
-            footnote="CPCV 28 paths · 19 features."
-          />
-        </div>
-
         {/* Citation imposée (lock 2) */}
-        <figure className="mt-12 max-w-3xl">
+        <figure className="max-w-3xl">
           <blockquote className="border-l-2 border-sentinel-warn pl-5 text-balance text-base italic text-foreground sm:text-lg">
             Aucun indicateur de marché ne devrait promettre des gains. Nous
             n&apos;en faisons pas. Ce que nous offrons, c&apos;est une
@@ -100,7 +66,7 @@ export function HonestConfidenceSection() {
         </figure>
 
         {/* Que faisons-nous alors */}
-        <div className="mt-12 grid gap-6 lg:grid-cols-3">
+        <div className="mt-12 grid gap-6 lg:grid-cols-2">
           <ValueColumn
             icon={<AlertTriangle className="h-5 w-5" aria-hidden />}
             title="Ce que nous ne ferons jamais"
@@ -108,7 +74,7 @@ export function HonestConfidenceSection() {
               'Publier des « 90 % win-rate ».',
               'Promettre un rendement chiffré.',
               'Vendre une lecture comme un signal de trade.',
-              'Cacher un backtest défavorable.',
+              'Nous présenter comme un système de trading rentable.',
             ]}
             tone="bad"
           />
@@ -117,96 +83,15 @@ export function HonestConfidenceSection() {
             title={`Ce que nous faisons aujourd${'’'}hui`}
             items={[
               'Une lecture structurée du marché en temps réel.',
-              "Une jauge d'incertitude conformelle, affichée.",
+              "Une incertitude affichée, jamais masquée.",
               'Un chatbot qui refuse les ordres de trade.',
-              'Tous nos chiffres publics — bons ou mauvais.',
+              'Une méthodologie publique et reproductible.',
             ]}
             tone="good"
           />
-          <ValueColumn
-            icon={<FileText className="h-5 w-5" aria-hidden />}
-            title="Ce sur quoi nous travaillons"
-            items={[
-              'Améliorer la valeur prédictive du scoring.',
-              "Atteindre un edge mesurable (DSR > 1, PF lo > 1,05).",
-              'Tester en paper-trading avant toute promesse.',
-              'Publier les progrès — comme les revers.',
-            ]}
-            tone="neutral"
-          />
         </div>
-
-        {/* Notes techniques bas de section */}
-        <p className="mt-10 max-w-3xl text-xs leading-relaxed text-muted-foreground">
-          <strong className="font-medium text-foreground">
-            Note technique.
-          </strong>{' '}
-          Le contrat <code className="rounded bg-muted/60 px-1.5 py-0.5 font-mono text-[10px]">
-            InsightSignal v2.1.0
-          </code>{' '}
-          expose explicitement le champ{' '}
-          <code className="rounded bg-muted/60 px-1.5 py-0.5 font-mono text-[10px]">
-            edge_claim = false
-          </code>
-          . Tant que ce champ n&apos;est pas passé à <code className="rounded bg-muted/60 px-1.5 py-0.5 font-mono text-[10px]">true</code>,
-          MIA s&apos;interdit de présenter ses lectures comme un signal de
-          trade rentable. Méthodologie : Deflated Sharpe Ratio (Bailey &amp;
-          López de Prado, 2014) · CPCV (López de Prado, 2018) · PBO (Bailey
-          et al., 2017). Audit interne reproductible (rapport{' '}
-          <code className="rounded bg-muted/60 px-1.5 py-0.5 font-mono text-[10px]">
-            a1_verdict_2026.md
-          </code>).
-        </p>
       </div>
     </section>
-  );
-}
-
-interface StatCardProps {
-  label: string;
-  value: string;
-  unit: string;
-  footnote: string;
-  tone: 'bad' | 'warn' | 'good';
-}
-
-function StatCard({ label, value, unit, footnote, tone }: StatCardProps) {
-  const toneClasses = {
-    bad: 'border-sentinel-bear/30 bg-sentinel-bear/[0.04]',
-    warn: 'border-sentinel-warn/30 bg-sentinel-warn/[0.04]',
-    good: 'border-sentinel-bull/30 bg-sentinel-bull/[0.04]',
-  } as const;
-  const valueClasses = {
-    bad: 'text-sentinel-bear',
-    warn: 'text-sentinel-warn',
-    good: 'text-sentinel-bull',
-  } as const;
-
-  return (
-    <article
-      className={cn(
-        'rounded-2xl border p-5 sm:p-6',
-        toneClasses[tone],
-      )}
-    >
-      <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-        {label}
-      </p>
-      <p
-        className={cn(
-          'mt-2 flex items-baseline gap-1.5 tabular-nums',
-          valueClasses[tone],
-        )}
-      >
-        <span className="text-3xl font-semibold sm:text-4xl">{value}</span>
-        <span className="text-xs font-normal text-muted-foreground">
-          {unit}
-        </span>
-      </p>
-      <p className="mt-3 text-[11px] leading-snug text-muted-foreground">
-        {footnote}
-      </p>
-    </article>
   );
 }
 
@@ -214,19 +99,17 @@ interface ValueColumnProps {
   icon: React.ReactNode;
   title: string;
   items: ReadonlyArray<string>;
-  tone: 'bad' | 'good' | 'neutral';
+  tone: 'bad' | 'good';
 }
 
 function ValueColumn({ icon, title, items, tone }: ValueColumnProps) {
   const iconClasses = {
     bad: 'text-sentinel-bear',
     good: 'text-sentinel-bull',
-    neutral: 'text-muted-foreground',
   } as const;
   const bulletClasses = {
     bad: 'bg-sentinel-bear',
     good: 'bg-sentinel-bull',
-    neutral: 'bg-muted-foreground',
   } as const;
 
   return (

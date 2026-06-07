@@ -18,7 +18,7 @@ interface FaqEntry {
  *
  * 6 questions choisies sur les vrais points d'objection :
  *  1. Est-ce un service de signaux ? (compliance + positionnement)
- *  2. Quelle est la précision réelle ? (lien section Honnêteté)
+ *  2. Promesse de performance ? (positionnement descriptif + lien Honnêteté)
  *  3. Comment fonctionne le chatbot ? (Claude + contexte)
  *  4. Suis-je éligible ? (geo 9 pays)
  *  5. Annulation / remboursement
@@ -43,23 +43,22 @@ const FAQ: ReadonlyArray<FaqEntry> = [
   },
   {
     id: 'q2-precision',
-    question: 'Quelle est la précision réelle de l’algorithme ?',
+    question: 'MIA promet-elle une performance ou un gain ?',
     answer: (
       <>
-        Aujourd&apos;hui : <strong>Profit Factor backtest 7 ans = 0,786</strong>,
-        soit en-dessous d&apos;une stratégie passive longue. Nous publions
-        ce chiffre, ainsi que le Deflated Sharpe Ratio à zéro et la
-        probability of backtest overfitting à 0,50, dans la section{' '}
+        Non. MIA est un <strong>outil de compréhension augmentée</strong>,
+        pas un moteur de performance : elle <em>décrit</em> le marché
+        (structure, régime, événements) sans promettre de rendement ni se
+        présenter comme un système de trading. Ce que nous mesurons et
+        assumons publiquement, c&apos;est la <strong>fidélité descriptive</strong>{' '}
+        de nos lectures — détaillée dans la section{' '}
         <a
           href="#honnetete"
           className="underline-offset-2 hover:underline"
         >
-          Honnêteté conformelle
+          Honnêteté
         </a>
-        . Tant que le contrat <code className="font-mono text-[12px]">edge_claim</code>{' '}
-        n&apos;est pas passé à <code className="font-mono text-[12px]">true</code>,
-        MIA reste un outil de <em>compréhension augmentée</em>, pas un
-        moteur de performance.
+        .
       </>
     ),
   },
@@ -114,9 +113,8 @@ const FAQ: ReadonlyArray<FaqEntry> = [
     question: 'Que devient mon historique et mes données ?',
     answer: (
       <>
-        Vos lectures, vos conversations chatbot et votre suivi paper-PnL
-        restent <strong>privés et exportables au format JSON</strong> à
-        tout moment. À la suppression du compte, l&apos;intégralité des
+        Vos lectures et vos conversations chatbot restent{' '}
+        <strong>privés et exportables au format JSON</strong> à tout moment. À la suppression du compte, l&apos;intégralité des
         données est effacée sous 30 jours (RGPD art. 17). Aucune
         revente, aucun croisement publicitaire. Détail dans la{' '}
         <a

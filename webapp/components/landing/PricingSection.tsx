@@ -35,7 +35,7 @@ const TIERS: ReadonlyArray<Tier> = [
     pitch: 'Goûtez la lecture, sans CB, sans engagement.',
     features: [
       '1 lecture XAU M15 par jour',
-      'Verdict + jauge de conviction',
+      'Verdict + lecture structurée',
       '3 questions chatbot par jour',
       'Posture éducative, sans signaux',
     ],
@@ -65,9 +65,9 @@ const TIERS: ReadonlyArray<Tier> = [
     pitch: 'Tout l’outil pour les power-users SMC + macro.',
     features: [
       'Tout Approfondie',
-      'Décomposition 8 composantes (waterfall)',
-      'Visualisation conformelle + sources RAG',
-      'Historique 50 lectures + PnL paper individuel',
+      'Synthèse experte détaillée',
+      'Sources RAG académiques',
+      'Historique 50 lectures',
       'Accès anticipé futures fonctionnalités',
     ],
     cta: "S'abonner",
@@ -96,11 +96,11 @@ export function PricingSection() {
         </h2>
         <p className="max-w-2xl text-pretty text-muted-foreground">
           Pas d&apos;essai gratuit déguisé, pas de carte demandée sur le
-          tier Découverte. Les tarifs Early Access restent valables tant que
-          MIA n&apos;a pas atteint l&apos;edge mesurable (cf. section{' '}
+          tier Découverte. Tarifs Early Access pendant la phase d&apos;accès
+          anticipé — voir notre posture dans la section{' '}
           <a href="#honnetete" className="underline-offset-2 hover:underline">
-            Honnêteté conformelle
-          </a>).
+            Honnêteté
+          </a>.
         </p>
       </header>
 
@@ -142,7 +142,7 @@ export function PricingSection() {
       </aside>
 
       <p className="text-xs italic text-muted-foreground">
-        Démonstration paper-trading. MIA Markets produit des analyses
+        Démonstration en accès anticipé. MIA Markets produit des analyses
         éditoriales contextuelles et non des recommandations
         personnalisées (UE 2024/2811). Disponibilité géographique
         restreinte — voir bas de page.

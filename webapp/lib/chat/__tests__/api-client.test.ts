@@ -5,7 +5,6 @@ import {
   ChatApiUnavailableError,
   type ConversationMessage,
 } from '@/lib/chat/api-client';
-import type { InsightSignalV2 } from '@/types/insight';
 
 /**
  * Unit tests for the Chantier 5.A api-client → backend FastAPI (Chantier 4).
@@ -13,8 +12,8 @@ import type { InsightSignalV2 } from '@/types/insight';
  */
 
 // Minimal signal stub: askSentinel only reads instrument + timeframe for the
-// Tension-T1 context preamble. Cast keeps the test free of the full heavy type.
-const SIGNAL = { instrument: 'XAUUSD', timeframe: 'H1' } as InsightSignalV2;
+// Tension-T1 context preamble (SignalContext = Pick<…,'instrument'|'timeframe'>).
+const SIGNAL = { instrument: 'XAUUSD', timeframe: 'H1' };
 
 function jsonResponse(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), {

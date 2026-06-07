@@ -1,17 +1,18 @@
 {
+  "_comment": "Chantier 5.C — i18n purged of pre-pivot residuals: performance-stats section removed, tiers aligned to Découverte/Approfondie/Intégrale, taglines reworded to the descriptive posture. NOTE: these messages are loaded by NextIntlClientProvider but NOT yet consumed (components use hard-coded FR strings). TODO 5.D: validate/wire these keys during copy finishing, or remove.",
   "nav": {
-    "dashboard": "Panel", "narratives": "Análisis", "transparency": "Transparencia",
+    "dashboard": "Panel", "narratives": "Análisis",
     "glossary": "Glosario", "pricing": "Precios", "chat": "Chat IA",
     "login": "Iniciar sesión", "language": "Idioma"
   },
   "landing": {
     "hero_title": "Comprende el mercado del oro sin que te digan qué hacer.",
     "hero_subtitle": "MIA Markets genera análisis contextuales con fuentes para XAU/USD — transparente por diseño.",
-    "hero_cta_primary": "Empieza gratis", "hero_cta_secondary": "Ver transparencia",
+    "hero_cta_primary": "Empieza gratis", "hero_cta_secondary": "Descubre el método",
     "value_1_title": "Narrativa de IA con fuentes",
     "value_1_body": "Cada análisis cita sus fuentes. Sin alucinación, sin recomendación.",
-    "value_2_title": "Transparencia radical",
-    "value_2_body": "Curva de paper-trading publicada en vivo, drawdowns incluidos. Sin reclamar edge.",
+    "value_2_title": "Postura honesta",
+    "value_2_body": "Sin promesa de ganancia, sin edge reclamado — una herramienta para comprender, no un sistema de trading.",
     "value_3_title": "Contexto multicapa",
     "value_3_body": "Régimen de volatilidad, correlaciones cross-asset, calendario macro — para comprender, no para operar."
   },
@@ -19,22 +20,14 @@
     "short": "Análisis algorítmico educativo. No es asesoramiento de inversión.",
     "long": "MIA Markets produce análisis editoriales contextuales, no recomendaciones personalizadas. Cumple UE 2024/2811 y la regulación de finfluencers de marzo de 2026."
   },
-  "transparency": {
-    "title": "Transparencia radical",
-    "subtitle": "Nuestra curva de paper-trading en vivo, drawdowns incluidos.",
-    "disclaimer": "Demostración de paper-trading. MIA Markets NO pretende poseer un edge. Esta curva es educativa.",
-    "stats_title": "Estadísticas acumuladas",
-    "n_trades": "Operaciones", "win_rate": "Tasa de aciertos", "total_r": "R acumulado",
-    "max_dd": "Drawdown máx.", "sharpe": "Sharpe por operación"
-  },
   "glossary": {
     "title": "Glosario",
     "subtitle": "50 términos técnicos usados en los análisis, explicados de forma sencilla."
   },
   "pricing": {
     "title": "Precios simples y transparentes",
-    "subtitle": "Prueba de 14 días sin tarjeta en LITE y PRO.",
-    "free_title": "FREE", "lite_title": "LITE", "pro_title": "PRO", "pro_plus_title": "PRO+",
+    "subtitle": "Sin tarjeta en el tier Découverte.",
+    "free_title": "Découverte", "approfondie_title": "Approfondie", "integrale_title": "Intégrale",
     "billed_monthly": "/mes", "cta_signup": "Empezar", "cta_contact": "Contáctanos"
   },
   "chat": {

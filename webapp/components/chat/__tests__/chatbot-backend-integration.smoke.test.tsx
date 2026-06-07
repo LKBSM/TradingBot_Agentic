@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChatProvider, useChat } from '../ChatProvider';
 import { ChatMessage } from '../ChatMessage';
-import type { InsightSignalV2 } from '@/types/insight';
+import type { ChatSignalContext } from '@/lib/chat/types';
 
 /**
  * Chantier 5.A — smoke "e2e équivalent" de l'intégration chatbot.
@@ -14,7 +14,7 @@ import type { InsightSignalV2 } from '@/types/insight';
  * matrice dans un navigateur avec page.route().
  */
 
-const SIGNAL = { id: 'sig-1', instrument: 'XAUUSD', timeframe: 'H1' } as InsightSignalV2;
+const SIGNAL: ChatSignalContext = { id: 'sig-1', instrument: 'XAUUSD', timeframe: 'H1' };
 
 function jsonResponse(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), {

@@ -18,7 +18,7 @@ import { FALLBACK_SCRIPT, getChatbotScript } from '@/lib/chatbot';
 import {
   formatInstrument,
   formatTimeframe,
-} from '@/lib/insight-formatters';
+} from '@/lib/market-reading/formatters';
 import type { ChatbotQuestion } from '@/types/chatbot';
 
 /**
@@ -96,7 +96,7 @@ export function ChatPanel() {
                 className="text-xs"
               >
                 {activeSignal
-                  ? `${formatInstrument(activeSignal)} · ${formatTimeframe(activeSignal)} · contexte injecté`
+                  ? `${formatInstrument(activeSignal.instrument)} · ${formatTimeframe(activeSignal.timeframe)} · contexte injecté`
                   : 'Sélectionne une lecture pour ouvrir le contexte.'}
               </SheetDescription>
             </div>

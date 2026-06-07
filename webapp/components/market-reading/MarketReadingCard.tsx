@@ -1,7 +1,7 @@
 import { MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { DisclaimerStub } from './DisclaimerStub';
+import { DisclaimerStub } from '@/components/shared/DisclaimerStub';
 import { MarketPhasePanel } from './MarketPhasePanel';
 import { MarketReadingHeader } from './MarketReadingHeader';
 import {
