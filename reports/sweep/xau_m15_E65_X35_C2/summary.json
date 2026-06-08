@@ -1,0 +1,151 @@
+{
+  "symbol": "XAUUSD",
+  "timeframe": "M15",
+  "bars_processed": 29875,
+  "date_range": [
+    "2025-01-23 03:15:00",
+    "2026-04-29 23:45:00"
+  ],
+  "state_machine_config": {
+    "enter_threshold": 65.0,
+    "exit_threshold": 35.0,
+    "confirm_bars": 2,
+    "cooldown_bars": 2,
+    "max_signal_age_bars": 12,
+    "silent_bars_before_score_exit": 2,
+    "high_vol_forces_exit": true
+  },
+  "open_trade_bars": 0,
+  "summary": {
+    "total_trades": 1,
+    "wins": 0,
+    "losses": 0,
+    "other_exits": 1,
+    "win_rate": 0.0,
+    "loss_rate": 0.0,
+    "exits_by_reason": {
+      "regime_shifted": 1
+    },
+    "avg_r": -0.47,
+    "median_r": -0.47,
+    "total_r": -0.47,
+    "best_r": -0.47,
+    "worst_r": -0.47,
+    "gross_win_r": 0.0,
+    "gross_loss_r": -0.47,
+    "profit_factor": 0.0,
+    "expectancy_r": -0.47,
+    "max_drawdown_r": 0.0,
+    "max_consecutive_losses": 1,
+    "sharpe_per_trade": 0.0,
+    "avg_bars_held": 1.0,
+    "median_bars_held": 1.0,
+    "signals_per_day": 0.002,
+    "arms_started": 6,
+    "arms_confirmed": 1,
+    "arms_aborted": 5,
+    "confirmation_rate": 0.167,
+    "avg_signal_lifetime_bars_machine": 2.0,
+    "bars_with_bos": 1002,
+    "signals_produced_by_detector": 4052,
+    "score_max": 70.83,
+    "score_percentiles": {
+      "p50": 41.7,
+      "p75": 45.16,
+      "p90": 49.39,
+      "p95": 53.18,
+      "p99": 58.54
+    }
+  },
+  "trades": [
+    {
+      "signal_id": "1b0e52601773",
+      "direction": "SHORT",
+      "entry_bar": "2026-02-01 23:15:00",
+      "exit_bar": "2026-02-01 23:30:00",
+      "entry_price": 4729.96,
+      "exit_price": 4774.895,
+      "stop_loss": 4853.94,
+      "take_profit": 4419.99,
+      "confluence_score": 66.69298440992075,
+      "exit_reason": "regime_shifted",
+      "bars_held": 1,
+      "pnl_price": -58.2187,
+      "pnl_price_raw": -44.935,
+      "r_multiple": -0.47,
+      "initial_risk": 123.98,
+      "spread_cost": 3.8019,
+      "slippage_cost": 9.4818,
+      "commission": 0.0,
+      "components": {
+        "BOS": 7.5,
+        "FVG": 15.0,
+        "OrderBlock": 0.0,
+        "Regime": 21.25,
+        "News": 0.0,
+        "Volume": 0.0,
+        "Momentum": 2.935,
+        "RSI_Divergence": 0.0
+      },
+      "cmp_BOS": 7.5,
+      "cmp_FVG": 15.0,
+      "cmp_OrderBlock": 0.0,
+      "cmp_Regime": 21.25,
+      "cmp_News": 0.0,
+      "cmp_Volume": 0.0,
+      "cmp_Momentum": 2.935,
+      "cmp_RSI_Divergence": 0.0
+    }
+  ],
+  "institutional_metrics": {
+    "summary": {
+      "total_trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "breakeven": 0,
+      "win_rate": 0.0,
+      "loss_rate": 1.0
+    },
+    "returns": {
+      "avg_r": -0.47,
+      "median_r": -0.47,
+      "stdev_r": 0.0,
+      "total_r": -0.47,
+      "expectancy_r": -0.47,
+      "best_r": -0.47,
+      "worst_r": -0.47,
+      "gross_win_r": 0.0,
+      "gross_loss_r": -0.47
+    },
+    "risk": {
+      "profit_factor": 0.0,
+      "payoff_ratio": 0.0,
+      "max_drawdown_r": 0.0,
+      "max_consecutive_losses": 1,
+      "max_consecutive_wins": 0
+    },
+    "risk_adjusted": {
+      "sharpe_per_trade": 0.0,
+      "sortino_per_trade": -1.0,
+      "calmar": 0.0,
+      "sharpe_annualised": null,
+      "sortino_annualised": -0.9
+    },
+    "lifetime": {
+      "avg_bars_held": 1.0,
+      "median_bars_held": 1.0,
+      "trades_per_year": 0.81
+    },
+    "by_tier": [
+      {
+        "tier": "STANDARD",
+        "trades": 1,
+        "win_rate": 0.0,
+        "expectancy_r": -0.47,
+        "total_r": -0.47,
+        "profit_factor": 0.0,
+        "avg_bars_held": 1.0
+      }
+    ]
+  }
+}

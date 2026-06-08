@@ -1,0 +1,240 @@
+{
+  "XAUUSD": {
+    "symbol": "XAUUSD",
+    "n_train_returns": 117852,
+    "n_oos_returns": 54995,
+    "state_labels": {
+      "0": "low_vol_trending",
+      "1": "low_vol_ranging",
+      "2": "high_vol_stress"
+    },
+    "label_counts": {
+      "low_vol_trending": 5617,
+      "low_vol_ranging": 46460,
+      "high_vol_stress": 2918
+    },
+    "q1_label_sanity_stress": {
+      "median_fwd_var_stress": 3.6664476686273506e-06,
+      "median_fwd_var_non_stress": 5.660258635008407e-07,
+      "ratio": 6.477526744008766,
+      "n_stress": 2918,
+      "n_non_stress": 52069,
+      "definition": "forward 8-bar median squared return on stress vs non-stress bars; ratio > 1 = label is descriptive"
+    },
+    "q1_label_sanity_trending": {
+      "median_drift_trending": 0.00015819919403037286,
+      "median_drift_ranging": 9.633430868472015e-05,
+      "ratio": 1.6421895396386985,
+      "n_trending": 5617,
+      "n_ranging": 46460,
+      "definition": "median |32-bar rolling mean return| on trending vs ranging bars; ratio > 1 = label is descriptive"
+    },
+    "q2_persistence": {
+      "flicker_rate_per_bar": 0.21753282176237407,
+      "dwell_times": {
+        "low_vol_trending": {
+          "median_bars": 1.0,
+          "mean_bars": 1.0,
+          "n_runs": 5617
+        },
+        "low_vol_ranging": {
+          "median_bars": 4.0,
+          "mean_bars": 9.254980079681275,
+          "n_runs": 5020
+        },
+        "high_vol_stress": {
+          "median_bars": 1.0,
+          "mean_bars": 2.1989449886963075,
+          "n_runs": 1327
+        }
+      },
+      "transition_matrix": [
+        [
+          0.0,
+          0.8790954415954416,
+          0.12090455840455841
+        ],
+        [
+          0.09410245372363324,
+          0.8919500645716746,
+          0.013947481704692209
+        ],
+        [
+          0.4263193968471556,
+          0.02844413982179575,
+          0.5452364633310487
+        ]
+      ],
+      "n": 54995
+    },
+    "q3_posterior_calibration": {
+      "ece": 0.5388993397935042,
+      "verdict": "\ud83d\udd34",
+      "bins": [
+        {
+          "lo": 0.4,
+          "hi": 0.5,
+          "n": 539,
+          "accuracy": 0.3172541743970315,
+          "mean_conf": 0.45711142895885043
+        },
+        {
+          "lo": 0.5,
+          "hi": 0.6,
+          "n": 1318,
+          "accuracy": 0.38163884673748105,
+          "mean_conf": 0.553540444389039
+        },
+        {
+          "lo": 0.6,
+          "hi": 0.7,
+          "n": 1767,
+          "accuracy": 0.34521788341822296,
+          "mean_conf": 0.6520125726789625
+        },
+        {
+          "lo": 0.7,
+          "hi": 0.8,
+          "n": 2233,
+          "accuracy": 0.2942230183609494,
+          "mean_conf": 0.752916844647294
+        },
+        {
+          "lo": 0.8,
+          "hi": 0.8999999999999999,
+          "n": 3405,
+          "accuracy": 0.2740088105726872,
+          "mean_conf": 0.8554551982693684
+        },
+        {
+          "lo": 0.8999999999999999,
+          "hi": 1.0,
+          "n": 45393,
+          "accuracy": 0.41682638292247703,
+          "mean_conf": 0.9848503987659664
+        }
+      ],
+      "n_valid": 54987,
+      "definition": "binned posterior vs accuracy of stress/non-stress prediction confirmed by next-8-bar realized var vs train-derived top-1/3 threshold"
+    }
+  },
+  "EURUSD": {
+    "symbol": "EURUSD",
+    "n_train_returns": 124582,
+    "n_oos_returns": 49897,
+    "state_labels": {
+      "1": "low_vol_trending",
+      "0": "low_vol_ranging",
+      "2": "high_vol_stress"
+    },
+    "label_counts": {
+      "low_vol_trending": 24704,
+      "low_vol_ranging": 24559,
+      "high_vol_stress": 634
+    },
+    "q1_label_sanity_stress": {
+      "median_fwd_var_stress": 7.299075626867805e-07,
+      "median_fwd_var_non_stress": 8.575996087446085e-08,
+      "ratio": 8.51105288813332,
+      "n_stress": 634,
+      "n_non_stress": 49255,
+      "definition": "forward 8-bar median squared return on stress vs non-stress bars; ratio > 1 = label is descriptive"
+    },
+    "q1_label_sanity_trending": {
+      "median_drift_trending": 3.735680828910546e-05,
+      "median_drift_ranging": 3.729698304251374e-05,
+      "ratio": 1.001604023749683,
+      "n_trending": 24704,
+      "n_ranging": 24559,
+      "definition": "median |32-bar rolling mean return| on trending vs ranging bars; ratio > 1 = label is descriptive"
+    },
+    "q2_persistence": {
+      "flicker_rate_per_bar": 0.9942480359147026,
+      "dwell_times": {
+        "low_vol_ranging": {
+          "median_bars": 1.0,
+          "mean_bars": 1.0,
+          "n_runs": 24559
+        },
+        "low_vol_trending": {
+          "median_bars": 1.0,
+          "mean_bars": 1.0,
+          "n_runs": 24704
+        },
+        "high_vol_stress": {
+          "median_bars": 1.0,
+          "mean_bars": 1.8270893371757926,
+          "n_runs": 347
+        }
+      },
+      "transition_matrix": [
+        [
+          0.0,
+          1.0,
+          0.0
+        ],
+        [
+          0.9859536917098446,
+          0.0,
+          0.01404630829015544
+        ],
+        [
+          0.3186119873817035,
+          0.22870662460567823,
+          0.4526813880126183
+        ]
+      ],
+      "n": 49897
+    },
+    "q3_posterior_calibration": {
+      "ece": 0.18232682415537083,
+      "verdict": "\ud83d\udd34",
+      "bins": [
+        {
+          "lo": 0.4,
+          "hi": 0.5,
+          "n": 8946,
+          "accuracy": 0.6075340934495864,
+          "mean_conf": 0.466135497682004
+        },
+        {
+          "lo": 0.5,
+          "hi": 0.6,
+          "n": 15358,
+          "accuracy": 0.6228675608803229,
+          "mean_conf": 0.5441398043087954
+        },
+        {
+          "lo": 0.6,
+          "hi": 0.7,
+          "n": 9472,
+          "accuracy": 0.5135135135135135,
+          "mean_conf": 0.6482218367179264
+        },
+        {
+          "lo": 0.7,
+          "hi": 0.8,
+          "n": 6386,
+          "accuracy": 0.5880050109614783,
+          "mean_conf": 0.7475770807750779
+        },
+        {
+          "lo": 0.8,
+          "hi": 0.8999999999999999,
+          "n": 4896,
+          "accuracy": 0.4360702614379085,
+          "mean_conf": 0.8469804249220786
+        },
+        {
+          "lo": 0.8999999999999999,
+          "hi": 1.0,
+          "n": 3422,
+          "accuracy": 0.2679719462302747,
+          "mean_conf": 0.9445498455536646
+        }
+      ],
+      "n_valid": 49889,
+      "definition": "binned posterior vs accuracy of stress/non-stress prediction confirmed by next-8-bar realized var vs train-derived top-1/3 threshold"
+    }
+  }
+}

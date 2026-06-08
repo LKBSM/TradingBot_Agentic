@@ -33,7 +33,7 @@
 
 import numpy as np
 import pandas as pd
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from datetime import datetime, time
 from collections import deque
 
@@ -265,8 +265,11 @@ class MultiTimeframeFeatures:
         """Get features from a higher timeframe."""
         features = {}
 
-        # Find the most recent HTF bar
-        mask = htf_df.index <= current_ts
+        # Find the most recent HTF bar (strict inequality — no look-ahead).
+        # `current_ts` is the current LTF bar timestamp; the HTF bar with the
+        # same timestamp would still be open (forming), so we exclude it.
+        # Fix P0-7 Sprint 1 batch 1.2 (audit institutional 2026-05-15).
+        mask = htf_df.index < current_ts
         if not mask.any():
             # No HTF data available yet
             return {
@@ -536,7 +539,16 @@ class KeyLevelDetector:
         self._calculate_swing_points()
 
     def _calculate_swing_points(self) -> None:
-        """Calculate swing highs and lows on 4H."""
+        """Calculate swing highs and lows on 4H — causally corrected.
+
+        Uses a 5-bar centered-then-shifted detector: the boolean condition
+        is computed with the full ``[i-2, i-1, i, i+1, i+2]`` window, then
+        the resulting series is ``.shift(2)`` so the swing detected at
+        center bar ``i`` is only emitted at ``t = i + 2``. This introduces
+        a deterministic 2-bar detection lag but eliminates the look-ahead
+        bias of the prior implementation (which exposed bars i+1 / i+2
+        before they were closed).
+        """
         df = self.df_4h
 
         if len(df) < 5:
@@ -544,31 +556,50 @@ class KeyLevelDetector:
             self.swing_lows = []
             return
 
-        swing_highs = []
-        swing_lows = []
+        high = df['High']
+        low = df['Low']
 
-        for i in range(2, len(df) - 2):
-            # Swing high: higher than 2 bars on each side
-            if (df['High'].iloc[i] > df['High'].iloc[i-1] and
-                df['High'].iloc[i] > df['High'].iloc[i-2] and
-                df['High'].iloc[i] > df['High'].iloc[i+1] and
-                df['High'].iloc[i] > df['High'].iloc[i+2]):
-                swing_highs.append({
-                    'price': df['High'].iloc[i],
-                    'idx': i,
-                    'timestamp': df.index[i] if hasattr(df.index, 'tolist') else i
-                })
+        # Centered 5-bar pivot conditions (computed at center i, exposed at i+2)
+        is_swing_high_centered = (
+            (high > high.shift(1)) &
+            (high > high.shift(2)) &
+            (high > high.shift(-1)) &
+            (high > high.shift(-2))
+        )
+        is_swing_low_centered = (
+            (low < low.shift(1)) &
+            (low < low.shift(2)) &
+            (low < low.shift(-1)) &
+            (low < low.shift(-2))
+        )
 
-            # Swing low
-            if (df['Low'].iloc[i] < df['Low'].iloc[i-1] and
-                df['Low'].iloc[i] < df['Low'].iloc[i-2] and
-                df['Low'].iloc[i] < df['Low'].iloc[i+1] and
-                df['Low'].iloc[i] < df['Low'].iloc[i+2]):
-                swing_lows.append({
-                    'price': df['Low'].iloc[i],
-                    'idx': i,
-                    'timestamp': df.index[i] if hasattr(df.index, 'tolist') else i
-                })
+        # Causal correction: shift forward by 2 so labels appear at t = i + 2
+        is_swing_high = is_swing_high_centered.shift(2).fillna(False).astype(bool)
+        is_swing_low = is_swing_low_centered.shift(2).fillna(False).astype(bool)
+
+        swing_highs: List[Dict[str, Any]] = []
+        swing_lows: List[Dict[str, Any]] = []
+        # Iterate only over emission positions (t = center + 2). The pivot's
+        # price/timestamp still refer to the center bar where the swing
+        # actually formed, but it could only be *known* at t = center + 2.
+        for emit_idx in np.flatnonzero(is_swing_high.to_numpy()):
+            center = int(emit_idx) - 2
+            if center < 0:
+                continue
+            swing_highs.append({
+                'price': float(high.iloc[center]),
+                'idx': center,
+                'timestamp': df.index[center] if hasattr(df.index, 'tolist') else center,
+            })
+        for emit_idx in np.flatnonzero(is_swing_low.to_numpy()):
+            center = int(emit_idx) - 2
+            if center < 0:
+                continue
+            swing_lows.append({
+                'price': float(low.iloc[center]),
+                'idx': center,
+                'timestamp': df.index[center] if hasattr(df.index, 'tolist') else center,
+            })
 
         self.swing_highs = swing_highs[-self.lookback_4h:] if swing_highs else []
         self.swing_lows = swing_lows[-self.lookback_4h:] if swing_lows else []

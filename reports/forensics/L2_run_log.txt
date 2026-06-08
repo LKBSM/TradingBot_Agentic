@@ -1,0 +1,50 @@
+[L2] Chargement + features...
+[load] Lecture XAU_15MIN_2019_2026.csv...
+[load] 172,874 barres de 2019-01-02 06:00:00 a 2026-04-29 23:45:00
+[load] Lecture economic_calendar_HIGH_IMPACT_2019_2025.csv...
+[load] 875 events high-impact USD/EUR
+[L2] features OK : 172874 barres
+
+[L2] Walk-forward purge avec timeout=24 (config production actuelle)
+
+[L2] segment Train 2019-01-01 -> 2022-12-31
+  n_trades=1285, PF=0.6739 CI=[0.573, 0.781]
+  Sharpe=-2.563, MaxDD=-70.9%, return=-69.2%
+
+[L2] segment Test 2023-01-06 -> 2024-12-31
+  n_trades=655, PF=0.9562 CI=[0.779, 1.165]
+  Sharpe=0.082, MaxDD=-26.1%, return=-6.4%
+
+[L2] segment Holdout 2025-01-06 -> 2026-04-29
+  n_trades=412, PF=1.2786 CI=[1.008, 1.631]
+  Sharpe=2.420, MaxDD=-7.9%, return=38.1%
+
+[L2] Sub-decomposition annuelle des segments
+  Train_2019: n=307, PF=0.668, MaxDD=-25.7%
+  Train_2020: n=324, PF=0.726, MaxDD=-24.2%
+  Train_2021: n=333, PF=0.583, MaxDD=-36.7%
+  Train_2022: n=314, PF=0.689, MaxDD=-28.1%
+  Test_2023: n=328, PF=0.747, MaxDD=-26.1%
+  Test_2024: n=326, PF=1.223, MaxDD=-8.9%
+  Holdout_2025: n=307, PF=1.312, MaxDD=-7.9%
+  Holdout_2026: n=102, PF=1.218, MaxDD=-5.6%
+
+[L2] Verification finding L1 sur Holdout uniquement
+  Holdout tmo=12: n=468, PF=1.200 CI=[0.956, 1.517]
+  Holdout tmo=18: n=439, PF=1.165 CI=[0.919, 1.482]
+  Holdout tmo=24: n=412, PF=1.279 CI=[1.008, 1.631]
+  Holdout tmo=30: n=391, PF=1.300 CI=[1.027, 1.674]
+  Holdout tmo=36: n=381, PF=1.285 CI=[1.016, 1.652]
+  Holdout tmo=48: n=356, PF=1.347 CI=[1.048, 1.718]
+  Holdout tmo=64: n=329, PF=1.340 CI=[1.037, 1.737]
+
+[L2] Verdict degradation: AMELIORATION MONOTONE (regime change favorable, pas d'overfit)
+[L2] Holdout PF >= 1.20 ? True, CI lo > 1.20 ? False
+
+[L2] DONE. Files: L2_walkforward_main.csv, L2_walkforward_yearly.csv, L2_holdout_timeout_sweep.csv, L2_walkforward.json
+
+[L2] Tableau principal:
+segment      start        end  n_bars  n_trades     wr     pf  pf_ci95_lo  pf_ci95_hi  sharpe  sortino  max_dd_pct  max_dd_usd  expectancy_r  return_pct  final_capital
+  Train 2019-01-01 2022-12-31   94320      1285 0.4054 0.6739      0.5729      0.7807 -2.5626  -3.2064     -0.7085  -7100.9918       -0.0829     -0.6919      3080.8207
+   Test 2023-01-06 2024-12-31   46929       655 0.4641 0.9562      0.7793      1.1654  0.0817   0.1886     -0.2612  -2641.4903       -0.0007     -0.0643      9357.3746
+Holdout 2025-01-06 2026-04-29   30983       412 0.5194 1.2786      1.0080      1.6305  2.4195  11.0440     -0.0791   -843.4041        0.0837      0.3813     13813.0132

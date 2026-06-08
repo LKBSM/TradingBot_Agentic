@@ -53,3 +53,9 @@ class AppState:
     webhook_drain_worker: Optional[Any] = None   # src.delivery.webhook_drain_worker.WebhookDrainWorker (OBS-2B.6)
     narrative_quality_tracker: Optional[Any] = None  # src.intelligence.narrative_quality.NarrativeQualityTracker (LLM-2B.7)
     stripe_client: Optional[Any] = None              # src.billing.stripe_client.StripeClient (INFRA-2B.3)
+    # MIA Markets V2 — Chantier 2
+    market_reading_assembler: Optional[Any] = None   # src.intelligence.market_reading_assembler.MarketReadingAssembler
+    # MIA Markets V2 — Chantier 3
+    market_reading_scheduler: Optional[Any] = None   # src.intelligence.scheduler.MarketReadingScheduler
+    # MIA Markets V2 — Chantier 4
+    chatbot: Optional[Any] = None   # src.intelligence.chatbot.chatbot.Chatbot

@@ -1,0 +1,30 @@
+[
+  {
+    "dataset": "baseline",
+    "buckets": 7,
+    "is_winrate_monotone_up": false,
+    "is_expectancy_monotone_up": false,
+    "winrate_range": [
+      0.42857142857142855,
+      0.5
+    ],
+    "expectancy_range": [
+      -0.07078571428571427,
+      0.19420000000000004
+    ]
+  },
+  {
+    "dataset": "sweep",
+    "buckets": 5,
+    "is_winrate_monotone_up": false,
+    "is_expectancy_monotone_up": false,
+    "winrate_range": [
+      0.0,
+      0.46449704142011833
+    ],
+    "expectancy_range": [
+      -0.2935,
+      0.01837278106508876
+    ]
+  }
+]

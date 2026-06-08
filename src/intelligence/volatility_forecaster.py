@@ -364,7 +364,9 @@ class VolatilityForecaster:
         #  * `_tcp_residuals`: rolling buffer of (actual - predicted) used to derive
         #    empirical quantile-based asymmetric intervals (H5, Sprint 4).
         self._tcp_width: float = 0.5
-        self._tcp_alpha: float = 0.10          # central-coverage = 1 - 2*alpha = 80%
+        # Fix P0-18 Sprint 1 (audit institutional 2026-05-15): honor InstrumentConfig.tcp_alpha
+        # instead of hardcoding 0.10. Default config.tcp_alpha=0.05 (target miscoverage 95%).
+        self._tcp_alpha: float = float(getattr(self._config, "tcp_alpha", 0.10))
         self._tcp_residual_maxlen: int = 500
         self._tcp_residuals: deque = deque(maxlen=self._tcp_residual_maxlen)
         self._tcp_q_lower: Optional[float] = None  # empirical alpha-quantile of residuals (<=0 typical)

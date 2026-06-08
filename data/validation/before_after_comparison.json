@@ -1,0 +1,141 @@
+{
+  "aggregates": {
+    "bos_recent_tag_count": {
+      "before": 60,
+      "after": 28,
+      "of": 60
+    },
+    "bos_level_equals_close_proxy": {
+      "before": 60,
+      "after": 0
+    },
+    "description_source": {
+      "before": {
+        "haiku_generated": 55,
+        "template_fallback": 5
+      },
+      "after": {
+        "haiku_generated": 60
+      }
+    }
+  },
+  "bos_level_samples": [
+    {
+      "candle_id": 3,
+      "instrument": "XAUUSD",
+      "bar_open_ts": "2026-01-02T03:00:00",
+      "close_price": 4375.185,
+      "bos_level_before": 4375.185,
+      "bos_level_after": 4373.4,
+      "bos_level_engine_truth": 4373.4,
+      "matches_truth": true
+    },
+    {
+      "candle_id": 5,
+      "instrument": "XAUUSD",
+      "bar_open_ts": "2026-01-06T14:00:00",
+      "close_price": 4487.788500000001,
+      "bos_level_before": 4487.788500000001,
+      "bos_level_after": 4475.9,
+      "bos_level_engine_truth": 4475.9,
+      "matches_truth": true
+    },
+    {
+      "candle_id": 9,
+      "instrument": "XAUUSD",
+      "bar_open_ts": "2026-01-20T23:00:00",
+      "close_price": 4775.945,
+      "bos_level_before": 4775.945,
+      "bos_level_after": 4766.4435,
+      "bos_level_engine_truth": 4766.4435,
+      "matches_truth": true
+    },
+    {
+      "candle_id": 11,
+      "instrument": "XAUUSD",
+      "bar_open_ts": "2026-01-28T01:00:00",
+      "close_price": 5204.6900000000005,
+      "bos_level_before": 5204.6900000000005,
+      "bos_level_after": 5190.535,
+      "bos_level_engine_truth": 5190.535,
+      "matches_truth": true
+    },
+    {
+      "candle_id": 12,
+      "instrument": "XAUUSD",
+      "bar_open_ts": "2026-01-29T15:00:00",
+      "close_price": 5182.825,
+      "bos_level_before": 5182.825,
+      "bos_level_after": 5235.662,
+      "bos_level_engine_truth": 5235.662,
+      "matches_truth": true
+    }
+  ],
+  "ob_fvg_samples": [
+    {
+      "candle_id": 2,
+      "instrument": "XAUUSD",
+      "close_price": 4354.128500000001,
+      "fvg_before": [
+        4343.117613147269,
+        4365.139386852732
+      ],
+      "fvg_after": [
+        4319.2405,
+        4341.49
+      ]
+    },
+    {
+      "candle_id": 3,
+      "instrument": "XAUUSD",
+      "close_price": 4375.185,
+      "fvg_before": [
+        4364.933316995099,
+        4385.436683004902
+      ],
+      "fvg_after": [
+        4355.97,
+        4362.2
+      ]
+    },
+    {
+      "candle_id": 7,
+      "instrument": "XAUUSD",
+      "close_price": 4588.9265,
+      "fvg_before": [
+        4578.857129945123,
+        4598.995870054876
+      ],
+      "fvg_after": [
+        4511.4515,
+        4536.475
+      ]
+    },
+    {
+      "candle_id": 11,
+      "instrument": "XAUUSD",
+      "close_price": 5204.6900000000005,
+      "ob_before": [
+        5189.201974107054,
+        5220.178025892947
+      ],
+      "ob_after": [
+        5157.45,
+        5180.195
+      ]
+    },
+    {
+      "candle_id": 14,
+      "instrument": "XAUUSD",
+      "close_price": 4549.6165,
+      "ob_before": [
+        4488.77517194678,
+        4610.4578280532205
+      ],
+      "ob_after": [
+        4603.4385,
+        4713.2865
+      ]
+    }
+  ]
+}

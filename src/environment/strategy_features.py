@@ -20,9 +20,22 @@ except ImportError:
         return decorator
     prange = range
 
-# Configure le logging pour un usage commercial
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# Module logger. NOTE (audit D1-5): we deliberately do NOT call
+# ``logging.basicConfig`` here — doing so at import time reconfigures the root
+# logger of the entire process (global side effect) and can clobber the app's
+# logging setup (e.g. LOG_FORMAT=json wired by the API entrypoint). Logging
+# configuration is the responsibility of the application entrypoint, not of a
+# detection library module.
 logger = logging.getLogger(__name__)
+
+
+# Runtime monitoring thresholds (audit D4-6). A BOS event firing-rate outside
+# this band is the classic symptom of a data-quality problem (the 100%-firing
+# bug seen on a low-coverage CSV) or an over-strict detector. This mirrors the
+# OFFLINE regression guard in tests/test_data_quality_bos_regression.py — but
+# evaluated at RUNTIME so a solo operator gets an automatic warning in prod.
+BOS_FIRING_RATE_MIN_PCT = 0.5
+BOS_FIRING_RATE_MAX_PCT = 10.0
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -293,19 +306,25 @@ def _calculate_bos_retest_numba(
         a = atr[i] if (not np.isnan(atr[i]) and atr[i] > 0) else 0.0
 
         if active == 1:
-            if lows[i] <= level + retest_tol_atr * a:
+            # Invalidation takes precedence over retest — a bar that dips to
+            # the level AND closes well past it represents a failed break, not
+            # a pullback. Without this ordering, violent rejection bars would
+            # be mis-classified as confirmations.
+            if closes[i] < level - invalid_tol_atr * a:
+                active = 0
+            elif lows[i] <= level + retest_tol_atr * a:
                 active = 2
                 bars_in = 0
-            elif closes[i] < level - invalid_tol_atr * a:
-                active = 0
+                retest_armed[i] = 1
             elif bars_in > awaiting_timeout:
                 active = 0
         elif active == -1:
-            if highs[i] >= level - retest_tol_atr * a:
+            if closes[i] > level + invalid_tol_atr * a:
+                active = 0
+            elif highs[i] >= level - retest_tol_atr * a:
                 active = -2
                 bars_in = 0
-            elif closes[i] > level + invalid_tol_atr * a:
-                active = 0
+                retest_armed[i] = -1
             elif bars_in > awaiting_timeout:
                 active = 0
         elif active == 2:
@@ -364,19 +383,21 @@ def _calculate_bos_retest_python(
         a = atr[i] if (not np.isnan(atr[i]) and atr[i] > 0) else 0.0
 
         if active == 1:
-            if lows[i] <= level + retest_tol_atr * a:
+            if closes[i] < level - invalid_tol_atr * a:
+                active = 0
+            elif lows[i] <= level + retest_tol_atr * a:
                 active = 2
                 bars_in = 0
-            elif closes[i] < level - invalid_tol_atr * a:
-                active = 0
+                retest_armed[i] = 1
             elif bars_in > awaiting_timeout:
                 active = 0
         elif active == -1:
-            if highs[i] >= level - retest_tol_atr * a:
+            if closes[i] > level + invalid_tol_atr * a:
+                active = 0
+            elif highs[i] >= level - retest_tol_atr * a:
                 active = -2
                 bars_in = 0
-            elif closes[i] > level + invalid_tol_atr * a:
-                active = 0
+                retest_armed[i] = -1
             elif bars_in > awaiting_timeout:
                 active = 0
         elif active == 2:
@@ -500,27 +521,47 @@ class SMCConfig(BaseModel):
         description="Maximum bars to wait for a pullback after a BOS event before the setup goes stale."
     )
     RETEST_ARMED_WINDOW: int = Field(
-        default=5,
+        default=30,
         ge=1,
-        description="Bars an armed setup remains valid after a successful retest. After this window the "
-                    "setup expires and a new BOS event is required."
+        description="Bars an armed setup remains valid after a successful retest. Sized to cover a "
+                    "full trade lifetime (avg ~13 bars on XAU M15 per replay) so the detector keeps "
+                    "emitting signals for state-machine score tracking. Once the trend flips via "
+                    "CHOCH or a new BOS event, the window is overridden. Setting this too short "
+                    "causes premature SCORE_DECAYED exits on confirmed trades."
+    )
+    # --- Outlier flagging (audit D4-3) ---
+    OUTLIER_ATR_MULT: float = Field(
+        default=5.0,
+        ge=0.0,
+        description="A bar whose range (high-low) exceeds OUTLIER_ATR_MULT×ATR is FLAGGED as an "
+                    "outlier (OUTLIER_FLAG=1). Purely observational: the data is NOT altered, no "
+                    "detection logic depends on it. 0 disables flagging."
     )
 
 
 # --- II. Core Analysis Engine (Class Architecture) ---
 class SmartMoneyEngine:
     """
-    High-Performance Smart Money Concepts (SMC) Analysis Engine.
+    Smart Money Concepts (SMC) Analysis Engine.
 
-    OPTIMIZED VERSION with:
-    - Vectorized fractal detection (100x faster than loop)
-    - Numba JIT-compiled BOS/CHOCH (50-100x faster)
-    - Parallel-ready architecture
-    - Production-grade logging (no console spam)
+    Design:
+    - Vectorized fractal / FVG / OB detection (pandas/numpy).
+    - BOS/CHOCH and retest as sequential O(n) passes, JIT-compiled with Numba
+      when available, with an exact pure-Python fallback otherwise.
 
-    Performance benchmarks (20,000 bars):
-    - Original: ~15-20 seconds
-    - Optimized: ~0.2-0.5 seconds (30-100x improvement)
+    Performance — IMPORTANT, read the caveats (audit D3-3):
+    - The Numba speed-up applies ONLY when ``numba`` is installed
+      (``NUMBA_AVAILABLE``). It is listed in requirements.txt but NOT guaranteed
+      in every environment; when absent, the pure-Python fallback runs and the
+      sequential passes are markedly slower. Check ``NUMBA_AVAILABLE`` /
+      ``get_timing_report()`` to know which path executed.
+    - The figures below are for a 20,000-bar batch WITH Numba — NOT the product
+      regime. In production the assembler runs on a ~200-bar lookback and emits
+      a single row; measured cost there is ~170-200 ms on the Python fallback,
+      dominated by fixed pandas / `ta` overhead (not the JIT-able loops), so
+      Numba helps far less at 200 bars than the 20k-bar headline suggests.
+    - Indicative 20,000-bar batch, Numba enabled: ~0.2-0.5 s. Python fallback is
+      several times slower; benchmark your own environment with --benchmark.
     """
 
     def __init__(self, data: pd.DataFrame, config: Dict[str, Any], verbose: bool = False):
@@ -549,6 +590,55 @@ class SmartMoneyEngine:
 
         if not all(col in self.df.columns for col in self.ohlcv_cols):
             raise ValueError(f"DataFrame must contain OHLCV columns: {self.ohlcv_cols}")
+
+        # Defensive input integrity check (audit D4-2). Non-fatal: surfaces dirty
+        # OHLC via structured warnings instead of silently emitting a degraded
+        # reading. Counts are stored for observability (see get_data_quality_report).
+        self._input_quality: Dict[str, int] = self._validate_ohlc_integrity()
+
+    def _validate_ohlc_integrity(self) -> Dict[str, int]:
+        """Run defensive sanity checks on the input OHLC (audit D4-2).
+
+        Returns a dict of issue_name -> count (empty when clean). Does NOT raise
+        — a detection library should report dirty input, not crash production on
+        a single bad bar. NaN-safe (comparisons against NaN evaluate False, so
+        NaN rows only trip the explicit NaN check).
+        """
+        df = self.df
+        price_cols = ["open", "high", "low", "close"]
+        h, l = df["high"], df["low"]
+        body_hi = df[["open", "close"]].max(axis=1)
+        body_lo = df[["open", "close"]].min(axis=1)
+
+        checks = {
+            "nan_ohlc_rows": int(df[price_cols].isna().any(axis=1).sum()),
+            "high_lt_low": int((h < l).sum()),
+            "high_below_body": int((h < body_hi).sum()),
+            "low_above_body": int((l > body_lo).sum()),
+            "non_positive_price": int((df[price_cols] <= 0).any(axis=1).sum()),
+        }
+
+        idx = df.index
+        try:
+            if not idx.is_monotonic_increasing:
+                checks["non_monotonic_index"] = 1
+            dups = int(idx.duplicated().sum())
+            if dups:
+                checks["duplicate_timestamps"] = dups
+        except (TypeError, AttributeError):
+            pass  # non-orderable index — skip temporal checks
+
+        issues = {k: v for k, v in checks.items() if v}
+        if issues:
+            logger.warning(
+                "OHLC integrity: input has %d anomaly type(s) over %d rows: %s",
+                len(issues), len(df), issues,
+            )
+        return issues
+
+    def get_data_quality_report(self) -> Dict[str, int]:
+        """Return the input-integrity issue counts detected at construction (D4-2)."""
+        return dict(getattr(self, "_input_quality", {}))
 
     def _add_ta_indicators(self) -> None:
         """Calcule et ajoute les indicateurs techniques classiques."""
@@ -582,6 +672,19 @@ class SmartMoneyEngine:
         # --- Simple Candle Features ---
         self.df['SPREAD'] = self.df['high'] - self.df['low']
         self.df['BODY_SIZE'] = abs(self.df['open'] - self.df['close'])
+
+        # --- Outlier flag (audit D4-3) ---
+        # FLAG ONLY — the data is never altered, and no detection step reads this
+        # column. A bar whose range exceeds OUTLIER_ATR_MULT×ATR (flash crash,
+        # fat finger, post-gap bar) is marked for observability/monitoring (D4-6).
+        mult = cfg.OUTLIER_ATR_MULT
+        if mult > 0:
+            self.df['OUTLIER_FLAG'] = np.where(
+                (self.df['ATR'] > 0) & (self.df['SPREAD'] > mult * self.df['ATR']),
+                1, 0
+            ).astype(np.int32)
+        else:
+            self.df['OUTLIER_FLAG'] = np.zeros(len(self.df), dtype=np.int32)
 
     def _add_smc_base_features(self) -> None:
         """
@@ -867,16 +970,27 @@ class SmartMoneyEngine:
 
         self.df['CHOCH_DIVERGENCE'] = divergence
 
-    def analyze(self) -> pd.DataFrame:
+    def analyze(self, compute_divergence: bool = True) -> pd.DataFrame:
         """
         Execute complete SMC analysis pipeline.
+
+        Args:
+            compute_divergence: If True (default), compute the RSI divergence
+                column ``CHOCH_DIVERGENCE`` (used by the legacy ConfluenceDetector
+                / state-machine replay flow). If False, skip it — this is the
+                MarketReading product path (audit D2-9): the product mapper does
+                NOT consume ``CHOCH_DIVERGENCE``, so computing it ran an O(n·k)
+                Python loop for nothing on every reading. Default stays True so
+                existing callers are unchanged.
 
         Returns:
             Enriched DataFrame with all technical and SMC features.
 
-        Performance:
-            - ~0.2-0.5s for 20,000 bars (optimized)
-            - ~15-20s for 20,000 bars (original)
+        Performance (see class docstring caveats — audit D3-3):
+            Figures are for a 20,000-bar batch WITH Numba installed (~0.2-0.5s).
+            Without Numba the pure-Python fallback is several times slower. The
+            product regime is a ~200-bar lookback (~170-200 ms on the fallback,
+            dominated by fixed pandas/`ta` overhead). Use get_timing_report().
         """
         import time
         total_start = time.perf_counter()
@@ -897,8 +1011,11 @@ class SmartMoneyEngine:
         self._calculate_structure_iterative()
         self._timing['structure'] = time.perf_counter() - struct_start
 
-        # 4. RSI Divergence Detection (after both RSI and fractals are available)
-        self._detect_rsi_divergence()
+        # 4. RSI Divergence Detection (after both RSI and fractals are available).
+        # Skipped in the MarketReading product path (compute_divergence=False)
+        # because the product mapper does not consume CHOCH_DIVERGENCE (D2-9).
+        if compute_divergence:
+            self._detect_rsi_divergence()
 
         # 5. Data Cleaning - Drop rows with NaN in critical columns
         clean_start = time.perf_counter()
@@ -936,7 +1053,59 @@ class SmartMoneyEngine:
         if len(self.df) < self.config.BB_WINDOW * 2:
             logger.warning(f"Cleaning left very few rows ({len(self.df)}). Check data quality.")
 
+        # 6. Runtime monitoring (audit D4-6) — firing-rate / fractals / outliers.
+        self._monitoring = self._compute_monitoring(initial_rows, rows_dropped)
+
         return self.df
+
+    def _compute_monitoring(self, initial_rows: int, rows_dropped: int) -> Dict[str, float]:
+        """Compute per-analyze monitoring metrics and warn on anomalies (D4-6).
+
+        Surfaces at RUNTIME the same data-quality signal the offline regression
+        test guards: a BOS firing-rate outside [MIN, MAX]% almost always means a
+        gap-ridden / low-coverage feed (over-firing) or an over-strict detector
+        (under-firing). Also reports fractal count, outlier count and input NaN
+        rate. Returns the metrics dict (also stored on ``self._monitoring``).
+        """
+        df = self.df
+        n = len(df)
+        metrics: Dict[str, float] = {
+            "output_rows": float(n),
+            "rows_dropped": float(rows_dropped),
+            "input_nan_rate_pct": (
+                100.0 * float(self.get_data_quality_report().get("nan_ohlc_rows", 0))
+                / initial_rows if initial_rows else 0.0
+            ),
+        }
+        if n == 0:
+            logger.warning("MONITORING: analyze produced 0 rows after cleaning.")
+            return metrics
+
+        if "BOS_EVENT" in df.columns:
+            firing = 100.0 * float((df["BOS_EVENT"] != 0).sum()) / n
+            metrics["bos_event_rate_pct"] = firing
+            if firing < BOS_FIRING_RATE_MIN_PCT:
+                logger.warning(
+                    "MONITORING: BOS firing-rate %.2f%% < %.2f%% — detector may be "
+                    "over-strict or the feed is stale.", firing, BOS_FIRING_RATE_MIN_PCT,
+                )
+            elif firing > BOS_FIRING_RATE_MAX_PCT:
+                logger.warning(
+                    "MONITORING: BOS firing-rate %.2f%% > %.2f%% — likely data-quality "
+                    "issue (gaps / low-coverage feed). See test_data_quality_bos_regression.",
+                    firing, BOS_FIRING_RATE_MAX_PCT,
+                )
+
+        up = int(df["UP_FRACTAL"].notna().sum()) if "UP_FRACTAL" in df.columns else 0
+        dn = int(df["DOWN_FRACTAL"].notna().sum()) if "DOWN_FRACTAL" in df.columns else 0
+        metrics["n_fractals"] = float(up + dn)
+        if "OUTLIER_FLAG" in df.columns:
+            metrics["outlier_count"] = float(int(df["OUTLIER_FLAG"].sum()))
+        return metrics
+
+    def get_monitoring_report(self) -> Dict[str, float]:
+        """Return the runtime monitoring metrics from the last analyze() (D4-6)."""
+        return dict(getattr(self, "_monitoring", {}))
 
     def get_timing_report(self) -> Dict[str, float]:
         """Get performance timing breakdown."""
@@ -973,6 +1142,16 @@ def compute_feature_vif(df: pd.DataFrame, feature_columns: list) -> pd.DataFrame
 # PARALLEL PREPROCESSING UTILITIES
 # ═════════════════════════════════════════════════════════════════════════════
 
+# Single source of truth for default SMC parameters (audit D1-3).
+# Both preprocess helpers below MUST share the SAME defaults as ``SMCConfig()``
+# so the offline / training / backtest path detects structures with the exact
+# parameters the PRODUCT serves: the assembler runs ``SmartMoneyEngine`` with
+# ``config={}`` → ``SMCConfig`` defaults (RSI/ATR=14, FVG_THRESHOLD=0.1).
+# Previously these helpers hardcoded RSI/ATR=7 and FVG_THRESHOLD=0.0 — a silent
+# train/serve skew where calibration did not describe what was served.
+DEFAULT_SMC_CONFIG: Dict[str, Any] = SMCConfig().model_dump()
+
+
 def preprocess_dataframe(df: pd.DataFrame, config: Dict[str, Any] = None, verbose: bool = False) -> pd.DataFrame:
     """
     Preprocess a single DataFrame with SMC features.
@@ -989,18 +1168,7 @@ def preprocess_dataframe(df: pd.DataFrame, config: Dict[str, Any] = None, verbos
     """
     from src.environment.strategy_features import SmartMoneyEngine
 
-    default_config = {
-        "RSI_WINDOW": 7,
-        "MACD_FAST": 8,
-        "MACD_SLOW": 17,
-        "MACD_SIGNAL": 9,
-        "BB_WINDOW": 20,
-        "ATR_WINDOW": 7,
-        "FRACTAL_WINDOW": 2,
-        "FVG_THRESHOLD": 0.0,
-    }
-
-    config = config or default_config
+    config = config or dict(DEFAULT_SMC_CONFIG)  # D1-3: same defaults as the product
     engine = SmartMoneyEngine(data=df, config=config, verbose=verbose)
     return engine.analyze()
 
@@ -1037,17 +1205,7 @@ def preprocess_dataframes_parallel(
         JOBLIB_AVAILABLE = False
         logger.warning("joblib not available. Using sequential processing.")
 
-    default_config = {
-        "RSI_WINDOW": 7,
-        "MACD_FAST": 8,
-        "MACD_SLOW": 17,
-        "MACD_SIGNAL": 9,
-        "BB_WINDOW": 20,
-        "ATR_WINDOW": 7,
-        "FRACTAL_WINDOW": 2,
-        "FVG_THRESHOLD": 0.0,
-    }
-    config = config or default_config
+    config = config or dict(DEFAULT_SMC_CONFIG)  # D1-3: same defaults as the product
 
     if JOBLIB_AVAILABLE and len(dataframes) > 1:
         if verbose:
@@ -1113,46 +1271,13 @@ def benchmark_preprocessing(n_rows: int = 20000, n_iterations: int = 3) -> Dict[
     }
 
 
-if __name__ == '__main__':
-    import sys
-    import os
-
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-    # ✅ IMPORT LOCAL (évite l'importation circulaire)
-    from src.agent_trainer import AgentTrainer
-    import config
-
-    data_points = 10000
-    prices = 100 + np.cumsum(np.random.randn(data_points) * 0.1)
-    df_data = pd.DataFrame({
-        'Date': pd.to_datetime(pd.date_range(start='2024-01-01', periods=data_points, freq='15min')),
-        'Open': prices + np.random.uniform(-0.1, 0.1, data_points),
-        'High': prices + np.random.uniform(0.1, 0.2, data_points),
-        'Low': prices - np.random.uniform(0.1, 0.2, data_points),
-        'Close': prices,
-        'Volume': np.random.randint(100, 1000, data_points)
-    }).set_index('Date')
-
-    split_index = int(len(df_data) * 0.8)
-    df_train = df_data.iloc[:split_index].copy()
-
-    if df_train.empty or len(df_train) < config.LOOKBACK_WINDOW_SIZE * 2:
-        raise ValueError("Le DataFrame d'entraînement est trop petit.")
-
-    n_sessions = 10
-    trainer = AgentTrainer(df_historical=df_train)
-    total_timesteps_per_session = config.TOTAL_TIMESTEPS_PER_BOT // n_sessions
-
-    trained_agent = trainer.train_offline(total_timesteps=total_timesteps_per_session)
-
-    for i in range(1, n_sessions):
-        model_name = f"model_offline_session_{i}"
-        trainer.agent.save(os.path.join(config.MODEL_DIR, f"{model_name}.zip"))
-        trained_agent = trainer.continue_training(
-            model_path=os.path.join(config.MODEL_DIR, f"{model_name}.zip"),
-            additional_timesteps=total_timesteps_per_session
-        )
+# NOTE (audit D1-4): a legacy script-entry block that imported the RL trainer
+# (src.agent_trainer) and launched a reinforcement-learning training run used to
+# live here, a leftover from the RL-bot era (pre-SaaS pivot). Running this
+# detection module as a script therefore triggered RL training as a side effect.
+# It has been removed — this module is a detection library, not a training
+# entrypoint. The only supported script entry is the benchmark below
+# (`python -m src.environment.strategy_features --benchmark`).
 
 
 # ═════════════════════════════════════════════════════════════════════════════

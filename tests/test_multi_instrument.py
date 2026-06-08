@@ -138,6 +138,7 @@ class TestConfluenceDetectorInstrumentConfig:
         detector = ConfluenceDetector(
             instrument_config=config,
             min_score=0.0,  # Accept any signal for testing
+            require_retest=False,  # SL/TP math is independent of retest gate
         )
 
         smc_features = {
@@ -167,7 +168,7 @@ class TestConfluenceDetectorInstrumentConfig:
 
     def test_backward_compat_no_config(self):
         """ConfluenceDetector should work without instrument_config."""
-        detector = ConfluenceDetector(min_score=0.0)
+        detector = ConfluenceDetector(min_score=0.0, require_retest=False)
         smc_features = {
             "BOS_SIGNAL": 1.0,
             "FVG_SIGNAL": 1.0,

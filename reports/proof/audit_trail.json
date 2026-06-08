@@ -1,0 +1,29 @@
+{
+  "generated_at": "2026-05-23T14:45:24.010268+00:00",
+  "n_insights": 250,
+  "days_back": 90,
+  "clean": {
+    "size": 250,
+    "build_ms": 148.3,
+    "verify_ms": 6.5,
+    "head_hash": "5e42b58dc164407aca37e00a5b8a38ac78f5465f21c36f93e046e460ad943582",
+    "first_entry_ts": "2026-05-23T14:45:23.778686Z",
+    "last_entry_ts": "2026-05-23T14:45:23.926382Z",
+    "verification": {
+      "ok": true,
+      "n_entries": 250,
+      "broken_at_seq": null,
+      "reason": ""
+    }
+  },
+  "tamper": {
+    "target_seq": 137,
+    "verification": {
+      "ok": false,
+      "n_entries": 137,
+      "broken_at_seq": 137,
+      "reason": "entry_hash mismatch — body was tampered"
+    },
+    "verify_ms": 6.0
+  }
+}

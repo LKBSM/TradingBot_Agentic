@@ -4,12 +4,12 @@ Usage
 -----
 ::
 
-    # Default: XAU_15MIN_2019_2025 with default state-machine config
+    # Default: XAU_15MIN_2019_2026 with default state-machine config
     python scripts/replay_state_machine.py
 
     # Custom CSV + config overrides
     python scripts/replay_state_machine.py \\
-        --csv data/XAU_15MIN_2019_2025.csv \\
+        --csv data/XAU_15MIN_2019_2026.csv \\
         --symbol XAUUSD --timeframe M15 \\
         --enter 75 --exit 55 --confirm 2 --cooldown 2 --max-age 12 \\
         --out replay_report.json --trades-csv replay_trades.csv
@@ -141,7 +141,7 @@ def run(args: argparse.Namespace) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Replay state machine on historical OHLCV")
-    p.add_argument("--csv", default="data/XAU_15MIN_2019_2025.csv",
+    p.add_argument("--csv", default="data/XAU_15MIN_2019_2026.csv",
                    help="Path to OHLCV CSV")
     p.add_argument("--symbol", default="XAUUSD")
     p.add_argument("--timeframe", default="M15")

@@ -1,0 +1,138 @@
+{
+  "XAUUSD": {
+    "symbol": "XAUUSD",
+    "n_oos_returns": 54995,
+    "n_high_cp_05": 0,
+    "n_variance_shifts": 5395,
+    "q1_distribution": {
+      "q01": 0.00024371711303985302,
+      "q50": 0.00033059506420935223,
+      "q95": 0.0006592661715138872,
+      "q99": 0.001364981844545956,
+      "mean": 0.0004226330068358324,
+      "min": 0.00021463310662321917,
+      "max": 0.47372664101363887
+    },
+    "q1_high_cp_matches_shift": {
+      "rate": NaN,
+      "n_high_cp": 0,
+      "neighbor_window_bars": 8,
+      "definition": "high cp_prob (>=0.5) flagged within \u00b18 bars of a Welch-test variance shift (p<0.01)"
+    },
+    "q2_persistence": {
+      "mean_inter_cp_distance_bars": NaN,
+      "prior_hazard_bars": 240,
+      "definition": "mean distance between consecutive bars with cp_prob>=0.5"
+    },
+    "q3_calibration": {
+      "ece": 0.2682017873950189,
+      "verdict": "\ud83d\udd34",
+      "bins": [
+        {
+          "lo": 0.0,
+          "hi": 0.05,
+          "n": 54985,
+          "hit_rate": 0.26860052741656815,
+          "mean_cp_prob": 0.0003930044993956512
+        },
+        {
+          "lo": 0.05,
+          "hi": 0.2,
+          "n": 7,
+          "hit_rate": 0.42857142857142855,
+          "mean_cp_prob": 0.09270478671131337
+        },
+        {
+          "lo": 0.2,
+          "hi": 0.5,
+          "n": 3,
+          "hit_rate": 0.3333333333333333,
+          "mean_cp_prob": 0.32813876822917704
+        },
+        {
+          "lo": 0.5,
+          "hi": 0.8,
+          "n": 0,
+          "hit_rate": null,
+          "mean_cp_prob": null
+        },
+        {
+          "lo": 0.8,
+          "hi": 1.001,
+          "n": 0,
+          "hit_rate": null,
+          "mean_cp_prob": null
+        }
+      ],
+      "n_total": 54995
+    }
+  },
+  "EURUSD": {
+    "symbol": "EURUSD",
+    "n_oos_returns": 49897,
+    "n_high_cp_05": 0,
+    "n_variance_shifts": 7776,
+    "q1_distribution": {
+      "q01": 0.0002431856004596133,
+      "q50": 0.00032714337640342027,
+      "q95": 0.0006850911043415755,
+      "q99": 0.0014328202041485735,
+      "mean": 0.000428538936251293,
+      "min": 0.00021462475383134135,
+      "max": 0.4737271574345248
+    },
+    "q1_high_cp_matches_shift": {
+      "rate": NaN,
+      "n_high_cp": 0,
+      "neighbor_window_bars": 8,
+      "definition": "high cp_prob (>=0.5) flagged within \u00b18 bars of a Welch-test variance shift (p<0.01)"
+    },
+    "q2_persistence": {
+      "mean_inter_cp_distance_bars": NaN,
+      "prior_hazard_bars": 240,
+      "definition": "mean distance between consecutive bars with cp_prob>=0.5"
+    },
+    "q3_calibration": {
+      "ece": 0.36565093107644164,
+      "verdict": "\ud83d\udd34",
+      "bins": [
+        {
+          "lo": 0.0,
+          "hi": 0.05,
+          "n": 49887,
+          "hit_rate": 0.3660873574277868,
+          "mean_cp_prob": 0.00039587767736005416
+        },
+        {
+          "lo": 0.05,
+          "hi": 0.2,
+          "n": 7,
+          "hit_rate": 0.0,
+          "mean_cp_prob": 0.09274700079871026
+        },
+        {
+          "lo": 0.2,
+          "hi": 0.5,
+          "n": 3,
+          "hit_rate": 0.0,
+          "mean_cp_prob": 0.32814286869292336
+        },
+        {
+          "lo": 0.5,
+          "hi": 0.8,
+          "n": 0,
+          "hit_rate": null,
+          "mean_cp_prob": null
+        },
+        {
+          "lo": 0.8,
+          "hi": 1.001,
+          "n": 0,
+          "hit_rate": null,
+          "mean_cp_prob": null
+        }
+      ],
+      "n_total": 49897
+    }
+  }
+}

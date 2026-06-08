@@ -1,0 +1,267 @@
+{
+  "generated_at": "2026-05-13T23:36:04.963721",
+  "ohlcv_path": "data\\XAU_15MIN_2019_2026.csv",
+  "calendar_path": "data\\economic_calendar_HIGH_IMPACT_2019_2025.csv",
+  "config": {
+    "trigger_window_min": 30,
+    "trigger_threshold_atr": 0.5,
+    "sl_atr": 2.0,
+    "tp_atr": 3.0,
+    "max_hold_bars": 8,
+    "currency_filter": "USD",
+    "impact_filter": "HIGH"
+  },
+  "summary": {
+    "n_trades": 329,
+    "win_rate": 0.46504559270516715,
+    "avg_r_multiple": 0.030880758729708073,
+    "sum_r_multiple": 10.159769622073956,
+    "best_trade_r": 1.5000000000000306,
+    "worst_trade_r": -1.0000000000000446
+  },
+  "by_event": {
+    "ISM Services PMI": {
+      "n": 27,
+      "wins": 12,
+      "sum_r": -2.2324092773044675,
+      "exit_reasons": {
+        "SL": 13,
+        "TP": 6,
+        "TIME": 8
+      }
+    },
+    "CPI m/m": {
+      "n": 35,
+      "wins": 12,
+      "sum_r": -3.405266330766829,
+      "exit_reasons": {
+        "TIME": 22,
+        "SL": 9,
+        "TP": 4
+      }
+    },
+    "Core CPI m/m": {
+      "n": 35,
+      "wins": 12,
+      "sum_r": -3.405266330766829,
+      "exit_reasons": {
+        "TIME": 22,
+        "SL": 9,
+        "TP": 4
+      }
+    },
+    "Federal Funds Rate": {
+      "n": 25,
+      "wins": 12,
+      "sum_r": -0.785632083579539,
+      "exit_reasons": {
+        "TIME": 21,
+        "SL": 3,
+        "TP": 1
+      }
+    },
+    "FOMC Statement": {
+      "n": 25,
+      "wins": 12,
+      "sum_r": -0.785632083579539,
+      "exit_reasons": {
+        "TIME": 21,
+        "SL": 3,
+        "TP": 1
+      }
+    },
+    "Retail Sales m/m": {
+      "n": 30,
+      "wins": 18,
+      "sum_r": 5.206708965970494,
+      "exit_reasons": {
+        "TIME": 11,
+        "SL": 11,
+        "TP": 8
+      }
+    },
+    "ISM Manufacturing PMI": {
+      "n": 37,
+      "wins": 15,
+      "sum_r": 3.5382288002924467,
+      "exit_reasons": {
+        "TP": 11,
+        "TIME": 13,
+        "SL": 13
+      }
+    },
+    "Core PCE Price Index m/m": {
+      "n": 35,
+      "wins": 19,
+      "sum_r": 8.167149668433872,
+      "exit_reasons": {
+        "SL": 12,
+        "TIME": 11,
+        "TP": 12
+      }
+    },
+    "Unemployment Rate": {
+      "n": 29,
+      "wins": 16,
+      "sum_r": 3.8983561567646863,
+      "exit_reasons": {
+        "TIME": 22,
+        "SL": 4,
+        "TP": 3
+      }
+    },
+    "Non-Farm Payrolls": {
+      "n": 29,
+      "wins": 16,
+      "sum_r": 3.8983561567646863,
+      "exit_reasons": {
+        "TIME": 22,
+        "SL": 4,
+        "TP": 3
+      }
+    },
+    "FOMC Press Conference": {
+      "n": 22,
+      "wins": 9,
+      "sum_r": -3.934824020155021,
+      "exit_reasons": {
+        "TIME": 18,
+        "SL": 3,
+        "TP": 1
+      }
+    }
+  },
+  "gates": {
+    "passed": false,
+    "n_trades": 329,
+    "sharpe": 5.570469770220589,
+    "profit_factor": 1.090039263471085,
+    "profit_factor_lo": 0.830813869547558,
+    "profit_factor_hi": 1.3863649692961548,
+    "dsr": 0.6534884635872176,
+    "pbo": 0.5,
+    "dm_stat": -0.6506012763267074,
+    "dm_pvalue": 0.5153039062545446,
+    "gates": {
+      "trades": true,
+      "dsr": false,
+      "pbo": false,
+      "pf_lo": false,
+      "dm": false
+    },
+    "thresholds": {
+      "dsr_min": 1.5,
+      "pbo_max": 0.35,
+      "pf_lo_min": 1.0,
+      "dm_pvalue_max": 0.05,
+      "min_trades": 30,
+      "n_trials": 1
+    },
+    "failure_reasons": [
+      "DSR z-score 0.653 < 1.5 (prob=0.743)",
+      "PBO 0.500 > 0.35",
+      "PF lower-CI 0.831 <= 1.0 (point=1.090)",
+      "DM p-value 0.515 >= 0.05 (or mean return 0.030881 <= baseline 0.000000)"
+    ]
+  },
+  "variants": {
+    "A_naive": {
+      "passed": false,
+      "n_trades": 329,
+      "sharpe": 5.570469770220589,
+      "profit_factor": 1.090039263471085,
+      "profit_factor_lo": 0.830813869547558,
+      "profit_factor_hi": 1.3863649692961548,
+      "dsr": 0.6534884635872176,
+      "pbo": 0.5,
+      "dm_stat": -0.6506012763267074,
+      "dm_pvalue": 0.5153039062545446,
+      "gates": {
+        "trades": true,
+        "dsr": false,
+        "pbo": false,
+        "pf_lo": false,
+        "dm": false
+      },
+      "thresholds": {
+        "dsr_min": 1.5,
+        "pbo_max": 0.35,
+        "pf_lo_min": 1.0,
+        "dm_pvalue_max": 0.05,
+        "min_trades": 30,
+        "n_trials": 1
+      },
+      "failure_reasons": [
+        "DSR z-score 0.653 < 1.5 (prob=0.743)",
+        "PBO 0.500 > 0.35",
+        "PF lower-CI 0.831 <= 1.0 (point=1.090)",
+        "DM p-value 0.515 >= 0.05 (or mean return 0.030881 <= baseline 0.000000)"
+      ]
+    },
+    "B_conformal": {
+      "passed": false,
+      "n_trades": 0,
+      "sharpe": 0.0,
+      "profit_factor": 0.0,
+      "profit_factor_lo": 0.0,
+      "profit_factor_hi": 0.0,
+      "dsr": 0.0,
+      "pbo": 1.0,
+      "dm_stat": 0.0,
+      "dm_pvalue": 1.0,
+      "gates": {
+        "trades": false,
+        "dsr": false,
+        "pbo": false,
+        "pf_lo": false,
+        "dm": false
+      },
+      "thresholds": {
+        "dsr_min": 1.5,
+        "pbo_max": 0.35,
+        "pf_lo_min": 1.0,
+        "dm_pvalue_max": 0.05,
+        "min_trades": 10,
+        "n_trials": 1
+      },
+      "failure_reasons": [
+        "min_trades: have 0, need >= 10",
+        "sample too small to evaluate (< 4)"
+      ]
+    },
+    "C_regime_gate": {
+      "passed": false,
+      "n_trades": 308,
+      "sharpe": 7.165889803358915,
+      "profit_factor": 1.1166417070303043,
+      "profit_factor_lo": 0.8635217607746806,
+      "profit_factor_hi": 1.440520592797045,
+      "dsr": 0.8149163434208573,
+      "pbo": 0.5,
+      "dm_stat": -0.809870849369596,
+      "dm_pvalue": 0.4180144073740997,
+      "gates": {
+        "trades": true,
+        "dsr": false,
+        "pbo": false,
+        "pf_lo": false,
+        "dm": false
+      },
+      "thresholds": {
+        "dsr_min": 1.5,
+        "pbo_max": 0.35,
+        "pf_lo_min": 1.0,
+        "dm_pvalue_max": 0.05,
+        "min_trades": 30,
+        "n_trials": 1
+      },
+      "failure_reasons": [
+        "DSR z-score 0.815 < 1.5 (prob=0.792)",
+        "PBO 0.500 > 0.35",
+        "PF lower-CI 0.864 <= 1.0 (point=1.117)",
+        "DM p-value 0.418 >= 0.05 (or mean return 0.040416 <= baseline 0.000000)"
+      ]
+    },
+    "D_both": null
+  }
+}

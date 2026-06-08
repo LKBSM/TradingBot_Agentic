@@ -20,6 +20,10 @@ wheels/
 .installed.cfg
 *.egg
 
+# Re-include Next.js webapp lib/ (Python `lib/` rule above otherwise hides it)
+!/webapp/lib/
+!/webapp/lib/**
+
 # Virtual environments
 venv/
 ENV/
@@ -83,3 +87,27 @@ results/
 tmp/
 temp/
 *.tmp
+
+# Backups (Sprint 0 institutional overhaul)
+backups/
+
+# Stash recovery 2026-05-30 — ignore execution artefacts
+replay_*.json
+replay_*.csv
+.coverage
+*.coverage.*
+backtest_trades.csv
+.claude/scheduled_tasks.lock
+
+# Chantier 1 — MarketReadingsStore SQLite (WAL companions)
+data/market_readings.db
+data/market_readings.db-shm
+data/market_readings.db-wal
+
+# Chantier 1 — CandlesCacheStore SQLite (WAL companions)
+data/candles.db
+data/candles.db-shm
+data/candles.db-wal
+
+# Node — root-level node_modules (build/test caches, never tracked)
+node_modules/

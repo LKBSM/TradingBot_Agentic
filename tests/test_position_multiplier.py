@@ -47,7 +47,9 @@ def _analyse(detector, regime=None, news=None):
 
 class TestPositionMultiplier:
     def setup_method(self):
-        self.detector = ConfluenceDetector(min_score=0.0)
+        # require_retest=False isolates this test from the BOS retest gate;
+        # we only care about the position-multiplier composition here.
+        self.detector = ConfluenceDetector(min_score=0.0, require_retest=False)
 
     def test_defaults_to_full_size_when_no_agents(self):
         signal = _analyse(self.detector)

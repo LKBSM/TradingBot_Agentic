@@ -59,7 +59,7 @@ def fmt(v, fmt_spec=".3f") -> str:
 
 
 def main() -> int:
-    csv_path = Path("data/XAU_15MIN_2019_2025.csv")
+    csv_path = Path("data/XAU_15MIN_2019_2026.csv")
     trades_path = Path("reports/audit/trades_combined.csv")
     out_path = Path("reports/feature_subset_audit.md")
 

@@ -1,0 +1,103 @@
+# =============================================================================
+# Smart Sentinel AI — .dockerignore
+# Keep build context small and free of secrets.
+# =============================================================================
+
+# --- Secrets & local env ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials*
+
+# --- VCS ---
+.git
+.gitignore
+.gitattributes
+.github
+
+# --- Python build / cache ---
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.egg-info
+.eggs
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.tox
+.coverage
+.coverage.*
+htmlcov
+coverage.xml
+
+# --- Virtualenvs ---
+.venv
+venv
+env
+
+# --- IDE / editor ---
+.vscode
+.idea
+*.swp
+*.swo
+.DS_Store
+
+# --- Claude / agent tooling ---
+.claude
+memory
+
+# --- Data (heavy + non-redistributable) ---
+data/*.csv
+data/*.parquet
+data/*.feather
+data/*.h5
+data/*.pkl
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# --- Models (rebuild from training pipeline) ---
+models/
+checkpoints/
+*.pt
+*.pth
+*.h5
+*.onnx
+*.joblib
+*.lgb
+*.pickle
+
+# --- Replay / backtest artifacts ---
+replay_*.json
+replay_*.csv
+replay_diagnostic*
+backtest_*.csv
+backtest_*.json
+reports/
+mockups/
+"Script collab"
+
+# --- Logs ---
+logs/
+*.log
+
+# --- Tests (not needed for production runtime) ---
+tests/
+test_*.py
+*_test.py
+
+# --- Docs (kept out of runtime image) ---
+docs/
+*.md
+!README.md
+
+# --- Misc ---
+node_modules
+dist
+build
+*.tar.gz
+*.zip

@@ -102,7 +102,7 @@ def _make_vol_forecast(
 class TestConfluenceWithVolForecast:
     def test_analyze_without_vol_forecast(self):
         """Backward compat: works without vol_forecast."""
-        detector = ConfluenceDetector()
+        detector = ConfluenceDetector(require_retest=False)
         signal = detector.analyze(
             smc_features=_make_smc_features(),
             regime=MockRegime(),
@@ -116,7 +116,7 @@ class TestConfluenceWithVolForecast:
 
     def test_analyze_with_vol_forecast_uses_forecast_atr(self):
         """When vol_forecast provided, SL/TP should use forecast_atr."""
-        detector = ConfluenceDetector()
+        detector = ConfluenceDetector(require_retest=False)
         vol = _make_vol_forecast(forecast_atr=5.0, naive_atr=3.0)
 
         signal = detector.analyze(
@@ -135,7 +135,7 @@ class TestConfluenceWithVolForecast:
 
     def test_high_regime_widens_sl(self):
         """In high-vol regime, SL should be 1.5x wider."""
-        detector = ConfluenceDetector()
+        detector = ConfluenceDetector(require_retest=False)
         vol = _make_vol_forecast(forecast_atr=4.0, regime="high")
 
         signal = detector.analyze(
@@ -154,7 +154,7 @@ class TestConfluenceWithVolForecast:
 
     def test_normal_regime_no_widening(self):
         """In normal regime, no SL widening."""
-        detector = ConfluenceDetector()
+        detector = ConfluenceDetector(require_retest=False)
         vol = _make_vol_forecast(forecast_atr=4.0, regime="normal")
 
         signal = detector.analyze(
@@ -172,7 +172,7 @@ class TestConfluenceWithVolForecast:
 
     def test_vol_fields_in_signal(self):
         """ConfluenceSignal should include vol forecast metadata."""
-        detector = ConfluenceDetector()
+        detector = ConfluenceDetector(require_retest=False)
         vol = _make_vol_forecast(forecast_atr=3.5, regime="low")
 
         signal = detector.analyze(
@@ -192,7 +192,7 @@ class TestConfluenceWithVolForecast:
 
     def test_vol_fields_in_to_dict(self):
         """Vol fields should appear in to_dict() output."""
-        detector = ConfluenceDetector()
+        detector = ConfluenceDetector(require_retest=False)
         vol = _make_vol_forecast(forecast_atr=3.5, regime="normal")
 
         signal = detector.analyze(
@@ -213,7 +213,7 @@ class TestConfluenceWithVolForecast:
 
     def test_short_signal_with_vol_forecast(self):
         """Short signals should also use vol_forecast for SL/TP."""
-        detector = ConfluenceDetector()
+        detector = ConfluenceDetector(require_retest=False)
         vol = _make_vol_forecast(forecast_atr=5.0)
 
         signal = detector.analyze(
@@ -444,7 +444,7 @@ class TestEndToEndPipeline:
         vol = _make_vol_forecast(forecast_atr=4.0, naive_atr=3.0, regime="normal")
 
         # 2. Score with detector
-        detector = ConfluenceDetector()
+        detector = ConfluenceDetector(require_retest=False)
         signal = detector.analyze(
             smc_features=_make_smc_features(),
             regime=MockRegime(),
@@ -465,7 +465,7 @@ class TestEndToEndPipeline:
 
     def test_fallback_uses_naive_atr(self):
         """When vol_forecast is None, should use raw atr."""
-        detector = ConfluenceDetector()
+        detector = ConfluenceDetector(require_retest=False)
         signal = detector.analyze(
             smc_features=_make_smc_features(),
             regime=MockRegime(),

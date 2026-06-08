@@ -1,8 +1,8 @@
 {
+  "_comment": "Chantier 5.D (décision définitive 2026-06-07) — VALIDÉ comme infrastructure i18n DORMANTE. Vérifié par grep : aucun composant n'appelle useTranslations/getTranslations ; toute l'UI V1 utilise des strings FR en dur (choix d'architecture assumé, V1 = FR-only, middleware redirige en/de/es → fr). Ces clés ne sont donc PAS rendues client-facing. Résidus niveau-1.5 / pré-pivot purgés ici (ex-« Narrative IA sourcée », fausse mention « 50 termes »). À brancher OU retirer lors de l'activation effective de l'i18n multilingue (post-V1).",
   "nav": {
     "dashboard": "Tableau de bord",
     "narratives": "Analyses",
-    "transparency": "Transparence",
     "glossary": "Glossaire",
     "pricing": "Tarifs",
     "chat": "Chat IA",
@@ -11,36 +11,28 @@
   },
   "landing": {
     "hero_title": "Comprenez le marché XAU sans qu'on vous dise quoi faire.",
-    "hero_subtitle": "Smart Sentinel AI génère des analyses contextuelles sourcées pour l'or, en français, transparentes par construction.",
+    "hero_subtitle": "MIA Markets génère des analyses contextuelles sourcées pour l'or, en français, transparentes par construction.",
     "hero_cta_primary": "Commencer gratuitement",
-    "hero_cta_secondary": "Voir la transparence",
-    "value_1_title": "Narrative IA sourcée",
-    "value_1_body": "Chaque analyse cite ses sources. Pas d'hallucination, pas de recommandation.",
-    "value_2_title": "Transparence radicale",
-    "value_2_body": "Notre courbe de paper-trading publiée en direct, drawdowns inclus. Aucun edge revendiqué.",
+    "hero_cta_secondary": "Découvrir la méthode",
+    "value_1_title": "Lecture de marché sourcée",
+    "value_1_body": "Chaque lecture cite ses sources. Pas d'hallucination, pas de recommandation.",
+    "value_2_title": "Posture honnête",
+    "value_2_body": "Aucune promesse de gain, aucun edge revendiqué — un outil de compréhension, pas un système de trading.",
     "value_3_title": "Contexte multi-couches",
     "value_3_body": "Régime de volatilité, corrélations cross-asset, calendrier macro — pour comprendre, pas pour trader."
   },
   "disclaimer": {
     "short": "Analyse algorithmique éducative. Pas un conseil en investissement.",
-    "long": "Smart Sentinel AI produit des analyses éditoriales contextuelles, pas des recommandations personnalisées. Conformément à UE 2024/2811 et à la régulation finfluencer mars 2026."
-  },
-  "transparency": {
-    "title": "Transparence radicale",
-    "subtitle": "Notre courbe paper-trading en direct, drawdowns compris.",
-    "disclaimer": "Démonstration paper-trading. Smart Sentinel ne prétend PAS posséder un edge. Cette courbe est éducative.",
-    "stats_title": "Statistiques cumulées",
-    "n_trades": "Trades", "win_rate": "Taux gagnant", "total_r": "R cumulés",
-    "max_dd": "Drawdown max", "sharpe": "Sharpe par trade"
+    "long": "MIA Markets produit des analyses éditoriales contextuelles, pas des recommandations personnalisées. Conformément à UE 2024/2811 et à la régulation finfluencer mars 2026."
   },
   "glossary": {
     "title": "Glossaire",
-    "subtitle": "50 termes techniques utilisés dans les analyses, expliqués simplement."
+    "subtitle": "Les termes techniques de nos lectures, expliqués simplement — détaillés sur la page Méthodologie."
   },
   "pricing": {
     "title": "Tarification simple, transparente",
-    "subtitle": "Trial 14 jours sans carte sur LITE et PRO.",
-    "free_title": "FREE", "lite_title": "LITE", "pro_title": "PRO", "pro_plus_title": "PRO+",
+    "subtitle": "Sans carte sur le tier Découverte.",
+    "free_title": "Découverte", "approfondie_title": "Approfondie", "integrale_title": "Intégrale",
     "billed_monthly": "/mois", "cta_signup": "Commencer", "cta_contact": "Contactez-nous"
   },
   "chat": {
@@ -50,7 +42,7 @@
     "sources_label": "Sources citées"
   },
   "footer": {
-    "copyright": "© 2026 Smart Sentinel AI. Tous droits réservés.",
+    "copyright": "© 2026 MIA Markets. Tous droits réservés.",
     "terms": "CGU", "privacy": "Confidentialité", "contact": "Contact"
   }
 }

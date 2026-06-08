@@ -9,7 +9,7 @@ The ONLY question this POC answers:
   "Should we integrate Kronos into the Smart Sentinel pipeline for
    adaptive SL/TP sizing based on predicted volatility?"
 
-NOTE: The data CSV (XAU_15MIN_2019_2025.csv) is NOT in the GitHub repo
+NOTE: The data CSV (XAU_15MIN_2019_2026.csv) is NOT in the GitHub repo
       (gitignored due to size). Place it in data/ before running.
 
 Usage:
@@ -39,7 +39,7 @@ import pandas as pd
 # ---------------------------------------------------------------------------
 
 KRONOS_DIR = Path(__file__).resolve().parent.parent / "kronos_repo"
-DATA_PATH = Path(__file__).resolve().parent.parent / "data" / "XAU_15MIN_2019_2025.csv"
+DATA_PATH = Path(__file__).resolve().parent.parent / "data" / "XAU_15MIN_2019_2026.csv"
 RESULTS_DIR = Path(__file__).resolve().parent.parent / "poc_results"
 
 

@@ -1,0 +1,172 @@
+{
+  "aggregate": {
+    "n": 5,
+    "llm": {
+      "mean": 6,
+      "median": 6,
+      "min": 6,
+      "max": 6,
+      "p25": 6.0,
+      "p75": 6.0
+    },
+    "template": {
+      "mean": 17.2,
+      "median": 20,
+      "min": 6,
+      "max": 20
+    },
+    "lift_llm_vs_template": -11.2,
+    "threshold": 12.0,
+    "passed": false,
+    "judge_model": "claude-opus-4-7",
+    "narrator_model": "claude-sonnet-4-6",
+    "offline": true,
+    "llm_engine_stats": {
+      "total_cost_usd": 0.0,
+      "total_calls": 0,
+      "avg_cost_per_call": 0.0
+    }
+  },
+  "samples": [
+    {
+      "signal_id": "eval_029234",
+      "direction": "SHORT",
+      "score": 82.0,
+      "tier": "PREMIUM",
+      "payload_csv": "sym=XAUUSD,dir=SignalType.SHORT,score=82.0,tier=SignalTier.PREMIUM,entry=1591.35,sl=1605.65,tp=1562.75,rr=2.00,atr=7.15\ncomponents=BOS=15.0/15,FVG=12.0/15,OrderBlock=7.0/10,Regime=18.0/25",
+      "llm_narrative": "",
+      "template_narrative": "**Market Setup.** Setup \u2014 a constructive SignalType.SHORT on XAUUSD prints with a confluence score of 82/100. The regime is supportive of the signaltype.short thesis (Regime strong_downtrend). Price is working off 1591.35 against an ATR of 7.15. Volatility forecast is unavailable; assume standard ATR-based risk.\n\n**Key Confluences.** The signaltype.short case rests on 3 dominant factors. (1) Break of structure \u2014 very strong at 100% of weight: BOS aligned. (2) Fair value gap imbalance \u2014 strong at 80% of weight: FVG nearby. (3) Prevailing market regime \u2014 solid at 72% of weight: Regime strong_downtrend.\n\n**Risk Considerations.** Stop at 1605.65 (2.0\u00d7ATR, 14.30 pts away); target at 1562.75 (4.0\u00d7ATR) for a 2.00:1 reward/risk profile. Volatility is in its typical band, so the 2\u00d7ATR stop and 4\u00d7ATR target carry their usual probabilistic weight. A close above 1605.65 invalidates the thesis and the position should be exited without discretion.",
+      "llm_score": {
+        "faithfulness": 2,
+        "smc_framework": 1,
+        "risk_frame": 1,
+        "tone": 0,
+        "actionability": 2,
+        "total": 6,
+        "rationale": "offline heuristic"
+      },
+      "template_score": {
+        "faithfulness": 5,
+        "smc_framework": 4,
+        "risk_frame": 3,
+        "tone": 4,
+        "actionability": 4,
+        "total": 20,
+        "rationale": "offline heuristic"
+      },
+      "llm_latency_ms": 0.0
+    },
+    {
+      "signal_id": "eval_006606",
+      "direction": "SHORT",
+      "score": 62.0,
+      "tier": "STANDARD",
+      "payload_csv": "sym=XAUUSD,dir=SignalType.SHORT,score=62.0,tier=SignalTier.STANDARD,entry=1289.66,sl=1290.90,tp=1287.18,rr=2.00,atr=0.62\ncomponents=BOS=15.0/15,FVG=12.0/15,OrderBlock=7.0/10,Regime=18.0/25",
+      "llm_narrative": "",
+      "template_narrative": "**Market Setup.** Setup \u2014 a constructive SignalType.SHORT on XAUUSD prints with a confluence score of 62/100. The regime is supportive of the signaltype.short thesis (Regime strong_uptrend). Price is working off 1289.66 against an ATR of 0.62. Volatility forecast is unavailable; assume standard ATR-based risk.\n\n**Key Confluences.** The signaltype.short case rests on 3 dominant factors. (1) Break of structure \u2014 very strong at 100% of weight: BOS aligned. (2) Fair value gap imbalance \u2014 strong at 80% of weight: FVG nearby. (3) Prevailing market regime \u2014 solid at 72% of weight: Regime strong_uptrend.\n\n**Risk Considerations.** Stop at 1290.90 (2.0\u00d7ATR, 1.24 pts away); target at 1287.18 (4.0\u00d7ATR) for a 2.00:1 reward/risk profile. Volatility is in its typical band, so the 2\u00d7ATR stop and 4\u00d7ATR target carry their usual probabilistic weight. A close above 1290.90 invalidates the thesis and the position should be exited without discretion.",
+      "llm_score": {
+        "faithfulness": 2,
+        "smc_framework": 1,
+        "risk_frame": 1,
+        "tone": 0,
+        "actionability": 2,
+        "total": 6,
+        "rationale": "offline heuristic"
+      },
+      "template_score": {
+        "faithfulness": 5,
+        "smc_framework": 4,
+        "risk_frame": 3,
+        "tone": 4,
+        "actionability": 4,
+        "total": 20,
+        "rationale": "offline heuristic"
+      },
+      "llm_latency_ms": 0.0
+    },
+    {
+      "signal_id": "eval_072147",
+      "direction": "SHORT",
+      "score": 76.0,
+      "tier": "STANDARD",
+      "payload_csv": "sym=XAUUSD,dir=SignalType.SHORT,score=76.0,tier=SignalTier.STANDARD,entry=1841.83,sl=1843.19,tp=1839.11,rr=2.00,atr=0.68\ncomponents=BOS=15.0/15,FVG=12.0/15,OrderBlock=7.0/10,Regime=18.0/25",
+      "llm_narrative": "",
+      "template_narrative": "**Market Setup.** Setup \u2014 a constructive SignalType.SHORT on XAUUSD prints with a confluence score of 76/100. The regime is supportive of the signaltype.short thesis (Regime weak_uptrend). Price is working off 1841.83 against an ATR of 0.68. Volatility forecast is unavailable; assume standard ATR-based risk.\n\n**Key Confluences.** The signaltype.short case rests on 3 dominant factors. (1) Break of structure \u2014 very strong at 100% of weight: BOS aligned. (2) Fair value gap imbalance \u2014 strong at 80% of weight: FVG nearby. (3) Prevailing market regime \u2014 solid at 72% of weight: Regime weak_uptrend.\n\n**Risk Considerations.** Stop at 1843.19 (2.0\u00d7ATR, 1.36 pts away); target at 1839.11 (4.0\u00d7ATR) for a 2.00:1 reward/risk profile. Volatility is in its typical band, so the 2\u00d7ATR stop and 4\u00d7ATR target carry their usual probabilistic weight. A close above 1843.19 invalidates the thesis and the position should be exited without discretion.",
+      "llm_score": {
+        "faithfulness": 2,
+        "smc_framework": 1,
+        "risk_frame": 1,
+        "tone": 0,
+        "actionability": 2,
+        "total": 6,
+        "rationale": "offline heuristic"
+      },
+      "template_score": {
+        "faithfulness": 5,
+        "smc_framework": 4,
+        "risk_frame": 3,
+        "tone": 4,
+        "actionability": 4,
+        "total": 20,
+        "rationale": "offline heuristic"
+      },
+      "llm_latency_ms": 0.0
+    },
+    {
+      "signal_id": "eval_064246",
+      "direction": "LONG",
+      "score": 82.0,
+      "tier": "PREMIUM",
+      "payload_csv": "sym=XAUUSD,dir=SignalType.LONG,score=82.0,tier=SignalTier.PREMIUM,entry=1769.16,sl=1761.12,tp=1785.24,rr=2.00,atr=4.02\ncomponents=BOS=15.0/15,FVG=12.0/15,OrderBlock=7.0/10,Regime=18.0/25",
+      "llm_narrative": "",
+      "template_narrative": "**Market Setup.** Setup \u2014 a constructive SignalType.LONG on XAUUSD prints with a confluence score of 82/100. The regime is supportive of the signaltype.long thesis (Regime strong_downtrend). Price is working off 1769.16 against an ATR of 4.02. Volatility forecast is unavailable; assume standard ATR-based risk.\n\n**Key Confluences.** The signaltype.long case rests on 3 dominant factors. (1) Break of structure \u2014 very strong at 100% of weight: BOS aligned. (2) Fair value gap imbalance \u2014 strong at 80% of weight: FVG nearby. (3) Prevailing market regime \u2014 solid at 72% of weight: Regime strong_downtrend.\n\n**Risk Considerations.** Stop at 1761.12 (2.0\u00d7ATR, 8.04 pts away); target at 1785.24 (4.0\u00d7ATR) for a 2.00:1 reward/risk profile. Volatility is in its typical band, so the 2\u00d7ATR stop and 4\u00d7ATR target carry their usual probabilistic weight. A close above 1761.12 invalidates the thesis and the position should be exited without discretion.",
+      "llm_score": {
+        "faithfulness": 2,
+        "smc_framework": 1,
+        "risk_frame": 1,
+        "tone": 0,
+        "actionability": 2,
+        "total": 6,
+        "rationale": "offline heuristic"
+      },
+      "template_score": {
+        "faithfulness": 5,
+        "smc_framework": 4,
+        "risk_frame": 3,
+        "tone": 4,
+        "actionability": 4,
+        "total": 20,
+        "rationale": "offline heuristic"
+      },
+      "llm_latency_ms": 0.0
+    },
+    {
+      "signal_id": "eval_058563",
+      "direction": "SHORT",
+      "score": 52.0,
+      "tier": "WEAK",
+      "payload_csv": "sym=XAUUSD,dir=SignalType.SHORT,score=52.0,tier=SignalTier.WEAK,entry=1771.98,sl=1774.80,tp=1766.34,rr=2.00,atr=1.41\ncomponents=BOS=15.0/15,FVG=12.0/15,OrderBlock=7.0/10,Regime=18.0/25",
+      "llm_narrative": "",
+      "template_narrative": "",
+      "llm_score": {
+        "faithfulness": 2,
+        "smc_framework": 1,
+        "risk_frame": 1,
+        "tone": 0,
+        "actionability": 2,
+        "total": 6,
+        "rationale": "offline heuristic"
+      },
+      "template_score": {
+        "faithfulness": 2,
+        "smc_framework": 1,
+        "risk_frame": 1,
+        "tone": 0,
+        "actionability": 2,
+        "total": 6,
+        "rationale": "offline heuristic"
+      },
+      "llm_latency_ms": 0.0
+    }
+  ]
+}

@@ -1,0 +1,80 @@
+{
+  "XAUUSD": {
+    "symbol": "XAUUSD",
+    "label": "XAUUSD M15 OOS 2024+",
+    "n_events": 666,
+    "n_bull": 333,
+    "n_bear": 333,
+    "q1_definitional_sanity": {
+      "value": 1.0,
+      "definition": "CHOCH_SIGNAL!=0 must coincide with same-sign BOS_EVENT",
+      "n": 666
+    },
+    "q1_reversal_sanity": {
+      "value": 1.0,
+      "definition": "prior bos_signal must be of opposite sign (trend reversal)",
+      "n": 666
+    },
+    "q1_cross_method_f1": {
+      "window": 5,
+      "f1": 0.1806451612903226,
+      "precision": 0.6306306306306306,
+      "recall": 0.10542168674698796,
+      "verdict": "\ud83d\udd34",
+      "tp": 420,
+      "fp": 246,
+      "fn": 3564,
+      "n_prod_events": 666,
+      "n_ref_events": 3984,
+      "ref_method": "3-bar swing CHOCH (sign change)"
+    },
+    "q2_stability_16bars": {
+      "hold_rate_mean": 0.6040728228228228,
+      "hold_rate_ci95_lo": 0.5778856981981981,
+      "hold_rate_ci95_hi": 0.6303678678678678,
+      "no_immediate_reversal_rate": 0.8153153153153153,
+      "n": 666,
+      "lifetime_bars": 16,
+      "definition": "hold_rate_mean = fraction of next-16 closes respecting CHOCH direction; no_immediate_reversal_rate = fraction with no opposite CHOCH in 16 bars"
+    }
+  },
+  "EURUSD": {
+    "symbol": "EURUSD",
+    "label": "EURUSD M15 OOS 2024+",
+    "n_events": 678,
+    "n_bull": 339,
+    "n_bear": 339,
+    "q1_definitional_sanity": {
+      "value": 1.0,
+      "definition": "CHOCH_SIGNAL!=0 must coincide with same-sign BOS_EVENT",
+      "n": 678
+    },
+    "q1_reversal_sanity": {
+      "value": 1.0,
+      "definition": "prior bos_signal must be of opposite sign (trend reversal)",
+      "n": 678
+    },
+    "q1_cross_method_f1": {
+      "window": 5,
+      "f1": 0.2023094688221709,
+      "precision": 0.6460176991150443,
+      "recall": 0.11993428258488499,
+      "verdict": "\ud83d\udd34",
+      "tp": 438,
+      "fp": 240,
+      "fn": 3214,
+      "n_prod_events": 678,
+      "n_ref_events": 3652,
+      "ref_method": "3-bar swing CHOCH (sign change)"
+    },
+    "q2_stability_16bars": {
+      "hold_rate_mean": 0.6140302359882006,
+      "hold_rate_ci95_lo": 0.5883895648967552,
+      "hold_rate_ci95_hi": 0.642980272861357,
+      "no_immediate_reversal_rate": 0.7846607669616519,
+      "n": 678,
+      "lifetime_bars": 16,
+      "definition": "hold_rate_mean = fraction of next-16 closes respecting CHOCH direction; no_immediate_reversal_rate = fraction with no opposite CHOCH in 16 bars"
+    }
+  }
+}

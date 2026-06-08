@@ -11,7 +11,7 @@ Usage
 
     # Full 6-year Gold M15 baseline
     python scripts/run_backtest.py \\
-        --csv data/XAU_15MIN_2019_2025.csv \\
+        --csv data/XAU_15MIN_2019_2026.csv \\
         --symbol XAUUSD --timeframe M15 \\
         --out reports/baseline_2019_2024.json
 
@@ -147,6 +147,53 @@ def run(args: argparse.Namespace) -> int:
         "Retest gate: %s",
         "DISABLED (baseline)" if args.no_retest else "ENABLED (require pullback)",
     )
+    # Sprint 3 batch 3.X (audit P0-6): wire DynamicSpread/Slippage so backtest
+    # is no longer cost-free. Audit `section_3_8_backtest_engine.md` flagged
+    # commission=$0 + no slippage as P0 — strat-tear-sheet PF will drop but
+    # this is the honest number. --no-costs flag preserves the legacy cost-free
+    # behaviour for compat with older reports.
+    spread_model = None
+    slippage_model = None
+    if not args.no_costs:
+        from src.environment.execution_model import DynamicSlippageModel, DynamicSpreadModel
+        spread_model = DynamicSpreadModel()
+        slippage_model = DynamicSlippageModel(base_slippage=0.0001)
+        log.info("Costs ENABLED: dynamic spread + slippage models active")
+    else:
+        log.info("Costs DISABLED (--no-costs flag): legacy cost-free backtest")
+
+    # Action 1 (post Sprint 0 review): wire news provider so the News component
+    # of ConfluenceDetector receives BLOCK assessments during HIGH-impact event
+    # blackouts (±30min by default). Without this, news component score = 0
+    # and the additive ceiling stays around 70-74 < enter_threshold=75 (Sprint 0
+    # baseline: 0 trades on 7yr XAU+EURUSD). The News component does NOT *add*
+    # points (it can only BLOCK), but the detector's renormalisation logic
+    # raises the score ceiling when news is supplied (`section_3_3_confluence`).
+    news_provider = None
+    if not args.no_news:
+        from pathlib import Path as _P
+        from src.backtest.news_replay import BacktestNewsProvider
+        cal_path = _P(args.calendar_csv)
+        if cal_path.exists():
+            try:
+                news_provider = BacktestNewsProvider.from_csv(
+                    cal_path,
+                    symbol=args.symbol,
+                    block_before_min=args.news_block_before,
+                    block_after_min=args.news_block_after,
+                )
+                log.info(
+                    "News provider ENABLED: %d HIGH-impact events from %s",
+                    len(news_provider.events), cal_path,
+                )
+            except Exception as exc:
+                log.warning("News provider init failed (%s) — running without news", exc)
+                news_provider = None
+        else:
+            log.warning("Calendar CSV not found at %s — running without news", cal_path)
+    else:
+        log.info("News provider DISABLED (--no-news flag)")
+
     replay = SignalReplay(
         symbol=args.symbol,
         timeframe=args.timeframe,
@@ -155,6 +202,9 @@ def run(args: argparse.Namespace) -> int:
         use_regime=not args.no_regime,
         use_vol_regime=not args.no_vol_regime,
         warmup_bars=args.warmup,
+        spread_model=spread_model,
+        slippage_model=slippage_model,
+        news_provider=news_provider,
     )
     log.info(
         "ConfluenceDetector min_score=%.1f  (state machine enter=%.1f exit=%.1f)",
@@ -198,8 +248,8 @@ def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         description="Institutional backtest harness for Smart Sentinel AI",
     )
-    p.add_argument("--csv", default="data/XAU_15MIN_2019_2025.csv",
-                   help="Path to OHLCV CSV (default: Gold M15 2019-2025)")
+    p.add_argument("--csv", default="data/XAU_15MIN_2019_2026.csv",
+                   help="Path to OHLCV CSV (default: Gold M15 2019-2026, 98.72% coverage)")
     p.add_argument("--symbol", default="XAUUSD")
     p.add_argument("--timeframe", default="M15",
                    help="Bar cadence (used to annualise Sharpe/Sortino)")
@@ -227,6 +277,21 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--no-retest", action="store_true",
                    help="Disable BOS pullback/retest gate in ConfluenceDetector "
                         "(pre-retest baseline for comparison).")
+    p.add_argument("--no-costs", action="store_true",
+                   help="Disable dynamic spread + slippage models (legacy "
+                        "cost-free backtest, default since Sprint 3 = costs ON).")
+
+    # News provider (Action 1 post Sprint 0 review)
+    p.add_argument("--no-news", action="store_true",
+                   help="Disable BacktestNewsProvider (run as if no economic "
+                        "calendar). Score ceiling stays ~70-74.")
+    p.add_argument("--calendar-csv",
+                   default="data/economic_calendar_HIGH_IMPACT_2019_2025.csv",
+                   help="Path to HIGH-impact calendar CSV (FF format).")
+    p.add_argument("--news-block-before", type=int, default=30,
+                   help="Blackout minutes before each HIGH-impact event.")
+    p.add_argument("--news-block-after", type=int, default=30,
+                   help="Blackout minutes after each HIGH-impact event.")
 
     # Output
     p.add_argument("--out", default="backtest_report.json",

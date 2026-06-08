@@ -20,11 +20,70 @@ from src.api.middleware.geo_block import GeoBlockMiddleware
 from src.api.middleware.rate_limit_headers import RateLimitHeadersMiddleware
 from src.api.models import ErrorResponse
 from src.api.openapi_enrichment import install_openapi_enrichment
-from src.api.routes import admin, admin_audit, audit, billing, dashboard, enrich, health, health_deep, insight_history, legal, metrics_latency, narratives, operator, prometheus, qa, signals, state, webapp, webhook_ack
+from src.api.routes import admin, admin_audit, audit, billing, chatbot, dashboard, enrich, health, health_deep, insight_history, legal, market_reading, metrics_latency, narratives, operator, prometheus, qa, signals, state, webapp, webhook_ack
 from src.api.shutdown import GracefulShutdownCoordinator
 from src.api.signal_store import SignalStore
 
 logger = logging.getLogger(__name__)
+
+
+def _maybe_bootstrap_market_reading(app_state: AppState) -> None:
+    """Env-gated runtime bootstrap of the MarketReading engine (Chantier 3).
+
+    When nothing was injected via ``create_app``, optionally build the
+    assembler + scheduler from environment configuration so production
+    (``BOOTSTRAP_ENABLED=true`` / ``SCHEDULER_ENABLED=true``) serves
+    ``/api/market-reading`` and runs the hybrid scheduler. A no-op when
+    the flags are off, so tests calling ``create_app()`` stay light (no
+    network, no Anthropic). The scheduler is built but NOT started here — the
+    lifespan starts it after its shutdown handler is registered.
+    """
+    from src.api.bootstrap import (
+        build_market_reading_assembler,
+        build_market_reading_scheduler,
+        env_flag,
+        is_bootstrap_enabled,
+    )
+
+    if app_state.market_reading_assembler is None and is_bootstrap_enabled():
+        try:
+            app_state.market_reading_assembler = build_market_reading_assembler()
+            logger.info("MarketReadingAssembler bootstrapped at startup")
+        except Exception:
+            logger.exception(
+                "MarketReading bootstrap failed — endpoint will return 503"
+            )
+
+    assembler = app_state.market_reading_assembler
+    if (
+        assembler is not None
+        and app_state.market_reading_scheduler is None
+        and env_flag("SCHEDULER_ENABLED", False)
+    ):
+        try:
+            app_state.market_reading_scheduler = build_market_reading_scheduler(
+                assembler
+            )
+            logger.info("MarketReadingScheduler built at startup")
+        except Exception:
+            logger.exception("MarketReadingScheduler build failed")
+
+
+def _maybe_bootstrap_chatbot(app_state: AppState) -> None:
+    """Env-gated runtime bootstrap of the niveau 1.5 strict Chatbot (Chantier 4).
+
+    A no-op unless ``CHATBOT_ENABLED=true`` (default OFF so tests stay light).
+    Requires the MarketReadingAssembler bootstrapped first; misconfiguration
+    raises BootstrapConfigurationError. Callers in the lifespan wrap this so a
+    chatbot misconfig degrades the endpoint to 503 rather than aborting startup.
+    """
+    from src.api.bootstrap import build_chatbot, env_flag
+
+    if app_state.chatbot is not None:
+        return
+    if not env_flag("CHATBOT_ENABLED", default=False):
+        return
+    app_state.chatbot = build_chatbot(app_state.market_reading_assembler)
 
 
 def _auto_register_default_handlers(
@@ -58,6 +117,13 @@ def _auto_register_default_handlers(
     scanner = app_state.scanner
     if scanner is not None and hasattr(scanner, "stop"):
         _add("sentinel-scanner", scanner.stop, budget_s=5.0)
+
+    # MIA Markets V2 — Chantier 3 — MarketReading hybrid scheduler.
+    # Must stop before the readings store closes so the final tick
+    # doesn't write into a torn-down connection.
+    mr_scheduler = app_state.market_reading_scheduler
+    if mr_scheduler is not None and hasattr(mr_scheduler, "stop"):
+        _add("market-reading-scheduler", mr_scheduler.stop, budget_s=5.0)
 
     # The drain worker isn't stored on AppState today — callers that
     # wire it call coord.register("webhook-drain", worker.stop) before
@@ -109,6 +175,8 @@ def create_app(
     webhook_drain_worker: Any = None,
     narrative_quality_tracker: Any = None,
     stripe_client: Any = None,
+    market_reading_assembler: Any = None,
+    market_reading_scheduler: Any = None,
 ) -> FastAPI:
     """
     Build and return a fully-configured FastAPI application.
@@ -158,11 +226,26 @@ def create_app(
         webhook_drain_worker=webhook_drain_worker,
         narrative_quality_tracker=narrative_quality_tracker,
         stripe_client=stripe_client,
+        market_reading_assembler=market_reading_assembler,
+        market_reading_scheduler=market_reading_scheduler,
     )
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         logger.info("API starting up")
+        # MIA Markets V2 — Chantier 3 — env-gated runtime bootstrap. Builds
+        # the MarketReadingAssembler + scheduler from env when nothing was
+        # injected (production opts in via BOOTSTRAP_ENABLED + SCHEDULER_ENABLED).
+        # No-op otherwise so tests stay light. Runs BEFORE
+        # _auto_register_default_handlers so the scheduler's shutdown is wired.
+        _maybe_bootstrap_market_reading(app_state)
+        # MIA Markets V2 — Chantier 4 — build the Chatbot (CHATBOT_ENABLED).
+        # Wrapped so a chatbot misconfig degrades POST /api/chatbot/message to
+        # 503 rather than aborting the whole API startup.
+        try:
+            _maybe_bootstrap_chatbot(app_state)
+        except Exception:
+            logger.exception("Chatbot bootstrap failed — endpoint will return 503")
         # INFRA-2B.11: auto-register any wired subsystems that expose a
         # shutdown surface. Caller can register more *before* startup —
         # we only add the ones not already registered by name. Order
@@ -170,6 +253,15 @@ def create_app(
         # in-flight log writes complete.
         coord: GracefulShutdownCoordinator = app_state.shutdown_coordinator
         _auto_register_default_handlers(coord, app_state)
+        # MIA Markets V2 — Chantier 3 — start the hybrid scheduler once the
+        # shutdown handler is registered. Failure to start is logged but does
+        # not abort startup so the rest of the API stays available.
+        mr_scheduler = app_state.market_reading_scheduler
+        if mr_scheduler is not None and hasattr(mr_scheduler, "start"):
+            try:
+                mr_scheduler.start()
+            except Exception:
+                logger.exception("market-reading-scheduler failed to start")
         try:
             yield
         finally:
@@ -341,6 +433,8 @@ def create_app(
     app.include_router(webhook_ack.router)
     app.include_router(billing.router)
     app.include_router(webapp.router)
+    app.include_router(market_reading.router)
+    app.include_router(chatbot.router)
 
     # API-2B.7 — enrich the OpenAPI spec with stable operationIds,
     # tag descriptions, and production servers list so generated

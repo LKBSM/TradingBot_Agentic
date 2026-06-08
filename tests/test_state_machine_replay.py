@@ -254,9 +254,16 @@ class TestEndToEnd:
             cooldown_bars=1,
             max_signal_age_bars=20,
         )
+        # The synthetic fixture doesn't simulate a real BOS-then-retest sequence,
+        # so we disable the retest gate and let the legacy scoring ladder run.
+        from src.intelligence.confluence_detector import ConfluenceDetector
         replay = SignalReplay(
             symbol="SYNTH", timeframe="M15",
             state_machine_config=cfg,
+            confluence_detector=ConfluenceDetector(
+                symbol="SYNTH", min_score=min(cfg.enter_threshold, cfg.exit_threshold),
+                require_retest=False,
+            ),
             use_regime=False, use_vol_regime=False,
             warmup_bars=50,
         )

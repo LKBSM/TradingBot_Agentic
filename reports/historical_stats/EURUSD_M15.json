@@ -1,0 +1,31 @@
+{
+  "asset": "EURUSD",
+  "timeframe": "M15",
+  "computed_at_utc": "2026-05-16T20:25:34+00:00",
+  "sample_window": "2019-01-01\u20142025-12-31",
+  "n_total_bars": 174506,
+  "horizon_bars": 96,
+  "refit_days": 30,
+  "threshold_quantile": 0.6,
+  "similar_setups_n": 6402,
+  "wins_costed": 2067,
+  "losses_costed": 4335,
+  "hit_rate_observed": 0.3229,
+  "profit_factor": 0.6,
+  "profit_factor_ci95": [
+    0.532,
+    0.675
+  ],
+  "profit_factor_no_costs_reference": 1.134,
+  "profit_factor_no_costs_ci95": [
+    1.017,
+    1.267
+  ],
+  "cost_assumptions": {
+    "round_trip_spread_bps": 2.0,
+    "round_trip_slippage_bps": 1.0,
+    "round_trip_commission_bps": 0.0,
+    "note": "Costs deducted from each pseudo-trade log return. Reflects what the client would have realised after broker spread + slippage."
+  },
+  "model": "lightgbm_walk_forward_v1"
+}

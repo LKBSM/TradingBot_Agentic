@@ -14,7 +14,7 @@ Covers:
 import re
 import threading
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -174,39 +174,70 @@ class TestScannerCircuitBreaker:
         assert stats["llm_circuit"] == "closed"
         assert stats["telegram_circuit"] == "closed"
 
+    @staticmethod
+    def _make_concrete_signal():
+        """Concrete signal-shaped object the TemplateNarrativeEngine can render."""
+        from src.intelligence.confluence_detector import ComponentScore
+
+        @dataclass
+        class _Side:
+            value: str = "LONG"
+
+        @dataclass
+        class _Sig:
+            signal_id: str = "test123"
+            symbol: str = "XAUUSD"
+            signal_type: _Side = field(default_factory=_Side)
+            confluence_score: float = 75.0
+            tier: str = "STANDARD"
+            entry_price: float = 2400.0
+            stop_loss: float = 2380.0
+            take_profit: float = 2440.0
+            rr_ratio: float = 2.0
+            atr: float = 10.0
+            components: list = field(default_factory=lambda: [
+                ComponentScore(
+                    name="BOS", raw_value=1.0, weighted_score=15.0,
+                    weight=15.0, reasoning="Bullish BOS",
+                ),
+                ComponentScore(
+                    name="Regime", raw_value=0.7, weighted_score=18.0,
+                    weight=25.0, reasoning="Uptrend",
+                ),
+            ])
+
+        return _Sig()
+
     def test_llm_failure_uses_fallback_narrative(self):
-        """When LLM fails (no circuit breaker), scanner returns fallback narrative."""
+        """When LLM raises, scanner returns a Template-engine fallback narrative."""
         scanner = self._make_scanner(llm_fails=True)
-        # Test the _generate_narrative_safe method directly
-        mock_signal = MagicMock()
-        mock_signal.signal_type.value = "LONG"
-        mock_signal.symbol = "XAUUSD"
-        mock_signal.confluence_score = 75.0
-        mock_signal.signal_id = "test123"
+        signal = self._make_concrete_signal()
 
-        result = scanner._generate_narrative_safe(mock_signal)
-        assert result is None
+        result = scanner._generate_narrative_safe(signal)
+        assert result is not None
+        assert result.get("fallback_used") is True
+        assert result.get("fallback_reason", "").startswith("llm_error:")
         assert scanner._llm_failures == 1
+        assert scanner._fallback_uses == 1
 
-    def test_llm_circuit_open_returns_none(self):
-        """When LLM circuit is OPEN, generate_narrative_safe returns None."""
+    def test_llm_circuit_open_returns_template_fallback(self):
+        """When LLM circuit is OPEN, scanner falls back to TemplateEngine (not None)."""
         from src.intelligence.circuit_breaker import CircuitBreaker
         llm_cb = CircuitBreaker(name="llm_api", failure_threshold=2)
         scanner = self._make_scanner(llm_breaker=llm_cb, llm_fails=True)
+        signal = self._make_concrete_signal()
 
-        mock_signal = MagicMock()
-        mock_signal.signal_id = "test123"
-
-        # Trip the circuit
+        # Trip the circuit (each call falls back, but still increments failures)
         for _ in range(2):
-            scanner._generate_narrative_safe(mock_signal)
+            scanner._generate_narrative_safe(signal)
 
-        # Now circuit should be open
         assert llm_cb.state.value == "open"
 
-        # Next call should be blocked by circuit
-        result = scanner._generate_narrative_safe(mock_signal)
-        assert result is None
+        # Next call should be blocked by circuit and routed through the template fallback.
+        result = scanner._generate_narrative_safe(signal)
+        assert result is not None
+        assert result.get("fallback_used") is True
+        assert result.get("fallback_reason") == "circuit_open"
         assert scanner._llm_failures == 3
 
     def test_notification_failure_doesnt_crash(self):

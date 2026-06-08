@@ -1,31 +1,24 @@
 {
+  "_comment": "Chantier 5.C — i18n purged of pre-pivot residuals: performance-stats section removed, tiers aligned to Découverte/Approfondie/Intégrale, taglines reworded to the descriptive posture. NOTE: these messages are loaded by NextIntlClientProvider but NOT yet consumed (components use hard-coded FR strings). TODO 5.D: validate/wire these keys during copy finishing, or remove.",
   "nav": {
-    "dashboard": "Dashboard", "narratives": "Analysen", "transparency": "Transparenz",
+    "dashboard": "Dashboard", "narratives": "Analysen",
     "glossary": "Glossar", "pricing": "Preise", "chat": "KI-Chat",
     "login": "Anmelden", "language": "Sprache"
   },
   "landing": {
     "hero_title": "Den Goldmarkt verstehen, ohne dass jemand Ihnen sagt, was zu tun ist.",
-    "hero_subtitle": "Smart Sentinel AI erzeugt belegte Kontextanalysen für XAU/USD — transparent von Grund auf.",
-    "hero_cta_primary": "Kostenlos starten", "hero_cta_secondary": "Transparenz ansehen",
+    "hero_subtitle": "MIA Markets erzeugt belegte Kontextanalysen für XAU/USD — transparent von Grund auf.",
+    "hero_cta_primary": "Kostenlos starten", "hero_cta_secondary": "Die Methode entdecken",
     "value_1_title": "Belegte KI-Erzählung",
     "value_1_body": "Jede Analyse zitiert ihre Quellen. Keine Halluzination, keine Empfehlung.",
-    "value_2_title": "Radikale Transparenz",
-    "value_2_body": "Live-Paper-Trading-Kurve mit Drawdowns. Kein Trading-Edge behauptet.",
+    "value_2_title": "Ehrliche Haltung",
+    "value_2_body": "Kein Gewinnversprechen, kein behaupteter Edge — ein Werkzeug zum Verstehen, kein Trading-System.",
     "value_3_title": "Mehrschichtiger Kontext",
     "value_3_body": "Volatilitätsregime, Asset-Korrelationen, Makro-Kalender — zum Verstehen, nicht zum Traden."
   },
   "disclaimer": {
     "short": "Algorithmische Analyse zu Bildungszwecken. Keine Anlageberatung.",
-    "long": "Smart Sentinel AI erstellt redaktionelle Kontextanalysen, keine personalisierten Empfehlungen. Gemäß EU 2024/2811 und der Finfluencer-Verordnung vom März 2026."
-  },
-  "transparency": {
-    "title": "Radikale Transparenz",
-    "subtitle": "Unsere Live-Paper-Trading-Kurve mit allen Drawdowns.",
-    "disclaimer": "Paper-Trading-Demonstration. Smart Sentinel beansprucht KEINEN Trading-Edge. Diese Kurve dient ausschließlich Bildungszwecken.",
-    "stats_title": "Kumulierte Statistiken",
-    "n_trades": "Trades", "win_rate": "Gewinnrate", "total_r": "Kumuliertes R",
-    "max_dd": "Maximaler Drawdown", "sharpe": "Sharpe pro Trade"
+    "long": "MIA Markets erstellt redaktionelle Kontextanalysen, keine personalisierten Empfehlungen. Gemäß EU 2024/2811 und der Finfluencer-Verordnung vom März 2026."
   },
   "glossary": {
     "title": "Glossar",
@@ -33,8 +26,8 @@
   },
   "pricing": {
     "title": "Einfache, transparente Preise",
-    "subtitle": "14-tägige Testphase ohne Karte für LITE und PRO.",
-    "free_title": "FREE", "lite_title": "LITE", "pro_title": "PRO", "pro_plus_title": "PRO+",
+    "subtitle": "Keine Karte für den Découverte-Tarif.",
+    "free_title": "Découverte", "approfondie_title": "Approfondie", "integrale_title": "Intégrale",
     "billed_monthly": "/Monat", "cta_signup": "Loslegen", "cta_contact": "Kontakt"
   },
   "chat": {
@@ -43,7 +36,7 @@
     "send": "Senden", "sources_label": "Zitierte Quellen"
   },
   "footer": {
-    "copyright": "© 2026 Smart Sentinel AI. Alle Rechte vorbehalten.",
+    "copyright": "© 2026 MIA Markets. Alle Rechte vorbehalten.",
     "terms": "AGB", "privacy": "Datenschutz", "contact": "Kontakt"
   }
 }

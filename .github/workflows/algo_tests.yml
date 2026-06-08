@@ -1,0 +1,45 @@
+name: algo-tests
+
+on:
+  push:
+    branches:
+      - institutional-overhaul
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  algo-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install pytest pytest-cov pandas numpy scipy scikit-learn lightgbm hmmlearn pydantic
+
+      - name: Collect tests
+        run: pytest tests/ --collect-only -q
+
+      - name: Run fast algo tests
+        env:
+          PYTHONIOENCODING: utf-8
+          SENTINEL_TESTING_MODE: "1"
+        run: |
+          pytest tests/ \
+            -m "not slow and not integration and not skip_on_ci" \
+            --maxfail=20 \
+            --tb=short \
+            --durations=20 \
+            -q

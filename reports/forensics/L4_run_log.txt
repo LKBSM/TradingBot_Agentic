@@ -1,0 +1,44 @@
+[NR4] Loading data...
+[NR4] 172,874 barres de 2019-01-02 06:00:00 a 2026-04-29 23:45:00
+[NR4] 875 events high-impact USD/EUR
+[NR4] Computing features...
+[NR4] Computing news blackout +/-60 min...
+[NR4] Signals brut: long=16636, short=17651
+[NR4] Signals apres filtres: long=15559, short=16527
+[NR4] Simulating...
+[NR4] 6538 trades generated
+
+[NR4] Metriques globales:
+  label: FULL_2019_2026
+  n_trades: 6538
+  wr: 0.3134
+  pf: 0.6027
+  pf_ci_lo: 0.5402
+  pf_ci_hi: 0.6787
+  sharpe: 0.0803
+  sortino: 0.0812
+  max_dd_pct: -1.3326
+  expectancy_r: -0.2410
+  final_capital: -2893.7113
+  return_pct: -1.2894
+  n_tp: 1597
+  n_sl: 4225
+  n_timeout: 716
+
+[NR4] Comparaison apples-to-apples NR4 vs SMC:
+         label  n_trades     wr     pf  sharpe  sortino  max_dd_pct  expectancy_r  return_pct
+FULL_2019_2026 6538.0000 0.3134 0.6027  0.0803   0.0812     -1.3326       -0.2410     -1.2894
+      SMC_FULL 2363.0000 0.4418 0.7863 -0.8597  -1.3086     -0.7792       -0.0323     -0.6246
+
+[NR4] Tableau annuel:
+    label  n_trades     wr     pf  pf_ci_lo  pf_ci_hi  max_dd_pct
+year_2019       880 0.2591 0.4039    0.3074    0.5090     -0.9932
+year_2020       849 0.3168 0.7144    0.5964    0.8457     -0.0606
+year_2021       969 0.3199 0.7079    0.6047    0.8217     -0.0565
+year_2022       910 0.2989 0.6299    0.5344    0.7451     -0.0728
+year_2023       934 0.2976 0.6098    0.5151    0.7152     -0.0688
+year_2024       924 0.3290 0.7382    0.6292    0.8586     -0.0607
+year_2025       821 0.3605 1.0068    0.8372    1.1828     -0.0280
+year_2026       251 0.3665 1.0538    0.7581    1.4217     -0.0294
+
+[NR4] DONE. Files: L4_baseline_nr4_trades.csv, L4_baseline_nr4.json

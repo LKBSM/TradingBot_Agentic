@@ -230,7 +230,7 @@ def test_short_roundtrip_pnl():
     """
     df = _make_data(800, trend="down")
     env = TradingEnv(df, strict_scaler_mode=False, cost_multiplier=0.0)
-    env.reset()
+    env.reset(seed=42)
     _step_n(env, ACTION_HOLD, 10)
 
     initial_balance = env.balance

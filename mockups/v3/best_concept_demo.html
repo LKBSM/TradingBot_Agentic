@@ -1,0 +1,1476 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>M.I.A. Markets · Démo concept (architecture progressive uniforme)</title>
+<style>
+/* ========================================================================
+   SMART SENTINEL CO-PILOT — DEMO HTML SINGLE-FILE v2 (2026-05-26)
+   Architecture PROGRESSIVE UNIFORME — pas de toggle 3-modes.
+   Hero card permanent + sections collapsibles + gating tier par contenu.
+
+   Aucun CDN, aucune dépendance externe. Tout est inline.
+   Design : finance premium sobre. Inspirations : Bloomberg Terminal, Linear,
+            Stripe, Pitchbook.
+======================================================================== */
+
+:root {
+  --bg-page:        #0b0e13;
+  --bg-card:        #141821;
+  --bg-elevated:    #1c2230;
+  --bg-hover:       #232a3a;
+  --border:         #2a3140;
+  --border-light:   #3a4252;
+  --text-primary:   #e6e9ef;
+  --text-secondary: #b3b9c5;
+  --text-muted:     #8b929c;
+  --text-dim:       #5a606b;
+  --gold:           #c9a961;
+  --gold-soft:      #8a7340;
+  --bullish:        #4ade80;
+  --bullish-dim:    #1f7a44;
+  --bearish:        #f87171;
+  --neutral:        #8b929c;
+  --warning:        #fbbf24;
+  --info:           #60a5fa;
+  --accent:         #7c8aff;
+  --locked:         #5a606b;
+  --radius:         8px;
+  --radius-sm:      4px;
+  --radius-lg:      12px;
+  --shadow:         0 4px 24px rgba(0,0,0,0.4);
+  --transition:     150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --font-sans:      'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono:      ui-monospace, SFMono-Regular, 'Menlo', 'Consolas', monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a { color: var(--accent); text-decoration: none; transition: color var(--transition); }
+a:hover { color: var(--gold); }
+code, .mono { font-family: var(--font-mono); font-size: 0.92em; }
+::selection { background: rgba(124, 138, 255, 0.3); color: var(--text-primary); }
+button { font-family: inherit; cursor: pointer; }
+
+/* ============ HEADER ============ */
+.site-header {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(11, 14, 19, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+.header-inner {
+  max-width: 1400px; margin: 0 auto;
+  padding: 14px 28px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 24px;
+}
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 15px; letter-spacing: -0.01em; }
+.brand-mark {
+  width: 24px; height: 24px;
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-soft) 100%);
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  color: #1a1410; font-weight: 700; font-size: 13px;
+}
+.brand-name { color: var(--text-primary); }
+.brand-suffix { color: var(--text-muted); font-weight: 400; }
+.site-nav { display: flex; gap: 4px; font-size: 13px; }
+.site-nav a { padding: 7px 12px; border-radius: var(--radius-sm); color: var(--text-secondary); }
+.site-nav a:hover { background: var(--bg-hover); color: var(--text-primary); }
+.header-cta {
+  padding: 7px 14px; font-size: 13px; font-weight: 500;
+  background: var(--bg-elevated); border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm); color: var(--text-primary);
+}
+.header-cta:hover { background: var(--gold); color: #1a1410; border-color: var(--gold); }
+
+/* ============ LAYOUT ============ */
+.container { max-width: 1400px; margin: 0 auto; padding: 0 28px; }
+.section { padding: 80px 0 56px; border-bottom: 1px solid var(--border); }
+.section:last-of-type { border-bottom: none; }
+.section-eyebrow {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 12px;
+}
+.section-title {
+  font-size: 34px; font-weight: 600;
+  letter-spacing: -0.02em; line-height: 1.15;
+  margin-bottom: 14px; max-width: 800px;
+}
+.section-subtitle {
+  font-size: 17px; line-height: 1.55;
+  color: var(--text-secondary);
+  margin-bottom: 36px; max-width: 760px;
+}
+
+/* ============ SECTION 1 — PITCH ============ */
+.pitch-hero { text-align: center; padding: 56px 0 32px; }
+.pitch-tagline {
+  font-size: 46px; font-weight: 600;
+  letter-spacing: -0.025em; line-height: 1.1;
+  max-width: 880px; margin: 0 auto 22px;
+}
+.pitch-tagline .accent-gold { color: var(--gold); }
+.pitch-subtagline {
+  font-size: 18px; color: var(--text-secondary);
+  max-width: 720px; margin: 0 auto 40px; line-height: 1.55;
+}
+.pitch-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+  padding: 28px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  max-width: 920px; margin: 0 auto;
+}
+.pitch-stat { text-align: center; }
+.pitch-stat-num {
+  font-size: 30px; font-weight: 600;
+  font-family: var(--font-mono);
+  color: var(--gold); letter-spacing: -0.02em;
+}
+.pitch-stat-label {
+  font-size: 12px; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.08em; margin-top: 6px;
+}
+
+/* ============ SECTION 2 — LECTURE PROGRESSIVE UNIFORME ============ */
+.market-frame {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+/* HERO CARD permanente — toujours visible */
+.hero-card {
+  padding: 32px;
+  background: linear-gradient(180deg, rgba(74, 222, 128, 0.04) 0%, transparent 100%);
+  border-bottom: 1px solid var(--border);
+}
+.hero-row {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 16px; margin-bottom: 18px;
+}
+.hero-id {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+}
+.hero-direction {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 14px;
+  background: rgba(74, 222, 128, 0.12);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+  border-radius: var(--radius-sm);
+  font-size: 14px; font-weight: 600;
+  color: var(--bullish);
+  letter-spacing: 0.01em;
+}
+.hero-direction::before {
+  content: ""; display: inline-block;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--bullish);
+  box-shadow: 0 0 8px rgba(74, 222, 128, 0.6);
+}
+.hero-strength {
+  font-size: 12px; font-weight: 600;
+  padding: 5px 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  color: var(--gold);
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+.hero-meta {
+  font-size: 13px; color: var(--text-muted);
+  display: flex; gap: 14px; flex-wrap: wrap;
+}
+.hero-meta span { display: inline-flex; align-items: center; gap: 6px; }
+.hero-validity {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--text-secondary);
+}
+.hero-validity::before {
+  content: ""; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--info); animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* Hero grid: track record + conviction */
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 20px;
+  margin-bottom: 18px;
+}
+.hero-trackrecord {
+  padding: 20px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+}
+.tr-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 10px;
+}
+.tr-main {
+  font-size: 26px; font-weight: 600;
+  font-family: var(--font-mono);
+  color: var(--text-primary); letter-spacing: -0.01em;
+  margin-bottom: 4px;
+}
+.tr-main .tr-pf { color: var(--gold); }
+.tr-main .tr-ci {
+  font-size: 14px; color: var(--text-secondary);
+  font-weight: 400; margin-left: 6px;
+}
+.tr-sub {
+  font-size: 13px; color: var(--text-muted); line-height: 1.5;
+}
+
+.hero-conviction {
+  padding: 20px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  text-align: center;
+}
+.cv-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 10px;
+}
+.cv-num {
+  font-size: 42px; font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text-primary); line-height: 1; letter-spacing: -0.03em;
+}
+.cv-num .cv-of { font-size: 16px; color: var(--text-muted); font-weight: 400; }
+.cv-gauge {
+  width: 100%; height: 6px;
+  background: var(--bg-page);
+  border-radius: 3px; overflow: hidden;
+  margin: 12px 0 6px; position: relative;
+}
+.cv-gauge-fill { height: 100%; background: linear-gradient(90deg, var(--gold-soft) 0%, var(--gold) 100%); width: 72%; }
+.cv-gauge-range {
+  position: absolute; top: 0; height: 100%;
+  background: rgba(201, 169, 97, 0.18);
+  border-left: 1px dashed rgba(201, 169, 97, 0.55);
+  border-right: 1px dashed rgba(201, 169, 97, 0.55);
+  left: 54%; width: 28%;
+}
+.cv-margin { font-size: 12px; color: var(--text-muted); }
+
+/* Event banner ≤4h */
+.hero-event {
+  padding: 14px 18px;
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: var(--radius);
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.hero-event::before { content: "⚠"; font-size: 16px; color: var(--warning); }
+.hero-event strong { color: var(--warning); }
+
+/* Verbal reading */
+.hero-verbal {
+  font-size: 16px; color: var(--text-secondary);
+  line-height: 1.6; font-style: italic;
+  padding: 14px 18px;
+  border-left: 3px solid var(--gold-soft);
+  margin-bottom: 22px;
+}
+
+/* CTA row */
+.hero-actions {
+  display: flex; gap: 12px; flex-wrap: wrap;
+}
+.btn-primary, .btn-secondary {
+  padding: 11px 20px;
+  font-size: 14px; font-weight: 500;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  transition: all var(--transition);
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.btn-primary {
+  background: var(--gold); color: #1a1410; border-color: var(--gold);
+}
+.btn-primary:hover { background: #d4b76b; border-color: #d4b76b; }
+.btn-secondary {
+  background: var(--bg-elevated); color: var(--text-primary); border-color: var(--border-light);
+}
+.btn-secondary:hover { background: var(--bg-hover); border-color: var(--text-muted); }
+
+/* ============ SECTIONS COLLAPSIBLES ============ */
+.collapsible {
+  border-bottom: 1px solid var(--border);
+}
+.collapsible:last-child { border-bottom: none; }
+.collapsible-head {
+  width: 100%;
+  padding: 18px 28px;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 15px; font-weight: 500;
+  text-align: left;
+  transition: background var(--transition);
+}
+.collapsible-head:hover { background: var(--bg-hover); }
+.collapsible-head .ch-left { display: flex; align-items: center; gap: 12px; }
+.collapsible-head .ch-icon {
+  width: 22px; height: 22px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--bg-elevated); border-radius: 50%;
+  font-size: 11px; color: var(--text-secondary);
+  transition: transform var(--transition);
+}
+.collapsible.open .ch-icon { transform: rotate(180deg); }
+.collapsible-head .ch-summary {
+  font-size: 13px; color: var(--text-muted); font-weight: 400;
+}
+.collapsible-head .ch-lock {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px;
+  font-size: 11px; font-weight: 500;
+  background: rgba(201, 169, 97, 0.1);
+  border: 1px solid rgba(201, 169, 97, 0.3);
+  border-radius: var(--radius-sm);
+  color: var(--gold);
+  letter-spacing: 0.04em;
+}
+.collapsible-body {
+  display: none;
+  padding: 4px 28px 28px;
+}
+.collapsible.open .collapsible-body { display: block; }
+.collapsible.locked .collapsible-head { opacity: 0.85; }
+.collapsible.locked .collapsible-body {
+  display: none;
+}
+.collapsible.locked.open .collapsible-body {
+  display: block;
+  position: relative;
+  filter: blur(2px);
+  pointer-events: none;
+  user-select: none;
+}
+.locked-overlay {
+  position: relative;
+  margin: 0 28px 28px;
+  padding: 20px;
+  background: rgba(201, 169, 97, 0.08);
+  border: 1px dashed rgba(201, 169, 97, 0.4);
+  border-radius: var(--radius);
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-secondary);
+  display: none;
+}
+.collapsible.locked .locked-overlay { display: block; }
+.locked-overlay strong { color: var(--gold); }
+.locked-overlay a { color: var(--accent); }
+
+/* "Tout déplier" toolbar */
+.market-toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 28px;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.toolbar-info { color: var(--text-muted); }
+.toolbar-actions { display: flex; gap: 8px; }
+.toolbar-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+  background: transparent;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  transition: all var(--transition);
+}
+.toolbar-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+/* ============ CONTENT BLOCKS in collapsibles ============ */
+.section-intro {
+  font-size: 14px; color: var(--text-secondary);
+  margin-bottom: 18px; line-height: 1.55;
+}
+.kv-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+.kv {
+  padding: 14px 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.kv-key {
+  font-size: 11px; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.08em;
+  margin-bottom: 4px;
+}
+.kv-val {
+  font-size: 16px; font-weight: 500;
+  font-family: var(--font-mono); color: var(--text-primary);
+  letter-spacing: -0.005em;
+}
+.kv-val small { font-size: 12px; color: var(--text-muted); font-weight: 400; }
+
+.badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.badge.success { background: rgba(74, 222, 128, 0.1); border-color: rgba(74, 222, 128, 0.3); color: var(--bullish); }
+.badge.warning { background: rgba(251, 191, 36, 0.1); border-color: rgba(251, 191, 36, 0.3); color: var(--warning); }
+.badge.info    { background: rgba(96, 165, 250, 0.1); border-color: rgba(96, 165, 250, 0.3); color: var(--info); }
+
+/* Waterfall 8 composantes */
+.waterfall {
+  display: flex; flex-direction: column; gap: 10px;
+}
+.wf-row {
+  display: grid;
+  grid-template-columns: 160px 1fr 80px 60px;
+  align-items: center;
+  gap: 14px;
+  font-size: 13px;
+}
+.wf-name { color: var(--text-primary); font-weight: 500; }
+.wf-bar-track {
+  height: 16px;
+  background: var(--bg-page);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.wf-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold-soft), var(--gold));
+  border-radius: 3px;
+}
+.wf-bar-fill.muted { background: var(--bg-hover); }
+.wf-contrib {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  color: var(--gold);
+  text-align: right;
+}
+.wf-contrib.zero { color: var(--text-muted); }
+.wf-weight {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: right;
+}
+
+/* Conformal viz */
+.conformal-viz {
+  padding: 24px 12px 16px;
+  position: relative;
+}
+.conformal-bar {
+  position: relative;
+  height: 12px;
+  background: var(--bg-page);
+  border-radius: 6px;
+}
+.conformal-range {
+  position: absolute;
+  top: 0; height: 100%;
+  background: rgba(201, 169, 97, 0.25);
+  border: 1px solid rgba(201, 169, 97, 0.5);
+  border-radius: 6px;
+  left: 54%; width: 28%;
+}
+.conformal-point {
+  position: absolute;
+  top: -4px;
+  left: calc(72% - 10px);
+  width: 20px; height: 20px;
+  background: var(--gold);
+  border: 3px solid var(--bg-card);
+  border-radius: 50%;
+  box-shadow: 0 0 12px rgba(201, 169, 97, 0.6);
+}
+.conformal-ticks {
+  display: flex; justify-content: space-between;
+  margin-top: 18px;
+  font-family: var(--font-mono);
+  font-size: 11px; color: var(--text-muted);
+}
+.conformal-legend {
+  margin-top: 14px;
+  font-size: 13px; color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+/* Sources */
+.sources-list { display: flex; flex-direction: column; gap: 10px; }
+.source-row {
+  padding: 12px 14px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: flex; gap: 12px; align-items: flex-start;
+}
+.source-row::before {
+  content: "📄"; font-size: 14px; opacity: 0.7;
+}
+.source-content { flex: 1; }
+.source-title { font-size: 14px; color: var(--text-primary); font-weight: 500; }
+.source-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+/* ============ SECTION 3 — CHATBOT FONCTIONNEL ============ */
+.chat-demo {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 24px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  min-height: 540px;
+}
+.chat-side {
+  padding: 22px;
+  background: var(--bg-elevated);
+  border-right: 1px solid var(--border);
+}
+.chat-side-title {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 14px;
+}
+.chat-questions { display: flex; flex-direction: column; gap: 8px; }
+.chat-question {
+  text-align: left;
+  padding: 12px 14px;
+  background: transparent;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  font-size: 13px; line-height: 1.5;
+}
+.chat-question:hover {
+  background: var(--bg-hover);
+  border-color: var(--gold-soft);
+  color: var(--text-primary);
+}
+.chat-question.active {
+  background: rgba(201, 169, 97, 0.1);
+  border-color: var(--gold);
+  color: var(--text-primary);
+}
+.chat-main {
+  display: flex; flex-direction: column;
+  padding: 22px;
+  background: var(--bg-card);
+}
+.chat-context-bar {
+  padding: 10px 14px;
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--bg-elevated);
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+}
+.chat-context-bar strong { color: var(--bullish); }
+.chat-thread {
+  flex: 1;
+  display: flex; flex-direction: column; gap: 14px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+.chat-msg {
+  max-width: 86%;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  font-size: 14px; line-height: 1.55;
+}
+.chat-msg.user {
+  align-self: flex-end;
+  background: rgba(124, 138, 255, 0.12);
+  border: 1px solid rgba(124, 138, 255, 0.3);
+  color: var(--text-primary);
+}
+.chat-msg.bot {
+  align-self: flex-start;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+.chat-msg.bot strong { color: var(--text-primary); }
+.chat-msg.bot .refusal-tag {
+  display: inline-block;
+  margin-top: 8px; padding: 4px 8px;
+  font-size: 11px;
+  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  border-radius: var(--radius-sm);
+  color: var(--bearish);
+  letter-spacing: 0.05em;
+}
+.chat-msg ul { margin: 8px 0; padding-left: 20px; }
+.chat-msg li { margin-bottom: 4px; }
+.chat-input {
+  margin-top: 16px;
+  padding: 12px 14px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  display: flex; gap: 10px; align-items: center;
+}
+.chat-input input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+}
+.chat-input input::placeholder { color: var(--text-muted); }
+.chat-input .chat-send {
+  width: 30px; height: 30px;
+  background: var(--gold);
+  border: none; border-radius: var(--radius-sm);
+  color: #1a1410; font-weight: 700;
+}
+
+/* ============ SECTION 4 — POURQUOI ÇA SE VEND ============ */
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 48px;
+}
+.tier-card {
+  padding: 24px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  display: flex; flex-direction: column; gap: 12px;
+  position: relative;
+}
+.tier-card.featured {
+  border-color: var(--gold);
+  background: linear-gradient(180deg, rgba(201, 169, 97, 0.06) 0%, var(--bg-card) 60%);
+}
+.tier-card.featured::before {
+  content: "RECOMMANDÉ";
+  position: absolute;
+  top: -10px; left: 50%; transform: translateX(-50%);
+  padding: 3px 12px;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.12em;
+  background: var(--gold); color: #1a1410;
+  border-radius: var(--radius-sm);
+}
+.tier-name { font-size: 14px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; }
+.tier-price { font-size: 28px; font-weight: 600; font-family: var(--font-mono); color: var(--text-primary); }
+.tier-price small { font-size: 14px; color: var(--text-muted); font-weight: 400; }
+.tier-target { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; }
+.tier-sections { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+.tier-sections-title { font-weight: 600; color: var(--gold); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; font-size: 11px; }
+.tier-features { list-style: none; font-size: 13px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 6px; }
+.tier-features li { display: flex; align-items: flex-start; gap: 6px; }
+.tier-features li::before { content: "✓"; color: var(--bullish); font-weight: 700; flex-shrink: 0; }
+.tier-features li.locked { color: var(--text-muted); }
+.tier-features li.locked::before { content: "×"; color: var(--text-dim); }
+.tier-cta {
+  margin-top: auto;
+  padding: 10px 14px;
+  font-size: 13px; font-weight: 500;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  width: 100%;
+}
+.tier-cta:hover { background: var(--gold); color: #1a1410; border-color: var(--gold); }
+.tier-card.featured .tier-cta { background: var(--gold); color: #1a1410; border-color: var(--gold); }
+.tier-card.featured .tier-cta:hover { background: #d4b76b; }
+
+.differentiators {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+.diff-card {
+  padding: 22px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.diff-icon { font-size: 28px; margin-bottom: 8px; }
+.diff-title { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+.diff-body { font-size: 13px; color: var(--text-secondary); line-height: 1.55; }
+
+/* ============ CHATBOT SIDEBAR PERMANENT (≥ 1024px) ============ */
+.bot-sidebar {
+  position: fixed;
+  top: 80px; right: 24px;
+  width: 320px;
+  max-height: calc(100vh - 120px);
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  display: flex; flex-direction: column;
+  z-index: 50;
+  transform: translateX(0); transition: transform 200ms ease;
+}
+.bot-sidebar.hidden { transform: translateX(calc(100% + 40px)); }
+.bot-sidebar-head {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.bot-sidebar-head .bot-title { font-size: 13px; font-weight: 600; color: var(--gold); letter-spacing: 0.06em; text-transform: uppercase; }
+.bot-sidebar-head .bot-close { background: transparent; border: none; color: var(--text-muted); font-size: 18px; }
+.bot-sidebar-body { padding: 14px; font-size: 13px; color: var(--text-secondary); line-height: 1.55; }
+.bot-sidebar-body p { margin-bottom: 8px; }
+.bot-fab {
+  position: fixed; bottom: 24px; right: 24px;
+  width: 56px; height: 56px;
+  background: var(--gold); color: #1a1410;
+  border-radius: 50%; border: none;
+  font-size: 24px;
+  box-shadow: 0 8px 24px rgba(201, 169, 97, 0.4);
+  z-index: 60;
+  display: none;
+}
+
+/* ============ FOOTER COMPLIANCE PERMANENT ============ */
+.site-footer {
+  padding: 24px 28px;
+  background: var(--bg-card);
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.6;
+}
+.site-footer strong { color: var(--text-secondary); }
+
+/* ============ RESPONSIVE ============ */
+@media (max-width: 1023px) {
+  .bot-sidebar { display: none; }
+  .bot-fab { display: flex; align-items: center; justify-content: center; }
+}
+@media (max-width: 880px) {
+  .hero-grid { grid-template-columns: 1fr; }
+  .pricing-grid { grid-template-columns: 1fr 1fr; }
+  .chat-demo { grid-template-columns: 1fr; }
+  .chat-side { border-right: none; border-bottom: 1px solid var(--border); }
+  .differentiators { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  html, body { font-size: 14px; }
+  .header-inner { padding: 12px 18px; }
+  .site-nav { display: none; }
+  .container { padding: 0 18px; }
+  .section { padding: 56px 0 36px; }
+  .pitch-tagline { font-size: 32px; }
+  .section-title { font-size: 26px; }
+  .hero-card { padding: 22px; }
+  .pricing-grid { grid-template-columns: 1fr; }
+  .wf-row { grid-template-columns: 110px 1fr 70px 50px; gap: 10px; font-size: 12px; }
+  .pitch-stats { gap: 24px; padding: 20px; }
+  .pitch-stat-num { font-size: 24px; }
+  .collapsible-head { padding: 16px 20px; }
+  .collapsible-body { padding: 4px 20px 22px; }
+  .market-toolbar { padding: 12px 20px; }
+  .locked-overlay { margin: 0 20px 22px; }
+}
+
+.hidden-tier { display: none; }
+</style>
+</head>
+<body>
+
+<!-- ============ HEADER ============ -->
+<header class="site-header">
+  <div class="header-inner">
+    <div class="brand">
+      <div class="brand-mark">M</div>
+      <span class="brand-name">M.I.A. Markets</span>
+      <span class="brand-suffix">· Multi-asset Intelligence Assistant</span>
+    </div>
+    <nav class="site-nav">
+      <a href="#lecture">Lecture</a>
+      <a href="#chatbot">Chatbot</a>
+      <a href="#pricing">Tarifs</a>
+      <a href="#methodologie">Méthodologie</a>
+    </nav>
+    <button class="header-cta">Essayer gratuitement</button>
+  </div>
+</header>
+
+<!-- ============ SECTION 1 — PITCH ============ -->
+<section class="section" style="border-bottom: none; padding-bottom: 24px;">
+  <div class="container">
+    <div class="pitch-hero">
+      <h1 class="pitch-tagline">
+        L'analyse de marché de niveau institutionnel, <span class="accent-gold">traduite</span>.
+        Plus un quant qui répond à toutes vos questions.
+      </h1>
+      <p class="pitch-subtagline">
+        M.I.A. Markets lit le marché Or et FX pour vous,
+        décompose ce qu'il sait — et ce qu'il ne sait pas. Vous gardez la décision.
+      </p>
+      <div class="pitch-stats">
+        <div class="pitch-stat"><div class="pitch-stat-num">8</div><div class="pitch-stat-label">facteurs analysés</div></div>
+        <div class="pitch-stat"><div class="pitch-stat-num">12</div><div class="pitch-stat-label">papers académiques</div></div>
+        <div class="pitch-stat"><div class="pitch-stat-num">7 ans</div><div class="pitch-stat-label">de données historiques</div></div>
+        <div class="pitch-stat"><div class="pitch-stat-num">2</div><div class="pitch-stat-label">actifs (XAU + EUR)</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SECTION 2 — LECTURE PROGRESSIVE UNIFORME ============ -->
+<section class="section" id="lecture">
+  <div class="container">
+    <div class="section-eyebrow">Lecture de marché live</div>
+    <h2 class="section-title">Tout est là. Vous décidez ce que vous voulez voir.</h2>
+    <p class="section-subtitle">
+      Une seule lecture, structurée en couches. Le hero card reste visible en permanence.
+      Le détail s'ouvre quand vous le voulez. Pas de choix imposé avant la valeur.
+    </p>
+
+    <div class="market-frame">
+
+      <!-- ===== HERO CARD permanent ===== -->
+      <div class="hero-card">
+        <div class="hero-row">
+          <div class="hero-id">
+            <span class="hero-direction">LECTURE HAUSSIÈRE</span>
+            <span class="hero-strength">Strong</span>
+            <span class="hero-meta">
+              <span><strong style="color:var(--text-secondary)">XAU/USD</strong></span>
+              <span>·</span>
+              <span>M15</span>
+              <span>·</span>
+              <span>✓ 8 facteurs analysés</span>
+            </span>
+          </div>
+          <span class="hero-validity">Lecture valable encore 2h47</span>
+        </div>
+
+        <div class="hero-grid">
+          <div class="hero-trackrecord">
+            <div class="tr-label">Méthodologie publique transparente</div>
+            <div class="tr-main">
+              <span class="tr-pf">5 briques scientifiques</span>
+              <span class="tr-ci">sources académiques citées</span>
+            </div>
+            <div class="tr-sub">
+              7 ans de données historiques · validation statistique OOS en cours · phase d'accès anticipé
+            </div>
+          </div>
+          <div class="hero-conviction">
+            <div class="cv-label">Conviction calibrée</div>
+            <div class="cv-num">72<span class="cv-of"> / 100</span></div>
+            <div class="cv-gauge">
+              <div class="cv-gauge-range" title="Intervalle conformel 54-82"></div>
+              <div class="cv-gauge-fill"></div>
+            </div>
+            <div class="cv-margin">marge d'erreur honnête : 54 – 82</div>
+          </div>
+        </div>
+
+        <div class="hero-event">
+          <span><strong>FOMC Minutes</strong> dans <strong>2 h 47</strong> — volatilité attendue +18 % vs normale</span>
+        </div>
+
+        <div class="hero-verbal">
+          « Cassure haussière confirmée au-dessus de 2 391,5. Zone de déséquilibre 2 378 – 2 381 toujours active,
+          retest armé. La lecture reste valable tant que le prix tient au-dessus de 2 378.
+          À surveiller : compte-rendu FOMC dans 2 h 47. »
+        </div>
+
+        <div class="hero-actions">
+          <button class="btn-primary" onclick="document.getElementById('chatbot').scrollIntoView({behavior:'smooth'})">
+            💬 Demander à Sentinel
+          </button>
+          <button class="btn-secondary" id="toggleAllBtn">📊 Tout déplier</button>
+        </div>
+      </div>
+
+      <!-- ===== TOOLBAR ===== -->
+      <div class="market-toolbar">
+        <div class="toolbar-info">Sections ci-dessous · cliquez pour déplier. Le détail technique est réservé aux abonnés Approfondie.</div>
+        <div class="toolbar-actions">
+          <button class="toolbar-btn" onclick="setTierView('FREE')">Vue FREE</button>
+          <button class="toolbar-btn" onclick="setTierView('ANALYST')">Vue Découverte</button>
+          <button class="toolbar-btn" onclick="setTierView('STRATEGIST')">Vue Approfondie</button>
+        </div>
+      </div>
+
+      <!-- ===== Section A : Pourquoi cette conviction ===== -->
+      <div class="collapsible" data-tier="ANALYST">
+        <button class="collapsible-head" onclick="toggleSection(this)">
+          <span class="ch-left">
+            <span class="ch-icon">▾</span>
+            <span>Pourquoi cette conviction ?</span>
+          </span>
+          <span class="ch-summary">Conviction 72 · marge honnête 54–82</span>
+        </button>
+        <div class="collapsible-body">
+          <p class="section-intro">
+            La conviction 72 décompose les 8 facteurs analysés (Smart Money, Volatilité, Multi-Timeframe, Liquidité, Sessions, Régime, Technical, News).
+            La marge 54 – 82 vient d'une garantie mathématique (Adaptive Conformal Inference, Gibbs &amp; Candès 2021), distribution-free.
+            La validation out-of-sample de la couverture est en cours (Sprint 1 du plan dev) — chiffres détaillés publiables après validation Brier skill &gt; +2 %.
+          </p>
+          <div class="conformal-viz">
+            <div class="conformal-bar">
+              <div class="conformal-range"></div>
+              <div class="conformal-point"></div>
+            </div>
+            <div class="conformal-ticks">
+              <span>0</span><span>25</span><span>50</span><span class="mono" style="color:var(--gold)">54</span><span class="mono" style="color:var(--gold)">72</span><span class="mono" style="color:var(--gold)">82</span><span>100</span>
+            </div>
+            <div class="conformal-legend">
+              Couverture nominale 95 % · couverture observée 94,3 % · méthode : Adaptive Conformal Inference (Gibbs &amp; Candès 2021).
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Section B : Régime + Volatilité ===== -->
+      <div class="collapsible" data-tier="ANALYST">
+        <button class="collapsible-head" onclick="toggleSection(this)">
+          <span class="ch-left">
+            <span class="ch-icon">▾</span>
+            <span>Régime de marché + volatilité</span>
+          </span>
+          <span class="ch-summary">Tendance haussière calme · vol +18 % vs normale</span>
+        </button>
+        <div class="collapsible-body">
+          <p class="section-intro">
+            L'algorithme classifie le marché en 3 états (calme / nerveux / stress) à partir des prix.
+            Aujourd'hui : tendance haussière calme, faible risque de retournement.
+          </p>
+          <div class="kv-grid">
+            <div class="kv">
+              <div class="kv-key">Régime de marché</div>
+              <div class="kv-val">Tendance haussière calme <small>(confiance 71 %)</small></div>
+            </div>
+            <div class="kv">
+              <div class="kv-key">Risque de retournement</div>
+              <div class="kv-val" style="color:var(--bullish)">Faible <small>(3 %)</small></div>
+            </div>
+            <div class="kv">
+              <div class="kv-key">Volatilité attendue</div>
+              <div class="kv-val">+18 % <small>vs ATR normale</small></div>
+            </div>
+            <div class="kv">
+              <div class="kv-key">Amplitude probable</div>
+              <div class="kv-val">7.2 – 10.4 <small>pips / 15 min</small></div>
+            </div>
+            <div class="kv">
+              <div class="kv-key">Sauts brutaux</div>
+              <div class="kv-val">12 % <small>(marché calme)</small></div>
+            </div>
+            <div class="kv">
+              <div class="kv-key">Session</div>
+              <div class="kv-val">New York Overlap</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Section C : Structure SMC ===== -->
+      <div class="collapsible" data-tier="ANALYST">
+        <button class="collapsible-head" onclick="toggleSection(this)">
+          <span class="ch-left">
+            <span class="ch-icon">▾</span>
+            <span>Structure du marché</span>
+          </span>
+          <span class="ch-summary">Cassure 2391.5 · zone 2378–2381 · invalidation 2378</span>
+        </button>
+        <div class="collapsible-body">
+          <p class="section-intro">
+            Détection des cassures de structure et zones d'absorption institutionnelle (Smart Money Concepts).
+            Le niveau d'invalidation est un <em>fait de marché descriptif</em>, pas un ordre de stop-loss — vous choisissez.
+          </p>
+          <div class="kv-grid">
+            <div class="kv">
+              <div class="kv-key">Cassure haussière (BOS)</div>
+              <div class="kv-val">2 391,50 <small>· il y a 30 min</small></div>
+            </div>
+            <div class="kv">
+              <div class="kv-key">Zone de déséquilibre (FVG)</div>
+              <div class="kv-val">2 378 – 2 381 <small>· 0.42 ATR</small></div>
+            </div>
+            <div class="kv">
+              <div class="kv-key">Zone d'absorption (OB)</div>
+              <div class="kv-val">2 375 – 2 378 <small>· force 0.73</small></div>
+            </div>
+            <div class="kv">
+              <div class="kv-key">État du retest</div>
+              <div class="kv-val" style="color:var(--bullish)">Armé</div>
+            </div>
+            <div class="kv">
+              <div class="kv-key">Invalidation structurelle</div>
+              <div class="kv-val">2 378,00</div>
+            </div>
+            <div class="kv">
+              <div class="kv-key">Renversement de caractère</div>
+              <div class="kv-val">— <small>(non détecté)</small></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Section D : Détail technique (STRATEGIST locked) ===== -->
+      <div class="collapsible locked" data-tier="STRATEGIST">
+        <button class="collapsible-head" onclick="toggleSection(this)">
+          <span class="ch-left">
+            <span class="ch-icon">▾</span>
+            <span>Détail technique</span>
+          </span>
+          <span class="ch-lock">🔒 Approfondie</span>
+        </button>
+
+        <div class="collapsible-body">
+          <p class="section-intro">
+            Décomposition complète des 8 composantes du score, intervalle conformel détaillé,
+            statistiques historiques enrichies et sources académiques.
+          </p>
+
+          <h3 style="font-size:14px;color:var(--gold);margin:18px 0 12px;text-transform:uppercase;letter-spacing:0.1em;">Waterfall — contributions des 8 composantes</h3>
+          <div class="waterfall">
+            <div class="wf-row"><div class="wf-name">Smart Money</div><div class="wf-bar-track"><div class="wf-bar-fill" style="width:98%"></div></div><div class="wf-contrib">+24.5</div><div class="wf-weight">25 %</div></div>
+            <div class="wf-row"><div class="wf-name">Volatilité</div><div class="wf-bar-track"><div class="wf-bar-fill" style="width:56%"></div></div><div class="wf-contrib">+14.0</div><div class="wf-weight">15 %</div></div>
+            <div class="wf-row"><div class="wf-name">Multi-Timeframe</div><div class="wf-bar-track"><div class="wf-bar-fill" style="width:38%"></div></div><div class="wf-contrib">+9.5</div><div class="wf-weight">12 %</div></div>
+            <div class="wf-row"><div class="wf-name">Liquidité</div><div class="wf-bar-track"><div class="wf-bar-fill" style="width:24%"></div></div><div class="wf-contrib">+6.0</div><div class="wf-weight">10 %</div></div>
+            <div class="wf-row"><div class="wf-name">Sessions</div><div class="wf-bar-track"><div class="wf-bar-fill" style="width:16%"></div></div><div class="wf-contrib">+4.0</div><div class="wf-weight">8 %</div></div>
+            <div class="wf-row"><div class="wf-name">Régime</div><div class="wf-bar-track"><div class="wf-bar-fill muted" style="width:4%"></div></div><div class="wf-contrib">+1.0</div><div class="wf-weight">15 %</div></div>
+            <div class="wf-row"><div class="wf-name">Technical</div><div class="wf-bar-track"><div class="wf-bar-fill muted" style="width:2%"></div></div><div class="wf-contrib">+0.5</div><div class="wf-weight">10 %</div></div>
+            <div class="wf-row"><div class="wf-name">News</div><div class="wf-bar-track"><div class="wf-bar-fill muted" style="width:0%"></div></div><div class="wf-contrib zero">0.0</div><div class="wf-weight">5 %</div></div>
+          </div>
+
+          <h3 style="font-size:14px;color:var(--gold);margin:24px 0 12px;text-transform:uppercase;letter-spacing:0.1em;">Stats historiques — Validation OOS en cours</h3>
+          <div class="kv-grid">
+            <div class="kv"><div class="kv-key">Données disponibles</div><div class="kv-val">7 années</div></div>
+            <div class="kv"><div class="kv-key">Couverture XAU</div><div class="kv-val">98.4 %</div></div>
+            <div class="kv"><div class="kv-key">Source données</div><div class="kv-val">Dukascopy</div></div>
+            <div class="kv"><div class="kv-key">Brier skill OOS</div><div class="kv-val">Pending Sprint 1</div></div>
+            <div class="kv"><div class="kv-key">DSR / PBO</div><div class="kv-val">Pending Sprint 1</div></div>
+            <div class="kv"><div class="kv-key">PF + IC bootstrap</div><div class="kv-val">Pending Sprint 1</div></div>
+          </div>
+
+          <h3 style="font-size:14px;color:var(--gold);margin:24px 0 12px;text-transform:uppercase;letter-spacing:0.1em;">Sources méthodologiques</h3>
+          <div class="sources-list">
+            <div class="source-row"><div class="source-content">
+              <div class="source-title">López de Prado (2018) — Advances in Financial Machine Learning</div>
+              <div class="source-meta">CPCV walk-forward · Wiley · ISBN 978-1119482086</div>
+            </div></div>
+            <div class="source-row"><div class="source-content">
+              <div class="source-title">Corsi (2009) — A Simple Approximate Long-Memory Model of Realized Volatility</div>
+              <div class="source-meta">HAR-RV · Journal of Financial Econometrics 7(2)</div>
+            </div></div>
+            <div class="source-row"><div class="source-content">
+              <div class="source-title">Gibbs &amp; Candès (2021) — Adaptive Conformal Inference Under Distribution Shift</div>
+              <div class="source-meta">NeurIPS 2021 · garantie distribution-free</div>
+            </div></div>
+            <div class="source-row"><div class="source-content">
+              <div class="source-title">Barndorff-Nielsen &amp; Shephard (2004) — Power and Bipower Variation</div>
+              <div class="source-meta">Jump detection · Journal of Financial Econometrics 2</div>
+            </div></div>
+            <div class="source-row"><div class="source-content">
+              <div class="source-title">Adams &amp; MacKay (2007) — Bayesian Online Changepoint Detection</div>
+              <div class="source-meta">BOCPD · arXiv:0710.3742</div>
+            </div></div>
+          </div>
+        </div>
+
+        <div class="locked-overlay">
+          <strong>Section réservée au tier Approfondie (19 € / mois).</strong>
+          Débloque le waterfall des 8 composantes, l'intervalle conformel détaillé, les sources académiques.
+          <br><a href="#pricing">Voir les tarifs →</a>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ===== Hint visibilité tier ===== -->
+    <p style="text-align:center;font-size:13px;color:var(--text-muted);margin-top:20px;">
+      Tier de démonstration actuel :
+      <strong id="tierBadge" style="color:var(--gold)">FREE</strong> ·
+      <span id="tierHint">vous voyez le hero card + lecture verbale. Débloquez plus de sections en montant de tier.</span>
+    </p>
+  </div>
+</section>
+
+<!-- ============ SECTION 3 — CHATBOT FONCTIONNEL ============ -->
+<section class="section" id="chatbot">
+  <div class="container">
+    <div class="section-eyebrow">Le pilier conversationnel</div>
+    <h2 class="section-title">Sentinel répond à toutes vos questions.</h2>
+    <p class="section-subtitle">
+      Le chatbot n'est pas un onglet d'aide — il est le moyen principal de comprendre la lecture.
+      Il définit le jargon, décompose la conviction, contextualise les événements,
+      et <strong style="color:var(--text-primary)">refuse de vous donner un ordre</strong>.
+    </p>
+
+    <div class="chat-demo">
+      <aside class="chat-side">
+        <div class="chat-side-title">Suggestions contextuelles</div>
+        <div class="chat-questions">
+          <button class="chat-question active" data-q="1">Pourquoi la conviction n'est que de 72 ?</button>
+          <button class="chat-question" data-q="2">C'est quoi un retest armé, en simple ?</button>
+          <button class="chat-question" data-q="3">Le FOMC dans 2h47, ça change quoi ?</button>
+          <button class="chat-question" data-q="4">Ça ressemble à quoi historiquement, ce setup ?</button>
+          <button class="chat-question" data-q="5">Donc je dois acheter ?</button>
+          <button class="chat-question" data-q="6">Quelle est ta marge d'erreur sur 72 ?</button>
+        </div>
+      </aside>
+
+      <div class="chat-main">
+        <div class="chat-context-bar">
+          <strong>Contexte injecté</strong> · XAU/USD M15 · Lecture haussière STRONG · conviction 72 · FOMC dans 2h47
+        </div>
+        <div class="chat-thread" id="chatThread">
+          <!-- rempli par JS -->
+        </div>
+        <div class="chat-input">
+          <input type="text" placeholder="Posez votre question à Sentinel…" />
+          <button class="chat-send">▶</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SECTION 4 — POURQUOI ÇA SE VEND ============ -->
+<section class="section" id="pricing">
+  <div class="container">
+    <div class="section-eyebrow">Tarifs &amp; différenciation</div>
+    <h2 class="section-title">Vous payez pour la profondeur de lecture, pas pour des promesses de gain.</h2>
+    <p class="section-subtitle">
+      Le pipeline algorithmique produit la même donnée pour tout le monde. Ce qui change : la profondeur de
+      lecture que vous débloquez en montant de tier. Aucun client ne reçoit moins ; chacun reçoit ce qu'il veut comprendre.
+    </p>
+
+    <div class="pricing-grid">
+      <div class="tier-card">
+        <div class="tier-name">FREE</div>
+        <div class="tier-price">0 €<small>/ mois</small></div>
+        <div class="tier-target">Découverte produit · 1 actif XAU · 3 lectures/jour</div>
+        <div class="tier-sections">
+          <div class="tier-sections-title">Sections débloquées</div>
+          Hero card · lecture verbale · chatbot 5 questions/jour
+        </div>
+        <ul class="tier-features">
+          <li>1 actif (XAU)</li>
+          <li>Chatbot 5 questions/jour</li>
+          <li class="locked">Sections structure / régime / vol</li>
+          <li class="locked">Détail technique</li>
+          <li class="locked">Alertes event</li>
+        </ul>
+        <button class="tier-cta">Commencer gratuitement</button>
+      </div>
+
+      <div class="tier-card featured">
+        <div class="tier-name">Découverte</div>
+        <div class="tier-price">9 €<small>/ mois</small></div>
+        <div class="tier-target">Apprendre à lire les marchés Or et FX · 2 actifs</div>
+        <div class="tier-sections">
+          <div class="tier-sections-title">Sections débloquées</div>
+          + Structure SMC · régime · volatilité · chatbot 50 Q/jour
+        </div>
+        <ul class="tier-features">
+          <li>2 actifs (XAU + EUR/USD)</li>
+          <li>Chatbot 50 questions/jour</li>
+          <li>Sections structure / régime / vol</li>
+          <li>Alertes event imminent</li>
+          <li class="locked">Détail technique (waterfall, RAG)</li>
+        </ul>
+        <button class="tier-cta">14 jours d'essai sans CB</button>
+      </div>
+
+      <div class="tier-card">
+        <div class="tier-name">Approfondie</div>
+        <div class="tier-price">19 €<small>/ mois</small></div>
+        <div class="tier-target">Comprendre l'algorithme en détail · chatbot illimité</div>
+        <div class="tier-sections">
+          <div class="tier-sections-title">Sections débloquées</div>
+          + Détail technique : waterfall + conformal viz + sources RAG
+        </div>
+        <ul class="tier-features">
+          <li>2 actifs · lectures illimitées</li>
+          <li>Chatbot illimité (cache sémantique)</li>
+          <li>Waterfall 8 composantes + conformal viz</li>
+          <li>12 sources RAG académiques cliquables</li>
+          <li>Email digest hebdo pédagogique</li>
+        </ul>
+        <button class="tier-cta">14 jours d'essai avec CB</button>
+      </div>
+    </div>
+
+    <p style="text-align:center;font-size:13px;color:var(--text-muted);margin-top:20px;">
+      Vous représentez un broker, family office ou institutionnel ?
+      <a href="#" class="ml-1" style="color:var(--accent);">Réserver une démo</a> pour une formule sur mesure.
+    </p>
+
+    <h3 style="font-size:14px;color:var(--gold);text-transform:uppercase;letter-spacing:0.1em;margin:48px 0 18px;text-align:center;">Trois différenciateurs réels, pas de promesses</h3>
+    <div class="differentiators">
+      <div class="diff-card">
+        <div class="diff-icon">📊</div>
+        <div class="diff-title">Méthodologie publique transparente</div>
+        <div class="diff-body">
+          Pipeline algorithmique 5 briques scientifiques (HAR-RV, HMM, BOCPD, ACI, Bipower).
+          Code open-source. Sources académiques citées (López de Prado, Corsi, Gibbs &amp; Candès, etc.). Pas de boîte noire.
+        </div>
+      </div>
+      <div class="diff-card">
+        <div class="diff-icon">💬</div>
+        <div class="diff-title">Chatbot comme moyen principal</div>
+        <div class="diff-body">
+          Sentinel ne livre pas un dashboard à lire — il dialogue avec vous. Il définit le jargon,
+          décompose la conviction, et refuse de vous donner un ordre. C'est ce qui sépare un indicateur d'un assistant.
+        </div>
+      </div>
+      <div class="diff-card">
+        <div class="diff-icon">🛡️</div>
+        <div class="diff-title">Honest confidence assumée</div>
+        <div class="diff-body">
+          <em>« Nous ne vous disons pas quoi faire — nous vous donnons les meilleurs outils pour décider. »</em><br>
+          Posture éducative, compliance UE 2024/2811 par construction, sources académiques visibles.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER COMPLIANCE PERMANENT ============ -->
+<footer class="site-footer">
+  <div>
+    <strong>Démonstration paper-trading</strong> · Lecture algorithmique éducative · Ne constitue ni un signal de trading ni un conseil en investissement.
+  </div>
+  <div style="margin-top:6px;">
+    7 années de données historiques · validation statistique OOS en cours · sources académiques publiques · conformité UE 2024/2811 par construction
+  </div>
+  <div style="margin-top:10px;font-size:11px;">
+    © 2026 M.I.A. Markets · <a href="#">CGU</a> · <a href="#">Privacy</a> · <a href="#">Méthodologie</a> · <a href="#">Contact</a>
+  </div>
+</footer>
+
+<!-- ============ CHATBOT SIDEBAR PERMANENT (desktop) ============ -->
+<aside class="bot-sidebar" id="botSidebar">
+  <div class="bot-sidebar-head">
+    <span class="bot-title">💬 Sentinel</span>
+    <button class="bot-close" onclick="document.getElementById('botSidebar').classList.add('hidden')">×</button>
+  </div>
+  <div class="bot-sidebar-body">
+    <p><strong style="color:var(--gold)">Bonjour.</strong> Je peux décomposer la lecture en cours, expliquer le jargon, ou comparer ce setup à l'historique.</p>
+    <p>Quelques pistes :</p>
+    <div class="chat-questions" style="margin-top:8px;">
+      <button class="chat-question" onclick="askBot(1)">Pourquoi 72 ?</button>
+      <button class="chat-question" onclick="askBot(2)">Retest armé ?</button>
+      <button class="chat-question" onclick="askBot(3)">Et le FOMC ?</button>
+      <button class="chat-question" onclick="askBot(5)">Dois-je acheter ?</button>
+    </div>
+  </div>
+</aside>
+
+<!-- ============ CHATBOT FAB (mobile) ============ -->
+<button class="bot-fab" onclick="document.getElementById('chatbot').scrollIntoView({behavior:'smooth'})" title="Demander à Sentinel">💬</button>
+
+<script>
+/* ============ SECTIONS COLLAPSIBLES ============ */
+function toggleSection(headBtn) {
+  const section = headBtn.closest('.collapsible');
+  section.classList.toggle('open');
+  updateExpandAllBtn();
+}
+
+const TOGGLE_BTN = document.getElementById('toggleAllBtn');
+function updateExpandAllBtn() {
+  const sections = document.querySelectorAll('.collapsible');
+  const allOpen = Array.from(sections).every(s => s.classList.contains('open'));
+  TOGGLE_BTN.textContent = allOpen ? '📊 Tout replier' : '📊 Tout déplier';
+}
+TOGGLE_BTN.addEventListener('click', () => {
+  const sections = document.querySelectorAll('.collapsible');
+  const allOpen = Array.from(sections).every(s => s.classList.contains('open'));
+  sections.forEach(s => s.classList.toggle('open', !allOpen));
+  updateExpandAllBtn();
+});
+
+/* ============ TIER VIEW SWITCHER (démo) ============ */
+const TIER_ORDER = { FREE: 0, ANALYST: 1, STRATEGIST: 2 };
+const TIER_BADGE = document.getElementById('tierBadge');
+const TIER_HINT  = document.getElementById('tierHint');
+const TIER_HINTS = {
+  FREE:       'vous voyez le hero card + lecture verbale. Toutes les sections détaillées sont verrouillées.',
+  ANALYST:    'vous accédez à conviction, régime, vol et structure. Le détail technique reste verrouillé.',
+  STRATEGIST: 'vous avez la lecture complète : waterfall, intervalle conformel visualisé, stats enrichies et sources académiques.'
+};
+
+function setTierView(tier) {
+  const userLvl = TIER_ORDER[tier];
+  TIER_BADGE.textContent = tier;
+  TIER_HINT.textContent  = TIER_HINTS[tier];
+
+  document.querySelectorAll('.collapsible').forEach(sec => {
+    const required = sec.dataset.tier || 'FREE';
+    const requiredLvl = TIER_ORDER[required];
+    if (userLvl >= requiredLvl) {
+      sec.classList.remove('locked');
+    } else {
+      sec.classList.add('locked');
+      sec.classList.remove('open');
+    }
+  });
+  updateExpandAllBtn();
+}
+// Default view : FREE → seul le hero + footer visibles, sections collapsed et la D verrouillée.
+setTierView('FREE');
+
+/* ============ CHATBOT SCRIPTÉ ============ */
+const CHAT_THREAD = document.getElementById('chatThread');
+const RESPONSES = {
+  1: {
+    q: 'Pourquoi la conviction n\'est que de 72 ?',
+    a: `<strong>Le score 72 / 100 est la somme calibrée de 8 composantes.</strong> Voici les contributions, du plus fort au plus faible :
+        <ul>
+          <li><strong>Smart Money</strong> +24.5 — la cassure 2 391,5 est confirmée, FVG 2 378 – 2 381 armé, OB présent.</li>
+          <li><strong>Volatilité</strong> +14.0 — forecast à +18 % vs normale, cohérent avec la cassure.</li>
+          <li><strong>Multi-Timeframe</strong> +9.5 — H1 et H4 confirment la tendance.</li>
+          <li><strong>Liquidité</strong> +6.0 — zones d'absorption institutionnelles repérées.</li>
+          <li><strong>Sessions</strong> +4.0 — New York Overlap = liquidité élevée.</li>
+          <li><strong>Régime</strong> +1.0 — calme, pas de cassure de régime.</li>
+          <li><strong>Technical</strong> +0.5 — RSI et MACD légèrement alignés.</li>
+          <li><strong>News</strong> 0.0 — pas de news majeure publiée, mais FOMC dans 2h47.</li>
+        </ul>
+        Pourquoi pas 100 ? Parce que News reste à 0 et Régime contribue peu. Une conviction de 100 supposerait un alignement parfait sur les 8 axes — c'est rare et un peu suspect quand ça arrive.`
+  },
+  2: {
+    q: 'C\'est quoi un retest armé, en simple ?',
+    a: `<strong>Un retest armé, c'est quand le marché revient toucher un niveau qu'il vient de casser, puis rebondit.</strong>
+        <br><br>
+        Imaginez une porte fermée à clé. Quelqu'un la force et passe : c'est la cassure (le BOS à 2 391,5).
+        Puis il revient toucher la porte pour vérifier qu'elle est bien ouverte, et reprend son chemin : c'est le retest armé.
+        <br><br>
+        C'est le moment où la cassure est confirmée par le comportement du prix lui-même, pas juste par un chiffre.
+        Beaucoup de traders attendent ce moment précis pour considérer que le mouvement est crédible.`
+  },
+  3: {
+    q: 'Le FOMC dans 2h47, ça change quoi ?',
+    a: `<strong>Le FOMC, c'est le compte-rendu de la dernière réunion de la Fed.</strong> Trois effets typiques sur l'or :
+        <ul>
+          <li><strong>Volatilité +30 à +80 %</strong> pendant les 60 minutes suivantes (notre forecast : +18 % moyen, mais avec une queue épaisse).</li>
+          <li><strong>Whipsaws</strong> — le prix peut sweeper les zones de liquidité (au-dessus de 2 398 ou en dessous de 2 375) avant de choisir une direction.</li>
+          <li><strong>Régime peut basculer</strong> de « calme » à « nerveux » brutalement.</li>
+        </ul>
+        Sentinel met une bannière jaune permanente quand un event high-impact est à moins de 4 heures.
+        À H-30 minutes, le mode blackout s'active : aucune nouvelle lecture n'est produite tant que la publication n'est pas digérée.`
+  },
+  4: {
+    q: 'Ça ressemble à quoi historiquement, ce setup ?',
+    a: `<strong>Notre validation statistique out-of-sample est encore en cours.</strong> Je peux te décrire ce que nous observons sur 7 années de XAU M15, mais les métriques détaillées (profit factor, win rate, intervalle de confiance) ne sont <strong>pas encore validées OOS</strong> et ne seront pas publiées tant que les seuils Brier skill > +2 %, DSR > 1.0 et PBO < 0.5 ne sont pas atteints.
+        <br><br>
+        Ce que je peux te dire en transparence :
+        <ul>
+          <li>Le scoring v1 rule-based actuel a une corrélation très faible avec le P&amp;L réel — c'est pour cela qu'une refonte LightGBM + Isotonic + ACI est en cours (Sprint 1).</li>
+          <li>L'algorithme est pédagogique avant tout — il décompose la lecture pour t'aider à comprendre, pas pour te promettre des gains.</li>
+          <li>Tu restes seul décideur. C'est une règle, pas une figure de style.</li>
+        </ul>
+        Si tu veux comprendre comment ce setup se compare <em>structurellement</em> (et non en termes de gains) à des configurations passées, je peux te décomposer les 8 facteurs. La transparence avant la promesse.`
+  },
+  5: {
+    q: 'Donc je dois acheter ?',
+    a: `<strong>Je ne peux pas vous dire d'acheter, et je ne le ferai pas — par règle et par éthique.</strong>
+        Voici ce que vous savez maintenant :
+        <ul>
+          <li><strong>Pour</strong> : cassure confirmée, FVG armé, régime calme, vol forecast favorable.</li>
+          <li><strong>Contre</strong> : FOMC dans 2h47 — risque de whipsaw majeur ; News contribue 0 ; régime peut basculer.</li>
+          <li><strong>À considérer</strong> : votre tolérance au risque, la taille de votre position habituelle, votre stop psychologique (sous 2 378 d'après la lecture).</li>
+        </ul>
+        La décision — et le risque — vous appartiennent. Je peux vous aider à comprendre, pas à choisir.
+        <div class="refusal-tag">REFUS PÉDAGOGIQUE · compliance UE 2024/2811</div>`
+  },
+  6: {
+    q: 'Quelle est ta marge d\'erreur sur 72 ?',
+    a: `<strong>L'intervalle conformel à 95 % est [54, 82].</strong>
+        <br><br>
+        Concrètement : l'algorithme estime sa propre incertitude.
+        Sur les 100 dernières lectures avec un profil similaire, le résultat observé est tombé dans l'intervalle prédit
+        <strong>94,3 % du temps</strong> — soit très proche du 95 % promis.
+        <br><br>
+        Méthode : Adaptive Conformal Inference (Gibbs &amp; Candès, NeurIPS 2021) avec garantie distribution-free.
+        Aucun modèle paramétrique requis, le système s'auto-ajuste si le marché change de régime.
+        <br><br>
+        Traduction : « 72 » veut dire « probablement entre 54 et 82, et je me trompe environ 1 fois sur 18 ».`
+  }
+};
+
+function askBot(qNum) {
+  const r = RESPONSES[qNum];
+  if (!r) return;
+
+  // visual : marque la question active
+  document.querySelectorAll('.chat-question').forEach(b => {
+    b.classList.toggle('active', b.dataset.q === String(qNum));
+  });
+
+  // ajoute messages
+  const userMsg = document.createElement('div');
+  userMsg.className = 'chat-msg user';
+  userMsg.textContent = r.q;
+
+  const botMsg = document.createElement('div');
+  botMsg.className = 'chat-msg bot';
+  botMsg.innerHTML = r.a;
+
+  CHAT_THREAD.appendChild(userMsg);
+  CHAT_THREAD.appendChild(botMsg);
+  botMsg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  document.getElementById('chatbot').scrollIntoView({ behavior: 'smooth' });
+}
+
+document.querySelectorAll('.chat-question[data-q]').forEach(btn => {
+  btn.addEventListener('click', () => askBot(parseInt(btn.dataset.q, 10)));
+});
+
+// Initialise avec la question 1
+askBot(1);
+</script>
+
+</body>
+</html>

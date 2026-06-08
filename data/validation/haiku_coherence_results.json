@@ -1,0 +1,1544 @@
+{
+  "metrics": {
+    "n": 60,
+    "A_per_element": {
+      "bos": 7.1,
+      "choch": 7.1,
+      "ob": 0.0,
+      "fvg": 16.7,
+      "news": null
+    },
+    "A_full_coverage_pct": 2.8,
+    "A_applicable": 36,
+    "B_coherence_pct": 100.0,
+    "B_applicable": 41,
+    "C_clean_pct": 100.0,
+    "D_no_invention_pct": 100.0,
+    "source_dist": {
+      "haiku_generated": 60
+    }
+  },
+  "results": [
+    {
+      "candle_id": 1,
+      "instrument": "XAUUSD",
+      "source": "haiku_generated",
+      "description": "Le marché oscille dans une plage de consolidation avec une volatilité normale tandis que les timeframes quotidienne et 4-horaire affichent des signaux haussiers.",
+      "tags": [
+        "trend_ranging",
+        "volatility_normal",
+        "phase_ranging",
+        "mtf_aligned"
+      ],
+      "testA": {},
+      "testB": "n/a",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": []
+    },
+    {
+      "candle_id": 2,
+      "instrument": "XAUUSD",
+      "source": "haiku_generated",
+      "description": "Les prix oscillent dans une fourchette de trading avec une tendance haussière confirmée sur les timeframes supérieures et une volatilité normale.",
+      "tags": [
+        "trend_ranging",
+        "volatility_normal",
+        "phase_ranging",
+        "fvg_active",
+        "mtf_aligned"
+      ],
+      "testA": {
+        "fvg": "MISSING"
+      },
+      "testB": "n/a",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": [
+        "A:fvg_not_mentioned"
+      ]
+    },
+    {
+      "candle_id": 3,
+      "instrument": "XAUUSD",
+      "source": "haiku_generated",
+      "description": "Les prix oscillent dans une plage de consolidation avec des signaux haussiers confirmés sur les périodes journalière et 4h, une zone de liquidité active et une volatilité normale.",
+      "tags": [
+        "trend_ranging",
+        "volatility_normal",
+        "phase_ranging",
+        "bos_recent_bullish",
+        "choch_recent_bullish",
+        "fvg_active",
+        "mtf_aligned"
+      ],
+      "testA": {
+        "bos": "MISSING",
+        "choch": "MISSING",
+        "fvg": "MISSING"
+      },
+      "testB": "n/a",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": [
+        "A:bos_not_mentioned",
+        "A:choch_not_mentioned",
+        "A:fvg_not_mentioned"
+      ]
+    },
+    {
+      "candle_id": 4,
+      "instrument": "XAUUSD",
+      "source": "haiku_generated",
+      "description": "Le cours teste à la hausse un niveau de résistance en phase de tendance haussière avec une volatilité normale et une confirmation multi-timeframe (quotidien et 4h haussiers).",
+      "tags": [
+        "trend_bullish",
+        "volatility_normal",
+        "phase_trend",
+        "retest_in_progress",
+        "mtf_aligned"
+      ],
+      "testA": {},
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": []
+    },
+    {
+      "candle_id": 5,
+      "instrument": "XAUUSD",
+      "source": "haiku_generated",
+      "description": "Les prix oscillent dans une bande de consolidation avec un biais haussier confirmé sur les timeframes quotidienne et 4-heures, dans un contexte de volatilité normale.",
+      "tags": [
+        "trend_ranging",
+        "volatility_normal",
+        "phase_ranging",
+        "bos_recent_bullish",
+        "mtf_aligned"
+      ],
+      "testA": {
+        "bos": "MISSING"
+      },
+      "testB": "n/a",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": [
+        "A:bos_not_mentioned"
+      ]
+    },
+    {
+      "candle_id": 6,
+      "instrument": "XAUUSD",
+      "source": "haiku_generated",
+      "description": "Les prix oscillent dans une fourchette définie avec une faible volatilité tandis que les timeframes supérieurs affichent une orientation haussière.",
+      "tags": [
+        "trend_ranging",
+        "volatility_low",
+        "phase_ranging",
+        "mtf_aligned"
+      ],
+      "testA": {},
+      "testB": "n/a",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": []
+    },
+    {
+      "candle_id": 7,
+      "instrument": "XAUUSD",
+      "source": "haiku_generated",
+      "description": "Les prix progressent sur plusieurs timeframes avec une volatilité accrue durant la phase d'expansion.",
+      "tags": [
+        "trend_bullish",
+        "volatility_elevated",
+        "phase_expansion",
+        "fvg_active",
+        "mtf_aligned"
+      ],
+      "testA": {
+        "fvg": "MISSING"
+      },
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": [
+        "A:fvg_not_mentioned"
+      ]
+    },
+    {
+      "candle_id": 8,
+      "instrument": "XAUUSD",
+      "source": "haiku_generated",
+      "description": "Le marché affiche une tendance haussière confirmée sur les horizons quotidien et 4-heures, avec une volatilité normale et une dynamique de tendance établie.",
+      "tags": [
+        "trend_bullish",
+        "volatility_normal",
+        "phase_trend",
+        "mtf_aligned"
+      ],
+      "testA": {},
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": []
+    },
+    {
+      "candle_id": 9,
+      "instrument": "XAUUSD",
+      "source": "haiku_generated",
+      "description": "Le marché affiche une dynamique haussière confirmée sur les timeframes multiples avec une volatilité normale et un momentum récent positif.",
+      "tags": [
+        "trend_bullish",
+        "volatility_normal",
+        "phase_trend",
+        "bos_recent_bullish",
+        "mtf_aligned"
+      ],
+      "testA": {
+        "bos": "MISSING"
+      },
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": [
+        "A:bos_not_mentioned"
+      ]
+    },
+    {
+      "candle_id": 10,
+      "instrument": "XAUUSD",
+      "source": "haiku_generated",
+      "description": "Les cours progressent sur plusieurs temporalités avec une volatilité accentuée dans une phase d'expansion haussière.",
+      "tags": [
+        "trend_bullish",
+        "volatility_elevated",
+        "phase_expansion",
+        "mtf_aligned"
+      ],
+      "testA": {},
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": []
+    },
+    {
+      "candle_id": 11,
+      "instrument": "XAUUSD",
+      "source": "haiku_generated",
+      "description": "Les prix progressent dans une dynamique haussière alignée sur plusieurs timeframes avec une volatilité élevée et une phase d'expansion active.",
+      "tags": [
+        "trend_bullish",
+        "volatility_elevated",
+        "phase_expansion",
+        "bos_recent_bullish",
+        "ob_active",
+        "mtf_aligned"
+      ],
+      "testA": {
+        "bos": "MISSING",
+        "ob": "MISSING"
+      },
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": [
+        "A:bos_not_mentioned",
+        "A:ob_not_mentioned"
+      ]
+    },
+    {
+      "candle_id": 12,
+      "instrument": "XAUUSD",
+      "source": "haiku_generated",
+      "description": "Les prix affichent une tendance haussière sur plusieurs échelles de temps avec une volatilité élevée en phase d'expansion, bien que des signaux baissiers récents soient détectés localement.",
+      "tags": [
+        "trend_bullish",
+        "volatility_elevated",
+        "phase_expansion",
+        "bos_recent_bearish",
+        "choch_recent_bearish",
+        "mtf_aligned"
+      ],
+      "testA": {
+        "bos": "MISSING",
+        "choch": "MISSING"
+      },
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": [
+        "A:bos_not_mentioned",
+        "A:choch_not_mentioned"
+      ]
+    },
+    {
+      "candle_id": 13,
+      "instrument": "XAUUSD",
+      "source": "haiku_generated",
+      "description": "Les cours progressent sur plusieurs temporalités avec une volatilité accentuée dans une phase d'expansion haussière.",
+      "tags": [
+        "trend_bullish",
+        "volatility_elevated",
+        "phase_expansion",
+        "mtf_aligned"
+      ],
+      "testA": {},
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": []
+    },
+    {
+      "candle_id": 14,
+      "instrument": "XAUUSD",
+      "source": "haiku_generated",
+      "description": "Le marché oscille dans une bande de prix avec une volatilité élevée, tiraillé entre des pressions haussières quotidiennes et un mouvement latéral sur quatre heures.",
+      "tags": [
+        "trend_ranging",
+        "volatility_elevated",
+        "phase_ranging",
+        "bos_recent_bearish",
+        "ob_active",
+        "mtf_mixed"
+      ],
+      "testA": {
+        "bos": "MISSING",
+        "ob": "MISSING"
+      },
+      "testB": "n/a",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": [
+        "A:bos_not_mentioned",
+        "A:ob_not_mentioned"
+      ]
+    },
+    {
+      "candle_id": 15,
+      "instrument": "XAUUSD",
+      "source": "haiku_generated",
+      "description": "Le marché oscille dans une bande de prix avec une volatilité normale, aligné sur les timeframes supérieures en tendance haussière.",
+      "tags": [
+        "trend_ranging",
+        "volatility_normal",
+        "phase_ranging",
+        "ob_active",
+        "mtf_aligned"
+      ],
+      "testA": {
+        "ob": "MISSING"
+      },
+      "testB": "n/a",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": [
+        "A:ob_not_mentioned"
+      ]
+    },
+    {
+      "candle_id": 16,
+      "instrument": "XAUUSD",
+      "source": "haiku_generated",
+      "description": "Le marché affiche une tendance haussière confirmée sur les horizons quotidien et 4-heures, avec une volatilité normale et une dynamique de tendance établie.",
+      "tags": [
+        "trend_bullish",
+        "volatility_normal",
+        "phase_trend",
+        "mtf_aligned"
+      ],
+      "testA": {},
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": []
+    },
+    {
+      "candle_id": 17,
+      "instrument": "XAUUSD",
+      "source": "haiku_generated",
+      "description": "Les prix oscillent dans une fourchette définie avec une faible volatilité tandis que les timeframes supérieurs affichent une orientation haussière.",
+      "tags": [
+        "trend_ranging",
+        "volatility_low",
+        "phase_ranging",
+        "mtf_aligned"
+      ],
+      "testA": {},
+      "testB": "n/a",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": []
+    },
+    {
+      "candle_id": 18,
+      "instrument": "XAUUSD",
+      "source": "haiku_generated",
+      "description": "Les prix oscillent dans une fourchette définie avec une faible volatilité tandis que les timeframes supérieurs affichent une orientation haussière.",
+      "tags": [
+        "trend_ranging",
+        "volatility_low",
+        "phase_ranging",
+        "mtf_aligned"
+      ],
+      "testA": {},
+      "testB": "n/a",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": []
+    },
+    {
+      "candle_id": 19,
+      "instrument": "XAUUSD",
+      "source": "haiku_generated",
+      "description": "Le marché oscille dans une plage de prix avec une volatilité normale tandis que les structures multiples temporelles affichent une orientation haussière.",
+      "tags": [
+        "trend_ranging",
+        "volatility_normal",
+        "phase_ranging",
+        "bos_recent_bearish",
+        "choch_recent_bearish",
+        "fvg_active",
+        "mtf_aligned"
+      ],
+      "testA": {
+        "bos": "MISSING",
+        "choch": "MISSING",
+        "fvg": "MISSING"
+      },
+      "testB": "n/a",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": [
+        "A:bos_not_mentioned",
+        "A:choch_not_mentioned",
+        "A:fvg_not_mentioned"
+      ]
+    },
+    {
+      "candle_id": 20,
+      "instrument": "XAUUSD",
+      "source": "haiku_generated",
+      "description": "Les prix évoluent à la hausse sur plusieurs timeframes avec une volatilité normale et un alignement haussier confirmé par les structures récentes.",
+      "tags": [
+        "trend_bullish",
+        "volatility_normal",
+        "phase_trend",
+        "bos_recent_bullish",
+        "choch_recent_bullish",
+        "mtf_aligned"
+      ],
+      "testA": {
+        "bos": "MISSING",
+        "choch": "MISSING"
+      },
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": [
+        "A:bos_not_mentioned",
+        "A:choch_not_mentioned"
+      ]
+    },
+    {
+      "candle_id": 21,
+      "instrument": "XAUUSD",
+      "source": "haiku_generated",
+      "description": "Le marché affiche une tendance haussière sur plusieurs timeframes avec une volatilité élevée en phase d'expansion, et un retest des niveaux clés est en cours.",
+      "tags": [
+        "trend_bullish",
+        "volatility_elevated",
+        "phase_expansion",
+        "retest_in_progress",
+        "mtf_aligned"
+      ],
+      "testA": {},
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": []
+    },
+    {
+      "candle_id": 22,
+      "instrument": "XAUUSD",
+      "source": "haiku_generated",
+      "description": "Le cours teste à la hausse un niveau de résistance en phase de tendance haussière avec une volatilité normale et une confirmation multi-timeframe (quotidien et 4h haussiers).",
+      "tags": [
+        "trend_bullish",
+        "volatility_normal",
+        "phase_trend",
+        "retest_in_progress",
+        "mtf_aligned"
+      ],
+      "testA": {},
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": []
+    },
+    {
+      "candle_id": 23,
+      "instrument": "XAUUSD",
+      "source": "haiku_generated",
+      "description": "Les prix affichent une tendance haussière sur plusieurs échelles de temps avec une volatilité élevée en phase d'expansion, bien que des signaux baissiers récents soient détectés localement.",
+      "tags": [
+        "trend_bullish",
+        "volatility_elevated",
+        "phase_expansion",
+        "bos_recent_bearish",
+        "choch_recent_bearish",
+        "mtf_aligned"
+      ],
+      "testA": {
+        "bos": "MISSING",
+        "choch": "MISSING"
+      },
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": [
+        "A:bos_not_mentioned",
+        "A:choch_not_mentioned"
+      ]
+    },
+    {
+      "candle_id": 24,
+      "instrument": "XAUUSD",
+      "source": "haiku_generated",
+      "description": "Les cours progressent dans un contexte haussier multi-timeframe avec volatilité élevée durant la phase d'expansion, bien que les données récentes affichent une légère pression baissière.",
+      "tags": [
+        "trend_bullish",
+        "volatility_elevated",
+        "phase_expansion",
+        "bos_recent_bearish",
+        "mtf_aligned"
+      ],
+      "testA": {
+        "bos": "MISSING"
+      },
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": [
+        "A:bos_not_mentioned"
+      ]
+    },
+    {
+      "candle_id": 25,
+      "instrument": "XAUUSD",
+      "source": "haiku_generated",
+      "description": "Le marché oscille dans une plage de consolidation avec une volatilité normale tandis que les timeframes quotidienne et 4-horaire affichent des signaux haussiers.",
+      "tags": [
+        "trend_ranging",
+        "volatility_normal",
+        "phase_ranging",
+        "mtf_aligned"
+      ],
+      "testA": {},
+      "testB": "n/a",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": []
+    },
+    {
+      "candle_id": 26,
+      "instrument": "XAUUSD",
+      "source": "haiku_generated",
+      "description": "Les prix affichent une tendance baissière sur le court terme avec volatilité normale, tandis que le quotidien montre une dynamique haussière et l'H4 une consolidation, créant une divergence multitemps.",
+      "tags": [
+        "trend_bearish",
+        "volatility_normal",
+        "phase_trend",
+        "bos_recent_bearish",
+        "fvg_active",
+        "mtf_mixed"
+      ],
+      "testA": {
+        "bos": "MISSING",
+        "fvg": "MISSING"
+      },
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": [
+        "A:bos_not_mentioned",
+        "A:fvg_not_mentioned"
+      ]
+    },
+    {
+      "candle_id": 27,
+      "instrument": "XAUUSD",
+      "source": "haiku_generated",
+      "description": "Le marché montre une tendance baissière en phase de retrace avec volatilité normale, tandis que le cadre quotidien reste haussier et l'horaire 4H oscille entre les bornes.",
+      "tags": [
+        "trend_bearish",
+        "volatility_normal",
+        "phase_trend",
+        "retest_in_progress",
+        "mtf_mixed"
+      ],
+      "testA": {},
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": []
+    },
+    {
+      "candle_id": 28,
+      "instrument": "XAUUSD",
+      "source": "haiku_generated",
+      "description": "Le marché affiche une tendance baissière avec volatilité élevée, divergence multi-timeframe (haussière en daily, baissière en 4h) et activité FVG durant une phase d'expansion.",
+      "tags": [
+        "trend_bearish",
+        "volatility_elevated",
+        "phase_expansion",
+        "fvg_active",
+        "mtf_divergent"
+      ],
+      "testA": {
+        "fvg": "mentioned"
+      },
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": []
+    },
+    {
+      "candle_id": 29,
+      "instrument": "XAUUSD",
+      "source": "haiku_generated",
+      "description": "La tendance baissière persiste avec une volatilité élevée tandis que la phase d'expansion se poursuit, créant une divergence entre la tendance haussière sur D1 et baissière sur H4.",
+      "tags": [
+        "trend_bearish",
+        "volatility_elevated",
+        "phase_expansion",
+        "bos_recent_bearish",
+        "mtf_divergent"
+      ],
+      "testA": {
+        "bos": "MISSING"
+      },
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": [
+        "A:bos_not_mentioned"
+      ]
+    },
+    {
+      "candle_id": 30,
+      "instrument": "XAUUSD",
+      "source": "haiku_generated",
+      "description": "La tendance baissière persiste sur les timeframes courtes avec une volatilité normale tandis que le daily affiche une orientation haussière, créant une divergence multitimeframe avec des niveaux de liquidité actifs.",
+      "tags": [
+        "trend_bearish",
+        "volatility_normal",
+        "phase_trend",
+        "bos_recent_bearish",
+        "choch_recent_bearish",
+        "ob_active",
+        "mtf_divergent"
+      ],
+      "testA": {
+        "bos": "MISSING",
+        "choch": "MISSING",
+        "ob": "MISSING"
+      },
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": [
+        "A:bos_not_mentioned",
+        "A:choch_not_mentioned",
+        "A:ob_not_mentioned"
+      ]
+    },
+    {
+      "candle_id": 31,
+      "instrument": "EURUSD",
+      "source": "haiku_generated",
+      "description": "Le marché affiche une tendance baissière sur timeframe mixte avec volatilité réduite, tandis que le daily montre une dynamique haussière et le H4 une consolidation latérale.",
+      "tags": [
+        "trend_bearish",
+        "volatility_low",
+        "phase_trend",
+        "mtf_mixed"
+      ],
+      "testA": {},
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": []
+    },
+    {
+      "candle_id": 32,
+      "instrument": "EURUSD",
+      "source": "haiku_generated",
+      "description": "Le marché évolue dans une plage de prix stable avec une volatilité réduite, le quotidien affichant une tendance haussière tandis que l'horizon à 4 heures reste consolidé.",
+      "tags": [
+        "trend_ranging",
+        "volatility_low",
+        "phase_ranging",
+        "mtf_mixed"
+      ],
+      "testA": {},
+      "testB": "n/a",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": []
+    },
+    {
+      "candle_id": 33,
+      "instrument": "EURUSD",
+      "source": "haiku_generated",
+      "description": "Les cours oscillent dans une fourchette définie avec une volatilité accrue, le cadre quotidien affichant une tendance haussière tandis que l'horizon court terme reste indécis.",
+      "tags": [
+        "trend_ranging",
+        "volatility_elevated",
+        "phase_ranging",
+        "ob_active",
+        "mtf_mixed"
+      ],
+      "testA": {
+        "ob": "MISSING"
+      },
+      "testB": "n/a",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": [
+        "A:ob_not_mentioned"
+      ]
+    },
+    {
+      "candle_id": 34,
+      "instrument": "EURUSD",
+      "source": "haiku_generated",
+      "description": "La tendance baissière persiste avec une volatilité élevée en phase d'expansion, tandis que le daily affiche une structure haussière contrastant avec la consolidation en 4H.",
+      "tags": [
+        "trend_bearish",
+        "volatility_elevated",
+        "phase_expansion",
+        "bos_recent_bearish",
+        "choch_recent_bearish",
+        "mtf_mixed"
+      ],
+      "testA": {
+        "bos": "MISSING",
+        "choch": "MISSING"
+      },
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": [
+        "A:bos_not_mentioned",
+        "A:choch_not_mentioned"
+      ]
+    },
+    {
+      "candle_id": 35,
+      "instrument": "EURUSD",
+      "source": "haiku_generated",
+      "description": "Le marché montre une tendance baissière en phase de retrace avec volatilité normale, tandis que le cadre quotidien reste haussier et l'horaire 4H oscille entre les bornes.",
+      "tags": [
+        "trend_bearish",
+        "volatility_normal",
+        "phase_trend",
+        "retest_in_progress",
+        "mtf_mixed"
+      ],
+      "testA": {},
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": []
+    },
+    {
+      "candle_id": 36,
+      "instrument": "EURUSD",
+      "source": "haiku_generated",
+      "description": "Les prix affichent une tendance baissière en phase de trend avec une faible volatilité, tandis que les timeframes supérieures montrent un Daily haussier et un H4 en consolidation.",
+      "tags": [
+        "trend_bearish",
+        "volatility_low",
+        "phase_trend",
+        "bos_recent_bullish",
+        "choch_recent_bullish",
+        "mtf_mixed"
+      ],
+      "testA": {
+        "bos": "MISSING",
+        "choch": "MISSING"
+      },
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": [
+        "A:bos_not_mentioned",
+        "A:choch_not_mentioned"
+      ]
+    },
+    {
+      "candle_id": 37,
+      "instrument": "EURUSD",
+      "source": "haiku_generated",
+      "description": "Les prix évoluent à la baisse avec une volatilité élevée, les divergences multitimeframe persistent tandis que la phase d'expansion continue malgré les signaux baissiers récents.",
+      "tags": [
+        "trend_bearish",
+        "volatility_elevated",
+        "phase_expansion",
+        "bos_recent_bearish",
+        "ob_active",
+        "mtf_divergent"
+      ],
+      "testA": {
+        "bos": "MISSING",
+        "ob": "MISSING"
+      },
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": [
+        "A:bos_not_mentioned",
+        "A:ob_not_mentioned"
+      ]
+    },
+    {
+      "candle_id": 38,
+      "instrument": "EURUSD",
+      "source": "haiku_generated",
+      "description": "La tendance baissière sur le court terme contraste avec une expansion haussière intraday, tandis que la volatilité reste élevée entre les timeframes.",
+      "tags": [
+        "trend_bearish",
+        "volatility_elevated",
+        "phase_expansion",
+        "mtf_mixed"
+      ],
+      "testA": {},
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": []
+    },
+    {
+      "candle_id": 39,
+      "instrument": "EURUSD",
+      "source": "haiku_generated",
+      "description": "Le marché présente une tendance baissière sur le court terme avec une volatilité normale, tandis que la structure quotidienne reste haussière et l'intraday range-bound.",
+      "tags": [
+        "trend_bearish",
+        "volatility_normal",
+        "phase_trend",
+        "mtf_mixed"
+      ],
+      "testA": {},
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": []
+    },
+    {
+      "candle_id": 40,
+      "instrument": "EURUSD",
+      "source": "haiku_generated",
+      "description": "Les cours oscillent dans une fourchette de prix sur le timeframe quotidien haussier tandis que le timeframe 4H demeure limité à une plage, avec une volatilité normale et un order book actif.",
+      "tags": [
+        "trend_ranging",
+        "volatility_normal",
+        "phase_ranging",
+        "ob_active",
+        "mtf_mixed"
+      ],
+      "testA": {
+        "ob": "MISSING"
+      },
+      "testB": "n/a",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": [
+        "A:ob_not_mentioned"
+      ]
+    },
+    {
+      "candle_id": 41,
+      "instrument": "EURUSD",
+      "source": "haiku_generated",
+      "description": "Le marché évolue dans une phase de consolidation avec des cassures baissières récentes, une volatilité normale et une divergence entre la tendance haussière quotidienne et le ranging sur timeframes inférieures.",
+      "tags": [
+        "trend_ranging",
+        "volatility_normal",
+        "phase_ranging",
+        "bos_recent_bearish",
+        "choch_recent_bearish",
+        "mtf_mixed"
+      ],
+      "testA": {
+        "bos": "mentioned",
+        "choch": "MISSING"
+      },
+      "testB": "n/a",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": [
+        "A:choch_not_mentioned"
+      ]
+    },
+    {
+      "candle_id": 42,
+      "instrument": "EURUSD",
+      "source": "haiku_generated",
+      "description": "Le marché oscille dans une fourchette avec une volatilité élevée, tandis que la tendance quotidienne affiche une orientation haussière et l'échelle 4H demeure dans une consolidation.",
+      "tags": [
+        "trend_ranging",
+        "volatility_elevated",
+        "phase_ranging",
+        "bos_recent_bullish",
+        "mtf_mixed"
+      ],
+      "testA": {
+        "bos": "MISSING"
+      },
+      "testB": "n/a",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": [
+        "A:bos_not_mentioned"
+      ]
+    },
+    {
+      "candle_id": 43,
+      "instrument": "EURUSD",
+      "source": "haiku_generated",
+      "description": "Le marché affiche une tendance baissière sur H4 tandis que D1 reste haussière, avec un retesting en cours et une volatilité normale dans la phase de tendance.",
+      "tags": [
+        "trend_bearish",
+        "volatility_normal",
+        "phase_trend",
+        "retest_in_progress",
+        "ob_active",
+        "mtf_divergent"
+      ],
+      "testA": {
+        "ob": "MISSING"
+      },
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": [
+        "A:ob_not_mentioned"
+      ]
+    },
+    {
+      "candle_id": 44,
+      "instrument": "EURUSD",
+      "source": "haiku_generated",
+      "description": "La structure présente une tendance baissière avec une zone de valeur juste active, une divergence multi-timeframe où le D1 reste haussier tandis que le H4 confirme la baisse, dans un contexte de volatilité normale.",
+      "tags": [
+        "trend_bearish",
+        "volatility_normal",
+        "phase_trend",
+        "bos_recent_bearish",
+        "fvg_active",
+        "mtf_divergent"
+      ],
+      "testA": {
+        "bos": "MISSING",
+        "fvg": "MISSING"
+      },
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": [
+        "A:bos_not_mentioned",
+        "A:fvg_not_mentioned"
+      ]
+    },
+    {
+      "candle_id": 45,
+      "instrument": "EURUSD",
+      "source": "haiku_generated",
+      "description": "Le marché teste à nouveau les niveaux précédents en tendance baissière sur H4 tandis que D1 affiche une dynamique haussière, avec une volatilité élevée durant cette phase d'expansion.",
+      "tags": [
+        "trend_bearish",
+        "volatility_elevated",
+        "phase_expansion",
+        "retest_in_progress",
+        "mtf_divergent"
+      ],
+      "testA": {},
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": []
+    },
+    {
+      "candle_id": 46,
+      "instrument": "EURUSD",
+      "source": "haiku_generated",
+      "description": "Les prix évoluent dans une tendance baissière avec volatilité normale, marquée par des signaux haussiers récents sur structure plus large alors que le court terme reste orienté à la baisse.",
+      "tags": [
+        "trend_bearish",
+        "volatility_normal",
+        "phase_trend",
+        "bos_recent_bullish",
+        "choch_recent_bullish",
+        "fvg_active",
+        "mtf_divergent"
+      ],
+      "testA": {
+        "bos": "MISSING",
+        "choch": "MISSING",
+        "fvg": "MISSING"
+      },
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": [
+        "A:bos_not_mentioned",
+        "A:choch_not_mentioned",
+        "A:fvg_not_mentioned"
+      ]
+    },
+    {
+      "candle_id": 47,
+      "instrument": "EURUSD",
+      "source": "haiku_generated",
+      "description": "La structure présente une divergence multi-timeframe avec un mouvement baissier en phase de tendance, une volatilité normale et des zones de value gap actives sur la timeframe inférieure.",
+      "tags": [
+        "trend_bearish",
+        "volatility_normal",
+        "phase_trend",
+        "bos_recent_bullish",
+        "fvg_active",
+        "mtf_divergent"
+      ],
+      "testA": {
+        "bos": "MISSING",
+        "fvg": "mentioned"
+      },
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": [
+        "A:bos_not_mentioned"
+      ]
+    },
+    {
+      "candle_id": 48,
+      "instrument": "EURUSD",
+      "source": "haiku_generated",
+      "description": "Le marché présente une tendance baissière en phase de trend avec une volatilité normale, tandis que la divergence multi-timeframe montre une orientation haussière en daily et baissière en H4.",
+      "tags": [
+        "trend_bearish",
+        "volatility_normal",
+        "phase_trend",
+        "mtf_divergent"
+      ],
+      "testA": {},
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": []
+    },
+    {
+      "candle_id": 49,
+      "instrument": "EURUSD",
+      "source": "haiku_generated",
+      "description": "Le marché oscille dans une zone de consolidation avec une divergence multitemporal : tendance haussière en daily face à une orientation baissière en H4, dans un contexte de volatilité normale.",
+      "tags": [
+        "trend_ranging",
+        "volatility_normal",
+        "phase_ranging",
+        "bos_recent_bearish",
+        "mtf_divergent"
+      ],
+      "testA": {
+        "bos": "MISSING"
+      },
+      "testB": "n/a",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": [
+        "A:bos_not_mentioned"
+      ]
+    },
+    {
+      "candle_id": 50,
+      "instrument": "EURUSD",
+      "source": "haiku_generated",
+      "description": "Les prix oscillent dans une plage de consolidation avec une volatilité élevée, tandis que la tendance quotidienne affiche une orientation haussière et les cassures récentes montrent une dynamique positive.",
+      "tags": [
+        "trend_ranging",
+        "volatility_elevated",
+        "phase_ranging",
+        "bos_recent_bullish",
+        "choch_recent_bullish",
+        "fvg_active",
+        "mtf_mixed"
+      ],
+      "testA": {
+        "bos": "mentioned",
+        "choch": "MISSING",
+        "fvg": "MISSING"
+      },
+      "testB": "n/a",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": [
+        "A:choch_not_mentioned",
+        "A:fvg_not_mentioned"
+      ]
+    },
+    {
+      "candle_id": 51,
+      "instrument": "EURUSD",
+      "source": "haiku_generated",
+      "description": "Le marché présente une tendance baissière sur le court terme avec une volatilité normale, tandis que la structure quotidienne reste haussière et l'intraday range-bound.",
+      "tags": [
+        "trend_bearish",
+        "volatility_normal",
+        "phase_trend",
+        "mtf_mixed"
+      ],
+      "testA": {},
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": []
+    },
+    {
+      "candle_id": 52,
+      "instrument": "EURUSD",
+      "source": "haiku_generated",
+      "description": "Le marché oscille dans une gamme définie avec une volatilité accrue, tandis que la tendance quotidienne affiche une direction haussière et le délai de 4h reste consolidé.",
+      "tags": [
+        "trend_ranging",
+        "volatility_elevated",
+        "phase_ranging",
+        "mtf_mixed"
+      ],
+      "testA": {},
+      "testB": "n/a",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": []
+    },
+    {
+      "candle_id": 53,
+      "instrument": "EURUSD",
+      "source": "haiku_generated",
+      "description": "Le prix teste un niveau de résistance dans une tendance haussière avec une volatilité stable, tandis que le timeframe horaire montre une consolidation.",
+      "tags": [
+        "trend_bullish",
+        "volatility_normal",
+        "phase_trend",
+        "retest_in_progress",
+        "mtf_mixed"
+      ],
+      "testA": {},
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": []
+    },
+    {
+      "candle_id": 54,
+      "instrument": "EURUSD",
+      "source": "haiku_generated",
+      "description": "Les prix affichent une tendance haussière sur le graphique journalier avec volatilité normale, tandis que la période 4 heures montre une consolidation latérale dans un contexte de phase de tendance.",
+      "tags": [
+        "trend_bullish",
+        "volatility_normal",
+        "phase_trend",
+        "bos_recent_bullish",
+        "mtf_mixed"
+      ],
+      "testA": {
+        "bos": "MISSING"
+      },
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": [
+        "A:bos_not_mentioned"
+      ]
+    },
+    {
+      "candle_id": 55,
+      "instrument": "EURUSD",
+      "source": "haiku_generated",
+      "description": "Les prix affichent une tendance haussière en daily avec volatilité normale, tandis que l'échelle horaire 4H montre une consolidation, avec des signaux récents baissiers locaux.",
+      "tags": [
+        "trend_bullish",
+        "volatility_normal",
+        "phase_trend",
+        "bos_recent_bearish",
+        "choch_recent_bearish",
+        "mtf_mixed"
+      ],
+      "testA": {
+        "bos": "MISSING",
+        "choch": "MISSING"
+      },
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": [
+        "A:bos_not_mentioned",
+        "A:choch_not_mentioned"
+      ]
+    },
+    {
+      "candle_id": 56,
+      "instrument": "EURUSD",
+      "source": "haiku_generated",
+      "description": "Les prix progressent à la hausse sur plusieurs timeframes avec une volatilité élevée tandis qu'une phase d'expansion se développe et qu'un retest se dessine.",
+      "tags": [
+        "trend_bullish",
+        "volatility_elevated",
+        "phase_expansion",
+        "retest_in_progress",
+        "fvg_active",
+        "mtf_aligned"
+      ],
+      "testA": {
+        "fvg": "MISSING"
+      },
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": [
+        "A:fvg_not_mentioned"
+      ]
+    },
+    {
+      "candle_id": 57,
+      "instrument": "EURUSD",
+      "source": "haiku_generated",
+      "description": "Le marché affiche une tendance haussière confirmée sur les horizons quotidien et 4-heures, avec une volatilité normale et une dynamique de tendance établie.",
+      "tags": [
+        "trend_bullish",
+        "volatility_normal",
+        "phase_trend",
+        "mtf_aligned"
+      ],
+      "testA": {},
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": []
+    },
+    {
+      "candle_id": 58,
+      "instrument": "EURUSD",
+      "source": "haiku_generated",
+      "description": "Le marché affiche une dynamique haussière confirmée sur les timeframes multiples avec une volatilité normale et un momentum récent positif.",
+      "tags": [
+        "trend_bullish",
+        "volatility_normal",
+        "phase_trend",
+        "bos_recent_bullish",
+        "mtf_aligned"
+      ],
+      "testA": {
+        "bos": "MISSING"
+      },
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": [
+        "A:bos_not_mentioned"
+      ]
+    },
+    {
+      "candle_id": 59,
+      "instrument": "EURUSD",
+      "source": "haiku_generated",
+      "description": "Les prix évoluent à la hausse avec une faible volatilité et un alignement haussier multi-timeframe, bien que des retournements locaux récents soient observés.",
+      "tags": [
+        "trend_bullish",
+        "volatility_low",
+        "phase_trend",
+        "bos_recent_bearish",
+        "choch_recent_bearish",
+        "mtf_aligned"
+      ],
+      "testA": {
+        "bos": "MISSING",
+        "choch": "mentioned"
+      },
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": [
+        "A:bos_not_mentioned"
+      ]
+    },
+    {
+      "candle_id": 60,
+      "instrument": "EURUSD",
+      "source": "haiku_generated",
+      "description": "L'actif affiche une tendance haussière confirmée sur les timeframes quotidienne et 4-heures, avec une volatilité élevée, une phase d'expansion active, et plusieurs signaux techniques bullish récents alignés.",
+      "tags": [
+        "trend_bullish",
+        "volatility_elevated",
+        "phase_expansion",
+        "bos_recent_bullish",
+        "choch_recent_bullish",
+        "fvg_active",
+        "mtf_aligned"
+      ],
+      "testA": {
+        "bos": "MISSING",
+        "choch": "MISSING",
+        "fvg": "MISSING"
+      },
+      "testB": "coherent",
+      "testC": {
+        "contaminated": false,
+        "category": null,
+        "tokens": []
+      },
+      "testD": [],
+      "flags": [
+        "A:bos_not_mentioned",
+        "A:choch_not_mentioned",
+        "A:fvg_not_mentioned"
+      ]
+    }
+  ]
+}

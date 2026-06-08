@@ -235,12 +235,16 @@ class TestPremiumSignal:
             atr=10.0,
         )
         assert signal is not None
-        assert len(signal.components) == 8
+        # 9 components since Phase 1 MTF wiring (2026-05-21): 8 original
+        # scorers + HTF_Alignment (weight=0 → no behavioural impact, only
+        # observability/reasoning).
+        assert len(signal.components) == 9
         names = [c.name for c in signal.components]
         assert "BOS" in names
         assert "FVG" in names
         assert "Regime" in names
         assert "RSI_Divergence" in names
+        assert "HTF_Alignment" in names
 
     def test_strong_bearish_confluence_is_premium(
         self, detector, bearish_smc, bearish_regime

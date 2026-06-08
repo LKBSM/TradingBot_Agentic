@@ -67,7 +67,7 @@ def bucket_metrics(sub):
 
 
 def main():
-    df = pd.read_csv("data/XAU_15MIN_2019_2025.csv", parse_dates=["Date"]).set_index("Date")
+    df = pd.read_csv("data/XAU_15MIN_2019_2026.csv", parse_dates=["Date"]).set_index("Date")
     df.columns = [c.lower() for c in df.columns]
     enr = SmartMoneyEngine(data=df, config={}, verbose=False).analyze()
     enr["hour"] = enr.index.hour
