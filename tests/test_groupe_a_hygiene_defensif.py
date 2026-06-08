@@ -143,3 +143,31 @@ class TestD1_3_UnifiedDefaults:
         # Pipeline complet OK avec les defaults unifiés (colonnes clés présentes).
         for col in ("RSI", "ATR", "BOS_SIGNAL", "FVG_SIGNAL"):
             assert col in out.columns
+
+
+# ---------------------------------------------------------------------------
+# D3-3 — docstrings perf honnêtes (numba conditionnel) + NUMBA_AVAILABLE exposé
+# ---------------------------------------------------------------------------
+class TestD3_3_NumbaHonestDocs:
+    def test_numba_available_flag_is_bool(self):
+        from src.environment.strategy_features import NUMBA_AVAILABLE
+
+        assert isinstance(NUMBA_AVAILABLE, bool)
+
+    def test_class_docstring_states_fallback_caveat(self):
+        from src.environment.strategy_features import SmartMoneyEngine
+
+        doc = SmartMoneyEngine.__doc__ or ""
+        assert "fallback" in doc.lower()
+        assert "NUMBA_AVAILABLE" in doc
+        # L'ancienne promesse absolue trompeuse ne doit plus apparaître seule.
+        assert "30-100x improvement" not in doc
+
+    def test_timing_report_exposes_path(self):
+        from src.environment.strategy_features import SmartMoneyEngine
+
+        eng = SmartMoneyEngine(_make_ohlcv(120), {})
+        eng.analyze()
+        report = eng.get_timing_report()
+        assert isinstance(report, dict)
+        assert "total" in report

@@ -525,17 +525,26 @@ class SMCConfig(BaseModel):
 # --- II. Core Analysis Engine (Class Architecture) ---
 class SmartMoneyEngine:
     """
-    High-Performance Smart Money Concepts (SMC) Analysis Engine.
+    Smart Money Concepts (SMC) Analysis Engine.
 
-    OPTIMIZED VERSION with:
-    - Vectorized fractal detection (100x faster than loop)
-    - Numba JIT-compiled BOS/CHOCH (50-100x faster)
-    - Parallel-ready architecture
-    - Production-grade logging (no console spam)
+    Design:
+    - Vectorized fractal / FVG / OB detection (pandas/numpy).
+    - BOS/CHOCH and retest as sequential O(n) passes, JIT-compiled with Numba
+      when available, with an exact pure-Python fallback otherwise.
 
-    Performance benchmarks (20,000 bars):
-    - Original: ~15-20 seconds
-    - Optimized: ~0.2-0.5 seconds (30-100x improvement)
+    Performance — IMPORTANT, read the caveats (audit D3-3):
+    - The Numba speed-up applies ONLY when ``numba`` is installed
+      (``NUMBA_AVAILABLE``). It is listed in requirements.txt but NOT guaranteed
+      in every environment; when absent, the pure-Python fallback runs and the
+      sequential passes are markedly slower. Check ``NUMBA_AVAILABLE`` /
+      ``get_timing_report()`` to know which path executed.
+    - The figures below are for a 20,000-bar batch WITH Numba — NOT the product
+      regime. In production the assembler runs on a ~200-bar lookback and emits
+      a single row; measured cost there is ~170-200 ms on the Python fallback,
+      dominated by fixed pandas / `ta` overhead (not the JIT-able loops), so
+      Numba helps far less at 200 bars than the 20k-bar headline suggests.
+    - Indicative 20,000-bar batch, Numba enabled: ~0.2-0.5 s. Python fallback is
+      several times slower; benchmark your own environment with --benchmark.
     """
 
     def __init__(self, data: pd.DataFrame, config: Dict[str, Any], verbose: bool = False):
@@ -889,9 +898,11 @@ class SmartMoneyEngine:
         Returns:
             Enriched DataFrame with all technical and SMC features.
 
-        Performance:
-            - ~0.2-0.5s for 20,000 bars (optimized)
-            - ~15-20s for 20,000 bars (original)
+        Performance (see class docstring caveats — audit D3-3):
+            Figures are for a 20,000-bar batch WITH Numba installed (~0.2-0.5s).
+            Without Numba the pure-Python fallback is several times slower. The
+            product regime is a ~200-bar lookback (~170-200 ms on the fallback,
+            dominated by fixed pandas/`ta` overhead). Use get_timing_report().
         """
         import time
         total_start = time.perf_counter()

@@ -81,7 +81,11 @@ tensorboard>=2.14.0           # Training visualization
 # =============================================================================
 # PERFORMANCE OPTIMIZATIONS
 # =============================================================================
-numba>=0.58.0                 # JIT compilation for 50-100x speedup
+numba>=0.58.0                 # OPTIONAL JIT for BOS/CHOCH+retest. The engine has
+                              # an exact pure-Python fallback when absent (slower
+                              # on large batches; ~negligible at the 200-bar
+                              # product lookback). Speed-up figures in docstrings
+                              # assume this is installed. See audit D3-3.
 joblib>=1.3.0                 # Parallel processing
 
 # =============================================================================
