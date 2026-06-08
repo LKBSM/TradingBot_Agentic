@@ -25,6 +25,7 @@ const TOC = [
   { href: '#scores', label: 'Ce que nous décrivons' },
   { href: '#donnees', label: 'Source de données' },
   { href: '#limites', label: 'Ce que nous ne faisons pas' },
+  { href: '#attributions', label: 'Attributions' },
 ] as const;
 
 /**
@@ -163,6 +164,35 @@ export default function MethodologyPage() {
             </li>
           ))}
         </ul>
+      </MethodologySection>
+
+      <MethodologySection
+        id="attributions"
+        title="Attributions"
+        intro="Le graphique en chandeliers de l’espace de lecture s’appuie sur une bibliothèque open-source, créditée ici comme l’exige sa licence."
+      >
+        <div className="space-y-2 text-sm text-muted-foreground">
+          <p>
+            <span className="text-foreground">Lightweight Charts™</span> —
+            © TradingView, Inc., distribué sous licence{' '}
+            <a
+              href="https://www.apache.org/licenses/LICENSE-2.0"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-4 hover:text-foreground"
+            >
+              Apache 2.0
+            </a>
+            . Bibliothèque d’affichage de graphiques utilisée pour le rendu des
+            chandeliers et des zones.
+          </p>
+          <p className="text-xs">
+            À noter : il s’agit d’une bibliothèque <em>d’affichage</em>{' '}
+            uniquement. MIA Markets n’utilise aucune API ni aucun flux de données
+            de marché de TradingView — les cours affichés proviennent de notre
+            propre moteur.
+          </p>
+        </div>
       </MethodologySection>
     </div>
   );
