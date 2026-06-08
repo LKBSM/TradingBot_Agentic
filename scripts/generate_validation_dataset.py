@@ -53,6 +53,7 @@ from src.intelligence.volatility_forecaster import resample_ohlcv  # noqa: E402
 from src.intelligence.market_reading_mappers import (  # noqa: E402
     candles_to_regime,
     confluence_signal_to_structure,
+    realized_levels,
     tags_and_description,
     _derive_trend,
     _derive_volatility,
@@ -225,6 +226,8 @@ def _build_reading(instrument: str, h1: pd.DataFrame, enriched: pd.DataFrame,
     close_price = float(h1["close"].iloc[i])
 
     smc_features = _features_row_to_dict(enriched.iloc[i])
+    # Merge real structural levels (F1/F2/F3) for THIS bar from the enriched window.
+    smc_features.update(realized_levels(enriched, idx=i))
 
     structure = confluence_signal_to_structure(
         confluence_signal=None,

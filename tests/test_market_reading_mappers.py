@@ -45,7 +45,7 @@ def test_confluence_signal_to_structure_with_long_signal(bar_ts):
     smc_features = {
         "BOS_SIGNAL": 1.0,
         "BOS_EVENT": 1.0,
-        "BOS_PRICE_LEVEL": 2375.20,
+        "BOS_BREAK_LEVEL": 2375.20,  # F1: real broken structural level
         "FVG_SIGNAL": 1.0,
         "OB_STRENGTH_NORM": 0.8,
         "BOS_RETEST_ARMED": 1.0,
@@ -57,7 +57,7 @@ def test_confluence_signal_to_structure_with_long_signal(bar_ts):
     assert s.bos is not None
     assert s.bos.direction == "bullish"
     assert s.bos.validation_status == "confirmed"
-    assert s.bos.level == 2375.20
+    assert s.bos.level == 2375.20  # F1: published BOS_BREAK_LEVEL, not current_price
     assert s.choch is None  # CHOCH_SIGNAL=0
     assert len(s.order_blocks) == 1
     assert s.order_blocks[0].direction == "bullish"
@@ -103,6 +103,45 @@ def test_confluence_signal_to_structure_no_signal_but_bos_in_features(bar_ts):
     assert s.order_blocks == []  # No OB strength
     assert s.fair_value_gaps == []
     assert s.retest_in_progress is None
+
+
+def test_bos_level_uses_break_level_last_when_propagated(bar_ts):
+    """F1: a propagated BOS (no fresh event this bar) still publishes the real
+    broken level via the forward-filled BOS_BREAK_LEVEL_LAST, never current_price."""
+    smc_features = {
+        "BOS_SIGNAL": 1.0,
+        "BOS_EVENT": 0.0,                 # propagated, no event on this bar
+        "BOS_BREAK_LEVEL_LAST": 2361.10,  # forward-filled real level from pipeline
+        "ATR": 5.0,
+    }
+    s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=2390.0)
+    assert s.bos is not None
+    assert s.bos.level == 2361.10        # NOT current_price (2390.0)
+
+
+def test_bos_level_falls_back_to_current_price_when_no_break_ever(bar_ts):
+    """F1: last-resort fallback only when no break level is available at all."""
+    s = confluence_signal_to_structure(
+        None, {"BOS_SIGNAL": -1.0, "ATR": 3.0}, bar_ts, current_price=1.0820
+    )
+    assert s.bos is not None
+    assert s.bos.level == 1.0820
+
+
+def test_realized_levels_forward_fills_bos_break_level():
+    """F1: realized_levels carries the last non-NaN BOS_BREAK_LEVEL forward."""
+    import numpy as np
+    import pandas as pd
+
+    from src.intelligence.market_reading_mappers import realized_levels
+
+    df = pd.DataFrame({
+        "high": [10.0, 11.0, 12.0, 13.0],
+        "low": [9.0, 9.5, 10.0, 11.0],
+        "BOS_BREAK_LEVEL": [np.nan, 10.5, np.nan, np.nan],
+    })
+    out = realized_levels(df, idx=3)
+    assert out["BOS_BREAK_LEVEL_LAST"] == 10.5
 
 
 def test_confluence_signal_to_structure_empty_features(bar_ts):

@@ -18,6 +18,7 @@ Niveau 1.5 strict (per Section 1.2 of architecture doc):
 
 from __future__ import annotations
 
+import math
 import re
 from datetime import datetime, timezone
 from typing import Any, Optional, Sequence
@@ -83,6 +84,94 @@ def _sign_to_direction(value: float) -> Optional[Direction]:
     return None
 
 
+def _clean_float(value: Any) -> Optional[float]:
+    """Return value as float unless it is None/NaN."""
+    if value is None:
+        return None
+    try:
+        f = float(value)
+    except (TypeError, ValueError):
+        return None
+    return None if math.isnan(f) else f
+
+
+def _first_real(smc: dict[str, float], *keys: str) -> Optional[float]:
+    """First non-None/non-NaN value among ``keys`` in ``smc``."""
+    for key in keys:
+        v = _clean_float(smc.get(key))
+        if v is not None:
+            return v
+    return None
+
+
+# ---------------------------------------------------------------------------
+# Realized structural levels — glue between SmartMoneyEngine output and the
+# structure mapper. Lives HERE (not in the engine) so the detection engine is
+# untouched. The two SMC pipelines (assembler + validation script) call this
+# and merge the result into ``smc_features`` so the mapper publishes the REAL
+# levels the engine computed, not price ± ATR proxies.
+# ---------------------------------------------------------------------------
+
+
+def realized_levels(enriched: Any, idx: int = -1) -> dict[str, float]:
+    """Extract real structural levels for bar ``idx`` from an enriched SMC frame.
+
+    Keys returned (only when computable; the mapper falls back gracefully):
+      - ``BOS_BREAK_LEVEL_LAST`` : last non-NaN ``BOS_BREAK_LEVEL`` up to ``idx``
+        (forward fill). The engine sets ``BOS_BREAK_LEVEL`` only on event bars,
+        so on propagated-state bars the *real* structural level is the most
+        recent break — forward-filling carries it correctly (fixes F1/F2).
+      - ``OB_LEVEL_HIGH`` / ``OB_LEVEL_LOW`` : the real order-block zone the
+        engine stored (``BULLISH_OB_*`` / ``BEARISH_OB_*``), not a proxy (F3).
+      - ``FVG_LEVEL_HIGH`` / ``FVG_LEVEL_LOW`` : the real 3-candle fair-value-gap
+        bounds, reconstructed from the same geometry the engine used (F3).
+    """
+    import pandas as pd  # lazy — keeps module import cheap for unit tests
+
+    out: dict[str, float] = {}
+    n = len(enriched)
+    if n == 0:
+        return out
+    pos = idx if idx >= 0 else n + idx
+    if pos < 0 or pos >= n:
+        return out
+    cols = set(enriched.columns)
+    row = enriched.iloc[pos]
+
+    # BOS broken level, forward-filled up to this bar.
+    if "BOS_BREAK_LEVEL" in cols:
+        ff = enriched["BOS_BREAK_LEVEL"].iloc[: pos + 1].ffill()
+        if len(ff) and not pd.isna(ff.iloc[-1]):
+            out["BOS_BREAK_LEVEL_LAST"] = float(ff.iloc[-1])
+
+    # Order-block zone (whichever side fired on this bar; mutually exclusive).
+    for hi_col, lo_col in (("BULLISH_OB_HIGH", "BULLISH_OB_LOW"),
+                           ("BEARISH_OB_HIGH", "BEARISH_OB_LOW")):
+        if hi_col in cols and lo_col in cols:
+            hi, lo = row.get(hi_col), row.get(lo_col)
+            if not pd.isna(hi) and not pd.isna(lo):
+                out["OB_LEVEL_HIGH"] = float(max(hi, lo))
+                out["OB_LEVEL_LOW"] = float(min(hi, lo))
+                break
+
+    # Fair-value-gap bounds via the engine's 3-candle geometry.
+    fvg_dir = row.get("FVG_DIR", 0.0) if "FVG_DIR" in cols else 0.0
+    if (not pd.isna(fvg_dir) and fvg_dir != 0 and pos >= 2
+            and {"high", "low"} <= cols):
+        high_i = float(enriched["high"].iloc[pos])
+        low_i = float(enriched["low"].iloc[pos])
+        high_i2 = float(enriched["high"].iloc[pos - 2])
+        low_i2 = float(enriched["low"].iloc[pos - 2])
+        if fvg_dir > 0:        # bullish gap: between high[i-2] (low) and low[i] (high)
+            a, b = high_i2, low_i
+        else:                  # bearish gap: between high[i] (low) and low[i-2] (high)
+            a, b = high_i, low_i2
+        out["FVG_LEVEL_HIGH"] = float(max(a, b))
+        out["FVG_LEVEL_LOW"] = float(min(a, b))
+
+    return out
+
+
 # ---------------------------------------------------------------------------
 # Structure mapper
 # ---------------------------------------------------------------------------
@@ -123,9 +212,14 @@ def confluence_signal_to_structure(
     if bos_direction is not None:
         bos_event = float(smc_features.get("BOS_EVENT", 0.0))
         validation = "confirmed" if abs(bos_event) > 0 else "pending"
+        # F1: publish the REAL broken structural level. The engine exposes it as
+        # BOS_BREAK_LEVEL (event bars only); the pipeline forward-fills it into
+        # BOS_BREAK_LEVEL_LAST so propagated states carry the real level too.
+        # current_price is the last-resort fallback (no break ever seen).
+        bos_level = _first_real(smc_features, "BOS_BREAK_LEVEL", "BOS_BREAK_LEVEL_LAST")
         bos = BOSRecent(
             direction=bos_direction,
-            level=float(smc_features.get("BOS_PRICE_LEVEL", current_price)),
+            level=bos_level if bos_level is not None else float(current_price),
             broken_at=bar_ts,
             validation_status=validation,
         )
