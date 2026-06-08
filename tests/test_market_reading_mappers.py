@@ -72,7 +72,8 @@ def test_confluence_signal_to_structure_with_long_signal(bar_ts):
 def test_confluence_signal_to_structure_with_short_signal(bar_ts):
     smc_features = {
         "BOS_SIGNAL": -1.0,
-        "BOS_EVENT": 0.0,  # not fresh → pending
+        "BOS_EVENT": -1.0,  # fresh bearish break
+        "BOS_BREAK_LEVEL": 1.0900,
         "FVG_SIGNAL": -1.0,
         "OB_STRENGTH_NORM": 0.45,  # medium
         "ATR": 4.0,
@@ -81,48 +82,64 @@ def test_confluence_signal_to_structure_with_short_signal(bar_ts):
     s = confluence_signal_to_structure(cs, smc_features, bar_ts, current_price=1.0820)
 
     assert s.bos.direction == "bearish"
-    assert s.bos.validation_status == "pending"
+    assert s.bos.validation_status == "confirmed"
     assert s.fair_value_gaps[0].direction == "bearish"
     assert s.order_blocks[0].importance == "medium"
     assert s.order_blocks[0].direction == "bearish"
 
 
+def test_propagated_bos_without_event_is_not_shown(bar_ts):
+    """F6: a propagated BOS_SIGNAL with no fresh BOS_EVENT does NOT emit a bos
+    object nor a bos_recent tag (it is trend state, not a recent break). The
+    OB direction still falls back to the propagated trend direction."""
+    smc_features = {
+        "BOS_SIGNAL": -1.0,
+        "BOS_EVENT": 0.0,            # propagated only — NOT fresh
+        "OB_STRENGTH_NORM": 0.5,
+        "ATR": 4.0,
+    }
+    s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=1.0820)
+    assert s.bos is None
+    assert s.order_blocks[0].direction == "bearish"  # OB still uses trend dir
+
+
 def test_confluence_signal_to_structure_no_signal_but_bos_in_features(bar_ts):
-    """No ConfluenceSignal fired (None), but smc_features show propagating BOS state."""
+    """F6: propagating BOS state (no fresh event) does not surface as a recent BOS."""
     smc_features = {
         "BOS_SIGNAL": 1.0,
         "BOS_EVENT": 0.0,
-        "BOS_PRICE_LEVEL": 2370.0,
         "ATR": 5.0,
     }
     s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=2380.0)
 
-    assert s.bos is not None
-    assert s.bos.direction == "bullish"
-    assert s.bos.validation_status == "pending"
+    assert s.bos is None  # F6: not a fresh break
     assert s.order_blocks == []  # No OB strength
     assert s.fair_value_gaps == []
     assert s.retest_in_progress is None
 
 
-def test_bos_level_uses_break_level_last_when_propagated(bar_ts):
-    """F1: a propagated BOS (no fresh event this bar) still publishes the real
-    broken level via the forward-filled BOS_BREAK_LEVEL_LAST, never current_price."""
+def test_retest_uses_break_level_last_without_fresh_bos(bar_ts):
+    """F1+F6: a retest is armed bars after the break (no fresh BOS event). It is
+    decoupled from the bos object and sources its level from the forward-filled
+    real broken level, never current_price."""
     smc_features = {
         "BOS_SIGNAL": 1.0,
-        "BOS_EVENT": 0.0,                 # propagated, no event on this bar
+        "BOS_EVENT": 0.0,                 # no fresh break on this bar
+        "BOS_RETEST_ARMED": 1.0,
         "BOS_BREAK_LEVEL_LAST": 2361.10,  # forward-filled real level from pipeline
         "ATR": 5.0,
     }
     s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=2390.0)
-    assert s.bos is not None
-    assert s.bos.level == 2361.10        # NOT current_price (2390.0)
+    assert s.bos is None                       # F6: no fresh break
+    assert s.retest_in_progress is not None    # F6: retest decoupled from bos
+    assert s.retest_in_progress.level == 2361.10  # NOT current_price (2390.0)
 
 
-def test_bos_level_falls_back_to_current_price_when_no_break_ever(bar_ts):
-    """F1: last-resort fallback only when no break level is available at all."""
+def test_bos_level_falls_back_to_current_price_when_no_break_level(bar_ts):
+    """F1: last-resort fallback when a fresh break has no level available."""
     s = confluence_signal_to_structure(
-        None, {"BOS_SIGNAL": -1.0, "ATR": 3.0}, bar_ts, current_price=1.0820
+        None, {"BOS_SIGNAL": -1.0, "BOS_EVENT": -1.0, "ATR": 3.0},
+        bar_ts, current_price=1.0820,
     )
     assert s.bos is not None
     assert s.bos.level == 1.0820

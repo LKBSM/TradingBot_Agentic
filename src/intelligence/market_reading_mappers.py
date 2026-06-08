@@ -206,22 +206,27 @@ def confluence_signal_to_structure(
     half = atr_proxy / 2.0
 
     # BOS
+    # bos_direction reflects the propagated trend state (BOS_SIGNAL) and is kept
+    # for OB-direction fallback below even when no fresh break is shown.
     bos: Optional[BOSRecent] = None
     bos_signal = float(smc_features.get("BOS_SIGNAL", 0.0))
     bos_direction = _sign_to_direction(bos_signal)
-    if bos_direction is not None:
-        bos_event = float(smc_features.get("BOS_EVENT", 0.0))
-        validation = "confirmed" if abs(bos_event) > 0 else "pending"
-        # F1: publish the REAL broken structural level. The engine exposes it as
-        # BOS_BREAK_LEVEL (event bars only); the pipeline forward-fills it into
-        # BOS_BREAK_LEVEL_LAST so propagated states carry the real level too.
-        # current_price is the last-resort fallback (no break ever seen).
+    bos_event = float(smc_features.get("BOS_EVENT", 0.0))
+    # F6: a "recent BOS" is a FRESH break at this candle close (BOS_EVENT != 0),
+    # NOT the continuously-propagated BOS_SIGNAL trend state. Previously the
+    # object was emitted on every propagated bar, so `bos_recent_*` appeared on
+    # ~100% of readings (53% of them stale). Now it only appears on real breaks.
+    if bos_direction is not None and abs(bos_event) > 0:
+        event_direction = _sign_to_direction(bos_event) or bos_direction
+        # F1: publish the REAL broken structural level (present on event bars as
+        # BOS_BREAK_LEVEL; BOS_BREAK_LEVEL_LAST is a defensive forward-filled
+        # fallback). current_price is the last-resort fallback.
         bos_level = _first_real(smc_features, "BOS_BREAK_LEVEL", "BOS_BREAK_LEVEL_LAST")
         bos = BOSRecent(
-            direction=bos_direction,
+            direction=event_direction,
             level=bos_level if bos_level is not None else float(current_price),
             broken_at=bar_ts,
-            validation_status=validation,
+            validation_status="confirmed",  # fresh break ⇒ always confirmed
         )
 
     # CHOCH
@@ -293,11 +298,19 @@ def confluence_signal_to_structure(
         ))
 
     # Retest
+    # F6 corollary: a retest is armed BARS AFTER the break, when there is no fresh
+    # BOS event on the current bar. Decouple it from the (now fresh-only) bos
+    # object and source the level from the forward-filled real broken level.
     retest_in_progress: Optional[RetestInProgress] = None
     retest_armed = float(smc_features.get("BOS_RETEST_ARMED", 0.0))
-    if abs(retest_armed) > 0 and bos is not None:
+    if abs(retest_armed) > 0:
+        retest_level = _first_real(
+            smc_features, "BOS_BREAK_LEVEL", "BOS_BREAK_LEVEL_LAST"
+        )
+        if retest_level is None:
+            retest_level = bos.level if bos is not None else float(current_price)
         retest_in_progress = RetestInProgress(
-            level=bos.level,
+            level=retest_level,
             type="bos_retest",
             started_at=bar_ts,
         )
