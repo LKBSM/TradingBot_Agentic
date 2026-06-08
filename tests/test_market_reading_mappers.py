@@ -169,6 +169,61 @@ def test_choch_level_falls_back_to_price_when_no_level(bar_ts):
     assert s.choch.level == 1.0950
 
 
+def test_ob_fvg_use_real_levels(bar_ts):
+    """F3: OB and FVG publish the real zones/bounds, not price ± ATR/2 proxies."""
+    smc_features = {
+        "BOS_SIGNAL": 1.0,
+        "FVG_SIGNAL": 1.0,
+        "OB_STRENGTH_NORM": 0.8,
+        "OB_LEVEL_HIGH": 2372.0,
+        "OB_LEVEL_LOW": 2368.0,
+        "FVG_LEVEL_HIGH": 2381.0,
+        "FVG_LEVEL_LOW": 2379.0,
+        "ATR": 5.0,
+    }
+    s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=2400.0)
+    assert s.order_blocks[0].level_high == 2372.0
+    assert s.order_blocks[0].level_low == 2368.0
+    assert s.fair_value_gaps[0].level_high == 2381.0
+    assert s.fair_value_gaps[0].level_low == 2379.0
+
+
+def test_ob_fvg_fall_back_to_proxy_without_real_levels(bar_ts):
+    """F3: legacy proxy preserved when real levels are absent (backward compat)."""
+    smc_features = {"FVG_SIGNAL": 1.0, "OB_STRENGTH_NORM": 0.8, "ATR": 4.0}
+    s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=100.0)
+    # half = ATR/2 = 2.0
+    assert s.order_blocks[0].level_high == 102.0
+    assert s.order_blocks[0].level_low == 98.0
+    assert s.fair_value_gaps[0].level_high == 102.0
+    assert s.fair_value_gaps[0].level_low == 98.0
+
+
+def test_realized_levels_ob_and_fvg():
+    """F3: realized_levels extracts the real OB zone and FVG bounds."""
+    import numpy as np
+    import pandas as pd
+
+    from src.intelligence.market_reading_mappers import realized_levels
+
+    # Bullish FVG on last bar (idx=4): low[i]=12.0 > high[i-2]=high[2]=11.0
+    # → gap zone [11.0, 12.0]
+    df = pd.DataFrame({
+        "high": [10.0, 10.5, 11.0, 11.5, 13.0],
+        "low":  [9.0, 9.5, 10.0, 11.0, 12.0],
+        "BULLISH_OB_HIGH": [np.nan, np.nan, np.nan, np.nan, 11.8],
+        "BULLISH_OB_LOW":  [np.nan, np.nan, np.nan, np.nan, 11.2],
+        "BEARISH_OB_HIGH": [np.nan] * 5,
+        "BEARISH_OB_LOW":  [np.nan] * 5,
+        "FVG_DIR": [0.0, 0.0, 0.0, 0.0, 1.0],
+    })
+    out = realized_levels(df, idx=4)
+    assert out["OB_LEVEL_HIGH"] == 11.8
+    assert out["OB_LEVEL_LOW"] == 11.2
+    assert out["FVG_LEVEL_HIGH"] == 12.0   # low[i]
+    assert out["FVG_LEVEL_LOW"] == 11.0    # high[i-2] = high[2]
+
+
 def test_confluence_signal_to_structure_empty_features(bar_ts):
     """No structural signals at all — all-None structure is still valid."""
     s = confluence_signal_to_structure(None, {}, bar_ts, current_price=2378.45)

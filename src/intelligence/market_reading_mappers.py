@@ -252,11 +252,17 @@ def confluence_signal_to_structure(
         )
         ob_direction = sig_direction or bos_direction
         importance = "high" if ob_strength >= 0.75 else "medium" if ob_strength >= 0.4 else "low"
+        # F3: publish the REAL order-block zone the engine stored (prior-candle
+        # range via OB_LEVEL_HIGH/LOW from realized_levels), not a price±ATR/2 proxy.
+        ob_high = _first_real(smc_features, "OB_LEVEL_HIGH")
+        ob_low = _first_real(smc_features, "OB_LEVEL_LOW")
+        if ob_high is None or ob_low is None:
+            ob_high, ob_low = current_price + half, current_price - half
         order_blocks.append(OrderBlock(
             id=f"OB_{bar_ts.strftime('%Y%m%d%H%M%S')}",
             direction=ob_direction,
-            level_high=current_price + half,
-            level_low=current_price - half,
+            level_high=ob_high,
+            level_low=ob_low,
             importance=importance,
             status="active",
             created_at=bar_ts,
@@ -269,11 +275,17 @@ def confluence_signal_to_structure(
     fvg_signal = float(smc_features.get("FVG_SIGNAL", 0.0))
     fvg_direction = _sign_to_direction(fvg_signal)
     if fvg_direction is not None:
+        # F3: publish the REAL fair-value-gap bounds (3-candle geometry via
+        # FVG_LEVEL_HIGH/LOW from realized_levels), not a price±ATR/2 proxy.
+        fvg_high = _first_real(smc_features, "FVG_LEVEL_HIGH")
+        fvg_low = _first_real(smc_features, "FVG_LEVEL_LOW")
+        if fvg_high is None or fvg_low is None:
+            fvg_high, fvg_low = current_price + half, current_price - half
         fair_value_gaps.append(FairValueGap(
             id=f"FVG_{bar_ts.strftime('%Y%m%d%H%M%S')}",
             direction=fvg_direction,
-            level_high=current_price + half,
-            level_low=current_price - half,
+            level_high=fvg_high,
+            level_low=fvg_low,
             status="active",
             created_at=bar_ts,
             tested=False,
