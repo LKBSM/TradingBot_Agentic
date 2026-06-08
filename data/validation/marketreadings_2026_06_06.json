@@ -47,8 +47,8 @@
       "bar_open_ts": "2026-01-01T23:00:00",
       "candle_close_ts": "2026-01-02T00:00:00",
       "close_price": 4348.255,
-      "template_description": "Tendance en range, volatilité normale, phase de range. BOS baissière récent (pending). MTF alignée haussière.",
-      "haiku_description": "Le marché oscille dans une bande de consolidation avec une volatilité normale et un alignement haussier sur les timeframes supérieures.",
+      "template_description": "Tendance en range, volatilité normale, phase de range. MTF alignée haussière.",
+      "haiku_description": "Le marché oscille dans une plage de consolidation avec une volatilité normale tandis que les timeframes quotidienne et 4-horaire affichent des signaux haussiers.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -59,12 +59,7 @@
           "close_price": 4348.255
         },
         "structure": {
-          "bos": {
-            "direction": "bearish",
-            "level": 4348.255,
-            "broken_at": "2026-01-02T00:00:00",
-            "validation_status": "pending"
-          },
+          "bos": null,
           "choch": null,
           "order_blocks": [],
           "fair_value_gaps": [],
@@ -89,10 +84,9 @@
             "trend_ranging",
             "volatility_normal",
             "phase_ranging",
-            "bos_recent_bearish",
             "mtf_aligned"
           ],
-          "description": "Le marché oscille dans une bande de consolidation avec une volatilité normale et un alignement haussier sur les timeframes supérieures.",
+          "description": "Le marché oscille dans une plage de consolidation avec une volatilité normale tandis que les timeframes quotidienne et 4-horaire affichent des signaux haussiers.",
           "description_source": "haiku_generated"
         }
       },
@@ -104,8 +98,8 @@
       "bar_open_ts": "2026-01-02T00:00:00",
       "candle_close_ts": "2026-01-02T01:00:00",
       "close_price": 4354.128500000001,
-      "template_description": "Tendance en range, volatilité normale, phase de range. BOS baissière récent (pending). FVG actif. MTF alignée haussière.",
-      "haiku_description": "Le marché oscille dans une plage de consolidation avec une volatilité normale, tandis que les timeframes supérieures affichent une orientation haussière malgré la phase de range actuelle.",
+      "template_description": "Tendance en range, volatilité normale, phase de range. FVG actif. MTF alignée haussière.",
+      "haiku_description": "Les prix oscillent dans une fourchette de trading avec une tendance haussière confirmée sur les timeframes supérieures et une volatilité normale.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -116,20 +110,15 @@
           "close_price": 4354.128500000001
         },
         "structure": {
-          "bos": {
-            "direction": "bearish",
-            "level": 4354.128500000001,
-            "broken_at": "2026-01-02T01:00:00",
-            "validation_status": "pending"
-          },
+          "bos": null,
           "choch": null,
           "order_blocks": [],
           "fair_value_gaps": [
             {
               "id": "FVG_20260102010000",
               "direction": "bullish",
-              "level_high": 4365.139386852732,
-              "level_low": 4343.117613147269,
+              "level_high": 4341.49,
+              "level_low": 4319.2405,
               "status": "active",
               "created_at": "2026-01-02T01:00:00",
               "tested": false,
@@ -157,11 +146,10 @@
             "trend_ranging",
             "volatility_normal",
             "phase_ranging",
-            "bos_recent_bearish",
             "fvg_active",
             "mtf_aligned"
           ],
-          "description": "Le marché oscille dans une plage de consolidation avec une volatilité normale, tandis que les timeframes supérieures affichent une orientation haussière malgré la phase de range actuelle.",
+          "description": "Les prix oscillent dans une fourchette de trading avec une tendance haussière confirmée sur les timeframes supérieures et une volatilité normale.",
           "description_source": "haiku_generated"
         }
       },
@@ -174,7 +162,7 @@
       "candle_close_ts": "2026-01-02T04:00:00",
       "close_price": 4375.185,
       "template_description": "Tendance en range, volatilité normale, phase de range. BOS haussière récent (confirmed). FVG actif. MTF alignée haussière.",
-      "haiku_description": "Les prix oscillent dans une zone de consolidation avec des signaux heureux récents et un alignement haussier sur les timeframes supérieures.",
+      "haiku_description": "Les prix oscillent dans une plage de consolidation avec des signaux haussiers confirmés sur les périodes journalière et 4h, une zone de liquidité active et une volatilité normale.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -187,13 +175,13 @@
         "structure": {
           "bos": {
             "direction": "bullish",
-            "level": 4375.185,
+            "level": 4373.4,
             "broken_at": "2026-01-02T04:00:00",
             "validation_status": "confirmed"
           },
           "choch": {
             "direction": "bullish",
-            "level": 4375.185,
+            "level": 4373.4,
             "broken_at": "2026-01-02T04:00:00",
             "validation_status": "confirmed"
           },
@@ -202,8 +190,8 @@
             {
               "id": "FVG_20260102040000",
               "direction": "bullish",
-              "level_high": 4385.436683004902,
-              "level_low": 4364.933316995099,
+              "level_high": 4362.2,
+              "level_low": 4355.97,
               "status": "active",
               "created_at": "2026-01-02T04:00:00",
               "tested": false,
@@ -236,7 +224,7 @@
             "fvg_active",
             "mtf_aligned"
           ],
-          "description": "Les prix oscillent dans une zone de consolidation avec des signaux heureux récents et un alignement haussier sur les timeframes supérieures.",
+          "description": "Les prix oscillent dans une plage de consolidation avec des signaux haussiers confirmés sur les périodes journalière et 4h, une zone de liquidité active et une volatilité normale.",
           "description_source": "haiku_generated"
         }
       },
@@ -248,8 +236,8 @@
       "bar_open_ts": "2026-01-05T05:00:00",
       "candle_close_ts": "2026-01-05T06:00:00",
       "close_price": 4412.5685,
-      "template_description": "Tendance haussière, volatilité normale, phase de tendance. BOS haussière récent (pending). Retest de structure en cours. MTF alignée haussière.",
-      "haiku_description": "Le prix reteste une zone de support dans un contexte de tendance haussière confirmée sur les timeframes jour et 4h, avec une volatilité normale.",
+      "template_description": "Tendance haussière, volatilité normale, phase de tendance. Retest de structure en cours. MTF alignée haussière.",
+      "haiku_description": "Le cours teste à la hausse un niveau de résistance en phase de tendance haussière avec une volatilité normale et une confirmation multi-timeframe (quotidien et 4h haussiers).",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -260,17 +248,12 @@
           "close_price": 4412.5685
         },
         "structure": {
-          "bos": {
-            "direction": "bullish",
-            "level": 4412.5685,
-            "broken_at": "2026-01-05T06:00:00",
-            "validation_status": "pending"
-          },
+          "bos": null,
           "choch": null,
           "order_blocks": [],
           "fair_value_gaps": [],
           "retest_in_progress": {
-            "level": 4412.5685,
+            "level": 4402.3165,
             "type": "bos_retest",
             "started_at": "2026-01-05T06:00:00"
           }
@@ -294,11 +277,10 @@
             "trend_bullish",
             "volatility_normal",
             "phase_trend",
-            "bos_recent_bullish",
             "retest_in_progress",
             "mtf_aligned"
           ],
-          "description": "Le prix reteste une zone de support dans un contexte de tendance haussière confirmée sur les timeframes jour et 4h, avec une volatilité normale.",
+          "description": "Le cours teste à la hausse un niveau de résistance en phase de tendance haussière avec une volatilité normale et une confirmation multi-timeframe (quotidien et 4h haussiers).",
           "description_source": "haiku_generated"
         }
       },
@@ -311,7 +293,7 @@
       "candle_close_ts": "2026-01-06T15:00:00",
       "close_price": 4487.788500000001,
       "template_description": "Tendance en range, volatilité normale, phase de range. BOS haussière récent (confirmed). MTF alignée haussière.",
-      "haiku_description": "Les prix évoluent dans une plage de consolidation avec des signaux haussiers alignés sur les graphiques quotidien et 4-heures dans un contexte de volatilité normale.",
+      "haiku_description": "Les prix oscillent dans une bande de consolidation avec un biais haussier confirmé sur les timeframes quotidienne et 4-heures, dans un contexte de volatilité normale.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -324,7 +306,7 @@
         "structure": {
           "bos": {
             "direction": "bullish",
-            "level": 4487.788500000001,
+            "level": 4475.9,
             "broken_at": "2026-01-06T15:00:00",
             "validation_status": "confirmed"
           },
@@ -355,7 +337,7 @@
             "bos_recent_bullish",
             "mtf_aligned"
           ],
-          "description": "Les prix évoluent dans une plage de consolidation avec des signaux haussiers alignés sur les graphiques quotidien et 4-heures dans un contexte de volatilité normale.",
+          "description": "Les prix oscillent dans une bande de consolidation avec un biais haussier confirmé sur les timeframes quotidienne et 4-heures, dans un contexte de volatilité normale.",
           "description_source": "haiku_generated"
         }
       },
@@ -367,8 +349,8 @@
       "bar_open_ts": "2026-01-09T05:00:00",
       "candle_close_ts": "2026-01-09T06:00:00",
       "close_price": 4468.16,
-      "template_description": "Tendance en range, volatilité faible, phase de range. BOS haussière récent (pending). MTF alignée haussière.",
-      "haiku_description": "Les prix oscillent dans une plage définie avec une tendance haussière confirmée sur les deux timeframes supérieurs et une volatilité réduite.",
+      "template_description": "Tendance en range, volatilité faible, phase de range. MTF alignée haussière.",
+      "haiku_description": "Les prix oscillent dans une fourchette définie avec une faible volatilité tandis que les timeframes supérieurs affichent une orientation haussière.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -379,12 +361,7 @@
           "close_price": 4468.16
         },
         "structure": {
-          "bos": {
-            "direction": "bullish",
-            "level": 4468.16,
-            "broken_at": "2026-01-09T06:00:00",
-            "validation_status": "pending"
-          },
+          "bos": null,
           "choch": null,
           "order_blocks": [],
           "fair_value_gaps": [],
@@ -409,10 +386,9 @@
             "trend_ranging",
             "volatility_low",
             "phase_ranging",
-            "bos_recent_bullish",
             "mtf_aligned"
           ],
-          "description": "Les prix oscillent dans une plage définie avec une tendance haussière confirmée sur les deux timeframes supérieurs et une volatilité réduite.",
+          "description": "Les prix oscillent dans une fourchette définie avec une faible volatilité tandis que les timeframes supérieurs affichent une orientation haussière.",
           "description_source": "haiku_generated"
         }
       },
@@ -424,8 +400,8 @@
       "bar_open_ts": "2026-01-12T00:00:00",
       "candle_close_ts": "2026-01-12T01:00:00",
       "close_price": 4588.9265,
-      "template_description": "Tendance haussière, volatilité élevée, phase d'expansion. BOS haussière récent (pending). FVG actif. MTF alignée haussière.",
-      "haiku_description": "Les prix progressent dans un environnement haussier avec une volatilité élevée, les timeframes alignés confirment la phase d'expansion en cours.",
+      "template_description": "Tendance haussière, volatilité élevée, phase d'expansion. FVG actif. MTF alignée haussière.",
+      "haiku_description": "Les prix progressent sur plusieurs timeframes avec une volatilité accrue durant la phase d'expansion.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -436,20 +412,15 @@
           "close_price": 4588.9265
         },
         "structure": {
-          "bos": {
-            "direction": "bullish",
-            "level": 4588.9265,
-            "broken_at": "2026-01-12T01:00:00",
-            "validation_status": "pending"
-          },
+          "bos": null,
           "choch": null,
           "order_blocks": [],
           "fair_value_gaps": [
             {
               "id": "FVG_20260112010000",
               "direction": "bullish",
-              "level_high": 4598.995870054876,
-              "level_low": 4578.857129945123,
+              "level_high": 4536.475,
+              "level_low": 4511.4515,
               "status": "active",
               "created_at": "2026-01-12T01:00:00",
               "tested": false,
@@ -477,11 +448,10 @@
             "trend_bullish",
             "volatility_elevated",
             "phase_expansion",
-            "bos_recent_bullish",
             "fvg_active",
             "mtf_aligned"
           ],
-          "description": "Les prix progressent dans un environnement haussier avec une volatilité élevée, les timeframes alignés confirment la phase d'expansion en cours.",
+          "description": "Les prix progressent sur plusieurs timeframes avec une volatilité accrue durant la phase d'expansion.",
           "description_source": "haiku_generated"
         }
       },
@@ -493,8 +463,8 @@
       "bar_open_ts": "2026-01-16T10:00:00",
       "candle_close_ts": "2026-01-16T11:00:00",
       "close_price": 4600.235000000001,
-      "template_description": "Tendance haussière, volatilité normale, phase de tendance. BOS haussière récent (pending). MTF alignée haussière.",
-      "haiku_description": "Les prix progressent dans un contexte haussier confirmé sur les timeframes journalier et 4-heures, avec une volatilité normale et un momentum récent positif.",
+      "template_description": "Tendance haussière, volatilité normale, phase de tendance. MTF alignée haussière.",
+      "haiku_description": "Le marché affiche une tendance haussière confirmée sur les horizons quotidien et 4-heures, avec une volatilité normale et une dynamique de tendance établie.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -505,12 +475,7 @@
           "close_price": 4600.235000000001
         },
         "structure": {
-          "bos": {
-            "direction": "bullish",
-            "level": 4600.235000000001,
-            "broken_at": "2026-01-16T11:00:00",
-            "validation_status": "pending"
-          },
+          "bos": null,
           "choch": null,
           "order_blocks": [],
           "fair_value_gaps": [],
@@ -535,10 +500,9 @@
             "trend_bullish",
             "volatility_normal",
             "phase_trend",
-            "bos_recent_bullish",
             "mtf_aligned"
           ],
-          "description": "Les prix progressent dans un contexte haussier confirmé sur les timeframes journalier et 4-heures, avec une volatilité normale et un momentum récent positif.",
+          "description": "Le marché affiche une tendance haussière confirmée sur les horizons quotidien et 4-heures, avec une volatilité normale et une dynamique de tendance établie.",
           "description_source": "haiku_generated"
         }
       },
@@ -551,7 +515,7 @@
       "candle_close_ts": "2026-01-21T00:00:00",
       "close_price": 4775.945,
       "template_description": "Tendance haussière, volatilité normale, phase de tendance. BOS haussière récent (confirmed). MTF alignée haussière.",
-      "haiku_description": "Les prix progressent dans un contexte haussier confirmé sur les timeframes journalier et 4-heures, avec une volatilité normale et un momentum récent positif.",
+      "haiku_description": "Le marché affiche une dynamique haussière confirmée sur les timeframes multiples avec une volatilité normale et un momentum récent positif.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -564,7 +528,7 @@
         "structure": {
           "bos": {
             "direction": "bullish",
-            "level": 4775.945,
+            "level": 4766.4435,
             "broken_at": "2026-01-21T00:00:00",
             "validation_status": "confirmed"
           },
@@ -595,7 +559,7 @@
             "bos_recent_bullish",
             "mtf_aligned"
           ],
-          "description": "Les prix progressent dans un contexte haussier confirmé sur les timeframes journalier et 4-heures, avec une volatilité normale et un momentum récent positif.",
+          "description": "Le marché affiche une dynamique haussière confirmée sur les timeframes multiples avec une volatilité normale et un momentum récent positif.",
           "description_source": "haiku_generated"
         }
       },
@@ -607,8 +571,8 @@
       "bar_open_ts": "2026-01-26T03:00:00",
       "candle_close_ts": "2026-01-26T04:00:00",
       "close_price": 5076.795,
-      "template_description": "Tendance haussière, volatilité élevée, phase d'expansion. BOS haussière récent (pending). MTF alignée haussière.",
-      "haiku_description": "Les cours progressent sur plusieurs timeframes avec une volatilité élevée en phase d'expansion haussière.",
+      "template_description": "Tendance haussière, volatilité élevée, phase d'expansion. MTF alignée haussière.",
+      "haiku_description": "Les cours progressent sur plusieurs temporalités avec une volatilité accentuée dans une phase d'expansion haussière.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -619,12 +583,7 @@
           "close_price": 5076.795
         },
         "structure": {
-          "bos": {
-            "direction": "bullish",
-            "level": 5076.795,
-            "broken_at": "2026-01-26T04:00:00",
-            "validation_status": "pending"
-          },
+          "bos": null,
           "choch": null,
           "order_blocks": [],
           "fair_value_gaps": [],
@@ -649,10 +608,9 @@
             "trend_bullish",
             "volatility_elevated",
             "phase_expansion",
-            "bos_recent_bullish",
             "mtf_aligned"
           ],
-          "description": "Les cours progressent sur plusieurs timeframes avec une volatilité élevée en phase d'expansion haussière.",
+          "description": "Les cours progressent sur plusieurs temporalités avec une volatilité accentuée dans une phase d'expansion haussière.",
           "description_source": "haiku_generated"
         }
       },
@@ -665,7 +623,7 @@
       "candle_close_ts": "2026-01-28T02:00:00",
       "close_price": 5204.6900000000005,
       "template_description": "Tendance haussière, volatilité élevée, phase d'expansion. BOS haussière récent (confirmed). Order Block actif. MTF alignée haussière.",
-      "haiku_description": "La structure montre une tendance haussière alignée multi-timeframes avec volatilité élevée, phase d'expansion active et niveaux de support/résistance identifiés.",
+      "haiku_description": "Les prix progressent dans une dynamique haussière alignée sur plusieurs timeframes avec une volatilité élevée et une phase d'expansion active.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -678,7 +636,7 @@
         "structure": {
           "bos": {
             "direction": "bullish",
-            "level": 5204.6900000000005,
+            "level": 5190.535,
             "broken_at": "2026-01-28T02:00:00",
             "validation_status": "confirmed"
           },
@@ -687,8 +645,8 @@
             {
               "id": "OB_20260128020000",
               "direction": "bullish",
-              "level_high": 5220.178025892947,
-              "level_low": 5189.201974107054,
+              "level_high": 5180.195,
+              "level_low": 5157.45,
               "importance": "medium",
               "status": "active",
               "created_at": "2026-01-28T02:00:00",
@@ -722,7 +680,7 @@
             "ob_active",
             "mtf_aligned"
           ],
-          "description": "La structure montre une tendance haussière alignée multi-timeframes avec volatilité élevée, phase d'expansion active et niveaux de support/résistance identifiés.",
+          "description": "Les prix progressent dans une dynamique haussière alignée sur plusieurs timeframes avec une volatilité élevée et une phase d'expansion active.",
           "description_source": "haiku_generated"
         }
       },
@@ -735,7 +693,7 @@
       "candle_close_ts": "2026-01-29T16:00:00",
       "close_price": 5182.825,
       "template_description": "Tendance haussière, volatilité élevée, phase d'expansion. BOS baissière récent (confirmed). MTF alignée haussière.",
-      "haiku_description": "La tendance haussière persiste sur plusieurs horizons temporels avec une volatilité élevée durant la phase d'expansion, bien que des signaux baissiers récents soient présents localement.",
+      "haiku_description": "Les prix affichent une tendance haussière sur plusieurs échelles de temps avec une volatilité élevée en phase d'expansion, bien que des signaux baissiers récents soient détectés localement.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -748,13 +706,13 @@
         "structure": {
           "bos": {
             "direction": "bearish",
-            "level": 5182.825,
+            "level": 5235.662,
             "broken_at": "2026-01-29T16:00:00",
             "validation_status": "confirmed"
           },
           "choch": {
             "direction": "bearish",
-            "level": 5182.825,
+            "level": 5235.662,
             "broken_at": "2026-01-29T16:00:00",
             "validation_status": "confirmed"
           },
@@ -785,7 +743,7 @@
             "choch_recent_bearish",
             "mtf_aligned"
           ],
-          "description": "La tendance haussière persiste sur plusieurs horizons temporels avec une volatilité élevée durant la phase d'expansion, bien que des signaux baissiers récents soient présents localement.",
+          "description": "Les prix affichent une tendance haussière sur plusieurs échelles de temps avec une volatilité élevée en phase d'expansion, bien que des signaux baissiers récents soient détectés localement.",
           "description_source": "haiku_generated"
         }
       },
@@ -797,8 +755,8 @@
       "bar_open_ts": "2026-01-30T01:00:00",
       "candle_close_ts": "2026-01-30T02:00:00",
       "close_price": 5301.139999999999,
-      "template_description": "Tendance haussière, volatilité élevée, phase d'expansion. BOS baissière récent (pending). MTF alignée haussière.",
-      "haiku_description": "Les prix progressent dans un contexte haussier multi-timeframe avec volatilité élevée et phase d'expansion, malgré un signal baissier récent de court terme.",
+      "template_description": "Tendance haussière, volatilité élevée, phase d'expansion. MTF alignée haussière.",
+      "haiku_description": "Les cours progressent sur plusieurs temporalités avec une volatilité accentuée dans une phase d'expansion haussière.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -809,12 +767,7 @@
           "close_price": 5301.139999999999
         },
         "structure": {
-          "bos": {
-            "direction": "bearish",
-            "level": 5301.139999999999,
-            "broken_at": "2026-01-30T02:00:00",
-            "validation_status": "pending"
-          },
+          "bos": null,
           "choch": null,
           "order_blocks": [],
           "fair_value_gaps": [],
@@ -839,10 +792,9 @@
             "trend_bullish",
             "volatility_elevated",
             "phase_expansion",
-            "bos_recent_bearish",
             "mtf_aligned"
           ],
-          "description": "Les prix progressent dans un contexte haussier multi-timeframe avec volatilité élevée et phase d'expansion, malgré un signal baissier récent de court terme.",
+          "description": "Les cours progressent sur plusieurs temporalités avec une volatilité accentuée dans une phase d'expansion haussière.",
           "description_source": "haiku_generated"
         }
       },
@@ -855,7 +807,7 @@
       "candle_close_ts": "2026-02-02T06:00:00",
       "close_price": 4549.6165,
       "template_description": "Tendance en range, volatilité élevée, phase de range. BOS baissière récent (confirmed). Order Block actif. MTF mixte.",
-      "haiku_description": "Les prix oscillent dans une plage définie avec une volatilité accrue, le graphique quotidien affichant une direction haussière tandis que les délais plus courts demeurent en consolidation.",
+      "haiku_description": "Le marché oscille dans une bande de prix avec une volatilité élevée, tiraillé entre des pressions haussières quotidiennes et un mouvement latéral sur quatre heures.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -868,7 +820,7 @@
         "structure": {
           "bos": {
             "direction": "bearish",
-            "level": 4549.6165,
+            "level": 4584.7835,
             "broken_at": "2026-02-02T06:00:00",
             "validation_status": "confirmed"
           },
@@ -877,8 +829,8 @@
             {
               "id": "OB_20260202060000",
               "direction": "bearish",
-              "level_high": 4610.4578280532205,
-              "level_low": 4488.77517194678,
+              "level_high": 4713.2865,
+              "level_low": 4603.4385,
               "importance": "high",
               "status": "active",
               "created_at": "2026-02-02T06:00:00",
@@ -912,7 +864,7 @@
             "ob_active",
             "mtf_mixed"
           ],
-          "description": "Les prix oscillent dans une plage définie avec une volatilité accrue, le graphique quotidien affichant une direction haussière tandis que les délais plus courts demeurent en consolidation.",
+          "description": "Le marché oscille dans une bande de prix avec une volatilité élevée, tiraillé entre des pressions haussières quotidiennes et un mouvement latéral sur quatre heures.",
           "description_source": "haiku_generated"
         }
       },
@@ -924,8 +876,8 @@
       "bar_open_ts": "2026-02-05T16:00:00",
       "candle_close_ts": "2026-02-05T17:00:00",
       "close_price": 4889.066500000001,
-      "template_description": "Tendance en range, volatilité normale, phase de range. BOS baissière récent (pending). Order Block actif. MTF alignée haussière.",
-      "haiku_description": "Le marché évolue dans une phase de consolidation avec une volatilité normale, tandis que les timeframes supérieures affichent une orientation haussière contrastant avec un signal baissier récent.",
+      "template_description": "Tendance en range, volatilité normale, phase de range. Order Block actif. MTF alignée haussière.",
+      "haiku_description": "Le marché oscille dans une bande de prix avec une volatilité normale, aligné sur les timeframes supérieures en tendance haussière.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -936,19 +888,14 @@
           "close_price": 4889.066500000001
         },
         "structure": {
-          "bos": {
-            "direction": "bearish",
-            "level": 4889.066500000001,
-            "broken_at": "2026-02-05T17:00:00",
-            "validation_status": "pending"
-          },
+          "bos": null,
           "choch": null,
           "order_blocks": [
             {
               "id": "OB_20260205170000",
               "direction": "bearish",
-              "level_high": 4919.478516090064,
-              "level_low": 4858.654483909938,
+              "level_high": 4866.773499999999,
+              "level_low": 4800.5885,
               "importance": "high",
               "status": "active",
               "created_at": "2026-02-05T17:00:00",
@@ -978,11 +925,10 @@
             "trend_ranging",
             "volatility_normal",
             "phase_ranging",
-            "bos_recent_bearish",
             "ob_active",
             "mtf_aligned"
           ],
-          "description": "Le marché évolue dans une phase de consolidation avec une volatilité normale, tandis que les timeframes supérieures affichent une orientation haussière contrastant avec un signal baissier récent.",
+          "description": "Le marché oscille dans une bande de prix avec une volatilité normale, aligné sur les timeframes supérieures en tendance haussière.",
           "description_source": "haiku_generated"
         }
       },
@@ -994,8 +940,8 @@
       "bar_open_ts": "2026-02-13T17:00:00",
       "candle_close_ts": "2026-02-13T18:00:00",
       "close_price": 5021.110000000001,
-      "template_description": "Tendance haussière, volatilité normale, phase de tendance. BOS baissière récent (pending). MTF alignée haussière.",
-      "haiku_description": "Les cours évoluent à la hausse avec une volatilité normale, confirmée par l'alignement haussier des timeframes journalier et 4-heures, bien qu'une structure baissière récente soit observable.",
+      "template_description": "Tendance haussière, volatilité normale, phase de tendance. MTF alignée haussière.",
+      "haiku_description": "Le marché affiche une tendance haussière confirmée sur les horizons quotidien et 4-heures, avec une volatilité normale et une dynamique de tendance établie.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -1006,12 +952,7 @@
           "close_price": 5021.110000000001
         },
         "structure": {
-          "bos": {
-            "direction": "bearish",
-            "level": 5021.110000000001,
-            "broken_at": "2026-02-13T18:00:00",
-            "validation_status": "pending"
-          },
+          "bos": null,
           "choch": null,
           "order_blocks": [],
           "fair_value_gaps": [],
@@ -1036,10 +977,9 @@
             "trend_bullish",
             "volatility_normal",
             "phase_trend",
-            "bos_recent_bearish",
             "mtf_aligned"
           ],
-          "description": "Les cours évoluent à la hausse avec une volatilité normale, confirmée par l'alignement haussier des timeframes journalier et 4-heures, bien qu'une structure baissière récente soit observable.",
+          "description": "Le marché affiche une tendance haussière confirmée sur les horizons quotidien et 4-heures, avec une volatilité normale et une dynamique de tendance établie.",
           "description_source": "haiku_generated"
         }
       },
@@ -1051,8 +991,8 @@
       "bar_open_ts": "2026-02-16T12:00:00",
       "candle_close_ts": "2026-02-16T13:00:00",
       "close_price": 5002.025,
-      "template_description": "Tendance en range, volatilité faible, phase de range. BOS baissière récent (pending). MTF alignée haussière.",
-      "haiku_description": "Le marché oscille dans une plage étroite avec une volatilité réduite, tandis que les timeframes supérieures maintiennent une structure haussière.",
+      "template_description": "Tendance en range, volatilité faible, phase de range. MTF alignée haussière.",
+      "haiku_description": "Les prix oscillent dans une fourchette définie avec une faible volatilité tandis que les timeframes supérieurs affichent une orientation haussière.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -1063,12 +1003,7 @@
           "close_price": 5002.025
         },
         "structure": {
-          "bos": {
-            "direction": "bearish",
-            "level": 5002.025,
-            "broken_at": "2026-02-16T13:00:00",
-            "validation_status": "pending"
-          },
+          "bos": null,
           "choch": null,
           "order_blocks": [],
           "fair_value_gaps": [],
@@ -1093,10 +1028,9 @@
             "trend_ranging",
             "volatility_low",
             "phase_ranging",
-            "bos_recent_bearish",
             "mtf_aligned"
           ],
-          "description": "Le marché oscille dans une plage étroite avec une volatilité réduite, tandis que les timeframes supérieures maintiennent une structure haussière.",
+          "description": "Les prix oscillent dans une fourchette définie avec une faible volatilité tandis que les timeframes supérieurs affichent une orientation haussière.",
           "description_source": "haiku_generated"
         }
       },
@@ -1108,8 +1042,8 @@
       "bar_open_ts": "2026-02-17T04:00:00",
       "candle_close_ts": "2026-02-17T05:00:00",
       "close_price": 4953.0,
-      "template_description": "Tendance en range, volatilité faible, phase de range. BOS baissière récent (pending). MTF alignée haussière.",
-      "haiku_description": "Le marché oscille dans une plage étroite avec une volatilité réduite, tandis que les timeframes supérieures maintiennent une structure haussière.",
+      "template_description": "Tendance en range, volatilité faible, phase de range. MTF alignée haussière.",
+      "haiku_description": "Les prix oscillent dans une fourchette définie avec une faible volatilité tandis que les timeframes supérieurs affichent une orientation haussière.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -1120,12 +1054,7 @@
           "close_price": 4953.0
         },
         "structure": {
-          "bos": {
-            "direction": "bearish",
-            "level": 4953.0,
-            "broken_at": "2026-02-17T05:00:00",
-            "validation_status": "pending"
-          },
+          "bos": null,
           "choch": null,
           "order_blocks": [],
           "fair_value_gaps": [],
@@ -1150,10 +1079,9 @@
             "trend_ranging",
             "volatility_low",
             "phase_ranging",
-            "bos_recent_bearish",
             "mtf_aligned"
           ],
-          "description": "Le marché oscille dans une plage étroite avec une volatilité réduite, tandis que les timeframes supérieures maintiennent une structure haussière.",
+          "description": "Les prix oscillent dans une fourchette définie avec une faible volatilité tandis que les timeframes supérieurs affichent une orientation haussière.",
           "description_source": "haiku_generated"
         }
       },
@@ -1166,7 +1094,7 @@
       "candle_close_ts": "2026-02-24T14:00:00",
       "close_price": 5115.1485,
       "template_description": "Tendance en range, volatilité normale, phase de range. BOS baissière récent (confirmed). FVG actif. MTF alignée haussière.",
-      "haiku_description": "Le marché oscille dans une zone de consolidation avec une structure baissière récente, des vides de prix actifs et une tendance haussière confirmée sur les périodes supérieures.",
+      "haiku_description": "Le marché oscille dans une plage de prix avec une volatilité normale tandis que les structures multiples temporelles affichent une orientation haussière.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -1179,13 +1107,13 @@
         "structure": {
           "bos": {
             "direction": "bearish",
-            "level": 5115.1485,
+            "level": 5141.625,
             "broken_at": "2026-02-24T14:00:00",
             "validation_status": "confirmed"
           },
           "choch": {
             "direction": "bearish",
-            "level": 5115.1485,
+            "level": 5141.625,
             "broken_at": "2026-02-24T14:00:00",
             "validation_status": "confirmed"
           },
@@ -1194,8 +1122,8 @@
             {
               "id": "FVG_20260224140000",
               "direction": "bearish",
-              "level_high": 5127.48900292855,
-              "level_low": 5102.807997071451,
+              "level_high": 5171.01,
+              "level_low": 5161.513500000001,
               "status": "active",
               "created_at": "2026-02-24T14:00:00",
               "tested": false,
@@ -1228,7 +1156,7 @@
             "fvg_active",
             "mtf_aligned"
           ],
-          "description": "Le marché oscille dans une zone de consolidation avec une structure baissière récente, des vides de prix actifs et une tendance haussière confirmée sur les périodes supérieures.",
+          "description": "Le marché oscille dans une plage de prix avec une volatilité normale tandis que les structures multiples temporelles affichent une orientation haussière.",
           "description_source": "haiku_generated"
         }
       },
@@ -1241,7 +1169,7 @@
       "candle_close_ts": "2026-02-27T21:00:00",
       "close_price": 5263.415,
       "template_description": "Tendance haussière, volatilité normale, phase de tendance. BOS haussière récent (confirmed). MTF alignée haussière.",
-      "haiku_description": "Les prix progressent dans un contexte haussier aligné sur plusieurs timeframes avec volatilité modérée et structure en phase de tendance.",
+      "haiku_description": "Les prix évoluent à la hausse sur plusieurs timeframes avec une volatilité normale et un alignement haussier confirmé par les structures récentes.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -1254,13 +1182,13 @@
         "structure": {
           "bos": {
             "direction": "bullish",
-            "level": 5263.415,
+            "level": 5257.825,
             "broken_at": "2026-02-27T21:00:00",
             "validation_status": "confirmed"
           },
           "choch": {
             "direction": "bullish",
-            "level": 5263.415,
+            "level": 5257.825,
             "broken_at": "2026-02-27T21:00:00",
             "validation_status": "confirmed"
           },
@@ -1291,7 +1219,7 @@
             "choch_recent_bullish",
             "mtf_aligned"
           ],
-          "description": "Les prix progressent dans un contexte haussier aligné sur plusieurs timeframes avec volatilité modérée et structure en phase de tendance.",
+          "description": "Les prix évoluent à la hausse sur plusieurs timeframes avec une volatilité normale et un alignement haussier confirmé par les structures récentes.",
           "description_source": "haiku_generated"
         }
       },
@@ -1303,8 +1231,8 @@
       "bar_open_ts": "2026-03-02T06:00:00",
       "candle_close_ts": "2026-03-02T07:00:00",
       "close_price": 5387.715,
-      "template_description": "Tendance haussière, volatilité élevée, phase d'expansion. BOS haussière récent (pending). Retest de structure en cours. MTF alignée haussière.",
-      "haiku_description": "Le marché affiche une tendance haussière confirmée sur les timeframes quotidienne et 4h, en phase d'expansion avec volatilité élevée et un retesting en cours.",
+      "template_description": "Tendance haussière, volatilité élevée, phase d'expansion. Retest de structure en cours. MTF alignée haussière.",
+      "haiku_description": "Le marché affiche une tendance haussière sur plusieurs timeframes avec une volatilité élevée en phase d'expansion, et un retest des niveaux clés est en cours.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -1315,17 +1243,12 @@
           "close_price": 5387.715
         },
         "structure": {
-          "bos": {
-            "direction": "bullish",
-            "level": 5387.715,
-            "broken_at": "2026-03-02T07:00:00",
-            "validation_status": "pending"
-          },
+          "bos": null,
           "choch": null,
           "order_blocks": [],
           "fair_value_gaps": [],
           "retest_in_progress": {
-            "level": 5387.715,
+            "level": 5257.825,
             "type": "bos_retest",
             "started_at": "2026-03-02T07:00:00"
           }
@@ -1349,11 +1272,10 @@
             "trend_bullish",
             "volatility_elevated",
             "phase_expansion",
-            "bos_recent_bullish",
             "retest_in_progress",
             "mtf_aligned"
           ],
-          "description": "Le marché affiche une tendance haussière confirmée sur les timeframes quotidienne et 4h, en phase d'expansion avec volatilité élevée et un retesting en cours.",
+          "description": "Le marché affiche une tendance haussière sur plusieurs timeframes avec une volatilité élevée en phase d'expansion, et un retest des niveaux clés est en cours.",
           "description_source": "haiku_generated"
         }
       },
@@ -1365,8 +1287,8 @@
       "bar_open_ts": "2026-03-02T13:00:00",
       "candle_close_ts": "2026-03-02T14:00:00",
       "close_price": 5394.025,
-      "template_description": "Tendance haussière, volatilité normale, phase de tendance. BOS haussière récent (pending). Retest de structure en cours. MTF alignée haussière.",
-      "haiku_description": "Le prix reteste une zone de support dans un contexte de tendance haussière confirmée sur les timeframes jour et 4h, avec une volatilité normale.",
+      "template_description": "Tendance haussière, volatilité normale, phase de tendance. Retest de structure en cours. MTF alignée haussière.",
+      "haiku_description": "Le cours teste à la hausse un niveau de résistance en phase de tendance haussière avec une volatilité normale et une confirmation multi-timeframe (quotidien et 4h haussiers).",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -1377,17 +1299,12 @@
           "close_price": 5394.025
         },
         "structure": {
-          "bos": {
-            "direction": "bullish",
-            "level": 5394.025,
-            "broken_at": "2026-03-02T14:00:00",
-            "validation_status": "pending"
-          },
+          "bos": null,
           "choch": null,
           "order_blocks": [],
           "fair_value_gaps": [],
           "retest_in_progress": {
-            "level": 5394.025,
+            "level": 5393.610000000001,
             "type": "bos_retest",
             "started_at": "2026-03-02T14:00:00"
           }
@@ -1411,11 +1328,10 @@
             "trend_bullish",
             "volatility_normal",
             "phase_trend",
-            "bos_recent_bullish",
             "retest_in_progress",
             "mtf_aligned"
           ],
-          "description": "Le prix reteste une zone de support dans un contexte de tendance haussière confirmée sur les timeframes jour et 4h, avec une volatilité normale.",
+          "description": "Le cours teste à la hausse un niveau de résistance en phase de tendance haussière avec une volatilité normale et une confirmation multi-timeframe (quotidien et 4h haussiers).",
           "description_source": "haiku_generated"
         }
       },
@@ -1428,7 +1344,7 @@
       "candle_close_ts": "2026-03-02T15:00:00",
       "close_price": 5333.6035,
       "template_description": "Tendance haussière, volatilité élevée, phase d'expansion. BOS baissière récent (confirmed). MTF alignée haussière.",
-      "haiku_description": "La tendance haussière persiste sur plusieurs horizons temporels avec une volatilité élevée durant la phase d'expansion, bien que des signaux baissiers récents soient présents localement.",
+      "haiku_description": "Les prix affichent une tendance haussière sur plusieurs échelles de temps avec une volatilité élevée en phase d'expansion, bien que des signaux baissiers récents soient détectés localement.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -1441,13 +1357,13 @@
         "structure": {
           "bos": {
             "direction": "bearish",
-            "level": 5333.6035,
+            "level": 5341.04,
             "broken_at": "2026-03-02T15:00:00",
             "validation_status": "confirmed"
           },
           "choch": {
             "direction": "bearish",
-            "level": 5333.6035,
+            "level": 5341.04,
             "broken_at": "2026-03-02T15:00:00",
             "validation_status": "confirmed"
           },
@@ -1478,7 +1394,7 @@
             "choch_recent_bearish",
             "mtf_aligned"
           ],
-          "description": "La tendance haussière persiste sur plusieurs horizons temporels avec une volatilité élevée durant la phase d'expansion, bien que des signaux baissiers récents soient présents localement.",
+          "description": "Les prix affichent une tendance haussière sur plusieurs échelles de temps avec une volatilité élevée en phase d'expansion, bien que des signaux baissiers récents soient détectés localement.",
           "description_source": "haiku_generated"
         }
       },
@@ -1491,7 +1407,7 @@
       "candle_close_ts": "2026-03-03T11:00:00",
       "close_price": 5248.275,
       "template_description": "Tendance haussière, volatilité élevée, phase d'expansion. BOS baissière récent (confirmed). MTF alignée haussière.",
-      "haiku_description": "Les prix progressent dans un contexte haussier multi-timeframe avec volatilité élevée et phase d'expansion, malgré un signal baissier récent de court terme.",
+      "haiku_description": "Les cours progressent dans un contexte haussier multi-timeframe avec volatilité élevée durant la phase d'expansion, bien que les données récentes affichent une légère pression baissière.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -1504,7 +1420,7 @@
         "structure": {
           "bos": {
             "direction": "bearish",
-            "level": 5248.275,
+            "level": 5260.805,
             "broken_at": "2026-03-03T11:00:00",
             "validation_status": "confirmed"
           },
@@ -1535,7 +1451,7 @@
             "bos_recent_bearish",
             "mtf_aligned"
           ],
-          "description": "Les prix progressent dans un contexte haussier multi-timeframe avec volatilité élevée et phase d'expansion, malgré un signal baissier récent de court terme.",
+          "description": "Les cours progressent dans un contexte haussier multi-timeframe avec volatilité élevée durant la phase d'expansion, bien que les données récentes affichent une légère pression baissière.",
           "description_source": "haiku_generated"
         }
       },
@@ -1547,8 +1463,8 @@
       "bar_open_ts": "2026-03-05T21:00:00",
       "candle_close_ts": "2026-03-05T22:00:00",
       "close_price": 5083.64,
-      "template_description": "Tendance en range, volatilité normale, phase de range. BOS baissière récent (pending). MTF alignée haussière.",
-      "haiku_description": "Le marché oscille dans une bande de consolidation avec une volatilité normale et un alignement haussier sur les timeframes supérieures.",
+      "template_description": "Tendance en range, volatilité normale, phase de range. MTF alignée haussière.",
+      "haiku_description": "Le marché oscille dans une plage de consolidation avec une volatilité normale tandis que les timeframes quotidienne et 4-horaire affichent des signaux haussiers.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -1559,12 +1475,7 @@
           "close_price": 5083.64
         },
         "structure": {
-          "bos": {
-            "direction": "bearish",
-            "level": 5083.64,
-            "broken_at": "2026-03-05T22:00:00",
-            "validation_status": "pending"
-          },
+          "bos": null,
           "choch": null,
           "order_blocks": [],
           "fair_value_gaps": [],
@@ -1589,10 +1500,9 @@
             "trend_ranging",
             "volatility_normal",
             "phase_ranging",
-            "bos_recent_bearish",
             "mtf_aligned"
           ],
-          "description": "Le marché oscille dans une bande de consolidation avec une volatilité normale et un alignement haussier sur les timeframes supérieures.",
+          "description": "Le marché oscille dans une plage de consolidation avec une volatilité normale tandis que les timeframes quotidienne et 4-horaire affichent des signaux haussiers.",
           "description_source": "haiku_generated"
         }
       },
@@ -1605,7 +1515,7 @@
       "candle_close_ts": "2026-03-18T21:00:00",
       "close_price": 4818.5650000000005,
       "template_description": "Tendance baissière, volatilité normale, phase de tendance. BOS baissière récent (confirmed). FVG actif. MTF mixte.",
-      "haiku_description": "Le marché affiche une tendance baissière avec volatilité normale, des gaps de fair value actifs et une dynamique quotidienne haussière contrariée par une consolidation en quatre heures.",
+      "haiku_description": "Les prix affichent une tendance baissière sur le court terme avec volatilité normale, tandis que le quotidien montre une dynamique haussière et l'H4 une consolidation, créant une divergence multitemps.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -1618,7 +1528,7 @@
         "structure": {
           "bos": {
             "direction": "bearish",
-            "level": 4818.5650000000005,
+            "level": 4834.26,
             "broken_at": "2026-03-18T21:00:00",
             "validation_status": "confirmed"
           },
@@ -1628,8 +1538,8 @@
             {
               "id": "FVG_20260318210000",
               "direction": "bearish",
-              "level_high": 4832.533814226119,
-              "level_low": 4804.596185773882,
+              "level_high": 4852.465,
+              "level_low": 4848.84,
               "status": "active",
               "created_at": "2026-03-18T21:00:00",
               "tested": false,
@@ -1661,7 +1571,7 @@
             "fvg_active",
             "mtf_mixed"
           ],
-          "description": "Le marché affiche une tendance baissière avec volatilité normale, des gaps de fair value actifs et une dynamique quotidienne haussière contrariée par une consolidation en quatre heures.",
+          "description": "Les prix affichent une tendance baissière sur le court terme avec volatilité normale, tandis que le quotidien montre une dynamique haussière et l'H4 une consolidation, créant une divergence multitemps.",
           "description_source": "haiku_generated"
         }
       },
@@ -1673,8 +1583,8 @@
       "bar_open_ts": "2026-03-19T04:00:00",
       "candle_close_ts": "2026-03-19T05:00:00",
       "close_price": 4849.825,
-      "template_description": "Tendance baissière, volatilité normale, phase de tendance. BOS baissière récent (pending). Retest de structure en cours. MTF mixte.",
-      "haiku_description": "Le marché affiche une tendance baissière sur le court terme avec une volatilité normale, tandis que le daily maintient une orientation haussière et l'H4 évolue en range.",
+      "template_description": "Tendance baissière, volatilité normale, phase de tendance. Retest de structure en cours. MTF mixte.",
+      "haiku_description": "Le marché montre une tendance baissière en phase de retrace avec volatilité normale, tandis que le cadre quotidien reste haussier et l'horaire 4H oscille entre les bornes.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -1685,17 +1595,12 @@
           "close_price": 4849.825
         },
         "structure": {
-          "bos": {
-            "direction": "bearish",
-            "level": 4849.825,
-            "broken_at": "2026-03-19T05:00:00",
-            "validation_status": "pending"
-          },
+          "bos": null,
           "choch": null,
           "order_blocks": [],
           "fair_value_gaps": [],
           "retest_in_progress": {
-            "level": 4849.825,
+            "level": 4834.26,
             "type": "bos_retest",
             "started_at": "2026-03-19T05:00:00"
           }
@@ -1719,11 +1624,10 @@
             "trend_bearish",
             "volatility_normal",
             "phase_trend",
-            "bos_recent_bearish",
             "retest_in_progress",
             "mtf_mixed"
           ],
-          "description": "Le marché affiche une tendance baissière sur le court terme avec une volatilité normale, tandis que le daily maintient une orientation haussière et l'H4 évolue en range.",
+          "description": "Le marché montre une tendance baissière en phase de retrace avec volatilité normale, tandis que le cadre quotidien reste haussier et l'horaire 4H oscille entre les bornes.",
           "description_source": "haiku_generated"
         }
       },
@@ -1735,9 +1639,9 @@
       "bar_open_ts": "2026-03-19T13:00:00",
       "candle_close_ts": "2026-03-19T14:00:00",
       "close_price": 4621.29,
-      "template_description": "Tendance baissière, volatilité élevée, phase d'expansion. BOS baissière récent (pending). FVG actif. MTF mixte.",
-      "haiku_description": "Tendance baissière, volatilité élevée, phase d'expansion. MTF mixte.",
-      "description_source": "template_fallback",
+      "template_description": "Tendance baissière, volatilité élevée, phase d'expansion. FVG actif. MTF mixte.",
+      "haiku_description": "Le marché affiche une tendance baissière avec volatilité élevée, divergence multi-timeframe (haussière en daily, baissière en 4h) et activité FVG durant une phase d'expansion.",
+      "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
         "header": {
@@ -1747,20 +1651,15 @@
           "close_price": 4621.29
         },
         "structure": {
-          "bos": {
-            "direction": "bearish",
-            "level": 4621.29,
-            "broken_at": "2026-03-19T14:00:00",
-            "validation_status": "pending"
-          },
+          "bos": null,
           "choch": null,
           "order_blocks": [],
           "fair_value_gaps": [
             {
               "id": "FVG_20260319140000",
               "direction": "bearish",
-              "level_high": 4645.07518249825,
-              "level_low": 4597.50481750175,
+              "level_high": 4651.120000000001,
+              "level_low": 4621.450000000001,
               "status": "active",
               "created_at": "2026-03-19T14:00:00",
               "tested": false,
@@ -1788,12 +1687,11 @@
             "trend_bearish",
             "volatility_elevated",
             "phase_expansion",
-            "bos_recent_bearish",
             "fvg_active",
             "mtf_divergent"
           ],
-          "description": "Tendance baissière, volatilité élevée, phase d'expansion. MTF mixte.",
-          "description_source": "template_fallback"
+          "description": "Le marché affiche une tendance baissière avec volatilité élevée, divergence multi-timeframe (haussière en daily, baissière en 4h) et activité FVG durant une phase d'expansion.",
+          "description_source": "haiku_generated"
         }
       },
       "candle_id": 28
@@ -1805,7 +1703,7 @@
       "candle_close_ts": "2026-03-23T00:00:00",
       "close_price": 4464.79,
       "template_description": "Tendance baissière, volatilité élevée, phase d'expansion. BOS baissière récent (confirmed). MTF mixte.",
-      "haiku_description": "Le marché affiche une tendance baissière avec volatilité élevée, divergence multi-timeframes (haussière en D1, baissière en H4) et phase d'expansion des mouvements.",
+      "haiku_description": "La tendance baissière persiste avec une volatilité élevée tandis que la phase d'expansion se poursuit, créant une divergence entre la tendance haussière sur D1 et baissière sur H4.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -1818,7 +1716,7 @@
         "structure": {
           "bos": {
             "direction": "bearish",
-            "level": 4464.79,
+            "level": 4477.5235,
             "broken_at": "2026-03-23T00:00:00",
             "validation_status": "confirmed"
           },
@@ -1849,7 +1747,7 @@
             "bos_recent_bearish",
             "mtf_divergent"
           ],
-          "description": "Le marché affiche une tendance baissière avec volatilité élevée, divergence multi-timeframes (haussière en D1, baissière en H4) et phase d'expansion des mouvements.",
+          "description": "La tendance baissière persiste avec une volatilité élevée tandis que la phase d'expansion se poursuit, créant une divergence entre la tendance haussière sur D1 et baissière sur H4.",
           "description_source": "haiku_generated"
         }
       },
@@ -1862,7 +1760,7 @@
       "candle_close_ts": "2026-03-26T20:00:00",
       "close_price": 4364.16,
       "template_description": "Tendance baissière, volatilité normale, phase de tendance. BOS baissière récent (confirmed). Order Block actif. MTF mixte.",
-      "haiku_description": "Les prix évoluent dans une tendance baissière avec une volatilité normale, tandis que le graphique quotidien affiche une orientation haussière contrastant avec la tendance baissière observée en périodes intraday.",
+      "haiku_description": "La tendance baissière persiste sur les timeframes courtes avec une volatilité normale tandis que le daily affiche une orientation haussière, créant une divergence multitimeframe avec des niveaux de liquidité actifs.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -1875,13 +1773,13 @@
         "structure": {
           "bos": {
             "direction": "bearish",
-            "level": 4364.16,
+            "level": 4366.96,
             "broken_at": "2026-03-26T20:00:00",
             "validation_status": "confirmed"
           },
           "choch": {
             "direction": "bearish",
-            "level": 4364.16,
+            "level": 4366.96,
             "broken_at": "2026-03-26T20:00:00",
             "validation_status": "confirmed"
           },
@@ -1889,8 +1787,8 @@
             {
               "id": "OB_20260326200000",
               "direction": "bearish",
-              "level_high": 4383.00823240758,
-              "level_low": 4345.3117675924195,
+              "level_high": 4397.905000000001,
+              "level_low": 4367.855,
               "importance": "high",
               "status": "active",
               "created_at": "2026-03-26T20:00:00",
@@ -1925,7 +1823,7 @@
             "ob_active",
             "mtf_divergent"
           ],
-          "description": "Les prix évoluent dans une tendance baissière avec une volatilité normale, tandis que le graphique quotidien affiche une orientation haussière contrastant avec la tendance baissière observée en périodes intraday.",
+          "description": "La tendance baissière persiste sur les timeframes courtes avec une volatilité normale tandis que le daily affiche une orientation haussière, créant une divergence multitimeframe avec des niveaux de liquidité actifs.",
           "description_source": "haiku_generated"
         }
       },
@@ -1937,8 +1835,8 @@
       "bar_open_ts": "2025-10-01T00:00:00",
       "candle_close_ts": "2025-10-01T01:00:00",
       "close_price": 1.17359,
-      "template_description": "Tendance baissière, volatilité faible, phase de tendance. BOS haussière récent (pending). MTF mixte.",
-      "haiku_description": "Le marché affiche une tendance baissière en phase de trend avec une volatilité faible, tandis que le jour montre une orientation haussière et l'intraday un mouvement de consolidation.",
+      "template_description": "Tendance baissière, volatilité faible, phase de tendance. MTF mixte.",
+      "haiku_description": "Le marché affiche une tendance baissière sur timeframe mixte avec volatilité réduite, tandis que le daily montre une dynamique haussière et le H4 une consolidation latérale.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -1949,12 +1847,7 @@
           "close_price": 1.17359
         },
         "structure": {
-          "bos": {
-            "direction": "bullish",
-            "level": 1.17359,
-            "broken_at": "2025-10-01T01:00:00",
-            "validation_status": "pending"
-          },
+          "bos": null,
           "choch": null,
           "order_blocks": [],
           "fair_value_gaps": [],
@@ -1979,10 +1872,9 @@
             "trend_bearish",
             "volatility_low",
             "phase_trend",
-            "bos_recent_bullish",
             "mtf_mixed"
           ],
-          "description": "Le marché affiche une tendance baissière en phase de trend avec une volatilité faible, tandis que le jour montre une orientation haussière et l'intraday un mouvement de consolidation.",
+          "description": "Le marché affiche une tendance baissière sur timeframe mixte avec volatilité réduite, tandis que le daily montre une dynamique haussière et le H4 une consolidation latérale.",
           "description_source": "haiku_generated"
         }
       },
@@ -1994,8 +1886,8 @@
       "bar_open_ts": "2025-10-01T01:00:00",
       "candle_close_ts": "2025-10-01T02:00:00",
       "close_price": 1.173915,
-      "template_description": "Tendance en range, volatilité faible, phase de range. BOS haussière récent (pending). MTF mixte.",
-      "haiku_description": "Les prix oscillent dans une fourchette établie avec une volatilité réduite, tandis que la tendance quotidienne affiche des signaux haussiers contrastant avec la consolidation sur les périodes intermédiaires.",
+      "template_description": "Tendance en range, volatilité faible, phase de range. MTF mixte.",
+      "haiku_description": "Le marché évolue dans une plage de prix stable avec une volatilité réduite, le quotidien affichant une tendance haussière tandis que l'horizon à 4 heures reste consolidé.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -2006,12 +1898,7 @@
           "close_price": 1.173915
         },
         "structure": {
-          "bos": {
-            "direction": "bullish",
-            "level": 1.173915,
-            "broken_at": "2025-10-01T02:00:00",
-            "validation_status": "pending"
-          },
+          "bos": null,
           "choch": null,
           "order_blocks": [],
           "fair_value_gaps": [],
@@ -2036,10 +1923,9 @@
             "trend_ranging",
             "volatility_low",
             "phase_ranging",
-            "bos_recent_bullish",
             "mtf_mixed"
           ],
-          "description": "Les prix oscillent dans une fourchette établie avec une volatilité réduite, tandis que la tendance quotidienne affiche des signaux haussiers contrastant avec la consolidation sur les périodes intermédiaires.",
+          "description": "Le marché évolue dans une plage de prix stable avec une volatilité réduite, le quotidien affichant une tendance haussière tandis que l'horizon à 4 heures reste consolidé.",
           "description_source": "haiku_generated"
         }
       },
@@ -2051,8 +1937,8 @@
       "bar_open_ts": "2025-10-01T07:00:00",
       "candle_close_ts": "2025-10-01T08:00:00",
       "close_price": 1.1750000000000005,
-      "template_description": "Tendance en range, volatilité élevée, phase de range. BOS haussière récent (pending). Order Block actif. MTF mixte.",
-      "haiku_description": "Le marché oscille dans une fourchette avec volatilité accrue, soutenu par une structure haussière en daily tandis que l'échelle 4H demeure latérale.",
+      "template_description": "Tendance en range, volatilité élevée, phase de range. Order Block actif. MTF mixte.",
+      "haiku_description": "Les cours oscillent dans une fourchette définie avec une volatilité accrue, le cadre quotidien affichant une tendance haussière tandis que l'horizon court terme reste indécis.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -2063,19 +1949,14 @@
           "close_price": 1.1750000000000005
         },
         "structure": {
-          "bos": {
-            "direction": "bullish",
-            "level": 1.1750000000000005,
-            "broken_at": "2025-10-01T08:00:00",
-            "validation_status": "pending"
-          },
+          "bos": null,
           "choch": null,
           "order_blocks": [
             {
               "id": "OB_20251001080000",
               "direction": "bullish",
-              "level_high": 1.175738766383609,
-              "level_low": 1.174261233616392,
+              "level_high": 1.17749,
+              "level_low": 1.175075,
               "importance": "high",
               "status": "active",
               "created_at": "2025-10-01T08:00:00",
@@ -2105,11 +1986,10 @@
             "trend_ranging",
             "volatility_elevated",
             "phase_ranging",
-            "bos_recent_bullish",
             "ob_active",
             "mtf_mixed"
           ],
-          "description": "Le marché oscille dans une fourchette avec volatilité accrue, soutenu par une structure haussière en daily tandis que l'échelle 4H demeure latérale.",
+          "description": "Les cours oscillent dans une fourchette définie avec une volatilité accrue, le cadre quotidien affichant une tendance haussière tandis que l'horizon court terme reste indécis.",
           "description_source": "haiku_generated"
         }
       },
@@ -2122,7 +2002,7 @@
       "candle_close_ts": "2025-10-02T16:00:00",
       "close_price": 1.1696650000000002,
       "template_description": "Tendance baissière, volatilité élevée, phase d'expansion. BOS baissière récent (confirmed). MTF mixte.",
-      "haiku_description": "Les prix se situent en tendance baissière sur le court terme avec une volatilité accrue, tandis que le graphique journalier affiche une orientation haussière et l'H4 oscille sans direction claire.",
+      "haiku_description": "La tendance baissière persiste avec une volatilité élevée en phase d'expansion, tandis que le daily affiche une structure haussière contrastant avec la consolidation en 4H.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -2135,13 +2015,13 @@
         "structure": {
           "bos": {
             "direction": "bearish",
-            "level": 1.1696650000000002,
+            "level": 1.17122,
             "broken_at": "2025-10-02T16:00:00",
             "validation_status": "confirmed"
           },
           "choch": {
             "direction": "bearish",
-            "level": 1.1696650000000002,
+            "level": 1.17122,
             "broken_at": "2025-10-02T16:00:00",
             "validation_status": "confirmed"
           },
@@ -2172,7 +2052,7 @@
             "choch_recent_bearish",
             "mtf_mixed"
           ],
-          "description": "Les prix se situent en tendance baissière sur le court terme avec une volatilité accrue, tandis que le graphique journalier affiche une orientation haussière et l'H4 oscille sans direction claire.",
+          "description": "La tendance baissière persiste avec une volatilité élevée en phase d'expansion, tandis que le daily affiche une structure haussière contrastant avec la consolidation en 4H.",
           "description_source": "haiku_generated"
         }
       },
@@ -2184,8 +2064,8 @@
       "bar_open_ts": "2025-10-02T20:00:00",
       "candle_close_ts": "2025-10-02T21:00:00",
       "close_price": 1.171575,
-      "template_description": "Tendance baissière, volatilité normale, phase de tendance. BOS baissière récent (pending). Retest de structure en cours. MTF mixte.",
-      "haiku_description": "Le marché affiche une tendance baissière sur le court terme avec une volatilité normale, tandis que le daily maintient une orientation haussière et l'H4 évolue en range.",
+      "template_description": "Tendance baissière, volatilité normale, phase de tendance. Retest de structure en cours. MTF mixte.",
+      "haiku_description": "Le marché montre une tendance baissière en phase de retrace avec volatilité normale, tandis que le cadre quotidien reste haussier et l'horaire 4H oscille entre les bornes.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -2196,17 +2076,12 @@
           "close_price": 1.171575
         },
         "structure": {
-          "bos": {
-            "direction": "bearish",
-            "level": 1.171575,
-            "broken_at": "2025-10-02T21:00:00",
-            "validation_status": "pending"
-          },
+          "bos": null,
           "choch": null,
           "order_blocks": [],
           "fair_value_gaps": [],
           "retest_in_progress": {
-            "level": 1.171575,
+            "level": 1.17122,
             "type": "bos_retest",
             "started_at": "2025-10-02T21:00:00"
           }
@@ -2230,11 +2105,10 @@
             "trend_bearish",
             "volatility_normal",
             "phase_trend",
-            "bos_recent_bearish",
             "retest_in_progress",
             "mtf_mixed"
           ],
-          "description": "Le marché affiche une tendance baissière sur le court terme avec une volatilité normale, tandis que le daily maintient une orientation haussière et l'H4 évolue en range.",
+          "description": "Le marché montre une tendance baissière en phase de retrace avec volatilité normale, tandis que le cadre quotidien reste haussier et l'horaire 4H oscille entre les bornes.",
           "description_source": "haiku_generated"
         }
       },
@@ -2247,7 +2121,7 @@
       "candle_close_ts": "2025-10-09T04:00:00",
       "close_price": 1.164485,
       "template_description": "Tendance baissière, volatilité faible, phase de tendance. BOS haussière récent (confirmed). MTF mixte.",
-      "haiku_description": "La tendance baissière persiste avec une volatilité basse, tandis que le daily affiche une structure haussière et l'H4 oscille en range.",
+      "haiku_description": "Les prix affichent une tendance baissière en phase de trend avec une faible volatilité, tandis que les timeframes supérieures montrent un Daily haussier et un H4 en consolidation.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -2260,13 +2134,13 @@
         "structure": {
           "bos": {
             "direction": "bullish",
-            "level": 1.164485,
+            "level": 1.1644800000000002,
             "broken_at": "2025-10-09T04:00:00",
             "validation_status": "confirmed"
           },
           "choch": {
             "direction": "bullish",
-            "level": 1.164485,
+            "level": 1.1644800000000002,
             "broken_at": "2025-10-09T04:00:00",
             "validation_status": "confirmed"
           },
@@ -2297,7 +2171,7 @@
             "choch_recent_bullish",
             "mtf_mixed"
           ],
-          "description": "La tendance baissière persiste avec une volatilité basse, tandis que le daily affiche une structure haussière et l'H4 oscille en range.",
+          "description": "Les prix affichent une tendance baissière en phase de trend avec une faible volatilité, tandis que les timeframes supérieures montrent un Daily haussier et un H4 en consolidation.",
           "description_source": "haiku_generated"
         }
       },
@@ -2310,7 +2184,7 @@
       "candle_close_ts": "2025-10-09T19:00:00",
       "close_price": 1.15464,
       "template_description": "Tendance baissière, volatilité élevée, phase d'expansion. BOS baissière récent (confirmed). Order Block actif. MTF mixte.",
-      "haiku_description": "Les prix affichent une tendance baissière sur divergences multi-temporelles, avec une volatilité élevée et des niveaux de surv​ente en phase d'expansion.",
+      "haiku_description": "Les prix évoluent à la baisse avec une volatilité élevée, les divergences multitimeframe persistent tandis que la phase d'expansion continue malgré les signaux baissiers récents.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -2323,7 +2197,7 @@
         "structure": {
           "bos": {
             "direction": "bearish",
-            "level": 1.15464,
+            "level": 1.154715,
             "broken_at": "2025-10-09T19:00:00",
             "validation_status": "confirmed"
           },
@@ -2332,8 +2206,8 @@
             {
               "id": "OB_20251009190000",
               "direction": "bearish",
-              "level_high": 1.1554215575732654,
-              "level_low": 1.1538584424267349,
+              "level_high": 1.156635,
+              "level_low": 1.155415,
               "importance": "high",
               "status": "active",
               "created_at": "2025-10-09T19:00:00",
@@ -2367,7 +2241,7 @@
             "ob_active",
             "mtf_divergent"
           ],
-          "description": "Les prix affichent une tendance baissière sur divergences multi-temporelles, avec une volatilité élevée et des niveaux de surv​ente en phase d'expansion.",
+          "description": "Les prix évoluent à la baisse avec une volatilité élevée, les divergences multitimeframe persistent tandis que la phase d'expansion continue malgré les signaux baissiers récents.",
           "description_source": "haiku_generated"
         }
       },
@@ -2379,8 +2253,8 @@
       "bar_open_ts": "2025-10-14T13:00:00",
       "candle_close_ts": "2025-10-14T14:00:00",
       "close_price": 1.1574050000000002,
-      "template_description": "Tendance baissière, volatilité élevée, phase d'expansion. BOS baissière récent (pending). MTF mixte.",
-      "haiku_description": "Le marché affiche une tendance baissière avec volatilité élevée, tandis que la dynamique quotidienne reste haussière et le court terme oscille sans direction claire.",
+      "template_description": "Tendance baissière, volatilité élevée, phase d'expansion. MTF mixte.",
+      "haiku_description": "La tendance baissière sur le court terme contraste avec une expansion haussière intraday, tandis que la volatilité reste élevée entre les timeframes.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -2391,12 +2265,7 @@
           "close_price": 1.1574050000000002
         },
         "structure": {
-          "bos": {
-            "direction": "bearish",
-            "level": 1.1574050000000002,
-            "broken_at": "2025-10-14T14:00:00",
-            "validation_status": "pending"
-          },
+          "bos": null,
           "choch": null,
           "order_blocks": [],
           "fair_value_gaps": [],
@@ -2421,10 +2290,9 @@
             "trend_bearish",
             "volatility_elevated",
             "phase_expansion",
-            "bos_recent_bearish",
             "mtf_mixed"
           ],
-          "description": "Le marché affiche une tendance baissière avec volatilité élevée, tandis que la dynamique quotidienne reste haussière et le court terme oscille sans direction claire.",
+          "description": "La tendance baissière sur le court terme contraste avec une expansion haussière intraday, tandis que la volatilité reste élevée entre les timeframes.",
           "description_source": "haiku_generated"
         }
       },
@@ -2436,8 +2304,8 @@
       "bar_open_ts": "2025-10-15T18:00:00",
       "candle_close_ts": "2025-10-15T19:00:00",
       "close_price": 1.1633300000000002,
-      "template_description": "Tendance baissière, volatilité normale, phase de tendance. BOS haussière récent (pending). MTF mixte.",
-      "haiku_description": "La tendance hebdomadaire et journalière affiche un biais haussier récent tandis que la structure horaire montre une consolidation, dans un contexte de volatilité normale et de phase de tendance baissière générale.",
+      "template_description": "Tendance baissière, volatilité normale, phase de tendance. MTF mixte.",
+      "haiku_description": "Le marché présente une tendance baissière sur le court terme avec une volatilité normale, tandis que la structure quotidienne reste haussière et l'intraday range-bound.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -2448,12 +2316,7 @@
           "close_price": 1.1633300000000002
         },
         "structure": {
-          "bos": {
-            "direction": "bullish",
-            "level": 1.1633300000000002,
-            "broken_at": "2025-10-15T19:00:00",
-            "validation_status": "pending"
-          },
+          "bos": null,
           "choch": null,
           "order_blocks": [],
           "fair_value_gaps": [],
@@ -2478,10 +2341,9 @@
             "trend_bearish",
             "volatility_normal",
             "phase_trend",
-            "bos_recent_bullish",
             "mtf_mixed"
           ],
-          "description": "La tendance hebdomadaire et journalière affiche un biais haussier récent tandis que la structure horaire montre une consolidation, dans un contexte de volatilité normale et de phase de tendance baissière générale.",
+          "description": "Le marché présente une tendance baissière sur le court terme avec une volatilité normale, tandis que la structure quotidienne reste haussière et l'intraday range-bound.",
           "description_source": "haiku_generated"
         }
       },
@@ -2493,8 +2355,8 @@
       "bar_open_ts": "2025-10-20T06:00:00",
       "candle_close_ts": "2025-10-20T07:00:00",
       "close_price": 1.1658500000000005,
-      "template_description": "Tendance en range, volatilité normale, phase de range. BOS haussière récent (pending). Order Block actif. MTF mixte.",
-      "haiku_description": "Le marché fluctue dans une bande de consolidation avec une tendance haussière sur le timeframe quotidien, tandis que le graphique 4H demeure latéral dans un contexte de volatilité normale.",
+      "template_description": "Tendance en range, volatilité normale, phase de range. Order Block actif. MTF mixte.",
+      "haiku_description": "Les cours oscillent dans une fourchette de prix sur le timeframe quotidien haussier tandis que le timeframe 4H demeure limité à une plage, avec une volatilité normale et un order book actif.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -2505,19 +2367,14 @@
           "close_price": 1.1658500000000005
         },
         "structure": {
-          "bos": {
-            "direction": "bullish",
-            "level": 1.1658500000000005,
-            "broken_at": "2025-10-20T07:00:00",
-            "validation_status": "pending"
-          },
+          "bos": null,
           "choch": null,
           "order_blocks": [
             {
               "id": "OB_20251020070000",
               "direction": "bullish",
-              "level_high": 1.16640664128823,
-              "level_low": 1.165293358711771,
+              "level_high": 1.16755,
+              "level_low": 1.167005,
               "importance": "medium",
               "status": "active",
               "created_at": "2025-10-20T07:00:00",
@@ -2547,11 +2404,10 @@
             "trend_ranging",
             "volatility_normal",
             "phase_ranging",
-            "bos_recent_bullish",
             "ob_active",
             "mtf_mixed"
           ],
-          "description": "Le marché fluctue dans une bande de consolidation avec une tendance haussière sur le timeframe quotidien, tandis que le graphique 4H demeure latéral dans un contexte de volatilité normale.",
+          "description": "Les cours oscillent dans une fourchette de prix sur le timeframe quotidien haussier tandis que le timeframe 4H demeure limité à une plage, avec une volatilité normale et un order book actif.",
           "description_source": "haiku_generated"
         }
       },
@@ -2564,7 +2420,7 @@
       "candle_close_ts": "2025-10-20T18:00:00",
       "close_price": 1.1643400000000002,
       "template_description": "Tendance en range, volatilité normale, phase de range. BOS baissière récent (confirmed). MTF mixte.",
-      "haiku_description": "Le marché oscille dans une zone de consolidation avec des signaux techniques baissiers récents tandis que la volatilité demeure habituelle.",
+      "haiku_description": "Le marché évolue dans une phase de consolidation avec des cassures baissières récentes, une volatilité normale et une divergence entre la tendance haussière quotidienne et le ranging sur timeframes inférieures.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -2577,13 +2433,13 @@
         "structure": {
           "bos": {
             "direction": "bearish",
-            "level": 1.1643400000000002,
+            "level": 1.1644550000000002,
             "broken_at": "2025-10-20T18:00:00",
             "validation_status": "confirmed"
           },
           "choch": {
             "direction": "bearish",
-            "level": 1.1643400000000002,
+            "level": 1.1644550000000002,
             "broken_at": "2025-10-20T18:00:00",
             "validation_status": "confirmed"
           },
@@ -2614,7 +2470,7 @@
             "choch_recent_bearish",
             "mtf_mixed"
           ],
-          "description": "Le marché oscille dans une zone de consolidation avec des signaux techniques baissiers récents tandis que la volatilité demeure habituelle.",
+          "description": "Le marché évolue dans une phase de consolidation avec des cassures baissières récentes, une volatilité normale et une divergence entre la tendance haussière quotidienne et le ranging sur timeframes inférieures.",
           "description_source": "haiku_generated"
         }
       },
@@ -2627,7 +2483,7 @@
       "candle_close_ts": "2025-10-24T13:00:00",
       "close_price": 1.16342,
       "template_description": "Tendance en range, volatilité élevée, phase de range. BOS haussière récent (confirmed). MTF mixte.",
-      "haiku_description": "Les prix oscillent dans une fourchette sans direction claire, avec une volatilité élevée et un contexte haussier quotidien contrasté par une consolidation en 4h.",
+      "haiku_description": "Le marché oscille dans une fourchette avec une volatilité élevée, tandis que la tendance quotidienne affiche une orientation haussière et l'échelle 4H demeure dans une consolidation.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -2640,7 +2496,7 @@
         "structure": {
           "bos": {
             "direction": "bullish",
-            "level": 1.16342,
+            "level": 1.1627900000000002,
             "broken_at": "2025-10-24T13:00:00",
             "validation_status": "confirmed"
           },
@@ -2671,7 +2527,7 @@
             "bos_recent_bullish",
             "mtf_mixed"
           ],
-          "description": "Les prix oscillent dans une fourchette sans direction claire, avec une volatilité élevée et un contexte haussier quotidien contrasté par une consolidation en 4h.",
+          "description": "Le marché oscille dans une fourchette avec une volatilité élevée, tandis que la tendance quotidienne affiche une orientation haussière et l'échelle 4H demeure dans une consolidation.",
           "description_source": "haiku_generated"
         }
       },
@@ -2683,9 +2539,9 @@
       "bar_open_ts": "2025-10-30T20:00:00",
       "candle_close_ts": "2025-10-30T21:00:00",
       "close_price": 1.15646,
-      "template_description": "Tendance baissière, volatilité normale, phase de tendance. BOS baissière récent (pending). Retest de structure en cours. Order Block actif. MTF mixte.",
-      "haiku_description": "Tendance baissière, volatilité normale, phase de tendance. MTF mixte.",
-      "description_source": "template_fallback",
+      "template_description": "Tendance baissière, volatilité normale, phase de tendance. Retest de structure en cours. Order Block actif. MTF mixte.",
+      "haiku_description": "Le marché affiche une tendance baissière sur H4 tandis que D1 reste haussière, avec un retesting en cours et une volatilité normale dans la phase de tendance.",
+      "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
         "header": {
@@ -2695,19 +2551,14 @@
           "close_price": 1.15646
         },
         "structure": {
-          "bos": {
-            "direction": "bearish",
-            "level": 1.15646,
-            "broken_at": "2025-10-30T21:00:00",
-            "validation_status": "pending"
-          },
+          "bos": null,
           "choch": null,
           "order_blocks": [
             {
               "id": "OB_20251030210000",
               "direction": "bearish",
-              "level_high": 1.1572012258389677,
-              "level_low": 1.1557187741610324,
+              "level_high": 1.1571600000000002,
+              "level_low": 1.1561850000000002,
               "importance": "medium",
               "status": "active",
               "created_at": "2025-10-30T21:00:00",
@@ -2717,7 +2568,7 @@
           ],
           "fair_value_gaps": [],
           "retest_in_progress": {
-            "level": 1.15646,
+            "level": 1.162745,
             "type": "bos_retest",
             "started_at": "2025-10-30T21:00:00"
           }
@@ -2741,13 +2592,12 @@
             "trend_bearish",
             "volatility_normal",
             "phase_trend",
-            "bos_recent_bearish",
             "retest_in_progress",
             "ob_active",
             "mtf_divergent"
           ],
-          "description": "Tendance baissière, volatilité normale, phase de tendance. MTF mixte.",
-          "description_source": "template_fallback"
+          "description": "Le marché affiche une tendance baissière sur H4 tandis que D1 reste haussière, avec un retesting en cours et une volatilité normale dans la phase de tendance.",
+          "description_source": "haiku_generated"
         }
       },
       "candle_id": 43
@@ -2759,7 +2609,7 @@
       "candle_close_ts": "2025-10-31T14:00:00",
       "close_price": 1.153895,
       "template_description": "Tendance baissière, volatilité normale, phase de tendance. BOS baissière récent (confirmed). FVG actif. MTF mixte.",
-      "haiku_description": "Le marché affiche une tendance baissière sur H4 contrastant avec une direction haussière sur D1, avec une volatilité normale et un vide de prix actif en cours de phase de tendance.",
+      "haiku_description": "La structure présente une tendance baissière avec une zone de valeur juste active, une divergence multi-timeframe où le D1 reste haussier tandis que le H4 confirme la baisse, dans un contexte de volatilité normale.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -2772,7 +2622,7 @@
         "structure": {
           "bos": {
             "direction": "bearish",
-            "level": 1.153895,
+            "level": 1.15471,
             "broken_at": "2025-10-31T14:00:00",
             "validation_status": "confirmed"
           },
@@ -2782,8 +2632,8 @@
             {
               "id": "FVG_20251031140000",
               "direction": "bearish",
-              "level_high": 1.154522487134543,
-              "level_low": 1.1532675128654568,
+              "level_high": 1.155805,
+              "level_low": 1.1556350000000002,
               "status": "active",
               "created_at": "2025-10-31T14:00:00",
               "tested": false,
@@ -2815,7 +2665,7 @@
             "fvg_active",
             "mtf_divergent"
           ],
-          "description": "Le marché affiche une tendance baissière sur H4 contrastant avec une direction haussière sur D1, avec une volatilité normale et un vide de prix actif en cours de phase de tendance.",
+          "description": "La structure présente une tendance baissière avec une zone de valeur juste active, une divergence multi-timeframe où le D1 reste haussier tandis que le H4 confirme la baisse, dans un contexte de volatilité normale.",
           "description_source": "haiku_generated"
         }
       },
@@ -2827,8 +2677,8 @@
       "bar_open_ts": "2025-11-05T17:00:00",
       "candle_close_ts": "2025-11-05T18:00:00",
       "close_price": 1.14805,
-      "template_description": "Tendance baissière, volatilité élevée, phase d'expansion. BOS baissière récent (pending). Retest de structure en cours. MTF mixte.",
-      "haiku_description": "Les prix testent les niveaux précédents dans un contexte de volatilité élevée, avec une tendance baissière court terme contrastant avec une orientation haussière quotidienne.",
+      "template_description": "Tendance baissière, volatilité élevée, phase d'expansion. Retest de structure en cours. MTF mixte.",
+      "haiku_description": "Le marché teste à nouveau les niveaux précédents en tendance baissière sur H4 tandis que D1 affiche une dynamique haussière, avec une volatilité élevée durant cette phase d'expansion.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -2839,17 +2689,12 @@
           "close_price": 1.14805
         },
         "structure": {
-          "bos": {
-            "direction": "bearish",
-            "level": 1.14805,
-            "broken_at": "2025-11-05T18:00:00",
-            "validation_status": "pending"
-          },
+          "bos": null,
           "choch": null,
           "order_blocks": [],
           "fair_value_gaps": [],
           "retest_in_progress": {
-            "level": 1.14805,
+            "level": 1.149825,
             "type": "bos_retest",
             "started_at": "2025-11-05T18:00:00"
           }
@@ -2873,11 +2718,10 @@
             "trend_bearish",
             "volatility_elevated",
             "phase_expansion",
-            "bos_recent_bearish",
             "retest_in_progress",
             "mtf_divergent"
           ],
-          "description": "Les prix testent les niveaux précédents dans un contexte de volatilité élevée, avec une tendance baissière court terme contrastant avec une orientation haussière quotidienne.",
+          "description": "Le marché teste à nouveau les niveaux précédents en tendance baissière sur H4 tandis que D1 affiche une dynamique haussière, avec une volatilité élevée durant cette phase d'expansion.",
           "description_source": "haiku_generated"
         }
       },
@@ -2890,7 +2734,7 @@
       "candle_close_ts": "2025-11-06T14:00:00",
       "close_price": 1.153575,
       "template_description": "Tendance baissière, volatilité normale, phase de tendance. BOS haussière récent (confirmed). FVG actif. MTF mixte.",
-      "haiku_description": "Un marché en tendance baissière avec volatilité normale présente des divergences multi-temporelles (D1 haussière, H4 baissière), des changements de structure récents et une zone de déséquilibre active.",
+      "haiku_description": "Les prix évoluent dans une tendance baissière avec volatilité normale, marquée par des signaux haussiers récents sur structure plus large alors que le court terme reste orienté à la baisse.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -2903,13 +2747,13 @@
         "structure": {
           "bos": {
             "direction": "bullish",
-            "level": 1.153575,
+            "level": 1.1533600000000002,
             "broken_at": "2025-11-06T14:00:00",
             "validation_status": "confirmed"
           },
           "choch": {
             "direction": "bullish",
-            "level": 1.153575,
+            "level": 1.1533600000000002,
             "broken_at": "2025-11-06T14:00:00",
             "validation_status": "confirmed"
           },
@@ -2918,8 +2762,8 @@
             {
               "id": "FVG_20251106140000",
               "direction": "bullish",
-              "level_high": 1.1540782494516693,
-              "level_low": 1.1530717505483308,
+              "level_high": 1.152905,
+              "level_low": 1.15211,
               "status": "active",
               "created_at": "2025-11-06T14:00:00",
               "tested": false,
@@ -2952,7 +2796,7 @@
             "fvg_active",
             "mtf_divergent"
           ],
-          "description": "Un marché en tendance baissière avec volatilité normale présente des divergences multi-temporelles (D1 haussière, H4 baissière), des changements de structure récents et une zone de déséquilibre active.",
+          "description": "Les prix évoluent dans une tendance baissière avec volatilité normale, marquée par des signaux haussiers récents sur structure plus large alors que le court terme reste orienté à la baisse.",
           "description_source": "haiku_generated"
         }
       },
@@ -2965,8 +2809,8 @@
       "candle_close_ts": "2025-11-07T12:00:00",
       "close_price": 1.1558100000000002,
       "template_description": "Tendance baissière, volatilité normale, phase de tendance. BOS haussière récent (confirmed). FVG actif. MTF mixte.",
-      "haiku_description": "Tendance baissière, volatilité normale, phase de tendance. MTF mixte.",
-      "description_source": "template_fallback",
+      "haiku_description": "La structure présente une divergence multi-timeframe avec un mouvement baissier en phase de tendance, une volatilité normale et des zones de value gap actives sur la timeframe inférieure.",
+      "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
         "header": {
@@ -2978,7 +2822,7 @@
         "structure": {
           "bos": {
             "direction": "bullish",
-            "level": 1.1558100000000002,
+            "level": 1.1552350000000002,
             "broken_at": "2025-11-07T12:00:00",
             "validation_status": "confirmed"
           },
@@ -2988,8 +2832,8 @@
             {
               "id": "FVG_20251107120000",
               "direction": "bullish",
-              "level_high": 1.156259224249297,
-              "level_low": 1.1553607757507034,
+              "level_high": 1.15495,
+              "level_low": 1.1542400000000002,
               "status": "active",
               "created_at": "2025-11-07T12:00:00",
               "tested": false,
@@ -3021,8 +2865,8 @@
             "fvg_active",
             "mtf_divergent"
           ],
-          "description": "Tendance baissière, volatilité normale, phase de tendance. MTF mixte.",
-          "description_source": "template_fallback"
+          "description": "La structure présente une divergence multi-timeframe avec un mouvement baissier en phase de tendance, une volatilité normale et des zones de value gap actives sur la timeframe inférieure.",
+          "description_source": "haiku_generated"
         }
       },
       "candle_id": 47
@@ -3033,8 +2877,8 @@
       "bar_open_ts": "2025-11-11T12:00:00",
       "candle_close_ts": "2025-11-11T13:00:00",
       "close_price": 1.15705,
-      "template_description": "Tendance baissière, volatilité normale, phase de tendance. BOS haussière récent (pending). MTF mixte.",
-      "haiku_description": "Le marché affiche une tendance baissière sur le court terme avec volatilité normale, tandis que la tendance haussière quotidienne diverge avec la baisse en 4H.",
+      "template_description": "Tendance baissière, volatilité normale, phase de tendance. MTF mixte.",
+      "haiku_description": "Le marché présente une tendance baissière en phase de trend avec une volatilité normale, tandis que la divergence multi-timeframe montre une orientation haussière en daily et baissière en H4.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -3045,12 +2889,7 @@
           "close_price": 1.15705
         },
         "structure": {
-          "bos": {
-            "direction": "bullish",
-            "level": 1.15705,
-            "broken_at": "2025-11-11T13:00:00",
-            "validation_status": "pending"
-          },
+          "bos": null,
           "choch": null,
           "order_blocks": [],
           "fair_value_gaps": [],
@@ -3075,10 +2914,9 @@
             "trend_bearish",
             "volatility_normal",
             "phase_trend",
-            "bos_recent_bullish",
             "mtf_divergent"
           ],
-          "description": "Le marché affiche une tendance baissière sur le court terme avec volatilité normale, tandis que la tendance haussière quotidienne diverge avec la baisse en 4H.",
+          "description": "Le marché présente une tendance baissière en phase de trend avec une volatilité normale, tandis que la divergence multi-timeframe montre une orientation haussière en daily et baissière en H4.",
           "description_source": "haiku_generated"
         }
       },
@@ -3091,8 +2929,8 @@
       "candle_close_ts": "2025-11-19T11:00:00",
       "close_price": 1.156935,
       "template_description": "Tendance en range, volatilité normale, phase de range. BOS baissière récent (confirmed). MTF mixte.",
-      "haiku_description": "Tendance en range, volatilité normale, phase de range. MTF mixte.",
-      "description_source": "template_fallback",
+      "haiku_description": "Le marché oscille dans une zone de consolidation avec une divergence multitemporal : tendance haussière en daily face à une orientation baissière en H4, dans un contexte de volatilité normale.",
+      "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
         "header": {
@@ -3104,7 +2942,7 @@
         "structure": {
           "bos": {
             "direction": "bearish",
-            "level": 1.156935,
+            "level": 1.15715,
             "broken_at": "2025-11-19T11:00:00",
             "validation_status": "confirmed"
           },
@@ -3135,8 +2973,8 @@
             "bos_recent_bearish",
             "mtf_divergent"
           ],
-          "description": "Tendance en range, volatilité normale, phase de range. MTF mixte.",
-          "description_source": "template_fallback"
+          "description": "Le marché oscille dans une zone de consolidation avec une divergence multitemporal : tendance haussière en daily face à une orientation baissière en H4, dans un contexte de volatilité normale.",
+          "description_source": "haiku_generated"
         }
       },
       "candle_id": 49
@@ -3148,8 +2986,8 @@
       "candle_close_ts": "2025-11-25T14:00:00",
       "close_price": 1.15584,
       "template_description": "Tendance en range, volatilité élevée, phase de range. BOS haussière récent (confirmed). FVG actif. MTF mixte.",
-      "haiku_description": "Tendance en range, volatilité élevée, phase de range. MTF mixte.",
-      "description_source": "template_fallback",
+      "haiku_description": "Les prix oscillent dans une plage de consolidation avec une volatilité élevée, tandis que la tendance quotidienne affiche une orientation haussière et les cassures récentes montrent une dynamique positive.",
+      "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
         "header": {
@@ -3161,13 +2999,13 @@
         "structure": {
           "bos": {
             "direction": "bullish",
-            "level": 1.15584,
+            "level": 1.1552600000000002,
             "broken_at": "2025-11-25T14:00:00",
             "validation_status": "confirmed"
           },
           "choch": {
             "direction": "bullish",
-            "level": 1.15584,
+            "level": 1.1552600000000002,
             "broken_at": "2025-11-25T14:00:00",
             "validation_status": "confirmed"
           },
@@ -3176,8 +3014,8 @@
             {
               "id": "FVG_20251125140000",
               "direction": "bullish",
-              "level_high": 1.1564273619256136,
-              "level_low": 1.1552526380743864,
+              "level_high": 1.15427,
+              "level_low": 1.1539,
               "status": "active",
               "created_at": "2025-11-25T14:00:00",
               "tested": false,
@@ -3210,8 +3048,8 @@
             "fvg_active",
             "mtf_mixed"
           ],
-          "description": "Tendance en range, volatilité élevée, phase de range. MTF mixte.",
-          "description_source": "template_fallback"
+          "description": "Les prix oscillent dans une plage de consolidation avec une volatilité élevée, tandis que la tendance quotidienne affiche une orientation haussière et les cassures récentes montrent une dynamique positive.",
+          "description_source": "haiku_generated"
         }
       },
       "candle_id": 50
@@ -3222,8 +3060,8 @@
       "bar_open_ts": "2025-11-28T10:00:00",
       "candle_close_ts": "2025-11-28T11:00:00",
       "close_price": 1.15593,
-      "template_description": "Tendance baissière, volatilité normale, phase de tendance. BOS haussière récent (pending). MTF mixte.",
-      "haiku_description": "La tendance hebdomadaire et journalière affiche un biais haussier récent tandis que la structure horaire montre une consolidation, dans un contexte de volatilité normale et de phase de tendance baissière générale.",
+      "template_description": "Tendance baissière, volatilité normale, phase de tendance. MTF mixte.",
+      "haiku_description": "Le marché présente une tendance baissière sur le court terme avec une volatilité normale, tandis que la structure quotidienne reste haussière et l'intraday range-bound.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -3234,12 +3072,7 @@
           "close_price": 1.15593
         },
         "structure": {
-          "bos": {
-            "direction": "bullish",
-            "level": 1.15593,
-            "broken_at": "2025-11-28T11:00:00",
-            "validation_status": "pending"
-          },
+          "bos": null,
           "choch": null,
           "order_blocks": [],
           "fair_value_gaps": [],
@@ -3264,10 +3097,9 @@
             "trend_bearish",
             "volatility_normal",
             "phase_trend",
-            "bos_recent_bullish",
             "mtf_mixed"
           ],
-          "description": "La tendance hebdomadaire et journalière affiche un biais haussier récent tandis que la structure horaire montre une consolidation, dans un contexte de volatilité normale et de phase de tendance baissière générale.",
+          "description": "Le marché présente une tendance baissière sur le court terme avec une volatilité normale, tandis que la structure quotidienne reste haussière et l'intraday range-bound.",
           "description_source": "haiku_generated"
         }
       },
@@ -3279,8 +3111,8 @@
       "bar_open_ts": "2025-11-28T18:00:00",
       "candle_close_ts": "2025-11-28T19:00:00",
       "close_price": 1.160165,
-      "template_description": "Tendance en range, volatilité élevée, phase de range. BOS haussière récent (pending). MTF mixte.",
-      "haiku_description": "Les prix oscillent dans une fourchette sans direction claire, avec une volatilité élevée et un contexte haussier quotidien contrasté par une consolidation en 4h.",
+      "template_description": "Tendance en range, volatilité élevée, phase de range. MTF mixte.",
+      "haiku_description": "Le marché oscille dans une gamme définie avec une volatilité accrue, tandis que la tendance quotidienne affiche une direction haussière et le délai de 4h reste consolidé.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -3291,12 +3123,7 @@
           "close_price": 1.160165
         },
         "structure": {
-          "bos": {
-            "direction": "bullish",
-            "level": 1.160165,
-            "broken_at": "2025-11-28T19:00:00",
-            "validation_status": "pending"
-          },
+          "bos": null,
           "choch": null,
           "order_blocks": [],
           "fair_value_gaps": [],
@@ -3321,10 +3148,9 @@
             "trend_ranging",
             "volatility_elevated",
             "phase_ranging",
-            "bos_recent_bullish",
             "mtf_mixed"
           ],
-          "description": "Les prix oscillent dans une fourchette sans direction claire, avec une volatilité élevée et un contexte haussier quotidien contrasté par une consolidation en 4h.",
+          "description": "Le marché oscille dans une gamme définie avec une volatilité accrue, tandis que la tendance quotidienne affiche une direction haussière et le délai de 4h reste consolidé.",
           "description_source": "haiku_generated"
         }
       },
@@ -3336,8 +3162,8 @@
       "bar_open_ts": "2025-12-01T15:00:00",
       "candle_close_ts": "2025-12-01T16:00:00",
       "close_price": 1.16289,
-      "template_description": "Tendance haussière, volatilité normale, phase de tendance. BOS haussière récent (pending). Retest de structure en cours. MTF mixte.",
-      "haiku_description": "Les prix progressent à la hausse avec une volatilité normale, les retests de niveaux clés se poursuivent dans un contexte de tendance haussière.",
+      "template_description": "Tendance haussière, volatilité normale, phase de tendance. Retest de structure en cours. MTF mixte.",
+      "haiku_description": "Le prix teste un niveau de résistance dans une tendance haussière avec une volatilité stable, tandis que le timeframe horaire montre une consolidation.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -3348,17 +3174,12 @@
           "close_price": 1.16289
         },
         "structure": {
-          "bos": {
-            "direction": "bullish",
-            "level": 1.16289,
-            "broken_at": "2025-12-01T16:00:00",
-            "validation_status": "pending"
-          },
+          "bos": null,
           "choch": null,
           "order_blocks": [],
           "fair_value_gaps": [],
           "retest_in_progress": {
-            "level": 1.16289,
+            "level": 1.16159,
             "type": "bos_retest",
             "started_at": "2025-12-01T16:00:00"
           }
@@ -3382,11 +3203,10 @@
             "trend_bullish",
             "volatility_normal",
             "phase_trend",
-            "bos_recent_bullish",
             "retest_in_progress",
             "mtf_mixed"
           ],
-          "description": "Les prix progressent à la hausse avec une volatilité normale, les retests de niveaux clés se poursuivent dans un contexte de tendance haussière.",
+          "description": "Le prix teste un niveau de résistance dans une tendance haussière avec une volatilité stable, tandis que le timeframe horaire montre une consolidation.",
           "description_source": "haiku_generated"
         }
       },
@@ -3399,7 +3219,7 @@
       "candle_close_ts": "2025-12-03T11:00:00",
       "close_price": 1.16606,
       "template_description": "Tendance haussière, volatilité normale, phase de tendance. BOS haussière récent (confirmed). MTF mixte.",
-      "haiku_description": "Le marché affiche une tendance haussière en tendance long terme avec volatilité normale, tandis que le graphique 4H montre une consolidation dans cette dynamique.",
+      "haiku_description": "Les prix affichent une tendance haussière sur le graphique journalier avec volatilité normale, tandis que la période 4 heures montre une consolidation latérale dans un contexte de phase de tendance.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -3412,7 +3232,7 @@
         "structure": {
           "bos": {
             "direction": "bullish",
-            "level": 1.16606,
+            "level": 1.1652750000000005,
             "broken_at": "2025-12-03T11:00:00",
             "validation_status": "confirmed"
           },
@@ -3443,7 +3263,7 @@
             "bos_recent_bullish",
             "mtf_mixed"
           ],
-          "description": "Le marché affiche une tendance haussière en tendance long terme avec volatilité normale, tandis que le graphique 4H montre une consolidation dans cette dynamique.",
+          "description": "Les prix affichent une tendance haussière sur le graphique journalier avec volatilité normale, tandis que la période 4 heures montre une consolidation latérale dans un contexte de phase de tendance.",
           "description_source": "haiku_generated"
         }
       },
@@ -3456,7 +3276,7 @@
       "candle_close_ts": "2025-12-05T17:00:00",
       "close_price": 1.1634250000000002,
       "template_description": "Tendance haussière, volatilité normale, phase de tendance. BOS baissière récent (confirmed). MTF mixte.",
-      "haiku_description": "La tendance haussière se maintient sur le quotidien avec une volatilité normale, tandis que des signaux baissiers récents apparaissent sur les structures de court terme.",
+      "haiku_description": "Les prix affichent une tendance haussière en daily avec volatilité normale, tandis que l'échelle horaire 4H montre une consolidation, avec des signaux récents baissiers locaux.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -3469,13 +3289,13 @@
         "structure": {
           "bos": {
             "direction": "bearish",
-            "level": 1.1634250000000002,
+            "level": 1.16358,
             "broken_at": "2025-12-05T17:00:00",
             "validation_status": "confirmed"
           },
           "choch": {
             "direction": "bearish",
-            "level": 1.1634250000000002,
+            "level": 1.16358,
             "broken_at": "2025-12-05T17:00:00",
             "validation_status": "confirmed"
           },
@@ -3506,7 +3326,7 @@
             "choch_recent_bearish",
             "mtf_mixed"
           ],
-          "description": "La tendance haussière se maintient sur le quotidien avec une volatilité normale, tandis que des signaux baissiers récents apparaissent sur les structures de court terme.",
+          "description": "Les prix affichent une tendance haussière en daily avec volatilité normale, tandis que l'échelle horaire 4H montre une consolidation, avec des signaux récents baissiers locaux.",
           "description_source": "haiku_generated"
         }
       },
@@ -3518,8 +3338,8 @@
       "bar_open_ts": "2025-12-11T20:00:00",
       "candle_close_ts": "2025-12-11T21:00:00",
       "close_price": 1.1741100000000002,
-      "template_description": "Tendance haussière, volatilité élevée, phase d'expansion. BOS haussière récent (pending). Retest de structure en cours. FVG actif. MTF alignée haussière.",
-      "haiku_description": "La structure affiche une tendance haussière sur plusieurs timeframes avec volatilité élevée, un gap de liquidité actif et un retestage en cours dans une phase d'expansion.",
+      "template_description": "Tendance haussière, volatilité élevée, phase d'expansion. Retest de structure en cours. FVG actif. MTF alignée haussière.",
+      "haiku_description": "Les prix progressent à la hausse sur plusieurs timeframes avec une volatilité élevée tandis qu'une phase d'expansion se développe et qu'un retest se dessine.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -3530,20 +3350,15 @@
           "close_price": 1.1741100000000002
         },
         "structure": {
-          "bos": {
-            "direction": "bullish",
-            "level": 1.1741100000000002,
-            "broken_at": "2025-12-11T21:00:00",
-            "validation_status": "pending"
-          },
+          "bos": null,
           "choch": null,
           "order_blocks": [],
           "fair_value_gaps": [
             {
               "id": "FVG_20251211210000",
               "direction": "bearish",
-              "level_high": 1.1747369205196179,
-              "level_low": 1.1734830794803826,
+              "level_high": 1.1751200000000002,
+              "level_low": 1.1745800000000002,
               "status": "active",
               "created_at": "2025-12-11T21:00:00",
               "tested": false,
@@ -3551,7 +3366,7 @@
             }
           ],
           "retest_in_progress": {
-            "level": 1.1741100000000002,
+            "level": 1.170745,
             "type": "bos_retest",
             "started_at": "2025-12-11T21:00:00"
           }
@@ -3575,12 +3390,11 @@
             "trend_bullish",
             "volatility_elevated",
             "phase_expansion",
-            "bos_recent_bullish",
             "retest_in_progress",
             "fvg_active",
             "mtf_aligned"
           ],
-          "description": "La structure affiche une tendance haussière sur plusieurs timeframes avec volatilité élevée, un gap de liquidité actif et un retestage en cours dans une phase d'expansion.",
+          "description": "Les prix progressent à la hausse sur plusieurs timeframes avec une volatilité élevée tandis qu'une phase d'expansion se développe et qu'un retest se dessine.",
           "description_source": "haiku_generated"
         }
       },
@@ -3592,8 +3406,8 @@
       "bar_open_ts": "2025-12-15T02:00:00",
       "candle_close_ts": "2025-12-15T03:00:00",
       "close_price": 1.17414,
-      "template_description": "Tendance haussière, volatilité normale, phase de tendance. BOS haussière récent (pending). MTF alignée haussière.",
-      "haiku_description": "Les prix progressent dans un contexte haussier confirmé sur les timeframes journalier et 4-heures, avec une volatilité normale et un momentum récent positif.",
+      "template_description": "Tendance haussière, volatilité normale, phase de tendance. MTF alignée haussière.",
+      "haiku_description": "Le marché affiche une tendance haussière confirmée sur les horizons quotidien et 4-heures, avec une volatilité normale et une dynamique de tendance établie.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -3604,12 +3418,7 @@
           "close_price": 1.17414
         },
         "structure": {
-          "bos": {
-            "direction": "bullish",
-            "level": 1.17414,
-            "broken_at": "2025-12-15T03:00:00",
-            "validation_status": "pending"
-          },
+          "bos": null,
           "choch": null,
           "order_blocks": [],
           "fair_value_gaps": [],
@@ -3634,10 +3443,9 @@
             "trend_bullish",
             "volatility_normal",
             "phase_trend",
-            "bos_recent_bullish",
             "mtf_aligned"
           ],
-          "description": "Les prix progressent dans un contexte haussier confirmé sur les timeframes journalier et 4-heures, avec une volatilité normale et un momentum récent positif.",
+          "description": "Le marché affiche une tendance haussière confirmée sur les horizons quotidien et 4-heures, avec une volatilité normale et une dynamique de tendance établie.",
           "description_source": "haiku_generated"
         }
       },
@@ -3650,7 +3458,7 @@
       "candle_close_ts": "2025-12-16T13:00:00",
       "close_price": 1.177795,
       "template_description": "Tendance haussière, volatilité normale, phase de tendance. BOS haussière récent (confirmed). MTF alignée haussière.",
-      "haiku_description": "Les prix progressent dans un contexte haussier confirmé sur les timeframes journalier et 4-heures, avec une volatilité normale et un momentum récent positif.",
+      "haiku_description": "Le marché affiche une dynamique haussière confirmée sur les timeframes multiples avec une volatilité normale et un momentum récent positif.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -3663,7 +3471,7 @@
         "structure": {
           "bos": {
             "direction": "bullish",
-            "level": 1.177795,
+            "level": 1.1768900000000002,
             "broken_at": "2025-12-16T13:00:00",
             "validation_status": "confirmed"
           },
@@ -3694,7 +3502,7 @@
             "bos_recent_bullish",
             "mtf_aligned"
           ],
-          "description": "Les prix progressent dans un contexte haussier confirmé sur les timeframes journalier et 4-heures, avec une volatilité normale et un momentum récent positif.",
+          "description": "Le marché affiche une dynamique haussière confirmée sur les timeframes multiples avec une volatilité normale et un momentum récent positif.",
           "description_source": "haiku_generated"
         }
       },
@@ -3707,7 +3515,7 @@
       "candle_close_ts": "2025-12-17T05:00:00",
       "close_price": 1.172965,
       "template_description": "Tendance haussière, volatilité faible, phase de tendance. BOS baissière récent (confirmed). MTF alignée haussière.",
-      "haiku_description": "Le marché affiche une tendance haussière confirmée sur plusieurs timeframes avec une volatilité faible, malgré des signaux baissiers récents aux niveaux locaux.",
+      "haiku_description": "Les prix évoluent à la hausse avec une faible volatilité et un alignement haussier multi-timeframe, bien que des retournements locaux récents soient observés.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -3720,13 +3528,13 @@
         "structure": {
           "bos": {
             "direction": "bearish",
-            "level": 1.172965,
+            "level": 1.17352,
             "broken_at": "2025-12-17T05:00:00",
             "validation_status": "confirmed"
           },
           "choch": {
             "direction": "bearish",
-            "level": 1.172965,
+            "level": 1.17352,
             "broken_at": "2025-12-17T05:00:00",
             "validation_status": "confirmed"
           },
@@ -3757,7 +3565,7 @@
             "choch_recent_bearish",
             "mtf_aligned"
           ],
-          "description": "Le marché affiche une tendance haussière confirmée sur plusieurs timeframes avec une volatilité faible, malgré des signaux baissiers récents aux niveaux locaux.",
+          "description": "Les prix évoluent à la hausse avec une faible volatilité et un alignement haussier multi-timeframe, bien que des retournements locaux récents soient observés.",
           "description_source": "haiku_generated"
         }
       },
@@ -3770,7 +3578,7 @@
       "candle_close_ts": "2025-12-17T16:00:00",
       "close_price": 1.1752950000000002,
       "template_description": "Tendance haussière, volatilité élevée, phase d'expansion. BOS haussière récent (confirmed). FVG actif. MTF alignée haussière.",
-      "haiku_description": "Les prix affichent une tendance haussière confirmée sur plusieurs horizons temporels avec une volatilité élevée, des structures techniques récentes constructives et une phase d'expansion en cours.",
+      "haiku_description": "L'actif affiche une tendance haussière confirmée sur les timeframes quotidienne et 4-heures, avec une volatilité élevée, une phase d'expansion active, et plusieurs signaux techniques bullish récents alignés.",
       "description_source": "haiku_generated",
       "market_reading": {
         "schema_version": "2.0.0",
@@ -3783,13 +3591,13 @@
         "structure": {
           "bos": {
             "direction": "bullish",
-            "level": 1.1752950000000002,
+            "level": 1.17524,
             "broken_at": "2025-12-17T16:00:00",
             "validation_status": "confirmed"
           },
           "choch": {
             "direction": "bullish",
-            "level": 1.1752950000000002,
+            "level": 1.17524,
             "broken_at": "2025-12-17T16:00:00",
             "validation_status": "confirmed"
           },
@@ -3798,8 +3606,8 @@
             {
               "id": "FVG_20251217160000",
               "direction": "bullish",
-              "level_high": 1.1759831605282898,
-              "level_low": 1.1746068394717106,
+              "level_high": 1.17403,
+              "level_low": 1.1733350000000002,
               "status": "active",
               "created_at": "2025-12-17T16:00:00",
               "tested": false,
@@ -3832,7 +3640,7 @@
             "fvg_active",
             "mtf_aligned"
           ],
-          "description": "Les prix affichent une tendance haussière confirmée sur plusieurs horizons temporels avec une volatilité élevée, des structures techniques récentes constructives et une phase d'expansion en cours.",
+          "description": "L'actif affiche une tendance haussière confirmée sur les timeframes quotidienne et 4-heures, avec une volatilité élevée, une phase d'expansion active, et plusieurs signaux techniques bullish récents alignés.",
           "description_source": "haiku_generated"
         }
       },

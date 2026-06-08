@@ -30,14 +30,14 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 
 **Détection algo MIA Markets** :
 
-- BOS : **bearish** (pending)
+- BOS : **aucun**
 - CHOCH : **aucun**
 - Order Blocks actifs : **0**
 - FVG actifs : **0**
 - Régime : trend=**ranging**, volatilité=**normal**, phase=**ranging**
 - MTF : h4:bullish, d1:bullish
-- Tags : `['trend_ranging', 'volatility_normal', 'phase_ranging', 'bos_recent_bearish', 'mtf_aligned']`
-- Description (haiku_generated) : *Le marché oscille dans une bande de consolidation avec une volatilité normale et un alignement haussier sur les timeframes supérieures.*
+- Tags : `['trend_ranging', 'volatility_normal', 'phase_ranging', 'mtf_aligned']`
+- Description (haiku_generated) : *Le marché oscille dans une plage de consolidation avec une volatilité normale tandis que les timeframes quotidienne et 4-horaire affichent des signaux haussiers.*
 
 **Verdict founder** (à compléter) :
 
@@ -59,14 +59,14 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 
 **Détection algo MIA Markets** :
 
-- BOS : **bearish** (pending)
+- BOS : **aucun**
 - CHOCH : **aucun**
 - Order Blocks actifs : **0**
 - FVG actifs : **1**
 - Régime : trend=**ranging**, volatilité=**normal**, phase=**ranging**
 - MTF : h4:bullish, d1:bullish
-- Tags : `['trend_ranging', 'volatility_normal', 'phase_ranging', 'bos_recent_bearish', 'fvg_active', 'mtf_aligned']`
-- Description (haiku_generated) : *Le marché oscille dans une plage de consolidation avec une volatilité normale, tandis que les timeframes supérieures affichent une orientation haussière malgré la phase de range actuelle.*
+- Tags : `['trend_ranging', 'volatility_normal', 'phase_ranging', 'fvg_active', 'mtf_aligned']`
+- Description (haiku_generated) : *Les prix oscillent dans une fourchette de trading avec une tendance haussière confirmée sur les timeframes supérieures et une volatilité normale.*
 
 **Verdict founder** (à compléter) :
 
@@ -95,7 +95,7 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 - Régime : trend=**ranging**, volatilité=**normal**, phase=**ranging**
 - MTF : h4:bullish, d1:bullish
 - Tags : `['trend_ranging', 'volatility_normal', 'phase_ranging', 'bos_recent_bullish', 'choch_recent_bullish', 'fvg_active', 'mtf_aligned']`
-- Description (haiku_generated) : *Les prix oscillent dans une zone de consolidation avec des signaux heureux récents et un alignement haussier sur les timeframes supérieures.*
+- Description (haiku_generated) : *Les prix oscillent dans une plage de consolidation avec des signaux haussiers confirmés sur les périodes journalière et 4h, une zone de liquidité active et une volatilité normale.*
 
 **Verdict founder** (à compléter) :
 
@@ -117,14 +117,14 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 
 **Détection algo MIA Markets** :
 
-- BOS : **bullish** (pending)
+- BOS : **aucun**
 - CHOCH : **aucun**
 - Order Blocks actifs : **0**
 - FVG actifs : **0**
 - Régime : trend=**bullish**, volatilité=**normal**, phase=**trend**
 - MTF : h4:bullish, d1:bullish
-- Tags : `['trend_bullish', 'volatility_normal', 'phase_trend', 'bos_recent_bullish', 'retest_in_progress', 'mtf_aligned']`
-- Description (haiku_generated) : *Le prix reteste une zone de support dans un contexte de tendance haussière confirmée sur les timeframes jour et 4h, avec une volatilité normale.*
+- Tags : `['trend_bullish', 'volatility_normal', 'phase_trend', 'retest_in_progress', 'mtf_aligned']`
+- Description (haiku_generated) : *Le cours teste à la hausse un niveau de résistance en phase de tendance haussière avec une volatilité normale et une confirmation multi-timeframe (quotidien et 4h haussiers).*
 
 **Verdict founder** (à compléter) :
 
@@ -153,7 +153,7 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 - Régime : trend=**ranging**, volatilité=**normal**, phase=**ranging**
 - MTF : h4:bullish, d1:bullish
 - Tags : `['trend_ranging', 'volatility_normal', 'phase_ranging', 'bos_recent_bullish', 'mtf_aligned']`
-- Description (haiku_generated) : *Les prix évoluent dans une plage de consolidation avec des signaux haussiers alignés sur les graphiques quotidien et 4-heures dans un contexte de volatilité normale.*
+- Description (haiku_generated) : *Les prix oscillent dans une bande de consolidation avec un biais haussier confirmé sur les timeframes quotidienne et 4-heures, dans un contexte de volatilité normale.*
 
 **Verdict founder** (à compléter) :
 
@@ -175,14 +175,14 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 
 **Détection algo MIA Markets** :
 
-- BOS : **bullish** (pending)
+- BOS : **aucun**
 - CHOCH : **aucun**
 - Order Blocks actifs : **0**
 - FVG actifs : **0**
 - Régime : trend=**ranging**, volatilité=**low**, phase=**ranging**
 - MTF : h4:bullish, d1:bullish
-- Tags : `['trend_ranging', 'volatility_low', 'phase_ranging', 'bos_recent_bullish', 'mtf_aligned']`
-- Description (haiku_generated) : *Les prix oscillent dans une plage définie avec une tendance haussière confirmée sur les deux timeframes supérieurs et une volatilité réduite.*
+- Tags : `['trend_ranging', 'volatility_low', 'phase_ranging', 'mtf_aligned']`
+- Description (haiku_generated) : *Les prix oscillent dans une fourchette définie avec une faible volatilité tandis que les timeframes supérieurs affichent une orientation haussière.*
 
 **Verdict founder** (à compléter) :
 
@@ -204,14 +204,14 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 
 **Détection algo MIA Markets** :
 
-- BOS : **bullish** (pending)
+- BOS : **aucun**
 - CHOCH : **aucun**
 - Order Blocks actifs : **0**
 - FVG actifs : **1**
 - Régime : trend=**bullish**, volatilité=**elevated**, phase=**expansion**
 - MTF : h4:bullish, d1:bullish
-- Tags : `['trend_bullish', 'volatility_elevated', 'phase_expansion', 'bos_recent_bullish', 'fvg_active', 'mtf_aligned']`
-- Description (haiku_generated) : *Les prix progressent dans un environnement haussier avec une volatilité élevée, les timeframes alignés confirment la phase d'expansion en cours.*
+- Tags : `['trend_bullish', 'volatility_elevated', 'phase_expansion', 'fvg_active', 'mtf_aligned']`
+- Description (haiku_generated) : *Les prix progressent sur plusieurs timeframes avec une volatilité accrue durant la phase d'expansion.*
 
 **Verdict founder** (à compléter) :
 
@@ -233,14 +233,14 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 
 **Détection algo MIA Markets** :
 
-- BOS : **bullish** (pending)
+- BOS : **aucun**
 - CHOCH : **aucun**
 - Order Blocks actifs : **0**
 - FVG actifs : **0**
 - Régime : trend=**bullish**, volatilité=**normal**, phase=**trend**
 - MTF : h4:bullish, d1:bullish
-- Tags : `['trend_bullish', 'volatility_normal', 'phase_trend', 'bos_recent_bullish', 'mtf_aligned']`
-- Description (haiku_generated) : *Les prix progressent dans un contexte haussier confirmé sur les timeframes journalier et 4-heures, avec une volatilité normale et un momentum récent positif.*
+- Tags : `['trend_bullish', 'volatility_normal', 'phase_trend', 'mtf_aligned']`
+- Description (haiku_generated) : *Le marché affiche une tendance haussière confirmée sur les horizons quotidien et 4-heures, avec une volatilité normale et une dynamique de tendance établie.*
 
 **Verdict founder** (à compléter) :
 
@@ -269,7 +269,7 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 - Régime : trend=**bullish**, volatilité=**normal**, phase=**trend**
 - MTF : h4:bullish, d1:bullish
 - Tags : `['trend_bullish', 'volatility_normal', 'phase_trend', 'bos_recent_bullish', 'mtf_aligned']`
-- Description (haiku_generated) : *Les prix progressent dans un contexte haussier confirmé sur les timeframes journalier et 4-heures, avec une volatilité normale et un momentum récent positif.*
+- Description (haiku_generated) : *Le marché affiche une dynamique haussière confirmée sur les timeframes multiples avec une volatilité normale et un momentum récent positif.*
 
 **Verdict founder** (à compléter) :
 
@@ -291,14 +291,14 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 
 **Détection algo MIA Markets** :
 
-- BOS : **bullish** (pending)
+- BOS : **aucun**
 - CHOCH : **aucun**
 - Order Blocks actifs : **0**
 - FVG actifs : **0**
 - Régime : trend=**bullish**, volatilité=**elevated**, phase=**expansion**
 - MTF : h4:bullish, d1:bullish
-- Tags : `['trend_bullish', 'volatility_elevated', 'phase_expansion', 'bos_recent_bullish', 'mtf_aligned']`
-- Description (haiku_generated) : *Les cours progressent sur plusieurs timeframes avec une volatilité élevée en phase d'expansion haussière.*
+- Tags : `['trend_bullish', 'volatility_elevated', 'phase_expansion', 'mtf_aligned']`
+- Description (haiku_generated) : *Les cours progressent sur plusieurs temporalités avec une volatilité accentuée dans une phase d'expansion haussière.*
 
 **Verdict founder** (à compléter) :
 
@@ -327,7 +327,7 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 - Régime : trend=**bullish**, volatilité=**elevated**, phase=**expansion**
 - MTF : h4:bullish, d1:bullish
 - Tags : `['trend_bullish', 'volatility_elevated', 'phase_expansion', 'bos_recent_bullish', 'ob_active', 'mtf_aligned']`
-- Description (haiku_generated) : *La structure montre une tendance haussière alignée multi-timeframes avec volatilité élevée, phase d'expansion active et niveaux de support/résistance identifiés.*
+- Description (haiku_generated) : *Les prix progressent dans une dynamique haussière alignée sur plusieurs timeframes avec une volatilité élevée et une phase d'expansion active.*
 
 **Verdict founder** (à compléter) :
 
@@ -356,7 +356,7 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 - Régime : trend=**bullish**, volatilité=**elevated**, phase=**expansion**
 - MTF : h4:bullish, d1:bullish
 - Tags : `['trend_bullish', 'volatility_elevated', 'phase_expansion', 'bos_recent_bearish', 'choch_recent_bearish', 'mtf_aligned']`
-- Description (haiku_generated) : *La tendance haussière persiste sur plusieurs horizons temporels avec une volatilité élevée durant la phase d'expansion, bien que des signaux baissiers récents soient présents localement.*
+- Description (haiku_generated) : *Les prix affichent une tendance haussière sur plusieurs échelles de temps avec une volatilité élevée en phase d'expansion, bien que des signaux baissiers récents soient détectés localement.*
 
 **Verdict founder** (à compléter) :
 
@@ -378,14 +378,14 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 
 **Détection algo MIA Markets** :
 
-- BOS : **bearish** (pending)
+- BOS : **aucun**
 - CHOCH : **aucun**
 - Order Blocks actifs : **0**
 - FVG actifs : **0**
 - Régime : trend=**bullish**, volatilité=**elevated**, phase=**expansion**
 - MTF : h4:bullish, d1:bullish
-- Tags : `['trend_bullish', 'volatility_elevated', 'phase_expansion', 'bos_recent_bearish', 'mtf_aligned']`
-- Description (haiku_generated) : *Les prix progressent dans un contexte haussier multi-timeframe avec volatilité élevée et phase d'expansion, malgré un signal baissier récent de court terme.*
+- Tags : `['trend_bullish', 'volatility_elevated', 'phase_expansion', 'mtf_aligned']`
+- Description (haiku_generated) : *Les cours progressent sur plusieurs temporalités avec une volatilité accentuée dans une phase d'expansion haussière.*
 
 **Verdict founder** (à compléter) :
 
@@ -414,7 +414,7 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 - Régime : trend=**ranging**, volatilité=**elevated**, phase=**ranging**
 - MTF : h4:ranging, d1:bullish
 - Tags : `['trend_ranging', 'volatility_elevated', 'phase_ranging', 'bos_recent_bearish', 'ob_active', 'mtf_mixed']`
-- Description (haiku_generated) : *Les prix oscillent dans une plage définie avec une volatilité accrue, le graphique quotidien affichant une direction haussière tandis que les délais plus courts demeurent en consolidation.*
+- Description (haiku_generated) : *Le marché oscille dans une bande de prix avec une volatilité élevée, tiraillé entre des pressions haussières quotidiennes et un mouvement latéral sur quatre heures.*
 
 **Verdict founder** (à compléter) :
 
@@ -436,14 +436,14 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 
 **Détection algo MIA Markets** :
 
-- BOS : **bearish** (pending)
+- BOS : **aucun**
 - CHOCH : **aucun**
 - Order Blocks actifs : **1** (importance ['high'])
 - FVG actifs : **0**
 - Régime : trend=**ranging**, volatilité=**normal**, phase=**ranging**
 - MTF : h4:bullish, d1:bullish
-- Tags : `['trend_ranging', 'volatility_normal', 'phase_ranging', 'bos_recent_bearish', 'ob_active', 'mtf_aligned']`
-- Description (haiku_generated) : *Le marché évolue dans une phase de consolidation avec une volatilité normale, tandis que les timeframes supérieures affichent une orientation haussière contrastant avec un signal baissier récent.*
+- Tags : `['trend_ranging', 'volatility_normal', 'phase_ranging', 'ob_active', 'mtf_aligned']`
+- Description (haiku_generated) : *Le marché oscille dans une bande de prix avec une volatilité normale, aligné sur les timeframes supérieures en tendance haussière.*
 
 **Verdict founder** (à compléter) :
 
@@ -465,14 +465,14 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 
 **Détection algo MIA Markets** :
 
-- BOS : **bearish** (pending)
+- BOS : **aucun**
 - CHOCH : **aucun**
 - Order Blocks actifs : **0**
 - FVG actifs : **0**
 - Régime : trend=**bullish**, volatilité=**normal**, phase=**trend**
 - MTF : h4:bullish, d1:bullish
-- Tags : `['trend_bullish', 'volatility_normal', 'phase_trend', 'bos_recent_bearish', 'mtf_aligned']`
-- Description (haiku_generated) : *Les cours évoluent à la hausse avec une volatilité normale, confirmée par l'alignement haussier des timeframes journalier et 4-heures, bien qu'une structure baissière récente soit observable.*
+- Tags : `['trend_bullish', 'volatility_normal', 'phase_trend', 'mtf_aligned']`
+- Description (haiku_generated) : *Le marché affiche une tendance haussière confirmée sur les horizons quotidien et 4-heures, avec une volatilité normale et une dynamique de tendance établie.*
 
 **Verdict founder** (à compléter) :
 
@@ -494,14 +494,14 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 
 **Détection algo MIA Markets** :
 
-- BOS : **bearish** (pending)
+- BOS : **aucun**
 - CHOCH : **aucun**
 - Order Blocks actifs : **0**
 - FVG actifs : **0**
 - Régime : trend=**ranging**, volatilité=**low**, phase=**ranging**
 - MTF : h4:bullish, d1:bullish
-- Tags : `['trend_ranging', 'volatility_low', 'phase_ranging', 'bos_recent_bearish', 'mtf_aligned']`
-- Description (haiku_generated) : *Le marché oscille dans une plage étroite avec une volatilité réduite, tandis que les timeframes supérieures maintiennent une structure haussière.*
+- Tags : `['trend_ranging', 'volatility_low', 'phase_ranging', 'mtf_aligned']`
+- Description (haiku_generated) : *Les prix oscillent dans une fourchette définie avec une faible volatilité tandis que les timeframes supérieurs affichent une orientation haussière.*
 
 **Verdict founder** (à compléter) :
 
@@ -523,14 +523,14 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 
 **Détection algo MIA Markets** :
 
-- BOS : **bearish** (pending)
+- BOS : **aucun**
 - CHOCH : **aucun**
 - Order Blocks actifs : **0**
 - FVG actifs : **0**
 - Régime : trend=**ranging**, volatilité=**low**, phase=**ranging**
 - MTF : h4:bullish, d1:bullish
-- Tags : `['trend_ranging', 'volatility_low', 'phase_ranging', 'bos_recent_bearish', 'mtf_aligned']`
-- Description (haiku_generated) : *Le marché oscille dans une plage étroite avec une volatilité réduite, tandis que les timeframes supérieures maintiennent une structure haussière.*
+- Tags : `['trend_ranging', 'volatility_low', 'phase_ranging', 'mtf_aligned']`
+- Description (haiku_generated) : *Les prix oscillent dans une fourchette définie avec une faible volatilité tandis que les timeframes supérieurs affichent une orientation haussière.*
 
 **Verdict founder** (à compléter) :
 
@@ -559,7 +559,7 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 - Régime : trend=**ranging**, volatilité=**normal**, phase=**ranging**
 - MTF : h4:bullish, d1:bullish
 - Tags : `['trend_ranging', 'volatility_normal', 'phase_ranging', 'bos_recent_bearish', 'choch_recent_bearish', 'fvg_active', 'mtf_aligned']`
-- Description (haiku_generated) : *Le marché oscille dans une zone de consolidation avec une structure baissière récente, des vides de prix actifs et une tendance haussière confirmée sur les périodes supérieures.*
+- Description (haiku_generated) : *Le marché oscille dans une plage de prix avec une volatilité normale tandis que les structures multiples temporelles affichent une orientation haussière.*
 
 **Verdict founder** (à compléter) :
 
@@ -588,7 +588,7 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 - Régime : trend=**bullish**, volatilité=**normal**, phase=**trend**
 - MTF : h4:bullish, d1:bullish
 - Tags : `['trend_bullish', 'volatility_normal', 'phase_trend', 'bos_recent_bullish', 'choch_recent_bullish', 'mtf_aligned']`
-- Description (haiku_generated) : *Les prix progressent dans un contexte haussier aligné sur plusieurs timeframes avec volatilité modérée et structure en phase de tendance.*
+- Description (haiku_generated) : *Les prix évoluent à la hausse sur plusieurs timeframes avec une volatilité normale et un alignement haussier confirmé par les structures récentes.*
 
 **Verdict founder** (à compléter) :
 
@@ -610,14 +610,14 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 
 **Détection algo MIA Markets** :
 
-- BOS : **bullish** (pending)
+- BOS : **aucun**
 - CHOCH : **aucun**
 - Order Blocks actifs : **0**
 - FVG actifs : **0**
 - Régime : trend=**bullish**, volatilité=**elevated**, phase=**expansion**
 - MTF : h4:bullish, d1:bullish
-- Tags : `['trend_bullish', 'volatility_elevated', 'phase_expansion', 'bos_recent_bullish', 'retest_in_progress', 'mtf_aligned']`
-- Description (haiku_generated) : *Le marché affiche une tendance haussière confirmée sur les timeframes quotidienne et 4h, en phase d'expansion avec volatilité élevée et un retesting en cours.*
+- Tags : `['trend_bullish', 'volatility_elevated', 'phase_expansion', 'retest_in_progress', 'mtf_aligned']`
+- Description (haiku_generated) : *Le marché affiche une tendance haussière sur plusieurs timeframes avec une volatilité élevée en phase d'expansion, et un retest des niveaux clés est en cours.*
 
 **Verdict founder** (à compléter) :
 
@@ -639,14 +639,14 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 
 **Détection algo MIA Markets** :
 
-- BOS : **bullish** (pending)
+- BOS : **aucun**
 - CHOCH : **aucun**
 - Order Blocks actifs : **0**
 - FVG actifs : **0**
 - Régime : trend=**bullish**, volatilité=**normal**, phase=**trend**
 - MTF : h4:bullish, d1:bullish
-- Tags : `['trend_bullish', 'volatility_normal', 'phase_trend', 'bos_recent_bullish', 'retest_in_progress', 'mtf_aligned']`
-- Description (haiku_generated) : *Le prix reteste une zone de support dans un contexte de tendance haussière confirmée sur les timeframes jour et 4h, avec une volatilité normale.*
+- Tags : `['trend_bullish', 'volatility_normal', 'phase_trend', 'retest_in_progress', 'mtf_aligned']`
+- Description (haiku_generated) : *Le cours teste à la hausse un niveau de résistance en phase de tendance haussière avec une volatilité normale et une confirmation multi-timeframe (quotidien et 4h haussiers).*
 
 **Verdict founder** (à compléter) :
 
@@ -675,7 +675,7 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 - Régime : trend=**bullish**, volatilité=**elevated**, phase=**expansion**
 - MTF : h4:bullish, d1:bullish
 - Tags : `['trend_bullish', 'volatility_elevated', 'phase_expansion', 'bos_recent_bearish', 'choch_recent_bearish', 'mtf_aligned']`
-- Description (haiku_generated) : *La tendance haussière persiste sur plusieurs horizons temporels avec une volatilité élevée durant la phase d'expansion, bien que des signaux baissiers récents soient présents localement.*
+- Description (haiku_generated) : *Les prix affichent une tendance haussière sur plusieurs échelles de temps avec une volatilité élevée en phase d'expansion, bien que des signaux baissiers récents soient détectés localement.*
 
 **Verdict founder** (à compléter) :
 
@@ -704,7 +704,7 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 - Régime : trend=**bullish**, volatilité=**elevated**, phase=**expansion**
 - MTF : h4:bullish, d1:bullish
 - Tags : `['trend_bullish', 'volatility_elevated', 'phase_expansion', 'bos_recent_bearish', 'mtf_aligned']`
-- Description (haiku_generated) : *Les prix progressent dans un contexte haussier multi-timeframe avec volatilité élevée et phase d'expansion, malgré un signal baissier récent de court terme.*
+- Description (haiku_generated) : *Les cours progressent dans un contexte haussier multi-timeframe avec volatilité élevée durant la phase d'expansion, bien que les données récentes affichent une légère pression baissière.*
 
 **Verdict founder** (à compléter) :
 
@@ -726,14 +726,14 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 
 **Détection algo MIA Markets** :
 
-- BOS : **bearish** (pending)
+- BOS : **aucun**
 - CHOCH : **aucun**
 - Order Blocks actifs : **0**
 - FVG actifs : **0**
 - Régime : trend=**ranging**, volatilité=**normal**, phase=**ranging**
 - MTF : h4:bullish, d1:bullish
-- Tags : `['trend_ranging', 'volatility_normal', 'phase_ranging', 'bos_recent_bearish', 'mtf_aligned']`
-- Description (haiku_generated) : *Le marché oscille dans une bande de consolidation avec une volatilité normale et un alignement haussier sur les timeframes supérieures.*
+- Tags : `['trend_ranging', 'volatility_normal', 'phase_ranging', 'mtf_aligned']`
+- Description (haiku_generated) : *Le marché oscille dans une plage de consolidation avec une volatilité normale tandis que les timeframes quotidienne et 4-horaire affichent des signaux haussiers.*
 
 **Verdict founder** (à compléter) :
 
@@ -762,7 +762,7 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 - Régime : trend=**bearish**, volatilité=**normal**, phase=**trend**
 - MTF : h4:ranging, d1:bullish
 - Tags : `['trend_bearish', 'volatility_normal', 'phase_trend', 'bos_recent_bearish', 'fvg_active', 'mtf_mixed']`
-- Description (haiku_generated) : *Le marché affiche une tendance baissière avec volatilité normale, des gaps de fair value actifs et une dynamique quotidienne haussière contrariée par une consolidation en quatre heures.*
+- Description (haiku_generated) : *Les prix affichent une tendance baissière sur le court terme avec volatilité normale, tandis que le quotidien montre une dynamique haussière et l'H4 une consolidation, créant une divergence multitemps.*
 
 **Verdict founder** (à compléter) :
 
@@ -784,14 +784,14 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 
 **Détection algo MIA Markets** :
 
-- BOS : **bearish** (pending)
+- BOS : **aucun**
 - CHOCH : **aucun**
 - Order Blocks actifs : **0**
 - FVG actifs : **0**
 - Régime : trend=**bearish**, volatilité=**normal**, phase=**trend**
 - MTF : h4:ranging, d1:bullish
-- Tags : `['trend_bearish', 'volatility_normal', 'phase_trend', 'bos_recent_bearish', 'retest_in_progress', 'mtf_mixed']`
-- Description (haiku_generated) : *Le marché affiche une tendance baissière sur le court terme avec une volatilité normale, tandis que le daily maintient une orientation haussière et l'H4 évolue en range.*
+- Tags : `['trend_bearish', 'volatility_normal', 'phase_trend', 'retest_in_progress', 'mtf_mixed']`
+- Description (haiku_generated) : *Le marché montre une tendance baissière en phase de retrace avec volatilité normale, tandis que le cadre quotidien reste haussier et l'horaire 4H oscille entre les bornes.*
 
 **Verdict founder** (à compléter) :
 
@@ -813,14 +813,14 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 
 **Détection algo MIA Markets** :
 
-- BOS : **bearish** (pending)
+- BOS : **aucun**
 - CHOCH : **aucun**
 - Order Blocks actifs : **0**
 - FVG actifs : **1**
 - Régime : trend=**bearish**, volatilité=**elevated**, phase=**expansion**
 - MTF : h4:bearish, d1:bullish
-- Tags : `['trend_bearish', 'volatility_elevated', 'phase_expansion', 'bos_recent_bearish', 'fvg_active', 'mtf_divergent']`
-- Description (template_fallback) : *Tendance baissière, volatilité élevée, phase d'expansion. MTF mixte.*
+- Tags : `['trend_bearish', 'volatility_elevated', 'phase_expansion', 'fvg_active', 'mtf_divergent']`
+- Description (haiku_generated) : *Le marché affiche une tendance baissière avec volatilité élevée, divergence multi-timeframe (haussière en daily, baissière en 4h) et activité FVG durant une phase d'expansion.*
 
 **Verdict founder** (à compléter) :
 
@@ -849,7 +849,7 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 - Régime : trend=**bearish**, volatilité=**elevated**, phase=**expansion**
 - MTF : h4:bearish, d1:bullish
 - Tags : `['trend_bearish', 'volatility_elevated', 'phase_expansion', 'bos_recent_bearish', 'mtf_divergent']`
-- Description (haiku_generated) : *Le marché affiche une tendance baissière avec volatilité élevée, divergence multi-timeframes (haussière en D1, baissière en H4) et phase d'expansion des mouvements.*
+- Description (haiku_generated) : *La tendance baissière persiste avec une volatilité élevée tandis que la phase d'expansion se poursuit, créant une divergence entre la tendance haussière sur D1 et baissière sur H4.*
 
 **Verdict founder** (à compléter) :
 
@@ -878,7 +878,7 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 - Régime : trend=**bearish**, volatilité=**normal**, phase=**trend**
 - MTF : h4:bearish, d1:bullish
 - Tags : `['trend_bearish', 'volatility_normal', 'phase_trend', 'bos_recent_bearish', 'choch_recent_bearish', 'ob_active', 'mtf_divergent']`
-- Description (haiku_generated) : *Les prix évoluent dans une tendance baissière avec une volatilité normale, tandis que le graphique quotidien affiche une orientation haussière contrastant avec la tendance baissière observée en périodes intraday.*
+- Description (haiku_generated) : *La tendance baissière persiste sur les timeframes courtes avec une volatilité normale tandis que le daily affiche une orientation haussière, créant une divergence multitimeframe avec des niveaux de liquidité actifs.*
 
 **Verdict founder** (à compléter) :
 
@@ -900,14 +900,14 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 
 **Détection algo MIA Markets** :
 
-- BOS : **bullish** (pending)
+- BOS : **aucun**
 - CHOCH : **aucun**
 - Order Blocks actifs : **0**
 - FVG actifs : **0**
 - Régime : trend=**bearish**, volatilité=**low**, phase=**trend**
 - MTF : h4:ranging, d1:bullish
-- Tags : `['trend_bearish', 'volatility_low', 'phase_trend', 'bos_recent_bullish', 'mtf_mixed']`
-- Description (haiku_generated) : *Le marché affiche une tendance baissière en phase de trend avec une volatilité faible, tandis que le jour montre une orientation haussière et l'intraday un mouvement de consolidation.*
+- Tags : `['trend_bearish', 'volatility_low', 'phase_trend', 'mtf_mixed']`
+- Description (haiku_generated) : *Le marché affiche une tendance baissière sur timeframe mixte avec volatilité réduite, tandis que le daily montre une dynamique haussière et le H4 une consolidation latérale.*
 
 **Verdict founder** (à compléter) :
 
@@ -929,14 +929,14 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 
 **Détection algo MIA Markets** :
 
-- BOS : **bullish** (pending)
+- BOS : **aucun**
 - CHOCH : **aucun**
 - Order Blocks actifs : **0**
 - FVG actifs : **0**
 - Régime : trend=**ranging**, volatilité=**low**, phase=**ranging**
 - MTF : h4:ranging, d1:bullish
-- Tags : `['trend_ranging', 'volatility_low', 'phase_ranging', 'bos_recent_bullish', 'mtf_mixed']`
-- Description (haiku_generated) : *Les prix oscillent dans une fourchette établie avec une volatilité réduite, tandis que la tendance quotidienne affiche des signaux haussiers contrastant avec la consolidation sur les périodes intermédiaires.*
+- Tags : `['trend_ranging', 'volatility_low', 'phase_ranging', 'mtf_mixed']`
+- Description (haiku_generated) : *Le marché évolue dans une plage de prix stable avec une volatilité réduite, le quotidien affichant une tendance haussière tandis que l'horizon à 4 heures reste consolidé.*
 
 **Verdict founder** (à compléter) :
 
@@ -958,14 +958,14 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 
 **Détection algo MIA Markets** :
 
-- BOS : **bullish** (pending)
+- BOS : **aucun**
 - CHOCH : **aucun**
 - Order Blocks actifs : **1** (importance ['high'])
 - FVG actifs : **0**
 - Régime : trend=**ranging**, volatilité=**elevated**, phase=**ranging**
 - MTF : h4:ranging, d1:bullish
-- Tags : `['trend_ranging', 'volatility_elevated', 'phase_ranging', 'bos_recent_bullish', 'ob_active', 'mtf_mixed']`
-- Description (haiku_generated) : *Le marché oscille dans une fourchette avec volatilité accrue, soutenu par une structure haussière en daily tandis que l'échelle 4H demeure latérale.*
+- Tags : `['trend_ranging', 'volatility_elevated', 'phase_ranging', 'ob_active', 'mtf_mixed']`
+- Description (haiku_generated) : *Les cours oscillent dans une fourchette définie avec une volatilité accrue, le cadre quotidien affichant une tendance haussière tandis que l'horizon court terme reste indécis.*
 
 **Verdict founder** (à compléter) :
 
@@ -994,7 +994,7 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 - Régime : trend=**bearish**, volatilité=**elevated**, phase=**expansion**
 - MTF : h4:ranging, d1:bullish
 - Tags : `['trend_bearish', 'volatility_elevated', 'phase_expansion', 'bos_recent_bearish', 'choch_recent_bearish', 'mtf_mixed']`
-- Description (haiku_generated) : *Les prix se situent en tendance baissière sur le court terme avec une volatilité accrue, tandis que le graphique journalier affiche une orientation haussière et l'H4 oscille sans direction claire.*
+- Description (haiku_generated) : *La tendance baissière persiste avec une volatilité élevée en phase d'expansion, tandis que le daily affiche une structure haussière contrastant avec la consolidation en 4H.*
 
 **Verdict founder** (à compléter) :
 
@@ -1016,14 +1016,14 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 
 **Détection algo MIA Markets** :
 
-- BOS : **bearish** (pending)
+- BOS : **aucun**
 - CHOCH : **aucun**
 - Order Blocks actifs : **0**
 - FVG actifs : **0**
 - Régime : trend=**bearish**, volatilité=**normal**, phase=**trend**
 - MTF : h4:ranging, d1:bullish
-- Tags : `['trend_bearish', 'volatility_normal', 'phase_trend', 'bos_recent_bearish', 'retest_in_progress', 'mtf_mixed']`
-- Description (haiku_generated) : *Le marché affiche une tendance baissière sur le court terme avec une volatilité normale, tandis que le daily maintient une orientation haussière et l'H4 évolue en range.*
+- Tags : `['trend_bearish', 'volatility_normal', 'phase_trend', 'retest_in_progress', 'mtf_mixed']`
+- Description (haiku_generated) : *Le marché montre une tendance baissière en phase de retrace avec volatilité normale, tandis que le cadre quotidien reste haussier et l'horaire 4H oscille entre les bornes.*
 
 **Verdict founder** (à compléter) :
 
@@ -1052,7 +1052,7 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 - Régime : trend=**bearish**, volatilité=**low**, phase=**trend**
 - MTF : h4:ranging, d1:bullish
 - Tags : `['trend_bearish', 'volatility_low', 'phase_trend', 'bos_recent_bullish', 'choch_recent_bullish', 'mtf_mixed']`
-- Description (haiku_generated) : *La tendance baissière persiste avec une volatilité basse, tandis que le daily affiche une structure haussière et l'H4 oscille en range.*
+- Description (haiku_generated) : *Les prix affichent une tendance baissière en phase de trend avec une faible volatilité, tandis que les timeframes supérieures montrent un Daily haussier et un H4 en consolidation.*
 
 **Verdict founder** (à compléter) :
 
@@ -1081,7 +1081,7 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 - Régime : trend=**bearish**, volatilité=**elevated**, phase=**expansion**
 - MTF : h4:bearish, d1:bullish
 - Tags : `['trend_bearish', 'volatility_elevated', 'phase_expansion', 'bos_recent_bearish', 'ob_active', 'mtf_divergent']`
-- Description (haiku_generated) : *Les prix affichent une tendance baissière sur divergences multi-temporelles, avec une volatilité élevée et des niveaux de surv​ente en phase d'expansion.*
+- Description (haiku_generated) : *Les prix évoluent à la baisse avec une volatilité élevée, les divergences multitimeframe persistent tandis que la phase d'expansion continue malgré les signaux baissiers récents.*
 
 **Verdict founder** (à compléter) :
 
@@ -1103,14 +1103,14 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 
 **Détection algo MIA Markets** :
 
-- BOS : **bearish** (pending)
+- BOS : **aucun**
 - CHOCH : **aucun**
 - Order Blocks actifs : **0**
 - FVG actifs : **0**
 - Régime : trend=**bearish**, volatilité=**elevated**, phase=**expansion**
 - MTF : h4:ranging, d1:bullish
-- Tags : `['trend_bearish', 'volatility_elevated', 'phase_expansion', 'bos_recent_bearish', 'mtf_mixed']`
-- Description (haiku_generated) : *Le marché affiche une tendance baissière avec volatilité élevée, tandis que la dynamique quotidienne reste haussière et le court terme oscille sans direction claire.*
+- Tags : `['trend_bearish', 'volatility_elevated', 'phase_expansion', 'mtf_mixed']`
+- Description (haiku_generated) : *La tendance baissière sur le court terme contraste avec une expansion haussière intraday, tandis que la volatilité reste élevée entre les timeframes.*
 
 **Verdict founder** (à compléter) :
 
@@ -1132,14 +1132,14 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 
 **Détection algo MIA Markets** :
 
-- BOS : **bullish** (pending)
+- BOS : **aucun**
 - CHOCH : **aucun**
 - Order Blocks actifs : **0**
 - FVG actifs : **0**
 - Régime : trend=**bearish**, volatilité=**normal**, phase=**trend**
 - MTF : h4:ranging, d1:bullish
-- Tags : `['trend_bearish', 'volatility_normal', 'phase_trend', 'bos_recent_bullish', 'mtf_mixed']`
-- Description (haiku_generated) : *La tendance hebdomadaire et journalière affiche un biais haussier récent tandis que la structure horaire montre une consolidation, dans un contexte de volatilité normale et de phase de tendance baissière générale.*
+- Tags : `['trend_bearish', 'volatility_normal', 'phase_trend', 'mtf_mixed']`
+- Description (haiku_generated) : *Le marché présente une tendance baissière sur le court terme avec une volatilité normale, tandis que la structure quotidienne reste haussière et l'intraday range-bound.*
 
 **Verdict founder** (à compléter) :
 
@@ -1161,14 +1161,14 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 
 **Détection algo MIA Markets** :
 
-- BOS : **bullish** (pending)
+- BOS : **aucun**
 - CHOCH : **aucun**
 - Order Blocks actifs : **1** (importance ['medium'])
 - FVG actifs : **0**
 - Régime : trend=**ranging**, volatilité=**normal**, phase=**ranging**
 - MTF : h4:ranging, d1:bullish
-- Tags : `['trend_ranging', 'volatility_normal', 'phase_ranging', 'bos_recent_bullish', 'ob_active', 'mtf_mixed']`
-- Description (haiku_generated) : *Le marché fluctue dans une bande de consolidation avec une tendance haussière sur le timeframe quotidien, tandis que le graphique 4H demeure latéral dans un contexte de volatilité normale.*
+- Tags : `['trend_ranging', 'volatility_normal', 'phase_ranging', 'ob_active', 'mtf_mixed']`
+- Description (haiku_generated) : *Les cours oscillent dans une fourchette de prix sur le timeframe quotidien haussier tandis que le timeframe 4H demeure limité à une plage, avec une volatilité normale et un order book actif.*
 
 **Verdict founder** (à compléter) :
 
@@ -1197,7 +1197,7 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 - Régime : trend=**ranging**, volatilité=**normal**, phase=**ranging**
 - MTF : h4:ranging, d1:bullish
 - Tags : `['trend_ranging', 'volatility_normal', 'phase_ranging', 'bos_recent_bearish', 'choch_recent_bearish', 'mtf_mixed']`
-- Description (haiku_generated) : *Le marché oscille dans une zone de consolidation avec des signaux techniques baissiers récents tandis que la volatilité demeure habituelle.*
+- Description (haiku_generated) : *Le marché évolue dans une phase de consolidation avec des cassures baissières récentes, une volatilité normale et une divergence entre la tendance haussière quotidienne et le ranging sur timeframes inférieures.*
 
 **Verdict founder** (à compléter) :
 
@@ -1226,7 +1226,7 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 - Régime : trend=**ranging**, volatilité=**elevated**, phase=**ranging**
 - MTF : h4:ranging, d1:bullish
 - Tags : `['trend_ranging', 'volatility_elevated', 'phase_ranging', 'bos_recent_bullish', 'mtf_mixed']`
-- Description (haiku_generated) : *Les prix oscillent dans une fourchette sans direction claire, avec une volatilité élevée et un contexte haussier quotidien contrasté par une consolidation en 4h.*
+- Description (haiku_generated) : *Le marché oscille dans une fourchette avec une volatilité élevée, tandis que la tendance quotidienne affiche une orientation haussière et l'échelle 4H demeure dans une consolidation.*
 
 **Verdict founder** (à compléter) :
 
@@ -1248,14 +1248,14 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 
 **Détection algo MIA Markets** :
 
-- BOS : **bearish** (pending)
+- BOS : **aucun**
 - CHOCH : **aucun**
 - Order Blocks actifs : **1** (importance ['medium'])
 - FVG actifs : **0**
 - Régime : trend=**bearish**, volatilité=**normal**, phase=**trend**
 - MTF : h4:bearish, d1:bullish
-- Tags : `['trend_bearish', 'volatility_normal', 'phase_trend', 'bos_recent_bearish', 'retest_in_progress', 'ob_active', 'mtf_divergent']`
-- Description (template_fallback) : *Tendance baissière, volatilité normale, phase de tendance. MTF mixte.*
+- Tags : `['trend_bearish', 'volatility_normal', 'phase_trend', 'retest_in_progress', 'ob_active', 'mtf_divergent']`
+- Description (haiku_generated) : *Le marché affiche une tendance baissière sur H4 tandis que D1 reste haussière, avec un retesting en cours et une volatilité normale dans la phase de tendance.*
 
 **Verdict founder** (à compléter) :
 
@@ -1284,7 +1284,7 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 - Régime : trend=**bearish**, volatilité=**normal**, phase=**trend**
 - MTF : h4:bearish, d1:bullish
 - Tags : `['trend_bearish', 'volatility_normal', 'phase_trend', 'bos_recent_bearish', 'fvg_active', 'mtf_divergent']`
-- Description (haiku_generated) : *Le marché affiche une tendance baissière sur H4 contrastant avec une direction haussière sur D1, avec une volatilité normale et un vide de prix actif en cours de phase de tendance.*
+- Description (haiku_generated) : *La structure présente une tendance baissière avec une zone de valeur juste active, une divergence multi-timeframe où le D1 reste haussier tandis que le H4 confirme la baisse, dans un contexte de volatilité normale.*
 
 **Verdict founder** (à compléter) :
 
@@ -1306,14 +1306,14 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 
 **Détection algo MIA Markets** :
 
-- BOS : **bearish** (pending)
+- BOS : **aucun**
 - CHOCH : **aucun**
 - Order Blocks actifs : **0**
 - FVG actifs : **0**
 - Régime : trend=**bearish**, volatilité=**elevated**, phase=**expansion**
 - MTF : h4:bearish, d1:bullish
-- Tags : `['trend_bearish', 'volatility_elevated', 'phase_expansion', 'bos_recent_bearish', 'retest_in_progress', 'mtf_divergent']`
-- Description (haiku_generated) : *Les prix testent les niveaux précédents dans un contexte de volatilité élevée, avec une tendance baissière court terme contrastant avec une orientation haussière quotidienne.*
+- Tags : `['trend_bearish', 'volatility_elevated', 'phase_expansion', 'retest_in_progress', 'mtf_divergent']`
+- Description (haiku_generated) : *Le marché teste à nouveau les niveaux précédents en tendance baissière sur H4 tandis que D1 affiche une dynamique haussière, avec une volatilité élevée durant cette phase d'expansion.*
 
 **Verdict founder** (à compléter) :
 
@@ -1342,7 +1342,7 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 - Régime : trend=**bearish**, volatilité=**normal**, phase=**trend**
 - MTF : h4:bearish, d1:bullish
 - Tags : `['trend_bearish', 'volatility_normal', 'phase_trend', 'bos_recent_bullish', 'choch_recent_bullish', 'fvg_active', 'mtf_divergent']`
-- Description (haiku_generated) : *Un marché en tendance baissière avec volatilité normale présente des divergences multi-temporelles (D1 haussière, H4 baissière), des changements de structure récents et une zone de déséquilibre active.*
+- Description (haiku_generated) : *Les prix évoluent dans une tendance baissière avec volatilité normale, marquée par des signaux haussiers récents sur structure plus large alors que le court terme reste orienté à la baisse.*
 
 **Verdict founder** (à compléter) :
 
@@ -1371,7 +1371,7 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 - Régime : trend=**bearish**, volatilité=**normal**, phase=**trend**
 - MTF : h4:bearish, d1:bullish
 - Tags : `['trend_bearish', 'volatility_normal', 'phase_trend', 'bos_recent_bullish', 'fvg_active', 'mtf_divergent']`
-- Description (template_fallback) : *Tendance baissière, volatilité normale, phase de tendance. MTF mixte.*
+- Description (haiku_generated) : *La structure présente une divergence multi-timeframe avec un mouvement baissier en phase de tendance, une volatilité normale et des zones de value gap actives sur la timeframe inférieure.*
 
 **Verdict founder** (à compléter) :
 
@@ -1393,14 +1393,14 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 
 **Détection algo MIA Markets** :
 
-- BOS : **bullish** (pending)
+- BOS : **aucun**
 - CHOCH : **aucun**
 - Order Blocks actifs : **0**
 - FVG actifs : **0**
 - Régime : trend=**bearish**, volatilité=**normal**, phase=**trend**
 - MTF : h4:bearish, d1:bullish
-- Tags : `['trend_bearish', 'volatility_normal', 'phase_trend', 'bos_recent_bullish', 'mtf_divergent']`
-- Description (haiku_generated) : *Le marché affiche une tendance baissière sur le court terme avec volatilité normale, tandis que la tendance haussière quotidienne diverge avec la baisse en 4H.*
+- Tags : `['trend_bearish', 'volatility_normal', 'phase_trend', 'mtf_divergent']`
+- Description (haiku_generated) : *Le marché présente une tendance baissière en phase de trend avec une volatilité normale, tandis que la divergence multi-timeframe montre une orientation haussière en daily et baissière en H4.*
 
 **Verdict founder** (à compléter) :
 
@@ -1429,7 +1429,7 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 - Régime : trend=**ranging**, volatilité=**normal**, phase=**ranging**
 - MTF : h4:bearish, d1:bullish
 - Tags : `['trend_ranging', 'volatility_normal', 'phase_ranging', 'bos_recent_bearish', 'mtf_divergent']`
-- Description (template_fallback) : *Tendance en range, volatilité normale, phase de range. MTF mixte.*
+- Description (haiku_generated) : *Le marché oscille dans une zone de consolidation avec une divergence multitemporal : tendance haussière en daily face à une orientation baissière en H4, dans un contexte de volatilité normale.*
 
 **Verdict founder** (à compléter) :
 
@@ -1458,7 +1458,7 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 - Régime : trend=**ranging**, volatilité=**elevated**, phase=**ranging**
 - MTF : h4:ranging, d1:bullish
 - Tags : `['trend_ranging', 'volatility_elevated', 'phase_ranging', 'bos_recent_bullish', 'choch_recent_bullish', 'fvg_active', 'mtf_mixed']`
-- Description (template_fallback) : *Tendance en range, volatilité élevée, phase de range. MTF mixte.*
+- Description (haiku_generated) : *Les prix oscillent dans une plage de consolidation avec une volatilité élevée, tandis que la tendance quotidienne affiche une orientation haussière et les cassures récentes montrent une dynamique positive.*
 
 **Verdict founder** (à compléter) :
 
@@ -1480,14 +1480,14 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 
 **Détection algo MIA Markets** :
 
-- BOS : **bullish** (pending)
+- BOS : **aucun**
 - CHOCH : **aucun**
 - Order Blocks actifs : **0**
 - FVG actifs : **0**
 - Régime : trend=**bearish**, volatilité=**normal**, phase=**trend**
 - MTF : h4:ranging, d1:bullish
-- Tags : `['trend_bearish', 'volatility_normal', 'phase_trend', 'bos_recent_bullish', 'mtf_mixed']`
-- Description (haiku_generated) : *La tendance hebdomadaire et journalière affiche un biais haussier récent tandis que la structure horaire montre une consolidation, dans un contexte de volatilité normale et de phase de tendance baissière générale.*
+- Tags : `['trend_bearish', 'volatility_normal', 'phase_trend', 'mtf_mixed']`
+- Description (haiku_generated) : *Le marché présente une tendance baissière sur le court terme avec une volatilité normale, tandis que la structure quotidienne reste haussière et l'intraday range-bound.*
 
 **Verdict founder** (à compléter) :
 
@@ -1509,14 +1509,14 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 
 **Détection algo MIA Markets** :
 
-- BOS : **bullish** (pending)
+- BOS : **aucun**
 - CHOCH : **aucun**
 - Order Blocks actifs : **0**
 - FVG actifs : **0**
 - Régime : trend=**ranging**, volatilité=**elevated**, phase=**ranging**
 - MTF : h4:ranging, d1:bullish
-- Tags : `['trend_ranging', 'volatility_elevated', 'phase_ranging', 'bos_recent_bullish', 'mtf_mixed']`
-- Description (haiku_generated) : *Les prix oscillent dans une fourchette sans direction claire, avec une volatilité élevée et un contexte haussier quotidien contrasté par une consolidation en 4h.*
+- Tags : `['trend_ranging', 'volatility_elevated', 'phase_ranging', 'mtf_mixed']`
+- Description (haiku_generated) : *Le marché oscille dans une gamme définie avec une volatilité accrue, tandis que la tendance quotidienne affiche une direction haussière et le délai de 4h reste consolidé.*
 
 **Verdict founder** (à compléter) :
 
@@ -1538,14 +1538,14 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 
 **Détection algo MIA Markets** :
 
-- BOS : **bullish** (pending)
+- BOS : **aucun**
 - CHOCH : **aucun**
 - Order Blocks actifs : **0**
 - FVG actifs : **0**
 - Régime : trend=**bullish**, volatilité=**normal**, phase=**trend**
 - MTF : h4:ranging, d1:bullish
-- Tags : `['trend_bullish', 'volatility_normal', 'phase_trend', 'bos_recent_bullish', 'retest_in_progress', 'mtf_mixed']`
-- Description (haiku_generated) : *Les prix progressent à la hausse avec une volatilité normale, les retests de niveaux clés se poursuivent dans un contexte de tendance haussière.*
+- Tags : `['trend_bullish', 'volatility_normal', 'phase_trend', 'retest_in_progress', 'mtf_mixed']`
+- Description (haiku_generated) : *Le prix teste un niveau de résistance dans une tendance haussière avec une volatilité stable, tandis que le timeframe horaire montre une consolidation.*
 
 **Verdict founder** (à compléter) :
 
@@ -1574,7 +1574,7 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 - Régime : trend=**bullish**, volatilité=**normal**, phase=**trend**
 - MTF : h4:ranging, d1:bullish
 - Tags : `['trend_bullish', 'volatility_normal', 'phase_trend', 'bos_recent_bullish', 'mtf_mixed']`
-- Description (haiku_generated) : *Le marché affiche une tendance haussière en tendance long terme avec volatilité normale, tandis que le graphique 4H montre une consolidation dans cette dynamique.*
+- Description (haiku_generated) : *Les prix affichent une tendance haussière sur le graphique journalier avec volatilité normale, tandis que la période 4 heures montre une consolidation latérale dans un contexte de phase de tendance.*
 
 **Verdict founder** (à compléter) :
 
@@ -1603,7 +1603,7 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 - Régime : trend=**bullish**, volatilité=**normal**, phase=**trend**
 - MTF : h4:ranging, d1:bullish
 - Tags : `['trend_bullish', 'volatility_normal', 'phase_trend', 'bos_recent_bearish', 'choch_recent_bearish', 'mtf_mixed']`
-- Description (haiku_generated) : *La tendance haussière se maintient sur le quotidien avec une volatilité normale, tandis que des signaux baissiers récents apparaissent sur les structures de court terme.*
+- Description (haiku_generated) : *Les prix affichent une tendance haussière en daily avec volatilité normale, tandis que l'échelle horaire 4H montre une consolidation, avec des signaux récents baissiers locaux.*
 
 **Verdict founder** (à compléter) :
 
@@ -1625,14 +1625,14 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 
 **Détection algo MIA Markets** :
 
-- BOS : **bullish** (pending)
+- BOS : **aucun**
 - CHOCH : **aucun**
 - Order Blocks actifs : **0**
 - FVG actifs : **1**
 - Régime : trend=**bullish**, volatilité=**elevated**, phase=**expansion**
 - MTF : h4:bullish, d1:bullish
-- Tags : `['trend_bullish', 'volatility_elevated', 'phase_expansion', 'bos_recent_bullish', 'retest_in_progress', 'fvg_active', 'mtf_aligned']`
-- Description (haiku_generated) : *La structure affiche une tendance haussière sur plusieurs timeframes avec volatilité élevée, un gap de liquidité actif et un retestage en cours dans une phase d'expansion.*
+- Tags : `['trend_bullish', 'volatility_elevated', 'phase_expansion', 'retest_in_progress', 'fvg_active', 'mtf_aligned']`
+- Description (haiku_generated) : *Les prix progressent à la hausse sur plusieurs timeframes avec une volatilité élevée tandis qu'une phase d'expansion se développe et qu'un retest se dessine.*
 
 **Verdict founder** (à compléter) :
 
@@ -1654,14 +1654,14 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 
 **Détection algo MIA Markets** :
 
-- BOS : **bullish** (pending)
+- BOS : **aucun**
 - CHOCH : **aucun**
 - Order Blocks actifs : **0**
 - FVG actifs : **0**
 - Régime : trend=**bullish**, volatilité=**normal**, phase=**trend**
 - MTF : h4:bullish, d1:bullish
-- Tags : `['trend_bullish', 'volatility_normal', 'phase_trend', 'bos_recent_bullish', 'mtf_aligned']`
-- Description (haiku_generated) : *Les prix progressent dans un contexte haussier confirmé sur les timeframes journalier et 4-heures, avec une volatilité normale et un momentum récent positif.*
+- Tags : `['trend_bullish', 'volatility_normal', 'phase_trend', 'mtf_aligned']`
+- Description (haiku_generated) : *Le marché affiche une tendance haussière confirmée sur les horizons quotidien et 4-heures, avec une volatilité normale et une dynamique de tendance établie.*
 
 **Verdict founder** (à compléter) :
 
@@ -1690,7 +1690,7 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 - Régime : trend=**bullish**, volatilité=**normal**, phase=**trend**
 - MTF : h4:bullish, d1:bullish
 - Tags : `['trend_bullish', 'volatility_normal', 'phase_trend', 'bos_recent_bullish', 'mtf_aligned']`
-- Description (haiku_generated) : *Les prix progressent dans un contexte haussier confirmé sur les timeframes journalier et 4-heures, avec une volatilité normale et un momentum récent positif.*
+- Description (haiku_generated) : *Le marché affiche une dynamique haussière confirmée sur les timeframes multiples avec une volatilité normale et un momentum récent positif.*
 
 **Verdict founder** (à compléter) :
 
@@ -1719,7 +1719,7 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 - Régime : trend=**bullish**, volatilité=**low**, phase=**trend**
 - MTF : h4:bullish, d1:bullish
 - Tags : `['trend_bullish', 'volatility_low', 'phase_trend', 'bos_recent_bearish', 'choch_recent_bearish', 'mtf_aligned']`
-- Description (haiku_generated) : *Le marché affiche une tendance haussière confirmée sur plusieurs timeframes avec une volatilité faible, malgré des signaux baissiers récents aux niveaux locaux.*
+- Description (haiku_generated) : *Les prix évoluent à la hausse avec une faible volatilité et un alignement haussier multi-timeframe, bien que des retournements locaux récents soient observés.*
 
 **Verdict founder** (à compléter) :
 
@@ -1748,7 +1748,7 @@ niveaux chiffrés, valide la **présence/direction/phase**.
 - Régime : trend=**bullish**, volatilité=**elevated**, phase=**expansion**
 - MTF : h4:bullish, d1:bullish
 - Tags : `['trend_bullish', 'volatility_elevated', 'phase_expansion', 'bos_recent_bullish', 'choch_recent_bullish', 'fvg_active', 'mtf_aligned']`
-- Description (haiku_generated) : *Les prix affichent une tendance haussière confirmée sur plusieurs horizons temporels avec une volatilité élevée, des structures techniques récentes constructives et une phase d'expansion en cours.*
+- Description (haiku_generated) : *L'actif affiche une tendance haussière confirmée sur les timeframes quotidienne et 4-heures, avec une volatilité élevée, une phase d'expansion active, et plusieurs signaux techniques bullish récents alignés.*
 
 **Verdict founder** (à compléter) :
 
