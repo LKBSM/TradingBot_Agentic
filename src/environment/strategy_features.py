@@ -20,8 +20,12 @@ except ImportError:
         return decorator
     prange = range
 
-# Configure le logging pour un usage commercial
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# Module logger. NOTE (audit D1-5): we deliberately do NOT call
+# ``logging.basicConfig`` here — doing so at import time reconfigures the root
+# logger of the entire process (global side effect) and can clobber the app's
+# logging setup (e.g. LOG_FORMAT=json wired by the API entrypoint). Logging
+# configuration is the responsibility of the application entrypoint, not of a
+# detection library module.
 logger = logging.getLogger(__name__)
 
 
