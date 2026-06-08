@@ -123,6 +123,12 @@ def _default_smc_pipeline(candles: Sequence[Any]) -> Tuple[dict[str, float], Opt
             smc_features[str(k)] = 1.0 if v else 0.0
         elif isinstance(v, (int, float)) and not pd.isna(v):
             smc_features[str(k)] = float(v)
+
+    # Merge the REAL structural levels (BOS break level forward-filled, real
+    # OB zone, real FVG bounds) so the structure mapper publishes them instead
+    # of price ± ATR proxies (audit findings F1/F2/F3). Glue, not engine logic.
+    from src.intelligence.market_reading_mappers import realized_levels
+    smc_features.update(realized_levels(enriched, idx=len(enriched) - 1))
     return smc_features, None
 
 

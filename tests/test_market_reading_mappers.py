@@ -45,7 +45,7 @@ def test_confluence_signal_to_structure_with_long_signal(bar_ts):
     smc_features = {
         "BOS_SIGNAL": 1.0,
         "BOS_EVENT": 1.0,
-        "BOS_PRICE_LEVEL": 2375.20,
+        "BOS_BREAK_LEVEL": 2375.20,  # F1: real broken structural level
         "FVG_SIGNAL": 1.0,
         "OB_STRENGTH_NORM": 0.8,
         "BOS_RETEST_ARMED": 1.0,
@@ -57,7 +57,7 @@ def test_confluence_signal_to_structure_with_long_signal(bar_ts):
     assert s.bos is not None
     assert s.bos.direction == "bullish"
     assert s.bos.validation_status == "confirmed"
-    assert s.bos.level == 2375.20
+    assert s.bos.level == 2375.20  # F1: published BOS_BREAK_LEVEL, not current_price
     assert s.choch is None  # CHOCH_SIGNAL=0
     assert len(s.order_blocks) == 1
     assert s.order_blocks[0].direction == "bullish"
@@ -72,7 +72,8 @@ def test_confluence_signal_to_structure_with_long_signal(bar_ts):
 def test_confluence_signal_to_structure_with_short_signal(bar_ts):
     smc_features = {
         "BOS_SIGNAL": -1.0,
-        "BOS_EVENT": 0.0,  # not fresh → pending
+        "BOS_EVENT": -1.0,  # fresh bearish break
+        "BOS_BREAK_LEVEL": 1.0900,
         "FVG_SIGNAL": -1.0,
         "OB_STRENGTH_NORM": 0.45,  # medium
         "ATR": 4.0,
@@ -81,28 +82,163 @@ def test_confluence_signal_to_structure_with_short_signal(bar_ts):
     s = confluence_signal_to_structure(cs, smc_features, bar_ts, current_price=1.0820)
 
     assert s.bos.direction == "bearish"
-    assert s.bos.validation_status == "pending"
+    assert s.bos.validation_status == "confirmed"
     assert s.fair_value_gaps[0].direction == "bearish"
     assert s.order_blocks[0].importance == "medium"
     assert s.order_blocks[0].direction == "bearish"
 
 
+def test_propagated_bos_without_event_is_not_shown(bar_ts):
+    """F6: a propagated BOS_SIGNAL with no fresh BOS_EVENT does NOT emit a bos
+    object nor a bos_recent tag (it is trend state, not a recent break). The
+    OB direction still falls back to the propagated trend direction."""
+    smc_features = {
+        "BOS_SIGNAL": -1.0,
+        "BOS_EVENT": 0.0,            # propagated only — NOT fresh
+        "OB_STRENGTH_NORM": 0.5,
+        "ATR": 4.0,
+    }
+    s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=1.0820)
+    assert s.bos is None
+    assert s.order_blocks[0].direction == "bearish"  # OB still uses trend dir
+
+
 def test_confluence_signal_to_structure_no_signal_but_bos_in_features(bar_ts):
-    """No ConfluenceSignal fired (None), but smc_features show propagating BOS state."""
+    """F6: propagating BOS state (no fresh event) does not surface as a recent BOS."""
     smc_features = {
         "BOS_SIGNAL": 1.0,
         "BOS_EVENT": 0.0,
-        "BOS_PRICE_LEVEL": 2370.0,
         "ATR": 5.0,
     }
     s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=2380.0)
 
-    assert s.bos is not None
-    assert s.bos.direction == "bullish"
-    assert s.bos.validation_status == "pending"
+    assert s.bos is None  # F6: not a fresh break
     assert s.order_blocks == []  # No OB strength
     assert s.fair_value_gaps == []
     assert s.retest_in_progress is None
+
+
+def test_retest_uses_break_level_last_without_fresh_bos(bar_ts):
+    """F1+F6: a retest is armed bars after the break (no fresh BOS event). It is
+    decoupled from the bos object and sources its level from the forward-filled
+    real broken level, never current_price."""
+    smc_features = {
+        "BOS_SIGNAL": 1.0,
+        "BOS_EVENT": 0.0,                 # no fresh break on this bar
+        "BOS_RETEST_ARMED": 1.0,
+        "BOS_BREAK_LEVEL_LAST": 2361.10,  # forward-filled real level from pipeline
+        "ATR": 5.0,
+    }
+    s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=2390.0)
+    assert s.bos is None                       # F6: no fresh break
+    assert s.retest_in_progress is not None    # F6: retest decoupled from bos
+    assert s.retest_in_progress.level == 2361.10  # NOT current_price (2390.0)
+
+
+def test_bos_level_falls_back_to_current_price_when_no_break_level(bar_ts):
+    """F1: last-resort fallback when a fresh break has no level available."""
+    s = confluence_signal_to_structure(
+        None, {"BOS_SIGNAL": -1.0, "BOS_EVENT": -1.0, "ATR": 3.0},
+        bar_ts, current_price=1.0820,
+    )
+    assert s.bos is not None
+    assert s.bos.level == 1.0820
+
+
+def test_realized_levels_forward_fills_bos_break_level():
+    """F1: realized_levels carries the last non-NaN BOS_BREAK_LEVEL forward."""
+    import numpy as np
+    import pandas as pd
+
+    from src.intelligence.market_reading_mappers import realized_levels
+
+    df = pd.DataFrame({
+        "high": [10.0, 11.0, 12.0, 13.0],
+        "low": [9.0, 9.5, 10.0, 11.0],
+        "BOS_BREAK_LEVEL": [np.nan, 10.5, np.nan, np.nan],
+    })
+    out = realized_levels(df, idx=3)
+    assert out["BOS_BREAK_LEVEL_LAST"] == 10.5
+
+
+def test_choch_level_uses_break_level(bar_ts):
+    """F2: CHOCH publishes the real broken level (BOS_BREAK_LEVEL on the CHOCH
+    bar, since CHOCH == reversal BOS same bar), not current_price."""
+    smc_features = {
+        "BOS_SIGNAL": 1.0,
+        "BOS_EVENT": 1.0,
+        "CHOCH_SIGNAL": 1.0,
+        "BOS_BREAK_LEVEL": 2350.75,
+        "ATR": 5.0,
+    }
+    s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=2380.0)
+    assert s.choch is not None
+    assert s.choch.direction == "bullish"
+    assert s.choch.level == 2350.75      # NOT current_price (2380.0)
+
+
+def test_choch_level_falls_back_to_price_when_no_level(bar_ts):
+    """F2: last-resort fallback when no break level available."""
+    s = confluence_signal_to_structure(
+        None, {"CHOCH_SIGNAL": -1.0, "ATR": 3.0}, bar_ts, current_price=1.0950
+    )
+    assert s.choch is not None
+    assert s.choch.level == 1.0950
+
+
+def test_ob_fvg_use_real_levels(bar_ts):
+    """F3: OB and FVG publish the real zones/bounds, not price ± ATR/2 proxies."""
+    smc_features = {
+        "BOS_SIGNAL": 1.0,
+        "FVG_SIGNAL": 1.0,
+        "OB_STRENGTH_NORM": 0.8,
+        "OB_LEVEL_HIGH": 2372.0,
+        "OB_LEVEL_LOW": 2368.0,
+        "FVG_LEVEL_HIGH": 2381.0,
+        "FVG_LEVEL_LOW": 2379.0,
+        "ATR": 5.0,
+    }
+    s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=2400.0)
+    assert s.order_blocks[0].level_high == 2372.0
+    assert s.order_blocks[0].level_low == 2368.0
+    assert s.fair_value_gaps[0].level_high == 2381.0
+    assert s.fair_value_gaps[0].level_low == 2379.0
+
+
+def test_ob_fvg_fall_back_to_proxy_without_real_levels(bar_ts):
+    """F3: legacy proxy preserved when real levels are absent (backward compat)."""
+    smc_features = {"FVG_SIGNAL": 1.0, "OB_STRENGTH_NORM": 0.8, "ATR": 4.0}
+    s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=100.0)
+    # half = ATR/2 = 2.0
+    assert s.order_blocks[0].level_high == 102.0
+    assert s.order_blocks[0].level_low == 98.0
+    assert s.fair_value_gaps[0].level_high == 102.0
+    assert s.fair_value_gaps[0].level_low == 98.0
+
+
+def test_realized_levels_ob_and_fvg():
+    """F3: realized_levels extracts the real OB zone and FVG bounds."""
+    import numpy as np
+    import pandas as pd
+
+    from src.intelligence.market_reading_mappers import realized_levels
+
+    # Bullish FVG on last bar (idx=4): low[i]=12.0 > high[i-2]=high[2]=11.0
+    # → gap zone [11.0, 12.0]
+    df = pd.DataFrame({
+        "high": [10.0, 10.5, 11.0, 11.5, 13.0],
+        "low":  [9.0, 9.5, 10.0, 11.0, 12.0],
+        "BULLISH_OB_HIGH": [np.nan, np.nan, np.nan, np.nan, 11.8],
+        "BULLISH_OB_LOW":  [np.nan, np.nan, np.nan, np.nan, 11.2],
+        "BEARISH_OB_HIGH": [np.nan] * 5,
+        "BEARISH_OB_LOW":  [np.nan] * 5,
+        "FVG_DIR": [0.0, 0.0, 0.0, 0.0, 1.0],
+    })
+    out = realized_levels(df, idx=4)
+    assert out["OB_LEVEL_HIGH"] == 11.8
+    assert out["OB_LEVEL_LOW"] == 11.2
+    assert out["FVG_LEVEL_HIGH"] == 12.0   # low[i]
+    assert out["FVG_LEVEL_LOW"] == 11.0    # high[i-2] = high[2]
 
 
 def test_confluence_signal_to_structure_empty_features(bar_ts):
@@ -321,9 +457,13 @@ def test_contains_forbidden_tokens_detector_positive_and_negative():
     assert contains_forbidden_tokens("Tendance haussière, volatilité élevée") is None
     assert contains_forbidden_tokens("Structure alignée H1 et H4") is None
     assert contains_forbidden_tokens("BOS confirmé, retest en cours") is None
-    # Word-boundary check: "entre" matches but "entrer" does not (different word).
-    assert contains_forbidden_tokens("entre support et résistance") == "entre"
-    assert contains_forbidden_tokens("le prix peut entrer dans la zone") is None
+    # P4: bare "entre" (preposition "between") is NOT forbidden (homonym), but the
+    # directive forms ARE. This mirrors chatbot/constants.py and removes the
+    # unjustified template fallbacks on descriptive output like "FVG entre X et Y".
+    assert contains_forbidden_tokens("FVG entre 2376 et 2378") is None
+    assert contains_forbidden_tokens("entre support et résistance") is None
+    assert contains_forbidden_tokens("le prix peut entrer dans la zone") == "entrer"
+    assert contains_forbidden_tokens("entrez maintenant") == "entrez"
     # "bon moment" matches but "bon momentum" does not.
     assert contains_forbidden_tokens("le momentum est bon") is None
 
