@@ -71,3 +71,37 @@ class TestD1_5_NoBasicConfigAtImport:
         assert list(root.handlers) == before, (
             "Recharger le module ne doit ajouter aucun handler au root logger."
         )
+
+
+# ---------------------------------------------------------------------------
+# D1-4 — plus de __main__ d'entraînement RL legacy
+# ---------------------------------------------------------------------------
+class TestD1_4_NoLegacyRLMain:
+    def test_source_has_no_agent_trainer_import(self):
+        import src.environment.strategy_features as sf
+
+        src = inspect.getsource(sf)
+        # On cible les patterns de CODE (import / appel), pas une mention en commentaire.
+        assert "import AgentTrainer" not in src, (
+            "Le module détection ne doit plus importer AgentTrainer (RL legacy)."
+        )
+        assert "train_offline(" not in src, "Plus d'appel d'entraînement RL ici."
+        assert "continue_training(" not in src
+
+    def test_only_one_main_guard_remains(self):
+        import src.environment.strategy_features as sf
+
+        src = inspect.getsource(sf)
+        # Seul le bloc benchmark doit subsister (1 guard exécutable).
+        assert src.count('if __name__ ==') == 1
+
+    def test_import_module_is_side_effect_free(self):
+        # Importer ne doit pas lancer d'entraînement (sinon l'import lèverait /
+        # consommerait du temps). On vérifie juste qu'il s'importe proprement.
+        import importlib
+
+        import src.environment.strategy_features as sf
+
+        importlib.reload(sf)
+        assert hasattr(sf, "SmartMoneyEngine")
+        assert hasattr(sf, "run_benchmark")

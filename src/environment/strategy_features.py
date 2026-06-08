@@ -1128,46 +1128,13 @@ def benchmark_preprocessing(n_rows: int = 20000, n_iterations: int = 3) -> Dict[
     }
 
 
-if __name__ == '__main__':
-    import sys
-    import os
-
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-    # ✅ IMPORT LOCAL (évite l'importation circulaire)
-    from src.agent_trainer import AgentTrainer
-    import config
-
-    data_points = 10000
-    prices = 100 + np.cumsum(np.random.randn(data_points) * 0.1)
-    df_data = pd.DataFrame({
-        'Date': pd.to_datetime(pd.date_range(start='2024-01-01', periods=data_points, freq='15min')),
-        'Open': prices + np.random.uniform(-0.1, 0.1, data_points),
-        'High': prices + np.random.uniform(0.1, 0.2, data_points),
-        'Low': prices - np.random.uniform(0.1, 0.2, data_points),
-        'Close': prices,
-        'Volume': np.random.randint(100, 1000, data_points)
-    }).set_index('Date')
-
-    split_index = int(len(df_data) * 0.8)
-    df_train = df_data.iloc[:split_index].copy()
-
-    if df_train.empty or len(df_train) < config.LOOKBACK_WINDOW_SIZE * 2:
-        raise ValueError("Le DataFrame d'entraînement est trop petit.")
-
-    n_sessions = 10
-    trainer = AgentTrainer(df_historical=df_train)
-    total_timesteps_per_session = config.TOTAL_TIMESTEPS_PER_BOT // n_sessions
-
-    trained_agent = trainer.train_offline(total_timesteps=total_timesteps_per_session)
-
-    for i in range(1, n_sessions):
-        model_name = f"model_offline_session_{i}"
-        trainer.agent.save(os.path.join(config.MODEL_DIR, f"{model_name}.zip"))
-        trained_agent = trainer.continue_training(
-            model_path=os.path.join(config.MODEL_DIR, f"{model_name}.zip"),
-            additional_timesteps=total_timesteps_per_session
-        )
+# NOTE (audit D1-4): a legacy script-entry block that imported the RL trainer
+# (src.agent_trainer) and launched a reinforcement-learning training run used to
+# live here, a leftover from the RL-bot era (pre-SaaS pivot). Running this
+# detection module as a script therefore triggered RL training as a side effect.
+# It has been removed — this module is a detection library, not a training
+# entrypoint. The only supported script entry is the benchmark below
+# (`python -m src.environment.strategy_features --benchmark`).
 
 
 # ═════════════════════════════════════════════════════════════════════════════
