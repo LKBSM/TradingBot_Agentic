@@ -1,8 +1,12 @@
 'use client';
 
 import * as React from 'react';
-import { fetchMarketReading } from './api-client';
+import { fetchMarketReading, MarketReadingNotAvailableError } from './api-client';
+import { getMockReading, READING_DATA_SOURCE } from '@/lib/mockReadings';
 import type { MarketReading } from '@/types/market-reading';
+
+/** Where the reading comes from: live backend or the local TEMPORARY mocks. */
+export type ReadingSource = 'live' | 'mock';
 
 export interface UseMarketReadingResult {
   data: MarketReading | null;
@@ -18,7 +22,17 @@ export interface UseMarketReadingResult {
 export interface UseMarketReadingOptions {
   /** Poll interval in ms. Omit / 0 to disable polling. */
   pollMs?: number;
+  /**
+   * Data source. Defaults to the module-level READING_DATA_SOURCE flag.
+   *   · 'live' → fetchMarketReading() (real backend).
+   *   · 'mock' → local TEMPORARY mocks (getMockReading); no network call.
+   * Passing it explicitly is mostly useful in tests.
+   */
+  source?: ReadingSource;
 }
+
+/** Simulated latency for the mock source so the skeleton is briefly visible. */
+const MOCK_LATENCY_MS = 220;
 
 /**
  * Fetch + cache a single market reading for `(instrument, timeframe)`.
@@ -30,13 +44,16 @@ export interface UseMarketReadingOptions {
  *   · poll / manual refresh of the same combo → keeps stale data, flips
  *     `isRefreshing`.
  *   · stale responses (combo changed mid-flight) are discarded.
+ *
+ * The `source` option swaps the backend for the TEMPORARY local mocks (the
+ * single swap point for the "produit fini" demo; see lib/mockReadings.ts).
  */
 export function useMarketReading(
   instrument: string | null,
   timeframe: string | null,
   options: UseMarketReadingOptions = {},
 ): UseMarketReadingResult {
-  const { pollMs } = options;
+  const { pollMs, source = READING_DATA_SOURCE } = options;
 
   const [data, setData] = React.useState<MarketReading | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
@@ -82,6 +99,28 @@ export function useMarketReading(
       setIsRefreshing(true);
     }
 
+    // ── Mock source: resolve locally, no network. TEMPORAIRE (cf. mockReadings). ──
+    if (source === 'mock') {
+      const timer = setTimeout(() => {
+        if (seq !== requestSeq.current) return; // stale
+        const mock = getMockReading(instrument, timeframe);
+        if (mock) {
+          setData(mock);
+          setError(null);
+        } else {
+          // No mock for this combo → surface the "unavailable" placeholder.
+          setError(
+            new MarketReadingNotAvailableError(
+              'Lecture indisponible pour cette combinaison.',
+            ),
+          );
+        }
+        setIsLoading(false);
+        setIsRefreshing(false);
+      }, MOCK_LATENCY_MS);
+      return () => clearTimeout(timer);
+    }
+
     fetchMarketReading(instrument, timeframe, { signal: controller.signal })
       .then((reading) => {
         if (seq !== requestSeq.current) return; // stale
@@ -101,7 +140,7 @@ export function useMarketReading(
 
     return () => controller.abort();
     // refreshNonce is a dependency so refresh() re-triggers the fetch.
-  }, [instrument, timeframe, refreshNonce]);
+  }, [instrument, timeframe, refreshNonce, source]);
 
   // Optional polling.
   React.useEffect(() => {

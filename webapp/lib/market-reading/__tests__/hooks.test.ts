@@ -31,7 +31,7 @@ describe('useMarketReading', () => {
 
   it('loads data on mount and clears the loading flag', async () => {
     mockFetch.mockResolvedValue(FIXTURE_XAU_M15);
-    const { result } = renderHook(() => useMarketReading('XAUUSD', 'M15'));
+    const { result } = renderHook(() => useMarketReading('XAUUSD', 'M15', { source: 'live' }));
 
     // Initial load flips isLoading on.
     expect(result.current.isLoading).toBe(true);
@@ -49,7 +49,7 @@ describe('useMarketReading', () => {
 
   it('surfaces an error when the fetch rejects', async () => {
     mockFetch.mockRejectedValue(new Error('503 unavailable'));
-    const { result } = renderHook(() => useMarketReading('XAUUSD', 'M15'));
+    const { result } = renderHook(() => useMarketReading('XAUUSD', 'M15', { source: 'live' }));
 
     await waitFor(() => expect(result.current.error).not.toBeNull());
     expect(result.current.error?.message).toContain('503');
@@ -59,7 +59,7 @@ describe('useMarketReading', () => {
 
   it('refresh() re-fetches while keeping the previous reading visible', async () => {
     mockFetch.mockResolvedValue(FIXTURE_XAU_M15);
-    const { result } = renderHook(() => useMarketReading('XAUUSD', 'M15'));
+    const { result } = renderHook(() => useMarketReading('XAUUSD', 'M15', { source: 'live' }));
     await waitFor(() => expect(result.current.data).not.toBeNull());
     expect(mockFetch).toHaveBeenCalledTimes(1);
 
@@ -76,7 +76,7 @@ describe('useMarketReading', () => {
       instrument === 'XAUUSD' ? FIXTURE_XAU_M15 : FIXTURE_EUR_H1,
     );
     const { result, rerender } = renderHook(
-      ({ i, t }: { i: string; t: string }) => useMarketReading(i, t),
+      ({ i, t }: { i: string; t: string }) => useMarketReading(i, t, { source: 'live' }),
       { initialProps: { i: 'XAUUSD', t: 'M15' } },
     );
     await waitFor(() =>
