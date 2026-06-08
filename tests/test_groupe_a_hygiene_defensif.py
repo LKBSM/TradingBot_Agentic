@@ -216,3 +216,58 @@ class TestD2_9_DivergenceOptOut:
         assert "compute_divergence=False" in src, (
             "Le pipeline produit doit appeler analyze(compute_divergence=False)."
         )
+
+
+# ---------------------------------------------------------------------------
+# D4-2 — sanity checks OHLC en entrée (non-fatals)
+# ---------------------------------------------------------------------------
+class TestD4_2_OHLCSanityChecks:
+    def test_clean_data_reports_no_issue(self):
+        from src.environment.strategy_features import SmartMoneyEngine
+
+        eng = SmartMoneyEngine(_make_ohlcv(120), {})
+        assert eng.get_data_quality_report() == {}
+
+    def test_high_lt_low_detected_without_raising(self):
+        from src.environment.strategy_features import SmartMoneyEngine
+
+        df = _make_ohlcv(120)
+        df.iloc[10, df.columns.get_loc("high")] = df.iloc[10]["low"] - 5  # high < low
+        eng = SmartMoneyEngine(df, {})  # must NOT raise
+        rep = eng.get_data_quality_report()
+        assert rep.get("high_lt_low", 0) >= 1
+
+    def test_nan_ohlc_detected(self):
+        from src.environment.strategy_features import SmartMoneyEngine
+
+        df = _make_ohlcv(120)
+        df.iloc[5, df.columns.get_loc("close")] = np.nan
+        eng = SmartMoneyEngine(df, {})
+        assert eng.get_data_quality_report().get("nan_ohlc_rows", 0) >= 1
+
+    def test_non_positive_price_detected(self):
+        from src.environment.strategy_features import SmartMoneyEngine
+
+        df = _make_ohlcv(120)
+        df.iloc[7, df.columns.get_loc("low")] = -1.0
+        eng = SmartMoneyEngine(df, {})
+        assert eng.get_data_quality_report().get("non_positive_price", 0) >= 1
+
+    def test_engine_still_analyzes_dirty_data(self):
+        """Données sales = warning, pas crash : analyze() doit aboutir."""
+        from src.environment.strategy_features import SmartMoneyEngine
+
+        df = _make_ohlcv(120)
+        df.iloc[10, df.columns.get_loc("high")] = df.iloc[10]["low"] - 5
+        out = SmartMoneyEngine(df, {}).analyze()
+        assert "BOS_SIGNAL" in out.columns
+
+    def test_duplicate_timestamps_detected(self):
+        from src.environment.strategy_features import SmartMoneyEngine
+
+        df = _make_ohlcv(120)
+        idx = df.index.tolist()
+        idx[50] = idx[49]  # duplicate timestamp
+        df.index = pd.DatetimeIndex(idx)
+        eng = SmartMoneyEngine(df, {})
+        assert eng.get_data_quality_report().get("duplicate_timestamps", 0) >= 1

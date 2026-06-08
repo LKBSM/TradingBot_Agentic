@@ -574,6 +574,55 @@ class SmartMoneyEngine:
         if not all(col in self.df.columns for col in self.ohlcv_cols):
             raise ValueError(f"DataFrame must contain OHLCV columns: {self.ohlcv_cols}")
 
+        # Defensive input integrity check (audit D4-2). Non-fatal: surfaces dirty
+        # OHLC via structured warnings instead of silently emitting a degraded
+        # reading. Counts are stored for observability (see get_data_quality_report).
+        self._input_quality: Dict[str, int] = self._validate_ohlc_integrity()
+
+    def _validate_ohlc_integrity(self) -> Dict[str, int]:
+        """Run defensive sanity checks on the input OHLC (audit D4-2).
+
+        Returns a dict of issue_name -> count (empty when clean). Does NOT raise
+        — a detection library should report dirty input, not crash production on
+        a single bad bar. NaN-safe (comparisons against NaN evaluate False, so
+        NaN rows only trip the explicit NaN check).
+        """
+        df = self.df
+        price_cols = ["open", "high", "low", "close"]
+        h, l = df["high"], df["low"]
+        body_hi = df[["open", "close"]].max(axis=1)
+        body_lo = df[["open", "close"]].min(axis=1)
+
+        checks = {
+            "nan_ohlc_rows": int(df[price_cols].isna().any(axis=1).sum()),
+            "high_lt_low": int((h < l).sum()),
+            "high_below_body": int((h < body_hi).sum()),
+            "low_above_body": int((l > body_lo).sum()),
+            "non_positive_price": int((df[price_cols] <= 0).any(axis=1).sum()),
+        }
+
+        idx = df.index
+        try:
+            if not idx.is_monotonic_increasing:
+                checks["non_monotonic_index"] = 1
+            dups = int(idx.duplicated().sum())
+            if dups:
+                checks["duplicate_timestamps"] = dups
+        except (TypeError, AttributeError):
+            pass  # non-orderable index — skip temporal checks
+
+        issues = {k: v for k, v in checks.items() if v}
+        if issues:
+            logger.warning(
+                "OHLC integrity: input has %d anomaly type(s) over %d rows: %s",
+                len(issues), len(df), issues,
+            )
+        return issues
+
+    def get_data_quality_report(self) -> Dict[str, int]:
+        """Return the input-integrity issue counts detected at construction (D4-2)."""
+        return dict(getattr(self, "_input_quality", {}))
+
     def _add_ta_indicators(self) -> None:
         """Calcule et ajoute les indicateurs techniques classiques."""
         cfg = self.config
