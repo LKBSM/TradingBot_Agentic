@@ -144,6 +144,31 @@ def test_realized_levels_forward_fills_bos_break_level():
     assert out["BOS_BREAK_LEVEL_LAST"] == 10.5
 
 
+def test_choch_level_uses_break_level(bar_ts):
+    """F2: CHOCH publishes the real broken level (BOS_BREAK_LEVEL on the CHOCH
+    bar, since CHOCH == reversal BOS same bar), not current_price."""
+    smc_features = {
+        "BOS_SIGNAL": 1.0,
+        "BOS_EVENT": 1.0,
+        "CHOCH_SIGNAL": 1.0,
+        "BOS_BREAK_LEVEL": 2350.75,
+        "ATR": 5.0,
+    }
+    s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=2380.0)
+    assert s.choch is not None
+    assert s.choch.direction == "bullish"
+    assert s.choch.level == 2350.75      # NOT current_price (2380.0)
+
+
+def test_choch_level_falls_back_to_price_when_no_level(bar_ts):
+    """F2: last-resort fallback when no break level available."""
+    s = confluence_signal_to_structure(
+        None, {"CHOCH_SIGNAL": -1.0, "ATR": 3.0}, bar_ts, current_price=1.0950
+    )
+    assert s.choch is not None
+    assert s.choch.level == 1.0950
+
+
 def test_confluence_signal_to_structure_empty_features(bar_ts):
     """No structural signals at all — all-None structure is still valid."""
     s = confluence_signal_to_structure(None, {}, bar_ts, current_price=2378.45)

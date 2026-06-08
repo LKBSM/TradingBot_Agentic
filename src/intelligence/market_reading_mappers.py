@@ -229,9 +229,16 @@ def confluence_signal_to_structure(
     choch_signal = float(smc_features.get("CHOCH_SIGNAL", 0.0))
     choch_direction = _sign_to_direction(choch_signal)
     if choch_direction is not None:
+        # F2: there is no dedicated CHOCH level column. In this engine a CHOCH is
+        # a reversal BOS on the SAME bar, so the broken level is BOS_BREAK_LEVEL
+        # (set together with CHOCH_SIGNAL). Read it (or the forward-filled last)
+        # instead of the non-existent CHOCH_PRICE_LEVEL that fell back to price.
+        choch_level = _first_real(
+            smc_features, "BOS_BREAK_LEVEL", "BOS_BREAK_LEVEL_LAST"
+        )
         choch = CHOCHRecent(
             direction=choch_direction,
-            level=float(smc_features.get("CHOCH_PRICE_LEVEL", current_price)),
+            level=choch_level if choch_level is not None else float(current_price),
             broken_at=bar_ts,
             validation_status="confirmed",
         )
