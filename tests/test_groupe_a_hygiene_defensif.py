@@ -171,3 +171,48 @@ class TestD3_3_NumbaHonestDocs:
         report = eng.get_timing_report()
         assert isinstance(report, dict)
         assert "total" in report
+
+
+# ---------------------------------------------------------------------------
+# D2-9 — divergence RSI désactivable dans le chemin produit (sans toucher la détection)
+# ---------------------------------------------------------------------------
+class TestD2_9_DivergenceOptOut:
+    def test_default_still_computes_divergence(self):
+        from src.environment.strategy_features import SmartMoneyEngine
+
+        out = SmartMoneyEngine(_make_ohlcv(200), {}).analyze()  # default True
+        assert "CHOCH_DIVERGENCE" in out.columns, (
+            "Le flux legacy (ConfluenceDetector) dépend de CHOCH_DIVERGENCE."
+        )
+
+    def test_opt_out_skips_divergence_column(self):
+        from src.environment.strategy_features import SmartMoneyEngine
+
+        out = SmartMoneyEngine(_make_ohlcv(200), {}).analyze(compute_divergence=False)
+        assert "CHOCH_DIVERGENCE" not in out.columns
+
+    def test_detection_columns_identical_with_or_without_divergence(self):
+        """Skipper la divergence ne doit RIEN changer à la détection structurelle."""
+        from src.environment.strategy_features import SmartMoneyEngine
+
+        a = SmartMoneyEngine(_make_ohlcv(200, seed=7), {}).analyze(compute_divergence=True)
+        b = SmartMoneyEngine(_make_ohlcv(200, seed=7), {}).analyze(compute_divergence=False)
+        for col in (
+            "BOS_SIGNAL", "BOS_EVENT", "CHOCH_SIGNAL", "BOS_BREAK_LEVEL",
+            "FVG_SIGNAL", "OB_STRENGTH_NORM", "BOS_RETEST_ARMED",
+        ):
+            # NaN-safe equality
+            assert a[col].fillna(-999).tolist() == b[col].fillna(-999).tolist(), (
+                f"La colonne {col} diffère selon compute_divergence — la détection "
+                f"ne doit pas dépendre du calcul de divergence."
+            )
+
+    def test_assembler_pipeline_opts_out(self):
+        import inspect
+
+        import src.intelligence.market_reading_assembler as asm
+
+        src = inspect.getsource(asm._default_smc_pipeline)
+        assert "compute_divergence=False" in src, (
+            "Le pipeline produit doit appeler analyze(compute_divergence=False)."
+        )

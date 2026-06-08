@@ -891,9 +891,18 @@ class SmartMoneyEngine:
 
         self.df['CHOCH_DIVERGENCE'] = divergence
 
-    def analyze(self) -> pd.DataFrame:
+    def analyze(self, compute_divergence: bool = True) -> pd.DataFrame:
         """
         Execute complete SMC analysis pipeline.
+
+        Args:
+            compute_divergence: If True (default), compute the RSI divergence
+                column ``CHOCH_DIVERGENCE`` (used by the legacy ConfluenceDetector
+                / state-machine replay flow). If False, skip it — this is the
+                MarketReading product path (audit D2-9): the product mapper does
+                NOT consume ``CHOCH_DIVERGENCE``, so computing it ran an O(n·k)
+                Python loop for nothing on every reading. Default stays True so
+                existing callers are unchanged.
 
         Returns:
             Enriched DataFrame with all technical and SMC features.
@@ -923,8 +932,11 @@ class SmartMoneyEngine:
         self._calculate_structure_iterative()
         self._timing['structure'] = time.perf_counter() - struct_start
 
-        # 4. RSI Divergence Detection (after both RSI and fractals are available)
-        self._detect_rsi_divergence()
+        # 4. RSI Divergence Detection (after both RSI and fractals are available).
+        # Skipped in the MarketReading product path (compute_divergence=False)
+        # because the product mapper does not consume CHOCH_DIVERGENCE (D2-9).
+        if compute_divergence:
+            self._detect_rsi_divergence()
 
         # 5. Data Cleaning - Drop rows with NaN in critical columns
         clean_start = time.perf_counter()

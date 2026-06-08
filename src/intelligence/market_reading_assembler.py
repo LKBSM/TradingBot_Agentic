@@ -114,7 +114,9 @@ def _default_smc_pipeline(candles: Sequence[Any]) -> Tuple[dict[str, float], Opt
     df.index.name = "ts"
 
     engine = SmartMoneyEngine(data=df, config={}, verbose=False)
-    enriched = engine.analyze()
+    # compute_divergence=False: the MarketReading mapper does not consume the
+    # RSI divergence column, so we skip its O(n·k) pass on every reading (D2-9).
+    enriched = engine.analyze(compute_divergence=False)
     last_row = enriched.iloc[-1].to_dict()
 
     smc_features: dict[str, float] = {}
