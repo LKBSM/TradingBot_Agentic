@@ -11,6 +11,11 @@ vi.mock('@/lib/market-reading/api-client', async (importActual) => {
   return { ...actual, fetchMarketReading: (...args: unknown[]) => fetchMock(...args) };
 });
 
+// Stub the candlestick chart (lightweight-charts needs a real canvas).
+vi.mock('@/components/app/ReadingChart', () => ({
+  ReadingChart: () => <div data-testid="reading-chart" />,
+}));
+
 /** Drive useMediaQuery / useIsMobile by stubbing window.matchMedia. */
 function stubMatchMedia(matches: boolean) {
   vi.stubGlobal(
@@ -32,7 +37,7 @@ function stubMatchMedia(matches: boolean) {
 function renderApp() {
   return render(
     <ChatProvider>
-      <AppWorkspace />
+      <AppWorkspace dataSource="live" />
     </ChatProvider>,
   );
 }

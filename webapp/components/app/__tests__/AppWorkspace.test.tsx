@@ -18,10 +18,19 @@ import {
   MarketReadingValidationError,
 } from '@/lib/market-reading/api-client';
 
+// Stub the candlestick chart — lightweight-charts needs a real canvas/layout,
+// unavailable in jsdom. These tests exercise the data/selection flow, not the
+// chart rendering (covered separately).
+vi.mock('@/components/app/ReadingChart', () => ({
+  ReadingChart: () => <div data-testid="reading-chart" />,
+}));
+
+// These tests target the live (backend) path; force it explicitly since the
+// default source is now the local mocks.
 function renderApp() {
   return render(
     <ChatProvider>
-      <AppWorkspace />
+      <AppWorkspace dataSource="live" />
     </ChatProvider>,
   );
 }
@@ -60,8 +69,12 @@ describe('AppWorkspace — /app view', () => {
     const nav = screen.getByRole('navigation', {
       name: /combinaisons disponibles/i,
     });
-    // 3 timeframe buttons per instrument, 2 instruments → 6 buttons.
-    expect(within(nav).getAllByRole('button')).toHaveLength(6);
+    // Each combo row has a select button + a pin toggle. Count the select
+    // buttons only (the pin toggles carry an "Épingler/Désépingler" label).
+    const selectButtons = within(nav)
+      .getAllByRole('button')
+      .filter((b) => !/épingler/i.test(b.getAttribute('aria-label') ?? ''));
+    expect(selectButtons).toHaveLength(6);
   });
 
   it('fetches and renders the reading when a combo is selected', async () => {

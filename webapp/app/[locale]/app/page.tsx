@@ -1,6 +1,13 @@
 import type { Metadata } from 'next';
 import { AppWorkspace } from '@/components/app/AppWorkspace';
 
+/**
+ * Default combo on load (XAU/USD M15). Defined inline rather than imported from
+ * the client-only mockReadings module so this server component doesn't pull a
+ * 'use client' module into the server bundle.
+ */
+const DEFAULT_COMBO = { instrument: 'XAUUSD', timeframe: 'M15' } as const;
+
 export const metadata: Metadata = {
   title: 'Espace de lecture',
   description:
@@ -14,5 +21,7 @@ export const metadata: Metadata = {
  * route + metadata.
  */
 export default function AppPage() {
-  return <AppWorkspace />;
+  // Default to a XAU/USD M15 reading on load so the workspace shows a fully
+  // populated "produit fini" surface immediately (mock data — see mockReadings).
+  return <AppWorkspace initialCombo={DEFAULT_COMBO} />;
 }

@@ -18,6 +18,12 @@ interface MarketReadingCardProps {
   heroOnly?: boolean;
   /** Section keys to expand on mount (default: all collapsed). */
   defaultOpenSections?: ReadonlyArray<MarketReadingSectionKey>;
+  /**
+   * Optional chart (or chart-unavailable placeholder) rendered just below the
+   * header — the "Graphique d'abord" layout used in /app. Omitted on the
+   * landing samples, which keep the text-only hero.
+   */
+  chartSlot?: React.ReactNode;
   className?: string;
 }
 
@@ -37,12 +43,15 @@ export function MarketReadingCard({
   onAskChatbot,
   heroOnly = false,
   defaultOpenSections,
+  chartSlot,
   className,
 }: MarketReadingCardProps) {
   return (
     <Card className={className ?? 'w-full max-w-2xl border-border/60 shadow-sm'}>
       <CardContent className="space-y-5 p-5 sm:space-y-6 sm:p-7">
         <MarketReadingHeader header={reading.header} />
+
+        {chartSlot}
 
         <MarketPhasePanel regime={reading.regime} />
 
