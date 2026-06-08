@@ -457,9 +457,13 @@ def test_contains_forbidden_tokens_detector_positive_and_negative():
     assert contains_forbidden_tokens("Tendance haussière, volatilité élevée") is None
     assert contains_forbidden_tokens("Structure alignée H1 et H4") is None
     assert contains_forbidden_tokens("BOS confirmé, retest en cours") is None
-    # Word-boundary check: "entre" matches but "entrer" does not (different word).
-    assert contains_forbidden_tokens("entre support et résistance") == "entre"
-    assert contains_forbidden_tokens("le prix peut entrer dans la zone") is None
+    # P4: bare "entre" (preposition "between") is NOT forbidden (homonym), but the
+    # directive forms ARE. This mirrors chatbot/constants.py and removes the
+    # unjustified template fallbacks on descriptive output like "FVG entre X et Y".
+    assert contains_forbidden_tokens("FVG entre 2376 et 2378") is None
+    assert contains_forbidden_tokens("entre support et résistance") is None
+    assert contains_forbidden_tokens("le prix peut entrer dans la zone") == "entrer"
+    assert contains_forbidden_tokens("entrez maintenant") == "entrez"
     # "bon moment" matches but "bon momentum" does not.
     assert contains_forbidden_tokens("le momentum est bon") is None
 

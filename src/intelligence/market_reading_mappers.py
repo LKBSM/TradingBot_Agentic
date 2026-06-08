@@ -43,13 +43,20 @@ from src.intelligence.market_reading_schema import (
 
 # Forbidden tokens checked post-generation (Étape 5 enforces too).
 # Listed here for visibility — templates in this module must never emit any.
+# P4: the bare "entre" is intentionally EXCLUDED — it is the French preposition
+# "between" ("FVG entre 2376 et 2378"), a high-frequency homonym of the trade
+# verb. This matches the chatbot's deliberate exclusion (chatbot/constants.py
+# §3). The directive forms entrez/entrer/entry are kept. Without this, legitimate
+# descriptive Haiku output was rejected → unjustified template fallbacks.
 FORBIDDEN_TOKENS: frozenset[str] = frozenset({
     "conseille",
     "déconseille",
     "deconseille",
     "évite",
     "evite",
-    "entre",
+    "entrez",
+    "entrer",
+    "entry",
     "sors",
     "risqué",
     "sûr",
