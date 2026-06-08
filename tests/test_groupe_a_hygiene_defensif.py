@@ -323,3 +323,65 @@ class TestD4_3_OutlierFlag:
         df.loc[ts, "low"] = df.loc[ts, "close"] - 500.0
         out = SmartMoneyEngine(df, {"OUTLIER_ATR_MULT": 0.0}).analyze()
         assert int(out["OUTLIER_FLAG"].sum()) == 0
+
+
+# ---------------------------------------------------------------------------
+# D4-6 — monitoring runtime firing-rate / NaN-rate / fractals
+# ---------------------------------------------------------------------------
+class TestD4_6_Monitoring:
+    def test_report_present_after_analyze(self):
+        from src.environment.strategy_features import SmartMoneyEngine
+
+        eng = SmartMoneyEngine(_make_ohlcv(200), {})
+        eng.analyze()
+        rep = eng.get_monitoring_report()
+        assert "bos_event_rate_pct" in rep
+        assert "n_fractals" in rep
+        assert "output_rows" in rep
+        assert 0.0 <= rep["bos_event_rate_pct"] <= 100.0
+
+    def test_clean_data_firing_rate_in_band_no_warning(self, caplog):
+        from src.environment import strategy_features as sf
+
+        with caplog.at_level(logging.WARNING):
+            eng = sf.SmartMoneyEngine(_make_ohlcv(300, seed=2), {})
+            eng.analyze()
+        # Pas de warning de firing-rate sur données synthétiques propres.
+        assert not any("firing-rate" in r.getMessage() for r in caplog.records)
+
+    def test_overfiring_triggers_warning(self, caplog):
+        from src.environment import strategy_features as sf
+
+        eng = sf.SmartMoneyEngine(_make_ohlcv(50), {})
+        eng.analyze()
+        eng.df = pd.DataFrame({"BOS_EVENT": [1, -1, 1, 1]})  # 100% firing
+        with caplog.at_level(logging.WARNING):
+            m = eng._compute_monitoring(initial_rows=4, rows_dropped=0)
+        assert m["bos_event_rate_pct"] == 100.0
+        assert any(
+            "firing-rate" in r.getMessage() and ">" in r.getMessage()
+            for r in caplog.records
+        )
+
+    def test_underfiring_triggers_warning(self, caplog):
+        from src.environment import strategy_features as sf
+
+        eng = sf.SmartMoneyEngine(_make_ohlcv(50), {})
+        eng.analyze()
+        eng.df = pd.DataFrame({"BOS_EVENT": [0, 0, 0, 0]})  # 0% firing
+        with caplog.at_level(logging.WARNING):
+            m = eng._compute_monitoring(initial_rows=4, rows_dropped=0)
+        assert m["bos_event_rate_pct"] == 0.0
+        assert any(
+            "firing-rate" in r.getMessage() and "<" in r.getMessage()
+            for r in caplog.records
+        )
+
+    def test_input_nan_rate_reported(self):
+        from src.environment.strategy_features import SmartMoneyEngine
+
+        df = _make_ohlcv(120)
+        df.iloc[5, df.columns.get_loc("close")] = np.nan
+        eng = SmartMoneyEngine(df, {})
+        eng.analyze()
+        assert eng.get_monitoring_report()["input_nan_rate_pct"] > 0.0

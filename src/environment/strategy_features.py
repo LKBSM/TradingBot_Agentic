@@ -29,6 +29,15 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
+# Runtime monitoring thresholds (audit D4-6). A BOS event firing-rate outside
+# this band is the classic symptom of a data-quality problem (the 100%-firing
+# bug seen on a low-coverage CSV) or an over-strict detector. This mirrors the
+# OFFLINE regression guard in tests/test_data_quality_bos_regression.py — but
+# evaluated at RUNTIME so a solo operator gets an automatic warning in prod.
+BOS_FIRING_RATE_MIN_PCT = 0.5
+BOS_FIRING_RATE_MAX_PCT = 10.0
+
+
 # ═════════════════════════════════════════════════════════════════════════════
 # NUMBA-OPTIMIZED FUNCTIONS (50-100x faster than pure Python)
 # ═════════════════════════════════════════════════════════════════════════════
@@ -1044,7 +1053,59 @@ class SmartMoneyEngine:
         if len(self.df) < self.config.BB_WINDOW * 2:
             logger.warning(f"Cleaning left very few rows ({len(self.df)}). Check data quality.")
 
+        # 6. Runtime monitoring (audit D4-6) — firing-rate / fractals / outliers.
+        self._monitoring = self._compute_monitoring(initial_rows, rows_dropped)
+
         return self.df
+
+    def _compute_monitoring(self, initial_rows: int, rows_dropped: int) -> Dict[str, float]:
+        """Compute per-analyze monitoring metrics and warn on anomalies (D4-6).
+
+        Surfaces at RUNTIME the same data-quality signal the offline regression
+        test guards: a BOS firing-rate outside [MIN, MAX]% almost always means a
+        gap-ridden / low-coverage feed (over-firing) or an over-strict detector
+        (under-firing). Also reports fractal count, outlier count and input NaN
+        rate. Returns the metrics dict (also stored on ``self._monitoring``).
+        """
+        df = self.df
+        n = len(df)
+        metrics: Dict[str, float] = {
+            "output_rows": float(n),
+            "rows_dropped": float(rows_dropped),
+            "input_nan_rate_pct": (
+                100.0 * float(self.get_data_quality_report().get("nan_ohlc_rows", 0))
+                / initial_rows if initial_rows else 0.0
+            ),
+        }
+        if n == 0:
+            logger.warning("MONITORING: analyze produced 0 rows after cleaning.")
+            return metrics
+
+        if "BOS_EVENT" in df.columns:
+            firing = 100.0 * float((df["BOS_EVENT"] != 0).sum()) / n
+            metrics["bos_event_rate_pct"] = firing
+            if firing < BOS_FIRING_RATE_MIN_PCT:
+                logger.warning(
+                    "MONITORING: BOS firing-rate %.2f%% < %.2f%% — detector may be "
+                    "over-strict or the feed is stale.", firing, BOS_FIRING_RATE_MIN_PCT,
+                )
+            elif firing > BOS_FIRING_RATE_MAX_PCT:
+                logger.warning(
+                    "MONITORING: BOS firing-rate %.2f%% > %.2f%% — likely data-quality "
+                    "issue (gaps / low-coverage feed). See test_data_quality_bos_regression.",
+                    firing, BOS_FIRING_RATE_MAX_PCT,
+                )
+
+        up = int(df["UP_FRACTAL"].notna().sum()) if "UP_FRACTAL" in df.columns else 0
+        dn = int(df["DOWN_FRACTAL"].notna().sum()) if "DOWN_FRACTAL" in df.columns else 0
+        metrics["n_fractals"] = float(up + dn)
+        if "OUTLIER_FLAG" in df.columns:
+            metrics["outlier_count"] = float(int(df["OUTLIER_FLAG"].sum()))
+        return metrics
+
+    def get_monitoring_report(self) -> Dict[str, float]:
+        """Return the runtime monitoring metrics from the last analyze() (D4-6)."""
+        return dict(getattr(self, "_monitoring", {}))
 
     def get_timing_report(self) -> Dict[str, float]:
         """Get performance timing breakdown."""
