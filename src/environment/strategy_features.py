@@ -520,6 +520,14 @@ class SMCConfig(BaseModel):
                     "CHOCH or a new BOS event, the window is overridden. Setting this too short "
                     "causes premature SCORE_DECAYED exits on confirmed trades."
     )
+    # --- Outlier flagging (audit D4-3) ---
+    OUTLIER_ATR_MULT: float = Field(
+        default=5.0,
+        ge=0.0,
+        description="A bar whose range (high-low) exceeds OUTLIER_ATR_MULT×ATR is FLAGGED as an "
+                    "outlier (OUTLIER_FLAG=1). Purely observational: the data is NOT altered, no "
+                    "detection logic depends on it. 0 disables flagging."
+    )
 
 
 # --- II. Core Analysis Engine (Class Architecture) ---
@@ -655,6 +663,19 @@ class SmartMoneyEngine:
         # --- Simple Candle Features ---
         self.df['SPREAD'] = self.df['high'] - self.df['low']
         self.df['BODY_SIZE'] = abs(self.df['open'] - self.df['close'])
+
+        # --- Outlier flag (audit D4-3) ---
+        # FLAG ONLY — the data is never altered, and no detection step reads this
+        # column. A bar whose range exceeds OUTLIER_ATR_MULT×ATR (flash crash,
+        # fat finger, post-gap bar) is marked for observability/monitoring (D4-6).
+        mult = cfg.OUTLIER_ATR_MULT
+        if mult > 0:
+            self.df['OUTLIER_FLAG'] = np.where(
+                (self.df['ATR'] > 0) & (self.df['SPREAD'] > mult * self.df['ATR']),
+                1, 0
+            ).astype(np.int32)
+        else:
+            self.df['OUTLIER_FLAG'] = np.zeros(len(self.df), dtype=np.int32)
 
     def _add_smc_base_features(self) -> None:
         """

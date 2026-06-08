@@ -271,3 +271,55 @@ class TestD4_2_OHLCSanityChecks:
         df.index = pd.DatetimeIndex(idx)
         eng = SmartMoneyEngine(df, {})
         assert eng.get_data_quality_report().get("duplicate_timestamps", 0) >= 1
+
+
+# ---------------------------------------------------------------------------
+# D4-3 — flag bougies aberrantes (>m×ATR) SANS altérer les données
+# ---------------------------------------------------------------------------
+class TestD4_3_OutlierFlag:
+    def test_outlier_flag_column_present(self):
+        from src.environment.strategy_features import SmartMoneyEngine
+
+        out = SmartMoneyEngine(_make_ohlcv(120), {}).analyze()
+        assert "OUTLIER_FLAG" in out.columns
+
+    def test_huge_bar_is_flagged(self):
+        from src.environment.strategy_features import SmartMoneyEngine
+
+        df = _make_ohlcv(120, seed=3)
+        ts = df.index[80]
+        base = df.loc[ts, "close"]
+        df.loc[ts, "high"] = base + 500.0   # range énorme vs ATR
+        df.loc[ts, "low"] = base - 500.0
+        out = SmartMoneyEngine(df, {}).analyze()
+        assert out.loc[ts, "OUTLIER_FLAG"] == 1
+
+    def test_data_is_not_altered_by_flagging(self):
+        """Le flag observe, il ne modifie JAMAIS les OHLC."""
+        from src.environment.strategy_features import SmartMoneyEngine
+
+        df = _make_ohlcv(120, seed=3)
+        ts = df.index[80]
+        df.loc[ts, "high"] = df.loc[ts, "close"] + 500.0
+        df.loc[ts, "low"] = df.loc[ts, "close"] - 500.0
+        injected_high = df.loc[ts, "high"]
+        injected_low = df.loc[ts, "low"]
+        out = SmartMoneyEngine(df.copy(), {}).analyze()
+        assert out.loc[ts, "high"] == injected_high
+        assert out.loc[ts, "low"] == injected_low
+
+    def test_clean_data_flags_nothing(self):
+        from src.environment.strategy_features import SmartMoneyEngine
+
+        out = SmartMoneyEngine(_make_ohlcv(200, seed=1), {}).analyze()
+        assert int(out["OUTLIER_FLAG"].sum()) == 0
+
+    def test_mult_zero_disables_flagging(self):
+        from src.environment.strategy_features import SmartMoneyEngine
+
+        df = _make_ohlcv(120, seed=3)
+        ts = df.index[80]
+        df.loc[ts, "high"] = df.loc[ts, "close"] + 500.0
+        df.loc[ts, "low"] = df.loc[ts, "close"] - 500.0
+        out = SmartMoneyEngine(df, {"OUTLIER_ATR_MULT": 0.0}).analyze()
+        assert int(out["OUTLIER_FLAG"].sum()) == 0
