@@ -105,3 +105,41 @@ class TestD1_4_NoLegacyRLMain:
         importlib.reload(sf)
         assert hasattr(sf, "SmartMoneyEngine")
         assert hasattr(sf, "run_benchmark")
+
+
+# ---------------------------------------------------------------------------
+# D1-3 — defaults train/serve unifiés (DEFAULT_SMC_CONFIG)
+# ---------------------------------------------------------------------------
+class TestD1_3_UnifiedDefaults:
+    def test_default_config_matches_smcconfig(self):
+        from src.environment.strategy_features import DEFAULT_SMC_CONFIG, SMCConfig
+
+        assert DEFAULT_SMC_CONFIG == SMCConfig().model_dump(), (
+            "DEFAULT_SMC_CONFIG doit être l'unique source de vérité = SMCConfig()."
+        )
+
+    def test_default_config_uses_product_periods_not_legacy_7(self):
+        from src.environment.strategy_features import DEFAULT_SMC_CONFIG
+
+        # Le produit sert 14 / 0.1 ; plus de skew 7 / 0.0.
+        assert DEFAULT_SMC_CONFIG["RSI_WINDOW"] == 14
+        assert DEFAULT_SMC_CONFIG["ATR_WINDOW"] == 14
+        assert DEFAULT_SMC_CONFIG["FVG_THRESHOLD"] == 0.1
+
+    def test_no_legacy_hardcoded_default_dicts_in_source(self):
+        import src.environment.strategy_features as sf
+
+        src = inspect.getsource(sf)
+        # Les anciens defaults divergents (ATR=7 / FVG=0.0) ne doivent plus être
+        # codés en dur dans les helpers de preprocessing.
+        assert '"ATR_WINDOW": 7' not in src
+        assert '"FVG_THRESHOLD": 0.0' not in src
+
+    def test_preprocess_none_config_runs_with_product_defaults(self):
+        from src.environment.strategy_features import preprocess_dataframe
+
+        df = _make_ohlcv(120)
+        out = preprocess_dataframe(df.copy(), config=None)
+        # Pipeline complet OK avec les defaults unifiés (colonnes clés présentes).
+        for col in ("RSI", "ATR", "BOS_SIGNAL", "FVG_SIGNAL"):
+            assert col in out.columns

@@ -988,6 +988,16 @@ def compute_feature_vif(df: pd.DataFrame, feature_columns: list) -> pd.DataFrame
 # PARALLEL PREPROCESSING UTILITIES
 # ═════════════════════════════════════════════════════════════════════════════
 
+# Single source of truth for default SMC parameters (audit D1-3).
+# Both preprocess helpers below MUST share the SAME defaults as ``SMCConfig()``
+# so the offline / training / backtest path detects structures with the exact
+# parameters the PRODUCT serves: the assembler runs ``SmartMoneyEngine`` with
+# ``config={}`` → ``SMCConfig`` defaults (RSI/ATR=14, FVG_THRESHOLD=0.1).
+# Previously these helpers hardcoded RSI/ATR=7 and FVG_THRESHOLD=0.0 — a silent
+# train/serve skew where calibration did not describe what was served.
+DEFAULT_SMC_CONFIG: Dict[str, Any] = SMCConfig().model_dump()
+
+
 def preprocess_dataframe(df: pd.DataFrame, config: Dict[str, Any] = None, verbose: bool = False) -> pd.DataFrame:
     """
     Preprocess a single DataFrame with SMC features.
@@ -1004,18 +1014,7 @@ def preprocess_dataframe(df: pd.DataFrame, config: Dict[str, Any] = None, verbos
     """
     from src.environment.strategy_features import SmartMoneyEngine
 
-    default_config = {
-        "RSI_WINDOW": 7,
-        "MACD_FAST": 8,
-        "MACD_SLOW": 17,
-        "MACD_SIGNAL": 9,
-        "BB_WINDOW": 20,
-        "ATR_WINDOW": 7,
-        "FRACTAL_WINDOW": 2,
-        "FVG_THRESHOLD": 0.0,
-    }
-
-    config = config or default_config
+    config = config or dict(DEFAULT_SMC_CONFIG)  # D1-3: same defaults as the product
     engine = SmartMoneyEngine(data=df, config=config, verbose=verbose)
     return engine.analyze()
 
@@ -1052,17 +1051,7 @@ def preprocess_dataframes_parallel(
         JOBLIB_AVAILABLE = False
         logger.warning("joblib not available. Using sequential processing.")
 
-    default_config = {
-        "RSI_WINDOW": 7,
-        "MACD_FAST": 8,
-        "MACD_SLOW": 17,
-        "MACD_SIGNAL": 9,
-        "BB_WINDOW": 20,
-        "ATR_WINDOW": 7,
-        "FRACTAL_WINDOW": 2,
-        "FVG_THRESHOLD": 0.0,
-    }
-    config = config or default_config
+    config = config or dict(DEFAULT_SMC_CONFIG)  # D1-3: same defaults as the product
 
     if JOBLIB_AVAILABLE and len(dataframes) > 1:
         if verbose:
