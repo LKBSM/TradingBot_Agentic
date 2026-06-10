@@ -150,6 +150,36 @@ describe('StructureSection', () => {
     ).toBeInTheDocument();
   });
 
+  it('does not contradict itself: a BOS retest with a now-stale break (no "aucune cassure")', () => {
+    // Founder eval 2026-06-08: the engine emits `bos` only on a FRESH break, so
+    // bars later `bos` is null while a `bos_retest` is armed. The BOS row must
+    // not claim "aucune cassure récente" while the retest row shows a BOS retest.
+    const structure = {
+      bos: null,
+      choch: null,
+      order_blocks: [],
+      fair_value_gaps: [],
+      retest_in_progress: {
+        level: 2391.5,
+        type: 'bos_retest' as const,
+        started_at: '2026-05-26T11:30:00+00:00',
+      },
+    };
+    render(
+      <Accordion type="multiple" defaultValue={['structure']}>
+        <StructureSection structure={structure} instrument="XAUUSD" />
+      </Accordion>,
+    );
+    expect(screen.queryByText('aucune cassure récente')).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/cassure antérieure en cours de retest/),
+    ).toBeInTheDocument();
+    // The retest row still surfaces the live retest.
+    expect(
+      screen.getByText(/retest de cassure \(BOS\)/),
+    ).toBeInTheDocument();
+  });
+
   it('shows an empty-state line when structure is bare', () => {
     render(
       <Accordion type="multiple" defaultValue={['structure']}>

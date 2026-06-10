@@ -33,6 +33,18 @@ export function StructureSection({
   const { bos, choch, order_blocks, fair_value_gaps, retest_in_progress } =
     structure;
 
+  // Surfacing coherence (founder eval 2026-06-08): the engine emits `bos` only
+  // on a FRESH break at the last close (by design — see market_reading_mappers
+  // F6), while a retest is armed BARS AFTER that break, with `bos` already null.
+  // Without this, the BOS row said "aucune cassure récente" while the retest row
+  // said "retest de cassure (BOS)" — a logical contradiction. When the live
+  // retest references a prior break, we state that instead of denying it. This
+  // is a copy/surfacing fix only — no detection threshold is touched.
+  const bosUnderRetest =
+    !bos && retest_in_progress?.type === 'bos_retest';
+  const chochUnderRetest =
+    !choch && retest_in_progress?.type === 'choch_retest';
+
   const hasAnything =
     bos ||
     choch ||
@@ -61,7 +73,9 @@ export function StructureSection({
               value={
                 bos
                   ? `${formatPrice(bos.level, instrument)} · ${formatDirection(bos.direction)} · ${formatValidationStatus(bos.validation_status)}`
-                  : 'aucune cassure récente'
+                  : bosUnderRetest
+                    ? `cassure antérieure en cours de retest (${formatPrice(retest_in_progress!.level, instrument)})`
+                    : 'aucune cassure récente'
               }
             />
             <Row
@@ -70,7 +84,9 @@ export function StructureSection({
               value={
                 choch
                   ? `${formatPrice(choch.level, instrument)} · ${formatDirection(choch.direction)} · ${formatValidationStatus(choch.validation_status)}`
-                  : 'aucun changement récent'
+                  : chochUnderRetest
+                    ? `changement antérieur en cours de retest (${formatPrice(retest_in_progress!.level, instrument)})`
+                    : 'aucun changement récent'
               }
             />
             <Row
