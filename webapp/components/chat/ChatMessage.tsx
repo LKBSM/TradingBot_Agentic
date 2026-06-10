@@ -5,6 +5,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { renderMarkdown } from '@/lib/chat/markdown';
 import { cn } from '@/lib/utils';
 
 interface ChatMessageProps {
@@ -48,13 +49,15 @@ export function ChatMessage({ role, text, blockedReason }: ChatMessageProps) {
       <div className="flex max-w-[85%] flex-col gap-1">
         <div
           className={cn(
-            'whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed',
+            'rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed',
             isUser
-              ? 'rounded-tr-sm bg-primary text-primary-foreground'
+              ? 'whitespace-pre-wrap rounded-tr-sm bg-primary text-primary-foreground'
               : 'rounded-tl-sm bg-muted text-foreground',
           )}
         >
-          {text}
+          {/* Assistant replies may contain light Markdown (**bold**, lists) —
+              render it cleanly. User input stays verbatim (pre-wrap). */}
+          {isUser ? text : renderMarkdown(text)}
         </div>
         {showRedirect && (
           <TooltipProvider delayDuration={150}>
