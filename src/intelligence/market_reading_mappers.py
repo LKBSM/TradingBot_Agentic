@@ -229,7 +229,8 @@ def confluence_signal_to_structure(
       - CHOCH_SIGNAL : -1/0/+1
       - FVG_SIGNAL : -1/0/+1
       - OB_STRENGTH_NORM : 0..1
-      - BOS_RETEST_ARMED : -1/0/+1
+      - BOS_RETEST_STATE : 0 / ±1 (awaiting) / ±2 (armed) — lifecycle of the
+        break: BOS persists while != 0; "retest in progress" only while ±2.
 
     Levels (level_high/low for OB/FVG, level for BOS) are conservatively
     approximated from current_price ± a half-ATR proxy when not explicitly
@@ -356,13 +357,18 @@ def confluence_signal_to_structure(
             user_flagged=False,
         ))
 
-    # Retest
-    # F6 corollary: a retest is armed BARS AFTER the break, when there is no fresh
-    # BOS event on the current bar. Decouple it from the (now fresh-only) bos
-    # object and source the level from the forward-filled real broken level.
+    # Retest in progress
+    # D1-b: the BOS LEVEL persists for the whole active window (BOS_RETEST_STATE
+    # != 0 = awaiting OR armed — see the BOS block above). The "retest in
+    # progress" flag is narrower: it is shown ONLY during the ARMED sub-state
+    # (BOS_RETEST_STATE = ±2, i.e. price has returned to the broken level), never
+    # during AWAITING (±1, price has not come back yet). Both read the SAME
+    # engine-produced state — no detection threshold is touched. We also require
+    # the break to be surfaced (fresh_break or persisted_break), so the UI never
+    # shows a retest of a break that was dropped (e.g. trend inverted).
     retest_in_progress: Optional[RetestInProgress] = None
-    retest_armed = float(smc_features.get("BOS_RETEST_ARMED", 0.0))
-    if abs(retest_armed) > 0:
+    armed_retest = abs(retest_state) == 2.0
+    if armed_retest and (fresh_break or persisted_break):
         retest_level = _first_real(
             smc_features, "BOS_BREAK_LEVEL", "BOS_BREAK_LEVEL_LAST"
         )

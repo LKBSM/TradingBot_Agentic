@@ -42,13 +42,15 @@ def bar_ts() -> datetime:
 
 
 def test_confluence_signal_to_structure_with_long_signal(bar_ts):
+    # Armed retest of a prior bullish break (BOS_RETEST_STATE = +2). The break is
+    # persisted (state != 0) AND a retest is in progress (state == ±2).
     smc_features = {
         "BOS_SIGNAL": 1.0,
-        "BOS_EVENT": 1.0,
+        "BOS_EVENT": 0.0,
+        "BOS_RETEST_STATE": 2.0,     # armed → break persisted + retest in progress
         "BOS_BREAK_LEVEL": 2375.20,  # F1: real broken structural level
         "FVG_SIGNAL": 1.0,
         "OB_STRENGTH_NORM": 0.8,
-        "BOS_RETEST_ARMED": 1.0,
         "ATR": 5.0,
     }
     cs = _MockConfluenceSignal("LONG")
@@ -157,6 +159,48 @@ def test_persisted_bos_awaiting_state_without_armed_retest(bar_ts):
     assert s.bos.direction == "bearish"
     assert s.bos.level == 1.0850
     assert s.retest_in_progress is None            # not armed → no retest surfaced
+
+
+def test_retest_flag_only_during_armed_state_not_awaiting(bar_ts):
+    """D1-b separation: the BOS LEVEL persists across the whole active window
+    (state != 0), but the 'retest in progress' flag is shown ONLY while armed
+    (state == ±2), never while awaiting (±1)."""
+    base = {
+        "BOS_SIGNAL": 1.0,
+        "BOS_EVENT": 0.0,
+        "BOS_BREAK_LEVEL_LAST": 2361.10,
+        "ATR": 5.0,
+    }
+    # Awaiting (±1): break shown, NO retest in progress.
+    awaiting = confluence_signal_to_structure(
+        None, {**base, "BOS_RETEST_STATE": 1.0}, bar_ts, current_price=2390.0
+    )
+    assert awaiting.bos is not None
+    assert awaiting.retest_in_progress is None
+
+    # Armed (±2): break shown AND retest in progress.
+    armed = confluence_signal_to_structure(
+        None, {**base, "BOS_RETEST_STATE": 2.0}, bar_ts, current_price=2390.0
+    )
+    assert armed.bos is not None
+    assert armed.retest_in_progress is not None
+    assert armed.retest_in_progress.type == "bos_retest"
+
+
+def test_retest_not_shown_when_break_dropped_by_inverted_trend(bar_ts):
+    """Consistency: if the propagated trend inverted against an armed retest
+    state, the break is NOT persisted, and the retest flag is suppressed too —
+    the UI never shows a retest of a dropped break."""
+    smc_features = {
+        "BOS_SIGNAL": -1.0,               # trend now bearish…
+        "BOS_EVENT": 0.0,
+        "BOS_RETEST_STATE": 2.0,          # …stale bullish armed state
+        "BOS_BREAK_LEVEL_LAST": 2361.10,
+        "ATR": 5.0,
+    }
+    s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=2390.0)
+    assert s.bos is None                  # inverted → break dropped
+    assert s.retest_in_progress is None   # …and so is its retest
 
 
 def test_persisted_bos_broken_at_falls_back_to_bar_ts_without_break_ts(bar_ts):
@@ -460,7 +504,7 @@ def _structure_rich(bar_ts: datetime) -> MarketReadingStructure:
             "BOS_EVENT": 1.0,
             "FVG_SIGNAL": 1.0,
             "OB_STRENGTH_NORM": 0.8,
-            "BOS_RETEST_ARMED": 1.0,
+            "BOS_RETEST_STATE": 2.0,  # armed → retest in progress surfaced
             "ATR": 5.0,
         },
         bar_ts,
