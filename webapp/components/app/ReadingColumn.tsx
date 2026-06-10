@@ -9,9 +9,10 @@ import {
   ReadingErrorState,
 } from './ReadingPlaceholders';
 import { ReadingSkeleton } from './ReadingSkeleton';
-import { getMockCandles } from '@/lib/mockReadings';
+import { READING_DATA_SOURCE } from '@/lib/mockReadings';
+import { useCandles, type ReadingSource } from '@/lib/market-reading/hooks';
 import type { Combo } from '@/lib/market-reading/store';
-import type { MarketReading } from '@/types/market-reading';
+import type { Candle, MarketReading } from '@/types/market-reading';
 
 /**
  * The chart is client-only (canvas) and pulls in lightweight-charts — load it
@@ -40,6 +41,8 @@ interface ReadingColumnProps {
   isRefreshing: boolean;
   error: Error | null;
   onRetry: () => void;
+  /** Candle source — defaults to the module flag; forced to 'mock' in tests. */
+  dataSource?: ReadingSource;
 }
 
 /**
@@ -55,7 +58,16 @@ export function ReadingColumn({
   isRefreshing,
   error,
   onRetry,
+  dataSource = READING_DATA_SOURCE,
 }: ReadingColumnProps) {
+  // Candle feed for the chart hero. Re-pulled when the combo changes or a new
+  // candle closes (candle_close_ts) — never faster, to keep the load honest.
+  const { candles } = useCandles(
+    active?.instrument ?? null,
+    active?.timeframe ?? null,
+    { source: dataSource, candleCloseTs: reading?.header.candle_close_ts ?? null },
+  );
+
   function focusChat() {
     const input = document.querySelector<HTMLTextAreaElement>(
       'textarea[aria-label="Question libre pour Sentinel"]',
@@ -76,7 +88,7 @@ export function ReadingColumn({
       <MarketReadingCard
         reading={reading}
         onAskChatbot={focusChat}
-        chartSlot={buildChartSlot(reading)}
+        chartSlot={buildChartSlot(reading, candles)}
         className="w-full border-border/60 shadow-sm"
       />
     );
@@ -104,13 +116,13 @@ export function ReadingColumn({
 /**
  * The chart hero for a reading: candlesticks + SMC overlays when a candle feed
  * is available, otherwise the "Graphique indisponible" placeholder (the textual
- * reading below stays usable). Candle data is mock today — see lib/mockReadings.
+ * reading below stays usable). Candles are supplied by useCandles (live backend
+ * by default, deterministic mocks in tests) — see lib/market-reading/hooks.
  */
-function buildChartSlot(reading: MarketReading): React.ReactNode {
-  const candles = getMockCandles(
-    reading.header.instrument,
-    reading.header.timeframe,
-  );
+function buildChartSlot(
+  reading: MarketReading,
+  candles: Candle[] | null,
+): React.ReactNode {
   if (!candles || candles.length === 0) {
     return <ChartUnavailable />;
   }

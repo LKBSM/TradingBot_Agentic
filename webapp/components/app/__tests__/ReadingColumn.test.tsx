@@ -28,6 +28,7 @@ describe('ReadingColumn', () => {
         isRefreshing={false}
         error={null}
         onRetry={noop}
+        dataSource="mock"
       />,
     );
     expect(
@@ -44,6 +45,7 @@ describe('ReadingColumn', () => {
         isRefreshing={false}
         error={new MarketReadingNotAvailableError('down')}
         onRetry={noop}
+        dataSource="mock"
       />,
     );
     expect(screen.getByText('Données indisponibles')).toBeInTheDocument();
@@ -61,6 +63,7 @@ describe('ReadingColumn', () => {
         isRefreshing={false}
         error={null}
         onRetry={noop}
+        dataSource="mock"
       />,
     );
     await waitFor(() =>
@@ -77,6 +80,7 @@ describe('ReadingColumn', () => {
         isRefreshing={false}
         error={null}
         onRetry={noop}
+        dataSource="mock"
       />,
     );
     expect(screen.getByText('Graphique indisponible')).toBeInTheDocument();

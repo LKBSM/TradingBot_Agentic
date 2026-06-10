@@ -165,6 +165,46 @@ class CandlesCacheStore:
             finally:
                 conn.close()
 
+    def get_last_n_candles(
+        self, instrument: str, timeframe: str, n: int
+    ) -> List[Candle]:
+        """Return the most recent ``n`` candles in ascending chronological order.
+
+        Read-only window over ``candles_cache`` (already populated by the
+        assembler / scheduler). No external provider call is made here — this is
+        a pure cache read. Returns an empty list if the combo has no cached
+        candles. ``n <= 0`` returns an empty list.
+        """
+        if n <= 0:
+            return []
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                cur = conn.execute(
+                    """
+                    SELECT ts, open, high, low, close, volume FROM candles_cache
+                    WHERE instrument = ? AND timeframe = ?
+                    ORDER BY ts DESC LIMIT ?
+                    """,
+                    (instrument, timeframe, n),
+                )
+                rows = cur.fetchall()
+            finally:
+                conn.close()
+        # Rows come back newest-first; reverse to ascending (chart expects it).
+        candles = [
+            Candle(
+                ts=datetime.fromisoformat(row["ts"]),
+                open=row["open"],
+                high=row["high"],
+                low=row["low"],
+                close=row["close"],
+                volume=row["volume"] if row["volume"] is not None else 0.0,
+            )
+            for row in reversed(rows)
+        ]
+        return candles
+
     def count_candles(self, instrument: str, timeframe: str) -> int:
         with self._lock:
             conn = self._get_connection()

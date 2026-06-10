@@ -203,6 +203,30 @@ export interface MarketReading {
   conditions: MarketReadingConditions;
 }
 
+// ─── Chart feed (GET /api/candles) ────────────────────────────────────────────
+
+/**
+ * One OHLC candle as served by GET /api/candles. `time` is a UTC epoch in
+ * SECONDS (lightweight-charts' UTCTimestamp). Strictly descriptive — the series
+ * stops at the last fully-closed candle, never a forward projection.
+ */
+export interface Candle {
+  time: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  /** Tick/real volume when available (0 when the provider omits it). */
+  volume?: number;
+}
+
+/** Envelope returned by GET /api/candles. */
+export interface CandlesResponse {
+  instrument: string;
+  timeframe: string;
+  candles: Candle[];
+}
+
 // ─── Convenience helpers ──────────────────────────────────────────────────────
 
 export function isBullishTrend(r: Pick<MarketReadingRegime, 'trend'>): boolean {

@@ -8,7 +8,11 @@ const fetchMock = vi.fn();
 vi.mock('@/lib/market-reading/api-client', async (importActual) => {
   const actual =
     await importActual<typeof import('@/lib/market-reading/api-client')>();
-  return { ...actual, fetchMarketReading: (...args: unknown[]) => fetchMock(...args) };
+  return {
+    ...actual,
+    fetchMarketReading: (...args: unknown[]) => fetchMock(...args),
+    fetchCandles: () => Promise.resolve([]),
+  };
 });
 
 // Stub the candlestick chart (lightweight-charts needs a real canvas).

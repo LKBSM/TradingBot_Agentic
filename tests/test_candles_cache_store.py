@@ -64,6 +64,39 @@ class TestIdempotence:
         assert store.count_candles("XAUUSD", "H1") == 1
 
 
+class TestGetLastNCandles:
+    def test_returns_ascending_order(self, store):
+        # Insert newest-to-oldest to prove the store sorts, not the caller.
+        candles = [_sample_candle(seconds=i, close=2378.0 + i) for i in range(5)]
+        store.upsert_candles("XAUUSD", "M15", list(reversed(candles)))
+        got = store.get_last_n_candles("XAUUSD", "M15", 5)
+        assert [c.close for c in got] == [2378.0 + i for i in range(5)]
+        # Strictly ascending timestamps.
+        assert all(got[i].ts < got[i + 1].ts for i in range(len(got) - 1))
+
+    def test_limit_returns_most_recent_window(self, store):
+        candles = [_sample_candle(seconds=i, close=2378.0 + i) for i in range(10)]
+        store.upsert_candles("XAUUSD", "M15", candles)
+        got = store.get_last_n_candles("XAUUSD", "M15", 3)
+        assert len(got) == 3
+        # The 3 most recent (highest seconds), still ascending.
+        assert [c.close for c in got] == [2385.0, 2386.0, 2387.0]
+
+    def test_empty_when_no_candles(self, store):
+        assert store.get_last_n_candles("XAUUSD", "M15", 50) == []
+
+    def test_zero_or_negative_limit_returns_empty(self, store):
+        store.upsert_candles("XAUUSD", "M15", [_sample_candle()])
+        assert store.get_last_n_candles("XAUUSD", "M15", 0) == []
+        assert store.get_last_n_candles("XAUUSD", "M15", -3) == []
+
+    def test_isolated_per_combo(self, store):
+        store.upsert_candles("XAUUSD", "M15", [_sample_candle(close=1.0)])
+        store.upsert_candles("EURUSD", "M15", [_sample_candle(close=2.0)])
+        xau = store.get_last_n_candles("XAUUSD", "M15", 10)
+        assert [c.close for c in xau] == [1.0]
+
+
 class TestEnvAwarePath:
     def test_explicit_path_wins_over_env_var(self, tmp_path, monkeypatch):
         env_path = tmp_path / "from_env.db"

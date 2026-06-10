@@ -12,8 +12,7 @@ import {
 } from 'lightweight-charts';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
-import type { Candle } from '@/lib/mockReadings';
-import type { MarketReadingStructure } from '@/types/market-reading';
+import type { Candle, MarketReadingStructure } from '@/types/market-reading';
 
 /**
  * Candlestick chart for the reading panel, built on TradingView's Lightweight

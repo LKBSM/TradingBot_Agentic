@@ -1,4 +1,4 @@
-import type { MarketReading } from '@/types/market-reading';
+import type { Candle, CandlesResponse, MarketReading } from '@/types/market-reading';
 
 /**
  * Client for GET /api/market-reading — Chantier 2 lazy on-demand endpoint.
@@ -160,6 +160,125 @@ async function attempt(
   }
 
   return parsed;
+}
+
+// ─── Candles (GET /api/candles) ───────────────────────────────────────────────
+
+const CANDLES_ENDPOINT = '/api/candles';
+
+/**
+ * Raised when the candle feed is unavailable for a combo. `status` distinguishes
+ * the cases the chart cares about:
+ *   · 404 → valid combo, no candles cached yet  → "graphique indisponible"
+ *   · 400 → combo outside the V1 perimeter
+ *   · 503 → candles store not wired on this environment
+ *   · 0   → transport / parse failure
+ * The chart treats all of them the same way (no candles → placeholder); the code
+ * is kept for callers that want to differentiate.
+ */
+export class CandlesError extends Error {
+  readonly status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+    this.name = 'CandlesError';
+  }
+}
+
+export interface FetchCandlesOptions {
+  signal?: AbortSignal;
+  /** Max candles to request (backend caps at 500; default 200). */
+  limit?: number;
+  timeoutMs?: number;
+}
+
+/**
+ * Fetch the OHLC window for a combo from the descriptive `/api/candles` feed.
+ *
+ * Same-origin: proxied to FastAPI through the `/api/:path*` rewrite — the browser
+ * never holds an API key. The response is OHLC only (no predictive fields).
+ *
+ * @throws {CandlesError} on any non-200 / transport / parse failure.
+ */
+export async function fetchCandles(
+  instrument: string,
+  timeframe: string,
+  options: FetchCandlesOptions = {},
+): Promise<Candle[]> {
+  const { signal, limit = 200, timeoutMs = DEFAULT_TIMEOUT_MS } = options;
+  const url =
+    `${CANDLES_ENDPOINT}?instrument=${encodeURIComponent(instrument)}` +
+    `&timeframe=${encodeURIComponent(timeframe)}&limit=${encodeURIComponent(String(limit))}`;
+
+  const controller = new AbortController();
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs);
+  const onCallerAbort = () => controller.abort();
+  if (signal) {
+    if (signal.aborted) controller.abort();
+    else signal.addEventListener('abort', onCallerAbort, { once: true });
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: 'GET',
+      headers: { accept: 'application/json' },
+      signal: controller.signal,
+    });
+  } catch (err) {
+    const message = timedOut
+      ? 'Délai dépassé en interrogeant le service de bougies.'
+      : err instanceof Error
+        ? err.message
+        : 'Erreur réseau';
+    throw new CandlesError(0, `Service de bougies injoignable : ${message}`);
+  } finally {
+    clearTimeout(timer);
+    signal?.removeEventListener('abort', onCallerAbort);
+  }
+
+  if (!res.ok) {
+    const detail = await readErrorDetail(res);
+    throw new CandlesError(
+      res.status,
+      detail ?? 'Le flux de bougies est indisponible pour cette combinaison.',
+    );
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = await res.json();
+  } catch {
+    throw new CandlesError(res.status, 'Réponse du service de bougies illisible.');
+  }
+
+  if (!isCandlesResponseShape(parsed)) {
+    throw new CandlesError(res.status, 'Réponse du service de bougies malformée.');
+  }
+
+  return parsed.candles;
+}
+
+/** Structural guard for the candles envelope. */
+function isCandlesResponseShape(value: unknown): value is CandlesResponse {
+  if (typeof value !== 'object' || value === null) return false;
+  const v = value as Record<string, unknown>;
+  if (!Array.isArray(v.candles)) return false;
+  return v.candles.every((c) => {
+    if (typeof c !== 'object' || c === null) return false;
+    const cc = c as Record<string, unknown>;
+    return (
+      typeof cc.time === 'number' &&
+      typeof cc.open === 'number' &&
+      typeof cc.high === 'number' &&
+      typeof cc.low === 'number' &&
+      typeof cc.close === 'number'
+    );
+  });
 }
 
 /** Best-effort extraction of a FastAPI `{detail}` body; never throws. */

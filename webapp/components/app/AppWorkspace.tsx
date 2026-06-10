@@ -38,6 +38,8 @@ export interface WorkspaceViewProps {
   isRefreshing: boolean;
   error: Error | null;
   onRetry(): void;
+  /** Candle/reading source, forwarded to ReadingColumn's chart feed. */
+  dataSource: ReadingSource;
 }
 
 /**
@@ -82,6 +84,7 @@ function WorkspaceInner({ dataSource }: { dataSource: ReadingSource }) {
     isRefreshing,
     error,
     onRetry: refresh,
+    dataSource,
   };
 
   if (isMobile) {
@@ -100,6 +103,7 @@ function DesktopWorkspace({
   isRefreshing,
   error,
   onRetry,
+  dataSource,
 }: WorkspaceViewProps) {
   return (
     <div className="container-wide py-6">
@@ -118,6 +122,7 @@ function DesktopWorkspace({
           isRefreshing={isRefreshing}
           error={error}
           onRetry={onRetry}
+          dataSource={dataSource}
         />
 
         <div className="md:sticky md:top-6 md:h-[calc(100vh-7rem)]">

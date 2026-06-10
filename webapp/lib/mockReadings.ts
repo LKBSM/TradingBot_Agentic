@@ -24,7 +24,12 @@ import {
   FIXTURE_XAU_M15,
 } from '@/lib/market-reading/fixtures';
 import { comboKey, type Combo } from '@/lib/market-reading/store';
-import type { MarketReading } from '@/types/market-reading';
+import type { Candle, MarketReading } from '@/types/market-reading';
+
+// Re-exported for existing importers (ReadingChart, tests). The canonical
+// definition now lives in the contract types alongside the live /api/candles
+// shape — mock and live candles share one type.
+export type { Candle };
 
 /**
  * Source de données de la vue /app.
@@ -32,7 +37,7 @@ import type { MarketReading } from '@/types/market-reading';
  *   · 'live' → lectures via fetchMarketReading() (backend réel).
  * TEMPORAIRE : 'mock' tant que le groupe backend ne sert pas de données réelles.
  */
-export const READING_DATA_SOURCE: 'mock' | 'live' = 'mock';
+export const READING_DATA_SOURCE: 'mock' | 'live' = 'live';
 
 // ─── Lectures mock (calquées sur le contrat MarketReading v2.0.0) ─────────────
 
@@ -270,15 +275,8 @@ export function getMockReading(
 }
 
 // ─── Bougies mock (pour le graphique) ────────────────────────────────────────
-
-/** Une bougie OHLC. `time` = timestamp UNIX en SECONDES (UTCTimestamp). */
-export interface Candle {
-  time: number;
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-}
+// La forme `Candle` est définie dans les types du contrat (cf. import en tête) :
+// `time` = timestamp UNIX en SECONDES (UTCTimestamp).
 
 const INTERVAL_SECONDS: Record<string, number> = {
   M15: 15 * 60,

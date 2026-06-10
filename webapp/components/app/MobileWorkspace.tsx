@@ -29,6 +29,7 @@ export function MobileWorkspace({
   isRefreshing,
   error,
   onRetry,
+  dataSource,
 }: WorkspaceViewProps) {
   const [tab, setTab] = React.useState<MobileTab>('markets');
 
@@ -71,6 +72,7 @@ export function MobileWorkspace({
             isRefreshing={isRefreshing}
             error={error}
             onRetry={onRetry}
+            dataSource={dataSource}
           />
         </TabsContent>
 
