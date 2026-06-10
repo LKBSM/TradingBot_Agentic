@@ -99,6 +99,23 @@ Tests `Nav.test.tsx` : landing montre la nav marketing ; /app la masque (aucun �
 
 ---
 
+## Mise à jour — séparation niveau de cassure / flag retest (commit `bd7ef91`)
+
+Décision founder : **ne pas** restreindre la cassure à armed ; séparer plutôt les deux flags, tous deux lus sur le **même** signal canonique `BOS_RETEST_STATE` :
+
+| Flag | Gate | Fenêtre |
+|------|------|---------|
+| **Niveau de cassure (BOS)** | `BOS_RETEST_STATE != 0` | awaiting **+** armed (inchangé) |
+| **Retest en cours** | `abs(BOS_RETEST_STATE) == 2` | **armed seul** (jamais awaiting) |
+
+- Le gating du retest bascule de `BOS_RETEST_ARMED` vers `abs(BOS_RETEST_STATE) == 2` — équivalent côté moteur, mais **explicite** et aligné sur le même signal que la persistance BOS.
+- **Cohérence** : le retest n'est surfacé que si la cassure l'est aussi (`fresh_break or persisted_break`) → jamais de retest d'une cassure lâchée (trend inversé).
+- Toujours niveau assembler-mapper, **aucun seuil touché**.
+
+**Split mesuré (XAU M15 réel, 177 bougies)** : BOS persiste **59,9 %** · dont awaiting **4,5 %** (retest masqué) · armed **55,4 %** (retest affiché). La séparation déplace les ~4,5 % de bougies « awaiting » de *retest affiché* à *retest masqué* ; le niveau de cassure, lui, reste affiché sur toute la fenêtre active.
+
+Tests ajoutés/ajustés : `test_retest_flag_only_during_armed_state_not_awaiting`, `test_retest_not_shown_when_break_dropped_by_inverted_trend`, et mise en scénario armed réaliste de `test_confluence_signal_to_structure_with_long_signal` + `_structure_rich`. Backend : **164 tests verts** sur les suites concernées, 0 régression.
+
 ## Déféré (NON fait ici)
 
 - **1b** — persistance OB/FVG « tant qu'actives » : nécessiterait une logique d'invalidation OB/FVG inexistante côté moteur (zone consommée / FVG comblée), dont les définitions doivent d'abord être validées par l'**annotation manuelle**. **Groupe B.**
