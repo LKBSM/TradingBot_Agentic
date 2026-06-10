@@ -49,6 +49,32 @@ describe('MarketReadingHeader', () => {
     render(<MarketReadingHeader header={FIXTURE_XAU_M15.header} />);
     expect(await screen.findByText(/Bougie clôturée/)).toBeInTheDocument();
   });
+
+  it('shows the unified live price + daily change when `live` is supplied', () => {
+    // A unified price that DIFFERS from the per-timeframe close_price (the bug:
+    // M15 vs H1/H4 divergence) — the header must show the unified one.
+    render(
+      <MarketReadingHeader
+        header={FIXTURE_XAU_M15.header}
+        live={{
+          price: 4131.4,
+          priceTs: 0,
+          referenceClose: 4268.7,
+          changeAbs: -137.3,
+          changePct: -0.0322,
+        }}
+      />,
+    );
+    expect(screen.getByText(/4[\s ]?131,40/)).toBeInTheDocument();
+    expect(screen.getByText(/−3,22 %/)).toBeInTheDocument();
+    // The per-timeframe close_price must NOT also be shown.
+    expect(screen.queryByText(/2[\s ]?392,35/)).not.toBeInTheDocument();
+  });
+
+  it('falls back to close_price when no live price is available', () => {
+    render(<MarketReadingHeader header={FIXTURE_XAU_M15.header} live={null} />);
+    expect(screen.getByText(/2[\s ]?392,35/)).toBeInTheDocument();
+  });
 });
 
 describe('MarketReadingCard', () => {

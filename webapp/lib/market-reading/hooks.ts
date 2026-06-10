@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { fetchCandles, fetchMarketReading, MarketReadingNotAvailableError } from './api-client';
+import { computeDailyChange, type DailyChange } from './price';
 import { getMockCandles, getMockReading, READING_DATA_SOURCE } from '@/lib/mockReadings';
 import type { Candle, MarketReading } from '@/types/market-reading';
 
@@ -241,4 +242,115 @@ export function useCandles(
   }, [instrument, timeframe, source, candleCloseTs]);
 
   return { candles, isLoading, error };
+}
+
+// ─── Unified last price (header) ─────────────────────────────────────────────
+
+/**
+ * Timeframe the unified header price is read from. M15 is the finest combo
+ * served by /api/candles, so its last closed candle is the freshest descriptive
+ * price available — identical whatever timeframe the chart shows.
+ */
+const LATEST_PRICE_TF = 'M15';
+/** Window pulled to find the previous-UTC-day reference close (≈ 3 days of M15). */
+const LATEST_PRICE_LIMIT = 300;
+/**
+ * Light refresh cadence for the header price. NOT a tick stream — a coarse
+ * cache read (no Twelve Data call) so the header feels alive between candle
+ * closes without leaving the "closed-candle" model.
+ */
+export const DEFAULT_LATEST_PRICE_INTERVAL_MS = 45_000;
+
+export interface UseLatestPriceResult {
+  /** Unified last price + descriptive daily change, or null when unavailable. */
+  change: DailyChange | null;
+  isLoading: boolean;
+}
+
+export interface UseLatestPriceOptions {
+  source?: ReadingSource;
+  /** Active reading's `candle_close_ts` — a fresh close re-pulls the price too. */
+  candleCloseTs?: string | null;
+  /** Light poll interval in ms (default 45s). Set to 0 to disable polling. */
+  intervalMs?: number;
+}
+
+/**
+ * Resolve ONE unified last price for `instrument`, independent of the displayed
+ * timeframe, plus its descriptive daily % change.
+ *
+ * Always reads the M15 candle window (the freshest closed price) — so the H1/H4
+ * header no longer lags behind M15. Pure cache read via /api/candles (no API
+ * key, no provider call). Refetches on a light interval AND whenever a candle
+ * closes on the active timeframe. In mock mode it derives from the local mock
+ * M15 candles; if the feed is unavailable it returns `change: null` and the
+ * header falls back to the per-timeframe `close_price`.
+ */
+export function useLatestPrice(
+  instrument: string | null,
+  options: UseLatestPriceOptions = {},
+): UseLatestPriceResult {
+  const {
+    source = READING_DATA_SOURCE,
+    candleCloseTs = null,
+    intervalMs = DEFAULT_LATEST_PRICE_INTERVAL_MS,
+  } = options;
+
+  const [change, setChange] = React.useState<DailyChange | null>(null);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const requestSeq = React.useRef(0);
+  const [tick, setTick] = React.useState(0);
+
+  React.useEffect(() => {
+    if (!instrument) {
+      setChange(null);
+      setIsLoading(false);
+      return;
+    }
+
+    const seq = ++requestSeq.current;
+
+    // ── Mock source: derive from local mock M15 candles, no network. ──
+    if (source === 'mock') {
+      setChange(computeDailyChange(getMockCandles(instrument, LATEST_PRICE_TF)));
+      setIsLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    setIsLoading(true);
+
+    fetchCandles(instrument, LATEST_PRICE_TF, {
+      signal: controller.signal,
+      limit: LATEST_PRICE_LIMIT,
+    })
+      .then((data) => {
+        if (seq !== requestSeq.current) return; // stale
+        setChange(computeDailyChange(data));
+      })
+      .catch(() => {
+        if (seq !== requestSeq.current) return; // stale
+        if (controller.signal.aborted) return; // unmounted / superseded
+        // Feed unavailable → no unified price → header falls back to close_price.
+        setChange(null);
+      })
+      .finally(() => {
+        if (seq !== requestSeq.current) return; // stale
+        setIsLoading(false);
+      });
+
+    return () => controller.abort();
+    // `tick` (interval) and `candleCloseTs` (fresh close) both re-pull the price.
+  }, [instrument, source, candleCloseTs, tick]);
+
+  // Light polling — coarse cache read, never a tick stream.
+  React.useEffect(() => {
+    if (!instrument || source === 'mock' || !intervalMs || intervalMs <= 0) {
+      return;
+    }
+    const id = window.setInterval(() => setTick((t) => t + 1), intervalMs);
+    return () => window.clearInterval(id);
+  }, [instrument, source, intervalMs]);
+
+  return { change, isLoading };
 }

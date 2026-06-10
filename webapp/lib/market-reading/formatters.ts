@@ -87,6 +87,28 @@ export function formatBand(
   return `${formatPrice(low, instrument)} – ${formatPrice(high, instrument)}`;
 }
 
+/**
+ * Format a fractional change as a signed percentage, fr-FR ("-3,22 %",
+ * "+1,10 %", "0,00 %"). Descriptive market fact, not a forecast.
+ */
+export function formatChangePercent(fraction: number): string {
+  const pct = fraction * 100;
+  const sign = pct > 0 ? '+' : pct < 0 ? '−' : '';
+  const body = Math.abs(pct).toLocaleString('fr-FR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  return `${sign}${body} %`;
+}
+
+/** Colour intent for a price change (green up / red down / muted flat). */
+export function changeTone(fraction: number | null | undefined): Tone {
+  if (fraction === null || fraction === undefined || fraction === 0) {
+    return 'neutral';
+  }
+  return fraction > 0 ? 'bull' : 'bear';
+}
+
 // ─── Time ──────────────────────────────────────────────────────────────────────
 
 const SECOND = 1_000;

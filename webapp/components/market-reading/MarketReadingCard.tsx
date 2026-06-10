@@ -8,6 +8,7 @@ import {
   MarketReadingSections,
   type MarketReadingSectionKey,
 } from './MarketReadingSections';
+import type { DailyChange } from '@/lib/market-reading/price';
 import type { MarketReading } from '@/types/market-reading';
 
 interface MarketReadingCardProps {
@@ -24,6 +25,11 @@ interface MarketReadingCardProps {
    * landing samples, which keep the text-only hero.
    */
   chartSlot?: React.ReactNode;
+  /**
+   * Unified last price + descriptive daily change for the header. Omitted on
+   * static surfaces (landing samples), where the header shows `close_price`.
+   */
+  live?: DailyChange | null;
   className?: string;
 }
 
@@ -44,12 +50,13 @@ export function MarketReadingCard({
   heroOnly = false,
   defaultOpenSections,
   chartSlot,
+  live,
   className,
 }: MarketReadingCardProps) {
   return (
     <Card className={className ?? 'w-full max-w-2xl border-border/60 shadow-sm'}>
       <CardContent className="space-y-5 p-5 sm:space-y-6 sm:p-7">
-        <MarketReadingHeader header={reading.header} />
+        <MarketReadingHeader header={reading.header} live={live} />
 
         {chartSlot}
 

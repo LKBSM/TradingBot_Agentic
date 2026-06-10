@@ -10,7 +10,11 @@ import {
 } from './ReadingPlaceholders';
 import { ReadingSkeleton } from './ReadingSkeleton';
 import { READING_DATA_SOURCE } from '@/lib/mockReadings';
-import { useCandles, type ReadingSource } from '@/lib/market-reading/hooks';
+import {
+  useCandles,
+  useLatestPrice,
+  type ReadingSource,
+} from '@/lib/market-reading/hooks';
 import type { Combo } from '@/lib/market-reading/store';
 import type { Candle, MarketReading } from '@/types/market-reading';
 
@@ -68,6 +72,14 @@ export function ReadingColumn({
     { source: dataSource, candleCloseTs: reading?.header.candle_close_ts ?? null },
   );
 
+  // Unified last price for the header — the M15 freshest close, identical
+  // whatever timeframe is shown (fixes the M15-vs-H1/H4 price divergence). Pure
+  // cache read; refreshes on a light interval + on each active-TF candle close.
+  const { change: live } = useLatestPrice(active?.instrument ?? null, {
+    source: dataSource,
+    candleCloseTs: reading?.header.candle_close_ts ?? null,
+  });
+
   function focusChat() {
     const input = document.querySelector<HTMLTextAreaElement>(
       'textarea[aria-label="Question libre pour Sentinel"]',
@@ -89,6 +101,7 @@ export function ReadingColumn({
         reading={reading}
         onAskChatbot={focusChat}
         chartSlot={buildChartSlot(reading, candles)}
+        live={live}
         className="w-full border-border/60 shadow-sm"
       />
     );
