@@ -111,6 +111,22 @@ def _first_real(smc: dict[str, float], *keys: str) -> Optional[float]:
     return None
 
 
+def _epoch_to_dt(value: Any) -> Optional[datetime]:
+    """Convert epoch SECONDS (float) to a tz-aware UTC datetime, or None.
+
+    Used to recover the ORIGINAL break time for a persisted (non-fresh) BOS from
+    the ``BOS_BREAK_TS`` glue field, so ``broken_at`` is honest rather than the
+    current bar.
+    """
+    f = _clean_float(value)
+    if f is None:
+        return None
+    try:
+        return datetime.fromtimestamp(f, tz=timezone.utc)
+    except (OverflowError, OSError, ValueError):
+        return None
+
+
 # ---------------------------------------------------------------------------
 # Realized structural levels — glue between SmartMoneyEngine output and the
 # structure mapper. Lives HERE (not in the engine) so the detection engine is
@@ -150,6 +166,17 @@ def realized_levels(enriched: Any, idx: int = -1) -> dict[str, float]:
         ff = enriched["BOS_BREAK_LEVEL"].iloc[: pos + 1].ffill()
         if len(ff) and not pd.isna(ff.iloc[-1]):
             out["BOS_BREAK_LEVEL_LAST"] = float(ff.iloc[-1])
+
+    # Timestamp of the most recent BOS event up to this bar (forward-carried), so
+    # a PERSISTED active break (still vouched for by the retest state machine —
+    # D1-b option 1a) reports its ORIGINAL break time, not the current bar. Glue,
+    # not engine logic. Guarded on a DatetimeIndex so integer-indexed test frames
+    # never produce a bogus timestamp.
+    if "BOS_EVENT" in cols and isinstance(enriched.index, pd.DatetimeIndex):
+        ev = enriched["BOS_EVENT"].iloc[: pos + 1]
+        nz = ev[ev != 0]
+        if len(nz):
+            out["BOS_BREAK_TS"] = float(nz.index[-1].timestamp())
 
     # Order-block zone (whichever side fired on this bar; mutually exclusive).
     for hi_col, lo_col in (("BULLISH_OB_HIGH", "BULLISH_OB_LOW"),
@@ -219,21 +246,46 @@ def confluence_signal_to_structure(
     bos_signal = float(smc_features.get("BOS_SIGNAL", 0.0))
     bos_direction = _sign_to_direction(bos_signal)
     bos_event = float(smc_features.get("BOS_EVENT", 0.0))
-    # F6: a "recent BOS" is a FRESH break at this candle close (BOS_EVENT != 0),
-    # NOT the continuously-propagated BOS_SIGNAL trend state. Previously the
-    # object was emitted on every propagated bar, so `bos_recent_*` appeared on
-    # ~100% of readings (53% of them stale). Now it only appears on real breaks.
-    if bos_direction is not None and abs(bos_event) > 0:
-        event_direction = _sign_to_direction(bos_event) or bos_direction
+    retest_state = float(smc_features.get("BOS_RETEST_STATE", 0.0))
+    state_direction = _sign_to_direction(retest_state)
+    # F6: a "recent BOS" is NOT the continuously-propagated BOS_SIGNAL trend
+    # state — emitting on every propagated bar surfaced a (stale) BOS on ~100% of
+    # readings. We surface a break only when it is genuinely active.
+    #
+    # D1-b (option 1a): a break is active when EITHER it is fresh at this candle
+    # close (BOS_EVENT != 0) OR a prior break is still vouched for by the engine's
+    # retest state machine (BOS_RETEST_STATE != 0 = awaiting/armed). That state
+    # self-clears to 0 on invalidation, reclaim, or timeout
+    # (strategy_features._calculate_bos_retest_*), and we additionally require the
+    # propagated trend not to have inverted against the break direction
+    # ("BOS_SIGNAL n'est pas inversé"). This relies STRICTLY on engine-produced
+    # state — NO detection threshold is touched. Persistence lives at this
+    # assembler-layer mapper, not in the detection engine. The window is bounded
+    # (awaiting_timeout=20 + armed_window=5 bars by default), so this is the
+    # opposite of the F6 "stale on ~100%" bug.
+    fresh_break = abs(bos_event) > 0
+    persisted_break = (
+        state_direction is not None
+        and (bos_direction is None or bos_direction == state_direction)
+    )
+    if fresh_break or persisted_break:
         # F1: publish the REAL broken structural level (present on event bars as
-        # BOS_BREAK_LEVEL; BOS_BREAK_LEVEL_LAST is a defensive forward-filled
-        # fallback). current_price is the last-resort fallback.
+        # BOS_BREAK_LEVEL; BOS_BREAK_LEVEL_LAST is the forward-filled level a
+        # persisted break sources). current_price is the last-resort fallback.
         bos_level = _first_real(smc_features, "BOS_BREAK_LEVEL", "BOS_BREAK_LEVEL_LAST")
+        if fresh_break:
+            event_direction = _sign_to_direction(bos_event) or bos_direction
+            broken_at = bar_ts
+        else:
+            # Persisted break: direction from the retest state, original break
+            # time from the glue field (honest broken_at, not the current bar).
+            event_direction = state_direction or bos_direction
+            broken_at = _epoch_to_dt(smc_features.get("BOS_BREAK_TS")) or bar_ts
         bos = BOSRecent(
             direction=event_direction,
             level=bos_level if bos_level is not None else float(current_price),
-            broken_at=bar_ts,
-            validation_status="confirmed",  # fresh break ⇒ always confirmed
+            broken_at=broken_at,
+            validation_status="confirmed",  # broke and not invalidated ⇒ confirmed
         )
 
     # CHOCH

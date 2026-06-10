@@ -118,21 +118,88 @@ def test_confluence_signal_to_structure_no_signal_but_bos_in_features(bar_ts):
     assert s.retest_in_progress is None
 
 
-def test_retest_uses_break_level_last_without_fresh_bos(bar_ts):
-    """F1+F6: a retest is armed bars after the break (no fresh BOS event). It is
-    decoupled from the bos object and sources its level from the forward-filled
-    real broken level, never current_price."""
+def test_persisted_bos_during_active_retest_state(bar_ts):
+    """D1-b (1a): a prior break with no fresh event but an ACTIVE retest state
+    (BOS_RETEST_STATE != 0) is persisted — surfaced as a confirmed bos AND a
+    retest in progress, both sourcing the forward-filled real broken level
+    (never current_price)."""
     smc_features = {
         "BOS_SIGNAL": 1.0,
         "BOS_EVENT": 0.0,                 # no fresh break on this bar
+        "BOS_RETEST_STATE": 2.0,          # armed retest → break still active
         "BOS_RETEST_ARMED": 1.0,
         "BOS_BREAK_LEVEL_LAST": 2361.10,  # forward-filled real level from pipeline
+        "BOS_BREAK_TS": 1748352600.0,     # original break time (epoch seconds)
         "ATR": 5.0,
     }
     s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=2390.0)
-    assert s.bos is None                       # F6: no fresh break
-    assert s.retest_in_progress is not None    # F6: retest decoupled from bos
-    assert s.retest_in_progress.level == 2361.10  # NOT current_price (2390.0)
+    assert s.bos is not None                       # 1a: persisted while active
+    assert s.bos.direction == "bullish"
+    assert s.bos.level == 2361.10                  # forward-filled real level
+    assert s.bos.validation_status == "confirmed"
+    assert s.bos.broken_at == datetime.fromtimestamp(1748352600.0, tz=timezone.utc)
+    assert s.retest_in_progress is not None        # retest still surfaced
+    assert s.retest_in_progress.level == 2361.10   # NOT current_price (2390.0)
+
+
+def test_persisted_bos_awaiting_state_without_armed_retest(bar_ts):
+    """1a: awaiting state (BOS_RETEST_STATE = ±1, price has not retested yet)
+    persists the bos, but NO retest is in progress (only armed ±2 arms one)."""
+    smc_features = {
+        "BOS_SIGNAL": -1.0,
+        "BOS_EVENT": 0.0,
+        "BOS_RETEST_STATE": -1.0,         # awaiting (bearish)
+        "BOS_BREAK_LEVEL_LAST": 1.0850,
+        "ATR": 4.0,
+    }
+    s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=1.0820)
+    assert s.bos is not None
+    assert s.bos.direction == "bearish"
+    assert s.bos.level == 1.0850
+    assert s.retest_in_progress is None            # not armed → no retest surfaced
+
+
+def test_persisted_bos_broken_at_falls_back_to_bar_ts_without_break_ts(bar_ts):
+    """1a: when the glue field BOS_BREAK_TS is absent, broken_at falls back to
+    the current bar (never crashes, never invents a time)."""
+    smc_features = {
+        "BOS_SIGNAL": 1.0,
+        "BOS_EVENT": 0.0,
+        "BOS_RETEST_STATE": 1.0,
+        "BOS_BREAK_LEVEL_LAST": 2361.10,
+        "ATR": 5.0,
+    }
+    s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=2390.0)
+    assert s.bos is not None
+    assert s.bos.broken_at == bar_ts
+
+
+def test_bos_disappears_on_invalidation(bar_ts):
+    """1a: once the engine's retest state machine clears to 0 (invalidation /
+    reclaim / timeout), the break is no longer surfaced — it disappears."""
+    smc_features = {
+        "BOS_SIGNAL": 1.0,                # trend may still propagate…
+        "BOS_EVENT": 0.0,
+        "BOS_RETEST_STATE": 0.0,          # …but the break is no longer active
+        "BOS_BREAK_LEVEL_LAST": 2361.10,
+        "ATR": 5.0,
+    }
+    s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=2390.0)
+    assert s.bos is None                  # disappeared on invalidation
+
+
+def test_bos_not_persisted_when_trend_inverted_against_break(bar_ts):
+    """1a: 'BOS_SIGNAL n'est pas inversé' — if the propagated trend has flipped
+    opposite to the (stale) retest-state direction, the break is not surfaced."""
+    smc_features = {
+        "BOS_SIGNAL": -1.0,               # trend now bearish…
+        "BOS_EVENT": 0.0,
+        "BOS_RETEST_STATE": 2.0,          # …stale bullish retest state
+        "BOS_BREAK_LEVEL_LAST": 2361.10,
+        "ATR": 5.0,
+    }
+    s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=2390.0)
+    assert s.bos is None                  # inverted trend → not persisted
 
 
 def test_bos_level_falls_back_to_current_price_when_no_break_level(bar_ts):
@@ -159,6 +226,37 @@ def test_realized_levels_forward_fills_bos_break_level():
     })
     out = realized_levels(df, idx=3)
     assert out["BOS_BREAK_LEVEL_LAST"] == 10.5
+
+
+def test_realized_levels_emits_break_ts_from_last_event(bar_ts):
+    """1a glue: realized_levels carries the ORIGINAL break timestamp (last bar
+    with BOS_EVENT != 0) so a persisted break reports an honest broken_at. Only
+    when the frame has a DatetimeIndex (production), never on integer indices."""
+    import numpy as np
+    import pandas as pd
+
+    from src.intelligence.market_reading_mappers import realized_levels
+
+    idx = pd.to_datetime([
+        "2026-05-28T13:00:00Z",
+        "2026-05-28T13:15:00Z",  # the break bar
+        "2026-05-28T13:30:00Z",
+        "2026-05-28T13:45:00Z",
+    ])
+    df = pd.DataFrame(
+        {
+            "high": [10.0, 11.0, 12.0, 13.0],
+            "low": [9.0, 9.5, 10.0, 11.0],
+            "BOS_EVENT": [0.0, 1.0, 0.0, 0.0],
+        },
+        index=idx,
+    )
+    out = realized_levels(df, idx=3)
+    assert out["BOS_BREAK_TS"] == pd.Timestamp("2026-05-28T13:15:00Z").timestamp()
+
+    # Integer-indexed frame → no bogus timestamp emitted.
+    df_int = pd.DataFrame({"high": [1.0, 2.0], "low": [0.5, 1.5], "BOS_EVENT": [0.0, 1.0]})
+    assert "BOS_BREAK_TS" not in realized_levels(df_int, idx=1)
 
 
 def test_choch_level_uses_break_level(bar_ts):
