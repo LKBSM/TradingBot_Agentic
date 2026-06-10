@@ -180,6 +180,23 @@ describe('StructureSection', () => {
     ).toBeInTheDocument();
   });
 
+  it('shows the present-tense editorial framing (1a) in French, no English/directive wording', () => {
+    render(
+      <Accordion type="multiple" defaultValue={['structure']}>
+        <StructureSection
+          structure={FIXTURE_XAU_M15.structure}
+          instrument="XAUUSD"
+        />
+      </Accordion>,
+    );
+    const framing = screen.getByText(/Structures décrites au présent/);
+    expect(framing).toBeInTheDocument();
+    expect(framing.textContent).toMatch(/reprise ou invalidation/);
+    expect(framing.textContent).toMatch(/Order Block et Fair Value Gap/);
+    // No English leak, no directive verb.
+    expect(framing.textContent).not.toMatch(/\b(shown|while|until|invalidated|buy|sell)\b/i);
+  });
+
   it('shows an empty-state line when structure is bare', () => {
     render(
       <Accordion type="multiple" defaultValue={['structure']}>

@@ -61,6 +61,15 @@ export function StructureSection({
         </span>
       </AccordionTrigger>
       <AccordionContent>
+        {/* Cadrage éditorial (niveau 1.5) — les structures sont décrites au
+            présent : une cassure reste affichée tant que le moteur la considère
+            active (en attente / retest), et disparaît dès sa reprise ou son
+            invalidation. Les zones OB/FVG sont indiquées à leur formation. */}
+        <p className="mb-3 text-xs text-muted-foreground">
+          Structures décrites au présent : affichées tant qu’elles restent
+          vérifiables, retirées dès leur reprise ou invalidation. Les zones Order
+          Block et Fair Value Gap sont indiquées à leur formation.
+        </p>
         {!hasAnything ? (
           <p className="text-sm text-muted-foreground">
             Aucun élément structurel notable sur la dernière bougie.
