@@ -17,6 +17,20 @@ from src.performance.metrics import MetricsRegistry
 
 
 # =============================================================================
+# HERMETICITY
+# =============================================================================
+
+@pytest.fixture(autouse=True)
+def _disable_provider_snapshots(monkeypatch):
+    """Provider snapshots append JSONL under ./data — keep the suite hermetic.
+
+    Tests that exercise the snapshot path re-enable it explicitly with their
+    own monkeypatch (which takes precedence over this autouse default).
+    """
+    monkeypatch.setenv("PROVIDER_SNAPSHOT_ENABLED", "0")
+
+
+# =============================================================================
 # DATABASE FIXTURES
 # =============================================================================
 

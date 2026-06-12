@@ -615,3 +615,40 @@ def test_forbidden_tokens_set_is_immutable():
     assert isinstance(FORBIDDEN_TOKENS, frozenset)
     with pytest.raises(AttributeError):
         FORBIDDEN_TOKENS.add("new_token")  # type: ignore[attr-defined]
+
+
+def test_persisted_bos_future_break_ts_falls_back_to_bar_ts(bar_ts):
+    """Audit 2026-06-12 §T2: a BOS_BREAK_TS recovered from a wrong clock domain
+    (candle index labelled in the future) must never surface — production
+    readings published broken_at timestamps hours AFTER the reading itself.
+    The mapper clamps: future recovered time → fall back to bar_ts."""
+    future_epoch = bar_ts.timestamp() + 10 * 3600  # +10h, the observed offset
+    smc_features = {
+        "BOS_SIGNAL": 1.0,
+        "BOS_EVENT": 0.0,
+        "BOS_RETEST_STATE": 2.0,
+        "BOS_RETEST_ARMED": 1.0,
+        "BOS_BREAK_LEVEL_LAST": 2361.10,
+        "BOS_BREAK_TS": future_epoch,
+        "ATR": 5.0,
+    }
+    s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=2390.0)
+    assert s.bos is not None
+    assert s.bos.broken_at == bar_ts          # clamped, never in the future
+    assert s.bos.broken_at <= bar_ts
+
+
+def test_persisted_bos_past_break_ts_still_honest(bar_ts):
+    """Sanity counterpart: a legitimately past BOS_BREAK_TS is surfaced as-is."""
+    past_epoch = bar_ts.timestamp() - 3 * 3600
+    smc_features = {
+        "BOS_SIGNAL": 1.0,
+        "BOS_EVENT": 0.0,
+        "BOS_RETEST_STATE": 1.0,
+        "BOS_BREAK_LEVEL_LAST": 2361.10,
+        "BOS_BREAK_TS": past_epoch,
+        "ATR": 5.0,
+    }
+    s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=2390.0)
+    assert s.bos is not None
+    assert s.bos.broken_at == datetime.fromtimestamp(past_epoch, tz=timezone.utc)

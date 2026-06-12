@@ -25,7 +25,7 @@ assembler uses the template fallback from market_reading_mappers.
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Callable, Mapping, Optional, Sequence, Tuple
 
 from src.intelligence.market_reading_mappers import (
@@ -40,6 +40,7 @@ from src.intelligence.market_reading_schema import (
     MarketReadingEvents,
     MarketReadingHeader,
 )
+from src.intelligence.provider_snapshot import snapshot_provider_response
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +77,33 @@ def expected_last_candle_close(timeframe: str, now: datetime) -> datetime:
     epoch_minutes = int(ts.timestamp() // 60)
     last_boundary_minutes = (epoch_minutes // minutes) * minutes
     return datetime.fromtimestamp(last_boundary_minutes * 60, tz=timezone.utc)
+
+
+def drop_unclosed_candles(
+    candles: Sequence[Any], timeframe: str, expected_close: datetime
+) -> list[Any]:
+    """Keep only the bars fully closed at ``expected_close``.
+
+    Twelve Data labels bars by OPEN time and includes the still-forming bar in
+    its response. Analysing that bar makes every detector repaint (audit
+    DETECTION_QUALITY_REVIEW_2026_06_12 §T3): the same OB was published twice
+    under two ids, and readings were not reproducible from final candles.
+
+    A bar opened at ``ts`` is closed iff ``ts + timeframe <= expected_close``.
+    This also drops any future-labelled bar (defence-in-depth against the §T2
+    timezone mislabelling). Naive timestamps are treated as UTC, matching the
+    provider parse and the candles cache convention.
+    """
+    minutes = _TIMEFRAME_MINUTES[timeframe.upper()]
+    span = timedelta(minutes=minutes)
+    out: list[Any] = []
+    for candle in candles:
+        ts = candle.ts
+        if ts.tzinfo is None:
+            ts = ts.replace(tzinfo=timezone.utc)
+        if ts + span <= expected_close:
+            out.append(candle)
+    return out
 
 
 SmcPipelineFn = Callable[[Sequence[Any]], Tuple[dict[str, float], Optional[Any]]]
@@ -225,9 +253,19 @@ class MarketReadingAssembler:
     def _build_fresh(
         self, instrument: str, timeframe: str, expected_close: datetime
     ) -> MarketReading:
-        candles = self._data_provider.fetch_candles(
+        raw_candles = self._data_provider.fetch_candles(
             instrument, timeframe, self._lookback
         )
+        # Raw response snapshot BEFORE any filtering — the only way to replay
+        # a reading bit-for-bit later (the feed revises forming bars; audit §T3
+        # found a reading whose close_price existed in no stored final candle).
+        snapshot_provider_response(
+            instrument, timeframe, raw_candles, fetched_at=self._clock()
+        )
+        # The forming bar (and any future-labelled bar) never reaches the SMC
+        # pipeline nor the cache: candle_close_ts promises closed-candle data,
+        # and /api/candles documents "stops at the last fully-closed candle".
+        candles = drop_unclosed_candles(raw_candles, timeframe, expected_close)
         if candles:
             try:
                 self._candles_store.upsert_candles(instrument, timeframe, candles)

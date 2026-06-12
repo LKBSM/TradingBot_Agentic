@@ -278,3 +278,33 @@ class TestNiveau15Strict:
             if contains_forbidden_tokens(d) is not None
         ]
         assert offenders == [], f"forbidden tokens leaked: {offenders[:5]}"
+
+
+class TestNaiveTimestampDST:
+    """Audit 2026-06-12 §2.6: naive FF timestamps are US Eastern — the offset
+    must follow DST (EDT = UTC-4 in summer), not a fixed UTC-5."""
+
+    def test_naive_summer_date_parsed_as_edt(self):
+        ev = ff_event("CPI y/y", "USD", datetime(2026, 7, 15, 8, 30), impact="high")
+        norm = normalize_ff_event(ev)
+        assert norm is not None
+        # 08:30 ET in July = EDT (UTC-4) → 12:30 UTC (a fixed -5 would say 13:30)
+        assert norm.scheduled_at.hour == 12
+        assert norm.scheduled_at.minute == 30
+
+    def test_naive_winter_date_parsed_as_est(self):
+        ev = ff_event("CPI y/y", "USD", datetime(2026, 1, 15, 8, 30), impact="high")
+        norm = normalize_ff_event(ev)
+        assert norm is not None
+        # 08:30 ET in January = EST (UTC-5) → 13:30 UTC
+        assert norm.scheduled_at.hour == 13
+        assert norm.scheduled_at.minute == 30
+
+    def test_explicit_offset_still_wins(self):
+        edt = timezone(timedelta(hours=-4))
+        ev = ff_event(
+            "ECB Rate", "EUR", datetime(2026, 7, 15, 8, 30, tzinfo=edt), impact="high"
+        )
+        norm = normalize_ff_event(ev)
+        assert norm is not None
+        assert norm.scheduled_at.hour == 12

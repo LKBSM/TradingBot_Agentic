@@ -232,6 +232,10 @@ class TwelveDataProvider(DataProvider):
             "outputsize": lookback,
             "apikey": self._api_key,
             "format": "JSON",
+            # Without this, Twelve Data returns exchange-local timestamps
+            # (observed +10h vs UTC on XAU/EUR) that _parse_time_series would
+            # mislabel as UTC — audit DETECTION_QUALITY_REVIEW_2026_06_12 §T2.
+            "timezone": "UTC",
         }
         url = f"{self.BASE_URL}/time_series"
 

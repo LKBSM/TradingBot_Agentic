@@ -31,7 +31,7 @@ class CandlesCacheStore:
       3. ``DEFAULT_DB_PATH`` (``./data/candles.db``)
     """
 
-    SCHEMA_VERSION = 1
+    SCHEMA_VERSION = 2
     DEFAULT_DB_PATH = "./data/candles.db"
     DB_PATH_ENV_VAR = "CANDLES_DB_PATH"
 
@@ -103,6 +103,15 @@ class CandlesCacheStore:
                     ON candles_cache(instrument, timeframe, ts DESC);
                 """
             )
+        if 0 < from_v < 2:
+            # One-time wipe (audit 2026-06-12 §T2/T3): rows written before the
+            # timezone fix carry exchange-local timestamps mislabelled as UTC
+            # (up to +10h in the future) plus overwritten forming-bar values.
+            # Keyed by (instrument, timeframe, ts), they would survive as ghost
+            # future bars on the chart. The cache is a pure cache — dropping it
+            # is safe; the assembler refills it with closed UTC bars on the
+            # next generation.
+            conn.execute("DELETE FROM candles_cache")
 
     # ------------------------------------------------------------------ #
     # CRUD

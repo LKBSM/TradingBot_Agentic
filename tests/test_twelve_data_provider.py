@@ -213,6 +213,18 @@ class TestProviderHttpBehaviour:
         assert candles[0].close == 2378.7
         assert candles[1].volume == 120.0
 
+    def test_request_pins_timezone_utc(self):
+        """Audit 2026-06-12 §T2: without an explicit timezone=UTC, Twelve Data
+        returns exchange-local timestamps that get mislabelled as UTC."""
+        session = MagicMock()
+        session.get.return_value = _make_response(200, json_body=_SAMPLE_BODY_XAU_2BARS)
+        provider = TwelveDataProvider(
+            api_key="dummy", session=session, sleep_fn=lambda _: None,
+        )
+        provider.get_ohlcv("XAUUSD", "M15", 2)
+        params = session.get.call_args.kwargs["params"]
+        assert params["timezone"] == "UTC"
+
 
 # =============================================================================
 # Init + interface tests

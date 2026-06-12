@@ -280,8 +280,17 @@ def confluence_signal_to_structure(
         else:
             # Persisted break: direction from the retest state, original break
             # time from the glue field (honest broken_at, not the current bar).
+            # A recovered time AFTER the bar being read means the candle index
+            # was in a wrong clock domain (audit 2026-06-12 §T2 published
+            # broken_at timestamps in the future) — never surface it.
             event_direction = state_direction or bos_direction
-            broken_at = _epoch_to_dt(smc_features.get("BOS_BREAK_TS")) or bar_ts
+            recovered = _epoch_to_dt(smc_features.get("BOS_BREAK_TS"))
+            bar_ts_utc = (
+                bar_ts if bar_ts.tzinfo else bar_ts.replace(tzinfo=timezone.utc)
+            )
+            if recovered is not None and recovered > bar_ts_utc:
+                recovered = None
+            broken_at = recovered or bar_ts
         bos = BOSRecent(
             direction=event_direction,
             level=bos_level if bos_level is not None else float(current_price),

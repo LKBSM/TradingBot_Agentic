@@ -349,3 +349,100 @@ def test_description_engine_failure_falls_back_to_template(fixed_clock):
     # Falls back: still produces a valid reading via template
     assert reading.conditions.description_source == "template_fallback"
     assert len(reading.conditions.description) > 0
+
+
+# ---------------------------------------------------------------------------
+# Closed-candles-only contract (audit DETECTION_QUALITY_REVIEW_2026_06_12 §T3)
+# ---------------------------------------------------------------------------
+
+from src.intelligence.market_reading_assembler import drop_unclosed_candles
+
+
+class TestDropUnclosedCandles:
+    def test_forming_bar_is_dropped(self):
+        """A bar whose close boundary has not elapsed never reaches the pipeline."""
+        expected_close = datetime(2026, 5, 28, 14, 15, tzinfo=timezone.utc)
+        closed = _MockCandle(datetime(2026, 5, 28, 14, 0, tzinfo=timezone.utc), 2380.0)
+        forming = _MockCandle(datetime(2026, 5, 28, 14, 15, tzinfo=timezone.utc), 2381.0)
+        kept = drop_unclosed_candles([closed, forming], "M15", expected_close)
+        assert kept == [closed]
+
+    def test_future_labelled_bar_is_dropped(self):
+        """Defence-in-depth vs §T2: exchange-local labels ~+10h ahead of UTC."""
+        expected_close = datetime(2026, 6, 12, 14, 15, tzinfo=timezone.utc)
+        ok = _MockCandle(datetime(2026, 6, 12, 14, 0, tzinfo=timezone.utc), 4190.0)
+        future = _MockCandle(datetime(2026, 6, 13, 0, 0, tzinfo=timezone.utc), 4192.0)
+        kept = drop_unclosed_candles([ok, future], "M15", expected_close)
+        assert kept == [ok]
+
+    def test_naive_ts_treated_as_utc(self):
+        expected_close = datetime(2026, 5, 28, 14, 15, tzinfo=timezone.utc)
+        closed = _MockCandle(datetime(2026, 5, 28, 14, 0), 2380.0)  # naive
+        forming = _MockCandle(datetime(2026, 5, 28, 14, 15), 2381.0)  # naive
+        kept = drop_unclosed_candles([closed, forming], "M15", expected_close)
+        assert kept == [closed]
+
+    def test_h1_boundary(self):
+        expected_close = datetime(2026, 5, 28, 14, 0, tzinfo=timezone.utc)
+        closed = _MockCandle(datetime(2026, 5, 28, 13, 0, tzinfo=timezone.utc), 2380.0)
+        forming = _MockCandle(datetime(2026, 5, 28, 14, 0, tzinfo=timezone.utc), 2381.0)
+        kept = drop_unclosed_candles([closed, forming], "H1", expected_close)
+        assert kept == [closed]
+
+
+def test_build_fresh_excludes_forming_bar_from_analysis_and_cache(fixed_clock):
+    """The SMC pipeline and the candles cache only ever see closed bars; the
+    header close_price is the close of the last CLOSED candle, matching the
+    candle_close_ts contract."""
+    # fixed_clock = 14:23Z → expected M15 close = 14:15Z. Last closed candle
+    # opens at 14:00 (closes exactly 14:15); the forming one opens at 14:15.
+    closed_last = _MockCandle(datetime(2026, 5, 28, 14, 0, tzinfo=timezone.utc), 2384.0)
+    forming = _MockCandle(datetime(2026, 5, 28, 14, 15, tzinfo=timezone.utc), 2399.0)
+    candles = _build_candles(10) + [closed_last, forming]
+
+    seen_by_pipeline: list[list] = []
+
+    def _capturing_pipeline(cs):
+        seen_by_pipeline.append(list(cs))
+        return _stub_smc_pipeline(cs)
+
+    candles_store = _MockCandlesStore()
+    assembler = MarketReadingAssembler(
+        data_provider=_MockDataProvider(candles),
+        readings_store=_MockReadingsStore(),
+        candles_store=candles_store,
+        smc_pipeline=_capturing_pipeline,
+        clock=fixed_clock,
+    )
+    reading = assembler.get_or_generate("XAUUSD", "M15")
+
+    assert forming not in seen_by_pipeline[0]
+    assert seen_by_pipeline[0][-1] is closed_last
+    assert reading.header.close_price == 2384.0  # not the forming bar's 2399.0
+    # Cache contract (/api/candles: "stops at the last fully-closed candle")
+    assert candles_store.upsert_calls == [("XAUUSD", "M15", len(candles) - 1)]
+
+
+def test_provider_snapshot_written_before_filtering(fixed_clock, tmp_path, monkeypatch):
+    """Observability (§T3): the RAW response — forming bar included — is
+    persisted as JSONL so any reading can be replayed bit-for-bit later."""
+    monkeypatch.setenv("PROVIDER_SNAPSHOT_ENABLED", "1")
+    monkeypatch.setenv("PROVIDER_SNAPSHOT_DIR", str(tmp_path))
+
+    forming = _MockCandle(datetime(2026, 5, 28, 14, 15, tzinfo=timezone.utc), 2399.0)
+    candles = _build_candles(5) + [forming]
+    assembler = MarketReadingAssembler(
+        data_provider=_MockDataProvider(candles),
+        readings_store=_MockReadingsStore(),
+        candles_store=_MockCandlesStore(),
+        smc_pipeline=_stub_smc_pipeline,
+        clock=fixed_clock,
+    )
+    assembler.get_or_generate("XAUUSD", "M15")
+
+    files = list(tmp_path.glob("XAUUSD_M15_*.jsonl"))
+    assert len(files) == 1
+    record = json.loads(files[0].read_text(encoding="utf-8").splitlines()[0])
+    assert record["instrument"] == "XAUUSD"
+    assert len(record["candles"]) == len(candles)  # raw = forming bar included
+    assert record["candles"][-1]["close"] == 2399.0

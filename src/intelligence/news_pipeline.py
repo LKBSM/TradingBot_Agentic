@@ -65,8 +65,15 @@ _NUMERIC_SUFFIX = {
 }
 
 # ForexFactory's default timezone is US Eastern; the feed emits offsets when
-# known, naive timestamps otherwise. We assume ET for naive values.
-_FF_DEFAULT_TZ = timezone(timedelta(hours=-5))
+# known, naive timestamps otherwise. We assume ET for naive values — DST-aware
+# (a fixed UTC-5 is wrong half the year: EDT is UTC-4; audit 2026-06-12 §2.6).
+# Fallback to fixed EST only if the IANA database is unavailable.
+try:
+    from zoneinfo import ZoneInfo
+
+    _FF_DEFAULT_TZ: Any = ZoneInfo("America/New_York")
+except Exception:  # pragma: no cover — missing tzdata on minimal installs
+    _FF_DEFAULT_TZ = timezone(timedelta(hours=-5))
 
 
 # ===================================================================== #
