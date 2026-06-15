@@ -769,3 +769,145 @@ def test_structure_mapper_falls_back_without_zones(bar_ts):
            "OB_LEVEL_HIGH": 101.0, "OB_LEVEL_LOW": 99.0}
     s = confluence_signal_to_structure(None, smc, bar_ts, current_price=100.0)
     assert len(s.order_blocks) == 1  # single-bar fallback still works
+
+
+# ---------------------------------------------------------------------------
+# Mitigation lifecycle: mitigated_at bounding + single-source-of-truth policy
+# (feat/ob-fvg-mitigation-lifecycle — defaults validated by founder 2026-06-15,
+# DÉFAUTS À VALIDER PAR ANNOTATION)
+# ---------------------------------------------------------------------------
+
+from src.intelligence.market_reading_mappers import (
+    MITIGATION_POLICY,
+    MitigationPolicy,
+    _fvg_lifecycle,
+    _ob_lifecycle,
+)
+
+
+def test_active_ob_has_no_mitigation_timestamp():
+    """An untouched OB is active and carries mitigated_at=None (box → current)."""
+    rows = [{"high": 100 + i, "low": 99 + i, "close": 100 + i} for i in range(10)]
+    rows[2].update(BULLISH_OB_HIGH=92.0, BULLISH_OB_LOW=90.0, OB_STRENGTH_NORM=0.8)
+    z = collect_zones(_frame(rows), idx=9)
+    ob = z["order_blocks"][0]
+    assert ob["status"] == "active"
+    assert ob["mitigated_at"] is None
+
+
+def test_mitigated_ob_carries_first_tap_timestamp():
+    """A tapped-but-held OB stays exposed (founder choice) with a bounded box:
+    mitigated_at = the bar of the FIRST tap, so the front draws formation→tap."""
+    frame_start = "2026-05-28T00:00:00Z"
+    rows = [{"high": 100, "low": 99, "close": 100} for _ in range(6)]
+    rows[1].update(BULLISH_OB_HIGH=98.0, BULLISH_OB_LOW=97.0, OB_STRENGTH_NORM=0.9)
+    rows[3].update(high=100, low=97.5, close=99.0)  # first tap at k=3, holds
+    z = collect_zones(_frame(rows, start=frame_start), idx=5)
+    ob = z["order_blocks"][0]
+    assert ob["status"] == "mitigated"
+    # k=3 with 15-min spacing from 00:00 → 00:45.
+    expected = pd.Timestamp(frame_start) + pd.Timedelta(minutes=15 * 3)
+    assert ob["mitigated_at"] == expected.to_pydatetime()
+    # The box is bounded: formation (k=1) strictly before mitigation (k=3).
+    assert ob["created_at"] < ob["mitigated_at"]
+
+
+def test_active_fvg_has_no_mitigation_timestamp():
+    rows = [{"high": 100 + i, "low": 99 + i, "close": 100 + i} for i in range(8)]
+    rows[5].update(FVG_DIR=1.0, FVG_SIZE_NORM=0.3)  # gap well above, untouched
+    z = collect_zones(_frame(rows), idx=7)
+    fvg = z["fair_value_gaps"][0]
+    assert fvg["status"] == "active"
+    assert fvg["mitigated_at"] is None
+
+
+def test_partially_filled_fvg_carries_first_entry_timestamp():
+    """Partial fill (near edge touched, far edge not reached) stays exposed with
+    mitigated_at = first entry bar (founder: 100% strict before drop)."""
+    rows = [{"high": 100 + i, "low": 99 + i, "close": 100 + i} for i in range(8)]
+    # Bullish gap at k=2: [high[0]=100, low[2]=101] → band [100,101], fill at <=100.
+    rows[2].update(FVG_DIR=1.0, FVG_SIZE_NORM=0.5)
+    rows[4].update(low=100.5)  # dips below near edge (101) but not to 100 → partial
+    z = collect_zones(_frame(rows), idx=7)
+    fvg = z["fair_value_gaps"][0]
+    assert fvg["status"] == "partially_filled"
+    assert fvg["mitigated_at"] is not None
+
+
+def test_consumed_zones_are_never_exposed():
+    """Honesty guardrail: invalidated OB and filled FVG are dropped entirely."""
+    rows = [{"high": 100, "low": 99, "close": 100} for _ in range(6)]
+    rows[1].update(BULLISH_OB_HIGH=98.0, BULLISH_OB_LOW=97.0, OB_STRENGTH_NORM=0.9)
+    rows[4].update(high=98, low=95, close=96.0)  # closes through → invalidated
+    z = collect_zones(_frame(rows), idx=5)
+    assert z["order_blocks"] == []
+
+
+def test_ob_lifecycle_returns_tap_index_and_is_conservative():
+    """Direct unit on the single-source-of-truth helper: default penetration=0.0
+    declares mitigation on the FIRST overlap (conservative — earlier, not later)."""
+    highs = [100, 100, 100, 100, 100]
+    lows = [99, 99, 99, 97.5, 99]   # j=3 dips into [97,98]
+    closes = [100, 100, 100, 99, 100]
+    status, tested, tap = _ob_lifecycle(
+        "bullish", 98.0, 97.0, highs, lows, closes, created=0, upto=4
+    )
+    assert (status, tested, tap) == ("mitigated", True, 3)
+
+
+def test_penetration_threshold_is_a_single_tunable_knob():
+    """Raising ob_mitigation_penetration delays mitigation (less conservative).
+    A shallow tap that mitigates under the default stays active under a deep one."""
+    highs = [100, 100, 100, 100]
+    lows = [99, 99, 97.9, 99]   # dips 0.1 into [97,98] (height 1.0) at j=2
+    closes = [100, 100, 99, 100]
+    # Default (0.0): any touch → mitigated.
+    assert _ob_lifecycle("bullish", 98.0, 97.0, highs, lows, closes, 0, 3)[0] == "mitigated"
+    # Require 50% penetration: 0.1 tap is too shallow → still active.
+    deep = MitigationPolicy(ob_mitigation_penetration=0.5)
+    assert _ob_lifecycle("bullish", 98.0, 97.0, highs, lows, closes, 0, 3, deep)[0] == "active"
+
+
+def test_policy_drop_when_mitigated_removes_zone():
+    """The conservative 'drop on mitigation' switch lives in the single policy."""
+    rows = [{"high": 100, "low": 99, "close": 100} for _ in range(6)]
+    rows[1].update(BULLISH_OB_HIGH=98.0, BULLISH_OB_LOW=97.0, OB_STRENGTH_NORM=0.9)
+    rows[3].update(high=100, low=97.5, close=99.0)  # tap → mitigated
+    import src.intelligence.market_reading_mappers as m
+    original = m.MITIGATION_POLICY
+    m.MITIGATION_POLICY = MitigationPolicy(ob_drop_when_mitigated=True)
+    try:
+        z = collect_zones(_frame(rows), idx=5)
+        assert z["order_blocks"] == []  # mitigated zone dropped under strict policy
+    finally:
+        m.MITIGATION_POLICY = original
+
+
+def test_default_policy_matches_founder_decision():
+    """Founder 2026-06-15: keep mitigated OB / partial FVG visible, 100% fill."""
+    assert MITIGATION_POLICY.ob_mitigation_penetration == 0.0
+    assert MITIGATION_POLICY.ob_drop_when_mitigated is False
+    assert MITIGATION_POLICY.fvg_fill_fraction == 1.0
+    assert MITIGATION_POLICY.fvg_drop_when_partial is False
+
+
+def test_order_block_schema_accepts_mitigated_at(bar_ts):
+    """Schema round-trip: mitigated_at optional, defaults to None for active."""
+    from src.intelligence.market_reading_schema import FairValueGap, OrderBlock
+
+    ob = OrderBlock(
+        id="OB_x", direction="bullish", level_high=92.0, level_low=90.0,
+        importance="high", status="active", created_at=bar_ts, tested=False,
+    )
+    assert ob.mitigated_at is None
+    ob2 = OrderBlock(
+        id="OB_y", direction="bullish", level_high=92.0, level_low=90.0,
+        importance="high", status="mitigated", created_at=bar_ts, tested=True,
+        mitigated_at=bar_ts,
+    )
+    assert ob2.mitigated_at == bar_ts
+    fvg = FairValueGap(
+        id="FVG_z", direction="bullish", level_high=101.0, level_low=100.0,
+        status="active", created_at=bar_ts, tested=False,
+    )
+    assert fvg.mitigated_at is None

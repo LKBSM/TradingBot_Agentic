@@ -103,6 +103,12 @@ export interface OrderBlock {
   status: OBStatus;
   created_at: string;
   tested: boolean;
+  /**
+   * Timestamp of first interaction (mitigation point). null/absent while the
+   * zone is untouched. Bound the box created_at → mitigated_at; for active
+   * zones extend to the current price. Descriptive, never predictive.
+   */
+  mitigated_at?: string | null;
   user_flagged: boolean;
 }
 
@@ -115,6 +121,8 @@ export interface FairValueGap {
   status: FVGStatus;
   created_at: string;
   tested: boolean;
+  /** First-entry (partial-fill) timestamp; same box-bounding role as OrderBlock.mitigated_at. */
+  mitigated_at?: string | null;
   user_flagged: boolean;
 }
 
