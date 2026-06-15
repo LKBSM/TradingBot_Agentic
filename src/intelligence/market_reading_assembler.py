@@ -172,7 +172,12 @@ class MarketReadingAssembler:
     inherited from the underlying stores (RLock).
     """
 
-    DEFAULT_LOOKBACK = 200
+    # Indicator-grade context windows. Widened 2026-06-15 (was lookback=200,
+    # news 240/60 min) so the product shows real history + a multi-day economic
+    # calendar, not a 4h keyhole. All overridable via env in the bootstrap.
+    DEFAULT_LOOKBACK = 500
+    DEFAULT_NEWS_LOOKAHEAD_MIN = 4320   # 3 days — captures FOMC/NFP ahead
+    DEFAULT_NEWS_LOOKBACK_MIN = 1440    # 24h — what moved the market today
 
     def __init__(
         self,
@@ -185,6 +190,8 @@ class MarketReadingAssembler:
         lookback: int = DEFAULT_LOOKBACK,
         mtf_provider: Optional[Callable[[str, str], Mapping[str, Sequence[Any]]]] = None,
         clock: Callable[[], datetime] = lambda: datetime.now(timezone.utc),
+        news_lookahead_min: int = DEFAULT_NEWS_LOOKAHEAD_MIN,
+        news_lookback_min: int = DEFAULT_NEWS_LOOKBACK_MIN,
     ) -> None:
         self._data_provider = data_provider
         self._readings_store = readings_store
@@ -195,6 +202,8 @@ class MarketReadingAssembler:
         self._lookback = lookback
         self._mtf_provider = mtf_provider
         self._clock = clock
+        self._news_lookahead_min = news_lookahead_min
+        self._news_lookback_min = news_lookback_min
 
     # ------------------------------------------------------------------ #
     # Public accessors (used by the Chantier 3 scheduler / bootstrap)
@@ -347,10 +356,14 @@ class MarketReadingAssembler:
         now = self._clock()
         try:
             upcoming = self._news_pipeline.get_upcoming(
-                currency_filter=["USD", "EUR"], lookahead_minutes=240, now=now
+                currency_filter=["USD", "EUR"],
+                lookahead_minutes=self._news_lookahead_min,
+                now=now,
             )
             published = self._news_pipeline.get_just_published(
-                currency_filter=["USD", "EUR"], lookback_minutes=60, now=now
+                currency_filter=["USD", "EUR"],
+                lookback_minutes=self._news_lookback_min,
+                now=now,
             )
         except Exception as exc:  # pragma: no cover — defensive
             logger.warning("news_pipeline failed: %s — emitting empty events", exc)

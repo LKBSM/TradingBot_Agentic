@@ -34,10 +34,11 @@ router = APIRouter(prefix="/api", tags=["candles"])
 SUPPORTED_INSTRUMENTS = frozenset({"XAUUSD", "EURUSD"})
 SUPPORTED_TIMEFRAMES = frozenset({"M15", "H1", "H4"})
 
-# Default / max window. The chart draws ~96 candles; cap to keep payloads small
-# and to never serve more than the assembler's lookback (DEFAULT_LOOKBACK = 200).
-DEFAULT_LIMIT = 200
-MAX_LIMIT = 500
+# Default / max window. Widened 2026-06-15 alongside the assembler lookback
+# (now 500) so the chart can render indicator-grade history. Payload stays small
+# (OHLC only, gzipped). Never serve more than the assembler caches.
+DEFAULT_LIMIT = 300
+MAX_LIMIT = 1000
 
 
 class CandleOut(BaseModel):

@@ -227,7 +227,9 @@ def realized_levels(enriched: Any, idx: int = -1) -> dict[str, float]:
 # ---------------------------------------------------------------------------
 
 # Default cap per zone type. Keeps the surface readable; tune vs annotation.
-MAX_ZONES_PER_TYPE = 6
+# Widened 2026-06-15 (was 6) for indicator-grade context. Overridable per call
+# and via the MAX_ZONES_PER_TYPE env var (resolved in collect_zones).
+MAX_ZONES_PER_TYPE = 12
 
 
 def _ob_lifecycle(
@@ -308,7 +310,7 @@ def _zone_created_at(enriched: Any, k: int) -> Optional[datetime]:
 def collect_zones(
     enriched: Any,
     idx: int = -1,
-    max_per_type: int = MAX_ZONES_PER_TYPE,
+    max_per_type: Optional[int] = None,
 ) -> dict[str, list[dict]]:
     """Collect every still-relevant OB / FVG zone up to bar ``idx``.
 
@@ -316,9 +318,17 @@ def collect_zones(
     (the structure mapper builds the pydantic models, filling ``created_at`` from
     ``bar_ts`` when the frame has no datetime index). Consumed zones (invalidated
     OB, filled FVG) are dropped. Ordering: active before partially-consumed, then
-    by strength/size, then by recency; capped to ``max_per_type``.
+    by strength/size, then by recency; capped to ``max_per_type`` (defaults to the
+    ``MAX_ZONES_PER_TYPE`` env var, else the module constant).
     """
+    import os
     import pandas as pd
+
+    if max_per_type is None:
+        try:
+            max_per_type = int(os.environ.get("MAX_ZONES_PER_TYPE", MAX_ZONES_PER_TYPE))
+        except (TypeError, ValueError):
+            max_per_type = MAX_ZONES_PER_TYPE
 
     out: dict[str, list[dict]] = {"order_blocks": [], "fair_value_gaps": []}
     n = len(enriched)

@@ -308,3 +308,17 @@ class TestNaiveTimestampDST:
         norm = normalize_ff_event(ev)
         assert norm is not None
         assert norm.scheduled_at.hour == 12
+
+
+class TestHumanizeMinutes:
+    """Indicator-grade news windows (3 days) need readable durations."""
+
+    def test_formats(self):
+        from src.intelligence.news_pipeline import _humanize_minutes
+        assert _humanize_minutes(0) == "0 min"
+        assert _humanize_minutes(45) == "45 min"
+        assert _humanize_minutes(150) == "2h30"
+        assert _humanize_minutes(120) == "2h"
+        assert _humanize_minutes(1500) == "1j 1h"
+        assert _humanize_minutes(2880) == "2j"
+        assert _humanize_minutes(-5) == "0 min"

@@ -165,11 +165,28 @@ def _surprise_direction(
 # ===================================================================== #
 # Niveau 1.5 strict description templates (factual, never directive)
 # ===================================================================== #
+def _humanize_minutes(minutes: int) -> str:
+    """Format a duration in minutes as a compact FR string (jours/heures/min).
+
+    With multi-day news windows, a bare "dans 4320 min" is unreadable. Examples:
+    45 → "45 min"; 150 → "2h30"; 1500 → "1j 1h"; 2880 → "2j".
+    """
+    minutes = max(0, int(minutes))
+    if minutes < 60:
+        return f"{minutes} min"
+    if minutes < 1440:
+        h, m = divmod(minutes, 60)
+        return f"{h}h{m:02d}" if m else f"{h}h"
+    days, rem = divmod(minutes, 1440)
+    hours = rem // 60
+    return f"{days}j {hours}h" if hours else f"{days}j"
+
+
 def _upcoming_effect_description(event: NormalizedNewsEvent, minutes: int) -> str:
     impact_fr = _IMPACT_FR.get(event.impact, event.impact)
     desc = (
         f"{event.event} ({event.currency}) — impact {impact_fr}, "
-        f"prévu dans {minutes} min. Publication macro {event.currency} "
+        f"prévu dans {_humanize_minutes(minutes)}. Publication macro {event.currency} "
         f"pouvant générer du mouvement sur XAUUSD et EURUSD."
     )
     return _ensure_clean(desc, event)
@@ -183,7 +200,7 @@ def _just_published_effect_description(
     impact_fr = _IMPACT_FR.get(event.impact, event.impact)
     desc = (
         f"{event.event} ({event.currency}) — impact {impact_fr}, "
-        f"publié il y a {minutes_ago} min."
+        f"publié il y a {_humanize_minutes(minutes_ago)}."
     )
     if surprise == "beat":
         desc += " Résultat supérieur au consensus."
@@ -243,8 +260,11 @@ class NewsPipeline:
 
     DEFAULT_TTL_SECONDS = 120
     DEFAULT_CURRENCIES = ("USD", "EUR")
-    DEFAULT_LOOKAHEAD_MIN = 240
-    DEFAULT_LOOKBACK_MIN = 60
+    # Indicator-grade windows (widened 2026-06-15; was 240/60). The assembler
+    # overrides these from env, but the pipeline defaults match so direct callers
+    # also get the multi-day calendar.
+    DEFAULT_LOOKAHEAD_MIN = 4320   # 3 days
+    DEFAULT_LOOKBACK_MIN = 1440    # 24h
 
     def __init__(
         self,
