@@ -49,7 +49,7 @@ export function LivePrice({ instrument, price, changePct }: LivePriceProps) {
     <span className="flex flex-wrap items-baseline justify-end gap-x-2 gap-y-0.5">
       <span
         className={cn(
-          'font-mono text-lg font-semibold tabular-nums transition-colors duration-700 sm:text-xl',
+          'font-mono text-lg font-medium tabular-nums transition-colors duration-700',
           flash ? TONE_CLASS[tone] : 'text-foreground',
         )}
         aria-live="polite"
@@ -58,7 +58,7 @@ export function LivePrice({ instrument, price, changePct }: LivePriceProps) {
       </span>
       {changePct !== null && (
         <span
-          className={cn('text-sm font-semibold tabular-nums', TONE_CLASS[tone])}
+          className={cn('font-mono text-xs font-medium tabular-nums', TONE_CLASS[tone])}
           aria-label={`Variation du jour ${formatChangePercent(changePct)}`}
         >
           {formatChangePercent(changePct)}

@@ -29,7 +29,7 @@ export function MarketReadingHeader({
   return (
     <header className="space-y-2">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <h2 className="text-balance text-xl font-semibold leading-tight tracking-tight sm:text-2xl">
+        <h2 className="text-balance text-[15px] font-medium leading-tight tracking-tight">
           {formatInstrument(header.instrument)}
         </h2>
         {live ? (
@@ -39,13 +39,13 @@ export function MarketReadingHeader({
             changePct={live.changePct}
           />
         ) : (
-          <span className="font-mono text-lg font-semibold tabular-nums text-foreground sm:text-xl">
+          <span className="font-mono text-lg font-medium tabular-nums text-foreground">
             {formatPrice(header.close_price, header.instrument)}
           </span>
         )}
       </div>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <span className="text-xs font-medium text-muted-foreground">
+        <span className="font-mono text-[11px] font-normal tabular-nums text-muted-foreground">
           {header.instrument} · {formatTimeframe(header.timeframe)}
         </span>
         <TemporalBadge candleCloseTs={header.candle_close_ts} />

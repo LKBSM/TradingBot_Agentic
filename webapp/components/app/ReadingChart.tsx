@@ -5,11 +5,13 @@ import {
   CandlestickSeries,
   ColorType,
   createChart,
+  CrosshairMode,
   LineStyle,
   type IChartApi,
   type ISeriesApi,
   type UTCTimestamp,
 } from 'lightweight-charts';
+import { Maximize2, Minus, Plus } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 import type { Candle, MarketReadingStructure } from '@/types/market-reading';
@@ -20,16 +22,18 @@ import type { Candle, MarketReadingStructure } from '@/types/market-reading';
  * MarketReadingStructure:
  *
  *   · BOS / CHOCH / retest break levels → horizontal price lines.
- *   · Order Blocks  → amber shaded price bands.
+ *   · Order Blocks  → slate shaded price bands.
  *   · Fair Value Gaps → blue shaded price bands.
+ *
+ * Visual language = "Direction 1" (sober / institutional): muted body colours,
+ * hairline strokes, horizontal-only grid, monospace tabular axis numbers, no
+ * neon / glow / gradient. Only *active* structures are surfaced (faded when the
+ * engine marks them inactive) — the styling restyles what the engine emits, it
+ * never adds, hides, or reinterprets a structure.
  *
  * Props are typed against the production contract (Candle[] + structure) so the
  * SAME component renders the real engine output once the backend feeds it — only
- * the data source changes, not this component. (Candle data is mock today; see
- * lib/mockReadings.ts.)
- *
- * Beta scope (per brief): candles + OB + FVG + break levels. Finer overlays
- * (uncertainty band, bias marker polish) are V1.1.
+ * the data source changes, not this component.
  */
 
 export interface ReadingChartProps {
@@ -60,13 +64,55 @@ interface ZoneRect {
   faded: boolean;
 }
 
-const COLORS = {
-  bull: '#16a34a',
-  bear: '#dc2626',
-  bos: '#c9a961',
-  choch: '#8b5cf6',
-  retest: '#0ea5e9',
+/** Candle bodies — muted bull / bear; wick + border share the body colour. */
+const CANDLE = { bull: '#2F9E78', bear: '#C2693E' };
+
+/** Break-level line colours — sober, distinguishable, hairline. */
+const LEVEL = {
+  bos: '#8B95A7',
+  choch: '#8E84B0',
+  retest: '#6E84B0',
 };
+
+/** Sober zone palette (fill / dashed border / label), per Direction 1. */
+const ZONE_STYLE = {
+  ob: {
+    fill: 'rgba(139, 149, 167, 0.10)', // #8B95A7
+    border: 'rgba(139, 149, 167, 0.40)',
+    label: '#9AA4B8',
+  },
+  fvg: {
+    fill: 'rgba(110, 132, 176, 0.10)', // #6E84B0
+    border: 'rgba(110, 132, 176, 0.40)',
+    label: '#6E84B0',
+  },
+} as const;
+
+/**
+ * Theme-resolved palette. Lightweight-charts paints onto a canvas, so it needs
+ * concrete colour strings (CSS `var(--token)` does not resolve there). These
+ * values mirror the app tokens — `--border` for the grid, `--muted-foreground`
+ * for axis text — at both light and dark, so the chart tracks the app theme.
+ */
+function palette(isDark: boolean) {
+  return isDark
+    ? {
+        axisText: 'hsl(215, 20%, 65%)', // --muted-foreground (dark) → tertiary axis
+        grid: 'hsla(217, 33%, 17%, 0.4)', // --border (dark) @ 0.4
+        scaleBorder: 'hsla(217, 33%, 17%, 0.6)',
+        crosshair: 'hsla(215, 20%, 65%, 0.45)',
+        crosshairLabel: '#3f3f46',
+      }
+    : {
+        axisText: 'hsl(215, 16%, 47%)', // --muted-foreground (light) → tertiary axis
+        grid: 'hsla(214, 32%, 91%, 0.4)', // --border (light) @ 0.4
+        scaleBorder: 'hsla(214, 32%, 91%, 0.8)',
+        crosshair: 'hsla(215, 16%, 47%, 0.40)',
+        crosshairLabel: '#52525b',
+      };
+}
+
+const MONO_FONT = "'ui-monospace', 'SFMono-Regular', 'Menlo', monospace";
 
 export function ReadingChart({
   candles,
@@ -114,33 +160,78 @@ export function ReadingChart({
     const container = containerRef.current;
     if (!container) return;
 
+    const p = palette(isDark);
+
     const chart = createChart(container, {
+      // Responsive: tracks the container box (paired with the ResizeObserver
+      // below so the chart never feels cramped on small / rotated screens).
       autoSize: true,
       layout: {
         background: { type: ColorType.Solid, color: 'transparent' },
-        textColor: isDark ? '#a1a1aa' : '#52525b',
-        fontFamily: 'inherit',
+        textColor: p.axisText,
+        fontFamily: MONO_FONT, // monospace → tabular axis numbers.
+        fontSize: 11,
         attributionLogo: true, // TradingView attribution (Apache-2.0 licence).
       },
       grid: {
-        vertLines: { color: isDark ? '#27272a' : '#f4f4f5' },
-        horzLines: { color: isDark ? '#27272a' : '#f4f4f5' },
+        // Horizontal hairlines only — vertical lines off for a calmer canvas.
+        vertLines: { visible: false },
+        horzLines: { color: p.grid, style: LineStyle.Solid },
       },
-      rightPriceScale: { borderColor: isDark ? '#3f3f46' : '#e4e4e7' },
+      crosshair: {
+        mode: CrosshairMode.Magnet,
+        vertLine: {
+          color: p.crosshair,
+          width: 1,
+          style: LineStyle.Dashed,
+          labelBackgroundColor: p.crosshairLabel,
+        },
+        horzLine: {
+          color: p.crosshair,
+          width: 1,
+          style: LineStyle.Dashed,
+          labelBackgroundColor: p.crosshairLabel,
+        },
+      },
+      rightPriceScale: { borderColor: p.scaleBorder },
       timeScale: {
-        borderColor: isDark ? '#3f3f46' : '#e4e4e7',
+        borderColor: p.scaleBorder,
         timeVisible: true,
         secondsVisible: false,
       },
+      // ── Interaction: fluid pan / zoom on mouse AND touch. ──
+      handleScroll: {
+        mouseWheel: true,
+        pressedMouseMove: true,
+        horzTouchDrag: true,
+        vertTouchDrag: false,
+      },
+      handleScale: {
+        mouseWheel: true,
+        pinch: true, // pinch-zoom on touch.
+        axisPressedMouseMove: true,
+        axisDoubleClickReset: true,
+      },
+      kineticScroll: { touch: true, mouse: false },
+      // trackingMode defaults to OnNextTap → tap-to-read crosshair on mobile.
     });
 
     const series = chart.addSeries(CandlestickSeries, {
-      upColor: COLORS.bull,
-      downColor: COLORS.bear,
-      borderUpColor: COLORS.bull,
-      borderDownColor: COLORS.bear,
-      wickUpColor: COLORS.bull,
-      wickDownColor: COLORS.bear,
+      upColor: CANDLE.bull,
+      downColor: CANDLE.bear,
+      // Wick + border share the body colour (no contrasting outline).
+      borderUpColor: CANDLE.bull,
+      borderDownColor: CANDLE.bear,
+      wickUpColor: CANDLE.bull,
+      wickDownColor: CANDLE.bear,
+      // Current-price line: hairline, dashed, colour follows the last move.
+      priceLineVisible: true,
+      priceLineWidth: 1,
+      priceLineStyle: LineStyle.Dashed,
+      // Empty colour → inherits the up/down colour of the last candle, so the
+      // axis badge reads green when up, terracotta when down (white label text).
+      priceLineColor: '',
+      lastValueVisible: true,
     });
 
     chartRef.current = chart;
@@ -169,21 +260,21 @@ export function ReadingChart({
       })),
     );
 
-    // Horizontal break-level price lines (BOS / CHOCH / retest).
+    // Horizontal break-level price lines (BOS / CHOCH / retest) — hairline.
     const priceLines = [
       structure.bos && {
         price: structure.bos.level,
-        color: COLORS.bos,
+        color: LEVEL.bos,
         title: 'BOS',
       },
       structure.choch && {
         price: structure.choch.level,
-        color: COLORS.choch,
+        color: LEVEL.choch,
         title: 'CHOCH',
       },
       structure.retest_in_progress && {
         price: structure.retest_in_progress.level,
-        color: COLORS.retest,
+        color: LEVEL.retest,
         title: 'Retest',
       },
     ].filter((l): l is { price: number; color: string; title: string } =>
@@ -194,7 +285,7 @@ export function ReadingChart({
       series.createPriceLine({
         price: l.price,
         color: l.color,
-        lineWidth: 2,
+        lineWidth: 1,
         lineStyle: LineStyle.Dashed,
         axisLabelVisible: true,
         title: l.title,
@@ -247,6 +338,21 @@ export function ReadingChart({
     };
   }, [zones, candles]);
 
+  // ── Discreet zoom / fit controls (mouse + ≥44px touch targets). ─────────────
+  const zoom = React.useCallback((factor: number) => {
+    const ts = chartRef.current?.timeScale();
+    if (!ts) return;
+    const range = ts.getVisibleLogicalRange();
+    if (!range) return;
+    const center = (range.from + range.to) / 2;
+    const half = ((range.to - range.from) / 2) * factor;
+    ts.setVisibleLogicalRange({ from: center - half, to: center + half });
+  }, []);
+
+  const fit = React.useCallback(() => {
+    chartRef.current?.timeScale().fitContent();
+  }, []);
+
   return (
     <div className={cn('relative w-full', className)}>
       <div
@@ -255,31 +361,75 @@ export function ReadingChart({
         role="img"
         aria-label={`Graphique en chandeliers ${instrument} avec zones Order Block, Fair Value Gap et niveaux de cassure`}
       />
+
       {/* Shaded OB / FVG bands, layered over the chart canvas. */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        {zoneRects.map((r) => (
-          <div
-            key={`${r.kind}:${r.id}`}
-            className={cn(
-              'absolute left-0 right-[64px] border-y',
-              r.kind === 'ob'
-                ? 'border-[#c9a961]/50 bg-[#c9a961]/10'
-                : 'border-[#0ea5e9]/50 bg-[#0ea5e9]/10',
-              r.faded && 'opacity-40',
-            )}
-            style={{ top: r.top, height: r.height }}
-          >
-            <span
-              className={cn(
-                'absolute left-1 top-0 text-[10px] font-medium leading-tight',
-                r.kind === 'ob' ? 'text-[#c9a961]' : 'text-[#0ea5e9]',
-              )}
+        {zoneRects.map((r) => {
+          const style = ZONE_STYLE[r.kind];
+          return (
+            <div
+              key={`${r.kind}:${r.id}`}
+              className="absolute left-0 right-[64px]"
+              style={{
+                top: r.top,
+                height: r.height,
+                backgroundColor: style.fill,
+                borderTop: `1px dashed ${style.border}`,
+                borderBottom: `1px dashed ${style.border}`,
+                opacity: r.faded ? 0.4 : 1,
+              }}
             >
-              {r.label}
-            </span>
-          </div>
-        ))}
+              <span
+                className="absolute left-1 top-0 text-[10px] font-normal leading-tight tabular-nums"
+                style={{ color: style.label }}
+              >
+                {r.label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Sober pan/zoom controls — visually light, ≥44px tap zone on mobile. */}
+      <div className="absolute bottom-2 left-2 flex gap-1">
+        <ChartControl label="Zoom avant" onClick={() => zoom(0.7)}>
+          <Plus className="h-4 w-4" aria-hidden />
+        </ChartControl>
+        <ChartControl label="Zoom arrière" onClick={() => zoom(1.4)}>
+          <Minus className="h-4 w-4" aria-hidden />
+        </ChartControl>
+        <ChartControl label="Ajuster le graphique" onClick={fit}>
+          <Maximize2 className="h-4 w-4" aria-hidden />
+        </ChartControl>
       </div>
     </div>
+  );
+}
+
+/** A single sober chart control: hairline border, ≥44px tap target on mobile. */
+function ChartControl({
+  label,
+  onClick,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      className={cn(
+        'flex h-11 w-11 items-center justify-center rounded-md border border-border/60',
+        'bg-background/70 text-muted-foreground backdrop-blur-sm',
+        'transition-colors hover:text-foreground',
+        'sm:h-8 sm:w-8',
+      )}
+    >
+      {children}
+    </button>
   );
 }
