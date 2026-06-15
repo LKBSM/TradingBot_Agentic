@@ -14,6 +14,11 @@ import {
 import { Maximize2, Minus, Plus } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
+import {
+  buildZoneModels,
+  curateZones,
+  type ZoneModel,
+} from '@/lib/chart/zoneLayout';
 import type { Candle, MarketReadingStructure } from '@/types/market-reading';
 
 /**
@@ -22,14 +27,19 @@ import type { Candle, MarketReadingStructure } from '@/types/market-reading';
  * MarketReadingStructure:
  *
  *   · BOS / CHOCH / retest break levels → horizontal price lines.
- *   · Order Blocks  → slate shaded price bands.
- *   · Fair Value Gaps → blue shaded price bands.
+ *   · Order Blocks / Fair Value Gaps → LOCALIZED boxes, anchored to the
+ *     formation candle (x-start = created_at) and bounded in time: an active
+ *     zone runs to the current bar, a tested/mitigated zone stops at its
+ *     mitigation point (mitigated_at, read-only). No full-width bands, no
+ *     projection into the future.
  *
  * Visual language = "Direction 1" (sober / institutional): muted body colours,
  * hairline strokes, horizontal-only grid, monospace tabular axis numbers, no
- * neon / glow / gradient. Only *active* structures are surfaced (faded when the
- * engine marks them inactive) — the styling restyles what the engine emits, it
- * never adds, hides, or reinterprets a structure.
+ * neon / glow / gradient. Active zones read crisp (visible fill, marked dashed
+ * border, label); tested zones recede (near-transparent fill, ghost dashed
+ * border, no label) so the two never compete for attention. The chart only
+ * restyles + curates what the engine emits — it never adds, recomputes, or
+ * reinterprets a structure.
  *
  * Props are typed against the production contract (Candle[] + structure) so the
  * SAME component renders the real engine output once the backend feeds it — only
@@ -44,24 +54,16 @@ export interface ReadingChartProps {
   className?: string;
 }
 
-/** A shaded price band overlay (Order Block / Fair Value Gap). */
-interface ZoneOverlay {
-  id: string;
-  kind: 'ob' | 'fvg';
-  high: number;
-  low: number;
-  label: string;
-  faded: boolean;
-}
-
-/** Pixel rect for a rendered zone (recomputed on scale / resize changes). */
+/** Pixel rect for a rendered, localized zone box (recomputed on scale / resize). */
 interface ZoneRect {
   id: string;
   kind: 'ob' | 'fvg';
+  left: number;
+  width: number;
   top: number;
   height: number;
   label: string;
-  faded: boolean;
+  tested: boolean;
 }
 
 /** Candle bodies — muted bull / bear; wick + border share the body colour. */
@@ -74,18 +76,25 @@ const LEVEL = {
   retest: '#6E84B0',
 };
 
-/** Sober zone palette (fill / dashed border / label), per Direction 1. */
-const ZONE_STYLE = {
-  ob: {
-    fill: 'rgba(139, 149, 167, 0.10)', // #8B95A7
-    border: 'rgba(139, 149, 167, 0.40)',
-    label: '#9AA4B8',
-  },
-  fvg: {
-    fill: 'rgba(110, 132, 176, 0.10)', // #6E84B0
-    border: 'rgba(110, 132, 176, 0.40)',
-    label: '#6E84B0',
-  },
+/**
+ * Sober zone palette, per Direction 1. One base RGB per kind; the alpha encodes
+ * the active/tested hierarchy (crisp vs ghost) so a tested box never competes
+ * with an active one. No neon / glow / gradient.
+ */
+const ZONE_RGB = {
+  ob: '139, 149, 167', // #8B95A7
+  fvg: '110, 132, 176', // #6E84B0
+} as const;
+
+const ZONE_LABEL = {
+  ob: '#9AA4B8',
+  fvg: '#6E84B0',
+} as const;
+
+/** Fill / border alpha by state — active reads, tested recedes (~0.05 fill). */
+const ZONE_ALPHA = {
+  active: { fill: 0.12, border: 0.45 },
+  tested: { fill: 0.05, border: 0.18 },
 } as const;
 
 /**
@@ -129,31 +138,18 @@ export function ReadingChart({
 
   const [zoneRects, setZoneRects] = React.useState<ZoneRect[]>([]);
 
-  // Zone overlays (OB + FVG) derived from the structure — stable per structure.
-  const zones = React.useMemo<ZoneOverlay[]>(() => {
-    const out: ZoneOverlay[] = [];
-    for (const ob of structure.order_blocks) {
-      out.push({
-        id: ob.id,
-        kind: 'ob',
-        high: ob.level_high,
-        low: ob.level_low,
-        label: 'Order Block',
-        faded: ob.status !== 'active',
-      });
-    }
-    for (const fvg of structure.fair_value_gaps) {
-      out.push({
-        id: fvg.id,
-        kind: 'fvg',
-        high: fvg.level_high,
-        low: fvg.level_low,
-        label: 'Fair Value Gap',
-        faded: fvg.status === 'filled',
-      });
-    }
-    return out;
-  }, [structure]);
+  // Current bar = last candle: its close anchors the proximity curation, its
+  // time bounds the right edge of an active (unmitigated) box.
+  const lastCandle = candles.length > 0 ? candles[candles.length - 1] : null;
+
+  // Curated zone models (localized + bounded). Tested first so active boxes
+  // layer on top when rendered; consumed zones are already excluded upstream.
+  const zones = React.useMemo<(ZoneModel & { tested: boolean })[]>(() => {
+    const models = buildZoneModels(structure);
+    const price = lastCandle?.close ?? 0;
+    const { active, tested } = curateZones(models, price);
+    return [...tested, ...active];
+  }, [structure, lastCandle?.close]);
 
   // ── Create the chart once; recreate only if the theme changes. ──────────────
   React.useEffect(() => {
@@ -306,7 +302,40 @@ export function ReadingChart({
     const container = containerRef.current;
     if (!chart || !series || !container) return;
 
+    const timeScale = chart.timeScale();
+
+    // Snap a target time to the nearest candle so timeToCoordinate (which maps
+    // data points) always resolves, then clamp into the plot area. Boxes never
+    // overrun the price-scale gutter and never project past the current bar.
+    const candleTimes = candles.map((c) => c.time as number);
+    const lastTime = candleTimes.length ? candleTimes[candleTimes.length - 1]! : null;
+    const snapToCandle = (sec: number): number | null => {
+      if (!candleTimes.length) return null;
+      let best = candleTimes[0]!;
+      let bestD = Math.abs(best - sec);
+      for (const t of candleTimes) {
+        const d = Math.abs(t - sec);
+        if (d < bestD) {
+          best = t;
+          bestD = d;
+        }
+      }
+      return best;
+    };
+
     const recompute = () => {
+      const plotRight = Math.max(
+        0,
+        container.clientWidth - chart.priceScale('right').width(),
+      );
+      const clampX = (x: number) => Math.min(Math.max(x, 0), plotRight);
+      const xAt = (sec: number): number | null => {
+        const snapped = snapToCandle(sec);
+        if (snapped === null) return null;
+        const c = timeScale.timeToCoordinate(snapped as UTCTimestamp);
+        return c === null ? null : clampX(c);
+      };
+
       const rects: ZoneRect[] = [];
       for (const z of zones) {
         const yHigh = series.priceToCoordinate(z.high);
@@ -314,20 +343,31 @@ export function ReadingChart({
         if (yHigh === null || yLow === null) continue;
         const top = Math.min(yHigh, yLow);
         const height = Math.max(2, Math.abs(yLow - yHigh));
+
+        // x-start = formation; x-end = mitigation point for a tested zone, else
+        // the current bar for an active one (no future projection).
+        const xStart = xAt(z.createdSec);
+        const endSec = z.tested && z.mitigatedSec !== null ? z.mitigatedSec : lastTime;
+        const xEnd = endSec === null ? null : xAt(endSec);
+        if (xStart === null || xEnd === null) continue;
+        const left = Math.min(xStart, xEnd);
+        const width = Math.max(2, Math.abs(xEnd - xStart));
+
         rects.push({
           id: z.id,
           kind: z.kind,
+          left,
+          width,
           top,
           height,
           label: z.label,
-          faded: z.faded,
+          tested: z.tested,
         });
       }
       setZoneRects(rects);
     };
 
     recompute();
-    const timeScale = chart.timeScale();
     timeScale.subscribeVisibleLogicalRangeChange(recompute);
     const ro = new ResizeObserver(recompute);
     ro.observe(container);
@@ -362,29 +402,35 @@ export function ReadingChart({
         aria-label={`Graphique en chandeliers ${instrument} avec zones Order Block, Fair Value Gap et niveaux de cassure`}
       />
 
-      {/* Shaded OB / FVG bands, layered over the chart canvas. */}
+      {/* Localized OB / FVG boxes, layered over the chart canvas. Active boxes
+          read crisp + labelled; tested boxes recede (ghost fill/border, no
+          label) so they never crowd the active ones. */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         {zoneRects.map((r) => {
-          const style = ZONE_STYLE[r.kind];
+          const rgb = ZONE_RGB[r.kind];
+          const a = r.tested ? ZONE_ALPHA.tested : ZONE_ALPHA.active;
           return (
             <div
               key={`${r.kind}:${r.id}`}
-              className="absolute left-0 right-[64px]"
+              className="absolute"
               style={{
+                left: r.left,
+                width: r.width,
                 top: r.top,
                 height: r.height,
-                backgroundColor: style.fill,
-                borderTop: `1px dashed ${style.border}`,
-                borderBottom: `1px dashed ${style.border}`,
-                opacity: r.faded ? 0.4 : 1,
+                backgroundColor: `rgba(${rgb}, ${a.fill})`,
+                border: `1px dashed rgba(${rgb}, ${a.border})`,
+                borderRadius: 1,
               }}
             >
-              <span
-                className="absolute left-1 top-0 text-[10px] font-normal leading-tight tabular-nums"
-                style={{ color: style.label }}
-              >
-                {r.label}
-              </span>
+              {!r.tested && (
+                <span
+                  className="absolute left-1 top-0 whitespace-nowrap text-[10px] font-normal leading-tight tabular-nums"
+                  style={{ color: ZONE_LABEL[r.kind] }}
+                >
+                  {r.label}
+                </span>
+              )}
             </div>
           );
         })}

@@ -43,6 +43,20 @@ export const FIXTURE_XAU_M15: MarketReading = {
         tested: false,
         user_flagged: false,
       },
+      {
+        // Tested/mitigated OB: tapped 2026-05-26T08:30 and held → box bounded
+        // formation → mitigation point (renders faded, no label).
+        id: 'ob-xau-2-mitigated',
+        direction: 'bullish',
+        level_high: 2386.0,
+        level_low: 2384.0,
+        importance: 'medium',
+        status: 'mitigated',
+        created_at: '2026-05-26T05:00:00+00:00',
+        tested: true,
+        mitigated_at: '2026-05-26T08:30:00+00:00',
+        user_flagged: false,
+      },
     ],
     fair_value_gaps: [
       {
@@ -53,6 +67,19 @@ export const FIXTURE_XAU_M15: MarketReading = {
         status: 'active',
         created_at: '2026-05-26T10:45:00+00:00',
         tested: false,
+        user_flagged: false,
+      },
+      {
+        // Partially filled FVG: price entered the near edge 2026-05-26T09:15 but
+        // never fully filled → still surfaced, bounded at the first-entry point.
+        id: 'fvg-xau-2-partial',
+        direction: 'bullish',
+        level_high: 2382.5,
+        level_low: 2381.5,
+        status: 'partially_filled',
+        created_at: '2026-05-26T06:30:00+00:00',
+        tested: true,
+        mitigated_at: '2026-05-26T09:15:00+00:00',
         user_flagged: false,
       },
     ],
