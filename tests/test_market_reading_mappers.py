@@ -652,3 +652,120 @@ def test_persisted_bos_past_break_ts_still_honest(bar_ts):
     s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=2390.0)
     assert s.bos is not None
     assert s.bos.broken_at == datetime.fromtimestamp(past_epoch, tz=timezone.utc)
+
+
+# ---------------------------------------------------------------------------
+# Multi-zone registry (audit DETECTION_QUALITY_REVIEW_2026_06_12 §T1 fix)
+# ---------------------------------------------------------------------------
+
+import pandas as pd
+
+from src.intelligence.market_reading_mappers import collect_zones
+
+
+def _frame(rows: list[dict], start="2026-05-28T00:00:00Z") -> pd.DataFrame:
+    """Build an enriched-like frame with a DatetimeIndex (M15 spacing)."""
+    idx = pd.date_range(start=start, periods=len(rows), freq="15min", tz="UTC")
+    cols = ["high", "low", "close", "BULLISH_OB_HIGH", "BULLISH_OB_LOW",
+            "BEARISH_OB_HIGH", "BEARISH_OB_LOW", "OB_STRENGTH_NORM",
+            "FVG_DIR", "FVG_SIZE_NORM"]
+    data = {c: [r.get(c, float("nan")) for r in rows] for c in cols}
+    return pd.DataFrame(data, index=idx)
+
+
+def test_collect_zones_surfaces_multiple_obs():
+    """The registry returns every still-active OB, not just the last bar's."""
+    # Two bullish OBs far below price; price never returns → both stay active.
+    rows = [{"high": 100 + i, "low": 99 + i, "close": 100 + i} for i in range(10)]
+    rows[2].update(BULLISH_OB_HIGH=92.0, BULLISH_OB_LOW=90.0, OB_STRENGTH_NORM=0.8)
+    rows[5].update(BULLISH_OB_HIGH=95.0, BULLISH_OB_LOW=94.0, OB_STRENGTH_NORM=0.5)
+    z = collect_zones(_frame(rows), idx=9)
+    obs = z["order_blocks"]
+    assert len(obs) == 2
+    assert {o["status"] for o in obs} == {"active"}
+    # higher strength first
+    assert obs[0]["level_low"] == 90.0
+    assert obs[0]["importance"] == "high"
+    assert obs[1]["importance"] == "medium"
+
+
+def test_collect_zones_drops_invalidated_ob():
+    """A bullish OB whose support is closed through is consumed → dropped."""
+    rows = [{"high": 100, "low": 99, "close": 100} for _ in range(6)]
+    rows[1].update(BULLISH_OB_HIGH=98.0, BULLISH_OB_LOW=97.0, OB_STRENGTH_NORM=0.9)
+    # Later bar closes below the OB low → invalidated.
+    rows[4].update(high=98, low=95, close=96.0)
+    z = collect_zones(_frame(rows), idx=5)
+    assert z["order_blocks"] == []
+
+
+def test_collect_zones_mitigated_ob_kept():
+    """Price taps into the OB but holds (no close-through) → mitigated, kept."""
+    rows = [{"high": 100, "low": 99, "close": 100} for _ in range(6)]
+    rows[1].update(BULLISH_OB_HIGH=98.0, BULLISH_OB_LOW=97.0, OB_STRENGTH_NORM=0.9)
+    rows[3].update(high=100, low=97.5, close=99.0)  # dips into zone, closes above
+    z = collect_zones(_frame(rows), idx=5)
+    assert len(z["order_blocks"]) == 1
+    assert z["order_blocks"][0]["status"] == "mitigated"
+    assert z["order_blocks"][0]["tested"] is True
+
+
+def test_collect_zones_drops_filled_fvg_keeps_active():
+    """A filled bullish FVG is dropped; an untouched one stays active."""
+    rows = [{"high": 100 + i, "low": 99 + i, "close": 100 + i} for i in range(8)]
+    # Bullish gap at k=2: high[0]=100 (low edge), low[2]=101 (high edge) → [100,101].
+    rows[2].update(FVG_DIR=1.0, FVG_SIZE_NORM=0.5)
+    # Bullish gap at k=5 way above; price never returns → active.
+    rows[5].update(FVG_DIR=1.0, FVG_SIZE_NORM=0.3)
+    # Make an early bar fill the k=2 gap: a low reaching <= 100.
+    rows[4].update(low=99.5)
+    z = collect_zones(_frame(rows), idx=7)
+    fvgs = z["fair_value_gaps"]
+    statuses = {round(f["_size"], 2): f["status"] for f in fvgs}
+    # k=2 gap filled (dropped), only k=5 remains active
+    assert len(fvgs) == 1
+    assert fvgs[0]["status"] == "active"
+
+
+def test_collect_zones_caps_per_type():
+    rows = [{"high": 100 + i, "low": 99 + i, "close": 100 + i} for i in range(20)]
+    for k in range(2, 12):  # 10 bullish OBs below price → all active
+        rows[k].update(BULLISH_OB_HIGH=50.0 - k, BULLISH_OB_LOW=49.0 - k,
+                       OB_STRENGTH_NORM=0.5)
+    z = collect_zones(_frame(rows), idx=19, max_per_type=6)
+    assert len(z["order_blocks"]) == 6
+
+
+def test_structure_mapper_uses_injected_zones(bar_ts):
+    """confluence_signal_to_structure publishes the multi-zone list when present."""
+    smc = {
+        "BOS_SIGNAL": 0.0, "BOS_EVENT": 0.0, "ATR": 5.0,
+        "_zones": {
+            "order_blocks": [
+                {"direction": "bullish", "level_high": 92.0, "level_low": 90.0,
+                 "importance": "high", "status": "active", "tested": False,
+                 "created_at": bar_ts},
+                {"direction": "bearish", "level_high": 110.0, "level_low": 108.0,
+                 "importance": "medium", "status": "mitigated", "tested": True,
+                 "created_at": bar_ts},
+            ],
+            "fair_value_gaps": [
+                {"direction": "bearish", "level_high": 105.0, "level_low": 104.0,
+                 "status": "active", "tested": False, "created_at": bar_ts},
+            ],
+        },
+    }
+    s = confluence_signal_to_structure(None, smc, bar_ts, current_price=100.0)
+    assert len(s.order_blocks) == 2
+    assert s.order_blocks[0].direction == "bullish"
+    assert s.order_blocks[1].status == "mitigated"
+    assert len(s.fair_value_gaps) == 1
+    assert s.fair_value_gaps[0].direction == "bearish"
+
+
+def test_structure_mapper_falls_back_without_zones(bar_ts):
+    """No _zones key → legacy single-bar behaviour is preserved."""
+    smc = {"BOS_SIGNAL": 0.0, "OB_STRENGTH_NORM": 0.6, "ATR": 5.0,
+           "OB_LEVEL_HIGH": 101.0, "OB_LEVEL_LOW": 99.0}
+    s = confluence_signal_to_structure(None, smc, bar_ts, current_price=100.0)
+    assert len(s.order_blocks) == 1  # single-bar fallback still works

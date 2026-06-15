@@ -207,6 +207,215 @@ def realized_levels(enriched: Any, idx: int = -1) -> dict[str, float]:
 
 
 # ---------------------------------------------------------------------------
+# Multi-zone registry — surfaces ALL still-relevant OB/FVG zones the engine
+# computed over the lookback window, not just the one that fired on the last
+# bar. Lives HERE (glue layer), the detection engine is untouched: the engine
+# already emits a zone on every qualifying bar via BULLISH_OB_*/BEARISH_OB_*
+# /FVG_* columns. This walks those columns, applies a lifecycle (mitigation /
+# invalidation for OB, fill for FVG) and drops consumed zones.
+#
+# Audit DETECTION_QUALITY_REVIEW_2026_06_12 §T1: the assembler read only
+# enriched.iloc[-1], so the product showed ≤1 OB and ≤1 FVG (often 0) while the
+# engine had computed dozens. This restores the cardinality the engine produces.
+#
+# IMPORTANT — gated by founder annotation: the IMPORTANCE ranking and the
+# active/mitigated retention policy below use the engine's existing strength
+# heuristic (OB body/ATR). They are PROVISIONAL surfacing rules, not a new
+# detection definition. Calibrate the cap, the importance cutoffs and the
+# retention policy against the annotation dataset (audit §4/§5) — the geometry
+# of each zone is the engine's, untouched.
+# ---------------------------------------------------------------------------
+
+# Default cap per zone type. Keeps the surface readable; tune vs annotation.
+MAX_ZONES_PER_TYPE = 6
+
+
+def _ob_lifecycle(
+    side: str,
+    zhigh: float,
+    zlow: float,
+    highs: Any,
+    lows: Any,
+    closes: Any,
+    created: int,
+    upto: int,
+) -> tuple[str, bool]:
+    """Classify an order-block zone over bars (created, upto].
+
+    Returns ``(status, tested)`` where status ∈ {active, mitigated, invalidated}:
+      * invalidated — a later candle CLOSED through the zone (support lost for a
+        bullish OB, resistance reclaimed for a bearish OB) → consumed.
+      * mitigated   — price traded back into the zone but it held (a tap).
+      * active      — price has not returned to the zone yet.
+    """
+    tested = False
+    for j in range(created + 1, upto + 1):
+        if lows[j] <= zhigh and highs[j] >= zlow:  # candle overlaps the zone
+            tested = True
+        if side == "bullish":
+            if closes[j] < zlow:
+                return "invalidated", tested
+        else:
+            if closes[j] > zhigh:
+                return "invalidated", tested
+    return ("mitigated" if tested else "active"), tested
+
+
+def _fvg_lifecycle(
+    side: str,
+    zhigh: float,
+    zlow: float,
+    highs: Any,
+    lows: Any,
+    created: int,
+    upto: int,
+) -> tuple[str, bool]:
+    """Classify a fair-value-gap over bars (created, upto].
+
+    Returns ``(status, tested)`` where status ∈ {active, partially_filled,
+    filled}. A bullish gap (price gapped up, empty band ``[zlow, zhigh]``) is
+    filled from above: it is ``filled`` once a later low reaches ``zlow`` (the
+    far edge), ``partially_filled`` once a later low dips below ``zhigh`` (the
+    near edge). Bearish gap is the mirror, filled from below.
+    """
+    entered = False
+    for j in range(created + 1, upto + 1):
+        if side == "bullish":
+            if lows[j] <= zlow:
+                return "filled", True
+            if lows[j] <= zhigh:
+                entered = True
+        else:
+            if highs[j] >= zhigh:
+                return "filled", True
+            if highs[j] >= zlow:
+                entered = True
+    return ("partially_filled" if entered else "active"), entered
+
+
+def _zone_created_at(enriched: Any, k: int) -> Optional[datetime]:
+    import pandas as pd
+
+    if isinstance(enriched.index, pd.DatetimeIndex):
+        ts = enriched.index[k]
+        dt = ts.to_pydatetime() if hasattr(ts, "to_pydatetime") else ts
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
+    return None
+
+
+def collect_zones(
+    enriched: Any,
+    idx: int = -1,
+    max_per_type: int = MAX_ZONES_PER_TYPE,
+) -> dict[str, list[dict]]:
+    """Collect every still-relevant OB / FVG zone up to bar ``idx``.
+
+    Returns ``{"order_blocks": [...], "fair_value_gaps": [...]}`` as plain dicts
+    (the structure mapper builds the pydantic models, filling ``created_at`` from
+    ``bar_ts`` when the frame has no datetime index). Consumed zones (invalidated
+    OB, filled FVG) are dropped. Ordering: active before partially-consumed, then
+    by strength/size, then by recency; capped to ``max_per_type``.
+    """
+    import pandas as pd
+
+    out: dict[str, list[dict]] = {"order_blocks": [], "fair_value_gaps": []}
+    n = len(enriched)
+    if n == 0:
+        return out
+    pos = idx if idx >= 0 else n + idx
+    if pos < 0 or pos >= n:
+        return out
+
+    cols = set(enriched.columns)
+    highs = enriched["high"].values if "high" in cols else None
+    lows = enriched["low"].values if "low" in cols else None
+    closes = enriched["close"].values if "close" in cols else None
+    if highs is None or lows is None or closes is None:
+        return out
+
+    # ---- Order blocks ----------------------------------------------------
+    ob_cols = {"BULLISH_OB_HIGH", "BULLISH_OB_LOW", "BEARISH_OB_HIGH", "BEARISH_OB_LOW"}
+    if ob_cols <= cols:
+        strength = (
+            enriched["OB_STRENGTH_NORM"].values if "OB_STRENGTH_NORM" in cols else None
+        )
+        bull_hi = enriched["BULLISH_OB_HIGH"].values
+        bull_lo = enriched["BULLISH_OB_LOW"].values
+        bear_hi = enriched["BEARISH_OB_HIGH"].values
+        bear_lo = enriched["BEARISH_OB_LOW"].values
+        obs: list[dict] = []
+        for k in range(pos + 1):
+            for side, hv, lv in (
+                ("bullish", bull_hi[k], bull_lo[k]),
+                ("bearish", bear_hi[k], bear_lo[k]),
+            ):
+                if pd.isna(hv) or pd.isna(lv):
+                    continue
+                zhigh, zlow = float(max(hv, lv)), float(min(hv, lv))
+                st = float(strength[k]) if strength is not None and not pd.isna(strength[k]) else 0.0
+                status, tested = _ob_lifecycle(
+                    side, zhigh, zlow, highs, lows, closes, k, pos
+                )
+                if status == "invalidated":
+                    continue
+                created_at = _zone_created_at(enriched, k)
+                importance = "high" if st >= 0.75 else "medium" if st >= 0.4 else "low"
+                obs.append({
+                    "direction": side,
+                    "level_high": zhigh,
+                    "level_low": zlow,
+                    "importance": importance,
+                    "status": status,
+                    "tested": tested,
+                    "created_at": created_at,
+                    "_strength": st,
+                    "_k": k,
+                })
+        # active first, then by strength, then most recent first.
+        obs.sort(key=lambda z: (z["status"] != "active", -z["_strength"], -z["_k"]))
+        out["order_blocks"] = obs[:max_per_type]
+
+    # ---- Fair value gaps -------------------------------------------------
+    if "FVG_DIR" in cols and {"high", "low"} <= cols:
+        fvg_dir = enriched["FVG_DIR"].values
+        size_norm = (
+            enriched["FVG_SIZE_NORM"].values if "FVG_SIZE_NORM" in cols else None
+        )
+        fvgs: list[dict] = []
+        for k in range(2, pos + 1):
+            d = fvg_dir[k]
+            if pd.isna(d) or d == 0:
+                continue
+            if d > 0:  # bullish gap: high[k-2] (low edge) .. low[k] (high edge)
+                a, b = float(highs[k - 2]), float(lows[k])
+                side = "bullish"
+            else:      # bearish gap: high[k] (low edge) .. low[k-2] (high edge)
+                a, b = float(highs[k]), float(lows[k - 2])
+                side = "bearish"
+            zhigh, zlow = max(a, b), min(a, b)
+            status, tested = _fvg_lifecycle(side, zhigh, zlow, highs, lows, k, pos)
+            if status == "filled":
+                continue
+            sz = float(size_norm[k]) if size_norm is not None and not pd.isna(size_norm[k]) else (zhigh - zlow)
+            fvgs.append({
+                "direction": side,
+                "level_high": zhigh,
+                "level_low": zlow,
+                "status": status,
+                "tested": tested,
+                "created_at": _zone_created_at(enriched, k),
+                "_size": sz,
+                "_k": k,
+            })
+        fvgs.sort(key=lambda z: (z["status"] != "active", -z["_size"], -z["_k"]))
+        out["fair_value_gaps"] = fvgs[:max_per_type]
+
+    return out
+
+
+# ---------------------------------------------------------------------------
 # Structure mapper
 # ---------------------------------------------------------------------------
 
@@ -317,8 +526,27 @@ def confluence_signal_to_structure(
             validation_status="confirmed",
         )
 
-    # Order blocks
-    order_blocks: list[OrderBlock] = []
+    # Order blocks + fair value gaps.
+    # Preferred path: the multi-zone registry (all still-relevant zones the
+    # engine computed over the window, with lifecycle), injected by the SMC
+    # pipeline under ``_zones``. Fallback: the legacy single-last-bar zone, kept
+    # so callers/tests that don't run collect_zones still behave as before.
+    zones = smc_features.get("_zones")
+    if isinstance(zones, dict):
+        order_blocks, fair_value_gaps = _zones_to_models(zones, bar_ts)
+        return MarketReadingStructure(
+            bos=bos,
+            choch=choch,
+            order_blocks=order_blocks,
+            fair_value_gaps=fair_value_gaps,
+            retest_in_progress=_build_retest(
+                smc_features, retest_state, fresh_break, persisted_break, bos,
+                current_price, bar_ts,
+            ),
+        )
+
+    # ---- legacy single-bar fallback -------------------------------------
+    order_blocks = []
     ob_strength = float(smc_features.get("OB_STRENGTH_NORM", 0.0))
     if ob_strength > 0.0:
         sig_direction = _signal_type_to_direction(
@@ -366,36 +594,82 @@ def confluence_signal_to_structure(
             user_flagged=False,
         ))
 
-    # Retest in progress
-    # D1-b: the BOS LEVEL persists for the whole active window (BOS_RETEST_STATE
-    # != 0 = awaiting OR armed — see the BOS block above). The "retest in
-    # progress" flag is narrower: it is shown ONLY during the ARMED sub-state
-    # (BOS_RETEST_STATE = ±2, i.e. price has returned to the broken level), never
-    # during AWAITING (±1, price has not come back yet). Both read the SAME
-    # engine-produced state — no detection threshold is touched. We also require
-    # the break to be surfaced (fresh_break or persisted_break), so the UI never
-    # shows a retest of a break that was dropped (e.g. trend inverted).
-    retest_in_progress: Optional[RetestInProgress] = None
-    armed_retest = abs(retest_state) == 2.0
-    if armed_retest and (fresh_break or persisted_break):
-        retest_level = _first_real(
-            smc_features, "BOS_BREAK_LEVEL", "BOS_BREAK_LEVEL_LAST"
-        )
-        if retest_level is None:
-            retest_level = bos.level if bos is not None else float(current_price)
-        retest_in_progress = RetestInProgress(
-            level=retest_level,
-            type="bos_retest",
-            started_at=bar_ts,
-        )
-
     return MarketReadingStructure(
         bos=bos,
         choch=choch,
         order_blocks=order_blocks,
         fair_value_gaps=fair_value_gaps,
-        retest_in_progress=retest_in_progress,
+        retest_in_progress=_build_retest(
+            smc_features, retest_state, fresh_break, persisted_break, bos,
+            current_price, bar_ts,
+        ),
     )
+
+
+def _build_retest(
+    smc_features: dict[str, float],
+    retest_state: float,
+    fresh_break: bool,
+    persisted_break: bool,
+    bos: Optional[BOSRecent],
+    current_price: float,
+    bar_ts: datetime,
+) -> Optional[RetestInProgress]:
+    """Shared retest-in-progress builder for both the multi-zone and legacy paths.
+
+    D1-b: the BOS LEVEL persists for the whole active window (BOS_RETEST_STATE
+    != 0 = awaiting OR armed). The "retest in progress" flag is narrower: shown
+    ONLY during the ARMED sub-state (±2, price has returned to the broken level),
+    never during AWAITING (±1). Reads the SAME engine-produced state — no
+    detection threshold is touched. Requires the break to be surfaced so the UI
+    never shows a retest of a break that was dropped (e.g. trend inverted).
+    """
+    if abs(retest_state) != 2.0 or not (fresh_break or persisted_break):
+        return None
+    retest_level = _first_real(smc_features, "BOS_BREAK_LEVEL", "BOS_BREAK_LEVEL_LAST")
+    if retest_level is None:
+        retest_level = bos.level if bos is not None else float(current_price)
+    return RetestInProgress(level=retest_level, type="bos_retest", started_at=bar_ts)
+
+
+def _zones_to_models(
+    zones: dict[str, list[dict]],
+    bar_ts: datetime,
+) -> tuple[list[OrderBlock], list[FairValueGap]]:
+    """Convert collected zone dicts (from :func:`collect_zones`) to schema models.
+
+    ``created_at`` falls back to ``bar_ts`` when the collector could not derive a
+    per-zone timestamp (non-datetime frame index). The ``id`` is stable per zone
+    (direction + created time) so the same zone keeps its identity across reads.
+    """
+    order_blocks: list[OrderBlock] = []
+    for z in zones.get("order_blocks", []):
+        created = z.get("created_at") or bar_ts
+        order_blocks.append(OrderBlock(
+            id=f"OB_{z['direction']}_{created.strftime('%Y%m%d%H%M%S')}",
+            direction=z["direction"],
+            level_high=z["level_high"],
+            level_low=z["level_low"],
+            importance=z["importance"],
+            status=z["status"],
+            created_at=created,
+            tested=z["tested"],
+            user_flagged=False,
+        ))
+    fair_value_gaps: list[FairValueGap] = []
+    for z in zones.get("fair_value_gaps", []):
+        created = z.get("created_at") or bar_ts
+        fair_value_gaps.append(FairValueGap(
+            id=f"FVG_{z['direction']}_{created.strftime('%Y%m%d%H%M%S')}",
+            direction=z["direction"],
+            level_high=z["level_high"],
+            level_low=z["level_low"],
+            status=z["status"],
+            created_at=created,
+            tested=z["tested"],
+            user_flagged=False,
+        ))
+    return order_blocks, fair_value_gaps
 
 
 # ---------------------------------------------------------------------------
