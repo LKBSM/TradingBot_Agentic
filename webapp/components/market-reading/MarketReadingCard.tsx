@@ -74,7 +74,7 @@ export function MarketReadingCard({
             aria-label="Ouvrir le chatbot pour poser une question contextuelle"
           >
             <MessageCircle aria-hidden />
-            Demander à Sentinel
+            Demander à M.I.A Agent
           </Button>
         </div>
 

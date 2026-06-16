@@ -37,7 +37,7 @@ test.describe('Landing — golden paths (architecture L1-L6 2026-05-27)', () => 
     await expect(
       page.getByRole('heading', {
         level: 2,
-        name: /Sentinel répond aux vraies questions/i,
+        name: /M\.I\.A Agent répond aux vraies questions/i,
       }),
     ).toBeVisible();
     // Three tile titles (5.D — "score" reformulated to a descriptive reading).

@@ -57,7 +57,7 @@ export function ChatInput({ className }: ChatInputProps) {
   const placeholder =
     apiAvailable === false
       ? 'Le LLM en direct n\'est pas configuré — utilise les questions suggérées ci-dessus.'
-      : 'Pose une question libre à Sentinel… (Entrée pour envoyer · Maj+Entrée pour saut de ligne)';
+      : 'Pose une question libre à M.I.A Agent… (Entrée pour envoyer · Maj+Entrée pour saut de ligne)';
 
   return (
     <form
@@ -78,7 +78,7 @@ export function ChatInput({ className }: ChatInputProps) {
         rows={1}
         maxLength={MAX_CHARS}
         disabled={apiAvailable === false}
-        aria-label="Question libre pour Sentinel"
+        aria-label="Question libre pour M.I.A Agent"
         className="flex-1 resize-none bg-transparent px-2 py-1 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/70 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
       />
       <Button

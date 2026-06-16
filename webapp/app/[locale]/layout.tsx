@@ -55,13 +55,13 @@ export const metadata: Metadata = {
     siteName: 'MIA Markets',
     title: 'MIA Markets — Indicateur de marché conversationnel',
     description:
-      'Lectures algorithmiques contextuelles pour XAU/USD et le forex, expliquées par un chatbot (Sentinel). Posture éducative, conforme UE 2024/2811.',
+      'Lectures algorithmiques contextuelles pour XAU/USD et le forex, expliquées par un chatbot (M.I.A Agent). Posture éducative, conforme UE 2024/2811.',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'MIA Markets — Indicateur de marché conversationnel',
     description:
-      'Comprenez le marché — sans qu’on vous dise quoi faire. Lectures algorithmiques + chatbot Sentinel.',
+      'Comprenez le marché — sans qu’on vous dise quoi faire. Lectures algorithmiques + chatbot M.I.A Agent.',
   },
   // PWA install: iOS Safari reads these to badge the home-screen icon and
   // hide the browser chrome when launched standalone.

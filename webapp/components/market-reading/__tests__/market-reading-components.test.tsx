@@ -89,7 +89,7 @@ describe('MarketReadingCard', () => {
     expect(screen.getByText('Synthèse des conditions')).toBeInTheDocument();
   });
 
-  it('wires the "Demander à Sentinel" CTA when a handler is provided', () => {
+  it('wires the "Demander à M.I.A Agent" CTA when a handler is provided', () => {
     const onAsk = vi.fn();
     render(<MarketReadingCard reading={FIXTURE_XAU_M15} onAskChatbot={onAsk} />);
     const cta = screen.getByRole('button', {

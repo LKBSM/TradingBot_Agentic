@@ -1,9 +1,10 @@
 'use client';
 
-import { Bot, MessageCircle } from 'lucide-react';
+import { MessageCircle } from 'lucide-react';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { MiaAgentLogo } from '@/components/chat/MiaAgentLogo';
 import { useChat } from '@/components/chat/ChatProvider';
 import { getChatbotScript } from '@/lib/chatbot';
 import { cn } from '@/lib/utils';
@@ -67,15 +68,15 @@ export function HeroChatPreview({
 
   return (
     <Card
-      aria-label="Aperçu de la conversation avec Sentinel"
+      aria-label="Aperçu de la conversation avec M.I.A Agent"
       className="relative flex flex-col gap-4 border-border/60 bg-card/80 p-5 shadow-md backdrop-blur sm:p-6"
     >
       <div className="flex items-center gap-2">
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
-          <Bot className="h-4 w-4" aria-hidden />
+          <MiaAgentLogo className="h-5 w-5" />
         </div>
         <div>
-          <p className="text-sm font-semibold">Sentinel</p>
+          <p className="text-sm font-semibold">M.I.A Agent</p>
           <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
             Assistant conversationnel · {reading.header.instrument}
           </p>
@@ -88,7 +89,7 @@ export function HeroChatPreview({
         ) : (
           <div className="hero-stagger rounded-2xl rounded-tl-sm bg-muted px-4 py-3 text-sm leading-relaxed">
             <p>
-              Salut, je suis Sentinel — l&apos;assistant de MIA Markets. Je
+              Salut, je suis M.I.A Agent — l&apos;assistant de MIA Markets. Je
               viens de lire le marché {reading.header.instrument} : la structure
               indique une configuration{' '}
               {reading.regime.trend === 'bullish'
@@ -152,9 +153,9 @@ function ThinkingBubble() {
   return (
     <div
       className="inline-flex items-center gap-1 rounded-2xl rounded-tl-sm bg-muted px-4 py-3 text-sm text-muted-foreground"
-      aria-label="Sentinel réfléchit"
+      aria-label="M.I.A Agent réfléchit"
     >
-      <span className="text-xs italic">Sentinel lit le marché</span>
+      <span className="text-xs italic">M.I.A Agent lit le marché</span>
       <span className="flex gap-1">
         <span
           className="hero-thinking-dot h-1.5 w-1.5 rounded-full bg-muted-foreground"

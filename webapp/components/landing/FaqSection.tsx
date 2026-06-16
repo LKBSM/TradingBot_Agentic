@@ -65,10 +65,10 @@ const FAQ: ReadonlyArray<FaqEntry> = [
   },
   {
     id: 'q3-chatbot',
-    question: 'Comment fonctionne le chatbot Sentinel ?',
+    question: 'Comment fonctionne le chatbot M.I.A Agent ?',
     answer: (
       <>
-        Sentinel est l&apos;assistant conversationnel de MIA Markets. Il
+        M.I.A Agent est l&apos;assistant conversationnel de MIA Markets. Il
         utilise <strong>Claude (Anthropic)</strong> avec le contexte de
         la lecture en cours injecté en système : structure, régime,
         événements macro à venir, instrument et unité de temps. Le prompt

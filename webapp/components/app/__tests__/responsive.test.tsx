@@ -65,7 +65,7 @@ describe('responsive layout — desktop (≥768px)', () => {
       screen.getByRole('navigation', { name: /combinaisons disponibles/i }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('complementary', { name: /assistant sentinel/i }),
+      screen.getByRole('complementary', { name: /assistant m.i.a agent/i }),
     ).toBeInTheDocument();
     // No mobile tab bar.
     expect(screen.queryAllByRole('tab')).toHaveLength(0);
@@ -123,7 +123,7 @@ describe('responsive layout — mobile (<768px)', () => {
 
     await waitFor(() =>
       expect(
-        screen.getByRole('complementary', { name: /assistant sentinel/i }),
+        screen.getByRole('complementary', { name: /assistant m.i.a agent/i }),
       ).toBeInTheDocument(),
     );
   });

@@ -29,7 +29,7 @@ async function openChatPanel(page: import('@playwright/test').Page) {
 }
 
 async function askFreeText(page: import('@playwright/test').Page, text: string) {
-  const input = page.getByRole('textbox', { name: /Question libre pour Sentinel/i });
+  const input = page.getByRole('textbox', { name: /Question libre pour M\.I\.A Agent/i });
   await expect(input).toBeVisible();
   await input.fill(text);
   await page.getByRole('button', { name: /Envoyer la question/i }).click();

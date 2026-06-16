@@ -64,7 +64,7 @@ describe('AppWorkspace — /app view', () => {
     ).toBeInTheDocument();
     // Right: chat sidebar, idle context.
     expect(
-      screen.getByRole('complementary', { name: /assistant sentinel/i }),
+      screen.getByRole('complementary', { name: /assistant m.i.a agent/i }),
     ).toBeInTheDocument();
     // No fetch fired until a combo is selected.
     expect(fetchMock).not.toHaveBeenCalled();
@@ -102,7 +102,7 @@ describe('AppWorkspace — /app view', () => {
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
     );
     // Chat context now reflects the selected combo.
-    const chat = screen.getByRole('complementary', { name: /assistant sentinel/i });
+    const chat = screen.getByRole('complementary', { name: /assistant m.i.a agent/i });
     expect(within(chat).getByText(/Or \(XAU\/USD\) · 15 minutes/)).toBeInTheDocument();
   });
 

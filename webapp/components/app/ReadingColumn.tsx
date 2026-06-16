@@ -82,7 +82,7 @@ export function ReadingColumn({
 
   function focusChat() {
     const input = document.querySelector<HTMLTextAreaElement>(
-      'textarea[aria-label="Question libre pour Sentinel"]',
+      'textarea[aria-label="Question libre pour M.I.A Agent"]',
     );
     input?.focus();
     input?.scrollIntoView({ behavior: 'smooth', block: 'center' });
