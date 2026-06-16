@@ -91,6 +91,12 @@ const ZONE_LABEL = {
   fvg: '#6E84B0',
 } as const;
 
+/** Short type code shown INSIDE every box so OB vs FVG is always identifiable. */
+const ZONE_CODE = {
+  ob: 'OB',
+  fvg: 'FVG',
+} as const;
+
 /** Fill / border alpha by state — active reads, tested recedes (~0.05 fill). */
 const ZONE_ALPHA = {
   active: { fill: 0.12, border: 0.45 },
@@ -403,8 +409,9 @@ export function ReadingChart({
       />
 
       {/* Localized OB / FVG boxes, layered over the chart canvas. Active boxes
-          read crisp + labelled; tested boxes recede (ghost fill/border, no
-          label) so they never crowd the active ones. */}
+          read crisp; tested boxes recede (ghost fill/border). Every box carries
+          a short OB / FVG type code at its top-left so the kind is always
+          identifiable — crisp on active, dimmer + smaller on tested. */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         {zoneRects.map((r) => {
           const rgb = ZONE_RGB[r.kind];
@@ -423,14 +430,16 @@ export function ReadingChart({
                 borderRadius: 1,
               }}
             >
-              {!r.tested && (
-                <span
-                  className="absolute left-1 top-0 whitespace-nowrap text-[10px] font-normal leading-tight tabular-nums"
-                  style={{ color: ZONE_LABEL[r.kind] }}
-                >
-                  {r.label}
-                </span>
-              )}
+              <span
+                className={cn(
+                  'absolute left-1 top-0 whitespace-nowrap font-medium leading-tight tabular-nums',
+                  r.tested ? 'text-[9px] opacity-70' : 'text-[10px]',
+                )}
+                style={{ color: ZONE_LABEL[r.kind] }}
+                title={r.label}
+              >
+                {ZONE_CODE[r.kind]}
+              </span>
             </div>
           );
         })}
