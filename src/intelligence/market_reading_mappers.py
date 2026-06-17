@@ -232,6 +232,10 @@ def realized_levels(enriched: Any, idx: int = -1) -> dict[str, float]:
 # and via the MAX_ZONES_PER_TYPE env var (resolved in collect_zones).
 MAX_ZONES_PER_TYPE = 12
 
+# Default cap per structure-event type (BOS / CHOCH). Keeps the recent break
+# history readable; overridable via the MAX_STRUCTURE_EVENTS env var.
+MAX_STRUCTURE_EVENTS = 8
+
 
 # ---------------------------------------------------------------------------
 # Mitigation policy — SINGLE SOURCE OF TRUTH for the OB/FVG lifecycle rules.
@@ -532,6 +536,79 @@ def collect_zones(
     return out
 
 
+def collect_structure_events(
+    enriched: Any,
+    idx: int = -1,
+    max_per_type: Optional[int] = None,
+) -> dict[str, list[dict]]:
+    """Collect discrete BOS / CHOCH break EVENTS over the window up to ``idx``.
+
+    Reads ONLY engine-produced event columns — ``BOS_EVENT`` (±1 on a true break
+    bar), ``CHOCH_SIGNAL`` (±1 on a reversal bar) and ``BOS_BREAK_LEVEL`` (the
+    broken level on those bars). No detection, no recompute, no threshold. This
+    is the structure-event twin of :func:`collect_zones`: the engine detects many
+    breaks but only the LAST bar's one ever surfaced via ``bos``/``choch`` (audit
+    2026-06-16 "sous-surfaçage": 88 BOS / 40 CHOCH detected over 6 combos, ≤1
+    surfaced — a pure plumbing gap). Returns the most recent events first, capped
+    to ``max_per_type``. Uses the discrete ``BOS_EVENT`` (real break bars,
+    ~11-25 / 500 bars), NEVER the propagated ``BOS_SIGNAL`` that the F6 fix proved
+    fires on ~100% of bars.
+    """
+    import os
+    import pandas as pd
+
+    if max_per_type is None:
+        try:
+            max_per_type = int(os.environ.get("MAX_STRUCTURE_EVENTS", MAX_STRUCTURE_EVENTS))
+        except (TypeError, ValueError):
+            max_per_type = MAX_STRUCTURE_EVENTS
+
+    out: dict[str, list[dict]] = {"bos_events": [], "choch_events": []}
+    n = len(enriched)
+    if n == 0:
+        return out
+    pos = idx if idx >= 0 else n + idx
+    if pos < 0 or pos >= n:
+        return out
+
+    cols = set(enriched.columns)
+    closes = enriched["close"].values if "close" in cols else None
+    break_level = enriched["BOS_BREAK_LEVEL"].values if "BOS_BREAK_LEVEL" in cols else None
+
+    def _level(k: int) -> Optional[float]:
+        # Real broken level on the event bar; close is the last-resort fallback.
+        if break_level is not None and not pd.isna(break_level[k]):
+            return float(break_level[k])
+        if closes is not None and not pd.isna(closes[k]):
+            return float(closes[k])
+        return None
+
+    def _collect(col: str) -> list[dict]:
+        if col not in cols:
+            return []
+        values = enriched[col].values
+        events: list[dict] = []
+        for k in range(pos + 1):
+            v = values[k]
+            if pd.isna(v) or v == 0:
+                continue
+            lvl = _level(k)
+            if lvl is None:
+                continue
+            events.append({
+                "direction": "bullish" if v > 0 else "bearish",
+                "level": lvl,
+                "broken_at": _zone_created_at(enriched, k),
+                "_k": k,
+            })
+        events.sort(key=lambda e: -e["_k"])  # most recent first
+        return events[:max_per_type]
+
+    out["bos_events"] = _collect("BOS_EVENT")
+    out["choch_events"] = _collect("CHOCH_SIGNAL")
+    return out
+
+
 # ---------------------------------------------------------------------------
 # Structure mapper
 # ---------------------------------------------------------------------------
@@ -643,6 +720,16 @@ def confluence_signal_to_structure(
             validation_status="confirmed",
         )
 
+    # Discrete BOS/CHOCH break-event history (most-recent first, capped). Like
+    # the multi-zone registry, injected by the SMC pipeline under
+    # ``_structure_events``; absent on callers/tests that don't run the collector.
+    structure_events = smc_features.get("_structure_events")
+    bos_events, choch_events = (
+        _structure_events_to_models(structure_events, bar_ts)
+        if isinstance(structure_events, dict)
+        else ([], [])
+    )
+
     # Order blocks + fair value gaps.
     # Preferred path: the multi-zone registry (all still-relevant zones the
     # engine computed over the window, with lifecycle), injected by the SMC
@@ -654,6 +741,8 @@ def confluence_signal_to_structure(
         return MarketReadingStructure(
             bos=bos,
             choch=choch,
+            bos_events=bos_events,
+            choch_events=choch_events,
             order_blocks=order_blocks,
             fair_value_gaps=fair_value_gaps,
             retest_in_progress=_build_retest(
@@ -714,6 +803,8 @@ def confluence_signal_to_structure(
     return MarketReadingStructure(
         bos=bos,
         choch=choch,
+        bos_events=bos_events,
+        choch_events=choch_events,
         order_blocks=order_blocks,
         fair_value_gaps=fair_value_gaps,
         retest_in_progress=_build_retest(
@@ -790,6 +881,35 @@ def _zones_to_models(
             user_flagged=False,
         ))
     return order_blocks, fair_value_gaps
+
+
+def _structure_events_to_models(
+    events: dict[str, list[dict]],
+    bar_ts: datetime,
+) -> tuple[list[BOSRecent], list[CHOCHRecent]]:
+    """Convert collected BOS/CHOCH event dicts (from
+    :func:`collect_structure_events`) to schema models. ``broken_at`` falls back
+    to ``bar_ts`` when the collector could not derive a per-bar timestamp
+    (non-datetime frame index). Direction/level come straight from the engine
+    event columns — descriptive, never predictive (status is always "confirmed":
+    the break occurred)."""
+    bos_events: list[BOSRecent] = []
+    for e in events.get("bos_events", []):
+        bos_events.append(BOSRecent(
+            direction=e["direction"],
+            level=float(e["level"]),
+            broken_at=e.get("broken_at") or bar_ts,
+            validation_status="confirmed",
+        ))
+    choch_events: list[CHOCHRecent] = []
+    for e in events.get("choch_events", []):
+        choch_events.append(CHOCHRecent(
+            direction=e["direction"],
+            level=float(e["level"]),
+            broken_at=e.get("broken_at") or bar_ts,
+            validation_status="confirmed",
+        ))
+    return bos_events, choch_events
 
 
 # ---------------------------------------------------------------------------

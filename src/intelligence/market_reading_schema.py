@@ -132,6 +132,15 @@ class RetestInProgress(BaseModel):
 class MarketReadingStructure(BaseModel):
     bos: Optional[BOSRecent] = None
     choch: Optional[CHOCHRecent] = None
+    # Discrete BOS / CHOCH break EVENTS observed over the window, most-recent
+    # first (capped). Read-only/descriptive history: the engine detects many
+    # breaks but only the last-bar one ever surfaced via `bos`/`choch` (audit
+    # 2026-06-16 "sous-surfaçage": 88 BOS / 40 CHOCH detected over 6 combos, ≤1
+    # surfaced). These lists carry the real broken level + honest timestamp of
+    # each break — read from engine event columns, never recomputed. `bos` /
+    # `choch` above stay the single "current" break for backward compatibility.
+    bos_events: list[BOSRecent] = Field(default_factory=list)
+    choch_events: list[CHOCHRecent] = Field(default_factory=list)
     order_blocks: list[OrderBlock] = Field(default_factory=list)
     fair_value_gaps: list[FairValueGap] = Field(default_factory=list)
     retest_in_progress: Optional[RetestInProgress] = None

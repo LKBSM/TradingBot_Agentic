@@ -81,7 +81,10 @@ def build_market_reading_assembler(enable_news: Optional[bool] = None) -> Any:
     """
     from src.intelligence.data_providers import TwelveDataProvider
     from src.intelligence.haiku_description_engine import HaikuDescriptionEngine
-    from src.intelligence.market_reading_assembler import MarketReadingAssembler
+    from src.intelligence.market_reading_assembler import (
+        MarketReadingAssembler,
+        build_cache_mtf_provider,
+    )
     from src.intelligence.news_pipeline import NewsPipeline
     from src.storage import (
         CandlesCacheStore,
@@ -112,6 +115,12 @@ def build_market_reading_assembler(enable_news: Optional[bool] = None) -> Any:
         candles_store=candles_store,
         description_engine=haiku_engine,
         news_pipeline=news_pipeline,
+        # Multi-timeframe bias from the candle cache (pure read, no extra Twelve
+        # Data call) — populates regime.mtf_confluence, previously always empty
+        # in live because no provider was wired.
+        mtf_provider=build_cache_mtf_provider(
+            candles_store, env_int("MTF_BIAS_LOOKBACK", 200)
+        ),
         lookback=env_int(
             "MARKET_READING_LOOKBACK", MarketReadingAssembler.DEFAULT_LOOKBACK
         ),

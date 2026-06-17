@@ -142,6 +142,14 @@ export interface RetestInProgress {
 export interface MarketReadingStructure {
   bos?: BOSRecent | null;
   choch?: CHOCHRecent | null;
+  /**
+   * Discrete BOS / CHOCH break events over the window, most-recent first
+   * (read-only, descriptive). The engine detects many breaks but only the
+   * last-bar one surfaced via `bos`/`choch`; these lists carry the recent
+   * history so the chart can mark each break. Absent on older payloads.
+   */
+  bos_events?: BOSRecent[];
+  choch_events?: CHOCHRecent[];
   order_blocks: OrderBlock[];
   fair_value_gaps: FairValueGap[];
   retest_in_progress?: RetestInProgress | null;
