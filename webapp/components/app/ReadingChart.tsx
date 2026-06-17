@@ -66,6 +66,35 @@ interface ZoneRect {
   tested: boolean;
 }
 
+/** Quantise to ½px so sub-pixel float noise never triggers a re-render. */
+const qpx = (n: number) => Math.round(n * 2) / 2;
+
+/**
+ * Geometry-equal guard for the rAF redraw loop: true when both lists hold the
+ * same boxes at the same (½px-rounded) pixel rects. Lets the loop run every
+ * frame (so zones stay glued to the price axis) while keeping React idle until
+ * a box actually moves.
+ */
+function rectsEqual(a: ZoneRect[], b: ZoneRect[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += 1) {
+    const x = a[i]!;
+    const y = b[i]!;
+    if (
+      x.id !== y.id ||
+      x.kind !== y.kind ||
+      x.tested !== y.tested ||
+      qpx(x.left) !== qpx(y.left) ||
+      qpx(x.width) !== qpx(y.width) ||
+      qpx(x.top) !== qpx(y.top) ||
+      qpx(x.height) !== qpx(y.height)
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
 /** Candle bodies — muted bull / bear; wick + border share the body colour. */
 const CANDLE = { bull: '#2F9E78', bear: '#C2693E' };
 
@@ -301,7 +330,16 @@ export function ReadingChart({
     };
   }, [candles, structure]);
 
-  // ── Recompute zone rectangles on scale / resize changes. ────────────────────
+  // ── Keep zone rectangles IN PHASE with the chart canvas. ────────────────────
+  // The boxes are an HTML overlay positioned from priceToCoordinate /
+  // timeToCoordinate. The time axis emits a range-change event, but a VERTICAL
+  // PRICE-AXIS drag (handleScale.axisPressedMouseMove) emits nothing — so the
+  // old "subscribe to the time range + ResizeObserver" wiring never recomputed
+  // on price scaling: boxes stayed frozen at stale Y, then snapped on the next
+  // time event = the jitter. Fix: recompute every animation frame so the
+  // overlay tracks the canvas for ALL scale changes (price drag, time pan/zoom,
+  // autoscale, resize), gated by a geometry guard so React only re-renders when
+  // a box truly moves.
   React.useEffect(() => {
     const chart = chartRef.current;
     const series = seriesRef.current;
@@ -329,7 +367,7 @@ export function ReadingChart({
       return best;
     };
 
-    const recompute = () => {
+    const computeRects = (): ZoneRect[] => {
       const plotRight = Math.max(
         0,
         container.clientWidth - chart.priceScale('right').width(),
@@ -370,17 +408,26 @@ export function ReadingChart({
           tested: z.tested,
         });
       }
-      setZoneRects(rects);
+      return rects;
     };
 
-    recompute();
-    timeScale.subscribeVisibleLogicalRangeChange(recompute);
-    const ro = new ResizeObserver(recompute);
-    ro.observe(container);
+    // Animation-frame loop: recompute in phase with the canvas, commit to React
+    // only when the geometry changes (rectsEqual guard) so an idle chart costs
+    // a cheap coordinate read per frame and zero re-renders.
+    let prev: ZoneRect[] = [];
+    let raf = 0;
+    const tick = () => {
+      const next = computeRects();
+      if (!rectsEqual(prev, next)) {
+        prev = next;
+        setZoneRects(next);
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
 
     return () => {
-      timeScale.unsubscribeVisibleLogicalRangeChange(recompute);
-      ro.disconnect();
+      cancelAnimationFrame(raf);
     };
   }, [zones, candles]);
 
