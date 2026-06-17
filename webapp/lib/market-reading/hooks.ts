@@ -176,6 +176,15 @@ export interface UseCandlesOptions {
 }
 
 /**
+ * Candle depth requested for the chart. A few hundred bars of real history
+ * (vs the client default of 200) so the chart shows context, not a keyhole.
+ * Served straight from the SQLite candle cache (backend caps at 1000 and the
+ * assembler caches 500) — NO extra Twelve Data call. Kept well within the cache
+ * so every combo resolves without a provider round-trip.
+ */
+const CHART_CANDLE_LIMIT = 400;
+
+/**
  * Fetch the candle window for `(instrument, timeframe)` for the chart.
  *
  *   · 'mock' → getMockCandles() (deterministic local series; no network).
@@ -219,7 +228,10 @@ export function useCandles(
     setIsLoading(true);
     setError(null);
 
-    fetchCandles(instrument, timeframe, { signal: controller.signal })
+    fetchCandles(instrument, timeframe, {
+      signal: controller.signal,
+      limit: CHART_CANDLE_LIMIT,
+    })
       .then((data) => {
         if (seq !== requestSeq.current) return; // stale
         setCandles(data.length > 0 ? data : null);

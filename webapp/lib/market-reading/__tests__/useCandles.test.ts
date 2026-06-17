@@ -58,7 +58,8 @@ describe('useCandles', () => {
     expect(mockFetchCandles).toHaveBeenCalledWith(
       'XAUUSD',
       'M15',
-      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+      // Requests a few-hundred-bar window (cache-served, no extra provider call).
+      expect.objectContaining({ signal: expect.any(AbortSignal), limit: 400 }),
     );
   });
 
