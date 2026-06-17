@@ -8,6 +8,7 @@ import pytest
 
 from src.intelligence.market_reading_assembler import (
     MarketReadingAssembler,
+    build_cache_mtf_provider,
     expected_last_candle_close,
 )
 from src.intelligence.market_reading_schema import MarketReading
@@ -446,3 +447,60 @@ def test_provider_snapshot_written_before_filtering(fixed_clock, tmp_path, monke
     assert record["instrument"] == "XAUUSD"
     assert len(record["candles"]) == len(candles)  # raw = forming bar included
     assert record["candles"][-1]["close"] == 2399.0
+
+
+# ---------------------------------------------------------------------------
+# build_cache_mtf_provider — cache-only multi-timeframe bias (fix mtf_confluence
+# vide en live : aucun provider n'etait cable)
+# ---------------------------------------------------------------------------
+
+
+class _MtfStore:
+    """Fake candle store exposing only get_last_n_candles (pure cache read)."""
+
+    def __init__(self, by_tf: dict[str, list[_MockCandle]]):
+        self._by_tf = by_tf
+        self.calls: list[tuple[str, str, int]] = []
+
+    def get_last_n_candles(self, instrument: str, timeframe: str, n: int):
+        self.calls.append((instrument, timeframe, n))
+        return self._by_tf.get(timeframe, [])[-n:]
+
+
+def _rising(n: int, base: float = 100.0) -> list[_MockCandle]:
+    start = datetime(2026, 5, 28, tzinfo=timezone.utc)
+    return [_MockCandle(start + timedelta(hours=i), base + i) for i in range(n)]
+
+
+def test_mtf_provider_returns_upper_timeframes_only():
+    store = _MtfStore({"H1": _rising(30), "H4": _rising(30)})
+    provider = build_cache_mtf_provider(store, lookback=20)
+    out = provider("XAUUSD", "M15")  # upper TFs of M15 = H1, H4, D1, W1
+    assert set(out.keys()) == {"h1", "h4"}  # only the cached ones surface
+    # Values are plain OHLC dicts (consumable by candles_to_regime).
+    assert set(out["h1"][0].keys()) == {"open", "high", "low", "close"}
+    # Pure cache read — only get_last_n_candles was called, with our lookback.
+    assert all(call[2] == 20 for call in store.calls)
+
+
+def test_mtf_provider_skips_unknown_timeframe_and_empty_cache():
+    store = _MtfStore({"H4": []})  # H4 cached but empty
+    provider = build_cache_mtf_provider(store)
+    assert provider("XAUUSD", "ZZ") == {}        # not on the ladder
+    assert provider("XAUUSD", "H1") == {}        # H4 empty, D1/W1 absent
+
+
+def test_mtf_provider_feeds_candles_to_regime_bias():
+    """End-to-end: a rising upper-TF series yields a bullish bias via the engine's
+    existing trend logic (no new detection)."""
+    from src.intelligence.market_reading_mappers import candles_to_regime
+
+    store = _MtfStore({"H1": _rising(40), "H4": _rising(40)})
+    provider = build_cache_mtf_provider(store)
+    mtf = provider("XAUUSD", "M15")
+    regime = candles_to_regime(
+        [{"close": 100 + i, "high": 101 + i, "low": 99 + i} for i in range(40)],
+        mtf_candles_above=mtf,
+    )
+    assert regime.mtf_confluence.get("h1") == "bullish"
+    assert regime.mtf_confluence.get("h4") == "bullish"

@@ -400,8 +400,62 @@ class MarketReadingAssembler:
             return fallback, "template_fallback"
 
 
+# ---------------------------------------------------------------------------
+# Multi-timeframe bias provider (cache-only)
+# ---------------------------------------------------------------------------
+
+# Timeframe ladder (low → high) and the MTF key each maps to (see
+# market_reading_schema.VALID_MTF_KEYS). The bias surfaced for a reading is that
+# of the timeframes ABOVE the requested one.
+_MTF_LADDER = ["M15", "H1", "H4", "D1", "W1"]
+_MTF_KEY = {"M15": "m15", "H1": "h1", "H4": "h4", "D1": "d1", "W1": "w1"}
+DEFAULT_MTF_BIAS_LOOKBACK = 200
+
+
+def build_cache_mtf_provider(
+    candles_store: Any,
+    lookback: int = DEFAULT_MTF_BIAS_LOOKBACK,
+) -> Callable[[str, str], Mapping[str, Sequence[dict]]]:
+    """Build an ``mtf_provider`` that reads the UPPER timeframes' candles straight
+    from the candle CACHE — a pure read, NO Twelve Data call, NO new detection.
+
+    Without this wired (the prior state), ``regime.mtf_confluence`` was always
+    empty in live (no provider injected), so the multi-timeframe bias never
+    surfaced. The returned callable maps each upper timeframe to its cached OHLC
+    rows as plain dicts; ``candles_to_regime`` then derives the descriptive bias
+    via the engine's existing trend logic. Timeframes with no cached candles are
+    simply omitted (graceful — the panel degrades, never errors).
+    """
+
+    def _provider(instrument: str, timeframe: str) -> Mapping[str, Sequence[dict]]:
+        tf = (timeframe or "").upper()
+        if tf not in _MTF_LADDER:
+            return {}
+        out: dict[str, list[dict]] = {}
+        for upper in _MTF_LADDER[_MTF_LADDER.index(tf) + 1:]:
+            try:
+                candles = candles_store.get_last_n_candles(instrument, upper, lookback)
+            except Exception:  # pragma: no cover — defensive cache read
+                continue
+            if not candles:
+                continue
+            out[_MTF_KEY[upper]] = [
+                {
+                    "open": float(c.open),
+                    "high": float(c.high),
+                    "low": float(c.low),
+                    "close": float(c.close),
+                }
+                for c in candles
+            ]
+        return out
+
+    return _provider
+
+
 __all__ = [
     "MarketReadingAssembler",
     "SmcPipelineFn",
+    "build_cache_mtf_provider",
     "expected_last_candle_close",
 ]
