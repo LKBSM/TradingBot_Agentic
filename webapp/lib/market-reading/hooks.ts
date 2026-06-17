@@ -4,6 +4,7 @@ import * as React from 'react';
 import { fetchCandles, fetchMarketReading, MarketReadingNotAvailableError } from './api-client';
 import { computeDailyChange, type DailyChange } from './price';
 import { getMockCandles, getMockReading, READING_DATA_SOURCE } from '@/lib/mockReadings';
+import { MTF_TREND_ORDER, type MtfTrendMap } from './mtf-trend';
 import type { Candle, MarketReading } from '@/types/market-reading';
 
 /** Where the reading comes from: live backend or the local TEMPORARY mocks. */
@@ -151,6 +152,77 @@ export function useMarketReading(
   }, [instrument, timeframe, pollMs, refresh]);
 
   return { data, isLoading, isRefreshing, error, refresh };
+}
+
+// ─── Multi-timeframe trend snapshot (read-only) ───────────────────────────────
+
+export interface UseMtfTrendsResult {
+  /** M15 / H1 / H4 trend values; each null while unavailable / not loaded. */
+  trends: MtfTrendMap;
+  isLoading: boolean;
+}
+
+const EMPTY_MTF_TRENDS: MtfTrendMap = { h4: null, h1: null, m15: null };
+
+/**
+ * Read-only multi-timeframe trend snapshot for `instrument`: the M15 / H1 / H4
+ * trend values, each taken from that timeframe's EXISTING market reading
+ * (`regime.trend`). It performs NO new detection and NO recompute — it just
+ * reads three (cache-served) reads in parallel. A failed / missing timeframe
+ * collapses to null so the panel degrades gracefully.
+ */
+export function useMtfTrends(
+  instrument: string | null,
+  options: { source?: ReadingSource } = {},
+): UseMtfTrendsResult {
+  const { source = READING_DATA_SOURCE } = options;
+  const [trends, setTrends] = React.useState<MtfTrendMap>(EMPTY_MTF_TRENDS);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const seqRef = React.useRef(0);
+
+  React.useEffect(() => {
+    if (!instrument) {
+      setTrends(EMPTY_MTF_TRENDS);
+      setIsLoading(false);
+      return;
+    }
+
+    const seq = ++seqRef.current;
+    setIsLoading(true);
+    setTrends(EMPTY_MTF_TRENDS);
+
+    // ── Mock source: resolve locally, no network. ──
+    if (source === 'mock') {
+      const next: MtfTrendMap = { ...EMPTY_MTF_TRENDS };
+      for (const { key, tf } of MTF_TREND_ORDER) {
+        next[key] = getMockReading(instrument, tf)?.regime.trend ?? null;
+      }
+      if (seq === seqRef.current) {
+        setTrends(next);
+        setIsLoading(false);
+      }
+      return;
+    }
+
+    const controller = new AbortController();
+    Promise.all(
+      MTF_TREND_ORDER.map(({ key, tf }) =>
+        fetchMarketReading(instrument, tf, { signal: controller.signal })
+          .then((r) => [key, r.regime.trend] as const)
+          .catch(() => [key, null] as const),
+      ),
+    ).then((pairs) => {
+      if (seq !== seqRef.current) return;
+      const next: MtfTrendMap = { ...EMPTY_MTF_TRENDS };
+      for (const [key, trend] of pairs) next[key] = trend;
+      setTrends(next);
+      setIsLoading(false);
+    });
+
+    return () => controller.abort();
+  }, [instrument, source]);
+
+  return { trends, isLoading };
 }
 
 // ─── Candles (chart feed) ─────────────────────────────────────────────────────
