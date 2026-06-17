@@ -344,37 +344,50 @@ def _fvg_lifecycle(
     created: int,
     upto: int,
     policy: MitigationPolicy = MITIGATION_POLICY,
-) -> tuple[str, bool, Optional[int]]:
+) -> tuple[str, bool, Optional[int], Optional[float]]:
     """Classify a fair-value-gap over bars (created, upto].
 
-    Returns ``(status, entered, first_entry_idx)`` where status ∈
+    Returns ``(status, entered, first_entry_idx, fill_level)`` where status ∈
     {active, partially_filled, filled}. A bullish gap (price gapped up, empty
     band ``[zlow, zhigh]``) fills from above: ``filled`` once a later low
     retraces ``policy.fvg_fill_fraction`` of the gap height (1.0 = far edge
     ``zlow``), ``partially_filled`` once a later low dips below ``zhigh`` (near
     edge). Bearish gap is the mirror, filled from below. ``first_entry_idx`` is
     the bar of the first partial entry.
+
+    ``fill_level`` is the DEEPEST price the wicks reached INTO the band (clamped
+    to ``[zlow, zhigh]``): the lowest low for a bullish gap (it fills downward),
+    the highest high for a bearish one. ``None`` while still active/untouched.
+    Purely a measurement of engine-emitted highs/lows — it bounds the still-open
+    portion of the box, it does NOT recompute or re-detect the gap.
     """
     height = max(zhigh - zlow, 0.0)
     fill = policy.fvg_fill_fraction * height
     entered = False
     first_entry: Optional[int] = None
+    deepest: Optional[float] = None  # deepest penetration price into the band
     for j in range(created + 1, upto + 1):
         if side == "bullish":
             if lows[j] <= zhigh - fill:  # retraced enough → filled
-                return "filled", True, (first_entry if first_entry is not None else j)
+                return "filled", True, (first_entry if first_entry is not None else j), zlow
             if lows[j] <= zhigh:
                 entered = True
                 if first_entry is None:
                     first_entry = j
+                pen = max(float(lows[j]), zlow)  # clamp into the band
+                if deepest is None or pen < deepest:
+                    deepest = pen
         else:
             if highs[j] >= zlow + fill:
-                return "filled", True, (first_entry if first_entry is not None else j)
+                return "filled", True, (first_entry if first_entry is not None else j), zhigh
             if highs[j] >= zlow:
                 entered = True
                 if first_entry is None:
                     first_entry = j
-    return ("partially_filled" if entered else "active"), entered, first_entry
+                pen = min(float(highs[j]), zhigh)  # clamp into the band
+                if deepest is None or pen > deepest:
+                    deepest = pen
+    return ("partially_filled" if entered else "active"), entered, first_entry, deepest
 
 
 def _zone_created_at(enriched: Any, k: int) -> Optional[datetime]:
@@ -492,7 +505,9 @@ def collect_zones(
                 a, b = float(highs[k]), float(lows[k - 2])
                 side = "bearish"
             zhigh, zlow = max(a, b), min(a, b)
-            status, tested, entry_idx = _fvg_lifecycle(side, zhigh, zlow, highs, lows, k, pos)
+            status, tested, entry_idx, fill_level = _fvg_lifecycle(
+                side, zhigh, zlow, highs, lows, k, pos
+            )
             # Honesty guardrail (mission §C): never surface a consumed zone.
             if status == "filled":
                 continue
@@ -507,6 +522,7 @@ def collect_zones(
                 "tested": tested,
                 "created_at": _zone_created_at(enriched, k),
                 "mitigated_at": _zone_created_at(enriched, entry_idx) if entry_idx is not None else None,
+                "fill_level": fill_level,
                 "_size": sz,
                 "_k": k,
             })
@@ -770,6 +786,7 @@ def _zones_to_models(
             created_at=created,
             tested=z["tested"],
             mitigated_at=z.get("mitigated_at"),
+            fill_level=z.get("fill_level"),
             user_flagged=False,
         ))
     return order_blocks, fair_value_gaps

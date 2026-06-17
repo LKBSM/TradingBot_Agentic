@@ -10,7 +10,7 @@
  * `mitigated_at` is READ-ONLY here: it is consumed to bound a tested box at its
  * mitigation point, never written or derived.
  */
-import type { MarketReadingStructure } from '@/types/market-reading';
+import type { FairValueGap, MarketReadingStructure } from '@/types/market-reading';
 
 /** A zone reduced to what the chart needs to place a localized, bounded box. */
 export interface ZoneModel {
@@ -43,6 +43,29 @@ export function isoToSec(iso: string | null | undefined): number {
 }
 
 /**
+ * Resolve the still-OPEN price band of an FVG box. For a partially-filled gap
+ * with a known direction and an in-band `fill_level`, the box shrinks to the
+ * unfilled side (bullish: top down to fill_level; bearish: bottom up to it).
+ * In every other case (active, unknown direction, or out-of-band level) the
+ * full engine band is returned unchanged — never guess a shrink.
+ */
+export function openFvgBand(fvg: FairValueGap): { high: number; low: number } {
+  let high = fvg.level_high;
+  let low = fvg.level_low;
+  const lvl = fvg.fill_level;
+  if (
+    fvg.status === 'partially_filled' &&
+    typeof lvl === 'number' &&
+    lvl > low &&
+    lvl < high
+  ) {
+    if (fvg.direction === 'bullish') high = lvl;
+    else if (fvg.direction === 'bearish') low = lvl;
+  }
+  return { high, low };
+}
+
+/**
  * Reduce a structure's OB/FVG zones to drawable models. Consumed zones
  * (invalidated OB, filled FVG) are skipped defensively — the backend already
  * drops them, but the chart must never surface a consumed zone as live.
@@ -64,11 +87,18 @@ export function buildZoneModels(structure: MarketReadingStructure): ZoneModel[] 
   }
   for (const fvg of structure.fair_value_gaps) {
     if (fvg.status === 'filled') continue;
+    // Shrink a partially-filled gap to its STILL-OPEN portion. The engine emits
+    // fill_level = the deepest wick into the band (read-only). A bullish gap
+    // fills from the top down → the open part is below the penetration (high =
+    // fill_level); a bearish gap fills from the bottom up → open part above it
+    // (low = fill_level). Only shrink when the direction is known and the level
+    // sits strictly inside the band — otherwise keep the full box (no guess).
+    const { high, low } = openFvgBand(fvg);
     out.push({
       id: fvg.id,
       kind: 'fvg',
-      high: fvg.level_high,
-      low: fvg.level_low,
+      high,
+      low,
       createdSec: isoToSec(fvg.created_at),
       mitigatedSec: fvg.mitigated_at ? isoToSec(fvg.mitigated_at) : null,
       tested: fvg.status !== 'active',

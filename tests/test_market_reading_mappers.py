@@ -834,6 +834,32 @@ def test_partially_filled_fvg_carries_first_entry_timestamp():
     assert fvg["mitigated_at"] is not None
 
 
+def test_active_fvg_has_no_fill_level():
+    """An untouched gap exposes fill_level=None (front draws the full band)."""
+    rows = [{"high": 100 + i, "low": 99 + i, "close": 100 + i} for i in range(8)]
+    rows[5].update(FVG_DIR=1.0, FVG_SIZE_NORM=0.3)
+    z = collect_zones(_frame(rows), idx=7)
+    fvg = z["fair_value_gaps"][0]
+    assert fvg["status"] == "active"
+    assert fvg["fill_level"] is None
+
+
+def test_partially_filled_fvg_exposes_deepest_penetration_as_fill_level():
+    """A bullish gap fills from above: fill_level = the deepest low reached into
+    the band (clamped), so the box shrinks to the still-open portion below it."""
+    rows = [{"high": 100 + i, "low": 99 + i, "close": 100 + i} for i in range(8)]
+    # Bullish gap at k=2: band [high[0]=100, low[2]=101] = [100,101]; full fill <=100.
+    rows[2].update(FVG_DIR=1.0, FVG_SIZE_NORM=0.5)
+    rows[4].update(low=100.5)  # dips to 100.5 (partial); deepest = 100.5
+    rows[6].update(low=100.7)  # shallower later dip must NOT override the deepest
+    z = collect_zones(_frame(rows), idx=7)
+    fvg = z["fair_value_gaps"][0]
+    assert fvg["status"] == "partially_filled"
+    assert fvg["fill_level"] == 100.5
+    # Still-open portion is below the penetration: strictly inside the band.
+    assert fvg["level_low"] <= fvg["fill_level"] < fvg["level_high"]
+
+
 def test_consumed_zones_are_never_exposed():
     """Honesty guardrail: invalidated OB and filled FVG are dropped entirely."""
     rows = [{"high": 100, "low": 99, "close": 100} for _ in range(6)]

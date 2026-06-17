@@ -123,6 +123,13 @@ export interface FairValueGap {
   tested: boolean;
   /** First-entry (partial-fill) timestamp; same box-bounding role as OrderBlock.mitigated_at. */
   mitigated_at?: string | null;
+  /**
+   * Price the gap has been penetrated to — the deepest wick into the band so
+   * far (within [level_low, level_high]). null/absent while active. Read-only:
+   * the chart shrinks a partially-filled box to the still-open portion using
+   * this, so the rectangle stops "just under the wicks". Never predictive.
+   */
+  fill_level?: number | null;
   user_flagged: boolean;
 }
 

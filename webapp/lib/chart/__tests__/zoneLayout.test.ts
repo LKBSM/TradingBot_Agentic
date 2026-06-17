@@ -5,9 +5,10 @@ import {
   buildZoneModels,
   curateZones,
   isoToSec,
+  openFvgBand,
   type ZoneModel,
 } from '../zoneLayout';
-import type { MarketReadingStructure } from '@/types/market-reading';
+import type { Direction, FairValueGap, MarketReadingStructure } from '@/types/market-reading';
 
 function ob(
   id: string,
@@ -38,16 +39,18 @@ function fvg(
   low: number,
   created: string,
   mitigated?: string,
-) {
+  extra: { direction?: Direction; fill_level?: number | null } = {},
+): FairValueGap {
   return {
     id,
-    direction: 'bullish' as const,
+    direction: extra.direction ?? ('bullish' as const),
     level_high: high,
     level_low: low,
     status,
     created_at: created,
     tested: status !== 'active',
     mitigated_at: mitigated ?? null,
+    fill_level: extra.fill_level ?? null,
     user_flagged: false,
   };
 }
@@ -104,6 +107,70 @@ describe('buildZoneModels', () => {
   it('drops a zone whose formation time is unparseable (cannot anchor)', () => {
     const s = structure([ob('bad', 'active', 102, 100, 'nope')]);
     expect(buildZoneModels(s)).toEqual([]);
+  });
+});
+
+describe('openFvgBand', () => {
+  it('keeps the full band for an active gap (no fill_level)', () => {
+    expect(openFvgBand(fvg('f', 'active', 101, 100, '2026-05-26T00:00:00Z'))).toEqual({
+      high: 101,
+      low: 100,
+    });
+  });
+
+  it('shrinks a bullish partial fill to the still-open portion (top down)', () => {
+    // Fills from above → open part below the penetration → high = fill_level.
+    const f = fvg('f', 'partially_filled', 101, 100, '2026-05-26T00:00:00Z', undefined, {
+      direction: 'bullish',
+      fill_level: 100.5,
+    });
+    expect(openFvgBand(f)).toEqual({ high: 100.5, low: 100 });
+  });
+
+  it('shrinks a bearish partial fill to the still-open portion (bottom up)', () => {
+    // Fills from below → open part above the penetration → low = fill_level.
+    const f = fvg('f', 'partially_filled', 101, 100, '2026-05-26T00:00:00Z', undefined, {
+      direction: 'bearish',
+      fill_level: 100.5,
+    });
+    expect(openFvgBand(f)).toEqual({ high: 101, low: 100.5 });
+  });
+
+  it('never shrinks when fill_level sits outside the band or direction is unknown', () => {
+    const outOfBand = fvg('f', 'partially_filled', 101, 100, '2026-05-26T00:00:00Z', undefined, {
+      direction: 'bullish',
+      fill_level: 99, // below the band → ignored
+    });
+    expect(openFvgBand(outOfBand)).toEqual({ high: 101, low: 100 });
+    // direction null (doc-example shape): can't tell which side filled → keep full band.
+    const noDir: FairValueGap = {
+      id: 'g',
+      direction: null,
+      level_high: 101,
+      level_low: 100,
+      status: 'partially_filled',
+      created_at: '2026-05-26T00:00:00Z',
+      tested: true,
+      mitigated_at: null,
+      fill_level: 100.5,
+      user_flagged: false,
+    };
+    expect(openFvgBand(noDir)).toEqual({ high: 101, low: 100 });
+  });
+
+  it('feeds the shrunk band through buildZoneModels', () => {
+    const s = structure(
+      [],
+      [
+        fvg('f', 'partially_filled', 101, 100, '2026-05-26T06:00:00+00:00', '2026-05-26T08:00:00+00:00', {
+          direction: 'bullish',
+          fill_level: 100.5,
+        }),
+      ],
+    );
+    const m = buildZoneModels(s).find((z) => z.id === 'f')!;
+    expect(m.high).toBe(100.5);
+    expect(m.low).toBe(100);
   });
 });
 
