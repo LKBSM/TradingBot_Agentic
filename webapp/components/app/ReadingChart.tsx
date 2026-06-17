@@ -5,10 +5,13 @@ import {
   CandlestickSeries,
   ColorType,
   createChart,
+  createSeriesMarkers,
   CrosshairMode,
   LineStyle,
   type IChartApi,
   type ISeriesApi,
+  type ISeriesMarkersPluginApi,
+  type Time,
   type UTCTimestamp,
 } from 'lightweight-charts';
 import { Maximize2, Minus, Plus } from 'lucide-react';
@@ -19,6 +22,7 @@ import {
   curateZones,
   type ZoneModel,
 } from '@/lib/chart/zoneLayout';
+import { buildStructureMarkers } from '@/lib/chart/structureMarkers';
 import type { Candle, MarketReadingStructure } from '@/types/market-reading';
 
 /**
@@ -170,6 +174,7 @@ export function ReadingChart({
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const chartRef = React.useRef<IChartApi | null>(null);
   const seriesRef = React.useRef<ISeriesApi<'Candlestick'> | null>(null);
+  const markersRef = React.useRef<ISeriesMarkersPluginApi<Time> | null>(null);
 
   const [zoneRects, setZoneRects] = React.useState<ZoneRect[]>([]);
 
@@ -267,11 +272,14 @@ export function ReadingChart({
 
     chartRef.current = chart;
     seriesRef.current = series;
+    // Markers plugin for the BOS/CHOCH break history (set in the data effect).
+    markersRef.current = createSeriesMarkers(series, []);
 
     return () => {
       chart.remove();
       chartRef.current = null;
       seriesRef.current = null;
+      markersRef.current = null;
     };
   }, [isDark]);
 
@@ -290,6 +298,12 @@ export function ReadingChart({
         close: c.close,
       })),
     );
+
+    // BOS / CHOCH break-history markers (read-only, descriptive). One arrow per
+    // detected break over the window — fixes the "sous-surfaçage" where only the
+    // last bar's break ever showed. Lightweight-charts ignores markers outside
+    // the loaded candle range, so older breaks simply don't draw (graceful).
+    markersRef.current?.setMarkers(buildStructureMarkers(structure));
 
     // Horizontal break-level price lines (BOS / CHOCH / retest) — hairline.
     const priceLines = [

@@ -157,13 +157,21 @@ def _default_smc_pipeline(candles: Sequence[Any]) -> Tuple[dict[str, float], Opt
     # Merge the REAL structural levels (BOS break level forward-filled, real
     # OB zone, real FVG bounds) so the structure mapper publishes them instead
     # of price ± ATR proxies (audit findings F1/F2/F3). Glue, not engine logic.
-    from src.intelligence.market_reading_mappers import collect_zones, realized_levels
+    from src.intelligence.market_reading_mappers import (
+        collect_structure_events,
+        collect_zones,
+        realized_levels,
+    )
     last_idx = len(enriched) - 1
     smc_features.update(realized_levels(enriched, idx=last_idx))
     # Multi-zone registry: surface ALL still-relevant OB/FVG zones the engine
     # computed over the window, not just the last bar (audit §T1). Carried under
     # a reserved key the structure mapper consumes; never persisted.
     smc_features["_zones"] = collect_zones(enriched, idx=last_idx)
+    # Discrete BOS/CHOCH break-event history over the window (twin of _zones):
+    # fixes the "sous-surfaçage" where only the last-bar break ever surfaced
+    # (audit 2026-06-16). Reserved key consumed by the structure mapper.
+    smc_features["_structure_events"] = collect_structure_events(enriched, idx=last_idx)
     return smc_features, None
 
 

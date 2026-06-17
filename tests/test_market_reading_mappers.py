@@ -937,3 +937,81 @@ def test_order_block_schema_accepts_mitigated_at(bar_ts):
         status="active", created_at=bar_ts, tested=False,
     )
     assert fvg.mitigated_at is None
+
+
+# ---------------------------------------------------------------------------
+# Structure events (BOS/CHOCH history) — collect_structure_events + mapper
+# (fix sous-surfaçage 2026-06-16 : le moteur detecte beaucoup de breaks mais
+# seul celui du dernier bar surfaçait via bos/choch)
+# ---------------------------------------------------------------------------
+
+from src.intelligence.market_reading_mappers import collect_structure_events
+
+
+def _events_frame(rows: list[dict], start="2026-05-28T00:00:00Z") -> pd.DataFrame:
+    """Frame carrying the engine event columns (BOS_EVENT/CHOCH_SIGNAL/level)."""
+    idx = pd.date_range(start=start, periods=len(rows), freq="15min", tz="UTC")
+    cols = ["close", "BOS_EVENT", "CHOCH_SIGNAL", "BOS_BREAK_LEVEL"]
+    data = {c: [r.get(c, float("nan")) for r in rows] for c in cols}
+    return pd.DataFrame(data, index=idx)
+
+
+def test_collect_structure_events_surfaces_multiple_breaks_recent_first():
+    """The whole window's breaks are collected, most-recent first — not just the
+    last bar (the bug that surfaced ≤1 BOS/CHOCH)."""
+    rows = [{"close": 100 + i} for i in range(10)]
+    rows[2].update(BOS_EVENT=1.0, BOS_BREAK_LEVEL=102.0)   # bullish break at k=2
+    rows[5].update(BOS_EVENT=-1.0, BOS_BREAK_LEVEL=105.0)  # bearish break at k=5
+    rows[7].update(CHOCH_SIGNAL=1.0, BOS_BREAK_LEVEL=107.0)
+    ev = collect_structure_events(_events_frame(rows), idx=9)
+    assert [e["direction"] for e in ev["bos_events"]] == ["bearish", "bullish"]
+    assert ev["bos_events"][0]["level"] == 105.0  # real broken level, recent first
+    assert len(ev["choch_events"]) == 1
+    assert ev["choch_events"][0]["level"] == 107.0
+
+
+def test_collect_structure_events_caps_to_max_per_type():
+    rows = [{"close": 100.0} for _ in range(12)]
+    for k in range(10):  # 10 breaks, cap default = 8
+        rows[k].update(BOS_EVENT=1.0, BOS_BREAK_LEVEL=100.0 + k)
+    ev = collect_structure_events(_events_frame(rows), idx=11, max_per_type=8)
+    assert len(ev["bos_events"]) == 8
+    # Most recent kept: highest _k (k=9 → level 109) first.
+    assert ev["bos_events"][0]["level"] == 109.0
+
+
+def test_collect_structure_events_falls_back_to_close_without_break_level():
+    rows = [{"close": 100 + i} for i in range(5)]
+    rows[3].update(BOS_EVENT=1.0)  # no BOS_BREAK_LEVEL → close fallback
+    ev = collect_structure_events(_events_frame(rows), idx=4)
+    assert ev["bos_events"][0]["level"] == 103.0
+
+
+def test_mapper_exposes_event_lists_when_collector_injected():
+    """confluence_signal_to_structure publishes bos_events/choch_events from the
+    injected _structure_events (read-only history)."""
+    bar_ts = datetime(2026, 5, 28, tzinfo=timezone.utc)
+    smc = {
+        "_structure_events": {
+            "bos_events": [
+                {"direction": "bullish", "level": 102.0, "broken_at": bar_ts},
+                {"direction": "bearish", "level": 105.0, "broken_at": bar_ts},
+            ],
+            "choch_events": [
+                {"direction": "bullish", "level": 107.0, "broken_at": bar_ts},
+            ],
+        },
+    }
+    s = confluence_signal_to_structure(None, smc, bar_ts, current_price=100.0)
+    assert len(s.bos_events) == 2
+    assert len(s.choch_events) == 1
+    assert s.bos_events[1].level == 105.0
+    assert s.bos_events[0].validation_status == "confirmed"
+
+
+def test_mapper_event_lists_default_empty_without_collector():
+    """Backward compatible: no _structure_events → empty lists (not an error)."""
+    bar_ts = datetime(2026, 5, 28, tzinfo=timezone.utc)
+    s = confluence_signal_to_structure(None, {}, bar_ts, current_price=100.0)
+    assert s.bos_events == []
+    assert s.choch_events == []
