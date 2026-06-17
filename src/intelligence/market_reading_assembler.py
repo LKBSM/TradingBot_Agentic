@@ -25,7 +25,7 @@ assembler uses the template fallback from market_reading_mappers.
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Callable, Mapping, Optional, Sequence, Tuple
 
 from src.intelligence.market_reading_mappers import (
@@ -40,6 +40,7 @@ from src.intelligence.market_reading_schema import (
     MarketReadingEvents,
     MarketReadingHeader,
 )
+from src.intelligence.provider_snapshot import snapshot_provider_response
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +77,33 @@ def expected_last_candle_close(timeframe: str, now: datetime) -> datetime:
     epoch_minutes = int(ts.timestamp() // 60)
     last_boundary_minutes = (epoch_minutes // minutes) * minutes
     return datetime.fromtimestamp(last_boundary_minutes * 60, tz=timezone.utc)
+
+
+def drop_unclosed_candles(
+    candles: Sequence[Any], timeframe: str, expected_close: datetime
+) -> list[Any]:
+    """Keep only the bars fully closed at ``expected_close``.
+
+    Twelve Data labels bars by OPEN time and includes the still-forming bar in
+    its response. Analysing that bar makes every detector repaint (audit
+    DETECTION_QUALITY_REVIEW_2026_06_12 §T3): the same OB was published twice
+    under two ids, and readings were not reproducible from final candles.
+
+    A bar opened at ``ts`` is closed iff ``ts + timeframe <= expected_close``.
+    This also drops any future-labelled bar (defence-in-depth against the §T2
+    timezone mislabelling). Naive timestamps are treated as UTC, matching the
+    provider parse and the candles cache convention.
+    """
+    minutes = _TIMEFRAME_MINUTES[timeframe.upper()]
+    span = timedelta(minutes=minutes)
+    out: list[Any] = []
+    for candle in candles:
+        ts = candle.ts
+        if ts.tzinfo is None:
+            ts = ts.replace(tzinfo=timezone.utc)
+        if ts + span <= expected_close:
+            out.append(candle)
+    return out
 
 
 SmcPipelineFn = Callable[[Sequence[Any]], Tuple[dict[str, float], Optional[Any]]]
@@ -129,8 +157,13 @@ def _default_smc_pipeline(candles: Sequence[Any]) -> Tuple[dict[str, float], Opt
     # Merge the REAL structural levels (BOS break level forward-filled, real
     # OB zone, real FVG bounds) so the structure mapper publishes them instead
     # of price ± ATR proxies (audit findings F1/F2/F3). Glue, not engine logic.
-    from src.intelligence.market_reading_mappers import realized_levels
-    smc_features.update(realized_levels(enriched, idx=len(enriched) - 1))
+    from src.intelligence.market_reading_mappers import collect_zones, realized_levels
+    last_idx = len(enriched) - 1
+    smc_features.update(realized_levels(enriched, idx=last_idx))
+    # Multi-zone registry: surface ALL still-relevant OB/FVG zones the engine
+    # computed over the window, not just the last bar (audit §T1). Carried under
+    # a reserved key the structure mapper consumes; never persisted.
+    smc_features["_zones"] = collect_zones(enriched, idx=last_idx)
     return smc_features, None
 
 
@@ -141,7 +174,12 @@ class MarketReadingAssembler:
     inherited from the underlying stores (RLock).
     """
 
-    DEFAULT_LOOKBACK = 200
+    # Indicator-grade context windows. Widened 2026-06-15 (was lookback=200,
+    # news 240/60 min) so the product shows real history + a multi-day economic
+    # calendar, not a 4h keyhole. All overridable via env in the bootstrap.
+    DEFAULT_LOOKBACK = 500
+    DEFAULT_NEWS_LOOKAHEAD_MIN = 4320   # 3 days — captures FOMC/NFP ahead
+    DEFAULT_NEWS_LOOKBACK_MIN = 1440    # 24h — what moved the market today
 
     def __init__(
         self,
@@ -154,6 +192,8 @@ class MarketReadingAssembler:
         lookback: int = DEFAULT_LOOKBACK,
         mtf_provider: Optional[Callable[[str, str], Mapping[str, Sequence[Any]]]] = None,
         clock: Callable[[], datetime] = lambda: datetime.now(timezone.utc),
+        news_lookahead_min: int = DEFAULT_NEWS_LOOKAHEAD_MIN,
+        news_lookback_min: int = DEFAULT_NEWS_LOOKBACK_MIN,
     ) -> None:
         self._data_provider = data_provider
         self._readings_store = readings_store
@@ -164,6 +204,8 @@ class MarketReadingAssembler:
         self._lookback = lookback
         self._mtf_provider = mtf_provider
         self._clock = clock
+        self._news_lookahead_min = news_lookahead_min
+        self._news_lookback_min = news_lookback_min
 
     # ------------------------------------------------------------------ #
     # Public accessors (used by the Chantier 3 scheduler / bootstrap)
@@ -227,9 +269,19 @@ class MarketReadingAssembler:
     def _build_fresh(
         self, instrument: str, timeframe: str, expected_close: datetime
     ) -> MarketReading:
-        candles = self._data_provider.fetch_candles(
+        raw_candles = self._data_provider.fetch_candles(
             instrument, timeframe, self._lookback
         )
+        # Raw response snapshot BEFORE any filtering — the only way to replay
+        # a reading bit-for-bit later (the feed revises forming bars; audit §T3
+        # found a reading whose close_price existed in no stored final candle).
+        snapshot_provider_response(
+            instrument, timeframe, raw_candles, fetched_at=self._clock()
+        )
+        # The forming bar (and any future-labelled bar) never reaches the SMC
+        # pipeline nor the cache: candle_close_ts promises closed-candle data,
+        # and /api/candles documents "stops at the last fully-closed candle".
+        candles = drop_unclosed_candles(raw_candles, timeframe, expected_close)
         if candles:
             try:
                 self._candles_store.upsert_candles(instrument, timeframe, candles)
@@ -306,10 +358,14 @@ class MarketReadingAssembler:
         now = self._clock()
         try:
             upcoming = self._news_pipeline.get_upcoming(
-                currency_filter=["USD", "EUR"], lookahead_minutes=240, now=now
+                currency_filter=["USD", "EUR"],
+                lookahead_minutes=self._news_lookahead_min,
+                now=now,
             )
             published = self._news_pipeline.get_just_published(
-                currency_filter=["USD", "EUR"], lookback_minutes=60, now=now
+                currency_filter=["USD", "EUR"],
+                lookback_minutes=self._news_lookback_min,
+                now=now,
             )
         except Exception as exc:  # pragma: no cover — defensive
             logger.warning("news_pipeline failed: %s — emitting empty events", exc)

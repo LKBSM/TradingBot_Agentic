@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import math
 import re
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Optional, Sequence
 
@@ -111,6 +112,22 @@ def _first_real(smc: dict[str, float], *keys: str) -> Optional[float]:
     return None
 
 
+def _epoch_to_dt(value: Any) -> Optional[datetime]:
+    """Convert epoch SECONDS (float) to a tz-aware UTC datetime, or None.
+
+    Used to recover the ORIGINAL break time for a persisted (non-fresh) BOS from
+    the ``BOS_BREAK_TS`` glue field, so ``broken_at`` is honest rather than the
+    current bar.
+    """
+    f = _clean_float(value)
+    if f is None:
+        return None
+    try:
+        return datetime.fromtimestamp(f, tz=timezone.utc)
+    except (OverflowError, OSError, ValueError):
+        return None
+
+
 # ---------------------------------------------------------------------------
 # Realized structural levels — glue between SmartMoneyEngine output and the
 # structure mapper. Lives HERE (not in the engine) so the detection engine is
@@ -151,6 +168,17 @@ def realized_levels(enriched: Any, idx: int = -1) -> dict[str, float]:
         if len(ff) and not pd.isna(ff.iloc[-1]):
             out["BOS_BREAK_LEVEL_LAST"] = float(ff.iloc[-1])
 
+    # Timestamp of the most recent BOS event up to this bar (forward-carried), so
+    # a PERSISTED active break (still vouched for by the retest state machine —
+    # D1-b option 1a) reports its ORIGINAL break time, not the current bar. Glue,
+    # not engine logic. Guarded on a DatetimeIndex so integer-indexed test frames
+    # never produce a bogus timestamp.
+    if "BOS_EVENT" in cols and isinstance(enriched.index, pd.DatetimeIndex):
+        ev = enriched["BOS_EVENT"].iloc[: pos + 1]
+        nz = ev[ev != 0]
+        if len(nz):
+            out["BOS_BREAK_TS"] = float(nz.index[-1].timestamp())
+
     # Order-block zone (whichever side fired on this bar; mutually exclusive).
     for hi_col, lo_col in (("BULLISH_OB_HIGH", "BULLISH_OB_LOW"),
                            ("BEARISH_OB_HIGH", "BEARISH_OB_LOW")):
@@ -180,6 +208,331 @@ def realized_levels(enriched: Any, idx: int = -1) -> dict[str, float]:
 
 
 # ---------------------------------------------------------------------------
+# Multi-zone registry — surfaces ALL still-relevant OB/FVG zones the engine
+# computed over the lookback window, not just the one that fired on the last
+# bar. Lives HERE (glue layer), the detection engine is untouched: the engine
+# already emits a zone on every qualifying bar via BULLISH_OB_*/BEARISH_OB_*
+# /FVG_* columns. This walks those columns, applies a lifecycle (mitigation /
+# invalidation for OB, fill for FVG) and drops consumed zones.
+#
+# Audit DETECTION_QUALITY_REVIEW_2026_06_12 §T1: the assembler read only
+# enriched.iloc[-1], so the product showed ≤1 OB and ≤1 FVG (often 0) while the
+# engine had computed dozens. This restores the cardinality the engine produces.
+#
+# IMPORTANT — gated by founder annotation: the IMPORTANCE ranking and the
+# active/mitigated retention policy below use the engine's existing strength
+# heuristic (OB body/ATR). They are PROVISIONAL surfacing rules, not a new
+# detection definition. Calibrate the cap, the importance cutoffs and the
+# retention policy against the annotation dataset (audit §4/§5) — the geometry
+# of each zone is the engine's, untouched.
+# ---------------------------------------------------------------------------
+
+# Default cap per zone type. Keeps the surface readable; tune vs annotation.
+# Widened 2026-06-15 (was 6) for indicator-grade context. Overridable per call
+# and via the MAX_ZONES_PER_TYPE env var (resolved in collect_zones).
+MAX_ZONES_PER_TYPE = 12
+
+
+# ---------------------------------------------------------------------------
+# Mitigation policy — SINGLE SOURCE OF TRUTH for the OB/FVG lifecycle rules.
+#
+# >>> DÉFAUTS À VALIDER PAR ANNOTATION <<<
+# These are PROVISIONAL surfacing rules, not a detection definition. The zone
+# GEOMETRY (where each OB/FVG sits) comes from the engine and is untouched —
+# this only decides WHEN a formed zone is considered touched (mitigated /
+# partially filled) or consumed (invalidated / filled, and therefore dropped).
+# Calibrate every knob below against the annotation dataset (audit §4/§5).
+#
+# Conservative bias (mission §2/§C): in doubt, declare a zone mitigated EARLIER,
+# never later, and never surface a consumed zone as active.
+#
+# Founder-validated defaults 2026-06-15 (see docs/audits/OB_FVG_MITIGATION_*):
+#   - OB invalidated on a CLOSE through the block → dropped.
+#   - OB tapped by a wick (any overlap) → 'mitigated', kept VISIBLE & tagged.
+#   - FVG removed only on a FULL (100% / far-edge) fill; partial fill kept tagged.
+# Every threshold lives here so nothing is scattered across the collector.
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class MitigationPolicy:
+    """Tunable OB/FVG lifecycle thresholds. See module comment above."""
+
+    # --- Order blocks ---------------------------------------------------- #
+    # A later candle that CLOSES through the block invalidates it (consumed).
+    ob_invalidate_on_close_through: bool = True
+    # Fraction of the block height a wick must penetrate (from the near edge)
+    # to count as a tap/mitigation. 0.0 = any touch (most conservative, current
+    # default). Raise toward 0.5 to require a deeper tap before declaring the
+    # block mitigated — LESS conservative, hence annotation-gated.
+    ob_mitigation_penetration: float = 0.0
+    # Founder 2026-06-15: a tapped-but-held OB stays VISIBLE, tagged 'mitigated'.
+    # Flip to True to DROP mitigated OBs entirely (stricter / cleaner surface).
+    ob_drop_when_mitigated: bool = False
+
+    # --- Fair value gaps ------------------------------------------------- #
+    # Fraction of the gap height price must retrace for the gap to be FILLED
+    # (and dropped). 1.0 = far edge / 100% (founder 2026-06-15). Lower it to
+    # drop gaps earlier (e.g. 0.5 = mid-fill) — LESS history shown, annotation-
+    # gated. Any entry short of this fraction is 'partially_filled'.
+    fvg_fill_fraction: float = 1.0
+    # Founder 2026-06-15: a partially filled FVG stays VISIBLE, tagged
+    # 'partially_filled'. Flip to True to DROP a gap on first entry (strictest).
+    fvg_drop_when_partial: bool = False
+
+
+# The active policy. Constructed once; import and pass to the lifecycle helpers.
+MITIGATION_POLICY = MitigationPolicy()
+
+
+def _ob_lifecycle(
+    side: str,
+    zhigh: float,
+    zlow: float,
+    highs: Any,
+    lows: Any,
+    closes: Any,
+    created: int,
+    upto: int,
+    policy: MitigationPolicy = MITIGATION_POLICY,
+) -> tuple[str, bool, Optional[int]]:
+    """Classify an order-block zone over bars (created, upto].
+
+    Returns ``(status, tested, first_tap_idx)`` where status ∈
+    {active, mitigated, invalidated}:
+      * invalidated — a later candle CLOSED through the zone (support lost for a
+        bullish OB, resistance reclaimed for a bearish OB) → consumed/dropped.
+      * mitigated   — price traded into the zone deep enough (per policy) but it
+        held (a tap). ``first_tap_idx`` is the bar of the first such tap.
+      * active      — price has not returned to the zone yet.
+
+    All thresholds come from ``policy`` (the single source of truth). The zone
+    geometry is the engine's; this only times the interaction.
+    """
+    height = max(zhigh - zlow, 0.0)
+    depth = policy.ob_mitigation_penetration * height
+    tested = False
+    first_tap: Optional[int] = None
+    for j in range(created + 1, upto + 1):
+        if side == "bullish":
+            # Support: price dips from above; require it to reach depth into the
+            # block from the near (top) edge, and not be entirely below it.
+            if lows[j] <= zhigh - depth and highs[j] >= zlow:
+                tested = True
+                if first_tap is None:
+                    first_tap = j
+            if policy.ob_invalidate_on_close_through and closes[j] < zlow:
+                return "invalidated", tested, first_tap
+        else:
+            # Resistance: price rises from below; require it to reach depth into
+            # the block from the near (bottom) edge.
+            if highs[j] >= zlow + depth and lows[j] <= zhigh:
+                tested = True
+                if first_tap is None:
+                    first_tap = j
+            if policy.ob_invalidate_on_close_through and closes[j] > zhigh:
+                return "invalidated", tested, first_tap
+    return ("mitigated" if tested else "active"), tested, first_tap
+
+
+def _fvg_lifecycle(
+    side: str,
+    zhigh: float,
+    zlow: float,
+    highs: Any,
+    lows: Any,
+    created: int,
+    upto: int,
+    policy: MitigationPolicy = MITIGATION_POLICY,
+) -> tuple[str, bool, Optional[int], Optional[float]]:
+    """Classify a fair-value-gap over bars (created, upto].
+
+    Returns ``(status, entered, first_entry_idx, fill_level)`` where status ∈
+    {active, partially_filled, filled}. A bullish gap (price gapped up, empty
+    band ``[zlow, zhigh]``) fills from above: ``filled`` once a later low
+    retraces ``policy.fvg_fill_fraction`` of the gap height (1.0 = far edge
+    ``zlow``), ``partially_filled`` once a later low dips below ``zhigh`` (near
+    edge). Bearish gap is the mirror, filled from below. ``first_entry_idx`` is
+    the bar of the first partial entry.
+
+    ``fill_level`` is the DEEPEST price the wicks reached INTO the band (clamped
+    to ``[zlow, zhigh]``): the lowest low for a bullish gap (it fills downward),
+    the highest high for a bearish one. ``None`` while still active/untouched.
+    Purely a measurement of engine-emitted highs/lows — it bounds the still-open
+    portion of the box, it does NOT recompute or re-detect the gap.
+    """
+    height = max(zhigh - zlow, 0.0)
+    fill = policy.fvg_fill_fraction * height
+    entered = False
+    first_entry: Optional[int] = None
+    deepest: Optional[float] = None  # deepest penetration price into the band
+    for j in range(created + 1, upto + 1):
+        if side == "bullish":
+            if lows[j] <= zhigh - fill:  # retraced enough → filled
+                return "filled", True, (first_entry if first_entry is not None else j), zlow
+            if lows[j] <= zhigh:
+                entered = True
+                if first_entry is None:
+                    first_entry = j
+                pen = max(float(lows[j]), zlow)  # clamp into the band
+                if deepest is None or pen < deepest:
+                    deepest = pen
+        else:
+            if highs[j] >= zlow + fill:
+                return "filled", True, (first_entry if first_entry is not None else j), zhigh
+            if highs[j] >= zlow:
+                entered = True
+                if first_entry is None:
+                    first_entry = j
+                pen = min(float(highs[j]), zhigh)  # clamp into the band
+                if deepest is None or pen > deepest:
+                    deepest = pen
+    return ("partially_filled" if entered else "active"), entered, first_entry, deepest
+
+
+def _zone_created_at(enriched: Any, k: int) -> Optional[datetime]:
+    import pandas as pd
+
+    if isinstance(enriched.index, pd.DatetimeIndex):
+        ts = enriched.index[k]
+        dt = ts.to_pydatetime() if hasattr(ts, "to_pydatetime") else ts
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
+    return None
+
+
+def collect_zones(
+    enriched: Any,
+    idx: int = -1,
+    max_per_type: Optional[int] = None,
+) -> dict[str, list[dict]]:
+    """Collect every still-relevant OB / FVG zone up to bar ``idx``.
+
+    Returns ``{"order_blocks": [...], "fair_value_gaps": [...]}`` as plain dicts
+    (the structure mapper builds the pydantic models, filling ``created_at`` from
+    ``bar_ts`` when the frame has no datetime index). Consumed zones (invalidated
+    OB, filled FVG) are dropped. Ordering: active before partially-consumed, then
+    by strength/size, then by recency; capped to ``max_per_type`` (defaults to the
+    ``MAX_ZONES_PER_TYPE`` env var, else the module constant).
+    """
+    import os
+    import pandas as pd
+
+    if max_per_type is None:
+        try:
+            max_per_type = int(os.environ.get("MAX_ZONES_PER_TYPE", MAX_ZONES_PER_TYPE))
+        except (TypeError, ValueError):
+            max_per_type = MAX_ZONES_PER_TYPE
+
+    out: dict[str, list[dict]] = {"order_blocks": [], "fair_value_gaps": []}
+    n = len(enriched)
+    if n == 0:
+        return out
+    pos = idx if idx >= 0 else n + idx
+    if pos < 0 or pos >= n:
+        return out
+
+    cols = set(enriched.columns)
+    highs = enriched["high"].values if "high" in cols else None
+    lows = enriched["low"].values if "low" in cols else None
+    closes = enriched["close"].values if "close" in cols else None
+    if highs is None or lows is None or closes is None:
+        return out
+
+    # ---- Order blocks ----------------------------------------------------
+    ob_cols = {"BULLISH_OB_HIGH", "BULLISH_OB_LOW", "BEARISH_OB_HIGH", "BEARISH_OB_LOW"}
+    if ob_cols <= cols:
+        strength = (
+            enriched["OB_STRENGTH_NORM"].values if "OB_STRENGTH_NORM" in cols else None
+        )
+        bull_hi = enriched["BULLISH_OB_HIGH"].values
+        bull_lo = enriched["BULLISH_OB_LOW"].values
+        bear_hi = enriched["BEARISH_OB_HIGH"].values
+        bear_lo = enriched["BEARISH_OB_LOW"].values
+        obs: list[dict] = []
+        for k in range(pos + 1):
+            for side, hv, lv in (
+                ("bullish", bull_hi[k], bull_lo[k]),
+                ("bearish", bear_hi[k], bear_lo[k]),
+            ):
+                if pd.isna(hv) or pd.isna(lv):
+                    continue
+                zhigh, zlow = float(max(hv, lv)), float(min(hv, lv))
+                st = float(strength[k]) if strength is not None and not pd.isna(strength[k]) else 0.0
+                status, tested, tap_idx = _ob_lifecycle(
+                    side, zhigh, zlow, highs, lows, closes, k, pos
+                )
+                # Honesty guardrail (mission §C): never surface a consumed zone.
+                if status == "invalidated":
+                    continue
+                if status == "mitigated" and MITIGATION_POLICY.ob_drop_when_mitigated:
+                    continue
+                created_at = _zone_created_at(enriched, k)
+                mitigated_at = _zone_created_at(enriched, tap_idx) if tap_idx is not None else None
+                importance = "high" if st >= 0.75 else "medium" if st >= 0.4 else "low"
+                obs.append({
+                    "direction": side,
+                    "level_high": zhigh,
+                    "level_low": zlow,
+                    "importance": importance,
+                    "status": status,
+                    "tested": tested,
+                    "created_at": created_at,
+                    "mitigated_at": mitigated_at,
+                    "_strength": st,
+                    "_k": k,
+                })
+        # active first, then by strength, then most recent first.
+        obs.sort(key=lambda z: (z["status"] != "active", -z["_strength"], -z["_k"]))
+        out["order_blocks"] = obs[:max_per_type]
+
+    # ---- Fair value gaps -------------------------------------------------
+    if "FVG_DIR" in cols and {"high", "low"} <= cols:
+        fvg_dir = enriched["FVG_DIR"].values
+        size_norm = (
+            enriched["FVG_SIZE_NORM"].values if "FVG_SIZE_NORM" in cols else None
+        )
+        fvgs: list[dict] = []
+        for k in range(2, pos + 1):
+            d = fvg_dir[k]
+            if pd.isna(d) or d == 0:
+                continue
+            if d > 0:  # bullish gap: high[k-2] (low edge) .. low[k] (high edge)
+                a, b = float(highs[k - 2]), float(lows[k])
+                side = "bullish"
+            else:      # bearish gap: high[k] (low edge) .. low[k-2] (high edge)
+                a, b = float(highs[k]), float(lows[k - 2])
+                side = "bearish"
+            zhigh, zlow = max(a, b), min(a, b)
+            status, tested, entry_idx, fill_level = _fvg_lifecycle(
+                side, zhigh, zlow, highs, lows, k, pos
+            )
+            # Honesty guardrail (mission §C): never surface a consumed zone.
+            if status == "filled":
+                continue
+            if status == "partially_filled" and MITIGATION_POLICY.fvg_drop_when_partial:
+                continue
+            sz = float(size_norm[k]) if size_norm is not None and not pd.isna(size_norm[k]) else (zhigh - zlow)
+            fvgs.append({
+                "direction": side,
+                "level_high": zhigh,
+                "level_low": zlow,
+                "status": status,
+                "tested": tested,
+                "created_at": _zone_created_at(enriched, k),
+                "mitigated_at": _zone_created_at(enriched, entry_idx) if entry_idx is not None else None,
+                "fill_level": fill_level,
+                "_size": sz,
+                "_k": k,
+            })
+        fvgs.sort(key=lambda z: (z["status"] != "active", -z["_size"], -z["_k"]))
+        out["fair_value_gaps"] = fvgs[:max_per_type]
+
+    return out
+
+
+# ---------------------------------------------------------------------------
 # Structure mapper
 # ---------------------------------------------------------------------------
 
@@ -202,7 +555,8 @@ def confluence_signal_to_structure(
       - CHOCH_SIGNAL : -1/0/+1
       - FVG_SIGNAL : -1/0/+1
       - OB_STRENGTH_NORM : 0..1
-      - BOS_RETEST_ARMED : -1/0/+1
+      - BOS_RETEST_STATE : 0 / ±1 (awaiting) / ±2 (armed) — lifecycle of the
+        break: BOS persists while != 0; "retest in progress" only while ±2.
 
     Levels (level_high/low for OB/FVG, level for BOS) are conservatively
     approximated from current_price ± a half-ATR proxy when not explicitly
@@ -219,21 +573,55 @@ def confluence_signal_to_structure(
     bos_signal = float(smc_features.get("BOS_SIGNAL", 0.0))
     bos_direction = _sign_to_direction(bos_signal)
     bos_event = float(smc_features.get("BOS_EVENT", 0.0))
-    # F6: a "recent BOS" is a FRESH break at this candle close (BOS_EVENT != 0),
-    # NOT the continuously-propagated BOS_SIGNAL trend state. Previously the
-    # object was emitted on every propagated bar, so `bos_recent_*` appeared on
-    # ~100% of readings (53% of them stale). Now it only appears on real breaks.
-    if bos_direction is not None and abs(bos_event) > 0:
-        event_direction = _sign_to_direction(bos_event) or bos_direction
+    retest_state = float(smc_features.get("BOS_RETEST_STATE", 0.0))
+    state_direction = _sign_to_direction(retest_state)
+    # F6: a "recent BOS" is NOT the continuously-propagated BOS_SIGNAL trend
+    # state — emitting on every propagated bar surfaced a (stale) BOS on ~100% of
+    # readings. We surface a break only when it is genuinely active.
+    #
+    # D1-b (option 1a): a break is active when EITHER it is fresh at this candle
+    # close (BOS_EVENT != 0) OR a prior break is still vouched for by the engine's
+    # retest state machine (BOS_RETEST_STATE != 0 = awaiting/armed). That state
+    # self-clears to 0 on invalidation, reclaim, or timeout
+    # (strategy_features._calculate_bos_retest_*), and we additionally require the
+    # propagated trend not to have inverted against the break direction
+    # ("BOS_SIGNAL n'est pas inversé"). This relies STRICTLY on engine-produced
+    # state — NO detection threshold is touched. Persistence lives at this
+    # assembler-layer mapper, not in the detection engine. The window is bounded
+    # (awaiting_timeout=20 + armed_window=5 bars by default), so this is the
+    # opposite of the F6 "stale on ~100%" bug.
+    fresh_break = abs(bos_event) > 0
+    persisted_break = (
+        state_direction is not None
+        and (bos_direction is None or bos_direction == state_direction)
+    )
+    if fresh_break or persisted_break:
         # F1: publish the REAL broken structural level (present on event bars as
-        # BOS_BREAK_LEVEL; BOS_BREAK_LEVEL_LAST is a defensive forward-filled
-        # fallback). current_price is the last-resort fallback.
+        # BOS_BREAK_LEVEL; BOS_BREAK_LEVEL_LAST is the forward-filled level a
+        # persisted break sources). current_price is the last-resort fallback.
         bos_level = _first_real(smc_features, "BOS_BREAK_LEVEL", "BOS_BREAK_LEVEL_LAST")
+        if fresh_break:
+            event_direction = _sign_to_direction(bos_event) or bos_direction
+            broken_at = bar_ts
+        else:
+            # Persisted break: direction from the retest state, original break
+            # time from the glue field (honest broken_at, not the current bar).
+            # A recovered time AFTER the bar being read means the candle index
+            # was in a wrong clock domain (audit 2026-06-12 §T2 published
+            # broken_at timestamps in the future) — never surface it.
+            event_direction = state_direction or bos_direction
+            recovered = _epoch_to_dt(smc_features.get("BOS_BREAK_TS"))
+            bar_ts_utc = (
+                bar_ts if bar_ts.tzinfo else bar_ts.replace(tzinfo=timezone.utc)
+            )
+            if recovered is not None and recovered > bar_ts_utc:
+                recovered = None
+            broken_at = recovered or bar_ts
         bos = BOSRecent(
             direction=event_direction,
             level=bos_level if bos_level is not None else float(current_price),
-            broken_at=bar_ts,
-            validation_status="confirmed",  # fresh break ⇒ always confirmed
+            broken_at=broken_at,
+            validation_status="confirmed",  # broke and not invalidated ⇒ confirmed
         )
 
     # CHOCH
@@ -255,8 +643,27 @@ def confluence_signal_to_structure(
             validation_status="confirmed",
         )
 
-    # Order blocks
-    order_blocks: list[OrderBlock] = []
+    # Order blocks + fair value gaps.
+    # Preferred path: the multi-zone registry (all still-relevant zones the
+    # engine computed over the window, with lifecycle), injected by the SMC
+    # pipeline under ``_zones``. Fallback: the legacy single-last-bar zone, kept
+    # so callers/tests that don't run collect_zones still behave as before.
+    zones = smc_features.get("_zones")
+    if isinstance(zones, dict):
+        order_blocks, fair_value_gaps = _zones_to_models(zones, bar_ts)
+        return MarketReadingStructure(
+            bos=bos,
+            choch=choch,
+            order_blocks=order_blocks,
+            fair_value_gaps=fair_value_gaps,
+            retest_in_progress=_build_retest(
+                smc_features, retest_state, fresh_break, persisted_break, bos,
+                current_price, bar_ts,
+            ),
+        )
+
+    # ---- legacy single-bar fallback -------------------------------------
+    order_blocks = []
     ob_strength = float(smc_features.get("OB_STRENGTH_NORM", 0.0))
     if ob_strength > 0.0:
         sig_direction = _signal_type_to_direction(
@@ -304,31 +711,85 @@ def confluence_signal_to_structure(
             user_flagged=False,
         ))
 
-    # Retest
-    # F6 corollary: a retest is armed BARS AFTER the break, when there is no fresh
-    # BOS event on the current bar. Decouple it from the (now fresh-only) bos
-    # object and source the level from the forward-filled real broken level.
-    retest_in_progress: Optional[RetestInProgress] = None
-    retest_armed = float(smc_features.get("BOS_RETEST_ARMED", 0.0))
-    if abs(retest_armed) > 0:
-        retest_level = _first_real(
-            smc_features, "BOS_BREAK_LEVEL", "BOS_BREAK_LEVEL_LAST"
-        )
-        if retest_level is None:
-            retest_level = bos.level if bos is not None else float(current_price)
-        retest_in_progress = RetestInProgress(
-            level=retest_level,
-            type="bos_retest",
-            started_at=bar_ts,
-        )
-
     return MarketReadingStructure(
         bos=bos,
         choch=choch,
         order_blocks=order_blocks,
         fair_value_gaps=fair_value_gaps,
-        retest_in_progress=retest_in_progress,
+        retest_in_progress=_build_retest(
+            smc_features, retest_state, fresh_break, persisted_break, bos,
+            current_price, bar_ts,
+        ),
     )
+
+
+def _build_retest(
+    smc_features: dict[str, float],
+    retest_state: float,
+    fresh_break: bool,
+    persisted_break: bool,
+    bos: Optional[BOSRecent],
+    current_price: float,
+    bar_ts: datetime,
+) -> Optional[RetestInProgress]:
+    """Shared retest-in-progress builder for both the multi-zone and legacy paths.
+
+    D1-b: the BOS LEVEL persists for the whole active window (BOS_RETEST_STATE
+    != 0 = awaiting OR armed). The "retest in progress" flag is narrower: shown
+    ONLY during the ARMED sub-state (±2, price has returned to the broken level),
+    never during AWAITING (±1). Reads the SAME engine-produced state — no
+    detection threshold is touched. Requires the break to be surfaced so the UI
+    never shows a retest of a break that was dropped (e.g. trend inverted).
+    """
+    if abs(retest_state) != 2.0 or not (fresh_break or persisted_break):
+        return None
+    retest_level = _first_real(smc_features, "BOS_BREAK_LEVEL", "BOS_BREAK_LEVEL_LAST")
+    if retest_level is None:
+        retest_level = bos.level if bos is not None else float(current_price)
+    return RetestInProgress(level=retest_level, type="bos_retest", started_at=bar_ts)
+
+
+def _zones_to_models(
+    zones: dict[str, list[dict]],
+    bar_ts: datetime,
+) -> tuple[list[OrderBlock], list[FairValueGap]]:
+    """Convert collected zone dicts (from :func:`collect_zones`) to schema models.
+
+    ``created_at`` falls back to ``bar_ts`` when the collector could not derive a
+    per-zone timestamp (non-datetime frame index). The ``id`` is stable per zone
+    (direction + created time) so the same zone keeps its identity across reads.
+    """
+    order_blocks: list[OrderBlock] = []
+    for z in zones.get("order_blocks", []):
+        created = z.get("created_at") or bar_ts
+        order_blocks.append(OrderBlock(
+            id=f"OB_{z['direction']}_{created.strftime('%Y%m%d%H%M%S')}",
+            direction=z["direction"],
+            level_high=z["level_high"],
+            level_low=z["level_low"],
+            importance=z["importance"],
+            status=z["status"],
+            created_at=created,
+            tested=z["tested"],
+            mitigated_at=z.get("mitigated_at"),
+            user_flagged=False,
+        ))
+    fair_value_gaps: list[FairValueGap] = []
+    for z in zones.get("fair_value_gaps", []):
+        created = z.get("created_at") or bar_ts
+        fair_value_gaps.append(FairValueGap(
+            id=f"FVG_{z['direction']}_{created.strftime('%Y%m%d%H%M%S')}",
+            direction=z["direction"],
+            level_high=z["level_high"],
+            level_low=z["level_low"],
+            status=z["status"],
+            created_at=created,
+            tested=z["tested"],
+            mitigated_at=z.get("mitigated_at"),
+            fill_level=z.get("fill_level"),
+            user_flagged=False,
+        ))
+    return order_blocks, fair_value_gaps
 
 
 # ---------------------------------------------------------------------------

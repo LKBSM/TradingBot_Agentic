@@ -1,10 +1,11 @@
 'use client';
 
-import { Bot, Play, RotateCcw, ShieldAlert, User } from 'lucide-react';
+import { Play, RotateCcw, ShieldAlert, User } from 'lucide-react';
 import * as React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { MiaAgentLogo } from '@/components/chat/MiaAgentLogo';
 import { cn } from '@/lib/utils';
 
 interface ConversationReplayCardProps {
@@ -139,14 +140,14 @@ export function ConversationReplayCard({
 
           {showThinking && (
             <Bubble role="assistant">
-              <Bot className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              <MiaAgentLogo className="h-3.5 w-3.5 shrink-0" />
               <ThinkingDots />
             </Bubble>
           )}
 
           {showAnswer && (
             <Bubble role="assistant">
-              <Bot className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+              <MiaAgentLogo className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               <span className="whitespace-pre-wrap leading-relaxed">
                 {displayedAnswer}
                 {state === 'answering' && <Caret />}

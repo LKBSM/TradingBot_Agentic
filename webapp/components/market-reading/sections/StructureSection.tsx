@@ -33,6 +33,18 @@ export function StructureSection({
   const { bos, choch, order_blocks, fair_value_gaps, retest_in_progress } =
     structure;
 
+  // Surfacing coherence (founder eval 2026-06-08): the engine emits `bos` only
+  // on a FRESH break at the last close (by design — see market_reading_mappers
+  // F6), while a retest is armed BARS AFTER that break, with `bos` already null.
+  // Without this, the BOS row said "aucune cassure récente" while the retest row
+  // said "retest de cassure (BOS)" — a logical contradiction. When the live
+  // retest references a prior break, we state that instead of denying it. This
+  // is a copy/surfacing fix only — no detection threshold is touched.
+  const bosUnderRetest =
+    !bos && retest_in_progress?.type === 'bos_retest';
+  const chochUnderRetest =
+    !choch && retest_in_progress?.type === 'choch_retest';
+
   const hasAnything =
     bos ||
     choch ||
@@ -49,6 +61,15 @@ export function StructureSection({
         </span>
       </AccordionTrigger>
       <AccordionContent>
+        {/* Cadrage éditorial (niveau 1.5) — les structures sont décrites au
+            présent : une cassure reste affichée tant que le moteur la considère
+            active (en attente / retest), et disparaît dès sa reprise ou son
+            invalidation. Les zones OB/FVG sont indiquées à leur formation. */}
+        <p className="mb-3 text-xs text-muted-foreground">
+          Structures décrites au présent : affichées tant qu’elles restent
+          vérifiables, retirées dès leur reprise ou invalidation. Les zones Order
+          Block et Fair Value Gap sont indiquées à leur formation.
+        </p>
         {!hasAnything ? (
           <p className="text-sm text-muted-foreground">
             Aucun élément structurel notable sur la dernière bougie.
@@ -61,7 +82,9 @@ export function StructureSection({
               value={
                 bos
                   ? `${formatPrice(bos.level, instrument)} · ${formatDirection(bos.direction)} · ${formatValidationStatus(bos.validation_status)}`
-                  : 'aucune cassure récente'
+                  : bosUnderRetest
+                    ? `cassure antérieure en cours de retest (${formatPrice(retest_in_progress!.level, instrument)})`
+                    : 'aucune cassure récente'
               }
             />
             <Row
@@ -70,7 +93,9 @@ export function StructureSection({
               value={
                 choch
                   ? `${formatPrice(choch.level, instrument)} · ${formatDirection(choch.direction)} · ${formatValidationStatus(choch.validation_status)}`
-                  : 'aucun changement récent'
+                  : chochUnderRetest
+                    ? `changement antérieur en cours de retest (${formatPrice(retest_in_progress!.level, instrument)})`
+                    : 'aucun changement récent'
               }
             />
             <Row

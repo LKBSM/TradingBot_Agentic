@@ -35,7 +35,7 @@ export const softwareApplicationLd = {
   applicationCategory: 'FinanceApplication',
   operatingSystem: 'Web · iOS · Android (PWA)',
   description:
-    'MIA Markets est un indicateur de marché conversationnel pour XAU/USD et le forex. Lectures algorithmiques contextuelles, posture éducative, chatbot Sentinel.',
+    'MIA Markets est un indicateur de marché conversationnel pour XAU/USD et le forex. Lectures algorithmiques contextuelles, posture éducative, chatbot M.I.A Agent.',
   inLanguage: 'fr-FR',
   isAccessibleForFree: true,
   offers: [

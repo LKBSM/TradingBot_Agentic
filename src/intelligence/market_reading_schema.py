@@ -95,6 +95,10 @@ class OrderBlock(BaseModel):
     status: OBStatus
     created_at: datetime
     tested: bool
+    # Timestamp of first interaction (mitigation point). None while the zone is
+    # untouched/active. Lets the frontend bound the box formation → mitigation,
+    # or → current price when still active. Descriptive, not predictive.
+    mitigated_at: Optional[datetime] = None
     user_flagged: bool = False
 
 
@@ -106,6 +110,16 @@ class FairValueGap(BaseModel):
     status: FVGStatus
     created_at: datetime
     tested: bool
+    # Timestamp of first entry (partial-fill point). None while the gap is
+    # untouched/active. Same box-bounding purpose as OrderBlock.mitigated_at.
+    mitigated_at: Optional[datetime] = None
+    # Price the gap has been penetrated to — the DEEPEST wick into the band so
+    # far (clamped inside [level_low, level_high]). None while active/untouched.
+    # Read-only/descriptive: lets the frontend SHRINK the box to the still-open
+    # portion of a partially-filled gap (stops "just under the wicks"). It is a
+    # lifecycle measurement over engine-emitted highs/lows — never a detection
+    # threshold and never recomputes the gap.
+    fill_level: Optional[float] = None
     user_flagged: bool = False
 
 

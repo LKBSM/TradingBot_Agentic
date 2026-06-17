@@ -103,14 +103,32 @@ def build_market_reading_assembler(enable_news: Optional[bool] = None) -> Any:
 
     news_pipeline = NewsPipeline(NewsCacheStore()) if enable_news else None
 
+    # Indicator-grade context windows — overridable via env (widened defaults
+    # live on the assembler class). An indicator needs history + a multi-day
+    # calendar, not a 4h keyhole.
     assembler = MarketReadingAssembler(
         data_provider=data_provider,
         readings_store=readings_store,
         candles_store=candles_store,
         description_engine=haiku_engine,
         news_pipeline=news_pipeline,
+        lookback=env_int(
+            "MARKET_READING_LOOKBACK", MarketReadingAssembler.DEFAULT_LOOKBACK
+        ),
+        news_lookahead_min=env_int(
+            "NEWS_LOOKAHEAD_MIN", MarketReadingAssembler.DEFAULT_NEWS_LOOKAHEAD_MIN
+        ),
+        news_lookback_min=env_int(
+            "NEWS_LOOKBACK_MIN", MarketReadingAssembler.DEFAULT_NEWS_LOOKBACK_MIN
+        ),
     )
-    logger.info("MarketReadingAssembler built (news=%s)", "on" if news_pipeline else "off")
+    logger.info(
+        "MarketReadingAssembler built (news=%s, lookback=%d, news_window=%d/%dmin)",
+        "on" if news_pipeline else "off",
+        assembler._lookback,
+        assembler._news_lookahead_min,
+        assembler._news_lookback_min,
+    )
     return assembler
 
 

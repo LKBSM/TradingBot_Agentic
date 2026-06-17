@@ -7,15 +7,23 @@ import { InstrumentSidebar } from './InstrumentSidebar';
 import { MobileWorkspace } from './MobileWorkspace';
 import { ReadingColumn } from './ReadingColumn';
 import { useIsMobile } from '@/lib/use-media-query';
-import { useMarketReading } from '@/lib/market-reading/hooks';
+import { useMarketReading, type ReadingSource } from '@/lib/market-reading/hooks';
 import {
   ActiveComboProvider,
   useActiveCombo,
   type Combo,
 } from '@/lib/market-reading/store';
+import { READING_DATA_SOURCE } from '@/lib/mockReadings';
 import type { MarketReading } from '@/types/market-reading';
 
 const POLL_MS = 60_000;
+
+export interface AppWorkspaceProps {
+  /** Combo selected on mount (null = none). The /app route defaults to XAU M15. */
+  initialCombo?: Combo | null;
+  /** Reading source — defaults to the module flag; overridable for tests. */
+  dataSource?: ReadingSource;
+}
 
 /**
  * Shared shape handed to both the desktop and mobile layouts so the data /
@@ -30,6 +38,8 @@ export interface WorkspaceViewProps {
   isRefreshing: boolean;
   error: Error | null;
   onRetry(): void;
+  /** Candle/reading source, forwarded to ReadingColumn's chart feed. */
+  dataSource: ReadingSource;
 }
 
 /**
@@ -38,15 +48,18 @@ export interface WorkspaceViewProps {
  * ActiveComboProvider; the reading is fetched + polled (60s) via
  * useMarketReading; the chat context follows the active combo via openForCombo.
  */
-export function AppWorkspace() {
+export function AppWorkspace({
+  initialCombo = null,
+  dataSource = READING_DATA_SOURCE,
+}: AppWorkspaceProps = {}) {
   return (
-    <ActiveComboProvider>
-      <WorkspaceInner />
+    <ActiveComboProvider initial={initialCombo}>
+      <WorkspaceInner dataSource={dataSource} />
     </ActiveComboProvider>
   );
 }
 
-function WorkspaceInner() {
+function WorkspaceInner({ dataSource }: { dataSource: ReadingSource }) {
   const { active, select, combos } = useActiveCombo();
   const { openForCombo } = useChat();
   const isMobile = useIsMobile();
@@ -54,7 +67,7 @@ function WorkspaceInner() {
   const { data, isLoading, isRefreshing, error, refresh } = useMarketReading(
     active?.instrument ?? null,
     active?.timeframe ?? null,
-    { pollMs: POLL_MS },
+    { pollMs: POLL_MS, source: dataSource },
   );
 
   // Keep the chat context aligned with the selected combo.
@@ -71,6 +84,7 @@ function WorkspaceInner() {
     isRefreshing,
     error,
     onRetry: refresh,
+    dataSource,
   };
 
   if (isMobile) {
@@ -89,6 +103,7 @@ function DesktopWorkspace({
   isRefreshing,
   error,
   onRetry,
+  dataSource,
 }: WorkspaceViewProps) {
   return (
     <div className="container-wide py-6">
@@ -107,6 +122,7 @@ function DesktopWorkspace({
           isRefreshing={isRefreshing}
           error={error}
           onRetry={onRetry}
+          dataSource={dataSource}
         />
 
         <div className="md:sticky md:top-6 md:h-[calc(100vh-7rem)]">

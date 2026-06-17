@@ -49,6 +49,32 @@ describe('MarketReadingHeader', () => {
     render(<MarketReadingHeader header={FIXTURE_XAU_M15.header} />);
     expect(await screen.findByText(/Bougie clôturée/)).toBeInTheDocument();
   });
+
+  it('shows the unified live price + daily change when `live` is supplied', () => {
+    // A unified price that DIFFERS from the per-timeframe close_price (the bug:
+    // M15 vs H1/H4 divergence) — the header must show the unified one.
+    render(
+      <MarketReadingHeader
+        header={FIXTURE_XAU_M15.header}
+        live={{
+          price: 4131.4,
+          priceTs: 0,
+          referenceClose: 4268.7,
+          changeAbs: -137.3,
+          changePct: -0.0322,
+        }}
+      />,
+    );
+    expect(screen.getByText(/4[\s ]?131,40/)).toBeInTheDocument();
+    expect(screen.getByText(/−3,22 %/)).toBeInTheDocument();
+    // The per-timeframe close_price must NOT also be shown.
+    expect(screen.queryByText(/2[\s ]?392,35/)).not.toBeInTheDocument();
+  });
+
+  it('falls back to close_price when no live price is available', () => {
+    render(<MarketReadingHeader header={FIXTURE_XAU_M15.header} live={null} />);
+    expect(screen.getByText(/2[\s ]?392,35/)).toBeInTheDocument();
+  });
 });
 
 describe('MarketReadingCard', () => {
@@ -63,7 +89,7 @@ describe('MarketReadingCard', () => {
     expect(screen.getByText('Synthèse des conditions')).toBeInTheDocument();
   });
 
-  it('wires the "Demander à Sentinel" CTA when a handler is provided', () => {
+  it('wires the "Demander à M.I.A Agent" CTA when a handler is provided', () => {
     const onAsk = vi.fn();
     render(<MarketReadingCard reading={FIXTURE_XAU_M15} onAskChatbot={onAsk} />);
     const cta = screen.getByRole('button', {
@@ -122,6 +148,53 @@ describe('StructureSection', () => {
     expect(
       screen.getByRole('button', { name: /Order Block — définition/i }),
     ).toBeInTheDocument();
+  });
+
+  it('does not contradict itself: a BOS retest with a now-stale break (no "aucune cassure")', () => {
+    // Founder eval 2026-06-08: the engine emits `bos` only on a FRESH break, so
+    // bars later `bos` is null while a `bos_retest` is armed. The BOS row must
+    // not claim "aucune cassure récente" while the retest row shows a BOS retest.
+    const structure = {
+      bos: null,
+      choch: null,
+      order_blocks: [],
+      fair_value_gaps: [],
+      retest_in_progress: {
+        level: 2391.5,
+        type: 'bos_retest' as const,
+        started_at: '2026-05-26T11:30:00+00:00',
+      },
+    };
+    render(
+      <Accordion type="multiple" defaultValue={['structure']}>
+        <StructureSection structure={structure} instrument="XAUUSD" />
+      </Accordion>,
+    );
+    expect(screen.queryByText('aucune cassure récente')).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/cassure antérieure en cours de retest/),
+    ).toBeInTheDocument();
+    // The retest row still surfaces the live retest.
+    expect(
+      screen.getByText(/retest de cassure \(BOS\)/),
+    ).toBeInTheDocument();
+  });
+
+  it('shows the present-tense editorial framing (1a) in French, no English/directive wording', () => {
+    render(
+      <Accordion type="multiple" defaultValue={['structure']}>
+        <StructureSection
+          structure={FIXTURE_XAU_M15.structure}
+          instrument="XAUUSD"
+        />
+      </Accordion>,
+    );
+    const framing = screen.getByText(/Structures décrites au présent/);
+    expect(framing).toBeInTheDocument();
+    expect(framing.textContent).toMatch(/reprise ou invalidation/);
+    expect(framing.textContent).toMatch(/Order Block et Fair Value Gap/);
+    // No English leak, no directive verb.
+    expect(framing.textContent).not.toMatch(/\b(shown|while|until|invalidated|buy|sell)\b/i);
   });
 
   it('shows an empty-state line when structure is bare', () => {

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  changeTone,
   formatBand,
+  formatChangePercent,
   formatImpact,
   formatInstrument,
   formatMarketPhase,
@@ -40,6 +42,19 @@ describe('market-reading formatters', () => {
 
   it('formats a price band with an en-dash', () => {
     expect(formatBand(2375, 2378, 'XAUUSD')).toMatch(/2[\s ]?375,00 – 2[\s ]?378,00/);
+  });
+
+  it('formats a signed daily change percentage (fr-FR, descriptive)', () => {
+    expect(formatChangePercent(-0.0322)).toBe('−3,22 %');
+    expect(formatChangePercent(0.011)).toBe('+1,10 %');
+    expect(formatChangePercent(0)).toBe('0,00 %');
+  });
+
+  it('maps a change to a colour tone (green up / red down / muted flat)', () => {
+    expect(changeTone(0.01)).toBe('bull');
+    expect(changeTone(-0.01)).toBe('bear');
+    expect(changeTone(0)).toBe('neutral');
+    expect(changeTone(null)).toBe('neutral');
   });
 
   it('maps trend to a descriptive label + tone (never a score)', () => {

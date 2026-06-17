@@ -13,6 +13,14 @@ const intlMiddleware = createMiddleware({
   locales: SUPPORTED_LOCALES,
   defaultLocale: DEFAULT_LOCALE,
   localePrefix: 'as-needed',
+  // Locale detection MUST stay off. With it on, a browser advertising
+  // `Accept-Language: en` makes next-intl 302 `/` → `/en` (en is a supported
+  // but INACTIVE locale); the redirect above then strips `/en` → `/`, which
+  // next-intl re-detects as `en` → `/en` … = an infinite redirect loop
+  // (ERR_TOO_MANY_REDIRECTS) for every en/de/es visitor. V1 ships FR only, so
+  // `/` always serves the default locale; direct /en/* visits are still
+  // 302-redirected to FR by the guard above.
+  localeDetection: false,
 });
 
 export default function middleware(request: NextRequest) {

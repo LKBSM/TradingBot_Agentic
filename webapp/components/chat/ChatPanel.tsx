@@ -1,6 +1,6 @@
 'use client';
 
-import { Bot, Loader2, MessageCircle, RotateCcw } from 'lucide-react';
+import { Loader2, MessageCircle, RotateCcw } from 'lucide-react';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,6 +13,7 @@ import {
 import { ChatInput } from './ChatInput';
 import { ChatMessage } from './ChatMessage';
 import { useChat } from './ChatProvider';
+import { MiaAgentLogo } from './MiaAgentLogo';
 import { SuggestedQuestions } from './SuggestedQuestions';
 import { FALLBACK_SCRIPT, getChatbotScript } from '@/lib/chatbot';
 import {
@@ -87,10 +88,10 @@ export function ChatPanel() {
         <SheetHeader className="border-b px-5 py-4 text-left">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
-              <Bot className="h-4 w-4" aria-hidden />
+              <MiaAgentLogo className="h-5 w-5" />
             </div>
             <div className="space-y-0.5">
-              <SheetTitle className="text-base">Sentinel</SheetTitle>
+              <SheetTitle className="text-base">M.I.A Agent</SheetTitle>
               <SheetDescription
                 id="chat-panel-description"
                 className="text-xs"
@@ -125,7 +126,7 @@ export function ChatPanel() {
               aria-live="polite"
             >
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-              Sentinel réfléchit…
+              M.I.A Agent réfléchit…
             </div>
           )}
 
@@ -154,8 +155,8 @@ export function ChatPanel() {
               chat panel — aligned with legal terminal wording on
               educational-use posture (UE 2024/2811 + MiFID II 03/2026). */}
           <p className="text-[11px] italic text-muted-foreground">
-            Sentinel répond à des questions sur la lecture algorithmique. Il
-            ne donne ni signal de trading, ni recommandation personnalisée.
+            M.I.A Agent répond à des questions sur la lecture algorithmique.
+            Il ne donne ni signal de trading, ni recommandation personnalisée.
           </p>
         </div>
       </SheetContent>
@@ -174,7 +175,7 @@ function IntroBubble({
     <div className="rounded-2xl rounded-tl-sm bg-muted px-3.5 py-2.5 text-sm leading-relaxed">
       <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
         <MessageCircle className="h-3 w-3" aria-hidden />
-        Sentinel · {script.instrument_label}
+        M.I.A Agent · {script.instrument_label}
       </p>
       <p className="mt-2">
         Pose-moi une question sur cette lecture. Je peux t&apos;expliquer

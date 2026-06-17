@@ -1,9 +1,10 @@
 'use client';
 
-import { Bot, Loader2, RotateCcw } from 'lucide-react';
+import { Loader2, RotateCcw } from 'lucide-react';
 import * as React from 'react';
 import { ChatInput } from '@/components/chat/ChatInput';
 import { ChatMessage } from '@/components/chat/ChatMessage';
+import { MiaAgentLogo } from '@/components/chat/MiaAgentLogo';
 import { useChat } from '@/components/chat/ChatProvider';
 import { Button } from '@/components/ui/button';
 import {
@@ -29,15 +30,15 @@ export function AppChatSidebar({ active }: { active: Combo | null }) {
 
   return (
     <aside
-      aria-label="Assistant Sentinel"
+      aria-label="Assistant M.I.A Agent"
       className="flex h-full min-h-0 flex-col rounded-lg border border-border/60 bg-card"
     >
       <header className="flex items-center gap-2 border-b border-border/60 px-4 py-3">
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
-          <Bot className="h-4 w-4" aria-hidden />
+          <MiaAgentLogo className="h-5 w-5" />
         </div>
         <div className="min-w-0">
-          <p className="text-sm font-semibold leading-tight">Sentinel</p>
+          <p className="text-sm font-semibold leading-tight">M.I.A Agent</p>
           <p className="truncate text-xs text-muted-foreground">
             {active
               ? `${formatInstrument(active.instrument)} · ${formatTimeframe(active.timeframe)}`
@@ -79,7 +80,7 @@ export function AppChatSidebar({ active }: { active: Combo | null }) {
             aria-live="polite"
           >
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-            Sentinel réfléchit…
+            M.I.A Agent réfléchit…
           </div>
         )}
 
@@ -102,8 +103,8 @@ export function AppChatSidebar({ active }: { active: Combo | null }) {
         {/* LEGAL-PENDING: chat compliance line — aligned with the legal terminal
             wording on educational-use posture (UE 2024/2811 + MiFID II 03/2026). */}
         <p className="text-[11px] italic text-muted-foreground">
-          Sentinel répond à des questions sur la lecture algorithmique. Il ne
-          donne ni signal de trading, ni recommandation personnalisée.
+          M.I.A Agent répond à des questions sur la lecture algorithmique. Il
+          ne donne ni signal de trading, ni recommandation personnalisée.
         </p>
       </div>
     </aside>

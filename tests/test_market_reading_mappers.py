@@ -42,13 +42,15 @@ def bar_ts() -> datetime:
 
 
 def test_confluence_signal_to_structure_with_long_signal(bar_ts):
+    # Armed retest of a prior bullish break (BOS_RETEST_STATE = +2). The break is
+    # persisted (state != 0) AND a retest is in progress (state == ±2).
     smc_features = {
         "BOS_SIGNAL": 1.0,
-        "BOS_EVENT": 1.0,
+        "BOS_EVENT": 0.0,
+        "BOS_RETEST_STATE": 2.0,     # armed → break persisted + retest in progress
         "BOS_BREAK_LEVEL": 2375.20,  # F1: real broken structural level
         "FVG_SIGNAL": 1.0,
         "OB_STRENGTH_NORM": 0.8,
-        "BOS_RETEST_ARMED": 1.0,
         "ATR": 5.0,
     }
     cs = _MockConfluenceSignal("LONG")
@@ -118,21 +120,130 @@ def test_confluence_signal_to_structure_no_signal_but_bos_in_features(bar_ts):
     assert s.retest_in_progress is None
 
 
-def test_retest_uses_break_level_last_without_fresh_bos(bar_ts):
-    """F1+F6: a retest is armed bars after the break (no fresh BOS event). It is
-    decoupled from the bos object and sources its level from the forward-filled
-    real broken level, never current_price."""
+def test_persisted_bos_during_active_retest_state(bar_ts):
+    """D1-b (1a): a prior break with no fresh event but an ACTIVE retest state
+    (BOS_RETEST_STATE != 0) is persisted — surfaced as a confirmed bos AND a
+    retest in progress, both sourcing the forward-filled real broken level
+    (never current_price)."""
     smc_features = {
         "BOS_SIGNAL": 1.0,
         "BOS_EVENT": 0.0,                 # no fresh break on this bar
+        "BOS_RETEST_STATE": 2.0,          # armed retest → break still active
         "BOS_RETEST_ARMED": 1.0,
         "BOS_BREAK_LEVEL_LAST": 2361.10,  # forward-filled real level from pipeline
+        "BOS_BREAK_TS": 1748352600.0,     # original break time (epoch seconds)
         "ATR": 5.0,
     }
     s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=2390.0)
-    assert s.bos is None                       # F6: no fresh break
-    assert s.retest_in_progress is not None    # F6: retest decoupled from bos
-    assert s.retest_in_progress.level == 2361.10  # NOT current_price (2390.0)
+    assert s.bos is not None                       # 1a: persisted while active
+    assert s.bos.direction == "bullish"
+    assert s.bos.level == 2361.10                  # forward-filled real level
+    assert s.bos.validation_status == "confirmed"
+    assert s.bos.broken_at == datetime.fromtimestamp(1748352600.0, tz=timezone.utc)
+    assert s.retest_in_progress is not None        # retest still surfaced
+    assert s.retest_in_progress.level == 2361.10   # NOT current_price (2390.0)
+
+
+def test_persisted_bos_awaiting_state_without_armed_retest(bar_ts):
+    """1a: awaiting state (BOS_RETEST_STATE = ±1, price has not retested yet)
+    persists the bos, but NO retest is in progress (only armed ±2 arms one)."""
+    smc_features = {
+        "BOS_SIGNAL": -1.0,
+        "BOS_EVENT": 0.0,
+        "BOS_RETEST_STATE": -1.0,         # awaiting (bearish)
+        "BOS_BREAK_LEVEL_LAST": 1.0850,
+        "ATR": 4.0,
+    }
+    s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=1.0820)
+    assert s.bos is not None
+    assert s.bos.direction == "bearish"
+    assert s.bos.level == 1.0850
+    assert s.retest_in_progress is None            # not armed → no retest surfaced
+
+
+def test_retest_flag_only_during_armed_state_not_awaiting(bar_ts):
+    """D1-b separation: the BOS LEVEL persists across the whole active window
+    (state != 0), but the 'retest in progress' flag is shown ONLY while armed
+    (state == ±2), never while awaiting (±1)."""
+    base = {
+        "BOS_SIGNAL": 1.0,
+        "BOS_EVENT": 0.0,
+        "BOS_BREAK_LEVEL_LAST": 2361.10,
+        "ATR": 5.0,
+    }
+    # Awaiting (±1): break shown, NO retest in progress.
+    awaiting = confluence_signal_to_structure(
+        None, {**base, "BOS_RETEST_STATE": 1.0}, bar_ts, current_price=2390.0
+    )
+    assert awaiting.bos is not None
+    assert awaiting.retest_in_progress is None
+
+    # Armed (±2): break shown AND retest in progress.
+    armed = confluence_signal_to_structure(
+        None, {**base, "BOS_RETEST_STATE": 2.0}, bar_ts, current_price=2390.0
+    )
+    assert armed.bos is not None
+    assert armed.retest_in_progress is not None
+    assert armed.retest_in_progress.type == "bos_retest"
+
+
+def test_retest_not_shown_when_break_dropped_by_inverted_trend(bar_ts):
+    """Consistency: if the propagated trend inverted against an armed retest
+    state, the break is NOT persisted, and the retest flag is suppressed too —
+    the UI never shows a retest of a dropped break."""
+    smc_features = {
+        "BOS_SIGNAL": -1.0,               # trend now bearish…
+        "BOS_EVENT": 0.0,
+        "BOS_RETEST_STATE": 2.0,          # …stale bullish armed state
+        "BOS_BREAK_LEVEL_LAST": 2361.10,
+        "ATR": 5.0,
+    }
+    s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=2390.0)
+    assert s.bos is None                  # inverted → break dropped
+    assert s.retest_in_progress is None   # …and so is its retest
+
+
+def test_persisted_bos_broken_at_falls_back_to_bar_ts_without_break_ts(bar_ts):
+    """1a: when the glue field BOS_BREAK_TS is absent, broken_at falls back to
+    the current bar (never crashes, never invents a time)."""
+    smc_features = {
+        "BOS_SIGNAL": 1.0,
+        "BOS_EVENT": 0.0,
+        "BOS_RETEST_STATE": 1.0,
+        "BOS_BREAK_LEVEL_LAST": 2361.10,
+        "ATR": 5.0,
+    }
+    s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=2390.0)
+    assert s.bos is not None
+    assert s.bos.broken_at == bar_ts
+
+
+def test_bos_disappears_on_invalidation(bar_ts):
+    """1a: once the engine's retest state machine clears to 0 (invalidation /
+    reclaim / timeout), the break is no longer surfaced — it disappears."""
+    smc_features = {
+        "BOS_SIGNAL": 1.0,                # trend may still propagate…
+        "BOS_EVENT": 0.0,
+        "BOS_RETEST_STATE": 0.0,          # …but the break is no longer active
+        "BOS_BREAK_LEVEL_LAST": 2361.10,
+        "ATR": 5.0,
+    }
+    s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=2390.0)
+    assert s.bos is None                  # disappeared on invalidation
+
+
+def test_bos_not_persisted_when_trend_inverted_against_break(bar_ts):
+    """1a: 'BOS_SIGNAL n'est pas inversé' — if the propagated trend has flipped
+    opposite to the (stale) retest-state direction, the break is not surfaced."""
+    smc_features = {
+        "BOS_SIGNAL": -1.0,               # trend now bearish…
+        "BOS_EVENT": 0.0,
+        "BOS_RETEST_STATE": 2.0,          # …stale bullish retest state
+        "BOS_BREAK_LEVEL_LAST": 2361.10,
+        "ATR": 5.0,
+    }
+    s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=2390.0)
+    assert s.bos is None                  # inverted trend → not persisted
 
 
 def test_bos_level_falls_back_to_current_price_when_no_break_level(bar_ts):
@@ -159,6 +270,37 @@ def test_realized_levels_forward_fills_bos_break_level():
     })
     out = realized_levels(df, idx=3)
     assert out["BOS_BREAK_LEVEL_LAST"] == 10.5
+
+
+def test_realized_levels_emits_break_ts_from_last_event(bar_ts):
+    """1a glue: realized_levels carries the ORIGINAL break timestamp (last bar
+    with BOS_EVENT != 0) so a persisted break reports an honest broken_at. Only
+    when the frame has a DatetimeIndex (production), never on integer indices."""
+    import numpy as np
+    import pandas as pd
+
+    from src.intelligence.market_reading_mappers import realized_levels
+
+    idx = pd.to_datetime([
+        "2026-05-28T13:00:00Z",
+        "2026-05-28T13:15:00Z",  # the break bar
+        "2026-05-28T13:30:00Z",
+        "2026-05-28T13:45:00Z",
+    ])
+    df = pd.DataFrame(
+        {
+            "high": [10.0, 11.0, 12.0, 13.0],
+            "low": [9.0, 9.5, 10.0, 11.0],
+            "BOS_EVENT": [0.0, 1.0, 0.0, 0.0],
+        },
+        index=idx,
+    )
+    out = realized_levels(df, idx=3)
+    assert out["BOS_BREAK_TS"] == pd.Timestamp("2026-05-28T13:15:00Z").timestamp()
+
+    # Integer-indexed frame → no bogus timestamp emitted.
+    df_int = pd.DataFrame({"high": [1.0, 2.0], "low": [0.5, 1.5], "BOS_EVENT": [0.0, 1.0]})
+    assert "BOS_BREAK_TS" not in realized_levels(df_int, idx=1)
 
 
 def test_choch_level_uses_break_level(bar_ts):
@@ -362,7 +504,7 @@ def _structure_rich(bar_ts: datetime) -> MarketReadingStructure:
             "BOS_EVENT": 1.0,
             "FVG_SIGNAL": 1.0,
             "OB_STRENGTH_NORM": 0.8,
-            "BOS_RETEST_ARMED": 1.0,
+            "BOS_RETEST_STATE": 2.0,  # armed → retest in progress surfaced
             "ATR": 5.0,
         },
         bar_ts,
@@ -473,3 +615,325 @@ def test_forbidden_tokens_set_is_immutable():
     assert isinstance(FORBIDDEN_TOKENS, frozenset)
     with pytest.raises(AttributeError):
         FORBIDDEN_TOKENS.add("new_token")  # type: ignore[attr-defined]
+
+
+def test_persisted_bos_future_break_ts_falls_back_to_bar_ts(bar_ts):
+    """Audit 2026-06-12 §T2: a BOS_BREAK_TS recovered from a wrong clock domain
+    (candle index labelled in the future) must never surface — production
+    readings published broken_at timestamps hours AFTER the reading itself.
+    The mapper clamps: future recovered time → fall back to bar_ts."""
+    future_epoch = bar_ts.timestamp() + 10 * 3600  # +10h, the observed offset
+    smc_features = {
+        "BOS_SIGNAL": 1.0,
+        "BOS_EVENT": 0.0,
+        "BOS_RETEST_STATE": 2.0,
+        "BOS_RETEST_ARMED": 1.0,
+        "BOS_BREAK_LEVEL_LAST": 2361.10,
+        "BOS_BREAK_TS": future_epoch,
+        "ATR": 5.0,
+    }
+    s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=2390.0)
+    assert s.bos is not None
+    assert s.bos.broken_at == bar_ts          # clamped, never in the future
+    assert s.bos.broken_at <= bar_ts
+
+
+def test_persisted_bos_past_break_ts_still_honest(bar_ts):
+    """Sanity counterpart: a legitimately past BOS_BREAK_TS is surfaced as-is."""
+    past_epoch = bar_ts.timestamp() - 3 * 3600
+    smc_features = {
+        "BOS_SIGNAL": 1.0,
+        "BOS_EVENT": 0.0,
+        "BOS_RETEST_STATE": 1.0,
+        "BOS_BREAK_LEVEL_LAST": 2361.10,
+        "BOS_BREAK_TS": past_epoch,
+        "ATR": 5.0,
+    }
+    s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=2390.0)
+    assert s.bos is not None
+    assert s.bos.broken_at == datetime.fromtimestamp(past_epoch, tz=timezone.utc)
+
+
+# ---------------------------------------------------------------------------
+# Multi-zone registry (audit DETECTION_QUALITY_REVIEW_2026_06_12 §T1 fix)
+# ---------------------------------------------------------------------------
+
+import pandas as pd
+
+from src.intelligence.market_reading_mappers import collect_zones
+
+
+def _frame(rows: list[dict], start="2026-05-28T00:00:00Z") -> pd.DataFrame:
+    """Build an enriched-like frame with a DatetimeIndex (M15 spacing)."""
+    idx = pd.date_range(start=start, periods=len(rows), freq="15min", tz="UTC")
+    cols = ["high", "low", "close", "BULLISH_OB_HIGH", "BULLISH_OB_LOW",
+            "BEARISH_OB_HIGH", "BEARISH_OB_LOW", "OB_STRENGTH_NORM",
+            "FVG_DIR", "FVG_SIZE_NORM"]
+    data = {c: [r.get(c, float("nan")) for r in rows] for c in cols}
+    return pd.DataFrame(data, index=idx)
+
+
+def test_collect_zones_surfaces_multiple_obs():
+    """The registry returns every still-active OB, not just the last bar's."""
+    # Two bullish OBs far below price; price never returns → both stay active.
+    rows = [{"high": 100 + i, "low": 99 + i, "close": 100 + i} for i in range(10)]
+    rows[2].update(BULLISH_OB_HIGH=92.0, BULLISH_OB_LOW=90.0, OB_STRENGTH_NORM=0.8)
+    rows[5].update(BULLISH_OB_HIGH=95.0, BULLISH_OB_LOW=94.0, OB_STRENGTH_NORM=0.5)
+    z = collect_zones(_frame(rows), idx=9)
+    obs = z["order_blocks"]
+    assert len(obs) == 2
+    assert {o["status"] for o in obs} == {"active"}
+    # higher strength first
+    assert obs[0]["level_low"] == 90.0
+    assert obs[0]["importance"] == "high"
+    assert obs[1]["importance"] == "medium"
+
+
+def test_collect_zones_drops_invalidated_ob():
+    """A bullish OB whose support is closed through is consumed → dropped."""
+    rows = [{"high": 100, "low": 99, "close": 100} for _ in range(6)]
+    rows[1].update(BULLISH_OB_HIGH=98.0, BULLISH_OB_LOW=97.0, OB_STRENGTH_NORM=0.9)
+    # Later bar closes below the OB low → invalidated.
+    rows[4].update(high=98, low=95, close=96.0)
+    z = collect_zones(_frame(rows), idx=5)
+    assert z["order_blocks"] == []
+
+
+def test_collect_zones_mitigated_ob_kept():
+    """Price taps into the OB but holds (no close-through) → mitigated, kept."""
+    rows = [{"high": 100, "low": 99, "close": 100} for _ in range(6)]
+    rows[1].update(BULLISH_OB_HIGH=98.0, BULLISH_OB_LOW=97.0, OB_STRENGTH_NORM=0.9)
+    rows[3].update(high=100, low=97.5, close=99.0)  # dips into zone, closes above
+    z = collect_zones(_frame(rows), idx=5)
+    assert len(z["order_blocks"]) == 1
+    assert z["order_blocks"][0]["status"] == "mitigated"
+    assert z["order_blocks"][0]["tested"] is True
+
+
+def test_collect_zones_drops_filled_fvg_keeps_active():
+    """A filled bullish FVG is dropped; an untouched one stays active."""
+    rows = [{"high": 100 + i, "low": 99 + i, "close": 100 + i} for i in range(8)]
+    # Bullish gap at k=2: high[0]=100 (low edge), low[2]=101 (high edge) → [100,101].
+    rows[2].update(FVG_DIR=1.0, FVG_SIZE_NORM=0.5)
+    # Bullish gap at k=5 way above; price never returns → active.
+    rows[5].update(FVG_DIR=1.0, FVG_SIZE_NORM=0.3)
+    # Make an early bar fill the k=2 gap: a low reaching <= 100.
+    rows[4].update(low=99.5)
+    z = collect_zones(_frame(rows), idx=7)
+    fvgs = z["fair_value_gaps"]
+    statuses = {round(f["_size"], 2): f["status"] for f in fvgs}
+    # k=2 gap filled (dropped), only k=5 remains active
+    assert len(fvgs) == 1
+    assert fvgs[0]["status"] == "active"
+
+
+def test_collect_zones_caps_per_type():
+    rows = [{"high": 100 + i, "low": 99 + i, "close": 100 + i} for i in range(20)]
+    for k in range(2, 12):  # 10 bullish OBs below price → all active
+        rows[k].update(BULLISH_OB_HIGH=50.0 - k, BULLISH_OB_LOW=49.0 - k,
+                       OB_STRENGTH_NORM=0.5)
+    z = collect_zones(_frame(rows), idx=19, max_per_type=6)
+    assert len(z["order_blocks"]) == 6
+
+
+def test_structure_mapper_uses_injected_zones(bar_ts):
+    """confluence_signal_to_structure publishes the multi-zone list when present."""
+    smc = {
+        "BOS_SIGNAL": 0.0, "BOS_EVENT": 0.0, "ATR": 5.0,
+        "_zones": {
+            "order_blocks": [
+                {"direction": "bullish", "level_high": 92.0, "level_low": 90.0,
+                 "importance": "high", "status": "active", "tested": False,
+                 "created_at": bar_ts},
+                {"direction": "bearish", "level_high": 110.0, "level_low": 108.0,
+                 "importance": "medium", "status": "mitigated", "tested": True,
+                 "created_at": bar_ts},
+            ],
+            "fair_value_gaps": [
+                {"direction": "bearish", "level_high": 105.0, "level_low": 104.0,
+                 "status": "active", "tested": False, "created_at": bar_ts},
+            ],
+        },
+    }
+    s = confluence_signal_to_structure(None, smc, bar_ts, current_price=100.0)
+    assert len(s.order_blocks) == 2
+    assert s.order_blocks[0].direction == "bullish"
+    assert s.order_blocks[1].status == "mitigated"
+    assert len(s.fair_value_gaps) == 1
+    assert s.fair_value_gaps[0].direction == "bearish"
+
+
+def test_structure_mapper_falls_back_without_zones(bar_ts):
+    """No _zones key → legacy single-bar behaviour is preserved."""
+    smc = {"BOS_SIGNAL": 0.0, "OB_STRENGTH_NORM": 0.6, "ATR": 5.0,
+           "OB_LEVEL_HIGH": 101.0, "OB_LEVEL_LOW": 99.0}
+    s = confluence_signal_to_structure(None, smc, bar_ts, current_price=100.0)
+    assert len(s.order_blocks) == 1  # single-bar fallback still works
+
+
+# ---------------------------------------------------------------------------
+# Mitigation lifecycle: mitigated_at bounding + single-source-of-truth policy
+# (feat/ob-fvg-mitigation-lifecycle — defaults validated by founder 2026-06-15,
+# DÉFAUTS À VALIDER PAR ANNOTATION)
+# ---------------------------------------------------------------------------
+
+from src.intelligence.market_reading_mappers import (
+    MITIGATION_POLICY,
+    MitigationPolicy,
+    _fvg_lifecycle,
+    _ob_lifecycle,
+)
+
+
+def test_active_ob_has_no_mitigation_timestamp():
+    """An untouched OB is active and carries mitigated_at=None (box → current)."""
+    rows = [{"high": 100 + i, "low": 99 + i, "close": 100 + i} for i in range(10)]
+    rows[2].update(BULLISH_OB_HIGH=92.0, BULLISH_OB_LOW=90.0, OB_STRENGTH_NORM=0.8)
+    z = collect_zones(_frame(rows), idx=9)
+    ob = z["order_blocks"][0]
+    assert ob["status"] == "active"
+    assert ob["mitigated_at"] is None
+
+
+def test_mitigated_ob_carries_first_tap_timestamp():
+    """A tapped-but-held OB stays exposed (founder choice) with a bounded box:
+    mitigated_at = the bar of the FIRST tap, so the front draws formation→tap."""
+    frame_start = "2026-05-28T00:00:00Z"
+    rows = [{"high": 100, "low": 99, "close": 100} for _ in range(6)]
+    rows[1].update(BULLISH_OB_HIGH=98.0, BULLISH_OB_LOW=97.0, OB_STRENGTH_NORM=0.9)
+    rows[3].update(high=100, low=97.5, close=99.0)  # first tap at k=3, holds
+    z = collect_zones(_frame(rows, start=frame_start), idx=5)
+    ob = z["order_blocks"][0]
+    assert ob["status"] == "mitigated"
+    # k=3 with 15-min spacing from 00:00 → 00:45.
+    expected = pd.Timestamp(frame_start) + pd.Timedelta(minutes=15 * 3)
+    assert ob["mitigated_at"] == expected.to_pydatetime()
+    # The box is bounded: formation (k=1) strictly before mitigation (k=3).
+    assert ob["created_at"] < ob["mitigated_at"]
+
+
+def test_active_fvg_has_no_mitigation_timestamp():
+    rows = [{"high": 100 + i, "low": 99 + i, "close": 100 + i} for i in range(8)]
+    rows[5].update(FVG_DIR=1.0, FVG_SIZE_NORM=0.3)  # gap well above, untouched
+    z = collect_zones(_frame(rows), idx=7)
+    fvg = z["fair_value_gaps"][0]
+    assert fvg["status"] == "active"
+    assert fvg["mitigated_at"] is None
+
+
+def test_partially_filled_fvg_carries_first_entry_timestamp():
+    """Partial fill (near edge touched, far edge not reached) stays exposed with
+    mitigated_at = first entry bar (founder: 100% strict before drop)."""
+    rows = [{"high": 100 + i, "low": 99 + i, "close": 100 + i} for i in range(8)]
+    # Bullish gap at k=2: [high[0]=100, low[2]=101] → band [100,101], fill at <=100.
+    rows[2].update(FVG_DIR=1.0, FVG_SIZE_NORM=0.5)
+    rows[4].update(low=100.5)  # dips below near edge (101) but not to 100 → partial
+    z = collect_zones(_frame(rows), idx=7)
+    fvg = z["fair_value_gaps"][0]
+    assert fvg["status"] == "partially_filled"
+    assert fvg["mitigated_at"] is not None
+
+
+def test_active_fvg_has_no_fill_level():
+    """An untouched gap exposes fill_level=None (front draws the full band)."""
+    rows = [{"high": 100 + i, "low": 99 + i, "close": 100 + i} for i in range(8)]
+    rows[5].update(FVG_DIR=1.0, FVG_SIZE_NORM=0.3)
+    z = collect_zones(_frame(rows), idx=7)
+    fvg = z["fair_value_gaps"][0]
+    assert fvg["status"] == "active"
+    assert fvg["fill_level"] is None
+
+
+def test_partially_filled_fvg_exposes_deepest_penetration_as_fill_level():
+    """A bullish gap fills from above: fill_level = the deepest low reached into
+    the band (clamped), so the box shrinks to the still-open portion below it."""
+    rows = [{"high": 100 + i, "low": 99 + i, "close": 100 + i} for i in range(8)]
+    # Bullish gap at k=2: band [high[0]=100, low[2]=101] = [100,101]; full fill <=100.
+    rows[2].update(FVG_DIR=1.0, FVG_SIZE_NORM=0.5)
+    rows[4].update(low=100.5)  # dips to 100.5 (partial); deepest = 100.5
+    rows[6].update(low=100.7)  # shallower later dip must NOT override the deepest
+    z = collect_zones(_frame(rows), idx=7)
+    fvg = z["fair_value_gaps"][0]
+    assert fvg["status"] == "partially_filled"
+    assert fvg["fill_level"] == 100.5
+    # Still-open portion is below the penetration: strictly inside the band.
+    assert fvg["level_low"] <= fvg["fill_level"] < fvg["level_high"]
+
+
+def test_consumed_zones_are_never_exposed():
+    """Honesty guardrail: invalidated OB and filled FVG are dropped entirely."""
+    rows = [{"high": 100, "low": 99, "close": 100} for _ in range(6)]
+    rows[1].update(BULLISH_OB_HIGH=98.0, BULLISH_OB_LOW=97.0, OB_STRENGTH_NORM=0.9)
+    rows[4].update(high=98, low=95, close=96.0)  # closes through → invalidated
+    z = collect_zones(_frame(rows), idx=5)
+    assert z["order_blocks"] == []
+
+
+def test_ob_lifecycle_returns_tap_index_and_is_conservative():
+    """Direct unit on the single-source-of-truth helper: default penetration=0.0
+    declares mitigation on the FIRST overlap (conservative — earlier, not later)."""
+    highs = [100, 100, 100, 100, 100]
+    lows = [99, 99, 99, 97.5, 99]   # j=3 dips into [97,98]
+    closes = [100, 100, 100, 99, 100]
+    status, tested, tap = _ob_lifecycle(
+        "bullish", 98.0, 97.0, highs, lows, closes, created=0, upto=4
+    )
+    assert (status, tested, tap) == ("mitigated", True, 3)
+
+
+def test_penetration_threshold_is_a_single_tunable_knob():
+    """Raising ob_mitigation_penetration delays mitigation (less conservative).
+    A shallow tap that mitigates under the default stays active under a deep one."""
+    highs = [100, 100, 100, 100]
+    lows = [99, 99, 97.9, 99]   # dips 0.1 into [97,98] (height 1.0) at j=2
+    closes = [100, 100, 99, 100]
+    # Default (0.0): any touch → mitigated.
+    assert _ob_lifecycle("bullish", 98.0, 97.0, highs, lows, closes, 0, 3)[0] == "mitigated"
+    # Require 50% penetration: 0.1 tap is too shallow → still active.
+    deep = MitigationPolicy(ob_mitigation_penetration=0.5)
+    assert _ob_lifecycle("bullish", 98.0, 97.0, highs, lows, closes, 0, 3, deep)[0] == "active"
+
+
+def test_policy_drop_when_mitigated_removes_zone():
+    """The conservative 'drop on mitigation' switch lives in the single policy."""
+    rows = [{"high": 100, "low": 99, "close": 100} for _ in range(6)]
+    rows[1].update(BULLISH_OB_HIGH=98.0, BULLISH_OB_LOW=97.0, OB_STRENGTH_NORM=0.9)
+    rows[3].update(high=100, low=97.5, close=99.0)  # tap → mitigated
+    import src.intelligence.market_reading_mappers as m
+    original = m.MITIGATION_POLICY
+    m.MITIGATION_POLICY = MitigationPolicy(ob_drop_when_mitigated=True)
+    try:
+        z = collect_zones(_frame(rows), idx=5)
+        assert z["order_blocks"] == []  # mitigated zone dropped under strict policy
+    finally:
+        m.MITIGATION_POLICY = original
+
+
+def test_default_policy_matches_founder_decision():
+    """Founder 2026-06-15: keep mitigated OB / partial FVG visible, 100% fill."""
+    assert MITIGATION_POLICY.ob_mitigation_penetration == 0.0
+    assert MITIGATION_POLICY.ob_drop_when_mitigated is False
+    assert MITIGATION_POLICY.fvg_fill_fraction == 1.0
+    assert MITIGATION_POLICY.fvg_drop_when_partial is False
+
+
+def test_order_block_schema_accepts_mitigated_at(bar_ts):
+    """Schema round-trip: mitigated_at optional, defaults to None for active."""
+    from src.intelligence.market_reading_schema import FairValueGap, OrderBlock
+
+    ob = OrderBlock(
+        id="OB_x", direction="bullish", level_high=92.0, level_low=90.0,
+        importance="high", status="active", created_at=bar_ts, tested=False,
+    )
+    assert ob.mitigated_at is None
+    ob2 = OrderBlock(
+        id="OB_y", direction="bullish", level_high=92.0, level_low=90.0,
+        importance="high", status="mitigated", created_at=bar_ts, tested=True,
+        mitigated_at=bar_ts,
+    )
+    assert ob2.mitigated_at == bar_ts
+    fvg = FairValueGap(
+        id="FVG_z", direction="bullish", level_high=101.0, level_low=100.0,
+        status="active", created_at=bar_ts, tested=False,
+    )
+    assert fvg.mitigated_at is None

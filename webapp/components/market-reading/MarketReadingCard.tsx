@@ -8,6 +8,7 @@ import {
   MarketReadingSections,
   type MarketReadingSectionKey,
 } from './MarketReadingSections';
+import type { DailyChange } from '@/lib/market-reading/price';
 import type { MarketReading } from '@/types/market-reading';
 
 interface MarketReadingCardProps {
@@ -18,6 +19,17 @@ interface MarketReadingCardProps {
   heroOnly?: boolean;
   /** Section keys to expand on mount (default: all collapsed). */
   defaultOpenSections?: ReadonlyArray<MarketReadingSectionKey>;
+  /**
+   * Optional chart (or chart-unavailable placeholder) rendered just below the
+   * header — the "Graphique d'abord" layout used in /app. Omitted on the
+   * landing samples, which keep the text-only hero.
+   */
+  chartSlot?: React.ReactNode;
+  /**
+   * Unified last price + descriptive daily change for the header. Omitted on
+   * static surfaces (landing samples), where the header shows `close_price`.
+   */
+  live?: DailyChange | null;
   className?: string;
 }
 
@@ -37,12 +49,16 @@ export function MarketReadingCard({
   onAskChatbot,
   heroOnly = false,
   defaultOpenSections,
+  chartSlot,
+  live,
   className,
 }: MarketReadingCardProps) {
   return (
     <Card className={className ?? 'w-full max-w-2xl border-border/60 shadow-sm'}>
       <CardContent className="space-y-5 p-5 sm:space-y-6 sm:p-7">
-        <MarketReadingHeader header={reading.header} />
+        <MarketReadingHeader header={reading.header} live={live} />
+
+        {chartSlot}
 
         <MarketPhasePanel regime={reading.regime} />
 
@@ -58,7 +74,7 @@ export function MarketReadingCard({
             aria-label="Ouvrir le chatbot pour poser une question contextuelle"
           >
             <MessageCircle aria-hidden />
-            Demander à Sentinel
+            Demander à M.I.A Agent
           </Button>
         </div>
 

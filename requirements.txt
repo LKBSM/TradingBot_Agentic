@@ -52,6 +52,7 @@ uvicorn>=0.24.0               # ASGI server
 requests>=2.31.0              # HTTP requests
 httpx>=0.25.0                 # Modern async HTTP client
 APScheduler>=3.10,<4.0        # In-process scheduler — MarketReading hybrid mode (Chantier 3)
+tzdata>=2024.1                # IANA tz database for zoneinfo on Windows (news DST parsing)
 
 # =============================================================================
 # DELIVERY

@@ -30,7 +30,7 @@ export function TemporalBadge({ candleCloseTs, className }: TemporalBadgeProps) 
     return (
       <div
         className={cn(
-          'flex items-center gap-2 text-xs text-muted-foreground',
+          'flex items-center gap-2 font-mono text-[11px] font-normal text-muted-foreground',
           className,
         )}
         aria-hidden
@@ -44,7 +44,7 @@ export function TemporalBadge({ candleCloseTs, className }: TemporalBadgeProps) 
   return (
     <div
       className={cn(
-        'flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground',
+        'flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] font-normal text-muted-foreground',
         className,
       )}
     >

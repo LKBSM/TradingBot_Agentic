@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 test.describe('Chatbot — golden paths', () => {
   test('opens the chat panel when CTA is clicked', async ({ page }) => {
     await page.goto('/#multi-marche');
-    // Click "Demander à Sentinel" on the first card.
+    // Click "Demander à M.I.A Agent" on the first card.
     await page
       .getByRole('button', {
         name: /Ouvrir le chatbot pour poser une question contextuelle/i,
@@ -12,7 +12,7 @@ test.describe('Chatbot — golden paths', () => {
       .click();
     // Panel must be visible (dialog role).
     await expect(page.getByRole('dialog')).toBeVisible();
-    await expect(page.getByText(/Sentinel · XAU\/USD/i)).toBeVisible();
+    await expect(page.getByText(/M\.I\.A Agent · XAU\/USD/i)).toBeVisible();
   });
 
   test('clicking a suggested question shows its scripted reply', async ({ page }) => {
@@ -73,7 +73,7 @@ test.describe('Chatbot — golden paths', () => {
       .first()
       .click();
     const input = page.getByRole('textbox', {
-      name: /Question libre pour Sentinel/i,
+      name: /Question libre pour M\.I\.A Agent/i,
     });
     await expect(input).toBeVisible();
     await input.fill('Bonjour, en bref ?');

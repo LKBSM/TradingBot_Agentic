@@ -103,6 +103,12 @@ export interface OrderBlock {
   status: OBStatus;
   created_at: string;
   tested: boolean;
+  /**
+   * Timestamp of first interaction (mitigation point). null/absent while the
+   * zone is untouched. Bound the box created_at → mitigated_at; for active
+   * zones extend to the current price. Descriptive, never predictive.
+   */
+  mitigated_at?: string | null;
   user_flagged: boolean;
 }
 
@@ -115,6 +121,15 @@ export interface FairValueGap {
   status: FVGStatus;
   created_at: string;
   tested: boolean;
+  /** First-entry (partial-fill) timestamp; same box-bounding role as OrderBlock.mitigated_at. */
+  mitigated_at?: string | null;
+  /**
+   * Price the gap has been penetrated to — the deepest wick into the band so
+   * far (within [level_low, level_high]). null/absent while active. Read-only:
+   * the chart shrinks a partially-filled box to the still-open portion using
+   * this, so the rectangle stops "just under the wicks". Never predictive.
+   */
+  fill_level?: number | null;
   user_flagged: boolean;
 }
 
@@ -201,6 +216,30 @@ export interface MarketReading {
   regime: MarketReadingRegime;
   events: MarketReadingEvents;
   conditions: MarketReadingConditions;
+}
+
+// ─── Chart feed (GET /api/candles) ────────────────────────────────────────────
+
+/**
+ * One OHLC candle as served by GET /api/candles. `time` is a UTC epoch in
+ * SECONDS (lightweight-charts' UTCTimestamp). Strictly descriptive — the series
+ * stops at the last fully-closed candle, never a forward projection.
+ */
+export interface Candle {
+  time: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  /** Tick/real volume when available (0 when the provider omits it). */
+  volume?: number;
+}
+
+/** Envelope returned by GET /api/candles. */
+export interface CandlesResponse {
+  instrument: string;
+  timeframe: string;
+  candles: Candle[];
 }
 
 // ─── Convenience helpers ──────────────────────────────────────────────────────

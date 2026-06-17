@@ -52,7 +52,7 @@ export function ConversationReplaySection() {
             id="conversations-title"
             className="text-balance text-2xl font-semibold tracking-tight sm:text-3xl"
           >
-            Sentinel répond aux vraies questions.
+            M.I.A Agent répond aux vraies questions.
           </h2>
           <p className="mt-3 text-pretty text-muted-foreground">
             Pas un script générique — un assistant qui connaît le contexte
@@ -88,7 +88,7 @@ export function ConversationReplaySection() {
 
         <p className="mt-6 text-xs italic text-muted-foreground">
           Les réponses ci-dessus sont scriptées pour la démo. En production,
-          Sentinel utilise Claude (Anthropic) avec le contexte InsightSignal
+          M.I.A Agent utilise Claude (Anthropic) avec le contexte InsightSignal
           v2.1.0 injecté et un prompt système compliance UE 2024/2811.
         </p>
       </div>

@@ -38,10 +38,11 @@ const LEGAL_LINKS = [
 
 const PRODUCT_LINKS = [
   { href: '#multi-marche', label: 'Multi-actifs' },
-  { href: '#conversations', label: 'Chatbot Sentinel' },
+  { href: '#conversations', label: 'Chatbot M.I.A Agent' },
   { href: '#avant-apres', label: 'Avant / Après' },
   { href: '#honnetete', label: 'Transparence' },
   { href: '/methodology', label: 'Méthodologie' },
+  { href: '/methodology#attributions', label: 'Attributions' },
   { href: '#tarifs', label: 'Tarifs' },
   { href: '#faq', label: 'FAQ' },
 ] as const;

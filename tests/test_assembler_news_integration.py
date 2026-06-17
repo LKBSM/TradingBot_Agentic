@@ -169,8 +169,9 @@ class TestNewsInjection:
         assembler.get_or_generate("XAUUSD", "M15")
         assert captured["upcoming_filter"] == ["USD", "EUR"]
         assert captured["published_filter"] == ["USD", "EUR"]
-        assert captured["lookahead"] == 240
-        assert captured["lookback"] == 60
+        # Indicator-grade windows (widened 2026-06-15): 3 days ahead / 24h back.
+        assert captured["lookahead"] == MarketReadingAssembler.DEFAULT_NEWS_LOOKAHEAD_MIN
+        assert captured["lookback"] == MarketReadingAssembler.DEFAULT_NEWS_LOOKBACK_MIN
 
 
 class TestChantier2Compat:

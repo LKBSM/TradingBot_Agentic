@@ -278,3 +278,47 @@ class TestNiveau15Strict:
             if contains_forbidden_tokens(d) is not None
         ]
         assert offenders == [], f"forbidden tokens leaked: {offenders[:5]}"
+
+
+class TestNaiveTimestampDST:
+    """Audit 2026-06-12 §2.6: naive FF timestamps are US Eastern — the offset
+    must follow DST (EDT = UTC-4 in summer), not a fixed UTC-5."""
+
+    def test_naive_summer_date_parsed_as_edt(self):
+        ev = ff_event("CPI y/y", "USD", datetime(2026, 7, 15, 8, 30), impact="high")
+        norm = normalize_ff_event(ev)
+        assert norm is not None
+        # 08:30 ET in July = EDT (UTC-4) → 12:30 UTC (a fixed -5 would say 13:30)
+        assert norm.scheduled_at.hour == 12
+        assert norm.scheduled_at.minute == 30
+
+    def test_naive_winter_date_parsed_as_est(self):
+        ev = ff_event("CPI y/y", "USD", datetime(2026, 1, 15, 8, 30), impact="high")
+        norm = normalize_ff_event(ev)
+        assert norm is not None
+        # 08:30 ET in January = EST (UTC-5) → 13:30 UTC
+        assert norm.scheduled_at.hour == 13
+        assert norm.scheduled_at.minute == 30
+
+    def test_explicit_offset_still_wins(self):
+        edt = timezone(timedelta(hours=-4))
+        ev = ff_event(
+            "ECB Rate", "EUR", datetime(2026, 7, 15, 8, 30, tzinfo=edt), impact="high"
+        )
+        norm = normalize_ff_event(ev)
+        assert norm is not None
+        assert norm.scheduled_at.hour == 12
+
+
+class TestHumanizeMinutes:
+    """Indicator-grade news windows (3 days) need readable durations."""
+
+    def test_formats(self):
+        from src.intelligence.news_pipeline import _humanize_minutes
+        assert _humanize_minutes(0) == "0 min"
+        assert _humanize_minutes(45) == "45 min"
+        assert _humanize_minutes(150) == "2h30"
+        assert _humanize_minutes(120) == "2h"
+        assert _humanize_minutes(1500) == "1j 1h"
+        assert _humanize_minutes(2880) == "2j"
+        assert _humanize_minutes(-5) == "0 min"

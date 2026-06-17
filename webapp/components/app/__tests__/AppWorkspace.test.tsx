@@ -10,7 +10,13 @@ const fetchMock = vi.fn();
 vi.mock('@/lib/market-reading/api-client', async (importActual) => {
   const actual =
     await importActual<typeof import('@/lib/market-reading/api-client')>();
-  return { ...actual, fetchMarketReading: (...args: unknown[]) => fetchMock(...args) };
+  return {
+    ...actual,
+    fetchMarketReading: (...args: unknown[]) => fetchMock(...args),
+    // Chart feed is stubbed (chart itself is stubbed below); these tests target
+    // the reading/selection flow, not the candle feed.
+    fetchCandles: () => Promise.resolve([]),
+  };
 });
 
 import {
@@ -18,10 +24,19 @@ import {
   MarketReadingValidationError,
 } from '@/lib/market-reading/api-client';
 
+// Stub the candlestick chart — lightweight-charts needs a real canvas/layout,
+// unavailable in jsdom. These tests exercise the data/selection flow, not the
+// chart rendering (covered separately).
+vi.mock('@/components/app/ReadingChart', () => ({
+  ReadingChart: () => <div data-testid="reading-chart" />,
+}));
+
+// These tests target the live (backend) path; force it explicitly since the
+// default source is now the local mocks.
 function renderApp() {
   return render(
     <ChatProvider>
-      <AppWorkspace />
+      <AppWorkspace dataSource="live" />
     </ChatProvider>,
   );
 }
@@ -49,7 +64,7 @@ describe('AppWorkspace — /app view', () => {
     ).toBeInTheDocument();
     // Right: chat sidebar, idle context.
     expect(
-      screen.getByRole('complementary', { name: /assistant sentinel/i }),
+      screen.getByRole('complementary', { name: /assistant m.i.a agent/i }),
     ).toBeInTheDocument();
     // No fetch fired until a combo is selected.
     expect(fetchMock).not.toHaveBeenCalled();
@@ -60,8 +75,12 @@ describe('AppWorkspace — /app view', () => {
     const nav = screen.getByRole('navigation', {
       name: /combinaisons disponibles/i,
     });
-    // 3 timeframe buttons per instrument, 2 instruments → 6 buttons.
-    expect(within(nav).getAllByRole('button')).toHaveLength(6);
+    // Each combo row has a select button + a pin toggle. Count the select
+    // buttons only (the pin toggles carry an "Épingler/Désépingler" label).
+    const selectButtons = within(nav)
+      .getAllByRole('button')
+      .filter((b) => !/épingler/i.test(b.getAttribute('aria-label') ?? ''));
+    expect(selectButtons).toHaveLength(6);
   });
 
   it('fetches and renders the reading when a combo is selected', async () => {
@@ -83,7 +102,7 @@ describe('AppWorkspace — /app view', () => {
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
     );
     // Chat context now reflects the selected combo.
-    const chat = screen.getByRole('complementary', { name: /assistant sentinel/i });
+    const chat = screen.getByRole('complementary', { name: /assistant m.i.a agent/i });
     expect(within(chat).getByText(/Or \(XAU\/USD\) · 15 minutes/)).toBeInTheDocument();
   });
 
