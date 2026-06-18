@@ -90,6 +90,13 @@ const securityHeaders = [
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // Disable Next's built-in gzip. It re-compresses the rewrite-proxied SSE
+  // stream (GET /api/live-price), buffering the small per-tick frames until its
+  // threshold — so the browser's EventSource opened but received nothing, while
+  // curl (no Accept-Encoding by default) was unaffected. An SSE stream must
+  // never be gzip-buffered. Normal asset compression is handled at the edge/CDN
+  // in production, so turning this off here is safe.
+  compress: false,
   // Vercel deployment fronts the FastAPI backend on Fly.io at
   // api.mia.markets. Rewrites send /api/* through to it (set
   // NEXT_PUBLIC_API_BASE for non-default targets).

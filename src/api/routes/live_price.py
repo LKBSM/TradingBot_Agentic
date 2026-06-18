@@ -102,6 +102,13 @@ async def live_price(
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
             "X-Accel-Buffering": "no",  # disable proxy buffering for SSE
+            # CRITICAL: declare an explicit encoding so Starlette's GZipMiddleware
+            # skips this response. Browsers send `Accept-Encoding: gzip`, which
+            # makes GZipMiddleware BUFFER small SSE frames until its 1 KB minimum
+            # — the stream then never flushes to EventSource (curl, which omits
+            # gzip by default, was unaffected, masking the bug). With a
+            # Content-Encoding already set, GZipResponder passes frames through.
+            "Content-Encoding": "identity",
         },
     )
 
