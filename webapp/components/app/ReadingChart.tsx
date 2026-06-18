@@ -544,14 +544,26 @@ export function ReadingChart({
     let prevLive: LiveFvgRect[] = [];
     let raf = 0;
     const tick = () => {
-      const { rects, live } = computeRects();
-      if (!rectsEqual(prev, rects)) {
-        prev = rects;
-        setZoneRects(rects);
+      // Bail if the chart was disposed/recreated (next-themes resolves the theme
+      // after hydration, which re-runs the create-chart effect and remove()s this
+      // one). The captured `chart`/`series` would then be disposed — calling them
+      // throws "Object is disposed". Stop this stale loop; the fresh effect run
+      // owns the new chart. The try/catch is a final guard against a disposal
+      // that races mid-frame.
+      if (chartRef.current !== chart || seriesRef.current !== series) return;
+      let next: { rects: ZoneRect[]; live: LiveFvgRect[] };
+      try {
+        next = computeRects();
+      } catch {
+        return; // disposed mid-frame — stop without rescheduling
       }
-      if (!liveRectsEqual(prevLive, live)) {
-        prevLive = live;
-        setLiveFvgRects(live);
+      if (!rectsEqual(prev, next.rects)) {
+        prev = next.rects;
+        setZoneRects(next.rects);
+      }
+      if (!liveRectsEqual(prevLive, next.live)) {
+        prevLive = next.live;
+        setLiveFvgRects(next.live);
       }
       raf = requestAnimationFrame(tick);
     };
