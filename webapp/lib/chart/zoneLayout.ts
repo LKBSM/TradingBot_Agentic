@@ -118,17 +118,17 @@ export function buildZoneModels(structure: MarketReadingStructure): ZoneModel[] 
  *   · `mitigation` — a MITIGATED zone (tested + a known mitigation point) ends AT
  *     that point (UNIX seconds). Bounded, honest, never over-extended past a
  *     resolved outcome.
- *   · `edge` — an ACTIVE zone (and a tested zone with no usable mitigation point)
- *     runs to the current price, i.e. the RIGHT EDGE of the plot. An active zone
- *     is valid right now, so it must reach "now" — not stop at the last bar's
- *     centre, which sits left of the edge (chart right margin + price gutter).
+ *   · `active` — an ACTIVE zone (and a tested zone with no usable mitigation
+ *     point) is valid right now, so it runs a LITTLE PAST the current bar: just
+ *     beyond the latest candle, never to the plot edge (an infinite band) and
+ *     never short of the candle.
  *
- * Pure + view-independent: the caller maps `mitigation` → x(sec) and `edge` →
- * the plot's right-edge pixel. Split out so the rule is unit-testable.
+ * Pure + view-independent: the caller maps `mitigation` → x(sec) and `active` →
+ * the current-bar pixel plus a small pad. Split out so the rule is unit-testable.
  */
 export type ZoneRightAnchor =
   | { kind: 'mitigation'; sec: number }
-  | { kind: 'edge' };
+  | { kind: 'active' };
 
 export function zoneRightAnchor(zone: {
   tested: boolean;
@@ -137,7 +137,7 @@ export function zoneRightAnchor(zone: {
   if (zone.tested && zone.mitigatedSec !== null) {
     return { kind: 'mitigation', sec: zone.mitigatedSec };
   }
-  return { kind: 'edge' };
+  return { kind: 'active' };
 }
 
 // ─── Live (provisional, intra-candle) zone interaction ────────────────────────

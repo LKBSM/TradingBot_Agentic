@@ -244,9 +244,9 @@ describe('curateZones', () => {
 });
 
 describe('zoneRightAnchor (right-edge placement)', () => {
-  it('anchors an ACTIVE zone to the plot EDGE (reaches the current price)', () => {
+  it('marks an ACTIVE zone as `active` (a little past the current bar)', () => {
     expect(zoneRightAnchor({ tested: false, mitigatedSec: null })).toEqual({
-      kind: 'edge',
+      kind: 'active',
     });
   });
 
@@ -258,9 +258,9 @@ describe('zoneRightAnchor (right-edge placement)', () => {
     });
   });
 
-  it('falls back to the EDGE for a tested zone with no usable mitigation point', () => {
+  it('falls back to `active` for a tested zone with no usable mitigation point', () => {
     expect(zoneRightAnchor({ tested: true, mitigatedSec: null })).toEqual({
-      kind: 'edge',
+      kind: 'active',
     });
   });
 });

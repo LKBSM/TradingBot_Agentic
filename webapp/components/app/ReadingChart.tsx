@@ -109,6 +109,15 @@ interface LiveFvgRect {
 const qpx = (n: number) => Math.round(n * 2) / 2;
 
 /**
+ * How far an ACTIVE zone's right edge sits PAST the current bar, in multiples of
+ * the bar spacing. Small, deliberate breathing room — "a little to the right of
+ * the candle" — that scales with zoom. NOT to the plot edge (would read as an
+ * infinite band) and never short of / before the candle. Clamped to the plot so
+ * it can't overflow the price gutter.
+ */
+const ACTIVE_ZONE_RIGHT_PAD_BARS = 1.5;
+
+/**
  * Geometry-equal guard for the rAF redraw loop: true when both lists hold the
  * same boxes at the same (½px-rounded) pixel rects. Lets the loop run every
  * frame (so zones stay glued to the price axis) while keeping React idle until
@@ -487,9 +496,11 @@ export function ReadingChart({
     // data points) always resolves, then clamp into the plot area. Boxes never
     // overrun the price-scale gutter and never project past the current bar.
     const candleTimes = candles.map((c) => c.time as number);
+    const lastTime = candleTimes.length ? candleTimes[candleTimes.length - 1]! : null;
     // Snap a target time to the nearest candle so timeToCoordinate (which maps
     // data points) always resolves. Used for the box LEFT edge (formation) and a
-    // mitigated box's RIGHT edge; an active box's right edge is the plot edge.
+    // mitigated box's RIGHT edge; an active box's right edge is the current bar
+    // plus a small pad.
     const snapToCandle = (sec: number): number | null => {
       if (!candleTimes.length) return null;
       let best = candleTimes[0]!;
@@ -517,6 +528,21 @@ export function ReadingChart({
         return c === null ? null : clampX(c);
       };
 
+      // Right edge for an ACTIVE zone: the CURRENT bar (live forming bar when a
+      // tick streams, else the last closed bar — both are real series points, so
+      // timeToCoordinate resolves directly without snapping) plus a small pad of
+      // bar-widths. A little past the candle, scaled to zoom — never the plot
+      // edge, never before the candle. Falls back to the plot edge only if the
+      // current bar has no coordinate (scrolled out of view).
+      const currentSec = formingRef.current?.time ?? lastTime;
+      const barSpacing = timeScale.options().barSpacing ?? 6;
+      const activeRightX = (): number => {
+        if (currentSec === null) return plotRight;
+        const raw = timeScale.timeToCoordinate(currentSec as UTCTimestamp);
+        if (raw === null) return plotRight;
+        return clampX(raw + barSpacing * ACTIVE_ZONE_RIGHT_PAD_BARS);
+      };
+
       // Provisional live fronts, keyed by FVG id (recomputed each frame).
       const liveFronts = new Map(liveOverlay.fvgFronts.map((f) => [f.id, f]));
 
@@ -531,13 +557,12 @@ export function ReadingChart({
 
         // x-start = formation. x-end depends on the zone's right anchor:
         //  · MITIGATED → its mitigation point (bounded, never over-extended).
-        //  · ACTIVE → the RIGHT EDGE of the plot, where the current price line
-        //    lives. The last bar's centre sits left of the edge (chart right
-        //    margin + price gutter), so anchoring there left a visible gap; an
-        //    active zone is valid right now, so it must reach "now" = the edge.
+        //  · ACTIVE → a little PAST the current bar (see activeRightX): an active
+        //    zone is valid now, so it reads just beyond the latest candle without
+        //    becoming an infinite band.
         const xStart = xAt(z.createdSec);
         const anchor = zoneRightAnchor(z);
-        const xEnd = anchor.kind === 'mitigation' ? xAt(anchor.sec) : plotRight;
+        const xEnd = anchor.kind === 'mitigation' ? xAt(anchor.sec) : activeRightX();
         if (xStart === null || xEnd === null) continue;
         const left = Math.min(xStart, xEnd);
         const width = Math.max(2, Math.abs(xEnd - xStart));
