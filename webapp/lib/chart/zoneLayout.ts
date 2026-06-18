@@ -10,7 +10,11 @@
  * `mitigated_at` is READ-ONLY here: it is consumed to bound a tested box at its
  * mitigation point, never written or derived.
  */
-import type { FairValueGap, MarketReadingStructure } from '@/types/market-reading';
+import type {
+  FairValueGap,
+  MarketReadingStructure,
+  OrderBlock,
+} from '@/types/market-reading';
 
 /** A zone reduced to what the chart needs to place a localized, bounded box. */
 export interface ZoneModel {
@@ -107,6 +111,97 @@ export function buildZoneModels(structure: MarketReadingStructure): ZoneModel[] 
   }
   // Drop zones with an unparseable formation time — can't be anchored.
   return out.filter((z) => Number.isFinite(z.createdSec));
+}
+
+// ─── Live (provisional, intra-candle) zone interaction ────────────────────────
+//
+// PROTOTYPE — opt-in live overlay. Everything below derives a PROVISIONAL view
+// from the latest tick price ON TOP of the candle-CONFIRMED structure, WITHOUT
+// mutating it. It is recomputed from the current price each time, so when price
+// retreats the provisional state cleanly disappears (nothing "confirmed" ever
+// un-confirms). It only describes INTERACTION (FVG being filled, OB being
+// touched) — it NEVER detects structure and NEVER touches BOS/CHOCH (those are
+// candle-close only, SMC law).
+
+/** The still-open FVG band as it stands RIGHT NOW given the live price. */
+export interface LiveFvgFront {
+  id: string;
+  /** Provisional open-band top, intra-candle. */
+  high: number;
+  /** Provisional open-band bottom, intra-candle. */
+  low: number;
+}
+
+/** Provisional interaction overlay computed from the latest tick. */
+export interface LiveOverlay {
+  /** FVGs the price is currently eating into deeper than the confirmed front. */
+  fvgFronts: LiveFvgFront[];
+  /** Ids of ACTIVE order blocks the price is currently inside ("in test"). */
+  obInTest: Set<string>;
+}
+
+/**
+ * Provisional still-open band of an FVG given the live price, or null when the
+ * price isn't penetrating it any deeper than the candle-confirmed front. The
+ * box shrinks toward the side price is eating from (bullish gap fills top-down →
+ * new high = price; bearish fills bottom-up → new low = price). Returns null —
+ * i.e. "show the confirmed box, no live shrink" — for a filled gap, an unknown
+ * direction, a non-finite price, or a price outside the confirmed open band
+ * (so a retreat reverts cleanly to the confirmed geometry).
+ */
+export function provisionalOpenFvgBand(
+  fvg: FairValueGap,
+  livePrice: number,
+): { high: number; low: number } | null {
+  if (fvg.status === 'filled') return null;
+  if (!Number.isFinite(livePrice)) return null;
+  const dir = fvg.direction;
+  if (dir !== 'bullish' && dir !== 'bearish') return null;
+  // Confirmed still-open band (already accounts for any close-confirmed fill).
+  const { high: cHigh, low: cLow } = openFvgBand(fvg);
+  // Price must be strictly INSIDE the confirmed open band to shrink it further.
+  if (livePrice <= cLow || livePrice >= cHigh) return null;
+  return dir === 'bullish'
+    ? { high: livePrice, low: cLow } // eaten from the top down
+    : { high: cHigh, low: livePrice }; // eaten from the bottom up
+}
+
+/**
+ * True when an ACTIVE (untested) order block currently contains the live price —
+ * i.e. it is being tested right now (provisional). Only an `active` OB qualifies:
+ * a mitigated/invalidated OB is already a candle-confirmed outcome, never
+ * "live in test".
+ */
+export function isObInTestLive(ob: OrderBlock, livePrice: number): boolean {
+  if (ob.status !== 'active') return false;
+  if (!Number.isFinite(livePrice)) return false;
+  const lo = Math.min(ob.level_low, ob.level_high);
+  const hi = Math.max(ob.level_low, ob.level_high);
+  return livePrice >= lo && livePrice <= hi;
+}
+
+/**
+ * Build the provisional interaction overlay from a structure + the live price.
+ * Pure + cheap; the chart recomputes it on each new tick. A non-finite price
+ * yields an empty overlay (no live state).
+ */
+export function buildLiveOverlay(
+  structure: MarketReadingStructure,
+  livePrice: number | null | undefined,
+): LiveOverlay {
+  const fvgFronts: LiveFvgFront[] = [];
+  const obInTest = new Set<string>();
+  if (livePrice == null || !Number.isFinite(livePrice)) {
+    return { fvgFronts, obInTest };
+  }
+  for (const fvg of structure.fair_value_gaps) {
+    const band = provisionalOpenFvgBand(fvg, livePrice);
+    if (band) fvgFronts.push({ id: fvg.id, high: band.high, low: band.low });
+  }
+  for (const ob of structure.order_blocks) {
+    if (isObInTestLive(ob, livePrice)) obInTest.add(ob.id);
+  }
+  return { fvgFronts, obInTest };
 }
 
 const mid = (z: ZoneModel) => (z.high + z.low) / 2;

@@ -18,6 +18,7 @@ import { Maximize2, Minus, Plus } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 import {
+  buildLiveOverlay,
   buildZoneModels,
   curateZones,
   type ZoneModel,
@@ -55,6 +56,15 @@ export interface ReadingChartProps {
   structure: MarketReadingStructure;
   /** Instrument code — drives price precision in the overlay labels. */
   instrument: string;
+  /**
+   * PROTOTYPE — opt-in live tick price (null when the live overlay is off). When
+   * set, the chart layers a PROVISIONAL, intra-candle interaction view on top of
+   * the candle-CONFIRMED zones: a FVG shrinks toward the still-open side as the
+   * price eats into it, and an active OB is flagged "en test". This NEVER mutates
+   * the confirmed structure and NEVER touches BOS/CHOCH; a price retreat reverts
+   * the provisional view cleanly. Confirmation still happens only at candle close.
+   */
+  livePrice?: number | null;
   className?: string;
 }
 
@@ -68,6 +78,17 @@ interface ZoneRect {
   height: number;
   label: string;
   tested: boolean;
+  /** Provisional: an ACTIVE order block the live price is currently inside. */
+  inTestLive: boolean;
+}
+
+/** Pixel rect for a PROVISIONAL live FVG-fill front (drawn inside its box). */
+interface LiveFvgRect {
+  id: string;
+  left: number;
+  width: number;
+  top: number;
+  height: number;
 }
 
 /** Quantise to ½px so sub-pixel float noise never triggers a re-render. */
@@ -88,6 +109,26 @@ function rectsEqual(a: ZoneRect[], b: ZoneRect[]): boolean {
       x.id !== y.id ||
       x.kind !== y.kind ||
       x.tested !== y.tested ||
+      x.inTestLive !== y.inTestLive ||
+      qpx(x.left) !== qpx(y.left) ||
+      qpx(x.width) !== qpx(y.width) ||
+      qpx(x.top) !== qpx(y.top) ||
+      qpx(x.height) !== qpx(y.height)
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/** Geometry-equal guard for the provisional live FVG-front rects. */
+function liveRectsEqual(a: LiveFvgRect[], b: LiveFvgRect[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += 1) {
+    const x = a[i]!;
+    const y = b[i]!;
+    if (
+      x.id !== y.id ||
       qpx(x.left) !== qpx(y.left) ||
       qpx(x.width) !== qpx(y.width) ||
       qpx(x.top) !== qpx(y.top) ||
@@ -137,6 +178,15 @@ const ZONE_ALPHA = {
 } as const;
 
 /**
+ * PROVISIONAL / live accent — deliberately a DIFFERENT hue (warm amber) from the
+ * cool slate/blue confirmed palette, so an intra-candle "in progress" state can
+ * never be mistaken for a candle-confirmed one. Used for the live FVG-fill front
+ * and the OB "en test" flag.
+ */
+const LIVE_RGB = '201, 162, 39'; // #C9A227 — warm amber
+const LIVE_COLOR = '#C9A227';
+
+/**
  * Theme-resolved palette. Lightweight-charts paints onto a canvas, so it needs
  * concrete colour strings (CSS `var(--token)` does not resolve there). These
  * values mirror the app tokens — `--border` for the grid, `--muted-foreground`
@@ -166,6 +216,7 @@ export function ReadingChart({
   candles,
   structure,
   instrument,
+  livePrice = null,
   className,
 }: ReadingChartProps) {
   const { resolvedTheme } = useTheme();
@@ -177,6 +228,20 @@ export function ReadingChart({
   const markersRef = React.useRef<ISeriesMarkersPluginApi<Time> | null>(null);
 
   const [zoneRects, setZoneRects] = React.useState<ZoneRect[]>([]);
+  const [liveFvgRects, setLiveFvgRects] = React.useState<LiveFvgRect[]>([]);
+
+  // PROTOTYPE — provisional intra-candle interaction overlay derived from the
+  // latest tick. Recomputed from the CURRENT price only (never persisted), so a
+  // price retreat reverts it cleanly. Only describes FVG fill / OB touch — never
+  // detection, never BOS/CHOCH.
+  const liveOverlay = React.useMemo(
+    () => buildLiveOverlay(structure, livePrice),
+    [structure, livePrice],
+  );
+  const liveActive =
+    typeof livePrice === 'number' &&
+    Number.isFinite(livePrice) &&
+    (liveOverlay.fvgFronts.length > 0 || liveOverlay.obInTest.size > 0);
 
   // Current bar = last candle: its close anchors the proximity curation, its
   // time bounds the right edge of an active (unmitigated) box.
@@ -381,7 +446,7 @@ export function ReadingChart({
       return best;
     };
 
-    const computeRects = (): ZoneRect[] => {
+    const computeRects = (): { rects: ZoneRect[]; live: LiveFvgRect[] } => {
       const plotRight = Math.max(
         0,
         container.clientWidth - chart.priceScale('right').width(),
@@ -394,7 +459,11 @@ export function ReadingChart({
         return c === null ? null : clampX(c);
       };
 
+      // Provisional live fronts, keyed by FVG id (recomputed each frame).
+      const liveFronts = new Map(liveOverlay.fvgFronts.map((f) => [f.id, f]));
+
       const rects: ZoneRect[] = [];
+      const live: LiveFvgRect[] = [];
       for (const z of zones) {
         const yHigh = series.priceToCoordinate(z.high);
         const yLow = series.priceToCoordinate(z.low);
@@ -420,21 +489,47 @@ export function ReadingChart({
           height,
           label: z.label,
           tested: z.tested,
+          // Provisional: an ACTIVE order block the live price is inside right now.
+          inTestLive: z.kind === 'ob' && liveOverlay.obInTest.has(z.id),
         });
+
+        // Provisional live FVG-fill front: the still-open band drawn INSIDE the
+        // confirmed FVG box (warm-amber accent), tied to the same x-span so it
+        // reads as "the gap being eaten right now". Shrinks as price penetrates;
+        // disappears when price retreats (front absent from the overlay).
+        const front = z.kind === 'fvg' ? liveFronts.get(z.id) : undefined;
+        if (front) {
+          const fHigh = series.priceToCoordinate(front.high);
+          const fLow = series.priceToCoordinate(front.low);
+          if (fHigh !== null && fLow !== null) {
+            live.push({
+              id: z.id,
+              left,
+              width,
+              top: Math.min(fHigh, fLow),
+              height: Math.max(2, Math.abs(fLow - fHigh)),
+            });
+          }
+        }
       }
-      return rects;
+      return { rects, live };
     };
 
     // Animation-frame loop: recompute in phase with the canvas, commit to React
     // only when the geometry changes (rectsEqual guard) so an idle chart costs
     // a cheap coordinate read per frame and zero re-renders.
     let prev: ZoneRect[] = [];
+    let prevLive: LiveFvgRect[] = [];
     let raf = 0;
     const tick = () => {
-      const next = computeRects();
-      if (!rectsEqual(prev, next)) {
-        prev = next;
-        setZoneRects(next);
+      const { rects, live } = computeRects();
+      if (!rectsEqual(prev, rects)) {
+        prev = rects;
+        setZoneRects(rects);
+      }
+      if (!liveRectsEqual(prevLive, live)) {
+        prevLive = live;
+        setLiveFvgRects(live);
       }
       raf = requestAnimationFrame(tick);
     };
@@ -443,7 +538,7 @@ export function ReadingChart({
     return () => {
       cancelAnimationFrame(raf);
     };
-  }, [zones, candles]);
+  }, [zones, candles, liveOverlay]);
 
   // ── Discreet zoom / fit controls (mouse + ≥44px touch targets). ─────────────
   const zoom = React.useCallback((factor: number) => {
@@ -472,7 +567,10 @@ export function ReadingChart({
       {/* Localized OB / FVG boxes, layered over the chart canvas. Active boxes
           read crisp; tested boxes recede (ghost fill/border). Every box carries
           a short OB / FVG type code at its top-left so the kind is always
-          identifiable — crisp on active, dimmer + smaller on tested. */}
+          identifiable — crisp on active, dimmer + smaller on tested. An active
+          OB the live price is inside gets a warm-amber "en test" accent (a
+          PROVISIONAL, intra-candle state — distinct hue from the confirmed
+          palette so it's never read as a candle-confirmed outcome). */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         {zoneRects.map((r) => {
           const rgb = ZONE_RGB[r.kind];
@@ -487,7 +585,9 @@ export function ReadingChart({
                 top: r.top,
                 height: r.height,
                 backgroundColor: `rgba(${rgb}, ${a.fill})`,
-                border: `1px dashed rgba(${rgb}, ${a.border})`,
+                border: r.inTestLive
+                  ? `1px solid rgba(${LIVE_RGB}, 0.85)`
+                  : `1px dashed rgba(${rgb}, ${a.border})`,
                 borderRadius: 1,
               }}
             >
@@ -501,10 +601,70 @@ export function ReadingChart({
               >
                 {ZONE_CODE[r.kind]}
               </span>
+              {r.inTestLive && (
+                <span
+                  className="absolute right-1 top-0 whitespace-nowrap text-[9px] font-semibold leading-tight"
+                  style={{ color: LIVE_COLOR }}
+                  title="Order Block en cours de test — provisoire, intra-bougie (confirmé seulement à la clôture)"
+                >
+                  • en test
+                </span>
+              )}
             </div>
           );
         })}
+
+        {/* PROVISIONAL live FVG-fill front — the still-open band right now, drawn
+            inside its confirmed FVG box in warm amber. Descriptive: the price is
+            literally there. Shrinks live as price fills the gap; vanishes on a
+            retreat. Never confirmed — confirmation lands at candle close. */}
+        {liveFvgRects.map((r) => (
+          <div
+            key={`live-fvg:${r.id}`}
+            className="absolute"
+            style={{
+              left: r.left,
+              width: r.width,
+              top: r.top,
+              height: r.height,
+              backgroundColor: `rgba(${LIVE_RGB}, 0.16)`,
+              border: `1px solid rgba(${LIVE_RGB}, 0.8)`,
+              borderRadius: 1,
+            }}
+            title="Comblement du FVG en cours — provisoire, intra-bougie (confirmé seulement à la clôture)"
+          >
+            <span
+              className="absolute right-1 top-0 whitespace-nowrap text-[9px] font-semibold leading-tight"
+              style={{ color: LIVE_COLOR }}
+            >
+              comblement live
+            </span>
+          </div>
+        ))}
       </div>
+
+      {/* Live-mode badge — makes the PROVISIONAL state explicit and honest. Only
+          shown when a tick is actually driving a provisional interaction. */}
+      {liveActive && (
+        <div
+          className="pointer-events-none absolute right-2 top-2 flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold"
+          style={{
+            color: LIVE_COLOR,
+            backgroundColor: `rgba(${LIVE_RGB}, 0.12)`,
+            border: `1px solid rgba(${LIVE_RGB}, 0.5)`,
+          }}
+          title="Interaction de zones EN DIRECT (provisoire, intra-bougie). Les cassures BOS/CHOCH et les invalidations ne sont confirmées qu'à la clôture de bougie."
+          role="status"
+          aria-live="polite"
+        >
+          <span
+            className="inline-block h-1.5 w-1.5 rounded-full"
+            style={{ backgroundColor: LIVE_COLOR }}
+            aria-hidden
+          />
+          EN DIRECT · provisoire
+        </div>
+      )}
 
       {/* Sober pan/zoom controls — visually light, ≥44px tap zone on mobile. */}
       <div className="absolute bottom-2 left-2 flex gap-1">

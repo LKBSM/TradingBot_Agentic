@@ -59,3 +59,6 @@ class AppState:
     market_reading_scheduler: Optional[Any] = None   # src.intelligence.scheduler.MarketReadingScheduler
     # MIA Markets V2 — Chantier 4
     chatbot: Optional[Any] = None   # src.intelligence.chatbot.chatbot.Chatbot
+    # Prototype — live-tick zone interaction (LIVE_TICK_ENABLED, dev/free tier).
+    # Single shared Twelve Data WS connection feeding the /api/live-price SSE.
+    live_tick_bridge: Optional[Any] = None  # src.intelligence.data_providers.TwelveDataLiveTickBridge

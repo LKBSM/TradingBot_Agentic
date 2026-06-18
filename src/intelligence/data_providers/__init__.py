@@ -12,5 +12,16 @@ from src.intelligence.data_providers.base import DataProvider
 from src.intelligence.data_providers.csv_provider import CSVDataProvider
 from src.intelligence.data_providers.mt5_provider import MT5DataProvider
 from src.intelligence.data_providers.twelve_data_provider import TwelveDataProvider
+from src.intelligence.data_providers.twelve_data_ws import (
+    LiveTick,
+    TwelveDataLiveTickBridge,
+)
 
-__all__ = ["DataProvider", "CSVDataProvider", "MT5DataProvider", "TwelveDataProvider"]
+__all__ = [
+    "DataProvider",
+    "CSVDataProvider",
+    "MT5DataProvider",
+    "TwelveDataProvider",
+    "LiveTick",
+    "TwelveDataLiveTickBridge",
+]

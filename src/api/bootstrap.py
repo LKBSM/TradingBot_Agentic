@@ -173,6 +173,37 @@ def build_chatbot(assembler: Any) -> Any:
     return chatbot
 
 
+def is_live_tick_enabled() -> bool:
+    """Return True when the live-tick WS bridge should be built at startup.
+
+    Reads ``LIVE_TICK_ENABLED`` (default ``False`` — prototype opt-in). When
+    off, the /api/live-price SSE returns 503 and the app behaves exactly as
+    before (zone interaction refreshes only at candle close).
+    """
+    return env_flag("LIVE_TICK_ENABLED", default=False)
+
+
+def build_live_tick_bridge() -> Any:
+    """Instantiate the Twelve Data WS live-tick bridge from env config.
+
+    Reads ``TWELVE_DATA_API_KEY`` (same key as the REST provider) and the
+    optional ``LIVE_TICK_INSTRUMENTS`` (comma-separated, default XAUUSD,EURUSD).
+    DEV / free-tier prototype — one shared connection (trial 1-conn cap). A
+    commercial launch requires the Twelve Data Business plan.
+    """
+    from src.intelligence.data_providers import TwelveDataLiveTickBridge
+
+    api_key = os.environ.get("TWELVE_DATA_API_KEY")
+    if not api_key:
+        raise BootstrapConfigurationError(
+            "LIVE_TICK_ENABLED requires TWELVE_DATA_API_KEY to open the live "
+            "WebSocket. Set it or disable with LIVE_TICK_ENABLED=false."
+        )
+    raw = os.environ.get("LIVE_TICK_INSTRUMENTS", "XAUUSD,EURUSD")
+    instruments = [s.strip() for s in raw.split(",") if s.strip()]
+    return TwelveDataLiveTickBridge(api_key=api_key, instruments=instruments)
+
+
 def build_market_reading_scheduler(assembler: Any) -> Any:
     """Instantiate the hybrid scheduler bound to an assembler's stores."""
     from src.intelligence.scheduler import MarketReadingScheduler
@@ -221,9 +252,11 @@ def _build_anthropic_client() -> Any:
 __all__ = [
     "BootstrapConfigurationError",
     "build_chatbot",
+    "build_live_tick_bridge",
     "build_market_reading_assembler",
     "build_market_reading_scheduler",
     "env_flag",
     "env_int",
     "is_bootstrap_enabled",
+    "is_live_tick_enabled",
 ]

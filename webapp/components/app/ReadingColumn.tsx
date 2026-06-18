@@ -15,6 +15,7 @@ import {
   useLatestPrice,
   type ReadingSource,
 } from '@/lib/market-reading/hooks';
+import { useLivePrice } from '@/lib/market-reading/live-price';
 import type { Combo } from '@/lib/market-reading/store';
 import type { Candle, MarketReading } from '@/types/market-reading';
 
@@ -80,6 +81,15 @@ export function ReadingColumn({
     candleCloseTs: reading?.header.candle_close_ts ?? null,
   });
 
+  // PROTOTYPE — opt-in live tick (NEXT_PUBLIC_LIVE_TICK). Streams the last price
+  // for the PROVISIONAL intra-candle zone-interaction overlay (FVG fill / OB
+  // touch). Disabled in mock mode and when the flag is off — then it stays null
+  // and the chart is exactly the candle-close view. Never affects detection /
+  // BOS / CHOCH.
+  const { price: livePrice } = useLivePrice(active?.instrument ?? null, {
+    enabled: dataSource === 'live' ? undefined : false,
+  });
+
   function focusChat() {
     const input = document.querySelector<HTMLTextAreaElement>(
       'textarea[aria-label="Question libre pour M.I.A Agent"]',
@@ -100,7 +110,7 @@ export function ReadingColumn({
       <MarketReadingCard
         reading={reading}
         onAskChatbot={focusChat}
-        chartSlot={buildChartSlot(reading, candles)}
+        chartSlot={buildChartSlot(reading, candles, livePrice)}
         live={live}
         className="w-full border-border/60 shadow-sm"
       />
@@ -135,6 +145,7 @@ export function ReadingColumn({
 function buildChartSlot(
   reading: MarketReading,
   candles: Candle[] | null,
+  livePrice: number | null,
 ): React.ReactNode {
   if (!candles || candles.length === 0) {
     return <ChartUnavailable />;
@@ -144,6 +155,7 @@ function buildChartSlot(
       candles={candles}
       structure={reading.structure}
       instrument={reading.header.instrument}
+      livePrice={livePrice}
     />
   );
 }

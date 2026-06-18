@@ -20,7 +20,7 @@ from src.api.middleware.geo_block import GeoBlockMiddleware
 from src.api.middleware.rate_limit_headers import RateLimitHeadersMiddleware
 from src.api.models import ErrorResponse
 from src.api.openapi_enrichment import install_openapi_enrichment
-from src.api.routes import admin, admin_audit, audit, billing, candles, chatbot, dashboard, enrich, health, health_deep, insight_history, legal, market_reading, metrics_latency, narratives, operator, prometheus, qa, signals, state, webapp, webhook_ack
+from src.api.routes import admin, admin_audit, audit, billing, candles, chatbot, dashboard, enrich, health, health_deep, insight_history, legal, live_price, market_reading, metrics_latency, narratives, operator, prometheus, qa, signals, state, webapp, webhook_ack
 from src.api.shutdown import GracefulShutdownCoordinator
 from src.api.signal_store import SignalStore
 
@@ -86,6 +86,26 @@ def _maybe_bootstrap_chatbot(app_state: AppState) -> None:
     app_state.chatbot = build_chatbot(app_state.market_reading_assembler)
 
 
+def _maybe_bootstrap_live_tick(app_state: AppState) -> None:
+    """Env-gated build of the live-tick WS bridge (PROTOTYPE, LIVE_TICK_ENABLED).
+
+    A no-op unless ``LIVE_TICK_ENABLED=true`` (default OFF so the app refreshes
+    zone interaction only at candle close, unchanged). Builds but does NOT start
+    the bridge — the lifespan starts it after its shutdown handler is wired.
+    Misconfig (missing TWELVE_DATA_API_KEY) is logged and degrades /api/live-price
+    to 503 rather than aborting startup.
+    """
+    from src.api.bootstrap import build_live_tick_bridge, is_live_tick_enabled
+
+    if app_state.live_tick_bridge is not None or not is_live_tick_enabled():
+        return
+    try:
+        app_state.live_tick_bridge = build_live_tick_bridge()
+        logger.info("Live-tick WS bridge built at startup (LIVE_TICK_ENABLED)")
+    except Exception:
+        logger.exception("Live-tick bridge build failed — /api/live-price will 503")
+
+
 def _auto_register_default_handlers(
     coord: GracefulShutdownCoordinator, app_state: AppState
 ) -> None:
@@ -124,6 +144,12 @@ def _auto_register_default_handlers(
     mr_scheduler = app_state.market_reading_scheduler
     if mr_scheduler is not None and hasattr(mr_scheduler, "stop"):
         _add("market-reading-scheduler", mr_scheduler.stop, budget_s=5.0)
+
+    # Prototype — live-tick WS bridge. Stop the shared WS connection cleanly so
+    # the trial's single connection slot is released on shutdown.
+    live_bridge = app_state.live_tick_bridge
+    if live_bridge is not None and hasattr(live_bridge, "stop"):
+        _add("live-tick-bridge", live_bridge.stop, budget_s=6.0)
 
     # The drain worker isn't stored on AppState today — callers that
     # wire it call coord.register("webhook-drain", worker.stop) before
@@ -246,6 +272,9 @@ def create_app(
             _maybe_bootstrap_chatbot(app_state)
         except Exception:
             logger.exception("Chatbot bootstrap failed — endpoint will return 503")
+        # Prototype — build the live-tick bridge (LIVE_TICK_ENABLED) BEFORE the
+        # shutdown handlers are registered so its stop() is wired below.
+        _maybe_bootstrap_live_tick(app_state)
         # INFRA-2B.11: auto-register any wired subsystems that expose a
         # shutdown surface. Caller can register more *before* startup —
         # we only add the ones not already registered by name. Order
@@ -262,6 +291,13 @@ def create_app(
                 mr_scheduler.start()
             except Exception:
                 logger.exception("market-reading-scheduler failed to start")
+        # Prototype — start the live-tick WS bridge once its shutdown is wired.
+        live_bridge = app_state.live_tick_bridge
+        if live_bridge is not None and hasattr(live_bridge, "start"):
+            try:
+                live_bridge.start()
+            except Exception:
+                logger.exception("live-tick bridge failed to start")
         try:
             yield
         finally:
@@ -435,6 +471,7 @@ def create_app(
     app.include_router(webapp.router)
     app.include_router(market_reading.router)
     app.include_router(candles.router)
+    app.include_router(live_price.router)
     app.include_router(chatbot.router)
 
     # API-2B.7 — enrich the OpenAPI spec with stable operationIds,

@@ -2,10 +2,13 @@ import { describe, expect, it } from 'vitest';
 import {
   ACTIVE_ZONE_CAP,
   TESTED_ZONE_CAP,
+  buildLiveOverlay,
   buildZoneModels,
   curateZones,
+  isObInTestLive,
   isoToSec,
   openFvgBand,
+  provisionalOpenFvgBand,
   type ZoneModel,
 } from '../zoneLayout';
 import type { Direction, FairValueGap, MarketReadingStructure } from '@/types/market-reading';
@@ -236,5 +239,111 @@ describe('curateZones', () => {
     const r1 = curateZones(zones, 100).active.map((z) => z.id);
     const r2 = curateZones(zones, 100).active.map((z) => z.id);
     expect(r1).toEqual(r2);
+  });
+});
+
+// ─── Live (provisional, intra-candle) interaction ─────────────────────────────
+
+describe('provisionalOpenFvgBand', () => {
+  it('shrinks a bullish gap further as the live price eats it top-down', () => {
+    // Active gap [100,101]; price at 100.4 (inside) → open band shrinks to [100,100.4].
+    const f = fvg('f', 'active', 101, 100, '2026-05-26T00:00:00Z', undefined, {
+      direction: 'bullish',
+    });
+    expect(provisionalOpenFvgBand(f, 100.4)).toEqual({ high: 100.4, low: 100 });
+  });
+
+  it('shrinks a bearish gap further as the live price eats it bottom-up', () => {
+    const f = fvg('f', 'active', 101, 100, '2026-05-26T00:00:00Z', undefined, {
+      direction: 'bearish',
+    });
+    expect(provisionalOpenFvgBand(f, 100.6)).toEqual({ high: 101, low: 100.6 });
+  });
+
+  it('starts from the CONFIRMED open band (deeper than a prior partial fill)', () => {
+    // Bullish gap already partially filled to 100.5 → confirmed open band [100,100.5].
+    // Live price 100.2 is deeper → provisional open band [100,100.2].
+    const f = fvg('f', 'partially_filled', 101, 100, '2026-05-26T00:00:00Z', undefined, {
+      direction: 'bullish',
+      fill_level: 100.5,
+    });
+    expect(provisionalOpenFvgBand(f, 100.2)).toEqual({ high: 100.2, low: 100 });
+  });
+
+  it('returns null on a retreat (price above the confirmed front) — reverts cleanly', () => {
+    const f = fvg('f', 'partially_filled', 101, 100, '2026-05-26T00:00:00Z', undefined, {
+      direction: 'bullish',
+      fill_level: 100.5,
+    });
+    // Price 100.8 is ABOVE the confirmed front (100.5) → no further shrink.
+    expect(provisionalOpenFvgBand(f, 100.8)).toBeNull();
+  });
+
+  it('returns null for a filled gap, unknown direction, price outside, or non-finite', () => {
+    const filled = fvg('f', 'filled', 101, 100, '2026-05-26T00:00:00Z', undefined, {
+      direction: 'bullish',
+    });
+    expect(provisionalOpenFvgBand(filled, 100.4)).toBeNull();
+    // Unknown direction — built as a literal (the fvg() helper defaults null → bullish).
+    const noDir: FairValueGap = {
+      id: 'g',
+      direction: null,
+      level_high: 101,
+      level_low: 100,
+      status: 'active',
+      created_at: '2026-05-26T00:00:00Z',
+      tested: false,
+      mitigated_at: null,
+      fill_level: null,
+      user_flagged: false,
+    };
+    expect(provisionalOpenFvgBand(noDir, 100.4)).toBeNull();
+    const active = fvg('h', 'active', 101, 100, '2026-05-26T00:00:00Z', undefined, {
+      direction: 'bullish',
+    });
+    expect(provisionalOpenFvgBand(active, 105)).toBeNull(); // outside
+    expect(provisionalOpenFvgBand(active, Number.NaN)).toBeNull();
+  });
+});
+
+describe('isObInTestLive', () => {
+  it('flags an ACTIVE OB the price is currently inside', () => {
+    expect(isObInTestLive(ob('a', 'active', 102, 100, '2026-05-26T00:00:00Z'), 101)).toBe(true);
+  });
+
+  it('does NOT flag a mitigated/invalidated OB (already candle-confirmed)', () => {
+    expect(isObInTestLive(ob('a', 'mitigated', 102, 100, '2026-05-26T00:00:00Z'), 101)).toBe(false);
+    expect(isObInTestLive(ob('a', 'invalidated', 102, 100, '2026-05-26T00:00:00Z'), 101)).toBe(false);
+  });
+
+  it('does NOT flag when the price is outside the band or non-finite', () => {
+    const a = ob('a', 'active', 102, 100, '2026-05-26T00:00:00Z');
+    expect(isObInTestLive(a, 99)).toBe(false);
+    expect(isObInTestLive(a, Number.NaN)).toBe(false);
+  });
+});
+
+describe('buildLiveOverlay', () => {
+  it('collects provisional FVG fronts and in-test OBs from the live price', () => {
+    const s = structure(
+      [
+        ob('ob_in', 'active', 102, 100, '2026-05-26T00:00:00Z'), // price 100.4 inside
+        ob('ob_out', 'active', 99, 98, '2026-05-26T00:00:00Z'), // price outside
+      ],
+      [
+        fvg('fvg_in', 'active', 101, 100, '2026-05-26T00:00:00Z', undefined, {
+          direction: 'bullish',
+        }),
+      ],
+    );
+    const overlay = buildLiveOverlay(s, 100.4);
+    expect(overlay.fvgFronts).toEqual([{ id: 'fvg_in', high: 100.4, low: 100 }]);
+    expect([...overlay.obInTest]).toEqual(['ob_in']);
+  });
+
+  it('returns an empty overlay for a null / non-finite price (no live state)', () => {
+    const s = structure([ob('a', 'active', 102, 100, '2026-05-26T00:00:00Z')]);
+    expect(buildLiveOverlay(s, null)).toEqual({ fvgFronts: [], obInTest: new Set() });
+    expect(buildLiveOverlay(s, Number.NaN)).toEqual({ fvgFronts: [], obInTest: new Set() });
   });
 });
