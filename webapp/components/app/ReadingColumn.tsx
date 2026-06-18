@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import { Loader2 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { MarketReadingCard } from '@/components/market-reading/MarketReadingCard';
@@ -82,13 +83,31 @@ export function ReadingColumn({
   });
 
   // PROTOTYPE — opt-in live tick (NEXT_PUBLIC_LIVE_TICK). Streams the last price
-  // for the PROVISIONAL intra-candle zone-interaction overlay (FVG fill / OB
-  // touch). Disabled in mock mode and when the flag is off — then it stays null
-  // and the chart is exactly the candle-close view. Never affects detection /
-  // BOS / CHOCH.
-  const { price: livePrice } = useLivePrice(active?.instrument ?? null, {
+  // for the PROVISIONAL intra-candle view: the forming candle + header price
+  // move with each tick (TradingView-style), and the zone-interaction overlay
+  // updates (FVG fill / OB touch). Disabled in mock mode and when the flag is
+  // off — then it stays null and the chart is exactly the candle-close view.
+  // Never affects detection / BOS / CHOCH (confirmed only at candle close).
+  const { price: livePrice, ts: liveTs } = useLivePrice(active?.instrument ?? null, {
     enabled: dataSource === 'live' ? undefined : false,
   });
+
+  // Header price follows the tick: override the unified (closed-candle) price
+  // with the live one, keeping the SAME descriptive daily reference so the % is
+  // honest. Falls back to the closed-candle `live` when no tick is available.
+  const liveHeader = React.useMemo(() => {
+    if (live == null || livePrice == null || !Number.isFinite(livePrice)) {
+      return live;
+    }
+    const ref = live.referenceClose;
+    return {
+      ...live,
+      price: livePrice,
+      priceTs: liveTs ?? live.priceTs,
+      changeAbs: ref != null ? livePrice - ref : live.changeAbs,
+      changePct: ref != null && ref !== 0 ? (livePrice - ref) / ref : live.changePct,
+    };
+  }, [live, livePrice, liveTs]);
 
   function focusChat() {
     const input = document.querySelector<HTMLTextAreaElement>(
@@ -110,8 +129,8 @@ export function ReadingColumn({
       <MarketReadingCard
         reading={reading}
         onAskChatbot={focusChat}
-        chartSlot={buildChartSlot(reading, candles, livePrice)}
-        live={live}
+        chartSlot={buildChartSlot(reading, candles, livePrice, liveTs, active?.timeframe ?? null)}
+        live={liveHeader}
         className="w-full border-border/60 shadow-sm"
       />
     );
@@ -146,6 +165,8 @@ function buildChartSlot(
   reading: MarketReading,
   candles: Candle[] | null,
   livePrice: number | null,
+  liveTs: number | null,
+  timeframe: string | null,
 ): React.ReactNode {
   if (!candles || candles.length === 0) {
     return <ChartUnavailable />;
@@ -155,7 +176,9 @@ function buildChartSlot(
       candles={candles}
       structure={reading.structure}
       instrument={reading.header.instrument}
+      timeframe={timeframe}
       livePrice={livePrice}
+      liveTs={liveTs}
     />
   );
 }

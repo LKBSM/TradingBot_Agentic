@@ -56,17 +56,29 @@ export interface ReadingChartProps {
   structure: MarketReadingStructure;
   /** Instrument code — drives price precision in the overlay labels. */
   instrument: string;
+  /** Displayed timeframe (M15/H1/H4) — sizes the live forming candle's bucket. */
+  timeframe?: string | null;
   /**
    * PROTOTYPE — opt-in live tick price (null when the live overlay is off). When
-   * set, the chart layers a PROVISIONAL, intra-candle interaction view on top of
-   * the candle-CONFIRMED zones: a FVG shrinks toward the still-open side as the
-   * price eats into it, and an active OB is flagged "en test". This NEVER mutates
-   * the confirmed structure and NEVER touches BOS/CHOCH; a price retreat reverts
-   * the provisional view cleanly. Confirmation still happens only at candle close.
+   * set, the chart shows a TradingView-style live view ON TOP of the candle-
+   * CONFIRMED data: the forming (current) candle grows with each tick, and the
+   * zone-interaction overlay updates (a FVG shrinks toward the still-open side as
+   * the price eats into it; an active OB is flagged "en test"). This NEVER mutates
+   * the confirmed/closed candles or structure and NEVER touches BOS/CHOCH; a price
+   * retreat reverts the provisional view cleanly. Confirmation is candle close only.
    */
   livePrice?: number | null;
+  /** Feed epoch (seconds) of the live tick — buckets the forming candle. */
+  liveTs?: number | null;
   className?: string;
 }
+
+/** Timeframe → bar length in seconds (for the live forming candle bucket). */
+const TF_SECONDS: Record<string, number> = {
+  M15: 900,
+  H1: 3600,
+  H4: 14400,
+};
 
 /** Pixel rect for a rendered, localized zone box (recomputed on scale / resize). */
 interface ZoneRect {
@@ -216,7 +228,9 @@ export function ReadingChart({
   candles,
   structure,
   instrument,
+  timeframe = null,
   livePrice = null,
+  liveTs = null,
   className,
 }: ReadingChartProps) {
   const { resolvedTheme } = useTheme();
@@ -226,6 +240,14 @@ export function ReadingChart({
   const chartRef = React.useRef<IChartApi | null>(null);
   const seriesRef = React.useRef<ISeriesApi<'Candlestick'> | null>(null);
   const markersRef = React.useRef<ISeriesMarkersPluginApi<Time> | null>(null);
+  // Accumulated OHLC of the live FORMING candle (provisional, intra-bar).
+  const formingRef = React.useRef<{
+    time: number;
+    open: number;
+    high: number;
+    low: number;
+    close: number;
+  } | null>(null);
 
   const [zoneRects, setZoneRects] = React.useState<ZoneRect[]>([]);
   const [liveFvgRects, setLiveFvgRects] = React.useState<LiveFvgRect[]>([]);
@@ -238,10 +260,7 @@ export function ReadingChart({
     () => buildLiveOverlay(structure, livePrice),
     [structure, livePrice],
   );
-  const liveActive =
-    typeof livePrice === 'number' &&
-    Number.isFinite(livePrice) &&
-    (liveOverlay.fvgFronts.length > 0 || liveOverlay.obInTest.size > 0);
+  const liveActive = typeof livePrice === 'number' && Number.isFinite(livePrice);
 
   // Current bar = last candle: its close anchors the proximity curation, its
   // time bounds the right edge of an active (unmitigated) box.
@@ -363,6 +382,9 @@ export function ReadingChart({
         close: c.close,
       })),
     );
+    // A fresh closed-candle window resets any in-progress forming bar; the live
+    // effect rebuilds it from the next tick (so it's never drawn over stale data).
+    formingRef.current = null;
 
     // BOS / CHOCH break-history markers (read-only, descriptive). One arrow per
     // detected break over the window — fixes the "sous-surfaçage" where only the
@@ -539,6 +561,58 @@ export function ReadingChart({
       cancelAnimationFrame(raf);
     };
   }, [zones, candles, liveOverlay]);
+
+  // ── Live FORMING candle (TradingView-style) ─────────────────────────────────
+  // Grow the current (still-open) bar with each tick: open anchored to the last
+  // CLOSED candle's close for visual continuity, high/low accumulated, close =
+  // live price. PROVISIONAL — it is the rightmost forming bar, never a confirmed
+  // close; it resets when a real candle closes (the data effect clears it) and
+  // is rebuilt from the next tick. Closed candles and structure are untouched,
+  // and BOS/CHOCH are never derived from it.
+  const lastClosedTime = lastCandle?.time ?? null;
+  const lastClosedClose = lastCandle?.close ?? null;
+  React.useEffect(() => {
+    const series = seriesRef.current;
+    if (!series) return;
+    if (livePrice == null || !Number.isFinite(livePrice)) return;
+    if (lastClosedTime === null || lastClosedClose === null) return;
+    const tf = timeframe ? TF_SECONDS[timeframe] : undefined;
+    if (!tf) return;
+
+    // Bucket the tick to its bar slot; require it to be AFTER the last closed bar
+    // (a tick stamped inside an already-closed bar — clock edge — is ignored).
+    const ts = typeof liveTs === 'number' && liveTs > 0 ? liveTs : null;
+    const slot = ts !== null ? Math.floor(ts / tf) * tf : lastClosedTime + tf;
+    if (slot <= lastClosedTime) return;
+
+    const f = formingRef.current;
+    if (!f || f.time !== slot) {
+      formingRef.current = {
+        time: slot,
+        open: lastClosedClose,
+        high: Math.max(lastClosedClose, livePrice),
+        low: Math.min(lastClosedClose, livePrice),
+        close: livePrice,
+      };
+    } else {
+      f.high = Math.max(f.high, livePrice);
+      f.low = Math.min(f.low, livePrice);
+      f.close = livePrice;
+    }
+
+    const c = formingRef.current!;
+    try {
+      series.update({
+        time: c.time as UTCTimestamp,
+        open: c.open,
+        high: c.high,
+        low: c.low,
+        close: c.close,
+      });
+    } catch {
+      // update() throws if time < last data point — ignore (next tick recovers).
+    }
+  }, [livePrice, liveTs, lastClosedTime, lastClosedClose, timeframe]);
 
   // ── Discreet zoom / fit controls (mouse + ≥44px touch targets). ─────────────
   const zoom = React.useCallback((factor: number) => {
