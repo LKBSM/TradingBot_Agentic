@@ -114,24 +114,30 @@ export function buildZoneModels(structure: MarketReadingStructure): ZoneModel[] 
 }
 
 /**
- * Right-edge time anchor (UNIX seconds) for a zone box.
- *   · A MITIGATED zone (tested + a known mitigation point) ends AT its mitigation
- *     point — bounded, honest, never over-extended past a resolved outcome.
- *   · An ACTIVE zone (and a tested zone with no usable mitigation point) runs to
- *     the CURRENT bar: the live forming bar when one exists, else the last closed
- *     bar. This makes an active box reach the current candle / live price without
- *     ever projecting into the empty future beyond it.
+ * Where a zone box's RIGHT edge should land:
+ *   · `mitigation` — a MITIGATED zone (tested + a known mitigation point) ends AT
+ *     that point (UNIX seconds). Bounded, honest, never over-extended past a
+ *     resolved outcome.
+ *   · `edge` — an ACTIVE zone (and a tested zone with no usable mitigation point)
+ *     runs to the current price, i.e. the RIGHT EDGE of the plot. An active zone
+ *     is valid right now, so it must reach "now" — not stop at the last bar's
+ *     centre, which sits left of the edge (chart right margin + price gutter).
  *
- * `formingSec` is the time of the live forming (still-open) bar, or null when no
- * tick is streaming — in which case the current bar IS the last closed bar, so
- * the default (closed-candle) view is preserved exactly.
+ * Pure + view-independent: the caller maps `mitigation` → x(sec) and `edge` →
+ * the plot's right-edge pixel. Split out so the rule is unit-testable.
  */
-export function zoneEndSec(
-  zone: { tested: boolean; mitigatedSec: number | null },
-  bars: { lastBarSec: number | null; formingSec: number | null },
-): number | null {
-  if (zone.tested && zone.mitigatedSec !== null) return zone.mitigatedSec;
-  return bars.formingSec ?? bars.lastBarSec;
+export type ZoneRightAnchor =
+  | { kind: 'mitigation'; sec: number }
+  | { kind: 'edge' };
+
+export function zoneRightAnchor(zone: {
+  tested: boolean;
+  mitigatedSec: number | null;
+}): ZoneRightAnchor {
+  if (zone.tested && zone.mitigatedSec !== null) {
+    return { kind: 'mitigation', sec: zone.mitigatedSec };
+  }
+  return { kind: 'edge' };
 }
 
 // ─── Live (provisional, intra-candle) zone interaction ────────────────────────

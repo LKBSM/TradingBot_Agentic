@@ -9,7 +9,7 @@ import {
   isoToSec,
   openFvgBand,
   provisionalOpenFvgBand,
-  zoneEndSec,
+  zoneRightAnchor,
   type ZoneModel,
 } from '../zoneLayout';
 import type { Direction, FairValueGap, MarketReadingStructure } from '@/types/market-reading';
@@ -243,34 +243,25 @@ describe('curateZones', () => {
   });
 });
 
-describe('zoneEndSec (right-edge time anchor)', () => {
-  const lastBarSec = 2000;
-  const formingSec = 2900; // live forming bar, further right than the last closed bar
-
-  it('extends an ACTIVE zone to the live forming bar (current candle)', () => {
-    expect(
-      zoneEndSec({ tested: false, mitigatedSec: null }, { lastBarSec, formingSec }),
-    ).toBe(formingSec);
+describe('zoneRightAnchor (right-edge placement)', () => {
+  it('anchors an ACTIVE zone to the plot EDGE (reaches the current price)', () => {
+    expect(zoneRightAnchor({ tested: false, mitigatedSec: null })).toEqual({
+      kind: 'edge',
+    });
   });
 
-  it('extends an ACTIVE zone to the last closed bar when no tick is streaming', () => {
-    // formingSec null → current bar IS the last closed bar (default view preserved).
-    expect(
-      zoneEndSec({ tested: false, mitigatedSec: null }, { lastBarSec, formingSec: null }),
-    ).toBe(lastBarSec);
+  it('anchors a MITIGATED zone to its mitigation point (bounded, never over-extended)', () => {
+    const mitigatedSec = 1500;
+    expect(zoneRightAnchor({ tested: true, mitigatedSec })).toEqual({
+      kind: 'mitigation',
+      sec: mitigatedSec,
+    });
   });
 
-  it('keeps a MITIGATED zone BOUNDED at its mitigation point (never over-extended)', () => {
-    const mitigatedSec = 1500; // resolved before the current bar
-    expect(
-      zoneEndSec({ tested: true, mitigatedSec }, { lastBarSec, formingSec }),
-    ).toBe(mitigatedSec);
-  });
-
-  it('falls back to the current bar for a tested zone with no usable mitigation point', () => {
-    expect(
-      zoneEndSec({ tested: true, mitigatedSec: null }, { lastBarSec, formingSec }),
-    ).toBe(formingSec);
+  it('falls back to the EDGE for a tested zone with no usable mitigation point', () => {
+    expect(zoneRightAnchor({ tested: true, mitigatedSec: null })).toEqual({
+      kind: 'edge',
+    });
   });
 });
 

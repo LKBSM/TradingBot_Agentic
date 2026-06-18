@@ -21,7 +21,7 @@ import {
   buildLiveOverlay,
   buildZoneModels,
   curateZones,
-  zoneEndSec,
+  zoneRightAnchor,
   type ZoneModel,
 } from '@/lib/chart/zoneLayout';
 import { buildStructureMarkers } from '@/lib/chart/structureMarkers';
@@ -487,15 +487,14 @@ export function ReadingChart({
     // data points) always resolves, then clamp into the plot area. Boxes never
     // overrun the price-scale gutter and never project past the current bar.
     const candleTimes = candles.map((c) => c.time as number);
-    const lastTime = candleTimes.length ? candleTimes[candleTimes.length - 1]! : null;
-    // Snap a target time to the nearest data point among `times` (closed candles,
-    // plus the live forming bar when present — it's a real series point too, so
-    // an active box can reach it).
-    const snapTo = (sec: number, times: number[]): number | null => {
-      if (!times.length) return null;
-      let best = times[0]!;
+    // Snap a target time to the nearest candle so timeToCoordinate (which maps
+    // data points) always resolves. Used for the box LEFT edge (formation) and a
+    // mitigated box's RIGHT edge; an active box's right edge is the plot edge.
+    const snapToCandle = (sec: number): number | null => {
+      if (!candleTimes.length) return null;
+      let best = candleTimes[0]!;
       let bestD = Math.abs(best - sec);
-      for (const t of times) {
+      for (const t of candleTimes) {
         const d = Math.abs(t - sec);
         if (d < bestD) {
           best = t;
@@ -511,13 +510,8 @@ export function ReadingChart({
         container.clientWidth - chart.priceScale('right').width(),
       );
       const clampX = (x: number) => Math.min(Math.max(x, 0), plotRight);
-      // The live forming bar (if a tick is streaming) IS the current bar; include
-      // it so an active zone extends to it, not one bar short. Null otherwise →
-      // current bar = last closed bar (default view preserved exactly).
-      const formingSec = formingRef.current?.time ?? null;
-      const snapTimes = formingSec !== null ? [...candleTimes, formingSec] : candleTimes;
       const xAt = (sec: number): number | null => {
-        const snapped = snapTo(sec, snapTimes);
+        const snapped = snapToCandle(sec);
         if (snapped === null) return null;
         const c = timeScale.timeToCoordinate(snapped as UTCTimestamp);
         return c === null ? null : clampX(c);
@@ -535,12 +529,15 @@ export function ReadingChart({
         const top = Math.min(yHigh, yLow);
         const height = Math.max(2, Math.abs(yLow - yHigh));
 
-        // x-start = formation; x-end = mitigation point for a tested zone, else
-        // the current bar (live forming bar when present, else last closed) for an
-        // active one — reaches the current candle, never projects past it.
+        // x-start = formation. x-end depends on the zone's right anchor:
+        //  · MITIGATED → its mitigation point (bounded, never over-extended).
+        //  · ACTIVE → the RIGHT EDGE of the plot, where the current price line
+        //    lives. The last bar's centre sits left of the edge (chart right
+        //    margin + price gutter), so anchoring there left a visible gap; an
+        //    active zone is valid right now, so it must reach "now" = the edge.
         const xStart = xAt(z.createdSec);
-        const endSec = zoneEndSec(z, { lastBarSec: lastTime, formingSec });
-        const xEnd = endSec === null ? null : xAt(endSec);
+        const anchor = zoneRightAnchor(z);
+        const xEnd = anchor.kind === 'mitigation' ? xAt(anchor.sec) : plotRight;
         if (xStart === null || xEnd === null) continue;
         const left = Math.min(xStart, xEnd);
         const width = Math.max(2, Math.abs(xEnd - xStart));
