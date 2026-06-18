@@ -9,6 +9,7 @@ import {
   isoToSec,
   openFvgBand,
   provisionalOpenFvgBand,
+  zoneEndSec,
   type ZoneModel,
 } from '../zoneLayout';
 import type { Direction, FairValueGap, MarketReadingStructure } from '@/types/market-reading';
@@ -239,6 +240,37 @@ describe('curateZones', () => {
     const r1 = curateZones(zones, 100).active.map((z) => z.id);
     const r2 = curateZones(zones, 100).active.map((z) => z.id);
     expect(r1).toEqual(r2);
+  });
+});
+
+describe('zoneEndSec (right-edge time anchor)', () => {
+  const lastBarSec = 2000;
+  const formingSec = 2900; // live forming bar, further right than the last closed bar
+
+  it('extends an ACTIVE zone to the live forming bar (current candle)', () => {
+    expect(
+      zoneEndSec({ tested: false, mitigatedSec: null }, { lastBarSec, formingSec }),
+    ).toBe(formingSec);
+  });
+
+  it('extends an ACTIVE zone to the last closed bar when no tick is streaming', () => {
+    // formingSec null → current bar IS the last closed bar (default view preserved).
+    expect(
+      zoneEndSec({ tested: false, mitigatedSec: null }, { lastBarSec, formingSec: null }),
+    ).toBe(lastBarSec);
+  });
+
+  it('keeps a MITIGATED zone BOUNDED at its mitigation point (never over-extended)', () => {
+    const mitigatedSec = 1500; // resolved before the current bar
+    expect(
+      zoneEndSec({ tested: true, mitigatedSec }, { lastBarSec, formingSec }),
+    ).toBe(mitigatedSec);
+  });
+
+  it('falls back to the current bar for a tested zone with no usable mitigation point', () => {
+    expect(
+      zoneEndSec({ tested: true, mitigatedSec: null }, { lastBarSec, formingSec }),
+    ).toBe(formingSec);
   });
 });
 

@@ -21,9 +21,11 @@ import {
   buildLiveOverlay,
   buildZoneModels,
   curateZones,
+  zoneEndSec,
   type ZoneModel,
 } from '@/lib/chart/zoneLayout';
 import { buildStructureMarkers } from '@/lib/chart/structureMarkers';
+import { isPlausibleTick, isValidBar } from '@/lib/chart/sanitize';
 import type { Candle, MarketReadingStructure } from '@/types/market-reading';
 
 /**
@@ -240,6 +242,10 @@ export function ReadingChart({
   const chartRef = React.useRef<IChartApi | null>(null);
   const seriesRef = React.useRef<ISeriesApi<'Candlestick'> | null>(null);
   const markersRef = React.useRef<ISeriesMarkersPluginApi<Time> | null>(null);
+  // True once the chart has done its one-and-only auto-fit (initial load). After
+  // that, data updates PRESERVE the user's zoom/pan — only the explicit "Ajuster"
+  // button (or a chart recreation) refits. Reset when the chart is recreated.
+  const didInitialFitRef = React.useRef(false);
   // Accumulated OHLC of the live FORMING candle (provisional, intra-bar).
   const formingRef = React.useRef<{
     time: number;
@@ -356,6 +362,9 @@ export function ReadingChart({
 
     chartRef.current = chart;
     seriesRef.current = series;
+    // A freshly created chart (initial mount or theme change) gets ONE auto-fit
+    // from the data effect, then preserves the user's view from then on.
+    didInitialFitRef.current = false;
     // Markers plugin for the BOS/CHOCH break history (set in the data effect).
     markersRef.current = createSeriesMarkers(series, []);
 
@@ -373,8 +382,26 @@ export function ReadingChart({
     const series = seriesRef.current;
     if (!chart || !series) return;
 
+    // GARDE-FOU données : drop structurally-impossible bars (0 / negative / NaN /
+    // high<low) before they reach the canvas. A single corrupt cache row would
+    // otherwise paint a spike and — once the price axis fits to include it —
+    // squash every real candle. We reject the data error, never a real move.
+    const validCandles = candles.filter(isValidBar);
+    const dropped = candles.length - validCandles.length;
+    if (dropped > 0) {
+      console.warn(
+        `[ReadingChart] dropped ${dropped} invalid candle(s) (0/negative/NaN/high<low) before render`,
+      );
+    }
+
+    // Preserve the user's zoom/pan ACROSS data updates: capture the visible range
+    // before replacing the series so a background refetch (a candle closing) never
+    // snaps the view. Only the very first load — or an explicit "Ajuster" — fits.
+    const timeScale = chart.timeScale();
+    const prevRange = didInitialFitRef.current ? timeScale.getVisibleLogicalRange() : null;
+
     series.setData(
-      candles.map((c) => ({
+      validCandles.map((c) => ({
         time: c.time as UTCTimestamp,
         open: c.open,
         high: c.high,
@@ -424,7 +451,14 @@ export function ReadingChart({
       }),
     );
 
-    chart.timeScale().fitContent();
+    // Fit ONCE (initial load); afterwards restore the pre-update view so data
+    // refreshes don't reset the user's zoom/pan. The "Ajuster" button refits.
+    if (!didInitialFitRef.current) {
+      timeScale.fitContent();
+      didInitialFitRef.current = true;
+    } else if (prevRange) {
+      timeScale.setVisibleLogicalRange(prevRange);
+    }
 
     return () => {
       for (const line of created) series.removePriceLine(line);
@@ -454,11 +488,14 @@ export function ReadingChart({
     // overrun the price-scale gutter and never project past the current bar.
     const candleTimes = candles.map((c) => c.time as number);
     const lastTime = candleTimes.length ? candleTimes[candleTimes.length - 1]! : null;
-    const snapToCandle = (sec: number): number | null => {
-      if (!candleTimes.length) return null;
-      let best = candleTimes[0]!;
+    // Snap a target time to the nearest data point among `times` (closed candles,
+    // plus the live forming bar when present — it's a real series point too, so
+    // an active box can reach it).
+    const snapTo = (sec: number, times: number[]): number | null => {
+      if (!times.length) return null;
+      let best = times[0]!;
       let bestD = Math.abs(best - sec);
-      for (const t of candleTimes) {
+      for (const t of times) {
         const d = Math.abs(t - sec);
         if (d < bestD) {
           best = t;
@@ -474,8 +511,13 @@ export function ReadingChart({
         container.clientWidth - chart.priceScale('right').width(),
       );
       const clampX = (x: number) => Math.min(Math.max(x, 0), plotRight);
+      // The live forming bar (if a tick is streaming) IS the current bar; include
+      // it so an active zone extends to it, not one bar short. Null otherwise →
+      // current bar = last closed bar (default view preserved exactly).
+      const formingSec = formingRef.current?.time ?? null;
+      const snapTimes = formingSec !== null ? [...candleTimes, formingSec] : candleTimes;
       const xAt = (sec: number): number | null => {
-        const snapped = snapToCandle(sec);
+        const snapped = snapTo(sec, snapTimes);
         if (snapped === null) return null;
         const c = timeScale.timeToCoordinate(snapped as UTCTimestamp);
         return c === null ? null : clampX(c);
@@ -494,9 +536,10 @@ export function ReadingChart({
         const height = Math.max(2, Math.abs(yLow - yHigh));
 
         // x-start = formation; x-end = mitigation point for a tested zone, else
-        // the current bar for an active one (no future projection).
+        // the current bar (live forming bar when present, else last closed) for an
+        // active one — reaches the current candle, never projects past it.
         const xStart = xAt(z.createdSec);
-        const endSec = z.tested && z.mitigatedSec !== null ? z.mitigatedSec : lastTime;
+        const endSec = zoneEndSec(z, { lastBarSec: lastTime, formingSec });
         const xEnd = endSec === null ? null : xAt(endSec);
         if (xStart === null || xEnd === null) continue;
         const left = Math.min(xStart, xEnd);
@@ -588,6 +631,16 @@ export function ReadingChart({
     if (!series) return;
     if (livePrice == null || !Number.isFinite(livePrice)) return;
     if (lastClosedTime === null || lastClosedClose === null) return;
+    // GARDE-FOU tick : reject obvious garbage (0 / negative / implausibly far from
+    // the last close = a feed glitch) so a bad tick never explodes the forming
+    // bar's range. A real large move stays well within the band and passes — we
+    // reject the data error, not the volatility.
+    if (!isPlausibleTick(livePrice, lastClosedClose)) {
+      console.warn(
+        `[ReadingChart] ignored implausible live tick ${livePrice} (ref close ${lastClosedClose})`,
+      );
+      return;
+    }
     const tf = timeframe ? TF_SECONDS[timeframe] : undefined;
     if (!tf) return;
 

@@ -113,6 +113,27 @@ export function buildZoneModels(structure: MarketReadingStructure): ZoneModel[] 
   return out.filter((z) => Number.isFinite(z.createdSec));
 }
 
+/**
+ * Right-edge time anchor (UNIX seconds) for a zone box.
+ *   · A MITIGATED zone (tested + a known mitigation point) ends AT its mitigation
+ *     point — bounded, honest, never over-extended past a resolved outcome.
+ *   · An ACTIVE zone (and a tested zone with no usable mitigation point) runs to
+ *     the CURRENT bar: the live forming bar when one exists, else the last closed
+ *     bar. This makes an active box reach the current candle / live price without
+ *     ever projecting into the empty future beyond it.
+ *
+ * `formingSec` is the time of the live forming (still-open) bar, or null when no
+ * tick is streaming — in which case the current bar IS the last closed bar, so
+ * the default (closed-candle) view is preserved exactly.
+ */
+export function zoneEndSec(
+  zone: { tested: boolean; mitigatedSec: number | null },
+  bars: { lastBarSec: number | null; formingSec: number | null },
+): number | null {
+  if (zone.tested && zone.mitigatedSec !== null) return zone.mitigatedSec;
+  return bars.formingSec ?? bars.lastBarSec;
+}
+
 // ─── Live (provisional, intra-candle) zone interaction ────────────────────────
 //
 // PROTOTYPE — opt-in live overlay. Everything below derives a PROVISIONAL view
