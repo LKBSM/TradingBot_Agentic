@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { AppWorkspace } from '@/components/app/AppWorkspace';
+import { resolveComboFromQuery } from '@/lib/conditions/app-link';
 
 export const metadata: Metadata = {
   title: 'Espace de lecture',
@@ -13,6 +14,14 @@ export const metadata: Metadata = {
  * lifting lives in the client AppWorkspace; this server page only sets the
  * route + metadata.
  */
-export default function AppPage() {
-  return <AppWorkspace />;
+export default async function AppPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ instrument?: string; timeframe?: string }>;
+}) {
+  const sp = await searchParams;
+  // Honour an optional Scanner deep-link (?instrument=&timeframe=); falls back
+  // to the default (no pre-selection) for any absent / out-of-perimeter value.
+  const initialCombo = resolveComboFromQuery(sp.instrument, sp.timeframe);
+  return <AppWorkspace initialCombo={initialCombo} />;
 }

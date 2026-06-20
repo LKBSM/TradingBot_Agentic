@@ -38,9 +38,14 @@ export interface WorkspaceViewProps {
  * ActiveComboProvider; the reading is fetched + polled (60s) via
  * useMarketReading; the chat context follows the active combo via openForCombo.
  */
-export function AppWorkspace() {
+export function AppWorkspace({
+  initialCombo = null,
+}: {
+  /** Pre-selected combo (e.g. from a Scanner deep-link). Defaults to none. */
+  initialCombo?: Combo | null;
+} = {}) {
   return (
-    <ActiveComboProvider>
+    <ActiveComboProvider initial={initialCombo}>
       <WorkspaceInner />
     </ActiveComboProvider>
   );

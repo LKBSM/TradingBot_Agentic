@@ -43,6 +43,12 @@ export function Nav() {
         </nav>
 
         <div className="flex items-center gap-2">
+          <Link
+            href="/scanner"
+            className="rounded-md px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            Scanner
+          </Link>
           <LocaleToggle />
           <ThemeToggle />
         </div>

@@ -20,7 +20,7 @@ from src.api.middleware.geo_block import GeoBlockMiddleware
 from src.api.middleware.rate_limit_headers import RateLimitHeadersMiddleware
 from src.api.models import ErrorResponse
 from src.api.openapi_enrichment import install_openapi_enrichment
-from src.api.routes import admin, admin_audit, audit, billing, chatbot, dashboard, enrich, health, health_deep, insight_history, legal, market_reading, metrics_latency, narratives, operator, prometheus, qa, signals, state, webapp, webhook_ack
+from src.api.routes import admin, admin_audit, audit, billing, chatbot, conditions_scan, dashboard, enrich, health, health_deep, insight_history, legal, market_reading, metrics_latency, narratives, operator, prometheus, qa, signals, state, webapp, webhook_ack
 from src.api.shutdown import GracefulShutdownCoordinator
 from src.api.signal_store import SignalStore
 
@@ -434,6 +434,7 @@ def create_app(
     app.include_router(billing.router)
     app.include_router(webapp.router)
     app.include_router(market_reading.router)
+    app.include_router(conditions_scan.router)
     app.include_router(chatbot.router)
 
     # API-2B.7 — enrich the OpenAPI spec with stable operationIds,

@@ -1,0 +1,216 @@
+'use client';
+
+import * as React from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
+import {
+  CONDITION_PALETTE,
+  DEFAULT_BOS_MAX_BARS,
+  DIRECTION_LABELS,
+} from '@/lib/conditions/palette';
+import type {
+  ConditionType,
+  ConditionsConfig,
+  DirectionFilter,
+  ScanLogic,
+} from '@/lib/conditions/types';
+
+/**
+ * Builder where the user COMPOSES their conditions from the present-tense
+ * palette + an AND/OR logic. Used both for first-visit onboarding and for later
+ * editing. Descriptive only — no condition here speaks of a future outcome.
+ */
+
+interface RowState {
+  selected: boolean;
+  direction: DirectionFilter;
+  maxBars: number;
+}
+
+type BuilderState = Record<ConditionType, RowState>;
+
+function initialState(config: ConditionsConfig | null): BuilderState {
+  const base = {} as BuilderState;
+  for (const entry of CONDITION_PALETTE) {
+    base[entry.type] = {
+      selected: false,
+      direction: 'any',
+      maxBars: DEFAULT_BOS_MAX_BARS,
+    };
+  }
+  if (config) {
+    for (const cond of config.conditions) {
+      if (base[cond.type]) {
+        base[cond.type] = {
+          selected: true,
+          direction: cond.direction ?? 'any',
+          maxBars: cond.max_bars ?? DEFAULT_BOS_MAX_BARS,
+        };
+      }
+    }
+  }
+  return base;
+}
+
+export function ConditionsBuilder({
+  config,
+  onSubmit,
+  onCancel,
+  mode,
+}: {
+  config: ConditionsConfig | null;
+  onSubmit(config: ConditionsConfig): void;
+  onCancel?(): void;
+  mode: 'onboarding' | 'edit';
+}) {
+  const [rows, setRows] = React.useState<BuilderState>(() => initialState(config));
+  const [logic, setLogic] = React.useState<ScanLogic>(config?.logic ?? 'AND');
+
+  const selectedCount = CONDITION_PALETTE.filter((e) => rows[e.type].selected).length;
+
+  function toggle(type: ConditionType) {
+    setRows((prev) => ({ ...prev, [type]: { ...prev[type], selected: !prev[type].selected } }));
+  }
+  function setDirection(type: ConditionType, direction: DirectionFilter) {
+    setRows((prev) => ({ ...prev, [type]: { ...prev[type], direction } }));
+  }
+  function setMaxBars(type: ConditionType, maxBars: number) {
+    setRows((prev) => ({ ...prev, [type]: { ...prev[type], maxBars } }));
+  }
+
+  function submit() {
+    const conditions = CONDITION_PALETTE.filter((e) => rows[e.type].selected).map((e) => {
+      const row = rows[e.type];
+      return {
+        type: e.type,
+        direction: e.supportsDirection ? row.direction : ('any' as DirectionFilter),
+        ...(e.type === 'bos_recent_confirmed' ? { max_bars: row.maxBars } : {}),
+      };
+    });
+    onSubmit({ logic, conditions });
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">
+          {mode === 'onboarding' ? 'Compose tes conditions' : 'Modifier mes conditions'}
+        </CardTitle>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Choisis les faits structurels <strong>présents</strong> que tu veux
+          retrouver. Le scanner te montre sur quels marchés et timeframes ils sont
+          réunis <strong>en ce moment</strong>. C’est un outil de lecture : à toi
+          le jugement.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <ul className="space-y-2">
+          {CONDITION_PALETTE.map((entry) => {
+            const row = rows[entry.type];
+            return (
+              <li
+                key={entry.type}
+                className={cn(
+                  'rounded-lg border p-3 transition-colors',
+                  row.selected ? 'border-primary/60 bg-primary/5' : 'border-border/60',
+                )}
+              >
+                <label className="flex cursor-pointer items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={row.selected}
+                    onChange={() => toggle(entry.type)}
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-input accent-primary"
+                    aria-label={entry.label}
+                  />
+                  <span className="flex flex-col">
+                    <span className="text-sm font-medium text-foreground">{entry.label}</span>
+                    <span className="text-xs leading-snug text-muted-foreground">
+                      {entry.description}
+                    </span>
+                  </span>
+                </label>
+
+                {row.selected && (entry.supportsDirection || entry.type === 'bos_recent_confirmed') && (
+                  <div className="mt-3 flex flex-wrap items-center gap-3 pl-7">
+                    {entry.supportsDirection && (
+                      <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                        Direction
+                        <select
+                          value={row.direction}
+                          onChange={(e) =>
+                            setDirection(entry.type, e.target.value as DirectionFilter)
+                          }
+                          className="rounded-md border border-input bg-background px-2 py-1 text-xs text-foreground"
+                        >
+                          {(['any', 'bullish', 'bearish'] as DirectionFilter[]).map((d) => (
+                            <option key={d} value={d}>
+                              {DIRECTION_LABELS[d]}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    )}
+                    {entry.type === 'bos_recent_confirmed' && (
+                      <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                        Dans les
+                        <input
+                          type="number"
+                          min={1}
+                          max={50}
+                          value={row.maxBars}
+                          onChange={(e) =>
+                            setMaxBars(
+                              entry.type,
+                              Math.min(50, Math.max(1, Number(e.target.value) || 1)),
+                            )
+                          }
+                          className="w-16 rounded-md border border-input bg-background px-2 py-1 text-xs text-foreground"
+                        />
+                        dernières bougies
+                      </label>
+                    )}
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border/60 p-3">
+          <span className="text-sm text-muted-foreground">Combinaison&nbsp;:</span>
+          <div className="flex gap-1">
+            {(['AND', 'OR'] as ScanLogic[]).map((l) => (
+              <Button
+                key={l}
+                type="button"
+                size="sm"
+                variant={logic === l ? 'default' : 'outline'}
+                onClick={() => setLogic(l)}
+              >
+                {l === 'AND' ? 'Toutes (ET)' : 'Au moins une (OU)'}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" onClick={submit} disabled={selectedCount === 0}>
+            {mode === 'onboarding' ? 'Voir les marchés concernés' : 'Enregistrer & relancer'}
+          </Button>
+          {onCancel && (
+            <Button type="button" variant="ghost" onClick={onCancel}>
+              Annuler
+            </Button>
+          )}
+          {selectedCount === 0 && (
+            <span className="self-center text-xs text-muted-foreground">
+              Sélectionne au moins une condition.
+            </span>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
