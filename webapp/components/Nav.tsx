@@ -15,15 +15,17 @@ const ANCHORS = [
 ] as const;
 
 /**
- * Is the current route the /app workspace? `localePrefix: 'as-needed'` means FR
- * (default) has no prefix (`/app`), but we strip a leading locale segment
- * defensively in case a prefixed locale ever ships.
+ * Is the current route a product surface (the /app workspace or the /scanner
+ * page)? Both wear the product header (brand → /app + Scanner button) so the
+ * user can move between the reading workspace and the scanner freely.
+ * `localePrefix: 'as-needed'` means FR (default) has no prefix (`/app`), but we
+ * strip a leading locale segment defensively in case a prefixed locale ships.
  */
 function isAppRoute(pathname: string): boolean {
   const segs = pathname.split('/').filter(Boolean);
   const first = segs[0] as (typeof SUPPORTED_LOCALES)[number] | undefined;
   const rest = first && SUPPORTED_LOCALES.includes(first) ? segs.slice(1) : segs;
-  return rest[0] === 'app';
+  return rest[0] === 'app' || rest[0] === 'scanner';
 }
 
 /**
@@ -71,6 +73,12 @@ export function Nav() {
         </nav>
 
         <div className="flex items-center gap-2">
+          <Link
+            href="/scanner"
+            className="rounded-md px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            Scanner
+          </Link>
           <LocaleToggle />
           <ThemeToggle />
         </div>

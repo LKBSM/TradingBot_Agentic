@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { SUPPORTED_INSTRUMENTS, SUPPORTED_TIMEFRAMES } from './perimeter';
 
 /**
  * Lightweight shared state for the active (instrument, timeframe) combination
@@ -18,8 +19,7 @@ export interface Combo {
  * SUPPORTED_TIMEFRAMES = XAUUSD/EURUSD × M15/H1/H4). Order is the display
  * order in the instruments column.
  */
-export const SUPPORTED_INSTRUMENTS = ['XAUUSD', 'EURUSD'] as const;
-export const SUPPORTED_TIMEFRAMES = ['M15', 'H1', 'H4'] as const;
+export { SUPPORTED_INSTRUMENTS, SUPPORTED_TIMEFRAMES };
 
 export const SUPPORTED_COMBOS: readonly Combo[] = SUPPORTED_INSTRUMENTS.flatMap(
   (instrument) =>

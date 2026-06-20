@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { AppWorkspace } from '@/components/app/AppWorkspace';
+import { resolveComboFromQuery } from '@/lib/conditions/app-link';
 
 /**
  * Default combo on load (XAU/USD M15). Defined inline rather than imported from
@@ -20,8 +21,14 @@ export const metadata: Metadata = {
  * lifting lives in the client AppWorkspace; this server page only sets the
  * route + metadata.
  */
-export default function AppPage() {
-  // Default to a XAU/USD M15 reading on load so the workspace shows a fully
-  // populated "produit fini" surface immediately (mock data — see mockReadings).
-  return <AppWorkspace initialCombo={DEFAULT_COMBO} />;
+export default async function AppPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ instrument?: string; timeframe?: string }>;
+}) {
+  const sp = await searchParams;
+  // Honour an optional Scanner deep-link (?instrument=&timeframe=); fall back to
+  // the default XAU/USD M15 so a direct visit still shows a populated surface.
+  const initialCombo = resolveComboFromQuery(sp.instrument, sp.timeframe) ?? DEFAULT_COMBO;
+  return <AppWorkspace initialCombo={initialCombo} />;
 }

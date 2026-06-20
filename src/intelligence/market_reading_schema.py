@@ -52,7 +52,12 @@ TRIGGER_TYPE_PATTERN = (
     r"|^(ob_mitigation|fvg_fill|retest)_(m15|h1|h4|d1)$"
 )
 
-DESCRIPTION_MAX_LENGTH = 280
+# Narrated reading length budget. Raised from 280 (legacy one-sentence
+# « synthèse ») to give room for a 2-4 sentence present-tense paragraph that
+# synthesises trend, multi-TF alignment, near-price zones and volatility. The
+# field is not consumed by the Telegram footer (separate render contract), so a
+# longer paragraph here does not affect delivery surfaces.
+DESCRIPTION_MAX_LENGTH = 500
 
 
 # ---------------------------------------------------------------------------
