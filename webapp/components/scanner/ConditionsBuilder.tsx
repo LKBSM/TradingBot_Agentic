@@ -8,12 +8,19 @@ import {
   CONDITION_PALETTE,
   DEFAULT_BOS_MAX_BARS,
   DIRECTION_LABELS,
+  PHASE_OPTIONS,
+  TREND_OPTIONS,
+  VOLATILITY_OPTIONS,
 } from '@/lib/conditions/palette';
 import type {
   ConditionType,
   ConditionsConfig,
   DirectionFilter,
+  PhaseChoice,
+  ScanCondition,
   ScanLogic,
+  TrendChoice,
+  VolatilityChoice,
 } from '@/lib/conditions/types';
 
 /**
@@ -26,32 +33,48 @@ interface RowState {
   selected: boolean;
   direction: DirectionFilter;
   maxBars: number;
+  trend: TrendChoice;
+  phase: PhaseChoice;
+  volatility: VolatilityChoice;
 }
 
 type BuilderState = Record<ConditionType, RowState>;
 
+const DEFAULT_ROW: RowState = {
+  selected: false,
+  direction: 'any',
+  maxBars: DEFAULT_BOS_MAX_BARS,
+  trend: 'bullish',
+  phase: 'trend',
+  volatility: 'elevated',
+};
+
 function initialState(config: ConditionsConfig | null): BuilderState {
   const base = {} as BuilderState;
   for (const entry of CONDITION_PALETTE) {
-    base[entry.type] = {
-      selected: false,
-      direction: 'any',
-      maxBars: DEFAULT_BOS_MAX_BARS,
-    };
+    base[entry.type] = { ...DEFAULT_ROW };
   }
   if (config) {
     for (const cond of config.conditions) {
-      if (base[cond.type]) {
+      const row = base[cond.type];
+      if (row) {
         base[cond.type] = {
+          ...row,
           selected: true,
-          direction: cond.direction ?? 'any',
-          maxBars: cond.max_bars ?? DEFAULT_BOS_MAX_BARS,
+          direction: cond.direction ?? row.direction,
+          maxBars: cond.max_bars ?? row.maxBars,
+          trend: cond.trend ?? row.trend,
+          phase: cond.phase ?? row.phase,
+          volatility: cond.volatility ?? row.volatility,
         };
       }
     }
   }
   return base;
 }
+
+const SELECT_CLASS =
+  'rounded-md border border-input bg-background px-2 py-1 text-xs text-foreground';
 
 export function ConditionsBuilder({
   config,
@@ -69,24 +92,22 @@ export function ConditionsBuilder({
 
   const selectedCount = CONDITION_PALETTE.filter((e) => rows[e.type].selected).length;
 
-  function toggle(type: ConditionType) {
-    setRows((prev) => ({ ...prev, [type]: { ...prev[type], selected: !prev[type].selected } }));
-  }
-  function setDirection(type: ConditionType, direction: DirectionFilter) {
-    setRows((prev) => ({ ...prev, [type]: { ...prev[type], direction } }));
-  }
-  function setMaxBars(type: ConditionType, maxBars: number) {
-    setRows((prev) => ({ ...prev, [type]: { ...prev[type], maxBars } }));
+  function patch(type: ConditionType, partial: Partial<RowState>) {
+    setRows((prev) => ({ ...prev, [type]: { ...prev[type], ...partial } }));
   }
 
   function submit() {
-    const conditions = CONDITION_PALETTE.filter((e) => rows[e.type].selected).map((e) => {
+    const conditions: ScanCondition[] = CONDITION_PALETTE.filter(
+      (e) => rows[e.type].selected,
+    ).map((e) => {
       const row = rows[e.type];
-      return {
-        type: e.type,
-        direction: e.supportsDirection ? row.direction : ('any' as DirectionFilter),
-        ...(e.type === 'bos_recent_confirmed' ? { max_bars: row.maxBars } : {}),
-      };
+      const cond: ScanCondition = { type: e.type };
+      if (e.controls.includes('direction')) cond.direction = row.direction;
+      if (e.controls.includes('bars')) cond.max_bars = row.maxBars;
+      if (e.controls.includes('trend')) cond.trend = row.trend;
+      if (e.controls.includes('phase')) cond.phase = row.phase;
+      if (e.controls.includes('volatility')) cond.volatility = row.volatility;
+      return cond;
     });
     onSubmit({ logic, conditions });
   }
@@ -98,8 +119,8 @@ export function ConditionsBuilder({
           {mode === 'onboarding' ? 'Compose tes conditions' : 'Modifier mes conditions'}
         </CardTitle>
         <p className="mt-1 text-sm text-muted-foreground">
-          Choisis les faits structurels <strong>présents</strong> que tu veux
-          retrouver. Le scanner te montre sur quels marchés et timeframes ils sont
+          Choisis les faits structurels <strong>présents</strong> qui composent ta
+          lecture. Le scanner te montre sur quels marchés et timeframes ils sont
           réunis <strong>en ce moment</strong>. C’est un outil de lecture : à toi
           le jugement.
         </p>
@@ -108,6 +129,7 @@ export function ConditionsBuilder({
         <ul className="space-y-2">
           {CONDITION_PALETTE.map((entry) => {
             const row = rows[entry.type];
+            const hasControls = entry.controls.length > 0;
             return (
               <li
                 key={entry.type}
@@ -120,7 +142,7 @@ export function ConditionsBuilder({
                   <input
                     type="checkbox"
                     checked={row.selected}
-                    onChange={() => toggle(entry.type)}
+                    onChange={() => patch(entry.type, { selected: !row.selected })}
                     className="mt-0.5 h-4 w-4 shrink-0 rounded border-input accent-primary"
                     aria-label={entry.label}
                   />
@@ -132,17 +154,17 @@ export function ConditionsBuilder({
                   </span>
                 </label>
 
-                {row.selected && (entry.supportsDirection || entry.type === 'bos_recent_confirmed') && (
+                {row.selected && hasControls && (
                   <div className="mt-3 flex flex-wrap items-center gap-3 pl-7">
-                    {entry.supportsDirection && (
+                    {entry.controls.includes('direction') && (
                       <label className="flex items-center gap-2 text-xs text-muted-foreground">
                         Direction
                         <select
                           value={row.direction}
                           onChange={(e) =>
-                            setDirection(entry.type, e.target.value as DirectionFilter)
+                            patch(entry.type, { direction: e.target.value as DirectionFilter })
                           }
-                          className="rounded-md border border-input bg-background px-2 py-1 text-xs text-foreground"
+                          className={SELECT_CLASS}
                         >
                           {(['any', 'bullish', 'bearish'] as DirectionFilter[]).map((d) => (
                             <option key={d} value={d}>
@@ -152,7 +174,61 @@ export function ConditionsBuilder({
                         </select>
                       </label>
                     )}
-                    {entry.type === 'bos_recent_confirmed' && (
+                    {entry.controls.includes('trend') && (
+                      <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                        Tendance
+                        <select
+                          value={row.trend}
+                          onChange={(e) =>
+                            patch(entry.type, { trend: e.target.value as TrendChoice })
+                          }
+                          className={SELECT_CLASS}
+                        >
+                          {TREND_OPTIONS.map((o) => (
+                            <option key={o.value} value={o.value}>
+                              {o.label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    )}
+                    {entry.controls.includes('phase') && (
+                      <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                        Phase
+                        <select
+                          value={row.phase}
+                          onChange={(e) =>
+                            patch(entry.type, { phase: e.target.value as PhaseChoice })
+                          }
+                          className={SELECT_CLASS}
+                        >
+                          {PHASE_OPTIONS.map((o) => (
+                            <option key={o.value} value={o.value}>
+                              {o.label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    )}
+                    {entry.controls.includes('volatility') && (
+                      <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                        Volatilité
+                        <select
+                          value={row.volatility}
+                          onChange={(e) =>
+                            patch(entry.type, { volatility: e.target.value as VolatilityChoice })
+                          }
+                          className={SELECT_CLASS}
+                        >
+                          {VOLATILITY_OPTIONS.map((o) => (
+                            <option key={o.value} value={o.value}>
+                              {o.label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    )}
+                    {entry.controls.includes('bars') && (
                       <label className="flex items-center gap-2 text-xs text-muted-foreground">
                         Dans les
                         <input
@@ -161,10 +237,9 @@ export function ConditionsBuilder({
                           max={50}
                           value={row.maxBars}
                           onChange={(e) =>
-                            setMaxBars(
-                              entry.type,
-                              Math.min(50, Math.max(1, Number(e.target.value) || 1)),
-                            )
+                            patch(entry.type, {
+                              maxBars: Math.min(50, Math.max(1, Number(e.target.value) || 1)),
+                            })
                           }
                           className="w-16 rounded-md border border-input bg-background px-2 py-1 text-xs text-foreground"
                         />

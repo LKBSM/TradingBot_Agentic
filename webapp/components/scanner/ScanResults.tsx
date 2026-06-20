@@ -9,10 +9,26 @@ import {
 } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { paletteEntry } from '@/lib/conditions/palette';
-import type { ConditionsConfig, ConditionsScanResponse } from '@/lib/conditions/types';
+import {
+  PHASE_OPTIONS,
+  TREND_OPTIONS,
+  VOLATILITY_OPTIONS,
+  paletteEntry,
+} from '@/lib/conditions/palette';
+import type { ConditionsConfig, ConditionsScanResponse, ScanCondition } from '@/lib/conditions/types';
 import { ComboCard } from './ComboCard';
 import { instrumentLabel } from './labels';
+
+/** Compact human description of a condition's chosen parameter, if any. */
+function conditionParam(c: ScanCondition): string {
+  if (c.trend) return TREND_OPTIONS.find((o) => o.value === c.trend)?.label ?? c.trend;
+  if (c.phase) return PHASE_OPTIONS.find((o) => o.value === c.phase)?.label ?? c.phase;
+  if (c.volatility)
+    return VOLATILITY_OPTIONS.find((o) => o.value === c.volatility)?.label ?? c.volatility;
+  if (c.direction && c.direction !== 'any')
+    return c.direction === 'bullish' ? 'haussier' : 'baissier';
+  return '';
+}
 
 /**
  * Results view. A neutral, descriptive list — never a ranking.
@@ -56,12 +72,15 @@ export function ScanResults({
         </div>
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           <span>Tes conditions ({config.logic === 'AND' ? 'toutes' : 'au moins une'})&nbsp;:</span>
-          {config.conditions.map((c) => (
-            <Badge key={c.type} variant="secondary">
-              {paletteEntry(c.type)?.label ?? c.type}
-              {c.direction !== 'any' ? ` · ${c.direction === 'bullish' ? 'haussier' : 'baissier'}` : ''}
-            </Badge>
-          ))}
+          {config.conditions.map((c) => {
+            const param = conditionParam(c);
+            return (
+              <Badge key={c.type} variant="secondary">
+                {paletteEntry(c.type)?.label ?? c.type}
+                {param ? ` · ${param}` : ''}
+              </Badge>
+            );
+          })}
         </div>
       </header>
 
@@ -74,7 +93,7 @@ export function ScanResults({
             Les correspondances partielles ci-dessous montrent ce qui est présent ailleurs.
           </p>
         ) : (
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="flex flex-col gap-4">
             {full.map((m) => (
               <ComboCard key={`${m.instrument}:${m.timeframe}`} match={m} locale={locale} />
             ))}
@@ -90,7 +109,7 @@ export function ScanResults({
               Correspondances partielles ({partial.length})
             </AccordionTrigger>
             <AccordionContent>
-              <div className="grid grid-cols-1 gap-4 pt-2 lg:grid-cols-2">
+              <div className="flex flex-col gap-4 pt-2">
                 {partial.map((m) => (
                   <ComboCard key={`${m.instrument}:${m.timeframe}`} match={m} locale={locale} />
                 ))}

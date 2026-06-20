@@ -132,3 +132,40 @@ d'issue future.
   pour rester présent-only ; un `assert` lie le `Literal` de requête à la palette
   backend pour empêcher toute dérive d'un seul côté.
 - i18n dormant dans la webapp (FR en dur) : la page suit cette convention.
+
+## 6. Révision 2026-06-20 (suite premiers retours)
+
+### 6.1 Bug corrigé — crash « Analyser »
+`resolveComboFromQuery` plantait (`SUPPORTED_INSTRUMENTS.includes is not a function`)
+quand le composant **serveur** `/app/page.tsx` importait les constantes depuis le
+module `store.tsx` marqué `'use client'` : un composant serveur reçoit alors une
+**référence-client proxy**, pas le tableau réel. Correctif : constantes de
+périmètre déplacées dans un module **plain** `webapp/lib/market-reading/perimeter.ts`
+(sans `'use client'`), re-exporté par `store.tsx` ; `app-link.ts` importe désormais
+depuis `perimeter`. « Analyser » navigue maintenant vers `/app?instrument=…&timeframe=…`
+sans erreur (vérifié au runtime via Playwright : `crash markers présents ? false`).
+
+### 6.2 Palette élargie 5 → 10 conditions
+Toutes restent des **faits structurels au présent** dérivés du MarketReading
+existant (aucune détection modifiée, aucune condition prédictive) :
+- `trend_is` — tendance observée = cible (haussière/baissière/range/neutre)
+- `market_phase_is` — phase observée = cible (accumulation/distribution/tendance/range/expansion)
+- `volatility_is` — volatilité observée = niveau (faible/normale/élevée)
+- `choch_recent_confirmed` — CHOCH confirmé daté des N dernières bougies (BOS/CHOCH partagent l'évaluateur)
+- `retest_in_progress` — un retest (BOS/CHOCH/OB/FVG) est en cours maintenant
+
+Schéma de requête étendu (`ScanCondition` : `trend`/`phase`/`volatility` en plus de
+`direction`/`max_bars`), types `Literal` côté endpoint (toujours 422 hors palette),
+`assert` Literal ↔ `PALETTE` maintenu. Builder rendu **générique** via
+`controls: ControlKind[]` par entrée de palette.
+
+### 6.3 Esthétique — résultats en rangées horizontales
+`ComboCard` repensé en **long rectangle horizontal** (gauche : marché/TF/compteur ·
+centre : conditions remplies ✓ / non remplies ○ · droite : contexte complet +
+« Analyser »), `ScanResults` en colonne unique, page `/scanner` en `container-wide`.
+
+### 6.4 Tests / build (révision)
+Backend **48** verts (ajout trend/phase/volatility/CHOCH/retest + palette=10).
+Frontend **99** verts (palette=10, navigation Analyser, anti-Trader). `tsc` + `next build`
+verts (route `/scanner` 7.72 kB / 126 kB). Pilotage Playwright : 10 options offertes,
+4 conditions composées (dont régime), rangées horizontales, Analyser sans crash.

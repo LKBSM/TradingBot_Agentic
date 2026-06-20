@@ -1,5 +1,5 @@
 import { DEFAULT_LOCALE } from '@/i18n';
-import { SUPPORTED_INSTRUMENTS, SUPPORTED_TIMEFRAMES } from '@/lib/market-reading/store';
+import { SUPPORTED_INSTRUMENTS, SUPPORTED_TIMEFRAMES } from '@/lib/market-reading/perimeter';
 
 /**
  * Deep-link from a scan match to the /app reading view for the same combo.

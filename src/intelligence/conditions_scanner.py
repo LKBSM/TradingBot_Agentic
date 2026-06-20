@@ -30,6 +30,11 @@ from typing import Any, Dict, List, Optional
 #: Direction filter accepted by direction-aware conditions.
 DIRECTION_VALUES = ("any", "bullish", "bearish")
 
+#: Allowed values for the regime selectors (present-tense facts in the reading).
+TREND_VALUES = ("bullish", "bearish", "ranging", "neutral")
+PHASE_VALUES = ("accumulation", "distribution", "trend", "ranging", "expansion")
+VOLATILITY_VALUES = ("low", "normal", "elevated")
+
 #: The complete, closed palette. Each entry is a fact AT THE PRESENT. Adding a
 #: predictive/outcome condition here is forbidden — the test-suite asserts every
 #: entry carries ``tense == "present"`` and uses no predictive vocabulary.
@@ -42,6 +47,36 @@ PALETTE: List[Dict[str, Any]] = [
             "en ce moment."
         ),
         "supports_direction": True,
+        "tense": "present",
+    },
+    {
+        "type": "trend_is",
+        "label": "Tendance actuelle",
+        "description": (
+            "La tendance observée sur ce timeframe est, en ce moment, "
+            "celle choisie (haussière, baissière ou en range)."
+        ),
+        "supports_direction": False,
+        "tense": "present",
+    },
+    {
+        "type": "market_phase_is",
+        "label": "Phase de marché",
+        "description": (
+            "La phase de marché observée correspond, en ce moment, à celle "
+            "choisie (accumulation, distribution, tendance, range, expansion)."
+        ),
+        "supports_direction": False,
+        "tense": "present",
+    },
+    {
+        "type": "volatility_is",
+        "label": "Volatilité observée",
+        "description": (
+            "La volatilité observée en ce moment correspond au niveau choisi "
+            "(faible, normale, élevée)."
+        ),
+        "supports_direction": False,
         "tense": "present",
     },
     {
@@ -81,6 +116,26 @@ PALETTE: List[Dict[str, Any]] = [
             "bougies."
         ),
         "supports_direction": True,
+        "tense": "present",
+    },
+    {
+        "type": "choch_recent_confirmed",
+        "label": "CHOCH confirmé récent",
+        "description": (
+            "Un changement de caractère (CHOCH) confirmé est daté des "
+            "dernières bougies."
+        ),
+        "supports_direction": True,
+        "tense": "present",
+    },
+    {
+        "type": "retest_in_progress",
+        "label": "Retest en cours",
+        "description": (
+            "Un retest d'un niveau (BOS, CHOCH, OB ou FVG) est en cours "
+            "en ce moment."
+        ),
+        "supports_direction": False,
         "tense": "present",
     },
 ]
@@ -272,34 +327,79 @@ def _eval_ob_fvg_confluence(reading: Dict[str, Any]) -> Dict[str, Any]:
     return _result("ob_fvg_confluence", False, detail)
 
 
-def _eval_bos_recent_confirmed(reading: Dict[str, Any], direction: str, max_bars: int) -> Dict[str, Any]:
-    bos = reading.get("structure", {}).get("bos")
-    if not bos:
-        return _result("bos_recent_confirmed", False, "Aucun BOS récent.")
-    if bos.get("validation_status") != "confirmed":
-        status = bos.get("validation_status", "inconnu")
-        return _result("bos_recent_confirmed", False, f"BOS non confirmé (statut : {status}).")
-    bos_dir = bos.get("direction")
-    if not _direction_matches(bos_dir, direction):
+def _eval_break_recent_confirmed(
+    reading: Dict[str, Any], cond_type: str, struct_key: str, name: str,
+    direction: str, max_bars: int,
+) -> Dict[str, Any]:
+    """Shared evaluator for a confirmed, recent structural break (BOS or CHOCH)."""
+    rec = reading.get("structure", {}).get(struct_key)
+    if not rec:
+        return _result(cond_type, False, f"Aucun {name} récent.")
+    if rec.get("validation_status") != "confirmed":
+        status = rec.get("validation_status", "inconnu")
+        return _result(cond_type, False, f"{name} non confirmé (statut : {status}).")
+    rec_dir = rec.get("direction")
+    if not _direction_matches(rec_dir, direction):
         return _result(
-            "bos_recent_confirmed", False,
-            f"BOS confirmé mais {bos_dir or 'n/d'} (≠ {_direction_word(direction)} demandé).",
+            cond_type, False,
+            f"{name} confirmé mais {rec_dir or 'n/d'} (≠ {_direction_word(direction)} demandé).",
         )
     timeframe = reading.get("header", {}).get("timeframe", "")
     candle_ts = reading.get("header", {}).get("candle_close_ts")
-    bars = _bars_between(bos.get("broken_at"), candle_ts, timeframe)
-    word = _direction_word(bos_dir) or bos_dir or "n/d"
+    bars = _bars_between(rec.get("broken_at"), candle_ts, timeframe)
+    word = _direction_word(rec_dir) or rec_dir or "n/d"
     if bars is None:
-        return _result("bos_recent_confirmed", False, f"BOS {word} confirmé mais ancienneté inconnue.")
+        return _result(cond_type, False, f"{name} {word} confirmé mais ancienneté inconnue.")
     if bars <= max_bars:
         return _result(
-            "bos_recent_confirmed", True,
-            f"BOS {word} confirmé il y a ~{round(bars)} bougie(s) (≤ {max_bars}).",
+            cond_type, True,
+            f"{name} {word} confirmé il y a ~{round(bars)} bougie(s) (≤ {max_bars}).",
         )
     return _result(
-        "bos_recent_confirmed", False,
-        f"BOS {word} confirmé mais trop ancien (~{round(bars)} bougies > {max_bars}).",
+        cond_type, False,
+        f"{name} {word} confirmé mais trop ancien (~{round(bars)} bougies > {max_bars}).",
     )
+
+
+def _eval_trend_is(reading: Dict[str, Any], trend: Optional[str]) -> Dict[str, Any]:
+    if not trend:
+        return _result("trend_is", False, "Tendance cible non précisée.")
+    observed = reading.get("regime", {}).get("trend")
+    met = observed == trend
+    return _result(
+        "trend_is", met,
+        f"Tendance observée : {observed or '—'} (cible : {trend}).",
+    )
+
+
+def _eval_market_phase_is(reading: Dict[str, Any], phase: Optional[str]) -> Dict[str, Any]:
+    if not phase:
+        return _result("market_phase_is", False, "Phase cible non précisée.")
+    observed = reading.get("regime", {}).get("market_phase")
+    met = observed == phase
+    return _result(
+        "market_phase_is", met,
+        f"Phase observée : {observed or '—'} (cible : {phase}).",
+    )
+
+
+def _eval_volatility_is(reading: Dict[str, Any], volatility: Optional[str]) -> Dict[str, Any]:
+    if not volatility:
+        return _result("volatility_is", False, "Niveau de volatilité cible non précisé.")
+    observed = reading.get("regime", {}).get("volatility_observed")
+    met = observed == volatility
+    return _result(
+        "volatility_is", met,
+        f"Volatilité observée : {observed or '—'} (cible : {volatility}).",
+    )
+
+
+def _eval_retest_in_progress(reading: Dict[str, Any]) -> Dict[str, Any]:
+    retest = reading.get("structure", {}).get("retest_in_progress")
+    if retest:
+        kind = retest.get("type", "niveau")
+        return _result("retest_in_progress", True, f"Retest en cours ({kind}).")
+    return _result("retest_in_progress", False, "Aucun retest en cours.")
 
 
 # ---------------------------------------------------------------------------
@@ -318,6 +418,12 @@ def evaluate_condition(reading: Dict[str, Any], cond: Dict[str, Any]) -> Dict[st
     direction = cond.get("direction", "any") or "any"
     if cond_type == "mtf_aligned":
         return _eval_mtf_aligned(reading, direction)
+    if cond_type == "trend_is":
+        return _eval_trend_is(reading, cond.get("trend"))
+    if cond_type == "market_phase_is":
+        return _eval_market_phase_is(reading, cond.get("phase"))
+    if cond_type == "volatility_is":
+        return _eval_volatility_is(reading, cond.get("volatility"))
     if cond_type == "price_in_ob":
         return _eval_price_in_ob(reading, direction)
     if cond_type == "price_in_fvg":
@@ -326,7 +432,16 @@ def evaluate_condition(reading: Dict[str, Any], cond: Dict[str, Any]) -> Dict[st
         return _eval_ob_fvg_confluence(reading)
     if cond_type == "bos_recent_confirmed":
         max_bars = int(cond.get("max_bars") or DEFAULT_BOS_MAX_BARS)
-        return _eval_bos_recent_confirmed(reading, direction, max_bars)
+        return _eval_break_recent_confirmed(
+            reading, "bos_recent_confirmed", "bos", "BOS", direction, max_bars
+        )
+    if cond_type == "choch_recent_confirmed":
+        max_bars = int(cond.get("max_bars") or DEFAULT_BOS_MAX_BARS)
+        return _eval_break_recent_confirmed(
+            reading, "choch_recent_confirmed", "choch", "CHOCH", direction, max_bars
+        )
+    if cond_type == "retest_in_progress":
+        return _eval_retest_in_progress(reading)
     raise ValueError(f"Unknown condition type: {cond_type!r}")
 
 

@@ -11,20 +11,38 @@
 /** Closed set of present-tense condition types. No predictive type exists. */
 export type ConditionType =
   | 'mtf_aligned'
+  | 'trend_is'
+  | 'market_phase_is'
+  | 'volatility_is'
   | 'price_in_ob'
   | 'price_in_fvg'
   | 'ob_fvg_confluence'
-  | 'bos_recent_confirmed';
+  | 'bos_recent_confirmed'
+  | 'choch_recent_confirmed'
+  | 'retest_in_progress';
 
 export type DirectionFilter = 'any' | 'bullish' | 'bearish';
 export type ScanLogic = 'AND' | 'OR';
 
+export type TrendChoice = 'bullish' | 'bearish' | 'ranging' | 'neutral';
+export type PhaseChoice =
+  | 'accumulation'
+  | 'distribution'
+  | 'trend'
+  | 'ranging'
+  | 'expansion';
+export type VolatilityChoice = 'low' | 'normal' | 'elevated';
+
 /** One condition in the user's set (wire-shaped: matches the POST body). */
 export interface ScanCondition {
   type: ConditionType;
-  direction: DirectionFilter;
-  /** Recency window in bars for `bos_recent_confirmed` (ignored by others). */
+  direction?: DirectionFilter;
+  /** Recency window in bars for bos/choch_recent_confirmed (ignored by others). */
   max_bars?: number;
+  /** Regime selectors (used by trend_is / market_phase_is / volatility_is). */
+  trend?: TrendChoice;
+  phase?: PhaseChoice;
+  volatility?: VolatilityChoice;
 }
 
 /** The user's saved configuration (their conditions + AND/OR logic). */
@@ -33,12 +51,16 @@ export interface ConditionsConfig {
   conditions: ScanCondition[];
 }
 
+/** Which input controls the builder renders for a condition. */
+export type ControlKind = 'direction' | 'bars' | 'trend' | 'phase' | 'volatility';
+
 /** A palette entry — what the builder may offer. Always present-tense. */
 export interface PaletteEntry {
   type: ConditionType;
   label: string;
   description: string;
-  supportsDirection: boolean;
+  /** The selectors the builder shows when this condition is picked. */
+  controls: ControlKind[];
   tense: 'present';
 }
 

@@ -47,12 +47,20 @@ SCAN_COMBOS: Tuple[Tuple[str, str], ...] = (
 # Present-tense condition types ONLY. Drift from the palette is caught below.
 ConditionType = Literal[
     "mtf_aligned",
+    "trend_is",
+    "market_phase_is",
+    "volatility_is",
     "price_in_ob",
     "price_in_fvg",
     "ob_fvg_confluence",
     "bos_recent_confirmed",
+    "choch_recent_confirmed",
+    "retest_in_progress",
 ]
 DirectionFilter = Literal["any", "bullish", "bearish"]
+TrendChoice = Literal["bullish", "bearish", "ranging", "neutral"]
+PhaseChoice = Literal["accumulation", "distribution", "trend", "ranging", "expansion"]
+VolatilityChoice = Literal["low", "normal", "elevated"]
 
 # Guard: the request-model vocabulary must equal the engine palette exactly, so a
 # predictive type can never slip in on one side only.
@@ -68,6 +76,10 @@ class ScanCondition(BaseModel):
     type: ConditionType
     direction: DirectionFilter = "any"
     max_bars: int = Field(default=DEFAULT_BOS_MAX_BARS, ge=1, le=50)
+    # Regime selectors (used by trend_is / market_phase_is / volatility_is).
+    trend: Optional[TrendChoice] = None
+    phase: Optional[PhaseChoice] = None
+    volatility: Optional[VolatilityChoice] = None
 
 
 class ConditionsScanRequest(BaseModel):

@@ -186,6 +186,72 @@ def test_bos_recent_confirmed_unmet_when_absent():
     assert evaluate_condition(r, {"type": "bos_recent_confirmed"})["met"] is False
 
 
+# ── trend_is / market_phase_is / volatility_is ──────────────────────────────
+
+
+def test_trend_is_matches_observed_trend():
+    r = _reading(trend="bullish")
+    assert evaluate_condition(r, {"type": "trend_is", "trend": "bullish"})["met"] is True
+    assert evaluate_condition(r, {"type": "trend_is", "trend": "bearish"})["met"] is False
+
+
+def test_market_phase_is_matches_observed_phase():
+    r = _reading()  # market_phase defaults to "trend" in helper
+    assert evaluate_condition(r, {"type": "market_phase_is", "phase": "trend"})["met"] is True
+    assert evaluate_condition(r, {"type": "market_phase_is", "phase": "range"})["met"] is False
+
+
+def test_volatility_is_matches_observed_level():
+    r = _reading()  # volatility_observed defaults to "normal"
+    assert evaluate_condition(r, {"type": "volatility_is", "volatility": "normal"})["met"] is True
+    assert evaluate_condition(r, {"type": "volatility_is", "volatility": "elevated"})["met"] is False
+
+
+def test_regime_conditions_unmet_when_target_missing():
+    r = _reading()
+    assert evaluate_condition(r, {"type": "trend_is"})["met"] is False
+    assert evaluate_condition(r, {"type": "market_phase_is"})["met"] is False
+    assert evaluate_condition(r, {"type": "volatility_is"})["met"] is False
+
+
+# ── choch_recent_confirmed ───────────────────────────────────────────────────
+
+
+def test_choch_recent_confirmed_met_when_confirmed_and_recent():
+    r = _reading()
+    r["structure"]["choch"] = {
+        "direction": "bearish",
+        "level": 2010.0,
+        "broken_at": "2026-05-28T13:45:00+00:00",
+        "validation_status": "confirmed",
+    }
+    res = evaluate_condition(r, {"type": "choch_recent_confirmed", "direction": "bearish", "max_bars": 5})
+    assert res["met"] is True
+
+
+def test_choch_recent_confirmed_unmet_when_absent():
+    r = _reading()
+    assert evaluate_condition(r, {"type": "choch_recent_confirmed"})["met"] is False
+
+
+# ── retest_in_progress ───────────────────────────────────────────────────────
+
+
+def test_retest_in_progress_met_when_present():
+    r = _reading()
+    r["structure"]["retest_in_progress"] = {
+        "level": 2000.0,
+        "type": "ob_retest",
+        "started_at": "2026-05-28T14:00:00+00:00",
+    }
+    assert evaluate_condition(r, {"type": "retest_in_progress"})["met"] is True
+
+
+def test_retest_in_progress_unmet_when_absent():
+    r = _reading()
+    assert evaluate_condition(r, {"type": "retest_in_progress"})["met"] is False
+
+
 # ── evaluate_reading (logic + context) ───────────────────────────────────────
 
 
@@ -245,7 +311,19 @@ def test_context_includes_full_picture():
 
 def test_palette_types_exactly_match_allowlist():
     assert {p["type"] for p in PALETTE} == set(ALLOWED_CONDITION_TYPES)
-    assert len(PALETTE) == 5
+    assert len(PALETTE) == 10
+    assert {p["type"] for p in PALETTE} == {
+        "mtf_aligned",
+        "trend_is",
+        "market_phase_is",
+        "volatility_is",
+        "price_in_ob",
+        "price_in_fvg",
+        "ob_fvg_confluence",
+        "bos_recent_confirmed",
+        "choch_recent_confirmed",
+        "retest_in_progress",
+    }
 
 
 def test_every_palette_entry_is_present_tense():

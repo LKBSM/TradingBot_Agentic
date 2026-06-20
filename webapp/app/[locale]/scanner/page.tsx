@@ -20,7 +20,7 @@ export default async function ScannerPage({
 }) {
   const { locale } = await params;
   return (
-    <div className="container-prose py-8">
+    <div className="container-wide py-8">
       <ScannerWorkspace locale={locale} />
     </div>
   );
