@@ -78,13 +78,19 @@ _build_fresh (assembler)
   le **prix brut est exclu de la clé** → un tick calme ne régénère pas ; régénération
   sur **changement notable** (structure/regime).
 
-### Choix d'ingénierie
-- Niveaux rendus en **décimale point, sans séparateur de milliers** (`3358.42`) pour
-  que le validateur d'ancrage matche de façon non ambiguë. Les entiers nus (`M15`,
-  « les 3 TF ») n'ont pas de décimale → ignorés par construction.
-- Le validateur exige une correspondance **exacte** des prix cités avec les niveaux
-  du moteur ; la consigne demande au modèle de recopier les nombres verbatim. Tout
-  niveau inventé → rejet (favorise la sûreté).
+### Choix d'ingénierie — AFFICHAGE vs VALIDATION (découplés)
+- **Affichage fr-FR** : virgule décimale + séparateur de milliers (espace fine
+  insécable U+202F, comme `toLocaleString('fr-FR')`) → cohérent avec l'en-tête
+  (« 4 320,12 »). C'est ce que voit le lecteur et ce que recopie le modèle.
+- **Validation canonique** : point décimal, sans séparateur (`4320.12`). Le
+  validateur `references_only_known_levels` **normalise** chaque nombre du texte
+  (retrait des espaces, virgule→point) avant de vérifier l'appartenance au set de
+  niveaux canoniques. Donc on **affiche** `4 320,12` mais on **valide** sur
+  `4320.12`, sans ambiguïté de parsing.
+- Les entiers nus (`M15`, « les 3 TF ») n'ont pas de séparateur décimal → ignorés
+  par construction. Tout niveau inventé (display ou canonique) → rejet.
+- `ZoneFact`/`BreakFact`/`ReadingFacts` portent les **deux** formes (`*` display,
+  `*_canon` validation) ; `allowed_levels` ne collecte que le canonique.
 
 ## 4. Tests (build vert)
 
@@ -114,8 +120,9 @@ Tests/copie mis à jour pour le renommage « Synthèse » → « Lecture narrée
 
 ## 5. Suites / non-fait (honnête)
 - La narration s'appuie sur la **dernière** cassure `bos`/`choch` (pas d'historique
-  multi-events sur cette base). Quand `institutional-overhaul` aura mergé
-  `collect_structure_events`, enrichir `build_reading_facts` pour citer plusieurs
-  cassures est trivial (même contrat).
-- Décimale point côté texte : si l'on veut l'affichage fr-FR (virgule) dans la
-  narration, il faudra dé-coupler le format d'affichage du format de validation.
+  multi-events sur cette base). **Ne pas enrichir `build_reading_facts` sur cette
+  base périmée** : consolider d'abord les branches dans `institutional-overhaul`,
+  puis enrichir (trivial, même contrat). La narration reste ancrée sur les faits
+  actuels.
+- Affichage/validation découplés (fait) : fr-FR à l'affichage, canonique à la
+  validation. Cf. « Choix d'ingénierie » ci-dessus.

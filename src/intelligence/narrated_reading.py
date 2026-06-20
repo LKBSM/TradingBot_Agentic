@@ -13,6 +13,15 @@ Principe inviolable (cf. mission « narrated-reading ») :
   - Présent, descriptif, équilibré (le contexte contraire est dit), honnête sur
     provisoire vs confirmé. Zéro prédiction / causalité / conseil / score.
 
+AFFICHAGE vs VALIDATION (deux formats distincts, volontairement) :
+  - AFFICHAGE : fr-FR, séparateur de milliers (espace fine insécable) + virgule
+    décimale — cohérent avec l'en-tête (« 4 321,52 »). C'est ce qui est dans le
+    texte de la narration et dans le bloc de faits donné au modèle.
+  - VALIDATION : forme canonique (point décimal, sans séparateur). Le validateur
+    NORMALISE chaque nombre du texte vers le canonique avant de vérifier qu'il
+    appartient aux niveaux du moteur. Ainsi on affiche « 3 358,42 » mais on
+    valide sur « 3358.42 », sans ambiguïté de parsing.
+
 Ce module ne touche JAMAIS la détection : il ne fait que LIRE une
 `MarketReadingStructure` + `MarketReadingRegime` déjà produites et un prix, et
 rendre du texte. Il est la source unique partagée par :
@@ -39,8 +48,7 @@ from src.intelligence.market_reading_schema import (
 )
 
 # Conventional price precision per instrument (mirrors the webapp formatters
-# PRICE_DECIMALS). Levels are rendered with a dot decimal and NO thousands
-# separator so the anchoring validator can match them unambiguously.
+# PRICE_DECIMALS).
 _PRICE_DECIMALS: dict[str, int] = {
     "XAUUSD": 2,
     "EURUSD": 5,
@@ -50,6 +58,10 @@ _PRICE_DECIMALS: dict[str, int] = {
     "BTCUSD": 2,
 }
 _DEFAULT_DECIMALS = 2
+
+# fr-FR thousands separator — the narrow no-break space ICU emits for
+# `toLocaleString('fr-FR')`, so the narration matches the header exactly.
+_FR_THOUSANDS_SEP = " "
 
 # A zone counts as « près du prix » when its nearest edge sits within this % of
 # the current price. When nothing is that close, the single nearest active zone
@@ -85,14 +97,30 @@ def price_decimals(instrument: str) -> int:
     return _PRICE_DECIMALS.get((instrument or "").upper(), _DEFAULT_DECIMALS)
 
 
-def fmt_level(value: float, decimals: int) -> str:
-    """Render a price level with a dot decimal and no thousands separator.
-
-    The SAME function feeds both the facts given to the model and the deterministic
-    template, so the anchoring validator (exact-string membership) never rejects
-    the template path and only ever rejects a *foreign* number the model invented.
-    """
+def fmt_canonical(value: float, decimals: int) -> str:
+    """Validation form — dot decimal, no separator (e.g. ``3358.42``)."""
     return f"{float(value):.{decimals}f}"
+
+
+def fmt_display(value: float, decimals: int) -> str:
+    """Display form — fr-FR, thousands grouped + comma decimal (e.g. ``3 358,42``).
+
+    Used in the narration text and the prompt's fact block, so what the reader
+    sees is consistent with the header. The validator never parses this form
+    directly — it normalises it back to the canonical value first.
+    """
+    canon = fmt_canonical(value, decimals)
+    neg = canon.startswith("-")
+    body = canon[1:] if neg else canon
+    int_part, _, frac = body.partition(".")
+    groups: list[str] = []
+    while len(int_part) > 3:
+        groups.insert(0, int_part[-3:])
+        int_part = int_part[:-3]
+    groups.insert(0, int_part)
+    grouped = _FR_THOUSANDS_SEP.join(groups)
+    out = f"{grouped},{frac}" if frac else grouped
+    return f"-{out}" if neg else out
 
 
 # ---------------------------------------------------------------------------
@@ -106,8 +134,10 @@ class ZoneFact:
     direction: Optional[str]  # "bullish" | "bearish" | None
     status: str
     tested: bool
-    low: str  # formatted
-    high: str  # formatted
+    low: str  # display (fr-FR)
+    high: str  # display (fr-FR)
+    low_canon: str  # validation form
+    high_canon: str  # validation form
     position: str  # "below" | "above" | "inside" (relative to current price)
 
 
@@ -115,7 +145,8 @@ class ZoneFact:
 class BreakFact:
     kind: str  # "bos" | "choch"
     direction: str
-    level: str  # formatted
+    level: str  # display (fr-FR)
+    level_canon: str  # validation form
     confirmed: bool  # False ⇒ provisoire (pending)
 
 
@@ -129,8 +160,10 @@ class ReadingFacts:
     zones: list[ZoneFact]
     breaks: list[BreakFact]
     retest_type: Optional[str]
-    retest_level: Optional[str]
-    price: str  # formatted
+    retest_level: Optional[str]  # display (fr-FR)
+    retest_level_canon: Optional[str]  # validation form
+    price: str  # display (fr-FR)
+    price_canon: str  # validation form
     decimals: int = _DEFAULT_DECIMALS
     contrary: Optional[str] = field(default=None)
 
@@ -192,7 +225,7 @@ def _collect_zones(
     window = abs(price) * (PROXIMITY_PCT / 100.0) if price else 0.0
     raw: list[tuple[float, bool, ZoneFact]] = []
 
-    def _add(kind: str, zones, status_fr_map):
+    def _add(kind: str, zones):
         for z in zones:
             low = float(z.level_low)
             high = float(z.level_high)
@@ -214,15 +247,17 @@ def _collect_zones(
                         direction=z.direction,
                         status=z.status,
                         tested=bool(z.tested),
-                        low=fmt_level(lo, decimals),
-                        high=fmt_level(hi, decimals),
+                        low=fmt_display(lo, decimals),
+                        high=fmt_display(hi, decimals),
+                        low_canon=fmt_canonical(lo, decimals),
+                        high_canon=fmt_canonical(hi, decimals),
                         position=_zone_position(lo, hi, price),
                     ),
                 )
             )
 
-    _add("ob", structure.order_blocks, _OB_STATUS_FR)
-    _add("fvg", structure.fair_value_gaps, _FVG_STATUS_FR)
+    _add("ob", structure.order_blocks)
+    _add("fvg", structure.fair_value_gaps)
 
     if not raw:
         return []
@@ -248,7 +283,8 @@ def _collect_breaks(structure: MarketReadingStructure, decimals: int) -> list[Br
             BreakFact(
                 kind="choch",
                 direction=c.direction,
-                level=fmt_level(float(c.level), decimals),
+                level=fmt_display(float(c.level), decimals),
+                level_canon=fmt_canonical(float(c.level), decimals),
                 confirmed=c.validation_status == "confirmed",
             )
         )
@@ -258,7 +294,8 @@ def _collect_breaks(structure: MarketReadingStructure, decimals: int) -> list[Br
             BreakFact(
                 kind="bos",
                 direction=b.direction,
-                level=fmt_level(float(b.level), decimals),
+                level=fmt_display(float(b.level), decimals),
+                level_canon=fmt_canonical(float(b.level), decimals),
                 confirmed=b.validation_status == "confirmed",
             )
         )
@@ -306,10 +343,12 @@ def build_reading_facts(
     relation = _mtf_relation(regime.trend, mtf)
     zones = _collect_zones(structure, float(price), decimals)
     breaks = _collect_breaks(structure, decimals)
-    retest_type = retest_level = None
+    retest_type = retest_level = retest_level_canon = None
     if structure.retest_in_progress is not None:
         retest_type = structure.retest_in_progress.type
-        retest_level = fmt_level(float(structure.retest_in_progress.level), decimals)
+        rl = float(structure.retest_in_progress.level)
+        retest_level = fmt_display(rl, decimals)
+        retest_level_canon = fmt_canonical(rl, decimals)
     contrary = _contrary_reason(regime.trend, relation, zones)
     return ReadingFacts(
         trend=regime.trend,
@@ -321,7 +360,9 @@ def build_reading_facts(
         breaks=breaks,
         retest_type=retest_type,
         retest_level=retest_level,
-        price=fmt_level(float(price), decimals),
+        retest_level_canon=retest_level_canon,
+        price=fmt_display(float(price), decimals),
+        price_canon=fmt_canonical(float(price), decimals),
         decimals=decimals,
         contrary=contrary,
     )
@@ -331,22 +372,36 @@ def build_reading_facts(
 # Allowed levels + anchoring validator (the « verrou ids » for prices)
 # ---------------------------------------------------------------------------
 
-# A price token = digits, a dot, digits. Bare integers (« les 3 TF », « M15 »)
-# carry no decimal, so they are ignored by construction — only genuine price
+# A price token = digits, optional fr-FR grouping spaces, a decimal separator
+# (comma OR dot), then digits. Bare integers (« les 3 TF », « M15 ») carry no
+# decimal separator, so they are ignored by construction — only genuine price
 # levels are checked against the fact set.
-_PRICE_TOKEN = re.compile(r"\d+\.\d+")
+_GROUP_SPACES = "    "
+_PRICE_TOKEN = re.compile(rf"\d[\d{_GROUP_SPACES}]*[.,]\d+")
+
+
+def _normalize_price_token(token: str) -> str:
+    """fr-FR / canonical price string → canonical form (dot decimal, no spaces).
+
+    « 3 358,42 » → « 3358.42 » ; « 3358.42 » → « 3358.42 ». This is the bridge
+    that lets us DISPLAY in fr-FR yet VALIDATE on the canonical level set.
+    """
+    cleaned = token
+    for ch in _GROUP_SPACES:
+        cleaned = cleaned.replace(ch, "")
+    return cleaned.replace(",", ".")
 
 
 def allowed_levels(facts: ReadingFacts) -> set[str]:
-    """Every formatted level the narration is permitted to mention."""
-    allowed: set[str] = {facts.price}
+    """Every CANONICAL level the narration is permitted to mention."""
+    allowed: set[str] = {facts.price_canon}
     for z in facts.zones:
-        allowed.add(z.low)
-        allowed.add(z.high)
+        allowed.add(z.low_canon)
+        allowed.add(z.high_canon)
     for b in facts.breaks:
-        allowed.add(b.level)
-    if facts.retest_level is not None:
-        allowed.add(facts.retest_level)
+        allowed.add(b.level_canon)
+    if facts.retest_level_canon is not None:
+        allowed.add(facts.retest_level_canon)
     return allowed
 
 
@@ -355,11 +410,13 @@ def references_only_known_levels(text: str, facts: ReadingFacts) -> bool:
 
     This is the structural-claim lock: a narration that cites a level the moteur
     never produced (a hallucinated zone / break) is rejected, exactly as
-    coerceViewActions drops a focus_zone on an unknown id.
+    coerceViewActions drops a focus_zone on an unknown id. Tokens are normalised
+    to the canonical form first, so the fr-FR display ("3 358,42") validates
+    against the canonical level set ("3358.42").
     """
     allowed = allowed_levels(facts)
     for token in _PRICE_TOKEN.findall(text):
-        if token not in allowed:
+        if _normalize_price_token(token) not in allowed:
             return False
     return True
 
@@ -396,7 +453,7 @@ def render_template(facts: ReadingFacts) -> str:
 
     Used when no LLM client is wired and as the fallback when Haiku output fails
     the anchoring/forbidden-token checks. Always factual, always present-tense,
-    so the panel is never empty and never speculative.
+    so the panel is never empty and never speculative. Levels are fr-FR display.
     """
     trend_fr = _TREND_FR.get(facts.trend, facts.trend)
     vol_fr = _VOL_FR.get(facts.volatility, facts.volatility)
@@ -417,7 +474,8 @@ def render_template(facts: ReadingFacts) -> str:
 
     if facts.zones:
         if len(facts.zones) == 1:
-            parts.append(f"Le prix évolue près de {_zone_phrase(facts.zones[0])}.")
+            # élision : « près d'un Order Block » / « près d'une FVG ».
+            parts.append(f"Le prix évolue près d'{_zone_phrase(facts.zones[0])}.")
         else:
             joined = " ; ".join(_zone_phrase(z) for z in facts.zones[:2])
             parts.append(f"À proximité : {joined}.")
@@ -451,7 +509,7 @@ SYSTEM_PROMPT = """Tu rédiges une LECTURE NARRÉE des conditions de marché en 
 
 RÈGLES STRICTES :
 - Tu décris UNIQUEMENT ce qui est observé, au PRÉSENT. Jamais de prédiction, de cause, de conseil, de probabilité, ni de score.
-- Tu n'écris QUE ce qui figure dans les FAITS. Tu n'inventes aucun niveau, aucune zone, aucun événement. Tu recopies les NOMBRES EXACTEMENT comme fournis.
+- Tu n'écris QUE ce qui figure dans les FAITS. Tu n'inventes aucun niveau, aucune zone, aucun événement. Tu recopies les NOMBRES EXACTEMENT comme fournis (format français, ex. « 3 358,42 »).
 - Tu n'utilises jamais : conseiller, déconseiller, recommander, éviter, entrer, sortir, acheter, vendre, risqué, sûr, bon, mauvais, dangereux, opportunité.
 - Récit ÉQUILIBRÉ : si un élément va à l'encontre d'un autre (timeframe supérieur opposé, zone proche opposée à la tendance), tu le DIS.
 - Tu distingues le PROVISOIRE (en attente de confirmation) du CONFIRMÉ.
@@ -475,7 +533,12 @@ def _mtf_prompt_line(facts: ReadingFacts) -> str:
 
 
 def build_user_prompt(facts: ReadingFacts) -> str:
-    """Serialize the facts into a compact block the model narrates verbatim."""
+    """Serialize the facts into a compact block the model narrates verbatim.
+
+    Levels are given in fr-FR display form so the model copies them as-is into a
+    French paragraph; the post-generation validator normalises them back to the
+    canonical level set.
+    """
     lines: list[str] = [
         f"Prix actuel : {facts.price}",
         f"Tendance : {facts.trend} ; volatilité : {facts.volatility} ; "
@@ -511,8 +574,8 @@ def build_user_prompt(facts: ReadingFacts) -> str:
     lines.append("")
     lines.append(
         "Rédige la lecture narrée au présent à partir de ces faits uniquement. "
-        "Recopie les nombres exactement. Mentionne le contexte contraire s'il "
-        "existe. Distingue provisoire et confirmé."
+        "Recopie les nombres exactement (format français). Mentionne le contexte "
+        "contraire s'il existe. Distingue provisoire et confirmé."
     )
     return "\n".join(lines)
 
@@ -527,7 +590,8 @@ __all__ = [
     "allowed_levels",
     "build_reading_facts",
     "build_user_prompt",
-    "fmt_level",
+    "fmt_canonical",
+    "fmt_display",
     "price_decimals",
     "references_only_known_levels",
     "render_template",

@@ -5,6 +5,9 @@ deterministic template. Covers the four mission requirements:
   (b) the deterministic fallback is factual and is what the engine falls back to;
   (c) output is present-tense and carries no predictive / forbidden vocabulary;
   (d) contrary context is included whenever it exists.
+
+Plus the display/validation decoupling: levels are DISPLAYED fr-FR (comma +
+thousands grouping) but VALIDATED on the canonical form (dot, no separator).
 """
 
 from src.intelligence.market_reading_mappers import contains_forbidden_tokens
@@ -19,6 +22,7 @@ from src.intelligence.market_reading_schema import (
 from src.intelligence.narrated_reading import (
     allowed_levels,
     build_reading_facts,
+    fmt_display,
     references_only_known_levels,
     render_template,
 )
@@ -57,17 +61,47 @@ def _regime(trend="bullish", vol="normal", phase="trend", mtf=None):
 def test_known_level_passes_anchoring():
     structure = MarketReadingStructure(order_blocks=[_ob(1995.0, 2005.0)])
     facts = build_reading_facts(structure, _regime(), PRICE, INSTRUMENT)
-    # A narration reusing a real band edge is accepted.
-    assert references_only_known_levels(
-        "Order Block actif borne 1995.00–2005.00.", facts
-    )
+    # A narration reusing a real band edge (fr-FR display) is accepted.
+    text = f"Order Block actif borne {facts.zones[0].low}-{facts.zones[0].high}."
+    assert references_only_known_levels(text, facts)
 
 
 def test_foreign_level_fails_anchoring():
     structure = MarketReadingStructure(order_blocks=[_ob(1995.0, 2005.0)])
     facts = build_reading_facts(structure, _regime(), PRICE, INSTRUMENT)
-    # 2222.22 was never produced by the engine → rejected.
+    # 2222.22 was never produced by the engine -> rejected (canonical form).
     assert not references_only_known_levels("Le prix vise 2222.22.", facts)
+    # …and the same in fr-FR display form.
+    assert not references_only_known_levels(
+        f"Le prix vise {fmt_display(2222.22, 2)}.", facts
+    )
+
+
+def test_display_is_fr_fr_but_validation_is_canonical():
+    """A large level is DISPLAYED fr-FR (comma + grouped) yet VALIDATED canonical."""
+    structure = MarketReadingStructure(order_blocks=[_ob(4318.0, 4321.52)])
+    facts = build_reading_facts(structure, _regime(), 4320.0, INSTRUMENT)
+    z = facts.zones[0]
+    # Display: comma decimal, grouped thousands, never a dot (header-consistent).
+    assert z.high == fmt_display(4321.52, 2)
+    assert "," in z.high and "." not in z.high
+    # Validation form stays canonical (dot, no separator).
+    assert z.high_canon == "4321.52"
+    assert "4321.52" in allowed_levels(facts)
+    # The fr-FR display the model copies verbatim still validates…
+    assert references_only_known_levels(f"Une zone borne {z.low}-{z.high}.", facts)
+    # …and an invented fr-FR level is still rejected.
+    assert not references_only_known_levels(
+        f"Une zone a {fmt_display(4999.99, 2)}.", facts
+    )
+
+
+def test_template_renders_fr_fr_levels_and_self_validates():
+    structure = MarketReadingStructure(order_blocks=[_ob(4318.0, 4321.52)])
+    facts = build_reading_facts(structure, _regime(), 4320.0, INSTRUMENT)
+    text = render_template(facts)
+    assert facts.zones[0].high in text  # the fr-FR level appears verbatim
+    assert references_only_known_levels(text, facts)
 
 
 def test_bare_integers_are_not_treated_as_levels():
@@ -116,7 +150,6 @@ def test_template_is_factual_and_self_anchored():
     structure = MarketReadingStructure(order_blocks=[_ob(1995.0, 2005.0)])
     facts = build_reading_facts(structure, _regime(), PRICE, INSTRUMENT)
     text = render_template(facts)
-    # Mentions the regime facts and a real zone band, and references only real levels.
     assert "Tendance" in text
     assert "Order Block" in text
     assert references_only_known_levels(text, facts)
@@ -137,7 +170,7 @@ def test_template_distinguishes_provisional_from_confirmed():
     )
     t_conf = render_template(build_reading_facts(confirmed, _regime(), PRICE, INSTRUMENT))
     t_prov = render_template(build_reading_facts(pending, _regime(), PRICE, INSTRUMENT))
-    assert "confirmé" in t_conf
+    assert "confirm" in t_conf and "provisoire" not in t_conf
     assert "provisoire" in t_prov
 
 
@@ -167,7 +200,7 @@ def test_template_never_emits_forbidden_tokens():
                      mtf={"h1": "bearish", "h4": "bullish"})
     text = render_template(build_reading_facts(structure, regime, PRICE, INSTRUMENT))
     assert contains_forbidden_tokens(text) is None
-    # No future tense markers that would imply a forecast.
+    # No future-tense markers that would imply a forecast.
     lowered = text.lower()
     for forecast in ("va ", "sera", "devrait", "pourrait", "probab"):
         assert forecast not in lowered
@@ -179,7 +212,7 @@ def test_template_never_emits_forbidden_tokens():
 
 
 def test_contrary_context_pullback_against_higher_tfs():
-    # Reading TF bearish, higher TFs aligned bullish → pullback contrary.
+    # Reading TF bearish, higher TFs aligned bullish -> pullback contrary.
     regime = _regime(trend="bearish", mtf={"h1": "bullish", "h4": "bullish"})
     facts = build_reading_facts(MarketReadingStructure(), regime, PRICE, INSTRUMENT)
     assert facts.contrary is not None
@@ -187,26 +220,25 @@ def test_contrary_context_pullback_against_higher_tfs():
 
 
 def test_contrary_context_opposite_zone_near_price():
-    # Trend bullish but an ACTIVE bearish OB sits near the price → contrary.
+    # Trend bullish but an ACTIVE bearish OB sits near the price -> contrary.
     structure = MarketReadingStructure(
         order_blocks=[_ob(2002.0, 2006.0, direction="bearish", status="active")]
     )
     regime = _regime(trend="bullish")
     facts = build_reading_facts(structure, regime, PRICE, INSTRUMENT)
     assert facts.contrary is not None
-    text = render_template(facts)
-    assert "À noter" in text
+    assert "noter" in render_template(facts)  # "À noter" clause present
 
 
 def test_no_contrary_when_one_directional():
-    # Trend bullish, higher TFs bullish, only a bullish active zone → no contrary.
+    # Trend bullish, higher TFs bullish, only a bullish active zone -> no contrary.
     structure = MarketReadingStructure(
         order_blocks=[_ob(1995.0, 1999.0, direction="bullish", status="active")]
     )
     regime = _regime(trend="bullish", mtf={"h1": "bullish", "h4": "bullish"})
     facts = build_reading_facts(structure, regime, PRICE, INSTRUMENT)
     assert facts.contrary is None
-    assert "À noter" not in render_template(facts)
+    assert "noter" not in render_template(facts)
 
 
 # ---------------------------------------------------------------------------
@@ -215,15 +247,14 @@ def test_no_contrary_when_one_directional():
 
 
 def test_far_zone_excluded_unless_nearest_active():
-    # One zone within the window, one far away → only the near one is surfaced.
     structure = MarketReadingStructure(
         order_blocks=[
-            _ob(1998.0, 2002.0, status="active"),   # straddles price → near
-            _ob(1500.0, 1510.0, status="active"),   # ~25% away → excluded
+            _ob(1998.0, 2002.0, status="active"),   # straddles price -> near
+            _ob(1500.0, 1510.0, status="active"),   # ~25% away -> excluded
         ]
     )
     facts = build_reading_facts(structure, _regime(), PRICE, INSTRUMENT)
-    bands = {(z.low, z.high) for z in facts.zones}
+    bands = {(z.low_canon, z.high_canon) for z in facts.zones}
     assert ("1998.00", "2002.00") in bands
     assert ("1500.00", "1510.00") not in bands
 
@@ -236,6 +267,6 @@ def test_zone_position_relative_to_price():
         ]
     )
     facts = build_reading_facts(structure, _regime(), PRICE, INSTRUMENT)
-    pos = {(z.low, z.high): z.position for z in facts.zones}
+    pos = {(z.low_canon, z.high_canon): z.position for z in facts.zones}
     assert pos[("1990.00", "1995.00")] == "below"
     assert pos[("2005.00", "2010.00")] == "above"

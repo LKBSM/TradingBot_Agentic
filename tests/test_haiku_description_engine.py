@@ -231,7 +231,7 @@ def test_anchored_level_accepted(cache_store, regime):
         ]
     )
     facts = build_reading_facts(structure, regime, PRICE, INSTRUMENT)
-    assert "2005.00" in {*[z.low for z in facts.zones]}  # sanity: real level
+    assert "2005.00" in {z.low_canon for z in facts.zones}  # sanity: real level
     client = _MockAnthropicClient(["Un Order Block actif borne 2005.00–2010.00."])
     engine = HaikuDescriptionEngine(anthropic_client=client, cache_store=cache_store)
 
