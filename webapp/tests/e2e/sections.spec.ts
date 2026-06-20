@@ -4,8 +4,8 @@ import { expect, test } from '@playwright/test';
  * Sections collapsibles de la MarketReadingCard (Chantier 5.B) telles que
  * rendues dans la galerie multi-marché de la landing. Mises à jour au
  * Chantier 5.C : la landing consomme désormais la card market-reading native
- * (Structure / Régime / Événements / Synthèse) — plus de section « Détail
- * expert », plus de waterfall de score, plus de champ BOCPD.
+ * (Structure / Régime / Événements / Lecture narrée) — plus de section
+ * « Détail expert », plus de waterfall de score, plus de champ BOCPD.
  */
 test.describe('Sections collapsibles — golden paths', () => {
   test('clicking the structure trigger reveals SMC facts', async ({ page }) => {
@@ -30,10 +30,10 @@ test.describe('Sections collapsibles — golden paths', () => {
     ).toBeVisible();
   });
 
-  test('synthesis section shows the plain-language conditions on click', async ({ page }) => {
+  test('narrated reading section shows the plain-language conditions on click', async ({ page }) => {
     await page.goto('/#multi-marche');
     const conditionsTrigger = page
-      .getByRole('button', { name: /Synthèse des conditions/i })
+      .getByRole('button', { name: /Lecture narrée/i })
       .first();
     await expect(conditionsTrigger).toBeVisible();
     await conditionsTrigger.click();

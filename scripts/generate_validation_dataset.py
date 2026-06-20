@@ -249,7 +249,7 @@ def _build_reading(instrument: str, h1: pd.DataFrame, enriched: pd.DataFrame,
     regime = candles_to_regime(candle_dicts, mtf_candles_above=mtf)
 
     tags, template_desc = tags_and_description(structure, regime)
-    haiku_desc, source = haiku.generate(tags, regime)
+    haiku_desc, source = haiku.generate(tags, regime, structure, close_price, instrument)
 
     reading = MarketReading(
         header=MarketReadingHeader(

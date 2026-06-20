@@ -12,7 +12,7 @@ const DEFAULT_COMBO = { instrument: 'XAUUSD', timeframe: 'M15' } as const;
 export const metadata: Metadata = {
   title: 'Espace de lecture',
   description:
-    'Lecture de marché en direct — XAU/USD et EUR/USD sur M15, H1, H4. Structure, régime, événements et synthèse, expliqués par M.I.A Agent.',
+    'Lecture de marché en direct — XAU/USD et EUR/USD sur M15, H1, H4. Structure, régime, événements et lecture narrée, expliqués par M.I.A Agent.',
 };
 
 /**

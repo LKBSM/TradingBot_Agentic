@@ -35,9 +35,20 @@ export interface ZoneModel {
   label: string;
 }
 
-/** Curation caps — mechanical anti-clutter, documented (NOT importance ranking). */
-export const ACTIVE_ZONE_CAP = 4;
-export const TESTED_ZONE_CAP = 3;
+/**
+ * Curation caps — mechanical anti-clutter, NOT importance ranking.
+ *
+ * ACTIVE zones are NEVER dropped by recency/proximity: an active OB/FVG can sit
+ * far from the current price or be days old and still be in play (e.g. an
+ * untested supply zone 50+ points away that the engine still tracks as `active`).
+ * This cap is therefore a pure runaway / perf guard, set well ABOVE the backend's
+ * per-type ceiling (`MAX_ZONES_PER_TYPE = 12`), so it never removes a real active
+ * zone — it only bounds a pathological payload. TESTED zones (touched-but-alive:
+ * `mitigated` OB / `partially_filled` FVG) stay visible and extend too; a
+ * generous cap keeps the canvas calm without hiding an in-play zone in practice.
+ */
+export const ACTIVE_ZONE_CAP = 24;
+export const TESTED_ZONE_CAP = 12;
 
 /** ISO-8601 → UNIX seconds; returns NaN for an unparseable string. */
 export function isoToSec(iso: string | null | undefined): number {
@@ -115,13 +126,17 @@ export function buildZoneModels(structure: MarketReadingStructure): ZoneModel[] 
 
 /**
  * Where a zone box's RIGHT edge should land:
- *   · `mitigation` — a MITIGATED zone (tested + a known mitigation point) ends AT
- *     that point (UNIX seconds). Bounded, honest, never over-extended past a
- *     resolved outcome.
- *   · `active` — an ACTIVE zone (and a tested zone with no usable mitigation
- *     point) is valid right now, so it runs a LITTLE PAST the current bar: just
- *     beyond the latest candle, never to the plot edge (an infinite band) and
- *     never short of the candle.
+ *   · `mitigation` — a RESOLVED zone (engine `invalidated` OB / `filled` FVG, with
+ *     a known mitigation point) ends AT that point (UNIX seconds). Bounded, never
+ *     over-extended past a settled outcome. The engine drops resolved zones, so in
+ *     practice they never reach the chart — this is a defensive guard only.
+ *   · `active` — every IN-PLAY zone runs a LITTLE PAST the current bar: just beyond
+ *     the latest candle, never to the plot edge (an infinite band) and never short
+ *     of the candle. This covers BOTH an `active` (untested) zone AND a
+ *     touched-but-alive one (`mitigated` OB / `partially_filled` FVG: price tapped
+ *     it but did NOT close through, so the engine keeps it). A touched zone is
+ *     still in play, so its box extends — the faded `tested` style is what marks it
+ *     as already touched (symptom (b): it no longer stops at the tap).
  *
  * Pure + view-independent: the caller maps `mitigation` → x(sec) and `active` →
  * the current-bar pixel plus a small pad. Split out so the rule is unit-testable.
@@ -133,8 +148,15 @@ export type ZoneRightAnchor =
 export function zoneRightAnchor(zone: {
   tested: boolean;
   mitigatedSec: number | null;
+  /**
+   * Engine-resolved (invalidated OB / filled FVG) — a closed outcome. Drawn zones
+   * are never resolved (they are filtered upstream), so this defaults to falsy and
+   * the box extends; the flag only exists so the bounded branch stays expressible
+   * and unit-testable.
+   */
+  resolved?: boolean;
 }): ZoneRightAnchor {
-  if (zone.tested && zone.mitigatedSec !== null) {
+  if (zone.resolved && zone.mitigatedSec !== null) {
     return { kind: 'mitigation', sec: zone.mitigatedSec };
   }
   return { kind: 'active' };
@@ -300,11 +322,13 @@ function rankSort(zones: ZoneModel[], currentPrice: number): ZoneModel[] {
 }
 
 /**
- * Curate the full zone set into the boxes the chart should draw: at most
- * `ACTIVE_ZONE_CAP` active zones and `TESTED_ZONE_CAP` tested ones, chosen by
- * recency + proximity to the current price. The rest are hidden (logged by the
- * caller if useful). Active zones are returned last so they layer ON TOP of the
- * faded tested boxes when rendered in order.
+ * Curate the full zone set into the boxes the chart should draw. The split is by
+ * lifecycle, NOT by recency: active zones are bounded only by `ACTIVE_ZONE_CAP` (a
+ * perf guard well above the backend ceiling — an active zone is never dropped for
+ * being far or old), tested-but-alive zones by the generous `TESTED_ZONE_CAP`.
+ * The `rankSort` ordering (recency + proximity) only decides layout order and the
+ * never-reached overflow tail. Active zones are returned last so they layer ON TOP
+ * of the faded tested boxes when rendered in order.
  */
 export function curateZones(
   zones: ZoneModel[],

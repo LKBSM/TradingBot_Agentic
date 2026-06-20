@@ -84,7 +84,7 @@ def _stub_smc(candles):
 
 
 class _StubDescriptionEngine:
-    def generate(self, tags, regime):
+    def generate(self, tags, regime, structure, price, instrument):
         return "Conditions de marché décrites factuellement pour le test.", "haiku_generated"
 
 

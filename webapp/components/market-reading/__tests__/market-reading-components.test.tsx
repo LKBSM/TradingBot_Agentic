@@ -86,7 +86,7 @@ describe('MarketReadingCard', () => {
     expect(screen.getByText('Structure de marché')).toBeInTheDocument();
     expect(screen.getByText('Régime de marché')).toBeInTheDocument();
     expect(screen.getByText('Contexte événementiel')).toBeInTheDocument();
-    expect(screen.getByText('Synthèse des conditions')).toBeInTheDocument();
+    expect(screen.getByText('Lecture narrée')).toBeInTheDocument();
   });
 
   it('wires the "Demander à M.I.A Agent" CTA when a handler is provided', () => {
@@ -226,7 +226,7 @@ describe('ConditionsSection', () => {
     // `retest_active` → "Retest en cours" (the snake_case code stays backend-side).
     expect(screen.getByText('Tendance établie')).toBeInTheDocument();
     expect(screen.getByText('Retest en cours')).toBeInTheDocument();
-    expect(screen.getByText('Synthèse générée')).toBeInTheDocument();
+    expect(screen.getByText('Narration générée')).toBeInTheDocument();
   });
 
   it('marks template fallbacks distinctly', () => {
@@ -235,6 +235,6 @@ describe('ConditionsSection', () => {
         <ConditionsSection conditions={FIXTURE_EUR_H1.conditions} />
       </Accordion>,
     );
-    expect(screen.getByText(/Synthèse modèle/)).toBeInTheDocument();
+    expect(screen.getByText(/Lecture modèle/)).toBeInTheDocument();
   });
 });

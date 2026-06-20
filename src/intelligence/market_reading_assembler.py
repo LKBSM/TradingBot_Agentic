@@ -40,6 +40,7 @@ from src.intelligence.market_reading_schema import (
     MarketReadingEvents,
     MarketReadingHeader,
 )
+from src.intelligence.narrated_reading import build_reading_facts, render_template
 from src.intelligence.provider_snapshot import snapshot_provider_response
 
 logger = logging.getLogger(__name__)
@@ -329,8 +330,10 @@ class MarketReadingAssembler:
 
         events = self._build_events()
 
-        tags, fallback_description = tags_and_description(structure, regime)
-        description, source = self._resolve_description(tags, regime, fallback_description)
+        tags, _ = tags_and_description(structure, regime)
+        description, source = self._resolve_description(
+            tags, regime, structure, current_price, instrument
+        )
 
         header = MarketReadingHeader(
             instrument=instrument,
@@ -387,13 +390,25 @@ class MarketReadingAssembler:
         self,
         tags: list[str],
         regime: Any,
-        fallback: str,
+        structure: Any,
+        price: float,
+        instrument: str,
     ) -> tuple[str, str]:
-        """Use the Haiku engine if injected, else the template fallback string."""
+        """Narrated reading, anchored to the engine facts.
+
+        Uses the Haiku engine if injected (it validates against the same facts and
+        falls back internally), else the deterministic template — so the panel is
+        always factual and always present. The template is also the safety net
+        when the engine raises before returning.
+        """
+        facts = build_reading_facts(structure, regime, price, instrument)
+        fallback = render_template(facts)
         if self._description_engine is None:
             return fallback, "template_fallback"
         try:
-            description, source = self._description_engine.generate(tags, regime)
+            description, source = self._description_engine.generate(
+                tags, regime, structure, price, instrument
+            )
             return description, source
         except Exception as exc:  # pragma: no cover — defensive
             logger.warning("description_engine.generate failed: %s — using template", exc)

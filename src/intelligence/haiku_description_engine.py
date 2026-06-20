@@ -1,21 +1,31 @@
-"""Haiku LLM engine — generates the MarketReading description with 4-lever cost optimization.
+"""Haiku LLM engine — generates the MarketReading "Lecture narrée" from the
+engine FACTS, validated against them, with 4-lever cost optimization.
 
-Implements Section 2.5 of the V2 architecture doc:
-  - Lever 1 : cache by hash(sorted_tags + regime) → re-use prior description
-  - Lever 2 : (template fallback handled by the mappers / assembler)
-  - Lever 3 : short prompts (< 200 tokens system, < 500 tokens total budget)
-  - Lever 4 : on-demand generation only (the assembler triggers this engine
-              only when serving a user request, not on every candle close)
+Replaces the legacy weak « synthèse » (tags + regime only, one sentence) with a
+present-tense NARRATION anchored to the structured facts of the moteur
+(`src.intelligence.narrated_reading`): tendance, alignement multi-TF, zones
+OB/FVG actives/testées près du prix, cassures BOS/CHOCH, retest, volatilité.
 
-Niveau 1.5 strict enforcement:
-  - System prompt explicitly forbids recommendation/judgement vocabulary
-  - Post-generation forbidden-token filter (cf. market_reading_mappers.
-    contains_forbidden_tokens). Contaminated output is NEVER cached and
-    NEVER returned — the engine falls back to a tags+regime template.
+Niveau 1.5 strict + anchoring enforcement:
+  - System prompt forbids recommendation / prediction / causality / score.
+  - Post-generation filters: forbidden-token filter (`contains_forbidden_tokens`)
+    AND level-anchoring filter (`references_only_known_levels`) — a narration
+    that cites a level the moteur never produced is REJECTED, the same way
+    coerceViewActions drops a focus on an unknown zone id.
+  - On a failed check the engine retries ONCE, then falls back to the
+    deterministic `render_template` so the panel is always factual, never empty.
+
+Cost levers (Section 2.5 of the V2 architecture doc):
+  - Lever 1 : cache by hash(structural facts) — re-uses a prior narration. The
+              raw price is deliberately excluded from the key so the cache is not
+              busted every bar; the cache regenerates on a *structural* change
+              (zones / breaks / retest / regime), i.e. « changement notable ».
+  - Lever 3 : short prompts (system < 250 tokens, facts block ~100-200 tokens).
+  - Lever 4 : on-demand generation only (the assembler triggers this engine only
+              when serving a user request, not on every candle close).
 
 The Anthropic client is duck-typed: we only call ``client.messages.create(...)``
-and read ``response.content[0].text``. This keeps the engine independent of
-any specific anthropic-sdk version and makes tests trivial with stubs.
+and read ``response.content[0].text``.
 """
 
 from __future__ import annotations
@@ -25,58 +35,38 @@ import json
 import logging
 from typing import Any, Literal, Optional
 
-from src.intelligence.market_reading_mappers import (
-    _TREND_FR,
-    _VOL_FR,
-    _PHASE_FR,
-    contains_forbidden_tokens,
-)
+from src.intelligence.market_reading_mappers import contains_forbidden_tokens
 from src.intelligence.market_reading_schema import (
-    DESCRIPTION_MAX_LENGTH,
     MarketReadingRegime,
+    MarketReadingStructure,
+)
+from src.intelligence.narrated_reading import (
+    NARRATION_MAX_LENGTH,
+    SYSTEM_PROMPT,
+    ReadingFacts,
+    build_reading_facts,
+    build_user_prompt,
+    references_only_known_levels,
+    render_template,
 )
 
 logger = logging.getLogger(__name__)
 
 
-SYSTEM_PROMPT = """Tu es un assistant qui décrit des conditions de marché en français.
-
-RÈGLES STRICTES :
-- Tu décris ce qui est observé, JAMAIS ce qu'il faut faire
-- Tu n'utilises jamais : conseiller, déconseiller, recommander, éviter, entrer, sortir, acheter, vendre
-- Tu n'utilises jamais : risqué, sûr, bon, mauvais, dangereux, opportunité
-- Tu te limites à 280 caractères maximum
-- Tu écris UNE phrase descriptive en français"""
-
 DEFAULT_MODEL = "claude-haiku-4-5-20251001"
-DEFAULT_MAX_TOKENS = 200  # output budget — input + output stays < 500
-
-
-def _engine_template_fallback(tags: list[str], regime: MarketReadingRegime) -> str:
-    """Tags+regime-only fallback used when Haiku produces contaminated output.
-
-    Conservative phrasing — no structure info available at this point.
-    """
-    trend = _TREND_FR.get(regime.trend, regime.trend)
-    vol = _VOL_FR.get(regime.volatility_observed, regime.volatility_observed)
-    phase = _PHASE_FR.get(regime.market_phase, regime.market_phase)
-    desc = f"Tendance {trend}, volatilité {vol}, phase {phase}."
-    if regime.mtf_confluence:
-        biases = set(regime.mtf_confluence.values())
-        if len(biases) == 1:
-            (single,) = biases
-            desc += f" MTF alignée {_TREND_FR.get(single, single)}."
-        else:
-            desc += " MTF mixte."
-    return desc[:DESCRIPTION_MAX_LENGTH]
+# Output budget — a 2-4 sentence paragraph fits comfortably; input + output stays
+# well under the per-call ceiling.
+DEFAULT_MAX_TOKENS = 350
 
 
 class HaikuDescriptionEngine:
-    """Produces a niveau 1.5 strict description via Haiku LLM with caching.
+    """Produces a niveau 1.5 strict, engine-anchored narration via Haiku.
 
     Sources returned (matching MarketReading schema):
-      - "haiku_generated"  : Haiku output passed the forbidden-token filter
-      - "template_fallback": fallback path used (no client, or contamination)
+      - "haiku_generated"  : Haiku output passed the forbidden-token AND
+                             level-anchoring filters.
+      - "template_fallback": deterministic template used (no client, API error,
+                             or output failed a filter twice).
     """
 
     def __init__(
@@ -98,49 +88,44 @@ class HaikuDescriptionEngine:
         self,
         tags: list[str],
         regime: MarketReadingRegime,
+        structure: MarketReadingStructure,
+        price: float,
+        instrument: str,
     ) -> tuple[str, Literal["haiku_generated", "template_fallback"]]:
-        """Return ``(description, source)``.
+        """Return ``(narration, source)``.
 
         Strict order:
-          1. Cache lookup (sorted tags + regime fingerprint) — cache hit
-             never re-calls the LLM.
-          2. If no client injected → template fallback (no cache write).
-          3. LLM call.
-          4. Forbidden-token filter — contaminated output is NEVER cached
-             and triggers template fallback.
+          1. Build the engine FACTS (read-only projection of structure+regime).
+          2. Cache lookup (structural fingerprint) — a hit never re-calls the LLM
+             and is re-validated defensively before reuse.
+          3. No client → deterministic template (no cache write).
+          4. LLM call → validate (forbidden tokens AND known levels). On failure,
+             ONE retry. Still failing → deterministic template.
           5. Clean LLM output is cached and returned.
         """
-        hash_key = self._compute_hash(tags, regime)
+        facts = build_reading_facts(structure, regime, price, instrument)
+        hash_key = self._compute_hash(tags, facts)
 
         cached = self._cache.get(hash_key)
         if cached is not None:
             description, source = cached
-            # Defensive double-check: the cache should only hold clean output,
-            # but if a forbidden token slipped in historically, drop it and
-            # regenerate via fallback.
-            if contains_forbidden_tokens(description) is None:
+            # Defensive double-check: the cache should only hold clean output. If
+            # a contaminated/unanchored string slipped in historically, drop it.
+            if self._is_clean(description, facts):
                 return description, source  # type: ignore[return-value]
-            logger.warning("Cached description contained forbidden tokens; falling back")
+            logger.warning("Cached narration failed validation; regenerating")
 
         if self._client is None:
-            return _engine_template_fallback(tags, regime), "template_fallback"
+            return render_template(facts), "template_fallback"
 
-        try:
-            raw = self._call_haiku(tags, regime)
-        except Exception as exc:  # network / API error
-            logger.warning("Haiku call failed: %s — using template fallback", exc)
-            return _engine_template_fallback(tags, regime), "template_fallback"
+        candidate = self._attempt(facts)
+        if candidate is None:
+            # Retry once — transient model wobble or a single bad number.
+            logger.info("Narration failed validation; retrying once")
+            candidate = self._attempt(facts)
 
-        # Trim to schema max-length BEFORE filtering (some forbidden tokens
-        # might appear only in the truncated portion; we filter what we keep).
-        candidate = raw.strip()[:DESCRIPTION_MAX_LENGTH]
-        forbidden = contains_forbidden_tokens(candidate)
-        if forbidden is not None:
-            logger.warning(
-                "Haiku output contained forbidden token %r — using template fallback",
-                forbidden,
-            )
-            return _engine_template_fallback(tags, regime), "template_fallback"
+        if candidate is None:
+            return render_template(facts), "template_fallback"
 
         self._cache.put(hash_key, candidate, "haiku_generated")
         return candidate, "haiku_generated"
@@ -148,45 +133,67 @@ class HaikuDescriptionEngine:
     # ------------------------------------------------------------------ #
     # Internals
     # ------------------------------------------------------------------ #
-    @staticmethod
-    def _compute_hash(tags: list[str], regime: MarketReadingRegime) -> str:
-        """Stable SHA-256 of sorted tags + regime fingerprint.
+    def _attempt(self, facts: ReadingFacts) -> Optional[str]:
+        """One LLM call + validation. Returns the clean narration or None."""
+        try:
+            raw = self._call_haiku(facts)
+        except Exception as exc:  # network / API error
+            logger.warning("Haiku call failed: %s", exc)
+            return None
+        candidate = raw.strip()[:NARRATION_MAX_LENGTH]
+        if not self._is_clean(candidate, facts):
+            return None
+        return candidate
 
-        Tag order does not matter (sorted). MTF confluence keys are sorted
-        so {h1:'bullish', h4:'bearish'} and {h4:'bearish', h1:'bullish'}
-        produce the same hash.
+    @staticmethod
+    def _is_clean(text: str, facts: ReadingFacts) -> bool:
+        """Both niveau-1.5 gates: no forbidden vocab AND only engine-known levels."""
+        forbidden = contains_forbidden_tokens(text)
+        if forbidden is not None:
+            logger.warning("Narration contained forbidden token %r", forbidden)
+            return False
+        if not references_only_known_levels(text, facts):
+            logger.warning("Narration referenced a level absent from the facts")
+            return False
+        return True
+
+    @staticmethod
+    def _compute_hash(tags: list[str], facts: ReadingFacts) -> str:
+        """Stable SHA-256 of the STRUCTURAL facts (price excluded on purpose).
+
+        Tag order does not matter (sorted). The fingerprint captures everything
+        that should bust the cache — regime, MTF relation+biases, each zone
+        (kind/dir/status/tested/bounds), each break (kind/dir/level/confirmed),
+        and the retest — but NOT the raw price, so a quiet tick does not force a
+        regeneration (Lever 1 / « regénère sur changement notable »).
         """
-        sorted_tags = sorted(tags)
-        regime_fingerprint = {
-            "trend": regime.trend,
-            "volatility_observed": regime.volatility_observed,
-            "market_phase": regime.market_phase,
-            "mtf_confluence": dict(sorted(regime.mtf_confluence.items())),
+        fingerprint = {
+            "tags": sorted(tags),
+            "trend": facts.trend,
+            "volatility": facts.volatility,
+            "phase": facts.phase,
+            "mtf_relation": facts.mtf_relation,
+            "mtf": dict(sorted(facts.mtf_biases.items())),
+            "zones": sorted(
+                f"{z.kind}|{z.direction}|{z.status}|{z.tested}|{z.low}|{z.high}|{z.position}"
+                for z in facts.zones
+            ),
+            "breaks": [
+                f"{b.kind}|{b.direction}|{b.level}|{b.confirmed}" for b in facts.breaks
+            ],
+            "retest": f"{facts.retest_type}|{facts.retest_level}",
+            "contrary": facts.contrary or "",
         }
-        payload = json.dumps(
-            {"tags": sorted_tags, "regime": regime_fingerprint},
-            sort_keys=True,
-            ensure_ascii=False,
-        )
+        payload = json.dumps(fingerprint, sort_keys=True, ensure_ascii=False)
         return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
-    def _call_haiku(self, tags: list[str], regime: MarketReadingRegime) -> str:
-        """Call the Anthropic client and return the raw text content.
-
-        User-prompt body kept small (~50-100 tokens) — the system prompt is
-        the only large fixed cost.
-        """
-        user_prompt = (
-            f"Tags du marché : {sorted(tags)}\n"
-            f"Régime : trend={regime.trend}, volatilité={regime.volatility_observed}, "
-            f"phase={regime.market_phase}, mtf={dict(sorted(regime.mtf_confluence.items()))}\n\n"
-            "Décris en une phrase ce qui est observé. Pas de conseil, pas d'évaluation."
-        )
+    def _call_haiku(self, facts: ReadingFacts) -> str:
+        """Call the Anthropic client and return the raw text content."""
         response = self._client.messages.create(
             model=self._model,
             max_tokens=self._max_tokens,
             system=SYSTEM_PROMPT,
-            messages=[{"role": "user", "content": user_prompt}],
+            messages=[{"role": "user", "content": build_user_prompt(facts)}],
         )
         # Anthropic SDK shape: response.content is a list of content blocks
         # whose .text attribute holds the generated string.

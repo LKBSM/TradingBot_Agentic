@@ -196,33 +196,54 @@ describe('curateZones', () => {
     label: 'Order Block',
   });
 
-  it('splits active vs tested and caps each independently', () => {
+  it('splits active vs tested and returns all when within the (generous) caps', () => {
     const zones: ZoneModel[] = [];
     for (let i = 0; i < 8; i += 1) zones.push(mk(`act${i}`, false, 100 + i, 99 + i, 1000 + i));
     for (let i = 0; i < 6; i += 1) zones.push(mk(`tst${i}`, true, 100 + i, 99 + i, 1000 + i));
     const { active, tested } = curateZones(zones, 100);
-    expect(active).toHaveLength(ACTIVE_ZONE_CAP);
-    expect(tested).toHaveLength(TESTED_ZONE_CAP);
+    expect(active).toHaveLength(8); // ≤ ACTIVE_ZONE_CAP → none dropped
+    expect(tested).toHaveLength(6); // ≤ TESTED_ZONE_CAP → none dropped
     expect(active.every((z) => !z.tested)).toBe(true);
     expect(tested.every((z) => z.tested)).toBe(true);
   });
 
-  it('keeps the zones nearest to the current price (proximity weighs in)', () => {
-    // Five active zones at increasing distance from price=100; cap=4 → the
-    // farthest (mid ~140) must be dropped.
+  it('NEVER drops an ACTIVE zone for being far from price + old (symptom a / the ~4208 OB)', () => {
+    // A nearby-recent zone plus a FAR + OLD active zone (the ~4208 supply block,
+    // band 4202.93–4209.82, ~50 pts above a 4156 price, 2 days back). Under the old
+    // recency+proximity cap=4 it would be curated away; it must now survive.
     const zones = [
-      mk('p100', false, 101, 99, 5000), // mid 100
-      mk('p110', false, 111, 109, 5000), // mid 110
-      mk('p120', false, 121, 119, 5000), // mid 120
-      mk('p130', false, 131, 129, 5000), // mid 130
-      mk('p140', false, 141, 139, 5000), // mid 140 (farthest)
+      mk('near_new', false, 4157, 4156, 9000), // mid ~4156, at price, recent
+      mk('far_old_4208', false, 4209.82, 4202.93, 1000), // mid ~4206, far, old
     ];
-    const { active } = curateZones(zones, 100);
-    expect(active).toHaveLength(4);
-    expect(active.map((z) => z.id)).not.toContain('p140');
+    const { active } = curateZones(zones, 4156);
+    expect(active.map((z) => z.id)).toContain('far_old_4208');
   });
 
-  it('prefers more recent zones when proximity ties', () => {
+  it('keeps every active zone the backend ships (cap is a perf guard, not a recency filter)', () => {
+    // Backend ceiling is 12/type — all 12 active zones must survive curation.
+    const zones: ZoneModel[] = [];
+    for (let i = 0; i < 12; i += 1) zones.push(mk(`act${i}`, false, 100 + i, 99 + i, 1000 + i));
+    const { active } = curateZones(zones, 100);
+    expect(active).toHaveLength(12);
+    expect(active.map((z) => z.id)).toContain('act0'); // oldest + farthest still kept
+  });
+
+  it('applies the perf guard only past the (large) cap', () => {
+    const zones: ZoneModel[] = [];
+    for (let i = 0; i < 30; i += 1) zones.push(mk(`act${i}`, false, 100 + i, 99 + i, 1000 + i));
+    const { active } = curateZones(zones, 100);
+    expect(active).toHaveLength(ACTIVE_ZONE_CAP); // 24 — runaway guard bites only here
+  });
+
+  it('caps tested zones at the generous TESTED_ZONE_CAP guard', () => {
+    const zones: ZoneModel[] = [];
+    const many = TESTED_ZONE_CAP + 5;
+    for (let i = 0; i < many; i += 1) zones.push(mk(`tst${i}`, true, 100 + i, 99 + i, 1000 + i));
+    const { tested } = curateZones(zones, 100);
+    expect(tested).toHaveLength(TESTED_ZONE_CAP);
+  });
+
+  it('prefers more recent zones when proximity ties (overflow ordering, explicit cap)', () => {
     // All same mid-price → recency decides; oldest dropped at cap.
     const zones = [
       mk('old', false, 101, 99, 1000),
@@ -250,9 +271,18 @@ describe('zoneRightAnchor (right-edge placement)', () => {
     });
   });
 
-  it('anchors a MITIGATED zone to its mitigation point (bounded, never over-extended)', () => {
+  it('EXTENDS a touched-but-alive zone to the current bar (symptom b: not bounded at the tap)', () => {
+    // A `mitigated` OB / `partially_filled` FVG: tested + a known mitigation point,
+    // but the engine still tracks it (not invalidated/filled) → still in play → it
+    // extends to the current bar rather than stopping at the tap.
+    expect(zoneRightAnchor({ tested: true, mitigatedSec: 1500 })).toEqual({
+      kind: 'active',
+    });
+  });
+
+  it('bounds a RESOLVED zone at its mitigation point (defensive — resolved zones are dropped upstream)', () => {
     const mitigatedSec = 1500;
-    expect(zoneRightAnchor({ tested: true, mitigatedSec })).toEqual({
+    expect(zoneRightAnchor({ tested: true, mitigatedSec, resolved: true })).toEqual({
       kind: 'mitigation',
       sec: mitigatedSec,
     });

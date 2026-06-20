@@ -300,18 +300,20 @@ def test_empty_lists_allowed_everywhere():
     assert m2 == m
 
 
-def test_description_max_280_chars():
-    """Test 7: conditions.description capped at 280 chars (validator enforced)."""
-    exactly_280 = "a" * 280
+def test_description_capped_at_max_length():
+    """Test 7: conditions.description capped at DESCRIPTION_MAX_LENGTH (narration)."""
+    from src.intelligence.market_reading_schema import DESCRIPTION_MAX_LENGTH
+
+    exactly_max = "a" * DESCRIPTION_MAX_LENGTH
     MarketReadingConditions(
         tags=["t"],
-        description=exactly_280,
+        description=exactly_max,
         description_source="template_fallback",
     )
     with pytest.raises(ValidationError):
         MarketReadingConditions(
             tags=["t"],
-            description="a" * 281,
+            description="a" * (DESCRIPTION_MAX_LENGTH + 1),
             description_source="template_fallback",
         )
 

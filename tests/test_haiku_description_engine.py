@@ -1,6 +1,10 @@
-"""Tests for HaikuDescriptionEngine + HaikuDescriptionCacheStore (Chantier 2 Étape 5)."""
+"""Tests for HaikuDescriptionEngine + HaikuDescriptionCacheStore.
 
-import tempfile
+Narrated-reading upgrade: the engine now generates a fact-anchored narration
+(tags + regime + structure + price), validated against the engine FACTS
+(forbidden tokens AND known levels), retried once, then deterministic template.
+"""
+
 from pathlib import Path
 
 import pytest
@@ -10,8 +14,19 @@ from src.intelligence.haiku_description_engine import (
     HaikuDescriptionEngine,
     SYSTEM_PROMPT,
 )
-from src.intelligence.market_reading_schema import MarketReadingRegime
+from src.intelligence.market_reading_schema import (
+    MarketReadingRegime,
+    MarketReadingStructure,
+    OrderBlock,
+)
+from src.intelligence.narrated_reading import (
+    NARRATION_MAX_LENGTH,
+    build_reading_facts,
+)
 from src.storage.haiku_description_cache_store import HaikuDescriptionCacheStore
+
+PRICE = 2000.0
+INSTRUMENT = "XAUUSD"
 
 
 # ---------------------------------------------------------------------------
@@ -57,9 +72,18 @@ def regime() -> MarketReadingRegime:
 
 
 @pytest.fixture
+def structure() -> MarketReadingStructure:
+    return MarketReadingStructure()  # empty — no zones / breaks / retest
+
+
+@pytest.fixture
 def cache_store(tmp_path: Path) -> HaikuDescriptionCacheStore:
     db = tmp_path / "haiku_cache.db"
     return HaikuDescriptionCacheStore(db_path=str(db))
+
+
+def _gen(engine, tags, regime, structure):
+    return engine.generate(tags, regime, structure, PRICE, INSTRUMENT)
 
 
 # ---------------------------------------------------------------------------
@@ -67,32 +91,41 @@ def cache_store(tmp_path: Path) -> HaikuDescriptionCacheStore:
 # ---------------------------------------------------------------------------
 
 
-def test_cache_hit_does_not_call_llm(cache_store, regime):
+def test_cache_hit_does_not_call_llm(cache_store, regime, structure):
     client = _MockAnthropicClient(["Tendance haussière, volatilité élevée."])
     engine = HaikuDescriptionEngine(anthropic_client=client, cache_store=cache_store)
     tags = ["volatility_elevated", "trend_bullish"]
 
-    # First call: cache miss → LLM
-    desc1, src1 = engine.generate(tags, regime)
+    desc1, src1 = _gen(engine, tags, regime, structure)
     assert src1 == "haiku_generated"
     assert desc1 == "Tendance haussière, volatilité élevée."
     assert len(client.messages.calls) == 1
 
-    # Second call (same tags, same regime): cache hit → no LLM
-    desc2, src2 = engine.generate(tags, regime)
+    # Same facts → cache hit → no new LLM call.
+    desc2, src2 = _gen(engine, tags, regime, structure)
     assert desc2 == desc1
     assert src2 == "haiku_generated"
-    assert len(client.messages.calls) == 1  # unchanged
+    assert len(client.messages.calls) == 1
 
 
-def test_cache_key_independent_of_tag_order(cache_store, regime):
+def test_cache_key_independent_of_tag_order(cache_store, regime, structure):
     client = _MockAnthropicClient(["Description from LLM."])
     engine = HaikuDescriptionEngine(anthropic_client=client, cache_store=cache_store)
 
-    desc1, _ = engine.generate(["a", "b", "c"], regime)
-    desc2, _ = engine.generate(["c", "a", "b"], regime)
+    desc1, _ = _gen(engine, ["a", "b", "c"], regime, structure)
+    desc2, _ = _gen(engine, ["c", "a", "b"], regime, structure)
     assert desc1 == desc2
     assert len(client.messages.calls) == 1  # second call hit cache
+
+
+def test_cache_key_excludes_raw_price(cache_store, regime, structure):
+    """A quiet tick (price moves, structure unchanged) must NOT bust the cache."""
+    client = _MockAnthropicClient(["Tendance haussière observée."])
+    engine = HaikuDescriptionEngine(anthropic_client=client, cache_store=cache_store)
+
+    engine.generate(["t"], regime, structure, 2000.0, INSTRUMENT)
+    engine.generate(["t"], regime, structure, 2001.4, INSTRUMENT)  # price moved
+    assert len(client.messages.calls) == 1  # structural fingerprint unchanged
 
 
 # ---------------------------------------------------------------------------
@@ -100,73 +133,137 @@ def test_cache_key_independent_of_tag_order(cache_store, regime):
 # ---------------------------------------------------------------------------
 
 
-def test_llm_called_with_correct_model_and_short_prompt(cache_store, regime):
+def test_llm_called_with_correct_model_and_short_prompt(cache_store, regime, structure):
     client = _MockAnthropicClient(["Clean output."])
     engine = HaikuDescriptionEngine(anthropic_client=client, cache_store=cache_store)
-    engine.generate(["t1"], regime)
+    _gen(engine, ["t1"], regime, structure)
 
     call = client.messages.calls[0]
     assert call["model"].startswith("claude-haiku")
     assert call["max_tokens"] == DEFAULT_MAX_TOKENS
-    assert call["max_tokens"] <= 200  # Lever 3 budget
+    assert call["max_tokens"] <= 400  # Lever 3 budget (paragraph)
     assert call["system"] == SYSTEM_PROMPT
     assert len(call["messages"]) == 1
     assert call["messages"][0]["role"] == "user"
-    # System prompt itself is short
-    assert len(SYSTEM_PROMPT) < 1500  # ~rough proxy for < 200 tokens FR
+    assert len(SYSTEM_PROMPT) < 1800  # short system prompt (~250 tokens FR)
 
 
 # ---------------------------------------------------------------------------
-# CRITICAL: forbidden-token contamination → fallback template, no cache write
+# Forbidden-token contamination → fallback template, no cache write
 # ---------------------------------------------------------------------------
 
 
-def test_contaminated_haiku_output_falls_back_no_cache(cache_store, regime):
-    """If Haiku emits a forbidden token, fallback template is used AND nothing is cached."""
-    client = _MockAnthropicClient(["Conseille d'acheter maintenant."])
+def test_contaminated_haiku_output_falls_back_no_cache(cache_store, regime, structure):
+    # Both attempts contaminated (forbidden token) → template fallback, nothing cached.
+    client = _MockAnthropicClient(
+        ["Conseille d'acheter maintenant.", "Je conseille de sortir vite."]
+    )
     engine = HaikuDescriptionEngine(anthropic_client=client, cache_store=cache_store)
 
-    desc, src = engine.generate(["t1"], regime)
+    desc, src = _gen(engine, ["t1"], regime, structure)
 
     assert src == "template_fallback"
-    # The returned description must NOT contain the contaminated tokens
     assert "conseille" not in desc.lower()
-    assert "achète" not in desc.lower()
-    assert "acheter" not in desc.lower()
-    # Cache must be empty for this combination (contaminated output never persisted)
     assert cache_store.size() == 0
 
-    # Subsequent call: still a cache miss (because we didn't cache).
-    # If the client is exhausted, the engine should still produce a fallback.
-    desc2, src2 = engine.generate(["t1"], regime)
-    # The client raised RuntimeError("No more mocked responses") → engine falls back
-    assert src2 == "template_fallback"
+
+def test_retry_once_then_succeeds(cache_store, regime, structure):
+    """First attempt contaminated, second clean → haiku_generated (one retry)."""
+    client = _MockAnthropicClient(
+        ["Conseille d'acheter.", "Tendance haussière, volatilité élevée."]
+    )
+    engine = HaikuDescriptionEngine(anthropic_client=client, cache_store=cache_store)
+
+    desc, src = _gen(engine, ["t1"], regime, structure)
+    assert src == "haiku_generated"
+    assert desc == "Tendance haussière, volatilité élevée."
+    assert len(client.messages.calls) == 2  # one retry
 
 
 # ---------------------------------------------------------------------------
-# No client injected → fallback template
+# Level-anchoring: a narration citing a foreign level is rejected
 # ---------------------------------------------------------------------------
 
 
-def test_no_client_returns_template_fallback(cache_store, regime):
-    engine = HaikuDescriptionEngine(anthropic_client=None, cache_store=cache_store)
-    desc, src = engine.generate(["volatility_elevated"], regime)
+def test_unanchored_level_rejected_then_fallback(cache_store, regime):
+    """A narration citing a price absent from the facts is rejected (both tries)."""
+    structure = MarketReadingStructure(
+        order_blocks=[
+            OrderBlock(
+                id="ob1",
+                direction="bearish",
+                level_high=2010.0,
+                level_low=2005.0,
+                importance="medium",
+                status="active",
+                created_at="2026-06-20T00:00:00Z",
+                tested=False,
+            )
+        ]
+    )
+    # 2222.22 is NOT a level the engine produced → must be rejected.
+    client = _MockAnthropicClient(
+        ["Le prix teste 2222.22.", "Order Block actif à 9999.99."]
+    )
+    engine = HaikuDescriptionEngine(anthropic_client=client, cache_store=cache_store)
+
+    desc, src = engine.generate(["t1"], regime, structure, PRICE, INSTRUMENT)
     assert src == "template_fallback"
-    assert "tendance" in desc.lower()  # template uses this vocabulary
+    assert "2222.22" not in desc
+    assert "9999.99" not in desc
+    assert cache_store.size() == 0
+
+
+def test_anchored_level_accepted(cache_store, regime):
+    """A narration reusing a real engine level passes anchoring."""
+    structure = MarketReadingStructure(
+        order_blocks=[
+            OrderBlock(
+                id="ob1",
+                direction="bearish",
+                level_high=2010.0,
+                level_low=2005.0,
+                importance="medium",
+                status="active",
+                created_at="2026-06-20T00:00:00Z",
+                tested=False,
+            )
+        ]
+    )
+    facts = build_reading_facts(structure, regime, PRICE, INSTRUMENT)
+    assert "2005.00" in {*[z.low for z in facts.zones]}  # sanity: real level
+    client = _MockAnthropicClient(["Un Order Block actif borne 2005.00–2010.00."])
+    engine = HaikuDescriptionEngine(anthropic_client=client, cache_store=cache_store)
+
+    desc, src = engine.generate(["t1"], regime, structure, PRICE, INSTRUMENT)
+    assert src == "haiku_generated"
+    assert "2005.00" in desc
+
+
+# ---------------------------------------------------------------------------
+# No client injected → deterministic template
+# ---------------------------------------------------------------------------
+
+
+def test_no_client_returns_template_fallback(cache_store, regime, structure):
+    engine = HaikuDescriptionEngine(anthropic_client=None, cache_store=cache_store)
+    desc, src = _gen(engine, ["volatility_elevated"], regime, structure)
+    assert src == "template_fallback"
+    assert "tendance" in desc.lower()
     assert cache_store.size() == 0
 
 
 # ---------------------------------------------------------------------------
-# Truncation to 280 chars
+# Truncation to the narration max length
 # ---------------------------------------------------------------------------
 
 
-def test_haiku_output_truncated_to_schema_max_length(cache_store, regime):
-    long_output = "Tendance haussière " * 50  # ~950 chars
+def test_haiku_output_truncated_to_schema_max_length(cache_store, regime, structure):
+    long_output = "Tendance haussière " * 60  # ~1140 chars, no numbers
     client = _MockAnthropicClient([long_output])
     engine = HaikuDescriptionEngine(anthropic_client=client, cache_store=cache_store)
-    desc, _ = engine.generate(["t"], regime)
-    assert len(desc) <= 280
+    desc, _ = _gen(engine, ["t"], regime, structure)
+    assert len(desc) <= NARRATION_MAX_LENGTH
 
 
 # ---------------------------------------------------------------------------
@@ -181,19 +278,19 @@ def test_cache_store_get_returns_none_on_miss(cache_store):
 def test_cache_store_put_then_get_roundtrip(cache_store):
     cache_store.put("k1", "Description un.", "haiku_generated")
     assert cache_store.get("k1") == ("Description un.", "haiku_generated")
-    cache_store.put("k1", "Description deux.", "haiku_generated")  # replace
+    cache_store.put("k1", "Description deux.", "haiku_generated")
     assert cache_store.get("k1") == ("Description deux.", "haiku_generated")
 
 
 def test_cache_store_uses_env_var_for_path(tmp_path: Path, monkeypatch):
     custom = tmp_path / "via_env.db"
     monkeypatch.setenv("MARKET_READINGS_DB_PATH", str(custom))
-    store = HaikuDescriptionCacheStore()  # no explicit path
+    store = HaikuDescriptionCacheStore()
     store.put("k", "d", "haiku_generated")
     assert custom.exists()
 
 
-def test_cache_hash_changes_when_regime_changes(cache_store):
+def test_cache_hash_changes_when_regime_changes(structure):
     regime_a = MarketReadingRegime(
         trend="bullish", volatility_observed="normal", market_phase="trend",
         mtf_confluence={"h1": "bullish"},
@@ -202,8 +299,10 @@ def test_cache_hash_changes_when_regime_changes(cache_store):
         trend="bearish", volatility_observed="normal", market_phase="trend",
         mtf_confluence={"h1": "bullish"},
     )
-    h_a = HaikuDescriptionEngine._compute_hash(["t1"], regime_a)
-    h_b = HaikuDescriptionEngine._compute_hash(["t1"], regime_b)
+    facts_a = build_reading_facts(structure, regime_a, PRICE, INSTRUMENT)
+    facts_b = build_reading_facts(structure, regime_b, PRICE, INSTRUMENT)
+    h_a = HaikuDescriptionEngine._compute_hash(["t1"], facts_a)
+    h_b = HaikuDescriptionEngine._compute_hash(["t1"], facts_b)
     assert h_a != h_b
 
 
@@ -212,7 +311,7 @@ def test_cache_hash_changes_when_regime_changes(cache_store):
 # ---------------------------------------------------------------------------
 
 
-def test_llm_exception_returns_fallback(cache_store, regime):
+def test_llm_exception_returns_fallback(cache_store, regime, structure):
     class _BoomMessages:
         def create(self, **kwargs):
             raise ConnectionError("network down")
@@ -221,6 +320,6 @@ def test_llm_exception_returns_fallback(cache_store, regime):
         messages = _BoomMessages()
 
     engine = HaikuDescriptionEngine(anthropic_client=_BoomClient(), cache_store=cache_store)
-    desc, src = engine.generate(["t1"], regime)
+    desc, src = _gen(engine, ["t1"], regime, structure)
     assert src == "template_fallback"
     assert len(desc) > 0

@@ -908,6 +908,20 @@ export function ReadingChart({
                   • en test
                 </span>
               )}
+              {/* Touched-but-alive marker: a `mitigated` OB / `partially_filled`
+                  FVG that price has tapped but NOT closed through. The engine still
+                  tracks it, so its box extends to the current bar (it is in play) —
+                  this dim slate tag (NOT the amber live accent) makes the touched
+                  state explicit so the extension never reads as untested. */}
+              {r.tested && !r.inTestLive && (
+                <span
+                  className="absolute right-1 top-0 whitespace-nowrap text-[9px] font-medium leading-tight opacity-70"
+                  style={{ color: ZONE_LABEL[r.kind] }}
+                  title="Zone déjà touchée mais non invalidée — toujours suivie par le moteur (encore en jeu)"
+                >
+                  • touché
+                </span>
+              )}
             </div>
           );
         })}

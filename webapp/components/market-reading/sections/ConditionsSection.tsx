@@ -8,9 +8,12 @@ import { formatTag } from '@/lib/market-reading/tag-labels';
 import type { MarketReadingConditions } from '@/types/market-reading';
 
 /**
- * Section "Conditions" — the plain-language synthesis plus the descriptive
- * tags. `description_source` is surfaced discreetly so the reader knows whether
- * the sentence was LLM-generated or a deterministic template fallback.
+ * Section "Lecture narrée" — the present-tense narration synthesised by the
+ * engine FACTS (trend, multi-TF alignment, near-price OB/FVG zones, recent
+ * BOS/CHOCH, volatility), validated against those facts server-side.
+ * `description_source` is surfaced discreetly so the reader knows whether the
+ * narration came from the LLM (anchored + level-validated) or the deterministic
+ * template fallback. The text is descriptive only — never a forecast or advice.
  */
 export function ConditionsSection({
   conditions,
@@ -19,22 +22,33 @@ export function ConditionsSection({
 }) {
   const sourceLabel =
     conditions.description_source === 'haiku_generated'
-      ? 'Synthèse générée'
-      : 'Synthèse modèle (fallback)';
+      ? 'Narration générée'
+      : 'Lecture modèle (repli)';
+
+  // The narration is a short paragraph; render any sentence-level line breaks the
+  // engine produced as separate lines for readability (it never adds markup).
+  const paragraphs = conditions.description
+    .split(/\n+/)
+    .map((p) => p.trim())
+    .filter(Boolean);
 
   return (
     <AccordionItem value="conditions">
       <AccordionTrigger className="text-left text-sm">
         <span className="flex items-center gap-2">
           <span aria-hidden>🧭</span>
-          <span>Synthèse des conditions</span>
+          <span>Lecture narrée</span>
         </span>
       </AccordionTrigger>
       <AccordionContent>
         <div className="space-y-4">
-          <p className="text-sm leading-relaxed text-foreground">
-            {conditions.description}
-          </p>
+          <div className="space-y-2 text-sm leading-relaxed text-foreground">
+            {paragraphs.length > 0 ? (
+              paragraphs.map((p, i) => <p key={i}>{p}</p>)
+            ) : (
+              <p>{conditions.description}</p>
+            )}
+          </div>
 
           {conditions.tags.length > 0 && (
             <div className="flex flex-wrap gap-1.5">

@@ -34,7 +34,7 @@ const FAQ: ReadonlyArray<FaqEntry> = [
     answer: (
       <>
         Non. MIA Markets produit des <strong>lectures de marché
-        descriptives</strong> (structure, régime, événements, synthèse) sur un
+        descriptives</strong> (structure, régime, événements, lecture narrée) sur un
         actif et une unité de temps. Le chatbot refuse explicitement les
         questions de type «&nbsp;dois-je acheter ?&nbsp;» (cf. règlement UE
         2024/2811 et MiFID II sur les finfluencers). Aucune recommandation

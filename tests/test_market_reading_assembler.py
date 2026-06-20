@@ -312,7 +312,7 @@ class _StubDescriptionEngine:
         self._source = source
         self.calls: list[tuple[list[str], Any]] = []
 
-    def generate(self, tags, regime):
+    def generate(self, tags, regime, structure, price, instrument):
         self.calls.append((list(tags), regime))
         return self._description, self._source
 
@@ -335,7 +335,7 @@ def test_description_engine_used_when_injected(fixed_clock):
 
 def test_description_engine_failure_falls_back_to_template(fixed_clock):
     class _FailingEngine:
-        def generate(self, tags, regime):
+        def generate(self, tags, regime, structure, price, instrument):
             raise RuntimeError("LLM down")
 
     assembler = MarketReadingAssembler(
