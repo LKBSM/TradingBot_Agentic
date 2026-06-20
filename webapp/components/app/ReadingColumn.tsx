@@ -17,6 +17,8 @@ import {
   type ReadingSource,
 } from '@/lib/market-reading/hooks';
 import { useLivePrice } from '@/lib/market-reading/live-price';
+import { useChartViewOptional } from '@/lib/chart/viewState';
+import type { ChartViewState } from '@/lib/chart/viewActions';
 import type { Combo } from '@/lib/market-reading/store';
 import type { Candle, MarketReading } from '@/types/market-reading';
 
@@ -92,6 +94,11 @@ export function ReadingColumn({
     enabled: dataSource === 'live' ? undefined : false,
   });
 
+  // Chatbot-controlled DISPLAY state (layers / filters / focus / highlight).
+  // Optional: outside the /app provider it defaults to "show everything", so the
+  // chart's behaviour is unchanged when no chatbot action has been applied.
+  const { view: chartView } = useChartViewOptional();
+
   // Header price follows the tick: override the unified (closed-candle) price
   // with the live one, keeping the SAME descriptive daily reference so the % is
   // honest. Falls back to the closed-candle `live` when no tick is available.
@@ -129,7 +136,7 @@ export function ReadingColumn({
       <MarketReadingCard
         reading={reading}
         onAskChatbot={focusChat}
-        chartSlot={buildChartSlot(reading, candles, livePrice, liveTs, active?.timeframe ?? null)}
+        chartSlot={buildChartSlot(reading, candles, livePrice, liveTs, active?.timeframe ?? null, chartView)}
         live={liveHeader}
         className="w-full border-border/60 shadow-sm"
       />
@@ -167,6 +174,7 @@ function buildChartSlot(
   livePrice: number | null,
   liveTs: number | null,
   timeframe: string | null,
+  chartView: ChartViewState,
 ): React.ReactNode {
   if (!candles || candles.length === 0) {
     return <ChartUnavailable />;
@@ -179,6 +187,10 @@ function buildChartSlot(
       timeframe={timeframe}
       livePrice={livePrice}
       liveTs={liveTs}
+      layers={chartView.layers}
+      filter={chartView.filter}
+      focus={chartView.focus}
+      highlightZoneId={chartView.highlightZoneId}
     />
   );
 }

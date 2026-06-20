@@ -21,9 +21,16 @@ import {
   buildLiveOverlay,
   buildZoneModels,
   curateZones,
+  filterZoneModels,
   zoneRightAnchor,
   type ZoneModel,
 } from '@/lib/chart/zoneLayout';
+import type {
+  ChartFilter,
+  ChartLayers,
+  FocusCommand,
+} from '@/lib/chart/viewActions';
+import { DEFAULT_CHART_VIEW } from '@/lib/chart/viewActions';
 import { buildStructureMarkers } from '@/lib/chart/structureMarkers';
 import { isPlausibleTick, isValidBar } from '@/lib/chart/sanitize';
 import type { Candle, MarketReadingStructure } from '@/types/market-reading';
@@ -72,6 +79,20 @@ export interface ReadingChartProps {
   livePrice?: number | null;
   /** Feed epoch (seconds) of the live tick — buckets the forming candle. */
   liveTs?: number | null;
+  /**
+   * DISPLAY-ONLY view state, driven by the M.I.A Agent chat (or left at the
+   * defaults). These change ONLY what the chart renders / how it frames — never
+   * the detection data or a zone's geometry:
+   *   · layers          — which overlay families are drawn (FVG / OB / breaks).
+   *   · filter          — which DETECTED zones are shown (active / size / proximity).
+   *   · focus           — a one-shot framing command (zone / price / fit).
+   *   · highlightZoneId  — a detected zone to emphasise visually.
+   * All optional; omitting them yields the exact pre-existing behaviour.
+   */
+  layers?: ChartLayers;
+  filter?: ChartFilter;
+  focus?: FocusCommand | null;
+  highlightZoneId?: string | null;
   className?: string;
 }
 
@@ -210,6 +231,18 @@ const LIVE_RGB = '201, 162, 39'; // #C9A227 — warm amber
 const LIVE_COLOR = '#C9A227';
 
 /**
+ * View-only HIGHLIGHT accent for a zone the chat asked to emphasise. A COOL
+ * sky-blue, deliberately distinct from both the confirmed slate/blue palette and
+ * the warm-amber live accent — so "mis en évidence à la demande" never reads as a
+ * detection state or an intra-candle outcome. Display emphasis only.
+ */
+const HIGHLIGHT_RGB = '79, 157, 222'; // #4F9DDE
+const HIGHLIGHT_COLOR = '#4F9DDE';
+
+/** Number of recent bars framed when centring on the current price. */
+const FOCUS_PRICE_BARS = 40;
+
+/**
  * Theme-resolved palette. Lightweight-charts paints onto a canvas, so it needs
  * concrete colour strings (CSS `var(--token)` does not resolve there). These
  * values mirror the app tokens — `--border` for the grid, `--muted-foreground`
@@ -242,6 +275,10 @@ export function ReadingChart({
   timeframe = null,
   livePrice = null,
   liveTs = null,
+  layers = DEFAULT_CHART_VIEW.layers,
+  filter = DEFAULT_CHART_VIEW.filter,
+  focus = null,
+  highlightZoneId = null,
   className,
 }: ReadingChartProps) {
   const { resolvedTheme } = useTheme();
@@ -283,12 +320,39 @@ export function ReadingChart({
 
   // Curated zone models (localized + bounded). Tested first so active boxes
   // layer on top when rendered; consumed zones are already excluded upstream.
+  // The chat-driven DISPLAY filter (active-only / min-size / proximity) and the
+  // per-kind layer visibility are applied here — both HIDE detected boxes, never
+  // edit a band. With the defaults this is the unchanged full set.
+  const { fvg: showFvg, ob: showOb } = layers;
+  const {
+    activeOnly: fActiveOnly,
+    proximityOnly: fProximityOnly,
+    proximityPct: fProximityPct,
+    minSizePct: fMinSizePct,
+  } = filter;
   const zones = React.useMemo<(ZoneModel & { tested: boolean })[]>(() => {
-    const models = buildZoneModels(structure);
+    const models = buildZoneModels(structure).filter((z) =>
+      z.kind === 'ob' ? showOb : showFvg,
+    );
     const price = lastCandle?.close ?? 0;
-    const { active, tested } = curateZones(models, price);
+    const filtered = filterZoneModels(models, price, {
+      activeOnly: fActiveOnly,
+      proximityOnly: fProximityOnly,
+      proximityPct: fProximityPct,
+      minSizePct: fMinSizePct,
+    });
+    const { active, tested } = curateZones(filtered, price);
     return [...tested, ...active];
-  }, [structure, lastCandle?.close]);
+  }, [
+    structure,
+    lastCandle?.close,
+    showFvg,
+    showOb,
+    fActiveOnly,
+    fProximityOnly,
+    fProximityPct,
+    fMinSizePct,
+  ]);
 
   // ── Create the chart once; recreate only if the theme changes. ──────────────
   React.useEffect(() => {
@@ -426,26 +490,34 @@ export function ReadingChart({
     // detected break over the window — fixes the "sous-surfaçage" where only the
     // last bar's break ever showed. Lightweight-charts ignores markers outside
     // the loaded candle range, so older breaks simply don't draw (graceful).
-    markersRef.current?.setMarkers(buildStructureMarkers(structure));
+    // The "breaks" layer can be hidden on chat request → no markers, no lines.
+    markersRef.current?.setMarkers(
+      layers.breaks ? buildStructureMarkers(structure) : [],
+    );
 
     // Horizontal break-level price lines (BOS / CHOCH / retest) — hairline.
-    const priceLines = [
-      structure.bos && {
-        price: structure.bos.level,
-        color: LEVEL.bos,
-        title: 'BOS',
-      },
-      structure.choch && {
-        price: structure.choch.level,
-        color: LEVEL.choch,
-        title: 'CHOCH',
-      },
-      structure.retest_in_progress && {
-        price: structure.retest_in_progress.level,
-        color: LEVEL.retest,
-        title: 'Retest',
-      },
-    ].filter((l): l is { price: number; color: string; title: string } =>
+    // Hidden when the "breaks" layer is toggled off (display-only).
+    const priceLines = (
+      layers.breaks
+        ? [
+            structure.bos && {
+              price: structure.bos.level,
+              color: LEVEL.bos,
+              title: 'BOS',
+            },
+            structure.choch && {
+              price: structure.choch.level,
+              color: LEVEL.choch,
+              title: 'CHOCH',
+            },
+            structure.retest_in_progress && {
+              price: structure.retest_in_progress.level,
+              color: LEVEL.retest,
+              title: 'Retest',
+            },
+          ]
+        : []
+    ).filter((l): l is { price: number; color: string; title: string } =>
       Boolean(l),
     );
 
@@ -472,7 +544,7 @@ export function ReadingChart({
     return () => {
       for (const line of created) series.removePriceLine(line);
     };
-  }, [candles, structure]);
+  }, [candles, structure, layers.breaks]);
 
   // ── Keep zone rectangles IN PHASE with the chart canvas. ────────────────────
   // The boxes are an HTML overlay positioned from priceToCoordinate /
@@ -701,6 +773,59 @@ export function ReadingChart({
     }
   }, [livePrice, liveTs, lastClosedTime, lastClosedClose, timeframe]);
 
+  // ── Chat-driven FOCUS command (one-shot, re-triggered by nonce). ────────────
+  // Re-frames the visible window only — it never changes data or geometry:
+  //   · zone  — bracket the (read-only) time/price span of a DETECTED zone.
+  //   · price — frame the last FOCUS_PRICE_BARS bars around the current price.
+  //   · fit   — fit all candles (same as the "Ajuster" control).
+  // Keyed on focus?.nonce so the same command (e.g. re-focus the same zone)
+  // re-runs. A zone id that no longer resolves is a graceful no-op.
+  const focusNonce = focus?.nonce ?? null;
+  React.useEffect(() => {
+    if (!focus) return;
+    const chart = chartRef.current;
+    if (!chart) return;
+    const ts = chart.timeScale();
+    const times = candles.map((c) => c.time as number);
+    const lastTime = times.length ? times[times.length - 1]! : null;
+    const barSec = (timeframe ? TF_SECONDS[timeframe] : undefined) ?? 0;
+
+    if (focus.kind === 'fit') {
+      ts.fitContent();
+      return;
+    }
+
+    if (focus.kind === 'price') {
+      if (lastTime === null || barSec <= 0) {
+        ts.scrollToRealTime();
+        return;
+      }
+      ts.setVisibleRange({
+        from: (lastTime - barSec * FOCUS_PRICE_BARS) as UTCTimestamp,
+        to: (lastTime + barSec * 2) as UTCTimestamp,
+      });
+      return;
+    }
+
+    if (focus.kind === 'zone' && focus.zoneId) {
+      const model = buildZoneModels(structure).find((z) => z.id === focus.zoneId);
+      if (!model || lastTime === null) return;
+      const zoneStart = model.createdSec;
+      const zoneEnd = model.mitigatedSec ?? lastTime;
+      const span = Math.max(zoneEnd - zoneStart, 0);
+      const margin = Math.max(barSec * 8, span);
+      try {
+        ts.setVisibleRange({
+          from: (zoneStart - margin) as UTCTimestamp,
+          to: (zoneEnd + margin) as UTCTimestamp,
+        });
+      } catch {
+        // Range outside the data — graceful no-op (next command recovers).
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusNonce]);
+
   // ── Discreet zoom / fit controls (mouse + ≥44px touch targets). ─────────────
   const zoom = React.useCallback((factor: number) => {
     const ts = chartRef.current?.timeScale();
@@ -736,6 +861,15 @@ export function ReadingChart({
         {zoneRects.map((r) => {
           const rgb = ZONE_RGB[r.kind];
           const a = r.tested ? ZONE_ALPHA.tested : ZONE_ALPHA.active;
+          // View-only emphasis requested via chat — a cool solid ring, distinct
+          // from the live-amber "en test" accent. Display only; geometry is the
+          // detected band, untouched.
+          const isHighlighted = highlightZoneId != null && r.id === highlightZoneId;
+          const border = isHighlighted
+            ? `2px solid rgba(${HIGHLIGHT_RGB}, 0.95)`
+            : r.inTestLive
+              ? `1px solid rgba(${LIVE_RGB}, 0.85)`
+              : `1px dashed rgba(${rgb}, ${a.border})`;
           return (
             <div
               key={`${r.kind}:${r.id}`}
@@ -745,11 +879,14 @@ export function ReadingChart({
                 width: r.width,
                 top: r.top,
                 height: r.height,
-                backgroundColor: `rgba(${rgb}, ${a.fill})`,
-                border: r.inTestLive
-                  ? `1px solid rgba(${LIVE_RGB}, 0.85)`
-                  : `1px dashed rgba(${rgb}, ${a.border})`,
+                backgroundColor: isHighlighted
+                  ? `rgba(${HIGHLIGHT_RGB}, ${Math.max(a.fill, 0.16)})`
+                  : `rgba(${rgb}, ${a.fill})`,
+                border,
                 borderRadius: 1,
+                boxShadow: isHighlighted
+                  ? `0 0 0 1px rgba(${HIGHLIGHT_RGB}, 0.35)`
+                  : undefined,
               }}
             >
               <span

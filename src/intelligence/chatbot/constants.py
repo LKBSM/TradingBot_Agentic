@@ -312,6 +312,14 @@ INSIST_REDIRECT_TEMPLATE: str = (
     "Je décris les conditions du marché. La décision d'agir t'appartient."
 )
 
+# Couche 4 — on-brand refusal when a chart-view action falls outside the
+# display-only whitelist (e.g. inventing / moving / resizing a structure). Kept
+# free of forbidden tokens so it never trips Couche 3.
+VIEW_ACTION_REFUSAL_TEMPLATE: str = (
+    "Je n'invente pas de structure — je n'affiche que ce que le marché montre. "
+    "Je peux masquer, filtrer, ou me centrer sur les zones détectées."
+)
+
 
 __all__ = [
     "ADVERSARIAL_PATTERNS_BY_CATEGORY",
@@ -330,5 +338,6 @@ __all__ = [
     "LLM_ERROR_TEMPLATE",
     "OUTPUT_CONTAMINATED_TEMPLATE",
     "REFUSAL_TEMPLATE",
+    "VIEW_ACTION_REFUSAL_TEMPLATE",
     "normalize_text",
 ]

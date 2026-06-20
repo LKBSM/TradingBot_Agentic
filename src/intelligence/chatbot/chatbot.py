@@ -29,9 +29,14 @@ from src.intelligence.chatbot.constants import (
     LLM_ERROR_TEMPLATE,
     OUTPUT_CONTAMINATED_TEMPLATE,
     REFUSAL_TEMPLATE,
+    VIEW_ACTION_REFUSAL_TEMPLATE,
 )
 from src.intelligence.chatbot.output_filter import OutputFilter
 from src.intelligence.chatbot.signal_summary_provider import SignalSummaryProvider
+from src.intelligence.chatbot.view_action_filter import (
+    ALLOWED_ACTIONS,
+    ViewActionValidator,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +82,48 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
         ),
         "input_schema": {"type": "object", "properties": {}, "required": []},
     },
+    {
+        "name": "apply_chart_view",
+        "description": (
+            "Change UNIQUEMENT l'AFFICHAGE du graphique (jamais les données ni la "
+            "géométrie d'une zone). Action structurée, liste blanche stricte :\n"
+            "- set_layer_visibility {layer: 'fvg'|'ob'|'breaks'|'all', visible: bool} "
+            "— masquer/afficher une couche (breaks = BOS/CHOCH/retest).\n"
+            "- filter_zones {active_only?: bool, proximity_only?: bool, "
+            "proximity_pct?: number, min_size_pct?: number} — filtrer les zones "
+            "DÉTECTÉES affichées (actives seules / proches du prix / taille min "
+            "en % du prix).\n"
+            "- focus_zone {zone_id: str} — se centrer sur une zone DÉTECTÉE "
+            "(utilise un id renvoyé par get_market_reading ; jamais un id inventé).\n"
+            "- highlight_zone {zone_id: str} — mettre en évidence une zone DÉTECTÉE.\n"
+            "- focus_price {} — se centrer sur le prix courant.\n"
+            "- fit_chart {} — ajuster la vue à toutes les bougies.\n"
+            "- reset_view {} — réinitialiser l'affichage (couches visibles, sans "
+            "filtre ni mise en évidence).\n"
+            "- set_instrument_timeframe {instrument: 'XAUUSD'|'EURUSD', "
+            "timeframe: 'M15'|'H1'|'H4'} — changer la combinaison affichée.\n"
+            "INTERDIT : créer/placer/déplacer/redimensionner une structure, ou "
+            "fournir un prix/niveau — ces actions n'existent pas et seront rejetées."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "enum": list(ALLOWED_ACTIONS),
+                    "description": "Action de la liste blanche (vue seule).",
+                },
+                "params": {
+                    "type": "object",
+                    "description": (
+                        "Paramètres de l'action (voir description). Aucun champ de "
+                        "prix/niveau/géométrie n'est admis."
+                    ),
+                },
+            },
+            "required": ["action"],
+        },
+    },
 ]
 
 
@@ -90,12 +137,20 @@ RÈGLES STRICTES :
 - Tu n'inventes jamais de données — utilise toujours get_market_reading ou get_signal_summary.
 - Tu réponds en français, par défaut concis (2-4 phrases sauf demande explicite de détail).
 
+CONTRÔLE DE L'AFFICHAGE DU GRAPHIQUE (apply_chart_view) :
+- Tu peux changer ce que le graphique AFFICHE, jamais ce que le marché contient.
+- Actions possibles uniquement : masquer/afficher une couche (FVG, OB, BOS/CHOCH), filtrer les zones DÉTECTÉES (actives seules / proches / taille min), te centrer/zoomer (zone détectée ou prix courant), changer instrument/timeframe, mettre en évidence une zone DÉTECTÉE.
+- Pour cibler une zone précise (focus_zone / highlight_zone), appelle d'abord get_market_reading pour obtenir son id, et n'utilise QUE des ids renvoyés par le moteur — jamais un id ou un prix inventé.
+- Tu n'inventes, ne places, ne déplaces et ne redimensionnes JAMAIS une structure. Si on te le demande (« mets un OB à 2000 », « agrandis ce FVG »), tu refuses ainsi : « Je n'invente pas de structure — je n'affiche que ce que le marché montre. Je peux masquer, filtrer, ou me centrer sur les zones détectées. »
+- Après une action d'affichage, décris-la comme un changement de VUE, au présent (« j'ai masqué les FVG », « je me centre sur l'OB actif »). N'implique jamais que tu as modifié le marché ou créé une structure.
+
 CONTEXTE INITIAL (signal_summary) :
 {signal_summary}
 
-Tu as accès à 2 tools :
+Tu as accès à 3 tools :
 - get_market_reading(instrument, timeframe) : lecture complète d'une combinaison.
 - get_signal_summary() : résumé des 6 combinaisons (XAUUSD/EURUSD × M15/H1/H4).
+- apply_chart_view(action, params) : changer l'AFFICHAGE du graphique (liste blanche, vue seule).
 
 Si l'utilisateur pose une question contextuelle nécessitant des détails absents du signal_summary, appelle get_market_reading."""
 
@@ -107,12 +162,16 @@ class ChatResponse:
     Attributes:
         content: the text shown to the user (LLM answer, refusal, or fallback).
         tool_calls_made: list of {"name", "input"} for each tool executed.
+        view_actions: display-only chart actions the model emitted AND that passed
+            the Couche 4 whitelist (normalised). The frontend applies these to the
+            chart RENDER only — they never touch detection. Empty on a plain turn.
         blocked_reason: None on a normal answer; otherwise the reason
             (adversarial category, "llm_error", "max_tool_turns_exceeded").
     """
 
     content: str
     tool_calls_made: list[dict[str, Any]] = field(default_factory=list)
+    view_actions: list[dict[str, Any]] = field(default_factory=list)
     blocked_reason: Optional[str] = None
 
 
@@ -126,6 +185,7 @@ class Chatbot:
         assembler: Any,
         adversarial_filter: Optional[AdversarialFilter] = None,
         output_filter: Optional[OutputFilter] = None,
+        view_action_validator: Optional[ViewActionValidator] = None,
         model: str = DEFAULT_MODEL,
         max_tokens: int = DEFAULT_MAX_TOKENS,
         max_tool_turns: int = MAX_TOOL_TURNS,
@@ -135,6 +195,7 @@ class Chatbot:
         self._assembler = assembler
         self._adv_filter = adversarial_filter or AdversarialFilter()
         self._output_filter = output_filter or OutputFilter()
+        self._view_validator = view_action_validator or ViewActionValidator()
         self._model = model
         self._max_tokens = max_tokens
         self._max_tool_turns = max_tool_turns
@@ -167,6 +228,10 @@ class Chatbot:
             {"role": "user", "content": user_message}
         ]
         tool_calls_made: list[dict[str, Any]] = []
+        view_actions: list[dict[str, Any]] = []
+        # Ids of zones the engine actually emitted this turn — the ONLY zones the
+        # model is allowed to focus / highlight (an invented id is rejected).
+        known_zone_ids: set[str] = set()
 
         for _turn in range(self._max_tool_turns):
             try:
@@ -197,11 +262,13 @@ class Chatbot:
                     return ChatResponse(
                         content=OUTPUT_CONTAMINATED_TEMPLATE,
                         tool_calls_made=tool_calls_made,
+                        view_actions=view_actions,
                         blocked_reason=f"output_contaminated_{output_check.category}",
                     )
                 return ChatResponse(
                     content=text,
                     tool_calls_made=tool_calls_made,
+                    view_actions=view_actions,
                     blocked_reason=None,
                 )
 
@@ -212,8 +279,20 @@ class Chatbot:
             for block in response.content:
                 if getattr(block, "type", None) != "tool_use":
                     continue
-                result = self._execute_tool(block.name, dict(block.input))
-                tool_calls_made.append({"name": block.name, "input": dict(block.input)})
+                tool_input = dict(block.input)
+                tool_calls_made.append({"name": block.name, "input": tool_input})
+
+                if block.name == "apply_chart_view":
+                    # --- Couche 4 — view-action whitelist (display-only) ---
+                    result = self._apply_view_action(
+                        tool_input, view_actions, known_zone_ids
+                    )
+                else:
+                    result = self._execute_tool(block.name, tool_input)
+                    # Harvest detected zone ids so a later focus/highlight can only
+                    # reference a zone the engine actually emitted.
+                    self._harvest_zone_ids(result, known_zone_ids)
+
                 tool_results.append({
                     "type": "tool_result",
                     "tool_use_id": block.id,
@@ -226,6 +305,7 @@ class Chatbot:
         return ChatResponse(
             content=LLM_ERROR_TEMPLATE,
             tool_calls_made=tool_calls_made,
+            view_actions=view_actions,
             blocked_reason="max_tool_turns_exceeded",
         )
 
@@ -238,6 +318,48 @@ class Chatbot:
         except Exception as exc:  # never let summary failure abort the turn
             logger.warning("signal_summary provider failed: %s", exc)
             return {"instruments_tracked": []}
+
+    def _apply_view_action(
+        self,
+        tool_input: dict[str, Any],
+        view_actions: list[dict[str, Any]],
+        known_zone_ids: set[str],
+    ) -> dict[str, Any]:
+        """Validate a proposed view action (Couche 4) and record it if admissible.
+
+        Returns the tool_result payload handed back to the model: a success ack on
+        a whitelisted action, or a rejection carrying the on-brand refusal text so
+        the model phrases the refusal itself. NEVER touches detection — a valid
+        action is only *recorded* for the frontend to apply to the render.
+        """
+        check = self._view_validator.validate(
+            tool_input, known_zone_ids=known_zone_ids
+        )
+        if not check.valid:
+            logger.info("view action rejected (%s): %s", check.reason, tool_input)
+            return {
+                "status": "rejected",
+                "reason": check.reason,
+                "message": VIEW_ACTION_REFUSAL_TEMPLATE,
+            }
+        action = check.action or {}
+        view_actions.append(action)
+        return {"status": "applied", "action": action}
+
+    @staticmethod
+    def _harvest_zone_ids(result: Any, known_zone_ids: set[str]) -> None:
+        """Collect OB / FVG ids from a get_market_reading result (read-only)."""
+        if not isinstance(result, dict):
+            return
+        structure = result.get("structure")
+        if not isinstance(structure, dict):
+            return
+        for key in ("order_blocks", "fair_value_gaps"):
+            for zone in structure.get(key, []) or []:
+                if isinstance(zone, dict):
+                    zid = zone.get("id")
+                    if isinstance(zid, str) and zid:
+                        known_zone_ids.add(zid)
 
     def _execute_tool(self, name: str, tool_input: dict[str, Any]) -> dict[str, Any]:
         """Run a tool; on failure return an ``{"error": ...}`` dict so the LLM

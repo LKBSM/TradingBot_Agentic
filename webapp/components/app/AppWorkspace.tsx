@@ -13,6 +13,8 @@ import {
   useActiveCombo,
   type Combo,
 } from '@/lib/market-reading/store';
+import { ChartViewProvider, useChartView } from '@/lib/chart/viewState';
+import { coerceViewActions } from '@/lib/chart/viewActions';
 import { READING_DATA_SOURCE } from '@/lib/mockReadings';
 import type { MarketReading } from '@/types/market-reading';
 
@@ -54,14 +56,17 @@ export function AppWorkspace({
 }: AppWorkspaceProps = {}) {
   return (
     <ActiveComboProvider initial={initialCombo}>
-      <WorkspaceInner dataSource={dataSource} />
+      <ChartViewProvider>
+        <WorkspaceInner dataSource={dataSource} />
+      </ChartViewProvider>
     </ActiveComboProvider>
   );
 }
 
 function WorkspaceInner({ dataSource }: { dataSource: ReadingSource }) {
   const { active, select, combos } = useActiveCombo();
-  const { openForCombo } = useChat();
+  const { openForCombo, viewActionSignal } = useChat();
+  const { applyActions } = useChartView();
   const isMobile = useIsMobile();
 
   const { data, isLoading, isRefreshing, error, refresh } = useMarketReading(
@@ -74,6 +79,31 @@ function WorkspaceInner({ dataSource }: { dataSource: ReadingSource }) {
   React.useEffect(() => {
     if (active) openForCombo(active);
   }, [active, openForCombo]);
+
+  // Zone ids the chart can currently resolve — the ONLY zones a focus/highlight
+  // view action may reference (defence in depth on top of the backend Couche 4).
+  const validZoneIds = React.useMemo(() => {
+    const ids = new Set<string>();
+    const s = data?.structure;
+    if (s) {
+      for (const ob of s.order_blocks ?? []) ids.add(ob.id);
+      for (const fvg of s.fair_value_gaps ?? []) ids.add(fvg.id);
+    }
+    return ids;
+  }, [data]);
+
+  // Apply the chatbot's display-only view actions to the chart RENDER. We
+  // re-validate the raw actions against the on-screen zones, then dispatch:
+  // `set_instrument_timeframe` changes the active combo (via select), every
+  // other action changes the chart view state only. Detection is never touched.
+  const lastViewNonceRef = React.useRef(0);
+  React.useEffect(() => {
+    if (!viewActionSignal) return;
+    if (viewActionSignal.nonce === lastViewNonceRef.current) return;
+    lastViewNonceRef.current = viewActionSignal.nonce;
+    const actions = coerceViewActions(viewActionSignal.actions, validZoneIds);
+    applyActions(actions, select);
+  }, [viewActionSignal, validZoneIds, applyActions, select]);
 
   const view: WorkspaceViewProps = {
     combos,

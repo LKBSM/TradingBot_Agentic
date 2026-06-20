@@ -42,6 +42,12 @@ export interface AskResult {
   blockedReason: string | null;
   /** Tool calls the backend executed for this turn ({name, input}). */
   toolCallsMade: ReadonlyArray<Record<string, unknown>>;
+  /**
+   * Display-only chart view actions the backend validated (Couche 4 whitelist).
+   * RAW here — the caller re-validates them via `coerceViewActions` against the
+   * zones currently on screen before applying to the chart render.
+   */
+  viewActions: ReadonlyArray<Record<string, unknown>>;
 }
 
 /**
@@ -77,6 +83,7 @@ interface ChatbotMessageResponse {
   content: string;
   blocked_reason: string | null;
   tool_calls_made: Array<Record<string, unknown>>;
+  view_actions?: Array<Record<string, unknown>>;
 }
 
 /**
@@ -168,6 +175,7 @@ export async function askSentinel(opts: AskOptions): Promise<AskResult> {
     text: parsed.content,
     blockedReason: parsed.blocked_reason ?? null,
     toolCallsMade: Array.isArray(parsed.tool_calls_made) ? parsed.tool_calls_made : [],
+    viewActions: Array.isArray(parsed.view_actions) ? parsed.view_actions : [],
   };
 }
 

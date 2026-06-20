@@ -42,6 +42,10 @@ class ChatbotMessageResponse(BaseModel):
     content: str
     blocked_reason: Optional[str] = None
     tool_calls_made: list[dict[str, Any]] = Field(default_factory=list)
+    # Display-only chart view actions (Couche 4 whitelist). The webapp applies
+    # these to the chart RENDER only — they never touch detection. Empty on a
+    # plain conversational turn.
+    view_actions: list[dict[str, Any]] = Field(default_factory=list)
 
 
 @router.post("/message", response_model=ChatbotMessageResponse)
@@ -66,4 +70,5 @@ async def chatbot_message(
         content=response.content,
         blocked_reason=response.blocked_reason,
         tool_calls_made=response.tool_calls_made,
+        view_actions=getattr(response, "view_actions", []),
     )

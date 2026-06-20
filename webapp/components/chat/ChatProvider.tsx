@@ -22,10 +22,23 @@ interface ChatTurn {
   blockedReason?: string | null;
 }
 
+/**
+ * Display-only chart view actions returned by the last successful turn, RAW (not
+ * yet validated against on-screen zones). `nonce` lets a consumer re-apply even
+ * when the same action list repeats. The workspace re-validates via
+ * `coerceViewActions` before touching the chart render.
+ */
+export interface ViewActionSignal {
+  actions: ReadonlyArray<Record<string, unknown>>;
+  nonce: number;
+}
+
 interface ChatContextValue {
   isOpen: boolean;
   activeSignal: ChatSignalContext | null;
   turns: ChatTurn[];
+  /** Latest display-only chart actions from the chatbot (raw), or null. */
+  viewActionSignal: ViewActionSignal | null;
   /** True while a backend answer is in flight (synchronous JSON, no stream). */
   isLoading: boolean;
   /**
@@ -71,7 +84,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [apiAvailable, setApiAvailable] = React.useState<boolean | 'unknown'>(
     'unknown',
   );
+  const [viewActionSignal, setViewActionSignal] =
+    React.useState<ViewActionSignal | null>(null);
   const seqRef = React.useRef(0);
+  const viewNonceRef = React.useRef(0);
 
   const openFor = React.useCallback((signal: ChatSignalContext) => {
     setActiveSignal((current) => {
@@ -167,7 +183,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
 
       try {
-        const { text, blockedReason } = await askSentinel({
+        const { text, blockedReason, viewActions } = await askSentinel({
           signal: activeSignal,
           question: trimmed,
           history: historyForApi,
@@ -183,6 +199,14 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
             blockedReason,
           },
         ]);
+        // Surface display-only chart actions (raw) for the workspace to validate
+        // against on-screen zones and apply to the render. Always set a fresh
+        // signal (even when empty) so a consumer never replays a stale list.
+        viewNonceRef.current += 1;
+        setViewActionSignal({
+          actions: viewActions ?? [],
+          nonce: viewNonceRef.current,
+        });
       } catch (err) {
         if (err instanceof ChatApiUnavailableError) {
           setApiAvailable(false);
@@ -221,6 +245,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       isOpen,
       activeSignal,
       turns,
+      viewActionSignal,
       isLoading,
       apiAvailable,
       openFor,
@@ -234,6 +259,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       isOpen,
       activeSignal,
       turns,
+      viewActionSignal,
       isLoading,
       apiAvailable,
       openFor,

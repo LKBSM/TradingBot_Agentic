@@ -234,6 +234,42 @@ export function buildLiveOverlay(
 const mid = (z: ZoneModel) => (z.high + z.low) / 2;
 
 /**
+ * Display filter for the chatbot's `filter_zones` view action. PURELY a display
+ * choice over the DETECTED zones — it hides boxes, never edits a band:
+ *   · activeOnly    — drop tested/mitigated zones, keep only active ones.
+ *   · minSizePct    — drop zones whose band height is < pct of the current price.
+ *   · proximityOnly — keep only zones whose mid sits within ±proximityPct of price.
+ * A non-finite price disables the price-relative filters (returns size-filtered
+ * only). Returns a new array; the inputs are never mutated.
+ */
+export interface ZoneDisplayFilter {
+  activeOnly: boolean;
+  proximityOnly: boolean;
+  proximityPct: number;
+  minSizePct: number | null;
+}
+
+export function filterZoneModels(
+  zones: ZoneModel[],
+  currentPrice: number,
+  filter: ZoneDisplayFilter,
+): ZoneModel[] {
+  const priceOk = Number.isFinite(currentPrice) && currentPrice > 0;
+  return zones.filter((z) => {
+    if (filter.activeOnly && z.tested) return false;
+    if (filter.minSizePct != null && priceOk) {
+      const heightPct = (Math.abs(z.high - z.low) / currentPrice) * 100;
+      if (heightPct < filter.minSizePct) return false;
+    }
+    if (filter.proximityOnly && priceOk) {
+      const distPct = (Math.abs(mid(z) - currentPrice) / currentPrice) * 100;
+      if (distPct > filter.proximityPct) return false;
+    }
+    return true;
+  });
+}
+
+/**
  * Rank a zone list by a combined RECENCY + PROXIMITY-to-price score and keep the
  * top `cap`. Mechanical curation only:
  *   · proximityRank — distance of the zone mid-price to the current price (0 = closest)
