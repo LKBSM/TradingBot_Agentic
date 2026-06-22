@@ -2,7 +2,6 @@
 
 import { Loader2, SendHorizonal } from 'lucide-react';
 import * as React from 'react';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useChat } from './ChatProvider';
 
@@ -16,7 +15,8 @@ const MAX_CHARS = 2000;
  * Free-text input for the chatbot. Submits to the backend via
  * `useChat().askFreeForm()` (POST /api/chatbot/message, synchronous JSON).
  * Disabled while a request is in flight to prevent overlapping calls.
- * Auto-grows the textarea up to a reasonable max height.
+ * Auto-grows the textarea up to a reasonable max height. Enter sends,
+ * Shift+Enter inserts a newline.
  */
 export function ChatInput({ className }: ChatInputProps) {
   const { askFreeForm, isLoading, activeSignal, apiAvailable } = useChat();
@@ -31,6 +31,7 @@ export function ChatInput({ className }: ChatInputProps) {
     ta.style.height = `${Math.min(ta.scrollHeight, 160)}px`;
   }, [value]);
 
+  const offline = apiAvailable === false;
   const canSubmit =
     !isLoading && value.trim().length > 0 && activeSignal !== null;
 
@@ -54,45 +55,54 @@ export function ChatInput({ className }: ChatInputProps) {
     }
   }
 
-  const placeholder =
-    apiAvailable === false
-      ? 'Le LLM en direct n\'est pas configuré — utilise les questions suggérées ci-dessus.'
-      : 'Pose une question libre à M.I.A Agent… (Entrée pour envoyer · Maj+Entrée pour saut de ligne)';
+  const placeholder = offline
+    ? "Le LLM en direct n'est pas configuré — utilise les questions suggérées."
+    : 'Pose une question à M.I.A Agent…';
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className={cn(
-        'flex items-end gap-2 rounded-xl border border-border bg-background p-2',
-        className,
-      )}
-    >
-      <textarea
-        ref={textareaRef}
-        value={value}
-        onChange={(e) =>
-          setValue(e.target.value.slice(0, MAX_CHARS))
-        }
-        onKeyDown={handleKeyDown}
-        placeholder={placeholder}
-        rows={1}
-        maxLength={MAX_CHARS}
-        disabled={apiAvailable === false}
-        aria-label="Question libre pour M.I.A Agent"
-        className="flex-1 resize-none bg-transparent px-2 py-1 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/70 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
-      />
-      <Button
-        type="submit"
-        size="icon"
-        disabled={!canSubmit}
-        aria-label={isLoading ? 'Réponse en cours…' : 'Envoyer la question'}
-      >
-        {isLoading ? (
-          <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-        ) : (
-          <SendHorizonal className="h-4 w-4" aria-hidden />
+    <div className={className}>
+      <form
+        onSubmit={handleSubmit}
+        className={cn(
+          'flex items-end gap-2 rounded-2xl border border-border bg-background/80 p-2 pl-3.5 transition-shadow',
+          'focus-within:border-[hsl(35_92%_55%/0.5)] focus-within:shadow-[0_0_0_3px_hsl(35_92%_55%/0.10)]',
         )}
-      </Button>
-    </form>
+      >
+        <textarea
+          ref={textareaRef}
+          value={value}
+          onChange={(e) => setValue(e.target.value.slice(0, MAX_CHARS))}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          rows={1}
+          maxLength={MAX_CHARS}
+          disabled={offline}
+          aria-label="Question libre pour M.I.A Agent"
+          className="flex-1 resize-none bg-transparent py-1.5 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/70 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+        />
+        <button
+          type="submit"
+          disabled={!canSubmit}
+          aria-label={isLoading ? 'Réponse en cours…' : 'Envoyer la question'}
+          className={cn(
+            'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors',
+            canSubmit
+              ? 'bg-[hsl(var(--sentinel-warn))] text-[hsl(222_47%_11%)] hover:brightness-110'
+              : 'cursor-not-allowed bg-muted text-muted-foreground',
+          )}
+        >
+          {isLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+          ) : (
+            <SendHorizonal className="h-4 w-4" aria-hidden />
+          )}
+        </button>
+      </form>
+      {!offline && (
+        <p className="mt-2 text-center text-[10.5px] italic text-muted-foreground/75">
+          Entrée pour envoyer · Maj+Entrée pour un saut de ligne
+        </p>
+      )}
+    </div>
   );
 }

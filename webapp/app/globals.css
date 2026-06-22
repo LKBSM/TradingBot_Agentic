@@ -120,9 +120,46 @@
   animation: hero-thinking-dot 1.4s ease-in-out infinite;
 }
 
+/*
+ * Chat surface — gentle reveal of each new bubble and the pulsing "thinking"
+ * dots. Purely presentational; the answer itself still arrives in one block
+ * (synchronous backend). Soft 6px lift + opacity, no bounce.
+ */
+@keyframes chat-msg-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes chat-think-dot {
+  0%, 80%, 100% {
+    opacity: 0.2;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+
+.chat-msg-in {
+  animation: chat-msg-in 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.chat-think-dot {
+  animation: chat-think-dot 1.4s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero-stagger,
-  .hero-thinking-dot {
+  .hero-thinking-dot,
+  .chat-msg-in,
+  .chat-think-dot {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
