@@ -27,13 +27,15 @@ const PHASE1_COUNTRIES = [
   'Irlande',
 ] as const;
 
+// `pending: true` keeps the LEGAL-PENDING marker (route not built yet — mission
+// ④). The Conditions + Confidentialité pages now exist, so they are live links.
 const LEGAL_LINKS = [
-  { href: '/mentions-legales', label: 'Mentions légales' },
-  { href: '/terms', label: 'CGU' },
-  { href: '/privacy', label: 'Confidentialité' },
-  { href: '/cookies', label: 'Cookies' },
-  { href: '#mediateur', label: 'Médiateur (CM2C)' },
-  { href: 'mailto:contact@mia.markets', label: 'Contact' },
+  { href: '/mentions-legales', label: 'Mentions légales', pending: true },
+  { href: '/conditions', label: 'Conditions d’utilisation', pending: false },
+  { href: '/confidentialite', label: 'Confidentialité', pending: false },
+  { href: '/cookies', label: 'Cookies', pending: true },
+  { href: '#mediateur', label: 'Médiateur (CM2C)', pending: true },
+  { href: 'mailto:contact@mia.markets', label: 'Contact', pending: false },
 ] as const;
 
 const PRODUCT_LINKS = [
@@ -116,7 +118,7 @@ export function Footer() {
                   <Link
                     href={link.href}
                     className="text-muted-foreground transition-colors hover:text-foreground focus-visible:underline focus-visible:outline-none"
-                    data-legal-pending="footer-link"
+                    {...(link.pending ? { 'data-legal-pending': 'footer-link' } : {})}
                   >
                     {link.label}
                   </Link>

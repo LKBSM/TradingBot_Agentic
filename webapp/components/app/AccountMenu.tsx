@@ -1,26 +1,28 @@
 'use client';
 
 import Link from 'next/link';
-import { ChevronDown, ExternalLink, LogOut, User } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ChevronDown, ExternalLink, LogIn, LogOut, User, UserPlus } from 'lucide-react';
 import * as React from 'react';
 import { LocaleToggle } from '@/components/LocaleToggle';
+import { useAuth } from '@/lib/auth/store';
 import { cn } from '@/lib/utils';
 
 /**
  * Account menu for the /app product header — a lightweight, dependency-free
- * dropdown (no @radix dropdown package needed). Trigger = avatar + chevron;
- * panel holds the account items.
+ * dropdown. Trigger = avatar + chevron; panel adapts to the session:
+ *   - logged out → Connexion / Inscription
+ *   - logged in  → username, Mon compte, Se déconnecter (real logout)
  *
- * Posture: the app currently runs in personal-testing mode (no real auth /
- * session — see TESTING_MODE), so these entries are the product shell. The
- * marketing surfaces (Honnêteté, FAQ, Tarifs) live ONLY on the landing; here we
- * link back to them rather than duplicating the marketing nav in the header.
+ * The marketing surfaces (Honnêteté, FAQ, Tarifs) live ONLY on the landing; we
+ * link back to them here rather than duplicating the marketing nav.
  */
 export function AccountMenu() {
   const [open, setOpen] = React.useState(false);
   const rootRef = React.useRef<HTMLDivElement>(null);
+  const { account, isAuthenticated, logout } = useAuth();
+  const router = useRouter();
 
-  // Close on outside click + Escape.
   React.useEffect(() => {
     if (!open) return;
     const onDown = (e: MouseEvent) => {
@@ -38,6 +40,12 @@ export function AccountMenu() {
       document.removeEventListener('keydown', onKey);
     };
   }, [open]);
+
+  async function onLogout() {
+    setOpen(false);
+    await logout();
+    router.push('/');
+  }
 
   return (
     <div ref={rootRef} className="relative">
@@ -67,14 +75,43 @@ export function AccountMenu() {
           aria-label="Compte"
           className="absolute right-0 z-50 mt-2 w-56 overflow-hidden rounded-lg border border-border/70 bg-popover p-1 text-popover-foreground shadow-md"
         >
-          <Link
-            href="/#tarifs"
-            role="menuitem"
-            className="flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
-            onClick={() => setOpen(false)}
-          >
-            Abonnement
-          </Link>
+          {isAuthenticated ? (
+            <>
+              <p className="truncate px-3 pb-1 pt-2 text-sm font-medium text-foreground">
+                {account?.username}
+              </p>
+              <Link
+                href="/compte"
+                role="menuitem"
+                className="flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
+                onClick={() => setOpen(false)}
+              >
+                Mon compte
+                <User className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/connexion"
+                role="menuitem"
+                className="flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
+                onClick={() => setOpen(false)}
+              >
+                Se connecter
+                <LogIn className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+              </Link>
+              <Link
+                href="/inscription"
+                role="menuitem"
+                className="flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
+                onClick={() => setOpen(false)}
+              >
+                Créer un compte
+                <UserPlus className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+              </Link>
+            </>
+          )}
 
           <div className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
             <span className="text-muted-foreground">Langue</span>
@@ -105,17 +142,20 @@ export function AccountMenu() {
             <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
           </Link>
 
-          <div className="my-1 h-px bg-border/60" role="separator" />
-
-          <Link
-            href="/"
-            role="menuitem"
-            className="flex items-center justify-between rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:bg-accent focus-visible:outline-none"
-            onClick={() => setOpen(false)}
-          >
-            Se déconnecter
-            <LogOut className="h-3.5 w-3.5" aria-hidden />
-          </Link>
+          {isAuthenticated && (
+            <>
+              <div className="my-1 h-px bg-border/60" role="separator" />
+              <button
+                type="button"
+                role="menuitem"
+                onClick={onLogout}
+                className="flex w-full items-center justify-between rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:bg-accent focus-visible:outline-none"
+              >
+                Se déconnecter
+                <LogOut className="h-3.5 w-3.5" aria-hidden />
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>

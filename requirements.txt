@@ -49,6 +49,8 @@ hmmlearn>=0.3.0               # HMM regime detection (HAR-RV pipeline)
 # =============================================================================
 fastapi>=0.104.0              # REST API framework
 uvicorn>=0.24.0               # ASGI server
+argon2-cffi>=23.1.0           # Argon2id password hashing (account auth — proven KDF)
+itsdangerous>=2.1.0           # Signed session cookies (Pallets — account auth)
 requests>=2.31.0              # HTTP requests
 httpx>=0.25.0                 # Modern async HTTP client
 APScheduler>=3.10,<4.0        # In-process scheduler — MarketReading hybrid mode (Chantier 3)
