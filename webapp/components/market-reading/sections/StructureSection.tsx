@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import {
   AccordionContent,
   AccordionItem,
@@ -16,7 +17,28 @@ import {
   formatRetestType,
   formatValidationStatus,
 } from '@/lib/market-reading/formatters';
-import type { MarketReadingStructure } from '@/types/market-reading';
+import type {
+  FairValueGap,
+  MarketReadingStructure,
+  OBImportance,
+  OrderBlock,
+} from '@/types/market-reading';
+import { ZoneList } from './ZoneList';
+
+// Importance / status weights driving the collapsed ordering (lower = surfaced
+// first). Display-only ranking — detection is untouched.
+const OB_IMPORTANCE_RANK: Record<OBImportance, number> = {
+  high: 0,
+  medium: 1,
+  low: 2,
+};
+// FVGs carry no importance field; their lifecycle status stands in for it so OB
+// and FVG get the same « importance puis proximité » treatment.
+const FVG_STATUS_RANK: Record<FairValueGap['status'], number> = {
+  active: 0,
+  partially_filled: 1,
+  filled: 2,
+};
 
 /**
  * Section "Structure" — renders the Smart Money Concept block factually:
@@ -26,9 +48,12 @@ import type { MarketReadingStructure } from '@/types/market-reading';
 export function StructureSection({
   structure,
   instrument,
+  closePrice,
 }: {
   structure: MarketReadingStructure;
   instrument: string;
+  /** Current close price — drives the proximity tie-break in the zone lists. */
+  closePrice?: number;
 }) {
   const { bos, choch, order_blocks, fair_value_gaps, retest_in_progress } =
     structure;
@@ -98,36 +123,50 @@ export function StructureSection({
                     : 'aucun changement récent'
               }
             />
-            <Row
-              label="Order Blocks"
-              termKey="order_block"
-              value={
-                order_blocks.length > 0
-                  ? order_blocks
-                      .map(
-                        (ob) =>
-                          `${formatBand(ob.level_low, ob.level_high, instrument)} · importance ${formatObImportance(ob.importance)} · ${formatObStatus(ob.status)}`,
-                      )
-                      .join(' | ')
-                  : 'aucun bloc significatif'
-              }
-              className="sm:col-span-2"
-            />
-            <Row
-              label="Fair Value Gaps"
-              termKey="fvg"
-              value={
-                fair_value_gaps.length > 0
-                  ? fair_value_gaps
-                      .map(
-                        (fvg) =>
-                          `${formatBand(fvg.level_low, fvg.level_high, instrument)} · ${formatFvgStatus(fvg.status)}`,
-                      )
-                      .join(' | ')
-                  : 'aucune zone détectée'
-              }
-              className="sm:col-span-2"
-            />
+            <ZoneRow label="Order Blocks" termKey="order_block">
+              {order_blocks.length > 0 ? (
+                <ZoneList<OrderBlock>
+                  zones={order_blocks}
+                  price={closePrice}
+                  noun="zone"
+                  importanceRank={(ob) => OB_IMPORTANCE_RANK[ob.importance]}
+                  band={(ob) => [ob.level_low, ob.level_high]}
+                  isActive={(ob) => ob.status === 'active'}
+                  dedupKey={(ob) =>
+                    `${ob.level_low}|${ob.level_high}|${ob.importance}|${ob.status}`
+                  }
+                  renderLabel={(ob) =>
+                    `${formatBand(ob.level_low, ob.level_high, instrument)} · importance ${formatObImportance(ob.importance)} · ${formatObStatus(ob.status)}`
+                  }
+                />
+              ) : (
+                <span className="text-sm font-medium text-foreground">
+                  aucun bloc significatif
+                </span>
+              )}
+            </ZoneRow>
+            <ZoneRow label="Fair Value Gaps" termKey="fvg">
+              {fair_value_gaps.length > 0 ? (
+                <ZoneList<FairValueGap>
+                  zones={fair_value_gaps}
+                  price={closePrice}
+                  noun="zone"
+                  importanceRank={(fvg) => FVG_STATUS_RANK[fvg.status]}
+                  band={(fvg) => [fvg.level_low, fvg.level_high]}
+                  isActive={(fvg) => fvg.status === 'active'}
+                  dedupKey={(fvg) =>
+                    `${fvg.level_low}|${fvg.level_high}|${fvg.status}`
+                  }
+                  renderLabel={(fvg) =>
+                    `${formatBand(fvg.level_low, fvg.level_high, instrument)} · ${formatFvgStatus(fvg.status)}`
+                  }
+                />
+              ) : (
+                <span className="text-sm font-medium text-foreground">
+                  aucune zone détectée
+                </span>
+              )}
+            </ZoneRow>
             <Row
               label="Retest en cours"
               termKey="retest"
@@ -167,6 +206,26 @@ function Row({
         {termKey ? <InfoTooltip termKey={termKey}>{label}</InfoTooltip> : label}
       </dt>
       <dd className="mt-1 text-sm font-medium text-foreground">{value}</dd>
+    </div>
+  );
+}
+
+/** Like `Row`, but the value is arbitrary content (the collapsible zone list). */
+function ZoneRow({
+  label,
+  termKey,
+  children,
+}: {
+  label: string;
+  termKey?: GlossaryKey;
+  children: ReactNode;
+}) {
+  return (
+    <div className="sm:col-span-2">
+      <dt className="text-xs uppercase tracking-wide text-muted-foreground">
+        {termKey ? <InfoTooltip termKey={termKey}>{label}</InfoTooltip> : label}
+      </dt>
+      <dd className="mt-1.5">{children}</dd>
     </div>
   );
 }
