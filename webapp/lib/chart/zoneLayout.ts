@@ -292,6 +292,30 @@ export function filterZoneModels(
 }
 
 /**
+ * Apply the chatbot's per-id visibility state (`hide_zones` / `isolate_zones`) to
+ * a zone list. PURELY a display choice over the DETECTED zones — it hides boxes
+ * by id, never edits a band or invents a zone:
+ *   · isolatedZoneIds — when non-null, keep ONLY zones whose id is in the set
+ *     (show only the isolated zones); null means no isolation.
+ *   · hiddenZoneIds   — drop any zone whose id was explicitly masked.
+ * Both are reversible from the view state (`show_zones` / `reset_view`). Returns a
+ * new array; the input is never mutated, and the zones themselves are untouched.
+ */
+export function applyZoneVisibility(
+  zones: ZoneModel[],
+  hiddenZoneIds: readonly string[],
+  isolatedZoneIds: readonly string[] | null,
+): ZoneModel[] {
+  const hidden = new Set(hiddenZoneIds);
+  const isolated = isolatedZoneIds === null ? null : new Set(isolatedZoneIds);
+  return zones.filter((z) => {
+    if (isolated !== null && !isolated.has(z.id)) return false;
+    if (hidden.has(z.id)) return false;
+    return true;
+  });
+}
+
+/**
  * Rank a zone list by a combined RECENCY + PROXIMITY-to-price score and keep the
  * top `cap`. Mechanical curation only:
  *   · proximityRank — distance of the zone mid-price to the current price (0 = closest)

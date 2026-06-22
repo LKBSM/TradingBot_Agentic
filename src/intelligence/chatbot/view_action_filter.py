@@ -47,11 +47,24 @@ ALLOWED_ACTIONS: tuple[str, ...] = (
     "fit_chart",
     "set_instrument_timeframe",
     "highlight_zone",
+    "hide_zones",
+    "isolate_zones",
+    "show_zones",
     "reset_view",
 )
 
-# Actions that reference a detected zone by id (must exist in the engine output).
+# Actions that reference a single detected zone by id (must exist in the engine
+# output). hide/isolate/show reference a LIST of ids — see _ZONE_REFS_ACTIONS.
 _ZONE_REF_ACTIONS: frozenset[str] = frozenset({"focus_zone", "highlight_zone"})
+
+# Actions that reference a LIST of detected zone ids by id. Same id lock as
+# focus/highlight: every id must belong to a zone the engine actually emitted
+# this turn — masking removes a REAL zone from the DISPLAY, never fabricates one,
+# and is reversible (show_zones / reset_view). If ANY id is invented the whole
+# action is rejected and nothing is hidden, exactly like focus on an invented id.
+_ZONE_REFS_ACTIONS: frozenset[str] = frozenset(
+    {"hide_zones", "isolate_zones", "show_zones"}
+)
 
 # Geometry-shaped param keys that must NEVER appear on a view action. Their mere
 # presence means "set/move a structure's coordinates" → reject outright. This is
@@ -218,6 +231,26 @@ class ViewActionValidator:
             {"instrument": instrument, "timeframe": timeframe},
         )
 
+    def _v_hide_zones(
+        self, params: dict[str, Any], known: set[str]
+    ) -> ViewActionCheckResult:
+        return self._zone_refs("hide_zones", params, known)
+
+    def _v_isolate_zones(
+        self, params: dict[str, Any], known: set[str]
+    ) -> ViewActionCheckResult:
+        return self._zone_refs("isolate_zones", params, known)
+
+    def _v_show_zones(
+        self, params: dict[str, Any], known: set[str]
+    ) -> ViewActionCheckResult:
+        # No ids → restore EVERY masked zone (full un-hide / drop isolation). An
+        # explicit (possibly empty) list is validated like hide/isolate so a stale
+        # id can't slip through; an empty list also means "restore all".
+        if "zone_ids" not in params or params.get("zone_ids") is None:
+            return _ok("show_zones", {})
+        return self._zone_refs("show_zones", params, known, allow_empty=True)
+
     # ------------------------------------------------------------------ #
     def _zone_ref(
         self, action: str, params: dict[str, Any], known: set[str]
@@ -231,6 +264,38 @@ class ViewActionValidator:
         if zone_id not in known:
             return ViewActionCheckResult(False, reason="unknown_zone_id")
         return _ok(action, {"zone_id": zone_id})
+
+    def _zone_refs(
+        self,
+        action: str,
+        params: dict[str, Any],
+        known: set[str],
+        *,
+        allow_empty: bool = False,
+    ) -> ViewActionCheckResult:
+        """Validate a LIST of zone ids against the engine-emitted set.
+
+        The SAME id lock as ``_zone_ref``, generalised to many ids: every id must
+        be a real, on-screen zone. If a single id is invented the whole action is
+        rejected (``unknown_zone_id``) — masking « l'OB à 4160 » when no real OB
+        matches hides nothing. Ids are de-duplicated, order preserved.
+        """
+        zone_ids = params.get("zone_ids")
+        if not isinstance(zone_ids, list):
+            return ViewActionCheckResult(False, reason="bad_zone_ids")
+        seen: set[str] = set()
+        deduped: list[str] = []
+        for zid in zone_ids:
+            if not isinstance(zid, str) or not zid.strip():
+                return ViewActionCheckResult(False, reason="bad_zone_ids")
+            if zid not in known:
+                return ViewActionCheckResult(False, reason="unknown_zone_id")
+            if zid not in seen:
+                seen.add(zid)
+                deduped.append(zid)
+        if not deduped and not allow_empty:
+            return ViewActionCheckResult(False, reason="empty_zone_ids")
+        return _ok(action, {"zone_ids": deduped})
 
 
 def _ok(action: str, params: dict[str, Any]) -> ViewActionCheckResult:
