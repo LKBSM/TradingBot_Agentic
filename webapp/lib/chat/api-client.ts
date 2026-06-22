@@ -1,4 +1,5 @@
 import type { ChatSignalContext } from '@/lib/chat/types';
+import { accessErrorFromResponse } from '@/lib/access/errors';
 
 /** The api-client only needs the instrument/timeframe combo for the preamble. */
 type SignalContext = Pick<ChatSignalContext, 'instrument' | 'timeframe'>;
@@ -151,6 +152,10 @@ export async function askSentinel(opts: AskOptions): Promise<AskResult> {
       'La question a été refusée par la validation du service (format ou longueur). Reformule plus court.',
     );
   }
+
+  // 401/402 — the freemium gate (free tier has a daily quota). Clean upsell.
+  const accessErr = await accessErrorFromResponse(res);
+  if (accessErr) throw accessErr;
 
   if (!res.ok) {
     // 500 and anything else: never surface server internals.

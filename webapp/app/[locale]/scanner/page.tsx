@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { ScannerWorkspace } from '@/components/scanner/ScannerWorkspace';
+import { SubscriptionGate } from '@/components/access/SubscriptionGate';
 
 export const metadata: Metadata = {
   title: 'Scanner de conditions',
@@ -19,9 +20,18 @@ export default async function ScannerPage({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
+  // The multi-market scanner is a paid feature: require full access (subscriber
+  // or owner). Visitors → login; free accounts → a clean upsell paywall. Open
+  // while the gate is OFF (testing phase).
   return (
-    <div className="container-wide py-8">
-      <ScannerWorkspace locale={locale} />
-    </div>
+    <SubscriptionGate
+      requireFullAccess
+      paywallTitle="Le scanner est réservé aux abonnés"
+      paywallDescription="Le scanner multi-marchés balaie XAU/USD et EUR/USD sur M15, H1 et H4. Passe à l’abonnement pour l’utiliser."
+    >
+      <div className="container-wide py-8">
+        <ScannerWorkspace locale={locale} />
+      </div>
+    </SubscriptionGate>
   );
 }
