@@ -1,11 +1,21 @@
-"""Subscription gate — the SINGLE seam where a future payment wall will decide
-access. NO Stripe, NO billing logic here (that is mission ②).
+"""Subscription gate — the SINGLE seam where the payment wall decides access.
 
-Today this is intentionally a pass-through: every authenticated account is
-allowed, and the ``owner`` role is ALWAYS allowed (and must stay allowed even
-after the gate becomes real). The one job of this module is to give the rest of
-the codebase a stable, single place to import so that when the paywall lands it
-is a localized change here — not a scatter of conditionals across routes.
+This is the ONE place the rest of the codebase imports to ask "may this account
+use a gated feature?". Keeping it centralized means the paywall is a localized
+concern here, not a scatter of conditionals across routes.
+
+Wiring (payments mission ②)
+---------------------------
+Access is resolved from the account's persisted subscription state
+(``AccountStore.get_subscription``) — set by Stripe webhooks, never from card
+data. Two invariants hold forever:
+
+* The ``owner`` role is ALWAYS allowed (the operator must never lock themselves
+  out, including during the personal-testing phase).
+* During the personal-testing phase the gate is OPEN by default. Enforcement is
+  a deliberate env switch — set ``SUBSCRIPTION_GATE_ENFORCED=1`` to require a
+  live subscription for non-owner accounts. This mirrors the existing
+  ``SENTINEL_TESTING_MODE`` philosophy (machinery fully wired, flip when ready).
 
 Usage (FastAPI dependency)::
 
@@ -16,52 +26,88 @@ Usage (FastAPI dependency)::
         ...
 
 The dependency returns the authenticated account dict (role included). It
-raises 401 when there is no authenticated account.
+raises 401 when there is no authenticated account, 402 when authenticated but
+not entitled (and the gate is enforced).
 """
 
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict
+import os
+import time
+from typing import Any, Dict, Optional
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Request
 
 from src.api.session_auth import require_account
 
 logger = logging.getLogger(__name__)
 
+# Stripe subscription statuses that grant access. ``trialing`` is included so an
+# (optional) free trial counts as access while it runs.
+ACTIVE_STATUSES = frozenset({"active", "trialing"})
 
-def account_has_access(account: Dict[str, Any]) -> bool:
-    """Return True if the account may access gated features.
 
-    TODAY: everyone authenticated passes (free during personal-testing phase).
-    The ``owner`` short-circuit is permanent — when the real paywall replaces
-    the ``return True`` below, owner access MUST remain unconditional.
+def _gate_enforced() -> bool:
+    """Whether the paywall is enforced for non-owner accounts.
 
-    FUTURE GATE (mission ②) — replace the marked line with the real check, e.g.::
-
-        if account.get("role") == "owner":
-            return True
-        return billing.has_active_subscription(account["id"])
+    Default OFF (personal-testing phase) — only an explicit truthy env value
+    turns the wall on, so wiring this in never silently locks anyone out.
     """
-    if account.get("role") == "owner":
-        return True
-    # ─── FUTURE PAYMENT GATE HOOKS HERE ───────────────────────────────────
-    # Until mission ② wires billing, all authenticated accounts have access.
+    raw = os.environ.get("SUBSCRIPTION_GATE_ENFORCED", "0").strip().lower()
+    return raw in ("1", "true", "yes", "on")
+
+
+def has_active_subscription(store: Any, account_id: int) -> bool:
+    """True if the account has a non-expired active/trialing subscription.
+
+    Reads only persisted state — no Stripe call. ``current_period_end`` is a
+    safety net: even if a ``deleted`` webhook were missed, access lapses once the
+    paid period ends.
+    """
+    if store is None:
+        return False
+    sub = store.get_subscription(account_id)
+    if not sub:
+        return False
+    if sub.get("status") not in ACTIVE_STATUSES:
+        return False
+    period_end = sub.get("current_period_end")
+    if period_end is not None and float(period_end) < time.time():
+        return False
     return True
 
 
+def account_has_access(account: Dict[str, Any], store: Any = None) -> bool:
+    """Return True if the account may access gated features.
+
+    * ``owner`` → always True (unconditional, permanent).
+    * Gate not enforced (default, personal-testing phase) → True for any
+      authenticated account.
+    * Gate enforced → True only with a live subscription (see
+      :func:`has_active_subscription`); requires ``store``.
+    """
+    if account.get("role") == "owner":
+        return True
+    if not _gate_enforced():
+        return True
+    return has_active_subscription(store, account["id"])
+
+
+def _account_store(request: Request) -> Optional[Any]:
+    return getattr(request.app.state.app_state, "account_store", None)
+
+
 async def require_active_subscription(
+    request: Request,
     account: Dict[str, Any] = Depends(require_account),
 ) -> Dict[str, Any]:
-    """Dependency: authenticated AND (today: always) entitled.
+    """Dependency: authenticated AND entitled (owner always passes).
 
-    Owner always passes. When the paywall is wired in :func:`account_has_access`,
-    a non-entitled account gets 402 Payment Required while owner is untouched.
+    A non-entitled non-owner account gets 402 Payment Required when the gate is
+    enforced; otherwise the gate is open and every authenticated account passes.
     """
-    if not account_has_access(account):
-        # 402 is the canonical "you must pay" status. Unused today because the
-        # gate is open, but wired so the future change is one function away.
+    if not account_has_access(account, _account_store(request)):
         raise HTTPException(
             status_code=402,
             detail="An active subscription is required for this feature.",

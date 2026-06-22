@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ChevronDown, ExternalLink, LogIn, LogOut, User, UserPlus } from 'lucide-react';
+import { ChevronDown, CreditCard, ExternalLink, LogIn, LogOut, User, UserPlus } from 'lucide-react';
 import * as React from 'react';
 import { LocaleToggle } from '@/components/LocaleToggle';
 import { useAuth } from '@/lib/auth/store';
@@ -88,6 +88,15 @@ export function AccountMenu() {
               >
                 Mon compte
                 <User className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+              </Link>
+              <Link
+                href="/abonnement"
+                role="menuitem"
+                className="flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
+                onClick={() => setOpen(false)}
+              >
+                Abonnement
+                <CreditCard className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
               </Link>
             </>
           ) : (

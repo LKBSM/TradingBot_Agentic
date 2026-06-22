@@ -79,7 +79,7 @@ class AccountError(ValueError):
 class AccountStore:
     """Thread-safe account store with SQLite WAL persistence."""
 
-    SCHEMA_VERSION = 1
+    SCHEMA_VERSION = 2
 
     def __init__(self, db_path: str = "./data/accounts.db"):
         self._db_path = Path(db_path)
@@ -159,6 +159,34 @@ class AccountStore:
                     created_at REAL    NOT NULL,
                     expires_at REAL    NOT NULL,
                     used_at    REAL
+                );
+            """)
+        if from_v < 2:
+            # Payments mission ② — subscription state keyed to the account.
+            # ONE row per account (account_id PK) holding the Stripe linkage and
+            # the RESOLVED subscription state. NO card data EVER lives here — only
+            # opaque Stripe IDs and the status Stripe reports. ``processed_webhooks``
+            # makes webhook handling idempotent (each Stripe event id applied once).
+            conn.executescript("""
+                CREATE TABLE IF NOT EXISTS subscriptions (
+                    account_id             INTEGER PRIMARY KEY
+                        REFERENCES accounts(id) ON DELETE CASCADE,
+                    stripe_customer_id     TEXT,
+                    stripe_subscription_id TEXT,
+                    status                 TEXT,
+                    price_id               TEXT,
+                    current_period_end     REAL,
+                    cancel_at_period_end   INTEGER NOT NULL DEFAULT 0,
+                    trial_end              REAL,
+                    updated_at             TEXT    NOT NULL
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS idx_subscriptions_customer
+                    ON subscriptions(stripe_customer_id)
+                    WHERE stripe_customer_id IS NOT NULL;
+                CREATE TABLE IF NOT EXISTS processed_webhooks (
+                    event_id     TEXT PRIMARY KEY,
+                    event_type   TEXT,
+                    processed_at REAL NOT NULL
                 );
             """)
         conn.execute(
@@ -654,6 +682,180 @@ class AccountStore:
                     "UPDATE accounts SET password_hash = ? WHERE id = ?",
                     (password_hash, account_id),
                 )
+            finally:
+                conn.close()
+
+    # --------------------------------------------------------------------- #
+    # Subscriptions / Stripe linkage (payments mission ②)
+    #
+    # NO card data is ever stored here. We persist only the opaque Stripe
+    # customer/subscription IDs and the subscription STATE Stripe reports, so
+    # the paywall (subscription_gate.account_has_access) can answer offline.
+    # --------------------------------------------------------------------- #
+    @staticmethod
+    def _row_to_subscription(row: Optional[sqlite3.Row]) -> Optional[Dict[str, Any]]:
+        if row is None:
+            return None
+        return {
+            "account_id": row["account_id"],
+            "stripe_customer_id": row["stripe_customer_id"],
+            "stripe_subscription_id": row["stripe_subscription_id"],
+            "status": row["status"],
+            "price_id": row["price_id"],
+            "current_period_end": row["current_period_end"],
+            "cancel_at_period_end": bool(row["cancel_at_period_end"]),
+            "trial_end": row["trial_end"],
+            "updated_at": row["updated_at"],
+        }
+
+    def get_subscription(self, account_id: int) -> Optional[Dict[str, Any]]:
+        """Return the subscription row for an account, or None if never linked."""
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                cur = conn.execute(
+                    "SELECT * FROM subscriptions WHERE account_id = ?",
+                    (account_id,),
+                )
+                return self._row_to_subscription(cur.fetchone())
+            finally:
+                conn.close()
+
+    def link_stripe_customer(self, account_id: int, stripe_customer_id: str) -> None:
+        """Bind a Stripe customer id to an account (created at checkout time).
+
+        Idempotent: upserts the ``subscriptions`` row so a customer is linked
+        before any subscription exists. Never overwrites an existing customer id
+        with a different one (the first binding wins — a guard against a stray
+        second customer for the same account).
+        """
+        now_iso = time.strftime("%Y-%m-%dT%H:%M:%S")
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                conn.execute(
+                    "INSERT INTO subscriptions "
+                    "(account_id, stripe_customer_id, cancel_at_period_end, updated_at) "
+                    "VALUES (?, ?, 0, ?) "
+                    "ON CONFLICT(account_id) DO UPDATE SET "
+                    "  stripe_customer_id = COALESCE(subscriptions.stripe_customer_id, excluded.stripe_customer_id), "
+                    "  updated_at = excluded.updated_at",
+                    (account_id, stripe_customer_id, now_iso),
+                )
+            finally:
+                conn.close()
+
+    def get_account_by_stripe_customer(
+        self, stripe_customer_id: str
+    ) -> Optional[Dict[str, Any]]:
+        """Resolve the account behind a Stripe customer id (webhook join key)."""
+        if not stripe_customer_id:
+            return None
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                cur = conn.execute(
+                    "SELECT a.* FROM subscriptions s "
+                    "JOIN accounts a ON a.id = s.account_id "
+                    "WHERE s.stripe_customer_id = ?",
+                    (stripe_customer_id,),
+                )
+                row = cur.fetchone()
+            finally:
+                conn.close()
+        return self._row_to_public(row) if row else None
+
+    def upsert_subscription(
+        self,
+        account_id: int,
+        *,
+        stripe_customer_id: Optional[str] = None,
+        stripe_subscription_id: Optional[str] = None,
+        status: Optional[str] = None,
+        price_id: Optional[str] = None,
+        current_period_end: Optional[float] = None,
+        cancel_at_period_end: Optional[bool] = None,
+        trial_end: Optional[float] = None,
+    ) -> Dict[str, Any]:
+        """Create/update the subscription row from a (verified) Stripe event.
+
+        Only non-None fields are written, so a partial event (e.g. an invoice
+        carrying just a status change) never wipes the subscription id or period
+        already on record. Returns the resulting subscription dict.
+        """
+        now_iso = time.strftime("%Y-%m-%dT%H:%M:%S")
+        fields = {
+            "stripe_customer_id": stripe_customer_id,
+            "stripe_subscription_id": stripe_subscription_id,
+            "status": status,
+            "price_id": price_id,
+            "current_period_end": current_period_end,
+            "cancel_at_period_end": (
+                None if cancel_at_period_end is None else int(cancel_at_period_end)
+            ),
+            "trial_end": trial_end,
+        }
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                conn.execute("BEGIN")
+                cur = conn.execute(
+                    "SELECT account_id FROM subscriptions WHERE account_id = ?",
+                    (account_id,),
+                )
+                exists = cur.fetchone() is not None
+                if not exists:
+                    conn.execute(
+                        "INSERT INTO subscriptions (account_id, cancel_at_period_end, updated_at) "
+                        "VALUES (?, 0, ?)",
+                        (account_id, now_iso),
+                    )
+                set_cols = [(k, v) for k, v in fields.items() if v is not None]
+                if set_cols:
+                    assignments = ", ".join(f"{k} = ?" for k, _ in set_cols)
+                    params = [v for _, v in set_cols]
+                    params.append(now_iso)
+                    params.append(account_id)
+                    conn.execute(
+                        f"UPDATE subscriptions SET {assignments}, updated_at = ? "
+                        "WHERE account_id = ?",
+                        params,
+                    )
+                else:
+                    conn.execute(
+                        "UPDATE subscriptions SET updated_at = ? WHERE account_id = ?",
+                        (now_iso, account_id),
+                    )
+                conn.execute("COMMIT")
+            except Exception:
+                conn.rollback()
+                raise
+            finally:
+                conn.close()
+        sub = self.get_subscription(account_id)
+        assert sub is not None  # just upserted
+        return sub
+
+    def mark_webhook_processed(self, event_id: str, event_type: str = "") -> bool:
+        """Record a Stripe event id; return True if NEW, False if already seen.
+
+        The PRIMARY KEY makes this atomic — a duplicate delivery of the same
+        event id is a no-op insert, so callers gate their side effects on the
+        returned bool to stay idempotent under Stripe's at-least-once delivery.
+        """
+        if not event_id:
+            # No id to dedup on — treat as new but never persist an empty key.
+            return True
+        now = time.time()
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                cur = conn.execute(
+                    "INSERT OR IGNORE INTO processed_webhooks "
+                    "(event_id, event_type, processed_at) VALUES (?, ?, ?)",
+                    (event_id, event_type, now),
+                )
+                return cur.rowcount > 0
             finally:
                 conn.close()
 

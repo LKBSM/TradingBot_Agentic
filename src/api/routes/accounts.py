@@ -256,19 +256,19 @@ async def password_reset_confirm(payload: ResetConfirmBody, request: Request):
 
 @router.get("/access", response_model=Dict[str, Any])
 async def access_status(
+    request: Request,
     account: Dict[str, Any] = Depends(require_active_subscription),
 ):
-    """Single entitlement probe behind the future payment gate.
+    """Single entitlement probe behind the payment gate.
 
-    Today the gate is open (everyone authenticated passes; owner unconditional),
-    so this returns the resolved access for the current account. When mission ②
-    wires billing into ``account_has_access``, a non-entitled non-owner account
-    will get 402 here without any change to this route.
+    Returns the resolved access for the current account. When the gate is
+    enforced (``SUBSCRIPTION_GATE_ENFORCED=1``) a non-entitled non-owner account
+    gets 402 from the dependency before reaching this body; owner is untouched.
     """
     return {
         "ok": True,
         "role": account["role"],
-        "has_access": account_has_access(account),
+        "has_access": account_has_access(account, _store(request)),
         "is_owner": account["role"] == "owner",
     }
 
