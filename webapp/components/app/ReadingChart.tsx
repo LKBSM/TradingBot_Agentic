@@ -889,39 +889,69 @@ export function ReadingChart({
                   : undefined,
               }}
             >
-              <span
-                className={cn(
-                  'absolute left-1 top-0 whitespace-nowrap font-medium leading-tight tabular-nums',
-                  r.tested ? 'text-[9px] opacity-70' : 'text-[10px]',
-                )}
-                style={{ color: ZONE_LABEL[r.kind] }}
-                title={r.label}
-              >
-                {ZONE_CODE[r.kind]}
-              </span>
-              {r.inTestLive && (
-                <span
-                  className="absolute right-1 top-0 whitespace-nowrap text-[9px] font-semibold leading-tight"
-                  style={{ color: LIVE_COLOR }}
-                  title="Order Block en cours de test — provisoire, intra-bougie (confirmé seulement à la clôture)"
-                >
-                  • en test
-                </span>
-              )}
-              {/* Touched-but-alive marker: a `mitigated` OB / `partially_filled`
-                  FVG that price has tapped but NOT closed through. The engine still
-                  tracks it, so its box extends to the current bar (it is in play) —
-                  this dim slate tag (NOT the amber live accent) makes the touched
-                  state explicit so the extension never reads as untested. */}
-              {r.tested && !r.inTestLive && (
-                <span
-                  className="absolute right-1 top-0 whitespace-nowrap text-[9px] font-medium leading-tight opacity-70"
-                  style={{ color: ZONE_LABEL[r.kind] }}
-                  title="Zone déjà touchée mais non invalidée — toujours suivie par le moteur (encore en jeu)"
-                >
-                  • touché
-                </span>
-              )}
+              {/* Type code + status grouped in ONE top-left cluster, INSIDE the
+                  box with a little padding. Everything is left-anchored (the box's
+                  left edge sits at the zone's creation, deep in the past) so no
+                  label can reach the right price-scale gutter / live price the way
+                  the old `right-1` status tags did. Narrow boxes that can't hold
+                  the cluster fall back to sitting just ABOVE the box, still
+                  left-aligned — never to the right. */}
+              {(() => {
+                // Width below which the cluster would spill past the box's right
+                // edge: park it just above instead. The bare type code is tiny, so
+                // only boxes carrying a status chip need the larger threshold.
+                const hasStatus = r.inTestLive || r.tested;
+                const narrow = r.width < (hasStatus ? 66 : 22);
+                return (
+                  <div
+                    className={cn(
+                      'absolute flex items-center gap-1 whitespace-nowrap',
+                      narrow ? 'bottom-full left-0 mb-0.5' : 'left-1 top-0.5',
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        'font-medium leading-none tabular-nums',
+                        r.tested ? 'text-[9px] opacity-70' : 'text-[10px]',
+                      )}
+                      style={{ color: ZONE_LABEL[r.kind] }}
+                      title={r.label}
+                    >
+                      {ZONE_CODE[r.kind]}
+                    </span>
+                    {r.inTestLive && (
+                      <span
+                        className="rounded-sm px-1 py-px text-[9px] font-semibold leading-none"
+                        style={{
+                          color: LIVE_COLOR,
+                          backgroundColor: `rgba(${LIVE_RGB}, 0.16)`,
+                        }}
+                        title="Order Block en cours de test — provisoire, intra-bougie (confirmé seulement à la clôture)"
+                      >
+                        en test
+                      </span>
+                    )}
+                    {/* Touched-but-alive chip: a `mitigated` OB / `partially_filled`
+                        FVG that price has tapped but NOT closed through. The engine
+                        still tracks it, so its box extends to the current bar (it is
+                        in play) — this dim slate chip (NOT the amber live accent)
+                        keeps the touched state explicit so the extension never reads
+                        as untested. */}
+                    {r.tested && !r.inTestLive && (
+                      <span
+                        className="rounded-sm px-1 py-px text-[9px] font-medium leading-none opacity-80"
+                        style={{
+                          color: ZONE_LABEL[r.kind],
+                          backgroundColor: `rgba(${ZONE_RGB[r.kind]}, 0.18)`,
+                        }}
+                        title="Zone déjà touchée mais non invalidée — toujours suivie par le moteur (encore en jeu)"
+                      >
+                        touché
+                      </span>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           );
         })}
