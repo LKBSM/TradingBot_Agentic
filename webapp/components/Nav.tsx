@@ -2,9 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { User } from 'lucide-react';
 import { AppHeader } from '@/components/app/AppHeader';
 import { LocaleToggle } from '@/components/LocaleToggle';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { useAuth } from '@/lib/auth/store';
 import { SUPPORTED_LOCALES } from '@/i18n';
 
 const ANCHORS = [
@@ -34,6 +36,27 @@ function isAppRoute(pathname: string): boolean {
  * header (brand + utility cluster only) — the marketing nav lives ONLY on the
  * landing.
  */
+/**
+ * Session-aware account control for the marketing nav. Logged out → "Connexion";
+ * logged in → "Compte" (links to /compte). Stays quiet during the initial /me
+ * probe to avoid a flash of the wrong state.
+ */
+function NavAccountLink() {
+  const { isAuthenticated, loading } = useAuth();
+  if (loading) {
+    return <span className="h-9 w-20" aria-hidden />;
+  }
+  return (
+    <Link
+      href={isAuthenticated ? '/compte' : '/connexion'}
+      className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      <User className="h-4 w-4" aria-hidden />
+      <span className="hidden sm:inline">{isAuthenticated ? 'Compte' : 'Connexion'}</span>
+    </Link>
+  );
+}
+
 export function Nav() {
   const pathname = usePathname() ?? '/';
   if (isAppRoute(pathname)) {
@@ -79,6 +102,7 @@ export function Nav() {
           >
             Scanner
           </Link>
+          <NavAccountLink />
           <LocaleToggle />
           <ThemeToggle />
         </div>

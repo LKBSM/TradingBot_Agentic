@@ -26,6 +26,8 @@ class AppState:
     signal_tracker: Optional[Any] = None  # SignalTracker
     # Smart Sentinel AI
     tier_manager: Optional[Any] = None    # UserTierManager
+    # User accounts (auth + roles + consent). Seeded owner from env at boot.
+    account_store: Optional[Any] = None   # src.api.account_store.AccountStore
     llm_engine: Optional[Any] = None      # LLMNarrativeEngine
     scanner: Optional[Any] = None         # SentinelScanner
     vol_forecaster: Optional[Any] = None  # VolatilityForecaster

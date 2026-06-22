@@ -20,11 +20,39 @@ from src.api.middleware.geo_block import GeoBlockMiddleware
 from src.api.middleware.rate_limit_headers import RateLimitHeadersMiddleware
 from src.api.models import ErrorResponse
 from src.api.openapi_enrichment import install_openapi_enrichment
-from src.api.routes import admin, admin_audit, audit, billing, candles, chatbot, conditions_scan, dashboard, enrich, health, health_deep, insight_history, legal, live_price, market_reading, metrics_latency, narratives, operator, prometheus, qa, signals, state, webapp, webhook_ack
+from src.api.routes import accounts, admin, admin_audit, audit, billing, candles, chatbot, conditions_scan, dashboard, enrich, health, health_deep, insight_history, legal, live_price, market_reading, metrics_latency, narratives, operator, prometheus, qa, signals, state, webapp, webhook_ack
 from src.api.shutdown import GracefulShutdownCoordinator
 from src.api.signal_store import SignalStore
 
 logger = logging.getLogger(__name__)
+
+
+def _maybe_seed_owner(app_state: AppState) -> None:
+    """Seed the owner account from the environment at first boot (idempotent).
+
+    Reads ``OWNER_USERNAME`` / ``OWNER_EMAIL`` / ``OWNER_PASSWORD``. When all
+    three are set, ensures an ``owner``-role account exists (password hashed at
+    creation, never stored or logged in clear text). A no-op when the env vars
+    are absent, so tests calling ``create_app()`` without owner env stay clean.
+
+    A bad value (e.g. too-short password) is logged and swallowed — a
+    misconfigured owner var must NOT abort the whole API startup.
+    """
+    store = app_state.account_store
+    if store is None:
+        return
+    username = os.environ.get("OWNER_USERNAME")
+    email = os.environ.get("OWNER_EMAIL")
+    password = os.environ.get("OWNER_PASSWORD")
+    if not (username and email and password):
+        return
+    try:
+        owner = store.seed_owner(username, email, password)
+        logger.info("owner account ensured at startup (id=%s)", owner["id"])
+    except Exception:
+        logger.exception(
+            "owner seeding failed — check OWNER_USERNAME/OWNER_EMAIL/OWNER_PASSWORD"
+        )
 
 
 def _maybe_bootstrap_market_reading(app_state: AppState) -> None:
@@ -180,6 +208,7 @@ def create_app(
     hmac_manager: Any = None,
     signal_tracker: Any = None,
     tier_manager: Any = None,
+    account_store: Any = None,
     llm_engine: Any = None,
     scanner: Any = None,
     circuit_breakers: Optional[Dict[str, Any]] = None,
@@ -219,6 +248,16 @@ def create_app(
         latency_tracker = LatencyTracker()
     if shutdown_coordinator is None:
         shutdown_coordinator = GracefulShutdownCoordinator()
+    # Accounts/auth store — cheap, always useful (the /api/auth/* routes return
+    # 503 without it). Default-instantiated like signal_store so create_app()
+    # in tests has a working auth surface. Owner seeding (env-gated) happens in
+    # the lifespan, not here, so a no-env test boot stays side-effect-free.
+    if account_store is None:
+        from src.api.account_store import AccountStore
+
+        account_store = AccountStore(
+            db_path=os.environ.get("ACCOUNTS_DB_PATH", "./data/accounts.db")
+        )
 
     app_state = AppState(
         signal_store=signal_store,
@@ -231,6 +270,7 @@ def create_app(
         hmac_manager=hmac_manager,
         signal_tracker=signal_tracker,
         tier_manager=tier_manager,
+        account_store=account_store,
         llm_engine=llm_engine,
         scanner=scanner,
         circuit_breakers=circuit_breakers or {},
@@ -259,6 +299,8 @@ def create_app(
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         logger.info("API starting up")
+        # Seed the owner account from env (idempotent, no-op without OWNER_*).
+        _maybe_seed_owner(app_state)
         # MIA Markets V2 — Chantier 3 — env-gated runtime bootstrap. Builds
         # the MarketReadingAssembler + scheduler from env when nothing was
         # injected (production opts in via BOOTSTRAP_ENABLED + SCHEDULER_ENABLED).
@@ -461,6 +503,7 @@ def create_app(
     app.include_router(dashboard.router)
     app.include_router(narratives.router)
     app.include_router(legal.router)
+    app.include_router(accounts.router)
     app.include_router(qa.router)
     app.include_router(enrich.router)
     app.include_router(audit.router)

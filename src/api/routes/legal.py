@@ -15,9 +15,10 @@ be rendered in a browser or piped into a marketing site.
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Dict, Optional
 
-from fastapi import APIRouter, Query, Request
+from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import PlainTextResponse
 
 from src.api.disclaimers import (
@@ -29,6 +30,15 @@ from src.api.disclaimers import (
 router = APIRouter(tags=["legal"])
 
 LAST_UPDATED = "2026-04-28"
+
+# Canonical CGU document — rendered TEL QUEL by /api/v1/legal/conditions and the
+# webapp /conditions page. Repo-root-relative (this file is src/api/routes/).
+CONDITIONS_DOC_PATH = (
+    Path(__file__).resolve().parents[3] / "docs" / "legal" / "conditions-utilisation.md"
+)
+# Version stamp for the canonical document. Kept in lockstep with the date in
+# the markdown header and with the consent version recorded at registration.
+CONDITIONS_VERSION = LAST_UPDATED
 
 
 # ─── Terms of Service ─────────────────────────────────────────────────────
@@ -450,6 +460,47 @@ async def legal_version():
     return {
         "terms_version": LAST_UPDATED,
         "privacy_version": LAST_UPDATED,
+        "conditions_version": CONDITIONS_VERSION,
         "supported_languages": list(SUPPORTED_LANGS),
+        "fetched_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+def _read_conditions_doc() -> str:
+    """Read the canonical CGU markdown verbatim. 503 if the file is missing."""
+    try:
+        return CONDITIONS_DOC_PATH.read_text(encoding="utf-8")
+    except FileNotFoundError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="Conditions document unavailable",
+        ) from exc
+
+
+@router.get("/api/v1/legal/conditions", response_class=PlainTextResponse)
+async def conditions_document():
+    """Serve ``docs/legal/conditions-utilisation.md`` TEL QUEL (verbatim).
+
+    The webapp ``/conditions`` page fetches this through the same-origin
+    ``/api/*`` rewrite and renders the markdown without rewriting the text.
+    """
+    body = _read_conditions_doc()
+    return PlainTextResponse(
+        body,
+        media_type="text/markdown; charset=utf-8",
+        headers={
+            "Content-Language": "fr",
+            "X-Document-Version": CONDITIONS_VERSION,
+            "Cache-Control": "public, max-age=3600",
+        },
+    )
+
+
+@router.get("/api/v1/legal/conditions/meta")
+async def conditions_meta():
+    """Version + date for the canonical CGU document (machine-readable)."""
+    return {
+        "version": CONDITIONS_VERSION,
+        "last_updated": LAST_UPDATED,
         "fetched_at": datetime.now(timezone.utc).isoformat(),
     }
