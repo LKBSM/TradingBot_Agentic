@@ -48,6 +48,7 @@ from src.intelligence.narrated_reading import (
     build_user_prompt,
     references_only_known_levels,
     render_template,
+    truncate_at_sentence,
 )
 
 logger = logging.getLogger(__name__)
@@ -140,7 +141,12 @@ class HaikuDescriptionEngine:
         except Exception as exc:  # network / API error
             logger.warning("Haiku call failed: %s", exc)
             return None
-        candidate = raw.strip()[:NARRATION_MAX_LENGTH]
+        # Display-only field: clamp on a SENTENCE boundary, never mid-word. The
+        # budget (NARRATION_MAX_LENGTH) is sized to hold a complete 2-4 sentence
+        # paragraph, so a compliant narration is returned whole; only a run-on
+        # that ignored the length instruction gets trimmed — and then at a
+        # sentence end, not through a word/number.
+        candidate = truncate_at_sentence(raw, NARRATION_MAX_LENGTH)
         if not self._is_clean(candidate, facts):
             return None
         return candidate

@@ -92,6 +92,38 @@ _RETEST_FR: dict[str, str] = {
 
 NARRATION_MAX_LENGTH = DESCRIPTION_MAX_LENGTH
 
+# A narration is a short paragraph of full sentences. In fr-FR display form the
+# only '.' / '!' / '?' are sentence terminators (decimals use a comma, thousands
+# a fine no-break space), so splitting on them is unambiguous.
+_SENTENCE_RE = re.compile(r"[^.!?]*[.!?]+(?:\s|$)|[^.!?]+$")
+
+
+def truncate_at_sentence(text: str, max_length: int) -> str:
+    """Clamp ``text`` to ``max_length`` on a SENTENCE boundary — never mid-word.
+
+    The narrated reading is a DISPLAY-only field, sized to hold a complete 2-4
+    sentence paragraph, so this rarely fires. When a narration does exceed the
+    budget we drop WHOLE trailing sentences rather than slicing through a word or
+    a number. If even the first sentence overflows (degenerate, e.g. a model that
+    ignored the « 2 à 4 phrases » instruction and returned one giant run-on), we
+    fall back to the last word boundary plus an ellipsis so the text never ends
+    on a fragment of a word.
+    """
+    text = text.strip()
+    if len(text) <= max_length:
+        return text
+    kept = ""
+    for sentence in _SENTENCE_RE.findall(text):
+        if len((kept + sentence).strip()) > max_length:
+            break
+        kept += sentence
+    kept = kept.strip()
+    if kept:
+        return kept
+    # Degenerate: a single sentence longer than the whole budget.
+    clipped = text[: max_length - 1].rsplit(" ", 1)[0].rstrip(" ,;:–-")
+    return f"{clipped}…" if clipped else text[: max_length - 1] + "…"
+
 
 def price_decimals(instrument: str) -> int:
     return _PRICE_DECIMALS.get((instrument or "").upper(), _DEFAULT_DECIMALS)
@@ -496,9 +528,10 @@ def render_template(facts: ReadingFacts) -> str:
         parts.append(f"À noter : {facts.contrary}.")
 
     desc = " ".join(parts)
-    if len(desc) > NARRATION_MAX_LENGTH:
-        desc = desc[: NARRATION_MAX_LENGTH - 1].rstrip(" ,;–-") + "."
-    return desc
+    # Display-only field: if the assembled template ever exceeds the budget, cut
+    # on a sentence boundary (never mid-word). Each `parts` entry is a complete
+    # sentence, so this drops whole trailing facts cleanly.
+    return truncate_at_sentence(desc, NARRATION_MAX_LENGTH)
 
 
 # ---------------------------------------------------------------------------
@@ -595,4 +628,5 @@ __all__ = [
     "price_decimals",
     "references_only_known_levels",
     "render_template",
+    "truncate_at_sentence",
 ]
