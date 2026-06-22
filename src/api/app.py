@@ -20,7 +20,7 @@ from src.api.middleware.geo_block import GeoBlockMiddleware
 from src.api.middleware.rate_limit_headers import RateLimitHeadersMiddleware
 from src.api.models import ErrorResponse
 from src.api.openapi_enrichment import install_openapi_enrichment
-from src.api.routes import accounts, admin, admin_audit, audit, billing, candles, chatbot, conditions_scan, dashboard, enrich, health, health_deep, insight_history, legal, live_price, market_reading, metrics_latency, narratives, operator, prometheus, qa, signals, state, webapp, webhook_ack
+from src.api.routes import account_billing, accounts, admin, admin_audit, audit, billing, candles, chatbot, conditions_scan, dashboard, enrich, health, health_deep, insight_history, legal, live_price, market_reading, metrics_latency, narratives, operator, prometheus, qa, signals, state, webapp, webhook_ack
 from src.api.shutdown import GracefulShutdownCoordinator
 from src.api.signal_store import SignalStore
 
@@ -258,6 +258,15 @@ def create_app(
         account_store = AccountStore(
             db_path=os.environ.get("ACCOUNTS_DB_PATH", "./data/accounts.db")
         )
+
+    # Stripe billing client (payments mission ②) — only when a secret key is
+    # configured. Without it the account billing routes return 503, so dev/CI
+    # and tests boot cleanly with no Stripe credentials and no SDK call.
+    if stripe_client is None and os.environ.get("STRIPE_SECRET_KEY"):
+        from src.billing.stripe_client import StripeClient
+
+        stripe_client = StripeClient()
+        logger.info("StripeClient configured from environment")
 
     app_state = AppState(
         signal_store=signal_store,
@@ -511,6 +520,7 @@ def create_app(
     app.include_router(metrics_latency.router)
     app.include_router(webhook_ack.router)
     app.include_router(billing.router)
+    app.include_router(account_billing.router)
     app.include_router(webapp.router)
     app.include_router(market_reading.router)
     app.include_router(candles.router)
