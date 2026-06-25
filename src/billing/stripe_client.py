@@ -99,6 +99,139 @@ def parse_webhook_event(payload: dict) -> Optional[StripeWebhookEvent]:
     )
 
 
+# Events that drive the ACCOUNT subscription state (payments mission ②). Distinct
+# from the legacy tier-keyed ``parse_webhook_event`` above.
+ACCOUNT_SUBSCRIPTION_EVENTS = frozenset({
+    "checkout.session.completed",
+    "customer.subscription.created",
+    "customer.subscription.updated",
+    "customer.subscription.deleted",
+    "invoice.paid",
+    "invoice.payment_succeeded",
+    "invoice.payment_failed",
+})
+
+
+@dataclass(frozen=True)
+class AccountSubscriptionEvent:
+    """Account-centric projection of a verified Stripe event.
+
+    ``account_id`` is resolved from metadata when present (None otherwise — the
+    route then falls back to a customer-id lookup). ``status`` is the subscription
+    status to persist; it is derived for events that don't carry one directly
+    (deleted → ``canceled``, payment_failed → ``past_due``).
+    """
+    event_id: str
+    event_type: str
+    account_id: Optional[int]
+    customer_id: str
+    subscription_id: Optional[str]
+    status: Optional[str]
+    price_id: Optional[str]
+    current_period_end: Optional[float]
+    cancel_at_period_end: Optional[bool]
+    trial_end: Optional[float]
+
+
+def _coerce_account_id(meta: Any) -> Optional[int]:
+    if not isinstance(meta, dict):
+        return None
+    raw = meta.get("account_id")
+    if raw is None:
+        return None
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        return None
+
+
+def _first_price_id(obj: dict) -> Optional[str]:
+    items = obj.get("items")
+    if isinstance(items, dict):
+        data = items.get("data") or []
+        if data:
+            return ((data[0] or {}).get("price") or {}).get("id")
+    lines = obj.get("lines")
+    if isinstance(lines, dict):
+        data = lines.get("data") or []
+        if data:
+            return ((data[0] or {}).get("price") or {}).get("id")
+    return None
+
+
+def parse_account_event(payload: dict) -> Optional[AccountSubscriptionEvent]:
+    """Project a verified Stripe event onto the account subscription shape.
+
+    Returns None for events outside :data:`ACCOUNT_SUBSCRIPTION_EVENTS`.
+    """
+    event_type = payload.get("type", "")
+    if event_type not in ACCOUNT_SUBSCRIPTION_EVENTS:
+        return None
+    event_id = str(payload.get("id", ""))
+    obj = (payload.get("data", {}) or {}).get("object", {}) or {}
+    customer_id = str(obj.get("customer", "") or "")
+
+    if event_type == "checkout.session.completed":
+        # Linkage event: bind customer↔account; full state arrives via the
+        # subscription.* events. account_id comes from client_reference_id/metadata.
+        account_id = _coerce_account_id(obj.get("metadata"))
+        if account_id is None and obj.get("client_reference_id"):
+            try:
+                account_id = int(obj["client_reference_id"])
+            except (TypeError, ValueError):
+                account_id = None
+        return AccountSubscriptionEvent(
+            event_id=event_id,
+            event_type=event_type,
+            account_id=account_id,
+            customer_id=customer_id,
+            subscription_id=str(obj.get("subscription") or "") or None,
+            status=None,
+            price_id=None,
+            current_period_end=None,
+            cancel_at_period_end=None,
+            trial_end=None,
+        )
+
+    if event_type.startswith("customer.subscription."):
+        status = obj.get("status")
+        if event_type == "customer.subscription.deleted":
+            status = "canceled"
+        return AccountSubscriptionEvent(
+            event_id=event_id,
+            event_type=event_type,
+            account_id=_coerce_account_id(obj.get("metadata")),
+            customer_id=customer_id,
+            subscription_id=str(obj.get("id") or "") or None,
+            status=status,
+            price_id=_first_price_id(obj),
+            current_period_end=obj.get("current_period_end"),
+            cancel_at_period_end=(
+                bool(obj["cancel_at_period_end"])
+                if obj.get("cancel_at_period_end") is not None
+                else None
+            ),
+            trial_end=obj.get("trial_end"),
+        )
+
+    # invoice.* — carries customer + subscription id; status is derived.
+    derived_status = "past_due" if event_type == "invoice.payment_failed" else "active"
+    return AccountSubscriptionEvent(
+        event_id=event_id,
+        event_type=event_type,
+        account_id=_coerce_account_id(obj.get("subscription_details", {}).get("metadata"))
+        if isinstance(obj.get("subscription_details"), dict)
+        else None,
+        customer_id=customer_id,
+        subscription_id=str(obj.get("subscription") or "") or None,
+        status=derived_status,
+        price_id=_first_price_id(obj),
+        current_period_end=None,
+        cancel_at_period_end=None,
+        trial_end=None,
+    )
+
+
 class StripeClient:
     """Lazy-init wrapper. ``is_configured`` is False when ``STRIPE_SECRET_KEY``
     is unset — every method raises in that case so a misconfigured deploy
@@ -125,27 +258,77 @@ class StripeClient:
     # Customer + checkout session
     # ------------------------------------------------------------------
 
+    def create_customer(self, *, email: str, account_id: int) -> dict:
+        """Create a Stripe customer carrying the account id in metadata.
+
+        ``metadata.account_id`` is the durable join key used by the webhook to
+        map Stripe events back to a local account (more robust than email).
+        """
+        stripe = self._require()
+        return stripe.Customer.create(
+            email=email,
+            metadata={"account_id": str(account_id)},
+        )
+
     def create_checkout_session(
         self,
         *,
         price_id: str,
         success_url: str,
         cancel_url: str,
-        customer_email: str,
+        customer_email: Optional[str] = None,
+        customer: Optional[str] = None,
+        account_id: Optional[int] = None,
         trial_days: int = 0,
+        automatic_tax: bool = False,
     ) -> dict:
+        """Create a subscription Checkout session.
+
+        Pass EITHER an existing ``customer`` id (preferred — keeps one customer
+        per account) OR a ``customer_email`` (Stripe creates the customer). When
+        ``account_id`` is given it is stamped on the session AND propagated to the
+        subscription metadata so webhooks can resolve the account. ``automatic_tax``
+        turns on Stripe Tax (TPS/TVQ etc.) — it also requires collecting the
+        customer's billing address, which Checkout does automatically when on.
+        """
         stripe = self._require()
-        params = {
+        sub_data: dict = {}
+        if trial_days > 0:
+            sub_data["trial_period_days"] = trial_days
+        if account_id is not None:
+            sub_data["metadata"] = {"account_id": str(account_id)}
+
+        params: dict = {
             "mode": "subscription",
             "line_items": [{"price": price_id, "quantity": 1}],
             "success_url": success_url,
             "cancel_url": cancel_url,
-            "customer_email": customer_email,
             "allow_promotion_codes": True,
         }
-        if trial_days > 0:
-            params["subscription_data"] = {"trial_period_days": trial_days}
+        if customer:
+            params["customer"] = customer
+            # Let Stripe Tax save the address it collects back onto the customer.
+            if automatic_tax:
+                params["customer_update"] = {"address": "auto"}
+        elif customer_email:
+            params["customer_email"] = customer_email
+        if account_id is not None:
+            params["client_reference_id"] = str(account_id)
+        if sub_data:
+            params["subscription_data"] = sub_data
+        if automatic_tax:
+            params["automatic_tax"] = {"enabled": True}
         return stripe.checkout.Session.create(**params)
+
+    def create_billing_portal_session(
+        self, *, customer_id: str, return_url: str
+    ) -> dict:
+        """Create a Stripe Customer Portal session (hosted manage/cancel page)."""
+        stripe = self._require()
+        return stripe.billing_portal.Session.create(
+            customer=customer_id,
+            return_url=return_url,
+        )
 
     def cancel_subscription(self, subscription_id: str) -> dict:
         stripe = self._require()
@@ -177,9 +360,12 @@ class StripeClient:
 
 
 __all__ = [
+    "ACCOUNT_SUBSCRIPTION_EVENTS",
     "STRIPE_API_KEY_ENV",
     "STRIPE_WEBHOOK_SECRET_ENV",
+    "AccountSubscriptionEvent",
     "StripeClient",
     "StripeWebhookEvent",
+    "parse_account_event",
     "parse_webhook_event",
 ]

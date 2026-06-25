@@ -1,4 +1,5 @@
 import type { Candle, CandlesResponse, MarketReading } from '@/types/market-reading';
+import { accessErrorFromResponse } from '@/lib/access/errors';
 
 /**
  * Client for GET /api/market-reading — Chantier 2 lazy on-demand endpoint.
@@ -140,6 +141,10 @@ async function attempt(
     );
   }
 
+  // 401/402 — the freemium gate. Surface the clean upsell, not a raw error.
+  const accessErr = await accessErrorFromResponse(res);
+  if (accessErr) throw accessErr;
+
   if (!res.ok) {
     // 500 and anything else — never surface server internals.
     throw new MarketReadingError(
@@ -240,6 +245,10 @@ export async function fetchCandles(
     clearTimeout(timer);
     signal?.removeEventListener('abort', onCallerAbort);
   }
+
+  // 401/402 — the freemium gate. Surface the clean upsell, not a raw error.
+  const accessErr = await accessErrorFromResponse(res);
+  if (accessErr) throw accessErr;
 
   if (!res.ok) {
     const detail = await readErrorDetail(res);

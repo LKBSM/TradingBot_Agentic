@@ -1,4 +1,5 @@
 import type { ConditionsConfig, ConditionsScanResponse } from './types';
+import { accessErrorFromResponse } from '@/lib/access/errors';
 
 /**
  * Client for POST /api/conditions-scan — the read-only structural scan.
@@ -95,6 +96,10 @@ export async function fetchConditionsScan(
       detail ?? "Le service de scan n’est pas disponible sur cet environnement.",
     );
   }
+  // 401/402 — the freemium gate (the scanner is a paid feature). Clean upsell.
+  const accessErr = await accessErrorFromResponse(res);
+  if (accessErr) throw accessErr;
+
   if (!res.ok) {
     throw new ScanError(
       res.status,

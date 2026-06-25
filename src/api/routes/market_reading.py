@@ -10,8 +10,12 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from typing import Any, Dict, Optional
 
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+
+from src.api.entitlements import enforce_combo_access
+from src.api.session_auth import optional_account
 from src.intelligence.market_reading_schema import MarketReading
 
 logger = logging.getLogger(__name__)
@@ -28,6 +32,7 @@ async def get_market_reading(
     request: Request,
     instrument: str = Query(..., description="XAUUSD or EURUSD"),
     timeframe: str = Query(..., description="M15, H1, or H4"),
+    account: Optional[Dict[str, Any]] = Depends(optional_account),
 ) -> MarketReading:
     if instrument not in SUPPORTED_INSTRUMENTS:
         raise HTTPException(
@@ -45,6 +50,9 @@ async def get_market_reading(
                 f"Supported: {sorted(SUPPORTED_TIMEFRAMES)}"
             ),
         )
+
+    # Freemium gate (no-op while the gate is OFF): free tier sees XAU/USD M15.
+    enforce_combo_access(request, account, instrument, timeframe)
 
     assembler = getattr(request.app.state.app_state, "market_reading_assembler", None)
     if assembler is None:

@@ -13,6 +13,7 @@ import { CookieBanner } from '@/components/compliance/CookieBanner';
 import { JsonLd, softwareApplicationLd } from '@/components/seo/JsonLd';
 import { ThemeProvider } from '@/components/theme-provider';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { AuthProvider } from '@/lib/auth/store';
 import { SUPPORTED_LOCALES } from '../../i18n';
 
 // Inter, variable axis weight 100..900, only the Latin subset (no CJK/Cyrillic
@@ -111,15 +112,17 @@ export default async function LocaleLayout({
         >
           <NextIntlClientProvider messages={messages}>
             <TooltipProvider delayDuration={200}>
-              <ChatProvider>
-                <Nav />
-                <main id="main" className="min-h-[calc(100vh-160px)]">
-                  {children}
-                </main>
-                <Footer />
-                <ChatPanel />
-                <CookieBanner />
-              </ChatProvider>
+              <AuthProvider>
+                <ChatProvider>
+                  <Nav />
+                  <main id="main" className="min-h-[calc(100vh-160px)]">
+                    {children}
+                  </main>
+                  <Footer />
+                  <ChatPanel />
+                  <CookieBanner />
+                </ChatProvider>
+              </AuthProvider>
             </TooltipProvider>
           </NextIntlClientProvider>
         </ThemeProvider>

@@ -21,10 +21,13 @@ from __future__ import annotations
 
 import logging
 from datetime import timezone
-from typing import List
+from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
+
+from src.api.entitlements import enforce_combo_access
+from src.api.session_auth import optional_account
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +72,7 @@ async def get_candles(
     instrument: str = Query(..., description="XAUUSD or EURUSD"),
     timeframe: str = Query(..., description="M15, H1, or H4"),
     limit: int = Query(DEFAULT_LIMIT, ge=1, le=MAX_LIMIT, description="Max candles"),
+    account: Optional[Dict[str, Any]] = Depends(optional_account),
 ) -> CandlesResponse:
     if instrument not in SUPPORTED_INSTRUMENTS:
         raise HTTPException(
@@ -86,6 +90,9 @@ async def get_candles(
                 f"Supported: {sorted(SUPPORTED_TIMEFRAMES)}"
             ),
         )
+
+    # Freemium gate (no-op while the gate is OFF): free tier sees XAU/USD M15.
+    enforce_combo_access(request, account, instrument, timeframe)
 
     store = _resolve_candles_store(request)
     if store is None:
