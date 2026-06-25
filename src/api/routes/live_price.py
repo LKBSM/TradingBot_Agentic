@@ -23,9 +23,13 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+from typing import Any, Dict, Optional
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
+
+from src.api.entitlements import enforce_instrument_access
+from src.api.session_auth import optional_account
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +59,7 @@ def format_price_event(instrument: str, price: float, ts: int) -> str:
 async def live_price(
     request: Request,
     instrument: str = Query(..., description="XAUUSD or EURUSD"),
+    account: Optional[Dict[str, Any]] = Depends(optional_account),
 ) -> StreamingResponse:
     if instrument not in SUPPORTED_INSTRUMENTS:
         raise HTTPException(
@@ -64,6 +69,9 @@ async def live_price(
                 f"Supported: {sorted(SUPPORTED_INSTRUMENTS)}"
             ),
         )
+
+    # Freemium gate (no-op while the gate is OFF): free tier streams XAU/USD.
+    enforce_instrument_access(request, account, instrument)
 
     bridge = _resolve_bridge(request)
     if bridge is None:

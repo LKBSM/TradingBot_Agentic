@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { AppWorkspace } from '@/components/app/AppWorkspace';
+import { SubscriptionGate } from '@/components/access/SubscriptionGate';
 import { resolveComboFromQuery } from '@/lib/conditions/app-link';
 
 /**
@@ -30,5 +31,12 @@ export default async function AppPage({
   // Honour an optional Scanner deep-link (?instrument=&timeframe=); fall back to
   // the default XAU/USD M15 so a direct visit still shows a populated surface.
   const initialCombo = resolveComboFromQuery(sp.instrument, sp.timeframe) ?? DEFAULT_COMBO;
-  return <AppWorkspace initialCombo={initialCombo} />;
+  // Gate the working surface: when enforced, a visitor is redirected to login; a
+  // free account is let in (partial perimeter — XAU/USD M15) and locked combos
+  // degrade to a clean upsell per request. Open while the gate is OFF (testing).
+  return (
+    <SubscriptionGate>
+      <AppWorkspace initialCombo={initialCombo} />
+    </SubscriptionGate>
+  );
 }

@@ -79,7 +79,7 @@ class AccountError(ValueError):
 class AccountStore:
     """Thread-safe account store with SQLite WAL persistence."""
 
-    SCHEMA_VERSION = 2
+    SCHEMA_VERSION = 3
 
     def __init__(self, db_path: str = "./data/accounts.db"):
         self._db_path = Path(db_path)
@@ -187,6 +187,20 @@ class AccountStore:
                     event_id     TEXT PRIMARY KEY,
                     event_type   TEXT,
                     processed_at REAL NOT NULL
+                );
+            """)
+        if from_v < 3:
+            # Subscription-gate mission ③ — per-account daily chat counter that
+            # backs the freemium quota (free tier = N messages/day). ONE row per
+            # (account, UTC day); enforcement lives in ``entitlements``. No PII,
+            # just a count — old days can be pruned at will.
+            conn.executescript("""
+                CREATE TABLE IF NOT EXISTS chat_usage (
+                    account_id INTEGER NOT NULL
+                        REFERENCES accounts(id) ON DELETE CASCADE,
+                    day        TEXT    NOT NULL,
+                    count      INTEGER NOT NULL DEFAULT 0,
+                    PRIMARY KEY (account_id, day)
                 );
             """)
         conn.execute(
@@ -858,6 +872,49 @@ class AccountStore:
                 return cur.rowcount > 0
             finally:
                 conn.close()
+
+    # --------------------------------------------------------------------- #
+    # Freemium chat quota (per-account, per-UTC-day counter)
+    #
+    # Backs the free-tier "N messages/day" limit (subscription-gate mission ③).
+    # The policy/limit lives in ``entitlements``; the store only counts.
+    # --------------------------------------------------------------------- #
+    def get_chat_usage(self, account_id: int, day: str) -> int:
+        """Return today's message count for an account (0 if none yet)."""
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                cur = conn.execute(
+                    "SELECT count FROM chat_usage WHERE account_id = ? AND day = ?",
+                    (account_id, day),
+                )
+                row = cur.fetchone()
+            finally:
+                conn.close()
+        return int(row["count"]) if row else 0
+
+    def increment_chat_usage(self, account_id: int, day: str) -> int:
+        """Atomically add one to the day's counter and return the new total.
+
+        The ``ON CONFLICT`` upsert + RLock make this safe under concurrency, so
+        two parallel chat turns can never both slip past the same quota boundary.
+        """
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                conn.execute(
+                    "INSERT INTO chat_usage (account_id, day, count) VALUES (?, ?, 1) "
+                    "ON CONFLICT(account_id, day) DO UPDATE SET count = count + 1",
+                    (account_id, day),
+                )
+                cur = conn.execute(
+                    "SELECT count FROM chat_usage WHERE account_id = ? AND day = ?",
+                    (account_id, day),
+                )
+                row = cur.fetchone()
+            finally:
+                conn.close()
+        return int(row["count"]) if row else 1
 
     # --------------------------------------------------------------------- #
     # Owner seeding (idempotent, from environment at first boot)

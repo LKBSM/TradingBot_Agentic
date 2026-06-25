@@ -20,9 +20,11 @@ import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Literal, Optional, Tuple
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
+from src.api.entitlements import enforce_scanner_access
+from src.api.session_auth import optional_account
 from src.intelligence.conditions_scanner import (
     ALLOWED_CONDITION_TYPES,
     DEFAULT_BOS_MAX_BARS,
@@ -141,7 +143,15 @@ async def get_palette() -> PaletteResponse:
 
 
 @router.post("/conditions-scan", response_model=ConditionsScanResponse)
-async def conditions_scan(request: Request, body: ConditionsScanRequest) -> ConditionsScanResponse:
+async def conditions_scan(
+    request: Request,
+    body: ConditionsScanRequest,
+    account: Optional[Dict[str, Any]] = Depends(optional_account),
+) -> ConditionsScanResponse:
+    # Freemium gate (no-op while the gate is OFF): the multi-market scanner is a
+    # paid feature — a free account is invited to subscribe (402), never errored.
+    enforce_scanner_access(request, account)
+
     assembler = getattr(request.app.state.app_state, "market_reading_assembler", None)
     if assembler is None:
         raise HTTPException(status_code=503, detail="MarketReading service not configured")

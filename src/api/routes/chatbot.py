@@ -13,10 +13,13 @@ MarketReading endpoint reads ``app.state.app_state.market_reading_assembler``.
 from __future__ import annotations
 
 import logging
-from typing import Any, Literal, Optional
+from typing import Any, Dict, Literal, Optional
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
+
+from src.api.entitlements import enforce_chat_access
+from src.api.session_auth import optional_account
 
 logger = logging.getLogger(__name__)
 
@@ -50,8 +53,15 @@ class ChatbotMessageResponse(BaseModel):
 
 @router.post("/message", response_model=ChatbotMessageResponse)
 async def chatbot_message(
-    payload: ChatbotMessageRequest, request: Request
+    payload: ChatbotMessageRequest,
+    request: Request,
+    account: Optional[Dict[str, Any]] = Depends(optional_account),
 ) -> ChatbotMessageResponse:
+    # Freemium gate (no-op while the gate is OFF): the free tier gets a small
+    # daily message quota; subscribers/owner are unlimited. Counting the turn
+    # BEFORE we run it keeps the quota authoritative server-side. 402 on exhaust.
+    enforce_chat_access(request, account)
+
     chatbot = getattr(request.app.state.app_state, "chatbot", None)
     if chatbot is None:
         raise HTTPException(status_code=503, detail="Chatbot service not configured")
