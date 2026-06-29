@@ -17,6 +17,7 @@ from src.intelligence.chatbot.constants import VIEW_ACTION_REFUSAL_TEMPLATE
 from src.intelligence.chatbot.signal_summary_provider import SignalSummaryProvider
 from src.intelligence.chatbot.view_action_filter import ViewActionValidator
 from src.intelligence.market_reading_schema import (
+    FairValueGap,
     MarketReading,
     MarketReadingConditions,
     MarketReadingEvents,
@@ -372,6 +373,121 @@ def test_hide_invented_zone_is_rejected_and_nothing_hidden() -> None:
     assert out.view_actions == []  # invented zone never recorded
     tool_result_msg = client.calls[2]["messages"][-1]
     assert VIEW_ACTION_REFUSAL_TEMPLATE in tool_result_msg["content"][0]["content"]
+
+
+# ---- Group resolution by factual state (« masque les FVG touchés ») --------- #
+
+
+def _fvg(fvg_id: str, status: str) -> FairValueGap:
+    return FairValueGap(
+        id=fvg_id,
+        level_high=2380.0,
+        level_low=2378.0,
+        status=status,  # type: ignore[arg-type]
+        created_at=datetime(2026, 6, 5, 12, 0, tzinfo=timezone.utc),
+        tested=status != "active",
+    )
+
+
+def _reading_with_fvgs(fvgs: list[FairValueGap]) -> MarketReading:
+    return MarketReading(
+        header=MarketReadingHeader(
+            instrument="XAUUSD",
+            timeframe="M15",
+            candle_close_ts=datetime(2026, 6, 5, 14, 0, tzinfo=timezone.utc),
+            close_price=2378.45,
+        ),
+        structure=MarketReadingStructure(fair_value_gaps=fvgs),
+        regime=MarketReadingRegime(
+            trend="bullish",
+            volatility_observed="elevated",
+            market_phase="expansion",
+            mtf_confluence={},
+        ),
+        events=MarketReadingEvents(),
+        conditions=MarketReadingConditions(
+            tags=[], description="desc", description_source="template_fallback"
+        ),
+    )
+
+
+class _FvgAssembler:
+    """Assembler returning a reading carrying several FVGs of mixed status."""
+
+    def __init__(self, fvgs: list[FairValueGap]) -> None:
+        self._fvgs = fvgs
+
+    def get_or_generate(self, instrument: str, timeframe: str) -> MarketReading:
+        return _reading_with_fvgs(list(self._fvgs))
+
+
+def test_reading_exposes_per_zone_status_for_group_resolution() -> None:
+    # The group criterion (« les FVG touchés ») is resolvable ONLY because each
+    # zone in the reading carries both an id and a status. Guard that contract.
+    reading = _reading_with_fvgs(
+        [_fvg("fvg_a", "active"), _fvg("fvg_b", "partially_filled")]
+    )
+    dumped = reading.model_dump(mode="json")["structure"]["fair_value_gaps"]
+    assert {z["id"]: z["status"] for z in dumped} == {
+        "fvg_a": "active",
+        "fvg_b": "partially_filled",
+    }
+
+
+def test_hide_touched_fvg_group_targets_the_right_ids() -> None:
+    # « masque les FVG touchés » : the model reads the combo (3 FVGs, 2 of them
+    # partially_filled = touched), resolves the GROUP to the two touched ids, and
+    # hides them in a SINGLE multi-id call. The untouched/active FVG stays.
+    fvgs = [
+        _fvg("fvg_active", "active"),
+        _fvg("fvg_touch1", "partially_filled"),
+        _fvg("fvg_touch2", "partially_filled"),
+    ]
+    r1 = StubResponse(
+        [ToolUseBlock("get_market_reading", {"instrument": "XAUUSD", "timeframe": "M15"}, id="t1")],
+        "tool_use",
+    )
+    r2 = StubResponse(
+        [
+            ToolUseBlock(
+                "apply_chart_view",
+                {"action": "hide_zones", "params": {"zone_ids": ["fvg_touch1", "fvg_touch2"]}},
+                id="t2",
+            )
+        ],
+        "tool_use",
+    )
+    r3 = StubResponse([TextBlock("J'ai masqué les FVG touchés.")], "end_turn")
+    bot, _ = _make_bot([r1, r2, r3], _FvgAssembler(fvgs))
+    out = bot.chat("Masque les FVG touchés")
+    assert out.blocked_reason is None
+    assert out.view_actions == [
+        {"action": "hide_zones", "params": {"zone_ids": ["fvg_touch1", "fvg_touch2"]}}
+    ]
+
+
+def test_group_with_one_invented_id_rejects_whole_action() -> None:
+    # If the model's resolved group contains a single id the engine did not emit
+    # (a hallucinated FVG), the WHOLE hide is rejected — nothing is masked.
+    fvgs = [_fvg("fvg_touch1", "partially_filled")]
+    r1 = StubResponse(
+        [ToolUseBlock("get_market_reading", {"instrument": "XAUUSD", "timeframe": "M15"}, id="t1")],
+        "tool_use",
+    )
+    r2 = StubResponse(
+        [
+            ToolUseBlock(
+                "apply_chart_view",
+                {"action": "hide_zones", "params": {"zone_ids": ["fvg_touch1", "fvg_ghost"]}},
+                id="t2",
+            )
+        ],
+        "tool_use",
+    )
+    r3 = StubResponse([TextBlock(VIEW_ACTION_REFUSAL_TEMPLATE)], "end_turn")
+    bot, _ = _make_bot([r1, r2, r3], _FvgAssembler(fvgs))
+    out = bot.chat("Masque les FVG touchés")
+    assert out.view_actions == []  # one invented id → nothing hidden
 
 
 def test_isolate_then_show_restore_roundtrip() -> None:
