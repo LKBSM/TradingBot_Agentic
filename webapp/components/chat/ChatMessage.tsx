@@ -32,6 +32,7 @@ export function ChatMessage({ role, text, blockedReason }: ChatMessageProps) {
   const showRedirect = !isUser && Boolean(blockedReason);
   return (
     <div
+      data-chat-role={role}
       className={cn(
         'flex w-full gap-2',
         isUser ? 'justify-end' : 'justify-start',

@@ -13,6 +13,7 @@ import {
 import { ChatInput } from './ChatInput';
 import { ChatMessage } from './ChatMessage';
 import { useChat } from './ChatProvider';
+import { useChatAnchorScroll } from './useChatAnchorScroll';
 import { MiaAgentLogo } from './MiaAgentLogo';
 import { SuggestedQuestions } from './SuggestedQuestions';
 import { FALLBACK_SCRIPT, getChatbotScript } from '@/lib/chatbot';
@@ -44,7 +45,9 @@ export function ChatPanel() {
     appendExchange,
     resetTurns,
   } = useChat();
-  const scrollRef = React.useRef<HTMLDivElement>(null);
+  // Anchor the latest question near the top after sending instead of jumping to
+  // the bottom of a long reply (UX only — no chat logic changes).
+  const scrollRef = useChatAnchorScroll(turns, isLoading);
 
   const script = React.useMemo(() => {
     if (!activeSignal) return FALLBACK_SCRIPT;
@@ -61,13 +64,6 @@ export function ChatPanel() {
       ),
     [turns],
   );
-
-  // Auto-scroll to the bottom whenever a new exchange lands or the loader
-  // toggles.
-  React.useEffect(() => {
-    if (!scrollRef.current) return;
-    scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [turns.length, isLoading]);
 
   function handlePick(q: ChatbotQuestion) {
     appendExchange({
