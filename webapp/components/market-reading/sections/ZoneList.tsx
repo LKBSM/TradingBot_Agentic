@@ -16,6 +16,12 @@ import { cn } from '@/lib/utils';
  *      toggle reveals the FULL list (« voir moins » folds it back).
  *
  * Everything stays accessible: nothing is dropped, the count is surfaced.
+ *
+ * Optionally, when `onSelect` + `idOf` are supplied, each entry becomes a
+ * clickable button that asks the chart to focus/highlight that zone by its REAL
+ * engine id (navigation only — it never creates or mutates a zone). When they
+ * are absent the entries render exactly as before (plain, non-interactive), so
+ * the list stays usable with no chart wired in.
  */
 export interface ZoneListProps<T> {
   zones: T[];
@@ -37,6 +43,15 @@ export interface ZoneListProps<T> {
   collapsedCount?: number;
   /** Accessible noun for the toggle, e.g. "zone". */
   noun: string;
+  /** The REAL engine zone id, used to ask the chart to focus/highlight it.
+   *  Required (with `onSelect`) to make entries clickable. */
+  idOf?: (zone: T) => string;
+  /** Called with the real zone id when an entry is clicked. When absent (or no
+   *  `idOf`), entries render as plain, non-interactive lines (default). */
+  onSelect?: (zoneId: string) => void;
+  /** The currently selected zone id — the matching entry is marked as selected.
+   *  Single source of truth = the chart's highlighted zone. */
+  selectedZoneId?: string | null;
 }
 
 function bandDistance(low: number, high: number, price: number): number {
@@ -54,8 +69,13 @@ export function ZoneList<T>({
   dedupKey,
   collapsedCount = 3,
   noun,
+  idOf,
+  onSelect,
+  selectedZoneId,
 }: ZoneListProps<T>) {
   const [expanded, setExpanded] = useState(false);
+  // Entries are interactive only when both the id accessor and a handler exist.
+  const interactive = Boolean(idOf && onSelect);
 
   const ordered = useMemo(() => {
     // 1. De-duplicate identical zones (keep first occurrence).
@@ -91,24 +111,57 @@ export function ZoneList<T>({
       <ul className="space-y-1.5">
         {visible.map((zone, i) => {
           const active = isActive(zone);
-          return (
-            <li
-              key={dedupKey(zone) + i}
+          const zoneId = idOf?.(zone);
+          const selected =
+            interactive && zoneId != null && zoneId === selectedZoneId;
+          const dot = (
+            <span
+              aria-hidden
               className={cn(
-                'flex items-start gap-2 text-sm',
-                active ? 'text-foreground' : 'text-muted-foreground',
+                'mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full',
+                active
+                  ? 'bg-foreground/70'
+                  : 'border border-muted-foreground/50 bg-transparent',
               )}
-            >
-              <span
-                aria-hidden
+            />
+          );
+          const label = <span className="font-medium">{renderLabel(zone)}</span>;
+
+          // Default (non-interactive) entry — identical to the pre-click list.
+          if (!interactive || zoneId == null) {
+            return (
+              <li
+                key={dedupKey(zone) + i}
                 className={cn(
-                  'mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full',
-                  active
-                    ? 'bg-foreground/70'
-                    : 'border border-muted-foreground/50 bg-transparent',
+                  'flex items-start gap-2 text-sm',
+                  active ? 'text-foreground' : 'text-muted-foreground',
                 )}
-              />
-              <span className="font-medium">{renderLabel(zone)}</span>
+              >
+                {dot}
+                {label}
+              </li>
+            );
+          }
+
+          // Clickable entry — focuses + highlights the zone on the chart by its
+          // real engine id (navigation only). Selected entry is marked.
+          return (
+            <li key={dedupKey(zone) + i}>
+              <button
+                type="button"
+                onClick={() => onSelect!(zoneId)}
+                aria-pressed={selected}
+                title="Localiser cette zone sur le graphique"
+                className={cn(
+                  'flex w-full items-start gap-2 rounded px-1.5 py-1 text-left text-sm transition-colors',
+                  'hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  active ? 'text-foreground' : 'text-muted-foreground',
+                  selected && 'bg-muted ring-1 ring-ring',
+                )}
+              >
+                {dot}
+                {label}
+              </button>
             </li>
           );
         })}
