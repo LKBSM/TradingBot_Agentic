@@ -1,0 +1,110 @@
+{
+  "XAUUSD_M15": {
+    "bars": 172849,
+    "reads": 60,
+    "pools_total": 477,
+    "pools_per_read_mean": 7.95,
+    "pools_per_read_max": 8,
+    "by_kind": {
+      "range_high": 52,
+      "range_low": 59,
+      "equal_highs": 174,
+      "equal_lows": 192
+    },
+    "pct_external": 25.2,
+    "pct_internal": 74.8,
+    "pct_intact": 53.9,
+    "pct_swept": 7.3,
+    "pct_broken": 38.8
+  },
+  "XAUUSD_H1": {
+    "bars": 43218,
+    "reads": 60,
+    "pools_total": 461,
+    "pools_per_read_mean": 7.68,
+    "pools_per_read_max": 8,
+    "by_kind": {
+      "range_low": 58,
+      "range_high": 53,
+      "equal_lows": 188,
+      "equal_highs": 162
+    },
+    "pct_external": 26.0,
+    "pct_internal": 74.0,
+    "pct_intact": 54.4,
+    "pct_swept": 8.9,
+    "pct_broken": 36.7
+  },
+  "XAUUSD_H4": {
+    "bars": 11363,
+    "reads": 60,
+    "pools_total": 473,
+    "pools_per_read_mean": 7.88,
+    "pools_per_read_max": 8,
+    "by_kind": {
+      "equal_highs": 161,
+      "equal_lows": 206,
+      "range_high": 57,
+      "range_low": 49
+    },
+    "pct_external": 25.4,
+    "pct_internal": 74.6,
+    "pct_intact": 55.6,
+    "pct_swept": 5.3,
+    "pct_broken": 39.1
+  },
+  "EURUSD_M15": {
+    "bars": 174481,
+    "reads": 60,
+    "pools_total": 478,
+    "pools_per_read_mean": 7.97,
+    "pools_per_read_max": 8,
+    "by_kind": {
+      "range_low": 50,
+      "range_high": 49,
+      "equal_highs": 195,
+      "equal_lows": 184
+    },
+    "pct_external": 25.1,
+    "pct_internal": 74.9,
+    "pct_intact": 53.1,
+    "pct_swept": 5.2,
+    "pct_broken": 41.6
+  },
+  "EURUSD_H1": {
+    "bars": 43606,
+    "reads": 60,
+    "pools_total": 474,
+    "pools_per_read_mean": 7.9,
+    "pools_per_read_max": 8,
+    "by_kind": {
+      "range_high": 53,
+      "range_low": 51,
+      "equal_lows": 178,
+      "equal_highs": 192
+    },
+    "pct_external": 25.3,
+    "pct_internal": 74.7,
+    "pct_intact": 51.9,
+    "pct_swept": 9.1,
+    "pct_broken": 39.0
+  },
+  "EURUSD_H4": {
+    "bars": 11253,
+    "reads": 60,
+    "pools_total": 475,
+    "pools_per_read_mean": 7.92,
+    "pools_per_read_max": 8,
+    "by_kind": {
+      "range_low": 56,
+      "range_high": 50,
+      "equal_highs": 168,
+      "equal_lows": 201
+    },
+    "pct_external": 25.3,
+    "pct_internal": 74.7,
+    "pct_intact": 54.7,
+    "pct_swept": 9.1,
+    "pct_broken": 36.2
+  }
+}

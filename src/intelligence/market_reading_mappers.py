@@ -30,6 +30,7 @@ from src.intelligence.market_reading_schema import (
     CHOCHRecent,
     Direction,
     FairValueGap,
+    LiquidityPool,
     MarketPhase,
     MarketReadingEvents,
     MarketReadingRegime,
@@ -235,6 +236,10 @@ MAX_ZONES_PER_TYPE = 12
 # Default cap per structure-event type (BOS / CHOCH). Keeps the recent break
 # history readable; overridable via the MAX_STRUCTURE_EVENTS env var.
 MAX_STRUCTURE_EVENTS = 8
+
+# Default cap on external liquidity pools surfaced per read. Keeps the surface
+# readable; overridable per call and via the MAX_LIQUIDITY_POOLS env var.
+MAX_LIQUIDITY_POOLS = 8
 
 
 # ---------------------------------------------------------------------------
@@ -610,6 +615,246 @@ def collect_structure_events(
 
 
 # ---------------------------------------------------------------------------
+# External liquidity pools (EQH/EQL + range extremes) — descriptive twin of
+# collect_zones. Reuses the engine's EXISTING swing fractals (UP_FRACTAL /
+# DOWN_FRACTAL); detects NOTHING new and touches no BOS/CHOCH/OB/FVG rule.
+#
+# Honesty / no-look-ahead: a fractal column is causal (shifted to its
+# confirmation bar), so the value at bar k is the swing price first KNOWABLE at
+# k. A pocket's lifecycle is therefore scanned only from the bar AFTER its last
+# constituent swing is confirmed — we never declare a level swept/broken before
+# the pocket itself could be observed. The output is purely factual: WHERE the
+# pocket sits and WHETHER it is intact / swept / broken. No target, draw, bias
+# or probability is ever produced (mission §0 inviolable line).
+# ---------------------------------------------------------------------------
+
+
+def _pool_lifecycle(
+    side: str,
+    level: float,
+    highs: Any,
+    lows: Any,
+    closes: Any,
+    scan_from: int,
+    upto: int,
+) -> tuple[str, Optional[int], Optional[int]]:
+    """Classify a liquidity pocket over bars (scan_from, upto].
+
+    Returns ``(status, swept_idx, broken_idx)`` where status ∈
+    {intact, swept, broken}:
+      * broken — a later bar CLOSED net through ``level`` (close > level for a
+        buy-side pocket, close < level for sell-side). Terminal: the resting
+        liquidity at that level is gone. ``broken_idx`` = first such bar.
+      * swept  — a later bar's WICK pierced ``level`` and the bar CLOSED back
+        inside (high > level but close ≤ level for buy-side; mirror for
+        sell-side). A liquidity-grab event. ``swept_idx`` = first such bar.
+      * intact — price has not traded through ``level`` yet.
+
+    A pocket may be swept first and broken later; ``broken`` wins (terminal) but
+    ``swept_idx`` is retained. Strict comparisons mirror the OB close-through
+    convention (``_ob_lifecycle``); no extra threshold is introduced.
+    """
+    swept_idx: Optional[int] = None
+    broken_idx: Optional[int] = None
+    for j in range(scan_from + 1, upto + 1):
+        if side == "bsl":  # liquidity resting ABOVE the level
+            if closes[j] > level:
+                broken_idx = j
+                break
+            if highs[j] > level and closes[j] <= level and swept_idx is None:
+                swept_idx = j
+        else:  # "ssl" — liquidity resting BELOW the level
+            if closes[j] < level:
+                broken_idx = j
+                break
+            if lows[j] < level and closes[j] >= level and swept_idx is None:
+                swept_idx = j
+    status = "broken" if broken_idx is not None else ("swept" if swept_idx is not None else "intact")
+    return status, swept_idx, broken_idx
+
+
+def _cluster_swings(
+    points: list[tuple[int, float]], eps: float, extreme: str
+) -> list[dict]:
+    """Cluster swing points whose prices fall within ``eps`` into pockets.
+
+    ``points`` = list of ``(bar_index, price)``. ``extreme`` ∈ {"max", "min"}
+    selects the pocket level (founder decision: the cluster EXTREME — the highest
+    high for buy-side, the lowest low for sell-side — i.e. the truly breachable
+    edge). Greedy on price-sorted points: a new point joins the open cluster while
+    it stays within ``eps`` of the cluster's running extreme, else it seeds a new
+    cluster. Returns one dict per cluster with level, touches, first/last bar.
+    """
+    if not points:
+        return []
+    # Sort by price: descending for highs (max extreme), ascending for lows.
+    pts = sorted(points, key=lambda p: p[1], reverse=(extreme == "max"))
+    clusters: list[list[tuple[int, float]]] = []
+    current: list[tuple[int, float]] = [pts[0]]
+    ref = pts[0][1]
+    for k, price in pts[1:]:
+        if abs(price - ref) <= eps:
+            current.append((k, price))
+            # Running extreme so a drifting chain stays anchored to the edge.
+            ref = max(ref, price) if extreme == "max" else min(ref, price)
+        else:
+            clusters.append(current)
+            current = [(k, price)]
+            ref = price
+    clusters.append(current)
+
+    out: list[dict] = []
+    for cl in clusters:
+        prices = [p[1] for p in cl]
+        idxs = [p[0] for p in cl]
+        level = max(prices) if extreme == "max" else min(prices)
+        out.append({
+            "level": float(level),
+            "touches": len(cl),
+            "first_k": min(idxs),
+            "last_k": max(idxs),
+        })
+    return out
+
+
+def collect_liquidity_pools(
+    enriched: Any,
+    idx: int = -1,
+    *,
+    eq_tolerance_atr: float = 0.10,
+    eq_tolerance_pips_floor: float = 0.0,
+    eq_min_touches: int = 2,
+    lookback: int = 200,
+    max_pools: Optional[int] = None,
+) -> list[dict]:
+    """Collect external liquidity pockets up to bar ``idx`` (most relevant first).
+
+    Aggregates the engine's existing swing fractals into buy-side (BSL) and
+    sell-side (SSL) pockets and times each pocket's intact/swept/broken state.
+    Pocket kinds: ``equal_highs`` / ``equal_lows`` (≥ ``eq_min_touches`` swings
+    within tolerance) and ``range_high`` / ``range_low`` (the window's extreme
+    swing, emitted as a lone pocket only when no equal-cluster already sits at
+    that extreme — avoids a duplicate at the same level).
+
+    ``is_external`` = the pocket sits at/beyond the current range's extreme swing
+    (buy-side ≥ range high − eps, sell-side ≤ range low + eps); range extremes are
+    external by construction. Tolerance ``eps`` = max(``eq_tolerance_atr``×ATR,
+    ``eq_tolerance_pips_floor``), ATR read at the read bar. Returns plain dicts;
+    the structure mapper builds the pydantic models. Read-only — no engine column
+    is written, no detection rule altered.
+    """
+    import os
+    import pandas as pd
+
+    if max_pools is None:
+        try:
+            max_pools = int(os.environ.get("MAX_LIQUIDITY_POOLS", MAX_LIQUIDITY_POOLS))
+        except (TypeError, ValueError):
+            max_pools = MAX_LIQUIDITY_POOLS
+
+    n = len(enriched)
+    if n == 0:
+        return []
+    pos = idx if idx >= 0 else n + idx
+    if pos < 0 or pos >= n:
+        return []
+
+    cols = set(enriched.columns)
+    if not ({"UP_FRACTAL", "DOWN_FRACTAL", "high", "low", "close"} <= cols):
+        return []
+
+    highs = enriched["high"].values
+    lows = enriched["low"].values
+    closes = enriched["close"].values
+    up_fr = enriched["UP_FRACTAL"].values
+    dn_fr = enriched["DOWN_FRACTAL"].values
+
+    atr = 0.0
+    if "ATR" in cols:
+        a = enriched["ATR"].values[pos]
+        atr = float(a) if not pd.isna(a) else 0.0
+    eps = max(atr * float(eq_tolerance_atr), float(eq_tolerance_pips_floor))
+    if eps <= 0.0:  # degenerate ATR and no floor → use a hair of price to avoid 0-width clusters
+        eps = abs(float(closes[pos])) * 1e-4 if closes[pos] else 1e-9
+
+    lo_bound = max(0, pos - int(lookback) + 1)
+    # Collect confirmed swing points within the window. The fractal column value
+    # IS the swing price; the bar index is the confirmation bar (first knowable).
+    sh: list[tuple[int, float]] = []  # swing highs
+    sl: list[tuple[int, float]] = []  # swing lows
+    for k in range(lo_bound, pos + 1):
+        v = up_fr[k]
+        if not pd.isna(v) and v > 0:
+            sh.append((k, float(v)))
+        v = dn_fr[k]
+        if not pd.isna(v) and v > 0:
+            sl.append((k, float(v)))
+
+    pools: list[dict] = []
+    range_high = max((p[1] for p in sh), default=None)
+    range_low = min((p[1] for p in sl), default=None)
+
+    def _emit(side: str, kind: str, level: float, touches: int,
+              first_k: int, last_k: int, is_external: bool) -> None:
+        status, swept_k, broken_k = _pool_lifecycle(
+            side, level, highs, lows, closes, scan_from=last_k, upto=pos
+        )
+        pools.append({
+            "side": side,
+            "kind": kind,
+            "level": float(level),
+            "touches": int(touches),
+            "is_external": bool(is_external),
+            "status": status,
+            "created_at": _zone_created_at(enriched, first_k),
+            "swept_at": _zone_created_at(enriched, swept_k) if swept_k is not None else None,
+            "broken_at": _zone_created_at(enriched, broken_k) if broken_k is not None else None,
+            "_first_k": first_k,
+            "_last_k": last_k,
+        })
+
+    # --- Buy-side (equal highs) -----------------------------------------------
+    top_cluster_external = False
+    for cl in _cluster_swings(sh, eps, "max"):
+        if cl["touches"] < int(eq_min_touches):
+            continue
+        is_ext = range_high is not None and cl["level"] >= range_high - eps
+        if is_ext:
+            top_cluster_external = True
+        _emit("bsl", "equal_highs", cl["level"], cl["touches"],
+              cl["first_k"], cl["last_k"], is_ext)
+    # Range high as a lone external pocket only if no equal-cluster holds the top.
+    if range_high is not None and not top_cluster_external:
+        at_top = [p for p in sh if p[1] >= range_high - eps]
+        _emit("bsl", "range_high", range_high, len(at_top),
+              min(p[0] for p in at_top), max(p[0] for p in at_top), True)
+
+    # --- Sell-side (equal lows) -----------------------------------------------
+    bot_cluster_external = False
+    for cl in _cluster_swings(sl, eps, "min"):
+        if cl["touches"] < int(eq_min_touches):
+            continue
+        is_ext = range_low is not None and cl["level"] <= range_low + eps
+        if is_ext:
+            bot_cluster_external = True
+        _emit("ssl", "equal_lows", cl["level"], cl["touches"],
+              cl["first_k"], cl["last_k"], is_ext)
+    if range_low is not None and not bot_cluster_external:
+        at_bot = [p for p in sl if p[1] <= range_low + eps]
+        _emit("ssl", "range_low", range_low, len(at_bot),
+              min(p[0] for p in at_bot), max(p[0] for p in at_bot), True)
+
+    # External first, intact before swept before broken, then most recent first.
+    _status_rank = {"intact": 0, "swept": 1, "broken": 2}
+    pools.sort(key=lambda z: (
+        not z["is_external"],
+        _status_rank.get(z["status"], 3),
+        -z["_last_k"],
+    ))
+    return pools[:max_pools]
+
+
+# ---------------------------------------------------------------------------
 # Structure mapper
 # ---------------------------------------------------------------------------
 
@@ -730,6 +975,16 @@ def confluence_signal_to_structure(
         else ([], [])
     )
 
+    # External liquidity pockets (EQH/EQL + range extremes). Twin of the multi-
+    # zone registry: injected by the SMC pipeline under ``_liquidity``; absent on
+    # callers/tests that don't run collect_liquidity_pools → empty list.
+    liquidity = smc_features.get("_liquidity")
+    liquidity_pools = (
+        _liquidity_to_models(liquidity, bar_ts)
+        if isinstance(liquidity, list)
+        else []
+    )
+
     # Order blocks + fair value gaps.
     # Preferred path: the multi-zone registry (all still-relevant zones the
     # engine computed over the window, with lifecycle), injected by the SMC
@@ -745,6 +1000,7 @@ def confluence_signal_to_structure(
             choch_events=choch_events,
             order_blocks=order_blocks,
             fair_value_gaps=fair_value_gaps,
+            liquidity_pools=liquidity_pools,
             retest_in_progress=_build_retest(
                 smc_features, retest_state, fresh_break, persisted_break, bos,
                 current_price, bar_ts,
@@ -807,6 +1063,7 @@ def confluence_signal_to_structure(
         choch_events=choch_events,
         order_blocks=order_blocks,
         fair_value_gaps=fair_value_gaps,
+        liquidity_pools=liquidity_pools,
         retest_in_progress=_build_retest(
             smc_features, retest_state, fresh_break, persisted_break, bos,
             current_price, bar_ts,
@@ -881,6 +1138,35 @@ def _zones_to_models(
             user_flagged=False,
         ))
     return order_blocks, fair_value_gaps
+
+
+def _liquidity_to_models(
+    pools: list[dict],
+    bar_ts: datetime,
+) -> list[LiquidityPool]:
+    """Convert collected pocket dicts (from :func:`collect_liquidity_pools`) to
+    schema models. ``created_at`` falls back to ``bar_ts`` when the collector
+    could not derive a per-pocket timestamp (non-datetime frame index). The ``id``
+    is stable per pocket (side + kind + created time) so the same pocket keeps its
+    identity across reads — for display anchoring and the agent.
+    """
+    out: list[LiquidityPool] = []
+    for z in pools:
+        created = z.get("created_at") or bar_ts
+        out.append(LiquidityPool(
+            id=f"LIQ_{z['side']}_{z['kind']}_{created.strftime('%Y%m%d%H%M%S')}",
+            side=z["side"],
+            kind=z["kind"],
+            level=z["level"],
+            touches=z["touches"],
+            is_external=z["is_external"],
+            status=z["status"],
+            created_at=created,
+            swept_at=z.get("swept_at"),
+            broken_at=z.get("broken_at"),
+            user_flagged=False,
+        ))
+    return out
 
 
 def _structure_events_to_models(

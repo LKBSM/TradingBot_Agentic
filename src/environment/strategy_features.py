@@ -537,6 +537,39 @@ class SMCConfig(BaseModel):
                     "outlier (OUTLIER_FLAG=1). Purely observational: the data is NOT altered, no "
                     "detection logic depends on it. 0 disables flagging."
     )
+    # --- External liquidity pools (EQH/EQL + range extremes) -------------------
+    # Descriptive-only feature: aggregates the EXISTING swing fractals
+    # (UP_FRACTAL / DOWN_FRACTAL) into buy-side / sell-side liquidity pockets and
+    # times their intact → swept → broken lifecycle factually. No detection rule
+    # of BOS/CHOCH/OB/FVG is touched; these knobs only parameterise the pocket
+    # aggregation. The pool COLLECTOR lives in market_reading_mappers; these are
+    # the single source of truth for its thresholds (threaded via the assembler).
+    EQ_TOLERANCE_ATR: float = Field(
+        default=0.10,
+        ge=0.0,
+        description="Equality tolerance for EQH/EQL as an ATR multiple. Two swing highs (resp. lows) "
+                    "are 'equal' (same pocket) when their price gap is <= EQ_TOLERANCE_ATR×ATR. "
+                    "0.10 = within 10% of ATR. Lower = stricter clustering."
+    )
+    EQ_TOLERANCE_PIPS_FLOOR: float = Field(
+        default=0.0,
+        ge=0.0,
+        description="Absolute floor (in price units) for the equality tolerance, applied as "
+                    "max(EQ_TOLERANCE_ATR×ATR, EQ_TOLERANCE_PIPS_FLOOR). 0 disables the floor. "
+                    "Guards against a collapsed tolerance when ATR is tiny."
+    )
+    EQ_MIN_TOUCHES: int = Field(
+        default=2,
+        ge=2,
+        description="Minimum number of swing points within tolerance to qualify an EQH/EQL pocket. "
+                    "2 = a classic double top/bottom. Range-extreme pockets (single swing) are exempt."
+    )
+    LIQ_LOOKBACK: int = Field(
+        default=200,
+        ge=10,
+        description="Window (bars, ending at the read bar) over which swing fractals are scanned to "
+                    "form liquidity pockets and to bound the current range (its extreme swing high/low)."
+    )
 
 
 # --- II. Core Analysis Engine (Class Architecture) ---

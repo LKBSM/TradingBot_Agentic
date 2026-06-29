@@ -159,6 +159,7 @@ def _default_smc_pipeline(candles: Sequence[Any]) -> Tuple[dict[str, float], Opt
     # OB zone, real FVG bounds) so the structure mapper publishes them instead
     # of price ± ATR proxies (audit findings F1/F2/F3). Glue, not engine logic.
     from src.intelligence.market_reading_mappers import (
+        collect_liquidity_pools,
         collect_structure_events,
         collect_zones,
         realized_levels,
@@ -173,6 +174,18 @@ def _default_smc_pipeline(candles: Sequence[Any]) -> Tuple[dict[str, float], Opt
     # fixes the "sous-surfaçage" where only the last-bar break ever surfaced
     # (audit 2026-06-16). Reserved key consumed by the structure mapper.
     smc_features["_structure_events"] = collect_structure_events(enriched, idx=last_idx)
+    # External liquidity pockets (EQH/EQL + range extremes) with intact/swept/
+    # broken state. Reuses the engine's swing fractals; thresholds come from the
+    # validated SMCConfig (single source of truth). Reserved key, never persisted.
+    cfg = engine.config
+    smc_features["_liquidity"] = collect_liquidity_pools(
+        enriched,
+        idx=last_idx,
+        eq_tolerance_atr=cfg.EQ_TOLERANCE_ATR,
+        eq_tolerance_pips_floor=cfg.EQ_TOLERANCE_PIPS_FLOOR,
+        eq_min_touches=cfg.EQ_MIN_TOUCHES,
+        lookback=cfg.LIQ_LOOKBACK,
+    )
     return smc_features, None
 
 

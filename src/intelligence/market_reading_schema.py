@@ -42,6 +42,10 @@ OBStatus = Literal["active", "mitigated", "invalidated"]
 FVGStatus = Literal["active", "partially_filled", "filled"]
 OBImportance = Literal["low", "medium", "high"]
 RetestType = Literal["bos_retest", "choch_retest", "ob_retest", "fvg_retest"]
+# External liquidity pools (buy-side above / sell-side below the range).
+LiquiditySide = Literal["bsl", "ssl"]
+LiquidityKind = Literal["equal_highs", "equal_lows", "range_high", "range_low"]
+LiquidityStatus = Literal["intact", "swept", "broken"]
 DescriptionSource = Literal["haiku_generated", "template_fallback"]
 
 VALID_MTF_KEYS = {"m15", "h1", "h4", "d1", "w1"}
@@ -134,6 +138,41 @@ class RetestInProgress(BaseModel):
     started_at: datetime
 
 
+class LiquidityPool(BaseModel):
+    """External liquidity pocket — equal highs/lows or a range extreme.
+
+    Strictly DESCRIPTIVE (niveau 1.5): it states WHERE resting liquidity sits and
+    WHETHER that level has been intact / swept / broken — a past, observable fact.
+    It carries NO target, draw, bias or probability; nothing here implies the price
+    will move toward the pocket. The pocket geometry reuses the engine's existing
+    swing fractals (UP_FRACTAL / DOWN_FRACTAL) — it is not a new detection.
+
+    Side: ``bsl`` = buy-side liquidity (above equal highs / the range high),
+    ``ssl`` = sell-side liquidity (below equal lows / the range low).
+
+    Lifecycle (deterministic, factual):
+      * intact  — no later bar has traded through ``level``.
+      * swept   — a later bar's WICK pierced ``level`` and that bar CLOSED back
+                  inside (``swept_at`` = first such bar). A liquidity grab event.
+      * broken  — a later bar CLOSED net through ``level`` (``broken_at`` = first
+                  such bar). Terminal; supersedes ``swept`` if both occurred.
+    """
+
+    id: str
+    side: LiquiditySide
+    kind: LiquidityKind
+    level: float
+    touches: int  # number of swing points forming the pocket (1 for range extremes)
+    is_external: bool  # True = at/beyond the current range's extreme swing
+    status: LiquidityStatus
+    created_at: datetime  # timestamp of the earliest swing forming the pocket
+    # First bar that wicked through and closed back inside. None unless swept.
+    swept_at: Optional[datetime] = None
+    # First bar that closed net through the level. None unless broken. Terminal.
+    broken_at: Optional[datetime] = None
+    user_flagged: bool = False
+
+
 class MarketReadingStructure(BaseModel):
     bos: Optional[BOSRecent] = None
     choch: Optional[CHOCHRecent] = None
@@ -148,6 +187,11 @@ class MarketReadingStructure(BaseModel):
     choch_events: list[CHOCHRecent] = Field(default_factory=list)
     order_blocks: list[OrderBlock] = Field(default_factory=list)
     fair_value_gaps: list[FairValueGap] = Field(default_factory=list)
+    # External liquidity pockets (EQH/EQL + range extremes) with intact/swept/
+    # broken state. Read-only/descriptive twin of order_blocks/fair_value_gaps;
+    # injected by the SMC pipeline under ``_liquidity`` and built by the structure
+    # mapper. Empty on callers/tests that don't run collect_liquidity_pools.
+    liquidity_pools: list[LiquidityPool] = Field(default_factory=list)
     retest_in_progress: Optional[RetestInProgress] = None
 
 
@@ -246,6 +290,10 @@ __all__ = [
     "FairValueGap",
     "FVGStatus",
     "ImpactLevel",
+    "LiquidityKind",
+    "LiquidityPool",
+    "LiquiditySide",
+    "LiquidityStatus",
     "MarketPhase",
     "MarketReading",
     "MarketReadingConditions",
