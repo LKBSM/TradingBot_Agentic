@@ -199,6 +199,20 @@ export function formatMarketPhase(phase: MarketPhase): {
   return { label: MARKET_PHASE_LABEL[phase], tone: 'neutral' };
 }
 
+// Compact one-word phase label for the Régime section badge (« Phase : Tendance »),
+// distinct from the hero MarketPhasePanel's full « Phase de tendance » wording.
+const MARKET_PHASE_SHORT: Record<MarketPhase, string> = {
+  accumulation: 'Accumulation',
+  distribution: 'Distribution',
+  trend: 'Tendance',
+  ranging: 'Range',
+  expansion: 'Expansion',
+};
+
+export function formatMarketPhaseShort(phase: MarketPhase): string {
+  return MARKET_PHASE_SHORT[phase];
+}
+
 // ─── MTF confluence ──────────────────────────────────────────────────────────
 
 const MTF_BIAS_LABEL: Record<MTFBiasValue, string> = {

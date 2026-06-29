@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  classifyMtfAlignment,
   describeMtfAlignment,
   mtfTrendGlyph,
   type MtfTrendMap,
@@ -90,5 +91,46 @@ describe('describeMtfAlignment', () => {
       /probab/i,
     ];
     for (const re of forbidden) expect(samples).not.toMatch(re);
+  });
+});
+
+describe('classifyMtfAlignment (relation kind + disagreement flag)', () => {
+  it('all aligned → kind aligned, no disagreement', () => {
+    const r = classifyMtfAlignment(map('bullish', 'bullish', 'bullish'));
+    expect(r.kind).toBe('aligned');
+    expect(r.disagreement).toBe(false);
+    expect(r.text).toBe('Les 3 TF sont alignés (haussiers).');
+  });
+
+  it('all flat → kind neutral, no disagreement', () => {
+    const r = classifyMtfAlignment(map('neutral', 'ranging', 'neutral'));
+    expect(r.kind).toBe('neutral');
+    expect(r.disagreement).toBe(false);
+  });
+
+  it('M15 opposes the higher TFs → kind pullback, DISAGREEMENT', () => {
+    const r = classifyMtfAlignment(map('bullish', 'bullish', 'bearish'));
+    expect(r.kind).toBe('pullback');
+    expect(r.disagreement).toBe(true);
+    expect(r.text).toBe('M15 se replie contre la tendance H4 haussière.');
+  });
+
+  it('up AND down both present → kind divergent, DISAGREEMENT', () => {
+    const r = classifyMtfAlignment(map('bullish', 'neutral', 'bearish'));
+    expect(r.kind).toBe('divergent');
+    expect(r.disagreement).toBe(true);
+  });
+
+  it('one direction + flats (no opposite) → kind partial, NO disagreement', () => {
+    const r = classifyMtfAlignment(map('bullish', 'neutral', 'bullish'));
+    expect(r.kind).toBe('partial');
+    expect(r.disagreement).toBe(false);
+  });
+
+  it('nothing available → kind none, empty text', () => {
+    const r = classifyMtfAlignment(map(null, null, null));
+    expect(r.kind).toBe('none');
+    expect(r.text).toBe('');
+    expect(r.disagreement).toBe(false);
   });
 });
