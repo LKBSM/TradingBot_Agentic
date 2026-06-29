@@ -61,16 +61,40 @@ function joinFr(parts: string[]): string {
 }
 
 /**
- * One present-tense line characterising the RELATION between the timeframes,
- * derived purely by classifying the already-computed trend values:
+ * Relation between the timeframes — the classification underlying both the
+ * descriptive line and the multi-TF DISAGREEMENT callout.
+ */
+export interface MtfRelation {
+  /**
+   *   · 'aligned'    all available TFs share one non-flat direction
+   *   · 'neutral'    all available TFs are flat (neutral / ranging)
+   *   · 'pullback'   the higher TFs agree and M15 takes the opposite direction
+   *   · 'divergent'  both an up and a down direction are present (contradiction)
+   *   · 'partial'    a mix of one direction and flats (no opposite direction)
+   *   · 'none'       no timeframe available
+   */
+  kind: 'aligned' | 'neutral' | 'pullback' | 'divergent' | 'partial' | 'none';
+  /** Present-tense description; '' when kind === 'none'. */
+  text: string;
+  /**
+   * True only when a timeframe genuinely goes AGAINST another — i.e. an up and a
+   * down direction coexist (pullback or divergent). A direction-vs-flat mix is
+   * NOT a disagreement. Drives the warn callout so the « contre » is as readable
+   * as the « accord ».
+   */
+  disagreement: boolean;
+}
+
+/**
+ * Classify the RELATION between the timeframes, derived purely from the already-
+ * computed trend values:
  *   · all same non-flat  → "Les 3 TF sont alignés (haussiers)."
  *   · all flat           → "Les 3 TF sont neutres."
  *   · H4+H1 agree, M15 opposes → "M15 se replie contre la tendance H4 haussière."
  *   · otherwise          → "Les TF divergent : H4 haussier, H1 neutre et M15 baissier."
- * Returns '' when no timeframe is available (the caller hides the line). Strictly
- * descriptive — no future tense, no probability, no score, no action verdict.
+ * Strictly descriptive — no future tense, no probability, no score, no action verdict.
  */
-export function describeMtfAlignment(trends: MtfTrendMap): string {
+export function classifyMtfAlignment(trends: MtfTrendMap): MtfRelation {
   const entries = MTF_TREND_ORDER.map(({ key, label }) => ({
     label: label as string,
     trend: trends[key],
@@ -78,16 +102,25 @@ export function describeMtfAlignment(trends: MtfTrendMap): string {
     (e): e is { label: string; trend: TrendValue } => e.trend != null,
   );
 
-  if (entries.length === 0) return '';
+  if (entries.length === 0) return { kind: 'none', text: '', disagreement: false };
 
   const dirs = entries.map((e) => dirOf(e.trend));
   const allSame = dirs.every((d) => d === dirs[0]);
   const countWord = entries.length === 3 ? 'Les 3 TF' : `Les ${entries.length} TF`;
 
   if (allSame) {
-    if (dirs[0] === 'flat') return `${countWord} sont neutres.`;
-    return `${countWord} sont alignés (${dirs[0] === 'up' ? 'haussiers' : 'baissiers'}).`;
+    if (dirs[0] === 'flat') {
+      return { kind: 'neutral', text: `${countWord} sont neutres.`, disagreement: false };
+    }
+    return {
+      kind: 'aligned',
+      text: `${countWord} sont alignés (${dirs[0] === 'up' ? 'haussiers' : 'baissiers'}).`,
+      disagreement: false,
+    };
   }
+
+  // A real « contre » exists only when an up and a down direction coexist.
+  const contradiction = dirs.includes('up') && dirs.includes('down');
 
   // Pullback: the two higher timeframes share one non-flat direction and M15 is
   // the opposite non-flat direction — M15 is pulling back against them.
@@ -103,10 +136,28 @@ export function describeMtfAlignment(trends: MtfTrendMap): string {
   ) {
     // "tendance" is feminine → "haussière" / "baissière" (not the masculine adj).
     const fem = dirOf(h4) === 'up' ? 'haussière' : 'baissière';
-    return `M15 se replie contre la tendance H4 ${fem}.`;
+    return {
+      kind: 'pullback',
+      text: `M15 se replie contre la tendance H4 ${fem}.`,
+      disagreement: true,
+    };
   }
 
-  // General divergence: list each available timeframe's observed trend.
+  // General mix: list each available timeframe's observed trend. It is a
+  // disagreement only when a true contradiction (up AND down) is present.
   const parts = entries.map((e) => `${e.label} ${TREND_ADJ[e.trend]}`);
-  return `Les TF divergent : ${joinFr(parts)}.`;
+  return {
+    kind: contradiction ? 'divergent' : 'partial',
+    text: `Les TF divergent : ${joinFr(parts)}.`,
+    disagreement: contradiction,
+  };
+}
+
+/**
+ * One present-tense line characterising the RELATION between the timeframes.
+ * Thin wrapper over {@link classifyMtfAlignment} — returns just its `text`
+ * ('' when no timeframe is available, so the caller hides the line).
+ */
+export function describeMtfAlignment(trends: MtfTrendMap): string {
+  return classifyMtfAlignment(trends).text;
 }

@@ -40,7 +40,8 @@ export function MarketReadingSections({
       />
       <RegimeSection
         regime={reading.regime}
-        instrument={reading.header.instrument}
+        structure={reading.structure}
+        header={reading.header}
       />
       <EventsSection events={reading.events} />
       <ConditionsSection conditions={reading.conditions} />
