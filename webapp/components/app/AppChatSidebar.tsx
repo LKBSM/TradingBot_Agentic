@@ -1,11 +1,11 @@
 'use client';
 
 import { Loader2, RotateCcw } from 'lucide-react';
-import * as React from 'react';
 import { ChatInput } from '@/components/chat/ChatInput';
 import { ChatMessage } from '@/components/chat/ChatMessage';
 import { MiaAgentLogo } from '@/components/chat/MiaAgentLogo';
 import { useChat } from '@/components/chat/ChatProvider';
+import { useChatAnchorScroll } from '@/components/chat/useChatAnchorScroll';
 import { Button } from '@/components/ui/button';
 import {
   formatInstrument,
@@ -21,12 +21,9 @@ import type { Combo } from '@/lib/market-reading/store';
  */
 export function AppChatSidebar({ active }: { active: Combo | null }) {
   const { turns, isLoading, apiAvailable, resetTurns } = useChat();
-  const scrollRef = React.useRef<HTMLDivElement>(null);
-
-  React.useEffect(() => {
-    if (!scrollRef.current) return;
-    scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [turns.length, isLoading]);
+  // Anchor the latest question near the top after sending instead of jumping to
+  // the bottom of a long reply (UX only — no chat logic changes).
+  const scrollRef = useChatAnchorScroll(turns, isLoading);
 
   return (
     <aside
