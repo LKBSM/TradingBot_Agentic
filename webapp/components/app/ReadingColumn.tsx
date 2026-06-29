@@ -191,6 +191,8 @@ function buildChartSlot(
       filter={chartView.filter}
       focus={chartView.focus}
       highlightZoneId={chartView.highlightZoneId}
+      hiddenZoneIds={chartView.hiddenZoneIds}
+      isolatedZoneIds={chartView.isolatedZoneIds}
     />
   );
 }

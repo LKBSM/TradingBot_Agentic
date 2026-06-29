@@ -7,7 +7,7 @@ import {
   type ChartViewState,
   type ViewAction,
 } from '../viewActions';
-import { filterZoneModels, type ZoneModel } from '../zoneLayout';
+import { applyZoneVisibility, filterZoneModels, type ZoneModel } from '../zoneLayout';
 
 const ZONES = new Set(['ob_1', 'fvg_2']);
 
@@ -46,6 +46,45 @@ describe('coerceViewAction', () => {
     ).toBeNull();
     expect(
       coerceViewAction({ action: 'highlight_zone', params: { zone_id: 'nope' } }, ZONES),
+    ).toBeNull();
+  });
+
+  it('accepts hide/isolate on known zone ids and de-dupes', () => {
+    expect(
+      coerceViewAction({ action: 'hide_zones', params: { zone_ids: ['ob_1', 'fvg_2'] } }, ZONES),
+    ).toEqual({ action: 'hide_zones', params: { zone_ids: ['ob_1', 'fvg_2'] } });
+    expect(
+      coerceViewAction({ action: 'isolate_zones', params: { zone_ids: ['ob_1', 'ob_1'] } }, ZONES),
+    ).toEqual({ action: 'isolate_zones', params: { zone_ids: ['ob_1'] } });
+  });
+
+  it('rejects hide/isolate when ANY id is invented (nothing hidden)', () => {
+    // « masque l'OB à 4160 » with no matching real zone → whole action dropped.
+    expect(
+      coerceViewAction({ action: 'hide_zones', params: { zone_ids: ['ob_1', 'ob_4160'] } }, ZONES),
+    ).toBeNull();
+    expect(
+      coerceViewAction({ action: 'isolate_zones', params: { zone_ids: ['ghost'] } }, ZONES),
+    ).toBeNull();
+  });
+
+  it('rejects hide/isolate with an empty or non-array list', () => {
+    expect(coerceViewAction({ action: 'hide_zones', params: { zone_ids: [] } }, ZONES)).toBeNull();
+    expect(
+      coerceViewAction({ action: 'hide_zones', params: { zone_ids: 'ob_1' } }, ZONES),
+    ).toBeNull();
+  });
+
+  it('show_zones: no ids restores all; an explicit list is validated', () => {
+    expect(coerceViewAction({ action: 'show_zones', params: {} }, ZONES)).toEqual({
+      action: 'show_zones',
+      params: {},
+    });
+    expect(
+      coerceViewAction({ action: 'show_zones', params: { zone_ids: ['ob_1'] } }, ZONES),
+    ).toEqual({ action: 'show_zones', params: { zone_ids: ['ob_1'] } });
+    expect(
+      coerceViewAction({ action: 'show_zones', params: { zone_ids: ['ghost'] } }, ZONES),
     ).toBeNull();
   });
 
@@ -168,12 +207,53 @@ describe('applyChartViewAction', () => {
     expect(next.highlightZoneId).toBe('fvg_2');
   });
 
+  it('hide_zones unions ids into the hidden set (reversible)', () => {
+    const a = applyChartViewAction(DEFAULT_CHART_VIEW, {
+      action: 'hide_zones',
+      params: { zone_ids: ['ob_1'] },
+    });
+    expect(a.hiddenZoneIds).toEqual(['ob_1']);
+    const b = applyChartViewAction(a, { action: 'hide_zones', params: { zone_ids: ['fvg_2', 'ob_1'] } });
+    expect(new Set(b.hiddenZoneIds)).toEqual(new Set(['ob_1', 'fvg_2']));
+  });
+
+  it('isolate_zones sets the isolation allow-list', () => {
+    const next = applyChartViewAction(DEFAULT_CHART_VIEW, {
+      action: 'isolate_zones',
+      params: { zone_ids: ['ob_1'] },
+    });
+    expect(next.isolatedZoneIds).toEqual(['ob_1']);
+  });
+
+  it('show_zones with no ids restores all masks', () => {
+    const masked = applyChartViewAction(
+      applyChartViewAction(DEFAULT_CHART_VIEW, { action: 'hide_zones', params: { zone_ids: ['ob_1'] } }),
+      { action: 'isolate_zones', params: { zone_ids: ['fvg_2'] } },
+    );
+    const restored = applyChartViewAction(masked, { action: 'show_zones', params: {} });
+    expect(restored.hiddenZoneIds).toEqual([]);
+    expect(restored.isolatedZoneIds).toBeNull();
+  });
+
+  it('show_zones with ids un-hides them (and re-adds under active isolation)', () => {
+    let s = applyChartViewAction(DEFAULT_CHART_VIEW, {
+      action: 'hide_zones',
+      params: { zone_ids: ['ob_1', 'fvg_2'] },
+    });
+    s = applyChartViewAction(s, { action: 'isolate_zones', params: { zone_ids: ['ob_3'] } });
+    s = applyChartViewAction(s, { action: 'show_zones', params: { zone_ids: ['ob_1'] } });
+    expect(s.hiddenZoneIds).toEqual(['fvg_2']); // ob_1 un-hidden
+    expect(new Set(s.isolatedZoneIds!)).toEqual(new Set(['ob_3', 'ob_1'])); // re-added to isolation
+  });
+
   it('reset_view restores defaults', () => {
     const dirty: ChartViewState = {
       layers: { fvg: false, ob: false, breaks: false },
       filter: { activeOnly: true, proximityOnly: true, proximityPct: 2, minSizePct: 1 },
       focus: { kind: 'zone', zoneId: 'ob_1', nonce: 9 },
       highlightZoneId: 'ob_1',
+      hiddenZoneIds: ['ob_1'],
+      isolatedZoneIds: ['fvg_2'],
     };
     expect(applyChartViewAction(dirty, { action: 'reset_view', params: {} })).toEqual(
       DEFAULT_CHART_VIEW,
@@ -248,6 +328,48 @@ describe('filterZoneModels', () => {
   it('does not mutate the input array', () => {
     const copy = [...zones];
     filterZoneModels(zones, price, { ...DEFAULT_CHART_VIEW.filter, activeOnly: true });
+    expect(zones).toEqual(copy);
+  });
+});
+
+// ─── applyZoneVisibility — per-id masking (hide / isolate), reversible ─────────
+
+describe('applyZoneVisibility', () => {
+  const zones = [
+    zone('ob_1', 2002, 1998),
+    zone('ob_2', 2102, 2098),
+    zone('fvg_3', 2001, 1999),
+  ];
+
+  it('keeps everything with no masks (default state)', () => {
+    expect(applyZoneVisibility(zones, [], null).map((z) => z.id)).toEqual([
+      'ob_1',
+      'ob_2',
+      'fvg_3',
+    ]);
+  });
+
+  it('hide removes a real zone by id and is reversible', () => {
+    const hidden = applyZoneVisibility(zones, ['ob_1'], null);
+    expect(hidden.map((z) => z.id)).toEqual(['ob_2', 'fvg_3']); // ob_1 gone
+    // Reversibility: dropping the mask shows it again (same input zones).
+    const restored = applyZoneVisibility(zones, [], null);
+    expect(restored.map((z) => z.id)).toContain('ob_1');
+  });
+
+  it('isolate shows ONLY the listed zones', () => {
+    const iso = applyZoneVisibility(zones, [], ['ob_2']);
+    expect(iso.map((z) => z.id)).toEqual(['ob_2']);
+  });
+
+  it('hide composes with isolate (intersection minus hidden)', () => {
+    const out = applyZoneVisibility(zones, ['ob_2'], ['ob_1', 'ob_2']);
+    expect(out.map((z) => z.id)).toEqual(['ob_1']); // ob_2 isolated-in but then hidden
+  });
+
+  it('does not mutate the input array', () => {
+    const copy = [...zones];
+    applyZoneVisibility(zones, ['ob_1'], ['ob_2']);
     expect(zones).toEqual(copy);
   });
 });

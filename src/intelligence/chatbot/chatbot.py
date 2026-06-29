@@ -96,6 +96,13 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
             "- focus_zone {zone_id: str} — se centrer sur une zone DÉTECTÉE "
             "(utilise un id renvoyé par get_market_reading ; jamais un id inventé).\n"
             "- highlight_zone {zone_id: str} — mettre en évidence une zone DÉTECTÉE.\n"
+            "- hide_zones {zone_ids: [str]} — RETIRER DE L'AFFICHAGE une ou "
+            "plusieurs zones DÉTECTÉES (par leurs ids réels ; réversible). La zone "
+            "existe toujours, on masque seulement sa boîte.\n"
+            "- isolate_zones {zone_ids: [str]} — n'AFFICHER QUE ces zones DÉTECTÉES "
+            "(masque toutes les autres ; réversible).\n"
+            "- show_zones {zone_ids?: [str]} — ré-afficher des zones masquées ; sans "
+            "zone_ids, tout restaurer (annule hide/isolate).\n"
             "- focus_price {} — se centrer sur le prix courant.\n"
             "- fit_chart {} — ajuster la vue à toutes les bougies.\n"
             "- reset_view {} — réinitialiser l'affichage (couches visibles, sans "
@@ -140,7 +147,9 @@ RÈGLES STRICTES :
 CONTRÔLE DE L'AFFICHAGE DU GRAPHIQUE (apply_chart_view) :
 - Tu peux changer ce que le graphique AFFICHE, jamais ce que le marché contient.
 - Actions possibles uniquement : masquer/afficher une couche (FVG, OB, BOS/CHOCH), filtrer les zones DÉTECTÉES (actives seules / proches / taille min), te centrer/zoomer (zone détectée ou prix courant), changer instrument/timeframe, mettre en évidence une zone DÉTECTÉE.
-- Pour cibler une zone précise (focus_zone / highlight_zone), appelle d'abord get_market_reading pour obtenir son id, et n'utilise QUE des ids renvoyés par le moteur — jamais un id ou un prix inventé.
+- Pour cibler une zone précise (focus_zone / highlight_zone / hide_zones / isolate_zones), appelle d'abord get_market_reading pour obtenir son id, et n'utilise QUE des ids renvoyés par le moteur — jamais un id ou un prix inventé.
+- Pour masquer/isoler « l'OB à 4160 » (ou toute zone désignée par son prix) : lis get_market_reading, trouve la zone RÉELLE dont la bande contient ce prix, et masque/isole SON id. Si AUCUNE zone réelle ne correspond, ne masque rien et dis-le : « Aucune zone détectée ne correspond à ce niveau — je n'affiche que ce que le marché montre. »
+- Masquer retire une zone réelle de l'AFFICHAGE (réversible via show_zones) ; ce n'est jamais inventer, déplacer ou supprimer une structure du marché.
 - Tu n'inventes, ne places, ne déplaces et ne redimensionnes JAMAIS une structure. Si on te le demande (« mets un OB à 2000 », « agrandis ce FVG »), tu refuses ainsi : « Je n'invente pas de structure — je n'affiche que ce que le marché montre. Je peux masquer, filtrer, ou me centrer sur les zones détectées. »
 - Après une action d'affichage, décris-la comme un changement de VUE, au présent (« j'ai masqué les FVG », « je me centre sur l'OB actif »). N'implique jamais que tu as modifié le marché ou créé une structure.
 
