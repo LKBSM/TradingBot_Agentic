@@ -23,6 +23,59 @@ describe('coerceViewAction', () => {
     ).toEqual({ action: 'set_layer_visibility', params: { layer: 'fvg', visible: false } });
   });
 
+  it('accepts a MULTI-layer toggle and de-dupes (fvg + ob in one action)', () => {
+    expect(
+      coerceViewAction(
+        { action: 'set_layer_visibility', params: { layers: ['fvg', 'ob'], visible: false } },
+        ZONES,
+      ),
+    ).toEqual({
+      action: 'set_layer_visibility',
+      params: { layers: ['fvg', 'ob'], visible: false },
+    });
+    // duplicate collapsed, order preserved
+    expect(
+      coerceViewAction(
+        { action: 'set_layer_visibility', params: { layers: ['ob', 'ob', 'fvg'], visible: true } },
+        ZONES,
+      ),
+    ).toEqual({
+      action: 'set_layer_visibility',
+      params: { layers: ['ob', 'fvg'], visible: true },
+    });
+  });
+
+  it('rejects a MULTI-layer toggle with a bad/empty/all/mixed list', () => {
+    // "all" is not addressable inside an explicit subset.
+    expect(
+      coerceViewAction(
+        { action: 'set_layer_visibility', params: { layers: ['fvg', 'all'], visible: false } },
+        ZONES,
+      ),
+    ).toBeNull();
+    // empty list, non-array, junk element
+    expect(
+      coerceViewAction({ action: 'set_layer_visibility', params: { layers: [], visible: false } }, ZONES),
+    ).toBeNull();
+    expect(
+      coerceViewAction({ action: 'set_layer_visibility', params: { layers: 'fvg', visible: false } }, ZONES),
+    ).toBeNull();
+    // mixing `layer` and `layers` is ambiguous → dropped
+    expect(
+      coerceViewAction(
+        { action: 'set_layer_visibility', params: { layer: 'fvg', layers: ['ob'], visible: false } },
+        ZONES,
+      ),
+    ).toBeNull();
+    // a non-bool visible still fails
+    expect(
+      coerceViewAction(
+        { action: 'set_layer_visibility', params: { layers: ['fvg', 'ob'], visible: 'yes' } },
+        ZONES,
+      ),
+    ).toBeNull();
+  });
+
   it('rejects an off-list (create/move/resize) action', () => {
     for (const action of ['create_zone', 'place_ob', 'move_zone', 'resize_fvg']) {
       expect(coerceViewAction({ action, params: {} }, ZONES)).toBeNull();
@@ -163,6 +216,14 @@ describe('applyChartViewAction', () => {
       params: { layer: 'fvg', visible: false },
     });
     expect(next.layers).toEqual({ fvg: false, ob: true, breaks: true });
+  });
+
+  it('toggles MULTIPLE layers in one action (fvg + ob), leaving breaks intact', () => {
+    const next = applyChartViewAction(DEFAULT_CHART_VIEW, {
+      action: 'set_layer_visibility',
+      params: { layers: ['fvg', 'ob'], visible: false },
+    });
+    expect(next.layers).toEqual({ fvg: false, ob: false, breaks: true });
   });
 
   it('layer "all" toggles every overlay', () => {

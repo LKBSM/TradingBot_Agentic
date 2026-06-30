@@ -181,11 +181,15 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         { id: userTurnId, role: 'user', text: trimmed },
       ]);
 
-      // Build history payload (last 6 turns, alternating user/assistant).
-      const historyForApi = turns.slice(-6).map((t) => ({
-        role: t.role,
-        content: t.text,
-      }));
+      // Build history payload (last 6 turns, alternating user/assistant). Drop
+      // any turn whose text is empty/whitespace: a display-only answer (e.g. the
+      // model toggled a layer with no prose) renders as an empty bubble, and the
+      // backend's ConversationMessage requires content length ≥ 1 — replaying it
+      // would 422 the whole request ("format ou longueur") on the next message.
+      const historyForApi = turns
+        .slice(-6)
+        .map((t) => ({ role: t.role, content: t.text.trim() }))
+        .filter((m) => m.content.length > 0);
 
       setIsLoading(true);
 
