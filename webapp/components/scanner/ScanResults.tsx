@@ -16,8 +16,14 @@ import {
   paletteEntry,
 } from '@/lib/conditions/palette';
 import type { ConditionsConfig, ConditionsScanResponse, ScanCondition } from '@/lib/conditions/types';
+import { freshnessLabel } from '@/lib/conditions/candle-clock';
+import { useNow } from '@/lib/conditions/use-now';
 import { ComboCard } from './ComboCard';
+import { AutoRefreshToggle } from './AutoRefreshToggle';
 import { instrumentLabel } from './labels';
+
+/** Re-render the freshness/age labels twice a minute (no re-fetch). */
+const CLOCK_TICK_MS = 30_000;
 
 /** Compact human description of a condition's chosen parameter, if any. */
 function conditionParam(c: ScanCondition): string {
@@ -44,6 +50,8 @@ export function ScanResults({
   onEdit,
   onRefresh,
   isRefreshing,
+  autoRefreshEnabled,
+  onToggleAutoRefresh,
 }: {
   response: ConditionsScanResponse;
   config: ConditionsConfig;
@@ -51,10 +59,17 @@ export function ScanResults({
   onEdit(): void;
   onRefresh(): void;
   isRefreshing: boolean;
+  autoRefreshEnabled: boolean;
+  onToggleAutoRefresh(next: boolean): void;
 }) {
   const full = response.matches.filter((m) => m.matched);
   const partial = response.matches.filter((m) => !m.matched && m.met_count > 0);
   const none = response.matches.filter((m) => m.met_count === 0);
+
+  // Ticking clock so "dernière analyse il y a X" / per-combo ages stay honest
+  // while the page is open — without triggering any network request.
+  const now = useNow(CLOCK_TICK_MS);
+  const freshness = freshnessLabel(response.as_of, now);
 
   return (
     <div className="space-y-6">
@@ -69,6 +84,16 @@ export function ScanResults({
               Modifier mes conditions
             </Button>
           </div>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-xs text-muted-foreground">
+          <span aria-live="polite" data-testid="scan-freshness">
+            {isRefreshing
+              ? 'Analyse en cours…'
+              : freshness
+                ? `Dernière analyse : ${freshness}`
+                : 'Dernière analyse : —'}
+          </span>
+          <AutoRefreshToggle enabled={autoRefreshEnabled} onChange={onToggleAutoRefresh} />
         </div>
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           <span>Tes conditions ({config.logic === 'AND' ? 'toutes' : 'au moins une'})&nbsp;:</span>
@@ -95,7 +120,7 @@ export function ScanResults({
         ) : (
           <div className="flex flex-col gap-4">
             {full.map((m) => (
-              <ComboCard key={`${m.instrument}:${m.timeframe}`} match={m} locale={locale} />
+              <ComboCard key={`${m.instrument}:${m.timeframe}`} match={m} locale={locale} now={now} />
             ))}
           </div>
         )}
@@ -111,7 +136,7 @@ export function ScanResults({
             <AccordionContent>
               <div className="flex flex-col gap-4 pt-2">
                 {partial.map((m) => (
-                  <ComboCard key={`${m.instrument}:${m.timeframe}`} match={m} locale={locale} />
+                  <ComboCard key={`${m.instrument}:${m.timeframe}`} match={m} locale={locale} now={now} />
                 ))}
               </div>
             </AccordionContent>

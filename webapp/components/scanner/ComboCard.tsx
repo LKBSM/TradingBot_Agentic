@@ -24,9 +24,18 @@ import {
  * 3"), and the FULL context (including what goes against). No quality score,
  * no ranking. "Analyser" sends the user to look at the chart themselves.
  */
-export function ComboCard({ match, locale }: { match: ComboMatch; locale: string }) {
+export function ComboCard({
+  match,
+  locale,
+  now,
+}: {
+  match: ComboMatch;
+  locale: string;
+  /** Injected ticking clock (epoch ms) so the age stays honest; defaults to now. */
+  now?: number;
+}) {
   const ctx = match.context;
-  const age = relativeAge(match.candle_close_ts);
+  const age = relativeAge(match.candle_close_ts, now);
 
   // Heads-up factuel : on ne garde que les actus à IMPACT HAUT (les
   // moyennes/faibles sont du bruit). Aucune direction, aucune prédiction —
