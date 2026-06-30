@@ -32,6 +32,7 @@ export type GlossaryKey =
   | 'order_block'
   | 'fvg'
   | 'retest'
+  | 'liquidity'
   | 'mtf'
   | 'volatility'
   | 'atr'
@@ -68,6 +69,12 @@ export const GLOSSARY: Record<GlossaryKey, GlossaryEntry> = {
     short:
       'Après une cassure, le prix revient toucher le niveau franchi pour le tester : la zone confirme ou s’invalide.',
     anchor: '#retest',
+  },
+  liquidity: {
+    term: 'Liquidité externe (BSL / SSL)',
+    short:
+      'Des niveaux où des ordres en attente s’accumulent — au-dessus de sommets égaux (BSL) ou sous des creux égaux (SSL). On indique si le niveau est intact, balayé (mèche puis retour) ou cassé.',
+    anchor: '#liquidite-externe',
   },
   mtf: {
     term: 'Confluence multi-timeframe',

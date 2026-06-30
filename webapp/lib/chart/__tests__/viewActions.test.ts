@@ -215,7 +215,7 @@ describe('applyChartViewAction', () => {
       action: 'set_layer_visibility',
       params: { layer: 'fvg', visible: false },
     });
-    expect(next.layers).toEqual({ fvg: false, ob: true, breaks: true });
+    expect(next.layers).toEqual({ fvg: false, ob: true, breaks: true, liquidity: true });
   });
 
   it('toggles MULTIPLE layers in one action (fvg + ob), leaving breaks intact', () => {
@@ -231,7 +231,7 @@ describe('applyChartViewAction', () => {
       action: 'set_layer_visibility',
       params: { layer: 'all', visible: false },
     });
-    expect(next.layers).toEqual({ fvg: false, ob: false, breaks: false });
+    expect(next.layers).toEqual({ fvg: false, ob: false, breaks: false, liquidity: false });
   });
 
   it('merges filter changes', () => {
@@ -309,7 +309,7 @@ describe('applyChartViewAction', () => {
 
   it('reset_view restores defaults', () => {
     const dirty: ChartViewState = {
-      layers: { fvg: false, ob: false, breaks: false },
+      layers: { fvg: false, ob: false, breaks: false, liquidity: false },
       filter: { activeOnly: true, proximityOnly: true, proximityPct: 2, minSizePct: 1 },
       focus: { kind: 'zone', zoneId: 'ob_1', nonce: 9 },
       highlightZoneId: 'ob_1',

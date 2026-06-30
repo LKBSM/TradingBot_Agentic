@@ -33,6 +33,8 @@ import type {
 } from '@/lib/chart/viewActions';
 import { DEFAULT_CHART_VIEW } from '@/lib/chart/viewActions';
 import { buildStructureMarkers } from '@/lib/chart/structureMarkers';
+import { buildLiquidityLines } from '@/lib/chart/liquidityLines';
+import type { LiquiditySide, LiquidityStatus } from '@/types/market-reading';
 import { isPlausibleTick, isValidBar } from '@/lib/chart/sanitize';
 import type { Candle, MarketReadingStructure } from '@/types/market-reading';
 
@@ -198,6 +200,33 @@ const LEVEL = {
   choch: '#8E84B0',
   retest: '#6E84B0',
 };
+
+/**
+ * External-liquidity line palette. Per side (buy-side above / sell-side below),
+ * deliberately distinct from BOTH the candle bull/bear hues (so a pool never
+ * reads as a buy/sell instruction) and the slate/purple break lines. Cool
+ * blue-teal = BSL, muted rose-violet = SSL. The STATUS drives the alpha + dash:
+ * intact = crisp solid, swept = dashed, broken = faint dotted.
+ */
+const LIQUIDITY_RGB: Record<LiquiditySide, string> = {
+  bsl: '79, 163, 199', // #4FA3C7 — cool blue-teal
+  ssl: '199, 127, 163', // #C77FA3 — muted rose-violet
+};
+const LIQUIDITY_ALPHA: Record<LiquidityStatus, number> = {
+  intact: 0.9,
+  swept: 0.7,
+  broken: 0.4,
+};
+function liquidityColor(side: LiquiditySide, status: LiquidityStatus): string {
+  return `rgba(${LIQUIDITY_RGB[side]}, ${LIQUIDITY_ALPHA[status]})`;
+}
+function liquidityLineStyle(status: LiquidityStatus): LineStyle {
+  return status === 'intact'
+    ? LineStyle.Solid
+    : status === 'swept'
+      ? LineStyle.Dashed
+      : LineStyle.Dotted;
+}
 
 /**
  * Sober zone palette, per Direction 1. One base RGB per kind; the alpha encodes
@@ -544,6 +573,23 @@ export function ReadingChart({
       }),
     );
 
+    // External liquidity pockets (BSL/SSL) as horizontal price-level lines —
+    // intact = crisp solid, swept = dashed, broken (terminal) left off the chart
+    // to keep it readable (the Structure panel still lists broken pools). Hidden
+    // when the "liquidity" layer is toggled off (display-only). Read straight
+    // from engine-emitted pools — never recomputed, never projected.
+    const liquidityLines = layers.liquidity ? buildLiquidityLines(structure) : [];
+    const createdLiquidity = liquidityLines.map((l) =>
+      series.createPriceLine({
+        price: l.price,
+        color: liquidityColor(l.side, l.status),
+        lineWidth: 1,
+        lineStyle: liquidityLineStyle(l.status),
+        axisLabelVisible: true,
+        title: l.title,
+      }),
+    );
+
     // Fit ONCE (initial load); afterwards restore the pre-update view so data
     // refreshes don't reset the user's zoom/pan. The "Ajuster" button refits.
     if (!didInitialFitRef.current) {
@@ -555,8 +601,9 @@ export function ReadingChart({
 
     return () => {
       for (const line of created) series.removePriceLine(line);
+      for (const line of createdLiquidity) series.removePriceLine(line);
     };
-  }, [candles, structure, layers.breaks]);
+  }, [candles, structure, layers.breaks, layers.liquidity]);
 
   // ── Keep zone rectangles IN PHASE with the chart canvas. ────────────────────
   // The boxes are an HTML overlay positioned from priceToCoordinate /
@@ -859,7 +906,7 @@ export function ReadingChart({
         ref={containerRef}
         className="h-[280px] w-full sm:h-[340px]"
         role="img"
-        aria-label={`Graphique en chandeliers ${instrument} avec zones Order Block, Fair Value Gap et niveaux de cassure`}
+        aria-label={`Graphique en chandeliers ${instrument} avec zones Order Block, Fair Value Gap, niveaux de cassure et poches de liquidité externe (BSL/SSL)`}
       />
 
       {/* Localized OB / FVG boxes, layered over the chart canvas. Active boxes
