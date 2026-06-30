@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Any, Optional
+from typing import Any, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -208,12 +208,22 @@ def build_market_reading_scheduler(assembler: Any) -> Any:
     """Instantiate the hybrid scheduler bound to an assembler's stores."""
     from src.intelligence.scheduler import MarketReadingScheduler
 
+    # Keep the Conditions Scanner perimeter (the 6 fixed combos) always warm so
+    # the scanner never opens onto a missing or aged reading after an idle
+    # window. SCAN_COMBOS is the single source of truth for that perimeter.
+    always_warm: Tuple[Tuple[str, str], ...] = ()
+    if env_flag("SCHEDULER_WARM_SCAN_COMBOS", True):
+        from src.api.routes.conditions_scan import SCAN_COMBOS
+
+        always_warm = SCAN_COMBOS
+
     return MarketReadingScheduler(
         assembler=assembler,
         readings_store=assembler.readings_store,
         candles_store=assembler.candles_store,
         tick_interval_seconds=env_int("SCHEDULER_TICK_INTERVAL_SECONDS", 60),
         auto_stop_hours=env_int("SCHEDULER_AUTO_STOP_HOURS", 24),
+        always_warm=always_warm,
     )
 
 

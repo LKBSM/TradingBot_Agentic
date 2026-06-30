@@ -31,6 +31,7 @@ from src.intelligence.conditions_scanner import (
     PALETTE,
     evaluate_reading,
 )
+from src.intelligence.market_reading_assembler import expected_last_candle_close
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +46,49 @@ SCAN_COMBOS: Tuple[Tuple[str, str], ...] = (
     ("EURUSD", "H1"),
     ("EURUSD", "H4"),
 )
+
+# Candle duration per timeframe — used to express a reading's age in *bars*
+# (market-cadence units) rather than wall-clock, so freshness is comparable
+# across timeframes. Factual; no prediction.
+_TF_MINUTES: Dict[str, int] = {"M15": 15, "M30": 30, "H1": 60, "H4": 240, "D1": 1440}
+
+# Freshness tiers, in bars behind the latest expected close. A healthy combo
+# (the 60s scheduler keeps the scanner perimeter warm) sits at 0–1 bar.
+FreshnessState = Literal["fresh", "aging", "stale"]
+_FRESH_MAX_BARS = 1   # 0–1 bar behind  → up to date
+_AGING_MAX_BARS = 4   # 2–4 bars behind → starting to date; ≥5 → stale
+
+
+def _compute_freshness(
+    timeframe: Optional[str], candle_close_ts: Optional[str], now: datetime
+) -> Tuple[int, FreshnessState]:
+    """How many closed candles a reading is behind the latest expected close.
+
+    Purely descriptive: compares the reading's ``candle_close_ts`` to the most
+    recent boundary that has elapsed at ``now`` (same clock the scheduler uses).
+    Returns ``(bars_behind, state)``. Unknown/unparsable inputs return
+    ``(0, "fresh")`` — we never fabricate staleness we cannot prove.
+    """
+    if not timeframe or not candle_close_ts:
+        return 0, "fresh"
+    tf_minutes = _TF_MINUTES.get(timeframe.upper())
+    if not tf_minutes:
+        return 0, "fresh"
+    try:
+        expected = expected_last_candle_close(timeframe, now)
+        stored = datetime.fromisoformat(str(candle_close_ts).replace("Z", "+00:00"))
+    except (ValueError, TypeError):
+        return 0, "fresh"
+    if stored.tzinfo is None:
+        stored = stored.replace(tzinfo=timezone.utc)
+    delta_minutes = (expected - stored.astimezone(timezone.utc)).total_seconds() / 60.0
+    bars_behind = max(0, round(delta_minutes / tf_minutes))
+    if bars_behind <= _FRESH_MAX_BARS:
+        return bars_behind, "fresh"
+    if bars_behind <= _AGING_MAX_BARS:
+        return bars_behind, "aging"
+    return bars_behind, "stale"
+
 
 # Present-tense condition types ONLY. Drift from the palette is caught below.
 ConditionType = Literal[
@@ -113,6 +157,10 @@ class ComboMatch(BaseModel):
     conditions_met: List[ConditionOutcome]
     conditions_unmet: List[ConditionOutcome]
     context: Dict[str, Any]
+    # Reading age in candles behind the latest expected close, and its tier.
+    # Lets the UI avoid asserting an aged reading as "présent maintenant".
+    bars_behind: int = 0
+    freshness: FreshnessState = "fresh"
 
 
 class UnavailableCombo(BaseModel):
@@ -159,6 +207,7 @@ async def conditions_scan(
     if store is None:
         raise HTTPException(status_code=503, detail="Readings store not available")
 
+    now = datetime.now(timezone.utc)
     conditions = [c.model_dump() for c in body.conditions]
     matches: List[ComboMatch] = []
     unavailable: List[UnavailableCombo] = []
@@ -196,10 +245,15 @@ async def conditions_scan(
                 )
             )
             continue
+        bars_behind, freshness = _compute_freshness(
+            timeframe, combo.get("candle_close_ts"), now
+        )
+        combo["bars_behind"] = bars_behind
+        combo["freshness"] = freshness
         matches.append(ComboMatch(**combo))
 
     return ConditionsScanResponse(
-        as_of=datetime.now(timezone.utc).isoformat(),
+        as_of=now.isoformat(),
         logic=body.logic,
         scanned=len(SCAN_COMBOS),
         matches=matches,

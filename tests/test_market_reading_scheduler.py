@@ -278,6 +278,85 @@ class TestTick:
 
 
 # =========================================================================== #
+# always_warm — the scanner perimeter is regenerated even with no recent access
+# =========================================================================== #
+class TestAlwaysWarm:
+    def test_warm_combo_regenerated_when_not_in_active_set(self):
+        # Nobody accessed XAUUSD/M15 recently (empty active set), but it is in
+        # always_warm and has no stored reading → it must be generated.
+        store = _MockReadingsStore(active=[], readings={})
+        assembler = _MockAssembler()
+        sched = MarketReadingScheduler(
+            assembler, store, always_warm=[("XAUUSD", "M15")], clock=_clock
+        )
+        assert sched.tick() == 1
+        assert assembler.calls == [("XAUUSD", "M15")]
+
+    def test_warm_combo_skipped_when_reading_is_current(self):
+        fresh = datetime(2026, 5, 28, 14, 15, 0, tzinfo=timezone.utc)
+        store = _MockReadingsStore(
+            active=[], readings={("XAUUSD", "M15"): _reading_payload(fresh)}
+        )
+        assembler = _MockAssembler()
+        sched = MarketReadingScheduler(
+            assembler, store, always_warm=[("XAUUSD", "M15")], clock=_clock
+        )
+        # Idempotence still holds for warm combos — current reading, no work.
+        assert sched.tick() == 0
+        assert assembler.calls == []
+
+    def test_warm_combo_deduped_with_active_set(self):
+        old = datetime(2026, 5, 28, 13, 30, 0, tzinfo=timezone.utc)
+        store = _MockReadingsStore(
+            active=[("XAUUSD", "M15")],
+            readings={("XAUUSD", "M15"): _reading_payload(old)},
+        )
+        assembler = _MockAssembler()
+        sched = MarketReadingScheduler(
+            assembler, store, always_warm=[("XAUUSD", "M15")], clock=_clock
+        )
+        # Present in both active and always_warm → regenerated exactly once.
+        assert sched.tick() == 1
+        assert assembler.calls == [("XAUUSD", "M15")]
+
+    def test_warm_combo_survives_active_set_failure(self):
+        # get_active_combinations blows up, but the warm perimeter must still
+        # regenerate (the scanner's readings can't be hostage to that read).
+        store = _MockReadingsStore(raise_on_active=True, readings={})
+        assembler = _MockAssembler()
+        sched = MarketReadingScheduler(
+            assembler, store, always_warm=[("XAUUSD", "M15")], clock=_clock
+        )
+        assert sched.tick() == 1
+        assert assembler.calls == [("XAUUSD", "M15")]
+
+    def test_active_order_preserved_then_warm_appended(self):
+        old = datetime(2026, 5, 28, 8, 0, 0, tzinfo=timezone.utc)
+        store = _MockReadingsStore(
+            active=[("XAUUSD", "M15"), ("EURUSD", "H1")],
+            readings={
+                ("XAUUSD", "M15"): _reading_payload(old),
+                ("EURUSD", "H1"): _reading_payload(old),
+                ("XAUUSD", "H4"): _reading_payload(old),
+            },
+        )
+        assembler = _MockAssembler()
+        sched = MarketReadingScheduler(
+            assembler,
+            store,
+            always_warm=[("XAUUSD", "M15"), ("XAUUSD", "H4")],
+            clock=_clock,
+        )
+        assert sched.tick() == 3
+        # Active combos keep their order; the warm-only extra (H4) is appended.
+        assert assembler.calls == [
+            ("XAUUSD", "M15"),
+            ("EURUSD", "H1"),
+            ("XAUUSD", "H4"),
+        ]
+
+
+# =========================================================================== #
 # Lifecycle: start / stop / running
 # =========================================================================== #
 class TestLifecycle:

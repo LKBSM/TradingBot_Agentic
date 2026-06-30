@@ -8,13 +8,18 @@ detection), predictive types rejected at the schema boundary, and 503 wiring.
 from __future__ import annotations
 
 import tempfile
+from datetime import datetime, timezone
 
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from src.api.dependencies import AppState
-from src.api.routes.conditions_scan import SCAN_COMBOS, router as scan_router
+from src.api.routes.conditions_scan import (
+    SCAN_COMBOS,
+    _compute_freshness,
+    router as scan_router,
+)
 from src.api.signal_store import SignalStore
 
 
@@ -200,6 +205,55 @@ def test_scan_503_when_assembler_not_wired():
         "/api/conditions-scan", json={"logic": "AND", "conditions": [{"type": "mtf_aligned"}]}
     )
     assert resp.status_code == 503
+
+
+# --------------------------------------------------------------------------- #
+# Freshness — reading age in candles, so the UI never asserts an aged reading
+# as "présent maintenant". Descriptive only; matching is unaffected.
+# --------------------------------------------------------------------------- #
+_NOW = datetime(2026, 5, 28, 14, 23, tzinfo=timezone.utc)  # expected M15 close → 14:15
+
+
+class TestComputeFreshness:
+    def test_fresh_within_one_bar(self):
+        assert _compute_freshness("M15", "2026-05-28T14:15:00+00:00", _NOW) == (0, "fresh")
+        assert _compute_freshness("M15", "2026-05-28T14:00:00+00:00", _NOW) == (1, "fresh")
+
+    def test_aging_between_two_and_four_bars(self):
+        assert _compute_freshness("M15", "2026-05-28T13:15:00+00:00", _NOW) == (4, "aging")
+
+    def test_stale_at_five_or_more_bars(self):
+        assert _compute_freshness("M15", "2026-05-28T13:00:00+00:00", _NOW) == (5, "stale")
+
+    def test_unknown_inputs_never_fabricate_staleness(self):
+        assert _compute_freshness(None, "2026-05-28T14:15:00+00:00", _NOW) == (0, "fresh")
+        assert _compute_freshness("M15", None, _NOW) == (0, "fresh")
+        assert _compute_freshness("M15", "garbage", _NOW) == (0, "fresh")
+        assert _compute_freshness("ZZ9", "2026-05-28T14:15:00+00:00", _NOW) == (0, "fresh")
+
+
+def test_scan_response_carries_freshness_fields():
+    # The fixtures' candle_close_ts is weeks behind real "now" → stale, with a
+    # bars_behind well past the aging threshold. The fields must be present so
+    # the UI can hold an aged full-match out of the "maintenant" section.
+    readings = {
+        ("XAUUSD", "M15"): _reading("XAUUSD", "M15"),
+        ("XAUUSD", "H1"): _reading("XAUUSD", "H1"),
+        ("XAUUSD", "H4"): _reading("XAUUSD", "H4"),
+    }
+    app = _make_app(_RecordingAssembler(_RecordingStore(readings)))
+    client = TestClient(app)
+
+    resp = client.post(
+        "/api/conditions-scan",
+        json={"logic": "OR", "conditions": [{"type": "mtf_aligned"}]},
+    )
+    assert resp.status_code == 200
+    m = next(x for x in resp.json()["matches"] if x["timeframe"] == "M15")
+    assert m["freshness"] == "stale"
+    assert m["bars_behind"] > 4
+    # Matching itself is untouched by freshness.
+    assert m["matched"] is True
 
 
 def test_palette_endpoint_lists_present_tense_only():
