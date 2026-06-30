@@ -56,4 +56,52 @@ describe('ComboCard', () => {
     const { container } = render(<ComboCard match={makeMatch()} locale="fr" />);
     expect(container.textContent?.toLowerCase()).not.toContain('trader');
   });
+
+  it('counts ONLY high-impact upcoming news (ignores medium/low noise)', () => {
+    const match = makeMatch({
+      context: {
+        ...makeMatch().context,
+        news_upcoming: [
+          { event: 'US NFP', impact: 'high', time_to_event_min: 30 },
+          { event: 'EU PMI', impact: 'medium', time_to_event_min: 45 },
+          { event: 'US Jobless', impact: 'low', time_to_event_min: 60 },
+        ],
+      },
+    });
+    render(<ComboCard match={match} locale="fr" />);
+    // 1 high-impact → singular "importante", medium/low excluded from the count.
+    expect(
+      screen.getByText(/1 actu importante à venir — à garder en tête/),
+    ).toBeInTheDocument();
+  });
+
+  it('pluralises the label for several high-impact news', () => {
+    const match = makeMatch({
+      context: {
+        ...makeMatch().context,
+        news_upcoming: [
+          { event: 'US NFP', impact: 'high', time_to_event_min: 30 },
+          { event: 'US CPI', impact: 'high', time_to_event_min: 90 },
+        ],
+      },
+    });
+    render(<ComboCard match={match} locale="fr" />);
+    expect(
+      screen.getByText(/2 actus importantes à venir — à garder en tête/),
+    ).toBeInTheDocument();
+  });
+
+  it('hides the heads-up line when no high-impact news is upcoming', () => {
+    const match = makeMatch({
+      context: {
+        ...makeMatch().context,
+        news_upcoming: [
+          { event: 'EU PMI', impact: 'medium', time_to_event_min: 45 },
+          { event: 'US Jobless', impact: 'low', time_to_event_min: 60 },
+        ],
+      },
+    });
+    render(<ComboCard match={match} locale="fr" />);
+    expect(screen.queryByText(/à garder en tête/)).not.toBeInTheDocument();
+  });
 });

@@ -28,6 +28,14 @@ export function ComboCard({ match, locale }: { match: ComboMatch; locale: string
   const ctx = match.context;
   const age = relativeAge(match.candle_close_ts);
 
+  // Heads-up factuel : on ne garde que les actus à IMPACT HAUT (les
+  // moyennes/faibles sont du bruit). Aucune direction, aucune prédiction —
+  // juste un signalement de volatilité programmée. Détection inchangée : on
+  // filtre uniquement à l'affichage.
+  const importantNewsCount = ctx.news_upcoming.filter(
+    (n) => n.impact === 'high',
+  ).length;
+
   return (
     <Card className="overflow-hidden">
       <div className="flex flex-col gap-4 p-4 md:flex-row md:items-stretch">
@@ -106,9 +114,10 @@ export function ComboCard({ match, locale }: { match: ComboMatch; locale: string
             {ctx.active_order_blocks} OB · {ctx.active_fair_value_gaps} FVG actifs
             {ctx.bos ? ` · BOS ${biasLabel(ctx.bos.direction)}` : ''}
           </p>
-          {ctx.news_upcoming.length > 0 && (
+          {importantNewsCount > 0 && (
             <p className="text-xs text-sentinel-warn">
-              {ctx.news_upcoming.length} actu(s) à venir — à garder en tête.
+              {importantNewsCount} actu{importantNewsCount > 1 ? 's' : ''} importante
+              {importantNewsCount > 1 ? 's' : ''} à venir — à garder en tête.
             </p>
           )}
           <Button asChild variant="outline" size="sm" className="mt-1 w-full">
