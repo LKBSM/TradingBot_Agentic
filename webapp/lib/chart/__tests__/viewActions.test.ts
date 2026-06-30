@@ -218,7 +218,7 @@ describe('applyChartViewAction', () => {
     expect(next.layers).toEqual({ fvg: false, ob: true, breaks: true, liquidity: true });
   });
 
-  it('toggles MULTIPLE layers in one action (fvg + ob), leaving breaks intact', () => {
+  it('toggles MULTIPLE layers in one action (fvg + ob), leaving the rest intact', () => {
     const next = applyChartViewAction(DEFAULT_CHART_VIEW, {
       action: 'set_layer_visibility',
       params: { layers: ['fvg', 'ob'], visible: false },
