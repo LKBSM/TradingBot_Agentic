@@ -15,9 +15,15 @@
  * how to change the chart's display state.
  */
 
-export type ChartLayer = 'fvg' | 'ob' | 'breaks' | 'all';
+export type ChartLayer = 'fvg' | 'ob' | 'breaks' | 'liquidity' | 'all';
 
-export const ALLOWED_LAYERS: readonly ChartLayer[] = ['fvg', 'ob', 'breaks', 'all'];
+export const ALLOWED_LAYERS: readonly ChartLayer[] = [
+  'fvg',
+  'ob',
+  'breaks',
+  'liquidity',
+  'all',
+];
 
 export const SUPPORTED_INSTRUMENTS = ['XAUUSD', 'EURUSD'] as const;
 export const SUPPORTED_TIMEFRAMES = ['M15', 'H1', 'H4'] as const;
@@ -216,6 +222,8 @@ export interface ChartLayers {
   fvg: boolean;
   ob: boolean;
   breaks: boolean;
+  /** External liquidity pockets (BSL/SSL) as horizontal price-level lines. */
+  liquidity: boolean;
 }
 
 export interface ChartFilter {
@@ -254,7 +262,7 @@ export interface ChartViewState {
 }
 
 export const DEFAULT_CHART_VIEW: ChartViewState = {
-  layers: { fvg: true, ob: true, breaks: true },
+  layers: { fvg: true, ob: true, breaks: true, liquidity: true },
   filter: { activeOnly: false, proximityOnly: false, proximityPct: 0.5, minSizePct: null },
   focus: null,
   highlightZoneId: null,
@@ -275,7 +283,10 @@ export function applyChartViewAction(
     case 'set_layer_visibility': {
       const { layer, visible } = action.params;
       if (layer === 'all') {
-        return { ...state, layers: { fvg: visible, ob: visible, breaks: visible } };
+        return {
+          ...state,
+          layers: { fvg: visible, ob: visible, breaks: visible, liquidity: visible },
+        };
       }
       return { ...state, layers: { ...state.layers, [layer]: visible } };
     }

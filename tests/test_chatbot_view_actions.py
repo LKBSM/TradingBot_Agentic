@@ -57,6 +57,17 @@ def test_layer_all_is_allowed() -> None:
     assert res.valid
 
 
+def test_layer_liquidity_is_allowed() -> None:
+    res = v().validate(
+        {"action": "set_layer_visibility", "params": {"layer": "liquidity", "visible": False}}
+    )
+    assert res.valid
+    assert res.action == {
+        "action": "set_layer_visibility",
+        "params": {"layer": "liquidity", "visible": False},
+    }
+
+
 def test_bad_layer_rejected() -> None:
     res = v().validate({"action": "set_layer_visibility", "params": {"layer": "candles", "visible": True}})
     assert not res.valid

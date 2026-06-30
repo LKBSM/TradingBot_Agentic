@@ -61,6 +61,19 @@ export type RetestType =
   | 'ob_retest'
   | 'fvg_retest';
 
+/** External liquidity side: buy-side (above) / sell-side (below). */
+export type LiquiditySide = 'bsl' | 'ssl';
+
+/** Liquidity pocket geometry. */
+export type LiquidityKind =
+  | 'equal_highs'
+  | 'equal_lows'
+  | 'range_high'
+  | 'range_low';
+
+/** Liquidity pocket lifecycle (descriptive, factual). */
+export type LiquidityStatus = 'intact' | 'swept' | 'broken';
+
 /** Provenance of the synthesised conditions description. */
 export type DescriptionSource = 'haiku_generated' | 'template_fallback';
 
@@ -139,6 +152,32 @@ export interface RetestInProgress {
   started_at: string;
 }
 
+/**
+ * External liquidity pocket — equal highs/lows or a range extreme. Strictly
+ * DESCRIPTIVE (niveau 1.5): WHERE resting liquidity sits and WHETHER that level
+ * has been intact / swept / broken. No target, draw, bias or probability. Mirror
+ * of the Pydantic `LiquidityPool`.
+ */
+export interface LiquidityPool {
+  id: string;
+  /** `bsl` = buy-side (above), `ssl` = sell-side (below). */
+  side: LiquiditySide;
+  kind: LiquidityKind;
+  /** Resting-liquidity price level. */
+  level: number;
+  /** Swing points forming the pocket (1 for a range extreme). */
+  touches: number;
+  /** True when at/beyond the current range's extreme swing. */
+  is_external: boolean;
+  status: LiquidityStatus;
+  created_at: string;
+  /** First bar that wicked through and closed back inside. null unless swept. */
+  swept_at?: string | null;
+  /** First bar that closed net through the level. null unless broken (terminal). */
+  broken_at?: string | null;
+  user_flagged: boolean;
+}
+
 export interface MarketReadingStructure {
   bos?: BOSRecent | null;
   choch?: CHOCHRecent | null;
@@ -152,6 +191,12 @@ export interface MarketReadingStructure {
   choch_events?: CHOCHRecent[];
   order_blocks: OrderBlock[];
   fair_value_gaps: FairValueGap[];
+  /**
+   * External liquidity pockets (equal highs/lows + range extremes) with
+   * intact/swept/broken state. Read-only/descriptive twin of order_blocks /
+   * fair_value_gaps. Absent on older payloads (treat as empty).
+   */
+  liquidity_pools?: LiquidityPool[];
   retest_in_progress?: RetestInProgress | null;
 }
 

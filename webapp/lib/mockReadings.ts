@@ -91,6 +91,54 @@ const MOCK_XAU_H1: MarketReading = {
         user_flagged: false,
       },
     ],
+    liquidity_pools: [
+      {
+        id: 'liq-xau-h1-1',
+        side: 'bsl',
+        kind: 'equal_highs',
+        level: 2402.0,
+        touches: 3,
+        is_external: true,
+        status: 'intact',
+        created_at: '2026-05-26T03:00:00+00:00',
+        user_flagged: false,
+      },
+      {
+        id: 'liq-xau-h1-2',
+        side: 'bsl',
+        kind: 'range_high',
+        level: 2399.5,
+        touches: 1,
+        is_external: true,
+        status: 'swept',
+        created_at: '2026-05-26T01:00:00+00:00',
+        swept_at: '2026-05-26T09:00:00+00:00',
+        user_flagged: false,
+      },
+      {
+        id: 'liq-xau-h1-3',
+        side: 'ssl',
+        kind: 'equal_lows',
+        level: 2386.0,
+        touches: 2,
+        is_external: false,
+        status: 'intact',
+        created_at: '2026-05-26T04:00:00+00:00',
+        user_flagged: false,
+      },
+      {
+        id: 'liq-xau-h1-4',
+        side: 'ssl',
+        kind: 'range_low',
+        level: 2374.0,
+        touches: 1,
+        is_external: true,
+        status: 'broken',
+        created_at: '2026-05-25T20:00:00+00:00',
+        broken_at: '2026-05-26T02:00:00+00:00',
+        user_flagged: false,
+      },
+    ],
     retest_in_progress: null,
   },
   regime: {
@@ -417,6 +465,7 @@ function collectLevels(reading: MarketReading): number[] {
   if (s.retest_in_progress) levels.push(s.retest_in_progress.level);
   for (const ob of s.order_blocks) levels.push(ob.level_high, ob.level_low);
   for (const fvg of s.fair_value_gaps) levels.push(fvg.level_high, fvg.level_low);
+  for (const liq of s.liquidity_pools ?? []) levels.push(liq.level);
   return levels.length > 0 ? levels : [reading.header.close_price];
 }
 
