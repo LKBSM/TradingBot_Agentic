@@ -15,6 +15,9 @@ import {
   formatBand,
   formatDirection,
   formatFvgStatus,
+  formatLiquidityKind,
+  formatLiquiditySideShort,
+  formatLiquidityStatus,
   formatObImportance,
   formatObStatus,
   formatPrice,
@@ -23,6 +26,8 @@ import {
 } from '@/lib/market-reading/formatters';
 import type {
   FairValueGap,
+  LiquidityPool,
+  LiquidityStatus,
   MarketReadingStructure,
   OBImportance,
   OrderBlock,
@@ -44,6 +49,14 @@ const FVG_STATUS_RANK: Record<FairValueGap['status'], number> = {
   filled: 2,
 };
 
+// Liquidity ordering — surface in-play pockets first: intact, then swept, then
+// broken (terminal). Display-only ranking; detection is untouched.
+const LIQUIDITY_STATUS_RANK: Record<LiquidityStatus, number> = {
+  intact: 0,
+  swept: 1,
+  broken: 2,
+};
+
 /**
  * Section "Structure" — renders the Smart Money Concept block factually:
  * BOS / CHOCH, Order Blocks, Fair Value Gaps, retest in progress. Every line is
@@ -61,6 +74,7 @@ export function StructureSection({
 }) {
   const { bos, choch, order_blocks, fair_value_gaps, retest_in_progress } =
     structure;
+  const liquidity_pools = structure.liquidity_pools ?? [];
 
   // Click-to-chart wiring (display/navigation only). We reuse the EXISTING chart
   // view channel the M.I.A Agent drives: clicking a zone asks the chart to
@@ -116,7 +130,20 @@ export function StructureSection({
     choch ||
     order_blocks.length > 0 ||
     fair_value_gaps.length > 0 ||
+    liquidity_pools.length > 0 ||
     retest_in_progress;
+
+  // In-play pockets first (intact → swept → broken), then by price level. The
+  // engine already caps the set; this is display ordering only.
+  const sortedLiquidity = useMemo(
+    () =>
+      [...liquidity_pools].sort(
+        (a, b) =>
+          LIQUIDITY_STATUS_RANK[a.status] - LIQUIDITY_STATUS_RANK[b.status] ||
+          b.level - a.level,
+      ),
+    [liquidity_pools],
+  );
 
   return (
     <AccordionItem value="structure">
@@ -214,6 +241,15 @@ export function StructureSection({
                 </span>
               )}
             </ZoneRow>
+            <ZoneRow label="Liquidité externe (BSL / SSL)" termKey="liquidity">
+              {sortedLiquidity.length > 0 ? (
+                <LiquidityList pools={sortedLiquidity} instrument={instrument} />
+              ) : (
+                <span className="text-sm font-medium text-foreground">
+                  aucune poche de liquidité détectée
+                </span>
+              )}
+            </ZoneRow>
             <Row
               label="Retest en cours"
               termKey="retest"
@@ -254,6 +290,66 @@ function Row({
       </dt>
       <dd className="mt-1 text-sm font-medium text-foreground">{value}</dd>
     </div>
+  );
+}
+
+/**
+ * Read-only list of external liquidity pockets. Mirrors the chart's per-side
+ * palette (BSL blue-teal / SSL rose-violet) so the panel and the price lines
+ * read as one. Strictly descriptive: WHERE liquidity rests + its intact / swept
+ * / broken state — no target, draw or bias. Not clickable (these are levels, not
+ * focusable boxes), unlike Order Block / FVG zones.
+ */
+const LIQUIDITY_DOT: Record<LiquidityPool['side'], string> = {
+  bsl: 'rgb(79, 163, 199)',
+  ssl: 'rgb(199, 127, 163)',
+};
+
+function LiquidityList({
+  pools,
+  instrument,
+}: {
+  pools: LiquidityPool[];
+  instrument: string;
+}) {
+  return (
+    <ul className="flex flex-col gap-1.5">
+      {pools.map((p) => {
+        const status = formatLiquidityStatus(p.status);
+        return (
+          <li
+            key={p.id}
+            className="flex items-center gap-2 text-sm font-medium text-foreground"
+          >
+            <span
+              className="inline-block h-2 w-2 shrink-0 rounded-full"
+              style={{
+                backgroundColor: LIQUIDITY_DOT[p.side],
+                opacity: p.status === 'broken' ? 0.45 : 1,
+              }}
+              aria-hidden
+            />
+            <span className="tabular-nums">{formatPrice(p.level, instrument)}</span>
+            <span className="text-muted-foreground">·</span>
+            <span className="font-semibold tracking-wide">
+              {formatLiquiditySideShort(p.side)}
+            </span>
+            <span className="text-muted-foreground">
+              {formatLiquidityKind(p.kind)}
+            </span>
+            <span className="text-muted-foreground">·</span>
+            <span
+              className={cn(
+                status.tone === 'warn' ? 'text-amber-600 dark:text-amber-500' : 'text-muted-foreground',
+                p.status === 'broken' && 'line-through opacity-70',
+              )}
+            >
+              {status.label}
+            </span>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 

@@ -83,6 +83,59 @@ export const FIXTURE_XAU_M15: MarketReading = {
         user_flagged: false,
       },
     ],
+    liquidity_pools: [
+      {
+        // Buy-side liquidity resting above equal highs (intact) — solid line.
+        id: 'liq-xau-m15-1',
+        side: 'bsl',
+        kind: 'equal_highs',
+        level: 2396.0,
+        touches: 3,
+        is_external: true,
+        status: 'intact',
+        created_at: '2026-05-26T07:00:00+00:00',
+        user_flagged: false,
+      },
+      {
+        // Range-high BSL already swept (wick through + close back in) — dashed.
+        id: 'liq-xau-m15-2',
+        side: 'bsl',
+        kind: 'range_high',
+        level: 2393.6,
+        touches: 1,
+        is_external: true,
+        status: 'swept',
+        created_at: '2026-05-26T06:00:00+00:00',
+        swept_at: '2026-05-26T10:30:00+00:00',
+        user_flagged: false,
+      },
+      {
+        // Sell-side liquidity resting below equal lows (intact) — solid line.
+        id: 'liq-xau-m15-3',
+        side: 'ssl',
+        kind: 'equal_lows',
+        level: 2383.0,
+        touches: 2,
+        is_external: false,
+        status: 'intact',
+        created_at: '2026-05-26T08:15:00+00:00',
+        user_flagged: false,
+      },
+      {
+        // Range-low SSL broken (closed net through) — terminal: listed in the
+        // panel, kept OFF the chart by default to avoid clutter.
+        id: 'liq-xau-m15-4',
+        side: 'ssl',
+        kind: 'range_low',
+        level: 2373.0,
+        touches: 1,
+        is_external: true,
+        status: 'broken',
+        created_at: '2026-05-25T22:00:00+00:00',
+        broken_at: '2026-05-26T04:00:00+00:00',
+        user_flagged: false,
+      },
+    ],
     retest_in_progress: {
       level: 2391.5,
       type: 'bos_retest',

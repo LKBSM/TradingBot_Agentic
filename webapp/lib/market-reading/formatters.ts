@@ -2,6 +2,9 @@ import type {
   Direction,
   FVGStatus,
   ImpactLevel,
+  LiquidityKind,
+  LiquiditySide,
+  LiquidityStatus,
   MarketPhase,
   MTFBiasValue,
   MTFTimeframeKey,
@@ -292,6 +295,51 @@ const RETEST_TYPE_LABEL: Record<RetestType, string> = {
 
 export function formatRetestType(type: RetestType): string {
   return RETEST_TYPE_LABEL[type];
+}
+
+// ─── Structure: external liquidity ────────────────────────────────────────────
+
+const LIQUIDITY_SIDE_LABEL: Record<LiquiditySide, string> = {
+  bsl: 'liquidité acheteuse (au-dessus)',
+  ssl: 'liquidité vendeuse (en-dessous)',
+};
+
+export function formatLiquiditySide(side: LiquiditySide): string {
+  return LIQUIDITY_SIDE_LABEL[side];
+}
+
+/** Short axis/badge code — `BSL` (buy-side) / `SSL` (sell-side). */
+const LIQUIDITY_SIDE_SHORT: Record<LiquiditySide, string> = {
+  bsl: 'BSL',
+  ssl: 'SSL',
+};
+
+export function formatLiquiditySideShort(side: LiquiditySide): string {
+  return LIQUIDITY_SIDE_SHORT[side];
+}
+
+const LIQUIDITY_KIND_LABEL: Record<LiquidityKind, string> = {
+  equal_highs: 'sommets égaux',
+  equal_lows: 'creux égaux',
+  range_high: 'extrême haut de range',
+  range_low: 'extrême bas de range',
+};
+
+export function formatLiquidityKind(kind: LiquidityKind): string {
+  return LIQUIDITY_KIND_LABEL[kind];
+}
+
+const LIQUIDITY_STATUS_LABEL: Record<LiquidityStatus, { label: string; tone: Tone }> = {
+  intact: { label: 'intacte', tone: 'neutral' },
+  swept: { label: 'balayée', tone: 'warn' },
+  broken: { label: 'cassée', tone: 'neutral' },
+};
+
+export function formatLiquidityStatus(status: LiquidityStatus): {
+  label: string;
+  tone: Tone;
+} {
+  return LIQUIDITY_STATUS_LABEL[status];
 }
 
 // ─── Events ────────────────────────────────────────────────────────────────────

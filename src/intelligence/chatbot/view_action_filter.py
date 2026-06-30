@@ -35,8 +35,9 @@ SUPPORTED_INSTRUMENTS: tuple[str, ...] = ("XAUUSD", "EURUSD")
 SUPPORTED_TIMEFRAMES: tuple[str, ...] = ("M15", "H1", "H4")
 
 # Layers the chatbot may toggle. "all" is the convenience target (show/hide every
-# overlay at once); "breaks" = BOS / CHOCH / retest level lines + markers.
-ALLOWED_LAYERS: tuple[str, ...] = ("fvg", "ob", "breaks", "all")
+# overlay at once); "breaks" = BOS / CHOCH / retest level lines + markers;
+# "liquidity" = external BSL/SSL pocket level lines.
+ALLOWED_LAYERS: tuple[str, ...] = ("fvg", "ob", "breaks", "liquidity", "all")
 
 # The individual overlay families addressable in a MULTI-layer toggle
 # (``set_layer_visibility`` with a ``layers`` list). "all" is excluded here — it
