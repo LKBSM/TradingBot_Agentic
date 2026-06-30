@@ -68,12 +68,18 @@ export function phaseLabel(value: string | null | undefined): string {
   }
 }
 
-/** "il y a ~2 h" style relative age from an ISO close timestamp. */
-export function relativeAge(iso: string | null | undefined): string | null {
+/**
+ * "il y a ~2 h" style relative age from an ISO close timestamp.
+ * `nowMs` is injectable so the label can tick (and be tested) deterministically.
+ */
+export function relativeAge(
+  iso: string | null | undefined,
+  nowMs: number = Date.now(),
+): string | null {
   if (!iso) return null;
   const then = Date.parse(iso);
   if (Number.isNaN(then)) return null;
-  const minutes = Math.max(0, Math.round((Date.now() - then) / 60000));
+  const minutes = Math.max(0, Math.round((nowMs - then) / 60000));
   if (minutes < 60) return `il y a ${minutes} min`;
   const hours = Math.round(minutes / 60);
   if (hours < 48) return `il y a ${hours} h`;

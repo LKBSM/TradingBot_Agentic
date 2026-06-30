@@ -2,6 +2,8 @@
 
 import * as React from 'react';
 import { useConditionsConfig } from '@/lib/conditions/config-store';
+import { useAutoRefreshPref } from '@/lib/conditions/auto-refresh-store';
+import { useCandleCloseRefresh } from '@/lib/conditions/use-candle-close-refresh';
 import {
   fetchConditionsScan,
   ScanNotAvailableError,
@@ -19,6 +21,7 @@ import { ScanResults } from './ScanResults';
  */
 export function ScannerWorkspace({ locale }: { locale: string }) {
   const { config, ready, save } = useConditionsConfig();
+  const { enabled: autoRefresh, setEnabled: setAutoRefresh } = useAutoRefreshPref();
   const [editing, setEditing] = React.useState(false);
 
   const [response, setResponse] = React.useState<ConditionsScanResponse | null>(null);
@@ -53,6 +56,26 @@ export function ScannerWorkspace({ locale }: { locale: string }) {
     }
     // re-run when the saved config identity changes
   }, [ready, config, showBuilder, runScan]);
+
+  // Timeframes actually scanned (from the latest response) drive the auto-refresh
+  // cadence. The scan covers fixed combos (M15/H1/H4) — we read them off the
+  // response so the cadence stays correct if that set ever changes.
+  const timeframes = React.useMemo(
+    () => Array.from(new Set((response?.matches ?? []).map((m) => m.timeframe))),
+    [response],
+  );
+
+  // Auto-refresh aligned on candle closes (not a per-second poll). Only active
+  // once we have a config, results, and are not editing.
+  const canAutoRefresh = ready && !!config && !showBuilder && !!response;
+  useCandleCloseRefresh({
+    timeframes,
+    enabled: autoRefresh && canAutoRefresh,
+    isScanning,
+    onRefresh: React.useCallback(() => {
+      if (config) void runScan(config);
+    }, [config, runScan]),
+  });
 
   if (!ready) {
     return <p className="text-sm text-muted-foreground">Chargement…</p>;
@@ -101,6 +124,8 @@ export function ScannerWorkspace({ locale }: { locale: string }) {
       isRefreshing={isScanning}
       onRefresh={() => runScan(config)}
       onEdit={() => setEditing(true)}
+      autoRefreshEnabled={autoRefresh}
+      onToggleAutoRefresh={setAutoRefresh}
     />
   );
 }
