@@ -43,8 +43,8 @@ export function SuggestedQuestions({
             type="button"
             onClick={() => onPick(q)}
             className={cn(
-              'rounded-lg border border-border bg-background px-3 py-2 text-left text-sm',
-              'transition-colors hover:bg-accent hover:text-accent-foreground',
+              'rounded-xl border border-border bg-muted/40 px-3.5 py-2.5 text-left text-sm',
+              'transition-all hover:-translate-y-0.5 hover:border-[hsl(35_92%_55%/0.4)] hover:bg-muted',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
             )}
           >

@@ -1,5 +1,9 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import type {
+  MarketReadingStructure,
+  OrderBlock,
+} from '@/types/market-reading';
 import { MarketPhasePanel } from '../MarketPhasePanel';
 import { MarketReadingCard } from '../MarketReadingCard';
 import { MarketReadingHeader } from '../MarketReadingHeader';
@@ -209,6 +213,87 @@ describe('StructureSection', () => {
     expect(
       screen.getByText(/Aucun élément structurel notable/),
     ).toBeInTheDocument();
+  });
+
+  // ── Collapsible OB/FVG lists (display-only, detection untouched) ──────────
+  const mkOb = (i: number, over: Partial<OrderBlock> = {}): OrderBlock => ({
+    id: `ob-${i}`,
+    level_low: 2300 + i,
+    level_high: 2302 + i,
+    importance: 'medium',
+    status: 'active',
+    created_at: '2026-06-20T10:00:00+00:00',
+    tested: false,
+    user_flagged: false,
+    ...over,
+  });
+
+  const structureWithObs = (obs: OrderBlock[]): MarketReadingStructure => ({
+    bos: null,
+    choch: null,
+    order_blocks: obs,
+    fair_value_gaps: [],
+    retest_in_progress: null,
+  });
+
+  it('shows only the top-3 zones by default and folds the rest behind « voir plus »', () => {
+    const obs = [mkOb(1), mkOb(2), mkOb(3), mkOb(4), mkOb(5)];
+    render(
+      <Accordion type="multiple" defaultValue={['structure']}>
+        <StructureSection
+          structure={structureWithObs(obs)}
+          instrument="XAUUSD"
+          closePrice={2305}
+        />
+      </Accordion>,
+    );
+    // 5 zones → 3 list items visible by default.
+    expect(screen.getAllByRole('listitem')).toHaveLength(3);
+    // « voir plus » surfaces the 2 folded ones (nothing is removed).
+    expect(
+      screen.getByRole('button', { name: /voir plus \(2 zones\)/i }),
+    ).toBeInTheDocument();
+  });
+
+  it('« voir plus » reveals the FULL list (nothing dropped), « voir moins » folds back', () => {
+    const obs = [mkOb(1), mkOb(2), mkOb(3), mkOb(4), mkOb(5)];
+    render(
+      <Accordion type="multiple" defaultValue={['structure']}>
+        <StructureSection
+          structure={structureWithObs(obs)}
+          instrument="XAUUSD"
+          closePrice={2305}
+        />
+      </Accordion>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /voir plus/i }));
+    // All 5 zones are now accessible — none was deleted.
+    expect(screen.getAllByRole('listitem')).toHaveLength(5);
+    // The toggle flips to « voir moins ».
+    const less = screen.getByRole('button', { name: /voir moins/i });
+    expect(less).toHaveAttribute('aria-expanded', 'true');
+    fireEvent.click(less);
+    expect(screen.getAllByRole('listitem')).toHaveLength(3);
+  });
+
+  it('de-duplicates identical zones before display', () => {
+    // Three rows but two are byte-identical (same bounds + status + importance).
+    const dup = mkOb(1);
+    const obs = [dup, { ...dup, id: 'ob-dup' }, mkOb(2)];
+    render(
+      <Accordion type="multiple" defaultValue={['structure']}>
+        <StructureSection
+          structure={structureWithObs(obs)}
+          instrument="XAUUSD"
+          closePrice={2305}
+        />
+      </Accordion>,
+    );
+    // Two distinct zones remain — no « voir plus » needed (≤ 3).
+    expect(screen.getAllByRole('listitem')).toHaveLength(2);
+    expect(
+      screen.queryByRole('button', { name: /voir plus/i }),
+    ).not.toBeInTheDocument();
   });
 });
 

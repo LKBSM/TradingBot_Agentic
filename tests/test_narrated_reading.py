@@ -19,12 +19,15 @@ from src.intelligence.market_reading_schema import (
     OrderBlock,
     RetestInProgress,
 )
+from src.intelligence.market_reading_schema import DESCRIPTION_MAX_LENGTH
 from src.intelligence.narrated_reading import (
+    NARRATION_MAX_LENGTH,
     allowed_levels,
     build_reading_facts,
     fmt_display,
     references_only_known_levels,
     render_template,
+    truncate_at_sentence,
 )
 
 PRICE = 2000.0
@@ -270,3 +273,85 @@ def test_zone_position_relative_to_price():
     pos = {(z.low_canon, z.high_canon): z.position for z in facts.zones}
     assert pos[("1990.00", "1995.00")] == "below"
     assert pos[("2005.00", "2010.00")] == "above"
+
+
+# ---------------------------------------------------------------------------
+# Truncation — never mid-word, always on a sentence boundary (mission B)
+# ---------------------------------------------------------------------------
+
+
+def _no_word_cut(text: str, source: str) -> bool:
+    """The narration must not end on a fragment of a word: it ends on a sentence
+    terminator, or (degenerate) on a whole word + ellipsis — never on a partial
+    word sliced out of `source`."""
+    if text.endswith((".", "!", "?")):
+        return True
+    if text.endswith("…"):
+        # The body before the ellipsis is a whole word of the source (the next
+        # source char is a space/terminator, i.e. we cut on a word boundary).
+        body = text[:-1].rstrip()
+        nxt = source[len(body) : len(body) + 1]
+        return nxt in ("", " ")
+    return False
+
+
+def test_truncate_returns_short_text_unchanged():
+    txt = "Tendance haussière. Volatilité normale."
+    assert truncate_at_sentence(txt, 500) == txt
+
+
+def test_truncate_drops_whole_trailing_sentences_never_mid_word():
+    # Four sentences; a 60-char budget keeps only the whole sentences that fit.
+    txt = (
+        "Le prix évolue près d'un Order Block actif. "
+        "Les timeframes supérieurs divergent nettement. "
+        "Un retest de cassure est en cours maintenant. "
+        "À noter un contexte contraire marqué ici."
+    )
+    out = truncate_at_sentence(txt, 60)
+    assert len(out) <= 60
+    assert out == "Le prix évolue près d'un Order Block actif."  # whole sentence
+    assert _no_word_cut(out, txt)
+    # No partial second sentence leaked in.
+    assert "Les timeframes" not in out
+
+
+def test_truncate_long_narration_ends_on_sentence_boundary():
+    sentence = "Le prix reste proche d'une zone active confirmée. "
+    txt = sentence * 30  # ~1500 chars, all complete sentences
+    out = truncate_at_sentence(txt, NARRATION_MAX_LENGTH)
+    assert len(out) <= NARRATION_MAX_LENGTH
+    assert out.endswith(".")
+    assert _no_word_cut(out, txt)
+
+
+def test_truncate_degenerate_single_runon_cuts_on_word_boundary():
+    # One giant run-on with no internal terminator (a model ignoring the « 2 à 4
+    # phrases » rule). Must still never end mid-word.
+    txt = "tendance " * 200  # 1800 chars, no '.'
+    out = truncate_at_sentence(txt, 100)
+    assert len(out) <= 100
+    assert _no_word_cut(out, txt)
+    assert "tendanc…" not in out  # never a sliced word + ellipsis
+
+
+def test_template_fallback_is_complete_and_never_truncated_in_practice():
+    # A rich reading (trend + MTF + zones + break + retest + contrary) renders a
+    # full present-tense paragraph that fits the budget — nothing is cut.
+    structure = MarketReadingStructure(
+        bos=BOSRecent(
+            direction="bullish",
+            level=2001.0,
+            broken_at="2026-06-20T00:00:00Z",
+            validation_status="confirmed",
+        ),
+        order_blocks=[_ob(1998.0, 2002.0, status="active")],
+        retest_in_progress=RetestInProgress(
+            level=2001.0, type="bos_retest", started_at="2026-06-20T00:00:00Z"
+        ),
+    )
+    facts = build_reading_facts(structure, _regime(), PRICE, INSTRUMENT)
+    desc = render_template(facts)
+    assert len(desc) <= DESCRIPTION_MAX_LENGTH
+    assert desc.endswith((".", "!", "?"))  # complete sentence, not a fragment
+    assert contains_forbidden_tokens(desc) is None  # still niveau-1.5 clean

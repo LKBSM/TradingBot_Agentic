@@ -37,6 +37,7 @@ export function MarketReadingSections({
       <StructureSection
         structure={reading.structure}
         instrument={reading.header.instrument}
+        closePrice={reading.header.close_price}
       />
       <RegimeSection
         regime={reading.regime}

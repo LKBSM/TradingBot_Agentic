@@ -56,12 +56,17 @@ TRIGGER_TYPE_PATTERN = (
     r"|^(ob_mitigation|fvg_fill|retest)_(m15|h1|h4|d1)$"
 )
 
-# Narrated reading length budget. Raised from 280 (legacy one-sentence
-# « synthèse ») to give room for a 2-4 sentence present-tense paragraph that
-# synthesises trend, multi-TF alignment, near-price zones and volatility. The
-# field is not consumed by the Telegram footer (separate render contract), so a
-# longer paragraph here does not affect delivery surfaces.
-DESCRIPTION_MAX_LENGTH = 500
+# Narrated reading length budget. Sized to HOLD a complete present-tense
+# paragraph (2-4 sentences synthesising trend, multi-TF alignment, near-price
+# zones and volatility) so the narration is never cut short. History: 280
+# (legacy one-sentence « synthèse ») → 500 (multi-sentence) → 700, because a
+# full 4-sentence reading with a contrary-context clause could still overflow
+# 500 and get hard-truncated mid-word. This field is a DISPLAY-only surface,
+# NOT consumed by the Telegram footer (separate render contract), so the larger
+# ceiling costs nothing downstream. When a narration does exceed it, the cut is
+# made on a SENTENCE boundary (never mid-word) — see
+# `narrated_reading.truncate_at_sentence`.
+DESCRIPTION_MAX_LENGTH = 700
 
 
 # ---------------------------------------------------------------------------

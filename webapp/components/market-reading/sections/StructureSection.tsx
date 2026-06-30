@@ -1,3 +1,6 @@
+'use client';
+
+import { useCallback, useMemo, type ReactNode } from 'react';
 import {
   AccordionContent,
   AccordionItem,
@@ -6,6 +9,8 @@ import {
 import { cn } from '@/lib/utils';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import type { GlossaryKey } from '@/lib/glossary';
+import { useChartViewOptional } from '@/lib/chart/viewState';
+import { coerceViewActions } from '@/lib/chart/viewActions';
 import {
   formatBand,
   formatDirection,
@@ -16,7 +21,28 @@ import {
   formatRetestType,
   formatValidationStatus,
 } from '@/lib/market-reading/formatters';
-import type { MarketReadingStructure } from '@/types/market-reading';
+import type {
+  FairValueGap,
+  MarketReadingStructure,
+  OBImportance,
+  OrderBlock,
+} from '@/types/market-reading';
+import { ZoneList } from './ZoneList';
+
+// Importance / status weights driving the collapsed ordering (lower = surfaced
+// first). Display-only ranking — detection is untouched.
+const OB_IMPORTANCE_RANK: Record<OBImportance, number> = {
+  high: 0,
+  medium: 1,
+  low: 2,
+};
+// FVGs carry no importance field; their lifecycle status stands in for it so OB
+// and FVG get the same « importance puis proximité » treatment.
+const FVG_STATUS_RANK: Record<FairValueGap['status'], number> = {
+  active: 0,
+  partially_filled: 1,
+  filled: 2,
+};
 
 /**
  * Section "Structure" — renders the Smart Money Concept block factually:
@@ -26,12 +52,52 @@ import type { MarketReadingStructure } from '@/types/market-reading';
 export function StructureSection({
   structure,
   instrument,
+  closePrice,
 }: {
   structure: MarketReadingStructure;
   instrument: string;
+  /** Current close price — drives the proximity tie-break in the zone lists. */
+  closePrice?: number;
 }) {
   const { bos, choch, order_blocks, fair_value_gaps, retest_in_progress } =
     structure;
+
+  // Click-to-chart wiring (display/navigation only). We reuse the EXISTING chart
+  // view channel the M.I.A Agent drives: clicking a zone asks the chart to
+  // `focus_zone` (centre) + `highlight_zone` (emphasise) it by its REAL engine
+  // id. Optional provider — outside the /app workspace `applyActions` is a no-op,
+  // so the list stays readable with no chart wired in. Detection is never touched.
+  const { view: chartView, applyActions } = useChartViewOptional();
+
+  // The id verrou: the ONLY zones a focus/highlight may reference are the ones
+  // the engine emitted in THIS structure — identical to AppWorkspace's set.
+  // A click can never invent or move a zone.
+  const validZoneIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const ob of order_blocks) ids.add(ob.id);
+    for (const fvg of fair_value_gaps) ids.add(fvg.id);
+    return ids;
+  }, [order_blocks, fair_value_gaps]);
+
+  const selectZone = useCallback(
+    (zoneId: string) => {
+      // Re-validate through the same Couche-4 coercion (defence in depth): a
+      // focus/highlight on an unknown id is dropped rather than mis-applied.
+      const actions = coerceViewActions(
+        [
+          { action: 'focus_zone', params: { zone_id: zoneId } },
+          { action: 'highlight_zone', params: { zone_id: zoneId } },
+        ],
+        validZoneIds,
+      );
+      applyActions(actions);
+    },
+    [applyActions, validZoneIds],
+  );
+
+  // The selected entry mirrors the chart's highlighted zone (single source of
+  // truth) — the highlight persists as the selection until another is clicked.
+  const selectedZoneId = chartView.highlightZoneId;
 
   // Surfacing coherence (founder eval 2026-06-08): the engine emits `bos` only
   // on a FRESH break at the last close (by design — see market_reading_mappers
@@ -98,36 +164,56 @@ export function StructureSection({
                     : 'aucun changement récent'
               }
             />
-            <Row
-              label="Order Blocks"
-              termKey="order_block"
-              value={
-                order_blocks.length > 0
-                  ? order_blocks
-                      .map(
-                        (ob) =>
-                          `${formatBand(ob.level_low, ob.level_high, instrument)} · importance ${formatObImportance(ob.importance)} · ${formatObStatus(ob.status)}`,
-                      )
-                      .join(' | ')
-                  : 'aucun bloc significatif'
-              }
-              className="sm:col-span-2"
-            />
-            <Row
-              label="Fair Value Gaps"
-              termKey="fvg"
-              value={
-                fair_value_gaps.length > 0
-                  ? fair_value_gaps
-                      .map(
-                        (fvg) =>
-                          `${formatBand(fvg.level_low, fvg.level_high, instrument)} · ${formatFvgStatus(fvg.status)}`,
-                      )
-                      .join(' | ')
-                  : 'aucune zone détectée'
-              }
-              className="sm:col-span-2"
-            />
+            <ZoneRow label="Order Blocks" termKey="order_block">
+              {order_blocks.length > 0 ? (
+                <ZoneList<OrderBlock>
+                  zones={order_blocks}
+                  price={closePrice}
+                  noun="zone"
+                  importanceRank={(ob) => OB_IMPORTANCE_RANK[ob.importance]}
+                  band={(ob) => [ob.level_low, ob.level_high]}
+                  isActive={(ob) => ob.status === 'active'}
+                  dedupKey={(ob) =>
+                    `${ob.level_low}|${ob.level_high}|${ob.importance}|${ob.status}`
+                  }
+                  renderLabel={(ob) =>
+                    `${formatBand(ob.level_low, ob.level_high, instrument)} · importance ${formatObImportance(ob.importance)} · ${formatObStatus(ob.status)}`
+                  }
+                  idOf={(ob) => ob.id}
+                  onSelect={selectZone}
+                  selectedZoneId={selectedZoneId}
+                />
+              ) : (
+                <span className="text-sm font-medium text-foreground">
+                  aucun bloc significatif
+                </span>
+              )}
+            </ZoneRow>
+            <ZoneRow label="Fair Value Gaps" termKey="fvg">
+              {fair_value_gaps.length > 0 ? (
+                <ZoneList<FairValueGap>
+                  zones={fair_value_gaps}
+                  price={closePrice}
+                  noun="zone"
+                  importanceRank={(fvg) => FVG_STATUS_RANK[fvg.status]}
+                  band={(fvg) => [fvg.level_low, fvg.level_high]}
+                  isActive={(fvg) => fvg.status === 'active'}
+                  dedupKey={(fvg) =>
+                    `${fvg.level_low}|${fvg.level_high}|${fvg.status}`
+                  }
+                  renderLabel={(fvg) =>
+                    `${formatBand(fvg.level_low, fvg.level_high, instrument)} · ${formatFvgStatus(fvg.status)}`
+                  }
+                  idOf={(fvg) => fvg.id}
+                  onSelect={selectZone}
+                  selectedZoneId={selectedZoneId}
+                />
+              ) : (
+                <span className="text-sm font-medium text-foreground">
+                  aucune zone détectée
+                </span>
+              )}
+            </ZoneRow>
             <Row
               label="Retest en cours"
               termKey="retest"
@@ -167,6 +253,26 @@ function Row({
         {termKey ? <InfoTooltip termKey={termKey}>{label}</InfoTooltip> : label}
       </dt>
       <dd className="mt-1 text-sm font-medium text-foreground">{value}</dd>
+    </div>
+  );
+}
+
+/** Like `Row`, but the value is arbitrary content (the collapsible zone list). */
+function ZoneRow({
+  label,
+  termKey,
+  children,
+}: {
+  label: string;
+  termKey?: GlossaryKey;
+  children: ReactNode;
+}) {
+  return (
+    <div className="sm:col-span-2">
+      <dt className="text-xs uppercase tracking-wide text-muted-foreground">
+        {termKey ? <InfoTooltip termKey={termKey}>{label}</InfoTooltip> : label}
+      </dt>
+      <dd className="mt-1.5">{children}</dd>
     </div>
   );
 }

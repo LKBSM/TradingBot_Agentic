@@ -20,6 +20,13 @@ interface ChatTurn {
    * answer.
    */
   blockedReason?: string | null;
+  /**
+   * Display-only mirror: this turn carried validated chart view actions, so the
+   * workspace updated the chart render. Lets the bubble show a discreet "Vue
+   * mise à jour" confirmation. Does NOT drive view-control — `viewActionSignal`
+   * remains the single source the workspace consumes.
+   */
+  viewUpdated?: boolean;
 }
 
 /**
@@ -197,6 +204,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
             text,
             source: 'llm',
             blockedReason,
+            viewUpdated: (viewActions ?? []).length > 0,
           },
         ]);
         // Surface display-only chart actions (raw) for the workspace to validate

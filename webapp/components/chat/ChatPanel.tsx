@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2, MessageCircle, RotateCcw } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,12 +10,14 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
+import { AgentAvatar } from './AgentAvatar';
 import { ChatInput } from './ChatInput';
 import { ChatMessage } from './ChatMessage';
 import { useChat } from './ChatProvider';
+// Keep main's anchor-scroll UX (anti scroll-to-bottom) inside the redesign's UI.
 import { useChatAnchorScroll } from './useChatAnchorScroll';
-import { MiaAgentLogo } from './MiaAgentLogo';
 import { SuggestedQuestions } from './SuggestedQuestions';
+import { ThinkingIndicator } from './ThinkingIndicator';
 import { FALLBACK_SCRIPT, getChatbotScript } from '@/lib/chatbot';
 import {
   formatInstrument,
@@ -81,13 +83,17 @@ export function ChatPanel() {
         className="flex w-full flex-col gap-0 p-0 sm:max-w-md md:max-w-lg"
         aria-describedby="chat-panel-description"
       >
-        <SheetHeader className="border-b px-5 py-4 text-left">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
-              <MiaAgentLogo className="h-5 w-5" />
-            </div>
-            <div className="space-y-0.5">
-              <SheetTitle className="text-base">M.I.A Agent</SheetTitle>
+        <SheetHeader className="space-y-0 border-b px-5 py-4 text-left">
+          <div className="flex items-center gap-3">
+            <AgentAvatar size="md" />
+            <div className="min-w-0 flex-1 space-y-0.5">
+              <SheetTitle className="flex items-center gap-1.5 text-base">
+                M.I.A Agent
+                <span
+                  className="h-1.5 w-1.5 rounded-full bg-[hsl(var(--sentinel-bull))]"
+                  aria-hidden
+                />
+              </SheetTitle>
               <SheetDescription
                 id="chat-panel-description"
                 className="text-xs"
@@ -96,13 +102,16 @@ export function ChatPanel() {
                   ? `${formatInstrument(activeSignal.instrument)} · ${formatTimeframe(activeSignal.timeframe)} · contexte injecté`
                   : 'Sélectionne une lecture pour ouvrir le contexte.'}
               </SheetDescription>
+              <p className="text-[10.5px] italic text-muted-foreground/85">
+                Analyse pédagogique — aucun signal ni conseil.
+              </p>
             </div>
           </div>
         </SheetHeader>
 
         <div
           ref={scrollRef}
-          className="flex-1 space-y-4 overflow-y-auto px-5 py-4"
+          className="flex flex-1 flex-col gap-4 overflow-y-auto px-5 py-4"
         >
           <IntroBubble script={script} apiAvailable={apiAvailable} />
 
@@ -112,19 +121,11 @@ export function ChatPanel() {
               role={t.role}
               text={t.text}
               blockedReason={t.blockedReason}
+              viewUpdated={t.viewUpdated}
             />
           ))}
 
-          {isLoading && (
-            <div
-              className="flex items-center gap-2 px-1 text-sm text-muted-foreground"
-              role="status"
-              aria-live="polite"
-            >
-              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-              M.I.A Agent réfléchit…
-            </div>
-          )}
+          {isLoading && <ThinkingIndicator />}
 
           {turns.length > 0 && !isLoading && (
             <Button
@@ -150,7 +151,7 @@ export function ChatPanel() {
           {/* LEGAL-PENDING: standalone compliance line at the bottom of the
               chat panel — aligned with legal terminal wording on
               educational-use posture (UE 2024/2811 + MiFID II 03/2026). */}
-          <p className="text-[11px] italic text-muted-foreground">
+          <p className="text-center text-[10.5px] italic text-muted-foreground/70">
             M.I.A Agent répond à des questions sur la lecture algorithmique.
             Il ne donne ni signal de trading, ni recommandation personnalisée.
           </p>
@@ -168,29 +169,33 @@ function IntroBubble({
   apiAvailable: boolean | 'unknown';
 }) {
   return (
-    <div className="rounded-2xl rounded-tl-sm bg-muted px-3.5 py-2.5 text-sm leading-relaxed">
-      <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-        <MessageCircle className="h-3 w-3" aria-hidden />
-        M.I.A Agent · {script.instrument_label}
-      </p>
-      <p className="mt-2">
-        Pose-moi une question sur cette lecture. Je peux t&apos;expliquer
-        ce qu&apos;elle décrit, vulgariser un terme technique, ou
-        contextualiser un événement à venir.
-      </p>
-      <p className="mt-2 text-xs italic text-muted-foreground">
-        {apiAvailable === false ? (
-          <>
-            Mode scripted : utilise les suggestions ci-dessous. La saisie
-            libre nécessite la clef Anthropic côté serveur.
-          </>
-        ) : (
-          <>
-            Je ne donne ni signal d&apos;achat ou de vente, ni conseil en
-            investissement.
-          </>
-        )}
-      </p>
+    <div className="chat-msg-in flex w-full gap-2.5">
+      <AgentAvatar size="sm" className="mt-0.5" />
+      <div className="flex min-w-0 flex-col gap-1">
+        <span className="px-0.5 text-xs font-medium text-muted-foreground">
+          M.I.A Agent · {script.instrument_label}
+        </span>
+        <div className="max-w-[88%] rounded-2xl rounded-tl-sm border border-border bg-muted/60 px-3.5 py-2.5 text-sm leading-relaxed">
+          <p>
+            Pose-moi une question sur cette lecture. Je peux t&apos;expliquer
+            ce qu&apos;elle décrit, vulgariser un terme technique, ou
+            contextualiser un événement à venir.
+          </p>
+          <p className="mt-2 text-xs italic text-muted-foreground">
+            {apiAvailable === false ? (
+              <>
+                Mode scripted : utilise les suggestions ci-dessous. La saisie
+                libre nécessite la clef Anthropic côté serveur.
+              </>
+            ) : (
+              <>
+                Je ne donne ni signal d&apos;achat ou de vente, ni conseil en
+                investissement.
+              </>
+            )}
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
