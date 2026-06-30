@@ -18,6 +18,7 @@ import { Maximize2, Minus, Plus } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 import {
+  applyZoneVisibility,
   buildLiveOverlay,
   buildZoneModels,
   curateZones,
@@ -87,12 +88,16 @@ export interface ReadingChartProps {
    *   · filter          — which DETECTED zones are shown (active / size / proximity).
    *   · focus           — a one-shot framing command (zone / price / fit).
    *   · highlightZoneId  — a detected zone to emphasise visually.
+   *   · hiddenZoneIds    — detected zones removed from the display by id (reversible).
+   *   · isolatedZoneIds  — when set, show ONLY these detected zones (null = all).
    * All optional; omitting them yields the exact pre-existing behaviour.
    */
   layers?: ChartLayers;
   filter?: ChartFilter;
   focus?: FocusCommand | null;
   highlightZoneId?: string | null;
+  hiddenZoneIds?: readonly string[];
+  isolatedZoneIds?: readonly string[] | null;
   className?: string;
 }
 
@@ -279,6 +284,8 @@ export function ReadingChart({
   filter = DEFAULT_CHART_VIEW.filter,
   focus = null,
   highlightZoneId = null,
+  hiddenZoneIds = DEFAULT_CHART_VIEW.hiddenZoneIds,
+  isolatedZoneIds = DEFAULT_CHART_VIEW.isolatedZoneIds,
   className,
 }: ReadingChartProps) {
   const { resolvedTheme } = useTheme();
@@ -341,7 +348,10 @@ export function ReadingChart({
       proximityPct: fProximityPct,
       minSizePct: fMinSizePct,
     });
-    const { active, tested } = curateZones(filtered, price);
+    // Per-id masking (hide_zones / isolate_zones) — a display choice over the
+    // detected set; the zones are never edited, only their boxes hidden.
+    const visible = applyZoneVisibility(filtered, hiddenZoneIds, isolatedZoneIds);
+    const { active, tested } = curateZones(visible, price);
     return [...tested, ...active];
   }, [
     structure,
@@ -352,6 +362,8 @@ export function ReadingChart({
     fProximityOnly,
     fProximityPct,
     fMinSizePct,
+    hiddenZoneIds,
+    isolatedZoneIds,
   ]);
 
   // ── Create the chart once; recreate only if the theme changes. ──────────────

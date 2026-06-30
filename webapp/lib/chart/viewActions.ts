@@ -51,6 +51,9 @@ export type ViewAction =
     }
   | { action: 'focus_zone'; params: { zone_id: string } }
   | { action: 'highlight_zone'; params: { zone_id: string } }
+  | { action: 'hide_zones'; params: { zone_ids: string[] } }
+  | { action: 'isolate_zones'; params: { zone_ids: string[] } }
+  | { action: 'show_zones'; params: { zone_ids?: string[] } }
   | { action: 'focus_price'; params: Record<string, never> }
   | { action: 'fit_chart'; params: Record<string, never> }
   | { action: 'reset_view'; params: Record<string, never> }
@@ -72,6 +75,30 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
 
 function hasGeometryKey(params: Record<string, unknown>): boolean {
   return Object.keys(params).some((k) => GEOMETRY_KEYS.has(k));
+}
+
+/**
+ * Validate a list of zone ids against the on-screen detected set (same id lock as
+ * focus/highlight, generalised). Returns a de-duplicated (order-preserving) list,
+ * or null if the input is not an array or any id is missing/blank/unknown — an
+ * invented id rejects the whole action so masking it hides nothing.
+ */
+function coerceZoneIdList(
+  raw: unknown,
+  validZoneIds: ReadonlySet<string>,
+): string[] | null {
+  if (!Array.isArray(raw)) return null;
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const id of raw) {
+    if (typeof id !== 'string' || !id.trim()) return null;
+    if (!validZoneIds.has(id)) return null;
+    if (!seen.has(id)) {
+      seen.add(id);
+      out.push(id);
+    }
+  }
+  return out;
 }
 
 /**
@@ -124,6 +151,24 @@ export function coerceViewAction(
       if (typeof zoneId !== 'string' || !zoneId.trim()) return null;
       if (!validZoneIds.has(zoneId)) return null;
       return { action, params: { zone_id: zoneId } };
+    }
+    case 'hide_zones':
+    case 'isolate_zones': {
+      const ids = coerceZoneIdList(params.zone_ids, validZoneIds);
+      // A single invented id (or an empty list) drops the whole action — masking
+      // a non-existent zone hides nothing, exactly like focus on an invented id.
+      if (ids === null || ids.length === 0) return null;
+      return { action, params: { zone_ids: ids } };
+    }
+    case 'show_zones': {
+      // No ids → restore every masked zone. An explicit list is validated the
+      // same way (a stale id can't slip through); an empty list also restores.
+      if (params.zone_ids === undefined || params.zone_ids === null) {
+        return { action, params: {} };
+      }
+      const ids = coerceZoneIdList(params.zone_ids, validZoneIds);
+      if (ids === null) return null;
+      return { action, params: { zone_ids: ids } };
     }
     case 'focus_price':
     case 'fit_chart':
@@ -194,6 +239,18 @@ export interface ChartViewState {
   filter: ChartFilter;
   focus: FocusCommand | null;
   highlightZoneId: string | null;
+  /**
+   * Detected zones explicitly REMOVED from the display by id (`hide_zones`).
+   * Reversible via `show_zones` / `reset_view`. The zones still exist in the
+   * engine — this is display state only, never a detection mutation.
+   */
+  hiddenZoneIds: string[];
+  /**
+   * When non-null, ONLY these detected zones are displayed (`isolate_zones`);
+   * every other zone is hidden. `null` means "no isolation" (show all). Cleared
+   * by `show_zones` (no ids) / `reset_view`.
+   */
+  isolatedZoneIds: string[] | null;
 }
 
 export const DEFAULT_CHART_VIEW: ChartViewState = {
@@ -201,6 +258,8 @@ export const DEFAULT_CHART_VIEW: ChartViewState = {
   filter: { activeOnly: false, proximityOnly: false, proximityPct: 0.5, minSizePct: null },
   focus: null,
   highlightZoneId: null,
+  hiddenZoneIds: [],
+  isolatedZoneIds: null,
 };
 
 /**
@@ -241,6 +300,30 @@ export function applyChartViewAction(
       return { ...state, focus: { kind: 'fit', nonce: nextNonce(state) } };
     case 'highlight_zone':
       return { ...state, highlightZoneId: action.params.zone_id };
+    case 'hide_zones': {
+      // Union the targeted ids into the hidden set (display-only, reversible).
+      const hidden = new Set(state.hiddenZoneIds);
+      for (const id of action.params.zone_ids) hidden.add(id);
+      return { ...state, hiddenZoneIds: [...hidden] };
+    }
+    case 'isolate_zones':
+      // Show ONLY these zones; replaces any prior isolation.
+      return { ...state, isolatedZoneIds: [...action.params.zone_ids] };
+    case 'show_zones': {
+      const ids = action.params.zone_ids;
+      if (!ids || ids.length === 0) {
+        // Restore all: drop every mask and any isolation.
+        return { ...state, hiddenZoneIds: [], isolatedZoneIds: null };
+      }
+      // Un-hide the named ids; if an isolation is active, add them back into it.
+      const restore = new Set(ids);
+      const hiddenZoneIds = state.hiddenZoneIds.filter((id) => !restore.has(id));
+      const isolatedZoneIds =
+        state.isolatedZoneIds === null
+          ? null
+          : [...new Set([...state.isolatedZoneIds, ...ids])];
+      return { ...state, hiddenZoneIds, isolatedZoneIds };
+    }
     case 'reset_view':
       return { ...DEFAULT_CHART_VIEW };
     case 'set_instrument_timeframe':

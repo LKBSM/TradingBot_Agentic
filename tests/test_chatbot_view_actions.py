@@ -17,6 +17,7 @@ from src.intelligence.chatbot.constants import VIEW_ACTION_REFUSAL_TEMPLATE
 from src.intelligence.chatbot.signal_summary_provider import SignalSummaryProvider
 from src.intelligence.chatbot.view_action_filter import ViewActionValidator
 from src.intelligence.market_reading_schema import (
+    FairValueGap,
     MarketReading,
     MarketReadingConditions,
     MarketReadingEvents,
@@ -114,6 +115,93 @@ def test_highlight_zone_requires_known_id() -> None:
     res = v().validate({"action": "highlight_zone", "params": {"zone_id": "x"}}, known_zone_ids=set())
     assert not res.valid
     assert res.reason == "unknown_zone_id"
+
+
+# ---- hide / isolate / show by id (display-only masking, reversible) --------- #
+
+
+def test_hide_zones_requires_known_ids() -> None:
+    known = {"ob_1", "fvg_2"}
+    ok = v().validate(
+        {"action": "hide_zones", "params": {"zone_ids": ["ob_1", "fvg_2"]}},
+        known_zone_ids=known,
+    )
+    assert ok.valid
+    assert ok.action == {"action": "hide_zones", "params": {"zone_ids": ["ob_1", "fvg_2"]}}
+
+
+def test_hide_zones_rejects_any_invented_id() -> None:
+    # « masque l'OB à 4160 » when no real OB matches → one invented id rejects the
+    # whole action and NOTHING is hidden.
+    res = v().validate(
+        {"action": "hide_zones", "params": {"zone_ids": ["ob_1", "ob_at_4160"]}},
+        known_zone_ids={"ob_1"},
+    )
+    assert not res.valid
+    assert res.reason == "unknown_zone_id"
+
+
+def test_hide_zones_dedupes_ids() -> None:
+    res = v().validate(
+        {"action": "hide_zones", "params": {"zone_ids": ["ob_1", "ob_1"]}},
+        known_zone_ids={"ob_1"},
+    )
+    assert res.valid
+    assert res.action["params"]["zone_ids"] == ["ob_1"]
+
+
+def test_hide_zones_empty_list_rejected() -> None:
+    res = v().validate({"action": "hide_zones", "params": {"zone_ids": []}}, known_zone_ids={"ob_1"})
+    assert not res.valid
+    assert res.reason == "empty_zone_ids"
+
+
+def test_hide_zones_non_list_rejected() -> None:
+    res = v().validate({"action": "hide_zones", "params": {"zone_ids": "ob_1"}}, known_zone_ids={"ob_1"})
+    assert not res.valid
+    assert res.reason == "bad_zone_ids"
+
+
+def test_isolate_zones_requires_known_ids() -> None:
+    ok = v().validate(
+        {"action": "isolate_zones", "params": {"zone_ids": ["ob_1"]}}, known_zone_ids={"ob_1"}
+    )
+    assert ok.valid
+    invented = v().validate(
+        {"action": "isolate_zones", "params": {"zone_ids": ["nope"]}}, known_zone_ids={"ob_1"}
+    )
+    assert not invented.valid and invented.reason == "unknown_zone_id"
+
+
+def test_show_zones_no_ids_restores_all() -> None:
+    # show_zones with no ids = restore everything; no id lock needed.
+    res = v().validate({"action": "show_zones", "params": {}}, known_zone_ids=set())
+    assert res.valid
+    assert res.action == {"action": "show_zones", "params": {}}
+
+
+def test_show_zones_with_ids_validates_them() -> None:
+    ok = v().validate({"action": "show_zones", "params": {"zone_ids": ["ob_1"]}}, known_zone_ids={"ob_1"})
+    assert ok.valid and ok.action["params"]["zone_ids"] == ["ob_1"]
+    bad = v().validate({"action": "show_zones", "params": {"zone_ids": ["ghost"]}}, known_zone_ids={"ob_1"})
+    assert not bad.valid and bad.reason == "unknown_zone_id"
+
+
+def test_show_zones_empty_list_allowed_as_restore() -> None:
+    res = v().validate({"action": "show_zones", "params": {"zone_ids": []}}, known_zone_ids=set())
+    assert res.valid
+    assert res.action["params"]["zone_ids"] == []
+
+
+def test_mask_actions_reject_geometry_param() -> None:
+    # The hard geometry guard still applies — no coordinate may ride along.
+    for action in ("hide_zones", "isolate_zones"):
+        res = v().validate(
+            {"action": action, "params": {"zone_ids": ["ob_1"], "price": 4160}},
+            known_zone_ids={"ob_1"},
+        )
+        assert not res.valid, action
+        assert res.reason == "geometry_param_forbidden"
 
 
 # ---- The inviolable line: no create/move/resize, no geometry ---------------- #
@@ -261,3 +349,164 @@ def test_detection_is_never_mutated_by_view_action() -> None:
     bot.chat("Mets en évidence l'OB")
     # A fresh generation yields the SAME structure — nothing was written back.
     assert assembler.get_or_generate("XAUUSD", "M15").model_dump(mode="json")["structure"] == reference["structure"]
+
+
+def test_hide_real_zone_by_id_after_reading_surfaces() -> None:
+    # The model reads the combo (harvesting the OB id), THEN hides that real zone.
+    r1 = StubResponse([ToolUseBlock("get_market_reading", {"instrument": "XAUUSD", "timeframe": "M15"}, id="t1")], "tool_use")
+    r2 = StubResponse([ToolUseBlock("apply_chart_view", {"action": "hide_zones", "params": {"zone_ids": ["ob_1"]}}, id="t2")], "tool_use")
+    r3 = StubResponse([TextBlock("J'ai masqué cet order block.")], "end_turn")
+    bot, _ = _make_bot([r1, r2, r3], _ReadingAssembler("ob_1"))
+    out = bot.chat("Masque l'OB à 2378")
+    assert out.view_actions == [{"action": "hide_zones", "params": {"zone_ids": ["ob_1"]}}]
+    assert out.blocked_reason is None
+
+
+def test_hide_invented_zone_is_rejected_and_nothing_hidden() -> None:
+    # « masque l'OB à 4160 » with no matching real zone → invented id → rejected,
+    # nothing recorded; the on-brand refusal is handed back to the model.
+    r1 = StubResponse([ToolUseBlock("get_market_reading", {"instrument": "XAUUSD", "timeframe": "M15"}, id="t1")], "tool_use")
+    r2 = StubResponse([ToolUseBlock("apply_chart_view", {"action": "hide_zones", "params": {"zone_ids": ["ob_at_4160"]}}, id="t2")], "tool_use")
+    r3 = StubResponse([TextBlock(VIEW_ACTION_REFUSAL_TEMPLATE)], "end_turn")
+    bot, client = _make_bot([r1, r2, r3], _ReadingAssembler("ob_1"))
+    out = bot.chat("Masque l'OB à 4160")
+    assert out.view_actions == []  # invented zone never recorded
+    tool_result_msg = client.calls[2]["messages"][-1]
+    assert VIEW_ACTION_REFUSAL_TEMPLATE in tool_result_msg["content"][0]["content"]
+
+
+# ---- Group resolution by factual state (« masque les FVG touchés ») --------- #
+
+
+def _fvg(fvg_id: str, status: str) -> FairValueGap:
+    return FairValueGap(
+        id=fvg_id,
+        level_high=2380.0,
+        level_low=2378.0,
+        status=status,  # type: ignore[arg-type]
+        created_at=datetime(2026, 6, 5, 12, 0, tzinfo=timezone.utc),
+        tested=status != "active",
+    )
+
+
+def _reading_with_fvgs(fvgs: list[FairValueGap]) -> MarketReading:
+    return MarketReading(
+        header=MarketReadingHeader(
+            instrument="XAUUSD",
+            timeframe="M15",
+            candle_close_ts=datetime(2026, 6, 5, 14, 0, tzinfo=timezone.utc),
+            close_price=2378.45,
+        ),
+        structure=MarketReadingStructure(fair_value_gaps=fvgs),
+        regime=MarketReadingRegime(
+            trend="bullish",
+            volatility_observed="elevated",
+            market_phase="expansion",
+            mtf_confluence={},
+        ),
+        events=MarketReadingEvents(),
+        conditions=MarketReadingConditions(
+            tags=[], description="desc", description_source="template_fallback"
+        ),
+    )
+
+
+class _FvgAssembler:
+    """Assembler returning a reading carrying several FVGs of mixed status."""
+
+    def __init__(self, fvgs: list[FairValueGap]) -> None:
+        self._fvgs = fvgs
+
+    def get_or_generate(self, instrument: str, timeframe: str) -> MarketReading:
+        return _reading_with_fvgs(list(self._fvgs))
+
+
+def test_reading_exposes_per_zone_status_for_group_resolution() -> None:
+    # The group criterion (« les FVG touchés ») is resolvable ONLY because each
+    # zone in the reading carries both an id and a status. Guard that contract.
+    reading = _reading_with_fvgs(
+        [_fvg("fvg_a", "active"), _fvg("fvg_b", "partially_filled")]
+    )
+    dumped = reading.model_dump(mode="json")["structure"]["fair_value_gaps"]
+    assert {z["id"]: z["status"] for z in dumped} == {
+        "fvg_a": "active",
+        "fvg_b": "partially_filled",
+    }
+
+
+def test_hide_touched_fvg_group_targets_the_right_ids() -> None:
+    # « masque les FVG touchés » : the model reads the combo (3 FVGs, 2 of them
+    # partially_filled = touched), resolves the GROUP to the two touched ids, and
+    # hides them in a SINGLE multi-id call. The untouched/active FVG stays.
+    fvgs = [
+        _fvg("fvg_active", "active"),
+        _fvg("fvg_touch1", "partially_filled"),
+        _fvg("fvg_touch2", "partially_filled"),
+    ]
+    r1 = StubResponse(
+        [ToolUseBlock("get_market_reading", {"instrument": "XAUUSD", "timeframe": "M15"}, id="t1")],
+        "tool_use",
+    )
+    r2 = StubResponse(
+        [
+            ToolUseBlock(
+                "apply_chart_view",
+                {"action": "hide_zones", "params": {"zone_ids": ["fvg_touch1", "fvg_touch2"]}},
+                id="t2",
+            )
+        ],
+        "tool_use",
+    )
+    r3 = StubResponse([TextBlock("J'ai masqué les FVG touchés.")], "end_turn")
+    bot, _ = _make_bot([r1, r2, r3], _FvgAssembler(fvgs))
+    out = bot.chat("Masque les FVG touchés")
+    assert out.blocked_reason is None
+    assert out.view_actions == [
+        {"action": "hide_zones", "params": {"zone_ids": ["fvg_touch1", "fvg_touch2"]}}
+    ]
+
+
+def test_group_with_one_invented_id_rejects_whole_action() -> None:
+    # If the model's resolved group contains a single id the engine did not emit
+    # (a hallucinated FVG), the WHOLE hide is rejected — nothing is masked.
+    fvgs = [_fvg("fvg_touch1", "partially_filled")]
+    r1 = StubResponse(
+        [ToolUseBlock("get_market_reading", {"instrument": "XAUUSD", "timeframe": "M15"}, id="t1")],
+        "tool_use",
+    )
+    r2 = StubResponse(
+        [
+            ToolUseBlock(
+                "apply_chart_view",
+                {"action": "hide_zones", "params": {"zone_ids": ["fvg_touch1", "fvg_ghost"]}},
+                id="t2",
+            )
+        ],
+        "tool_use",
+    )
+    r3 = StubResponse([TextBlock(VIEW_ACTION_REFUSAL_TEMPLATE)], "end_turn")
+    bot, _ = _make_bot([r1, r2, r3], _FvgAssembler(fvgs))
+    out = bot.chat("Masque les FVG touchés")
+    assert out.view_actions == []  # one invented id → nothing hidden
+
+
+def test_isolate_then_show_restore_roundtrip() -> None:
+    # isolate a real zone, then restore — both are display-only, reversible. Both
+    # view actions ride in ONE assistant turn (after the reading) so the tool-turn
+    # budget isn't exhausted.
+    r1 = StubResponse([ToolUseBlock("get_market_reading", {"instrument": "XAUUSD", "timeframe": "M15"}, id="t1")], "tool_use")
+    r2 = StubResponse(
+        [
+            ToolUseBlock("apply_chart_view", {"action": "isolate_zones", "params": {"zone_ids": ["ob_1"]}}, id="t2"),
+            ToolUseBlock("apply_chart_view", {"action": "show_zones", "params": {}}, id="t3"),
+        ],
+        "tool_use",
+    )
+    r3 = StubResponse([TextBlock("J'ai isolé puis tout réaffiché.")], "end_turn")
+    bot, _ = _make_bot([r1, r2, r3], _ReadingAssembler("ob_1"))
+    out = bot.chat("Isole l'OB puis réaffiche tout")
+    assert out.view_actions == [
+        {"action": "isolate_zones", "params": {"zone_ids": ["ob_1"]}},
+        {"action": "show_zones", "params": {}},
+    ]
+    assert out.blocked_reason is None
