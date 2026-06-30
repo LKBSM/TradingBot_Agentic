@@ -16,6 +16,12 @@ MarketReadingAssembler in Chantier 2):
     ``get_active_combinations(since=...)``, so the tick stops regenerating it.
     No explicit teardown is needed — the access window drives everything.
 
+An optional ``always_warm`` set is unioned into every tick on top of the
+access-driven active set: those combinations (e.g. the fixed Conditions
+Scanner perimeter) are regenerated whenever a new candle closes, even with
+zero recent user access, so the scanner never opens onto a missing/aged
+reading.
+
 The tick is exception-isolated per combination AND globally: one failing
 combination never aborts the others, and any tick-level error is swallowed
 (logged) so the BackgroundScheduler thread never dies.
@@ -29,7 +35,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Iterable, Optional, Tuple
 
 from src.intelligence.market_reading_assembler import expected_last_candle_close
 
@@ -65,6 +71,7 @@ class MarketReadingScheduler:
         candles_store: Any = None,
         tick_interval_seconds: int = DEFAULT_TICK_INTERVAL_SECONDS,
         auto_stop_hours: int = DEFAULT_AUTO_STOP_HOURS,
+        always_warm: Optional[Iterable[Tuple[str, str]]] = None,
         clock: Callable[[], datetime] = lambda: datetime.now(timezone.utc),
     ) -> None:
         from apscheduler.schedulers.background import BackgroundScheduler
@@ -74,6 +81,21 @@ class MarketReadingScheduler:
         self._candles_store = candles_store
         self._tick_interval_seconds = tick_interval_seconds
         self._auto_stop_hours = auto_stop_hours
+        # Combinations kept warm regardless of recent user access — e.g. the
+        # fixed perimeter the Conditions Scanner reads. Without this, a combo
+        # nobody opened in the last ``auto_stop_hours`` falls out of the active
+        # set and its reading goes stale (or never gets generated at all), so
+        # the scanner would surface ``no_reading_yet`` / aged readings on a cold
+        # open. Normalised to a de-duplicated, order-preserving tuple of
+        # (instrument, timeframe) pairs.
+        _seen: set = set()
+        _warm: list = []
+        for i, tf in (always_warm or ()):
+            key = (str(i), str(tf))
+            if key not in _seen:
+                _seen.add(key)
+                _warm.append(key)
+        self._always_warm: Tuple[Tuple[str, str], ...] = tuple(_warm)
         self._clock = clock
         self._scheduler = BackgroundScheduler()
 
@@ -128,9 +150,26 @@ class MarketReadingScheduler:
             active = self._readings_store.get_active_combinations(since=since)
         except Exception:
             logger.exception("scheduler tick: failed to read active combinations")
-            return 0
+            # The always-warm set must survive a failed active-set read, so the
+            # scanner perimeter keeps regenerating even then.
+            active = []
 
-        for instrument, timeframe in active:
+        # Union the access-driven active set with the always-warm perimeter,
+        # preserving the active order first (deterministic), then appending any
+        # always-warm combo not already queued. A combo in both runs once.
+        seen: set = set()
+        combos: list = []
+        for i, tf in active:
+            key = (str(i), str(tf))
+            if key not in seen:
+                seen.add(key)
+                combos.append(key)
+        for key in self._always_warm:
+            if key not in seen:
+                seen.add(key)
+                combos.append(key)
+
+        for instrument, timeframe in combos:
             try:
                 if self._needs_regeneration(instrument, timeframe, now):
                     self._assembler.get_or_generate(instrument, timeframe)

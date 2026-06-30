@@ -38,7 +38,10 @@ function conditionParam(c: ScanCondition): string {
 
 /**
  * Results view. A neutral, descriptive list — never a ranking.
- *  · "Conditions présentes" = combos that satisfy the full AND/OR logic.
+ *  · "Conditions présentes maintenant" = combos satisfying the full AND/OR
+ *    logic ON A CURRENT reading (fresh/aging). A combo that satisfies it only
+ *    on a STALE reading is held back into its own "lecture plus ancienne"
+ *    section — we never assert an aged reading as "présent maintenant".
  *  · "Correspondances partielles" = combos meeting ≥1 condition (transparency).
  *  · Combos meeting nothing, and combos without a reading yet, are listed
  *    plainly so coverage is honest (no silent truncation).
@@ -62,7 +65,13 @@ export function ScanResults({
   autoRefreshEnabled: boolean;
   onToggleAutoRefresh(next: boolean): void;
 }) {
-  const full = response.matches.filter((m) => m.matched);
+  // A full match on a STALE reading (server-reported freshness) is held back
+  // from the "maintenant" section so we never assert an aged reading as present.
+  // Auto-refresh self-heals most staleness; this is the honest fallback when a
+  // reading hasn't been regenerated yet (cold open, weekend, quiet market).
+  const isStale = (m: (typeof response.matches)[number]) => m.freshness === 'stale';
+  const full = response.matches.filter((m) => m.matched && !isStale(m));
+  const staleFull = response.matches.filter((m) => m.matched && isStale(m));
   const partial = response.matches.filter((m) => !m.matched && m.met_count > 0);
   const none = response.matches.filter((m) => m.met_count === 0);
 
@@ -109,14 +118,16 @@ export function ScanResults({
         </div>
       </header>
 
-      {/* Full matches */}
+      {/* Full matches — on current readings only */}
       <section className="space-y-3">
         {full.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-border/70 p-4 text-sm text-muted-foreground">
-            Aucun marché ne réunit actuellement{' '}
-            {config.logic === 'AND' ? 'toutes tes conditions' : 'au moins une de tes conditions'}.
-            Les correspondances partielles ci-dessous montrent ce qui est présent ailleurs.
-          </p>
+          staleFull.length === 0 && (
+            <p className="rounded-lg border border-dashed border-border/70 p-4 text-sm text-muted-foreground">
+              Aucun marché ne réunit actuellement{' '}
+              {config.logic === 'AND' ? 'toutes tes conditions' : 'au moins une de tes conditions'}.
+              Les correspondances partielles ci-dessous montrent ce qui est présent ailleurs.
+            </p>
+          )
         ) : (
           <div className="flex flex-col gap-4">
             {full.map((m) => (
@@ -125,6 +136,26 @@ export function ScanResults({
           </div>
         )}
       </section>
+
+      {/* Full matches on a STALE reading — held back from "maintenant" */}
+      {staleFull.length > 0 && (
+        <section className="space-y-2">
+          <h2 className="text-sm font-semibold text-foreground">
+            Sur une lecture plus ancienne — à rafraîchir
+          </h2>
+          <p className="text-xs text-muted-foreground">
+            Ces marchés réunissent tes conditions, mais sur une lecture qui date
+            (week-end ou marché calme). Le scan se rafraîchit à la prochaine
+            clôture de bougie, ou relance-le pour la mettre à jour avant de
+            t&apos;y fier.
+          </p>
+          <div className="flex flex-col gap-4 pt-1">
+            {staleFull.map((m) => (
+              <ComboCard key={`${m.instrument}:${m.timeframe}`} match={m} locale={locale} now={now} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Partial matches — transparency */}
       {partial.length > 0 && (

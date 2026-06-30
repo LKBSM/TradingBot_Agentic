@@ -116,7 +116,18 @@ export interface ComboMatch {
   conditions_met: ConditionOutcome[];
   conditions_unmet: ConditionOutcome[];
   context: ComboContext;
+  /**
+   * Reading age expressed in candles behind the latest expected close, and its
+   * tier. A healthy combo (kept warm by the 60s scheduler) sits at fresh/0–1.
+   * Optional for backward compatibility with older payloads — absent ⇒ treat
+   * as fresh (never invent staleness the backend did not report).
+   */
+  bars_behind?: number;
+  freshness?: Freshness;
 }
+
+/** Reading-freshness tier (see ComboMatch.freshness). */
+export type Freshness = 'fresh' | 'aging' | 'stale';
 
 export interface UnavailableCombo {
   instrument: string;

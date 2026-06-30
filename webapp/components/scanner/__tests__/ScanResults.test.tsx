@@ -99,3 +99,68 @@ describe('ScanResults — freshness & refresh', () => {
     expect(onToggleAutoRefresh).toHaveBeenCalledWith(false);
   });
 });
+
+/** A full match with an explicit freshness. */
+function matchWith(
+  instrument: string,
+  timeframe: string,
+  freshness: 'fresh' | 'aging' | 'stale',
+): ConditionsScanResponse['matches'][number] {
+  return {
+    instrument,
+    timeframe,
+    candle_close_ts: new Date(Date.now() - 3 * 60_000).toISOString(),
+    close_price: 2400,
+    matched: true,
+    met_count: 1,
+    total: 1,
+    freshness,
+    bars_behind: freshness === 'stale' ? 8 : 0,
+    conditions_met: [
+      { type: 'trend_is', label: 'Tendance haussière', met: true, detail: 'Tendance haussière.' },
+    ],
+    conditions_unmet: [],
+    context: {
+      trend: 'bullish',
+      market_phase: 'trend',
+      volatility_observed: 'normal',
+      mtf_confluence: { h4: 'bullish', h1: 'bullish', m15: 'bullish' },
+      bos: null,
+      choch: null,
+      active_order_blocks: 0,
+      active_fair_value_gaps: 0,
+      news_upcoming: [],
+    },
+  };
+}
+
+describe('ScanResults — freshness bucketing', () => {
+  it('keeps a fresh full match under "présentes maintenant", no older-reading section', () => {
+    renderResults({
+      response: makeResponse({ matches: [matchWith('XAUUSD', 'M15', 'fresh')] }),
+    });
+    expect(screen.getByText('Conditions présentes maintenant')).toBeInTheDocument();
+    expect(screen.queryByText(/lecture plus ancienne/)).not.toBeInTheDocument();
+  });
+
+  it('holds a STALE full match in its own "lecture plus ancienne" section', () => {
+    renderResults({
+      response: makeResponse({ matches: [matchWith('XAUUSD', 'M15', 'stale')] }),
+    });
+    expect(screen.getByText(/Sur une lecture plus ancienne — à rafraîchir/)).toBeInTheDocument();
+    // The combo DOES meet the conditions (just on an aged reading), so the
+    // "aucun marché ne réunit" empty note must NOT appear.
+    expect(screen.queryByText(/Aucun marché ne réunit/)).not.toBeInTheDocument();
+  });
+
+  it('separates a fresh and a stale full match into the two sections', () => {
+    renderResults({
+      response: makeResponse({
+        scanned: 2,
+        matches: [matchWith('XAUUSD', 'M15', 'fresh'), matchWith('EURUSD', 'H4', 'stale')],
+      }),
+    });
+    expect(screen.getByText('Conditions présentes maintenant')).toBeInTheDocument();
+    expect(screen.getByText(/Sur une lecture plus ancienne — à rafraîchir/)).toBeInTheDocument();
+  });
+});
