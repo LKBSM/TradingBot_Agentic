@@ -13,7 +13,7 @@ import {
   useActiveCombo,
   type Combo,
 } from '@/lib/market-reading/store';
-import { ChartViewProvider, useChartView } from '@/lib/chart/viewState';
+import { useChartView } from '@/lib/chart/viewState';
 import { coerceViewActions } from '@/lib/chart/viewActions';
 import { READING_DATA_SOURCE } from '@/lib/mockReadings';
 import type { MarketReading } from '@/types/market-reading';
@@ -23,6 +23,12 @@ const POLL_MS = 60_000;
 export interface AppWorkspaceProps {
   /** Combo selected on mount (null = none). The /app route defaults to XAU M15. */
   initialCombo?: Combo | null;
+  /**
+   * Zone id to focus on the chart once the reading loads — set by the "Analyser"
+   * deep-link (`?focus=`). Validated against the on-screen zone-id lock before
+   * dispatch, so an unknown/stale id is a graceful no-op. Display-only.
+   */
+  initialFocusZoneId?: string | null;
   /** Reading source — defaults to the module flag; overridable for tests. */
   dataSource?: ReadingSource;
 }
@@ -52,18 +58,25 @@ export interface WorkspaceViewProps {
  */
 export function AppWorkspace({
   initialCombo = null,
+  initialFocusZoneId = null,
   dataSource = READING_DATA_SOURCE,
 }: AppWorkspaceProps = {}) {
+  // ChartViewProvider is now mounted in the locale layout (shared with /zones),
+  // so this surface just consumes it via useChartView().
   return (
     <ActiveComboProvider initial={initialCombo}>
-      <ChartViewProvider>
-        <WorkspaceInner dataSource={dataSource} />
-      </ChartViewProvider>
+      <WorkspaceInner dataSource={dataSource} initialFocusZoneId={initialFocusZoneId} />
     </ActiveComboProvider>
   );
 }
 
-function WorkspaceInner({ dataSource }: { dataSource: ReadingSource }) {
+function WorkspaceInner({
+  dataSource,
+  initialFocusZoneId = null,
+}: {
+  dataSource: ReadingSource;
+  initialFocusZoneId?: string | null;
+}) {
   const { active, select, combos } = useActiveCombo();
   const { openForCombo, viewActionSignal } = useChat();
   const { applyActions } = useChartView();
@@ -104,6 +117,25 @@ function WorkspaceInner({ dataSource }: { dataSource: ReadingSource }) {
     const actions = coerceViewActions(viewActionSignal.actions, validZoneIds);
     applyActions(actions, select);
   }, [viewActionSignal, validZoneIds, applyActions, select]);
+
+  // Honour an "Analyser" deep-link (?focus=<zone_id>) from the /zones page: once
+  // the reading is loaded and the id resolves to an on-screen zone, focus +
+  // highlight it ONCE. Re-validated through the same id-lock — an unknown/stale
+  // id is dropped, never mis-applied. Display-only; detection is never touched.
+  const focusDispatchedRef = React.useRef(false);
+  React.useEffect(() => {
+    if (focusDispatchedRef.current) return;
+    if (!initialFocusZoneId || !validZoneIds.has(initialFocusZoneId)) return;
+    focusDispatchedRef.current = true;
+    const actions = coerceViewActions(
+      [
+        { action: 'focus_zone', params: { zone_id: initialFocusZoneId } },
+        { action: 'highlight_zone', params: { zone_id: initialFocusZoneId } },
+      ],
+      validZoneIds,
+    );
+    applyActions(actions, select);
+  }, [initialFocusZoneId, validZoneIds, applyActions, select]);
 
   const view: WorkspaceViewProps = {
     combos,

@@ -12,11 +12,16 @@ import { SUPPORTED_INSTRUMENTS, SUPPORTED_TIMEFRAMES } from '@/lib/market-readin
 export function buildAppHref(
   locale: string,
   combo: { instrument: string; timeframe: string },
+  focusZoneId?: string | null,
 ): string {
   const params = new URLSearchParams({
     instrument: combo.instrument,
     timeframe: combo.timeframe,
   });
+  // Optional zone to focus on the chart (the Zones page "Analyser" action). The
+  // id is validated against the on-screen zone-id lock on arrival, so passing it
+  // here is safe — an unknown id simply does nothing.
+  if (focusZoneId) params.set('focus', focusZoneId);
   const prefix = locale === DEFAULT_LOCALE ? '' : `/${locale}`;
   return `${prefix}/app?${params.toString()}`;
 }

@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppWorkspace } from '../AppWorkspace';
 import { ChatProvider } from '@/components/chat/ChatProvider';
+import { ChartViewProvider } from '@/lib/chart/viewState';
 import { FIXTURE_XAU_M15 } from '@/lib/market-reading/fixtures';
 
 const fetchMock = vi.fn();
@@ -41,7 +42,9 @@ function stubMatchMedia(matches: boolean) {
 function renderApp() {
   return render(
     <ChatProvider>
-      <AppWorkspace dataSource="live" />
+      <ChartViewProvider>
+        <AppWorkspace dataSource="live" />
+      </ChartViewProvider>
     </ChatProvider>,
   );
 }

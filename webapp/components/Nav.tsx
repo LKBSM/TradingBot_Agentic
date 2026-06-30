@@ -27,7 +27,7 @@ function isAppRoute(pathname: string): boolean {
   const segs = pathname.split('/').filter(Boolean);
   const first = segs[0] as (typeof SUPPORTED_LOCALES)[number] | undefined;
   const rest = first && SUPPORTED_LOCALES.includes(first) ? segs.slice(1) : segs;
-  return rest[0] === 'app' || rest[0] === 'scanner';
+  return rest[0] === 'app' || rest[0] === 'scanner' || rest[0] === 'zones';
 }
 
 /**
@@ -96,6 +96,12 @@ export function Nav() {
         </nav>
 
         <div className="flex items-center gap-2">
+          <Link
+            href="/zones"
+            className="rounded-md px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            Zones
+          </Link>
           <Link
             href="/scanner"
             className="rounded-md px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
