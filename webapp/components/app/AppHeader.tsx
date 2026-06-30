@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { HelpCircle, Radar } from 'lucide-react';
+import { HelpCircle, Layers, Radar } from 'lucide-react';
 import { LocaleToggle } from '@/components/LocaleToggle';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +34,14 @@ export function AppHeader() {
         </Link>
 
         <div className="flex items-center gap-2">
+          <Link
+            href="/zones"
+            aria-label="Zones — cycle de vie des zones détectées"
+            className="inline-flex h-9 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <Layers className="h-4 w-4" aria-hidden />
+            <span className="hidden sm:inline">Zones</span>
+          </Link>
           <Link
             href="/scanner"
             aria-label="Scanner de conditions"

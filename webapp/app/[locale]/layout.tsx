@@ -9,6 +9,7 @@ import { Footer } from '@/components/Footer';
 import { SkipLink } from '@/components/a11y/SkipLink';
 import { ChatPanel } from '@/components/chat/ChatPanel';
 import { ChatProvider } from '@/components/chat/ChatProvider';
+import { ChartViewProvider } from '@/lib/chart/viewState';
 import { CookieBanner } from '@/components/compliance/CookieBanner';
 import { JsonLd, softwareApplicationLd } from '@/components/seo/JsonLd';
 import { ThemeProvider } from '@/components/theme-provider';
@@ -114,13 +115,19 @@ export default async function LocaleLayout({
             <TooltipProvider delayDuration={200}>
               <AuthProvider>
                 <ChatProvider>
-                  <Nav />
-                  <main id="main" className="min-h-[calc(100vh-160px)]">
-                    {children}
-                  </main>
-                  <Footer />
-                  <ChatPanel />
-                  <CookieBanner />
+                  {/* Chart view state (layer/zone visibility, focus) is hoisted
+                      here — above /app AND /zones — so an action taken on one
+                      surface (e.g. masking a zone from /zones) is reflected on the
+                      chart. Display-only; it never holds or touches detection. */}
+                  <ChartViewProvider>
+                    <Nav />
+                    <main id="main" className="min-h-[calc(100vh-160px)]">
+                      {children}
+                    </main>
+                    <Footer />
+                    <ChatPanel />
+                    <CookieBanner />
+                  </ChartViewProvider>
                 </ChatProvider>
               </AuthProvider>
             </TooltipProvider>
