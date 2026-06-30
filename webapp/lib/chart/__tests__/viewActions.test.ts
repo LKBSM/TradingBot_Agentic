@@ -223,7 +223,7 @@ describe('applyChartViewAction', () => {
       action: 'set_layer_visibility',
       params: { layers: ['fvg', 'ob'], visible: false },
     });
-    expect(next.layers).toEqual({ fvg: false, ob: false, breaks: true });
+    expect(next.layers).toEqual({ fvg: false, ob: false, breaks: true, liquidity: true });
   });
 
   it('layer "all" toggles every overlay', () => {
