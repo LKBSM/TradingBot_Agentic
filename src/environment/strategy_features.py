@@ -493,6 +493,15 @@ class SMCConfig(BaseModel):
         ge=0.0,
         description="Minimum FVG size as fraction of ATR. 0.1 = gap must be >= 10% of ATR to qualify. Filters spread-level noise."
     )
+    FVG_SESSION_GAP_MULT: float = Field(
+        default=1.5,
+        ge=0.0,
+        description="A 3-candle FVG whose window straddles a market closure (weekend, daily gold break, "
+                    "holiday) is a session gap, not a momentum imbalance, and is suppressed. Closure is "
+                    "detected data-driven via the inter-bar TIME gap: if a gap inside the window exceeds "
+                    "FVG_SESSION_GAP_MULT × the nominal bar step, a closure happened there. No hardcoded "
+                    "session calendar. 0.0 disables the filter (legacy geometric-only behaviour)."
+    )
     OB_REQUIRE_FVG: bool = Field(
         default=False,
         description="If True, Order Blocks require adjacent FVG confirmation. If False, FVG adds a strength bonus instead."
@@ -802,6 +811,46 @@ class SmartMoneyEngine:
             self.df['FVG_DIR'],
             0
         )
+
+        # =========================================================================
+        # 2b. SESSION-GAP AWARENESS — suppress closure-straddling FVGs
+        # =========================================================================
+        # The geometric FVG condition (low[i] > high[i-2] / high[i] < low[i-2])
+        # is blind to whether the market was OPEN across the 3-candle window.
+        # When the window straddles a market closure (week-end, the daily gold
+        # maintenance break, a holiday), the price "hole" is not a momentum
+        # imbalance — it is just the market having been shut — yet it satisfies
+        # the same condition and gets mislabelled an FVG.
+        #
+        # Detection is data-driven, with NO hardcoded session calendar: a closure
+        # surfaces as an abnormal TIME gap between consecutive bar timestamps. On
+        # a clean timeframe the inter-bar delta equals the nominal step (~15 min
+        # in M15); a delta markedly larger than that step (> mult × nominal) marks
+        # a closure. This generalises to any instrument/market (incl. future
+        # indices/stocks) without a schedule table to maintain.
+        #
+        # Guarded on a DatetimeIndex (integer-indexed test frames keep the legacy
+        # geometric behaviour) and on mult > 0 (FVG_SESSION_GAP_MULT=0 disables).
+        # Only windows that straddle a closure are touched; normal-interval
+        # windows — i.e. all genuine continuous FVGs — are left untouched.
+        mult = self.config.FVG_SESSION_GAP_MULT
+        if mult > 0 and isinstance(self.df.index, pd.DatetimeIndex) and len(self.df) >= 3:
+            deltas = self.df.index.to_series().diff().dt.total_seconds()
+            nominal = deltas.median()  # robust: >98% of bars sit at the nominal step
+            if nominal and nominal > 0:
+                threshold = mult * nominal
+                gap_here = (deltas > threshold).to_numpy()   # delta i-1 -> i
+                gap_prev = np.roll(gap_here, 1)               # delta i-2 -> i-1
+                gap_prev[0] = False
+                spans_closure = gap_here | gap_prev
+                spans_closure[:2] = False  # bars 0-1 have no full 3-candle window
+                if spans_closure.any():
+                    # Zero the full FVG tuple so every downstream consumer
+                    # (FVG_SIGNAL/DIR/SIZE/SIZE_NORM) sees a uniform "no FVG".
+                    self.df.loc[
+                        spans_closure,
+                        ['FVG_SIZE', 'FVG_DIR', 'FVG_SIZE_NORM', 'FVG_SIGNAL'],
+                    ] = 0
 
         # =========================================================================
         # 3. VALIDATION (Silent in production, verbose in debug)
