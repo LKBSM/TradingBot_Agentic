@@ -38,6 +38,11 @@ SUPPORTED_TIMEFRAMES: tuple[str, ...] = ("M15", "H1", "H4")
 # overlay at once); "breaks" = BOS / CHOCH / retest level lines + markers.
 ALLOWED_LAYERS: tuple[str, ...] = ("fvg", "ob", "breaks", "all")
 
+# The individual overlay families addressable in a MULTI-layer toggle
+# (``set_layer_visibility`` with a ``layers`` list). "all" is excluded here — it
+# is a single-target shorthand, redundant inside an explicit subset.
+ALLOWED_MULTI_LAYERS: tuple[str, ...] = ("fvg", "ob", "breaks")
+
 # The CLOSED whitelist of view actions. Everything outside this set is rejected.
 ALLOWED_ACTIONS: tuple[str, ...] = (
     "set_layer_visibility",
@@ -157,12 +162,38 @@ class ViewActionValidator:
     def _v_set_layer_visibility(
         self, params: dict[str, Any], _known: set[str]
     ) -> ViewActionCheckResult:
-        layer = params.get("layer")
         visible = params.get("visible")
-        if layer not in ALLOWED_LAYERS:
-            return ViewActionCheckResult(False, reason="bad_layer")
         if not isinstance(visible, bool):
             return ViewActionCheckResult(False, reason="bad_visible")
+
+        # MULTI-layer form: ``layers`` lists a subset of overlays to toggle at
+        # once (e.g. « enlève les FVG et les OB » → ["fvg", "ob"]). Validated
+        # against the SAME closed whitelist — every element must be an addressable
+        # overlay, never a geometry/price and never "all" (use the single-layer
+        # shorthand for that). Order-preserving dedupe keeps the output canonical.
+        if "layers" in params:
+            if "layer" in params:
+                # Ambiguous: don't let the model send both forms at once.
+                return ViewActionCheckResult(False, reason="bad_layer")
+            raw_layers = params.get("layers")
+            if not isinstance(raw_layers, list) or not raw_layers:
+                return ViewActionCheckResult(False, reason="bad_layer")
+            seen: set[str] = set()
+            layers: list[str] = []
+            for item in raw_layers:
+                if item not in ALLOWED_MULTI_LAYERS:
+                    return ViewActionCheckResult(False, reason="bad_layer")
+                if item not in seen:
+                    seen.add(item)
+                    layers.append(item)
+            return _ok(
+                "set_layer_visibility", {"layers": layers, "visible": visible}
+            )
+
+        # Single-layer form (incl. the "all" shorthand) — unchanged.
+        layer = params.get("layer")
+        if layer not in ALLOWED_LAYERS:
+            return ViewActionCheckResult(False, reason="bad_layer")
         return _ok("set_layer_visibility", {"layer": layer, "visible": visible})
 
     def _v_filter_zones(
@@ -318,6 +349,7 @@ def _clamp(v: float, lo: float, hi: float) -> float:
 __all__ = [
     "ALLOWED_ACTIONS",
     "ALLOWED_LAYERS",
+    "ALLOWED_MULTI_LAYERS",
     "GEOMETRY_KEYS",
     "SUPPORTED_INSTRUMENTS",
     "SUPPORTED_TIMEFRAMES",

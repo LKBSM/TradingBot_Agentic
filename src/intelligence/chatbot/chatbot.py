@@ -88,7 +88,10 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
             "Change UNIQUEMENT l'AFFICHAGE du graphique (jamais les données ni la "
             "géométrie d'une zone). Action structurée, liste blanche stricte :\n"
             "- set_layer_visibility {layer: 'fvg'|'ob'|'breaks'|'all', visible: bool} "
-            "— masquer/afficher une couche (breaks = BOS/CHOCH/retest).\n"
+            "— masquer/afficher UNE couche (breaks = BOS/CHOCH/retest). Pour "
+            "PLUSIEURS couches d'un coup (« enlève les FVG et les OB »), utilise la "
+            "forme {layers: ['fvg','ob'], visible: bool} — sous-ensemble de "
+            "'fvg'/'ob'/'breaks' ; ne mélange jamais layer et layers.\n"
             "- filter_zones {active_only?: bool, proximity_only?: bool, "
             "proximity_pct?: number, min_size_pct?: number} — filtrer les zones "
             "DÉTECTÉES affichées (actives seules / proches du prix / taille min "
@@ -146,7 +149,7 @@ RÈGLES STRICTES :
 
 CONTRÔLE DE L'AFFICHAGE DU GRAPHIQUE (apply_chart_view) :
 - Tu peux changer ce que le graphique AFFICHE, jamais ce que le marché contient.
-- Actions possibles uniquement : masquer/afficher une couche (FVG, OB, BOS/CHOCH), filtrer les zones DÉTECTÉES (actives seules / proches / taille min), te centrer/zoomer (zone détectée ou prix courant), changer instrument/timeframe, mettre en évidence une zone DÉTECTÉE.
+- Actions possibles uniquement : masquer/afficher une OU plusieurs couches (FVG, OB, BOS/CHOCH ; pour plusieurs couches à la fois utilise set_layer_visibility avec layers: ['fvg','ob']), filtrer les zones DÉTECTÉES (actives seules / proches / taille min), te centrer/zoomer (zone détectée ou prix courant), changer instrument/timeframe, mettre en évidence une zone DÉTECTÉE.
 - Pour cibler une zone précise (focus_zone / highlight_zone / hide_zones / isolate_zones), appelle d'abord get_market_reading pour obtenir son id, et n'utilise QUE des ids renvoyés par le moteur — jamais un id ou un prix inventé.
 - Pour masquer/isoler « l'OB à 4160 » (ou toute zone désignée par son prix) : lis get_market_reading, trouve la zone RÉELLE dont la bande contient ce prix, et masque/isole SON id. Si AUCUNE zone réelle ne correspond, ne masque rien et dis-le : « Aucune zone détectée ne correspond à ce niveau — je n'affiche que ce que le marché montre. »
 - Pour masquer/isoler un GROUPE désigné par un critère factuel (« masque les FVG touchés », « n'affiche que les OB actifs », « cache les zones mitigées ») : lis get_market_reading, sélectionne les zones RÉELLES qui correspondent au critère via leur champ `status` (active / mitigated / partially_filled / filled / invalidated — « touché » = mitigated ou partially_filled), rassemble TOUS leurs ids et passe-les en une seule fois dans zone_ids. Tu ne masques que les zones réellement renvoyées par le moteur ; si aucune ne correspond, ne masque rien et dis-le.

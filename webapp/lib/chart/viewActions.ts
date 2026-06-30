@@ -19,6 +19,16 @@ export type ChartLayer = 'fvg' | 'ob' | 'breaks' | 'all';
 
 export const ALLOWED_LAYERS: readonly ChartLayer[] = ['fvg', 'ob', 'breaks', 'all'];
 
+/**
+ * Individual overlay families addressable in a MULTI-layer toggle
+ * (`set_layer_visibility` with a `layers` list). `'all'` is excluded — it is the
+ * single-layer shorthand, redundant inside an explicit subset. Mirror of the
+ * backend `ALLOWED_MULTI_LAYERS`.
+ */
+export type MultiChartLayer = 'fvg' | 'ob' | 'breaks';
+
+export const ALLOWED_MULTI_LAYERS: readonly MultiChartLayer[] = ['fvg', 'ob', 'breaks'];
+
 export const SUPPORTED_INSTRUMENTS = ['XAUUSD', 'EURUSD'] as const;
 export const SUPPORTED_TIMEFRAMES = ['M15', 'H1', 'H4'] as const;
 
@@ -40,6 +50,7 @@ const GEOMETRY_KEYS = new Set([
 
 export type ViewAction =
   | { action: 'set_layer_visibility'; params: { layer: ChartLayer; visible: boolean } }
+  | { action: 'set_layer_visibility'; params: { layers: MultiChartLayer[]; visible: boolean } }
   | {
       action: 'filter_zones';
       params: {
@@ -117,12 +128,33 @@ export function coerceViewAction(
 
   switch (action) {
     case 'set_layer_visibility': {
-      const layer = params.layer;
       const visible = params.visible;
+      if (typeof visible !== 'boolean') return null;
+      // MULTI-layer form: toggle a subset of overlays at once. Validated against
+      // the SAME closed whitelist (each element ∈ fvg/ob/breaks, never 'all').
+      // Order-preserving dedupe; an empty/invalid list or mixing with `layer`
+      // drops the action.
+      if ('layers' in params) {
+        if ('layer' in params) return null;
+        const raw = params.layers;
+        if (!Array.isArray(raw) || raw.length === 0) return null;
+        const seen = new Set<string>();
+        const layers: MultiChartLayer[] = [];
+        for (const item of raw) {
+          if (typeof item !== 'string' || !ALLOWED_MULTI_LAYERS.includes(item as MultiChartLayer)) {
+            return null;
+          }
+          if (!seen.has(item)) {
+            seen.add(item);
+            layers.push(item as MultiChartLayer);
+          }
+        }
+        return { action, params: { layers, visible } };
+      }
+      const layer = params.layer;
       if (typeof layer !== 'string' || !ALLOWED_LAYERS.includes(layer as ChartLayer)) {
         return null;
       }
-      if (typeof visible !== 'boolean') return null;
       return { action, params: { layer: layer as ChartLayer, visible } };
     }
     case 'filter_zones': {
@@ -273,7 +305,14 @@ export function applyChartViewAction(
 ): ChartViewState {
   switch (action.action) {
     case 'set_layer_visibility': {
-      const { layer, visible } = action.params;
+      const { visible } = action.params;
+      // MULTI-layer form: flip each named overlay to `visible` in one shot.
+      if ('layers' in action.params) {
+        const next = { ...state.layers };
+        for (const layer of action.params.layers) next[layer] = visible;
+        return { ...state, layers: next };
+      }
+      const { layer } = action.params;
       if (layer === 'all') {
         return { ...state, layers: { fvg: visible, ob: visible, breaks: visible } };
       }

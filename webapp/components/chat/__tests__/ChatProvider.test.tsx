@@ -94,6 +94,43 @@ describe('ChatProvider.askFreeForm', () => {
     ).toBeInTheDocument();
   });
 
+  it('does not replay an empty-content turn in history (avoids the 422)', async () => {
+    // 1st answer is display-only: the model toggled a layer with no prose, so the
+    // assistant turn renders empty. Replaying content:"" would 422 the backend
+    // ("format ou longueur") — it must be dropped from the next request's history.
+    askSentinelMock.mockResolvedValueOnce({
+      text: '',
+      blockedReason: null,
+      toolCallsMade: [],
+      viewActions: [{ action: 'set_layer_visibility', params: { layers: ['fvg', 'ob'], visible: false } }],
+    });
+    askSentinelMock.mockResolvedValueOnce({
+      text: 'Deuxième réponse.',
+      blockedReason: null,
+      toolCallsMade: [],
+      viewActions: [],
+    });
+    renderHarness();
+
+    fireEvent.click(screen.getByText('ask'));
+    await waitFor(() => expect(askSentinelMock).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.getByTestId('loading').textContent).toBe('false'));
+
+    fireEvent.click(screen.getByText('ask'));
+    await waitFor(() => expect(askSentinelMock).toHaveBeenCalledTimes(2));
+
+    const secondCall = askSentinelMock.mock.calls[1];
+    expect(secondCall).toBeDefined();
+    const secondArgs = secondCall![0] as {
+      history: Array<{ role: string; content: string }>;
+    };
+    // No empty-content message survives; the prior user question still does.
+    for (const m of secondArgs.history) {
+      expect(m.content.length).toBeGreaterThan(0);
+    }
+    expect(secondArgs.history).toEqual([{ role: 'user', content: 'Quelle conviction ?' }]);
+  });
+
   it('toggles isLoading false after the call resolves', async () => {
     askSentinelMock.mockResolvedValue({ text: 'ok', blockedReason: null, toolCallsMade: [] });
     renderHarness();

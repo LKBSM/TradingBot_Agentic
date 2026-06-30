@@ -69,6 +69,49 @@ def test_visible_must_be_bool() -> None:
     assert res.reason == "bad_visible"
 
 
+def test_multi_layer_toggle_ok_and_dedupes() -> None:
+    # « enlève tous les FVG et les OB » → masque deux couches en une seule action.
+    res = v().validate(
+        {"action": "set_layer_visibility", "params": {"layers": ["fvg", "ob"], "visible": False}}
+    )
+    assert res.valid
+    assert res.action == {
+        "action": "set_layer_visibility",
+        "params": {"layers": ["fvg", "ob"], "visible": False},
+    }
+    # Order-preserving dedupe.
+    res2 = v().validate(
+        {"action": "set_layer_visibility", "params": {"layers": ["ob", "ob", "fvg"], "visible": True}}
+    )
+    assert res2.valid
+    assert res2.action["params"]["layers"] == ["ob", "fvg"]
+
+
+def test_multi_layer_rejects_bad_inputs() -> None:
+    # "all" is not addressable inside an explicit subset (use the single-layer form).
+    bad_all = v().validate(
+        {"action": "set_layer_visibility", "params": {"layers": ["fvg", "all"], "visible": False}}
+    )
+    assert not bad_all.valid and bad_all.reason == "bad_layer"
+    # Empty list / non-list.
+    empty = v().validate({"action": "set_layer_visibility", "params": {"layers": [], "visible": False}})
+    assert not empty.valid and empty.reason == "bad_layer"
+    not_list = v().validate(
+        {"action": "set_layer_visibility", "params": {"layers": "fvg", "visible": False}}
+    )
+    assert not not_list.valid and not_list.reason == "bad_layer"
+    # Mixing layer + layers is ambiguous.
+    mixed = v().validate(
+        {"action": "set_layer_visibility", "params": {"layer": "fvg", "layers": ["ob"], "visible": False}}
+    )
+    assert not mixed.valid and mixed.reason == "bad_layer"
+    # visible is still required and must be a bool.
+    bad_visible = v().validate(
+        {"action": "set_layer_visibility", "params": {"layers": ["fvg", "ob"], "visible": "yes"}}
+    )
+    assert not bad_visible.valid and bad_visible.reason == "bad_visible"
+
+
 def test_filter_zones_clamps_thresholds() -> None:
     res = v().validate(
         {"action": "filter_zones", "params": {"active_only": True, "proximity_pct": 999, "min_size_pct": -3}}
@@ -300,6 +343,22 @@ def test_view_action_layer_toggle_surfaces() -> None:
     assert out.content == "J'ai masqué les FVG."
     assert out.view_actions == [
         {"action": "set_layer_visibility", "params": {"layer": "fvg", "visible": False}}
+    ]
+
+
+def test_multi_layer_toggle_surfaces() -> None:
+    # « enlève tous les FVG et les OB » → une seule action multi-couches, validée
+    # et remontée telle quelle (les breaks restent visibles).
+    r1 = StubResponse(
+        [ToolUseBlock("apply_chart_view", {"action": "set_layer_visibility", "params": {"layers": ["fvg", "ob"], "visible": False}}, id="t1")],
+        "tool_use",
+    )
+    r2 = StubResponse([TextBlock("J'ai masqué les FVG et les OB.")], "end_turn")
+    bot, _ = _make_bot([r1, r2], StubAssembler())
+    out = bot.chat("Enlève tous les FVG et les OB")
+    assert out.blocked_reason is None
+    assert out.view_actions == [
+        {"action": "set_layer_visibility", "params": {"layers": ["fvg", "ob"], "visible": False}}
     ]
 
 
