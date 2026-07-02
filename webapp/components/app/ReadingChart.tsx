@@ -529,11 +529,16 @@ export function ReadingChart({
 
     // BOS / CHOCH break-history markers (read-only, descriptive). One arrow per
     // detected break over the window — fixes the "sous-surfaçage" where only the
-    // last bar's break ever showed. Lightweight-charts ignores markers outside
-    // the loaded candle range, so older breaks simply don't draw (graceful).
+    // last bar's break ever showed. Lightweight-charts v5 does NOT ignore markers
+    // older than the loaded range — createSeriesMarkers clamps them onto the
+    // FIRST bar (NearestRight), stacking stale labels at the left edge — so we
+    // pass the first loaded candle time and let the builder drop them.
     // The "breaks" layer can be hidden on chat request → no markers, no lines.
+    const firstLoadedCandle = validCandles[0];
     markersRef.current?.setMarkers(
-      layers.breaks ? buildStructureMarkers(structure) : [],
+      layers.breaks && firstLoadedCandle
+        ? buildStructureMarkers(structure, firstLoadedCandle.time as number)
+        : [],
     );
 
     // Horizontal break-level price lines (BOS / CHOCH / retest) — hairline.
