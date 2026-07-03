@@ -69,4 +69,41 @@ describe('buildStructureMarkers', () => {
     const m = buildStructureMarkers(structure([bos('bullish', 'not-a-date')]));
     expect(m).toEqual([]);
   });
+
+  describe('minTime (first loaded candle)', () => {
+    // Backend collects events over its 500-bar window; the chart loads fewer
+    // candles. lightweight-charts v5 clamps older markers onto the FIRST bar
+    // instead of ignoring them → they must be dropped here.
+    const firstCandle = T('2026-05-24T05:00:00Z');
+
+    it('drops events breaking before the first loaded candle', () => {
+      const m = buildStructureMarkers(
+        structure(
+          [
+            bos('bearish', '2026-06-24T09:00:00Z'), // in window
+            bos('bullish', '2026-05-07T05:00:00Z'), // before window → dropped
+          ],
+          [choch('bullish', '2026-04-30T05:00:00Z')], // before window → dropped
+        ),
+        firstCandle,
+      );
+      expect(m).toHaveLength(1);
+      expect(m[0]).toMatchObject({ text: 'BOS', time: T('2026-06-24T09:00:00Z') });
+    });
+
+    it('keeps an event breaking exactly on the first loaded candle', () => {
+      const m = buildStructureMarkers(
+        structure([bos('bullish', '2026-05-24T05:00:00Z')]),
+        firstCandle,
+      );
+      expect(m).toHaveLength(1);
+    });
+
+    it('keeps every event when minTime is omitted (legacy behaviour)', () => {
+      const m = buildStructureMarkers(
+        structure([bos('bullish', '2026-05-07T05:00:00Z')]),
+      );
+      expect(m).toHaveLength(1);
+    });
+  });
 });

@@ -30,17 +30,27 @@ function isoToSec(iso: string | null | undefined): number {
  *   · CHOCH wins a shared bar — a CHOCH is a reversal BOS on the SAME bar, so we
  *     drop the duplicate BOS marker at a timestamp that already has a CHOCH;
  *   · events with an unparseable timestamp are skipped;
+ *   · events OLDER than `minTime` are dropped — the backend collects events over
+ *     its full 500-bar window while the chart loads fewer candles, and
+ *     lightweight-charts v5 CLAMPS out-of-range markers onto the first loaded
+ *     bar (NearestRight in createSeriesMarkers) instead of ignoring them, which
+ *     stacked stale labels vertically at the left edge;
  *   · output is sorted ascending by time (lightweight-charts requires it).
+ *
+ * @param minTime UNIX seconds of the first loaded candle; events breaking
+ *   before it have no bar to anchor to and are omitted. Omit to keep all.
  */
 export function buildStructureMarkers(
   structure: MarketReadingStructure,
+  minTime?: number,
 ): SeriesMarker<UTCTimestamp>[] {
   const chochTimes = new Set<number>();
   const markers: SeriesMarker<UTCTimestamp>[] = [];
+  const inRange = (t: number) => minTime === undefined || t >= minTime;
 
   for (const e of structure.choch_events ?? []) {
     const t = isoToSec(e.broken_at);
-    if (!Number.isFinite(t)) continue;
+    if (!Number.isFinite(t) || !inRange(t)) continue;
     chochTimes.add(t);
     const up = e.direction === 'bullish';
     markers.push({
@@ -54,7 +64,7 @@ export function buildStructureMarkers(
 
   for (const e of structure.bos_events ?? []) {
     const t = isoToSec(e.broken_at);
-    if (!Number.isFinite(t)) continue;
+    if (!Number.isFinite(t) || !inRange(t)) continue;
     if (chochTimes.has(t)) continue; // CHOCH already marks this bar
     const up = e.direction === 'bullish';
     markers.push({

@@ -108,6 +108,27 @@ describe('buildZoneModels', () => {
     expect(buildZoneModels(s)).toEqual([]);
   });
 
+  it('drops a consumed zone even when formed before the loaded window (no left-edge pill)', () => {
+    // A broken zone whose formation candle predates the chart's candles would
+    // otherwise snap to the FIRST bar and clamp a stale sliver + pill onto the
+    // left edge — same failure mode as the BOS/CHOCH marker clamping.
+    const s = structure(
+      [ob('old-inv', 'invalidated', 102, 100, '2026-04-17T17:00:00+00:00', '2026-04-19T17:00:00+00:00')],
+      [fvg('old-filled', 'filled', 99, 98, '2026-04-21T17:00:00+00:00', '2026-04-21T21:00:00+00:00')],
+    );
+    expect(buildZoneModels(s)).toEqual([]);
+  });
+
+  it('drawable statuses are a WHITELIST: an unknown / future status never draws', () => {
+    const weirdOb = { ...ob('w1', 'active', 102, 100, '2026-05-26T05:00:00+00:00'), status: 'broken' };
+    const weirdFvg = { ...fvg('w2', 'active', 99, 98, '2026-05-26T06:00:00+00:00'), status: 'swept' };
+    const s = structure(
+      [weirdOb as unknown as ReturnType<typeof ob>],
+      [weirdFvg as unknown as FairValueGap],
+    );
+    expect(buildZoneModels(s)).toEqual([]);
+  });
+
   it('drops a zone whose formation time is unparseable (cannot anchor)', () => {
     const s = structure([ob('bad', 'active', 102, 100, 'nope')]);
     expect(buildZoneModels(s)).toEqual([]);
