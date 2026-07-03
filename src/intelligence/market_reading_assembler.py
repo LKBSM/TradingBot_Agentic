@@ -110,19 +110,16 @@ def drop_unclosed_candles(
 SmcPipelineFn = Callable[[Sequence[Any]], Tuple[dict[str, float], Optional[Any]]]
 
 
-def _default_smc_pipeline(candles: Sequence[Any]) -> Tuple[dict[str, float], Optional[Any]]:
-    """Default SMC pipeline — runs SmartMoneyEngine on the candle list.
+def build_enriched_frame(candles: Sequence[Any]) -> Tuple[Any, Any]:
+    """Build the SMC-enriched frame from a candle list — THE shared engine run.
 
-    Returns ``(smc_features, confluence_signal=None)`` because Chantier 2
-    does not wire ConfluenceDetector by default (scoring is for the legacy
-    InsightSignalV2 flow; MarketReading describes state, not setups).
-    Callers wanting a ConfluenceSignal can inject a custom pipeline.
-
-    Heavy imports are local so unit tests with mocks pay no import cost.
+    Returns ``(enriched_df, engine_config)``. Extracted from
+    ``_default_smc_pipeline`` (which still flows through here) so the OB
+    rejection diagnostics analyse EXACTLY the frame/config the readings are
+    built from — same DataFrame construction, same default SMCConfig, same
+    ``analyze`` flags. Heavy imports are local so unit tests with mocks pay no
+    import cost.
     """
-    if not candles:
-        return {}, None
-
     import pandas as pd
 
     from src.intelligence.smart_money import SmartMoneyEngine
@@ -146,6 +143,23 @@ def _default_smc_pipeline(candles: Sequence[Any]) -> Tuple[dict[str, float], Opt
     # compute_divergence=False: the MarketReading mapper does not consume the
     # RSI divergence column, so we skip its O(n·k) pass on every reading (D2-9).
     enriched = engine.analyze(compute_divergence=False)
+    return enriched, engine.config
+
+
+def _default_smc_pipeline(candles: Sequence[Any]) -> Tuple[dict[str, float], Optional[Any]]:
+    """Default SMC pipeline — runs SmartMoneyEngine on the candle list.
+
+    Returns ``(smc_features, confluence_signal=None)`` because Chantier 2
+    does not wire ConfluenceDetector by default (scoring is for the legacy
+    InsightSignalV2 flow; MarketReading describes state, not setups).
+    Callers wanting a ConfluenceSignal can inject a custom pipeline.
+    """
+    if not candles:
+        return {}, None
+
+    import pandas as pd
+
+    enriched, engine_config = build_enriched_frame(candles)
     last_row = enriched.iloc[-1].to_dict()
 
     smc_features: dict[str, float] = {}
@@ -177,7 +191,7 @@ def _default_smc_pipeline(candles: Sequence[Any]) -> Tuple[dict[str, float], Opt
     # External liquidity pockets (EQH/EQL + range extremes) with intact/swept/
     # broken state. Reuses the engine's swing fractals; thresholds come from the
     # validated SMCConfig (single source of truth). Reserved key, never persisted.
-    cfg = engine.config
+    cfg = engine_config
     smc_features["_liquidity"] = collect_liquidity_pools(
         enriched,
         idx=last_idx,
@@ -264,6 +278,47 @@ class MarketReadingAssembler:
         )
         self._readings_store.mark_combination_active(instrument, timeframe)
         return reading
+
+    def get_ob_diagnostic(
+        self,
+        instrument: str,
+        timeframe: str,
+        ts: Optional[Any] = None,
+        price: Optional[float] = None,
+    ) -> dict:
+        """On-demand OB rejection diagnostic (mission 2026-07-02) — read-only.
+
+        Explains why a given candle (referenced by timestamp or approximate
+        price) is or is not an Order Block, by reading the engine's OWN
+        decision path: same candle cache the readings populate, same
+        ``build_enriched_frame`` run, then ``ob_diagnostics.diagnose_ob`` over
+        the named detection criteria and the zone collector's reject records.
+        Never mutates stores, never re-detects with different thresholds, and
+        returns an honest ``unresolved``/``no_data`` status instead of guessing.
+        """
+        from src.intelligence.ob_diagnostics import diagnose_ob
+
+        expected_close = expected_last_candle_close(timeframe, self._clock())
+        raw = self._candles_store.get_last_n_candles(
+            instrument, timeframe, self._lookback
+        )
+        candles = drop_unclosed_candles(raw, timeframe, expected_close)
+        if not candles:
+            return {
+                "status": "no_data",
+                "resolution": {"resolved": False, "reason": "no_data"},
+                "instrument": instrument,
+                "timeframe": timeframe,
+                "note_fr": (
+                    "aucune bougie en cache pour cette combinaison — ouvre "
+                    "d'abord la lecture correspondante"
+                ),
+            }
+        enriched, engine_config = build_enriched_frame(candles)
+        diag = diagnose_ob(enriched, engine_config, ts=ts, price=price)
+        diag["instrument"] = instrument
+        diag["timeframe"] = timeframe
+        return diag
 
     # ------------------------------------------------------------------ #
     # Internals
