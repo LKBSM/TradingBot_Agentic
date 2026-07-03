@@ -83,6 +83,50 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
         "input_schema": {"type": "object", "properties": {}, "required": []},
     },
     {
+        "name": "get_ob_diagnostic",
+        "description": (
+            "Diagnostic FACTUEL du moteur : pourquoi une bougie précise est ou "
+            "n'est PAS un Order Block. Fournis instrument + timeframe et UNE "
+            "référence : price (le moteur résout la bougie la plus récente dont "
+            "l'amplitude contient ce prix) ou ts (horodatage ISO de la bougie). "
+            "Le résultat rapporte les critères RÉELS évalués par le moteur "
+            "(checks passés/échoués avec label_fr), et si un OB détecté a été "
+            "retiré (invalidé par une clôture à travers la zone, ou au-delà de "
+            "la limite d'affichage). Statuts : is_order_block / not_candidate / "
+            "was_rejected / awaiting_next_candle / unresolved / no_data. "
+            "OBLIGATOIRE avant d'expliquer pourquoi une bougie n'est pas un OB — "
+            "ne réponds jamais à cette question par la définition générale."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "instrument": {
+                    "type": "string",
+                    "enum": list(SUPPORTED_INSTRUMENTS),
+                    "description": "XAUUSD ou EURUSD",
+                },
+                "timeframe": {
+                    "type": "string",
+                    "enum": list(SUPPORTED_TIMEFRAMES),
+                    "description": "M15, H1 ou H4",
+                },
+                "price": {
+                    "type": "number",
+                    "description": "Prix approximatif désignant la bougie (ex. 4114).",
+                },
+                "ts": {
+                    "type": "string",
+                    "description": (
+                        "Horodatage ISO 8601 de la bougie (ex. "
+                        "2026-07-01T14:00:00Z). Prioritaire sur price si les deux "
+                        "sont fournis."
+                    ),
+                },
+            },
+            "required": ["instrument", "timeframe"],
+        },
+    },
+    {
         "name": "apply_chart_view",
         "description": (
             "Change UNIQUEMENT l'AFFICHAGE du graphique (jamais les données ni la "
@@ -157,12 +201,23 @@ CONTRÔLE DE L'AFFICHAGE DU GRAPHIQUE (apply_chart_view) :
 - Tu n'inventes, ne places, ne déplaces et ne redimensionnes JAMAIS une structure. Si on te le demande (« mets un OB à 2000 », « agrandis ce FVG »), tu refuses ainsi : « Je n'invente pas de structure — je n'affiche que ce que le marché montre. Je peux masquer, filtrer, ou me centrer sur les zones détectées. »
 - Après une action d'affichage, décris-la comme un changement de VUE, au présent (« j'ai masqué les FVG », « je me centre sur l'OB actif »). N'implique jamais que tu as modifié le marché ou créé une structure.
 
+DIAGNOSTIC ORDER BLOCK (get_ob_diagnostic) :
+- Quand l'utilisateur demande pourquoi une bougie ou un niveau n'est PAS un Order Block (« pourquoi la bougie à 4114 n'est pas un OB ? », « pourquoi pas d'OB à 14h ? »), appelle get_ob_diagnostic avec le prix ou l'horodatage. Tu n'expliques JAMAIS un rejet sans ce diagnostic, et tu ne réponds jamais par la définition générale d'un OB.
+- Tu rapportes UNIQUEMENT les raisons renvoyées par le moteur : les critères échoués (champs checks → label_fr, avec les valeurs observées), ou la raison de retrait (reject_label_fr, avec la date d'invalidation le cas échéant). Jamais une raison de ton cru.
+- status=not_candidate → explique le(s) critère(s) échoué(s), factuellement (« la bougie suivante n'a pas dépassé son plus haut : X contre Y »).
+- status=was_rejected → explique la raison réelle : invalidation (une bougie a clôturé à travers la zone, date fournie) ou zone au-delà de la limite d'affichage des zones les plus significatives.
+- status=is_order_block → dis que le moteur détecte bien un OB ici (direction, statut du cycle de vie, retesté ou non) ; la confusion vient peut-être de l'affichage.
+- status=awaiting_next_candle → explique que le moteur évalue un OB sur la bougie SUIVANTE, qui n'existe pas encore pour la dernière bougie.
+- status=unresolved ou no_data → dis honnêtement que tu n'as pas le détail pour cette bougie (hors de la fenêtre analysée, prix jamais touché sur la période, pas de données) — tu ne devines pas.
+- Ce diagnostic décrit l'évaluation PASSÉE du moteur — éducatif et factuel. Tu n'en tires jamais une anticipation de ce que le prix fera.
+
 CONTEXTE INITIAL (signal_summary) :
 {signal_summary}
 
-Tu as accès à 3 tools :
+Tu as accès à 4 tools :
 - get_market_reading(instrument, timeframe) : lecture complète d'une combinaison.
 - get_signal_summary() : résumé des 6 combinaisons (XAUUSD/EURUSD × M15/H1/H4).
+- get_ob_diagnostic(instrument, timeframe, price|ts) : pourquoi une bougie précise est ou n'est pas un Order Block (raisons réelles du moteur).
 - apply_chart_view(action, params) : changer l'AFFICHAGE du graphique (liste blanche, vue seule).
 
 Si l'utilisateur pose une question contextuelle nécessitant des détails absents du signal_summary, appelle get_market_reading."""
@@ -385,6 +440,15 @@ class Chatbot:
                 return reading.model_dump(mode="json")
             if name == "get_signal_summary":
                 return self._summary_provider.get()
+            if name == "get_ob_diagnostic":
+                # Read-only engine diagnostic — the reasons come from the same
+                # code path that decided accept/reject (never fabricated here).
+                return self._assembler.get_ob_diagnostic(
+                    tool_input.get("instrument"),
+                    tool_input.get("timeframe"),
+                    ts=tool_input.get("ts"),
+                    price=tool_input.get("price"),
+                )
             return {"error": f"unknown tool: {name}"}
         except Exception as exc:
             logger.warning("tool %s failed: %s", name, exc)

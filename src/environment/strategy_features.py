@@ -581,6 +581,62 @@ class SMCConfig(BaseModel):
     )
 
 
+# --- Order Block candidate criteria — SINGLE SOURCE OF TRUTH -----------------
+# The decision "bar d confirms an OB whose zone is bar d-1" is the AND of the
+# named elementary conditions below (plus the FVG clause when OB_REQUIRE_FVG).
+# ``_add_smc_order_blocks`` combines EXACTLY these Series to accept/reject, and
+# the rejection diagnostics (src/intelligence/ob_diagnostics.py) reads the SAME
+# Series to report which criterion failed — never a parallel re-implementation
+# of the rule. Any threshold change here moves the decision AND the reported
+# reason together (tested in tests/test_ob_rejection_diagnostics.py).
+
+OB_CRITERIA: dict[str, tuple[str, ...]] = {
+    "bullish": ("prev_candle_bearish", "confirm_candle_bullish", "breaks_prev_high"),
+    "bearish": ("prev_candle_bullish", "confirm_candle_bearish", "breaks_prev_low"),
+}
+OB_FVG_CRITERION = "fvg_adjacent_present"
+
+
+def ob_candidate_conditions(df: pd.DataFrame, config: "SMCConfig") -> dict:
+    """Named elementary OB conditions, one boolean Series each, evaluated at the
+    CONFIRMATION bar d (the OB zone is the PREVIOUS bar d-1).
+
+    Bullish OB: bar d-1 bearish, bar d bullish, bar d breaks bar d-1's high.
+    Bearish OB: the exact mirror. ``fvg_adjacent_present`` is the legacy FVG
+    clause — a decision criterion only when ``config.OB_REQUIRE_FVG`` is True,
+    otherwise a strength bonus (see ``_add_smc_order_blocks`` Step 5).
+    """
+    return {
+        "bullish": {
+            "prev_candle_bearish": df['close'].shift(1) < df['open'].shift(1),
+            "confirm_candle_bullish": df['close'] > df['open'],
+            "breaks_prev_high": df['high'] > df['high'].shift(1),
+        },
+        "bearish": {
+            "prev_candle_bullish": df['close'].shift(1) > df['open'].shift(1),
+            "confirm_candle_bearish": df['close'] < df['open'],
+            "breaks_prev_low": df['low'] < df['low'].shift(1),
+        },
+        OB_FVG_CRITERION: (df['FVG_SIGNAL'] != 0).shift(1).fillna(False),
+        "fvg_required": bool(config.OB_REQUIRE_FVG),
+    }
+
+
+def combine_ob_conditions(conditions: dict, side: str) -> pd.Series:
+    """AND of the named Series for ``side`` — THE accept/reject decision.
+
+    This is the only place the elementary conditions are combined; detection
+    and diagnostics both flow through it.
+    """
+    names = OB_CRITERIA[side]
+    combined = conditions[side][names[0]]
+    for name in names[1:]:
+        combined = combined & conditions[side][name]
+    if conditions["fvg_required"]:
+        combined = combined & conditions[OB_FVG_CRITERION]
+    return combined
+
+
 # --- II. Core Analysis Engine (Class Architecture) ---
 class SmartMoneyEngine:
     """
@@ -936,30 +992,17 @@ class SmartMoneyEngine:
         FVG presence adds a strength bonus to OB_STRENGTH_NORM.
         """
 
-        # --- Step 1: Base candlestick pattern conditions ---
-        bullish_ob_condition = (
-                (self.df['close'].shift(1) < self.df['open'].shift(1)) &
-                (self.df['close'] > self.df['open']) &
-                (self.df['high'] > self.df['high'].shift(1))
-        )
+        # --- Steps 1-2: candidate criteria + combination -------------------
+        # Single source of truth shared with the rejection diagnostics
+        # (ob_candidate_conditions / combine_ob_conditions above). The combined
+        # Series are mathematically identical to the legacy inline expressions
+        # — proven by tests/test_ob_golden_nonregression.py (6-combo snapshot)
+        # and the oracle test in tests/test_ob_rejection_diagnostics.py.
+        conditions = ob_candidate_conditions(self.df, self.config)
+        fvg_present = conditions[OB_FVG_CRITERION]
 
-        bearish_ob_condition = (
-                (self.df['close'].shift(1) > self.df['open'].shift(1)) &
-                (self.df['close'] < self.df['open']) &
-                (self.df['low'] < self.df['low'].shift(1))
-        )
-
-        # --- Step 2: FVG filtering (conditional) ---
-        fvg_present = (self.df['FVG_SIGNAL'] != 0).shift(1).fillna(False)
-
-        if self.config.OB_REQUIRE_FVG:
-            # Legacy mode: require FVG for OB detection
-            bullish_ob_final = bullish_ob_condition & fvg_present
-            bearish_ob_final = bearish_ob_condition & fvg_present
-        else:
-            # Default: detect OBs independently of FVG
-            bullish_ob_final = bullish_ob_condition
-            bearish_ob_final = bearish_ob_condition
+        bullish_ob_final = combine_ob_conditions(conditions, "bullish")
+        bearish_ob_final = combine_ob_conditions(conditions, "bearish")
 
         # --- Step 3: Define OB zones ---
         self.df['BULLISH_OB_HIGH'] = np.where(bullish_ob_final, self.df['high'].shift(1), np.nan)
