@@ -81,6 +81,17 @@ export function openFvgBand(fvg: FairValueGap): { high: number; low: number } {
 }
 
 /**
+ * Statuses that still mean "this zone is in play" and therefore deserve a box.
+ * WHITELIST, not blacklist: a consumed zone (invalidated OB / filled FVG) or any
+ * unknown / future status never draws. This matters at the window edge — a
+ * consumed zone formed before the loaded candles would otherwise clamp a stale
+ * sliver + pill onto the chart's left edge (same failure mode as the BOS/CHOCH
+ * marker clamping fixed in structureMarkers.ts).
+ */
+const OB_DRAWABLE_STATUSES: ReadonlySet<string> = new Set(['active', 'mitigated']);
+const FVG_DRAWABLE_STATUSES: ReadonlySet<string> = new Set(['active', 'partially_filled']);
+
+/**
  * Reduce a structure's OB/FVG zones to drawable models. Consumed zones
  * (invalidated OB, filled FVG) are skipped defensively — the backend already
  * drops them, but the chart must never surface a consumed zone as live.
@@ -88,7 +99,7 @@ export function openFvgBand(fvg: FairValueGap): { high: number; low: number } {
 export function buildZoneModels(structure: MarketReadingStructure): ZoneModel[] {
   const out: ZoneModel[] = [];
   for (const ob of structure.order_blocks) {
-    if (ob.status === 'invalidated') continue;
+    if (!OB_DRAWABLE_STATUSES.has(ob.status)) continue;
     out.push({
       id: ob.id,
       kind: 'ob',
@@ -101,7 +112,7 @@ export function buildZoneModels(structure: MarketReadingStructure): ZoneModel[] 
     });
   }
   for (const fvg of structure.fair_value_gaps) {
-    if (fvg.status === 'filled') continue;
+    if (!FVG_DRAWABLE_STATUSES.has(fvg.status)) continue;
     // Shrink a partially-filled gap to its STILL-OPEN portion. The engine emits
     // fill_level = the deepest wick into the band (read-only). A bullish gap
     // fills from the top down → the open part is below the penetration (high =
