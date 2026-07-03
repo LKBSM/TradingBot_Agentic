@@ -52,10 +52,17 @@ Les canvases de lightweight-charts portent leur propre `z-index` (1-2) : le
 canvas de l'axe temporel **interceptait les clics** sur les contrôles bas-gauche
 (zoom compris, préexistant). Ajout de `z-10` sur le conteneur de contrôles.
 
+## Réconciliation main
+
+main a avancé pendant la session (PR #21 `b803e04` filtre minTime des markers,
+PR #22 `903e313` géométrie pure temps+prix + clipping par gouttière) →
+**mergé, pas écrasé** : les segments liquidité adoptent la même géométrie non
+clampée et se clippent au bord du plot via le conteneur.
+
 ## Vérification
 
 - `tsc --noEmit` : 0 erreur. `next build` : OK.
-- Vitest : **43 fichiers / 386 tests verts** (377 de main + 9 nouveaux sur le
+- Vitest : **43 fichiers / 391 tests verts** post-merge (9 nouveaux sur le
   builder : ancres, premier contact, broken par défaut, intactOnly réversible).
 - Visuel (backend live XAUUSD M15, données réelles avec les 3 états) :
   - avant : `liquidity_polish_avant.png` (traits pleine largeur) ;
