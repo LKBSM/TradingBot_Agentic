@@ -331,7 +331,7 @@ export function formatLiquidityKind(kind: LiquidityKind): string {
 
 const LIQUIDITY_STATUS_LABEL: Record<LiquidityStatus, { label: string; tone: Tone }> = {
   intact: { label: 'intacte', tone: 'neutral' },
-  swept: { label: 'balayée', tone: 'warn' },
+  swept: { label: 'prise', tone: 'warn' },
   broken: { label: 'cassée', tone: 'neutral' },
 };
 
