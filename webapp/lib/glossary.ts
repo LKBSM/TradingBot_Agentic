@@ -73,7 +73,7 @@ export const GLOSSARY: Record<GlossaryKey, GlossaryEntry> = {
   liquidity: {
     term: 'Liquidité externe (BSL / SSL)',
     short:
-      'Des niveaux où des ordres en attente s’accumulent — au-dessus de sommets égaux (BSL) ou sous des creux égaux (SSL). On indique si le niveau est intact, balayé (mèche puis retour) ou cassé.',
+      'Des niveaux où des ordres en attente s’accumulent — au-dessus de sommets égaux (BSL) ou sous des creux égaux (SSL). On indique si le niveau est intact, pris (mèche puis retour — il tient encore) ou cassé.',
     anchor: '#liquidite-externe',
   },
   mtf: {

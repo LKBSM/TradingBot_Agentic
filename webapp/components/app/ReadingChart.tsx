@@ -14,7 +14,7 @@ import {
   type Time,
   type UTCTimestamp,
 } from 'lightweight-charts';
-import { Maximize2, Minus, Plus } from 'lucide-react';
+import { Droplets, Maximize2, Minus, Plus } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 import {
@@ -172,6 +172,44 @@ function rectsEqual(a: ZoneRect[], b: ZoneRect[]): boolean {
   return true;
 }
 
+/**
+ * Pixel geometry for a rendered, TIME-BOUNDED liquidity segment: x-start at the
+ * pocket's formation, x-end at the current bar while intact or FROZEN at the
+ * first contact once swept/broken (recomputed on scale / resize, like ZoneRect).
+ */
+interface LiquidityRect {
+  id: string;
+  left: number;
+  width: number;
+  /** Pixel y of the resting-liquidity level. */
+  y: number;
+  side: LiquiditySide;
+  status: LiquidityStatus;
+  /** Left-edge tag, e.g. "Liquidité achat · intacte". */
+  chartLabel: string;
+  /** Full descriptive tooltip text. */
+  description: string;
+}
+
+/** Geometry-equal guard for the liquidity segments (same rAF pattern). */
+function liquidityRectsEqual(a: LiquidityRect[], b: LiquidityRect[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += 1) {
+    const x = a[i]!;
+    const y = b[i]!;
+    if (
+      x.id !== y.id ||
+      x.status !== y.status ||
+      qpx(x.left) !== qpx(y.left) ||
+      qpx(x.width) !== qpx(y.width) ||
+      qpx(x.y) !== qpx(y.y)
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
 /** Geometry-equal guard for the provisional live FVG-front rects. */
 function liveRectsEqual(a: LiveFvgRect[], b: LiveFvgRect[]): boolean {
   if (a.length !== b.length) return false;
@@ -202,11 +240,12 @@ const LEVEL = {
 };
 
 /**
- * External-liquidity line palette. Per side (buy-side above / sell-side below),
- * deliberately distinct from BOTH the candle bull/bear hues (so a pool never
- * reads as a buy/sell instruction) and the slate/purple break lines. Cool
- * blue-teal = BSL, muted rose-violet = SSL. The STATUS drives the alpha + dash:
- * intact = crisp solid, swept = dashed, broken = faint dotted.
+ * External-liquidity segment palette. Per side (buy-side above / sell-side
+ * below), deliberately distinct from BOTH the candle bull/bear hues (so a pool
+ * never reads as a buy/sell instruction) and the slate/purple break lines. Cool
+ * blue-teal = BSL, muted rose-violet = SSL. The STATUS drives the alpha + the
+ * CSS border style: intact = crisp solid, swept (prise) = dashed + dimmed,
+ * broken (cassée) = tight dotted + very dim. Rendu cible validé.
  */
 const LIQUIDITY_RGB: Record<LiquiditySide, string> = {
   bsl: '79, 163, 199', // #4FA3C7 — cool blue-teal
@@ -214,19 +253,20 @@ const LIQUIDITY_RGB: Record<LiquiditySide, string> = {
 };
 const LIQUIDITY_ALPHA: Record<LiquidityStatus, number> = {
   intact: 0.9,
-  swept: 0.7,
+  swept: 0.55,
   broken: 0.4,
+};
+const LIQUIDITY_BORDER_STYLE: Record<LiquidityStatus, 'solid' | 'dashed' | 'dotted'> = {
+  intact: 'solid',
+  swept: 'dashed',
+  broken: 'dotted',
 };
 function liquidityColor(side: LiquiditySide, status: LiquidityStatus): string {
   return `rgba(${LIQUIDITY_RGB[side]}, ${LIQUIDITY_ALPHA[status]})`;
 }
-function liquidityLineStyle(status: LiquidityStatus): LineStyle {
-  return status === 'intact'
-    ? LineStyle.Solid
-    : status === 'swept'
-      ? LineStyle.Dashed
-      : LineStyle.Dotted;
-}
+
+/** localStorage key for the "intact pockets only" display toggle. */
+const LIQUIDITY_INTACT_ONLY_KEY = 'mia.chart.liquidityIntactOnly';
 
 /**
  * Sober zone palette, per Direction 1. One base RGB per kind; the alpha encodes
@@ -339,6 +379,42 @@ export function ReadingChart({
 
   const [zoneRects, setZoneRects] = React.useState<ZoneRect[]>([]);
   const [liveFvgRects, setLiveFvgRects] = React.useState<LiveFvgRect[]>([]);
+  const [liquidityRects, setLiquidityRects] = React.useState<LiquidityRect[]>([]);
+
+  // "Poches intactes seulement" — a reversible DISPLAY filter over the detected
+  // pools (hides swept + broken segments, deletes nothing; the Structure panel
+  // still lists every state). Persisted per browser, default = everything shown.
+  const [liquidityIntactOnly, setLiquidityIntactOnly] = React.useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      return window.localStorage.getItem(LIQUIDITY_INTACT_ONLY_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
+  const toggleLiquidityIntactOnly = React.useCallback(() => {
+    setLiquidityIntactOnly((v) => {
+      const next = !v;
+      try {
+        window.localStorage.setItem(LIQUIDITY_INTACT_ONLY_KEY, next ? '1' : '0');
+      } catch {
+        // Storage unavailable (private mode) — the toggle still works in-session.
+      }
+      return next;
+    });
+  }, []);
+
+  // External-liquidity segments (BSL/SSL), read straight from engine-emitted
+  // pools — never recomputed, never projected. Hidden entirely when the
+  // "liquidity" layer is toggled off (display-only).
+  const liquidityLines = React.useMemo(
+    () =>
+      layers.liquidity
+        ? buildLiquidityLines(structure, { intactOnly: liquidityIntactOnly })
+        : [],
+    [structure, layers.liquidity, liquidityIntactOnly],
+  );
+  const hasLiquidityPools = (structure.liquidity_pools ?? []).length > 0;
 
   // PROTOTYPE — provisional intra-candle interaction overlay derived from the
   // latest tick. Recomputed from the CURRENT price only (never persisted), so a
@@ -573,22 +649,24 @@ export function ReadingChart({
       }),
     );
 
-    // External liquidity pockets (BSL/SSL) as horizontal price-level lines —
-    // intact = crisp solid, swept = dashed, broken (terminal) left off the chart
-    // to keep it readable (the Structure panel still lists broken pools). Hidden
-    // when the "liquidity" layer is toggled off (display-only). Read straight
-    // from engine-emitted pools — never recomputed, never projected.
-    const liquidityLines = layers.liquidity ? buildLiquidityLines(structure) : [];
-    const createdLiquidity = liquidityLines.map((l) =>
-      series.createPriceLine({
-        price: l.price,
-        color: liquidityColor(l.side, l.status),
-        lineWidth: 1,
-        lineStyle: liquidityLineStyle(l.status),
-        axisLabelVisible: true,
-        title: l.title,
-      }),
-    );
+    // External liquidity pockets (BSL/SSL): the SEGMENT itself is drawn by the
+    // HTML overlay (time-bounded like the OB/FVG boxes — see liquidityRects),
+    // never a full-width price line. Here we only keep the price-scale PILL for
+    // INTACT pockets: a price line with the line hidden (lineVisible: false) so
+    // the level reads on the axis without a band crossing the whole canvas.
+    // Swept/broken pockets carry their state at the frozen contact instead.
+    const createdLiquidity = liquidityLines
+      .filter((l) => l.status === 'intact')
+      .map((l) =>
+        series.createPriceLine({
+          price: l.price,
+          color: liquidityColor(l.side, l.status),
+          lineWidth: 1,
+          lineVisible: false,
+          axisLabelVisible: true,
+          title: l.title,
+        }),
+      );
 
     // Fit ONCE (initial load); afterwards restore the pre-update view so data
     // refreshes don't reset the user's zoom/pan. The "Ajuster" button refits.
@@ -603,7 +681,7 @@ export function ReadingChart({
       for (const line of created) series.removePriceLine(line);
       for (const line of createdLiquidity) series.removePriceLine(line);
     };
-  }, [candles, structure, layers.breaks, layers.liquidity]);
+  }, [candles, structure, layers.breaks, liquidityLines]);
 
   // ── Keep zone rectangles IN PHASE with the chart canvas. ────────────────────
   // The boxes are an HTML overlay positioned from priceToCoordinate /
@@ -646,7 +724,11 @@ export function ReadingChart({
       return best;
     };
 
-    const computeRects = (): { rects: ZoneRect[]; live: LiveFvgRect[] } => {
+    const computeRects = (): {
+      rects: ZoneRect[];
+      live: LiveFvgRect[];
+      liq: LiquidityRect[];
+    } => {
       const plotRight = Math.max(
         0,
         container.clientWidth - chart.priceScale('right').width(),
@@ -730,7 +812,31 @@ export function ReadingChart({
           }
         }
       }
-      return { rects, live };
+      // Liquidity segments — SAME time-bounding mechanics as the zone boxes:
+      // x-start = formation candle (plot left edge if unparseable — a real
+      // pocket is never dropped), x-end = the current bar + pad while INTACT
+      // (like an active OB) or FROZEN at the first contact (engine-emitted
+      // swept_at / broken_at) once the level was touched. Read-only geometry.
+      const liq: LiquidityRect[] = [];
+      for (const l of liquidityLines) {
+        const y = series.priceToCoordinate(l.price);
+        if (y === null) continue;
+        const xStart = Number.isFinite(l.createdSec) ? xAt(l.createdSec) : 0;
+        const xEnd = l.contactSec !== null ? xAt(l.contactSec) : activeRightX();
+        if (xStart === null || xEnd === null) continue;
+        liq.push({
+          id: l.id,
+          left: Math.min(xStart, xEnd),
+          width: Math.max(2, Math.abs(xEnd - xStart)),
+          y,
+          side: l.side,
+          status: l.status,
+          chartLabel: l.chartLabel,
+          description: l.description,
+        });
+      }
+
+      return { rects, live, liq };
     };
 
     // Animation-frame loop: recompute in phase with the canvas, commit to React
@@ -738,6 +844,7 @@ export function ReadingChart({
     // a cheap coordinate read per frame and zero re-renders.
     let prev: ZoneRect[] = [];
     let prevLive: LiveFvgRect[] = [];
+    let prevLiq: LiquidityRect[] = [];
     let raf = 0;
     const tick = () => {
       // Bail if the chart was disposed/recreated (next-themes resolves the theme
@@ -747,7 +854,7 @@ export function ReadingChart({
       // owns the new chart. The try/catch is a final guard against a disposal
       // that races mid-frame.
       if (chartRef.current !== chart || seriesRef.current !== series) return;
-      let next: { rects: ZoneRect[]; live: LiveFvgRect[] };
+      let next: { rects: ZoneRect[]; live: LiveFvgRect[]; liq: LiquidityRect[] };
       try {
         next = computeRects();
       } catch {
@@ -761,6 +868,10 @@ export function ReadingChart({
         prevLive = next.live;
         setLiveFvgRects(next.live);
       }
+      if (!liquidityRectsEqual(prevLiq, next.liq)) {
+        prevLiq = next.liq;
+        setLiquidityRects(next.liq);
+      }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -768,7 +879,7 @@ export function ReadingChart({
     return () => {
       cancelAnimationFrame(raf);
     };
-  }, [zones, candles, liveOverlay]);
+  }, [zones, candles, liveOverlay, liquidityLines]);
 
   // ── Live FORMING candle (TradingView-style) ─────────────────────────────────
   // Grow the current (still-open) bar with each tick: open anchored to the last
@@ -1042,6 +1153,72 @@ export function ReadingChart({
             </span>
           </div>
         ))}
+
+        {/* External-liquidity segments (BSL/SSL) — TIME-BOUNDED like the OB
+            boxes, never full-width. INTACT: crisp solid line to the current bar,
+            type tag at its left edge. SWEPT (prise): frozen at the first
+            contact, dashed + dimmed, dot marker + "prise" — the pocket STAYS
+            visible (touched is not broken). BROKEN (cassée): frozen, tight
+            dotted + very dim, × marker + "cassée". Read-only states; labels are
+            factual — no target, no direction. */}
+        {liquidityRects.map((r) => {
+          const color = liquidityColor(r.side, r.status);
+          const labelColor = `rgba(${LIQUIDITY_RGB[r.side]}, 0.95)`;
+          return (
+            <div
+              key={`liq:${r.id}`}
+              className="absolute"
+              style={{
+                left: r.left,
+                width: r.width,
+                top: r.y,
+                height: 0,
+                borderTop: `1px ${LIQUIDITY_BORDER_STYLE[r.status]} ${color}`,
+              }}
+              title={r.description}
+            >
+              {r.status === 'intact' ? (
+                <span
+                  className="absolute whitespace-nowrap text-[9px] font-medium leading-none"
+                  style={{ left: 2, top: -12, color: labelColor }}
+                >
+                  {r.chartLabel}
+                </span>
+              ) : (
+                <>
+                  {/* Contact marker at the FROZEN right end: dot = prise
+                      (swept, still holding), × = cassée (closed through). */}
+                  {r.status === 'swept' ? (
+                    <span
+                      className="absolute h-[5px] w-[5px] rounded-full"
+                      style={{ right: -2, top: -3, backgroundColor: color }}
+                      aria-hidden
+                    />
+                  ) : (
+                    <span
+                      className="absolute text-[10px] font-semibold leading-none"
+                      style={{ right: -3, top: -5, color }}
+                      aria-hidden
+                    >
+                      ×
+                    </span>
+                  )}
+                  <span
+                    className="absolute whitespace-nowrap text-[9px] font-medium leading-none"
+                    style={{
+                      right: 4,
+                      top: -12,
+                      color: labelColor,
+                      opacity: r.status === 'broken' ? 0.7 : 0.9,
+                    }}
+                  >
+                    {r.status === 'swept' ? 'prise' : 'cassée'}
+                  </span>
+                </>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* Live-mode badge — makes the PROVISIONAL state explicit and honest. Only
@@ -1067,8 +1244,11 @@ export function ReadingChart({
         </div>
       )}
 
-      {/* Sober pan/zoom controls — visually light, ≥44px tap zone on mobile. */}
-      <div className="absolute bottom-2 left-2 flex gap-1">
+      {/* Sober pan/zoom controls — visually light, ≥44px tap zone on mobile.
+          z-10 lifts them above the lightweight-charts canvases (which carry
+          their own z-index and would otherwise intercept clicks over the
+          time-axis strip). */}
+      <div className="absolute bottom-2 left-2 z-10 flex gap-1">
         <ChartControl label="Zoom avant" onClick={() => zoom(0.7)}>
           <Plus className="h-4 w-4" aria-hidden />
         </ChartControl>
@@ -1078,6 +1258,22 @@ export function ReadingChart({
         <ChartControl label="Ajuster le graphique" onClick={fit}>
           <Maximize2 className="h-4 w-4" aria-hidden />
         </ChartControl>
+        {/* "Poches intactes seulement" — reversible DISPLAY filter (hides the
+            swept/broken liquidity segments, deletes nothing). Only offered when
+            the liquidity layer is on and the engine emitted pockets. */}
+        {layers.liquidity && hasLiquidityPools && (
+          <ChartControl
+            label={
+              liquidityIntactOnly
+                ? 'Afficher toutes les poches de liquidité (intactes, prises, cassées)'
+                : 'Afficher seulement les poches de liquidité intactes'
+            }
+            onClick={toggleLiquidityIntactOnly}
+            pressed={liquidityIntactOnly}
+          >
+            <Droplets className="h-4 w-4" aria-hidden />
+          </ChartControl>
+        )}
       </div>
     </div>
   );
@@ -1087,10 +1283,13 @@ export function ReadingChart({
 function ChartControl({
   label,
   onClick,
+  pressed,
   children,
 }: {
   label: string;
   onClick: () => void;
+  /** Toggle state (aria-pressed + emphasised style); omit for plain buttons. */
+  pressed?: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -1099,11 +1298,13 @@ function ChartControl({
       onClick={onClick}
       aria-label={label}
       title={label}
+      aria-pressed={pressed}
       className={cn(
         'flex h-11 w-11 items-center justify-center rounded-md border border-border/60',
         'bg-background/70 text-muted-foreground backdrop-blur-sm',
         'transition-colors hover:text-foreground',
         'sm:h-8 sm:w-8',
+        pressed && 'border-foreground/40 text-foreground',
       )}
     >
       {children}
