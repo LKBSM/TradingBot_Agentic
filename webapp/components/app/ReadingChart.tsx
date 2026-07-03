@@ -339,6 +339,11 @@ export function ReadingChart({
 
   const [zoneRects, setZoneRects] = React.useState<ZoneRect[]>([]);
   const [liveFvgRects, setLiveFvgRects] = React.useState<LiveFvgRect[]>([]);
+  // Width of the right price-scale gutter, tracked so the zone overlay can end
+  // exactly at the plot edge. Clipping happens THERE (container `overflow-hidden`
+  // + `right` inset) — box geometry itself is pure time+price and is never
+  // clamped to screen coordinates (a screen-clamped edge deforms under pan).
+  const [priceGutterWidth, setPriceGutterWidth] = React.useState(0);
 
   // PROTOTYPE — provisional intra-candle interaction overlay derived from the
   // latest tick. Recomputed from the CURRENT price only (never persisted), so a
@@ -628,9 +633,6 @@ export function ReadingChart({
 
     const timeScale = chart.timeScale();
 
-    // Snap a target time to the nearest candle so timeToCoordinate (which maps
-    // data points) always resolves, then clamp into the plot area. Boxes never
-    // overrun the price-scale gutter and never project past the current bar.
     const candleTimes = candles.map((c) => c.time as number);
     const lastTime = candleTimes.length ? candleTimes[candleTimes.length - 1]! : null;
     // Snap a target time to the nearest candle so timeToCoordinate (which maps
@@ -651,17 +653,23 @@ export function ReadingChart({
       return best;
     };
 
-    const computeRects = (): { rects: ZoneRect[]; live: LiveFvgRect[] } => {
-      const plotRight = Math.max(
-        0,
-        container.clientWidth - chart.priceScale('right').width(),
-      );
-      const clampX = (x: number) => Math.min(Math.max(x, 0), plotRight);
+    const computeRects = (): {
+      rects: ZoneRect[];
+      live: LiveFvgRect[];
+      gutter: number;
+    } => {
+      // Both x-edges are PURE time coordinates — never clamped to the screen.
+      // A screen-clamped edge sticks to the viewport while the other follows the
+      // graph, so the box deformed during a horizontal pan (the live FVG-fill
+      // frame visibly stretched). Off-plot geometry is fine: the overlay
+      // container clips at the plot edge (overflow-hidden + gutter inset), which
+      // renders the exact same visible surface without deforming the box.
+      const gutter = chart.priceScale('right').width();
+      const plotRight = Math.max(0, container.clientWidth - gutter);
       const xAt = (sec: number): number | null => {
         const snapped = snapToCandle(sec);
         if (snapped === null) return null;
-        const c = timeScale.timeToCoordinate(snapped as UTCTimestamp);
-        return c === null ? null : clampX(c);
+        return timeScale.timeToCoordinate(snapped as UTCTimestamp);
       };
 
       // Right edge for an ACTIVE zone: the CURRENT bar (live forming bar when a
@@ -669,14 +677,14 @@ export function ReadingChart({
       // timeToCoordinate resolves directly without snapping) plus a small pad of
       // bar-widths. A little past the candle, scaled to zoom — never the plot
       // edge, never before the candle. Falls back to the plot edge only if the
-      // current bar has no coordinate (scrolled out of view).
+      // current bar has no coordinate at all (not on the time scale).
       const currentSec = formingRef.current?.time ?? lastTime;
       const barSpacing = timeScale.options().barSpacing ?? 6;
       const activeRightX = (): number => {
         if (currentSec === null) return plotRight;
         const raw = timeScale.timeToCoordinate(currentSec as UTCTimestamp);
         if (raw === null) return plotRight;
-        return clampX(raw + barSpacing * ACTIVE_ZONE_RIGHT_PAD_BARS);
+        return raw + barSpacing * ACTIVE_ZONE_RIGHT_PAD_BARS;
       };
 
       // Provisional live fronts, keyed by FVG id (recomputed each frame).
@@ -735,7 +743,7 @@ export function ReadingChart({
           }
         }
       }
-      return { rects, live };
+      return { rects, live, gutter };
     };
 
     // Animation-frame loop: recompute in phase with the canvas, commit to React
@@ -743,6 +751,7 @@ export function ReadingChart({
     // a cheap coordinate read per frame and zero re-renders.
     let prev: ZoneRect[] = [];
     let prevLive: LiveFvgRect[] = [];
+    let prevGutter = -1;
     let raf = 0;
     const tick = () => {
       // Bail if the chart was disposed/recreated (next-themes resolves the theme
@@ -752,7 +761,7 @@ export function ReadingChart({
       // owns the new chart. The try/catch is a final guard against a disposal
       // that races mid-frame.
       if (chartRef.current !== chart || seriesRef.current !== series) return;
-      let next: { rects: ZoneRect[]; live: LiveFvgRect[] };
+      let next: { rects: ZoneRect[]; live: LiveFvgRect[]; gutter: number };
       try {
         next = computeRects();
       } catch {
@@ -765,6 +774,10 @@ export function ReadingChart({
       if (!liveRectsEqual(prevLive, next.live)) {
         prevLive = next.live;
         setLiveFvgRects(next.live);
+      }
+      if (next.gutter !== prevGutter) {
+        prevGutter = next.gutter;
+        setPriceGutterWidth(next.gutter);
       }
       raf = requestAnimationFrame(tick);
     };
@@ -920,8 +933,15 @@ export function ReadingChart({
           identifiable — crisp on active, dimmer + smaller on tested. An active
           OB the live price is inside gets a warm-amber "en test" accent (a
           PROVISIONAL, intra-candle state — distinct hue from the confirmed
-          palette so it's never read as a candle-confirmed outcome). */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          palette so it's never read as a candle-confirmed outcome).
+          The container ends at the PLOT edge (right inset = price-scale gutter)
+          and clips overflow: boxes are anchored purely to time+price (their
+          geometry can extend off-plot) and get clipped HERE, so no edge is ever
+          pinned to a screen coordinate — panning/zooming moves them rigidly. */}
+      <div
+        className="pointer-events-none absolute inset-y-0 left-0 overflow-hidden"
+        style={{ right: priceGutterWidth }}
+      >
         {zoneRects.map((r) => {
           const rgb = ZONE_RGB[r.kind];
           const a = r.tested ? ZONE_ALPHA.tested : ZONE_ALPHA.active;
@@ -966,12 +986,18 @@ export function ReadingChart({
                 // only boxes carrying a status chip need the larger threshold.
                 const hasStatus = r.inTestLive || r.tested;
                 const narrow = r.width < (hasStatus ? 66 : 22);
+                // The box's left edge is a pure time coordinate and often sits
+                // OFF-plot (old formation candle). Slide the label cluster to the
+                // box's first VISIBLE pixel so the type code stays readable —
+                // label chrome only, the box geometry itself is never clamped.
+                const labelLeft = Math.max(0, -r.left) + (narrow ? 0 : 4);
                 return (
                   <div
                     className={cn(
                       'absolute flex items-center gap-1 whitespace-nowrap',
-                      narrow ? 'bottom-full left-0 mb-0.5' : 'left-1 top-0.5',
+                      narrow ? 'bottom-full mb-0.5' : 'top-0.5',
                     )}
+                    style={{ left: labelLeft }}
                   >
                     <span
                       className={cn(
