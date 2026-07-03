@@ -875,10 +875,10 @@ def test_ob_lifecycle_returns_tap_index_and_is_conservative():
     highs = [100, 100, 100, 100, 100]
     lows = [99, 99, 99, 97.5, 99]   # j=3 dips into [97,98]
     closes = [100, 100, 100, 99, 100]
-    status, tested, tap = _ob_lifecycle(
+    status, tested, tap, invalidated_idx = _ob_lifecycle(
         "bullish", 98.0, 97.0, highs, lows, closes, created=0, upto=4
     )
-    assert (status, tested, tap) == ("mitigated", True, 3)
+    assert (status, tested, tap, invalidated_idx) == ("mitigated", True, 3, None)
 
 
 def test_penetration_threshold_is_a_single_tunable_knob():

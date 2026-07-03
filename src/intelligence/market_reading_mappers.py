@@ -304,13 +304,15 @@ def _ob_lifecycle(
     created: int,
     upto: int,
     policy: MitigationPolicy = MITIGATION_POLICY,
-) -> tuple[str, bool, Optional[int]]:
+) -> tuple[str, bool, Optional[int], Optional[int]]:
     """Classify an order-block zone over bars (created, upto].
 
-    Returns ``(status, tested, first_tap_idx)`` where status ∈
+    Returns ``(status, tested, first_tap_idx, invalidated_idx)`` where status ∈
     {active, mitigated, invalidated}:
       * invalidated — a later candle CLOSED through the zone (support lost for a
         bullish OB, resistance reclaimed for a bearish OB) → consumed/dropped.
+        ``invalidated_idx`` is that candle's bar (None otherwise). Reported by
+        the rejection diagnostics; purely informational, never a decision input.
       * mitigated   — price traded into the zone deep enough (per policy) but it
         held (a tap). ``first_tap_idx`` is the bar of the first such tap.
       * active      — price has not returned to the zone yet.
@@ -331,7 +333,7 @@ def _ob_lifecycle(
                 if first_tap is None:
                     first_tap = j
             if policy.ob_invalidate_on_close_through and closes[j] < zlow:
-                return "invalidated", tested, first_tap
+                return "invalidated", tested, first_tap, j
         else:
             # Resistance: price rises from below; require it to reach depth into
             # the block from the near (bottom) edge.
@@ -340,8 +342,8 @@ def _ob_lifecycle(
                 if first_tap is None:
                     first_tap = j
             if policy.ob_invalidate_on_close_through and closes[j] > zhigh:
-                return "invalidated", tested, first_tap
-    return ("mitigated" if tested else "active"), tested, first_tap
+                return "invalidated", tested, first_tap, j
+    return ("mitigated" if tested else "active"), tested, first_tap, None
 
 
 def _fvg_lifecycle(
@@ -415,6 +417,7 @@ def collect_zones(
     enriched: Any,
     idx: int = -1,
     max_per_type: Optional[int] = None,
+    with_rejects: bool = False,
 ) -> dict[str, list[dict]]:
     """Collect every still-relevant OB / FVG zone up to bar ``idx``.
 
@@ -424,6 +427,14 @@ def collect_zones(
     OB, filled FVG) are dropped. Ordering: active before partially-consumed, then
     by strength/size, then by recency; capped to ``max_per_type`` (defaults to the
     ``MAX_ZONES_PER_TYPE`` env var, else the module constant).
+
+    ``with_rejects=True`` additionally returns ``rejected_order_blocks``: the OB
+    the engine DID detect but does not surface, each carrying the reason emitted
+    by the very branch that dropped it (``invalidated_close_through`` from the
+    lifecycle, ``mitigated_dropped_by_policy`` from the policy flag,
+    ``capped_max_zones`` from the sort/cap). The surfaced lists are byte-identical
+    with the flag on or off — the flag only keeps what was already discarded
+    (rejection-diagnostics mission 2026-07-02; never persisted, never mapped).
     """
     import os
     import pandas as pd
@@ -460,6 +471,7 @@ def collect_zones(
         bear_hi = enriched["BEARISH_OB_HIGH"].values
         bear_lo = enriched["BEARISH_OB_LOW"].values
         obs: list[dict] = []
+        ob_rejects: list[dict] = []
         for k in range(pos + 1):
             for side, hv, lv in (
                 ("bullish", bull_hi[k], bull_lo[k]),
@@ -469,32 +481,54 @@ def collect_zones(
                     continue
                 zhigh, zlow = float(max(hv, lv)), float(min(hv, lv))
                 st = float(strength[k]) if strength is not None and not pd.isna(strength[k]) else 0.0
-                status, tested, tap_idx = _ob_lifecycle(
+                status, tested, tap_idx, invalidated_idx = _ob_lifecycle(
                     side, zhigh, zlow, highs, lows, closes, k, pos
                 )
-                # Honesty guardrail (mission §C): never surface a consumed zone.
-                if status == "invalidated":
-                    continue
-                if status == "mitigated" and MITIGATION_POLICY.ob_drop_when_mitigated:
-                    continue
                 created_at = _zone_created_at(enriched, k)
-                mitigated_at = _zone_created_at(enriched, tap_idx) if tap_idx is not None else None
-                importance = "high" if st >= 0.75 else "medium" if st >= 0.4 else "low"
-                obs.append({
+                zone = {
                     "direction": side,
                     "level_high": zhigh,
                     "level_low": zlow,
-                    "importance": importance,
+                    "importance": "high" if st >= 0.75 else "medium" if st >= 0.4 else "low",
                     "status": status,
                     "tested": tested,
                     "created_at": created_at,
-                    "mitigated_at": mitigated_at,
+                    "mitigated_at": (
+                        _zone_created_at(enriched, tap_idx) if tap_idx is not None else None
+                    ),
                     "_strength": st,
                     "_k": k,
-                })
+                }
+                # Honesty guardrail (mission §C): never surface a consumed zone.
+                # With ``with_rejects`` the SAME branch that drops the zone also
+                # records the reason — the reason is a byproduct of the decision.
+                if status == "invalidated":
+                    if with_rejects:
+                        zone["reject_reason"] = "invalidated_close_through"
+                        zone["invalidated_at"] = (
+                            _zone_created_at(enriched, invalidated_idx)
+                            if invalidated_idx is not None else None
+                        )
+                        ob_rejects.append(zone)
+                    continue
+                if status == "mitigated" and MITIGATION_POLICY.ob_drop_when_mitigated:
+                    if with_rejects:
+                        zone["reject_reason"] = "mitigated_dropped_by_policy"
+                        ob_rejects.append(zone)
+                    continue
+                obs.append(zone)
         # active first, then by strength, then most recent first.
         obs.sort(key=lambda z: (z["status"] != "active", -z["_strength"], -z["_k"]))
         out["order_blocks"] = obs[:max_per_type]
+        if with_rejects:
+            # Overflow of the SAME sorted list the cap truncates: detected,
+            # alive, but ranked beyond max_per_type → not displayed.
+            for rank, zone in enumerate(obs[max_per_type:], start=max_per_type):
+                zone["reject_reason"] = "capped_max_zones"
+                zone["cap_rank"] = rank
+                zone["cap_max"] = max_per_type
+                ob_rejects.append(zone)
+            out["rejected_order_blocks"] = ob_rejects
 
     # ---- Fair value gaps -------------------------------------------------
     if "FVG_DIR" in cols and {"high", "low"} <= cols:
@@ -1097,6 +1131,13 @@ def _build_retest(
     return RetestInProgress(level=retest_level, type="bos_retest", started_at=bar_ts)
 
 
+def ob_zone_id(direction: str, created_at: datetime) -> str:
+    """Stable OB id (direction + creation time) — the ONLY place the format is
+    defined. Shared by the reading models below and the rejection diagnostics so
+    both always name the same zone the same way."""
+    return f"OB_{direction}_{created_at.strftime('%Y%m%d%H%M%S')}"
+
+
 def _zones_to_models(
     zones: dict[str, list[dict]],
     bar_ts: datetime,
@@ -1111,7 +1152,7 @@ def _zones_to_models(
     for z in zones.get("order_blocks", []):
         created = z.get("created_at") or bar_ts
         order_blocks.append(OrderBlock(
-            id=f"OB_{z['direction']}_{created.strftime('%Y%m%d%H%M%S')}",
+            id=ob_zone_id(z["direction"], created),
             direction=z["direction"],
             level_high=z["level_high"],
             level_low=z["level_low"],

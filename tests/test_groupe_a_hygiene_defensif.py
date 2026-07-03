@@ -212,9 +212,16 @@ class TestD2_9_DivergenceOptOut:
 
         import src.intelligence.market_reading_assembler as asm
 
-        src = inspect.getsource(asm._default_smc_pipeline)
+        # L'appel analyze() vit dans build_enriched_frame (extrait du pipeline,
+        # partagé avec les diagnostics de rejet OB) ; le pipeline produit passe
+        # obligatoirement par lui.
+        src = inspect.getsource(asm.build_enriched_frame)
         assert "compute_divergence=False" in src, (
             "Le pipeline produit doit appeler analyze(compute_divergence=False)."
+        )
+        pipeline_src = inspect.getsource(asm._default_smc_pipeline)
+        assert "build_enriched_frame" in pipeline_src, (
+            "Le pipeline produit doit construire le frame via build_enriched_frame."
         )
 
 
