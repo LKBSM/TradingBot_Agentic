@@ -34,6 +34,9 @@ export function ZoneTimeline({ events }: { events: TimelineEvent[] }) {
             <span className="text-sm font-medium text-foreground">{ev.label}</span>
             <span className="text-xs text-muted-foreground">
               {ev.at ? formatZoneDateTime(ev.at) : ev.variant === 'ongoing' ? 'à présent' : '—'}
+              {/* The engine records only the FIRST interaction (no per-test
+                  history) — say so rather than let the date read as "the" test. */}
+              {ev.variant === 'interaction' && ev.at ? ' · premier contact' : ''}
             </span>
           </div>
         </li>
