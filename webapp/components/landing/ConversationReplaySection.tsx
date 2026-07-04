@@ -78,7 +78,7 @@ export function ConversationReplaySection() {
           />
           <ConversationReplayCard
             title="Refuser un ordre"
-            kicker="Compliance UE 2024/2811"
+            kicker="Refus pédagogique"
             question={buyOrNot.text}
             answer={buyOrNot.reply}
             instrument="XAU/USD M15"
@@ -89,7 +89,8 @@ export function ConversationReplaySection() {
         <p className="mt-6 text-xs italic text-muted-foreground">
           Les réponses ci-dessus sont scriptées pour la démo. En production,
           M.I.A Agent utilise Claude (Anthropic) avec le contexte InsightSignal
-          v2.1.0 injecté et un prompt système compliance UE 2024/2811.
+          v2.1.0 injecté et un prompt système qui interdit toute
+          recommandation personnalisée.
         </p>
       </div>
     </section>

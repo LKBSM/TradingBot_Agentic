@@ -42,7 +42,7 @@ test.describe('Chatbot — golden paths', () => {
       .first()
       .click();
     await page.getByRole('button', { name: /Donc je dois acheter/i }).click();
-    // Refusal MUST start with "Non" — compliance UE 2024/2811.
+    // Refusal MUST start with "Non" — le chatbot ne donne aucune instruction.
     await expect(
       page.getByText(/Non, je ne donne aucune instruction/i),
     ).toBeVisible();
