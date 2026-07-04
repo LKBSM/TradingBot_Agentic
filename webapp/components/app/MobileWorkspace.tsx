@@ -78,7 +78,9 @@ export function MobileWorkspace({
 
         <TabsContent value="chat" className="mt-0">
           <div className="h-[70vh]">
-            <AppChatSidebar active={active} />
+            {/* onSelect (not handleSelect): picking a recent discussion swaps
+                the combo while staying on the Chat tab. */}
+            <AppChatSidebar active={active} onSelectCombo={onSelect} />
           </div>
         </TabsContent>
       </div>
