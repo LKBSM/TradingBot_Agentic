@@ -1,13 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import type { FairValueGap, OrderBlock } from '@/types/market-reading';
+import type { Candle, FairValueGap, OrderBlock } from '@/types/market-reading';
 import {
+  barsSince,
   buildTimeline,
   collectZones,
   fillFraction,
+  findOverlaps,
+  formatDurationShort,
   matchesFilter,
-  narrateZone,
+  priceRelation,
   sortZones,
-  type ZoneLifecycle,
+  type SiblingZone,
 } from '../lifecycle';
 
 function ob(overrides: Partial<OrderBlock> = {}): OrderBlock {
@@ -158,7 +161,109 @@ describe('matchesFilter', () => {
   });
 });
 
-describe('sortZones', () => {
+describe('priceRelation — present-tense geometric fact', () => {
+  const zone = collectZones({
+    order_blocks: [ob({ level_low: 2375, level_high: 2378 })],
+    fair_value_gaps: [],
+  } as never)[0]!;
+
+  it('inside when the price is within the band (edges included)', () => {
+    expect(priceRelation(zone, 2376.5)).toEqual({ position: 'inside' });
+    expect(priceRelation(zone, 2375)).toEqual({ position: 'inside' });
+    expect(priceRelation(zone, 2378)).toEqual({ position: 'inside' });
+  });
+
+  it('below the price: gap measured to the NEAREST edge (high)', () => {
+    expect(priceRelation(zone, 2392.35)).toEqual({
+      position: 'below',
+      distance: expect.closeTo(14.35, 5) as never,
+    });
+  });
+
+  it('above the price: gap measured to the nearest edge (low)', () => {
+    expect(priceRelation(zone, 2370)).toEqual({
+      position: 'above',
+      distance: expect.closeTo(5, 5) as never,
+    });
+  });
+
+  it('returns null without a usable price (badge omitted, never guessed)', () => {
+    expect(priceRelation(zone, null)).toBeNull();
+    expect(priceRelation(zone, undefined)).toBeNull();
+    expect(priceRelation(zone, Number.NaN)).toBeNull();
+  });
+});
+
+describe('barsSince — counted on real candles, never estimated', () => {
+  // Ascending M15 window: 10:00 → 11:00 (5 bars).
+  const t0 = Date.parse('2026-05-26T10:00:00+00:00') / 1000;
+  const candles: Candle[] = Array.from({ length: 5 }, (_, i) => ({
+    time: t0 + i * 900,
+    open: 1,
+    high: 2,
+    low: 0,
+    close: 1,
+  }));
+
+  it('counts the candles strictly after the formation bar', () => {
+    expect(barsSince(candles, '2026-05-26T10:00:00+00:00')).toBe(4);
+    expect(barsSince(candles, '2026-05-26T10:30:00+00:00')).toBe(2);
+  });
+
+  it('0 when the formation bar is the last one', () => {
+    expect(barsSince(candles, '2026-05-26T11:00:00+00:00')).toBe(0);
+  });
+
+  it('null when the window does not reach the formation (truncated count)', () => {
+    expect(barsSince(candles, '2026-05-26T08:00:00+00:00')).toBeNull();
+  });
+
+  it('null without candles or on an unparsable timestamp', () => {
+    expect(barsSince(null, '2026-05-26T10:00:00+00:00')).toBeNull();
+    expect(barsSince([], '2026-05-26T10:00:00+00:00')).toBeNull();
+    expect(barsSince(candles, 'not-a-date')).toBeNull();
+  });
+});
+
+describe('formatDurationShort', () => {
+  it('formats minutes, hours and days compactly', () => {
+    expect(formatDurationShort(30 * 1000)).toBe("moins d'une minute");
+    expect(formatDurationShort(45 * 60 * 1000)).toBe('45 min');
+    expect(formatDurationShort((6 * 60 + 30) * 60 * 1000)).toBe('6 h 30');
+    expect(formatDurationShort(6 * 60 * 60 * 1000)).toBe('6 h');
+    expect(formatDurationShort((2 * 24 + 4) * 60 * 60 * 1000)).toBe('2 j 4 h');
+    expect(formatDurationShort(2 * 24 * 60 * 60 * 1000)).toBe('2 j');
+  });
+});
+
+describe('findOverlaps — pure interval intersection', () => {
+  const zone = collectZones({
+    order_blocks: [ob({ level_low: 2375, level_high: 2378 })],
+    fair_value_gaps: [],
+  } as never)[0]!;
+
+  const sibling = (over: Partial<SiblingZone>): SiblingZone => ({
+    id: 's-1',
+    kind: 'ob',
+    direction: 'bullish',
+    levelHigh: 2380,
+    levelLow: 2376,
+    timeframe: 'H1',
+    ...over,
+  });
+
+  it('keeps a sibling whose band intersects', () => {
+    expect(findOverlaps(zone, [sibling({})])).toHaveLength(1);
+  });
+
+  it('drops a disjoint sibling and a merely-touching edge', () => {
+    expect(findOverlaps(zone, [sibling({ levelLow: 2380, levelHigh: 2384 })])).toHaveLength(0);
+    // Touching at exactly 2378 is not an overlap (zero-width intersection).
+    expect(findOverlaps(zone, [sibling({ levelLow: 2378, levelHigh: 2384 })])).toHaveLength(0);
+  });
+});
+
+describe('sortZones — factual orders only (no importance/quality sort)', () => {
   it('recency orders by created_at desc', () => {
     const zones = collectZones({
       order_blocks: [
@@ -170,44 +275,35 @@ describe('sortZones', () => {
     expect(sortZones(zones, 'recency').map((z) => z.id)).toEqual(['new', 'old']);
   });
 
-  it('proximity orders by distance of the band mid to price', () => {
+  it('proximity orders by distance to the BAND, price-inside first', () => {
     const zones = collectZones({
       order_blocks: [
         ob({ id: 'far', level_low: 2400, level_high: 2402 }),
-        ob({ id: 'near', level_low: 2390, level_high: 2392 }),
+        ob({ id: 'inside', level_low: 2390, level_high: 2392 }),
+        ob({ id: 'near', level_low: 2393, level_high: 2394 }),
       ],
       fair_value_gaps: [],
     } as never);
-    expect(sortZones(zones, 'proximity', 2391).map((z) => z.id)).toEqual(['near', 'far']);
-  });
-});
-
-describe('narrateZone — factual, never predictive', () => {
-  const cases: ZoneLifecycle[] = [
-    collectZones({ order_blocks: [ob({ status: 'active', tested: false })], fair_value_gaps: [] } as never)[0]!,
-    collectZones({ order_blocks: [ob({ status: 'active', tested: true, mitigated_at: '2026-05-26T09:00:00+00:00' })], fair_value_gaps: [] } as never)[0]!,
-    collectZones({ order_blocks: [ob({ status: 'mitigated', mitigated_at: '2026-05-26T08:30:00+00:00' })], fair_value_gaps: [] } as never)[0]!,
-    collectZones({ order_blocks: [], fair_value_gaps: [fvg({ status: 'active' })] } as never)[0]!,
-    collectZones({ order_blocks: [], fair_value_gaps: [fvg({ status: 'partially_filled', fill_level: 2379.5 })] } as never)[0]!,
-    collectZones({ order_blocks: [], fair_value_gaps: [fvg({ status: 'filled' })] } as never)[0]!,
-  ];
-
-  it('produces present/past descriptive sentences', () => {
-    expect(narrateZone(cases[0]!, 'XAUUSD')).toContain('Order Block');
-    expect(narrateZone(cases[0]!, 'XAUUSD')).toContain('Non testé');
-    expect(narrateZone(cases[2]!, 'XAUUSD')).toContain('Mitigé');
-    expect(narrateZone(cases[3]!, 'XAUUSD')).toContain('Intact');
-    expect(narrateZone(cases[4]!, 'XAUUSD')).toMatch(/Partiellement comblé/);
-    expect(narrateZone(cases[5]!, 'XAUUSD')).toContain('comblé');
+    expect(sortZones(zones, 'proximity', 2391).map((z) => z.id)).toEqual([
+      'inside',
+      'near',
+      'far',
+    ]);
   });
 
-  it('contains no predictive or directive vocabulary', () => {
-    // Forbidden lexicon — chosen NOT to overlap with legitimate descriptive
-    // words (haussier/baissier/mitigé/comblé/testé/pénétré/actif/importance).
-    const FORBIDDEN =
-      /(\bva\b|vise|cible|objectif|devrait|rebond|prévis|prédi|acheter|vendre|\bsignal\b|probab|attendu|recommand)/i;
-    for (const z of cases) {
-      expect(narrateZone(z, 'XAUUSD')).not.toMatch(FORBIDDEN);
-    }
+  it('proximity without a price degrades to the state order (no invented distance)', () => {
+    const zones = collectZones({
+      order_blocks: [ob({ id: 'mit', status: 'mitigated' }), ob({ id: 'act', status: 'active' })],
+      fair_value_gaps: [],
+    } as never);
+    expect(sortZones(zones, 'proximity', null).map((z) => z.id)).toEqual(['act', 'mit']);
+  });
+
+  it('state follows the engine lifecycle status', () => {
+    const zones = collectZones({
+      order_blocks: [ob({ id: 'mit', status: 'mitigated' }), ob({ id: 'act', status: 'active' })],
+      fair_value_gaps: [{ ...fvg({ id: 'part', status: 'partially_filled' }) }],
+    } as never);
+    expect(sortZones(zones, 'state').map((z) => z.id)).toEqual(['act', 'part', 'mit']);
   });
 });
