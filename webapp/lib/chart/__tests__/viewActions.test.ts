@@ -45,6 +45,31 @@ describe('coerceViewAction', () => {
     });
   });
 
+  it('accepts liquidity in single and MULTI-layer toggles (pockets are maskable)', () => {
+    expect(
+      coerceViewAction(
+        { action: 'set_layer_visibility', params: { layer: 'liquidity', visible: false } },
+        ZONES,
+      ),
+    ).toEqual({
+      action: 'set_layer_visibility',
+      params: { layer: 'liquidity', visible: false },
+    });
+    // « enlève les FVG et la liquidité » → one multi-layer action.
+    expect(
+      coerceViewAction(
+        {
+          action: 'set_layer_visibility',
+          params: { layers: ['fvg', 'liquidity'], visible: false },
+        },
+        ZONES,
+      ),
+    ).toEqual({
+      action: 'set_layer_visibility',
+      params: { layers: ['fvg', 'liquidity'], visible: false },
+    });
+  });
+
   it('rejects a MULTI-layer toggle with a bad/empty/all/mixed list', () => {
     // "all" is not addressable inside an explicit subset.
     expect(
@@ -224,6 +249,14 @@ describe('applyChartViewAction', () => {
       params: { layers: ['fvg', 'ob'], visible: false },
     });
     expect(next.layers).toEqual({ fvg: false, ob: false, breaks: true, liquidity: true });
+  });
+
+  it('toggles the liquidity layer in the multi-layer form, leaving the rest intact', () => {
+    const next = applyChartViewAction(DEFAULT_CHART_VIEW, {
+      action: 'set_layer_visibility',
+      params: { layers: ['liquidity'], visible: false },
+    });
+    expect(next.layers).toEqual({ fvg: true, ob: true, breaks: true, liquidity: false });
   });
 
   it('layer "all" toggles every overlay', () => {

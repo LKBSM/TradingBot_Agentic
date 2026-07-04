@@ -93,14 +93,17 @@ function WorkspaceInner({
     if (active) openForCombo(active);
   }, [active, openForCombo]);
 
-  // Zone ids the chart can currently resolve — the ONLY zones a focus/highlight
-  // view action may reference (defence in depth on top of the backend Couche 4).
+  // Structure ids the chart can currently resolve — the ONLY structures a
+  // focus/highlight/mask view action may reference (defence in depth on top of
+  // the backend Couche 4). Liquidity pockets are id-maskable exactly like
+  // OB/FVG zones, so their engine-emitted ids belong to the same lock.
   const validZoneIds = React.useMemo(() => {
     const ids = new Set<string>();
     const s = data?.structure;
     if (s) {
       for (const ob of s.order_blocks ?? []) ids.add(ob.id);
       for (const fvg of s.fair_value_gaps ?? []) ids.add(fvg.id);
+      for (const pool of s.liquidity_pools ?? []) ids.add(pool.id);
     }
     return ids;
   }, [data]);

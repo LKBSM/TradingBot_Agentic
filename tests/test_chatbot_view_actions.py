@@ -13,11 +13,15 @@ from datetime import datetime, timezone
 from typing import Any
 
 from src.intelligence.chatbot.chatbot import Chatbot
-from src.intelligence.chatbot.constants import VIEW_ACTION_REFUSAL_TEMPLATE
+from src.intelligence.chatbot.constants import (
+    VIEW_ACTION_EMPTY_CATEGORY_TEMPLATE,
+    VIEW_ACTION_REFUSAL_TEMPLATE,
+)
 from src.intelligence.chatbot.signal_summary_provider import SignalSummaryProvider
 from src.intelligence.chatbot.view_action_filter import ViewActionValidator
 from src.intelligence.market_reading_schema import (
     FairValueGap,
+    LiquidityPool,
     MarketReading,
     MarketReadingConditions,
     MarketReadingEvents,
@@ -560,6 +564,152 @@ def test_group_with_one_invented_id_rejects_whole_action() -> None:
     assert out.view_actions == []  # one invented id → nothing hidden
 
 
+# ---- Liquidity pockets (SSL/BSL) — maskable like any detected structure ----- #
+
+
+def test_multi_layer_toggle_accepts_liquidity() -> None:
+    # « enlève les FVG et la liquidité » → one multi-layer action.
+    res = v().validate(
+        {
+            "action": "set_layer_visibility",
+            "params": {"layers": ["fvg", "liquidity"], "visible": False},
+        }
+    )
+    assert res.valid
+    assert res.action["params"]["layers"] == ["fvg", "liquidity"]
+
+
+def test_hide_zones_accepts_real_pool_ids() -> None:
+    # A pocket id is validated by the SAME id lock as an OB/FVG id.
+    known = {"LIQ_ssl_equal_lows_20260605100000"}
+    res = v().validate(
+        {"action": "hide_zones", "params": {"zone_ids": list(known)}},
+        known_zone_ids=known,
+    )
+    assert res.valid
+
+
+def test_hide_zones_rejects_invented_pool_id() -> None:
+    res = v().validate(
+        {"action": "hide_zones", "params": {"zone_ids": ["LIQ_ssl_at_4160"]}},
+        known_zone_ids={"LIQ_ssl_equal_lows_20260605100000"},
+    )
+    assert not res.valid
+    assert res.reason == "unknown_zone_id"
+
+
+_POOL_INDEX = {
+    "ssl": ["LIQ_ssl_a", "LIQ_ssl_b"],
+    "bsl": ["LIQ_bsl_a"],
+    "liquidity": ["LIQ_ssl_a", "LIQ_ssl_b", "LIQ_bsl_a"],
+}
+_POOL_KNOWN = {"LIQ_ssl_a", "LIQ_ssl_b", "LIQ_bsl_a"}
+
+
+def test_hide_zones_category_resolves_to_emitted_ids_only() -> None:
+    # « masque les SSL » → category resolved server-side to ALL emitted SSL ids
+    # and NOTHING else (the BSL pocket is untouched).
+    res = v().validate(
+        {"action": "hide_zones", "params": {"category": "ssl"}},
+        known_zone_ids=_POOL_KNOWN,
+        known_category_ids=_POOL_INDEX,
+    )
+    assert res.valid
+    assert res.action == {
+        "action": "hide_zones",
+        "params": {"zone_ids": ["LIQ_ssl_a", "LIQ_ssl_b"]},
+    }
+
+
+def test_hide_zones_category_liquidity_covers_both_sides() -> None:
+    res = v().validate(
+        {"action": "hide_zones", "params": {"category": "liquidity"}},
+        known_zone_ids=_POOL_KNOWN,
+        known_category_ids=_POOL_INDEX,
+    )
+    assert res.valid
+    assert res.action["params"]["zone_ids"] == ["LIQ_ssl_a", "LIQ_ssl_b", "LIQ_bsl_a"]
+
+
+def test_show_zones_category_resolves_like_hide() -> None:
+    # « ré-affiche les BSL » — same closed resolver, reversible masking.
+    res = v().validate(
+        {"action": "show_zones", "params": {"category": "bsl"}},
+        known_zone_ids=_POOL_KNOWN,
+        known_category_ids=_POOL_INDEX,
+    )
+    assert res.valid
+    assert res.action == {"action": "show_zones", "params": {"zone_ids": ["LIQ_bsl_a"]}}
+
+
+def test_isolate_zones_category_resolves() -> None:
+    res = v().validate(
+        {"action": "isolate_zones", "params": {"category": "ssl"}},
+        known_zone_ids=_POOL_KNOWN,
+        known_category_ids=_POOL_INDEX,
+    )
+    assert res.valid
+    assert res.action["params"]["zone_ids"] == ["LIQ_ssl_a", "LIQ_ssl_b"]
+
+
+def test_category_outside_closed_enum_rejected() -> None:
+    for bad in ("liq", "pockets", "SSL ", "trendlines", 3, None):
+        res = v().validate(
+            {"action": "hide_zones", "params": {"category": bad, "zone_ids": None}},
+            known_zone_ids=_POOL_KNOWN,
+            known_category_ids=_POOL_INDEX,
+        )
+        assert not res.valid, bad
+        # None falls through to the zone_ids path (absent list → bad_zone_ids);
+        # every other value is an off-enum category.
+        assert res.reason in ("bad_category", "bad_zone_ids")
+
+
+def test_category_with_zone_ids_is_ambiguous() -> None:
+    res = v().validate(
+        {"action": "hide_zones", "params": {"category": "ssl", "zone_ids": ["LIQ_ssl_a"]}},
+        known_zone_ids=_POOL_KNOWN,
+        known_category_ids=_POOL_INDEX,
+    )
+    assert not res.valid
+    assert res.reason == "ambiguous_target"
+
+
+def test_empty_category_rejected_honestly() -> None:
+    # « masque les SSL » when the engine emitted NO SSL pocket → rejected with a
+    # dedicated reason (the orchestrator reports "nothing of that kind"), and
+    # nothing is hidden — the resolver never pads an empty set.
+    res = v().validate(
+        {"action": "hide_zones", "params": {"category": "ssl"}},
+        known_zone_ids={"ob_1"},
+        known_category_ids={"ob": ["ob_1"]},
+    )
+    assert not res.valid
+    assert res.reason == "empty_category"
+
+
+def test_category_resolver_drops_ids_missing_from_known() -> None:
+    # Defence in depth: an index entry that is NOT in the emitted-id set can
+    # never surface (the resolver re-checks every id against the lock).
+    res = v().validate(
+        {"action": "hide_zones", "params": {"category": "ssl"}},
+        known_zone_ids={"LIQ_ssl_a"},
+        known_category_ids={"ssl": ["LIQ_ssl_a", "LIQ_ssl_ghost"]},
+    )
+    assert res.valid
+    assert res.action["params"]["zone_ids"] == ["LIQ_ssl_a"]
+
+
+def test_category_mask_rejects_geometry_param() -> None:
+    res = v().validate(
+        {"action": "hide_zones", "params": {"category": "ssl", "level": 4160}},
+        known_zone_ids=_POOL_KNOWN,
+        known_category_ids=_POOL_INDEX,
+    )
+    assert not res.valid
+    assert res.reason == "geometry_param_forbidden"
+
+
 def test_isolate_then_show_restore_roundtrip() -> None:
     # isolate a real zone, then restore — both are display-only, reversible. Both
     # view actions ride in ONE assistant turn (after the reading) so the tool-turn
@@ -580,3 +730,185 @@ def test_isolate_then_show_restore_roundtrip() -> None:
         {"action": "show_zones", "params": {}},
     ]
     assert out.blocked_reason is None
+
+
+# ---- Liquidity pockets end-to-end (« masque les SSL ») ----------------------- #
+
+
+def _pool(pool_id: str, side: str, status: str = "intact") -> LiquidityPool:
+    return LiquidityPool(
+        id=pool_id,
+        side=side,  # type: ignore[arg-type]
+        kind="equal_highs" if side == "bsl" else "equal_lows",  # type: ignore[arg-type]
+        level=2380.0 if side == "bsl" else 2370.0,
+        touches=2,
+        is_external=True,
+        status=status,  # type: ignore[arg-type]
+        created_at=datetime(2026, 6, 5, 10, 0, tzinfo=timezone.utc),
+    )
+
+
+def _reading_with_pools(pools: list[LiquidityPool]) -> MarketReading:
+    return MarketReading(
+        header=MarketReadingHeader(
+            instrument="XAUUSD",
+            timeframe="M15",
+            candle_close_ts=datetime(2026, 6, 5, 14, 0, tzinfo=timezone.utc),
+            close_price=2378.45,
+        ),
+        structure=MarketReadingStructure(
+            order_blocks=_reading_with_ob("ob_1").structure.order_blocks,
+            liquidity_pools=pools,
+        ),
+        regime=MarketReadingRegime(
+            trend="bullish",
+            volatility_observed="elevated",
+            market_phase="expansion",
+            mtf_confluence={},
+        ),
+        events=MarketReadingEvents(),
+        conditions=MarketReadingConditions(
+            tags=[], description="desc", description_source="template_fallback"
+        ),
+    )
+
+
+class _PoolAssembler:
+    """Assembler returning a reading carrying liquidity pockets (and one OB)."""
+
+    def __init__(self, pools: list[LiquidityPool]) -> None:
+        self._pools = pools
+
+    def get_or_generate(self, instrument: str, timeframe: str) -> MarketReading:
+        return _reading_with_pools(list(self._pools))
+
+
+_TWO_SSL_ONE_BSL = [
+    _pool("LIQ_ssl_equal_lows_20260605100000", "ssl"),
+    _pool("LIQ_ssl_equal_lows_20260605110000", "ssl", status="swept"),
+    _pool("LIQ_bsl_equal_highs_20260605100000", "bsl"),
+]
+
+
+def test_hide_ssl_category_masks_all_emitted_ssl_and_nothing_else() -> None:
+    # « masque les SSL » : the model reads the combo (pockets harvested), then
+    # sends ONE category action; the server resolves it to every emitted SSL id
+    # — the BSL pocket and the OB stay visible.
+    r1 = StubResponse([ToolUseBlock("get_market_reading", {"instrument": "XAUUSD", "timeframe": "M15"}, id="t1")], "tool_use")
+    r2 = StubResponse([ToolUseBlock("apply_chart_view", {"action": "hide_zones", "params": {"category": "ssl"}}, id="t2")], "tool_use")
+    r3 = StubResponse([TextBlock("J'ai masqué les poches SSL.")], "end_turn")
+    bot, _ = _make_bot([r1, r2, r3], _PoolAssembler(_TWO_SSL_ONE_BSL))
+    out = bot.chat("Masque les SSL")
+    assert out.blocked_reason is None
+    assert out.view_actions == [
+        {
+            "action": "hide_zones",
+            "params": {
+                "zone_ids": [
+                    "LIQ_ssl_equal_lows_20260605100000",
+                    "LIQ_ssl_equal_lows_20260605110000",
+                ]
+            },
+        }
+    ]
+
+
+def test_hide_liquidity_category_then_show_restores() -> None:
+    # « masque la liquidité » covers BOTH sides; show_zones {category} restores
+    # the same resolved set — reversible, in one assistant turn.
+    r1 = StubResponse([ToolUseBlock("get_market_reading", {"instrument": "XAUUSD", "timeframe": "M15"}, id="t1")], "tool_use")
+    r2 = StubResponse(
+        [
+            ToolUseBlock("apply_chart_view", {"action": "hide_zones", "params": {"category": "liquidity"}}, id="t2"),
+            ToolUseBlock("apply_chart_view", {"action": "show_zones", "params": {"category": "liquidity"}}, id="t3"),
+        ],
+        "tool_use",
+    )
+    r3 = StubResponse([TextBlock("Masqué puis ré-affiché.")], "end_turn")
+    bot, _ = _make_bot([r1, r2, r3], _PoolAssembler(_TWO_SSL_ONE_BSL))
+    out = bot.chat("Masque la liquidité puis ré-affiche-la")
+    all_pool_ids = [p.id for p in _TWO_SSL_ONE_BSL]
+    assert out.view_actions == [
+        {"action": "hide_zones", "params": {"zone_ids": all_pool_ids}},
+        {"action": "show_zones", "params": {"zone_ids": all_pool_ids}},
+    ]
+
+
+def test_hide_real_pool_by_id_after_reading_surfaces() -> None:
+    # A single pocket is maskable by its REAL id, exactly like an OB/FVG.
+    pid = "LIQ_ssl_equal_lows_20260605100000"
+    r1 = StubResponse([ToolUseBlock("get_market_reading", {"instrument": "XAUUSD", "timeframe": "M15"}, id="t1")], "tool_use")
+    r2 = StubResponse([ToolUseBlock("apply_chart_view", {"action": "hide_zones", "params": {"zone_ids": [pid]}}, id="t2")], "tool_use")
+    r3 = StubResponse([TextBlock("J'ai masqué cette poche.")], "end_turn")
+    bot, _ = _make_bot([r1, r2, r3], _PoolAssembler(_TWO_SSL_ONE_BSL))
+    out = bot.chat("Masque la poche SSL du bas")
+    assert out.view_actions == [{"action": "hide_zones", "params": {"zone_ids": [pid]}}]
+
+
+def test_hide_invented_pool_id_is_rejected() -> None:
+    # An invented pocket id is rejected by the CODE — nothing is hidden.
+    r1 = StubResponse([ToolUseBlock("get_market_reading", {"instrument": "XAUUSD", "timeframe": "M15"}, id="t1")], "tool_use")
+    r2 = StubResponse([ToolUseBlock("apply_chart_view", {"action": "hide_zones", "params": {"zone_ids": ["LIQ_ssl_at_4160"]}}, id="t2")], "tool_use")
+    r3 = StubResponse([TextBlock(VIEW_ACTION_REFUSAL_TEMPLATE)], "end_turn")
+    bot, client = _make_bot([r1, r2, r3], _PoolAssembler(_TWO_SSL_ONE_BSL))
+    out = bot.chat("Masque la poche à 4160")
+    assert out.view_actions == []
+    tool_result_msg = client.calls[2]["messages"][-1]
+    assert VIEW_ACTION_REFUSAL_TEMPLATE in tool_result_msg["content"][0]["content"]
+
+
+def test_hide_ssl_with_no_ssl_emitted_reports_honestly() -> None:
+    # The engine emitted NO SSL pocket → the category action is rejected with the
+    # HONEST "nothing of that kind" message (not the invented-structure refusal),
+    # and nothing is hidden.
+    only_bsl = [_pool("LIQ_bsl_equal_highs_20260605100000", "bsl")]
+    r1 = StubResponse([ToolUseBlock("get_market_reading", {"instrument": "XAUUSD", "timeframe": "M15"}, id="t1")], "tool_use")
+    r2 = StubResponse([ToolUseBlock("apply_chart_view", {"action": "hide_zones", "params": {"category": "ssl"}}, id="t2")], "tool_use")
+    r3 = StubResponse([TextBlock("Le moteur n'émet aucune poche SSL sur cette lecture.")], "end_turn")
+    bot, client = _make_bot([r1, r2, r3], _PoolAssembler(only_bsl))
+    out = bot.chat("Masque les SSL")
+    assert out.view_actions == []  # nothing hidden, nothing invented
+    tool_result_msg = client.calls[2]["messages"][-1]
+    assert VIEW_ACTION_EMPTY_CATEGORY_TEMPLATE in tool_result_msg["content"][0]["content"]
+
+
+def test_fvg_ob_categories_resolve_via_same_mechanism() -> None:
+    # The SAME generic resolver serves « enlève les FVG et les OB » by ids: two
+    # category actions in one turn, each resolved to the emitted ids of its kind.
+    r1 = StubResponse([ToolUseBlock("get_market_reading", {"instrument": "XAUUSD", "timeframe": "M15"}, id="t1")], "tool_use")
+    r2 = StubResponse(
+        [
+            ToolUseBlock("apply_chart_view", {"action": "hide_zones", "params": {"category": "ob"}}, id="t2"),
+        ],
+        "tool_use",
+    )
+    r3 = StubResponse([TextBlock("J'ai masqué les OB.")], "end_turn")
+    bot, _ = _make_bot([r1, r2, r3], _PoolAssembler(_TWO_SSL_ONE_BSL))
+    out = bot.chat("Masque tous les OB")
+    assert out.view_actions == [{"action": "hide_zones", "params": {"zone_ids": ["ob_1"]}}]
+
+
+def test_create_move_resize_still_rejected_for_pockets() -> None:
+    # The action vocabulary is unchanged: no create/move/resize verb exists for
+    # pockets either — off-list actions are rejected and never recorded.
+    r1 = StubResponse([ToolUseBlock("apply_chart_view", {"action": "create_liquidity_pool", "params": {}}, id="t1")], "tool_use")
+    r2 = StubResponse([TextBlock(VIEW_ACTION_REFUSAL_TEMPLATE)], "end_turn")
+    bot, _ = _make_bot([r1, r2], _PoolAssembler(_TWO_SSL_ONE_BSL))
+    out = bot.chat("Place une poche de liquidité à 4200")
+    assert out.view_actions == []
+
+
+def test_detection_never_mutated_by_pool_masking() -> None:
+    # Masking pockets is display-only: a fresh generation yields the SAME
+    # structure — nothing was written back to the engine output.
+    assembler = _PoolAssembler(_TWO_SSL_ONE_BSL)
+    reference = _reading_with_pools(_TWO_SSL_ONE_BSL).model_dump(mode="json")
+    r1 = StubResponse([ToolUseBlock("get_market_reading", {"instrument": "XAUUSD", "timeframe": "M15"}, id="t1")], "tool_use")
+    r2 = StubResponse([ToolUseBlock("apply_chart_view", {"action": "hide_zones", "params": {"category": "liquidity"}}, id="t2")], "tool_use")
+    r3 = StubResponse([TextBlock("Masqué.")], "end_turn")
+    bot, _ = _make_bot([r1, r2, r3], assembler)
+    bot.chat("Masque la liquidité")
+    assert (
+        assembler.get_or_generate("XAUUSD", "M15").model_dump(mode="json")["structure"]
+        == reference["structure"]
+    )
