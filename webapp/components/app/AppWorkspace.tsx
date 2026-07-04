@@ -188,7 +188,7 @@ function DesktopWorkspace({
         />
 
         <div className="md:sticky md:top-6 md:h-[calc(100vh-7rem)]">
-          <AppChatSidebar active={active} />
+          <AppChatSidebar active={active} onSelectCombo={onSelect} />
         </div>
       </div>
     </div>
