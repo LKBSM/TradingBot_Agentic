@@ -49,7 +49,7 @@ webapp/
 │  ├─ theme-provider.tsx         # Wrapper next-themes
 │  ├─ theme-toggle.tsx           # Bouton dark/light (Sun/Moon)
 │  ├─ Nav.tsx                    # Sticky brand + anchors + theme toggle
-│  ├─ Footer.tsx                 # Compliance bandeau + 5 liens LEGAL-PENDING
+│  ├─ Footer.tsx                 # Footer partagé — liens réels uniquement, claims vérifiables
 │  ├─ insight/                   # Cœur produit
 │  │  ├─ MarketReadingCard.tsx   # Orchestrateur couches 1 + 2
 │  │  ├─ InsightGallery.tsx      # Bridge useChat() (client)

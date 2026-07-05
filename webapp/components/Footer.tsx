@@ -2,51 +2,31 @@ import Link from 'next/link';
 import { ShieldCheck } from 'lucide-react';
 
 /**
- * Footer enrichi L5.3.
+ * Footer partagé (rendu une seule fois dans `[locale]/layout`).
  *
- * Mentions légales placeholder (LEGAL-PENDING jusqu'à la sortie du
- * terminal légal Iubenda Pro + relecture avocat M3) mais inclut dès la
- * V1 :
- *   - Badge "Early Access · 50 places" (cap bootstrap legal 2026-05-26)
- *   - Liste explicite des 9 pays Phase 1 (lock 4 utilisateur 2026-05-27)
- *   - Posture UE 2024/2811 + mention accès anticipé
- *   - Médiateur CM2C + DSAR RGPD placeholders
- *
- * Réseaux sociaux : placeholders pour ne pas perdre l'arbo, désactivés
- * tant que les comptes ne sont pas publiés.
+ * Règle éditoriale (nettoyage claims 2026-07-04) : le footer n'affirme QUE ce
+ * qui est vrai et vérifiable aujourd'hui. Il ne liste que des liens dont la
+ * cible existe réellement dans le repo. Les pages légales manquantes
+ * (mentions légales, cookies) seront ajoutées ici quand elles existeront —
+ * ne PAS réintroduire de lien mort ni de claim de conformité non sourcé.
  */
-const PHASE1_COUNTRIES = [
-  'France',
-  'Belgique',
-  'Suisse',
-  'Luxembourg',
-  'Canada (hors Québec)',
-  'Royaume-Uni',
-  'Australie',
-  'Nouvelle-Zélande',
-  'Irlande',
+export const LEGAL_LINKS = [
+  { href: '/conditions', label: 'Conditions d’utilisation' },
+  { href: '/confidentialite', label: 'Confidentialité' },
+  { href: 'mailto:contact@mia.markets', label: 'Contact' },
 ] as const;
 
-// `pending: true` keeps the LEGAL-PENDING marker (route not built yet — mission
-// ④). The Conditions + Confidentialité pages now exist, so they are live links.
-const LEGAL_LINKS = [
-  { href: '/mentions-legales', label: 'Mentions légales', pending: true },
-  { href: '/conditions', label: 'Conditions d’utilisation', pending: false },
-  { href: '/confidentialite', label: 'Confidentialité', pending: false },
-  { href: '/cookies', label: 'Cookies', pending: true },
-  { href: '#mediateur', label: 'Médiateur (CM2C)', pending: true },
-  { href: 'mailto:contact@mia.markets', label: 'Contact', pending: false },
-] as const;
-
-const PRODUCT_LINKS = [
-  { href: '#multi-marche', label: 'Multi-actifs' },
-  { href: '#conversations', label: 'Chatbot M.I.A Agent' },
-  { href: '#avant-apres', label: 'Avant / Après' },
-  { href: '#honnetete', label: 'Transparence' },
+// Ancres préfixées `/#` : le footer est global, les sections vivent sur la
+// landing — le lien doit fonctionner depuis /app, /scanner, /zones aussi.
+export const PRODUCT_LINKS = [
+  { href: '/#multi-marche', label: 'Multi-actifs' },
+  { href: '/#conversations', label: 'Chatbot M.I.A Agent' },
+  { href: '/#avant-apres', label: 'Avant / Après' },
+  { href: '/#honnetete', label: 'Transparence' },
   { href: '/methodology', label: 'Méthodologie' },
   { href: '/methodology#attributions', label: 'Attributions' },
-  { href: '#tarifs', label: 'Tarifs' },
-  { href: '#faq', label: 'FAQ' },
+  { href: '/#tarifs', label: 'Tarifs' },
+  { href: '/#faq', label: 'FAQ' },
 ] as const;
 
 export function Footer() {
@@ -65,7 +45,7 @@ export function Footer() {
               </p>
               <span className="inline-flex items-center gap-1 rounded-full border border-sentinel-bull/40 bg-sentinel-bull/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-sentinel-bull">
                 <ShieldCheck className="h-2.5 w-2.5" aria-hidden />
-                Early Access · 50 places
+                Accès anticipé
               </span>
             </div>
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground/80">
@@ -74,8 +54,7 @@ export function Footer() {
             <p className="max-w-md text-xs text-muted-foreground">
               Indicateur de marché conversationnel. Posture éducative,
               compréhension augmentée du marché — pas une performance
-              financière promise. Conformité UE 2024/2811 par
-              construction.
+              financière promise.
             </p>
             <p className="text-[11px] text-muted-foreground">
               <span className="font-mono">mia.markets</span> ·{' '}
@@ -118,7 +97,6 @@ export function Footer() {
                   <Link
                     href={link.href}
                     className="text-muted-foreground transition-colors hover:text-foreground focus-visible:underline focus-visible:outline-none"
-                    {...(link.pending ? { 'data-legal-pending': 'footer-link' } : {})}
                   >
                     {link.label}
                   </Link>
@@ -126,21 +104,6 @@ export function Footer() {
               ))}
             </ul>
           </nav>
-        </div>
-
-        {/* Disponibilité géographique — lock 4 : 9 pays Phase 1 */}
-        <div className="rounded-lg border border-dashed border-border/70 bg-card/50 p-4">
-          <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-            Disponibilité géographique · Phase 1
-          </p>
-          <p className="mt-2 text-xs text-muted-foreground">
-            Early Access ouvert exclusivement dans :{' '}
-            <span className="text-foreground">
-              {PHASE1_COUNTRIES.join(' · ')}
-            </span>
-            . États-Unis et Québec exclus (revue légale Phase 2,
-            indicative M+9).
-          </p>
         </div>
 
         <div

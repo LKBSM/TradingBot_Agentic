@@ -86,8 +86,7 @@ export default function OpenGraphImage() {
               lineHeight: 1.4,
             }}
           >
-            Lectures algorithmiques · chatbot M.I.A Agent · posture éducative ·
-            conforme UE 2024/2811
+            Lectures algorithmiques · chatbot M.I.A Agent · posture éducative
           </p>
         </div>
 

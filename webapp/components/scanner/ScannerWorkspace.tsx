@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useConditionsConfig } from '@/lib/conditions/config-store';
+import { useSavedStrategies, type SavedStrategy } from '@/lib/conditions/strategy-store';
 import { useAutoRefreshPref } from '@/lib/conditions/auto-refresh-store';
 import { useCandleCloseRefresh } from '@/lib/conditions/use-candle-close-refresh';
 import {
@@ -12,6 +13,7 @@ import type { ConditionsConfig, ConditionsScanResponse } from '@/lib/conditions/
 import { Button } from '@/components/ui/button';
 import { ConditionsBuilder } from './ConditionsBuilder';
 import { ScanResults } from './ScanResults';
+import { StrategyPanel } from './StrategyPanel';
 
 /**
  * Orchestrates the Scanner page:
@@ -21,8 +23,30 @@ import { ScanResults } from './ScanResults';
  */
 export function ScannerWorkspace({ locale }: { locale: string }) {
   const { config, ready, save } = useConditionsConfig();
+  const saved = useSavedStrategies();
   const { enabled: autoRefresh, setEnabled: setAutoRefresh } = useAutoRefreshPref();
   const [editing, setEditing] = React.useState(false);
+  // Strategy loaded into the builder ("recharger" = repopulate the palette,
+  // then the existing "Enregistrer & relancer" runs the scan). The key forces
+  // the builder to re-init its rows from the loaded config.
+  const [loaded, setLoaded] = React.useState<{
+    config: ConditionsConfig;
+    name: string;
+    key: number;
+  } | null>(null);
+
+  const loadStrategy = React.useCallback(
+    (strategy: SavedStrategy) => {
+      saved.markUsed(strategy.id);
+      setLoaded((prev) => ({
+        config: strategy.config,
+        name: strategy.name,
+        key: (prev?.key ?? 0) + 1,
+      }));
+      setEditing(true);
+    },
+    [saved],
+  );
 
   const [response, setResponse] = React.useState<ConditionsScanResponse | null>(null);
   const [isScanning, setIsScanning] = React.useState(false);
@@ -81,18 +105,43 @@ export function ScannerWorkspace({ locale }: { locale: string }) {
     return <p className="text-sm text-muted-foreground">Chargement…</p>;
   }
 
+  const strategyPanel = saved.ready ? (
+    <StrategyPanel
+      strategies={saved.strategies}
+      locale={locale}
+      onLoad={loadStrategy}
+      onRename={saved.renameStrategy}
+      onDuplicate={saved.duplicateStrategy}
+      onDelete={saved.deleteStrategy}
+    />
+  ) : null;
+
   if (showBuilder) {
     return (
-      <ConditionsBuilder
-        config={config}
-        mode={config ? 'edit' : 'onboarding'}
-        onCancel={config ? () => setEditing(false) : undefined}
-        onSubmit={(cfg) => {
-          save(cfg);
-          setEditing(false);
-          void runScan(cfg);
-        }}
-      />
+      <div className="space-y-4">
+        <ConditionsBuilder
+          key={loaded ? `strategy-${loaded.key}` : 'default'}
+          config={loaded?.config ?? config}
+          initialStrategyName={loaded?.name}
+          mode={config ? 'edit' : 'onboarding'}
+          onCancel={
+            config
+              ? () => {
+                  setEditing(false);
+                  setLoaded(null);
+                }
+              : undefined
+          }
+          onSubmit={(cfg) => {
+            save(cfg);
+            setEditing(false);
+            setLoaded(null);
+            void runScan(cfg);
+          }}
+          onSaveStrategy={saved.saveStrategy}
+        />
+        {strategyPanel}
+      </div>
     );
   }
 
@@ -117,15 +166,18 @@ export function ScannerWorkspace({ locale }: { locale: string }) {
   }
 
   return (
-    <ScanResults
-      response={response}
-      config={config}
-      locale={locale}
-      isRefreshing={isScanning}
-      onRefresh={() => runScan(config)}
-      onEdit={() => setEditing(true)}
-      autoRefreshEnabled={autoRefresh}
-      onToggleAutoRefresh={setAutoRefresh}
-    />
+    <div className="space-y-4">
+      <ScanResults
+        response={response}
+        config={config}
+        locale={locale}
+        isRefreshing={isScanning}
+        onRefresh={() => runScan(config)}
+        onEdit={() => setEditing(true)}
+        autoRefreshEnabled={autoRefresh}
+        onToggleAutoRefresh={setAutoRefresh}
+      />
+      {strategyPanel}
+    </div>
   );
 }
