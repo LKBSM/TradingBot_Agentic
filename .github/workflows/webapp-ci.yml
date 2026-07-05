@@ -42,7 +42,10 @@ jobs:
           cache: npm
           cache-dependency-path: webapp/package-lock.json
       - run: npm ci --legacy-peer-deps
-      - run: npx playwright install --with-deps chromium
+      # chromium + webkit: the mobile-iphone-12 project (devices['iPhone 12'])
+      # runs on the webkit engine — chromium alone made every mobile spec fail
+      # with "Executable doesn't exist".
+      - run: npx playwright install --with-deps chromium webkit
       - run: npm run build
       - run: npm run test:e2e
       - if: failure()
@@ -64,7 +67,9 @@ jobs:
           cache: npm
           cache-dependency-path: webapp/package-lock.json
       - run: npm ci --legacy-peer-deps
-      - run: npm install -D @lhci/cli
+      # Same peer-conflict as npm ci (vite 8 vs @types/node pin) — the ad-hoc
+      # install needs the same resolution flag.
+      - run: npm install -D @lhci/cli --legacy-peer-deps
       - run: npm run build
       - run: npx lhci autorun
         env:

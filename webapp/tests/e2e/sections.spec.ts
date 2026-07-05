@@ -19,14 +19,16 @@ test.describe('Sections collapsibles — golden paths', () => {
     await expect(page.getByText(/haussier · confirmée/i).first()).toBeVisible();
   });
 
-  test('clicking the regime trigger reveals the MTF confluence map', async ({ page }) => {
+  test('clicking the regime trigger reveals the MTF alignment map', async ({ page }) => {
     await page.goto('/#multi-marche');
     const regimeTrigger = page
       .getByRole('button', { name: /Régime de marché/i })
       .first();
     await regimeTrigger.click();
+    // Renamed from « Confluence multi-timeframe » by the market-regime
+    // enrichment (the map states factual per-TF alignment, not a score).
     await expect(
-      page.getByText(/Confluence multi-timeframe/i).first(),
+      page.getByText(/Alignement multi-timeframe/i).first(),
     ).toBeVisible();
   });
 
