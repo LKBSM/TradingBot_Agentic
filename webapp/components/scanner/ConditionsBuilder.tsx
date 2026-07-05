@@ -22,6 +22,11 @@ import type {
   TrendChoice,
   VolatilityChoice,
 } from '@/lib/conditions/types';
+import {
+  MAX_NAME_CHARS,
+  type StrategyMutationResult,
+} from '@/lib/conditions/strategy-store';
+import { mutationErrorMessage } from './StrategyPanel';
 
 /**
  * Builder where the user COMPOSES their conditions from the present-tense
@@ -81,14 +86,25 @@ export function ConditionsBuilder({
   onSubmit,
   onCancel,
   mode,
+  onSaveStrategy,
+  initialStrategyName,
 }: {
   config: ConditionsConfig | null;
   onSubmit(config: ConditionsConfig): void;
   onCancel?(): void;
   mode: 'onboarding' | 'edit';
+  /** When provided, the builder offers to save the composition as a named strategy (client-only). */
+  onSaveStrategy?(name: string, config: ConditionsConfig): StrategyMutationResult;
+  /** Prefilled strategy name when the palette was repopulated from a saved strategy. */
+  initialStrategyName?: string;
 }) {
   const [rows, setRows] = React.useState<BuilderState>(() => initialState(config));
   const [logic, setLogic] = React.useState<ScanLogic>(config?.logic ?? 'AND');
+  const [strategyName, setStrategyName] = React.useState(initialStrategyName ?? '');
+  const [strategyFeedback, setStrategyFeedback] = React.useState<{
+    kind: 'ok' | 'error';
+    text: string;
+  } | null>(null);
 
   const selectedCount = CONDITION_PALETTE.filter((e) => rows[e.type].selected).length;
 
@@ -96,7 +112,7 @@ export function ConditionsBuilder({
     setRows((prev) => ({ ...prev, [type]: { ...prev[type], ...partial } }));
   }
 
-  function submit() {
+  function composeConfig(): ConditionsConfig {
     const conditions: ScanCondition[] = CONDITION_PALETTE.filter(
       (e) => rows[e.type].selected,
     ).map((e) => {
@@ -109,7 +125,27 @@ export function ConditionsBuilder({
       if (e.controls.includes('volatility')) cond.volatility = row.volatility;
       return cond;
     });
-    onSubmit({ logic, conditions });
+    return { logic, conditions };
+  }
+
+  function submit() {
+    onSubmit(composeConfig());
+  }
+
+  function saveAsStrategy() {
+    if (!onSaveStrategy) return;
+    const result = onSaveStrategy(strategyName, composeConfig());
+    if (result.ok) {
+      setStrategyFeedback({
+        kind: 'ok',
+        text: `Stratégie « ${result.strategy.name} » sauvegardée sur cet appareil.`,
+      });
+    } else {
+      setStrategyFeedback({
+        kind: 'error',
+        text: mutationErrorMessage(result) ?? 'Sauvegarde impossible.',
+      });
+    }
   }
 
   return (
@@ -269,6 +305,50 @@ export function ConditionsBuilder({
             ))}
           </div>
         </div>
+
+        {onSaveStrategy && (
+          <div className="space-y-2 rounded-lg border border-border/60 p-3">
+            <p className="text-sm text-muted-foreground">
+              Sauvegarder cette combinaison comme stratégie nommée (sur cet appareil
+              uniquement — rien n’est envoyé au serveur)&nbsp;:
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                value={strategyName}
+                onChange={(e) => {
+                  setStrategyName(e.target.value);
+                  setStrategyFeedback(null);
+                }}
+                maxLength={MAX_NAME_CHARS}
+                placeholder="ex. London sweep M15"
+                aria-label="Nom de la stratégie"
+                className="min-w-0 flex-1 rounded-md border border-input bg-background px-2 py-1 text-sm text-foreground"
+              />
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={saveAsStrategy}
+                disabled={selectedCount === 0 || strategyName.trim().length === 0}
+              >
+                Sauvegarder la stratégie
+              </Button>
+            </div>
+            {strategyFeedback && (
+              <p
+                role={strategyFeedback.kind === 'error' ? 'alert' : 'status'}
+                className={cn(
+                  'text-xs',
+                  strategyFeedback.kind === 'error'
+                    ? 'text-destructive'
+                    : 'text-muted-foreground',
+                )}
+              >
+                {strategyFeedback.text}
+              </p>
+            )}
+          </div>
+        )}
 
         <div className="flex flex-wrap gap-2">
           <Button type="button" onClick={submit} disabled={selectedCount === 0}>
