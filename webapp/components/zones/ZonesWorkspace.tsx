@@ -3,7 +3,12 @@
 import * as React from 'react';
 import { useChartView } from '@/lib/chart/viewState';
 import { coerceViewActions } from '@/lib/chart/viewActions';
-import { useMarketReading } from '@/lib/market-reading/hooks';
+import {
+  useCandles,
+  useLatestPrice,
+  useMarketReading,
+} from '@/lib/market-reading/hooks';
+import { useSiblingZones } from '@/lib/zones/use-sibling-zones';
 import {
   SUPPORTED_INSTRUMENTS,
   SUPPORTED_TIMEFRAMES,
@@ -32,10 +37,12 @@ const FILTERS: { value: ZoneFilter; label: string }[] = [
   { value: 'mitigated', label: 'Mitigées' },
 ];
 
+// Factual orders only — deliberately NO importance/quality sort (a "strength"
+// ranking would be an implicit recommendation, mission §0).
 const SORTS: { value: ZoneSort; label: string }[] = [
-  { value: 'importance', label: 'Importance' },
-  { value: 'recency', label: 'Récence' },
   { value: 'proximity', label: 'Proximité' },
+  { value: 'recency', label: 'Fraîcheur' },
+  { value: 'state', label: 'État' },
 ];
 
 /** Small segmented control (display-only, no detection impact). */
@@ -87,13 +94,30 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
   const [instrument, setInstrument] = React.useState<string>(SUPPORTED_INSTRUMENTS[0]);
   const [timeframe, setTimeframe] = React.useState<string>(SUPPORTED_TIMEFRAMES[0]);
   const [filter, setFilter] = React.useState<ZoneFilter>('all');
-  const [sort, setSort] = React.useState<ZoneSort>('importance');
+  // Proximity to the price is the default order — the most useful factual one.
+  const [sort, setSort] = React.useState<ZoneSort>('proximity');
 
   const { data, isLoading, isRefreshing, error, refresh } = useMarketReading(
     instrument,
     timeframe,
     { pollMs: POLL_MS },
   );
+
+  // Freshest unified price (M15 cache read, light poll) for the relation badge
+  // and the proximity sort; the reading's close_price is the fallback. Both are
+  // engine facts — never a projection.
+  const { change } = useLatestPrice(instrument, {
+    candleCloseTs: data?.header.candle_close_ts ?? null,
+  });
+
+  // Real candle window of the combo — the bar-count part of the zone age is
+  // counted on it (never derived by dividing elapsed time by the timeframe).
+  const { candles } = useCandles(instrument, timeframe, {
+    candleCloseTs: data?.header.candle_close_ts ?? null,
+  });
+
+  // Zones of the other timeframes (same instrument) for the overlap facts.
+  const { siblings } = useSiblingZones(instrument, timeframe);
 
   const { view, applyActions } = useChartView();
 
@@ -112,12 +136,13 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
     [view.hiddenZoneIds],
   );
 
-  const closePrice = data?.header.close_price ?? null;
+  // useLatestPrice first (freshest closed price), close_price as the fallback.
+  const referencePrice = change?.price ?? data?.header.close_price ?? null;
 
   const zones = React.useMemo(() => {
     const filtered = allZones.filter((z) => matchesFilter(z, filter));
-    return sortZones(filtered, sort, closePrice);
-  }, [allZones, filter, sort, closePrice]);
+    return sortZones(filtered, sort, referencePrice);
+  }, [allZones, filter, sort, referencePrice]);
 
   const toggleHide = React.useCallback(
     (zoneId: string) => {
@@ -201,6 +226,9 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
               key={zone.id}
               zone={zone}
               instrument={instrument}
+              referencePrice={referencePrice}
+              candles={candles}
+              siblingZones={siblings}
               isHidden={hidden.has(zone.id)}
               onToggleHide={toggleHide}
               appHref={buildAppHref(locale, { instrument, timeframe }, zone.id)}
