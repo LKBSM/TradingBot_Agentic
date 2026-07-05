@@ -229,7 +229,7 @@ export function AppChatSidebar({
       <div className="space-y-2 border-t border-border/60 bg-background/60 px-4 py-3">
         <ChatInput />
         {/* LEGAL-PENDING: chat compliance line — aligned with the legal terminal
-            wording on educational-use posture (UE 2024/2811 + MiFID II 03/2026). */}
+            wording on educational-use posture. */}
         <p className="text-center text-[10.5px] italic text-muted-foreground/70">
           M.I.A Agent répond à des questions sur la lecture algorithmique. Il ne
           donne ni signal de trading, ni recommandation personnalisée.

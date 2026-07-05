@@ -92,17 +92,24 @@ test.describe('Landing — golden paths (architecture L1-L6 2026-05-27)', () => 
     ).toBeVisible();
   });
 
-  test('footer lists 9 Phase-1 countries explicitly', async ({ page }) => {
+  test('footer only states verifiable facts (claims cleanup 2026-07-04)', async ({ page }) => {
     await page.goto('/');
     const footer = page.getByRole('contentinfo');
-    await expect(footer.getByText(/France/)).toBeVisible();
-    await expect(footer.getByText(/Belgique/)).toBeVisible();
-    await expect(footer.getByText(/Canada \(hors Québec\)/i)).toBeVisible();
-    await expect(footer.getByText(/Royaume-Uni/)).toBeVisible();
-    await expect(footer.getByText(/Australie/)).toBeVisible();
-    await expect(footer.getByText(/Nouvelle-Zélande/)).toBeVisible();
-    await expect(footer.getByText(/Irlande/)).toBeVisible();
-    // Early Access badge.
-    await expect(footer.getByText(/Early Access · 50 places/i)).toBeVisible();
+    // Honest educational disclaimer stays.
+    await expect(footer.getByText(/Lecture algorithmique éducative/i)).toBeVisible();
+    await expect(footer.getByText(/ni un signal de trading/i)).toBeVisible();
+    // Live legal links only (targets exist in the repo).
+    await expect(footer.getByRole('link', { name: /Conditions d.utilisation/i })).toBeVisible();
+    await expect(footer.getByRole('link', { name: /Confidentialité/i })).toBeVisible();
+    // Removed false / unverified claims must NOT reappear anywhere on the page.
+    const body = page.locator('body');
+    await expect(body.getByText(/2024\/2811/)).toHaveCount(0);
+    await expect(body.getByText(/CM2C/)).toHaveCount(0);
+    await expect(body.getByText(/50 places/)).toHaveCount(0);
+    await expect(body.getByText(/hors Québec/i)).toHaveCount(0);
+    await expect(body.getByText(/Médiateur/i)).toHaveCount(0);
+    // Dead links removed from the footer.
+    await expect(footer.getByRole('link', { name: /Mentions légales/i })).toHaveCount(0);
+    await expect(footer.getByRole('link', { name: /Cookies/i })).toHaveCount(0);
   });
 });

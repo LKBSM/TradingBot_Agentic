@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     template: '%s · MIA Markets',
   },
   description:
-    "MIA Markets (Multi-asset Intelligence Assistant) — Lecture de marché XAU/USD et FX, expliquée par un quant. Analyses contextuelles sourcées, posture éducative, conforme UE 2024/2811.",
+    "MIA Markets (Multi-asset Intelligence Assistant) — Lecture de marché XAU/USD et FX, expliquée par un quant. Analyses contextuelles sourcées, posture éducative.",
   applicationName: 'MIA Markets',
   authors: [{ name: 'MIA Markets' }],
   robots: { index: true, follow: true },
@@ -57,7 +57,7 @@ export const metadata: Metadata = {
     siteName: 'MIA Markets',
     title: 'MIA Markets — Indicateur de marché conversationnel',
     description:
-      'Lectures algorithmiques contextuelles pour XAU/USD et le forex, expliquées par un chatbot (M.I.A Agent). Posture éducative, conforme UE 2024/2811.',
+      'Lectures algorithmiques contextuelles pour XAU/USD et le forex, expliquées par un chatbot (M.I.A Agent). Posture éducative.',
   },
   twitter: {
     card: 'summary_large_image',

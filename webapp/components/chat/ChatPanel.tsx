@@ -150,7 +150,7 @@ export function ChatPanel() {
           <ChatInput />
           {/* LEGAL-PENDING: standalone compliance line at the bottom of the
               chat panel — aligned with legal terminal wording on
-              educational-use posture (UE 2024/2811 + MiFID II 03/2026). */}
+              educational-use posture. */}
           <p className="text-center text-[10.5px] italic text-muted-foreground/70">
             M.I.A Agent répond à des questions sur la lecture algorithmique.
             Il ne donne ni signal de trading, ni recommandation personnalisée.

@@ -23,8 +23,10 @@ interface Tier {
  * de la grille publique, remplacé par un bloc "Réserver une démo" Calendly
  * en bas de section.
  *
- * Cap volontaire 50 abonnés (bootstrap legal) → mention "Early Access".
- * Refund 30 j + annulation 1 clic = défense MiFID II / UE 2024/2811.
+ * Règle éditoriale (nettoyage claims 2026-07-04) : aucun compteur de places,
+ * aucune référence réglementaire non vérifiée, aucune promesse (remboursement,
+ * périmètre géographique) non implémentée. Les quotas affichés doivent rester
+ * alignés sur `src/api/entitlements.py`.
  */
 const TIERS: ReadonlyArray<Tier> = [
   {
@@ -34,9 +36,9 @@ const TIERS: ReadonlyArray<Tier> = [
     cadence: '',
     pitch: 'Goûtez la lecture, sans CB, sans engagement.',
     features: [
-      '1 lecture XAU M15 par jour',
+      'Lecture XAU M15',
       'Verdict + lecture structurée',
-      '3 questions chatbot par jour',
+      '5 questions chatbot par jour',
       'Posture éducative, sans signaux',
     ],
     cta: 'Commencer',
@@ -86,17 +88,17 @@ export function PricingSection() {
           variant="outline"
           className="border-sentinel-bull/40 text-[11px] uppercase tracking-wider text-sentinel-bull"
         >
-          Early Access · 50 places
+          Accès anticipé
         </Badge>
         <h2
           id="pricing-title"
           className="text-balance text-2xl font-semibold tracking-tight sm:text-3xl"
         >
-          Trois entrées. Annulation en un clic. Remboursement 30 jours.
+          Trois entrées. Annulation en un clic.
         </h2>
         <p className="max-w-2xl text-pretty text-muted-foreground">
           Pas d&apos;essai gratuit déguisé, pas de carte demandée sur le
-          tier Découverte. Tarifs Early Access pendant la phase d&apos;accès
+          tier Découverte. Tarifs de la phase d&apos;accès
           anticipé — voir notre posture dans la section{' '}
           <a href="#honnetete" className="underline-offset-2 hover:underline">
             Honnêteté
@@ -129,11 +131,7 @@ export function PricingSection() {
             size="sm"
             className="shrink-0"
           >
-            <a
-              href="https://calendly.com/mia-markets/demo"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
+            <a href="mailto:contact@mia.markets?subject=D%C3%A9mo%20B2B">
               Réserver une démo
               <ExternalLink className="ml-1.5 h-3.5 w-3.5" aria-hidden />
             </a>
@@ -144,8 +142,7 @@ export function PricingSection() {
       <p className="text-xs italic text-muted-foreground">
         Démonstration en accès anticipé. MIA Markets produit des analyses
         éditoriales contextuelles et non des recommandations
-        personnalisées (UE 2024/2811). Disponibilité géographique
-        restreinte — voir bas de page.
+        personnalisées.
       </p>
     </section>
   );
