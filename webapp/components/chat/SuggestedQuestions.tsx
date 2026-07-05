@@ -25,8 +25,8 @@ export function SuggestedQuestions({
     return (
       <p className="rounded-md border border-dashed border-border bg-muted/40 px-3 py-2 text-xs italic text-muted-foreground">
         Toutes les questions suggérées ont été posées. La saisie libre arrive
-        bientôt — pour l'instant, ferme et rouvre le chat pour relancer
-        l'enchaînement.
+        bientôt — pour l&apos;instant, ferme et rouvre le chat pour relancer
+        l&apos;enchaînement.
       </p>
     );
   }

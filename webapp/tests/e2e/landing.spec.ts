@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { dismissCookieBanner } from './utils';
 
 test.describe('Landing — golden paths (architecture L1-L6 2026-05-27)', () => {
   test('brand visible in nav + hero badges (no marketing H1 above fold)', async ({ page }) => {
@@ -68,9 +69,11 @@ test.describe('Landing — golden paths (architecture L1-L6 2026-05-27)', () => 
 
   test('pricing section shows 3 tiers FREE/9€/19€ post pivot 2026-05-27', async ({ page }) => {
     await page.goto('/#tarifs');
-    await expect(page.getByText(/Découverte/)).toBeVisible();
-    await expect(page.getByText(/Approfondie/)).toBeVisible();
-    await expect(page.getByText(/Intégrale/)).toBeVisible();
+    // Rôle heading (h3 des TierCard) : « Découverte » apparaît aussi dans le
+    // paragraphe d'intro (« …sur le tier Découverte ») → strict mode.
+    await expect(page.getByRole('heading', { name: 'Découverte' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Approfondie' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Intégrale' })).toBeVisible();
     await expect(page.getByText(/9 €/).first()).toBeVisible();
     await expect(page.getByText(/19 €/).first()).toBeVisible();
     // INSTITUTIONAL retiré grille publique → bloc Calendly aside.
@@ -80,6 +83,8 @@ test.describe('Landing — golden paths (architecture L1-L6 2026-05-27)', () => 
 
   test('FAQ accordion exposes 6 questions and opens the first one', async ({ page }) => {
     await page.goto('/#faq');
+    // Mobile : la bannière cookies intercepte les clics près du bord bas.
+    await dismissCookieBanner(page);
     await expect(
       page.getByRole('heading', { level: 2, name: /Vous vous demandez/i }),
     ).toBeVisible();
@@ -87,22 +92,30 @@ test.describe('Landing — golden paths (architecture L1-L6 2026-05-27)', () => 
       .getByRole('button', { name: /MIA est-il un service de signaux/i })
       .first();
     await firstTrigger.click();
+    // Texte de la réponse q1 (post nettoyage claims 2026-07-04).
     await expect(
-      page.getByText(/analyses éditoriales contextuelles/i),
+      page.getByText(/refuse explicitement les questions/i),
     ).toBeVisible();
   });
 
-  test('footer lists 9 Phase-1 countries explicitly', async ({ page }) => {
+  test('footer only states verifiable facts (claims cleanup 2026-07-04)', async ({ page }) => {
     await page.goto('/');
     const footer = page.getByRole('contentinfo');
-    await expect(footer.getByText(/France/)).toBeVisible();
-    await expect(footer.getByText(/Belgique/)).toBeVisible();
-    await expect(footer.getByText(/Canada \(hors Québec\)/i)).toBeVisible();
-    await expect(footer.getByText(/Royaume-Uni/)).toBeVisible();
-    await expect(footer.getByText(/Australie/)).toBeVisible();
-    await expect(footer.getByText(/Nouvelle-Zélande/)).toBeVisible();
-    await expect(footer.getByText(/Irlande/)).toBeVisible();
-    // Early Access badge.
-    await expect(footer.getByText(/Early Access · 50 places/i)).toBeVisible();
+    // Honest educational disclaimer stays.
+    await expect(footer.getByText(/Lecture algorithmique éducative/i)).toBeVisible();
+    await expect(footer.getByText(/ni un signal de trading/i)).toBeVisible();
+    // Live legal links only (targets exist in the repo).
+    await expect(footer.getByRole('link', { name: /Conditions d.utilisation/i })).toBeVisible();
+    await expect(footer.getByRole('link', { name: /Confidentialité/i })).toBeVisible();
+    // Removed false / unverified claims must NOT reappear anywhere on the page.
+    const body = page.locator('body');
+    await expect(body.getByText(/2024\/2811/)).toHaveCount(0);
+    await expect(body.getByText(/CM2C/)).toHaveCount(0);
+    await expect(body.getByText(/50 places/)).toHaveCount(0);
+    await expect(body.getByText(/hors Québec/i)).toHaveCount(0);
+    await expect(body.getByText(/Médiateur/i)).toHaveCount(0);
+    // Dead links removed from the footer.
+    await expect(footer.getByRole('link', { name: /Mentions légales/i })).toHaveCount(0);
+    await expect(footer.getByRole('link', { name: /Cookies/i })).toHaveCount(0);
   });
 });

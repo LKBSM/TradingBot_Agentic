@@ -64,7 +64,9 @@ jobs:
           cache: npm
           cache-dependency-path: webapp/package-lock.json
       - run: npm ci --legacy-peer-deps
-      - run: npm install -D @lhci/cli
+      # --legacy-peer-deps aligné sur le npm ci ci-dessus : sans lui, npm 10
+      # refuse d'ajouter @lhci/cli (ERESOLVE vite/vitest vs @types/node).
+      - run: npm install -D @lhci/cli --legacy-peer-deps
       - run: npm run build
       - run: npx lhci autorun
         env:

@@ -140,6 +140,22 @@ function WorkspaceInner({
     applyActions(actions, select);
   }, [initialFocusZoneId, validZoneIds, applyActions, select]);
 
+  // ID lock, honest half: when the deep-linked zone id does NOT resolve in the
+  // loaded reading (zone consumed/expired between /zones and here), say so
+  // discreetly — the app opens normally on the combo, and the stale zone is
+  // NEVER redrawn from memory. Checked ONCE at the first loaded reading (the
+  // dispatch effect above runs first, so a resolved focus never notices).
+  const [staleFocusNotice, setStaleFocusNotice] = React.useState(false);
+  const focusCheckedRef = React.useRef(false);
+  React.useEffect(() => {
+    if (focusCheckedRef.current) return;
+    if (!initialFocusZoneId || !data) return;
+    focusCheckedRef.current = true;
+    if (!focusDispatchedRef.current && !validZoneIds.has(initialFocusZoneId)) {
+      setStaleFocusNotice(true);
+    }
+  }, [initialFocusZoneId, data, validZoneIds]);
+
   const view: WorkspaceViewProps = {
     combos,
     active,
@@ -152,11 +168,29 @@ function WorkspaceInner({
     dataSource,
   };
 
-  if (isMobile) {
-    return <MobileWorkspace {...view} />;
-  }
-
-  return <DesktopWorkspace {...view} />;
+  return (
+    <>
+      {staleFocusNotice && (
+        <div className="container-wide pt-4" role="status" aria-live="polite">
+          <div className="flex items-center justify-between gap-3 rounded-md border border-border/70 bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+            <span>
+              Cette zone n’est plus détectée — la lecture actuelle du marché est
+              affichée.
+            </span>
+            <button
+              type="button"
+              aria-label="Fermer ce message"
+              onClick={() => setStaleFocusNotice(false)}
+              className="shrink-0 rounded px-1 font-medium transition-colors hover:text-foreground"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+      {isMobile ? <MobileWorkspace {...view} /> : <DesktopWorkspace {...view} />}
+    </>
+  );
 }
 
 function DesktopWorkspace({
@@ -191,7 +225,7 @@ function DesktopWorkspace({
         />
 
         <div className="md:sticky md:top-6 md:h-[calc(100vh-7rem)]">
-          <AppChatSidebar active={active} />
+          <AppChatSidebar active={active} onSelectCombo={onSelect} />
         </div>
       </div>
     </div>

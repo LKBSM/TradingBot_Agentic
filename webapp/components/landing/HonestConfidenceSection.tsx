@@ -19,8 +19,8 @@ import { cn } from '@/lib/utils';
  * Conservé : la citation « Engagement public » (lock 2) + les colonnes
  * « Ce que nous ne ferons jamais » et « Ce que nous faisons aujourd'hui ».
  *
- * Cette section EXISTE parce qu'elle constitue la défense MIFID II / UE
- * 2024/2811 et le différenciateur "fini de mentir" face aux fournisseurs
+ * Cette section EXISTE parce qu'elle constitue la posture d'honnêteté
+ * publique et le différenciateur "fini de mentir" face aux fournisseurs
  * de signaux qui annoncent 90 % de win-rate.
  */
 export function HonestConfidenceSection() {

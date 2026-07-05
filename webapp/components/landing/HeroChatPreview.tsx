@@ -58,8 +58,11 @@ export function HeroChatPreview({
   }, [introDelayMs]);
 
   function handleQuestion(qid: string, text: string, reply: string) {
-    appendExchange({ questionId: qid, text, reply, source: 'scripted' });
+    // openFor FIRST: appendExchange writes into the active thread, and the two
+    // functional updates compose within the same batch. The previous order
+    // dropped the very first exchange (no active thread yet when appending).
     openFor(chatContext);
+    appendExchange({ questionId: qid, text, reply, source: 'scripted' });
   }
 
   function handleOpenPanel() {

@@ -78,6 +78,10 @@
   }
   html {
     @apply scroll-smooth;
+    /* Le header est sticky (h-14) : sans scroll-padding, la navigation par
+       ancre (#tarifs, #faq…) cale la cible SOUS le header et les clics près
+       du bord haut sont interceptés. */
+    scroll-padding-top: 5rem;
   }
 }
 
