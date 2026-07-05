@@ -86,6 +86,7 @@ jobs:
             "pyarrow>=15.0.0" "lightgbm>=4.0.0" "scikit-learn>=1.3.0" \
             "pydantic>=2.0.0" "scipy>=1.11.0" \
             "sentry-sdk[fastapi]>=2.0" "fastapi>=0.104.0" \
+            "itsdangerous>=2.1.0" "argon2-cffi>=23.1.0" \
             "pytest>=7.0.0" "pytest-cov>=4.0.0"
 
       - name: Run Phase 1 tests with coverage
@@ -93,8 +94,9 @@ jobs:
         # sprints land. Coverage scope = src/agents/data + src/research +
         # tools/governance + tests/eval_llm (the new code we ship).
         # `python -m pytest` (not bare `pytest`) so the repo root lands on
-        # sys.path and tests/conftest.py can import the `src` package (fastapi
-        # above is its transitive need via src.api.auth).
+        # sys.path and tests/conftest.py can import the `src` package (fastapi,
+        # itsdangerous and argon2-cffi above are its transitive needs via
+        # src.api.auth / session_auth / account_store).
         run: |
           python -m pytest \
             tests/test_fred_provider.py \
