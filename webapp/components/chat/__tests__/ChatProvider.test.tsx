@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ChatProvider, useChat } from '../ChatProvider';
+import { STORAGE_KEY } from '@/lib/chat/thread-store';
 import type { ChatSignalContext } from '@/lib/chat/types';
 
 // Keep the real error classes; override only askSentinel.
@@ -47,6 +48,7 @@ function renderHarness() {
 
 afterEach(() => {
   askSentinelMock.mockReset();
+  window.localStorage.clear();
 });
 
 describe('ChatProvider.askFreeForm', () => {
@@ -140,5 +142,152 @@ describe('ChatProvider.askFreeForm', () => {
     await waitFor(() =>
       expect(screen.getByTestId('loading').textContent).toBe('false'),
     );
+  });
+});
+
+/** Harness for combo-scoped threads (the /app sidebar path via openForCombo). */
+function ComboHarness() {
+  const { turns, openForCombo, askFreeForm, resetTurns, recentThreads } =
+    useChat();
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => openForCombo({ instrument: 'XAUUSD', timeframe: 'H1' })}
+      >
+        combo-h1
+      </button>
+      <button
+        type="button"
+        onClick={() => openForCombo({ instrument: 'XAUUSD', timeframe: 'H4' })}
+      >
+        combo-h4
+      </button>
+      <button type="button" onClick={() => void askFreeForm('Ma question ?')}>
+        ask-combo
+      </button>
+      <button type="button" onClick={resetTurns}>
+        reset-combo
+      </button>
+      <span data-testid="turn-count">{turns.length}</span>
+      <span data-testid="recents">{recentThreads.map((t) => t.id).join(',')}</span>
+      <ul>
+        {turns.map((t) => (
+          <li key={t.id}>{t.text}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+describe('ChatProvider thread scoping & persistence (client-only)', () => {
+  it("keeps each combo's conversation and restores it when coming back", async () => {
+    askSentinelMock.mockResolvedValue({
+      text: 'Réponse H1.',
+      blockedReason: null,
+      toolCallsMade: [],
+    });
+    render(
+      <ChatProvider>
+        <ComboHarness />
+      </ChatProvider>,
+    );
+
+    fireEvent.click(screen.getByText('combo-h1'));
+    fireEvent.click(screen.getByText('ask-combo'));
+    expect(await screen.findByText('Réponse H1.')).toBeInTheDocument();
+
+    // Switch to H4 → its own fresh thread, H1's turns are NOT shown (no mixing).
+    fireEvent.click(screen.getByText('combo-h4'));
+    await waitFor(() =>
+      expect(screen.getByTestId('turn-count').textContent).toBe('0'),
+    );
+    expect(screen.queryByText('Réponse H1.')).not.toBeInTheDocument();
+
+    // Back to H1 → the conversation is restored intact.
+    fireEvent.click(screen.getByText('combo-h1'));
+    expect(await screen.findByText('Réponse H1.')).toBeInTheDocument();
+    expect(screen.getByTestId('turn-count').textContent).toBe('2');
+    expect(screen.getByTestId('recents').textContent).toBe('app:XAUUSD:H1');
+  });
+
+  it('persists combo threads to localStorage and rehydrates a fresh provider', async () => {
+    askSentinelMock.mockResolvedValue({
+      text: 'Réponse persistée.',
+      blockedReason: null,
+      toolCallsMade: [],
+    });
+    const first = render(
+      <ChatProvider>
+        <ComboHarness />
+      </ChatProvider>,
+    );
+    fireEvent.click(screen.getByText('combo-h1'));
+    fireEvent.click(screen.getByText('ask-combo'));
+    expect(await screen.findByText('Réponse persistée.')).toBeInTheDocument();
+    await waitFor(() =>
+      expect(window.localStorage.getItem(STORAGE_KEY)).toContain(
+        'Réponse persistée.',
+      ),
+    );
+    first.unmount();
+
+    // Fresh provider (simulates a page refresh): the thread comes back from
+    // localStorage — no server involved.
+    render(
+      <ChatProvider>
+        <ComboHarness />
+      </ChatProvider>,
+    );
+    fireEvent.click(screen.getByText('combo-h1'));
+    expect(await screen.findByText('Réponse persistée.')).toBeInTheDocument();
+    expect(await screen.findByText('Ma question ?')).toBeInTheDocument();
+  });
+
+  it('resetTurns clears ONLY the active thread, in memory and in storage', async () => {
+    askSentinelMock
+      .mockResolvedValueOnce({ text: 'Réponse H1.', blockedReason: null, toolCallsMade: [] })
+      .mockResolvedValueOnce({ text: 'Réponse H4.', blockedReason: null, toolCallsMade: [] });
+    render(
+      <ChatProvider>
+        <ComboHarness />
+      </ChatProvider>,
+    );
+
+    fireEvent.click(screen.getByText('combo-h1'));
+    fireEvent.click(screen.getByText('ask-combo'));
+    expect(await screen.findByText('Réponse H1.')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('combo-h4'));
+    fireEvent.click(screen.getByText('ask-combo'));
+    expect(await screen.findByText('Réponse H4.')).toBeInTheDocument();
+
+    // Reset while H4 is active: H4 gone everywhere, H1 untouched.
+    fireEvent.click(screen.getByText('reset-combo'));
+    await waitFor(() =>
+      expect(screen.getByTestId('turn-count').textContent).toBe('0'),
+    );
+    await waitFor(() => {
+      const raw = window.localStorage.getItem(STORAGE_KEY) ?? '';
+      expect(raw).not.toContain('Réponse H4.');
+      expect(raw).toContain('Réponse H1.');
+    });
+    fireEvent.click(screen.getByText('combo-h1'));
+    expect(await screen.findByText('Réponse H1.')).toBeInTheDocument();
+  });
+
+  it('never persists landing signal threads (only app:* combo threads)', async () => {
+    askSentinelMock.mockResolvedValue({
+      text: 'Réponse signal.',
+      blockedReason: null,
+      toolCallsMade: [],
+    });
+    renderHarness(); // opens for SIGNAL (id 'sig-1')
+    fireEvent.click(screen.getByText('ask'));
+    expect(await screen.findByText('Réponse signal.')).toBeInTheDocument();
+
+    await waitFor(() => {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      expect(raw === null || !raw.includes('sig-1')).toBe(true);
+    });
   });
 });

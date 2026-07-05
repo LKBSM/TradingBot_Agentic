@@ -17,12 +17,8 @@
  * Strictly descriptive (niveau 1.5): no target, no conviction, no prediction.
  */
 
-import {
-  formatBand,
-  formatDirection,
-  formatObImportance,
-} from '@/lib/market-reading/formatters';
 import type {
+  Candle,
   Direction,
   FairValueGap,
   MarketReadingStructure,
@@ -35,8 +31,12 @@ export type ZoneKind = 'ob' | 'fvg';
 /** Lifecycle filter buckets exposed on the page. */
 export type ZoneFilter = 'all' | 'active' | 'mitigated';
 
-/** Sort order for the zone list (display-only ranking). */
-export type ZoneSort = 'importance' | 'recency' | 'proximity';
+/**
+ * Sort order for the zone list. Deliberately NO quality/importance sort: ranking
+ * zones by "strength" would be an implicit recommendation (mission §0). The
+ * three orders are factual: distance to price, formation recency, engine status.
+ */
+export type ZoneSort = 'proximity' | 'recency' | 'state';
 
 /**
  * A unified view of one detected zone (OB or FVG) for the Zones page. Mirrors the
@@ -218,7 +218,96 @@ export function fillFraction(zone: ZoneLifecycle): number | null {
   return Math.max(0, Math.min(1, raw));
 }
 
-// ─── Narration (deterministic, factual) ──────────────────────────────────────
+// ─── Present-tense facts (price relation · age · overlaps) ───────────────────
+
+/**
+ * Where the zone's band sits RELATIVE TO the current price — a present-tense
+ * geometric fact, recomputed at the freshness of the readings. `inside` when the
+ * price is within [levelLow, levelHigh]; otherwise the side the ZONE is on
+ * (`above`/`below` the price) plus the gap to its NEAREST edge, in price units.
+ * Returns null without a usable price — the badge is then omitted, never guessed.
+ */
+export type PriceRelation =
+  | { position: 'inside' }
+  | { position: 'above' | 'below'; distance: number };
+
+export function priceRelation(
+  zone: ZoneLifecycle,
+  price: number | null | undefined,
+): PriceRelation | null {
+  if (price == null || !Number.isFinite(price)) return null;
+  if (price >= zone.levelLow && price <= zone.levelHigh) return { position: 'inside' };
+  return price > zone.levelHigh
+    ? { position: 'below', distance: price - zone.levelHigh }
+    : { position: 'above', distance: zone.levelLow - price };
+}
+
+/**
+ * Number of candles CLOSED strictly after the zone's formation bar, counted on
+ * the real candle window (ascending) — never derived by dividing elapsed time by
+ * the timeframe (weekends/session gaps would inflate it). Returns null when the
+ * window does not reach back to the formation (count would be truncated), when
+ * no candles are available, or on an unparsable timestamp — the card then falls
+ * back to the exact duration alone. Honest degradation, no estimate.
+ */
+export function barsSince(
+  candles: Candle[] | null | undefined,
+  createdAtIso: string,
+): number | null {
+  if (!candles || candles.length === 0) return null;
+  const ms = Date.parse(createdAtIso);
+  if (Number.isNaN(ms)) return null;
+  const sec = ms / 1000;
+  if (sec < candles[0]!.time) return null; // formation predates the window
+  let count = 0;
+  for (let i = candles.length - 1; i >= 0 && candles[i]!.time > sec; i -= 1) count += 1;
+  return count;
+}
+
+/** "45 min", "6 h 30", "2 j 4 h" — compact elapsed duration (fact, no rounding up). */
+export function formatDurationShort(ms: number): string {
+  const min = Math.floor(ms / 60_000);
+  if (min < 1) return "moins d'une minute";
+  if (min < 60) return `${min} min`;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  if (h < 24) return m === 0 ? `${h} h` : `${h} h ${String(m).padStart(2, '0')}`;
+  const d = Math.floor(h / 24);
+  const rh = h % 24;
+  return rh === 0 ? `${d} j` : `${d} j ${rh} h`;
+}
+
+/**
+ * A zone from ANOTHER timeframe of the same instrument, reduced to what the
+ * geometric-overlap fact needs. Built from the sibling readings' engine output
+ * (`collectZones`) — same source of truth as the cards themselves.
+ */
+export interface SiblingZone {
+  id: string;
+  kind: ZoneKind;
+  direction: Direction | null;
+  levelHigh: number;
+  levelLow: number;
+  /** Timeframe the sibling zone was read on (e.g. 'H1'). */
+  timeframe: string;
+}
+
+/**
+ * Pure interval intersection between the zone's band and each sibling's band
+ * (strict: touching edges alone don't count). A geometric FACT — the caller must
+ * phrase it as such ("chevauche un OB H1 (bornes)"), never as confluence,
+ * reinforcement or reliability (mission §0).
+ */
+export function findOverlaps(
+  zone: ZoneLifecycle,
+  siblings: readonly SiblingZone[],
+): SiblingZone[] {
+  return siblings.filter(
+    (s) => s.levelLow < zone.levelHigh && zone.levelLow < s.levelHigh,
+  );
+}
+
+// ─── Date formatting ─────────────────────────────────────────────────────────
 
 /** "28 juin 2026" — absolute date, no relative-to-now dependency. */
 export function formatZoneDate(iso: string): string {
@@ -237,63 +326,6 @@ export function formatZoneDateTime(iso: string): string {
   }).format(d);
 }
 
-/**
- * One factual sentence describing the zone's life so far — present/past only,
- * composed strictly from engine facts. No target, no "va rebondir", no
- * conviction. A missing timestamp degrades the clause, never invents a date.
- */
-export function narrateZone(zone: ZoneLifecycle, instrument: string): string {
-  const kindLabel = zone.kind === 'ob' ? 'Order Block' : 'Fair Value Gap';
-  const dir = zone.direction ? ` ${formatDirection(zone.direction)}` : '';
-  const band = formatBand(zone.levelLow, zone.levelHigh, instrument);
-  const parts: string[] = [
-    `${kindLabel}${dir} formé le ${formatZoneDate(zone.createdAt)}, entre ${band}.`,
-  ];
-
-  if (zone.kind === 'ob' && zone.importance) {
-    parts.push(`Importance ${formatObImportance(zone.importance)}.`);
-  }
-
-  if (zone.kind === 'ob') {
-    if (zone.status === 'mitigated') {
-      parts.push(
-        zone.mitigatedAt
-          ? `Mitigé le ${formatZoneDate(zone.mitigatedAt)}.`
-          : 'Mitigé depuis sa formation.',
-      );
-    } else if (zone.tested) {
-      parts.push(
-        zone.mitigatedAt
-          ? `Testé le ${formatZoneDate(zone.mitigatedAt)}, toujours actif.`
-          : 'Déjà testé, toujours actif.',
-      );
-    } else {
-      parts.push('Non testé à ce jour.');
-    }
-  } else {
-    if (zone.status === 'filled') {
-      parts.push('Désormais comblé.');
-    } else if (zone.status === 'partially_filled') {
-      const frac = fillFraction(zone);
-      parts.push(
-        frac != null
-          ? `Partiellement comblé (≈ ${Math.round(frac * 100)} %).`
-          : 'Partiellement comblé.',
-      );
-    } else if (zone.tested) {
-      parts.push(
-        zone.mitigatedAt
-          ? `Pénétré le ${formatZoneDate(zone.mitigatedAt)}, encore ouvert.`
-          : 'Déjà pénétré, encore ouvert.',
-      );
-    } else {
-      parts.push('Intact.');
-    }
-  }
-
-  return parts.join(' ');
-}
-
 // ─── Filter + sort (display-only) ────────────────────────────────────────────
 
 export function matchesFilter(zone: ZoneLifecycle, filter: ZoneFilter): boolean {
@@ -302,10 +334,8 @@ export function matchesFilter(zone: ZoneLifecycle, filter: ZoneFilter): boolean 
   return zone.isMitigated;
 }
 
-// Lower rank surfaces first. OB by importance; FVG (no importance) by status, so
-// the two families interleave coherently — mirrors StructureSection's ordering.
-const OB_IMPORTANCE_RANK: Record<OBImportance, number> = { high: 0, medium: 1, low: 2 };
-const STATUS_RANK: Record<string, number> = {
+// Engine-status order (factual lifecycle progression, NOT a quality ranking).
+const STATE_RANK: Record<string, number> = {
   active: 0,
   partially_filled: 1,
   mitigated: 2,
@@ -313,21 +343,25 @@ const STATUS_RANK: Record<string, number> = {
   invalidated: 4,
 };
 
-export function zoneRank(zone: ZoneLifecycle): number {
-  if (zone.kind === 'ob') {
-    return zone.importance != null ? OB_IMPORTANCE_RANK[zone.importance] : 3;
-  }
-  return STATUS_RANK[zone.status] ?? 5;
-}
-
-function zoneMid(zone: ZoneLifecycle): number {
-  return (zone.levelHigh + zone.levelLow) / 2;
+export function stateRank(zone: ZoneLifecycle): number {
+  return STATE_RANK[zone.status] ?? 5;
 }
 
 /**
- * Order the zones for display. `importance` uses the rank above, `recency` uses
- * `created_at` (newest first), `proximity` uses |mid − price| (closest first,
- * falling back to importance when no price is available). Pure, stable input.
+ * Distance from the price to the zone's BAND (0 when inside) — the same fact the
+ * card's relation badge shows, so the proximity order matches what is displayed.
+ */
+function distanceToPrice(zone: ZoneLifecycle, price: number): number {
+  const rel = priceRelation(zone, price);
+  return rel && rel.position !== 'inside' ? rel.distance : 0;
+}
+
+/**
+ * Order the zones for display. `proximity` (the default) uses the distance from
+ * the price to the band, closest first; `recency` uses `created_at` (newest
+ * first); `state` follows the engine's lifecycle status. Without a usable price,
+ * `proximity` degrades to the state order (no invented distance). Every order is
+ * a fact — there is deliberately NO importance/quality sort (mission §0).
  */
 export function sortZones(
   zones: ZoneLifecycle[],
@@ -335,16 +369,16 @@ export function sortZones(
   price?: number | null,
 ): ZoneLifecycle[] {
   const arr = [...zones];
+  const byRecency = (a: ZoneLifecycle, b: ZoneLifecycle) =>
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   if (sort === 'recency') {
-    arr.sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
+    arr.sort(byRecency);
   } else if (sort === 'proximity' && price != null) {
     arr.sort(
-      (a, b) => Math.abs(zoneMid(a) - price) - Math.abs(zoneMid(b) - price),
+      (a, b) => distanceToPrice(a, price) - distanceToPrice(b, price) || byRecency(a, b),
     );
   } else {
-    arr.sort((a, b) => zoneRank(a) - zoneRank(b) || zoneMid(b) - zoneMid(a));
+    arr.sort((a, b) => stateRank(a) - stateRank(b) || byRecency(a, b));
   }
   return arr;
 }
