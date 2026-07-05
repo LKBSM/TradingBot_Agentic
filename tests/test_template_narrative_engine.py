@@ -91,7 +91,9 @@ def test_validator_accepts_strong_signal(engine, strong_signal):
     assert result.tier == NarrativeTier.VALIDATOR
     assert result.is_valid is True
     assert "validated" in result.validation_reason.lower()
-    assert "LONG" in result.validation_reason
+    # The reason phrases the direction editorially (« Long setup validated … »
+    # via _setup_phrase().capitalize()) — assert its presence, not its casing.
+    assert "long" in result.validation_reason.lower()
     assert result.cost_usd == 0.0
 
 

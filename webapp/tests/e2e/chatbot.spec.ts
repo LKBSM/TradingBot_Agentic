@@ -1,8 +1,15 @@
 import { expect, test } from '@playwright/test';
+import { dismissCookieBanner } from './utils';
 
 test.describe('Chatbot — golden paths', () => {
-  test('opens the chat panel when CTA is clicked', async ({ page }) => {
+  test.beforeEach(async ({ page }) => {
     await page.goto('/#multi-marche');
+    // Sur mobile la bannière cookies recouvre le bas du viewport (z-50) et
+    // intercepte les clics dans le panneau de chat.
+    await dismissCookieBanner(page);
+  });
+
+  test('opens the chat panel when CTA is clicked', async ({ page }) => {
     // Click "Demander à M.I.A Agent" on the first card.
     await page
       .getByRole('button', {
@@ -16,7 +23,6 @@ test.describe('Chatbot — golden paths', () => {
   });
 
   test('clicking a suggested question shows its scripted reply', async ({ page }) => {
-    await page.goto('/#multi-marche');
     await page
       .getByRole('button', {
         name: /Ouvrir le chatbot pour poser une question contextuelle/i,
@@ -34,7 +40,6 @@ test.describe('Chatbot — golden paths', () => {
   });
 
   test('pedagogical refusal on "should I buy?"', async ({ page }) => {
-    await page.goto('/#multi-marche');
     await page
       .getByRole('button', {
         name: /Ouvrir le chatbot pour poser une question contextuelle/i,
@@ -65,7 +70,6 @@ test.describe('Chatbot — golden paths', () => {
       }),
     );
 
-    await page.goto('/#multi-marche');
     await page
       .getByRole('button', {
         name: /Ouvrir le chatbot pour poser une question contextuelle/i,

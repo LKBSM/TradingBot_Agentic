@@ -74,7 +74,11 @@ export function StructureSection({
 }) {
   const { bos, choch, order_blocks, fair_value_gaps, retest_in_progress } =
     structure;
-  const liquidity_pools = structure.liquidity_pools ?? [];
+  const structure_liquidity_pools = structure.liquidity_pools;
+  const liquidity_pools = useMemo(
+    () => structure_liquidity_pools ?? [],
+    [structure_liquidity_pools],
+  );
 
   // Click-to-chart wiring (display/navigation only). We reuse the EXISTING chart
   // view channel the M.I.A Agent drives: clicking a zone asks the chart to

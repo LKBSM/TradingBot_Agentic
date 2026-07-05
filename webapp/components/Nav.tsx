@@ -95,21 +95,28 @@ export function Nav() {
           </ul>
         </nav>
 
-        <div className="flex items-center gap-2">
+        {/* gap-1 + px-2 sous sm : sur 390px le cluster débordait et le
+            LocaleToggle recouvrait le ThemeToggle (toggle thème incliquable
+            sur mobile — bug attrapé par l'e2e mobile-iphone-12). */}
+        <div className="flex items-center gap-1 sm:gap-2">
           <Link
             href="/zones"
-            className="rounded-md px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="rounded-md px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-3"
           >
             Zones
           </Link>
           <Link
             href="/scanner"
-            className="rounded-md px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="rounded-md px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-3"
           >
             Scanner
           </Link>
           <NavAccountLink />
-          <LocaleToggle />
+          {/* V1 = FR-only (middleware 302 en/de/es → fr) : le sélecteur de
+              langue reste desktop-only tant que l'i18n n'est pas activée. */}
+          <div className="hidden sm:block">
+            <LocaleToggle />
+          </div>
           <ThemeToggle />
         </div>
       </div>

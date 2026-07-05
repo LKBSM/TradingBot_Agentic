@@ -12,7 +12,10 @@ on:
 jobs:
   algo-tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # The "fast" marker taxonomy (slow/integration/skip_on_ci) is declared but
+    # barely applied yet, so this lane still runs nearly the full suite — give
+    # it headroom until the markers are rolled out test-by-test.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:
@@ -29,15 +32,19 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           pip install pytest pytest-cov pandas numpy scipy scikit-learn lightgbm hmmlearn pydantic
 
+      # `python -m pytest` (not bare `pytest`) so the repo root lands on
+      # sys.path and `tests/conftest.py` can import the `src` package — the
+      # bare binary broke every run at collection (exit 4) since the conftest
+      # gained engine imports.
       - name: Collect tests
-        run: pytest tests/ --collect-only -q
+        run: python -m pytest tests/ --collect-only -q
 
       - name: Run fast algo tests
         env:
           PYTHONIOENCODING: utf-8
           SENTINEL_TESTING_MODE: "1"
         run: |
-          pytest tests/ \
+          python -m pytest tests/ \
             -m "not slow and not integration and not skip_on_ci" \
             --maxfail=20 \
             --tb=short \

@@ -12,6 +12,11 @@ import { defineConfig, devices } from '@playwright/test';
  *   npm run test:e2e          # headless run
  *   npm run test:e2e:ui       # interactive UI mode
  */
+// E2E_BASE_URL pilote à la fois le navigateur et le health-check du serveur —
+// utile pour tourner sur un autre port quand 3000 est occupé (PORT est lu par
+// `next start`/`next dev`) : PORT=3100 E2E_BASE_URL=http://localhost:3100.
+const BASE_URL = process.env.E2E_BASE_URL ?? 'http://localhost:3000';
+
 export default defineConfig({
   testDir: './tests/e2e',
   fullyParallel: true,
@@ -20,7 +25,7 @@ export default defineConfig({
   workers: process.env.CI ? 2 : undefined,
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
   use: {
-    baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:3000',
+    baseURL: BASE_URL,
     trace: 'on-first-retry',
     locale: 'fr-FR',
   },
@@ -31,12 +36,18 @@ export default defineConfig({
     },
     {
       name: 'mobile-iphone-12',
-      use: { ...devices['iPhone 12'] },
+      // Le device « iPhone 12 » sélectionne webkit par défaut ; la CI (et la
+      // convention locale documentée ci-dessus) n'installe que chromium →
+      // chaque test mobile échouait au lancement du navigateur. On garde le
+      // viewport/UA iPhone mais émulé sous chromium.
+      use: { ...devices['iPhone 12'], browserName: 'chromium' },
     },
   ],
   webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:3000',
+    // En CI le workflow fait déjà `npm run build` : servir le build (start)
+    // est plus rapide et plus fidèle à la prod que `next dev`.
+    command: process.env.CI ? 'npm run start' : 'npm run dev',
+    url: BASE_URL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
     stdout: 'pipe',

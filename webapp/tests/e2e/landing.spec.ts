@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { dismissCookieBanner } from './utils';
 
 test.describe('Landing — golden paths (architecture L1-L6 2026-05-27)', () => {
   test('brand visible in nav + hero badges (no marketing H1 above fold)', async ({ page }) => {
@@ -68,9 +69,11 @@ test.describe('Landing — golden paths (architecture L1-L6 2026-05-27)', () => 
 
   test('pricing section shows 3 tiers FREE/9€/19€ post pivot 2026-05-27', async ({ page }) => {
     await page.goto('/#tarifs');
-    await expect(page.getByText(/Découverte/)).toBeVisible();
-    await expect(page.getByText(/Approfondie/)).toBeVisible();
-    await expect(page.getByText(/Intégrale/)).toBeVisible();
+    // Rôle heading (h3 des TierCard) : « Découverte » apparaît aussi dans le
+    // paragraphe d'intro (« …sur le tier Découverte ») → strict mode.
+    await expect(page.getByRole('heading', { name: 'Découverte' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Approfondie' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Intégrale' })).toBeVisible();
     await expect(page.getByText(/9 €/).first()).toBeVisible();
     await expect(page.getByText(/19 €/).first()).toBeVisible();
     // INSTITUTIONAL retiré grille publique → bloc Calendly aside.
@@ -80,6 +83,8 @@ test.describe('Landing — golden paths (architecture L1-L6 2026-05-27)', () => 
 
   test('FAQ accordion exposes 6 questions and opens the first one', async ({ page }) => {
     await page.goto('/#faq');
+    // Mobile : la bannière cookies intercepte les clics près du bord bas.
+    await dismissCookieBanner(page);
     await expect(
       page.getByRole('heading', { level: 2, name: /Vous vous demandez/i }),
     ).toBeVisible();
@@ -87,8 +92,9 @@ test.describe('Landing — golden paths (architecture L1-L6 2026-05-27)', () => 
       .getByRole('button', { name: /MIA est-il un service de signaux/i })
       .first();
     await firstTrigger.click();
+    // Texte de la réponse q1 (post nettoyage claims 2026-07-04).
     await expect(
-      page.getByText(/analyses éditoriales contextuelles/i),
+      page.getByText(/refuse explicitement les questions/i),
     ).toBeVisible();
   });
 

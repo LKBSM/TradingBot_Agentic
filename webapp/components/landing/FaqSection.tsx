@@ -87,12 +87,12 @@ const FAQ: ReadonlyArray<FaqEntry> = [
     answer: (
       <>
         Vous devez avoir <strong>18 ans minimum</strong>, accepter les{' '}
-        <a
+        <Link
           href="/conditions"
           className="underline-offset-2 hover:underline"
         >
           conditions d&apos;utilisation
-        </a>{' '}
+        </Link>{' '}
         et confirmer que vous comprenez le caractère non personnalisé de
         l&apos;analyse. Les restrictions applicables selon votre
         juridiction sont détaillées dans les conditions.
@@ -121,12 +121,12 @@ const FAQ: ReadonlyArray<FaqEntry> = [
         l&apos;accès, la rectification ou l&apos;effacement de vos données
         (contact@mia.markets). Aucune revente, aucun croisement
         publicitaire. Détail dans la{' '}
-        <a
+        <Link
           href="/confidentialite"
           className="underline-offset-2 hover:underline"
         >
           politique de confidentialité
-        </a>
+        </Link>
         .
       </>
     ),

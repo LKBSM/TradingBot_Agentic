@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { dismissCookieBanner } from './utils';
 
 /**
  * Chantier 5.A — e2e de l'intégration chatbot webapp ↔ backend FastAPI.
@@ -19,6 +20,9 @@ const CHAT_ENDPOINT = '**/api/chatbot/message';
 
 async function openChatPanel(page: import('@playwright/test').Page) {
   await page.goto('/#multi-marche');
+  // Mobile : la bannière cookies (fixed bottom, z-50) intercepte les clics
+  // dans la zone de saisie du chat.
+  await dismissCookieBanner(page);
   await page
     .getByRole('button', {
       name: /Ouvrir le chatbot pour poser une question contextuelle/i,

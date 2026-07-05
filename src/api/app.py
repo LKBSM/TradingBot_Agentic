@@ -517,12 +517,17 @@ def create_app(
     app.include_router(qa.router)
     app.include_router(enrich.router)
     app.include_router(audit.router)
+    # webapp BEFORE insight_history: both share the /api/v1/insights prefix and
+    # insight_history ends with the dynamic GET /{insight_id} — registered
+    # first, it would swallow the static /preview route ("preview" parsed as an
+    # insight id → 503 ledger). FastAPI matches in registration order, so the
+    # static route must come first.
+    app.include_router(webapp.router)
     app.include_router(insight_history.router)
     app.include_router(metrics_latency.router)
     app.include_router(webhook_ack.router)
     app.include_router(billing.router)
     app.include_router(account_billing.router)
-    app.include_router(webapp.router)
     app.include_router(market_reading.router)
     app.include_router(candles.router)
     app.include_router(live_price.router)

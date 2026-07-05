@@ -27,6 +27,7 @@ contract: same data, richer interactions on top.
 from __future__ import annotations
 
 import html
+import json
 import logging
 import uuid
 from datetime import datetime, timezone
@@ -330,6 +331,7 @@ async def preview(
     # Reuse the /enrich pipeline (single source of truth) by calling the
     # underlying handler. Avoid HTTP self-referral overhead by importing
     # the function directly.
+    from src.api.insight_signal_v2 import InsightSignalV2
     from src.api.routes.enrich import enrich as enrich_handler
 
     body = EnrichRequest(
@@ -342,5 +344,8 @@ async def preview(
         target_2=target_2,
         language=language,
     )
-    payload = await enrich_handler(body, request, subscriber)
+    # enrich returns a JSONResponse (idempotency-cache contract) — rebuild the
+    # typed payload for the HTML renderer.
+    response = await enrich_handler(body, request, subscriber)
+    payload = InsightSignalV2.model_validate(json.loads(response.body))
     return HTMLResponse(content=_render_html(payload, language))
