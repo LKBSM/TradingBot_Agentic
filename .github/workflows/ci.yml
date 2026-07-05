@@ -85,15 +85,18 @@ jobs:
             "fredapi>=0.5.0" "requests>=2.31.0" "python-dotenv>=1.0.0" \
             "pyarrow>=15.0.0" "lightgbm>=4.0.0" "scikit-learn>=1.3.0" \
             "pydantic>=2.0.0" "scipy>=1.11.0" \
-            "sentry-sdk[fastapi]>=2.0" \
+            "sentry-sdk[fastapi]>=2.0" "fastapi>=0.104.0" \
             "pytest>=7.0.0" "pytest-cov>=4.0.0"
 
       - name: Run Phase 1 tests with coverage
         # Curated subset that doesn't depend on local CSVs. Expands as more
         # sprints land. Coverage scope = src/agents/data + src/research +
         # tools/governance + tests/eval_llm (the new code we ship).
+        # `python -m pytest` (not bare `pytest`) so the repo root lands on
+        # sys.path and tests/conftest.py can import the `src` package (fastapi
+        # above is its transitive need via src.api.auth).
         run: |
-          pytest \
+          python -m pytest \
             tests/test_fred_provider.py \
             tests/test_cot_provider.py \
             tests/test_a1_features.py \

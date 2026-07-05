@@ -118,12 +118,12 @@ const FAQ: ReadonlyArray<FaqEntry> = [
         <strong>privés et exportables au format JSON</strong> à tout moment. À la suppression du compte, l&apos;intégralité des
         données est effacée sous 30 jours (RGPD art. 17). Aucune
         revente, aucun croisement publicitaire. Détail dans la{' '}
-        <a
-          href="/privacy"
+        <Link
+          href="/confidentialite"
           className="underline-offset-2 hover:underline"
         >
           politique de confidentialité
-        </a>
+        </Link>
         .
       </>
     ),
