@@ -14,6 +14,7 @@ from fastapi.testclient import TestClient
 
 from src.api.account_store import AccountError, AccountStore
 from src.api.app import create_app
+from src.api.routes.legal import CONDITIONS_VERSION
 
 
 # =============================================================================
@@ -281,18 +282,26 @@ class TestOwnerEnvSeedAndAccess:
 # =============================================================================
 
 class TestLegalDocuments:
+    # La version vient de src/api/routes/legal.py (source unique, lockstep
+    # avec l'en-tête du markdown canonique) — pas de littéral figé ici.
     def test_conditions_rendered_with_version(self, client):
         r = client.get("/api/v1/legal/conditions")
         assert r.status_code == 200
-        assert r.headers["X-Document-Version"] == "2026-04-28"
+        assert r.headers["X-Document-Version"] == CONDITIONS_VERSION
         assert "Conditions Générales d'Utilisation" in r.text
+
+    def test_conditions_doc_header_in_lockstep_with_code(self, client):
+        # L'en-tête du markdown canonique doit porter la même date que
+        # CONDITIONS_VERSION (horodatage de consentement Loi 25 / RGPD).
+        r = client.get("/api/v1/legal/conditions")
+        assert f"_Version : {CONDITIONS_VERSION}" in r.text
 
     def test_conditions_meta(self, client):
         r = client.get("/api/v1/legal/conditions/meta")
         assert r.status_code == 200
-        assert r.json()["version"] == "2026-04-28"
+        assert r.json()["version"] == CONDITIONS_VERSION
 
     def test_legal_version_includes_conditions(self, client):
         r = client.get("/api/v1/legal/version")
         assert r.status_code == 200
-        assert r.json()["conditions_version"] == "2026-04-28"
+        assert r.json()["conditions_version"] == CONDITIONS_VERSION
