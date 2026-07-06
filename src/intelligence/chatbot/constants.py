@@ -320,6 +320,16 @@ VIEW_ACTION_REFUSAL_TEMPLATE: str = (
     "Je peux masquer, filtrer, ou me centrer sur les zones détectées."
 )
 
+# Couche 4 — honest report when a category-targeted mask (« masque les SSL »)
+# resolves to ZERO engine-emitted structures on the current reading. Nothing is
+# hidden and nothing is invented; the model relays this factually. Kept free of
+# forbidden tokens so it never trips Couche 3.
+VIEW_ACTION_EMPTY_CATEGORY_TEMPLATE: str = (
+    "Le moteur n'émet aucune structure de cette catégorie sur la lecture "
+    "actuelle — il n'y a rien à masquer ni à ré-afficher. Je n'affiche que ce "
+    "que le marché montre."
+)
+
 
 __all__ = [
     "ADVERSARIAL_PATTERNS_BY_CATEGORY",
@@ -338,6 +348,7 @@ __all__ = [
     "LLM_ERROR_TEMPLATE",
     "OUTPUT_CONTAMINATED_TEMPLATE",
     "REFUSAL_TEMPLATE",
+    "VIEW_ACTION_EMPTY_CATEGORY_TEMPLATE",
     "VIEW_ACTION_REFUSAL_TEMPLATE",
     "normalize_text",
 ]

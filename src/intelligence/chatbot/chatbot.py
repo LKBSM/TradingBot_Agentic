@@ -29,6 +29,7 @@ from src.intelligence.chatbot.constants import (
     LLM_ERROR_TEMPLATE,
     OUTPUT_CONTAMINATED_TEMPLATE,
     REFUSAL_TEMPLATE,
+    VIEW_ACTION_EMPTY_CATEGORY_TEMPLATE,
     VIEW_ACTION_REFUSAL_TEMPLATE,
 )
 from src.intelligence.chatbot.output_filter import OutputFilter
@@ -131,11 +132,12 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
         "description": (
             "Change UNIQUEMENT l'AFFICHAGE du graphique (jamais les données ni la "
             "géométrie d'une zone). Action structurée, liste blanche stricte :\n"
-            "- set_layer_visibility {layer: 'fvg'|'ob'|'breaks'|'all', visible: bool} "
-            "— masquer/afficher UNE couche (breaks = BOS/CHOCH/retest). Pour "
-            "PLUSIEURS couches d'un coup (« enlève les FVG et les OB »), utilise la "
-            "forme {layers: ['fvg','ob'], visible: bool} — sous-ensemble de "
-            "'fvg'/'ob'/'breaks' ; ne mélange jamais layer et layers.\n"
+            "- set_layer_visibility {layer: 'fvg'|'ob'|'breaks'|'liquidity'|'all', "
+            "visible: bool} — masquer/afficher UNE couche (breaks = BOS/CHOCH/"
+            "retest ; liquidity = poches de liquidité BSL/SSL). Pour PLUSIEURS "
+            "couches d'un coup (« enlève les FVG et les OB »), utilise la forme "
+            "{layers: ['fvg','ob'], visible: bool} — sous-ensemble de "
+            "'fvg'/'ob'/'breaks'/'liquidity' ; ne mélange jamais layer et layers.\n"
             "- filter_zones {active_only?: bool, proximity_only?: bool, "
             "proximity_pct?: number, min_size_pct?: number} — filtrer les zones "
             "DÉTECTÉES affichées (actives seules / proches du prix / taille min "
@@ -143,13 +145,20 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
             "- focus_zone {zone_id: str} — se centrer sur une zone DÉTECTÉE "
             "(utilise un id renvoyé par get_market_reading ; jamais un id inventé).\n"
             "- highlight_zone {zone_id: str} — mettre en évidence une zone DÉTECTÉE.\n"
-            "- hide_zones {zone_ids: [str]} — RETIRER DE L'AFFICHAGE une ou "
-            "plusieurs zones DÉTECTÉES (par leurs ids réels ; réversible). La zone "
-            "existe toujours, on masque seulement sa boîte.\n"
-            "- isolate_zones {zone_ids: [str]} — n'AFFICHER QUE ces zones DÉTECTÉES "
-            "(masque toutes les autres ; réversible).\n"
-            "- show_zones {zone_ids?: [str]} — ré-afficher des zones masquées ; sans "
-            "zone_ids, tout restaurer (annule hide/isolate).\n"
+            "- hide_zones {zone_ids: [str]} OU {category: "
+            "'fvg'|'ob'|'bsl'|'ssl'|'liquidity'} — RETIRER DE L'AFFICHAGE des "
+            "structures DÉTECTÉES (par leurs ids réels, ou par catégorie : la "
+            "catégorie est résolue côté serveur vers TOUS les ids réellement émis "
+            "de ce type — 'ssl' = poches de liquidité vendeuses, 'bsl' = "
+            "acheteuses, 'liquidity' = les deux ; réversible). La structure existe "
+            "toujours, on masque seulement son tracé. Ne mélange jamais zone_ids "
+            "et category.\n"
+            "- isolate_zones {zone_ids: [str]} OU {category: ...} — n'AFFICHER QUE "
+            "ces structures DÉTECTÉES (masque toutes les autres, poches de "
+            "liquidité comprises ; réversible).\n"
+            "- show_zones {zone_ids?: [str]} OU {category: ...} — ré-afficher des "
+            "structures masquées ; sans zone_ids ni category, tout restaurer "
+            "(annule hide/isolate).\n"
             "- focus_price {} — se centrer sur le prix courant.\n"
             "- fit_chart {} — ajuster la vue à toutes les bougies.\n"
             "- reset_view {} — réinitialiser l'affichage (couches visibles, sans "
@@ -193,8 +202,11 @@ RÈGLES STRICTES :
 
 CONTRÔLE DE L'AFFICHAGE DU GRAPHIQUE (apply_chart_view) :
 - Tu peux changer ce que le graphique AFFICHE, jamais ce que le marché contient.
-- Actions possibles uniquement : masquer/afficher une OU plusieurs couches (FVG, OB, BOS/CHOCH ; pour plusieurs couches à la fois utilise set_layer_visibility avec layers: ['fvg','ob']), filtrer les zones DÉTECTÉES (actives seules / proches / taille min), te centrer/zoomer (zone détectée ou prix courant), changer instrument/timeframe, mettre en évidence une zone DÉTECTÉE.
-- Pour cibler une zone précise (focus_zone / highlight_zone / hide_zones / isolate_zones), appelle d'abord get_market_reading pour obtenir son id, et n'utilise QUE des ids renvoyés par le moteur — jamais un id ou un prix inventé.
+- Actions possibles uniquement : masquer/afficher une OU plusieurs couches (FVG, OB, BOS/CHOCH, liquidité BSL/SSL ; pour plusieurs couches à la fois utilise set_layer_visibility avec layers: ['fvg','ob']), filtrer les zones DÉTECTÉES (actives seules / proches / taille min), te centrer/zoomer (zone détectée ou prix courant), changer instrument/timeframe, mettre en évidence une zone DÉTECTÉE.
+- Les poches de liquidité (BSL/SSL) SONT masquables, exactement comme les OB/FVG : masquer une poche est un filtre d'affichage RÉVERSIBLE — la poche détectée existe toujours, tu ne supprimes ni n'inventes rien. Ne refuse jamais « masque les SSL/BSL/la liquidité » au motif que la liquidité ne serait pas contrôlable.
+- Pour « masque les SSL » / « les BSL » / « la liquidité » (ou les FVG/OB en tant que groupe par ids) : appelle d'abord get_market_reading (les poches du tour doivent être connues), puis hide_zones {{category: 'ssl'|'bsl'|'liquidity'|'fvg'|'ob'}} — le serveur résout la catégorie vers TOUS les ids réellement émis, et rien d'autre. Ré-afficher : show_zones {{category: ...}} ou show_zones {{}} pour tout restaurer. Si le moteur n'émet AUCUNE poche de la catégorie, l'action est rejetée : dis-le honnêtement (« le moteur n'émet aucune poche SSL sur cette lecture ») — ne masque rien, n'invente rien.
+- Une poche de liquidité se DÉCRIT (côté, niveau, intacte/prise/cassée) — jamais de commentaire prédictif du type « le prix va la chercher ».
+- Pour cibler une zone ou une poche précise (focus_zone / highlight_zone / hide_zones / isolate_zones), appelle d'abord get_market_reading pour obtenir son id, et n'utilise QUE des ids renvoyés par le moteur — jamais un id ou un prix inventé.
 - Pour masquer/isoler « l'OB à 4160 » (ou toute zone désignée par son prix) : lis get_market_reading, trouve la zone RÉELLE dont la bande contient ce prix, et masque/isole SON id. Si AUCUNE zone réelle ne correspond, ne masque rien et dis-le : « Aucune zone détectée ne correspond à ce niveau — je n'affiche que ce que le marché montre. »
 - Pour masquer/isoler un GROUPE désigné par un critère factuel (« masque les FVG touchés », « n'affiche que les OB actifs », « cache les zones mitigées ») : lis get_market_reading, sélectionne les zones RÉELLES qui correspondent au critère via leur champ `status` (active / mitigated / partially_filled / filled / invalidated — « touché » = mitigated ou partially_filled), rassemble TOUS leurs ids et passe-les en une seule fois dans zone_ids. Tu ne masques que les zones réellement renvoyées par le moteur ; si aucune ne correspond, ne masque rien et dis-le.
 - Masquer retire une zone réelle de l'AFFICHAGE (réversible via show_zones) ; ce n'est jamais inventer, déplacer ou supprimer une structure du marché.
@@ -297,9 +309,13 @@ class Chatbot:
         ]
         tool_calls_made: list[dict[str, Any]] = []
         view_actions: list[dict[str, Any]] = []
-        # Ids of zones the engine actually emitted this turn — the ONLY zones the
-        # model is allowed to focus / highlight (an invented id is rejected).
+        # Ids of zones/pockets the engine actually emitted this turn — the ONLY
+        # structures the model is allowed to focus / highlight / mask (an
+        # invented id is rejected). The category index maps each closed category
+        # ('fvg'/'ob'/'bsl'/'ssl'/'liquidity') to those same emitted ids, so a
+        # category mask (« masque les SSL ») resolves server-side to real ids.
         known_zone_ids: set[str] = set()
+        known_category_ids: dict[str, list[str]] = {}
 
         for _turn in range(self._max_tool_turns):
             try:
@@ -353,13 +369,14 @@ class Chatbot:
                 if block.name == "apply_chart_view":
                     # --- Couche 4 — view-action whitelist (display-only) ---
                     result = self._apply_view_action(
-                        tool_input, view_actions, known_zone_ids
+                        tool_input, view_actions, known_zone_ids, known_category_ids
                     )
                 else:
                     result = self._execute_tool(block.name, tool_input)
-                    # Harvest detected zone ids so a later focus/highlight can only
-                    # reference a zone the engine actually emitted.
-                    self._harvest_zone_ids(result, known_zone_ids)
+                    # Harvest detected zone/pocket ids so a later focus/highlight/
+                    # mask can only reference a structure the engine actually
+                    # emitted.
+                    self._harvest_zone_ids(result, known_zone_ids, known_category_ids)
 
                 tool_results.append({
                     "type": "tool_result",
@@ -392,6 +409,7 @@ class Chatbot:
         tool_input: dict[str, Any],
         view_actions: list[dict[str, Any]],
         known_zone_ids: set[str],
+        known_category_ids: dict[str, list[str]],
     ) -> dict[str, Any]:
         """Validate a proposed view action (Couche 4) and record it if admissible.
 
@@ -401,33 +419,68 @@ class Chatbot:
         action is only *recorded* for the frontend to apply to the render.
         """
         check = self._view_validator.validate(
-            tool_input, known_zone_ids=known_zone_ids
+            tool_input,
+            known_zone_ids=known_zone_ids,
+            known_category_ids=known_category_ids,
         )
         if not check.valid:
             logger.info("view action rejected (%s): %s", check.reason, tool_input)
+            # A category that resolves to ZERO emitted structures is not an
+            # invented-structure attempt — hand back the honest "nothing of that
+            # kind on this reading" wording instead of the generic refusal.
+            message = (
+                VIEW_ACTION_EMPTY_CATEGORY_TEMPLATE
+                if check.reason == "empty_category"
+                else VIEW_ACTION_REFUSAL_TEMPLATE
+            )
             return {
                 "status": "rejected",
                 "reason": check.reason,
-                "message": VIEW_ACTION_REFUSAL_TEMPLATE,
+                "message": message,
             }
         action = check.action or {}
         view_actions.append(action)
         return {"status": "applied", "action": action}
 
     @staticmethod
-    def _harvest_zone_ids(result: Any, known_zone_ids: set[str]) -> None:
-        """Collect OB / FVG ids from a get_market_reading result (read-only)."""
+    def _harvest_zone_ids(
+        result: Any,
+        known_zone_ids: set[str],
+        known_category_ids: Optional[dict[str, list[str]]] = None,
+    ) -> None:
+        """Collect OB / FVG / liquidity-pocket ids from a get_market_reading
+        result (read-only). Each id also lands in its category bucket ('fvg' /
+        'ob' / 'bsl' / 'ssl' / 'liquidity') so a category mask resolves to the
+        ids ACTUALLY emitted this turn — and nothing else."""
         if not isinstance(result, dict):
             return
         structure = result.get("structure")
         if not isinstance(structure, dict):
             return
-        for key in ("order_blocks", "fair_value_gaps"):
+
+        def _bucket(category: str, zid: str) -> None:
+            if known_category_ids is None:
+                return
+            ids = known_category_ids.setdefault(category, [])
+            if zid not in ids:
+                ids.append(zid)
+
+        for key, category in (("order_blocks", "ob"), ("fair_value_gaps", "fvg")):
             for zone in structure.get(key, []) or []:
                 if isinstance(zone, dict):
                     zid = zone.get("id")
                     if isinstance(zid, str) and zid:
                         known_zone_ids.add(zid)
+                        _bucket(category, zid)
+        for pool in structure.get("liquidity_pools", []) or []:
+            if isinstance(pool, dict):
+                pid = pool.get("id")
+                if isinstance(pid, str) and pid:
+                    known_zone_ids.add(pid)
+                    side = pool.get("side")
+                    if side in ("bsl", "ssl"):
+                        _bucket(side, pid)
+                    _bucket("liquidity", pid)
 
     def _execute_tool(self, name: str, tool_input: dict[str, Any]) -> dict[str, Any]:
         """Run a tool; on failure return an ``{"error": ...}`` dict so the LLM

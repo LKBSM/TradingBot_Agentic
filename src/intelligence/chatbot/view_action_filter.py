@@ -42,7 +42,15 @@ ALLOWED_LAYERS: tuple[str, ...] = ("fvg", "ob", "breaks", "liquidity", "all")
 # The individual overlay families addressable in a MULTI-layer toggle
 # (``set_layer_visibility`` with a ``layers`` list). "all" is excluded here — it
 # is a single-target shorthand, redundant inside an explicit subset.
-ALLOWED_MULTI_LAYERS: tuple[str, ...] = ("fvg", "ob", "breaks")
+ALLOWED_MULTI_LAYERS: tuple[str, ...] = ("fvg", "ob", "breaks", "liquidity")
+
+# The CLOSED enum of structure CATEGORIES addressable in the category form of
+# hide_zones / isolate_zones / show_zones (« masque les SSL »). A category is
+# resolved by the CALLER-side index ``known_category_ids`` — built ONLY from ids
+# the engine actually emitted this turn — so the resolver can never invent an
+# id. "bsl"/"ssl" = liquidity pockets by side; "liquidity" = both sides;
+# "fvg"/"ob" = the detected zone families (same generic mechanism).
+ALLOWED_ZONE_CATEGORIES: tuple[str, ...] = ("fvg", "ob", "bsl", "ssl", "liquidity")
 
 # The CLOSED whitelist of view actions. Everything outside this set is rejected.
 ALLOWED_ACTIONS: tuple[str, ...] = (
@@ -123,6 +131,7 @@ class ViewActionValidator:
         proposed: Any,
         *,
         known_zone_ids: Optional[set[str]] = None,
+        known_category_ids: Optional[dict[str, list[str]]] = None,
     ) -> ViewActionCheckResult:
         """Validate one proposed action against the display-only whitelist.
 
@@ -132,8 +141,14 @@ class ViewActionValidator:
             known_zone_ids: ids of zones actually read from the engine this turn.
                 ``focus_zone`` / ``highlight_zone`` are rejected if their
                 ``zone_id`` is not in this set (an invented zone).
+            known_category_ids: category → ordered ids ACTUALLY emitted this turn
+                (e.g. ``{"ssl": ["LIQ_ssl_…"]}``), built by the caller from the
+                same readings as ``known_zone_ids``. The category form of
+                hide/isolate/show_zones resolves against this index only — an
+                empty resolution is rejected (``empty_category``), never padded.
         """
         known = known_zone_ids or set()
+        categories = known_category_ids or {}
 
         if not isinstance(proposed, dict):
             return ViewActionCheckResult(False, reason="not_an_object")
@@ -155,13 +170,13 @@ class ViewActionValidator:
             return ViewActionCheckResult(False, reason="geometry_param_forbidden")
 
         handler = getattr(self, f"_v_{action}")
-        return handler(params, known)
+        return handler(params, known, categories)
 
     # ------------------------------------------------------------------ #
     # Per-action validators — each returns a normalised action or a reason.
     # ------------------------------------------------------------------ #
     def _v_set_layer_visibility(
-        self, params: dict[str, Any], _known: set[str]
+        self, params: dict[str, Any], _known: set[str], _cats: dict[str, list[str]]
     ) -> ViewActionCheckResult:
         visible = params.get("visible")
         if not isinstance(visible, bool):
@@ -198,7 +213,7 @@ class ViewActionValidator:
         return _ok("set_layer_visibility", {"layer": layer, "visible": visible})
 
     def _v_filter_zones(
-        self, params: dict[str, Any], _known: set[str]
+        self, params: dict[str, Any], _known: set[str], _cats: dict[str, list[str]]
     ) -> ViewActionCheckResult:
         out: dict[str, Any] = {}
         if "active_only" in params:
@@ -225,32 +240,32 @@ class ViewActionValidator:
         return _ok("filter_zones", out)
 
     def _v_focus_zone(
-        self, params: dict[str, Any], known: set[str]
+        self, params: dict[str, Any], known: set[str], _cats: dict[str, list[str]]
     ) -> ViewActionCheckResult:
         return self._zone_ref("focus_zone", params, known)
 
     def _v_highlight_zone(
-        self, params: dict[str, Any], known: set[str]
+        self, params: dict[str, Any], known: set[str], _cats: dict[str, list[str]]
     ) -> ViewActionCheckResult:
         return self._zone_ref("highlight_zone", params, known)
 
     def _v_focus_price(
-        self, _params: dict[str, Any], _known: set[str]
+        self, _params: dict[str, Any], _known: set[str], _cats: dict[str, list[str]]
     ) -> ViewActionCheckResult:
         return _ok("focus_price", {})
 
     def _v_fit_chart(
-        self, _params: dict[str, Any], _known: set[str]
+        self, _params: dict[str, Any], _known: set[str], _cats: dict[str, list[str]]
     ) -> ViewActionCheckResult:
         return _ok("fit_chart", {})
 
     def _v_reset_view(
-        self, _params: dict[str, Any], _known: set[str]
+        self, _params: dict[str, Any], _known: set[str], _cats: dict[str, list[str]]
     ) -> ViewActionCheckResult:
         return _ok("reset_view", {})
 
     def _v_set_instrument_timeframe(
-        self, params: dict[str, Any], _known: set[str]
+        self, params: dict[str, Any], _known: set[str], _cats: dict[str, list[str]]
     ) -> ViewActionCheckResult:
         instrument = params.get("instrument")
         timeframe = params.get("timeframe")
@@ -264,18 +279,24 @@ class ViewActionValidator:
         )
 
     def _v_hide_zones(
-        self, params: dict[str, Any], known: set[str]
+        self, params: dict[str, Any], known: set[str], cats: dict[str, list[str]]
     ) -> ViewActionCheckResult:
+        if _has_category(params):
+            return self._zone_category("hide_zones", params, known, cats)
         return self._zone_refs("hide_zones", params, known)
 
     def _v_isolate_zones(
-        self, params: dict[str, Any], known: set[str]
+        self, params: dict[str, Any], known: set[str], cats: dict[str, list[str]]
     ) -> ViewActionCheckResult:
+        if _has_category(params):
+            return self._zone_category("isolate_zones", params, known, cats)
         return self._zone_refs("isolate_zones", params, known)
 
     def _v_show_zones(
-        self, params: dict[str, Any], known: set[str]
+        self, params: dict[str, Any], known: set[str], cats: dict[str, list[str]]
     ) -> ViewActionCheckResult:
+        if _has_category(params):
+            return self._zone_category("show_zones", params, known, cats)
         # No ids → restore EVERY masked zone (full un-hide / drop isolation). An
         # explicit (possibly empty) list is validated like hide/isolate so a stale
         # id can't slip through; an empty list also means "restore all".
@@ -329,6 +350,43 @@ class ViewActionValidator:
             return ViewActionCheckResult(False, reason="empty_zone_ids")
         return _ok(action, {"zone_ids": deduped})
 
+    def _zone_category(
+        self,
+        action: str,
+        params: dict[str, Any],
+        known: set[str],
+        cats: dict[str, list[str]],
+    ) -> ViewActionCheckResult:
+        """Resolve a CLOSED category (« masque les SSL ») to the ids the engine
+        ACTUALLY emitted this turn, then normalise to the plain ``zone_ids`` form.
+
+        The resolver only READS the caller-built index — it can never invent an
+        id (defence in depth: every resolved id is re-checked against ``known``).
+        A category with ZERO emitted structures is rejected (``empty_category``)
+        so the orchestrator reports honestly that there is nothing to mask.
+        """
+        if params.get("zone_ids") is not None:
+            # Ambiguous: don't let the model send both targeting forms at once.
+            return ViewActionCheckResult(False, reason="ambiguous_target")
+        category = params.get("category")
+        if not isinstance(category, str) or category not in ALLOWED_ZONE_CATEGORIES:
+            return ViewActionCheckResult(False, reason="bad_category")
+        seen: set[str] = set()
+        resolved: list[str] = []
+        for zid in cats.get(category, []):
+            if not isinstance(zid, str) or zid not in known:
+                continue  # index/known mismatch — never surface an unknown id
+            if zid not in seen:
+                seen.add(zid)
+                resolved.append(zid)
+        if not resolved:
+            return ViewActionCheckResult(False, reason="empty_category")
+        return _ok(action, {"zone_ids": resolved})
+
+
+def _has_category(params: dict[str, Any]) -> bool:
+    return params.get("category") is not None
+
 
 def _ok(action: str, params: dict[str, Any]) -> ViewActionCheckResult:
     return ViewActionCheckResult(True, action={"action": action, "params": params})
@@ -351,6 +409,7 @@ __all__ = [
     "ALLOWED_ACTIONS",
     "ALLOWED_LAYERS",
     "ALLOWED_MULTI_LAYERS",
+    "ALLOWED_ZONE_CATEGORIES",
     "GEOMETRY_KEYS",
     "SUPPORTED_INSTRUMENTS",
     "SUPPORTED_TIMEFRAMES",

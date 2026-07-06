@@ -411,13 +411,26 @@ export function ReadingChart({
 
   // External-liquidity segments (BSL/SSL), read straight from engine-emitted
   // pools — never recomputed, never projected. Hidden entirely when the
-  // "liquidity" layer is toggled off (display-only).
+  // "liquidity" layer is toggled off, and per-pocket through the SAME id
+  // masking as the OB/FVG boxes (hide_zones / isolate_zones — isolation is
+  // uniform: isolating a set of ids hides every other structure, pockets
+  // included). All display-only and reversible.
   const liquidityLines = React.useMemo(
     () =>
       layers.liquidity
-        ? buildLiquidityLines(structure, { intactOnly: liquidityIntactOnly })
+        ? applyZoneVisibility(
+            buildLiquidityLines(structure, { intactOnly: liquidityIntactOnly }),
+            hiddenZoneIds,
+            isolatedZoneIds,
+          )
         : [],
-    [structure, layers.liquidity, liquidityIntactOnly],
+    [
+      structure,
+      layers.liquidity,
+      liquidityIntactOnly,
+      hiddenZoneIds,
+      isolatedZoneIds,
+    ],
   );
   const hasLiquidityPools = (structure.liquidity_pools ?? []).length > 0;
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildLiquidityLines, poolContactSec } from '../liquidityLines';
+import { applyZoneVisibility } from '../zoneLayout';
 import type {
   LiquidityPool,
   MarketReadingStructure,
@@ -150,5 +151,36 @@ describe('poolContactSec', () => {
   it('is null (defensive) when a swept/broken pocket has no parseable timestamp', () => {
     expect(poolContactSec(pool({ status: 'swept' }))).toBeNull();
     expect(poolContactSec(pool({ status: 'broken', broken_at: null }))).toBeNull();
+  });
+});
+
+// ─── Per-id masking of pockets — the SAME mechanism as OB/FVG boxes ────────────
+
+describe('liquidity segments through applyZoneVisibility', () => {
+  const threePools = structure([
+    pool({ id: 'LIQ_ssl_a', side: 'ssl', kind: 'equal_lows', level: 1980 }),
+    pool({ id: 'LIQ_ssl_b', side: 'ssl', kind: 'range_low', level: 1970 }),
+    pool({ id: 'LIQ_bsl_a', side: 'bsl', kind: 'equal_highs', level: 2010 }),
+  ]);
+
+  it('hides the masked pocket ids and NOTHING else; restoring brings them back', () => {
+    const lines = buildLiquidityLines(threePools);
+    // « masque les SSL » → the resolved SSL ids land in hiddenZoneIds.
+    const masked = applyZoneVisibility(lines, ['LIQ_ssl_a', 'LIQ_ssl_b'], null);
+    expect(masked.map((l) => l.id)).toEqual(['LIQ_bsl_a']);
+    // Reversible: an empty hidden set restores every segment (nothing deleted).
+    const restored = applyZoneVisibility(lines, [], null);
+    expect(restored.map((l) => l.id).sort()).toEqual(['LIQ_bsl_a', 'LIQ_ssl_a', 'LIQ_ssl_b']);
+  });
+
+  it('isolation is UNIFORM: isolating other structures hides the pockets too', () => {
+    const lines = buildLiquidityLines(threePools);
+    // « n'affiche que cet OB » → the isolation set holds only the OB id, so
+    // every liquidity segment drops out of the display (reversible).
+    const isolated = applyZoneVisibility(lines, [], ['ob_1']);
+    expect(isolated).toEqual([]);
+    // Isolating one pocket keeps that pocket only.
+    const onlyOne = applyZoneVisibility(lines, [], ['LIQ_ssl_b']);
+    expect(onlyOne.map((l) => l.id)).toEqual(['LIQ_ssl_b']);
   });
 });

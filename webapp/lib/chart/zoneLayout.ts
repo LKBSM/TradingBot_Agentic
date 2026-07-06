@@ -304,22 +304,25 @@ export function filterZoneModels(
 
 /**
  * Apply the chatbot's per-id visibility state (`hide_zones` / `isolate_zones`) to
- * a zone list. PURELY a display choice over the DETECTED zones — it hides boxes
- * by id, never edits a band or invents a zone:
- *   · isolatedZoneIds — when non-null, keep ONLY zones whose id is in the set
- *     (show only the isolated zones); null means no isolation.
- *   · hiddenZoneIds   — drop any zone whose id was explicitly masked.
+ * a list of id-bearing display items — OB/FVG zone models AND liquidity-pocket
+ * segments go through this SAME filter (one masking mechanism, no duplicate).
+ * PURELY a display choice over the DETECTED structures — it hides drawings by
+ * id, never edits a band or invents a structure:
+ *   · isolatedZoneIds — when non-null, keep ONLY items whose id is in the set
+ *     (show only the isolated structures — uniform across zones and pockets);
+ *     null means no isolation.
+ *   · hiddenZoneIds   — drop any item whose id was explicitly masked.
  * Both are reversible from the view state (`show_zones` / `reset_view`). Returns a
- * new array; the input is never mutated, and the zones themselves are untouched.
+ * new array; the input is never mutated, and the structures themselves are untouched.
  */
-export function applyZoneVisibility(
-  zones: ZoneModel[],
+export function applyZoneVisibility<T extends { id: string }>(
+  items: T[],
   hiddenZoneIds: readonly string[],
   isolatedZoneIds: readonly string[] | null,
-): ZoneModel[] {
+): T[] {
   const hidden = new Set(hiddenZoneIds);
   const isolated = isolatedZoneIds === null ? null : new Set(isolatedZoneIds);
-  return zones.filter((z) => {
+  return items.filter((z) => {
     if (isolated !== null && !isolated.has(z.id)) return false;
     if (hidden.has(z.id)) return false;
     return true;

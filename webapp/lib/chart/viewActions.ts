@@ -31,9 +31,14 @@ export const ALLOWED_LAYERS: readonly ChartLayer[] = [
  * single-layer shorthand, redundant inside an explicit subset. Mirror of the
  * backend `ALLOWED_MULTI_LAYERS`.
  */
-export type MultiChartLayer = 'fvg' | 'ob' | 'breaks';
+export type MultiChartLayer = 'fvg' | 'ob' | 'breaks' | 'liquidity';
 
-export const ALLOWED_MULTI_LAYERS: readonly MultiChartLayer[] = ['fvg', 'ob', 'breaks'];
+export const ALLOWED_MULTI_LAYERS: readonly MultiChartLayer[] = [
+  'fvg',
+  'ob',
+  'breaks',
+  'liquidity',
+];
 
 export const SUPPORTED_INSTRUMENTS = ['XAUUSD', 'EURUSD'] as const;
 export const SUPPORTED_TIMEFRAMES = ['M15', 'H1', 'H4'] as const;
@@ -137,9 +142,9 @@ export function coerceViewAction(
       const visible = params.visible;
       if (typeof visible !== 'boolean') return null;
       // MULTI-layer form: toggle a subset of overlays at once. Validated against
-      // the SAME closed whitelist (each element ∈ fvg/ob/breaks, never 'all').
-      // Order-preserving dedupe; an empty/invalid list or mixing with `layer`
-      // drops the action.
+      // the SAME closed whitelist (each element ∈ fvg/ob/breaks/liquidity, never
+      // 'all'). Order-preserving dedupe; an empty/invalid list or mixing with
+      // `layer` drops the action.
       if ('layers' in params) {
         if ('layer' in params) return null;
         const raw = params.layers;
