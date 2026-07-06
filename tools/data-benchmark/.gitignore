@@ -1,0 +1,5 @@
+# donnees telechargees et resultats de run : volumineux, reproductibles
+data/
+results/
+.env
+__pycache__/
