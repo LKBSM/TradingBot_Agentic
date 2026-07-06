@@ -1,0 +1,109 @@
+# =============================================================================
+# MIA Markets — Render Blueprint (private beta, 24/7).
+#
+# Deploy: push this branch, then on Render → "New +" → "Blueprint" → pick the
+# repo/branch. Render reads THIS file and creates both services + the disk.
+#
+# IMPORTANT caveats (read once):
+#  1. The backend keeps its data in SQLite on a PERSISTENT DISK → the backend
+#     MUST run on a paid instance (Starter, ~$7/mo). Free instances have NO
+#     disk, so accounts/readings would be wiped on every restart/redeploy.
+#  2. Secrets (OWNER_*, ANTHROPIC_API_KEY, TWELVE_DATA_API_KEY) are marked
+#     `sync: false` → set their VALUES in the Render dashboard after the first
+#     deploy (they are never committed).
+#  3. The frontend proxies /api/* to the backend. NEXT_PUBLIC_API_BASE must be
+#     the backend's PUBLIC URL and is baked at BUILD time. After the FIRST
+#     deploy, copy the backend URL (https://mia-backend-XXXX.onrender.com), set
+#     it as the frontend's NEXT_PUBLIC_API_BASE env var, and redeploy the
+#     frontend (Render passes env vars to the Docker build as ARGs).
+#  4. Seed the 10 testers once via the backend service "Shell" tab:
+#         python scripts/seed_testers.py
+# =============================================================================
+
+services:
+  # ── Backend — FastAPI (uvicorn src.api.asgi:app) ──────────────────────────
+  - type: web
+    name: mia-backend
+    runtime: docker
+    plan: starter                      # required for the persistent disk
+    dockerfilePath: ./infrastructure/Dockerfile.api
+    dockerContext: .
+    # Render injects $PORT; bind to it instead of the fixed 8000.
+    dockerCommand: uvicorn src.api.asgi:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    disk:
+      name: mia-data
+      mountPath: /app/data
+      sizeGB: 1
+    envVars:
+      - key: BETA_LOCKDOWN
+        value: "1"
+      - key: SENTINEL_TESTING_MODE
+        value: "1"
+      - key: SUBSCRIPTION_GATE_ENFORCED
+        value: "0"
+      - key: SESSION_COOKIE_SECURE      # Render is HTTPS end-to-end
+        value: "1"
+      - key: SESSION_SECRET
+        generateValue: true             # Render generates a strong secret
+      - key: OWNER_USERNAME
+        sync: false
+      - key: OWNER_EMAIL
+        sync: false
+      - key: OWNER_PASSWORD
+        sync: false
+      - key: DATA_DIR
+        value: /app/data
+      - key: ACCOUNTS_DB_PATH
+        value: /app/data/accounts.db
+      - key: SIGNAL_DB_PATH
+        value: /app/data/signals.db
+      - key: CANDLES_DB_PATH
+        value: /app/data/candles.db
+      - key: MARKET_READINGS_DB_PATH
+        value: /app/data/market_readings.db
+      - key: BOOTSTRAP_ENABLED
+        value: "true"
+      - key: SCHEDULER_ENABLED
+        value: "true"
+      - key: CHATBOT_ENABLED
+        value: "true"
+      - key: NEWS_PIPELINE_ENABLED
+        value: "true"
+      - key: LIVE_TICK_ENABLED
+        value: "false"
+      - key: VOL_MODE
+        value: har
+      - key: SYMBOLS
+        value: XAUUSD
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: TWELVE_DATA_API_KEY
+        sync: false
+      - key: LOG_LEVEL
+        value: INFO
+      - key: LOG_FORMAT
+        value: json
+      # After deploy, set this to the frontend URL for correct CORS.
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+
+  # ── Frontend — Next.js 15 (standalone) ────────────────────────────────────
+  - type: web
+    name: mia-frontend
+    runtime: docker
+    plan: starter                      # free works too, but sleeps when idle
+    dockerfilePath: ./Dockerfile
+    dockerContext: ./webapp
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: BETA_LOCKDOWN              # edge middleware login wall
+        value: "1"
+      - key: NEXT_PUBLIC_BETA_LOCKDOWN  # baked into the client bundle at build
+        value: "1"
+      # Set to the backend PUBLIC url after first deploy, then redeploy this
+      # service so the value is baked into the build (e.g.
+      # https://mia-backend-xxxx.onrender.com).
+      - key: NEXT_PUBLIC_API_BASE
+        sync: false

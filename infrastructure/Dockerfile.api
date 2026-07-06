@@ -12,8 +12,7 @@
 # ---- builder ---------------------------------------------------------------
 FROM python:3.11-slim AS builder
 
-ENV PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential curl git \
@@ -24,7 +23,12 @@ RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 COPY requirements.txt .
-RUN pip install --upgrade pip && pip install -r requirements.txt
+# BuildKit cache mount keeps downloaded wheels across retries, and --retries/
+# --timeout make the (large: torch + ML) install resilient to transient network
+# blips (IncompleteRead) that otherwise fail the whole layer.
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --upgrade pip \
+    && pip install --retries 8 --timeout 240 -r requirements.txt
 
 # ---- runtime ---------------------------------------------------------------
 FROM python:3.11-slim AS runtime

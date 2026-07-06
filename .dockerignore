@@ -97,6 +97,11 @@ docs/
 
 # --- Misc ---
 node_modules
+# Nested JS deps/build output (e.g. webapp/) must never enter the backend
+# build context — they add hundreds of MB and are irrelevant to the API image.
+**/node_modules
+**/.next
+webapp/
 dist
 build
 *.tar.gz
