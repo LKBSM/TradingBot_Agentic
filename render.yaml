@@ -93,7 +93,10 @@ services:
     name: mia-frontend
     runtime: docker
     plan: starter                      # free works too, but sleeps when idle
-    dockerfilePath: ./Dockerfile
+    # Path is relative to the REPO ROOT (not the context) — must be the webapp
+    # Dockerfile, NOT the legacy root Dockerfile (that one has COPY
+    # requirements.txt which fails against the webapp context).
+    dockerfilePath: ./webapp/Dockerfile
     dockerContext: ./webapp
     envVars:
       - key: NODE_ENV
