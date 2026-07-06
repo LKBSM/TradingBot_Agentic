@@ -27,6 +27,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, Field
 
 from src.api.account_store import AccountError, AccountStore
+from src.api.middleware.beta_auth import beta_lockdown_enabled
 from src.api.routes.legal import LAST_UPDATED as LEGAL_VERSION
 from src.api.session_auth import (
     clear_session_cookie,
@@ -144,6 +145,19 @@ def _raise_account_error(exc: AccountError) -> None:
 @router.post("/register", response_model=AccountOut, status_code=201)
 async def register(payload: RegisterRequest, request: Request, response: Response):
     store = _store(request)
+
+    # Closed beta: public self-registration is disabled. The only accounts that
+    # may exist are the owner (seeded from env) and the testers (seeded by
+    # scripts/seed_testers.py). This keeps the access perimeter to invited
+    # accounts only, independently of the BetaAuthMiddleware login wall.
+    if beta_lockdown_enabled():
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "Les inscriptions sont fermées pendant la beta privée. "
+                "L'accès est réservé aux comptes testeurs invités."
+            ),
+        )
 
     if not payload.age_confirmed:
         raise HTTPException(

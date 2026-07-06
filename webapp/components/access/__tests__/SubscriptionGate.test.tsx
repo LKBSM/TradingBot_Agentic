@@ -28,6 +28,8 @@ function stubAccess(summary: AccessSummary) {
 const FULL: AccessSummary = {
   authenticated: true,
   gate_enforced: true,
+  beta_lockdown: false,
+  must_login: false,
   tier: 'subscriber',
   is_owner: false,
   has_full_access: true,
@@ -42,6 +44,8 @@ const FULL: AccessSummary = {
 const FREE: AccessSummary = {
   authenticated: true,
   gate_enforced: true,
+  beta_lockdown: false,
+  must_login: false,
   tier: 'free',
   is_owner: false,
   has_full_access: false,
@@ -56,6 +60,8 @@ const FREE: AccessSummary = {
 const VISITOR: AccessSummary = {
   authenticated: false,
   gate_enforced: true,
+  beta_lockdown: false,
+  must_login: false,
   tier: 'visitor',
   is_owner: false,
   has_full_access: false,
@@ -64,6 +70,24 @@ const VISITOR: AccessSummary = {
     timeframes: ['M15'],
     scanner: false,
     chat: { limit: 5, used: null, remaining: null },
+  },
+};
+
+// Closed beta, anonymous caller: gate not enforced (freemium off) but the beta
+// lockdown demands login. must_login drives the redirect independently.
+const LOCKDOWN_ANON: AccessSummary = {
+  authenticated: false,
+  gate_enforced: false,
+  beta_lockdown: true,
+  must_login: true,
+  tier: 'visitor',
+  is_owner: false,
+  has_full_access: false,
+  entitlements: {
+    instruments: null,
+    timeframes: null,
+    scanner: true,
+    chat: { limit: null, used: null, remaining: null },
   },
 };
 
@@ -96,6 +120,19 @@ describe('SubscriptionGate', () => {
       expect(hoisted.replace).toHaveBeenCalledWith(
         '/connexion?next=%2Fapp',
       ),
+    );
+    expect(screen.queryByText('secret content')).not.toBeInTheDocument();
+  });
+
+  it('redirects to /connexion under beta lockdown (must_login)', async () => {
+    stubAccess(LOCKDOWN_ANON);
+    render(
+      <SubscriptionGate>
+        <div>secret content</div>
+      </SubscriptionGate>,
+    );
+    await waitFor(() =>
+      expect(hoisted.replace).toHaveBeenCalledWith('/connexion?next=%2Fapp'),
     );
     expect(screen.queryByText('secret content')).not.toBeInTheDocument();
   });

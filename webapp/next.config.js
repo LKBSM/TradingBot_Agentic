@@ -90,6 +90,10 @@ const securityHeaders = [
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // Emit a self-contained server bundle (.next/standalone) so the Docker image
+  // ships only the traced runtime deps + a tiny node server, not the full
+  // node_modules. Enables the slim multi-stage webapp/Dockerfile.
+  output: 'standalone',
   // Disable Next's built-in gzip. It re-compresses the rewrite-proxied SSE
   // stream (GET /api/live-price), buffering the small per-tick frames until its
   // threshold — so the browser's EventSource opened but received nothing, while

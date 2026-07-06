@@ -1,0 +1,107 @@
+# =============================================================================
+# MIA Markets — Private BETA stack (24/7).
+#
+#   docker compose -f docker-compose.beta.yml up -d --build
+#
+# Two containers + a persistent SQLite volume (no separate DB server needed):
+#   · backend   — FastAPI (uvicorn src.api.asgi:app) with BETA_LOCKDOWN on
+#   · frontend  — Next.js 15 (standalone), proxies /api/* to backend
+#   · mia-beta-data — named volume holding accounts.db / signals.db / candles.db
+#                     / market_readings.db (survives restarts & rebuilds)
+#
+# ALL secrets come from a NON-committed `.env` next to this file (copy from
+# .env.beta.example). Nothing sensitive is baked into an image.
+#
+# After first boot, seed the testers ON the persistent volume:
+#   docker compose -f docker-compose.beta.yml exec backend python scripts/seed_testers.py
+# =============================================================================
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: infrastructure/Dockerfile.api
+    image: mia-markets/backend:beta
+    container_name: mia-beta-backend
+    restart: unless-stopped
+    expose:
+      - "8000"                       # internal only; the frontend proxies to it
+    # Uncomment to reach the API directly from the host for debugging:
+    # ports:
+    #   - "127.0.0.1:8000:8000"
+    environment:
+      # ── Beta lockdown (the hard login wall) ──────────────────────────────
+      BETA_LOCKDOWN: "1"
+      # Optional stricter role gate ("tester,owner"); empty = any active account.
+      BETA_ALLOWED_ROLES: "${BETA_ALLOWED_ROLES:-}"
+      # Legacy api-key auth stays bypassed so the session-only webapp works; the
+      # lockdown middleware is the real wall in front of it.
+      SENTINEL_TESTING_MODE: "1"
+      SUBSCRIPTION_GATE_ENFORCED: "0"
+      ENVIRONMENT: "beta"
+      # ── Sessions / owner (SECRETS — from .env) ───────────────────────────
+      SESSION_SECRET: "${SESSION_SECRET:?set SESSION_SECRET in .env}"
+      # Local http → cookies must not be Secure-only. Set "1" behind HTTPS.
+      SESSION_COOKIE_SECURE: "${SESSION_COOKIE_SECURE:-0}"
+      OWNER_USERNAME: "${OWNER_USERNAME:?set OWNER_USERNAME in .env}"
+      OWNER_EMAIL: "${OWNER_EMAIL:?set OWNER_EMAIL in .env}"
+      OWNER_PASSWORD: "${OWNER_PASSWORD:?set OWNER_PASSWORD in .env}"
+      # ── Persistent SQLite paths (all on the mounted volume) ──────────────
+      DATA_DIR: "/app/data"
+      ACCOUNTS_DB_PATH: "/app/data/accounts.db"
+      SIGNAL_DB_PATH: "/app/data/signals.db"
+      CANDLES_DB_PATH: "/app/data/candles.db"
+      MARKET_READINGS_DB_PATH: "/app/data/market_readings.db"
+      # ── CORS (browser only ever hits the frontend, but keep it explicit) ─
+      CORS_ALLOWED_ORIGINS: "${CORS_ALLOWED_ORIGINS:-http://localhost:3000}"
+      # ── Product engine (needs API keys to be fully live; degrades to 503) ─
+      BOOTSTRAP_ENABLED: "${BOOTSTRAP_ENABLED:-true}"
+      SCHEDULER_ENABLED: "${SCHEDULER_ENABLED:-true}"
+      CHATBOT_ENABLED: "${CHATBOT_ENABLED:-true}"
+      NEWS_PIPELINE_ENABLED: "${NEWS_PIPELINE_ENABLED:-true}"
+      LIVE_TICK_ENABLED: "${LIVE_TICK_ENABLED:-false}"
+      VOL_MODE: "${VOL_MODE:-har}"
+      SYMBOLS: "${SYMBOLS:-XAUUSD}"
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+      TWELVE_DATA_API_KEY: "${TWELVE_DATA_API_KEY:-}"
+      LOG_LEVEL: "${LOG_LEVEL:-INFO}"
+      LOG_FORMAT: "${LOG_FORMAT:-json}"
+    volumes:
+      - mia-beta-data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    build:
+      context: ./webapp
+      dockerfile: Dockerfile
+      args:
+        # Server-side proxy target (Docker DNS name of the backend service).
+        NEXT_PUBLIC_API_BASE: "http://backend:8000"
+        NEXT_PUBLIC_BETA_LOCKDOWN: "1"
+    image: mia-markets/frontend:beta
+    container_name: mia-beta-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: "production"
+      # Edge middleware reads this at runtime to gate protected routes.
+      BETA_LOCKDOWN: "1"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  mia-beta-data:
+    name: mia-beta-data

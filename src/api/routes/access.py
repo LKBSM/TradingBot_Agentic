@@ -30,6 +30,7 @@ from src.api.entitlements import (
     tier_allows_scanner,
     today_key,
 )
+from src.api.middleware.beta_auth import beta_lockdown_enabled
 from src.api.session_auth import optional_account
 from src.api.subscription_gate import _gate_enforced
 
@@ -49,6 +50,7 @@ async def access_me(
 ) -> Dict[str, Any]:
     store = _store(request)
     gate_on = _gate_enforced()
+    lockdown_on = beta_lockdown_enabled()
     tier = resolve_tier(account, store)
     # While the gate is OFF every (even anonymous) caller has the full product,
     # mirroring the feature routes that short-circuit when not enforced.
@@ -65,6 +67,11 @@ async def access_me(
     return {
         "authenticated": account is not None,
         "gate_enforced": gate_on,
+        # Private-beta wall. When on, an anonymous caller MUST be routed to login:
+        # the whole product API is 401 for them (see BetaAuthMiddleware). This is
+        # independent of ``gate_enforced`` (the freemium/payment wall).
+        "beta_lockdown": lockdown_on,
+        "must_login": lockdown_on and account is None,
         "tier": tier.label,
         "is_owner": tier == Tier.OWNER,
         "has_full_access": full,

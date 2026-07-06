@@ -66,16 +66,34 @@ export function SubscriptionGate({
   const prefix = localePrefix(pathname);
 
   // Redirect unauthenticated users away from a gated page (effect, not render).
-  const mustLogin = access?.gate_enforced === true && access.authenticated === false;
+  // Two independent triggers:
+  //   · beta lockdown (closed beta)  → must_login when not authenticated;
+  //   · freemium/payment gate ON     → anonymous callers must log in.
+  const mustLogin =
+    access?.must_login === true ||
+    (access?.gate_enforced === true && access.authenticated === false);
   React.useEffect(() => {
     if (!mustLogin) return;
     const next = encodeURIComponent(pathname);
     router.replace(`${prefix}/connexion?next=${next}`);
   }, [mustLogin, pathname, prefix, router]);
 
-  // On a transport failure we fail OPEN (render children): the server guard is
-  // the real wall, so a flaky summary fetch must never hard-block a paying user.
-  if (error) return <>{children}</>;
+  // Transport failure handling:
+  //   · closed beta (NEXT_PUBLIC_BETA_LOCKDOWN=1) → fail CLOSED: we cannot
+  //     confirm a valid session, and every product API call is 401 anyway, so
+  //     bounce to login rather than render a broken/empty shell.
+  //   · otherwise → fail OPEN: the server guard is the real wall, so a flaky
+  //     summary fetch must never hard-block a paying user during testing.
+  const lockdown = process.env.NEXT_PUBLIC_BETA_LOCKDOWN === '1';
+  React.useEffect(() => {
+    if (!error || !lockdown) return;
+    const next = encodeURIComponent(pathname);
+    router.replace(`${prefix}/connexion?next=${next}`);
+  }, [error, lockdown, pathname, prefix, router]);
+  if (error) {
+    if (lockdown) return null; // redirecting to login
+    return <>{children}</>;
+  }
 
   if (access === null || mustLogin) {
     return (

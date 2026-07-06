@@ -1,0 +1,61 @@
+# syntax=docker/dockerfile:1
+# =============================================================================
+# MIA Markets — Backend (FastAPI / V2 product) image for 24/7 operation.
+#
+# IMPORTANT: this runs the CURRENT product entrypoint `uvicorn src.api.asgi:app`,
+# NOT the legacy `python -m src.intelligence.main` (scanner + MT5) that the older
+# infrastructure/Dockerfile still uses. MT5 is Windows-only and irrelevant here.
+#
+# Multi-stage: build wheels in a fat builder, ship a slim non-root runtime.
+# =============================================================================
+
+# ---- builder ---------------------------------------------------------------
+FROM python:3.11-slim AS builder
+
+ENV PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential curl git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Isolated venv so we can copy it wholesale into the runtime stage.
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+COPY requirements.txt .
+RUN pip install --upgrade pip && pip install -r requirements.txt
+
+# ---- runtime ---------------------------------------------------------------
+FROM python:3.11-slim AS runtime
+
+ENV PYTHONPATH=/app \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    TZ=UTC \
+    PATH="/opt/venv/bin:$PATH"
+
+# curl for the container HEALTHCHECK.
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --create-home --uid 10001 sentinel
+
+COPY --from=builder /opt/venv /opt/venv
+
+WORKDIR /app
+# Source only — DBs/logs/models live on the mounted volume (see .dockerignore).
+COPY --chown=sentinel:sentinel . .
+
+# Persistent data dir (accounts.db, signals.db, candles.db, market_readings.db).
+RUN mkdir -p /app/data /app/logs && chown -R sentinel:sentinel /app/data /app/logs
+
+USER sentinel
+EXPOSE 8000
+
+# Fail-fast health signal for compose / orchestrators.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+    CMD curl -fsS http://localhost:8000/health || exit 1
+
+# Single Uvicorn worker: the app holds in-process state (schedulers, caches,
+# SQLite WAL). Scale by running more replicas behind a proxy, not workers.
+CMD ["uvicorn", "src.api.asgi:app", "--host", "0.0.0.0", "--port", "8000"]
