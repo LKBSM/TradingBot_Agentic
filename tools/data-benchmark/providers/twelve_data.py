@@ -29,7 +29,14 @@ class TwelveDataProvider(ProviderBase):
     native_tfs = {tf: tf for tf in INTERVALS}
 
     def map_symbol(self, sym: Sym):
-        if sym.cls.startswith("fx") or sym.cls in ("metal", "crypto"):
+        if sym.cls == "crypto":
+            if sym.name == "MATICUSD":
+                # MATIC renomme POL en 2024 (migration 1:1 du meme token) ;
+                # TD a delisté MATIC/USD — mapping documente, meme actif
+                return "POL/USD"
+            # bases de 3 a 5 lettres (DOGE, AVAX...) : couper sur le suffixe USD
+            return f"{sym.name[:-3]}/{sym.name[-3:]}"
+        if sym.cls.startswith("fx") or sym.cls == "metal":
             return f"{sym.name[:3]}/{sym.name[3:]}"
         if sym.cls == "energy":
             return ENERGY_MAP.get(sym.name)

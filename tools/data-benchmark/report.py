@@ -111,14 +111,28 @@ def main():
         L.append("")
         L.append(f"Statuts cellules : `{s['status_counts']}`")
         cells = metrics.get(name, {})
-        # non couverts, agreges par symbole
-        nc_syms = sorted({c.rsplit('_', 1)[0] for c, e in cells.items()
-                          if e["status"] == "not_covered"})
-        if nc_syms:
+        # non couverts, agreges par symbole — en distinguant "verrouille par
+        # plan superieur" (le fournisseur L'A mais pas a ce tier) de "hors
+        # catalogue"
+        gated, absent = set(), set()
+        for c, e in cells.items():
+            if e["status"] != "not_covered":
+                continue
+            s = c.rsplit("_", 1)[0]
+            if "available starting with" in str(e.get("error") or ""):
+                gated.add(s)
+            else:
+                absent.add(s)
+        absent -= gated
+        if gated:
             L.append("")
-            L.append(f"Symboles non couverts ({len(nc_syms)}) : "
-                     + ", ".join(nc_syms[:40])
-                     + (" …" if len(nc_syms) > 40 else ""))
+            L.append(f"Symboles verrouillés par plan supérieur ({len(gated)}) : "
+                     + ", ".join(sorted(gated)))
+        if absent:
+            L.append("")
+            L.append(f"Symboles hors catalogue / non couverts ({len(absent)}) : "
+                     + ", ".join(sorted(absent)[:40])
+                     + (" …" if len(absent) > 40 else ""))
         errs = [(c, e.get("error", "")) for c, e in cells.items() if e["status"] == "error"]
         if errs:
             L.append("")

@@ -31,7 +31,7 @@ class EodhdProvider(ProviderBase):
         if sym.cls.startswith("fx") or sym.cls == "metal":
             return f"{sym.name}.FOREX"
         if sym.cls == "crypto":
-            return f"{sym.name[:3]}-USD.CC"
+            return f"{sym.name[:-3]}-USD.CC"
         if sym.cls == "index":
             return INDEX_MAP.get(sym.name)
         return None  # energy: pas d'intraday OHLC

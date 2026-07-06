@@ -230,7 +230,11 @@ def main():
                     entry["status"] = "empty"
                 else:
                     fetched = pd.Timestamp(m["fetched_at"]) if m.get("fetched_at") else None
-                    grid = expected_grid(sym, tf, df, start, end, fetched)
+                    # fenetre par cellule : les reprises de cache ont des instants
+                    # de fetch differents ; la grille attendue suit chaque cellule
+                    cell_start = (fetched - pd.Timedelta(days=run_meta["days"])
+                                  ) if fetched is not None else start
+                    grid = expected_grid(sym, tf, df, cell_start, end, fetched)
                     if grid is None:
                         entry["completeness_pct"] = None
                         entry["top_gaps"] = intrinsic_gaps(df, TF_SECONDS[tf])

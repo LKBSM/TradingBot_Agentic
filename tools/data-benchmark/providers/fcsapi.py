@@ -20,11 +20,10 @@ class FcsApiProvider(ProviderBase):
     native_tfs = {tf: tf for tf in PERIOD}
 
     def map_symbol(self, sym: Sym):
-        pair = f"{sym.name[:3]}/{sym.name[3:]}"
         if sym.cls.startswith("fx") or sym.cls == "metal":
-            return ("forex", pair)
+            return ("forex", f"{sym.name[:3]}/{sym.name[3:]}")
         if sym.cls == "crypto":
-            return ("crypto", pair)
+            return ("crypto", f"{sym.name[:-3]}/{sym.name[-3:]}")
         return None
 
     def windows(self, tf, start, end):

@@ -28,7 +28,7 @@ class AlphaVantageProvider(ProviderBase):
         yield start, end  # outputsize=full couvre la fenetre
 
     def _fetch_window(self, ticker, sym, tf, start: datetime, end: datetime):
-        base, to = ticker[:3], ticker[3:]
+        base, to = ticker[:-3], ticker[-3:]
         if sym.cls == "crypto":
             params = {"function": "CRYPTO_INTRADAY" if tf != "D1" else "DIGITAL_CURRENCY_DAILY",
                       "symbol": base, "market": to}

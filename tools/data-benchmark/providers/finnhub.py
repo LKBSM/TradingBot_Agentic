@@ -27,7 +27,7 @@ class FinnhubProvider(ProviderBase):
 
     def map_symbol(self, sym: Sym):
         if sym.cls == "crypto":
-            return f"BINANCE:{sym.name[:3]}USDT"
+            return f"BINANCE:{sym.name[:-3]}USDT"
         if sym.cls in ("energy", "index"):
             return SPECIAL.get(sym.name)
         return f"OANDA:{sym.name[:3]}_{sym.name[3:]}"  # fx + metaux

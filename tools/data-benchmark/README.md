@@ -61,3 +61,6 @@ couverture 15 %, fraîcheur 5 %, fiabilité 5 %).
   couverts » (jamais de proxy futures substitué à du spot).
 - Timezones : UTC forcé partout (Twelve Data `timezone=UTC` — bug +10h connu ;
   FMP converti depuis America/New_York).
+- MATIC a été renommé POL en 2024 (migration 1:1) : certains fournisseurs ne
+  listent plus que POL — mapping documenté par adaptateur (fait pour Twelve
+  Data), à vérifier chez les autres au premier run avec clé.
