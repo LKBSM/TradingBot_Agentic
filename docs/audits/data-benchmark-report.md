@@ -1,8 +1,8 @@
 # Banc d'essai qualité des fournisseurs de données de marché
 
-_Généré le 2026-07-06 15:44 UTC par `tools/data-benchmark/report.py` — relançable (`python runner.py && python metrics.py && python scoring.py && python report.py`)._
+_Généré le 2026-07-06 20:22 UTC par `tools/data-benchmark/report.py` — relançable (`python runner.py && python metrics.py && python scoring.py && python report.py`)._
 
-Fenêtre testée : **30 jours** (2026-06-06 → 2026-07-06), 80 symboles × 5 TF (M5, M15, H1, H4, D1).
+Fenêtre testée : **30 jours** (2026-06-06 → 2026-07-06), 80 symboles × 1 TF (D1).
 
 ## Avertissement de méthode
 
@@ -15,6 +15,7 @@ Pondérations (éditables dans `scoring.py`) : wick 35%, completeness 25%, valid
 | Rang | Fournisseur | Score global | Mèches | Complétude | Validité OHLC | Couverture | Fraîcheur | Fiabilité | Cellules OK/400 |
 |---|---|---|---|---|---|---|---|---|---|
 | 1 | **twelve_data** _(étalon)_ | **93.9** | — | 98.8 | 100.0 | 76.2 | 98.2 | 99.6 | 305 |
+| 2 | **itick** | **78.1** | 45.8 | 97.3 | 99.9 | 97.2 | 77.5 | 85.9 | 389 |
 
 ## Détail par fournisseur
 
@@ -22,7 +23,7 @@ Pondérations (éditables dans `scoring.py`) : wick 35%, completeness 25%, valid
 
 _Reference du banc. Display commercial = Venture 499$/mois (414$ annuel)._
 
-Statuts cellules : `{'not_covered': 95, 'ok': 305}`
+Statuts cellules : `{'ok': 305, 'not_covered': 95}`
 
 Symboles verrouillés par plan supérieur (10) : BRENT, NAS100, SPX500, UK100, WTI, XAGUSD, XAUEUR, XAUGBP, XPDUSD, XPTUSD
 
@@ -30,11 +31,37 @@ Symboles hors catalogue / non couverts (9) : AUS200, EU50, FRA40, GER40, HK50, J
 
 Plus gros trous de complétude : `USDPLN_M5` 909 barres dès 2026-06-30T18:15 ; `USDNOK_M5` 890 barres dès 2026-06-30T18:15 ; `USDCNH_M15` 303 barres dès 2026-06-30T18:15 ; `USDHKD_M15` 303 barres dès 2026-06-30T18:15 ; `USDBRL_M15` 303 barres dès 2026-06-30T18:15.
 
+### itick
+
+_Calibre sur API reelle 2026-07-06. Crypto = paires USDT Binance (basis vs USD). BRENT et US2000 introuvables. H4 derive du H1. 79-319$/mois mais droit display a confirmer par ecrit._
+
+Statuts cellules : `{'ok': 389, 'empty': 1, 'not_covered': 10}`
+
+Symboles hors catalogue / non couverts (2) : BRENT, US2000
+
+⚠️ TF **dérivés par resampling** (non natifs) : 78 cellules (ex. ADAUSD_H4, APTUSD_H4, ATOMUSD_H4, AUDCAD_H4, AUDCHF_H4, AUDJPY_H4).
+
+Pires écarts de mèches vs référence (à vérifier à l'œil) :
+
+| Symbole×TF | Timestamp (UTC) | ΔHigh (pts) | ΔLow (pts) | High réf → fournisseur | Low réf → fournisseur |
+|---|---|---|---|---|---|
+| EURTRY_H1 | 2026-06-17T19:00:00+00:00 | 3764.1 | 6734.7 | 53.4511 → 53.82751 | 53.154 → 53.82747 |
+| EURTRY_H4 | 2026-06-17T16:00:00+00:00 | 550.6 | 6734.7 | 53.77245 → 53.82751 | 53.154 → 53.82747 |
+| EURTRY_H4 | 2026-06-17T20:00:00+00:00 | 3704.3 | 6218.0 | 53.45708 → 53.82751 | 53.20567 → 53.82747 |
+| EURTRY_D1 | 2026-06-17T00:00:00+00:00 | 1620.8 | 6171.8 | 53.80189 → 53.96397 | 53.154 → 53.77118 |
+| EURTRY_M15 | 2026-06-17T19:00:00+00:00 | 3764.1 | 5327.3 | 53.4511 → 53.82751 | 53.29474 → 53.82747 |
+| EURTRY_M5 | 2026-06-17T19:00:00+00:00 | 3764.1 | 4534.8 | 53.4511 → 53.82751 | 53.37399 → 53.82747 |
+| EURTRY_M5 | 2026-06-17T23:00:00+00:00 | 3828.8 | 4297.9 | 53.44463 → 53.82751 | 53.39768 → 53.82747 |
+| EURTRY_M15 | 2026-06-17T23:00:00+00:00 | 3772.2 | 4297.9 | 53.45029 → 53.82751 | 53.39768 → 53.82747 |
+
+Plus gros trous de complétude : `MATICUSD_M5` 4209 barres dès 2026-06-06T19:50 ; `HK50_M5` 1070 barres dès 2026-06-18T08:05 ; `MATICUSD_M15` 1060 barres dès 2026-06-06T20:00 ; `JP225_M5` 785 barres dès 2026-06-12T06:30 ; `JP225_M5` 785 barres dès 2026-06-19T06:30.
+
 ## Croisement qualité × prix d'affichage commercial
 
 | Fournisseur | Score qualité | Prix display commercial (recherche 2026-07-05) |
 |---|---|---|
 | twelve_data | 93.9 | 499 $/mois (414 $ annuel, plan Venture) |
+| itick | 78.1 | 79-319 $/mois + avenant display ecrit requis |
 
 _Les recommandations mono/bi-fournisseur sont rédigées dans la section conclusion du rapport au vu des scores mesurés — voir en bas de fichier._
 

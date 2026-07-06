@@ -65,6 +65,10 @@ class ITickProvider(ProviderBase):
             if data.get("code") not in (0, 200):
                 raise ProviderError(f"iTick code={data.get('code')}: {str(data)[:150]}")
             rows = data.get("data") or []
+            # payloads transitoires malformes observes sous rate-limiting :
+            # ne garder que les dicts avec timestamp numerique
+            rows = [r for r in rows
+                    if isinstance(r, dict) and isinstance(r.get("t"), (int, float))]
             if not rows:
                 break
             all_rows.extend(rows)
