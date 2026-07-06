@@ -15,6 +15,16 @@ export function LoginForm() {
   const [error, setError] = React.useState<string | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
 
+  // After login, go straight to the product. Honor a ?next= return path (set by
+  // the login-wall redirect) when it's a safe internal path, else land on /app.
+  // Read from window at submit time (client-only) to avoid the useSearchParams
+  // Suspense-boundary requirement on the /connexion page build.
+  function resolveDestination(): string {
+    if (typeof window === 'undefined') return '/app';
+    const next = new URLSearchParams(window.location.search).get('next');
+    return next && next.startsWith('/') ? next : '/app';
+  }
+
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
@@ -25,7 +35,7 @@ export function LoginForm() {
         identifier: String(form.get('identifier') ?? '').trim(),
         password: String(form.get('password') ?? ''),
       });
-      router.push('/compte');
+      router.push(resolveDestination());
     } catch (err) {
       setError(
         err instanceof AuthError ? err.message : 'Connexion impossible. Réessaie.',

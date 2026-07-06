@@ -100,6 +100,12 @@ export function Nav() {
             sur mobile — bug attrapé par l'e2e mobile-iphone-12). */}
         <div className="flex items-center gap-1 sm:gap-2">
           <Link
+            href="/app"
+            className="rounded-md px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-3"
+          >
+            App
+          </Link>
+          <Link
             href="/zones"
             className="rounded-md px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-3"
           >

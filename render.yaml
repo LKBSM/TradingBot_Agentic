@@ -38,6 +38,11 @@ services:
     envVars:
       - key: BETA_LOCKDOWN
         value: "1"
+      # The host runs in a US region → the geo-block (which denies US) would
+      # 451 the app against itself via the proxy chain. The login wall already
+      # restricts access to invited accounts, so disable geo-blocking here.
+      - key: GEO_BLOCK_DISABLED
+        value: "1"
       - key: SENTINEL_TESTING_MODE
         value: "1"
       - key: SUBSCRIPTION_GATE_ENFORCED
