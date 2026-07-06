@@ -1,14 +1,18 @@
 """Geo-blocking middleware — denies access from sanctioned / unlicensed jurisdictions.
 
-Required by P29 compliance audit. Smart Sentinel AI does not hold a securities
+Required by P29 compliance audit. MIA Markets does not hold a securities
 or commodities licence in:
 
   * United States (SEC Investment Advisers Act §202(a)(11))
-  * Canada / Quebec (AMF — Autorité des marchés financiers du Québec)
   * United Kingdom (FCA — restricted financial promotion regime)
 
 It is also barred from doing business with persons in OFAC SDN-comprehensive
 sanction territories: Cuba, Iran, North Korea, Russia, Syria, Belarus.
+
+Le Québec (CA-QC) n'est PAS bloqué : c'est la juridiction de rattachement de
+l'entreprise (stratégie légale Loi 25 + LPC québécoises). Le blocage CA-QC
+présent jusqu'au 2026-07-05 venait d'un boilerplate généré et contredisait la
+réalité — décision fondateur de le retirer (cf. CGU §4 alignées même date).
 
 The middleware resolves the client's country via (in order of priority):
 
@@ -22,7 +26,7 @@ The middleware resolves the client's country via (in order of priority):
 When no resolver yields a country, the request is **allowed** by default —
 geo-blocking is a hard barrier on the *known* deny-list, not a closed-by-default
 filter. This avoids accidentally bricking the API for misconfigured deployments
-while still satisfying the compliance requirement that *known* US/QC/UK/OFAC
+while still satisfying the compliance requirement that *known* US/UK/OFAC
 clients receive HTTP 451.
 
 Allowlisted paths (always served regardless of origin):
@@ -76,11 +80,10 @@ BLOCKED_COUNTRIES: Set[str] = {
 }
 
 #: Sub-country regions blocked. Resolved via CDN headers when available.
-#: Quebec is denied due to AMF — Quebec-resident retail investors require
-#: a separate registration regardless of the broader Canadian framework.
-BLOCKED_REGIONS: Set[str] = {
-    "CA-QC",   # Quebec, Canada
-}
+#: Vide depuis 2026-07-05 : le Québec (CA-QC) a été retiré — juridiction de
+#: rattachement de l'entreprise (Loi 25 + LPC), le bloquer était une erreur de
+#: boilerplate. La mécanique région reste en place pour un besoin futur.
+BLOCKED_REGIONS: Set[str] = set()
 
 #: Paths always served regardless of origin. These must remain accessible
 #: so a blocked client can still reach the legal terms explaining the block.

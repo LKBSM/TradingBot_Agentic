@@ -63,13 +63,16 @@ class TestTermsEndpoint:
         r = client.get("/api/v1/terms")
         assert "text/markdown" in r.headers["content-type"]
 
-    def test_terms_mention_us_qc_uk_block(self):
+    def test_terms_disclose_us_uk_block_and_quebec_availability(self):
+        # Divulgation alignée sur le GeoBlockMiddleware (2026-07-05) :
+        # US + UK + OFAC bloqués ; le Québec est la juridiction de
+        # rattachement et doit être annoncé comme disponible.
         client = TestClient(_make_app())
         r = client.get("/api/v1/terms?lang=en")
         body = r.text
         assert "United States" in body
-        assert "Quebec" in body
         assert "United Kingdom" in body
+        assert "operated from Quebec (Canada), where it is fully available" in body
 
     def test_reachable_even_from_blocked_country(self):
         client = TestClient(_make_app(geo_blocked=True))

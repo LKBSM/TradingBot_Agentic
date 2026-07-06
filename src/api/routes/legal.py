@@ -29,7 +29,10 @@ from src.api.disclaimers import (
 
 router = APIRouter(tags=["legal"])
 
-LAST_UPDATED = "2026-04-28"
+# 2026-07-05 : retrait du Québec des juridictions exclues (juridiction de
+# rattachement de l'entreprise — décision fondateur, alignée sur le retrait de
+# CA-QC du GeoBlockMiddleware). Bump = nouvel horodatage de consentement.
+LAST_UPDATED = "2026-07-05"
 
 # Canonical CGU document — rendered TEL QUEL by /api/v1/legal/conditions and the
 # webapp /conditions page. Repo-root-relative (this file is src/api/routes/).
@@ -71,9 +74,10 @@ We do not hold client funds and never execute trades on your behalf.
 ## 3. Restricted jurisdictions
 
 The service is unavailable to natural or legal persons resident in:
-United States, Quebec (Canada), United Kingdom, and any country on
-the U.S. OFAC Specially Designated Nationals (SDN) comprehensive
-sanctions list. Access from those jurisdictions returns HTTP 451.
+United States, United Kingdom, and any country on the U.S. OFAC
+Specially Designated Nationals (SDN) comprehensive sanctions list.
+Access from those jurisdictions returns HTTP 451. The service is
+operated from Quebec (Canada), where it is fully available.
 
 ## 4. Risk warning
 
@@ -125,9 +129,10 @@ Nous ne détenons aucun fonds client et n'exécutons aucun ordre.
 ## 3. Juridictions exclues
 
 Le service est indisponible aux personnes physiques ou morales
-résidant aux États-Unis, au Québec (Canada), au Royaume-Uni, ainsi
-que dans tout pays figurant sur la liste OFAC SDN. L'accès depuis
-ces juridictions renvoie un HTTP 451.
+résidant aux États-Unis, au Royaume-Uni, ainsi que dans tout pays
+figurant sur la liste OFAC SDN. L'accès depuis ces juridictions
+renvoie un HTTP 451. Le service est exploité depuis le Québec
+(Canada) et y est pleinement disponible.
 
 ## 4. Avertissement sur les risques
 
@@ -173,9 +178,10 @@ verwalter.
 
 ## 3. Ausgeschlossene Rechtsräume
 
-Der Dienst ist in den USA, in Quebec (Kanada), im Vereinigten
-Königreich und in allen OFAC-SDN-sanktionierten Ländern nicht
-verfügbar. Zugriffe von dort werden mit HTTP 451 abgewiesen.
+Der Dienst ist in den USA, im Vereinigten Königreich und in allen
+OFAC-SDN-sanktionierten Ländern nicht verfügbar. Zugriffe von dort
+werden mit HTTP 451 abgewiesen. Der Dienst wird von Quebec (Kanada)
+aus betrieben und ist dort uneingeschränkt verfügbar.
 
 ## 4. Risikohinweis
 
@@ -217,9 +223,10 @@ autorizada por la CNMV ni un asesor financiero registrado.
 
 ## 3. Jurisdicciones excluidas
 
-El servicio no está disponible en Estados Unidos, Quebec (Canadá),
-Reino Unido ni en países sancionados por OFAC SDN. El acceso desde
-esas jurisdicciones devuelve HTTP 451.
+El servicio no está disponible en Estados Unidos, Reino Unido ni en
+países sancionados por OFAC SDN. El acceso desde esas jurisdicciones
+devuelve HTTP 451. El servicio se opera desde Quebec (Canadá), donde
+está plenamente disponible.
 
 ## 4. Advertencia de riesgo
 

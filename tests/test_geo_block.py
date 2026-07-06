@@ -47,8 +47,10 @@ class TestDenyLists:
         for code in ("CU", "IR", "KP", "RU", "SY", "BY"):
             assert code in BLOCKED_COUNTRIES, f"Missing OFAC code {code}"
 
-    def test_quebec_in_blocked_regions(self):
-        assert "CA-QC" in BLOCKED_REGIONS
+    def test_quebec_not_in_blocked_regions(self):
+        # Décision fondateur 2026-07-05 : le Québec est la juridiction de
+        # rattachement (Loi 25 + LPC) — il ne doit JAMAIS revenir en deny-list.
+        assert "CA-QC" not in BLOCKED_REGIONS
 
     def test_health_and_terms_in_allowed_paths(self):
         for path in ("/health", "/api/v1/health", "/api/v1/terms", "/api/v1/privacy"):
@@ -112,11 +114,17 @@ class TestBlockedCountry:
         assert r.status_code == 200
 
 
-# ─── Block path: Quebec ───────────────────────────────────────────────────
+# ─── Quebec is SERVED (home jurisdiction) ─────────────────────────────────
 
 
-class TestQuebecBlocking:
-    def test_canada_quebec_blocked_via_cloudfront_pair(self):
+class TestQuebecServed:
+    """Le Québec est la juridiction de rattachement — jamais bloqué.
+
+    Le blocage CA-QC (boilerplate) a été retiré le 2026-07-05. Ces tests
+    verrouillent le comportement inverse : un client québécois est servi.
+    """
+
+    def test_canada_quebec_served_via_cloudfront_pair(self):
         # Realistic CloudFront shape: country in one header, region in the other.
         app = _make_app(disabled=False)
         client = TestClient(app)
@@ -127,11 +135,9 @@ class TestQuebecBlocking:
                 "CloudFront-Viewer-Country-Region": "QC",
             },
         )
-        assert r.status_code == 451
-        assert r.json()["country"] == "CA-QC"
+        assert r.status_code == 200
 
-    def test_canada_quebec_blocked_via_full_iso_form(self):
-        # Tests with explicit "CA-QC" in the region header should also work.
+    def test_canada_quebec_served_via_full_iso_form(self):
         app = _make_app(disabled=False)
         client = TestClient(app)
         r = client.get(
@@ -141,7 +147,7 @@ class TestQuebecBlocking:
                 "CloudFront-Viewer-Country-Region": "CA-QC",
             },
         )
-        assert r.status_code == 451
+        assert r.status_code == 200
 
     def test_canada_other_provinces_pass(self):
         app = _make_app(disabled=False)

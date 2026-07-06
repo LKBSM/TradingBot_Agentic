@@ -1,6 +1,6 @@
 # MIA Markets — Conditions Générales d'Utilisation
 
-_Version : 2026-04-28 · Dernière mise à jour : 2026-04-28_
+_Version : 2026-07-05 · Dernière mise à jour : 2026-07-05_
 
 > Document canonique. La page `/conditions` du site et l'endpoint
 > `GET /api/v1/legal/conditions` rendent ce fichier **tel quel**. Toute
@@ -35,9 +35,11 @@ l'acceptation des présentes Conditions et de la Politique de confidentialité.
 ## 4. Juridictions exclues
 
 Le service est indisponible aux personnes physiques ou morales résidant aux
-États-Unis, au Québec (Canada), au Royaume-Uni, ainsi que dans tout pays
-figurant sur la liste OFAC SDN. L'accès depuis ces juridictions peut être
-refusé.
+États-Unis, au Royaume-Uni, ainsi que dans tout pays figurant sur la liste
+OFAC SDN. L'accès depuis ces juridictions peut être refusé.
+
+Le service est exploité depuis le Québec (Canada) et y est pleinement
+disponible.
 
 ## 5. Avertissement sur les risques
 
