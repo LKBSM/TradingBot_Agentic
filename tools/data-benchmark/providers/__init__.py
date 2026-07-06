@@ -51,6 +51,8 @@ PROVIDER_NOTES = {
     "finage": "Essai 3 jours ; redistribution interdite par disclaimer ; 599-1450$/mois.",
     "fcsapi": "149-329$/mois all-markets, droit display a confirmer par ecrit. Cache 10min plans bas.",
     "finazon": "Redistribution incluse des 19$/mois (meilleure licence) ; historique FX depuis 2023-07.",
-    "itick": "Adaptateur NON VALIDE (ecrit sur doc publique, jamais execute faute de cle).",
+    "itick": "Calibre sur API reelle 2026-07-06. Crypto = paires USDT Binance "
+             "(basis vs USD). BRENT et US2000 introuvables. H4 derive du H1. "
+             "79-319$/mois mais droit display a confirmer par ecrit.",
     "alltick": "Adaptateur NON VALIDE (ecrit sur doc publique, jamais execute faute de cle).",
 }
