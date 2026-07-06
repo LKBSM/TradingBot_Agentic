@@ -16,6 +16,7 @@ from fastapi.responses import JSONResponse
 from src.api.dependencies import AppState
 from src.api.latency_tracker import LatencyTracker
 from src.api.middleware.access_log import StructuredAccessLogMiddleware
+from src.api.middleware.beta_auth import BetaAuthMiddleware
 from src.api.middleware.geo_block import GeoBlockMiddleware
 from src.api.middleware.rate_limit_headers import RateLimitHeadersMiddleware
 from src.api.models import ErrorResponse
@@ -403,6 +404,13 @@ def create_app(
 
     # ── Geo-block (US/QC/UK + OFAC SDN) — P29 compliance ──────────────────
     app.add_middleware(GeoBlockMiddleware)
+
+    # ── Private-beta lockdown — hard login wall over the whole API ─────────
+    # No-op unless BETA_LOCKDOWN=1. When on, every non-allowlisted request must
+    # carry a valid session cookie (see middleware.beta_auth). This closes the
+    # anonymous-access hole on the data/AI/scanner/view-control endpoints during
+    # the closed beta without touching the detection engine or the freemium gate.
+    app.add_middleware(BetaAuthMiddleware)
 
     # ── Request size limit middleware (1 MB) ──────────────────────────────
     MAX_BODY_SIZE = 1_048_576  # 1 MB

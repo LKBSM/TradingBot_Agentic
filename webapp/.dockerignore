@@ -1,0 +1,16 @@
+# Keep the frontend build context small and reproducible.
+node_modules
+.next
+.git
+.env
+.env.local
+.env.*.local
+npm-debug.log*
+*.log
+# Test/build artifacts and screenshots that must never enter the image.
+playwright-report
+test-results
+coverage
+*.png
+shot*.mjs
+drive_scanner.mjs

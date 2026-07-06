@@ -9,6 +9,26 @@ import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from './i18n';
 // without prefix thanks to `localePrefix: 'as-needed'`).
 const INACTIVE_LOCALES = ['en', 'de', 'es'] as const;
 
+// Closed private beta: when BETA_LOCKDOWN is on, the product surfaces are only
+// reachable by a logged-in account. This edge guard is the FAST first layer —
+// a request without the session cookie is redirected to /connexion before the
+// page renders. It is defence-in-depth, NOT the source of truth: the backend
+// (BetaAuthMiddleware) 401s every product API call regardless, and the cookie's
+// VALIDITY is verified there. A stale/forged cookie still gets nothing from the
+// API; here we only check presence to avoid a pointless render.
+const BETA_LOCKDOWN =
+  process.env.BETA_LOCKDOWN === '1' || process.env.BETA_LOCKDOWN === 'true';
+const SESSION_COOKIE = 'mia_session';
+// Product routes behind the login wall (FR is prefixless; en/de/es are stripped
+// to FR by the guard below before this check runs).
+const PROTECTED_PREFIXES = ['/app', '/zones', '/scanner', '/compte', '/abonnement'];
+
+function isProtectedPath(pathname: string): boolean {
+  return PROTECTED_PREFIXES.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`),
+  );
+}
+
 const intlMiddleware = createMiddleware({
   locales: SUPPORTED_LOCALES,
   defaultLocale: DEFAULT_LOCALE,
@@ -32,6 +52,19 @@ export default function middleware(request: NextRequest) {
       const target = request.nextUrl.clone();
       target.pathname = stripped;
       return NextResponse.redirect(target, 302);
+    }
+  }
+
+  // Closed-beta login wall (edge layer). Cookieless visitors to a product route
+  // are bounced to the login page with a ?next= return path.
+  if (BETA_LOCKDOWN && isProtectedPath(pathname)) {
+    const hasSession = request.cookies.has(SESSION_COOKIE);
+    if (!hasSession) {
+      const target = request.nextUrl.clone();
+      target.pathname = '/connexion';
+      target.search = '';
+      target.searchParams.set('next', pathname);
+      return NextResponse.redirect(target, 307);
     }
   }
 

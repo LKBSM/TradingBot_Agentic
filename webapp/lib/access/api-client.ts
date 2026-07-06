@@ -27,6 +27,10 @@ export interface AccessSummary {
   authenticated: boolean;
   /** False during the personal-testing phase — everything is then open. */
   gate_enforced: boolean;
+  /** Closed-beta login wall. When true the whole product API is 401 for anon. */
+  beta_lockdown: boolean;
+  /** Convenience: `beta_lockdown && !authenticated` — the UI must route to login. */
+  must_login: boolean;
   tier: AccessTier;
   is_owner: boolean;
   has_full_access: boolean;

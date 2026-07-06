@@ -50,7 +50,11 @@ _USERNAME_RE = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9_.\-]{1,30})[A-Za-z0-9]$")
 MIN_PASSWORD_LENGTH = 10
 MAX_PASSWORD_LENGTH = 256  # argon2 has no hard cap, but bound memory/DoS
 
-VALID_ROLES = ("user", "owner")
+# Roles. ``tester`` is the closed-beta role — a normal, non-owner account seeded
+# by scripts/seed_testers.py and distinct from ``owner`` (which keeps unlimited
+# operator access). It carries the same access as ``user`` today; the label lets
+# us tell beta testers apart from organic sign-ups and target them later.
+VALID_ROLES = ("user", "tester", "owner")
 VALID_CONSENT_DOCS = ("terms", "privacy")
 
 # Default session lifetime (30 days) and reset-token lifetime (1 hour).
@@ -437,6 +441,29 @@ class AccountStore:
             finally:
                 conn.close()
 
+    def get_account_by_identifier(self, identifier: str) -> Optional[Dict[str, Any]]:
+        """Return the public account for a username OR email, or None.
+
+        A password-less lookup (unlike :meth:`verify_credentials`) used by admin
+        tooling — e.g. the tester seed script checking idempotently whether an
+        account already exists. Never exposes the password hash.
+        """
+        if not identifier:
+            return None
+        ident = identifier.strip().lower()
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                cur = conn.execute(
+                    "SELECT * FROM accounts "
+                    "WHERE username_lower = ? OR email_lower = ?",
+                    (ident, ident),
+                )
+                row = cur.fetchone()
+            finally:
+                conn.close()
+        return self._row_to_public(row) if row else None
+
     # --------------------------------------------------------------------- #
     # Credential verification (login by username OR email)
     # --------------------------------------------------------------------- #
@@ -696,6 +723,45 @@ class AccountStore:
                     "UPDATE accounts SET password_hash = ? WHERE id = ?",
                     (password_hash, account_id),
                 )
+            finally:
+                conn.close()
+
+    def set_password(self, account_id: int, new_password: str) -> None:
+        """Admin-set an account's password (hashed) and revoke its sessions.
+
+        Used by the tester seed script's ``--reset`` path to rotate a tester's
+        password out-of-band (e.g. when the one-time printout was lost). Same
+        Argon2id hashing as everywhere else — the plaintext is never persisted.
+        Revoking existing sessions forces re-login with the new credential.
+        """
+        if not new_password or len(new_password) < MIN_PASSWORD_LENGTH:
+            raise AccountError(
+                "weak_password",
+                f"Le mot de passe doit faire au moins {MIN_PASSWORD_LENGTH} "
+                "caractères.",
+            )
+        if len(new_password) > MAX_PASSWORD_LENGTH:
+            raise AccountError(
+                "password_too_long",
+                f"Le mot de passe ne peut pas dépasser {MAX_PASSWORD_LENGTH} "
+                "caractères.",
+            )
+        new_hash = self._hash_password(new_password)
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                conn.execute("BEGIN")
+                conn.execute(
+                    "UPDATE accounts SET password_hash = ? WHERE id = ?",
+                    (new_hash, account_id),
+                )
+                conn.execute(
+                    "DELETE FROM sessions WHERE account_id = ?", (account_id,)
+                )
+                conn.execute("COMMIT")
+            except Exception:
+                conn.rollback()
+                raise
             finally:
                 conn.close()
 
