@@ -1,5 +1,13 @@
 # Plan de migration V0 → V1 (avocat fintech FR) — M3
 
+> ⚠️ **SUSPENDU SINE DIE (2026-07-06)** — décision fondateur : aucune
+> consultation avocat planifiée. Stratégie en vigueur = posture descriptive +
+> exclusion US/UK/OFAC, cf.
+> `decisions/2026-07-06_conformite_posture_descriptive_exclusion.md`.
+> Ce plan ne redevient pertinent que si l'ouverture des États-Unis ou du
+> Royaume-Uni est un jour souhaitée (et devrait alors viser un avocat
+> québécois/canadien, pas le cadre auto-entrepreneur FR décrit ici).
+
 **Date création** : 2026-05-26
 **Cible exécution** : M3 (2026-08-XX environ, ~12 semaines après lancement bootstrap)
 **Référence** : `legal_bootstrap_strategy_2026_05_26.md` + `legal_templates/`

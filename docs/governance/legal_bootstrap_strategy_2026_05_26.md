@@ -1,5 +1,12 @@
 # Stratégie de protection légale provisoire — M.I.A. Markets
 
+> ⚠️ **PARTIELLEMENT OBSOLÈTE (2026-07-06)** — les points géo-restriction
+> (FR/BE/CH/LU), migration avocat M3 et cadre auto-entrepreneur FR/CM2C sont
+> remplacés par `decisions/2026-07-06_conformite_posture_descriptive_exclusion.md`
+> (posture descriptive + exclusion US/UK/OFAC, entreprise québécoise Loi 25 + LPC,
+> aucune consultation avocat planifiée). Le reste (posture produit réduite,
+> refund, honnêteté des claims) reste la ligne en vigueur.
+
 **Date** : 2026-05-26
 **Contexte** : budget avocat fintech FR (3-5 k€, DG-075) non disponible aujourd'hui. Vague 1 doit démarrer pour générer du revenue qui financera l'avocat à M3.
 **Objectif** : minimiser l'exposition juridique pendant la phase bootstrap (M0-M3) avec des templates de qualité, une posture produit réduite, et une géo-restriction temporaire.
