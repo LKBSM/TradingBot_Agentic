@@ -97,7 +97,13 @@ export function ReadingColumn({
   // Chatbot-controlled DISPLAY state (layers / filters / focus / highlight).
   // Optional: outside the /app provider it defaults to "show everything", so the
   // chart's behaviour is unchanged when no chatbot action has been applied.
-  const { view: chartView } = useChartViewOptional();
+  const { view: chartView, applyActions } = useChartViewOptional();
+
+  // Deselect the highlighted zone (drop the blue + un-zoom) when the user clicks
+  // the blue box on the chart — same toggle as re-clicking its list entry.
+  const onClearHighlight = React.useCallback(() => {
+    applyActions([{ action: 'clear_highlight', params: {} }]);
+  }, [applyActions]);
 
   // Header price follows the tick: override the unified (closed-candle) price
   // with the live one, keeping the SAME descriptive daily reference so the % is
@@ -136,7 +142,7 @@ export function ReadingColumn({
       <MarketReadingCard
         reading={reading}
         onAskChatbot={focusChat}
-        chartSlot={buildChartSlot(reading, candles, livePrice, liveTs, active?.timeframe ?? null, chartView)}
+        chartSlot={buildChartSlot(reading, candles, livePrice, liveTs, active?.timeframe ?? null, chartView, onClearHighlight)}
         live={liveHeader}
         className="w-full border-border/60 shadow-sm"
       />
@@ -175,6 +181,7 @@ function buildChartSlot(
   liveTs: number | null,
   timeframe: string | null,
   chartView: ChartViewState,
+  onClearHighlight: () => void,
 ): React.ReactNode {
   if (!candles || candles.length === 0) {
     return <ChartUnavailable />;
@@ -191,6 +198,7 @@ function buildChartSlot(
       filter={chartView.filter}
       focus={chartView.focus}
       highlightZoneId={chartView.highlightZoneId}
+      onClearHighlight={onClearHighlight}
       hiddenZoneIds={chartView.hiddenZoneIds}
       isolatedZoneIds={chartView.isolatedZoneIds}
     />
