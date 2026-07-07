@@ -58,6 +58,21 @@ function statusLabel(zone: ZoneLifecycle): string {
     : formatFvgStatus(zone.status as FVGStatus);
 }
 
+/**
+ * Is the zone still worth watching? INDEPENDENT of whether it was tested. This
+ * clears up the « mitigé » confusion: a mitigated OB was tapped by price but
+ * still holds (still effective) — only an INVALIDATED OB (broken through) or a
+ * fully FILLED FVG (imbalance closed) is spent. active / mitigated (OB) and
+ * active / partially_filled (FVG) all stay effective.
+ */
+function effectiveness(zone: ZoneLifecycle): { effective: boolean; label: string } {
+  const spent =
+    zone.kind === 'ob' ? zone.status === 'invalidated' : zone.status === 'filled';
+  return spent
+    ? { effective: false, label: 'plus efficace' }
+    : { effective: true, label: 'encore efficace' };
+}
+
 /** "prix actuellement dans la zone" / "à 3,40 pts au-dessus du prix" — fact only. */
 function relationLabel(
   rel: ReturnType<typeof priceRelation>,
@@ -157,9 +172,33 @@ export function ZoneLifecycleCard({
             </span>
           )}
         </div>
-        <span className="rounded-full border border-border/70 px-2 py-0.5 text-xs font-medium text-muted-foreground">
-          {statusLabel(zone)}
-        </span>
+        <div className="flex items-center gap-1.5">
+          {/* Effectiveness — the plain-language answer to "is this zone still
+              usable?", so « mitigé » is never mistaken for « dead ». */}
+          {(() => {
+            const eff = effectiveness(zone);
+            return (
+              <span
+                className={cn(
+                  'rounded-full px-2 py-0.5 text-xs font-semibold',
+                  eff.effective
+                    ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400'
+                    : 'bg-muted text-muted-foreground line-through decoration-1',
+                )}
+                title={
+                  eff.effective
+                    ? 'Zone toujours valable (même mitigée/testée)'
+                    : 'Zone consommée (OB invalidé / FVG entièrement comblé)'
+                }
+              >
+                {eff.label}
+              </span>
+            );
+          })()}
+          <span className="rounded-full border border-border/70 px-2 py-0.5 text-xs font-medium text-muted-foreground">
+            {statusLabel(zone)}
+          </span>
+        </div>
       </div>
 
       {/* Band + importance */}
@@ -245,8 +284,13 @@ export function ZoneLifecycleCard({
           {overlaps.length > 0 && (
             <div className="flex flex-col gap-1">
               <span className="text-xs uppercase tracking-wide text-muted-foreground">
-                Chevauchements
+                Recoupements avec d’autres unités de temps
               </span>
+              <p className="text-[11px] leading-snug text-muted-foreground/80">
+                Cette zone se superpose à des zones détectées sur d’autres unités de
+                temps (mêmes niveaux de prix qui se recoupent) — un repère de
+                convergence, pas un signal.
+              </p>
               <ul className="flex flex-col gap-0.5">
                 {overlaps.map((o) => (
                   // Sibling ids are only unique WITHIN a timeframe — prefix it.
