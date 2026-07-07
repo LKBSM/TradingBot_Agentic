@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertTriangle } from 'lucide-react';
+import { Activity, AlertTriangle } from 'lucide-react';
 import {
   AccordionContent,
   AccordionItem,
@@ -68,7 +68,7 @@ export function RegimeSection({
     <AccordionItem value="regime">
       <AccordionTrigger className="text-left text-sm">
         <span className="flex items-center gap-2">
-          <span aria-hidden>🌊</span>
+          <Activity className="h-4 w-4 text-muted-foreground" aria-hidden />
           <span>Régime de marché</span>
         </span>
       </AccordionTrigger>

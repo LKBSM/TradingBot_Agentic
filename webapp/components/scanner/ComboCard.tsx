@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { Check, Circle, CircleSlash } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -68,7 +69,7 @@ export function ComboCard({
         <ul className="min-w-0 flex-1 space-y-1.5">
           {match.conditions_met.map((c) => (
             <li key={`met-${c.type}`} className="flex items-start gap-2 text-sm">
-              <span aria-hidden className="mt-0.5 text-sentinel-bull">✓</span>
+              <Check className="mt-0.5 h-4 w-4 shrink-0 text-sentinel-bull" aria-hidden />
               <span>
                 <span className="font-medium">{c.label}</span>
                 <span className="text-muted-foreground"> — {c.detail}</span>
@@ -81,9 +82,11 @@ export function ComboCard({
             const unavailable = c.available === false;
             return (
               <li key={`unmet-${c.type}`} className="flex items-start gap-2 text-sm">
-                <span aria-hidden className="mt-0.5 text-muted-foreground">
-                  {unavailable ? '⊘' : '○'}
-                </span>
+                {unavailable ? (
+                  <CircleSlash className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                ) : (
+                  <Circle className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                )}
                 <span className="text-muted-foreground">
                   <span className="font-medium">{c.label}</span>
                   {unavailable && (
