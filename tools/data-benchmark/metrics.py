@@ -84,6 +84,10 @@ def expected_grid(sym, tf, df, start, end, fetched_at):
     step = TF_SECONDS[tf]
     # ne jamais attendre la bougie encore en formation au moment du fetch
     cap = min(end, fetched_at - pd.Timedelta(seconds=step)) if fetched_at is not None else end
+    # la grille demarre a la 1re barre servie : la profondeur d'historique
+    # bridee par un plan (ex. FCS gratuit = 900 barres) est mesuree a part
+    # (depth_days) au lieu d'ecraser la completude en double peine
+    start = max(pd.Timestamp(start), df.index[0])
     if sym.cls == "crypto":
         return anchored_range(start, cap, step, 0)
     if sym.cls in ("index", "energy"):
@@ -241,6 +245,8 @@ def main():
                     else:
                         comp, gaps = completeness(df, grid)
                         entry["completeness_pct"], entry["top_gaps"] = comp, gaps
+                    entry["depth_days"] = round(
+                        (df.index[-1] - df.index[0]).total_seconds() / 86400, 1)
                     v_pct, v_bad, v_worst = validity(df)
                     entry["validity_pct"], entry["invalid_bars"] = v_pct, v_bad
                     if v_worst:

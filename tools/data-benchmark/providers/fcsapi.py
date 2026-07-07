@@ -15,7 +15,9 @@ PERIOD = {"M5": "5m", "M15": "15m", "H1": "1h", "H4": "4h", "D1": "1d"}
 class FcsApiProvider(ProviderBase):
     name = "fcsapi"
     env_key = "FCSAPI_API_KEY"
-    min_interval_s = 2.0
+    # compte gratuit : 3 req/min STRICT ("Access block ... maximum 3 limit per
+    # minute"), les hits bloques ne consomment pas de credits
+    min_interval_s = 21.0
     max_bars_per_request = 10**9  # l'API renvoie sa fenetre max par period
     native_tfs = {tf: tf for tf in PERIOD}
 
@@ -31,9 +33,12 @@ class FcsApiProvider(ProviderBase):
 
     def _fetch_window(self, ticker, sym, tf, start: datetime, end: datetime):
         kind, pair = ticker
+        # plan gratuit : from/to interdits (code 105) -> une seule requete par
+        # cellule, l'API renvoie ses ~900 dernieres barres (level=3).
+        # M5 ~5.4j / M15 ~9.4j servis sur la fenetre de 30j : la profondeur
+        # bridee apparait dans depth_days, pas en double peine de completude.
         data = self.get_json(f"https://fcsapi.com/api-v3/{kind}/history", params={
             "symbol": pair, "period": PERIOD[tf], "access_key": self.api_key,
-            "from": start.strftime("%Y-%m-%d"), "to": end.strftime("%Y-%m-%d"),
             "level": 3})
         if not data.get("status"):
             msg = str(data.get("msg", data))[:200]

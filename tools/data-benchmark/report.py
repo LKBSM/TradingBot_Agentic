@@ -47,6 +47,30 @@ def fmt(v, nd=1):
     return "—" if v is None else f"{v:.{nd}f}"
 
 
+def triangulation(providers, sym_name, tf):
+    """MAE high/low par paire de fournisseurs sur sym_name x tf (jointure
+    par timestamp UTC sur les CSV bruts). Retourne {(p,q): (maeH, maeL, n)}."""
+    import pandas as pd
+    dfs = {}
+    for p in providers + [REFERENCE]:
+        f = HERE / "data" / "raw" / p / f"{sym_name}_{tf}.csv"
+        if f.is_file():
+            df = pd.read_csv(f, index_col="ts", parse_dates=True)
+            if len(df) > 50:
+                dfs[p] = df
+    out = {}
+    names = sorted(dfs)
+    for i, p in enumerate(names):
+        for q in names[i + 1:]:
+            j = dfs[p].join(dfs[q], how="inner", rsuffix="_q")
+            if len(j) < 50:
+                continue
+            out[(p, q)] = (float((j["high"] - j["high_q"]).abs().mean()),
+                           float((j["low"] - j["low_q"]).abs().mean()),
+                           int(len(j)))
+    return out
+
+
 def main():
     scores = json.loads((RESULTS_DIR / "scores.json").read_text(encoding="utf-8"))
     metrics = json.loads((RESULTS_DIR / "metrics.json").read_text(encoding="utf-8"))
@@ -172,6 +196,30 @@ def main():
             L.append("Plus gros trous de complétude : "
                      + " ; ".join(f"`{c}` {g['bars']} barres dès {g['from'][:16]}"
                                   for _, c, g in gap_rows[:5]) + ".")
+        L.append("")
+
+    # ---- triangulation croisee (qui est l'outlier ?) -----------------------
+    tri = triangulation(list(tested), "XAUUSD", "M15")
+    if tri:
+        L.append("## Triangulation croisée — XAUUSD M15 (qui est l'outlier ?)")
+        L.append("")
+        L.append("Écart absolu moyen des mèches (high/low, en $) entre chaque paire de "
+                 "fournisseurs testés. Quand deux sources indépendantes s'accordent et "
+                 "qu'une troisième diverge, cette dernière est l'outlier probable — "
+                 "sans qu'aucune ne soit « le vrai prix ».")
+        L.append("")
+        provs = sorted({p for pair in tri for p in pair})
+        L.append("| MAE high/low ($) | " + " | ".join(provs) + " |")
+        L.append("|---" * (len(provs) + 1) + "|")
+        for p in provs:
+            row = [f"| **{p}**"]
+            for q in provs:
+                if p == q:
+                    row.append("—")
+                else:
+                    v = tri.get((p, q)) or tri.get((q, p))
+                    row.append(f"{v[0]:.3f} / {v[1]:.3f} (n={v[2]})" if v else "n/d")
+            L.append(" | ".join(row) + " |")
         L.append("")
 
     # ---- croisement qualite x prix -----------------------------------------
