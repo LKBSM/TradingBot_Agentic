@@ -1,8 +1,8 @@
 # Banc d'essai qualité des fournisseurs de données de marché
 
-_Généré le 2026-07-06 20:22 UTC par `tools/data-benchmark/report.py` — relançable (`python runner.py && python metrics.py && python scoring.py && python report.py`)._
+_Généré le 2026-07-07 18:40 UTC par `tools/data-benchmark/report.py` — relançable (`python runner.py && python metrics.py && python scoring.py && python report.py`)._
 
-Fenêtre testée : **30 jours** (2026-06-06 → 2026-07-06), 80 symboles × 1 TF (D1).
+Fenêtre testée : **30 jours** (2026-06-07 → 2026-07-07), 80 symboles × 5 TF (M5, M15, H1, H4, D1).
 
 ## Avertissement de méthode
 
@@ -15,7 +15,8 @@ Pondérations (éditables dans `scoring.py`) : wick 35%, completeness 25%, valid
 | Rang | Fournisseur | Score global | Mèches | Complétude | Validité OHLC | Couverture | Fraîcheur | Fiabilité | Cellules OK/400 |
 |---|---|---|---|---|---|---|---|---|---|
 | 1 | **twelve_data** _(étalon)_ | **93.9** | — | 98.8 | 100.0 | 76.2 | 98.2 | 99.6 | 305 |
-| 2 | **itick** | **78.1** | 45.8 | 97.3 | 99.9 | 97.2 | 77.5 | 85.9 | 389 |
+| 2 | **itick** | **78.2** | 45.8 | 97.7 | 99.9 | 97.2 | 77.5 | 85.9 | 389 |
+| 3 | **fcsapi** | **73.7** | 53.4 | 98.8 | 100.0 | 41.2 | 92.7 | 89.4 | 165 |
 
 ## Détail par fournisseur
 
@@ -23,7 +24,7 @@ Pondérations (éditables dans `scoring.py`) : wick 35%, completeness 25%, valid
 
 _Reference du banc. Display commercial = Venture 499$/mois (414$ annuel)._
 
-Statuts cellules : `{'ok': 305, 'not_covered': 95}`
+Statuts cellules : `{'not_covered': 95, 'ok': 305}`
 
 Symboles verrouillés par plan supérieur (10) : BRENT, NAS100, SPX500, UK100, WTI, XAGUSD, XAUEUR, XAUGBP, XPDUSD, XPTUSD
 
@@ -35,7 +36,7 @@ Plus gros trous de complétude : `USDPLN_M5` 909 barres dès 2026-06-30T18:15 ; 
 
 _Calibre sur API reelle 2026-07-06. Crypto = paires USDT Binance (basis vs USD). BRENT et US2000 introuvables. H4 derive du H1. 79-319$/mois mais droit display a confirmer par ecrit._
 
-Statuts cellules : `{'ok': 389, 'empty': 1, 'not_covered': 10}`
+Statuts cellules : `{'not_covered': 10, 'empty': 1, 'ok': 389}`
 
 Symboles hors catalogue / non couverts (2) : BRENT, US2000
 
@@ -54,14 +55,55 @@ Pires écarts de mèches vs référence (à vérifier à l'œil) :
 | EURTRY_M5 | 2026-06-17T23:00:00+00:00 | 3828.8 | 4297.9 | 53.44463 → 53.82751 | 53.39768 → 53.82747 |
 | EURTRY_M15 | 2026-06-17T23:00:00+00:00 | 3772.2 | 4297.9 | 53.45029 → 53.82751 | 53.39768 → 53.82747 |
 
-Plus gros trous de complétude : `MATICUSD_M5` 4209 barres dès 2026-06-06T19:50 ; `HK50_M5` 1070 barres dès 2026-06-18T08:05 ; `MATICUSD_M15` 1060 barres dès 2026-06-06T20:00 ; `JP225_M5` 785 barres dès 2026-06-12T06:30 ; `JP225_M5` 785 barres dès 2026-06-19T06:30.
+Plus gros trous de complétude : `HK50_M5` 1070 barres dès 2026-06-18T08:05 ; `JP225_M5` 785 barres dès 2026-06-12T06:30 ; `JP225_M5` 785 barres dès 2026-06-19T06:30 ; `HK50_M5` 782 barres dès 2026-06-12T08:05 ; `FRA40_M5` 696 barres dès 2026-06-12T19:55.
+
+### fcsapi
+
+_149-329$/mois all-markets, droit display a confirmer par ecrit. Cache 10min plans bas._
+
+Statuts cellules : `{'not_covered': 80, 'error': 155, 'ok': 165}`
+
+Symboles hors catalogue / non couverts (16) : AUS200, BRENT, DOTUSD, EU50, FRA40, GER40, HK50, JP225, NAS100, NATGAS, SPX500, UK100, UNIUSD, US2000, US30, WTI
+
+Échecs (155) — 5 premiers :
+- `XAUUSD_H4` : FCS: Access block for you, You have reached maximum 3 limit per minute in free account, Please stop extra hits or upgrade your account. Rest
+- `XAGUSD_M15` : FCS: Access block for you, You have reached maximum 3 limit per minute in free account, Please stop extra hits or upgrade your account. Rest
+- `XAGUSD_D1` : FCS: Access block for you, You have reached maximum 3 limit per minute in free account, Please stop extra hits or upgrade your account. Rest
+- `XPTUSD_H1` : FCS: Access block for you, You have reached maximum 3 limit per minute in free account, Please stop extra hits or upgrade your account. Rest
+- `NZDCHF_D1` : FCS: Your monthly API request limit exceed, Please upgrade your account, If you think this message is error, please contact our support.  Yo
+
+Pires écarts de mèches vs référence (à vérifier à l'œil) :
+
+| Symbole×TF | Timestamp (UTC) | ΔHigh (pts) | ΔLow (pts) | High réf → fournisseur | Low réf → fournisseur |
+|---|---|---|---|---|---|
+| XAUUSD_D1 | 2026-06-14T00:00:00+00:00 | 24.39 | 495.99 | 4306.49146 → 4308.93 | 4213.19131 → 4262.79 |
+| XAUUSD_H1 | 2026-06-14T22:00:00+00:00 | 24.39 | 434.5 | 4306.49146 → 4308.93 | 4219.33985 → 4262.79 |
+| XAUUSD_M15 | 2026-07-01T13:30:00+00:00 | 179.51 | 30.67 | 4081.79926 → 4099.75 | 4039.1934 → 4042.26 |
+| XAUUSD_M5 | 2026-07-02T12:35:00+00:00 | 53.13 | 148.9 | 4133.42702 → 4138.74 | 4109.65009 → 4124.54 |
+| XAUUSD_M15 | 2026-07-01T13:45:00+00:00 | 79.83 | 148.72 | 4115.77285 → 4107.79 | 4070.74796 → 4085.62 |
+| GBPJPY_D1 | 2026-07-06T00:00:00+00:00 | 130.02 | 0.97 | 215.86977 → 217.17 | 215.58975 → 215.58 |
+| XAUUSD_M5 | 2026-07-02T13:35:00+00:00 | 40.49 | 129.04 | 4134.11055 → 4138.16 | 4114.58635 → 4127.49 |
+| XAUUSD_M15 | 2026-06-25T12:30:00+00:00 | 38.15 | 126.07 | 4007.8554 → 4011.67 | 3971.54328 → 3984.15 |
+
+Plus gros trous de complétude : `XAUEUR_M5` 67 barres dès 2026-07-03T16:25 ; `XPTUSD_M5` 61 barres dès 2026-07-03T16:55 ; `XPDUSD_M5` 61 barres dès 2026-07-03T16:55 ; `XAUUSD_M5` 60 barres dès 2026-07-03T17:00 ; `XAGUSD_M5` 60 barres dès 2026-07-03T17:00.
+
+## Triangulation croisée — XAUUSD M15 (qui est l'outlier ?)
+
+Écart absolu moyen des mèches (high/low, en $) entre chaque paire de fournisseurs testés. Quand deux sources indépendantes s'accordent et qu'une troisième diverge, cette dernière est l'outlier probable — sans qu'aucune ne soit « le vrai prix ».
+
+| MAE high/low ($) | fcsapi | itick | twelve_data |
+|---|---|---|---|
+| **fcsapi** | — | 0.126 / 0.143 (n=824) | 0.751 / 0.818 (n=800) |
+| **itick** | 0.126 / 0.143 (n=824) | — | 0.848 / 0.910 (n=1881) |
+| **twelve_data** | 0.751 / 0.818 (n=800) | 0.848 / 0.910 (n=1881) | — |
 
 ## Croisement qualité × prix d'affichage commercial
 
 | Fournisseur | Score qualité | Prix display commercial (recherche 2026-07-05) |
 |---|---|---|
 | twelve_data | 93.9 | 499 $/mois (414 $ annuel, plan Venture) |
-| itick | 78.1 | 79-319 $/mois + avenant display ecrit requis |
+| itick | 78.2 | 79-319 $/mois + avenant display ecrit requis |
+| fcsapi | 73.7 | 149-329 $/mois SI display confirme par ecrit |
 
 _Les recommandations mono/bi-fournisseur sont rédigées dans la section conclusion du rapport au vu des scores mesurés — voir en bas de fichier._
 
