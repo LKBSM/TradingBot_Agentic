@@ -73,6 +73,7 @@ export type ViewAction =
     }
   | { action: 'focus_zone'; params: { zone_id: string } }
   | { action: 'highlight_zone'; params: { zone_id: string } }
+  | { action: 'clear_highlight'; params: Record<string, never> }
   | { action: 'hide_zones'; params: { zone_ids: string[] } }
   | { action: 'isolate_zones'; params: { zone_ids: string[] } }
   | { action: 'show_zones'; params: { zone_ids?: string[] } }
@@ -216,6 +217,7 @@ export function coerceViewAction(
     case 'focus_price':
     case 'fit_chart':
     case 'reset_view':
+    case 'clear_highlight':
       return { action, params: {} };
     case 'set_instrument_timeframe': {
       const instrument = params.instrument;
@@ -355,6 +357,14 @@ export function applyChartViewAction(
       return { ...state, focus: { kind: 'fit', nonce: nextNonce(state) } };
     case 'highlight_zone':
       return { ...state, highlightZoneId: action.params.zone_id };
+    case 'clear_highlight':
+      // Deselect: drop the blue emphasis and un-zoom back to recent price so a
+      // second click on the same zone behaves like a toggle.
+      return {
+        ...state,
+        highlightZoneId: null,
+        focus: { kind: 'price', nonce: nextNonce(state) },
+      };
     case 'hide_zones': {
       // Union the targeted ids into the hidden set (display-only, reversible).
       const hidden = new Set(state.hiddenZoneIds);

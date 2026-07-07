@@ -97,8 +97,20 @@ export function StructureSection({
     return ids;
   }, [order_blocks, fair_value_gaps]);
 
+  // The selected entry mirrors the chart's highlighted zone (single source of
+  // truth) — the highlight persists as the selection until another is clicked.
+  const selectedZoneId = chartView.highlightZoneId;
+
   const selectZone = useCallback(
     (zoneId: string) => {
+      // Toggle: clicking the ALREADY-selected zone deselects it (drop the blue
+      // highlight + un-zoom), so a second click undoes the first.
+      if (zoneId === selectedZoneId) {
+        applyActions(
+          coerceViewActions([{ action: 'clear_highlight', params: {} }], validZoneIds),
+        );
+        return;
+      }
       // Re-validate through the same Couche-4 coercion (defence in depth): a
       // focus/highlight on an unknown id is dropped rather than mis-applied.
       const actions = coerceViewActions(
@@ -110,12 +122,8 @@ export function StructureSection({
       );
       applyActions(actions);
     },
-    [applyActions, validZoneIds],
+    [applyActions, validZoneIds, selectedZoneId],
   );
-
-  // The selected entry mirrors the chart's highlighted zone (single source of
-  // truth) — the highlight persists as the selection until another is clicked.
-  const selectedZoneId = chartView.highlightZoneId;
 
   // Surfacing coherence (founder eval 2026-06-08): the engine emits `bos` only
   // on a FRESH break at the last close (by design — see market_reading_mappers
