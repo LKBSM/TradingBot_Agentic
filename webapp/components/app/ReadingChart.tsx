@@ -98,6 +98,8 @@ export interface ReadingChartProps {
   filter?: ChartFilter;
   focus?: FocusCommand | null;
   highlightZoneId?: string | null;
+  /** Called when the user clicks the highlighted (blue) zone to deselect it. */
+  onClearHighlight?: () => void;
   hiddenZoneIds?: readonly string[];
   isolatedZoneIds?: readonly string[] | null;
   className?: string;
@@ -363,6 +365,7 @@ export function ReadingChart({
   filter = DEFAULT_CHART_VIEW.filter,
   focus = null,
   highlightZoneId = null,
+  onClearHighlight,
   hiddenZoneIds = DEFAULT_CHART_VIEW.hiddenZoneIds,
   isolatedZoneIds = DEFAULT_CHART_VIEW.isolatedZoneIds,
   className,
@@ -1105,10 +1108,30 @@ export function ReadingChart({
             : r.inTestLive
               ? `1px solid rgba(${LIVE_RGB}, 0.85)`
               : `1px dashed rgba(${rgb}, ${a.border})`;
+          // Only the HIGHLIGHTED (blue) box is interactive — clicking it
+          // deselects (toggle off). Every other box stays pointer-events:none so
+          // chart panning/zooming over zones is never captured. The container is
+          // pointer-events:none, so we opt this one box back in.
+          const clickable = isHighlighted && onClearHighlight != null;
           return (
             <div
               key={`${r.kind}:${r.id}`}
               className="absolute"
+              role={clickable ? 'button' : undefined}
+              tabIndex={clickable ? 0 : undefined}
+              aria-label={clickable ? 'Désélectionner cette zone' : undefined}
+              title={clickable ? 'Cliquer pour désélectionner' : undefined}
+              onClick={clickable ? () => onClearHighlight() : undefined}
+              onKeyDown={
+                clickable
+                  ? (e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onClearHighlight();
+                      }
+                    }
+                  : undefined
+              }
               style={{
                 left: r.left,
                 width: r.width,
@@ -1122,6 +1145,8 @@ export function ReadingChart({
                 boxShadow: isHighlighted
                   ? `0 0 0 1px rgba(${HIGHLIGHT_RGB}, 0.35)`
                   : undefined,
+                pointerEvents: clickable ? 'auto' : 'none',
+                cursor: clickable ? 'pointer' : undefined,
               }}
             >
               {/* Type code + status grouped in ONE top-left cluster, INSIDE the
