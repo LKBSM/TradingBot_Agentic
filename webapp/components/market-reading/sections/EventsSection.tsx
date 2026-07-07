@@ -1,4 +1,4 @@
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Calendar } from 'lucide-react';
 import {
   AccordionContent,
   AccordionItem,
@@ -48,7 +48,7 @@ export function EventsSection({ events }: { events: MarketReadingEvents }) {
     <AccordionItem value="events">
       <AccordionTrigger className="text-left text-sm">
         <span className="flex items-center gap-2">
-          <span aria-hidden>📅</span>
+          <Calendar className="h-4 w-4 text-muted-foreground" aria-hidden />
           <span>Contexte événementiel</span>
           {hasImminent && (
             <Badge variant="warn" className="text-[10px]">

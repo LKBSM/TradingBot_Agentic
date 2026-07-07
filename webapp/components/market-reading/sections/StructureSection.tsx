@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useMemo, type ReactNode } from 'react';
+import { Shapes } from 'lucide-react';
 import {
   AccordionContent,
   AccordionItem,
@@ -161,7 +162,7 @@ export function StructureSection({
     <AccordionItem value="structure">
       <AccordionTrigger className="text-left text-sm">
         <span className="flex items-center gap-2">
-          <span aria-hidden>📐</span>
+          <Shapes className="h-4 w-4 text-muted-foreground" aria-hidden />
           <span>Structure de marché</span>
         </span>
       </AccordionTrigger>

@@ -42,7 +42,7 @@ interface MarketReadingCardProps {
  *     · DisclaimerStub       · "Demander à Sentinel" CTA
  *
  *   Layer 2 (collapsible, default collapsed):
- *     · 📐 Structure · 🌊 Régime · 📅 Événements · 🧭 Synthèse
+ *     · Structure · Régime · Événements · Synthèse
  */
 export function MarketReadingCard({
   reading,

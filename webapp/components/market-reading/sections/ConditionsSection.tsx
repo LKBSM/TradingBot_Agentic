@@ -1,3 +1,4 @@
+import { FileText } from 'lucide-react';
 import {
   AccordionContent,
   AccordionItem,
@@ -36,7 +37,7 @@ export function ConditionsSection({
     <AccordionItem value="conditions">
       <AccordionTrigger className="text-left text-sm">
         <span className="flex items-center gap-2">
-          <span aria-hidden>🧭</span>
+          <FileText className="h-4 w-4 text-muted-foreground" aria-hidden />
           <span>Lecture narrée</span>
         </span>
       </AccordionTrigger>
