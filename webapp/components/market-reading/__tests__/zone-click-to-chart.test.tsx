@@ -131,19 +131,25 @@ describe('zone list → click to chart', () => {
     expect(['OB_bull_1', 'OB_bull_2']).toContain(secondHighlight);
   });
 
-  it('re-clicking the SAME zone re-issues a fresh focus command (re-frames an out-of-view zone)', () => {
+  it('re-clicking the SAME zone deselects it (toggle: clears highlight + un-zooms)', () => {
     renderWired(structureWith([mkOb(1)]));
     const entry = screen.getByRole('button', {
       name: /importance moyenne · actif/i,
     });
     fireEvent.click(entry);
+    expect(entry).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByTestId('highlight')).toHaveTextContent('OB_bull_1');
     const first = Number(screen.getByTestId('focus-nonce').textContent);
+
     fireEvent.click(entry);
+    // Second click on the already-selected zone deselects it: the blue highlight
+    // is cleared, the entry is no longer pressed, and the view un-zooms back to
+    // recent price (focus kind 'price'). The nonce still bumps to re-frame.
+    expect(entry).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByTestId('highlight')).toHaveTextContent('none');
+    expect(screen.getByTestId('focus-kind')).toHaveTextContent('price');
     const second = Number(screen.getByTestId('focus-nonce').textContent);
-    // A bumped nonce is what re-triggers the chart's setVisibleRange even when
-    // the same zone is already selected — so an off-screen zone is always shown.
     expect(second).toBeGreaterThan(first);
-    expect(screen.getByTestId('focus-zone')).toHaveTextContent('OB_bull_1');
   });
 
   it('never dispatches an invented zone — only ids the engine emitted are focusable', () => {

@@ -317,6 +317,16 @@ const HIGHLIGHT_COLOR = '#4F9DDE';
 const FOCUS_PRICE_BARS = 40;
 
 /**
+ * Default number of most-recent bars shown when the chart first opens. We
+ * right-anchor to these (with a little breathing room on the right) instead of
+ * fitContent()-ing the whole 200-bar history — so the chart opens on current
+ * price action at a readable zoom, not squeezed onto the oldest candle. The
+ * user can still scroll left for history or hit "Ajuster" to fit everything.
+ */
+const DEFAULT_VISIBLE_BARS = 90;
+const INITIAL_RIGHT_PAD_BARS = 3;
+
+/**
  * Theme-resolved palette. Lightweight-charts paints onto a canvas, so it needs
  * concrete colour strings (CSS `var(--token)` does not resolve there). These
  * values mirror the app tokens — `--border` for the grid, `--muted-foreground`
@@ -691,10 +701,21 @@ export function ReadingChart({
         }),
       );
 
-    // Fit ONCE (initial load); afterwards restore the pre-update view so data
+    // Initial view ONCE; afterwards restore the pre-update view so data
     // refreshes don't reset the user's zoom/pan. The "Ajuster" button refits.
+    // On first load we right-anchor to the most recent bars (not fitContent over
+    // the whole history) so the chart opens on current price action, not the
+    // oldest candle. Few-bar datasets fall back to fitContent.
     if (!didInitialFitRef.current) {
-      timeScale.fitContent();
+      const n = validCandles.length;
+      if (n > DEFAULT_VISIBLE_BARS) {
+        timeScale.setVisibleLogicalRange({
+          from: n - DEFAULT_VISIBLE_BARS,
+          to: n - 1 + INITIAL_RIGHT_PAD_BARS,
+        });
+      } else {
+        timeScale.fitContent();
+      }
       didInitialFitRef.current = true;
     } else if (prevRange) {
       timeScale.setVisibleLogicalRange(prevRange);
@@ -1017,7 +1038,10 @@ export function ReadingChart({
       const zoneStart = model.createdSec;
       const zoneEnd = model.mitigatedSec ?? lastTime;
       const span = Math.max(zoneEnd - zoneStart, 0);
-      const margin = Math.max(barSec * 8, span);
+      // Keep plenty of context around the zone so the focus doesn't slam the
+      // viewport onto a tiny band (jarring for the user). At least ~24 bars of
+      // breathing room on each side, or 1.5× the zone span, whichever is larger.
+      const margin = Math.max(barSec * 24, span * 1.5);
       try {
         ts.setVisibleRange({
           from: (zoneStart - margin) as UTCTimestamp,
