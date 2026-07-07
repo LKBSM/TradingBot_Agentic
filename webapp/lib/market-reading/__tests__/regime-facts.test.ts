@@ -97,36 +97,40 @@ describe('formatBreakTimestamp', () => {
 });
 
 describe('deriveTrendMaturity (b)', () => {
-  it('derives the candle count since the last CHOCH', () => {
+  it('derives the candle count since the point-in-time CHOCH (fallback)', () => {
     const m = deriveTrendMaturity(structure({ choch: choch() }), header());
     // 14:30 → 19:00 = 270 min / 15 = 18 candles.
     expect(m).toEqual({
       direction: 'bullish',
-      kind: 'CHOCH',
       brokenAt: '2026-06-24T14:30:00',
       bars: 18,
     });
   });
-  it('falls back to the last BOS when no CHOCH (honest continuation anchor)', () => {
+  it('anchors on the MOST RECENT CHOCH from the event history (even bars ago)', () => {
+    // The point-in-time choch is null, but a CHOCH lives in the history 20 bars
+    // back → maturity must use it (not « non disponible », never a BOS).
     const m = deriveTrendMaturity(
-      structure({ bos: bos({ broken_at: '2026-06-24T14:30:00', direction: 'bearish' }) }),
+      structure({
+        choch: null,
+        bos: bos(), // a BOS present must be IGNORED for maturity
+        choch_events: [
+          choch({ broken_at: '2026-06-24T10:00:00', direction: 'bearish' }),
+          choch({ broken_at: '2026-06-24T14:00:00', direction: 'bearish' }),
+        ],
+      }),
       header(),
     );
+    // Latest event = 14:00 → 19:00 = 300 min / 15 = 20 candles.
     expect(m).toEqual({
       direction: 'bearish',
-      kind: 'BOS',
-      brokenAt: '2026-06-24T14:30:00',
-      bars: 18,
+      brokenAt: '2026-06-24T14:00:00',
+      bars: 20,
     });
   });
-  it('prefers the CHOCH over the BOS when both are present', () => {
-    const m = deriveTrendMaturity(
-      structure({ choch: choch(), bos: bos() }),
-      header(),
-    );
-    expect(m?.kind).toBe('CHOCH');
+  it('never uses a BOS for maturity — BOS-only → null', () => {
+    expect(deriveTrendMaturity(structure({ bos: bos() }), header())).toBeNull();
   });
-  it('returns null only when neither CHOCH nor BOS is available', () => {
+  it('returns null when no CHOCH exists anywhere in the window', () => {
     expect(deriveTrendMaturity(structure(), header())).toBeNull();
   });
   it('leaves bars null for an unknown timeframe (no invented count)', () => {
@@ -158,15 +162,19 @@ describe('formatTrendMaturity (b)', () => {
       formatTrendMaturity(structure({ choch: choch() }), header({ timeframe: 'Z9' })),
     ).toBe('Structure orientée haussière depuis le CHOCH du 24/06 à 14:30.');
   });
-  it('phrases the BOS fallback honestly (continuation, not a CHOCH)', () => {
+  it('uses the most recent CHOCH from the history for the line', () => {
     expect(
       formatTrendMaturity(
-        structure({ bos: bos({ broken_at: '2026-06-24T14:30:00', direction: 'bearish' }) }),
+        structure({
+          choch: null,
+          choch_events: [choch({ broken_at: '2026-06-24T14:00:00', direction: 'bearish' })],
+        }),
         header(),
       ),
-    ).toBe('Structure baissière maintenue depuis la cassure (BOS) du 24/06 à 14:30 (≈ 18 bougies M15).');
+    ).toBe('Structure orientée baissière depuis le CHOCH du 24/06 à 14:00 (≈ 20 bougies M15).');
   });
-  it('returns null only when neither CHOCH nor BOS (caller shows « non disponible »)', () => {
+  it('returns null when no CHOCH (BOS-only or empty → « non disponible »)', () => {
+    expect(formatTrendMaturity(structure({ bos: bos() }), header())).toBeNull();
     expect(formatTrendMaturity(structure(), header())).toBeNull();
   });
 });

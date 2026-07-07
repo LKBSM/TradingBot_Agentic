@@ -46,7 +46,7 @@ const UNAVAILABLE = 'non disponible';
  * On top of the existing volatility + multi-timeframe trend alignment, it now
  * surfaces five additional facts the engine already produces:
  *   (a) market phase            → regime.market_phase
- *   (b) trend maturity          → structure.choch, else structure.bos (fallback)
+ *   (b) trend maturity          → most recent structure.choch_events (CHOCH only)
  *   (c) last structural event   → most recent of structure.bos / structure.choch
  *   (d) active zone density     → structure.order_blocks / fair_value_gaps (status active)
  *   (e) multi-TF disagreement   → classifyMtfAlignment(...).disagreement

@@ -53,16 +53,9 @@ export function formatBreakTimestamp(iso: string): string | null {
 // ─── (b) Trend maturity — anchored on the last CHOCH ─────────────────────────
 
 export interface TrendMaturity {
-  /** Orientation established by the anchoring structural break. */
+  /** Orientation established by the CHOCH that started the current trend. */
   direction: 'bullish' | 'bearish';
-  /**
-   * Which break anchors the maturity: the CHOCH (the change of character that
-   * STARTED the current trend) when present, otherwise the last BOS (a
-   * continuation break) as an honest fallback so a BOS-only market still reports
-   * how long its structure has held rather than « non disponible ».
-   */
-  kind: 'CHOCH' | 'BOS';
-  /** ISO timestamp of that break. */
+  /** ISO timestamp of that CHOCH break. */
   brokenAt: string;
   /**
    * Whole candles between the break and the reading's candle close, or null when
@@ -73,28 +66,43 @@ export interface TrendMaturity {
 }
 
 /**
- * Maturity of the current structural orientation. Prefers the last CHOCH
- * (`structure.choch`) — the change of character that starts a trend — and falls
- * back to the last BOS (`structure.bos`) when no CHOCH is surfaced, so a market
- * that only broke structure (continuation) still reports its maturity instead of
- * « non disponible ». Returns null only when NEITHER break exists. Read-only.
+ * Maturity of the current trend, anchored on the CHOCH (change of character)
+ * that started it. A BOS is a CONTINUATION break and never starts a trend, so it
+ * is deliberately NOT used here.
+ *
+ * The point-in-time ``structure.choch`` is only set when the CHOCH lands on the
+ * LAST bar, so a change of character that happened many bars ago would read as
+ * « non disponible ». We therefore take the MOST RECENT CHOCH from the break-event
+ * HISTORY (``structure.choch_events``, which spans the whole window) — that's the
+ * real trend origin even when it's 20+ bars back. Returns null only when there is
+ * no CHOCH at all in the window. Read-only / descriptive.
  */
 export function deriveTrendMaturity(
   structure: MarketReadingStructure,
   header: MarketReadingHeader,
 ): TrendMaturity | null {
-  const anchor = structure.choch
-    ? ({ kind: 'CHOCH', ev: structure.choch } as const)
-    : structure.bos
-      ? ({ kind: 'BOS', ev: structure.bos } as const)
-      : null;
-  if (!anchor) return null;
+  // Most recent CHOCH from the event history (max broken_at).
+  let anchor: { broken_at: string; direction: 'bullish' | 'bearish' } | null = null;
+  for (const e of structure.choch_events ?? []) {
+    if (
+      anchor === null ||
+      new Date(e.broken_at).getTime() > new Date(anchor.broken_at).getTime()
+    ) {
+      anchor = { broken_at: e.broken_at, direction: e.direction };
+    }
+  }
+  // Fall back to the point-in-time CHOCH when no history is present (older
+  // payloads / fixtures). Still CHOCH-only — never a BOS.
+  if (anchor === null && structure.choch) {
+    anchor = { broken_at: structure.choch.broken_at, direction: structure.choch.direction };
+  }
+  if (anchor === null) return null;
 
   let bars: number | null = null;
   const tfMin = timeframeMinutes(header.timeframe);
   if (tfMin) {
     const closeMs = new Date(header.candle_close_ts).getTime();
-    const breakMs = new Date(anchor.ev.broken_at).getTime();
+    const breakMs = new Date(anchor.broken_at).getTime();
     const diffMs = closeMs - breakMs;
     // Guard against unparseable dates and the known « broken_at in the future »
     // data glitch — we never show a negative or NaN candle count.
@@ -103,19 +111,13 @@ export function deriveTrendMaturity(
     }
   }
 
-  return {
-    direction: anchor.ev.direction,
-    kind: anchor.kind,
-    brokenAt: anchor.ev.broken_at,
-    bars,
-  };
+  return { direction: anchor.direction, brokenAt: anchor.broken_at, bars };
 }
 
 /**
  * Present-tense maturity line, e.g.
  *   « Structure orientée haussière depuis le CHOCH du 24/06 à 14:30 (≈ 18 bougies M15). »
- *   « Structure baissière maintenue depuis la cassure (BOS) du 07/07 à 09:15 (≈ 6 bougies M15). »
- * Returns null only when neither a CHOCH nor a BOS is available.
+ * Returns null only when no CHOCH exists in the window (caller → « non disponible »).
  */
 export function formatTrendMaturity(
   structure: MarketReadingStructure,
@@ -131,10 +133,7 @@ export function formatTrendMaturity(
     m.bars != null
       ? ` (≈ ${m.bars} bougie${m.bars > 1 ? 's' : ''} ${header.timeframe})`
       : '';
-  // CHOCH = trend start; BOS = continuation break kept as the honest fallback.
-  return m.kind === 'CHOCH'
-    ? `Structure orientée ${orient} depuis le CHOCH${whenPart}${barsPart}.`
-    : `Structure ${orient} maintenue depuis la cassure (BOS)${whenPart}${barsPart}.`;
+  return `Structure orientée ${orient} depuis le CHOCH${whenPart}${barsPart}.`;
 }
 
 // ─── (c) Last structural event — most recent of BOS / CHOCH ──────────────────
