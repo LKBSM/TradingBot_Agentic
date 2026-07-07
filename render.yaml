@@ -76,7 +76,7 @@ services:
       - key: NEWS_PIPELINE_ENABLED
         value: "true"
       - key: LIVE_TICK_ENABLED
-        value: "false"
+        value: "true"          # 1 shared Twelve Data WS (free tier allows 1 conn)
       - key: VOL_MODE
         value: har
       - key: SYMBOLS
@@ -109,6 +109,8 @@ services:
       - key: BETA_LOCKDOWN              # edge middleware login wall
         value: "1"
       - key: NEXT_PUBLIC_BETA_LOCKDOWN  # baked into the client bundle at build
+        value: "1"
+      - key: NEXT_PUBLIC_LIVE_TICK      # enable the live-price SSE overlay (build-time)
         value: "1"
       # Set to the backend PUBLIC url after first deploy, then redeploy this
       # service so the value is baked into the build (e.g.

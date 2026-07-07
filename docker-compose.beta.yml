@@ -59,7 +59,7 @@ services:
       SCHEDULER_ENABLED: "${SCHEDULER_ENABLED:-true}"
       CHATBOT_ENABLED: "${CHATBOT_ENABLED:-true}"
       NEWS_PIPELINE_ENABLED: "${NEWS_PIPELINE_ENABLED:-true}"
-      LIVE_TICK_ENABLED: "${LIVE_TICK_ENABLED:-false}"
+      LIVE_TICK_ENABLED: "${LIVE_TICK_ENABLED:-true}"
       VOL_MODE: "${VOL_MODE:-har}"
       SYMBOLS: "${SYMBOLS:-XAUUSD}"
       ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
@@ -83,6 +83,7 @@ services:
         # Server-side proxy target (Docker DNS name of the backend service).
         NEXT_PUBLIC_API_BASE: "http://backend:8000"
         NEXT_PUBLIC_BETA_LOCKDOWN: "1"
+        NEXT_PUBLIC_LIVE_TICK: "1"
     image: mia-markets/frontend:beta
     container_name: mia-beta-frontend
     restart: unless-stopped
