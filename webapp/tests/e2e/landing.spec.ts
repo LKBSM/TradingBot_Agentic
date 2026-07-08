@@ -17,8 +17,19 @@ test.describe('Landing — golden paths (architecture L1-L6 2026-05-27)', () => 
     ).toBeVisible();
     // Discreet CTA (not a hero-dominant button anymore).
     await expect(
-      page.getByRole('link', { name: /Essayer gratuitement/i }),
+      page.getByRole('link', { name: /Voir l'offre/i }),
     ).toBeVisible();
+  });
+
+  test('how-it-works section defines the product in 4 steps', async ({ page }) => {
+    await page.goto('/#fonctionnement');
+    await expect(
+      page.getByRole('heading', {
+        level: 2,
+        name: /De la bougie brute à une lecture/i,
+      }),
+    ).toBeVisible();
+    await expect(page.getByText(/Ce que les démos prouvent/i)).toBeVisible();
   });
 
   test('multi-market section shows XAU + EUR + Bientôt placeholder', async ({ page }) => {
@@ -67,18 +78,22 @@ test.describe('Landing — golden paths (architecture L1-L6 2026-05-27)', () => 
     await expect(page.getByText(/conformel/i)).toHaveCount(0);
   });
 
-  test('pricing section shows 3 tiers FREE/9€/19€ post pivot 2026-05-27', async ({ page }) => {
+  test('pricing section shows the single plan with monthly/annual toggle', async ({ page }) => {
     await page.goto('/#tarifs');
-    // Rôle heading (h3 des TierCard) : « Découverte » apparaît aussi dans le
-    // paragraphe d'intro (« …sur le tier Découverte ») → strict mode.
-    await expect(page.getByRole('heading', { name: 'Découverte' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Approfondie' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Intégrale' })).toBeVisible();
-    await expect(page.getByText(/9 €/).first()).toBeVisible();
-    await expect(page.getByText(/19 €/).first()).toBeVisible();
-    // INSTITUTIONAL retiré grille publique → bloc Calendly aside.
+    await expect(page.getByRole('heading', { name: /Un seul plan/i })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Accès intégral MIA' }),
+    ).toBeVisible();
+    // Annual is the default cadence → 39,99 $ shown.
+    await expect(page.getByText(/39,99/).first()).toBeVisible();
+    // Switching to monthly reveals 49,99 $.
+    await page.getByRole('button', { name: /^Mensuel$/i }).click();
+    await expect(page.getByText(/49,99/).first()).toBeVisible();
+    // Old tiers are gone.
+    await expect(page.getByText(/Approfondie/)).toHaveCount(0);
+    await expect(page.getByText(/Intégrale/)).toHaveCount(0);
+    // B2B contact block conservé.
     await expect(page.getByText(/Réserver une démo/i)).toBeVisible();
-    await expect(page.getByText(/Recommandé/)).toBeVisible();
   });
 
   test('FAQ accordion exposes 6 questions and opens the first one', async ({ page }) => {
