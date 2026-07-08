@@ -68,7 +68,7 @@ export function HeroLive() {
           href="#tarifs"
           className="text-xs font-medium text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline focus-visible:underline focus-visible:outline-none"
         >
-          Essayer gratuitement →
+          Voir l&apos;offre →
         </a>
       </div>
     </section>
