@@ -28,7 +28,14 @@ def build_registry():
                FinnhubProvider, AlphaVantageProvider, TraderMadeProvider,
                FinageProvider, FcsApiProvider, FinazonProvider,
                ITickProvider, AllTickProvider]
-    return {cls.name: cls for cls in classes}
+    registry = {cls.name: cls for cls in classes}
+    try:  # juge MT5 : seulement si le package et le terminal sont presents
+        import MetaTrader5  # noqa: F401
+        from .mt5_local import Mt5LocalProvider
+        registry[Mt5LocalProvider.name] = Mt5LocalProvider
+    except ImportError:
+        pass
+    return registry
 
 
 # Cles d'environnement alternatives acceptees (alias historiques)
@@ -57,4 +64,8 @@ PROVIDER_NOTES = {
              "(basis vs USD). BRENT et US2000 introuvables. H4 derive du H1. "
              "79-319$/mois mais droit display a confirmer par ecrit.",
     "alltick": "Adaptateur NON VALIDE (ecrit sur doc publique, jamais execute faute de cle).",
+    "mt5": "JUGE uniquement (feed broker du terminal local, licence interne — "
+           "PAS un candidat production). Bougies BID (les feeds API sont mid : "
+           "biais ~demi-spread attendu). MetaQuotes-Demo : forex+metaux+indices, "
+           "pas d'energie/crypto CFD.",
 }

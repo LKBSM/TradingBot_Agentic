@@ -121,7 +121,10 @@ class ProviderBase:
             for w_start, w_end in self.windows(native_tf, start, end):
                 frames.append(self._fetch_window(ticker, sym, native_tf, w_start, w_end))
             df = normalize(pd.concat(frames) if frames else pd.DataFrame())
-            if derived and not df.empty:
+            if df.empty:
+                # index vide non-datetime : sortir avant le filtre de fenetre
+                return self._result("empty", derived=derived, req0=req0, err0=err0)
+            if derived:
                 df = resample_ohlc(df, tf)
             df = df[(df.index >= pd.Timestamp(start)) & (df.index < pd.Timestamp(end))]
             # exclure la bougie partielle en cours (ouverte il y a < 1 TF)

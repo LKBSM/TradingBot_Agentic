@@ -42,6 +42,7 @@ DISPLAY_PRICE_USD = {
     "finage": ("599-1450 $/mois, redistribution interdite par disclaimer", None),
     "finnhub": ("sur devis (ancre 3500 $/mois)", None),
     "alpha_vantage": ("sur devis (tiers publies = personal use)", None),
+    "mt5": ("JUGE du banc (feed broker local) — non commercialisable", None),
 }
 
 
@@ -50,9 +51,11 @@ def fmt(v, nd=1):
 
 
 def triangulation(providers, sym_name, tf):
-    """MAE high/low par paire de fournisseurs sur sym_name x tf (jointure
-    par timestamp UTC sur les CSV bruts). Retourne {(p,q): (maeH, maeL, n)}."""
+    """MAE high/low par paire de fournisseurs sur sym_name x tf (jointure par
+    timestamp UTC sur les CSV bruts), exprimee en POINTS/PIPS du symbole
+    (symbols.py). Retourne {(p,q): (maeH_pts, maeL_pts, n)}."""
     import pandas as pd
+    point = SYM_BY_NAME[sym_name].point
     dfs = {}
     for p in providers + [REFERENCE]:
         f = HERE / "data" / "raw" / p / f"{sym_name}_{tf}.csv"
@@ -67,8 +70,8 @@ def triangulation(providers, sym_name, tf):
             j = dfs[p].join(dfs[q], how="inner", rsuffix="_q")
             if len(j) < 50:
                 continue
-            out[(p, q)] = (float((j["high"] - j["high_q"]).abs().mean()),
-                           float((j["low"] - j["low_q"]).abs().mean()),
+            out[(p, q)] = (float((j["high"] - j["high_q"]).abs().mean() / point),
+                           float((j["low"] - j["low_q"]).abs().mean() / point),
                            int(len(j)))
     return out
 
@@ -201,17 +204,29 @@ def main():
         L.append("")
 
     # ---- triangulation croisee (qui est l'outlier ?) -----------------------
-    tri = triangulation(list(tested), "XAUUSD", "M15")
-    if tri:
-        L.append("## Triangulation croisée — XAUUSD M15 (qui est l'outlier ?)")
-        L.append("")
-        L.append("Écart absolu moyen des mèches (high/low, en $) entre chaque paire de "
-                 "fournisseurs testés. Quand deux sources indépendantes s'accordent et "
-                 "qu'une troisième diverge, cette dernière est l'outlier probable — "
-                 "sans qu'aucune ne soit « le vrai prix ».")
+    first_tri = True
+    for tri_sym, tri_tf in [("XAUUSD", "M15"), ("US30", "M15"), ("NAS100", "M15"),
+                            ("EURUSD", "M15")]:
+        tri = triangulation(list(tested), tri_sym, tri_tf)
+        if not tri:
+            continue
+        if first_tri:
+            L.append("## Triangulation croisée (qui est l'outlier ?)")
+            L.append("")
+            L.append("Écart absolu moyen des mèches (high/low, en unités de prix) entre "
+                     "chaque paire de fournisseurs testés. Quand deux sources "
+                     "indépendantes s'accordent et qu'une troisième diverge, cette "
+                     "dernière est l'outlier probable — sans qu'aucune ne soit « le "
+                     "vrai prix ». `mt5` = feed broker du terminal local (bougies bid), "
+                     "juge non commercialisable.")
+            L.append("")
+            first_tri = False
+        unit = "pips" if SYM_BY_NAME[tri_sym].point in (0.0001, 0.01) else "points"
+        L.append(f"### {tri_sym} {tri_tf} (en {unit}, "
+                 f"1 pt = {SYM_BY_NAME[tri_sym].point})")
         L.append("")
         provs = sorted({p for pair in tri for p in pair})
-        L.append("| MAE high/low ($) | " + " | ".join(provs) + " |")
+        L.append("| MAE high/low | " + " | ".join(provs) + " |")
         L.append("|---" * (len(provs) + 1) + "|")
         for p in provs:
             row = [f"| **{p}**"]

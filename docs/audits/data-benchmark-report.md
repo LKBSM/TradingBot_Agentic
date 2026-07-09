@@ -1,8 +1,8 @@
 # Banc d'essai qualité des fournisseurs de données de marché
 
-_Généré le 2026-07-09 15:40 UTC par `tools/data-benchmark/report.py` — relançable (`python runner.py && python metrics.py && python scoring.py && python report.py`)._
+_Généré le 2026-07-09 17:24 UTC par `tools/data-benchmark/report.py` — relançable (`python runner.py && python metrics.py && python scoring.py && python report.py`)._
 
-Fenêtre testée : **30 jours** (2026-06-07 → 2026-07-07), 80 symboles × 5 TF (M5, M15, H1, H4, D1).
+Fenêtre testée : **30 jours** (2026-06-09 → 2026-07-09), 80 symboles × 5 TF (M5, M15, H1, H4, D1).
 
 ## Avertissement de méthode
 
@@ -16,7 +16,8 @@ Pondérations (éditables dans `scoring.py`) : wick 35%, completeness 25%, valid
 |---|---|---|---|---|---|---|---|---|---|
 | 1 | **twelve_data** _(étalon)_ | **93.9** | — | 98.8 | 100.0 | 76.2 | 98.2 | 99.6 | 305 |
 | 2 | **itick** | **78.2** | 45.8 | 97.7 | 99.9 | 97.2 | 77.5 | 85.9 | 389 |
-| 3 | **fcsapi** | **73.7** | 53.4 | 98.8 | 100.0 | 41.2 | 92.7 | 89.4 | 165 |
+| 3 | **fcsapi** | **73.6** | 53.4 | 98.6 | 100.0 | 41.2 | 92.7 | 89.4 | 165 |
+| 4 | **mt5** | **71.1** | 35.5 | 93.0 | 100.0 | 70.0 | 98.7 | 100.0 | 280 |
 
 ## Détail par fournisseur
 
@@ -36,7 +37,7 @@ Plus gros trous de complétude : `USDPLN_M5` 909 barres dès 2026-06-30T18:15 ; 
 
 _Calibre sur API reelle 2026-07-06. Crypto = paires USDT Binance (basis vs USD). BRENT et US2000 introuvables. H4 derive du H1. 79-319$/mois mais droit display a confirmer par ecrit._
 
-Statuts cellules : `{'not_covered': 10, 'empty': 1, 'ok': 389}`
+Statuts cellules : `{'empty': 1, 'not_covered': 10, 'ok': 389}`
 
 Symboles hors catalogue / non couverts (2) : BRENT, US2000
 
@@ -61,7 +62,7 @@ Plus gros trous de complétude : `HK50_M5` 1070 barres dès 2026-06-18T08:05 ; `
 
 _149-329$/mois all-markets, droit display a confirmer par ecrit. Cache 10min plans bas._
 
-Statuts cellules : `{'not_covered': 80, 'error': 155, 'ok': 165}`
+Statuts cellules : `{'error': 155, 'not_covered': 80, 'ok': 165}`
 
 Symboles hors catalogue / non couverts (16) : AUS200, BRENT, DOTUSD, EU50, FRA40, GER40, HK50, JP225, NAS100, NATGAS, SPX500, UK100, UNIUSD, US2000, US30, WTI
 
@@ -87,15 +88,64 @@ Pires écarts de mèches vs référence (à vérifier à l'œil) :
 
 Plus gros trous de complétude : `XAUEUR_M5` 67 barres dès 2026-07-03T16:25 ; `XPTUSD_M5` 61 barres dès 2026-07-03T16:55 ; `XPDUSD_M5` 61 barres dès 2026-07-03T16:55 ; `XAUUSD_M5` 60 barres dès 2026-07-03T17:00 ; `XAGUSD_M5` 60 barres dès 2026-07-03T17:00.
 
-## Triangulation croisée — XAUUSD M15 (qui est l'outlier ?)
+### mt5
 
-Écart absolu moyen des mèches (high/low, en $) entre chaque paire de fournisseurs testés. Quand deux sources indépendantes s'accordent et qu'une troisième diverge, cette dernière est l'outlier probable — sans qu'aucune ne soit « le vrai prix ».
+_JUGE uniquement (feed broker du terminal local, licence interne — PAS un candidat production). Bougies BID (les feeds API sont mid : biais ~demi-spread attendu). MetaQuotes-Demo : forex+metaux+indices, pas d'energie/crypto CFD._
 
-| MAE high/low ($) | fcsapi | itick | twelve_data |
-|---|---|---|---|
-| **fcsapi** | — | 0.126 / 0.143 (n=824) | 0.751 / 0.818 (n=800) |
-| **itick** | 0.126 / 0.143 (n=824) | — | 0.848 / 0.910 (n=1881) |
-| **twelve_data** | 0.751 / 0.818 (n=800) | 0.848 / 0.910 (n=1881) | — |
+Statuts cellules : `{'empty': 5, 'not_covered': 115, 'ok': 280}`
+
+Symboles hors catalogue / non couverts (23) : ADAUSD, APTUSD, ATOMUSD, AVAXUSD, BCHUSD, BNBUSD, BRENT, BTCUSD, DOGEUSD, DOTUSD, ETCUSD, ETHUSD, FILUSD, LINKUSD, LTCUSD, MATICUSD, NATGAS, SOLUSD, TRXUSD, UNIUSD, WTI, XLMUSD, XRPUSD
+
+Pires écarts de mèches vs référence (à vérifier à l'œil) :
+
+| Symbole×TF | Timestamp (UTC) | ΔHigh (pts) | ΔLow (pts) | High réf → fournisseur | Low réf → fournisseur |
+|---|---|---|---|---|---|
+| EURTRY_M5 | 2026-06-21T21:20:00+00:00 | 3343.8 | 2384.7 | 53.25888 → 52.9245 | 53.1563 → 52.91783 |
+| EURTRY_M5 | 2026-06-21T21:25:00+00:00 | 3026.1 | 1650.7 | 53.22734 → 52.92473 | 53.08324 → 52.91817 |
+| EURTRY_M5 | 2026-06-21T21:30:00+00:00 | 2901.8 | 1641.1 | 53.23732 → 52.94714 | 53.08357 → 52.91946 |
+| EURTRY_M5 | 2026-06-21T21:00:00+00:00 | 2764.3 | 1965.9 | 53.29531 → 53.01888 | 53.2127 → 53.01611 |
+| EURTRY_M15 | 2026-06-21T21:00:00+00:00 | 2764.3 | 2530.4 | 53.29531 → 53.01888 | 53.15489 → 52.90185 |
+| EURTRY_M5 | 2026-06-21T21:05:00+00:00 | 2362.6 | 2530.4 | 53.24959 → 53.01333 | 53.15489 → 52.90185 |
+| EURTRY_M15 | 2026-07-05T21:00:00+00:00 | 724.5 | 2199.5 | 53.54672 → 53.47427 | 53.5161 → 53.29615 |
+| EURTRY_H1 | 2026-07-05T21:00:00+00:00 | 775.0 | 2147.8 | 53.59422 → 53.51672 | 53.51093 → 53.29615 |
+
+Plus gros trous de complétude : `HK50_M5` 939 barres dès 2026-06-18T18:55 ; `XAUGBP_M5` 657 barres dès 2026-06-29T06:55 ; `JP225_M5` 637 barres dès 2026-07-03T16:55 ; `US30_M5` 636 barres dès 2026-06-19T16:55 ; `US30_M5` 636 barres dès 2026-07-03T16:55.
+
+## Triangulation croisée (qui est l'outlier ?)
+
+Écart absolu moyen des mèches (high/low, en unités de prix) entre chaque paire de fournisseurs testés. Quand deux sources indépendantes s'accordent et qu'une troisième diverge, cette dernière est l'outlier probable — sans qu'aucune ne soit « le vrai prix ». `mt5` = feed broker du terminal local (bougies bid), juge non commercialisable.
+
+### XAUUSD M15 (en points, 1 pt = 0.1)
+
+| MAE high/low | fcsapi | itick | mt5 | twelve_data |
+|---|---|---|---|---|
+| **fcsapi** | — | 1.260 / 1.435 (n=824) | 0.954 / 3.658 (n=863) | 7.515 / 8.179 (n=800) |
+| **itick** | 1.260 / 1.435 (n=824) | — | 1.387 / 3.375 (n=1661) | 8.479 / 9.096 (n=1881) |
+| **mt5** | 0.954 / 3.658 (n=863) | 1.387 / 3.375 (n=1661) | — | 8.392 / 10.413 (n=1638) |
+| **twelve_data** | 7.515 / 8.179 (n=800) | 8.479 / 9.096 (n=1881) | 8.392 / 10.413 (n=1638) | — |
+
+### US30 M15 (en points, 1 pt = 1.0)
+
+| MAE high/low | itick | mt5 |
+|---|---|---|
+| **itick** | — | 21.660 / 22.171 (n=1705) |
+| **mt5** | 21.660 / 22.171 (n=1705) | — |
+
+### NAS100 M15 (en points, 1 pt = 1.0)
+
+| MAE high/low | itick | mt5 |
+|---|---|---|
+| **itick** | — | 29.649 / 30.415 (n=1705) |
+| **mt5** | 29.649 / 30.415 (n=1705) | — |
+
+### EURUSD M15 (en pips, 1 pt = 0.0001)
+
+| MAE high/low | fcsapi | itick | mt5 | twelve_data |
+|---|---|---|---|---|
+| **fcsapi** | — | 0.390 / 0.338 (n=818) | 0.401 / 0.572 (n=899) | 0.584 / 0.502 (n=746) |
+| **itick** | 0.390 / 0.338 (n=818) | — | 0.167 / 0.415 (n=1836) | 0.499 / 0.480 (n=1942) |
+| **mt5** | 0.401 / 0.572 (n=899) | 0.167 / 0.415 (n=1836) | — | 0.496 / 0.763 (n=1764) |
+| **twelve_data** | 0.584 / 0.502 (n=746) | 0.499 / 0.480 (n=1942) | 0.496 / 0.763 (n=1764) | — |
 
 ## Croisement qualité × prix d'affichage commercial
 
@@ -103,7 +153,8 @@ Plus gros trous de complétude : `XAUEUR_M5` 67 barres dès 2026-07-03T16:25 ; `
 |---|---|---|
 | twelve_data | 93.9 | Venture 'a partir de 149 $/mois' (devis sales 2026-07-09 ; display FX+metaux+crypto+commodities+US, sole proprietor OK, SANS indices — 'we don't carry indices') ; tarif public 499 $ |
 | itick | 78.2 | 79-319 $/mois + avenant display ecrit requis |
-| fcsapi | 73.7 | 149-329 $/mois SI display confirme par ecrit |
+| fcsapi | 73.6 | 149-329 $/mois SI display confirme par ecrit |
+| mt5 | 71.1 | JUGE du banc (feed broker local) — non commercialisable |
 
 _Les recommandations mono/bi-fournisseur sont rédigées dans la section conclusion du rapport au vu des scores mesurés — voir en bas de fichier._
 
