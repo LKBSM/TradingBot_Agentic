@@ -39,7 +39,9 @@ ENV_ALIASES = {
 # Metadonnees affichees dans le rapport (statut licence / testabilite,
 # recherche du 2026-07-05 — voir research_synthesis.md pour les sources).
 PROVIDER_NOTES = {
-    "twelve_data": "Reference du banc. Display commercial = Venture 499$/mois (414$ annuel).",
+    "twelve_data": "Reference du banc. Display = Venture, devis sales 2026-07-09: "
+                   "'a partir de 149$/mois', sole proprietor OK, PAS d'indices du tout "
+                   "(confirme les 404 du banc). Tarif public 499$.",
     "oanda": "Compte practice gratuit ; licence = usage interne (display client sur devis).",
     "tiingo": "Display publie ~250$/mois (startup). Pas d'indices/energie/XPD.",
     "massive_polygon": "Ex-Polygon.io. Display = plan Business non publie ; indices US only.",

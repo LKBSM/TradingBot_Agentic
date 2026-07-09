@@ -26,7 +26,9 @@ REPORT_PATH = HERE.parent.parent / "docs" / "audits" / "data-benchmark-report.md
 # Prix d'affichage commercial estimes (recherche 2026-07-05, cf. synthese) —
 # utilises pour le croisement qualite x prix. "None" = sur devis / non publie.
 DISPLAY_PRICE_USD = {
-    "twelve_data": ("499 $/mois (414 $ annuel, plan Venture)", 499),
+    "twelve_data": ("Venture 'a partir de 149 $/mois' (devis sales 2026-07-09 ; "
+                    "display FX+metaux+crypto+commodities+US, sole proprietor OK, "
+                    "SANS indices — 'we don't carry indices') ; tarif public 499 $", 149),
     "oanda": ("sur devis (licence API = interne only)", None),
     "tiingo": ("~250 $/mois (display startup publie)", 250),
     "fcsapi": ("149-329 $/mois SI display confirme par ecrit", 239),

@@ -1,6 +1,6 @@
 # Banc d'essai qualité des fournisseurs de données de marché
 
-_Généré le 2026-07-07 18:40 UTC par `tools/data-benchmark/report.py` — relançable (`python runner.py && python metrics.py && python scoring.py && python report.py`)._
+_Généré le 2026-07-09 15:40 UTC par `tools/data-benchmark/report.py` — relançable (`python runner.py && python metrics.py && python scoring.py && python report.py`)._
 
 Fenêtre testée : **30 jours** (2026-06-07 → 2026-07-07), 80 symboles × 5 TF (M5, M15, H1, H4, D1).
 
@@ -22,7 +22,7 @@ Pondérations (éditables dans `scoring.py`) : wick 35%, completeness 25%, valid
 
 ### twelve_data
 
-_Reference du banc. Display commercial = Venture 499$/mois (414$ annuel)._
+_Reference du banc. Display = Venture, devis sales 2026-07-09: 'a partir de 149$/mois', sole proprietor OK, PAS d'indices du tout (confirme les 404 du banc). Tarif public 499$._
 
 Statuts cellules : `{'not_covered': 95, 'ok': 305}`
 
@@ -101,7 +101,7 @@ Plus gros trous de complétude : `XAUEUR_M5` 67 barres dès 2026-07-03T16:25 ; `
 
 | Fournisseur | Score qualité | Prix display commercial (recherche 2026-07-05) |
 |---|---|---|
-| twelve_data | 93.9 | 499 $/mois (414 $ annuel, plan Venture) |
+| twelve_data | 93.9 | Venture 'a partir de 149 $/mois' (devis sales 2026-07-09 ; display FX+metaux+crypto+commodities+US, sole proprietor OK, SANS indices — 'we don't carry indices') ; tarif public 499 $ |
 | itick | 78.2 | 79-319 $/mois + avenant display ecrit requis |
 | fcsapi | 73.7 | 149-329 $/mois SI display confirme par ecrit |
 
