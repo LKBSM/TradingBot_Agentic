@@ -16,6 +16,7 @@ import type {
   MarketReadingStructure,
   ValidationStatus,
 } from '@/types/market-reading';
+import { formatLocalDayHm, parseUtc } from '@/lib/time/localTime';
 
 // ─── Timeframe → minutes (for the « X bougies » derivation) ──────────────────
 
@@ -35,19 +36,18 @@ export function timeframeMinutes(timeframe: string): number | null {
   return TIMEFRAME_MINUTES[timeframe] ?? null;
 }
 
-// ─── Break timestamp (engine wall-clock, no timezone math) ────────────────────
+// ─── Break timestamp (engine UTC → reader's local timezone) ───────────────────
 
 /**
- * Render an ISO timestamp as « JJ/MM à HH:MM », reading the calendar/clock
- * fields AS AUTHORED by the engine (no UTC conversion). This keeps the displayed
- * moment identical to what the engine emitted and makes the output deterministic
- * regardless of the runtime timezone. Returns null on an unparseable string.
+ * Render an ISO timestamp (authored by the engine in UTC) as « JJ/MM à HH:MM »
+ * in the READER's local timezone, so the displayed clock is never ambiguous. A
+ * discreet « Heure locale · UTC±N » indicator sits next to the chart. Returns
+ * null on an unparseable string. Pass `timeZone` to pin the zone (tests).
  */
-export function formatBreakTimestamp(iso: string): string | null {
-  const m = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/.exec(iso);
-  if (!m) return null;
-  const [, , month, day, hh, mi] = m;
-  return `${day}/${month} à ${hh}:${mi}`;
+export function formatBreakTimestamp(iso: string, timeZone?: string): string | null {
+  const d = parseUtc(iso);
+  if (d === null) return null;
+  return formatLocalDayHm(d, timeZone);
 }
 
 // ─── (b) Trend maturity — anchored on the last CHOCH ─────────────────────────
@@ -122,12 +122,13 @@ export function deriveTrendMaturity(
 export function formatTrendMaturity(
   structure: MarketReadingStructure,
   header: MarketReadingHeader,
+  timeZone?: string,
 ): string | null {
   const m = deriveTrendMaturity(structure, header);
   if (!m) return null;
 
   const orient = m.direction === 'bullish' ? 'haussière' : 'baissière';
-  const when = formatBreakTimestamp(m.brokenAt);
+  const when = formatBreakTimestamp(m.brokenAt, timeZone);
   const whenPart = when ? ` du ${when}` : '';
   const barsPart =
     m.bars != null

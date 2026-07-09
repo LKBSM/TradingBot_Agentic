@@ -120,9 +120,11 @@ describe('RegimeSection — (a) market phase', () => {
 describe('RegimeSection — (b) trend maturity, (c) last event, (d) zone density', () => {
   it('renders the real engine data for each fact', () => {
     renderSection({ h4: 'bullish', h1: 'bullish', m15: 'bullish' });
+    // The clock is rendered in the reader's LOCAL timezone (the hour therefore
+    // depends on the runtime zone); assert the stable structure, not the hour.
     expect(
       screen.getByText(
-        'Structure orientée haussière depuis le CHOCH du 24/06 à 14:30 (≈ 18 bougies M15).',
+        /^Structure orientée haussière depuis le CHOCH du 24\/06 à \d{2}:\d{2} \(≈ 18 bougies M15\)\.$/,
       ),
     ).toBeInTheDocument();
     expect(screen.getByText('CHOCH haussier confirmé (M15)')).toBeInTheDocument();

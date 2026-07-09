@@ -87,9 +87,11 @@ describe('timeframeMinutes', () => {
 });
 
 describe('formatBreakTimestamp', () => {
-  it('renders the engine wall-clock as JJ/MM à HH:MM, no timezone math', () => {
-    expect(formatBreakTimestamp('2026-06-24T14:30:00')).toBe('24/06 à 14:30');
-    expect(formatBreakTimestamp('2026-01-02T09:05:00+02:00')).toBe('02/01 à 09:05');
+  it('converts the engine UTC instant to the reader timezone (pinned UTC here)', () => {
+    // Naive engine timestamps are UTC → shown as-is in the UTC zone.
+    expect(formatBreakTimestamp('2026-06-24T14:30:00', 'UTC')).toBe('24/06 à 14:30');
+    // A +02:00 instant is 07:05 UTC.
+    expect(formatBreakTimestamp('2026-01-02T09:05:00+02:00', 'UTC')).toBe('02/01 à 07:05');
   });
   it('returns null on an unparseable string', () => {
     expect(formatBreakTimestamp('not-a-date')).toBeNull();
@@ -148,18 +150,18 @@ describe('deriveTrendMaturity (b)', () => {
 
 describe('formatTrendMaturity (b)', () => {
   it('present-tense line with date + derived candle count', () => {
-    expect(formatTrendMaturity(structure({ choch: choch() }), header())).toBe(
+    expect(formatTrendMaturity(structure({ choch: choch() }), header(), 'UTC')).toBe(
       'Structure orientée haussière depuis le CHOCH du 24/06 à 14:30 (≈ 18 bougies M15).',
     );
   });
   it('bearish orientation', () => {
     expect(
-      formatTrendMaturity(structure({ choch: choch({ direction: 'bearish' }) }), header()),
+      formatTrendMaturity(structure({ choch: choch({ direction: 'bearish' }) }), header(), 'UTC'),
     ).toBe('Structure orientée baissière depuis le CHOCH du 24/06 à 14:30 (≈ 18 bougies M15).');
   });
   it('omits the candle count when the timeframe is unknown', () => {
     expect(
-      formatTrendMaturity(structure({ choch: choch() }), header({ timeframe: 'Z9' })),
+      formatTrendMaturity(structure({ choch: choch() }), header({ timeframe: 'Z9' }), 'UTC'),
     ).toBe('Structure orientée haussière depuis le CHOCH du 24/06 à 14:30.');
   });
   it('uses the most recent CHOCH from the history for the line', () => {
@@ -170,6 +172,7 @@ describe('formatTrendMaturity (b)', () => {
           choch_events: [choch({ broken_at: '2026-06-24T14:00:00', direction: 'bearish' })],
         }),
         header(),
+        'UTC',
       ),
     ).toBe('Structure orientée baissière depuis le CHOCH du 24/06 à 14:00 (≈ 20 bougies M15).');
   });
