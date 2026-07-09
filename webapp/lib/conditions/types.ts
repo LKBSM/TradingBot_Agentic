@@ -19,9 +19,14 @@ export type ConditionType =
   | 'ob_fvg_confluence'
   | 'bos_recent_confirmed'
   | 'choch_recent_confirmed'
-  | 'retest_in_progress';
+  | 'retest_in_progress'
+  | 'price_near_ob'
+  | 'price_near_fvg'
+  | 'price_near_liquidity'
+  | 'liquidity_swept_recent';
 
 export type DirectionFilter = 'any' | 'bullish' | 'bearish';
+export type LiquiditySideFilter = 'any' | 'bsl' | 'ssl';
 export type ScanLogic = 'AND' | 'OR';
 
 export type TrendChoice = 'bullish' | 'bearish' | 'ranging' | 'neutral';
@@ -43,6 +48,10 @@ export interface ScanCondition {
   trend?: TrendChoice;
   phase?: PhaseChoice;
   volatility?: VolatilityChoice;
+  /** Proximity threshold in % of price (price_near_ob / _fvg / _liquidity). */
+  proximity_pct?: number;
+  /** Liquidity side filter (price_near_liquidity / liquidity_swept_recent). */
+  side?: LiquiditySideFilter;
 }
 
 /** The user's saved configuration (their conditions + AND/OR logic). */
@@ -52,7 +61,14 @@ export interface ConditionsConfig {
 }
 
 /** Which input controls the builder renders for a condition. */
-export type ControlKind = 'direction' | 'bars' | 'trend' | 'phase' | 'volatility';
+export type ControlKind =
+  | 'direction'
+  | 'bars'
+  | 'trend'
+  | 'phase'
+  | 'volatility'
+  | 'proximity'
+  | 'side';
 
 /** A palette entry — what the builder may offer. Always present-tense. */
 export interface PaletteEntry {

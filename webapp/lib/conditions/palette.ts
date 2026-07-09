@@ -11,6 +11,7 @@
 
 import type {
   ConditionType,
+  LiquiditySideFilter,
   PaletteEntry,
   PhaseChoice,
   TrendChoice,
@@ -97,6 +98,38 @@ export const CONDITION_PALETTE: readonly PaletteEntry[] = [
     controls: [],
     tense: 'present',
   },
+  {
+    type: 'price_near_ob',
+    label: 'Prix proche d’un Order Block',
+    description:
+      'Le prix courant est proche d’un Order Block actif (sous la distance choisie), sans être nécessairement dedans.',
+    controls: ['direction', 'proximity'],
+    tense: 'present',
+  },
+  {
+    type: 'price_near_fvg',
+    label: 'Prix proche d’un Fair Value Gap',
+    description:
+      'Le prix courant est proche d’un Fair Value Gap non comblé (sous la distance choisie).',
+    controls: ['direction', 'proximity'],
+    tense: 'present',
+  },
+  {
+    type: 'price_near_liquidity',
+    label: 'Prix proche d’une liquidité (SSL/BSL)',
+    description:
+      'Le prix courant est proche d’une poche de liquidité intacte (BSL au-dessus / SSL en dessous).',
+    controls: ['side', 'proximity'],
+    tense: 'present',
+  },
+  {
+    type: 'liquidity_swept_recent',
+    label: 'Prise de liquidité récente',
+    description:
+      'Une poche de liquidité (SSL/BSL) a été balayée au cours des dernières bougies.',
+    controls: ['side', 'bars'],
+    tense: 'present',
+  },
 ] as const;
 
 export const CONDITION_TYPES: readonly ConditionType[] = CONDITION_PALETTE.map(
@@ -134,4 +167,17 @@ export const VOLATILITY_OPTIONS: Array<{ value: VolatilityChoice; label: string 
   { value: 'elevated', label: 'Élevée' },
 ];
 
+export const LIQUIDITY_SIDE_OPTIONS: Array<{
+  value: LiquiditySideFilter;
+  label: string;
+}> = [
+  { value: 'any', label: 'Les deux (SSL + BSL)' },
+  { value: 'bsl', label: 'BSL (liquidité au-dessus)' },
+  { value: 'ssl', label: 'SSL (liquidité en dessous)' },
+];
+
 export const DEFAULT_BOS_MAX_BARS = 5;
+/** Default proximity threshold (% of price) for the "price near …" conditions. */
+export const DEFAULT_PROXIMITY_PCT = 0.3;
+/** Default recency window (bars) for liquidity_swept_recent. */
+export const DEFAULT_LIQ_MAX_BARS = 10;

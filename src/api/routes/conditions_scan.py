@@ -28,6 +28,7 @@ from src.api.session_auth import optional_account
 from src.intelligence.conditions_scanner import (
     ALLOWED_CONDITION_TYPES,
     DEFAULT_BOS_MAX_BARS,
+    DEFAULT_PROXIMITY_PCT,
     PALETTE,
     evaluate_reading,
 )
@@ -102,8 +103,13 @@ ConditionType = Literal[
     "bos_recent_confirmed",
     "choch_recent_confirmed",
     "retest_in_progress",
+    "price_near_ob",
+    "price_near_fvg",
+    "price_near_liquidity",
+    "liquidity_swept_recent",
 ]
 DirectionFilter = Literal["any", "bullish", "bearish"]
+LiquiditySideFilter = Literal["any", "bsl", "ssl"]
 TrendChoice = Literal["bullish", "bearish", "ranging", "neutral"]
 PhaseChoice = Literal["accumulation", "distribution", "trend", "ranging", "expansion"]
 VolatilityChoice = Literal["low", "normal", "elevated"]
@@ -126,6 +132,10 @@ class ScanCondition(BaseModel):
     trend: Optional[TrendChoice] = None
     phase: Optional[PhaseChoice] = None
     volatility: Optional[VolatilityChoice] = None
+    # Proximity threshold (% of price) for the "price near …" conditions.
+    proximity_pct: float = Field(default=DEFAULT_PROXIMITY_PCT, gt=0, le=10)
+    # Liquidity-side filter for the liquidity conditions (bsl above / ssl below).
+    side: LiquiditySideFilter = "any"
 
 
 class ConditionsScanRequest(BaseModel):

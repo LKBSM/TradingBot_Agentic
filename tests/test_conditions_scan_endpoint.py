@@ -262,5 +262,5 @@ def test_palette_endpoint_lists_present_tense_only():
     resp = client.get("/api/conditions-scan/palette")
     assert resp.status_code == 200
     palette = resp.json()["palette"]
-    assert len(palette) == 10
+    assert len(palette) == 14
     assert all(p["tense"] == "present" for p in palette)
