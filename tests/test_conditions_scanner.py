@@ -22,6 +22,7 @@ def _reading(
     mtf=None,
     order_blocks=None,
     fair_value_gaps=None,
+    liquidity_pools=None,
     bos=None,
     candle_close_ts="2026-05-28T14:15:00+00:00",
     trend="bullish",
@@ -38,6 +39,7 @@ def _reading(
             "choch": None,
             "order_blocks": order_blocks or [],
             "fair_value_gaps": fair_value_gaps or [],
+            "liquidity_pools": liquidity_pools or [],
         },
         "regime": {
             "trend": trend,
@@ -317,9 +319,76 @@ def test_context_includes_full_picture():
 # ── Palette: present-tense only, no predictive/outcome condition ──────────────
 
 
+def _liq(side, level, *, status="intact", swept_at=None):
+    return {
+        "id": f"liq_{side}_{int(level)}",
+        "side": side,
+        "kind": "range_extreme",
+        "level": level,
+        "touches": 1,
+        "is_external": True,
+        "status": status,
+        "created_at": "2026-05-28T12:00:00+00:00",
+        "swept_at": swept_at,
+        "broken_at": None,
+    }
+
+
+# ── price_near_ob / _fvg (proximity, not just inside) ────────────────────────
+
+
+def test_price_near_ob_met_when_within_proximity():
+    # price 2000, OB [1990, 1995] → nearest edge 1995 → 0.25% away ≤ 0.3%.
+    r = _reading(close_price=2000.0, order_blocks=[_ob(1990.0, 1995.0)])
+    res = evaluate_condition(r, {"type": "price_near_ob", "proximity_pct": 0.3})
+    assert res["met"] is True
+
+
+def test_price_near_ob_unmet_when_too_far():
+    # OB [1980, 1985] → 0.75% away > 0.3%.
+    r = _reading(close_price=2000.0, order_blocks=[_ob(1980.0, 1985.0)])
+    res = evaluate_condition(r, {"type": "price_near_ob", "proximity_pct": 0.3})
+    assert res["met"] is False
+
+
+def test_price_near_fvg_met_within_proximity():
+    r = _reading(close_price=2000.0, fair_value_gaps=[_fvg(2001.0, 2004.0)])
+    res = evaluate_condition(r, {"type": "price_near_fvg", "proximity_pct": 0.3})
+    assert res["met"] is True
+
+
+# ── price_near_liquidity / liquidity_swept_recent ───────────────────────────
+
+
+def test_price_near_liquidity_met_for_intact_pool_within_proximity():
+    r = _reading(close_price=2000.0, liquidity_pools=[_liq("bsl", 2004.0)])
+    res = evaluate_condition(r, {"type": "price_near_liquidity", "side": "any", "proximity_pct": 0.3})
+    assert res["met"] is True
+
+
+def test_price_near_liquidity_respects_side_filter():
+    r = _reading(close_price=2000.0, liquidity_pools=[_liq("bsl", 2004.0)])
+    # Asking for SSL only → the BSL pool must not satisfy it.
+    res = evaluate_condition(r, {"type": "price_near_liquidity", "side": "ssl", "proximity_pct": 0.3})
+    assert res["met"] is False
+
+
+def test_liquidity_swept_recent_met_within_window():
+    # swept 30 min before the 14:15 close = 2 M15 bars ≤ 10.
+    r = _reading(liquidity_pools=[_liq("ssl", 1990.0, status="swept", swept_at="2026-05-28T13:45:00+00:00")])
+    res = evaluate_condition(r, {"type": "liquidity_swept_recent", "side": "any", "max_bars": 10})
+    assert res["met"] is True
+
+
+def test_liquidity_swept_recent_unmet_when_no_sweep():
+    r = _reading(liquidity_pools=[_liq("ssl", 1990.0)])  # intact, never swept
+    res = evaluate_condition(r, {"type": "liquidity_swept_recent", "side": "any", "max_bars": 10})
+    assert res["met"] is False
+
+
 def test_palette_types_exactly_match_allowlist():
     assert {p["type"] for p in PALETTE} == set(ALLOWED_CONDITION_TYPES)
-    assert len(PALETTE) == 10
+    assert len(PALETTE) == 14
     assert {p["type"] for p in PALETTE} == {
         "mtf_aligned",
         "trend_is",
@@ -331,6 +400,10 @@ def test_palette_types_exactly_match_allowlist():
         "bos_recent_confirmed",
         "choch_recent_confirmed",
         "retest_in_progress",
+        "price_near_ob",
+        "price_near_fvg",
+        "price_near_liquidity",
+        "liquidity_swept_recent",
     }
 
 

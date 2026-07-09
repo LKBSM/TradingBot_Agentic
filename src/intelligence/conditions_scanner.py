@@ -138,6 +138,46 @@ PALETTE: List[Dict[str, Any]] = [
         "supports_direction": False,
         "tense": "present",
     },
+    {
+        "type": "price_near_ob",
+        "label": "Prix proche d'un Order Block",
+        "description": (
+            "Le prix courant est proche d'un Order Block actif (à moins de la "
+            "distance choisie), sans être nécessairement à l'intérieur."
+        ),
+        "supports_direction": True,
+        "tense": "present",
+    },
+    {
+        "type": "price_near_fvg",
+        "label": "Prix proche d'un Fair Value Gap",
+        "description": (
+            "Le prix courant est proche d'un Fair Value Gap non comblé "
+            "(à moins de la distance choisie), sans être nécessairement dedans."
+        ),
+        "supports_direction": True,
+        "tense": "present",
+    },
+    {
+        "type": "price_near_liquidity",
+        "label": "Prix proche d'une liquidité (SSL/BSL)",
+        "description": (
+            "Le prix courant est proche d'une poche de liquidité intacte "
+            "(BSL au-dessus / SSL en dessous), à moins de la distance choisie."
+        ),
+        "supports_direction": False,
+        "tense": "present",
+    },
+    {
+        "type": "liquidity_swept_recent",
+        "label": "Prise de liquidité récente",
+        "description": (
+            "Une poche de liquidité (SSL/BSL) a été balayée au cours des "
+            "dernières bougies — un point de prise de liquidité observé."
+        ),
+        "supports_direction": False,
+        "tense": "present",
+    },
 ]
 
 #: Closed allowlist of condition types. Anything outside is rejected by the
@@ -151,6 +191,15 @@ _TF_MINUTES = {"M15": 15, "H1": 60, "H4": 240}
 
 #: Default recency window (in bars) for ``bos_recent_confirmed``.
 DEFAULT_BOS_MAX_BARS = 5
+
+#: Default proximity threshold (in % of price) for the "price near …" conditions.
+DEFAULT_PROXIMITY_PCT = 0.3
+
+#: Default recency window (in bars) for ``liquidity_swept_recent``.
+DEFAULT_LIQ_MAX_BARS = 10
+
+#: Accepted liquidity-side filter values.
+LIQUIDITY_SIDE_VALUES = ("any", "bsl", "ssl")
 
 
 # ---------------------------------------------------------------------------
@@ -469,6 +518,127 @@ def _eval_retest_in_progress(reading: Dict[str, Any]) -> Dict[str, Any]:
     return _result("retest_in_progress", False, "Aucun retest en cours.")
 
 
+def _distance_pct(price: float, lo: float, hi: float) -> float:
+    """% distance from ``price`` to the ``[lo, hi]`` band (0.0 when inside)."""
+    if not price:
+        return float("inf")
+    if lo <= price <= hi:
+        return 0.0
+    edge = lo if price < lo else hi
+    return abs(price - edge) / price * 100.0
+
+
+def _nearest_zone_pct(
+    reading: Dict[str, Any], struct_key: str, active_statuses: tuple, direction: str
+) -> Optional[float]:
+    """Smallest %-distance from price to an active zone of ``struct_key`` (or None)."""
+    price = reading.get("header", {}).get("close_price")
+    if price is None:
+        return None
+    best: Optional[float] = None
+    for z in reading.get("structure", {}).get(struct_key, []) or []:
+        if z.get("status") not in active_statuses:
+            continue
+        bounds = _zone_bounds(z)
+        if bounds is None or not _direction_matches(z.get("direction"), direction):
+            continue
+        d = _distance_pct(price, bounds[0], bounds[1])
+        if best is None or d < best:
+            best = d
+    return best
+
+
+def _eval_price_near_zone(
+    reading: Dict[str, Any], cond_type: str, struct_key: str, name: str,
+    active_statuses: tuple, direction: str, proximity_pct: float,
+) -> Dict[str, Any]:
+    """Shared evaluator for « price near an OB / FVG » (within proximity_pct %)."""
+    if reading.get("header", {}).get("close_price") is None:
+        return _result(cond_type, False, "Prix courant indisponible.", available=False)
+    best = _nearest_zone_pct(reading, struct_key, active_statuses, direction)
+    if best is None:
+        suffix = f" {_direction_word(direction)}" if direction != "any" else ""
+        return _result(cond_type, False, f"Aucun {name} actif{suffix}.")
+    if best <= proximity_pct:
+        where = "dedans" if best == 0.0 else f"à ~{best:.2f} %"
+        return _result(
+            cond_type, True,
+            f"Prix proche d'un {name} actif ({where} ; seuil {proximity_pct:.2f} %).",
+        )
+    return _result(
+        cond_type, False,
+        f"{name} actif le plus proche à ~{best:.2f} % (> seuil {proximity_pct:.2f} %).",
+    )
+
+
+def _eval_price_near_liquidity(
+    reading: Dict[str, Any], side: str, proximity_pct: float
+) -> Dict[str, Any]:
+    price = reading.get("header", {}).get("close_price")
+    if price is None:
+        return _result("price_near_liquidity", False, "Prix courant indisponible.", available=False)
+    best: Optional[float] = None
+    best_side: Optional[str] = None
+    for lp in reading.get("structure", {}).get("liquidity_pools", []) or []:
+        if lp.get("status") != "intact":  # only resting (not-yet-taken) liquidity
+            continue
+        if side != "any" and lp.get("side") != side:
+            continue
+        level = lp.get("level")
+        if level is None or not price:
+            continue
+        d = abs(price - level) / price * 100.0
+        if best is None or d < best:
+            best = d
+            best_side = lp.get("side")
+    if best is None:
+        s = f" {side.upper()}" if side != "any" else ""
+        return _result("price_near_liquidity", False, f"Aucune poche de liquidité{s} intacte.")
+    if best <= proximity_pct:
+        return _result(
+            "price_near_liquidity", True,
+            f"Prix proche d'une liquidité {(best_side or '').upper()} intacte "
+            f"(à ~{best:.2f} % ; seuil {proximity_pct:.2f} %).",
+        )
+    return _result(
+        "price_near_liquidity", False,
+        f"Liquidité intacte la plus proche à ~{best:.2f} % (> seuil {proximity_pct:.2f} %).",
+    )
+
+
+def _eval_liquidity_swept_recent(
+    reading: Dict[str, Any], side: str, max_bars: int
+) -> Dict[str, Any]:
+    tf = reading.get("header", {}).get("timeframe", "")
+    candle_ts = reading.get("header", {}).get("candle_close_ts")
+    best_bars: Optional[float] = None
+    best_side: Optional[str] = None
+    for lp in reading.get("structure", {}).get("liquidity_pools", []) or []:
+        if lp.get("status") != "swept":
+            continue
+        if side != "any" and lp.get("side") != side:
+            continue
+        bars = _bars_between(lp.get("swept_at"), candle_ts, tf)
+        if bars is None:
+            continue
+        if best_bars is None or bars < best_bars:
+            best_bars = bars
+            best_side = lp.get("side")
+    if best_bars is None:
+        s = f" {side.upper()}" if side != "any" else ""
+        return _result("liquidity_swept_recent", False, f"Aucune prise de liquidité{s} récente.")
+    if best_bars <= max_bars:
+        return _result(
+            "liquidity_swept_recent", True,
+            f"Liquidité {(best_side or '').upper()} balayée il y a ~{round(best_bars)} "
+            f"bougie(s) (≤ {max_bars}).",
+        )
+    return _result(
+        "liquidity_swept_recent", False,
+        f"Prise de liquidité trop ancienne (~{round(best_bars)} bougies > {max_bars}).",
+    )
+
+
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
@@ -516,6 +686,24 @@ def evaluate_condition(
         )
     if cond_type == "retest_in_progress":
         return _eval_retest_in_progress(reading)
+    if cond_type == "price_near_ob":
+        prox = float(cond.get("proximity_pct") or DEFAULT_PROXIMITY_PCT)
+        return _eval_price_near_zone(
+            reading, "price_near_ob", "order_blocks", "Order Block",
+            ("active",), direction, prox,
+        )
+    if cond_type == "price_near_fvg":
+        prox = float(cond.get("proximity_pct") or DEFAULT_PROXIMITY_PCT)
+        return _eval_price_near_zone(
+            reading, "price_near_fvg", "fair_value_gaps", "Fair Value Gap",
+            ("active", "partially_filled"), direction, prox,
+        )
+    if cond_type == "price_near_liquidity":
+        prox = float(cond.get("proximity_pct") or DEFAULT_PROXIMITY_PCT)
+        return _eval_price_near_liquidity(reading, cond.get("side", "any") or "any", prox)
+    if cond_type == "liquidity_swept_recent":
+        max_bars = int(cond.get("max_bars") or DEFAULT_LIQ_MAX_BARS)
+        return _eval_liquidity_swept_recent(reading, cond.get("side", "any") or "any", max_bars)
     raise ValueError(f"Unknown condition type: {cond_type!r}")
 
 
@@ -607,7 +795,10 @@ def evaluate_reading(
 __all__ = [
     "ALLOWED_CONDITION_TYPES",
     "DEFAULT_BOS_MAX_BARS",
+    "DEFAULT_LIQ_MAX_BARS",
+    "DEFAULT_PROXIMITY_PCT",
     "DIRECTION_VALUES",
+    "LIQUIDITY_SIDE_VALUES",
     "PALETTE",
     "build_context",
     "evaluate_condition",

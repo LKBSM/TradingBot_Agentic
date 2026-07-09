@@ -7,7 +7,9 @@ import { cn } from '@/lib/utils';
 import {
   CONDITION_PALETTE,
   DEFAULT_BOS_MAX_BARS,
+  DEFAULT_PROXIMITY_PCT,
   DIRECTION_LABELS,
+  LIQUIDITY_SIDE_OPTIONS,
   PHASE_OPTIONS,
   TREND_OPTIONS,
   VOLATILITY_OPTIONS,
@@ -16,6 +18,7 @@ import type {
   ConditionType,
   ConditionsConfig,
   DirectionFilter,
+  LiquiditySideFilter,
   PhaseChoice,
   ScanCondition,
   ScanLogic,
@@ -41,6 +44,8 @@ interface RowState {
   trend: TrendChoice;
   phase: PhaseChoice;
   volatility: VolatilityChoice;
+  proximityPct: number;
+  side: LiquiditySideFilter;
 }
 
 type BuilderState = Record<ConditionType, RowState>;
@@ -52,6 +57,8 @@ const DEFAULT_ROW: RowState = {
   trend: 'bullish',
   phase: 'trend',
   volatility: 'elevated',
+  proximityPct: DEFAULT_PROXIMITY_PCT,
+  side: 'any',
 };
 
 function initialState(config: ConditionsConfig | null): BuilderState {
@@ -71,6 +78,8 @@ function initialState(config: ConditionsConfig | null): BuilderState {
           trend: cond.trend ?? row.trend,
           phase: cond.phase ?? row.phase,
           volatility: cond.volatility ?? row.volatility,
+          proximityPct: cond.proximity_pct ?? row.proximityPct,
+          side: cond.side ?? row.side,
         };
       }
     }
@@ -123,6 +132,8 @@ export function ConditionsBuilder({
       if (e.controls.includes('trend')) cond.trend = row.trend;
       if (e.controls.includes('phase')) cond.phase = row.phase;
       if (e.controls.includes('volatility')) cond.volatility = row.volatility;
+      if (e.controls.includes('proximity')) cond.proximity_pct = row.proximityPct;
+      if (e.controls.includes('side')) cond.side = row.side;
       return cond;
     });
     return { logic, conditions };
@@ -280,6 +291,46 @@ export function ConditionsBuilder({
                           className="w-16 rounded-md border border-input bg-background px-2 py-1 text-xs text-foreground"
                         />
                         dernières bougies
+                      </label>
+                    )}
+                    {entry.controls.includes('proximity') && (
+                      <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                        À moins de
+                        <input
+                          type="number"
+                          min={0.05}
+                          max={10}
+                          step={0.05}
+                          value={row.proximityPct}
+                          onChange={(e) =>
+                            patch(entry.type, {
+                              proximityPct: Math.min(
+                                10,
+                                Math.max(0.05, Number(e.target.value) || DEFAULT_PROXIMITY_PCT),
+                              ),
+                            })
+                          }
+                          className="w-16 rounded-md border border-input bg-background px-2 py-1 text-xs text-foreground"
+                        />
+                        % du prix
+                      </label>
+                    )}
+                    {entry.controls.includes('side') && (
+                      <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                        Côté
+                        <select
+                          value={row.side}
+                          onChange={(e) =>
+                            patch(entry.type, { side: e.target.value as LiquiditySideFilter })
+                          }
+                          className={SELECT_CLASS}
+                        >
+                          {LIQUIDITY_SIDE_OPTIONS.map((o) => (
+                            <option key={o.value} value={o.value}>
+                              {o.label}
+                            </option>
+                          ))}
+                        </select>
                       </label>
                     )}
                   </div>
