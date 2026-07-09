@@ -15,7 +15,7 @@
       {
         "id": "fomc-impact",
         "text": "Le FOMC change quoi ?",
-        "reply": "Les minutes du FOMC sont publiées dans environ 18 heures. C'est un événement à fort impact pour l'or : historiquement, l'or bouge beaucoup plus que d'habitude dans la fenêtre qui entoure la publication (de 30 min avant à 1 h après). Concrètement, deux choses : (1) toute position ouverte maintenant traversera l'événement, (2) le moteur se met automatiquement en pause peu avant la publication et suspend les nouvelles lectures le temps que la volatilité retombe. Pour anticiper le sens du mouvement il faudrait croiser avec les attentes du marché — ce que le moteur ne fait pas encore."
+        "reply": "Les minutes du FOMC sont publiées dans environ 18 heures. C'est un événement à fort impact pour l'or : historiquement, l'or bouge beaucoup plus que d'habitude dans la fenêtre qui entoure la publication (de 30 min avant à 1 h après). Concrètement, deux choses : (1) toute position ouverte maintenant traversera l'événement, (2) MIA repère l'échéance et t'annonce à l'avance l'élargissement probable de la volatilité autour de la publication — à toi d'en tenir compte. Pour anticiper le sens du mouvement il faudrait croiser avec les attentes du marché — ce que le moteur ne fait pas encore."
       },
       {
         "id": "historical-comparison",
@@ -46,7 +46,7 @@
       {
         "id": "event-impact",
         "text": "La BCE dans 3 heures, ça change quoi ?",
-        "reply": "Beaucoup. La décision de la BCE est un événement à très fort impact pour l'EUR/USD : la volatilité (l'amplitude des bougies) explose typiquement dans la fenêtre qui entoure l'annonce. Le moteur se met automatiquement en pause peu avant la publication et suspend les nouvelles lectures. Toute position ouverte maintenant traversera intégralement la décision — c'est exactement le genre de contexte où la structure actuelle, déjà fragile (retest non encore réalisé), devient encore plus incertaine."
+        "reply": "Beaucoup. La décision de la BCE est un événement à très fort impact pour l'EUR/USD : la volatilité (l'amplitude des bougies) explose typiquement dans la fenêtre qui entoure l'annonce. MIA repère l'échéance et t'annonce à l'avance cet élargissement probable de la volatilité. Toute position ouverte maintenant traversera intégralement la décision — c'est exactement le genre de contexte où la structure actuelle, déjà fragile (retest non encore réalisé), devient encore plus incertaine."
       },
       {
         "id": "historical-comparison",
@@ -77,7 +77,7 @@
       {
         "id": "event-impact",
         "text": "Les NFP dans 2 jours, ça change quoi ?",
-        "reply": "C'est trop loin pour impacter la lecture H4 actuelle, mais ça structure les 2 prochains jours. Autour de la publication des NFP, le moteur se mettra automatiquement en pause. En H4, cela veut dire que 1 à 2 bougies seront affectées. Si ton horizon est plus court que le délai d'ici là, l'événement n'invalide rien d'actuel. Si tu ouvres une position H4 maintenant, elle vivra les NFP — un moment où la volatilité (l'amplitude des bougies) grimpe fortement."
+        "reply": "C'est trop loin pour impacter la lecture H4 actuelle, mais ça structure les 2 prochains jours. Autour de la publication des NFP, MIA t'annoncera l'élargissement probable de la volatilité. En H4, cela veut dire que 1 à 2 bougies seront concernées. Si ton horizon est plus court que le délai d'ici là, l'événement n'invalide rien d'actuel. Si tu ouvres une position H4 maintenant, elle vivra les NFP — un moment où la volatilité (l'amplitude des bougies) grimpe fortement."
       },
       {
         "id": "historical-comparison",

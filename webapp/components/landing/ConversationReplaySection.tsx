@@ -71,7 +71,7 @@ export function ConversationReplaySection() {
           />
           <ConversationReplayCard
             title="Contextualiser un événement"
-            kicker="Macro · blackout"
+            kicker="Macro · volatilité"
             question={fomc.text}
             answer={fomc.reply}
             instrument="XAU/USD M15"
