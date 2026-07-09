@@ -8,6 +8,7 @@ import {
   createSeriesMarkers,
   CrosshairMode,
   LineStyle,
+  TickMarkType,
   type IChartApi,
   type ISeriesApi,
   type ISeriesMarkersPluginApi,
@@ -17,6 +18,7 @@ import {
 import { Droplets, Maximize2, Minus, Plus } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
+import { formatLocalDayHm, formatLocalHm, localTimeLabel } from '@/lib/time/localTime';
 import {
   applyZoneVisibility,
   buildLiveOverlay,
@@ -541,10 +543,27 @@ export function ReadingChart({
         },
       },
       rightPriceScale: { borderColor: p.scaleBorder },
+      // The engine emits UTC; render the axis + crosshair in the reader's LOCAL
+      // timezone so the clock is never ambiguous (a discreet « Heure locale »
+      // chip sits at the bottom-left). Candle times are UTC epoch seconds.
+      localization: {
+        locale: 'fr-FR',
+        timeFormatter: (t: Time) =>
+          formatLocalDayHm(new Date((t as number) * 1000)),
+      },
       timeScale: {
         borderColor: p.scaleBorder,
         timeVisible: true,
         secondsVisible: false,
+        tickMarkFormatter: (t: Time, tickMarkType: TickMarkType) => {
+          const d = new Date((t as number) * 1000);
+          if (tickMarkType === TickMarkType.Year) return String(d.getFullYear());
+          if (tickMarkType === TickMarkType.Month)
+            return d.toLocaleDateString('fr-FR', { month: 'short' });
+          if (tickMarkType === TickMarkType.DayOfMonth)
+            return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+          return formatLocalHm(d);
+        },
       },
       // ── Interaction: fluid pan / zoom on mouse AND touch. ──
       handleScroll: {
@@ -1072,6 +1091,11 @@ export function ReadingChart({
     chartRef.current?.timeScale().fitContent();
   }, []);
 
+  // Timezone indicator — resolved on the client only (the browser's offset), so
+  // it never mismatches the server render.
+  const [tzLabel, setTzLabel] = React.useState('');
+  React.useEffect(() => setTzLabel(localTimeLabel()), []);
+
   return (
     <div className={cn('relative w-full', className)}>
       <div
@@ -1080,6 +1104,13 @@ export function ReadingChart({
         role="img"
         aria-label={`Graphique en chandeliers ${instrument} avec zones Order Block, Fair Value Gap, niveaux de cassure et poches de liquidité externe (BSL/SSL)`}
       />
+
+      {/* Discreet local-time indicator (bottom-left, over the plot). */}
+      {tzLabel && (
+        <span className="pointer-events-none absolute bottom-1 left-2 z-10 select-none rounded bg-background/60 px-1.5 py-0.5 text-[10px] font-medium tracking-tight text-muted-foreground/70 backdrop-blur-sm">
+          {tzLabel}
+        </span>
+      )}
 
       {/* Localized OB / FVG boxes, layered over the chart canvas. Active boxes
           read crisp; tested boxes recede (ghost fill/border). Every box carries
