@@ -40,12 +40,12 @@ const STEPS: ReadonlyArray<Step> = [
   {
     icon: CalendarClock,
     title: '3 · Événements macro',
-    body: "Il surveille le calendrier (FOMC, BCE, NFP…) et se met en pause à l'approche des publications à fort impact, le temps que la volatilité retombe.",
+    body: "Il repère les publications à fort impact à venir (FOMC, BCE, NFP…) et t'annonce lui-même l'élargissement probable de la volatilité — tu sais à quoi t'attendre avant l'annonce, à toi de juger.",
   },
   {
     icon: MessagesSquare,
     title: '4 · Lecture narrée + chatbot',
-    body: "Tout est traduit en une lecture claire, puis M.I.A Agent (Claude) répond à vos questions avec ce contexte injecté. Il explique, il contextualise — et il refuse tout ordre d'achat ou de vente.",
+    body: "Tout est traduit en une lecture claire, puis M.I.A Agent répond à vos questions avec ce contexte injecté. Il explique, il contextualise — et il refuse tout ordre d'achat ou de vente.",
   },
 ];
 
