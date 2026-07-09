@@ -1,15 +1,15 @@
 import { ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { LandingReadingChart } from './LandingReadingChart';
 
 /**
  * Section 4 — « L'avant / L'après ».
  *
- * Comparaison visuelle SVG : à gauche, le chaos habituel (RSI + MACD + BB
- * empilés, signaux contradictoires) ; à droite, la lecture MIA (un verdict,
- * une jauge, un blackout, c'est tout). Aucun texte « regardez comme c'est
- * mieux » — la composition fait le job.
- *
- * SVG pur (pas de chart lib) pour perf Lighthouse + a11y title/desc.
+ * À gauche, le chaos habituel (trois indicateurs génériques empilés qui se
+ * contredisent) ; à droite, la VRAIE lecture MIA : le graphique produit
+ * (`ReadingChart`, chandeliers + zones SMC lues dans la structure), la même
+ * surface que la vue /app — pas un mock. Aucun texte « regardez comme c'est
+ * mieux » : la composition fait le job.
  */
 export function BeforeAfterSection() {
   return (
@@ -34,11 +34,12 @@ export function BeforeAfterSection() {
         </h2>
         <p className="mt-3 text-pretty text-muted-foreground">
           La plupart des traders empilent trois indicateurs qui se contredisent.
-          MIA propose une seule lecture — et l&apos;assume.
+          MIA lit la structure du marché et l&apos;affiche telle quelle — voici
+          le graphique réel du produit, à droite.
         </p>
       </header>
 
-      <div className="grid gap-5 sm:gap-6 lg:grid-cols-2">
+      <div className="grid items-stretch gap-5 sm:gap-6 lg:grid-cols-2">
         <BeforeCard />
         <AfterCard />
       </div>
@@ -61,7 +62,7 @@ function BeforeCard() {
             id="before-card-title"
             className="mt-0.5 text-base font-semibold tracking-tight"
           >
-            RSI + MACD + Bollinger empilés
+            Trois indicateurs empilés
           </h3>
         </div>
         <Badge variant="secondary" className="text-[10px]">
@@ -104,7 +105,7 @@ function BeforeCard() {
         </li>
       </ul>
 
-      <p className="mt-1 rounded-md bg-background/60 px-3 py-2 text-xs italic text-muted-foreground">
+      <p className="mt-auto rounded-md bg-background/60 px-3 py-2 text-xs italic text-muted-foreground">
         « Bon, je fais quoi ? »
       </p>
     </article>
@@ -120,13 +121,13 @@ function AfterCard() {
       <header className="flex items-center justify-between gap-3">
         <div>
           <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-            Lecture MIA
+            Lecture MIA · Or (XAU/USD) · 15 min
           </p>
           <h3
             id="after-card-title"
             className="mt-0.5 text-base font-semibold tracking-tight"
           >
-            Un verdict, un cadre, rien de caché.
+            Le vrai graphique du produit, rien de caché.
           </h3>
         </div>
         <Badge variant="default" className="text-[10px]">
@@ -134,7 +135,9 @@ function AfterCard() {
         </Badge>
       </header>
 
-      <AfterChart />
+      {/* Le graphique produit réel : chandeliers + zones SMC (OB / FVG),
+          niveaux de cassure (BOS / CHOCH) et poches de liquidité. */}
+      <LandingReadingChart />
 
       <ul className="space-y-1.5 text-xs text-muted-foreground">
         <li className="flex items-start gap-2">
@@ -144,17 +147,8 @@ function AfterCard() {
           />
           <span>
             <strong className="font-medium text-foreground">Biais haussier</strong>{' '}
-            — structure et régime décrits, sans score directif.
-          </span>
-        </li>
-        <li className="flex items-start gap-2">
-          <span
-            className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-sentinel-warn"
-            aria-hidden
-          />
-          <span>
-            <strong className="font-medium text-foreground">Blackout</strong>{' '}
-            — FOMC dans 3 h, prudence demandée.
+            — cassure de structure confirmée et retest en cours, décrits sans
+            score directif.
           </span>
         </li>
         <li className="flex items-start gap-2">
@@ -163,13 +157,25 @@ function AfterCard() {
             aria-hidden
           />
           <span>
-            <strong className="font-medium text-foreground">Zone d&apos;incertitude</strong>{' '}
-            — affichée, jamais masquée.
+            <strong className="font-medium text-foreground">Zones dessinées</strong>{' '}
+            — Order Block et Fair Value Gap haussiers sous le prix, poches de
+            liquidité repérées.
+          </span>
+        </li>
+        <li className="flex items-start gap-2">
+          <span
+            className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-sentinel-warn"
+            aria-hidden
+          />
+          <span>
+            <strong className="font-medium text-foreground">Volatilité annoncée</strong>{' '}
+            — un FOMC approche : MIA signale l&apos;élargissement probable, sans
+            décider à ta place.
           </span>
         </li>
       </ul>
 
-      <p className="mt-1 rounded-md bg-muted/40 px-3 py-2 text-xs italic text-muted-foreground">
+      <p className="mt-auto rounded-md bg-muted/40 px-3 py-2 text-xs italic text-muted-foreground">
         « Voilà ce qu&apos;on voit. À toi de décider si tu agis. »
       </p>
     </article>
@@ -263,102 +269,6 @@ function BeforeChart() {
         textAnchor="end"
       >
         BB band
-      </text>
-    </svg>
-  );
-}
-
-/**
- * Chart "après" : un seul prix propre, une zone haussière conditionnelle
- * teintée vert pâle, une zone d'incertitude gris-foncé. Pas de faux
- * indicateur, pas de score directif — la lecture parle d'elle-même.
- */
-function AfterChart() {
-  return (
-    <svg
-      viewBox="0 0 400 140"
-      className="h-32 w-full rounded-lg bg-background/40"
-      role="img"
-      aria-labelledby="after-chart-title after-chart-desc"
-    >
-      <title id="after-chart-title">Lecture MIA — biais haussier conditionnel</title>
-      <desc id="after-chart-desc">
-        Le même graphique avec une seule lecture : zone haussière conditionnelle
-        marquée, zone d&apos;incertitude représentée par une bande grise autour
-        du prix.
-      </desc>
-
-      {/* Zone d'incertitude */}
-      <path
-        d="M 200 70 L 370 30 L 370 110 L 200 70 Z"
-        fill="hsl(var(--muted-foreground) / 0.12)"
-      />
-
-      {/* Trajectoire projetée centrale */}
-      <path
-        d="M 200 70 L 370 60"
-        fill="none"
-        stroke="hsl(var(--sentinel-bull))"
-        strokeWidth="1.5"
-        strokeDasharray="4 3"
-        strokeLinecap="round"
-      />
-
-      {/* Prix passé — clean */}
-      <path
-        d="M 10 95 L 50 88 L 90 92 L 130 80 L 170 82 L 200 70"
-        fill="none"
-        stroke="hsl(var(--foreground))"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-
-      {/* Point d'entrée du verdict */}
-      <circle
-        cx="200"
-        cy="70"
-        r="3.5"
-        fill="hsl(var(--sentinel-bull))"
-        stroke="hsl(var(--background))"
-        strokeWidth="1.5"
-      />
-
-      {/* Annotations */}
-      <text
-        x="200"
-        y="58"
-        className="fill-[hsl(var(--sentinel-bull))] text-[9px] font-semibold"
-        textAnchor="middle"
-      >
-        Biais ↑
-      </text>
-      <text
-        x="370"
-        y="120"
-        className="fill-muted-foreground text-[8px]"
-        textAnchor="end"
-      >
-        Zone d&apos;incertitude
-      </text>
-
-      {/* Marker blackout FOMC */}
-      <line
-        x1="320"
-        y1="10"
-        x2="320"
-        y2="130"
-        stroke="hsl(var(--sentinel-warn))"
-        strokeWidth="1"
-        strokeDasharray="2 2"
-        opacity="0.7"
-      />
-      <text
-        x="324"
-        y="22"
-        className="fill-[hsl(var(--sentinel-warn))] text-[8px] font-medium"
-      >
-        FOMC
       </text>
     </svg>
   );
