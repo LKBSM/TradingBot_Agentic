@@ -72,8 +72,10 @@ describe('Nav — /app product header', () => {
     // No marketing anchors surfaced in the header itself.
     expect(screen.queryByText('Démo')).not.toBeInTheDocument();
     expect(screen.queryByText('Tarifs')).not.toBeInTheDocument();
-    // Brand + utility controls present.
-    expect(screen.getByRole('link', { name: /espace de lecture/i })).toBeInTheDocument();
+    // Brand + utility controls present. Target the brand wordmark by name —
+    // both the wordmark and the "App" quick link carry an aria-label ending in
+    // "espace de lecture", so match on "MIA Markets" to stay unambiguous.
+    expect(screen.getByRole('link', { name: /MIA Markets/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /menu du compte/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /aide/i })).toBeInTheDocument();
   });
