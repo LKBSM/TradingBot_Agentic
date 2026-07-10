@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { ShieldCheck } from 'lucide-react';
+import { BRAND_BASELINE } from '@/lib/brand';
 
 /**
  * Footer partagé (rendu une seule fois dans `[locale]/layout`).
@@ -49,7 +50,7 @@ export function Footer() {
               </span>
             </div>
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground/80">
-              Multi-asset Intelligence Assistant for Markets
+              {BRAND_BASELINE} for Markets
             </p>
             <p className="max-w-md text-xs text-muted-foreground">
               Indicateur de marché conversationnel. Posture éducative,

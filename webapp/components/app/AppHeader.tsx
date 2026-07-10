@@ -5,6 +5,7 @@ import { CandlestickChart, HelpCircle, Layers, Radar } from 'lucide-react';
 import { LocaleToggle } from '@/components/LocaleToggle';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Badge } from '@/components/ui/badge';
+import { BRAND_NAME, BRAND_BASELINE } from '@/lib/brand';
 import { AccountMenu } from './AccountMenu';
 
 /**
@@ -30,7 +31,12 @@ export function AppHeader() {
           >
             M
           </span>
-          <span>MIA Markets</span>
+          <span className="flex flex-col leading-none">
+            <span>{BRAND_NAME}</span>
+            <span className="mt-0.5 hidden text-[10px] font-normal tracking-tight text-muted-foreground lg:block">
+              {BRAND_BASELINE}
+            </span>
+          </span>
         </Link>
 
         <div className="flex items-center gap-2">
