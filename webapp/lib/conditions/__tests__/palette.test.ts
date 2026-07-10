@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { CONDITION_PALETTE, CONDITION_TYPES } from '../palette';
 
 describe('conditions palette', () => {
-  it('exposes exactly the 10 present-tense condition types', () => {
-    expect(CONDITION_PALETTE).toHaveLength(10);
+  it('exposes exactly the 14 present-tense condition types', () => {
+    expect(CONDITION_PALETTE).toHaveLength(14);
     expect(new Set(CONDITION_TYPES)).toEqual(
       new Set([
         'mtf_aligned',
@@ -16,6 +16,10 @@ describe('conditions palette', () => {
         'bos_recent_confirmed',
         'choch_recent_confirmed',
         'retest_in_progress',
+        'price_near_ob',
+        'price_near_fvg',
+        'price_near_liquidity',
+        'liquidity_swept_recent',
       ]),
     );
   });
