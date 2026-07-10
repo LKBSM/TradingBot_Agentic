@@ -7,6 +7,7 @@ import { AppHeader } from '@/components/app/AppHeader';
 import { LocaleToggle } from '@/components/LocaleToggle';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { useAuth } from '@/lib/auth/store';
+import { BRAND_NAME, BRAND_BASELINE } from '@/lib/brand';
 import { SUPPORTED_LOCALES } from '@/i18n';
 
 const ANCHORS = [
@@ -77,7 +78,12 @@ export function Nav() {
           >
             M
           </span>
-          <span>MIA Markets</span>
+          <span className="flex flex-col leading-none">
+            <span>{BRAND_NAME}</span>
+            <span className="mt-0.5 hidden text-[10px] font-normal tracking-tight text-muted-foreground lg:block">
+              {BRAND_BASELINE}
+            </span>
+          </span>
         </Link>
 
         <nav aria-label="Sections du site" className="hidden sm:block">
