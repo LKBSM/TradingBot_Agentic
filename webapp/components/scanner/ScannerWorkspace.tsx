@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { useConditionsConfig } from '@/lib/conditions/config-store';
 import { useSavedStrategies, type SavedStrategy } from '@/lib/conditions/strategy-store';
 import { useAutoRefreshPref } from '@/lib/conditions/auto-refresh-store';
@@ -22,6 +23,7 @@ import { StrategyPanel } from './StrategyPanel';
  *  · "Modifier mes conditions" → edit the config, then re-scan.
  */
 export function ScannerWorkspace({ locale }: { locale: string }) {
+  const t = useTranslations('scanner');
   const { config, ready, save } = useConditionsConfig();
   const saved = useSavedStrategies();
   const { enabled: autoRefresh, setEnabled: setAutoRefresh } = useAutoRefreshPref();
@@ -62,15 +64,15 @@ export function ScannerWorkspace({ locale }: { locale: string }) {
       setResponse(null);
       setError(
         err instanceof ScanNotAvailableError
-          ? "Le service de scan n’est pas disponible sur cet environnement."
+          ? t('errorUnavailable')
           : err instanceof Error
             ? err.message
-            : 'Le scan a échoué.',
+            : t('errorGeneric'),
       );
     } finally {
       setIsScanning(false);
     }
-  }, []);
+  }, [t]);
 
   // Run a scan whenever we have a config and are not in the builder.
   const showBuilder = editing || (ready && !config);
@@ -102,7 +104,7 @@ export function ScannerWorkspace({ locale }: { locale: string }) {
   });
 
   if (!ready) {
-    return <p className="text-sm text-muted-foreground">Chargement…</p>;
+    return <p className="text-sm text-muted-foreground">{t('loading')}</p>;
   }
 
   const strategyPanel = saved.ready ? (
@@ -151,10 +153,10 @@ export function ScannerWorkspace({ locale }: { locale: string }) {
         <p className="text-sm text-foreground">{error}</p>
         <div className="flex gap-2">
           <Button size="sm" variant="outline" onClick={() => config && runScan(config)}>
-            Réessayer
+            {t('retry')}
           </Button>
           <Button size="sm" variant="ghost" onClick={() => setEditing(true)}>
-            Modifier mes conditions
+            {t('editConditions')}
           </Button>
         </div>
       </div>
@@ -162,7 +164,7 @@ export function ScannerWorkspace({ locale }: { locale: string }) {
   }
 
   if (!response || !config) {
-    return <p className="text-sm text-muted-foreground">Scan en cours…</p>;
+    return <p className="text-sm text-muted-foreground">{t('scanInProgress')}</p>;
   }
 
   return (

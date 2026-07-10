@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ComingSoonCard } from './ComingSoonCard';
@@ -14,6 +15,7 @@ import { LANDING_SAMPLES } from '@/lib/market-reading/landing-samples';
  * Le visiteur scrolle, voit 3 cartes, comprend sans qu'on ait à le dire.
  */
 export function MultiMarketSection() {
+  const t = useTranslations('landing.multiMarket');
   const xau = LANDING_SAMPLES[0]; // XAU M15 bullish
   const eur = LANDING_SAMPLES[1]; // EUR H1 ranging
 
@@ -31,23 +33,22 @@ export function MultiMarketSection() {
           className="mb-3 text-[11px] uppercase tracking-wider"
         >
           <Clock className="mr-1 h-3 w-3" aria-hidden />
-          Trois lectures · à l&apos;instant
+          {t('badge')}
         </Badge>
         <h2
           id="multi-marche-title"
           className="text-balance text-2xl font-semibold tracking-tight sm:text-3xl"
         >
-          Sur chaque marché, le même cadre de lecture.
+          {t('title')}
         </h2>
         <p className="mt-3 text-pretty text-muted-foreground">
-          Or, devises, indices — la même rigueur méthodologique, la même
-          honnêteté sur l&apos;incertitude.
+          {t('subtitle')}
         </p>
       </header>
 
       <MarketReadingGalleryClient
         samples={[xau, eur]}
-        renderAfter={<ComingSoonCard label="BTC/USD" subtitle="Bientôt" />}
+        renderAfter={<ComingSoonCard label="BTC/USD" />}
         gridClassName="grid-cols-1 gap-5 sm:gap-6 lg:grid-cols-3"
       />
     </section>

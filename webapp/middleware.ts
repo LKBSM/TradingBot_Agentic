@@ -2,12 +2,23 @@ import createMiddleware from 'next-intl/middleware';
 import { NextRequest, NextResponse } from 'next/server';
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from './i18n';
 
-// V1 ships FR only. EN/DE/ES translation files stay in the repo as dormant
-// infrastructure but their routes must NOT be indexable — empty/stub locale
-// pages would trigger SEO duplication penalties. Any incoming /en/* /de/* /es/*
-// request is 302-redirected to the FR equivalent (default locale, served
-// without prefix thanks to `localePrefix: 'as-needed'`).
-const INACTIVE_LOCALES = ['en', 'de', 'es'] as const;
+// All locales in SUPPORTED_LOCALES are now ACTIVE (fr/en/de/es/it/pt/nl/pl/ar).
+// The former en/de/es → fr redirect guard is gone: every locale serves real,
+// translated content, so there is nothing to redirect away from and no
+// SEO-duplication risk.
+//
+// `localeDetection: true` — an incoming request with no locale prefix and no
+// NEXT_LOCALE cookie is matched against `Accept-Language`. A browser set to
+// Arabic lands on /ar, a German browser on /de, everyone else on the default
+// (FR) served prefix-less thanks to `localePrefix: 'as-needed'`. The language
+// switcher writes the NEXT_LOCALE cookie, so an explicit choice always wins
+// over the browser header on subsequent visits.
+const intlMiddleware = createMiddleware({
+  locales: SUPPORTED_LOCALES,
+  defaultLocale: DEFAULT_LOCALE,
+  localePrefix: 'as-needed',
+  localeDetection: true,
+});
 
 // Closed private beta: when BETA_LOCKDOWN is on, the product surfaces are only
 // reachable by a logged-in account. This edge guard is the FAST first layer —
@@ -19,41 +30,28 @@ const INACTIVE_LOCALES = ['en', 'de', 'es'] as const;
 const BETA_LOCKDOWN =
   process.env.BETA_LOCKDOWN === '1' || process.env.BETA_LOCKDOWN === 'true';
 const SESSION_COOKIE = 'mia_session';
-// Product routes behind the login wall (FR is prefixless; en/de/es are stripped
-// to FR by the guard below before this check runs).
+// Product routes behind the login wall. FR is prefixless; a leading locale
+// segment (/en/app …) is stripped before the check so all locales are gated.
 const PROTECTED_PREFIXES = ['/app', '/zones', '/scanner', '/compte', '/abonnement'];
 
+function stripLocale(pathname: string): string {
+  const segs = pathname.split('/').filter(Boolean);
+  const first = segs[0] as (typeof SUPPORTED_LOCALES)[number] | undefined;
+  if (first && SUPPORTED_LOCALES.includes(first)) {
+    return '/' + segs.slice(1).join('/');
+  }
+  return pathname;
+}
+
 function isProtectedPath(pathname: string): boolean {
+  const p = stripLocale(pathname);
   return PROTECTED_PREFIXES.some(
-    (p) => pathname === p || pathname.startsWith(`${p}/`),
+    (prefix) => p === prefix || p.startsWith(`${prefix}/`),
   );
 }
 
-const intlMiddleware = createMiddleware({
-  locales: SUPPORTED_LOCALES,
-  defaultLocale: DEFAULT_LOCALE,
-  localePrefix: 'as-needed',
-  // Locale detection MUST stay off. With it on, a browser advertising
-  // `Accept-Language: en` makes next-intl 302 `/` → `/en` (en is a supported
-  // but INACTIVE locale); the redirect above then strips `/en` → `/`, which
-  // next-intl re-detects as `en` → `/en` … = an infinite redirect loop
-  // (ERR_TOO_MANY_REDIRECTS) for every en/de/es visitor. V1 ships FR only, so
-  // `/` always serves the default locale; direct /en/* visits are still
-  // 302-redirected to FR by the guard above.
-  localeDetection: false,
-});
-
 export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-
-  for (const inactive of INACTIVE_LOCALES) {
-    if (pathname === `/${inactive}` || pathname.startsWith(`/${inactive}/`)) {
-      const stripped = pathname.slice(inactive.length + 1) || '/';
-      const target = request.nextUrl.clone();
-      target.pathname = stripped;
-      return NextResponse.redirect(target, 302);
-    }
-  }
 
   // Closed-beta login wall (edge layer). Cookieless visitors to a product route
   // are bounced to the login page with a ?next= return path.

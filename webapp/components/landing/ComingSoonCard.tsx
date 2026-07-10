@@ -1,10 +1,11 @@
+import { useTranslations } from 'next-intl';
 import { Hourglass } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 
 interface ComingSoonCardProps {
+  /** Instrument ticker (proper noun, not translated). */
   label: string;
-  subtitle: string;
 }
 
 /**
@@ -12,7 +13,9 @@ interface ComingSoonCardProps {
  * d'autres marchés sans bluffer sur leur disponibilité. Aligné D4
  * instruments (XAU + EUR seuls en GA, le reste post-S16).
  */
-export function ComingSoonCard({ label, subtitle }: ComingSoonCardProps) {
+export function ComingSoonCard({ label }: ComingSoonCardProps) {
+  const t = useTranslations('landing.comingSoon');
+  const subtitle = t('subtitle');
   return (
     <Card
       aria-label={`${label} — ${subtitle}`}
@@ -26,9 +29,7 @@ export function ComingSoonCard({ label, subtitle }: ComingSoonCardProps) {
         <Badge variant="outline" className="text-[10px] uppercase tracking-wider">
           {subtitle}
         </Badge>
-        <p className="text-xs text-muted-foreground">
-          Extension prévue après validation OOS du moteur sur XAU/EUR.
-        </p>
+        <p className="text-xs text-muted-foreground">{t('note')}</p>
       </CardContent>
     </Card>
   );

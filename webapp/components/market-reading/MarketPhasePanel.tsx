@@ -1,11 +1,8 @@
+import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import {
-  formatMarketPhase,
-  formatTrend,
-  formatVolatility,
-  type Tone,
-} from '@/lib/market-reading/formatters';
+import { type Tone } from '@/lib/market-reading/formatters';
+import { useReadingFormatters } from '@/lib/market-reading/use-reading-formatters';
 import type { MarketReadingRegime } from '@/types/market-reading';
 
 /**
@@ -35,18 +32,20 @@ export function MarketPhasePanel({
   regime: MarketReadingRegime;
   className?: string;
 }) {
-  const trend = formatTrend(regime.trend);
-  const volatility = formatVolatility(regime.volatility_observed);
-  const phase = formatMarketPhase(regime.market_phase);
+  const t = useTranslations('reading.card');
+  const fmt = useReadingFormatters();
+  const trend = fmt.trend(regime.trend);
+  const volatility = fmt.volatility(regime.volatility_observed);
+  const phase = fmt.marketPhase(regime.market_phase);
 
   return (
     <div
       className={cn('w-full', className)}
       role="group"
-      aria-label="Phase de marché observée"
+      aria-label={t('phaseAria')}
     >
       <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-        Phase de marché
+        {t('phaseTitle')}
       </p>
       <div className="flex flex-wrap items-center gap-2">
         <Badge variant={TONE_TO_VARIANT[trend.tone]} className="text-xs">

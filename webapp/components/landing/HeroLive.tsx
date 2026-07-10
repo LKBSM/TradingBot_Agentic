@@ -1,3 +1,4 @@
+import { useLocale, useTranslations } from 'next-intl';
 import { ShieldCheck, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { HeroChatPreview } from './HeroChatPreview';
@@ -20,6 +21,8 @@ import { getHeroLandingSample } from '@/lib/market-reading/landing-samples';
  */
 export function HeroLive() {
   const sample = getHeroLandingSample();
+  const t = useTranslations('landing.hero');
+  const locale = useLocale();
 
   return (
     <section
@@ -37,21 +40,21 @@ export function HeroLive() {
           className="text-[11px] uppercase tracking-wider"
         >
           <Sparkles className="mr-1 h-3 w-3" aria-hidden />
-          Lecture en direct · {new Date().toLocaleDateString('fr-FR', {
+          {t('badgeLive')} · {new Date().toLocaleDateString(locale, {
             day: 'numeric',
             month: 'long',
           })}
         </Badge>
         <Badge variant="outline" className="text-[11px] uppercase tracking-wider">
           <ShieldCheck className="mr-1 h-3 w-3" aria-hidden />
-          Indicateur · pas un service de signaux
+          {t('badgeIndicator')}
         </Badge>
       </div>
 
       {/* H1 SEO-only : indexable, parlé par les lecteurs d'écran, invisible
           visuellement parce que c'est le produit qui doit attirer l'œil. */}
       <h1 id="hero-title" className="sr-only">
-        MIA Markets — Comprenez le marché sans qu&apos;on vous dise quoi faire.
+        {t('srTitle')}
       </h1>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:items-start lg:gap-8">
@@ -68,7 +71,7 @@ export function HeroLive() {
           href="#tarifs"
           className="text-xs font-medium text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline focus-visible:underline focus-visible:outline-none"
         >
-          Voir l&apos;offre →
+          {t('cta')} →
         </a>
       </div>
     </section>

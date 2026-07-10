@@ -1,7 +1,19 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render as rtlRender, screen, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { NextIntlClientProvider } from 'next-intl';
 import { ScanResults } from '../ScanResults';
 import type { ConditionsConfig, ConditionsScanResponse } from '@/lib/conditions/types';
+import messages from '@/messages/fr.json';
+
+// ScanResults + ComboCard consume the `scanner` namespace; wrap the intl
+// provider with fr messages (asserted FR strings unchanged).
+function render(ui: React.ReactElement) {
+  return rtlRender(
+    <NextIntlClientProvider locale="fr" messages={messages}>
+      {ui}
+    </NextIntlClientProvider>,
+  );
+}
 
 const CONFIG: ConditionsConfig = {
   logic: 'AND',

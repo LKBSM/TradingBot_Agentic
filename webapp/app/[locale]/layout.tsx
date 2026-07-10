@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
+import { Inter, Noto_Sans_Arabic } from 'next/font/google';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
@@ -15,7 +15,7 @@ import { JsonLd, softwareApplicationLd } from '@/components/seo/JsonLd';
 import { ThemeProvider } from '@/components/theme-provider';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { AuthProvider } from '@/lib/auth/store';
-import { SUPPORTED_LOCALES } from '../../i18n';
+import { SUPPORTED_LOCALES, isRtl } from '../../i18n';
 
 // Inter, variable axis weight 100..900, only the Latin subset (no CJK/Cyrillic
 // shipped). Latin-ext kept for accented FR characters. `display: 'swap'`
@@ -26,6 +26,17 @@ const inter = Inter({
   display: 'swap',
   preload: true,
   variable: '--font-sans',
+});
+
+// Arabic-capable font, exposed as --font-arabic. The Latin `Inter` subset has
+// no Arabic glyphs, so RTL locales fall back to it via a globals.css rule that
+// swaps the body font stack when `html[dir="rtl"]`. Not preloaded — only ar
+// visitors pay for it, and only after the (already-swapped) Inter.
+const notoArabic = Noto_Sans_Arabic({
+  subsets: ['arabic'],
+  display: 'swap',
+  preload: false,
+  variable: '--font-arabic',
 });
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://mia.markets';
@@ -100,8 +111,14 @@ export default async function LocaleLayout({
     notFound();
   }
   const messages = await getMessages();
+  const dir = isRtl(locale) ? 'rtl' : 'ltr';
   return (
-    <html lang={locale} className={inter.variable} suppressHydrationWarning>
+    <html
+      lang={locale}
+      dir={dir}
+      className={`${inter.variable} ${notoArabic.variable}`}
+      suppressHydrationWarning
+    >
       <body className="min-h-screen bg-background font-sans antialiased">
         <SkipLink />
         <JsonLd data={softwareApplicationLd} />

@@ -1,11 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import {
-  changeTone,
-  formatChangePercent,
-  formatPrice,
-} from '@/lib/market-reading/formatters';
+import { useTranslations } from 'next-intl';
+import { useReadingFormatters } from '@/lib/market-reading/use-reading-formatters';
 import { cn } from '@/lib/utils';
 
 interface LivePriceProps {
@@ -30,6 +27,8 @@ const TONE_CLASS: Record<'bull' | 'bear' | 'neutral' | 'warn', string> = {
  * refreshes on a coarse interval / candle close upstream).
  */
 export function LivePrice({ instrument, price, changePct }: LivePriceProps) {
+  const t = useTranslations('reading.temporal');
+  const fmt = useReadingFormatters();
   const [flash, setFlash] = React.useState(false);
   const prev = React.useRef(price);
 
@@ -43,7 +42,7 @@ export function LivePrice({ instrument, price, changePct }: LivePriceProps) {
     return undefined;
   }, [price]);
 
-  const tone = changeTone(changePct);
+  const tone = fmt.changeTone(changePct);
 
   return (
     <span className="flex flex-wrap items-baseline justify-end gap-x-2 gap-y-0.5">
@@ -54,14 +53,14 @@ export function LivePrice({ instrument, price, changePct }: LivePriceProps) {
         )}
         aria-live="polite"
       >
-        {formatPrice(price, instrument)}
+        {fmt.price(price, instrument)}
       </span>
       {changePct !== null && (
         <span
           className={cn('font-mono text-xs font-medium tabular-nums', TONE_CLASS[tone])}
-          aria-label={`Variation du jour ${formatChangePercent(changePct)}`}
+          aria-label={t('dailyChangeAria', { pct: fmt.changePercent(changePct) })}
         >
-          {formatChangePercent(changePct)}
+          {fmt.changePercent(changePct)}
         </span>
       )}
     </span>

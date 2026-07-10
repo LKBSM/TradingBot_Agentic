@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 
 /**
@@ -15,14 +16,15 @@ export function AutoRefreshToggle({
   enabled: boolean;
   onChange(next: boolean): void;
 }) {
+  const t = useTranslations('scanner.toggle');
   return (
     <label className="flex cursor-pointer select-none items-center gap-2">
-      <span>Actualisation auto (à chaque clôture)</span>
+      <span>{t('label')}</span>
       <button
         type="button"
         role="switch"
         aria-checked={enabled}
-        aria-label="Actualisation automatique à chaque clôture de bougie"
+        aria-label={t('aria')}
         onClick={() => onChange(!enabled)}
         className={cn(
           'relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors',

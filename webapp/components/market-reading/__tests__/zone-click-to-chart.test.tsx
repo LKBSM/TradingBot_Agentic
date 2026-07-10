@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@/components/test-utils';
 import { describe, expect, it } from 'vitest';
 import type {
   FairValueGap,

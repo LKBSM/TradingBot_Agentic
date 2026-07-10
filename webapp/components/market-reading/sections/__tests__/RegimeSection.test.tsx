@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen } from '@/components/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Accordion } from '@/components/ui/accordion';
 import { RegimeSection } from '../RegimeSection';

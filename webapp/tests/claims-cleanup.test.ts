@@ -89,7 +89,7 @@ describe('claims cleanup — liens du footer', () => {
   const anchorIds = collectAnchorIds();
   const allLinks = [...LEGAL_LINKS, ...PRODUCT_LINKS];
 
-  it.each(allLinks.map((l) => [l.href, l.label] as const))(
+  it.each(allLinks.map((l) => [l.href, l.key] as const))(
     'la cible de « %s » (%s) existe',
     (href) => {
       if (href.startsWith('mailto:')) return; // pas une route interne

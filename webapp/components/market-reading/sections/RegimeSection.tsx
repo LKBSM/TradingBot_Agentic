@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Activity, AlertTriangle } from 'lucide-react';
 import {
   AccordionContent,
@@ -9,16 +10,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import { cn } from '@/lib/utils';
-import {
-  formatMarketPhaseShort,
-  formatVolatility,
-  type Tone,
-} from '@/lib/market-reading/formatters';
-import {
-  formatLastStructuralEvent,
-  formatTrendMaturity,
-  formatZoneDensity,
-} from '@/lib/market-reading/regime-facts';
+import { type Tone } from '@/lib/market-reading/formatters';
+import { useReadingFormatters } from '@/lib/market-reading/use-reading-formatters';
 import { useMtfTrends } from '@/lib/market-reading/hooks';
 import {
   MTF_TREND_ORDER,
@@ -37,8 +30,6 @@ const TONE_TO_VARIANT: Record<Tone, 'bull' | 'bear' | 'neutral' | 'warn'> = {
   neutral: 'neutral',
   warn: 'warn',
 };
-
-const UNAVAILABLE = 'non disponible';
 
 /**
  * Section "Régime de marché" — read-only, present-tense, descriptive.
@@ -64,12 +55,13 @@ export function RegimeSection({
   structure: MarketReadingStructure;
   header: MarketReadingHeader;
 }) {
+  const t = useTranslations('reading.regime');
   return (
     <AccordionItem value="regime">
       <AccordionTrigger className="text-left text-sm">
         <span className="flex items-center gap-2">
           <Activity className="h-4 w-4 text-muted-foreground" aria-hidden />
-          <span>Régime de marché</span>
+          <span>{t('title')}</span>
         </span>
       </AccordionTrigger>
       <AccordionContent>
@@ -90,17 +82,20 @@ function RegimeBody({
   structure: MarketReadingStructure;
   header: MarketReadingHeader;
 }) {
+  const t = useTranslations('reading.regime');
+  const fmt = useReadingFormatters();
   const instrument = header.instrument;
   const { trends, isLoading } = useMtfTrends(instrument);
-  const volatility = formatVolatility(regime.volatility_observed);
-  const phaseLabel = formatMarketPhaseShort(regime.market_phase);
+  const volatility = fmt.volatility(regime.volatility_observed);
+  const phaseLabel = fmt.marketPhaseShort(regime.market_phase);
   const relation = classifyMtfAlignment(trends);
+  const mtfText = fmt.mtfAlignmentText(trends, relation.kind);
   const hasAnyTrend = MTF_TREND_ORDER.some(({ key }) => trends[key] !== null);
 
   // (b)(c)(d) — present-tense facts read straight from the engine's structure.
-  const maturity = formatTrendMaturity(structure, header);
-  const lastEvent = formatLastStructuralEvent(structure, header);
-  const density = formatZoneDensity(structure);
+  const maturity = fmt.regimeMaturity(structure, header);
+  const lastEvent = fmt.regimeLastEvent(structure, header);
+  const density = fmt.regimeZoneDensity(structure);
 
   return (
     <div className="space-y-4">
@@ -113,7 +108,7 @@ function RegimeBody({
           <InfoTooltip termKey="volatility" iconOnly />
         </span>
         <span className="inline-flex items-center gap-1">
-          <Badge variant="neutral">Phase : {phaseLabel}</Badge>
+          <Badge variant="neutral">{t('phaseLabel', { label: phaseLabel })}</Badge>
           <InfoTooltip termKey="market_phase" iconOnly />
         </span>
       </div>
@@ -121,30 +116,28 @@ function RegimeBody({
       {/* État structurel courant : maturité (b) · dernier événement (c) · zones (d) */}
       <div>
         <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
-          État structurel courant
+          {t('structuralState')}
         </p>
         <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Fact
-            label="Maturité de tendance"
+            label={t('factMaturity')}
             termKey="choch"
             value={maturity}
             className="sm:col-span-2"
           />
-          <Fact label="Dernier événement" termKey="choch" value={lastEvent} />
-          <Fact label="Zones actives" termKey="order_block" value={density} />
+          <Fact label={t('factLastEvent')} termKey="choch" value={lastEvent} />
+          <Fact label={t('factZones')} termKey="order_block" value={density} />
         </dl>
       </div>
 
       {/* Alignement multi-timeframe + désaccord (e) */}
       <div>
         <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
-          <InfoTooltip termKey="mtf">Alignement multi-timeframe</InfoTooltip>
+          <InfoTooltip termKey="mtf">{t('mtfTitle')}</InfoTooltip>
         </p>
 
         {isLoading && !hasAnyTrend ? (
-          <p className="text-xs text-muted-foreground">
-            Lecture des timeframes…
-          </p>
+          <p className="text-xs text-muted-foreground">{t('mtfLoading')}</p>
         ) : hasAnyTrend ? (
           <div className="flex flex-wrap items-center gap-2">
             {MTF_TREND_ORDER.map(({ key, label }) => {
@@ -161,9 +154,7 @@ function RegimeBody({
             })}
           </div>
         ) : (
-          <p className="text-xs text-muted-foreground">
-            Alignement multi-timeframe indisponible.
-          </p>
+          <p className="text-xs text-muted-foreground">{t('mtfUnavailable')}</p>
         )}
 
         {/* The « contre » is given the same visibility as the « accord » — a warn
@@ -179,20 +170,17 @@ function RegimeBody({
             />
             <div className="space-y-0.5">
               <p className="text-sm font-semibold text-sentinel-warn">
-                Désaccord multi-timeframe
+                {t('disagreementTitle')}
               </p>
-              <p className="text-sm text-foreground">{relation.text}</p>
+              <p className="text-sm text-foreground">{mtfText}</p>
             </div>
           </div>
         ) : (
-          relation.text && <p className="mt-2 text-sm">{relation.text}</p>
+          mtfText && <p className="mt-2 text-sm">{mtfText}</p>
         )}
       </div>
 
-      <p className="text-xs italic text-muted-foreground">
-        Ces faits décrivent l’état observé du marché en ce moment. Ils ne
-        constituent pas une instruction adressée au trader.
-      </p>
+      <p className="text-xs italic text-muted-foreground">{t('disclaimer')}</p>
     </div>
   );
 }
@@ -212,6 +200,7 @@ function Fact({
   termKey?: 'choch' | 'order_block';
   className?: string;
 }) {
+  const t = useTranslations('reading.regime');
   const available = value != null && value !== '';
   return (
     <div className={cn(className)}>
@@ -224,7 +213,7 @@ function Fact({
           available ? 'text-foreground' : 'italic text-muted-foreground',
         )}
       >
-        {available ? value : UNAVAILABLE}
+        {available ? value : t('unavailable')}
       </dd>
     </div>
   );
