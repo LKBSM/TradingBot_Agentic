@@ -81,14 +81,14 @@ export const SMC_CONCEPTS: ReadonlyArray<MethodologyConcept> = [
 
 export const SCORE_FORMULAS: ReadonlyArray<MethodologyFormula> = [
   {
-    id: 'order-block-importance',
-    title: 'Importance d’un Order Block',
+    id: 'order-block',
+    title: 'Order Block',
     description:
-      'Un repère qualitatif (faible / moyenne / élevée) qui décrit à quel point une zone se distingue. Ce n’est pas une probabilité de réussite.',
+      'Une zone laissée par une bougie de déséquilibre avant un mouvement marqué. On l’affiche à sa formation avec sa fourchette de prix et son état présent (active, testée, mitigée, invalidée) — sans note ni classement de qualité, aucune probabilité de réussite.',
     variables: [
-      'la taille du déséquilibre qui a suivi la zone',
-      'la distance entre la zone et le prix actuel',
-      'la cohérence avec la lecture des autres unités de temps',
+      'la fourchette de prix de la zone',
+      'sa taille rapportée à la volatilité récente',
+      'son état courant : active, testée, mitigée ou invalidée',
     ],
   },
   {

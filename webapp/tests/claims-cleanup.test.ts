@@ -29,6 +29,10 @@ const FORBIDDEN_CLAIMS = [
   'CM' + '2C', // médiateur jamais adhéré
   '50' + ' places', // compteur de places jamais décidé
   'hors' + ' Québec', // périmètre géographique jamais décidé côté produit
+  // Purge lexicale ligne éditoriale (2026-07-17) — libellés prédictifs / de
+  // conviction retirés des zones ; cf. docs/audits/ZONES_LABEL_LINE_PURGE_2026_07_17.md.
+  'effic' + 'ace', // « encore/plus efficace » ⇒ prédictif → « non invalidée / non comblée »
+  'importance ' + 'élevée', // score de conviction OB déguisé → libellé retiré
 ] as const;
 
 function walk(dir: string, acc: string[] = []): string[] {
