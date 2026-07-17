@@ -90,7 +90,7 @@ describe('zone list → click to chart', () => {
     renderWired(structureWith([mkOb(1)]));
 
     const entry = screen.getByRole('button', {
-      name: /importance moyenne · actif/i,
+      name: /· actif/i,
     });
     fireEvent.click(entry);
 
@@ -114,7 +114,7 @@ describe('zone list → click to chart', () => {
   it('selecting another zone moves the selection (only one entry stays selected)', () => {
     renderWired(structureWith([mkOb(1), mkOb(2)]));
     const entries = screen.getAllByRole('button', {
-      name: /importance moyenne · actif/i,
+      name: /· actif/i,
     });
     fireEvent.click(entries[0]!);
     expect(entries[0]!).toHaveAttribute('aria-pressed', 'true');
@@ -134,7 +134,7 @@ describe('zone list → click to chart', () => {
   it('re-clicking the SAME zone deselects it (toggle: clears highlight + un-zooms)', () => {
     renderWired(structureWith([mkOb(1)]));
     const entry = screen.getByRole('button', {
-      name: /importance moyenne · actif/i,
+      name: /· actif/i,
     });
     fireEvent.click(entry);
     expect(entry).toHaveAttribute('aria-pressed', 'true');

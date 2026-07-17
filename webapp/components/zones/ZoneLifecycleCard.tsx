@@ -9,7 +9,6 @@ import {
   formatBand,
   formatDirection,
   formatFvgStatus,
-  formatObImportance,
   formatObStatus,
   formatPrice,
 } from '@/lib/market-reading/formatters';
@@ -30,8 +29,8 @@ import { ZoneTimeline } from './ZoneTimeline';
  * One zone card — "compact d'abord, riche en dépliant". Every line is a
  * present/past FACT read off the engine payload:
  *
- * COMPACT (scannable): type/direction/status header · band (+ OB importance,
- * an engine bucket already shown on the chart) · relation to the current price
+ * COMPACT (scannable): type/direction/status header · band · relation to the
+ * current price
  * (inside / gap to the nearest edge) · age since formation (bars counted on the
  * real candle window, exact duration otherwise) with the boolean "testée" /
  * "pénétrée" fact · the FVG fill bar (real engine fill_level only).
@@ -59,18 +58,47 @@ function statusLabel(zone: ZoneLifecycle): string {
 }
 
 /**
- * Is the zone still worth watching? INDEPENDENT of whether it was tested. This
- * clears up the « mitigé » confusion: a mitigated OB was tapped by price but
- * still holds (still effective) — only an INVALIDATED OB (broken through) or a
- * fully FILLED FVG (imbalance closed) is spent. active / mitigated (OB) and
- * active / partially_filled (FVG) all stay effective.
+ * Descriptive « still there? » fact — NOT a prediction of future effect and
+ * INDEPENDENT of whether the zone was tested. It states the present structural
+ * state in the reader's own vocabulary: an OB is « invalidée » only once price
+ * has CLOSED through it, an FVG « comblée » only once fully filled. A mitigated
+ * OB (tapped but holding) and a partially-filled FVG are therefore still
+ * « non invalidée » / « non comblée » — clearing the « mitigé » confusion
+ * without ever implying the zone WILL produce an effect.
  */
-function effectiveness(zone: ZoneLifecycle): { effective: boolean; label: string } {
-  const spent =
-    zone.kind === 'ob' ? zone.status === 'invalidated' : zone.status === 'filled';
+function effectiveness(zone: ZoneLifecycle): {
+  effective: boolean;
+  label: string;
+  title: string;
+} {
+  if (zone.kind === 'ob') {
+    const spent = zone.status === 'invalidated';
+    return spent
+      ? {
+          effective: false,
+          label: 'invalidée',
+          title: 'Order Block invalidé : le prix a clôturé au travers de la zone.',
+        }
+      : {
+          effective: true,
+          label: 'non invalidée',
+          title:
+            'Order Block non invalidé : le prix n’a pas clôturé au travers (la zone tient, même mitigée ou testée).',
+        };
+  }
+  const spent = zone.status === 'filled';
   return spent
-    ? { effective: false, label: 'plus efficace' }
-    : { effective: true, label: 'encore efficace' };
+    ? {
+        effective: false,
+        label: 'comblée',
+        title: 'Fair Value Gap entièrement comblé : le déséquilibre est refermé.',
+      }
+    : {
+        effective: true,
+        label: 'non comblée',
+        title:
+          'Fair Value Gap non entièrement comblé : le déséquilibre n’est pas refermé.',
+      };
 }
 
 /** "prix actuellement dans la zone" / "à 3,40 pts au-dessus du prix" — fact only. */
@@ -173,8 +201,9 @@ export function ZoneLifecycleCard({
           )}
         </div>
         <div className="flex items-center gap-1.5">
-          {/* Effectiveness — the plain-language answer to "is this zone still
-              usable?", so « mitigé » is never mistaken for « dead ». */}
+          {/* Present-tense « still there? » fact (non invalidée / non comblée),
+              so « mitigé » is never mistaken for « dead ». Descriptive, never a
+              prediction of future effect. */}
           {(() => {
             const eff = effectiveness(zone);
             return (
@@ -185,11 +214,7 @@ export function ZoneLifecycleCard({
                     ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400'
                     : 'bg-muted text-muted-foreground line-through decoration-1',
                 )}
-                title={
-                  eff.effective
-                    ? 'Zone toujours valable (même mitigée/testée)'
-                    : 'Zone consommée (OB invalidé / FVG entièrement comblé)'
-                }
+                title={eff.title}
               >
                 {eff.label}
               </span>
@@ -201,16 +226,12 @@ export function ZoneLifecycleCard({
         </div>
       </div>
 
-      {/* Band + importance */}
+      {/* Band — the zone's price range only. No quality/importance score is
+          shown (the range itself lets the reader judge the zone's width). */}
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm">
         <span className="font-medium tabular-nums text-foreground">
           {formatBand(zone.levelLow, zone.levelHigh, instrument)}
         </span>
-        {zone.importance && (
-          <span className="text-xs text-muted-foreground">
-            importance {formatObImportance(zone.importance)}
-          </span>
-        )}
       </div>
 
       {/* Relation to the current price — accent 1 (amber only when inside). */}

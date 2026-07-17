@@ -19,7 +19,6 @@ import {
   formatLiquidityKind,
   formatLiquiditySideShort,
   formatLiquidityStatus,
-  formatObImportance,
   formatObStatus,
   formatPrice,
   formatRetestType,
@@ -217,7 +216,7 @@ export function StructureSection({
                     `${ob.level_low}|${ob.level_high}|${ob.importance}|${ob.status}`
                   }
                   renderLabel={(ob) =>
-                    `${formatBand(ob.level_low, ob.level_high, instrument)} · importance ${formatObImportance(ob.importance)} · ${formatObStatus(ob.status)}`
+                    `${formatBand(ob.level_low, ob.level_high, instrument)} · ${formatObStatus(ob.status)}`
                   }
                   idOf={(ob) => ob.id}
                   onSelect={selectZone}
