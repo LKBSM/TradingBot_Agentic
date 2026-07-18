@@ -1,12 +1,20 @@
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 import { ZonesWorkspace } from '@/components/zones/ZonesWorkspace';
 import { SubscriptionGate } from '@/components/access/SubscriptionGate';
 
-export const metadata: Metadata = {
-  title: 'Zones',
-  description:
-    'Le cycle de vie de chaque zone détectée (Order Block, Fair Value Gap) — formation, tests, mitigation, comblement. Lecture descriptive et read-only : aucune prévision.',
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'pages' });
+  return {
+    title: t('zones.meta.title'),
+    description: t('zones.meta.description'),
+  };
+}
 
 /**
  * Zones page — the life of every detected OB/FVG zone for a chosen combo:

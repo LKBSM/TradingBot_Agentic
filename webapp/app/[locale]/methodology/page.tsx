@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 import { ShieldCheck, ArrowLeft } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { MethodologySection } from '@/components/methodology/MethodologySection';
@@ -7,25 +9,26 @@ import { ConceptCard } from '@/components/methodology/ConceptCard';
 import { ScoreFormula } from '@/components/methodology/ScoreFormula';
 import {
   DATA_SOURCE,
-  ENGAGEMENT_QUOTE,
   NEVER_DO,
   SCORE_FORMULAS,
   SMC_CONCEPTS,
 } from '@/lib/methodology/content';
 
-export const metadata: Metadata = {
-  title: 'Méthodologie — Comment MIA Markets décrit le marché',
-  description:
-    'Documentation technique transparente : comment notre indicateur détecte les structures SMC (Order Block, Fair Value Gap, cassures), comment nous décrivons les éléments affichés, notre source de données, et ce que nous ne faisons pas.',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('methodology');
+  return {
+    title: t('meta.title'),
+    description: t('meta.description'),
+  };
+}
 
 const TOC = [
-  { href: '#engagement', label: 'Notre engagement' },
-  { href: '#concepts', label: 'Concepts de structure' },
-  { href: '#scores', label: 'Ce que nous décrivons' },
-  { href: '#donnees', label: 'Source de données' },
-  { href: '#limites', label: 'Ce que nous ne faisons pas' },
-  { href: '#attributions', label: 'Attributions' },
+  { href: '#engagement', key: 'engagement' },
+  { href: '#concepts', key: 'concepts' },
+  { href: '#scores', key: 'scores' },
+  { href: '#donnees', key: 'donnees' },
+  { href: '#limites', key: 'limites' },
+  { href: '#attributions', key: 'attributions' },
 ] as const;
 
 /**
@@ -37,6 +40,8 @@ const TOC = [
  * termes partagés avec les tooltips ⓘ via le glossaire central.
  */
 export default function MethodologyPage() {
+  const t = useTranslations('methodology');
+
   return (
     <div className="container-prose py-12 sm:py-16">
       <header className="space-y-4">
@@ -45,32 +50,34 @@ export default function MethodologyPage() {
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
         >
           <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
-          Retour à l’accueil
+          {t('header.back')}
         </Link>
         <Badge
           variant="outline"
           className="text-[11px] uppercase tracking-wider"
         >
           <ShieldCheck className="mr-1 h-3 w-3" aria-hidden />
-          Méthodologie
+          {t('header.badge')}
         </Badge>
         <h1 className="text-balance text-2xl font-semibold tracking-tight sm:text-3xl lg:text-4xl">
-          Comment MIA Markets décrit le marché
+          {t('header.title')}
         </h1>
         <p className="max-w-2xl text-pretty text-muted-foreground">
-          Cette page explique, sans jargon, comment notre indicateur repère les
-          structures de marché et ce que signifie chaque élément affiché. C’est
-          une documentation descriptive : on explique ce que le moteur
-          <em> observe</em>, jamais ce qu’il <em>prédirait</em>.
+          {t.rich('header.intro', {
+            em: (chunks) => <em>{chunks}</em>,
+          })}
         </p>
-        <nav aria-label="Sommaire" className="flex flex-wrap gap-2 pt-2">
+        <nav
+          aria-label={t('header.tocLabel')}
+          className="flex flex-wrap gap-2 pt-2"
+        >
           {TOC.map((item) => (
             <a
               key={item.href}
               href={item.href}
               className="rounded-full border border-border/60 px-3 py-1 text-xs text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground"
             >
-              {item.label}
+              {t(`toc.${item.key}`)}
             </a>
           ))}
         </nav>
@@ -78,23 +85,23 @@ export default function MethodologyPage() {
 
       <MethodologySection
         id="engagement"
-        title="Notre engagement"
-        intro="MIA Markets est un outil de compréhension du marché, pas un système de trading. Notre posture est descriptive (niveau « lecture augmentée ») : nous décrivons une structure, nous ne recommandons jamais une action."
+        title={t('engagement.title')}
+        intro={t('engagement.intro')}
       >
         <figure>
           <blockquote className="border-l-2 border-sentinel-warn pl-5 text-balance text-base italic text-foreground">
-            {ENGAGEMENT_QUOTE}
+            {t('engagement.quote')}
           </blockquote>
           <figcaption className="mt-3 text-xs text-muted-foreground">
-            — Engagement public MIA Markets, 27 mai 2026
+            {t('engagement.caption')}
           </figcaption>
         </figure>
       </MethodologySection>
 
       <MethodologySection
         id="concepts"
-        title="Concepts de structure (SMC)"
-        intro="Notre lecture s’appuie sur les Smart Money Concepts — une grille de lecture de la structure du prix. Voici les éléments que le moteur détecte et affiche."
+        title={t('concepts.title')}
+        intro={t('concepts.intro')}
       >
         <div className="grid gap-4 sm:grid-cols-2">
           {SMC_CONCEPTS.map((concept) => (
@@ -105,8 +112,8 @@ export default function MethodologyPage() {
 
       <MethodologySection
         id="scores"
-        title="Ce que nous décrivons (et comment)"
-        intro="Certains éléments de la lecture sont qualifiés (importance d’une zone, statut, phase, incertitude). Voici ce que chacun décrit et les variables qui le composent — aucun n’est une probabilité de réussite."
+        title={t('scores.title')}
+        intro={t('scores.intro')}
       >
         <div className="space-y-8">
           {SCORE_FORMULAS.map((formula) => (
@@ -117,13 +124,13 @@ export default function MethodologyPage() {
 
       <MethodologySection
         id="donnees"
-        title="Notre source de données"
-        intro={DATA_SOURCE.detail}
+        title={t('donnees.title')}
+        intro={t('donnees.detail')}
       >
         <dl className="grid gap-4 sm:grid-cols-3">
           <div>
             <dt className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground/80">
-              Fournisseur
+              {t('donnees.providerLabel')}
             </dt>
             <dd className="mt-1 text-sm text-foreground">
               {DATA_SOURCE.provider}
@@ -131,18 +138,18 @@ export default function MethodologyPage() {
           </div>
           <div>
             <dt className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground/80">
-              Couverture V1
+              {t('donnees.coverageLabel')}
             </dt>
             <dd className="mt-1 text-sm text-foreground">
-              {DATA_SOURCE.coverage}
+              {t('donnees.coverage')}
             </dd>
           </div>
           <div>
             <dt className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground/80">
-              Fréquence
+              {t('donnees.refreshLabel')}
             </dt>
             <dd className="mt-1 text-sm text-foreground">
-              {DATA_SOURCE.refresh}
+              {t('donnees.refresh')}
             </dd>
           </div>
         </dl>
@@ -150,17 +157,17 @@ export default function MethodologyPage() {
 
       <MethodologySection
         id="limites"
-        title="Ce que nous ne faisons pas"
-        intro="La transparence vaut aussi pour nos limites. Volontairement, l’indicateur ne fait rien de ce qui suit."
+        title={t('limites.title')}
+        intro={t('limites.intro')}
       >
         <ul className="space-y-2 text-sm text-muted-foreground">
-          {NEVER_DO.map((item) => (
-            <li key={item} className="flex items-start gap-2">
+          {NEVER_DO.map((_, i) => (
+            <li key={i} className="flex items-start gap-2">
               <span
                 className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-sentinel-bear"
                 aria-hidden
               />
-              <span>{item}</span>
+              <span>{t(`limites.items.${i}`)}</span>
             </li>
           ))}
         </ul>
@@ -168,29 +175,31 @@ export default function MethodologyPage() {
 
       <MethodologySection
         id="attributions"
-        title="Attributions"
-        intro="Le graphique en chandeliers de l’espace de lecture s’appuie sur une bibliothèque open-source, créditée ici comme l’exige sa licence."
+        title={t('attributions.title')}
+        intro={t('attributions.intro')}
       >
         <div className="space-y-2 text-sm text-muted-foreground">
           <p>
-            <span className="text-foreground">Lightweight Charts™</span> —
-            © TradingView, Inc., distribué sous licence{' '}
-            <a
-              href="https://www.apache.org/licenses/LICENSE-2.0"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline underline-offset-4 hover:text-foreground"
-            >
-              Apache 2.0
-            </a>
-            . Bibliothèque d’affichage de graphiques utilisée pour le rendu des
-            chandeliers et des zones.
+            {t.rich('attributions.license', {
+              name: (chunks) => (
+                <span className="text-foreground">{chunks}</span>
+              ),
+              link: (chunks) => (
+                <a
+                  href="https://www.apache.org/licenses/LICENSE-2.0"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-4 hover:text-foreground"
+                >
+                  {chunks}
+                </a>
+              ),
+            })}
           </p>
           <p className="text-xs">
-            À noter : il s’agit d’une bibliothèque <em>d’affichage</em>{' '}
-            uniquement. MIA Markets n’utilise aucune API ni aucun flux de données
-            de marché de TradingView — les cours affichés proviennent de notre
-            propre moteur.
+            {t.rich('attributions.note', {
+              em: (chunks) => <em>{chunks}</em>,
+            })}
           </p>
         </div>
       </MethodologySection>

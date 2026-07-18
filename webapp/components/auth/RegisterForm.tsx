@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import * as React from 'react';
 import { AuthError } from '@/lib/auth/api-client';
 import { useAuth } from '@/lib/auth/store';
@@ -15,6 +16,7 @@ import { CheckField, FormError, TextField } from './fields';
  * timestamp of those consents are recorded server-side at account creation.
  */
 export function RegisterForm() {
+  const t = useTranslations('auth');
   const { register } = useAuth();
   const router = useRouter();
   const [error, setError] = React.useState<string | null>(null);
@@ -29,13 +31,11 @@ export function RegisterForm() {
     const acceptPrivacy = form.get('accept_privacy') === 'on';
 
     if (!ageConfirmed) {
-      setError('Vous devez déclarer avoir 18 ans ou plus.');
+      setError(t('register.errorAge'));
       return;
     }
     if (!acceptTerms || !acceptPrivacy) {
-      setError(
-        'Vous devez accepter les Conditions d’utilisation et la Politique de confidentialité.',
-      );
+      setError(t('register.errorConsents'));
       return;
     }
 
@@ -52,7 +52,7 @@ export function RegisterForm() {
       router.push('/compte');
     } catch (err) {
       setError(
-        err instanceof AuthError ? err.message : 'Inscription impossible. Réessaie.',
+        err instanceof AuthError ? err.message : t('register.errorGeneric'),
       );
     } finally {
       setSubmitting(false);
@@ -63,73 +63,69 @@ export function RegisterForm() {
     <form onSubmit={onSubmit} className="space-y-4" noValidate>
       <FormError message={error} />
       <TextField
-        label="Nom d’utilisateur"
+        label={t('register.usernameLabel')}
         name="username"
         autoComplete="username"
         required
         minLength={3}
         maxLength={32}
-        hint="3 à 32 caractères."
+        hint={t('register.usernameHint')}
       />
       <TextField
-        label="Adresse e-mail"
+        label={t('register.emailLabel')}
         name="email"
         type="email"
         autoComplete="email"
         required
       />
       <TextField
-        label="Mot de passe"
+        label={t('register.passwordLabel')}
         name="password"
         type="password"
         autoComplete="new-password"
         required
         minLength={10}
-        hint="Au moins 10 caractères."
+        hint={t('register.passwordHint')}
       />
 
       <fieldset className="space-y-2.5 rounded-md border border-border/60 bg-muted/20 p-3">
         <legend className="px-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          Déclarations obligatoires
+          {t('register.declarationsLegend')}
         </legend>
         <CheckField
           name="age_confirmed"
-          label="Je déclare avoir 18 ans ou plus."
+          label={t('register.ageLabel')}
         />
         <CheckField
           name="accept_terms"
-          label={
-            <>
-              J’accepte les{' '}
+          label={t.rich('register.acceptTerms', {
+            link: (chunks) => (
               <Link href="/conditions" className="underline underline-offset-2 hover:text-foreground">
-                Conditions d’utilisation
+                {chunks}
               </Link>
-              .
-            </>
-          }
+            ),
+          })}
         />
         <CheckField
           name="accept_privacy"
-          label={
-            <>
-              J’accepte la{' '}
+          label={t.rich('register.acceptPrivacy', {
+            link: (chunks) => (
               <Link href="/confidentialite" className="underline underline-offset-2 hover:text-foreground">
-                Politique de confidentialité
+                {chunks}
               </Link>
-              .
-            </>
-          }
+            ),
+          })}
         />
       </fieldset>
 
       <Button type="submit" className="w-full" disabled={submitting}>
-        {submitting ? 'Création…' : 'Créer mon compte'}
+        {submitting ? t('register.submitting') : t('register.submit')}
       </Button>
 
       <p className="text-center text-sm text-muted-foreground">
-        Déjà un compte ?{' '}
+        {t('register.haveAccount')}{' '}
         <Link href="/connexion" className="underline underline-offset-2 hover:text-foreground">
-          Se connecter
+          {t('register.login')}
         </Link>
       </p>
     </form>

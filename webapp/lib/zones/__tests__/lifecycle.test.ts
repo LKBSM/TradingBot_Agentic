@@ -10,8 +10,30 @@ import {
   matchesFilter,
   priceRelation,
   sortZones,
+  type DurationLabels,
   type SiblingZone,
+  type TimelineLabels,
 } from '../lifecycle';
+
+// French labels injected by the React caller in production — mirrored here so
+// the exact-wording assertions below stay meaningful (the lib itself is now
+// locale-agnostic).
+const FR_TIMELINE: TimelineLabels = {
+  formed: 'Formé',
+  mitigated: 'Mitigé',
+  obTested: 'Testé',
+  fvgTested: 'Pénétré',
+  filled: 'Comblé',
+  partial: 'Partiellement comblé',
+  active: 'Suivi en cours',
+};
+
+const FR_DURATION: DurationLabels = {
+  underMinute: "moins d'une minute",
+  min: 'min',
+  hour: 'h',
+  day: 'j',
+};
 
 function ob(overrides: Partial<OrderBlock> = {}): OrderBlock {
   return {
@@ -73,7 +95,7 @@ describe('collectZones', () => {
 describe('buildTimeline — only real events, never fabricated', () => {
   it('active + untested OB: Formé → Suivi en cours (no Testé step)', () => {
     const [z] = collectZones({ order_blocks: [ob({ tested: false })], fair_value_gaps: [] } as never);
-    const t = buildTimeline(z!);
+    const t = buildTimeline(z!, FR_TIMELINE);
     expect(t.map((e) => e.key)).toEqual(['formed', 'active']);
     expect(t.some((e) => e.label === 'Testé')).toBe(false);
   });
@@ -83,7 +105,7 @@ describe('buildTimeline — only real events, never fabricated', () => {
       order_blocks: [ob({ tested: true, mitigated_at: '2026-05-26T09:00:00+00:00' })],
       fair_value_gaps: [],
     } as never);
-    const t = buildTimeline(z!);
+    const t = buildTimeline(z!, FR_TIMELINE);
     expect(t.map((e) => e.key)).toEqual(['formed', 'tested', 'active']);
     const tested = t.filter((e) => e.key === 'tested');
     expect(tested).toHaveLength(1); // never "×N"
@@ -95,7 +117,7 @@ describe('buildTimeline — only real events, never fabricated', () => {
       order_blocks: [ob({ status: 'mitigated', tested: true, mitigated_at: '2026-05-26T08:30:00+00:00' })],
       fair_value_gaps: [],
     } as never);
-    const t = buildTimeline(z!);
+    const t = buildTimeline(z!, FR_TIMELINE);
     expect(t.map((e) => e.key)).toEqual(['formed', 'mitigated']);
     expect(t[1]).toMatchObject({ variant: 'terminal', at: '2026-05-26T08:30:00+00:00' });
   });
@@ -105,7 +127,7 @@ describe('buildTimeline — only real events, never fabricated', () => {
       order_blocks: [],
       fair_value_gaps: [fvg({ status: 'filled', tested: false })],
     } as never);
-    const t = buildTimeline(z!);
+    const t = buildTimeline(z!, FR_TIMELINE);
     expect(t.map((e) => e.key)).toEqual(['formed', 'filled']);
     // No "filled_at" exists → we surface the step WITHOUT inventing a date.
     expect(t[1]!.at).toBeNull();
@@ -116,7 +138,7 @@ describe('buildTimeline — only real events, never fabricated', () => {
       order_blocks: [],
       fair_value_gaps: [fvg({ status: 'partially_filled', tested: true, mitigated_at: '2026-05-26T09:15:00+00:00' })],
     } as never);
-    const t = buildTimeline(z!);
+    const t = buildTimeline(z!, FR_TIMELINE);
     expect(t.map((e) => e.key)).toEqual(['formed', 'partial', 'active']);
   });
 });
@@ -227,12 +249,12 @@ describe('barsSince — counted on real candles, never estimated', () => {
 
 describe('formatDurationShort', () => {
   it('formats minutes, hours and days compactly', () => {
-    expect(formatDurationShort(30 * 1000)).toBe("moins d'une minute");
-    expect(formatDurationShort(45 * 60 * 1000)).toBe('45 min');
-    expect(formatDurationShort((6 * 60 + 30) * 60 * 1000)).toBe('6 h 30');
-    expect(formatDurationShort(6 * 60 * 60 * 1000)).toBe('6 h');
-    expect(formatDurationShort((2 * 24 + 4) * 60 * 60 * 1000)).toBe('2 j 4 h');
-    expect(formatDurationShort(2 * 24 * 60 * 60 * 1000)).toBe('2 j');
+    expect(formatDurationShort(30 * 1000, FR_DURATION)).toBe("moins d'une minute");
+    expect(formatDurationShort(45 * 60 * 1000, FR_DURATION)).toBe('45 min');
+    expect(formatDurationShort((6 * 60 + 30) * 60 * 1000, FR_DURATION)).toBe('6 h 30');
+    expect(formatDurationShort(6 * 60 * 60 * 1000, FR_DURATION)).toBe('6 h');
+    expect(formatDurationShort((2 * 24 + 4) * 60 * 60 * 1000, FR_DURATION)).toBe('2 j 4 h');
+    expect(formatDurationShort(2 * 24 * 60 * 60 * 1000, FR_DURATION)).toBe('2 j');
   });
 });
 

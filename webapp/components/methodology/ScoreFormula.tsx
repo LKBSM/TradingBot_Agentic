@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { MethodologyFormula } from '@/lib/methodology/content';
 
 /**
@@ -10,23 +11,27 @@ import type { MethodologyFormula } from '@/lib/methodology/content';
  * promesse de résultat.
  */
 export function ScoreFormula({ formula }: { formula: MethodologyFormula }) {
+  const t = useTranslations('methodology');
+
   return (
     <div id={formula.id} className="scroll-mt-24">
-      <h3 className="text-base font-semibold tracking-tight">{formula.title}</h3>
+      <h3 className="text-base font-semibold tracking-tight">
+        {t(`formulas.${formula.id}.title`)}
+      </h3>
       <p className="mt-1.5 text-sm text-muted-foreground">
-        {formula.description}
+        {t(`formulas.${formula.id}.description`)}
       </p>
       <p className="mt-3 text-[11px] font-medium uppercase tracking-wide text-muted-foreground/80">
-        Ce que le moteur prend en compte
+        {t('formulas.variablesLabel')}
       </p>
       <ul className="mt-1.5 space-y-1.5 text-sm text-foreground">
-        {formula.variables.map((v) => (
-          <li key={v} className="flex items-start gap-2">
+        {formula.variables.map((_, i) => (
+          <li key={i} className="flex items-start gap-2">
             <span
               className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/60"
               aria-hidden
             />
-            <span>{v}</span>
+            <span>{t(`formulas.${formula.id}.variables.${i}`)}</span>
           </li>
         ))}
       </ul>

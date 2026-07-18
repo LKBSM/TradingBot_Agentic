@@ -162,12 +162,12 @@ export function ConditionsBuilder({
     if (result.ok) {
       setStrategyFeedback({
         kind: 'ok',
-        text: `Stratégie « ${result.strategy.name} » sauvegardée sur cet appareil.`,
+        text: t('saveStrategy.saved', { name: result.strategy.name }),
       });
     } else {
       setStrategyFeedback({
         kind: 'error',
-        text: mutationErrorMessage(result) ?? 'Sauvegarde impossible.',
+        text: mutationErrorMessage(result, t) ?? t('saveStrategy.saveFailed'),
       });
     }
   }
@@ -307,7 +307,7 @@ export function ConditionsBuilder({
                     )}
                     {entry.controls.includes('proximity') && (
                       <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                        À moins de
+                        {t('builder.proximityWithin')}
                         <input
                           type="number"
                           min={0.05}
@@ -324,12 +324,12 @@ export function ConditionsBuilder({
                           }
                           className="w-16 rounded-md border border-input bg-background px-2 py-1 text-xs text-foreground"
                         />
-                        % du prix
+                        {t('builder.proximityOfPrice')}
                       </label>
                     )}
                     {entry.controls.includes('side') && (
                       <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                        Côté
+                        {t('builder.side')}
                         <select
                           value={row.side}
                           onChange={(e) =>
@@ -339,7 +339,7 @@ export function ConditionsBuilder({
                         >
                           {LIQUIDITY_SIDE_OPTIONS.map((o) => (
                             <option key={o.value} value={o.value}>
-                              {o.label}
+                              {t(`options.side${cap(o.value)}`)}
                             </option>
                           ))}
                         </select>
@@ -372,8 +372,7 @@ export function ConditionsBuilder({
         {onSaveStrategy && (
           <div className="space-y-2 rounded-lg border border-border/60 p-3">
             <p className="text-sm text-muted-foreground">
-              Sauvegarder cette combinaison comme stratégie nommée (sur cet appareil
-              uniquement — rien n’est envoyé au serveur)&nbsp;:
+              {t('saveStrategy.prompt')}
             </p>
             <div className="flex flex-wrap items-center gap-2">
               <input
@@ -383,8 +382,8 @@ export function ConditionsBuilder({
                   setStrategyFeedback(null);
                 }}
                 maxLength={MAX_NAME_CHARS}
-                placeholder="ex. London sweep M15"
-                aria-label="Nom de la stratégie"
+                placeholder={t('saveStrategy.placeholder')}
+                aria-label={t('saveStrategy.nameAria')}
                 className="min-w-0 flex-1 rounded-md border border-input bg-background px-2 py-1 text-sm text-foreground"
               />
               <Button
@@ -394,7 +393,7 @@ export function ConditionsBuilder({
                 onClick={saveAsStrategy}
                 disabled={selectedCount === 0 || strategyName.trim().length === 0}
               >
-                Sauvegarder la stratégie
+                {t('saveStrategy.save')}
               </Button>
             </div>
             {strategyFeedback && (

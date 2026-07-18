@@ -2,11 +2,8 @@ import { useTranslations } from 'next-intl';
 import { MessageCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ConversationReplayCard } from './ConversationReplayCard';
-import { getChatbotScript } from '@/lib/chatbot';
-import {
-  getHeroLandingSample,
-  LANDING_SAMPLES,
-} from '@/lib/market-reading/landing-samples';
+import { useChatbotScriptGetter } from '@/lib/chatbot';
+import { getHeroLandingSample } from '@/lib/market-reading/landing-samples';
 
 /**
  * Section 3 — « MIA répond aux vraies questions ».
@@ -21,10 +18,9 @@ import {
  */
 export function ConversationReplaySection() {
   const t = useTranslations('landing.conversations');
+  const resolveScript = useChatbotScriptGetter();
   const xau = getHeroLandingSample();
-  const eur = LANDING_SAMPLES[1];
-  const xauScript = getChatbotScript(xau.id);
-  const eurScript = eur ? getChatbotScript(eur.id) : null;
+  const xauScript = resolveScript(xau.id);
 
   if (!xauScript) return null;
 

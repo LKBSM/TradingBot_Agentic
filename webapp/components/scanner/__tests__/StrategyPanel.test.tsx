@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent } from '@/components/test-utils';
 import { describe, expect, it, vi } from 'vitest';
 import { StrategyPanel } from '../StrategyPanel';
 import {

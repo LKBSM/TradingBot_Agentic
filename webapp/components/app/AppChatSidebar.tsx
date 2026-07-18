@@ -7,6 +7,7 @@ import {
   LineChart,
   RotateCcw,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import * as React from 'react';
 import { AgentAvatar } from '@/components/chat/AgentAvatar';
 import { ChatInput } from '@/components/chat/ChatInput';
@@ -23,23 +24,11 @@ import {
 } from '@/lib/market-reading/formatters';
 import type { Combo } from '@/lib/market-reading/store';
 
-/** On-brand starter questions for the empty state — go through the live LLM. */
-const STARTERS: ReadonlyArray<WelcomeSuggestion> = [
-  {
-    id: 'structure',
-    text: 'Décompose la structure actuelle',
-    icon: <LineChart className="h-4 w-4" aria-hidden />,
-  },
-  {
-    id: 'choch',
-    text: 'C’est quoi un CHOCH ?',
-    icon: <HelpCircle className="h-4 w-4" aria-hidden />,
-  },
-  {
-    id: 'order-blocks',
-    text: 'Montre-moi les Order Blocks actifs',
-    icon: <LayoutPanelTop className="h-4 w-4" aria-hidden />,
-  },
+/** Icons for the on-brand starter questions (text is localized in-component). */
+const STARTER_META: ReadonlyArray<{ id: string; icon: React.ReactNode }> = [
+  { id: 'structure', icon: <LineChart className="h-4 w-4" aria-hidden /> },
+  { id: 'choch', icon: <HelpCircle className="h-4 w-4" aria-hidden /> },
+  { id: 'order-blocks', icon: <LayoutPanelTop className="h-4 w-4" aria-hidden /> },
 ];
 
 /**
@@ -60,6 +49,7 @@ export function AppChatSidebar({
    */
   onSelectCombo?: (combo: Combo) => void;
 }) {
+  const t = useTranslations('app');
   const {
     turns,
     isLoading,
@@ -68,6 +58,11 @@ export function AppChatSidebar({
     resetTurns,
     recentThreads,
   } = useChat();
+  const STARTERS: ReadonlyArray<WelcomeSuggestion> = STARTER_META.map((s) => ({
+    id: s.id,
+    text: t(`chat.starter_${s.id}`),
+    icon: s.icon,
+  }));
   const [showRecents, setShowRecents] = React.useState(false);
   // Keep main's anchor-scroll UX (anchor the latest question near the top after
   // sending instead of jumping to the bottom of a long reply) in the new sidebar.
@@ -86,7 +81,7 @@ export function AppChatSidebar({
 
   return (
     <aside
-      aria-label="Assistant M.I.A Agent"
+      aria-label={t('chat.asideAria')}
       className="flex h-full min-h-0 flex-col rounded-xl border border-border/60 bg-card"
     >
       <header className="flex items-center gap-3 border-b border-border/60 px-4 py-3">
@@ -96,17 +91,17 @@ export function AppChatSidebar({
             M.I.A Agent
             <span
               className="h-1.5 w-1.5 rounded-full bg-[hsl(var(--sentinel-bull))]"
-              title={offline ? 'mode hors-ligne' : 'en ligne'}
+              title={offline ? t('chat.statusOffline') : t('chat.statusOnline')}
               aria-hidden
             />
           </p>
           <p className="truncate text-xs text-muted-foreground">
             {active
               ? `${formatInstrument(active.instrument)} · ${formatTimeframe(active.timeframe)}`
-              : 'Sélectionnez une combinaison pour discuter de sa lecture.'}
+              : t('chat.pickComboPrompt')}
           </p>
           <p className="mt-0.5 text-[10.5px] italic text-muted-foreground/85">
-            Analyse pédagogique — aucun signal ni conseil.
+            {t('chat.pedagogicalNote')}
           </p>
         </div>
         {recentThreads.length > 0 && (
@@ -119,7 +114,7 @@ export function AppChatSidebar({
             className="h-7 shrink-0 gap-1 px-2 text-xs text-muted-foreground"
           >
             <History className="h-3 w-3" aria-hidden />
-            <span className="sr-only sm:not-sr-only">Discussions</span>
+            <span className="sr-only sm:not-sr-only">{t('chat.discussions')}</span>
           </Button>
         )}
         {!empty && (
@@ -131,18 +126,18 @@ export function AppChatSidebar({
             className="h-7 shrink-0 gap-1 px-2 text-xs text-muted-foreground"
           >
             <RotateCcw className="h-3 w-3" aria-hidden />
-            <span className="sr-only sm:not-sr-only">Réinitialiser</span>
+            <span className="sr-only sm:not-sr-only">{t('chat.reset')}</span>
           </Button>
         )}
       </header>
 
       {showRecents && recentThreads.length > 0 && (
         <nav
-          aria-label="Discussions récentes"
+          aria-label={t('chat.recentDiscussions')}
           className="border-b border-border/60 px-2 py-2"
         >
           <p className="px-2 pb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-            Discussions récentes
+            {t('chat.recentDiscussions')}
           </p>
           <ul className="space-y-0.5">
             {recentThreads.map((t) => {
@@ -192,23 +187,13 @@ export function AppChatSidebar({
       >
         {empty ? (
           <ChatWelcome
-            title={
-              active
-                ? 'Comment puis-je t’aider à lire le marché ?'
-                : 'Choisis un marché pour commencer'
-            }
+            title={active ? t('chat.welcomeTitleActive') : t('chat.welcomeTitleIdle')}
             subtitle={
-              active
-                ? 'Pose une question sur la lecture en cours : décompose la structure, vulgarise un terme, ou contextualise un événement à venir.'
-                : 'Sélectionne un marché à gauche, puis pose-moi une question sur sa lecture.'
+              active ? t('chat.welcomeSubtitleActive') : t('chat.welcomeSubtitleIdle')
             }
             suggestions={active && !offline ? STARTERS : []}
             onPick={handleStarter}
-            note={
-              offline
-                ? 'Mode hors-ligne : la saisie libre nécessite la clef Anthropic côté serveur.'
-                : undefined
-            }
+            note={offline ? t('chat.offlineNote') : undefined}
           />
         ) : (
           <>
@@ -231,8 +216,7 @@ export function AppChatSidebar({
         {/* LEGAL-PENDING: chat compliance line — aligned with the legal terminal
             wording on educational-use posture. */}
         <p className="text-center text-[10.5px] italic text-muted-foreground/70">
-          M.I.A Agent répond à des questions sur la lecture algorithmique. Il ne
-          donne ni signal de trading, ni recommandation personnalisée.
+          {t('chat.complianceLine')}
         </p>
       </div>
     </aside>

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import * as React from 'react';
 import {
   askSentinel,
@@ -154,6 +155,7 @@ function appendToThread(
 const MAX_RECENT_THREADS = 6;
 
 export function ChatProvider({ children }: { children: React.ReactNode }) {
+  const t = useTranslations('chat');
   const [isOpen, setIsOpen] = React.useState(false);
   const [state, setState] = React.useState<ChatState>({
     active: null,
@@ -354,21 +356,19 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
                 id: nextId('asst'),
                 role: 'assistant',
                 source: 'fallback',
-                text:
-                  "Le mode chatbot en direct n'est pas disponible sur cet environnement pour le moment. " +
-                  'Utilise les questions suggérées ci-dessous — elles renvoient des réponses contextualisées sur cette lecture.',
+                text: t('turnUnavailable'),
               },
             ]),
           );
         } else {
-          const message = err instanceof Error ? err.message : 'Erreur inconnue';
+          const message = err instanceof Error ? err.message : t('unknownError');
           setState((s) =>
             appendToThread(s, threadId, meta, [
               {
                 id: nextId('asst'),
                 role: 'assistant',
                 source: 'error',
-                text: `Désolé, une erreur a empêché la réponse : ${message} Réessaie ou utilise une question suggérée.`,
+                text: t('turnError', { message }),
               },
             ]),
           );
@@ -377,7 +377,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
       }
     },
-    [activeSignal, turns, nextId],
+    [activeSignal, turns, nextId, t],
   );
 
   const recentThreads = React.useMemo<ChatThreadSummary[]>(() => {
