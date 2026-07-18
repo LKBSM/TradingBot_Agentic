@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@/components/test-utils';
 import { describe, expect, it, vi } from 'vitest';
 import { ReadingColumn } from '../ReadingColumn';
 import { MarketReadingNotAvailableError } from '@/lib/market-reading/api-client';

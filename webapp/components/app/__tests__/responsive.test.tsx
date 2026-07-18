@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@/components/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppWorkspace } from '../AppWorkspace';
 import { ChatProvider } from '@/components/chat/ChatProvider';

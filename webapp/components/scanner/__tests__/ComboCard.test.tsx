@@ -1,7 +1,19 @@
-import { render, screen } from '@testing-library/react';
+import { render as rtlRender, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { NextIntlClientProvider } from 'next-intl';
 import { ComboCard } from '../ComboCard';
 import type { ComboMatch } from '@/lib/conditions/types';
+import messages from '@/messages/fr.json';
+
+// ComboCard now consumes the `scanner` message namespace; fr messages keep the
+// asserted FR labels intact.
+function render(ui: React.ReactElement) {
+  return rtlRender(
+    <NextIntlClientProvider locale="fr" messages={messages}>
+      {ui}
+    </NextIntlClientProvider>,
+  );
+}
 
 function makeMatch(overrides: Partial<ComboMatch> = {}): ComboMatch {
   return {

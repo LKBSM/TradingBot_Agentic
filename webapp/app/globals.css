@@ -3,6 +3,17 @@
 @tailwind utilities;
 
 /*
+ * RTL / Arabic support (i18n Étape 1). The Latin `Inter` variable font ships no
+ * Arabic glyphs, so for `html[dir="rtl"]` (currently only the `ar` locale) we
+ * prepend the Arabic-capable Noto stack. `dir="rtl"` on <html> already flips
+ * the flow; Tailwind logical utilities + flexbox handle the rest of the layout.
+ */
+html[dir='rtl'] body {
+  font-family: var(--font-arabic), var(--font-sans), ui-sans-serif, system-ui,
+    sans-serif;
+}
+
+/*
  * shadcn/ui new-york theme — neutral slate palette with subtle gold accent
  * inspired by Linear / Stripe / Pitchbook sobriety. Domain colors (bull/bear/
  * neutral/warn) are exposed through the sentinel-* palette in tailwind.config.

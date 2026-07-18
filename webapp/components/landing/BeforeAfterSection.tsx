@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { LandingReadingChart } from './LandingReadingChart';
@@ -12,6 +13,7 @@ import { LandingReadingChart } from './LandingReadingChart';
  * mieux » : la composition fait le job.
  */
 export function BeforeAfterSection() {
+  const t = useTranslations('landing.beforeAfter');
   return (
     <section
       id="avant-apres"
@@ -24,18 +26,16 @@ export function BeforeAfterSection() {
           className="mb-3 text-[11px] uppercase tracking-wider"
         >
           <ArrowRight className="mr-1 h-3 w-3" aria-hidden />
-          Avant · Après
+          {t('kicker')}
         </Badge>
         <h2
           id="before-after-title"
           className="text-balance text-2xl font-semibold tracking-tight sm:text-3xl"
         >
-          La même heure de marché, deux façons de la lire.
+          {t('title')}
         </h2>
         <p className="mt-3 text-pretty text-muted-foreground">
-          La plupart des traders empilent trois indicateurs qui se contredisent.
-          MIA lit la structure du marché et l&apos;affiche telle quelle — voici
-          le graphique réel du produit, à droite.
+          {t('subtitle')}
         </p>
       </header>
 
@@ -48,6 +48,7 @@ export function BeforeAfterSection() {
 }
 
 function BeforeCard() {
+  const t = useTranslations('landing.beforeAfter');
   return (
     <article
       className="relative flex flex-col gap-4 rounded-2xl border border-border/60 bg-muted/30 p-5 shadow-sm sm:p-6"
@@ -56,17 +57,17 @@ function BeforeCard() {
       <header className="flex items-center justify-between gap-3">
         <div>
           <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-            Approche classique
+            {t('before.eyebrow')}
           </p>
           <h3
             id="before-card-title"
             className="mt-0.5 text-base font-semibold tracking-tight"
           >
-            Trois indicateurs empilés
+            {t('before.title')}
           </h3>
         </div>
         <Badge variant="secondary" className="text-[10px]">
-          3 signaux contradictoires
+          {t('before.badge')}
         </Badge>
       </header>
 
@@ -79,8 +80,11 @@ function BeforeCard() {
             aria-hidden
           />
           <span>
-            <strong className="font-medium text-foreground">RSI 28</strong>{' '}
-            — survente, signal d&apos;achat.
+            {t.rich('before.items.rsi', {
+              strong: (chunks) => (
+                <strong className="font-medium text-foreground">{chunks}</strong>
+              ),
+            })}
           </span>
         </li>
         <li className="flex items-start gap-2">
@@ -89,8 +93,11 @@ function BeforeCard() {
             aria-hidden
           />
           <span>
-            <strong className="font-medium text-foreground">MACD</strong>{' '}
-            — croisement baissier, signal de vente.
+            {t.rich('before.items.macd', {
+              strong: (chunks) => (
+                <strong className="font-medium text-foreground">{chunks}</strong>
+              ),
+            })}
           </span>
         </li>
         <li className="flex items-start gap-2">
@@ -99,20 +106,24 @@ function BeforeCard() {
             aria-hidden
           />
           <span>
-            <strong className="font-medium text-foreground">Bollinger</strong>{' '}
-            — prix sur la bande inférieure, signal ambigu.
+            {t.rich('before.items.bollinger', {
+              strong: (chunks) => (
+                <strong className="font-medium text-foreground">{chunks}</strong>
+              ),
+            })}
           </span>
         </li>
       </ul>
 
       <p className="mt-auto rounded-md bg-background/60 px-3 py-2 text-xs italic text-muted-foreground">
-        « Bon, je fais quoi ? »
+        {t('before.quote')}
       </p>
     </article>
   );
 }
 
 function AfterCard() {
+  const t = useTranslations('landing.beforeAfter');
   return (
     <article
       className="relative flex flex-col gap-4 rounded-2xl border border-primary/30 bg-card p-5 shadow-md sm:p-6"
@@ -121,17 +132,17 @@ function AfterCard() {
       <header className="flex items-center justify-between gap-3">
         <div>
           <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-            Lecture MIA · Or (XAU/USD) · 15 min
+            {t('after.eyebrow')}
           </p>
           <h3
             id="after-card-title"
             className="mt-0.5 text-base font-semibold tracking-tight"
           >
-            Le vrai graphique du produit, rien de caché.
+            {t('after.title')}
           </h3>
         </div>
         <Badge variant="default" className="text-[10px]">
-          1 lecture assumée
+          {t('after.badge')}
         </Badge>
       </header>
 
@@ -146,9 +157,11 @@ function AfterCard() {
             aria-hidden
           />
           <span>
-            <strong className="font-medium text-foreground">Biais haussier</strong>{' '}
-            — cassure de structure confirmée et retest en cours, décrits sans
-            score directif.
+            {t.rich('after.items.bias', {
+              strong: (chunks) => (
+                <strong className="font-medium text-foreground">{chunks}</strong>
+              ),
+            })}
           </span>
         </li>
         <li className="flex items-start gap-2">
@@ -157,9 +170,11 @@ function AfterCard() {
             aria-hidden
           />
           <span>
-            <strong className="font-medium text-foreground">Zones dessinées</strong>{' '}
-            — Order Block et Fair Value Gap haussiers sous le prix, poches de
-            liquidité repérées.
+            {t.rich('after.items.zones', {
+              strong: (chunks) => (
+                <strong className="font-medium text-foreground">{chunks}</strong>
+              ),
+            })}
           </span>
         </li>
         <li className="flex items-start gap-2">
@@ -168,15 +183,17 @@ function AfterCard() {
             aria-hidden
           />
           <span>
-            <strong className="font-medium text-foreground">Volatilité annoncée</strong>{' '}
-            — un FOMC approche : MIA signale l&apos;élargissement probable, sans
-            décider à ta place.
+            {t.rich('after.items.volatility', {
+              strong: (chunks) => (
+                <strong className="font-medium text-foreground">{chunks}</strong>
+              ),
+            })}
           </span>
         </li>
       </ul>
 
       <p className="mt-auto rounded-md bg-muted/40 px-3 py-2 text-xs italic text-muted-foreground">
-        « Voilà ce qu&apos;on voit. À toi de décider si tu agis. »
+        {t('after.quote')}
       </p>
     </article>
   );
@@ -188,6 +205,7 @@ function AfterCard() {
  * 0 0 400 140, stroke uniquement.
  */
 function BeforeChart() {
+  const t = useTranslations('landing.beforeAfter');
   return (
     <svg
       viewBox="0 0 400 140"
@@ -195,10 +213,9 @@ function BeforeChart() {
       role="img"
       aria-labelledby="before-chart-title before-chart-desc"
     >
-      <title id="before-chart-title">Trois indicateurs contradictoires</title>
+      <title id="before-chart-title">{t('chart.title')}</title>
       <desc id="before-chart-desc">
-        Un graphique illustratif où RSI, MACD et bandes de Bollinger envoient
-        des signaux opposés sur la même fenêtre temporelle.
+        {t('chart.desc')}
       </desc>
 
       {/* Bandes Bollinger — gris clair */}
@@ -241,7 +258,7 @@ function BeforeChart() {
         className="fill-[hsl(var(--sentinel-bull))] text-[8px] font-medium"
         textAnchor="end"
       >
-        RSI ↑
+        {t('chart.rsiLabel')}
       </text>
 
       {/* MACD overlay — bearish (rouge) */}
@@ -258,7 +275,7 @@ function BeforeChart() {
         className="fill-[hsl(var(--sentinel-bear))] text-[8px] font-medium"
         textAnchor="end"
       >
-        MACD ↓
+        {t('chart.macdLabel')}
       </text>
 
       {/* Annotation BB */}
@@ -268,7 +285,7 @@ function BeforeChart() {
         className="fill-muted-foreground text-[8px]"
         textAnchor="end"
       >
-        BB band
+        {t('chart.bbLabel')}
       </text>
     </svg>
   );

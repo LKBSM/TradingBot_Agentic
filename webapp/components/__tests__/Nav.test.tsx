@@ -1,8 +1,10 @@
 import { fireEvent, render as rtlRender, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { NextIntlClientProvider } from 'next-intl';
 import { Nav } from '../Nav';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { AuthProvider } from '@/lib/auth/store';
+import messages from '@/messages/fr.json';
 
 // usePathname drives the marketing-vs-product header switch; useRouter is used
 // by the (now session-aware) AccountMenu.
@@ -26,12 +28,16 @@ beforeEach(() => {
   );
 });
 
-// The real app wraps everything in a TooltipProvider + AuthProvider (layout).
+// The real app wraps everything in NextIntlClientProvider + TooltipProvider +
+// AuthProvider (layout). Nav now consumes the `nav` message namespace, so the
+// intl provider is required; fr messages keep the asserted FR labels intact.
 function render(ui: React.ReactElement) {
   return rtlRender(
-    <TooltipProvider>
-      <AuthProvider>{ui}</AuthProvider>
-    </TooltipProvider>,
+    <NextIntlClientProvider locale="fr" messages={messages}>
+      <TooltipProvider>
+        <AuthProvider>{ui}</AuthProvider>
+      </TooltipProvider>
+    </NextIntlClientProvider>,
   );
 }
 

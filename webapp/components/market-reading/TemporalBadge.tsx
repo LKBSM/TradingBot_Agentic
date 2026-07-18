@@ -2,8 +2,9 @@
 
 import { Clock } from 'lucide-react';
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
-import { formatRelativePast } from '@/lib/market-reading/formatters';
+import { useReadingFormatters } from '@/lib/market-reading/use-reading-formatters';
 
 interface TemporalBadgeProps {
   /** ISO-8601 timestamp of the candle close this reading describes. */
@@ -18,6 +19,8 @@ interface TemporalBadgeProps {
  * the real value after mount.
  */
 export function TemporalBadge({ candleCloseTs, className }: TemporalBadgeProps) {
+  const t = useTranslations('reading.temporal');
+  const fmt = useReadingFormatters();
   const [now, setNow] = React.useState<Date | null>(null);
 
   React.useEffect(() => {
@@ -50,7 +53,7 @@ export function TemporalBadge({ candleCloseTs, className }: TemporalBadgeProps) 
     >
       <span className="inline-flex items-center gap-1.5">
         <Clock className="h-3.5 w-3.5" aria-hidden />
-        Bougie clôturée {formatRelativePast(candleCloseTs, now)}
+        {t('candleClosed', { rel: fmt.relativePast(candleCloseTs, now) })}
       </span>
     </div>
   );

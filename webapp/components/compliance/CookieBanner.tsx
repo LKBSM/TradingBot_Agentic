@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -77,6 +78,7 @@ function persistConsent(consent: CookieConsent): void {
 }
 
 export function CookieBanner() {
+  const t = useTranslations('cookies');
   const [mounted, setMounted] = React.useState(false);
   const [open, setOpen] = React.useState(false);
   const [showDetails, setShowDetails] = React.useState(false);
@@ -116,43 +118,40 @@ export function CookieBanner() {
     >
       <Card className="border-border/80 p-4 shadow-xl sm:p-5">
         <h2 id="cookie-banner-title" className="text-sm font-semibold">
-          Cookies &amp; vie privée
+          {t('title')}
         </h2>
         {/* LEGAL-PENDING: wording final à valider par le terminal légal. */}
         <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-          Nous utilisons des cookies pour faire fonctionner le site
-          (nécessaires) et, sous réserve de votre consentement, pour mémoriser
-          vos préférences, mesurer l&apos;audience et améliorer le produit.
-          Vous pouvez accepter, refuser ou personnaliser à tout moment.
+          {t('description')}
         </p>
 
         {showDetails && (
           <ul className="mt-3 space-y-2 text-xs">
             <CookieRow
               id="necessary"
-              label="Nécessaires"
-              description="Indispensables au fonctionnement du site (préférence de thème, navigation). Toujours actifs."
+              label={t('necessaryLabel')}
+              description={t('necessaryDesc')}
               checked
               disabled
             />
             <CookieRow
               id="functional"
-              label="Fonctionnels"
-              description="Mémorisent vos préférences (langue, sections dépliées, état du chatbot)."
+              label={t('functionalLabel')}
+              description={t('functionalDesc')}
               checked={draft.functional}
               onChange={(v) => setDraft((d) => ({ ...d, functional: v }))}
             />
             <CookieRow
               id="analytics"
-              label="Analytiques"
-              description="Statistiques d'usage anonymisées pour améliorer le produit (V2 : Plausible self-hosted, sans transfert hors UE)."
+              label={t('analyticsLabel')}
+              description={t('analyticsDesc')}
               checked={draft.analytics}
               onChange={(v) => setDraft((d) => ({ ...d, analytics: v }))}
             />
             <CookieRow
               id="marketing"
-              label="Marketing"
-              description="Personnalisation d'éventuelles communications. Aucun outil actif en V1."
+              label={t('marketingLabel')}
+              description={t('marketingDesc')}
               checked={draft.marketing}
               onChange={(v) => setDraft((d) => ({ ...d, marketing: v }))}
             />
@@ -161,7 +160,7 @@ export function CookieBanner() {
 
         <div className="mt-4 flex flex-wrap gap-2">
           <Button size="sm" onClick={acceptAll} className="flex-1 sm:flex-none">
-            Tout accepter
+            {t('acceptAll')}
           </Button>
           <Button
             size="sm"
@@ -169,7 +168,7 @@ export function CookieBanner() {
             onClick={rejectAll}
             className="flex-1 sm:flex-none"
           >
-            Tout refuser
+            {t('rejectAll')}
           </Button>
           <Button
             size="sm"
@@ -180,7 +179,7 @@ export function CookieBanner() {
             }}
             className="flex-1 sm:flex-none"
           >
-            {showDetails ? 'Enregistrer mon choix' : 'Personnaliser'}
+            {showDetails ? t('save') : t('customize')}
           </Button>
         </div>
       </Card>
