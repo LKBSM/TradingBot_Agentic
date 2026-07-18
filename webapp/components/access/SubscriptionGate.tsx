@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { fetchAccess, type AccessSummary } from '@/lib/access/api-client';
 import { Paywall } from './Paywall';
 
@@ -42,6 +43,7 @@ export function SubscriptionGate({
   paywallDescription,
   children,
 }: SubscriptionGateProps) {
+  const t = useTranslations('access');
   const router = useRouter();
   const pathname = usePathname() || '/';
   const [access, setAccess] = React.useState<AccessSummary | null>(null);
@@ -103,7 +105,7 @@ export function SubscriptionGate({
         aria-live="polite"
       >
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
-        <span className="sr-only">Chargement…</span>
+        <span className="sr-only">{t('gate.loading')}</span>
       </div>
     );
   }

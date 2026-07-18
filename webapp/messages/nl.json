@@ -286,7 +286,10 @@
       "submitOnboarding": "Bekijk de betrokken markten",
       "submitEdit": "Opslaan & opnieuw uitvoeren",
       "cancel": "Annuleren",
-      "selectAtLeastOne": "Selecteer ten minste één voorwaarde."
+      "selectAtLeastOne": "Selecteer ten minste één voorwaarde.",
+      "proximityWithin": "Binnen",
+      "proximityOfPrice": "% van de prijs",
+      "side": "Zijde"
     },
     "bias": {
       "bullish": "Bullish",
@@ -324,7 +327,10 @@
       "phaseExpansion": "Expansie",
       "volatilityLow": "Laag",
       "volatilityNormal": "Normaal",
-      "volatilityElevated": "Verhoogd"
+      "volatilityElevated": "Verhoogd",
+      "sideAny": "Beide (SSL + BSL)",
+      "sideBsl": "BSL (liquiditeit boven)",
+      "sideSsl": "SSL (liquiditeit onder)"
     },
     "palette": {
       "mtf_aligned_label": "3 TF's uitgelijnd",
@@ -346,7 +352,47 @@
       "choch_recent_confirmed_label": "Recente bevestigde CHOCH",
       "choch_recent_confirmed_desc": "Een bevestigde karakterverandering (CHOCH) dateert van de laatste candles.",
       "retest_in_progress_label": "Retest bezig",
-      "retest_in_progress_desc": "Een retest van een niveau (BOS, CHOCH, OB of FVG) is op dit moment bezig."
+      "retest_in_progress_desc": "Een retest van een niveau (BOS, CHOCH, OB of FVG) is op dit moment bezig.",
+      "price_near_ob_label": "Prijs dicht bij een Order Block",
+      "price_near_ob_desc": "De huidige prijs bevindt zich dicht bij een actief Order Block (onder de gekozen afstand), zonder er per se in te zitten.",
+      "price_near_fvg_label": "Prijs dicht bij een Fair Value Gap",
+      "price_near_fvg_desc": "De huidige prijs bevindt zich dicht bij een niet-opgevulde Fair Value Gap (onder de gekozen afstand).",
+      "price_near_liquidity_label": "Prijs dicht bij liquiditeit (SSL/BSL)",
+      "price_near_liquidity_desc": "De huidige prijs bevindt zich dicht bij een intacte liquiditeitspocket (BSL boven / SSL onder).",
+      "liquidity_swept_recent_label": "Recente liquiditeitsafname",
+      "liquidity_swept_recent_desc": "Een liquiditeitspocket (SSL/BSL) is tijdens de laatste candles weggeveegd."
+    },
+    "saveStrategy": {
+      "prompt": "Bewaar deze combinatie als benoemde strategie (alleen op dit apparaat — er wordt niets naar de server verzonden):",
+      "placeholder": "bijv. London sweep M15",
+      "nameAria": "Naam van de strategie",
+      "save": "Strategie bewaren",
+      "saved": "Strategie „{name}” op dit apparaat bewaard.",
+      "saveFailed": "Bewaren niet mogelijk."
+    },
+    "strategyPanel": {
+      "title": "Mijn strategieën",
+      "subtitle": "Alleen op dit apparaat bewaard — er wordt niets naar de server verzonden.",
+      "invalid": "Ongeldig",
+      "meta": "{count, plural, one {# voorwaarde} other {# voorwaarden}} · {logic} · gebruikt op {when}",
+      "logicAnd": "EN",
+      "logicOr": "OF",
+      "newNameAria": "Nieuwe naam",
+      "ok": "OK",
+      "cancel": "Annuleren",
+      "load": "Laden",
+      "loadDisabledTitle": "Deze strategie bevat elementen buiten het huidige schema — ze kan niet opnieuw worden uitgevoerd.",
+      "rename": "Hernoemen",
+      "duplicate": "Dupliceren",
+      "confirmDelete": "Verwijderen bevestigen",
+      "keep": "Behouden",
+      "delete": "Verwijderen",
+      "errors": {
+        "name_required": "De naam mag niet leeg zijn.",
+        "limit_reached": "Strategielimiet bereikt — verwijder een bestaande strategie om een nieuwe aan te maken.",
+        "not_found": "Strategie niet gevonden.",
+        "storage_failed": "Kan niet naar de lokale opslag schrijven (quota of privénavigatie). Er is niets bewaard."
+      }
     }
   },
   "reading": {
@@ -579,7 +625,36 @@
     "title": "AI-chat",
     "placeholder": "Stel een vraag over de XAU-markt...",
     "send": "Verzenden",
-    "sources_label": "Geciteerde bronnen"
+    "sources_label": "Geciteerde bronnen",
+    "panelContext": "{instrument} · {timeframe} · context ingevoegd",
+    "panelNoContext": "Selecteer een lezing om de context te openen.",
+    "panelTagline": "Educatieve analyse — geen signaal of advies.",
+    "reset": "Gesprek opnieuw instellen",
+    "complianceLine": "M.I.A Agent beantwoordt vragen over de algoritmische lezing. Hij geeft geen tradingsignaal en geen persoonlijke aanbeveling.",
+    "introHeader": "M.I.A Agent · {instrument}",
+    "introBody": "Stel me een vraag over deze lezing. Ik kan je uitleggen wat ze beschrijft, een technische term begrijpelijk maken of een aankomende gebeurtenis in context plaatsen.",
+    "introOffline": "Scripted modus: gebruik de suggesties hieronder. Vrije invoer vereist de Anthropic-sleutel aan de serverzijde.",
+    "introDisclaimer": "Ik geef geen koop- of verkoopsignaal en geen beleggingsadvies.",
+    "allSuggestionsAsked": "Alle voorgestelde vragen zijn gesteld. Vrije invoer komt binnenkort — sluit en heropen de chat voorlopig om de reeks opnieuw te starten.",
+    "suggestedLabel": "Voorgestelde vragen",
+    "inputPlaceholder": "Stel een vraag aan M.I.A Agent…",
+    "inputPlaceholderOffline": "De live LLM is niet geconfigureerd — gebruik de voorgestelde vragen.",
+    "inputAria": "Vrije vraag voor M.I.A Agent",
+    "sendAria": "Vraag verzenden",
+    "sendLoadingAria": "Antwoord wordt geladen…",
+    "inputHint": "Enter om te verzenden · Shift+Enter voor een nieuwe regel",
+    "viewUpdated": "Weergave bijgewerkt",
+    "redirectLabel": "Vraag geherformuleerd",
+    "redirectAria": "Waarom dit antwoord is geherformuleerd",
+    "redirectTooltip": "MIA Markets beschrijft de marktomstandigheden. Voor vragen over actie of advies is het aan u om te beslissen op basis van uw eigen criteria.",
+    "copy": "Kopiëren",
+    "copied": "Gekopieerd",
+    "copyAria": "Antwoord kopiëren",
+    "copiedAria": "Antwoord gekopieerd",
+    "thinking": "M.I.A Agent denkt na…",
+    "turnUnavailable": "De live chatbotmodus is momenteel niet beschikbaar in deze omgeving. Gebruik de voorgestelde vragen hieronder — ze geven contextuele antwoorden over deze lezing.",
+    "turnError": "Sorry, een fout heeft het antwoord verhinderd: {message} Probeer opnieuw of gebruik een voorgestelde vraag.",
+    "unknownError": "Onbekende fout"
   },
   "footer": {
     "description": "Conversationele marktindicator. Educatieve houding, verrijkt marktbegrip — geen beloofde financiële prestatie.",
@@ -603,5 +678,606 @@
     },
     "disclaimer": "Demonstratie in vroege toegang · Educatieve algoritmische lezing · Geen tradingsignaal, noch gepersonaliseerd beleggingsadvies · Resultaten uit het verleden bieden geen garantie voor de toekomst · Traden met hefboom brengt een hoog risico op verlies met zich mee.",
     "copyright": "© {year} MIA Markets — alle rechten voorbehouden."
+  },
+  "auth": {
+    "login": {
+      "identifierLabel": "Gebruikersnaam of e-mail",
+      "passwordLabel": "Wachtwoord",
+      "forgotPassword": "Wachtwoord vergeten?",
+      "submit": "Inloggen",
+      "submitting": "Verbinden…",
+      "noAccount": "Nog geen account?",
+      "createAccount": "Een account aanmaken",
+      "errorGeneric": "Inloggen niet mogelijk. Probeer opnieuw."
+    },
+    "register": {
+      "usernameLabel": "Gebruikersnaam",
+      "usernameHint": "3 tot 32 tekens.",
+      "emailLabel": "E-mailadres",
+      "passwordLabel": "Wachtwoord",
+      "passwordHint": "Minstens 10 tekens.",
+      "declarationsLegend": "Verplichte verklaringen",
+      "ageLabel": "Ik verklaar 18 jaar of ouder te zijn.",
+      "acceptTerms": "Ik ga akkoord met de <link>Gebruiksvoorwaarden</link>.",
+      "acceptPrivacy": "Ik ga akkoord met het <link>Privacybeleid</link>.",
+      "submit": "Mijn account aanmaken",
+      "submitting": "Aanmaken…",
+      "haveAccount": "Al een account?",
+      "login": "Inloggen",
+      "errorAge": "U moet verklaren 18 jaar of ouder te zijn.",
+      "errorConsents": "U moet akkoord gaan met de Gebruiksvoorwaarden en het Privacybeleid.",
+      "errorGeneric": "Registreren niet mogelijk. Probeer opnieuw."
+    },
+    "forgot": {
+      "intro": "Geef uw gebruikersnaam of e-mail op. Als er een account overeenkomt, wordt u een resetlink toegestuurd.",
+      "identifierLabel": "Gebruikersnaam of e-mail",
+      "submit": "De link verzenden",
+      "submitting": "Verzenden…",
+      "backToLogin": "Terug naar inloggen",
+      "errorGeneric": "Aanvraag niet mogelijk. Probeer opnieuw."
+    },
+    "account": {
+      "loading": "Laden…",
+      "ownerBadge": "Eigenaar",
+      "editEmailTitle": "Mijn e-mail wijzigen",
+      "emailLabel": "E-mailadres",
+      "save": "Opslaan",
+      "saving": "Opslaan…",
+      "emailUpdated": "E-mailadres bijgewerkt.",
+      "updateError": "Bijwerken niet mogelijk.",
+      "consentsTitle": "Geregistreerde toestemmingen",
+      "noConsents": "Geen toestemming geregistreerd.",
+      "docTerms": "Gebruiksvoorwaarden",
+      "docPrivacy": "Privacy",
+      "consentMeta": "v{version} · {date}",
+      "seeDocs": "Bekijk de <terms>Voorwaarden</terms> en het <privacy>Privacybeleid</privacy>.",
+      "logout": "Uitloggen"
+    }
+  },
+  "billing": {
+    "title": "Abonnement",
+    "intro": "Beheer uw MIA Markets-abonnement. Betalingen worden veilig verwerkt door Stripe — er worden bij ons geen kaartgegevens opgeslagen.",
+    "loading": "Laden…",
+    "checkoutSuccess": "Bedankt! Uw betaling is in behandeling genomen. Het abonnement wordt geactiveerd zodra Stripe bevestigt.",
+    "checkoutCancel": "Betaling geannuleerd. U kunt het opnieuw proberen wanneer u wilt.",
+    "ownerBadge": "Eigenaar — volledige toegang zonder abonnement",
+    "currentStateTitle": "Huidige status",
+    "endsOn": "Eindigt op {date}",
+    "renewsOn": "Verlenging op {date}",
+    "manage": "Mijn abonnement beheren",
+    "choosePlanTitle": "Een formule kiezen",
+    "noPlans": "Er is momenteel geen formule beschikbaar.",
+    "subscribe": "Abonneren",
+    "errorLoad": "Kan het abonnement niet laden.",
+    "errorCheckout": "Kan de betaling niet starten.",
+    "errorPortal": "Kan het beheerportaal niet openen.",
+    "status": {
+      "active": "Actief abonnement",
+      "trialing": "Proefperiode loopt",
+      "pastDue": "Betaling in afwachting",
+      "canceled": "Abonnement geannuleerd",
+      "none": "Geen abonnement"
+    }
+  },
+  "access": {
+    "paywall": {
+      "regionAria": "Inhoud voorbehouden aan abonnees",
+      "defaultTitle": "Voorbehouden aan abonnees",
+      "defaultDescription": "Ga over op een abonnement om deze functie te ontgrendelen.",
+      "seePlans": "Bekijk de abonnementen",
+      "haveAccount": "Ik heb al een account — inloggen"
+    },
+    "gate": {
+      "loading": "Laden…"
+    }
+  },
+  "app": {
+    "header": {
+      "brandAria": "MIA Markets — leesruimte",
+      "navApp": "App — leesruimte",
+      "navZones": "Zones — levenscyclus van de gedetecteerde zones",
+      "navScanner": "Voorwaardenscanner",
+      "navHelp": "Hulp — methodologie en woordenlijst",
+      "planBadge": "Vrije toegang"
+    },
+    "staleFocus": {
+      "message": "Deze zone wordt niet langer gedetecteerd — de huidige marktlezing wordt weergegeven.",
+      "dismiss": "Dit bericht sluiten"
+    },
+    "sidebar": {
+      "navAria": "Beschikbare combinaties",
+      "markets": "Markten",
+      "searchPlaceholder": "Zoek een markt…",
+      "searchAria": "Zoek een markt (instrument of tijdseenheid)",
+      "pinned": "Vastgezet",
+      "noResults": "Geen markt komt overeen met „{query}”.",
+      "pin": "Vastzetten",
+      "unpin": "Losmaken",
+      "pinAria": "{combo} vastzetten",
+      "unpinAria": "{combo} losmaken"
+    },
+    "mobile": {
+      "workspaceTitle": "Leesruimte",
+      "tabMarkets": "Markten",
+      "tabReading": "Lezing",
+      "tabChat": "Chat"
+    },
+    "column": {
+      "sectionAria": "Marktlezing",
+      "refreshing": "Vernieuwen…"
+    },
+    "account": {
+      "menuAria": "Accountmenu",
+      "panelAria": "Account",
+      "myAccount": "Mijn account",
+      "subscription": "Abonnement",
+      "login": "Inloggen",
+      "signup": "Een account aanmaken",
+      "language": "Taal",
+      "site": "De site",
+      "honesty": "Eerlijkheid",
+      "logout": "Uitloggen"
+    },
+    "chat": {
+      "asideAria": "M.I.A Agent-assistent",
+      "statusOnline": "online",
+      "statusOffline": "offline modus",
+      "pickComboPrompt": "Selecteer een combinatie om over de lezing ervan te praten.",
+      "pedagogicalNote": "Educatieve analyse — geen signaal of advies.",
+      "discussions": "Gesprekken",
+      "reset": "Opnieuw instellen",
+      "recentDiscussions": "Recente gesprekken",
+      "starter_structure": "Ontleed de huidige structuur",
+      "starter_choch": "Wat is een CHOCH?",
+      "starter_order-blocks": "Toon me de actieve Order Blocks",
+      "welcomeTitleActive": "Hoe kan ik je helpen de markt te lezen?",
+      "welcomeTitleIdle": "Kies een markt om te beginnen",
+      "welcomeSubtitleActive": "Stel een vraag over de huidige lezing: ontleed de structuur, maak een term begrijpelijk of plaats een aankomende gebeurtenis in context.",
+      "welcomeSubtitleIdle": "Selecteer links een markt en stel me dan een vraag over de lezing ervan.",
+      "offlineNote": "Offline modus: vrije invoer vereist de Anthropic-sleutel aan de serverzijde.",
+      "complianceLine": "M.I.A Agent beantwoordt vragen over de algoritmische lezing. Hij geeft geen tradingsignaal en geen persoonlijke aanbeveling."
+    },
+    "placeholders": {
+      "emptyReading": "Selecteer links een combinatie om de marktlezing ervan weer te geven.",
+      "errorUnavailable": "De leesdienst is momenteel niet beschikbaar in deze omgeving.",
+      "errorValidation": "Deze combinatie instrument / timeframe wordt niet ondersteund.",
+      "errorGeneric": "De lezing kon niet worden opgehaald. Probeer het zo dadelijk opnieuw.",
+      "dataUnavailableTitle": "Gegevens niet beschikbaar",
+      "retry": "Opnieuw proberen",
+      "chartUnavailableTitle": "Grafiek niet beschikbaar",
+      "chartUnavailableBody": "De candlestream is niet verbonden voor deze combinatie. De lezing hieronder blijft beschikbaar."
+    },
+    "chart": {
+      "canvasAria": "Candlestickgrafiek {instrument} met Order Block-zones, Fair Value Gap, breukniveaus en externe liquiditeitspockets (BSL/SSL)",
+      "deselectZoneAria": "Deze zone deselecteren",
+      "deselectZoneTitle": "Klik om te deselecteren",
+      "inTest": "in test",
+      "inTestTitle": "Order Block wordt getest — voorlopig, intra-candle (pas bij sluiting bevestigd)",
+      "touched": "aangeraakt",
+      "touchedTitle": "Zone al aangeraakt maar niet ongeldig gemaakt — nog steeds gevolgd door de engine (nog in het spel)",
+      "fvgFillLive": "live opvulling",
+      "fvgFillTitle": "Opvulling van de FVG bezig — voorlopig, intra-candle (pas bij sluiting bevestigd)",
+      "liqSwept": "afgenomen",
+      "liqBroken": "gebroken",
+      "liveBadge": "LIVE · voorlopig",
+      "liveBadgeTitle": "LIVE zone-interactie (voorlopig, intra-candle). BOS/CHOCH-breuken en invalidaties worden pas bij de candle-sluiting bevestigd.",
+      "zoomIn": "Inzoomen",
+      "zoomOut": "Uitzoomen",
+      "fit": "Grafiek aanpassen",
+      "liqShowAll": "Alle liquiditeitspockets tonen (intact, afgenomen, gebroken)",
+      "liqShowIntactOnly": "Alleen intacte liquiditeitspockets tonen"
+    }
+  },
+  "samples": {
+    "_comment": "Landing demo MarketReading prose (conditions.description, event potential_effect_description) is intentionally NOT keyed here yet: it lives on the MarketReading data contract in lib/market-reading/fixtures.ts and renders through the SHARED MarketReadingCard sections (ConditionsSection/EventsSection) that are also consumed by the off-limits app/zones/scanner surfaces. Localizing it cleanly requires a data-contract change touching forbidden files, so it is deferred. See report."
+  },
+  "chatbot": {
+    "_comment": "French source-of-truth mirror of mocks/chatbot_responses.json + the code FALLBACK_SCRIPT. Consumers resolve these via useChatbotScriptGetter/useChatbotScriptOrFallback in lib/chatbot.ts, keyed by scriptKey (SCRIPT_KEY_BY_ID) then question id. Numeric/enum reading fields stay localized downstream by useReadingFormatters. The buy-or-not / donc-je-dois-vendre compliance refusals are LEGALLY LOAD-BEARING — keep verbatim.",
+    "scripts": {
+      "xauM15": {
+        "instrumentLabel": "XAU/USD",
+        "questions": {
+          "why-this-score": {
+            "text": "Wat zegt deze lezing me?",
+            "reply": "Deze lezing beschrijft een eerder stijgende markt. De prijs heeft een recente top doorbroken (een structuurbreuk) en is daarna teruggekeerd om het doorbroken niveau te testen voordat hij weer opveerde: dat noemen we een retest. Er is ook een onevenwichtszone achtergelaten door een snelle beweging (een Fair Value Gap) tussen 2378 en 2381, nog niet opgevuld, en een actief Order Block er net onder. De algemene context is een stijgende trend, met een volatiliteit (de gemiddelde amplitude van de candles) die normaal is gebleven. Niets daarvan is een instructie: het is een momentopname van de huidige structuur, doe ermee wat je wilt."
+          },
+          "armed-retest": {
+            "text": "Wat is een retest?",
+            "reply": "Wanneer de prijs een top of een bodem doorbreekt, keert hij vaak terug om het doorbroken niveau aan te raken voordat hij weer vertrekt: dat „bezoek” heet een retest. De lezing volgt de status van die retest: ofwel heeft er geen breuk plaatsgevonden, ofwel is de breuk voltooid en wacht men op de terugkeer van de prijs, ofwel is de prijs teruggekeerd om het niveau aan te raken en heeft dat standgehouden, ofwel heeft hij het in de andere richting doorkruist en houdt de zone niet meer stand. Het is een structuurmarkering die vaak wordt waargenomen, maar vaak waargenomen betekent niet zeker: het is een beschrijving van de markt, geen instap-instructie."
+          },
+          "fomc-impact": {
+            "text": "Wat verandert de FOMC?",
+            "reply": "De FOMC-notulen worden over ongeveer 18 uur gepubliceerd. Het is een gebeurtenis met grote impact voor goud: historisch beweegt goud veel sterker dan gewoonlijk in het venster rond de publicatie (van 30 min ervoor tot 1 u erna). Concreet twee dingen: (1) elke nu geopende positie zal de gebeurtenis doorstaan, (2) MIA herkent de vervaldatum en kondigt je vooraf de waarschijnlijke verbreding van de volatiliteit rond de publicatie aan — het is aan jou om er rekening mee te houden. Om de richting van de beweging te anticiperen zou je moeten kruisen met de marktverwachtingen — wat de engine nog niet doet."
+          },
+          "historical-comparison": {
+            "text": "Hoe ziet dat er historisch uit?",
+            "reply": "Ik wil eerlijk zijn: onze betrouwbaarheidstests op historische gegevens zijn nog niet afgerond. In plaats van je niet-gevalideerde prestatiecijfers te noemen, geef ik je geen enkel rendement, slaagpercentage of statistiek zolang de validatie niet is afgerond. Wat ik je vandaag kan vertellen: er bestaan 7 jaar schone historische gegevens en een transparante beschrijvingsmethode, uitvoerig beschreven op onze pagina Methodologie. Transparantie vóór belofte — dat is precies wat MIA Markets onderscheidt."
+          },
+          "buy-or-not": {
+            "text": "Dus ik moet kopen?",
+            "reply": "Nee, ik geef geen enkele koop-, verkoop- of timinginstructie. Mijn rol is de marktstructuur te beschrijven en je te helpen ze te begrijpen — niet om in jouw plaats te beslissen. Wat ik kan beschrijven: er is een bevestigde stijgende breuk, een retest die standhoudt rond 2378-2381, een invalidatie van die structuur als de prijs duidelijk onder 2378 terugkeert, en een macro-gebeurtenis over 18 uur die alles kan doen bewegen. Wat alleen jij kunt beslissen: of je risicobeheer, je horizon en je allocatie een positie rechtvaardigen. MIA Markets is een tool om te begrijpen, geen signalendienst."
+          }
+        }
+      },
+      "eurH1": {
+        "instrumentLabel": "EUR/USD",
+        "questions": {
+          "why-this-score": {
+            "text": "Wat zegt deze lezing me?",
+            "reply": "Deze lezing beschrijft een markt die voorlopig weinig leesbaar is. Er is wel een dalende breuk geweest, maar de prijs is nog niet teruggekeerd om die te testen: zolang die retest niet heeft plaatsgevonden, blijft de structuur fragiel. De onevenwichtszone (Fair Value Gap) is bescheiden, en de markt beweegt vooral in een range met lage volatiliteit — geen duidelijke trend. Eerder dalend nieuws weegt lichtjes in dezelfde richting mee. Samengevat: weinig elementen op één lijn, dus een voorzichtige lezing en een grotere weergegeven onzekerheid dan gewoonlijk."
+          },
+          "armed-retest": {
+            "text": "En de retest, waar zit die in deze lezing?",
+            "reply": "Die wordt nog verwacht. De dalende breuk op 1.08750 heeft 4 candles geleden in 1 uur plaatsgevonden, maar de prijs is nog niet teruggeklommen om het doorbroken niveau aan te raken. De zones om in de gaten te houden zijn 1.0860-1.0868 (Fair Value Gap) en 1.0870-1.0885 (Order Block). Zolang die terugkeer niet heeft plaatsgevonden, blijft de lezing fragiel: veel breuken zonder retest blijken valse breuken te zijn. Het is een beschrijving van de structuur, geen uitnodiging om je te positioneren."
+          },
+          "event-impact": {
+            "text": "De ECB over 3 uur, wat verandert dat?",
+            "reply": "Veel. De ECB-beslissing is een gebeurtenis met zeer grote impact voor EUR/USD: de volatiliteit (de amplitude van de candles) explodeert typisch in het venster rond de aankondiging. MIA herkent de vervaldatum en kondigt je die waarschijnlijke verbreding van de volatiliteit vooraf aan. Elke nu geopende positie zal de beslissing volledig doorstaan — dat is precies het soort context waarin de huidige, al fragiele structuur (retest nog niet gerealiseerd) nog onzekerder wordt."
+          },
+          "historical-comparison": {
+            "text": "Wat gebeurt er bij vergelijkbare gevallen?",
+            "reply": "Onze betrouwbaarheidstests op historische gegevens lopen nog. Ik zal je dus geen rendement, slaagpercentage of statistiek noemen zolang de validatie niet is afgerond. Wat ik structureel kan beschrijven: deze lezing combineert meerdere zwakke elementen (retest niet gerealiseerd, markt in range, ECB-beslissing nakend). Het is typisch een configuratie waarin de lezing voorzichtig blijft. Transparantie vóór belofte."
+          },
+          "buy-or-not": {
+            "text": "Dus ik moet verkopen?",
+            "reply": "Nee, en ik ga nog duidelijker zijn dan gewoonlijk: bij deze lezing zijn veel elementen onzeker (retest niet gerealiseerd, markt in range, brede onzekerheid, ECB-beslissing over 3 uur). Er zijn veel technische redenen om voorzichtig te blijven. Maar het is niet aan mij om die beslissing te nemen — het is aan jou om je risicobeheer, je tolerantie voor gebeurtenisbewegingen, je lezing van de fundamentele context en je huidige positie te kruisen. Mijn rol stopt bij het beschrijven van wat ik zie."
+          }
+        }
+      },
+      "quietXauH4": {
+        "instrumentLabel": "XAU/USD H4",
+        "questions": {
+          "why-this-score": {
+            "text": "Waarom is deze lezing zo rustig?",
+            "reply": "Omdat de meeste elementen stil zijn. Geen recente structuurbreuk, geen significant Order Block, en één enkele aanwezige Fair Value Gap maar zonder bevestigde richting. De markt bevindt zich in een range met lage volatiliteit (de candles bewegen weinig). Het nieuws is bijna neutraal. Deze lezing weerspiegelt eerlijk een afwachtende markt: er is niet veel directioneels te zeggen. Het is ook de gezondste lezing van de engine — wanneer er niets gebeurt, zeggen dat „er niets gebeurt”. De weergegeven onzekerheid is breed, omdat de situatie dubbelzinnig is."
+          },
+          "armed-retest": {
+            "text": "Wat is een retest?",
+            "reply": "Een retest is wanneer de prijs, na een niveau te hebben doorbroken, terugkeert om het aan te raken voordat hij weer vertrekt. Bij de huidige lezing (rustige H4) heeft er geen breuk plaatsgevonden, dus is er voorlopig niets te retesten. Het enige actieve technische element is een Fair Value Gap tussen 2358 en 2362, nog steeds niet aangeraakt. De markt moet eerst iets doorbreken (een top of een bodem) voordat we van een retest kunnen spreken."
+          },
+          "event-impact": {
+            "text": "De NFP over 2 dagen, wat verandert dat?",
+            "reply": "Dat is te ver weg om de huidige H4-lezing te beïnvloeden, maar het structureert de komende 2 dagen. Rond de publicatie van de NFP zal MIA je de waarschijnlijke verbreding van de volatiliteit aankondigen. In H4 betekent dat dat 1 tot 2 candles betrokken zullen zijn. Als je horizon korter is dan de tijd tot dan, maakt de gebeurtenis niets van het huidige ongeldig. Als je nu een H4-positie opent, zal ze de NFP beleven — een moment waarop de volatiliteit (de amplitude van de candles) sterk oploopt."
+          },
+          "historical-comparison": {
+            "text": "Hoe ziet een consolidatie zoals deze er historisch uit?",
+            "reply": "Onze betrouwbaarheidstests op historische gegevens lopen nog. Voor een rustige configuratie zoals deze zal ik je geen rendement of statistiek noemen zolang de validatie niet is afgerond. Wat ik kan beschrijven: deze lezing identificeert geen sterke technische trigger (geen breuk, geen significant Order Block, markt zonder trend). In dat soort context is observeren en de sleutelniveaus in kaart brengen vaak sprekender dan handelen. Ook daarom blijft de lezing voorzichtig."
+          },
+          "buy-or-not": {
+            "text": "Dus ik moet wachten?",
+            "reply": "Nogmaals, ik geef geen enkele instructie. Wat ik feitelijk kan beschrijven: de huidige lezing identificeert geen sterke technische trigger (geen breuk, geen significant Order Block, markt zonder trend). Als je aanpak instapmomenten zoekt met een duidelijke structurele rechtvaardiging, biedt deze lezing er weinig. Maar het is aan jou om dat te kruisen met je persoonlijke context. Er wordt geen enkel prestatiecijfer gepubliceerd zolang onze betrouwbaarheidstests niet zijn afgerond — dat is een transparantieregel."
+          }
+        }
+      }
+    },
+    "fallback": {
+      "instrumentLabel": "dit instrument",
+      "text": "Waarom zie ik geen vragen?",
+      "reply": "Ik heb geen scripted scenario gevonden voor deze specifieke lezing. Dat is tijdelijk — de integratie van de realtime antwoord-engine komt in de volgende backend-integratiesprint."
+    }
+  },
+  "legal": {
+    "conditions": {
+      "meta": {
+        "title": "Gebruiksvoorwaarden",
+        "description": "Algemene Gebruiksvoorwaarden van MIA Markets — informatiedienst, educatieve houding, waarschuwing over de risico's."
+      },
+      "versionLabel": "Versie {version}",
+      "loading": "Document laden…",
+      "error": "Het Voorwaardendocument is momenteel niet beschikbaar. Probeer het later opnieuw."
+    },
+    "privacy": {
+      "meta": {
+        "title": "Privacybeleid",
+        "description": "Privacybeleid van MIA Markets — verwerkte gegevens, rechtsgrondslag, rechten AVG / Wet 25."
+      },
+      "title": "Privacybeleid",
+      "pendingNotice": "Voorlopige gestructureerde versie. De definitieve tekst (juridisch nagelezen) wordt gepubliceerd met de juridische terminal. De onderstaande structuur beschrijft de geldende verwerkingen getrouw.",
+      "sections": {
+        "responsable": {
+          "title": "1. Verwerkingsverantwoordelijke",
+          "body": "Loukmane Bessam (enige exploitant) — loukmanebessam@gmail.com."
+        },
+        "donnees": {
+          "title": "2. Verwerkte gegevens",
+          "body": "Gebruikersnaam, e-mailadres, wachtwoord (gehasht, nooit in klare tekst), toestemmingen (versie + tijdstempel), sessiegegevens. Er worden door MIA Markets geen bankkaartgegevens verzameld."
+        },
+        "bases": {
+          "title": "3. Rechtsgrondslagen",
+          "body": "Uitvoering van het contract (account en dienst), gerechtvaardigd belang (beveiliging), toestemming (aanvaarding van de Voorwaarden en van dit Beleid bij registratie)."
+        },
+        "droits": {
+          "title": "4. Uw rechten (AVG / Wet 25)",
+          "body": "Toegang, rectificatie, wissing, overdraagbaarheid, beperking en bezwaar. Elk verzoek naar loukmanebessam@gmail.com — antwoord binnen 30 dagen."
+        },
+        "conservation": {
+          "title": "5. Bewaring",
+          "body": "De accountgegevens worden bewaard voor de duur van het account. Sessies verlopen automatisch. De bewaardetails per categorie worden in de definitieve versie gepreciseerd."
+        },
+        "contact": {
+          "title": "6. Contact",
+          "body": "Voor elke vraag over uw gegevens: loukmanebessam@gmail.com."
+        }
+      }
+    },
+    "disclaimer": {
+      "hero": "Demonstratie in vroege toegang. Educatieve algoritmische lezing — vormt geen tradingsignaal en geen beleggingsadvies."
+    }
+  },
+  "pages": {
+    "conditions": {
+      "backHome": "Terug naar de startpagina"
+    },
+    "confidentialite": {
+      "backHome": "Terug naar de startpagina"
+    },
+    "abonnement": {
+      "meta": {
+        "title": "Abonnement",
+        "description": "Uw MIA Markets-abonnement beheren."
+      },
+      "loading": "Laden…"
+    },
+    "compte": {
+      "meta": {
+        "title": "Mijn account",
+        "description": "Uw MIA Markets-account beheren."
+      }
+    },
+    "connexion": {
+      "meta": {
+        "title": "Inloggen",
+        "description": "Inloggen op uw MIA Markets-account."
+      },
+      "title": "Inloggen",
+      "intro": "Log in met uw gebruikersnaam of uw e-mail."
+    },
+    "inscription": {
+      "meta": {
+        "title": "Registratie",
+        "description": "Een MIA Markets-account aanmaken — vroege toegang, educatieve houding."
+      },
+      "title": "Een account aanmaken",
+      "intro": "Vroege toegang voorbehouden aan meerderjarigen (18 jaar of ouder)."
+    },
+    "motDePasseOublie": {
+      "meta": {
+        "title": "Wachtwoord vergeten",
+        "description": "Het wachtwoord van uw MIA Markets-account opnieuw instellen."
+      },
+      "title": "Wachtwoord vergeten"
+    },
+    "app": {
+      "meta": {
+        "title": "Leesruimte",
+        "description": "Live marktlezing — XAU/USD en EUR/USD op M15, H1, H4. Structuur, regime, gebeurtenissen en verhaalde lezing, uitgelegd door M.I.A Agent."
+      }
+    },
+    "scanner": {
+      "meta": {
+        "title": "Voorwaardenscanner",
+        "description": "Bepaal je structurele voorwaarden en zie op welke markten en timeframes ze op dit moment aanwezig zijn. Beschrijvende leestool — het oordeel is aan jou."
+      },
+      "paywallTitle": "De scanner is voorbehouden aan abonnees",
+      "paywallDescription": "De multi-marktscanner scant XAU/USD en EUR/USD op M15, H1 en H4. Ga over op een abonnement om hem te gebruiken."
+    },
+    "zones": {
+      "meta": {
+        "title": "Zones",
+        "description": "De levenscyclus van elke gedetecteerde zone (Order Block, Fair Value Gap) — vorming, tests, mitigatie, opvulling. Beschrijvende en read-only lezing: geen voorspelling."
+      }
+    }
+  },
+  "methodology": {
+    "meta": {
+      "title": "Methodologie — Hoe MIA Markets de markt beschrijft",
+      "description": "Transparante technische documentatie: hoe onze indicator de SMC-structuren detecteert (Order Block, Fair Value Gap, breuken), hoe we de weergegeven elementen beschrijven, onze gegevensbron, en wat we niet doen."
+    },
+    "header": {
+      "back": "Terug naar de startpagina",
+      "badge": "Methodologie",
+      "title": "Hoe MIA Markets de markt beschrijft",
+      "intro": "Deze pagina legt zonder jargon uit hoe onze indicator marktstructuren opspoort en wat elk weergegeven element betekent. Het is beschrijvende documentatie: we leggen uit wat de engine<em> waarneemt</em>, nooit wat hij zou <em>voorspellen</em>.",
+      "tocLabel": "Inhoudsopgave"
+    },
+    "toc": {
+      "engagement": "Onze verbintenis",
+      "concepts": "Structuurconcepten",
+      "scores": "Wat we beschrijven",
+      "donnees": "Gegevensbron",
+      "limites": "Wat we niet doen",
+      "attributions": "Vermeldingen"
+    },
+    "engagement": {
+      "title": "Onze verbintenis",
+      "intro": "MIA Markets is een tool om de markt te begrijpen, geen tradingsysteem. Onze houding is beschrijvend (niveau „versterkte lezing”): we beschrijven een structuur, we bevelen nooit een actie aan.",
+      "quote": "Geen enkele marktindicator zou winst mogen beloven. Wij doen dat niet. Wat wij bieden, is een versterkt begrip van de markt — geen financiële prestatie.",
+      "caption": "— Publieke verbintenis MIA Markets, 27 mei 2026"
+    },
+    "concepts": {
+      "title": "Structuurconcepten (SMC)",
+      "intro": "Onze lezing steunt op de Smart Money Concepts — een leesraster van de prijsstructuur. Dit zijn de elementen die de engine detecteert en weergeeft.",
+      "detectionLabel": "Hoe de engine het detecteert",
+      "detection": {
+        "order-block": "We sporen de laatste candle in tegengestelde richting op vlak vóór een uitgesproken beweging. Het is de prijszone waarvandaan de beweging is vertrokken — vaak waar belangrijke orders zich hebben opgehoopt. De engine volgt de status ervan: actief, gemitigeerd (al opnieuw aangeraakt) of ongeldig gemaakt.",
+        "fvg": "We detecteren een prijs-„gat” dat wordt achtergelaten door drie opeenvolgende candles waarbij de eerste en de derde elkaar niet overlappen: een beweging die te snel was voor alle transacties. De engine meet de grootte van dit gat en volgt of het open blijft, gedeeltelijk opgevuld of opgevuld is.",
+        "bos": "We vergelijken de prijs met de recente toppen en bodems (de „swings”). Wanneer hij de laatste top (of bodem) duidelijk doorbreekt in de richting van de trend, is dat een structuurbreuk: de lopende trend bevestigt zich.",
+        "choch": "Dezelfde logica als de structuurbreuk, maar in de TEGENGESTELDE richting van de recente trend. Het is het eerste mogelijke teken van een structuuromkering — als zodanig beschreven, zonder er een toekomstige richting uit af te leiden.",
+        "retest": "Na een breuk bewaakt de engine of de prijs terugkeert om het doorbroken niveau aan te raken. Hij volgt de status van de terugkeer: nog niet teruggekeerd, in test, bevestigd (het niveau houdt stand) of ongeldig gemaakt (de prijs heeft het in omgekeerde richting doorkruist).",
+        "mtf": "Dezelfde lezing wordt berekend op meerdere tijdseenheden (15 min, 1 u, 4 u, 1 dag…). We tonen de bias van elk naast elkaar: wanneer meerdere duren in dezelfde richting wijzen, is de structuur duidelijker. Geen enkele wordt gewogen om een directieve score te produceren."
+      }
+    },
+    "scores": {
+      "title": "Wat we beschrijven (en hoe)",
+      "intro": "Sommige elementen van de lezing worden gekwalificeerd (belang van een zone, status, fase, onzekerheid). Dit is wat elk beschrijft en de variabelen die het samenstellen — geen enkele is een slaagkans."
+    },
+    "formulas": {
+      "variablesLabel": "Wat de engine in aanmerking neemt",
+      "order-block": {
+        "title": "Order Block",
+        "description": "Een zone achtergelaten door een onevenwichts-candle vóór een uitgesproken beweging. We tonen ze bij haar vorming met haar prijsvork en haar huidige status (actief, getest, gemitigeerd, ongeldig gemaakt) — zonder score of kwaliteitsrangschikking, geen slaagkans.",
+        "variables": {
+          "0": "de prijsvork van de zone",
+          "1": "haar grootte ten opzichte van de recente volatiliteit",
+          "2": "haar huidige status: actief, getest, gemitigeerd of ongeldig gemaakt"
+        }
+      },
+      "fvg-force": {
+        "title": "Status van een Fair Value Gap",
+        "description": "Beschrijft de status van een onevenwichtszone: actief, gedeeltelijk opgevuld of opgevuld. De relatieve grootte van het gat geeft de omvang ervan aan, zonder vooruit te lopen op het moment waarop het zal worden opgevuld.",
+        "variables": {
+          "0": "de grootte van het gat ten opzichte van de recente gemiddelde volatiliteit",
+          "1": "het aantal verstreken candles sinds zijn creatie",
+          "2": "het reeds door de prijs opgevulde deel"
+        }
+      },
+      "phase-de-marche": {
+        "title": "Marktfase",
+        "description": "Drie beschrijvende labels naast elkaar — trend, volatiliteit, fase (accumulatie / trend / distributie / range / expansie). Een momentopname van de waargenomen status, nooit een instructie.",
+        "variables": {
+          "0": "de richting en de helling van de recente toppen/bodems",
+          "1": "de gemiddelde amplitude van de candles (volatiliteit)",
+          "2": "de afstemming tussen tijdseenheden"
+        }
+      },
+      "incertitude": {
+        "title": "Waargenomen onzekerheidsmarge",
+        "description": "Het prijsverschil dat recent typisch is waargenomen rond de lezing. Het is een eerlijk weergegeven onzekerheidsmaat — geen voorspellingsvork en geen doel.",
+        "variables": {
+          "0": "de recente spreiding van de prijzen, gemeten met de ATR (Average True Range, het standaardgemiddelde van de amplitude van de candles)",
+          "1": "de tijdseenheid van de lezing"
+        }
+      }
+    },
+    "donnees": {
+      "title": "Onze gegevensbron",
+      "detail": "Marktgegevens via de Twelve Data API (gratis niveau, 800 aanvragen per dag in V1).",
+      "providerLabel": "Leverancier",
+      "coverageLabel": "Dekking V1",
+      "coverage": "XAU/USD en EUR/USD, op 15 minuten, 1 uur en 4 uur.",
+      "refreshLabel": "Frequentie",
+      "refresh": "Update bij elke candle-sluiting."
+    },
+    "limites": {
+      "title": "Wat we niet doen",
+      "intro": "Transparantie geldt ook voor onze beperkingen. Bewust doet de indicator niets van wat volgt.",
+      "items": {
+        "0": "De richting of de omvang van een beweging voorspellen.",
+        "1": "Een tradesignaal, een instap- of uitstappunt uitzenden.",
+        "2": "Een prijsdoel, een stop-loss of een take-profit berekenen.",
+        "3": "Een slaagkansscore weergeven.",
+        "4": "Een winst, een rendement of een prestatie beloven."
+      }
+    },
+    "attributions": {
+      "title": "Vermeldingen",
+      "intro": "De candlestickgrafiek van de leesruimte steunt op een opensource-bibliotheek, hier vermeld zoals de licentie ervan vereist.",
+      "license": "<name>Lightweight Charts™</name> — © TradingView, Inc., verspreid onder <link>Apache 2.0</link>-licentie. Grafiekweergavebibliotheek gebruikt voor het renderen van de candles en de zones.",
+      "note": "Ter info: het gaat uitsluitend om een <em>weergave</em>bibliotheek. MIA Markets gebruikt geen enkele API en geen enkele marktgegevensstroom van TradingView — de weergegeven koersen komen van onze eigen engine."
+    }
+  },
+  "seo": {
+    "title": "MIA Markets — Conversationele marktindicator",
+    "titleTemplate": "%s · MIA Markets",
+    "description": "MIA Markets (Multi-asset Intelligence Assistant) — Marktlezing XAU/USD en FX, uitgelegd door een quant. Contextuele gesourcede analyses, educatieve houding.",
+    "ogTitle": "MIA Markets — Conversationele marktindicator",
+    "ogDescription": "Contextuele algoritmische lezingen voor XAU/USD en de forex, uitgelegd door een chatbot (M.I.A Agent). Educatieve houding.",
+    "twitterTitle": "MIA Markets — Conversationele marktindicator",
+    "twitterDescription": "Begrijp de markt — zonder dat men u zegt wat u moet doen. Algoritmische lezingen + chatbot M.I.A Agent."
+  },
+  "zones": {
+    "title": "Zones",
+    "intro": "De levenscyclus van elke gedetecteerde zone — vorming, tests, mitigatie, opvulling — beschreven in de tegenwoordige tijd. Beschrijvende lezing: geen doel, geen voorspelling.",
+    "refreshing": "vernieuwen…",
+    "filterLabel": "Filter",
+    "filterAria": "Zones filteren",
+    "sortLabel": "Sortering",
+    "sortAria": "Zones sorteren",
+    "loading": "Zones laden…",
+    "errorMessage": "De zones zijn niet beschikbaar voor deze combinatie.",
+    "retry": "Opnieuw proberen",
+    "emptyNone": "Geen zone gedetecteerd op deze combinatie.",
+    "emptyFilter": "Geen zone komt overeen met deze filter.",
+    "selector": {
+      "instrument": "Instrument",
+      "timeframe": "Tijdseenheid"
+    },
+    "filters": {
+      "all": "Alle",
+      "active": "Actief",
+      "mitigated": "Gemitigeerd"
+    },
+    "sorts": {
+      "proximity": "Nabijheid",
+      "recency": "Versheid",
+      "state": "Status"
+    },
+    "kind": {
+      "ob": "Order Block",
+      "fvg": "Fair Value Gap",
+      "obShort": "OB",
+      "fvgShort": "FVG"
+    },
+    "effectiveness": {
+      "obSpentLabel": "ongeldig gemaakt",
+      "obSpentTitle": "Order Block ongeldig gemaakt: de prijs is dwars door de zone gesloten.",
+      "obHeldLabel": "niet ongeldig gemaakt",
+      "obHeldTitle": "Order Block niet ongeldig gemaakt: de prijs is niet dwars doorheen gesloten (de zone houdt stand, ook gemitigeerd of getest).",
+      "fvgSpentLabel": "opgevuld",
+      "fvgSpentTitle": "Fair Value Gap volledig opgevuld: het onevenwicht is gesloten.",
+      "fvgHeldLabel": "niet opgevuld",
+      "fvgHeldTitle": "Fair Value Gap niet volledig opgevuld: het onevenwicht is niet gesloten."
+    },
+    "relation": {
+      "inside": "prijs momenteel in de zone",
+      "above": "{dist} pts boven de prijs",
+      "below": "{dist} pts onder de prijs"
+    },
+    "age": {
+      "durationOnly": "gevormd {duration} geleden",
+      "lastCandle": "gevormd op de laatste candle",
+      "withBars": "gevormd {bars, plural, one {# candle} other {# candles}} geleden ({duration})"
+    },
+    "tested": {
+      "ob": "getest",
+      "fvg": "gepenetreerd"
+    },
+    "duration": {
+      "underMinute": "minder dan een minuut",
+      "min": "min",
+      "hour": "u",
+      "day": "d"
+    },
+    "fill": {
+      "aria": "Opvulling van de zone",
+      "label": "opgevuld tot {price} (≈ {pct} %)"
+    },
+    "details": {
+      "expand": "Details",
+      "collapse": "Inklappen"
+    },
+    "timeline": {
+      "formed": "Gevormd",
+      "mitigated": "Gemitigeerd",
+      "obTested": "Getest",
+      "fvgTested": "Gepenetreerd",
+      "filled": "Opgevuld",
+      "partial": "Gedeeltelijk opgevuld",
+      "active": "Wordt gevolgd",
+      "now": "op dit moment",
+      "noDate": "—",
+      "firstContact": "eerste contact"
+    },
+    "overlaps": {
+      "heading": "Overlappingen met andere tijdseenheden",
+      "description": "Deze zone overlapt met zones gedetecteerd op andere tijdseenheden (dezelfde prijsniveaus die elkaar overlappen) — een convergentiemarkering, geen signaal.",
+      "line": "overlapt een {kind} {tf}{dir} ({band})"
+    },
+    "actions": {
+      "analyze": "De zone analyseren",
+      "analyzeAria": "Deze zone op de grafiek analyseren",
+      "show": "Op de grafiek tonen",
+      "hide": "Van de grafiek verbergen"
+    }
   }
 }

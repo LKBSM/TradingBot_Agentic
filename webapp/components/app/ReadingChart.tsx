@@ -17,6 +17,7 @@ import {
 } from 'lightweight-charts';
 import { Droplets, Maximize2, Minus, Plus } from 'lucide-react';
 import { useTheme } from 'next-themes';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { formatLocalDayHm, formatLocalHm, localTimeLabel } from '@/lib/time/localTime';
 import {
@@ -372,6 +373,7 @@ export function ReadingChart({
   isolatedZoneIds = DEFAULT_CHART_VIEW.isolatedZoneIds,
   className,
 }: ReadingChartProps) {
+  const t = useTranslations('app');
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
 
@@ -1102,7 +1104,7 @@ export function ReadingChart({
         ref={containerRef}
         className="h-[280px] w-full sm:h-[340px]"
         role="img"
-        aria-label={`Graphique en chandeliers ${instrument} avec zones Order Block, Fair Value Gap, niveaux de cassure et poches de liquidité externe (BSL/SSL)`}
+        aria-label={t('chart.canvasAria', { instrument })}
       />
 
       {/* Discreet local-time indicator (bottom-left, over the plot). */}
@@ -1150,8 +1152,8 @@ export function ReadingChart({
               className="absolute"
               role={clickable ? 'button' : undefined}
               tabIndex={clickable ? 0 : undefined}
-              aria-label={clickable ? 'Désélectionner cette zone' : undefined}
-              title={clickable ? 'Cliquer pour désélectionner' : undefined}
+              aria-label={clickable ? t('chart.deselectZoneAria') : undefined}
+              title={clickable ? t('chart.deselectZoneTitle') : undefined}
               onClick={clickable ? () => onClearHighlight() : undefined}
               onKeyDown={
                 clickable
@@ -1223,9 +1225,9 @@ export function ReadingChart({
                           color: LIVE_COLOR,
                           backgroundColor: `rgba(${LIVE_RGB}, 0.16)`,
                         }}
-                        title="Order Block en cours de test — provisoire, intra-bougie (confirmé seulement à la clôture)"
+                        title={t('chart.inTestTitle')}
                       >
-                        en test
+                        {t('chart.inTest')}
                       </span>
                     )}
                     {/* Touched-but-alive chip: a `mitigated` OB / `partially_filled`
@@ -1241,9 +1243,9 @@ export function ReadingChart({
                           color: ZONE_LABEL[r.kind],
                           backgroundColor: `rgba(${ZONE_RGB[r.kind]}, 0.18)`,
                         }}
-                        title="Zone déjà touchée mais non invalidée — toujours suivie par le moteur (encore en jeu)"
+                        title={t('chart.touchedTitle')}
                       >
-                        touché
+                        {t('chart.touched')}
                       </span>
                     )}
                   </div>
@@ -1270,13 +1272,13 @@ export function ReadingChart({
               border: `1px solid rgba(${LIVE_RGB}, 0.8)`,
               borderRadius: 1,
             }}
-            title="Comblement du FVG en cours — provisoire, intra-bougie (confirmé seulement à la clôture)"
+            title={t('chart.fvgFillTitle')}
           >
             <span
               className="absolute right-1 top-0 whitespace-nowrap text-[9px] font-semibold leading-tight"
               style={{ color: LIVE_COLOR }}
             >
-              comblement live
+              {t('chart.fvgFillLive')}
             </span>
           </div>
         ))}
@@ -1339,7 +1341,7 @@ export function ReadingChart({
                       opacity: r.status === 'broken' ? 0.7 : 0.9,
                     }}
                   >
-                    {r.status === 'swept' ? 'prise' : 'cassée'}
+                    {r.status === 'swept' ? t('chart.liqSwept') : t('chart.liqBroken')}
                   </span>
                 </>
               )}
@@ -1358,7 +1360,7 @@ export function ReadingChart({
             backgroundColor: `rgba(${LIVE_RGB}, 0.12)`,
             border: `1px solid rgba(${LIVE_RGB}, 0.5)`,
           }}
-          title="Interaction de zones EN DIRECT (provisoire, intra-bougie). Les cassures BOS/CHOCH et les invalidations ne sont confirmées qu'à la clôture de bougie."
+          title={t('chart.liveBadgeTitle')}
           role="status"
           aria-live="polite"
         >
@@ -1367,7 +1369,7 @@ export function ReadingChart({
             style={{ backgroundColor: LIVE_COLOR }}
             aria-hidden
           />
-          EN DIRECT · provisoire
+          {t('chart.liveBadge')}
         </div>
       )}
 
@@ -1376,13 +1378,13 @@ export function ReadingChart({
           their own z-index and would otherwise intercept clicks over the
           time-axis strip). */}
       <div className="absolute bottom-2 left-2 z-10 flex gap-1">
-        <ChartControl label="Zoom avant" onClick={() => zoom(0.7)}>
+        <ChartControl label={t('chart.zoomIn')} onClick={() => zoom(0.7)}>
           <Plus className="h-4 w-4" aria-hidden />
         </ChartControl>
-        <ChartControl label="Zoom arrière" onClick={() => zoom(1.4)}>
+        <ChartControl label={t('chart.zoomOut')} onClick={() => zoom(1.4)}>
           <Minus className="h-4 w-4" aria-hidden />
         </ChartControl>
-        <ChartControl label="Ajuster le graphique" onClick={fit}>
+        <ChartControl label={t('chart.fit')} onClick={fit}>
           <Maximize2 className="h-4 w-4" aria-hidden />
         </ChartControl>
         {/* "Poches intactes seulement" — reversible DISPLAY filter (hides the
@@ -1392,8 +1394,8 @@ export function ReadingChart({
           <ChartControl
             label={
               liquidityIntactOnly
-                ? 'Afficher toutes les poches de liquidité (intactes, prises, cassées)'
-                : 'Afficher seulement les poches de liquidité intactes'
+                ? t('chart.liqShowAll')
+                : t('chart.liqShowIntactOnly')
             }
             onClick={toggleLiquidityIntactOnly}
             pressed={liquidityIntactOnly}

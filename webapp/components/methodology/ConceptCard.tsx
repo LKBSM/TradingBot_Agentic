@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { Card, CardContent } from '@/components/ui/card';
 import type { MethodologyConcept } from '@/lib/methodology/content';
 import { conceptShort, conceptTerm } from '@/lib/methodology/content';
@@ -11,6 +12,8 @@ import { conceptShort, conceptTerm } from '@/lib/methodology/content';
  * `detection` explique comment le moteur repère le concept.
  */
 export function ConceptCard({ concept }: { concept: MethodologyConcept }) {
+  const t = useTranslations('methodology');
+
   return (
     <Card id={concept.id} className="scroll-mt-24 border-border/60">
       <CardContent className="space-y-2 p-5">
@@ -22,10 +25,10 @@ export function ConceptCard({ concept }: { concept: MethodologyConcept }) {
         </p>
         <div className="pt-1">
           <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground/80">
-            Comment le moteur le détecte
+            {t('concepts.detectionLabel')}
           </p>
           <p className="mt-1 text-sm leading-relaxed text-foreground">
-            {concept.detection}
+            {t(`concepts.detection.${concept.id}`)}
           </p>
         </div>
       </CardContent>

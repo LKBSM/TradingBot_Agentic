@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { useChat } from '@/components/chat/ChatProvider';
 import { AppChatSidebar } from './AppChatSidebar';
 import { InstrumentSidebar } from './InstrumentSidebar';
@@ -77,6 +78,7 @@ function WorkspaceInner({
   dataSource: ReadingSource;
   initialFocusZoneId?: string | null;
 }) {
+  const t = useTranslations('app');
   const { active, select, combos } = useActiveCombo();
   const { openForCombo, viewActionSignal } = useChat();
   const { applyActions } = useChartView();
@@ -173,13 +175,10 @@ function WorkspaceInner({
       {staleFocusNotice && (
         <div className="container-wide pt-4" role="status" aria-live="polite">
           <div className="flex items-center justify-between gap-3 rounded-md border border-border/70 bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
-            <span>
-              Cette zone n’est plus détectée — la lecture actuelle du marché est
-              affichée.
-            </span>
+            <span>{t('staleFocus.message')}</span>
             <button
               type="button"
-              aria-label="Fermer ce message"
+              aria-label={t('staleFocus.dismiss')}
               onClick={() => setStaleFocusNotice(false)}
               className="shrink-0 rounded px-1 font-medium transition-colors hover:text-foreground"
             >

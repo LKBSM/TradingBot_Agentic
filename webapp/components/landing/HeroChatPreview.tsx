@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { MiaAgentLogo } from '@/components/chat/MiaAgentLogo';
 import { useChat } from '@/components/chat/ChatProvider';
-import { getChatbotScript } from '@/lib/chatbot';
+import { useChatbotScriptGetter } from '@/lib/chatbot';
 import { cn } from '@/lib/utils';
 import type { LandingSample } from '@/lib/market-reading/landing-samples';
 
@@ -32,6 +32,7 @@ export function HeroChatPreview({
   introDelayMs = 1400,
 }: HeroChatPreviewProps) {
   const t = useTranslations('landing.chatPreview');
+  const resolveScript = useChatbotScriptGetter();
   const { openFor, appendExchange } = useChat();
   const [showIntro, setShowIntro] = React.useState(false);
 
@@ -51,7 +52,10 @@ export function HeroChatPreview({
     [sample.id, reading.header.instrument, reading.header.timeframe],
   );
 
-  const script = React.useMemo(() => getChatbotScript(sample.id), [sample.id]);
+  const script = React.useMemo(
+    () => resolveScript(sample.id),
+    [resolveScript, sample.id],
+  );
   const previewQuestions = React.useMemo(
     () => script?.questions.slice(0, 3) ?? [],
     [script],

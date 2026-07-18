@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@/components/test-utils';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ChatProvider, useChat } from '../ChatProvider';
 import { STORAGE_KEY } from '@/lib/chat/thread-store';

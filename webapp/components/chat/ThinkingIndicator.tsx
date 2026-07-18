@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { AgentAvatar } from './AgentAvatar';
 
 /**
@@ -7,6 +8,7 @@ import { AgentAvatar } from './AgentAvatar';
  * visually without a noisy label.
  */
 export function ThinkingIndicator() {
+  const t = useTranslations('chat');
   return (
     <div className="flex w-full gap-2.5" role="status" aria-live="polite">
       <AgentAvatar size="sm" className="mt-0.5" />
@@ -20,7 +22,7 @@ export function ThinkingIndicator() {
           className="chat-think-dot h-1.5 w-1.5 rounded-full bg-muted-foreground"
           style={{ animationDelay: '0.4s' }}
         />
-        <span className="sr-only">M.I.A Agent réfléchit…</span>
+        <span className="sr-only">{t('thinking')}</span>
       </div>
     </div>
   );

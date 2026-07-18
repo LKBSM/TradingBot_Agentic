@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import * as React from 'react';
 import { AuthError, requestPasswordReset } from '@/lib/auth/api-client';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,7 @@ import { FormError, FormSuccess, TextField } from './fields';
  * neutral confirmation on success.
  */
 export function ForgotPasswordForm() {
+  const t = useTranslations('auth');
   const [error, setError] = React.useState<string | null>(null);
   const [done, setDone] = React.useState<string | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
@@ -27,7 +29,7 @@ export function ForgotPasswordForm() {
       );
       setDone(res.message);
     } catch (err) {
-      setError(err instanceof AuthError ? err.message : 'Demande impossible. Réessaie.');
+      setError(err instanceof AuthError ? err.message : t('forgot.errorGeneric'));
     } finally {
       setSubmitting(false);
     }
@@ -41,7 +43,7 @@ export function ForgotPasswordForm() {
           href="/connexion"
           className="block text-center text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground"
         >
-          Retour à la connexion
+          {t('forgot.backToLogin')}
         </Link>
       </div>
     );
@@ -51,21 +53,20 @@ export function ForgotPasswordForm() {
     <form onSubmit={onSubmit} className="space-y-4" noValidate>
       <FormError message={error} />
       <p className="text-sm text-muted-foreground">
-        Indiquez votre nom d’utilisateur ou votre e-mail. Si un compte
-        correspond, un lien de réinitialisation vous sera envoyé.
+        {t('forgot.intro')}
       </p>
       <TextField
-        label="Nom d’utilisateur ou e-mail"
+        label={t('forgot.identifierLabel')}
         name="identifier"
         autoComplete="username"
         required
       />
       <Button type="submit" className="w-full" disabled={submitting}>
-        {submitting ? 'Envoi…' : 'Envoyer le lien'}
+        {submitting ? t('forgot.submitting') : t('forgot.submit')}
       </Button>
       <p className="text-center text-sm text-muted-foreground">
         <Link href="/connexion" className="underline underline-offset-2 hover:text-foreground">
-          Retour à la connexion
+          {t('forgot.backToLogin')}
         </Link>
       </p>
     </form>

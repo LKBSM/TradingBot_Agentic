@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import * as React from 'react';
 import { AuthError } from '@/lib/auth/api-client';
 import { useAuth } from '@/lib/auth/store';
@@ -10,6 +11,7 @@ import { FormError, TextField } from './fields';
 
 /** Login form — identifier is a username OR an email (single field). */
 export function LoginForm() {
+  const t = useTranslations('auth');
   const { login } = useAuth();
   const router = useRouter();
   const [error, setError] = React.useState<string | null>(null);
@@ -38,7 +40,7 @@ export function LoginForm() {
       router.push(resolveDestination());
     } catch (err) {
       setError(
-        err instanceof AuthError ? err.message : 'Connexion impossible. Réessaie.',
+        err instanceof AuthError ? err.message : t('login.errorGeneric'),
       );
     } finally {
       setSubmitting(false);
@@ -49,13 +51,13 @@ export function LoginForm() {
     <form onSubmit={onSubmit} className="space-y-4" noValidate>
       <FormError message={error} />
       <TextField
-        label="Nom d’utilisateur ou e-mail"
+        label={t('login.identifierLabel')}
         name="identifier"
         autoComplete="username"
         required
       />
       <TextField
-        label="Mot de passe"
+        label={t('login.passwordLabel')}
         name="password"
         type="password"
         autoComplete="current-password"
@@ -66,16 +68,16 @@ export function LoginForm() {
           href="/mot-de-passe-oublie"
           className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
         >
-          Mot de passe oublié ?
+          {t('login.forgotPassword')}
         </Link>
       </div>
       <Button type="submit" className="w-full" disabled={submitting}>
-        {submitting ? 'Connexion…' : 'Se connecter'}
+        {submitting ? t('login.submitting') : t('login.submit')}
       </Button>
       <p className="text-center text-sm text-muted-foreground">
-        Pas encore de compte ?{' '}
+        {t('login.noAccount')}{' '}
         <Link href="/inscription" className="underline underline-offset-2 hover:text-foreground">
-          Créer un compte
+          {t('login.createAccount')}
         </Link>
       </p>
     </form>

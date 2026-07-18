@@ -11,7 +11,7 @@ export function MethodologySection({
   children,
 }: {
   id: string;
-  title: string;
+  title: React.ReactNode;
   intro?: React.ReactNode;
   children: React.ReactNode;
 }) {

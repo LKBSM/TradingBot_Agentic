@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -21,18 +22,17 @@ import {
  * "Enregistrer & relancer" path.
  */
 
-const ERROR_MESSAGES: Record<string, string> = {
-  name_required: 'Le nom ne peut pas être vide.',
-  limit_reached:
-    'Limite de stratégies atteinte — supprime une stratégie existante pour en créer une nouvelle.',
-  not_found: 'Stratégie introuvable.',
-  storage_failed:
-    'Impossible d’écrire dans le stockage local (quota ou navigation privée). Rien n’a été sauvegardé.',
-};
+/** Translator bound to the `scanner` namespace (next-intl's useTranslations). */
+type ScannerT = ReturnType<typeof useTranslations<'scanner'>>;
 
-export function mutationErrorMessage(result: StrategyMutationResult): string | null {
+/** Map a mutation error code to a localized message via the scanner translator. */
+export function mutationErrorMessage(
+  result: StrategyMutationResult,
+  t: ScannerT,
+): string | null {
   if (result.ok) return null;
-  return ERROR_MESSAGES[result.error] ?? 'Opération impossible.';
+  const key = `strategyPanel.errors.${result.error}`;
+  return t(key);
 }
 
 function formatDate(ts: number, locale: string): string {
@@ -64,6 +64,7 @@ export function StrategyPanel({
   onDuplicate(id: string): StrategyMutationResult;
   onDelete(id: string): void;
 }) {
+  const t = useTranslations('scanner');
   const [renamingId, setRenamingId] = React.useState<string | null>(null);
   const [renameDraft, setRenameDraft] = React.useState('');
   const [confirmDeleteId, setConfirmDeleteId] = React.useState<string | null>(null);
@@ -73,7 +74,7 @@ export function StrategyPanel({
 
   function submitRename(id: string) {
     const result = onRename(id, renameDraft);
-    const message = mutationErrorMessage(result);
+    const message = mutationErrorMessage(result, t);
     setFeedback(message);
     if (result.ok) {
       setRenamingId(null);
@@ -84,9 +85,9 @@ export function StrategyPanel({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Mes stratégies</CardTitle>
+        <CardTitle className="text-base">{t('strategyPanel.title')}</CardTitle>
         <p className="mt-1 text-xs text-muted-foreground">
-          Sauvegardées sur cet appareil uniquement — rien n’est envoyé au serveur.
+          {t('strategyPanel.subtitle')}
         </p>
       </CardHeader>
       <CardContent className="space-y-2">
@@ -120,15 +121,15 @@ export function StrategyPanel({
                           if (e.key === 'Enter') submitRename(strategy.id);
                           if (e.key === 'Escape') setRenamingId(null);
                         }}
-                        aria-label="Nouveau nom"
+                        aria-label={t('strategyPanel.newNameAria')}
                         autoFocus
                         className="min-w-0 flex-1 rounded-md border border-input bg-background px-2 py-1 text-sm text-foreground"
                       />
                       <Button size="sm" onClick={() => submitRename(strategy.id)}>
-                        OK
+                        {t('strategyPanel.ok')}
                       </Button>
                       <Button size="sm" variant="ghost" onClick={() => setRenamingId(null)}>
-                        Annuler
+                        {t('strategyPanel.cancel')}
                       </Button>
                     </>
                   ) : (
@@ -138,13 +139,18 @@ export function StrategyPanel({
                       </span>
                       {invalid && (
                         <span className="rounded-full border border-destructive/50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-destructive">
-                          Invalide
+                          {t('strategyPanel.invalid')}
                         </span>
                       )}
                       <span className="text-xs text-muted-foreground">
-                        {conditionCount} condition{conditionCount > 1 ? 's' : ''} ·{' '}
-                        {strategy.config?.logic === 'OR' ? 'OU' : 'ET'} · utilisée le{' '}
-                        {formatDate(strategy.lastUsedAt, locale)}
+                        {t('strategyPanel.meta', {
+                          count: conditionCount,
+                          logic:
+                            strategy.config?.logic === 'OR'
+                              ? t('strategyPanel.logicOr')
+                              : t('strategyPanel.logicAnd'),
+                          when: formatDate(strategy.lastUsedAt, locale),
+                        })}
                       </span>
                     </>
                   )}
@@ -164,14 +170,10 @@ export function StrategyPanel({
                       size="sm"
                       variant="outline"
                       disabled={invalid}
-                      title={
-                        invalid
-                          ? 'Cette stratégie contient des éléments hors schéma actuel — elle ne peut pas être relancée.'
-                          : undefined
-                      }
+                      title={invalid ? t('strategyPanel.loadDisabledTitle') : undefined}
                       onClick={() => onLoad(strategy)}
                     >
-                      Charger
+                      {t('strategyPanel.load')}
                     </Button>
                     <Button
                       size="sm"
@@ -183,14 +185,14 @@ export function StrategyPanel({
                         setFeedback(null);
                       }}
                     >
-                      Renommer
+                      {t('strategyPanel.rename')}
                     </Button>
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => setFeedback(mutationErrorMessage(onDuplicate(strategy.id)))}
+                      onClick={() => setFeedback(mutationErrorMessage(onDuplicate(strategy.id), t))}
                     >
-                      Dupliquer
+                      {t('strategyPanel.duplicate')}
                     </Button>
                     {confirmDeleteId === strategy.id ? (
                       <>
@@ -202,14 +204,14 @@ export function StrategyPanel({
                             setConfirmDeleteId(null);
                           }}
                         >
-                          Confirmer la suppression
+                          {t('strategyPanel.confirmDelete')}
                         </Button>
                         <Button
                           size="sm"
                           variant="ghost"
                           onClick={() => setConfirmDeleteId(null)}
                         >
-                          Garder
+                          {t('strategyPanel.keep')}
                         </Button>
                       </>
                     ) : (
@@ -219,7 +221,7 @@ export function StrategyPanel({
                         className="text-destructive hover:text-destructive"
                         onClick={() => setConfirmDeleteId(strategy.id)}
                       >
-                        Supprimer
+                        {t('strategyPanel.delete')}
                       </Button>
                     )}
                   </div>

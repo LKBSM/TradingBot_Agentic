@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 
 /**
@@ -9,6 +10,7 @@ import { cn } from '@/lib/utils';
  * "LEGAL-PENDING" before each release tag.
  */
 export function DisclaimerStub({ className }: { className?: string }) {
+  const t = useTranslations('legal');
   return (
     <p
       className={cn(
@@ -19,8 +21,7 @@ export function DisclaimerStub({ className }: { className?: string }) {
     >
       {/* LEGAL-PENDING: hero disclaimer — to be replaced with the wording
           finalised by the legal terminal. */}
-      Démonstration en accès anticipé. Lecture algorithmique éducative — ne
-      constitue ni un signal de trading, ni un conseil en investissement.
+      {t('disclaimer.hero')}
     </p>
   );
 }

@@ -1,10 +1,16 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render as rtlRender, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { NextIntlClientProvider } from 'next-intl';
 import { ZonesWorkspace } from '../ZonesWorkspace';
 import { ChartViewProvider, useChartViewOptional } from '@/lib/chart/viewState';
 import { coerceViewActions } from '@/lib/chart/viewActions';
 import { collectZones } from '@/lib/zones/lifecycle';
 import { FIXTURE_XAU_M15 } from '@/lib/market-reading/fixtures';
+import messages from '@/messages/fr.json';
+
+// The zones surface consumes the `zones` namespace (+ `reading` enums via
+// useReadingFormatters); both live in the fr bundle so the asserted FR strings
+// resolve directly.
 
 const fetchMock = vi.fn();
 vi.mock('@/lib/market-reading/api-client', async (importActual) => {
@@ -24,11 +30,13 @@ function HiddenProbe() {
 }
 
 function renderZones() {
-  return render(
-    <ChartViewProvider>
-      <ZonesWorkspace locale="fr" />
-      <HiddenProbe />
-    </ChartViewProvider>,
+  return rtlRender(
+    <NextIntlClientProvider locale="fr" messages={messages}>
+      <ChartViewProvider>
+        <ZonesWorkspace locale="fr" />
+        <HiddenProbe />
+      </ChartViewProvider>
+    </NextIntlClientProvider>,
   );
 }
 

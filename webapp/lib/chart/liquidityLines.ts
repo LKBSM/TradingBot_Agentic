@@ -25,6 +25,7 @@ import {
 } from '@/lib/market-reading/formatters';
 import { isoToSec } from '@/lib/chart/zoneLayout';
 import type {
+  LiquidityKind,
   LiquidityPool,
   LiquiditySide,
   LiquidityStatus,
@@ -69,6 +70,34 @@ export interface LiquidityLine {
   contactSec: number | null;
 }
 
+/**
+ * Localized label producers for the segment's human-readable strings, INJECTED
+ * by the React caller (this module is a pure, hook-free lib). Each returns the
+ * already-localized label for one enum value. Optional: when omitted, the
+ * built-in French formatters are used, so existing callers keep their output.
+ */
+export interface LiquidityLineLabels {
+  /** Full side label, e.g. "liquidité acheteuse …". */
+  side(side: LiquiditySide): string;
+  /** Short side code for the compact axis title, e.g. "BSL". */
+  sideShort(side: LiquiditySide): string;
+  /** Short on-chart side tag, e.g. "Liquidité achat". */
+  sideChart(side: LiquiditySide): string;
+  /** Pocket kind label, e.g. "sommets égaux". */
+  kind(kind: LiquidityKind): string;
+  /** Status label, e.g. "prise" / "intacte" / "cassée". */
+  status(status: LiquidityStatus): string;
+}
+
+/** Built-in French labels — the pure formatters, wrapped as a {@link LiquidityLineLabels}. */
+const FR_LIQUIDITY_LABELS: LiquidityLineLabels = {
+  side: (s) => formatLiquiditySide(s),
+  sideShort: (s) => formatLiquiditySideShort(s),
+  sideChart: (s) => SIDE_CHART_LABEL[s],
+  kind: (k) => formatLiquidityKind(k),
+  status: (st) => formatLiquidityStatus(st).label,
+};
+
 export interface BuildLiquidityLinesOptions {
   /**
    * Display filter: show only `intact` pockets (hides swept + broken segments).
@@ -76,6 +105,12 @@ export interface BuildLiquidityLinesOptions {
    * Structure panel still lists every state. Default: everything visible.
    */
   intactOnly?: boolean;
+  /**
+   * Localized label producers (side / kind / status). Injected by the React
+   * caller for i18n; defaults to the built-in French formatters so existing
+   * callers stay backward-compatible.
+   */
+  labels?: LiquidityLineLabels;
 }
 
 /** Draw priority so intact lines layer on top of swept, swept on top of broken. */
@@ -119,23 +154,23 @@ export function buildLiquidityLines(
   structure: MarketReadingStructure,
   options: BuildLiquidityLinesOptions = {},
 ): LiquidityLine[] {
-  const { intactOnly = false } = options;
+  const { intactOnly = false, labels = FR_LIQUIDITY_LABELS } = options;
   const pools = structure.liquidity_pools ?? [];
   const lines: LiquidityLine[] = [];
 
   for (const p of pools) {
     if (!Number.isFinite(p.level)) continue;
     if (intactOnly && p.status !== 'intact') continue;
-    const sideShort = formatLiquiditySideShort(p.side);
-    const status = formatLiquidityStatus(p.status).label;
+    const sideShort = labels.sideShort(p.side);
+    const status = labels.status(p.status);
     lines.push({
       id: p.id,
       price: p.level,
       side: p.side,
       status: p.status,
       title: `${sideShort} · ${KIND_SHORT[p.kind]}`,
-      description: `${formatLiquiditySide(p.side)} · ${formatLiquidityKind(p.kind)} · ${status}`,
-      chartLabel: `${SIDE_CHART_LABEL[p.side]} · ${status}`,
+      description: `${labels.side(p.side)} · ${labels.kind(p.kind)} · ${status}`,
+      chartLabel: `${labels.sideChart(p.side)} · ${status}`,
       createdSec: isoToSec(p.created_at),
       contactSec: poolContactSec(p),
     });

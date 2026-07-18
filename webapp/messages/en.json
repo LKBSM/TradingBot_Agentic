@@ -286,7 +286,10 @@
       "submitOnboarding": "See the relevant markets",
       "submitEdit": "Save & run again",
       "cancel": "Cancel",
-      "selectAtLeastOne": "Select at least one condition."
+      "selectAtLeastOne": "Select at least one condition.",
+      "proximityWithin": "Within",
+      "proximityOfPrice": "% of price",
+      "side": "Side"
     },
     "bias": {
       "bullish": "Bullish",
@@ -324,7 +327,10 @@
       "phaseExpansion": "Expansion",
       "volatilityLow": "Low",
       "volatilityNormal": "Normal",
-      "volatilityElevated": "Elevated"
+      "volatilityElevated": "Elevated",
+      "sideAny": "Both (SSL + BSL)",
+      "sideBsl": "BSL (liquidity above)",
+      "sideSsl": "SSL (liquidity below)"
     },
     "palette": {
       "mtf_aligned_label": "3 TF aligned",
@@ -346,7 +352,47 @@
       "choch_recent_confirmed_label": "Recent confirmed CHOCH",
       "choch_recent_confirmed_desc": "A confirmed change of character (CHOCH) is dated within the last candles.",
       "retest_in_progress_label": "Retest in progress",
-      "retest_in_progress_desc": "A retest of a level (BOS, CHOCH, OB or FVG) is currently in progress."
+      "retest_in_progress_desc": "A retest of a level (BOS, CHOCH, OB or FVG) is currently in progress.",
+      "price_near_ob_label": "Price near an Order Block",
+      "price_near_ob_desc": "The current price is near an active Order Block (within the chosen distance), without necessarily being inside it.",
+      "price_near_fvg_label": "Price near a Fair Value Gap",
+      "price_near_fvg_desc": "The current price is near an unfilled Fair Value Gap (within the chosen distance).",
+      "price_near_liquidity_label": "Price near liquidity (SSL/BSL)",
+      "price_near_liquidity_desc": "The current price is near an intact liquidity pool (BSL above / SSL below).",
+      "liquidity_swept_recent_label": "Recent liquidity sweep",
+      "liquidity_swept_recent_desc": "A liquidity pool (SSL/BSL) has been swept over the last few candles."
+    },
+    "saveStrategy": {
+      "prompt": "Save this combination as a named strategy (on this device only — nothing is sent to the server):",
+      "placeholder": "e.g. London sweep M15",
+      "nameAria": "Strategy name",
+      "save": "Save strategy",
+      "saved": "Strategy “{name}” saved on this device.",
+      "saveFailed": "Unable to save."
+    },
+    "strategyPanel": {
+      "title": "My strategies",
+      "subtitle": "Saved on this device only — nothing is sent to the server.",
+      "invalid": "Invalid",
+      "meta": "{count, plural, one {# condition} other {# conditions}} · {logic} · last used {when}",
+      "logicAnd": "AND",
+      "logicOr": "OR",
+      "newNameAria": "New name",
+      "ok": "OK",
+      "cancel": "Cancel",
+      "load": "Load",
+      "loadDisabledTitle": "This strategy contains items outside the current schema — it cannot be re-run.",
+      "rename": "Rename",
+      "duplicate": "Duplicate",
+      "confirmDelete": "Confirm deletion",
+      "keep": "Keep",
+      "delete": "Delete",
+      "errors": {
+        "name_required": "The name cannot be empty.",
+        "limit_reached": "Strategy limit reached — delete an existing strategy to create a new one.",
+        "not_found": "Strategy not found.",
+        "storage_failed": "Unable to write to local storage (quota or private browsing). Nothing was saved."
+      }
     }
   },
   "reading": {
@@ -579,7 +625,36 @@
     "title": "AI Chat",
     "placeholder": "Ask a question about the XAU market...",
     "send": "Send",
-    "sources_label": "Cited sources"
+    "sources_label": "Cited sources",
+    "panelContext": "{instrument} · {timeframe} · context injected",
+    "panelNoContext": "Select a reading to open the context.",
+    "panelTagline": "Educational analysis — no signals, no advice.",
+    "reset": "Reset the conversation",
+    "complianceLine": "M.I.A Agent answers questions about the algorithmic reading. It provides neither trading signals nor personalized recommendations.",
+    "introHeader": "M.I.A Agent · {instrument}",
+    "introBody": "Ask me a question about this reading. I can explain what it describes, break down a technical term in plain language, or put an upcoming event in context.",
+    "introOffline": "Scripted mode: use the suggestions below. Free-form input requires the Anthropic key on the server side.",
+    "introDisclaimer": "I provide neither a buy or sell signal nor investment advice.",
+    "allSuggestionsAsked": "All the suggested questions have been asked. Free-form input is coming soon — for now, close and reopen the chat to restart the sequence.",
+    "suggestedLabel": "Suggested questions",
+    "inputPlaceholder": "Ask M.I.A Agent a question…",
+    "inputPlaceholderOffline": "The live LLM is not configured — use the suggested questions.",
+    "inputAria": "Free-form question for M.I.A Agent",
+    "sendAria": "Send the question",
+    "sendLoadingAria": "Reply in progress…",
+    "inputHint": "Enter to send · Shift+Enter for a line break",
+    "viewUpdated": "View updated",
+    "redirectLabel": "Question reframed",
+    "redirectAria": "Why this reply was reframed",
+    "redirectTooltip": "MIA Markets describes market conditions. For questions about action or advice, it is up to you to decide based on your own criteria.",
+    "copy": "Copy",
+    "copied": "Copied",
+    "copyAria": "Copy the reply",
+    "copiedAria": "Reply copied",
+    "thinking": "M.I.A Agent is thinking…",
+    "turnUnavailable": "Live chatbot mode is not available in this environment at the moment. Use the suggested questions below — they return contextualized answers about this reading.",
+    "turnError": "Sorry, an error prevented the reply: {message} Try again or use a suggested question.",
+    "unknownError": "Unknown error"
   },
   "footer": {
     "description": "Conversational market indicator. Educational posture, augmented market understanding — not a promised financial performance.",
@@ -603,5 +678,606 @@
     },
     "disclaimer": "Early-access demonstration · Educational algorithmic reading · Not a trading signal, nor personalised investment advice · Past performance is not indicative of future results · Leveraged trading carries a high risk of loss.",
     "copyright": "© {year} MIA Markets — all rights reserved."
+  },
+  "auth": {
+    "login": {
+      "identifierLabel": "Username or email",
+      "passwordLabel": "Password",
+      "forgotPassword": "Forgot your password?",
+      "submit": "Log in",
+      "submitting": "Logging in…",
+      "noAccount": "Don't have an account yet?",
+      "createAccount": "Create an account",
+      "errorGeneric": "Unable to log in. Try again."
+    },
+    "register": {
+      "usernameLabel": "Username",
+      "usernameHint": "3 to 32 characters.",
+      "emailLabel": "Email address",
+      "passwordLabel": "Password",
+      "passwordHint": "At least 10 characters.",
+      "declarationsLegend": "Required declarations",
+      "ageLabel": "I declare that I am 18 years of age or older.",
+      "acceptTerms": "I accept the <link>Terms of Use</link>.",
+      "acceptPrivacy": "I accept the <link>Privacy Policy</link>.",
+      "submit": "Create my account",
+      "submitting": "Creating…",
+      "haveAccount": "Already have an account?",
+      "login": "Log in",
+      "errorAge": "You must declare that you are 18 years of age or older.",
+      "errorConsents": "You must accept the Terms of Use and the Privacy Policy.",
+      "errorGeneric": "Unable to register. Try again."
+    },
+    "forgot": {
+      "intro": "Enter your username or email. If an account matches, a reset link will be sent to you.",
+      "identifierLabel": "Username or email",
+      "submit": "Send the link",
+      "submitting": "Sending…",
+      "backToLogin": "Back to login",
+      "errorGeneric": "Unable to process the request. Try again."
+    },
+    "account": {
+      "loading": "Loading…",
+      "ownerBadge": "Owner",
+      "editEmailTitle": "Edit my email",
+      "emailLabel": "Email address",
+      "save": "Save",
+      "saving": "Saving…",
+      "emailUpdated": "Email address updated.",
+      "updateError": "Unable to update.",
+      "consentsTitle": "Recorded consents",
+      "noConsents": "No consent recorded.",
+      "docTerms": "Terms of Use",
+      "docPrivacy": "Privacy",
+      "consentMeta": "v{version} · {date}",
+      "seeDocs": "See the <terms>Terms</terms> and the <privacy>Privacy Policy</privacy>.",
+      "logout": "Log out"
+    }
+  },
+  "billing": {
+    "title": "Subscription",
+    "intro": "Manage your MIA Markets subscription. Payments are securely processed by Stripe — no card data is stored with us.",
+    "loading": "Loading…",
+    "checkoutSuccess": "Thank you! Your payment has been received. The subscription activates as soon as Stripe confirms it.",
+    "checkoutCancel": "Payment canceled. You can try again whenever you like.",
+    "ownerBadge": "Owner — full access without a subscription",
+    "currentStateTitle": "Current status",
+    "endsOn": "Ends on {date}",
+    "renewsOn": "Renews on {date}",
+    "manage": "Manage my subscription",
+    "choosePlanTitle": "Choose a plan",
+    "noPlans": "No plan is available at the moment.",
+    "subscribe": "Subscribe",
+    "errorLoad": "Unable to load the subscription.",
+    "errorCheckout": "Unable to start the payment.",
+    "errorPortal": "Unable to open the management portal.",
+    "status": {
+      "active": "Subscription active",
+      "trialing": "Trial in progress",
+      "pastDue": "Payment pending",
+      "canceled": "Subscription canceled",
+      "none": "No subscription"
+    }
+  },
+  "access": {
+    "paywall": {
+      "regionAria": "Content reserved for subscribers",
+      "defaultTitle": "Reserved for subscribers",
+      "defaultDescription": "Upgrade to a subscription to unlock this feature.",
+      "seePlans": "See subscriptions",
+      "haveAccount": "I already have an account — log in"
+    },
+    "gate": {
+      "loading": "Loading…"
+    }
+  },
+  "app": {
+    "header": {
+      "brandAria": "MIA Markets — reading workspace",
+      "navApp": "App — reading workspace",
+      "navZones": "Zones — lifecycle of detected zones",
+      "navScanner": "Condition scanner",
+      "navHelp": "Help — methodology and glossary",
+      "planBadge": "Free access"
+    },
+    "staleFocus": {
+      "message": "This zone is no longer detected — the current market reading is shown.",
+      "dismiss": "Dismiss this message"
+    },
+    "sidebar": {
+      "navAria": "Available combinations",
+      "markets": "Markets",
+      "searchPlaceholder": "Search for a market…",
+      "searchAria": "Search for a market (instrument or timeframe)",
+      "pinned": "Pinned",
+      "noResults": "No market matches “{query}”.",
+      "pin": "Pin",
+      "unpin": "Unpin",
+      "pinAria": "Pin {combo}",
+      "unpinAria": "Unpin {combo}"
+    },
+    "mobile": {
+      "workspaceTitle": "Reading workspace",
+      "tabMarkets": "Markets",
+      "tabReading": "Reading",
+      "tabChat": "Chat"
+    },
+    "column": {
+      "sectionAria": "Market reading",
+      "refreshing": "Refreshing…"
+    },
+    "account": {
+      "menuAria": "Account menu",
+      "panelAria": "Account",
+      "myAccount": "My account",
+      "subscription": "Subscription",
+      "login": "Log in",
+      "signup": "Create an account",
+      "language": "Language",
+      "site": "The site",
+      "honesty": "Honesty",
+      "logout": "Log out"
+    },
+    "chat": {
+      "asideAria": "M.I.A Agent assistant",
+      "statusOnline": "online",
+      "statusOffline": "offline mode",
+      "pickComboPrompt": "Select a combination to discuss its reading.",
+      "pedagogicalNote": "Educational analysis — no signals, no advice.",
+      "discussions": "Discussions",
+      "reset": "Reset",
+      "recentDiscussions": "Recent discussions",
+      "starter_structure": "Break down the current structure",
+      "starter_choch": "What is a CHOCH?",
+      "starter_order-blocks": "Show me the active Order Blocks",
+      "welcomeTitleActive": "How can I help you read the market?",
+      "welcomeTitleIdle": "Choose a market to get started",
+      "welcomeSubtitleActive": "Ask a question about the current reading: break down the structure, explain a term in plain language, or put an upcoming event in context.",
+      "welcomeSubtitleIdle": "Select a market on the left, then ask me a question about its reading.",
+      "offlineNote": "Offline mode: free-form input requires the Anthropic key on the server side.",
+      "complianceLine": "M.I.A Agent answers questions about the algorithmic reading. It provides neither trading signals nor personalized recommendations."
+    },
+    "placeholders": {
+      "emptyReading": "Select a combination on the left to display its market reading.",
+      "errorUnavailable": "The reading service is not available in this environment at the moment.",
+      "errorValidation": "This instrument / timeframe combination is not supported.",
+      "errorGeneric": "The reading could not be retrieved. Try again in a moment.",
+      "dataUnavailableTitle": "Data unavailable",
+      "retry": "Try again",
+      "chartUnavailableTitle": "Chart unavailable",
+      "chartUnavailableBody": "The candle feed is not connected for this combination. The reading below remains available."
+    },
+    "chart": {
+      "canvasAria": "{instrument} candlestick chart with Order Block zones, Fair Value Gap, break levels and external liquidity pools (BSL/SSL)",
+      "deselectZoneAria": "Deselect this zone",
+      "deselectZoneTitle": "Click to deselect",
+      "inTest": "in test",
+      "inTestTitle": "Order Block currently being tested — provisional, intra-candle (confirmed only at close)",
+      "touched": "touched",
+      "touchedTitle": "Zone already touched but not invalidated — still tracked by the engine (still in play)",
+      "fvgFillLive": "live fill",
+      "fvgFillTitle": "FVG fill in progress — provisional, intra-candle (confirmed only at close)",
+      "liqSwept": "swept",
+      "liqBroken": "broken",
+      "liveBadge": "LIVE · provisional",
+      "liveBadgeTitle": "LIVE zone interaction (provisional, intra-candle). BOS/CHOCH breaks and invalidations are confirmed only at candle close.",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "fit": "Fit the chart",
+      "liqShowAll": "Show all liquidity pools (intact, swept, broken)",
+      "liqShowIntactOnly": "Show only intact liquidity pools"
+    }
+  },
+  "samples": {
+    "_comment": "Landing demo MarketReading prose (conditions.description, event potential_effect_description) is intentionally NOT keyed here yet: it lives on the MarketReading data contract in lib/market-reading/fixtures.ts and renders through the SHARED MarketReadingCard sections (ConditionsSection/EventsSection) that are also consumed by the off-limits app/zones/scanner surfaces. Localizing it cleanly requires a data-contract change touching forbidden files, so it is deferred. See report."
+  },
+  "chatbot": {
+    "_comment": "French source-of-truth mirror of mocks/chatbot_responses.json + the code FALLBACK_SCRIPT. Consumers resolve these via useChatbotScriptGetter/useChatbotScriptOrFallback in lib/chatbot.ts, keyed by scriptKey (SCRIPT_KEY_BY_ID) then question id. Numeric/enum reading fields stay localized downstream by useReadingFormatters. The buy-or-not / donc-je-dois-vendre compliance refusals are LEGALLY LOAD-BEARING — keep verbatim.",
+    "scripts": {
+      "xauM15": {
+        "instrumentLabel": "XAU/USD",
+        "questions": {
+          "why-this-score": {
+            "text": "What does this reading tell me?",
+            "reply": "This reading describes a rather bullish market. The price broke above a recent high (a break of structure), then came back to test the broken level before bouncing: this is what we call a retest. There is also an imbalance zone left by a fast move (a Fair Value Gap) between 2378 and 2381, still unfilled, and an active Order Block just below. The overall context is a bullish trend, with volatility (the average range of the candles) remaining normal. None of this is an instruction: it is a snapshot of the current structure, to do with as you see fit."
+          },
+          "armed-retest": {
+            "text": "What is a retest?",
+            "reply": "When the price breaks a high or a low, it often comes back to touch the broken level before moving on: this “visit” is called a retest. The reading tracks the state of this retest: either no break has occurred, or the break is done and we are waiting for the price to return, or the price has come back to touch the level and held, or it has crossed back through in the other direction and the zone no longer holds. It is a structural marker that is often observed, but often observed does not mean certain: it is a description of the market, not an entry instruction."
+          },
+          "fomc-impact": {
+            "text": "What does the FOMC change?",
+            "reply": "The FOMC minutes are released in about 18 hours. It is a high-impact event for gold: historically, gold moves much more than usual in the window surrounding the release (from 30 min before to 1 h after). Concretely, two things: (1) any position open now will go through the event, (2) MIA flags the upcoming release and warns you in advance of the likely widening of volatility around it — for you to take into account. To anticipate the direction of the move you would need to cross-reference market expectations — which the engine does not do yet."
+          },
+          "historical-comparison": {
+            "text": "What does it look like historically?",
+            "reply": "I'd rather be honest: our reliability tests on past data are not finished yet. Rather than quote you unvalidated performance figures, I give you no returns, success rate or statistics until the validation is complete. What I can tell you today: there are 7 years of clean historical data and a transparent description method, detailed on our Methodology page. Transparency before the promise — that is precisely what sets MIA Markets apart."
+          },
+          "buy-or-not": {
+            "text": "So should I buy?",
+            "reply": "No, I give no instruction to buy, sell or time the market. My role is to describe the market structure and help you understand it — not to decide for you. What I can describe: there is a confirmed bullish break, a retest holding around 2378-2381, an invalidation of this structure if the price drops clearly back below 2378, and a macro event in 18 hours that can move everything. What only you can decide: whether your risk management, your horizon and your allocation justify a position. MIA Markets is a tool for understanding, not a signals service."
+          }
+        }
+      },
+      "eurH1": {
+        "instrumentLabel": "EUR/USD",
+        "questions": {
+          "why-this-score": {
+            "text": "What does this reading tell me?",
+            "reply": "This reading describes a market that is hard to read for now. There was indeed a bearish break, but the price has not yet come back to test it: as long as that retest has not happened, the structure remains fragile. The imbalance zone (Fair Value Gap) is modest, and the market is mostly moving within a low-volatility range — no clear trend. Somewhat bearish news weighs slightly in the same direction. In short: few elements aligned, so a cautious reading and a wider-than-usual displayed uncertainty."
+          },
+          "armed-retest": {
+            "text": "And where is the retest in this reading?",
+            "reply": "It is still awaited. The bearish break at 1.08750 occurred 4 candles ago over 1 hour, but the price has not yet climbed back to touch the broken level. The zones to watch are 1.0860-1.0868 (Fair Value Gap) and 1.0870-1.0885 (Order Block). As long as this return has not happened, the reading remains fragile: many breaks without a retest turn out to be false breaks. It is a description of the structure, not an invitation to take a position."
+          },
+          "event-impact": {
+            "text": "The ECB in 3 hours, what does that change?",
+            "reply": "A lot. The ECB decision is a very high-impact event for EUR/USD: volatility (the range of the candles) typically explodes in the window surrounding the announcement. MIA flags the upcoming release and warns you in advance of this likely widening of volatility. Any position open now will go entirely through the decision — this is exactly the kind of context where the current structure, already fragile (retest not yet done), becomes even more uncertain."
+          },
+          "historical-comparison": {
+            "text": "In similar cases, what happens?",
+            "reply": "Our reliability tests on past data are still in progress. So I will quote you no return, success rate or statistic until the validation is complete. What I can describe structurally: this reading combines several weak elements (retest not done, market in a range, imminent ECB decision). It is typically a configuration where the reading remains cautious. Transparency before the promise."
+          },
+          "buy-or-not": {
+            "text": "So should I sell?",
+            "reply": "No, and I will be even clearer than usual: in this reading, many elements are uncertain (retest not done, market in a range, wide uncertainty, ECB decision in 3 hours). There are many technical reasons to stay cautious. But it is not for me to make that decision — it is for you to weigh your risk management, your tolerance for event-driven moves, your reading of the fundamental context and your current position. My role stops at describing what I see."
+          }
+        }
+      },
+      "quietXauH4": {
+        "instrumentLabel": "XAU/USD H4",
+        "questions": {
+          "why-this-score": {
+            "text": "Why is this reading so quiet?",
+            "reply": "Because most of the elements are silent. No recent break of structure, no significant Order Block, and a single Fair Value Gap present but without confirmed direction. The market is in a low-volatility range (the candles move little). The news is nearly neutral. This reading honestly reflects a market in wait-and-see mode: there is not much directional to say. It is also the engine's healthiest reading — when nothing is happening, saying “nothing is happening.” The displayed uncertainty is wide, because the situation is ambiguous."
+          },
+          "armed-retest": {
+            "text": "What is a retest?",
+            "reply": "A retest is when the price, after breaking a level, comes back to touch it before moving on. On the current reading (quiet H4), no break has occurred, so there is nothing to retest for now. The only active technical element is a Fair Value Gap between 2358 and 2362, still untouched. The market must first break something (a high or a low) before we can talk about a retest."
+          },
+          "event-impact": {
+            "text": "The NFP in 2 days, what does that change?",
+            "reply": "It is too far off to affect the current H4 reading, but it shapes the next 2 days. Around the NFP release, MIA will warn you of the likely widening of volatility. On H4, that means 1 to 2 candles will be affected. If your horizon is shorter than the time until then, the event invalidates nothing current. If you open an H4 position now, it will live through the NFP — a moment when volatility (the range of the candles) rises sharply."
+          },
+          "historical-comparison": {
+            "text": "What does a consolidation like this look like historically?",
+            "reply": "Our reliability tests on past data are still in progress. For a quiet configuration like this one, I will quote you no return or statistic until the validation is complete. What I can describe: this reading identifies no strong technical trigger (no break, no significant Order Block, trendless market). In this kind of context, observing and noting the key levels is often more telling than acting. That is also why the reading remains cautious."
+          },
+          "buy-or-not": {
+            "text": "So should I wait?",
+            "reply": "Once again, I give no instruction. What I can describe factually: the current reading identifies no strong technical trigger (no break, no significant Order Block, trendless market). If your approach looks for entries with a clear structural rationale, this reading offers few. But it is for you to weigh that against your personal context. No performance figures will be published until our reliability tests are complete — that is a rule of transparency."
+          }
+        }
+      }
+    },
+    "fallback": {
+      "instrumentLabel": "this instrument",
+      "text": "Why don't I see any questions?",
+      "reply": "I didn't find a scripted scenario for this specific reading. This is temporary — the real-time response engine integration is coming in the next backend integration sprint."
+    }
+  },
+  "legal": {
+    "conditions": {
+      "meta": {
+        "title": "Terms of Use",
+        "description": "MIA Markets Terms of Use — information service, educational stance, risk warning."
+      },
+      "versionLabel": "Version {version}",
+      "loading": "Loading the document…",
+      "error": "The Terms document is momentarily unavailable. Try again later."
+    },
+    "privacy": {
+      "meta": {
+        "title": "Privacy Policy",
+        "description": "MIA Markets Privacy Policy — data processed, legal basis, GDPR / Law 25 rights."
+      },
+      "title": "Privacy Policy",
+      "pendingNotice": "Structured preliminary version. The final text (legally reviewed) will be published with the legal terminal. The structure below faithfully describes the processing currently in effect.",
+      "sections": {
+        "responsable": {
+          "title": "1. Data controller",
+          "body": "Loukmane Bessam (sole operator) — loukmanebessam@gmail.com."
+        },
+        "donnees": {
+          "title": "2. Data processed",
+          "body": "Username, email address, password (hashed, never in plain text), consents (version + timestamp), session data. No bank card data is collected by MIA Markets."
+        },
+        "bases": {
+          "title": "3. Legal bases",
+          "body": "Performance of the contract (account and service), legitimate interest (security), consent (acceptance of the Terms and of this Policy at registration)."
+        },
+        "droits": {
+          "title": "4. Your rights (GDPR / Law 25)",
+          "body": "Access, rectification, erasure, portability, restriction and objection. Any request to loukmanebessam@gmail.com — response within 30 days."
+        },
+        "conservation": {
+          "title": "5. Retention",
+          "body": "Account data is retained for the duration of the account. Sessions expire automatically. Retention details by category will be specified in the final version."
+        },
+        "contact": {
+          "title": "6. Contact",
+          "body": "For any question about your data: loukmanebessam@gmail.com."
+        }
+      }
+    },
+    "disclaimer": {
+      "hero": "Early-access demonstration. Educational algorithmic reading — constitutes neither a trading signal nor investment advice."
+    }
+  },
+  "pages": {
+    "conditions": {
+      "backHome": "Back to home"
+    },
+    "confidentialite": {
+      "backHome": "Back to home"
+    },
+    "abonnement": {
+      "meta": {
+        "title": "Subscription",
+        "description": "Manage your MIA Markets subscription."
+      },
+      "loading": "Loading…"
+    },
+    "compte": {
+      "meta": {
+        "title": "My account",
+        "description": "Manage your MIA Markets account."
+      }
+    },
+    "connexion": {
+      "meta": {
+        "title": "Login",
+        "description": "Log in to your MIA Markets account."
+      },
+      "title": "Login",
+      "intro": "Log in with your username or email."
+    },
+    "inscription": {
+      "meta": {
+        "title": "Registration",
+        "description": "Create a MIA Markets account — early access, educational stance."
+      },
+      "title": "Create an account",
+      "intro": "Early access reserved for adults (18 years of age or older)."
+    },
+    "motDePasseOublie": {
+      "meta": {
+        "title": "Forgot password",
+        "description": "Reset the password of your MIA Markets account."
+      },
+      "title": "Forgot password"
+    },
+    "app": {
+      "meta": {
+        "title": "Reading workspace",
+        "description": "Live market reading — XAU/USD and EUR/USD on M15, H1, H4. Structure, regime, events and narrated reading, explained by M.I.A Agent."
+      }
+    },
+    "scanner": {
+      "meta": {
+        "title": "Condition scanner",
+        "description": "Define your structural conditions and see on which markets and timeframes they are present right now. A descriptive reading tool — the judgment is yours."
+      },
+      "paywallTitle": "The scanner is reserved for subscribers",
+      "paywallDescription": "The multi-market scanner sweeps XAU/USD and EUR/USD on M15, H1 and H4. Upgrade to a subscription to use it."
+    },
+    "zones": {
+      "meta": {
+        "title": "Zones",
+        "description": "The lifecycle of each detected zone (Order Block, Fair Value Gap) — formation, tests, mitigation, fill. Descriptive and read-only reading: no forecast."
+      }
+    }
+  },
+  "methodology": {
+    "meta": {
+      "title": "Methodology — How MIA Markets describes the market",
+      "description": "Transparent technical documentation: how our indicator detects SMC structures (Order Block, Fair Value Gap, breaks), how we describe the displayed elements, our data source, and what we do not do."
+    },
+    "header": {
+      "back": "Back to home",
+      "badge": "Methodology",
+      "title": "How MIA Markets describes the market",
+      "intro": "This page explains, without jargon, how our indicator spots market structures and what each displayed element means. It is descriptive documentation: we explain what the engine<em> observes</em>, never what it <em>would predict</em>.",
+      "tocLabel": "Contents"
+    },
+    "toc": {
+      "engagement": "Our commitment",
+      "concepts": "Structure concepts",
+      "scores": "What we describe",
+      "donnees": "Data source",
+      "limites": "What we do not do",
+      "attributions": "Attributions"
+    },
+    "engagement": {
+      "title": "Our commitment",
+      "intro": "MIA Markets is a tool for understanding the market, not a trading system. Our stance is descriptive (“augmented reading” level): we describe a structure, we never recommend an action.",
+      "quote": "No market indicator should promise gains. We make no such promise. What we offer is an augmented understanding of the market — not financial performance.",
+      "caption": "— MIA Markets public commitment, May 27, 2026"
+    },
+    "concepts": {
+      "title": "Structure concepts (SMC)",
+      "intro": "Our reading relies on Smart Money Concepts — a framework for reading price structure. Here are the elements the engine detects and displays.",
+      "detectionLabel": "How the engine detects it",
+      "detection": {
+        "order-block": "We spot the last candle of the opposite direction just before a marked move. It is the price zone from which the move started — often where significant orders accumulated. The engine tracks its state: active, mitigated (already retouched) or invalidated.",
+        "fvg": "We detect a price “gap” left by three consecutive candles where the first and the third do not overlap: a move too fast for all trades to take place. The engine measures the size of this gap and tracks whether it remains open, partially filled or filled.",
+        "bos": "We compare the price to recent highs and lows (the “swings”). When it clearly breaks above the last high (or below the last low) in the direction of the trend, it is a break of structure: the current trend is confirmed.",
+        "choch": "Same logic as a break of structure, but in the OPPOSITE direction to the recent trend. It is the first possible sign of a structural reversal — described as such, without inferring a future direction.",
+        "retest": "After a break, the engine watches whether the price comes back to touch the broken level. It tracks the state of the return: not yet returned, being tested, confirmed (the level holds) or invalidated (the price crossed it in the opposite direction).",
+        "mtf": "The same reading is computed on several timeframes (15 min, 1 h, 4 h, 1 day…). We display the bias of each side by side: when several durations point in the same direction, the structure is clearer. None is weighted to produce a directional score."
+      }
+    },
+    "scores": {
+      "title": "What we describe (and how)",
+      "intro": "Some elements of the reading are qualified (importance of a zone, status, phase, uncertainty). Here is what each describes and the variables that make it up — none is a probability of success."
+    },
+    "formulas": {
+      "variablesLabel": "What the engine takes into account",
+      "order-block": {
+        "title": "Order Block",
+        "description": "A zone left by an imbalance candle before a marked move. We display it at its formation with its price range and its present state (active, tested, mitigated, invalidated) — with no rating or quality ranking, no probability of success.",
+        "variables": {
+          "0": "the price range of the zone",
+          "1": "its size relative to recent volatility",
+          "2": "its current state: active, tested, mitigated or invalidated"
+        }
+      },
+      "fvg-force": {
+        "title": "Status of a Fair Value Gap",
+        "description": "Describes the state of an imbalance zone: active, partially filled or filled. The relative size of the gap indicates its magnitude, without predicting when it will be filled.",
+        "variables": {
+          "0": "the size of the gap relative to recent average volatility",
+          "1": "the number of candles elapsed since its creation",
+          "2": "the share already filled by the price"
+        }
+      },
+      "phase-de-marche": {
+        "title": "Market phase",
+        "description": "Three descriptive labels side by side — trend, volatility, phase (accumulation / trend / distribution / range / expansion). A snapshot of the observed state, never an instruction.",
+        "variables": {
+          "0": "the direction and slope of recent highs/lows",
+          "1": "the average range of the candles (volatility)",
+          "2": "the alignment across timeframes"
+        }
+      },
+      "incertitude": {
+        "title": "Observed uncertainty range",
+        "description": "The price gap typically observed recently around the reading. It is a measure of uncertainty displayed honestly — not a forecast range or a target.",
+        "variables": {
+          "0": "the recent dispersion of prices, measured by the ATR (Average True Range, the standard average of the candles' range)",
+          "1": "the timeframe of the reading"
+        }
+      }
+    },
+    "donnees": {
+      "title": "Our data source",
+      "detail": "Market data via the Twelve Data API (free tier, 800 requests per day in V1).",
+      "providerLabel": "Provider",
+      "coverageLabel": "V1 coverage",
+      "coverage": "XAU/USD and EUR/USD, on 15 minutes, 1 hour and 4 hours.",
+      "refreshLabel": "Frequency",
+      "refresh": "Updated at each candle close."
+    },
+    "limites": {
+      "title": "What we do not do",
+      "intro": "Transparency also applies to our limits. Deliberately, the indicator does none of the following.",
+      "items": {
+        "0": "Predict the direction or magnitude of a move.",
+        "1": "Issue a trade signal, an entry or exit point.",
+        "2": "Calculate a price target, a stop-loss or a take-profit.",
+        "3": "Display a probability-of-success score.",
+        "4": "Promise a gain, a return or a performance."
+      }
+    },
+    "attributions": {
+      "title": "Attributions",
+      "intro": "The candlestick chart in the reading workspace relies on an open-source library, credited here as its license requires.",
+      "license": "<name>Lightweight Charts™</name> — © TradingView, Inc., distributed under the <link>Apache 2.0</link> license. Chart display library used to render the candles and zones.",
+      "note": "Note: this is a <em>display</em> library only. MIA Markets uses no TradingView API or market data feed — the prices shown come from our own engine."
+    }
+  },
+  "seo": {
+    "title": "MIA Markets — Conversational market indicator",
+    "titleTemplate": "%s · MIA Markets",
+    "description": "MIA Markets (Multi-asset Intelligence Assistant) — XAU/USD and FX market reading, explained by a quant. Sourced contextual analyses, educational stance.",
+    "ogTitle": "MIA Markets — Conversational market indicator",
+    "ogDescription": "Contextual algorithmic readings for XAU/USD and forex, explained by a chatbot (M.I.A Agent). Educational stance.",
+    "twitterTitle": "MIA Markets — Conversational market indicator",
+    "twitterDescription": "Understand the market — without being told what to do. Algorithmic readings + M.I.A Agent chatbot."
+  },
+  "zones": {
+    "title": "Zones",
+    "intro": "The lifecycle of each detected zone — formation, tests, mitigation, fill — described in the present tense. Descriptive reading: no target, no forecast.",
+    "refreshing": "refreshing…",
+    "filterLabel": "Filter",
+    "filterAria": "Filter the zones",
+    "sortLabel": "Sort",
+    "sortAria": "Sort the zones",
+    "loading": "Loading the zones…",
+    "errorMessage": "The zones are not available for this combination.",
+    "retry": "Try again",
+    "emptyNone": "No zone detected on this combination.",
+    "emptyFilter": "No zone matches this filter.",
+    "selector": {
+      "instrument": "Instrument",
+      "timeframe": "Timeframe"
+    },
+    "filters": {
+      "all": "All",
+      "active": "Active",
+      "mitigated": "Mitigated"
+    },
+    "sorts": {
+      "proximity": "Proximity",
+      "recency": "Recency",
+      "state": "State"
+    },
+    "kind": {
+      "ob": "Order Block",
+      "fvg": "Fair Value Gap",
+      "obShort": "OB",
+      "fvgShort": "FVG"
+    },
+    "effectiveness": {
+      "obSpentLabel": "invalidated",
+      "obSpentTitle": "Order Block invalidated: the price closed through the zone.",
+      "obHeldLabel": "not invalidated",
+      "obHeldTitle": "Order Block not invalidated: the price did not close through it (the zone holds, even if mitigated or tested).",
+      "fvgSpentLabel": "filled",
+      "fvgSpentTitle": "Fair Value Gap fully filled: the imbalance is closed.",
+      "fvgHeldLabel": "not filled",
+      "fvgHeldTitle": "Fair Value Gap not fully filled: the imbalance is not closed."
+    },
+    "relation": {
+      "inside": "price currently inside the zone",
+      "above": "{dist} pts above the price",
+      "below": "{dist} pts below the price"
+    },
+    "age": {
+      "durationOnly": "formed {duration} ago",
+      "lastCandle": "formed on the last candle",
+      "withBars": "formed {bars, plural, one {# candle} other {# candles}} ago ({duration})"
+    },
+    "tested": {
+      "ob": "tested",
+      "fvg": "penetrated"
+    },
+    "duration": {
+      "underMinute": "less than a minute",
+      "min": "min",
+      "hour": "h",
+      "day": "d"
+    },
+    "fill": {
+      "aria": "Zone fill",
+      "label": "filled up to {price} (≈ {pct} %)"
+    },
+    "details": {
+      "expand": "Details",
+      "collapse": "Collapse"
+    },
+    "timeline": {
+      "formed": "Formed",
+      "mitigated": "Mitigated",
+      "obTested": "Tested",
+      "fvgTested": "Penetrated",
+      "filled": "Filled",
+      "partial": "Partially filled",
+      "active": "Tracking in progress",
+      "now": "now",
+      "noDate": "—",
+      "firstContact": "first contact"
+    },
+    "overlaps": {
+      "heading": "Overlaps with other timeframes",
+      "description": "This zone overlaps with zones detected on other timeframes (matching price levels that overlap) — a marker of convergence, not a signal.",
+      "line": "overlaps a {kind} {tf}{dir} ({band})"
+    },
+    "actions": {
+      "analyze": "Analyze the zone",
+      "analyzeAria": "Analyze this zone on the chart",
+      "show": "Show on the chart",
+      "hide": "Hide from the chart"
+    }
   }
 }

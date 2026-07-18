@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import { MarketReadingCard } from '@/components/market-reading/MarketReadingCard';
 import {
@@ -68,6 +69,7 @@ export function ReadingColumn({
   onRetry,
   dataSource = READING_DATA_SOURCE,
 }: ReadingColumnProps) {
+  const t = useTranslations('app');
   // Candle feed for the chart hero. Re-pulled when the combo changes or a new
   // candle closes (candle_close_ts) — never faster, to keep the load honest.
   const { candles } = useCandles(
@@ -152,7 +154,7 @@ export function ReadingColumn({
   }
 
   return (
-    <section aria-label="Lecture de marché" className="min-w-0 space-y-3">
+    <section aria-label={t('column.sectionAria')} className="min-w-0 space-y-3">
       {isRefreshing && reading && (
         <div
           className="flex items-center gap-2 text-xs text-muted-foreground"
@@ -160,7 +162,7 @@ export function ReadingColumn({
           aria-live="polite"
         >
           <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
-          Actualisation…
+          {t('column.refreshing')}
         </div>
       )}
       {body}

@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import type { ChatbotQuestion } from '@/types/chatbot';
 
@@ -19,14 +20,13 @@ export function SuggestedQuestions({
   consumedIds = new Set(),
   onPick,
 }: SuggestedQuestionsProps) {
+  const t = useTranslations('chat');
   const remaining = questions.filter((q) => !consumedIds.has(q.id));
 
   if (remaining.length === 0) {
     return (
       <p className="rounded-md border border-dashed border-border bg-muted/40 px-3 py-2 text-xs italic text-muted-foreground">
-        Toutes les questions suggérées ont été posées. La saisie libre arrive
-        bientôt — pour l&apos;instant, ferme et rouvre le chat pour relancer
-        l&apos;enchaînement.
+        {t('allSuggestionsAsked')}
       </p>
     );
   }
@@ -34,7 +34,7 @@ export function SuggestedQuestions({
   return (
     <div className="space-y-2">
       <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-        Questions suggérées
+        {t('suggestedLabel')}
       </p>
       <div className="flex flex-col gap-2">
         {remaining.map((q) => (

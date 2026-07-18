@@ -1,6 +1,7 @@
 'use client';
 
 import { Loader2, SendHorizonal } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { useChat } from './ChatProvider';
@@ -19,6 +20,7 @@ const MAX_CHARS = 2000;
  * Shift+Enter inserts a newline.
  */
 export function ChatInput({ className }: ChatInputProps) {
+  const t = useTranslations('chat');
   const { askFreeForm, isLoading, activeSignal, apiAvailable } = useChat();
   const [value, setValue] = React.useState('');
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
@@ -56,8 +58,8 @@ export function ChatInput({ className }: ChatInputProps) {
   }
 
   const placeholder = offline
-    ? "Le LLM en direct n'est pas configuré — utilise les questions suggérées."
-    : 'Pose une question à M.I.A Agent…';
+    ? t('inputPlaceholderOffline')
+    : t('inputPlaceholder');
 
   return (
     <div className={className}>
@@ -77,13 +79,13 @@ export function ChatInput({ className }: ChatInputProps) {
           rows={1}
           maxLength={MAX_CHARS}
           disabled={offline}
-          aria-label="Question libre pour M.I.A Agent"
+          aria-label={t('inputAria')}
           className="flex-1 resize-none bg-transparent py-1.5 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/70 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
         />
         <button
           type="submit"
           disabled={!canSubmit}
-          aria-label={isLoading ? 'Réponse en cours…' : 'Envoyer la question'}
+          aria-label={isLoading ? t('sendLoadingAria') : t('sendAria')}
           className={cn(
             'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors',
             canSubmit
@@ -100,7 +102,7 @@ export function ChatInput({ className }: ChatInputProps) {
       </form>
       {!offline && (
         <p className="mt-2 text-center text-[10.5px] italic text-muted-foreground/75">
-          Entrée pour envoyer · Maj+Entrée pour un saut de ligne
+          {t('inputHint')}
         </p>
       )}
     </div>
