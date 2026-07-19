@@ -107,8 +107,18 @@ export default async function LocaleLayout({
         <JsonLd data={softwareApplicationLd} />
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          defaultTheme="terminal"
+          themes={['terminal', 'atelier', 'schema', 'ardoise']}
+          value={{
+            // One class per theme (next-themes toggles a SINGLE token on
+            // <html>). The `.theme-*` class carries the token values
+            // (globals.css). The three dark themes are recognised by Tailwind's
+            // `dark:` variant via the darkMode config in tailwind.config.ts.
+            terminal: 'theme-terminal',
+            atelier: 'theme-atelier',
+            schema: 'theme-schema',
+            ardoise: 'theme-ardoise',
+          }}
           disableTransitionOnChange
         >
           <NextIntlClientProvider messages={messages}>

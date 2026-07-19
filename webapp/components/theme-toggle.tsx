@@ -11,14 +11,17 @@ export function ThemeToggle() {
 
   React.useEffect(() => setMounted(true), []);
 
-  const isDark = mounted && theme === 'dark';
+  // Quick light/dark switch across the named themes: Atelier is the only light
+  // theme, everything else is dark. The full four-theme picker lives in the
+  // account "Apparence" settings (Phase C).
+  const isDark = mounted && theme !== 'atelier';
 
   return (
     <Button
       variant="ghost"
       size="icon"
       aria-label={isDark ? 'Activer le mode clair' : 'Activer le mode sombre'}
-      onClick={() => setTheme(isDark ? 'light' : 'dark')}
+      onClick={() => setTheme(isDark ? 'atelier' : 'terminal')}
     >
       {/* Render both icons; hide via opacity to avoid hydration mismatch. */}
       <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
