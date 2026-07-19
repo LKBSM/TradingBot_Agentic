@@ -64,6 +64,44 @@ def _cookie_secure() -> bool:
     return raw not in ("0", "false", "no", "off")
 
 
+def _cookie_domain() -> Optional[str]:
+    """Optional cookie ``Domain`` attribute.
+
+    Unset (the default) keeps the cookie host-only, which is correct when the
+    frontend reaches the API same-origin through the Next `/api/*` rewrite. Set
+    ``SESSION_COOKIE_DOMAIN`` (e.g. ``.mia.markets``) ONLY when the front and API
+    live on different subdomains and the cookie must be shared across them. It
+    MUST match between set and clear or the browser silently ignores the delete
+    (AUTH-01/AUTH-11).
+    """
+    domain = os.environ.get("SESSION_COOKIE_DOMAIN", "").strip()
+    return domain or None
+
+
+def _is_production() -> bool:
+    return os.environ.get("ENVIRONMENT", "").strip().lower() in {"production", "prod"}
+
+
+def assert_stable_secret_configured() -> None:
+    """Boot-time guard: a production deploy MUST set a stable ``SESSION_SECRET``.
+
+    Without it, ``_secret()`` falls back to a per-process ephemeral value. With
+    more than one worker/replica (the norm on Render/gunicorn/uvicorn), each
+    process signs cookies with a different secret, so a cookie minted by worker
+    A is rejected (BadSignature) by worker B — users get logged out at random
+    (AUTH-13). We fail fast at startup rather than ship a silently broken login.
+
+    Dev/CI/tests keep the ephemeral fallback (ENVIRONMENT unset), so nothing
+    here changes their boot.
+    """
+    if _is_production() and not os.environ.get("SESSION_SECRET"):
+        raise RuntimeError(
+            "SESSION_SECRET must be set when ENVIRONMENT=production. Without a "
+            "shared signing secret, multi-worker deployments reject each other's "
+            "session cookies and users are logged out at random."
+        )
+
+
 def sign_session_token(raw_token: str) -> str:
     """Wrap the opaque DB token in an itsdangerous signature for the cookie."""
     return _serializer().dumps(raw_token)
@@ -82,20 +120,45 @@ def unsign_session_token(cookie_value: str) -> Optional[str]:
         return None
 
 
-def set_session_cookie(response: Response, raw_token: str) -> None:
+def set_session_cookie(
+    response: Response,
+    raw_token: str,
+    *,
+    ttl_seconds: float = _SIGNATURE_MAX_AGE_S,
+) -> None:
+    """Set the signed session cookie.
+
+    ``ttl_seconds`` should mirror the DB session TTL passed to
+    ``create_session`` so the browser-side expiry matches the server-side one
+    (AUTH-12). It must stay ≤ ``_SIGNATURE_MAX_AGE_S`` — the signature tolerance
+    checked in ``unsign_session_token`` — or the cookie would out-live its own
+    signature.
+    """
     response.set_cookie(
         key=COOKIE_NAME,
         value=sign_session_token(raw_token),
-        max_age=_SIGNATURE_MAX_AGE_S,
+        max_age=int(ttl_seconds),
         httponly=True,
         secure=_cookie_secure(),
         samesite="lax",
         path="/",
+        domain=_cookie_domain(),
     )
 
 
 def clear_session_cookie(response: Response) -> None:
-    response.delete_cookie(key=COOKIE_NAME, path="/", samesite="lax")
+    # The delete MUST carry the SAME attributes the cookie was set with
+    # (secure, httponly, samesite, path, domain) — otherwise the browser treats
+    # it as a different cookie and ignores the delete, leaving a stale session
+    # cookie after logout (AUTH-01).
+    response.delete_cookie(
+        key=COOKIE_NAME,
+        path="/",
+        secure=_cookie_secure(),
+        httponly=True,
+        samesite="lax",
+        domain=_cookie_domain(),
+    )
 
 
 def _get_account_store(request: Request) -> Optional[AccountStore]:
