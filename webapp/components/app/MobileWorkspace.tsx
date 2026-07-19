@@ -17,9 +17,12 @@ import type { Combo } from '@/lib/market-reading/store';
 type MobileTab = 'markets' | 'reading' | 'chat';
 
 /**
- * Mobile layout (<768px) — a single full-height column with a sticky header
- * (active combo) and sticky bottom tab bar (Marchés · Lecture · Chat), in the
- * spirit of a native mobile app. Selecting a combo jumps to the Lecture tab.
+ * Stacked layout (<1280px — phone + tablet) — a single full-height column with
+ * a sticky header (active combo) and sticky bottom tab bar (Marchés · Lecture ·
+ * Chat), in the spirit of a native mobile app. Selecting a combo jumps to the
+ * Lecture tab. Heights use `svh` (small viewport) so the tab bar stays put when
+ * mobile browser chrome expands/collapses; the bottom bar reserves the
+ * home-indicator safe area.
  */
 export function MobileWorkspace({
   combos,
@@ -48,9 +51,11 @@ export function MobileWorkspace({
     <Tabs
       value={tab}
       onValueChange={(v) => setTab(v as MobileTab)}
-      className="flex min-h-[calc(100vh-4rem)] flex-col"
+      className="flex min-h-[calc(100svh-3.5rem)] flex-col"
     >
-      <header className="sticky top-0 z-10 border-b border-border/60 bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+      {/* top-14 (3.5rem) so this combo bar docks directly under the sticky
+          global AppHeader (h-14) instead of colliding with it at top-0. */}
+      <header className="sticky top-14 z-10 border-b border-border/60 bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <p className="truncate text-sm font-semibold text-foreground">
           {headerLabel}
         </p>
@@ -87,7 +92,7 @@ export function MobileWorkspace({
         </TabsContent>
       </div>
 
-      <TabsList className="sticky bottom-0 z-10 grid h-auto w-full grid-cols-3 rounded-none border-t border-border/60 bg-background p-0">
+      <TabsList className="sticky bottom-0 z-10 grid h-auto w-full grid-cols-3 rounded-none border-t border-border/60 bg-background p-0 pb-[env(safe-area-inset-bottom)]">
         <MobileTabTrigger value="markets" label={t('mobile.tabMarkets')}>
           <ListTree className="h-4 w-4" aria-hidden />
         </MobileTabTrigger>
