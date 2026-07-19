@@ -54,13 +54,26 @@ export function ScannerWorkspace({ locale }: { locale: string }) {
   const [isScanning, setIsScanning] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
+  // Guards against stale results (UI-10): every scan takes a sequence number;
+  // only the LATEST requested scan may apply its result, so a slow earlier scan
+  // can't overwrite a fresher one. `lastScannedConfigRef` records which config
+  // has been (or is being) scanned so the effect below doesn't re-run a scan for
+  // a config already scanned (UI-11) — including the double-scan that used to
+  // fire on submit (explicit runScan + config-change effect).
+  const scanSeqRef = React.useRef(0);
+  const lastScannedConfigRef = React.useRef<ConditionsConfig | null>(null);
+
   const runScan = React.useCallback(async (cfg: ConditionsConfig) => {
+    lastScannedConfigRef.current = cfg;
+    const seq = ++scanSeqRef.current;
     setIsScanning(true);
     setError(null);
     try {
       const res = await fetchConditionsScan(cfg);
+      if (seq !== scanSeqRef.current) return; // superseded by a newer scan
       setResponse(res);
     } catch (err) {
+      if (seq !== scanSeqRef.current) return;
       setResponse(null);
       setError(
         err instanceof ScanNotAvailableError
@@ -70,17 +83,17 @@ export function ScannerWorkspace({ locale }: { locale: string }) {
             : t('errorGeneric'),
       );
     } finally {
-      setIsScanning(false);
+      if (seq === scanSeqRef.current) setIsScanning(false);
     }
   }, [t]);
 
-  // Run a scan whenever we have a config and are not in the builder.
+  // Run a scan whenever we have a config and are not in the builder — but skip a
+  // config we've already scanned (UI-11: no superfluous scan on cancel/submit).
   const showBuilder = editing || (ready && !config);
   React.useEffect(() => {
-    if (ready && config && !showBuilder) {
+    if (ready && config && !showBuilder && config !== lastScannedConfigRef.current) {
       void runScan(config);
     }
-    // re-run when the saved config identity changes
   }, [ready, config, showBuilder, runScan]);
 
   // Timeframes actually scanned (from the latest response) drive the auto-refresh

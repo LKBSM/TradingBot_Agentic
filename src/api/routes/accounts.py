@@ -21,6 +21,7 @@ NO payments here. Gated features import ``require_active_subscription`` from
 from __future__ import annotations
 
 import logging
+import os
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -308,11 +309,68 @@ async def admin_overview(
     }
 
 
-def _dispatch_reset_token(request: Request, identifier: str, raw_token: str) -> None:
-    """Deliver the reset token out-of-band (email).
+def _reset_base_url() -> str:
+    """Public base URL of the frontend for building the reset link."""
+    return os.environ.get("FRONTEND_BASE_URL", "https://mia.markets").rstrip("/")
 
-    Email delivery is mission-④ territory; until an emailer is wired, we log
-    that a token was issued WITHOUT logging the token value (never log secrets).
-    A wired notifier would be read from app_state here.
+
+def _send_reset_email(to_email: str, reset_url: str) -> bool:
+    """Send the reset link over SMTP when configured; return False otherwise.
+
+    Env-gated (``SMTP_HOST`` …). With no SMTP configured this is a clean no-op —
+    the caller then logs an honest "delivery not configured" line. Never logs the
+    token/link. Best-effort: a send failure is surfaced to the caller as False.
     """
-    logger.info("password reset token issued for identifier=%r (delivery pending)", identifier)
+    host = os.environ.get("SMTP_HOST")
+    if not host:
+        return False
+    import smtplib
+    from email.message import EmailMessage
+
+    msg = EmailMessage()
+    msg["Subject"] = "Réinitialisation de votre mot de passe MIA Markets"
+    msg["From"] = os.environ.get(
+        "SMTP_FROM", os.environ.get("SMTP_USER", "no-reply@mia.markets")
+    )
+    msg["To"] = to_email
+    msg.set_content(
+        "Vous avez demandé la réinitialisation de votre mot de passe MIA Markets.\n\n"
+        f"Ouvrez ce lien pour choisir un nouveau mot de passe :\n{reset_url}\n\n"
+        "Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail — "
+        "votre mot de passe reste inchangé. Le lien expire après un court délai."
+    )
+    port = int(os.environ.get("SMTP_PORT", "587"))
+    user = os.environ.get("SMTP_USER")
+    password = os.environ.get("SMTP_PASSWORD")
+    with smtplib.SMTP(host, port, timeout=10) as server:
+        server.starttls()
+        if user and password:
+            server.login(user, password)
+        server.send_message(msg)
+    return True
+
+
+def _dispatch_reset_token(request: Request, identifier: str, raw_token: str) -> None:
+    """Deliver the reset token out-of-band (email link) — AUTH-02.
+
+    Resolves the recipient email, builds the confirmation link
+    (``/mot-de-passe-oublie/confirmer?token=…``) and emails it when SMTP is
+    configured. With no emailer configured it degrades cleanly to a log line
+    (never logging the token). Anti-enumeration is the caller's job — this is
+    only reached when a matching account existed.
+    """
+    store = _store(request)
+    email = store.email_for_identifier(identifier)
+    reset_url = f"{_reset_base_url()}/mot-de-passe-oublie/confirmer?token={raw_token}"
+    if email:
+        try:
+            if _send_reset_email(email, reset_url):
+                logger.info("password reset email sent for identifier=%r", identifier)
+                return
+        except Exception:
+            logger.exception("password reset email send failed for identifier=%r", identifier)
+    logger.info(
+        "password reset requested for identifier=%r — email delivery not configured "
+        "(token not logged)",
+        identifier,
+    )

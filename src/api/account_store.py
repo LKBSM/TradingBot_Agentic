@@ -633,6 +633,28 @@ class AccountStore:
             finally:
                 conn.close()
 
+    def email_for_identifier(self, identifier: str) -> Optional[str]:
+        """Return the email of the active account matching username OR email.
+
+        Used to address the password-reset email (AUTH-02). Anti-enumeration
+        stays the ROUTE's job — this only resolves a recipient when one exists.
+        """
+        if not identifier:
+            return None
+        ident = identifier.strip().lower()
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                cur = conn.execute(
+                    "SELECT email FROM accounts "
+                    "WHERE (username_lower = ? OR email_lower = ?) AND is_active = 1",
+                    (ident, ident),
+                )
+                row = cur.fetchone()
+            finally:
+                conn.close()
+        return row["email"] if row else None
+
     def consume_reset_token(self, raw_token: str, new_password: str) -> bool:
         """Atomically validate + burn a reset token and set the new password."""
         if not raw_token:

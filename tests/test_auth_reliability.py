@@ -100,3 +100,26 @@ class TestOwnerSeedHardening:
         consents = account_store.get_consents(owner["id"])
         docs = {c["doc"] for c in consents}
         assert docs == {"terms", "privacy"}
+
+
+# --------------------------------------------------------------------------- #
+# AUTH-02 — reset email recipient resolution + safe degradation
+# --------------------------------------------------------------------------- #
+class TestResetDelivery:
+    def test_email_for_identifier_by_username_and_email(self, account_store):
+        _mk(account_store, "dave", "dave@example.com")
+        assert account_store.email_for_identifier("dave") == "dave@example.com"
+        assert account_store.email_for_identifier("dave@example.com") == "dave@example.com"
+
+    def test_email_for_identifier_unknown_is_none(self, account_store):
+        assert account_store.email_for_identifier("ghost") is None
+
+    def test_reset_request_stays_200_without_smtp(self, client, monkeypatch):
+        # No SMTP configured → dispatch degrades cleanly, response is unchanged.
+        monkeypatch.delenv("SMTP_HOST", raising=False)
+        client.post("/api/auth/register", json=VALID_REGISTER)
+        r = client.post(
+            "/api/auth/password-reset/request",
+            json={"identifier": "alice@example.com"},
+        )
+        assert r.status_code == 200

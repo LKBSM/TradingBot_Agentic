@@ -80,11 +80,17 @@ export function useSiblingZones(
           // Unavailable sibling → no overlap facts for it (never inferred).
           .catch(() => [] as SiblingZone[]),
       ),
-    ).then((lists) => {
-      if (seq !== seqRef.current) return;
-      setSiblings(lists.flat());
-      setIsLoading(false);
-    });
+    )
+      .then((lists) => {
+        if (seq !== seqRef.current) return;
+        setSiblings(lists.flat());
+        setIsLoading(false);
+      })
+      .catch(() => {
+        // Inner fetches each .catch, so Promise.all won't reject — but never
+        // leave isLoading stuck if the .then body throws (UI-15).
+        if (seq === seqRef.current) setIsLoading(false);
+      });
 
     return () => controller.abort();
   }, [instrument, timeframe, source]);
