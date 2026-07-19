@@ -10,33 +10,50 @@ interface TurnLike {
   role: 'user' | 'assistant';
 }
 
+type AnchorTarget = 'user' | 'assistant';
+
+interface AnchorOptions {
+  /**
+   * Which message to pin near the top once a new exchange starts.
+   * - `'user'` (default): the latest question — keeps the question and the
+   *   beginning of the reply both visible (landing slide-over behaviour).
+   * - `'assistant'`: the latest reply — pins the *first word of M.I.A's answer*
+   *   to the top (docked sidebar). Falls back to the question while the reply
+   *   has not rendered yet, then re-pins to the reply the moment it appears.
+   */
+  anchor?: AnchorTarget;
+}
+
 /**
  * Assistant-style chat scrolling.
  *
  * Instead of yanking the viewport to the absolute bottom on every change
  * (which buries the start of a long reply below the fold and forces the reader
- * to scroll back up), this anchors the *latest user message* near the top of
- * the scroll area:
+ * to scroll back up), this anchors a chosen message near the top of the scroll
+ * area:
  *
- * - When a new question is sent, the question is smooth-scrolled to the top so
- *   the question and the beginning of the answer are both visible.
- * - While "following", the same question stays pinned at the top as the answer
- *   lands / grows — so the reader keeps reading from the start, never teleported
- *   to the bottom. (Streaming-safe: incremental growth re-pins to the same spot,
- *   which is a no-op once reached.)
+ * - When a new question is sent, following engages and the anchor is
+ *   smooth-scrolled to the top.
+ * - While "following", the anchor stays pinned at the top as the answer lands /
+ *   grows — so the reader keeps reading from the start, never teleported to the
+ *   bottom. (Streaming-safe: incremental growth re-pins to the same spot, which
+ *   is a no-op once reached.) With `anchor: 'assistant'` the pin hands off from
+ *   the question to the reply the moment the reply mounts.
  * - The first wheel / touch gesture disengages following, so the user can scroll
  *   freely during generation without being re-aspirated.
  *
  * The hook only reads layout and scrolls a single container — it touches no chat
  * logic, security, or view-control.
  *
- * Anchoring relies on the latest `[data-chat-role="user"]` element inside the
+ * Anchoring relies on the latest `[data-chat-role="…"]` element inside the
  * container (set by <ChatMessage />).
  */
 export function useChatAnchorScroll(
   turns: ReadonlyArray<TurnLike>,
   isLoading: boolean,
+  options: AnchorOptions = {},
 ) {
+  const anchor = options.anchor ?? 'user';
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const prevUserCount = React.useRef(0);
   const followingRef = React.useRef(false);
@@ -46,36 +63,43 @@ export function useChatAnchorScroll(
     [turns],
   );
 
-  const anchorToLastUser = React.useCallback(() => {
+  const anchorToTop = React.useCallback(() => {
     const container = scrollRef.current;
     if (!container) return;
-    const users = container.querySelectorAll<HTMLElement>(
-      '[data-chat-role="user"]',
-    );
-    const anchor = users[users.length - 1];
-    if (!anchor) return;
+    const pick = (role: AnchorTarget) => {
+      const nodes = container.querySelectorAll<HTMLElement>(
+        `[data-chat-role="${role}"]`,
+      );
+      return nodes[nodes.length - 1] ?? null;
+    };
+    // Prefer the requested target; fall back to the latest question so the view
+    // stays anchored while the assistant reply has not mounted yet.
+    const target =
+      (anchor === 'assistant' ? pick('assistant') : null) ?? pick('user');
+    if (!target) return;
     const delta =
-      anchor.getBoundingClientRect().top -
+      target.getBoundingClientRect().top -
       container.getBoundingClientRect().top;
     const top = Math.max(0, container.scrollTop + delta - TOP_GAP_PX);
     container.scrollTo({ top, behavior: 'smooth' });
-  }, []);
+  }, [anchor]);
 
-  // A new question was sent → engage following and pin it to the top.
+  // A new question was sent → engage following and pin the anchor to the top.
   React.useEffect(() => {
     if (userCount > prevUserCount.current) {
       followingRef.current = true;
-      anchorToLastUser();
+      anchorToTop();
     }
     prevUserCount.current = userCount;
-  }, [userCount, anchorToLastUser]);
+  }, [userCount, anchorToTop]);
 
-  // The answer landed / grew (or the loader toggled) → keep the question pinned
+  // The answer landed / grew (or the loader toggled) → keep the anchor pinned
   // while following, so the start of the reply stays in view. No-op once the
-  // question already sits at the top.
+  // anchor already sits at the top; this is also where an assistant anchor hands
+  // the pin off from the question to the freshly-mounted reply.
   React.useEffect(() => {
-    if (followingRef.current) anchorToLastUser();
-  }, [turns, isLoading, anchorToLastUser]);
+    if (followingRef.current) anchorToTop();
+  }, [turns, isLoading, anchorToTop]);
 
   // Any deliberate scroll gesture disengages following — the user is now in
   // control and must not be re-aspirated toward the anchor.
