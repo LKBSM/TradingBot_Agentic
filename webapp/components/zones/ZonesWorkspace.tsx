@@ -1,9 +1,11 @@
 'use client';
 
 import * as React from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useChartView } from '@/lib/chart/viewState';
 import { coerceViewActions } from '@/lib/chart/viewActions';
+import { resolveComboFromQuery } from '@/lib/conditions/app-link';
 import {
   useCandles,
   useLatestPrice,
@@ -93,8 +95,60 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
     label: t(`sorts.${value}`),
   }));
 
-  const [instrument, setInstrument] = React.useState<string>(SUPPORTED_INSTRUMENTS[0]);
-  const [timeframe, setTimeframe] = React.useState<string>(SUPPORTED_TIMEFRAMES[0]);
+  // The combo is URL-driven (NAV-04) so `/zones?instrument=…&timeframe=…` is
+  // shareable/bookmarkable and back/forward restores it — instead of a local
+  // state that always reset to XAU/M15.
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const urlCombo = React.useMemo(
+    () =>
+      resolveComboFromQuery(
+        searchParams.get('instrument') ?? undefined,
+        searchParams.get('timeframe') ?? undefined,
+      ),
+    [searchParams],
+  );
+
+  const [instrument, setInstrumentState] = React.useState<string>(
+    urlCombo?.instrument ?? SUPPORTED_INSTRUMENTS[0],
+  );
+  const [timeframe, setTimeframeState] = React.useState<string>(
+    urlCombo?.timeframe ?? SUPPORTED_TIMEFRAMES[0],
+  );
+
+  // URL → state: reflect a deep-link / back-forward change into the selection.
+  React.useEffect(() => {
+    if (!urlCombo) return;
+    if (urlCombo.instrument !== instrument) setInstrumentState(urlCombo.instrument);
+    if (urlCombo.timeframe !== timeframe) setTimeframeState(urlCombo.timeframe);
+  }, [urlCombo, instrument, timeframe]);
+
+  const writeCombo = React.useCallback(
+    (inst: string, tf: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('instrument', inst);
+      params.set('timeframe', tf);
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [searchParams, pathname, router],
+  );
+
+  const setInstrument = React.useCallback(
+    (i: string) => {
+      setInstrumentState(i);
+      writeCombo(i, timeframe);
+    },
+    [writeCombo, timeframe],
+  );
+  const setTimeframe = React.useCallback(
+    (tf: string) => {
+      setTimeframeState(tf);
+      writeCombo(instrument, tf);
+    },
+    [writeCombo, instrument],
+  );
+
   const [filter, setFilter] = React.useState<ZoneFilter>('all');
   // Proximity to the price is the default order — the most useful factual one.
   const [sort, setSort] = React.useState<ZoneSort>('proximity');

@@ -30,6 +30,15 @@ interface ChartViewContextValue {
   ): void;
   /** Restore the default view (all layers visible, no filter, no highlight). */
   reset(): void;
+  /**
+   * Reset the render state when the active combo CHANGES (NAV-05). Hidden /
+   * isolated / highlighted zones are keyed to a specific combo's engine ids;
+   * without this they linger (as invisible stale ids) across a combo switch and
+   * re-apply if the user returns to the original combo. No-op while the combo
+   * key is unchanged, so the intended /app↔/zones sharing for the SAME combo is
+   * preserved. The first call only records the key (never wipes the arrival view).
+   */
+  resetForCombo(comboKey: string): void;
 }
 
 const ChartViewContext = React.createContext<ChartViewContextValue | null>(null);
@@ -63,9 +72,19 @@ export function ChartViewProvider({ children }: { children: React.ReactNode }) {
 
   const reset = React.useCallback(() => setView(DEFAULT_CHART_VIEW), []);
 
+  const lastComboKeyRef = React.useRef<string | null>(null);
+  const resetForCombo = React.useCallback((comboKey: string) => {
+    if (lastComboKeyRef.current === comboKey) return;
+    const isFirst = lastComboKeyRef.current === null;
+    lastComboKeyRef.current = comboKey;
+    // First observation just records the key; only a real CHANGE wipes the view
+    // so masks/isolation/highlight from the previous combo don't leak forward.
+    if (!isFirst) setView(DEFAULT_CHART_VIEW);
+  }, []);
+
   const value = React.useMemo<ChartViewContextValue>(
-    () => ({ view, applyActions, reset }),
-    [view, applyActions, reset],
+    () => ({ view, applyActions, reset, resetForCombo }),
+    [view, applyActions, reset, resetForCombo],
   );
 
   return (
@@ -85,6 +104,7 @@ const NOOP_VIEW: ChartViewContextValue = {
   view: DEFAULT_CHART_VIEW,
   applyActions: () => {},
   reset: () => {},
+  resetForCombo: () => {},
 };
 
 /**

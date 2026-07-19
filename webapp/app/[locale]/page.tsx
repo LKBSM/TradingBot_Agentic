@@ -1,3 +1,4 @@
+import { HashScroll } from '@/components/a11y/HashScroll';
 import { BeforeAfterSection } from '@/components/landing/BeforeAfterSection';
 import { ConversationReplaySection } from '@/components/landing/ConversationReplaySection';
 import { FaqSection } from '@/components/landing/FaqSection';
@@ -23,6 +24,7 @@ import { PricingSection } from '@/components/landing/PricingSection';
 export default function LandingPage() {
   return (
     <>
+      <HashScroll />
       <HeroLive />
       <HowItWorksSection />
       <MultiMarketSection />
