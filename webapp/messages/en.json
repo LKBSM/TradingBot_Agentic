@@ -865,7 +865,9 @@
       "zoomOut": "Zoom out",
       "fit": "Fit the chart",
       "liqShowAll": "Show all liquidity pools (intact, swept, broken)",
-      "liqShowIntactOnly": "Show only intact liquidity pools"
+      "liqShowIntactOnly": "Show only intact liquidity pools",
+      "marketClosed": "Market closed",
+      "marketClosedTitle": "The market is currently closed: the chart shows the last closed candle and does not reflect a live quote."
     }
   },
   "samples": {

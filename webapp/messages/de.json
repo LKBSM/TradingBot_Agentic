@@ -865,7 +865,9 @@
       "zoomOut": "Verkleinern",
       "fit": "Chart anpassen",
       "liqShowAll": "Alle Liquiditätszonen anzeigen (intakt, abgeschöpft, gebrochen)",
-      "liqShowIntactOnly": "Nur intakte Liquiditätszonen anzeigen"
+      "liqShowIntactOnly": "Nur intakte Liquiditätszonen anzeigen",
+      "marketClosed": "Markt geschlossen",
+      "marketClosedTitle": "Der Markt ist derzeit geschlossen: Das Chart zeigt die letzte abgeschlossene Kerze und keine Live-Notierung."
     }
   },
   "samples": {

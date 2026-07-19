@@ -865,7 +865,9 @@
       "zoomOut": "Zoom arrière",
       "fit": "Ajuster le graphique",
       "liqShowAll": "Afficher toutes les poches de liquidité (intactes, prises, cassées)",
-      "liqShowIntactOnly": "Afficher seulement les poches de liquidité intactes"
+      "liqShowIntactOnly": "Afficher seulement les poches de liquidité intactes",
+      "marketClosed": "Marché fermé",
+      "marketClosedTitle": "Le marché est actuellement fermé : le graphique montre la dernière bougie clôturée, il ne reflète pas de cotation en direct."
     }
   },
   "samples": {

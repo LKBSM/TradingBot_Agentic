@@ -865,7 +865,9 @@
       "zoomOut": "Zoom indietro",
       "fit": "Adatta il grafico",
       "liqShowAll": "Mostra tutte le sacche di liquidità (intatte, prese, rotte)",
-      "liqShowIntactOnly": "Mostra solo le sacche di liquidità intatte"
+      "liqShowIntactOnly": "Mostra solo le sacche di liquidità intatte",
+      "marketClosed": "Mercato chiuso",
+      "marketClosedTitle": "Il mercato è attualmente chiuso: il grafico mostra l'ultima candela chiusa e non riflette una quotazione in tempo reale."
     }
   },
   "samples": {

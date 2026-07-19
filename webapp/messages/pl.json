@@ -865,7 +865,9 @@
       "zoomOut": "Pomniejsz",
       "fit": "Dopasuj wykres",
       "liqShowAll": "Pokaż wszystkie kieszenie płynności (nienaruszone, zebrane, przełamane)",
-      "liqShowIntactOnly": "Pokaż tylko nienaruszone kieszenie płynności"
+      "liqShowIntactOnly": "Pokaż tylko nienaruszone kieszenie płynności",
+      "marketClosed": "Rynek zamknięty",
+      "marketClosedTitle": "Rynek jest obecnie zamknięty: wykres pokazuje ostatnią zamkniętą świecę i nie odzwierciedla notowania na żywo."
     }
   },
   "samples": {
