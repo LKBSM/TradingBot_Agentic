@@ -706,6 +706,8 @@
       "login": "Iniciar sessão",
       "errorAge": "Tem de declarar que tem 18 anos ou mais.",
       "errorConsents": "Tem de aceitar os Termos de Utilização e a Política de Privacidade.",
+      "closedTitle": "Inscrições encerradas",
+      "closedBody": "O acesso está reservado às contas de testador convidadas durante a beta privada.",
       "errorGeneric": "Não foi possível concluir o registo. Tente novamente."
     },
     "forgot": {
@@ -727,6 +729,8 @@
       "updateError": "Não foi possível atualizar.",
       "consentsTitle": "Consentimentos registados",
       "noConsents": "Nenhum consentimento registado.",
+      "sessionError": "Não foi possível verificar a tua sessão. Verifica a ligação e tenta novamente.",
+      "retry": "Tentar novamente",
       "docTerms": "Termos de Utilização",
       "docPrivacy": "Privacidade",
       "consentMeta": "v{version} · {date}",

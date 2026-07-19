@@ -17,15 +17,30 @@ import { FormError, FormSuccess, TextField } from './fields';
  */
 export function AccountPanel() {
   const t = useTranslations('auth');
-  const { account, loading, logout, refresh } = useAuth();
+  const { account, loading, probeFailed, logout, refresh } = useAuth();
   const router = useRouter();
   const [error, setError] = React.useState<string | null>(null);
   const [success, setSuccess] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
+  const savingRef = React.useRef(false);
 
+  // Redirect to login ONLY on a confirmed logged-out state (probe returned 401).
+  // A network/5xx failure (probeFailed) must NOT eject a possibly-valid user —
+  // we show a retry instead (AUTH-03/AUTH-09).
   React.useEffect(() => {
-    if (!loading && account === null) router.replace('/connexion');
-  }, [loading, account, router]);
+    if (!loading && account === null && !probeFailed) router.replace('/connexion');
+  }, [loading, account, probeFailed, router]);
+
+  if (!loading && account === null && probeFailed) {
+    return (
+      <div className="space-y-4">
+        <FormError message={t('account.sessionError')} />
+        <Button variant="outline" onClick={() => refresh()}>
+          {t('account.retry')}
+        </Button>
+      </div>
+    );
+  }
 
   if (loading || account === null) {
     return <p className="text-sm text-muted-foreground">{t('account.loading')}</p>;
@@ -33,17 +48,25 @@ export function AccountPanel() {
 
   async function onSaveEmail(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    // Guard against a double submit (Enter + click) racing two requests before
+    // React flips `saving` — the ref updates synchronously (AUTH-08).
+    if (savingRef.current) return;
+    savingRef.current = true;
     setError(null);
     setSuccess(null);
     const form = new FormData(e.currentTarget);
     setSaving(true);
     try {
       await updateProfile(String(form.get('email') ?? '').trim());
+      // The server re-issued the session cookie on email change (AUTH-14), so a
+      // follow-up refresh() reflects the new state without ever nulling the
+      // account on a transient error (refresh is non-destructive now, AUTH-03).
       await refresh();
       setSuccess(t('account.emailUpdated'));
     } catch (err) {
       setError(err instanceof AuthError ? err.message : t('account.updateError'));
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   }

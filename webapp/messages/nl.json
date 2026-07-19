@@ -706,6 +706,8 @@
       "login": "Inloggen",
       "errorAge": "U moet verklaren 18 jaar of ouder te zijn.",
       "errorConsents": "U moet akkoord gaan met de Gebruiksvoorwaarden en het Privacybeleid.",
+      "closedTitle": "Registratie gesloten",
+      "closedBody": "Toegang is tijdens de besloten bèta beperkt tot uitgenodigde testeraccounts.",
       "errorGeneric": "Registreren niet mogelijk. Probeer opnieuw."
     },
     "forgot": {
@@ -727,6 +729,8 @@
       "updateError": "Bijwerken niet mogelijk.",
       "consentsTitle": "Geregistreerde toestemmingen",
       "noConsents": "Geen toestemming geregistreerd.",
+      "sessionError": "We konden je sessie niet verifiëren. Controleer je verbinding en probeer opnieuw.",
+      "retry": "Opnieuw proberen",
       "docTerms": "Gebruiksvoorwaarden",
       "docPrivacy": "Privacy",
       "consentMeta": "v{version} · {date}",

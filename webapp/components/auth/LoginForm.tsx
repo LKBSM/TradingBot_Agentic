@@ -16,6 +16,7 @@ export function LoginForm() {
   const router = useRouter();
   const [error, setError] = React.useState<string | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
+  const submittingRef = React.useRef(false);
 
   // After login, go straight to the product. Honor a ?next= return path (set by
   // the login-wall redirect) when it's a safe internal path, else land on /app.
@@ -24,11 +25,17 @@ export function LoginForm() {
   function resolveDestination(): string {
     if (typeof window === 'undefined') return '/app';
     const next = new URLSearchParams(window.location.search).get('next');
-    return next && next.startsWith('/') ? next : '/app';
+    // Only a same-site absolute path is allowed. `//host` and `/\host` are
+    // protocol-relative URLs the browser resolves off-site → open-redirect
+    // (AUTH-06). Require a single leading slash not followed by / or \.
+    if (next && /^\/(?![/\\])/.test(next)) return next;
+    return '/app';
   }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (submittingRef.current) return; // AUTH-08 — no double submit
+    submittingRef.current = true;
     setError(null);
     const form = new FormData(e.currentTarget);
     setSubmitting(true);
@@ -43,6 +50,7 @@ export function LoginForm() {
         err instanceof AuthError ? err.message : t('login.errorGeneric'),
       );
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   }

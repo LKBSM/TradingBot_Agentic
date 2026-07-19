@@ -706,6 +706,8 @@
       "login": "Log in",
       "errorAge": "You must declare that you are 18 years of age or older.",
       "errorConsents": "You must accept the Terms of Use and the Privacy Policy.",
+      "closedTitle": "Registrations closed",
+      "closedBody": "Access is limited to invited tester accounts during the private beta.",
       "errorGeneric": "Unable to register. Try again."
     },
     "forgot": {
@@ -727,6 +729,8 @@
       "updateError": "Unable to update.",
       "consentsTitle": "Recorded consents",
       "noConsents": "No consent recorded.",
+      "sessionError": "We couldn't verify your session. Check your connection and try again.",
+      "retry": "Try again",
       "docTerms": "Terms of Use",
       "docPrivacy": "Privacy",
       "consentMeta": "v{version} · {date}",

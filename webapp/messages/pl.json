@@ -706,6 +706,8 @@
       "login": "Zaloguj się",
       "errorAge": "Musisz oświadczyć, że masz 18 lat lub więcej.",
       "errorConsents": "Musisz zaakceptować Warunki użytkowania i Politykę prywatności.",
+      "closedTitle": "Rejestracja zamknięta",
+      "closedBody": "Dostęp jest zarezerwowany dla zaproszonych kont testerów podczas prywatnej bety.",
       "errorGeneric": "Nie można zarejestrować. Spróbuj ponownie."
     },
     "forgot": {
@@ -727,6 +729,8 @@
       "updateError": "Nie można zaktualizować.",
       "consentsTitle": "Zapisane zgody",
       "noConsents": "Brak zapisanych zgód.",
+      "sessionError": "Nie udało się zweryfikować sesji. Sprawdź połączenie i spróbuj ponownie.",
+      "retry": "Spróbuj ponownie",
       "docTerms": "Warunki użytkowania",
       "docPrivacy": "Prywatność",
       "consentMeta": "v{version} · {date}",
