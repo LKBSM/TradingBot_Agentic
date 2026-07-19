@@ -23,6 +23,14 @@ vi.mock('@/lib/market-reading/api-client', async (importActual) => {
   };
 });
 
+// ZonesWorkspace now drives the combo from the URL (NAV-04); stub the app-router
+// hooks. Empty search params → it falls back to the default combo as before.
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+  usePathname: () => '/zones',
+  useSearchParams: () => new URLSearchParams(),
+}));
+
 /** Probe exposing the SHARED chart view state so we can assert hide reflects. */
 function HiddenProbe() {
   const { view } = useChartViewOptional();

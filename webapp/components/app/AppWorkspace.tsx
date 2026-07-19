@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useChat } from '@/components/chat/ChatProvider';
 import { AppChatSidebar } from './AppChatSidebar';
@@ -11,9 +12,12 @@ import { useIsMobile } from '@/lib/use-media-query';
 import { useMarketReading, type ReadingSource } from '@/lib/market-reading/hooks';
 import {
   ActiveComboProvider,
+  comboKey,
+  sameCombo,
   useActiveCombo,
   type Combo,
 } from '@/lib/market-reading/store';
+import { resolveComboFromQuery } from '@/lib/conditions/app-link';
 import { useChartView } from '@/lib/chart/viewState';
 import { coerceViewActions } from '@/lib/chart/viewActions';
 import { READING_DATA_SOURCE } from '@/lib/mockReadings';
@@ -81,8 +85,50 @@ function WorkspaceInner({
   const t = useTranslations('app');
   const { active, select, combos } = useActiveCombo();
   const { openForCombo, viewActionSignal } = useChat();
-  const { applyActions } = useChartView();
+  const { applyActions, resetForCombo } = useChartView();
   const isMobile = useIsMobile();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // The URL is the source of truth for the active combo (NAV-01/02/04). Reading
+  // it via useSearchParams makes it reactive to client navigation, deep-links
+  // arriving while already on /app, AND the browser back/forward buttons — none
+  // of which re-seed the provider's initial state.
+  const urlCombo = React.useMemo(
+    () =>
+      resolveComboFromQuery(
+        searchParams.get('instrument') ?? undefined,
+        searchParams.get('timeframe') ?? undefined,
+      ),
+    [searchParams],
+  );
+
+  // URL → state: reflect the query combo into the active selection whenever it
+  // changes. Guarded by comboKey equality so this never fights the state→URL
+  // write below (no replace/effect loop).
+  React.useEffect(() => {
+    if (urlCombo && !sameCombo(urlCombo, active)) {
+      select(urlCombo);
+    }
+  }, [urlCombo, active, select]);
+
+  // State → URL: a user pick writes the combo into the query (shallow replace,
+  // no scroll) so it survives navigation and is shareable/bookmarkable. A manual
+  // pick also clears any lingering ?focus= deep-link (that zone belonged to the
+  // previous selection). Snappy: select() updates immediately; the URL→state
+  // effect then sees an equal combo and no-ops.
+  const handleSelect = React.useCallback(
+    (combo: Combo) => {
+      select(combo);
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('instrument', combo.instrument);
+      params.set('timeframe', combo.timeframe);
+      params.delete('focus');
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [select, searchParams, pathname, router],
+  );
 
   const { data, isLoading, isRefreshing, error, refresh } = useMarketReading(
     active?.instrument ?? null,
@@ -90,10 +136,14 @@ function WorkspaceInner({
     { pollMs: POLL_MS, source: dataSource },
   );
 
-  // Keep the chat context aligned with the selected combo.
+  // Keep the chat context aligned with the selected combo, and clear any chart
+  // masks/isolation/highlight carried over from a previous combo (NAV-05).
   React.useEffect(() => {
-    if (active) openForCombo(active);
-  }, [active, openForCombo]);
+    if (active) {
+      openForCombo(active);
+      resetForCombo(comboKey(active));
+    }
+  }, [active, openForCombo, resetForCombo]);
 
   // Structure ids the chart can currently resolve — the ONLY structures a
   // focus/highlight/mask view action may reference (defence in depth on top of
@@ -120,48 +170,57 @@ function WorkspaceInner({
     if (viewActionSignal.nonce === lastViewNonceRef.current) return;
     lastViewNonceRef.current = viewActionSignal.nonce;
     const actions = coerceViewActions(viewActionSignal.actions, validZoneIds);
-    applyActions(actions, select);
-  }, [viewActionSignal, validZoneIds, applyActions, select]);
+    // Route the combo-change action through handleSelect (not raw select) so a
+    // chatbot `set_instrument_timeframe` also updates the URL — otherwise the
+    // URL→state sync effect would immediately revert it to the stale query.
+    applyActions(actions, handleSelect);
+  }, [viewActionSignal, validZoneIds, applyActions, handleSelect]);
 
-  // Honour an "Analyser" deep-link (?focus=<zone_id>) from the /zones page: once
-  // the reading is loaded and the id resolves to an on-screen zone, focus +
-  // highlight it ONCE. Re-validated through the same id-lock — an unknown/stale
+  // Honour an "Analyser" deep-link (?focus=<zone_id>) from the /zones page. The
+  // focus id is read from the (reactive) URL so a SECOND deep-link — or a
+  // back/forward that lands on a different ?focus= — re-dispatches instead of
+  // being swallowed by a once-per-mount latch (NAV-03). We track the last id we
+  // dispatched, not a boolean. Re-validated through the id-lock; an unknown/stale
   // id is dropped, never mis-applied. Display-only; detection is never touched.
-  const focusDispatchedRef = React.useRef(false);
+  const focusZoneId = searchParams.get('focus') ?? initialFocusZoneId;
+  const lastFocusDispatchedRef = React.useRef<string | null>(null);
   React.useEffect(() => {
-    if (focusDispatchedRef.current) return;
-    if (!initialFocusZoneId || !validZoneIds.has(initialFocusZoneId)) return;
-    focusDispatchedRef.current = true;
+    if (!focusZoneId || focusZoneId === lastFocusDispatchedRef.current) return;
+    if (!validZoneIds.has(focusZoneId)) return; // wait for the reading / or stale
+    lastFocusDispatchedRef.current = focusZoneId;
     const actions = coerceViewActions(
       [
-        { action: 'focus_zone', params: { zone_id: initialFocusZoneId } },
-        { action: 'highlight_zone', params: { zone_id: initialFocusZoneId } },
+        { action: 'focus_zone', params: { zone_id: focusZoneId } },
+        { action: 'highlight_zone', params: { zone_id: focusZoneId } },
       ],
       validZoneIds,
     );
     applyActions(actions, select);
-  }, [initialFocusZoneId, validZoneIds, applyActions, select]);
+  }, [focusZoneId, validZoneIds, applyActions, select]);
 
   // ID lock, honest half: when the deep-linked zone id does NOT resolve in the
   // loaded reading (zone consumed/expired between /zones and here), say so
   // discreetly — the app opens normally on the combo, and the stale zone is
-  // NEVER redrawn from memory. Checked ONCE at the first loaded reading (the
-  // dispatch effect above runs first, so a resolved focus never notices).
+  // NEVER redrawn from memory. Re-evaluated per focus id (not once-per-mount) so
+  // it clears/re-checks as the URL focus changes (NAV-03/UI-17).
   const [staleFocusNotice, setStaleFocusNotice] = React.useState(false);
-  const focusCheckedRef = React.useRef(false);
+  const lastFocusCheckedRef = React.useRef<string | null>(null);
   React.useEffect(() => {
-    if (focusCheckedRef.current) return;
-    if (!initialFocusZoneId || !data) return;
-    focusCheckedRef.current = true;
-    if (!focusDispatchedRef.current && !validZoneIds.has(initialFocusZoneId)) {
-      setStaleFocusNotice(true);
+    if (!focusZoneId) {
+      lastFocusCheckedRef.current = null;
+      setStaleFocusNotice(false);
+      return;
     }
-  }, [initialFocusZoneId, data, validZoneIds]);
+    if (!data || focusZoneId === lastFocusCheckedRef.current) return;
+    lastFocusCheckedRef.current = focusZoneId;
+    const dispatched = focusZoneId === lastFocusDispatchedRef.current;
+    setStaleFocusNotice(!dispatched && !validZoneIds.has(focusZoneId));
+  }, [focusZoneId, data, validZoneIds]);
 
   const view: WorkspaceViewProps = {
     combos,
     active,
-    onSelect: select,
+    onSelect: handleSelect,
     reading: data,
     isLoading,
     isRefreshing,
