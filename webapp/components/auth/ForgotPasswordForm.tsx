@@ -17,9 +17,12 @@ export function ForgotPasswordForm() {
   const [error, setError] = React.useState<string | null>(null);
   const [done, setDone] = React.useState<string | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
+  const submittingRef = React.useRef(false);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (submittingRef.current) return; // AUTH-08 — no double submit
+    submittingRef.current = true;
     setError(null);
     const form = new FormData(e.currentTarget);
     setSubmitting(true);
@@ -31,6 +34,7 @@ export function ForgotPasswordForm() {
     } catch (err) {
       setError(err instanceof AuthError ? err.message : t('forgot.errorGeneric'));
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   }

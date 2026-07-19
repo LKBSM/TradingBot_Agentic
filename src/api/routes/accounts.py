@@ -229,6 +229,7 @@ async def me(
 async def update_profile(
     payload: ProfileUpdateRequest,
     request: Request,
+    response: Response,
     account: Dict[str, Any] = Depends(require_account),
 ):
     store = _store(request)
@@ -236,6 +237,10 @@ async def update_profile(
         updated = store.update_email(account["id"], str(payload.email))
     except AccountError as exc:
         _raise_account_error(exc)
+    # update_email revoked every session (AUTH-14). Mint a fresh one so the
+    # actor stays logged in on THIS device while other devices are signed out.
+    raw_token = store.create_session(account["id"])
+    set_session_cookie(response, raw_token)
     return _account_out(store, updated)
 
 

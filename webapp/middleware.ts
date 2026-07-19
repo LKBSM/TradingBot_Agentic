@@ -27,8 +27,15 @@ const intlMiddleware = createMiddleware({
 // (BetaAuthMiddleware) 401s every product API call regardless, and the cookie's
 // VALIDITY is verified there. A stale/forged cookie still gets nothing from the
 // API; here we only check presence to avoid a pointless render.
+// AUTH-04: the edge guard and the client <SubscriptionGate> must agree. The
+// gate can only read a NEXT_PUBLIC_ var (inlined at build), so we make THAT the
+// single source of truth for both layers — set `NEXT_PUBLIC_BETA_LOCKDOWN=1`
+// and lockdown is on everywhere. `BETA_LOCKDOWN` remains a server-only override
+// for the edge, so neither layer can be silently half-enabled.
+const truthy = (v: string | undefined) => v === '1' || v === 'true';
 const BETA_LOCKDOWN =
-  process.env.BETA_LOCKDOWN === '1' || process.env.BETA_LOCKDOWN === 'true';
+  truthy(process.env.NEXT_PUBLIC_BETA_LOCKDOWN) ||
+  truthy(process.env.BETA_LOCKDOWN);
 const SESSION_COOKIE = 'mia_session';
 // Product routes behind the login wall. FR is prefixless; a leading locale
 // segment (/en/app …) is stripped before the check so all locales are gated.

@@ -41,8 +41,10 @@ def _maybe_seed_owner(app_state: AppState) -> None:
     creation, never stored or logged in clear text). A no-op when the env vars
     are absent, so tests calling ``create_app()`` without owner env stay clean.
 
-    A bad value (e.g. too-short password) is logged and swallowed — a
-    misconfigured owner var must NOT abort the whole API startup.
+    A bad value (e.g. too-short password, or an owner var colliding with an
+    existing account) is logged. In production it is re-raised so a deploy with
+    no working admin fails fast; in dev/CI/tests it is swallowed so a stray env
+    var never aborts a local boot (AUTH-10).
     """
     store = app_state.account_store
     if store is None:
@@ -52,13 +54,24 @@ def _maybe_seed_owner(app_state: AppState) -> None:
     password = os.environ.get("OWNER_PASSWORD")
     if not (username and email and password):
         return
+    # Record the operator's implicit consent to the current legal docs so their
+    # consent table is never empty (single source of versions = routes.accounts).
+    from src.api.routes.accounts import PRIVACY_VERSION, TERMS_VERSION
+
+    owner_consents = [("terms", TERMS_VERSION), ("privacy", PRIVACY_VERSION)]
     try:
-        owner = store.seed_owner(username, email, password)
+        owner = store.seed_owner(
+            username, email, password, consents=owner_consents
+        )
         logger.info("owner account ensured at startup (id=%s)", owner["id"])
     except Exception:
         logger.exception(
             "owner seeding failed — check OWNER_USERNAME/OWNER_EMAIL/OWNER_PASSWORD"
         )
+        if os.environ.get("ENVIRONMENT", "").strip().lower() in {"production", "prod"}:
+            # No usable admin account in production is a hard misconfig — don't
+            # ship a silently owner-less API.
+            raise
 
 
 def _maybe_bootstrap_market_reading(app_state: AppState) -> None:

@@ -21,9 +21,16 @@ export function RegisterForm() {
   const router = useRouter();
   const [error, setError] = React.useState<string | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
+  const submittingRef = React.useRef(false);
+
+  // Closed private beta: the backend 403s every /register call. Don't offer a
+  // form the server is guaranteed to reject — show a clear "registrations
+  // closed" notice instead (AUTH-18). Same public flag that drives the gate.
+  const registrationsClosed = process.env.NEXT_PUBLIC_BETA_LOCKDOWN === '1';
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (submittingRef.current) return; // AUTH-08 — no double submit
     setError(null);
     const form = new FormData(e.currentTarget);
     const ageConfirmed = form.get('age_confirmed') === 'on';
@@ -39,6 +46,7 @@ export function RegisterForm() {
       return;
     }
 
+    submittingRef.current = true;
     setSubmitting(true);
     try {
       await register({
@@ -55,8 +63,26 @@ export function RegisterForm() {
         err instanceof AuthError ? err.message : t('register.errorGeneric'),
       );
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
+  }
+
+  if (registrationsClosed) {
+    return (
+      <div className="space-y-3 rounded-lg border border-border/60 bg-muted/20 p-5 text-center">
+        <h2 className="text-base font-medium text-foreground">
+          {t('register.closedTitle')}
+        </h2>
+        <p className="text-sm text-muted-foreground">{t('register.closedBody')}</p>
+        <p className="text-sm text-muted-foreground">
+          {t('register.haveAccount')}{' '}
+          <Link href="/connexion" className="underline underline-offset-2 hover:text-foreground">
+            {t('register.login')}
+          </Link>
+        </p>
+      </div>
+    );
   }
 
   return (

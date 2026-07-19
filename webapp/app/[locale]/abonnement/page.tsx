@@ -3,6 +3,7 @@ import { Suspense } from 'react';
 import { useTranslations } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import { SubscriptionPanel } from '@/components/billing/SubscriptionPanel';
+import { SubscriptionGate } from '@/components/access/SubscriptionGate';
 
 export async function generateMetadata({
   params,
@@ -21,18 +22,22 @@ export async function generateMetadata({
 export default function SubscriptionPage() {
   const t = useTranslations('pages');
   return (
-    <div className="container-prose py-12 sm:py-16">
-      {/* SubscriptionPanel reads search params (Checkout return status) — wrap
-          in Suspense so the static shell can render while it hydrates. */}
-      <Suspense
-        fallback={
-          <p className="text-sm text-muted-foreground">
-            {t('abonnement.loading')}
-          </p>
-        }
-      >
-        <SubscriptionPanel />
-      </Suspense>
-    </div>
+    // Gate the subscription page (AUTH-05): a logged-out visitor under the gate
+    // is redirected to login instead of stranded on the panel's own loader.
+    <SubscriptionGate>
+      <div className="container-prose py-12 sm:py-16">
+        {/* SubscriptionPanel reads search params (Checkout return status) — wrap
+            in Suspense so the static shell can render while it hydrates. */}
+        <Suspense
+          fallback={
+            <p className="text-sm text-muted-foreground">
+              {t('abonnement.loading')}
+            </p>
+          }
+        >
+          <SubscriptionPanel />
+        </Suspense>
+      </div>
+    </SubscriptionGate>
   );
 }

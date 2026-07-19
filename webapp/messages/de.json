@@ -706,6 +706,8 @@
       "login": "Anmelden",
       "errorAge": "Sie müssen erklären, dass Sie 18 Jahre oder älter sind.",
       "errorConsents": "Sie müssen die Nutzungsbedingungen und die Datenschutzrichtlinie akzeptieren.",
+      "closedTitle": "Registrierung geschlossen",
+      "closedBody": "Der Zugang ist während der privaten Beta auf eingeladene Testkonten beschränkt.",
       "errorGeneric": "Registrierung nicht möglich. Versuche es erneut."
     },
     "forgot": {
@@ -727,6 +729,8 @@
       "updateError": "Aktualisierung nicht möglich.",
       "consentsTitle": "Gespeicherte Einwilligungen",
       "noConsents": "Keine Einwilligung gespeichert.",
+      "sessionError": "Deine Sitzung konnte nicht überprüft werden. Prüfe deine Verbindung und versuche es erneut.",
+      "retry": "Erneut versuchen",
       "docTerms": "Nutzungsbedingungen",
       "docPrivacy": "Datenschutz",
       "consentMeta": "v{version} · {date}",
