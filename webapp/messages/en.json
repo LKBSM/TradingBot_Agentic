@@ -710,6 +710,15 @@
       "closedBody": "Access is limited to invited tester accounts during the private beta.",
       "errorGeneric": "Unable to register. Try again."
     },
+    "resetConfirm": {
+      "intro": "Choose a new password (at least 10 characters).",
+      "passwordLabel": "New password",
+      "submit": "Reset password",
+      "submitting": "Resetting…",
+      "success": "Password reset. You can now sign in.",
+      "errorGeneric": "Reset failed. The link may have expired.",
+      "missingToken": "Invalid or incomplete link. Request a new reset."
+    },
     "forgot": {
       "intro": "Enter your username or email. If an account matches, a reset link will be sent to you.",
       "identifierLabel": "Username or email",
@@ -751,6 +760,8 @@
     "manage": "Manage my subscription",
     "choosePlanTitle": "Choose a plan",
     "noPlans": "No plan is available at the moment.",
+      "planMonthly": "Monthly — $49.99 / month",
+      "planAnnual": "Annual — $39.99 / month (billed yearly)",
     "subscribe": "Subscribe",
     "errorLoad": "Unable to load the subscription.",
     "errorCheckout": "Unable to start the payment.",
@@ -1043,6 +1054,13 @@
       },
       "title": "Create an account",
       "intro": "Early access reserved for adults (18 years of age or older)."
+    },
+    "motDePasseOublieConfirmer": {
+      "meta": {
+        "title": "Reset password",
+        "description": "Choose a new password for your MIA Markets account."
+      },
+      "title": "Reset password"
     },
     "motDePasseOublie": {
       "meta": {

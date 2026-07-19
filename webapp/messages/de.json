@@ -710,6 +710,15 @@
       "closedBody": "Der Zugang ist während der privaten Beta auf eingeladene Testkonten beschränkt.",
       "errorGeneric": "Registrierung nicht möglich. Versuche es erneut."
     },
+    "resetConfirm": {
+      "intro": "Wähle ein neues Passwort (mindestens 10 Zeichen).",
+      "passwordLabel": "Neues Passwort",
+      "submit": "Passwort zurücksetzen",
+      "submitting": "Wird zurückgesetzt…",
+      "success": "Passwort zurückgesetzt. Du kannst dich jetzt anmelden.",
+      "errorGeneric": "Zurücksetzen fehlgeschlagen. Der Link ist möglicherweise abgelaufen.",
+      "missingToken": "Ungültiger oder unvollständiger Link. Fordere eine neue Zurücksetzung an."
+    },
     "forgot": {
       "intro": "Geben Sie Ihren Benutzernamen oder Ihre E-Mail an. Wenn ein Konto übereinstimmt, wird Ihnen ein Link zum Zurücksetzen gesendet.",
       "identifierLabel": "Benutzername oder E-Mail",
@@ -751,6 +760,8 @@
     "manage": "Mein Abonnement verwalten",
     "choosePlanTitle": "Einen Tarif wählen",
     "noPlans": "Derzeit ist kein Tarif verfügbar.",
+      "planMonthly": "Monatlich — 49,99 $ / Monat",
+      "planAnnual": "Jährlich — 39,99 $ / Monat (jährlich abgerechnet)",
     "subscribe": "Abonnieren",
     "errorLoad": "Abonnement kann nicht geladen werden.",
     "errorCheckout": "Zahlung kann nicht gestartet werden.",
@@ -1043,6 +1054,13 @@
       },
       "title": "Konto erstellen",
       "intro": "Frühzugang nur für volljährige Personen (18 Jahre oder älter)."
+    },
+    "motDePasseOublieConfirmer": {
+      "meta": {
+        "title": "Passwort zurücksetzen",
+        "description": "Wähle ein neues Passwort für dein MIA-Markets-Konto."
+      },
+      "title": "Passwort zurücksetzen"
     },
     "motDePasseOublie": {
       "meta": {

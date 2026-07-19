@@ -710,6 +710,15 @@
       "closedBody": "L'accès est réservé aux comptes testeurs invités pendant la beta privée.",
       "errorGeneric": "Inscription impossible. Réessaie."
     },
+    "resetConfirm": {
+      "intro": "Choisis un nouveau mot de passe (au moins 10 caractères).",
+      "passwordLabel": "Nouveau mot de passe",
+      "submit": "Réinitialiser le mot de passe",
+      "submitting": "Réinitialisation…",
+      "success": "Mot de passe réinitialisé. Tu peux te connecter.",
+      "errorGeneric": "Réinitialisation impossible. Le lien est peut-être périmé.",
+      "missingToken": "Lien invalide ou incomplet. Redemande une réinitialisation."
+    },
     "forgot": {
       "intro": "Indiquez votre nom d’utilisateur ou votre e-mail. Si un compte correspond, un lien de réinitialisation vous sera envoyé.",
       "identifierLabel": "Nom d’utilisateur ou e-mail",
@@ -751,6 +760,8 @@
     "manage": "Gérer mon abonnement",
     "choosePlanTitle": "Choisir une formule",
     "noPlans": "Aucune formule n’est disponible pour le moment.",
+      "planMonthly": "Mensuel — 49,99 $ / mois",
+      "planAnnual": "Annuel — 39,99 $ / mois (facturé annuellement)",
     "subscribe": "S’abonner",
     "errorLoad": "Impossible de charger l’abonnement.",
     "errorCheckout": "Impossible de démarrer le paiement.",
@@ -1043,6 +1054,13 @@
       },
       "title": "Créer un compte",
       "intro": "Accès anticipé réservé aux personnes majeures (18 ans ou plus)."
+    },
+    "motDePasseOublieConfirmer": {
+      "meta": {
+        "title": "Réinitialiser le mot de passe",
+        "description": "Choisir un nouveau mot de passe pour votre compte MIA Markets."
+      },
+      "title": "Réinitialiser le mot de passe"
     },
     "motDePasseOublie": {
       "meta": {

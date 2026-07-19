@@ -710,6 +710,15 @@
       "closedBody": "Dostęp jest zarezerwowany dla zaproszonych kont testerów podczas prywatnej bety.",
       "errorGeneric": "Nie można zarejestrować. Spróbuj ponownie."
     },
+    "resetConfirm": {
+      "intro": "Wybierz nowe hasło (co najmniej 10 znaków).",
+      "passwordLabel": "Nowe hasło",
+      "submit": "Zresetuj hasło",
+      "submitting": "Resetowanie…",
+      "success": "Hasło zresetowane. Możesz się teraz zalogować.",
+      "errorGeneric": "Nie udało się zresetować. Link mógł wygasnąć.",
+      "missingToken": "Nieprawidłowy lub niekompletny link. Poproś o nowy reset."
+    },
     "forgot": {
       "intro": "Podaj swoją nazwę użytkownika lub e-mail. Jeśli konto zostanie znalezione, wyślemy Ci link do resetowania.",
       "identifierLabel": "Nazwa użytkownika lub e-mail",
@@ -751,6 +760,8 @@
     "manage": "Zarządzaj moją subskrypcją",
     "choosePlanTitle": "Wybierz plan",
     "noPlans": "Obecnie żaden plan nie jest dostępny.",
+      "planMonthly": "Miesięcznie — 49,99 $ / mies.",
+      "planAnnual": "Rocznie — 39,99 $ / mies. (rozliczane rocznie)",
     "subscribe": "Subskrybuj",
     "errorLoad": "Nie można wczytać subskrypcji.",
     "errorCheckout": "Nie można rozpocząć płatności.",
@@ -1043,6 +1054,13 @@
       },
       "title": "Utwórz konto",
       "intro": "Wczesny dostęp zarezerwowany dla osób pełnoletnich (18 lat lub więcej)."
+    },
+    "motDePasseOublieConfirmer": {
+      "meta": {
+        "title": "Zresetuj hasło",
+        "description": "Wybierz nowe hasło dla swojego konta MIA Markets."
+      },
+      "title": "Zresetuj hasło"
     },
     "motDePasseOublie": {
       "meta": {
