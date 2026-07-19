@@ -30,6 +30,7 @@ import {
   formatTimeframe,
 } from '@/lib/market-reading/formatters';
 import type { Combo } from '@/lib/market-reading/store';
+import { useNow } from '@/lib/conditions/use-now';
 
 /** Icons for the on-brand starter questions (text is localized in-component). */
 const STARTER_META: ReadonlyArray<{ id: string; icon: React.ReactNode }> = [
@@ -71,6 +72,9 @@ export function AppChatSidebar({
     icon: s.icon,
   }));
   const [showRecents, setShowRecents] = React.useState(false);
+  // Tick every 60s so the recents' "il y a X" ages stay honest while the panel
+  // sits open, instead of freezing at their first render (UI-03).
+  const now = useNow(60_000);
   // Docked sidebar: anchor the *first word of M.I.A's reply* to the top after
   // sending (not the bottom of a long answer, not the question). Falls back to
   // the question until the reply mounts, then re-pins to the reply — streaming
@@ -194,7 +198,10 @@ export function AppChatSidebar({
                         {formatTimeframe(t.timeframe)}
                       </span>
                       <span className="shrink-0 text-[10.5px] text-muted-foreground">
-                        {formatRelativePast(new Date(t.updatedAt).toISOString())}
+                        {formatRelativePast(
+                          new Date(t.updatedAt).toISOString(),
+                          new Date(now),
+                        )}
                       </span>
                     </span>
                     {t.lastText && (
@@ -213,6 +220,12 @@ export function AppChatSidebar({
       <div
         ref={scrollRef}
         className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-4"
+        // One live region for the whole transcript (UI-08) — announces each new
+        // message once, instead of every persistent bubble being its own status
+        // region (which flooded screen readers on every re-render).
+        role="log"
+        aria-live="polite"
+        aria-relevant="additions"
       >
         {empty ? (
           <ChatWelcome

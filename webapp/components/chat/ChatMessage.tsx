@@ -71,7 +71,6 @@ export function ChatMessage({
     <div
       data-chat-role={role}
       className="chat-msg-in flex w-full gap-2.5"
-      role="status"
     >
       <AgentAvatar size="sm" className="mt-0.5" />
       <div className="group flex min-w-0 flex-col gap-1">

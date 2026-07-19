@@ -64,12 +64,19 @@ export function useLivePrice(
     const url = `${ENDPOINT}?instrument=${encodeURIComponent(instrument)}`;
     const es = new EventSource(url);
     let closed = false;
+    // Cap native auto-reconnect: after MAX_ERRORS consecutive failures without a
+    // successful frame, stop retrying so a dead endpoint doesn't loop forever
+    // (UI-16). Any good open/message resets the counter.
+    const MAX_ERRORS = 5;
+    let errorStreak = 0;
 
     es.onopen = () => {
+      errorStreak = 0;
       if (!closed) setState((s) => ({ ...s, connected: true }));
     };
     es.onmessage = (ev: MessageEvent) => {
       if (closed) return;
+      errorStreak = 0;
       try {
         const data = JSON.parse(ev.data) as {
           instrument?: string;
@@ -88,8 +95,14 @@ export function useLivePrice(
       }
     };
     es.onerror = () => {
-      // EventSource auto-reconnects; just reflect the dropped connection.
-      if (!closed) setState((s) => ({ ...s, connected: false }));
+      if (closed) return;
+      setState((s) => ({ ...s, connected: false }));
+      errorStreak += 1;
+      if (errorStreak >= MAX_ERRORS) {
+        // Give up rather than let EventSource reconnect indefinitely.
+        closed = true;
+        es.close();
+      }
     };
 
     return () => {

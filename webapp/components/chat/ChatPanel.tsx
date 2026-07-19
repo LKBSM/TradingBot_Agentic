@@ -114,6 +114,10 @@ export function ChatPanel() {
         <div
           ref={scrollRef}
           className="flex flex-1 flex-col gap-4 overflow-y-auto px-5 py-4"
+          // One live region for the whole transcript (UI-08) — see AppChatSidebar.
+          role="log"
+          aria-live="polite"
+          aria-relevant="additions"
         >
           <IntroBubble script={script} apiAvailable={apiAvailable} />
 

@@ -245,8 +245,33 @@ function Freshness({ candleCloseTs }: { candleCloseTs: string | null }) {
 
   React.useEffect(() => {
     setNow(new Date());
-    const id = window.setInterval(() => setNow(new Date()), 30_000);
-    return () => window.clearInterval(id);
+    let id = 0;
+    // Only tick while the tab is visible (UI-14) — no point re-rendering the
+    // relative age every 30s in a backgrounded tab. Resync + resume on return.
+    const start = () => {
+      if (id) return;
+      id = window.setInterval(() => setNow(new Date()), 30_000);
+    };
+    const stop = () => {
+      if (id) {
+        window.clearInterval(id);
+        id = 0;
+      }
+    };
+    const onVisibility = () => {
+      if (document.hidden) {
+        stop();
+      } else {
+        setNow(new Date());
+        start();
+      }
+    };
+    if (!document.hidden) start();
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      stop();
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, []);
 
   return (
