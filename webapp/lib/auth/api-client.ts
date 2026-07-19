@@ -34,6 +34,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   try {
     res = await fetch(`${BASE}${path}`, {
       headers: { 'content-type': 'application/json' },
+      // Send the HttpOnly session cookie. `same-origin` is the fetch default,
+      // but we set it explicitly so the auth flow keeps working if these calls
+      // are ever proxied, and to document the dependency (AUTH-11: the whole
+      // session relies on this cookie riding along with every auth request).
+      credentials: 'same-origin',
       ...init,
     });
   } catch (err) {
