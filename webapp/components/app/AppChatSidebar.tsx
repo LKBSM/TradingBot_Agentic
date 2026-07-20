@@ -158,7 +158,7 @@ export function AppChatSidebar({
           </TooltipProvider>
         </div>
         {/* Honesty disclaimer — kept to a single line with a discreet icon. */}
-        <p className="mt-1.5 flex items-center gap-1 text-[10.5px] italic text-muted-foreground/85">
+        <p className="mt-1.5 flex items-center gap-1 text-[11px] italic text-muted-foreground/85">
           <GraduationCap className="h-3 w-3 shrink-0" aria-hidden />
           <span className="truncate">{t('chat.pedagogicalNote')}</span>
         </p>
@@ -257,7 +257,7 @@ export function AppChatSidebar({
         <ChatInput />
         {/* LEGAL-PENDING: chat compliance line — aligned with the legal terminal
             wording on educational-use posture. */}
-        <p className="text-center text-[10.5px] italic text-muted-foreground/70">
+        <p className="text-center text-[11px] italic text-muted-foreground/70">
           {t('chat.complianceLine')}
         </p>
       </div>

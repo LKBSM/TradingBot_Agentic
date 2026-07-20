@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Info } from 'lucide-react';
+import * as React from 'react';
 import {
   Tooltip,
   TooltipContent,
@@ -41,13 +42,18 @@ export function InfoTooltip({
   className?: string;
 }) {
   const entry = GLOSSARY[termKey];
+  // Controlled so a TAP opens it on touch (no hover): focus + click both set
+  // open; blur / escape / outside-tap close it via onOpenChange. Otherwise the
+  // definition + "En savoir plus" link are unreachable on touch (RESP-E-01).
+  const [open, setOpen] = React.useState(false);
 
   return (
     <TooltipProvider delayDuration={150}>
-      <Tooltip>
+      <Tooltip open={open} onOpenChange={setOpen}>
         <TooltipTrigger asChild>
           <button
             type="button"
+            onClick={() => setOpen(true)}
             className={cn(
               iconOnly
                 ? 'inline-flex items-center text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1 rounded-sm'

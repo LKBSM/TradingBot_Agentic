@@ -104,7 +104,7 @@ export function ChatInput({ className }: ChatInputProps) {
         </button>
       </form>
       {!offline && (
-        <p className="mt-2 text-center text-[10.5px] italic text-muted-foreground/75">
+        <p className="mt-2 text-center text-[11px] italic text-muted-foreground/75">
           {t('inputHint')}
         </p>
       )}
