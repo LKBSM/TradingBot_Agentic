@@ -19,6 +19,23 @@ import { FormError, FormSuccess } from '@/components/auth/fields';
 
 const ACTIVE_STATUSES = new Set(['active', 'trialing']);
 
+/**
+ * Human label for a plan key (AUTH-15). The backend /pricing intentionally
+ * returns only the key + price_id (no amount hard-coded server-side), so the
+ * readable label + price live here, mirroring the landing. Unknown keys fall
+ * back to the raw key rather than showing nothing.
+ */
+function planLabel(key: string, t: (k: string) => string): string {
+  switch (key) {
+    case 'MONTHLY':
+      return t('planMonthly');
+    case 'ANNUAL':
+      return t('planAnnual');
+    default:
+      return key;
+  }
+}
+
 function statusLabel(
   status: string | null,
   t: (key: string) => string,
@@ -214,7 +231,7 @@ export function SubscriptionPanel() {
                   key={plan.key}
                   className="flex items-center justify-between gap-3"
                 >
-                  <span className="font-medium text-foreground">{plan.key}</span>
+                  <span className="font-medium text-foreground">{planLabel(plan.key, t)}</span>
                   <Button onClick={() => onSubscribe(plan.key)} disabled={busy}>
                     {t('subscribe')}
                   </Button>

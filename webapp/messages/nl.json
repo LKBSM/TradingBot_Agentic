@@ -706,7 +706,18 @@
       "login": "Inloggen",
       "errorAge": "U moet verklaren 18 jaar of ouder te zijn.",
       "errorConsents": "U moet akkoord gaan met de Gebruiksvoorwaarden en het Privacybeleid.",
+      "closedTitle": "Registratie gesloten",
+      "closedBody": "Toegang is tijdens de besloten bèta beperkt tot uitgenodigde testeraccounts.",
       "errorGeneric": "Registreren niet mogelijk. Probeer opnieuw."
+    },
+    "resetConfirm": {
+      "intro": "Kies een nieuw wachtwoord (minstens 10 tekens).",
+      "passwordLabel": "Nieuw wachtwoord",
+      "submit": "Wachtwoord opnieuw instellen",
+      "submitting": "Bezig met opnieuw instellen…",
+      "success": "Wachtwoord opnieuw ingesteld. Je kunt nu inloggen.",
+      "errorGeneric": "Opnieuw instellen mislukt. De link is mogelijk verlopen.",
+      "missingToken": "Ongeldige of onvolledige link. Vraag een nieuwe reset aan."
     },
     "forgot": {
       "intro": "Geef uw gebruikersnaam of e-mail op. Als er een account overeenkomt, wordt u een resetlink toegestuurd.",
@@ -727,6 +738,8 @@
       "updateError": "Bijwerken niet mogelijk.",
       "consentsTitle": "Geregistreerde toestemmingen",
       "noConsents": "Geen toestemming geregistreerd.",
+      "sessionError": "We konden je sessie niet verifiëren. Controleer je verbinding en probeer opnieuw.",
+      "retry": "Opnieuw proberen",
       "docTerms": "Gebruiksvoorwaarden",
       "docPrivacy": "Privacy",
       "consentMeta": "v{version} · {date}",
@@ -747,6 +760,8 @@
     "manage": "Mijn abonnement beheren",
     "choosePlanTitle": "Een formule kiezen",
     "noPlans": "Er is momenteel geen formule beschikbaar.",
+      "planMonthly": "Maandelijks — $ 49,99 / maand",
+      "planAnnual": "Jaarlijks — $ 39,99 / maand (jaarlijks gefactureerd)",
     "subscribe": "Abonneren",
     "errorLoad": "Kan het abonnement niet laden.",
     "errorCheckout": "Kan de betaling niet starten.",
@@ -1041,6 +1056,13 @@
       },
       "title": "Een account aanmaken",
       "intro": "Vroege toegang voorbehouden aan meerderjarigen (18 jaar of ouder)."
+    },
+    "motDePasseOublieConfirmer": {
+      "meta": {
+        "title": "Wachtwoord opnieuw instellen",
+        "description": "Kies een nieuw wachtwoord voor je MIA Markets-account."
+      },
+      "title": "Wachtwoord opnieuw instellen"
     },
     "motDePasseOublie": {
       "meta": {

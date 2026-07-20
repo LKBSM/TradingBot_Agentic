@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  GraduationCap,
   HelpCircle,
   History,
   LayoutPanelTop,
@@ -18,11 +19,18 @@ import { useChat } from '@/components/chat/ChatProvider';
 import { useChatAnchorScroll } from '@/components/chat/useChatAnchorScroll';
 import { Button } from '@/components/ui/button';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
   formatInstrument,
   formatRelativePast,
   formatTimeframe,
 } from '@/lib/market-reading/formatters';
 import type { Combo } from '@/lib/market-reading/store';
+import { useNow } from '@/lib/conditions/use-now';
 
 /** Icons for the on-brand starter questions (text is localized in-component). */
 const STARTER_META: ReadonlyArray<{ id: string; icon: React.ReactNode }> = [
@@ -64,9 +72,14 @@ export function AppChatSidebar({
     icon: s.icon,
   }));
   const [showRecents, setShowRecents] = React.useState(false);
-  // Keep main's anchor-scroll UX (anchor the latest question near the top after
-  // sending instead of jumping to the bottom of a long reply) in the new sidebar.
-  const scrollRef = useChatAnchorScroll(turns, isLoading);
+  // Tick every 60s so the recents' "il y a X" ages stay honest while the panel
+  // sits open, instead of freezing at their first render (UI-03).
+  const now = useNow(60_000);
+  // Docked sidebar: anchor the *first word of M.I.A's reply* to the top after
+  // sending (not the bottom of a long answer, not the question). Falls back to
+  // the question until the reply mounts, then re-pins to the reply — streaming
+  // stays pinned to the start. See useChatAnchorScroll.
+  const scrollRef = useChatAnchorScroll(turns, isLoading, { anchor: 'assistant' });
 
   const empty = turns.length === 0;
   const offline = apiAvailable === false;
@@ -84,51 +97,71 @@ export function AppChatSidebar({
       aria-label={t('chat.asideAria')}
       className="flex h-full min-h-0 flex-col rounded-xl border border-border/60 bg-card"
     >
-      <header className="flex items-center gap-3 border-b border-border/60 px-4 py-3">
-        <AgentAvatar size="md" />
-        <div className="min-w-0 flex-1">
-          <p className="flex items-center gap-1.5 text-sm font-semibold leading-tight">
-            M.I.A Agent
+      <header className="border-b border-border/60 px-4 py-3">
+        <div className="flex items-center gap-3">
+          <AgentAvatar size="md" />
+          {/* Title + live context on a single line — truncates before it can
+              wrap. Icon actions stay pinned to the right. */}
+          <p className="flex min-w-0 flex-1 items-center gap-1.5 text-sm font-semibold leading-tight">
+            <span className="shrink-0">M.I.A Agent</span>
             <span
-              className="h-1.5 w-1.5 rounded-full bg-[hsl(var(--sentinel-bull))]"
+              className="h-1.5 w-1.5 shrink-0 rounded-full bg-[hsl(var(--sentinel-bull))]"
               title={offline ? t('chat.statusOffline') : t('chat.statusOnline')}
               aria-hidden
             />
+            <span className="truncate text-xs font-normal text-muted-foreground">
+              {active
+                ? `· ${formatInstrument(active.instrument)} · ${formatTimeframe(active.timeframe)}`
+                : `· ${t('chat.pickComboPrompt')}`}
+            </span>
           </p>
-          <p className="truncate text-xs text-muted-foreground">
-            {active
-              ? `${formatInstrument(active.instrument)} · ${formatTimeframe(active.timeframe)}`
-              : t('chat.pickComboPrompt')}
-          </p>
-          <p className="mt-0.5 text-[10.5px] italic text-muted-foreground/85">
-            {t('chat.pedagogicalNote')}
-          </p>
+          <TooltipProvider delayDuration={200}>
+            <div className="flex shrink-0 items-center gap-0.5">
+              {recentThreads.length > 0 && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      aria-expanded={showRecents}
+                      aria-label={t('chat.discussions')}
+                      onClick={() => setShowRecents((v) => !v)}
+                      className="h-8 w-8 text-muted-foreground"
+                    >
+                      <History className="h-4 w-4" aria-hidden />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    {t('chat.discussions')}
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              {!empty && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      aria-label={t('chat.reset')}
+                      onClick={resetTurns}
+                      className="h-8 w-8 text-muted-foreground"
+                    >
+                      <RotateCcw className="h-4 w-4" aria-hidden />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">{t('chat.reset')}</TooltipContent>
+                </Tooltip>
+              )}
+            </div>
+          </TooltipProvider>
         </div>
-        {recentThreads.length > 0 && (
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            aria-expanded={showRecents}
-            onClick={() => setShowRecents((v) => !v)}
-            className="h-7 shrink-0 gap-1 px-2 text-xs text-muted-foreground"
-          >
-            <History className="h-3 w-3" aria-hidden />
-            <span className="sr-only sm:not-sr-only">{t('chat.discussions')}</span>
-          </Button>
-        )}
-        {!empty && (
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            onClick={resetTurns}
-            className="h-7 shrink-0 gap-1 px-2 text-xs text-muted-foreground"
-          >
-            <RotateCcw className="h-3 w-3" aria-hidden />
-            <span className="sr-only sm:not-sr-only">{t('chat.reset')}</span>
-          </Button>
-        )}
+        {/* Honesty disclaimer — kept to a single line with a discreet icon. */}
+        <p className="mt-1.5 flex items-center gap-1 text-[10.5px] italic text-muted-foreground/85">
+          <GraduationCap className="h-3 w-3 shrink-0" aria-hidden />
+          <span className="truncate">{t('chat.pedagogicalNote')}</span>
+        </p>
       </header>
 
       {showRecents && recentThreads.length > 0 && (
@@ -165,7 +198,10 @@ export function AppChatSidebar({
                         {formatTimeframe(t.timeframe)}
                       </span>
                       <span className="shrink-0 text-[10.5px] text-muted-foreground">
-                        {formatRelativePast(new Date(t.updatedAt).toISOString())}
+                        {formatRelativePast(
+                          new Date(t.updatedAt).toISOString(),
+                          new Date(now),
+                        )}
                       </span>
                     </span>
                     {t.lastText && (
@@ -184,6 +220,12 @@ export function AppChatSidebar({
       <div
         ref={scrollRef}
         className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-4"
+        // One live region for the whole transcript (UI-08) — announces each new
+        // message once, instead of every persistent bubble being its own status
+        // region (which flooded screen readers on every re-render).
+        role="log"
+        aria-live="polite"
+        aria-relevant="additions"
       >
         {empty ? (
           <ChatWelcome

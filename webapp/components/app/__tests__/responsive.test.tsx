@@ -21,6 +21,14 @@ vi.mock('@/components/app/ReadingChart', () => ({
   ReadingChart: () => <div data-testid="reading-chart" />,
 }));
 
+// AppWorkspace syncs the active combo with the URL (NAV-01/02); stub the
+// app-router hooks so the workspace renders under jsdom.
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+  usePathname: () => '/app',
+  useSearchParams: () => new URLSearchParams(),
+}));
+
 /** Drive useMediaQuery / useIsMobile by stubbing window.matchMedia. */
 function stubMatchMedia(matches: boolean) {
   vi.stubGlobal(

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 import time
@@ -27,6 +28,10 @@ from src.api.signal_store import SignalStore
 
 logger = logging.getLogger(__name__)
 
+# AUTH-19 — how often to sweep expired session rows. Cheap DELETE; hourly-ish is
+# plenty since rows only matter for the 30-day TTL window.
+SESSION_PURGE_INTERVAL_S = 6 * 3600
+
 
 def _maybe_seed_owner(app_state: AppState) -> None:
     """Seed the owner account from the environment at first boot (idempotent).
@@ -36,8 +41,10 @@ def _maybe_seed_owner(app_state: AppState) -> None:
     creation, never stored or logged in clear text). A no-op when the env vars
     are absent, so tests calling ``create_app()`` without owner env stay clean.
 
-    A bad value (e.g. too-short password) is logged and swallowed — a
-    misconfigured owner var must NOT abort the whole API startup.
+    A bad value (e.g. too-short password, or an owner var colliding with an
+    existing account) is logged. In production it is re-raised so a deploy with
+    no working admin fails fast; in dev/CI/tests it is swallowed so a stray env
+    var never aborts a local boot (AUTH-10).
     """
     store = app_state.account_store
     if store is None:
@@ -47,13 +54,24 @@ def _maybe_seed_owner(app_state: AppState) -> None:
     password = os.environ.get("OWNER_PASSWORD")
     if not (username and email and password):
         return
+    # Record the operator's implicit consent to the current legal docs so their
+    # consent table is never empty (single source of versions = routes.accounts).
+    from src.api.routes.accounts import PRIVACY_VERSION, TERMS_VERSION
+
+    owner_consents = [("terms", TERMS_VERSION), ("privacy", PRIVACY_VERSION)]
     try:
-        owner = store.seed_owner(username, email, password)
+        owner = store.seed_owner(
+            username, email, password, consents=owner_consents
+        )
         logger.info("owner account ensured at startup (id=%s)", owner["id"])
     except Exception:
         logger.exception(
             "owner seeding failed — check OWNER_USERNAME/OWNER_EMAIL/OWNER_PASSWORD"
         )
+        if os.environ.get("ENVIRONMENT", "").strip().lower() in {"production", "prod"}:
+            # No usable admin account in production is a hard misconfig — don't
+            # ship a silently owner-less API.
+            raise
 
 
 def _maybe_bootstrap_market_reading(app_state: AppState) -> None:
@@ -309,8 +327,36 @@ def create_app(
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         logger.info("API starting up")
+        # AUTH-13 — refuse to boot a production deploy without a stable session
+        # secret (ephemeral per-process secrets break multi-worker logins). A
+        # no-op in dev/CI/tests where ENVIRONMENT is unset.
+        from src.api.session_auth import assert_stable_secret_configured
+
+        assert_stable_secret_configured()
         # Seed the owner account from env (idempotent, no-op without OWNER_*).
         _maybe_seed_owner(app_state)
+        # AUTH-19 — purge expired session rows at boot then on a slow timer so
+        # the sessions table can't grow without bound. Best-effort: any failure
+        # is logged and never touches request handling. Cancelled on shutdown.
+        purge_task: Optional[asyncio.Task] = None
+        _acct_store = app_state.account_store
+        if _acct_store is not None and hasattr(_acct_store, "purge_expired_sessions"):
+            try:
+                removed = _acct_store.purge_expired_sessions()
+                if removed:
+                    logger.info("purged %d expired session(s) at startup", removed)
+            except Exception:
+                logger.exception("startup session purge failed")
+
+            async def _purge_loop() -> None:
+                while True:
+                    await asyncio.sleep(SESSION_PURGE_INTERVAL_S)
+                    try:
+                        _acct_store.purge_expired_sessions()
+                    except Exception:
+                        logger.exception("periodic session purge failed")
+
+            purge_task = asyncio.create_task(_purge_loop())
         # MIA Markets V2 — Chantier 3 — env-gated runtime bootstrap. Builds
         # the MarketReadingAssembler + scheduler from env when nothing was
         # injected (production opts in via BOOTSTRAP_ENABLED + SCHEDULER_ENABLED).
@@ -353,6 +399,13 @@ def create_app(
         try:
             yield
         finally:
+            # Stop the session-purge timer before the stores close (AUTH-19).
+            if purge_task is not None:
+                purge_task.cancel()
+                try:
+                    await purge_task
+                except (asyncio.CancelledError, Exception):
+                    pass
             logger.info("API shutting down — running %d handlers", len(coord._registrations))  # noqa: SLF001
             try:
                 await coord.run()

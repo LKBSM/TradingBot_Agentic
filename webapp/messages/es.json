@@ -706,7 +706,18 @@
       "login": "Iniciar sesión",
       "errorAge": "Debes declarar tener 18 años o más.",
       "errorConsents": "Debes aceptar las Condiciones de uso y la Política de privacidad.",
+      "closedTitle": "Registros cerrados",
+      "closedBody": "El acceso está reservado a las cuentas de prueba invitadas durante la beta privada.",
       "errorGeneric": "No se pudo registrar. Vuelve a intentarlo."
+    },
+    "resetConfirm": {
+      "intro": "Elige una nueva contraseña (al menos 10 caracteres).",
+      "passwordLabel": "Nueva contraseña",
+      "submit": "Restablecer contraseña",
+      "submitting": "Restableciendo…",
+      "success": "Contraseña restablecida. Ya puedes iniciar sesión.",
+      "errorGeneric": "No se pudo restablecer. Es posible que el enlace haya caducado.",
+      "missingToken": "Enlace no válido o incompleto. Solicita un nuevo restablecimiento."
     },
     "forgot": {
       "intro": "Indica tu nombre de usuario o tu correo electrónico. Si hay una cuenta que coincide, se te enviará un enlace de restablecimiento.",
@@ -727,6 +738,8 @@
       "updateError": "No se pudo actualizar.",
       "consentsTitle": "Consentimientos registrados",
       "noConsents": "Ningún consentimiento registrado.",
+      "sessionError": "No pudimos verificar tu sesión. Comprueba tu conexión e inténtalo de nuevo.",
+      "retry": "Reintentar",
       "docTerms": "Condiciones de uso",
       "docPrivacy": "Privacidad",
       "consentMeta": "v{version} · {date}",
@@ -747,6 +760,8 @@
     "manage": "Gestionar mi suscripción",
     "choosePlanTitle": "Elegir una fórmula",
     "noPlans": "No hay ninguna fórmula disponible por el momento.",
+      "planMonthly": "Mensual — 49,99 $ / mes",
+      "planAnnual": "Anual — 39,99 $ / mes (facturado anualmente)",
     "subscribe": "Suscribirse",
     "errorLoad": "No se pudo cargar la suscripción.",
     "errorCheckout": "No se pudo iniciar el pago.",
@@ -1041,6 +1056,13 @@
       },
       "title": "Crear una cuenta",
       "intro": "Acceso anticipado reservado a personas mayores de edad (18 años o más)."
+    },
+    "motDePasseOublieConfirmer": {
+      "meta": {
+        "title": "Restablecer contraseña",
+        "description": "Elige una nueva contraseña para tu cuenta de MIA Markets."
+      },
+      "title": "Restablecer contraseña"
     },
     "motDePasseOublie": {
       "meta": {

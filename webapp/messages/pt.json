@@ -706,7 +706,18 @@
       "login": "Iniciar sessão",
       "errorAge": "Tem de declarar que tem 18 anos ou mais.",
       "errorConsents": "Tem de aceitar os Termos de Utilização e a Política de Privacidade.",
+      "closedTitle": "Inscrições encerradas",
+      "closedBody": "O acesso está reservado às contas de testador convidadas durante a beta privada.",
       "errorGeneric": "Não foi possível concluir o registo. Tente novamente."
+    },
+    "resetConfirm": {
+      "intro": "Escolhe uma nova palavra-passe (pelo menos 10 caracteres).",
+      "passwordLabel": "Nova palavra-passe",
+      "submit": "Repor palavra-passe",
+      "submitting": "A repor…",
+      "success": "Palavra-passe reposta. Já podes iniciar sessão.",
+      "errorGeneric": "Não foi possível repor. O link pode ter expirado.",
+      "missingToken": "Link inválido ou incompleto. Solicita uma nova reposição."
     },
     "forgot": {
       "intro": "Indique o seu nome de utilizador ou o seu e-mail. Se existir uma conta correspondente, ser-lhe-á enviado um link de reposição.",
@@ -727,6 +738,8 @@
       "updateError": "Não foi possível atualizar.",
       "consentsTitle": "Consentimentos registados",
       "noConsents": "Nenhum consentimento registado.",
+      "sessionError": "Não foi possível verificar a tua sessão. Verifica a ligação e tenta novamente.",
+      "retry": "Tentar novamente",
       "docTerms": "Termos de Utilização",
       "docPrivacy": "Privacidade",
       "consentMeta": "v{version} · {date}",
@@ -747,6 +760,8 @@
     "manage": "Gerir a minha subscrição",
     "choosePlanTitle": "Escolher um plano",
     "noPlans": "Nenhum plano está disponível de momento.",
+      "planMonthly": "Mensal — 49,99 $ / mês",
+      "planAnnual": "Anual — 39,99 $ / mês (faturado anualmente)",
     "subscribe": "Subscrever",
     "errorLoad": "Não foi possível carregar a subscrição.",
     "errorCheckout": "Não foi possível iniciar o pagamento.",
@@ -1041,6 +1056,13 @@
       },
       "title": "Criar uma conta",
       "intro": "Acesso antecipado reservado a pessoas maiores de idade (18 anos ou mais)."
+    },
+    "motDePasseOublieConfirmer": {
+      "meta": {
+        "title": "Repor palavra-passe",
+        "description": "Escolhe uma nova palavra-passe para a tua conta MIA Markets."
+      },
+      "title": "Repor palavra-passe"
     },
     "motDePasseOublie": {
       "meta": {

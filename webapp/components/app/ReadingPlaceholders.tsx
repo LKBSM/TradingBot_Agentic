@@ -86,7 +86,9 @@ export function ChartUnavailable({
   return (
     <div
       role="status"
-      className="flex h-full min-h-[260px] w-full flex-col items-center justify-center gap-3 rounded-md border border-dashed border-border/60 bg-muted/30 px-6 py-10 text-center"
+      // Match the chart / loader height (UI-13) so swapping to this placeholder
+      // doesn't shift the content below it (CLS).
+      className="flex h-[280px] w-full flex-col items-center justify-center gap-3 rounded-md border border-dashed border-border/60 bg-muted/30 px-6 py-10 text-center sm:h-[340px]"
     >
       <LineChart className="h-7 w-7 text-muted-foreground/60" aria-hidden />
       <div className="space-y-1">

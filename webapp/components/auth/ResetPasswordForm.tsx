@@ -3,36 +3,48 @@
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import * as React from 'react';
-import { AuthError, requestPasswordReset } from '@/lib/auth/api-client';
+import { AuthError, confirmPasswordReset } from '@/lib/auth/api-client';
 import { Button } from '@/components/ui/button';
 import { FormError, FormSuccess, TextField } from './fields';
 
 /**
- * Password-reset request. The backend answers identically whether or not the
- * identifier matched (anti-enumeration), so this form always shows the same
- * neutral confirmation on success.
+ * Password-reset confirmation (AUTH-02). Reads the single-use `?token=` from the
+ * URL (the link delivered by email) and lets the user set a new password via
+ * `confirmPasswordReset`. Without a token it shows an honest error instead of a
+ * dead form. Token read from `window.location` at submit time to avoid the
+ * useSearchParams Suspense-boundary requirement on this route's build.
  */
-export function ForgotPasswordForm() {
+export function ResetPasswordForm() {
   const t = useTranslations('auth');
   const [error, setError] = React.useState<string | null>(null);
-  const [done, setDone] = React.useState<string | null>(null);
+  const [done, setDone] = React.useState(false);
   const [submitting, setSubmitting] = React.useState(false);
   const submittingRef = React.useRef(false);
 
+  function readToken(): string | null {
+    if (typeof window === 'undefined') return null;
+    return new URLSearchParams(window.location.search).get('token');
+  }
+
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (submittingRef.current) return; // AUTH-08 — no double submit
+    if (submittingRef.current) return; // no double submit
+    const token = readToken();
+    if (!token) {
+      setError(t('resetConfirm.missingToken'));
+      return;
+    }
     submittingRef.current = true;
     setError(null);
     const form = new FormData(e.currentTarget);
     setSubmitting(true);
     try {
-      const res = await requestPasswordReset(
-        String(form.get('identifier') ?? '').trim(),
-      );
-      setDone(res.message);
+      await confirmPasswordReset(token, String(form.get('password') ?? ''));
+      setDone(true);
     } catch (err) {
-      setError(err instanceof AuthError ? err.message : t('forgot.errorGeneric'));
+      setError(
+        err instanceof AuthError ? err.message : t('resetConfirm.errorGeneric'),
+      );
     } finally {
       submittingRef.current = false;
       setSubmitting(false);
@@ -42,7 +54,7 @@ export function ForgotPasswordForm() {
   if (done) {
     return (
       <div className="space-y-4">
-        <FormSuccess message={done} />
+        <FormSuccess message={t('resetConfirm.success')} />
         <Link
           href="/connexion"
           className="block text-center text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground"
@@ -56,17 +68,17 @@ export function ForgotPasswordForm() {
   return (
     <form onSubmit={onSubmit} className="space-y-4" noValidate>
       <FormError message={error} />
-      <p className="text-sm text-muted-foreground">
-        {t('forgot.intro')}
-      </p>
+      <p className="text-sm text-muted-foreground">{t('resetConfirm.intro')}</p>
       <TextField
-        label={t('forgot.identifierLabel')}
-        name="identifier"
-        autoComplete="username"
+        label={t('resetConfirm.passwordLabel')}
+        name="password"
+        type="password"
+        autoComplete="new-password"
         required
+        minLength={10}
       />
       <Button type="submit" className="w-full" disabled={submitting}>
-        {submitting ? t('forgot.submitting') : t('forgot.submit')}
+        {submitting ? t('resetConfirm.submitting') : t('resetConfirm.submit')}
       </Button>
       <p className="text-center text-sm text-muted-foreground">
         <Link href="/connexion" className="underline underline-offset-2 hover:text-foreground">

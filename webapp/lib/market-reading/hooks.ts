@@ -211,13 +211,20 @@ export function useMtfTrends(
           .then((r) => [key, r.regime.trend] as const)
           .catch(() => [key, null] as const),
       ),
-    ).then((pairs) => {
-      if (seq !== seqRef.current) return;
-      const next: MtfTrendMap = { ...EMPTY_MTF_TRENDS };
-      for (const [key, trend] of pairs) next[key] = trend;
-      setTrends(next);
-      setIsLoading(false);
-    });
+    )
+      .then((pairs) => {
+        if (seq !== seqRef.current) return;
+        const next: MtfTrendMap = { ...EMPTY_MTF_TRENDS };
+        for (const [key, trend] of pairs) next[key] = trend;
+        setTrends(next);
+        setIsLoading(false);
+      })
+      .catch(() => {
+        // Defensive: the inner fetches each .catch already, so Promise.all does
+        // not reject — but never leave isLoading stuck true if the .then body
+        // itself throws (UI-15).
+        if (seq === seqRef.current) setIsLoading(false);
+      });
 
     return () => controller.abort();
   }, [instrument, source]);

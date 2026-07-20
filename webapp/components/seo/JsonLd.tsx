@@ -14,7 +14,12 @@ export function JsonLd({ data }: JsonLdProps) {
     <script
       type="application/ld+json"
       // Pre-stringified to avoid React escaping quotes inside the payload.
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+      // `<` is escaped to its < form so a value containing `</script>` (or
+      // `<!--`) can never break out of the script tag (UI-18: XSS-safe even
+      // though today's payloads are all static).
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify(data).replace(/</g, '\\u003c'),
+      }}
     />
   );
 }

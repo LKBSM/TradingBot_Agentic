@@ -21,6 +21,15 @@ vi.mock('@/components/app/ReadingChart', () => ({
   ReadingChart: () => <div data-testid="reading-chart" />,
 }));
 
+// Focus is now read from the URL (?focus=) with the prop as fallback (NAV-03).
+// Empty search params → the test's `initialFocusZoneId` prop drives the focus,
+// so these assertions keep exercising the same id-lock behaviour.
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+  usePathname: () => '/app',
+  useSearchParams: () => new URLSearchParams(),
+}));
+
 /** Surfaces the chart's one-shot focus command (zone id) from shared state. */
 function FocusProbe() {
   const { view } = useChartViewOptional();

@@ -706,7 +706,18 @@
       "login": "Accedi",
       "errorAge": "Devi dichiarare di avere 18 anni o più.",
       "errorConsents": "Devi accettare le Condizioni d’uso e l’Informativa sulla privacy.",
+      "closedTitle": "Registrazioni chiuse",
+      "closedBody": "L'accesso è riservato agli account tester invitati durante la beta privata.",
       "errorGeneric": "Registrazione impossibile. Riprova."
+    },
+    "resetConfirm": {
+      "intro": "Scegli una nuova password (almeno 10 caratteri).",
+      "passwordLabel": "Nuova password",
+      "submit": "Reimposta password",
+      "submitting": "Reimpostazione…",
+      "success": "Password reimpostata. Ora puoi accedere.",
+      "errorGeneric": "Reimpostazione non riuscita. Il link potrebbe essere scaduto.",
+      "missingToken": "Link non valido o incompleto. Richiedi un nuovo reset."
     },
     "forgot": {
       "intro": "Indica il tuo nome utente o la tua e-mail. Se un account corrisponde, ti verrà inviato un link di reimpostazione.",
@@ -727,6 +738,8 @@
       "updateError": "Aggiornamento impossibile.",
       "consentsTitle": "Consensi registrati",
       "noConsents": "Nessun consenso registrato.",
+      "sessionError": "Impossibile verificare la tua sessione. Controlla la connessione e riprova.",
+      "retry": "Riprova",
       "docTerms": "Condizioni d’uso",
       "docPrivacy": "Privacy",
       "consentMeta": "v{version} · {date}",
@@ -747,6 +760,8 @@
     "manage": "Gestisci il mio abbonamento",
     "choosePlanTitle": "Scegli una formula",
     "noPlans": "Nessuna formula è disponibile al momento.",
+      "planMonthly": "Mensile — 49,99 $ / mese",
+      "planAnnual": "Annuale — 39,99 $ / mese (fatturato annualmente)",
     "subscribe": "Abbonati",
     "errorLoad": "Impossibile caricare l’abbonamento.",
     "errorCheckout": "Impossibile avviare il pagamento.",
@@ -1041,6 +1056,13 @@
       },
       "title": "Crea un account",
       "intro": "Accesso anticipato riservato alle persone maggiorenni (18 anni o più)."
+    },
+    "motDePasseOublieConfirmer": {
+      "meta": {
+        "title": "Reimposta password",
+        "description": "Scegli una nuova password per il tuo account MIA Markets."
+      },
+      "title": "Reimposta password"
     },
     "motDePasseOublie": {
       "meta": {
