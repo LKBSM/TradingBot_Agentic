@@ -35,7 +35,7 @@ const ReadingChart = dynamic(
     ssr: false,
     loading: () => (
       <div
-        className="flex h-[280px] w-full items-center justify-center rounded-md border border-border/60 bg-muted/30 sm:h-[340px]"
+        className="flex h-[clamp(300px,52svh,560px)] w-full items-center justify-center rounded-md border border-border/60 bg-muted/30"
         role="status"
       >
         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" aria-hidden />
