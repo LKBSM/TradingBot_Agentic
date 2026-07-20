@@ -9,6 +9,7 @@ import { AuthError, updateProfile } from '@/lib/auth/api-client';
 import { useAuth } from '@/lib/auth/store';
 import { useLocalizedHref } from '@/lib/i18n/href';
 import { Button } from '@/components/ui/button';
+import { AppearancePicker } from '@/components/theme/AppearancePicker';
 import { FormError, FormSuccess, TextField } from './fields';
 
 /**
@@ -18,6 +19,7 @@ import { FormError, FormSuccess, TextField } from './fields';
  */
 export function AccountPanel() {
   const t = useTranslations('auth');
+  const tAppearance = useTranslations('appearance');
   const { account, loading, probeFailed, logout, refresh } = useAuth();
   const router = useRouter();
   const lh = useLocalizedHref();
@@ -91,7 +93,7 @@ export function AccountPanel() {
           <p className="text-sm text-muted-foreground">{account.email}</p>
         </div>
         {account.role === 'owner' && (
-          <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-600">
+          <span className="inline-flex items-center gap-1 rounded-full border border-sentinel-warn/40 bg-sentinel-warn/10 px-2.5 py-1 text-xs font-medium text-sentinel-warn">
             <ShieldCheck className="h-3.5 w-3.5" aria-hidden />
             {t('account.ownerBadge')}
           </span>
@@ -117,6 +119,18 @@ export function AccountPanel() {
             {saving ? t('account.saving') : t('account.save')}
           </Button>
         </form>
+      </section>
+
+      <section className="space-y-4 rounded-lg border border-border/60 p-5">
+        <div>
+          <h2 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+            {tAppearance('sectionTitle')}
+          </h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {tAppearance('sectionDescription')}
+          </p>
+        </div>
+        <AppearancePicker />
       </section>
 
       <section className="space-y-3 rounded-lg border border-border/60 p-5">

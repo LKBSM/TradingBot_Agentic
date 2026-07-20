@@ -3,6 +3,23 @@
 @tailwind utilities;
 
 /*
+ * Design-token theming system. A "theme" is nothing but a set of VALUES for the
+ * same role-named tokens below — never a new token. Tokens are named by ROLE
+ * (surface / text / accent / state) so switching themes is a pure value swap.
+ *
+ * Four themes ship: Terminal (default, cold dark), Atelier (light analyst note),
+ * Schéma (technical monochrome), Ardoise (warm dark). next-themes sets
+ * `data-theme="<id>"` on <html> (see layout.tsx); the token VALUES live under
+ * `[data-theme='…']` below. The three dark themes drive Tailwind's `dark:`
+ * variant via the darkMode config in tailwind.config.ts.
+ *
+ * Colour is reserved for MEANING. The sentinel-* / state tokens carry market
+ * semantics (bull / bear / neutral / warn / liquidity) and are the ONLY place a
+ * theme may express bull/bear hues — never a decorative green/red "buy/sell".
+ * Domain tokens are exposed through the sentinel-* palette in tailwind.config.
+ */
+
+/*
  * RTL / Arabic support (i18n Étape 1). The Latin `Inter` variable font ships no
  * Arabic glyphs, so for `html[dir="rtl"]` (currently only the `ar` locale) we
  * prepend the Arabic-capable Noto stack. `dir="rtl"` on <html> already flips
@@ -12,66 +29,138 @@ html[dir='rtl'] body {
   font-family: var(--font-arabic), var(--font-sans), ui-sans-serif, system-ui,
     sans-serif;
 }
-
-/*
- * shadcn/ui new-york theme — neutral slate palette with subtle gold accent
- * inspired by Linear / Stripe / Pitchbook sobriety. Domain colors (bull/bear/
- * neutral/warn) are exposed through the sentinel-* palette in tailwind.config.
- */
 @layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 222 47% 11%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 11%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222 47% 11%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 222 47% 11%;
+  /* ── Terminal — cold dark, DEFAULT (pre-hydration fallback = :root) ── */
+  :root,
+  [data-theme='terminal'] {
+    color-scheme: dark;
+    --background: 223 47% 7%;
+    --foreground: 220 45% 94%;
+    --card: 220 44% 12%;
+    --card-foreground: 220 45% 94%;
+    --popover: 220 44% 12%;
+    --popover-foreground: 220 45% 94%;
+    --primary: 207 70% 59%;
+    --primary-foreground: 223 47% 9%;
+    --secondary: 220 40% 16%;
+    --secondary-foreground: 220 45% 94%;
+    --muted: 220 40% 16%;
+    --muted-foreground: 223 16% 61%;
+    --accent: 220 40% 18%;
+    --accent-foreground: 220 45% 94%;
+    --destructive: 352 60% 52%;
+    --destructive-foreground: 220 45% 96%;
+    --border: 218 33% 20%;
+    --input: 218 33% 20%;
+    --ring: 207 70% 59%;
     --radius: 0.75rem;
 
-    --sentinel-bull: 142 71% 35%;
-    --sentinel-bear: 0 72% 45%;
-    --sentinel-neutral: 215 16% 47%;
-    --sentinel-warn: 32 95% 44%;
+    --sentinel-bull: 159 54% 47%;
+    --sentinel-bear: 352 63% 64%;
+    --sentinel-neutral: 223 16% 61%;
+    --sentinel-warn: 38 63% 56%;
+    --sentinel-liq: 38 63% 56%;
+
+    --font-narrative: var(--font-sans);
   }
 
-  .dark {
-    --background: 222 47% 6%;
-    --foreground: 210 40% 98%;
-    --card: 222 47% 9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222 47% 9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222 47% 11%;
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 217 33% 17%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 63% 41%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 213 27% 84%;
+  /* ── Atelier — light, analyst note (narration in serif) ── */
+  [data-theme='atelier'] {
+    color-scheme: light;
+    --background: 45 31% 95%;
+    --foreground: 220 7% 16%;
+    --card: 45 27% 91%;
+    --card-foreground: 220 7% 16%;
+    --popover: 45 27% 91%;
+    --popover-foreground: 220 7% 16%;
+    --primary: 176 59% 27%;
+    --primary-foreground: 45 31% 96%;
+    --secondary: 45 22% 86%;
+    --secondary-foreground: 220 7% 16%;
+    --muted: 45 22% 86%;
+    --muted-foreground: 60 3% 38%;
+    --accent: 45 24% 84%;
+    --accent-foreground: 220 7% 16%;
+    --destructive: 4 55% 48%;
+    --destructive-foreground: 45 31% 96%;
+    --border: 45 16% 80%;
+    --input: 45 16% 80%;
+    --ring: 176 59% 27%;
+    --radius: 0.75rem;
 
-    --sentinel-bull: 142 65% 48%;
-    --sentinel-bear: 0 76% 60%;
-    --sentinel-neutral: 215 20% 65%;
-    --sentinel-warn: 35 92% 55%;
+    --sentinel-bull: 158 51% 37%;
+    --sentinel-bear: 4 40% 51%;
+    --sentinel-neutral: 60 3% 41%;
+    --sentinel-warn: 39 73% 40%;
+    --sentinel-liq: 39 73% 40%;
+
+    --font-narrative: Georgia, Cambria, 'Times New Roman', serif;
+  }
+
+  /* ── Schéma — technical monochrome (states in grey, almost no colour) ── */
+  [data-theme='schema'] {
+    color-scheme: dark;
+    --background: 220 13% 9%;
+    --foreground: 213 16% 89%;
+    --card: 220 14% 12%;
+    --card-foreground: 213 16% 89%;
+    --popover: 220 14% 12%;
+    --popover-foreground: 213 16% 89%;
+    --primary: 190 46% 57%;
+    --primary-foreground: 220 13% 10%;
+    --secondary: 220 12% 16%;
+    --secondary-foreground: 213 16% 89%;
+    --muted: 220 12% 16%;
+    --muted-foreground: 219 6% 57%;
+    --accent: 220 12% 18%;
+    --accent-foreground: 213 16% 89%;
+    --destructive: 0 50% 52%;
+    --destructive-foreground: 213 16% 92%;
+    --border: 220 10% 20%;
+    --input: 220 10% 20%;
+    --ring: 190 46% 57%;
+    --radius: 0.5rem;
+
+    --sentinel-bull: 215 11% 79%;
+    --sentinel-bear: 216 6% 52%;
+    --sentinel-neutral: 219 6% 57%;
+    --sentinel-warn: 40 40% 55%;
+    --sentinel-liq: 190 46% 57%;
+
+    --font-narrative: var(--font-sans);
+  }
+
+  /* ── Ardoise — warm dark, calmed (softer corners) ── */
+  [data-theme='ardoise'] {
+    color-scheme: dark;
+    --background: 26 16% 9%;
+    --foreground: 36 32% 91%;
+    --card: 30 16% 12%;
+    --card-foreground: 36 32% 91%;
+    --popover: 30 16% 12%;
+    --popover-foreground: 36 32% 91%;
+    --primary: 40 55% 66%;
+    --primary-foreground: 26 16% 10%;
+    --secondary: 30 14% 16%;
+    --secondary-foreground: 36 32% 91%;
+    --muted: 30 14% 16%;
+    --muted-foreground: 34 12% 62%;
+    --accent: 30 14% 18%;
+    --accent-foreground: 36 32% 91%;
+    --destructive: 11 56% 58%;
+    --destructive-foreground: 36 32% 94%;
+    --border: 28 14% 20%;
+    --input: 28 14% 20%;
+    --ring: 40 55% 66%;
+    --radius: 1rem;
+
+    --sentinel-bull: 154 40% 58%;
+    --sentinel-bear: 11 56% 66%;
+    --sentinel-neutral: 34 12% 62%;
+    --sentinel-warn: 40 55% 66%;
+    --sentinel-liq: 40 55% 66%;
+
+    --font-narrative: var(--font-sans);
   }
 }
 

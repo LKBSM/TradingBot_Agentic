@@ -93,14 +93,14 @@ export function InstrumentSidebar({
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t('sidebar.searchPlaceholder')}
             aria-label={t('sidebar.searchAria')}
-            className="w-full rounded-md border border-border/60 bg-background py-2 pl-8 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-[#c9a961] focus:outline-none focus:ring-1 focus:ring-[#c9a961]"
+            className="w-full rounded-md border border-border/60 bg-background py-2 pl-8 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
           />
         </div>
       </div>
 
       {matchingPinned.length > 0 && (
         <div className="space-y-1.5">
-          <p className="px-1 text-xs font-semibold uppercase tracking-wide text-[#c9a961]">
+          <p className="px-1 text-xs font-semibold uppercase tracking-wide text-primary">
             {t('sidebar.pinned')}
           </p>
           <ul className="space-y-1">
@@ -188,7 +188,7 @@ function ComboRow({
       className={cn(
         'flex items-stretch rounded-md border-l-2 transition-colors',
         isActive
-          ? 'border-l-[#c9a961] bg-[#c9a961]/10'
+          ? 'border-l-primary bg-primary/10'
           : 'border-l-transparent hover:bg-muted',
       )}
     >
@@ -222,8 +222,8 @@ function ComboRow({
         title={pinned ? t('sidebar.unpin') : t('sidebar.pin')}
         className={cn(
           // ≥44px tap target on touch; natural (compact) size on xl desktop.
-          'flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center px-2 text-muted-foreground/60 transition-colors hover:text-[#c9a961] xl:min-h-0 xl:min-w-0',
-          pinned && 'text-[#c9a961]',
+          'flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center px-2 text-muted-foreground/60 transition-colors hover:text-primary xl:min-h-0 xl:min-w-0',
+          pinned && 'text-primary',
         )}
       >
         {pinned ? (
@@ -277,7 +277,7 @@ function Freshness({ candleCloseTs }: { candleCloseTs: string | null }) {
 
   return (
     <span className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
-      <span className="h-1.5 w-1.5 rounded-full bg-[#c9a961]" aria-hidden />
+      <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden />
       {now && candleCloseTs ? formatRelativePast(candleCloseTs, now) : null}
     </span>
   );

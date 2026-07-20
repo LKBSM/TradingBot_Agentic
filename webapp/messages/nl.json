@@ -1304,5 +1304,19 @@
       "show": "Op de grafiek tonen",
       "hide": "Van de grafiek verbergen"
     }
+  },
+  "appearance": {
+    "menuLabel": "Thema kiezen",
+    "menuHeading": "Thema’s",
+    "sectionTitle": "Weergave",
+    "sectionDescription": "Kies het thema van de interface. Je keuze wordt meteen toegepast en op dit apparaat onthouden.",
+    "groupLabel": "Themakeuze",
+    "active": "Actief",
+    "descriptions": {
+      "terminal": "Koel donker, rustig lezen — het standaardthema.",
+      "atelier": "Licht, als een analistennotitie op papier.",
+      "schema": "Technisch monochroom, bijna zonder kleur.",
+      "ardoise": "Warm donker, rustgevend, met zachtere hoeken."
+    }
   }
 }

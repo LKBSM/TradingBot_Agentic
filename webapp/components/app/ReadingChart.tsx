@@ -360,26 +360,37 @@ const MIN_VISIBLE_RANGE_FRAC = 0.003;
 
 /**
  * Theme-resolved palette. Lightweight-charts paints onto a canvas, so it needs
- * concrete colour strings (CSS `var(--token)` does not resolve there). These
- * values mirror the app tokens — `--border` for the grid, `--muted-foreground`
- * for axis text — at both light and dark, so the chart tracks the app theme.
+ * concrete colour strings (CSS `var(--token)` does not resolve there). We read
+ * the LIVE token values off <html> via getComputedStyle so the chart tracks
+ * whichever of the four themes is active — structural chrome from `--border` /
+ * `--muted-foreground`, and the candle bull/bear from the reserved
+ * `--sentinel-*` state tokens (colour = meaning). Called inside a client effect,
+ * re-keyed on the resolved theme, so switching between two dark themes repaints.
  */
-function palette(isDark: boolean) {
-  return isDark
-    ? {
-        axisText: 'hsl(215, 20%, 65%)', // --muted-foreground (dark) → tertiary axis
-        grid: 'hsla(217, 33%, 17%, 0.4)', // --border (dark) @ 0.4
-        scaleBorder: 'hsla(217, 33%, 17%, 0.6)',
-        crosshair: 'hsla(215, 20%, 65%, 0.45)',
-        crosshairLabel: '#3f3f46',
-      }
-    : {
-        axisText: 'hsl(215, 16%, 47%)', // --muted-foreground (light) → tertiary axis
-        grid: 'hsla(214, 32%, 91%, 0.4)', // --border (light) @ 0.4
-        scaleBorder: 'hsla(214, 32%, 91%, 0.8)',
-        crosshair: 'hsla(215, 16%, 47%, 0.40)',
-        crosshairLabel: '#52525b',
-      };
+// The tokens store a bare HSL triplet ("159 54% 47%"). Emit the comma form
+// (`hsl(159, 54%, 47%)`) that lightweight-charts' colour parser accepts across
+// versions, rather than the space/slash CSS Color-4 syntax.
+function readHsl(el: HTMLElement, name: string, fallback: string): string {
+  const v = getComputedStyle(el).getPropertyValue(name).trim();
+  if (!v) return fallback;
+  return `hsl(${v.split(/\s+/).join(', ')})`;
+}
+function readHsla(el: HTMLElement, name: string, alpha: number, fallback: string): string {
+  const v = getComputedStyle(el).getPropertyValue(name).trim();
+  if (!v) return fallback;
+  return `hsla(${v.split(/\s+/).join(', ')}, ${alpha})`;
+}
+function palette() {
+  const el = document.documentElement;
+  return {
+    axisText: readHsl(el, '--muted-foreground', 'hsl(215 20% 65%)'),
+    grid: readHsla(el, '--border', 0.4, 'hsla(217, 33%, 17%, 0.4)'),
+    scaleBorder: readHsla(el, '--border', 0.6, 'hsla(217, 33%, 17%, 0.6)'),
+    crosshair: readHsla(el, '--muted-foreground', 0.45, 'hsla(215, 20%, 65%, 0.45)'),
+    crosshairLabel: readHsl(el, '--secondary', '#3f3f46'),
+    candleBull: readHsl(el, '--sentinel-bull', CANDLE.bull),
+    candleBear: readHsl(el, '--sentinel-bear', CANDLE.bear),
+  };
 }
 
 const MONO_FONT = "'ui-monospace', 'SFMono-Regular', 'Menlo', monospace";
@@ -404,7 +415,6 @@ export function ReadingChart({
 }: ReadingChartProps) {
   const t = useTranslations('app');
   const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === 'dark';
 
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const chartRef = React.useRef<IChartApi | null>(null);
@@ -540,7 +550,7 @@ export function ReadingChart({
     const container = containerRef.current;
     if (!container) return;
 
-    const p = palette(isDark);
+    const p = palette();
 
     const chart = createChart(container, {
       // Responsive: tracks the container box (paired with the ResizeObserver
@@ -623,13 +633,13 @@ export function ReadingChart({
     });
 
     const series = chart.addSeries(CandlestickSeries, {
-      upColor: CANDLE.bull,
-      downColor: CANDLE.bear,
+      upColor: p.candleBull,
+      downColor: p.candleBear,
       // Wick + border share the body colour (no contrasting outline).
-      borderUpColor: CANDLE.bull,
-      borderDownColor: CANDLE.bear,
-      wickUpColor: CANDLE.bull,
-      wickDownColor: CANDLE.bear,
+      borderUpColor: p.candleBull,
+      borderDownColor: p.candleBear,
+      wickUpColor: p.candleBull,
+      wickDownColor: p.candleBear,
       // Current-price line: hairline, dashed, colour follows the last move.
       priceLineVisible: true,
       priceLineWidth: 1,
@@ -675,16 +685,18 @@ export function ReadingChart({
     };
     // Created once — theme changes are applied in place below (UI-19), so the
     // chart is NOT torn down and rebuilt on every light/dark toggle (which lost
-    // the user's zoom/pan and flickered). isDark here is only the mount-time seed.
+    // the user's zoom/pan and flickered).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── Apply theme colours live on light/dark toggle (UI-19). applyOptions keeps
-  // the chart instance — and the user's zoom/pan — instead of recreating it. ──
+  // the chart instance — and the user's zoom/pan — instead of recreating it.
+  // palette() reads the current CSS-variable colours, so it returns the new theme
+  // once resolvedTheme (and the html class) have flipped. ──
   React.useEffect(() => {
     const chart = chartRef.current;
     if (!chart) return;
-    const p = palette(isDark);
+    const p = palette();
     chart.applyOptions({
       layout: { textColor: p.axisText },
       grid: { horzLines: { color: p.grid } },
@@ -695,7 +707,7 @@ export function ReadingChart({
       rightPriceScale: { borderColor: p.scaleBorder },
       timeScale: { borderColor: p.scaleBorder },
     });
-  }, [isDark]);
+  }, [resolvedTheme]);
 
   // ── Push candle data + structure price lines; fit content. ──────────────────
   React.useEffect(() => {

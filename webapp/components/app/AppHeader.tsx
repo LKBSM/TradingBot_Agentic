@@ -6,7 +6,7 @@ import { CandlestickChart, HelpCircle, Layers, Radar } from 'lucide-react';
 import { useLocalizedHref } from '@/lib/i18n/href';
 import { LocaleToggle } from '@/components/LocaleToggle';
 import { MobileMenu } from '@/components/MobileMenu';
-import { ThemeToggle } from '@/components/theme-toggle';
+import { ThemeMenu } from '@/components/theme/ThemeMenu';
 import { Badge } from '@/components/ui/badge';
 import { BRAND_NAME, BRAND_BASELINE } from '@/lib/brand';
 import { AccountMenu } from './AccountMenu';
@@ -85,7 +85,7 @@ export function AppHeader() {
             </Link>
             <LocaleToggle />
           </div>
-          <ThemeToggle />
+          <ThemeMenu />
           <AccountMenu />
           <MobileMenu variant="app" />
         </div>

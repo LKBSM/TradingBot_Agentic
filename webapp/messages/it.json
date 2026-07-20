@@ -1304,5 +1304,19 @@
       "show": "Mostra sul grafico",
       "hide": "Nascondi dal grafico"
     }
+  },
+  "appearance": {
+    "menuLabel": "Scegli il tema",
+    "menuHeading": "Temi",
+    "sectionTitle": "Aspetto",
+    "sectionDescription": "Scegli il tema dell’interfaccia. La scelta si applica subito e viene ricordata su questo dispositivo.",
+    "groupLabel": "Selezione del tema",
+    "active": "Attivo",
+    "descriptions": {
+      "terminal": "Scuro freddo, lettura tranquilla: il tema predefinito.",
+      "atelier": "Chiaro, come l’appunto di un analista su carta.",
+      "schema": "Monocromo tecnico, quasi senza colore.",
+      "ardoise": "Scuro caldo, rilassante, con angoli più morbidi."
+    }
   }
 }

@@ -332,7 +332,7 @@ function LiquidityList({
             <span className="text-muted-foreground">·</span>
             <span
               className={cn(
-                status.tone === 'warn' ? 'text-amber-600 dark:text-amber-500' : 'text-muted-foreground',
+                status.tone === 'warn' ? 'text-sentinel-warn' : 'text-muted-foreground',
                 p.status === 'broken' && 'line-through opacity-70',
               )}
             >

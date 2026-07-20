@@ -1304,5 +1304,19 @@
       "show": "Show on the chart",
       "hide": "Hide from the chart"
     }
+  },
+  "appearance": {
+    "menuLabel": "Choose theme",
+    "menuHeading": "Themes",
+    "sectionTitle": "Appearance",
+    "sectionDescription": "Choose the interface theme. Your choice applies instantly and is remembered on this device.",
+    "groupLabel": "Theme selection",
+    "active": "Active",
+    "descriptions": {
+      "terminal": "Cool dark, calm reading — the default theme.",
+      "atelier": "Light, like an analyst’s note on paper.",
+      "schema": "Technical monochrome, almost colourless.",
+      "ardoise": "Warm dark, soothing, with softer corners."
+    }
   }
 }
