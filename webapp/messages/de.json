@@ -1018,7 +1018,8 @@
       }
     },
     "disclaimer": {
-      "hero": "Demonstration im Frühzugang. Edukative algorithmische Lesart — stellt weder ein Trading-Signal noch eine Anlageberatung dar."
+      "hero": "Demonstration im Frühzugang. Edukative algorithmische Lesart — stellt weder ein Trading-Signal noch eine Anlageberatung dar.",
+      "chart": "Edukative algorithmische Lesart — stellt weder ein Trading-Signal noch eine Anlageberatung dar."
     }
   },
   "pages": {
@@ -1196,7 +1197,7 @@
     "attributions": {
       "title": "Attributionen",
       "intro": "Der Kerzenchart des Lesebereichs stützt sich auf eine Open-Source-Bibliothek, die hier gemäß ihrer Lizenz genannt wird.",
-      "license": "<name>Lightweight Charts™</name> — © TradingView, Inc., vertrieben unter der Lizenz <link>Apache 2.0</link>. Anzeigebibliothek für Charts, verwendet zur Darstellung der Kerzen und Zonen.",
+      "license": "<name>Lightweight Charts™</name> — © <tv>TradingView, Inc.</tv>, vertrieben unter der Lizenz <link>Apache 2.0</link>. Anzeigebibliothek für Charts, verwendet zur Darstellung der Kerzen und Zonen.",
       "note": "Zu beachten: Es handelt sich um eine reine <em>Anzeige</em>-Bibliothek. MIA Markets nutzt weder eine API noch einen Marktdaten-Feed von TradingView — die angezeigten Kurse stammen aus unserem eigenen Motor."
     }
   },

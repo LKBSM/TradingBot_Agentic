@@ -22,8 +22,10 @@ specific language governing permissions and limitations under the License.
 
 Used in: the candlestick reading chart on the /app view
 (components/app/ReadingChart.tsx). The on-chart TradingView attribution logo is
-kept visible (layout.attributionLogo = true), and this attribution is also
-published on the public /methodology page.
+hidden (layout.attributionLogo = false) for a cleaner plot; as the licence then
+requires, the attribution is kept here in this NOTICE and is published for users
+— together with a link to https://www.tradingview.com/ — in the "Attributions"
+section of the public /methodology page.
 
 NOTE: Lightweight Charts™ is a charting LIBRARY only. MIA Markets does NOT use
 any TradingView market-data API or feed. Candle data shown today is generated

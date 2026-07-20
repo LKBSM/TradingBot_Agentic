@@ -1018,7 +1018,8 @@
       }
     },
     "disclaimer": {
-      "hero": "Demonstratie in vroege toegang. Educatieve algoritmische lezing — vormt geen tradingsignaal en geen beleggingsadvies."
+      "hero": "Demonstratie in vroege toegang. Educatieve algoritmische lezing — vormt geen tradingsignaal en geen beleggingsadvies.",
+      "chart": "Educatieve algoritmische lezing — vormt geen tradingsignaal en geen beleggingsadvies."
     }
   },
   "pages": {
@@ -1196,7 +1197,7 @@
     "attributions": {
       "title": "Vermeldingen",
       "intro": "De candlestickgrafiek van de leesruimte steunt op een opensource-bibliotheek, hier vermeld zoals de licentie ervan vereist.",
-      "license": "<name>Lightweight Charts™</name> — © TradingView, Inc., verspreid onder <link>Apache 2.0</link>-licentie. Grafiekweergavebibliotheek gebruikt voor het renderen van de candles en de zones.",
+      "license": "<name>Lightweight Charts™</name> — © <tv>TradingView, Inc.</tv>, verspreid onder <link>Apache 2.0</link>-licentie. Grafiekweergavebibliotheek gebruikt voor het renderen van de candles en de zones.",
       "note": "Ter info: het gaat uitsluitend om een <em>weergave</em>bibliotheek. MIA Markets gebruikt geen enkele API en geen enkele marktgegevensstroom van TradingView — de weergegeven koersen komen van onze eigen engine."
     }
   },

@@ -194,6 +194,19 @@ export default function MethodologyPage() {
                   {chunks}
                 </a>
               ),
+              // Required attribution link to TradingView (the on-chart logo is
+              // hidden via layout.attributionLogo=false; the Apache-2.0 licence
+              // then requires this link to remain visible to users).
+              tv: (chunks) => (
+                <a
+                  href="https://www.tradingview.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-4 hover:text-foreground"
+                >
+                  {chunks}
+                </a>
+              ),
             })}
           </p>
           <p className="text-xs">

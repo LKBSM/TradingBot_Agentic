@@ -551,7 +551,12 @@ export function ReadingChart({
         textColor: p.axisText,
         fontFamily: MONO_FONT, // monospace → tabular axis numbers.
         fontSize: 11,
-        attributionLogo: true, // TradingView attribution (Apache-2.0 licence).
+        // On-chart TradingView logo hidden for a cleaner plot. The Apache-2.0
+        // licence for Lightweight Charts™ then requires the attribution to be
+        // kept elsewhere: it lives in the repo NOTICE file and is published for
+        // users — with a link to https://www.tradingview.com/ — in the
+        // "Attributions" section of the public /methodology page.
+        attributionLogo: false,
       },
       grid: {
         // Horizontal hairlines only — vertical lines off for a calmer canvas.
