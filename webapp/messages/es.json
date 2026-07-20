@@ -1018,7 +1018,8 @@
       }
     },
     "disclaimer": {
-      "hero": "Demostración en acceso anticipado. Lectura algorítmica educativa — no constituye ni una señal de trading, ni un consejo de inversión."
+      "hero": "Demostración en acceso anticipado. Lectura algorítmica educativa — no constituye ni una señal de trading, ni un consejo de inversión.",
+      "chart": "Lectura algorítmica educativa — no constituye ni una señal de trading, ni un consejo de inversión."
     }
   },
   "pages": {
@@ -1196,7 +1197,7 @@
     "attributions": {
       "title": "Atribuciones",
       "intro": "El gráfico de velas del espacio de lectura se apoya en una biblioteca de código abierto, acreditada aquí como exige su licencia.",
-      "license": "<name>Lightweight Charts™</name> — © TradingView, Inc., distribuido bajo licencia <link>Apache 2.0</link>. Biblioteca de visualización de gráficos utilizada para el renderizado de las velas y las zonas.",
+      "license": "<name>Lightweight Charts™</name> — © <tv>TradingView, Inc.</tv>, distribuido bajo licencia <link>Apache 2.0</link>. Biblioteca de visualización de gráficos utilizada para el renderizado de las velas y las zonas.",
       "note": "A tener en cuenta: se trata de una biblioteca <em>de visualización</em> únicamente. MIA Markets no utiliza ninguna API ni ningún flujo de datos de mercado de TradingView — las cotizaciones mostradas provienen de nuestro propio motor."
     }
   },

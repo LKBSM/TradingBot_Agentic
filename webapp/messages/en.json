@@ -1018,7 +1018,8 @@
       }
     },
     "disclaimer": {
-      "hero": "Early-access demonstration. Educational algorithmic reading — constitutes neither a trading signal nor investment advice."
+      "hero": "Early-access demonstration. Educational algorithmic reading — constitutes neither a trading signal nor investment advice.",
+      "chart": "Educational algorithmic reading — constitutes neither a trading signal nor investment advice."
     }
   },
   "pages": {
@@ -1196,7 +1197,7 @@
     "attributions": {
       "title": "Attributions",
       "intro": "The candlestick chart in the reading workspace relies on an open-source library, credited here as its license requires.",
-      "license": "<name>Lightweight Charts™</name> — © TradingView, Inc., distributed under the <link>Apache 2.0</link> license. Chart display library used to render the candles and zones.",
+      "license": "<name>Lightweight Charts™</name> — © <tv>TradingView, Inc.</tv>, distributed under the <link>Apache 2.0</link> license. Chart display library used to render the candles and zones.",
       "note": "Note: this is a <em>display</em> library only. MIA Markets uses no TradingView API or market data feed — the prices shown come from our own engine."
     }
   },

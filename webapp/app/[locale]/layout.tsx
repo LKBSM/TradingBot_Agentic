@@ -142,6 +142,10 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   viewportFit: 'cover',
+  // When the on-screen keyboard opens, resize the layout viewport (not just the
+  // visual one) so `svh`/percentage heights shrink and a bottom-pinned input
+  // (mobile chat) stays visible above the keyboard instead of being covered.
+  interactiveWidget: 'resizes-content',
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#ffffff' },
     { media: '(prefers-color-scheme: dark)', color: '#0a0f1c' },
@@ -168,7 +172,7 @@ export default async function LocaleLayout({
       className={`${inter.variable} ${notoArabic.variable}`}
       suppressHydrationWarning
     >
-      <body className="min-h-screen bg-background font-sans antialiased">
+      <body className="flex min-h-screen flex-col bg-background font-sans antialiased">
         <SkipLink />
         <JsonLd data={softwareApplicationLd} />
         <ThemeProvider
@@ -191,7 +195,9 @@ export default async function LocaleLayout({
                       chart. Display-only; it never holds or touches detection. */}
                   <ChartViewProvider>
                     <Nav />
-                    <main id="main" className="min-h-[calc(100vh-160px)]">
+                    {/* flex-1 fills the space between the sticky header and the
+                        footer without a hard-coded height guess. */}
+                    <main id="main" className="flex-1">
                       {children}
                     </main>
                     <Footer />

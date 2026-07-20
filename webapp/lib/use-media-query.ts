@@ -23,9 +23,15 @@ export function useMediaQuery(query: string): boolean {
   return matches;
 }
 
-/** Mobile breakpoint — below Tailwind's `md` (768px). */
-export const MOBILE_QUERY = '(max-width: 767px)';
+/**
+ * Stacked-layout breakpoint — below Tailwind's `xl` (1280px). Phone AND tablet
+ * (iPad portrait 834 / landscape 1024) use the single-column tabbed workspace;
+ * the three-column desktop grid is reserved for `xl+`, where the two fixed rails
+ * (240 + 360px) leave the centre reading column a usable width. Below 1280 the
+ * three columns would crush the centre (~138px @834, ~312px @1024).
+ */
+export const STACKED_QUERY = '(max-width: 1279px)';
 
-export function useIsMobile(): boolean {
-  return useMediaQuery(MOBILE_QUERY);
+export function useStackedLayout(): boolean {
+  return useMediaQuery(STACKED_QUERY);
 }

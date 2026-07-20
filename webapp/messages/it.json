@@ -1018,7 +1018,8 @@
       }
     },
     "disclaimer": {
-      "hero": "Dimostrazione in accesso anticipato. Lettura algoritmica educativa — non costituisce né un segnale di trading, né una consulenza in investimenti."
+      "hero": "Dimostrazione in accesso anticipato. Lettura algoritmica educativa — non costituisce né un segnale di trading, né una consulenza in investimenti.",
+      "chart": "Lettura algoritmica educativa — non costituisce né un segnale di trading, né una consulenza in investimenti."
     }
   },
   "pages": {
@@ -1196,7 +1197,7 @@
     "attributions": {
       "title": "Attribuzioni",
       "intro": "Il grafico a candele dello spazio di lettura si basa su una libreria open-source, accreditata qui come richiede la sua licenza.",
-      "license": "<name>Lightweight Charts™</name> — © TradingView, Inc., distribuito con licenza <link>Apache 2.0</link>. Libreria di visualizzazione di grafici usata per il rendering delle candele e delle zone.",
+      "license": "<name>Lightweight Charts™</name> — © <tv>TradingView, Inc.</tv>, distribuito con licenza <link>Apache 2.0</link>. Libreria di visualizzazione di grafici usata per il rendering delle candele e delle zone.",
       "note": "Da notare: si tratta di una libreria <em>di visualizzazione</em> soltanto. MIA Markets non utilizza alcuna API né alcun flusso di dati di mercato di TradingView — le quotazioni mostrate provengono dal nostro proprio motore."
     }
   },

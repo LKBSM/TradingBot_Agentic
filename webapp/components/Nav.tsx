@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { User } from 'lucide-react';
 import { AppHeader } from '@/components/app/AppHeader';
 import { LocaleToggle } from '@/components/LocaleToggle';
+import { MobileMenu } from '@/components/MobileMenu';
 import { ThemeMenu } from '@/components/theme/ThemeMenu';
 import { useAuth } from '@/lib/auth/store';
 import { useLocalizedHref } from '@/lib/i18n/href';
@@ -109,35 +110,36 @@ export function Nav() {
           </ul>
         </nav>
 
-        {/* gap-1 + px-2 sous sm : sur 390px le cluster débordait et le
-            LocaleToggle recouvrait le ThemeToggle (toggle thème incliquable
-            sur mobile — bug attrapé par l'e2e mobile-iphone-12). */}
+        {/* Sous sm (390px) le cluster débordait : App/Zones/Scanner + compte +
+            langue passent dans le tiroir burger (MobileMenu). Restent toujours
+            visibles : le thème et le burger. */}
         <div className="flex items-center gap-1 sm:gap-2">
-          <Link
-            href={lh('/app')}
-            className="rounded-md px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-3"
-          >
-            App
-          </Link>
-          <Link
-            href={lh('/zones')}
-            className="rounded-md px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-3"
-          >
-            {t('zones')}
-          </Link>
-          <Link
-            href={lh('/scanner')}
-            className="rounded-md px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-3"
-          >
-            {t('scanner')}
-          </Link>
-          <NavAccountLink />
-          {/* Sélecteur de langue desktop-only (le cluster mobile est déjà dense
-              sur 390px ; les liens localisés ci-dessus couvrent toutes locales). */}
-          <div className="hidden sm:block">
+          <div className="hidden items-center gap-1 sm:flex sm:gap-2">
+            <Link
+              href={lh('/app')}
+              className="rounded-md px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              App
+            </Link>
+            <Link
+              href={lh('/zones')}
+              className="rounded-md px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {t('zones')}
+            </Link>
+            <Link
+              href={lh('/scanner')}
+              className="rounded-md px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {t('scanner')}
+            </Link>
+            <NavAccountLink />
+            {/* Sélecteur de langue desktop-only (le cluster mobile est déjà dense
+                sur 390px ; les liens localisés ci-dessus couvrent toutes locales). */}
             <LocaleToggle />
           </div>
           <ThemeMenu />
+          <MobileMenu variant="marketing" />
         </div>
       </div>
     </header>

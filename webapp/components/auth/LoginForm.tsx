@@ -49,7 +49,19 @@ export function LoginForm() {
         identifier: String(form.get('identifier') ?? '').trim(),
         password: String(form.get('password') ?? ''),
       });
-      router.push(resolveDestination());
+      // The session cookie is now set. Invalidate the Next.js Router Cache
+      // BEFORE navigating: during the cookieless visit the edge middleware
+      // (BETA_LOCKDOWN) redirected the protected route to /connexion, and that
+      // redirect can be cached client-side. Navigating without clearing it can
+      // serve the stale "→ /connexion" entry and bounce a freshly-authenticated
+      // user right back to login on the FIRST attempt — only a hard refresh
+      // (which drops the Router Cache) then lets them in. `refresh()` first so
+      // the destination is refetched from the server with the new cookie;
+      // `replace` (not `push`) keeps /connexion out of history. This is what
+      // makes login reliable on the first attempt.
+      const dest = resolveDestination();
+      router.refresh();
+      router.replace(dest);
     } catch (err) {
       setError(
         err instanceof AuthError ? err.message : t('login.errorGeneric'),

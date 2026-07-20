@@ -1018,7 +1018,8 @@
       }
     },
     "disclaimer": {
-      "hero": "Demonstracja we wczesnym dostępie. Edukacyjny odczyt algorytmiczny — nie stanowi ani sygnału tradingowego, ani porady inwestycyjnej."
+      "hero": "Demonstracja we wczesnym dostępie. Edukacyjny odczyt algorytmiczny — nie stanowi ani sygnału tradingowego, ani porady inwestycyjnej.",
+      "chart": "Edukacyjny odczyt algorytmiczny — nie stanowi ani sygnału tradingowego, ani porady inwestycyjnej."
     }
   },
   "pages": {
@@ -1196,7 +1197,7 @@
     "attributions": {
       "title": "Atrybucje",
       "intro": "Wykres świecowy w przestrzeni odczytu opiera się na bibliotece open-source, przypisanej tutaj zgodnie z wymogami jej licencji.",
-      "license": "<name>Lightweight Charts™</name> — © TradingView, Inc., dystrybuowane na licencji <link>Apache 2.0</link>. Biblioteka wyświetlania wykresów używana do renderowania świec i stref.",
+      "license": "<name>Lightweight Charts™</name> — © <tv>TradingView, Inc.</tv>, dystrybuowane na licencji <link>Apache 2.0</link>. Biblioteka wyświetlania wykresów używana do renderowania świec i stref.",
       "note": "Uwaga: to biblioteka <em>wyłącznie wyświetlająca</em>. MIA Markets nie korzysta z żadnego API ani strumienia danych rynkowych TradingView — wyświetlane kursy pochodzą z naszego własnego silnika."
     }
   },

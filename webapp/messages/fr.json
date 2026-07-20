@@ -1018,7 +1018,8 @@
       }
     },
     "disclaimer": {
-      "hero": "Démonstration en accès anticipé. Lecture algorithmique éducative — ne constitue ni un signal de trading, ni un conseil en investissement."
+      "hero": "Démonstration en accès anticipé. Lecture algorithmique éducative — ne constitue ni un signal de trading, ni un conseil en investissement.",
+      "chart": "Lecture algorithmique éducative — ne constitue ni un signal de trading, ni un conseil en investissement."
     }
   },
   "pages": {
@@ -1196,7 +1197,7 @@
     "attributions": {
       "title": "Attributions",
       "intro": "Le graphique en chandeliers de l’espace de lecture s’appuie sur une bibliothèque open-source, créditée ici comme l’exige sa licence.",
-      "license": "<name>Lightweight Charts™</name> — © TradingView, Inc., distribué sous licence <link>Apache 2.0</link>. Bibliothèque d’affichage de graphiques utilisée pour le rendu des chandeliers et des zones.",
+      "license": "<name>Lightweight Charts™</name> — © <tv>TradingView, Inc.</tv>, distribué sous licence <link>Apache 2.0</link>. Bibliothèque d’affichage de graphiques utilisée pour le rendu des chandeliers et des zones.",
       "note": "À noter : il s’agit d’une bibliothèque <em>d’affichage</em> uniquement. MIA Markets n’utilise aucune API ni aucun flux de données de marché de TradingView — les cours affichés proviennent de notre propre moteur."
     }
   },

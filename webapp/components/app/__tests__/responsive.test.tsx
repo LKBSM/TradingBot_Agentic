@@ -29,7 +29,7 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
-/** Drive useMediaQuery / useIsMobile by stubbing window.matchMedia. */
+/** Drive useMediaQuery / useStackedLayout by stubbing window.matchMedia. */
 function stubMatchMedia(matches: boolean) {
   vi.stubGlobal(
     'matchMedia',
@@ -66,8 +66,9 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('responsive layout — desktop (≥768px)', () => {
+describe('responsive layout — desktop (≥1280px / xl)', () => {
   it('renders the three columns side by side, no tab bar', async () => {
+    // matchMedia(false) → the stacked-layout query does NOT match → 3 columns.
     stubMatchMedia(false);
     renderApp();
 
@@ -83,7 +84,7 @@ describe('responsive layout — desktop (≥768px)', () => {
   });
 });
 
-describe('responsive layout — mobile (<768px)', () => {
+describe('responsive layout — phone + tablet (<1280px)', () => {
   it('renders a three-tab bar (Marchés · Lecture · Chat)', async () => {
     stubMatchMedia(true);
     renderApp();
