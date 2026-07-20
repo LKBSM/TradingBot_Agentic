@@ -89,6 +89,14 @@ function WorkspaceInner({
   const { openForCombo, viewActionSignal } = useChat();
   const { applyActions, resetForCombo } = useChartView();
   const isStacked = useStackedLayout();
+  // useStackedLayout reports `false` until its effect runs, so the first paint
+  // would show the DESKTOP layout for a frame before flipping to the stacked
+  // (tablet/phone) layout — a flash + remount of the columns (NAV-10). Gate the
+  // layout choice on `mounted` so we render a neutral placeholder until the real
+  // breakpoint is known; both `mounted` and the media query resolve in the same
+  // post-mount flush, so the next paint is the correct layout directly.
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => setMounted(true), []);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -248,7 +256,17 @@ function WorkspaceInner({
           </div>
         </div>
       )}
-      {isStacked ? <MobileWorkspace {...view} /> : <DesktopWorkspace {...view} />}
+      {!mounted ? (
+        <div className="container-wide py-6" aria-busy="true" aria-live="polite">
+          <div className="flex min-h-[60vh] items-center justify-center">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
+          </div>
+        </div>
+      ) : isStacked ? (
+        <MobileWorkspace {...view} />
+      ) : (
+        <DesktopWorkspace {...view} />
+      )}
     </>
   );
 }

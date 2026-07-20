@@ -545,7 +545,7 @@ export function ReadingChart({
     isolatedZoneIds,
   ]);
 
-  // ── Create the chart once; recreate only if the theme changes. ──────────────
+  // ── Create the chart ONCE (theme is applied live below, not by recreating). ─
   React.useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -683,6 +683,30 @@ export function ReadingChart({
       seriesRef.current = null;
       markersRef.current = null;
     };
+    // Created once — theme changes are applied in place below (UI-19), so the
+    // chart is NOT torn down and rebuilt on every light/dark toggle (which lost
+    // the user's zoom/pan and flickered).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Apply theme colours live on light/dark toggle (UI-19). applyOptions keeps
+  // the chart instance — and the user's zoom/pan — instead of recreating it.
+  // palette() reads the current CSS-variable colours, so it returns the new theme
+  // once resolvedTheme (and the html class) have flipped. ──
+  React.useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    const p = palette();
+    chart.applyOptions({
+      layout: { textColor: p.axisText },
+      grid: { horzLines: { color: p.grid } },
+      crosshair: {
+        vertLine: { color: p.crosshair, labelBackgroundColor: p.crosshairLabel },
+        horzLine: { color: p.crosshair, labelBackgroundColor: p.crosshairLabel },
+      },
+      rightPriceScale: { borderColor: p.scaleBorder },
+      timeScale: { borderColor: p.scaleBorder },
+    });
   }, [resolvedTheme]);
 
   // ── Push candle data + structure price lines; fit content. ──────────────────
@@ -1035,12 +1059,37 @@ export function ReadingChart({
         prevGutter = next.gutter;
         setPriceGutterWidth(next.gutter);
       }
+      // Stop the loop entirely while the tab is hidden (UI-20): a background tab
+      // has nothing to keep glued, so don't burn a frame budget on it. The
+      // visibilitychange listener below resumes it on return. (We keep full
+      // per-frame cadence while VISIBLE — a price-axis drag emits no events, so
+      // throttling there would detach the overlays.)
+      if (document.hidden) {
+        raf = 0;
+        return;
+      }
       raf = requestAnimationFrame(tick);
     };
-    raf = requestAnimationFrame(tick);
+
+    const startLoop = () => {
+      if (!raf) raf = requestAnimationFrame(tick);
+    };
+    const stopLoop = () => {
+      if (raf) {
+        cancelAnimationFrame(raf);
+        raf = 0;
+      }
+    };
+    const onVisibility = () => {
+      if (document.hidden) stopLoop();
+      else startLoop();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    if (!document.hidden) startLoop();
 
     return () => {
-      cancelAnimationFrame(raf);
+      stopLoop();
+      document.removeEventListener('visibilitychange', onVisibility);
     };
   }, [zones, candles, liveOverlay, liquidityLines]);
 
@@ -1113,15 +1162,29 @@ export function ReadingChart({
   //   · fit   — fit all candles (same as the "Ajuster" control).
   // Keyed on focus?.nonce so the same command (e.g. re-focus the same zone)
   // re-runs. A zone id that no longer resolves is a graceful no-op.
+  // Latest-value refs so the focus effect (which fires only on focusNonce, to
+  // avoid re-framing on every data tick) still reads the CURRENT candles /
+  // structure / timeframe when it runs — not values captured by a stale closure
+  // if a refetch landed between the focus command and this effect (UI-04).
+  const candlesRef = React.useRef(candles);
+  candlesRef.current = candles;
+  const structureRef = React.useRef(structure);
+  structureRef.current = structure;
+  const timeframeRef = React.useRef(timeframe);
+  timeframeRef.current = timeframe;
+
   const focusNonce = focus?.nonce ?? null;
   React.useEffect(() => {
     if (!focus) return;
     const chart = chartRef.current;
     if (!chart) return;
     const ts = chart.timeScale();
-    const times = candles.map((c) => c.time as number);
+    const currentCandles = candlesRef.current;
+    const currentStructure = structureRef.current;
+    const currentTimeframe = timeframeRef.current;
+    const times = currentCandles.map((c) => c.time as number);
     const lastTime = times.length ? times[times.length - 1]! : null;
-    const barSec = (timeframe ? TF_SECONDS[timeframe] : undefined) ?? 0;
+    const barSec = (currentTimeframe ? TF_SECONDS[currentTimeframe] : undefined) ?? 0;
 
     if (focus.kind === 'fit') {
       ts.fitContent();
@@ -1141,7 +1204,7 @@ export function ReadingChart({
     }
 
     if (focus.kind === 'zone' && focus.zoneId) {
-      const model = buildZoneModels(structure).find((z) => z.id === focus.zoneId);
+      const model = buildZoneModels(currentStructure).find((z) => z.id === focus.zoneId);
       if (!model || lastTime === null) return;
       const zoneStart = model.createdSec;
       const zoneEnd = model.mitigatedSec ?? lastTime;
