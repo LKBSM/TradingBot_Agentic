@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Play, RotateCcw, ShieldAlert, User } from 'lucide-react';
 import * as React from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -38,6 +39,7 @@ export function ConversationReplayCard({
   instrument,
   highlight = 'normal',
 }: ConversationReplayCardProps) {
+  const t = useTranslations('landing.replayCard');
   const [state, setState] = React.useState<ReplayState>('idle');
   const [typedChars, setTypedChars] = React.useState(0);
   const cardRef = React.useRef<HTMLDivElement>(null);
@@ -121,13 +123,13 @@ export function ConversationReplayCard({
           {highlight === 'refusal' && (
             <Badge variant="warn" className="shrink-0 text-[10px]">
               <ShieldAlert className="mr-1 h-3 w-3" aria-hidden />
-              Compliance
+              {t('compliance')}
             </Badge>
           )}
         </header>
 
         <Badge variant="outline" className="w-fit text-[10px]">
-          Contexte injecté · {instrument}
+          {t('contextInjected')} · {instrument}
         </Badge>
 
         <div className="flex flex-1 flex-col gap-3 text-sm">
@@ -160,7 +162,7 @@ export function ConversationReplayCard({
           {state === 'idle' ? (
             <Button type="button" size="sm" variant="ghost" onClick={start}>
               <Play className="h-3.5 w-3.5" aria-hidden />
-              Lancer
+              {t('play')}
             </Button>
           ) : (
             <Button
@@ -170,7 +172,7 @@ export function ConversationReplayCard({
               onClick={handleReplay}
             >
               <RotateCcw className="h-3.5 w-3.5" aria-hidden />
-              Rejouer
+              {t('replay')}
             </Button>
           )}
         </div>

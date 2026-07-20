@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 import { AppWorkspace } from '@/components/app/AppWorkspace';
 import { SubscriptionGate } from '@/components/access/SubscriptionGate';
 import { resolveComboFromQuery } from '@/lib/conditions/app-link';
@@ -10,11 +11,18 @@ import { resolveComboFromQuery } from '@/lib/conditions/app-link';
  */
 const DEFAULT_COMBO = { instrument: 'XAUUSD', timeframe: 'M15' } as const;
 
-export const metadata: Metadata = {
-  title: 'Espace de lecture',
-  description:
-    'Lecture de marché en direct — XAU/USD et EUR/USD sur M15, H1, H4. Structure, régime, événements et lecture narrée, expliqués par M.I.A Agent.',
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'pages' });
+  return {
+    title: t('app.meta.title'),
+    description: t('app.meta.description'),
+  };
+}
 
 /**
  * Application view — the working surface (distinct from the marketing landing

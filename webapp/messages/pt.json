@@ -1,0 +1,1321 @@
+{
+  "_comment": "TRADUÇÃO AUTOMÁTICA (landing+cookies 2026-07-08), revisão por nativo pendente",
+  "nav": {
+    "brandHomeAria": "MIA Markets — voltar ao início",
+    "sectionsAria": "Secções do site",
+    "demo": "Demo",
+    "honesty": "Honestidade",
+    "pricing": "Preços",
+    "faq": "FAQ",
+    "zones": "Zonas",
+    "scanner": "Scanner",
+    "account": "Conta",
+    "login": "Entrar",
+    "language": "Idioma"
+  },
+  "landing": {
+    "hero": {
+      "badgeLive": "Leitura em direto",
+      "badgeIndicator": "Indicador · não é um serviço de sinais",
+      "srTitle": "MIA Markets — Compreenda o mercado sem que lhe digam o que fazer.",
+      "cta": "Ver a oferta"
+    },
+    "chatPreview": {
+      "ariaCard": "Pré-visualização da conversa com o M.I.A Agent",
+      "role": "Assistente conversacional",
+      "thinking": "O M.I.A Agent lê o mercado",
+      "thinkingAria": "O M.I.A Agent está a pensar",
+      "greeting": "Olá, sou o M.I.A Agent — o assistente da MIA Markets. Acabei de ler o mercado {instrument}: a estrutura indica uma configuração {trend}.",
+      "trendBullish": "de alta",
+      "trendBearish": "de baixa",
+      "trendNeutral": "neutra",
+      "disclaimer": "Pergunte-me o que quiser — não dou instruções de compra nem aconselhamento personalizado.",
+      "suggested": "Perguntas sugeridas",
+      "continue": "Continuar no chat"
+    },
+    "multiMarket": {
+      "badge": "Três leituras · agora mesmo",
+      "title": "Em cada mercado, o mesmo enquadramento de leitura.",
+      "subtitle": "Ouro, divisas, índices — o mesmo rigor metodológico, a mesma honestidade quanto à incerteza."
+    },
+    "comingSoon": {
+      "subtitle": "Em breve",
+      "note": "Expansão prevista após validação OOS do motor em XAU/EUR."
+    },
+    "conversations": {
+      "badge": "O chatbot · demonstração",
+      "title": "O M.I.A Agent responde a perguntas reais.",
+      "subtitle": "Não é um script genérico — um assistente que conhece o contexto de cada leitura e que recusa as perguntas a que não deve responder.",
+      "card1Title": "Compreender uma leitura",
+      "card1Kicker": "Pedagogia",
+      "card2Title": "Contextualizar um evento",
+      "card2Kicker": "Macro · blackout",
+      "card3Title": "Recusar uma ordem",
+      "card3Kicker": "Recusa pedagógica",
+      "footnote": "As respostas acima são predefinidas para a demonstração. Em produção, o M.I.A Agent utiliza o Claude (Anthropic) com o contexto InsightSignal v2.1.0 injetado e um prompt de sistema que proíbe qualquer recomendação personalizada."
+    },
+    "replayCard": {
+      "contextInjected": "Contexto injetado",
+      "compliance": "Conformidade",
+      "play": "Iniciar",
+      "replay": "Repetir"
+    },
+    "honesty": {
+      "badge": "Transparência",
+      "title": "Um indicador honesto começa por dizer o que não faz.",
+      "subtitle": "A MIA descreve o mercado — a estrutura, o regime, os eventos. Não promete qualquer ganho e não se apresenta como um sistema de trading. Assumimo-lo publicamente, porque é a única postura defensável para uma ferramenta de compreensão.",
+      "quote": "Nenhum indicador de mercado deveria prometer ganhos. Nós não o fazemos. O que oferecemos é uma compreensão aumentada do mercado — não um desempenho financeiro.",
+      "quoteCaption": "— Compromisso público MIA Markets, 27 de maio de 2026",
+      "neverTitle": "O que nunca faremos",
+      "never1": "Publicar «90 % de win-rate».",
+      "never2": "Prometer um rendimento quantificado.",
+      "never3": "Vender uma leitura como um sinal de trade.",
+      "never4": "Apresentar-nos como um sistema de trading rentável.",
+      "todayTitle": "O que fazemos hoje",
+      "today1": "Uma leitura estruturada do mercado em tempo real.",
+      "today2": "Um intervalo de incerteza observado, apresentado.",
+      "today3": "Um chatbot que recusa ordens de trade.",
+      "today4": "Uma documentação técnica transparente dos nossos algoritmos.",
+      "cta": "Como o nosso indicador descreve o mercado"
+    },
+    "pricing": {
+      "earlyAccessBadge": "Acesso antecipado",
+      "title": "Um único plano. A ferramenta completa, sem meias-medidas.",
+      "intro": "Sem período experimental disfarçado, sem escalões que amputam a ferramenta: um acesso completo, cancelável com um clique. As demonstrações desta página são gratuitas — vê exatamente o que obtém. Consulte a nossa postura na secção <link>Honestidade</link>.",
+      "cadenceGroupLabel": "Escolher a frequência de faturação",
+      "monthlyToggle": "Mensal",
+      "annualToggle": "Anual",
+      "discountBadge": "−20 %",
+      "planName": "Acesso integral MIA",
+      "allIncludedBadge": "Tudo incluído",
+      "planSubtitle": "Uma única subscrição, a ferramenta completa — leitura, chatbot, scanner, zonas.",
+      "currency": "$",
+      "perMonth": "/ mês",
+      "annualBilling": "Faturado {total} $ por ano — ou seja, 120 $ de poupança (−20 %).",
+      "monthlyBilling": "Sem compromisso, cancelável a qualquer momento.",
+      "feature1": "Leituras ilimitadas XAU/USD + EUR/USD · M15 → H4",
+      "feature2": "Todas as secções: estrutura SMC, regime, volatilidade, eventos",
+      "feature3": "Chatbot M.I.A Agent ilimitado (Claude, com o contexto da leitura injetado)",
+      "feature4": "Scanner multicombinações + página Zonas (ciclo de vida OB / FVG)",
+      "feature5": "Alerta de evento macro ≤ 4 h",
+      "feature6": "Síntese especializada detalhada + fontes RAG académicas",
+      "feature7": "Histórico completo das suas leituras",
+      "feature8": "Cancelamento com um clique",
+      "subscribeDisabledTitle": "Inscrição disponível após a integração do backend",
+      "subscribeButton": "Subscrever",
+      "reassurance1": "<strong>Nenhum cartão numa armadilha.</strong> Cancelamento com um clique a partir da sua conta, sem insistências nem questionários de retenção.",
+      "reassurance2": "<strong>Sem compromisso de duração.</strong> A oferta mensal cancela-se a qualquer momento; a anual permanece ativa até ao fim do período pago.",
+      "reassurance3": "<strong>Os seus dados continuam a ser seus.</strong> Leituras e conversas privadas, nunca revendidas, nunca cruzadas para fins publicitários.",
+      "reassurance4": "<strong>Teste antes de pagar.</strong> As demonstrações desta página são interativas e gratuitas — vê exatamente o que está a comprar.",
+      "b2bEyebrow": "Para equipas profissionais · API B2B",
+      "b2bDescription": "Corretoras, fundos, meios de comunicação: integração API REST + webhooks assinados, SLA e onboarding acompanhado — preço sob consulta.",
+      "b2bButton": "Reservar uma demonstração",
+      "disclaimer": "Demonstração em acesso antecipado. A MIA Markets produz análises editoriais contextuais e não recomendações personalizadas."
+    },
+    "faq": {
+      "kicker": "Perguntas frequentes",
+      "title": "Provavelmente está a perguntar-se…",
+      "q1": "A MIA é um serviço de sinais de trading?",
+      "a1": "Não. A MIA Markets produz <strong>leituras de mercado descritivas</strong> (estrutura, regime, eventos, leitura narrada) sobre um ativo e uma unidade de tempo. O chatbot recusa explicitamente perguntas do tipo «devo comprar?». Não é fornecida qualquer recomendação personalizada.",
+      "q2": "A MIA promete desempenho ou ganhos?",
+      "a2": "Não. A MIA é uma <strong>ferramenta de compreensão aumentada</strong>, não um motor de desempenho: ela <em>descreve</em> o mercado (estrutura, regime, eventos) sem prometer rentabilidade nem se apresentar como um sistema de trading. O que medimos e assumimos publicamente é a <strong>fidelidade descritiva</strong> das nossas leituras — detalhada na secção <link>Honestidade</link>.",
+      "q3": "Como funciona o chatbot M.I.A Agent?",
+      "a3": "O M.I.A Agent é o assistente conversacional da MIA Markets. Utiliza <strong>Claude (Anthropic)</strong> com o contexto da leitura em curso injetado no sistema: estrutura, regime, eventos macro por vir, instrumento e unidade de tempo. O prompt de sistema proíbe-lhe qualquer recomendação personalizada. Se a chave de API estiver ausente, um fallback pedagógico com script assume o comando — nenhuma resposta alucinada será servida.",
+      "q4": "Sou elegível para a MIA Markets?",
+      "a4": "Deve ter <strong>18 anos no mínimo</strong>, aceitar os <link>termos de utilização</link> e confirmar que compreende o caráter não personalizado da análise. As restrições aplicáveis consoante a sua jurisdição são detalhadas nos termos.",
+      "q5": "Como funciona o cancelamento?",
+      "a5": "<strong>Cancelamento com um clique</strong> a partir da sua área de conta — sem insistências comerciais, sem questionários de retenção. A subscrição permanece ativa até ao fim do período já pago.",
+      "q6": "O que acontece ao meu histórico e aos meus dados?",
+      "a6": "As suas leituras e as suas conversas com o chatbot permanecem <strong>privadas</strong>. Pode solicitar a qualquer momento o acesso, a retificação ou o apagamento dos seus dados (contact@mia.markets). Sem revenda, sem cruzamento publicitário. Detalhe na <link>política de privacidade</link>.",
+      "methodologyPrompt": "Quer aprofundar o funcionamento?",
+      "methodologyLink": "Como o nosso indicador descreve as estruturas de mercado"
+    },
+    "beforeAfter": {
+      "kicker": "Antes · Depois",
+      "title": "A mesma hora de mercado, duas formas de a ler.",
+      "subtitle": "A maioria dos traders empilha três indicadores que se contradizem. A MIA lê a estrutura do mercado e exibe-a tal como é — eis o gráfico real do produto, à direita.",
+      "before": {
+        "eyebrow": "Abordagem clássica",
+        "title": "Três indicadores empilhados",
+        "badge": "3 sinais contraditórios",
+        "items": {
+          "rsi": "<strong>RSI 28</strong> — sobrevenda, sinal de compra.",
+          "macd": "<strong>MACD</strong> — cruzamento em baixa, sinal de venda.",
+          "bollinger": "<strong>Bollinger</strong> — preço na banda inferior, sinal ambíguo."
+        },
+        "quote": "«Então, o que faço?»"
+      },
+      "after": {
+        "eyebrow": "Leitura MIA · Ouro (XAU/USD) · 15 min",
+        "title": "O verdadeiro gráfico do produto, nada escondido.",
+        "badge": "1 leitura assumida",
+        "items": {
+          "bias": "<strong>Viés em alta</strong> — quebra de estrutura confirmada e retest em curso, descritos sem pontuação diretiva.",
+          "zones": "<strong>Zonas desenhadas</strong> — Order Block e Fair Value Gap em alta abaixo do preço, bolsas de liquidez identificadas.",
+          "volatility": "<strong>Volatilidade anunciada</strong> — aproxima-se um FOMC: a MIA assinala o provável alargamento, sem decidir por ti."
+        },
+        "quote": "«Eis o que se observa. Cabe-te a ti decidir se ages.»"
+      },
+      "chart": {
+        "title": "Três indicadores contraditórios",
+        "desc": "Um gráfico ilustrativo em que RSI, MACD e bandas de Bollinger enviam sinais opostos sobre a mesma janela temporal.",
+        "rsiLabel": "RSI ↑",
+        "macdLabel": "MACD ↓",
+        "bbLabel": "BB band"
+      }
+    },
+    "howItWorks": {
+      "kicker": "Como funciona",
+      "title": "Da vela em bruto a uma leitura que compreende.",
+      "subtitle": "A MIA lê o mercado como um analista estrutural e depois explica-lho em linguagem clara. Eis as quatro etapas — e, mais abaixo, o que cada demonstração desta página lhe mostra em condições reais.",
+      "steps": {
+        "marketStructure": {
+          "title": "1 · Estrutura do mercado",
+          "body": "O motor identifica as pegadas reais dos grandes fluxos: quebras de estrutura (BOS), mudanças de caráter (CHOCH), Order Blocks, Fair Value Gaps e retests. Nem indicadores empilhados, nem interpretação subjetiva."
+        },
+        "regimeVolatility": {
+          "title": "2 · Regime e volatilidade",
+          "body": "Qualifica a tendência, a maturidade do movimento e a amplitude média das velas — volatilidade normal ou elevada. O que é incerto é exibido como incerto, nunca ocultado."
+        },
+        "macroEvents": {
+          "title": "3 · Eventos macro",
+          "body": "Identifica as publicações de forte impacto por vir (FOMC, BCE, NFP…) e anuncia-te ela própria o provável alargamento da volatilidade — sabes o que esperar antes do anúncio, cabe-te a ti julgar."
+        },
+        "narratedChatbot": {
+          "title": "4 · Leitura narrada + chatbot",
+          "body": "Tudo é traduzido numa leitura clara e, em seguida, o M.I.A Agent responde às suas perguntas com esse contexto injetado. Explica, contextualiza — e recusa qualquer ordem de compra ou de venda."
+        }
+      },
+      "strengthsHeading": "O que as demonstrações provam",
+      "strengths": {
+        "multiAsset": {
+          "title": "Multiativos, multi-horizontes",
+          "proof": "Demo · Três leituras",
+          "body": "O mesmo rigor metodológico no ouro e no euro, de M15 a H4 — o BTC chega após validação do motor."
+        },
+        "contextChatbot": {
+          "title": "Um chatbot que tem o contexto",
+          "proof": "Demo · Conversas",
+          "body": "O M.I.A Agent conhece a leitura em curso: estrutura, regime, eventos. Divulga de forma acessível e recusa as perguntas que não deve responder."
+        },
+        "singleReading": {
+          "title": "Uma única leitura assumida",
+          "proof": "Demo · Antes / Depois",
+          "body": "Acabaram os três indicadores que se contradizem: um enquadramento único, um veredito descritivo, a incerteza sempre visível."
+        },
+        "honestByDesign": {
+          "title": "Honesta por conceção",
+          "proof": "Secção · Transparência",
+          "body": "Zero promessas de ganhos, zero sinais de trading — uma postura educativa que assumimos publicamente."
+        }
+      },
+      "seeDemo": "Ver a demonstração →"
+    }
+  },
+  "cookies": {
+    "title": "Cookies e privacidade",
+    "description": "Utilizamos cookies para fazer o site funcionar (necessários) e, mediante o seu consentimento, para memorizar as suas preferências, medir a audiência e melhorar o produto. Pode aceitar, recusar ou personalizar a qualquer momento.",
+    "necessaryLabel": "Necessários",
+    "necessaryDesc": "Indispensáveis ao funcionamento do site (preferência de tema, navegação). Sempre ativos.",
+    "functionalLabel": "Funcionais",
+    "functionalDesc": "Memorizam as suas preferências (idioma, secções expandidas, estado do chatbot).",
+    "analyticsLabel": "Analíticos",
+    "analyticsDesc": "Estatísticas de utilização anonimizadas para melhorar o produto (V2: Plausible self-hosted, sem transferência para fora da UE).",
+    "marketingLabel": "Marketing",
+    "marketingDesc": "Personalização de eventuais comunicações. Nenhuma ferramenta ativa na V1.",
+    "acceptAll": "Aceitar tudo",
+    "rejectAll": "Recusar tudo",
+    "customize": "Personalizar",
+    "save": "Guardar a minha escolha"
+  },
+  "scanner": {
+    "loading": "A carregar…",
+    "scanInProgress": "Análise em curso…",
+    "errorUnavailable": "O serviço de análise não está disponível neste ambiente.",
+    "errorGeneric": "A análise falhou.",
+    "retry": "Tentar novamente",
+    "editConditions": "Modificar as minhas condições",
+    "results": {
+      "title": "Condições presentes agora",
+      "rescan": "Reiniciar a análise",
+      "scanning": "A analisar…",
+      "analysisInProgress": "Análise em curso…",
+      "lastAnalysis": "Última análise: {when}",
+      "lastAnalysisNone": "Última análise: —",
+      "yourConditionsAll": "As suas condições (todas):",
+      "yourConditionsAny": "As suas condições (pelo menos uma):",
+      "noMarketsAll": "Nenhum mercado reúne atualmente todas as suas condições. As correspondências parciais abaixo mostram o que está presente noutros lados.",
+      "noMarketsAny": "Nenhum mercado reúne atualmente pelo menos uma das suas condições. As correspondências parciais abaixo mostram o que está presente noutros lados.",
+      "olderTitle": "Numa leitura mais antiga — a atualizar",
+      "olderBody": "Estes mercados reúnem as suas condições, mas numa leitura já datada (fim de semana ou mercado calmo). A análise atualiza-se no próximo fecho de vela, ou reinicie-a para a atualizar antes de confiar nela.",
+      "partialMatches": "Correspondências parciais ({count})",
+      "nonePresent": "Nenhuma das suas condições presente: {list}.",
+      "notGenerated": "Leitura ainda não gerada: {list}.",
+      "scannedFooter": "{count} combos analisados apenas em leitura, com base nas últimas leituras já produzidas."
+    },
+    "combo": {
+      "conditionsPresent": "{met} das suas {total, plural, one {# condição presente} other {# condições presentes}}",
+      "price": "Preço {price}",
+      "reading": "leitura {age}",
+      "fullContext": "Contexto completo",
+      "trend": "Tendência: {label}",
+      "obFvg": "{ob} OB · {fvg} FVG ativos",
+      "bosSuffix": " · BOS {dir}",
+      "importantNews": "{count, plural, one {# notícia importante a chegar — a ter em conta.} other {# notícias importantes a chegar — a ter em conta.}}",
+      "analyse": "Analisar",
+      "disclaimer": "Factos estruturais observados no presente. O scanner não prevê nada nem recomenda nada — o julgamento é seu.",
+      "unavailable": "indisponível"
+    },
+    "toggle": {
+      "label": "Atualização automática (a cada fecho)",
+      "aria": "Atualização automática a cada fecho de vela"
+    },
+    "builder": {
+      "composeTitle": "Componha as suas condições",
+      "editTitle": "Modificar as minhas condições",
+      "intro": "Escolha os factos estruturais <b>presentes</b> que compõem a sua leitura. O scanner mostra-lhe em que mercados e timeframes estão reunidos <b>neste momento</b>. É uma ferramenta de leitura: o julgamento é seu.",
+      "direction": "Direção",
+      "trend": "Tendência",
+      "phase": "Fase",
+      "volatility": "Volatilidade",
+      "inLast": "Nas",
+      "lastCandles": "últimas velas",
+      "combination": "Combinação:",
+      "logicAnd": "Todas (E)",
+      "logicOr": "Pelo menos uma (OU)",
+      "submitOnboarding": "Ver os mercados em questão",
+      "submitEdit": "Guardar e reiniciar",
+      "cancel": "Cancelar",
+      "selectAtLeastOne": "Selecione pelo menos uma condição.",
+      "proximityWithin": "A menos de",
+      "proximityOfPrice": "% do preço",
+      "side": "Lado"
+    },
+    "bias": {
+      "bullish": "De alta",
+      "bearish": "De baixa",
+      "ranging": "Range",
+      "neutral": "Neutro",
+      "unknown": "—"
+    },
+    "phase": {
+      "accumulation": "Acumulação",
+      "distribution": "Distribuição",
+      "trend": "Tendência",
+      "ranging": "Range",
+      "expansion": "Expansão",
+      "unknown": "—"
+    },
+    "age": {
+      "instant": "agora mesmo",
+      "min": "há {n} min",
+      "hours": "há {n} h",
+      "days": "há {n} d"
+    },
+    "options": {
+      "directionAny": "Qualquer direção",
+      "directionBullish": "De alta",
+      "directionBearish": "De baixa",
+      "trendBullish": "De alta",
+      "trendBearish": "De baixa",
+      "trendRanging": "Range",
+      "trendNeutral": "Neutra",
+      "phaseAccumulation": "Acumulação",
+      "phaseDistribution": "Distribuição",
+      "phaseTrend": "Tendência",
+      "phaseRanging": "Range",
+      "phaseExpansion": "Expansão",
+      "volatilityLow": "Baixa",
+      "volatilityNormal": "Normal",
+      "volatilityElevated": "Elevada",
+      "sideAny": "Ambos (SSL + BSL)",
+      "sideBsl": "BSL (liquidez acima)",
+      "sideSsl": "SSL (liquidez abaixo)"
+    },
+    "palette": {
+      "mtf_aligned_label": "3 TF alinhados",
+      "mtf_aligned_desc": "Os 3 timeframes (H4, H1, M15) apontam na mesma direção neste momento.",
+      "trend_is_label": "Tendência atual",
+      "trend_is_desc": "A tendência observada neste timeframe é, neste momento, a que escolheu.",
+      "market_phase_is_label": "Fase de mercado",
+      "market_phase_is_desc": "A fase de mercado observada corresponde, neste momento, à que escolheu.",
+      "volatility_is_label": "Volatilidade observada",
+      "volatility_is_desc": "A volatilidade observada neste momento corresponde ao nível escolhido.",
+      "price_in_ob_label": "Preço num Order Block",
+      "price_in_ob_desc": "O preço atual situa-se no interior de um Order Block ativo.",
+      "price_in_fvg_label": "Preço num Fair Value Gap",
+      "price_in_fvg_desc": "O preço atual situa-se no interior de um Fair Value Gap por preencher.",
+      "ob_fvg_confluence_label": "Confluência OB + FVG no preço atual",
+      "ob_fvg_confluence_desc": "O preço atual situa-se simultaneamente num Order Block ativo e num Fair Value Gap por preencher.",
+      "bos_recent_confirmed_label": "BOS confirmado recente",
+      "bos_recent_confirmed_desc": "Uma quebra de estrutura (BOS) confirmada está datada das últimas velas.",
+      "choch_recent_confirmed_label": "CHOCH confirmado recente",
+      "choch_recent_confirmed_desc": "Uma mudança de carácter (CHOCH) confirmada está datada das últimas velas.",
+      "retest_in_progress_label": "Reteste em curso",
+      "retest_in_progress_desc": "Um reteste de um nível (BOS, CHOCH, OB ou FVG) está em curso neste momento.",
+      "price_near_ob_label": "Preço perto de um Order Block",
+      "price_near_ob_desc": "O preço atual está perto de um Order Block ativo (abaixo da distância escolhida), sem estar necessariamente dentro dele.",
+      "price_near_fvg_label": "Preço perto de um Fair Value Gap",
+      "price_near_fvg_desc": "O preço atual está perto de um Fair Value Gap não preenchido (abaixo da distância escolhida).",
+      "price_near_liquidity_label": "Preço perto de uma liquidez (SSL/BSL)",
+      "price_near_liquidity_desc": "O preço atual está perto de uma bolsa de liquidez intacta (BSL acima / SSL abaixo).",
+      "liquidity_swept_recent_label": "Recolha de liquidez recente",
+      "liquidity_swept_recent_desc": "Uma bolsa de liquidez (SSL/BSL) foi varrida ao longo das últimas velas."
+    },
+    "saveStrategy": {
+      "prompt": "Guardar esta combinação como estratégia nomeada (apenas neste dispositivo — nada é enviado para o servidor):",
+      "placeholder": "ex. London sweep M15",
+      "nameAria": "Nome da estratégia",
+      "save": "Guardar a estratégia",
+      "saved": "Estratégia «{name}» guardada neste dispositivo.",
+      "saveFailed": "Não foi possível guardar."
+    },
+    "strategyPanel": {
+      "title": "As minhas estratégias",
+      "subtitle": "Guardadas apenas neste dispositivo — nada é enviado para o servidor.",
+      "invalid": "Inválida",
+      "meta": "{count, plural, one {# condição} other {# condições}} · {logic} · usada a {when}",
+      "logicAnd": "E",
+      "logicOr": "OU",
+      "newNameAria": "Novo nome",
+      "ok": "OK",
+      "cancel": "Cancelar",
+      "load": "Carregar",
+      "loadDisabledTitle": "Esta estratégia contém elementos fora do esquema atual — não pode ser reexecutada.",
+      "rename": "Renomear",
+      "duplicate": "Duplicar",
+      "confirmDelete": "Confirmar a eliminação",
+      "keep": "Manter",
+      "delete": "Eliminar",
+      "errors": {
+        "name_required": "O nome não pode estar vazio.",
+        "limit_reached": "Limite de estratégias atingido — elimine uma estratégia existente para criar uma nova.",
+        "not_found": "Estratégia não encontrada.",
+        "storage_failed": "Não foi possível escrever no armazenamento local (quota ou navegação privada). Nada foi guardado."
+      }
+    }
+  },
+  "reading": {
+    "card": {
+      "phaseTitle": "Fase de mercado",
+      "phaseAria": "Fase de mercado observada",
+      "askChatbot": "Perguntar ao M.I.A Agent",
+      "askChatbotAria": "Abrir o chatbot para colocar uma questão contextual"
+    },
+    "temporal": {
+      "candleClosed": "Vela fechada {rel}",
+      "dailyChangeAria": "Variação do dia {pct}"
+    },
+    "events": {
+      "title": "Contexto de eventos",
+      "imminent": "Iminente",
+      "empty": "Nenhum evento relevante nas proximidades desta leitura.",
+      "upcoming": "Por vir",
+      "justPublished": "Publicado recentemente",
+      "recentTriggers": "Desencadeadores técnicos recentes"
+    },
+    "time": {
+      "instant": "agora mesmo",
+      "relativePast": "há {n, plural, one {# minuto} other {# minutos}}",
+      "relativePastHours": "há {n, plural, one {# hora} other {# horas}}",
+      "relativePastDays": "há {n, plural, one {# dia} other {# dias}}",
+      "toEventImminent": "iminente",
+      "toEventMin": "em {n} min",
+      "toEventHours": "em {h}h",
+      "toEventHoursMin": "em {h}h{mm}",
+      "toEventDays": "em {d}d",
+      "toEventDaysHours": "em {d}d{h}h",
+      "agoMin": "há {n} min",
+      "agoHours": "há {h}h",
+      "agoHoursMin": "há {h}h{mm}"
+    },
+    "labels": {
+      "instrument_XAUUSD": "Ouro (XAU/USD)",
+      "instrument_EURUSD": "Euro / Dólar (EUR/USD)",
+      "instrument_BTCUSD": "Bitcoin (BTC/USD)",
+      "instrument_US500": "S&P 500 (US500)",
+      "instrument_GBPUSD": "Libra / Dólar (GBP/USD)",
+      "instrument_USDJPY": "Dólar / Iene (USD/JPY)",
+      "timeframe_M1": "1 minuto",
+      "timeframe_M5": "5 minutos",
+      "timeframe_M15": "15 minutos",
+      "timeframe_M30": "30 minutos",
+      "timeframe_H1": "1 hora",
+      "timeframe_H4": "4 horas",
+      "timeframe_D1": "1 dia",
+      "timeframe_W1": "1 semana",
+      "trend_bullish": "Tendência de alta",
+      "trend_bearish": "Tendência de baixa",
+      "trend_neutral": "Tendência neutra",
+      "trend_ranging": "Mercado em range",
+      "volatility_low": "Volatilidade baixa",
+      "volatility_normal": "Volatilidade normal",
+      "volatility_elevated": "Volatilidade elevada",
+      "marketPhase_accumulation": "Fase de acumulação",
+      "marketPhase_distribution": "Fase de distribuição",
+      "marketPhase_trend": "Fase de tendência",
+      "marketPhase_ranging": "Fase de range",
+      "marketPhase_expansion": "Fase de expansão",
+      "impact_low": "Impacto reduzido",
+      "impact_medium": "Impacto médio",
+      "impact_high": "Impacto forte",
+      "surprise_beat": "acima do consenso",
+      "surprise_miss": "abaixo do consenso",
+      "surprise_in_line": "em linha com o consenso",
+      "direction_bullish": "de alta",
+      "direction_bearish": "de baixa",
+      "triggerEvent_bos": "Quebra de estrutura",
+      "triggerEvent_choch": "Mudança de carácter",
+      "triggerEvent_ob": "Mitigação de Order Block",
+      "triggerEvent_fvg": "Preenchimento de Fair Value Gap",
+      "triggerEvent_retest": "Reteste",
+      "marketPhaseShort_accumulation": "Acumulação",
+      "marketPhaseShort_distribution": "Distribuição",
+      "marketPhaseShort_trend": "Tendência",
+      "marketPhaseShort_ranging": "Range",
+      "marketPhaseShort_expansion": "Expansão",
+      "validation_confirmed": "confirmado",
+      "validation_pending": "a aguardar confirmação",
+      "validation_invalidated": "invalidado",
+      "trendAdj_bullish": "de alta",
+      "trendAdj_bearish": "de baixa",
+      "trendAdj_neutral": "neutro",
+      "trendAdj_ranging": "em range",
+      "orient_bullish": "de alta",
+      "orient_bearish": "de baixa",
+      "alignedDir_up": "de alta",
+      "alignedDir_down": "de baixa",
+      "validationFem_confirmed": "confirmada",
+      "validationFem_pending": "a aguardar confirmação",
+      "validationFem_invalidated": "invalidada",
+      "obStatus_active": "ativo",
+      "obStatus_mitigated": "mitigado",
+      "obStatus_invalidated": "invalidado",
+      "obImportance_low": "baixa",
+      "obImportance_medium": "média",
+      "obImportance_high": "alta",
+      "fvgStatus_active": "ativo",
+      "fvgStatus_partially_filled": "parcialmente preenchido",
+      "fvgStatus_filled": "preenchido",
+      "retestType_bos_retest": "retest de rutura (BOS)",
+      "retestType_choch_retest": "retest de mudança de carácter (CHOCH)",
+      "retestType_ob_retest": "retest de Order Block",
+      "retestType_fvg_retest": "retest de Fair Value Gap",
+      "liquidityKind_equal_highs": "máximos iguais",
+      "liquidityKind_equal_lows": "mínimos iguais",
+      "liquidityKind_range_high": "extremo superior do range",
+      "liquidityKind_range_low": "extremo inferior do range",
+      "liquidityStatus_intact": "intacta",
+      "liquidityStatus_swept": "varrida",
+      "liquidityStatus_broken": "quebrada"
+    },
+    "structure": {
+      "title": "Estrutura de mercado",
+      "intro": "Estruturas descritas no presente: apresentadas enquanto permanecem verificáveis, retiradas assim que forem retomadas ou invalidadas. As zonas Order Block e Fair Value Gap são indicadas na sua formação.",
+      "empty": "Nenhum elemento estrutural relevante na última vela.",
+      "bosLabel": "Rutura de estrutura (BOS)",
+      "chochLabel": "Mudança de carácter (CHOCH)",
+      "obLabel": "Order Blocks",
+      "fvgLabel": "Fair Value Gaps",
+      "liquidityLabel": "Liquidez externa (BSL / SSL)",
+      "retestLabel": "Retest em curso",
+      "bosNone": "nenhuma rutura recente",
+      "bosRetest": "rutura anterior em curso de retest ({price})",
+      "chochNone": "nenhuma mudança recente",
+      "chochRetest": "mudança anterior em curso de retest ({price})",
+      "obEmpty": "nenhum bloco significativo",
+      "fvgEmpty": "nenhuma zona detetada",
+      "liquidityEmpty": "nenhuma bolsa de liquidez detetada",
+      "retestNone": "nenhum retest em curso",
+      "obItem": "{band} · {status}",
+      "footer": "Leitura descritiva — uma invalidação estrutural é um facto de mercado, não um stop-loss imposto.",
+      "voirMoins": "▴ ver menos",
+      "voirPlus": "▾ ver mais ({n, plural, one {# zona} other {# zonas}})",
+      "locateZone": "Localizar esta zona no gráfico"
+    },
+    "regime": {
+      "title": "Regime de mercado",
+      "phaseLabel": "Fase: {label}",
+      "structuralState": "Estado estrutural atual",
+      "factMaturity": "Maturidade da tendência",
+      "factLastEvent": "Último evento",
+      "factZones": "Zonas ativas",
+      "unavailable": "não disponível",
+      "mtfTitle": "Alinhamento multi-timeframe",
+      "mtfLoading": "A ler os timeframes…",
+      "mtfUnavailable": "Alinhamento multi-timeframe indisponível.",
+      "disagreementTitle": "Desacordo multi-timeframe",
+      "disclaimer": "Estes factos descrevem o estado observado do mercado neste momento. Não constituem uma instrução dirigida ao trader.",
+      "maturity": "Estrutura orientada {orient} desde o CHOCH{when}{bars}.",
+      "maturityWhen": " de {ts}",
+      "maturityBars": " (≈ {n, plural, one {# vela} other {# velas}} {tf})",
+      "breakTimestamp": "{day}/{month} às {hh}:{mm}",
+      "lastEvent": "{kind} {dir} {val} ({tf})",
+      "zoneDensity": "{ob} OB · {fvg} FVG ativos",
+      "mtfAligned": "Os {count} TF estão alinhados ({dir}).",
+      "mtfNeutral": "Os {count} TF são neutros.",
+      "mtfPullback": "M15 recua contra a tendência H4 {fem}.",
+      "mtfDivergent": "Os TF divergem: {list}."
+    },
+    "conditions": {
+      "title": "Leitura narrada",
+      "sourceGenerated": "Narração gerada",
+      "sourceFallback": "Leitura modelo (alternativa)"
+    },
+    "tags": {
+      "trend": "Tendência estabelecida",
+      "trending": "Tendência estabelecida",
+      "ranging": "Mercado em range",
+      "quiet": "Mercado calmo",
+      "expansion": "Expansão",
+      "accumulation": "Acumulação",
+      "distribution": "Distribuição",
+      "low_vol": "Volatilidade baixa",
+      "high_vol": "Volatilidade elevada",
+      "normal_vol": "Volatilidade normal",
+      "bos_confirmed": "Quebra confirmada",
+      "bos_pending": "Quebra pendente",
+      "choch_confirmed": "Mudança de carácter confirmada",
+      "choch_pending": "Mudança de carácter pendente",
+      "retest_active": "Reteste em curso",
+      "retest_awaiting": "Reteste previsto",
+      "ob_active": "Order Block ativo",
+      "fvg_active": "Fair Value Gap ativo",
+      "trend_bullish": "Tendência de alta",
+      "trend_bearish": "Tendência de baixa",
+      "trend_neutral": "Tendência neutra",
+      "trend_ranging": "Mercado em range",
+      "volatility_low": "Volatilidade baixa",
+      "volatility_normal": "Volatilidade normal",
+      "volatility_elevated": "Volatilidade elevada",
+      "phase_accumulation": "Fase de acumulação",
+      "phase_distribution": "Fase de distribuição",
+      "phase_trend": "Fase de tendência",
+      "phase_ranging": "Fase de range",
+      "phase_expansion": "Fase de expansão",
+      "bos_recent_bullish": "Quebra de alta recente",
+      "bos_recent_bearish": "Quebra de baixa recente",
+      "choch_recent_bullish": "Mudança de carácter de alta",
+      "choch_recent_bearish": "Mudança de carácter de baixa",
+      "retest_in_progress": "Reteste em curso",
+      "mtf_aligned": "Timeframes alinhados",
+      "mtf_divergent": "Timeframes divergentes",
+      "mtf_mixed": "Timeframes mistos"
+    }
+  },
+  "disclaimer": {
+    "short": "Análise algorítmica educativa. Não é aconselhamento de investimento.",
+    "long": "A MIA Markets produz análises editoriais contextuais, não recomendações personalizadas."
+  },
+  "glossary": {
+    "title": "Glossário",
+    "subtitle": "Os termos técnicos das nossas leituras, explicados de forma simples — detalhados na página de Metodologia."
+  },
+  "pricing": {
+    "title": "Preços simples e transparentes",
+    "subtitle": "Sem cartão no plano Découverte.",
+    "free_title": "Découverte",
+    "approfondie_title": "Approfondie",
+    "integrale_title": "Intégrale",
+    "billed_monthly": "/mês",
+    "cta_signup": "Começar",
+    "cta_contact": "Contacte-nos"
+  },
+  "chat": {
+    "title": "Chat IA",
+    "placeholder": "Faça uma pergunta sobre o mercado XAU...",
+    "send": "Enviar",
+    "sources_label": "Fontes citadas",
+    "panelContext": "{instrument} · {timeframe} · contexto injetado",
+    "panelNoContext": "Selecione uma leitura para abrir o contexto.",
+    "panelTagline": "Análise pedagógica — nenhum sinal nem conselho.",
+    "reset": "Reiniciar a conversa",
+    "complianceLine": "O M.I.A Agent responde a perguntas sobre a leitura algorítmica. Não dá sinais de trading nem recomendações personalizadas.",
+    "introHeader": "M.I.A Agent · {instrument}",
+    "introBody": "Faça-me uma pergunta sobre esta leitura. Posso explicar-lhe o que ela descreve, simplificar um termo técnico ou contextualizar um evento futuro.",
+    "introOffline": "Modo scripted: use as sugestões abaixo. A entrada livre requer a chave Anthropic do lado do servidor.",
+    "introDisclaimer": "Não dou sinais de compra ou venda, nem conselhos de investimento.",
+    "allSuggestionsAsked": "Todas as perguntas sugeridas foram feitas. A entrada livre chega em breve — por agora, feche e reabra o chat para reiniciar a sequência.",
+    "suggestedLabel": "Perguntas sugeridas",
+    "inputPlaceholder": "Faça uma pergunta ao M.I.A Agent…",
+    "inputPlaceholderOffline": "O LLM em direto não está configurado — use as perguntas sugeridas.",
+    "inputAria": "Pergunta livre para o M.I.A Agent",
+    "sendAria": "Enviar a pergunta",
+    "sendLoadingAria": "Resposta em curso…",
+    "inputHint": "Enter para enviar · Shift+Enter para uma quebra de linha",
+    "viewUpdated": "Vista atualizada",
+    "redirectLabel": "Pergunta reenquadrada",
+    "redirectAria": "Porque é que esta resposta foi reenquadrada",
+    "redirectTooltip": "A MIA Markets descreve as condições de mercado. Para as perguntas de ação ou de conselho, a decisão é sua, segundo os seus próprios critérios.",
+    "copy": "Copiar",
+    "copied": "Copiado",
+    "copyAria": "Copiar a resposta",
+    "copiedAria": "Resposta copiada",
+    "thinking": "O M.I.A Agent está a pensar…",
+    "turnUnavailable": "O modo chatbot em direto não está disponível neste ambiente de momento. Use as perguntas sugeridas abaixo — devolvem respostas contextualizadas sobre esta leitura.",
+    "turnError": "Lamento, um erro impediu a resposta: {message} Tente novamente ou use uma pergunta sugerida.",
+    "unknownError": "Erro desconhecido"
+  },
+  "footer": {
+    "description": "Indicador de mercado conversacional. Postura educativa, compreensão aumentada do mercado — não uma performance financeira prometida.",
+    "earlyAccessBadge": "Acesso antecipado · 50 lugares",
+    "productHeading": "Produto",
+    "legalHeading": "Legal",
+    "product": {
+      "multiAsset": "Multiativo",
+      "chatbot": "Chatbot M.I.A Agent",
+      "beforeAfter": "Antes / Depois",
+      "transparency": "Transparência",
+      "methodology": "Metodologia",
+      "attributions": "Atribuições",
+      "pricing": "Preços",
+      "faq": "FAQ"
+    },
+    "legal": {
+      "terms": "Condições de utilização",
+      "privacy": "Privacidade",
+      "contact": "Contacto"
+    },
+    "disclaimer": "Demonstração em acesso antecipado · Leitura algorítmica educativa · Não constitui um sinal de trading nem aconselhamento de investimento personalizado · Desempenhos passados não são indicativos de resultados futuros · O trading alavancado comporta um elevado risco de perda.",
+    "copyright": "© {year} MIA Markets — todos os direitos reservados."
+  },
+  "auth": {
+    "login": {
+      "identifierLabel": "Nome de utilizador ou e-mail",
+      "passwordLabel": "Palavra-passe",
+      "forgotPassword": "Esqueceu-se da palavra-passe?",
+      "submit": "Iniciar sessão",
+      "submitting": "A iniciar sessão…",
+      "noAccount": "Ainda não tem conta?",
+      "createAccount": "Criar uma conta",
+      "errorGeneric": "Não foi possível iniciar sessão. Tente novamente."
+    },
+    "register": {
+      "usernameLabel": "Nome de utilizador",
+      "usernameHint": "3 a 32 caracteres.",
+      "emailLabel": "Endereço de e-mail",
+      "passwordLabel": "Palavra-passe",
+      "passwordHint": "Pelo menos 10 caracteres.",
+      "declarationsLegend": "Declarações obrigatórias",
+      "ageLabel": "Declaro ter 18 anos ou mais.",
+      "acceptTerms": "Aceito os <link>Termos de Utilização</link>.",
+      "acceptPrivacy": "Aceito a <link>Política de Privacidade</link>.",
+      "submit": "Criar a minha conta",
+      "submitting": "A criar…",
+      "haveAccount": "Já tem conta?",
+      "login": "Iniciar sessão",
+      "errorAge": "Tem de declarar que tem 18 anos ou mais.",
+      "errorConsents": "Tem de aceitar os Termos de Utilização e a Política de Privacidade.",
+      "closedTitle": "Inscrições encerradas",
+      "closedBody": "O acesso está reservado às contas de testador convidadas durante a beta privada.",
+      "errorGeneric": "Não foi possível concluir o registo. Tente novamente."
+    },
+    "resetConfirm": {
+      "intro": "Escolhe uma nova palavra-passe (pelo menos 10 caracteres).",
+      "passwordLabel": "Nova palavra-passe",
+      "submit": "Repor palavra-passe",
+      "submitting": "A repor…",
+      "success": "Palavra-passe reposta. Já podes iniciar sessão.",
+      "errorGeneric": "Não foi possível repor. O link pode ter expirado.",
+      "missingToken": "Link inválido ou incompleto. Solicita uma nova reposição."
+    },
+    "forgot": {
+      "intro": "Indique o seu nome de utilizador ou o seu e-mail. Se existir uma conta correspondente, ser-lhe-á enviado um link de reposição.",
+      "identifierLabel": "Nome de utilizador ou e-mail",
+      "submit": "Enviar o link",
+      "submitting": "A enviar…",
+      "backToLogin": "Voltar ao início de sessão",
+      "errorGeneric": "Não foi possível concluir o pedido. Tente novamente."
+    },
+    "account": {
+      "loading": "A carregar…",
+      "ownerBadge": "Proprietário",
+      "editEmailTitle": "Alterar o meu e-mail",
+      "emailLabel": "Endereço de e-mail",
+      "save": "Guardar",
+      "saving": "A guardar…",
+      "emailUpdated": "Endereço de e-mail atualizado.",
+      "updateError": "Não foi possível atualizar.",
+      "consentsTitle": "Consentimentos registados",
+      "noConsents": "Nenhum consentimento registado.",
+      "sessionError": "Não foi possível verificar a tua sessão. Verifica a ligação e tenta novamente.",
+      "retry": "Tentar novamente",
+      "docTerms": "Termos de Utilização",
+      "docPrivacy": "Privacidade",
+      "consentMeta": "v{version} · {date}",
+      "seeDocs": "Consulte os <terms>Termos</terms> e a <privacy>Política de Privacidade</privacy>.",
+      "logout": "Terminar sessão"
+    }
+  },
+  "billing": {
+    "title": "Subscrição",
+    "intro": "Faça a gestão da sua subscrição MIA Markets. Os pagamentos são processados de forma segura pela Stripe — nenhum dado de cartão é armazenado por nós.",
+    "loading": "A carregar…",
+    "checkoutSuccess": "Obrigado! O seu pagamento foi registado. A subscrição ativa-se assim que a Stripe o confirmar.",
+    "checkoutCancel": "Pagamento cancelado. Pode tentar novamente quando quiser.",
+    "ownerBadge": "Proprietário — acesso completo sem subscrição",
+    "currentStateTitle": "Estado atual",
+    "endsOn": "Termina a {date}",
+    "renewsOn": "Renovação a {date}",
+    "manage": "Gerir a minha subscrição",
+    "choosePlanTitle": "Escolher um plano",
+    "noPlans": "Nenhum plano está disponível de momento.",
+      "planMonthly": "Mensal — 49,99 $ / mês",
+      "planAnnual": "Anual — 39,99 $ / mês (faturado anualmente)",
+    "subscribe": "Subscrever",
+    "errorLoad": "Não foi possível carregar a subscrição.",
+    "errorCheckout": "Não foi possível iniciar o pagamento.",
+    "errorPortal": "Não foi possível abrir o portal de gestão.",
+    "status": {
+      "active": "Subscrição ativa",
+      "trialing": "Período de avaliação em curso",
+      "pastDue": "Pagamento pendente",
+      "canceled": "Subscrição cancelada",
+      "none": "Nenhuma subscrição"
+    }
+  },
+  "access": {
+    "paywall": {
+      "regionAria": "Conteúdo reservado a subscritores",
+      "defaultTitle": "Reservado a subscritores",
+      "defaultDescription": "Passe à subscrição para desbloquear esta funcionalidade.",
+      "seePlans": "Ver as subscrições",
+      "haveAccount": "Já tenho conta — iniciar sessão"
+    },
+    "gate": {
+      "loading": "A carregar…"
+    }
+  },
+  "app": {
+    "header": {
+      "brandAria": "MIA Markets — espaço de leitura",
+      "navApp": "App — espaço de leitura",
+      "navZones": "Zonas — ciclo de vida das zonas detetadas",
+      "navScanner": "Scanner de condições",
+      "navHelp": "Ajuda — metodologia e glossário",
+      "planBadge": "Acesso livre"
+    },
+    "staleFocus": {
+      "message": "Esta zona já não é detetada — é apresentada a leitura atual do mercado.",
+      "dismiss": "Fechar esta mensagem"
+    },
+    "sidebar": {
+      "navAria": "Combinações disponíveis",
+      "markets": "Mercados",
+      "searchPlaceholder": "Procurar um mercado…",
+      "searchAria": "Procurar um mercado (instrumento ou timeframe)",
+      "pinned": "Fixados",
+      "noResults": "Nenhum mercado corresponde a «{query}».",
+      "pin": "Fixar",
+      "unpin": "Desafixar",
+      "pinAria": "Fixar {combo}",
+      "unpinAria": "Desafixar {combo}"
+    },
+    "mobile": {
+      "workspaceTitle": "Espaço de leitura",
+      "tabMarkets": "Mercados",
+      "tabReading": "Leitura",
+      "tabChat": "Chat"
+    },
+    "column": {
+      "sectionAria": "Leitura de mercado",
+      "refreshing": "A atualizar…"
+    },
+    "account": {
+      "menuAria": "Menu da conta",
+      "panelAria": "Conta",
+      "myAccount": "A minha conta",
+      "subscription": "Subscrição",
+      "login": "Iniciar sessão",
+      "signup": "Criar uma conta",
+      "language": "Idioma",
+      "site": "O site",
+      "honesty": "Honestidade",
+      "logout": "Terminar sessão"
+    },
+    "chat": {
+      "asideAria": "Assistente M.I.A Agent",
+      "statusOnline": "online",
+      "statusOffline": "modo offline",
+      "pickComboPrompt": "Selecione uma combinação para discutir a sua leitura.",
+      "pedagogicalNote": "Análise pedagógica — nenhum sinal nem conselho.",
+      "discussions": "Discussões",
+      "reset": "Reiniciar",
+      "recentDiscussions": "Discussões recentes",
+      "starter_structure": "Decomponha a estrutura atual",
+      "starter_choch": "O que é um CHOCH?",
+      "starter_order-blocks": "Mostre-me os Order Blocks ativos",
+      "welcomeTitleActive": "Como posso ajudá-lo a ler o mercado?",
+      "welcomeTitleIdle": "Escolha um mercado para começar",
+      "welcomeSubtitleActive": "Faça uma pergunta sobre a leitura em curso: decomponha a estrutura, simplifique um termo ou contextualize um evento futuro.",
+      "welcomeSubtitleIdle": "Selecione um mercado à esquerda e depois faça-me uma pergunta sobre a sua leitura.",
+      "offlineNote": "Modo offline: a entrada livre requer a chave Anthropic do lado do servidor.",
+      "complianceLine": "O M.I.A Agent responde a perguntas sobre a leitura algorítmica. Não dá sinais de trading nem recomendações personalizadas."
+    },
+    "placeholders": {
+      "emptyReading": "Selecione uma combinação à esquerda para apresentar a sua leitura de mercado.",
+      "errorUnavailable": "O serviço de leitura não está disponível neste ambiente de momento.",
+      "errorValidation": "Esta combinação instrumento / timeframe não é suportada.",
+      "errorGeneric": "Não foi possível obter a leitura. Tente novamente dentro de instantes.",
+      "dataUnavailableTitle": "Dados indisponíveis",
+      "retry": "Tentar novamente",
+      "chartUnavailableTitle": "Gráfico indisponível",
+      "chartUnavailableBody": "O fluxo de velas não está ligado para esta combinação. A leitura abaixo permanece disponível."
+    },
+    "chart": {
+      "canvasAria": "Gráfico de velas {instrument} com zonas Order Block, Fair Value Gap, níveis de rutura e bolsas de liquidez externa (BSL/SSL)",
+      "deselectZoneAria": "Anular a seleção desta zona",
+      "deselectZoneTitle": "Clique para anular a seleção",
+      "inTest": "em teste",
+      "inTestTitle": "Order Block em teste — provisório, intravela (confirmado apenas ao fecho)",
+      "touched": "tocada",
+      "touchedTitle": "Zona já tocada mas não invalidada — ainda seguida pelo motor (ainda em jogo)",
+      "fvgFillLive": "preenchimento live",
+      "fvgFillTitle": "Preenchimento do FVG em curso — provisório, intravela (confirmado apenas ao fecho)",
+      "liqSwept": "recolhida",
+      "liqBroken": "rompida",
+      "liveBadge": "EM DIRETO · provisório",
+      "liveBadgeTitle": "Interação de zonas EM DIRETO (provisória, intravela). As ruturas BOS/CHOCH e as invalidações só são confirmadas ao fecho da vela.",
+      "zoomIn": "Aproximar",
+      "zoomOut": "Afastar",
+      "fit": "Ajustar o gráfico",
+      "liqShowAll": "Mostrar todas as bolsas de liquidez (intactas, recolhidas, rompidas)",
+      "liqShowIntactOnly": "Mostrar apenas as bolsas de liquidez intactas",
+      "marketClosed": "Mercado fechado",
+      "marketClosedTitle": "O mercado está fechado no momento: o gráfico mostra a última vela fechada e não reflete uma cotação ao vivo."
+    }
+  },
+  "samples": {
+    "_comment": "Landing demo MarketReading prose (conditions.description, event potential_effect_description) is intentionally NOT keyed here yet: it lives on the MarketReading data contract in lib/market-reading/fixtures.ts and renders through the SHARED MarketReadingCard sections (ConditionsSection/EventsSection) that are also consumed by the off-limits app/zones/scanner surfaces. Localizing it cleanly requires a data-contract change touching forbidden files, so it is deferred. See report."
+  },
+  "chatbot": {
+    "_comment": "French source-of-truth mirror of mocks/chatbot_responses.json + the code FALLBACK_SCRIPT. Consumers resolve these via useChatbotScriptGetter/useChatbotScriptOrFallback in lib/chatbot.ts, keyed by scriptKey (SCRIPT_KEY_BY_ID) then question id. Numeric/enum reading fields stay localized downstream by useReadingFormatters. The buy-or-not / donc-je-dois-vendre compliance refusals are LEGALLY LOAD-BEARING — keep verbatim.",
+    "scripts": {
+      "xauM15": {
+        "instrumentLabel": "XAU/USD",
+        "questions": {
+          "why-this-score": {
+            "text": "O que é que esta leitura me diz?",
+            "reply": "Esta leitura descreve um mercado tendencialmente de alta. O preço ultrapassou um máximo recente (uma rutura de estrutura) e depois voltou a testar o nível ultrapassado antes de ressaltar: é a isto que se chama um retest. Há também uma zona de desequilíbrio deixada por um movimento rápido (um Fair Value Gap) entre 2378 e 2381, ainda não preenchida, e um Order Block ativo logo abaixo. O contexto geral é uma tendência de alta, com uma volatilidade (a amplitude média das velas) que se manteve normal. Nada disto é uma instrução: é uma fotografia da estrutura atual, faça dela o que quiser."
+          },
+          "armed-retest": {
+            "text": "O que é um retest?",
+            "reply": "Quando o preço rompe um máximo ou um mínimo, volta muitas vezes a tocar o nível rompido antes de arrancar: essa «visita» chama-se um retest. A leitura acompanha o estado desse retest: ou nenhuma rutura ocorreu, ou a rutura está feita e aguarda-se o regresso do preço, ou o preço voltou a tocar o nível e aguentou, ou atravessou-o no sentido inverso e a zona já não aguenta. É um marco de estrutura frequentemente observado, mas frequentemente observado não quer dizer certo: é uma descrição do mercado, não uma instrução de entrada."
+          },
+          "fomc-impact": {
+            "text": "O FOMC muda o quê?",
+            "reply": "As atas do FOMC são publicadas dentro de cerca de 18 horas. É um evento de forte impacto para o ouro: historicamente, o ouro move-se muito mais do que o habitual na janela em torno da publicação (de 30 min antes a 1 h depois). Concretamente, duas coisas: (1) qualquer posição aberta agora atravessará o evento, (2) a MIA identifica o prazo e anuncia-lhe com antecedência o provável alargamento da volatilidade em torno da publicação — cabe-lhe a si tê-lo em conta. Para antecipar o sentido do movimento seria preciso cruzar com as expectativas do mercado — o que o motor ainda não faz."
+          },
+          "historical-comparison": {
+            "text": "A que é que isto se parece historicamente?",
+            "reply": "Prefiro ser franco: os nossos testes de fiabilidade sobre dados passados ainda não estão terminados. Em vez de lhe citar números de desempenho não validados, não lhe dou qualquer rendibilidade, taxa de sucesso nem estatística enquanto a validação não estiver concluída. O que lhe posso dizer hoje: existem 7 anos de dados históricos limpos e um método de descrição transparente, detalhado na nossa página Metodologia. A transparência antes da promessa — é precisamente o que distingue a MIA Markets."
+          },
+          "buy-or-not": {
+            "text": "Então devo comprar?",
+            "reply": "Não, não dou qualquer instrução de compra, de venda ou de timing. O meu papel é descrever a estrutura do mercado e ajudá-lo a compreendê-la — não decidir por si. O que posso descrever: há uma rutura de alta confirmada, um retest que aguenta em torno de 2378-2381, uma invalidação desta estrutura se o preço voltar claramente para baixo de 2378, e um evento macro dentro de 18 horas que pode mexer com tudo. O que só você pode decidir: se a sua gestão do risco, o seu horizonte e a sua alocação justificam uma posição. A MIA Markets é uma ferramenta de compreensão, não um serviço de sinais."
+          }
+        }
+      },
+      "eurH1": {
+        "instrumentLabel": "EUR/USD",
+        "questions": {
+          "why-this-score": {
+            "text": "O que é que esta leitura me diz?",
+            "reply": "Esta leitura descreve um mercado pouco legível por agora. Houve de facto uma rutura de baixa, mas o preço ainda não voltou a testá-la: enquanto esse retest não tiver ocorrido, a estrutura permanece frágil. A zona de desequilíbrio (Fair Value Gap) é modesta, e o mercado evolui sobretudo num range de baixa volatilidade — sem tendência nítida. Notícias tendencialmente de baixa pesam um pouco no mesmo sentido. Em resumo: poucos elementos alinhados, portanto uma leitura prudente e uma incerteza apresentada mais ampla do que o habitual."
+          },
+          "armed-retest": {
+            "text": "E o retest, onde está nesta leitura?",
+            "reply": "Ainda é aguardado. A rutura de baixa a 1.08750 ocorreu há 4 velas em 1 hora, mas o preço ainda não subiu para tocar o nível rompido. As zonas a vigiar são 1.0860-1.0868 (Fair Value Gap) e 1.0870-1.0885 (Order Block). Enquanto esse regresso não tiver ocorrido, a leitura permanece frágil: muitas ruturas sem retest revelam-se falsas ruturas. É uma descrição da estrutura, não um convite para se posicionar."
+          },
+          "event-impact": {
+            "text": "O BCE dentro de 3 horas muda o quê?",
+            "reply": "Muito. A decisão do BCE é um evento de impacto muito forte para o EUR/USD: a volatilidade (a amplitude das velas) dispara tipicamente na janela em torno do anúncio. A MIA identifica o prazo e anuncia-lhe com antecedência este provável alargamento da volatilidade. Qualquer posição aberta agora atravessará integralmente a decisão — é exatamente o tipo de contexto em que a estrutura atual, já frágil (retest ainda não realizado), se torna ainda mais incerta."
+          },
+          "historical-comparison": {
+            "text": "Em casos semelhantes, o que é que se passa?",
+            "reply": "Os nossos testes de fiabilidade sobre dados passados ainda estão em curso. Não lhe citarei, portanto, qualquer rendibilidade, taxa de sucesso nem estatística enquanto a validação não estiver terminada. O que posso descrever estruturalmente: esta leitura combina vários elementos fracos (retest não realizado, mercado em range, decisão do BCE iminente). É tipicamente uma configuração em que a leitura permanece prudente. A transparência antes da promessa."
+          },
+          "buy-or-not": {
+            "text": "Então devo vender?",
+            "reply": "Não, e vou ser ainda mais claro do que o habitual: nesta leitura, muitos elementos são incertos (retest não realizado, mercado em range, incerteza ampla, decisão do BCE dentro de 3 horas). Há muitas razões técnicas para permanecer prudente. Mas não sou eu que devo tomar essa decisão — cabe-lhe a si cruzar a sua gestão do risco, a sua tolerância aos movimentos de evento, a sua leitura do contexto fundamental e a sua posição atual. O meu papel termina em descrever o que vejo."
+          }
+        }
+      },
+      "quietXauH4": {
+        "instrumentLabel": "XAU/USD H4",
+        "questions": {
+          "why-this-score": {
+            "text": "Porque é que esta leitura está tão calma?",
+            "reply": "Porque a maioria dos elementos está silenciosa. Nenhuma rutura de estrutura recente, nenhum Order Block significativo, e apenas um Fair Value Gap presente mas sem direção confirmada. O mercado está num range de baixa volatilidade (as velas mexem-se pouco). As notícias são quase neutras. Esta leitura reflete honestamente um mercado em espera: não há grande coisa direcional a dizer. É também a leitura mais sã do motor — quando nada acontece, dizer «nada acontece». A incerteza apresentada é ampla, porque a situação é ambígua."
+          },
+          "armed-retest": {
+            "text": "O que é um retest?",
+            "reply": "Um retest é quando o preço, depois de ter rompido um nível, volta a tocá-lo antes de arrancar. Na leitura atual (H4 calma), nenhuma rutura ocorreu, portanto não há nada a testar de novo por agora. O único elemento técnico ativo é um Fair Value Gap entre 2358 e 2362, ainda não tocado. O mercado tem primeiro de romper algo (um máximo ou um mínimo) antes de se poder falar de retest."
+          },
+          "event-impact": {
+            "text": "Os NFP dentro de 2 dias mudam o quê?",
+            "reply": "É demasiado longe para impactar a leitura H4 atual, mas estrutura os próximos 2 dias. Em torno da publicação dos NFP, a MIA anunciar-lhe-á o provável alargamento da volatilidade. Em H4, isso quer dizer que 1 a 2 velas serão afetadas. Se o seu horizonte for mais curto do que o prazo até lá, o evento não invalida nada de atual. Se abrir uma posição H4 agora, ela viverá os NFP — um momento em que a volatilidade (a amplitude das velas) sobe fortemente."
+          },
+          "historical-comparison": {
+            "text": "A que se parece historicamente uma consolidação como esta?",
+            "reply": "Os nossos testes de fiabilidade sobre dados passados ainda estão em curso. Para uma configuração calma como esta, não lhe citarei qualquer rendibilidade nem estatística enquanto a validação não estiver terminada. O que posso descrever: esta leitura não identifica nenhum gatilho técnico forte (sem rutura, sem Order Block significativo, mercado sem tendência). Neste tipo de contexto, observar e identificar os níveis-chave é muitas vezes mais esclarecedor do que agir. É também por isso que a leitura permanece prudente."
+          },
+          "buy-or-not": {
+            "text": "Então devo esperar?",
+            "reply": "Mais uma vez, não dou qualquer instrução. O que posso descrever factualmente: a leitura atual não identifica nenhum gatilho técnico forte (sem rutura, sem Order Block significativo, mercado sem tendência). Se a sua abordagem procura entradas com uma justificação estrutural clara, esta leitura oferece poucas. Mas cabe-lhe a si cruzar isso com o seu contexto pessoal. Nenhum número de desempenho será publicado enquanto os nossos testes de fiabilidade não estiverem terminados — é uma regra de transparência."
+          }
+        }
+      }
+    },
+    "fallback": {
+      "instrumentLabel": "este instrumento",
+      "text": "Porque é que não vejo perguntas?",
+      "reply": "Não encontrei um cenário scripted para esta leitura específica. É temporário — a integração do motor de resposta em tempo real chega no próximo sprint de integração backend."
+    }
+  },
+  "legal": {
+    "conditions": {
+      "meta": {
+        "title": "Termos de Utilização",
+        "description": "Termos e Condições de Utilização da MIA Markets — serviço de informação, postura educativa, aviso sobre os riscos."
+      },
+      "versionLabel": "Versão {version}",
+      "loading": "A carregar o documento…",
+      "error": "O documento dos Termos está momentaneamente indisponível. Tente novamente mais tarde."
+    },
+    "privacy": {
+      "meta": {
+        "title": "Política de Privacidade",
+        "description": "Política de Privacidade da MIA Markets — dados tratados, base legal, direitos RGPD / Lei 25."
+      },
+      "title": "Política de Privacidade",
+      "pendingNotice": "Versão preliminar estruturada. O texto definitivo (revisto juridicamente) será publicado com o terminal legal. A estrutura abaixo descreve fielmente os tratamentos em vigor.",
+      "sections": {
+        "responsable": {
+          "title": "1. Responsável pelo tratamento",
+          "body": "Loukmane Bessam (operador único) — loukmanebessam@gmail.com."
+        },
+        "donnees": {
+          "title": "2. Dados tratados",
+          "body": "Nome de utilizador, endereço de e-mail, palavra-passe (com hash, nunca em claro), consentimentos (versão + data e hora), dados de sessão. Nenhum dado de cartão bancário é recolhido pela MIA Markets."
+        },
+        "bases": {
+          "title": "3. Bases legais",
+          "body": "Execução do contrato (conta e serviço), interesse legítimo (segurança), consentimento (aceitação dos Termos e da presente Política no registo)."
+        },
+        "droits": {
+          "title": "4. Os seus direitos (RGPD / Lei 25)",
+          "body": "Acesso, retificação, apagamento, portabilidade, limitação e oposição. Qualquer pedido para loukmanebessam@gmail.com — resposta no prazo de 30 dias."
+        },
+        "conservation": {
+          "title": "5. Conservação",
+          "body": "Os dados de conta são conservados durante o período do conta. As sessões expiram automaticamente. Os detalhes de conservação por categoria serão precisados na versão definitiva."
+        },
+        "contact": {
+          "title": "6. Contacto",
+          "body": "Para qualquer questão relativa aos seus dados: loukmanebessam@gmail.com."
+        }
+      }
+    },
+    "disclaimer": {
+      "hero": "Demonstração em acesso antecipado. Leitura algorítmica educativa — não constitui um sinal de trading nem um conselho de investimento."
+    }
+  },
+  "pages": {
+    "conditions": {
+      "backHome": "Voltar ao início"
+    },
+    "confidentialite": {
+      "backHome": "Voltar ao início"
+    },
+    "abonnement": {
+      "meta": {
+        "title": "Subscrição",
+        "description": "Gerir a sua subscrição MIA Markets."
+      },
+      "loading": "A carregar…"
+    },
+    "compte": {
+      "meta": {
+        "title": "A minha conta",
+        "description": "Gerir a sua conta MIA Markets."
+      }
+    },
+    "connexion": {
+      "meta": {
+        "title": "Início de sessão",
+        "description": "Iniciar sessão na sua conta MIA Markets."
+      },
+      "title": "Início de sessão",
+      "intro": "Inicie sessão com o seu nome de utilizador ou o seu e-mail."
+    },
+    "inscription": {
+      "meta": {
+        "title": "Registo",
+        "description": "Criar uma conta MIA Markets — acesso antecipado, postura educativa."
+      },
+      "title": "Criar uma conta",
+      "intro": "Acesso antecipado reservado a pessoas maiores de idade (18 anos ou mais)."
+    },
+    "motDePasseOublieConfirmer": {
+      "meta": {
+        "title": "Repor palavra-passe",
+        "description": "Escolhe uma nova palavra-passe para a tua conta MIA Markets."
+      },
+      "title": "Repor palavra-passe"
+    },
+    "motDePasseOublie": {
+      "meta": {
+        "title": "Palavra-passe esquecida",
+        "description": "Repor a palavra-passe da sua conta MIA Markets."
+      },
+      "title": "Palavra-passe esquecida"
+    },
+    "app": {
+      "meta": {
+        "title": "Espaço de leitura",
+        "description": "Leitura de mercado em direto — XAU/USD e EUR/USD em M15, H1, H4. Estrutura, regime, eventos e leitura narrada, explicados pelo M.I.A Agent."
+      }
+    },
+    "scanner": {
+      "meta": {
+        "title": "Scanner de condições",
+        "description": "Defina as suas condições estruturais e veja em que mercados e timeframes estão presentes neste momento. Ferramenta de leitura descritiva — o julgamento é seu."
+      },
+      "paywallTitle": "O scanner é reservado a subscritores",
+      "paywallDescription": "O scanner multimercado varre XAU/USD e EUR/USD em M15, H1 e H4. Passe à subscrição para o utilizar."
+    },
+    "zones": {
+      "meta": {
+        "title": "Zonas",
+        "description": "O ciclo de vida de cada zona detetada (Order Block, Fair Value Gap) — formação, testes, mitigação, preenchimento. Leitura descritiva e read-only: nenhuma previsão."
+      }
+    }
+  },
+  "methodology": {
+    "meta": {
+      "title": "Metodologia — Como a MIA Markets descreve o mercado",
+      "description": "Documentação técnica transparente: como o nosso indicador deteta as estruturas SMC (Order Block, Fair Value Gap, ruturas), como descrevemos os elementos apresentados, a nossa fonte de dados e o que não fazemos."
+    },
+    "header": {
+      "back": "Voltar ao início",
+      "badge": "Metodologia",
+      "title": "Como a MIA Markets descreve o mercado",
+      "intro": "Esta página explica, sem jargão, como o nosso indicador identifica as estruturas de mercado e o que significa cada elemento apresentado. É uma documentação descritiva: explicamos o que o motor<em> observa</em>, nunca o que ele <em>preveria</em>.",
+      "tocLabel": "Índice"
+    },
+    "toc": {
+      "engagement": "O nosso compromisso",
+      "concepts": "Conceitos de estrutura",
+      "scores": "O que descrevemos",
+      "donnees": "Fonte de dados",
+      "limites": "O que não fazemos",
+      "attributions": "Atribuições"
+    },
+    "engagement": {
+      "title": "O nosso compromisso",
+      "intro": "A MIA Markets é uma ferramenta de compreensão do mercado, não um sistema de trading. A nossa postura é descritiva (nível «leitura aumentada»): descrevemos uma estrutura, nunca recomendamos uma ação.",
+      "quote": "Nenhum indicador de mercado deveria prometer ganhos. Nós não o fazemos. O que oferecemos é uma compreensão aumentada do mercado — não um desempenho financeiro.",
+      "caption": "— Compromisso público MIA Markets, 27 de maio de 2026"
+    },
+    "concepts": {
+      "title": "Conceitos de estrutura (SMC)",
+      "intro": "A nossa leitura apoia-se nos Smart Money Concepts — uma grelha de leitura da estrutura do preço. Eis os elementos que o motor deteta e apresenta.",
+      "detectionLabel": "Como o motor o deteta",
+      "detection": {
+        "order-block": "Identifica-se a última vela de sentido oposto imediatamente antes de um movimento marcado. É a zona de preço de onde o movimento partiu — muitas vezes onde ordens importantes se acumularam. O motor acompanha o seu estado: ativo, mitigado (já retocado) ou invalidado.",
+        "fvg": "Deteta-se um «buraco» de preço deixado por três velas consecutivas em que a primeira e a terceira não se sobrepõem: um movimento demasiado rápido para que todas as trocas tenham lugar. O motor mede o tamanho desse buraco e acompanha se permanece aberto, parcialmente preenchido ou preenchido.",
+        "bos": "Compara-se o preço com os máximos e mínimos recentes (os «swings»). Quando ultrapassa claramente o último máximo (ou mínimo) no sentido da tendência, é uma rutura de estrutura: a tendência em curso confirma-se.",
+        "choch": "Mesma lógica que a rutura de estrutura, mas no sentido OPOSTO à tendência recente. É o primeiro sinal possível de uma inversão de estrutura — descrito como tal, sem daí deduzir uma direção futura.",
+        "retest": "Após uma rutura, o motor vigia se o preço volta a tocar o nível ultrapassado. Acompanha o estado do regresso: ainda não voltou, em teste, confirmado (o nível aguenta) ou invalidado (o preço atravessou-o em sentido inverso).",
+        "mtf": "A mesma leitura é calculada em vários timeframes (15 min, 1 h, 4 h, 1 dia…). Apresenta-se o viés de cada um lado a lado: quando vários períodos apontam no mesmo sentido, a estrutura é mais nítida. Nenhum é ponderado para produzir um score diretivo."
+      }
+    },
+    "scores": {
+      "title": "O que descrevemos (e como)",
+      "intro": "Certos elementos da leitura são qualificados (importância de uma zona, estado, fase, incerteza). Eis o que cada um descreve e as variáveis que o compõem — nenhum é uma probabilidade de sucesso."
+    },
+    "formulas": {
+      "variablesLabel": "O que o motor tem em conta",
+      "order-block": {
+        "title": "Order Block",
+        "description": "Uma zona deixada por uma vela de desequilíbrio antes de um movimento marcado. Apresenta-se na sua formação com o seu intervalo de preço e o seu estado presente (ativa, testada, mitigada, invalidada) — sem nota nem classificação de qualidade, nenhuma probabilidade de sucesso.",
+        "variables": {
+          "0": "o intervalo de preço da zona",
+          "1": "o seu tamanho face à volatilidade recente",
+          "2": "o seu estado atual: ativa, testada, mitigada ou invalidada"
+        }
+      },
+      "fvg-force": {
+        "title": "Estado de um Fair Value Gap",
+        "description": "Descreve o estado de uma zona de desequilíbrio: ativa, parcialmente preenchida ou preenchida. O tamanho relativo do buraco indica a sua amplitude, sem presumir o momento em que será preenchido.",
+        "variables": {
+          "0": "o tamanho do buraco face à volatilidade média recente",
+          "1": "o número de velas decorridas desde a sua criação",
+          "2": "a parte já preenchida pelo preço"
+        }
+      },
+      "phase-de-marche": {
+        "title": "Fase de mercado",
+        "description": "Três rótulos descritivos lado a lado — tendência, volatilidade, fase (acumulação / tendência / distribuição / range / expansão). Uma fotografia do estado observado, nunca uma instrução.",
+        "variables": {
+          "0": "a direção e a inclinação dos máximos/mínimos recentes",
+          "1": "a amplitude média das velas (volatilidade)",
+          "2": "o alinhamento entre timeframes"
+        }
+      },
+      "incertitude": {
+        "title": "Intervalo de incerteza observado",
+        "description": "O desvio de preço tipicamente observado recentemente em torno da leitura. É uma medida de incerteza apresentada honestamente — não um intervalo de previsão nem um objetivo.",
+        "variables": {
+          "0": "a dispersão recente dos preços, medida pelo ATR (Average True Range, a média padrão da amplitude das velas)",
+          "1": "o timeframe da leitura"
+        }
+      }
+    },
+    "donnees": {
+      "title": "A nossa fonte de dados",
+      "detail": "Dados de mercado via a API Twelve Data (nível gratuito, 800 pedidos por dia na V1).",
+      "providerLabel": "Fornecedor",
+      "coverageLabel": "Cobertura V1",
+      "coverage": "XAU/USD e EUR/USD, em 15 minutos, 1 hora e 4 horas.",
+      "refreshLabel": "Frequência",
+      "refresh": "Atualização a cada fecho de vela."
+    },
+    "limites": {
+      "title": "O que não fazemos",
+      "intro": "A transparência vale também para os nossos limites. Voluntariamente, o indicador não faz nada do que se segue.",
+      "items": {
+        "0": "Prever o sentido ou a amplitude de um movimento.",
+        "1": "Emitir um sinal de trade, um ponto de entrada ou de saída.",
+        "2": "Calcular um objetivo de preço, um stop-loss ou um take-profit.",
+        "3": "Apresentar um score de probabilidade de sucesso.",
+        "4": "Prometer um ganho, uma rendibilidade ou um desempenho."
+      }
+    },
+    "attributions": {
+      "title": "Atribuições",
+      "intro": "O gráfico de velas do espaço de leitura apoia-se numa biblioteca open-source, creditada aqui conforme exige a sua licença.",
+      "license": "<name>Lightweight Charts™</name> — © TradingView, Inc., distribuída sob licença <link>Apache 2.0</link>. Biblioteca de apresentação de gráficos utilizada para o render das velas e das zonas.",
+      "note": "De notar: trata-se de uma biblioteca <em>de apresentação</em> apenas. A MIA Markets não utiliza qualquer API nem qualquer fluxo de dados de mercado da TradingView — as cotações apresentadas provêm do nosso próprio motor."
+    }
+  },
+  "seo": {
+    "title": "MIA Markets — Indicador de mercado conversacional",
+    "titleTemplate": "%s · MIA Markets",
+    "description": "MIA Markets (Multi-asset Intelligence Assistant) — Leitura de mercado XAU/USD e FX, explicada por um quant. Análises contextuais com fontes, postura educativa.",
+    "ogTitle": "MIA Markets — Indicador de mercado conversacional",
+    "ogDescription": "Leituras algorítmicas contextuais para XAU/USD e o forex, explicadas por um chatbot (M.I.A Agent). Postura educativa.",
+    "twitterTitle": "MIA Markets — Indicador de mercado conversacional",
+    "twitterDescription": "Compreenda o mercado — sem que lhe digam o que fazer. Leituras algorítmicas + chatbot M.I.A Agent."
+  },
+  "zones": {
+    "title": "Zonas",
+    "intro": "O ciclo de vida de cada zona detetada — formação, testes, mitigação, preenchimento — descrito no presente. Leitura descritiva: nenhum objetivo, nenhuma previsão.",
+    "refreshing": "a atualizar…",
+    "filterLabel": "Filtro",
+    "filterAria": "Filtrar as zonas",
+    "sortLabel": "Ordenação",
+    "sortAria": "Ordenar as zonas",
+    "loading": "A carregar as zonas…",
+    "errorMessage": "As zonas não estão disponíveis para esta combinação.",
+    "retry": "Tentar novamente",
+    "emptyNone": "Nenhuma zona detetada nesta combinação.",
+    "emptyFilter": "Nenhuma zona corresponde a este filtro.",
+    "selector": {
+      "instrument": "Instrumento",
+      "timeframe": "Timeframe"
+    },
+    "filters": {
+      "all": "Todas",
+      "active": "Ativas",
+      "mitigated": "Mitigadas"
+    },
+    "sorts": {
+      "proximity": "Proximidade",
+      "recency": "Frescura",
+      "state": "Estado"
+    },
+    "kind": {
+      "ob": "Order Block",
+      "fvg": "Fair Value Gap",
+      "obShort": "OB",
+      "fvgShort": "FVG"
+    },
+    "effectiveness": {
+      "obSpentLabel": "invalidada",
+      "obSpentTitle": "Order Block invalidado: o preço fechou através da zona.",
+      "obHeldLabel": "não invalidada",
+      "obHeldTitle": "Order Block não invalidado: o preço não fechou através dela (a zona aguenta, mesmo mitigada ou testada).",
+      "fvgSpentLabel": "preenchida",
+      "fvgSpentTitle": "Fair Value Gap inteiramente preenchido: o desequilíbrio está fechado.",
+      "fvgHeldLabel": "não preenchida",
+      "fvgHeldTitle": "Fair Value Gap não inteiramente preenchido: o desequilíbrio não está fechado."
+    },
+    "relation": {
+      "inside": "preço atualmente dentro da zona",
+      "above": "a {dist} pts acima do preço",
+      "below": "a {dist} pts abaixo do preço"
+    },
+    "age": {
+      "durationOnly": "formada há {duration}",
+      "lastCandle": "formada na última vela",
+      "withBars": "formada há {bars, plural, one {# vela} other {# velas}} ({duration})"
+    },
+    "tested": {
+      "ob": "testada",
+      "fvg": "penetrada"
+    },
+    "duration": {
+      "underMinute": "menos de um minuto",
+      "min": "min",
+      "hour": "h",
+      "day": "d"
+    },
+    "fill": {
+      "aria": "Preenchimento da zona",
+      "label": "preenchida até {price} (≈ {pct} %)"
+    },
+    "details": {
+      "expand": "Detalhes",
+      "collapse": "Reduzir"
+    },
+    "timeline": {
+      "formed": "Formado",
+      "mitigated": "Mitigado",
+      "obTested": "Testado",
+      "fvgTested": "Penetrado",
+      "filled": "Preenchido",
+      "partial": "Parcialmente preenchido",
+      "active": "Acompanhamento em curso",
+      "now": "atualmente",
+      "noDate": "—",
+      "firstContact": "primeiro contacto"
+    },
+    "overlaps": {
+      "heading": "Sobreposições com outros timeframes",
+      "description": "Esta zona sobrepõe-se a zonas detetadas noutros timeframes (mesmos níveis de preço que se cruzam) — um marco de convergência, não um sinal.",
+      "line": "sobrepõe-se a um {kind} {tf}{dir} ({band})"
+    },
+    "actions": {
+      "analyze": "Analisar a zona",
+      "analyzeAria": "Analisar esta zona no gráfico",
+      "show": "Mostrar no gráfico",
+      "hide": "Ocultar do gráfico"
+    }
+  },
+  "appearance": {
+    "menuLabel": "Escolher tema",
+    "menuHeading": "Temas",
+    "sectionTitle": "Aparência",
+    "sectionDescription": "Escolha o tema da interface. A escolha é aplicada de imediato e fica memorizada neste dispositivo.",
+    "groupLabel": "Seleção de tema",
+    "active": "Ativo",
+    "descriptions": {
+      "terminal": "Escuro frio, leitura tranquila — o tema padrão.",
+      "atelier": "Claro, como a nota de um analista no papel.",
+      "schema": "Monocromático técnico, quase sem cor.",
+      "ardoise": "Escuro quente, sereno, com cantos mais suaves."
+    }
+  }
+}

@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { FileText } from 'lucide-react';
 import {
   AccordionContent,
@@ -5,7 +6,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
-import { formatTag } from '@/lib/market-reading/tag-labels';
+import { humaniseTag } from '@/lib/market-reading/tag-labels';
 import type { MarketReadingConditions } from '@/types/market-reading';
 
 /**
@@ -21,10 +22,13 @@ export function ConditionsSection({
 }: {
   conditions: MarketReadingConditions;
 }) {
+  const t = useTranslations('reading');
+  const tagLabel = (tag: string): string =>
+    t.has(`tags.${tag}`) ? t(`tags.${tag}`) : humaniseTag(tag);
   const sourceLabel =
     conditions.description_source === 'haiku_generated'
-      ? 'Narration générée'
-      : 'Lecture modèle (repli)';
+      ? t('conditions.sourceGenerated')
+      : t('conditions.sourceFallback');
 
   // The narration is a short paragraph; render any sentence-level line breaks the
   // engine produced as separate lines for readability (it never adds markup).
@@ -38,7 +42,7 @@ export function ConditionsSection({
       <AccordionTrigger className="text-left text-sm">
         <span className="flex items-center gap-2">
           <FileText className="h-4 w-4 text-muted-foreground" aria-hidden />
-          <span>Lecture narrée</span>
+          <span>{t('conditions.title')}</span>
         </span>
       </AccordionTrigger>
       <AccordionContent>
@@ -55,7 +59,7 @@ export function ConditionsSection({
             <div className="flex flex-wrap gap-1.5">
               {conditions.tags.map((tag) => (
                 <Badge key={tag} variant="secondary" className="text-[10px]">
-                  {formatTag(tag)}
+                  {tagLabel(tag)}
                 </Badge>
               ))}
             </div>

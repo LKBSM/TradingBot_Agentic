@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import * as React from 'react';
 import {
   askSentinel,
@@ -154,11 +155,19 @@ function appendToThread(
 const MAX_RECENT_THREADS = 6;
 
 export function ChatProvider({ children }: { children: React.ReactNode }) {
+  const t = useTranslations('chat');
   const [isOpen, setIsOpen] = React.useState(false);
   const [state, setState] = React.useState<ChatState>({
     active: null,
     threads: {},
   });
+  // Mirror of the latest state for reads inside async callbacks (UI-01): the
+  // history payload must reflect the CURRENT thread, not the `turns` value
+  // captured when askFreeForm was created (stale on rapid/successive sends).
+  const stateRef = React.useRef(state);
+  React.useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
   const [hydrated, setHydrated] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const [apiAvailable, setApiAvailable] = React.useState<boolean | 'unknown'>(
@@ -306,12 +315,16 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         ]),
       );
 
-      // Build history payload (last 6 turns, alternating user/assistant). Drop
-      // any turn whose text is empty/whitespace: a display-only answer (e.g. the
-      // model toggled a layer with no prose) renders as an empty bubble, and the
-      // backend's ConversationMessage requires content length ≥ 1 — replaying it
-      // would 422 the whole request ("format ou longueur") on the next message.
-      const historyForApi = turns
+      // Build history payload (last 6 turns, alternating user/assistant) from
+      // the FRESH thread state (stateRef), not the closure `turns` — otherwise a
+      // second message sent before the re-render would replay a stale history
+      // (UI-01). We read the thread as it is BEFORE pushing the current question,
+      // so the current turn is correctly excluded. Drop any empty/whitespace turn:
+      // a display-only answer renders as an empty bubble and the backend's
+      // ConversationMessage requires content length ≥ 1 — replaying it would 422
+      // the whole request ("format ou longueur") on the next message.
+      const priorTurns = stateRef.current.threads[threadId]?.turns ?? EMPTY_TURNS;
+      const historyForApi = priorTurns
         .slice(-6)
         .map((t) => ({ role: t.role, content: t.text.trim() }))
         .filter((m) => m.content.length > 0);
@@ -354,21 +367,19 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
                 id: nextId('asst'),
                 role: 'assistant',
                 source: 'fallback',
-                text:
-                  "Le mode chatbot en direct n'est pas disponible sur cet environnement pour le moment. " +
-                  'Utilise les questions suggérées ci-dessous — elles renvoient des réponses contextualisées sur cette lecture.',
+                text: t('turnUnavailable'),
               },
             ]),
           );
         } else {
-          const message = err instanceof Error ? err.message : 'Erreur inconnue';
+          const message = err instanceof Error ? err.message : t('unknownError');
           setState((s) =>
             appendToThread(s, threadId, meta, [
               {
                 id: nextId('asst'),
                 role: 'assistant',
                 source: 'error',
-                text: `Désolé, une erreur a empêché la réponse : ${message} Réessaie ou utilise une question suggérée.`,
+                text: t('turnError', { message }),
               },
             ]),
           );
@@ -377,7 +388,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
       }
     },
-    [activeSignal, turns, nextId],
+    // `turns` intentionally dropped — history is read from stateRef now, so the
+    // callback identity no longer churns on every new turn (UI-01).
+    [activeSignal, nextId, t],
   );
 
   const recentThreads = React.useMemo<ChatThreadSummary[]>(() => {

@@ -8,16 +8,27 @@
  * (surface / text / accent / state) so switching themes is a pure value swap.
  *
  * Four themes ship: Terminal (default, cold dark), Atelier (light analyst note),
- * Schéma (technical monochrome), Ardoise (warm dark). next-themes applies a
- * `dark`/light base class + a `.theme-*` class carrying the values (see
- * layout.tsx). The base class keeps every existing `dark:` utility working; the
- * `.theme-*` class overrides the token values.
+ * Schéma (technical monochrome), Ardoise (warm dark). next-themes sets
+ * `data-theme="<id>"` on <html> (see layout.tsx); the token VALUES live under
+ * `[data-theme='…']` below. The three dark themes drive Tailwind's `dark:`
+ * variant via the darkMode config in tailwind.config.ts.
  *
  * Colour is reserved for MEANING. The sentinel-* / state tokens carry market
  * semantics (bull / bear / neutral / warn / liquidity) and are the ONLY place a
  * theme may express bull/bear hues — never a decorative green/red "buy/sell".
  * Domain tokens are exposed through the sentinel-* palette in tailwind.config.
  */
+
+/*
+ * RTL / Arabic support (i18n Étape 1). The Latin `Inter` variable font ships no
+ * Arabic glyphs, so for `html[dir="rtl"]` (currently only the `ar` locale) we
+ * prepend the Arabic-capable Noto stack. `dir="rtl"` on <html> already flips
+ * the flow; Tailwind logical utilities + flexbox handle the rest of the layout.
+ */
+html[dir='rtl'] body {
+  font-family: var(--font-arabic), var(--font-sans), ui-sans-serif, system-ui,
+    sans-serif;
+}
 @layer base {
   /* ── Terminal — cold dark, DEFAULT (pre-hydration fallback = :root) ── */
   :root,

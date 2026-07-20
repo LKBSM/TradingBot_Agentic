@@ -1,5 +1,6 @@
 'use client';
 
+import { useLocale, useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { formatZoneDateTime, type TimelineEvent } from '@/lib/zones/lifecycle';
 
@@ -21,6 +22,8 @@ const DOT_TONE: Record<TimelineEvent['variant'], string> = {
 };
 
 export function ZoneTimeline({ events }: { events: TimelineEvent[] }) {
+  const t = useTranslations('zones');
+  const locale = useLocale();
   return (
     <ol className="relative ml-1 flex flex-col gap-3 border-l border-border/70 pl-4">
       {events.map((ev, i) => (
@@ -36,10 +39,14 @@ export function ZoneTimeline({ events }: { events: TimelineEvent[] }) {
           <div className="flex flex-col">
             <span className="text-sm font-medium text-foreground">{ev.label}</span>
             <span className="text-xs text-muted-foreground">
-              {ev.at ? formatZoneDateTime(ev.at) : ev.variant === 'ongoing' ? 'à présent' : '—'}
+              {ev.at
+                ? formatZoneDateTime(ev.at, locale)
+                : ev.variant === 'ongoing'
+                  ? t('timeline.now')
+                  : t('timeline.noDate')}
               {/* The engine records only the FIRST interaction (no per-test
                   history) — say so rather than let the date read as "the" test. */}
-              {ev.variant === 'interaction' && ev.at ? ' · premier contact' : ''}
+              {ev.variant === 'interaction' && ev.at ? ` · ${t('timeline.firstContact')}` : ''}
             </span>
           </div>
         </li>

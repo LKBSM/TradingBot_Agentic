@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { AlertTriangle, Calendar } from 'lucide-react';
 import {
   AccordionContent,
@@ -6,15 +7,8 @@ import {
 } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import {
-  formatCurrency,
-  formatImpact,
-  formatMinutesAgo,
-  formatSurprise,
-  formatTimeToEvent,
-  formatTriggerType,
-  type Tone,
-} from '@/lib/market-reading/formatters';
+import { type Tone } from '@/lib/market-reading/formatters';
+import { useReadingFormatters } from '@/lib/market-reading/use-reading-formatters';
 import type { MarketReadingEvents } from '@/types/market-reading';
 
 const TONE_TO_VARIANT: Record<Tone, 'bull' | 'bear' | 'neutral' | 'warn'> = {
@@ -33,6 +27,8 @@ const IMMINENT_MIN = 60;
  * comes verbatim from the backend (niveau 1.5 enforced server-side).
  */
 export function EventsSection({ events }: { events: MarketReadingEvents }) {
+  const t = useTranslations('reading.events');
+  const fmt = useReadingFormatters();
   const { news_upcoming, news_just_published, technical_triggers_recent } =
     events;
 
@@ -49,32 +45,30 @@ export function EventsSection({ events }: { events: MarketReadingEvents }) {
       <AccordionTrigger className="text-left text-sm">
         <span className="flex items-center gap-2">
           <Calendar className="h-4 w-4 text-muted-foreground" aria-hidden />
-          <span>Contexte événementiel</span>
+          <span>{t('title')}</span>
           {hasImminent && (
             <Badge variant="warn" className="text-[10px]">
               <AlertTriangle className="mr-1 h-3 w-3" aria-hidden />
-              Imminent
+              {t('imminent')}
             </Badge>
           )}
         </span>
       </AccordionTrigger>
       <AccordionContent>
         {isEmpty ? (
-          <p className="text-sm text-muted-foreground">
-            Aucun événement notable à proximité de cette lecture.
-          </p>
+          <p className="text-sm text-muted-foreground">{t('empty')}</p>
         ) : (
           <div className="space-y-5">
             {news_upcoming.length > 0 && (
-              <Group title="À venir">
+              <Group title={t('upcoming')}>
                 {news_upcoming.map((n, i) => {
-                  const impact = formatImpact(n.impact);
+                  const impact = fmt.impact(n.impact);
                   const imminent = n.time_to_event_min <= IMMINENT_MIN;
                   return (
                     <EventRow
                       key={`up-${i}`}
-                      title={`${n.event} · ${formatCurrency(n.currency)}`}
-                      timing={formatTimeToEvent(n.time_to_event_min)}
+                      title={`${n.event} · ${fmt.currency(n.currency)}`}
+                      timing={fmt.timeToEvent(n.time_to_event_min)}
                       timingClassName={imminent ? 'text-sentinel-warn' : undefined}
                       impact={impact}
                       description={n.potential_effect_description}
@@ -85,16 +79,16 @@ export function EventsSection({ events }: { events: MarketReadingEvents }) {
             )}
 
             {news_just_published.length > 0 && (
-              <Group title="Publié récemment">
+              <Group title={t('justPublished')}>
                 {news_just_published.map((n, i) => {
-                  const impact = formatImpact(n.impact);
+                  const impact = fmt.impact(n.impact);
                   const surprise = n.surprise_direction
-                    ? formatSurprise(n.surprise_direction)
+                    ? fmt.surprise(n.surprise_direction)
                     : null;
                   return (
                     <EventRow
                       key={`pub-${i}`}
-                      title={`${n.event} · ${formatCurrency(n.currency)}`}
+                      title={`${n.event} · ${fmt.currency(n.currency)}`}
                       timing={surprise}
                       impact={impact}
                       description={n.potential_effect_description}
@@ -105,18 +99,18 @@ export function EventsSection({ events }: { events: MarketReadingEvents }) {
             )}
 
             {technical_triggers_recent.length > 0 && (
-              <Group title="Déclencheurs techniques récents">
+              <Group title={t('recentTriggers')}>
                 <ul className="space-y-1.5">
-                  {technical_triggers_recent.map((t, i) => (
+                  {technical_triggers_recent.map((trig, i) => (
                     <li
                       key={`trig-${i}`}
                       className="flex flex-wrap items-baseline justify-between gap-x-3 text-sm"
                     >
                       <span className="font-medium text-foreground">
-                        {formatTriggerType(t.type)}
+                        {fmt.triggerType(trig.type)}
                       </span>
                       <span className="text-xs text-muted-foreground">
-                        {formatMinutesAgo(t.minutes_ago)}
+                        {fmt.minutesAgo(trig.minutes_ago)}
                       </span>
                     </li>
                   ))}

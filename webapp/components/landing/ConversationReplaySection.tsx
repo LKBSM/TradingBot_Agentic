@@ -1,11 +1,9 @@
+import { useTranslations } from 'next-intl';
 import { MessageCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ConversationReplayCard } from './ConversationReplayCard';
-import { getChatbotScript } from '@/lib/chatbot';
-import {
-  getHeroLandingSample,
-  LANDING_SAMPLES,
-} from '@/lib/market-reading/landing-samples';
+import { useChatbotScriptGetter } from '@/lib/chatbot';
+import { getHeroLandingSample } from '@/lib/market-reading/landing-samples';
 
 /**
  * Section 3 — « MIA répond aux vraies questions ».
@@ -19,10 +17,10 @@ import {
  * Le visiteur peut cliquer "Rejouer" pour relancer chaque conversation.
  */
 export function ConversationReplaySection() {
+  const t = useTranslations('landing.conversations');
+  const resolveScript = useChatbotScriptGetter();
   const xau = getHeroLandingSample();
-  const eur = LANDING_SAMPLES[1];
-  const xauScript = getChatbotScript(xau.id);
-  const eurScript = eur ? getChatbotScript(eur.id) : null;
+  const xauScript = resolveScript(xau.id);
 
   if (!xauScript) return null;
 
@@ -46,39 +44,37 @@ export function ConversationReplaySection() {
             className="mb-3 text-[11px] uppercase tracking-wider"
           >
             <MessageCircle className="mr-1 h-3 w-3" aria-hidden />
-            Le chatbot · démonstration
+            {t('badge')}
           </Badge>
           <h2
             id="conversations-title"
             className="text-balance text-2xl font-semibold tracking-tight sm:text-3xl"
           >
-            M.I.A Agent répond aux vraies questions.
+            {t('title')}
           </h2>
           <p className="mt-3 text-pretty text-muted-foreground">
-            Pas un script générique — un assistant qui connaît le contexte
-            de chaque lecture, et qui refuse les questions qu&apos;il ne
-            doit pas répondre.
+            {t('subtitle')}
           </p>
         </header>
 
         <div className="grid gap-5 lg:grid-cols-3 lg:gap-6">
           <ConversationReplayCard
-            title="Comprendre une lecture"
-            kicker="Pédagogie"
+            title={t('card1Title')}
+            kicker={t('card1Kicker')}
             question={whyScore.text}
             answer={whyScore.reply}
             instrument="XAU/USD M15"
           />
           <ConversationReplayCard
-            title="Contextualiser un événement"
-            kicker="Macro · volatilité"
+            title={t('card2Title')}
+            kicker={t('card2Kicker')}
             question={fomc.text}
             answer={fomc.reply}
             instrument="XAU/USD M15"
           />
           <ConversationReplayCard
-            title="Refuser un ordre"
-            kicker="Refus pédagogique"
+            title={t('card3Title')}
+            kicker={t('card3Kicker')}
             question={buyOrNot.text}
             answer={buyOrNot.reply}
             instrument="XAU/USD M15"
@@ -87,10 +83,7 @@ export function ConversationReplaySection() {
         </div>
 
         <p className="mt-6 text-xs italic text-muted-foreground">
-          Les réponses ci-dessus sont scriptées pour la démo. En production,
-          M.I.A Agent utilise Claude (Anthropic) avec le contexte InsightSignal
-          v2.1.0 injecté et un prompt système qui interdit toute
-          recommandation personnalisée.
+          {t('footnote')}
         </p>
       </div>
     </section>

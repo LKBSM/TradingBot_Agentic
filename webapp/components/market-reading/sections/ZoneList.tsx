@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 
 /**
@@ -68,11 +69,11 @@ export function ZoneList<T>({
   isActive,
   dedupKey,
   collapsedCount = 3,
-  noun,
   idOf,
   onSelect,
   selectedZoneId,
 }: ZoneListProps<T>) {
+  const t = useTranslations('reading.structure');
   const [expanded, setExpanded] = useState(false);
   // Entries are interactive only when both the id accessor and a handler exist.
   const interactive = Boolean(idOf && onSelect);
@@ -151,7 +152,7 @@ export function ZoneList<T>({
                 type="button"
                 onClick={() => onSelect!(zoneId)}
                 aria-pressed={selected}
-                title="Localiser cette zone sur le graphique"
+                title={t('locateZone')}
                 className={cn(
                   'flex w-full items-start gap-2 rounded px-1.5 py-1 text-left text-sm transition-colors',
                   'hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
@@ -174,9 +175,7 @@ export function ZoneList<T>({
           aria-expanded={expanded}
           className="text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
         >
-          {expanded
-            ? '▴ voir moins'
-            : `▾ voir plus (${hidden} ${noun}${hidden > 1 ? 's' : ''})`}
+          {expanded ? t('voirMoins') : t('voirPlus', { n: hidden })}
         </button>
       )}
     </div>

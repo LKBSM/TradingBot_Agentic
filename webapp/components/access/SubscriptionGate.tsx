@@ -2,7 +2,10 @@
 
 import * as React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
 import { fetchAccess, type AccessSummary } from '@/lib/access/api-client';
+import { localizeHref } from '@/lib/i18n/href';
+import { DEFAULT_LOCALE } from '@/i18n';
 import { Paywall } from './Paywall';
 
 export interface SubscriptionGateProps {
@@ -17,11 +20,6 @@ export interface SubscriptionGateProps {
   paywallTitle?: string;
   paywallDescription?: string;
   children: React.ReactNode;
-}
-
-/** Derive the locale prefix ("" for the default fr, "/en" for en) from the path. */
-function localePrefix(pathname: string): string {
-  return pathname === '/en' || pathname.startsWith('/en/') ? '/en' : '';
 }
 
 /**
@@ -42,6 +40,8 @@ export function SubscriptionGate({
   paywallDescription,
   children,
 }: SubscriptionGateProps) {
+  const t = useTranslations('access');
+  const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname() || '/';
   const [access, setAccess] = React.useState<AccessSummary | null>(null);
@@ -63,7 +63,10 @@ export function SubscriptionGate({
     };
   }, []);
 
-  const prefix = localePrefix(pathname);
+  // Locale prefix for the ACTIVE locale (NAV-07) — the old heuristic only
+  // recognised `/en`, dropping de/es/it/… users onto the default locale.
+  const localePrefix = locale === DEFAULT_LOCALE ? '' : `/${locale}`;
+  const loginHref = localizeHref('/connexion', locale);
 
   // Redirect unauthenticated users away from a gated page (effect, not render).
   // Two independent triggers:
@@ -75,8 +78,8 @@ export function SubscriptionGate({
   React.useEffect(() => {
     if (!mustLogin) return;
     const next = encodeURIComponent(pathname);
-    router.replace(`${prefix}/connexion?next=${next}`);
-  }, [mustLogin, pathname, prefix, router]);
+    router.replace(`${loginHref}?next=${next}`);
+  }, [mustLogin, pathname, loginHref, router]);
 
   // Transport failure handling:
   //   · closed beta (NEXT_PUBLIC_BETA_LOCKDOWN=1) → fail CLOSED: we cannot
@@ -88,8 +91,8 @@ export function SubscriptionGate({
   React.useEffect(() => {
     if (!error || !lockdown) return;
     const next = encodeURIComponent(pathname);
-    router.replace(`${prefix}/connexion?next=${next}`);
-  }, [error, lockdown, pathname, prefix, router]);
+    router.replace(`${loginHref}?next=${next}`);
+  }, [error, lockdown, pathname, loginHref, router]);
   if (error) {
     if (lockdown) return null; // redirecting to login
     return <>{children}</>;
@@ -103,7 +106,7 @@ export function SubscriptionGate({
         aria-live="polite"
       >
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
-        <span className="sr-only">Chargement…</span>
+        <span className="sr-only">{t('gate.loading')}</span>
       </div>
     );
   }
@@ -116,7 +119,7 @@ export function SubscriptionGate({
         <Paywall
           title={paywallTitle}
           description={paywallDescription}
-          basePrefix={prefix}
+          basePrefix={localePrefix}
         />
       </div>
     );

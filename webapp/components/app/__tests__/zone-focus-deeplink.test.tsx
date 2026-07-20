@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@/components/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppWorkspace } from '../AppWorkspace';
 import { ChatProvider } from '@/components/chat/ChatProvider';
@@ -19,6 +19,15 @@ vi.mock('@/lib/market-reading/api-client', async (importActual) => {
 // Chart needs a real canvas; stub it — we assert the focus COMMAND, not pixels.
 vi.mock('@/components/app/ReadingChart', () => ({
   ReadingChart: () => <div data-testid="reading-chart" />,
+}));
+
+// Focus is now read from the URL (?focus=) with the prop as fallback (NAV-03).
+// Empty search params → the test's `initialFocusZoneId` prop drives the focus,
+// so these assertions keep exercising the same id-lock behaviour.
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+  usePathname: () => '/app',
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 /** Surfaces the chart's one-shot focus command (zone id) from shared state. */

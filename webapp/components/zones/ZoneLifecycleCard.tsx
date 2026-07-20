@@ -2,16 +2,11 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { ArrowRight, ChevronDown, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import {
-  formatBand,
-  formatDirection,
-  formatFvgStatus,
-  formatObStatus,
-  formatPrice,
-} from '@/lib/market-reading/formatters';
+import { useReadingFormatters } from '@/lib/market-reading/use-reading-formatters';
 import type { Candle, FVGStatus, OBStatus } from '@/types/market-reading';
 import {
   barsSince,
@@ -20,10 +15,15 @@ import {
   findOverlaps,
   formatDurationShort,
   priceRelation,
+  type DurationLabels,
   type SiblingZone,
+  type TimelineLabels,
   type ZoneLifecycle,
 } from '@/lib/zones/lifecycle';
 import { ZoneTimeline } from './ZoneTimeline';
+
+type ZonesT = ReturnType<typeof useTranslations>;
+type ReadingFmt = ReturnType<typeof useReadingFormatters>;
 
 /**
  * One zone card — "compact d'abord, riche en dépliant". Every line is a
@@ -51,10 +51,10 @@ function directionTone(direction: ZoneLifecycle['direction']): string {
   return 'text-muted-foreground';
 }
 
-function statusLabel(zone: ZoneLifecycle): string {
+function statusLabel(zone: ZoneLifecycle, fmt: ReadingFmt): string {
   return zone.kind === 'ob'
-    ? formatObStatus(zone.status as OBStatus)
-    : formatFvgStatus(zone.status as FVGStatus);
+    ? fmt.obStatus(zone.status as OBStatus)
+    : fmt.fvgStatus(zone.status as FVGStatus);
 }
 
 /**
@@ -66,7 +66,7 @@ function statusLabel(zone: ZoneLifecycle): string {
  * « non invalidée » / « non comblée » — clearing the « mitigé » confusion
  * without ever implying the zone WILL produce an effect.
  */
-function effectiveness(zone: ZoneLifecycle): {
+function effectiveness(zone: ZoneLifecycle, t: ZonesT): {
   effective: boolean;
   label: string;
   title: string;
@@ -76,28 +76,26 @@ function effectiveness(zone: ZoneLifecycle): {
     return spent
       ? {
           effective: false,
-          label: 'invalidée',
-          title: 'Order Block invalidé : le prix a clôturé au travers de la zone.',
+          label: t('effectiveness.obSpentLabel'),
+          title: t('effectiveness.obSpentTitle'),
         }
       : {
           effective: true,
-          label: 'non invalidée',
-          title:
-            'Order Block non invalidé : le prix n’a pas clôturé au travers (la zone tient, même mitigée ou testée).',
+          label: t('effectiveness.obHeldLabel'),
+          title: t('effectiveness.obHeldTitle'),
         };
   }
   const spent = zone.status === 'filled';
   return spent
     ? {
         effective: false,
-        label: 'comblée',
-        title: 'Fair Value Gap entièrement comblé : le déséquilibre est refermé.',
+        label: t('effectiveness.fvgSpentLabel'),
+        title: t('effectiveness.fvgSpentTitle'),
       }
     : {
         effective: true,
-        label: 'non comblée',
-        title:
-          'Fair Value Gap non entièrement comblé : le déséquilibre n’est pas refermé.',
+        label: t('effectiveness.fvgHeldLabel'),
+        title: t('effectiveness.fvgHeldTitle'),
       };
 }
 
@@ -105,13 +103,15 @@ function effectiveness(zone: ZoneLifecycle): {
 function relationLabel(
   rel: ReturnType<typeof priceRelation>,
   instrument: string,
+  t: ZonesT,
+  fmt: ReadingFmt,
 ): string | null {
   if (!rel) return null;
-  if (rel.position === 'inside') return 'prix actuellement dans la zone';
-  const dist = formatPrice(rel.distance, instrument);
+  if (rel.position === 'inside') return t('relation.inside');
+  const dist = fmt.price(rel.distance, instrument);
   return rel.position === 'above'
-    ? `à ${dist} pts au-dessus du prix`
-    : `à ${dist} pts en dessous du prix`;
+    ? t('relation.above', { dist })
+    : t('relation.below', { dist });
 }
 
 /**
@@ -119,21 +119,27 @@ function relationLabel(
  * reaches back to the formation, exact duration alone otherwise. Subject is
  * "la zone" (feminine) for both kinds. Never an estimated bar count.
  */
-function ageLabel(zone: ZoneLifecycle, candles: Candle[] | null, now: Date): string | null {
+function ageLabel(
+  zone: ZoneLifecycle,
+  candles: Candle[] | null,
+  now: Date,
+  t: ZonesT,
+  durationLabels: DurationLabels,
+): string | null {
   const createdMs = Date.parse(zone.createdAt);
   if (Number.isNaN(createdMs)) return null;
   const elapsed = Math.max(now.getTime() - createdMs, 0);
-  const duration = formatDurationShort(elapsed);
+  const duration = formatDurationShort(elapsed, durationLabels);
   const bars = barsSince(candles, zone.createdAt);
-  if (bars == null) return `formée il y a ${duration}`;
-  if (bars === 0) return 'formée sur la dernière bougie';
-  return `formée il y a ${bars} bougie${bars > 1 ? 's' : ''} (${duration})`;
+  if (bars == null) return t('age.durationOnly', { duration });
+  if (bars === 0) return t('age.lastCandle');
+  return t('age.withBars', { bars, duration });
 }
 
 /** Boolean interaction fact — engine tracks no count, so never a "×N". */
-function testedLabel(zone: ZoneLifecycle): string | null {
+function testedLabel(zone: ZoneLifecycle, t: ZonesT): string | null {
   if (!zone.tested) return null;
-  return zone.kind === 'ob' ? 'testée' : 'pénétrée';
+  return zone.kind === 'ob' ? t('tested.ob') : t('tested.fvg');
 }
 
 export interface ZoneLifecycleCardProps {
@@ -167,17 +173,35 @@ export function ZoneLifecycleCard({
   onToggleHide,
   appHref,
 }: ZoneLifecycleCardProps) {
+  const t = useTranslations('zones');
+  const fmt = useReadingFormatters();
   const [expanded, setExpanded] = React.useState(false);
   const detailsId = React.useId();
 
-  const events = buildTimeline(zone);
+  const timelineLabels: TimelineLabels = {
+    formed: t('timeline.formed'),
+    mitigated: t('timeline.mitigated'),
+    obTested: t('timeline.obTested'),
+    fvgTested: t('timeline.fvgTested'),
+    filled: t('timeline.filled'),
+    partial: t('timeline.partial'),
+    active: t('timeline.active'),
+  };
+  const durationLabels: DurationLabels = {
+    underMinute: t('duration.underMinute'),
+    min: t('duration.min'),
+    hour: t('duration.hour'),
+    day: t('duration.day'),
+  };
+
+  const events = buildTimeline(zone, timelineLabels);
   const frac = zone.status === 'partially_filled' ? fillFraction(zone) : null;
-  const kindLabel = zone.kind === 'ob' ? 'Order Block' : 'Fair Value Gap';
+  const kindLabel = zone.kind === 'ob' ? t('kind.ob') : t('kind.fvg');
 
   const rel = priceRelation(zone, referencePrice);
-  const relation = relationLabel(rel, instrument);
-  const age = ageLabel(zone, candles, new Date());
-  const tested = testedLabel(zone);
+  const relation = relationLabel(rel, instrument, t, fmt);
+  const age = ageLabel(zone, candles, new Date(), t, durationLabels);
+  const tested = testedLabel(zone, t);
   const overlaps = findOverlaps(zone, siblingZones);
 
   return (
@@ -196,7 +220,7 @@ export function ZoneLifecycleCard({
           <span className="text-sm font-semibold text-foreground">{kindLabel}</span>
           {zone.direction && (
             <span className={cn('text-sm font-medium', directionTone(zone.direction))}>
-              {formatDirection(zone.direction)}
+              {fmt.direction(zone.direction)}
             </span>
           )}
         </div>
@@ -205,7 +229,7 @@ export function ZoneLifecycleCard({
               so « mitigé » is never mistaken for « dead ». Descriptive, never a
               prediction of future effect. */}
           {(() => {
-            const eff = effectiveness(zone);
+            const eff = effectiveness(zone, t);
             return (
               <span
                 className={cn(
@@ -221,7 +245,7 @@ export function ZoneLifecycleCard({
             );
           })()}
           <span className="rounded-full border border-border/70 px-2 py-0.5 text-xs font-medium text-muted-foreground">
-            {statusLabel(zone)}
+            {statusLabel(zone, fmt)}
           </span>
         </div>
       </div>
@@ -230,7 +254,7 @@ export function ZoneLifecycleCard({
           shown (the range itself lets the reader judge the zone's width). */}
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm">
         <span className="font-medium tabular-nums text-foreground">
-          {formatBand(zone.levelLow, zone.levelHigh, instrument)}
+          {fmt.band(zone.levelLow, zone.levelHigh, instrument)}
         </span>
       </div>
 
@@ -267,7 +291,7 @@ export function ZoneLifecycleCard({
             aria-valuenow={Math.round(frac * 100)}
             aria-valuemin={0}
             aria-valuemax={100}
-            aria-label="Comblement de la zone"
+            aria-label={t('fill.aria')}
           >
             <div
               className="h-full rounded-full bg-sentinel-warn"
@@ -275,8 +299,10 @@ export function ZoneLifecycleCard({
             />
           </div>
           <span className="text-xs text-muted-foreground">
-            comblé jusqu’à {formatPrice(zone.fillLevel as number, instrument)} (≈{' '}
-            {Math.round(frac * 100)} %)
+            {t('fill.label', {
+              price: fmt.price(zone.fillLevel as number, instrument),
+              pct: Math.round(frac * 100),
+            })}
           </span>
         </div>
       )}
@@ -293,7 +319,7 @@ export function ZoneLifecycleCard({
           aria-hidden
           className={cn('h-3.5 w-3.5 transition-transform', expanded && 'rotate-180')}
         />
-        {expanded ? 'Réduire' : 'Détails'}
+        {expanded ? t('details.collapse') : t('details.expand')}
       </button>
 
       {expanded && (
@@ -305,20 +331,21 @@ export function ZoneLifecycleCard({
           {overlaps.length > 0 && (
             <div className="flex flex-col gap-1">
               <span className="text-xs uppercase tracking-wide text-muted-foreground">
-                Recoupements avec d’autres unités de temps
+                {t('overlaps.heading')}
               </span>
               <p className="text-[11px] leading-snug text-muted-foreground/80">
-                Cette zone se superpose à des zones détectées sur d’autres unités de
-                temps (mêmes niveaux de prix qui se recoupent) — un repère de
-                convergence, pas un signal.
+                {t('overlaps.description')}
               </p>
               <ul className="flex flex-col gap-0.5">
                 {overlaps.map((o) => (
                   // Sibling ids are only unique WITHIN a timeframe — prefix it.
                   <li key={`${o.timeframe}-${o.id}`} className="text-xs text-muted-foreground">
-                    chevauche un {o.kind === 'ob' ? 'OB' : 'FVG'} {o.timeframe}
-                    {o.direction ? ` ${formatDirection(o.direction)}` : ''} (
-                    {formatBand(o.levelLow, o.levelHigh, instrument)})
+                    {t('overlaps.line', {
+                      kind: o.kind === 'ob' ? t('kind.obShort') : t('kind.fvgShort'),
+                      tf: o.timeframe,
+                      dir: o.direction ? ` ${fmt.direction(o.direction)}` : '',
+                      band: fmt.band(o.levelLow, o.levelHigh, instrument),
+                    })}
                   </li>
                 ))}
               </ul>
@@ -330,8 +357,8 @@ export function ZoneLifecycleCard({
       {/* Actions */}
       <div className="mt-1 flex flex-wrap items-center gap-2">
         <Button asChild size="sm" variant="outline">
-          <Link href={appHref} aria-label="Analyser cette zone sur le graphique">
-            Analyser la zone
+          <Link href={appHref} aria-label={t('actions.analyzeAria')}>
+            {t('actions.analyze')}
             <ArrowRight className="ml-1 h-4 w-4" aria-hidden />
           </Link>
         </Button>
@@ -344,12 +371,12 @@ export function ZoneLifecycleCard({
           {isHidden ? (
             <>
               <Eye className="mr-1 h-4 w-4" aria-hidden />
-              Afficher sur le graphique
+              {t('actions.show')}
             </>
           ) : (
             <>
               <EyeOff className="mr-1 h-4 w-4" aria-hidden />
-              Masquer du graphique
+              {t('actions.hide')}
             </>
           )}
         </Button>

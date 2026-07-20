@@ -1,6 +1,7 @@
 'use client';
 
 import { Check, Palette } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,7 @@ import { THEMES, DEFAULT_THEME } from '@/lib/theme/themes';
  * preview picker lives in the account "Apparence" settings.
  */
 export function ThemeMenu() {
+  const t = useTranslations('appearance');
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
   const [open, setOpen] = React.useState(false);
@@ -45,7 +47,7 @@ export function ThemeMenu() {
       <Button
         variant="ghost"
         size="icon"
-        aria-label="Choisir le thème"
+        aria-label={t('menuLabel')}
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
@@ -56,7 +58,7 @@ export function ThemeMenu() {
       {open && (
         <div
           role="menu"
-          aria-label="Thèmes"
+          aria-label={t('menuHeading')}
           className="absolute right-0 z-50 mt-2 w-60 overflow-hidden rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-md"
         >
           {THEMES.map((t) => {

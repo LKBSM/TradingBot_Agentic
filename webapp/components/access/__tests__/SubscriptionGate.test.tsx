@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@/components/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SubscriptionGate } from '../SubscriptionGate';
 import { comboAllowed, type AccessSummary } from '@/lib/access/api-client';

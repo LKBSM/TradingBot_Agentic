@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@/components/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppWorkspace } from '../AppWorkspace';
 import { ChatProvider } from '@/components/chat/ChatProvider';
@@ -30,6 +30,15 @@ import {
 // chart rendering (covered separately).
 vi.mock('@/components/app/ReadingChart', () => ({
   ReadingChart: () => <div data-testid="reading-chart" />,
+}));
+
+// AppWorkspace now syncs the active combo with the URL (NAV-01/02). Stub the
+// app-router hooks: empty search params → the combo comes from select()/prop as
+// before, and router.replace is a no-op in jsdom.
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+  usePathname: () => '/app',
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 // These tests target the live (backend) path; force it explicitly since the

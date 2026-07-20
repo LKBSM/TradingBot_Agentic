@@ -2,10 +2,12 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { ChevronDown, CreditCard, ExternalLink, LogIn, LogOut, User, UserPlus } from 'lucide-react';
 import * as React from 'react';
 import { LocaleToggle } from '@/components/LocaleToggle';
 import { useAuth } from '@/lib/auth/store';
+import { useLocalizedHref } from '@/lib/i18n/href';
 import { cn } from '@/lib/utils';
 
 /**
@@ -18,10 +20,12 @@ import { cn } from '@/lib/utils';
  * link back to them here rather than duplicating the marketing nav.
  */
 export function AccountMenu() {
+  const t = useTranslations('app');
   const [open, setOpen] = React.useState(false);
   const rootRef = React.useRef<HTMLDivElement>(null);
   const { account, isAuthenticated, logout } = useAuth();
   const router = useRouter();
+  const lh = useLocalizedHref();
 
   React.useEffect(() => {
     if (!open) return;
@@ -44,7 +48,7 @@ export function AccountMenu() {
   async function onLogout() {
     setOpen(false);
     await logout();
-    router.push('/');
+    router.push(lh('/'));
   }
 
   return (
@@ -54,7 +58,7 @@ export function AccountMenu() {
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label="Menu du compte"
+        aria-label={t('account.menuAria')}
         className="flex items-center gap-1 rounded-full border border-border/70 py-0.5 pl-0.5 pr-1.5 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <span
@@ -72,7 +76,7 @@ export function AccountMenu() {
       {open && (
         <div
           role="menu"
-          aria-label="Compte"
+          aria-label={t('account.panelAria')}
           className="absolute right-0 z-50 mt-2 w-56 overflow-hidden rounded-lg border border-border/70 bg-popover p-1 text-popover-foreground shadow-md"
         >
           {isAuthenticated ? (
@@ -81,68 +85,68 @@ export function AccountMenu() {
                 {account?.username}
               </p>
               <Link
-                href="/compte"
+                href={lh('/compte')}
                 role="menuitem"
                 className="flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
                 onClick={() => setOpen(false)}
               >
-                Mon compte
+                {t('account.myAccount')}
                 <User className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
               </Link>
               <Link
-                href="/abonnement"
+                href={lh('/abonnement')}
                 role="menuitem"
                 className="flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
                 onClick={() => setOpen(false)}
               >
-                Abonnement
+                {t('account.subscription')}
                 <CreditCard className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
               </Link>
             </>
           ) : (
             <>
               <Link
-                href="/connexion"
+                href={lh('/connexion')}
                 role="menuitem"
                 className="flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
                 onClick={() => setOpen(false)}
               >
-                Se connecter
+                {t('account.login')}
                 <LogIn className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
               </Link>
               <Link
-                href="/inscription"
+                href={lh('/inscription')}
                 role="menuitem"
                 className="flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
                 onClick={() => setOpen(false)}
               >
-                Créer un compte
+                {t('account.signup')}
                 <UserPlus className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
               </Link>
             </>
           )}
 
           <div className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
-            <span className="text-muted-foreground">Langue</span>
+            <span className="text-muted-foreground">{t('account.language')}</span>
             <LocaleToggle />
           </div>
 
           <div className="my-1 h-px bg-border/60" role="separator" />
 
           <p className="px-3 pb-1 pt-1 text-[11px] uppercase tracking-wide text-muted-foreground/70">
-            Le site
+            {t('account.site')}
           </p>
           <Link
-            href="/#honnetete"
+            href={lh('/#honnetete')}
             role="menuitem"
             className="flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
             onClick={() => setOpen(false)}
           >
-            Honnêteté
+            {t('account.honesty')}
             <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
           </Link>
           <Link
-            href="/#faq"
+            href={lh('/#faq')}
             role="menuitem"
             className="flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
             onClick={() => setOpen(false)}
@@ -160,7 +164,7 @@ export function AccountMenu() {
                 onClick={onLogout}
                 className="flex w-full items-center justify-between rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:bg-accent focus-visible:outline-none"
               >
-                Se déconnecter
+                {t('account.logout')}
                 <LogOut className="h-3.5 w-3.5" aria-hidden />
               </button>
             </>

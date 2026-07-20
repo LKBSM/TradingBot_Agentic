@@ -126,21 +126,38 @@ export interface TimelineEvent {
 }
 
 /**
+ * Localized labels for the timeline steps, INJECTED by the React caller (this
+ * module is a pure, hook-free lib). `obTested` / `fvgTested` disambiguate the
+ * single "first contact" interaction step ("Testé" for an OB, "Pénétré" for an
+ * FVG) — the engine tracks no per-test history, so there is never a "×N".
+ */
+export interface TimelineLabels {
+  formed: string;
+  mitigated: string;
+  obTested: string;
+  fvgTested: string;
+  filled: string;
+  partial: string;
+  active: string;
+}
+
+/**
  * Build the lifecycle timeline from ONLY the events the engine actually tracked.
  * `Formé` is always present (every zone has `created_at`); the rest depend on
  * `tested` / `status` / `mitigated_at`. No event is emitted without a backing
- * fact, and no "×N" count is ever produced (the engine has none).
+ * fact, and no "×N" count is ever produced (the engine has none). Step labels
+ * are supplied by the caller (`labels`) so the module stays locale-agnostic.
  */
-export function buildTimeline(zone: ZoneLifecycle): TimelineEvent[] {
+export function buildTimeline(zone: ZoneLifecycle, labels: TimelineLabels): TimelineEvent[] {
   const events: TimelineEvent[] = [
-    { key: 'formed', label: 'Formé', at: zone.createdAt, variant: 'formed' },
+    { key: 'formed', label: labels.formed, at: zone.createdAt, variant: 'formed' },
   ];
 
   if (zone.kind === 'ob') {
     if (zone.status === 'mitigated') {
       events.push({
         key: 'mitigated',
-        label: 'Mitigé',
+        label: labels.mitigated,
         at: zone.mitigatedAt,
         variant: 'terminal',
       });
@@ -148,12 +165,12 @@ export function buildTimeline(zone: ZoneLifecycle): TimelineEvent[] {
       if (zone.tested) {
         events.push({
           key: 'tested',
-          label: 'Testé',
+          label: labels.obTested,
           at: zone.mitigatedAt,
           variant: 'interaction',
         });
       }
-      events.push({ key: 'active', label: 'Suivi en cours', at: null, variant: 'ongoing' });
+      events.push({ key: 'active', label: labels.active, at: null, variant: 'ongoing' });
     }
     return events;
   }
@@ -163,24 +180,24 @@ export function buildTimeline(zone: ZoneLifecycle): TimelineEvent[] {
     if (zone.tested && zone.mitigatedAt) {
       events.push({
         key: 'tested',
-        label: 'Pénétré',
+        label: labels.fvgTested,
         at: zone.mitigatedAt,
         variant: 'interaction',
       });
     }
     // The engine records no "filled_at" — surface the terminal step without a date.
-    events.push({ key: 'filled', label: 'Comblé', at: null, variant: 'terminal' });
+    events.push({ key: 'filled', label: labels.filled, at: null, variant: 'terminal' });
     return events;
   }
 
   if (zone.status === 'partially_filled') {
     events.push({
       key: 'partial',
-      label: 'Partiellement comblé',
+      label: labels.partial,
       at: zone.mitigatedAt,
       variant: 'interaction',
     });
-    events.push({ key: 'active', label: 'Suivi en cours', at: null, variant: 'ongoing' });
+    events.push({ key: 'active', label: labels.active, at: null, variant: 'ongoing' });
     return events;
   }
 
@@ -188,12 +205,12 @@ export function buildTimeline(zone: ZoneLifecycle): TimelineEvent[] {
   if (zone.tested && zone.mitigatedAt) {
     events.push({
       key: 'tested',
-      label: 'Pénétré',
+      label: labels.fvgTested,
       at: zone.mitigatedAt,
       variant: 'interaction',
     });
   }
-  events.push({ key: 'active', label: 'Suivi en cours', at: null, variant: 'ongoing' });
+  events.push({ key: 'active', label: labels.active, at: null, variant: 'ongoing' });
   return events;
 }
 
@@ -264,17 +281,30 @@ export function barsSince(
   return count;
 }
 
+/**
+ * Localized unit fragments for {@link formatDurationShort}, INJECTED by the
+ * React caller (hook-free lib). `underMinute` is the whole "moins d'une minute"
+ * string; `min` / `hour` / `day` are the compact unit suffixes ("min" / "h" /
+ * "j" in French).
+ */
+export interface DurationLabels {
+  underMinute: string;
+  min: string;
+  hour: string;
+  day: string;
+}
+
 /** "45 min", "6 h 30", "2 j 4 h" — compact elapsed duration (fact, no rounding up). */
-export function formatDurationShort(ms: number): string {
+export function formatDurationShort(ms: number, labels: DurationLabels): string {
   const min = Math.floor(ms / 60_000);
-  if (min < 1) return "moins d'une minute";
-  if (min < 60) return `${min} min`;
+  if (min < 1) return labels.underMinute;
+  if (min < 60) return `${min} ${labels.min}`;
   const h = Math.floor(min / 60);
   const m = min % 60;
-  if (h < 24) return m === 0 ? `${h} h` : `${h} h ${String(m).padStart(2, '0')}`;
+  if (h < 24) return m === 0 ? `${h} ${labels.hour}` : `${h} ${labels.hour} ${String(m).padStart(2, '0')}`;
   const d = Math.floor(h / 24);
   const rh = h % 24;
-  return rh === 0 ? `${d} j` : `${d} j ${rh} h`;
+  return rh === 0 ? `${d} ${labels.day}` : `${d} ${labels.day} ${rh} ${labels.hour}`;
 }
 
 /**
@@ -309,18 +339,18 @@ export function findOverlaps(
 
 // ─── Date formatting ─────────────────────────────────────────────────────────
 
-/** "28 juin 2026" — absolute date, no relative-to-now dependency. */
-export function formatZoneDate(iso: string): string {
+/** "28 juin 2026" — absolute date, locale-aware (defaults to fr-FR). */
+export function formatZoneDate(iso: string, locale: string = 'fr-FR'): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
-  return new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium' }).format(d);
+  return new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(d);
 }
 
-/** "28 juin 2026, 14:30" — date + time for the timeline steps. */
-export function formatZoneDateTime(iso: string): string {
+/** "28 juin 2026, 14:30" — date + time for the timeline steps, locale-aware. */
+export function formatZoneDateTime(iso: string, locale: string = 'fr-FR'): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
-  return new Intl.DateTimeFormat('fr-FR', {
+  return new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(d);

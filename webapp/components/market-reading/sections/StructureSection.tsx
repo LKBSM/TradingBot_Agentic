@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useMemo, type ReactNode } from 'react';
+import { useTranslations } from 'next-intl';
 import { Shapes } from 'lucide-react';
 import {
   AccordionContent,
@@ -12,18 +13,7 @@ import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import type { GlossaryKey } from '@/lib/glossary';
 import { useChartViewOptional } from '@/lib/chart/viewState';
 import { coerceViewActions } from '@/lib/chart/viewActions';
-import {
-  formatBand,
-  formatDirection,
-  formatFvgStatus,
-  formatLiquidityKind,
-  formatLiquiditySideShort,
-  formatLiquidityStatus,
-  formatObStatus,
-  formatPrice,
-  formatRetestType,
-  formatValidationStatus,
-} from '@/lib/market-reading/formatters';
+import { useReadingFormatters } from '@/lib/market-reading/use-reading-formatters';
 import type {
   FairValueGap,
   LiquidityPool,
@@ -72,6 +62,8 @@ export function StructureSection({
   /** Current close price — drives the proximity tie-break in the zone lists. */
   closePrice?: number;
 }) {
+  const t = useTranslations('reading.structure');
+  const fmt = useReadingFormatters();
   const { bos, choch, order_blocks, fair_value_gaps, retest_in_progress } =
     structure;
   const structure_liquidity_pools = structure.liquidity_pools;
@@ -162,48 +154,39 @@ export function StructureSection({
       <AccordionTrigger className="text-left text-sm">
         <span className="flex items-center gap-2">
           <Shapes className="h-4 w-4 text-muted-foreground" aria-hidden />
-          <span>Structure de marché</span>
+          <span>{t('title')}</span>
         </span>
       </AccordionTrigger>
       <AccordionContent>
-        {/* Cadrage éditorial (niveau 1.5) — les structures sont décrites au
-            présent : une cassure reste affichée tant que le moteur la considère
-            active (en attente / retest), et disparaît dès sa reprise ou son
-            invalidation. Les zones OB/FVG sont indiquées à leur formation. */}
-        <p className="mb-3 text-xs text-muted-foreground">
-          Structures décrites au présent : affichées tant qu’elles restent
-          vérifiables, retirées dès leur reprise ou invalidation. Les zones Order
-          Block et Fair Value Gap sont indiquées à leur formation.
-        </p>
+        {/* Cadrage éditorial (niveau 1.5) — structures décrites au présent. */}
+        <p className="mb-3 text-xs text-muted-foreground">{t('intro')}</p>
         {!hasAnything ? (
-          <p className="text-sm text-muted-foreground">
-            Aucun élément structurel notable sur la dernière bougie.
-          </p>
+          <p className="text-sm text-muted-foreground">{t('empty')}</p>
         ) : (
           <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Row
-              label="Cassure de structure (BOS)"
+              label={t('bosLabel')}
               termKey="bos"
               value={
                 bos
-                  ? `${formatPrice(bos.level, instrument)} · ${formatDirection(bos.direction)} · ${formatValidationStatus(bos.validation_status)}`
+                  ? `${fmt.price(bos.level, instrument)} · ${fmt.direction(bos.direction)} · ${fmt.validationFem(bos.validation_status)}`
                   : bosUnderRetest
-                    ? `cassure antérieure en cours de retest (${formatPrice(retest_in_progress!.level, instrument)})`
-                    : 'aucune cassure récente'
+                    ? t('bosRetest', { price: fmt.price(retest_in_progress!.level, instrument) })
+                    : t('bosNone')
               }
             />
             <Row
-              label="Changement de caractère (CHOCH)"
+              label={t('chochLabel')}
               termKey="choch"
               value={
                 choch
-                  ? `${formatPrice(choch.level, instrument)} · ${formatDirection(choch.direction)} · ${formatValidationStatus(choch.validation_status)}`
+                  ? `${fmt.price(choch.level, instrument)} · ${fmt.direction(choch.direction)} · ${fmt.validationFem(choch.validation_status)}`
                   : chochUnderRetest
-                    ? `changement antérieur en cours de retest (${formatPrice(retest_in_progress!.level, instrument)})`
-                    : 'aucun changement récent'
+                    ? t('chochRetest', { price: fmt.price(retest_in_progress!.level, instrument) })
+                    : t('chochNone')
               }
             />
-            <ZoneRow label="Order Blocks" termKey="order_block">
+            <ZoneRow label={t('obLabel')} termKey="order_block">
               {order_blocks.length > 0 ? (
                 <ZoneList<OrderBlock>
                   zones={order_blocks}
@@ -216,19 +199,23 @@ export function StructureSection({
                     `${ob.level_low}|${ob.level_high}|${ob.importance}|${ob.status}`
                   }
                   renderLabel={(ob) =>
-                    `${formatBand(ob.level_low, ob.level_high, instrument)} · ${formatObStatus(ob.status)}`
+                    // PR #51 label purge: OB shows band · status only — the
+                    // "importance {X}" conviction score was removed from the
+                    // display (the price band suffices). Detection/sort untouched.
+                    t('obItem', {
+                      band: fmt.band(ob.level_low, ob.level_high, instrument),
+                      status: fmt.obStatus(ob.status),
+                    })
                   }
                   idOf={(ob) => ob.id}
                   onSelect={selectZone}
                   selectedZoneId={selectedZoneId}
                 />
               ) : (
-                <span className="text-sm font-medium text-foreground">
-                  aucun bloc significatif
-                </span>
+                <span className="text-sm font-medium text-foreground">{t('obEmpty')}</span>
               )}
             </ZoneRow>
-            <ZoneRow label="Fair Value Gaps" termKey="fvg">
+            <ZoneRow label={t('fvgLabel')} termKey="fvg">
               {fair_value_gaps.length > 0 ? (
                 <ZoneList<FairValueGap>
                   zones={fair_value_gaps}
@@ -241,43 +228,36 @@ export function StructureSection({
                     `${fvg.level_low}|${fvg.level_high}|${fvg.status}`
                   }
                   renderLabel={(fvg) =>
-                    `${formatBand(fvg.level_low, fvg.level_high, instrument)} · ${formatFvgStatus(fvg.status)}`
+                    `${fmt.band(fvg.level_low, fvg.level_high, instrument)} · ${fmt.fvgStatus(fvg.status)}`
                   }
                   idOf={(fvg) => fvg.id}
                   onSelect={selectZone}
                   selectedZoneId={selectedZoneId}
                 />
               ) : (
-                <span className="text-sm font-medium text-foreground">
-                  aucune zone détectée
-                </span>
+                <span className="text-sm font-medium text-foreground">{t('fvgEmpty')}</span>
               )}
             </ZoneRow>
-            <ZoneRow label="Liquidité externe (BSL / SSL)" termKey="liquidity">
+            <ZoneRow label={t('liquidityLabel')} termKey="liquidity">
               {sortedLiquidity.length > 0 ? (
                 <LiquidityList pools={sortedLiquidity} instrument={instrument} />
               ) : (
-                <span className="text-sm font-medium text-foreground">
-                  aucune poche de liquidité détectée
-                </span>
+                <span className="text-sm font-medium text-foreground">{t('liquidityEmpty')}</span>
               )}
             </ZoneRow>
             <Row
-              label="Retest en cours"
+              label={t('retestLabel')}
               termKey="retest"
               value={
                 retest_in_progress
-                  ? `${formatPrice(retest_in_progress.level, instrument)} · ${formatRetestType(retest_in_progress.type)}`
-                  : 'aucun retest en cours'
+                  ? `${fmt.price(retest_in_progress.level, instrument)} · ${fmt.retestType(retest_in_progress.type)}`
+                  : t('retestNone')
               }
               className="sm:col-span-2"
             />
           </dl>
         )}
-        <p className="mt-4 text-xs italic text-muted-foreground">
-          Lecture descriptive — une invalidation structurelle est un fait de
-          marché, pas un stop-loss imposé.
-        </p>
+        <p className="mt-4 text-xs italic text-muted-foreground">{t('footer')}</p>
       </AccordionContent>
     </AccordionItem>
   );
@@ -324,10 +304,11 @@ function LiquidityList({
   pools: LiquidityPool[];
   instrument: string;
 }) {
+  const fmt = useReadingFormatters();
   return (
     <ul className="flex flex-col gap-1.5">
       {pools.map((p) => {
-        const status = formatLiquidityStatus(p.status);
+        const status = fmt.liquidityStatus(p.status);
         return (
           <li
             key={p.id}
@@ -341,14 +322,10 @@ function LiquidityList({
               }}
               aria-hidden
             />
-            <span className="tabular-nums">{formatPrice(p.level, instrument)}</span>
+            <span className="tabular-nums">{fmt.price(p.level, instrument)}</span>
             <span className="text-muted-foreground">·</span>
-            <span className="font-semibold tracking-wide">
-              {formatLiquiditySideShort(p.side)}
-            </span>
-            <span className="text-muted-foreground">
-              {formatLiquidityKind(p.kind)}
-            </span>
+            <span className="font-semibold tracking-wide">{p.side.toUpperCase()}</span>
+            <span className="text-muted-foreground">{fmt.liquidityKind(p.kind)}</span>
             <span className="text-muted-foreground">·</span>
             <span
               className={cn(

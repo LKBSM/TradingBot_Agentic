@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { Pin, PinOff, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -60,6 +61,7 @@ export function InstrumentSidebar({
   onSelect,
   activeCandleCloseTs,
 }: InstrumentSidebarProps) {
+  const t = useTranslations('app');
   const [query, setQuery] = React.useState('');
   const { pinned, isPinned, toggle } = usePinnedCombos();
 
@@ -75,10 +77,10 @@ export function InstrumentSidebar({
   const hasResults = matchingPinned.length > 0 || groups.length > 0;
 
   return (
-    <nav aria-label="Combinaisons disponibles" className="space-y-4">
+    <nav aria-label={t('sidebar.navAria')} className="space-y-4">
       <div>
         <p className="px-1 pb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          Marchés
+          {t('sidebar.markets')}
         </p>
         <div className="relative">
           <Search
@@ -89,8 +91,8 @@ export function InstrumentSidebar({
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Rechercher un marché…"
-            aria-label="Rechercher un marché (instrument ou unité de temps)"
+            placeholder={t('sidebar.searchPlaceholder')}
+            aria-label={t('sidebar.searchAria')}
             className="w-full rounded-md border border-border/60 bg-background py-2 pl-8 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
           />
         </div>
@@ -99,7 +101,7 @@ export function InstrumentSidebar({
       {matchingPinned.length > 0 && (
         <div className="space-y-1.5">
           <p className="px-1 text-xs font-semibold uppercase tracking-wide text-primary">
-            Épinglés
+            {t('sidebar.pinned')}
           </p>
           <ul className="space-y-1">
             {matchingPinned.map((combo) => (
@@ -146,7 +148,7 @@ export function InstrumentSidebar({
 
       {!hasResults && (
         <p className="px-1 py-6 text-center text-sm text-muted-foreground">
-          Aucun marché ne correspond à « {query} ».
+          {t('sidebar.noResults', { query })}
         </p>
       )}
     </nav>
@@ -175,6 +177,7 @@ function ComboRow({
   activeCandleCloseTs?: string | null;
   showInstrument?: boolean;
 }) {
+  const t = useTranslations('app');
   const isActive = sameCombo(active, combo);
   const label = showInstrument
     ? `${formatInstrument(combo.instrument)} · ${formatTimeframe(combo.timeframe)}`
@@ -209,10 +212,14 @@ function ComboRow({
         aria-pressed={pinned}
         aria-label={
           pinned
-            ? `Désépingler ${formatInstrument(combo.instrument)} ${formatTimeframe(combo.timeframe)}`
-            : `Épingler ${formatInstrument(combo.instrument)} ${formatTimeframe(combo.timeframe)}`
+            ? t('sidebar.unpinAria', {
+                combo: `${formatInstrument(combo.instrument)} ${formatTimeframe(combo.timeframe)}`,
+              })
+            : t('sidebar.pinAria', {
+                combo: `${formatInstrument(combo.instrument)} ${formatTimeframe(combo.timeframe)}`,
+              })
         }
-        title={pinned ? 'Désépingler' : 'Épingler'}
+        title={pinned ? t('sidebar.unpin') : t('sidebar.pin')}
         className={cn(
           'flex shrink-0 items-center px-2 text-muted-foreground/60 transition-colors hover:text-primary',
           pinned && 'text-primary',
@@ -238,8 +245,33 @@ function Freshness({ candleCloseTs }: { candleCloseTs: string | null }) {
 
   React.useEffect(() => {
     setNow(new Date());
-    const id = window.setInterval(() => setNow(new Date()), 30_000);
-    return () => window.clearInterval(id);
+    let id = 0;
+    // Only tick while the tab is visible (UI-14) — no point re-rendering the
+    // relative age every 30s in a backgrounded tab. Resync + resume on return.
+    const start = () => {
+      if (id) return;
+      id = window.setInterval(() => setNow(new Date()), 30_000);
+    };
+    const stop = () => {
+      if (id) {
+        window.clearInterval(id);
+        id = 0;
+      }
+    };
+    const onVisibility = () => {
+      if (document.hidden) {
+        stop();
+      } else {
+        setNow(new Date());
+        start();
+      }
+    };
+    if (!document.hidden) start();
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      stop();
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, []);
 
   return (

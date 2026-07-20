@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -30,6 +31,11 @@ interface MarketReadingCardProps {
    * static surfaces (landing samples), where the header shows `close_price`.
    */
   live?: DailyChange | null;
+  /**
+   * Descriptive session state — true when the spot market is closed. Surfaces a
+   * "Marché fermé" badge next to the header price. Omitted on static surfaces.
+   */
+  marketClosed?: boolean;
   className?: string;
 }
 
@@ -51,12 +57,18 @@ export function MarketReadingCard({
   defaultOpenSections,
   chartSlot,
   live,
+  marketClosed,
   className,
 }: MarketReadingCardProps) {
+  const t = useTranslations('reading.card');
   return (
     <Card className={className ?? 'w-full max-w-2xl border-border/60 shadow-sm'}>
       <CardContent className="space-y-5 p-5 sm:space-y-6 sm:p-7">
-        <MarketReadingHeader header={reading.header} live={live} />
+        <MarketReadingHeader
+          header={reading.header}
+          live={live}
+          marketClosed={marketClosed}
+        />
 
         {chartSlot}
 
@@ -71,10 +83,10 @@ export function MarketReadingCard({
             className="w-full shrink-0 sm:w-auto"
             onClick={onAskChatbot}
             disabled={!onAskChatbot}
-            aria-label="Ouvrir le chatbot pour poser une question contextuelle"
+            aria-label={t('askChatbotAria')}
           >
             <MessageCircle aria-hidden />
-            Demander à M.I.A Agent
+            {t('askChatbot')}
           </Button>
         </div>
 

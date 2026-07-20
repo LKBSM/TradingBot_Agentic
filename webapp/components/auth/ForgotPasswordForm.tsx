@@ -1,8 +1,10 @@
 'use client';
 
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import * as React from 'react';
 import { AuthError, requestPasswordReset } from '@/lib/auth/api-client';
+import { useLocalizedHref } from '@/lib/i18n/href';
 import { Button } from '@/components/ui/button';
 import { FormError, FormSuccess, TextField } from './fields';
 
@@ -12,12 +14,17 @@ import { FormError, FormSuccess, TextField } from './fields';
  * neutral confirmation on success.
  */
 export function ForgotPasswordForm() {
+  const t = useTranslations('auth');
+  const lh = useLocalizedHref();
   const [error, setError] = React.useState<string | null>(null);
   const [done, setDone] = React.useState<string | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
+  const submittingRef = React.useRef(false);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (submittingRef.current) return; // AUTH-08 — no double submit
+    submittingRef.current = true;
     setError(null);
     const form = new FormData(e.currentTarget);
     setSubmitting(true);
@@ -27,8 +34,9 @@ export function ForgotPasswordForm() {
       );
       setDone(res.message);
     } catch (err) {
-      setError(err instanceof AuthError ? err.message : 'Demande impossible. Réessaie.');
+      setError(err instanceof AuthError ? err.message : t('forgot.errorGeneric'));
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   }
@@ -38,10 +46,10 @@ export function ForgotPasswordForm() {
       <div className="space-y-4">
         <FormSuccess message={done} />
         <Link
-          href="/connexion"
+          href={lh('/connexion')}
           className="block text-center text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground"
         >
-          Retour à la connexion
+          {t('forgot.backToLogin')}
         </Link>
       </div>
     );
@@ -51,21 +59,20 @@ export function ForgotPasswordForm() {
     <form onSubmit={onSubmit} className="space-y-4" noValidate>
       <FormError message={error} />
       <p className="text-sm text-muted-foreground">
-        Indiquez votre nom d’utilisateur ou votre e-mail. Si un compte
-        correspond, un lien de réinitialisation vous sera envoyé.
+        {t('forgot.intro')}
       </p>
       <TextField
-        label="Nom d’utilisateur ou e-mail"
+        label={t('forgot.identifierLabel')}
         name="identifier"
         autoComplete="username"
         required
       />
       <Button type="submit" className="w-full" disabled={submitting}>
-        {submitting ? 'Envoi…' : 'Envoyer le lien'}
+        {submitting ? t('forgot.submitting') : t('forgot.submit')}
       </Button>
       <p className="text-center text-sm text-muted-foreground">
-        <Link href="/connexion" className="underline underline-offset-2 hover:text-foreground">
-          Retour à la connexion
+        <Link href={lh('/connexion')} className="underline underline-offset-2 hover:text-foreground">
+          {t('forgot.backToLogin')}
         </Link>
       </p>
     </form>

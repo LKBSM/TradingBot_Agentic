@@ -1,0 +1,1321 @@
+{
+  "_comment": "AR فصحى — صياغة احترافية (landing+cookies 2026-07-08)، تنتظر مراجعة نهائية من متحدث أصلي",
+  "nav": {
+    "brandHomeAria": "MIA Markets — العودة إلى الصفحة الرئيسية",
+    "sectionsAria": "أقسام الموقع",
+    "demo": "عرض توضيحي",
+    "honesty": "النزاهة",
+    "pricing": "الأسعار",
+    "faq": "الأسئلة الشائعة",
+    "zones": "المناطق",
+    "scanner": "الماسح",
+    "account": "الحساب",
+    "login": "تسجيل الدخول",
+    "language": "اللغة"
+  },
+  "landing": {
+    "hero": {
+      "badgeLive": "قراءة مباشرة",
+      "badgeIndicator": "مؤشّر · وليس خدمة إشارات",
+      "srTitle": "MIA Markets — افهم السوق دون أن يُملي عليك أحد ما يجب فعله.",
+      "cta": "اطّلع على العرض"
+    },
+    "chatPreview": {
+      "ariaCard": "معاينة المحادثة مع M.I.A Agent",
+      "role": "مساعد تحاوري",
+      "thinking": "يقرأ M.I.A Agent السوق",
+      "thinkingAria": "يفكّر M.I.A Agent",
+      "greeting": "مرحبًا، أنا M.I.A Agent — مساعد MIA Markets. لقد قرأتُ لتوّي سوق {instrument}: تشير البنية إلى تشكيلة {trend}.",
+      "trendBullish": "صعودية",
+      "trendBearish": "هبوطية",
+      "trendNeutral": "محايدة",
+      "disclaimer": "اطرح عليّ أيّ سؤال — لا أُعطي أمر شراء ولا نصيحة مخصّصة.",
+      "suggested": "أسئلة مقترحة",
+      "continue": "تابع في الدردشة"
+    },
+    "multiMarket": {
+      "badge": "ثلاث قراءات · في اللحظة نفسها",
+      "title": "في كل سوق، إطار القراءة ذاته.",
+      "subtitle": "الذهب، والعملات، والمؤشّرات — الدقة المنهجية نفسها، والصدق ذاته حيال عدم اليقين."
+    },
+    "comingSoon": {
+      "subtitle": "قريبًا",
+      "note": "توسّع مُقرّر بعد التحقّق خارج العيّنة (OOS) للمحرّك على XAU/EUR."
+    },
+    "conversations": {
+      "badge": "روبوت الدردشة · عرض توضيحي",
+      "title": "يُجيب M.I.A Agent عن الأسئلة الحقيقية.",
+      "subtitle": "ليس نصًّا جاهزًا عامًّا — بل مساعد يعرف سياق كل قراءة، ويرفض الأسئلة التي لا ينبغي له الإجابة عنها.",
+      "card1Title": "فهم قراءة",
+      "card1Kicker": "تعليم",
+      "card2Title": "وضع حدث في سياقه",
+      "card2Kicker": "الاقتصاد الكلّي · فترة الحظر",
+      "card3Title": "رفض أمر تداول",
+      "card3Kicker": "رفض تعليمي",
+      "footnote": "الردود أعلاه مكتوبة مسبقًا لأغراض العرض. في الإنتاج، يستخدم M.I.A Agent نموذج Claude (Anthropic) مع حقن سياق InsightSignal v2.1.0 ومطالبة نظام تمنع أيّ توصية مخصّصة."
+    },
+    "replayCard": {
+      "contextInjected": "السياق المحقون",
+      "compliance": "الامتثال",
+      "play": "تشغيل",
+      "replay": "إعادة التشغيل"
+    },
+    "honesty": {
+      "badge": "الشفافية",
+      "title": "المؤشّر الصادق يبدأ بذكر ما لا يفعله.",
+      "subtitle": "تصف MIA السوق — البنية، والنظام، والأحداث. لا تعِد بأيّ ربح ولا تقدّم نفسها بوصفها نظام تداول. نتحمّل هذا علنًا، لأنه الموقف الوحيد الذي يمكن الدفاع عنه لأداة فهم.",
+      "quote": "لا ينبغي لأيّ مؤشّر سوقي أن يعِد بالأرباح. نحن لا نفعل ذلك. ما نقدّمه هو فهمٌ مُعزَّز للسوق — لا أداءٌ مالي.",
+      "quoteCaption": "— تعهّد علني من MIA Markets، 27 مايو 2026",
+      "neverTitle": "ما لن نفعله أبدًا",
+      "never1": "نشر «نسبة نجاح 90٪».",
+      "never2": "الوعد بعائد مُحدَّد بالأرقام.",
+      "never3": "بيع قراءة على أنها إشارة تداول.",
+      "never4": "تقديم أنفسنا بوصفنا نظام تداول مُربح.",
+      "todayTitle": "ما نفعله اليوم",
+      "today1": "قراءة مُنظَّمة للسوق في الوقت الفعلي.",
+      "today2": "مجال عدم يقين مُلاحَظ ومعروض.",
+      "today3": "روبوت دردشة يرفض أوامر التداول.",
+      "today4": "توثيق تقني شفّاف لخوارزمياتنا.",
+      "cta": "كيف يصف مؤشّرنا السوق"
+    },
+    "pricing": {
+      "earlyAccessBadge": "وصول مبكر",
+      "title": "خطة واحدة فقط. الأداة كاملةً، دون أنصاف حلول.",
+      "intro": "لا تجربة مُقنَّعة، ولا فئة تبتر الأداة: وصول كامل، قابل للإلغاء بنقرة واحدة. العروض التوضيحية في هذه الصفحة مجانية — ترى تمامًا ما ستحصل عليه. اطّلع على موقفنا في قسم <link>النزاهة</link>.",
+      "cadenceGroupLabel": "اختيار وتيرة الفوترة",
+      "monthlyToggle": "شهري",
+      "annualToggle": "سنوي",
+      "discountBadge": "−20 %",
+      "planName": "الوصول الكامل إلى MIA",
+      "allIncludedBadge": "كل شيء مُضمَّن",
+      "planSubtitle": "اشتراك واحد، الأداة كاملةً — القراءة، روبوت المحادثة، الماسح، المناطق.",
+      "currency": "$",
+      "perMonth": "/ شهريًا",
+      "annualBilling": "تُفوتَر بمبلغ {total} $ سنويًا — أي توفير 120 $ (−20 %).",
+      "monthlyBilling": "دون التزام، قابل للإلغاء في أي وقت.",
+      "feature1": "قراءات غير محدودة لـ XAU/USD + EUR/USD · M15 → H4",
+      "feature2": "جميع الأقسام: بنية SMC، النظام السوقي، التقلّب، الأحداث",
+      "feature3": "روبوت M.I.A Agent غير محدود (Claude، مع حقن سياق القراءة)",
+      "feature4": "ماسح متعدد التركيبات + صفحة المناطق (دورة حياة OB / FVG)",
+      "feature5": "شريط الأحداث الاقتصادية الكلية ≤ 4 ساعات",
+      "feature6": "خلاصة خبيرة مفصّلة + مصادر RAG أكاديمية",
+      "feature7": "سجل كامل لقراءاتك",
+      "feature8": "إلغاء بنقرة واحدة",
+      "subscribeDisabledTitle": "التسجيل متاح بعد دمج الواجهة الخلفية",
+      "subscribeButton": "اشترك",
+      "reassurance1": "<strong>لا بطاقة مصيدة.</strong> إلغاء بنقرة واحدة من حسابك، دون متابعة تسويقية ولا استبيان احتفاظ.",
+      "reassurance2": "<strong>دون التزام بمدة.</strong> العرض الشهري قابل للإلغاء في أي وقت؛ والسنوي يبقى فعّالًا حتى نهاية الفترة المدفوعة.",
+      "reassurance3": "<strong>بياناتك تبقى ملكك.</strong> قراءاتك ومحادثاتك خاصة، لا تُباع أبدًا، ولا تُدمَج لأغراض إعلانية.",
+      "reassurance4": "<strong>جرّب قبل الدفع.</strong> العروض التوضيحية في هذه الصفحة تفاعلية ومجانية — ترى تمامًا ما تشتريه.",
+      "b2bEyebrow": "لفرق المحترفين · واجهة API للأعمال B2B",
+      "b2bDescription": "الوسطاء والصناديق ووسائل الإعلام: دمج عبر REST API + خطافات ويب موقّعة، واتفاقية مستوى خدمة، ومرافقة عند الإعداد — السعر عند الطلب.",
+      "b2bButton": "احجز عرضًا توضيحيًا",
+      "disclaimer": "عرض توضيحي في مرحلة الوصول المبكر. تُنتج MIA Markets تحليلات تحريرية سياقية وليست توصيات شخصية."
+    },
+    "faq": {
+      "kicker": "الأسئلة الشائعة",
+      "title": "ربما تتساءل…",
+      "q1": "هل MIA خدمة إشارات تداول؟",
+      "a1": "لا. تُنتج MIA Markets <strong>قراءات وصفية للسوق</strong> (البنية، النظام السوقي، الأحداث، القراءة المسرودة) على أصل ووحدة زمنية. يرفض روبوت المحادثة صراحةً الأسئلة من نوع «هل أشتري؟». ولا تُقدَّم أي توصية شخصية.",
+      "q2": "هل تَعِد MIA بأداء أو ربح؟",
+      "a2": "لا. MIA هي <strong>أداة فهم مُعزَّز</strong>، وليست محرّك أداء: فهي <em>تصف</em> السوق (البنية، النظام السوقي، الأحداث) دون أن تَعِد بعائد أو تُقدِّم نفسها كنظام تداول. ما نقيسه ونتحمّل مسؤوليته علنًا هو <strong>الأمانة الوصفية</strong> لقراءاتنا — المفصّلة في قسم <link>النزاهة</link>.",
+      "q3": "كيف يعمل روبوت M.I.A Agent؟",
+      "a3": "M.I.A Agent هو المساعد الحواري لـ MIA Markets. يستخدم <strong>Claude (Anthropic)</strong> مع حقن سياق القراءة الجارية في النظام: البنية، النظام السوقي، الأحداث الاقتصادية الكلية القادمة، الأداة والوحدة الزمنية. يمنعه موجّه النظام من تقديم أي توصية شخصية. وإن غاب مفتاح الـ API، يتولّى بديل تعليمي مكتوب مسبقًا المهمة — ولن تُقدَّم أي إجابة مُهلوَسة.",
+      "q4": "هل أنا مؤهَّل لـ MIA Markets؟",
+      "a4": "يجب أن تكون بعمر <strong>18 عامًا على الأقل</strong>، وأن تقبل <link>شروط الاستخدام</link>، وأن تؤكّد فهمك للطابع غير الشخصي للتحليل. والقيود المطبَّقة بحسب ولايتك القضائية مفصّلة في الشروط.",
+      "q5": "كيف يعمل الإلغاء؟",
+      "a5": "<strong>إلغاء بنقرة واحدة</strong> من مساحة حسابك — دون أي متابعة تسويقية، ولا استبيان احتفاظ. يبقى الاشتراك فعّالًا حتى نهاية الفترة المدفوعة مسبقًا.",
+      "q6": "ماذا يحدث لسجلّي وبياناتي؟",
+      "a6": "تبقى قراءاتك ومحادثاتك مع روبوت المحادثة <strong>خاصة</strong>. يمكنك في أي وقت طلب الوصول إلى بياناتك أو تصحيحها أو محوها (contact@mia.markets). لا إعادة بيع، ولا دمج إعلاني. التفاصيل في <link>سياسة الخصوصية</link>.",
+      "methodologyPrompt": "هل تريد التعمّق في آلية العمل؟",
+      "methodologyLink": "كيف يصف مؤشرنا بنى السوق"
+    },
+    "beforeAfter": {
+      "kicker": "قبل · بعد",
+      "title": "الساعة نفسها من السوق، طريقتان لقراءتها.",
+      "subtitle": "يُكدِّس معظم المتداولين ثلاثة مؤشرات يناقض بعضها بعضًا. تقرأ MIA بنية السوق وتعرضها كما هي — وهذا هو الرسم البياني الحقيقي للمنتج، إلى اليمين.",
+      "before": {
+        "eyebrow": "المقاربة التقليدية",
+        "title": "ثلاثة مؤشرات مُكدَّسة",
+        "badge": "3 إشارات متناقضة",
+        "items": {
+          "rsi": "<strong>RSI 28</strong> — تشبّع بيعي، إشارة شراء.",
+          "macd": "<strong>MACD</strong> — تقاطع هبوطي، إشارة بيع.",
+          "bollinger": "<strong>Bollinger</strong> — السعر على النطاق السفلي، إشارة غامضة."
+        },
+        "quote": "«حسنًا، ماذا أفعل؟»"
+      },
+      "after": {
+        "eyebrow": "قراءة MIA · الذهب (XAU/USD) · 15 دقيقة",
+        "title": "الرسم البياني الحقيقي للمنتج، دون إخفاء شيء.",
+        "badge": "قراءة واحدة متحمَّل مسؤوليتها",
+        "items": {
+          "bias": "<strong>ميل صعودي</strong> — كسر بنية مؤكَّد وإعادة اختبار جارية، موصوفان دون درجة توجيهية.",
+          "zones": "<strong>مناطق مرسومة</strong> — Order Block و Fair Value Gap صعوديان تحت السعر، وجيوب سيولة مرصودة.",
+          "volatility": "<strong>تقلّب مُعلَن</strong> — يقترب حدث FOMC: تشير MIA إلى الاتساع المحتمل، دون أن تقرّر مكانك."
+        },
+        "quote": "«هذا ما نراه. لك أن تقرّر إن كنت ستتحرّك.»"
+      },
+      "chart": {
+        "title": "ثلاثة مؤشرات متناقضة",
+        "desc": "رسم بياني توضيحي حيث تُرسل RSI و MACD ونطاقات Bollinger إشارات متعارضة على النافذة الزمنية نفسها.",
+        "rsiLabel": "RSI ↑",
+        "macdLabel": "MACD ↓",
+        "bbLabel": "BB band"
+      }
+    },
+    "howItWorks": {
+      "kicker": "كيف يعمل",
+      "title": "من الشمعة الخام إلى قراءة تفهمها.",
+      "subtitle": "تقرأ MIA السوق كمحلّل بنيوي، ثم تشرحه لك بلغة واضحة. إليك الخطوات الأربع — وأدناه، ما يُظهره لك كل عرض توضيحي في هذه الصفحة في ظروف حقيقية.",
+      "steps": {
+        "marketStructure": {
+          "title": "1 · بنية السوق",
+          "body": "يرصد المحرّك البصمات الحقيقية للتدفقات الكبيرة: كسور البنية (BOS)، تغيّرات الطابع (CHOCH)، وحدات Order Blocks، وحدات Fair Value Gaps وإعادات الاختبار. لا مؤشرات مُكدَّسة، ولا تفسير ذاتي."
+        },
+        "regimeVolatility": {
+          "title": "2 · النظام السوقي والتقلّب",
+          "body": "يُصنِّف الاتجاه، ونضج الحركة، ومتوسط اتساع الشموع — تقلّب طبيعي أو مرتفع. وما هو غير مؤكَّد يُعرَض كغير مؤكَّد، دون إخفائه أبدًا."
+        },
+        "macroEvents": {
+          "title": "3 · الأحداث الاقتصادية الكلية",
+          "body": "يرصد النشرات القادمة عالية التأثير (FOMC, ECB, NFP…) ويُعلن لك بنفسه الاتساع المحتمل للتقلّب — تعرف ما تتوقّعه قبل الإعلان، ولك أن تحكم."
+        },
+        "narratedChatbot": {
+          "title": "4 · القراءة المسرودة + روبوت المحادثة",
+          "body": "يُترجَم كل شيء إلى قراءة واضحة، ثم يجيب M.I.A Agent عن أسئلتك بهذا السياق المحقون. يشرح، ويضع في السياق — ويرفض أي أمر بالشراء أو البيع."
+        }
+      },
+      "strengthsHeading": "ما تُثبته العروض التوضيحية",
+      "strengths": {
+        "multiAsset": {
+          "title": "متعدد الأصول، متعدد الآفاق",
+          "proof": "عرض توضيحي · ثلاث قراءات",
+          "body": "الصرامة المنهجية نفسها على الذهب واليورو، من M15 إلى H4 — أما BTC فيأتي بعد التحقق من المحرّك."
+        },
+        "contextChatbot": {
+          "title": "روبوت محادثة يملك السياق",
+          "proof": "عرض توضيحي · محادثات",
+          "body": "يعرف M.I.A Agent القراءة الجارية: البنية، النظام السوقي، الأحداث. يُبسِّط، ويرفض الأسئلة التي لا يجب أن يجيب عنها."
+        },
+        "singleReading": {
+          "title": "قراءة واحدة متحمَّل مسؤوليتها",
+          "proof": "عرض توضيحي · قبل / بعد",
+          "body": "انتهى زمن المؤشرات الثلاثة المتناقضة: إطار واحد، حكم وصفي، وعدم اليقين ظاهر دائمًا."
+        },
+        "honestByDesign": {
+          "title": "نزيه بحكم التصميم",
+          "proof": "قسم · الشفافية",
+          "body": "صفر وعد بالربح، صفر إشارة تداول — موقف تعليمي نتحمّل مسؤوليته علنًا."
+        }
+      },
+      "seeDemo": "شاهد العرض التوضيحي →"
+    }
+  },
+  "cookies": {
+    "title": "ملفات تعريف الارتباط والخصوصية",
+    "description": "نستخدم ملفات تعريف الارتباط لتشغيل الموقع (الضرورية)، ورهنًا بموافقتك، لتذكّر تفضيلاتك، وقياس الجمهور، وتحسين المنتج. يمكنك القبول أو الرفض أو التخصيص في أيّ وقت.",
+    "necessaryLabel": "الضرورية",
+    "necessaryDesc": "لا غنى عنها لعمل الموقع (تفضيل السمة، والتنقّل). مُفعَّلة دائمًا.",
+    "functionalLabel": "الوظيفية",
+    "functionalDesc": "تتذكّر تفضيلاتك (اللغة، والأقسام المفتوحة، وحالة روبوت الدردشة).",
+    "analyticsLabel": "التحليلية",
+    "analyticsDesc": "إحصاءات استخدام مجهولة الهوية لتحسين المنتج (V2: Plausible مُستضاف ذاتيًا، دون نقل خارج الاتحاد الأوروبي).",
+    "marketingLabel": "التسويقية",
+    "marketingDesc": "تخصيص مراسلات محتملة. لا أداة نشطة في V1.",
+    "acceptAll": "قبول الكل",
+    "rejectAll": "رفض الكل",
+    "customize": "تخصيص",
+    "save": "حفظ اختياري"
+  },
+  "scanner": {
+    "loading": "جارٍ التحميل…",
+    "scanInProgress": "الفحص جارٍ…",
+    "errorUnavailable": "خدمة الفحص غير متوفّرة في هذه البيئة.",
+    "errorGeneric": "فشل الفحص.",
+    "retry": "إعادة المحاولة",
+    "editConditions": "تعديل شروطي",
+    "results": {
+      "title": "الشروط المتحقّقة الآن",
+      "rescan": "إعادة تشغيل الفحص",
+      "scanning": "فحص…",
+      "analysisInProgress": "التحليل جارٍ…",
+      "lastAnalysis": "آخر تحليل: {when}",
+      "lastAnalysisNone": "آخر تحليل: —",
+      "yourConditionsAll": "شروطك (جميعها):",
+      "yourConditionsAny": "شروطك (واحد على الأقل):",
+      "noMarketsAll": "لا يوجد سوق يستوفي حاليًا جميع شروطك. تُظهر المطابقات الجزئية أدناه ما هو متحقّق في أسواق أخرى.",
+      "noMarketsAny": "لا يوجد سوق يستوفي حاليًا أيًّا من شروطك. تُظهر المطابقات الجزئية أدناه ما هو متحقّق في أسواق أخرى.",
+      "olderTitle": "بناءً على قراءة أقدم — بحاجة إلى تحديث",
+      "olderBody": "تستوفي هذه الأسواق شروطك، لكن بناءً على قراءة قديمة (عطلة نهاية أسبوع أو سوق هادئ). يُحدَّث الفحص عند إغلاق الشمعة التالية، أو أعِد تشغيله لتحديثه قبل الاعتماد عليه.",
+      "partialMatches": "المطابقات الجزئية ({count})",
+      "nonePresent": "لا يوجد أيٌّ من شروطك متحقّقًا: {list}.",
+      "notGenerated": "لم تُولَّد القراءة بعد: {list}.",
+      "scannedFooter": "تم تحليل {count} تركيبة للقراءة فقط بناءً على أحدث القراءات المُنتَجة."
+    },
+    "combo": {
+      "conditionsPresent": "{met} من {total, plural, one {شرط واحد متحقّق} two {شرطان متحقّقان} few {# شروط متحقّقة} many {# شرطًا متحقّقًا} other {# شرط متحقّق}}",
+      "price": "السعر {price}",
+      "reading": "قراءة {age}",
+      "fullContext": "السياق الكامل",
+      "trend": "الاتجاه: {label}",
+      "obFvg": "{ob} OB · {fvg} FVG نشطة",
+      "bosSuffix": " · BOS {dir}",
+      "importantNews": "{count, plural, one {خبر مهمّ واحد قادم — ضعه في الحسبان.} two {خبران مهمّان قادمان — ضعهما في الحسبان.} few {# أخبار مهمّة قادمة — ضعها في الحسبان.} many {# خبرًا مهمًّا قادمًا — ضعها في الحسبان.} other {# خبر مهمّ قادم — ضعه في الحسبان.}}",
+      "analyse": "تحليل",
+      "disclaimer": "وقائع بنيوية مرصودة في الحاضر. لا يتنبّأ الماسح بشيء ولا يوصي بشيء — الحكم لك.",
+      "unavailable": "غير متوفّر"
+    },
+    "toggle": {
+      "label": "تحديث تلقائي (عند كل إغلاق)",
+      "aria": "تحديث تلقائي عند كل إغلاق شمعة"
+    },
+    "builder": {
+      "composeTitle": "كوّن شروطك",
+      "editTitle": "تعديل شروطي",
+      "intro": "اختر الوقائع البنيوية <b>المتحقّقة</b> التي تكوّن قراءتك. يُظهر لك الماسح على أيّ الأسواق والأطر الزمنية تجتمع <b>في هذه اللحظة</b>. إنها أداة قراءة: الحكم لك.",
+      "direction": "الاتجاه",
+      "trend": "الاتجاه العام",
+      "phase": "المرحلة",
+      "volatility": "التقلّب",
+      "inLast": "خلال آخر",
+      "lastCandles": "الشموع الأخيرة",
+      "combination": "التركيب:",
+      "logicAnd": "الكل (AND)",
+      "logicOr": "واحد على الأقل (OR)",
+      "submitOnboarding": "اعرض الأسواق المعنيّة",
+      "submitEdit": "حفظ وإعادة التشغيل",
+      "cancel": "إلغاء",
+      "selectAtLeastOne": "اختر شرطًا واحدًا على الأقل.",
+      "proximityWithin": "على مسافة أقل من",
+      "proximityOfPrice": "% من السعر",
+      "side": "الجهة"
+    },
+    "bias": {
+      "bullish": "صاعد",
+      "bearish": "هابط",
+      "ranging": "تداول عرضي",
+      "neutral": "محايد",
+      "unknown": "—"
+    },
+    "phase": {
+      "accumulation": "تجميع",
+      "distribution": "تصريف",
+      "trend": "اتجاه",
+      "ranging": "تداول عرضي",
+      "expansion": "توسّع",
+      "unknown": "—"
+    },
+    "age": {
+      "instant": "الآن",
+      "min": "منذ {n} دقيقة",
+      "hours": "منذ {n} ساعة",
+      "days": "منذ {n} يوم"
+    },
+    "options": {
+      "directionAny": "أيّ اتجاه",
+      "directionBullish": "صاعد",
+      "directionBearish": "هابط",
+      "trendBullish": "صاعد",
+      "trendBearish": "هابط",
+      "trendRanging": "تداول عرضي",
+      "trendNeutral": "محايد",
+      "phaseAccumulation": "تجميع",
+      "phaseDistribution": "تصريف",
+      "phaseTrend": "اتجاه",
+      "phaseRanging": "تداول عرضي",
+      "phaseExpansion": "توسّع",
+      "volatilityLow": "منخفض",
+      "volatilityNormal": "طبيعي",
+      "volatilityElevated": "مرتفع",
+      "sideAny": "كلاهما (SSL + BSL)",
+      "sideBsl": "BSL (سيولة في الأعلى)",
+      "sideSsl": "SSL (سيولة في الأسفل)"
+    },
+    "palette": {
+      "mtf_aligned_label": "3 أطر زمنية متوائمة",
+      "mtf_aligned_desc": "الأطر الزمنية الثلاثة (H4, H1, M15) تشير جميعها إلى الاتجاه نفسه في هذه اللحظة.",
+      "trend_is_label": "الاتجاه الحالي",
+      "trend_is_desc": "الاتجاه المرصود على هذا الإطار الزمني هو، في هذه اللحظة، الاتجاه المختار.",
+      "market_phase_is_label": "مرحلة السوق",
+      "market_phase_is_desc": "مرحلة السوق المرصودة تطابق، في هذه اللحظة، المرحلة المختارة.",
+      "volatility_is_label": "التقلّب المرصود",
+      "volatility_is_desc": "التقلّب المرصود في هذه اللحظة يطابق المستوى المختار.",
+      "price_in_ob_label": "السعر داخل Order Block",
+      "price_in_ob_desc": "السعر الحالي يقع داخل Order Block نشط.",
+      "price_in_fvg_label": "السعر داخل Fair Value Gap",
+      "price_in_fvg_desc": "السعر الحالي يقع داخل Fair Value Gap غير مملوء.",
+      "ob_fvg_confluence_label": "التقاء OB + FVG عند السعر الحالي",
+      "ob_fvg_confluence_desc": "السعر الحالي يقع في آنٍ واحد داخل Order Block نشط وداخل Fair Value Gap غير مملوء.",
+      "bos_recent_confirmed_label": "BOS مؤكّد حديث",
+      "bos_recent_confirmed_desc": "كسر بنية (BOS) مؤكّد مؤرّخ ضمن الشموع الأخيرة.",
+      "choch_recent_confirmed_label": "CHOCH مؤكّد حديث",
+      "choch_recent_confirmed_desc": "تغيّر طابع (CHOCH) مؤكّد مؤرّخ ضمن الشموع الأخيرة.",
+      "retest_in_progress_label": "إعادة اختبار جارية",
+      "retest_in_progress_desc": "إعادة اختبار لمستوى (BOS أو CHOCH أو OB أو FVG) جارية في هذه اللحظة.",
+      "price_near_ob_label": "السعر قريب من Order Block",
+      "price_near_ob_desc": "السعر الحالي قريب من Order Block نشط (دون المسافة المختارة)، من دون أن يكون بالضرورة داخله.",
+      "price_near_fvg_label": "السعر قريب من Fair Value Gap",
+      "price_near_fvg_desc": "السعر الحالي قريب من Fair Value Gap غير مُردوم (دون المسافة المختارة).",
+      "price_near_liquidity_label": "السعر قريب من سيولة (SSL/BSL)",
+      "price_near_liquidity_desc": "السعر الحالي قريب من جيب سيولة سليم (BSL في الأعلى / SSL في الأسفل).",
+      "liquidity_swept_recent_label": "أخذ سيولة حديث",
+      "liquidity_swept_recent_desc": "جيب سيولة (SSL/BSL) جرى اجتياحه خلال الشموع الأخيرة."
+    },
+    "saveStrategy": {
+      "prompt": "احفظ هذا التركيب كاستراتيجية مسمّاة (على هذا الجهاز فقط — لا يُرسَل أي شيء إلى الخادم):",
+      "placeholder": "مثال: London sweep M15",
+      "nameAria": "اسم الاستراتيجية",
+      "save": "احفظ الاستراتيجية",
+      "saved": "حُفظت الاستراتيجية «{name}» على هذا الجهاز.",
+      "saveFailed": "تعذّر الحفظ."
+    },
+    "strategyPanel": {
+      "title": "استراتيجياتي",
+      "subtitle": "محفوظة على هذا الجهاز فقط — لا يُرسَل أي شيء إلى الخادم.",
+      "invalid": "غير صالحة",
+      "meta": "{count, plural, zero {# شرط} one {# شرط} two {# شرطان} few {# شروط} many {# شرطًا} other {# شرط}} · {logic} · استُخدمت في {when}",
+      "logicAnd": "و",
+      "logicOr": "أو",
+      "newNameAria": "اسم جديد",
+      "ok": "موافق",
+      "cancel": "إلغاء",
+      "load": "تحميل",
+      "loadDisabledTitle": "تحتوي هذه الاستراتيجية على عناصر خارجة عن المخطّط الحالي — لا يمكن إعادة تشغيلها.",
+      "rename": "إعادة تسمية",
+      "duplicate": "تكرار",
+      "confirmDelete": "تأكيد الحذف",
+      "keep": "الاحتفاظ",
+      "delete": "حذف",
+      "errors": {
+        "name_required": "لا يمكن أن يكون الاسم فارغًا.",
+        "limit_reached": "بُلغ الحدّ الأقصى للاستراتيجيات — احذف استراتيجية موجودة لإنشاء واحدة جديدة.",
+        "not_found": "الاستراتيجية غير موجودة.",
+        "storage_failed": "تعذّرت الكتابة في التخزين المحلي (الحصة أو التصفّح الخاص). لم يُحفظ أي شيء."
+      }
+    }
+  },
+  "disclaimer": {
+    "short": "تحليل خوارزمي تعليمي. ليس نصيحة استثمارية.",
+    "long": "تُنتج MIA Markets تحليلات سياقية تحريرية، لا توصيات مخصّصة."
+  },
+  "glossary": {
+    "title": "مسرد المصطلحات",
+    "subtitle": "المصطلحات التقنية الواردة في قراءاتنا، مشروحة ببساطة — بالتفصيل في صفحة المنهجية."
+  },
+  "pricing": {
+    "title": "أسعار بسيطة وشفّافة",
+    "subtitle": "دون بطاقة في باقة Découverte.",
+    "free_title": "Découverte",
+    "approfondie_title": "Approfondie",
+    "integrale_title": "Intégrale",
+    "billed_monthly": "/شهريًا",
+    "cta_signup": "ابدأ",
+    "cta_contact": "اتصل بنا"
+  },
+  "chat": {
+    "title": "دردشة الذكاء الاصطناعي",
+    "placeholder": "اطرح سؤالًا حول سوق XAU...",
+    "send": "إرسال",
+    "sources_label": "المصادر المذكورة",
+    "panelContext": "{instrument} · {timeframe} · سياق مُدرَج",
+    "panelNoContext": "اختر قراءة لفتح السياق.",
+    "panelTagline": "تحليل تعليمي — لا إشارات ولا نصائح.",
+    "reset": "إعادة تعيين المحادثة",
+    "complianceLine": "يجيب M.I.A Agent عن أسئلة حول القراءة الخوارزمية. إنه لا يقدّم أي إشارة تداول ولا أي توصية شخصية.",
+    "introHeader": "M.I.A Agent · {instrument}",
+    "introBody": "اطرح عليّ سؤالاً حول هذه القراءة. يمكنني أن أشرح لك ما تصفه، أو أبسّط مصطلحًا تقنيًا، أو أضع حدثًا مقبلاً في سياقه.",
+    "introOffline": "الوضع النصّي: استخدم الاقتراحات أدناه. تتطلّب الكتابة الحرة مفتاح Anthropic على جانب الخادم.",
+    "introDisclaimer": "أنا لا أقدّم أي إشارة شراء أو بيع، ولا أي نصيحة استثمارية.",
+    "allSuggestionsAsked": "طُرحت جميع الأسئلة المقترحة. الكتابة الحرة قادمة قريبًا — في الوقت الحالي، أغلق المحادثة وأعد فتحها لإعادة تشغيل التسلسل.",
+    "suggestedLabel": "أسئلة مقترحة",
+    "inputPlaceholder": "اطرح سؤالاً على M.I.A Agent…",
+    "inputPlaceholderOffline": "نموذج اللغة المباشر غير مُهيّأ — استخدم الأسئلة المقترحة.",
+    "inputAria": "سؤال حرّ لـ M.I.A Agent",
+    "sendAria": "إرسال السؤال",
+    "sendLoadingAria": "الإجابة قيد الإعداد…",
+    "inputHint": "Enter للإرسال · Shift+Enter لسطر جديد",
+    "viewUpdated": "حُدّثت العرض",
+    "redirectLabel": "سؤال مُعاد تأطيره",
+    "redirectAria": "لماذا أُعيد تأطير هذه الإجابة",
+    "redirectTooltip": "يصف MIA Markets ظروف السوق. أمّا أسئلة الفعل أو النصيحة، فالقرار لك وفق معاييرك الخاصة.",
+    "copy": "نسخ",
+    "copied": "نُسخ",
+    "copyAria": "نسخ الإجابة",
+    "copiedAria": "نُسخت الإجابة",
+    "thinking": "M.I.A Agent يفكّر…",
+    "turnUnavailable": "وضع المحادثة المباشر غير متاح في هذه البيئة في الوقت الحالي. استخدم الأسئلة المقترحة أدناه — فهي تُرجِع إجابات موضوعة في سياق هذه القراءة.",
+    "turnError": "عذرًا، منع خطأٌ الإجابة: {message} أعد المحاولة أو استخدم سؤالاً مقترحًا.",
+    "unknownError": "خطأ غير معروف"
+  },
+  "footer": {
+    "description": "مؤشّر سوق تحاوري. موقف تعليمي وفهم مُعزَّز للسوق — لا أداء مالي موعود.",
+    "earlyAccessBadge": "وصول مبكر · 50 مقعدًا",
+    "productHeading": "المنتج",
+    "legalHeading": "قانوني",
+    "product": {
+      "multiAsset": "متعدّد الأصول",
+      "chatbot": "روبوت الدردشة M.I.A Agent",
+      "beforeAfter": "قبل / بعد",
+      "transparency": "الشفافية",
+      "methodology": "المنهجية",
+      "attributions": "الإسنادات",
+      "pricing": "الأسعار",
+      "faq": "الأسئلة الشائعة"
+    },
+    "legal": {
+      "terms": "شروط الاستخدام",
+      "privacy": "الخصوصية",
+      "contact": "التواصل"
+    },
+    "disclaimer": "عرض توضيحي بوصول مبكر · قراءة خوارزمية تعليمية · لا تُشكّل إشارة تداول ولا نصيحة استثمارية مخصّصة · الأداء السابق لا يدلّ على النتائج المستقبلية · ينطوي التداول بالرافعة المالية على مخاطر عالية للخسارة.",
+    "copyright": "© {year} MIA Markets — جميع الحقوق محفوظة."
+  },
+  "reading": {
+    "card": {
+      "phaseTitle": "مرحلة السوق",
+      "phaseAria": "مرحلة السوق المرصودة",
+      "askChatbot": "اسأل M.I.A Agent",
+      "askChatbotAria": "افتح روبوت المحادثة لطرح سؤال سياقي"
+    },
+    "temporal": {
+      "candleClosed": "أُغلقت الشمعة {rel}",
+      "dailyChangeAria": "تغيّر اليوم {pct}"
+    },
+    "events": {
+      "title": "سياق الأحداث",
+      "imminent": "وشيك",
+      "empty": "لا توجد أحداث بارزة بالقرب من هذه القراءة.",
+      "upcoming": "قادم",
+      "justPublished": "نُشر مؤخّراً",
+      "recentTriggers": "محفّزات فنية حديثة"
+    },
+    "time": {
+      "instant": "الآن",
+      "relativePast": "منذ {n, plural, one {دقيقة واحدة} two {دقيقتين} few {# دقائق} many {# دقيقة} other {# دقيقة}}",
+      "relativePastHours": "منذ {n, plural, one {ساعة واحدة} two {ساعتين} few {# ساعات} many {# ساعة} other {# ساعة}}",
+      "relativePastDays": "منذ {n, plural, one {يوم واحد} two {يومين} few {# أيام} many {# يوماً} other {# يوم}}",
+      "toEventImminent": "وشيك",
+      "toEventMin": "خلال {n} دقيقة",
+      "toEventHours": "خلال {h} س",
+      "toEventHoursMin": "خلال {h}:{mm} س",
+      "toEventDays": "خلال {d} ي",
+      "toEventDaysHours": "خلال {d} ي {h} س",
+      "agoMin": "منذ {n} دقيقة",
+      "agoHours": "منذ {h} س",
+      "agoHoursMin": "منذ {h}:{mm} س"
+    },
+    "labels": {
+      "instrument_XAUUSD": "الذهب (XAU/USD)",
+      "instrument_EURUSD": "اليورو / الدولار (EUR/USD)",
+      "instrument_BTCUSD": "بيتكوين (BTC/USD)",
+      "instrument_US500": "S&P 500 (US500)",
+      "instrument_GBPUSD": "الجنيه / الدولار (GBP/USD)",
+      "instrument_USDJPY": "الدولار / الين (USD/JPY)",
+      "timeframe_M1": "دقيقة واحدة",
+      "timeframe_M5": "5 دقائق",
+      "timeframe_M15": "15 دقيقة",
+      "timeframe_M30": "30 دقيقة",
+      "timeframe_H1": "ساعة واحدة",
+      "timeframe_H4": "4 ساعات",
+      "timeframe_D1": "يوم واحد",
+      "timeframe_W1": "أسبوع واحد",
+      "trend_bullish": "اتجاه صعودي",
+      "trend_bearish": "اتجاه هبوطي",
+      "trend_neutral": "اتجاه محايد",
+      "trend_ranging": "سوق ضمن نطاق",
+      "volatility_low": "تقلّب منخفض",
+      "volatility_normal": "تقلّب طبيعي",
+      "volatility_elevated": "تقلّب مرتفع",
+      "marketPhase_accumulation": "مرحلة تجميع",
+      "marketPhase_distribution": "مرحلة توزيع",
+      "marketPhase_trend": "مرحلة اتجاه",
+      "marketPhase_ranging": "مرحلة نطاق",
+      "marketPhase_expansion": "مرحلة توسّع",
+      "impact_low": "أثر ضعيف",
+      "impact_medium": "أثر متوسّط",
+      "impact_high": "أثر قوي",
+      "surprise_beat": "أعلى من التوقّعات",
+      "surprise_miss": "أدنى من التوقّعات",
+      "surprise_in_line": "متوافق مع التوقّعات",
+      "direction_bullish": "صعودي",
+      "direction_bearish": "هبوطي",
+      "triggerEvent_bos": "كسر بنية (BOS)",
+      "triggerEvent_choch": "تغيّر بنية (CHOCH)",
+      "triggerEvent_ob": "تخفيف Order Block",
+      "triggerEvent_fvg": "ملء Fair Value Gap",
+      "triggerEvent_retest": "إعادة اختبار",
+      "marketPhaseShort_accumulation": "تجميع",
+      "marketPhaseShort_distribution": "توزيع",
+      "marketPhaseShort_trend": "اتجاه",
+      "marketPhaseShort_ranging": "نطاق",
+      "marketPhaseShort_expansion": "توسّع",
+      "validation_confirmed": "مؤكَّد",
+      "validation_pending": "بانتظار التأكيد",
+      "validation_invalidated": "مُبطَل",
+      "trendAdj_bullish": "صعودي",
+      "trendAdj_bearish": "هبوطي",
+      "trendAdj_neutral": "محايد",
+      "trendAdj_ranging": "في نطاق",
+      "orient_bullish": "صعوديًّا",
+      "orient_bearish": "هبوطيًّا",
+      "alignedDir_up": "صعودية",
+      "alignedDir_down": "هبوطية",
+      "validationFem_confirmed": "مؤكَّدة",
+      "validationFem_pending": "بانتظار التأكيد",
+      "validationFem_invalidated": "مُبطَلة",
+      "obStatus_active": "نشط",
+      "obStatus_mitigated": "مُخفَّف",
+      "obStatus_invalidated": "مُبطَل",
+      "obImportance_low": "منخفضة",
+      "obImportance_medium": "متوسطة",
+      "obImportance_high": "مرتفعة",
+      "fvgStatus_active": "نشط",
+      "fvgStatus_partially_filled": "مملوء جزئيًا",
+      "fvgStatus_filled": "مملوء",
+      "retestType_bos_retest": "إعادة اختبار كسر البنية (BOS)",
+      "retestType_choch_retest": "إعادة اختبار تغيّر الطابع (CHOCH)",
+      "retestType_ob_retest": "إعادة اختبار Order Block",
+      "retestType_fvg_retest": "إعادة اختبار Fair Value Gap",
+      "liquidityKind_equal_highs": "قمم متساوية",
+      "liquidityKind_equal_lows": "قيعان متساوية",
+      "liquidityKind_range_high": "أعلى النطاق",
+      "liquidityKind_range_low": "أدنى النطاق",
+      "liquidityStatus_intact": "سليمة",
+      "liquidityStatus_swept": "مكنوسة",
+      "liquidityStatus_broken": "مكسورة"
+    },
+    "structure": {
+      "title": "بنية السوق",
+      "intro": "بنى موصوفة في الحاضر: تُعرَض ما دامت قابلة للتحقّق، وتُزال فور استئنافها أو إبطالها. تُشار مناطق Order Block وFair Value Gap عند تشكّلها.",
+      "empty": "لا عنصر بنيوي بارز على الشمعة الأخيرة.",
+      "bosLabel": "كسر البنية (BOS)",
+      "chochLabel": "تغيّر الطابع (CHOCH)",
+      "obLabel": "Order Blocks",
+      "fvgLabel": "Fair Value Gaps",
+      "liquidityLabel": "السيولة الخارجية (BSL / SSL)",
+      "retestLabel": "إعادة اختبار جارية",
+      "bosNone": "لا كسر حديث",
+      "bosRetest": "كسر سابق قيد إعادة الاختبار ({price})",
+      "chochNone": "لا تغيّر حديث",
+      "chochRetest": "تغيّر سابق قيد إعادة الاختبار ({price})",
+      "obEmpty": "لا كتلة ذات دلالة",
+      "fvgEmpty": "لا منطقة مرصودة",
+      "liquidityEmpty": "لا جيب سيولة مرصود",
+      "retestNone": "لا إعادة اختبار جارية",
+      "obItem": "{band} · {status}",
+      "footer": "قراءة وصفية — إبطال البنية واقعة سوقية، لا وقف خسارة مفروض.",
+      "voirMoins": "▴ عرض أقل",
+      "voirPlus": "▾ عرض المزيد ({n, plural, one {منطقة واحدة} two {منطقتان} few {# مناطق} many {# منطقة} other {# منطقة}})",
+      "locateZone": "حدّد موقع هذه المنطقة على الرسم البياني"
+    },
+    "regime": {
+      "title": "نظام السوق",
+      "phaseLabel": "المرحلة: {label}",
+      "structuralState": "الحالة البنيوية الراهنة",
+      "factMaturity": "نضج الاتجاه",
+      "factLastEvent": "آخر حدث",
+      "factZones": "المناطق النشطة",
+      "unavailable": "غير متاح",
+      "mtfTitle": "توافق الأطر الزمنية",
+      "mtfLoading": "قراءة الأطر الزمنية…",
+      "mtfUnavailable": "توافق الأطر الزمنية غير متاح.",
+      "disagreementTitle": "تعارض الأطر الزمنية",
+      "disclaimer": "تصف هذه الوقائع الحالة المرصودة للسوق في هذه اللحظة، ولا تُشكّل تعليمة موجَّهة إلى المتداول.",
+      "maturity": "بنية موجَّهة {orient} منذ CHOCH{when}{bars}.",
+      "maturityWhen": " بتاريخ {ts}",
+      "maturityBars": " (≈ {n, plural, one {شمعة واحدة} two {شمعتان} few {# شموع} many {# شمعة} other {# شمعة}} {tf})",
+      "breakTimestamp": "{day}/{month} في {hh}:{mm}",
+      "lastEvent": "{kind} {dir} {val} ({tf})",
+      "zoneDensity": "{ob} OB · {fvg} FVG نشطة",
+      "mtfAligned": "الأُطُر الزمنية الـ {count} متوائمة ({dir}).",
+      "mtfNeutral": "الأُطُر الزمنية الـ {count} محايدة.",
+      "mtfPullback": "يرتدّ M15 عكس اتجاه H4 {fem}.",
+      "mtfDivergent": "تتباعد الأُطُر الزمنية: {list}."
+    },
+    "conditions": {
+      "title": "قراءة مسرودة",
+      "sourceGenerated": "سرد مُولَّد",
+      "sourceFallback": "قراءة نموذجية (احتياطية)"
+    },
+    "tags": {
+      "trend": "اتجاه راسخ",
+      "trending": "اتجاه راسخ",
+      "ranging": "سوق ضمن نطاق",
+      "quiet": "سوق هادئ",
+      "expansion": "توسّع",
+      "accumulation": "تجميع",
+      "distribution": "توزيع",
+      "low_vol": "تقلّب منخفض",
+      "high_vol": "تقلّب مرتفع",
+      "normal_vol": "تقلّب طبيعي",
+      "bos_confirmed": "كسر بنية (BOS) مؤكّد",
+      "bos_pending": "كسر بنية (BOS) قيد الانتظار",
+      "choch_confirmed": "تغيّر بنية (CHOCH) مؤكّد",
+      "choch_pending": "تغيّر بنية (CHOCH) قيد الانتظار",
+      "retest_active": "إعادة اختبار جارية",
+      "retest_awaiting": "إعادة اختبار متوقّعة",
+      "ob_active": "Order Block نشط",
+      "fvg_active": "Fair Value Gap نشط",
+      "trend_bullish": "اتجاه صعودي",
+      "trend_bearish": "اتجاه هبوطي",
+      "trend_neutral": "اتجاه محايد",
+      "trend_ranging": "سوق ضمن نطاق",
+      "volatility_low": "تقلّب منخفض",
+      "volatility_normal": "تقلّب طبيعي",
+      "volatility_elevated": "تقلّب مرتفع",
+      "phase_accumulation": "مرحلة تجميع",
+      "phase_distribution": "مرحلة توزيع",
+      "phase_trend": "مرحلة اتجاه",
+      "phase_ranging": "مرحلة نطاق",
+      "phase_expansion": "مرحلة توسّع",
+      "bos_recent_bullish": "كسر بنية (BOS) صعودي حديث",
+      "bos_recent_bearish": "كسر بنية (BOS) هبوطي حديث",
+      "choch_recent_bullish": "تغيّر بنية (CHOCH) صعودي",
+      "choch_recent_bearish": "تغيّر بنية (CHOCH) هبوطي",
+      "retest_in_progress": "إعادة اختبار جارية",
+      "mtf_aligned": "أُطُر زمنية متوائمة",
+      "mtf_divergent": "أُطُر زمنية متباعدة",
+      "mtf_mixed": "أُطُر زمنية مختلطة"
+    }
+  },
+  "auth": {
+    "login": {
+      "identifierLabel": "اسم المستخدم أو البريد الإلكتروني",
+      "passwordLabel": "كلمة المرور",
+      "forgotPassword": "هل نسيت كلمة المرور؟",
+      "submit": "تسجيل الدخول",
+      "submitting": "جارٍ الاتصال…",
+      "noAccount": "ليس لديك حساب بعد؟",
+      "createAccount": "إنشاء حساب",
+      "errorGeneric": "تعذّر تسجيل الدخول. أعد المحاولة."
+    },
+    "register": {
+      "usernameLabel": "اسم المستخدم",
+      "usernameHint": "من 3 إلى 32 حرفًا.",
+      "emailLabel": "عنوان البريد الإلكتروني",
+      "passwordLabel": "كلمة المرور",
+      "passwordHint": "10 أحرف على الأقل.",
+      "declarationsLegend": "إقرارات إلزامية",
+      "ageLabel": "أقرّ بأن عمري 18 عامًا أو أكثر.",
+      "acceptTerms": "أوافق على <link>شروط الاستخدام</link>.",
+      "acceptPrivacy": "أوافق على <link>سياسة الخصوصية</link>.",
+      "submit": "إنشاء حسابي",
+      "submitting": "جارٍ الإنشاء…",
+      "haveAccount": "هل لديك حساب بالفعل؟",
+      "login": "تسجيل الدخول",
+      "errorAge": "يجب أن تقرّ بأن عمرك 18 عامًا أو أكثر.",
+      "errorConsents": "يجب أن توافق على شروط الاستخدام وسياسة الخصوصية.",
+      "closedTitle": "التسجيل مغلق",
+      "closedBody": "الوصول مقصور على حسابات المختبِرين المدعوّين خلال النسخة التجريبية الخاصة.",
+      "errorGeneric": "تعذّر التسجيل. أعد المحاولة."
+    },
+    "resetConfirm": {
+      "intro": "اختر كلمة مرور جديدة (10 أحرف على الأقل).",
+      "passwordLabel": "كلمة المرور الجديدة",
+      "submit": "إعادة تعيين كلمة المرور",
+      "submitting": "جارٍ إعادة التعيين…",
+      "success": "تمت إعادة تعيين كلمة المرور. يمكنك تسجيل الدخول الآن.",
+      "errorGeneric": "تعذّرت إعادة التعيين. ربما انتهت صلاحية الرابط.",
+      "missingToken": "رابط غير صالح أو غير مكتمل. اطلب إعادة تعيين جديدة."
+    },
+    "forgot": {
+      "intro": "أدخل اسم المستخدم أو البريد الإلكتروني الخاص بك. إذا كان هناك حساب مطابق، فسيُرسَل إليك رابط لإعادة التعيين.",
+      "identifierLabel": "اسم المستخدم أو البريد الإلكتروني",
+      "submit": "إرسال الرابط",
+      "submitting": "جارٍ الإرسال…",
+      "backToLogin": "العودة إلى تسجيل الدخول",
+      "errorGeneric": "تعذّر الطلب. أعد المحاولة."
+    },
+    "account": {
+      "loading": "جارٍ التحميل…",
+      "ownerBadge": "المالك",
+      "editEmailTitle": "تعديل بريدي الإلكتروني",
+      "emailLabel": "عنوان البريد الإلكتروني",
+      "save": "حفظ",
+      "saving": "جارٍ الحفظ…",
+      "emailUpdated": "حُدّث عنوان البريد الإلكتروني.",
+      "updateError": "تعذّر التحديث.",
+      "consentsTitle": "الموافقات المسجّلة",
+      "noConsents": "لا توجد موافقة مسجّلة.",
+      "sessionError": "تعذّر التحقق من جلستك. تحقق من اتصالك وحاول مرة أخرى.",
+      "retry": "أعد المحاولة",
+      "docTerms": "شروط الاستخدام",
+      "docPrivacy": "الخصوصية",
+      "consentMeta": "v{version} · {date}",
+      "seeDocs": "اطّلع على <terms>الشروط</terms> و<privacy>سياسة الخصوصية</privacy>.",
+      "logout": "تسجيل الخروج"
+    }
+  },
+  "billing": {
+    "title": "الاشتراك",
+    "intro": "أدِر اشتراكك في MIA Markets. تُعالَج المدفوعات بأمان عبر Stripe — لا نُخزّن أي بيانات بطاقة لدينا.",
+    "loading": "جارٍ التحميل…",
+    "checkoutSuccess": "شكرًا! سُجّل دفعك. يُفعَّل الاشتراك فور تأكيد Stripe.",
+    "checkoutCancel": "أُلغي الدفع. يمكنك إعادة المحاولة متى شئت.",
+    "ownerBadge": "المالك — وصول كامل من دون اشتراك",
+    "currentStateTitle": "الحالة الراهنة",
+    "endsOn": "ينتهي في {date}",
+    "renewsOn": "يتجدّد في {date}",
+    "manage": "إدارة اشتراكي",
+    "choosePlanTitle": "اختر خطة",
+    "noPlans": "لا تتوفّر أي خطة في الوقت الحالي.",
+      "planMonthly": "شهري — 49.99 $ / شهر",
+      "planAnnual": "سنوي — 39.99 $ / شهر (يُفوتر سنويًا)",
+    "subscribe": "اشترك",
+    "errorLoad": "تعذّر تحميل الاشتراك.",
+    "errorCheckout": "تعذّر بدء الدفع.",
+    "errorPortal": "تعذّر فتح بوابة الإدارة.",
+    "status": {
+      "active": "اشتراك نشط",
+      "trialing": "فترة تجريبية جارية",
+      "pastDue": "دفعة معلّقة",
+      "canceled": "اشتراك مُلغى",
+      "none": "لا يوجد اشتراك"
+    }
+  },
+  "access": {
+    "paywall": {
+      "regionAria": "محتوى مخصّص للمشتركين",
+      "defaultTitle": "مخصّص للمشتركين",
+      "defaultDescription": "انتقل إلى الاشتراك لفتح هذه الميزة.",
+      "seePlans": "عرض الاشتراكات",
+      "haveAccount": "لديّ حساب بالفعل — تسجيل الدخول"
+    },
+    "gate": {
+      "loading": "جارٍ التحميل…"
+    }
+  },
+  "app": {
+    "header": {
+      "brandAria": "MIA Markets — فضاء القراءة",
+      "navApp": "التطبيق — فضاء القراءة",
+      "navZones": "المناطق — دورة حياة المناطق المُكتشفة",
+      "navScanner": "ماسح الشروط",
+      "navHelp": "المساعدة — المنهجية والمعجم",
+      "planBadge": "وصول مجاني"
+    },
+    "staleFocus": {
+      "message": "لم تعد هذه المنطقة مُكتشفة — تُعرَض القراءة الحالية للسوق.",
+      "dismiss": "إغلاق هذه الرسالة"
+    },
+    "sidebar": {
+      "navAria": "التركيبات المتاحة",
+      "markets": "الأسواق",
+      "searchPlaceholder": "ابحث عن سوق…",
+      "searchAria": "ابحث عن سوق (أداة أو إطار زمني)",
+      "pinned": "مُثبّتة",
+      "noResults": "لا يوجد سوق يطابق «{query}».",
+      "pin": "تثبيت",
+      "unpin": "إلغاء التثبيت",
+      "pinAria": "تثبيت {combo}",
+      "unpinAria": "إلغاء تثبيت {combo}"
+    },
+    "mobile": {
+      "workspaceTitle": "فضاء القراءة",
+      "tabMarkets": "الأسواق",
+      "tabReading": "القراءة",
+      "tabChat": "المحادثة"
+    },
+    "column": {
+      "sectionAria": "قراءة السوق",
+      "refreshing": "جارٍ التحديث…"
+    },
+    "account": {
+      "menuAria": "قائمة الحساب",
+      "panelAria": "الحساب",
+      "myAccount": "حسابي",
+      "subscription": "الاشتراك",
+      "login": "تسجيل الدخول",
+      "signup": "إنشاء حساب",
+      "language": "اللغة",
+      "site": "الموقع",
+      "honesty": "النزاهة",
+      "logout": "تسجيل الخروج"
+    },
+    "chat": {
+      "asideAria": "المساعد M.I.A Agent",
+      "statusOnline": "متصل",
+      "statusOffline": "وضع دون اتصال",
+      "pickComboPrompt": "اختر تركيبًا لمناقشة قراءته.",
+      "pedagogicalNote": "تحليل تعليمي — لا إشارات ولا نصائح.",
+      "discussions": "المناقشات",
+      "reset": "إعادة تعيين",
+      "recentDiscussions": "المناقشات الأخيرة",
+      "starter_structure": "حلّل البنية الحالية",
+      "starter_choch": "ما هو CHOCH؟",
+      "starter_order-blocks": "أرِني الـ Order Blocks النشطة",
+      "welcomeTitleActive": "كيف يمكنني مساعدتك على قراءة السوق؟",
+      "welcomeTitleIdle": "اختر سوقًا للبدء",
+      "welcomeSubtitleActive": "اطرح سؤالاً حول القراءة الجارية: حلّل البنية، أو بسّط مصطلحًا، أو ضع حدثًا مقبلاً في سياقه.",
+      "welcomeSubtitleIdle": "اختر سوقًا على اليسار، ثم اطرح عليّ سؤالاً حول قراءته.",
+      "offlineNote": "وضع دون اتصال: تتطلّب الكتابة الحرة مفتاح Anthropic على جانب الخادم.",
+      "complianceLine": "يجيب M.I.A Agent عن أسئلة حول القراءة الخوارزمية. إنه لا يقدّم أي إشارة تداول ولا أي توصية شخصية."
+    },
+    "placeholders": {
+      "emptyReading": "اختر تركيبًا على اليسار لعرض قراءة سوقه.",
+      "errorUnavailable": "خدمة القراءة غير متاحة في هذه البيئة في الوقت الحالي.",
+      "errorValidation": "تركيب الأداة / الإطار الزمني هذا غير مدعوم.",
+      "errorGeneric": "تعذّر جلب القراءة. أعد المحاولة بعد لحظة.",
+      "dataUnavailableTitle": "البيانات غير متاحة",
+      "retry": "إعادة المحاولة",
+      "chartUnavailableTitle": "الرسم البياني غير متاح",
+      "chartUnavailableBody": "تدفّق الشموع غير متصل لهذا التركيب. تبقى القراءة أدناه متاحة."
+    },
+    "chart": {
+      "canvasAria": "رسم بياني بالشموع {instrument} مع مناطق Order Block وFair Value Gap ومستويات الكسر وجيوب السيولة الخارجية (BSL/SSL)",
+      "deselectZoneAria": "إلغاء تحديد هذه المنطقة",
+      "deselectZoneTitle": "انقر لإلغاء التحديد",
+      "inTest": "قيد الاختبار",
+      "inTestTitle": "Order Block قيد الاختبار — مؤقّت، داخل الشمعة (لا يُؤكَّد إلا عند الإغلاق)",
+      "touched": "مُلامَس",
+      "touchedTitle": "منطقة مُلامَسة سابقًا لكن غير مُبطَلة — لا يزال المحرّك يتابعها (ما زالت قيد اللعب)",
+      "fvgFillLive": "ردم مباشر",
+      "fvgFillTitle": "ردم الـ FVG جارٍ — مؤقّت، داخل الشمعة (لا يُؤكَّد إلا عند الإغلاق)",
+      "liqSwept": "مأخوذة",
+      "liqBroken": "مكسورة",
+      "liveBadge": "مباشر · مؤقّت",
+      "liveBadgeTitle": "تفاعل مناطق مباشر (مؤقّت، داخل الشمعة). لا تُؤكَّد كسور BOS/CHOCH والإبطالات إلا عند إغلاق الشمعة.",
+      "zoomIn": "تكبير",
+      "zoomOut": "تصغير",
+      "fit": "ملاءمة الرسم البياني",
+      "liqShowAll": "عرض كل جيوب السيولة (سليمة، مأخوذة، مكسورة)",
+      "liqShowIntactOnly": "عرض جيوب السيولة السليمة فقط",
+      "marketClosed": "السوق مغلق",
+      "marketClosedTitle": "السوق مغلق حاليًا: يعرض الرسم البياني آخر شمعة مغلقة ولا يعكس تسعيرًا مباشرًا."
+    }
+  },
+  "samples": {
+    "_comment": "Landing demo MarketReading prose (conditions.description, event potential_effect_description) is intentionally NOT keyed here yet: it lives on the MarketReading data contract in lib/market-reading/fixtures.ts and renders through the SHARED MarketReadingCard sections (ConditionsSection/EventsSection) that are also consumed by the off-limits app/zones/scanner surfaces. Localizing it cleanly requires a data-contract change touching forbidden files, so it is deferred. See report."
+  },
+  "chatbot": {
+    "_comment": "French source-of-truth mirror of mocks/chatbot_responses.json + the code FALLBACK_SCRIPT. Consumers resolve these via useChatbotScriptGetter/useChatbotScriptOrFallback in lib/chatbot.ts, keyed by scriptKey (SCRIPT_KEY_BY_ID) then question id. Numeric/enum reading fields stay localized downstream by useReadingFormatters. The buy-or-not / donc-je-dois-vendre compliance refusals are LEGALLY LOAD-BEARING — keep verbatim.",
+    "scripts": {
+      "xauM15": {
+        "instrumentLabel": "XAU/USD",
+        "questions": {
+          "why-this-score": {
+            "text": "ماذا تخبرني هذه القراءة؟",
+            "reply": "تصف هذه القراءة سوقًا صاعدًا نوعًا ما. تجاوز السعر قمّةً حديثة (كسر بنية)، ثم عاد ليختبر المستوى المُتجاوَز قبل أن يرتدّ: هذا ما نسمّيه إعادة اختبار. توجد أيضًا منطقة اختلال تركها حراك سريع (Fair Value Gap) بين 2378 و2381، لا تزال غير مردومة، وOrder Block نشط أسفلها مباشرة. السياق العام اتجاه صاعد، مع تقلّب (متوسّط اتساع الشموع) بقي طبيعيًا. لا شيء من ذلك تعليمة: إنها صورة للبنية الحالية، والقرار لك في ما تفعله بها."
+          },
+          "armed-retest": {
+            "text": "ما هي إعادة الاختبار؟",
+            "reply": "حين يكسر السعر قمّةً أو قاعًا، كثيرًا ما يعود ليلامس المستوى المكسور قبل أن ينطلق مجدّدًا: هذه «الزيارة» تُسمّى إعادة اختبار. تتابع القراءة حالة إعادة الاختبار هذه: إمّا لم يحدث أي كسر، أو حدث الكسر وننتظر عودة السعر، أو عاد السعر ليلامس المستوى وصمد، أو اخترقه في الاتجاه الآخر ولم تعد المنطقة صامدة. إنها علامة بنيوية كثيرًا ما تُلاحَظ، لكن «كثيرًا ما تُلاحَظ» لا تعني مؤكّدة: إنها وصف للسوق، لا تعليمة دخول."
+          },
+          "fomc-impact": {
+            "text": "ماذا يغيّر الـ FOMC؟",
+            "reply": "تُنشَر محاضر الـ FOMC خلال نحو 18 ساعة. إنه حدث شديد التأثير على الذهب: تاريخيًا، يتحرّك الذهب أكثر بكثير من المعتاد في النافذة المحيطة بالنشر (من 30 دقيقة قبله إلى ساعة بعده). عمليًا، أمران: (1) أي مركز مفتوح الآن سيعبر الحدث، (2) يرصد MIA الموعد ويعلن لك مسبقًا الاتساع المحتمل للتقلّب حول النشر — والقرار لك في مراعاة ذلك. ولتوقّع اتجاه الحركة، سيلزم تقاطعها مع توقّعات السوق — وهو ما لا يفعله المحرّك بعد."
+          },
+          "historical-comparison": {
+            "text": "بماذا تُشبِه تاريخيًا؟",
+            "reply": "أفضّل أن أكون صريحًا: اختباراتنا للموثوقية على بيانات سابقة لم تنتهِ بعد. بدلاً من أن أذكر لك أرقام أداء غير مُتحقَّق منها، لن أعطيك أي عائد ولا نسبة نجاح ولا إحصاءً ما دام التحقّق لم يكتمل. ما يمكنني قوله اليوم: توجد 7 سنوات من البيانات التاريخية النظيفة ومنهج وصف شفّاف، مفصّل في صفحة المنهجية لدينا. الشفافية قبل الوعد — وهذا بالضبط ما يميّز MIA Markets."
+          },
+          "buy-or-not": {
+            "text": "إذًا هل عليّ الشراء؟",
+            "reply": "لا، أنا لا أعطي أي تعليمة شراء أو بيع أو توقيت. دوري أن أصف بنية السوق وأساعدك على فهمها — لا أن أقرّر بدلاً منك. ما يمكنني وصفه: يوجد كسر صاعد مؤكّد، وإعادة اختبار صامدة حول 2378-2381، وإبطال لهذه البنية إذا عاد السعر بوضوح دون 2378، وحدث كلّي خلال 18 ساعة قد يحرّك كل شيء. وما أنت وحدك من يقرّره: هل تبرّر إدارتك للمخاطر وأفقك وتوزيعك اتخاذ مركز. MIA Markets أداة فهم، لا خدمة إشارات."
+          }
+        }
+      },
+      "eurH1": {
+        "instrumentLabel": "EUR/USD",
+        "questions": {
+          "why-this-score": {
+            "text": "ماذا تخبرني هذه القراءة؟",
+            "reply": "تصف هذه القراءة سوقًا يصعب قراءته في الوقت الحالي. حدث بالفعل كسر هابط، لكن السعر لم يعد بعد ليختبره: ما دامت إعادة الاختبار لم تحدث، تبقى البنية هشّة. منطقة الاختلال (Fair Value Gap) متواضعة، ويتحرّك السوق أساسًا في نطاق منخفض التقلّب — لا اتجاه واضح. أخبار هابطة نوعًا ما تضغط قليلاً في الاتجاه نفسه. باختصار: عناصر قليلة متوائمة، ومن ثمّ قراءة حذرة وعدم يقين معروض أوسع من المعتاد."
+          },
+          "armed-retest": {
+            "text": "وأين إعادة الاختبار في هذه القراءة؟",
+            "reply": "لا تزال منتظَرة. حدث الكسر الهابط عند 1.08750 قبل 4 شموع خلال ساعة، لكن السعر لم يصعد بعد ليلامس المستوى المكسور. المناطق التي ينبغي مراقبتها هي 1.0860-1.0868 (Fair Value Gap) و1.0870-1.0885 (Order Block). ما دامت هذه العودة لم تحدث، تبقى القراءة هشّة: كثير من الكسور من دون إعادة اختبار تتبيّن أنها كسور زائفة. إنه وصف للبنية، لا دعوة إلى أخذ مركز."
+          },
+          "event-impact": {
+            "text": "ماذا يغيّر قرار الـ ECB خلال 3 ساعات؟",
+            "reply": "الكثير. قرار الـ ECB حدث شديد التأثير على EUR/USD: يتفجّر التقلّب (اتساع الشموع) عادةً في النافذة المحيطة بالإعلان. يرصد MIA الموعد ويعلن لك مسبقًا هذا الاتساع المحتمل للتقلّب. أي مركز مفتوح الآن سيعبر القرار بالكامل — وهذا بالضبط نوع السياق الذي تصبح فيه البنية الحالية، الهشّة أصلاً (إعادة اختبار لم تتحقّق بعد)، أكثر عدم يقين."
+          },
+          "historical-comparison": {
+            "text": "في حالات مشابهة، ماذا يحدث؟",
+            "reply": "اختباراتنا للموثوقية على بيانات سابقة لا تزال جارية. لذلك لن أذكر لك عائدًا ولا نسبة نجاح ولا إحصاءً ما دام التحقّق لم ينتهِ. ما يمكنني وصفه بنيويًا: تجمع هذه القراءة عدّة عناصر ضعيفة (إعادة اختبار لم تتحقّق، سوق في نطاق، قرار ECB وشيك). إنها نموذجيًا تشكيلة تبقى فيها القراءة حذرة. الشفافية قبل الوعد."
+          },
+          "buy-or-not": {
+            "text": "إذًا هل عليّ البيع؟",
+            "reply": "لا، وسأكون أوضح من المعتاد: في هذه القراءة، عناصر كثيرة غير مؤكّدة (إعادة اختبار لم تتحقّق، سوق في نطاق، عدم يقين واسع، قرار ECB خلال 3 ساعات). توجد أسباب تقنية كثيرة تدعو إلى الحذر. لكن ليس من دوري اتخاذ هذا القرار — بل عليك أن تقاطع إدارتك للمخاطر، وتحمّلك لحركات الأحداث، وقراءتك للسياق الأساسي، ومركزك الحالي. ينتهي دوري عند وصف ما أراه."
+          }
+        }
+      },
+      "quietXauH4": {
+        "instrumentLabel": "XAU/USD H4",
+        "questions": {
+          "why-this-score": {
+            "text": "لماذا هذه القراءة هادئة إلى هذا الحدّ؟",
+            "reply": "لأن معظم العناصر صامتة. لا كسر بنية حديث، ولا Order Block ذو دلالة، وFair Value Gap واحد فقط موجود لكن من دون اتجاه مؤكّد. السوق في نطاق منخفض التقلّب (تتحرّك الشموع قليلاً). الأخبار شبه محايدة. تعكس هذه القراءة بصدق سوقًا في وضع انتظار: لا يوجد الكثير مما يُقال اتجاهيًا. إنها أيضًا أصحّ قراءة للمحرّك — حين لا يحدث شيء، قل «لا يحدث شيء». عدم اليقين المعروض واسع، لأن الوضع ملتبس."
+          },
+          "armed-retest": {
+            "text": "ما هي إعادة الاختبار؟",
+            "reply": "إعادة الاختبار هي أن يعود السعر، بعد كسر مستوى، ليلامسه قبل أن ينطلق مجدّدًا. في القراءة الحالية (H4 هادئة)، لم يحدث أي كسر، فليس هناك ما يُعاد اختباره في الوقت الحالي. العنصر التقني النشط الوحيد هو Fair Value Gap بين 2358 و2362، لا يزال غير مُلامَس. على السوق أولاً أن يكسر شيئًا (قمّة أو قاعًا) قبل أن نتكلّم عن إعادة اختبار."
+          },
+          "event-impact": {
+            "text": "ماذا يغيّر الـ NFP بعد يومين؟",
+            "reply": "إنه أبعد من أن يؤثّر على قراءة H4 الحالية، لكنه يهيكل اليومين المقبلين. حول نشر الـ NFP، سيعلن لك MIA الاتساع المحتمل للتقلّب. على إطار H4، يعني ذلك أن شمعة إلى شمعتين ستكون معنيّة. إذا كان أفقك أقصر من المهلة حتى ذلك الحين، فالحدث لا يُبطل شيئًا حاليًا. أمّا إذا فتحت مركزًا على H4 الآن، فسيعيش الـ NFP — لحظة يرتفع فيها التقلّب (اتساع الشموع) بقوة."
+          },
+          "historical-comparison": {
+            "text": "بماذا يُشبِه تاريخيًا تجميعٌ كهذا؟",
+            "reply": "اختباراتنا للموثوقية على بيانات سابقة لا تزال جارية. لتشكيلة هادئة كهذه، لن أذكر لك عائدًا ولا إحصاءً ما دام التحقّق لم ينتهِ. ما يمكنني وصفه: لا تُحدِّد هذه القراءة أي مُحفِّز تقني قوي (لا كسر، لا Order Block ذا دلالة، سوق بلا اتجاه). في هذا النوع من السياق، تكون الملاحظة ورصد المستويات المفتاحية غالبًا أبلغ من الفعل. ولهذا أيضًا تبقى القراءة حذرة."
+          },
+          "buy-or-not": {
+            "text": "إذًا هل عليّ الانتظار؟",
+            "reply": "مرّة أخرى، أنا لا أعطي أي تعليمة. ما يمكنني وصفه واقعيًا: لا تُحدِّد القراءة الحالية أي مُحفِّز تقني قوي (لا كسر، لا Order Block ذا دلالة، سوق بلا اتجاه). إذا كان نهجك يبحث عن دخول له مبرّر بنيوي واضح، فهذه القراءة تقدّم القليل منه. لكن عليك أن تقاطع ذلك مع سياقك الشخصي. لن يُنشَر أي رقم أداء ما دامت اختباراتنا للموثوقية لم تنتهِ — إنها قاعدة شفافية."
+          }
+        }
+      }
+    },
+    "fallback": {
+      "instrumentLabel": "هذه الأداة",
+      "text": "لماذا لا أرى أسئلة؟",
+      "reply": "لم أجد سيناريو نصّيًا لهذه القراءة المحدّدة. هذا مؤقّت — دمج محرّك الإجابة الفوري قادم في دورة تكامل الواجهة الخلفية المقبلة."
+    }
+  },
+  "legal": {
+    "conditions": {
+      "meta": {
+        "title": "شروط الاستخدام",
+        "description": "الشروط العامة لاستخدام MIA Markets — خدمة معلومات، توجّه تعليمي، تحذير من المخاطر."
+      },
+      "versionLabel": "الإصدار {version}",
+      "loading": "جارٍ تحميل المستند…",
+      "error": "مستند الشروط غير متاح مؤقتًا. أعد المحاولة لاحقًا."
+    },
+    "privacy": {
+      "meta": {
+        "title": "سياسة الخصوصية",
+        "description": "سياسة خصوصية MIA Markets — البيانات المُعالَجة، الأساس القانوني، الحقوق بموجب GDPR / القانون 25."
+      },
+      "title": "سياسة الخصوصية",
+      "pendingNotice": "نسخة أولية مُهيكلة. سيُنشَر النص النهائي (المُراجَع قانونيًا) مع الطرف القانوني. تصف البنية أدناه بأمانة عمليات المعالجة السارية.",
+      "sections": {
+        "responsable": {
+          "title": "1. المسؤول عن المعالجة",
+          "body": "Loukmane Bessam (المُشغِّل الوحيد) — loukmanebessam@gmail.com."
+        },
+        "donnees": {
+          "title": "2. البيانات المُعالَجة",
+          "body": "اسم المستخدم، عنوان البريد الإلكتروني، كلمة المرور (مُجزّأة، أبدًا بنص واضح)، الموافقات (الإصدار + الطابع الزمني)، بيانات الجلسة. لا تجمع MIA Markets أي بيانات بطاقة مصرفية."
+        },
+        "bases": {
+          "title": "3. الأسس القانونية",
+          "body": "تنفيذ العقد (الحساب والخدمة)، المصلحة المشروعة (الأمن)، الموافقة (قبول الشروط وهذه السياسة عند التسجيل)."
+        },
+        "droits": {
+          "title": "4. حقوقك (GDPR / القانون 25)",
+          "body": "الوصول، التصحيح، المحو، قابلية النقل، التقييد والاعتراض. تُرسَل كل طلبات إلى loukmanebessam@gmail.com — الردّ خلال 30 يومًا."
+        },
+        "conservation": {
+          "title": "5. الاحتفاظ",
+          "body": "تُحفَظ بيانات الحساب طوال مدّة الحساب. تنتهي صلاحية الجلسات تلقائيًا. ستُحدَّد تفاصيل الاحتفاظ حسب الفئة في النسخة النهائية."
+        },
+        "contact": {
+          "title": "6. الاتصال",
+          "body": "لأي سؤال يتعلّق ببياناتك: loukmanebessam@gmail.com."
+        }
+      }
+    },
+    "disclaimer": {
+      "hero": "عرض توضيحي بوصول مبكر. قراءة خوارزمية تعليمية — لا تشكّل إشارة تداول ولا نصيحة استثمارية."
+    }
+  },
+  "pages": {
+    "conditions": {
+      "backHome": "العودة إلى الصفحة الرئيسية"
+    },
+    "confidentialite": {
+      "backHome": "العودة إلى الصفحة الرئيسية"
+    },
+    "abonnement": {
+      "meta": {
+        "title": "الاشتراك",
+        "description": "إدارة اشتراكك في MIA Markets."
+      },
+      "loading": "جارٍ التحميل…"
+    },
+    "compte": {
+      "meta": {
+        "title": "حسابي",
+        "description": "إدارة حسابك في MIA Markets."
+      }
+    },
+    "connexion": {
+      "meta": {
+        "title": "تسجيل الدخول",
+        "description": "تسجيل الدخول إلى حسابك في MIA Markets."
+      },
+      "title": "تسجيل الدخول",
+      "intro": "سجّل الدخول باسم المستخدم أو بالبريد الإلكتروني الخاص بك."
+    },
+    "inscription": {
+      "meta": {
+        "title": "التسجيل",
+        "description": "إنشاء حساب في MIA Markets — وصول مبكر، توجّه تعليمي."
+      },
+      "title": "إنشاء حساب",
+      "intro": "وصول مبكر مخصّص للبالغين (18 عامًا أو أكثر)."
+    },
+    "motDePasseOublieConfirmer": {
+      "meta": {
+        "title": "إعادة تعيين كلمة المرور",
+        "description": "اختر كلمة مرور جديدة لحساب MIA Markets الخاص بك."
+      },
+      "title": "إعادة تعيين كلمة المرور"
+    },
+    "motDePasseOublie": {
+      "meta": {
+        "title": "نسيت كلمة المرور",
+        "description": "إعادة تعيين كلمة مرور حسابك في MIA Markets."
+      },
+      "title": "نسيت كلمة المرور"
+    },
+    "app": {
+      "meta": {
+        "title": "فضاء القراءة",
+        "description": "قراءة سوق مباشرة — XAU/USD وEUR/USD على M15 وH1 وH4. البنية والنظام والأحداث والقراءة المسرودة، شرحها M.I.A Agent."
+      }
+    },
+    "scanner": {
+      "meta": {
+        "title": "ماسح الشروط",
+        "description": "حدّد شروطك البنيوية وشاهد على أي الأسواق والأطر الزمنية تتحقّق في هذه اللحظة. أداة قراءة وصفية — الحكم لك."
+      },
+      "paywallTitle": "الماسح مخصّص للمشتركين",
+      "paywallDescription": "يمسح الماسح متعدّد الأسواق XAU/USD وEUR/USD على M15 وH1 وH4. انتقل إلى الاشتراك لاستخدامه."
+    },
+    "zones": {
+      "meta": {
+        "title": "المناطق",
+        "description": "دورة حياة كل منطقة مُكتشفة (Order Block، Fair Value Gap) — التكوّن، الاختبارات، التخفيف، الردم. قراءة وصفية للقراءة فقط: لا توقّعات."
+      }
+    }
+  },
+  "methodology": {
+    "meta": {
+      "title": "المنهجية — كيف يصف MIA Markets السوق",
+      "description": "توثيق تقني شفّاف: كيف يكتشف مؤشّرنا بنى SMC (Order Block، Fair Value Gap، الكسور)، وكيف نصف العناصر المعروضة، ومصدر بياناتنا، وما لا نفعله."
+    },
+    "header": {
+      "back": "العودة إلى الصفحة الرئيسية",
+      "badge": "المنهجية",
+      "title": "كيف يصف MIA Markets السوق",
+      "intro": "تشرح هذه الصفحة، من دون مصطلحات معقّدة، كيف يرصد مؤشّرنا بنى السوق وماذا يعني كل عنصر معروض. إنه توثيق وصفي: نشرح ما<em> يلاحظه</em> المحرّك، أبدًا ما <em>سيتوقّعه</em>.",
+      "tocLabel": "المحتويات"
+    },
+    "toc": {
+      "engagement": "التزامنا",
+      "concepts": "مفاهيم البنية",
+      "scores": "ما نصفه",
+      "donnees": "مصدر البيانات",
+      "limites": "ما لا نفعله",
+      "attributions": "الإسنادات"
+    },
+    "engagement": {
+      "title": "التزامنا",
+      "intro": "MIA Markets أداة لفهم السوق، لا نظام تداول. توجّهنا وصفي (مستوى «قراءة معزَّزة»): نصف بنية، ولا نوصي أبدًا بفعل.",
+      "quote": "لا ينبغي لأي مؤشّر سوق أن يعِد بأرباح. نحن لا نفعل ذلك. ما نقدّمه هو فهم معزَّز للسوق — لا أداء ماليًّا.",
+      "caption": "— التزام علني من MIA Markets، 27 مايو 2026"
+    },
+    "concepts": {
+      "title": "مفاهيم البنية (SMC)",
+      "intro": "تستند قراءتنا إلى Smart Money Concepts — شبكة لقراءة بنية السعر. إليك العناصر التي يكتشفها المحرّك ويعرضها.",
+      "detectionLabel": "كيف يكتشفه المحرّك",
+      "detection": {
+        "order-block": "نرصد آخر شمعة معاكسة الاتجاه قبل حراك بارز مباشرة. إنها منطقة السعر التي انطلق منها الحراك — غالبًا حيث تراكمت أوامر مهمّة. يتابع المحرّك حالتها: نشط، مُخفَّف (مُلامَس سابقًا) أو مُبطَل.",
+        "fvg": "نكتشف «فجوة» سعرية تركتها ثلاث شموع متتالية حيث لا تتداخل الأولى والثالثة: حراك أسرع من أن تحدث فيه كل المبادلات. يقيس المحرّك حجم هذه الفجوة ويتابع إن بقيت مفتوحة أو مردومة جزئيًا أو مردومة.",
+        "bos": "نقارن السعر بالقمم والقيعان الأخيرة (الـ «swings»). حين يتجاوز بوضوح آخر قمّة (أو قاع) في اتجاه الاتجاه العام، فهذا كسر بنية: يتأكّد الاتجاه الجاري.",
+        "choch": "المنطق نفسه ككسر البنية، لكن في الاتجاه المعاكس للاتجاه الأخير. إنه أول علامة ممكنة على انقلاب بنية — يُوصَف كذلك، من دون استنتاج اتجاه مستقبلي منه.",
+        "retest": "بعد كسر، يراقب المحرّك إن عاد السعر ليلامس المستوى المُتجاوَز. يتابع حالة العودة: لم يعُد بعد، قيد الاختبار، مؤكّد (المستوى صامد) أو مُبطَل (اخترقه السعر في الاتجاه المعاكس).",
+        "mtf": "تُحسَب القراءة نفسها على عدّة أطر زمنية (15 دقيقة، ساعة، 4 ساعات، يوم…). نعرض تحيّز كل إطار جنبًا إلى جنب: حين تشير عدّة مدد في الاتجاه نفسه، تكون البنية أوضح. لا يُرجَّح أي منها لإنتاج درجة اتجاهية."
+      }
+    },
+    "scores": {
+      "title": "ما نصفه (وكيف)",
+      "intro": "بعض عناصر القراءة موصوفة بصفات (أهمّية منطقة، حالة، مرحلة، عدم يقين). إليك ما يصفه كل منها والمتغيّرات التي تكوّنه — لا شيء منها احتمال نجاح."
+    },
+    "formulas": {
+      "variablesLabel": "ما يأخذه المحرّك في الحسبان",
+      "order-block": {
+        "title": "Order Block",
+        "description": "منطقة تركتها شمعة اختلال قبل حراك بارز. نعرضها عند تكوّنها بمداها السعري وحالتها الراهنة (نشطة، مُختبَرة، مُخفَّفة، مُبطَلة) — من دون تقييم ولا ترتيب جودة، لا احتمال نجاح.",
+        "variables": {
+          "0": "المدى السعري للمنطقة",
+          "1": "حجمها منسوبًا إلى التقلّب الأخير",
+          "2": "حالتها الراهنة: نشطة، مُختبَرة، مُخفَّفة أو مُبطَلة"
+        }
+      },
+      "fvg-force": {
+        "title": "حالة Fair Value Gap",
+        "description": "يصف حالة منطقة اختلال: نشطة، مردومة جزئيًا أو مردومة. يشير الحجم النسبي للفجوة إلى سعتها، من دون التنبّؤ باللحظة التي ستُردَم فيها.",
+        "variables": {
+          "0": "حجم الفجوة منسوبًا إلى متوسّط التقلّب الأخير",
+          "1": "عدد الشموع المنقضية منذ إنشائها",
+          "2": "الجزء الذي ردمه السعر بالفعل"
+        }
+      },
+      "phase-de-marche": {
+        "title": "مرحلة السوق",
+        "description": "ثلاث تسميات وصفية جنبًا إلى جنب — الاتجاه، التقلّب، المرحلة (تجميع / اتجاه / تصريف / نطاق / توسّع). صورة للحالة المُلاحَظة، أبدًا تعليمة.",
+        "variables": {
+          "0": "اتجاه وميل القمم/القيعان الأخيرة",
+          "1": "متوسّط اتساع الشموع (التقلّب)",
+          "2": "التوافق بين الأطر الزمنية"
+        }
+      },
+      "incertitude": {
+        "title": "نطاق عدم اليقين المُلاحَظ",
+        "description": "الفارق السعري المُلاحَظ عادةً مؤخّرًا حول القراءة. إنه مقياس لعدم اليقين مَعروض بأمانة — لا نطاق توقّع ولا هدف.",
+        "variables": {
+          "0": "التشتّت الأخير للأسعار، مقيسًا بالـ ATR (Average True Range، المتوسّط المعياري لاتساع الشموع)",
+          "1": "الإطار الزمني للقراءة"
+        }
+      }
+    },
+    "donnees": {
+      "title": "مصدر بياناتنا",
+      "detail": "بيانات السوق عبر واجهة Twelve Data (الباقة المجانية، 800 طلب في اليوم في الإصدار الأول).",
+      "providerLabel": "المزوّد",
+      "coverageLabel": "التغطية في الإصدار الأول",
+      "coverage": "XAU/USD وEUR/USD، على 15 دقيقة وساعة و4 ساعات.",
+      "refreshLabel": "التواتر",
+      "refresh": "تحديث عند كل إغلاق شمعة."
+    },
+    "limites": {
+      "title": "ما لا نفعله",
+      "intro": "الشفافية تشمل حدودنا أيضًا. عن قصد، لا يفعل المؤشّر أيًّا مما يلي.",
+      "items": {
+        "0": "توقّع اتجاه حراك أو سعته.",
+        "1": "إصدار إشارة صفقة أو نقطة دخول أو خروج.",
+        "2": "حساب هدف سعري أو stop-loss أو take-profit.",
+        "3": "عرض درجة احتمال نجاح.",
+        "4": "الوعد بربح أو عائد أو أداء."
+      }
+    },
+    "attributions": {
+      "title": "الإسنادات",
+      "intro": "يستند الرسم البياني بالشموع في فضاء القراءة إلى مكتبة مفتوحة المصدر، مذكورة هنا كما تقتضي رخصتها.",
+      "license": "<name>Lightweight Charts™</name> — © TradingView, Inc.، موزّعة برخصة <link>Apache 2.0</link>. مكتبة عرض رسوم بيانية تُستخدم لتصيير الشموع والمناطق.",
+      "note": "للتنويه: إنها مكتبة <em>عرض</em> فقط. لا تستخدم MIA Markets أي واجهة برمجة ولا أي تدفّق بيانات سوق من TradingView — الأسعار المعروضة تأتي من محرّكنا الخاص."
+    }
+  },
+  "seo": {
+    "title": "MIA Markets — مؤشّر سوق تحاوري",
+    "titleTemplate": "%s · MIA Markets",
+    "description": "MIA Markets (Multi-asset Intelligence Assistant) — قراءة سوق XAU/USD والفوركس، شرحها quant. تحليلات سياقية موثَّقة المصادر، توجّه تعليمي.",
+    "ogTitle": "MIA Markets — مؤشّر سوق تحاوري",
+    "ogDescription": "قراءات خوارزمية سياقية لـ XAU/USD والفوركس، شرحها روبوت محادثة (M.I.A Agent). توجّه تعليمي.",
+    "twitterTitle": "MIA Markets — مؤشّر سوق تحاوري",
+    "twitterDescription": "افهم السوق — من دون أن يُملى عليك ما تفعله. قراءات خوارزمية + روبوت محادثة M.I.A Agent."
+  },
+  "zones": {
+    "title": "المناطق",
+    "intro": "دورة حياة كل منطقة مُكتشفة — التكوّن، الاختبارات، التخفيف، الردم — موصوفة في الحاضر. قراءة وصفية: لا هدف، لا توقّع.",
+    "refreshing": "جارٍ التحديث…",
+    "filterLabel": "المرشّح",
+    "filterAria": "تصفية المناطق",
+    "sortLabel": "الترتيب",
+    "sortAria": "ترتيب المناطق",
+    "loading": "جارٍ تحميل المناطق…",
+    "errorMessage": "المناطق غير متاحة لهذا التركيب.",
+    "retry": "إعادة المحاولة",
+    "emptyNone": "لا توجد منطقة مُكتشفة على هذا التركيب.",
+    "emptyFilter": "لا توجد منطقة تطابق هذا المرشّح.",
+    "selector": {
+      "instrument": "الأداة",
+      "timeframe": "الإطار الزمني"
+    },
+    "filters": {
+      "all": "الكل",
+      "active": "نشطة",
+      "mitigated": "مُخفَّفة"
+    },
+    "sorts": {
+      "proximity": "القرب",
+      "recency": "الحداثة",
+      "state": "الحالة"
+    },
+    "kind": {
+      "ob": "Order Block",
+      "fvg": "Fair Value Gap",
+      "obShort": "OB",
+      "fvgShort": "FVG"
+    },
+    "effectiveness": {
+      "obSpentLabel": "مُبطَلة",
+      "obSpentTitle": "Order Block مُبطَل: أغلق السعر عبر المنطقة.",
+      "obHeldLabel": "غير مُبطَلة",
+      "obHeldTitle": "Order Block غير مُبطَل: لم يُغلق السعر عبرها (المنطقة صامدة، حتى لو مُخفَّفة أو مُختبَرة).",
+      "fvgSpentLabel": "مردومة",
+      "fvgSpentTitle": "Fair Value Gap مردوم بالكامل: أُغلق الاختلال.",
+      "fvgHeldLabel": "غير مردومة",
+      "fvgHeldTitle": "Fair Value Gap غير مردوم بالكامل: الاختلال غير مُغلق."
+    },
+    "relation": {
+      "inside": "السعر حاليًا داخل المنطقة",
+      "above": "على بُعد {dist} نقطة فوق السعر",
+      "below": "على بُعد {dist} نقطة تحت السعر"
+    },
+    "age": {
+      "durationOnly": "تكوّنت منذ {duration}",
+      "lastCandle": "تكوّنت على الشمعة الأخيرة",
+      "withBars": "تكوّنت منذ {bars, plural, zero {# شمعة} one {# شمعة} two {# شمعتين} few {# شموع} many {# شمعة} other {# شمعة}} ({duration})"
+    },
+    "tested": {
+      "ob": "مُختبَرة",
+      "fvg": "مخترَقة"
+    },
+    "duration": {
+      "underMinute": "أقل من دقيقة",
+      "min": "د",
+      "hour": "س",
+      "day": "ي"
+    },
+    "fill": {
+      "aria": "ردم المنطقة",
+      "label": "مردومة حتى {price} (≈ {pct} %)"
+    },
+    "details": {
+      "expand": "التفاصيل",
+      "collapse": "طيّ"
+    },
+    "timeline": {
+      "formed": "تكوّنت",
+      "mitigated": "مُخفَّفة",
+      "obTested": "مُختبَرة",
+      "fvgTested": "مخترَقة",
+      "filled": "مردومة",
+      "partial": "مردومة جزئيًا",
+      "active": "متابعة جارية",
+      "now": "الآن",
+      "noDate": "—",
+      "firstContact": "أول تلامس"
+    },
+    "overlaps": {
+      "heading": "تقاطعات مع أطر زمنية أخرى",
+      "description": "تتداخل هذه المنطقة مع مناطق مُكتشفة على أطر زمنية أخرى (المستويات السعرية نفسها تتقاطع) — علامة تقارب، لا إشارة.",
+      "line": "تتداخل مع {kind} {tf}{dir} ({band})"
+    },
+    "actions": {
+      "analyze": "تحليل المنطقة",
+      "analyzeAria": "تحليل هذه المنطقة على الرسم البياني",
+      "show": "عرض على الرسم البياني",
+      "hide": "إخفاء من الرسم البياني"
+    }
+  },
+  "appearance": {
+    "menuLabel": "اختيار السمة",
+    "menuHeading": "السمات",
+    "sectionTitle": "المظهر",
+    "sectionDescription": "اختر سمة الواجهة. يُطبَّق الاختيار فورًا ويُحفَظ على هذا الجهاز.",
+    "groupLabel": "اختيار السمة",
+    "active": "نشط",
+    "descriptions": {
+      "terminal": "داكن بارد، قراءة هادئة — السمة الافتراضية.",
+      "atelier": "فاتح، مثل ملاحظة محلل على الورق.",
+      "schema": "أحادي اللون تقني، بلا ألوان تقريبًا.",
+      "ardoise": "داكن دافئ، مريح، بزوايا أنعم."
+    }
+  }
+}

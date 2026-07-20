@@ -15,8 +15,9 @@ export interface ThemeMeta {
   id: ThemeId;
   /** Whether the theme reads as light or dark (drives the quick sun/moon hint). */
   base: 'light' | 'dark';
+  /** Fixed identity name, kept across locales (the localised DESCRIPTION lives in
+   *  the `appearance` i18n namespace). */
   name: string;
-  description: string;
   /** Static preview chips — bg / panel / accent / bull / bear. */
   swatch: {
     bg: string;
@@ -32,28 +33,24 @@ export const THEMES: readonly ThemeMeta[] = [
     id: 'terminal',
     base: 'dark',
     name: 'Terminal',
-    description: 'Sombre froid, lecture au calme — le thème par défaut.',
     swatch: { bg: '#0a0f1c', panel: '#111a2c', accent: '#4d9de0', bull: '#37b98c', bear: '#dd6b7a' },
   },
   {
     id: 'atelier',
     base: 'light',
     name: 'Atelier',
-    description: "Clair, comme une note d'analyste sur papier.",
     swatch: { bg: '#f6f4ee', panel: '#efece3', accent: '#1d6f6a', bull: '#2f8f6b', bear: '#b4564f' },
   },
   {
     id: 'schema',
     base: 'dark',
     name: 'Schéma',
-    description: 'Monochrome technique, presque sans couleur.',
     swatch: { bg: '#14161a', panel: '#1b1e24', accent: '#5fb3c4', bull: '#c3c8cf', bear: '#7c828b' },
   },
   {
     id: 'ardoise',
     base: 'dark',
     name: 'Ardoise',
-    description: 'Sombre chaud, apaisé, aux coins plus doux.',
     swatch: { bg: '#1a1613', panel: '#241f1a', accent: '#d8b878', bull: '#6bbf9a', bear: '#d98b7a' },
   },
 ] as const;

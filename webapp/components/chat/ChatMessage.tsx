@@ -1,6 +1,7 @@
 'use client';
 
 import { Check, Copy, Info, User } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import * as React from 'react';
 import {
   Tooltip,
@@ -29,10 +30,6 @@ interface ChatMessageProps {
   viewUpdated?: boolean;
 }
 
-/** Niveau 1.5 strict, non-anxiogène — same wording validated in T3. */
-const REDIRECT_TOOLTIP =
-  'MIA Markets décrit les conditions de marché. Pour les questions d’action ou de conseil, c’est à vous de décider selon vos propres critères.';
-
 /**
  * Single chat exchange row. The assistant message is full-width with the brand
  * avatar + name and a discreet copy action; the user message sits on the right
@@ -45,6 +42,7 @@ export function ChatMessage({
   blockedReason,
   viewUpdated,
 }: ChatMessageProps) {
+  const t = useTranslations('chat');
   const isUser = role === 'user';
   const showRedirect = !isUser && Boolean(blockedReason);
 
@@ -73,7 +71,6 @@ export function ChatMessage({
     <div
       data-chat-role={role}
       className="chat-msg-in flex w-full gap-2.5"
-      role="status"
     >
       <AgentAvatar size="sm" className="mt-0.5" />
       <div className="group flex min-w-0 flex-col gap-1">
@@ -89,7 +86,7 @@ export function ChatMessage({
           {viewUpdated && (
             <span className="inline-flex items-center gap-1 rounded-full border border-[hsl(var(--sentinel-bull)/0.3)] bg-[hsl(var(--sentinel-bull)/0.12)] px-2 py-0.5 text-[11px] text-[hsl(var(--sentinel-bull))]">
               <Check className="h-3 w-3" aria-hidden />
-              Vue mise à jour
+              {t('viewUpdated')}
             </span>
           )}
           {showRedirect && (
@@ -99,14 +96,14 @@ export function ChatMessage({
                   <button
                     type="button"
                     className="flex w-fit items-center gap-1 rounded px-1 text-[11px] text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                    aria-label="Pourquoi cette réponse a été recadrée"
+                    aria-label={t('redirectAria')}
                   >
                     <Info className="h-3 w-3" aria-hidden />
-                    Question recadrée
+                    {t('redirectLabel')}
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="max-w-[260px] text-xs">
-                  {REDIRECT_TOOLTIP}
+                  {t('redirectTooltip')}
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -119,6 +116,7 @@ export function ChatMessage({
 
 /** Discreet copy-to-clipboard for an assistant reply (visible on row hover). */
 function CopyButton({ text }: { text: string }) {
+  const t = useTranslations('chat');
   const [copied, setCopied] = React.useState(false);
 
   async function handleCopy() {
@@ -135,7 +133,7 @@ function CopyButton({ text }: { text: string }) {
     <button
       type="button"
       onClick={handleCopy}
-      aria-label={copied ? 'Réponse copiée' : 'Copier la réponse'}
+      aria-label={copied ? t('copiedAria') : t('copyAria')}
       className={cn(
         'flex items-center gap-1 rounded px-1 py-0.5 text-[11px] text-muted-foreground',
         'opacity-0 transition-opacity hover:text-foreground focus-visible:opacity-100',
@@ -145,12 +143,12 @@ function CopyButton({ text }: { text: string }) {
       {copied ? (
         <>
           <Check className="h-3 w-3" aria-hidden />
-          Copié
+          {t('copied')}
         </>
       ) : (
         <>
           <Copy className="h-3 w-3" aria-hidden />
-          Copier
+          {t('copy')}
         </>
       )}
     </button>

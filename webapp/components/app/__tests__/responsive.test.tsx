@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@/components/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppWorkspace } from '../AppWorkspace';
 import { ChatProvider } from '@/components/chat/ChatProvider';
@@ -19,6 +19,14 @@ vi.mock('@/lib/market-reading/api-client', async (importActual) => {
 // Stub the candlestick chart (lightweight-charts needs a real canvas).
 vi.mock('@/components/app/ReadingChart', () => ({
   ReadingChart: () => <div data-testid="reading-chart" />,
+}));
+
+// AppWorkspace syncs the active combo with the URL (NAV-01/02); stub the
+// app-router hooks so the workspace renders under jsdom.
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+  usePathname: () => '/app',
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 /** Drive useMediaQuery / useIsMobile by stubbing window.matchMedia. */

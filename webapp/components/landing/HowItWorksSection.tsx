@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   Workflow,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/badge';
 
 /**
@@ -22,73 +23,32 @@ import { Badge } from '@/components/ui/badge';
 
 interface Step {
   icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  body: string;
+  key: string;
 }
 
 const STEPS: ReadonlyArray<Step> = [
-  {
-    icon: Activity,
-    title: '1 · Structure du marché',
-    body: "Le moteur repère les empreintes réelles des gros flux : cassures de structure (BOS), changements de caractère (CHOCH), Order Blocks, Fair Value Gaps et retests. Ni indicateurs empilés, ni interprétation subjective.",
-  },
-  {
-    icon: Gauge,
-    title: '2 · Régime & volatilité',
-    body: "Il qualifie la tendance, la maturité du mouvement et l'amplitude moyenne des bougies — volatilité normale ou élevée. Ce qui est incertain est affiché comme incertain, jamais masqué.",
-  },
-  {
-    icon: CalendarClock,
-    title: '3 · Événements macro',
-    body: "Il repère les publications à fort impact à venir (FOMC, BCE, NFP…) et t'annonce lui-même l'élargissement probable de la volatilité — tu sais à quoi t'attendre avant l'annonce, à toi de juger.",
-  },
-  {
-    icon: MessagesSquare,
-    title: '4 · Lecture narrée + chatbot',
-    body: "Tout est traduit en une lecture claire, puis M.I.A Agent répond à vos questions avec ce contexte injecté. Il explique, il contextualise — et il refuse tout ordre d'achat ou de vente.",
-  },
+  { icon: Activity, key: 'marketStructure' },
+  { icon: Gauge, key: 'regimeVolatility' },
+  { icon: CalendarClock, key: 'macroEvents' },
+  { icon: MessagesSquare, key: 'narratedChatbot' },
 ];
 
 interface Strength {
   icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  body: string;
+  key: string;
   href: string;
-  proof: string;
 }
 
 const STRENGTHS: ReadonlyArray<Strength> = [
-  {
-    icon: Layers,
-    title: 'Multi-actifs, multi-horizons',
-    body: 'La même rigueur méthodologique sur l’or et l’euro, de M15 à H4 — le BTC arrive après validation du moteur.',
-    href: '#multi-marche',
-    proof: 'Démo · Trois lectures',
-  },
-  {
-    icon: Radar,
-    title: 'Un chatbot qui a le contexte',
-    body: 'M.I.A Agent connaît la lecture en cours : structure, régime, événements. Il vulgarise, et refuse les questions qu’il ne doit pas répondre.',
-    href: '#conversations',
-    proof: 'Démo · Conversations',
-  },
-  {
-    icon: GitCompare,
-    title: 'Une seule lecture assumée',
-    body: 'Fini les trois indicateurs qui se contredisent : un cadre unique, un verdict descriptif, l’incertitude toujours visible.',
-    href: '#avant-apres',
-    proof: 'Démo · Avant / Après',
-  },
-  {
-    icon: ShieldCheck,
-    title: 'Honnête par construction',
-    body: 'Zéro promesse de gain, zéro signal de trade — une posture éducative qu’on assume publiquement.',
-    href: '#honnetete',
-    proof: 'Section · Transparence',
-  },
+  { icon: Layers, key: 'multiAsset', href: '#multi-marche' },
+  { icon: Radar, key: 'contextChatbot', href: '#conversations' },
+  { icon: GitCompare, key: 'singleReading', href: '#avant-apres' },
+  { icon: ShieldCheck, key: 'honestByDesign', href: '#honnetete' },
 ];
 
 export function HowItWorksSection() {
+  const t = useTranslations('landing.howItWorks');
+
   return (
     <section
       id="fonctionnement"
@@ -101,18 +61,16 @@ export function HowItWorksSection() {
           className="text-[11px] uppercase tracking-wider"
         >
           <Workflow className="mr-1 h-3 w-3" aria-hidden />
-          Comment ça marche
+          {t('kicker')}
         </Badge>
         <h2
           id="how-title"
           className="text-balance text-2xl font-semibold tracking-tight sm:text-3xl"
         >
-          De la bougie brute à une lecture que vous comprenez.
+          {t('title')}
         </h2>
         <p className="text-pretty text-muted-foreground">
-          MIA lit le marché comme un analyste structurel, puis vous l’explique
-          en langage clair. Voici les quatre étapes — et, plus bas, ce que
-          chaque démo de cette page vous montre en conditions réelles.
+          {t('subtitle')}
         </p>
       </header>
 
@@ -122,15 +80,15 @@ export function HowItWorksSection() {
           const Icon = step.icon;
           return (
             <li
-              key={step.title}
+              key={step.key}
               className="rounded-2xl border border-border/60 bg-card/50 p-5"
             >
               <Icon className="h-5 w-5 text-primary" aria-hidden />
               <h3 className="mt-3 text-sm font-semibold tracking-tight">
-                {step.title}
+                {t(`steps.${step.key}.title`)}
               </h3>
               <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                {step.body}
+                {t(`steps.${step.key}.body`)}
               </p>
             </li>
           );
@@ -140,14 +98,14 @@ export function HowItWorksSection() {
       {/* Points forts + ancrage vers les démos */}
       <div className="space-y-5">
         <h3 className="text-lg font-semibold tracking-tight">
-          Ce que les démos prouvent
+          {t('strengthsHeading')}
         </h3>
         <div className="grid gap-5 sm:grid-cols-2">
           {STRENGTHS.map((s) => {
             const Icon = s.icon;
             return (
               <a
-                key={s.title}
+                key={s.key}
                 href={s.href}
                 className="group flex gap-4 rounded-2xl border border-border/60 bg-card/50 p-5 transition-colors hover:border-primary/40 hover:bg-card"
               >
@@ -157,17 +115,17 @@ export function HowItWorksSection() {
                 <div className="space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <h4 className="text-sm font-semibold tracking-tight">
-                      {s.title}
+                      {t(`strengths.${s.key}.title`)}
                     </h4>
                     <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/80">
-                      {s.proof}
+                      {t(`strengths.${s.key}.proof`)}
                     </span>
                   </div>
                   <p className="text-sm leading-relaxed text-muted-foreground">
-                    {s.body}
+                    {t(`strengths.${s.key}.body`)}
                   </p>
                   <span className="inline-block text-xs font-medium text-primary underline-offset-4 group-hover:underline">
-                    Voir la démo →
+                    {t('seeDemo')}
                   </span>
                 </div>
               </a>

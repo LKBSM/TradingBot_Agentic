@@ -2,19 +2,23 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { User } from 'lucide-react';
 import { AppHeader } from '@/components/app/AppHeader';
 import { LocaleToggle } from '@/components/LocaleToggle';
 import { ThemeMenu } from '@/components/theme/ThemeMenu';
 import { useAuth } from '@/lib/auth/store';
+import { useLocalizedHref } from '@/lib/i18n/href';
 import { BRAND_NAME, BRAND_BASELINE } from '@/lib/brand';
 import { SUPPORTED_LOCALES } from '@/i18n';
 
+// Anchors keep their hrefs in code; the visible label is pulled from the
+// `nav` message namespace by key so every locale renders in its own language.
 const ANCHORS = [
-  { href: '#demo', label: 'Démo' },
-  { href: '#honnetete', label: 'Honnêteté' },
-  { href: '#tarifs', label: 'Tarifs' },
-  { href: '#faq', label: 'FAQ' },
+  { href: '#demo', key: 'demo' },
+  { href: '#honnetete', key: 'honesty' },
+  { href: '#tarifs', key: 'pricing' },
+  { href: '#faq', key: 'faq' },
 ] as const;
 
 /**
@@ -44,22 +48,26 @@ function isAppRoute(pathname: string): boolean {
  */
 function NavAccountLink() {
   const { isAuthenticated, loading } = useAuth();
+  const t = useTranslations('nav');
+  const lh = useLocalizedHref();
   if (loading) {
     return <span className="h-9 w-20" aria-hidden />;
   }
   return (
     <Link
-      href={isAuthenticated ? '/compte' : '/connexion'}
+      href={lh(isAuthenticated ? '/compte' : '/connexion')}
       className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <User className="h-4 w-4" aria-hidden />
-      <span className="hidden sm:inline">{isAuthenticated ? 'Compte' : 'Connexion'}</span>
+      <span className="hidden sm:inline">{isAuthenticated ? t('account') : t('login')}</span>
     </Link>
   );
 }
 
 export function Nav() {
   const pathname = usePathname() ?? '/';
+  const t = useTranslations('nav');
+  const lh = useLocalizedHref();
   if (isAppRoute(pathname)) {
     return <AppHeader />;
   }
@@ -68,9 +76,9 @@ export function Nav() {
     <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/85 backdrop-blur">
       <div className="container-prose flex h-14 items-center justify-between gap-4">
         <Link
-          href="/"
+          href={lh('/')}
           className="flex items-center gap-2 text-sm font-semibold tracking-tight"
-          aria-label="MIA Markets — retour à l'accueil"
+          aria-label={t('brandHomeAria')}
         >
           <span
             aria-hidden
@@ -86,7 +94,7 @@ export function Nav() {
           </span>
         </Link>
 
-        <nav aria-label="Sections du site" className="hidden sm:block">
+        <nav aria-label={t('sectionsAria')} className="hidden sm:block">
           <ul className="flex items-center gap-1 text-sm">
             {ANCHORS.map((a) => (
               <li key={a.href}>
@@ -94,7 +102,7 @@ export function Nav() {
                   href={a.href}
                   className="rounded-md px-3 py-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
-                  {a.label}
+                  {t(a.key)}
                 </Link>
               </li>
             ))}
@@ -106,26 +114,26 @@ export function Nav() {
             sur mobile — bug attrapé par l'e2e mobile-iphone-12). */}
         <div className="flex items-center gap-1 sm:gap-2">
           <Link
-            href="/app"
+            href={lh('/app')}
             className="rounded-md px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-3"
           >
             App
           </Link>
           <Link
-            href="/zones"
+            href={lh('/zones')}
             className="rounded-md px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-3"
           >
-            Zones
+            {t('zones')}
           </Link>
           <Link
-            href="/scanner"
+            href={lh('/scanner')}
             className="rounded-md px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-3"
           >
-            Scanner
+            {t('scanner')}
           </Link>
           <NavAccountLink />
-          {/* V1 = FR-only (middleware 302 en/de/es → fr) : le sélecteur de
-              langue reste desktop-only tant que l'i18n n'est pas activée. */}
+          {/* Sélecteur de langue desktop-only (le cluster mobile est déjà dense
+              sur 390px ; les liens localisés ci-dessus couvrent toutes locales). */}
           <div className="hidden sm:block">
             <LocaleToggle />
           </div>

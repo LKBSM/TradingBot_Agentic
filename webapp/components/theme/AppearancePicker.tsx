@@ -1,6 +1,7 @@
 'use client';
 
 import { Check } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import * as React from 'react';
 import { cn } from '@/lib/utils';
@@ -13,6 +14,7 @@ import { THEMES, DEFAULT_THEME, type ThemeMeta } from '@/lib/theme/themes';
  * cause a hydration mismatch. Purely presentational.
  */
 export function AppearancePicker() {
+  const t = useTranslations('appearance');
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
@@ -21,15 +23,17 @@ export function AppearancePicker() {
   return (
     <div
       role="radiogroup"
-      aria-label="Choix du thème"
+      aria-label={t('groupLabel')}
       className="grid grid-cols-1 gap-3 sm:grid-cols-2"
     >
-      {THEMES.map((t) => (
+      {THEMES.map((theme) => (
         <ThemeCard
-          key={t.id}
-          theme={t}
-          selected={active === t.id}
-          onSelect={() => setTheme(t.id)}
+          key={theme.id}
+          theme={theme}
+          description={t(`descriptions.${theme.id}`)}
+          activeLabel={t('active')}
+          selected={active === theme.id}
+          onSelect={() => setTheme(theme.id)}
         />
       ))}
     </div>
@@ -38,10 +42,14 @@ export function AppearancePicker() {
 
 function ThemeCard({
   theme,
+  description,
+  activeLabel,
   selected,
   onSelect,
 }: {
   theme: ThemeMeta;
+  description: string;
+  activeLabel: string;
   selected: boolean;
   onSelect: () => void;
 }) {
@@ -67,11 +75,11 @@ function ThemeCard({
             {selected && (
               <span className="inline-flex items-center gap-0.5 text-xs font-medium text-primary">
                 <Check className="h-3.5 w-3.5" aria-hidden />
-                Actif
+                {activeLabel}
               </span>
             )}
           </div>
-          <p className="mt-0.5 text-xs text-muted-foreground">{theme.description}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
         </div>
       </div>
     </button>

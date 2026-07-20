@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen } from '@/components/test-utils';
 import { describe, expect, it } from 'vitest';
 import { MethodologySection } from '../MethodologySection';
 import { ConceptCard } from '../ConceptCard';

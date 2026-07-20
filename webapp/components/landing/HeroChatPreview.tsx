@@ -1,12 +1,13 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { MessageCircle } from 'lucide-react';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { MiaAgentLogo } from '@/components/chat/MiaAgentLogo';
 import { useChat } from '@/components/chat/ChatProvider';
-import { getChatbotScript } from '@/lib/chatbot';
+import { useChatbotScriptGetter } from '@/lib/chatbot';
 import { cn } from '@/lib/utils';
 import type { LandingSample } from '@/lib/market-reading/landing-samples';
 
@@ -30,10 +31,18 @@ export function HeroChatPreview({
   sample,
   introDelayMs = 1400,
 }: HeroChatPreviewProps) {
+  const t = useTranslations('landing.chatPreview');
+  const resolveScript = useChatbotScriptGetter();
   const { openFor, appendExchange } = useChat();
   const [showIntro, setShowIntro] = React.useState(false);
 
   const { reading } = sample;
+  const trendWord =
+    reading.regime.trend === 'bullish'
+      ? t('trendBullish')
+      : reading.regime.trend === 'bearish'
+        ? t('trendBearish')
+        : t('trendNeutral');
   const chatContext = React.useMemo(
     () => ({
       id: sample.id,
@@ -43,7 +52,10 @@ export function HeroChatPreview({
     [sample.id, reading.header.instrument, reading.header.timeframe],
   );
 
-  const script = React.useMemo(() => getChatbotScript(sample.id), [sample.id]);
+  const script = React.useMemo(
+    () => resolveScript(sample.id),
+    [resolveScript, sample.id],
+  );
   const previewQuestions = React.useMemo(
     () => script?.questions.slice(0, 3) ?? [],
     [script],
@@ -71,7 +83,7 @@ export function HeroChatPreview({
 
   return (
     <Card
-      aria-label="Aperçu de la conversation avec M.I.A Agent"
+      aria-label={t('ariaCard')}
       className="relative flex flex-col gap-4 border-border/60 bg-card/80 p-5 shadow-md backdrop-blur sm:p-6"
     >
       <div className="flex items-center gap-2">
@@ -81,7 +93,7 @@ export function HeroChatPreview({
         <div>
           <p className="text-sm font-semibold">M.I.A Agent</p>
           <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
-            Assistant conversationnel · {reading.header.instrument}
+            {t('role')} · {reading.header.instrument}
           </p>
         </div>
       </div>
@@ -92,19 +104,13 @@ export function HeroChatPreview({
         ) : (
           <div className="hero-stagger rounded-2xl rounded-tl-sm bg-muted px-4 py-3 text-sm leading-relaxed">
             <p>
-              Salut, je suis M.I.A Agent — l&apos;assistant de MIA Markets. Je
-              viens de lire le marché {reading.header.instrument} : la structure
-              indique une configuration{' '}
-              {reading.regime.trend === 'bullish'
-                ? 'haussière'
-                : reading.regime.trend === 'bearish'
-                  ? 'baissière'
-                  : 'neutre'}
-              .
+              {t('greeting', {
+                instrument: reading.header.instrument,
+                trend: trendWord,
+              })}
             </p>
             <p className="mt-2 text-xs italic text-muted-foreground">
-              Pose-moi n&apos;importe quelle question — je ne donne ni
-              instruction d&apos;achat ni conseil personnalisé.
+              {t('disclaimer')}
             </p>
           </div>
         )}
@@ -116,7 +122,7 @@ export function HeroChatPreview({
           style={{ animationDelay: '300ms' }}
         >
           <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-            Questions suggérées
+            {t('suggested')}
           </p>
           {previewQuestions.map((q) => (
             <button
@@ -145,7 +151,7 @@ export function HeroChatPreview({
           style={{ animationDelay: '500ms' }}
         >
           <MessageCircle className="h-4 w-4" aria-hidden />
-          Continuer dans le chat
+          {t('continue')}
         </Button>
       )}
     </Card>
@@ -153,12 +159,13 @@ export function HeroChatPreview({
 }
 
 function ThinkingBubble() {
+  const t = useTranslations('landing.chatPreview');
   return (
     <div
       className="inline-flex items-center gap-1 rounded-2xl rounded-tl-sm bg-muted px-4 py-3 text-sm text-muted-foreground"
-      aria-label="M.I.A Agent réfléchit"
+      aria-label={t('thinkingAria')}
     >
-      <span className="text-xs italic">M.I.A Agent lit le marché</span>
+      <span className="text-xs italic">{t('thinking')}</span>
       <span className="flex gap-1">
         <span
           className="hero-thinking-dot h-1.5 w-1.5 rounded-full bg-muted-foreground"

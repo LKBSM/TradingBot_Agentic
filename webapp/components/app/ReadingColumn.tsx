@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import { MarketReadingCard } from '@/components/market-reading/MarketReadingCard';
 import {
@@ -17,6 +18,7 @@ import {
   type ReadingSource,
 } from '@/lib/market-reading/hooks';
 import { useLivePrice } from '@/lib/market-reading/live-price';
+import { useMarketClosed } from '@/lib/market-reading/session';
 import { useChartViewOptional } from '@/lib/chart/viewState';
 import type { ChartViewState } from '@/lib/chart/viewActions';
 import type { Combo } from '@/lib/market-reading/store';
@@ -68,6 +70,7 @@ export function ReadingColumn({
   onRetry,
   dataSource = READING_DATA_SOURCE,
 }: ReadingColumnProps) {
+  const t = useTranslations('app');
   // Candle feed for the chart hero. Re-pulled when the combo changes or a new
   // candle closes (candle_close_ts) — never faster, to keep the load honest.
   const { candles } = useCandles(
@@ -122,6 +125,15 @@ export function ReadingColumn({
     };
   }, [live, livePrice, liveTs]);
 
+  // Descriptive session state — closed spot FX / gold outside trading hours,
+  // corroborated by the freshest price age (holidays). Drives the "Marché fermé"
+  // badge near the price and on the chart; suppresses the "EN DIRECT" badge so
+  // the app never claims to be live when it isn't. Display-only.
+  const marketClosed = useMarketClosed(
+    active?.instrument ?? null,
+    liveHeader?.priceTs ?? null,
+  );
+
   function focusChat() {
     const input = document.querySelector<HTMLTextAreaElement>(
       'textarea[aria-label="Question libre pour M.I.A Agent"]',
@@ -142,8 +154,9 @@ export function ReadingColumn({
       <MarketReadingCard
         reading={reading}
         onAskChatbot={focusChat}
-        chartSlot={buildChartSlot(reading, candles, livePrice, liveTs, active?.timeframe ?? null, chartView, onClearHighlight)}
+        chartSlot={buildChartSlot(reading, candles, livePrice, liveTs, active?.timeframe ?? null, chartView, onClearHighlight, marketClosed)}
         live={liveHeader}
+        marketClosed={marketClosed}
         className="w-full border-border/60 shadow-sm"
       />
     );
@@ -152,7 +165,7 @@ export function ReadingColumn({
   }
 
   return (
-    <section aria-label="Lecture de marché" className="min-w-0 space-y-3">
+    <section aria-label={t('column.sectionAria')} className="min-w-0 space-y-3">
       {isRefreshing && reading && (
         <div
           className="flex items-center gap-2 text-xs text-muted-foreground"
@@ -160,7 +173,7 @@ export function ReadingColumn({
           aria-live="polite"
         >
           <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
-          Actualisation…
+          {t('column.refreshing')}
         </div>
       )}
       {body}
@@ -182,6 +195,7 @@ function buildChartSlot(
   timeframe: string | null,
   chartView: ChartViewState,
   onClearHighlight: () => void,
+  marketClosed: boolean,
 ): React.ReactNode {
   if (!candles || candles.length === 0) {
     return <ChartUnavailable />;
@@ -194,6 +208,7 @@ function buildChartSlot(
       timeframe={timeframe}
       livePrice={livePrice}
       liveTs={liveTs}
+      marketClosed={marketClosed}
       layers={chartView.layers}
       filter={chartView.filter}
       focus={chartView.focus}

@@ -1,7 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { CandlestickChart, HelpCircle, Layers, Radar } from 'lucide-react';
+import { useLocalizedHref } from '@/lib/i18n/href';
 import { LocaleToggle } from '@/components/LocaleToggle';
 import { ThemeMenu } from '@/components/theme/ThemeMenu';
 import { Badge } from '@/components/ui/badge';
@@ -17,13 +19,15 @@ import { AccountMenu } from './AccountMenu';
  * account menu ("Le site"), so they live only on the landing.
  */
 export function AppHeader() {
+  const t = useTranslations('app');
+  const lh = useLocalizedHref();
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/85 backdrop-blur">
       <div className="container-wide flex h-14 items-center justify-between gap-4">
         <Link
-          href="/app"
+          href={lh('/app')}
           className="flex items-center gap-2 text-sm font-semibold tracking-tight"
-          aria-label="MIA Markets — espace de lecture"
+          aria-label={t('header.brandAria')}
         >
           <span
             aria-hidden
@@ -41,35 +45,35 @@ export function AppHeader() {
 
         <div className="flex items-center gap-2">
           <Link
-            href="/app"
-            aria-label="App — espace de lecture"
+            href={lh('/app')}
+            aria-label={t('header.navApp')}
             className="inline-flex h-9 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <CandlestickChart className="h-4 w-4" aria-hidden />
             <span className="hidden sm:inline">App</span>
           </Link>
           <Link
-            href="/zones"
-            aria-label="Zones — cycle de vie des zones détectées"
+            href={lh('/zones')}
+            aria-label={t('header.navZones')}
             className="inline-flex h-9 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <Layers className="h-4 w-4" aria-hidden />
             <span className="hidden sm:inline">Zones</span>
           </Link>
           <Link
-            href="/scanner"
-            aria-label="Scanner de conditions"
+            href={lh('/scanner')}
+            aria-label={t('header.navScanner')}
             className="inline-flex h-9 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <Radar className="h-4 w-4" aria-hidden />
             <span className="hidden sm:inline">Scanner</span>
           </Link>
           <Badge variant="secondary" className="hidden sm:inline-flex">
-            Accès libre
+            {t('header.planBadge')}
           </Badge>
           <Link
-            href="/methodology"
-            aria-label="Aide — méthodologie et glossaire"
+            href={lh('/methodology')}
+            aria-label={t('header.navHelp')}
             className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <HelpCircle className="h-4 w-4" aria-hidden />

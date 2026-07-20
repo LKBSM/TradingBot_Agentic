@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@/components/test-utils';
 import { describe, expect, it, vi } from 'vitest';
 import type {
   MarketReadingStructure,
@@ -78,6 +78,20 @@ describe('MarketReadingHeader', () => {
   it('falls back to close_price when no live price is available', () => {
     render(<MarketReadingHeader header={FIXTURE_XAU_M15.header} live={null} />);
     expect(screen.getByText(/2[\s ]?392,35/)).toBeInTheDocument();
+  });
+
+  it('shows the "Marché fermé" badge near the price when the market is closed', () => {
+    render(
+      <MarketReadingHeader header={FIXTURE_XAU_M15.header} marketClosed />,
+    );
+    expect(screen.getByText('Marché fermé')).toBeInTheDocument();
+  });
+
+  it('hides the "Marché fermé" badge when the market is open', () => {
+    render(
+      <MarketReadingHeader header={FIXTURE_XAU_M15.header} marketClosed={false} />,
+    );
+    expect(screen.queryByText('Marché fermé')).not.toBeInTheDocument();
   });
 });
 

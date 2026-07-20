@@ -568,6 +568,31 @@ class AccountStore:
                 conn.close()
         return self._row_to_public(row) if row else None
 
+    def session_belongs_to_disabled(self, raw_token: str) -> bool:
+        """True when a valid, unexpired session exists but its account is inactive.
+
+        Lets ``require_account`` answer a deactivated user with an explicit 403
+        ("compte désactivé") instead of a bare 401 that reads like an expired
+        session (AUTH-16).
+        """
+        if not raw_token:
+            return False
+        token_hash = self._hash_token(raw_token)
+        now = time.time()
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                cur = conn.execute(
+                    "SELECT a.is_active FROM sessions s "
+                    "JOIN accounts a ON a.id = s.account_id "
+                    "WHERE s.token_hash = ? AND s.expires_at > ?",
+                    (token_hash, now),
+                )
+                row = cur.fetchone()
+            finally:
+                conn.close()
+        return row is not None and not row["is_active"]
+
     def delete_session(self, raw_token: str) -> bool:
         if not raw_token:
             return False
@@ -633,6 +658,28 @@ class AccountStore:
             finally:
                 conn.close()
 
+    def email_for_identifier(self, identifier: str) -> Optional[str]:
+        """Return the email of the active account matching username OR email.
+
+        Used to address the password-reset email (AUTH-02). Anti-enumeration
+        stays the ROUTE's job — this only resolves a recipient when one exists.
+        """
+        if not identifier:
+            return None
+        ident = identifier.strip().lower()
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                cur = conn.execute(
+                    "SELECT email FROM accounts "
+                    "WHERE (username_lower = ? OR email_lower = ?) AND is_active = 1",
+                    (ident, ident),
+                )
+                row = cur.fetchone()
+            finally:
+                conn.close()
+        return row["email"] if row else None
+
     def consume_reset_token(self, raw_token: str, new_password: str) -> bool:
         """Atomically validate + burn a reset token and set the new password."""
         if not raw_token:
@@ -691,7 +738,14 @@ class AccountStore:
                 conn.close()
 
     def update_email(self, account_id: int, new_email: str) -> Dict[str, Any]:
-        """Update an account's email. Raises AccountError on invalid/conflict."""
+        """Update an account's email. Raises AccountError on invalid/conflict.
+
+        Revokes every existing session for the account (AUTH-14) — same posture
+        as a password change (:meth:`set_password`). Changing the email is an
+        account-takeover step, so any session that isn't re-issued right after
+        must die. The caller (``PATCH /profile``) mints a fresh session cookie so
+        the actor stays logged in while other devices are signed out.
+        """
         new_email = new_email.strip()
         if not new_email or not _EMAIL_RE.match(new_email):
             raise AccountError("invalid_email", "Adresse e-mail invalide.")
@@ -707,10 +761,21 @@ class AccountStore:
                     raise AccountError(
                         "email_taken", "Cette adresse e-mail est déjà utilisée."
                     )
+                conn.execute("BEGIN")
                 conn.execute(
                     "UPDATE accounts SET email = ?, email_lower = ? WHERE id = ?",
                     (new_email, email_lower, account_id),
                 )
+                conn.execute(
+                    "DELETE FROM sessions WHERE account_id = ?", (account_id,)
+                )
+                conn.execute("COMMIT")
+            except AccountError:
+                conn.rollback()
+                raise
+            except Exception:
+                conn.rollback()
+                raise
             finally:
                 conn.close()
         return self._public_account(account_id)
@@ -986,18 +1051,28 @@ class AccountStore:
     # Owner seeding (idempotent, from environment at first boot)
     # --------------------------------------------------------------------- #
     def seed_owner(
-        self, username: str, email: str, password: str
+        self,
+        username: str,
+        email: str,
+        password: str,
+        *,
+        consents: Optional[Sequence[Tuple[str, str]]] = None,
     ) -> Dict[str, Any]:
         """Idempotently ensure an owner account exists, seeded from env.
 
         First boot: creates the account with role ``owner`` (password hashed at
-        creation). Subsequent boots: if an account with this username/email
-        already exists it is promoted to ``owner`` (and reactivated) WITHOUT
-        touching the password — so rotating ``OWNER_PASSWORD`` in the env does
-        not silently reset a password the operator may have already changed.
+        creation) and records the operator's implicit ``consents`` so their
+        consent table is never empty (AUTH-10). Subsequent boots: the owner is
+        identified by BOTH username AND email; when that exact row exists it is
+        promoted to ``owner`` (and reactivated) WITHOUT touching the password —
+        so rotating ``OWNER_PASSWORD`` never resets a password the operator may
+        have changed.
 
-        Raises :class:`AccountError` on invalid env values (caller logs +
-        continues so a bad env var never aborts startup).
+        A partial collision (an existing DIFFERENT account owning the same
+        username OR email) raises ``owner_conflict`` instead of silently
+        promoting that organic account — a privilege-escalation trap the old
+        ``OR`` lookup fell into. Raises :class:`AccountError` on invalid env
+        values too (caller logs and, in production, fails fast).
         """
         username = username.strip()
         email = email.strip()
@@ -1008,9 +1083,10 @@ class AccountStore:
         with self._lock:
             conn = self._get_connection()
             try:
+                # Exact owner row (username AND email) → idempotent ensure.
                 cur = conn.execute(
                     "SELECT id FROM accounts "
-                    "WHERE username_lower = ? OR email_lower = ?",
+                    "WHERE username_lower = ? AND email_lower = ?",
                     (username_lower, email_lower),
                 )
                 row = cur.fetchone()
@@ -1025,6 +1101,21 @@ class AccountStore:
                         row["id"],
                     )
                     return self._public_account(row["id"])
+
+                # No exact owner row: if the username OR email is taken by some
+                # OTHER account, refuse loudly rather than promote it or crash on
+                # the UNIQUE constraint (AUTH-10 — no silent elevation).
+                cur = conn.execute(
+                    "SELECT id FROM accounts "
+                    "WHERE username_lower = ? OR email_lower = ?",
+                    (username_lower, email_lower),
+                )
+                if cur.fetchone() is not None:
+                    raise AccountError(
+                        "owner_conflict",
+                        "OWNER_USERNAME/OWNER_EMAIL entrent en collision avec un "
+                        "compte existant différent — aucune promotion silencieuse.",
+                    )
 
                 now_iso = time.strftime("%Y-%m-%dT%H:%M:%S")
                 cur = conn.execute(
@@ -1044,6 +1135,13 @@ class AccountStore:
                 owner_id = cur.lastrowid
                 # Owner is the operator — record implicit consent to the current
                 # legal docs so the consent table is never empty for them.
+                for doc, version in consents or ():
+                    conn.execute(
+                        "INSERT INTO account_consents "
+                        "(account_id, doc, version, accepted_at) "
+                        "VALUES (?, ?, ?, ?)",
+                        (owner_id, doc, str(version), now_iso),
+                    )
                 logger.info("owner account seeded id=%s", owner_id)
             finally:
                 conn.close()

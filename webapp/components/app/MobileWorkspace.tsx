@@ -1,6 +1,7 @@
 'use client';
 
 import { LineChart, ListTree, MessageCircle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import * as React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AppChatSidebar } from './AppChatSidebar';
@@ -31,6 +32,7 @@ export function MobileWorkspace({
   onRetry,
   dataSource,
 }: WorkspaceViewProps) {
+  const t = useTranslations('app');
   const [tab, setTab] = React.useState<MobileTab>('markets');
 
   function handleSelect(combo: Combo) {
@@ -40,7 +42,7 @@ export function MobileWorkspace({
 
   const headerLabel = active
     ? `${formatInstrument(active.instrument)} · ${formatTimeframe(active.timeframe)}`
-    : 'Espace de lecture';
+    : t('mobile.workspaceTitle');
 
   return (
     <Tabs
@@ -86,13 +88,13 @@ export function MobileWorkspace({
       </div>
 
       <TabsList className="sticky bottom-0 z-10 grid h-auto w-full grid-cols-3 rounded-none border-t border-border/60 bg-background p-0">
-        <MobileTabTrigger value="markets" label="Marchés">
+        <MobileTabTrigger value="markets" label={t('mobile.tabMarkets')}>
           <ListTree className="h-4 w-4" aria-hidden />
         </MobileTabTrigger>
-        <MobileTabTrigger value="reading" label="Lecture">
+        <MobileTabTrigger value="reading" label={t('mobile.tabReading')}>
           <LineChart className="h-4 w-4" aria-hidden />
         </MobileTabTrigger>
-        <MobileTabTrigger value="chat" label="Chat">
+        <MobileTabTrigger value="chat" label={t('mobile.tabChat')}>
           <MessageCircle className="h-4 w-4" aria-hidden />
         </MobileTabTrigger>
       </TabsList>

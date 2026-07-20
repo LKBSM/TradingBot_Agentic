@@ -1,8 +1,11 @@
 'use client';
 
 import * as React from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useChartView } from '@/lib/chart/viewState';
 import { coerceViewActions } from '@/lib/chart/viewActions';
+import { resolveComboFromQuery } from '@/lib/conditions/app-link';
 import {
   useCandles,
   useLatestPrice,
@@ -14,10 +17,7 @@ import {
   SUPPORTED_TIMEFRAMES,
 } from '@/lib/market-reading/perimeter';
 import { buildAppHref } from '@/lib/conditions/app-link';
-import {
-  formatInstrument,
-  formatTimeframe,
-} from '@/lib/market-reading/formatters';
+import { useReadingFormatters } from '@/lib/market-reading/use-reading-formatters';
 import {
   collectZones,
   matchesFilter,
@@ -31,19 +31,11 @@ import { ZoneLifecycleCard } from './ZoneLifecycleCard';
 
 const POLL_MS = 60_000;
 
-const FILTERS: { value: ZoneFilter; label: string }[] = [
-  { value: 'all', label: 'Toutes' },
-  { value: 'active', label: 'Actives' },
-  { value: 'mitigated', label: 'Mitigées' },
-];
+const FILTER_VALUES: ZoneFilter[] = ['all', 'active', 'mitigated'];
 
 // Factual orders only — deliberately NO importance/quality sort (a "strength"
 // ranking would be an implicit recommendation, mission §0).
-const SORTS: { value: ZoneSort; label: string }[] = [
-  { value: 'proximity', label: 'Proximité' },
-  { value: 'recency', label: 'Fraîcheur' },
-  { value: 'state', label: 'État' },
-];
+const SORT_VALUES: ZoneSort[] = ['proximity', 'recency', 'state'];
 
 /** Small segmented control (display-only, no detection impact). */
 function Segmented<T extends string>({
@@ -91,8 +83,72 @@ function Segmented<T extends string>({
  * effect is reflected on the chart (`/app`).
  */
 export function ZonesWorkspace({ locale }: { locale: string }) {
-  const [instrument, setInstrument] = React.useState<string>(SUPPORTED_INSTRUMENTS[0]);
-  const [timeframe, setTimeframe] = React.useState<string>(SUPPORTED_TIMEFRAMES[0]);
+  const t = useTranslations('zones');
+  const fmt = useReadingFormatters();
+
+  const FILTERS = FILTER_VALUES.map((value) => ({
+    value,
+    label: t(`filters.${value}`),
+  }));
+  const SORTS = SORT_VALUES.map((value) => ({
+    value,
+    label: t(`sorts.${value}`),
+  }));
+
+  // The combo is URL-driven (NAV-04) so `/zones?instrument=…&timeframe=…` is
+  // shareable/bookmarkable and back/forward restores it — instead of a local
+  // state that always reset to XAU/M15.
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const urlCombo = React.useMemo(
+    () =>
+      resolveComboFromQuery(
+        searchParams.get('instrument') ?? undefined,
+        searchParams.get('timeframe') ?? undefined,
+      ),
+    [searchParams],
+  );
+
+  const [instrument, setInstrumentState] = React.useState<string>(
+    urlCombo?.instrument ?? SUPPORTED_INSTRUMENTS[0],
+  );
+  const [timeframe, setTimeframeState] = React.useState<string>(
+    urlCombo?.timeframe ?? SUPPORTED_TIMEFRAMES[0],
+  );
+
+  // URL → state: reflect a deep-link / back-forward change into the selection.
+  React.useEffect(() => {
+    if (!urlCombo) return;
+    if (urlCombo.instrument !== instrument) setInstrumentState(urlCombo.instrument);
+    if (urlCombo.timeframe !== timeframe) setTimeframeState(urlCombo.timeframe);
+  }, [urlCombo, instrument, timeframe]);
+
+  const writeCombo = React.useCallback(
+    (inst: string, tf: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('instrument', inst);
+      params.set('timeframe', tf);
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [searchParams, pathname, router],
+  );
+
+  const setInstrument = React.useCallback(
+    (i: string) => {
+      setInstrumentState(i);
+      writeCombo(i, timeframe);
+    },
+    [writeCombo, timeframe],
+  );
+  const setTimeframe = React.useCallback(
+    (tf: string) => {
+      setTimeframeState(tf);
+      writeCombo(instrument, tf);
+    },
+    [writeCombo, instrument],
+  );
+
   const [filter, setFilter] = React.useState<ZoneFilter>('all');
   // Proximity to the price is the default order — the most useful factual one.
   const [sort, setSort] = React.useState<ZoneSort>('proximity');
@@ -160,31 +216,27 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
   return (
     <section className="flex flex-col gap-5">
       <header className="flex flex-col gap-1">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">Zones</h1>
-        <p className="text-sm text-muted-foreground">
-          Le cycle de vie de chaque zone détectée — formation, tests, mitigation,
-          comblement — décrit au présent. Lecture descriptive : aucun objectif, aucune
-          prévision.
-        </p>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">{t('title')}</h1>
+        <p className="text-sm text-muted-foreground">{t('intro')}</p>
       </header>
 
       {/* Combo selector */}
       <div className="flex flex-wrap items-center gap-3">
         <Segmented
-          options={SUPPORTED_INSTRUMENTS.map((i) => ({ value: i, label: formatInstrument(i) }))}
+          options={SUPPORTED_INSTRUMENTS.map((i) => ({ value: i, label: fmt.instrument(i) }))}
           value={instrument}
           onChange={setInstrument}
-          ariaLabel="Instrument"
+          ariaLabel={t('selector.instrument')}
         />
         <Segmented
-          options={SUPPORTED_TIMEFRAMES.map((t) => ({ value: t, label: formatTimeframe(t) }))}
+          options={SUPPORTED_TIMEFRAMES.map((tf) => ({ value: tf, label: fmt.timeframe(tf) }))}
           value={timeframe}
           onChange={setTimeframe}
-          ariaLabel="Unité de temps"
+          ariaLabel={t('selector.timeframe')}
         />
         {isRefreshing && (
           <span className="text-xs text-muted-foreground" aria-live="polite">
-            actualisation…
+            {t('refreshing')}
           </span>
         )}
       </div>
@@ -192,32 +244,31 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
       {/* Filters + sort */}
       <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
         <div className="flex items-center gap-2">
-          <span className="text-xs uppercase tracking-wide text-muted-foreground">Filtre</span>
-          <Segmented<ZoneFilter> options={FILTERS} value={filter} onChange={setFilter} ariaLabel="Filtrer les zones" />
+          <span className="text-xs uppercase tracking-wide text-muted-foreground">{t('filterLabel')}</span>
+          <Segmented<ZoneFilter> options={FILTERS} value={filter} onChange={setFilter} ariaLabel={t('filterAria')} />
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs uppercase tracking-wide text-muted-foreground">Tri</span>
-          <Segmented<ZoneSort> options={SORTS} value={sort} onChange={setSort} ariaLabel="Trier les zones" />
+          <span className="text-xs uppercase tracking-wide text-muted-foreground">{t('sortLabel')}</span>
+          <Segmented<ZoneSort> options={SORTS} value={sort} onChange={setSort} ariaLabel={t('sortAria')} />
         </div>
       </div>
 
       {/* Body */}
-      {isLoading ? (
-        <p className="text-sm text-muted-foreground">Chargement des zones…</p>
+      {isLoading || (isRefreshing && allZones.length === 0) ? (
+        // Show the loading state (not "Aucune zone") while a refresh is in flight
+        // with no zones yet, so a combo switch doesn't flash an empty list before
+        // the new reading lands (UI-12).
+        <p className="text-sm text-muted-foreground">{t('loading')}</p>
       ) : error ? (
         <div className="space-y-3 rounded-lg border border-destructive/40 bg-destructive/5 p-4">
-          <p className="text-sm text-foreground">
-            Les zones ne sont pas disponibles pour cette combinaison.
-          </p>
+          <p className="text-sm text-foreground">{t('errorMessage')}</p>
           <Button size="sm" variant="outline" onClick={refresh}>
-            Réessayer
+            {t('retry')}
           </Button>
         </div>
       ) : zones.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          {allZones.length === 0
-            ? 'Aucune zone détectée sur cette combinaison.'
-            : 'Aucune zone ne correspond à ce filtre.'}
+          {allZones.length === 0 ? t('emptyNone') : t('emptyFilter')}
         </p>
       ) : (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">

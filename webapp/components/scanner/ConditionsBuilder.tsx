@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -8,11 +9,11 @@ import {
   CONDITION_PALETTE,
   DEFAULT_BOS_MAX_BARS,
   DEFAULT_PROXIMITY_PCT,
-  DIRECTION_LABELS,
   LIQUIDITY_SIDE_OPTIONS,
   PHASE_OPTIONS,
   TREND_OPTIONS,
   VOLATILITY_OPTIONS,
+  paletteEntry,
 } from '@/lib/conditions/palette';
 import type {
   ConditionType,
@@ -30,6 +31,11 @@ import {
   type StrategyMutationResult,
 } from '@/lib/conditions/strategy-store';
 import { mutationErrorMessage } from './StrategyPanel';
+
+/** Capitalise a locale-agnostic enum value to build an ICU key suffix. */
+function cap(v: string): string {
+  return v.charAt(0).toUpperCase() + v.slice(1);
+}
 
 /**
  * Builder where the user COMPOSES their conditions from the present-tense
@@ -107,6 +113,13 @@ export function ConditionsBuilder({
   /** Prefilled strategy name when the palette was repopulated from a saved strategy. */
   initialStrategyName?: string;
 }) {
+  const t = useTranslations('scanner');
+  // Palette label/description: translated when a key exists, else the palette's
+  // own FR label (covers conditions added after the i18n pass — deferred).
+  const plabel = (type: ConditionType): string =>
+    t.has(`palette.${type}_label`) ? t(`palette.${type}_label`) : paletteEntry(type)?.label ?? type;
+  const pdesc = (type: ConditionType): string =>
+    t.has(`palette.${type}_desc`) ? t(`palette.${type}_desc`) : paletteEntry(type)?.description ?? '';
   const [rows, setRows] = React.useState<BuilderState>(() => initialState(config));
   const [logic, setLogic] = React.useState<ScanLogic>(config?.logic ?? 'AND');
   const [strategyName, setStrategyName] = React.useState(initialStrategyName ?? '');
@@ -149,12 +162,12 @@ export function ConditionsBuilder({
     if (result.ok) {
       setStrategyFeedback({
         kind: 'ok',
-        text: `Stratégie « ${result.strategy.name} » sauvegardée sur cet appareil.`,
+        text: t('saveStrategy.saved', { name: result.strategy.name }),
       });
     } else {
       setStrategyFeedback({
         kind: 'error',
-        text: mutationErrorMessage(result) ?? 'Sauvegarde impossible.',
+        text: mutationErrorMessage(result, t) ?? t('saveStrategy.saveFailed'),
       });
     }
   }
@@ -163,13 +176,10 @@ export function ConditionsBuilder({
     <Card>
       <CardHeader>
         <CardTitle className="text-base">
-          {mode === 'onboarding' ? 'Compose tes conditions' : 'Modifier mes conditions'}
+          {mode === 'onboarding' ? t('builder.composeTitle') : t('builder.editTitle')}
         </CardTitle>
         <p className="mt-1 text-sm text-muted-foreground">
-          Choisis les faits structurels <strong>présents</strong> qui composent ta
-          lecture. Le scanner te montre sur quels marchés et timeframes ils sont
-          réunis <strong>en ce moment</strong>. C’est un outil de lecture : à toi
-          le jugement.
+          {t.rich('builder.intro', { b: (chunks) => <strong>{chunks}</strong> })}
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -191,12 +201,14 @@ export function ConditionsBuilder({
                     checked={row.selected}
                     onChange={() => patch(entry.type, { selected: !row.selected })}
                     className="mt-0.5 h-4 w-4 shrink-0 rounded border-input accent-primary"
-                    aria-label={entry.label}
+                    aria-label={plabel(entry.type)}
                   />
                   <span className="flex flex-col">
-                    <span className="text-sm font-medium text-foreground">{entry.label}</span>
+                    <span className="text-sm font-medium text-foreground">
+                      {plabel(entry.type)}
+                    </span>
                     <span className="text-xs leading-snug text-muted-foreground">
-                      {entry.description}
+                      {pdesc(entry.type)}
                     </span>
                   </span>
                 </label>
@@ -205,7 +217,7 @@ export function ConditionsBuilder({
                   <div className="mt-3 flex flex-wrap items-center gap-3 pl-7">
                     {entry.controls.includes('direction') && (
                       <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                        Direction
+                        {t('builder.direction')}
                         <select
                           value={row.direction}
                           onChange={(e) =>
@@ -215,7 +227,7 @@ export function ConditionsBuilder({
                         >
                           {(['any', 'bullish', 'bearish'] as DirectionFilter[]).map((d) => (
                             <option key={d} value={d}>
-                              {DIRECTION_LABELS[d]}
+                              {t(`options.direction${cap(d)}`)}
                             </option>
                           ))}
                         </select>
@@ -223,7 +235,7 @@ export function ConditionsBuilder({
                     )}
                     {entry.controls.includes('trend') && (
                       <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                        Tendance
+                        {t('builder.trend')}
                         <select
                           value={row.trend}
                           onChange={(e) =>
@@ -233,7 +245,7 @@ export function ConditionsBuilder({
                         >
                           {TREND_OPTIONS.map((o) => (
                             <option key={o.value} value={o.value}>
-                              {o.label}
+                              {t(`options.trend${cap(o.value)}`)}
                             </option>
                           ))}
                         </select>
@@ -241,7 +253,7 @@ export function ConditionsBuilder({
                     )}
                     {entry.controls.includes('phase') && (
                       <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                        Phase
+                        {t('builder.phase')}
                         <select
                           value={row.phase}
                           onChange={(e) =>
@@ -251,7 +263,7 @@ export function ConditionsBuilder({
                         >
                           {PHASE_OPTIONS.map((o) => (
                             <option key={o.value} value={o.value}>
-                              {o.label}
+                              {t(`options.phase${cap(o.value)}`)}
                             </option>
                           ))}
                         </select>
@@ -259,7 +271,7 @@ export function ConditionsBuilder({
                     )}
                     {entry.controls.includes('volatility') && (
                       <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                        Volatilité
+                        {t('builder.volatility')}
                         <select
                           value={row.volatility}
                           onChange={(e) =>
@@ -269,7 +281,7 @@ export function ConditionsBuilder({
                         >
                           {VOLATILITY_OPTIONS.map((o) => (
                             <option key={o.value} value={o.value}>
-                              {o.label}
+                              {t(`options.volatility${cap(o.value)}`)}
                             </option>
                           ))}
                         </select>
@@ -277,7 +289,7 @@ export function ConditionsBuilder({
                     )}
                     {entry.controls.includes('bars') && (
                       <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                        Dans les
+                        {t('builder.inLast')}
                         <input
                           type="number"
                           min={1}
@@ -290,12 +302,12 @@ export function ConditionsBuilder({
                           }
                           className="w-16 rounded-md border border-input bg-background px-2 py-1 text-xs text-foreground"
                         />
-                        dernières bougies
+                        {t('builder.lastCandles')}
                       </label>
                     )}
                     {entry.controls.includes('proximity') && (
                       <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                        À moins de
+                        {t('builder.proximityWithin')}
                         <input
                           type="number"
                           min={0.05}
@@ -312,12 +324,12 @@ export function ConditionsBuilder({
                           }
                           className="w-16 rounded-md border border-input bg-background px-2 py-1 text-xs text-foreground"
                         />
-                        % du prix
+                        {t('builder.proximityOfPrice')}
                       </label>
                     )}
                     {entry.controls.includes('side') && (
                       <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                        Côté
+                        {t('builder.side')}
                         <select
                           value={row.side}
                           onChange={(e) =>
@@ -327,7 +339,7 @@ export function ConditionsBuilder({
                         >
                           {LIQUIDITY_SIDE_OPTIONS.map((o) => (
                             <option key={o.value} value={o.value}>
-                              {o.label}
+                              {t(`options.side${cap(o.value)}`)}
                             </option>
                           ))}
                         </select>
@@ -341,7 +353,7 @@ export function ConditionsBuilder({
         </ul>
 
         <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border/60 p-3">
-          <span className="text-sm text-muted-foreground">Combinaison&nbsp;:</span>
+          <span className="text-sm text-muted-foreground">{t('builder.combination')}</span>
           <div className="flex gap-1">
             {(['AND', 'OR'] as ScanLogic[]).map((l) => (
               <Button
@@ -351,7 +363,7 @@ export function ConditionsBuilder({
                 variant={logic === l ? 'default' : 'outline'}
                 onClick={() => setLogic(l)}
               >
-                {l === 'AND' ? 'Toutes (ET)' : 'Au moins une (OU)'}
+                {l === 'AND' ? t('builder.logicAnd') : t('builder.logicOr')}
               </Button>
             ))}
           </div>
@@ -360,8 +372,7 @@ export function ConditionsBuilder({
         {onSaveStrategy && (
           <div className="space-y-2 rounded-lg border border-border/60 p-3">
             <p className="text-sm text-muted-foreground">
-              Sauvegarder cette combinaison comme stratégie nommée (sur cet appareil
-              uniquement — rien n’est envoyé au serveur)&nbsp;:
+              {t('saveStrategy.prompt')}
             </p>
             <div className="flex flex-wrap items-center gap-2">
               <input
@@ -371,8 +382,8 @@ export function ConditionsBuilder({
                   setStrategyFeedback(null);
                 }}
                 maxLength={MAX_NAME_CHARS}
-                placeholder="ex. London sweep M15"
-                aria-label="Nom de la stratégie"
+                placeholder={t('saveStrategy.placeholder')}
+                aria-label={t('saveStrategy.nameAria')}
                 className="min-w-0 flex-1 rounded-md border border-input bg-background px-2 py-1 text-sm text-foreground"
               />
               <Button
@@ -382,7 +393,7 @@ export function ConditionsBuilder({
                 onClick={saveAsStrategy}
                 disabled={selectedCount === 0 || strategyName.trim().length === 0}
               >
-                Sauvegarder la stratégie
+                {t('saveStrategy.save')}
               </Button>
             </div>
             {strategyFeedback && (
@@ -403,16 +414,16 @@ export function ConditionsBuilder({
 
         <div className="flex flex-wrap gap-2">
           <Button type="button" onClick={submit} disabled={selectedCount === 0}>
-            {mode === 'onboarding' ? 'Voir les marchés concernés' : 'Enregistrer & relancer'}
+            {mode === 'onboarding' ? t('builder.submitOnboarding') : t('builder.submitEdit')}
           </Button>
           {onCancel && (
             <Button type="button" variant="ghost" onClick={onCancel}>
-              Annuler
+              {t('builder.cancel')}
             </Button>
           )}
           {selectedCount === 0 && (
             <span className="self-center text-xs text-muted-foreground">
-              Sélectionne au moins une condition.
+              {t('builder.selectAtLeastOne')}
             </span>
           )}
         </div>

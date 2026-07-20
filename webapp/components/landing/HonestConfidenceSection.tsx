@@ -1,6 +1,8 @@
 import Link from 'next/link';
+import { useLocale, useTranslations } from 'next-intl';
 import { ShieldCheck, AlertTriangle, ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { localizeHref } from '@/lib/i18n/href';
 import { cn } from '@/lib/utils';
 
 /**
@@ -24,6 +26,8 @@ import { cn } from '@/lib/utils';
  * de signaux qui annoncent 90 % de win-rate.
  */
 export function HonestConfidenceSection() {
+  const t = useTranslations('landing.honesty');
+  const locale = useLocale();
   return (
     <section
       id="honnetete"
@@ -37,32 +41,26 @@ export function HonestConfidenceSection() {
             className="mb-3 border-sentinel-warn/40 text-[11px] uppercase tracking-wider text-sentinel-warn"
           >
             <ShieldCheck className="mr-1 h-3 w-3" aria-hidden />
-            Transparence
+            {t('badge')}
           </Badge>
           <h2
             id="honest-confidence-title"
             className="text-balance text-2xl font-semibold tracking-tight sm:text-3xl lg:text-4xl"
           >
-            Un indicateur honnête commence par dire ce qu&apos;il ne fait pas.
+            {t('title')}
           </h2>
           <p className="mt-4 max-w-2xl text-pretty text-muted-foreground">
-            MIA décrit le marché — la structure, le régime, les événements.
-            Elle ne promet aucun gain et ne se présente pas comme un système
-            de trading. Nous l&apos;assumons publiquement, parce que c&apos;est
-            la seule posture défendable pour un outil de compréhension.
+            {t('subtitle')}
           </p>
         </header>
 
         {/* Citation imposée (lock 2) */}
         <figure className="max-w-3xl">
           <blockquote className="border-l-2 border-sentinel-warn pl-5 text-balance text-base italic text-foreground sm:text-lg">
-            Aucun indicateur de marché ne devrait promettre des gains. Nous
-            n&apos;en faisons pas. Ce que nous offrons, c&apos;est une
-            compréhension augmentée du marché — pas une performance
-            financière.
+            {t('quote')}
           </blockquote>
           <figcaption className="mt-3 text-xs text-muted-foreground">
-            — Engagement public MIA Markets, 27 mai 2026
+            {t('quoteCaption')}
           </figcaption>
         </figure>
 
@@ -70,34 +68,24 @@ export function HonestConfidenceSection() {
         <div className="mt-12 grid gap-6 lg:grid-cols-2">
           <ValueColumn
             icon={<AlertTriangle className="h-5 w-5" aria-hidden />}
-            title="Ce que nous ne ferons jamais"
-            items={[
-              'Publier des « 90 % win-rate ».',
-              'Promettre un rendement chiffré.',
-              'Vendre une lecture comme un signal de trade.',
-              'Nous présenter comme un système de trading rentable.',
-            ]}
+            title={t('neverTitle')}
+            items={[t('never1'), t('never2'), t('never3'), t('never4')]}
             tone="bad"
           />
           <ValueColumn
             icon={<ShieldCheck className="h-5 w-5" aria-hidden />}
-            title={`Ce que nous faisons aujourd${'’'}hui`}
-            items={[
-              'Une lecture structurée du marché en temps réel.',
-              'Une plage d’incertitude observée, affichée.',
-              'Un chatbot qui refuse les ordres de trade.',
-              'Une documentation technique transparente de nos algorithmes.',
-            ]}
+            title={t('todayTitle')}
+            items={[t('today1'), t('today2'), t('today3'), t('today4')]}
             tone="good"
           />
         </div>
 
         <div className="mt-8">
           <Link
-            href="/methodology"
+            href={localizeHref('/methodology', locale)}
             className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground underline-offset-4 hover:underline"
           >
-            Comment notre indicateur décrit le marché
+            {t('cta')}
             <ArrowRight className="h-4 w-4" aria-hidden />
           </Link>
         </div>

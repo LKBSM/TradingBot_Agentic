@@ -1,6 +1,7 @@
 'use client';
 
 import { RotateCcw } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,7 +19,7 @@ import { useChat } from './ChatProvider';
 import { useChatAnchorScroll } from './useChatAnchorScroll';
 import { SuggestedQuestions } from './SuggestedQuestions';
 import { ThinkingIndicator } from './ThinkingIndicator';
-import { FALLBACK_SCRIPT, getChatbotScript } from '@/lib/chatbot';
+import { useChatbotScriptOrFallback } from '@/lib/chatbot';
 import {
   formatInstrument,
   formatTimeframe,
@@ -37,6 +38,7 @@ import type { ChatbotQuestion } from '@/types/chatbot';
  * friendly fallback when the backend is unavailable).
  */
 export function ChatPanel() {
+  const t = useTranslations('chat');
   const {
     isOpen,
     activeSignal,
@@ -51,10 +53,7 @@ export function ChatPanel() {
   // the bottom of a long reply (UX only — no chat logic changes).
   const scrollRef = useChatAnchorScroll(turns, isLoading);
 
-  const script = React.useMemo(() => {
-    if (!activeSignal) return FALLBACK_SCRIPT;
-    return getChatbotScript(activeSignal.id) ?? FALLBACK_SCRIPT;
-  }, [activeSignal]);
+  const script = useChatbotScriptOrFallback(activeSignal?.id ?? null);
 
   const consumedIds = React.useMemo(
     () =>
@@ -99,11 +98,14 @@ export function ChatPanel() {
                 className="text-xs"
               >
                 {activeSignal
-                  ? `${formatInstrument(activeSignal.instrument)} · ${formatTimeframe(activeSignal.timeframe)} · contexte injecté`
-                  : 'Sélectionne une lecture pour ouvrir le contexte.'}
+                  ? t('panelContext', {
+                      instrument: formatInstrument(activeSignal.instrument),
+                      timeframe: formatTimeframe(activeSignal.timeframe),
+                    })
+                  : t('panelNoContext')}
               </SheetDescription>
               <p className="text-[10.5px] italic text-muted-foreground/85">
-                Analyse pédagogique — aucun signal ni conseil.
+                {t('panelTagline')}
               </p>
             </div>
           </div>
@@ -112,6 +114,10 @@ export function ChatPanel() {
         <div
           ref={scrollRef}
           className="flex flex-1 flex-col gap-4 overflow-y-auto px-5 py-4"
+          // One live region for the whole transcript (UI-08) — see AppChatSidebar.
+          role="log"
+          aria-live="polite"
+          aria-relevant="additions"
         >
           <IntroBubble script={script} apiAvailable={apiAvailable} />
 
@@ -136,7 +142,7 @@ export function ChatPanel() {
               className="mx-auto flex h-7 items-center gap-1 text-xs text-muted-foreground"
             >
               <RotateCcw className="h-3 w-3" aria-hidden />
-              Réinitialiser la conversation
+              {t('reset')}
             </Button>
           )}
         </div>
@@ -152,8 +158,7 @@ export function ChatPanel() {
               chat panel — aligned with legal terminal wording on
               educational-use posture. */}
           <p className="text-center text-[10.5px] italic text-muted-foreground/70">
-            M.I.A Agent répond à des questions sur la lecture algorithmique.
-            Il ne donne ni signal de trading, ni recommandation personnalisée.
+            {t('complianceLine')}
           </p>
         </div>
       </SheetContent>
@@ -168,31 +173,18 @@ function IntroBubble({
   script: { instrument_label: string; questions: ReadonlyArray<ChatbotQuestion> };
   apiAvailable: boolean | 'unknown';
 }) {
+  const t = useTranslations('chat');
   return (
     <div className="chat-msg-in flex w-full gap-2.5">
       <AgentAvatar size="sm" className="mt-0.5" />
       <div className="flex min-w-0 flex-col gap-1">
         <span className="px-0.5 text-xs font-medium text-muted-foreground">
-          M.I.A Agent · {script.instrument_label}
+          {t('introHeader', { instrument: script.instrument_label })}
         </span>
         <div className="max-w-[88%] rounded-2xl rounded-tl-sm border border-border bg-muted/60 px-3.5 py-2.5 text-sm leading-relaxed">
-          <p>
-            Pose-moi une question sur cette lecture. Je peux t&apos;expliquer
-            ce qu&apos;elle décrit, vulgariser un terme technique, ou
-            contextualiser un événement à venir.
-          </p>
+          <p>{t('introBody')}</p>
           <p className="mt-2 text-xs italic text-muted-foreground">
-            {apiAvailable === false ? (
-              <>
-                Mode scripted : utilise les suggestions ci-dessous. La saisie
-                libre nécessite la clef Anthropic côté serveur.
-              </>
-            ) : (
-              <>
-                Je ne donne ni signal d&apos;achat ou de vente, ni conseil en
-                investissement.
-              </>
-            )}
+            {apiAvailable === false ? t('introOffline') : t('introDisclaimer')}
           </p>
         </div>
       </div>

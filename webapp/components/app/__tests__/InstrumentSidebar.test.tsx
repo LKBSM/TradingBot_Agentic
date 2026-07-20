@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@/components/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { InstrumentSidebar } from '../InstrumentSidebar';
 import { SUPPORTED_COMBOS, type Combo } from '@/lib/market-reading/store';

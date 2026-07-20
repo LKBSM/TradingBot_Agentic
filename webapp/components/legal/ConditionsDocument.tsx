@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { renderLegalMarkdown } from '@/lib/legal/render-markdown';
 
 /**
@@ -11,9 +12,10 @@ import { renderLegalMarkdown } from '@/lib/legal/render-markdown';
  * source file.
  */
 export function ConditionsDocument() {
+  const t = useTranslations('legal');
   const [markdown, setMarkdown] = React.useState<string | null>(null);
   const [version, setVersion] = React.useState<string | null>(null);
-  const [error, setError] = React.useState<string | null>(null);
+  const [hasError, setHasError] = React.useState(false);
 
   React.useEffect(() => {
     let active = true;
@@ -29,9 +31,7 @@ export function ConditionsDocument() {
         setMarkdown(text);
       } catch {
         if (active) {
-          setError(
-            'Le document des Conditions est momentanément indisponible. Réessayez plus tard.',
-          );
+          setHasError(true);
         }
       }
     })();
@@ -40,26 +40,28 @@ export function ConditionsDocument() {
     };
   }, []);
 
-  if (error) {
+  if (hasError) {
     return (
       <p
         role="alert"
         className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
       >
-        {error}
+        {t('conditions.error')}
       </p>
     );
   }
 
   if (markdown === null) {
-    return <p className="text-sm text-muted-foreground">Chargement du document…</p>;
+    return (
+      <p className="text-sm text-muted-foreground">{t('conditions.loading')}</p>
+    );
   }
 
   return (
     <article className="space-y-1">
       {version && (
         <p className="mb-6 text-xs uppercase tracking-wider text-muted-foreground">
-          Version {version}
+          {t('conditions.versionLabel', { version })}
         </p>
       )}
       {renderLegalMarkdown(markdown)}
