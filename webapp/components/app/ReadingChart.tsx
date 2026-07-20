@@ -9,6 +9,7 @@ import {
   CrosshairMode,
   LineStyle,
   TickMarkType,
+  type AutoscaleInfo,
   type IChartApi,
   type ISeriesApi,
   type ISeriesMarkersPluginApi,
@@ -85,6 +86,13 @@ export interface ReadingChartProps {
   livePrice?: number | null;
   /** Feed epoch (seconds) of the live tick — buckets the forming candle. */
   liveTs?: number | null;
+  /**
+   * Descriptive session state. When true (spot FX / gold outside trading hours),
+   * the chart shows a neutral "Marché fermé" badge and NEVER the "EN DIRECT"
+   * live badge — the app must not claim to be live when it isn't. Display-only;
+   * detection is untouched.
+   */
+  marketClosed?: boolean;
   /**
    * DISPLAY-ONLY view state, driven by the M.I.A Agent chat (or left at the
    * defaults). These change ONLY what the chart renders / how it frames — never
@@ -332,6 +340,19 @@ const DEFAULT_VISIBLE_BARS = 90;
 const INITIAL_RIGHT_PAD_BARS = 3;
 
 /**
+ * Minimum vertical (price) span the auto-scale is allowed to collapse to,
+ * expressed as a fraction of the visible mid price (~0.3%). Lightweight-charts
+ * fits the price axis to the visible candles' min/max; when the market is closed
+ * (week-end / holiday) the last bars barely move, so that range is a handful of
+ * ticks and the axis blows those micro-candles up to fill the whole height — the
+ * "zoom extrême" symptom. This floor pads the auto-range to a sensible minimum
+ * so a flat window reads as small candles, not magnified ones. It ONLY kicks in
+ * when the real range is smaller than the floor; a normal week already exceeds
+ * it, so weekday framing is untouched. Display-only — the data is never altered.
+ */
+const MIN_VISIBLE_RANGE_FRAC = 0.003;
+
+/**
  * Theme-resolved palette. Lightweight-charts paints onto a canvas, so it needs
  * concrete colour strings (CSS `var(--token)` does not resolve there). These
  * values mirror the app tokens — `--border` for the grid, `--muted-foreground`
@@ -364,6 +385,7 @@ export function ReadingChart({
   timeframe = null,
   livePrice = null,
   liveTs = null,
+  marketClosed = false,
   layers = DEFAULT_CHART_VIEW.layers,
   filter = DEFAULT_CHART_VIEW.filter,
   focus = null,
@@ -600,6 +622,25 @@ export function ReadingChart({
       // axis badge reads green when up, terracotta when down (white label text).
       priceLineColor: '',
       lastValueVisible: true,
+      // Floor the vertical auto-scale so a flat (closed-market) window never
+      // magnifies micro-candles to full height. We take the library's own fitted
+      // range and, only when it is smaller than MIN_VISIBLE_RANGE_FRAC of the
+      // mid price, widen it symmetrically to that minimum. A normal session's
+      // range already exceeds the floor, so this is a no-op on weekdays.
+      autoscaleInfoProvider: (baseImplementation: () => AutoscaleInfo | null) => {
+        const res = baseImplementation();
+        if (!res || !res.priceRange) return res;
+        const { minValue, maxValue } = res.priceRange;
+        const mid = (minValue + maxValue) / 2;
+        const span = maxValue - minValue;
+        const minSpan = Math.abs(mid) * MIN_VISIBLE_RANGE_FRAC;
+        if (mid === 0 || span >= minSpan) return res;
+        const half = minSpan / 2;
+        return {
+          ...res,
+          priceRange: { minValue: mid - half, maxValue: mid + half },
+        };
+      },
     });
 
     chartRef.current = chart;
@@ -1350,27 +1391,45 @@ export function ReadingChart({
         })}
       </div>
 
-      {/* Live-mode badge — makes the PROVISIONAL state explicit and honest. Only
-          shown when a tick is actually driving a provisional interaction. */}
-      {liveActive && (
+      {/* Session badge (top-right). "Marché fermé" is a PRESENT FACT and takes
+          precedence: when the spot market is closed we never show the live
+          badge — the app must not claim to be live when it isn't. Otherwise, the
+          amber "EN DIRECT · provisoire" badge appears only while a tick is
+          actually driving a provisional interaction. Neither predicts anything. */}
+      {marketClosed ? (
         <div
-          className="pointer-events-none absolute right-2 top-2 flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold"
-          style={{
-            color: LIVE_COLOR,
-            backgroundColor: `rgba(${LIVE_RGB}, 0.12)`,
-            border: `1px solid rgba(${LIVE_RGB}, 0.5)`,
-          }}
-          title={t('chart.liveBadgeTitle')}
+          className="pointer-events-none absolute right-2 top-2 flex items-center gap-1 rounded-full border border-border/70 bg-muted/70 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground backdrop-blur-sm"
+          title={t('chart.marketClosedTitle')}
           role="status"
           aria-live="polite"
         >
           <span
-            className="inline-block h-1.5 w-1.5 rounded-full"
-            style={{ backgroundColor: LIVE_COLOR }}
+            className="inline-block h-1.5 w-1.5 rounded-full bg-muted-foreground/70"
             aria-hidden
           />
-          {t('chart.liveBadge')}
+          {t('chart.marketClosed')}
         </div>
+      ) : (
+        liveActive && (
+          <div
+            className="pointer-events-none absolute right-2 top-2 flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold"
+            style={{
+              color: LIVE_COLOR,
+              backgroundColor: `rgba(${LIVE_RGB}, 0.12)`,
+              border: `1px solid rgba(${LIVE_RGB}, 0.5)`,
+            }}
+            title={t('chart.liveBadgeTitle')}
+            role="status"
+            aria-live="polite"
+          >
+            <span
+              className="inline-block h-1.5 w-1.5 rounded-full"
+              style={{ backgroundColor: LIVE_COLOR }}
+              aria-hidden
+            />
+            {t('chart.liveBadge')}
+          </div>
+        )
       )}
 
       {/* Sober pan/zoom controls — visually light, ≥44px tap zone on mobile.

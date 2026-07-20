@@ -18,6 +18,7 @@ import {
   type ReadingSource,
 } from '@/lib/market-reading/hooks';
 import { useLivePrice } from '@/lib/market-reading/live-price';
+import { useMarketClosed } from '@/lib/market-reading/session';
 import { useChartViewOptional } from '@/lib/chart/viewState';
 import type { ChartViewState } from '@/lib/chart/viewActions';
 import type { Combo } from '@/lib/market-reading/store';
@@ -124,6 +125,15 @@ export function ReadingColumn({
     };
   }, [live, livePrice, liveTs]);
 
+  // Descriptive session state — closed spot FX / gold outside trading hours,
+  // corroborated by the freshest price age (holidays). Drives the "Marché fermé"
+  // badge near the price and on the chart; suppresses the "EN DIRECT" badge so
+  // the app never claims to be live when it isn't. Display-only.
+  const marketClosed = useMarketClosed(
+    active?.instrument ?? null,
+    liveHeader?.priceTs ?? null,
+  );
+
   function focusChat() {
     const input = document.querySelector<HTMLTextAreaElement>(
       'textarea[aria-label="Question libre pour M.I.A Agent"]',
@@ -144,8 +154,9 @@ export function ReadingColumn({
       <MarketReadingCard
         reading={reading}
         onAskChatbot={focusChat}
-        chartSlot={buildChartSlot(reading, candles, livePrice, liveTs, active?.timeframe ?? null, chartView, onClearHighlight)}
+        chartSlot={buildChartSlot(reading, candles, livePrice, liveTs, active?.timeframe ?? null, chartView, onClearHighlight, marketClosed)}
         live={liveHeader}
+        marketClosed={marketClosed}
         className="w-full border-border/60 shadow-sm"
       />
     );
@@ -184,6 +195,7 @@ function buildChartSlot(
   timeframe: string | null,
   chartView: ChartViewState,
   onClearHighlight: () => void,
+  marketClosed: boolean,
 ): React.ReactNode {
   if (!candles || candles.length === 0) {
     return <ChartUnavailable />;
@@ -196,6 +208,7 @@ function buildChartSlot(
       timeframe={timeframe}
       livePrice={livePrice}
       liveTs={liveTs}
+      marketClosed={marketClosed}
       layers={chartView.layers}
       filter={chartView.filter}
       focus={chartView.focus}

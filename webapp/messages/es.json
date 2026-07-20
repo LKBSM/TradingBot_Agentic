@@ -880,7 +880,9 @@
       "zoomOut": "Alejar",
       "fit": "Ajustar el gráfico",
       "liqShowAll": "Mostrar todas las bolsas de liquidez (intactas, tomadas, rotas)",
-      "liqShowIntactOnly": "Mostrar solo las bolsas de liquidez intactas"
+      "liqShowIntactOnly": "Mostrar solo las bolsas de liquidez intactas",
+      "marketClosed": "Mercado cerrado",
+      "marketClosedTitle": "El mercado está cerrado en este momento: el gráfico muestra la última vela cerrada y no refleja una cotización en vivo."
     }
   },
   "samples": {
