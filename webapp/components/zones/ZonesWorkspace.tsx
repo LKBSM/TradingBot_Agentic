@@ -254,7 +254,10 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
       </div>
 
       {/* Body */}
-      {isLoading ? (
+      {isLoading || (isRefreshing && allZones.length === 0) ? (
+        // Show the loading state (not "Aucune zone") while a refresh is in flight
+        // with no zones yet, so a combo switch doesn't flash an empty list before
+        // the new reading lands (UI-12).
         <p className="text-sm text-muted-foreground">{t('loading')}</p>
       ) : error ? (
         <div className="space-y-3 rounded-lg border border-destructive/40 bg-destructive/5 p-4">

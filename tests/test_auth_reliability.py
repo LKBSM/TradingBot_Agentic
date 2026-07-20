@@ -123,3 +123,63 @@ class TestResetDelivery:
             json={"identifier": "alice@example.com"},
         )
         assert r.status_code == 200
+
+
+# --------------------------------------------------------------------------- #
+# AUTH-16 — deactivated account gets an explicit 403, not a bare 401
+# --------------------------------------------------------------------------- #
+class TestDisabledAccountSignal:
+    def _deactivate(self, store: AccountStore, account_id: int) -> None:
+        with store._lock:  # noqa: SLF001 — white-box test helper
+            conn = store._get_connection()  # noqa: SLF001
+            try:
+                conn.execute(
+                    "UPDATE accounts SET is_active = 0 WHERE id = ?", (account_id,)
+                )
+                conn.commit()
+            finally:
+                conn.close()
+
+    def test_session_belongs_to_disabled_flag(self, account_store):
+        acc = _mk(account_store)
+        tok = account_store.create_session(acc["id"])
+        assert account_store.session_belongs_to_disabled(tok) is False
+        self._deactivate(account_store, acc["id"])
+        assert account_store.session_belongs_to_disabled(tok) is True
+
+    def test_me_returns_403_for_disabled_account(self, client, account_store):
+        r = client.post("/api/auth/register", json=VALID_REGISTER)
+        account_id = r.json()["id"]
+        assert client.get("/api/auth/me").status_code == 200
+        self._deactivate(account_store, account_id)
+        resp = client.get("/api/auth/me")
+        assert resp.status_code == 403
+        assert "désactivé" in resp.json()["detail"]
+
+
+# --------------------------------------------------------------------------- #
+# AUTH-17 — CSRF Origin guard on state-changing auth POSTs
+# --------------------------------------------------------------------------- #
+class TestCsrfOriginGuard:
+    def test_cross_site_origin_rejected(self, client):
+        r = client.post(
+            "/api/auth/login",
+            json={"identifier": "x", "password": "y"},
+            headers={"origin": "https://evil.example.com"},
+        )
+        assert r.status_code == 403
+        assert r.json()["error"] == "csrf_origin_rejected"
+
+    def test_allowlisted_origin_passes(self, client):
+        # In the allowlist (CORS default) → guard lets it through; bad creds → 401.
+        r = client.post(
+            "/api/auth/login",
+            json={"identifier": "x", "password": "y"},
+            headers={"origin": "http://localhost:3000"},
+        )
+        assert r.status_code == 401
+
+    def test_no_origin_header_passes(self, client):
+        # Server-to-server / test client (no Origin) is never blocked.
+        r = client.post("/api/auth/login", json={"identifier": "x", "password": "y"})
+        assert r.status_code == 401

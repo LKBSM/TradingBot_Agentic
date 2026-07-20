@@ -89,12 +89,17 @@ export function logout(): Promise<{ ok: boolean; message: string }> {
   return request('/logout', { method: 'POST' });
 }
 
-/** Current account, or null when not authenticated (401 is not an error here). */
+/** Current account, or null when not authenticated. 401 (no/expired session)
+ *  and 403 (account deactivated — AUTH-16) both mean "not logged in" here, not a
+ *  transport error, so the provider treats them as anonymous rather than a
+ *  failed probe. */
 export async function fetchMe(): Promise<Account | null> {
   try {
     return await request<Account>('/me', { method: 'GET' });
   } catch (err) {
-    if (err instanceof AuthError && err.status === 401) return null;
+    if (err instanceof AuthError && (err.status === 401 || err.status === 403)) {
+      return null;
+    }
     throw err;
   }
 }

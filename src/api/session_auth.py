@@ -190,10 +190,25 @@ async def optional_account(request: Request) -> Optional[Dict[str, Any]]:
 
 
 async def require_account(
+    request: Request,
     account: Optional[Dict[str, Any]] = Depends(optional_account),
 ) -> Dict[str, Any]:
-    """Dependency: the current account, or 401 if not authenticated."""
+    """Dependency: the current account, or 401 if not authenticated.
+
+    A deactivated account whose session is otherwise valid gets an explicit 403
+    ("compte désactivé") rather than a bare 401 that looks like an expired
+    session (AUTH-16).
+    """
     if account is None:
+        store = _get_account_store(request)
+        raw_token = get_raw_session_token(request)
+        if (
+            store is not None
+            and raw_token
+            and hasattr(store, "session_belongs_to_disabled")
+            and store.session_belongs_to_disabled(raw_token)
+        ):
+            raise HTTPException(status_code=403, detail="Votre compte a été désactivé.")
         raise HTTPException(status_code=401, detail="Authentication required")
     return account
 
