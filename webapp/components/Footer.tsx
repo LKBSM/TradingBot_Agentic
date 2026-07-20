@@ -1,6 +1,7 @@
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { ShieldCheck } from 'lucide-react';
+import { localizeHref } from '@/lib/i18n/href';
 import { BRAND_BASELINE } from '@/lib/brand';
 
 /**
@@ -32,6 +33,7 @@ export const PRODUCT_LINKS = [
 
 export function Footer() {
   const t = useTranslations('footer');
+  const locale = useLocale();
   // String so the year renders literally (no locale number-grouping / Eastern digits).
   const year = String(new Date().getFullYear());
 
@@ -74,7 +76,7 @@ export function Footer() {
               {PRODUCT_LINKS.map((link) => (
                 <li key={link.href}>
                   <a
-                    href={link.href}
+                    href={localizeHref(link.href, locale)}
                     className="text-muted-foreground transition-colors hover:text-foreground focus-visible:underline focus-visible:outline-none"
                   >
                     {t(`product.${link.key}`)}
@@ -93,7 +95,7 @@ export function Footer() {
               {LEGAL_LINKS.map((link) => (
                 <li key={link.href}>
                   <Link
-                    href={link.href}
+                    href={localizeHref(link.href, locale)}
                     className="text-muted-foreground transition-colors hover:text-foreground focus-visible:underline focus-visible:outline-none"
                   >
                     {t(`legal.${link.key}`)}

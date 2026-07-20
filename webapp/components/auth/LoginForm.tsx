@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import * as React from 'react';
 import { AuthError } from '@/lib/auth/api-client';
 import { useAuth } from '@/lib/auth/store';
+import { useLocalizedHref } from '@/lib/i18n/href';
 import { Button } from '@/components/ui/button';
 import { FormError, TextField } from './fields';
 
@@ -14,6 +15,7 @@ export function LoginForm() {
   const t = useTranslations('auth');
   const { login } = useAuth();
   const router = useRouter();
+  const lh = useLocalizedHref();
   const [error, setError] = React.useState<string | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
   const submittingRef = React.useRef(false);
@@ -23,13 +25,16 @@ export function LoginForm() {
   // Read from window at submit time (client-only) to avoid the useSearchParams
   // Suspense-boundary requirement on the /connexion page build.
   function resolveDestination(): string {
-    if (typeof window === 'undefined') return '/app';
+    // `next` (set by the login wall) already carries the locale prefix; the
+    // fallback is localized so a non-default-locale user lands on /<locale>/app
+    // rather than the default locale (NAV-12).
+    if (typeof window === 'undefined') return lh('/app');
     const next = new URLSearchParams(window.location.search).get('next');
     // Only a same-site absolute path is allowed. `//host` and `/\host` are
     // protocol-relative URLs the browser resolves off-site → open-redirect
     // (AUTH-06). Require a single leading slash not followed by / or \.
     if (next && /^\/(?![/\\])/.test(next)) return next;
-    return '/app';
+    return lh('/app');
   }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -73,7 +78,7 @@ export function LoginForm() {
       />
       <div className="text-right">
         <Link
-          href="/mot-de-passe-oublie"
+          href={lh('/mot-de-passe-oublie')}
           className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
         >
           {t('login.forgotPassword')}
@@ -84,7 +89,7 @@ export function LoginForm() {
       </Button>
       <p className="text-center text-sm text-muted-foreground">
         {t('login.noAccount')}{' '}
-        <Link href="/inscription" className="underline underline-offset-2 hover:text-foreground">
+        <Link href={lh('/inscription')} className="underline underline-offset-2 hover:text-foreground">
           {t('login.createAccount')}
         </Link>
       </p>

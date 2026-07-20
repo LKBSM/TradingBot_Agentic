@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import * as React from 'react';
 import { AuthError } from '@/lib/auth/api-client';
 import { useAuth } from '@/lib/auth/store';
+import { useLocalizedHref } from '@/lib/i18n/href';
 import { Button } from '@/components/ui/button';
 import { CheckField, FormError, TextField } from './fields';
 
@@ -19,6 +20,7 @@ export function RegisterForm() {
   const t = useTranslations('auth');
   const { register } = useAuth();
   const router = useRouter();
+  const lh = useLocalizedHref();
   const [error, setError] = React.useState<string | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
   const submittingRef = React.useRef(false);
@@ -57,7 +59,7 @@ export function RegisterForm() {
         accept_terms: acceptTerms,
         accept_privacy: acceptPrivacy,
       });
-      router.push('/compte');
+      router.push(lh('/compte'));
     } catch (err) {
       setError(
         err instanceof AuthError ? err.message : t('register.errorGeneric'),
@@ -77,7 +79,7 @@ export function RegisterForm() {
         <p className="text-sm text-muted-foreground">{t('register.closedBody')}</p>
         <p className="text-sm text-muted-foreground">
           {t('register.haveAccount')}{' '}
-          <Link href="/connexion" className="underline underline-offset-2 hover:text-foreground">
+          <Link href={lh('/connexion')} className="underline underline-offset-2 hover:text-foreground">
             {t('register.login')}
           </Link>
         </p>
@@ -126,7 +128,7 @@ export function RegisterForm() {
           name="accept_terms"
           label={t.rich('register.acceptTerms', {
             link: (chunks) => (
-              <Link href="/conditions" className="underline underline-offset-2 hover:text-foreground">
+              <Link href={lh('/conditions')} className="underline underline-offset-2 hover:text-foreground">
                 {chunks}
               </Link>
             ),
@@ -136,7 +138,7 @@ export function RegisterForm() {
           name="accept_privacy"
           label={t.rich('register.acceptPrivacy', {
             link: (chunks) => (
-              <Link href="/confidentialite" className="underline underline-offset-2 hover:text-foreground">
+              <Link href={lh('/confidentialite')} className="underline underline-offset-2 hover:text-foreground">
                 {chunks}
               </Link>
             ),
@@ -150,7 +152,7 @@ export function RegisterForm() {
 
       <p className="text-center text-sm text-muted-foreground">
         {t('register.haveAccount')}{' '}
-        <Link href="/connexion" className="underline underline-offset-2 hover:text-foreground">
+        <Link href={lh('/connexion')} className="underline underline-offset-2 hover:text-foreground">
           {t('register.login')}
         </Link>
       </p>

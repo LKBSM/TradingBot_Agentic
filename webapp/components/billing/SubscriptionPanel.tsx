@@ -14,6 +14,7 @@ import {
   type Subscription,
 } from '@/lib/billing/api-client';
 import { useAuth } from '@/lib/auth/store';
+import { useLocalizedHref } from '@/lib/i18n/href';
 import { Button } from '@/components/ui/button';
 import { FormError, FormSuccess } from '@/components/auth/fields';
 
@@ -84,6 +85,7 @@ export function SubscriptionPanel() {
   const locale = useLocale();
   const { account, loading: authLoading } = useAuth();
   const router = useRouter();
+  const lh = useLocalizedHref();
   const searchParams = useSearchParams();
 
   const [plans, setPlans] = React.useState<Plan[]>([]);
@@ -95,8 +97,8 @@ export function SubscriptionPanel() {
   const checkoutStatus = searchParams.get('status');
 
   React.useEffect(() => {
-    if (!authLoading && account === null) router.replace('/connexion');
-  }, [authLoading, account, router]);
+    if (!authLoading && account === null) router.replace(lh('/connexion'));
+  }, [authLoading, account, router, lh]);
 
   React.useEffect(() => {
     let cancelled = false;
