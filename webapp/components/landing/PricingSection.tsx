@@ -95,7 +95,8 @@ export function PricingSection() {
           onClick={() => setCadence('monthly')}
           aria-pressed={!isAnnual}
           className={cn(
-            'rounded-full px-4 py-1.5 font-medium transition-colors',
+            // ≥44px tap target on touch; compact on xl desktop.
+            'inline-flex min-h-[44px] items-center justify-center rounded-full px-4 py-1.5 font-medium transition-colors xl:min-h-0',
             !isAnnual
               ? 'bg-background text-foreground shadow-sm'
               : 'text-muted-foreground hover:text-foreground',
@@ -108,7 +109,8 @@ export function PricingSection() {
           onClick={() => setCadence('annual')}
           aria-pressed={isAnnual}
           className={cn(
-            'inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 font-medium transition-colors',
+            // ≥44px tap target on touch; compact on xl desktop.
+            'inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full px-4 py-1.5 font-medium transition-colors xl:min-h-0',
             isAnnual
               ? 'bg-background text-foreground shadow-sm'
               : 'text-muted-foreground hover:text-foreground',
