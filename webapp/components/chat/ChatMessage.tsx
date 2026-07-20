@@ -136,8 +136,10 @@ function CopyButton({ text }: { text: string }) {
       aria-label={copied ? t('copiedAria') : t('copyAria')}
       className={cn(
         'flex items-center gap-1 rounded px-1 py-0.5 text-[11px] text-muted-foreground',
-        'opacity-0 transition-opacity hover:text-foreground focus-visible:opacity-100',
-        'group-hover:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+        // Visible by default on touch (no hover); only hover-reveal on xl desktop.
+        'opacity-100 transition-opacity hover:text-foreground',
+        'xl:opacity-0 xl:group-hover:opacity-100 xl:focus-visible:opacity-100',
+        'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
       )}
     >
       {copied ? (

@@ -127,7 +127,7 @@ export function AppChatSidebar({
                       aria-expanded={showRecents}
                       aria-label={t('chat.discussions')}
                       onClick={() => setShowRecents((v) => !v)}
-                      className="h-8 w-8 text-muted-foreground"
+                      className="h-11 w-11 text-muted-foreground xl:h-8 xl:w-8"
                     >
                       <History className="h-4 w-4" aria-hidden />
                     </Button>
@@ -146,7 +146,7 @@ export function AppChatSidebar({
                       variant="ghost"
                       aria-label={t('chat.reset')}
                       onClick={resetTurns}
-                      className="h-8 w-8 text-muted-foreground"
+                      className="h-11 w-11 text-muted-foreground xl:h-8 xl:w-8"
                     >
                       <RotateCcw className="h-4 w-4" aria-hidden />
                     </Button>
