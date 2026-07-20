@@ -391,6 +391,13 @@ export function useLatestPrice(
   const [isLoading, setIsLoading] = React.useState(false);
   const requestSeq = React.useRef(0);
   const [tick, setTick] = React.useState(0);
+  // Freshness floor (UI-05): the seq guard orders by request emission, but a
+  // newer request can still return an OLDER candle from the cache. Never let the
+  // displayed price rewind to an earlier timestamp. Reset on instrument change.
+  const lastPriceTsRef = React.useRef(0);
+  React.useEffect(() => {
+    lastPriceTsRef.current = 0;
+  }, [instrument]);
 
   React.useEffect(() => {
     if (!instrument) {
@@ -417,7 +424,11 @@ export function useLatestPrice(
     })
       .then((data) => {
         if (seq !== requestSeq.current) return; // stale
-        setChange(computeDailyChange(data));
+        const next = computeDailyChange(data);
+        // Drop a result that would rewind the price to an older candle (UI-05).
+        if (next && next.priceTs < lastPriceTsRef.current) return;
+        if (next) lastPriceTsRef.current = next.priceTs;
+        setChange(next);
       })
       .catch(() => {
         if (seq !== requestSeq.current) return; // stale

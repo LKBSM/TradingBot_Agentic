@@ -478,6 +478,47 @@ def create_app(
             )
         return await call_next(request)
 
+    # ── CSRF Origin check (AUTH-17) ───────────────────────────────────────
+    # Defence-in-depth on top of SameSite=Lax for state-changing auth/billing
+    # POSTs. A request is allowed when ANY of: no Origin header (server-to-server
+    # / non-browser / same-origin GET), the Origin host matches the request Host
+    # (same-origin), or the Origin is in the CORS allowlist (the Next same-origin
+    # rewrite forwards the frontend origin). A genuine cross-site forged POST
+    # (Origin = attacker, not allowlisted, != Host) is rejected. This design can
+    # never block a same-origin login even if CORS_ALLOWED_ORIGINS is misconfigured.
+    _CSRF_PROTECTED_PREFIXES = ("/api/auth", "/api/billing")
+    _CSRF_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
+    _csrf_allowed_origins = set(cors_origins)
+
+    @app.middleware("http")
+    async def csrf_origin_guard(request: Request, call_next):
+        if (
+            request.method in _CSRF_METHODS
+            and request.url.path.startswith(_CSRF_PROTECTED_PREFIXES)
+        ):
+            origin = request.headers.get("origin")
+            if origin:
+                allowed = origin in _csrf_allowed_origins
+                if not allowed:
+                    # Same-origin? Compare the Origin's host to the request Host.
+                    try:
+                        from urllib.parse import urlsplit
+
+                        origin_host = urlsplit(origin).netloc
+                    except Exception:
+                        origin_host = ""
+                    host = request.headers.get("host", "")
+                    allowed = bool(origin_host) and origin_host == host
+                if not allowed:
+                    return JSONResponse(
+                        status_code=403,
+                        content={
+                            "error": "csrf_origin_rejected",
+                            "detail": "Origine de la requête non autorisée.",
+                        },
+                    )
+        return await call_next(request)
+
     # ── Per-IP rate limiter middleware ─────────────────────────────────────
     @app.middleware("http")
     async def rate_limit_middleware(request: Request, call_next):

@@ -568,6 +568,31 @@ class AccountStore:
                 conn.close()
         return self._row_to_public(row) if row else None
 
+    def session_belongs_to_disabled(self, raw_token: str) -> bool:
+        """True when a valid, unexpired session exists but its account is inactive.
+
+        Lets ``require_account`` answer a deactivated user with an explicit 403
+        ("compte désactivé") instead of a bare 401 that reads like an expired
+        session (AUTH-16).
+        """
+        if not raw_token:
+            return False
+        token_hash = self._hash_token(raw_token)
+        now = time.time()
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                cur = conn.execute(
+                    "SELECT a.is_active FROM sessions s "
+                    "JOIN accounts a ON a.id = s.account_id "
+                    "WHERE s.token_hash = ? AND s.expires_at > ?",
+                    (token_hash, now),
+                )
+                row = cur.fetchone()
+            finally:
+                conn.close()
+        return row is not None and not row["is_active"]
+
     def delete_session(self, raw_token: str) -> bool:
         if not raw_token:
             return False
