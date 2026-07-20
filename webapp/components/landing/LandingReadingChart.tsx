@@ -49,6 +49,9 @@ export function LandingReadingChart({ className }: { className?: string }) {
         instrument="XAUUSD"
         timeframe="M15"
         className="rounded-lg border border-border/50 bg-background/40"
+        /* Fixed height on the marketing hero (the /app default is fluid). Matches
+           the dynamic-import loading placeholder above so there's no layout jump. */
+        heightClassName="h-[260px] sm:h-[300px]"
       />
     </div>
   );
