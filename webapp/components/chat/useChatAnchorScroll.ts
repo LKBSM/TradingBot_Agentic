@@ -81,6 +81,11 @@ export function useChatAnchorScroll(
       target.getBoundingClientRect().top -
       container.getBoundingClientRect().top;
     const top = Math.max(0, container.scrollTop + delta - TOP_GAP_PX);
+    // Already at the anchor (within a few px)? Don't re-issue a smooth scroll.
+    // The streaming re-pin fires on every chunk; without this guard each chunk
+    // launches a fresh smooth-scroll that fights the previous one → visible
+    // jitter (UI-07). This makes the "no-op once reached" comment actually true.
+    if (Math.abs(top - container.scrollTop) < 4) return;
     container.scrollTo({ top, behavior: 'smooth' });
   }, [anchor]);
 
