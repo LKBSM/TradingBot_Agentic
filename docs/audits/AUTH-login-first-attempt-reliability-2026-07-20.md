@@ -81,6 +81,19 @@ router.replace(dest);  // navigue vers une entrée forcément re-fetchée, cooki
 
 Même correctif appliqué à `RegisterForm.tsx` (l'inscription ouvre aussi une session).
 
+### 5.1bis Symétrie au logout (renforcement 2026-07-20)
+Le **problème inverse** existait au logout : `AccountMenu.tsx` et `AccountPanel.tsx`
+faisaient `await logout(); router.push('/')` **sans** invalider le Router Cache. Une
+fois le cookie effacé, des entrées RSC **authentifiées** en cache (routes protégées
+`/app`, `/compte`, `/abonnement`, `/zones`, `/scanner`) pouvaient encore être servies
+à un utilisateur désormais déconnecté. Correctif symétrique :
+
+```ts
+await logout();
+router.refresh();   // vide les entrées authentifiées cachées
+router.push(lh('/'));
+```
+
 ### 5.2 Durcissement de la sonde d'accès
 `webapp/lib/access/api-client.ts` — `fetchAccess` pose désormais
 `credentials: 'same-origin'` explicitement (parité avec le client auth ; latent
@@ -103,11 +116,17 @@ si l'API est un jour proxifiée). Inoffensif aujourd'hui (défaut same-origin).
 - ✅ `fetchAccess` envoie `credentials: 'same-origin'` ;
 - ✅ réponse non-OK → throw.
 
+**Nouveaux (renforcement logout)** :
+- `webapp/components/app/__tests__/AccountMenu.test.tsx` (1) : ✅ logout →
+  `router.refresh()` appelé **avant** `router.push('/')` ;
+- `webapp/components/auth/__tests__/AccountPanel.test.tsx` (1) : ✅ idem +
+  aucun redirect logged-out parasite sur un panneau authentifié.
+
 **Résultats :**
 - `tsc --noEmit` : **0 erreur**.
-- `vitest run` : **512/512** (une seule occurrence de timeout à 5000 ms sur
-  `tests/claims-cleanup.test.ts` sous forte charge machine — **passe 18/18 en
-  isolation**, sans rapport avec ce correctif).
+- `vitest run` : **514/514** (512 initiaux + 2 tests logout). Les lignes stderr
+  `useActiveCombo must be used inside…` proviennent d'un test d'error-boundary qui
+  **passe** (assertion de throw), pas d'un échec.
 - `npm run build` : **vert**.
 - Backend : **aucun fichier Python modifié** → suite pytest inchangée.
 
@@ -118,7 +137,7 @@ Couverture des scénarios demandés :
 | Mauvais identifiants → échec propre, pas de session | test « bad credentials » + backend `accounts.py:200-204` (inchangé) |
 | Nav directe route protégée sans session → login | `middleware.ts` + `SubscriptionGate` (inchangés) |
 | Accès immédiat post-login sans rejet transitoire | fix 5.1 (invalidation cache) |
-| Persistance au refresh / logout invalide la session | cookie 30j + `clear_session_cookie` (inchangés) |
+| Persistance au refresh / logout invalide la session | cookie 30j + `clear_session_cookie` (inchangés) + fix 5.1bis (cache authentifié purgé au logout) + tests AccountMenu/AccountPanel |
 
 ## 7. Réserves pour la validation live (appareil neuf, sans cookie)
 
