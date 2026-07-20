@@ -61,7 +61,7 @@ export function AccountPanel() {
           <p className="text-sm text-muted-foreground">{account.email}</p>
         </div>
         {account.role === 'owner' && (
-          <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-600">
+          <span className="inline-flex items-center gap-1 rounded-full border border-sentinel-warn/40 bg-sentinel-warn/10 px-2.5 py-1 text-xs font-medium text-sentinel-warn">
             <ShieldCheck className="h-3.5 w-3.5" aria-hidden />
             Propriétaire
           </span>

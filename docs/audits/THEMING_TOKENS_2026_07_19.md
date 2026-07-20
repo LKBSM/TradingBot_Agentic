@@ -57,17 +57,37 @@ Ajouts `tailwind.config.ts` : `sentinel.liq` + famille `font-narrative`.
   (worktree racine webapp). Contrastes OK, aucun texte illisible. Les 500 visibles = backend
   FastAPI absent en local (indépendant du theming).
 
-## Phase B — Migration écrans (À FAIRE, après GO)
-Cibles de dette hardcodée identifiées :
-- `components/app/InstrumentSidebar.tsx` — or `#c9a961` (×6) → `--primary`/`--ring`.
-- `components/Nav.tsx`, `components/app/AppHeader.tsx` — dégradé badge logo ambre + `text-white`.
-- `components/chat/MiaAgentLogo.tsx` — hex bull/bear (asset de marque, à trancher).
-- `components/zones/ZoneLifecycleCard.tsx`, `ZoneTimeline.tsx`, `market-reading/LivePrice.tsx`,
-  `sections/StructureSection.tsx`, `auth/AccountPanel.tsx`, `billing/SubscriptionPanel.tsx`
-  — classes palette `emerald/rose/amber/sky` (SENS) → `sentinel-*`.
-- `components/app/ReadingChart.tsx` (+ `lib/chart/structureMarkers.ts`) — palette canvas
-  (lightweight-charts) : lire les tokens via `getComputedStyle` au montage + au changement de
-  thème (source unique), en gardant les couleurs de détection réservées au sens.
+## Phase B — Migration écrans (LIVRÉ, en attente de validation live)
+
+Décisions fondateur : accent Terminal bleu confirmé ; **logos = or de marque FIXE** (badge « M »
+Nav/AppHeader + MiaAgentLogo laissés intacts, theme-independent volontairement).
+
+### B1 — UI fonctionnelle + états (SENS)
+- `components/app/InstrumentSidebar.tsx` — or `#c9a961` (×6) → `--primary` / `--ring`
+  (l'onglet TF actif, épingles, dot fraîcheur suivent l'accent du thème). **Vérifié en capture**.
+- `components/zones/ZoneLifecycleCard.tsx` — direction bull/bear, badge « non invalidée »,
+  relation prix « inside », barre de comblement → `sentinel-bull` / `sentinel-bear` / `sentinel-warn`.
+- `components/zones/ZoneTimeline.tsx` — dots de phase → `sentinel-neutral/warn/bear/bull`
+  (formed/interaction/terminal/ongoing).
+- `components/market-reading/LivePrice.tsx` — `TONE_CLASS` bull/bear/warn → `sentinel-*`.
+- `components/market-reading/sections/StructureSection.tsx` — ton « warn » → `sentinel-warn`.
+- `components/auth/AccountPanel.tsx`, `components/billing/SubscriptionPanel.tsx` — badge
+  « Propriétaire » ambre → `sentinel-warn`.
+
+### B2 — Chart (canvas, lightweight-charts)
+- `components/app/ReadingChart.tsx` — `palette()` lit désormais les tokens LIVE via
+  `getComputedStyle(document.documentElement)` (chrome : `--muted-foreground` / `--border` /
+  `--secondary` ; bougies bull/bear : `--sentinel-bull` / `--sentinel-bear`). Effet re-keyé sur
+  `resolvedTheme` (les bascules dark→dark repeignent). Triplet HSL émis en `hsl(H, S%, L%)` /
+  `hsla(…, a)` (format accepté par la lib). **Non visible en local (backend absent → « Données
+  indisponibles ») : à valider en live avec données.**
+- Laissé fixe (palette de détection sobre, theme-neutre, à re-mapper seulement si souhaité après
+  revue live) : `LEVEL` (bos/choch/retest), `ZONE` (ob/fvg), `LIQUIDITY` (bsl/ssl), `LIVE`,
+  `HIGHLIGHT`, `structureMarkers.ts`. Ces hues restent réservées au SENS.
+
+### Vérifications Phase B
+- `tsc` vert · `next build` vert (exit 0) · **vitest 482/482** (0 régression).
+- Captures `/app` 4 thèmes : onglet TF actif suit l'accent (bleu/teal/cyan/or), logo or fixe.
 
 ## Phase C — Réglages « Apparence » (À FAIRE, après GO)
 Section dans `AccountPanel` (`/compte`) : 4 vignettes cliquables (nom + 1 ligne), aperçu,
