@@ -7,6 +7,7 @@ import { ChevronDown, CreditCard, ExternalLink, LogIn, LogOut, User, UserPlus } 
 import * as React from 'react';
 import { LocaleToggle } from '@/components/LocaleToggle';
 import { useAuth } from '@/lib/auth/store';
+import { useLocalizedHref } from '@/lib/i18n/href';
 import { cn } from '@/lib/utils';
 
 /**
@@ -24,6 +25,7 @@ export function AccountMenu() {
   const rootRef = React.useRef<HTMLDivElement>(null);
   const { account, isAuthenticated, logout } = useAuth();
   const router = useRouter();
+  const lh = useLocalizedHref();
 
   React.useEffect(() => {
     if (!open) return;
@@ -46,7 +48,7 @@ export function AccountMenu() {
   async function onLogout() {
     setOpen(false);
     await logout();
-    router.push('/');
+    router.push(lh('/'));
   }
 
   return (
@@ -83,7 +85,7 @@ export function AccountMenu() {
                 {account?.username}
               </p>
               <Link
-                href="/compte"
+                href={lh('/compte')}
                 role="menuitem"
                 className="flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
                 onClick={() => setOpen(false)}
@@ -92,7 +94,7 @@ export function AccountMenu() {
                 <User className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
               </Link>
               <Link
-                href="/abonnement"
+                href={lh('/abonnement')}
                 role="menuitem"
                 className="flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
                 onClick={() => setOpen(false)}
@@ -104,7 +106,7 @@ export function AccountMenu() {
           ) : (
             <>
               <Link
-                href="/connexion"
+                href={lh('/connexion')}
                 role="menuitem"
                 className="flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
                 onClick={() => setOpen(false)}
@@ -113,7 +115,7 @@ export function AccountMenu() {
                 <LogIn className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
               </Link>
               <Link
-                href="/inscription"
+                href={lh('/inscription')}
                 role="menuitem"
                 className="flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
                 onClick={() => setOpen(false)}
@@ -135,7 +137,7 @@ export function AccountMenu() {
             {t('account.site')}
           </p>
           <Link
-            href="/#honnetete"
+            href={lh('/#honnetete')}
             role="menuitem"
             className="flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
             onClick={() => setOpen(false)}
@@ -144,7 +146,7 @@ export function AccountMenu() {
             <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
           </Link>
           <Link
-            href="/#faq"
+            href={lh('/#faq')}
             role="menuitem"
             className="flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
             onClick={() => setOpen(false)}

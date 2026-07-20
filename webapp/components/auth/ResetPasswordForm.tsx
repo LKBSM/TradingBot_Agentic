@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import * as React from 'react';
 import { AuthError, confirmPasswordReset } from '@/lib/auth/api-client';
+import { useLocalizedHref } from '@/lib/i18n/href';
 import { Button } from '@/components/ui/button';
 import { FormError, FormSuccess, TextField } from './fields';
 
@@ -16,6 +17,7 @@ import { FormError, FormSuccess, TextField } from './fields';
  */
 export function ResetPasswordForm() {
   const t = useTranslations('auth');
+  const lh = useLocalizedHref();
   const [error, setError] = React.useState<string | null>(null);
   const [done, setDone] = React.useState(false);
   const [submitting, setSubmitting] = React.useState(false);
@@ -56,7 +58,7 @@ export function ResetPasswordForm() {
       <div className="space-y-4">
         <FormSuccess message={t('resetConfirm.success')} />
         <Link
-          href="/connexion"
+          href={lh('/connexion')}
           className="block text-center text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground"
         >
           {t('forgot.backToLogin')}
@@ -81,7 +83,7 @@ export function ResetPasswordForm() {
         {submitting ? t('resetConfirm.submitting') : t('resetConfirm.submit')}
       </Button>
       <p className="text-center text-sm text-muted-foreground">
-        <Link href="/connexion" className="underline underline-offset-2 hover:text-foreground">
+        <Link href={lh('/connexion')} className="underline underline-offset-2 hover:text-foreground">
           {t('forgot.backToLogin')}
         </Link>
       </p>

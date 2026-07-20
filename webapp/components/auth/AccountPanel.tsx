@@ -7,6 +7,7 @@ import * as React from 'react';
 import { ShieldCheck } from 'lucide-react';
 import { AuthError, updateProfile } from '@/lib/auth/api-client';
 import { useAuth } from '@/lib/auth/store';
+import { useLocalizedHref } from '@/lib/i18n/href';
 import { Button } from '@/components/ui/button';
 import { FormError, FormSuccess, TextField } from './fields';
 
@@ -19,6 +20,7 @@ export function AccountPanel() {
   const t = useTranslations('auth');
   const { account, loading, probeFailed, logout, refresh } = useAuth();
   const router = useRouter();
+  const lh = useLocalizedHref();
   const [error, setError] = React.useState<string | null>(null);
   const [success, setSuccess] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
@@ -28,8 +30,8 @@ export function AccountPanel() {
   // A network/5xx failure (probeFailed) must NOT eject a possibly-valid user —
   // we show a retry instead (AUTH-03/AUTH-09).
   React.useEffect(() => {
-    if (!loading && account === null && !probeFailed) router.replace('/connexion');
-  }, [loading, account, probeFailed, router]);
+    if (!loading && account === null && !probeFailed) router.replace(lh('/connexion'));
+  }, [loading, account, probeFailed, router, lh]);
 
   if (!loading && account === null && probeFailed) {
     return (
@@ -73,7 +75,7 @@ export function AccountPanel() {
 
   async function onLogout() {
     await logout();
-    router.push('/');
+    router.push(lh('/'));
   }
 
   return (
@@ -139,12 +141,12 @@ export function AccountPanel() {
         <p className="text-xs text-muted-foreground">
           {t.rich('account.seeDocs', {
             terms: (chunks) => (
-              <Link href="/conditions" className="underline underline-offset-2 hover:text-foreground">
+              <Link href={lh('/conditions')} className="underline underline-offset-2 hover:text-foreground">
                 {chunks}
               </Link>
             ),
             privacy: (chunks) => (
-              <Link href="/confidentialite" className="underline underline-offset-2 hover:text-foreground">
+              <Link href={lh('/confidentialite')} className="underline underline-offset-2 hover:text-foreground">
                 {chunks}
               </Link>
             ),

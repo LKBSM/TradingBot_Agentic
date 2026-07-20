@@ -1,6 +1,7 @@
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { HelpCircle, ArrowRight } from 'lucide-react';
+import { localizeHref } from '@/lib/i18n/href';
 import { Badge } from '@/components/ui/badge';
 import {
   Accordion,
@@ -43,6 +44,7 @@ const FAQ: ReadonlyArray<FaqEntry> = [
 
 export function FaqSection() {
   const t = useTranslations('landing.faq');
+  const locale = useLocale();
 
   const answerElements: Record<string, React.ReactNode> = {
     a1: t.rich('a1', {
@@ -64,7 +66,7 @@ export function FaqSection() {
       strong: (chunks) => <strong>{chunks}</strong>,
       link: (chunks) => (
         <Link
-          href="/conditions"
+          href={localizeHref('/conditions', locale)}
           className="underline-offset-2 hover:underline"
         >
           {chunks}
@@ -78,7 +80,7 @@ export function FaqSection() {
       strong: (chunks) => <strong>{chunks}</strong>,
       link: (chunks) => (
         <Link
-          href="/confidentialite"
+          href={localizeHref('/confidentialite', locale)}
           className="underline-offset-2 hover:underline"
         >
           {chunks}
@@ -125,7 +127,7 @@ export function FaqSection() {
       <p className="mt-8 text-sm text-muted-foreground">
         {t('methodologyPrompt')}{' '}
         <Link
-          href="/methodology"
+          href={localizeHref('/methodology', locale)}
           className="inline-flex items-center gap-1 font-medium text-foreground underline-offset-4 hover:underline"
         >
           {t('methodologyLink')}

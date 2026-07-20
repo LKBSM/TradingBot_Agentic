@@ -1,7 +1,8 @@
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { ShieldCheck, AlertTriangle, ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { localizeHref } from '@/lib/i18n/href';
 import { cn } from '@/lib/utils';
 
 /**
@@ -26,6 +27,7 @@ import { cn } from '@/lib/utils';
  */
 export function HonestConfidenceSection() {
   const t = useTranslations('landing.honesty');
+  const locale = useLocale();
   return (
     <section
       id="honnetete"
@@ -80,7 +82,7 @@ export function HonestConfidenceSection() {
 
         <div className="mt-8">
           <Link
-            href="/methodology"
+            href={localizeHref('/methodology', locale)}
             className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground underline-offset-4 hover:underline"
           >
             {t('cta')}
