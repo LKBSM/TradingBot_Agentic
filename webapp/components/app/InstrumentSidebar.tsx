@@ -221,7 +221,8 @@ function ComboRow({
         }
         title={pinned ? t('sidebar.unpin') : t('sidebar.pin')}
         className={cn(
-          'flex shrink-0 items-center px-2 text-muted-foreground/60 transition-colors hover:text-[#c9a961]',
+          // ≥44px tap target on touch; natural (compact) size on xl desktop.
+          'flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center px-2 text-muted-foreground/60 transition-colors hover:text-[#c9a961] xl:min-h-0 xl:min-w-0',
           pinned && 'text-[#c9a961]',
         )}
       >
