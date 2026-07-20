@@ -312,7 +312,10 @@ function LiquidityList({
         return (
           <li
             key={p.id}
-            className="flex items-center gap-2 text-sm font-medium text-foreground"
+            /* flex-wrap + min-w-0: on a 390px phone the widest BSL/SSL line
+               (price · side · kind · status) wraps instead of overflowing the
+               panel horizontally. */
+            className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium text-foreground"
           >
             <span
               className="inline-block h-2 w-2 shrink-0 rounded-full"
