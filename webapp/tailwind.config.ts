@@ -1,12 +1,16 @@
 import type { Config } from 'tailwindcss';
 
 const config: Config = {
-  // A "theme" is a single `.theme-*` class on <html>. The three dark themes
-  // drive Tailwind's `dark:` variant; Atelier (light) is intentionally absent so
+  // A "theme" is `data-theme="<id>"` on <html>. The three dark themes drive
+  // Tailwind's `dark:` variant; Atelier (light) is intentionally absent so
   // `dark:` utilities do not apply there.
   darkMode: [
     'variant',
-    ['.theme-terminal &', '.theme-schema &', '.theme-ardoise &'],
+    [
+      '[data-theme=terminal] &',
+      '[data-theme=schema] &',
+      '[data-theme=ardoise] &',
+    ],
   ],
   content: ['./app/**/*.{ts,tsx}', './components/**/*.{ts,tsx}', './lib/**/*.{ts,tsx}'],
   theme: {

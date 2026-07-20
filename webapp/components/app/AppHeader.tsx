@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { CandlestickChart, HelpCircle, Layers, Radar } from 'lucide-react';
 import { LocaleToggle } from '@/components/LocaleToggle';
-import { ThemeToggle } from '@/components/theme-toggle';
+import { ThemeMenu } from '@/components/theme/ThemeMenu';
 import { Badge } from '@/components/ui/badge';
 import { BRAND_NAME, BRAND_BASELINE } from '@/lib/brand';
 import { AccountMenu } from './AccountMenu';
@@ -75,7 +75,7 @@ export function AppHeader() {
             <HelpCircle className="h-4 w-4" aria-hidden />
           </Link>
           <LocaleToggle />
-          <ThemeToggle />
+          <ThemeMenu />
           <AccountMenu />
         </div>
       </div>

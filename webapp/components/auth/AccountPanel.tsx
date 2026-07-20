@@ -7,6 +7,7 @@ import { ShieldCheck } from 'lucide-react';
 import { AuthError, updateProfile } from '@/lib/auth/api-client';
 import { useAuth } from '@/lib/auth/store';
 import { Button } from '@/components/ui/button';
+import { AppearancePicker } from '@/components/theme/AppearancePicker';
 import { FormError, FormSuccess, TextField } from './fields';
 
 /**
@@ -87,6 +88,19 @@ export function AccountPanel() {
             {saving ? 'Enregistrement…' : 'Enregistrer'}
           </Button>
         </form>
+      </section>
+
+      <section className="space-y-4 rounded-lg border border-border/60 p-5">
+        <div>
+          <h2 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+            Apparence
+          </h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Choisissez le thème de l’interface. Le choix s’applique aussitôt et
+            reste mémorisé sur cet appareil.
+          </p>
+        </div>
+        <AppearancePicker />
       </section>
 
       <section className="space-y-3 rounded-lg border border-border/60 p-5">

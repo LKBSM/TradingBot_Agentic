@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { User } from 'lucide-react';
 import { AppHeader } from '@/components/app/AppHeader';
 import { LocaleToggle } from '@/components/LocaleToggle';
-import { ThemeToggle } from '@/components/theme-toggle';
+import { ThemeMenu } from '@/components/theme/ThemeMenu';
 import { useAuth } from '@/lib/auth/store';
 import { BRAND_NAME, BRAND_BASELINE } from '@/lib/brand';
 import { SUPPORTED_LOCALES } from '@/i18n';
@@ -129,7 +129,7 @@ export function Nav() {
           <div className="hidden sm:block">
             <LocaleToggle />
           </div>
-          <ThemeToggle />
+          <ThemeMenu />
         </div>
       </div>
     </header>

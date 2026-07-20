@@ -106,19 +106,13 @@ export default async function LocaleLayout({
         <SkipLink />
         <JsonLd data={softwareApplicationLd} />
         <ThemeProvider
-          attribute="class"
+          // `data-theme="<id>"` on <html> — a single clean attribute (no class
+          // pollution, no flash for non-default themes). The token VALUES live
+          // under `[data-theme='…']` in globals.css; the three dark themes drive
+          // Tailwind's `dark:` variant via the darkMode config.
+          attribute="data-theme"
           defaultTheme="terminal"
           themes={['terminal', 'atelier', 'schema', 'ardoise']}
-          value={{
-            // One class per theme (next-themes toggles a SINGLE token on
-            // <html>). The `.theme-*` class carries the token values
-            // (globals.css). The three dark themes are recognised by Tailwind's
-            // `dark:` variant via the darkMode config in tailwind.config.ts.
-            terminal: 'theme-terminal',
-            atelier: 'theme-atelier',
-            schema: 'theme-schema',
-            ardoise: 'theme-ardoise',
-          }}
           disableTransitionOnChange
         >
           <NextIntlClientProvider messages={messages}>

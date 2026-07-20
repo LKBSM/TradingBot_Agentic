@@ -21,7 +21,7 @@
 @layer base {
   /* ── Terminal — cold dark, DEFAULT (pre-hydration fallback = :root) ── */
   :root,
-  .theme-terminal {
+  [data-theme='terminal'] {
     color-scheme: dark;
     --background: 223 47% 7%;
     --foreground: 220 45% 94%;
@@ -54,7 +54,7 @@
   }
 
   /* ── Atelier — light, analyst note (narration in serif) ── */
-  .theme-atelier {
+  [data-theme='atelier'] {
     color-scheme: light;
     --background: 45 31% 95%;
     --foreground: 220 7% 16%;
@@ -87,7 +87,7 @@
   }
 
   /* ── Schéma — technical monochrome (states in grey, almost no colour) ── */
-  .theme-schema {
+  [data-theme='schema'] {
     color-scheme: dark;
     --background: 220 13% 9%;
     --foreground: 213 16% 89%;
@@ -120,7 +120,7 @@
   }
 
   /* ── Ardoise — warm dark, calmed (softer corners) ── */
-  .theme-ardoise {
+  [data-theme='ardoise'] {
     color-scheme: dark;
     --background: 26 16% 9%;
     --foreground: 36 32% 91%;

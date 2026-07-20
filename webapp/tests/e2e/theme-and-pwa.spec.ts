@@ -1,17 +1,17 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('Theme + PWA — golden paths', () => {
-  test('theme toggle switches html.dark class', async ({ page }) => {
+  test('theme menu switches the active data-theme on <html>', async ({ page }) => {
     await page.goto('/');
     const html = page.locator('html');
-    const initialDark = await html.evaluate((el) => el.classList.contains('dark'));
-    await page
-      .getByRole('button', { name: /(Activer le mode (clair|sombre))/i })
-      .click();
-    // Wait one frame for next-themes to settle.
-    await page.waitForTimeout(150);
-    const flipped = await html.evaluate((el) => el.classList.contains('dark'));
-    expect(flipped).not.toBe(initialDark);
+    // Pick Atelier (light) from the theme menu.
+    await page.getByRole('button', { name: /Choisir le thème/i }).click();
+    await page.getByRole('menuitemradio', { name: /Atelier/i }).click();
+    await expect(html).toHaveAttribute('data-theme', 'atelier');
+    // Switch to Terminal (dark) and confirm the attribute flips.
+    await page.getByRole('button', { name: /Choisir le thème/i }).click();
+    await page.getByRole('menuitemradio', { name: /Terminal/i }).click();
+    await expect(html).toHaveAttribute('data-theme', 'terminal');
   });
 
   test('manifest is served with right content-type', async ({ request }) => {

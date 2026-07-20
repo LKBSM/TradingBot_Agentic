@@ -7,17 +7,21 @@ vert/rouge décoratif « achat/vente » introduit par un thème.
 
 ## Phase A — Socle (LIVRÉ, en attente de validation live)
 
-### Mécanisme retenu
+### Mécanisme retenu (final)
 - `next-themes` en **4 thèmes nommés** : `terminal` (défaut) · `atelier` · `schema` · `ardoise`.
-- `attribute="class"` + `value` map = **une seule classe `.theme-*` par thème** sur `<html>`
-  (le multi-token `'dark theme-x'` casse `DOMTokenList.remove` de next-themes → interdit).
+- `attribute="data-theme"` → **`data-theme="<id>"` sur `<html>`** (un attribut propre, source
+  unique ; pas de pollution de classe, pas de flash pour les thèmes non-défaut). Les valeurs de
+  tokens vivent sous `[data-theme='…']` dans `globals.css`.
+  *(Étape intermédiaire écartée : `attribute="class"` + `value` map — le multi-token
+  `'dark theme-x'` casse `DOMTokenList.remove` de next-themes, et une seule classe laissait des
+  scories de classe brute résiduelles.)*
 - Les **3 thèmes sombres** pilotent le variant Tailwind `dark:` via
-  `darkMode: ['variant', ['.theme-terminal &', '.theme-schema &', '.theme-ardoise &']]`.
-  Atelier (clair) en est volontairement absent. → tous les `dark:` existants continuent de
-  fonctionner sans les toucher.
-- **Sans flash SSR** : script bloquant next-themes + `suppressHydrationWarning` sur `<html>`
-  + `:root` = valeurs Terminal (fallback pré-hydratation cohérent).
-- **Persistance** : `localStorage['theme']` (défaut next-themes). Défaut = `terminal`.
+  `darkMode: ['variant', ['[data-theme=terminal] &', '[data-theme=schema] &', '[data-theme=ardoise] &']]`.
+  Atelier (clair) en est volontairement absent → tous les `dark:` existants fonctionnent sans être touchés.
+- **Sans flash SSR** : script bloquant next-themes (pose `data-theme` avant paint) +
+  `suppressHydrationWarning` sur `<html>` + `:root` = valeurs Terminal (fallback cohérent).
+- **Persistance** : `localStorage['theme']` (défaut next-themes). Défaut = `terminal`. **Vérifié**
+  (bascule + reload conservent le thème, 0 pageerror).
 - `color-scheme` déclaré par thème (dark/light) → widgets natifs + scrollbars cohérents.
 
 ### Tokens sémantiques (par RÔLE, format HSL — `tailwind.config.ts` inchangé côté mapping)
@@ -89,6 +93,23 @@ Nav/AppHeader + MiaAgentLogo laissés intacts, theme-independent volontairement)
 - `tsc` vert · `next build` vert (exit 0) · **vitest 482/482** (0 régression).
 - Captures `/app` 4 thèmes : onglet TF actif suit l'accent (bleu/teal/cyan/or), logo or fixe.
 
-## Phase C — Réglages « Apparence » (À FAIRE, après GO)
-Section dans `AccountPanel` (`/compte`) : 4 vignettes cliquables (nom + 1 ligne), aperçu,
-application immédiate + persistance. Le `theme-toggle` deviendra un sélecteur 4-thèmes.
+## Phase C — Réglages « Apparence » + sélecteur (LIVRÉ)
+- **Source unique** : `lib/theme/themes.ts` (id, base clair/sombre, nom, description, swatch de
+  prévisualisation static). Consommée par le menu Nav ET le picker réglages.
+- **Menu de thème (Nav + AppHeader)** : `components/theme/ThemeMenu.tsx` — bouton palette →
+  menu accessible (role=menu, `menuitemradio`, coche sur l'actif), popover click-outside + Échap,
+  mount-guard anti-mismatch. Remplace l'ancien `theme-toggle.tsx` (supprimé). **Vérifié en capture**.
+- **Section « Apparence » (`/compte`)** : `components/theme/AppearancePicker.tsx` — 4 vignettes
+  cliquables (mini-maquette bg/panel/accent/bull/bear + nom + 1 ligne), `role=radiogroup`,
+  application immédiate + persistance. Ajoutée dans `AccountPanel`.
+- **e2e** : `theme-and-pwa.spec.ts` réécrit → pilote le menu et vérifie `data-theme` (atelier↔terminal).
+
+### Vérifications Phase C
+- `tsc` vert · `next build` vert · **vitest 482/482** (0 régression).
+- Menu 4-thèmes fonctionnel + persistance reload confirmés (Playwright). Captures :
+  `phaseC_menu_open.png`, `theme_{terminal,atelier,schema,ardoise}.png`.
+
+## Reste à valider EN LIVE (backend + session requis — non observables en local)
+1. **Chart** (B2) : bougies/chrome themés avec vraies données ; bascule dark→dark repeint.
+2. **Section Apparence** (`/compte`) : rendu derrière l'auth (redirige sans session en local).
+   Le rendu des vignettes est prouvé identique via le menu Nav (mêmes primitives).
