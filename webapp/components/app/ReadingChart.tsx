@@ -114,6 +114,12 @@ export interface ReadingChartProps {
   hiddenZoneIds?: readonly string[];
   isolatedZoneIds?: readonly string[] | null;
   className?: string;
+  /**
+   * Height utility for the plot container. Defaults to a fluid, viewport-scaled
+   * height for the /app workspace so the plot isn't crushed on small screens;
+   * the landing hero passes a fixed height to keep the marketing layout stable.
+   */
+  heightClassName?: string;
 }
 
 /** Timeframe → bar length in seconds (for the live forming candle bucket). */
@@ -394,6 +400,7 @@ export function ReadingChart({
   hiddenZoneIds = DEFAULT_CHART_VIEW.hiddenZoneIds,
   isolatedZoneIds = DEFAULT_CHART_VIEW.isolatedZoneIds,
   className,
+  heightClassName = 'h-[clamp(300px,52svh,560px)]',
 }: ReadingChartProps) {
   const t = useTranslations('app');
   const { resolvedTheme } = useTheme();
@@ -544,7 +551,12 @@ export function ReadingChart({
         textColor: p.axisText,
         fontFamily: MONO_FONT, // monospace → tabular axis numbers.
         fontSize: 11,
-        attributionLogo: true, // TradingView attribution (Apache-2.0 licence).
+        // On-chart TradingView logo hidden for a cleaner plot. The Apache-2.0
+        // licence for Lightweight Charts™ then requires the attribution to be
+        // kept elsewhere: it lives in the repo NOTICE file and is published for
+        // users — with a link to https://www.tradingview.com/ — in the
+        // "Attributions" section of the public /methodology page.
+        attributionLogo: false,
       },
       grid: {
         // Horizontal hairlines only — vertical lines off for a calmer canvas.
@@ -579,6 +591,10 @@ export function ReadingChart({
         borderColor: p.scaleBorder,
         timeVisible: true,
         secondsVisible: false,
+        // Floor on candle spacing: on a narrow phone plot the default 90-bar fit
+        // would squeeze candles to ~3-4px hairlines. minBarSpacing caps the
+        // density (the chart shows fewer bars rather than illegible slivers).
+        minBarSpacing: 4,
         tickMarkFormatter: (t: Time, tickMarkType: TickMarkType) => {
           const d = new Date((t as number) * 1000);
           if (tickMarkType === TickMarkType.Year) return String(d.getFullYear());
@@ -1204,14 +1220,15 @@ export function ReadingChart({
     <div className={cn('relative w-full', className)}>
       <div
         ref={containerRef}
-        className="h-[280px] w-full sm:h-[340px]"
+        className={cn(heightClassName, 'w-full')}
         role="img"
         aria-label={t('chart.canvasAria', { instrument })}
       />
 
-      {/* Discreet local-time indicator (bottom-left, over the plot). */}
+      {/* Discreet local-time indicator — sits ABOVE the bottom-left controls
+          (bottom-14) so the two no longer overlap on a short plot (RESP-B-05). */}
       {tzLabel && (
-        <span className="pointer-events-none absolute bottom-1 left-2 z-10 select-none rounded bg-background/60 px-1.5 py-0.5 text-[10px] font-medium tracking-tight text-muted-foreground/70 backdrop-blur-sm">
+        <span className="pointer-events-none absolute bottom-14 left-2 z-10 select-none rounded bg-background/60 px-1.5 py-0.5 text-[10px] font-medium tracking-tight text-muted-foreground/70 backdrop-blur-sm">
           {tzLabel}
         </span>
       )}
@@ -1376,12 +1393,18 @@ export function ReadingChart({
             }}
             title={t('chart.fvgFillTitle')}
           >
-            <span
-              className="absolute right-1 top-0 whitespace-nowrap text-[9px] font-semibold leading-tight"
-              style={{ color: LIVE_COLOR }}
-            >
-              {t('chart.fvgFillLive')}
-            </span>
+            {/* Only label the live-fill when the box is wide enough to hold the
+                text — on a narrow box the nowrap badge would overflow across
+                neighbouring candles. The amber fill itself still conveys the
+                state. */}
+            {r.width >= 60 && (
+              <span
+                className="absolute right-1 top-0 whitespace-nowrap text-[9px] font-semibold leading-tight"
+                style={{ color: LIVE_COLOR }}
+              >
+                {t('chart.fvgFillLive')}
+              </span>
+            )}
           </div>
         ))}
 
@@ -1493,7 +1516,7 @@ export function ReadingChart({
         )
       )}
 
-      {/* Sober pan/zoom controls — visually light, ≥44px tap zone on mobile.
+      {/* Sober pan/zoom controls — visually light, ≥44px tap zone on touch.
           z-10 lifts them above the lightweight-charts canvases (which carry
           their own z-index and would otherwise intercept clicks over the
           time-axis strip). */}
@@ -1528,7 +1551,7 @@ export function ReadingChart({
   );
 }
 
-/** A single sober chart control: hairline border, ≥44px tap target on mobile. */
+/** A single sober chart control: hairline border, ≥44px tap target on touch. */
 function ChartControl({
   label,
   onClick,
@@ -1552,7 +1575,9 @@ function ChartControl({
         'flex h-11 w-11 items-center justify-center rounded-md border border-border/60',
         'bg-background/70 text-muted-foreground backdrop-blur-sm',
         'transition-colors hover:text-foreground',
-        'sm:h-8 sm:w-8',
+        // 44px on touch (phone + tablet); only shrink to 32px on xl desktop
+        // where a mouse is the pointer. (Was sm: → served 32px to iPad touch.)
+        'xl:h-8 xl:w-8',
         pressed && 'border-foreground/40 text-foreground',
       )}
     >

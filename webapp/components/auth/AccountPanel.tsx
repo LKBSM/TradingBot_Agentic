@@ -75,6 +75,9 @@ export function AccountPanel() {
 
   async function onLogout() {
     await logout();
+    // Invalidate the Router Cache before navigating so no cached authenticated
+    // page survives the logout (inverse of the first-login fix — see LoginForm).
+    router.refresh();
     router.push(lh('/'));
   }
 

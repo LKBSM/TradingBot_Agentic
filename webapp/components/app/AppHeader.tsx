@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { CandlestickChart, HelpCircle, Layers, Radar } from 'lucide-react';
 import { useLocalizedHref } from '@/lib/i18n/href';
 import { LocaleToggle } from '@/components/LocaleToggle';
+import { MobileMenu } from '@/components/MobileMenu';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Badge } from '@/components/ui/badge';
 import { BRAND_NAME, BRAND_BASELINE } from '@/lib/brand';
@@ -43,44 +44,50 @@ export function AppHeader() {
           </span>
         </Link>
 
+        {/* Sous sm : App/Zones/Scanner + badge + aide + langue passent dans le
+            tiroir burger. Restent visibles : thème, compte (déjà un dropdown
+            tactile) et le burger. */}
         <div className="flex items-center gap-2">
-          <Link
-            href={lh('/app')}
-            aria-label={t('header.navApp')}
-            className="inline-flex h-9 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <CandlestickChart className="h-4 w-4" aria-hidden />
-            <span className="hidden sm:inline">App</span>
-          </Link>
-          <Link
-            href={lh('/zones')}
-            aria-label={t('header.navZones')}
-            className="inline-flex h-9 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <Layers className="h-4 w-4" aria-hidden />
-            <span className="hidden sm:inline">Zones</span>
-          </Link>
-          <Link
-            href={lh('/scanner')}
-            aria-label={t('header.navScanner')}
-            className="inline-flex h-9 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <Radar className="h-4 w-4" aria-hidden />
-            <span className="hidden sm:inline">Scanner</span>
-          </Link>
-          <Badge variant="secondary" className="hidden sm:inline-flex">
-            {t('header.planBadge')}
-          </Badge>
-          <Link
-            href={lh('/methodology')}
-            aria-label={t('header.navHelp')}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <HelpCircle className="h-4 w-4" aria-hidden />
-          </Link>
-          <LocaleToggle />
+          <div className="hidden items-center gap-2 sm:flex">
+            <Link
+              href={lh('/app')}
+              aria-label={t('header.navApp')}
+              className="inline-flex h-9 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <CandlestickChart className="h-4 w-4" aria-hidden />
+              <span>App</span>
+            </Link>
+            <Link
+              href={lh('/zones')}
+              aria-label={t('header.navZones')}
+              className="inline-flex h-9 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <Layers className="h-4 w-4" aria-hidden />
+              <span>Zones</span>
+            </Link>
+            <Link
+              href={lh('/scanner')}
+              aria-label={t('header.navScanner')}
+              className="inline-flex h-9 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <Radar className="h-4 w-4" aria-hidden />
+              <span>Scanner</span>
+            </Link>
+            <Badge variant="secondary" className="inline-flex">
+              {t('header.planBadge')}
+            </Badge>
+            <Link
+              href={lh('/methodology')}
+              aria-label={t('header.navHelp')}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <HelpCircle className="h-4 w-4" aria-hidden />
+            </Link>
+            <LocaleToggle />
+          </div>
           <ThemeToggle />
           <AccountMenu />
+          <MobileMenu variant="app" />
         </div>
       </div>
     </header>

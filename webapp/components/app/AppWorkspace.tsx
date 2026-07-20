@@ -8,7 +8,7 @@ import { AppChatSidebar } from './AppChatSidebar';
 import { InstrumentSidebar } from './InstrumentSidebar';
 import { MobileWorkspace } from './MobileWorkspace';
 import { ReadingColumn } from './ReadingColumn';
-import { useIsMobile } from '@/lib/use-media-query';
+import { useStackedLayout } from '@/lib/use-media-query';
 import { useMarketReading, type ReadingSource } from '@/lib/market-reading/hooks';
 import {
   ActiveComboProvider,
@@ -56,8 +56,10 @@ export interface WorkspaceViewProps {
 }
 
 /**
- * /app workspace. Desktop (≥768px) shows three columns; mobile (<768px) shows
- * a tabbed layout (Marchés · Lecture · Chat). The active combo lives in
+ * /app workspace. Desktop (≥1280px / xl) shows three columns; phone + tablet
+ * (<1280px) show a tabbed layout (Marchés · Lecture · Chat) so the reading
+ * column keeps a usable width instead of being crushed between the two fixed
+ * rails on iPad. The active combo lives in
  * ActiveComboProvider; the reading is fetched + polled (60s) via
  * useMarketReading; the chat context follows the active combo via openForCombo.
  */
@@ -86,13 +88,13 @@ function WorkspaceInner({
   const { active, select, combos } = useActiveCombo();
   const { openForCombo, viewActionSignal } = useChat();
   const { applyActions, resetForCombo } = useChartView();
-  const isMobile = useIsMobile();
-  // useIsMobile reports `false` until its effect runs, so the first paint would
-  // show the DESKTOP layout for a frame before flipping to mobile — a flash +
-  // remount of the columns (NAV-10). Gate the layout choice on `mounted` so we
-  // render a neutral placeholder until the real breakpoint is known; both
-  // `mounted` and the media query resolve in the same post-mount flush, so the
-  // next paint is the correct layout directly.
+  const isStacked = useStackedLayout();
+  // useStackedLayout reports `false` until its effect runs, so the first paint
+  // would show the DESKTOP layout for a frame before flipping to the stacked
+  // (tablet/phone) layout — a flash + remount of the columns (NAV-10). Gate the
+  // layout choice on `mounted` so we render a neutral placeholder until the real
+  // breakpoint is known; both `mounted` and the media query resolve in the same
+  // post-mount flush, so the next paint is the correct layout directly.
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
   const router = useRouter();
@@ -260,7 +262,7 @@ function WorkspaceInner({
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
           </div>
         </div>
-      ) : isMobile ? (
+      ) : isStacked ? (
         <MobileWorkspace {...view} />
       ) : (
         <DesktopWorkspace {...view} />
@@ -282,7 +284,7 @@ function DesktopWorkspace({
 }: WorkspaceViewProps) {
   return (
     <div className="container-wide py-6">
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-[240px_minmax(0,1fr)_360px] md:items-start">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[240px_minmax(0,1fr)_360px] xl:items-start">
         <InstrumentSidebar
           combos={combos}
           active={active}
@@ -300,7 +302,9 @@ function DesktopWorkspace({
           dataSource={dataSource}
         />
 
-        <div className="md:sticky md:top-6 md:h-[calc(100vh-7rem)]">
+        {/* Sticky offset = 3.5rem header + 1rem gap; height leaves a 1rem bottom
+            gap so the rail never overflows behind the viewport edge. */}
+        <div className="xl:sticky xl:top-[4.5rem] xl:h-[calc(100vh-5.5rem)]">
           <AppChatSidebar active={active} onSelectCombo={onSelect} />
         </div>
       </div>

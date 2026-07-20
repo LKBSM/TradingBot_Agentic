@@ -80,14 +80,17 @@ export function ChatInput({ className }: ChatInputProps) {
           maxLength={MAX_CHARS}
           disabled={offline}
           aria-label={t('inputAria')}
-          className="flex-1 resize-none bg-transparent py-1.5 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/70 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+          /* text-base (16px) on touch prevents iOS from zooming the page on
+             focus; shrink to text-sm only on xl desktop. */
+          className="flex-1 resize-none bg-transparent py-1.5 text-base leading-relaxed text-foreground placeholder:text-muted-foreground/70 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 xl:text-sm"
         />
         <button
           type="submit"
           disabled={!canSubmit}
           aria-label={isLoading ? t('sendLoadingAria') : t('sendAria')}
           className={cn(
-            'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors',
+            // 44px tap target on touch; 36px only on xl desktop (mouse).
+            'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-colors xl:h-9 xl:w-9',
             canSubmit
               ? 'bg-[hsl(var(--sentinel-warn))] text-[hsl(222_47%_11%)] hover:brightness-110'
               : 'cursor-not-allowed bg-muted text-muted-foreground',
@@ -101,7 +104,7 @@ export function ChatInput({ className }: ChatInputProps) {
         </button>
       </form>
       {!offline && (
-        <p className="mt-2 text-center text-[10.5px] italic text-muted-foreground/75">
+        <p className="mt-2 text-center text-[11px] italic text-muted-foreground/75">
           {t('inputHint')}
         </p>
       )}
