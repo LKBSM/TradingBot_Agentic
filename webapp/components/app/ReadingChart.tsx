@@ -803,18 +803,35 @@ export function ReadingChart({
     // INTACT pockets: a price line with the line hidden (lineVisible: false) so
     // the level reads on the axis without a band crossing the whole canvas.
     // Swept/broken pockets carry their state at the frozen contact instead.
-    const createdLiquidity = liquidityLines
-      .filter((l) => l.status === 'intact')
-      .map((l) =>
-        series.createPriceLine({
-          price: l.price,
-          color: liquidityColor(l.side, l.status),
-          lineWidth: 1,
-          lineVisible: false,
-          axisLabelVisible: true,
-          title: l.title,
-        }),
-      );
+    // B-03 declutter: on a short/narrow plot the right axis stacked one price
+    // pill per intact pocket, overlapping the BOS/CHOCH/retest badges. Cap the
+    // axis pills to the few pockets NEAREST the current price; every level still
+    // renders on-chart as an HTML segment (liquidityRects), so nothing is hidden
+    // — only the redundant, colliding axis badge is dropped for far levels.
+    const MAX_LIQUIDITY_PILLS = 4;
+    const lastClose = validCandles.length
+      ? validCandles[validCandles.length - 1]!.close
+      : null;
+    const intactLiquidity = liquidityLines.filter((l) => l.status === 'intact');
+    const pilledLiquidity =
+      lastClose == null || intactLiquidity.length <= MAX_LIQUIDITY_PILLS
+        ? intactLiquidity
+        : [...intactLiquidity]
+            .sort(
+              (a, b) =>
+                Math.abs(a.price - lastClose) - Math.abs(b.price - lastClose),
+            )
+            .slice(0, MAX_LIQUIDITY_PILLS);
+    const createdLiquidity = pilledLiquidity.map((l) =>
+      series.createPriceLine({
+        price: l.price,
+        color: liquidityColor(l.side, l.status),
+        lineWidth: 1,
+        lineVisible: false,
+        axisLabelVisible: true,
+        title: l.title,
+      }),
+    );
 
     // Initial view ONCE; afterwards restore the pre-update view so data
     // refreshes don't reset the user's zoom/pan. The "Ajuster" button refits.
@@ -1341,11 +1358,17 @@ export function ReadingChart({
                   >
                     <span
                       className={cn(
-                        'font-medium leading-none tabular-nums',
+                        // B-04: a hairline backdrop keeps the code legible when
+                        // two zone labels overlap on a dense/narrow plot (never
+                        // hides a level — only rescues readability). aria-label
+                        // carries the full description to assistive tech on touch
+                        // where the native title tooltip is unreachable (E-02).
+                        'rounded-sm bg-background/65 px-0.5 font-medium leading-none tabular-nums',
                         r.tested ? 'text-[9px] opacity-70' : 'text-[10px]',
                       )}
                       style={{ color: ZONE_LABEL[r.kind] }}
                       title={r.label}
+                      aria-label={r.label}
                     >
                       {ZONE_CODE[r.kind]}
                     </span>
