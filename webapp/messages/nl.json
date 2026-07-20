@@ -880,7 +880,9 @@
       "zoomOut": "Uitzoomen",
       "fit": "Grafiek aanpassen",
       "liqShowAll": "Alle liquiditeitspockets tonen (intact, afgenomen, gebroken)",
-      "liqShowIntactOnly": "Alleen intacte liquiditeitspockets tonen"
+      "liqShowIntactOnly": "Alleen intacte liquiditeitspockets tonen",
+      "marketClosed": "Markt gesloten",
+      "marketClosedTitle": "De markt is momenteel gesloten: de grafiek toont de laatste gesloten candle en geeft geen live-koers weer."
     }
   },
   "samples": {
