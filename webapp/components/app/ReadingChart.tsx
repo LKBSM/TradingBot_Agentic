@@ -1164,9 +1164,10 @@ export function ReadingChart({
         aria-label={t('chart.canvasAria', { instrument })}
       />
 
-      {/* Discreet local-time indicator (bottom-left, over the plot). */}
+      {/* Discreet local-time indicator — sits ABOVE the bottom-left controls
+          (bottom-14) so the two no longer overlap on a short plot (RESP-B-05). */}
       {tzLabel && (
-        <span className="pointer-events-none absolute bottom-1 left-2 z-10 select-none rounded bg-background/60 px-1.5 py-0.5 text-[10px] font-medium tracking-tight text-muted-foreground/70 backdrop-blur-sm">
+        <span className="pointer-events-none absolute bottom-14 left-2 z-10 select-none rounded bg-background/60 px-1.5 py-0.5 text-[10px] font-medium tracking-tight text-muted-foreground/70 backdrop-blur-sm">
           {tzLabel}
         </span>
       )}
