@@ -23,12 +23,17 @@ test.describe('Theme + PWA — golden paths', () => {
     expect(body.display).toBe('standalone');
   });
 
-  test('inactive locale routes 302 to FR equivalent', async ({ request }) => {
-    const res = await request.get('/en/whatever', {
+  test('a non-default active locale is served', async ({ request }) => {
+    // i18n is live: `en` (like the other 8 locales) is now served directly,
+    // not 302'd to FR. A valid locale root returns 200; an unknown page under
+    // it is a normal 404.
+    const root = await request.get('/en', { maxRedirects: 0, failOnStatusCode: false });
+    expect(root.status()).toBe(200);
+    const missing = await request.get('/en/whatever', {
       maxRedirects: 0,
       failOnStatusCode: false,
     });
-    expect(res.status()).toBe(302);
+    expect(missing.status()).toBe(404);
   });
 
   test('icon endpoints respond 200 with image content-type', async ({ request }) => {
