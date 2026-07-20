@@ -45,6 +45,11 @@ export async function fetchAccess(signal?: AbortSignal): Promise<AccessSummary> 
   const res = await fetch(ENDPOINT, {
     method: 'GET',
     headers: { accept: 'application/json' },
+    // Explicitly send the same-origin HttpOnly session cookie. `same-origin` is
+    // the fetch default, but we set it for parity with the auth client and to
+    // keep the gate decision working if these calls are ever proxied — the whole
+    // access decision depends on the session cookie riding along.
+    credentials: 'same-origin',
     signal,
   });
   if (!res.ok) {

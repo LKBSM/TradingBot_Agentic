@@ -59,7 +59,11 @@ export function RegisterForm() {
         accept_terms: acceptTerms,
         accept_privacy: acceptPrivacy,
       });
-      router.push(lh('/compte'));
+      // Registration also opens a session (Set-Cookie). Same first-attempt
+      // reliability fix as login: invalidate the Router Cache before navigating
+      // so the destination is fetched fresh with the new cookie. See LoginForm.
+      router.refresh();
+      router.replace(lh('/compte'));
     } catch (err) {
       setError(
         err instanceof AuthError ? err.message : t('register.errorGeneric'),
