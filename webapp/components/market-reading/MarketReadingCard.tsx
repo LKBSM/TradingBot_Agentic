@@ -2,7 +2,8 @@ import { useTranslations } from 'next-intl';
 import { MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { DisclaimerStub } from '@/components/shared/DisclaimerStub';
+import { DisclaimerStub, EarlyAccessBadge } from '@/components/shared/DisclaimerStub';
+import { cn } from '@/lib/utils';
 import { MarketPhasePanel } from './MarketPhasePanel';
 import { MarketReadingHeader } from './MarketReadingHeader';
 import {
@@ -70,12 +71,34 @@ export function MarketReadingCard({
           marketClosed={marketClosed}
         />
 
-        {chartSlot}
+        {/* "Graphique d'abord" layout (/app): the chart is framed by a discreet
+            "Accès anticipé" badge in its header and, directly beneath it, the
+            PERSISTENT legal mention — placed here, glued to the chart, where the
+            "this is a signal" misread risk is highest. The two are deliberately
+            separate: the badge is a temporary product-status marker, the line is
+            the compliance disclaimer that always stays visible and legible. */}
+        {chartSlot && (
+          <div className="space-y-2">
+            <div className="flex justify-end">
+              <EarlyAccessBadge />
+            </div>
+            {chartSlot}
+            <DisclaimerStub variant="chart" />
+          </div>
+        )}
 
         <MarketPhasePanel regime={reading.regime} />
 
-        <div className="flex flex-col gap-3 border-t border-border/60 pt-4 sm:flex-row sm:items-center sm:justify-between">
-          <DisclaimerStub className="sm:max-w-md" />
+        <div
+          className={cn(
+            'flex flex-col gap-3 border-t border-border/60 pt-4 sm:flex-row sm:items-center',
+            // Text-only surfaces (landing samples, no chart) keep the full hero
+            // disclaimer on this row; the /app chart view already shows the legal
+            // mention under the chart, so this row only carries the CTA.
+            chartSlot ? 'sm:justify-end' : 'sm:justify-between',
+          )}
+        >
+          {!chartSlot && <DisclaimerStub className="sm:max-w-md" />}
           <Button
             type="button"
             variant="default"
