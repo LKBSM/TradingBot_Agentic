@@ -7,7 +7,7 @@ import { User } from 'lucide-react';
 import { AppHeader } from '@/components/app/AppHeader';
 import { LocaleToggle } from '@/components/LocaleToggle';
 import { MobileMenu } from '@/components/MobileMenu';
-import { ThemeToggle } from '@/components/theme-toggle';
+import { ThemeMenu } from '@/components/theme/ThemeMenu';
 import { useAuth } from '@/lib/auth/store';
 import { useLocalizedHref } from '@/lib/i18n/href';
 import { BRAND_NAME, BRAND_BASELINE } from '@/lib/brand';
@@ -138,7 +138,7 @@ export function Nav() {
                 sur 390px ; les liens localisés ci-dessus couvrent toutes locales). */}
             <LocaleToggle />
           </div>
-          <ThemeToggle />
+          <ThemeMenu />
           <MobileMenu variant="marketing" />
         </div>
       </div>

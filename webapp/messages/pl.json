@@ -1304,5 +1304,19 @@
       "show": "Pokaż na wykresie",
       "hide": "Ukryj z wykresu"
     }
+  },
+  "appearance": {
+    "menuLabel": "Wybierz motyw",
+    "menuHeading": "Motywy",
+    "sectionTitle": "Wygląd",
+    "sectionDescription": "Wybierz motyw interfejsu. Wybór jest stosowany natychmiast i zapamiętywany na tym urządzeniu.",
+    "groupLabel": "Wybór motywu",
+    "active": "Aktywny",
+    "descriptions": {
+      "terminal": "Chłodna ciemność, spokojne czytanie — motyw domyślny.",
+      "atelier": "Jasny, jak notatka analityka na papierze.",
+      "schema": "Techniczna monochromia, niemal bez koloru.",
+      "ardoise": "Ciepła ciemność, kojąca, z łagodniejszymi rogami."
+    }
   }
 }

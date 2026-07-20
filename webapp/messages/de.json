@@ -1304,5 +1304,19 @@
       "show": "Auf dem Chart anzeigen",
       "hide": "Vom Chart ausblenden"
     }
+  },
+  "appearance": {
+    "menuLabel": "Thema wählen",
+    "menuHeading": "Themen",
+    "sectionTitle": "Darstellung",
+    "sectionDescription": "Wählen Sie das Design der Oberfläche. Die Auswahl wird sofort übernommen und auf diesem Gerät gespeichert.",
+    "groupLabel": "Themenauswahl",
+    "active": "Aktiv",
+    "descriptions": {
+      "terminal": "Kühles Dunkel, ruhiges Lesen – das Standardthema.",
+      "atelier": "Hell, wie eine Analystennotiz auf Papier.",
+      "schema": "Technisches Monochrom, fast ohne Farbe.",
+      "ardoise": "Warmes Dunkel, beruhigend, mit weicheren Ecken."
+    }
   }
 }

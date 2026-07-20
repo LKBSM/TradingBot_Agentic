@@ -11,11 +11,14 @@ import { formatZoneDateTime, type TimelineEvent } from '@/lib/zones/lifecycle';
  * alone. Purely descriptive: a sequence of facts already produced upstream.
  */
 
+// Lifecycle phase dots — mapped onto the reserved state tokens so they track
+// the theme (and never read as a decorative buy/sell hue): formed = neutral,
+// interaction = warn, terminal (ended) = bear, ongoing (live) = bull.
 const DOT_TONE: Record<TimelineEvent['variant'], string> = {
-  formed: 'bg-sky-500',
-  interaction: 'bg-amber-500',
-  terminal: 'bg-rose-500',
-  ongoing: 'bg-emerald-500',
+  formed: 'bg-sentinel-neutral',
+  interaction: 'bg-sentinel-warn',
+  terminal: 'bg-sentinel-bear',
+  ongoing: 'bg-sentinel-bull',
 };
 
 export function ZoneTimeline({ events }: { events: TimelineEvent[] }) {

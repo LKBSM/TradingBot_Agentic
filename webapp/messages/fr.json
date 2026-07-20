@@ -1304,5 +1304,19 @@
       "show": "Afficher sur le graphique",
       "hide": "Masquer du graphique"
     }
+  },
+  "appearance": {
+    "menuLabel": "Choisir le thème",
+    "menuHeading": "Thèmes",
+    "sectionTitle": "Apparence",
+    "sectionDescription": "Choisissez le thème de l’interface. Le choix s’applique aussitôt et reste mémorisé sur cet appareil.",
+    "groupLabel": "Choix du thème",
+    "active": "Actif",
+    "descriptions": {
+      "terminal": "Sombre froid, lecture au calme — le thème par défaut.",
+      "atelier": "Clair, comme une note d’analyste sur papier.",
+      "schema": "Monochrome technique, presque sans couleur.",
+      "ardoise": "Sombre chaud, apaisé, aux coins plus doux."
+    }
   }
 }

@@ -1304,5 +1304,19 @@
       "show": "Mostrar en el gráfico",
       "hide": "Ocultar del gráfico"
     }
+  },
+  "appearance": {
+    "menuLabel": "Elegir tema",
+    "menuHeading": "Temas",
+    "sectionTitle": "Apariencia",
+    "sectionDescription": "Elige el tema de la interfaz. Tu elección se aplica al instante y se recuerda en este dispositivo.",
+    "groupLabel": "Selección de tema",
+    "active": "Activo",
+    "descriptions": {
+      "terminal": "Oscuro frío, lectura tranquila: el tema por defecto.",
+      "atelier": "Claro, como la nota de un analista en papel.",
+      "schema": "Monocromo técnico, casi sin color.",
+      "ardoise": "Oscuro cálido, sereno, con esquinas más suaves."
+    }
   }
 }

@@ -1,7 +1,17 @@
 import type { Config } from 'tailwindcss';
 
 const config: Config = {
-  darkMode: ['class'],
+  // A "theme" is `data-theme="<id>"` on <html>. The three dark themes drive
+  // Tailwind's `dark:` variant; Atelier (light) is intentionally absent so
+  // `dark:` utilities do not apply there.
+  darkMode: [
+    'variant',
+    [
+      '[data-theme=terminal] &',
+      '[data-theme=schema] &',
+      '[data-theme=ardoise] &',
+    ],
+  ],
   content: ['./app/**/*.{ts,tsx}', './components/**/*.{ts,tsx}', './lib/**/*.{ts,tsx}'],
   theme: {
     container: {
@@ -51,6 +61,7 @@ const config: Config = {
           bear: 'hsl(var(--sentinel-bear))',
           neutral: 'hsl(var(--sentinel-neutral))',
           warn: 'hsl(var(--sentinel-warn))',
+          liq: 'hsl(var(--sentinel-liq))',
         },
       },
       borderRadius: {
@@ -67,6 +78,15 @@ const config: Config = {
           'sans-serif',
         ],
         mono: ['ui-monospace', 'SFMono-Regular', 'monospace'],
+        // Narrative voice — resolves to `--font-narrative` which a theme may
+        // swap (e.g. Atelier → serif). Defaults to the sans stack elsewhere.
+        narrative: [
+          'var(--font-narrative)',
+          'var(--font-sans)',
+          'ui-serif',
+          'Georgia',
+          'serif',
+        ],
       },
       keyframes: {
         'accordion-down': {

@@ -46,9 +46,9 @@ webapp/
 ├─ components/
 │  ├─ ui/                        # shadcn primitives (Button, Card, Badge,
 │  │                             # Accordion, Dialog, Sheet, Tooltip, Tabs)
-│  ├─ theme-provider.tsx         # Wrapper next-themes
-│  ├─ theme-toggle.tsx           # Bouton dark/light (Sun/Moon)
-│  ├─ Nav.tsx                    # Sticky brand + anchors + theme toggle
+│  ├─ theme-provider.tsx         # Wrapper next-themes (4 thèmes nommés)
+│  ├─ theme/                     # ThemeMenu (nav) + AppearancePicker (réglages)
+│  ├─ Nav.tsx                    # Sticky brand + anchors + menu de thème
 │  ├─ Footer.tsx                 # Footer partagé — liens réels uniquement, claims vérifiables
 │  ├─ insight/                   # Cœur produit
 │  │  ├─ MarketReadingCard.tsx   # Orchestrateur couches 1 + 2

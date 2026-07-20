@@ -14,10 +14,10 @@ interface LivePriceProps {
 }
 
 const TONE_CLASS: Record<'bull' | 'bear' | 'neutral' | 'warn', string> = {
-  bull: 'text-emerald-600 dark:text-emerald-400',
-  bear: 'text-red-600 dark:text-red-400',
+  bull: 'text-sentinel-bull',
+  bear: 'text-sentinel-bear',
   neutral: 'text-muted-foreground',
-  warn: 'text-amber-600 dark:text-amber-400',
+  warn: 'text-sentinel-warn',
 };
 
 /**

@@ -46,8 +46,8 @@ type ReadingFmt = ReturnType<typeof useReadingFormatters>;
  */
 
 function directionTone(direction: ZoneLifecycle['direction']): string {
-  if (direction === 'bullish') return 'text-emerald-600 dark:text-emerald-500';
-  if (direction === 'bearish') return 'text-rose-600 dark:text-rose-500';
+  if (direction === 'bullish') return 'text-sentinel-bull';
+  if (direction === 'bearish') return 'text-sentinel-bear';
   return 'text-muted-foreground';
 }
 
@@ -235,7 +235,7 @@ export function ZoneLifecycleCard({
                 className={cn(
                   'rounded-full px-2 py-0.5 text-xs font-semibold',
                   eff.effective
-                    ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400'
+                    ? 'bg-sentinel-bull/15 text-sentinel-bull'
                     : 'bg-muted text-muted-foreground line-through decoration-1',
                 )}
                 title={eff.title}
@@ -265,7 +265,7 @@ export function ZoneLifecycleCard({
             className={cn(
               'inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium',
               rel?.position === 'inside'
-                ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400'
+                ? 'bg-sentinel-warn/15 text-sentinel-warn'
                 : 'bg-muted text-muted-foreground',
             )}
           >
@@ -294,7 +294,7 @@ export function ZoneLifecycleCard({
             aria-label={t('fill.aria')}
           >
             <div
-              className="h-full rounded-full bg-amber-500"
+              className="h-full rounded-full bg-sentinel-warn"
               style={{ width: `${Math.round(frac * 100)}%` }}
             />
           </div>
