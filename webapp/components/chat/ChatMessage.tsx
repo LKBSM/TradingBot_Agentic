@@ -54,7 +54,7 @@ export function ChatMessage({
         data-chat-role={role}
         className="chat-msg-in flex w-full justify-end gap-2.5"
       >
-        <div className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-tr-sm border border-[hsl(35_92%_55%/0.30)] bg-[hsl(35_92%_55%/0.14)] px-3.5 py-2.5 text-sm leading-relaxed text-foreground">
+        <div className="max-w-[85%] whitespace-pre-wrap break-words rounded-2xl rounded-tr-sm border border-[hsl(35_92%_55%/0.30)] bg-[hsl(35_92%_55%/0.14)] px-3.5 py-2.5 text-sm leading-relaxed text-foreground">
           {text}
         </div>
         <div
@@ -77,7 +77,7 @@ export function ChatMessage({
         <span className="px-0.5 text-xs font-medium text-muted-foreground">
           M.I.A Agent
         </span>
-        <div className="max-w-[88%] rounded-2xl rounded-tl-sm border border-border bg-muted/60 px-3.5 py-2.5 text-sm leading-relaxed text-foreground">
+        <div className="max-w-[88%] min-w-0 break-words rounded-2xl rounded-tl-sm border border-border bg-muted/60 px-3.5 py-2.5 text-sm leading-relaxed text-foreground">
           {renderMarkdown(text)}
         </div>
 

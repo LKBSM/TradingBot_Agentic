@@ -142,6 +142,10 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   viewportFit: 'cover',
+  // When the on-screen keyboard opens, resize the layout viewport (not just the
+  // visual one) so `svh`/percentage heights shrink and a bottom-pinned input
+  // (mobile chat) stays visible above the keyboard instead of being covered.
+  interactiveWidget: 'resizes-content',
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#ffffff' },
     { media: '(prefers-color-scheme: dark)', color: '#0a0f1c' },

@@ -33,7 +33,7 @@ function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
       nodes.push(
         <code
           key={key}
-          className="rounded bg-foreground/10 px-1 py-0.5 font-mono text-[0.85em]"
+          className="break-words rounded bg-foreground/10 px-1 py-0.5 font-mono text-[0.85em]"
         >
           {part.slice(1, -1)}
         </code>,
@@ -69,13 +69,15 @@ export function renderMarkdown(input: string): React.ReactNode {
   let para: string[] = [];
   let bullets: string[] = [];
   let ordered: string[] = [];
+  // Non-null while inside a ``` fenced code block.
+  let code: string[] | null = null;
   let blockId = 0;
 
   const flushPara = () => {
     if (para.length === 0) return;
     const id = `p-${blockId++}`;
     blocks.push(
-      <p key={id} className="whitespace-pre-wrap [&:not(:first-child)]:mt-2">
+      <p key={id} className="whitespace-pre-wrap break-words [&:not(:first-child)]:mt-2">
         {para.map((line, i) => (
           <React.Fragment key={`${id}-l-${i}`}>
             {i > 0 && <br />}
@@ -119,7 +121,39 @@ export function renderMarkdown(input: string): React.ReactNode {
     ordered = [];
   };
 
+  const flushCode = () => {
+    if (code === null) return;
+    const id = `code-${blockId++}`;
+    blocks.push(
+      <pre
+        key={id}
+        className="overflow-x-auto rounded-md bg-foreground/10 p-2 text-[0.85em] [&:not(:first-child)]:mt-2"
+      >
+        <code className="font-mono">{code.join('\n')}</code>
+      </pre>,
+    );
+    code = null;
+  };
+
   for (const line of lines) {
+    // Fenced code block: ``` toggles in/out. Inside a fence, lines are captured
+    // verbatim (no inline/list parsing) and rendered in a horizontally
+    // scrollable <pre> so a wide snippet never widens the bubble.
+    if (line.trim().startsWith('```')) {
+      if (code === null) {
+        flushPara();
+        flushBullets();
+        flushOrdered();
+        code = [];
+      } else {
+        flushCode();
+      }
+      continue;
+    }
+    if (code !== null) {
+      code.push(line);
+      continue;
+    }
     if (line.trim() === '') {
       flushPara();
       flushBullets();
@@ -148,6 +182,7 @@ export function renderMarkdown(input: string): React.ReactNode {
   flushPara();
   flushBullets();
   flushOrdered();
+  flushCode();
 
   return <>{blocks}</>;
 }
