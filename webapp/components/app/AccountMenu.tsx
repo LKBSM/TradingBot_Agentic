@@ -48,6 +48,13 @@ export function AccountMenu() {
   async function onLogout() {
     setOpen(false);
     await logout();
+    // Invalidate the Next.js Router Cache BEFORE navigating: the cookie is now
+    // cleared, but cached authenticated RSC entries for the protected routes
+    // (/app, /compte, /abonnement …) could still be served to a now-logged-out
+    // user. This is the inverse of the first-login fix (see LoginForm) —
+    // refresh() drops those stale entries so the next protected visit is
+    // re-evaluated against the absent session.
+    router.refresh();
     router.push(lh('/'));
   }
 
