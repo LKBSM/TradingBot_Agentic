@@ -1,0 +1,518 @@
+/*
+ * Product-shell stylesheet — a VERBATIM port of the base-component and shell
+ * rules from docs/design/reference-desktop.html, so the reference markup
+ * transposes into React one-to-one (mission UI-1). Every rule is scoped under
+ * `.app-shell` so the generic class names (.card / .btn / .tf …) can never leak
+ * into or collide with the marketing surfaces or shadcn/ui. Colours come only
+ * from the literal design tokens (--bg / --panel / --acc …, see globals.css),
+ * so all four themes drive this file for free.
+ *
+ * Page CONTENT classes from the reference (.zone / .combo / .strow / .newsrow …)
+ * are intentionally NOT ported: the existing page components keep their own
+ * markup for this mission. This file carries the coquille + base primitives only.
+ */
+
+.app-shell {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  color: var(--txt);
+}
+
+/* ── numeric voice ─────────────────────────────────────────────────────── */
+.app-shell .mono {
+  font-family: var(--font-mono), 'JetBrains Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+.app-shell .up {
+  color: var(--bull);
+}
+.app-shell .dn {
+  color: var(--bear);
+}
+
+/* ── Card ──────────────────────────────────────────────────────────────── */
+.app-shell .card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 14px 15px;
+}
+.app-shell .card-h {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 11px;
+}
+.app-shell .card-h h3 {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.app-shell .card-h .badge2 {
+  margin-left: auto;
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--faint);
+  letter-spacing: 0.35px;
+  text-transform: uppercase;
+}
+.app-shell .card-h svg {
+  width: 13px;
+  height: 13px;
+  stroke: var(--acc);
+  fill: none;
+  stroke-width: 1.7;
+  opacity: 0.85;
+}
+
+/* ── Button (primary / acc / danger) ──────────────────────────────────── */
+.app-shell .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 8px 13px;
+  border-radius: var(--r-s);
+  border: 1px solid var(--line-2);
+  background: var(--panel-2);
+  color: var(--txt);
+  cursor: pointer;
+  font-family: inherit;
+  min-height: 38px;
+  transition: border-color 0.15s;
+}
+.app-shell .btn:hover {
+  border-color: var(--line-3);
+}
+.app-shell .btn:focus-visible {
+  outline: none;
+  border-color: var(--acc);
+  box-shadow: 0 0 0 3px var(--acc-dim);
+}
+.app-shell .btn.primary {
+  background: var(--acc);
+  border-color: var(--acc);
+  color: var(--acc-txt);
+  font-weight: 600;
+}
+.app-shell .btn.acc {
+  background: var(--acc-dim);
+  border-color: transparent;
+  color: var(--acc);
+}
+.app-shell .btn.danger {
+  color: var(--bear);
+  border-color: transparent;
+  background: transparent;
+}
+.app-shell .btn svg {
+  width: 13px;
+  height: 13px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
+}
+
+/* ── Search + Input ───────────────────────────────────────────────────── */
+.app-shell .search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--panel-2);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-s);
+  padding: 0 11px;
+  min-height: 36px;
+}
+.app-shell .search svg {
+  width: 14px;
+  height: 14px;
+  stroke: var(--faint);
+  fill: none;
+  stroke-width: 1.8;
+  flex-shrink: 0;
+}
+.app-shell .search input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--txt);
+  font-family: inherit;
+  font-size: 12.5px;
+  min-width: 0;
+}
+.app-shell .search input::placeholder {
+  color: var(--faint);
+}
+.app-shell .search:focus-within {
+  border-color: var(--acc);
+  box-shadow: 0 0 0 3px var(--acc-dim);
+}
+.app-shell .input {
+  width: 100%;
+  background: var(--panel-2);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-s);
+  color: var(--txt);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 10px 12px;
+  outline: none;
+  min-height: 42px;
+}
+.app-shell .input:focus {
+  border-color: var(--acc);
+  box-shadow: 0 0 0 3px var(--acc-dim);
+}
+.app-shell .flabel {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--dim);
+  margin: 0 0 6px;
+}
+
+/* ── Live dot + LiveBadge ─────────────────────────────────────────────── */
+.app-shell .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--bull);
+  position: relative;
+  flex-shrink: 0;
+}
+.app-shell .dot::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1px solid var(--bull);
+  opacity: 0.4;
+  animation: shell-pulse 2.4s ease-out infinite;
+}
+@keyframes shell-pulse {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1.85);
+    opacity: 0;
+  }
+}
+.app-shell .livebadge {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10.5px;
+  color: var(--dim);
+  background: var(--panel);
+  padding: 6px 10px;
+  border-radius: var(--r-s);
+  border: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+/* ── Early-access badge + inline legal ────────────────────────────────── */
+.app-shell .ea {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--liq);
+  background: color-mix(in srgb, var(--liq) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--liq) 25%, transparent);
+  padding: 3px 8px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.app-shell .ea .d {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--liq);
+}
+.app-shell .legal-inline {
+  font-size: 10px;
+  color: var(--faint);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.app-shell .legal-inline svg {
+  width: 11px;
+  height: 11px;
+  stroke: var(--faint);
+  fill: none;
+  stroke-width: 1.7;
+  flex-shrink: 0;
+}
+
+/* ── Tagx (bear / bull / neu) ─────────────────────────────────────────── */
+.app-shell .tagx {
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 7px;
+  border-radius: 5px;
+  flex-shrink: 0;
+}
+.app-shell .tagx.bear {
+  background: color-mix(in srgb, var(--bear) 13%, transparent);
+  color: var(--bear);
+}
+.app-shell .tagx.bull {
+  background: color-mix(in srgb, var(--bull) 13%, transparent);
+  color: var(--bull);
+}
+.app-shell .tagx.neu {
+  background: var(--panel-3);
+  color: var(--dim);
+}
+
+/* ── Timeframe pills (segmented) ──────────────────────────────────────── */
+.app-shell .tf {
+  text-align: center;
+  padding: 6px 0;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--dim);
+  cursor: pointer;
+  border: 1px solid transparent;
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  flex: 1;
+  background: transparent;
+}
+.app-shell .tf:hover {
+  background: var(--panel-2);
+}
+.app-shell .tf.on {
+  background: var(--acc-dim);
+  color: var(--acc);
+  border-color: color-mix(in srgb, var(--acc) 30%, transparent);
+}
+
+/* ── Chart layer chip ─────────────────────────────────────────────────── */
+.app-shell .layer {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  font-weight: 500;
+  padding: 4px 9px;
+  border-radius: 6px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  color: var(--dim);
+  cursor: pointer;
+}
+.app-shell .layer .sw {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+.app-shell .layer.off {
+  opacity: 0.4;
+}
+
+/* ── Freshbox ─────────────────────────────────────────────────────────── */
+.app-shell .freshbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 9px;
+  background: var(--panel-2);
+  border-radius: var(--r-s);
+  border: 1px solid var(--line);
+}
+.app-shell .freshbox .l1 {
+  font-size: 10.5px;
+  font-weight: 500;
+}
+.app-shell .freshbox .l2 {
+  font-size: 9px;
+  color: var(--faint);
+}
+
+/* ══ SHELL CHROME ═══════════════════════════════════════════════════════ */
+
+/* 3 columns on /app (rail · center · chat); 2 columns elsewhere (rail · center).
+   The `.no-chat` modifier drops the chat column. Height fills the viewport. */
+.app-shell {
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr) 338px;
+  height: 100vh;
+  height: 100dvh;
+}
+.app-shell.no-chat {
+  grid-template-columns: 232px minmax(0, 1fr);
+}
+
+/* ── Rail (left) ──────────────────────────────────────────────────────── */
+.app-shell .rail {
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+  padding: 13px 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+}
+.app-shell .rail-lbl {
+  font-size: 9.5px;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  color: var(--faint);
+  font-weight: 600;
+  padding: 0 5px 6px;
+}
+.app-shell .mkt {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 9px;
+  border-radius: var(--r-s);
+  cursor: pointer;
+  position: relative;
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: left;
+  font-family: inherit;
+}
+.app-shell .mkt:hover {
+  background: var(--panel-2);
+}
+.app-shell .mkt.on {
+  background: var(--panel-2);
+}
+.app-shell .mkt.on::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 7px;
+  bottom: 7px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--acc);
+}
+.app-shell .mkt .ic {
+  width: 21px;
+  height: 21px;
+  border-radius: 5px;
+  background: var(--panel-3);
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--dim);
+  flex-shrink: 0;
+}
+.app-shell .mkt.on .ic {
+  color: var(--acc);
+}
+.app-shell .mkt .nm {
+  font-size: 12.5px;
+  font-weight: 500;
+  flex: 1;
+}
+.app-shell .mkt .px {
+  font-size: 11px;
+  color: var(--dim);
+}
+.app-shell .nl {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 9px;
+  border-radius: var(--r-s);
+  color: var(--dim);
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 500;
+  text-decoration: none;
+}
+.app-shell .nl:hover {
+  background: var(--panel-2);
+  color: var(--txt);
+}
+.app-shell .nl.on {
+  background: var(--panel-2);
+  color: var(--txt);
+}
+.app-shell .nl svg {
+  width: 15px;
+  height: 15px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.7;
+}
+.app-shell .railfoot {
+  margin-top: auto;
+}
+
+/* ── Center column ────────────────────────────────────────────────────── */
+.app-shell .center {
+  overflow-y: auto;
+}
+.app-shell .apphead {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--line);
+}
+.app-shell .apphead h1 {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+.app-shell .price {
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+  transition: color 0.5s;
+}
+.app-shell .price.u2 {
+  color: var(--bull);
+}
+.app-shell .price.d2 {
+  color: var(--bear);
+}
+.app-shell .hsp {
+  flex: 1;
+}
+.app-shell .legalbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 18px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+
+/* ── Chat column (right, /app only) ───────────────────────────────────── */
+.app-shell .chatcol {
+  background: var(--panel);
+  border-left: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Reduced motion: static dot, instant price swap ───────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .app-shell .dot::after {
+    animation: none;
+    opacity: 0;
+  }
+  .app-shell .price {
+    transition: none;
+  }
+}

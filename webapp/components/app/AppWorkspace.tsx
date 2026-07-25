@@ -4,8 +4,6 @@ import * as React from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useChat } from '@/components/chat/ChatProvider';
-import { AppChatSidebar } from './AppChatSidebar';
-import { InstrumentSidebar } from './InstrumentSidebar';
 import { MobileWorkspace } from './MobileWorkspace';
 import { ReadingColumn } from './ReadingColumn';
 import { useStackedLayout } from '@/lib/use-media-query';
@@ -272,9 +270,7 @@ function WorkspaceInner({
 }
 
 function DesktopWorkspace({
-  combos,
   active,
-  onSelect,
   reading,
   isLoading,
   isRefreshing,
@@ -282,32 +278,21 @@ function DesktopWorkspace({
   onRetry,
   dataSource,
 }: WorkspaceViewProps) {
+  // Desktop /app now lives inside the product shell (components/shell): the shell
+  // owns the left rail (market + timeframe selector) and the right docked chat
+  // column, so the page renders only the reading in the shell's centre column.
+  // The mobile/tablet layout (<1280px) keeps its own sidebar + chat tabs.
   return (
-    <div className="container-wide py-6">
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[240px_minmax(0,1fr)_360px] xl:items-start">
-        <InstrumentSidebar
-          combos={combos}
-          active={active}
-          onSelect={onSelect}
-          activeCandleCloseTs={reading?.header.candle_close_ts ?? null}
-        />
-
-        <ReadingColumn
-          active={active}
-          reading={reading}
-          isLoading={isLoading}
-          isRefreshing={isRefreshing}
-          error={error}
-          onRetry={onRetry}
-          dataSource={dataSource}
-        />
-
-        {/* Sticky offset = 3.5rem header + 1rem gap; height leaves a 1rem bottom
-            gap so the rail never overflows behind the viewport edge. */}
-        <div className="xl:sticky xl:top-[4.5rem] xl:h-[calc(100vh-5.5rem)]">
-          <AppChatSidebar active={active} onSelectCombo={onSelect} />
-        </div>
-      </div>
+    <div className="px-5 py-6">
+      <ReadingColumn
+        active={active}
+        reading={reading}
+        isLoading={isLoading}
+        isRefreshing={isRefreshing}
+        error={error}
+        onRetry={onRetry}
+        dataSource={dataSource}
+      />
     </div>
   );
 }

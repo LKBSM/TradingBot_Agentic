@@ -1,17 +1,30 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('Theme + PWA — golden paths', () => {
-  test('theme menu switches the active data-theme on <html>', async ({ page }) => {
+  test('theme menu switches the active data-design on <html>', async ({ page }) => {
     await page.goto('/');
     const html = page.locator('html');
     // Pick Atelier (light) from the theme menu.
     await page.getByRole('button', { name: /Choisir le thème/i }).click();
     await page.getByRole('menuitemradio', { name: /Atelier/i }).click();
-    await expect(html).toHaveAttribute('data-theme', 'atelier');
+    await expect(html).toHaveAttribute('data-design', 'atelier');
     // Switch to Terminal (dark) and confirm the attribute flips.
     await page.getByRole('button', { name: /Choisir le thème/i }).click();
     await page.getByRole('menuitemradio', { name: /Terminal/i }).click();
-    await expect(html).toHaveAttribute('data-theme', 'terminal');
+    await expect(html).toHaveAttribute('data-design', 'terminal');
+  });
+
+  test('the chosen design persists across a reload (no flash back to default)', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    const html = page.locator('html');
+    await page.getByRole('button', { name: /Choisir le thème/i }).click();
+    await page.getByRole('menuitemradio', { name: /Atelier/i }).click();
+    await expect(html).toHaveAttribute('data-design', 'atelier');
+    // Reload: the pre-paint inline script must restore the persisted design.
+    await page.reload();
+    await expect(html).toHaveAttribute('data-design', 'atelier');
   });
 
   test('manifest is served with right content-type', async ({ request }) => {

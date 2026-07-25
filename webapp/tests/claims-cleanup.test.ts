@@ -71,6 +71,23 @@ describe('claims cleanup — chaînes interdites', () => {
 describe('claims cleanup — liens du footer', () => {
   const LOCALE_APP_DIR = path.join(WEBAPP_ROOT, 'app', '[locale]');
 
+  /**
+   * Route-group aware page resolver. A URL route maps to `<segs>/page.tsx` either
+   * directly under app/[locale] OR inside a transparent route group — a `(name)`
+   * directory (e.g. (site) / (product)) that never appears in the URL. Checks the
+   * direct path first, then every route-group child.
+   */
+  function pageExists(segs: string[]): boolean {
+    if (existsSync(path.join(LOCALE_APP_DIR, ...segs, 'page.tsx'))) return true;
+    for (const entry of readdirSync(LOCALE_APP_DIR)) {
+      if (!/^\(.+\)$/.test(entry)) continue;
+      if (existsSync(path.join(LOCALE_APP_DIR, entry, ...segs, 'page.tsx'))) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   /** id="…" déclarés dans les sections de la landing et les pages. */
   function collectAnchorIds(): Set<string> {
     const ids = new Set<string>();
@@ -98,11 +115,8 @@ describe('claims cleanup — liens du footer', () => {
 
       const [routePart = '', anchor] = href.split('#');
       const route = routePart.replace(/\/$/, ''); // '/' → ''
-      const pageFile =
-        route === ''
-          ? path.join(LOCALE_APP_DIR, 'page.tsx')
-          : path.join(LOCALE_APP_DIR, ...route.slice(1).split('/'), 'page.tsx');
-      expect(existsSync(pageFile), `page manquante pour ${href}`).toBe(true);
+      const segs = route === '' ? [] : route.slice(1).split('/');
+      expect(pageExists(segs), `page manquante pour ${href}`).toBe(true);
 
       if (anchor) {
         expect(anchorIds.has(anchor), `ancre #${anchor} introuvable`).toBe(

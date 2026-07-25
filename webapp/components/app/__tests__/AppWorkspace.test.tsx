@@ -1,9 +1,12 @@
-import { fireEvent, render, screen, waitFor, within } from '@/components/test-utils';
+import { fireEvent, render, screen, waitFor } from '@/components/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppWorkspace } from '../AppWorkspace';
 import { ChatProvider } from '@/components/chat/ChatProvider';
 import { ChartViewProvider } from '@/lib/chart/viewState';
 import { FIXTURE_XAU_M15 } from '@/lib/market-reading/fixtures';
+import type { Combo } from '@/lib/market-reading/store';
+
+const XAU_M15: Combo = { instrument: 'XAUUSD', timeframe: 'M15' };
 
 // Override only fetchMarketReading; keep the real error classes (ReadingPlaceholders
 // uses them for instanceof checks).
@@ -42,12 +45,15 @@ vi.mock('next/navigation', () => ({
 }));
 
 // These tests target the live (backend) path; force it explicitly since the
-// default source is now the local mocks.
-function renderApp() {
+// default source is now the local mocks. The desktop selector (rail) and chat
+// live in the product shell now, so the combo is seeded via `initialCombo`
+// (equivalent to the URL, which /app treats as the source of truth) rather than
+// by clicking a nav that the workspace no longer renders on desktop.
+function renderApp(initialCombo: Combo | null = null) {
   return render(
     <ChatProvider>
       <ChartViewProvider>
-        <AppWorkspace dataSource="live" />
+        <AppWorkspace dataSource="live" initialCombo={initialCombo} />
       </ChartViewProvider>
     </ChatProvider>,
   );
@@ -62,48 +68,20 @@ afterEach(() => {
 });
 
 describe('AppWorkspace — /app view', () => {
-  it('renders the three columns with the empty state before any selection', () => {
+  it('renders the empty state and fires no fetch before any selection', () => {
     renderApp();
-    // Left: instruments nav with both markets.
-    expect(
-      screen.getByRole('navigation', { name: /combinaisons disponibles/i }),
-    ).toBeInTheDocument();
-    expect(screen.getByText('Or (XAU/USD)')).toBeInTheDocument();
-    expect(screen.getByText('Euro / Dollar (EUR/USD)')).toBeInTheDocument();
-    // Centre: empty state.
+    // Centre: empty state. The instrument selector + chat are owned by the
+    // product shell now, so the workspace itself renders only the reading area.
     expect(
       screen.getByText(/Sélectionnez une combinaison à gauche/),
-    ).toBeInTheDocument();
-    // Right: chat sidebar, idle context.
-    expect(
-      screen.getByRole('complementary', { name: /assistant m.i.a agent/i }),
     ).toBeInTheDocument();
     // No fetch fired until a combo is selected.
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('lists the 6 V1 combos (2 instruments × 3 timeframes)', () => {
-    renderApp();
-    const nav = screen.getByRole('navigation', {
-      name: /combinaisons disponibles/i,
-    });
-    // Each combo row has a select button + a pin toggle. Count the select
-    // buttons only (the pin toggles carry an "Épingler/Désépingler" label).
-    const selectButtons = within(nav)
-      .getAllByRole('button')
-      .filter((b) => !/épingler/i.test(b.getAttribute('aria-label') ?? ''));
-    expect(selectButtons).toHaveLength(6);
-  });
-
-  it('fetches and renders the reading when a combo is selected', async () => {
+  it('fetches and renders the reading for the active combo', async () => {
     fetchMock.mockResolvedValue(FIXTURE_XAU_M15);
-    renderApp();
-
-    // Select XAUUSD · 15 minutes (first timeframe of the first market).
-    const nav = screen.getByRole('navigation', {
-      name: /combinaisons disponibles/i,
-    });
-    fireEvent.click(within(nav).getAllByRole('button')[0]!);
+    renderApp(XAU_M15);
 
     await waitFor(() =>
       expect(screen.getByText('Tendance haussière')).toBeInTheDocument(),
@@ -113,18 +91,11 @@ describe('AppWorkspace — /app view', () => {
       'M15',
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
     );
-    // Chat context now reflects the selected combo.
-    const chat = screen.getByRole('complementary', { name: /assistant m.i.a agent/i });
-    expect(within(chat).getByText(/Or \(XAU\/USD\) · 15 minutes/)).toBeInTheDocument();
   });
 
   it('shows a skeleton while the initial fetch is in flight', async () => {
     fetchMock.mockReturnValue(new Promise(() => {})); // never resolves
-    renderApp();
-    const nav = screen.getByRole('navigation', {
-      name: /combinaisons disponibles/i,
-    });
-    fireEvent.click(within(nav).getAllByRole('button')[0]!);
+    renderApp(XAU_M15);
 
     await waitFor(() =>
       expect(screen.getByTestId('reading-skeleton')).toBeInTheDocument(),
@@ -135,11 +106,7 @@ describe('AppWorkspace — /app view', () => {
     fetchMock.mockRejectedValue(
       new MarketReadingNotAvailableError('service not configured'),
     );
-    renderApp();
-    const nav = screen.getByRole('navigation', {
-      name: /combinaisons disponibles/i,
-    });
-    fireEvent.click(within(nav).getAllByRole('button')[0]!);
+    renderApp(XAU_M15);
 
     await waitFor(() =>
       expect(
@@ -153,11 +120,7 @@ describe('AppWorkspace — /app view', () => {
     fetchMock.mockRejectedValue(
       new MarketReadingValidationError('unsupported'),
     );
-    renderApp();
-    const nav = screen.getByRole('navigation', {
-      name: /combinaisons disponibles/i,
-    });
-    fireEvent.click(within(nav).getAllByRole('button')[0]!);
+    renderApp(XAU_M15);
 
     await waitFor(() =>
       expect(
@@ -173,11 +136,7 @@ describe('AppWorkspace — /app view', () => {
     fetchMock
       .mockRejectedValueOnce(new MarketReadingNotAvailableError('down'))
       .mockResolvedValueOnce(FIXTURE_XAU_M15);
-    renderApp();
-    const nav = screen.getByRole('navigation', {
-      name: /combinaisons disponibles/i,
-    });
-    fireEvent.click(within(nav).getAllByRole('button')[0]!);
+    renderApp(XAU_M15);
 
     const retry = await screen.findByRole('button', { name: /réessayer/i });
     fireEvent.click(retry);

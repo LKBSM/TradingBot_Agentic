@@ -787,6 +787,10 @@
     }
   },
   "app": {
+    "rail": {
+      "timeframe": "الإطار الزمني",
+      "space": "مساحة العمل"
+    },
     "header": {
       "brandAria": "MIA Markets — فضاء القراءة",
       "navApp": "التطبيق — فضاء القراءة",
