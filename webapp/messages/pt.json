@@ -787,6 +787,10 @@
     }
   },
   "app": {
+    "rail": {
+      "timeframe": "Período",
+      "space": "Espaço de trabalho"
+    },
     "header": {
       "brandAria": "MIA Markets — espaço de leitura",
       "navApp": "App — espaço de leitura",

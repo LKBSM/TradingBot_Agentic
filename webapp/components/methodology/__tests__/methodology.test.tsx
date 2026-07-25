@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { MethodologySection } from '../MethodologySection';
 import { ConceptCard } from '../ConceptCard';
 import { ScoreFormula } from '../ScoreFormula';
-import MethodologyPage from '@/app/[locale]/methodology/page';
+import MethodologyPage from '@/app/[locale]/(site)/methodology/page';
 import {
   SCORE_FORMULAS,
   SMC_CONCEPTS,

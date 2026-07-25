@@ -67,20 +67,35 @@ afterEach(() => {
 });
 
 describe('responsive layout — desktop (≥1280px / xl)', () => {
-  it('renders the three columns side by side, no tab bar', async () => {
-    // matchMedia(false) → the stacked-layout query does NOT match → 3 columns.
+  it('renders only the reading; the rail + chat are owned by the product shell', async () => {
+    // matchMedia(false) → the stacked-layout query does NOT match → desktop path.
+    fetchMock.mockResolvedValue(FIXTURE_XAU_M15);
     stubMatchMedia(false);
-    renderApp();
+    render(
+      <ChatProvider>
+        <ChartViewProvider>
+          <AppWorkspace
+            dataSource="live"
+            initialCombo={{ instrument: 'XAUUSD', timeframe: 'M15' }}
+          />
+        </ChartViewProvider>
+      </ChatProvider>,
+    );
 
-    // Instruments nav and chat sidebar both present at once (3-col).
-    expect(
-      screen.getByRole('navigation', { name: /combinaisons disponibles/i }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('complementary', { name: /assistant m.i.a agent/i }),
-    ).toBeInTheDocument();
-    // No mobile tab bar.
+    // The reading renders in the shell's centre column.
+    await waitFor(() =>
+      expect(screen.getByText('Tendance haussière')).toBeInTheDocument(),
+    );
+    // No mobile tab bar on desktop.
     expect(screen.queryAllByRole('tab')).toHaveLength(0);
+    // The instrument selector and chat are NO LONGER inside the workspace on
+    // desktop — the product shell (components/shell) owns them now.
+    expect(
+      screen.queryByRole('navigation', { name: /combinaisons disponibles/i }),
+    ).toBeNull();
+    expect(
+      screen.queryByRole('complementary', { name: /assistant m.i.a agent/i }),
+    ).toBeNull();
   });
 });
 

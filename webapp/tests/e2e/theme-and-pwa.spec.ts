@@ -14,6 +14,19 @@ test.describe('Theme + PWA — golden paths', () => {
     await expect(html).toHaveAttribute('data-design', 'terminal');
   });
 
+  test('the chosen design persists across a reload (no flash back to default)', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    const html = page.locator('html');
+    await page.getByRole('button', { name: /Choisir le thème/i }).click();
+    await page.getByRole('menuitemradio', { name: /Atelier/i }).click();
+    await expect(html).toHaveAttribute('data-design', 'atelier');
+    // Reload: the pre-paint inline script must restore the persisted design.
+    await page.reload();
+    await expect(html).toHaveAttribute('data-design', 'atelier');
+  });
+
   test('manifest is served with right content-type', async ({ request }) => {
     const res = await request.get('/manifest.webmanifest');
     expect(res.status()).toBe(200);

@@ -4,14 +4,8 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import '../globals.css';
-import { Nav } from '@/components/Nav';
-import { Footer } from '@/components/Footer';
-import { SkipLink } from '@/components/a11y/SkipLink';
-import { ChatPanel } from '@/components/chat/ChatPanel';
 import { ChatProvider } from '@/components/chat/ChatProvider';
 import { ChartViewProvider } from '@/lib/chart/viewState';
-import { CookieBanner } from '@/components/compliance/CookieBanner';
-import { JsonLd, softwareApplicationLd } from '@/components/seo/JsonLd';
 import { ThemeProvider } from '@/components/theme-provider';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { AuthProvider } from '@/lib/auth/store';
@@ -185,8 +179,15 @@ export default async function LocaleLayout({
       suppressHydrationWarning
     >
       <body className="flex min-h-screen flex-col bg-background font-sans antialiased">
-        <SkipLink />
-        <JsonLd data={softwareApplicationLd} />
+        {/*
+         * The locale layout now carries ONLY the cross-cutting providers. The
+         * page chrome is chosen by route group: (site) renders the marketing
+         * Nav/Footer + floating ChatPanel; (product) renders the terminal shell
+         * (rail · center · docked chat). Both groups are nested here, so they
+         * share these providers — the chat context in particular is shared so the
+         * product shell's docked chat and the marketing floating chat are one and
+         * the same conversation state.
+         */}
         <ThemeProvider
           // `data-design="<id>"` on <html> — a single clean attribute (no class
           // pollution, no flash for non-default themes; next-themes injects a
@@ -206,17 +207,7 @@ export default async function LocaleLayout({
                       here — above /app AND /zones — so an action taken on one
                       surface (e.g. masking a zone from /zones) is reflected on the
                       chart. Display-only; it never holds or touches detection. */}
-                  <ChartViewProvider>
-                    <Nav />
-                    {/* flex-1 fills the space between the sticky header and the
-                        footer without a hard-coded height guess. */}
-                    <main id="main" className="flex-1">
-                      {children}
-                    </main>
-                    <Footer />
-                    <ChatPanel />
-                    <CookieBanner />
-                  </ChartViewProvider>
+                  <ChartViewProvider>{children}</ChartViewProvider>
                 </ChatProvider>
               </AuthProvider>
             </TooltipProvider>
