@@ -3,8 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { ArrowRight, ChevronDown, Eye, EyeOff } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useReadingFormatters } from '@/lib/market-reading/use-reading-formatters';
 import type { Candle, FVGStatus, OBStatus } from '@/types/market-reading';
@@ -26,30 +25,23 @@ type ZonesT = ReturnType<typeof useTranslations>;
 type ReadingFmt = ReturnType<typeof useReadingFormatters>;
 
 /**
- * One zone card — "compact d'abord, riche en dépliant". Every line is a
- * present/past FACT read off the engine payload:
+ * One zone card — UI-2 terminal reference (`.zone`). Every line is a present/past
+ * FACT read off the engine payload, restyled onto the shared design tokens:
  *
- * COMPACT (scannable): type/direction/status header · band · relation to the
- * current price
- * (inside / gap to the nearest edge) · age since formation (bars counted on the
- * real candle window, exact duration otherwise) with the boolean "testée" /
- * "pénétrée" fact · the FVG fill bar (real engine fill_level only).
+ *   · `.ztop` — a `.tagx` type/direction tag (OB↑ / OB↓ / FVG↑ / FVG↓, bull/bear
+ *     by direction), the price band as a mono `.rng`, and a `.zstate` badge
+ *     (Actif / « Comblé N % » / Mitigé). A mitigated/filled card gets `.mitig`.
+ *   · `.tl` — the lifecycle timeline (only engine-recorded events; `mitigated_at`
+ *     is the SINGLE FIRST contact — never a « ×N »: the engine tracks no per-test
+ *     history).
+ *   · `.fillbar` — FVG partial fill, from the real `fill_level` price only.
+ *   · `.znarr` — a factual sentence assembled from the same engine facts.
+ *   · `.zfoot` — « Analyser » (deep-link carrying the REAL engine id) and
+ *     « Masquer / Afficher » (hide-by-id through the shared view state).
  *
- * EXPANDED (chevron): the lifecycle timeline (only engine-recorded events;
- * `mitigated_at` is the FIRST contact — labelled as such, never a "×N": the
- * engine tracks no per-test history) · geometric overlaps with zones of the
- * other timeframes (pure interval intersection, phrased as geometry — never
- * "confluence"/"renforcée", mission §0).
- *
- * Actions: "Analyser la zone" (deep-link carrying the REAL engine id — the /app
- * chart re-validates it through the zone-id lock) and "Masquer / Afficher".
+ * The chevron unfolds ONLY the cross-timeframe geometric overlaps (a secondary
+ * fact); the lifecycle itself is always visible, as in the reference.
  */
-
-function directionTone(direction: ZoneLifecycle['direction']): string {
-  if (direction === 'bullish') return 'text-sentinel-bull';
-  if (direction === 'bearish') return 'text-sentinel-bear';
-  return 'text-muted-foreground';
-}
 
 function statusLabel(zone: ZoneLifecycle, fmt: ReadingFmt): string {
   return zone.kind === 'ob'
@@ -57,46 +49,55 @@ function statusLabel(zone: ZoneLifecycle, fmt: ReadingFmt): string {
     : fmt.fvgStatus(zone.status as FVGStatus);
 }
 
+/** `.tagx` tone by direction — bull / bear / neutral (never a decorative hue). */
+function tagTone(direction: ZoneLifecycle['direction']): 'bull' | 'bear' | 'neu' {
+  if (direction === 'bullish') return 'bull';
+  if (direction === 'bearish') return 'bear';
+  return 'neu';
+}
+
+/** "OB ↑" / "FVG ↓" — kind + a direction arrow (nothing when direction is null). */
+function tagLabel(zone: ZoneLifecycle): string {
+  const kind = zone.kind === 'ob' ? 'OB' : 'FVG';
+  const arrow = zone.direction === 'bullish' ? ' ↑' : zone.direction === 'bearish' ? ' ↓' : '';
+  return `${kind}${arrow}`;
+}
+
 /**
- * Descriptive « still there? » fact — NOT a prediction of future effect and
- * INDEPENDENT of whether the zone was tested. It states the present structural
- * state in the reader's own vocabulary: an OB is « invalidée » only once price
- * has CLOSED through it, an FVG « comblée » only once fully filled. A mitigated
- * OB (tapped but holding) and a partially-filled FVG are therefore still
- * « non invalidée » / « non comblée » — clearing the « mitigé » confusion
- * without ever implying the zone WILL produce an effect.
+ * The `.zstate` badge — the zone's present lifecycle state, one of three tones:
+ *   · Actif (`zs-a`)          — OB/FVG still active
+ *   · « Comblé N % » (`zs-f`) — a partially-filled FVG (fraction from fill_level)
+ *   · Mitigé (`zs-m`)         — a mitigated OB / fully-filled FVG (card = .mitig)
+ * Descriptive only: it states what the engine records, never a future effect.
  */
-function effectiveness(zone: ZoneLifecycle, t: ZonesT): {
-  effective: boolean;
-  label: string;
-  title: string;
-} {
-  if (zone.kind === 'ob') {
-    const spent = zone.status === 'invalidated';
-    return spent
-      ? {
-          effective: false,
-          label: t('effectiveness.obSpentLabel'),
-          title: t('effectiveness.obSpentTitle'),
-        }
-      : {
-          effective: true,
-          label: t('effectiveness.obHeldLabel'),
-          title: t('effectiveness.obHeldTitle'),
-        };
+function zoneState(
+  zone: ZoneLifecycle,
+  frac: number | null,
+  t: ZonesT,
+): { cls: 'zs-a' | 'zs-f' | 'zs-m'; label: string; mitig: boolean } {
+  if (zone.isMitigated && zone.status === 'partially_filled' && frac != null) {
+    return { cls: 'zs-f', label: t('state.filledPct', { pct: Math.round(frac * 100) }), mitig: false };
   }
-  const spent = zone.status === 'filled';
-  return spent
-    ? {
-        effective: false,
-        label: t('effectiveness.fvgSpentLabel'),
-        title: t('effectiveness.fvgSpentTitle'),
-      }
-    : {
-        effective: true,
-        label: t('effectiveness.fvgHeldLabel'),
-        title: t('effectiveness.fvgHeldTitle'),
-      };
+  if (zone.isMitigated) {
+    return { cls: 'zs-m', label: t('state.mitigated'), mitig: true };
+  }
+  return { cls: 'zs-a', label: t('state.active'), mitig: false };
+}
+
+/**
+ * Present-tense « still there? » fact — NOT a prediction and independent of
+ * whether the zone was tested: an OB is « invalidée » only once price CLOSED
+ * through it, an FVG « comblée » only once fully filled.
+ */
+function effectiveness(zone: ZoneLifecycle, t: ZonesT): { effective: boolean; label: string } {
+  if (zone.kind === 'ob') {
+    return zone.status === 'invalidated'
+      ? { effective: false, label: t('effectiveness.obSpentLabel') }
+      : { effective: true, label: t('effectiveness.obHeldLabel') };
+  }
+  return zone.status === 'filled'
+    ? { effective: false, label: t('effectiveness.fvgSpentLabel') }
+    : { effective: true, label: t('effectiveness.fvgHeldLabel') };
 }
 
 /** "prix actuellement dans la zone" / "à 3,40 pts au-dessus du prix" — fact only. */
@@ -116,8 +117,7 @@ function relationLabel(
 
 /**
  * "formée il y a 26 bougies (6 h 30)" — bars from the REAL candle window when it
- * reaches back to the formation, exact duration alone otherwise. Subject is
- * "la zone" (feminine) for both kinds. Never an estimated bar count.
+ * reaches back to the formation, exact duration alone otherwise. Never estimated.
  */
 function ageLabel(
   zone: ZoneLifecycle,
@@ -185,7 +185,8 @@ export function ZoneLifecycleCard({
     fvgTested: t('timeline.fvgTested'),
     filled: t('timeline.filled'),
     partial: t('timeline.partial'),
-    active: t('timeline.active'),
+    // The live/ongoing step reads « Maintenant » (reference), not the panel label.
+    active: t('timeline.currentStep'),
   };
   const durationLabels: DurationLabels = {
     underMinute: t('duration.underMinute'),
@@ -196,150 +197,92 @@ export function ZoneLifecycleCard({
 
   const events = buildTimeline(zone, timelineLabels);
   const frac = zone.status === 'partially_filled' ? fillFraction(zone) : null;
-  const kindLabel = zone.kind === 'ob' ? t('kind.ob') : t('kind.fvg');
 
   const rel = priceRelation(zone, referencePrice);
   const relation = relationLabel(rel, instrument, t, fmt);
   const age = ageLabel(zone, candles, new Date(), t, durationLabels);
   const tested = testedLabel(zone, t);
   const overlaps = findOverlaps(zone, siblingZones);
+  const state = zoneState(zone, frac, t);
+  const eff = effectiveness(zone, t);
+
+  // The live "Maintenant" sub-line: « prix dedans » when the price sits inside the
+  // band, otherwise the current engine status word (both present-tense facts).
+  const nowSub = rel?.position === 'inside' ? t('timeline.priceInside') : statusLabel(zone, fmt);
+
+  // Secondary `.znarr` facts (age·tested / fill / relation), each present only
+  // when its engine backing exists — joined by « · » with no dangling separator.
+  const secondaryFacts = [
+    tested ?? undefined,
+    frac != null
+      ? t('fill.label', { price: fmt.price(zone.fillLevel as number, instrument), pct: Math.round(frac * 100) })
+      : undefined,
+    relation ?? undefined,
+  ].filter((s): s is string => Boolean(s));
 
   return (
-    <article
-      className={cn(
-        'flex flex-col gap-3 rounded-lg border border-border/70 bg-card p-4 shadow-sm transition-opacity',
-        isHidden && 'opacity-60',
-      )}
-    >
-      {/* Header: type · direction · state */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-foreground">
-            {zone.kind === 'ob' ? 'OB' : 'FVG'}
-          </span>
-          <span className="text-sm font-semibold text-foreground">{kindLabel}</span>
-          {zone.direction && (
-            <span className={cn('text-sm font-medium', directionTone(zone.direction))}>
-              {fmt.direction(zone.direction)}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-1.5">
-          {/* Present-tense « still there? » fact (non invalidée / non comblée),
-              so « mitigé » is never mistaken for « dead ». Descriptive, never a
-              prediction of future effect. */}
-          {(() => {
-            const eff = effectiveness(zone, t);
-            return (
-              <span
-                className={cn(
-                  'rounded-full px-2 py-0.5 text-xs font-semibold',
-                  eff.effective
-                    ? 'bg-sentinel-bull/15 text-sentinel-bull'
-                    : 'bg-muted text-muted-foreground line-through decoration-1',
-                )}
-                title={eff.title}
-              >
-                {eff.label}
-              </span>
-            );
-          })()}
-          <span className="rounded-full border border-border/70 px-2 py-0.5 text-xs font-medium text-muted-foreground">
-            {statusLabel(zone, fmt)}
-          </span>
-        </div>
+    <article className={cn('zone', state.mitig && 'mitig', isHidden && 'opacity-60')}>
+      {/* Header: type/direction tag · price band · state badge */}
+      <div className="ztop">
+        <span className={cn('tagx', tagTone(zone.direction))}>{tagLabel(zone)}</span>
+        <span className="rng">{fmt.band(zone.levelLow, zone.levelHigh, instrument)}</span>
+        <span className="hsp" />
+        <span className={cn('zstate', state.cls)}>{state.label}</span>
       </div>
 
-      {/* Band — the zone's price range only. No quality/importance score is
-          shown (the range itself lets the reader judge the zone's width). */}
-      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm">
-        <span className="font-medium tabular-nums text-foreground">
-          {fmt.band(zone.levelLow, zone.levelHigh, instrument)}
-        </span>
-      </div>
+      {/* Lifecycle timeline — only engine-recorded events (single « Testé »). */}
+      <ZoneTimeline events={events} nowSubLabel={nowSub} />
 
-      {/* Relation to the current price — accent 1 (amber only when inside). */}
-      {relation && (
-        <div>
-          <span
-            className={cn(
-              'inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium',
-              rel?.position === 'inside'
-                ? 'bg-sentinel-warn/15 text-sentinel-warn'
-                : 'bg-muted text-muted-foreground',
-            )}
-          >
-            {relation}
-          </span>
-        </div>
-      )}
-
-      {/* Age + boolean interaction fact (no count exists — never "×N"). */}
-      {age && (
-        <p className="text-xs text-muted-foreground">
-          {age}
-          {tested ? ` · ${tested}` : ''}
-        </p>
-      )}
-
-      {/* FVG fill bar — accent 2, derived from the real fill_level price. */}
+      {/* FVG partial fill — from the real fill_level price only. */}
       {frac != null && (
-        <div className="flex flex-col gap-1">
-          <div
-            className="h-2 w-full overflow-hidden rounded-full bg-muted"
-            role="progressbar"
-            aria-valuenow={Math.round(frac * 100)}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-label={t('fill.aria')}
-          >
-            <div
-              className="h-full rounded-full bg-sentinel-warn"
-              style={{ width: `${Math.round(frac * 100)}%` }}
-            />
-          </div>
-          <span className="text-xs text-muted-foreground">
-            {t('fill.label', {
-              price: fmt.price(zone.fillLevel as number, instrument),
-              pct: Math.round(frac * 100),
-            })}
-          </span>
+        <div
+          className="fillbar"
+          role="progressbar"
+          aria-valuenow={Math.round(frac * 100)}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={t('fill.aria')}
+        >
+          <span style={{ width: `${Math.round(frac * 100)}%` }} />
         </div>
       )}
 
-      {/* Expand / collapse the detailed life of the zone. */}
-      <button
-        type="button"
-        onClick={() => setExpanded((e) => !e)}
-        aria-expanded={expanded}
-        aria-controls={detailsId}
-        className="flex items-center gap-1 self-start text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <ChevronDown
-          aria-hidden
-          className={cn('h-3.5 w-3.5 transition-transform', expanded && 'rotate-180')}
-        />
-        {expanded ? t('details.collapse') : t('details.expand')}
-      </button>
+      {/* Factual narration — assembled from the same engine facts, no prediction. */}
+      <p className="znarr">
+        {age && <b>{age}</b>}
+        {secondaryFacts.length > 0 ? `${age ? ' · ' : ''}${secondaryFacts.join(' · ')}` : ''}
+        {age || secondaryFacts.length > 0 ? ' · ' : ''}
+        <b>{eff.label}</b>.
+      </p>
 
-      {expanded && (
-        <div id={detailsId} className="flex flex-col gap-3 border-t border-border/60 pt-3">
-          {/* Lifecycle timeline — only engine-recorded events. */}
-          <ZoneTimeline events={events} />
-
-          {/* Geometric overlaps with the other timeframes' zones (facts only). */}
-          {overlaps.length > 0 && (
-            <div className="flex flex-col gap-1">
-              <span className="text-xs uppercase tracking-wide text-muted-foreground">
+      {/* Cross-timeframe geometric overlaps (secondary fact), unfolded on demand. */}
+      {overlaps.length > 0 && (
+        <>
+          <button
+            type="button"
+            onClick={() => setExpanded((e) => !e)}
+            aria-expanded={expanded}
+            aria-controls={detailsId}
+            className="mb-2 flex items-center gap-1 self-start text-[10.5px] font-medium text-[var(--dim)] transition-colors hover:text-[var(--txt)]"
+          >
+            <ChevronDown
+              aria-hidden
+              className={cn('h-3 w-3 transition-transform', expanded && 'rotate-180')}
+            />
+            {expanded ? t('details.collapse') : t('details.expand')}
+          </button>
+          {expanded && (
+            <div id={detailsId} className="mb-2.5 flex flex-col gap-1">
+              <span className="text-[9px] font-semibold uppercase tracking-wide text-[var(--faint)]">
                 {t('overlaps.heading')}
               </span>
-              <p className="text-[11px] leading-snug text-muted-foreground/80">
+              <p className="text-[10.5px] leading-snug text-[var(--faint)]">
                 {t('overlaps.description')}
               </p>
               <ul className="flex flex-col gap-0.5">
                 {overlaps.map((o) => (
                   // Sibling ids are only unique WITHIN a timeframe — prefix it.
-                  <li key={`${o.timeframe}-${o.id}`} className="text-xs text-muted-foreground">
+                  <li key={`${o.timeframe}-${o.id}`} className="text-[11px] text-[var(--dim)]">
                     {t('overlaps.line', {
                       kind: o.kind === 'ob' ? t('kind.obShort') : t('kind.fvgShort'),
                       tf: o.timeframe,
@@ -351,35 +294,22 @@ export function ZoneLifecycleCard({
               </ul>
             </div>
           )}
-        </div>
+        </>
       )}
 
       {/* Actions */}
-      <div className="mt-1 flex flex-wrap items-center gap-2">
-        <Button asChild size="sm" variant="outline">
-          <Link href={appHref} aria-label={t('actions.analyzeAria')}>
-            {t('actions.analyze')}
-            <ArrowRight className="ml-1 h-4 w-4" aria-hidden />
-          </Link>
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
+      <div className="zfoot">
+        <Link href={appHref} className="btn acc" aria-label={t('actions.analyzeAria')}>
+          {t('actions.analyze')}
+        </Link>
+        <button
+          type="button"
+          className="btn"
           onClick={() => onToggleHide(zone.id)}
           aria-pressed={isHidden}
         >
-          {isHidden ? (
-            <>
-              <Eye className="mr-1 h-4 w-4" aria-hidden />
-              {t('actions.show')}
-            </>
-          ) : (
-            <>
-              <EyeOff className="mr-1 h-4 w-4" aria-hidden />
-              {t('actions.hide')}
-            </>
-          )}
-        </Button>
+          {isHidden ? t('actions.show') : t('actions.hide')}
+        </button>
       </div>
     </article>
   );

@@ -393,7 +393,16 @@
         "not_found": "Estratégia não encontrada.",
         "storage_failed": "Não foi possível escrever no armazenamento local (quota ou navegação privada). Nada foi guardado."
       }
-    }
+    },
+    "page": {
+      "title": "Scanner",
+      "subtitle": "As tuas condições, presentes e factuais — resultados transparentes, sem pontuação."
+    },
+    "livebadge": "Alinhado com os fechos",
+    "activeStrategy": "A minha estratégia — condições ativas",
+    "note": "Paleta fechada, no presente. Qualquer condição preditiva é recusada — nada de «vai ressaltar», sem alvo.",
+    "resultsMeta": "{count} combos · {when} · sem classificação",
+    "unavailable": "Indisponível — sem leitura recente para este combo. Nada é inventado."
   },
   "reading": {
     "card": {
@@ -760,8 +769,8 @@
     "manage": "Gerir a minha subscrição",
     "choosePlanTitle": "Escolher um plano",
     "noPlans": "Nenhum plano está disponível de momento.",
-      "planMonthly": "Mensal — 49,99 $ / mês",
-      "planAnnual": "Anual — 39,99 $ / mês (faturado anualmente)",
+    "planMonthly": "Mensal — 49,99 $ / mês",
+    "planAnnual": "Anual — 39,99 $ / mês (faturado anualmente)",
     "subscribe": "Subscrever",
     "errorLoad": "Não foi possível carregar a subscrição.",
     "errorCheckout": "Não foi possível iniciar o pagamento.",
@@ -835,7 +844,34 @@
       "language": "Idioma",
       "site": "O site",
       "honesty": "Honestidade",
-      "logout": "Terminar sessão"
+      "logout": "Terminar sessão",
+      "title": "Definições",
+      "subtitle": "A tua conta, a tua aparência, os teus dados.",
+      "sectionAccount": "Conta",
+      "emailRow": "Endereço de e-mail",
+      "edit": "Editar",
+      "editCancel": "Cancelar",
+      "passwordRow": "Palavra-passe",
+      "passwordMasked": "••••••••",
+      "comingSoon": "em breve",
+      "sessionRow": "Sessão",
+      "sessionValue": "Ligado neste dispositivo",
+      "sectionAppearance": "Aparência",
+      "appearanceBadge": "Aplica-se de imediato · memorizado",
+      "sectionSubscription": "Subscrição",
+      "planRow": "Plano atual",
+      "planValue": "Nenhum cartão necessário durante o acesso antecipado.",
+      "earlyAccessBadge": "Acesso antecipado",
+      "sectionLegal": "Legal e dados",
+      "docsRow": "Documentos",
+      "docsValue": "Termos de utilização · Política de privacidade",
+      "consult": "Consultar",
+      "exportRow": "Os meus dados",
+      "exportValue": "Exportar uma cópia dos teus dados pessoais.",
+      "export": "Exportar",
+      "deleteRow": "Eliminar a conta",
+      "deleteValue": "Apagar definitivamente a tua conta e dados.",
+      "delete": "Eliminar"
     },
     "chat": {
       "asideAria": "Assistente M.I.A Agent",
@@ -887,6 +923,44 @@
       "liqShowIntactOnly": "Mostrar apenas as bolsas de liquidez intactas",
       "marketClosed": "Mercado fechado",
       "marketClosedTitle": "O mercado está fechado no momento: o gráfico mostra a última vela fechada e não reflete uma cotação ao vivo."
+    },
+    "layers": {
+      "ob": "OB",
+      "fvg": "FVG",
+      "liquidity": "Liquidez",
+      "breaks": "BOS/CHOCH",
+      "mitigated": "Mitigadas"
+    },
+    "desktop": {
+      "live": "Ao vivo",
+      "earlyAccess": "Acesso antecipado",
+      "legalInline": "Leitura algorítmica educativa · nem sinal nem conselho.",
+      "narratedTitle": "Leitura narrada",
+      "narratedBadge": "Ancorada ao motor",
+      "narratedFooter": "Cada nível citado corresponde a uma saída real do motor.",
+      "structureFooter": "Cada estrutura é descrita no presente, nunca projetada.",
+      "reg": {
+        "trend": "Tendência",
+        "volatility": "Volatilidade",
+        "maturity": "Maturidade",
+        "alignment": "Alinhamento",
+        "lastEvent": "Último evento",
+        "density": "Densidade",
+        "disagreement": "Divergência"
+      },
+      "liq": {
+        "badge": "Onde · que estado",
+        "empty": "Nenhuma bolsa de liquidez detetada para este combo.",
+        "intactDesc": "Intacta — nunca varrida.",
+        "sweptDesc": "Pavio além, fecho de volta. Ainda aguenta.",
+        "brokenDesc": "Fecho nítido além. Cedeu."
+      },
+      "news": {
+        "title": "Notícias — volatilidade a caminho",
+        "badge": "Sem direção",
+        "empty": "Nenhum evento a caminho para este combo.",
+        "scheduledOn": "Volatilidade programada em {currency}"
+      }
     }
   },
   "samples": {
@@ -1295,7 +1369,9 @@
       "active": "Acompanhamento em curso",
       "now": "atualmente",
       "noDate": "—",
-      "firstContact": "primeiro contacto"
+      "firstContact": "primeiro contacto",
+      "currentStep": "Agora",
+      "priceInside": "preço dentro"
     },
     "overlaps": {
       "heading": "Sobreposições com outros timeframes",
@@ -1307,6 +1383,14 @@
       "analyzeAria": "Analisar esta zona no gráfico",
       "show": "Mostrar no gráfico",
       "hide": "Ocultar do gráfico"
+    },
+    "badge": {
+      "count": "{count, plural, one {# zona} other {# zonas}}"
+    },
+    "state": {
+      "active": "Ativo",
+      "mitigated": "Mitigada",
+      "filledPct": "Preenchida {pct} %"
     }
   },
   "appearance": {
@@ -1322,5 +1406,11 @@
       "schema": "Monocromático técnico, quase sem cor.",
       "ardoise": "Escuro quente, sereno, com cantos mais suaves."
     }
+  },
+  "connexion": {
+    "title": "Iniciar sessão",
+    "subtitle": "Retoma a tua leitura onde a deixaste.",
+    "or": "ou",
+    "trust": "Ferramenta educativa de leitura de mercado. Nem sinal de trading nem aconselhamento de investimento. 18+."
   }
 }

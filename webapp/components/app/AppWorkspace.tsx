@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useChat } from '@/components/chat/ChatProvider';
 import { MobileWorkspace } from './MobileWorkspace';
-import { ReadingColumn } from './ReadingColumn';
+import { DesktopReading } from './DesktopReading';
 import { useStackedLayout } from '@/lib/use-media-query';
 import { useMarketReading, type ReadingSource } from '@/lib/market-reading/hooks';
 import {
@@ -281,18 +281,17 @@ function DesktopWorkspace({
   // Desktop /app now lives inside the product shell (components/shell): the shell
   // owns the left rail (market + timeframe selector) and the right docked chat
   // column, so the page renders only the reading in the shell's centre column.
-  // The mobile/tablet layout (<1280px) keeps its own sidebar + chat tabs.
+  // The reference flat-grid layout (mission UI-2) owns its own padding, so no
+  // wrapper padding here. The mobile/tablet layout (<1280px) keeps ReadingColumn.
   return (
-    <div className="px-5 py-6">
-      <ReadingColumn
-        active={active}
-        reading={reading}
-        isLoading={isLoading}
-        isRefreshing={isRefreshing}
-        error={error}
-        onRetry={onRetry}
-        dataSource={dataSource}
-      />
-    </div>
+    <DesktopReading
+      active={active}
+      reading={reading}
+      isLoading={isLoading}
+      isRefreshing={isRefreshing}
+      error={error}
+      onRetry={onRetry}
+      dataSource={dataSource}
+    />
   );
 }

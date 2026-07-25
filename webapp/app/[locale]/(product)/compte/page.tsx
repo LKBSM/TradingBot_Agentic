@@ -24,9 +24,7 @@ export default function AccountPage() {
   // view its own account. AccountPanel still guards its own null/probe states.
   return (
     <SubscriptionGate>
-      <div className="container-prose py-12 sm:py-16">
-        <AccountPanel />
-      </div>
+      <AccountPanel />
     </SubscriptionGate>
   );
 }

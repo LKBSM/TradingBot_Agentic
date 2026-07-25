@@ -38,9 +38,7 @@ export default async function ScannerPage({
       paywallTitle={t('scanner.paywallTitle')}
       paywallDescription={t('scanner.paywallDescription')}
     >
-      <div className="container-wide py-8">
-        <ScannerWorkspace locale={locale} />
-      </div>
+      <ScannerWorkspace locale={locale} />
     </SubscriptionGate>
   );
 }

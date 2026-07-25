@@ -77,10 +77,12 @@ function renderResults(props: Partial<React.ComponentProps<typeof ScanResults>> 
 }
 
 describe('ScanResults — freshness & refresh', () => {
-  it('shows an honest "Dernière analyse" freshness indicator reflecting real age', () => {
+  it('shows an honest freshness indicator reflecting real age (and no ranking)', () => {
     renderResults();
     const fresh = screen.getByTestId('scan-freshness');
-    expect(fresh.textContent).toMatch(/Dernière analyse : il y a 3 min/);
+    expect(fresh.textContent).toMatch(/il y a 3 min/);
+    // The no-ranking promise is made visible in the results meta.
+    expect(fresh.textContent).toMatch(/aucun classement/);
   });
 
   it('shows "Analyse en cours…" while a scan is running', () => {
