@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MIA Markets — iPhone & iPad · Terminal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0f1c;--panel:#0e1524;--panel-2:#121a2c;--panel-3:#182238;
+  --line:rgba(255,255,255,.07);--line-2:rgba(255,255,255,.11);--line-3:rgba(255,255,255,.17);
+  --txt:#e7ecf6;--dim:#8b94ab;--faint:#59617a;
+  --acc:#4d9de0;--acc-dim:rgba(77,157,224,.14);--acc-txt:#06131f;
+  --bull:#37b98c;--bear:#dd6b7a;--liq:#d6a24a;
+  --ob:rgba(221,107,122,.11);--ob-l:rgba(221,107,122,.5);
+  --fvg:rgba(126,120,210,.13);--fvg-l:rgba(126,120,210,.5);
+  --r:10px;--r-s:8px;
+}
+body[data-design="ardoise"]{--bg:#1a1613;--panel:#211c17;--panel-2:#28221c;--panel-3:#322a22;--line:rgba(255,248,238,.08);--line-2:rgba(255,248,238,.13);--line-3:rgba(255,248,238,.2);--txt:#efe9e0;--dim:#a99f92;--faint:#736b60;--acc:#d8b878;--acc-dim:rgba(216,184,120,.14);--acc-txt:#1a1613;--bull:#6bbf9a;--bear:#d98b7a;--liq:#d8b878;--ob:rgba(217,139,122,.11);--ob-l:rgba(217,139,122,.45);--fvg:rgba(160,140,200,.13);--fvg-l:rgba(160,140,200,.5)}
+body[data-design="schema"]{--bg:#14161a;--panel:#181b20;--panel-2:#1e2228;--panel-3:#262b33;--line:rgba(255,255,255,.09);--line-2:rgba(255,255,255,.14);--line-3:rgba(255,255,255,.22);--txt:#dfe3e8;--dim:#8b9099;--faint:#565b64;--acc:#5fb3c4;--acc-dim:rgba(95,179,196,.13);--acc-txt:#0c1418;--bull:#c3c8cf;--bear:#7c828b;--liq:#5fb3c4;--ob:rgba(255,255,255,.05);--ob-l:rgba(255,255,255,.3);--fvg:rgba(255,255,255,.04);--fvg-l:rgba(255,255,255,.22)}
+body[data-design="atelier"]{--bg:#f6f4ee;--panel:#fbfaf6;--panel-2:#efece3;--panel-3:#e6e1d4;--line:rgba(38,40,44,.1);--line-2:rgba(38,40,44,.16);--line-3:rgba(38,40,44,.24);--txt:#26282c;--dim:#6a6b66;--faint:#9b9a91;--acc:#1d6f6a;--acc-dim:rgba(29,111,106,.12);--acc-txt:#f6f4ee;--bull:#2f8f6b;--bear:#b4564f;--liq:#b07d1c;--ob:rgba(180,86,79,.1);--ob-l:rgba(180,86,79,.45);--fvg:rgba(120,110,180,.12);--fvg-l:rgba(120,110,180,.45)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#060910;color:var(--txt);font-family:'Inter',system-ui,sans-serif;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh}
+.mono{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+.up{color:var(--bull)}.dn{color:var(--bear)}
+a{cursor:pointer}
+
+.ctrl{position:sticky;top:0;z-index:80;display:flex;align-items:center;gap:10px;padding:11px 20px;background:var(--panel);border-bottom:1px solid var(--line-2);flex-wrap:wrap}
+.ctrl .lbl{font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--faint);font-weight:600}
+.pill{font-size:12px;font-weight:500;padding:6px 13px;border-radius:20px;border:1px solid var(--line-2);background:transparent;color:var(--dim);cursor:pointer;font-family:inherit;transition:all .15s}
+.pill:hover{border-color:var(--line-3);color:var(--txt)}
+.pill.on{background:var(--acc-dim);border-color:var(--acc);color:var(--acc)}
+.ctrl .sp{flex:1}
+.ctrl .note{font-size:10.5px;color:var(--faint)}
+
+.stage{display:flex;justify-content:center;padding:26px 16px 50px}
+.frame{background:var(--bg);border:1px solid var(--line-3);border-radius:28px;overflow:hidden;box-shadow:0 30px 90px rgba(0,0,0,.55);position:relative;display:none;flex-direction:column}
+body[data-device="phone"] #devPhone{display:flex}
+body[data-device="tab"] #devTab{display:flex}
+#devPhone{width:390px;height:min(824px,88vh)}
+#devTab{width:834px;height:min(1080px,88vh)}
+.homebar{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);width:120px;height:4px;border-radius:2px;background:var(--line-3);z-index:40;pointer-events:none}
+
+/* composants */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:13px 14px}
+.card-h{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.card-h h3{font-size:12.5px;font-weight:600}
+.card-h .badge2{margin-left:auto;font-size:8.5px;font-weight:500;color:var(--faint);letter-spacing:.35px;text-transform:uppercase}
+.card-h svg{width:13px;height:13px;stroke:var(--acc);fill:none;stroke-width:1.7;opacity:.85}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:500;padding:10px 14px;border-radius:var(--r-s);border:1px solid var(--line-2);background:var(--panel-2);color:var(--txt);cursor:pointer;font-family:inherit;min-height:44px}
+.btn.primary{background:var(--acc);border-color:var(--acc);color:var(--acc-txt);font-weight:600}
+.btn.acc{background:var(--acc-dim);border-color:transparent;color:var(--acc)}
+.btn.danger{color:var(--bear);border-color:transparent;background:transparent}
+.btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8}
+.input{width:100%;background:var(--panel-2);border:1px solid var(--line-2);border-radius:var(--r-s);color:var(--txt);font-family:inherit;font-size:15px;padding:12px 13px;outline:none;min-height:48px}
+.input:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-dim)}
+.flabel{display:block;font-size:12px;font-weight:500;color:var(--dim);margin:0 0 6px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--bull);position:relative;flex-shrink:0}
+.dot::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:1px solid var(--bull);opacity:.4;animation:pulse 2.4s ease-out infinite}
+@keyframes pulse{0%{transform:scale(.6);opacity:.5}100%{transform:scale(1.85);opacity:0}}
+.ea{display:inline-flex;align-items:center;gap:6px;font-size:9px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:var(--liq);background:color-mix(in srgb,var(--liq) 10%,transparent);border:1px solid color-mix(in srgb,var(--liq) 25%,transparent);padding:3px 8px;border-radius:20px;white-space:nowrap}
+.ea .d{width:5px;height:5px;border-radius:50%;background:var(--liq)}
+.tagx{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;padding:3px 7px;border-radius:5px;flex-shrink:0}
+.tagx.bear{background:color-mix(in srgb,var(--bear) 13%,transparent);color:var(--bear)}
+.tagx.bull{background:color-mix(in srgb,var(--bull) 13%,transparent);color:var(--bull)}
+.tagx.neu{background:var(--panel-3);color:var(--dim)}
+.seg{display:flex;background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r-s);padding:3px;gap:3px}
+.seg .sg{flex:1;text-align:center;padding:9px 0;border-radius:6px;font-size:12.5px;font-weight:500;color:var(--dim);cursor:pointer;min-height:38px;display:flex;align-items:center;justify-content:center;gap:6px}
+.seg .sg.on{background:var(--panel);color:var(--txt);border:1px solid var(--line-2)}
+.seg.tfseg .sg{font-family:'JetBrains Mono',monospace}
+.seg .sg.on.acc2{color:var(--acc);background:var(--acc-dim);border-color:color-mix(in srgb,var(--acc) 30%,transparent)}
+.chartbox{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:4px}
+.chartbox svg{display:block;width:100%;height:auto}
+.narr{font-size:13px;line-height:1.6;color:color-mix(in srgb,var(--txt) 88%,var(--dim))}
+.narr b{color:var(--txt);font-weight:600}
+.narr .hl{color:var(--acc);font-weight:500;font-family:'JetBrains Mono',monospace}
+.narrfoot{margin-top:9px;padding-top:8px;border-top:1px solid var(--line);font-size:9.5px;color:var(--faint);display:flex;align-items:center;gap:6px}
+.narrfoot svg{width:11px;height:11px;stroke:var(--faint);fill:none;stroke-width:1.7}
+.reggrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.reggrid.r3{grid-template-columns:1fr 1fr 1fr}
+.reg{background:var(--panel-2);border-radius:var(--r-s);padding:8px 10px}
+.reg .k{font-size:8.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.4px;font-weight:600;margin-bottom:2px}
+.reg .v{font-size:12px;font-weight:500}
+.strow,.liqrow,.newsrow{display:flex;align-items:center;gap:9px;padding:8px 2px;border-bottom:1px solid var(--line)}
+.strow:last-child,.liqrow:last-child,.newsrow:last-child{border-bottom:none}
+.strow .d{font-size:12px;color:var(--dim);flex:1}
+.strow .t{font-size:10px;color:var(--faint);font-family:'JetBrains Mono',monospace}
+.lst{width:56px;flex-shrink:0}
+.lline{height:0;border-top:2px solid var(--liq);margin-bottom:3px}
+.lline.swept{border-top-style:dashed;opacity:.55}
+.lline.broken{border-top-style:dashed;border-color:var(--faint);opacity:.5}
+.lst .s{font-size:8.5px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:var(--liq)}
+.lst.broken .s{color:var(--faint)}
+.liqrow .lv{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:500;width:64px}
+.liqrow .dd{font-size:11.5px;color:var(--dim);flex:1}
+.nic{width:28px;height:28px;border-radius:7px;background:var(--panel-2);border:1px solid var(--line);display:grid;place-items:center;flex-shrink:0}
+.nic svg{width:13px;height:13px;stroke:var(--dim);fill:none;stroke-width:1.7}
+.newsrow .ev{font-size:12px;font-weight:500}
+.newsrow .mk3{font-size:10px;color:var(--faint)}
+.newsrow .main3{flex:1;min-width:0}
+.impact{font-size:8.5px;font-weight:600;letter-spacing:.3px;text-transform:uppercase;padding:2px 6px;border-radius:4px;flex-shrink:0}
+.impact.high{background:color-mix(in srgb,var(--liq) 13%,transparent);color:var(--liq)}
+.newsrow .when{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);text-align:right;white-space:nowrap}
+.livebadge{display:flex;align-items:center;gap:7px;font-size:10px;color:var(--dim);background:var(--panel);padding:6px 10px;border-radius:var(--r-s);border:1px solid var(--line);white-space:nowrap}
+.condpal{display:flex;flex-wrap:wrap;gap:8px}
+.cond{font-size:12.5px;font-weight:500;padding:10px 14px;border-radius:22px;border:1px solid var(--line-2);background:var(--panel);color:var(--dim);cursor:pointer;min-height:44px;display:inline-flex;align-items:center}
+.cond.on{background:var(--acc-dim);border-color:color-mix(in srgb,var(--acc) 40%,transparent);color:var(--acc)}
+.cond.on::before{content:"✓ ";font-weight:700;margin-right:3px}
+.scannote{font-size:11px;color:var(--faint);display:flex;align-items:flex-start;gap:7px;margin:10px 0 16px}
+.scannote svg{width:12px;height:12px;stroke:var(--faint);fill:none;stroke-width:1.7;flex-shrink:0;margin-top:2px}
+.combo{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:13px 14px}
+.combo.na{opacity:.5}
+.combo .t1{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.combo .t1 .nm{font-size:13.5px;font-weight:600}
+.combo .t1 .tf2{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--faint)}
+.cl{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:3px 0}
+.cl .mk2{width:16px;height:16px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;font-size:9px;font-weight:700}
+.cl.yes .mk2{background:color-mix(in srgb,var(--bull) 18%,transparent);color:var(--bull)}
+.cl.no .mk2{border:1px solid var(--line-2)}
+.cl.yes{color:var(--txt)}.cl.no{color:var(--faint)}
+.ctx2{font-size:11.5px;color:var(--dim);background:var(--panel-2);border-radius:var(--r-s);padding:8px 10px;line-height:1.45;margin:9px 0;border-left:2px solid var(--line-2)}
+.ctx2 b{color:var(--txt)}
+.natag{font-size:11px;color:var(--faint);font-style:italic;padding:4px 0}
+.zone{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:13px 15px;margin-bottom:11px}
+.zone.mitig{opacity:.6}
+.ztop{display:flex;align-items:center;gap:9px;margin-bottom:11px;flex-wrap:wrap}
+.ztop .rng{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:500}
+.ztop .hsp{flex:1}
+.zstate{font-size:9px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;padding:3px 9px;border-radius:20px}
+.zs-a{background:var(--acc-dim);color:var(--acc)}
+.zs-f{background:color-mix(in srgb,var(--fvg-l) 40%,transparent);color:var(--txt)}
+.zs-m{background:var(--panel-3);color:var(--faint)}
+.tl{display:flex;margin:2px 0 10px}
+.step{display:flex;flex-direction:column;align-items:center;flex:1;position:relative}
+.step::after{content:"";position:absolute;top:5px;left:50%;width:100%;height:2px;background:var(--line-2)}
+.step:last-child::after{display:none}
+.step .d3{width:11px;height:11px;border-radius:50%;background:var(--panel-3);border:2px solid var(--line-3);z-index:1;margin-bottom:6px}
+.step.done .d3{background:var(--acc);border-color:var(--acc)}
+.step.now .d3{background:var(--bull);border-color:var(--bull);box-shadow:0 0 0 4px color-mix(in srgb,var(--bull) 15%,transparent)}
+.step .sl{font-size:10px;font-weight:500}
+.step .st3{font-family:'JetBrains Mono',monospace;font-size:8.5px;color:var(--faint);margin-top:1px}
+.fillbar{height:6px;border-radius:3px;background:var(--panel-3);overflow:hidden;margin:0 0 9px}
+.fillbar span{display:block;height:100%;background:var(--fvg-l);border-radius:3px}
+.znarr{font-size:11.5px;color:var(--dim);line-height:1.5;margin-bottom:10px}
+.znarr b{color:var(--txt)}
+.zfoot{display:flex;gap:8px;flex-wrap:wrap}
+.setrow{display:flex;align-items:center;gap:12px;padding:12px 2px;border-bottom:1px solid var(--line)}
+.setrow:last-child{border-bottom:none}
+.setrow .sk{flex:1}
+.setrow .sk b{font-size:13px;font-weight:600;display:block}
+.setrow .sk span{font-size:11px;color:var(--dim)}
+.themegrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.themetile{display:flex;align-items:center;gap:10px;padding:12px;border-radius:var(--r-s);border:1px solid var(--line-2);cursor:pointer;background:var(--panel-2);position:relative;min-height:56px}
+.themetile.on{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-dim)}
+.sw3{display:flex;gap:3px;flex-shrink:0}
+.sw3 i{width:13px;height:24px;border-radius:4px;display:block}
+.themetile .tt b{font-size:12.5px;font-weight:600;display:block}
+.themetile .tt span{font-size:10px;color:var(--dim)}
+.chk{position:absolute;top:7px;right:9px;font-size:8.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--acc);opacity:0}
+.themetile.on .chk{opacity:1}
+.planbadge{font-size:10px;font-weight:600;letter-spacing:.3px;text-transform:uppercase;padding:3px 9px;border-radius:20px;background:var(--acc-dim);color:var(--acc)}
+
+/* chat commun */
+.chead{padding:11px 14px;border-bottom:1px solid var(--line)}
+.chead .r1{display:flex;align-items:center;gap:9px}
+.av{width:28px;height:28px;border-radius:var(--r-s);background:var(--acc-dim);border:1px solid color-mix(in srgb,var(--acc) 30%,transparent);display:grid;place-items:center;flex-shrink:0}
+.av svg{width:15px;height:15px;stroke:var(--acc);fill:none;stroke-width:1.8}
+.chead .nm{font-size:13px;font-weight:600;line-height:1.2}
+.chead .ctx{font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--faint)}
+.chead .sp{flex:1}
+.ib{width:40px;height:40px;border-radius:var(--r-s);background:transparent;border:1px solid transparent;display:grid;place-items:center;cursor:pointer}
+.ib:hover{background:var(--panel-2);border-color:var(--line)}
+.ib svg{width:16px;height:16px;stroke:var(--dim);fill:none;stroke-width:1.7}
+.cdisc{display:flex;align-items:center;gap:6px;margin-top:8px;padding:6px 9px;background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r-s)}
+.cdisc svg{width:11px;height:11px;stroke:var(--liq);fill:none;stroke-width:1.8;flex-shrink:0}
+.cdisc span{font-size:9.5px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cbody{flex:1;overflow-y:auto;padding:13px 14px;display:flex;flex-direction:column;gap:11px}
+.msg{max-width:90%}
+.msg.u{align-self:flex-end}
+.who{font-size:8.5px;color:var(--faint);font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin:0 3px 3px}
+.msg.u .who{text-align:right}
+.bub{border-radius:12px;padding:10px 13px;font-size:13px;line-height:1.5}
+.msg.a .bub{background:var(--panel-2);border:1px solid var(--line)}
+.msg.u .bub{background:var(--acc-dim);border:1px solid color-mix(in srgb,var(--acc) 28%,transparent)}
+.bub b{font-weight:600}
+.bub .lvl{font-family:'JetBrains Mono',monospace;color:var(--acc);font-weight:500}
+.refuse{border-left:2px solid var(--liq)!important;border-radius:0 12px 12px 0!important}
+.refuse .rf{display:flex;align-items:center;gap:5px;font-size:9px;font-weight:600;color:var(--liq);letter-spacing:.3px;text-transform:uppercase;margin-bottom:4px}
+.refuse .rf svg{width:10px;height:10px;stroke:var(--liq);fill:none;stroke-width:1.8}
+.cin{padding:10px 14px 12px;border-top:1px solid var(--line);background:var(--panel)}
+.inbox{display:flex;align-items:center;gap:8px;background:var(--panel-2);border:1px solid var(--line-2);border-radius:12px;padding:4px 4px 4px 13px}
+.inbox:focus-within{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-dim)}
+.inbox input{flex:1;background:none;border:none;outline:none;color:var(--txt);font-family:inherit;font-size:14px;padding:10px 0}
+.send{width:40px;height:40px;border-radius:9px;background:var(--acc);border:none;display:grid;place-items:center;cursor:pointer;flex-shrink:0}
+.send svg{width:16px;height:16px;stroke:var(--acc-txt);fill:none;stroke-width:2.2}
+
+/* ============ PHONE ============ */
+#devPhone .pv{display:none;flex-direction:column;flex:1;min-height:0}
+#devPhone .pv.on{display:flex}
+.phead{display:flex;align-items:center;gap:10px;padding:12px 14px 10px}
+.phead .mark{width:26px;height:26px;border-radius:7px;background:var(--panel-3);border:1px solid var(--line-3);display:grid;place-items:center;color:var(--acc);font-weight:600;font-size:12px}
+.phead h1{font-size:15px;font-weight:600;flex:1}
+.pscroll{flex:1;overflow-y:auto;min-height:0}
+.ppad{padding:0 14px 16px;display:flex;flex-direction:column;gap:11px}
+.pricebar{display:flex;align-items:baseline;gap:10px;padding:2px 14px 10px}
+.pricebar .price{font-size:26px;font-weight:600;letter-spacing:-.5px;transition:color .5s}
+.price.u2{color:var(--bull)}.price.d2{color:var(--bear)}
+.pricebar .chg{font-size:13px;font-weight:600}
+.pricebar .hsp{flex:1}
+.plegal{display:flex;align-items:center;gap:8px;padding:0 14px 10px}
+.plegal .lt{font-size:9.5px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bnav{display:flex;border-top:1px solid var(--line);background:var(--panel);padding:6px 6px 14px}
+.bnav .bi{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0;border-radius:10px;color:var(--faint);cursor:pointer;min-height:52px;justify-content:center}
+.bnav .bi svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7}
+.bnav .bi span{font-size:9.5px;font-weight:500}
+.bnav .bi.on{color:var(--acc);background:var(--acc-dim)}
+#devPhone[data-pg="login"] .bnav{display:none}
+.plogin{position:relative;flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:24px 18px}
+.plogin canvas{position:absolute;inset:0;width:100%;height:100%}
+.plogin::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,var(--bg) 0%,transparent 24%,transparent 76%,var(--bg) 100%);pointer-events:none}
+.plogin::after{content:"";position:absolute;inset:0;background:radial-gradient(340px 300px at 50% 44%,var(--acc-dim),transparent 70%);pointer-events:none;opacity:.7}
+.lcard{position:relative;z-index:2;width:100%;background:var(--panel);border:1px solid var(--line-2);border-radius:16px;padding:22px 20px 18px;box-shadow:0 20px 60px rgba(0,0,0,.45)}
+.brandline{display:flex;align-items:center;gap:9px;margin-bottom:16px}
+.brandline b{font-size:14px;font-weight:600}
+.brandline .bl-sp{flex:1}
+.lcard h1{font-size:19px;font-weight:600}
+.lcard .lsub{font-size:12.5px;color:var(--dim);margin:4px 0 18px}
+.fgroup{margin-bottom:13px}
+.frow{display:flex;align-items:center;justify-content:space-between;margin:2px 0 16px}
+.frow label{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--dim)}
+.frow input[type=checkbox]{accent-color:var(--acc);width:16px;height:16px}
+.frow a{font-size:12px;color:var(--acc);text-decoration:none}
+.lcard .btn.primary{width:100%;min-height:48px;font-size:14px}
+.mkacct{text-align:center;font-size:12.5px;color:var(--dim);margin-top:14px}
+.mkacct a{color:var(--acc);text-decoration:none;font-weight:500}
+.trust{margin-top:14px;padding:9px 11px;background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r-s);display:flex;gap:8px;align-items:flex-start}
+.trust svg{width:13px;height:13px;stroke:var(--liq);fill:none;stroke-width:1.7;flex-shrink:0;margin-top:1px}
+.trust p{font-size:10px;color:var(--dim);line-height:1.5}
+.under-links{position:relative;z-index:2;text-align:center;font-size:10px;color:var(--faint);margin-top:10px}
+.under-links a{color:var(--faint);text-decoration:none;margin:0 7px}
+
+/* ============ TABLET ============ */
+#devTab{flex-direction:row}
+#devTab .pv{display:none;flex-direction:column;flex:1;min-height:0}
+#devTab .pv.on{display:flex}
+.trail{width:64px;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:14px 0;gap:8px}
+.trail .mark{width:30px;height:30px;border-radius:8px;background:var(--panel-3);border:1px solid var(--line-3);display:grid;place-items:center;color:var(--acc);font-weight:600;font-size:13px;margin-bottom:8px}
+.trail .ti{width:46px;height:46px;border-radius:11px;display:grid;place-items:center;color:var(--faint);cursor:pointer}
+.trail .ti svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7}
+.trail .ti.on{color:var(--acc);background:var(--acc-dim)}
+.trail .tsp{flex:1}
+#devTab .tmain{flex:1;display:flex;flex-direction:column;min-height:0;position:relative}
+#devTab[data-pg="login"] .trail{display:none}
+.ttop{display:flex;align-items:center;gap:11px;padding:11px 16px;border-bottom:1px solid var(--line)}
+.ttop .seg{width:230px}
+.ttop .price{font-size:19px;font-weight:600;letter-spacing:-.4px;transition:color .5s}
+.ttop .hsp{flex:1}
+.tscroll{flex:1;overflow-y:auto;min-height:0}
+.tpad{padding:14px 16px 20px}
+.tpanels{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:11px}
+.tpanels .widet{grid-column:1/-1}
+.tlogin{position:relative;flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:40px}
+.tlogin canvas{position:absolute;inset:0;width:100%;height:100%}
+.tlogin::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,var(--bg) 0%,transparent 22%,transparent 78%,var(--bg) 100%);pointer-events:none}
+.tlogin::after{content:"";position:absolute;inset:0;background:radial-gradient(520px 380px at 50% 42%,var(--acc-dim),transparent 70%);pointer-events:none;opacity:.7}
+.tlogin .lcard{width:392px}
+.fab{position:absolute;bottom:20px;right:20px;z-index:30;display:flex;align-items:center;gap:8px;background:var(--acc);color:var(--acc-txt);border:none;border-radius:26px;padding:0 18px;height:52px;font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer;box-shadow:0 12px 34px rgba(0,0,0,.45)}
+.fab svg{width:18px;height:18px;stroke:var(--acc-txt);fill:none;stroke-width:1.9}
+#devTab[data-pg="login"] .fab{display:none}
+.miapanel{position:absolute;top:0;right:0;bottom:0;width:340px;background:var(--panel);border-left:1px solid var(--line-2);display:flex;flex-direction:column;z-index:35;transform:translateX(105%);transition:transform .28s cubic-bezier(.2,.7,.3,1);box-shadow:-18px 0 50px rgba(0,0,0,.4)}
+#devTab.chatopen .miapanel{transform:none}
+@media (prefers-reduced-motion: reduce){.dot::after{animation:none;opacity:0}*{transition:none!important}.miapanel{transition:none}}
+</style>
+</head>
+<body data-device="phone" data-design="terminal">
+
+<div class="ctrl">
+  <span class="lbl">Appareil</span>
+  <button class="pill dv on" data-d="phone">iPhone · 390</button>
+  <button class="pill dv" data-d="tab">iPad · 834</button>
+  <span class="lbl" style="margin-left:8px">Aller à</span>
+  <button class="pill gp" data-g="login">Connexion</button>
+  <button class="pill gp" data-g="app">App</button>
+  <span class="sp"></span>
+  <span class="note">La navigation à l'intérieur est réelle — bottom nav, rail, M.I.A.</span>
+</div>
+
+<div class="stage">
+
+  <!-- ==================== IPHONE ==================== -->
+  <div class="frame" id="devPhone" data-pg="login">
+    <!-- LOGIN -->
+    <div class="pv on" data-v="login">
+      <div class="plogin">
+        <canvas class="fxc"></canvas>
+        <div style="position:relative;z-index:2;width:100%">
+          <div class="lcard">
+            <div class="brandline"><div class="phead mark" style="padding:0"><span style="display:grid;place-items:center;width:26px;height:26px">M</span></div><b>MIA Markets</b><span class="bl-sp"></span><span class="ea"><span class="d"></span>Accès anticipé</span></div>
+            <h1>Connexion</h1>
+            <p class="lsub">Reprends ta lecture là où tu l'as laissée.</p>
+            <div class="fgroup"><label class="flabel">Adresse courriel</label><input class="input" type="email" placeholder="toi@exemple.com"></div>
+            <div class="fgroup"><label class="flabel">Mot de passe</label><input class="input" type="password" placeholder="••••••••••"></div>
+            <div class="frow"><label><input type="checkbox" checked>Rester connecté</label><a>Mot de passe oublié ?</a></div>
+            <button class="btn primary js-login">Se connecter</button>
+            <p class="mkacct">Pas encore de compte ? <a>Créer un compte</a></p>
+            <div class="trust"><svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 4-3.4 7.4-8 9-4.6-1.6-8-5-8-9V7l8-4z"/></svg><p>Outil éducatif. Ni signal de trading, ni conseil en investissement. 18+.</p></div>
+          </div>
+          <div class="under-links"><a>Conditions</a>·<a>Confidentialité</a></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- APP -->
+    <div class="pv" data-v="app">
+      <div class="phead"><div class="mark">M</div><h1>Or · XAU/USD</h1><div class="livebadge"><span class="dot"></span><span class="mono js-live">il y a 3 s</span></div></div>
+      <div class="pricebar"><span class="price mono js-px">2 392,35</span><span class="chg dn mono">−0,42 %</span><span class="hsp"></span><span class="ea"><span class="d"></span>Accès anticipé</span></div>
+      <div class="plegal"><span class="lt">Lecture algorithmique éducative · ni signal ni conseil.</span></div>
+      <div style="padding:0 14px 10px;display:flex;flex-direction:column;gap:8px">
+        <div class="seg"><div class="sg on">Or</div><div class="sg">EUR / USD</div></div>
+        <div class="seg tfseg"><div class="sg">M15</div><div class="sg on acc2">H1</div><div class="sg">H4</div></div>
+      </div>
+      <div class="pscroll"><div class="ppad">
+        <div class="chartbox"><svg class="js-chart" viewBox="0 0 362 210" preserveAspectRatio="none"></svg></div>
+        <div class="card">
+          <div class="card-h"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg><h3>Lecture narrée</h3><span class="badge2">Ancrée au moteur</span></div>
+          <p class="narr"><b>CHOCH baissier confirmé</b> à <span class="hl">14:00</span>. Prix <b>actuellement dans un OB baissier</b> (<span class="hl">2 398,40 – 2 401,10</span>). Liquidité achat <b>intacte</b> au-dessus de <span class="hl">2 404,20</span> ; celle à <span class="hl">2 389,60</span> <b>balayée</b>. <b>3 TF alignés baissier</b>.</p>
+          <div class="narrfoot"><svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>Chaque niveau vient du moteur.</div>
+        </div>
+        <div class="card">
+          <div class="card-h"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M21 3v6h-6"/></svg><h3>Régime de marché</h3></div>
+          <div class="reggrid">
+            <div class="reg"><div class="k">Tendance</div><div class="v">Baissière</div></div>
+            <div class="reg"><div class="k">Volatilité</div><div class="v">Normale</div></div>
+            <div class="reg"><div class="k">Alignement</div><div class="v mono">3/3 TF ↓</div></div>
+            <div class="reg"><div class="k">Dernier évén.</div><div class="v">CHOCH ↓ 14:00</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-h"><svg viewBox="0 0 24 24"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg><h3>Structure détectée</h3></div>
+          <div class="strow"><span class="tagx bear">CHOCH ↓</span><span class="d">Confirmé</span><span class="t">14:00</span></div>
+          <div class="strow"><span class="tagx bear">BOS ↓</span><span class="d">Cassure baissière</span><span class="t">11:00</span></div>
+          <div class="strow"><span class="tagx neu">OB</span><span class="d">Prix dans la zone</span><span class="t">actif</span></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><svg viewBox="0 0 24 24"><path d="M4 8h16M4 12h16M4 16h16"/></svg><h3>Poches de liquidité</h3></div>
+          <div class="liqrow"><div class="lst"><div class="lline"></div><div class="s">Intacte</div></div><span class="lv">2 404,20</span><span class="dd">Jamais touchée.</span></div>
+          <div class="liqrow"><div class="lst"><div class="lline swept"></div><div class="s">Balayée</div></div><span class="lv">2 389,60</span><span class="dd">Tient encore.</span></div>
+          <div class="liqrow"><div class="lst broken"><div class="lline broken"></div><div class="s">Cassée</div></div><span class="lv">2 382,10</span><span class="dd">A cédé.</span></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg><h3>Actus — volatilité</h3><span class="badge2">Sans direction</span></div>
+          <div class="newsrow"><div class="nic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><div class="main3"><div class="ev">Décision de taux — Fed</div><div class="mk3">USD</div></div><span class="impact high">Élevé</span><span class="when">Demain<br>14:00</span></div>
+          <div class="newsrow"><div class="nic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><div class="main3"><div class="ev">Emploi (NFP) — É.-U.</div><div class="mk3">USD</div></div><span class="impact high">Élevé</span><span class="when">Ven<br>08:30</span></div>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- SCANNER -->
+    <div class="pv" data-v="scanner">
+      <div class="phead"><h1>Scanner</h1><div class="livebadge"><span class="dot"></span><span class="mono">clôtures</span></div><button class="ib"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 11-3-6.7"/><path d="M21 4v5h-5"/></svg></button></div>
+      <div class="pscroll"><div class="ppad">
+        <div>
+          <div class="condpal">
+            <span class="cond on">Tendance baissière</span><span class="cond on">CHOCH récent</span><span class="cond on">Prix dans un OB</span><span class="cond">3 TF alignés</span><span class="cond">Prix dans un FVG</span>
+          </div>
+          <div class="scannote"><svg viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg>Conditions au présent uniquement. Toute condition prédictive est refusée.</div>
+        </div>
+        <div class="combo">
+          <div class="t1"><span class="nm">Or</span><span class="tf2">· H1</span></div>
+          <div class="cl yes"><span class="mk2">✓</span>Tendance baissière</div>
+          <div class="cl yes"><span class="mk2">✓</span>CHOCH récent</div>
+          <div class="cl yes"><span class="mk2">✓</span>Prix dans un OB</div>
+          <div class="ctx2"><b>Contexte :</b> un FVG plus bas reste non comblé — affiché pour que tu décides.</div>
+          <button class="btn acc" style="width:100%"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Analyser</button>
+        </div>
+        <div class="combo">
+          <div class="t1"><span class="nm">Or</span><span class="tf2">· M15</span></div>
+          <div class="cl yes"><span class="mk2">✓</span>Tendance baissière</div>
+          <div class="cl no"><span class="mk2"></span>CHOCH récent</div>
+          <div class="cl yes"><span class="mk2">✓</span>Prix dans un OB</div>
+          <div class="ctx2"><b>Contexte :</b> le M15 diverge du H1/H4 — désaccord signalé franchement.</div>
+          <button class="btn acc" style="width:100%"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Analyser</button>
+        </div>
+        <div class="combo na"><div class="t1"><span class="nm">EUR / USD</span><span class="tf2">· H1</span></div><div class="natag">Non disponible — pas de lecture fraîche. Rien n'est inventé.</div></div>
+      </div></div>
+    </div>
+
+    <!-- ZONES -->
+    <div class="pv" data-v="zones">
+      <div class="phead"><h1>Zones</h1><div class="livebadge"><span class="dot"></span><span class="mono">Or · H1 · 3</span></div></div>
+      <div class="pscroll"><div class="ppad">
+        <div class="zone">
+          <div class="ztop"><span class="tagx bear">OB ↓</span><span class="rng">2 398,40 – 2 401,10</span><span class="hsp"></span><span class="zstate zs-a">Actif</span></div>
+          <div class="tl">
+            <div class="step done"><div class="d3"></div><div class="sl">Formé</div><div class="st3">11:00</div></div>
+            <div class="step done"><div class="d3"></div><div class="sl">Testé ×2</div><div class="st3">12:30·13:15</div></div>
+            <div class="step now"><div class="d3"></div><div class="sl">Maintenant</div><div class="st3">dedans</div></div>
+          </div>
+          <p class="znarr"><b>Formé après le BOS de 11:00</b>, testé 2 fois sans céder. <b>Actuellement actif</b>.</p>
+          <div class="zfoot"><button class="btn acc" style="flex:1"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Analyser</button><button class="btn" style="flex:1"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7"/><path d="M4 4l16 16"/></svg>Masquer</button></div>
+        </div>
+        <div class="zone">
+          <div class="ztop"><span class="tagx bull">FVG ↑</span><span class="rng">2 389,00 – 2 394,00</span><span class="hsp"></span><span class="zstate zs-f">Comblé 58 %</span></div>
+          <div class="fillbar"><span style="width:58%"></span></div>
+          <p class="znarr"><b>Comblé à 58 %</b> lors du test de 13:00. Le reste de l'écart demeure ouvert.</p>
+          <div class="zfoot"><button class="btn acc" style="flex:1"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Analyser</button><button class="btn" style="flex:1"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7"/><path d="M4 4l16 16"/></svg>Masquer</button></div>
+        </div>
+        <div class="zone mitig">
+          <div class="ztop"><span class="tagx bull">OB ↑</span><span class="rng">2 383,00 – 2 385,50</span><span class="hsp"></span><span class="zstate zs-m">Mitigé</span></div>
+          <p class="znarr"><b>Mitigé à 12:45</b> après clôture au-delà. Conservé pour l'historique.</p>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- CHAT M.I.A -->
+    <div class="pv" data-v="chat">
+      <div class="chead">
+        <div class="r1"><div class="av"><svg viewBox="0 0 24 24"><path d="M7 4v16M7 8h4M7 14H3M17 4v16M17 9h4M17 15h-4"/></svg></div><div><div class="nm">M.I.A Agent</div><div class="ctx">XAU/USD · H1</div></div><span class="sp"></span><button class="ib"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 11-3-6.7"/><path d="M21 4v5h-5"/></svg></button><button class="ib"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button></div>
+        <div class="cdisc"><svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 4-3.4 7.4-8 9-4.6-1.6-8-5-8-9V7l8-4z"/></svg><span>Analyse pédagogique · aucun signal ni conseil</span></div>
+      </div>
+      <div class="cbody">
+        <div class="msg a"><div class="who">M.I.A</div><div class="bub">Le prix est <b>actuellement dans un OB baissier</b> (<span class="lvl">2 398,40 – 2 401,10</span>). Que veux-tu que je détaille ?</div></div>
+        <div class="msg u"><div class="who">Toi</div><div class="bub">Donc j'achète à 2 389,60 ?</div></div>
+        <div class="msg a"><div class="who">M.I.A</div><div class="bub refuse"><div class="rf"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg>Je ne donne pas d'ordre</div>Aucune entrée ni cible — par conception. Ce niveau porte une <b>liquidité balayée</b> qui <b>tient encore</b>. La décision t'appartient.</div></div>
+      </div>
+      <div class="cin"><div class="inbox"><input placeholder="Pose une question…"><button class="send"><svg viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"/></svg></button></div></div>
+    </div>
+
+    <!-- RÉGLAGES -->
+    <div class="pv" data-v="reglages">
+      <div class="phead"><h1>Réglages</h1></div>
+      <div class="pscroll"><div class="ppad">
+        <div class="card">
+          <div class="card-h"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><h3>Compte</h3></div>
+          <div class="setrow"><div class="sk"><b>Courriel</b><span>toi@exemple.com</span></div><button class="btn">Modifier</button></div>
+          <div class="setrow"><div class="sk"><b>Session</b><span>Connecté sur cet appareil</span></div><button class="btn danger">Déconnexion</button></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 000 18c1.5 0 2-1 2-2s-1-2 0-3 3 0 4-1 1-2 1-3a9 9 0 00-7-9z"/></svg><h3>Apparence</h3><span class="badge2">Immédiat · mémorisé</span></div>
+          <div class="themegrid">
+            <div class="themetile on" data-th="terminal"><span class="chk">Actif</span><div class="sw3"><i style="background:#0a0f1c"></i><i style="background:#121a2c"></i><i style="background:#4d9de0"></i></div><div class="tt"><b>Terminal</b><span>Défaut</span></div></div>
+            <div class="themetile" data-th="ardoise"><span class="chk">Actif</span><div class="sw3"><i style="background:#1a1613"></i><i style="background:#28221c"></i><i style="background:#d8b878"></i></div><div class="tt"><b>Ardoise</b><span>Dark chaud</span></div></div>
+            <div class="themetile" data-th="schema"><span class="chk">Actif</span><div class="sw3"><i style="background:#14161a"></i><i style="background:#1e2228"></i><i style="background:#5fb3c4"></i></div><div class="tt"><b>Schéma</b><span>Monochrome</span></div></div>
+            <div class="themetile" data-th="atelier"><span class="chk">Actif</span><div class="sw3"><i style="background:#f6f4ee;border:1px solid rgba(0,0,0,.1)"></i><i style="background:#efece3;border:1px solid rgba(0,0,0,.08)"></i><i style="background:#1d6f6a"></i></div><div class="tt"><b>Atelier</b><span>Clair</span></div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-h"><svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 4-3.4 7.4-8 9-4.6-1.6-8-5-8-9V7l8-4z"/></svg><h3>Légal & données</h3></div>
+          <div class="setrow"><div class="sk"><b>Documents</b><span>Conditions · Confidentialité</span></div><button class="btn">Consulter</button></div>
+          <div class="setrow"><div class="sk"><b>Mes données</b><span>Exporter une copie</span></div><button class="btn">Exporter</button></div>
+        </div>
+        <div class="setrow" style="border:none;justify-content:center"><span class="planbadge">Accès anticipé — aucune carte requise</span></div>
+      </div></div>
+    </div>
+
+    <nav class="bnav">
+      <div class="bi on" data-v="app"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg><span>App</span></div>
+      <div class="bi" data-v="scanner"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><span>Scanner</span></div>
+      <div class="bi" data-v="zones"><svg viewBox="0 0 24 24"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg><span>Zones</span></div>
+      <div class="bi" data-v="chat"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 01-8 8H5l-2 2V12a8 8 0 018-8h2a8 8 0 018 8z"/></svg><span>M.I.A</span></div>
+      <div class="bi" data-v="reglages"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 00-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 00-2-1.2L14.2 3h-4L9.8 5.7a7 7 0 00-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 005 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 002 1.2l.4 2.7h4l.4-2.7a7 7 0 002-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/></svg><span>Réglages</span></div>
+    </nav>
+    <div class="homebar"></div>
+  </div>
+
+  <!-- ==================== IPAD ==================== -->
+  <div class="frame" id="devTab" data-pg="login">
+    <aside class="trail">
+      <div class="mark">M</div>
+      <div class="ti tnav on" data-v="app" title="App"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg></div>
+      <div class="ti tnav" data-v="scanner" title="Scanner"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></div>
+      <div class="ti tnav" data-v="zones" title="Zones"><svg viewBox="0 0 24 24"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg></div>
+      <span class="tsp"></span>
+      <div class="ti tnav" data-v="reglages" title="Réglages"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 00-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 00-2-1.2L14.2 3h-4L9.8 5.7a7 7 0 00-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 005 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 002 1.2l.4 2.7h4l.4-2.7a7 7 0 002-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/></svg></div>
+    </aside>
+
+    <div class="tmain">
+      <!-- LOGIN -->
+      <div class="pv on" data-v="login">
+        <div class="tlogin">
+          <canvas class="fxc"></canvas>
+          <div style="position:relative;z-index:2">
+            <div class="lcard">
+              <div class="brandline"><div class="mark" style="width:26px;height:26px;border-radius:7px;background:var(--panel-3);border:1px solid var(--line-3);display:grid;place-items:center;color:var(--acc);font-weight:600;font-size:12px">M</div><b>MIA Markets</b><span class="bl-sp"></span><span class="ea"><span class="d"></span>Accès anticipé</span></div>
+              <h1>Connexion</h1>
+              <p class="lsub">Reprends ta lecture là où tu l'as laissée.</p>
+              <div class="fgroup"><label class="flabel">Adresse courriel</label><input class="input" type="email" placeholder="toi@exemple.com"></div>
+              <div class="fgroup"><label class="flabel">Mot de passe</label><input class="input" type="password" placeholder="••••••••••"></div>
+              <div class="frow"><label><input type="checkbox" checked>Rester connecté</label><a>Mot de passe oublié ?</a></div>
+              <button class="btn primary js-login" style="width:100%">Se connecter</button>
+              <p class="mkacct">Pas encore de compte ? <a>Créer un compte</a></p>
+              <div class="trust"><svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 4-3.4 7.4-8 9-4.6-1.6-8-5-8-9V7l8-4z"/></svg><p>Outil éducatif de lecture de marché. Ni signal, ni conseil. 18+.</p></div>
+            </div>
+            <div class="under-links"><a>Conditions d'utilisation</a>·<a>Confidentialité</a></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- APP -->
+      <div class="pv" data-v="app">
+        <div class="ttop">
+          <div class="seg"><div class="sg on">Or · <span class="mono js-px">2 392,35</span></div><div class="sg">EUR/USD</div></div>
+          <div class="seg tfseg" style="width:170px"><div class="sg">M15</div><div class="sg on acc2">H1</div><div class="sg">H4</div></div>
+          <span class="hsp"></span>
+          <span class="price mono js-px dnp">2 392,35</span>
+          <div class="livebadge"><span class="dot"></span><span class="mono js-live">il y a 3 s</span></div>
+        </div>
+        <div class="tscroll"><div class="tpad">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px"><span class="ea"><span class="d"></span>Accès anticipé</span><span style="font-size:10px;color:var(--faint)">Lecture algorithmique éducative · ni signal ni conseil.</span></div>
+          <div class="chartbox"><svg class="js-chart" viewBox="0 0 770 300" preserveAspectRatio="none"></svg></div>
+          <div class="tpanels">
+            <div class="card widet">
+              <div class="card-h"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg><h3>Lecture narrée</h3><span class="badge2">Ancrée au moteur</span></div>
+              <p class="narr"><b>Un CHOCH baissier s'est confirmé</b> à <span class="hl">14:00</span>. Le prix est <b>actuellement dans un Order Block baissier</b> (<span class="hl">2 398,40 – 2 401,10</span>). Un <b>FVG</b> reste <b>comblé à 58 %</b> ; une <b>liquidité achat est intacte</b> au-dessus de <span class="hl">2 404,20</span>, celle à <span class="hl">2 389,60</span> <b>a été balayée</b>. Les <b>3 TF sont alignés baissier</b>.</p>
+              <div class="narrfoot"><svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>Chaque niveau cité correspond à une sortie réelle du moteur.</div>
+            </div>
+            <div class="card">
+              <div class="card-h"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M21 3v6h-6"/></svg><h3>Régime de marché</h3></div>
+              <div class="reggrid r3">
+                <div class="reg"><div class="k">Tendance</div><div class="v">Baissière</div></div>
+                <div class="reg"><div class="k">Volatilité</div><div class="v">Normale</div></div>
+                <div class="reg"><div class="k">Maturité</div><div class="v">Établie</div></div>
+                <div class="reg"><div class="k">Alignement</div><div class="v mono">3/3 ↓</div></div>
+                <div class="reg"><div class="k">Dernier</div><div class="v">CHOCH ↓</div></div>
+                <div class="reg"><div class="k">Densité</div><div class="v mono">4</div></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-h"><svg viewBox="0 0 24 24"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg><h3>Structure détectée</h3></div>
+              <div class="strow"><span class="tagx bear">CHOCH ↓</span><span class="d">Confirmé</span><span class="t">14:00</span></div>
+              <div class="strow"><span class="tagx bear">BOS ↓</span><span class="d">Cassure baissière</span><span class="t">11:00</span></div>
+              <div class="strow"><span class="tagx neu">OB</span><span class="d">Prix dans la zone</span><span class="t">actif</span></div>
+            </div>
+            <div class="card">
+              <div class="card-h"><svg viewBox="0 0 24 24"><path d="M4 8h16M4 12h16M4 16h16"/></svg><h3>Poches de liquidité</h3></div>
+              <div class="liqrow"><div class="lst"><div class="lline"></div><div class="s">Intacte</div></div><span class="lv">2 404,20</span><span class="dd">Jamais touchée.</span></div>
+              <div class="liqrow"><div class="lst"><div class="lline swept"></div><div class="s">Balayée</div></div><span class="lv">2 389,60</span><span class="dd">Tient encore.</span></div>
+              <div class="liqrow"><div class="lst broken"><div class="lline broken"></div><div class="s">Cassée</div></div><span class="lv">2 382,10</span><span class="dd">A cédé.</span></div>
+            </div>
+            <div class="card">
+              <div class="card-h"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg><h3>Actus — volatilité</h3><span class="badge2">Sans direction</span></div>
+              <div class="newsrow"><div class="nic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><div class="main3"><div class="ev">Décision de taux — Fed</div><div class="mk3">USD</div></div><span class="impact high">Élevé</span><span class="when">Demain 14:00</span></div>
+              <div class="newsrow"><div class="nic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><div class="main3"><div class="ev">Emploi (NFP)</div><div class="mk3">USD</div></div><span class="impact high">Élevé</span><span class="when">Ven 08:30</span></div>
+            </div>
+          </div>
+        </div></div>
+      </div>
+
+      <!-- SCANNER -->
+      <div class="pv" data-v="scanner">
+        <div class="ttop"><h1 style="font-size:16px;font-weight:600">Scanner</h1><span class="hsp"></span><div class="livebadge"><span class="dot"></span><span class="mono">Aligné sur les clôtures</span></div><button class="btn"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 11-3-6.7"/><path d="M21 4v5h-5"/></svg>Relancer</button></div>
+        <div class="tscroll"><div class="tpad">
+          <div class="condpal" style="margin-bottom:6px">
+            <span class="cond on">Tendance baissière</span><span class="cond on">CHOCH récent</span><span class="cond on">Prix dans un OB</span><span class="cond on">3 TF alignés</span><span class="cond">Volatilité normale</span><span class="cond">Prix dans un FVG</span><span class="cond">Liquidité intacte à proximité</span>
+          </div>
+          <div class="scannote"><svg viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg>Palette fermée, au présent. Toute condition prédictive est refusée — pas de « va rebondir », pas de cible.</div>
+          <div class="tpanels" style="margin-top:0">
+            <div class="combo">
+              <div class="t1"><span class="nm">Or</span><span class="tf2">· H1</span></div>
+              <div class="cl yes"><span class="mk2">✓</span>Tendance baissière</div>
+              <div class="cl yes"><span class="mk2">✓</span>CHOCH récent</div>
+              <div class="cl yes"><span class="mk2">✓</span>Prix dans un OB</div>
+              <div class="cl yes"><span class="mk2">✓</span>3 TF alignés</div>
+              <div class="ctx2"><b>Contexte :</b> un FVG plus bas reste non comblé — affiché pour que tu décides en connaissance.</div>
+              <button class="btn acc"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Analyser</button>
+            </div>
+            <div class="combo">
+              <div class="t1"><span class="nm">Or</span><span class="tf2">· M15</span></div>
+              <div class="cl yes"><span class="mk2">✓</span>Tendance baissière</div>
+              <div class="cl no"><span class="mk2"></span>CHOCH récent</div>
+              <div class="cl yes"><span class="mk2">✓</span>Prix dans un OB</div>
+              <div class="cl no"><span class="mk2"></span>3 TF alignés</div>
+              <div class="ctx2"><b>Contexte :</b> 2/4 présentes. Le M15 diverge du H1/H4 — désaccord signalé.</div>
+              <button class="btn acc"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Analyser</button>
+            </div>
+            <div class="combo na widet"><div class="t1"><span class="nm">EUR / USD</span><span class="tf2">· H1</span></div><div class="natag">Non disponible — pas de lecture fraîche pour ce combo. Rien n'est inventé.</div></div>
+          </div>
+        </div></div>
+      </div>
+
+      <!-- ZONES -->
+      <div class="pv" data-v="zones">
+        <div class="ttop"><h1 style="font-size:16px;font-weight:600">Zones</h1><span class="hsp"></span><div class="livebadge"><span class="dot"></span><span class="mono">Or · H1 · 3 zones</span></div></div>
+        <div class="tscroll"><div class="tpad">
+          <div class="zone">
+            <div class="ztop"><span class="tagx bear">OB ↓</span><span class="rng">2 398,40 – 2 401,10</span><span class="hsp"></span><span class="zstate zs-a">Actif</span></div>
+            <div class="tl">
+              <div class="step done"><div class="d3"></div><div class="sl">Formé</div><div class="st3">11:00</div></div>
+              <div class="step done"><div class="d3"></div><div class="sl">Testé ×2</div><div class="st3">12:30 · 13:15</div></div>
+              <div class="step now"><div class="d3"></div><div class="sl">Maintenant</div><div class="st3">prix dedans</div></div>
+            </div>
+            <p class="znarr"><b>Formé après le BOS de 11:00</b>, testé 2 fois sans céder. <b>Actuellement actif</b>.</p>
+            <div class="zfoot"><button class="btn acc"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Analyser</button><button class="btn"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7"/><path d="M4 4l16 16"/></svg>Masquer du graphique</button></div>
+          </div>
+          <div class="zone">
+            <div class="ztop"><span class="tagx bull">FVG ↑</span><span class="rng">2 389,00 – 2 394,00</span><span class="hsp"></span><span class="zstate zs-f">Comblé 58 %</span></div>
+            <div class="fillbar"><span style="width:58%"></span></div>
+            <p class="znarr"><b>Comblé à 58 %</b> lors du test de 13:00. Le reste de l'écart demeure ouvert.</p>
+            <div class="zfoot"><button class="btn acc"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Analyser</button><button class="btn"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7"/><path d="M4 4l16 16"/></svg>Masquer du graphique</button></div>
+          </div>
+        </div></div>
+      </div>
+
+      <!-- RÉGLAGES -->
+      <div class="pv" data-v="reglages">
+        <div class="ttop"><h1 style="font-size:16px;font-weight:600">Réglages</h1></div>
+        <div class="tscroll"><div class="tpad" style="max-width:640px">
+          <div class="card" style="margin-bottom:11px">
+            <div class="card-h"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><h3>Compte</h3></div>
+            <div class="setrow"><div class="sk"><b>Adresse courriel</b><span>toi@exemple.com</span></div><button class="btn">Modifier</button></div>
+            <div class="setrow"><div class="sk"><b>Mot de passe</b><span>Modifié il y a 2 mois</span></div><button class="btn">Modifier</button></div>
+            <div class="setrow"><div class="sk"><b>Session</b><span>Connecté sur cet appareil</span></div><button class="btn danger">Se déconnecter</button></div>
+          </div>
+          <div class="card" style="margin-bottom:11px">
+            <div class="card-h"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 000 18c1.5 0 2-1 2-2s-1-2 0-3 3 0 4-1 1-2 1-3a9 9 0 00-7-9z"/></svg><h3>Apparence</h3><span class="badge2">Immédiat · mémorisé</span></div>
+            <div class="themegrid">
+              <div class="themetile on" data-th="terminal"><span class="chk">Actif</span><div class="sw3"><i style="background:#0a0f1c"></i><i style="background:#121a2c"></i><i style="background:#4d9de0"></i></div><div class="tt"><b>Terminal</b><span>Froid, dense — défaut.</span></div></div>
+              <div class="themetile" data-th="ardoise"><span class="chk">Actif</span><div class="sw3"><i style="background:#1a1613"></i><i style="background:#28221c"></i><i style="background:#d8b878"></i></div><div class="tt"><b>Ardoise</b><span>Dark chaud, apaisé.</span></div></div>
+              <div class="themetile" data-th="schema"><span class="chk">Actif</span><div class="sw3"><i style="background:#14161a"></i><i style="background:#1e2228"></i><i style="background:#5fb3c4"></i></div><div class="tt"><b>Schéma</b><span>Monochrome technique.</span></div></div>
+              <div class="themetile" data-th="atelier"><span class="chk">Actif</span><div class="sw3"><i style="background:#f6f4ee;border:1px solid rgba(0,0,0,.1)"></i><i style="background:#efece3;border:1px solid rgba(0,0,0,.08)"></i><i style="background:#1d6f6a"></i></div><div class="tt"><b>Atelier</b><span>Clair, note d'analyste.</span></div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-h"><svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 4-3.4 7.4-8 9-4.6-1.6-8-5-8-9V7l8-4z"/></svg><h3>Légal & données</h3></div>
+            <div class="setrow"><div class="sk"><b>Documents</b><span>Conditions · Confidentialité</span></div><button class="btn">Consulter</button></div>
+            <div class="setrow"><div class="sk"><b>Mes données</b><span>Exporter une copie de tes données</span></div><button class="btn">Exporter</button></div>
+            <div class="setrow"><div class="sk"><b>Supprimer le compte</b><span>Action définitive</span></div><button class="btn danger">Supprimer</button></div>
+          </div>
+        </div></div>
+      </div>
+
+      <button class="fab" id="fab"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 01-8 8H5l-2 2V12a8 8 0 018-8h2a8 8 0 018 8z"/></svg>M.I.A</button>
+
+      <div class="miapanel">
+        <div class="chead">
+          <div class="r1"><div class="av"><svg viewBox="0 0 24 24"><path d="M7 4v16M7 8h4M7 14H3M17 4v16M17 9h4M17 15h-4"/></svg></div><div><div class="nm">M.I.A Agent</div><div class="ctx">XAU/USD · H1</div></div><span class="sp"></span><button class="ib" id="fabclose"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+          <div class="cdisc"><svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 4-3.4 7.4-8 9-4.6-1.6-8-5-8-9V7l8-4z"/></svg><span>Analyse pédagogique · aucun signal ni conseil</span></div>
+        </div>
+        <div class="cbody">
+          <div class="msg a"><div class="who">M.I.A</div><div class="bub">Le prix est <b>actuellement dans un OB baissier</b> (<span class="lvl">2 398,40 – 2 401,10</span>). Que veux-tu que je détaille ?</div></div>
+          <div class="msg u"><div class="who">Toi</div><div class="bub">Donc j'achète à 2 389,60 ?</div></div>
+          <div class="msg a"><div class="who">M.I.A</div><div class="bub refuse"><div class="rf"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg>Je ne donne pas d'ordre</div>Aucune entrée ni cible — par conception. La décision t'appartient.</div></div>
+        </div>
+        <div class="cin"><div class="inbox"><input placeholder="Pose une question…"><button class="send"><svg viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"/></svg></button></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const phone=document.getElementById('devPhone'),tab=document.getElementById('devTab');
+  const fxs=[];
+
+  function setDevice(d){
+    document.body.dataset.device=d;
+    document.querySelectorAll('.pill.dv').forEach(x=>x.classList.toggle('on',x.dataset.d===d));
+    kickFx();
+  }
+  function setPhonePage(v){
+    phone.dataset.pg=v;
+    phone.querySelectorAll('.pv').forEach(x=>x.classList.toggle('on',x.dataset.v===v));
+    phone.querySelectorAll('.bnav .bi').forEach(x=>x.classList.toggle('on',x.dataset.v===v));
+    kickFx();
+  }
+  function setTabPage(v){
+    tab.dataset.pg=v;
+    tab.querySelectorAll('.pv').forEach(x=>x.classList.toggle('on',x.dataset.v===v));
+    tab.querySelectorAll('.tnav').forEach(x=>x.classList.toggle('on',x.dataset.v===v));
+    if(v==='login')tab.classList.remove('chatopen');
+    kickFx();
+  }
+  document.querySelectorAll('.pill.dv').forEach(b=>b.addEventListener('click',()=>setDevice(b.dataset.d)));
+  document.querySelectorAll('.pill.gp').forEach(b=>b.addEventListener('click',()=>{
+    const g=b.dataset.g;
+    if(document.body.dataset.device==='phone')setPhonePage(g);else setTabPage(g);
+  }));
+  phone.querySelectorAll('.bnav .bi').forEach(b=>b.addEventListener('click',()=>setPhonePage(b.dataset.v)));
+  tab.querySelectorAll('.tnav').forEach(b=>b.addEventListener('click',()=>setTabPage(b.dataset.v)));
+  phone.querySelectorAll('.js-login').forEach(b=>b.addEventListener('click',()=>setPhonePage('app')));
+  tab.querySelectorAll('.js-login').forEach(b=>b.addEventListener('click',()=>setTabPage('app')));
+  document.getElementById('fab').addEventListener('click',()=>tab.classList.toggle('chatopen'));
+  document.getElementById('fabclose').addEventListener('click',()=>tab.classList.remove('chatopen'));
+  document.querySelectorAll('.themetile').forEach(t=>t.addEventListener('click',()=>{
+    document.body.dataset.design=t.dataset.th;
+    document.querySelectorAll('.themetile').forEach(x=>x.classList.toggle('on',x.dataset.th===t.dataset.th));
+  }));
+
+  /* fond animé bougies — par canvas */
+  function initFx(cv){
+    const ctx=cv.getContext('2d');
+    const DPR=Math.min(window.devicePixelRatio||1,2);
+    let W=0,H=0,candles=[],last=.5;
+    const css=getComputedStyle(document.body);
+    const col=n=>css.getPropertyValue(n).trim();
+    const CW=12,GAP=8,STEP=CW+GAP,SPEED=0.2;
+    function mk(x){const d=(Math.random()-.5)*.07,o=last,c=Math.max(.1,Math.min(.9,o+d));last=c;
+      return {x,o,c,h:Math.max(o,c)+Math.random()*.035,l:Math.min(o,c)-Math.random()*.035};}
+    function fill(){candles=[];last=.5;for(let x=-STEP;x<W+STEP*2;x+=STEP)candles.push(mk(x));}
+    function resize(){const r=cv.parentElement.getBoundingClientRect();W=r.width;H=r.height;
+      if(W<10)return;cv.width=W*DPR;cv.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);fill();}
+    const yv=v=>H*(0.12+0.76*(1-v));
+    function draw(){
+      if(W<10)return;
+      ctx.clearRect(0,0,W,H);
+      ctx.strokeStyle='rgba(255,255,255,.05)';ctx.lineWidth=1;
+      for(let g=0;g<=4;g++){const yy=H*(0.12+0.76*g/4);ctx.beginPath();ctx.moveTo(0,yy);ctx.lineTo(W,yy);ctx.stroke();}
+      ctx.save();ctx.globalAlpha=.3;ctx.strokeStyle=col('--liq')||'#d6a24a';ctx.setLineDash([6,5]);
+      const ly=H*.25;ctx.beginPath();ctx.moveTo(0,ly);ctx.lineTo(W,ly);ctx.stroke();ctx.restore();
+      ctx.globalAlpha=.13;
+      const BULL=col('--bull')||'#37b98c',BEAR=col('--bear')||'#dd6b7a';
+      candles.forEach(cd=>{
+        const up=cd.c>=cd.o,c2=up?BULL:BEAR,cx=cd.x+CW/2;
+        ctx.strokeStyle=c2;ctx.fillStyle=c2;ctx.lineWidth=1.2;
+        ctx.beginPath();ctx.moveTo(cx,yv(cd.h));ctx.lineTo(cx,yv(cd.l));ctx.stroke();
+        const top=yv(Math.max(cd.o,cd.c)),bh=Math.max(2,Math.abs(yv(cd.o)-yv(cd.c)));
+        ctx.fillRect(cd.x,top,CW,bh);
+      });
+      ctx.globalAlpha=1;
+    }
+    function tick(){
+      if(W>10&&!reduce){candles.forEach(cd=>cd.x-=SPEED);
+        if(candles.length&&candles[0].x<-STEP){candles.shift();const lx=candles[candles.length-1].x;candles.push(mk(lx+STEP));}}
+      draw();
+      if(!reduce)requestAnimationFrame(tick);
+    }
+    resize();if(reduce){draw();}else tick();
+    return {kick(){resize();draw();}};
+  }
+  document.querySelectorAll('.fxc').forEach(cv=>fxs.push(initFx(cv)));
+  function kickFx(){requestAnimationFrame(()=>fxs.forEach(f=>f.kick()));}
+  window.addEventListener('resize',kickFx);
+
+  /* charts */
+  const NS='http://www.w3.org/2000/svg',el=(n,a)=>{const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);return e;};
+  const seed=[[2404,2406,2399,2400],[2400,2401,2394,2395],[2395,2398,2390,2396],[2396,2399,2393,2394],[2394,2395,2387,2388],[2388,2392,2384,2385],[2385,2390,2384,2389],[2389,2393,2387,2388],[2388,2390,2382,2383],[2383,2388,2382,2387],[2387,2391,2386,2390],[2390,2392,2385,2386],[2386,2389,2383,2388],[2388,2394,2387,2393],[2393,2396,2390,2391],[2391,2394,2388,2389],[2389,2393,2387,2392],[2392,2396,2390,2394],[2394,2398,2393,2397],[2397,2401,2396,2400],[2400,2402,2397,2398],[2398,2400,2395,2396],[2396,2399,2394,2398],[2398,2401,2396,2399]];
+  const updaters=[];
+  document.querySelectorAll('.js-chart').forEach(svg=>{
+    const vb=svg.getAttribute('viewBox').split(' ');
+    const W=+vb[2],H=+vb[3],padR=46,padT=9,padB=12,padL=5,plotW=W-padR-padL,plotH=H-padT-padB;
+    let lo=Infinity,hi=-Infinity;seed.forEach(c=>{lo=Math.min(lo,c[2]);hi=Math.max(hi,c[1]);});
+    const rg=hi-lo,pd=rg*.11,LO=lo-pd,HI=hi+pd;
+    const y=p=>padT+plotH-((p-LO)/(HI-LO))*plotH;
+    const n=seed.length,cw=plotW/n,bw=cw*.55,x=i=>padL+cw*i+cw/2;
+    for(let g=0;g<=4;g++){const py=padT+plotH*g/4,pv=HI-(HI-LO)*g/4;
+      svg.appendChild(el('line',{x1:padL,y1:py,x2:padL+plotW,y2:py,stroke:'var(--line)'}));
+      const t=el('text',{x:W-padR+6,y:py+4,fill:'var(--faint)','font-size':9.5,'font-family':'JetBrains Mono, monospace'});t.textContent=Math.round(pv);svg.appendChild(t);}
+    const obX=x(17)-bw/2;
+    svg.appendChild(el('rect',{x:obX,y:y(2401.1),width:(padL+plotW)-obX,height:y(2398.4)-y(2401.1),fill:'var(--ob)'}));
+    svg.appendChild(el('line',{x1:obX,y1:y(2401.1),x2:padL+plotW,y2:y(2401.1),stroke:'var(--ob-l)'}));
+    svg.appendChild(el('line',{x1:obX,y1:y(2398.4),x2:padL+plotW,y2:y(2398.4),stroke:'var(--ob-l)'}));
+    const ol=el('text',{x:obX+4,y:y(2401.1)-4,fill:'var(--bear)','font-size':9,'font-weight':600,'font-family':'JetBrains Mono, monospace'});ol.textContent='OB ↓';svg.appendChild(ol);
+    svg.appendChild(el('line',{x1:x(2),y1:y(2403.6),x2:padL+plotW,y2:y(2403.6),stroke:'var(--liq)','stroke-width':1.3}));
+    const bl=el('text',{x:padL+plotW-3,y:y(2403.6)-4,fill:'var(--liq)','font-size':8.5,'font-weight':600,'text-anchor':'end','font-family':'JetBrains Mono, monospace'});bl.textContent='BSL intacte';svg.appendChild(bl);
+    const sy=y(2383.2);svg.appendChild(el('line',{x1:x(5),y1:sy,x2:x(10),y2:sy,stroke:'var(--liq)','stroke-width':1.3,'stroke-dasharray':'5 4',opacity:.55}));
+    seed.forEach((c,i)=>{const [o,h,l,cl]=c,up=cl>=o,c3=up?'var(--bull)':'var(--bear)',cx=x(i);
+      svg.appendChild(el('line',{x1:cx,y1:y(h),x2:cx,y2:y(l),stroke:c3,'stroke-width':1,opacity:.9}));
+      const yo=y(o),yc=y(cl);svg.appendChild(el('rect',{x:cx-bw/2,y:Math.min(yo,yc),width:bw,height:Math.max(Math.abs(yc-yo),1.2),fill:c3,rx:.8,opacity:.94}));});
+    const lastY=y(seed[n-1][3]);
+    const pl=el('line',{x1:padL,y1:lastY,x2:padL+plotW,y2:lastY,stroke:'var(--acc)','stroke-dasharray':'4 4',opacity:.6});svg.appendChild(pl);
+    const pb=el('rect',{x:W-padR+1,y:lastY-8,width:padR-2,height:16,fill:'var(--acc)',rx:3});svg.appendChild(pb);
+    const pt=el('text',{x:W-padR+padR/2,y:lastY+3.5,fill:'var(--acc-txt)','font-size':9.5,'font-weight':600,'text-anchor':'middle','font-family':'JetBrains Mono, monospace'});pt.textContent='2394';svg.appendChild(pt);
+    updaters.push(p=>{const yy=y(p);pl.setAttribute('y1',yy);pl.setAttribute('y2',yy);pb.setAttribute('y',yy-8);pt.setAttribute('y',yy+3.5);pt.textContent=Math.round(p);});
+  });
+
+  const fmt=p=>p.toLocaleString('fr-CA',{minimumFractionDigits:2,maximumFractionDigits:2}).replace(',','§').replace('.',',').replace('§','\u00A0');
+  let price=2392.35,secs=3;
+  if(!reduce){
+    setInterval(()=>{const prev=price;price=Math.max(2389,Math.min(2397,price+(Math.random()-.5)*.9));
+      document.querySelectorAll('.js-px').forEach(e=>{e.textContent=fmt(price);
+        if(e.classList.contains('price')){e.classList.remove('u2','d2');void e.offsetWidth;e.classList.add(price>=prev?'u2':'d2');setTimeout(()=>e.classList.remove('u2','d2'),500);}});
+      updaters.forEach(u=>u(price));
+    },1900);
+    setInterval(()=>{secs++;if(secs>59)secs=0;
+      document.querySelectorAll('.js-live').forEach(e=>e.textContent='il y a '+secs+' s');
+    },1000);
+  }
+})();
+</script>
+</body>
+</html>
