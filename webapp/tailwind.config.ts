@@ -1,15 +1,15 @@
 import type { Config } from 'tailwindcss';
 
 const config: Config = {
-  // A "theme" is `data-theme="<id>"` on <html>. The three dark themes drive
+  // A "theme" is `data-design="<id>"` on <html>. The three dark themes drive
   // Tailwind's `dark:` variant; Atelier (light) is intentionally absent so
   // `dark:` utilities do not apply there.
   darkMode: [
     'variant',
     [
-      '[data-theme=terminal] &',
-      '[data-theme=schema] &',
-      '[data-theme=ardoise] &',
+      '[data-design=terminal] &',
+      '[data-design=schema] &',
+      '[data-design=ardoise] &',
     ],
   ],
   content: ['./app/**/*.{ts,tsx}', './components/**/*.{ts,tsx}', './lib/**/*.{ts,tsx}'],
@@ -77,7 +77,15 @@ const config: Config = {
           '-apple-system',
           'sans-serif',
         ],
-        mono: ['ui-monospace', 'SFMono-Regular', 'monospace'],
+        // JetBrains Mono (next/font, --font-mono) for every price/level/timestamp,
+        // then the system mono stack. Pairs with `tabular-nums` at call sites.
+        mono: [
+          'var(--font-mono)',
+          'ui-monospace',
+          'SFMono-Regular',
+          'JetBrains Mono',
+          'monospace',
+        ],
         // Narrative voice — resolves to `--font-narrative` which a theme may
         // swap (e.g. Atelier → serif). Defaults to the sans stack elsewhere.
         narrative: [

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter, Noto_Sans_Arabic } from 'next/font/google';
+import { Inter, JetBrains_Mono, Noto_Sans_Arabic } from 'next/font/google';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
@@ -33,6 +33,18 @@ const inter = Inter({
   display: 'swap',
   preload: true,
   variable: '--font-sans',
+});
+
+// JetBrains Mono — the numeric voice of the product shell (prices, levels,
+// timestamps, counts), always paired with `tabular-nums` so a changing figure
+// never shifts the layout. Exposed as --font-mono (consumed by `.mono` and the
+// Tailwind `mono` family). Latin only; `swap` avoids invisible digits.
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
+  display: 'swap',
+  preload: true,
+  variable: '--font-mono',
 });
 
 // Arabic-capable font, exposed as --font-arabic. The Latin `Inter` subset has
@@ -169,18 +181,19 @@ export default async function LocaleLayout({
     <html
       lang={locale}
       dir={dir}
-      className={`${inter.variable} ${notoArabic.variable}`}
+      className={`${inter.variable} ${jetbrainsMono.variable} ${notoArabic.variable}`}
       suppressHydrationWarning
     >
       <body className="flex min-h-screen flex-col bg-background font-sans antialiased">
         <SkipLink />
         <JsonLd data={softwareApplicationLd} />
         <ThemeProvider
-          // `data-theme="<id>"` on <html> — a single clean attribute (no class
-          // pollution, no flash for non-default themes). The token VALUES live
-          // under `[data-theme='…']` in globals.css; the three dark themes drive
-          // Tailwind's `dark:` variant via the darkMode config.
-          attribute="data-theme"
+          // `data-design="<id>"` on <html> — a single clean attribute (no class
+          // pollution, no flash for non-default themes; next-themes injects a
+          // blocking inline script that sets it before first paint). The token
+          // VALUES live under `[data-design='…']` in globals.css; the three dark
+          // themes drive Tailwind's `dark:` variant via the darkMode config.
+          attribute="data-design"
           defaultTheme="terminal"
           themes={['terminal', 'atelier', 'schema', 'ardoise']}
           disableTransitionOnChange

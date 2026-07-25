@@ -9,9 +9,18 @@
  *
  * Four themes ship: Terminal (default, cold dark), Atelier (light analyst note),
  * Schéma (technical monochrome), Ardoise (warm dark). next-themes sets
- * `data-theme="<id>"` on <html> (see layout.tsx); the token VALUES live under
- * `[data-theme='…']` below. The three dark themes drive Tailwind's `dark:`
+ * `data-design="<id>"` on <html> (see layout.tsx); the token VALUES live under
+ * `[data-design='…']` below. The three dark themes drive Tailwind's `dark:`
  * variant via the darkMode config in tailwind.config.ts.
+ *
+ * Two token vocabularies coexist under each theme block, on purpose:
+ *   1. HSL role tokens (--background / --primary / --border …) — the shadcn
+ *      surfaces (landing, Nav, Footer, ui/*) consume these.
+ *   2. Literal reference tokens (--bg / --panel / --acc / --r …) — the product
+ *      shell + its base components (UI-1) consume THESE, named exactly as in
+ *      docs/design/reference-desktop.html so the reference transposes directly.
+ * A theme is still only a set of VALUES; switching themes swaps both vocabularies
+ * at once. The literal tokens are the mission-mandated contract; never rename.
  *
  * Colour is reserved for MEANING. The sentinel-* / state tokens carry market
  * semantics (bull / bear / neutral / warn / liquidity) and are the ONLY place a
@@ -32,8 +41,34 @@ html[dir='rtl'] body {
 @layer base {
   /* ── Terminal — cold dark, DEFAULT (pre-hydration fallback = :root) ── */
   :root,
-  [data-theme='terminal'] {
+  [data-design='terminal'] {
     color-scheme: dark;
+
+    /* Reference literal tokens — verbatim from docs/design/reference-desktop.html.
+       --r / --r-s are defined once here; the other themes inherit them. */
+    --bg: #0a0f1c;
+    --panel: #0e1524;
+    --panel-2: #121a2c;
+    --panel-3: #182238;
+    --line: rgba(255, 255, 255, 0.07);
+    --line-2: rgba(255, 255, 255, 0.11);
+    --line-3: rgba(255, 255, 255, 0.17);
+    --txt: #e7ecf6;
+    --dim: #8b94ab;
+    --faint: #59617a;
+    --acc: #4d9de0;
+    --acc-dim: rgba(77, 157, 224, 0.14);
+    --acc-txt: #06131f;
+    --bull: #37b98c;
+    --bear: #dd6b7a;
+    --liq: #d6a24a;
+    --ob: rgba(221, 107, 122, 0.11);
+    --ob-l: rgba(221, 107, 122, 0.5);
+    --fvg: rgba(126, 120, 210, 0.13);
+    --fvg-l: rgba(126, 120, 210, 0.5);
+    --r: 10px;
+    --r-s: 7px;
+
     --background: 223 47% 7%;
     --foreground: 220 45% 94%;
     --card: 220 44% 12%;
@@ -65,8 +100,31 @@ html[dir='rtl'] body {
   }
 
   /* ── Atelier — light, analyst note (narration in serif) ── */
-  [data-theme='atelier'] {
+  [data-design='atelier'] {
     color-scheme: light;
+
+    /* Reference literal tokens — verbatim (docs/design/reference-desktop.html). */
+    --bg: #f6f4ee;
+    --panel: #fbfaf6;
+    --panel-2: #efece3;
+    --panel-3: #e6e1d4;
+    --line: rgba(38, 40, 44, 0.1);
+    --line-2: rgba(38, 40, 44, 0.16);
+    --line-3: rgba(38, 40, 44, 0.24);
+    --txt: #26282c;
+    --dim: #6a6b66;
+    --faint: #9b9a91;
+    --acc: #1d6f6a;
+    --acc-dim: rgba(29, 111, 106, 0.12);
+    --acc-txt: #f6f4ee;
+    --bull: #2f8f6b;
+    --bear: #b4564f;
+    --liq: #b07d1c;
+    --ob: rgba(180, 86, 79, 0.1);
+    --ob-l: rgba(180, 86, 79, 0.45);
+    --fvg: rgba(120, 110, 180, 0.12);
+    --fvg-l: rgba(120, 110, 180, 0.45);
+
     --background: 45 31% 95%;
     --foreground: 220 7% 16%;
     --card: 45 27% 91%;
@@ -98,8 +156,31 @@ html[dir='rtl'] body {
   }
 
   /* ── Schéma — technical monochrome (states in grey, almost no colour) ── */
-  [data-theme='schema'] {
+  [data-design='schema'] {
     color-scheme: dark;
+
+    /* Reference literal tokens — verbatim (docs/design/reference-desktop.html). */
+    --bg: #14161a;
+    --panel: #181b20;
+    --panel-2: #1e2228;
+    --panel-3: #262b33;
+    --line: rgba(255, 255, 255, 0.09);
+    --line-2: rgba(255, 255, 255, 0.14);
+    --line-3: rgba(255, 255, 255, 0.22);
+    --txt: #dfe3e8;
+    --dim: #8b9099;
+    --faint: #565b64;
+    --acc: #5fb3c4;
+    --acc-dim: rgba(95, 179, 196, 0.13);
+    --acc-txt: #0c1418;
+    --bull: #c3c8cf;
+    --bear: #7c828b;
+    --liq: #5fb3c4;
+    --ob: rgba(255, 255, 255, 0.05);
+    --ob-l: rgba(255, 255, 255, 0.3);
+    --fvg: rgba(255, 255, 255, 0.04);
+    --fvg-l: rgba(255, 255, 255, 0.22);
+
     --background: 220 13% 9%;
     --foreground: 213 16% 89%;
     --card: 220 14% 12%;
@@ -131,8 +212,31 @@ html[dir='rtl'] body {
   }
 
   /* ── Ardoise — warm dark, calmed (softer corners) ── */
-  [data-theme='ardoise'] {
+  [data-design='ardoise'] {
     color-scheme: dark;
+
+    /* Reference literal tokens — verbatim (docs/design/reference-desktop.html). */
+    --bg: #1a1613;
+    --panel: #211c17;
+    --panel-2: #28221c;
+    --panel-3: #322a22;
+    --line: rgba(255, 248, 238, 0.08);
+    --line-2: rgba(255, 248, 238, 0.13);
+    --line-3: rgba(255, 248, 238, 0.2);
+    --txt: #efe9e0;
+    --dim: #a99f92;
+    --faint: #736b60;
+    --acc: #d8b878;
+    --acc-dim: rgba(216, 184, 120, 0.14);
+    --acc-txt: #1a1613;
+    --bull: #6bbf9a;
+    --bear: #d98b7a;
+    --liq: #d8b878;
+    --ob: rgba(217, 139, 122, 0.11);
+    --ob-l: rgba(217, 139, 122, 0.45);
+    --fvg: rgba(160, 140, 200, 0.13);
+    --fvg-l: rgba(160, 140, 200, 0.5);
+
     --background: 26 16% 9%;
     --foreground: 36 32% 91%;
     --card: 30 16% 12%;
@@ -191,6 +295,19 @@ html[dir='rtl'] body {
   }
   .container-wide {
     @apply mx-auto max-w-6xl px-4 sm:px-6 lg:px-8;
+  }
+
+  /*
+   * Monospace numerics — EVERY price, level, timestamp and count in the product
+   * shell wears `.mono` (transposed verbatim from the reference). Tabular figures
+   * mean a changing price never shifts the layout. Resolves to JetBrains Mono via
+   * --font-mono (next/font, see layout.tsx), then the system mono stack.
+   */
+  .mono {
+    font-family:
+      var(--font-mono), ui-monospace, 'SFMono-Regular', 'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum';
   }
 }
 
@@ -267,5 +384,21 @@ html[dir='rtl'] body {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
+  }
+
+  /*
+   * Global brake (UI-1): the product shell leans on pulses (live dot) and colour
+   * transitions (price flash). For users who ask for reduced motion we disable
+   * animations and transitions everywhere — the live dot degrades to a static
+   * dot, the price flash to an instant colour swap. Kept minimal (0.01ms rather
+   * than `none`) so `transitionend`/`animationend` listeners still fire.
+   */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
