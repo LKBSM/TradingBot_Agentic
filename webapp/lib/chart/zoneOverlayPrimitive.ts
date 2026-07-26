@@ -199,6 +199,7 @@ interface LiqGeom {
   status: LiquidityStatus;
   chartLabel: string;
   stateText: string | null;
+  highlighted: boolean;
 }
 
 interface HitArea {
@@ -444,6 +445,7 @@ export class ZoneOverlayPrimitive implements ISeriesPrimitive<Time> {
         status: l.status,
         chartLabel: l.chartLabel,
         stateText: l.stateText,
+        highlighted: data.highlightId != null && l.id === data.highlightId,
       });
       const eid = `liq:${l.id}`;
       this._tips.set(eid, l.description);
@@ -522,29 +524,45 @@ export class ZoneOverlayPrimitive implements ISeriesPrimitive<Time> {
     if (!this._data) return;
     const pillBg = this._data.labelBg;
 
-    // 1) Liquidity segments (bottom layer).
+    // 1) Liquidity segments (bottom layer). A selected pocket (highlightId lock)
+    // is emphasized as a single accent LINE — same cool sky-blue as the box
+    // highlight, thicker + solid — never a band.
     for (const l of this._liqs) {
-      const color = liquidityColor(l.side, l.status);
+      const color = l.highlighted ? HIGHLIGHT_COLOR : liquidityColor(l.side, l.status);
       ctx.save();
       ctx.strokeStyle = color;
-      ctx.lineWidth = 1;
-      ctx.setLineDash(LIQUIDITY_DASH[l.status]);
+      ctx.lineWidth = l.highlighted ? 2 : 1;
+      // Highlighted line is solid for emphasis; others keep their status dash.
+      ctx.setLineDash(l.highlighted ? [] : LIQUIDITY_DASH[l.status]);
       const y = Math.round(l.y) + 0.5;
       ctx.beginPath();
       ctx.moveTo(l.left, y);
       ctx.lineTo(l.left + l.width, y);
       ctx.stroke();
       ctx.setLineDash([]);
+      // Selected accent marker at the left edge so the line reads as "selected".
+      if (l.highlighted) {
+        ctx.fillStyle = HIGHLIGHT_COLOR;
+        ctx.beginPath();
+        ctx.arc(Math.max(2, l.left) + 2, y, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = `rgba(${HIGHLIGHT_RGB}, 0.4)`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(Math.max(2, l.left) + 2, y, 5, 0, Math.PI * 2);
+        ctx.stroke();
+      }
       // Contact marker at the frozen right end: dot = prise, × = cassée.
+      // Drawn in the highlight colour when selected so the whole line stays cohesive.
       const rx = l.left + l.width;
       if (l.status === 'swept') {
         ctx.fillStyle = color;
         ctx.beginPath();
-        ctx.arc(rx, y, 2.5, 0, Math.PI * 2);
+        ctx.arc(rx, y, l.highlighted ? 3 : 2.5, 0, Math.PI * 2);
         ctx.fill();
       } else if (l.status === 'broken') {
         ctx.strokeStyle = color;
-        ctx.lineWidth = 1.2;
+        ctx.lineWidth = l.highlighted ? 1.6 : 1.2;
         ctx.beginPath();
         ctx.moveTo(rx - 3, y - 3);
         ctx.lineTo(rx + 3, y + 3);

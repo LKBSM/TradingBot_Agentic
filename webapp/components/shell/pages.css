@@ -411,6 +411,16 @@
 .app-shell .zone.mitig {
   opacity: 0.6;
 }
+/* Deep-link target (`/zones?zone=<id>`): highlight the referenced card with the
+   shared accent ring — same tokens as the focus ring, scoped to the zone card. */
+.app-shell .zone.zsel {
+  border-color: var(--acc);
+  box-shadow: 0 0 0 3px var(--acc-dim);
+}
+/* A mitigated deep-linked card stays legible: don't dim the highlighted one. */
+.app-shell .zone.mitig.zsel {
+  opacity: 1;
+}
 .app-shell .ztop {
   display: flex;
   align-items: center;

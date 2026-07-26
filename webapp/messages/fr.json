@@ -610,6 +610,40 @@
       "mtf_aligned": "Timeframes alignés",
       "mtf_divergent": "Timeframes divergents",
       "mtf_mixed": "Timeframes mixtes"
+    },
+    "help": {
+      "regime": {
+        "title": "Lire le régime de marché",
+        "body": "Ces six mesures décrivent l'état **actuel** du marché, chacune avec sa source affichée dessous. Aucune n'est une prévision, aucune n'est pondérée.\n\nLe petit **?** de chaque mesure explique ce qu'elle compte exactement, et ce qu'elle ne dit pas."
+      },
+      "trend": {
+        "title": "Tendance",
+        "body": "**Ce que ça compte :** la succession des sommets et creux sur **l'unité de temps affichée** (ici H1). Sommets et creux décroissants → baissière. C'est une lecture de structure passée, pas une projection.\n\n**Piège classique :** la tendance n'est pas la même sur toutes les unités de temps. Un M15 baissier dans un H4 haussier n'est pas une contradiction — c'est une question d'échelle. Change de TF et la réponse change."
+      },
+      "vol": {
+        "title": "Volatilité",
+        "body": "**Ce que ça compte :** l'amplitude moyenne des dernières bougies comparée à celle des bougies qui les précèdent. « Normale » = dans sa plage habituelle.\n\n**Pourquoi c'est utile en SMC :** la volatilité change la **taille** des zones. Un OB formé en forte volatilité est plus large, donc plus long à traverser. Ce n'est pas une qualité, c'est une dimension.\n\n**Ce que ça ne dit pas :** aucune direction. Une volatilité faible peut précéder n'importe quoi."
+      },
+      "mat": {
+        "title": "Maturité de la structure",
+        "body": "**Ce que ça compte :** le nombre de bougies clôturées sur l'unité de temps affichée **depuis le dernier CHOCH confirmé** (ici, celui de 14:00). Le point de départ est toujours nommé sous la valeur — un compteur sans origine ne veut rien dire.\n\n**Ce que ça ne dit pas :** une structure ancienne n'est ni plus ni moins susceptible de se poursuivre. Aucune probabilité n'est calculée ici."
+      },
+      "align": {
+        "title": "Alignement multi-unités de temps",
+        "body": "**Ce que ça compte :** les trois unités de temps analysées affichent **en ce moment** la même direction de structure. Quand elles divergent, MIA l'affiche tout autant (« Désaccord ») — le désaccord est une information, pas un échec.\n\n**Ce que la convention SMC en fait :** beaucoup de traders traitent l'alignement comme un critère de **confluence** dans leur propre méthode, et lisent le désaccord comme le signe que deux échelles racontent deux histoires différentes.\n\n**Ce que MIA n'affirmera jamais :** qu'un alignement rend une entrée plus sûre, plus probable ou moins risquée. Personne ne peut le mesurer sur ton compte, ton horizon et ta gestion du risque. MIA décrit le fait ; l'interprétation reste la tienne."
+      },
+      "dens": {
+        "title": "Densité de zones",
+        "body": "**Ce que ça compte :** le nombre de zones encore actives détectées sur cette unité de temps.\n\n**Comment le lire :** une densité élevée décrit un marché qui a laissé beaucoup de déséquilibres derrière lui ; une densité faible, un marché qui a déjà comblé la plupart des siens. Plus de zones ne veut pas dire plus d'occasions — seulement plus de niveaux à surveiller."
+      },
+      "struct": {
+        "title": "Les quatre objets de structure",
+        "body": "**OB (Order Block)** — la dernière bougie de sens opposé avant le mouvement impulsif qui a cassé la structure.\n\n**FVG (Fair Value Gap)** — l'écart laissé par trois bougies dont les mèches ne se recouvrent pas. Il se comble progressivement : MIA affiche le pourcentage réellement comblé.\n\n**BOS** — cassure d'un extrême **dans le sens** de la structure en cours. **CHOCH** — première cassure **en sens inverse** : c'est le changement de caractère.\n\nMIA détecte, décrit et date ces objets. Elle ne dit jamais lequel « va fonctionner »."
+      },
+      "liq": {
+        "title": "Liquidité externe : où et dans quel état",
+        "body": "**BSL** — liquidité achat, au-dessus des sommets et des sommets égaux. **SSL** — liquidité vente, sous les creux et creux égaux.\n\n**Intacte** — jamais touchée. **Balayée** — une mèche est allée au-delà mais la clôture est revenue en deçà : le niveau **tient encore**. **Cassée** — clôture nette au-delà : il a cédé.\n\n**La distinction à retenir :** touché n'égale pas cassé. C'est la nuance que la plupart des outils écrasent en un seul état binaire.\n\nMIA n'écrira jamais qu'une poche sera « prise » : c'est une prédiction, et personne ne la connaît."
+      }
     }
   },
   "disclaimer": {
@@ -962,6 +996,108 @@
       "liqShowIntactOnly": "Afficher seulement les poches de liquidité intactes",
       "marketClosed": "Marché fermé",
       "marketClosedTitle": "Le marché est actuellement fermé : le graphique montre la dernière bougie clôturée, il ne reflète pas de cotation en direct."
+    },
+    "struct": {
+      "title": "Structure de marché",
+      "zonesCount": "{count, plural, one {# zone} other {# zones}}",
+      "sortAria": "Trier et filtrer",
+      "helpAria": "En savoir plus",
+      "filterType": "Type",
+      "filterState": "État",
+      "filterSort": "Trier par",
+      "type": {
+        "all": "Tous",
+        "ob": "OB",
+        "fvg": "FVG"
+      },
+      "st": {
+        "all": "Tous",
+        "active": "Actives",
+        "tested": "Testées",
+        "mitig": "Mitigées"
+      },
+      "sort": {
+        "near": "Proche du prix",
+        "recent": "Récente",
+        "big": "Large"
+      },
+      "badge": {
+        "active": "Actif",
+        "tested": "Testé",
+        "mitig": "Mitigé"
+      },
+      "dist": {
+        "inside": "Prix dans la zone",
+        "above": "+{pct} % au-dessus",
+        "below": "−{pct} % en dessous"
+      },
+      "fact": {
+        "neverTested": "Jamais testée depuis sa formation.",
+        "tested": "Testée.",
+        "mitigatedAt": "Mitigée à {time}.",
+        "mitigated": "Mitigée.",
+        "filled": "Entièrement comblée.",
+        "partial": "Comblée à {pct} %.",
+        "fvgOpen": "Écart ouvert."
+      },
+      "more": "En savoir plus",
+      "hint": "Clic sur une zone = surbrillance sur le graphique.",
+      "empty1": "Aucune zone ne correspond à ces filtres.",
+      "empty2": "Rien n'est inventé pour remplir la liste.",
+      "evChoch": "Changement de caractère confirmé",
+      "evBosBull": "Cassure de structure haussière",
+      "evBosBear": "Cassure de structure baissière"
+    },
+    "liq2": {
+      "title": "Liquidité externe",
+      "pochesCount": "{count, plural, one {# poche} other {# poches}}",
+      "sortAria": "Trier et filtrer",
+      "helpAria": "En savoir plus",
+      "filterSide": "Côté",
+      "filterState": "État",
+      "side": {
+        "all": "Les deux",
+        "bsl": "BSL (achat)",
+        "ssl": "SSL (vente)"
+      },
+      "st": {
+        "all": "Tous",
+        "intact": "Intactes",
+        "swept": "Balayées",
+        "broken": "Cassées"
+      },
+      "badge": {
+        "intact": "Intacte",
+        "swept": "Balayée",
+        "broken": "Cassée"
+      },
+      "src": {
+        "eqh": "EQH",
+        "eql": "EQL",
+        "high": "Sommet",
+        "low": "Creux"
+      },
+      "dist": {
+        "above": "+{pct} % au-dessus",
+        "below": "−{pct} % en dessous"
+      },
+      "fact": {
+        "intact": "Jamais touchée depuis sa formation.",
+        "swept": "Mèche au-delà, clôture revenue. Tient encore.",
+        "broken": "Clôture nette au-delà. A cédé."
+      },
+      "hint": "Clic sur une poche = surbrillance de son niveau.",
+      "empty1": "Aucune poche ne correspond à ce filtre.",
+      "empty2": "Rien n'est inventé pour remplir la liste."
+    },
+    "reg2": {
+      "trendSub": "mesurée sur {tf}",
+      "volSub": "7 récentes vs précédentes",
+      "matSub": "depuis le CHOCH de {time}",
+      "matValue": "{count, plural, one {# bougie} other {# bougies}}",
+      "densSub": "actives sur {tf}",
+      "measureHelpAria": "Aide sur cette mesure",
+      "helpAria": "En savoir plus"
     }
   },
   "samples": {
@@ -1393,6 +1529,9 @@
       "active": "Actif",
       "mitigated": "Mitigée",
       "filledPct": "Comblé {pct} %"
+    },
+    "deeplink": {
+      "staleNotice": "Cette zone n'est plus détectée dans la lecture courante."
     }
   },
   "appearance": {

@@ -161,6 +161,13 @@ export interface ZoneLifecycleCardProps {
   onToggleHide(zoneId: string): void;
   /** Deep-link to /app focusing this zone (built with its real id). */
   appHref: string;
+  /**
+   * True when this card is the target of a `?zone=<id>` deep-link — it then
+   * carries the `.zsel` highlight ring so the referenced card stands out.
+   */
+  isSelected?: boolean;
+  /** Ref to the card root, so the workspace can scroll a deep-linked card into view. */
+  cardRef?: React.Ref<HTMLElement>;
 }
 
 export function ZoneLifecycleCard({
@@ -172,6 +179,8 @@ export function ZoneLifecycleCard({
   isHidden,
   onToggleHide,
   appHref,
+  isSelected = false,
+  cardRef,
 }: ZoneLifecycleCardProps) {
   const t = useTranslations('zones');
   const fmt = useReadingFormatters();
@@ -221,7 +230,10 @@ export function ZoneLifecycleCard({
   ].filter((s): s is string => Boolean(s));
 
   return (
-    <article className={cn('zone', state.mitig && 'mitig', isHidden && 'opacity-60')}>
+    <article
+      ref={cardRef}
+      className={cn('zone', state.mitig && 'mitig', isHidden && 'opacity-60', isSelected && 'zsel')}
+    >
       {/* Header: type/direction tag · price band · state badge */}
       <div className="ztop">
         <span className={cn('tagx', tagTone(zone.direction))}>{tagLabel(zone)}</span>

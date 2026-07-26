@@ -11,22 +11,22 @@ import {
 } from './ReadingPlaceholders';
 import { ReadingSkeleton } from './ReadingSkeleton';
 import { READING_DATA_SOURCE } from '@/lib/mockReadings';
+import { useRouter } from 'next/navigation';
 import {
   useCandles,
   useLatestPrice,
-  useMtfTrends,
   type ReadingSource,
 } from '@/lib/market-reading/hooks';
 import { useLivePrice } from '@/lib/market-reading/live-price';
 import { useMarketClosed } from '@/lib/market-reading/session';
 import { useChartViewOptional } from '@/lib/chart/viewState';
+import { coerceViewActions } from '@/lib/chart/viewActions';
 import { useReadingFormatters } from '@/lib/market-reading/use-reading-formatters';
-import {
-  MTF_TREND_ORDER,
-  classifyMtfAlignment,
-  mtfTrendGlyph,
-} from '@/lib/market-reading/mtf-trend';
-import { deriveTrendMaturity } from '@/lib/market-reading/regime-facts';
+import { useLocalizedHref } from '@/lib/i18n/href';
+import { StructureCard } from './StructureCard';
+import { LiquidityCard } from './LiquidityCard';
+import { RegimeCard } from './RegimeCard';
+import './ui2c.css';
 import type { Combo } from '@/lib/market-reading/store';
 import type {
   Candle,
@@ -123,6 +123,64 @@ export function DesktopReading({
     liveHeader?.priceTs ?? null,
   );
 
+  const router = useRouter();
+  const lh = useLocalizedHref();
+
+  // Page-level help state — a single open panel across the whole dashboard
+  // (mission §D/E): opening one measure's or card's "?" closes any other.
+  const [openHelp, setOpenHelp] = React.useState<string | null>(null);
+  const onToggleHelp = React.useCallback((key: string) => {
+    setOpenHelp((cur) => (cur === key ? null : key));
+  }, []);
+
+  // The id LOCK: only zone/liquidity ids the engine actually emitted may be
+  // focused/highlighted. An invented id is rejected by coerceViewActions.
+  const validZoneIds = React.useMemo(() => {
+    const ids = new Set<string>();
+    const s = reading?.structure;
+    if (s) {
+      for (const ob of s.order_blocks ?? []) ids.add(ob.id);
+      for (const fvg of s.fair_value_gaps ?? []) ids.add(fvg.id);
+      for (const pool of s.liquidity_pools ?? []) ids.add(pool.id);
+    }
+    return ids;
+  }, [reading]);
+
+  const selectedId = chartView.highlightZoneId;
+
+  // Click a zone/pocket row → toggle its chart highlight through the existing
+  // id-lock channel (focus + highlight); re-selecting clears it.
+  const selectZone = React.useCallback(
+    (id: string) => {
+      if (id === selectedId) {
+        applyActions(coerceViewActions([{ action: 'clear_highlight', params: {} }], validZoneIds));
+        return;
+      }
+      applyActions(
+        coerceViewActions(
+          [
+            { action: 'focus_zone', params: { zone_id: id } },
+            { action: 'highlight_zone', params: { zone_id: id } },
+          ],
+          validZoneIds,
+        ),
+      );
+    },
+    [selectedId, validZoneIds, applyActions],
+  );
+
+  // "En savoir plus" → open the Zones page on this zone's card (deep-link). An
+  // unknown/stale id is handled honestly by the Zones page itself.
+  const openZonePage = React.useCallback(
+    (id: string) => {
+      const combo = active
+        ? `&instrument=${active.instrument}&timeframe=${active.timeframe}`
+        : '';
+      router.push(lh(`/zones?zone=${encodeURIComponent(id)}${combo}`));
+    },
+    [active, router, lh],
+  );
+
   if (!active) return <EmptyReadingState />;
   if (error) return <ReadingErrorState error={error} onRetry={onRetry} />;
   if (isLoading && !reading) return <ReadingSkeleton />;
@@ -192,9 +250,32 @@ export function DesktopReading({
 
       <div className="panels">
         <NarratedPanel conditions={reading.conditions} />
-        <RegimePanel regime={reading.regime} structure={reading.structure} header={header} />
-        <StructurePanel structure={reading.structure} instrument={header.instrument} />
-        <LiquidityPanel structure={reading.structure} instrument={header.instrument} />
+        <RegimeCard
+          regime={reading.regime}
+          structure={reading.structure}
+          header={header}
+          openHelp={openHelp}
+          onToggleHelp={onToggleHelp}
+        />
+        <StructureCard
+          structure={reading.structure}
+          instrument={header.instrument}
+          price={price}
+          selectedId={selectedId}
+          onSelect={selectZone}
+          onOpenZone={openZonePage}
+          openHelp={openHelp}
+          onToggleHelp={onToggleHelp}
+        />
+        <LiquidityCard
+          structure={reading.structure}
+          instrument={header.instrument}
+          price={price}
+          selectedId={selectedId}
+          onSelect={selectZone}
+          openHelp={openHelp}
+          onToggleHelp={onToggleHelp}
+        />
         <NewsPanel events={reading.events} />
       </div>
     </div>
@@ -359,193 +440,6 @@ function NarratedPanel({ conditions }: { conditions: MarketReadingConditions }) 
         </svg>
         {t('desktop.narratedFooter')}
       </div>
-    </div>
-  );
-}
-
-function RegimePanel({
-  regime,
-  structure,
-  header,
-}: {
-  regime: MarketReadingRegime;
-  structure: MarketReadingStructure;
-  header: MarketReadingHeader;
-}) {
-  const t = useTranslations('app');
-  const tr = useTranslations('reading');
-  const fmt = useReadingFormatters();
-  const { trends } = useMtfTrends(header.instrument);
-
-  const maturity = deriveTrendMaturity(structure, header);
-  const maturityVal =
-    maturity?.bars != null ? `≈ ${maturity.bars} ${header.timeframe}` : null;
-
-  const relation = classifyMtfAlignment(trends);
-  const hasTrend = MTF_TREND_ORDER.some(({ key }) => trends[key] !== null);
-  const alignmentVal = hasTrend
-    ? MTF_TREND_ORDER.filter(({ key }) => trends[key] !== null)
-        .map(({ key, label }) => `${label} ${mtfTrendGlyph(trends[key]).arrow}`)
-        .join(' · ')
-    : null;
-
-  const cells: Array<{ k: string; v: string | null }> = [
-    { k: t('desktop.reg.trend'), v: fmt.trend(regime.trend).label },
-    { k: t('desktop.reg.volatility'), v: fmt.volatility(regime.volatility_observed).label },
-    { k: t('desktop.reg.maturity'), v: maturityVal },
-    { k: t('desktop.reg.alignment'), v: alignmentVal },
-    { k: t('desktop.reg.lastEvent'), v: fmt.regimeLastEvent(structure, header) },
-    { k: t('desktop.reg.density'), v: fmt.regimeZoneDensity(structure) },
-  ];
-
-  return (
-    <div className="card">
-      <div className="card-h">
-        <svg viewBox="0 0 24 24" aria-hidden>
-          <path d="M3 17l6-6 4 4 8-8" />
-          <path d="M21 3v6h-6" />
-        </svg>
-        <h3>{tr('regime.title')}</h3>
-        {relation.disagreement && (
-          <span className="badge2" style={{ color: 'var(--liq)' }}>
-            {t('desktop.reg.disagreement')}
-          </span>
-        )}
-      </div>
-      <div className="reggrid">
-        {cells.map((c) => (
-          <div className="reg" key={c.k}>
-            <div className="k">{c.k}</div>
-            <div className="v" style={c.v == null ? { color: 'var(--faint)', fontStyle: 'italic' } : undefined}>
-              {c.v ?? tr('regime.unavailable')}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function StructurePanel({
-  structure,
-  instrument,
-}: {
-  structure: MarketReadingStructure;
-  instrument: string;
-}) {
-  const t = useTranslations('app');
-  const tr = useTranslations('reading');
-  const fmt = useReadingFormatters();
-  const { bos, choch, order_blocks, fair_value_gaps } = structure;
-
-  type Row = { tag: string; tone: 'bull' | 'bear' | 'neu'; desc: string; right: string };
-  const rows: Row[] = [];
-
-  if (choch) {
-    rows.push({
-      tag: `CHOCH ${choch.direction === 'bullish' ? '↑' : '↓'}`,
-      tone: choch.direction === 'bullish' ? 'bull' : 'bear',
-      desc: `${fmt.direction(choch.direction)} · ${fmt.validationFem(choch.validation_status)}`,
-      right: fmt.price(choch.level, instrument),
-    });
-  }
-  if (bos) {
-    rows.push({
-      tag: `BOS ${bos.direction === 'bullish' ? '↑' : '↓'}`,
-      tone: bos.direction === 'bullish' ? 'bull' : 'bear',
-      desc: `${fmt.direction(bos.direction)} · ${fmt.validationFem(bos.validation_status)}`,
-      right: fmt.price(bos.level, instrument),
-    });
-  }
-  for (const ob of order_blocks.slice(0, 2)) {
-    rows.push({
-      tag: 'OB',
-      tone: 'neu',
-      desc: fmt.band(ob.level_low, ob.level_high, instrument),
-      right: fmt.obStatus(ob.status),
-    });
-  }
-  for (const fvg of fair_value_gaps.slice(0, 2)) {
-    rows.push({
-      tag: 'FVG',
-      tone: 'neu',
-      desc: fmt.band(fvg.level_low, fvg.level_high, instrument),
-      right: fmt.fvgStatus(fvg.status),
-    });
-  }
-
-  return (
-    <div className="card">
-      <div className="card-h">
-        <svg viewBox="0 0 24 24" aria-hidden>
-          <path d="M3 12h4l3-7 4 14 3-7h4" />
-        </svg>
-        <h3>{tr('structure.title')}</h3>
-      </div>
-      {rows.length === 0 ? (
-        <p className="emptyrow">{tr('structure.empty')}</p>
-      ) : (
-        rows.map((r, i) => (
-          <div className="strow" key={i}>
-            <span className={`tagx ${r.tone}`}>{r.tag}</span>
-            <span className="d">{r.desc}</span>
-            <span className="t">{r.right}</span>
-          </div>
-        ))
-      )}
-      <p className="narrfoot" style={{ borderTop: 'none', marginTop: 6, paddingTop: 0 }}>
-        {t('desktop.structureFooter')}
-      </p>
-    </div>
-  );
-}
-
-function LiquidityPanel({
-  structure,
-  instrument,
-}: {
-  structure: MarketReadingStructure;
-  instrument: string;
-}) {
-  const t = useTranslations('app');
-  const tr = useTranslations('reading');
-  const fmt = useReadingFormatters();
-  const pools = structure.liquidity_pools ?? [];
-
-  return (
-    <div className="card">
-      <div className="card-h">
-        <svg viewBox="0 0 24 24" aria-hidden>
-          <path d="M4 8h16M4 12h16M4 16h16" />
-        </svg>
-        <h3>{tr('structure.liquidityLabel')}</h3>
-        <span className="badge2">{t('desktop.liq.badge')}</span>
-      </div>
-      {pools.length === 0 ? (
-        <p className="emptyrow">{t('desktop.liq.empty')}</p>
-      ) : (
-        pools.map((p) => {
-          const lineClass =
-            p.status === 'swept' ? 'lline swept' : p.status === 'broken' ? 'lline broken' : 'lline';
-          const lstClass = p.status === 'broken' ? 'lst broken' : 'lst';
-          const desc =
-            p.status === 'swept'
-              ? t('desktop.liq.sweptDesc')
-              : p.status === 'broken'
-                ? t('desktop.liq.brokenDesc')
-                : t('desktop.liq.intactDesc');
-          return (
-            <div className="liqrow" key={p.id}>
-              <div className={lstClass}>
-                <div className={lineClass} />
-                <div className="s">{fmt.liquidityStatus(p.status).label}</div>
-              </div>
-              <span className="lv">{fmt.price(p.level, instrument)}</span>
-              <span className="dd">{desc}</span>
-            </div>
-          );
-        })
-      )}
     </div>
   );
 }

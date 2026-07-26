@@ -23,11 +23,13 @@ vi.mock('@/lib/market-reading/api-client', async (importActual) => {
 });
 
 // ZonesWorkspace now drives the combo from the URL (NAV-04); stub the app-router
-// hooks. Empty search params → it falls back to the default combo as before.
+// hooks. `mockSearchParams` lets a test inject `?zone=…` (the deep-link) etc.;
+// empty by default → it falls back to the default combo as before.
+let mockSearchParams = new URLSearchParams();
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
   usePathname: () => '/zones',
-  useSearchParams: () => new URLSearchParams(),
+  useSearchParams: () => mockSearchParams,
 }));
 
 /** Probe exposing the SHARED chart view state so we can assert hide reflects. */
@@ -36,9 +38,22 @@ function HiddenProbe() {
   return <div data-testid="hidden-ids">{view.hiddenZoneIds.join(',')}</div>;
 }
 
-function renderZones() {
+// `zones.deeplink.staleNotice` is owned by the i18n workstream and not yet in
+// fr.json; supply it locally so the deep-link notice test resolves its label
+// without waiting on that bundle change (the rest of the bundle is untouched).
+const messagesWithDeeplink = {
+  ...messages,
+  zones: {
+    ...messages.zones,
+    deeplink: {
+      staleNotice: 'Cette zone n’est plus détectée dans la lecture courante.',
+    },
+  },
+};
+
+function renderZones(msgs: typeof messages = messages) {
   return rtlRender(
-    <NextIntlClientProvider locale="fr" messages={messages}>
+    <NextIntlClientProvider locale="fr" messages={msgs}>
       <ChartViewProvider>
         <ZonesWorkspace locale="fr" />
         <HiddenProbe />
@@ -63,6 +78,7 @@ function cardForZone(zoneId: string): HTMLElement {
 beforeEach(() => {
   fetchMock.mockReset();
   fetchMock.mockResolvedValue(FIXTURE_XAU_M15);
+  mockSearchParams = new URLSearchParams();
 });
 
 afterEach(() => {
@@ -184,6 +200,53 @@ describe('ZonesWorkspace', () => {
     await waitFor(() =>
       expect(within(card).getAllByText(/chevauche un OB H1 haussier/).length).toBeGreaterThan(0),
     );
+  });
+
+  it('(j) `?zone=<id>` highlights the referenced card and scrolls it into view', async () => {
+    // jsdom doesn't implement scrollIntoView — install a spy on the prototype.
+    const scrollSpy = vi.fn();
+    (HTMLElement.prototype as unknown as { scrollIntoView: unknown }).scrollIntoView =
+      scrollSpy;
+    mockSearchParams = new URLSearchParams('zone=fvg-xau-1');
+    renderZones();
+    await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(4));
+
+    // The referenced card carries the `.zsel` highlight; no other card does.
+    const selected = cardForZone('fvg-xau-1');
+    await waitFor(() => expect(selected).toHaveClass('zsel'));
+    const highlighted = screen
+      .getAllByRole('article')
+      .filter((a) => a.classList.contains('zsel'));
+    expect(highlighted).toHaveLength(1);
+
+    // And it is scrolled into view (block:center).
+    await waitFor(() =>
+      expect(scrollSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ block: 'center' }),
+      ),
+    );
+  });
+
+  it('(k) a stale `?zone=<id>` shows the honest notice — never a fabricated card', async () => {
+    mockSearchParams = new URLSearchParams('zone=does-not-exist');
+    renderZones(messagesWithDeeplink);
+    await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(4));
+
+    // Honest notice is shown; still exactly the 4 real cards (nothing invented),
+    // and none is highlighted.
+    expect(
+      screen.getByText('Cette zone n’est plus détectée dans la lecture courante.'),
+    ).toBeInTheDocument();
+    expect(screen.getAllByRole('article')).toHaveLength(4);
+    expect(
+      screen.getAllByRole('article').some((a) => a.classList.contains('zsel')),
+    ).toBe(false);
+
+    // The notice is dismissible.
+    fireEvent.click(screen.getByRole('button', { name: /fermer ce message/i }));
+    expect(
+      screen.queryByText('Cette zone n’est plus détectée dans la lecture courante.'),
+    ).not.toBeInTheDocument();
   });
 
   it('(i) never renders a test count, a score or any confluence/quality wording', async () => {
