@@ -354,6 +354,103 @@
   grid-template-columns: 232px minmax(0, 1fr);
 }
 
+/* ── Responsive centre (mission UI-2b) ──────────────────────────────────────
+   The reference single-column centre must show from 768px up (tabs only on
+   phone). But the fixed 232 + 338 side columns would crush it below 1280, so:
+     · ≥1280px    rail · centre · chat DOCKÉ (the base rule above).
+     · 768–1279px rail · centre ; the chat becomes an OFF-CANVAS drawer opened
+                  by a floating button (.chat-fab), keeping the centre full width.
+     · <768px     centre plein écran ; MobileWorkspace (onglets) prend le relais,
+                  le rail et le chat du shell sont masqués.
+   Scoped to `:not(.no-chat)` so the Scanner/Zones/Réglages layouts (no chat
+   column) keep their current behaviour — mobile/tablet there is out of scope. */
+.app-shell .chat-fab,
+.app-shell .chat-backdrop {
+  display: none;
+}
+.app-shell .chat-fab {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 78;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--acc);
+  color: var(--acc-txt);
+  border: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+.app-shell .chat-fab svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.9;
+}
+
+@media (max-width: 1279px) {
+  .app-shell:not(.no-chat) {
+    grid-template-columns: 232px minmax(0, 1fr);
+  }
+  .app-shell:not(.no-chat) .chatcol {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100dvh;
+    width: min(338px, 88vw);
+    transform: translateX(101%);
+    transition: transform 0.22s ease;
+    z-index: 80;
+    box-shadow: -14px 0 46px rgba(0, 0, 0, 0.42);
+    border-left: 1px solid var(--line-2);
+  }
+  .app-shell:not(.no-chat) .chatcol.open {
+    transform: none;
+  }
+  .app-shell:not(.no-chat) .chat-fab {
+    display: inline-flex;
+  }
+  .app-shell:not(.no-chat) .chat-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.42);
+    z-index: 79;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.22s ease;
+  }
+  .app-shell:not(.no-chat) .chat-backdrop.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+@media (max-width: 767px) {
+  .app-shell:not(.no-chat) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .app-shell:not(.no-chat) .rail {
+    display: none;
+  }
+  .app-shell:not(.no-chat) .chatcol,
+  .app-shell:not(.no-chat) .chat-fab,
+  .app-shell:not(.no-chat) .chat-backdrop {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-shell .chatcol,
+  .app-shell .chat-backdrop {
+    transition: none;
+  }
+}
+
 /* ── Rail (left) ──────────────────────────────────────────────────────── */
 .app-shell .rail {
   background: var(--panel);

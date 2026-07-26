@@ -9,7 +9,7 @@
     "faq": "FAQ",
     "zones": "Zone",
     "scanner": "Scanner",
-    "account": "Account",
+    "account": "Impostazioni",
     "login": "Accedi",
     "language": "Lingua"
   },
@@ -667,7 +667,7 @@
   },
   "footer": {
     "description": "Indicatore di mercato conversazionale. Postura educativa, comprensione aumentata del mercato — non una performance finanziaria promessa.",
-    "earlyAccessBadge": "Accesso anticipato · 50 posti",
+    "earlyAccessBadge": "Accesso anticipato",
     "productHeading": "Prodotto",
     "legalHeading": "Legale",
     "product": {
@@ -890,7 +890,8 @@
       "welcomeSubtitleActive": "Fai una domanda sulla lettura in corso: scomponi la struttura, semplifica un termine o contestualizza un evento in arrivo.",
       "welcomeSubtitleIdle": "Seleziona un mercato a sinistra, poi fammi una domanda sulla sua lettura.",
       "offlineNote": "Modalità offline: l’inserimento libero richiede la chiave Anthropic lato server.",
-      "complianceLine": "M.I.A Agent risponde a domande sulla lettura algoritmica. Non fornisce né segnali di trading, né raccomandazioni personalizzate."
+      "complianceLine": "M.I.A Agent risponde a domande sulla lettura algoritmica. Non fornisce né segnali di trading, né raccomandazioni personalizzate.",
+      "openPanel": "Apri l'assistente"
     },
     "placeholders": {
       "emptyReading": "Seleziona una combinazione a sinistra per mostrare la sua lettura di mercato.",
@@ -1098,7 +1099,8 @@
     "disclaimer": {
       "hero": "Dimostrazione in accesso anticipato. Lettura algoritmica educativa — non costituisce né un segnale di trading, né una consulenza in investimenti.",
       "chart": "Lettura algoritmica educativa — non costituisce né un segnale di trading, né una consulenza in investimenti."
-    }
+    },
+    "earlyAccessBadge": "Accesso anticipato"
   },
   "pages": {
     "conditions": {

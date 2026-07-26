@@ -35,6 +35,14 @@
 .app-shell .panels .wide {
   grid-column: 1 / -1;
 }
+/* On a narrow centre (mission UI-2b: reference centre from 768px, where the rail
+   still occupies 232px) the 2-column panel grid gets cramped — drop to a single
+   column so each panel stays legible. */
+@media (max-width: 1100px) {
+  .app-shell .panels {
+    grid-template-columns: 1fr;
+  }
+}
 .app-shell .pagewrap {
   max-width: 1020px;
   margin: 0 auto;

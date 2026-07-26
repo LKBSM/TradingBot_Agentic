@@ -9,7 +9,7 @@
     "faq": "FAQ",
     "zones": "Zones",
     "scanner": "Scanner",
-    "account": "Account",
+    "account": "Settings",
     "login": "Sign in",
     "language": "Language"
   },
@@ -667,7 +667,7 @@
   },
   "footer": {
     "description": "Conversational market indicator. Educational posture, augmented market understanding — not a promised financial performance.",
-    "earlyAccessBadge": "Early Access · 50 seats",
+    "earlyAccessBadge": "Early access",
     "productHeading": "Product",
     "legalHeading": "Legal",
     "product": {
@@ -890,7 +890,8 @@
       "welcomeSubtitleActive": "Ask a question about the current reading: break down the structure, explain a term in plain language, or put an upcoming event in context.",
       "welcomeSubtitleIdle": "Select a market on the left, then ask me a question about its reading.",
       "offlineNote": "Offline mode: free-form input requires the Anthropic key on the server side.",
-      "complianceLine": "M.I.A Agent answers questions about the algorithmic reading. It provides neither trading signals nor personalized recommendations."
+      "complianceLine": "M.I.A Agent answers questions about the algorithmic reading. It provides neither trading signals nor personalized recommendations.",
+      "openPanel": "Open the assistant"
     },
     "placeholders": {
       "emptyReading": "Select a combination on the left to display its market reading.",
@@ -1098,7 +1099,8 @@
     "disclaimer": {
       "hero": "Early-access demonstration. Educational algorithmic reading — constitutes neither a trading signal nor investment advice.",
       "chart": "Educational algorithmic reading — constitutes neither a trading signal nor investment advice."
-    }
+    },
+    "earlyAccessBadge": "Early access"
   },
   "pages": {
     "conditions": {
