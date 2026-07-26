@@ -269,6 +269,33 @@ export interface MarketReading {
   regime: MarketReadingRegime;
   events: MarketReadingEvents;
   conditions: MarketReadingConditions;
+  /**
+   * MC-1 server-computed market status. Present on live readings, absent on
+   * static/landing fixtures (the UI then falls back to the client heuristic).
+   * The single source of truth for the App badge, Scanner and agent — never the
+   * client clock.
+   */
+  market_status?: MarketStatusPayload | null;
+}
+
+/** Server market status (src/intelligence/market_calendar.MarketStatus.to_dict). */
+export type MarketState =
+  | 'open'
+  | 'closed_weekend'
+  | 'closed_holiday'
+  | 'daily_break'
+  | 'data_lagged';
+
+export interface MarketStatusPayload {
+  state: MarketState;
+  reason: string;
+  instrument: string;
+  timeframe: string;
+  /** ISO-8601 UTC of the last fully-closed candle, or null. */
+  last_close_ts: string | null;
+  /** ISO-8601 UTC of the next open, or null (open / 24-7 market). */
+  next_open_ts: string | null;
+  bars_behind: number | null;
 }
 
 // ─── Chart feed (GET /api/candles) ────────────────────────────────────────────

@@ -3,7 +3,7 @@
 import * as React from 'react';
 import dynamic from 'next/dynamic';
 import { Loader2 } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import {
   ChartUnavailable,
   EmptyReadingState,
@@ -19,6 +19,12 @@ import {
 } from '@/lib/market-reading/hooks';
 import { useLivePrice } from '@/lib/market-reading/live-price';
 import { useMarketClosed } from '@/lib/market-reading/session';
+import {
+  badgeLabelKey,
+  deriveMarketStatus,
+  formatNyTimestamp,
+  type MarketStatusView,
+} from '@/lib/market-reading/status';
 import { useChartViewOptional } from '@/lib/chart/viewState';
 import { coerceViewActions } from '@/lib/chart/viewActions';
 import { useReadingFormatters } from '@/lib/market-reading/use-reading-formatters';
@@ -118,10 +124,15 @@ export function DesktopReading({
     };
   }, [live, livePrice, liveTs]);
 
-  const marketClosed = useMarketClosed(
+  // MC-1: server status is authoritative; the client heuristic is a fallback.
+  const clientClosed = useMarketClosed(
     active?.instrument ?? null,
     liveHeader?.priceTs ?? null,
   );
+  const serverStatus = deriveMarketStatus(reading?.market_status);
+  const marketClosed = serverStatus
+    ? serverStatus.isClosed || serverStatus.isLagged
+    : clientClosed;
 
   const router = useRouter();
   const lh = useLocalizedHref();
@@ -200,6 +211,7 @@ export function DesktopReading({
         livePrice={livePrice}
         liveTs={liveTs}
         marketClosed={marketClosed}
+        marketStatusState={serverStatus?.state ?? null}
         layers={chartView.layers}
         filter={chartView.filter}
         focus={chartView.focus}
@@ -230,6 +242,7 @@ export function DesktopReading({
         price={price}
         changeAbs={changeAbs}
         marketClosed={marketClosed}
+        status={serverStatus}
       />
 
       <LegalBar />
@@ -289,16 +302,36 @@ function AppHead({
   price,
   changeAbs,
   marketClosed,
+  status,
 }: {
   instrument: string;
   price: number;
   changeAbs: number | null;
   marketClosed: boolean;
+  status?: MarketStatusView | null;
 }) {
   const t = useTranslations('app');
+  const locale = useLocale();
   const fmt = useReadingFormatters();
   const tone = fmt.changeTone(changeAbs);
   const sign = changeAbs == null || changeAbs === 0 ? '' : changeAbs > 0 ? '+' : '−';
+
+  // Badge label: server state (closed / daily pause / data delayed) first.
+  const closedLabelKey = (status && badgeLabelKey(status.state)) || 'chart.marketClosed';
+  const lastClose = status ? formatNyTimestamp(status.lastCloseTs, locale) : null;
+  const reopen = status ? formatNyTimestamp(status.nextOpenTs, locale) : null;
+  const subline =
+    status && !status.isLive
+      ? status.isLagged
+        ? lastClose && t('chart.noNewCandleSince', { when: lastClose })
+        : [
+            lastClose && t('chart.lastCandleClosed', { when: lastClose }),
+            reopen && t('chart.reopensAt', { when: reopen }),
+          ]
+            .filter(Boolean)
+            .join(' · ')
+      : null;
+
   return (
     <div className="apphead">
       <h1>{fmt.instrument(instrument)}</h1>
@@ -314,7 +347,7 @@ function AppHead({
       )}
       <span className="hsp" />
       {marketClosed ? (
-        <div className="livebadge" role="status">
+        <div className="livebadge" role="status" title={subline || undefined}>
           <span
             style={{
               width: 7,
@@ -325,7 +358,7 @@ function AppHead({
             }}
             aria-hidden
           />
-          <span className="mono">{t('chart.marketClosed')}</span>
+          <span className="mono">{t(closedLabelKey)}</span>
         </div>
       ) : (
         <div className="livebadge" role="status">

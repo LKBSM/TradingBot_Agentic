@@ -402,7 +402,8 @@
     "activeStrategy": "My strategy — active conditions",
     "note": "Closed palette, present-tense. Any predictive condition is refused — no “will bounce”, no target.",
     "resultsMeta": "{count} combos · {when} · no ranking",
-    "unavailable": "Unavailable — no fresh reading for this combo. Nothing is invented."
+    "unavailable": "Unavailable — no fresh reading for this combo. Nothing is invented.",
+    "noNewClose": "No newly closed candle to analyze since the last scan."
   },
   "reading": {
     "card": {
@@ -957,7 +958,14 @@
       "liqShowAll": "Show all liquidity pools (intact, swept, broken)",
       "liqShowIntactOnly": "Show only intact liquidity pools",
       "marketClosed": "Market closed",
-      "marketClosedTitle": "The market is currently closed: the chart shows the last closed candle and does not reflect a live quote."
+      "marketClosedTitle": "The market is currently closed: the chart shows the last closed candle and does not reflect a live quote.",
+      "marketPaused": "Daily pause",
+      "marketPausedTitle": "Daily market pause (rollover): the chart shows the last closed candle and does not reflect a live quote.",
+      "dataLagged": "Data delayed",
+      "dataLaggedTitle": "The calendar shows the market open, but no new candle has been received recently.",
+      "lastCandleClosed": "Last candle closed {when} (New York)",
+      "reopensAt": "Reopens {when} (New York)",
+      "noNewCandleSince": "No new candle received since {when} (New York)"
     },
     "layers": {
       "ob": "OB",

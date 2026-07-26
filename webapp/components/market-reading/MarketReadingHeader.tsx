@@ -1,7 +1,13 @@
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { LivePrice } from './LivePrice';
 import { TemporalBadge } from './TemporalBadge';
 import { useReadingFormatters } from '@/lib/market-reading/use-reading-formatters';
+import {
+  badgeLabelKey,
+  badgeTitleKey,
+  formatNyTimestamp,
+  type MarketStatusView,
+} from '@/lib/market-reading/status';
 import type { DailyChange } from '@/lib/market-reading/price';
 import type { MarketReadingHeader as MarketReadingHeaderData } from '@/types/market-reading';
 
@@ -19,6 +25,7 @@ export function MarketReadingHeader({
   header,
   live,
   marketClosed = false,
+  status,
 }: {
   header: MarketReadingHeaderData;
   /** Unified last price + daily change. Omitted on static/landing surfaces. */
@@ -28,9 +35,23 @@ export function MarketReadingHeader({
    * neutral "Marché fermé" badge next to the price. A present fact, no forecast.
    */
   marketClosed?: boolean;
+  /**
+   * MC-1 server market status. When present it drives the badge (closed / daily
+   * pause / data delayed) and the factual sub-line (last close + reopen), taking
+   * precedence over the legacy `marketClosed` boolean.
+   */
+  status?: MarketStatusView | null;
 }) {
   const fmt = useReadingFormatters();
   const t = useTranslations('app');
+  const locale = useLocale();
+
+  // Badge label: server state first, else the legacy boolean.
+  const labelKey = status ? badgeLabelKey(status.state) : marketClosed ? 'chart.marketClosed' : null;
+  const titleKey = status ? badgeTitleKey(status.state) : 'chart.marketClosedTitle';
+  const lastClose = status ? formatNyTimestamp(status.lastCloseTs, locale) : null;
+  const reopen = status ? formatNyTimestamp(status.nextOpenTs, locale) : null;
+
   return (
     <header className="space-y-2">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
@@ -38,17 +59,17 @@ export function MarketReadingHeader({
           {fmt.instrument(header.instrument)}
         </h2>
         <div className="flex items-center gap-2">
-          {marketClosed && (
+          {labelKey && (
             <span
               className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-muted/70 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground"
-              title={t('chart.marketClosedTitle')}
+              title={titleKey ? t(titleKey) : undefined}
               role="status"
             >
               <span
                 className="inline-block h-1.5 w-1.5 rounded-full bg-muted-foreground/70"
                 aria-hidden
               />
-              {t('chart.marketClosed')}
+              {t(labelKey)}
             </span>
           )}
           {live ? (
@@ -70,6 +91,18 @@ export function MarketReadingHeader({
         </span>
         <TemporalBadge candleCloseTs={header.candle_close_ts} />
       </div>
+      {status && !status.isLive && (
+        <p className="text-[11px] leading-snug text-muted-foreground" role="status">
+          {status.isLagged
+            ? lastClose && t('chart.noNewCandleSince', { when: lastClose })
+            : [
+                lastClose && t('chart.lastCandleClosed', { when: lastClose }),
+                reopen && t('chart.reopensAt', { when: reopen }),
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+        </p>
+      )}
     </header>
   );
 }

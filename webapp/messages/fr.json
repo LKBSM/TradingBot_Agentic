@@ -402,7 +402,8 @@
     "activeStrategy": "Ma stratégie — conditions actives",
     "note": "Palette fermée, au présent. Toute condition prédictive est refusée — pas de « va rebondir », pas de cible.",
     "resultsMeta": "{count} combos · {when} · aucun classement",
-    "unavailable": "Non disponible — pas de lecture fraîche pour ce combo. Rien n'est inventé."
+    "unavailable": "Non disponible — pas de lecture fraîche pour ce combo. Rien n'est inventé.",
+    "noNewClose": "Aucune nouvelle bougie clôturée à analyser depuis la dernière analyse."
   },
   "reading": {
     "card": {
@@ -995,7 +996,14 @@
       "liqShowAll": "Afficher toutes les poches de liquidité (intactes, prises, cassées)",
       "liqShowIntactOnly": "Afficher seulement les poches de liquidité intactes",
       "marketClosed": "Marché fermé",
-      "marketClosedTitle": "Le marché est actuellement fermé : le graphique montre la dernière bougie clôturée, il ne reflète pas de cotation en direct."
+      "marketClosedTitle": "Le marché est actuellement fermé : le graphique montre la dernière bougie clôturée, il ne reflète pas de cotation en direct.",
+      "marketPaused": "Pause quotidienne",
+      "marketPausedTitle": "Pause quotidienne du marché (rollover) : le graphique montre la dernière bougie clôturée, il ne reflète pas de cotation en direct.",
+      "dataLagged": "Données en retard",
+      "dataLaggedTitle": "Le calendrier indique un marché ouvert, mais aucune nouvelle bougie n'a été reçue récemment.",
+      "lastCandleClosed": "Dernière bougie clôturée {when} (New York)",
+      "reopensAt": "Réouverture {when} (New York)",
+      "noNewCandleSince": "Aucune nouvelle bougie reçue depuis {when} (New York)"
     },
     "struct": {
       "title": "Structure de marché",

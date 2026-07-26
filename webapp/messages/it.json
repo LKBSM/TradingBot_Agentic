@@ -402,7 +402,8 @@
     "activeStrategy": "La mia strategia — condizioni attive",
     "note": "Palette chiusa, al presente. Ogni condizione predittiva è rifiutata — niente «rimbalzerà», nessun target.",
     "resultsMeta": "{count} combo · {when} · nessuna classifica",
-    "unavailable": "Non disponibile — nessuna lettura recente per questo combo. Niente è inventato."
+    "unavailable": "Non disponibile — nessuna lettura recente per questo combo. Niente è inventato.",
+    "noNewClose": "Nessuna candela appena chiusa da analizzare dall'ultima scansione."
   },
   "reading": {
     "card": {
@@ -957,7 +958,14 @@
       "liqShowAll": "Mostra tutte le sacche di liquidità (intatte, prese, rotte)",
       "liqShowIntactOnly": "Mostra solo le sacche di liquidità intatte",
       "marketClosed": "Mercato chiuso",
-      "marketClosedTitle": "Il mercato è attualmente chiuso: il grafico mostra l'ultima candela chiusa e non riflette una quotazione in tempo reale."
+      "marketClosedTitle": "Il mercato è attualmente chiuso: il grafico mostra l'ultima candela chiusa e non riflette una quotazione in tempo reale.",
+      "marketPaused": "Pausa giornaliera",
+      "marketPausedTitle": "Pausa giornaliera del mercato (rollover): il grafico mostra l'ultima candela chiusa e non riflette una quotazione in tempo reale.",
+      "dataLagged": "Dati in ritardo",
+      "dataLaggedTitle": "Il calendario indica il mercato aperto, ma non è stata ricevuta alcuna nuova candela di recente.",
+      "lastCandleClosed": "Ultima candela chiusa {when} (New York)",
+      "reopensAt": "Riapertura {when} (New York)",
+      "noNewCandleSince": "Nessuna nuova candela ricevuta da {when} (New York)"
     },
     "layers": {
       "ob": "OB",

@@ -68,3 +68,33 @@ async def get_market_reading(
     except Exception:
         logger.exception("market-reading generation failed for %s/%s", instrument, timeframe)
         raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.get("/market-status")
+async def get_market_status(
+    request: Request,
+    instrument: str = Query(..., description="XAUUSD or EURUSD"),
+    timeframe: str = Query(..., description="M15, H1, or H4"),
+) -> Dict[str, Any]:
+    """Server-side market status for (instrument, timeframe) — the single source
+    of truth the App badge, Scanner and M.I.A agent all read (never the client
+    clock). Fact-first: the last closed candle governs; the calendar names the
+    reason and gives the reopen time. A pure read — never fetches or rebuilds."""
+    if instrument not in SUPPORTED_INSTRUMENTS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported instrument '{instrument}'. Supported: {sorted(SUPPORTED_INSTRUMENTS)}",
+        )
+    if timeframe not in SUPPORTED_TIMEFRAMES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported timeframe '{timeframe}'. Supported: {sorted(SUPPORTED_TIMEFRAMES)}",
+        )
+    assembler = getattr(request.app.state.app_state, "market_reading_assembler", None)
+    if assembler is None:
+        raise HTTPException(status_code=503, detail="MarketReading service not configured")
+    try:
+        return assembler.market_status(instrument, timeframe).to_dict()
+    except Exception:
+        logger.exception("market-status failed for %s/%s", instrument, timeframe)
+        raise HTTPException(status_code=500, detail="Internal server error")

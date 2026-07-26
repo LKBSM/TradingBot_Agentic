@@ -40,6 +40,10 @@ from src.intelligence.market_reading_schema import (
     MarketReadingEvents,
     MarketReadingHeader,
 )
+from src.intelligence.market_calendar import (
+    compute_market_status,
+    market_aware_expected_close,
+)
 from src.intelligence.narrated_reading import build_reading_facts, render_template
 from src.intelligence.provider_snapshot import snapshot_provider_response
 
@@ -264,20 +268,108 @@ class MarketReadingAssembler:
         candle close. Otherwise re-generates end-to-end. Always marks the
         combination as active (Section 3.3 of architecture doc — hybrid
         scheduler state for Chantier 3).
+
+        MC-1 emission lock: ``expected_close`` is **market-aware** — while the
+        market is closed (weekend / holiday / daily break) it freezes at the
+        last traded candle, so the stored reading keeps matching, nothing is
+        re-fetched from Twelve Data and no "new" structure is re-emitted. This
+        is the server-side verrou, not a display filter: the reading is never
+        rebuilt without a genuinely new closed candle.
         """
-        expected_close = expected_last_candle_close(timeframe, self._clock())
+        expected_close = market_aware_expected_close(instrument, timeframe, self._clock())
 
         existing = self._readings_store.get_latest_reading(instrument, timeframe)
         if existing is not None and self._payload_matches(existing, expected_close):
             self._readings_store.mark_combination_active(instrument, timeframe)
-            return MarketReading.model_validate(existing)
+            return self._with_status(
+                MarketReading.model_validate(existing), instrument, timeframe
+            )
 
         reading = self._build_fresh(instrument, timeframe, expected_close)
         self._readings_store.save_reading(
             instrument, timeframe, expected_close, reading.model_dump(mode="json")
         )
         self._readings_store.mark_combination_active(instrument, timeframe)
+        return self._with_status(reading, instrument, timeframe)
+
+    def _with_status(
+        self, reading: MarketReading, instrument: str, timeframe: str
+    ) -> MarketReading:
+        """Attach the fresh market status to a reading WITHOUT persisting it.
+
+        The stored payload never carries a status (it depends on ``now``); every
+        response computes it from the calendar + the stored ``candle_close_ts``
+        so the App badge, Scanner and agent all read the same server truth."""
+        try:
+            reading.market_status = self.market_status(instrument, timeframe).to_dict()
+        except Exception:  # pragma: no cover — status must never break a reading
+            logger.warning("market_status attach failed for %s/%s", instrument, timeframe)
         return reading
+
+    def refresh_if_reopened(self, instrument: str, timeframe: str) -> bool:
+        """Infrequent safety probe (MC-1): the market may reopen *before* the
+        configured calendar time (e.g. an unforeseen holiday that turned out to
+        be a trading day). Makes ONE Twelve Data call and rebuilds the reading
+        **only if the provider actually returns a closed candle newer than the
+        frozen one** — stamped with that real candle's close, never the wall
+        clock. Returns True when it refreshed.
+
+        Deliberately conservative: when the market-aware close has not advanced
+        past the frozen close (the normal case for a still-closed market) it may
+        still find no new data and leave everything frozen. The scheduler only
+        calls this on holiday closures and at a low frequency, so a weekend
+        makes zero outbound calls."""
+        now = self._clock()
+        clock_expected = expected_last_candle_close(timeframe, now)
+        frozen = market_aware_expected_close(instrument, timeframe, now)
+        if clock_expected <= frozen:
+            return False
+
+        raw = self._data_provider.fetch_candles(instrument, timeframe, self._lookback)
+        candles = drop_unclosed_candles(raw, timeframe, clock_expected)
+        if not candles:
+            return False
+        span = timedelta(minutes=_TIMEFRAME_MINUTES[timeframe.upper()])
+        last_ts = candles[-1].ts
+        if last_ts.tzinfo is None:
+            last_ts = last_ts.replace(tzinfo=timezone.utc)
+        actual_close = last_ts.astimezone(timezone.utc) + span
+
+        stored = self.market_status(instrument, timeframe).last_close_ts
+        if stored is not None and actual_close <= stored:
+            return False  # provider has nothing newer — still closed, stay frozen
+
+        reading = self._build_fresh(instrument, timeframe, actual_close, raw_candles=raw)
+        self._readings_store.save_reading(
+            instrument, timeframe, actual_close, reading.model_dump(mode="json")
+        )
+        self._readings_store.mark_combination_active(instrument, timeframe)
+        return True
+
+    def market_status(self, instrument: str, timeframe: str):
+        """Current :class:`MarketStatus` for (instrument, timeframe).
+
+        Fact-first: the "last closed candle" is read from the stored reading's
+        ``candle_close_ts`` (the real data), never from the wall clock. The
+        calendar only names the reason and supplies the reopen time. A pure
+        read — never fetches, never rebuilds, never mutates a store.
+        """
+        last_close_ts: Optional[datetime] = None
+        existing = self._readings_store.get_latest_reading(instrument, timeframe)
+        if isinstance(existing, Mapping):
+            header = existing.get("header")
+            if isinstance(header, Mapping):
+                raw_ts = header.get("candle_close_ts")
+                if raw_ts is not None:
+                    try:
+                        last_close_ts = (
+                            raw_ts
+                            if isinstance(raw_ts, datetime)
+                            else datetime.fromisoformat(str(raw_ts).replace("Z", "+00:00"))
+                        )
+                    except ValueError:
+                        last_close_ts = None
+        return compute_market_status(instrument, timeframe, last_close_ts, self._clock())
 
     def get_ob_diagnostic(
         self,
@@ -298,7 +390,7 @@ class MarketReadingAssembler:
         """
         from src.intelligence.ob_diagnostics import diagnose_ob
 
-        expected_close = expected_last_candle_close(timeframe, self._clock())
+        expected_close = market_aware_expected_close(instrument, timeframe, self._clock())
         raw = self._candles_store.get_last_n_candles(
             instrument, timeframe, self._lookback
         )
@@ -344,11 +436,16 @@ class MarketReadingAssembler:
         return parsed.astimezone(timezone.utc) == expected_close
 
     def _build_fresh(
-        self, instrument: str, timeframe: str, expected_close: datetime
+        self,
+        instrument: str,
+        timeframe: str,
+        expected_close: datetime,
+        raw_candles: Optional[Sequence[Any]] = None,
     ) -> MarketReading:
-        raw_candles = self._data_provider.fetch_candles(
-            instrument, timeframe, self._lookback
-        )
+        if raw_candles is None:
+            raw_candles = self._data_provider.fetch_candles(
+                instrument, timeframe, self._lookback
+            )
         # Raw response snapshot BEFORE any filtering — the only way to replay
         # a reading bit-for-bit later (the feed revises forming bars; audit §T3
         # found a reading whose close_price existed in no stored final candle).

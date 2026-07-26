@@ -284,6 +284,11 @@ class MarketReading(BaseModel):
     regime: MarketReadingRegime
     events: MarketReadingEvents
     conditions: MarketReadingConditions
+    # MC-1 market status (open / closed_weekend / closed_holiday / daily_break /
+    # data_lagged). Computed fresh at response time from the market calendar +
+    # the last closed candle — NEVER persisted (it depends on "now"), so the
+    # stored payload always carries None and the accessor fills it per request.
+    market_status: Optional[dict] = None
 
 
 __all__ = [

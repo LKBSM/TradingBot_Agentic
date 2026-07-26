@@ -19,10 +19,11 @@ import {
 } from '@/lib/market-reading/hooks';
 import { useLivePrice } from '@/lib/market-reading/live-price';
 import { useMarketClosed } from '@/lib/market-reading/session';
+import { deriveMarketStatus, type MarketStatusView } from '@/lib/market-reading/status';
 import { useChartViewOptional } from '@/lib/chart/viewState';
 import type { ChartViewState } from '@/lib/chart/viewActions';
 import type { Combo } from '@/lib/market-reading/store';
-import type { Candle, MarketReading } from '@/types/market-reading';
+import type { Candle, MarketReading, MarketState } from '@/types/market-reading';
 
 /**
  * The chart is client-only (canvas) and pulls in lightweight-charts — load it
@@ -129,10 +130,17 @@ export function ReadingColumn({
   // corroborated by the freshest price age (holidays). Drives the "Marché fermé"
   // badge near the price and on the chart; suppresses the "EN DIRECT" badge so
   // the app never claims to be live when it isn't. Display-only.
-  const marketClosed = useMarketClosed(
+  // MC-1: the SERVER decides open/closed (calendar + last-candle age, DST-safe).
+  // The client heuristic is only a fallback for surfaces with no server status
+  // (landing mocks). We never let the browser clock override a server verdict.
+  const clientClosed = useMarketClosed(
     active?.instrument ?? null,
     liveHeader?.priceTs ?? null,
   );
+  const serverStatus: MarketStatusView | null = deriveMarketStatus(reading?.market_status);
+  const marketClosed = serverStatus
+    ? serverStatus.isClosed || serverStatus.isLagged
+    : clientClosed;
 
   function focusChat() {
     const input = document.querySelector<HTMLTextAreaElement>(
@@ -154,9 +162,10 @@ export function ReadingColumn({
       <MarketReadingCard
         reading={reading}
         onAskChatbot={focusChat}
-        chartSlot={buildChartSlot(reading, candles, livePrice, liveTs, active?.timeframe ?? null, chartView, onClearHighlight, marketClosed)}
+        chartSlot={buildChartSlot(reading, candles, livePrice, liveTs, active?.timeframe ?? null, chartView, onClearHighlight, marketClosed, serverStatus?.state ?? null)}
         live={liveHeader}
         marketClosed={marketClosed}
+        status={serverStatus}
         className="w-full border-border/60 shadow-sm"
       />
     );
@@ -196,6 +205,7 @@ function buildChartSlot(
   chartView: ChartViewState,
   onClearHighlight: () => void,
   marketClosed: boolean,
+  marketStatusState: MarketState | null,
 ): React.ReactNode {
   if (!candles || candles.length === 0) {
     return <ChartUnavailable />;
@@ -209,6 +219,7 @@ function buildChartSlot(
       livePrice={livePrice}
       liveTs={liveTs}
       marketClosed={marketClosed}
+      marketStatusState={marketStatusState}
       layers={chartView.layers}
       filter={chartView.filter}
       focus={chartView.focus}
