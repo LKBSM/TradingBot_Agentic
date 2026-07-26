@@ -610,6 +610,40 @@
       "mtf_aligned": "Timeframes uitgelijnd",
       "mtf_divergent": "Timeframes divergerend",
       "mtf_mixed": "Timeframes gemengd"
+    },
+    "help": {
+      "regime": {
+        "title": "Reading the market regime",
+        "body": "These six measures describe the **current** state of the market, each with its source shown below it. None is a forecast, none is weighted.\n\nThe little **?** on each measure explains exactly what it counts, and what it does not say."
+      },
+      "trend": {
+        "title": "Trend",
+        "body": "**What it counts:** the sequence of highs and lows on **the displayed timeframe** (here H1). Falling highs and lows → bearish. This is a reading of past structure, not a projection.\n\n**Classic trap:** the trend is not the same across all timeframes. A bearish M15 inside a bullish H4 is not a contradiction — it's a matter of scale. Change the TF and the answer changes."
+      },
+      "vol": {
+        "title": "Volatility",
+        "body": "**What it counts:** the average range of the most recent candles compared with that of the candles preceding them. \"Normal\" = within its usual range.\n\n**Why it's useful in SMC:** volatility changes the **size** of zones. An OB formed in high volatility is wider, and therefore takes longer to cross. This isn't a quality, it's a dimension.\n\n**What it does not say:** no direction. Low volatility can precede anything."
+      },
+      "mat": {
+        "title": "Structure maturity",
+        "body": "**What it counts:** the number of candles closed on the displayed timeframe **since the last confirmed CHOCH** (here, the one at 14:00). The starting point is always named below the value — a counter without an origin means nothing.\n\n**What it does not say:** an older structure is neither more nor less likely to continue. No probability is computed here."
+      },
+      "align": {
+        "title": "Multi-timeframe alignment",
+        "body": "**What it counts:** the three analysed timeframes are **right now** showing the same structural direction. When they diverge, MIA shows that just as plainly (\"Disagreement\") — disagreement is information, not a failure.\n\n**What the SMC convention makes of it:** many traders treat alignment as a **confluence** criterion within their own method, and read disagreement as the sign that two scales are telling two different stories.\n\n**What MIA will never assert:** that an alignment makes an entry safer, more likely or less risky. No one can measure that on your account, your horizon and your risk management. MIA describes the fact; the interpretation stays yours."
+      },
+      "dens": {
+        "title": "Zone density",
+        "body": "**What it counts:** the number of still-active zones detected on this timeframe.\n\n**How to read it:** high density describes a market that has left many imbalances behind it; low density, a market that has already filled most of its own. More zones does not mean more opportunities — only more levels to watch."
+      },
+      "struct": {
+        "title": "The four structure objects",
+        "body": "**OB (Order Block)** — the last candle of opposite direction before the impulsive move that broke the structure.\n\n**FVG (Fair Value Gap)** — the gap left by three candles whose wicks do not overlap. It fills progressively: MIA shows the percentage actually filled.\n\n**BOS** — break of an extreme **in the direction** of the current structure. **CHOCH** — first break **in the opposite direction**: this is the change of character.\n\nMIA detects, describes and dates these objects. It never says which one \"is going to work\"."
+      },
+      "liq": {
+        "title": "External liquidity: where and in what state",
+        "body": "**BSL** — buy-side liquidity, above highs and equal highs. **SSL** — sell-side liquidity, below lows and equal lows.\n\n**Intact** — never touched. **Swept** — a wick went beyond but the close came back short of it: the level **still holds**. **Broken** — a clean close beyond: it gave way.\n\n**The distinction to remember:** touched does not equal broken. That's the nuance most tools flatten into a single binary state.\n\nMIA will never write that a pocket will be \"taken\": that's a prediction, and no one knows it."
+      }
     }
   },
   "disclaimer": {
@@ -962,6 +996,108 @@
         "empty": "Geen aankomende gebeurtenis voor deze combinatie.",
         "scheduledOn": "Geplande volatiliteit op {currency}"
       }
+    },
+    "struct": {
+      "title": "Market structure",
+      "zonesCount": "{count, plural, one {# zone} other {# zones}}",
+      "sortAria": "Sort and filter",
+      "helpAria": "Learn more",
+      "filterType": "Type",
+      "filterState": "State",
+      "filterSort": "Sort by",
+      "type": {
+        "all": "All",
+        "ob": "OB",
+        "fvg": "FVG"
+      },
+      "st": {
+        "all": "All",
+        "active": "Active",
+        "tested": "Tested",
+        "mitig": "Mitigated"
+      },
+      "sort": {
+        "near": "Near price",
+        "recent": "Recent",
+        "big": "Wide"
+      },
+      "badge": {
+        "active": "Active",
+        "tested": "Tested",
+        "mitig": "Mitigated"
+      },
+      "dist": {
+        "inside": "Price inside the zone",
+        "above": "+{pct}% above",
+        "below": "−{pct}% below"
+      },
+      "fact": {
+        "neverTested": "Never tested since it formed.",
+        "tested": "Tested.",
+        "mitigatedAt": "Mitigated at {time}.",
+        "mitigated": "Mitigated.",
+        "filled": "Fully filled.",
+        "partial": "Filled to {pct}%.",
+        "fvgOpen": "Gap open."
+      },
+      "more": "Learn more",
+      "hint": "Click a zone = highlight on the chart.",
+      "empty1": "No zone matches these filters.",
+      "empty2": "Nothing is invented to pad the list.",
+      "evChoch": "Confirmed change of character",
+      "evBosBull": "Bullish break of structure",
+      "evBosBear": "Bearish break of structure"
+    },
+    "liq2": {
+      "title": "External liquidity",
+      "pochesCount": "{count, plural, one {# pocket} other {# pockets}}",
+      "sortAria": "Sort and filter",
+      "helpAria": "Learn more",
+      "filterSide": "Side",
+      "filterState": "State",
+      "side": {
+        "all": "Both",
+        "bsl": "BSL (buy)",
+        "ssl": "SSL (sell)"
+      },
+      "st": {
+        "all": "All",
+        "intact": "Intact",
+        "swept": "Swept",
+        "broken": "Broken"
+      },
+      "badge": {
+        "intact": "Intact",
+        "swept": "Swept",
+        "broken": "Broken"
+      },
+      "src": {
+        "eqh": "EQH",
+        "eql": "EQL",
+        "high": "High",
+        "low": "Low"
+      },
+      "dist": {
+        "above": "+{pct}% above",
+        "below": "−{pct}% below"
+      },
+      "fact": {
+        "intact": "Never touched since it formed.",
+        "swept": "Wick beyond, close came back. Still holds.",
+        "broken": "Clean close beyond. Gave way."
+      },
+      "hint": "Click a pocket = highlight its level.",
+      "empty1": "No pocket matches this filter.",
+      "empty2": "Nothing is invented to pad the list."
+    },
+    "reg2": {
+      "trendSub": "measured on {tf}",
+      "volSub": "7 recent vs preceding",
+      "matSub": "since the CHOCH at {time}",
+      "matValue": "{count, plural, one {# candle} other {# candles}}",
+      "densSub": "active on {tf}",
+      "measureHelpAria": "Help on this measure",
+      "helpAria": "Learn more"
     }
   },
   "samples": {
@@ -1393,6 +1529,9 @@
       "active": "Actief",
       "mitigated": "Gemitigeerd",
       "filledPct": "Opgevuld {pct} %"
+    },
+    "deeplink": {
+      "staleNotice": "This zone is no longer detected in the current reading."
     }
   },
   "appearance": {

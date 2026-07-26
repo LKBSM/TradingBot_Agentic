@@ -1,0 +1,294 @@
+/*
+ * UI-2c — Structure de marché · Liquidité externe · aide pédagogique · sources
+ * du Régime. VERBATIM port of the corresponding rules in the v5 reference
+ * (docs/design/reference-desktop.html), scoped under `.app-shell` so the generic
+ * class names never leak. Colours come only from the literal design tokens, so
+ * all four themes are covered for free. Presentation only — detection/data
+ * untouched.
+ */
+
+/* ── Régime : aide contextuelle + sous-lignes de source ────────────────── */
+.app-shell .reg .k {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.app-shell .ihelp {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid var(--line-3);
+  background: transparent;
+  color: var(--dim);
+  font-family: inherit;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+.app-shell .ihelp:hover,
+.app-shell .ihelp.on {
+  background: var(--acc-dim);
+  border-color: var(--acc);
+  color: var(--acc);
+}
+.app-shell .reg .sub2 {
+  font-size: 9.5px;
+  color: var(--faint);
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  margin-top: 2px;
+}
+.app-shell .infobox {
+  display: none;
+  margin-top: 9px;
+  padding: 10px 12px;
+  background: var(--panel-2);
+  border: 1px solid var(--line-2);
+  border-left: 2px solid var(--acc);
+  border-radius: var(--r-s);
+}
+.app-shell .infobox.on {
+  display: block;
+}
+.app-shell .infobox h4 {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--acc);
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+.app-shell .infobox p {
+  font-size: 11.5px;
+  color: var(--dim);
+  line-height: 1.55;
+  margin-bottom: 7px;
+}
+.app-shell .infobox p:last-child {
+  margin-bottom: 0;
+}
+.app-shell .infobox b {
+  color: var(--txt);
+  font-weight: 600;
+}
+
+/* ── Boutons d'en-tête : aide (?) + tri (curseurs) ─────────────────────── */
+.app-shell .card-h .hsp {
+  flex: 1;
+}
+.app-shell .hbtn {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid var(--line-2);
+  background: transparent;
+  color: var(--dim);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.app-shell .hbtn svg {
+  width: 12px;
+  height: 12px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.7;
+}
+.app-shell .hbtn:hover,
+.app-shell .hbtn.on {
+  background: var(--acc-dim);
+  border-color: var(--acc);
+  color: var(--acc);
+}
+
+/* ── Bandeau tri / filtre repliable ────────────────────────────────────── */
+.app-shell .ctrlrow {
+  display: none;
+  margin-bottom: 9px;
+  padding: 8px 10px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+}
+.app-shell .ctrlrow.on {
+  display: block;
+}
+.app-shell .fsec {
+  font-size: 8.5px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--faint);
+  font-weight: 600;
+  margin: 8px 0 4px;
+}
+.app-shell .fsec:first-child {
+  margin-top: 0;
+}
+.app-shell .fgrp {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.app-shell .fchip {
+  font-size: 10.5px;
+  font-weight: 500;
+  padding: 4px 9px;
+  border-radius: 14px;
+  border: 1px solid var(--line-2);
+  background: var(--panel);
+  color: var(--dim);
+  cursor: pointer;
+  user-select: none;
+  font-family: inherit;
+}
+.app-shell .fchip:hover {
+  border-color: var(--line-3);
+  color: var(--txt);
+}
+.app-shell .fchip.on {
+  background: var(--acc-dim);
+  border-color: color-mix(in srgb, var(--acc) 40%, transparent);
+  color: var(--acc);
+}
+
+/* ── Listes zones / liquidité (scroll à hauteur fixe) ──────────────────── */
+.app-shell .zlist {
+  max-height: 210px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  background: var(--panel-2);
+  margin-top: 9px;
+}
+.app-shell .zlist::-webkit-scrollbar {
+  width: 7px;
+}
+.app-shell .zlist::-webkit-scrollbar-thumb {
+  background: var(--line-2);
+  border-radius: 4px;
+}
+.app-shell .listhint {
+  font-size: 9.5px;
+  color: var(--faint);
+  margin-top: 7px;
+  line-height: 1.5;
+}
+.app-shell .zrow {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  font-family: inherit;
+  color: var(--txt);
+  display: block;
+}
+.app-shell .zrow:last-child {
+  border-bottom: none;
+}
+.app-shell .zrow:hover {
+  background: var(--panel-3);
+}
+.app-shell .zrow.sel {
+  background: var(--acc-dim);
+  box-shadow: inset 2px 0 0 var(--acc);
+}
+.app-shell .zr1 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.app-shell .zr2 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 4px;
+}
+.app-shell .zrow .zr {
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  font-weight: 500;
+  flex: 1;
+  white-space: nowrap;
+}
+.app-shell .zrow .zd {
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  color: var(--dim);
+  white-space: nowrap;
+}
+.app-shell .zrow .zd b {
+  color: var(--txt);
+  font-weight: 500;
+}
+.app-shell .zrow .zn {
+  flex: 1;
+  font-size: 10.5px;
+  color: var(--faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.app-shell .zbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 5px;
+  border: 1px solid transparent;
+  background: var(--acc-dim);
+  color: var(--acc);
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.app-shell .zbtn:hover {
+  border-color: color-mix(in srgb, var(--acc) 45%, transparent);
+}
+.app-shell .zbtn svg {
+  width: 11px;
+  height: 11px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.9;
+}
+.app-shell .zempty {
+  padding: 16px 12px;
+  font-size: 11px;
+  color: var(--faint);
+  font-style: italic;
+  text-align: center;
+  line-height: 1.5;
+}
+/* Liquidity level source (EQH/EQL/Sommet/Creux) — a factual origin tag, never a rank. */
+.app-shell .zsrc {
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--faint);
+  background: var(--panel-3);
+  padding: 2px 5px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.app-shell .lmini {
+  width: 34px;
+  flex-shrink: 0;
+}
+.app-shell .lmini .lline {
+  margin-bottom: 0;
+}
