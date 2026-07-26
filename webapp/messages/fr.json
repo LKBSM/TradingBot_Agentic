@@ -9,7 +9,7 @@
     "faq": "FAQ",
     "zones": "Zones",
     "scanner": "Scanner",
-    "account": "Compte",
+    "account": "Réglages",
     "login": "Connexion",
     "language": "Langue"
   },
@@ -928,7 +928,8 @@
       "welcomeSubtitleActive": "Pose une question sur la lecture en cours : décompose la structure, vulgarise un terme, ou contextualise un événement à venir.",
       "welcomeSubtitleIdle": "Sélectionne un marché à gauche, puis pose-moi une question sur sa lecture.",
       "offlineNote": "Mode hors-ligne : la saisie libre nécessite la clef Anthropic côté serveur.",
-      "complianceLine": "M.I.A Agent répond à des questions sur la lecture algorithmique. Il ne donne ni signal de trading, ni recommandation personnalisée."
+      "complianceLine": "M.I.A Agent répond à des questions sur la lecture algorithmique. Il ne donne ni signal de trading, ni recommandation personnalisée.",
+      "openPanel": "Ouvrir l'assistant"
     },
     "placeholders": {
       "emptyReading": "Sélectionnez une combinaison à gauche pour afficher sa lecture de marché.",
@@ -1098,7 +1099,8 @@
     "disclaimer": {
       "hero": "Démonstration en accès anticipé. Lecture algorithmique éducative — ne constitue ni un signal de trading, ni un conseil en investissement.",
       "chart": "Lecture algorithmique éducative — ne constitue ni un signal de trading, ni un conseil en investissement."
-    }
+    },
+    "earlyAccessBadge": "Accès anticipé"
   },
   "pages": {
     "conditions": {

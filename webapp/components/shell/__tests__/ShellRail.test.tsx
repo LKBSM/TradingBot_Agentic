@@ -40,8 +40,8 @@ describe('ShellRail', () => {
       'href',
       '/zones',
     );
-    // "Réglages" points at the existing /compte route (decision UI-1).
-    expect(screen.getByRole('link', { name: 'Compte' })).toHaveAttribute(
+    // "Réglages" points at the existing /compte route (nav label renamed UI-2b).
+    expect(screen.getByRole('link', { name: 'Réglages' })).toHaveAttribute(
       'href',
       '/compte',
     );

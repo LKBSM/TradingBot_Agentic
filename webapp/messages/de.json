@@ -9,7 +9,7 @@
     "faq": "FAQ",
     "zones": "Zonen",
     "scanner": "Scanner",
-    "account": "Konto",
+    "account": "Einstellungen",
     "login": "Anmelden",
     "language": "Sprache"
   },
@@ -667,7 +667,7 @@
   },
   "footer": {
     "description": "Konversationeller Marktindikator. Bildungsorientierte Haltung, erweitertes Marktverständnis — keine versprochene finanzielle Performance.",
-    "earlyAccessBadge": "Early Access · 50 Plätze",
+    "earlyAccessBadge": "Früher Zugang",
     "productHeading": "Produkt",
     "legalHeading": "Rechtliches",
     "product": {
@@ -890,7 +890,8 @@
       "welcomeSubtitleActive": "Stell eine Frage zur aktuellen Lesart: schlüssle die Struktur auf, mach einen Begriff verständlich oder ordne ein bevorstehendes Ereignis ein.",
       "welcomeSubtitleIdle": "Wähle links einen Markt und stell mir dann eine Frage zu seiner Lesart.",
       "offlineNote": "Offline-Modus: Die freie Eingabe erfordert den Anthropic-Schlüssel serverseitig.",
-      "complianceLine": "M.I.A Agent beantwortet Fragen zur algorithmischen Lesart. Er gibt weder Trading-Signale noch persönliche Empfehlungen."
+      "complianceLine": "M.I.A Agent beantwortet Fragen zur algorithmischen Lesart. Er gibt weder Trading-Signale noch persönliche Empfehlungen.",
+      "openPanel": "Assistent öffnen"
     },
     "placeholders": {
       "emptyReading": "Wählen Sie links eine Kombination, um ihre Marktlesart anzuzeigen.",
@@ -1098,7 +1099,8 @@
     "disclaimer": {
       "hero": "Demonstration im Frühzugang. Edukative algorithmische Lesart — stellt weder ein Trading-Signal noch eine Anlageberatung dar.",
       "chart": "Edukative algorithmische Lesart — stellt weder ein Trading-Signal noch eine Anlageberatung dar."
-    }
+    },
+    "earlyAccessBadge": "Früher Zugang"
   },
   "pages": {
     "conditions": {

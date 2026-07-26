@@ -24,13 +24,15 @@ export function useMediaQuery(query: string): boolean {
 }
 
 /**
- * Stacked-layout breakpoint — below Tailwind's `xl` (1280px). Phone AND tablet
- * (iPad portrait 834 / landscape 1024) use the single-column tabbed workspace;
- * the three-column desktop grid is reserved for `xl+`, where the two fixed rails
- * (240 + 360px) leave the centre reading column a usable width. Below 1280 the
- * three columns would crush the centre (~138px @834, ~312px @1024).
+ * Stacked-layout breakpoint (mission UI-2b) — the phone-only tabbed workspace.
+ * The reference single-column reading centre must show from 768px up, so only
+ * true phones (<768px) get the tabbed MobileWorkspace. From 768px the shell
+ * shows the reference centre and adapts the side columns instead of crushing it:
+ * the docked chat becomes an off-canvas drawer between 768 and 1279px, and only
+ * ≥1280px keeps the full three-column grid (see shell.css). The rail is hidden
+ * by the shell below 768 (MobileWorkspace carries its own Marchés tab).
  */
-export const STACKED_QUERY = '(max-width: 1279px)';
+export const STACKED_QUERY = '(max-width: 767px)';
 
 export function useStackedLayout(): boolean {
   return useMediaQuery(STACKED_QUERY);

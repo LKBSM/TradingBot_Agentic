@@ -9,7 +9,7 @@
     "faq": "FAQ",
     "zones": "Zones",
     "scanner": "Scanner",
-    "account": "Account",
+    "account": "Instellingen",
     "login": "Inloggen",
     "language": "Taal"
   },
@@ -667,7 +667,7 @@
   },
   "footer": {
     "description": "Conversationele marktindicator. Educatieve houding, verrijkt marktbegrip — geen beloofde financiële prestatie.",
-    "earlyAccessBadge": "Vroege toegang · 50 plaatsen",
+    "earlyAccessBadge": "Vroege toegang",
     "productHeading": "Product",
     "legalHeading": "Juridisch",
     "product": {
@@ -890,7 +890,8 @@
       "welcomeSubtitleActive": "Stel een vraag over de huidige lezing: ontleed de structuur, maak een term begrijpelijk of plaats een aankomende gebeurtenis in context.",
       "welcomeSubtitleIdle": "Selecteer links een markt en stel me dan een vraag over de lezing ervan.",
       "offlineNote": "Offline modus: vrije invoer vereist de Anthropic-sleutel aan de serverzijde.",
-      "complianceLine": "M.I.A Agent beantwoordt vragen over de algoritmische lezing. Hij geeft geen tradingsignaal en geen persoonlijke aanbeveling."
+      "complianceLine": "M.I.A Agent beantwoordt vragen over de algoritmische lezing. Hij geeft geen tradingsignaal en geen persoonlijke aanbeveling.",
+      "openPanel": "Assistent openen"
     },
     "placeholders": {
       "emptyReading": "Selecteer links een combinatie om de marktlezing ervan weer te geven.",
@@ -1098,7 +1099,8 @@
     "disclaimer": {
       "hero": "Demonstratie in vroege toegang. Educatieve algoritmische lezing — vormt geen tradingsignaal en geen beleggingsadvies.",
       "chart": "Educatieve algoritmische lezing — vormt geen tradingsignaal en geen beleggingsadvies."
-    }
+    },
+    "earlyAccessBadge": "Vroege toegang"
   },
   "pages": {
     "conditions": {

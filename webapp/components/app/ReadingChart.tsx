@@ -367,29 +367,29 @@ const MIN_VISIBLE_RANGE_FRAC = 0.003;
  * `--sentinel-*` state tokens (colour = meaning). Called inside a client effect,
  * re-keyed on the resolved theme, so switching between two dark themes repaints.
  */
-// The tokens store a bare HSL triplet ("159 54% 47%"). Emit the comma form
-// (`hsl(159, 54%, 47%)`) that lightweight-charts' colour parser accepts across
-// versions, rather than the space/slash CSS Color-4 syntax.
-function readHsl(el: HTMLElement, name: string, fallback: string): string {
+// The reference literal tokens (--bull #37b98c, --line rgba(…), --acc #4d9de0)
+// store ready-to-use CSS colour strings, so we read them verbatim (unlike the
+// `--sentinel-*` HSL triplets that need wrapping). Called inside a client
+// effect, re-keyed on the resolved theme, so switching themes repaints.
+function readVar(el: HTMLElement, name: string, fallback: string): string {
   const v = getComputedStyle(el).getPropertyValue(name).trim();
-  if (!v) return fallback;
-  return `hsl(${v.split(/\s+/).join(', ')})`;
-}
-function readHsla(el: HTMLElement, name: string, alpha: number, fallback: string): string {
-  const v = getComputedStyle(el).getPropertyValue(name).trim();
-  if (!v) return fallback;
-  return `hsla(${v.split(/\s+/).join(', ')}, ${alpha})`;
+  return v || fallback;
 }
 function palette() {
   const el = document.documentElement;
+  // Structural chrome + candles from the reference design tokens (mission
+  // UI-2b): grid = --line, scale border = --line-2, axis + crosshair = --faint,
+  // candles = --bull/--bear, current-price line = --acc. Fond = --panel via the
+  // `.chartbox` container (the canvas layout stays transparent).
   return {
-    axisText: readHsl(el, '--muted-foreground', 'hsl(215 20% 65%)'),
-    grid: readHsla(el, '--border', 0.4, 'hsla(217, 33%, 17%, 0.4)'),
-    scaleBorder: readHsla(el, '--border', 0.6, 'hsla(217, 33%, 17%, 0.6)'),
-    crosshair: readHsla(el, '--muted-foreground', 0.45, 'hsla(215, 20%, 65%, 0.45)'),
-    crosshairLabel: readHsl(el, '--secondary', '#3f3f46'),
-    candleBull: readHsl(el, '--sentinel-bull', CANDLE.bull),
-    candleBear: readHsl(el, '--sentinel-bear', CANDLE.bear),
+    axisText: readVar(el, '--faint', '#59617a'),
+    grid: readVar(el, '--line', 'rgba(255, 255, 255, 0.07)'),
+    scaleBorder: readVar(el, '--line-2', 'rgba(255, 255, 255, 0.11)'),
+    crosshair: readVar(el, '--faint', '#59617a'),
+    crosshairLabel: readVar(el, '--panel-3', '#182238'),
+    candleBull: readVar(el, '--bull', CANDLE.bull),
+    candleBear: readVar(el, '--bear', CANDLE.bear),
+    priceLine: readVar(el, '--acc', '#4d9de0'),
   };
 }
 
@@ -588,7 +588,14 @@ export function ReadingChart({
           labelBackgroundColor: p.crosshairLabel,
         },
       },
-      rightPriceScale: { borderColor: p.scaleBorder },
+      // Symmetric ~10 % top/bottom margins (mission UI-2b) so the visible candles
+      // fill the frame at any range instead of hugging one edge (the library
+      // default is 20 % top / 10 % bottom). Zones/liquidity are HTML overlays, so
+      // they never inflate the price-axis autoscale — this is candle-driven.
+      rightPriceScale: {
+        borderColor: p.scaleBorder,
+        scaleMargins: { top: 0.1, bottom: 0.1 },
+      },
       // The engine emits UTC; render the axis + crosshair in the reader's LOCAL
       // timezone so the clock is never ambiguous (a discreet « Heure locale »
       // chip sits at the bottom-left). Candle times are UTC epoch seconds.
@@ -644,9 +651,9 @@ export function ReadingChart({
       priceLineVisible: true,
       priceLineWidth: 1,
       priceLineStyle: LineStyle.Dashed,
-      // Empty colour → inherits the up/down colour of the last candle, so the
-      // axis badge reads green when up, terracotta when down (white label text).
-      priceLineColor: '',
+      // Current-price line follows the reference accent token (--acc), matching
+      // the dashed price line + axis badge in docs/design/reference-desktop.html.
+      priceLineColor: p.priceLine,
       lastValueVisible: true,
       // Floor the vertical auto-scale so a flat (closed-market) window never
       // magnifies micro-candles to full height. We take the library's own fitted

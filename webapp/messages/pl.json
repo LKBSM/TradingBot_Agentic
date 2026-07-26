@@ -9,7 +9,7 @@
     "faq": "FAQ",
     "zones": "Strefy",
     "scanner": "Skaner",
-    "account": "Konto",
+    "account": "Ustawienia",
     "login": "Zaloguj się",
     "language": "Język"
   },
@@ -667,7 +667,7 @@
   },
   "footer": {
     "description": "Konwersacyjny wskaźnik rynkowy. Postawa edukacyjna, pogłębione zrozumienie rynku — nie obiecana wydajność finansowa.",
-    "earlyAccessBadge": "Wczesny dostęp · 50 miejsc",
+    "earlyAccessBadge": "Wczesny dostęp",
     "productHeading": "Produkt",
     "legalHeading": "Informacje prawne",
     "product": {
@@ -890,7 +890,8 @@
       "welcomeSubtitleActive": "Zadaj pytanie o bieżący odczyt: rozłóż strukturę, przybliż termin lub osadź w kontekście nadchodzące wydarzenie.",
       "welcomeSubtitleIdle": "Wybierz rynek po lewej, a następnie zadaj mi pytanie o jego odczyt.",
       "offlineNote": "Tryb offline: swobodne wpisywanie wymaga klucza Anthropic po stronie serwera.",
-      "complianceLine": "M.I.A Agent odpowiada na pytania o odczyt algorytmiczny. Nie udziela sygnałów tradingowych ani spersonalizowanych rekomendacji."
+      "complianceLine": "M.I.A Agent odpowiada na pytania o odczyt algorytmiczny. Nie udziela sygnałów tradingowych ani spersonalizowanych rekomendacji.",
+      "openPanel": "Otwórz asystenta"
     },
     "placeholders": {
       "emptyReading": "Wybierz kombinację po lewej, aby wyświetlić jej odczyt rynku.",
@@ -1098,7 +1099,8 @@
     "disclaimer": {
       "hero": "Demonstracja we wczesnym dostępie. Edukacyjny odczyt algorytmiczny — nie stanowi ani sygnału tradingowego, ani porady inwestycyjnej.",
       "chart": "Edukacyjny odczyt algorytmiczny — nie stanowi ani sygnału tradingowego, ani porady inwestycyjnej."
-    }
+    },
+    "earlyAccessBadge": "Wczesny dostęp"
   },
   "pages": {
     "conditions": {
