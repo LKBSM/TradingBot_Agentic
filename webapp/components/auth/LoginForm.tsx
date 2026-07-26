@@ -7,12 +7,13 @@ import * as React from 'react';
 import { AuthError } from '@/lib/auth/api-client';
 import { useAuth } from '@/lib/auth/store';
 import { useLocalizedHref } from '@/lib/i18n/href';
-import { Button } from '@/components/ui/button';
-import { FormError, TextField } from './fields';
+import { BRAND_NAME } from '@/lib/brand';
 
 /** Login form — identifier is a username OR an email (single field). */
 export function LoginForm() {
   const t = useTranslations('auth');
+  const tf = useTranslations('footer');
+  const tc = useTranslations('connexion');
   const { login } = useAuth();
   const router = useRouter();
   const lh = useLocalizedHref();
@@ -73,38 +74,75 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4" noValidate>
-      <FormError message={error} />
-      <TextField
-        label={t('login.identifierLabel')}
-        name="identifier"
-        autoComplete="username"
-        required
-      />
-      <TextField
-        label={t('login.passwordLabel')}
-        name="password"
-        type="password"
-        autoComplete="current-password"
-        required
-      />
-      <div className="text-right">
-        <Link
-          href={lh('/mot-de-passe-oublie')}
-          className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
-        >
-          {t('login.forgotPassword')}
-        </Link>
+    <div className="login-card">
+      <div className="brandline">
+        <div className="mark" aria-hidden="true">
+          M
+        </div>
+        <b>{BRAND_NAME}</b>
+        <span className="bl-sp" />
+        <span className="ea">
+          <span className="d" aria-hidden="true" />
+          {tf('earlyAccessBadge')}
+        </span>
       </div>
-      <Button type="submit" className="w-full" disabled={submitting}>
-        {submitting ? t('login.submitting') : t('login.submit')}
-      </Button>
-      <p className="text-center text-sm text-muted-foreground">
+      <h1>{tc('title')}</h1>
+      <p className="lsub">{tc('subtitle')}</p>
+
+      <form onSubmit={onSubmit} noValidate>
+        {error && (
+          <p role="alert" className="form-error">
+            {error}
+          </p>
+        )}
+        <div className="fgroup">
+          <label className="flabel" htmlFor="identifier">
+            {t('login.identifierLabel')}
+          </label>
+          <input
+            className="input"
+            id="identifier"
+            name="identifier"
+            autoComplete="username"
+            required
+          />
+        </div>
+        <div className="fgroup">
+          <label className="flabel" htmlFor="password">
+            {t('login.passwordLabel')}
+          </label>
+          <input
+            className="input"
+            id="password"
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            required
+          />
+        </div>
+        <div className="frow">
+          <Link href={lh('/mot-de-passe-oublie')}>
+            {t('login.forgotPassword')}
+          </Link>
+        </div>
+        <button type="submit" className="btn primary" disabled={submitting}>
+          {submitting ? t('login.submitting') : t('login.submit')}
+        </button>
+      </form>
+
+      <div className="orline">
+        <span>{tc('or')}</span>
+      </div>
+      <p className="mkacct">
         {t('login.noAccount')}{' '}
-        <Link href={lh('/inscription')} className="underline underline-offset-2 hover:text-foreground">
-          {t('login.createAccount')}
-        </Link>
+        <Link href={lh('/inscription')}>{t('login.createAccount')}</Link>
       </p>
-    </form>
+      <div className="trust">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 3l8 4v5c0 4-3.4 7.4-8 9-4.6-1.6-8-5-8-9V7l8-4z" />
+        </svg>
+        <p>{tc('trust')}</p>
+      </div>
+    </div>
   );
 }

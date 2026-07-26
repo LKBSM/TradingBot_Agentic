@@ -32,9 +32,7 @@ export default async function ZonesPage({
   const { locale } = await params;
   return (
     <SubscriptionGate>
-      <div className="container-wide py-8">
-        <ZonesWorkspace locale={locale} />
-      </div>
+      <ZonesWorkspace locale={locale} />
     </SubscriptionGate>
   );
 }

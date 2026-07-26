@@ -26,7 +26,6 @@ import {
   type ZoneSort,
 } from '@/lib/zones/lifecycle';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
 import { ZoneLifecycleCard } from './ZoneLifecycleCard';
 
 const POLL_MS = 60_000;
@@ -213,15 +212,30 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
     [hidden, validZoneIds, applyActions],
   );
 
+  // « Or · H1 · N zones » — the reference live badge summarising the combo and
+  // the (filtered) zone count actually shown.
+  const badgeSummary = `${fmt.instrument(instrument)} · ${fmt.timeframe(timeframe)} · ${t('badge.count', { count: zones.length })}`;
+
   return (
-    <section className="flex flex-col gap-5">
-      <header className="flex flex-col gap-1">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">{t('title')}</h1>
-        <p className="text-sm text-muted-foreground">{t('intro')}</p>
-      </header>
+    <div className="pagewrap">
+      <div className="pghead">
+        <div>
+          <h1>{t('title')}</h1>
+          <div className="sub">{t('intro')}</div>
+        </div>
+        <span className="hsp" />
+        <div className="livebadge">
+          {isRefreshing ? (
+            <span aria-live="polite">{t('refreshing')}</span>
+          ) : (
+            <span className="dot" aria-hidden />
+          )}
+          <span className="mono">{badgeSummary}</span>
+        </div>
+      </div>
 
       {/* Combo selector */}
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="mb-3 flex flex-wrap items-center gap-3">
         <Segmented
           options={SUPPORTED_INSTRUMENTS.map((i) => ({ value: i, label: fmt.instrument(i) }))}
           value={instrument}
@@ -234,21 +248,16 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
           onChange={setTimeframe}
           ariaLabel={t('selector.timeframe')}
         />
-        {isRefreshing && (
-          <span className="text-xs text-muted-foreground" aria-live="polite">
-            {t('refreshing')}
-          </span>
-        )}
       </div>
 
       {/* Filters + sort */}
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+      <div className="mb-4 flex flex-wrap items-center gap-x-6 gap-y-2">
         <div className="flex items-center gap-2">
-          <span className="text-xs uppercase tracking-wide text-muted-foreground">{t('filterLabel')}</span>
+          <span className="text-[9px] font-semibold uppercase tracking-wide text-[var(--faint)]">{t('filterLabel')}</span>
           <Segmented<ZoneFilter> options={FILTERS} value={filter} onChange={setFilter} ariaLabel={t('filterAria')} />
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs uppercase tracking-wide text-muted-foreground">{t('sortLabel')}</span>
+          <span className="text-[9px] font-semibold uppercase tracking-wide text-[var(--faint)]">{t('sortLabel')}</span>
           <Segmented<ZoneSort> options={SORTS} value={sort} onChange={setSort} ariaLabel={t('sortAria')} />
         </div>
       </div>
@@ -258,20 +267,20 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
         // Show the loading state (not "Aucune zone") while a refresh is in flight
         // with no zones yet, so a combo switch doesn't flash an empty list before
         // the new reading lands (UI-12).
-        <p className="text-sm text-muted-foreground">{t('loading')}</p>
+        <p className="text-[12px] text-[var(--dim)]">{t('loading')}</p>
       ) : error ? (
-        <div className="space-y-3 rounded-lg border border-destructive/40 bg-destructive/5 p-4">
-          <p className="text-sm text-foreground">{t('errorMessage')}</p>
-          <Button size="sm" variant="outline" onClick={refresh}>
+        <div className="zone flex flex-col gap-3">
+          <p className="text-[12px] text-[var(--txt)]">{t('errorMessage')}</p>
+          <button type="button" className="btn self-start" onClick={refresh}>
             {t('retry')}
-          </Button>
+          </button>
         </div>
       ) : zones.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
+        <p className="text-[12px] text-[var(--dim)]">
           {allZones.length === 0 ? t('emptyNone') : t('emptyFilter')}
         </p>
       ) : (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div>
           {zones.map((zone) => (
             <ZoneLifecycleCard
               key={zone.id}
@@ -287,6 +296,6 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
           ))}
         </div>
       )}
-    </section>
+    </div>
   );
 }

@@ -1,0 +1,819 @@
+/*
+ * Page-CONTENT stylesheet (mission UI-2) — the reference page classes that
+ * shell.css (UI-1) deliberately left out: .panels / .narr / .reggrid / .strow /
+ * .liqrow / .newsrow / .condpal / .combo / .zone / .tl / .setrow / .themetile,
+ * plus the docked-chat body classes. A VERBATIM port of the corresponding rules
+ * in docs/design/reference-desktop.html, scoped under `.app-shell` so the generic
+ * class names never leak into the marketing surfaces or shadcn/ui. Colours come
+ * only from the literal design tokens (globals.css), so all four themes are free.
+ *
+ * Detection/data are untouched: these are presentation rules only.
+ */
+
+/* ── App center: heads, chart pad, panels grid ─────────────────────────── */
+.app-shell .chartpad {
+  padding: 13px 18px 4px;
+}
+.app-shell .layerrow {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-bottom: 9px;
+}
+.app-shell .chartbox {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 5px;
+}
+.app-shell .panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 11px;
+  padding: 11px 18px 20px;
+}
+.app-shell .panels .wide {
+  grid-column: 1 / -1;
+}
+.app-shell .pagewrap {
+  max-width: 1020px;
+  margin: 0 auto;
+  padding: 20px 20px 30px;
+}
+.app-shell .pghead {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.app-shell .pghead h1 {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+.app-shell .pghead .sub {
+  font-size: 12px;
+  color: var(--dim);
+  margin-top: 2px;
+}
+
+/* ── Narrated reading ──────────────────────────────────────────────────── */
+.app-shell .narr {
+  font-size: 12.5px;
+  line-height: 1.62;
+  color: color-mix(in srgb, var(--txt) 88%, var(--dim));
+}
+.app-shell .narr b {
+  color: var(--txt);
+  font-weight: 600;
+}
+.app-shell .narr .hl {
+  color: var(--acc);
+  font-weight: 500;
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+}
+.app-shell .narrfoot {
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid var(--line);
+  font-size: 9.5px;
+  color: var(--faint);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.app-shell .narrfoot svg {
+  width: 11px;
+  height: 11px;
+  stroke: var(--faint);
+  fill: none;
+  stroke-width: 1.7;
+  flex-shrink: 0;
+}
+
+/* ── Regime grid ───────────────────────────────────────────────────────── */
+.app-shell .reggrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.app-shell .reg {
+  background: var(--panel-2);
+  border-radius: var(--r-s);
+  padding: 8px 10px;
+}
+.app-shell .reg .k {
+  font-size: 9px;
+  color: var(--faint);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+.app-shell .reg .v {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* ── Structure rows ────────────────────────────────────────────────────── */
+.app-shell .strow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 4px;
+  border-bottom: 1px solid var(--line);
+}
+.app-shell .strow:last-child {
+  border-bottom: none;
+}
+.app-shell .strow .d {
+  font-size: 11.5px;
+  color: var(--dim);
+  flex: 1;
+}
+.app-shell .strow .t {
+  font-size: 10px;
+  color: var(--faint);
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+}
+
+/* ── Liquidity rows ────────────────────────────────────────────────────── */
+.app-shell .liqrow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 4px;
+  border-bottom: 1px solid var(--line);
+}
+.app-shell .liqrow:last-child {
+  border-bottom: none;
+}
+.app-shell .lst {
+  width: 58px;
+  flex-shrink: 0;
+}
+.app-shell .lline {
+  height: 0;
+  border-top: 2px solid var(--liq);
+  margin-bottom: 3px;
+}
+.app-shell .lline.swept {
+  border-top-style: dashed;
+  opacity: 0.55;
+}
+.app-shell .lline.broken {
+  border-top-style: dashed;
+  border-color: var(--faint);
+  opacity: 0.5;
+}
+.app-shell .lst .s {
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--liq);
+}
+.app-shell .lst.broken .s {
+  color: var(--faint);
+}
+.app-shell .liqrow .lv {
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  font-weight: 500;
+  width: 66px;
+}
+.app-shell .liqrow .dd {
+  font-size: 11px;
+  color: var(--dim);
+  flex: 1;
+}
+
+/* ── News rows ─────────────────────────────────────────────────────────── */
+.app-shell .newsrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--line);
+}
+.app-shell .newsrow:last-child {
+  border-bottom: none;
+}
+.app-shell .nic {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.app-shell .nic svg {
+  width: 13px;
+  height: 13px;
+  stroke: var(--dim);
+  fill: none;
+  stroke-width: 1.7;
+}
+.app-shell .newsrow .ev {
+  font-size: 11.5px;
+  font-weight: 500;
+}
+.app-shell .newsrow .mk3 {
+  font-size: 10px;
+  color: var(--faint);
+}
+.app-shell .newsrow .main3 {
+  flex: 1;
+  min-width: 0;
+}
+.app-shell .impact {
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.app-shell .impact.high {
+  background: color-mix(in srgb, var(--liq) 13%, transparent);
+  color: var(--liq);
+}
+.app-shell .impact.mid {
+  background: var(--panel-3);
+  color: var(--dim);
+}
+.app-shell .newsrow .when {
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--dim);
+  text-align: right;
+  white-space: nowrap;
+}
+.app-shell .emptyrow {
+  font-size: 11px;
+  color: var(--faint);
+  padding: 10px 4px;
+  font-style: italic;
+}
+
+/* ── Scanner: condition palette + notes + results ──────────────────────── */
+.app-shell .condpal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.app-shell .cond {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 8px 13px;
+  border-radius: 20px;
+  border: 1px solid var(--line-2);
+  background: var(--panel);
+  color: var(--dim);
+  cursor: pointer;
+  min-height: 36px;
+  font-family: inherit;
+}
+.app-shell .cond:hover {
+  border-color: var(--line-3);
+  color: var(--txt);
+}
+.app-shell .cond.on {
+  background: var(--acc-dim);
+  border-color: color-mix(in srgb, var(--acc) 40%, transparent);
+  color: var(--acc);
+}
+.app-shell .cond.on::before {
+  content: '✓ ';
+  font-weight: 700;
+}
+.app-shell .scannote {
+  font-size: 11px;
+  color: var(--faint);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 20px;
+}
+.app-shell .scannote svg {
+  width: 12px;
+  height: 12px;
+  stroke: var(--faint);
+  fill: none;
+  stroke-width: 1.7;
+  flex-shrink: 0;
+}
+.app-shell .resgrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 11px;
+}
+.app-shell .combo {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 13px 14px;
+}
+.app-shell .combo:hover {
+  border-color: var(--line-3);
+}
+.app-shell .combo.na {
+  opacity: 0.5;
+}
+.app-shell .combo .t1 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 9px;
+}
+.app-shell .combo .t1 .nm {
+  font-size: 13px;
+  font-weight: 600;
+}
+.app-shell .combo .t1 .tf2 {
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  color: var(--faint);
+}
+.app-shell .cl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  padding: 2.5px 0;
+}
+.app-shell .cl .mk2 {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  font-size: 9px;
+  font-weight: 700;
+}
+.app-shell .cl.yes .mk2 {
+  background: color-mix(in srgb, var(--bull) 18%, transparent);
+  color: var(--bull);
+}
+.app-shell .cl.no .mk2 {
+  border: 1px solid var(--line-2);
+}
+.app-shell .cl.yes {
+  color: var(--txt);
+}
+.app-shell .cl.no {
+  color: var(--faint);
+}
+.app-shell .ctx2 {
+  font-size: 11px;
+  color: var(--dim);
+  background: var(--panel-2);
+  border-radius: var(--r-s);
+  padding: 8px 10px;
+  line-height: 1.45;
+  margin: 9px 0;
+  border-left: 2px solid var(--line-2);
+}
+.app-shell .ctx2 b {
+  color: var(--txt);
+}
+.app-shell .natag {
+  font-size: 11px;
+  color: var(--faint);
+  font-style: italic;
+  padding: 4px 0;
+}
+
+/* ── Zones: card, timeline, fill bar ───────────────────────────────────── */
+.app-shell .zone {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 14px 16px;
+  margin-bottom: 11px;
+}
+.app-shell .zone:hover {
+  border-color: var(--line-3);
+}
+.app-shell .zone.mitig {
+  opacity: 0.6;
+}
+.app-shell .ztop {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.app-shell .ztop .rng {
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+}
+.app-shell .zstate {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 20px;
+}
+.app-shell .zs-a {
+  background: var(--acc-dim);
+  color: var(--acc);
+}
+.app-shell .zs-f {
+  background: color-mix(in srgb, var(--fvg-l) 40%, transparent);
+  color: var(--txt);
+}
+.app-shell .zs-m {
+  background: var(--panel-3);
+  color: var(--faint);
+}
+.app-shell .tl {
+  display: flex;
+  margin: 2px 0 11px;
+}
+.app-shell .step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  position: relative;
+}
+.app-shell .step::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  width: 100%;
+  height: 2px;
+  background: var(--line-2);
+}
+.app-shell .step:last-child::after {
+  display: none;
+}
+.app-shell .step .d3 {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--panel-3);
+  border: 2px solid var(--line-3);
+  z-index: 1;
+  margin-bottom: 6px;
+}
+.app-shell .step.done .d3 {
+  background: var(--acc);
+  border-color: var(--acc);
+}
+.app-shell .step.now .d3 {
+  background: var(--bull);
+  border-color: var(--bull);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--bull) 15%, transparent);
+}
+.app-shell .step .sl {
+  font-size: 10.5px;
+  font-weight: 500;
+}
+.app-shell .step .st3 {
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--faint);
+  margin-top: 1px;
+}
+.app-shell .fillbar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--panel-3);
+  overflow: hidden;
+  margin: 0 0 10px;
+}
+.app-shell .fillbar span {
+  display: block;
+  height: 100%;
+  background: var(--fvg-l);
+  border-radius: 3px;
+}
+.app-shell .znarr {
+  font-size: 11.5px;
+  color: var(--dim);
+  line-height: 1.5;
+  margin-bottom: 11px;
+}
+.app-shell .znarr b {
+  color: var(--txt);
+}
+.app-shell .zfoot {
+  display: flex;
+  gap: 8px;
+}
+
+/* ── Réglages: setting rows + theme tiles + plan badge ─────────────────── */
+.app-shell .setrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 4px;
+  border-bottom: 1px solid var(--line);
+}
+.app-shell .setrow:last-child {
+  border-bottom: none;
+}
+.app-shell .setrow .sk {
+  flex: 1;
+}
+.app-shell .setrow .sk b {
+  font-size: 12.5px;
+  font-weight: 600;
+  display: block;
+}
+.app-shell .setrow .sk span {
+  font-size: 11px;
+  color: var(--dim);
+}
+.app-shell .btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.app-shell .themegrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.app-shell .themetile {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 12px;
+  border-radius: var(--r-s);
+  border: 1px solid var(--line-2);
+  cursor: pointer;
+  background: var(--panel-2);
+  position: relative;
+  text-align: left;
+  font-family: inherit;
+  color: var(--txt);
+  width: 100%;
+}
+.app-shell .themetile:hover {
+  border-color: var(--line-3);
+}
+.app-shell .themetile.on {
+  border-color: var(--acc);
+  box-shadow: 0 0 0 3px var(--acc-dim);
+}
+.app-shell .sw3 {
+  display: flex;
+  gap: 3px;
+  flex-shrink: 0;
+}
+.app-shell .sw3 i {
+  width: 14px;
+  height: 26px;
+  border-radius: 4px;
+  display: block;
+}
+.app-shell .themetile .tt b {
+  font-size: 12.5px;
+  font-weight: 600;
+  display: block;
+}
+.app-shell .themetile .tt span {
+  font-size: 10.5px;
+  color: var(--dim);
+}
+.app-shell .chk {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--acc);
+  opacity: 0;
+}
+.app-shell .themetile.on .chk {
+  opacity: 1;
+}
+.app-shell .planbadge {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 20px;
+  background: var(--acc-dim);
+  color: var(--acc);
+}
+
+/* ── Docked chat body (visual restyle; scroll/stream logic untouched) ───── */
+.app-shell .chead {
+  padding: 11px 13px;
+  border-bottom: 1px solid var(--line);
+}
+.app-shell .chead .r1 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.app-shell .av {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r-s);
+  background: var(--acc-dim);
+  border: 1px solid color-mix(in srgb, var(--acc) 30%, transparent);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.app-shell .av svg {
+  width: 14px;
+  height: 14px;
+  stroke: var(--acc);
+  fill: none;
+  stroke-width: 1.8;
+}
+.app-shell .chead .nm {
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.app-shell .chead .ctx {
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  color: var(--faint);
+}
+.app-shell .chead .sp {
+  flex: 1;
+}
+.app-shell .ib {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--r-s);
+  background: transparent;
+  border: 1px solid transparent;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.app-shell .ib:hover {
+  background: var(--panel-2);
+  border-color: var(--line);
+}
+.app-shell .ib svg {
+  width: 14px;
+  height: 14px;
+  stroke: var(--dim);
+  fill: none;
+  stroke-width: 1.7;
+}
+.app-shell .cdisc {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 5px 8px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+}
+.app-shell .cdisc svg {
+  width: 11px;
+  height: 11px;
+  stroke: var(--liq);
+  fill: none;
+  stroke-width: 1.8;
+  flex-shrink: 0;
+}
+.app-shell .cdisc span {
+  font-size: 9.5px;
+  color: var(--dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.app-shell .cbody {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.app-shell .cbody::-webkit-scrollbar {
+  width: 7px;
+}
+.app-shell .cbody::-webkit-scrollbar-thumb {
+  background: var(--line-2);
+  border-radius: 4px;
+}
+.app-shell .msg {
+  max-width: 92%;
+}
+.app-shell .msg.u {
+  align-self: flex-end;
+}
+.app-shell .who {
+  font-size: 8.5px;
+  color: var(--faint);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin: 0 3px 3px;
+}
+.app-shell .msg.u .who {
+  text-align: right;
+}
+.app-shell .bub {
+  border-radius: var(--r);
+  padding: 8px 11px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.app-shell .msg.a .bub {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+}
+.app-shell .msg.u .bub {
+  background: var(--acc-dim);
+  border: 1px solid color-mix(in srgb, var(--acc) 28%, transparent);
+}
+.app-shell .bub b {
+  font-weight: 600;
+}
+.app-shell .bub .lvl {
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  color: var(--acc);
+  font-weight: 500;
+}
+.app-shell .refuse {
+  border-left: 2px solid var(--liq) !important;
+  border-radius: 0 var(--r) var(--r) 0 !important;
+}
+.app-shell .refuse .rf {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--liq);
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.app-shell .refuse .rf svg {
+  width: 10px;
+  height: 10px;
+  stroke: var(--liq);
+  fill: none;
+  stroke-width: 1.8;
+}
+.app-shell .cin {
+  padding: 9px 13px 12px;
+  border-top: 1px solid var(--line);
+}
+.app-shell .inbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--panel-2);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-s);
+  padding: 3px 3px 3px 11px;
+}
+.app-shell .inbox:focus-within {
+  border-color: var(--acc);
+  box-shadow: 0 0 0 3px var(--acc-dim);
+}
+.app-shell .inbox input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--txt);
+  font-family: inherit;
+  font-size: 12px;
+  padding: 7px 0;
+}
+.app-shell .send {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  background: var(--acc);
+  border: none;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.app-shell .send svg {
+  width: 13px;
+  height: 13px;
+  stroke: var(--acc-txt);
+  fill: none;
+  stroke-width: 2.2;
+}

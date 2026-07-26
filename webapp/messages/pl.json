@@ -393,7 +393,16 @@
         "not_found": "Nie znaleziono strategii.",
         "storage_failed": "Nie można zapisać w pamięci lokalnej (limit lub tryb prywatny). Nic nie zostało zapisane."
       }
-    }
+    },
+    "page": {
+      "title": "Skaner",
+      "subtitle": "Twoje warunki, obecne i faktyczne — przejrzyste wyniki, bez oceny."
+    },
+    "livebadge": "Zgodne z zamknięciami świec",
+    "activeStrategy": "Moja strategia — aktywne warunki",
+    "note": "Zamknięta paleta, czas teraźniejszy. Każdy warunek predykcyjny jest odrzucany — żadnego „odbije się”, bez celu.",
+    "resultsMeta": "{count} kombinacji · {when} · bez rankingu",
+    "unavailable": "Niedostępne — brak świeżego odczytu dla tej kombinacji. Nic nie jest zmyślane."
   },
   "reading": {
     "card": {
@@ -760,8 +769,8 @@
     "manage": "Zarządzaj moją subskrypcją",
     "choosePlanTitle": "Wybierz plan",
     "noPlans": "Obecnie żaden plan nie jest dostępny.",
-      "planMonthly": "Miesięcznie — 49,99 $ / mies.",
-      "planAnnual": "Rocznie — 39,99 $ / mies. (rozliczane rocznie)",
+    "planMonthly": "Miesięcznie — 49,99 $ / mies.",
+    "planAnnual": "Rocznie — 39,99 $ / mies. (rozliczane rocznie)",
     "subscribe": "Subskrybuj",
     "errorLoad": "Nie można wczytać subskrypcji.",
     "errorCheckout": "Nie można rozpocząć płatności.",
@@ -835,7 +844,34 @@
       "language": "Język",
       "site": "Serwis",
       "honesty": "Uczciwość",
-      "logout": "Wyloguj się"
+      "logout": "Wyloguj się",
+      "title": "Ustawienia",
+      "subtitle": "Twoje konto, wygląd i dane.",
+      "sectionAccount": "Konto",
+      "emailRow": "Adres e-mail",
+      "edit": "Edytuj",
+      "editCancel": "Anuluj",
+      "passwordRow": "Hasło",
+      "passwordMasked": "••••••••",
+      "comingSoon": "wkrótce",
+      "sessionRow": "Sesja",
+      "sessionValue": "Zalogowano na tym urządzeniu",
+      "sectionAppearance": "Wygląd",
+      "appearanceBadge": "Działa natychmiast · zapamiętane",
+      "sectionSubscription": "Subskrypcja",
+      "planRow": "Bieżący plan",
+      "planValue": "Podczas wczesnego dostępu karta nie jest wymagana.",
+      "earlyAccessBadge": "Wczesny dostęp",
+      "sectionLegal": "Prawne i dane",
+      "docsRow": "Dokumenty",
+      "docsValue": "Warunki użytkowania · Polityka prywatności",
+      "consult": "Zobacz",
+      "exportRow": "Moje dane",
+      "exportValue": "Wyeksportuj kopię swoich danych osobowych.",
+      "export": "Eksportuj",
+      "deleteRow": "Usuń konto",
+      "deleteValue": "Trwale usuń swoje konto i dane.",
+      "delete": "Usuń"
     },
     "chat": {
       "asideAria": "Asystent M.I.A Agent",
@@ -887,6 +923,44 @@
       "liqShowIntactOnly": "Pokaż tylko nienaruszone kieszenie płynności",
       "marketClosed": "Rynek zamknięty",
       "marketClosedTitle": "Rynek jest obecnie zamknięty: wykres pokazuje ostatnią zamkniętą świecę i nie odzwierciedla notowania na żywo."
+    },
+    "layers": {
+      "ob": "OB",
+      "fvg": "FVG",
+      "liquidity": "Płynność",
+      "breaks": "BOS/CHOCH",
+      "mitigated": "Zmitygowane"
+    },
+    "desktop": {
+      "live": "Na żywo",
+      "earlyAccess": "Wczesny dostęp",
+      "legalInline": "Edukacyjna analiza algorytmiczna · ani sygnał, ani porada.",
+      "narratedTitle": "Opis narracyjny",
+      "narratedBadge": "Zakotwiczone w silniku",
+      "narratedFooter": "Każdy podany poziom odpowiada rzeczywistemu wynikowi silnika.",
+      "structureFooter": "Każda struktura jest opisana w czasie teraźniejszym, nigdy prognozowana.",
+      "reg": {
+        "trend": "Trend",
+        "volatility": "Zmienność",
+        "maturity": "Dojrzałość",
+        "alignment": "Zbieżność",
+        "lastEvent": "Ostatnie zdarzenie",
+        "density": "Gęstość",
+        "disagreement": "Rozbieżność"
+      },
+      "liq": {
+        "badge": "Gdzie · jaki stan",
+        "empty": "Nie wykryto strefy płynności dla tej kombinacji.",
+        "intactDesc": "Nienaruszona — nigdy nie zebrana.",
+        "sweptDesc": "Knot poza poziom, zamknięcie wróciło. Nadal się trzyma.",
+        "brokenDesc": "Wyraźne zamknięcie poza poziomem. Ustąpił."
+      },
+      "news": {
+        "title": "Wiadomości — nadchodząca zmienność",
+        "badge": "Bez kierunku",
+        "empty": "Brak nadchodzących zdarzeń dla tej kombinacji.",
+        "scheduledOn": "Zaplanowana zmienność dla {currency}"
+      }
     }
   },
   "samples": {
@@ -1295,7 +1369,9 @@
       "active": "Śledzenie w toku",
       "now": "obecnie",
       "noDate": "—",
-      "firstContact": "pierwszy kontakt"
+      "firstContact": "pierwszy kontakt",
+      "currentStep": "Teraz",
+      "priceInside": "cena wewnątrz"
     },
     "overlaps": {
       "heading": "Nakładanie się z innymi interwałami",
@@ -1307,6 +1383,14 @@
       "analyzeAria": "Przeanalizuj tę strefę na wykresie",
       "show": "Pokaż na wykresie",
       "hide": "Ukryj z wykresu"
+    },
+    "badge": {
+      "count": "{count, plural, one {# strefa} few {# strefy} many {# stref} other {# strefy}}"
+    },
+    "state": {
+      "active": "Aktywna",
+      "mitigated": "Zmitygowana",
+      "filledPct": "Wypełniona {pct} %"
     }
   },
   "appearance": {
@@ -1322,5 +1406,11 @@
       "schema": "Techniczna monochromia, niemal bez koloru.",
       "ardoise": "Ciepła ciemność, kojąca, z łagodniejszymi rogami."
     }
+  },
+  "connexion": {
+    "title": "Zaloguj się",
+    "subtitle": "Wróć do analizy tam, gdzie skończyłeś.",
+    "or": "lub",
+    "trust": "Edukacyjne narzędzie do analizy rynku. Ani sygnał tradingowy, ani porada inwestycyjna. 18+."
   }
 }

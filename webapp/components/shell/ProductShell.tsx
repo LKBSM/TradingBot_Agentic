@@ -8,6 +8,7 @@ import { SkipLink } from '@/components/a11y/SkipLink';
 import { ShellRail } from './ShellRail';
 import { ShellChat } from './ShellChat';
 import './shell.css';
+import './pages.css';
 
 /**
  * Product shell (mission UI-1) — the terminal-style frame shared by every product

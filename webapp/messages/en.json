@@ -393,7 +393,16 @@
         "not_found": "Strategy not found.",
         "storage_failed": "Unable to write to local storage (quota or private browsing). Nothing was saved."
       }
-    }
+    },
+    "page": {
+      "title": "Scanner",
+      "subtitle": "Your conditions, present and factual — transparent results, no score."
+    },
+    "livebadge": "Aligned with candle closes",
+    "activeStrategy": "My strategy — active conditions",
+    "note": "Closed palette, present-tense. Any predictive condition is refused — no “will bounce”, no target.",
+    "resultsMeta": "{count} combos · {when} · no ranking",
+    "unavailable": "Unavailable — no fresh reading for this combo. Nothing is invented."
   },
   "reading": {
     "card": {
@@ -760,8 +769,8 @@
     "manage": "Manage my subscription",
     "choosePlanTitle": "Choose a plan",
     "noPlans": "No plan is available at the moment.",
-      "planMonthly": "Monthly — $49.99 / month",
-      "planAnnual": "Annual — $39.99 / month (billed yearly)",
+    "planMonthly": "Monthly — $49.99 / month",
+    "planAnnual": "Annual — $39.99 / month (billed yearly)",
     "subscribe": "Subscribe",
     "errorLoad": "Unable to load the subscription.",
     "errorCheckout": "Unable to start the payment.",
@@ -835,7 +844,34 @@
       "language": "Language",
       "site": "The site",
       "honesty": "Honesty",
-      "logout": "Log out"
+      "logout": "Log out",
+      "title": "Settings",
+      "subtitle": "Your account, your appearance, your data.",
+      "sectionAccount": "Account",
+      "emailRow": "Email address",
+      "edit": "Edit",
+      "editCancel": "Cancel",
+      "passwordRow": "Password",
+      "passwordMasked": "••••••••",
+      "comingSoon": "coming soon",
+      "sessionRow": "Session",
+      "sessionValue": "Signed in on this device",
+      "sectionAppearance": "Appearance",
+      "appearanceBadge": "Applies immediately · remembered",
+      "sectionSubscription": "Subscription",
+      "planRow": "Current plan",
+      "planValue": "No card required during early access.",
+      "earlyAccessBadge": "Early access",
+      "sectionLegal": "Legal & data",
+      "docsRow": "Documents",
+      "docsValue": "Terms of use · Privacy policy",
+      "consult": "View",
+      "exportRow": "My data",
+      "exportValue": "Export a copy of your personal data.",
+      "export": "Export",
+      "deleteRow": "Delete account",
+      "deleteValue": "Permanently erase your account and data.",
+      "delete": "Delete"
     },
     "chat": {
       "asideAria": "M.I.A Agent assistant",
@@ -887,6 +923,44 @@
       "liqShowIntactOnly": "Show only intact liquidity pools",
       "marketClosed": "Market closed",
       "marketClosedTitle": "The market is currently closed: the chart shows the last closed candle and does not reflect a live quote."
+    },
+    "layers": {
+      "ob": "OB",
+      "fvg": "FVG",
+      "liquidity": "Liquidity",
+      "breaks": "BOS/CHOCH",
+      "mitigated": "Mitigated"
+    },
+    "desktop": {
+      "live": "Live",
+      "earlyAccess": "Early access",
+      "legalInline": "Educational algorithmic reading · neither signal nor advice.",
+      "narratedTitle": "Narrated reading",
+      "narratedBadge": "Anchored to the engine",
+      "narratedFooter": "Every level cited corresponds to a real engine output.",
+      "structureFooter": "Every structure is described in the present, never projected.",
+      "reg": {
+        "trend": "Trend",
+        "volatility": "Volatility",
+        "maturity": "Maturity",
+        "alignment": "Alignment",
+        "lastEvent": "Last event",
+        "density": "Density",
+        "disagreement": "Disagreement"
+      },
+      "liq": {
+        "badge": "Where · what state",
+        "empty": "No liquidity pocket detected for this combo.",
+        "intactDesc": "Intact — never swept.",
+        "sweptDesc": "Wick beyond, close returned. Still holds.",
+        "brokenDesc": "Clean close beyond. It gave way."
+      },
+      "news": {
+        "title": "News — upcoming volatility",
+        "badge": "No direction",
+        "empty": "No upcoming event for this combo.",
+        "scheduledOn": "Scheduled volatility on {currency}"
+      }
     }
   },
   "samples": {
@@ -1295,7 +1369,9 @@
       "active": "Tracking in progress",
       "now": "now",
       "noDate": "—",
-      "firstContact": "first contact"
+      "firstContact": "first contact",
+      "currentStep": "Now",
+      "priceInside": "price inside"
     },
     "overlaps": {
       "heading": "Overlaps with other timeframes",
@@ -1307,6 +1383,14 @@
       "analyzeAria": "Analyze this zone on the chart",
       "show": "Show on the chart",
       "hide": "Hide from the chart"
+    },
+    "badge": {
+      "count": "{count, plural, one {# zone} other {# zones}}"
+    },
+    "state": {
+      "active": "Active",
+      "mitigated": "Mitigated",
+      "filledPct": "Filled {pct} %"
     }
   },
   "appearance": {
@@ -1322,5 +1406,11 @@
       "schema": "Technical monochrome, almost colourless.",
       "ardoise": "Warm dark, soothing, with softer corners."
     }
+  },
+  "connexion": {
+    "title": "Log in",
+    "subtitle": "Pick up your reading where you left off.",
+    "or": "or",
+    "trust": "Educational market-reading tool. Neither a trading signal nor investment advice. 18+."
   }
 }

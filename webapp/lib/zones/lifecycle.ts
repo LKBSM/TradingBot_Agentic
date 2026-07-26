@@ -356,6 +356,17 @@ export function formatZoneDateTime(iso: string, locale: string = 'fr-FR'): strin
   }).format(d);
 }
 
+/**
+ * "14:30" — compact time-of-day for the horizontal timeline steps (`.st3` in the
+ * UI-2 reference), locale-aware. Falls back to the raw string on an unparsable
+ * timestamp rather than inventing one.
+ */
+export function formatZoneShortTime(iso: string, locale: string = 'fr-FR'): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return new Intl.DateTimeFormat(locale, { timeStyle: 'short' }).format(d);
+}
+
 // ─── Filter + sort (display-only) ────────────────────────────────────────────
 
 export function matchesFilter(zone: ZoneLifecycle, filter: ZoneFilter): boolean {

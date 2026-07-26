@@ -6,11 +6,10 @@ import { ChartViewProvider, useChartViewOptional } from '@/lib/chart/viewState';
 import { coerceViewActions } from '@/lib/chart/viewActions';
 import { collectZones } from '@/lib/zones/lifecycle';
 import { FIXTURE_XAU_M15 } from '@/lib/market-reading/fixtures';
-import messages from '@/messages/fr.json';
-
 // The zones surface consumes the `zones` namespace (+ `reading` enums via
 // useReadingFormatters); both live in the fr bundle so the asserted FR strings
-// resolve directly.
+// resolve directly (the UI-2 microcopy keys are now merged into every locale).
+import messages from '@/messages/fr.json';
 
 const fetchMock = vi.fn();
 vi.mock('@/lib/market-reading/api-client', async (importActual) => {
@@ -80,9 +79,9 @@ describe('ZonesWorkspace', () => {
     renderZones();
     // Cards for every emitted zone (2 OB + 2 FVG in the fixture).
     await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(4));
-    // Real lifecycle facts surfaced once the details are unfolded.
-    expect(screen.getAllByText('Order Block').length).toBeGreaterThan(0);
-    for (const card of screen.getAllByRole('article')) expandCard(card);
+    // The type/direction tag is surfaced (OB / FVG with a direction arrow).
+    expect(screen.getAllByText(/^OB(\s|$)/).length).toBeGreaterThan(0);
+    // Real lifecycle facts on the always-visible timeline (single « Testé »).
     expect(screen.getAllByText('Formé').length).toBeGreaterThan(0);
     expect(screen.getByText('Mitigé')).toBeInTheDocument(); // ob-xau-2-mitigated
     expect(screen.getByText('Partiellement comblé')).toBeInTheDocument(); // fvg-xau-2-partial
@@ -94,11 +93,11 @@ describe('ZonesWorkspace', () => {
     // The partially-filled FVG has NO fill_level in the fixture → no fill bar is
     // fabricated (no progressbar), and no "%" is invented for it.
     expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
-    // The untested active OB (ob-xau-1) shows no "Testé" step.
+    // The untested active OB (ob-xau-1) shows no "Testé" step, and its live step
+    // reads « Maintenant » (the reference terminal-live label).
     const card = cardForZone('ob-xau-1');
-    expandCard(card);
     expect(within(card).queryByText('Testé')).not.toBeInTheDocument();
-    expect(within(card).getByText('Suivi en cours')).toBeInTheDocument();
+    expect(within(card).getByText('Maintenant')).toBeInTheDocument();
   });
 
   it('(c) "Analyser" links to /app focusing the right zone id', async () => {
@@ -165,11 +164,14 @@ describe('ZonesWorkspace', () => {
   it('(g) shows the relation to the price as a present-tense fact (distance to the band)', async () => {
     renderZones();
     await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(4));
-    // ob-xau-2-mitigated: band 2384–2386, price 2392.35 → 6.35 pts below the price.
+    // ob-xau-2-mitigated: band 2384–2386, price 2392.35 → 6.35 pts below the
+    // price. The relation is now woven into the factual `.znarr` sentence, so
+    // assert the substring within the card (age fact lives in the same line).
     const card = cardForZone('ob-xau-2-mitigated');
-    expect(within(card).getByText('à 6,35 pts en dessous du prix')).toBeInTheDocument();
+    const narr = within(card).getByText(/à 6,35 pts en dessous du prix/);
+    expect(narr).toBeInTheDocument();
     // And the age fact is present (duration-only here: no candle window is served).
-    expect(within(card).getByText(/formée il y a/)).toBeInTheDocument();
+    expect(narr).toHaveTextContent(/formée il y a/);
   });
 
   it('(h) surfaces geometric overlaps with the other timeframes, phrased as geometry', async () => {

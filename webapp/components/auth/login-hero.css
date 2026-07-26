@@ -1,0 +1,256 @@
+/*
+ * Login-hero stylesheet (mission UI-2) — a VERBATIM port of the "CONNEXION"
+ * block in docs/design/reference-desktop.html: a single centred card on an
+ * animated candle-drift canvas, no marketing panel. Every rule is scoped under
+ * `.login-hero` so the generic primitive names (.input / .btn / .ea …) — which
+ * the connexion route does NOT inherit from `.app-shell` — are redefined locally
+ * and can never collide with shadcn/ui or the marketing surfaces. Colours come
+ * only from the literal design tokens (globals.css) → all four themes for free.
+ */
+
+.login-hero {
+  position: relative;
+  min-height: calc(100vh - 54px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 40px 20px;
+}
+.login-hero .fx {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.login-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    var(--bg) 0%,
+    transparent 22%,
+    transparent 78%,
+    var(--bg) 100%
+  );
+  pointer-events: none;
+}
+.login-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(560px 380px at 50% 42%, var(--acc-dim), transparent 70%);
+  pointer-events: none;
+  opacity: 0.7;
+}
+.login-hero .login-stack {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.login-hero .login-card {
+  position: relative;
+  z-index: 2;
+  width: 384px;
+  max-width: 100%;
+  background: var(--panel);
+  border: 1px solid var(--line-2);
+  border-radius: 14px;
+  padding: 26px 26px 22px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+}
+.login-hero .brandline {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 18px;
+}
+.login-hero .mark {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--r-s);
+  background: var(--panel-3);
+  border: 1px solid var(--line-3);
+  display: grid;
+  place-items: center;
+  color: var(--acc);
+  font-weight: 600;
+  font-size: 12.5px;
+}
+.login-hero .brandline b {
+  font-size: 14.5px;
+  font-weight: 600;
+}
+.login-hero .bl-sp {
+  flex: 1;
+}
+.login-hero .ea {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--liq);
+  background: color-mix(in srgb, var(--liq) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--liq) 25%, transparent);
+  padding: 3px 8px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.login-hero .ea .d {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--liq);
+}
+.login-hero h1 {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+.login-hero .lsub {
+  font-size: 12.5px;
+  color: var(--dim);
+  margin: 5px 0 20px;
+}
+.login-hero .fgroup {
+  margin-bottom: 14px;
+}
+.login-hero .flabel {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--dim);
+  margin: 0 0 6px;
+}
+.login-hero .input {
+  width: 100%;
+  background: var(--panel-2);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-s);
+  color: var(--txt);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 10px 12px;
+  outline: none;
+  min-height: 42px;
+}
+.login-hero .input:focus {
+  border-color: var(--acc);
+  box-shadow: 0 0 0 3px var(--acc-dim);
+}
+.login-hero .frow {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin: 2px 0 18px;
+}
+.login-hero .frow a {
+  font-size: 12px;
+  color: var(--acc);
+  text-decoration: none;
+}
+.login-hero .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 8px 13px;
+  border-radius: var(--r-s);
+  border: 1px solid var(--line-2);
+  background: var(--panel-2);
+  color: var(--txt);
+  cursor: pointer;
+  font-family: inherit;
+  min-height: 38px;
+}
+.login-hero .btn.primary {
+  width: 100%;
+  background: var(--acc);
+  border-color: var(--acc);
+  color: var(--acc-txt);
+  font-weight: 600;
+}
+.login-hero .btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.login-hero .orline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0;
+}
+.login-hero .orline::before,
+.login-hero .orline::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+.login-hero .orline span {
+  font-size: 10.5px;
+  color: var(--faint);
+}
+.login-hero .mkacct {
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--dim);
+}
+.login-hero .mkacct a {
+  color: var(--acc);
+  text-decoration: none;
+  font-weight: 500;
+}
+.login-hero .trust {
+  margin-top: 18px;
+  padding: 9px 11px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.login-hero .trust svg {
+  width: 13px;
+  height: 13px;
+  stroke: var(--liq);
+  fill: none;
+  stroke-width: 1.7;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.login-hero .trust p {
+  font-size: 10.5px;
+  color: var(--dim);
+  line-height: 1.5;
+}
+.login-hero .under-links {
+  position: relative;
+  z-index: 2;
+  margin-top: 14px;
+  text-align: center;
+  font-size: 10.5px;
+  color: var(--faint);
+}
+.login-hero .under-links a {
+  color: var(--faint);
+  text-decoration: none;
+  margin: 0 8px;
+}
+.login-hero .under-links a:hover {
+  color: var(--dim);
+}
+.login-hero .form-error {
+  margin-bottom: 14px;
+  font-size: 12px;
+  color: var(--bear);
+}

@@ -133,9 +133,12 @@ describe('AppWorkspace — /app view', () => {
   });
 
   it('retries after an error and renders the reading on success', async () => {
+    // First call fails; once the service is back, every subsequent call resolves
+    // — including the multi-timeframe reads the always-visible desktop regime
+    // panel fires (useMtfTrends), so use a persistent resolve, not `…Once`.
     fetchMock
       .mockRejectedValueOnce(new MarketReadingNotAvailableError('down'))
-      .mockResolvedValueOnce(FIXTURE_XAU_M15);
+      .mockResolvedValue(FIXTURE_XAU_M15);
     renderApp(XAU_M15);
 
     const retry = await screen.findByRole('button', { name: /réessayer/i });

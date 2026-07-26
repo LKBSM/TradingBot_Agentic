@@ -2,55 +2,56 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
-import { formatZoneDateTime, type TimelineEvent } from '@/lib/zones/lifecycle';
+import { formatZoneShortTime, type TimelineEvent } from '@/lib/zones/lifecycle';
 
 /**
- * Vertical lifecycle timeline for one zone. Renders ONLY the events handed to it
- * (`buildTimeline` never fabricates a step), and shows a date only when the
- * engine recorded one — an event without a timestamp degrades to its label
- * alone. Purely descriptive: a sequence of facts already produced upstream.
+ * Horizontal lifecycle timeline for one zone (UI-2 terminal reference: `.tl` /
+ * `.step`). Renders ONLY the events handed to it (`buildTimeline` never
+ * fabricates a step) and shows a time only when the engine recorded one — an
+ * event without a timestamp degrades to a dash. Purely descriptive: a sequence
+ * of facts already produced upstream.
+ *
+ * Honesty: the interaction step is the single « Testé / Pénétré » — the engine
+ * records only the FIRST contact (no per-test history), so there is NEVER a
+ * « ×N » and no per-test list.
  */
 
-// Lifecycle phase dots — mapped onto the reserved state tokens so they track
-// the theme (and never read as a decorative buy/sell hue): formed = neutral,
-// interaction = warn, terminal (ended) = bear, ongoing (live) = bull.
-const DOT_TONE: Record<TimelineEvent['variant'], string> = {
-  formed: 'bg-sentinel-neutral',
-  interaction: 'bg-sentinel-warn',
-  terminal: 'bg-sentinel-bear',
-  ongoing: 'bg-sentinel-bull',
-};
+// Each engine event variant maps onto a reference step state:
+//   · ongoing (live) → `.now`  (the amber-highlighted "Maintenant" node)
+//   · everything else (formed / interaction / terminal) → `.done`
+function stepClass(variant: TimelineEvent['variant']): string {
+  return variant === 'ongoing' ? 'now' : 'done';
+}
 
-export function ZoneTimeline({ events }: { events: TimelineEvent[] }) {
+export function ZoneTimeline({
+  events,
+  /** Sub-label shown under the live "Maintenant" step (e.g. « prix dedans »). */
+  nowSubLabel,
+}: {
+  events: TimelineEvent[];
+  nowSubLabel?: string;
+}) {
   const t = useTranslations('zones');
   const locale = useLocale();
   return (
-    <ol className="relative ml-1 flex flex-col gap-3 border-l border-border/70 pl-4">
-      {events.map((ev, i) => (
-        <li key={`${ev.key}-${i}`} className="relative">
-          <span
-            aria-hidden
-            className={cn(
-              'absolute -left-[1.30rem] top-1 h-2.5 w-2.5 rounded-full ring-2 ring-background',
-              DOT_TONE[ev.variant],
-              ev.variant === 'ongoing' && 'animate-pulse',
-            )}
-          />
-          <div className="flex flex-col">
-            <span className="text-sm font-medium text-foreground">{ev.label}</span>
-            <span className="text-xs text-muted-foreground">
-              {ev.at
-                ? formatZoneDateTime(ev.at, locale)
-                : ev.variant === 'ongoing'
-                  ? t('timeline.now')
-                  : t('timeline.noDate')}
-              {/* The engine records only the FIRST interaction (no per-test
-                  history) — say so rather than let the date read as "the" test. */}
-              {ev.variant === 'interaction' && ev.at ? ` · ${t('timeline.firstContact')}` : ''}
-            </span>
+    <div className="tl">
+      {events.map((ev, i) => {
+        // `.st3` — the small mono sub-line: the recorded time when there is one;
+        // for the live step the caller's factual sub-label (or "à présent");
+        // otherwise a neutral dash (never a fabricated date).
+        const sub = ev.at
+          ? formatZoneShortTime(ev.at, locale)
+          : ev.variant === 'ongoing'
+            ? (nowSubLabel ?? t('timeline.now'))
+            : t('timeline.noDate');
+        return (
+          <div key={`${ev.key}-${i}`} className={cn('step', stepClass(ev.variant))}>
+            <div className="d3" aria-hidden />
+            <div className="sl">{ev.label}</div>
+            <div className="st3">{sub}</div>
           </div>
-        </li>
-      ))}
-    </ol>
+        );
+      })}
+    </div>
   );
 }

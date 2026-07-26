@@ -8,8 +8,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import type { ConditionsConfig, ConditionsScanResponse, ScanCondition } from '@/lib/conditions/types';
 import { paletteEntry } from '@/lib/conditions/palette';
 import { useNow } from '@/lib/conditions/use-now';
@@ -27,14 +25,16 @@ function cap(v: string): string {
 }
 
 /**
- * Results view. A neutral, descriptive list — never a ranking.
+ * Results view (UI-2 terminal reference). A neutral, descriptive grid — never a
+ * ranking, never a score.
  *  · "Conditions présentes maintenant" = combos satisfying the full AND/OR
  *    logic ON A CURRENT reading (fresh/aging). A combo that satisfies it only
  *    on a STALE reading is held back into its own "lecture plus ancienne"
  *    section — we never assert an aged reading as "présent maintenant".
  *  · "Correspondances partielles" = combos meeting ≥1 condition (transparency).
- *  · Combos meeting nothing, and combos without a reading yet, are listed
- *    plainly so coverage is honest (no silent truncation).
+ *  · Combos meeting nothing are listed plainly so coverage is honest.
+ *  · Combos WITHOUT a fresh reading render as a degraded `.combo.na` card —
+ *    honest "Non disponible", never fabricated.
  */
 export function ScanResults({
   response,
@@ -87,71 +87,92 @@ export function ScanResults({
   const now = useNow(CLOCK_TICK_MS);
   const freshness = age(response.as_of, now);
 
+  // Compact results meta: "6 combos · il y a 3 min · aucun classement". Present
+  // tense, honest — the "aucun classement" note makes the no-ranking promise
+  // visible on screen.
+  const resultsMeta = t('resultsMeta', {
+    count: response.scanned,
+    when: isRefreshing
+      ? t('results.analysisInProgress')
+      : freshness ?? t('results.lastAnalysisNone'),
+  });
+
   return (
-    <div className="space-y-6">
-      <header className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-lg font-semibold">{t('results.title')}</h1>
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={onRefresh} disabled={isRefreshing}>
-              {isRefreshing ? t('results.scanning') : t('results.rescan')}
-            </Button>
-            <Button size="sm" variant="ghost" onClick={onEdit}>
-              {t('editConditions')}
-            </Button>
-          </div>
+    <div className="pagewrap">
+      {/* Page head — title, live badge, refresh */}
+      <div className="pghead">
+        <div>
+          <h1>{t('page.title')}</h1>
+          <div className="sub">{t('page.subtitle')}</div>
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-xs text-muted-foreground">
-          <span aria-live="polite" data-testid="scan-freshness">
-            {isRefreshing
-              ? t('results.analysisInProgress')
-              : freshness
-                ? t('results.lastAnalysis', { when: freshness })
-                : t('results.lastAnalysisNone')}
-          </span>
-          <AutoRefreshToggle enabled={autoRefreshEnabled} onChange={onToggleAutoRefresh} />
+        <span className="hsp" />
+        <div className="livebadge">
+          <span className="dot" />
+          <span className="mono">{t('livebadge')}</span>
         </div>
-        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          <span>
-            {config.logic === 'AND'
-              ? t('results.yourConditionsAll')
-              : t('results.yourConditionsAny')}
-          </span>
-          {config.conditions.map((c) => {
-            const param = conditionParam(c);
-            return (
-              <Badge key={c.type} variant="secondary">
-                {plabel(c.type)}
-                {param ? ` · ${param}` : ''}
-              </Badge>
-            );
-          })}
-        </div>
-      </header>
+        <button className="btn" onClick={onRefresh} disabled={isRefreshing}>
+          {isRefreshing ? t('results.scanning') : t('results.rescan')}
+        </button>
+        <button className="btn" onClick={onEdit}>
+          {t('editConditions')}
+        </button>
+        <AutoRefreshToggle enabled={autoRefreshEnabled} onChange={onToggleAutoRefresh} />
+      </div>
+
+      {/* Active-conditions palette (read-only reflection of the saved strategy) */}
+      <div className="rail-lbl">{t('activeStrategy')}</div>
+      <div className="condpal">
+        <span className="cond on" data-logic={config.logic}>
+          {config.logic === 'AND' ? t('results.yourConditionsAll') : t('results.yourConditionsAny')}
+        </span>
+        {config.conditions.map((c) => {
+          const param = conditionParam(c);
+          return (
+            <span key={c.type} className="cond on">
+              {plabel(c.type)}
+              {param ? ` · ${param}` : ''}
+            </span>
+          );
+        })}
+      </div>
+      <div className="scannote">
+        <svg viewBox="0 0 24 24" aria-hidden>
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 8v4M12 16h.01" />
+        </svg>
+        {t('note')}
+      </div>
+
+      {/* Results head — count · freshness · no ranking */}
+      <div className="pghead">
+        <h1 style={{ fontSize: '14px' }}>{t('results.title')}</h1>
+        <span className="mono" data-testid="scan-freshness" aria-live="polite">
+          {resultsMeta}
+        </span>
+      </div>
 
       {/* Full matches — on current readings only */}
-      <section className="space-y-3">
-        {full.length === 0 ? (
-          staleFull.length === 0 && (
-            <p className="rounded-lg border border-dashed border-border/70 p-4 text-sm text-muted-foreground">
-              {config.logic === 'AND' ? t('results.noMarketsAll') : t('results.noMarketsAny')}
-            </p>
-          )
-        ) : (
-          <div className="flex flex-col gap-4">
-            {full.map((m) => (
-              <ComboCard key={`${m.instrument}:${m.timeframe}`} match={m} locale={locale} now={now} />
-            ))}
-          </div>
-        )}
-      </section>
+      {full.length === 0 ? (
+        staleFull.length === 0 &&
+        response.unavailable.length === 0 && (
+          <p className="scannote">
+            {config.logic === 'AND' ? t('results.noMarketsAll') : t('results.noMarketsAny')}
+          </p>
+        )
+      ) : (
+        <div className="resgrid">
+          {full.map((m) => (
+            <ComboCard key={`${m.instrument}:${m.timeframe}`} match={m} locale={locale} now={now} />
+          ))}
+        </div>
+      )}
 
       {/* Full matches on a STALE reading — held back from "maintenant" */}
       {staleFull.length > 0 && (
-        <section className="space-y-2">
-          <h2 className="text-sm font-semibold text-foreground">{t('results.olderTitle')}</h2>
-          <p className="text-xs text-muted-foreground">{t('results.olderBody')}</p>
-          <div className="flex flex-col gap-4 pt-1">
+        <section className="mt-5">
+          <div className="rail-lbl">{t('results.olderTitle')}</div>
+          <p className="scannote">{t('results.olderBody')}</p>
+          <div className="resgrid">
             {staleFull.map((m) => (
               <ComboCard key={`${m.instrument}:${m.timeframe}`} match={m} locale={locale} now={now} />
             ))}
@@ -159,15 +180,30 @@ export function ScanResults({
         </section>
       )}
 
+      {/* Combos without a fresh reading — honest degraded cards, never fabricated */}
+      {response.unavailable.length > 0 && (
+        <div className="resgrid mt-3">
+          {response.unavailable.map((u) => (
+            <div key={`${u.instrument}:${u.timeframe}`} className="combo na">
+              <div className="t1">
+                <span className="nm">{instrumentLabel(u.instrument)}</span>
+                <span className="tf2">· {u.timeframe}</span>
+              </div>
+              <div className="natag">{t('unavailable')}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Partial matches — transparency */}
       {partial.length > 0 && (
-        <Accordion type="single" collapsible>
+        <Accordion type="single" collapsible className="mt-4">
           <AccordionItem value="partial">
             <AccordionTrigger className="text-sm">
               {t('results.partialMatches', { count: partial.length })}
             </AccordionTrigger>
             <AccordionContent>
-              <div className="flex flex-col gap-4 pt-2">
+              <div className="resgrid pt-2">
                 {partial.map((m) => (
                   <ComboCard key={`${m.instrument}:${m.timeframe}`} match={m} locale={locale} now={now} />
                 ))}
@@ -178,24 +214,13 @@ export function ScanResults({
       )}
 
       {/* Honest coverage footer */}
-      {(none.length > 0 || response.unavailable.length > 0) && (
-        <footer className="space-y-1 border-t border-border/60 pt-4 text-xs text-muted-foreground">
-          {none.length > 0 && (
-            <p>
-              {t('results.nonePresent', {
-                list: none.map((m) => `${instrumentLabel(m.instrument)} ${m.timeframe}`).join(' · '),
-              })}
-            </p>
-          )}
-          {response.unavailable.length > 0 && (
-            <p>
-              {t('results.notGenerated', {
-                list: response.unavailable
-                  .map((u) => `${instrumentLabel(u.instrument)} ${u.timeframe}`)
-                  .join(' · '),
-              })}
-            </p>
-          )}
+      {none.length > 0 && (
+        <footer className="mt-4 border-t border-[color:var(--line)] pt-4 text-[11px] text-[color:var(--faint)]">
+          <p>
+            {t('results.nonePresent', {
+              list: none.map((m) => `${instrumentLabel(m.instrument)} ${m.timeframe}`).join(' · '),
+            })}
+          </p>
           <p>{t('results.scannedFooter', { count: response.scanned })}</p>
         </footer>
       )}

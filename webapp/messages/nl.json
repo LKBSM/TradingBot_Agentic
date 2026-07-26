@@ -393,7 +393,16 @@
         "not_found": "Strategie niet gevonden.",
         "storage_failed": "Kan niet naar de lokale opslag schrijven (quota of privénavigatie). Er is niets bewaard."
       }
-    }
+    },
+    "page": {
+      "title": "Scanner",
+      "subtitle": "Jouw voorwaarden, actueel en feitelijk — transparante resultaten, zonder score."
+    },
+    "livebadge": "Afgestemd op slotkoersen",
+    "activeStrategy": "Mijn strategie — actieve voorwaarden",
+    "note": "Gesloten palet, tegenwoordige tijd. Elke voorspellende voorwaarde wordt geweigerd — geen “gaat stuiteren”, geen doel.",
+    "resultsMeta": "{count} combinaties · {when} · geen rangschikking",
+    "unavailable": "Niet beschikbaar — geen verse analyse voor deze combinatie. Niets wordt verzonnen."
   },
   "reading": {
     "card": {
@@ -760,8 +769,8 @@
     "manage": "Mijn abonnement beheren",
     "choosePlanTitle": "Een formule kiezen",
     "noPlans": "Er is momenteel geen formule beschikbaar.",
-      "planMonthly": "Maandelijks — $ 49,99 / maand",
-      "planAnnual": "Jaarlijks — $ 39,99 / maand (jaarlijks gefactureerd)",
+    "planMonthly": "Maandelijks — $ 49,99 / maand",
+    "planAnnual": "Jaarlijks — $ 39,99 / maand (jaarlijks gefactureerd)",
     "subscribe": "Abonneren",
     "errorLoad": "Kan het abonnement niet laden.",
     "errorCheckout": "Kan de betaling niet starten.",
@@ -835,7 +844,34 @@
       "language": "Taal",
       "site": "De site",
       "honesty": "Eerlijkheid",
-      "logout": "Uitloggen"
+      "logout": "Uitloggen",
+      "title": "Instellingen",
+      "subtitle": "Je account, je weergave, je gegevens.",
+      "sectionAccount": "Account",
+      "emailRow": "E-mailadres",
+      "edit": "Bewerken",
+      "editCancel": "Annuleren",
+      "passwordRow": "Wachtwoord",
+      "passwordMasked": "••••••••",
+      "comingSoon": "binnenkort",
+      "sessionRow": "Sessie",
+      "sessionValue": "Aangemeld op dit apparaat",
+      "sectionAppearance": "Weergave",
+      "appearanceBadge": "Direct toegepast · onthouden",
+      "sectionSubscription": "Abonnement",
+      "planRow": "Huidig abonnement",
+      "planValue": "Geen kaart vereist tijdens vroege toegang.",
+      "earlyAccessBadge": "Vroege toegang",
+      "sectionLegal": "Juridisch & gegevens",
+      "docsRow": "Documenten",
+      "docsValue": "Gebruiksvoorwaarden · Privacybeleid",
+      "consult": "Bekijken",
+      "exportRow": "Mijn gegevens",
+      "exportValue": "Exporteer een kopie van je persoonsgegevens.",
+      "export": "Exporteren",
+      "deleteRow": "Account verwijderen",
+      "deleteValue": "Verwijder je account en gegevens definitief.",
+      "delete": "Verwijderen"
     },
     "chat": {
       "asideAria": "M.I.A Agent-assistent",
@@ -887,6 +923,44 @@
       "liqShowIntactOnly": "Alleen intacte liquiditeitspockets tonen",
       "marketClosed": "Markt gesloten",
       "marketClosedTitle": "De markt is momenteel gesloten: de grafiek toont de laatste gesloten candle en geeft geen live-koers weer."
+    },
+    "layers": {
+      "ob": "OB",
+      "fvg": "FVG",
+      "liquidity": "Liquiditeit",
+      "breaks": "BOS/CHOCH",
+      "mitigated": "Gemitigeerd"
+    },
+    "desktop": {
+      "live": "Live",
+      "earlyAccess": "Vroege toegang",
+      "legalInline": "Educatieve algoritmische analyse · geen signaal of advies.",
+      "narratedTitle": "Verhaalde analyse",
+      "narratedBadge": "Verankerd in de engine",
+      "narratedFooter": "Elk genoemd niveau komt overeen met een echte engine-uitvoer.",
+      "structureFooter": "Elke structuur wordt in het heden beschreven, nooit geprojecteerd.",
+      "reg": {
+        "trend": "Trend",
+        "volatility": "Volatiliteit",
+        "maturity": "Rijpheid",
+        "alignment": "Uitlijning",
+        "lastEvent": "Laatste gebeurtenis",
+        "density": "Dichtheid",
+        "disagreement": "Onenigheid"
+      },
+      "liq": {
+        "badge": "Waar · welke staat",
+        "empty": "Geen liquiditeitszone gedetecteerd voor deze combinatie.",
+        "intactDesc": "Intact — nooit geveegd.",
+        "sweptDesc": "Lont ervoorbij, slot teruggekeerd. Houdt nog stand.",
+        "brokenDesc": "Duidelijk slot ervoorbij. Het brak."
+      },
+      "news": {
+        "title": "Nieuws — aankomende volatiliteit",
+        "badge": "Zonder richting",
+        "empty": "Geen aankomende gebeurtenis voor deze combinatie.",
+        "scheduledOn": "Geplande volatiliteit op {currency}"
+      }
     }
   },
   "samples": {
@@ -1295,7 +1369,9 @@
       "active": "Wordt gevolgd",
       "now": "op dit moment",
       "noDate": "—",
-      "firstContact": "eerste contact"
+      "firstContact": "eerste contact",
+      "currentStep": "Nu",
+      "priceInside": "prijs erin"
     },
     "overlaps": {
       "heading": "Overlappingen met andere tijdseenheden",
@@ -1307,6 +1383,14 @@
       "analyzeAria": "Deze zone op de grafiek analyseren",
       "show": "Op de grafiek tonen",
       "hide": "Van de grafiek verbergen"
+    },
+    "badge": {
+      "count": "{count, plural, one {# zone} other {# zones}}"
+    },
+    "state": {
+      "active": "Actief",
+      "mitigated": "Gemitigeerd",
+      "filledPct": "Opgevuld {pct} %"
     }
   },
   "appearance": {
@@ -1322,5 +1406,11 @@
       "schema": "Technisch monochroom, bijna zonder kleur.",
       "ardoise": "Warm donker, rustgevend, met zachtere hoeken."
     }
+  },
+  "connexion": {
+    "title": "Inloggen",
+    "subtitle": "Ga verder met je analyse waar je gebleven was.",
+    "or": "of",
+    "trust": "Educatief hulpmiddel voor marktanalyse. Geen tradingsignaal of beleggingsadvies. 18+."
   }
 }

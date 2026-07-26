@@ -393,7 +393,16 @@
         "not_found": "Stratégie introuvable.",
         "storage_failed": "Impossible d’écrire dans le stockage local (quota ou navigation privée). Rien n’a été sauvegardé."
       }
-    }
+    },
+    "page": {
+      "title": "Scanner",
+      "subtitle": "Tes conditions, présentes et factuelles — résultats transparents, sans score."
+    },
+    "livebadge": "Aligné sur les clôtures",
+    "activeStrategy": "Ma stratégie — conditions actives",
+    "note": "Palette fermée, au présent. Toute condition prédictive est refusée — pas de « va rebondir », pas de cible.",
+    "resultsMeta": "{count} combos · {when} · aucun classement",
+    "unavailable": "Non disponible — pas de lecture fraîche pour ce combo. Rien n'est inventé."
   },
   "reading": {
     "card": {
@@ -760,8 +769,8 @@
     "manage": "Gérer mon abonnement",
     "choosePlanTitle": "Choisir une formule",
     "noPlans": "Aucune formule n’est disponible pour le moment.",
-      "planMonthly": "Mensuel — 49,99 $ / mois",
-      "planAnnual": "Annuel — 39,99 $ / mois (facturé annuellement)",
+    "planMonthly": "Mensuel — 49,99 $ / mois",
+    "planAnnual": "Annuel — 39,99 $ / mois (facturé annuellement)",
     "subscribe": "S’abonner",
     "errorLoad": "Impossible de charger l’abonnement.",
     "errorCheckout": "Impossible de démarrer le paiement.",
@@ -787,6 +796,44 @@
     }
   },
   "app": {
+    "layers": {
+      "ob": "OB",
+      "fvg": "FVG",
+      "liquidity": "Liquidité",
+      "breaks": "BOS/CHOCH",
+      "mitigated": "Mitigées"
+    },
+    "desktop": {
+      "live": "En direct",
+      "earlyAccess": "Accès anticipé",
+      "legalInline": "Lecture algorithmique éducative · ni signal ni conseil.",
+      "narratedTitle": "Lecture narrée",
+      "narratedBadge": "Ancrée au moteur",
+      "narratedFooter": "Chaque niveau cité correspond à une sortie réelle du moteur.",
+      "structureFooter": "Chaque structure est décrite au présent, jamais projetée.",
+      "reg": {
+        "trend": "Tendance",
+        "volatility": "Volatilité",
+        "maturity": "Maturité",
+        "alignment": "Alignement",
+        "lastEvent": "Dernier évén.",
+        "density": "Densité",
+        "disagreement": "Désaccord"
+      },
+      "liq": {
+        "badge": "Où · quel état",
+        "empty": "Aucune poche de liquidité détectée pour ce combo.",
+        "intactDesc": "Intacte — jamais balayée.",
+        "sweptDesc": "Mèche au-delà, clôture revenue. Tient encore.",
+        "brokenDesc": "Clôture nette au-delà. A cédé."
+      },
+      "news": {
+        "title": "Actus — volatilité à venir",
+        "badge": "Sans direction",
+        "empty": "Aucun événement à venir pour ce combo.",
+        "scheduledOn": "Volatilité programmée sur {currency}"
+      }
+    },
     "rail": {
       "timeframe": "Unité de temps",
       "space": "Espace"
@@ -835,7 +882,34 @@
       "language": "Langue",
       "site": "Le site",
       "honesty": "Honnêteté",
-      "logout": "Se déconnecter"
+      "logout": "Se déconnecter",
+      "title": "Réglages",
+      "subtitle": "Ton compte, ton apparence, tes données.",
+      "sectionAccount": "Compte",
+      "emailRow": "Adresse courriel",
+      "edit": "Modifier",
+      "editCancel": "Annuler",
+      "passwordRow": "Mot de passe",
+      "passwordMasked": "••••••••",
+      "comingSoon": "à venir",
+      "sessionRow": "Session",
+      "sessionValue": "Connecté sur cet appareil",
+      "sectionAppearance": "Apparence",
+      "appearanceBadge": "S'applique immédiatement · mémorisé",
+      "sectionSubscription": "Abonnement",
+      "planRow": "Plan actuel",
+      "planValue": "Aucune carte requise pendant l'accès anticipé.",
+      "earlyAccessBadge": "Accès anticipé",
+      "sectionLegal": "Légal & données",
+      "docsRow": "Documents",
+      "docsValue": "Conditions d'utilisation · Politique de confidentialité",
+      "consult": "Consulter",
+      "exportRow": "Mes données",
+      "exportValue": "Exporter une copie de tes données personnelles.",
+      "export": "Exporter",
+      "deleteRow": "Supprimer le compte",
+      "deleteValue": "Effacer définitivement ton compte et tes données.",
+      "delete": "Supprimer"
     },
     "chat": {
       "asideAria": "Assistant M.I.A Agent",
@@ -1295,7 +1369,9 @@
       "active": "Suivi en cours",
       "now": "à présent",
       "noDate": "—",
-      "firstContact": "premier contact"
+      "firstContact": "premier contact",
+      "currentStep": "Maintenant",
+      "priceInside": "prix dedans"
     },
     "overlaps": {
       "heading": "Recoupements avec d’autres unités de temps",
@@ -1307,6 +1383,14 @@
       "analyzeAria": "Analyser cette zone sur le graphique",
       "show": "Afficher sur le graphique",
       "hide": "Masquer du graphique"
+    },
+    "badge": {
+      "count": "{count, plural, one {# zone} other {# zones}}"
+    },
+    "state": {
+      "active": "Actif",
+      "mitigated": "Mitigée",
+      "filledPct": "Comblé {pct} %"
     }
   },
   "appearance": {
@@ -1322,5 +1406,11 @@
       "schema": "Monochrome technique, presque sans couleur.",
       "ardoise": "Sombre chaud, apaisé, aux coins plus doux."
     }
+  },
+  "connexion": {
+    "title": "Connexion",
+    "subtitle": "Reprends ta lecture là où tu l'as laissée.",
+    "or": "ou",
+    "trust": "Outil éducatif de lecture de marché. Ni signal de trading, ni conseil en investissement. 18+."
   }
 }
