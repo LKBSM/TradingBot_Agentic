@@ -306,7 +306,61 @@ body[data-page="reglages"] #cv-reglages{display:block}
 .chk{position:absolute;top:8px;right:10px;font-size:8.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--acc);opacity:0}
 .themetile.on .chk{opacity:1}
 .planbadge{font-size:10px;font-weight:600;letter-spacing:.3px;text-transform:uppercase;padding:3px 9px;border-radius:20px;background:var(--acc-dim);color:var(--acc)}
-@media (prefers-reduced-motion: reduce){.dot::after{animation:none;opacity:0}*{transition:none!important}}
+/* ==== aide contextuelle Régime ==== */
+.reg .k{display:flex;align-items:center;gap:5px}
+.ihelp{width:14px;height:14px;border-radius:50%;border:1px solid var(--line-3);background:transparent;color:var(--dim);font-family:inherit;font-size:9px;font-weight:700;line-height:1;cursor:pointer;display:grid;place-items:center;padding:0}
+.ihelp:hover,.ihelp.on{background:var(--acc-dim);border-color:var(--acc);color:var(--acc)}
+.reg .sub2{font-size:9.5px;color:var(--faint);font-family:'JetBrains Mono',monospace;margin-top:2px}
+.infobox{display:none;margin-top:9px;padding:10px 12px;background:var(--panel-2);border:1px solid var(--line-2);border-left:2px solid var(--acc);border-radius:var(--r-s)}
+.infobox.on{display:block}
+.infobox h4{font-size:11px;font-weight:600;color:var(--acc);letter-spacing:.3px;text-transform:uppercase;margin-bottom:5px}
+.infobox p{font-size:11.5px;color:var(--dim);line-height:1.55;margin-bottom:7px}
+.infobox p:last-child{margin-bottom:0}
+.infobox b{color:var(--txt);font-weight:600}
+
+/* ==== boutons d'en-tête : aide + tri ==== */
+.card-h .hsp{flex:1}
+.card-h .badge2{margin-left:0}
+.hbtn{width:22px;height:22px;border-radius:6px;border:1px solid var(--line-2);background:transparent;color:var(--dim);cursor:pointer;display:grid;place-items:center;padding:0;font-family:inherit;font-size:10px;font-weight:700;flex-shrink:0}
+.hbtn svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:1.7}
+.hbtn:hover,.hbtn.on{background:var(--acc-dim);border-color:var(--acc);color:var(--acc)}
+.ctrlrow{display:none;margin-bottom:9px;padding:8px 10px;background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r-s)}
+.ctrlrow.on{display:block}
+.fsec{font-size:8.5px;letter-spacing:.6px;text-transform:uppercase;color:var(--faint);font-weight:600;margin:8px 0 4px}
+.fsec:first-child{margin-top:0}
+.fgrp{display:flex;gap:5px;flex-wrap:wrap}
+.fchip{font-size:10.5px;font-weight:500;padding:4px 9px;border-radius:14px;border:1px solid var(--line-2);background:var(--panel);color:var(--dim);cursor:pointer;user-select:none}
+.fchip:hover{border-color:var(--line-3);color:var(--txt)}
+.fchip.on{background:var(--acc-dim);border-color:color-mix(in srgb,var(--acc) 40%,transparent);color:var(--acc)}
+
+/* ==== listes zones / liquidité ==== */
+.zlist{max-height:210px;overflow-y:auto;border:1px solid var(--line);border-radius:var(--r-s);background:var(--panel-2);margin-top:9px}
+.zlist::-webkit-scrollbar{width:7px}
+.zlist::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:4px}
+.listhint{font-size:9.5px;color:var(--faint);margin-top:7px;line-height:1.5}
+.zrow{padding:8px 10px;border-bottom:1px solid var(--line);cursor:pointer}
+.zrow:last-child{border-bottom:none}
+.zrow:hover{background:var(--panel-3)}
+.zrow.sel{background:var(--acc-dim);box-shadow:inset 2px 0 0 var(--acc)}
+.zr1{display:flex;align-items:center;gap:7px}
+.zr2{display:flex;align-items:center;gap:7px;margin-top:4px}
+.zrow .zr{font-family:'JetBrains Mono',monospace;font-size:11.5px;font-weight:500;flex:1;white-space:nowrap}
+.zrow .ztf{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--faint);background:var(--panel-3);padding:2px 5px;border-radius:4px}
+.zrow .zd{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--dim);white-space:nowrap}
+.zrow .zd b{color:var(--txt);font-weight:500}
+.zrow .zn{flex:1;font-size:10.5px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.zbtn{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:500;padding:4px 8px;border-radius:5px;border:1px solid transparent;background:var(--acc-dim);color:var(--acc);cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0}
+.zbtn:hover{border-color:color-mix(in srgb,var(--acc) 45%,transparent)}
+.zbtn svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:1.9}
+.zempty{padding:16px 12px;font-size:11px;color:var(--faint);font-style:italic;text-align:center;line-height:1.5}
+.zconf{font-size:8.5px;font-weight:600;letter-spacing:.3px;text-transform:uppercase;padding:2px 5px;border-radius:4px;background:var(--panel-3);color:var(--dim);flex-shrink:0}
+.lmini{width:34px;flex-shrink:0}
+.lmini .lline{margin-bottom:0}
+.zone.zsel{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-dim)}
+.zbanner{display:flex;align-items:center;gap:9px;padding:9px 12px;background:var(--acc-dim);border:1px solid color-mix(in srgb,var(--acc) 35%,transparent);border-radius:var(--r-s);margin-bottom:12px;font-size:11.5px;color:var(--txt)}
+.zbanner svg{width:14px;height:14px;stroke:var(--acc);fill:none;stroke-width:1.8;flex-shrink:0}
+@media (prefers-reduced-motion: reduce){.dot::after{animation:none;opacity:0}*{transition:none!important}.zhl{animation:none!important}}
+@keyframes zpulse{0%{opacity:.16}50%{opacity:.30}100%{opacity:.16}}
 </style>
 </head>
 <body data-page="login" data-design="terminal">
@@ -384,34 +438,54 @@ body[data-page="reglages"] #cv-reglages{display:block}
       <div class="panels">
         <div class="card wide">
           <div class="card-h"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg><h3>Lecture narrée</h3><span class="badge2">Ancrée au moteur</span></div>
-          <p class="narr"><b>Un CHOCH baissier s'est confirmé</b> à <span class="hl">14:00</span>. Le prix est <b>actuellement dans un Order Block baissier</b> (<span class="hl">2 398,40 – 2 401,10</span>). Un <b>FVG</b> reste <b>comblé à 58 %</b> ; une <b>liquidité achat est intacte</b> au-dessus de <span class="hl">2 404,20</span>, celle à <span class="hl">2 389,60</span> <b>a été balayée</b>. Les <b>3 TF sont alignés baissier</b>.</p>
+          <p class="narr"><b>Un CHOCH baissier s’est confirmé</b> à <span class="hl">14:00</span>. Le prix est <b>actuellement dans un Order Block baissier</b> (<span class="hl">2 398,40 – 2 401,10</span>). Un <b>FVG</b> reste <b>comblé à 58 %</b> ; une <b>liquidité achat est intacte</b> au-dessus de <span class="hl">2 404,20</span>, celle à <span class="hl">2 389,60</span> <b>a été balayée</b>. Les <b>3 TF sont alignés baissier</b>.</p>
           <div class="narrfoot"><svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>Chaque niveau cité correspond à une sortie réelle du moteur.</div>
         </div>
+
         <div class="card">
-          <div class="card-h"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M21 3v6h-6"/></svg><h3>Régime de marché</h3></div>
+          <div class="card-h"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M21 3v6h-6"/></svg><h3>Régime de marché</h3><span class="hsp"></span><button class="hbtn js-help" data-info="regime" title="En savoir plus">?</button></div>
           <div class="reggrid">
-            <div class="reg"><div class="k">Tendance</div><div class="v">Baissière</div></div>
-            <div class="reg"><div class="k">Volatilité</div><div class="v">Normale</div></div>
-            <div class="reg"><div class="k">Maturité</div><div class="v">Établie</div></div>
-            <div class="reg"><div class="k">Alignement</div><div class="v mono">3/3 TF ↓</div></div>
-            <div class="reg"><div class="k">Dernier évén.</div><div class="v">CHOCH ↓ 14:00</div></div>
-            <div class="reg"><div class="k">Densité</div><div class="v mono">4 actives</div></div>
+            <div class="reg"><div class="k">Tendance <button class="ihelp" data-info="trend">?</button></div><div class="v">Baissière</div><div class="sub2">mesurée sur H1</div></div>
+            <div class="reg"><div class="k">Volatilité <button class="ihelp" data-info="vol">?</button></div><div class="v">Normale</div><div class="sub2">vs 20 dernières bougies</div></div>
+            <div class="reg"><div class="k">Maturité <button class="ihelp" data-info="mat">?</button></div><div class="v mono">154 bougies</div><div class="sub2">depuis le CHOCH de 14:00</div></div>
+            <div class="reg"><div class="k">Alignement <button class="ihelp" data-info="align">?</button></div><div class="v mono">3/3 TF ↓</div><div class="sub2">H4 ↓ · H1 ↓ · M15 ↓</div></div>
+            <div class="reg"><div class="k">Dernier évén.</div><div class="v">CHOCH ↓</div><div class="sub2">14:00</div></div>
+            <div class="reg"><div class="k">Densité <button class="ihelp" data-info="dens">?</button></div><div class="v mono">3 OB · 4 FVG</div><div class="sub2">actives sur H1</div></div>
           </div>
+          <div class="infobox"></div>
         </div>
+
         <div class="card">
-          <div class="card-h"><svg viewBox="0 0 24 24"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg><h3>Structure détectée</h3></div>
+          <div class="card-h"><svg viewBox="0 0 24 24"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg><h3>Structure de marché</h3><span class="hsp"></span><span class="badge2"><span id="zcount">12</span> zones</span><button class="hbtn js-help" data-info="struct" title="En savoir plus">?</button><button class="hbtn js-sort" data-panel="z" title="Trier et filtrer"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 12h4M12 12h8M4 17h12M20 17h0"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="17" r="2"/></svg></button></div>
+          <div class="ctrlrow" data-panel="z">
+            <div class="fsec">Type</div>
+            <div class="fgrp"><span class="fchip on" data-f="type" data-v="all">Tous</span><span class="fchip" data-f="type" data-v="OB">OB</span><span class="fchip" data-f="type" data-v="FVG">FVG</span></div>
+            <div class="fsec">État</div>
+            <div class="fgrp"><span class="fchip on" data-f="state" data-v="all">Tous</span><span class="fchip" data-f="state" data-v="active">Actives</span><span class="fchip" data-f="state" data-v="tested">Testées</span><span class="fchip" data-f="state" data-v="mitig">Mitigées</span></div>
+            <div class="fsec">Trier par</div>
+            <div class="fgrp"><span class="fchip on" data-f="sort" data-v="near">Proche du prix</span><span class="fchip" data-f="sort" data-v="recent">Récente</span><span class="fchip" data-f="sort" data-v="big">Large</span></div>
+          </div>
           <div class="strow"><span class="tagx bear">CHOCH ↓</span><span class="d">Changement de caractère confirmé</span><span class="t">14:00</span></div>
           <div class="strow"><span class="tagx bear">BOS ↓</span><span class="d">Cassure de structure baissière</span><span class="t">11:00</span></div>
-          <div class="strow"><span class="tagx neu">OB</span><span class="d">Prix actuellement dans la zone</span><span class="t">actif</span></div>
-          <div class="strow"><span class="tagx neu">FVG</span><span class="d">Comblé à 58 %</span><span class="t">testé</span></div>
+          <div class="zlist" id="zlist"></div>
+          <div class="infobox"></div>
+          <div class="listhint">Clic sur une zone = surbrillance sur le graphique.</div>
         </div>
+
         <div class="card">
-          <div class="card-h"><svg viewBox="0 0 24 24"><path d="M4 8h16M4 12h16M4 16h16"/></svg><h3>Poches de liquidité</h3><span class="badge2">Où · quel état</span></div>
-          <div class="liqrow"><div class="lst"><div class="lline"></div><div class="s">Intacte</div></div><span class="lv">2 404,20</span><span class="dd">Au-dessus d'un sommet égal — jamais touchée.</span></div>
-          <div class="liqrow"><div class="lst"><div class="lline swept"></div><div class="s">Balayée</div></div><span class="lv">2 389,60</span><span class="dd">Mèche au-delà, clôture revenue. Tient encore.</span></div>
-          <div class="liqrow"><div class="lst broken"><div class="lline broken"></div><div class="s">Cassée</div></div><span class="lv">2 382,10</span><span class="dd">Clôture nette au-delà. A cédé.</span></div>
+          <div class="card-h"><svg viewBox="0 0 24 24"><path d="M4 8h16M4 12h16M4 16h16"/></svg><h3>Liquidité externe</h3><span class="hsp"></span><span class="badge2"><span id="lcount">8</span> poches</span><button class="hbtn js-help" data-info="liq" title="En savoir plus">?</button><button class="hbtn js-sort" data-panel="l" title="Trier et filtrer"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 12h4M12 12h8M4 17h12M20 17h0"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="17" r="2"/></svg></button></div>
+          <div class="ctrlrow" data-panel="l">
+            <div class="fsec">Côté</div>
+            <div class="fgrp"><span class="fchip on" data-f="side" data-v="all">Les deux</span><span class="fchip" data-f="side" data-v="BSL">BSL (achat)</span><span class="fchip" data-f="side" data-v="SSL">SSL (vente)</span></div>
+            <div class="fsec">État</div>
+            <div class="fgrp"><span class="fchip on" data-f="liq" data-v="all">Tous</span><span class="fchip" data-f="liq" data-v="intact">Intactes</span><span class="fchip" data-f="liq" data-v="swept">Balayées</span><span class="fchip" data-f="liq" data-v="broken">Cassées</span></div>
+          </div>
+          <div class="zlist" id="llist"></div>
+          <div class="infobox"></div>
+          <div class="listhint">Clic sur une poche = surbrillance de son niveau.</div>
         </div>
-        <div class="card">
+
+        <div class="card wide">
           <div class="card-h"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg><h3>Actus — volatilité à venir</h3><span class="badge2">Sans direction</span></div>
           <div class="newsrow"><div class="nic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><div class="main3"><div class="ev">Décision de taux — Fed</div><div class="mk3">Volatilité programmée sur USD</div></div><span class="impact high">Élevé</span><span class="when">Demain 14:00</span></div>
           <div class="newsrow"><div class="nic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><div class="main3"><div class="ev">Emploi (NFP) — É.-U.</div><div class="mk3">Volatilité programmée sur USD</div></div><span class="impact high">Élevé</span><span class="when">Ven 08:30</span></div>
@@ -459,8 +533,9 @@ body[data-page="reglages"] #cv-reglages{display:block}
 
     <div class="cview" id="cv-zones">
       <div class="pagewrap">
+        <div id="zbanner" class="zbanner" style="display:none"><svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg><span></span></div>
         <div class="pghead"><div><h1>Zones</h1><div class="sub">La vie de chaque zone — formé, testé, mitigé. Rien que du factuel.</div></div><span class="hsp"></span><div class="livebadge"><span class="dot"></span><span class="mono">Or · H1 · 3 zones</span></div></div>
-        <div class="zone">
+        <div class="zone" data-zid="ob-h1-1">
           <div class="ztop"><span class="tagx bear">OB ↓</span><span class="rng">2 398,40 – 2 401,10</span><span class="hsp"></span><span class="zstate zs-a">Actif</span></div>
           <div class="tl">
             <div class="step done"><div class="d3"></div><div class="sl">Formé</div><div class="st3">11:00</div></div>
@@ -470,7 +545,7 @@ body[data-page="reglages"] #cv-reglages{display:block}
           <p class="znarr"><b>Formé après le BOS de 11:00</b>, testé 2 fois sans céder. <b>Actuellement actif</b> — le prix évolue à l'intérieur.</p>
           <div class="zfoot"><button class="btn acc"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Analyser</button><button class="btn"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7"/><path d="M4 4l16 16"/></svg>Masquer du graphique</button></div>
         </div>
-        <div class="zone">
+        <div class="zone" data-zid="fvg-h1-1">
           <div class="ztop"><span class="tagx bull">FVG ↑</span><span class="rng">2 389,00 – 2 394,00</span><span class="hsp"></span><span class="zstate zs-f">Comblé 58 %</span></div>
           <div class="tl">
             <div class="step done"><div class="d3"></div><div class="sl">Formé</div><div class="st3">10:15</div></div>
@@ -481,7 +556,7 @@ body[data-page="reglages"] #cv-reglages{display:block}
           <p class="znarr"><b>Comblé à 58 %</b> lors du test de 13:00. Le reste de l'écart demeure ouvert.</p>
           <div class="zfoot"><button class="btn acc"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Analyser</button><button class="btn"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7"/><path d="M4 4l16 16"/></svg>Masquer du graphique</button></div>
         </div>
-        <div class="zone mitig">
+        <div class="zone mitig" data-zid="ob-h1-2">
           <div class="ztop"><span class="tagx bull">OB ↑</span><span class="rng">2 383,00 – 2 385,50</span><span class="hsp"></span><span class="zstate zs-m">Mitigé</span></div>
           <div class="tl">
             <div class="step done"><div class="d3"></div><div class="sl">Formé</div><div class="st3">09:00</div></div>
@@ -603,7 +678,7 @@ body[data-page="reglages"] #cv-reglages{display:block}
   /* ===== chart app ===== */
   const NS='http://www.w3.org/2000/svg',el=(n,a)=>{const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);return e;};
   const seed=[[2404,2406,2399,2400],[2400,2401,2394,2395],[2395,2398,2390,2396],[2396,2399,2393,2394],[2394,2395,2387,2388],[2388,2392,2384,2385],[2385,2390,2384,2389],[2389,2393,2387,2388],[2388,2390,2382,2383],[2383,2388,2382,2387],[2387,2391,2386,2390],[2390,2392,2385,2386],[2386,2389,2383,2388],[2388,2394,2387,2393],[2393,2396,2390,2391],[2391,2394,2388,2389],[2389,2393,2387,2392],[2392,2396,2390,2394],[2394,2398,2393,2397],[2397,2401,2396,2400],[2400,2402,2397,2398],[2398,2400,2395,2396],[2396,2399,2394,2398],[2398,2401,2396,2399],[2399,2400,2394,2395],[2395,2398,2392,2397],[2397,2399,2393,2394],[2394,2396,2390,2392]];
-  let updater=null;
+  let updater=null,highlighter=null;
   const svg=document.querySelector('.js-chart');
   (function(){
     const W=720,H=300,padR=50,padT=10,padB=13,padL=6,plotW=W-padR-padL,plotH=H-padT-padB;
@@ -634,15 +709,238 @@ body[data-page="reglages"] #cv-reglages{display:block}
     const pb=el('rect',{x:W-padR+2,y:lastY-8,width:padR-4,height:16,fill:'var(--acc)',rx:3});svg.appendChild(pb);
     const pt=el('text',{x:W-padR+padR/2,y:lastY+4,fill:'var(--acc-txt)','font-size':10,'font-weight':600,'text-anchor':'middle','font-family':'JetBrains Mono, monospace'});pt.textContent='2394';svg.appendChild(pt);
     updater=p=>{const yy=y(p);pl.setAttribute('y1',yy);pl.setAttribute('y2',yy);pb.setAttribute('y',yy-8);pt.setAttribute('y',yy+4);pt.textContent=Math.round(p);};
+
+    /* surbrillance bleue de la zone cliquée */
+    let hlGroup=null;
+    highlighter=z=>{
+      if(hlGroup){hlGroup.remove();hlGroup=null;}
+      if(!z)return;
+      const clamp=v=>Math.max(padT,Math.min(padT+plotH,v));
+      const g=el('g',{});
+      if(z.level!=null){
+        const yy=clamp(y(z.level));
+        const band=el('rect',{x:padL,y:yy-5,width:plotW,height:10,fill:'var(--acc)','fill-opacity':.16,rx:2});
+        band.style.animation='zpulse 2.2s ease-in-out infinite';band.setAttribute('class','zhl');
+        g.appendChild(band);
+        g.appendChild(el('line',{x1:padL,y1:yy,x2:padL+plotW,y2:yy,stroke:'var(--acc)','stroke-width':1.8}));
+        const lab=el('text',{x:padL+6,y:Math.max(yy-8,padT+10),fill:'var(--acc)','font-size':9.5,'font-weight':600,'font-family':'JetBrains Mono, monospace'});
+        lab.textContent=z.label+' · '+z.level.toFixed(2);
+        g.appendChild(lab);
+      }else{
+        const yTop=clamp(y(z.hi)),yBot=clamp(y(z.lo));
+        const band=el('rect',{x:padL,y:yTop,width:plotW,height:Math.max(yBot-yTop,3),
+          fill:'var(--acc)','fill-opacity':.16,stroke:'var(--acc)','stroke-width':1.4,rx:2});
+        band.style.animation='zpulse 2.2s ease-in-out infinite';band.setAttribute('class','zhl');
+        g.appendChild(band);
+        g.appendChild(el('line',{x1:padL,y1:yTop,x2:padL+plotW,y2:yTop,stroke:'var(--acc)','stroke-width':1.4}));
+        g.appendChild(el('line',{x1:padL,y1:yBot,x2:padL+plotW,y2:yBot,stroke:'var(--acc)','stroke-width':1.4}));
+        const lab=el('text',{x:padL+6,y:Math.max(yTop-6,padT+10),fill:'var(--acc)','font-size':9.5,'font-weight':600,'font-family':'JetBrains Mono, monospace'});
+        lab.textContent=z.label+' · '+z.lo.toFixed(2)+' – '+z.hi.toFixed(2);
+        g.appendChild(lab);
+      }
+      svg.appendChild(g);
+      hlGroup=g;
+    };
   })();
+
+  /* ===== Structure de marché + Liquidité : listes, filtres, tri, focus ===== */
+  const ZONES=[
+    {id:'ob-h1-1', type:'OB', dir:'\u2193', lo:2398.40, hi:2401.10, state:'active', tf:'H1', formed:'11:00', conf:'2 TF', note:'Test\u00e9e \u00d72 \u2014 le prix \u00e9volue \u00e0 l\u2019int\u00e9rieur.'},
+    {id:'fvg-m15-1',type:'FVG',dir:'\u2193', lo:2402.10, hi:2403.80, state:'active', tf:'M15',formed:'13:45', conf:null,  note:'\u00c9cart ouvert, jamais combl\u00e9.'},
+    {id:'fvg-h1-1', type:'FVG',dir:'\u2191', lo:2389.00, hi:2394.00, state:'tested', tf:'H1', formed:'10:15', conf:null,  note:'Combl\u00e9e \u00e0 58 % lors du test de 13:00.'},
+    {id:'fvg-m15-2',type:'FVG',dir:'\u2191', lo:2391.30, hi:2392.60, state:'tested', tf:'M15',formed:'14:15', conf:null,  note:'Combl\u00e9e \u00e0 30 %.'},
+    {id:'ob-h4-1',  type:'OB', dir:'\u2193', lo:2404.60, hi:2407.90, state:'active', tf:'H4', formed:'08:00', conf:'3 TF', note:'Form\u00e9e apr\u00e8s le BOS de 08:00.'},
+    {id:'fvg-m15-3',type:'FVG',dir:'\u2193', lo:2396.20, hi:2397.40, state:'tested', tf:'M15',formed:'12:30', conf:null,  note:'Combl\u00e9e \u00e0 74 %.'},
+    {id:'ob-h1-2',  type:'OB', dir:'\u2191', lo:2383.00, hi:2385.50, state:'mitig',  tf:'H1', formed:'09:00', conf:null,  note:'Mitig\u00e9e \u00e0 12:45 apr\u00e8s cl\u00f4ture au-del\u00e0.'},
+    {id:'fvg-m15-4',type:'FVG',dir:'\u2191', lo:2386.10, hi:2387.90, state:'mitig',  tf:'M15',formed:'09:30', conf:null,  note:'Enti\u00e8rement combl\u00e9e \u00e0 11:20.'},
+    {id:'ob-h4-2',  type:'OB', dir:'\u2191', lo:2376.20, hi:2379.40, state:'active', tf:'H4', formed:'04:00', conf:'2 TF', note:'Jamais test\u00e9e depuis sa formation.'},
+    {id:'ob-h4-3',  type:'OB', dir:'\u2193', lo:2410.30, hi:2413.70, state:'active', tf:'H4', formed:'Hier',  conf:null,  note:'Jamais test\u00e9e depuis sa formation.'},
+    {id:'ob-h4-4',  type:'OB', dir:'\u2191', lo:2370.50, hi:2373.10, state:'active', tf:'H4', formed:'Hier',  conf:null,  note:'Jamais test\u00e9e depuis sa formation.'},
+    {id:'ob-h4-5',  type:'OB', dir:'\u2193', lo:2417.80, hi:2421.20, state:'active', tf:'H4', formed:'Hier',  conf:'2 TF', note:'Jamais test\u00e9e depuis sa formation.'}
+  ];
+  const LIQS=[
+    {id:'l1', side:'BSL', level:2404.20, state:'intact', tf:'H1', src:'EQH', note:'Au-dessus d\u2019un sommet \u00e9gal \u2014 jamais touch\u00e9e.'},
+    {id:'l2', side:'SSL', level:2389.60, state:'swept',  tf:'H1', src:'EQL', note:'M\u00e8che au-del\u00e0, cl\u00f4ture revenue. Tient encore.'},
+    {id:'l3', side:'SSL', level:2382.10, state:'broken', tf:'H1', src:'Creux', note:'Cl\u00f4ture nette au-del\u00e0. A c\u00e9d\u00e9.'},
+    {id:'l4', side:'BSL', level:2409.80, state:'intact', tf:'H4', src:'Sommet', note:'Jamais touch\u00e9e depuis sa formation.'},
+    {id:'l5', side:'BSL', level:2416.40, state:'intact', tf:'H4', src:'EQH', note:'Jamais touch\u00e9e depuis sa formation.'},
+    {id:'l6', side:'SSL', level:2377.90, state:'swept',  tf:'H4', src:'EQL', note:'M\u00e8che au-del\u00e0 \u00e0 09:15, cl\u00f4ture revenue.'},
+    {id:'l7', side:'BSL', level:2399.10, state:'broken', tf:'M15',src:'Sommet', note:'Cl\u00f4ture nette au-del\u00e0 \u00e0 11:00.'},
+    {id:'l8', side:'SSL', level:2371.60, state:'intact', tf:'H4', src:'Creux', note:'Jamais touch\u00e9e depuis sa formation.'}
+  ];
+  const ORDER=['14:15','13:45','13:00','12:30','11:00','10:15','09:30','09:00','08:00','04:00','Hier'];
+  const F={type:'all',state:'all',sort:'near',liq:'all',side:'all'};
+  const zlist=document.getElementById('zlist'),zcount=document.getElementById('zcount');
+  const llist=document.getElementById('llist'),lcount=document.getElementById('lcount');
+  let selectedId=null,rowRefs=[],lrowRefs=[];
+  const n2=v=>v.toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/,'\u00A0');
+  const STATE_LBL={active:{t:'Actif',c:'zs-a'},tested:{t:'Test\u00e9',c:'zs-f'},mitig:{t:'Mitig\u00e9',c:'zs-m'}};
+  const LSTATE={intact:{t:'Intacte',c:''},swept:{t:'Balay\u00e9e',c:'swept'},broken:{t:'Cass\u00e9e',c:'broken'}};
+
+  function distText(z,p){
+    if(p>=z.lo&&p<=z.hi)return '<b>Prix dans la zone</b>';
+    if(p<z.lo)return '+'+((z.lo-p)/p*100).toFixed(2).replace('.',',')+' % au-dessus';
+    return '\u2212'+((p-z.hi)/p*100).toFixed(2).replace('.',',')+' % en dessous';
+  }
+  function distVal(z,p){if(p>=z.lo&&p<=z.hi)return 0;return p<z.lo?(z.lo-p):(p-z.hi);}
+  function ldistText(l,p){
+    const d=(l.level-p)/p*100;
+    return (d>=0?'+':'\u2212')+Math.abs(d).toFixed(2).replace('.',',')+' % '+(d>=0?'au-dessus':'en dessous');
+  }
+
+  function renderZones(){
+    const p=price;
+    let list=ZONES.filter(z=>(F.type==='all'||z.type===F.type)&&(F.state==='all'||z.state===F.state));
+    list.sort((a,b)=>F.sort==='near'?distVal(a,p)-distVal(b,p)
+      :F.sort==='big'?((b.hi-b.lo)-(a.hi-a.lo))
+      :ORDER.indexOf(a.formed)-ORDER.indexOf(b.formed));
+    zcount.textContent=list.length;
+    zlist.innerHTML='';rowRefs=[];
+    if(!list.length){zlist.innerHTML='<div class="zempty">Aucune zone ne correspond \u00e0 ces filtres.<br>Rien n\u2019est invent\u00e9 pour remplir la liste.</div>';return;}
+    list.forEach(z=>{
+      const st=STATE_LBL[z.state];
+      const row=document.createElement('div');
+      row.className='zrow'+(z.id===selectedId?' sel':'');
+      row.innerHTML='<div class="zr1"><span class="tagx '+(z.dir==='\u2193'?'bear':'bull')+'">'+z.type+' '+z.dir+'</span>'
+        +'<span class="ztf">'+z.tf+'</span>'
+        +'<span class="zr">'+n2(z.lo)+' \u2013 '+n2(z.hi)+'</span>'
+        +(z.conf?'<span class="zconf">'+z.conf+'</span>':'')
+        +'<span class="zstate '+st.c+'">'+st.t+'</span></div>'
+        +'<div class="zr2"><span class="zd js-zd">'+distText(z,p)+'</span>'
+        +'<span class="zn">'+z.note+'</span>'
+        +'<button class="zbtn js-an">En savoir plus<svg viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"/></svg></button></div>';
+      row.addEventListener('click',e=>{
+        if(e.target.closest('.js-an')){e.stopPropagation();openZonePage(z);return;}
+        selectZone(z);
+      });
+      zlist.appendChild(row);
+      rowRefs.push({z,el:row});
+    });
+  }
+
+  function renderLiqs(){
+    const p=price;
+    let list=LIQS.filter(l=>(F.liq==='all'||l.state===F.liq)&&(F.side==='all'||l.side===F.side));
+    list.sort((a,b)=>Math.abs(a.level-p)-Math.abs(b.level-p));
+    lcount.textContent=list.length;
+    llist.innerHTML='';lrowRefs=[];
+    if(!list.length){llist.innerHTML='<div class="zempty">Aucune poche ne correspond \u00e0 ce filtre.<br>Rien n\u2019est invent\u00e9 pour remplir la liste.</div>';return;}
+    list.forEach(l=>{
+      const st=LSTATE[l.state];
+      const row=document.createElement('div');
+      row.className='zrow'+(l.id===selectedId?' sel':'');
+      row.innerHTML='<div class="zr1"><span class="lmini"><span class="lline '+st.c+'"></span></span>'
+        +'<span class="tagx neu">'+l.side+'</span>'
+        +'<span class="ztf">'+l.tf+'</span>'
+        +'<span class="zr">'+n2(l.level)+'</span>'
+        +'<span class="zconf">'+l.src+'</span>'
+        +'<span class="zstate '+(l.state==='intact'?'zs-a':l.state==='swept'?'zs-f':'zs-m')+'">'+st.t+'</span></div>'
+        +'<div class="zr2"><span class="zd js-ld">'+ldistText(l,p)+'</span>'
+        +'<span class="zn">'+l.note+'</span></div>';
+      row.addEventListener('click',()=>selectLiq(l));
+      llist.appendChild(row);
+      lrowRefs.push({l,el:row});
+    });
+  }
+
+  function clearSel(){rowRefs.forEach(r=>r.el.classList.remove('sel'));lrowRefs.forEach(r=>r.el.classList.remove('sel'));}
+  function focusChart(){const box=document.querySelector('.chartpad');if(box)box.scrollIntoView({behavior:'smooth',block:'nearest'});}
+  function selectZone(z){
+    selectedId=(selectedId===z.id)?null:z.id;clearSel();
+    if(selectedId){rowRefs.forEach(r=>{if(r.z.id===selectedId)r.el.classList.add('sel');});}
+    if(highlighter)highlighter(selectedId?{lo:z.lo,hi:z.hi,label:z.type+' '+z.dir+' \u00b7 '+z.tf}:null);
+    if(selectedId)focusChart();
+  }
+  function selectLiq(l){
+    selectedId=(selectedId===l.id)?null:l.id;clearSel();
+    if(selectedId){lrowRefs.forEach(r=>{if(r.l.id===selectedId)r.el.classList.add('sel');});}
+    if(highlighter)highlighter(selectedId?{level:l.level,label:l.side+' \u00b7 '+LSTATE[l.state].t}:null);
+    if(selectedId)focusChart();
+  }
+
+  /* Analyser -> page Zones, fiche de la zone */
+  function openZonePage(z){
+    goto('zones');
+    const banner=document.getElementById('zbanner');
+    const card=document.querySelector('.zone[data-zid="'+z.id+'"]');
+    document.querySelectorAll('.zone').forEach(c=>c.classList.remove('zsel'));
+    if(card){
+      banner.style.display='none';
+      card.classList.add('zsel');
+      setTimeout(()=>card.scrollIntoView({behavior:'smooth',block:'center'}),60);
+    }else{
+      banner.style.display='flex';
+      banner.querySelector('span').innerHTML='Fiche compl\u00e8te de <b>'+z.type+' '+z.dir+' '+n2(z.lo)+' \u2013 '+n2(z.hi)+'</b> ('+z.tf+') \u2014 ouverte depuis la Structure de march\u00e9.';
+    }
+  }
+
+  /* ===== aide pédagogique (par carte) ===== */
+  const INFOS={
+    regime:'<h4>Lire le régime de marché</h4>'
+      +'<p>Ces six mesures d\u00e9crivent l\u2019\u00e9tat <b>actuel</b> du march\u00e9, chacune avec sa source affich\u00e9e dessous. Aucune n\u2019est une pr\u00e9vision, aucune n\u2019est pond\u00e9r\u00e9e.</p>'
+      +'<p>Le petit <b>?</b> de chaque mesure explique ce qu\u2019elle compte exactement, et ce qu\u2019elle ne dit pas.</p>',
+    trend:'<h4>Tendance</h4>'
+      +'<p><b>Ce que \u00e7a compte :</b> la succession des sommets et creux sur <b>l\u2019unit\u00e9 de temps affich\u00e9e</b> (ici H1). Sommets et creux d\u00e9croissants \u2192 baissi\u00e8re. C\u2019est une lecture de structure pass\u00e9e, pas une projection.</p>'
+      +'<p><b>Pi\u00e8ge classique :</b> la tendance n\u2019est pas la m\u00eame sur toutes les unit\u00e9s de temps. Un M15 baissier dans un H4 haussier n\u2019est pas une contradiction \u2014 c\u2019est une question d\u2019\u00e9chelle. Change de TF et la r\u00e9ponse change.</p>',
+    vol:'<h4>Volatilit\u00e9</h4>'
+      +'<p><b>Ce que \u00e7a compte :</b> l\u2019amplitude moyenne des derni\u00e8res bougies compar\u00e9e \u00e0 celle des 20 pr\u00e9c\u00e9dentes. \u00ab Normale \u00bb = dans sa plage habituelle.</p>'
+      +'<p><b>Pourquoi c\u2019est utile en SMC :</b> la volatilit\u00e9 change la <b>taille</b> des zones. Un OB form\u00e9 en forte volatilit\u00e9 est plus large, donc plus long \u00e0 traverser. Ce n\u2019est pas une qualit\u00e9, c\u2019est une dimension.</p>'
+      +'<p><b>Ce que \u00e7a ne dit pas :</b> aucune direction. Une volatilit\u00e9 faible peut pr\u00e9c\u00e9der n\u2019importe quoi.</p>',
+    mat:'<h4>Maturit\u00e9 de la structure</h4>'
+      +'<p><b>Ce que \u00e7a compte :</b> le nombre de bougies clôtur\u00e9es sur l\u2019unit\u00e9 de temps affich\u00e9e <b>depuis le dernier CHOCH confirm\u00e9</b> (ici, celui de 14:00). Le point de d\u00e9part est toujours nomm\u00e9 sous la valeur \u2014 un compteur sans origine ne veut rien dire.</p>'
+      +'<p><b>Ce que \u00e7a ne dit pas :</b> une structure ancienne n\u2019est ni plus ni moins susceptible de se poursuivre. Aucune probabilit\u00e9 n\u2019est calcul\u00e9e ici.</p>',
+    align:'<h4>Alignement multi-unit\u00e9s de temps</h4>'
+      +'<p><b>Ce que \u00e7a compte :</b> les trois unit\u00e9s de temps analys\u00e9es affichent <b>en ce moment</b> la m\u00eame direction de structure. Quand elles divergent, MIA l\u2019affiche tout autant (\u00ab D\u00e9saccord \u00bb) \u2014 le d\u00e9saccord est une information, pas un \u00e9chec.</p>'
+      +'<p><b>Ce que la convention SMC en fait :</b> beaucoup de traders traitent l\u2019alignement comme un crit\u00e8re de <b>confluence</b> dans leur propre m\u00e9thode, et lisent le d\u00e9saccord comme le signe que deux \u00e9chelles racontent deux histoires diff\u00e9rentes.</p>'
+      +'<p><b>Ce que MIA n\u2019affirmera jamais :</b> qu\u2019un alignement rend une entr\u00e9e plus s\u00fbre, plus probable ou moins risqu\u00e9e. Personne ne peut le mesurer sur ton compte, ton horizon et ta gestion du risque. MIA d\u00e9crit le fait ; l\u2019interpr\u00e9tation reste la tienne.</p>',
+    dens:'<h4>Densit\u00e9 de zones</h4>'
+      +'<p><b>Ce que \u00e7a compte :</b> le nombre de zones encore actives d\u00e9tect\u00e9es sur cette unit\u00e9 de temps.</p>'
+      +'<p><b>Comment le lire :</b> une densit\u00e9 \u00e9lev\u00e9e d\u00e9crit un march\u00e9 qui a laiss\u00e9 beaucoup de d\u00e9s\u00e9quilibres derri\u00e8re lui ; une densit\u00e9 faible, un march\u00e9 qui a d\u00e9j\u00e0 combl\u00e9 la plupart des siens. Plus de zones ne veut pas dire plus d\u2019occasions \u2014 seulement plus de niveaux \u00e0 surveiller.</p>',
+    struct:'<h4>Les quatre objets de structure</h4>'
+      +'<p><b>OB (Order Block)</b> \u2014 la derni\u00e8re bougie de sens oppos\u00e9 avant le mouvement impulsif qui a cass\u00e9 la structure.</p>'
+      +'<p><b>FVG (Fair Value Gap)</b> \u2014 l\u2019\u00e9cart laiss\u00e9 par trois bougies dont les m\u00e8ches ne se recouvrent pas. Il se comble progressivement : MIA affiche le pourcentage r\u00e9ellement combl\u00e9.</p>'
+      +'<p><b>BOS</b> \u2014 cassure d\u2019un extr\u00eame <b>dans le sens</b> de la structure en cours. <b>CHOCH</b> \u2014 premi\u00e8re cassure <b>en sens inverse</b> : c\u2019est le changement de caract\u00e8re.</p>'
+      +'<p>MIA d\u00e9tecte, d\u00e9crit et date ces objets. Elle ne dit jamais lequel \u00ab va fonctionner \u00bb.</p>',
+    liq:'<h4>Liquidit\u00e9 externe : o\u00f9 et dans quel \u00e9tat</h4>'
+      +'<p><b>BSL</b> \u2014 liquidit\u00e9 achat, au-dessus des sommets et des sommets \u00e9gaux. <b>SSL</b> \u2014 liquidit\u00e9 vente, sous les creux et creux \u00e9gaux.</p>'
+      +'<p><b>Intacte</b> \u2014 jamais touch\u00e9e. <b>Balay\u00e9e</b> \u2014 une m\u00e8che est all\u00e9e au-del\u00e0 mais la cl\u00f4ture est revenue en de\u00e7\u00e0 : le niveau <b>tient encore</b>. <b>Cass\u00e9e</b> \u2014 cl\u00f4ture nette au-del\u00e0 : il a c\u00e9d\u00e9.</p>'
+      +'<p><b>La distinction \u00e0 retenir :</b> touch\u00e9 n\u2019\u00e9gale pas cass\u00e9. C\u2019est la nuance que la plupart des outils \u00e9crasent en un seul \u00e9tat binaire.</p>'
+      +'<p>MIA n\u2019\u00e9crira jamais qu\u2019une poche sera \u00ab prise \u00bb : c\u2019est une pr\u00e9diction, et personne ne la conna\u00eet.</p>'
+  };
+  let openHelp=null;
+  function toggleHelp(btn){
+    const card=btn.closest('.card'),box=card.querySelector('.infobox'),k=btn.dataset.info;
+    if(openHelp===k){box.classList.remove('on');openHelp=null;document.querySelectorAll('.ihelp,.js-help').forEach(x=>x.classList.remove('on'));return;}
+    document.querySelectorAll('.infobox').forEach(b=>b.classList.remove('on'));
+    box.innerHTML=INFOS[k];box.classList.add('on');openHelp=k;
+    document.querySelectorAll('.ihelp,.js-help').forEach(x=>x.classList.toggle('on',x===btn));
+  }
+  document.querySelectorAll('.ihelp,.js-help').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();toggleHelp(b);}));
+
+  /* tri / filtre : panneau repliable dans l'en-tête de chaque carte */
+  document.querySelectorAll('.js-sort').forEach(b=>b.addEventListener('click',e=>{
+    e.stopPropagation();
+    const row=document.querySelector('.ctrlrow[data-panel="'+b.dataset.panel+'"]');
+    const on=row.classList.toggle('on');
+    b.classList.toggle('on',on);
+  }));
+
+  document.querySelectorAll('.fchip').forEach(c=>c.addEventListener('click',()=>{
+    F[c.dataset.f]=c.dataset.v;
+    document.querySelectorAll('.fchip[data-f="'+c.dataset.f+'"]').forEach(x=>x.classList.toggle('on',x===c));
+    if(c.dataset.f==='liq'||c.dataset.f==='side')renderLiqs();else renderZones();
+  }));
 
   const fmt=p=>p.toLocaleString('fr-CA',{minimumFractionDigits:2,maximumFractionDigits:2}).replace(',','§').replace('.',',').replace('§','\u00A0');
   let price=2392.35,secs=3;
+  renderZones();renderLiqs();
   if(!reduce){
     setInterval(()=>{const prev=price;price=Math.max(2389,Math.min(2397,price+(Math.random()-.5)*.9));
       document.querySelectorAll('.js-px').forEach(e=>{e.textContent=fmt(price);
         if(e.classList.contains('price')){e.classList.remove('u2','d2');void e.offsetWidth;e.classList.add(price>=prev?'u2':'d2');setTimeout(()=>e.classList.remove('u2','d2'),500);}});
       if(updater)updater(price);
+      rowRefs.forEach(r=>{const c=r.el.querySelector('.js-zd');if(c)c.innerHTML=distText(r.z,price);});
+      lrowRefs.forEach(r=>{const c=r.el.querySelector('.js-ld');if(c)c.innerHTML=ldistText(r.l,price);});
     },1900);
     setInterval(()=>{secs++;if(secs>59)secs=0;
       document.querySelectorAll('.js-live').forEach(e=>e.textContent='En direct · il y a '+secs+' s');
