@@ -13,6 +13,7 @@ import {
   type IChartApi,
   type ISeriesApi,
   type ISeriesMarkersPluginApi,
+  type MouseEventParams,
   type Time,
   type UTCTimestamp,
 } from 'lightweight-charts';
@@ -38,7 +39,13 @@ import type {
 import { DEFAULT_CHART_VIEW } from '@/lib/chart/viewActions';
 import { buildStructureMarkers } from '@/lib/chart/structureMarkers';
 import { buildLiquidityLines } from '@/lib/chart/liquidityLines';
-import type { LiquiditySide, LiquidityStatus } from '@/types/market-reading';
+import {
+  ZoneOverlayPrimitive,
+  liquidityColor,
+  LIVE_RGB,
+  LIVE_COLOR,
+  type ZoneOverlayData,
+} from '@/lib/chart/zoneOverlayPrimitive';
 import { isPlausibleTick, isValidBar } from '@/lib/chart/sanitize';
 import type { Candle, MarketReadingStructure } from '@/types/market-reading';
 
@@ -129,126 +136,8 @@ const TF_SECONDS: Record<string, number> = {
   H4: 14400,
 };
 
-/** Pixel rect for a rendered, localized zone box (recomputed on scale / resize). */
-interface ZoneRect {
-  id: string;
-  kind: 'ob' | 'fvg';
-  left: number;
-  width: number;
-  top: number;
-  height: number;
-  label: string;
-  tested: boolean;
-  /** Provisional: an ACTIVE order block the live price is currently inside. */
-  inTestLive: boolean;
-}
-
-/** Pixel rect for a PROVISIONAL live FVG-fill front (drawn inside its box). */
-interface LiveFvgRect {
-  id: string;
-  left: number;
-  width: number;
-  top: number;
-  height: number;
-}
-
-/** Quantise to ½px so sub-pixel float noise never triggers a re-render. */
-const qpx = (n: number) => Math.round(n * 2) / 2;
-
-/**
- * How far an ACTIVE zone's right edge sits PAST the current bar, in multiples of
- * the bar spacing. Small, deliberate breathing room — "a little to the right of
- * the candle" — that scales with zoom. NOT to the plot edge (would read as an
- * infinite band) and never short of / before the candle. Clamped to the plot so
- * it can't overflow the price gutter.
- */
-const ACTIVE_ZONE_RIGHT_PAD_BARS = 1.5;
-
-/**
- * Geometry-equal guard for the rAF redraw loop: true when both lists hold the
- * same boxes at the same (½px-rounded) pixel rects. Lets the loop run every
- * frame (so zones stay glued to the price axis) while keeping React idle until
- * a box actually moves.
- */
-function rectsEqual(a: ZoneRect[], b: ZoneRect[]): boolean {
-  if (a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i += 1) {
-    const x = a[i]!;
-    const y = b[i]!;
-    if (
-      x.id !== y.id ||
-      x.kind !== y.kind ||
-      x.tested !== y.tested ||
-      x.inTestLive !== y.inTestLive ||
-      qpx(x.left) !== qpx(y.left) ||
-      qpx(x.width) !== qpx(y.width) ||
-      qpx(x.top) !== qpx(y.top) ||
-      qpx(x.height) !== qpx(y.height)
-    ) {
-      return false;
-    }
-  }
-  return true;
-}
-
-/**
- * Pixel geometry for a rendered, TIME-BOUNDED liquidity segment: x-start at the
- * pocket's formation, x-end at the current bar while intact or FROZEN at the
- * first contact once swept/broken (recomputed on scale / resize, like ZoneRect).
- */
-interface LiquidityRect {
-  id: string;
-  left: number;
-  width: number;
-  /** Pixel y of the resting-liquidity level. */
-  y: number;
-  side: LiquiditySide;
-  status: LiquidityStatus;
-  /** Left-edge tag, e.g. "Liquidité achat · intacte". */
-  chartLabel: string;
-  /** Full descriptive tooltip text. */
-  description: string;
-}
-
-/** Geometry-equal guard for the liquidity segments (same rAF pattern). */
-function liquidityRectsEqual(a: LiquidityRect[], b: LiquidityRect[]): boolean {
-  if (a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i += 1) {
-    const x = a[i]!;
-    const y = b[i]!;
-    if (
-      x.id !== y.id ||
-      x.status !== y.status ||
-      qpx(x.left) !== qpx(y.left) ||
-      qpx(x.width) !== qpx(y.width) ||
-      qpx(x.y) !== qpx(y.y)
-    ) {
-      return false;
-    }
-  }
-  return true;
-}
-
-/** Geometry-equal guard for the provisional live FVG-front rects. */
-function liveRectsEqual(a: LiveFvgRect[], b: LiveFvgRect[]): boolean {
-  if (a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i += 1) {
-    const x = a[i]!;
-    const y = b[i]!;
-    if (
-      x.id !== y.id ||
-      qpx(x.left) !== qpx(y.left) ||
-      qpx(x.width) !== qpx(y.width) ||
-      qpx(x.top) !== qpx(y.top) ||
-      qpx(x.height) !== qpx(y.height)
-    ) {
-      return false;
-    }
-  }
-  return true;
-}
-
-/** Candle bodies — muted bull / bear; wick + border share the body colour. */
+/** Candle bodies — muted bull / bear fallbacks (live values come from the
+ *  `--bull` / `--bear` design tokens read in palette()). */
 const CANDLE = { bull: '#2F9E78', bear: '#C2693E' };
 
 /** Break-level line colours — sober, distinguishable, hairline. */
@@ -258,79 +147,8 @@ const LEVEL = {
   retest: '#6E84B0',
 };
 
-/**
- * External-liquidity segment palette. Per side (buy-side above / sell-side
- * below), deliberately distinct from BOTH the candle bull/bear hues (so a pool
- * never reads as a buy/sell instruction) and the slate/purple break lines. Cool
- * blue-teal = BSL, muted rose-violet = SSL. The STATUS drives the alpha + the
- * CSS border style: intact = crisp solid, swept (prise) = dashed + dimmed,
- * broken (cassée) = tight dotted + very dim. Rendu cible validé.
- */
-const LIQUIDITY_RGB: Record<LiquiditySide, string> = {
-  bsl: '79, 163, 199', // #4FA3C7 — cool blue-teal
-  ssl: '199, 127, 163', // #C77FA3 — muted rose-violet
-};
-const LIQUIDITY_ALPHA: Record<LiquidityStatus, number> = {
-  intact: 0.9,
-  swept: 0.55,
-  broken: 0.4,
-};
-const LIQUIDITY_BORDER_STYLE: Record<LiquidityStatus, 'solid' | 'dashed' | 'dotted'> = {
-  intact: 'solid',
-  swept: 'dashed',
-  broken: 'dotted',
-};
-function liquidityColor(side: LiquiditySide, status: LiquidityStatus): string {
-  return `rgba(${LIQUIDITY_RGB[side]}, ${LIQUIDITY_ALPHA[status]})`;
-}
-
 /** localStorage key for the "intact pockets only" display toggle. */
 const LIQUIDITY_INTACT_ONLY_KEY = 'mia.chart.liquidityIntactOnly';
-
-/**
- * Sober zone palette, per Direction 1. One base RGB per kind; the alpha encodes
- * the active/tested hierarchy (crisp vs ghost) so a tested box never competes
- * with an active one. No neon / glow / gradient.
- */
-const ZONE_RGB = {
-  ob: '139, 149, 167', // #8B95A7
-  fvg: '110, 132, 176', // #6E84B0
-} as const;
-
-const ZONE_LABEL = {
-  ob: '#9AA4B8',
-  fvg: '#6E84B0',
-} as const;
-
-/** Short type code shown INSIDE every box so OB vs FVG is always identifiable. */
-const ZONE_CODE = {
-  ob: 'OB',
-  fvg: 'FVG',
-} as const;
-
-/** Fill / border alpha by state — active reads, tested recedes (~0.05 fill). */
-const ZONE_ALPHA = {
-  active: { fill: 0.12, border: 0.45 },
-  tested: { fill: 0.05, border: 0.18 },
-} as const;
-
-/**
- * PROVISIONAL / live accent — deliberately a DIFFERENT hue (warm amber) from the
- * cool slate/blue confirmed palette, so an intra-candle "in progress" state can
- * never be mistaken for a candle-confirmed one. Used for the live FVG-fill front
- * and the OB "en test" flag.
- */
-const LIVE_RGB = '201, 162, 39'; // #C9A227 — warm amber
-const LIVE_COLOR = '#C9A227';
-
-/**
- * View-only HIGHLIGHT accent for a zone the chat asked to emphasise. A COOL
- * sky-blue, deliberately distinct from both the confirmed slate/blue palette and
- * the warm-amber live accent — so "mis en évidence à la demande" never reads as a
- * detection state or an intra-candle outcome. Display emphasis only.
- */
-const HIGHLIGHT_RGB = '79, 157, 222'; // #4F9DDE
-const HIGHLIGHT_COLOR = '#4F9DDE';
 
 /** Number of recent bars framed when centring on the current price. */
 const FOCUS_PRICE_BARS = 40;
@@ -433,14 +251,22 @@ export function ReadingChart({
     close: number;
   } | null>(null);
 
-  const [zoneRects, setZoneRects] = React.useState<ZoneRect[]>([]);
-  const [liveFvgRects, setLiveFvgRects] = React.useState<LiveFvgRect[]>([]);
-  const [liquidityRects, setLiquidityRects] = React.useState<LiquidityRect[]>([]);
-  // Width of the right price-scale gutter, tracked so the zone overlay can end
-  // exactly at the plot edge. Clipping happens THERE (container `overflow-hidden`
-  // + `right` inset) — box geometry itself is pure time+price and is never
-  // clamped to screen coordinates (a screen-clamped edge deforms under pan).
-  const [priceGutterWidth, setPriceGutterWidth] = React.useState(0);
+  // The SMC overlay (OB/FVG boxes, live FVG fronts, liquidity segments) is drawn
+  // by a lightweight-charts SERIES PRIMITIVE on the chart's own canvas — see
+  // zoneOverlayPrimitive.ts. The library paints it inside its own render pass with
+  // the SAME coordinate transform as the candles, so the boxes stay glued to the
+  // axes during pan / zoom / price-drag / resize with ZERO desync. (The old HTML
+  // overlay recomputed in a rAF loop and committed a frame late → the boxes
+  // "vibrated" against the candles.)
+  const overlayRef = React.useRef<ZoneOverlayPrimitive | null>(null);
+  // Hover tooltip — descriptive text for the box / pocket under the crosshair,
+  // driven by the chart's crosshair-move event. One element, updated only on
+  // hover, so it never re-renders per frame.
+  const [tooltip, setTooltip] = React.useState<{
+    text: string;
+    x: number;
+    y: number;
+  } | null>(null);
 
   // "Poches intactes seulement" — a reversible DISPLAY filter over the detected
   // pools (hides swept + broken segments, deletes nothing; the Structure panel
@@ -545,6 +371,14 @@ export function ReadingChart({
     isolatedZoneIds,
   ]);
 
+  // Latest-value refs for the canvas click / hover subscriptions (bound ONCE to
+  // the chart) so they always read the CURRENT highlight + handler without the
+  // subscription having to be torn down and re-bound on every prop change.
+  const highlightIdRef = React.useRef(highlightZoneId);
+  highlightIdRef.current = highlightZoneId;
+  const onClearHighlightRef = React.useRef(onClearHighlight);
+  onClearHighlightRef.current = onClearHighlight;
+
   // ── Create the chart ONCE (theme is applied live below, not by recreating). ─
   React.useEffect(() => {
     const container = containerRef.current;
@@ -590,8 +424,9 @@ export function ReadingChart({
       },
       // Symmetric ~10 % top/bottom margins (mission UI-2b) so the visible candles
       // fill the frame at any range instead of hugging one edge (the library
-      // default is 20 % top / 10 % bottom). Zones/liquidity are HTML overlays, so
-      // they never inflate the price-axis autoscale — this is candle-driven.
+      // default is 20 % top / 10 % bottom). The zone/liquidity primitive does NOT
+      // implement autoscaleInfo, so it never inflates the price-axis autoscale —
+      // framing stays candle-driven.
       rightPriceScale: {
         borderColor: p.scaleBorder,
         scaleMargins: { top: 0.1, bottom: 0.1 },
@@ -684,7 +519,57 @@ export function ReadingChart({
     // Markers plugin for the BOS/CHOCH break history (set in the data effect).
     markersRef.current = createSeriesMarkers(series, []);
 
+    // SMC overlay primitive — painted on the canvas, in phase with the candles.
+    const overlay = new ZoneOverlayPrimitive();
+    series.attachPrimitive(overlay);
+    overlayRef.current = overlay;
+
+    // Click on the HIGHLIGHTED (blue) zone → deselect it (toggle off). The
+    // primitive's hit-test surfaces the object id under the cursor via
+    // hoveredObjectId; only the currently-highlighted zone is clickable, so
+    // panning over any other box is never captured (same as the old behaviour).
+    const onClick = (param: MouseEventParams) => {
+      const hid = highlightIdRef.current;
+      const clear = onClearHighlightRef.current;
+      if (!hid || !clear) return;
+      if (param.hoveredObjectId === `zone:${hid}`) clear();
+    };
+    // Hover → descriptive tooltip near the cursor (box label / pocket
+    // description). Only updates React state when the text or position actually
+    // changes, so mouse-move doesn't spam re-renders.
+    const onMove = (param: MouseEventParams) => {
+      if (!param.point) {
+        setTooltip((prev) => (prev ? null : prev));
+        return;
+      }
+      const text = overlay.tooltipFor(param.hoveredObjectId);
+      const x = param.point.x;
+      const y = param.point.y;
+      setTooltip((prev) => {
+        if (!text) return prev ? null : prev;
+        if (
+          prev &&
+          prev.text === text &&
+          Math.abs(prev.x - x) < 2 &&
+          Math.abs(prev.y - y) < 2
+        ) {
+          return prev;
+        }
+        return { text, x, y };
+      });
+    };
+    chart.subscribeClick(onClick);
+    chart.subscribeCrosshairMove(onMove);
+
     return () => {
+      chart.unsubscribeClick(onClick);
+      chart.unsubscribeCrosshairMove(onMove);
+      try {
+        series.detachPrimitive(overlay);
+      } catch {
+        // series already disposed by chart.remove() below — safe to ignore.
+      }
+      overlayRef.current = null;
       chart.remove();
       chartRef.current = null;
       seriesRef.current = null;
@@ -805,15 +690,15 @@ export function ReadingChart({
     );
 
     // External liquidity pockets (BSL/SSL): the SEGMENT itself is drawn by the
-    // HTML overlay (time-bounded like the OB/FVG boxes — see liquidityRects),
-    // never a full-width price line. Here we only keep the price-scale PILL for
-    // INTACT pockets: a price line with the line hidden (lineVisible: false) so
-    // the level reads on the axis without a band crossing the whole canvas.
+    // canvas overlay primitive (time-bounded like the OB/FVG boxes), never a
+    // full-width price line. Here we only keep the price-scale PILL for INTACT
+    // pockets: a price line with the line hidden (lineVisible: false) so the
+    // level reads on the axis without a band crossing the whole canvas.
     // Swept/broken pockets carry their state at the frozen contact instead.
     // B-03 declutter: on a short/narrow plot the right axis stacked one price
     // pill per intact pocket, overlapping the BOS/CHOCH/retest badges. Cap the
     // axis pills to the few pockets NEAREST the current price; every level still
-    // renders on-chart as an HTML segment (liquidityRects), so nothing is hidden
+    // renders on-chart as a canvas segment (overlay primitive), so nothing is hidden
     // — only the redundant, colliding axis badge is dropped for far levels.
     const MAX_LIQUIDITY_PILLS = 4;
     const lastClose = validCandles.length
@@ -866,239 +751,104 @@ export function ReadingChart({
     };
   }, [candles, structure, layers.breaks, liquidityLines]);
 
-  // ── Keep zone rectangles IN PHASE with the chart canvas. ────────────────────
-  // The boxes are an HTML overlay positioned from priceToCoordinate /
-  // timeToCoordinate. The time axis emits a range-change event, but a VERTICAL
-  // PRICE-AXIS drag (handleScale.axisPressedMouseMove) emits nothing — so the
-  // old "subscribe to the time range + ResizeObserver" wiring never recomputed
-  // on price scaling: boxes stayed frozen at stale Y, then snapped on the next
-  // time event = the jitter. Fix: recompute every animation frame so the
-  // overlay tracks the canvas for ALL scale changes (price drag, time pan/zoom,
-  // autoscale, resize), gated by a geometry guard so React only re-renders when
-  // a box truly moves.
+  // ── Feed the overlay primitive the current view models. ─────────────────────
+  // Pure DISPLAY mapping (no detection): the curated zones + live FVG fronts +
+  // liquidity segments become plain price/time models handed to the primitive,
+  // which paints them on the canvas IN PHASE with the candles. This effect runs
+  // only when the underlying models change; pan / zoom / resize redraws are
+  // handled by the library calling the primitive every frame — no React involved,
+  // so the boxes never lag the candles (the old "vibration").
+  const overlayData = React.useMemo<ZoneOverlayData>(() => {
+    const zoneItems = zones.map((z) => {
+      const anchor = zoneRightAnchor(z);
+      const inTestLive = z.kind === 'ob' && liveOverlay.obInTest.has(z.id);
+      const statusText = inTestLive
+        ? t('chart.inTest')
+        : z.tested
+          ? t('chart.touched')
+          : null;
+      return {
+        id: z.id,
+        kind: z.kind,
+        high: z.high,
+        low: z.low,
+        // x-start = formation; x-end = mitigation point when resolved, else null
+        // → the primitive extends it a little past the current bar (an active
+        // zone reads just beyond the latest candle, never an infinite band).
+        leftSec: z.createdSec,
+        rightSec: anchor.kind === 'mitigation' ? anchor.sec : null,
+        tested: z.tested,
+        inTestLive,
+        statusText,
+        statusLive: inTestLive,
+        label: z.label,
+      };
+    });
+
+    // Live FVG-fill fronts share their parent box's x-span; only for a currently
+    // displayed FVG zone (so a hidden / filtered box never sprouts a live front).
+    const zoneById = new Map(zones.map((z) => [z.id, z]));
+    const liveFronts = liveOverlay.fvgFronts.flatMap((f) => {
+      const parent = zoneById.get(f.id);
+      if (!parent || parent.kind !== 'fvg') return [];
+      const anchor = zoneRightAnchor(parent);
+      return [
+        {
+          id: f.id,
+          high: f.high,
+          low: f.low,
+          leftSec: parent.createdSec,
+          rightSec: anchor.kind === 'mitigation' ? anchor.sec : null,
+          label: t('chart.fvgFillLive'),
+        },
+      ];
+    });
+
+    const liquidity = liquidityLines.map((l) => ({
+      id: l.id,
+      price: l.price,
+      leftSec: l.createdSec,
+      rightSec: l.contactSec,
+      side: l.side,
+      status: l.status,
+      chartLabel: l.chartLabel,
+      stateText:
+        l.status === 'swept'
+          ? t('chart.liqSwept')
+          : l.status === 'broken'
+            ? t('chart.liqBroken')
+            : null,
+      description: l.description,
+    }));
+
+    return {
+      candleTimes: candles.map((c) => c.time as number),
+      currentSec: lastCandle?.time ?? null,
+      zones: zoneItems,
+      liveFronts,
+      liquidity,
+      highlightId: highlightZoneId,
+      // Label-backdrop legibility only: the light design gets a light pill, the
+      // three dark designs a dark one (never a zone/pocket colour).
+      labelBg:
+        resolvedTheme === 'light'
+          ? 'rgba(255, 255, 255, 0.72)'
+          : 'rgba(17, 20, 32, 0.65)',
+    };
+  }, [
+    zones,
+    liveOverlay,
+    liquidityLines,
+    candles,
+    lastCandle?.time,
+    highlightZoneId,
+    resolvedTheme,
+    t,
+  ]);
+
   React.useEffect(() => {
-    const chart = chartRef.current;
-    const series = seriesRef.current;
-    const container = containerRef.current;
-    if (!chart || !series || !container) return;
-
-    const timeScale = chart.timeScale();
-
-    const candleTimes = candles.map((c) => c.time as number);
-    const lastTime = candleTimes.length ? candleTimes[candleTimes.length - 1]! : null;
-    // Snap a target time to the nearest candle so timeToCoordinate (which maps
-    // data points) always resolves. Used for the box LEFT edge (formation) and a
-    // mitigated box's RIGHT edge; an active box's right edge is the current bar
-    // plus a small pad.
-    const snapToCandle = (sec: number): number | null => {
-      if (!candleTimes.length) return null;
-      let best = candleTimes[0]!;
-      let bestD = Math.abs(best - sec);
-      for (const t of candleTimes) {
-        const d = Math.abs(t - sec);
-        if (d < bestD) {
-          best = t;
-          bestD = d;
-        }
-      }
-      return best;
-    };
-
-    const computeRects = (): {
-      rects: ZoneRect[];
-      live: LiveFvgRect[];
-      liq: LiquidityRect[];
-      gutter: number;
-    } => {
-      // Both x-edges are PURE time coordinates — never clamped to the screen.
-      // A screen-clamped edge sticks to the viewport while the other follows the
-      // graph, so the box deformed during a horizontal pan (the live FVG-fill
-      // frame visibly stretched). Off-plot geometry is fine: the overlay
-      // container clips at the plot edge (overflow-hidden + gutter inset), which
-      // renders the exact same visible surface without deforming the box.
-      const gutter = chart.priceScale('right').width();
-      const plotRight = Math.max(0, container.clientWidth - gutter);
-      const xAt = (sec: number): number | null => {
-        const snapped = snapToCandle(sec);
-        if (snapped === null) return null;
-        return timeScale.timeToCoordinate(snapped as UTCTimestamp);
-      };
-
-      // Right edge for an ACTIVE zone: the CURRENT bar (live forming bar when a
-      // tick streams, else the last closed bar — both are real series points, so
-      // timeToCoordinate resolves directly without snapping) plus a small pad of
-      // bar-widths. A little past the candle, scaled to zoom — never the plot
-      // edge, never before the candle. Falls back to the plot edge only if the
-      // current bar has no coordinate at all (not on the time scale).
-      const currentSec = formingRef.current?.time ?? lastTime;
-      const barSpacing = timeScale.options().barSpacing ?? 6;
-      const activeRightX = (): number => {
-        if (currentSec === null) return plotRight;
-        const raw = timeScale.timeToCoordinate(currentSec as UTCTimestamp);
-        if (raw === null) return plotRight;
-        return raw + barSpacing * ACTIVE_ZONE_RIGHT_PAD_BARS;
-      };
-
-      // Provisional live fronts, keyed by FVG id (recomputed each frame).
-      const liveFronts = new Map(liveOverlay.fvgFronts.map((f) => [f.id, f]));
-
-      const rects: ZoneRect[] = [];
-      const live: LiveFvgRect[] = [];
-      for (const z of zones) {
-        const yHigh = series.priceToCoordinate(z.high);
-        const yLow = series.priceToCoordinate(z.low);
-        if (yHigh === null || yLow === null) continue;
-        const top = Math.min(yHigh, yLow);
-        const height = Math.max(2, Math.abs(yLow - yHigh));
-
-        // x-start = formation. x-end depends on the zone's right anchor:
-        //  · MITIGATED → its mitigation point (bounded, never over-extended).
-        //  · ACTIVE → a little PAST the current bar (see activeRightX): an active
-        //    zone is valid now, so it reads just beyond the latest candle without
-        //    becoming an infinite band.
-        const xStart = xAt(z.createdSec);
-        const anchor = zoneRightAnchor(z);
-        const xEnd = anchor.kind === 'mitigation' ? xAt(anchor.sec) : activeRightX();
-        if (xStart === null || xEnd === null) continue;
-        const left = Math.min(xStart, xEnd);
-        const width = Math.max(2, Math.abs(xEnd - xStart));
-
-        rects.push({
-          id: z.id,
-          kind: z.kind,
-          left,
-          width,
-          top,
-          height,
-          label: z.label,
-          tested: z.tested,
-          // Provisional: an ACTIVE order block the live price is inside right now.
-          inTestLive: z.kind === 'ob' && liveOverlay.obInTest.has(z.id),
-        });
-
-        // Provisional live FVG-fill front: the still-open band drawn INSIDE the
-        // confirmed FVG box (warm-amber accent), tied to the same x-span so it
-        // reads as "the gap being eaten right now". Shrinks as price penetrates;
-        // disappears when price retreats (front absent from the overlay).
-        const front = z.kind === 'fvg' ? liveFronts.get(z.id) : undefined;
-        if (front) {
-          const fHigh = series.priceToCoordinate(front.high);
-          const fLow = series.priceToCoordinate(front.low);
-          if (fHigh !== null && fLow !== null) {
-            live.push({
-              id: z.id,
-              left,
-              width,
-              top: Math.min(fHigh, fLow),
-              height: Math.max(2, Math.abs(fLow - fHigh)),
-            });
-          }
-        }
-      }
-      // Liquidity segments — SAME time-bounding mechanics as the zone boxes:
-      // x-start = formation candle (plot left edge if unparseable — a real
-      // pocket is never dropped), x-end = the current bar + pad while INTACT
-      // (like an active OB) or FROZEN at the first contact (engine-emitted
-      // swept_at / broken_at) once the level was touched. Read-only geometry,
-      // pure time+price like the boxes — the container clips at the plot edge.
-      const liq: LiquidityRect[] = [];
-      for (const l of liquidityLines) {
-        const y = series.priceToCoordinate(l.price);
-        if (y === null) continue;
-        const xStart = Number.isFinite(l.createdSec) ? xAt(l.createdSec) : 0;
-        const xEnd = l.contactSec !== null ? xAt(l.contactSec) : activeRightX();
-        if (xStart === null || xEnd === null) continue;
-        liq.push({
-          id: l.id,
-          left: Math.min(xStart, xEnd),
-          width: Math.max(2, Math.abs(xEnd - xStart)),
-          y,
-          side: l.side,
-          status: l.status,
-          chartLabel: l.chartLabel,
-          description: l.description,
-        });
-      }
-
-      return { rects, live, liq, gutter };
-    };
-
-    // Animation-frame loop: recompute in phase with the canvas, commit to React
-    // only when the geometry changes (rectsEqual guard) so an idle chart costs
-    // a cheap coordinate read per frame and zero re-renders.
-    let prev: ZoneRect[] = [];
-    let prevLive: LiveFvgRect[] = [];
-    let prevLiq: LiquidityRect[] = [];
-    let prevGutter = -1;
-    let raf = 0;
-    const tick = () => {
-      // Bail if the chart was disposed/recreated (next-themes resolves the theme
-      // after hydration, which re-runs the create-chart effect and remove()s this
-      // one). The captured `chart`/`series` would then be disposed — calling them
-      // throws "Object is disposed". Stop this stale loop; the fresh effect run
-      // owns the new chart. The try/catch is a final guard against a disposal
-      // that races mid-frame.
-      if (chartRef.current !== chart || seriesRef.current !== series) return;
-      let next: {
-        rects: ZoneRect[];
-        live: LiveFvgRect[];
-        liq: LiquidityRect[];
-        gutter: number;
-      };
-      try {
-        next = computeRects();
-      } catch {
-        return; // disposed mid-frame — stop without rescheduling
-      }
-      if (!rectsEqual(prev, next.rects)) {
-        prev = next.rects;
-        setZoneRects(next.rects);
-      }
-      if (!liveRectsEqual(prevLive, next.live)) {
-        prevLive = next.live;
-        setLiveFvgRects(next.live);
-      }
-      if (!liquidityRectsEqual(prevLiq, next.liq)) {
-        prevLiq = next.liq;
-        setLiquidityRects(next.liq);
-      }
-      if (next.gutter !== prevGutter) {
-        prevGutter = next.gutter;
-        setPriceGutterWidth(next.gutter);
-      }
-      // Stop the loop entirely while the tab is hidden (UI-20): a background tab
-      // has nothing to keep glued, so don't burn a frame budget on it. The
-      // visibilitychange listener below resumes it on return. (We keep full
-      // per-frame cadence while VISIBLE — a price-axis drag emits no events, so
-      // throttling there would detach the overlays.)
-      if (document.hidden) {
-        raf = 0;
-        return;
-      }
-      raf = requestAnimationFrame(tick);
-    };
-
-    const startLoop = () => {
-      if (!raf) raf = requestAnimationFrame(tick);
-    };
-    const stopLoop = () => {
-      if (raf) {
-        cancelAnimationFrame(raf);
-        raf = 0;
-      }
-    };
-    const onVisibility = () => {
-      if (document.hidden) stopLoop();
-      else startLoop();
-    };
-    document.addEventListener('visibilitychange', onVisibility);
-    if (!document.hidden) startLoop();
-
-    return () => {
-      stopLoop();
-      document.removeEventListener('visibilitychange', onVisibility);
-    };
-  }, [zones, candles, liveOverlay, liquidityLines]);
+    overlayRef.current?.setData(overlayData);
+  }, [overlayData]);
 
   // ── Live FORMING candle (TradingView-style) ─────────────────────────────────
   // Grow the current (still-open) bar with each tick: open anchored to the last
@@ -1160,6 +910,9 @@ export function ReadingChart({
     } catch {
       // update() throws if time < last data point — ignore (next tick recovers).
     }
+    // Advance the overlay's current-bar anchor so an active zone's right edge
+    // tracks the live forming bar between ticks (cheap; requests one redraw).
+    overlayRef.current?.setCurrentSec(c.time);
   }, [livePrice, liveTs, lastClosedTime, lastClosedClose, timeframe]);
 
   // ── Chat-driven FOCUS command (one-shot, re-triggered by nonce). ────────────
@@ -1269,253 +1022,27 @@ export function ReadingChart({
         </span>
       )}
 
-      {/* Localized OB / FVG boxes, layered over the chart canvas. Active boxes
-          read crisp; tested boxes recede (ghost fill/border). Every box carries
-          a short OB / FVG type code at its top-left so the kind is always
-          identifiable — crisp on active, dimmer + smaller on tested. An active
-          OB the live price is inside gets a warm-amber "en test" accent (a
-          PROVISIONAL, intra-candle state — distinct hue from the confirmed
-          palette so it's never read as a candle-confirmed outcome).
-          The container ends at the PLOT edge (right inset = price-scale gutter)
-          and clips overflow: boxes are anchored purely to time+price (their
-          geometry can extend off-plot) and get clipped HERE, so no edge is ever
-          pinned to a screen coordinate — panning/zooming moves them rigidly. */}
-      <div
-        className="pointer-events-none absolute inset-y-0 left-0 overflow-hidden"
-        style={{ right: priceGutterWidth }}
-      >
-        {zoneRects.map((r) => {
-          const rgb = ZONE_RGB[r.kind];
-          const a = r.tested ? ZONE_ALPHA.tested : ZONE_ALPHA.active;
-          // View-only emphasis requested via chat — a cool solid ring, distinct
-          // from the live-amber "en test" accent. Display only; geometry is the
-          // detected band, untouched.
-          const isHighlighted = highlightZoneId != null && r.id === highlightZoneId;
-          const border = isHighlighted
-            ? `2px solid rgba(${HIGHLIGHT_RGB}, 0.95)`
-            : r.inTestLive
-              ? `1px solid rgba(${LIVE_RGB}, 0.85)`
-              : `1px dashed rgba(${rgb}, ${a.border})`;
-          // Only the HIGHLIGHTED (blue) box is interactive — clicking it
-          // deselects (toggle off). Every other box stays pointer-events:none so
-          // chart panning/zooming over zones is never captured. The container is
-          // pointer-events:none, so we opt this one box back in.
-          const clickable = isHighlighted && onClearHighlight != null;
-          return (
-            <div
-              key={`${r.kind}:${r.id}`}
-              className="absolute"
-              role={clickable ? 'button' : undefined}
-              tabIndex={clickable ? 0 : undefined}
-              aria-label={clickable ? t('chart.deselectZoneAria') : undefined}
-              title={clickable ? t('chart.deselectZoneTitle') : undefined}
-              onClick={clickable ? () => onClearHighlight() : undefined}
-              onKeyDown={
-                clickable
-                  ? (e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        onClearHighlight();
-                      }
-                    }
-                  : undefined
-              }
-              style={{
-                left: r.left,
-                width: r.width,
-                top: r.top,
-                height: r.height,
-                backgroundColor: isHighlighted
-                  ? `rgba(${HIGHLIGHT_RGB}, ${Math.max(a.fill, 0.16)})`
-                  : `rgba(${rgb}, ${a.fill})`,
-                border,
-                borderRadius: 1,
-                boxShadow: isHighlighted
-                  ? `0 0 0 1px rgba(${HIGHLIGHT_RGB}, 0.35)`
-                  : undefined,
-                pointerEvents: clickable ? 'auto' : 'none',
-                cursor: clickable ? 'pointer' : undefined,
-              }}
-            >
-              {/* Type code + status grouped in ONE top-left cluster, INSIDE the
-                  box with a little padding. Everything is left-anchored (the box's
-                  left edge sits at the zone's creation, deep in the past) so no
-                  label can reach the right price-scale gutter / live price the way
-                  the old `right-1` status tags did. Narrow boxes that can't hold
-                  the cluster fall back to sitting just ABOVE the box, still
-                  left-aligned — never to the right. */}
-              {(() => {
-                // Width below which the cluster would spill past the box's right
-                // edge: park it just above instead. The bare type code is tiny, so
-                // only boxes carrying a status chip need the larger threshold.
-                const hasStatus = r.inTestLive || r.tested;
-                const narrow = r.width < (hasStatus ? 66 : 22);
-                // The box's left edge is a pure time coordinate and often sits
-                // OFF-plot (old formation candle). Slide the label cluster to the
-                // box's first VISIBLE pixel so the type code stays readable —
-                // label chrome only, the box geometry itself is never clamped.
-                const labelLeft = Math.max(0, -r.left) + (narrow ? 0 : 4);
-                return (
-                  <div
-                    className={cn(
-                      'absolute flex items-center gap-1 whitespace-nowrap',
-                      narrow ? 'bottom-full mb-0.5' : 'top-0.5',
-                    )}
-                    style={{ left: labelLeft }}
-                  >
-                    <span
-                      className={cn(
-                        // B-04: a hairline backdrop keeps the code legible when
-                        // two zone labels overlap on a dense/narrow plot (never
-                        // hides a level — only rescues readability). aria-label
-                        // carries the full description to assistive tech on touch
-                        // where the native title tooltip is unreachable (E-02).
-                        'rounded-sm bg-background/65 px-0.5 font-medium leading-none tabular-nums',
-                        r.tested ? 'text-[9px] opacity-70' : 'text-[10px]',
-                      )}
-                      style={{ color: ZONE_LABEL[r.kind] }}
-                      title={r.label}
-                      aria-label={r.label}
-                    >
-                      {ZONE_CODE[r.kind]}
-                    </span>
-                    {r.inTestLive && (
-                      <span
-                        className="rounded-sm px-1 py-px text-[9px] font-semibold leading-none"
-                        style={{
-                          color: LIVE_COLOR,
-                          backgroundColor: `rgba(${LIVE_RGB}, 0.16)`,
-                        }}
-                        title={t('chart.inTestTitle')}
-                      >
-                        {t('chart.inTest')}
-                      </span>
-                    )}
-                    {/* Touched-but-alive chip: a `mitigated` OB / `partially_filled`
-                        FVG that price has tapped but NOT closed through. The engine
-                        still tracks it, so its box extends to the current bar (it is
-                        in play) — this dim slate chip (NOT the amber live accent)
-                        keeps the touched state explicit so the extension never reads
-                        as untested. */}
-                    {r.tested && !r.inTestLive && (
-                      <span
-                        className="rounded-sm px-1 py-px text-[9px] font-medium leading-none opacity-80"
-                        style={{
-                          color: ZONE_LABEL[r.kind],
-                          backgroundColor: `rgba(${ZONE_RGB[r.kind]}, 0.18)`,
-                        }}
-                        title={t('chart.touchedTitle')}
-                      >
-                        {t('chart.touched')}
-                      </span>
-                    )}
-                  </div>
-                );
-              })()}
-            </div>
-          );
-        })}
-
-        {/* PROVISIONAL live FVG-fill front — the still-open band right now, drawn
-            inside its confirmed FVG box in warm amber. Descriptive: the price is
-            literally there. Shrinks live as price fills the gap; vanishes on a
-            retreat. Never confirmed — confirmation lands at candle close. */}
-        {liveFvgRects.map((r) => (
-          <div
-            key={`live-fvg:${r.id}`}
-            className="absolute"
-            style={{
-              left: r.left,
-              width: r.width,
-              top: r.top,
-              height: r.height,
-              backgroundColor: `rgba(${LIVE_RGB}, 0.16)`,
-              border: `1px solid rgba(${LIVE_RGB}, 0.8)`,
-              borderRadius: 1,
-            }}
-            title={t('chart.fvgFillTitle')}
-          >
-            {/* Only label the live-fill when the box is wide enough to hold the
-                text — on a narrow box the nowrap badge would overflow across
-                neighbouring candles. The amber fill itself still conveys the
-                state. */}
-            {r.width >= 60 && (
-              <span
-                className="absolute right-1 top-0 whitespace-nowrap text-[9px] font-semibold leading-tight"
-                style={{ color: LIVE_COLOR }}
-              >
-                {t('chart.fvgFillLive')}
-              </span>
-            )}
-          </div>
-        ))}
-
-        {/* External-liquidity segments (BSL/SSL) — TIME-BOUNDED like the OB
-            boxes, never full-width. INTACT: crisp solid line to the current bar,
-            type tag at its left edge. SWEPT (prise): frozen at the first
-            contact, dashed + dimmed, dot marker + "prise" — the pocket STAYS
-            visible (touched is not broken). BROKEN (cassée): frozen, tight
-            dotted + very dim, × marker + "cassée". Read-only states; labels are
-            factual — no target, no direction. */}
-        {liquidityRects.map((r) => {
-          const color = liquidityColor(r.side, r.status);
-          const labelColor = `rgba(${LIQUIDITY_RGB[r.side]}, 0.95)`;
-          return (
-            <div
-              key={`liq:${r.id}`}
-              className="absolute"
-              style={{
-                left: r.left,
-                width: r.width,
-                top: r.y,
-                height: 0,
-                borderTop: `1px ${LIQUIDITY_BORDER_STYLE[r.status]} ${color}`,
-              }}
-              title={r.description}
-            >
-              {r.status === 'intact' ? (
-                <span
-                  className="absolute whitespace-nowrap text-[9px] font-medium leading-none"
-                  style={{ left: 2, top: -12, color: labelColor }}
-                >
-                  {r.chartLabel}
-                </span>
-              ) : (
-                <>
-                  {/* Contact marker at the FROZEN right end: dot = prise
-                      (swept, still holding), × = cassée (closed through). */}
-                  {r.status === 'swept' ? (
-                    <span
-                      className="absolute h-[5px] w-[5px] rounded-full"
-                      style={{ right: -2, top: -3, backgroundColor: color }}
-                      aria-hidden
-                    />
-                  ) : (
-                    <span
-                      className="absolute text-[10px] font-semibold leading-none"
-                      style={{ right: -3, top: -5, color }}
-                      aria-hidden
-                    >
-                      ×
-                    </span>
-                  )}
-                  <span
-                    className="absolute whitespace-nowrap text-[9px] font-medium leading-none"
-                    style={{
-                      right: 4,
-                      top: -12,
-                      color: labelColor,
-                      opacity: r.status === 'broken' ? 0.7 : 0.9,
-                    }}
-                  >
-                    {r.status === 'swept' ? t('chart.liqSwept') : t('chart.liqBroken')}
-                  </span>
-                </>
-              )}
-            </div>
-          );
-        })}
-      </div>
+      {/* SMC overlay (OB / FVG boxes, live FVG-fill fronts, external-liquidity
+          segments) is painted ON THE CANVAS by the series primitive — in phase
+          with the candles, so it stays glued to the axes during pan / zoom /
+          price-drag / resize (no more vibration). The only HTML here is the hover
+          tooltip below, which surfaces a box / pocket's descriptive text near the
+          cursor on crosshair-move (never per frame, so it never jitters). */}
+      {tooltip && (
+        <div
+          className="pointer-events-none absolute z-20 max-w-[220px] rounded border border-border/70 bg-background/95 px-2 py-1 text-[11px] leading-snug text-foreground shadow-sm backdrop-blur-sm"
+          style={{
+            left: Math.min(
+              Math.max(4, tooltip.x + 12),
+              Math.max(4, (containerRef.current?.clientWidth ?? 240) - 232),
+            ),
+            top: tooltip.y + 12,
+          }}
+          role="tooltip"
+        >
+          {tooltip.text}
+        </div>
+      )}
 
       {/* Session badge (top-right). "Marché fermé" is a PRESENT FACT and takes
           precedence: when the spot market is closed we never show the live
