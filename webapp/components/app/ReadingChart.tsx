@@ -35,6 +35,7 @@ import type {
   ChartFilter,
   ChartLayers,
   FocusCommand,
+  ReferenceLevel,
 } from '@/lib/chart/viewActions';
 import { DEFAULT_CHART_VIEW } from '@/lib/chart/viewActions';
 import { buildStructureMarkers } from '@/lib/chart/structureMarkers';
@@ -122,6 +123,14 @@ export interface ReadingChartProps {
   filter?: ChartFilter;
   focus?: FocusCommand | null;
   highlightZoneId?: string | null;
+  /**
+   * A calendar-derived reference marker to trace (day/week open, prev extreme),
+   * or null. Rendered as a distinct SOLID accent price line with an axis label —
+   * visually separate from detected zones, liquidity pills and dashed break
+   * lines. It is NOT a detected zone and travels on its own channel, so it never
+   * touches the zone id-lock. See `ReferenceLevel`.
+   */
+  referenceLevel?: ReferenceLevel | null;
   /** Called when the user clicks the highlighted (blue) zone to deselect it. */
   onClearHighlight?: () => void;
   hiddenZoneIds?: readonly string[];
@@ -232,6 +241,7 @@ export function ReadingChart({
   filter = DEFAULT_CHART_VIEW.filter,
   focus = null,
   highlightZoneId = null,
+  referenceLevel = null,
   onClearHighlight,
   hiddenZoneIds = DEFAULT_CHART_VIEW.hiddenZoneIds,
   isolatedZoneIds = DEFAULT_CHART_VIEW.isolatedZoneIds,
@@ -732,6 +742,24 @@ export function ReadingChart({
       }),
     );
 
+    // Calendar-derived reference marker (day/week open, prev extreme). A SOLID
+    // accent line with an axis label — deliberately distinct from the dashed
+    // grey break lines, the hidden-line liquidity pills and the OB/FVG boxes, so
+    // a temporal repère is never mistaken for detected structure. One at a time.
+    const refColor = palette().priceLine;
+    const createdReference = referenceLevel
+      ? [
+          series.createPriceLine({
+            price: referenceLevel.price,
+            color: refColor,
+            lineWidth: 2,
+            lineStyle: LineStyle.Solid,
+            axisLabelVisible: true,
+            title: referenceLevel.label,
+          }),
+        ]
+      : [];
+
     // Initial view ONCE; afterwards restore the pre-update view so data
     // refreshes don't reset the user's zoom/pan. The "Ajuster" button refits.
     // On first load we right-anchor to the most recent bars (not fitContent over
@@ -755,8 +783,9 @@ export function ReadingChart({
     return () => {
       for (const line of created) series.removePriceLine(line);
       for (const line of createdLiquidity) series.removePriceLine(line);
+      for (const line of createdReference) series.removePriceLine(line);
     };
-  }, [candles, structure, layers.breaks, liquidityLines]);
+  }, [candles, structure, layers.breaks, liquidityLines, referenceLevel]);
 
   // ── Feed the overlay primitive the current view models. ─────────────────────
   // Pure DISPLAY mapping (no detection): the curated zones + live FVG fronts +
