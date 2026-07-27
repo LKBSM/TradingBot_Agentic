@@ -463,6 +463,38 @@ def test_candles_to_regime_elevated_volatility():
     assert r.volatility_observed == "elevated"
 
 
+def test_candles_to_regime_volatility_detail_reproduces_ratio():
+    """The exposed intermediates must let a sceptic redo the operation:
+    ratio == recent_avg / baseline_avg, and the category follows the thresholds."""
+    candles = _candles_volatile()
+    r = candles_to_regime(candles, mtf_candles_above={})
+    d = r.volatility_detail
+    assert d is not None
+    # recent window is the last 7, baseline is everything before it.
+    assert d.recent_n == 7
+    assert d.baseline_n == len(candles) - 7
+    assert d.threshold_low == 0.70
+    assert d.threshold_high == 1.30
+    # The ratio is exactly recent_avg / baseline_avg.
+    assert d.ratio == pytest.approx(d.recent_avg / d.baseline_avg)
+    # Category is consistent with the ratio and the thresholds.
+    if d.ratio > d.threshold_high:
+        assert r.volatility_observed == "elevated"
+    elif d.ratio < d.threshold_low:
+        assert r.volatility_observed == "low"
+    else:
+        assert r.volatility_observed == "normal"
+    assert r.volatility_observed == "elevated"
+
+
+def test_candles_to_regime_volatility_detail_absent_on_short_window():
+    """< 14 candles → no numeric proof (and the category falls back to normal)."""
+    candles = _candles_uptrend(n=10)
+    r = candles_to_regime(candles, mtf_candles_above={})
+    assert r.volatility_detail is None
+    assert r.volatility_observed == "normal"
+
+
 def test_candles_to_regime_mtf_confluence_keys_filtered():
     candles = _candles_uptrend()
     mtf = {

@@ -202,12 +202,32 @@ export interface MarketReadingStructure {
 
 // ─── Regime ────────────────────────────────────────────────────────────────
 
+/**
+ * Numeric intermediates behind `volatility_observed`, so the proof panel can let
+ * a reader redo the operation. `ratio = recent_avg / baseline_avg`; the category
+ * is `low` below `threshold_low`, `elevated` above `threshold_high`, else
+ * `normal`. Averages are mean True Ranges (high − low) over the last `recent_n`
+ * candles and the `baseline_n` candles before them (all remaining, not a fixed
+ * 20). Absent when the window is too short (< 14 candles) or on older payloads.
+ */
+export interface VolatilityDetail {
+  recent_avg: number;
+  baseline_avg: number;
+  ratio: number;
+  recent_n: number;
+  baseline_n: number;
+  threshold_low: number;
+  threshold_high: number;
+}
+
 export interface MarketReadingRegime {
   trend: TrendValue;
   volatility_observed: VolatilityObserved;
   market_phase: MarketPhase;
   /** Multi-timeframe directional biases, keyed by `MTFTimeframeKey`. */
   mtf_confluence: Partial<Record<MTFTimeframeKey, MTFBiasValue>>;
+  /** Numeric proof behind `volatility_observed`; absent on short windows. */
+  volatility_detail?: VolatilityDetail | null;
 }
 
 // ─── Events ────────────────────────────────────────────────────────────────
