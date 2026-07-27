@@ -21,6 +21,7 @@ function pool(kind: LiquidityPool['kind'], level: number): LiquidityPool {
     is_external: true,
     status: 'intact',
     created_at: '2026-07-26T00:00:00Z',
+    user_flagged: false,
   };
 }
 

@@ -164,6 +164,49 @@ moteur pour exposer les intermédiaires vol (sinon 2c) ; 3(b) re-scoper Session 
 
 ---
 
+## 8. IMPLÉMENTATION (Phase 2) — livré
+
+**Backend (contenu, minimal, décision 2)**
+- `MarketReadingRegime.volatility_detail` (optionnel) : `recent_avg`, `baseline_avg`, `ratio`,
+  `recent_n`, `baseline_n`, `threshold_low`=0,70, `threshold_high`=1,30. Calcul factorisé
+  (`_volatility_from_candles`), rétro-compatible, miroir type TS.
+- `/api/candles` sert **D1/W1** (déjà en cache via l'assembleur MTF) — conséquence mécanique du
+  fuseau « bougie D1/W1 du flux ». Gate freemium inchangée (no-op OFF ; D1/W1 dégradent proprement
+  pour le tier gratuit quand ON — à noter).
+
+**Frontend**
+- `RegimeCard` : 6 → **10 tuiles**, panneau de détail **Donnée / Concept** (défilement borné,
+  clavier + `aria-expanded`/`role=tab`), **une seule ouverture** dans toute la page (canal `openHelp`
+  partagé, clés `rg:<tuile>:<onglet>`). Règle **nombre impair → dernière pleine largeur** (`.span2`).
+- **Onglet Donnée = valeurs LIVE du moteur** (décision). Volatilité : preuve chiffrée complète depuis
+  `volatility_detail`. Position, Maturité, Dernier événement, Densité, Alignement : dérivés réels.
+- **Niveaux de référence** : prix cliquables → `ChartViewProvider.setReferenceLevel` (canal **séparé**,
+  hors `coerceViewAction`), trait plein à l'accent, re-clic = retrait. Fetch D1/W1 via `/api/candles`.
+- **Session** re-scopée « Horaire du marché » sur MC-1 (`market_status` + heure locale NY).
+- i18n `regimePanel.*` **fr + en complets**, 7 autres locales = EN (convention UI-2c). Concept
+  trend/phase/vol **reformulés** (décision 1) ; align/pos/mat/last/dens/lvl/regime verbatim v9.
+
+**Tests** : back mappers + schéma + `/api/candles` D1/W1 ; front `reference-levels` (11), copy-honnêteté
+`regimePanel` 9 locales (surface assertive bannie ; Concept = phrases promo bannies + bloc « ne dit pas »
+obligatoire), composant RG-1 (tuile→Donnée, ?→Concept, un seul panneau, impair→span2, mesure sans
+donnée non rendue, clic prix trace/retire, id inventé toujours rejeté, géométrie hors whitelist).
+Playwright 1280×800 (structurel sans backend + interactions si reading présent).
+
+## 9. Écarts assumés vs la maquette v9 (à l'écran)
+- **Tendance / Phase / Volatilité** : textes Concept **reformulés** pour dire la vraie règle du moteur
+  (décision 1). Le libellé vol « 7 vs 20 · seuils 0,75/1,35 » de la v9 était **faux** → corrigé
+  (7 vs *les précédentes* ; seuils réels **0,70/1,30** ; chiffres réels dans l'onglet Donnée).
+- **Tendance – Donnée** : pas de tableau de sommets/creux (le moteur n'expose pas ces intermédiaires) —
+  la règle et le résultat, honnêtement. **Alignement – Donnée** : direction par TF (pas le chip
+  « CHOCH ↓ date » par TF — non fourni par `useMtfTrends`).
+- **Dernier événement** : lignes « Clôture de confirmation » et « Zone créée par le mouvement »
+  **RETIRÉES** (§5, pas de donnée moteur).
+- **Position** : bornes = **extrêmes de structure de la fenêtre** (`range_high`/`range_low`), pas
+  « dernier sommet/creux » ; % en arithmétique front bornée.
+- **Session → Horaire du marché** : pas de découpage Asie/Londres/NY (MC-1 ne le modélise pas ;
+  §6-3). Ouvert/fermé, clôture hebdo, heure locale, prochaine ouverture.
+- **Surface mobile** (`RegimeSection` accordéon) inchangée — la mission cible le desktop 1280×800.
+
 ## 7. Ce qui est prêt à implémenter sans décision (après GO)
 
 Mesures **5 (Alignement)**, **6 (Maturité)**, **8 (Densité)** : entièrement adossées au moteur, helpers déjà

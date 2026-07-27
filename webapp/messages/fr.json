@@ -1,4 +1,169 @@
 {
+  "regimePanel": {
+    "help": "En savoir plus",
+    "measureHelp": "Expliquer cette mesure",
+    "close": "Fermer",
+    "tabData": "Donnée",
+    "tabConcept": "Concept",
+    "unavailable": "non disponible",
+    "notSayLabel": "Ce que ça ne dit pas",
+    "continuous": "Marché continu · 24/7",
+    "headerBadge": "{tf} · dernière clôture {time}",
+    "tiles": {
+      "phase": "Phase de marché",
+      "trend": "Tendance",
+      "vol": "Volatilité",
+      "pos": "Position dans le range",
+      "align": "Alignement",
+      "mat": "Maturité",
+      "last": "Dernier événement",
+      "dens": "Densité",
+      "sess": "Horaire du marché",
+      "lvl": "Niveaux de référence"
+    },
+    "sub": {
+      "phase": "dérivée de la tendance et de la volatilité",
+      "trend": "mesurée sur {tf}",
+      "vol": "7 dernières bougies vs les précédentes",
+      "pos": "{low} – {high}",
+      "mat": "depuis le CHOCH du {date}",
+      "dens": "ouverts sur {tf}",
+      "lvl": "{count, plural, one {# repère} other {# repères}} · ouvre le détail"
+    },
+    "value": {
+      "pos": "{pct} %",
+      "mat": "{count, plural, one {# bougie} other {# bougies}}",
+      "dens": "{ob} OB · {fvg} FVG",
+      "align": "{count}/{total} TF {arrow}"
+    },
+    "data": {
+      "phaseHead": "Les deux mesures qui la composent",
+      "trendRow": "Tendance",
+      "volRow": "Volatilité",
+      "ruleRow": "Règle appliquée",
+      "phaseNote": "La phase se recompose entièrement de ces deux mesures : aucune information n’est ajoutée, seulement résumée.",
+      "trendHead": "La règle, en clair",
+      "resultRow": "Résultat",
+      "measuredOnRow": "Mesurée sur",
+      "trendNote": "Le moteur compare le déplacement net (première → dernière clôture) à l’amplitude de la fenêtre, sur {tf}. Les valeurs intermédiaires restent côté moteur ; la règle et son résultat sont affichés ici.",
+      "volHead": "Le calcul, en clair",
+      "volRecent": "Amplitude moyenne — {n} dernières",
+      "volBaseline": "Amplitude moyenne — {n} précédentes",
+      "volRatio": "Rapport",
+      "volThresholds": "Seuils",
+      "volThresholdsValue": "<{low} basse · >{high} élevée",
+      "volNote": "Le dénominateur est nommé : la comparaison porte sur les {n} bougies qui précèdent les 7 dernières, sur la même unité de temps.",
+      "posHead": "Où se trouve le prix entre les bornes de structure",
+      "currentPrice": "Prix courant",
+      "distTop": "Distance au bord haut",
+      "distBottom": "Distance au bord bas",
+      "rangeSpan": "Amplitude des bornes",
+      "barLow": "{v} · bas",
+      "barHigh": "{v} · haut",
+      "posNote": "Ces bornes sont **structurelles** : les extrêmes de structure retenus par le moteur. À ne pas confondre avec les niveaux de référence, qui sont **temporels**.",
+      "alignHead": "Le détail par unité de temps",
+      "alignNote": "Les unités de temps disponibles et leur direction de structure. Quand l’une diverge, sa ligne est mise en évidence ici plutôt que masquée.",
+      "matHead": "L’ancrage du compteur",
+      "anchorEvent": "Événement d’ancrage",
+      "crossedLevel": "Niveau franchi",
+      "barsSince": "Bougies clôturées depuis",
+      "elapsed": "Temps écoulé",
+      "eventsSince": "Événements survenus depuis",
+      "lastHead": "L’événement le plus récent",
+      "typeRow": "Type",
+      "crossedExtreme": "Extrême franchi",
+      "journal": "Journal des événements · {tf}",
+      "seeOnChart": "Voir ces événements sur le graphique",
+      "densHead": "Inventaire des zones · {tf}",
+      "obActive": "Order Blocks — actifs",
+      "obTested": "Order Blocks — testés (non mitigés)",
+      "obMitigated": "Order Blocks — mitigés",
+      "fvgOpen": "FVG ouverts — total",
+      "fvgUntouched": "— dont jamais touchés",
+      "fvgPartial": "— dont partiellement comblés",
+      "densNote": "Les partiellement comblés sont **inclus** dans le total des FVG ouverts. Un FVG entièrement comblé sort du compte (le moteur ne le conserve plus).",
+      "filterInStructure": "Filtrer ces zones dans Structure de marché",
+      "sessHead": "Horaires · heure de New York",
+      "marketState": "État du marché",
+      "marketLocalTime": "Heure locale du marché",
+      "weeklyClose": "Fermeture hebdomadaire",
+      "weeklyCloseValue": "ven. 17:00",
+      "nextOpen": "Prochaine ouverture",
+      "lvlHead": "Repères temporels · prix courant {price}",
+      "dayOpen": "Ouverture du jour",
+      "weekOpen": "Ouverture de la semaine",
+      "prevDayHigh": "Haut de la veille",
+      "prevDayLow": "Bas de la veille",
+      "prevWeekHigh": "Haut de la semaine",
+      "prevWeekLow": "Bas de la semaine",
+      "lvlNote": "Clique un prix : le niveau est tracé sur le graphique et amené dans la vue. Re-clic pour l’enlever."
+    },
+    "state": {
+      "open": "Marché ouvert",
+      "closed_weekend": "Fermé — week-end",
+      "closed_holiday": "Fermé — jour férié",
+      "daily_break": "Pause quotidienne",
+      "data_lagged": "Données en retard"
+    },
+    "concept": {
+      "regime": {
+        "title": "Pourquoi il n’y a pas de note globale",
+        "body": "Réduire dix mesures à un seul indice obligerait à décider laquelle compte le plus. Ce choix est une **opinion**, et une opinion pondérée reste une opinion — même présentée avec deux décimales.\n\nMIA affiche donc les dix mesures côte à côte, chacune vérifiable, et laisse la synthèse à celui qui prend le risque.",
+        "notSay": "Aucune de ces mesures, seule ou combinée, n’indique quoi faire. Elles décrivent un état présent et des faits passés."
+      },
+      "phase": {
+        "title": "Ce que la phase décrit",
+        "body": "La phase résume **comment** le prix se déplace, pas **où** il va. Le moteur la déduit de deux mesures déjà affichées : la **tendance** et la **volatilité**. Une tendance nette en forte volatilité est lue comme une **expansion** ; une tendance nette en volatilité contenue, comme une **tendance** ; un marché sans direction, comme un **range** ou une **accumulation**.\n\nC’est donc un résumé, pas une mesure de plus : elle se recompose entièrement à partir de la tendance et de la volatilité, et l’onglet Donnée montre laquelle a produit l’étiquette.",
+        "notSay": "Ni la durée de la phase, ni son amplitude restante, ni le moment où elle changera. Une phase peut basculer à la bougie suivante."
+      },
+      "trend": {
+        "title": "Comment la tendance est mesurée",
+        "body": "Le moteur compare la **première et la dernière clôture** de la fenêtre analysée à l’**amplitude** totale parcourue sur la même période. Si le déplacement net représente une part suffisante de l’amplitude, il retient **haussière** ou **baissière** selon le sens ; sinon, **range**. C’est une lecture de structure **déjà formée**, sur l’unité de temps affichée.\n\n**Piège d’échelle :** un M15 en range dans un H1 baissier n’est pas une contradiction — les deux décrivent des empans différents. C’est ce que la tuile Alignement rend visible.",
+        "notSay": "Une tendance décrit le passé récent. Elle ne prolonge rien et ne dit pas quand elle cessera. Elle ne mesure pas non plus la « force » du mouvement — seulement son sens."
+      },
+      "vol": {
+        "title": "Ce que la volatilité compte",
+        "body": "L’**amplitude moyenne** (haut − bas) des **7 dernières** bougies, rapportée à celle de **toutes les bougies qui les précèdent** dans la fenêtre — jamais un nombre fixe. Le dénominateur est donc toujours nommé, et l’onglet Donnée montre le calcul complet pour qu’il soit refaisable.\n\n**Pourquoi ça compte en SMC :** la volatilité fixe la **largeur** des zones. Un OB formé en forte volatilité est plus large, donc plus long à traverser. C’est une dimension, pas une qualité.",
+        "notSay": "Aucune direction. Une volatilité basse ne précède pas plus une hausse qu’une baisse."
+      },
+      "pos": {
+        "title": "Une mesure, rien de plus",
+        "body": "La position exprime en pourcentage où se situe le prix entre le creux et le sommet de structure retenus. 0 % = bord bas, 100 % = bord haut.\n\nC’est une **coordonnée**. Elle rend comparables deux marchés d’échelles très différentes et situe immédiatement une zone par rapport aux bornes.",
+        "notSay": "Être à 43 % ne rend rien plus probable. Ni « au milieu donc ça va choisir un bord », ni l’inverse : c’est un emplacement."
+      },
+      "align": {
+        "title": "Alignement multi-unités de temps",
+        "body": "**Ce que ça compte :** combien des unités de temps affichent **en ce moment** la même direction de structure. Quand elles divergent, MIA l’affiche tout autant : le désaccord est une information, pas un échec.\n\n**Ce que la convention SMC en fait :** beaucoup de traders traitent l’alignement comme un critère de **confluence** dans leur propre méthode.",
+        "notSay": "Qu’un alignement rende une entrée plus sûre, plus probable ou moins risquée. Personne ne peut le mesurer sur ton compte, ton horizon et ta gestion du risque. MIA décrit le fait — l’interprétation reste la tienne."
+      },
+      "mat": {
+        "title": "Maturité de la structure",
+        "body": "**Ce que ça compte :** le nombre de bougies clôturées sur l’unité de temps affichée depuis le **dernier CHOCH confirmé**. Le point de départ est toujours nommé avec sa date : dès qu’un compteur dépasse la journée, « 11:00 » tout seul devient ambigu.\n\nLe compteur repart à zéro au CHOCH suivant, jamais sur un BOS — un BOS prolonge la structure, il ne la redémarre pas.",
+        "notSay": "Une structure ancienne n’est ni plus ni moins susceptible de se poursuivre. Aucune probabilité n’est calculée, et aucune comparaison avec la durée des structures passées n’est faite — elle inviterait à conclure ce que personne ne sait."
+      },
+      "last": {
+        "title": "BOS et CHOCH",
+        "body": "**BOS** — cassure d’un extrême **dans le sens** de la structure en cours : elle la prolonge. **CHOCH** — première cassure **en sens inverse** : c’est le changement de caractère, et il sert d’ancrage à la maturité.\n\nDans les deux cas, MIA exige une **clôture** au-delà de l’extrême, pas une simple mèche. C’est ce qui distingue un niveau touché d’un niveau cédé.",
+        "notSay": "Un BOS ne dit pas que le mouvement continuera, un CHOCH ne dit pas que la tendance est terminée. Ce sont des faits datés, pas des annonces."
+      },
+      "dens": {
+        "title": "Densité de zones",
+        "body": "**Ce que ça compte :** les zones encore ouvertes détectées sur cette unité de temps, réparties par type et par état. Chaque zone n’est comptée qu’une fois, dans un seul état.\n\n**Comment le lire :** une densité élevée décrit un marché qui a laissé beaucoup de déséquilibres derrière lui ; une densité faible, un marché qui a déjà comblé les siens.",
+        "notSay": "Plus de zones ne veut pas dire plus d’occasions, et aucune n’est présentée comme meilleure. Rien n’indique laquelle sera atteinte, ni si elle le sera."
+      },
+      "sess": {
+        "title": "L’horaire du marché",
+        "body": "Des **plages horaires** publiées : l’ouverture hebdomadaire, la clôture, et pour l’or la pause de rollover quotidienne. Ce sont des faits de calendrier, pas des mesures de marché.\n\nMIA lit ces horaires depuis une **source unique** — la même qui décide si le marché est ouvert ou fermé, jamais une seconde définition. **Sur un marché continu** (crypto), il n’y a ni ouverture ni clôture hebdomadaire.",
+        "notSay": "Aucune session n’est présentée comme meilleure ou plus fiable. MIA ne dit pas ce que fera la clôture de New York."
+      },
+      "lvl": {
+        "title": "Des repères, pas des zones",
+        "body": "Ces niveaux ne sont pas **détectés** : ils existent parce que le temps passe. L’ouverture du jour est le prix d’ouverture de la bougie journalière en cours ; le plus haut de la veille est simplement l’extrême de la journée précédente.\n\nC’est la différence avec la tuile **Position dans le range**, qui utilise des bornes **structurelles**. Ici, les bornes sont **temporelles** : deux référentiels distincts, jamais les mêmes chiffres.\n\nChaque prix est cliquable : MIA trace le niveau sur le graphique et l’y amène. Dans l’approche ICT, ces repères sont souvent regardés avant tout le reste, parce qu’ils sont visibles par tout le monde de la même façon.",
+        "notSay": "Être sous l’ouverture du jour ne présage rien de la clôture. Un extrême de la veille n’est ni un support, ni une résistance, ni une cible : c’est un prix atteint hier, rien de plus."
+      }
+    }
+  },
+
   "_comment": "Locale SOURCE (FR). i18n Étape 1 (chrome) 2026-07-07 + Étape 2 (sections landing + bandeau cookies) 2026-07-08. Le namespace `landing` structuré remplace l'ancien bloc plat dormant. Rich text : <b>=strong, <i>=em, <link>=lien (href géré côté composant). Données démo (lectures d'exemple, scripts chatbot) NON incluses ici = couche data partagée, traitée à l'Étape 3 (surfaces produit).",
   "nav": {
     "brandHomeAria": "MIA Markets — retour à l'accueil",

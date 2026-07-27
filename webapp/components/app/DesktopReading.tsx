@@ -267,6 +267,8 @@ export function DesktopReading({
           regime={reading.regime}
           structure={reading.structure}
           header={header}
+          price={price}
+          marketStatus={serverStatus}
           openHelp={openHelp}
           onToggleHelp={onToggleHelp}
         />

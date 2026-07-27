@@ -1,4 +1,169 @@
 {
+  "regimePanel": {
+    "help": "Learn more",
+    "measureHelp": "Explain this measure",
+    "close": "Close",
+    "tabData": "Data",
+    "tabConcept": "Concept",
+    "unavailable": "not available",
+    "notSayLabel": "What it doesn't say",
+    "continuous": "Continuous market · 24/7",
+    "headerBadge": "{tf} · last close {time}",
+    "tiles": {
+      "phase": "Market phase",
+      "trend": "Trend",
+      "vol": "Volatility",
+      "pos": "Position in range",
+      "align": "Alignment",
+      "mat": "Maturity",
+      "last": "Last event",
+      "dens": "Density",
+      "sess": "Market hours",
+      "lvl": "Reference levels"
+    },
+    "sub": {
+      "phase": "derived from trend and volatility",
+      "trend": "measured on {tf}",
+      "vol": "last 7 candles vs the preceding",
+      "pos": "{low} – {high}",
+      "mat": "since the CHOCH of {date}",
+      "dens": "open on {tf}",
+      "lvl": "{count, plural, one {# marker} other {# markers}} · open the detail"
+    },
+    "value": {
+      "pos": "{pct} %",
+      "mat": "{count, plural, one {# candle} other {# candles}}",
+      "dens": "{ob} OB · {fvg} FVG",
+      "align": "{count}/{total} TF {arrow}"
+    },
+    "data": {
+      "phaseHead": "The two measures it is built from",
+      "trendRow": "Trend",
+      "volRow": "Volatility",
+      "ruleRow": "Rule applied",
+      "phaseNote": "The phase is fully recomposed from these two measures: no information is added, only summarised.",
+      "trendHead": "The rule, in plain terms",
+      "resultRow": "Result",
+      "measuredOnRow": "Measured on",
+      "trendNote": "The engine compares the net move (first → last close) to the window’s range, on {tf}. The intermediate values stay engine-side; the rule and its result are shown here.",
+      "volHead": "The calculation, in plain terms",
+      "volRecent": "Average range — last {n}",
+      "volBaseline": "Average range — preceding {n}",
+      "volRatio": "Ratio",
+      "volThresholds": "Thresholds",
+      "volThresholdsValue": "<{low} low · >{high} elevated",
+      "volNote": "The denominator is named: the comparison uses the {n} candles preceding the last 7, on the same timeframe.",
+      "posHead": "Where the price sits between the structural bounds",
+      "currentPrice": "Current price",
+      "distTop": "Distance to upper bound",
+      "distBottom": "Distance to lower bound",
+      "rangeSpan": "Bound span",
+      "barLow": "{v} · low",
+      "barHigh": "{v} · high",
+      "posNote": "These bounds are **structural**: the range extremes retained by the engine. Not to be confused with the reference levels, which are **temporal**.",
+      "alignHead": "The per-timeframe detail",
+      "alignNote": "The available timeframes and their structural direction. When one diverges, its line is highlighted here rather than hidden.",
+      "matHead": "The counter’s anchor",
+      "anchorEvent": "Anchor event",
+      "crossedLevel": "Level crossed",
+      "barsSince": "Candles closed since",
+      "elapsed": "Time elapsed",
+      "eventsSince": "Events since then",
+      "lastHead": "The most recent event",
+      "typeRow": "Type",
+      "crossedExtreme": "Extreme crossed",
+      "journal": "Event journal · {tf}",
+      "seeOnChart": "Show these events on the chart",
+      "densHead": "Zone inventory · {tf}",
+      "obActive": "Order Blocks — active",
+      "obTested": "Order Blocks — tested (unmitigated)",
+      "obMitigated": "Order Blocks — mitigated",
+      "fvgOpen": "FVG open — total",
+      "fvgUntouched": "— of which never touched",
+      "fvgPartial": "— of which partially filled",
+      "densNote": "Partially filled ones are **included** in the total of open FVGs. A fully filled FVG leaves the count (the engine no longer keeps it).",
+      "filterInStructure": "Filter these zones in Market structure",
+      "sessHead": "Hours · New York time",
+      "marketState": "Market state",
+      "marketLocalTime": "Market local time",
+      "weeklyClose": "Weekly close",
+      "weeklyCloseValue": "Fri 17:00",
+      "nextOpen": "Next open",
+      "lvlHead": "Temporal markers · current price {price}",
+      "dayOpen": "Day open",
+      "weekOpen": "Week open",
+      "prevDayHigh": "Previous day high",
+      "prevDayLow": "Previous day low",
+      "prevWeekHigh": "Previous week high",
+      "prevWeekLow": "Previous week low",
+      "lvlNote": "Click a price: the level is traced on the chart and brought into view. Click again to remove it."
+    },
+    "state": {
+      "open": "Market open",
+      "closed_weekend": "Closed — weekend",
+      "closed_holiday": "Closed — holiday",
+      "daily_break": "Daily break",
+      "data_lagged": "Data lagging"
+    },
+    "concept": {
+      "regime": {
+        "title": "Why there is no combined score",
+        "body": "Reducing ten measures to a single index would force a choice of which one matters most. That choice is an **opinion**, and a weighted opinion is still an opinion — even shown with two decimals.\n\nMIA therefore shows the ten measures side by side, each verifiable, and leaves the synthesis to whoever takes the risk.",
+        "notSay": "None of these measures, alone or combined, tells you what to do. They describe a present state and past facts."
+      },
+      "phase": {
+        "title": "What the phase describes",
+        "body": "The phase summarises **how** the price moves, not **where** it goes. The engine derives it from two measures already shown: the **trend** and the **volatility**. A clear trend in high volatility reads as an **expansion**; a clear trend in contained volatility, as a **trend**; a directionless market, as a **range** or **accumulation**.\n\nIt is a summary, not one more measure: it is fully recomposed from trend and volatility, and the Data tab shows which produced the label.",
+        "notSay": "Neither the duration of the phase, nor its remaining amplitude, nor when it will change. A phase can flip on the next candle."
+      },
+      "trend": {
+        "title": "How the trend is measured",
+        "body": "The engine compares the **first and last close** of the analysed window to the total **range** travelled over the same period. If the net move is a large enough share of the range, it returns **bullish** or **bearish** by direction; otherwise, **range**. It is a reading of **already-formed** structure, on the displayed timeframe.\n\n**Scale trap:** an M15 in range inside a bearish H1 is not a contradiction — they describe different spans. That is what the Alignment tile makes visible.",
+        "notSay": "A trend describes the recent past. It extends nothing and does not say when it will end. Nor does it measure the “strength” of the move — only its direction."
+      },
+      "vol": {
+        "title": "What volatility counts",
+        "body": "The **average range** (high − low) of the **last 7** candles, compared to that of **all the candles preceding them** in the window — never a fixed number. The denominator is therefore always named, and the Data tab shows the full calculation so it can be redone.\n\n**Why it matters in SMC:** volatility sets the **width** of zones. An OB formed in high volatility is wider, and so takes longer to cross. It is a dimension, not a quality.",
+        "notSay": "No direction. Low volatility precedes a rise no more than a fall."
+      },
+      "pos": {
+        "title": "A measure, nothing more",
+        "body": "The position expresses as a percentage where the price sits between the retained structural low and high. 0 % = lower bound, 100 % = upper bound.\n\nIt is a **coordinate**. It makes two markets of very different scales comparable and immediately locates a zone relative to the bounds.",
+        "notSay": "Being at 43 % makes nothing more likely. Neither “mid-range so it will pick a side” nor the reverse: it is a location."
+      },
+      "align": {
+        "title": "Multi-timeframe alignment",
+        "body": "**What it counts:** how many timeframes show **right now** the same structural direction. When they diverge, MIA shows it just as plainly: disagreement is information, not a failure.\n\n**What the SMC convention makes of it:** many traders treat alignment as a **confluence** criterion in their own method.",
+        "notSay": "That an alignment makes an entry safer, more likely or less risky. No one can measure that on your account, your horizon and your risk management. MIA describes the fact — the interpretation is yours."
+      },
+      "mat": {
+        "title": "Structure maturity",
+        "body": "**What it counts:** the number of candles closed on the displayed timeframe since the **last confirmed CHOCH**. The starting point is always named with its date: once a counter exceeds a day, “11:00” alone becomes ambiguous.\n\nThe counter resets at the next CHOCH, never on a BOS — a BOS extends the structure, it does not restart it.",
+        "notSay": "An old structure is neither more nor less likely to continue. No probability is computed, and no comparison with the duration of past structures is made — that would invite a conclusion no one holds."
+      },
+      "last": {
+        "title": "BOS and CHOCH",
+        "body": "**BOS** — a break of an extreme **in the direction** of the current structure: it extends it. **CHOCH** — the first break **in the opposite direction**: the change of character, and the anchor of maturity.\n\nIn both cases MIA requires a **close** beyond the extreme, not a mere wick. That is what separates a level touched from a level given up.",
+        "notSay": "A BOS does not say the move will continue, a CHOCH does not say the trend is over. They are dated facts, not announcements."
+      },
+      "dens": {
+        "title": "Zone density",
+        "body": "**What it counts:** the zones still open detected on this timeframe, split by type and by state. Each zone is counted once, in a single state.\n\n**How to read it:** high density describes a market that has left many imbalances behind; low density, a market that has already filled its own.",
+        "notSay": "More zones does not mean more opportunities, and none is presented as better. Nothing indicates which will be reached, nor whether it will be."
+      },
+      "sess": {
+        "title": "Market hours",
+        "body": "Published **time windows**: the weekly open, the close, and for gold the daily rollover break. These are calendar facts, not market measurements.\n\nMIA reads these hours from a **single source** — the same one that decides whether the market is open or closed, never a second definition. **On a continuous market** (crypto) there is no weekly open or close.",
+        "notSay": "No session is presented as better or more reliable. MIA does not say what the New York close will do."
+      },
+      "lvl": {
+        "title": "Markers, not zones",
+        "body": "These levels are not **detected**: they exist because time passes. The day open is the opening price of the current daily candle; the previous day high is simply the previous day’s extreme.\n\nThat is the difference with the **Position in range** tile, which uses **structural** bounds. Here the bounds are **temporal**: two distinct references, never the same figures.\n\nEach price is clickable: MIA traces the level on the chart and brings it into view. In the ICT approach these markers are often looked at before anything else, because everyone sees them the same way.",
+        "notSay": "Being below the day open foretells nothing about the close. A previous-day extreme is neither a support, nor a resistance, nor a target: it is a price reached yesterday, nothing more."
+      }
+    }
+  },
+
   "_comment": "TRADUÇÃO AUTOMÁTICA (landing+cookies 2026-07-08), revisão por nativo pendente",
   "nav": {
     "brandHomeAria": "MIA Markets — voltar ao início",
