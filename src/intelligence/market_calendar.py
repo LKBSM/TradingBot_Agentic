@@ -56,6 +56,38 @@ DATA_LAGGED_MIN_BARS_BEHIND = 5
 
 
 # --------------------------------------------------------------------------- #
+# Intraday sessions (reading convention, single source — here)
+# --------------------------------------------------------------------------- #
+@dataclass(frozen=True)
+class SessionWindow:
+    """A named intraday trading session, in the instrument's ``tz`` wall-clock.
+
+    ``end`` may be earlier than ``start`` when the window WRAPS past midnight
+    (the Asian session). Sessions are a **reading convention** — how traders
+    segment the global FX/metal day — not a market property; the concept text
+    says as much. They live HERE so there is a single source of session hours,
+    never a second one on the client.
+    """
+
+    name: str            # 'asia' | 'london' | 'new_york'
+    start: time
+    end: time
+
+
+# Global FX/metal session convention, America/New_York wall-clock. Anchored on
+# the two ranges the design reference pins — New York 08:00–17:00 and the
+# London∩NY overlap 08:00–11:30 (⇒ London closes 11:30) — with the standard ICT
+# windows consistent with that overlap. Source: common forex session hours in
+# Eastern Time (Tokyo 19:00–04:00, London 03:00–11:30, New York 08:00–17:00).
+# The London/NY overlap is DERIVED (intersection), never stored twice.
+_STANDARD_SESSIONS: tuple[SessionWindow, ...] = (
+    SessionWindow("asia", time(19, 0), time(4, 0)),      # wraps past midnight
+    SessionWindow("london", time(3, 0), time(11, 30)),
+    SessionWindow("new_york", time(8, 0), time(17, 0)),
+)
+
+
+# --------------------------------------------------------------------------- #
 # Per-instrument trading hours
 # --------------------------------------------------------------------------- #
 @dataclass(frozen=True)
@@ -68,6 +100,7 @@ class InstrumentHours:
     ``daily_break`` (start, end) applies Monday–Thursday only; on Friday the
     weekly close pre-empts it and on Sunday the later open pre-empts it.
     ``always_open`` short-circuits everything for 24/7 markets (crypto).
+    ``sessions`` = the intraday session windows (empty for a continuous market).
     """
 
     tz: str = "America/New_York"
@@ -77,6 +110,7 @@ class InstrumentHours:
     close_time: time = time(17, 0)
     daily_break: Optional[tuple[time, time]] = None
     always_open: bool = False
+    sessions: tuple[SessionWindow, ...] = _STANDARD_SESSIONS
 
 
 # Forex convention: Sunday 17:00 NY → Friday 17:00 NY, no daily break.
@@ -84,8 +118,8 @@ _FOREX_HOURS = InstrumentHours()
 # Spot-metal convention: Sunday 18:00 NY open, Friday 17:00 NY close, daily
 # rollover pause 17:00–18:00 NY.
 _METAL_HOURS = InstrumentHours(open_time=time(18, 0), daily_break=(time(17, 0), time(18, 0)))
-# Crypto: never closes.
-_CRYPTO_HOURS = InstrumentHours(always_open=True)
+# Crypto: never closes — and has no session découpage (continuous market).
+_CRYPTO_HOURS = InstrumentHours(always_open=True, sessions=())
 
 INSTRUMENT_HOURS: dict[str, InstrumentHours] = {
     "XAUUSD": _METAL_HOURS,
@@ -114,6 +148,13 @@ def hours_for(instrument: str) -> InstrumentHours:
     if _CRYPTO_RE.search(key):
         return _CRYPTO_HOURS
     return _FOREX_HOURS
+
+
+def sessions_for(instrument: str) -> tuple[SessionWindow, ...]:
+    """Intraday session windows for ``instrument`` (empty for a continuous
+    market). Read from the SAME per-instrument config as the trading hours —
+    never a second source."""
+    return hours_for(instrument).sessions
 
 
 # --------------------------------------------------------------------------- #
@@ -294,6 +335,7 @@ class MarketStatus:
                 return None
             return dt.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
 
+        hours = hours_for(self.instrument)
         return {
             "state": self.state,
             "reason": self.state,
@@ -302,6 +344,20 @@ class MarketStatus:
             "last_close_ts": _iso(self.last_close_ts),
             "next_open_ts": _iso(self.next_open_ts),
             "bars_behind": self.bars_behind,
+            # Session découpage (single source: this module's per-instrument
+            # config). The client computes the CURRENT session / next transition
+            # / overlap state live from these windows + the reader's clock — it
+            # never holds its own hours. Empty `sessions` ⇒ continuous market.
+            "continuous": hours.always_open,
+            "session_tz": hours.tz,
+            "sessions": [
+                {"name": s.name, "start": s.start.strftime("%H:%M"), "end": s.end.strftime("%H:%M")}
+                for s in hours.sessions
+            ],
+            "weekly_close": {
+                "weekday": hours.close_weekday,
+                "time": hours.close_time.strftime("%H:%M"),
+            },
         }
 
 
@@ -376,9 +432,11 @@ __all__ = [
     "InstrumentHours",
     "INSTRUMENT_HOURS",
     "MarketStatus",
+    "SessionWindow",
     "calendar_state",
     "compute_market_status",
     "hours_for",
+    "sessions_for",
     "market_aware_expected_close",
     "next_open",
     "reset_holiday_cache",

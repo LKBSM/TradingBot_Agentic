@@ -55,6 +55,34 @@ def test_crypto_never_closes():
 
 
 # --------------------------------------------------------------------------- #
+# Intraday sessions (single source) — exposed in the status payload
+# --------------------------------------------------------------------------- #
+def test_sessions_are_standard_for_fx_and_metal_but_empty_for_crypto():
+    fx = {s.name for s in mc.sessions_for("EURUSD")}
+    metal = {s.name for s in mc.sessions_for("XAUUSD")}
+    assert fx == {"asia", "london", "new_york"}
+    assert metal == {"asia", "london", "new_york"}
+    assert mc.sessions_for("BTCUSD") == ()
+
+
+def test_status_payload_carries_session_windows():
+    now = _ny(2026, 7, 22, 15, 0)  # Wednesday, market open
+    d = mc.compute_market_status("XAUUSD", "H1", now, now).to_dict()
+    assert d["continuous"] is False
+    assert d["session_tz"] == "America/New_York"
+    ny = next(s for s in d["sessions"] if s["name"] == "new_york")
+    assert (ny["start"], ny["end"]) == ("08:00", "17:00")
+    assert d["weekly_close"] == {"weekday": 4, "time": "17:00"}
+
+
+def test_status_payload_marks_crypto_continuous_with_no_sessions():
+    now = _ny(2026, 7, 22, 15, 0)
+    d = mc.compute_market_status("BTCUSD", "H1", now, now).to_dict()
+    assert d["continuous"] is True
+    assert d["sessions"] == []
+
+
+# --------------------------------------------------------------------------- #
 # DST: the 17:00 New-York boundary is 21:00 UTC in summer, 22:00 UTC in winter
 # --------------------------------------------------------------------------- #
 def test_dst_summer_boundary_is_21_utc():
