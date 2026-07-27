@@ -151,6 +151,30 @@ def test_rejects_unsupported_timeframe(tmp_path):
     assert "Unsupported timeframe" in resp.json()["detail"]
 
 
+def test_serves_daily_reference_series(tmp_path):
+    """D1/W1 are served (read-only reference series for the Régime panel's
+    calendar levels) — the 'day'/'week' boundary is the feed's own candle."""
+    app = FastAPI()
+    signal_store = SignalStore(db_path=str(tmp_path / "signals.db"))
+    candles_store = CandlesCacheStore(db_path=str(tmp_path / "candles.db"))
+    candles_store.upsert_candles(
+        "XAUUSD", "D1", [_candle(i, 2400.0 + i) for i in range(3)]
+    )
+    app.state.app_state = AppState(
+        signal_store=signal_store,
+        market_reading_assembler=_StubAssembler(candles_store),
+    )
+    app.include_router(candles_router)
+    client = TestClient(app)
+    resp = client.get(
+        "/api/candles", params={"instrument": "XAUUSD", "timeframe": "D1"}
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["timeframe"] == "D1"
+    assert len(body["candles"]) == 3
+
+
 def test_404_when_combo_has_no_cached_candles(tmp_path):
     # Valid combo (EURUSD/H4) but nothing seeded for it.
     client = TestClient(_make_app(tmp_path=tmp_path))
