@@ -13,9 +13,11 @@ import {
 } from '@/lib/zones/lifecycle';
 import type { BOSRecent, CHOCHRecent, MarketReadingStructure } from '@/types/market-reading';
 import { HelpContent } from './HelpContent';
+import { FilterChipGroup } from './FilterChipGroup';
+import { useMultiFilter } from '@/lib/market-reading/use-multi-filter';
 
-type TypeFilter = 'all' | 'ob' | 'fvg';
-type StateFilter = 'all' | 'active' | 'tested' | 'mitig';
+const TYPE_VALUES = ['ob', 'fvg'] as const;
+const STATE_VALUES = ['active', 'tested', 'mitig'] as const;
 type SortKey = 'near' | 'recent' | 'big';
 
 /**
@@ -94,8 +96,9 @@ export function StructureCard({
   const t = useTranslations('app.struct');
   const fmt = useReadingFormatters();
   const [sortOpen, setSortOpen] = React.useState(false);
-  const [type, setType] = React.useState<TypeFilter>('all');
-  const [state, setState] = React.useState<StateFilter>('all');
+  const typeFilter = useMultiFilter(TYPE_VALUES);
+  const stateFilter = useMultiFilter(STATE_VALUES);
+  const noneSelected = typeFilter.noneSelected || stateFilter.noneSelected;
   const [sort, setSort] = React.useState<SortKey>('near');
 
   // Price is read through a ref inside the ordering memo so a tick never
@@ -103,11 +106,16 @@ export function StructureCard({
   const priceRef = React.useRef(price);
   priceRef.current = price;
 
+  const allZones = React.useMemo(() => collectZones(structure), [structure]);
+
   const ordered = React.useMemo(() => {
-    const zones = collectZones(structure).filter(
+    // (OB ∪ FVG) ET (active ∪ testée ∪ mitigée). No selection in a group ⇒ zero
+    // rows — NEVER a silent fallback to "show all".
+    if (noneSelected) return [];
+    const zones = allZones.filter(
       (z) =>
-        (type === 'all' || z.kind === type) &&
-        (state === 'all' || zoneState3(z) === state),
+        typeFilter.selected.has(z.kind as (typeof TYPE_VALUES)[number]) &&
+        stateFilter.selected.has(zoneState3(z)),
     );
     const p = priceRef.current;
     const dist = (z: ZoneLifecycle) => {
@@ -126,7 +134,7 @@ export function StructureCard({
     return zones;
     // price excluded on purpose (see priceRef) — order is frozen between sorts.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [structure, type, state, sort]);
+  }, [allZones, typeFilter.selected, stateFilter.selected, sort, noneSelected]);
 
   const choch = latestBreak(structure.choch_events, structure.choch);
   const bos = latestBreak(structure.bos_events, structure.bos);
@@ -166,7 +174,7 @@ export function StructureCard({
         </svg>
         <h3>{t('title')}</h3>
         <span className="hsp" />
-        <span className="badge2">{t('zonesCount', { count: ordered.length })}</span>
+        <span className="badge2">{t('countFiltered', { n: ordered.length, m: allZones.length })}</span>
         <button
           type="button"
           className={cn('hbtn', helpOn && 'on')}
@@ -193,34 +201,25 @@ export function StructureCard({
       </div>
 
       <div className={cn('ctrlrow', sortOpen && 'on')}>
-        <div className="fsec">{t('filterType')}</div>
-        <div className="fgrp">
-          {(['all', 'ob', 'fvg'] as const).map((v) => (
-            <button
-              key={v}
-              type="button"
-              className={cn('fchip', type === v && 'on')}
-              aria-pressed={type === v}
-              onClick={() => setType(v)}
-            >
-              {t(`type.${v}`)}
-            </button>
-          ))}
-        </div>
-        <div className="fsec">{t('filterState')}</div>
-        <div className="fgrp">
-          {(['all', 'active', 'tested', 'mitig'] as const).map((v) => (
-            <button
-              key={v}
-              type="button"
-              className={cn('fchip', state === v && 'on')}
-              aria-pressed={state === v}
-              onClick={() => setState(v)}
-            >
-              {t(`st.${v}`)}
-            </button>
-          ))}
-        </div>
+        <FilterChipGroup
+          label={t('filterType')}
+          filter={typeFilter}
+          resetLabel={t('reset')}
+          options={[
+            { value: 'ob', label: t('type.ob') },
+            { value: 'fvg', label: t('type.fvg') },
+          ]}
+        />
+        <FilterChipGroup
+          label={t('filterState')}
+          filter={stateFilter}
+          resetLabel={t('reset')}
+          options={[
+            { value: 'active', label: t('st.active') },
+            { value: 'tested', label: t('st.tested') },
+            { value: 'mitig', label: t('st.mitig') },
+          ]}
+        />
         <div className="fsec">{t('filterSort')}</div>
         <div className="fgrp">
           {(['near', 'recent', 'big'] as const).map((v) => (
@@ -259,11 +258,15 @@ export function StructureCard({
       )}
 
       <div className="zlist">
-        {ordered.length === 0 ? (
+        {noneSelected ? (
           <div className="zempty">
-            {t('empty1')}
+            {typeFilter.noneSelected ? t('noneType') : t('noneState')}
+          </div>
+        ) : ordered.length === 0 ? (
+          <div className="zempty">
+            {t('noMatch1')}
             <br />
-            {t('empty2')}
+            {t('noMatch2')}
           </div>
         ) : (
           ordered.map((z) => {

@@ -10,9 +10,11 @@ import type {
   MarketReadingStructure,
 } from '@/types/market-reading';
 import { HelpContent } from './HelpContent';
+import { FilterChipGroup } from './FilterChipGroup';
+import { useMultiFilter } from '@/lib/market-reading/use-multi-filter';
 
-type SideFilter = 'all' | 'BSL' | 'SSL';
-type StateFilter = 'all' | 'intact' | 'swept' | 'broken';
+const SIDE_VALUES = ['BSL', 'SSL'] as const;
+const STATE_VALUES = ['intact', 'swept', 'broken'] as const;
 
 const LINE_CLASS: Record<LiquidityStatus, string> = {
   intact: 'lline',
@@ -62,8 +64,9 @@ export function LiquidityCard({
   const t = useTranslations('app.liq2');
   const fmt = useReadingFormatters();
   const [sortOpen, setSortOpen] = React.useState(false);
-  const [side, setSide] = React.useState<SideFilter>('all');
-  const [state, setState] = React.useState<StateFilter>('all');
+  const sideFilter = useMultiFilter(SIDE_VALUES);
+  const stateFilter = useMultiFilter(STATE_VALUES);
+  const noneSelected = sideFilter.noneSelected || stateFilter.noneSelected;
 
   const pools = React.useMemo(() => structure.liquidity_pools ?? [], [structure]);
 
@@ -71,10 +74,13 @@ export function LiquidityCard({
   priceRef.current = price;
 
   const ordered = React.useMemo(() => {
+    // (BSL ∪ SSL) ET (intacte ∪ balayée ∪ cassée). No selection in a group ⇒
+    // zero rows — NEVER a silent fallback to "show all".
+    if (noneSelected) return [];
     const list = pools.filter(
       (l) =>
-        (side === 'all' || l.side.toUpperCase() === side) &&
-        (state === 'all' || l.status === state),
+        sideFilter.selected.has(l.side.toUpperCase() as (typeof SIDE_VALUES)[number]) &&
+        stateFilter.selected.has(l.status),
     );
     const p = priceRef.current;
     if (p != null && Number.isFinite(p)) {
@@ -83,7 +89,7 @@ export function LiquidityCard({
     return list;
     // price excluded (priceRef) — order frozen between filter changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pools, side, state]);
+  }, [pools, sideFilter.selected, stateFilter.selected, noneSelected]);
 
   function distNode(level: number): React.ReactNode {
     if (price == null || !Number.isFinite(price)) return null;
@@ -102,7 +108,7 @@ export function LiquidityCard({
         </svg>
         <h3>{t('title')}</h3>
         <span className="hsp" />
-        <span className="badge2">{t('pochesCount', { count: ordered.length })}</span>
+        <span className="badge2">{t('countFiltered', { n: ordered.length, m: pools.length })}</span>
         <button
           type="button"
           className={cn('hbtn', helpOn && 'on')}
@@ -129,42 +135,37 @@ export function LiquidityCard({
       </div>
 
       <div className={cn('ctrlrow', sortOpen && 'on')}>
-        <div className="fsec">{t('filterSide')}</div>
-        <div className="fgrp">
-          {(['all', 'BSL', 'SSL'] as const).map((v) => (
-            <button
-              key={v}
-              type="button"
-              className={cn('fchip', side === v && 'on')}
-              aria-pressed={side === v}
-              onClick={() => setSide(v)}
-            >
-              {t(`side.${v === 'all' ? 'all' : v === 'BSL' ? 'bsl' : 'ssl'}`)}
-            </button>
-          ))}
-        </div>
-        <div className="fsec">{t('filterState')}</div>
-        <div className="fgrp">
-          {(['all', 'intact', 'swept', 'broken'] as const).map((v) => (
-            <button
-              key={v}
-              type="button"
-              className={cn('fchip', state === v && 'on')}
-              aria-pressed={state === v}
-              onClick={() => setState(v)}
-            >
-              {t(`st.${v}`)}
-            </button>
-          ))}
-        </div>
+        <FilterChipGroup
+          label={t('filterSide')}
+          filter={sideFilter}
+          resetLabel={t('reset')}
+          options={[
+            { value: 'BSL', label: t('side.bsl') },
+            { value: 'SSL', label: t('side.ssl') },
+          ]}
+        />
+        <FilterChipGroup
+          label={t('filterState')}
+          filter={stateFilter}
+          resetLabel={t('reset')}
+          options={[
+            { value: 'intact', label: t('st.intact') },
+            { value: 'swept', label: t('st.swept') },
+            { value: 'broken', label: t('st.broken') },
+          ]}
+        />
       </div>
 
       <div className="zlist">
-        {ordered.length === 0 ? (
+        {noneSelected ? (
           <div className="zempty">
-            {t('empty1')}
+            {sideFilter.noneSelected ? t('noneSide') : t('noneState')}
+          </div>
+        ) : ordered.length === 0 ? (
+          <div className="zempty">
+            {t('noMatch1')}
             <br />
-            {t('empty2')}
+            {t('noMatch2')}
           </div>
         ) : (
           ordered.map((l) => {

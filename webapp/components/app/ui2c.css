@@ -158,6 +158,28 @@
   border-color: color-mix(in srgb, var(--acc) 40%, transparent);
   color: var(--acc);
 }
+/* Active state must NOT be signalled by colour alone (UI-3a a11y): a check glyph
+   marks a selected multi-filter chip in addition to the accent styling. */
+.app-shell .fchip.on::before {
+  content: '✓';
+  margin-inline-end: 4px;
+  font-weight: 700;
+}
+/* « Réinitialiser » is an ACTION (re-selects the whole group), not a toggle —
+   distinct from selectable chips: dashed outline, no check, muted until hover. */
+.app-shell .fchip.freset {
+  border-style: dashed;
+  border-color: var(--line-3);
+  color: var(--dim);
+  background: transparent;
+}
+.app-shell .fchip.freset:hover {
+  border-color: var(--acc);
+  color: var(--acc);
+}
+.app-shell .fchip.freset::before {
+  content: none;
+}
 
 /* ── Listes zones / liquidité (scroll à hauteur fixe) ──────────────────── */
 .app-shell .zlist {

@@ -1,16 +1,10 @@
 'use client';
 
 import { useRef } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { Check, Globe } from 'lucide-react';
-import {
-  DEFAULT_LOCALE,
-  LOCALE_LABELS,
-  SUPPORTED_LOCALES,
-  isSupportedLocale,
-  type Locale,
-} from '@/i18n';
+import { LOCALE_LABELS, SUPPORTED_LOCALES, type Locale } from '@/i18n';
+import { useLocaleSwitch } from '@/lib/i18n/use-locale-switch';
 import { cn } from '@/lib/utils';
 
 /**
@@ -27,28 +21,15 @@ import { cn } from '@/lib/utils';
  *   3. navigates there.
  */
 export function LocaleToggle() {
-  const router = useRouter();
-  const pathname = usePathname() ?? '/';
   const active = useLocale() as Locale;
   const t = useTranslations('nav');
   const detailsRef = useRef<HTMLDetailsElement>(null);
-
-  // Strip a leading locale segment (if any) to get the locale-agnostic path.
-  const segments = pathname.split('/').filter(Boolean);
-  const first = segments[0];
-  const basePath =
-    first && isSupportedLocale(first) ? '/' + segments.slice(1).join('/') : pathname;
+  const switchLocale = useLocaleSwitch();
 
   function selectLocale(locale: Locale) {
     // Close the disclosure immediately for snappy feedback.
     detailsRef.current?.removeAttribute('open');
-
-    // 1 year, root path — matches next-intl's own cookie lifetime.
-    document.cookie = `NEXT_LOCALE=${locale}; path=/; max-age=31536000; samesite=lax`;
-
-    const clean = basePath === '' ? '/' : basePath;
-    const target = locale === DEFAULT_LOCALE ? clean : `/${locale}${clean === '/' ? '' : clean}`;
-    router.push(target);
+    switchLocale(locale);
   }
 
   return (

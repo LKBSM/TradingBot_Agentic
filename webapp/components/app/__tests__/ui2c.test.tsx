@@ -118,17 +118,19 @@ describe('UI-2c — Structure card list', () => {
     expect(rows(container)).toHaveLength(3);
   });
 
-  it('an empty filter shows the honest message and no rows', () => {
+  it('a filter matching nothing shows the honest "no match" message and no rows', () => {
     const { container } = renderStructure();
-    // Open the sort/filter panel, then keep only FVG + Actives (fvg1 is
-    // partially_filled → "tested", so this filter matches nothing).
+    // Open the panel, then narrow to type={FVG}, state={active}: fvg1 is
+    // partially_filled → "tested", so this multi-select combination matches
+    // nothing (chips ARE selected, so it's a no-match, not a no-selection).
     fireEvent.click(screen.getByRole('button', { name: fr.app.struct.sortAria }));
-    fireEvent.click(screen.getByRole('button', { name: fr.app.struct.type.fvg }));
-    fireEvent.click(screen.getByRole('button', { name: fr.app.struct.st.active }));
+    fireEvent.click(screen.getByRole('button', { name: fr.app.struct.type.ob })); // type → {fvg}
+    fireEvent.click(screen.getByRole('button', { name: fr.app.struct.st.tested })); // state → {active, mitig}
+    fireEvent.click(screen.getByRole('button', { name: fr.app.struct.st.mitig })); // state → {active}
     expect(rows(container)).toHaveLength(0);
     const empty = container.querySelector('.zempty')?.textContent ?? '';
-    expect(empty).toContain(fr.app.struct.empty1);
-    expect(empty).toContain(fr.app.struct.empty2);
+    expect(empty).toContain(fr.app.struct.noMatch1);
+    expect(empty).toContain(fr.app.struct.noMatch2);
   });
 
   it('a price tick updates the distances WITHOUT reordering the list', () => {
