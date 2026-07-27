@@ -128,4 +128,31 @@ Position (bornes = pools externes) ; Niveaux (façade 2 repères + panneau 6 pri
 format date long « 24 juil. à 09:45 » (fr/en) ; règle impair→pleine largeur ; vérifier bloc « ne dit
 pas » partout ; i18n fr+en ; ordre/écarts vs v11. **Il me faut `mia-markets-reference-v11.html`.**
 
-*(Phase 1 close ; backend décidé livré ; frontend en attente de v11.)*
+## IMPLÉMENTATION FRONTEND (faite — v11 posée dans reference-desktop.html)
+- **Phase → SUPPRIMÉE** de la grille (jamais rendue). Grille passe à **9 tuiles** → règle
+  **impair → dernière pleine largeur** active.
+- **Volatilité** : sous-ligne « 7 dernières vs 20 précédentes » (vraies valeurs `volatility_detail`) ;
+  Donnée = calcul complet (moyennes, rapport, seuils) déjà présent.
+- **Position** : `structureRange` retombe sur les pools **externes** (plus haut BSL / plus bas SSL)
+  quand `range_high`/`range_low` ne sont pas émis → la tuile s'affiche de façon robuste.
+- **Niveaux de référence** : inchangée côté front (façade 2 repères veille + panneau 6 prix cliquables →
+  tracé via le canal séparé) ; s'affiche dès que D1/W1 sont peuplés (backend à la demande, live).
+- **Date longue localisée** : `formatLocalDayLong` → « 24 juil. à 09:45 » (fr) / « Jul 24 at 09:45 » (en) ;
+  utilisée par le panneau (maturité, dernier événement, journal). Le chart garde son format numérique.
+- **Session** : sous-ligne + heure locale « … · 15:20 NY » (conforme v11).
+- **Concept** : bloc « ce que ça ne dit pas » présent sur les 9 mesures + le « ? » global ; global
+  reformulé « neuf mesures ».
+
+## ÉCARTS ASSUMÉS vs la maquette v11 (à l'écran)
+1. **Tuile Phase absente** alors que v11 la montre (« Expansion · depuis le CHOCH ») — le moteur n'a
+   PAS de phase fondée sur les bornes ; règle A → supprimée, pas dérivée. Réactivable par un ajout moteur.
+2. **Tendance — Concept & Donnée** : v11 décrit « la succession des sommets et creux » ; le moteur lit la
+   tendance par **déplacement close-à-close vs amplitude** (`_derive_trend`). On garde la formulation
+   HONNÊTE (décision RG-1 « vérité moteur »), pas le récit swings de v11. Donnée = règle + résultat, pas
+   un tableau de swings (non exposés).
+3. **Niveaux de référence** : n'apparaît qu'en live (D1/W1 peuplés à la demande) ; absente en e2e/mock
+   sans backend feed. Fuseau = bougie D1/W1 du flux.
+4. **Position** : bornes = extrêmes structurels des pools externes (pas un champ « dernier sommet/creux »
+   dédié, inexistant côté moteur).
+
+*(Phase 1 + 2 livrées ; MERGE après confirmation live.)*

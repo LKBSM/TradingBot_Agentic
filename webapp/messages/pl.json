@@ -24,7 +24,7 @@
     "sub": {
       "phase": "derived from trend and volatility",
       "trend": "measured on {tf}",
-      "vol": "last 7 candles vs the preceding",
+      "vol": "{recent} recent vs {baseline} preceding",
       "pos": "{low} – {high}",
       "mat": "since the CHOCH of {date}",
       "dens": "open on {tf}",
@@ -117,7 +117,7 @@
     "concept": {
       "regime": {
         "title": "Why there is no combined score",
-        "body": "Reducing ten measures to a single index would force a choice of which one matters most. That choice is an **opinion**, and a weighted opinion is still an opinion — even shown with two decimals.\n\nMIA therefore shows the ten measures side by side, each verifiable, and leaves the synthesis to whoever takes the risk.",
+        "body": "Reducing nine measures to a single index would force a choice of which one matters most. That choice is an **opinion**, and a weighted opinion is still an opinion — even shown with two decimals.\n\nMIA therefore shows the nine measures side by side, each verifiable, and leaves the synthesis to whoever takes the risk.",
         "notSay": "None of these measures, alone or combined, tells you what to do. They describe a present state and past facts."
       },
       "phase": {

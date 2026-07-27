@@ -125,12 +125,21 @@ function RefProbe() {
 }
 
 describe('RG-1 — RegimeCard tiles', () => {
+  it('never renders the Phase tile (no engine bornes-phase → suppressed, not derived)', () => {
+    render(<Harness structure={FULL_STRUCT} marketStatus={OPEN_STATUS} />);
+    // Phase is gone even with full data — it was only a derivation of trend+vol.
+    expect(screen.queryByText('Phase de marché')).toBeNull();
+    // The neighbouring real measures remain.
+    expect(screen.getByText('Tendance')).toBeInTheDocument();
+    expect(screen.getByText('Volatilité')).toBeInTheDocument();
+  });
+
   it('drops a measure with no engine datum (no tile, no « N/A », no 0)', () => {
     render(<Harness structure={MINIMAL_STRUCT} marketStatus={null} />);
     // Present (always have data):
-    expect(screen.getByText('Phase de marché')).toBeInTheDocument();
+    expect(screen.getByText('Tendance')).toBeInTheDocument();
     expect(screen.getByText('Densité')).toBeInTheDocument();
-    // Absent (no datum): maturity, last event, position, session, levels.
+    // Absent (no datum): maturity, last event, position, session.
     expect(screen.queryByText('Maturité')).toBeNull();
     expect(screen.queryByText('Dernier événement')).toBeNull();
     expect(screen.queryByText('Position dans le range')).toBeNull();
@@ -140,14 +149,30 @@ describe('RG-1 — RegimeCard tiles', () => {
   });
 
   it('when the tile count is odd, the last tile spans the full width', async () => {
-    // marketStatus null drops Session; candles resolve → Levels present.
-    const { container } = render(<Harness structure={FULL_STRUCT} marketStatus={null} />);
+    // Full data + session present → 9 tiles (Phase removed) = odd → last full-width.
+    const { container } = render(<Harness structure={FULL_STRUCT} marketStatus={OPEN_STATUS} />);
     await waitFor(() => expect(screen.getByText('Niveaux de référence')).toBeInTheDocument());
     const tiles = Array.from(container.querySelectorAll('.tile'));
     expect(tiles.length % 2).toBe(1); // odd
     expect(tiles[tiles.length - 1]!.classList.contains('span2')).toBe(true);
     // and no earlier tile is full-width
     for (const t of tiles.slice(0, -1)) expect(t.classList.contains('span2')).toBe(false);
+  });
+
+  it('names the volatility denominator on the sub-line (« 7 dernières vs 20 précédentes »)', () => {
+    const { container } = render(<Harness structure={FULL_STRUCT} marketStatus={OPEN_STATUS} />);
+    const volTile = screen.getByText('Volatilité').closest('.tile') as HTMLElement;
+    const sub = volTile.querySelector('.sub')?.textContent ?? '';
+    expect(sub).toContain('7');
+    expect(sub).toContain('20'); // the reference-window size is NAMED
+  });
+
+  it('formats dates long and localized (« 26 juil. à … », not « 26/07 »)', () => {
+    render(<Harness structure={FULL_STRUCT} marketStatus={OPEN_STATUS} />);
+    const matTile = screen.getByText('Maturité').closest('.tile') as HTMLElement;
+    const sub = matTile.querySelector('.sub')?.textContent ?? '';
+    expect(sub).toMatch(/juil\.|juill/); // localized short month, not a "/" numeric date
+    expect(sub).not.toMatch(/\d{2}\/\d{2}/);
   });
 
   it('opens Donnée from the tile and Concept from the « ? » (one panel at a time)', () => {

@@ -7,7 +7,7 @@ import { useReadingFormatters } from '@/lib/market-reading/use-reading-formatter
 import { useMtfTrends } from '@/lib/market-reading/hooks';
 import { MTF_TREND_ORDER } from '@/lib/market-reading/mtf-trend';
 import { deriveTrendMaturity } from '@/lib/market-reading/regime-facts';
-import { formatBreakTimestamp } from '@/lib/market-reading/regime-facts';
+import { formatLocalDayLong, parseUtc } from '@/lib/time/localTime';
 import { fetchCandles } from '@/lib/market-reading/api-client';
 import {
   structureRange,
@@ -165,7 +165,12 @@ export function RegimeCard({
     : null;
 
   const px = (v: number) => fmt.price(v, instrument);
-  const dayHm = (iso: string) => formatBreakTimestamp(iso) ?? '';
+  // Long, localized date — « 24 juil. à 09:45 » (fr) / « Jul 24 at 09:45 » (en),
+  // never the ambiguous numeric « 24/07 ».
+  const dayHm = (iso: string) => {
+    const d = parseUtc(iso);
+    return d ? formatLocalDayLong(d, locale) : '';
+  };
 
   // ── Derived facts (all read-only over engine output) ────────────────────────
   const maturity = deriveTrendMaturity(structure, header);
@@ -237,8 +242,14 @@ export function RegimeCard({
     return t('delay.m', { m });
   };
   const sessionSub = (s: SessionInfo): string | null => {
-    if (s.next) return t('sub.sess', { label: transitionName(s.next.label), delay: fmtDelay(s.next.inMinutes) });
-    return null;
+    const localPart = s.localTime ? ` · ${s.localTime} NY` : '';
+    if (s.next) {
+      return (
+        t('sub.sess', { label: transitionName(s.next.label), delay: fmtDelay(s.next.inMinutes) }) +
+        localPart
+      );
+    }
+    return s.localTime ? `${s.localTime} NY` : null;
   };
 
   // Reference-level rows (measure 10), each present only if computable.
@@ -260,13 +271,10 @@ export function RegimeCard({
 
   // ── Tile facades ────────────────────────────────────────────────────────────
   const tiles: Tile[] = [
-    {
-      key: 'phase',
-      label: t('tiles.phase'),
-      value: fmt.marketPhaseShort(regime.market_phase),
-      sub: t('sub.phase'),
-      available: true,
-    },
+    // Phase de marché — SUPPRIMÉE (RG-1b) : le moteur n'expose aucune phase
+    // fondée sur le franchissement des bornes de structure ; `market_phase` n'est
+    // qu'une dérivation de la tendance + volatilité (déjà deux tuiles). Pas de
+    // donnée réelle → pas de tuile (jamais une dérivation). Ajout moteur possible.
     {
       key: 'trend',
       label: t('tiles.trend'),
@@ -278,7 +286,9 @@ export function RegimeCard({
       key: 'vol',
       label: t('tiles.vol'),
       value: fmt.volatility(regime.volatility_observed).label,
-      sub: t('sub.vol'),
+      // Names the real denominator (« 7 dernières vs 20 précédentes ») from the
+      // engine's volatility_detail — a measure without its denominator is unverifiable.
+      sub: t('sub.vol', { recent: vd?.recent_n ?? 7, baseline: vd?.baseline_n ?? 20 }),
       available: true,
     },
     {

@@ -1004,7 +1004,7 @@ body[data-page="reglages"] #cv-reglages{display:block}
     {k:'mat',   lbl:'Maturit\u00e9', v:'7 bougies', mono:1, sub:'depuis le CHOCH du 26 juil. 11:00'},
     {k:'last',  lbl:'Dernier \u00e9v\u00e9nement', v:'BOS \u2193', sub:'aujourd\u2019hui 14:00'},
     {k:'dens',  lbl:'Densit\u00e9', v:'3 OB \u00b7 7 FVG', mono:1, sub:'ouverts sur H1'},
-    {k:'sess',  lbl:'Session', v:'New York', sub:'cl\u00f4ture dans 1 h 40'},
+    {k:'sess',  lbl:'Session', v:'New York', sub:'cl\u00f4ture dans 1 h 40 \u00b7 15:20 NY'},
     {k:'lvl',   lbl:'Niveaux de r\u00e9f\u00e9rence',
      html:'<div class="lvlmini"><span>Haut de la veille</span><b>2 421,20</b></div>'
          +'<div class="lvlmini"><span>Bas de la veille</span><b>2 376,20</b></div>',
@@ -1067,12 +1067,15 @@ body[data-page="reglages"] #cv-reglages{display:block}
       +'<div class="ev-r"><span class="ev-k">\u00c9v\u00e9nement d\u2019ancrage</span><span class="ev-v">CHOCH \u2193</span><span class="ev-t">26 juil. 11:00</span></div>'
       +'<div class="ev-r"><span class="ev-k">Niveau franchi</span><span class="ev-v">2 396,80</span></div>'
       +'<div class="ev-r"><span class="ev-k">Bougies cl\u00f4tur\u00e9es depuis</span><span class="ev-v">7</span><span class="ev-t">H1</span></div>'
-      +'<div class="ev-r"><span class="ev-k">Temps \u00e9coul\u00e9</span><span class="ev-v">7 h 00</span></div></div>'
+      +'<div class="ev-r"><span class="ev-k">Prix au moment de l\u2019ancrage</span><span class="ev-v">2 396,80</span></div>'
+      +'<div class="ev-r"><span class="ev-k">Variation depuis l\u2019ancrage</span><span class="ev-v">\u2212 4,45 $</span><span class="ev-t">\u2212 0,19 %</span></div>'
+      +'<div class="ev-r"><span class="ev-k">Amplitude parcourue depuis</span><span class="ev-v">22,70 $</span><span class="ev-t">plus haut 2 407,90 \u00b7 plus bas 2 385,20</span></div></div>'
       +'<div class="dh4 mt">\u00c9v\u00e9nements survenus depuis</div><div class="ev">'
       +'<div class="ev-r"><span class="ev-k">BOS \u2193</span><span class="ev-v">2 389,60</span><span class="ev-t">auj. 14:00</span></div></div>',
       concept:'<div class="dh4">Maturit\u00e9 de la structure</div>'
       +'<p class="dp"><b>Ce que \u00e7a compte :</b> le nombre de bougies cl\u00f4tur\u00e9es sur l\u2019unit\u00e9 de temps affich\u00e9e depuis le <b>dernier CHOCH confirm\u00e9</b>. Le point de d\u00e9part est toujours nomm\u00e9 avec sa date : d\u00e8s qu\u2019un compteur d\u00e9passe la journ\u00e9e, \u00ab 11:00 \u00bb tout seul devient ambigu.</p>'
       +'<p class="dp">Le compteur repart \u00e0 z\u00e9ro au CHOCH suivant, jamais sur un BOS \u2014 un BOS prolonge la structure, il ne la red\u00e9marre pas.</p>'
+      +'<p class="dp">Le panneau montre aussi <b>l\u2019amplitude</b> parcourue depuis l\u2019ancrage. Dur\u00e9e et amplitude sont deux dimensions distinctes : deux structures de m\u00eame \u00e2ge peuvent avoir parcouru des chemins tr\u00e8s diff\u00e9rents.</p>'
       +'<div class="notsay"><div class="nt">Ce que \u00e7a ne dit pas</div><p>Une structure ancienne n\u2019est ni plus ni moins susceptible de se poursuivre. Aucune probabilit\u00e9 n\u2019est calcul\u00e9e, et aucune comparaison avec la dur\u00e9e des structures pass\u00e9es n\u2019est faite \u2014 elle inviterait \u00e0 conclure ce que personne ne sait.</p></div>'},
     last:{data:'<div class="dh4">L\u2019\u00e9v\u00e9nement le plus r\u00e9cent</div><div class="ev">'
       +'<div class="ev-r"><span class="ev-k">Type</span><span class="ev-v">BOS \u2193</span></div>'
@@ -1103,15 +1106,22 @@ body[data-page="reglages"] #cv-reglages{display:block}
       +'<p class="dp"><b>Ce que \u00e7a compte :</b> les zones encore ouvertes d\u00e9tect\u00e9es sur cette unit\u00e9 de temps, r\u00e9parties par type et par \u00e9tat. Chaque zone n\u2019est compt\u00e9e qu\u2019une fois, dans un seul \u00e9tat.</p>'
       +'<p class="dp"><b>Comment le lire :</b> une densit\u00e9 \u00e9lev\u00e9e d\u00e9crit un march\u00e9 qui a laiss\u00e9 beaucoup de d\u00e9s\u00e9quilibres derri\u00e8re lui ; une densit\u00e9 faible, un march\u00e9 qui a d\u00e9j\u00e0 combl\u00e9 les siens.</p>'
       +'<div class="notsay"><div class="nt">Ce que \u00e7a ne dit pas</div><p>Plus de zones ne veut pas dire plus d\u2019occasions, et aucune n\u2019est pr\u00e9sent\u00e9e comme meilleure. Rien n\u2019indique laquelle sera atteinte, ni si elle le sera.</p></div>'},
-    sess:{data:'<div class="dh4">Horaires \u00b7 heure de New York</div><div class="ev">'
-      +'<div class="ev-r"><span class="ev-k">Session en cours</span><span class="ev-v">New York</span><span class="ev-t">08:00 \u2013 17:00</span></div>'
+    sess:{data:'<div class="dh4">Sessions \u00b7 heure de New York</div><div class="ev">'
+      +'<div class="ev-r"><span class="ev-k">Session en cours</span><span class="ev-t">08:00 \u2013 17:00</span><span class="ev-v">New York</span></div>'
       +'<div class="ev-r"><span class="ev-k">Heure locale du march\u00e9</span><span class="ev-v">15:20</span></div>'
-      +'<div class="ev-r"><span class="ev-k">Cl\u00f4ture de la session</span><span class="ev-v">17:00</span><span class="ev-t">dans 1 h 40</span></div>'
-      +'<div class="ev-r"><span class="ev-k">Chevauchement Londres / NY</span><span class="ev-v">08:00 \u2013 11:30</span><span class="ev-t">termin\u00e9</span></div>'
-      +'<div class="ev-r"><span class="ev-k">Fermeture hebdomadaire</span><span class="ev-v">ven. 17:00</span></div></div>',
+      +'<div class="ev-r"><span class="ev-k">Prochaine transition</span><span class="ev-t">dans 1 h 40</span><span class="ev-v">cl\u00f4ture 17:00</span></div>'
+      +'</div>'
+      +'<div class="dh4 mt">D\u00e9coupage de la journ\u00e9e</div><div class="ev">'
+      +'<div class="tfline"><span class="tf">Asie</span><span class="st">19:00 \u2013 04:00</span><span class="chip">termin\u00e9e</span></div>'
+      +'<div class="tfline"><span class="tf">Lon.</span><span class="st">03:00 \u2013 11:30</span><span class="chip">termin\u00e9e</span></div>'
+      +'<div class="tfline dis"><span class="tf">N.Y.</span><span class="st">08:00 \u2013 17:00</span><span class="chip a">en cours</span></div>'
+      +'<div class="tfline"><span class="tf">Chev.</span><span class="st">Londres / New York \u00b7 08:00 \u2013 11:30</span><span class="chip">termin\u00e9</span></div>'
+      +'</div>'
+      +'<p class="dp">\u00c9v\u00e9nements de structure survenus pendant la session en cours : <b>1</b> (BOS \u2193 \u00e0 14:00). Pendant Londres : <b>1</b> (CHOCH \u2193 \u00e0 11:00).</p>',
       concept:'<div class="dh4">Les sessions</div>'
       +'<p class="dp">Des <b>plages horaires</b>, au m\u00eame titre que le calendrier de volatilit\u00e9 : des faits publi\u00e9s, pas des mesures de march\u00e9.</p>'
-      +'<p class="dp">Beaucoup de traders SMC segmentent leur lecture par session plut\u00f4t que de traiter la journ\u00e9e comme un bloc. La tuile sert \u00e0 situer les \u00e9v\u00e9nements du journal dans cette d\u00e9coupe.</p>'
+      +'<p class="dp">Beaucoup de traders SMC segmentent leur lecture par session plut\u00f4t que de traiter la journ\u00e9e comme un bloc. La tuile sert \u00e0 situer les \u00e9v\u00e9nements du journal dans cette d\u00e9coupe \u2014 d\u2019o\u00f9 le compte des \u00e9v\u00e9nements par session.</p>'
+      +'<p class="dp">L\u2019<b>\u00e9tat du march\u00e9</b> (ouvert, pause, ferm\u00e9) n\u2019est pas r\u00e9p\u00e9t\u00e9 ici : il est affich\u00e9 dans l\u2019en-t\u00eate. Aucune valeur n\u2019existe \u00e0 deux endroits du produit.</p>'
       +'<p class="dp"><b>Sur un march\u00e9 continu</b> (crypto), la tuile affiche \u00ab March\u00e9 continu \u00b7 24/7 \u00bb : il n\u2019y a ni ouverture ni cl\u00f4ture hebdomadaire. D\u00e9couper la journ\u00e9e en heures Asie / Europe / Am\u00e9rique reste alors une convention de lecture, pas une propri\u00e9t\u00e9 du march\u00e9.</p>'
       +'<div class="notsay"><div class="nt">Ce que \u00e7a ne dit pas</div><p>Aucune session n\u2019est pr\u00e9sent\u00e9e comme meilleure ou plus fiable. MIA ne dit pas ce que fera la cl\u00f4ture de New York.</p></div>'},
     lvl:{data:'<div class="dh4">Rep\u00e8res temporels \u00b7 prix courant 2 392,35</div><div class="ev">'
