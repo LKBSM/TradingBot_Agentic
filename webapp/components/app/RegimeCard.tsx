@@ -17,7 +17,14 @@ import {
   type ReferenceLevels,
 } from '@/lib/market-reading/reference-levels';
 import { useChartViewOptional } from '@/lib/chart/viewState';
-import type { MarketStatusView } from '@/lib/market-reading/status';
+import {
+  computeSession,
+  splitDelay,
+  formatWeeklyClose,
+  type SessionInfo,
+  type SessionName,
+  type TransitionLabel,
+} from '@/lib/market-reading/sessions';
 import type {
   BOSRecent,
   CHOCHRecent,
@@ -25,6 +32,7 @@ import type {
   MarketReadingHeader,
   MarketReadingRegime,
   MarketReadingStructure,
+  MarketStatusPayload,
 } from '@/types/market-reading';
 import './regime-tiles.css';
 
@@ -106,7 +114,8 @@ interface RegimeCardProps {
   structure: MarketReadingStructure;
   header: MarketReadingHeader;
   price: number;
-  marketStatus: MarketStatusView | null;
+  /** Raw server market status — carries the session windows (single source). */
+  marketStatus: MarketStatusPayload | null;
   openHelp: string | null;
   onToggleHelp: (key: string) => void;
 }
@@ -211,19 +220,26 @@ export function RegimeCard({
 
   const vd = regime.volatility_detail;
 
-  // Market hours (re-scoped Session → MC-1). New York wall-clock snapshot.
-  const nyTime = React.useMemo(() => {
-    try {
-      return new Intl.DateTimeFormat(locale, {
-        timeZone: 'America/New_York',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      }).format(new Date());
-    } catch {
-      return null;
-    }
-  }, [locale, price]); // re-snapshot on tick
+  // Session — current session / next transition / overlap, computed live from
+  // the server's session windows (single source: MC-1). Re-snapshot on tick.
+  const session = React.useMemo(
+    () => computeSession(marketStatus, new Date()),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [marketStatus, price],
+  );
+
+  const sessionName = (name: SessionName): string => t(`session.${name}`);
+  const transitionName = (label: TransitionLabel): string => t(`session.${label}`);
+  const fmtDelay = (mins: number): string => {
+    const { d, h, m } = splitDelay(mins);
+    if (d > 0) return t('delay.dh', { d, h });
+    if (h > 0) return t('delay.hm', { h, mm: String(m).padStart(2, '0') });
+    return t('delay.m', { m });
+  };
+  const sessionSub = (s: SessionInfo): string | null => {
+    if (s.next) return t('sub.sess', { label: transitionName(s.next.label), delay: fmtDelay(s.next.inMinutes) });
+    return null;
+  };
 
   // Reference-level rows (measure 10), each present only if computable.
   const levelRows: { key: keyof ReferenceLevels; label: string; value: number }[] = [];
@@ -312,16 +328,12 @@ export function RegimeCard({
     },
     {
       key: 'sess',
+      // VALUE = the current session (not the market state — the header badge
+      // already shows open/closed; no value lives in two places).
       label: t('tiles.sess'),
-      value: marketStatus ? t(`state.${marketStatus.state}`) : null,
-      sub: marketStatus
-        ? marketStatus.isClosed && marketStatus.nextOpenTs
-          ? `${t('data.nextOpen')} · ${dayHm(marketStatus.nextOpenTs)}`
-          : nyTime
-            ? `${t('data.marketLocalTime')} · ${nyTime}`
-            : t('data.weeklyCloseValue')
-        : null,
-      available: marketStatus != null,
+      value: session ? sessionName(session.current) : null,
+      sub: session ? sessionSub(session) : null,
+      available: session != null,
     },
     {
       key: 'lvl',
@@ -487,8 +499,11 @@ export function RegimeCard({
                 fvgActive,
                 fvgPartial,
                 fvgOpen,
-                marketStatus,
-                nyTime,
+                session,
+                weeklyClose: formatWeeklyClose(marketStatus?.weekly_close, locale),
+                sessionName,
+                transitionName,
+                fmtDelay,
                 levelRows,
                 referenceLevel,
                 traceLevel,
@@ -548,8 +563,11 @@ interface DataCtx {
   fvgActive: unknown[];
   fvgPartial: unknown[];
   fvgOpen: number;
-  marketStatus: MarketStatusView | null;
-  nyTime: string | null;
+  session: SessionInfo | null;
+  weeklyClose: string | null;
+  sessionName: (name: SessionName) => string;
+  transitionName: (label: TransitionLabel) => string;
+  fmtDelay: (mins: number) => string;
   levelRows: { key: string; label: string; value: number }[];
   referenceLevel: { price: number; label: string } | null;
   traceLevel: (labelKey: string, label: string, value: number) => void;
@@ -750,18 +768,40 @@ function renderData(k: string, c: DataCtx): React.ReactNode {
         </>
       );
     case 'sess': {
-      const s = c.marketStatus;
+      const s = c.session;
       if (!s) return null;
+      // Continuous market (crypto): no découpage, no weekly close.
+      if (s.current === 'continuous') {
+        return (
+          <>
+            <Dh4>{t('data.sessHead')}</Dh4>
+            <Dp>{c.sessionName('continuous')}</Dp>
+          </>
+        );
+      }
+      const ov = s.overlap;
+      const overlapState = ov ? t(`data.overlap.${ov.state}`) : null;
       return (
         <>
           <Dh4>{t('data.sessHead')}</Dh4>
           <div className="ev">
-            <EvRow k={t('data.marketState')} v={t(`state.${s.state}`)} />
-            {c.nyTime && <EvRow k={t('data.marketLocalTime')} v={c.nyTime} />}
-            <EvRow k={t('data.weeklyClose')} v={t('data.weeklyCloseValue')} />
-            {s.isClosed && s.nextOpenTs && (
-              <EvRow k={t('data.nextOpen')} v={dayHm(s.nextOpenTs)} />
+            <EvRow
+              k={t('data.sessCurrent')}
+              v={c.sessionName(s.current)}
+              t={s.currentRange ? `${s.currentRange.start} – ${s.currentRange.end}` : undefined}
+            />
+            {s.localTime && <EvRow k={t('data.marketLocalTime')} v={s.localTime} />}
+            {s.next && (
+              <EvRow
+                k={t('data.sessNext')}
+                v={`${c.transitionName(s.next.label)} ${s.next.at}`}
+                t={c.fmtDelay(s.next.inMinutes)}
+              />
             )}
+            {ov && (
+              <EvRow k={t('data.sessOverlap')} v={`${ov.start} – ${ov.end}`} t={overlapState ?? undefined} />
+            )}
+            {c.weeklyClose && <EvRow k={t('data.weeklyClose')} v={c.weeklyClose} />}
           </div>
         </>
       );

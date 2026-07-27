@@ -268,7 +268,7 @@ export function DesktopReading({
           structure={reading.structure}
           header={header}
           price={price}
-          marketStatus={serverStatus}
+          marketStatus={reading.market_status ?? null}
           openHelp={openHelp}
           onToggleHelp={onToggleHelp}
         />

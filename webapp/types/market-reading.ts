@@ -316,6 +316,14 @@ export interface MarketStatusPayload {
   /** ISO-8601 UTC of the next open, or null (open / 24-7 market). */
   next_open_ts: string | null;
   bars_behind: number | null;
+  /** 24/7 market (crypto) — no session découpage, no weekly close. */
+  continuous?: boolean;
+  /** IANA zone the session windows are expressed in (e.g. America/New_York). */
+  session_tz?: string;
+  /** Named intraday session windows (« HH:MM » ET). Empty ⇒ continuous. */
+  sessions?: { name: string; start: string; end: string }[];
+  /** Weekly close, Python weekday (Mon=0…Sun=6) + « HH:MM » ET. */
+  weekly_close?: { weekday: number; time: string } | null;
 }
 
 // ─── Chart feed (GET /api/candles) ────────────────────────────────────────────

@@ -18,7 +18,7 @@
       "mat": "Maturity",
       "last": "Last event",
       "dens": "Density",
-      "sess": "Market hours",
+      "sess": "Session",
       "lvl": "Reference levels"
     },
     "sub": {
@@ -28,7 +28,8 @@
       "pos": "{low} – {high}",
       "mat": "since the CHOCH of {date}",
       "dens": "open on {tf}",
-      "lvl": "{count, plural, one {# marker} other {# markers}} · open the detail"
+      "lvl": "{count, plural, one {# marker} other {# markers}} · open the detail",
+      "sess": "{label} in {delay}"
     },
     "value": {
       "pos": "{pct} %",
@@ -96,7 +97,15 @@
       "prevDayLow": "Previous day low",
       "prevWeekHigh": "Previous week high",
       "prevWeekLow": "Previous week low",
-      "lvlNote": "Click a price: the level is traced on the chart and brought into view. Click again to remove it."
+      "lvlNote": "Click a price: the level is traced on the chart and brought into view. Click again to remove it.",
+      "sessCurrent": "Current session",
+      "sessNext": "Next transition",
+      "sessOverlap": "London / New York overlap",
+      "overlap": {
+        "upcoming": "upcoming",
+        "ongoing": "ongoing",
+        "ended": "ended"
+      }
     },
     "state": {
       "open": "Market open",
@@ -152,8 +161,8 @@
         "notSay": "More zones does not mean more opportunities, and none is presented as better. Nothing indicates which will be reached, nor whether it will be."
       },
       "sess": {
-        "title": "Market hours",
-        "body": "Published **time windows**: the weekly open, the close, and for gold the daily rollover break. These are calendar facts, not market measurements.\n\nMIA reads these hours from a **single source** — the same one that decides whether the market is open or closed, never a second definition. **On a continuous market** (crypto) there is no weekly open or close.",
+        "title": "The sessions",
+        "body": "Published **time windows**, like the volatility calendar: published facts, not market measurements.\n\nMany SMC traders read the market by session rather than treating the day as one block. The tile places the journal’s events within that segmentation.\n\n**On a continuous market** (crypto), the tile shows “Continuous market · 24/7”: there is no weekly open or close. Splitting the day into Asia / Europe / America hours is then a reading convention, not a market property.",
         "notSay": "No session is presented as better or more reliable. MIA does not say what the New York close will do."
       },
       "lvl": {
@@ -161,6 +170,21 @@
         "body": "These levels are not **detected**: they exist because time passes. The day open is the opening price of the current daily candle; the previous day high is simply the previous day’s extreme.\n\nThat is the difference with the **Position in range** tile, which uses **structural** bounds. Here the bounds are **temporal**: two distinct references, never the same figures.\n\nEach price is clickable: MIA traces the level on the chart and brings it into view. In the ICT approach these markers are often looked at before anything else, because everyone sees them the same way.",
         "notSay": "Being below the day open foretells nothing about the close. A previous-day extreme is neither a support, nor a resistance, nor a target: it is a price reached yesterday, nothing more."
       }
+    },
+    "session": {
+      "asia": "Asia",
+      "london": "London",
+      "new_york": "New York",
+      "overlap": "London / NY overlap",
+      "outside": "Between sessions",
+      "continuous": "Continuous market · 24/7",
+      "close": "close",
+      "open": "open"
+    },
+    "delay": {
+      "dh": "{d}d {h}h",
+      "hm": "{h}h {mm}",
+      "m": "{m} min"
     }
   },
 

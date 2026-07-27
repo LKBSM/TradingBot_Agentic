@@ -4,8 +4,7 @@ import * as React from 'react';
 import { RegimeCard } from '../RegimeCard';
 import { ChartViewProvider, useChartViewOptional } from '@/lib/chart/viewState';
 import { coerceViewAction } from '@/lib/chart/viewActions';
-import type { Candle, MarketReadingStructure } from '@/types/market-reading';
-import type { MarketStatusView } from '@/lib/market-reading/status';
+import type { Candle, MarketReadingStructure, MarketStatusPayload } from '@/types/market-reading';
 
 // Deterministic sibling-TF trends (no network).
 vi.mock('@/lib/market-reading/hooks', async (orig) => {
@@ -71,14 +70,30 @@ const HEADER = {
   candle_close_ts: '2026-07-26T21:00:00Z',
 } as never;
 const REGIME = { trend: 'bearish', volatility_observed: 'normal', market_phase: 'trend', mtf_confluence: {}, volatility_detail: { recent_avg: 3.42, baseline_avg: 3.6, ratio: 0.95, recent_n: 7, baseline_n: 20, threshold_low: 0.7, threshold_high: 1.3 } } as never;
-const OPEN_STATUS: MarketStatusView = { state: 'open', isClosed: false, isLagged: false, nextOpenTs: null } as never;
+const OPEN_STATUS: MarketStatusPayload = {
+  state: 'open',
+  reason: 'open',
+  instrument: 'XAUUSD',
+  timeframe: 'H1',
+  last_close_ts: null,
+  next_open_ts: null,
+  bars_behind: 0,
+  continuous: false,
+  session_tz: 'America/New_York',
+  sessions: [
+    { name: 'asia', start: '19:00', end: '04:00' },
+    { name: 'london', start: '03:00', end: '11:30' },
+    { name: 'new_york', start: '08:00', end: '17:00' },
+  ],
+  weekly_close: { weekday: 4, time: '17:00' },
+} as never;
 
 function Harness({
   structure,
   marketStatus,
 }: {
   structure: MarketReadingStructure;
-  marketStatus: MarketStatusView | null;
+  marketStatus: MarketStatusPayload | null;
 }) {
   const [openHelp, setOpenHelp] = React.useState<string | null>(null);
   const onToggleHelp = (k: string) => setOpenHelp((cur) => (cur === k ? null : k));
@@ -119,7 +134,7 @@ describe('RG-1 — RegimeCard tiles', () => {
     expect(screen.queryByText('Maturité')).toBeNull();
     expect(screen.queryByText('Dernier événement')).toBeNull();
     expect(screen.queryByText('Position dans le range')).toBeNull();
-    expect(screen.queryByText('Horaire du marché')).toBeNull();
+    expect(screen.queryByText('Session')).toBeNull(); // no session windows → dropped
     // No fabricated « non disponible » placeholder is rendered as a tile value.
     expect(screen.queryByText('non disponible')).toBeNull();
   });
@@ -172,6 +187,22 @@ describe('RG-1 — RegimeCard tiles', () => {
 
     fireEvent.click(dayOpenBtn); // re-click removes
     expect(screen.getByTestId('ref')).toHaveTextContent('none');
+  });
+
+  it('Session tile shows the current session, and its Donnée has no « État du marché » (no dup with the header badge)', () => {
+    render(<Harness structure={FULL_STRUCT} marketStatus={OPEN_STATUS} />);
+    // The tile is labelled « Session » (not « Horaire du marché ») and its value
+    // is one of the session names — never the market state.
+    const tile = screen.getByText('Session').closest('.tile') as HTMLElement;
+    expect(tile).toBeTruthy();
+    const value = tile.querySelector('.v')?.textContent ?? '';
+    expect(['Asie', 'Londres', 'New York', 'Chevauchement Londres / NY', 'Hors session']).toContain(value);
+
+    fireEvent.click(tile);
+    // Donnée: session in progress + local time, and NOT the market state row.
+    expect(screen.getByText('Session en cours')).toBeInTheDocument();
+    expect(screen.getByText('Heure locale du marché')).toBeInTheDocument();
+    expect(screen.queryByText('État du marché')).toBeNull();
   });
 });
 

@@ -18,7 +18,7 @@
       "mat": "Maturité",
       "last": "Dernier événement",
       "dens": "Densité",
-      "sess": "Horaire du marché",
+      "sess": "Session",
       "lvl": "Niveaux de référence"
     },
     "sub": {
@@ -28,7 +28,8 @@
       "pos": "{low} – {high}",
       "mat": "depuis le CHOCH du {date}",
       "dens": "ouverts sur {tf}",
-      "lvl": "{count, plural, one {# repère} other {# repères}} · ouvre le détail"
+      "lvl": "{count, plural, one {# repère} other {# repères}} · ouvre le détail",
+      "sess": "{label} dans {delay}"
     },
     "value": {
       "pos": "{pct} %",
@@ -96,7 +97,15 @@
       "prevDayLow": "Bas de la veille",
       "prevWeekHigh": "Haut de la semaine",
       "prevWeekLow": "Bas de la semaine",
-      "lvlNote": "Clique un prix : le niveau est tracé sur le graphique et amené dans la vue. Re-clic pour l’enlever."
+      "lvlNote": "Clique un prix : le niveau est tracé sur le graphique et amené dans la vue. Re-clic pour l’enlever.",
+      "sessCurrent": "Session en cours",
+      "sessNext": "Prochaine transition",
+      "sessOverlap": "Chevauchement Londres / New York",
+      "overlap": {
+        "upcoming": "à venir",
+        "ongoing": "en cours",
+        "ended": "terminé"
+      }
     },
     "state": {
       "open": "Marché ouvert",
@@ -152,8 +161,8 @@
         "notSay": "Plus de zones ne veut pas dire plus d’occasions, et aucune n’est présentée comme meilleure. Rien n’indique laquelle sera atteinte, ni si elle le sera."
       },
       "sess": {
-        "title": "L’horaire du marché",
-        "body": "Des **plages horaires** publiées : l’ouverture hebdomadaire, la clôture, et pour l’or la pause de rollover quotidienne. Ce sont des faits de calendrier, pas des mesures de marché.\n\nMIA lit ces horaires depuis une **source unique** — la même qui décide si le marché est ouvert ou fermé, jamais une seconde définition. **Sur un marché continu** (crypto), il n’y a ni ouverture ni clôture hebdomadaire.",
+        "title": "Les sessions",
+        "body": "Des **plages horaires**, au même titre que le calendrier de volatilité : des faits publiés, pas des mesures de marché.\n\nBeaucoup de traders SMC segmentent leur lecture par session plutôt que de traiter la journée comme un bloc. La tuile sert à situer les événements du journal dans cette découpe.\n\n**Sur un marché continu** (crypto), la tuile affiche « Marché continu · 24/7 » : il n’y a ni ouverture ni clôture hebdomadaire. Découper la journée en heures Asie / Europe / Amérique reste alors une convention de lecture, pas une propriété du marché.",
         "notSay": "Aucune session n’est présentée comme meilleure ou plus fiable. MIA ne dit pas ce que fera la clôture de New York."
       },
       "lvl": {
@@ -161,6 +170,21 @@
         "body": "Ces niveaux ne sont pas **détectés** : ils existent parce que le temps passe. L’ouverture du jour est le prix d’ouverture de la bougie journalière en cours ; le plus haut de la veille est simplement l’extrême de la journée précédente.\n\nC’est la différence avec la tuile **Position dans le range**, qui utilise des bornes **structurelles**. Ici, les bornes sont **temporelles** : deux référentiels distincts, jamais les mêmes chiffres.\n\nChaque prix est cliquable : MIA trace le niveau sur le graphique et l’y amène. Dans l’approche ICT, ces repères sont souvent regardés avant tout le reste, parce qu’ils sont visibles par tout le monde de la même façon.",
         "notSay": "Être sous l’ouverture du jour ne présage rien de la clôture. Un extrême de la veille n’est ni un support, ni une résistance, ni une cible : c’est un prix atteint hier, rien de plus."
       }
+    },
+    "session": {
+      "asia": "Asie",
+      "london": "Londres",
+      "new_york": "New York",
+      "overlap": "Chevauchement Londres / NY",
+      "outside": "Hors session",
+      "continuous": "Marché continu · 24/7",
+      "close": "clôture",
+      "open": "ouverture"
+    },
+    "delay": {
+      "dh": "{d} j {h} h",
+      "hm": "{h} h {mm}",
+      "m": "{m} min"
     }
   },
 
