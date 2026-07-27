@@ -41,6 +41,9 @@ SUPPORTED_INSTRUMENTS = frozenset({"XAUUSD", "EURUSD"})
 # boundary is therefore the DATA FEED's own D1/W1 candle (single definition,
 # shared with the chart), never a second client-side boundary. See RG-1 audit.
 SUPPORTED_TIMEFRAMES = frozenset({"M15", "H1", "H4", "D1", "W1"})
+# Reference series for the Régime « Niveaux de référence » tile. Not kept warm by
+# the scheduler → populated on demand from the feed on a cache-miss (see below).
+REFERENCE_TIMEFRAMES = frozenset({"D1", "W1"})
 
 # Default / max window. Widened 2026-06-15 alongside the assembler lookback
 # (now 500) so the chart can render indicator-grade history. Payload stays small
@@ -109,6 +112,18 @@ async def get_candles(
         logger.exception("candles read failed for %s/%s", instrument, timeframe)
         raise HTTPException(status_code=500, detail="Internal server error")
 
+    # D1/W1 are REFERENCE series (Régime « Niveaux de référence » tile), not kept
+    # warm by the scheduler. Populate them on demand from the feed — one provider
+    # call per closed daily/weekly bar (warm_candles is market-aware + idempotent).
+    if not candles and timeframe in REFERENCE_TIMEFRAMES:
+        assembler = _resolve_assembler(request)
+        if assembler is not None and hasattr(assembler, "warm_candles"):
+            if assembler.warm_candles(instrument, timeframe) > 0:
+                try:
+                    candles = store.get_last_n_candles(instrument, timeframe, limit)
+                except Exception:
+                    logger.exception("candles re-read failed for %s/%s", instrument, timeframe)
+
     if not candles:
         # Valid combo, but the cache has no candles yet (combo not bootstrapped /
         # scheduler hasn't filled it). The front shows "graphique indisponible".
@@ -122,6 +137,14 @@ async def get_candles(
         timeframe=timeframe,
         candles=[_to_candle_out(c) for c in candles],
     )
+
+
+def _resolve_assembler(request: Request):
+    """The market-reading assembler on app_state (owns the data provider + store)."""
+    app_state = getattr(request.app.state, "app_state", None)
+    if app_state is None:
+        return None
+    return getattr(app_state, "market_reading_assembler", None)
 
 
 def _resolve_candles_store(request: Request):

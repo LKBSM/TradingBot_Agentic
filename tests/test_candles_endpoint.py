@@ -175,6 +175,44 @@ def test_serves_daily_reference_series(tmp_path):
     assert len(body["candles"]) == 3
 
 
+def test_d1_populated_on_demand_when_cache_empty(tmp_path):
+    """D1/W1 aren't kept warm; a cache-miss triggers `warm_candles` (feed fetch),
+    then the endpoint serves the freshly-cached reference series."""
+
+    class _WarmingAssembler:
+        def __init__(self, store):
+            self.candles_store = store
+            self.warmed: list = []
+
+        def warm_candles(self, instrument, timeframe):
+            self.warmed.append((instrument, timeframe))
+            rows = [_candle(i, 2400.0 + i) for i in range(3)]
+            self.candles_store.upsert_candles(instrument, timeframe, rows)
+            return len(rows)
+
+    app = FastAPI()
+    signal_store = SignalStore(db_path=str(tmp_path / "signals.db"))
+    store = CandlesCacheStore(db_path=str(tmp_path / "candles.db"))
+    assembler = _WarmingAssembler(store)
+    app.state.app_state = AppState(signal_store=signal_store, market_reading_assembler=assembler)
+    app.include_router(candles_router)
+    client = TestClient(app)
+
+    resp = client.get("/api/candles", params={"instrument": "XAUUSD", "timeframe": "D1"})
+    assert resp.status_code == 200
+    assert len(resp.json()["candles"]) == 3
+    assert assembler.warmed == [("XAUUSD", "D1")]  # populated on demand
+
+
+def test_m15_cache_miss_does_not_trigger_warm(tmp_path):
+    """A chart timeframe (M15) is scheduler-warmed — a miss is an honest 404, not
+    an on-demand feed fetch (only D1/W1 are populated lazily)."""
+    app = _make_app(seed=False, tmp_path=tmp_path)  # store present, nothing seeded
+    client = TestClient(app)
+    resp = client.get("/api/candles", params={"instrument": "XAUUSD", "timeframe": "M15"})
+    assert resp.status_code == 404
+
+
 def test_404_when_combo_has_no_cached_candles(tmp_path):
     # Valid combo (EURUSD/H4) but nothing seeded for it.
     client = TestClient(_make_app(tmp_path=tmp_path))

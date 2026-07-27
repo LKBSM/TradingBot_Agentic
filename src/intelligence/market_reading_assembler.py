@@ -371,6 +371,34 @@ class MarketReadingAssembler:
                         last_close_ts = None
         return compute_market_status(instrument, timeframe, last_close_ts, self._clock())
 
+    def warm_candles(self, instrument: str, timeframe: str) -> int:
+        """Fetch + cache the CLOSED candles for (instrument, timeframe) WITHOUT
+        building a reading — used to populate the D1/W1 reference series for the
+        Régime « Niveaux de référence » tile, which the scheduler does not keep
+        warm. No SMC pipeline, no readings-store write: pure candle cache fill.
+
+        Idempotent + market-aware: refreshes only when the cache is empty or the
+        newest cached candle lags the last candle that actually traded, so it
+        makes at most one provider call per closed D1/W1 bar. Returns the number
+        of candles now cached (0 on a fetch failure — caller degrades to 404)."""
+        try:
+            expected_close = market_aware_expected_close(instrument, timeframe, self._clock())
+            existing = self._candles_store.get_last_n_candles(instrument, timeframe, 1)
+            if existing:
+                newest = existing[-1].ts
+                if newest.tzinfo is None:
+                    newest = newest.replace(tzinfo=timezone.utc)
+                if newest >= expected_close:
+                    return 1  # cache already has the last traded bar — no fetch
+            raw = self._data_provider.fetch_candles(instrument, timeframe, self._lookback)
+            candles = drop_unclosed_candles(raw, timeframe, expected_close)
+            if candles:
+                self._candles_store.upsert_candles(instrument, timeframe, candles)
+            return len(candles)
+        except Exception:  # pragma: no cover — defensive; caller degrades to 404
+            logger.exception("warm_candles failed for %s/%s", instrument, timeframe)
+            return 0
+
     def get_ob_diagnostic(
         self,
         instrument: str,

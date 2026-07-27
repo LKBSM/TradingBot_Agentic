@@ -470,9 +470,9 @@ def test_candles_to_regime_volatility_detail_reproduces_ratio():
     r = candles_to_regime(candles, mtf_candles_above={})
     d = r.volatility_detail
     assert d is not None
-    # recent window is the last 7, baseline is everything before it.
+    # recent window is the last 7; baseline = the 20 candles immediately before.
     assert d.recent_n == 7
-    assert d.baseline_n == len(candles) - 7
+    assert d.baseline_n == 20
     assert d.threshold_low == 0.70
     assert d.threshold_high == 1.30
     # The ratio is exactly recent_avg / baseline_avg.
@@ -493,6 +493,18 @@ def test_candles_to_regime_volatility_detail_absent_on_short_window():
     r = candles_to_regime(candles, mtf_candles_above={})
     assert r.volatility_detail is None
     assert r.volatility_observed == "normal"
+
+
+def test_volatility_baseline_window_is_bounded_to_20():
+    """The reference window is bounded (not the whole 500-bar history): a long
+    window still reports baseline_n == 20; a short one uses what's available."""
+    long_window = _candles_uptrend(n=200)
+    d_long = candles_to_regime(long_window, mtf_candles_above={}).volatility_detail
+    assert d_long is not None and d_long.baseline_n == 20
+    # 18 candles → 18 TRs → baseline = the 11 before the last 7.
+    short_window = _candles_uptrend(n=18)
+    d_short = candles_to_regime(short_window, mtf_candles_above={}).volatility_detail
+    assert d_short is not None and d_short.baseline_n == 11
 
 
 def test_candles_to_regime_mtf_confluence_keys_filtered():
