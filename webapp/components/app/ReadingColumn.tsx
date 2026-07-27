@@ -21,7 +21,7 @@ import { useLivePrice } from '@/lib/market-reading/live-price';
 import { useMarketClosed } from '@/lib/market-reading/session';
 import { deriveMarketStatus, type MarketStatusView } from '@/lib/market-reading/status';
 import { useChartViewOptional } from '@/lib/chart/viewState';
-import type { ChartViewState } from '@/lib/chart/viewActions';
+import type { ChartViewState, ReferenceLevel } from '@/lib/chart/viewActions';
 import type { Combo } from '@/lib/market-reading/store';
 import type { Candle, MarketReading, MarketState } from '@/types/market-reading';
 
@@ -101,7 +101,7 @@ export function ReadingColumn({
   // Chatbot-controlled DISPLAY state (layers / filters / focus / highlight).
   // Optional: outside the /app provider it defaults to "show everything", so the
   // chart's behaviour is unchanged when no chatbot action has been applied.
-  const { view: chartView, applyActions } = useChartViewOptional();
+  const { view: chartView, applyActions, referenceLevel } = useChartViewOptional();
 
   // Deselect the highlighted zone (drop the blue + un-zoom) when the user clicks
   // the blue box on the chart — same toggle as re-clicking its list entry.
@@ -162,7 +162,7 @@ export function ReadingColumn({
       <MarketReadingCard
         reading={reading}
         onAskChatbot={focusChat}
-        chartSlot={buildChartSlot(reading, candles, livePrice, liveTs, active?.timeframe ?? null, chartView, onClearHighlight, marketClosed, serverStatus?.state ?? null)}
+        chartSlot={buildChartSlot(reading, candles, livePrice, liveTs, active?.timeframe ?? null, chartView, onClearHighlight, marketClosed, serverStatus?.state ?? null, referenceLevel)}
         live={liveHeader}
         marketClosed={marketClosed}
         status={serverStatus}
@@ -206,6 +206,7 @@ function buildChartSlot(
   onClearHighlight: () => void,
   marketClosed: boolean,
   marketStatusState: MarketState | null,
+  referenceLevel: ReferenceLevel | null,
 ): React.ReactNode {
   if (!candles || candles.length === 0) {
     return <ChartUnavailable />;
@@ -224,6 +225,7 @@ function buildChartSlot(
       filter={chartView.filter}
       focus={chartView.focus}
       highlightZoneId={chartView.highlightZoneId}
+      referenceLevel={referenceLevel}
       onClearHighlight={onClearHighlight}
       hiddenZoneIds={chartView.hiddenZoneIds}
       isolatedZoneIds={chartView.isolatedZoneIds}

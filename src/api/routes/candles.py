@@ -35,7 +35,12 @@ router = APIRouter(prefix="/api", tags=["candles"])
 
 # V1 perimeter — mirrors src/api/routes/market_reading.py.
 SUPPORTED_INSTRUMENTS = frozenset({"XAUUSD", "EURUSD"})
-SUPPORTED_TIMEFRAMES = frozenset({"M15", "H1", "H4"})
+# M15/H1/H4 feed the chart; D1/W1 are read-only reference series (already cached
+# by the MTF assembler) used to derive the calendar reference levels of the
+# Régime panel — day/week open, previous day/week extremes. The "day"/"week"
+# boundary is therefore the DATA FEED's own D1/W1 candle (single definition,
+# shared with the chart), never a second client-side boundary. See RG-1 audit.
+SUPPORTED_TIMEFRAMES = frozenset({"M15", "H1", "H4", "D1", "W1"})
 
 # Default / max window. Widened 2026-06-15 alongside the assembler lookback
 # (now 500) so the chart can render indicator-grade history. Payload stays small
@@ -70,7 +75,7 @@ class CandlesResponse(BaseModel):
 async def get_candles(
     request: Request,
     instrument: str = Query(..., description="XAUUSD or EURUSD"),
-    timeframe: str = Query(..., description="M15, H1, or H4"),
+    timeframe: str = Query(..., description="M15, H1, H4 (chart) or D1, W1 (reference levels)"),
     limit: int = Query(DEFAULT_LIMIT, ge=1, le=MAX_LIMIT, description="Max candles"),
     account: Optional[Dict[str, Any]] = Depends(optional_account),
 ) -> CandlesResponse:

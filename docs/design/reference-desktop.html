@@ -359,6 +359,71 @@ body[data-page="reglages"] #cv-reglages{display:block}
 .zone.zsel{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-dim)}
 .zbanner{display:flex;align-items:center;gap:9px;padding:9px 12px;background:var(--acc-dim);border:1px solid color-mix(in srgb,var(--acc) 35%,transparent);border-radius:var(--r-s);margin-bottom:12px;font-size:11.5px;color:var(--txt)}
 .zbanner svg{width:14px;height:14px;stroke:var(--acc);fill:none;stroke-width:1.8;flex-shrink:0}
+/* ==== Régime : tuiles cliquables + panneau détaillé ==== */
+.tgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.tile{background:var(--panel-2);border:1px solid transparent;border-radius:var(--r-s);padding:8px 10px;cursor:pointer;position:relative}
+.tile:hover{background:var(--panel-3);border-color:var(--line-2)}
+.tile.span2{grid-column:1/-1}
+.lvlmini{display:flex;align-items:baseline;justify-content:space-between;gap:6px;font-size:10.5px;line-height:1.65}
+.lvlmini span{color:var(--dim)}
+.lvlmini b{font-family:'JetBrains Mono',monospace;font-weight:600;font-size:11.5px}
+.pxbtn{font-family:'JetBrains Mono',monospace;font-weight:600;font-size:11px;background:transparent;border:1px solid var(--line-2);border-radius:5px;padding:2px 7px;color:var(--acc);cursor:pointer;white-space:nowrap}
+.pxbtn:hover{background:var(--acc-dim);border-color:var(--acc)}
+.pxbtn.on{background:var(--acc);border-color:var(--acc);color:var(--acc-txt)}
+.tile.on{background:var(--acc-dim);border-color:color-mix(in srgb,var(--acc) 45%,transparent)}
+.tile .k{display:flex;align-items:center;gap:5px;font-size:8px;color:var(--faint);text-transform:uppercase;letter-spacing:.45px;font-weight:600;margin-bottom:3px;line-height:1.3}
+.tile .v{font-size:12.5px;font-weight:500;line-height:1.25}
+.tile .v.mono{font-family:'JetBrains Mono',monospace;font-size:12px}
+.tile .sub{font-size:8.5px;color:var(--faint);font-family:'JetBrains Mono',monospace;margin-top:3px;line-height:1.35}
+.thelp{width:13px;height:13px;border-radius:50%;border:1px solid var(--line-3);background:transparent;color:var(--dim);font-family:inherit;font-size:8px;font-weight:700;line-height:1;cursor:pointer;display:grid;place-items:center;padding:0;flex-shrink:0}
+.thelp:hover,.thelp.on{background:var(--acc);border-color:var(--acc);color:var(--acc-txt)}
+.tile .tarrow{position:absolute;right:7px;bottom:6px;width:10px;height:10px;stroke:var(--acc);fill:none;stroke-width:2;opacity:0}
+.tile:hover .tarrow,.tile.on .tarrow{opacity:.8}
+.thint{font-size:9px;color:var(--faint);margin-top:9px;display:flex;align-items:flex-start;gap:6px;line-height:1.5}
+.thint svg{width:11px;height:11px;stroke:var(--faint);fill:none;stroke-width:1.7;flex-shrink:0;margin-top:1px}
+.tdetail{display:none;margin-top:10px;background:var(--panel-2);border:1px solid var(--line-2);border-left:2px solid var(--acc);border-radius:var(--r-s);overflow:hidden}
+.tdetail.on{display:block}
+.tdhead{display:flex;align-items:center;gap:7px;padding:8px 10px;border-bottom:1px solid var(--line)}
+.tdt{font-size:11.5px;font-weight:600}
+.tdsp{flex:1}
+.ttabs{display:flex;gap:3px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:2px}
+.ttab{font-size:10px;font-weight:500;padding:3px 9px;border-radius:4px;color:var(--dim);cursor:pointer;user-select:none}
+.ttab.on{background:var(--acc-dim);color:var(--acc)}
+.tdclose{width:20px;height:20px;border-radius:5px;border:none;background:transparent;color:var(--faint);cursor:pointer;display:grid;place-items:center;font-size:14px;line-height:1;font-family:inherit}
+.tdclose:hover{background:var(--panel-3);color:var(--txt)}
+.tdbody{padding:10px 11px;max-height:340px;overflow-y:auto}
+.tdbody::-webkit-scrollbar{width:7px}
+.tdbody::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:4px}
+.ev{border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-bottom:8px}
+.ev-r{display:flex;align-items:flex-start;gap:8px;padding:5px 9px;border-bottom:1px solid var(--line);font-size:11px}
+.ev-r:last-child{border-bottom:none}
+.ev-r:nth-child(odd){background:color-mix(in srgb,var(--panel) 55%,transparent)}
+.ev-k{color:var(--dim);flex:1;line-height:1.4}
+.ev-v{font-family:'JetBrains Mono',monospace;font-weight:500;white-space:nowrap}
+.ev-t{font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--faint);white-space:nowrap}
+.dp{font-size:11px;color:var(--dim);line-height:1.6;margin-bottom:8px}
+.dp:last-child{margin-bottom:0}
+.dp b{color:var(--txt);font-weight:600}
+.dh4{font-size:9px;font-weight:600;color:var(--acc);letter-spacing:.5px;text-transform:uppercase;margin:0 0 6px}
+.dh4.mt{margin-top:11px}
+.notsay{border-left:2px solid var(--liq);background:color-mix(in srgb,var(--liq) 7%,transparent);border-radius:0 6px 6px 0;padding:7px 10px;margin-top:9px}
+.notsay .nt{font-size:8.5px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:var(--liq);margin-bottom:4px}
+.notsay p{font-size:11px;color:var(--dim);line-height:1.55}
+.bararea{margin:2px 0 9px}
+.barwrap{height:8px;border-radius:4px;background:var(--panel-3);position:relative;overflow:hidden}
+.barwrap i{position:absolute;top:0;bottom:0;left:0;background:var(--acc);opacity:.55;border-radius:4px}
+.barwrap u{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--txt);border-radius:1px}
+.barlbl{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--faint);margin-top:5px}
+.tfline{display:flex;align-items:center;gap:7px;padding:5px 9px;border-bottom:1px solid var(--line);font-size:11px}
+.tfline:last-child{border-bottom:none}
+.tfline .tf{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);width:26px;font-weight:600}
+.tfline .st{flex:1}
+.tfline.dis{background:color-mix(in srgb,var(--liq) 8%,transparent)}
+.chip{font-size:8.5px;font-weight:600;letter-spacing:.3px;text-transform:uppercase;padding:2px 6px;border-radius:12px;background:var(--panel-3);color:var(--dim);white-space:nowrap}
+.chip.a{background:var(--acc-dim);color:var(--acc)}
+.dlink{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:500;padding:5px 9px;border-radius:6px;background:var(--acc-dim);color:var(--acc);cursor:pointer;border:1px solid transparent;font-family:inherit;margin-top:3px}
+.dlink:hover{border-color:color-mix(in srgb,var(--acc) 45%,transparent)}
+.dlink svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:1.9}
 @media (prefers-reduced-motion: reduce){.dot::after{animation:none;opacity:0}*{transition:none!important}.zhl{animation:none!important}}
 @keyframes zpulse{0%{opacity:.16}50%{opacity:.30}100%{opacity:.16}}
 </style>
@@ -438,21 +503,18 @@ body[data-page="reglages"] #cv-reglages{display:block}
       <div class="panels">
         <div class="card wide">
           <div class="card-h"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg><h3>Lecture narrée</h3><span class="badge2">Ancrée au moteur</span></div>
-          <p class="narr"><b>Un CHOCH baissier s’est confirmé</b> à <span class="hl">14:00</span>. Le prix est <b>actuellement dans un Order Block baissier</b> (<span class="hl">2 398,40 – 2 401,10</span>). Un <b>FVG</b> reste <b>comblé à 58 %</b> ; une <b>liquidité achat est intacte</b> au-dessus de <span class="hl">2 404,20</span>, celle à <span class="hl">2 389,60</span> <b>a été balayée</b>. Les <b>3 TF sont alignés baissier</b>.</p>
+          <p class="narr"><b>Un CHOCH baissier s’est confirmé</b> à <span class="hl">11:00</span>, <b>prolongé par un BOS</b> à <span class="hl">14:00</span>. Le prix est <b>actuellement dans un Order Block baissier</b> (<span class="hl">2 398,40 – 2 401,10</span>). Un <b>FVG</b> reste <b>comblé à 58 %</b> ; une <b>liquidité achat est intacte</b> au-dessus de <span class="hl">2 404,20</span>, celle à <span class="hl">2 389,60</span> <b>a été balayée</b>. Les <b>3 TF sont alignés baissier</b>.</p>
           <div class="narrfoot"><svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>Chaque niveau cité correspond à une sortie réelle du moteur.</div>
         </div>
 
         <div class="card">
-          <div class="card-h"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M21 3v6h-6"/></svg><h3>Régime de marché</h3><span class="hsp"></span><button class="hbtn js-help" data-info="regime" title="En savoir plus">?</button></div>
-          <div class="reggrid">
-            <div class="reg"><div class="k">Tendance <button class="ihelp" data-info="trend">?</button></div><div class="v">Baissière</div><div class="sub2">mesurée sur H1</div></div>
-            <div class="reg"><div class="k">Volatilité <button class="ihelp" data-info="vol">?</button></div><div class="v">Normale</div><div class="sub2">vs 20 dernières bougies</div></div>
-            <div class="reg"><div class="k">Maturité <button class="ihelp" data-info="mat">?</button></div><div class="v mono">154 bougies</div><div class="sub2">depuis le CHOCH de 14:00</div></div>
-            <div class="reg"><div class="k">Alignement <button class="ihelp" data-info="align">?</button></div><div class="v mono">3/3 TF ↓</div><div class="sub2">H4 ↓ · H1 ↓ · M15 ↓</div></div>
-            <div class="reg"><div class="k">Dernier évén.</div><div class="v">CHOCH ↓</div><div class="sub2">14:00</div></div>
-            <div class="reg"><div class="k">Densité <button class="ihelp" data-info="dens">?</button></div><div class="v mono">3 OB · 4 FVG</div><div class="sub2">actives sur H1</div></div>
+          <div class="card-h"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M21 3v6h-6"/></svg><h3>Régime de marché</h3><span class="hsp"></span><span class="badge2">H1 · dernière clôture 17:00</span><button class="hbtn rhelp" title="En savoir plus">?</button></div>
+          <div class="tgrid" id="tgrid"></div>
+          <div class="thint"><svg viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg>Une tuile ouvre la donnée derrière le chiffre. Le « ? » ouvre le concept.</div>
+          <div class="tdetail" id="tdetail">
+            <div class="tdhead"><span class="tdt" id="tdtitle">—</span><span class="tdsp"></span><div class="ttabs"><span class="ttab on" data-tab="data">Donnée</span><span class="ttab" data-tab="concept">Concept</span></div><button class="tdclose" id="tdclose">×</button></div>
+            <div class="tdbody" id="tdbody"></div>
           </div>
-          <div class="infobox"></div>
         </div>
 
         <div class="card">
@@ -465,8 +527,8 @@ body[data-page="reglages"] #cv-reglages{display:block}
             <div class="fsec">Trier par</div>
             <div class="fgrp"><span class="fchip on" data-f="sort" data-v="near">Proche du prix</span><span class="fchip" data-f="sort" data-v="recent">Récente</span><span class="fchip" data-f="sort" data-v="big">Large</span></div>
           </div>
-          <div class="strow"><span class="tagx bear">CHOCH ↓</span><span class="d">Changement de caractère confirmé</span><span class="t">14:00</span></div>
-          <div class="strow"><span class="tagx bear">BOS ↓</span><span class="d">Cassure de structure baissière</span><span class="t">11:00</span></div>
+          <div class="strow"><span class="tagx bear">BOS ↓</span><span class="d">Cassure de structure baissière</span><span class="t">14:00</span></div>
+          <div class="strow"><span class="tagx bear">CHOCH ↓</span><span class="d">Changement de caractère confirmé</span><span class="t">11:00</span></div>
           <div class="zlist" id="zlist"></div>
           <div class="infobox"></div>
           <div class="listhint">Clic sur une zone = surbrillance sur le graphique.</div>
@@ -930,6 +992,193 @@ body[data-page="reglages"] #cv-reglages{display:block}
     document.querySelectorAll('.fchip[data-f="'+c.dataset.f+'"]').forEach(x=>x.classList.toggle('on',x===c));
     if(c.dataset.f==='liq'||c.dataset.f==='side')renderLiqs();else renderZones();
   }));
+
+  /* ===== Régime de marché : 9 tuiles, donnée vs concept ===== */
+  const TARROW='<svg class="tarrow" viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"/></svg>';
+  const TILES=[
+    {k:'phase', lbl:'Phase de march\u00e9', v:'Expansion', sub:'depuis le CHOCH de 11:00'},
+    {k:'trend', lbl:'Tendance', v:'Baissi\u00e8re', sub:'mesur\u00e9e sur H1'},
+    {k:'vol',   lbl:'Volatilit\u00e9', v:'Normale', sub:'7 derni\u00e8res vs 20 pr\u00e9c\u00e9dentes'},
+    {k:'pos',   lbl:'Position dans le range', v:'43 %', mono:1, sub:'2 370,50 \u2013 2 421,20'},
+    {k:'align', lbl:'Alignement', v:'3/3 TF \u2193', mono:1, sub:'H4 \u2193 \u00b7 H1 \u2193 \u00b7 M15 \u2193'},
+    {k:'mat',   lbl:'Maturit\u00e9', v:'7 bougies', mono:1, sub:'depuis le CHOCH du 26 juil. 11:00'},
+    {k:'last',  lbl:'Dernier \u00e9v\u00e9nement', v:'BOS \u2193', sub:'aujourd\u2019hui 14:00'},
+    {k:'dens',  lbl:'Densit\u00e9', v:'3 OB \u00b7 7 FVG', mono:1, sub:'ouverts sur H1'},
+    {k:'sess',  lbl:'Session', v:'New York', sub:'cl\u00f4ture dans 1 h 40'},
+    {k:'lvl',   lbl:'Niveaux de r\u00e9f\u00e9rence',
+     html:'<div class="lvlmini"><span>Haut de la veille</span><b>2 421,20</b></div>'
+         +'<div class="lvlmini"><span>Bas de la veille</span><b>2 376,20</b></div>',
+     sub:'6 rep\u00e8res \u00b7 ouvre le d\u00e9tail'}
+  ];
+  const TC={
+    phase:{data:'<div class="dh4">Ce que le moteur a observ\u00e9</div><div class="ev">'
+      +'<div class="ev-r"><span class="ev-k">Bornes de structure</span><span class="ev-v">2 370,50 \u2013 2 421,20</span></div>'
+      +'<div class="ev-r"><span class="ev-k">Derni\u00e8re borne franchie</span><span class="ev-v">2 389,60</span><span class="ev-t">auj. 14:00</span></div>'
+      +'<div class="ev-r"><span class="ev-k">Cassures depuis le CHOCH</span><span class="ev-v">1</span><span class="ev-t">BOS \u2193</span></div>'
+      +'<div class="ev-r"><span class="ev-k">Retour \u00e0 l\u2019int\u00e9rieur des bornes</span><span class="ev-v">aucun</span></div></div>'
+      +'<p class="dp">Une borne a \u00e9t\u00e9 franchie en cl\u00f4ture et le prix n\u2019est pas revenu au-dessus : c\u2019est ce qui maintient l\u2019\u00e9tat <b>expansion</b> plut\u00f4t que consolidation.</p>',
+      concept:'<div class="dh4">Ce que la phase d\u00e9crit</div>'
+      +'<p class="dp">La phase r\u00e9sume <b>comment</b> le prix se d\u00e9place, pas <b>o\u00f9</b> il va. Le moteur distingue une <b>expansion</b> (bornes franchies successivement, structure qui progresse) d\u2019une <b>consolidation</b> (prix contenu, bornes test\u00e9es sans cl\u00f4ture au-del\u00e0).</p>'
+      +'<p class="dp">C\u2019est le contexte dans lequel tout le reste se lit : un OB form\u00e9 en expansion et un OB form\u00e9 en consolidation n\u2019ont pas la m\u00eame histoire derri\u00e8re eux.</p>'
+      +'<div class="notsay"><div class="nt">Ce que \u00e7a ne dit pas</div><p>Ni la dur\u00e9e de l\u2019expansion, ni son amplitude restante, ni le moment o\u00f9 elle cessera. Une expansion peut s\u2019arr\u00eater \u00e0 la bougie suivante.</p></div>'},
+    trend:{data:'<div class="dh4">La s\u00e9quence de sommets et creux \u00b7 H1</div><div class="ev">'
+      +'<div class="ev-r"><span class="ev-k">Sommet</span><span class="ev-v">2 407,90</span><span class="ev-t">auj. 13:00</span></div>'
+      +'<div class="ev-r"><span class="ev-k">Creux</span><span class="ev-v">2 385,20</span><span class="ev-t">auj. 15:00</span></div>'
+      +'<div class="ev-r"><span class="ev-k">Sommet</span><span class="ev-v">2 417,80</span><span class="ev-t">hier 19:00</span></div>'
+      +'<div class="ev-r"><span class="ev-k">Creux</span><span class="ev-v">2 389,60</span><span class="ev-t">hier 22:00</span></div></div>'
+      +'<p class="dp">Les sommets s\u2019abaissent (2 417,80 puis 2 407,90) et les creux aussi (2 389,60 puis 2 385,20). Les deux s\u00e9ries descendent ensemble : le crit\u00e8re de tendance <b>baissi\u00e8re</b> est rempli.</p>',
+      concept:'<div class="dh4">Comment la tendance est lue</div>'
+      +'<p class="dp">Dans la <b>succession des extr\u00eames</b> : sommets et creux qui montent ensemble \u2192 haussi\u00e8re ; qui descendent ensemble \u2192 baissi\u00e8re ; ni l\u2019un ni l\u2019autre \u2192 range. C\u2019est une lecture de structure <b>d\u00e9j\u00e0 form\u00e9e</b>.</p>'
+      +'<p class="dp"><b>Pi\u00e8ge d\u2019\u00e9chelle :</b> un M15 en range dans un H1 baissier n\u2019est pas une contradiction \u2014 les deux d\u00e9crivent des empans diff\u00e9rents. C\u2019est ce que la tuile Alignement rend visible.</p>'
+      +'<div class="notsay"><div class="nt">Ce que \u00e7a ne dit pas</div><p>Une tendance d\u00e9crit le pass\u00e9 r\u00e9cent. Elle ne prolonge rien et ne dit pas quand elle cessera.</p></div>'},
+    vol:{data:'<div class="dh4">Le calcul, en clair</div><div class="ev">'
+      +'<div class="ev-r"><span class="ev-k">Amplitude moyenne \u2014 7 derni\u00e8res</span><span class="ev-v">3,42 $</span></div>'
+      +'<div class="ev-r"><span class="ev-k">Amplitude moyenne \u2014 20 pr\u00e9c\u00e9dentes</span><span class="ev-v">3,60 $</span></div>'
+      +'<div class="ev-r"><span class="ev-k">Rapport</span><span class="ev-v">0,95</span></div>'
+      +'<div class="ev-r"><span class="ev-k">Seuils</span><span class="ev-v">&lt;0,75 basse \u00b7 &gt;1,35 \u00e9lev\u00e9e</span></div>'
+      +'<div class="ev-r"><span class="ev-k">Plus grande bougie des 7</span><span class="ev-v">5,10 $</span><span class="ev-t">14:00</span></div></div>'
+      +'<p class="dp">Le d\u00e9nominateur est nomm\u00e9 : la comparaison porte sur les <b>20 bougies qui pr\u00e9c\u00e8dent</b> les 7 derni\u00e8res, sur la m\u00eame unit\u00e9 de temps.</p>',
+      concept:'<div class="dh4">Ce que la volatilit\u00e9 compte</div>'
+      +'<p class="dp">L\u2019amplitude moyenne des bougies r\u00e9centes, rapport\u00e9e \u00e0 une <b>r\u00e9f\u00e9rence explicite</b>. Un chiffre de volatilit\u00e9 sans son d\u00e9nominateur ne veut rien dire \u2014 c\u2019est pourquoi il est toujours affich\u00e9.</p>'
+      +'<p class="dp"><b>Pourquoi \u00e7a compte en SMC :</b> la volatilit\u00e9 fixe la <b>largeur</b> des zones. Un OB form\u00e9 en forte volatilit\u00e9 est plus large, donc plus long \u00e0 traverser. C\u2019est une dimension, pas une qualit\u00e9.</p>'
+      +'<div class="notsay"><div class="nt">Ce que \u00e7a ne dit pas</div><p>Aucune direction. Une volatilit\u00e9 basse ne pr\u00e9c\u00e8de pas plus une hausse qu\u2019une baisse.</p></div>'},
+    pos:{data:'<div class="dh4">O\u00f9 se trouve le prix entre les bornes de structure</div>'
+      +'<div class="bararea"><div class="barwrap"><i style="width:43%"></i><u style="left:43%"></u></div>'
+      +'<div class="barlbl"><span>2 370,50 \u00b7 bas</span><span>2 421,20 \u00b7 haut</span></div></div><div class="ev">'
+      +'<div class="ev-r"><span class="ev-k">Prix courant</span><span class="ev-v">2 392,35</span></div>'
+      +'<div class="ev-r"><span class="ev-k">Distance au bord haut</span><span class="ev-v">28,85 $</span><span class="ev-t">1,21 %</span></div>'
+      +'<div class="ev-r"><span class="ev-k">Distance au bord bas</span><span class="ev-v">21,85 $</span><span class="ev-t">0,91 %</span></div>'
+      +'<div class="ev-r"><span class="ev-k">Amplitude des bornes</span><span class="ev-v">50,70 $</span></div></div>'
+      +'<p class="dp">Ces bornes sont <b>structurelles</b> : le dernier sommet et le dernier creux retenus par le moteur. \u00c0 ne pas confondre avec les niveaux de r\u00e9f\u00e9rence, qui sont <b>temporels</b>.</p>',
+      concept:'<div class="dh4">Une mesure, rien de plus</div>'
+      +'<p class="dp">La position exprime en pourcentage o\u00f9 se situe le prix entre le creux et le sommet de structure retenus. 0 % = bord bas, 100 % = bord haut.</p>'
+      +'<p class="dp">C\u2019est une <b>coordonn\u00e9e</b>. Elle rend comparables deux march\u00e9s d\u2019\u00e9chelles tr\u00e8s diff\u00e9rentes et situe imm\u00e9diatement une zone par rapport aux bornes.</p>'
+      +'<div class="notsay"><div class="nt">Ce que \u00e7a ne dit pas</div><p>\u00catre \u00e0 43 % ne rend rien plus probable. Ni \u00ab au milieu donc \u00e7a va choisir un bord \u00bb, ni l\u2019inverse : c\u2019est un emplacement.</p></div>'},
+    align:{data:'<div class="dh4">Le d\u00e9tail par unit\u00e9 de temps</div><div class="ev">'
+      +'<div class="tfline"><span class="tf">H4</span><span class="st">Tendance baissi\u00e8re</span><span class="chip">CHOCH \u2193 24 juil.</span></div>'
+      +'<div class="tfline"><span class="tf">H1</span><span class="st">Tendance baissi\u00e8re</span><span class="chip">CHOCH \u2193 11:00</span></div>'
+      +'<div class="tfline"><span class="tf">M15</span><span class="st">Tendance baissi\u00e8re</span><span class="chip">BOS \u2193 15:30</span></div></div>'
+      +'<p class="dp">Les trois unit\u00e9s affichent la m\u00eame direction. Quand ce n\u2019est pas le cas, la ligne en d\u00e9saccord est mise en \u00e9vidence ici plut\u00f4t que masqu\u00e9e.</p>',
+      concept:'<div class="dh4">Alignement multi-unit\u00e9s de temps</div>'
+      +'<p class="dp"><b>Ce que \u00e7a compte :</b> combien des trois unit\u00e9s de temps affichent <b>en ce moment</b> la m\u00eame direction de structure. Quand elles divergent, MIA l\u2019affiche tout autant : le d\u00e9saccord est une information, pas un \u00e9chec.</p>'
+      +'<p class="dp"><b>Ce que la convention SMC en fait :</b> beaucoup de traders traitent l\u2019alignement comme un crit\u00e8re de <b>confluence</b> dans leur propre m\u00e9thode.</p>'
+      +'<div class="notsay"><div class="nt">Ce que \u00e7a ne dit pas</div><p>Qu\u2019un alignement rende une entr\u00e9e plus s\u00fbre, plus probable ou moins risqu\u00e9e. Personne ne peut le mesurer sur ton compte, ton horizon et ta gestion du risque. MIA d\u00e9crit le fait \u2014 l\u2019interpr\u00e9tation reste la tienne.</p></div>'},
+    mat:{data:'<div class="dh4">L\u2019ancrage du compteur</div><div class="ev">'
+      +'<div class="ev-r"><span class="ev-k">\u00c9v\u00e9nement d\u2019ancrage</span><span class="ev-v">CHOCH \u2193</span><span class="ev-t">26 juil. 11:00</span></div>'
+      +'<div class="ev-r"><span class="ev-k">Niveau franchi</span><span class="ev-v">2 396,80</span></div>'
+      +'<div class="ev-r"><span class="ev-k">Bougies cl\u00f4tur\u00e9es depuis</span><span class="ev-v">7</span><span class="ev-t">H1</span></div>'
+      +'<div class="ev-r"><span class="ev-k">Temps \u00e9coul\u00e9</span><span class="ev-v">7 h 00</span></div></div>'
+      +'<div class="dh4 mt">\u00c9v\u00e9nements survenus depuis</div><div class="ev">'
+      +'<div class="ev-r"><span class="ev-k">BOS \u2193</span><span class="ev-v">2 389,60</span><span class="ev-t">auj. 14:00</span></div></div>',
+      concept:'<div class="dh4">Maturit\u00e9 de la structure</div>'
+      +'<p class="dp"><b>Ce que \u00e7a compte :</b> le nombre de bougies cl\u00f4tur\u00e9es sur l\u2019unit\u00e9 de temps affich\u00e9e depuis le <b>dernier CHOCH confirm\u00e9</b>. Le point de d\u00e9part est toujours nomm\u00e9 avec sa date : d\u00e8s qu\u2019un compteur d\u00e9passe la journ\u00e9e, \u00ab 11:00 \u00bb tout seul devient ambigu.</p>'
+      +'<p class="dp">Le compteur repart \u00e0 z\u00e9ro au CHOCH suivant, jamais sur un BOS \u2014 un BOS prolonge la structure, il ne la red\u00e9marre pas.</p>'
+      +'<div class="notsay"><div class="nt">Ce que \u00e7a ne dit pas</div><p>Une structure ancienne n\u2019est ni plus ni moins susceptible de se poursuivre. Aucune probabilit\u00e9 n\u2019est calcul\u00e9e, et aucune comparaison avec la dur\u00e9e des structures pass\u00e9es n\u2019est faite \u2014 elle inviterait \u00e0 conclure ce que personne ne sait.</p></div>'},
+    last:{data:'<div class="dh4">L\u2019\u00e9v\u00e9nement le plus r\u00e9cent</div><div class="ev">'
+      +'<div class="ev-r"><span class="ev-k">Type</span><span class="ev-v">BOS \u2193</span></div>'
+      +'<div class="ev-r"><span class="ev-k">Extr\u00eame franchi</span><span class="ev-v">2 389,60</span><span class="ev-t">creux de 22:00</span></div>'
+      +'<div class="ev-r"><span class="ev-k">Cl\u00f4ture de confirmation</span><span class="ev-v">2 387,90</span><span class="ev-t">14:00</span></div>'
+      +'<div class="ev-r"><span class="ev-k">Zone cr\u00e9\u00e9e par le mouvement</span><span class="ev-v">OB \u2193 2 398,40</span></div></div>'
+      +'<div class="dh4 mt">Journal des \u00e9v\u00e9nements \u00b7 H1</div><div class="ev">'
+      +'<div class="ev-r"><span class="ev-k">BOS \u2193</span><span class="ev-v">2 389,60</span><span class="ev-t">auj. 14:00</span></div>'
+      +'<div class="ev-r"><span class="ev-k">CHOCH \u2193</span><span class="ev-v">2 396,80</span><span class="ev-t">auj. 11:00</span></div>'
+      +'<div class="ev-r"><span class="ev-k">BOS \u2191</span><span class="ev-v">2 404,60</span><span class="ev-t">hier 19:00</span></div>'
+      +'<div class="ev-r"><span class="ev-k">BOS \u2191</span><span class="ev-v">2 398,20</span><span class="ev-t">hier 12:00</span></div></div>'
+      +'<button class="dlink">Voir ces \u00e9v\u00e9nements sur le graphique<svg viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"/></svg></button>',
+      concept:'<div class="dh4">BOS et CHOCH</div>'
+      +'<p class="dp"><b>BOS</b> \u2014 cassure d\u2019un extr\u00eame <b>dans le sens</b> de la structure en cours : elle la prolonge. <b>CHOCH</b> \u2014 premi\u00e8re cassure <b>en sens inverse</b> : c\u2019est le changement de caract\u00e8re, et il sert d\u2019ancrage \u00e0 la maturit\u00e9.</p>'
+      +'<p class="dp">Dans les deux cas, MIA exige une <b>cl\u00f4ture</b> au-del\u00e0 de l\u2019extr\u00eame, pas une simple m\u00e8che. C\u2019est ce qui distingue un niveau touch\u00e9 d\u2019un niveau c\u00e9d\u00e9.</p>'
+      +'<div class="notsay"><div class="nt">Ce que \u00e7a ne dit pas</div><p>Un BOS ne dit pas que le mouvement continuera, un CHOCH ne dit pas que la tendance est termin\u00e9e. Ce sont des faits dat\u00e9s, pas des annonces.</p></div>'},
+    dens:{data:'<div class="dh4">Inventaire des zones \u00b7 H1</div><div class="ev">'
+      +'<div class="ev-r"><span class="ev-k">Order Blocks \u2014 actifs</span><span class="ev-v">3</span></div>'
+      +'<div class="ev-r"><span class="ev-k">Order Blocks \u2014 test\u00e9s, non mitig\u00e9s</span><span class="ev-v">2</span></div>'
+      +'<div class="ev-r"><span class="ev-k">Order Blocks \u2014 mitig\u00e9s</span><span class="ev-v">6</span></div>'
+      +'<div class="ev-r"><span class="ev-k">FVG ouverts \u2014 total</span><span class="ev-v">7</span></div>'
+      +'<div class="ev-r"><span class="ev-k">\u2014 dont jamais touch\u00e9s</span><span class="ev-v">3</span></div>'
+      +'<div class="ev-r"><span class="ev-k">\u2014 dont partiellement combl\u00e9s</span><span class="ev-v">4</span></div>'
+      +'<div class="ev-r"><span class="ev-k">FVG enti\u00e8rement combl\u00e9s</span><span class="ev-v">5</span></div></div>'
+      +'<p class="dp">Les 4 partiellement combl\u00e9s sont <b>inclus</b> dans les 7 ouverts. Un FVG enti\u00e8rement combl\u00e9 sort du compte des ouverts.</p>'
+      +'<button class="dlink">Filtrer ces zones dans Structure de march\u00e9<svg viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"/></svg></button>',
+      concept:'<div class="dh4">Densit\u00e9 de zones</div>'
+      +'<p class="dp"><b>Ce que \u00e7a compte :</b> les zones encore ouvertes d\u00e9tect\u00e9es sur cette unit\u00e9 de temps, r\u00e9parties par type et par \u00e9tat. Chaque zone n\u2019est compt\u00e9e qu\u2019une fois, dans un seul \u00e9tat.</p>'
+      +'<p class="dp"><b>Comment le lire :</b> une densit\u00e9 \u00e9lev\u00e9e d\u00e9crit un march\u00e9 qui a laiss\u00e9 beaucoup de d\u00e9s\u00e9quilibres derri\u00e8re lui ; une densit\u00e9 faible, un march\u00e9 qui a d\u00e9j\u00e0 combl\u00e9 les siens.</p>'
+      +'<div class="notsay"><div class="nt">Ce que \u00e7a ne dit pas</div><p>Plus de zones ne veut pas dire plus d\u2019occasions, et aucune n\u2019est pr\u00e9sent\u00e9e comme meilleure. Rien n\u2019indique laquelle sera atteinte, ni si elle le sera.</p></div>'},
+    sess:{data:'<div class="dh4">Horaires \u00b7 heure de New York</div><div class="ev">'
+      +'<div class="ev-r"><span class="ev-k">Session en cours</span><span class="ev-v">New York</span><span class="ev-t">08:00 \u2013 17:00</span></div>'
+      +'<div class="ev-r"><span class="ev-k">Heure locale du march\u00e9</span><span class="ev-v">15:20</span></div>'
+      +'<div class="ev-r"><span class="ev-k">Cl\u00f4ture de la session</span><span class="ev-v">17:00</span><span class="ev-t">dans 1 h 40</span></div>'
+      +'<div class="ev-r"><span class="ev-k">Chevauchement Londres / NY</span><span class="ev-v">08:00 \u2013 11:30</span><span class="ev-t">termin\u00e9</span></div>'
+      +'<div class="ev-r"><span class="ev-k">Fermeture hebdomadaire</span><span class="ev-v">ven. 17:00</span></div></div>',
+      concept:'<div class="dh4">Les sessions</div>'
+      +'<p class="dp">Des <b>plages horaires</b>, au m\u00eame titre que le calendrier de volatilit\u00e9 : des faits publi\u00e9s, pas des mesures de march\u00e9.</p>'
+      +'<p class="dp">Beaucoup de traders SMC segmentent leur lecture par session plut\u00f4t que de traiter la journ\u00e9e comme un bloc. La tuile sert \u00e0 situer les \u00e9v\u00e9nements du journal dans cette d\u00e9coupe.</p>'
+      +'<p class="dp"><b>Sur un march\u00e9 continu</b> (crypto), la tuile affiche \u00ab March\u00e9 continu \u00b7 24/7 \u00bb : il n\u2019y a ni ouverture ni cl\u00f4ture hebdomadaire. D\u00e9couper la journ\u00e9e en heures Asie / Europe / Am\u00e9rique reste alors une convention de lecture, pas une propri\u00e9t\u00e9 du march\u00e9.</p>'
+      +'<div class="notsay"><div class="nt">Ce que \u00e7a ne dit pas</div><p>Aucune session n\u2019est pr\u00e9sent\u00e9e comme meilleure ou plus fiable. MIA ne dit pas ce que fera la cl\u00f4ture de New York.</p></div>'},
+    lvl:{data:'<div class="dh4">Rep\u00e8res temporels \u00b7 prix courant 2 392,35</div><div class="ev">'
+      +'<div class="ev-r"><span class="ev-k">Ouverture du jour</span><span class="ev-t">\u2212 0,26 %</span><button class="pxbtn" data-lvl="2398.60" data-lab="Ouverture du jour">2 398,60</button></div>'
+      +'<div class="ev-r"><span class="ev-k">Ouverture de la semaine</span><span class="ev-t">\u2212 0,79 %</span><button class="pxbtn" data-lvl="2411.40" data-lab="Ouverture de la semaine">2 411,40</button></div>'
+      +'<div class="ev-r"><span class="ev-k">Haut de la veille</span><span class="ev-t">\u2212 1,19 %</span><button class="pxbtn" data-lvl="2421.20" data-lab="Haut de la veille">2 421,20</button></div>'
+      +'<div class="ev-r"><span class="ev-k">Bas de la veille</span><span class="ev-t">+ 0,68 %</span><button class="pxbtn" data-lvl="2376.20" data-lab="Bas de la veille">2 376,20</button></div>'
+      +'<div class="ev-r"><span class="ev-k">Haut de la semaine</span><span class="ev-t">\u2212 1,34 %</span><button class="pxbtn" data-lvl="2424.80" data-lab="Haut de la semaine">2 424,80</button></div>'
+      +'<div class="ev-r"><span class="ev-k">Bas de la semaine</span><span class="ev-t">+ 0,92 %</span><button class="pxbtn" data-lvl="2370.50" data-lab="Bas de la semaine">2 370,50</button></div></div>'
+      +'<p class="dp">Clique un prix : le niveau est trac\u00e9 sur le graphique et amen\u00e9 dans la vue. Re-clic pour l\u2019enlever.</p>',
+      concept:'<div class="dh4">Des rep\u00e8res, pas des zones</div>'
+      +'<p class="dp">Ces niveaux ne sont pas <b>d\u00e9tect\u00e9s</b> : ils existent parce que le temps passe. L\u2019ouverture du jour est le prix d\u2019ouverture de la bougie journali\u00e8re en cours ; le plus haut de la veille est simplement l\u2019extr\u00eame de la journ\u00e9e pr\u00e9c\u00e9dente.</p>'
+      +'<p class="dp">C\u2019est la diff\u00e9rence avec la tuile <b>Position dans le range</b>, qui utilise des bornes <b>structurelles</b> \u2014 un sommet et un creux retenus par le moteur. Ici, les bornes sont <b>temporelles</b> : deux r\u00e9f\u00e9rentiels distincts, jamais les m\u00eames chiffres.</p>'
+      +'<p class="dp">Chaque prix est cliquable : MIA trace le niveau sur le graphique et l\u2019y am\u00e8ne, pour situer imm\u00e9diatement la structure par rapport \u00e0 ce rep\u00e8re.</p>'
+      +'<p class="dp">Dans l\u2019approche ICT, ces rep\u00e8res sont souvent regard\u00e9s avant tout le reste, parce qu\u2019ils sont visibles par tout le monde de la m\u00eame fa\u00e7on \u2014 aucun r\u00e9glage ne les d\u00e9place.</p>'
+      +'<div class="notsay"><div class="nt">Ce que \u00e7a ne dit pas</div><p>\u00catre sous l\u2019ouverture du jour ne pr\u00e9sage rien de la cl\u00f4ture. Un extr\u00eame de la veille n\u2019est ni un support, ni une r\u00e9sistance, ni une cible : c\u2019est un prix atteint hier, rien de plus.</p></div>'},
+    regime:{data:'<div class="dh4">Vue d\u2019ensemble</div>'
+      +'<p class="dp">Ces dix mesures d\u00e9crivent l\u2019\u00e9tat <b>actuel</b> du march\u00e9 sur l\u2019unit\u00e9 de temps affich\u00e9e. Chacune indique sa source sous sa valeur et s\u2019ouvre sur les donn\u00e9es qui l\u2019ont produite.</p>'
+      +'<p class="dp">Aucune n\u2019est pond\u00e9r\u00e9e, aucune n\u2019est combin\u00e9e en note globale, et aucune n\u2019est compt\u00e9e deux fois sous deux noms diff\u00e9rents.</p>',
+      concept:'<div class="dh4">Pourquoi il n\u2019y a pas de note globale</div>'
+      +'<p class="dp">R\u00e9duire dix mesures \u00e0 un seul indice obligerait \u00e0 d\u00e9cider laquelle compte le plus. Ce choix est une <b>opinion</b>, et une opinion pond\u00e9r\u00e9e reste une opinion \u2014 m\u00eame pr\u00e9sent\u00e9e avec deux d\u00e9cimales.</p>'
+      +'<p class="dp">MIA affiche donc les dix mesures c\u00f4te \u00e0 c\u00f4te, chacune v\u00e9rifiable, et laisse la synth\u00e8se \u00e0 celui qui prend le risque.</p>'
+      +'<div class="notsay"><div class="nt">Ce que \u00e7a ne dit pas</div><p>Aucune de ces mesures, seule ou combin\u00e9e, n\u2019indique quoi faire. Elles d\u00e9crivent un \u00e9tat pr\u00e9sent et des faits pass\u00e9s.</p></div>'}
+  };
+  const tgrid=document.getElementById('tgrid'),tdetail=document.getElementById('tdetail'),
+        tdtitle=document.getElementById('tdtitle'),tdbody=document.getElementById('tdbody');
+  let tcur=null,ttab='data';
+  TILES.forEach(t=>{
+    const d=document.createElement('div');
+    d.className='tile';d.dataset.k=t.k;
+    d.innerHTML='<div class="k">'+t.lbl+' <button class="thelp" data-k="'+t.k+'">?</button></div>'
+      +(t.html?t.html:'<div class="v'+(t.mono?' mono':'')+'">'+t.v+'</div>')+'<div class="sub">'+t.sub+'</div>'+TARROW;
+    d.addEventListener('click',e=>{
+      if(e.target.closest('.thelp')){e.stopPropagation();topen(t.k,'concept');return;}
+      topen(t.k,'data');
+    });
+    tgrid.appendChild(d);
+  });
+  if(TILES.length%2)tgrid.lastElementChild.classList.add('span2');
+  function tlabel(k){const t=TILES.find(x=>x.k===k);return t?t.lbl:'R\u00e9gime de march\u00e9';}
+  function topen(k,which){
+    if(tcur===k&&ttab===which&&tdetail.classList.contains('on')){tclose();return;}
+    tcur=k;ttab=which;
+    tdtitle.textContent=tlabel(k);
+    tdbody.innerHTML=TC[k][which];tdbody.scrollTop=0;
+    tdetail.classList.add('on');
+    document.querySelectorAll('.ttab').forEach(x=>x.classList.toggle('on',x.dataset.tab===which));
+    document.querySelectorAll('.tile').forEach(x=>x.classList.toggle('on',x.dataset.k===k));
+    document.querySelectorAll('.thelp').forEach(x=>x.classList.toggle('on',x.dataset.k===k&&which==='concept'));
+    document.querySelector('.rhelp').classList.toggle('on',k==='regime');
+  }
+  function tclose(){tdetail.classList.remove('on');tcur=null;
+    document.querySelectorAll('.tile,.thelp,.rhelp').forEach(x=>x.classList.remove('on'));}
+  document.querySelectorAll('.ttab').forEach(t=>t.addEventListener('click',()=>{if(tcur)topen(tcur,t.dataset.tab);}));
+  let pxOn=null;
+  tdbody.addEventListener('click',e=>{
+    const b=e.target.closest('.pxbtn');if(!b)return;
+    const lv=parseFloat(b.dataset.lvl);
+    if(pxOn===b){highlighter(null);b.classList.remove('on');pxOn=null;return;}
+    tdbody.querySelectorAll('.pxbtn').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');pxOn=b;
+    highlighter({level:lv,label:b.dataset.lab});
+    document.querySelectorAll('.tile').forEach(x=>x.classList.remove('on'));
+    const c=document.querySelector('.js-chart');if(c)c.scrollIntoView({behavior:'smooth',block:'center'});
+  });
+  document.getElementById('tdclose').addEventListener('click',tclose);
+  document.querySelector('.rhelp').addEventListener('click',()=>topen('regime','concept'));
 
   const fmt=p=>p.toLocaleString('fr-CA',{minimumFractionDigits:2,maximumFractionDigits:2}).replace(',','§').replace('.',',').replace('§','\u00A0');
   let price=2392.35,secs=3;

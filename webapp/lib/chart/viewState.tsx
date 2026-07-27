@@ -5,6 +5,7 @@ import {
   applyChartViewAction,
   DEFAULT_CHART_VIEW,
   type ChartViewState,
+  type ReferenceLevel,
   type ViewAction,
 } from './viewActions';
 
@@ -31,6 +32,15 @@ interface ChartViewContextValue {
   /** Restore the default view (all layers visible, no filter, no highlight). */
   reset(): void;
   /**
+   * The calendar-derived reference marker currently traced on the chart, or null.
+   * This is a DISTINCT channel from the chatbot-controllable `view`: it is never
+   * produced by `coerceViewAction` (which bans price/level fields), so tracing a
+   * reference level cannot weaken the zone id-lock. Set by the Régime UI only.
+   */
+  referenceLevel: ReferenceLevel | null;
+  /** Trace a reference level (replaces any current one), or null to clear it. */
+  setReferenceLevel(level: ReferenceLevel | null): void;
+  /**
    * Reset the render state when the active combo CHANGES (NAV-05). Hidden /
    * isolated / highlighted zones are keyed to a specific combo's engine ids;
    * without this they linger (as invisible stale ids) across a combo switch and
@@ -45,6 +55,10 @@ const ChartViewContext = React.createContext<ChartViewContextValue | null>(null)
 
 export function ChartViewProvider({ children }: { children: React.ReactNode }) {
   const [view, setView] = React.useState<ChartViewState>(DEFAULT_CHART_VIEW);
+  // Reference marker lives OUTSIDE the reducer state on purpose — it must never
+  // be reachable from the chatbot view-action pipeline.
+  const [referenceLevel, setReferenceLevel] =
+    React.useState<ReferenceLevel | null>(null);
 
   const applyActions = React.useCallback(
     (
@@ -70,7 +84,10 @@ export function ChartViewProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
-  const reset = React.useCallback(() => setView(DEFAULT_CHART_VIEW), []);
+  const reset = React.useCallback(() => {
+    setView(DEFAULT_CHART_VIEW);
+    setReferenceLevel(null);
+  }, []);
 
   const lastComboKeyRef = React.useRef<string | null>(null);
   const resetForCombo = React.useCallback((comboKey: string) => {
@@ -79,12 +96,16 @@ export function ChartViewProvider({ children }: { children: React.ReactNode }) {
     lastComboKeyRef.current = comboKey;
     // First observation just records the key; only a real CHANGE wipes the view
     // so masks/isolation/highlight from the previous combo don't leak forward.
-    if (!isFirst) setView(DEFAULT_CHART_VIEW);
+    // A traced reference level is a price of THIS combo — drop it on a switch.
+    if (!isFirst) {
+      setView(DEFAULT_CHART_VIEW);
+      setReferenceLevel(null);
+    }
   }, []);
 
   const value = React.useMemo<ChartViewContextValue>(
-    () => ({ view, applyActions, reset, resetForCombo }),
-    [view, applyActions, reset, resetForCombo],
+    () => ({ view, applyActions, reset, resetForCombo, referenceLevel, setReferenceLevel }),
+    [view, applyActions, reset, resetForCombo, referenceLevel],
   );
 
   return (
@@ -105,6 +126,8 @@ const NOOP_VIEW: ChartViewContextValue = {
   applyActions: () => {},
   reset: () => {},
   resetForCombo: () => {},
+  referenceLevel: null,
+  setReferenceLevel: () => {},
 };
 
 /**

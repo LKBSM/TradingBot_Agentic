@@ -205,11 +205,37 @@ class MarketReadingStructure(BaseModel):
 # ---------------------------------------------------------------------------
 
 
+class VolatilityDetail(BaseModel):
+    """The numeric intermediates behind ``volatility_observed`` — so the reader
+    can REDO the operation. Strictly descriptive: it is the exact arithmetic the
+    engine ran on engine-emitted candle highs/lows, never a new detection.
+
+    ``ratio = recent_avg / baseline_avg``; the categorical result is ``low`` when
+    ``ratio < threshold_low``, ``elevated`` when ``ratio > threshold_high``, else
+    ``normal``. ``recent_avg`` / ``baseline_avg`` are mean True Ranges
+    (high − low) over the last ``recent_n`` candles and the ``baseline_n``
+    candles preceding them (all remaining candles in the window, NOT a fixed 20).
+    Optional on the regime so older payloads / minimal fixtures still validate.
+    """
+
+    recent_avg: float
+    baseline_avg: float
+    ratio: float
+    recent_n: int
+    baseline_n: int
+    threshold_low: float
+    threshold_high: float
+
+
 class MarketReadingRegime(BaseModel):
     trend: TrendValue
     volatility_observed: VolatilityObserved
     market_phase: MarketPhase
     mtf_confluence: dict[str, MTFBiasValue]
+    # Numeric proof behind ``volatility_observed`` (recent vs baseline True Range,
+    # ratio, thresholds). None when the window is too short to compute it (< 14
+    # candles) or on older payloads. Read-only/descriptive — see VolatilityDetail.
+    volatility_detail: Optional[VolatilityDetail] = None
 
     @field_validator("mtf_confluence")
     @classmethod
@@ -325,5 +351,6 @@ __all__ = [
     "TrendValue",
     "VALID_MTF_KEYS",
     "ValidationStatus",
+    "VolatilityDetail",
     "VolatilityObserved",
 ]

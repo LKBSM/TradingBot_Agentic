@@ -111,7 +111,7 @@ describe('MC-1 copy honesty', () => {
       const chart = (bundle as Record<string, any>).app.chart as Record<string, string>;
       for (const k of MC1_CHART_KEYS) {
         expect(typeof chart[k], `${name}.app.chart.${k}`).toBe('string');
-        expect(chart[k].length).toBeGreaterThan(0);
+        expect((chart[k] ?? '').length).toBeGreaterThan(0);
       }
       expect(typeof (bundle as Record<string, any>).scanner.noNewClose).toBe('string');
     });

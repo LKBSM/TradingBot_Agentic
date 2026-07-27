@@ -40,6 +40,7 @@ from src.intelligence.market_reading_schema import (
     RetestInProgress,
     TrendValue,
     VALID_MTF_KEYS,
+    VolatilityDetail,
     VolatilityObserved,
 )
 
@@ -1264,25 +1265,63 @@ def _derive_trend(closes: Sequence[float]) -> TrendValue:
     return "bullish" if last > first else "bearish"
 
 
-def _derive_volatility(candles: Sequence[dict]) -> VolatilityObserved:
+# Volatility thresholds & window — single source of truth, mirrored to the
+# frontend proof panel. The categorical result is ``low`` below _VOL_RATIO_LOW,
+# ``elevated`` above _VOL_RATIO_HIGH, else ``normal``. Recent window = last
+# _VOL_RECENT_N candles; baseline = ALL preceding candles in the window (not a
+# fixed 20 — the panel names the real denominator).
+_VOL_RECENT_N = 7
+_VOL_RATIO_LOW = 0.70
+_VOL_RATIO_HIGH = 1.30
+
+
+def _volatility_from_candles(
+    candles: Sequence[dict],
+) -> tuple[VolatilityObserved, Optional[VolatilityDetail]]:
+    """Categorical volatility PLUS the numeric intermediates behind it.
+
+    Returns ``(category, detail)``. ``detail`` is None when the window is too
+    short (< 14 True Ranges) or the baseline is non-positive — the same guards
+    that make the category fall back to ``normal``. The arithmetic is identical
+    to the historical ``_derive_volatility``; only the intermediates are now
+    surfaced so a sceptic can redo the operation.
+    """
     if len(candles) < 14:
-        return "normal"
+        return "normal", None
     trs = []
     for c in candles:
         if "high" in c and "low" in c:
             trs.append(float(c["high"]) - float(c["low"]))
     if len(trs) < 14:
-        return "normal"
-    recent = sum(trs[-7:]) / 7.0
-    baseline = sum(trs[:-7]) / max(len(trs) - 7, 1)
+        return "normal", None
+    recent_n = _VOL_RECENT_N
+    baseline_n = len(trs) - recent_n
+    recent = sum(trs[-recent_n:]) / float(recent_n)
+    baseline = sum(trs[:-recent_n]) / max(baseline_n, 1)
     if baseline <= 0:
-        return "normal"
+        return "normal", None
     ratio = recent / baseline
-    if ratio < 0.7:
-        return "low"
-    if ratio > 1.3:
-        return "elevated"
-    return "normal"
+    if ratio < _VOL_RATIO_LOW:
+        category: VolatilityObserved = "low"
+    elif ratio > _VOL_RATIO_HIGH:
+        category = "elevated"
+    else:
+        category = "normal"
+    detail = VolatilityDetail(
+        recent_avg=recent,
+        baseline_avg=baseline,
+        ratio=ratio,
+        recent_n=recent_n,
+        baseline_n=baseline_n,
+        threshold_low=_VOL_RATIO_LOW,
+        threshold_high=_VOL_RATIO_HIGH,
+    )
+    return category, detail
+
+
+def _derive_volatility(candles: Sequence[dict]) -> VolatilityObserved:
+    """Categorical volatility only (backward-compatible wrapper)."""
+    return _volatility_from_candles(candles)[0]
 
 
 def _derive_market_phase(trend: TrendValue, volatility: VolatilityObserved) -> MarketPhase:
@@ -1314,7 +1353,7 @@ def candles_to_regime(
     """
     closes = _closes(candles)
     trend = _derive_trend(closes)
-    volatility = _derive_volatility(candles)
+    volatility, volatility_detail = _volatility_from_candles(candles)
     market_phase = _derive_market_phase(trend, volatility)
 
     mtf_confluence: dict[str, MTFBiasValue] = {}
@@ -1330,6 +1369,7 @@ def candles_to_regime(
         volatility_observed=volatility,
         market_phase=market_phase,
         mtf_confluence=mtf_confluence,
+        volatility_detail=volatility_detail,
     )
 
 

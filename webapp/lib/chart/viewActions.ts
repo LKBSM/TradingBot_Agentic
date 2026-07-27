@@ -255,6 +255,22 @@ export function coerceViewActions(
   return out;
 }
 
+// ─── Reference level (calendar-derived marker — SEPARATE channel) ─────────────
+
+/**
+ * A temporal reference marker (day/week open, previous day/week extreme) the
+ * user chose to trace on the chart. It is a PRICE computed from calendar candles
+ * — deliberately NOT a detected zone and NOT a ViewAction: it never enters the
+ * `coerceViewAction` whitelist (which forbids any price/level/geometry field),
+ * so tracing it cannot weaken the zone id-lock. It travels on its own provider
+ * channel (`ChartViewProvider.setReferenceLevel`) and is rendered by the chart
+ * as a distinct solid accent line, visually separate from detected structure.
+ */
+export interface ReferenceLevel {
+  price: number;
+  label: string;
+}
+
 // ─── View state + reducer ─────────────────────────────────────────────────────
 
 export interface ChartLayers {

@@ -154,16 +154,27 @@ describe('UI-2c — Structure card list', () => {
   });
 });
 
-/* ── Régime card: every displayed measure names its source ───────────────── */
-describe('UI-2c — Régime measures each show a source sub-line', () => {
-  it('renders a non-empty .sub2 under the sourced measures', () => {
+/* ── Régime card: every displayed measure names its source (RG-1 tiles) ──── */
+describe('Régime measures each show a source sub-line', () => {
+  it('renders a non-empty .sub under every shown tile', () => {
     const { container } = render(
-      <RegimeCard regime={REGIME} structure={STRUCT} header={HEADER} openHelp={null} onToggleHelp={noop} />,
+      <RegimeCard
+        regime={REGIME}
+        structure={STRUCT}
+        header={HEADER}
+        price={2392.35}
+        marketStatus={null}
+        openHelp={null}
+        onToggleHelp={noop}
+      />,
     );
-    const subs = Array.from(container.querySelectorAll('.sub2'));
-    // Trend · Volatilité · Maturité · Alignement · Dernier évén. · Densité all
-    // carry a source line here (maturity resolves from the CHOCH history).
-    expect(subs.length).toBeGreaterThanOrEqual(5);
-    for (const s of subs) expect((s.textContent ?? '').trim().length).toBeGreaterThan(0);
+    const tiles = Array.from(container.querySelectorAll('.tile'));
+    expect(tiles.length).toBeGreaterThanOrEqual(5);
+    // Every rendered tile carries a non-empty source sub-line.
+    for (const tile of tiles) {
+      const sub = tile.querySelector('.sub');
+      expect(sub).not.toBeNull();
+      expect((sub?.textContent ?? '').trim().length).toBeGreaterThan(0);
+    }
   });
 });
