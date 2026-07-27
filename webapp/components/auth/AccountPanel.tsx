@@ -2,11 +2,13 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import * as React from 'react';
 import { AuthError, updateProfile } from '@/lib/auth/api-client';
 import { useAuth } from '@/lib/auth/store';
 import { useLocalizedHref } from '@/lib/i18n/href';
+import { useLocaleSwitch } from '@/lib/i18n/use-locale-switch';
+import { LOCALE_LABELS, SUPPORTED_LOCALES } from '@/i18n';
 import { useDesign } from '@/lib/theme/useDesign';
 import type { ThemeMeta } from '@/lib/theme/themes';
 import { FormError, FormSuccess } from './fields';
@@ -182,6 +184,15 @@ export function AccountPanel() {
         </div>
       </div>
 
+      {/* ── Langue ─────────────────────────────────────────────────────── */}
+      <div className="card">
+        <div className="card-h">
+          <GlobeIcon />
+          <h3>{t('sectionLanguage')}</h3>
+        </div>
+        <LanguageGrid />
+      </div>
+
       {/* ── Apparence ──────────────────────────────────────────────────── */}
       <div className="card">
         <div className="card-h">
@@ -248,6 +259,37 @@ export function AccountPanel() {
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Language selector in Réglages — the SAME switch action as the site nav's
+ * LocaleToggle (`useLocaleSwitch`: writes NEXT_LOCALE + client-navigates the
+ * current path under the chosen locale). One source of truth, so the choice is
+ * persisted and applied on return, and the user stays on this page, translated.
+ * Each chip is a real button with `aria-pressed`; the active one also carries a
+ * check glyph (not colour alone).
+ */
+function LanguageGrid() {
+  const t = useTranslations('nav');
+  const active = useLocale();
+  const switchLocale = useLocaleSwitch();
+  return (
+    <div className="fgrp" role="group" aria-label={t('language')}>
+      {SUPPORTED_LOCALES.map((loc) => (
+        <button
+          key={loc}
+          type="button"
+          lang={loc}
+          dir={loc === 'ar' ? 'rtl' : 'ltr'}
+          className={active === loc ? 'fchip on' : 'fchip'}
+          aria-pressed={active === loc}
+          onClick={() => switchLocale(loc)}
+        >
+          {LOCALE_LABELS[loc]}
+        </button>
+      ))}
     </div>
   );
 }
@@ -324,6 +366,15 @@ function UserIcon() {
     <svg viewBox="0 0 24 24" aria-hidden>
       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
       <circle cx="12" cy="7" r="4" />
+    </svg>
+  );
+}
+function GlobeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M2 12h20" />
+      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10Z" />
     </svg>
   );
 }

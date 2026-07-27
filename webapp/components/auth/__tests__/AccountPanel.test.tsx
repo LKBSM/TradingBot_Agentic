@@ -14,6 +14,7 @@ const h = vi.hoisted(() => ({
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: h.push, replace: h.replace, refresh: h.refresh }),
+  usePathname: () => '/compte',
 }));
 vi.mock('@/lib/auth/store', () => ({
   useAuth: () => ({
