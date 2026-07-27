@@ -46,6 +46,21 @@ describe('structureRange', () => {
       }),
     ).toBeNull();
   });
+
+  it('falls back to external clusters when range_high/low are not emitted (RG-1b)', () => {
+    const mk = (side: 'bsl' | 'ssl', kind: LiquidityPool['kind'], level: number, ext: boolean): LiquidityPool => ({
+      id: `${side}_${level}`, side, kind, level, touches: 2, is_external: ext,
+      status: 'intact', created_at: '2026-07-26T00:00:00Z', user_flagged: false,
+    });
+    const r = structureRange({
+      liquidity_pools: [
+        mk('bsl', 'equal_highs', 2421.2, true), // top external cluster
+        mk('ssl', 'equal_lows', 2370.5, true), // bottom external cluster
+        mk('bsl', 'equal_highs', 2410.0, false), // internal → ignored
+      ],
+    });
+    expect(r).toEqual({ low: 2370.5, high: 2421.2 });
+  });
 });
 
 describe('positionPct', () => {

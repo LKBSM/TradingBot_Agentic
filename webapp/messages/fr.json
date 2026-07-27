@@ -24,7 +24,7 @@
     "sub": {
       "phase": "dérivée de la tendance et de la volatilité",
       "trend": "mesurée sur {tf}",
-      "vol": "7 dernières bougies vs les précédentes",
+      "vol": "{recent} dernières vs {baseline} précédentes",
       "pos": "{low} – {high}",
       "mat": "depuis le CHOCH du {date}",
       "dens": "ouverts sur {tf}",
@@ -117,7 +117,7 @@
     "concept": {
       "regime": {
         "title": "Pourquoi il n’y a pas de note globale",
-        "body": "Réduire dix mesures à un seul indice obligerait à décider laquelle compte le plus. Ce choix est une **opinion**, et une opinion pondérée reste une opinion — même présentée avec deux décimales.\n\nMIA affiche donc les dix mesures côte à côte, chacune vérifiable, et laisse la synthèse à celui qui prend le risque.",
+        "body": "Réduire neuf mesures à un seul indice obligerait à décider laquelle compte le plus. Ce choix est une **opinion**, et une opinion pondérée reste une opinion — même présentée avec deux décimales.\n\nMIA affiche donc les neuf mesures côte à côte, chacune vérifiable, et laisse la synthèse à celui qui prend le risque.",
         "notSay": "Aucune de ces mesures, seule ou combinée, n’indique quoi faire. Elles décrivent un état présent et des faits passés."
       },
       "phase": {

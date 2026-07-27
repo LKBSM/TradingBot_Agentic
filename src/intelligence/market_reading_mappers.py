@@ -1268,9 +1268,11 @@ def _derive_trend(closes: Sequence[float]) -> TrendValue:
 # Volatility thresholds & window — single source of truth, mirrored to the
 # frontend proof panel. The categorical result is ``low`` below _VOL_RATIO_LOW,
 # ``elevated`` above _VOL_RATIO_HIGH, else ``normal``. Recent window = last
-# _VOL_RECENT_N candles; baseline = ALL preceding candles in the window (not a
-# fixed 20 — the panel names the real denominator).
+# _VOL_RECENT_N candles; baseline = the _VOL_BASELINE_N candles IMMEDIATELY
+# PRECEDING them (a bounded, comparable reference — not the whole 500-bar
+# history, which drowned the signal). The panel names this real denominator.
 _VOL_RECENT_N = 7
+_VOL_BASELINE_N = 20
 _VOL_RATIO_LOW = 0.70
 _VOL_RATIO_HIGH = 1.30
 
@@ -1295,9 +1297,15 @@ def _volatility_from_candles(
     if len(trs) < 14:
         return "normal", None
     recent_n = _VOL_RECENT_N
-    baseline_n = len(trs) - recent_n
     recent = sum(trs[-recent_n:]) / float(recent_n)
-    baseline = sum(trs[:-recent_n]) / max(baseline_n, 1)
+    # Baseline = the _VOL_BASELINE_N candles immediately before the recent ones
+    # (fewer only when the window is short). Bounded so the reference stays a
+    # recent, comparable norm rather than the whole history.
+    baseline_slice = trs[-(recent_n + _VOL_BASELINE_N) : -recent_n]
+    baseline_n = len(baseline_slice)
+    if baseline_n == 0:
+        return "normal", None
+    baseline = sum(baseline_slice) / baseline_n
     if baseline <= 0:
         return "normal", None
     ratio = recent / baseline

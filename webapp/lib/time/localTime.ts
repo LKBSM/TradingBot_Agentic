@@ -35,6 +35,20 @@ export function formatLocalDayHm(d: Date, timeZone?: string): string {
   return `${day} à ${formatLocalHm(d, timeZone)}`;
 }
 
+const DAY_LONG_OPTS: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' };
+
+/**
+ * « 24 juil. à 09:45 » — LONG, localized date + time. The month is a localized
+ * short name and the day/month order follows the locale (fr « 24 juil. », en
+ * « Jul 24 »); the « à » / « at » join is locale-driven. Used by the Régime
+ * panel where a numeric « 24/07 » would be ambiguous across languages.
+ */
+export function formatLocalDayLong(d: Date, locale: string, timeZone?: string): string {
+  const day = d.toLocaleDateString(locale, { ...DAY_LONG_OPTS, timeZone });
+  const sep = locale.toLowerCase().startsWith('fr') ? 'à' : 'at';
+  return `${day} ${sep} ${formatLocalHm(d, timeZone)}`;
+}
+
 /**
  * A short, stable timezone label built from the UTC offset, e.g. « UTC−4 ».
  * Offset-based (not an abbreviation) so it is unambiguous and locale-independent.

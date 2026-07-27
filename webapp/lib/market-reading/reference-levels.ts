@@ -27,11 +27,17 @@ export interface StructureRange {
 }
 
 /**
- * The structural range bounds, taken from the engine's liquidity pools —
- * `kind: "range_low"` / `"range_high"` are the window's extreme swings the SMC
- * mapper emits. These are DESCRIPTIVE window extremes (max/min of the retained
- * swings), NOT « the last swing » — the panel labels them as such. Returns null
- * when either bound is missing or the range is degenerate (high <= low).
+ * The structural range bounds, taken from the engine's liquidity pools. These
+ * are DESCRIPTIVE structural extremes (from the retained swings), NOT raw candle
+ * highs/lows — the panel labels them as such.
+ *
+ * `kind: "range_high"`/`"range_low"` are the direct extremes, BUT the mapper
+ * omits them when an equal-highs/-lows cluster already sits AT that extreme (it
+ * emits the cluster pool instead). So we take the top bound as the highest
+ * `is_external` BSL pool level (range_high OR the equal-highs cluster at the top)
+ * and the bottom bound as the lowest `is_external` SSL pool level — robust
+ * whenever structure exists. Returns null when either side is missing or the
+ * range is degenerate (high <= low).
  */
 export function structureRange(
   structure: Pick<MarketReadingStructure, 'liquidity_pools'>,
@@ -40,8 +46,20 @@ export function structureRange(
   let high: number | null = null;
   let low: number | null = null;
   for (const p of pools) {
+    // Direct range extremes win outright.
     if (p.kind === 'range_high') high = p.level;
     else if (p.kind === 'range_low') low = p.level;
+  }
+  // Fallback to the external clusters at the top / bottom of the window.
+  if (high == null) {
+    for (const p of pools) {
+      if (p.is_external && p.side === 'bsl' && (high == null || p.level > high)) high = p.level;
+    }
+  }
+  if (low == null) {
+    for (const p of pools) {
+      if (p.is_external && p.side === 'ssl' && (low == null || p.level < low)) low = p.level;
+    }
   }
   if (high == null || low == null || high <= low) return null;
   return { low, high };
