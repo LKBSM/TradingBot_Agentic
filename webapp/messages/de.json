@@ -402,7 +402,8 @@
     "activeStrategy": "Meine Strategie — aktive Bedingungen",
     "note": "Geschlossene Palette, Gegenwart. Jede prädiktive Bedingung wird abgelehnt — kein „wird abprallen“, kein Ziel.",
     "resultsMeta": "{count} Kombinationen · {when} · keine Rangfolge",
-    "unavailable": "Nicht verfügbar — keine frische Analyse für diese Kombination. Nichts wird erfunden."
+    "unavailable": "Nicht verfügbar — keine frische Analyse für diese Kombination. Nichts wird erfunden.",
+    "noNewClose": "Keine neu geschlossene Kerze zum Analysieren seit dem letzten Scan."
   },
   "reading": {
     "card": {
@@ -957,7 +958,14 @@
       "liqShowAll": "Alle Liquiditätszonen anzeigen (intakt, abgeschöpft, gebrochen)",
       "liqShowIntactOnly": "Nur intakte Liquiditätszonen anzeigen",
       "marketClosed": "Markt geschlossen",
-      "marketClosedTitle": "Der Markt ist derzeit geschlossen: Das Chart zeigt die letzte abgeschlossene Kerze und keine Live-Notierung."
+      "marketClosedTitle": "Der Markt ist derzeit geschlossen: Das Chart zeigt die letzte abgeschlossene Kerze und keine Live-Notierung.",
+      "marketPaused": "Tägliche Pause",
+      "marketPausedTitle": "Tägliche Marktpause (Rollover): Das Chart zeigt die letzte abgeschlossene Kerze und keine Live-Notierung.",
+      "dataLagged": "Daten verzögert",
+      "dataLaggedTitle": "Der Kalender zeigt den Markt als geöffnet, aber es wurde kürzlich keine neue Kerze empfangen.",
+      "lastCandleClosed": "Letzte Kerze geschlossen {when} (New York)",
+      "reopensAt": "Wiedereröffnung {when} (New York)",
+      "noNewCandleSince": "Keine neue Kerze empfangen seit {when} (New York)"
     },
     "layers": {
       "ob": "OB",

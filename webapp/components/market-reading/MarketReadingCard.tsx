@@ -11,6 +11,7 @@ import {
   type MarketReadingSectionKey,
 } from './MarketReadingSections';
 import type { DailyChange } from '@/lib/market-reading/price';
+import type { MarketStatusView } from '@/lib/market-reading/status';
 import type { MarketReading } from '@/types/market-reading';
 
 interface MarketReadingCardProps {
@@ -37,6 +38,8 @@ interface MarketReadingCardProps {
    * "Marché fermé" badge next to the header price. Omitted on static surfaces.
    */
   marketClosed?: boolean;
+  /** MC-1 server market status — drives the 3-state badge + factual sub-line. */
+  status?: MarketStatusView | null;
   className?: string;
 }
 
@@ -59,6 +62,7 @@ export function MarketReadingCard({
   chartSlot,
   live,
   marketClosed,
+  status,
   className,
 }: MarketReadingCardProps) {
   const t = useTranslations('reading.card');
@@ -69,6 +73,7 @@ export function MarketReadingCard({
           header={reading.header}
           live={live}
           marketClosed={marketClosed}
+          status={status}
         />
 
         {/* "Graphique d'abord" layout (/app): the chart is framed by a discreet

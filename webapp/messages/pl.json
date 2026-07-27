@@ -402,7 +402,8 @@
     "activeStrategy": "Moja strategia — aktywne warunki",
     "note": "Zamknięta paleta, czas teraźniejszy. Każdy warunek predykcyjny jest odrzucany — żadnego „odbije się”, bez celu.",
     "resultsMeta": "{count} kombinacji · {when} · bez rankingu",
-    "unavailable": "Niedostępne — brak świeżego odczytu dla tej kombinacji. Nic nie jest zmyślane."
+    "unavailable": "Niedostępne — brak świeżego odczytu dla tej kombinacji. Nic nie jest zmyślane.",
+    "noNewClose": "Brak nowo zamkniętej świecy do analizy od ostatniego skanu."
   },
   "reading": {
     "card": {
@@ -957,7 +958,14 @@
       "liqShowAll": "Pokaż wszystkie kieszenie płynności (nienaruszone, zebrane, przełamane)",
       "liqShowIntactOnly": "Pokaż tylko nienaruszone kieszenie płynności",
       "marketClosed": "Rynek zamknięty",
-      "marketClosedTitle": "Rynek jest obecnie zamknięty: wykres pokazuje ostatnią zamkniętą świecę i nie odzwierciedla notowania na żywo."
+      "marketClosedTitle": "Rynek jest obecnie zamknięty: wykres pokazuje ostatnią zamkniętą świecę i nie odzwierciedla notowania na żywo.",
+      "marketPaused": "Przerwa dzienna",
+      "marketPausedTitle": "Dzienna przerwa rynku (rollover): wykres pokazuje ostatnią zamkniętą świecę i nie odzwierciedla notowania na żywo.",
+      "dataLagged": "Dane opóźnione",
+      "dataLaggedTitle": "Kalendarz wskazuje otwarty rynek, ale ostatnio nie otrzymano nowej świecy.",
+      "lastCandleClosed": "Ostatnia świeca zamknięta {when} (Nowy Jork)",
+      "reopensAt": "Ponowne otwarcie {when} (Nowy Jork)",
+      "noNewCandleSince": "Brak nowej świecy od {when} (Nowy Jork)"
     },
     "layers": {
       "ob": "OB",

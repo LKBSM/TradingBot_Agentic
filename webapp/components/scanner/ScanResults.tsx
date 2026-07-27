@@ -77,6 +77,10 @@ export function ScanResults({
   // Auto-refresh self-heals most staleness; this is the honest fallback when a
   // reading hasn't been regenerated yet (cold open, weekend, quiet market).
   const isStale = (m: (typeof response.matches)[number]) => m.freshness === 'stale';
+  // MC-1: when every combo is stale the feed has stopped closing candles (weekend
+  // / holiday / lagged). Relaunching won't invent a new close — say so honestly
+  // instead of simulating a refresh.
+  const allStale = response.matches.length > 0 && response.matches.every(isStale);
   const full = response.matches.filter((m) => m.matched && !isStale(m));
   const staleFull = response.matches.filter((m) => m.matched && isStale(m));
   const partial = response.matches.filter((m) => !m.matched && m.met_count > 0);
@@ -110,7 +114,12 @@ export function ScanResults({
           <span className="dot" />
           <span className="mono">{t('livebadge')}</span>
         </div>
-        <button className="btn" onClick={onRefresh} disabled={isRefreshing}>
+        <button
+          className="btn"
+          onClick={onRefresh}
+          disabled={isRefreshing}
+          title={allStale ? t('noNewClose') : undefined}
+        >
           {isRefreshing ? t('results.scanning') : t('results.rescan')}
         </button>
         <button className="btn" onClick={onEdit}>
@@ -118,6 +127,12 @@ export function ScanResults({
         </button>
         <AutoRefreshToggle enabled={autoRefreshEnabled} onChange={onToggleAutoRefresh} />
       </div>
+
+      {allStale && (
+        <div className="sub" role="status" data-testid="scan-no-new-close">
+          {t('noNewClose')}
+        </div>
+      )}
 
       {/* Active-conditions palette (read-only reflection of the saved strategy) */}
       <div className="rail-lbl">{t('activeStrategy')}</div>

@@ -402,7 +402,8 @@
     "activeStrategy": "Mijn strategie — actieve voorwaarden",
     "note": "Gesloten palet, tegenwoordige tijd. Elke voorspellende voorwaarde wordt geweigerd — geen “gaat stuiteren”, geen doel.",
     "resultsMeta": "{count} combinaties · {when} · geen rangschikking",
-    "unavailable": "Niet beschikbaar — geen verse analyse voor deze combinatie. Niets wordt verzonnen."
+    "unavailable": "Niet beschikbaar — geen verse analyse voor deze combinatie. Niets wordt verzonnen.",
+    "noNewClose": "Geen nieuw gesloten candle om te analyseren sinds de laatste scan."
   },
   "reading": {
     "card": {
@@ -957,7 +958,14 @@
       "liqShowAll": "Alle liquiditeitspockets tonen (intact, afgenomen, gebroken)",
       "liqShowIntactOnly": "Alleen intacte liquiditeitspockets tonen",
       "marketClosed": "Markt gesloten",
-      "marketClosedTitle": "De markt is momenteel gesloten: de grafiek toont de laatste gesloten candle en geeft geen live-koers weer."
+      "marketClosedTitle": "De markt is momenteel gesloten: de grafiek toont de laatste gesloten candle en geeft geen live-koers weer.",
+      "marketPaused": "Dagelijkse pauze",
+      "marketPausedTitle": "Dagelijkse marktpauze (rollover): de grafiek toont de laatste gesloten candle en geen live-notering.",
+      "dataLagged": "Gegevens vertraagd",
+      "dataLaggedTitle": "De kalender geeft de markt als open aan, maar er is recent geen nieuwe candle ontvangen.",
+      "lastCandleClosed": "Laatste candle gesloten {when} (New York)",
+      "reopensAt": "Heropent {when} (New York)",
+      "noNewCandleSince": "Geen nieuwe candle ontvangen sinds {when} (New York)"
     },
     "layers": {
       "ob": "OB",

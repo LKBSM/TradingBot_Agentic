@@ -37,7 +37,11 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any, Callable, Iterable, Optional, Tuple
 
-from src.intelligence.market_reading_assembler import expected_last_candle_close
+from src.intelligence.market_calendar import (
+    CLOSED_HOLIDAY,
+    calendar_state,
+    market_aware_expected_close,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +67,11 @@ class MarketReadingScheduler:
 
     DEFAULT_TICK_INTERVAL_SECONDS = 60
     DEFAULT_AUTO_STOP_HOURS = 24
+    #: How often the safety probe may fire per combo while the market is closed
+    #: for a HOLIDAY (MC-1) — catches a venue that reopens before the calendar
+    #: says so. Weekends/daily breaks are deterministic and never probed, so a
+    #: normal weekend makes zero outbound Twelve Data calls. 0 disables it.
+    DEFAULT_SAFETY_POLL_SECONDS = 1800
 
     def __init__(
         self,
@@ -73,6 +82,7 @@ class MarketReadingScheduler:
         auto_stop_hours: int = DEFAULT_AUTO_STOP_HOURS,
         always_warm: Optional[Iterable[Tuple[str, str]]] = None,
         clock: Callable[[], datetime] = lambda: datetime.now(timezone.utc),
+        safety_poll_seconds: int = DEFAULT_SAFETY_POLL_SECONDS,
     ) -> None:
         from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -81,6 +91,8 @@ class MarketReadingScheduler:
         self._candles_store = candles_store
         self._tick_interval_seconds = tick_interval_seconds
         self._auto_stop_hours = auto_stop_hours
+        self._safety_poll_seconds = safety_poll_seconds
+        self._last_safety_probe: dict[Tuple[str, str], datetime] = {}
         # Combinations kept warm regardless of recent user access — e.g. the
         # fixed perimeter the Conditions Scanner reads. Without this, a combo
         # nobody opened in the last ``auto_stop_hours`` falls out of the active
@@ -172,8 +184,14 @@ class MarketReadingScheduler:
         for instrument, timeframe in combos:
             try:
                 if self._needs_regeneration(instrument, timeframe, now):
+                    # market-aware: while the market is closed this is False, so
+                    # no Twelve Data call and no re-emitted reading (MC-1 lock).
                     self._assembler.get_or_generate(instrument, timeframe)
                     regenerated += 1
+                elif self._should_safety_probe(instrument, timeframe, now):
+                    # Holiday-only, low-frequency probe for an early reopen.
+                    if self._assembler.refresh_if_reopened(instrument, timeframe):
+                        regenerated += 1
             except Exception:
                 # One combination failing must not abort the whole tick.
                 logger.exception(
@@ -181,6 +199,25 @@ class MarketReadingScheduler:
                     instrument, timeframe,
                 )
         return regenerated
+
+    def _should_safety_probe(
+        self, instrument: str, timeframe: str, now: datetime
+    ) -> bool:
+        """True when a low-frequency early-reopen probe is due for this combo.
+
+        Restricted to HOLIDAY closures: weekends and daily breaks are
+        deterministic, so probing them would waste API quota on data we already
+        know is frozen. Rate-limited to one probe per ``safety_poll_seconds``."""
+        if self._safety_poll_seconds <= 0:
+            return False
+        if calendar_state(instrument, now) != CLOSED_HOLIDAY:
+            return False
+        key = (str(instrument), str(timeframe))
+        last = self._last_safety_probe.get(key)
+        if last is not None and (now - last).total_seconds() < self._safety_poll_seconds:
+            return False
+        self._last_safety_probe[key] = now
+        return True
 
     # ------------------------------------------------------------------ #
     # Internals
@@ -193,8 +230,12 @@ class MarketReadingScheduler:
         Idempotence: once a tick regenerates a combination for ``expected_close``,
         a subsequent tick with no newer candle finds the stored reading current
         and skips it (no duplicate regeneration).
+
+        MC-1: ``expected_close`` is **market-aware** — it stops advancing while
+        the market is closed, so a stored Friday reading keeps matching all
+        weekend and the tick makes no Twelve Data call and re-emits nothing.
         """
-        expected_close = expected_last_candle_close(timeframe, now)
+        expected_close = market_aware_expected_close(instrument, timeframe, now)
         latest = self._readings_store.get_latest_reading(instrument, timeframe)
         if not latest:
             return True

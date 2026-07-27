@@ -1,0 +1,10 @@
+{
+  "_comment": "Full-day market closures for spot FX / spot metals. Only days when the venue is genuinely CLOSED (not merely thin-liquidity early-close days). Source: CME Group holiday calendar (https://www.cmegroup.com/tools-information/holiday-calendar.html) and ICE/EBS spot FX conventions, cross-checked 2026-07-26. Dates are the local New-York calendar date of the closure. Markets '*' = all instruments; otherwise the listed symbols. IMPORTANT: beyond 'covered_through_year' the calendar is UNKNOWN — the engine must fall back to last-closed-candle age (state 'data_lagged'), never assume 'open'.",
+  "covered_through_year": 2027,
+  "holidays": [
+    {"date": "2026-01-01", "markets": ["*"], "name": "New Year's Day", "source": "CME/ICE"},
+    {"date": "2026-12-25", "markets": ["*"], "name": "Christmas Day", "source": "CME/ICE"},
+    {"date": "2027-01-01", "markets": ["*"], "name": "New Year's Day", "source": "CME/ICE"},
+    {"date": "2027-12-24", "markets": ["*"], "name": "Christmas (observed)", "source": "CME/ICE"}
+  ]
+}

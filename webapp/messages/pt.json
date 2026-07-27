@@ -402,7 +402,8 @@
     "activeStrategy": "A minha estratégia — condições ativas",
     "note": "Paleta fechada, no presente. Qualquer condição preditiva é recusada — nada de «vai ressaltar», sem alvo.",
     "resultsMeta": "{count} combos · {when} · sem classificação",
-    "unavailable": "Indisponível — sem leitura recente para este combo. Nada é inventado."
+    "unavailable": "Indisponível — sem leitura recente para este combo. Nada é inventado.",
+    "noNewClose": "Nenhuma vela recém-fechada para analisar desde a última varredura."
   },
   "reading": {
     "card": {
@@ -957,7 +958,14 @@
       "liqShowAll": "Mostrar todas as bolsas de liquidez (intactas, recolhidas, rompidas)",
       "liqShowIntactOnly": "Mostrar apenas as bolsas de liquidez intactas",
       "marketClosed": "Mercado fechado",
-      "marketClosedTitle": "O mercado está fechado no momento: o gráfico mostra a última vela fechada e não reflete uma cotação ao vivo."
+      "marketClosedTitle": "O mercado está fechado no momento: o gráfico mostra a última vela fechada e não reflete uma cotação ao vivo.",
+      "marketPaused": "Pausa diária",
+      "marketPausedTitle": "Pausa diária do mercado (rollover): o gráfico mostra a última vela fechada e não reflete uma cotação ao vivo.",
+      "dataLagged": "Dados atrasados",
+      "dataLaggedTitle": "O calendário indica o mercado aberto, mas nenhuma vela nova foi recebida recentemente.",
+      "lastCandleClosed": "Última vela fechada {when} (Nova Iorque)",
+      "reopensAt": "Reabertura {when} (Nova Iorque)",
+      "noNewCandleSince": "Nenhuma vela nova recebida desde {when} (Nova Iorque)"
     },
     "layers": {
       "ob": "OB",

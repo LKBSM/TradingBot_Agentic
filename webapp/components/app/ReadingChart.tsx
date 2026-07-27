@@ -47,7 +47,8 @@ import {
   type ZoneOverlayData,
 } from '@/lib/chart/zoneOverlayPrimitive';
 import { isPlausibleTick, isValidBar } from '@/lib/chart/sanitize';
-import type { Candle, MarketReadingStructure } from '@/types/market-reading';
+import { badgeLabelKey } from '@/lib/market-reading/status';
+import type { Candle, MarketReadingStructure, MarketState } from '@/types/market-reading';
 
 /**
  * Candlestick chart for the reading panel, built on TradingView's Lightweight
@@ -100,6 +101,11 @@ export interface ReadingChartProps {
    * detection is untouched.
    */
   marketClosed?: boolean;
+  /**
+   * MC-1 server market status. When present it names the badge (closed / daily
+   * pause / data delayed) instead of the generic "Marché fermé".
+   */
+  marketStatusState?: MarketState | null;
   /**
    * DISPLAY-ONLY view state, driven by the M.I.A Agent chat (or left at the
    * defaults). These change ONLY what the chart renders / how it frames — never
@@ -221,6 +227,7 @@ export function ReadingChart({
   livePrice = null,
   liveTs = null,
   marketClosed = false,
+  marketStatusState = null,
   layers = DEFAULT_CHART_VIEW.layers,
   filter = DEFAULT_CHART_VIEW.filter,
   focus = null,
@@ -1060,7 +1067,7 @@ export function ReadingChart({
             className="inline-block h-1.5 w-1.5 rounded-full bg-muted-foreground/70"
             aria-hidden
           />
-          {t('chart.marketClosed')}
+          {t((marketStatusState && badgeLabelKey(marketStatusState)) || 'chart.marketClosed')}
         </div>
       ) : (
         liveActive && (
