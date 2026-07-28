@@ -374,11 +374,20 @@
 .cald-back {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   font-size: 11.5px;
-  color: var(--acc);
+  font-weight: 500;
+  color: var(--txt);
   text-decoration: none;
   margin-bottom: 14px;
+  padding: 7px 12px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-s);
+  background: var(--panel-2);
+}
+.cald-back:hover {
+  border-color: var(--acc);
+  color: var(--acc);
 }
 .cald-head {
   display: flex;
