@@ -137,6 +137,35 @@ function PxBtn({
   );
 }
 
+/**
+ * VZ-1b — a clickable EVENT (BOS/CHOCH) row value. Same affordance as PxBtn, but
+ * it selects the event on the temporal channel so the camera frames its
+ * confirmation BAR (not just its price). Shows the broken level as its face.
+ */
+function EvBtn({
+  kind,
+  ev,
+  c,
+}: {
+  kind: 'bos' | 'choch';
+  ev: { broken_at: string; direction: 'bullish' | 'bearish'; level: number };
+  c: DataCtx;
+}) {
+  const d = parseUtc(ev.broken_at);
+  const id = d ? `${kind}:${Math.floor(d.getTime() / 1000)}:${ev.level}` : null;
+  const on = id != null && c.selectedEventId === id;
+  return (
+    <button
+      type="button"
+      className={cn('pxbtn', on && 'on')}
+      aria-pressed={on}
+      onClick={() => c.selectEvent(kind, ev)}
+    >
+      {c.px(ev.level)}
+    </button>
+  );
+}
+
 interface RegimeCardProps {
   regime: MarketReadingRegime;
   structure: MarketReadingStructure;
@@ -189,7 +218,8 @@ export function RegimeCard({
   const instrument = header.instrument;
   const tf = header.timeframe;
   const { trends } = useMtfTrends(instrument);
-  const { referenceLevel, setReferenceLevel } = useChartViewOptional();
+  const { referenceLevel, setReferenceLevel, selection, select, clearSelection } =
+    useChartViewOptional();
 
   // Server-aggregated over the MC-1 trading calendar (RG-1c) — the front never
   // indexes a single candle to build these.
@@ -444,6 +474,26 @@ export function RegimeCard({
     setReferenceLevel(same ? null : { price: value, label: display });
   }
 
+  // VZ-1b — an EVENT (BOS/CHOCH) is a couple date+prix : it selects on the unified
+  // selection's EVENT channel (temporal frame on the confirmation candle via
+  // frameEvent), NOT as a price-only reference level. Distinct path from the zone
+  // id-lock; carries broken_at → epoch so the camera goes to the RIGHT bar.
+  const selectedEventId = selection?.family === 'event' ? selection.id : null;
+  function selectEvent(
+    kind: 'bos' | 'choch',
+    ev: { broken_at: string; direction: 'bullish' | 'bearish'; level: number },
+  ) {
+    const d = parseUtc(ev.broken_at);
+    if (!d) return; // no confirmation timestamp → no honest temporal frame.
+    const atSec = Math.floor(d.getTime() / 1000);
+    const id = `${kind}:${atSec}:${ev.level}`;
+    if (selectedEventId === id) {
+      clearSelection();
+      return;
+    }
+    select({ family: 'event', id, kind, direction: ev.direction, level: ev.level, atSec });
+  }
+
   return (
     <div className="card">
       <div className="card-h">
@@ -580,6 +630,8 @@ export function RegimeCard({
                 levelsInsufficient,
                 referenceLevel,
                 traceLevel,
+                selectEvent,
+                selectedEventId,
                 refLabel,
                 sideOf: coincidentSide,
               })
@@ -647,6 +699,12 @@ interface DataCtx {
   levelsInsufficient: string[];
   referenceLevel: { price: number; label: string } | null;
   traceLevel: (label: string, value: number) => void;
+  /** VZ-1b — select a BOS/CHOCH event (temporal frame on its confirmation bar). */
+  selectEvent: (
+    kind: 'bos' | 'choch',
+    ev: { broken_at: string; direction: 'bullish' | 'bearish'; level: number },
+  ) => void;
+  selectedEventId: string | null;
   refLabel: (label: string, value: number) => string;
   /** Side of a detected pocket coinciding with a price level, or null (RG-1d). */
   sideOf: (value: number) => LiquiditySide | null;
@@ -774,9 +832,12 @@ function renderData(k: string, c: DataCtx): React.ReactNode {
       const breakMs = new Date(m.brokenAt).getTime();
       const mins = Math.max(0, Math.floor((closeMs - breakMs) / 60000));
       const elapsed = `${Math.floor(mins / 60)} h ${String(mins % 60).padStart(2, '0')}`;
-      const since = [...(c.structure.bos_events ?? []), ...(c.structure.choch_events ?? [])]
-        .filter((e) => new Date(e.broken_at).getTime() > breakMs)
-        .sort((a, b) => new Date(b.broken_at).getTime() - new Date(a.broken_at).getTime());
+      const since = [
+        ...(c.structure.bos_events ?? []).map((e) => ({ kind: 'bos' as const, e })),
+        ...(c.structure.choch_events ?? []).map((e) => ({ kind: 'choch' as const, e })),
+      ]
+        .filter(({ e }) => new Date(e.broken_at).getTime() > breakMs)
+        .sort((a, b) => new Date(b.e.broken_at).getTime() - new Date(a.e.broken_at).getTime());
       return (
         <>
           <Dh4>{t('data.matHead')}</Dh4>
@@ -789,7 +850,7 @@ function renderData(k: string, c: DataCtx): React.ReactNode {
             {anchor && (
               <EvRow
                 k={t('data.crossedLevel')}
-                v={<PxBtn label={t('data.crossedLevel')} value={anchor.level} c={c} />}
+                v={<EvBtn kind="choch" ev={anchor} c={c} />}
               />
             )}
             <EvRow k={t('data.barsSince')} v={String(m.bars ?? '—')} t={tf} />
@@ -799,13 +860,13 @@ function renderData(k: string, c: DataCtx): React.ReactNode {
             <>
               <Dh4 mt>{t('data.eventsSince')}</Dh4>
               <div className="ev">
-                {since.slice(0, 6).map((e, i) => {
-                  const kLabel = `${'validation_status' in e && e === anchor ? 'CHOCH' : 'BOS'} ${e.direction === 'bullish' ? '↑' : '↓'}`;
+                {since.slice(0, 6).map(({ kind, e }, i) => {
+                  const kLabel = `${kind.toUpperCase()} ${e.direction === 'bullish' ? '↑' : '↓'}`;
                   return (
                     <EvRow
                       key={i}
                       k={kLabel}
-                      v={<PxBtn label={kLabel} value={e.level} c={c} />}
+                      v={<EvBtn kind={kind} ev={e} c={c} />}
                       t={dayHm(e.broken_at)}
                     />
                   );
@@ -833,7 +894,7 @@ function renderData(k: string, c: DataCtx): React.ReactNode {
             />
             <EvRow
               k={t('data.crossedExtreme')}
-              v={<PxBtn label={t('data.crossedExtreme')} value={l.level} c={c} />}
+              v={<EvBtn kind={c.lastKind === 'CHOCH' ? 'choch' : 'bos'} ev={l} c={c} />}
               t={dayHm(l.broken_at)}
             />
           </div>
@@ -847,7 +908,7 @@ function renderData(k: string, c: DataCtx): React.ReactNode {
                     <EvRow
                       key={i}
                       k={kLabel}
-                      v={<PxBtn label={kLabel} value={e.level} c={c} />}
+                      v={<EvBtn kind={kind === 'CHOCH' ? 'choch' : 'bos'} ev={e} c={c} />}
                       t={dayHm(e.broken_at)}
                     />
                   );

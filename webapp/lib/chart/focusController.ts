@@ -26,11 +26,18 @@ import type { Time, UTCTimestamp } from 'lightweight-charts';
 
 // ─── Framing thresholds (mission §B, validated 2026-07-27) ────────────────────
 
-/** Zone: target share of the visible height the zone band should occupy. */
-export const ZONE_OCCUPANCY_TARGET = 0.42;
+/**
+ * Zone: target share of the visible height the zone band should occupy (VZ-1b —
+ * relaxed from 0.42 so a click gives an immediately usable plan without a manual
+ * zoom-out; ~20% ⇒ ~40% breathing room above AND below the band).
+ */
+export const ZONE_OCCUPANCY_TARGET = 0.2;
 /** Zone: hard bounds on that share — below is illegible, above loses context. */
-export const ZONE_OCCUPANCY_MIN = 0.25;
-export const ZONE_OCCUPANCY_MAX = 0.6;
+export const ZONE_OCCUPANCY_MIN = 0.12;
+export const ZONE_OCCUPANCY_MAX = 0.3;
+/** Zone: breathing room past the current price when it is folded into the view,
+ *  as a fraction of the band height. */
+export const ZONE_PRICE_PAD_FRAC = 0.25;
 /** Event: minimum candles kept on each side of the confirmation bar. */
 export const EVENT_BARS_BEFORE = 20;
 export const EVENT_BARS_AFTER = 10;
@@ -86,8 +93,12 @@ function clamp(v: number, lo: number, hi: number): number {
 
 /**
  * ZONE (OB / FVG): the whole zone visible from its formation bar to the current
- * bar, with ≥15% vertical margin above and below, the band occupying 25–60% of
- * the visible height (target ~42%).
+ * bar, the band occupying ~20% of the visible height (bounds [12%, 30%]) so ~40%
+ * of breathing room sits above and below it (VZ-1b — a click gives an immediately
+ * usable plan, never a frame so tight the user must zoom back out). The CURRENT
+ * PRICE is kept in view alongside the band whenever the gap allows it without
+ * pushing the band below the 12% floor (« voir la zone sans voir le prix n'a
+ * aucune utilité »); past that floor we stop rather than crush the candles.
  */
 export function frameZone(args: {
   /** Formation candle time (epoch seconds). */
@@ -99,6 +110,8 @@ export function frameZone(args: {
   /** Zone band price bounds. */
   bandLow: number;
   bandHigh: number;
+  /** Current price — folded into the view when the gap allows (see above). */
+  price?: number | null;
 }): CameraFrame {
   const { startSec, lastSec, barSec, bandLow, bandHigh } = args;
   const marginX = Math.max(barSec * 3, (lastSec - startSec) * 0.08);
@@ -107,17 +120,28 @@ export function frameZone(args: {
 
   const bandHeight = Math.max(bandHigh - bandLow, 0);
   const center = (bandHigh + bandLow) / 2;
-  // Height so the band occupies the target share (clamped to [25%, 60%]).
-  const occupancy = clamp(ZONE_OCCUPANCY_TARGET, ZONE_OCCUPANCY_MIN, ZONE_OCCUPANCY_MAX);
+  // Base window: the band occupies the ~20% target (⇒ ~40% margin each side).
   // A degenerate (zero-height) band still gets a tiny window so the frame is valid.
-  const height = bandHeight > 0 ? bandHeight / occupancy : Math.abs(center) * 0.01 || 1;
-  return {
-    from,
-    to,
-    priceMin: center - height / 2,
-    priceMax: center + height / 2,
-    edge: null,
-  };
+  const height =
+    bandHeight > 0 ? bandHeight / ZONE_OCCUPANCY_TARGET : Math.abs(center) * 0.01 || 1;
+  let priceMin = center - height / 2;
+  let priceMax = center + height / 2;
+
+  // Fold the current price into the view when it sits outside the base window,
+  // extending toward it ONLY as far as the band still occupies ≥ 12% (the
+  // readability floor). Beyond that the price stays off-screen rather than
+  // dezooming the candles into hairlines — the zone's legibility comes first.
+  const price = args.price;
+  if (price != null && Number.isFinite(price) && bandHeight > 0) {
+    const maxHeight = bandHeight / ZONE_OCCUPANCY_MIN;
+    const pad = bandHeight * ZONE_PRICE_PAD_FRAC;
+    if (price > priceMax) {
+      priceMax = Math.min(price + pad, priceMin + maxHeight);
+    } else if (price < priceMin) {
+      priceMin = Math.max(price - pad, priceMax - maxHeight);
+    }
+  }
+  return { from, to, priceMin, priceMax, edge: null };
 }
 
 /**
