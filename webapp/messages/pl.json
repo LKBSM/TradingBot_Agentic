@@ -197,7 +197,6 @@
       "m": "{m} min"
     }
   },
-
   "_comment": "TŁUMACZENIE MASZYNOWE (landing+cookies 2026-07-08), oczekuje na weryfikację native speakera",
   "nav": {
     "brandHomeAria": "MIA Markets — powrót do strony głównej",
@@ -210,7 +209,8 @@
     "scanner": "Skaner",
     "account": "Ustawienia",
     "login": "Zaloguj się",
-    "language": "Język"
+    "language": "Język",
+    "calendar": "Wiadomości"
   },
   "landing": {
     "hero": {
@@ -1778,5 +1778,81 @@
     "subtitle": "Wróć do analizy tam, gdzie skończyłeś.",
     "or": "lub",
     "trust": "Edukacyjne narzędzie do analizy rynku. Ani sygnał tradingowy, ani porada inwestycyjna. 18+."
+  },
+  "calendar": {
+    "meta": {
+      "title": "Zaplanowane wiadomości — Kalendarz zmienności | MIA Markets",
+      "description": "Kalendarz publikacji ekonomicznych, których godzina jest znana z wyprzedzeniem. MIA zapowiada momenty, nigdy kierunki."
+    },
+    "title": "Zaplanowane wiadomości",
+    "badge": "Kalendarz zmienności",
+    "intro": {
+      "lead": "Ten kalendarz zapowiada momenty, a nie kierunki.",
+      "rest": "Wymienia publikacje ekonomiczne, których godzina jest znana z wyprzedzeniem i które w przeszłości zbiegały się ze wzrostem aktywności na twoich rynkach. MIA nie mówi, co zrobi cena — mierzy to, co wydarzyło się poprzednimi razy."
+    },
+    "filters": {
+      "impactLabel": "Wpływ",
+      "marketLabel": "Rynek",
+      "reset": "Zaznacz wszystko",
+      "past": "Minione publikacje"
+    },
+    "impact": {
+      "high": "Wysoki",
+      "medium": "Średni",
+      "low": "Niski"
+    },
+    "market": {
+      "XAUUSD": "Złoto",
+      "EURUSD": "EUR/USD"
+    },
+    "day": {
+      "today": "Dzisiaj",
+      "tomorrow": "Jutro",
+      "count": "{count, plural, one {# publikacja} few {# publikacje} many {# publikacji} other {# publikacji}}"
+    },
+    "countdown": {
+      "days": "za {days} d",
+      "hours": "za {hours} godz {minutes}",
+      "minutes": "za {minutes} min",
+      "now": "teraz",
+      "agoDays": "{days} d temu",
+      "agoHours": "{hours} godz {minutes} temu",
+      "agoMinutes": "{minutes} min temu"
+    },
+    "affects": "dotyczy {markets}",
+    "localTime": "{time} twój czas ({offset})",
+    "revisedBadge": "wartość skorygowana",
+    "amplitude": {
+      "k": "Mediana amplitudy · 60 min",
+      "pending": "pomiary w przygotowaniu"
+    },
+    "provenance": {
+      "source": "Źródło: {source}",
+      "organism": "Instytucja: {organism}",
+      "organismMissing": "Instytucja: nie podana przez to źródło",
+      "sourceName": {
+        "official": "Źródła oficjalne (do podłączenia)",
+        "forexfactory": "ForexFactory (prototyp)"
+      }
+    },
+    "coverage": {
+      "partial": "Kalendarz jest wypełniony do {date}. Poza tym okres nie jest jeszcze objęty."
+    },
+    "nono": {
+      "title": "Czego ten kalendarz nie mówi",
+      "body": "Wysoka mediana amplitudy sygnalizuje, że te momenty były historycznie ruchliwe. Nie mówi ani kierunku, ani tego, co wydarzy się tym razem. Publikacja może nic nie wywołać, a spokojny rynek może się poruszyć bez żadnej publikacji."
+    },
+    "empty": {
+      "noSelection": "Nie wybrano żadnego filtra: zaznacz co najmniej jeden wpływ i jeden rynek, aby wyświetlić publikacje.",
+      "noEvents": "Brak zaplanowanej publikacji w tym okresie dla twoich rynków.",
+      "noSource": "Na razie brak publikacji: oficjalne źródło kalendarza nie jest jeszcze podłączone. Publikacje pojawią się tutaj po zintegrowaniu oficjalnego źródła."
+    },
+    "loading": "Ładowanie kalendarza…",
+    "error": "Kalendarz jest chwilowo niedostępny.",
+    "preview": {
+      "title": "Najbliższe publikacje",
+      "seeAll": "Zobacz wszystko",
+      "empty": "Brak nadchodzącej publikacji w tym okresie."
+    }
   }
 }

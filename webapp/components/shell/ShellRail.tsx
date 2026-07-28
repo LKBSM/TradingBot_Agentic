@@ -4,7 +4,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { CandlestickChart, Layers, Radar, Settings } from 'lucide-react';
+import { CalendarClock, CandlestickChart, Layers, Radar, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLocalizedHref } from '@/lib/i18n/href';
 import { resolveComboFromQuery } from '@/lib/conditions/app-link';
@@ -91,6 +91,7 @@ export function ShellRail({ activeSpace }: { activeSpace: string }) {
     { key: 'app', href: lh('/app'), label: 'App', Icon: CandlestickChart },
     { key: 'scanner', href: lh('/scanner'), label: t('nav.scanner'), Icon: Radar },
     { key: 'zones', href: lh('/zones'), label: t('nav.zones'), Icon: Layers },
+    { key: 'actualites', href: lh('/actualites'), label: t('nav.calendar'), Icon: CalendarClock },
     { key: 'compte', href: lh('/compte'), label: t('nav.account'), Icon: Settings },
   ];
 

@@ -22,7 +22,7 @@ from src.api.middleware.geo_block import GeoBlockMiddleware
 from src.api.middleware.rate_limit_headers import RateLimitHeadersMiddleware
 from src.api.models import ErrorResponse
 from src.api.openapi_enrichment import install_openapi_enrichment
-from src.api.routes import access, account_billing, accounts, admin, admin_audit, audit, billing, candles, chatbot, conditions_scan, dashboard, enrich, health, health_deep, insight_history, legal, live_price, market_reading, metrics_latency, narratives, operator, prometheus, qa, signals, state, webapp, webhook_ack
+from src.api.routes import access, account_billing, accounts, admin, admin_audit, audit, billing, calendar, candles, chatbot, conditions_scan, dashboard, enrich, health, health_deep, insight_history, legal, live_price, market_reading, metrics_latency, narratives, operator, prometheus, qa, signals, state, webapp, webhook_ack
 from src.api.shutdown import GracefulShutdownCoordinator
 from src.api.signal_store import SignalStore
 
@@ -631,6 +631,7 @@ def create_app(
     app.include_router(billing.router)
     app.include_router(account_billing.router)
     app.include_router(market_reading.router)
+    app.include_router(calendar.router)
     app.include_router(candles.router)
     app.include_router(live_price.router)
     app.include_router(conditions_scan.router)

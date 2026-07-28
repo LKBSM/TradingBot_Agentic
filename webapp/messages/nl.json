@@ -197,7 +197,6 @@
       "m": "{m} min"
     }
   },
-
   "_comment": "MACHINEVERTALING (landing+cookies 2026-07-08), revisie door moedertaalspreker in afwachting",
   "nav": {
     "brandHomeAria": "MIA Markets — terug naar home",
@@ -210,7 +209,8 @@
     "scanner": "Scanner",
     "account": "Instellingen",
     "login": "Inloggen",
-    "language": "Taal"
+    "language": "Taal",
+    "calendar": "Nieuws"
   },
   "landing": {
     "hero": {
@@ -1778,5 +1778,81 @@
     "subtitle": "Ga verder met je analyse waar je gebleven was.",
     "or": "of",
     "trust": "Educatief hulpmiddel voor marktanalyse. Geen tradingsignaal of beleggingsadvies. 18+."
+  },
+  "calendar": {
+    "meta": {
+      "title": "Geplande berichten — Volatiliteitskalender | MIA Markets",
+      "description": "De kalender van economische publicaties waarvan het tijdstip vooraf bekend is. MIA kondigt momenten aan, nooit richtingen."
+    },
+    "title": "Geplande berichten",
+    "badge": "Volatiliteitskalender",
+    "intro": {
+      "lead": "Deze kalender kondigt momenten aan, geen richtingen.",
+      "rest": "Hij somt de economische publicaties op waarvan het tijdstip vooraf bekend is en die in het verleden samenvielen met een toename van activiteit op jouw markten. MIA zegt niet wat de prijs zal doen — ze meet wat de vorige keren is gebeurd."
+    },
+    "filters": {
+      "impactLabel": "Impact",
+      "marketLabel": "Markt",
+      "reset": "Alles aanvinken",
+      "past": "Voorbije publicaties"
+    },
+    "impact": {
+      "high": "Hoog",
+      "medium": "Gemiddeld",
+      "low": "Laag"
+    },
+    "market": {
+      "XAUUSD": "Goud",
+      "EURUSD": "EUR/USD"
+    },
+    "day": {
+      "today": "Vandaag",
+      "tomorrow": "Morgen",
+      "count": "{count, plural, one {# publicatie} other {# publicaties}}"
+    },
+    "countdown": {
+      "days": "over {days} d",
+      "hours": "over {hours} u {minutes}",
+      "minutes": "over {minutes} min",
+      "now": "nu",
+      "agoDays": "{days} d geleden",
+      "agoHours": "{hours} u {minutes} geleden",
+      "agoMinutes": "{minutes} min geleden"
+    },
+    "affects": "betreft {markets}",
+    "localTime": "{time} jouw tijd ({offset})",
+    "revisedBadge": "herziene waarde",
+    "amplitude": {
+      "k": "Mediane amplitude · 60 min",
+      "pending": "metingen volgen"
+    },
+    "provenance": {
+      "source": "Bron: {source}",
+      "organism": "Instantie: {organism}",
+      "organismMissing": "Instantie: niet verstrekt door deze bron",
+      "sourceName": {
+        "official": "Officiële bronnen (te koppelen)",
+        "forexfactory": "ForexFactory (prototype)"
+      }
+    },
+    "coverage": {
+      "partial": "De kalender is ingevuld tot {date}. Daarna is de periode nog niet gedekt."
+    },
+    "nono": {
+      "title": "Wat deze kalender niet zegt",
+      "body": "Een hoge mediane amplitude geeft aan dat deze momenten historisch gezien woelig waren. Ze zegt niet de richting, noch wat er deze keer zal gebeuren. Een publicatie kan niets teweegbrengen, en een rustige markt kan bewegen zonder enige publicatie."
+    },
+    "empty": {
+      "noSelection": "Geen filter geselecteerd: vink minstens één impact en één markt aan om publicaties te tonen.",
+      "noEvents": "Geen geplande publicatie in deze periode voor jouw markten.",
+      "noSource": "Nog geen publicaties: de officiële bron van de kalender is nog niet gekoppeld. Publicaties verschijnen hier zodra de officiële bron is geïntegreerd."
+    },
+    "loading": "Kalender laden…",
+    "error": "De kalender is tijdelijk niet beschikbaar.",
+    "preview": {
+      "title": "Volgende publicaties",
+      "seeAll": "Alles bekijken",
+      "empty": "Geen aankomende publicatie in deze periode."
+    }
   }
 }
