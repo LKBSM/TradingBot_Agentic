@@ -106,4 +106,29 @@ describe('buildStructureMarkers', () => {
       expect(m).toHaveLength(1);
     });
   });
+
+  describe('VZ-1 selected-event emphasis', () => {
+    const at = '2026-05-28T05:00:00Z';
+    it('repaints the selected event marker in the accent colour', () => {
+      const m = buildStructureMarkers(
+        structure([bos('bearish', at), bos('bullish', '2026-05-28T02:00:00Z')]),
+        undefined,
+        { selected: { kind: 'bos', atSec: T(at) } },
+      );
+      const selected = m.find((x) => (x.time as number) === T(at));
+      const other = m.find((x) => (x.time as number) !== T(at));
+      expect(selected!.color).toBe('#4d9de0');
+      expect(other!.color).not.toBe('#4d9de0'); // history stays descriptive grey
+    });
+
+    it('onlySelected returns just the selected event (breaks layer hidden)', () => {
+      const m = buildStructureMarkers(
+        structure([bos('bearish', at), bos('bullish', '2026-05-28T02:00:00Z')]),
+        undefined,
+        { selected: { kind: 'bos', atSec: T(at) }, onlySelected: true },
+      );
+      expect(m).toHaveLength(1);
+      expect(m[0]!.time as number).toBe(T(at));
+    });
+  });
 });

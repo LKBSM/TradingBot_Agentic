@@ -1165,7 +1165,11 @@
       "dataLaggedTitle": "يشير التقويم إلى أن السوق مفتوح، لكن لم تُستلم أي شمعة جديدة مؤخرًا.",
       "lastCandleClosed": "آخر شمعة مغلقة {when} (نيويورك)",
       "reopensAt": "إعادة الفتح {when} (نيويورك)",
-      "noNewCandleSince": "لم تُستلم أي شمعة جديدة منذ {when} (نيويورك)"
+      "noNewCandleSince": "لم تُستلم أي شمعة جديدة منذ {when} (نيويورك)",
+      "selectionMissing": "لم يعد هذا العنصر مكتشفًا في القراءة الحالية.",
+      "currentPrice": "السعر الحالي",
+      "priceAbove": "السعر الحالي أعلى من نطاق العرض",
+      "priceBelow": "السعر الحالي أسفل نطاق العرض"
     },
     "layers": {
       "ob": "OB",
@@ -1260,7 +1264,8 @@
       "empty2": "Nothing is invented to pad the list.",
       "evChoch": "Confirmed change of character",
       "evBosBull": "Bullish break of structure",
-      "evBosBear": "Bearish break of structure"
+      "evBosBear": "Bearish break of structure",
+      "evSelectAria": "تأطير الحدث {kind} على الرسم البياني"
     },
     "liq2": {
       "title": "External liquidity",

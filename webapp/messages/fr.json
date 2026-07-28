@@ -1203,7 +1203,11 @@
       "dataLaggedTitle": "Le calendrier indique un marché ouvert, mais aucune nouvelle bougie n'a été reçue récemment.",
       "lastCandleClosed": "Dernière bougie clôturée {when} (New York)",
       "reopensAt": "Réouverture {when} (New York)",
-      "noNewCandleSince": "Aucune nouvelle bougie reçue depuis {when} (New York)"
+      "noNewCandleSince": "Aucune nouvelle bougie reçue depuis {when} (New York)",
+      "selectionMissing": "Cet élément n'est plus détecté dans la lecture courante.",
+      "currentPrice": "Prix courant",
+      "priceAbove": "Le prix courant est au-dessus de la vue",
+      "priceBelow": "Le prix courant est en dessous de la vue"
     },
     "struct": {
       "title": "Structure de marché",
@@ -1260,7 +1264,8 @@
       "empty2": "Rien n'est inventé pour remplir la liste.",
       "evChoch": "Changement de caractère confirmé",
       "evBosBull": "Cassure de structure haussière",
-      "evBosBear": "Cassure de structure baissière"
+      "evBosBear": "Cassure de structure baissière",
+      "evSelectAria": "Cadrer l'événement {kind} sur le graphique"
     },
     "liq2": {
       "title": "Liquidité externe",

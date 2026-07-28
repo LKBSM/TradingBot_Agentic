@@ -134,6 +134,32 @@
 .app-shell .strow:last-child {
   border-bottom: none;
 }
+/* VZ-1 — BOS/CHOCH rows are selectable (event family): they frame the chart on
+   the confirmation candle + broken level. Same affordance/selected treatment as
+   a zone row so the gesture reads identically across families. */
+.app-shell .strow[role='button'] {
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  font-family: inherit;
+  color: var(--txt);
+  border-radius: 4px;
+}
+.app-shell .strow[role='button']:hover {
+  background: var(--panel-3);
+}
+.app-shell .strow.sel {
+  background: var(--acc-dim);
+  box-shadow: inset 2px 0 0 var(--acc);
+}
+.app-shell .strow[role='button']:focus-visible {
+  outline: none;
+  box-shadow: inset 2px 0 0 var(--acc), 0 0 0 2px var(--acc-dim);
+}
 .app-shell .strow .d {
   font-size: 11.5px;
   color: var(--dim);

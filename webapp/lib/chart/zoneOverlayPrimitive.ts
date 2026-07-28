@@ -287,6 +287,10 @@ export class ZoneOverlayPrimitive implements ISeriesPrimitive<Time> {
   private _liqs: LiqGeom[] = [];
   private _hit: HitArea[] = [];
   private _tips = new Map<string, string>();
+  // VZ-1 — respiration breath multiplier for the SELECTED (highlighted) zone's
+  // emphasis opacity (1 = full). Driven by a rAF loop in ReadingChart; disabled
+  // (held at 1) under prefers-reduced-motion.
+  private _pulse = 1;
 
   private readonly _paneView: IPrimitivePaneView;
   private readonly _views: readonly IPrimitivePaneView[];
@@ -348,6 +352,19 @@ export class ZoneOverlayPrimitive implements ISeriesPrimitive<Time> {
     if (this._data.currentSec === sec) return;
     this._data = { ...this._data, currentSec: sec };
     this._compute();
+    this._requestUpdate?.();
+  }
+
+  /**
+   * VZ-1 — set the selected zone's respiration breath (1 = full emphasis). A slow
+   * sine drives this from ReadingChart's rAF loop; it only touches the highlight
+   * opacity (composited), never the geometry, so it stays 60fps and never
+   * re-feeds the candles. Held at 1 under prefers-reduced-motion.
+   */
+  setHighlightPulse(v: number): void {
+    const clamped = Math.max(0, Math.min(1, v));
+    if (this._pulse === clamped) return;
+    this._pulse = clamped;
     this._requestUpdate?.();
   }
 
@@ -579,7 +596,7 @@ export class ZoneOverlayPrimitive implements ISeriesPrimitive<Time> {
       const a = b.tested ? ZONE_ALPHA.tested : ZONE_ALPHA.active;
       ctx.save();
       ctx.fillStyle = b.highlighted
-        ? `rgba(${HIGHLIGHT_RGB}, ${Math.max(a.fill, 0.16)})`
+        ? `rgba(${HIGHLIGHT_RGB}, ${Math.max(a.fill, 0.16) * this._pulse})`
         : `rgba(${rgb}, ${a.fill})`;
       ctx.fillRect(b.left, b.top, b.width, b.height);
 
@@ -588,12 +605,14 @@ export class ZoneOverlayPrimitive implements ISeriesPrimitive<Time> {
       const bw = Math.round(b.width);
       const bh = Math.round(b.height);
       if (b.highlighted) {
-        // Cool solid ring + a faint outer glow (the old box-shadow).
-        ctx.strokeStyle = hexA(HIGHLIGHT_COLOR, 0.95);
+        // Cool solid ring + a faint outer glow (the old box-shadow). The ring
+        // opacity breathes with the respiration pulse (§C) but the geometry never
+        // moves — a camera/emphasis effect, never a price movement.
+        ctx.strokeStyle = hexA(HIGHLIGHT_COLOR, 0.95 * this._pulse);
         ctx.lineWidth = 2;
         ctx.setLineDash([]);
         ctx.strokeRect(bx, by, bw, bh);
-        ctx.strokeStyle = `rgba(${HIGHLIGHT_RGB}, 0.35)`;
+        ctx.strokeStyle = `rgba(${HIGHLIGHT_RGB}, ${0.35 * this._pulse})`;
         ctx.lineWidth = 1;
         ctx.strokeRect(bx - 1.5, by - 1.5, bw + 3, bh + 3);
       } else if (b.inTestLive) {

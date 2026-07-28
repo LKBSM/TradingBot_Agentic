@@ -15,6 +15,13 @@ import type { BOSRecent, CHOCHRecent, MarketReadingStructure } from '@/types/mar
 import { HelpContent } from './HelpContent';
 import { FilterChipGroup } from './FilterChipGroup';
 import { useMultiFilter } from '@/lib/market-reading/use-multi-filter';
+import { useChartViewOptional } from '@/lib/chart/viewState';
+
+/** ISO-8601 → epoch seconds, or null when unparseable. */
+function isoToSec(iso: string): number | null {
+  const ms = Date.parse(iso);
+  return Number.isNaN(ms) ? null : Math.floor(ms / 1000);
+}
 
 const TYPE_VALUES = ['ob', 'fvg'] as const;
 const STATE_VALUES = ['active', 'tested', 'mitig'] as const;
@@ -95,6 +102,24 @@ export function StructureCard({
 }: StructureCardProps) {
   const t = useTranslations('app.struct');
   const fmt = useReadingFormatters();
+  // VZ-1 — BOS/CHOCH events select on the unified selection's distinct EVENT
+  // channel (confirmation-candle marker + broken-level line + frameEvent), never
+  // the zone id-lock. Zones keep flowing through `onSelect` (id-lock) above.
+  const { selection, select, clearSelection } = useChartViewOptional();
+  const selectedEventId = selection?.family === 'event' ? selection.id : null;
+  const selectEvent = React.useCallback(
+    (kind: 'bos' | 'choch', ev: BOSRecent | CHOCHRecent) => {
+      const atSec = isoToSec(ev.broken_at);
+      if (atSec == null) return;
+      const id = `${kind}:${atSec}:${ev.level}`;
+      if (selectedEventId === id) {
+        clearSelection();
+        return;
+      }
+      select({ family: 'event', id, kind, direction: ev.direction, level: ev.level, atSec });
+    },
+    [selectedEventId, select, clearSelection],
+  );
   const [sortOpen, setSortOpen] = React.useState(false);
   const typeFilter = useMultiFilter(TYPE_VALUES);
   const stateFilter = useMultiFilter(STATE_VALUES);
@@ -237,7 +262,20 @@ export function StructureCard({
       </div>
 
       {choch && (
-        <div className="strow">
+        <div
+          role="button"
+          tabIndex={0}
+          className={cn('strow', selectedEventId === `choch:${isoToSec(choch.broken_at)}:${choch.level}` && 'sel')}
+          aria-pressed={selectedEventId === `choch:${isoToSec(choch.broken_at)}:${choch.level}`}
+          aria-label={t('evSelectAria', { kind: 'CHOCH' })}
+          onClick={() => selectEvent('choch', choch)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              selectEvent('choch', choch);
+            }
+          }}
+        >
           <span className={cn('tagx', choch.direction === 'bullish' ? 'bull' : 'bear')}>
             CHOCH{dirArrow(choch.direction)}
           </span>
@@ -246,7 +284,20 @@ export function StructureCard({
         </div>
       )}
       {bos && (
-        <div className="strow">
+        <div
+          role="button"
+          tabIndex={0}
+          className={cn('strow', selectedEventId === `bos:${isoToSec(bos.broken_at)}:${bos.level}` && 'sel')}
+          aria-pressed={selectedEventId === `bos:${isoToSec(bos.broken_at)}:${bos.level}`}
+          aria-label={t('evSelectAria', { kind: 'BOS' })}
+          onClick={() => selectEvent('bos', bos)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              selectEvent('bos', bos);
+            }
+          }}
+        >
           <span className={cn('tagx', bos.direction === 'bullish' ? 'bull' : 'bear')}>
             BOS{dirArrow(bos.direction)}
           </span>

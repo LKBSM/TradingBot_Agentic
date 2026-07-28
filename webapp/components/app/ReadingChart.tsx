@@ -11,6 +11,7 @@ import {
   TickMarkType,
   type AutoscaleInfo,
   type IChartApi,
+  type IPriceLine,
   type ISeriesApi,
   type ISeriesMarkersPluginApi,
   type MouseEventParams,
@@ -34,10 +35,18 @@ import {
 import type {
   ChartFilter,
   ChartLayers,
+  ChartSelection,
   FocusCommand,
   ReferenceLevel,
 } from '@/lib/chart/viewActions';
 import { DEFAULT_CHART_VIEW } from '@/lib/chart/viewActions';
+import {
+  animateCamera,
+  frameEvent,
+  frameLevel,
+  frameZone,
+  type CameraFrame,
+} from '@/lib/chart/focusController';
 import { buildStructureMarkers } from '@/lib/chart/structureMarkers';
 import { buildLiquidityLines } from '@/lib/chart/liquidityLines';
 import {
@@ -131,7 +140,17 @@ export interface ReadingChartProps {
    * touches the zone id-lock. See `ReferenceLevel`.
    */
   referenceLevel?: ReferenceLevel | null;
-  /** Called when the user clicks the highlighted (blue) zone to deselect it. */
+  /**
+   * VZ-1 — the single selected element (zone / event / level), or null. Drives
+   * the unified animated camera framing and the per-family visual treatment. When
+   * null, the chart restores the view it held before the selection gesture.
+   */
+  selection?: ChartSelection | null;
+  /**
+   * Deselect (drop the emphasis + restore the previous view). Fired when the user
+   * clicks the highlighted zone on the canvas OR presses Escape. Same toggle as
+   * re-clicking the element's list entry.
+   */
   onClearHighlight?: () => void;
   hiddenZoneIds?: readonly string[];
   isolatedZoneIds?: readonly string[] | null;
@@ -191,12 +210,6 @@ const INITIAL_RIGHT_PAD_BARS = 3;
  */
 const MIN_VISIBLE_RANGE_FRAC = 0.003;
 
-// RG-1d: when a calendar reference level is traced, the vertical viewport is
-// widened to hold BOTH the level and the current price, plus this margin on each
-// side, so neither sits on the very edge and the structure between them stays
-// readable (that context is what makes the trace useful — never a tight zoom).
-const REFERENCE_VIEW_MARGIN_FRAC = 0.08;
-
 /**
  * Theme-resolved palette. Lightweight-charts paints onto a canvas, so it needs
  * concrete colour strings (CSS `var(--token)` does not resolve there). We read
@@ -234,6 +247,20 @@ function palette() {
 
 const MONO_FONT = "'ui-monospace', 'SFMono-Regular', 'Menlo', monospace";
 
+/** VZ-1 — respiration cycle of the selected zone (mission §C: slow, ~2.5s). */
+const ZONE_PULSE_MS = 2500;
+
+/** True when the reader asked for reduced motion — transitions off, framing
+ *  instant, respiration disabled. Read at gesture time so it always reflects the
+ *  current OS setting. Guarded for SSR. */
+function prefersReducedMotion(): boolean {
+  return (
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
+}
+
 export function ReadingChart({
   candles,
   structure,
@@ -248,6 +275,7 @@ export function ReadingChart({
   focus = null,
   highlightZoneId = null,
   referenceLevel = null,
+  selection = null,
   onClearHighlight,
   hiddenZoneIds = DEFAULT_CHART_VIEW.hiddenZoneIds,
   isolatedZoneIds = DEFAULT_CHART_VIEW.isolatedZoneIds,
@@ -265,6 +293,10 @@ export function ReadingChart({
   // that, data updates PRESERVE the user's zoom/pan — only the explicit "Ajuster"
   // button (or a chart recreation) refits. Reset when the chart is recreated.
   const didInitialFitRef = React.useRef(false);
+  // Identity of the candle array last pushed to the series — lets the data effect
+  // skip the (costly) setData + zoom-preserve dance when it re-runs for a
+  // selection-only change (VZ-1), rebuilding just the cheap markers / price lines.
+  const lastCandlesRef = React.useRef<Candle[] | null>(null);
   // Accumulated OHLC of the live FORMING candle (provisional, intra-bar).
   const formingRef = React.useRef<{
     time: number;
@@ -282,12 +314,22 @@ export function ReadingChart({
   // overlay recomputed in a rAF loop and committed a frame late → the boxes
   // "vibrated" against the candles.)
   const overlayRef = React.useRef<ZoneOverlayPrimitive | null>(null);
-  // Latest traced reference-level price, read by the series autoscaleInfoProvider
-  // (a stable closure) so it can widen the vertical range to include the level.
-  const referenceLevelPriceRef = React.useRef<number | null>(null);
-  // Previous traced price — so we react (scroll + re-autoscale) only when the
-  // trace actually CHANGES, never on every data refresh (RG-1d).
-  const prevRefPriceRef = React.useRef<number | null>(null);
+  // VZ-1 — the price window the active selection wants the vertical axis to show,
+  // read by the series autoscaleInfoProvider (a stable closure). Null → the base
+  // candle autoscale decides Y. Generalised from RG-1c/d's single reference price.
+  const framingTargetRef = React.useRef<{ min: number; max: number } | null>(null);
+  // The camera view captured before the CURRENT selection gesture, restored on
+  // deselect so the user returns exactly where they were ("un geste qui se défait").
+  const savedFrameRef = React.useRef<CameraFrame | null>(null);
+  // Cancel handle for the in-flight camera tween (a new selection never fights a
+  // running one) and for the selected-zone respiration loop.
+  const cancelTweenRef = React.useRef<(() => void) | null>(null);
+  const pulseRafRef = React.useRef<number | null>(null);
+  // Level family: which window edge the (off-screen) current price sits beyond,
+  // shown as a discreet directional chevron. A POSITION, never a movement.
+  const [edgeIndicator, setEdgeIndicator] = React.useState<'above' | 'below' | null>(null);
+  // Honest "this element is no longer detected in the current reading" notice.
+  const [selectionMissing, setSelectionMissing] = React.useState(false);
   // Hover tooltip — descriptive text for the box / pocket under the crosshair,
   // driven by the chart's crosshair-move event. One element, updated only on
   // hover, so it never re-renders per frame.
@@ -526,37 +568,39 @@ export function ReadingChart({
       // range already exceeds the floor, so this is a no-op on weekdays.
       autoscaleInfoProvider: (baseImplementation: () => AutoscaleInfo | null) => {
         const res = baseImplementation();
-        if (!res || !res.priceRange) return res;
-        let { minValue, maxValue } = res.priceRange;
-        // Bring a traced calendar reference level (RG-1c) into the vertical
-        // viewport: lightweight-charts does NOT include price lines in autoscale,
-        // so a level outside the candles' band would be painted off-screen and
-        // read as « nothing drawn ». Extending the range guarantees the line — and
-        // the price action around it — is actually visible. Read from a ref so
-        // this provider closure always sees the latest level without re-creating
-        // the series.
-        const lvl = referenceLevelPriceRef.current;
-        if (lvl != null && Number.isFinite(lvl)) {
-          minValue = Math.min(minValue, lvl);
-          maxValue = Math.max(maxValue, lvl);
-          // A margin so the level and the current price sit INSIDE the viewport,
-          // not on its edge (RG-1d). Falls back to a tiny relative pad if the
-          // union is degenerate.
-          const pad = (maxValue - minValue) * REFERENCE_VIEW_MARGIN_FRAC || Math.abs(maxValue) * 0.001;
-          minValue -= pad;
-          maxValue += pad;
+        // VZ-1 — while a selection is framed, its price WINDOW owns the vertical
+        // axis: return it verbatim (the framing rules already sized the margins
+        // and 25–60% occupancy). Read from a ref so this stable closure always
+        // sees the latest target without re-creating the series. When no window is
+        // active, fall back to the base candle fit. Either way, the min-span floor
+        // below guarantees a flat (closed-market) window never magnifies micro-
+        // candles — we never dezoom into indistinct candles.
+        const target = framingTargetRef.current;
+        let minValue: number;
+        let maxValue: number;
+        if (
+          target &&
+          Number.isFinite(target.min) &&
+          Number.isFinite(target.max) &&
+          target.max > target.min
+        ) {
+          minValue = target.min;
+          maxValue = target.max;
+        } else {
+          if (!res || !res.priceRange) return res;
+          minValue = res.priceRange.minValue;
+          maxValue = res.priceRange.maxValue;
         }
         const mid = (minValue + maxValue) / 2;
         const span = maxValue - minValue;
         const minSpan = Math.abs(mid) * MIN_VISIBLE_RANGE_FRAC;
-        if (mid === 0 || span >= minSpan) {
-          return { ...res, priceRange: { minValue, maxValue } };
+        if (mid !== 0 && span < minSpan) {
+          const half = minSpan / 2;
+          minValue = mid - half;
+          maxValue = mid + half;
         }
-        const half = minSpan / 2;
-        return {
-          ...res,
-          priceRange: { minValue: mid - half, maxValue: mid + half },
-        };
+        const priceRange = { minValue, maxValue };
+        return res ? { ...res, priceRange } : { priceRange };
       },
     });
 
@@ -613,6 +657,13 @@ export function ReadingChart({
     return () => {
       chart.unsubscribeClick(onClick);
       chart.unsubscribeCrosshairMove(onMove);
+      // Stop any in-flight camera tween / respiration loop before teardown.
+      cancelTweenRef.current?.();
+      cancelTweenRef.current = null;
+      if (pulseRafRef.current != null) {
+        cancelAnimationFrame(pulseRafRef.current);
+        pulseRafRef.current = null;
+      }
       try {
         series.detachPrimitive(overlay);
       } catch {
@@ -672,20 +723,29 @@ export function ReadingChart({
     // before replacing the series so a background refetch (a candle closing) never
     // snaps the view. Only the very first load — or an explicit "Ajuster" — fits.
     const timeScale = chart.timeScale();
-    const prevRange = didInitialFitRef.current ? timeScale.getVisibleLogicalRange() : null;
-
-    series.setData(
-      validCandles.map((c) => ({
-        time: c.time as UTCTimestamp,
-        open: c.open,
-        high: c.high,
-        low: c.low,
-        close: c.close,
-      })),
-    );
-    // A fresh closed-candle window resets any in-progress forming bar; the live
-    // effect rebuilds it from the next tick (so it's never drawn over stale data).
-    formingRef.current = null;
+    // Skip the data push (and its zoom-preserve dance) when only the SELECTION
+    // changed — the candle array is referentially stable across a selection, so
+    // this re-run just refreshes the cheap markers / price lines below (VZ-1).
+    const candlesChanged = candles !== lastCandlesRef.current;
+    const prevRange =
+      candlesChanged && didInitialFitRef.current
+        ? timeScale.getVisibleLogicalRange()
+        : null;
+    if (candlesChanged) {
+      lastCandlesRef.current = candles;
+      series.setData(
+        validCandles.map((c) => ({
+          time: c.time as UTCTimestamp,
+          open: c.open,
+          high: c.high,
+          low: c.low,
+          close: c.close,
+        })),
+      );
+      // A fresh closed-candle window resets any in-progress forming bar; the live
+      // effect rebuilds it from the next tick (so it's never drawn over stale data).
+      formingRef.current = null;
+    }
 
     // BOS / CHOCH break-history markers (read-only, descriptive). One arrow per
     // detected break over the window — fixes the "sous-surfaçage" where only the
@@ -694,10 +754,19 @@ export function ReadingChart({
     // FIRST bar (NearestRight), stacking stale labels at the left edge — so we
     // pass the first loaded candle time and let the builder drop them.
     // The "breaks" layer can be hidden on chat request → no markers, no lines.
+    // A selected EVENT keeps its confirmation-candle arrow visible even when the
+    // "breaks" layer is hidden (that arrow is half of the event's visual couple),
+    // and the builder emphasises it. When breaks are hidden we show ONLY that one.
+    const selectedEvent = selection?.family === 'event' ? selection : null;
     const firstLoadedCandle = validCandles[0];
     markersRef.current?.setMarkers(
-      layers.breaks && firstLoadedCandle
-        ? buildStructureMarkers(structure, firstLoadedCandle.time as number)
+      firstLoadedCandle && (layers.breaks || selectedEvent)
+        ? buildStructureMarkers(structure, firstLoadedCandle.time as number, {
+            selected: selectedEvent
+              ? { kind: selectedEvent.kind, atSec: selectedEvent.atSec }
+              : null,
+            onlySelected: !layers.breaks,
+          })
         : [],
     );
 
@@ -774,70 +843,86 @@ export function ReadingChart({
       }),
     );
 
-    // Calendar-derived reference marker (day/week open, prev extreme). A FINE
-    // solid accent line whose axis label carries the repère NAME + value
-    // (« Haut de la veille · 4 202,03 ») — deliberately distinct from the dashed
-    // grey break lines, the hidden-line liquidity pills and the OB/FVG boxes, so
-    // a temporal repère (computed from the calendar) is never mistaken for
-    // detected structure. One at a time; drawn only after a click.
-    const refColor = palette().priceLine;
-    const createdReference = referenceLevel
-      ? [
-          series.createPriceLine({
-            price: referenceLevel.price,
-            color: refColor,
-            lineWidth: 1,
-            lineStyle: LineStyle.Solid,
-            axisLabelVisible: true,
-            title: referenceLevel.label,
-          }),
-        ]
-      : [];
-    // Publish the level to the autoscale closure. React ONLY when the trace
-    // actually changes (set / changed / cleared) — not on every data refresh, so
-    // a user's manual zoom is preserved between ticks (RG-1d):
-    //   · set/changed → re-autoscale (folds the level + margin into the range)
-    //     AND scroll the chart into view so the click visibly « leads » to it ;
-    //   · cleared (re-click) → re-autoscale returns to the prior candle-fitted
-    //     scale (« retour à l'échelle précédente »), no scroll.
-    referenceLevelPriceRef.current = referenceLevel ? referenceLevel.price : null;
-    const curRefPrice = referenceLevel ? referenceLevel.price : null;
-    if (curRefPrice !== prevRefPriceRef.current) {
-      const ps = series.priceScale();
-      ps.applyOptions({ autoScale: false });
-      ps.applyOptions({ autoScale: true });
-      if (curRefPrice != null) {
-        containerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
-      prevRefPriceRef.current = curRefPrice;
+    // ── VZ-1 selection visuals — distinct per family (§C) ─────────────────────
+    // The camera framing + scroll-into-view are handled by the dedicated
+    // selection effect below (animated, uniform for the three families). Here we
+    // only draw each family's DISTINCT static mark:
+    //   · LEVEL reference → a fine SOLID accent line (calendar-derived).
+    //   · LEVEL liquidity → a SOLID per-side line (BSL teal / SSL rose).
+    //   · EVENT           → a SOLID break-colour line at the broken level,
+    //     labelled with the couple (« BOS ↓ · 14:00 »); its arrow marker is drawn
+    //     on the confirmation candle above.
+    // (Zone selection stays a canvas band + respiration, drawn by the primitive.)
+    const accent = palette().priceLine;
+    const selectionLines: IPriceLine[] = [];
+    if (referenceLevel) {
+      selectionLines.push(
+        series.createPriceLine({
+          price: referenceLevel.price,
+          color: accent,
+          lineWidth: 2,
+          lineStyle: LineStyle.Solid,
+          axisLabelVisible: true,
+          title: referenceLevel.label,
+        }),
+      );
+    }
+    if (selection?.family === 'level' && selection.kind === 'liquidity') {
+      selectionLines.push(
+        series.createPriceLine({
+          price: selection.price,
+          color: liquidityColor(selection.side ?? 'bsl', 'intact'),
+          lineWidth: 2,
+          lineStyle: LineStyle.Solid,
+          axisLabelVisible: true,
+          title: selection.label,
+        }),
+      );
+    }
+    if (selection?.family === 'event') {
+      const arrow = selection.direction === 'bullish' ? '↑' : '↓';
+      const when = formatLocalHm(new Date(selection.atSec * 1000));
+      selectionLines.push(
+        series.createPriceLine({
+          price: selection.level,
+          color: selection.kind === 'choch' ? LEVEL.choch : LEVEL.bos,
+          lineWidth: 2,
+          lineStyle: LineStyle.Solid,
+          axisLabelVisible: true,
+          title: `${selection.kind.toUpperCase()} ${arrow} · ${when}`,
+        }),
+      );
     }
 
     // Initial view ONCE; afterwards restore the pre-update view so data
     // refreshes don't reset the user's zoom/pan. The "Ajuster" button refits.
     // On first load we right-anchor to the most recent bars (not fitContent over
     // the whole history) so the chart opens on current price action, not the
-    // oldest candle. Few-bar datasets fall back to fitContent.
-    if (!didInitialFitRef.current) {
-      const n = validCandles.length;
-      if (n > DEFAULT_VISIBLE_BARS) {
-        timeScale.setVisibleLogicalRange({
-          from: n - DEFAULT_VISIBLE_BARS,
-          to: n - 1 + INITIAL_RIGHT_PAD_BARS,
-        });
-      } else {
-        timeScale.fitContent();
+    // oldest candle. Few-bar datasets fall back to fitContent. Only runs when the
+    // candle data actually changed — a selection-only re-run must not touch zoom.
+    if (candlesChanged) {
+      if (!didInitialFitRef.current) {
+        const n = validCandles.length;
+        if (n > DEFAULT_VISIBLE_BARS) {
+          timeScale.setVisibleLogicalRange({
+            from: n - DEFAULT_VISIBLE_BARS,
+            to: n - 1 + INITIAL_RIGHT_PAD_BARS,
+          });
+        } else {
+          timeScale.fitContent();
+        }
+        didInitialFitRef.current = true;
+      } else if (prevRange) {
+        timeScale.setVisibleLogicalRange(prevRange);
       }
-      didInitialFitRef.current = true;
-    } else if (prevRange) {
-      timeScale.setVisibleLogicalRange(prevRange);
     }
 
     return () => {
       for (const line of created) series.removePriceLine(line);
       for (const line of createdLiquidity) series.removePriceLine(line);
-      for (const line of createdReference) series.removePriceLine(line);
+      for (const line of selectionLines) series.removePriceLine(line);
     };
-  }, [candles, structure, layers.breaks, liquidityLines, referenceLevel]);
+  }, [candles, structure, layers.breaks, liquidityLines, referenceLevel, selection]);
 
   // ── Feed the overlay primitive the current view models. ─────────────────────
   // Pure DISPLAY mapping (no detection): the curated zones + live FVG fronts +
@@ -1021,24 +1106,88 @@ export function ReadingChart({
   const timeframeRef = React.useRef(timeframe);
   timeframeRef.current = timeframe;
 
+  // Base vertical fit (min low / max high) of the candles inside a time window —
+  // the price extent the autoscale would pick, used to capture/restore Y.
+  const candleFit = React.useCallback(
+    (fromSec: number, toSec: number): { min: number; max: number } | null => {
+      let lo = Infinity;
+      let hi = -Infinity;
+      for (const c of candlesRef.current) {
+        const tt = c.time as number;
+        if (tt < fromSec || tt > toSec) continue;
+        if (c.low < lo) lo = c.low;
+        if (c.high > hi) hi = c.high;
+      }
+      if (!Number.isFinite(lo) || !Number.isFinite(hi) || hi <= lo) return null;
+      return { min: lo, max: hi };
+    },
+    [],
+  );
+
+  // Snapshot the CURRENT camera (visible time range + current price window) so a
+  // selection can be undone back to exactly where the user was (mission §A.4).
+  const readCurrentFrame = React.useCallback((): CameraFrame => {
+    const chart = chartRef.current;
+    const times = candlesRef.current.map((c) => c.time as number);
+    const lastSec = times.length ? times[times.length - 1]! : 0;
+    const tf = timeframeRef.current;
+    const barSec = (tf ? TF_SECONDS[tf] : undefined) ?? 0;
+    let from = lastSec - DEFAULT_VISIBLE_BARS * (barSec || 1);
+    let to = lastSec + (barSec || 1);
+    const vr = chart?.timeScale().getVisibleRange();
+    if (vr && typeof vr.from === 'number' && typeof vr.to === 'number') {
+      from = vr.from;
+      to = vr.to;
+    }
+    const price = framingTargetRef.current ?? candleFit(from, to);
+    return { from, to, priceMin: price?.min ?? null, priceMax: price?.max ?? null, edge: null };
+  }, [candleFit]);
+
+  // Publish an interpolated price window to the autoscale closure and force the
+  // vertical axis to recompute from it (works even without an X change: the
+  // reduced-motion instant path and the final settle frame).
+  const setPriceTarget = React.useCallback((range: { min: number; max: number } | null) => {
+    framingTargetRef.current = range;
+    seriesRef.current?.priceScale().setAutoScale(true);
+  }, []);
+
+  // Selected-zone respiration (§C): a slow, discreet opacity breath (~2.5s), never
+  // blinking. Disabled under prefers-reduced-motion.
+  const stopPulse = React.useCallback(() => {
+    if (pulseRafRef.current != null) {
+      cancelAnimationFrame(pulseRafRef.current);
+      pulseRafRef.current = null;
+    }
+    overlayRef.current?.setHighlightPulse(1);
+  }, []);
+  const startPulse = React.useCallback(() => {
+    const t0 = performance.now();
+    const loop = () => {
+      const phase = ((performance.now() - t0) % ZONE_PULSE_MS) / ZONE_PULSE_MS;
+      // 0.7 → 1.0 opacity multiplier, sine-smooth (attracts the eye, never flashes).
+      overlayRef.current?.setHighlightPulse(0.85 + 0.15 * Math.sin(phase * Math.PI * 2));
+      pulseRafRef.current = requestAnimationFrame(loop);
+    };
+    pulseRafRef.current = requestAnimationFrame(loop);
+  }, []);
+
+  // ── Chat-driven camera command (focus_price / fit_chart), one-shot by nonce. ─
+  // Zone framing now travels through the unified SELECTION effect below; this only
+  // serves the chatbot's price/fit camera verbs. Re-frames the window only.
   const focusNonce = focus?.nonce ?? null;
   React.useEffect(() => {
     if (!focus) return;
     const chart = chartRef.current;
     if (!chart) return;
     const ts = chart.timeScale();
-    const currentCandles = candlesRef.current;
-    const currentStructure = structureRef.current;
-    const currentTimeframe = timeframeRef.current;
-    const times = currentCandles.map((c) => c.time as number);
+    const times = candlesRef.current.map((c) => c.time as number);
     const lastTime = times.length ? times[times.length - 1]! : null;
-    const barSec = (currentTimeframe ? TF_SECONDS[currentTimeframe] : undefined) ?? 0;
+    const barSec = (timeframeRef.current ? TF_SECONDS[timeframeRef.current] : undefined) ?? 0;
 
     if (focus.kind === 'fit') {
       ts.fitContent();
       return;
     }
-
     if (focus.kind === 'price') {
       if (lastTime === null || barSec <= 0) {
         ts.scrollToRealTime();
@@ -1048,30 +1197,144 @@ export function ReadingChart({
         from: (lastTime - barSec * FOCUS_PRICE_BARS) as UTCTimestamp,
         to: (lastTime + barSec * 2) as UTCTimestamp,
       });
-      return;
-    }
-
-    if (focus.kind === 'zone' && focus.zoneId) {
-      const model = buildZoneModels(currentStructure).find((z) => z.id === focus.zoneId);
-      if (!model || lastTime === null) return;
-      const zoneStart = model.createdSec;
-      const zoneEnd = model.mitigatedSec ?? lastTime;
-      const span = Math.max(zoneEnd - zoneStart, 0);
-      // Keep plenty of context around the zone so the focus doesn't slam the
-      // viewport onto a tiny band (jarring for the user). At least ~24 bars of
-      // breathing room on each side, or 1.5× the zone span, whichever is larger.
-      const margin = Math.max(barSec * 24, span * 1.5);
-      try {
-        ts.setVisibleRange({
-          from: (zoneStart - margin) as UTCTimestamp,
-          to: (zoneEnd + margin) as UTCTimestamp,
-        });
-      } catch {
-        // Range outside the data — graceful no-op (next command recovers).
-      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusNonce]);
+
+  // ── VZ-1 — unified SELECTION camera (zone / event / level). ──────────────────
+  // ONE gesture for the three families: bring the chart into view (§A.1), then
+  // animate the camera onto the element (§A.2, ~400ms soft ease) — both axes
+  // together, driven by a rAF tween (lightweight-charts has no native easing).
+  // Re-click / Escape → selection null → restore the pre-selection view (§A.4).
+  // The move is a CAMERA panning, never the price moving (§D). Keyed on the
+  // selection identity; a missing target says so honestly and frames nothing.
+  const selectionKeyStr = selection ? `${selection.family}:${selection.id}` : null;
+  React.useEffect(() => {
+    const chart = chartRef.current;
+    const series = seriesRef.current;
+    if (!chart || !series) return;
+
+    // Never let two tweens (or a stale respiration) fight the new gesture.
+    cancelTweenRef.current?.();
+    cancelTweenRef.current = null;
+    stopPulse();
+    setSelectionMissing(false);
+    setEdgeIndicator(null);
+
+    const reduced = prefersReducedMotion();
+    const cameraChart = {
+      setVisibleRange: (r: { from: number; to: number }) => {
+        try {
+          chart
+            .timeScale()
+            .setVisibleRange({ from: r.from as UTCTimestamp, to: r.to as UTCTimestamp });
+        } catch {
+          // Range momentarily outside the data — the next frame recovers.
+        }
+      },
+    };
+
+    // DESELECT → restore the camera captured before the selection chain, then hand
+    // the vertical axis back to the base candle autoscale.
+    if (!selection) {
+      const saved = savedFrameRef.current;
+      savedFrameRef.current = null;
+      if (!saved) {
+        setPriceTarget(null);
+        return;
+      }
+      cancelTweenRef.current = animateCamera({
+        chart: cameraChart,
+        from: readCurrentFrame(),
+        to: saved,
+        setPriceTarget,
+        reducedMotion: reduced,
+        onDone: () => setPriceTarget(null),
+      });
+      return;
+    }
+
+    const cs = candlesRef.current;
+    const times = cs.map((c) => c.time as number);
+    const lastSec = times.length ? times[times.length - 1]! : null;
+    const barSec = (timeframeRef.current ? TF_SECONDS[timeframeRef.current] : undefined) ?? 0;
+    if (lastSec === null || barSec <= 0) return;
+
+    let frame: CameraFrame | null = null;
+    if (selection.family === 'zone') {
+      const model = buildZoneModels(structureRef.current).find((z) => z.id === selection.id);
+      if (!model) {
+        setSelectionMissing(true); // cible disparue → message honnête, aucun cadrage.
+        return;
+      }
+      frame = frameZone({
+        startSec: model.createdSec,
+        lastSec,
+        barSec,
+        bandLow: model.low,
+        bandHigh: model.high,
+      });
+    } else if (selection.family === 'event') {
+      const cand = cs.find((c) => Math.abs((c.time as number) - selection.atSec) < barSec);
+      frame = frameEvent({
+        atSec: selection.atSec,
+        lastSec,
+        barSec,
+        level: selection.level,
+        candleLow: cand?.low,
+        candleHigh: cand?.high,
+      });
+    } else {
+      const currentPrice = cs.length ? cs[cs.length - 1]!.close : null;
+      if (currentPrice === null) return;
+      let ctxLo = Infinity;
+      let ctxHi = -Infinity;
+      for (const c of cs.slice(-48)) {
+        if (c.low < ctxLo) ctxLo = c.low;
+        if (c.high > ctxHi) ctxHi = c.high;
+      }
+      if (!Number.isFinite(ctxLo) || !Number.isFinite(ctxHi)) {
+        ctxLo = currentPrice;
+        ctxHi = currentPrice;
+      }
+      frame = frameLevel({
+        level: selection.price,
+        price: currentPrice,
+        lastSec,
+        barSec,
+        context: { low: ctxLo, high: ctxHi },
+      });
+    }
+    if (!frame) return;
+
+    // Remember where the user was BEFORE the selection chain began (restore point).
+    if (!savedFrameRef.current) savedFrameRef.current = readCurrentFrame();
+
+    // §A.1 — bring the chart into view (matters most under 768px where it is often
+    // off-screen). Smooth unless the reader asked for reduced motion.
+    containerRef.current?.scrollIntoView({
+      behavior: reduced ? 'auto' : 'smooth',
+      block: 'nearest',
+    });
+
+    setEdgeIndicator(frame.edge ?? null);
+    cancelTweenRef.current = animateCamera({
+      chart: cameraChart,
+      from: readCurrentFrame(),
+      to: frame,
+      setPriceTarget,
+      reducedMotion: reduced,
+    });
+
+    if (selection.family === 'zone' && !reduced) startPulse();
+
+    return () => {
+      cancelTweenRef.current?.();
+      cancelTweenRef.current = null;
+      stopPulse();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectionKeyStr]);
 
   // ── Discreet zoom / fit controls (mouse + ≥44px touch targets). ─────────────
   const zoom = React.useCallback((factor: number) => {
@@ -1129,6 +1392,37 @@ export function ReadingChart({
           role="tooltip"
         >
           {tooltip.text}
+        </div>
+      )}
+
+      {/* VZ-1 — honest "target gone" notice: the selected element is no longer
+          detected in the current reading. No framing, nothing invented. */}
+      {selectionMissing && (
+        <div
+          className="pointer-events-none absolute left-1/2 top-3 z-20 -translate-x-1/2 rounded-md border border-border/70 bg-background/95 px-3 py-1.5 text-[11px] font-medium text-muted-foreground shadow-sm backdrop-blur-sm"
+          role="status"
+          aria-live="polite"
+        >
+          {t('chart.selectionMissing')}
+        </div>
+      )}
+
+      {/* VZ-1 — level family: when the current price is off-screen (the level is
+          too far to frame both legibly) a discreet chevron marks the edge it sits
+          beyond. It indicates a POSITION, never a movement (§D). */}
+      {edgeIndicator && (
+        <div
+          className={cn(
+            'pointer-events-none absolute left-1/2 z-20 -translate-x-1/2 flex items-center gap-1 rounded-full border border-border/70 bg-background/90 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground backdrop-blur-sm',
+            edgeIndicator === 'above' ? 'top-2' : 'bottom-14',
+          )}
+          role="status"
+          aria-label={t(
+            edgeIndicator === 'above' ? 'chart.priceAbove' : 'chart.priceBelow',
+          )}
+        >
+          <span aria-hidden>{edgeIndicator === 'above' ? '▲' : '▼'}</span>
+          {t('chart.currentPrice')}
         </div>
       )}
 

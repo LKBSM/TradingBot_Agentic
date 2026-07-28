@@ -12,6 +12,7 @@ import type {
 import { HelpContent } from './HelpContent';
 import { FilterChipGroup } from './FilterChipGroup';
 import { useMultiFilter } from '@/lib/market-reading/use-multi-filter';
+import { useChartViewOptional } from '@/lib/chart/viewState';
 
 const SIDE_VALUES = ['BSL', 'SSL'] as const;
 const STATE_VALUES = ['intact', 'swept', 'broken'] as const;
@@ -37,8 +38,6 @@ interface LiquidityCardProps {
   structure: MarketReadingStructure;
   instrument: string;
   price: number | null;
-  selectedId: string | null;
-  onSelect: (id: string) => void;
   openHelp: string | null;
   onToggleHelp: (key: string) => void;
 }
@@ -56,13 +55,33 @@ export function LiquidityCard({
   structure,
   instrument,
   price,
-  selectedId,
-  onSelect,
   openHelp,
   onToggleHelp,
 }: LiquidityCardProps) {
   const t = useTranslations('app.liq2');
   const fmt = useReadingFormatters();
+  // VZ-1 — a pocket is a LEVEL, not a zone: it selects on the unified selection's
+  // distinct LEVEL channel (horizontal line + frameLevel), never the zone id-lock.
+  const { selection, select, clearSelection } = useChartViewOptional();
+  const selectedId =
+    selection?.family === 'level' && selection.kind === 'liquidity' ? selection.id : null;
+  const selectPocket = React.useCallback(
+    (pool: { id: string; level: number; side: 'bsl' | 'ssl' }) => {
+      if (selectedId === pool.id) {
+        clearSelection();
+        return;
+      }
+      select({
+        family: 'level',
+        kind: 'liquidity',
+        id: pool.id,
+        price: pool.level,
+        label: `${pool.side.toUpperCase()} · ${fmt.price(pool.level, instrument)}`,
+        side: pool.side,
+      });
+    },
+    [selectedId, select, clearSelection, fmt, instrument],
+  );
   const [sortOpen, setSortOpen] = React.useState(false);
   const sideFilter = useMultiFilter(SIDE_VALUES);
   const stateFilter = useMultiFilter(STATE_VALUES);
@@ -177,11 +196,11 @@ export function LiquidityCard({
                 tabIndex={0}
                 className={cn('zrow', selected && 'sel')}
                 aria-pressed={selected}
-                onClick={() => onSelect(l.id)}
+                onClick={() => selectPocket({ id: l.id, level: l.level, side: l.side })}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    onSelect(l.id);
+                    selectPocket({ id: l.id, level: l.level, side: l.side });
                   }
                 }}
               >

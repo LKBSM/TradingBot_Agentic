@@ -1165,7 +1165,11 @@
       "dataLaggedTitle": "Der Kalender zeigt den Markt als geöffnet, aber es wurde kürzlich keine neue Kerze empfangen.",
       "lastCandleClosed": "Letzte Kerze geschlossen {when} (New York)",
       "reopensAt": "Wiedereröffnung {when} (New York)",
-      "noNewCandleSince": "Keine neue Kerze empfangen seit {when} (New York)"
+      "noNewCandleSince": "Keine neue Kerze empfangen seit {when} (New York)",
+      "selectionMissing": "Dieses Element wird in der aktuellen Lesung nicht mehr erkannt.",
+      "currentPrice": "Aktueller Preis",
+      "priceAbove": "Der aktuelle Preis liegt oberhalb der Ansicht",
+      "priceBelow": "Der aktuelle Preis liegt unterhalb der Ansicht"
     },
     "layers": {
       "ob": "OB",
@@ -1260,7 +1264,8 @@
       "empty2": "Nothing is invented to pad the list.",
       "evChoch": "Confirmed change of character",
       "evBosBull": "Bullish break of structure",
-      "evBosBear": "Bearish break of structure"
+      "evBosBear": "Bearish break of structure",
+      "evSelectAria": "Das Ereignis {kind} im Chart einrahmen"
     },
     "liq2": {
       "title": "External liquidity",

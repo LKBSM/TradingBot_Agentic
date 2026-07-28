@@ -271,6 +271,57 @@ export interface ReferenceLevel {
   label: string;
 }
 
+// ─── Unified selection (VZ-1 — the ONE selected element, product-wide) ─────────
+
+/**
+ * The single selected element across the whole product (VZ-1). A discriminated
+ * union over the three selectable families. Exactly ONE may be selected at a
+ * time: selecting any element deselects whatever was selected before, in any
+ * panel (Structure, Liquidité, Régime, Zones).
+ *
+ * The id-lock discipline is preserved, NOT widened:
+ *   · ZONE (OB / FVG) carries ONLY the engine id — the chart resolves the
+ *     geometry by id, so a click can never invent or move a zone.
+ *   · EVENT (BOS / CHOCH) and LEVEL (liquidity pocket / temporal reference)
+ *     carry their descriptive geometry on THIS separate selection channel — the
+ *     same distinct path the RG-1c/d reference level already travels, never the
+ *     `coerceViewAction` whitelist (which forbids any price/level field). Tracing
+ *     one therefore cannot weaken the zone id-lock.
+ */
+export interface ZoneSelection {
+  family: 'zone';
+  /** Engine zone id (OB / FVG). */
+  id: string;
+}
+export interface EventSelection {
+  family: 'event';
+  /** Synthetic stable key `${kind}:${atSec}:${level}`. */
+  id: string;
+  kind: 'bos' | 'choch';
+  direction: 'bullish' | 'bearish';
+  /** Broken level price. */
+  level: number;
+  /** Confirmation candle time (epoch seconds). */
+  atSec: number;
+}
+export interface LevelSelection {
+  family: 'level';
+  /** Liquidity pool engine id, or `ref:${label}` for a temporal reference. */
+  id: string;
+  kind: 'liquidity' | 'reference';
+  price: number;
+  /** Axis label (« Haut de la veille · 4 202,03 » / pocket description). */
+  label: string;
+  /** Liquidity only — buy-/sell-side, for the per-side line colour. */
+  side?: 'bsl' | 'ssl';
+}
+export type ChartSelection = ZoneSelection | EventSelection | LevelSelection;
+
+/** Stable identity for a selection (family + id), for the re-click toggle. */
+export function selectionKey(s: ChartSelection): string {
+  return `${s.family}:${s.id}`;
+}
+
 // ─── View state + reducer ─────────────────────────────────────────────────────
 
 export interface ChartLayers {

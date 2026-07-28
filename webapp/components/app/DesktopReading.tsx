@@ -106,11 +106,12 @@ export function DesktopReading({
     enabled: dataSource === 'live' ? undefined : false,
   });
 
-  const { view: chartView, applyActions } = useChartViewOptional();
+  const { view: chartView, applyActions, selection, referenceLevel, clearSelection } =
+    useChartViewOptional();
 
   const onClearHighlight = React.useCallback(() => {
-    applyActions([{ action: 'clear_highlight', params: {} }]);
-  }, [applyActions]);
+    clearSelection();
+  }, [clearSelection]);
 
   const liveHeader = React.useMemo(() => {
     if (live == null || livePrice == null || !Number.isFinite(livePrice)) return live;
@@ -216,6 +217,8 @@ export function DesktopReading({
         filter={chartView.filter}
         focus={chartView.focus}
         highlightZoneId={chartView.highlightZoneId}
+        referenceLevel={referenceLevel}
+        selection={selection}
         onClearHighlight={onClearHighlight}
         hiddenZoneIds={chartView.hiddenZoneIds}
         isolatedZoneIds={chartView.isolatedZoneIds}
@@ -287,8 +290,6 @@ export function DesktopReading({
           structure={reading.structure}
           instrument={header.instrument}
           price={price}
-          selectedId={selectedId}
-          onSelect={selectZone}
           openHelp={openHelp}
           onToggleHelp={onToggleHelp}
         />

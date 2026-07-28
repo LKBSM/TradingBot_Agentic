@@ -15,6 +15,8 @@ import { useChartViewOptional } from '@/lib/chart/viewState';
 import { coerceViewActions } from '@/lib/chart/viewActions';
 import { useReadingFormatters } from '@/lib/market-reading/use-reading-formatters';
 import type {
+  BOSRecent,
+  CHOCHRecent,
   FairValueGap,
   LiquidityPool,
   LiquidityStatus,
@@ -23,6 +25,12 @@ import type {
   OrderBlock,
 } from '@/types/market-reading';
 import { ZoneList } from './ZoneList';
+
+/** ISO-8601 → epoch seconds, or null when unparseable. */
+function isoToSec(iso: string): number | null {
+  const ms = Date.parse(iso);
+  return Number.isNaN(ms) ? null : Math.floor(ms / 1000);
+}
 
 // Importance / status weights driving the collapsed ordering (lower = surfaced
 // first). Display-only ranking — detection is untouched.
@@ -77,7 +85,9 @@ export function StructureSection({
   // `focus_zone` (centre) + `highlight_zone` (emphasise) it by its REAL engine
   // id. Optional provider — outside the /app workspace `applyActions` is a no-op,
   // so the list stays readable with no chart wired in. Detection is never touched.
-  const { view: chartView, applyActions } = useChartViewOptional();
+  const { view: chartView, applyActions, selection, select, clearSelection } =
+    useChartViewOptional();
+  const fmtPrice = fmt.price;
 
   // The id verrou: the ONLY zones a focus/highlight may reference are the ones
   // the engine emitted in THIS structure — identical to AppWorkspace's set.
@@ -115,6 +125,43 @@ export function StructureSection({
       applyActions(actions);
     },
     [applyActions, validZoneIds, selectedZoneId],
+  );
+
+  // VZ-1 — events (BOS/CHOCH) and liquidity pockets select on the unified
+  // selection's DISTINCT channels (never the zone id-lock): an event carries its
+  // confirmation time + broken level; a pocket is a horizontal LEVEL.
+  const selectedEventId = selection?.family === 'event' ? selection.id : null;
+  const selectEvent = useCallback(
+    (kind: 'bos' | 'choch', ev: BOSRecent | CHOCHRecent) => {
+      const atSec = isoToSec(ev.broken_at);
+      if (atSec == null) return;
+      const id = `${kind}:${atSec}:${ev.level}`;
+      if (selectedEventId === id) {
+        clearSelection();
+        return;
+      }
+      select({ family: 'event', id, kind, direction: ev.direction, level: ev.level, atSec });
+    },
+    [selectedEventId, select, clearSelection],
+  );
+  const selectedLevelId =
+    selection?.family === 'level' && selection.kind === 'liquidity' ? selection.id : null;
+  const selectPocket = useCallback(
+    (pool: LiquidityPool) => {
+      if (selectedLevelId === pool.id) {
+        clearSelection();
+        return;
+      }
+      select({
+        family: 'level',
+        kind: 'liquidity',
+        id: pool.id,
+        price: pool.level,
+        label: `${pool.side.toUpperCase()} · ${fmtPrice(pool.level, instrument)}`,
+        side: pool.side,
+      });
+    },
+    [selectedLevelId, select, clearSelection, fmtPrice, instrument],
   );
 
   // Surfacing coherence (founder eval 2026-06-08): the engine emits `bos` only
@@ -174,6 +221,12 @@ export function StructureSection({
                     ? t('bosRetest', { price: fmt.price(retest_in_progress!.level, instrument) })
                     : t('bosNone')
               }
+              onSelect={bos ? () => selectEvent('bos', bos) : undefined}
+              selected={
+                bos != null &&
+                selectedEventId === `bos:${isoToSec(bos.broken_at)}:${bos.level}`
+              }
+              selectAria={t('bosLabel')}
             />
             <Row
               label={t('chochLabel')}
@@ -185,6 +238,12 @@ export function StructureSection({
                     ? t('chochRetest', { price: fmt.price(retest_in_progress!.level, instrument) })
                     : t('chochNone')
               }
+              onSelect={choch ? () => selectEvent('choch', choch) : undefined}
+              selected={
+                choch != null &&
+                selectedEventId === `choch:${isoToSec(choch.broken_at)}:${choch.level}`
+              }
+              selectAria={t('chochLabel')}
             />
             <ZoneRow label={t('obLabel')} termKey="order_block">
               {order_blocks.length > 0 ? (
@@ -240,7 +299,12 @@ export function StructureSection({
             </ZoneRow>
             <ZoneRow label={t('liquidityLabel')} termKey="liquidity">
               {sortedLiquidity.length > 0 ? (
-                <LiquidityList pools={sortedLiquidity} instrument={instrument} />
+                <LiquidityList
+                  pools={sortedLiquidity}
+                  instrument={instrument}
+                  onSelect={selectPocket}
+                  selectedId={selectedLevelId}
+                />
               ) : (
                 <span className="text-sm font-medium text-foreground">{t('liquidityEmpty')}</span>
               )}
@@ -268,19 +332,44 @@ function Row({
   value,
   termKey,
   className,
+  onSelect,
+  selected,
+  selectAria,
 }: {
   label: string;
   value: string;
   /** When set, the label becomes a vulgarisation tooltip (ⓘ + /methodology link). */
   termKey?: GlossaryKey;
   className?: string;
+  /** VZ-1 — when set, the value becomes a focusable button that frames the chart. */
+  onSelect?: () => void;
+  selected?: boolean;
+  selectAria?: string;
 }) {
   return (
     <div className={cn(className)}>
       <dt className="text-xs uppercase tracking-wide text-muted-foreground">
         {termKey ? <InfoTooltip termKey={termKey}>{label}</InfoTooltip> : label}
       </dt>
-      <dd className="mt-1 text-sm font-medium text-foreground">{value}</dd>
+      <dd className="mt-1 text-sm font-medium text-foreground">
+        {onSelect ? (
+          <button
+            type="button"
+            aria-pressed={selected}
+            aria-label={selectAria}
+            onClick={onSelect}
+            className={cn(
+              'w-full rounded px-1.5 py-1 text-left transition-colors -mx-1.5',
+              'hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+              selected && 'bg-primary/10 ring-1 ring-primary/40',
+            )}
+          >
+            {value}
+          </button>
+        ) : (
+          value
+        )}
+      </dd>
     </div>
   );
 }
@@ -300,22 +389,47 @@ const LIQUIDITY_DOT: Record<LiquidityPool['side'], string> = {
 function LiquidityList({
   pools,
   instrument,
+  onSelect,
+  selectedId,
 }: {
   pools: LiquidityPool[];
   instrument: string;
+  /** VZ-1 — select this pocket as a LEVEL on the chart (frame + line). */
+  onSelect?: (pool: LiquidityPool) => void;
+  selectedId?: string | null;
 }) {
   const fmt = useReadingFormatters();
   return (
     <ul className="flex flex-col gap-1.5">
       {pools.map((p) => {
         const status = fmt.liquidityStatus(p.status);
+        const selected = selectedId === p.id;
         return (
           <li
             key={p.id}
+            role={onSelect ? 'button' : undefined}
+            tabIndex={onSelect ? 0 : undefined}
+            aria-pressed={onSelect ? selected : undefined}
+            onClick={onSelect ? () => onSelect(p) : undefined}
+            onKeyDown={
+              onSelect
+                ? (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onSelect(p);
+                    }
+                  }
+                : undefined
+            }
             /* flex-wrap + min-w-0: on a 390px phone the widest BSL/SSL line
                (price · side · kind · status) wraps instead of overflowing the
                panel horizontally. */
-            className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium text-foreground"
+            className={cn(
+              'flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium text-foreground',
+              onSelect &&
+                'cursor-pointer rounded px-1.5 py-1 -mx-1.5 transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+              selected && 'bg-primary/10 ring-1 ring-primary/40',
+            )}
           >
             <span
               className="inline-block h-2 w-2 shrink-0 rounded-full"

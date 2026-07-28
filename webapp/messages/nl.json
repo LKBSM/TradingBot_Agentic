@@ -1165,7 +1165,11 @@
       "dataLaggedTitle": "De kalender geeft de markt als open aan, maar er is recent geen nieuwe candle ontvangen.",
       "lastCandleClosed": "Laatste candle gesloten {when} (New York)",
       "reopensAt": "Heropent {when} (New York)",
-      "noNewCandleSince": "Geen nieuwe candle ontvangen sinds {when} (New York)"
+      "noNewCandleSince": "Geen nieuwe candle ontvangen sinds {when} (New York)",
+      "selectionMissing": "Dit element wordt niet meer gedetecteerd in de huidige lezing.",
+      "currentPrice": "Huidige prijs",
+      "priceAbove": "De huidige prijs staat boven de weergave",
+      "priceBelow": "De huidige prijs staat onder de weergave"
     },
     "layers": {
       "ob": "OB",
@@ -1260,7 +1264,8 @@
       "empty2": "Nothing is invented to pad the list.",
       "evChoch": "Confirmed change of character",
       "evBosBull": "Bullish break of structure",
-      "evBosBear": "Bearish break of structure"
+      "evBosBear": "Bearish break of structure",
+      "evSelectAria": "Het {kind}-event op de grafiek kaderen"
     },
     "liq2": {
       "title": "External liquidity",
