@@ -33,14 +33,16 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["candles"])
 
-# V1 perimeter — mirrors src/api/routes/market_reading.py.
-SUPPORTED_INSTRUMENTS = frozenset({"XAUUSD", "EURUSD"})
-# M15/H1/H4 feed the chart; D1/W1 are read-only reference series (already cached
-# by the MTF assembler) used to derive the calendar reference levels of the
-# Régime panel — day/week open, previous day/week extremes. The "day"/"week"
-# boundary is therefore the DATA FEED's own D1/W1 candle (single definition,
-# shared with the chart), never a second client-side boundary. See RG-1 audit.
-SUPPORTED_TIMEFRAMES = frozenset({"M15", "H1", "H4", "D1", "W1"})
+# Perimeter — single source of truth = the LB-1 lookback config (M1..D1), plus
+# W1 as a read-only reference series. M1..H4/D1 feed the chart; D1/W1 also derive
+# the calendar reference levels of the Régime panel — day/week open, previous
+# day/week extremes. The "day"/"week" boundary is therefore the DATA FEED's own
+# D1/W1 candle (single definition, shared with the chart), never a second
+# client-side boundary. See RG-1 / MC-1 audits.
+from src.intelligence.lookback_config import supported_instruments, supported_timeframes
+
+SUPPORTED_INSTRUMENTS = frozenset(supported_instruments())
+SUPPORTED_TIMEFRAMES = frozenset(supported_timeframes()) | {"W1"}
 # Reference series for the Régime « Niveaux de référence » tile. Not kept warm by
 # the scheduler → populated on demand from the feed on a cache-miss (see below).
 REFERENCE_TIMEFRAMES = frozenset({"D1", "W1"})

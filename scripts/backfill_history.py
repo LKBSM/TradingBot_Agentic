@@ -39,6 +39,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--timeframe", help="Limit to one timeframe")
     parser.add_argument("--force", action="store_true", help="Re-fetch even if a combo is complete")
     parser.add_argument("--dry-run", action="store_true", help="Print the plan without any API call")
+    parser.add_argument("--no-structure", action="store_true", help="Skip seeding persisted structure after the fill")
     args = parser.parse_args(argv)
 
     combos = _combos(args.instrument, args.timeframe)
@@ -75,7 +76,29 @@ def main(argv: Optional[List[str]] = None) -> int:
             print(f"  {r.instrument} {r.timeframe:4} skipped ({r.reason})")
         else:
             print(f"  {r.instrument} {r.timeframe:4} fetched {r.fetched}, upserted {r.upserted} (target {r.target_bars})")
+
+    if not args.no_structure:
+        _seed_structure(store, combos)
     return 0
+
+
+def _seed_structure(candles_store, combos) -> None:
+    """Analyse the freshly-filled history ONCE and persist its current structure.
+
+    One engine run per combo on the trailing detection window seeds the zone/event
+    state; the deep event journal then accumulates going forward via live
+    refreshes. No provider call (pure cache read + detection)."""
+    from src.intelligence.incremental_detection import IncrementalDetector
+    from src.storage.structure_store import StructureStore
+
+    det = IncrementalDetector(StructureStore())
+    print("[backfill] seeding persisted structure (one engine pass per combo)...")
+    for inst, tf in combos:
+        candles = candles_store.get_last_n_candles(inst, tf, det._window)
+        if det.refresh(inst, tf, candles):
+            print(f"  {inst} {tf:4} structure seeded ({len(candles)} bars)")
+        else:
+            print(f"  {inst} {tf:4} skipped (too few candles)")
 
 
 if __name__ == "__main__":
