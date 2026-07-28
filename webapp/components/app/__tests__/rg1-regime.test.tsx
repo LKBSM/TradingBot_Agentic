@@ -4,7 +4,11 @@ import * as React from 'react';
 import { RegimeCard } from '../RegimeCard';
 import { ChartViewProvider, useChartViewOptional } from '@/lib/chart/viewState';
 import { coerceViewAction } from '@/lib/chart/viewActions';
-import type { Candle, MarketReadingStructure, MarketStatusPayload } from '@/types/market-reading';
+import type {
+  MarketReadingStructure,
+  MarketStatusPayload,
+  ReferenceLevelsPayload,
+} from '@/types/market-reading';
 
 // Deterministic sibling-TF trends (no network).
 vi.mock('@/lib/market-reading/hooks', async (orig) => {
@@ -18,24 +22,18 @@ vi.mock('@/lib/market-reading/hooks', async (orig) => {
   };
 });
 
-// D1/W1 reference candles (ascending). 3 each → all 6 reference levels resolve.
-const DAILY: Candle[] = [
-  { time: 1, open: 2410, high: 2424.8, low: 2370.5, close: 2415 },
-  { time: 2, open: 2415, high: 2421.2, low: 2376.2, close: 2400 },
-  { time: 3, open: 2398.6, high: 2405, low: 2390, close: 2392 },
-];
-const WEEKLY: Candle[] = [
-  { time: 10, open: 2380, high: 2450, low: 2350, close: 2420 },
-  { time: 20, open: 2420, high: 2424.8, low: 2370.5, close: 2405 },
-  { time: 30, open: 2411.4, high: 2412, low: 2390, close: 2392 },
-];
-const fetchCandlesMock = vi.fn((_i: string, tf: string) =>
-  Promise.resolve(tf === 'W1' ? WEEKLY : DAILY),
-);
-vi.mock('@/lib/market-reading/api-client', async (orig) => {
-  const actual = await orig<typeof import('@/lib/market-reading/api-client')>();
-  return { ...actual, fetchCandles: (i: string, tf: string) => fetchCandlesMock(i, tf) };
-});
+// Server-aggregated reference levels (RG-1c) — the panel now reads them straight
+// from the reading payload; no D1/W1 fetch, no single-candle indexing.
+const REF_LEVELS: ReferenceLevelsPayload = {
+  day_open: 2398.6,
+  week_open: 2411.4,
+  prev_day_high: 2421.2,
+  prev_day_low: 2376.2,
+  prev_week_high: 2424.8,
+  prev_week_low: 2370.5,
+  day_complete: true,
+  week_complete: true,
+};
 
 afterEach(() => vi.clearAllMocks());
 
@@ -91,9 +89,11 @@ const OPEN_STATUS: MarketStatusPayload = {
 function Harness({
   structure,
   marketStatus,
+  referenceLevelsPayload = REF_LEVELS,
 }: {
   structure: MarketReadingStructure;
   marketStatus: MarketStatusPayload | null;
+  referenceLevelsPayload?: ReferenceLevelsPayload | null;
 }) {
   const [openHelp, setOpenHelp] = React.useState<string | null>(null);
   const onToggleHelp = (k: string) => setOpenHelp((cur) => (cur === k ? null : k));
@@ -107,6 +107,7 @@ function Harness({
           header={HEADER}
           price={2392.35}
           marketStatus={marketStatus}
+          referenceLevelsPayload={referenceLevelsPayload}
           openHelp={openHelp}
           onToggleHelp={onToggleHelp}
         />
@@ -207,11 +208,36 @@ describe('RG-1 — RegimeCard tiles', () => {
     expect(screen.getByTestId('ref')).toHaveTextContent('none');
 
     fireEvent.click(dayOpenBtn); // trace
-    expect(screen.getByTestId('ref')).toHaveTextContent('Ouverture du jour=2398.6');
+    // The traced label is EXPLICIT — the repère name AND its value (« Ouverture
+    // du jour · <prix> ») — so a calendar marker is never mistaken for a zone.
+    expect(screen.getByTestId('ref')).toHaveTextContent('Ouverture du jour ·');
+    expect(screen.getByTestId('ref')).toHaveTextContent('=2398.6');
     expect(dayOpenBtn.getAttribute('aria-pressed')).toBe('true');
 
     fireEvent.click(dayOpenBtn); // re-click removes
     expect(screen.getByTestId('ref')).toHaveTextContent('none');
+  });
+
+  it('drops a level whose period the cache could not fully cover, and names it « données insuffisantes »', async () => {
+    render(
+      <Harness
+        structure={FULL_STRUCT}
+        marketStatus={OPEN_STATUS}
+        referenceLevelsPayload={{
+          ...REF_LEVELS,
+          prev_week_high: null,
+          prev_week_low: null,
+          week_complete: false,
+        }}
+      />,
+    );
+    fireEvent.click(screen.getByText('Niveaux de référence').closest('.tile') as HTMLElement);
+    // The covered rows are still there; the previous-week rows are NOT (no partial
+    // value), and the panel names the uncovered period. (« Haut de la veille »
+    // shows in both the tile facade and the Donnée panel — hence getAllByText.)
+    expect(screen.getAllByText('Haut de la veille').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Haut de la semaine')).toBeNull();
+    expect(screen.getByText(/Données insuffisantes/i)).toBeInTheDocument();
   });
 
   it('Session tile shows the current session, and its Donnée has no « État du marché » (no dup with the header badge)', () => {

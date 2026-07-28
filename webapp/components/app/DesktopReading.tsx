@@ -269,6 +269,7 @@ export function DesktopReading({
           header={header}
           price={price}
           marketStatus={reading.market_status ?? null}
+          referenceLevelsPayload={reading.reference_levels ?? null}
           openHelp={openHelp}
           onToggleHelp={onToggleHelp}
         />

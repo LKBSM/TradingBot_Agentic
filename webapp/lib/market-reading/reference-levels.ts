@@ -1,21 +1,25 @@
 /**
  * Pure helpers for the enriched « Régime de marché » panel — the two measures
- * that are ARITHMETIC over engine-emitted candles/structure, not new detections:
+ * that are ARITHMETIC over engine output, not new detections:
  *
  *   · Position dans le range (measure 4) — where the price sits between the
  *     engine's structural range extremes.
  *   · Niveaux de référence (measure 10) — day/week open + previous day/week
- *     extremes, read straight off the DATA FEED's own D1 / W1 candles.
+ *     extremes. These are computed SERVER-SIDE (RG-1c): the backend aggregates
+ *     max(high)/min(low) over every candle of each MC-1 trading day/week, in the
+ *     instrument's NY wall-clock — ONE definition of « a trading day », per
+ *     instrument. The front only maps the server payload here; it never indexes a
+ *     single candle (reading one bar's high/low was the RG-1c bug: a sub-daily
+ *     range presented as a full day). See docs/audits/AUDIT-rg-1c-niveaux-correctif.md.
  *
- * The « day » / « week » boundary is therefore the feed's own D1 / W1 candle
- * (the same reference the chart uses) — a single definition, never a second
- * client-side boundary. See docs/audits/AUDIT-rg-1-regime-enrichi.md.
- *
- * Every function returns `null` for a value it cannot compute (missing candles,
- * a degenerate range) so the caller renders nothing rather than inventing a
- * number — « pas de donnée, pas de ligne ».
+ * Every function returns `null` for a value it cannot compute (missing data, a
+ * degenerate range, an incompletely-covered period) so the caller renders
+ * nothing rather than inventing a number — « pas de donnée, pas de ligne ».
  */
-import type { Candle, MarketReadingStructure } from '@/types/market-reading';
+import type {
+  MarketReadingStructure,
+  ReferenceLevelsPayload,
+} from '@/types/market-reading';
 
 // ─── Position dans le range (measure 4) ──────────────────────────────────────
 
@@ -81,50 +85,42 @@ export function positionPct(low: number, high: number, price: number): number | 
 // ─── Niveaux de référence (measure 10) ───────────────────────────────────────
 
 export interface ReferenceLevels {
-  /** Open of the current (forming) daily candle. */
+  /** Open of the current (forming) trading day. */
   dayOpen: number | null;
-  /** Open of the current (forming) weekly candle. */
+  /** Open of the current (forming) trading week. */
   weekOpen: number | null;
-  /** High / low of the PREVIOUS completed daily candle. */
+  /** High / low of the PREVIOUS complete trading day. */
   prevDayHigh: number | null;
   prevDayLow: number | null;
-  /** High / low of the PREVIOUS completed weekly candle. */
+  /** High / low of the PREVIOUS complete trading week. */
   prevWeekHigh: number | null;
   prevWeekLow: number | null;
-}
-
-/** Open of the most recent candle (the current, still-forming period). */
-function currentOpen(candles: Candle[]): number | null {
-  const last = candles.at(-1);
-  return last ? last.open : null;
-}
-
-/** High/low of the previous completed candle (second from the end). */
-function previousExtremes(candles: Candle[]): { high: number | null; low: number | null } {
-  // Need at least [previous, current]; the last item is the forming period.
-  if (candles.length < 2) return { high: null, low: null };
-  const prev = candles[candles.length - 2]!;
-  return { high: prev.high, low: prev.low };
+  /** Whether the previous-day window was fully covered by the cached candles. */
+  dayComplete: boolean;
+  /** Whether the previous-week window was fully covered by the cached candles. */
+  weekComplete: boolean;
 }
 
 /**
- * Assemble the calendar reference levels from the feed's D1 and W1 candle series
- * (ascending, oldest-first — as `/api/candles` returns them). Any series that is
- * empty/too short yields nulls for its levels; the caller drops those lines.
+ * Map the SERVER-aggregated reference levels (RG-1c) to the panel's shape. The
+ * backend has already aggregated max/min over every candle of each MC-1 trading
+ * period and dropped any period it could not fully cover (those arrive as null).
+ * Returns null when the payload is absent (static fixture / older backend), so
+ * the caller drops the tile rather than inventing values.
  */
-export function referenceLevels(
-  daily: Candle[],
-  weekly: Candle[],
-): ReferenceLevels {
-  const day = previousExtremes(daily);
-  const week = previousExtremes(weekly);
+export function referenceLevelsFromPayload(
+  payload: ReferenceLevelsPayload | null | undefined,
+): ReferenceLevels | null {
+  if (!payload) return null;
   return {
-    dayOpen: currentOpen(daily),
-    weekOpen: currentOpen(weekly),
-    prevDayHigh: day.high,
-    prevDayLow: day.low,
-    prevWeekHigh: week.high,
-    prevWeekLow: week.low,
+    dayOpen: payload.day_open,
+    weekOpen: payload.week_open,
+    prevDayHigh: payload.prev_day_high,
+    prevDayLow: payload.prev_day_low,
+    prevWeekHigh: payload.prev_week_high,
+    prevWeekLow: payload.prev_week_low,
+    dayComplete: payload.day_complete,
+    weekComplete: payload.week_complete,
   };
 }
 
