@@ -8,17 +8,22 @@ from scripts import seed_twelve_data
 
 
 class TestDryRun:
-    def test_iterates_default_6_combos(self, tmp_path, monkeypatch, capsys):
+    def test_iterates_default_enabled_combos(self, tmp_path, monkeypatch, capsys):
         monkeypatch.setenv("CANDLES_DB_PATH", str(tmp_path / "candles.db"))
         monkeypatch.delenv("TWELVE_DATA_API_KEY", raising=False)
+        monkeypatch.delenv("LB1_ENABLE_M1", raising=False)
+        from src.intelligence import lookback_config
+        lookback_config.reset_cache()
         rc = seed_twelve_data.main(["--dry-run"])
         out = capsys.readouterr().out
         assert rc == 0
-        # 6 combos = 2 instruments × 3 timeframes
-        for inst in ["XAUUSD", "EURUSD"]:
-            for tf in ["M15", "H1", "H4"]:
-                assert f"{inst} {tf}: dry-run" in out
-        assert "DONE: 6 combinations" in out
+        # Default = the enabled LB-1 perimeter (2 instruments × 5 TFs, M1 gated off).
+        combos = lookback_config.enabled_combos()
+        assert len(combos) == 10
+        for inst, tf in combos:
+            assert f"{inst} {tf}: dry-run" in out
+        assert f"DONE: {len(combos)} combinations" in out
+        assert "M1:" not in out  # gated off by default
 
     def test_dry_run_does_not_require_api_key(self, tmp_path, monkeypatch):
         monkeypatch.setenv("CANDLES_DB_PATH", str(tmp_path / "candles.db"))
