@@ -1,15 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import type { Candle, LiquidityPool } from '@/types/market-reading';
+import type { LiquidityPool, ReferenceLevelsPayload } from '@/types/market-reading';
 import {
   structureRange,
   positionPct,
-  referenceLevels,
+  referenceLevelsFromPayload,
   distancePct,
 } from '../reference-levels';
-
-function candle(partial: Partial<Candle> & { time: number }): Candle {
-  return { open: 0, high: 0, low: 0, close: 0, volume: 0, ...partial };
-}
 
 function pool(kind: LiquidityPool['kind'], level: number): LiquidityPool {
   return {
@@ -81,39 +77,49 @@ describe('positionPct', () => {
   });
 });
 
-describe('referenceLevels', () => {
-  const daily: Candle[] = [
-    candle({ time: 1, open: 2410, high: 2424.8, low: 2370.5, close: 2415 }),
-    candle({ time: 2, open: 2415, high: 2421.2, low: 2376.2, close: 2400 }), // prev day
-    candle({ time: 3, open: 2398.6, high: 2405, low: 2390, close: 2392 }), // current day
-  ];
-  const weekly: Candle[] = [
-    candle({ time: 10, open: 2380, high: 2450, low: 2350, close: 2420 }),
-    candle({ time: 20, open: 2420, high: 2424.8, low: 2370.5, close: 2405 }), // prev week
-    candle({ time: 30, open: 2411.4, high: 2412, low: 2390, close: 2392 }), // current week
-  ];
+describe('referenceLevelsFromPayload', () => {
+  const payload: ReferenceLevelsPayload = {
+    day_open: 2398.6,
+    week_open: 2411.4,
+    prev_day_high: 2421.2,
+    prev_day_low: 2376.2,
+    prev_week_high: 2424.8,
+    prev_week_low: 2370.5,
+    day_complete: true,
+    week_complete: true,
+  };
 
-  it('takes day/week open from the current (last) candle', () => {
-    const r = referenceLevels(daily, weekly);
-    expect(r.dayOpen).toBe(2398.6);
-    expect(r.weekOpen).toBe(2411.4);
+  it('maps the server-aggregated levels straight through (RG-1c)', () => {
+    const r = referenceLevelsFromPayload(payload);
+    expect(r).toEqual({
+      dayOpen: 2398.6,
+      weekOpen: 2411.4,
+      prevDayHigh: 2421.2,
+      prevDayLow: 2376.2,
+      prevWeekHigh: 2424.8,
+      prevWeekLow: 2370.5,
+      dayComplete: true,
+      weekComplete: true,
+    });
   });
 
-  it('takes previous extremes from the second-to-last candle', () => {
-    const r = referenceLevels(daily, weekly);
-    expect(r.prevDayHigh).toBe(2421.2);
-    expect(r.prevDayLow).toBe(2376.2);
-    expect(r.prevWeekHigh).toBe(2424.8);
-    expect(r.prevWeekLow).toBe(2370.5);
+  it('carries per-period completeness so the panel can name « données insuffisantes »', () => {
+    const r = referenceLevelsFromPayload({
+      ...payload,
+      prev_week_high: null,
+      prev_week_low: null,
+      week_complete: false,
+    });
+    expect(r?.dayComplete).toBe(true);
+    expect(r?.weekComplete).toBe(false);
+    expect(r?.prevWeekHigh).toBeNull();
+    // A dropped period never shows a partial value — it arrives as null.
+    expect(r?.prevWeekLow).toBeNull();
   });
 
-  it('yields nulls for a series with no previous candle', () => {
-    const r = referenceLevels([candle({ time: 1, open: 100 })], []);
-    expect(r.dayOpen).toBe(100);
-    expect(r.prevDayHigh).toBeNull();
-    expect(r.prevDayLow).toBeNull();
-    expect(r.weekOpen).toBeNull();
-    expect(r.prevWeekHigh).toBeNull();
+  it('returns null when the payload is absent (static fixture / older backend)', () => {
+    expect(referenceLevelsFromPayload(null)).toBeNull();
+    expect(referenceLevelsFromPayload(undefined)).toBeNull();
   });
 });
 

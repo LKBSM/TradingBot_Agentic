@@ -276,6 +276,9 @@ export function ReadingChart({
   // overlay recomputed in a rAF loop and committed a frame late → the boxes
   // "vibrated" against the candles.)
   const overlayRef = React.useRef<ZoneOverlayPrimitive | null>(null);
+  // Latest traced reference-level price, read by the series autoscaleInfoProvider
+  // (a stable closure) so it can widen the vertical range to include the level.
+  const referenceLevelPriceRef = React.useRef<number | null>(null);
   // Hover tooltip — descriptive text for the box / pocket under the crosshair,
   // driven by the chart's crosshair-move event. One element, updated only on
   // hover, so it never re-renders per frame.
@@ -515,11 +518,25 @@ export function ReadingChart({
       autoscaleInfoProvider: (baseImplementation: () => AutoscaleInfo | null) => {
         const res = baseImplementation();
         if (!res || !res.priceRange) return res;
-        const { minValue, maxValue } = res.priceRange;
+        let { minValue, maxValue } = res.priceRange;
+        // Bring a traced calendar reference level (RG-1c) into the vertical
+        // viewport: lightweight-charts does NOT include price lines in autoscale,
+        // so a level outside the candles' band would be painted off-screen and
+        // read as « nothing drawn ». Extending the range guarantees the line — and
+        // the price action around it — is actually visible. Read from a ref so
+        // this provider closure always sees the latest level without re-creating
+        // the series.
+        const lvl = referenceLevelPriceRef.current;
+        if (lvl != null && Number.isFinite(lvl)) {
+          minValue = Math.min(minValue, lvl);
+          maxValue = Math.max(maxValue, lvl);
+        }
         const mid = (minValue + maxValue) / 2;
         const span = maxValue - minValue;
         const minSpan = Math.abs(mid) * MIN_VISIBLE_RANGE_FRAC;
-        if (mid === 0 || span >= minSpan) return res;
+        if (mid === 0 || span >= minSpan) {
+          return { ...res, priceRange: { minValue, maxValue } };
+        }
         const half = minSpan / 2;
         return {
           ...res,
@@ -742,23 +759,35 @@ export function ReadingChart({
       }),
     );
 
-    // Calendar-derived reference marker (day/week open, prev extreme). A SOLID
-    // accent line with an axis label — deliberately distinct from the dashed
+    // Calendar-derived reference marker (day/week open, prev extreme). A FINE
+    // solid accent line whose axis label carries the repère NAME + value
+    // (« Haut de la veille · 4 202,03 ») — deliberately distinct from the dashed
     // grey break lines, the hidden-line liquidity pills and the OB/FVG boxes, so
-    // a temporal repère is never mistaken for detected structure. One at a time.
+    // a temporal repère (computed from the calendar) is never mistaken for
+    // detected structure. One at a time; drawn only after a click.
     const refColor = palette().priceLine;
     const createdReference = referenceLevel
       ? [
           series.createPriceLine({
             price: referenceLevel.price,
             color: refColor,
-            lineWidth: 2,
+            lineWidth: 1,
             lineStyle: LineStyle.Solid,
             axisLabelVisible: true,
             title: referenceLevel.label,
           }),
         ]
       : [];
+    // Publish the level to the autoscale closure and force a re-autoscale so the
+    // vertical viewport is brought to the level (RG-1c « n'y amène pas la vue »):
+    // toggling autoScale off→on re-invokes autoscaleInfoProvider, which now folds
+    // the level into the range. A no-op when the level already sits in-band.
+    referenceLevelPriceRef.current = referenceLevel ? referenceLevel.price : null;
+    if (referenceLevel) {
+      const ps = series.priceScale();
+      ps.applyOptions({ autoScale: false });
+      ps.applyOptions({ autoScale: true });
+    }
 
     // Initial view ONCE; afterwards restore the pre-update view so data
     // refreshes don't reset the user's zoom/pan. The "Ajuster" button refits.

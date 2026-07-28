@@ -166,6 +166,7 @@ describe('Régime measures each show a source sub-line', () => {
         header={HEADER}
         price={2392.35}
         marketStatus={null}
+        referenceLevelsPayload={null}
         openHelp={null}
         onToggleHelp={noop}
       />,

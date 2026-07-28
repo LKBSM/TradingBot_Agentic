@@ -504,3 +504,64 @@ def test_mtf_provider_feeds_candles_to_regime_bias():
     )
     assert regime.mtf_confluence.get("h1") == "bullish"
     assert regime.mtf_confluence.get("h4") == "bullish"
+
+
+# ---------------------------------------------------------------------------
+# RG-1c — reference_levels wiring: fresh, from cached intraday candles, attached
+# to the reading payload (never persisted).
+# ---------------------------------------------------------------------------
+
+
+class _RefLevelsStore(_MockCandlesStore):
+    """A candles store that ALSO serves H1 candles for the reference levels."""
+
+    def __init__(self, h1_candles: list[_MockCandle]):
+        super().__init__()
+        self._h1 = list(h1_candles)
+
+    def get_last_n_candles(self, instrument: str, timeframe: str, n: int):
+        return list(self._h1) if timeframe == "H1" else []
+
+
+def _ref_h1_series() -> list[_MockCandle]:
+    # Two full XAU trading days of hourly bars (17:00 NY rollover = 21:00 UTC in
+    # July): an anchor, a complete previous day (Jul 24) and the current day.
+    def c(h_utc, close):
+        return _MockCandle(datetime(2026, 7, 24, h_utc, tzinfo=timezone.utc), close)
+
+    return [
+        _MockCandle(datetime(2026, 7, 23, 12, tzinfo=timezone.utc), 4100.0),  # anchor
+        c(6, 4200.0),
+        c(12, 4160.0),
+        c(18, 4170.0),
+        _MockCandle(datetime(2026, 7, 25, 6, tzinfo=timezone.utc), 4174.0),  # current day
+    ]
+
+
+def test_reference_levels_method_aggregates_from_cached_h1():
+    store = _RefLevelsStore(_ref_h1_series())
+    assembler = MarketReadingAssembler(
+        data_provider=_MockDataProvider(_build_candles(5)),
+        readings_store=_MockReadingsStore(),
+        candles_store=store,
+        smc_pipeline=_stub_smc_pipeline,
+        clock=lambda: datetime(2026, 7, 25, 20, tzinfo=timezone.utc),
+    )
+    levels = assembler.reference_levels("XAUUSD")
+    assert levels is not None
+    # Aggregated over ALL of Jul 24 (_MockCandle high = close + 1, low = close − 1).
+    assert levels["prev_day_high"] == 4201.0  # from the 4200 close bar
+    assert levels["prev_day_low"] == 4159.0  # from the 4160 close bar
+    assert levels["day_complete"] is True
+    assert levels["day_open"] == 4173.5  # open of the current day's first bar
+
+
+def test_reference_levels_none_when_no_cached_source():
+    assembler = MarketReadingAssembler(
+        data_provider=_MockDataProvider(_build_candles(5)),
+        readings_store=_MockReadingsStore(),
+        candles_store=_RefLevelsStore([]),  # no H1 → nothing to aggregate
+        smc_pipeline=_stub_smc_pipeline,
+        clock=lambda: datetime(2026, 7, 25, 20, tzinfo=timezone.utc),
+    )
+    assert assembler.reference_levels("XAUUSD") is None

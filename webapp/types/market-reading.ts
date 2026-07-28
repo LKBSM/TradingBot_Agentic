@@ -296,6 +296,28 @@ export interface MarketReading {
    * client clock.
    */
   market_status?: MarketStatusPayload | null;
+  /**
+   * RG-1c calendar reference levels — day/week open + previous day/week extremes,
+   * aggregated SERVER-SIDE over the MC-1 trading calendar (one definition of « a
+   * trading day », per instrument, in NY wall-clock). Each value is null when its
+   * period is not fully covered by the cached candles; `day_complete` /
+   * `week_complete` flag whether the previous-day / previous-week window was
+   * fully covered so the panel can name « données insuffisantes ». Absent on
+   * static fixtures.
+   */
+  reference_levels?: ReferenceLevelsPayload | null;
+}
+
+/** Server-aggregated calendar reference levels (reference_levels.to_dict). */
+export interface ReferenceLevelsPayload {
+  day_open: number | null;
+  week_open: number | null;
+  prev_day_high: number | null;
+  prev_day_low: number | null;
+  prev_week_high: number | null;
+  prev_week_low: number | null;
+  day_complete: boolean;
+  week_complete: boolean;
 }
 
 /** Server market status (src/intelligence/market_calendar.MarketStatus.to_dict). */

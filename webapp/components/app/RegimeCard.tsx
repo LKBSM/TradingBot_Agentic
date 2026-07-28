@@ -8,11 +8,10 @@ import { useMtfTrends } from '@/lib/market-reading/hooks';
 import { MTF_TREND_ORDER } from '@/lib/market-reading/mtf-trend';
 import { deriveTrendMaturity } from '@/lib/market-reading/regime-facts';
 import { formatLocalDayLong, parseUtc } from '@/lib/time/localTime';
-import { fetchCandles } from '@/lib/market-reading/api-client';
 import {
   structureRange,
   positionPct,
-  referenceLevels,
+  referenceLevelsFromPayload,
   distancePct,
   type ReferenceLevels,
 } from '@/lib/market-reading/reference-levels';
@@ -28,11 +27,11 @@ import {
 import type {
   BOSRecent,
   CHOCHRecent,
-  Candle,
   MarketReadingHeader,
   MarketReadingRegime,
   MarketReadingStructure,
   MarketStatusPayload,
+  ReferenceLevelsPayload,
 } from '@/types/market-reading';
 import './regime-tiles.css';
 
@@ -41,6 +40,14 @@ import './regime-tiles.css';
 // closes any other card's help and vice-versa. Encoding: `rg:<tileKey>:<tab>`.
 const RG = 'rg:';
 type Tab = 'data' | 'concept';
+/** The six numeric reference-level keys (excludes the completeness booleans). */
+type LevelKey =
+  | 'dayOpen'
+  | 'weekOpen'
+  | 'prevDayHigh'
+  | 'prevDayLow'
+  | 'prevWeekHigh'
+  | 'prevWeekLow';
 function parseOpen(openHelp: string | null): { key: string; tab: Tab } | null {
   if (!openHelp || !openHelp.startsWith(RG)) return null;
   const parts = openHelp.split(':');
@@ -71,27 +78,6 @@ function latestBreak<T extends BOSRecent | CHOCHRecent>(
   return best ?? fallback ?? null;
 }
 
-/** Fetch the D1 / W1 reference candle series once per instrument (read-only). */
-function useReferenceCandles(instrument: string): { daily: Candle[]; weekly: Candle[] } | null {
-  const [state, setState] = React.useState<{ daily: Candle[]; weekly: Candle[] } | null>(null);
-  React.useEffect(() => {
-    let alive = true;
-    setState(null);
-    const controller = new AbortController();
-    Promise.all([
-      fetchCandles(instrument, 'D1', { limit: 40, signal: controller.signal }).catch(() => [] as Candle[]),
-      fetchCandles(instrument, 'W1', { limit: 20, signal: controller.signal }).catch(() => [] as Candle[]),
-    ]).then(([daily, weekly]) => {
-      if (alive) setState({ daily, weekly });
-    });
-    return () => {
-      alive = false;
-      controller.abort();
-    };
-  }, [instrument]);
-  return state;
-}
-
 // ─── Small presentational helpers for the Donnée tab ──────────────────────────
 function Dh4({ children, mt }: { children: React.ReactNode; mt?: boolean }) {
   return <div className={cn('dh4', mt && 'mt')}>{children}</div>;
@@ -109,6 +95,42 @@ function EvRow({ k, v, t }: { k: React.ReactNode; v?: React.ReactNode; t?: React
   );
 }
 
+/**
+ * A clickable price → traces it as a calendar reference line on the chart, with
+ * an explicit label (« <name> · <price> »), and brings the view to it. Re-click
+ * removes it; a single trace at a time (RG-1c part C — every displayed price
+ * LEVEL is traceable with the same gesture; deltas/averages are not levels and
+ * stay plain text). `children` overrides the button face (else the formatted
+ * price).
+ */
+function PxBtn({
+  label,
+  value,
+  c,
+  children,
+}: {
+  label: string;
+  value: number;
+  c: DataCtx;
+  children?: React.ReactNode;
+}) {
+  const display = c.refLabel(label, value);
+  const on =
+    c.referenceLevel != null &&
+    c.referenceLevel.price === value &&
+    c.referenceLevel.label === display;
+  return (
+    <button
+      type="button"
+      className={cn('pxbtn', on && 'on')}
+      aria-pressed={on}
+      onClick={() => c.traceLevel(label, value)}
+    >
+      {children ?? c.px(value)}
+    </button>
+  );
+}
+
 interface RegimeCardProps {
   regime: MarketReadingRegime;
   structure: MarketReadingStructure;
@@ -116,6 +138,9 @@ interface RegimeCardProps {
   price: number;
   /** Raw server market status — carries the session windows (single source). */
   marketStatus: MarketStatusPayload | null;
+  /** Server-aggregated calendar reference levels (RG-1c) — day/week open + prev
+   *  extremes over the MC-1 trading calendar. Null on static fixtures. */
+  referenceLevelsPayload: ReferenceLevelsPayload | null;
   openHelp: string | null;
   onToggleHelp: (key: string) => void;
 }
@@ -147,6 +172,7 @@ export function RegimeCard({
   header,
   price,
   marketStatus,
+  referenceLevelsPayload,
   openHelp,
   onToggleHelp,
 }: RegimeCardProps) {
@@ -159,10 +185,9 @@ export function RegimeCard({
   const { trends } = useMtfTrends(instrument);
   const { referenceLevel, setReferenceLevel } = useChartViewOptional();
 
-  const refCandles = useReferenceCandles(instrument);
-  const refLevels: ReferenceLevels | null = refCandles
-    ? referenceLevels(refCandles.daily, refCandles.weekly)
-    : null;
+  // Server-aggregated over the MC-1 trading calendar (RG-1c) — the front never
+  // indexes a single candle to build these.
+  const refLevels: ReferenceLevels | null = referenceLevelsFromPayload(referenceLevelsPayload);
 
   const px = (v: number) => fmt.price(v, instrument);
   // Long, localized date — « 24 juil. à 09:45 » (fr) / « Jul 24 at 09:45 » (en),
@@ -253,9 +278,9 @@ export function RegimeCard({
   };
 
   // Reference-level rows (measure 10), each present only if computable.
-  const levelRows: { key: keyof ReferenceLevels; label: string; value: number }[] = [];
+  const levelRows: { key: LevelKey; label: string; value: number }[] = [];
   if (refLevels) {
-    const order: [keyof ReferenceLevels, string][] = [
+    const order: [LevelKey, string][] = [
       ['dayOpen', t('data.dayOpen')],
       ['weekOpen', t('data.weekOpen')],
       ['prevDayHigh', t('data.prevDayHigh')],
@@ -267,6 +292,14 @@ export function RegimeCard({
       const v = refLevels[k];
       if (v != null) levelRows.push({ key: k, label, value: v });
     }
+  }
+  // Periods the cached candles could not fully cover — the tile still shows the
+  // levels it CAN source and names « données insuffisantes » for the rest, never
+  // a partial value presented as complete (RG-1c).
+  const levelsInsufficient: string[] = [];
+  if (refLevels) {
+    if (!refLevels.dayComplete) levelsInsufficient.push(t('data.lvlPeriodDay'));
+    if (!refLevels.weekComplete) levelsInsufficient.push(t('data.lvlPeriodWeek'));
   }
 
   // ── Tile facades ────────────────────────────────────────────────────────────
@@ -377,9 +410,15 @@ export function RegimeCard({
     onToggleHelp(`${RG}${key}:${tab}`);
   }
 
-  function traceLevel(labelKey: string, label: string, value: number) {
-    const same = referenceLevel != null && referenceLevel.price === value && referenceLevel.label === label;
-    setReferenceLevel(same ? null : { price: value, label });
+  // Explicit chart-line label — « Haut de la veille · 4 202,03 » — so a calendar
+  // repère painted on the chart is never mistaken for a detected zone (RG-1c).
+  const refLabel = (label: string, value: number) => `${label} · ${px(value)}`;
+
+  function traceLevel(label: string, value: number) {
+    const display = refLabel(label, value);
+    const same =
+      referenceLevel != null && referenceLevel.price === value && referenceLevel.label === display;
+    setReferenceLevel(same ? null : { price: value, label: display });
   }
 
   return (
@@ -515,8 +554,10 @@ export function RegimeCard({
                 transitionName,
                 fmtDelay,
                 levelRows,
+                levelsInsufficient,
                 referenceLevel,
                 traceLevel,
+                refLabel,
               })
             )}
           </div>
@@ -579,8 +620,10 @@ interface DataCtx {
   transitionName: (label: TransitionLabel) => string;
   fmtDelay: (mins: number) => string;
   levelRows: { key: string; label: string; value: number }[];
+  levelsInsufficient: string[];
   referenceLevel: { price: number; label: string } | null;
-  traceLevel: (labelKey: string, label: string, value: number) => void;
+  traceLevel: (label: string, value: number) => void;
+  refLabel: (label: string, value: number) => string;
 }
 
 function fmtSigned(pct: number | null): string {
@@ -650,8 +693,12 @@ function renderData(k: string, c: DataCtx): React.ReactNode {
               <u style={{ left: `${c.pos}%` }} />
             </div>
             <div className="barlbl">
-              <span>{t('data.barLow', { v: px(c.range.low) })}</span>
-              <span>{t('data.barHigh', { v: px(c.range.high) })}</span>
+              <PxBtn label={t('data.boundLow')} value={c.range.low} c={c}>
+                {t('data.barLow', { v: px(c.range.low) })}
+              </PxBtn>
+              <PxBtn label={t('data.boundHigh')} value={c.range.high} c={c}>
+                {t('data.barHigh', { v: px(c.range.high) })}
+              </PxBtn>
             </div>
           </div>
           <div className="ev">
@@ -705,7 +752,12 @@ function renderData(k: string, c: DataCtx): React.ReactNode {
               v={`CHOCH ${m.direction === 'bullish' ? '↑' : '↓'}`}
               t={dayHm(m.brokenAt)}
             />
-            {anchor && <EvRow k={t('data.crossedLevel')} v={px(anchor.level)} />}
+            {anchor && (
+              <EvRow
+                k={t('data.crossedLevel')}
+                v={<PxBtn label={t('data.crossedLevel')} value={anchor.level} c={c} />}
+              />
+            )}
             <EvRow k={t('data.barsSince')} v={String(m.bars ?? '—')} t={tf} />
             <EvRow k={t('data.elapsed')} v={elapsed} />
           </div>
@@ -713,14 +765,17 @@ function renderData(k: string, c: DataCtx): React.ReactNode {
             <>
               <Dh4 mt>{t('data.eventsSince')}</Dh4>
               <div className="ev">
-                {since.slice(0, 6).map((e, i) => (
-                  <EvRow
-                    key={i}
-                    k={`${'validation_status' in e && e === anchor ? 'CHOCH' : 'BOS'} ${e.direction === 'bullish' ? '↑' : '↓'}`}
-                    v={px(e.level)}
-                    t={dayHm(e.broken_at)}
-                  />
-                ))}
+                {since.slice(0, 6).map((e, i) => {
+                  const kLabel = `${'validation_status' in e && e === anchor ? 'CHOCH' : 'BOS'} ${e.direction === 'bullish' ? '↑' : '↓'}`;
+                  return (
+                    <EvRow
+                      key={i}
+                      k={kLabel}
+                      v={<PxBtn label={kLabel} value={e.level} c={c} />}
+                      t={dayHm(e.broken_at)}
+                    />
+                  );
+                })}
               </div>
             </>
           )}
@@ -742,20 +797,27 @@ function renderData(k: string, c: DataCtx): React.ReactNode {
               k={t('data.typeRow')}
               v={`${c.lastKind} ${l.direction === 'bullish' ? '↑' : '↓'}`}
             />
-            <EvRow k={t('data.crossedExtreme')} v={px(l.level)} t={dayHm(l.broken_at)} />
+            <EvRow
+              k={t('data.crossedExtreme')}
+              v={<PxBtn label={t('data.crossedExtreme')} value={l.level} c={c} />}
+              t={dayHm(l.broken_at)}
+            />
           </div>
           {journal.length > 0 && (
             <>
               <Dh4 mt>{t('data.journal', { tf })}</Dh4>
               <div className="ev">
-                {journal.slice(0, 6).map(({ kind, e }, i) => (
-                  <EvRow
-                    key={i}
-                    k={`${kind} ${e.direction === 'bullish' ? '↑' : '↓'}`}
-                    v={px(e.level)}
-                    t={dayHm(e.broken_at)}
-                  />
-                ))}
+                {journal.slice(0, 6).map(({ kind, e }, i) => {
+                  const kLabel = `${kind} ${e.direction === 'bullish' ? '↑' : '↓'}`;
+                  return (
+                    <EvRow
+                      key={i}
+                      k={kLabel}
+                      v={<PxBtn label={kLabel} value={e.level} c={c} />}
+                      t={dayHm(e.broken_at)}
+                    />
+                  );
+                })}
               </div>
             </>
           )}
@@ -822,27 +884,17 @@ function renderData(k: string, c: DataCtx): React.ReactNode {
         <>
           <Dh4>{t('data.lvlHead', { price: px(c.price) })}</Dh4>
           <div className="ev">
-            {c.levelRows.map((r) => {
-              const on =
-                c.referenceLevel != null &&
-                c.referenceLevel.price === r.value &&
-                c.referenceLevel.label === r.label;
-              return (
-                <div className="ev-r" key={r.key}>
-                  <span className="ev-k">{r.label}</span>
-                  <span className="ev-t">{fmtSigned(distancePct(r.value, c.price))}</span>
-                  <button
-                    type="button"
-                    className={cn('pxbtn', on && 'on')}
-                    aria-pressed={on}
-                    onClick={() => c.traceLevel(r.key, r.label, r.value)}
-                  >
-                    {px(r.value)}
-                  </button>
-                </div>
-              );
-            })}
+            {c.levelRows.map((r) => (
+              <div className="ev-r" key={r.key}>
+                <span className="ev-k">{r.label}</span>
+                <span className="ev-t">{fmtSigned(distancePct(r.value, c.price))}</span>
+                <PxBtn label={r.label} value={r.value} c={c} />
+              </div>
+            ))}
           </div>
+          {c.levelsInsufficient.length > 0 && (
+            <Dp>{t('data.lvlInsufficient', { periods: c.levelsInsufficient.join(', ') })}</Dp>
+          )}
           <Dp>{t('data.lvlNote')}</Dp>
         </>
       );
