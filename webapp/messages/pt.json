@@ -1620,7 +1620,7 @@
       "detail": "Dados de mercado via a API Twelve Data (nível gratuito, 800 pedidos por dia na V1).",
       "providerLabel": "Fornecedor",
       "coverageLabel": "Cobertura V1",
-      "coverage": "XAU/USD e EUR/USD, em 15 minutos, 1 hora e 4 horas.",
+      "coverage": "XAU/USD e EUR/USD, de 5 minutos a diário.",
       "refreshLabel": "Frequência",
       "refresh": "Atualização a cada fecho de vela."
     },

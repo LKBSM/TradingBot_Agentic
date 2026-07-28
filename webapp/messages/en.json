@@ -1620,7 +1620,7 @@
       "detail": "Market data via the Twelve Data API (free tier, 800 requests per day in V1).",
       "providerLabel": "Provider",
       "coverageLabel": "V1 coverage",
-      "coverage": "XAU/USD and EUR/USD, on 15 minutes, 1 hour and 4 hours.",
+      "coverage": "XAU/USD and EUR/USD, from 5 minutes to daily.",
       "refreshLabel": "Frequency",
       "refresh": "Updated at each candle close."
     },
