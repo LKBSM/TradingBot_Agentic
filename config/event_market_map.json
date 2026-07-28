@@ -1,0 +1,23 @@
+{
+  "_doc": [
+    "NW-1 — Règle de rattachement événement → marché. SOURCE UNIQUE ET CONSULTABLE.",
+    "Un événement du calendrier est rattaché à un marché si la DEVISE de l'événement",
+    "figure dans la liste 'driver_currencies' de ce marché. Un événement dont la devise",
+    "n'est motrice d'AUCUN marché suivi n'est PAS rattaché, donc PAS affiché (jamais",
+    "rattaché par défaut). La règle est explicite ici et jamais enfouie dans le code.",
+    "",
+    "Justification des devises motrices :",
+    " - XAUUSD (Or) : coté en USD → la macro américaine (USD) meut son prix.",
+    " - EURUSD : paire USD/EUR → mû par la macro américaine (USD) ET européenne (EUR).",
+    "Une devise (GBP, JPY, CAD…) qui n'est motrice d'aucun marché suivi est ignorée."
+  ],
+  "version": 1,
+  "markets": {
+    "XAUUSD": {
+      "driver_currencies": ["USD"]
+    },
+    "EURUSD": {
+      "driver_currencies": ["USD", "EUR"]
+    }
+  }
+}

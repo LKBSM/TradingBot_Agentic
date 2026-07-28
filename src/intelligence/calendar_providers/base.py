@@ -1,0 +1,84 @@
+"""Calendar provider interface + neutral event (NW-1).
+
+MANDATORY ABSTRACTION. No provider-specific field ever crosses this boundary:
+the service, store, API schema and front see only ``ProviderEvent`` and its
+neutral fields, modelled on the OFFICIAL sources (BLS, BEA, Census, Federal
+Reserve, Eurostat, ECB) — never on ForexFactory. Swapping the adapter must
+touch nothing outside ``src/intelligence/calendar_providers/``.
+
+The schema carries the official-source shape from day one. An adapter that
+cannot supply a field leaves it ``None``; a ``None`` is rendered as ABSENT
+downstream — never fabricated, never defaulted.
+"""
+
+from __future__ import annotations
+
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import List, Optional
+
+
+@dataclass(frozen=True)
+class ProviderEvent:
+    """A scheduled economic event as returned by a calendar adapter — neutral,
+    source-agnostic. Modelled on official statistical releases.
+
+    Field availability by design:
+      · Official sources (target): all fields populated, incl. ``series_code``
+        (stable recurring id), ``organism``, ``value_unit``, revisions.
+      · ForexFactory (prototype): only ``event``, ``currency``, ``impact``,
+        ``scheduled_at``, ``actual``/``forecast``/``previous`` — the rest stay
+        ``None`` and surface as absent.
+    """
+
+    # Source identity + stable recurring identifier.
+    source: str                        # e.g. "official", "forexfactory"
+    provider_ref: str                  # native unique id of THIS release within the source
+    series_code: Optional[str]         # stable recurring code (BLS series id…) — None for FF
+    # What the event is.
+    event: str
+    currency: str
+    impact: str                        # "high" | "medium" | "low"
+    # When (UTC) + the publisher's own timezone (e.g. "America/New_York").
+    scheduled_at: datetime
+    source_timezone: Optional[str] = None
+    # Who publishes it.
+    organism: Optional[str] = None     # e.g. "Bureau of Labor Statistics" — None for FF
+    # Values (in the indicator's own unit — never a price, never converted).
+    value_unit: Optional[str] = None
+    actual: Optional[float] = None
+    forecast: Optional[float] = None   # third-party consensus, when the source carries one
+    previous: Optional[float] = None
+    revised: bool = False
+    previous_before_revision: Optional[float] = None
+    # Provenance / rights, per record.
+    license_label: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class ProviderFetch:
+    """Result of a provider fetch: the events plus the source-declared coverage
+    window (so the service can report honest coverage without guessing)."""
+
+    events: List[ProviderEvent] = field(default_factory=list)
+    coverage_start: Optional[datetime] = None
+    coverage_end: Optional[datetime] = None
+
+
+class CalendarProvider(ABC):
+    """A source of scheduled economic events. The ONLY place a concrete data
+    format is allowed to exist."""
+
+    @property
+    @abstractmethod
+    def source_name(self) -> str:
+        """Stable machine name stamped onto every event (``ProviderEvent.source``)."""
+
+    @abstractmethod
+    def fetch(self) -> ProviderFetch:
+        """Return the currently-known events + declared coverage window. Network
+        or parse errors should be swallowed into an empty fetch (graceful)."""
+
+
+__all__ = ["ProviderEvent", "ProviderFetch", "CalendarProvider"]

@@ -1,0 +1,356 @@
+/* Calendrier de volatilité — vue liste (NW-1).
+   Reproduit docs/design/reference-actualites.html (vue liste) avec les jetons
+   de design existants (couverts par les 4 thèmes). Tout est préfixé « cal- »
+   pour ne pas heurter les classes produit. Aucun code couleur ne hiérarchise
+   les événements entre eux : le jeton d'impact reprend le vocabulaire du
+   fournisseur, rien de plus. */
+
+.cal-page {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 20px 18px 64px;
+}
+
+.cal-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.cal-head h1 {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+}
+.cal-head .cal-badge {
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--faint);
+  letter-spacing: 0.35px;
+  text-transform: uppercase;
+}
+.cal-head .cal-markets {
+  margin-left: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  color: var(--faint);
+}
+
+.cal-intro {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 13px 15px;
+  margin-bottom: 14px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: color-mix(in srgb, var(--txt) 87%, var(--dim));
+}
+.cal-intro b {
+  color: var(--txt);
+  font-weight: 600;
+}
+
+/* Filter bar — reuses the shared .fchip groups; only the layout is here. */
+.cal-filtbar {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.cal-filtbar .cal-spacer {
+  flex: 1;
+}
+.cal-past {
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--line-2);
+  background: transparent;
+  color: var(--dim);
+  cursor: pointer;
+  font-family: inherit;
+}
+.cal-past:hover {
+  border-color: var(--line-3);
+  color: var(--txt);
+}
+.cal-past.on {
+  background: var(--acc-dim);
+  border-color: var(--acc);
+  color: var(--acc);
+}
+
+.cal-daysep {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 18px 0 9px;
+  font-size: 10px;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  color: var(--faint);
+  font-weight: 600;
+}
+.cal-daysep::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+.cal-daysep .cnt {
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0;
+  color: var(--faint);
+  text-transform: none;
+  font-weight: 400;
+}
+
+.cal-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 13px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  margin-bottom: 6px;
+}
+.cal-row.past {
+  opacity: 0.62;
+}
+.cal-clockcol {
+  flex-shrink: 0;
+  width: 74px;
+}
+.cal-clock {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+}
+.cal-clock .tz {
+  font-size: 8.5px;
+  color: var(--faint);
+  font-weight: 400;
+}
+.cal-cd {
+  font-size: 9px;
+  color: var(--faint);
+  font-family: 'JetBrains Mono', monospace;
+  margin-top: 1px;
+}
+.cal-local {
+  font-size: 8.5px;
+  color: var(--faint);
+  margin-top: 2px;
+}
+.cal-mid {
+  flex: 1;
+  min-width: 0;
+}
+.cal-ev {
+  font-size: 12.5px;
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+.cal-meta {
+  font-size: 10px;
+  color: var(--faint);
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.cal-meta .sep {
+  color: var(--line-3);
+}
+.cal-mkchip {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--panel-3);
+  color: var(--dim);
+}
+/* Provenance line — source + organism. Deliberately shows an em dash when the
+   prototype source has no organism, so the gap is VISIBLE, not hidden. */
+.cal-prov {
+  font-size: 9px;
+  color: var(--faint);
+  margin-top: 3px;
+}
+.cal-prov .missing {
+  color: var(--faint);
+  opacity: 0.7;
+}
+
+.cal-impact {
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  padding: 3px 7px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.cal-impact.high {
+  background: color-mix(in srgb, var(--liq) 13%, transparent);
+  color: var(--liq);
+}
+.cal-impact.medium {
+  background: var(--panel-3);
+  color: var(--dim);
+}
+.cal-impact.low {
+  background: var(--panel-3);
+  color: var(--faint);
+}
+
+/* Amplitude slot — kept empty in NW-1 ("mesures à venir"); filled by NW-2. */
+.cal-ampl {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+  width: 130px;
+}
+.cal-ampl .k {
+  font-size: 8.5px;
+  color: var(--faint);
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+.cal-ampl .v {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--faint);
+  font-style: italic;
+}
+
+.cal-nono {
+  display: flex;
+  gap: 9px;
+  padding: 12px 13px;
+  border-left: 2px solid var(--liq);
+  background: color-mix(in srgb, var(--liq) 6%, transparent);
+  border-radius: 0 var(--r-s) var(--r-s) 0;
+  margin-top: 16px;
+}
+.cal-nono .t {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--liq);
+  margin-bottom: 5px;
+}
+.cal-nono .b {
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--dim);
+}
+.cal-nono .b b {
+  color: var(--txt);
+  font-weight: 600;
+}
+.cal-nono ul {
+  margin: 6px 0 0;
+  padding-left: 15px;
+}
+.cal-nono li {
+  margin-bottom: 3px;
+}
+
+.cal-coverage {
+  margin-top: 14px;
+  font-size: 10.5px;
+  color: var(--faint);
+  line-height: 1.5;
+}
+
+.cal-empty {
+  padding: 26px 16px;
+  text-align: center;
+  color: var(--dim);
+  font-size: 12.5px;
+  line-height: 1.6;
+  border: 1px dashed var(--line-2);
+  border-radius: var(--r);
+}
+
+.cal-status {
+  padding: 20px 4px;
+  color: var(--faint);
+  font-size: 12px;
+}
+
+/* Compact dashboard preview (CalendarPreview). */
+.calprev {
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  background: var(--panel);
+  padding: 12px 13px;
+}
+.calprev-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--dim);
+  margin-bottom: 9px;
+}
+.calprev-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--acc);
+  font-size: 10.5px;
+  font-weight: 500;
+  text-decoration: none;
+}
+.calprev-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.calprev-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 11.5px;
+}
+.calprev-time {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--txt);
+  flex-shrink: 0;
+}
+.calprev-ev {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--dim);
+}
+.calprev-empty {
+  font-size: 11px;
+  color: var(--faint);
+  line-height: 1.5;
+}
+
+@media (max-width: 900px) {
+  .cal-ampl {
+    display: none;
+  }
+}

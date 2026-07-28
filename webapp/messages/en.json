@@ -197,7 +197,6 @@
       "m": "{m} min"
     }
   },
-
   "_comment": "EN — primary secondary locale, human-reviewed. Schema mirrors fr.json (source). landing+cookies translated 2026-07-08 (human-quality EN).",
   "nav": {
     "brandHomeAria": "MIA Markets — back to home",
@@ -210,7 +209,8 @@
     "scanner": "Scanner",
     "account": "Settings",
     "login": "Sign in",
-    "language": "Language"
+    "language": "Language",
+    "calendar": "News"
   },
   "landing": {
     "hero": {
@@ -1778,5 +1778,81 @@
     "subtitle": "Pick up your reading where you left off.",
     "or": "or",
     "trust": "Educational market-reading tool. Neither a trading signal nor investment advice. 18+."
+  },
+  "calendar": {
+    "meta": {
+      "title": "Scheduled news — Volatility calendar | MIA Markets",
+      "description": "The calendar of economic releases whose time is known in advance. MIA announces moments, never directions."
+    },
+    "title": "Scheduled news",
+    "badge": "Volatility calendar",
+    "intro": {
+      "lead": "This calendar announces moments, not directions.",
+      "rest": "It lists the economic releases whose time is known in advance and that, in the past, have coincided with a rise in activity on your markets. MIA does not say what price will do — it measures what happened the previous times."
+    },
+    "filters": {
+      "impactLabel": "Impact",
+      "marketLabel": "Market",
+      "reset": "Select all",
+      "past": "Past releases"
+    },
+    "impact": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "market": {
+      "XAUUSD": "Gold",
+      "EURUSD": "EUR/USD"
+    },
+    "day": {
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "count": "{count, plural, one {# release} other {# releases}}"
+    },
+    "countdown": {
+      "days": "in {days}d",
+      "hours": "in {hours}h {minutes}",
+      "minutes": "in {minutes} min",
+      "now": "now",
+      "agoDays": "{days}d ago",
+      "agoHours": "{hours}h {minutes} ago",
+      "agoMinutes": "{minutes} min ago"
+    },
+    "affects": "affects {markets}",
+    "localTime": "{time} your time ({offset})",
+    "revisedBadge": "revised value",
+    "amplitude": {
+      "k": "Median amplitude · 60 min",
+      "pending": "measurements to come"
+    },
+    "provenance": {
+      "source": "Source: {source}",
+      "organism": "Issuer: {organism}",
+      "organismMissing": "Issuer: not provided by this source",
+      "sourceName": {
+        "official": "Official sources (to be connected)",
+        "forexfactory": "ForexFactory (prototype)"
+      }
+    },
+    "coverage": {
+      "partial": "The calendar is populated through {date}. Beyond that, the period is not yet covered."
+    },
+    "nono": {
+      "title": "What this calendar does not say",
+      "body": "A high median amplitude signals that these moments have historically been busy. It says neither the direction, nor what will happen this time. A release may cause nothing, and a quiet market can move with no release at all."
+    },
+    "empty": {
+      "noSelection": "No filter selected: check at least one impact and one market to show releases.",
+      "noEvents": "No scheduled release in this period for your markets.",
+      "noSource": "No releases yet: the calendar's official source is not connected yet. Releases will appear here once the official source is integrated."
+    },
+    "loading": "Loading the calendar…",
+    "error": "The calendar is momentarily unavailable.",
+    "preview": {
+      "title": "Next releases",
+      "seeAll": "See all",
+      "empty": "No upcoming release in this period."
+    }
   }
 }

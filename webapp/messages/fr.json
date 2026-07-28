@@ -197,7 +197,6 @@
       "m": "{m} min"
     }
   },
-
   "_comment": "Locale SOURCE (FR). i18n Étape 1 (chrome) 2026-07-07 + Étape 2 (sections landing + bandeau cookies) 2026-07-08. Le namespace `landing` structuré remplace l'ancien bloc plat dormant. Rich text : <b>=strong, <i>=em, <link>=lien (href géré côté composant). Données démo (lectures d'exemple, scripts chatbot) NON incluses ici = couche data partagée, traitée à l'Étape 3 (surfaces produit).",
   "nav": {
     "brandHomeAria": "MIA Markets — retour à l'accueil",
@@ -210,7 +209,8 @@
     "scanner": "Scanner",
     "account": "Réglages",
     "login": "Connexion",
-    "language": "Langue"
+    "language": "Langue",
+    "calendar": "Actualités"
   },
   "landing": {
     "hero": {
@@ -1778,5 +1778,81 @@
     "subtitle": "Reprends ta lecture là où tu l'as laissée.",
     "or": "ou",
     "trust": "Outil éducatif de lecture de marché. Ni signal de trading, ni conseil en investissement. 18+."
+  },
+  "calendar": {
+    "meta": {
+      "title": "Actualités programmées — Calendrier de volatilité | MIA Markets",
+      "description": "Le calendrier des publications économiques dont l'heure est connue à l'avance. MIA annonce des moments, jamais des directions."
+    },
+    "title": "Actualités programmées",
+    "badge": "Calendrier de volatilité",
+    "intro": {
+      "lead": "Ce calendrier annonce des moments, pas des directions.",
+      "rest": "Il liste les publications économiques dont l'heure est connue à l'avance et qui, par le passé, ont coïncidé avec une hausse d'activité sur tes marchés. MIA ne dit pas ce que le prix fera — elle mesure ce qui s'est produit les fois précédentes."
+    },
+    "filters": {
+      "impactLabel": "Impact",
+      "marketLabel": "Marché",
+      "reset": "Tout cocher",
+      "past": "Publications passées"
+    },
+    "impact": {
+      "high": "Élevé",
+      "medium": "Moyen",
+      "low": "Faible"
+    },
+    "market": {
+      "XAUUSD": "Or",
+      "EURUSD": "EUR/USD"
+    },
+    "day": {
+      "today": "Aujourd'hui",
+      "tomorrow": "Demain",
+      "count": "{count, plural, one {# publication} other {# publications}}"
+    },
+    "countdown": {
+      "days": "dans {days} j",
+      "hours": "dans {hours} h {minutes}",
+      "minutes": "dans {minutes} min",
+      "now": "maintenant",
+      "agoDays": "il y a {days} j",
+      "agoHours": "il y a {hours} h {minutes}",
+      "agoMinutes": "il y a {minutes} min"
+    },
+    "affects": "affecte {markets}",
+    "localTime": "{time} ton heure ({offset})",
+    "revisedBadge": "valeur révisée",
+    "amplitude": {
+      "k": "Amplitude médiane · 60 min",
+      "pending": "mesures à venir"
+    },
+    "provenance": {
+      "source": "Source : {source}",
+      "organism": "Organisme : {organism}",
+      "organismMissing": "Organisme : non fourni par cette source",
+      "sourceName": {
+        "official": "Sources officielles (à connecter)",
+        "forexfactory": "ForexFactory (prototype)"
+      }
+    },
+    "coverage": {
+      "partial": "Le calendrier est renseigné jusqu'au {date}. Au-delà, la période n'est pas encore couverte."
+    },
+    "nono": {
+      "title": "Ce que ce calendrier ne dit pas",
+      "body": "Une amplitude médiane élevée signale que ces moments ont historiquement été agités. Elle ne dit ni la direction, ni ce qui se produira cette fois. Une publication peut ne rien provoquer, et un marché calme peut bouger sans aucune publication."
+    },
+    "empty": {
+      "noSelection": "Aucun filtre sélectionné : coche au moins un impact et un marché pour afficher des publications.",
+      "noEvents": "Aucune publication programmée sur cette période pour tes marchés.",
+      "noSource": "Aucune publication pour l'instant : la source officielle du calendrier n'est pas encore connectée. Les publications s'afficheront ici une fois la source officielle intégrée."
+    },
+    "loading": "Chargement du calendrier…",
+    "error": "Le calendrier est momentanément indisponible.",
+    "preview": {
+      "title": "Prochaines publications",
+      "seeAll": "Tout voir",
+      "empty": "Aucune publication à venir sur cette période."
+    }
   }
 }
