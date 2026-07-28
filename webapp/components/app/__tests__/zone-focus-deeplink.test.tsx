@@ -30,10 +30,11 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
-/** Surfaces the chart's one-shot focus command (zone id) from shared state. */
+/** Surfaces the unified selection's zone id from shared state (VZ-1). */
 function FocusProbe() {
-  const { view } = useChartViewOptional();
-  return <div data-testid="focus-zone">{view.focus?.zoneId ?? ''}</div>;
+  const { selection } = useChartViewOptional();
+  const zoneId = selection?.family === 'zone' ? selection.id : '';
+  return <div data-testid="focus-zone">{zoneId}</div>;
 }
 
 function renderWithFocus(focusZoneId: string | null) {

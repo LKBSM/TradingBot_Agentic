@@ -57,14 +57,13 @@ function structureWith(
   };
 }
 
-/** Surfaces the chart view state the click is supposed to drive. */
+/** Surfaces the unified SELECTION the click is supposed to drive (VZ-1). */
 function ChartViewProbe() {
-  const { view } = useChartView();
+  const { view, selection } = useChartView();
   return (
     <div>
-      <span data-testid="focus-kind">{view.focus?.kind ?? 'none'}</span>
-      <span data-testid="focus-zone">{view.focus?.zoneId ?? 'none'}</span>
-      <span data-testid="focus-nonce">{view.focus?.nonce ?? 0}</span>
+      <span data-testid="sel-family">{selection?.family ?? 'none'}</span>
+      <span data-testid="sel-id">{selection?.id ?? 'none'}</span>
       <span data-testid="highlight">{view.highlightZoneId ?? 'none'}</span>
     </div>
   );
@@ -94,12 +93,12 @@ describe('zone list → click to chart', () => {
     });
     fireEvent.click(entry);
 
-    // focus_zone → a "zone" focus command carrying the real id (the chart turns
-    // this into setVisibleRange); highlight_zone → the same id highlighted.
-    expect(screen.getByTestId('focus-kind')).toHaveTextContent('zone');
-    expect(screen.getByTestId('focus-zone')).toHaveTextContent('OB_bull_1');
+    // The unified selection carries the real id in the ZONE family (the chart
+    // turns this into an animated frame); highlight → the same id emphasised.
+    expect(screen.getByTestId('sel-family')).toHaveTextContent('zone');
+    expect(screen.getByTestId('sel-id')).toHaveTextContent('OB_bull_1');
     expect(screen.getByTestId('highlight')).toHaveTextContent('OB_bull_1');
-    // The selected entry is marked (single source of truth = highlighted zone).
+    // The selected entry is marked (single source of truth = the selection).
     expect(entry).toHaveAttribute('aria-pressed', 'true');
   });
 
@@ -107,7 +106,7 @@ describe('zone list → click to chart', () => {
     renderWired(structureWith([], [mkFvg(7)]));
     const entry = screen.getByRole('button', { name: /active/i });
     fireEvent.click(entry);
-    expect(screen.getByTestId('focus-zone')).toHaveTextContent('FVG_bull_7');
+    expect(screen.getByTestId('sel-id')).toHaveTextContent('FVG_bull_7');
     expect(screen.getByTestId('highlight')).toHaveTextContent('FVG_bull_7');
   });
 
@@ -139,17 +138,14 @@ describe('zone list → click to chart', () => {
     fireEvent.click(entry);
     expect(entry).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByTestId('highlight')).toHaveTextContent('OB_bull_1');
-    const first = Number(screen.getByTestId('focus-nonce').textContent);
 
     fireEvent.click(entry);
-    // Second click on the already-selected zone deselects it: the blue highlight
-    // is cleared, the entry is no longer pressed, and the view un-zooms back to
-    // recent price (focus kind 'price'). The nonce still bumps to re-frame.
+    // Second click on the already-selected zone deselects it: the selection is
+    // cleared, the entry is no longer pressed, and the chart restores its prior
+    // view (the restore is exercised in the ReadingChart-level tests).
     expect(entry).toHaveAttribute('aria-pressed', 'false');
     expect(screen.getByTestId('highlight')).toHaveTextContent('none');
-    expect(screen.getByTestId('focus-kind')).toHaveTextContent('price');
-    const second = Number(screen.getByTestId('focus-nonce').textContent);
-    expect(second).toBeGreaterThan(first);
+    expect(screen.getByTestId('sel-family')).toHaveTextContent('none');
   });
 
   it('never dispatches an invented zone — only ids the engine emitted are focusable', () => {
@@ -162,7 +158,7 @@ describe('zone list → click to chart', () => {
     // ("active") row, but not the « voir plus » / ⓘ buttons.
     for (const btn of screen.getAllByRole('button', { name: /·/ })) {
       fireEvent.click(btn);
-      expect(emitted.has(screen.getByTestId('focus-zone').textContent ?? '')).toBe(
+      expect(emitted.has(screen.getByTestId('sel-id').textContent ?? '')).toBe(
         true,
       );
     }

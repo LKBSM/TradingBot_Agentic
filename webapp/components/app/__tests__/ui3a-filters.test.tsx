@@ -36,7 +36,7 @@ const STRUCT = {
 function renderLiq() {
   return render(
     <div className="app-shell">
-      <LiquidityCard structure={LIQ} instrument="XAUUSD" price={2395} selectedId={null} onSelect={noop} openHelp={null} onToggleHelp={noop} />
+      <LiquidityCard structure={LIQ} instrument="XAUUSD" price={2395} openHelp={null} onToggleHelp={noop} />
     </div>,
   );
 }

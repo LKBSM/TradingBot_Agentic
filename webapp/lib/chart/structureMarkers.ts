@@ -13,6 +13,23 @@ import type { MarketReadingStructure } from '@/types/market-reading';
 
 /** Marker palette — mirrors the break-level line colours in ReadingChart. */
 const MARKER_COLOR = { bos: '#8B95A7', choch: '#8E84B0' } as const;
+/** VZ-1 — the SELECTED event's arrow is repainted in the accent so it stands out
+ *  from the descriptive grey/violet history. */
+const SELECTED_MARKER_COLOR = '#4d9de0';
+
+/** Which event (kind + confirmation time) is currently selected, for emphasis. */
+export interface SelectedEventMarker {
+  kind: 'bos' | 'choch';
+  /** Confirmation candle time, epoch seconds. */
+  atSec: number;
+}
+
+export interface StructureMarkerOptions {
+  /** The selected event to emphasise (accent colour), or null. */
+  selected?: SelectedEventMarker | null;
+  /** When true, return ONLY the selected event's marker (breaks layer hidden). */
+  onlySelected?: boolean;
+}
 
 /** ISO-8601 → UNIX seconds; NaN when unparseable. */
 function isoToSec(iso: string | null | undefined): number {
@@ -43,7 +60,13 @@ function isoToSec(iso: string | null | undefined): number {
 export function buildStructureMarkers(
   structure: MarketReadingStructure,
   minTime?: number,
+  options?: StructureMarkerOptions,
 ): SeriesMarker<UTCTimestamp>[] {
+  const selected = options?.selected ?? null;
+  const onlySelected = options?.onlySelected ?? false;
+  const isSelected = (kind: 'bos' | 'choch', t: number) =>
+    selected != null && selected.kind === kind && selected.atSec === t;
+
   const chochTimes = new Set<number>();
   const markers: SeriesMarker<UTCTimestamp>[] = [];
   const inRange = (t: number) => minTime === undefined || t >= minTime;
@@ -52,11 +75,13 @@ export function buildStructureMarkers(
     const t = isoToSec(e.broken_at);
     if (!Number.isFinite(t) || !inRange(t)) continue;
     chochTimes.add(t);
+    const sel = isSelected('choch', t);
+    if (onlySelected && !sel) continue;
     const up = e.direction === 'bullish';
     markers.push({
       time: t as UTCTimestamp,
       position: up ? 'belowBar' : 'aboveBar',
-      color: MARKER_COLOR.choch,
+      color: sel ? SELECTED_MARKER_COLOR : MARKER_COLOR.choch,
       shape: up ? 'arrowUp' : 'arrowDown',
       text: 'CHOCH',
     });
@@ -66,11 +91,13 @@ export function buildStructureMarkers(
     const t = isoToSec(e.broken_at);
     if (!Number.isFinite(t) || !inRange(t)) continue;
     if (chochTimes.has(t)) continue; // CHOCH already marks this bar
+    const sel = isSelected('bos', t);
+    if (onlySelected && !sel) continue;
     const up = e.direction === 'bullish';
     markers.push({
       time: t as UTCTimestamp,
       position: up ? 'belowBar' : 'aboveBar',
-      color: MARKER_COLOR.bos,
+      color: sel ? SELECTED_MARKER_COLOR : MARKER_COLOR.bos,
       shape: up ? 'arrowUp' : 'arrowDown',
       text: 'BOS',
     });

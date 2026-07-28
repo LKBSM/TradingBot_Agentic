@@ -21,7 +21,7 @@ import { useLivePrice } from '@/lib/market-reading/live-price';
 import { useMarketClosed } from '@/lib/market-reading/session';
 import { deriveMarketStatus, type MarketStatusView } from '@/lib/market-reading/status';
 import { useChartViewOptional } from '@/lib/chart/viewState';
-import type { ChartViewState, ReferenceLevel } from '@/lib/chart/viewActions';
+import type { ChartSelection, ChartViewState, ReferenceLevel } from '@/lib/chart/viewActions';
 import type { Combo } from '@/lib/market-reading/store';
 import type { Candle, MarketReading, MarketState } from '@/types/market-reading';
 
@@ -101,13 +101,15 @@ export function ReadingColumn({
   // Chatbot-controlled DISPLAY state (layers / filters / focus / highlight).
   // Optional: outside the /app provider it defaults to "show everything", so the
   // chart's behaviour is unchanged when no chatbot action has been applied.
-  const { view: chartView, applyActions, referenceLevel } = useChartViewOptional();
+  const { view: chartView, selection, referenceLevel, clearSelection } =
+    useChartViewOptional();
 
-  // Deselect the highlighted zone (drop the blue + un-zoom) when the user clicks
-  // the blue box on the chart — same toggle as re-clicking its list entry.
+  // Deselect the active element (drop the emphasis + restore the view) when the
+  // user clicks the blue box on the chart or presses Escape — same toggle as
+  // re-clicking its list entry.
   const onClearHighlight = React.useCallback(() => {
-    applyActions([{ action: 'clear_highlight', params: {} }]);
-  }, [applyActions]);
+    clearSelection();
+  }, [clearSelection]);
 
   // Header price follows the tick: override the unified (closed-candle) price
   // with the live one, keeping the SAME descriptive daily reference so the % is
@@ -162,7 +164,7 @@ export function ReadingColumn({
       <MarketReadingCard
         reading={reading}
         onAskChatbot={focusChat}
-        chartSlot={buildChartSlot(reading, candles, livePrice, liveTs, active?.timeframe ?? null, chartView, onClearHighlight, marketClosed, serverStatus?.state ?? null, referenceLevel)}
+        chartSlot={buildChartSlot(reading, candles, livePrice, liveTs, active?.timeframe ?? null, chartView, onClearHighlight, marketClosed, serverStatus?.state ?? null, referenceLevel, selection)}
         live={liveHeader}
         marketClosed={marketClosed}
         status={serverStatus}
@@ -207,6 +209,7 @@ function buildChartSlot(
   marketClosed: boolean,
   marketStatusState: MarketState | null,
   referenceLevel: ReferenceLevel | null,
+  selection: ChartSelection | null,
 ): React.ReactNode {
   if (!candles || candles.length === 0) {
     return <ChartUnavailable />;
@@ -226,6 +229,7 @@ function buildChartSlot(
       focus={chartView.focus}
       highlightZoneId={chartView.highlightZoneId}
       referenceLevel={referenceLevel}
+      selection={selection}
       onClearHighlight={onClearHighlight}
       hiddenZoneIds={chartView.hiddenZoneIds}
       isolatedZoneIds={chartView.isolatedZoneIds}
