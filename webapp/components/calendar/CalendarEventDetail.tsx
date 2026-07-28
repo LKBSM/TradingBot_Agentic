@@ -1,0 +1,230 @@
+'use client';
+
+import * as React from 'react';
+import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { ChevronLeft } from 'lucide-react';
+import { useLocalizedHref } from '@/lib/i18n/href';
+import { useCalendar } from '@/lib/calendar/useCalendar';
+import { countdown, hmInZone } from '@/lib/calendar/grouping';
+import { parseUtc, utcOffsetLabel, formatLocalDayLong } from '@/lib/time/localTime';
+import type { CalendarEvent, CalendarResponse } from '@/types/calendar';
+import './calendar.css';
+
+// Wide window so a deep-linked event is found even if the list scrolled.
+const LOOKAHEAD_DAYS = 30;
+const LOOKBACK_DAYS = 30;
+
+function tzCity(iana: string | null): string | null {
+  if (!iana) return null;
+  const seg = iana.split('/').pop() ?? iana;
+  return seg.replace(/_/g, ' ');
+}
+
+/**
+ * Per-event detail page (deep-linked from the list « En savoir plus »). Honest
+ * and MINIMAL: it shows only the fields the source actually provides — market +
+ * local time, attached markets, attributed impact, published figures when the
+ * feed carries them, source + provenance — and marks the engine-measured history
+ * as « mesures à venir » (NW-2). It announces a MOMENT, never a direction.
+ */
+export function CalendarEventDetail({
+  eventId,
+  locale,
+  data: injectedData,
+  now: injectedNow,
+}: {
+  eventId: string;
+  locale: string;
+  data?: CalendarResponse | null;
+  now?: Date;
+}) {
+  const t = useTranslations('calendar');
+  const lh = useLocalizedHref();
+  const hook = useCalendar({ lookaheadDays: LOOKAHEAD_DAYS, lookbackDays: LOOKBACK_DAYS });
+  const data = injectedData !== undefined ? injectedData : hook.data;
+  const isLoading = injectedData !== undefined ? false : hook.isLoading;
+  const error = injectedData !== undefined ? null : hook.error;
+  const now = React.useMemo(() => injectedNow ?? new Date(), [injectedNow]);
+
+  const ev = data?.events.find((e) => e.event_id === eventId) ?? null;
+
+  return (
+    <div className="cal-page cald">
+      <Link className="cald-back" href={lh('/actualites')}>
+        <ChevronLeft width={14} height={14} aria-hidden />
+        {t('detail.back')}
+      </Link>
+
+      {isLoading ? (
+        <div className="cal-status">{t('loading')}</div>
+      ) : error ? (
+        <div className="cal-status">{t('error')}</div>
+      ) : !ev ? (
+        <div className="cal-empty">
+          <strong>{t('detail.notFoundTitle')}</strong>
+          <br />
+          {t('detail.notFound')}
+        </div>
+      ) : (
+        <Detail ev={ev} now={now} locale={locale} t={t} />
+      )}
+    </div>
+  );
+}
+
+function sourceLabel(source: string, t: ReturnType<typeof useTranslations>): string {
+  if (source === 'official') return t('provenance.sourceName.official');
+  if (source === 'forexfactory') return t('provenance.sourceName.forexfactory');
+  return source;
+}
+
+function fmtCountdown(
+  cd: ReturnType<typeof countdown>,
+  t: ReturnType<typeof useTranslations>,
+): string {
+  const { past, days, hours, minutes } = cd;
+  const mm = String(minutes).padStart(2, '0');
+  if (past) {
+    if (days >= 1) return t('countdown.agoDays', { days });
+    if (hours >= 1) return t('countdown.agoHours', { hours, minutes: mm });
+    return t('countdown.agoMinutes', { minutes });
+  }
+  if (days >= 1) return t('countdown.days', { days });
+  if (hours >= 1) return t('countdown.hours', { hours, minutes: mm });
+  if (minutes >= 1) return t('countdown.minutes', { minutes });
+  return t('countdown.now');
+}
+
+function Detail({
+  ev,
+  now,
+  locale,
+  t,
+}: {
+  ev: CalendarEvent;
+  now: Date;
+  locale: string;
+  t: ReturnType<typeof useTranslations>;
+}) {
+  const when = parseUtc(ev.scheduled_at);
+  const cd = when ? countdown(now.getTime(), when.getTime()) : null;
+  const city = tzCity(ev.source_timezone);
+  const marketTime = when ? hmInZone(when, ev.source_timezone ?? undefined) : '—';
+  const localTime = when ? hmInZone(when) : '—';
+  const dayLabel = when ? formatLocalDayLong(when, locale) : '—';
+  const affects = ev.markets.map((m) => t(`market.${m}` as 'market.XAUUSD')).join(', ');
+  const fmtNum = (n: number) => n.toLocaleString(locale);
+  const hasFigures = ev.actual != null || ev.forecast != null || ev.previous != null;
+
+  const nonoItems = Object.values(
+    t.raw('detail.nono.items') as Record<string, string>,
+  );
+
+  return (
+    <>
+      <div className="cald-head">
+        <div className="cald-flag mono">{ev.currency}</div>
+        <div className="cald-headmain">
+          <h1>{ev.event}</h1>
+          <div className="cald-sub">
+            <span className={`cal-impact ${ev.impact}`}>{t(`impact.${ev.impact}`)}</span>
+            <span className="sep">·</span>
+            <span>{t('affects', { markets: affects })}</span>
+            {ev.revised && (
+              <>
+                <span className="sep">·</span>
+                <span>{t('revisedBadge')}</span>
+              </>
+            )}
+          </div>
+          <div className="cald-times mono">
+            {dayLabel} · {marketTime}
+            {city ? ` ${city}` : ''} · {t('localTime', { time: localTime, offset: utcOffsetLabel() })}
+          </div>
+          <div className="cald-prov">
+            {t('detail.sourceLine', { source: sourceLabel(ev.source, t) })}
+            {' · '}
+            {ev.organism ? (
+              t('provenance.organism', { organism: ev.organism })
+            ) : (
+              <span className="missing">{t('provenance.organismMissing')}</span>
+            )}
+            {' · '}
+            {ev.value_unit ? ev.value_unit : (
+              <span className="missing">{t('detail.unitMissing')}</span>
+            )}
+          </div>
+        </div>
+        {cd && (
+          <div className="cald-cd">
+            <div className="k">{t('detail.countdownLabel')}</div>
+            <div className="v mono">{fmtCountdown(cd, t)}</div>
+          </div>
+        )}
+      </div>
+
+      {/* Chiffres publiés — valeur de l'indicateur, jamais un prix */}
+      <div className="cald-card">
+        <div className="cald-card-h">
+          <h3>{t('detail.publishedFiguresTitle')}</h3>
+          <span className="cald-badge">{t('detail.publishedFiguresBadge')}</span>
+        </div>
+        {hasFigures ? (
+          <div className="cald-figs">
+            <div className="cald-fig">
+              <div className="k">{t('detail.actualLabel')}</div>
+              <div className="v mono">
+                {ev.actual != null ? fmtNum(ev.actual) : '—'}
+              </div>
+              {ev.actual == null && <div className="n">{t('detail.actualPending')}</div>}
+              {ev.revised && ev.previous_before_revision != null && (
+                <div className="n">
+                  {t('detail.revisedFrom', { value: fmtNum(ev.previous_before_revision) })}
+                </div>
+              )}
+            </div>
+            <div className="cald-fig">
+              <div className="k">{t('detail.forecastLabel')}</div>
+              <div className="v mono">
+                {ev.forecast != null ? fmtNum(ev.forecast) : '—'}
+              </div>
+              <div className="n">{t('detail.forecastNote')}</div>
+            </div>
+            <div className="cald-fig">
+              <div className="k">{t('detail.previousLabel')}</div>
+              <div className="v mono">
+                {ev.previous != null ? fmtNum(ev.previous) : '—'}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <p className="cald-empty-line">{t('detail.figuresEmpty')}</p>
+        )}
+        <p className="cald-note">{t('detail.publishedFiguresNote')}</p>
+      </div>
+
+      {/* Historique moteur — NW-2 */}
+      <div className="cald-card">
+        <div className="cald-card-h">
+          <h3>{t('detail.measuresTitle')}</h3>
+          <span className="cald-badge">{t('detail.measuresBadge')}</span>
+        </div>
+        <p className="cald-pending">{t('detail.measuresPending')}</p>
+      </div>
+
+      <div className="cal-nono" role="note">
+        <div>
+          <div className="t">{t('detail.nono.title')}</div>
+          <div className="b">
+            <ul>
+              {nonoItems.map((item, i) => (
+                <li key={i}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}

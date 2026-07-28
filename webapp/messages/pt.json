@@ -1853,6 +1853,37 @@
       "title": "Próximas publicações",
       "seeAll": "Ver tudo",
       "empty": "Nenhuma publicação futura neste período."
+    },
+    "seeMore": "Saber mais",
+    "detail": {
+      "back": "Voltar ao calendário",
+      "countdownLabel": "Publicação em",
+      "publishedFiguresTitle": "Números publicados",
+      "publishedFiguresBadge": "Valor do indicador",
+      "publishedFiguresNote": "Estes números são o valor do próprio indicador, na unidade do organismo que o publica — não movimentos de preço. O consenso é uma previsão produzida por terceiros: a MIA reporta-o sem o assumir como seu.",
+      "actualLabel": "Valor publicado",
+      "actualPending": "ainda não publicado",
+      "forecastLabel": "Consenso dos analistas",
+      "forecastNote": "previsão de terceiros, não da MIA",
+      "previousLabel": "Publicação anterior",
+      "revisedFrom": "revisto desde {value}",
+      "unitMissing": "unidade não fornecida por esta fonte",
+      "figuresEmpty": "Nenhum número fornecido para esta publicação pela fonte atual.",
+      "measuresTitle": "O que o motor mediu em publicações anteriores",
+      "measuresBadge": "Movimento de preço",
+      "measuresPending": "Medições por vir: a amplitude percorrida pelos mercados nas publicações passadas deste indicador aparecerá aqui assim que a medição do motor for ligada (NW-2).",
+      "sourceLine": "Fonte: {source}",
+      "notFoundTitle": "Publicação não encontrada",
+      "notFound": "Esta publicação não está na janela atual do calendário.",
+      "nono": {
+        "title": "O que esta página não diz",
+        "items": {
+          "0": "Não prevê nem o valor que será publicado, nem a reação do mercado.",
+          "1": "Não interpreta um desvio face ao consenso como altista ou baixista.",
+          "2": "Não recomenda nem intervir, nem abster-se, nem fechar o que quer que seja.",
+          "3": "As amplitudes passadas são medidas sobre um número reduzido de dias, em contextos diferentes, e não têm qualquer valor preditivo."
+        }
+      }
     }
   }
 }

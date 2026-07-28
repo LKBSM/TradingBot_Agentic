@@ -1853,6 +1853,37 @@
       "title": "Prossime pubblicazioni",
       "seeAll": "Vedi tutto",
       "empty": "Nessuna pubblicazione imminente in questo periodo."
+    },
+    "seeMore": "Scopri di più",
+    "detail": {
+      "back": "Torna al calendario",
+      "countdownLabel": "Pubblicazione tra",
+      "publishedFiguresTitle": "Dati pubblicati",
+      "publishedFiguresBadge": "Valore dell'indicatore",
+      "publishedFiguresNote": "Questi dati sono il valore dell'indicatore stesso, nell'unità dell'organismo che lo pubblica — non movimenti di prezzo. Il consenso è una previsione prodotta da terzi: MIA lo riporta senza farlo proprio.",
+      "actualLabel": "Valore pubblicato",
+      "actualPending": "non ancora pubblicato",
+      "forecastLabel": "Consenso degli analisti",
+      "forecastNote": "previsione di terzi, non di MIA",
+      "previousLabel": "Pubblicazione precedente",
+      "revisedFrom": "rivisto da {value}",
+      "unitMissing": "unità non fornita da questa fonte",
+      "figuresEmpty": "Nessun dato fornito per questa pubblicazione dalla fonte attuale.",
+      "measuresTitle": "Ciò che il motore ha misurato nelle pubblicazioni precedenti",
+      "measuresBadge": "Movimento di prezzo",
+      "measuresPending": "Misurazioni in arrivo: l'ampiezza percorsa dai mercati nelle pubblicazioni passate di questo indicatore comparirà qui una volta collegata la misurazione del motore (NW-2).",
+      "sourceLine": "Fonte: {source}",
+      "notFoundTitle": "Pubblicazione non trovata",
+      "notFound": "Questa pubblicazione non rientra nella finestra attuale del calendario.",
+      "nono": {
+        "title": "Ciò che questa pagina non dice",
+        "items": {
+          "0": "Non prevede né il valore che sarà pubblicato, né la reazione del mercato.",
+          "1": "Non interpreta uno scostamento dal consenso come rialzista o ribassista.",
+          "2": "Non raccomanda né di intervenire, né di astenersi, né di chiudere alcunché.",
+          "3": "Le ampiezze passate sono misurate su un numero ridotto di giornate, in contesti diversi, e non hanno alcun valore predittivo."
+        }
+      }
     }
   }
 }

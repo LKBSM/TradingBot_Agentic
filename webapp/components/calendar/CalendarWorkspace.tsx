@@ -1,8 +1,10 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { ChevronRight } from 'lucide-react';
+import { useLocalizedHref } from '@/lib/i18n/href';
 import { useMultiFilter } from '@/lib/market-reading/use-multi-filter';
 import { FilterChipGroup } from '@/components/app/FilterChipGroup';
 import { useCalendar } from '@/lib/calendar/useCalendar';
@@ -241,6 +243,7 @@ function Row({
   offsetLabel: string;
   marketName: (m: string) => string;
 }) {
+  const lh = useLocalizedHref();
   const when = parseUtc(ev.scheduled_at);
   const cd = when ? countdown(now.getTime(), when.getTime()) : null;
   const city = tzCity(ev.source_timezone);
@@ -292,7 +295,14 @@ function Row({
         <div className="v">{t('amplitude.pending')}</div>
       </div>
 
-      <ChevronRight className="cal-go" width={15} height={15} aria-hidden />
+      <Link
+        className="cal-more"
+        href={lh(`/actualites/${encodeURIComponent(ev.event_id)}`)}
+        aria-label={`${t('seeMore')} — ${ev.event}`}
+      >
+        {t('seeMore')}
+        <ChevronRight width={13} height={13} aria-hidden />
+      </Link>
     </div>
   );
 }

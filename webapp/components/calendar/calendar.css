@@ -290,6 +290,27 @@
   font-size: 12px;
 }
 
+/* « En savoir plus » → per-event detail page. */
+.cal-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+  font-size: 10.5px;
+  font-weight: 500;
+  padding: 5px 9px;
+  border-radius: var(--r-s);
+  border: 1px solid var(--line-2);
+  background: var(--panel-2);
+  color: var(--dim);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.cal-more:hover {
+  border-color: var(--acc);
+  color: var(--acc);
+}
+
 /* Compact dashboard preview (CalendarPreview). */
 .calprev {
   border: 1px solid var(--line);
@@ -349,8 +370,168 @@
   line-height: 1.5;
 }
 
+/* ===== Détail par événement ===== */
+.cald-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  color: var(--acc);
+  text-decoration: none;
+  margin-bottom: 14px;
+}
+.cald-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 17px;
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  border: 1px solid var(--line-2);
+  border-radius: var(--r);
+  margin-bottom: 13px;
+}
+.cald-flag {
+  width: 42px;
+  height: 42px;
+  border-radius: 9px;
+  background: var(--panel-3);
+  border: 1px solid var(--line-2);
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dim);
+  flex-shrink: 0;
+}
+.cald-headmain {
+  min-width: 0;
+  flex: 1;
+}
+.cald-headmain h1 {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  margin-bottom: 6px;
+}
+.cald-sub {
+  font-size: 11.5px;
+  color: var(--dim);
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.cald-sub .sep {
+  color: var(--line-3);
+}
+.cald-times {
+  font-size: 10.5px;
+  color: var(--faint);
+  margin-top: 7px;
+}
+.cald-prov {
+  font-size: 10px;
+  color: var(--faint);
+  margin-top: 5px;
+}
+.cald-prov .missing {
+  opacity: 0.75;
+}
+.cald-cd {
+  margin-left: auto;
+  text-align: right;
+  flex-shrink: 0;
+}
+.cald-cd .k {
+  font-size: 8.5px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 3px;
+}
+.cald-cd .v {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--liq);
+  line-height: 1.1;
+}
+.cald-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 15px 16px;
+  margin-bottom: 11px;
+}
+.cald-card-h {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.cald-card-h h3 {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.cald-badge {
+  margin-left: auto;
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--faint);
+  letter-spacing: 0.35px;
+  text-transform: uppercase;
+}
+.cald-figs {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 9px;
+  margin-bottom: 11px;
+}
+.cald-fig {
+  background: var(--panel-2);
+  border-radius: var(--r-s);
+  padding: 11px 12px;
+  text-align: center;
+}
+.cald-fig .k {
+  font-size: 8.5px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 5px;
+}
+.cald-fig .v {
+  font-size: 17px;
+  font-weight: 600;
+}
+.cald-fig .n {
+  font-size: 9px;
+  color: var(--faint);
+  margin-top: 4px;
+}
+.cald-note,
+.cald-empty-line {
+  font-size: 10.5px;
+  line-height: 1.55;
+  color: var(--faint);
+}
+.cald-empty-line {
+  margin-bottom: 10px;
+}
+.cald-pending {
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--dim);
+  font-style: italic;
+}
+
 @media (max-width: 900px) {
   .cal-ampl {
     display: none;
+  }
+  .cald-figs {
+    grid-template-columns: 1fr;
+  }
+  .cald-cd {
+    margin-left: 0;
   }
 }

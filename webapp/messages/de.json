@@ -1853,6 +1853,37 @@
       "title": "Nächste Veröffentlichungen",
       "seeAll": "Alle anzeigen",
       "empty": "Keine bevorstehende Veröffentlichung in diesem Zeitraum."
+    },
+    "seeMore": "Mehr erfahren",
+    "detail": {
+      "back": "Zurück zum Kalender",
+      "countdownLabel": "Veröffentlichung in",
+      "publishedFiguresTitle": "Veröffentlichte Zahlen",
+      "publishedFiguresBadge": "Indikatorwert",
+      "publishedFiguresNote": "Diese Zahlen sind der Wert des Indikators selbst, in der Einheit der veröffentlichenden Stelle — keine Kursbewegungen. Der Konsens ist eine von Dritten erstellte Prognose: MIA gibt ihn wieder, ohne ihn sich zu eigen zu machen.",
+      "actualLabel": "Veröffentlichter Wert",
+      "actualPending": "noch nicht veröffentlicht",
+      "forecastLabel": "Analystenkonsens",
+      "forecastNote": "Prognose Dritter, nicht von MIA",
+      "previousLabel": "Vorherige Veröffentlichung",
+      "revisedFrom": "revidiert von {value}",
+      "unitMissing": "Einheit von dieser Quelle nicht angegeben",
+      "figuresEmpty": "Für diese Veröffentlichung wurden von der aktuellen Quelle keine Zahlen bereitgestellt.",
+      "measuresTitle": "Was die Engine bei früheren Veröffentlichungen gemessen hat",
+      "measuresBadge": "Kursbewegung",
+      "measuresPending": "Messungen folgen: Die Amplitude, die die Märkte bei früheren Veröffentlichungen dieses Indikators zurückgelegt haben, erscheint hier, sobald die Engine-Messung angebunden ist (NW-2).",
+      "sourceLine": "Quelle: {source}",
+      "notFoundTitle": "Veröffentlichung nicht gefunden",
+      "notFound": "Diese Veröffentlichung liegt nicht im aktuellen Zeitfenster des Kalenders.",
+      "nono": {
+        "title": "Was diese Seite nicht sagt",
+        "items": {
+          "0": "Sie sagt weder den Wert voraus, der veröffentlicht wird, noch die Reaktion des Marktes.",
+          "1": "Sie interpretiert eine Abweichung vom Konsens nicht als steigend oder fallend.",
+          "2": "Sie empfiehlt weder einzugreifen, noch sich zurückzuhalten, noch irgendetwas zu schließen.",
+          "3": "Vergangene Amplituden werden über eine geringe Anzahl von Tagen in unterschiedlichen Kontexten gemessen und haben keinerlei Vorhersagewert."
+        }
+      }
     }
   }
 }
