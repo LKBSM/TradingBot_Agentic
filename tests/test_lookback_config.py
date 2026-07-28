@@ -51,15 +51,19 @@ def test_parse_duration_rejects_garbage(bad):
 # --------------------------------------------------------------------------- #
 # DURATION → bars lands near the mission reference horizons
 # --------------------------------------------------------------------------- #
-@pytest.mark.parametrize(
-    "tf,expected_ref",
-    [("M1", 1440), ("M5", 1440), ("M15", 2000), ("H1", 3100), ("H4", 3100), ("D1", 1300)],
-)
-def test_target_bars_near_reference(_default_env, tf, expected_ref):
-    bars = lb.target_bars("XAUUSD", tf)
-    # Within 15% of the mission's dimensioning figure — the reference exists only
-    # to prove the load stays bounded, not as a hard target.
-    assert expected_ref * 0.85 <= bars <= expected_ref * 1.20, f"{tf}: {bars} vs ~{expected_ref}"
+_TF_MIN = {"M1": 1, "M5": 5, "M15": 15, "H1": 60, "H4": 240, "D1": 1440}
+
+
+@pytest.mark.parametrize("tf", ["M1", "M5", "M15", "H1", "H4", "D1"])
+def test_target_bars_cover_the_duration_within_one_request(_default_env, tf):
+    """The bar count must SPAN at least the configured calendar duration (so the
+    stated depth is never silently under-delivered) AND fit a single free-plan
+    request (≤ 5000), so backfilling a combo costs exactly one call."""
+    depth = lb.depth_for("XAUUSD", tf)
+    covered_minutes = depth.target_bars * _TF_MIN[tf]
+    duration_minutes = depth.duration.total_seconds() / 60.0
+    assert covered_minutes >= duration_minutes, f"{tf}: {covered_minutes} < {duration_minutes}"
+    assert depth.target_bars <= 5000, f"{tf}: {depth.target_bars} exceeds a single request"
 
 
 def test_depth_is_config_driven_not_constant(monkeypatch, tmp_path):

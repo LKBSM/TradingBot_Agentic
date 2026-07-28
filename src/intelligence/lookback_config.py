@@ -40,22 +40,18 @@ _TF_MINUTES: Dict[str, int] = {
     "H1": 60, "H4": 240, "D1": 1440, "W1": 10080,
 }
 
-# Minutes of trading in one full day, per instrument. FX and metals trade ~24h
-# (1440 min) on a weekday. This is what turns a DURATION into a realistic bar
-# count. Extend this map when a reduced-hours instrument (an index) enters the
-# perimeter; a 24/7 instrument (crypto) would also raise _TRADING_DAYS_PER_WEEK.
-_DEFAULT_TRADING_MINUTES_PER_DAY = 1440
-_TRADING_MINUTES_PER_DAY: Dict[str, int] = {
-    "XAUUSD": 1440,
-    "EURUSD": 1440,
-}
-_TRADING_DAYS_PER_WEEK = 5.0
-_MEAN_MONTH_DAYS = 30.4375   # mean Gregorian month
-_MEAN_YEAR_DAYS = 365.25     # mean Gregorian year
+# A DURATION is turned into a bar count at CONTINUOUS density (1440 min/day, every
+# calendar day) — the densest a series can possibly be. Real Twelve Data series
+# are at most this dense (XAU/EUR intraday measured at ~24 bars/calendar-day, D1
+# sparser), so a fetch sized this way always reaches AT LEAST the requested
+# duration back — it never silently under-delivers the calendar span the config
+# promises. Any shortfall then comes only from the provider's own history limit,
+# which the audit reports per combo. (Sizing by trading-hours instead undershot
+# the calendar duration; see AUDIT-lb-1-lookback-profond.)
+_MINUTES_PER_CALENDAR_DAY = 1440
 
-# Small safety margin so a fetch sized from the config reliably *reaches* the
-# requested duration despite holiday gaps and rounding.
-_TARGET_MARGIN = 1.05
+# A few bars of cushion so the boundary candle is comfortably included.
+_TARGET_CUSHION_BARS = 4
 
 # The M1 gate. M1 stays off until the five slower units are stable and their
 # consumption measured (LB-1 mission §2C). Its live refresh is fundamentally
@@ -91,39 +87,19 @@ def parse_duration(text: str) -> timedelta:
     return timedelta(days=value * _DURATION_DAYS[unit])
 
 
-def _token_trading_days(token: str) -> float:
-    """Depth token → number of *trading* days it represents.
-
-    The ``d`` unit denotes full recent trading days (a 1-day M1 horizon means the
-    last ~24h of market, ~1440 candles — not a weekend-discounted 18h). Spans of a
-    week or longer discount weekends at 5/7, so 6 months of H1 ≈ 3100 bars.
-    """
-    value, unit = _parse_token(token)
-    if unit == "d":
-        return value
-    if unit == "w":
-        return value * _TRADING_DAYS_PER_WEEK
-    if unit == "mo":
-        return value * _MEAN_MONTH_DAYS * (_TRADING_DAYS_PER_WEEK / 7.0)
-    # unit == "y"
-    return value * _MEAN_YEAR_DAYS * (_TRADING_DAYS_PER_WEEK / 7.0)
-
-
-def _trading_minutes_per_day(instrument: str) -> int:
-    return _TRADING_MINUTES_PER_DAY.get((instrument or "").upper(), _DEFAULT_TRADING_MINUTES_PER_DAY)
-
-
 def _token_to_bars(instrument: str, timeframe: str, token: str) -> int:
-    """Trading-hours-aware DURATION token → candle count, plus a small margin.
+    """DURATION token → candle count at continuous density, so the fetch always
+    reaches at least the requested calendar span back. Returns at least 1 bar.
 
-    trading_days × trading_minutes_per_day / tf_minutes. For D1 this collapses to
-    the trading-day count. Returns at least 1 bar.
+    ``instrument`` is accepted for future per-instrument tuning (e.g. a
+    reduced-hours index) but is unused today: continuous density is the safe
+    ceiling for every current combo.
     """
     tf_min = _TF_MINUTES.get(timeframe.upper())
     if not tf_min:
         raise ValueError(f"Unknown timeframe {timeframe!r}")
-    trading_minutes = _token_trading_days(token) * _trading_minutes_per_day(instrument)
-    bars = math.ceil((trading_minutes / tf_min) * _TARGET_MARGIN)
+    calendar_days = parse_duration(token).total_seconds() / 86400.0
+    bars = math.ceil(calendar_days * _MINUTES_PER_CALENDAR_DAY / tf_min) + _TARGET_CUSHION_BARS
     return max(1, bars)
 
 
