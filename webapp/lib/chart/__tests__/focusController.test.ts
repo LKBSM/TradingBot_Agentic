@@ -18,18 +18,34 @@ import {
  * fails loudly.
  */
 
-describe('frameZone (mission VZ-1b — zone 12–30%, ≥40% margins, price in view)', () => {
+describe('frameZone (mission VZ-1c — wide frame, zone 5–15%, ≥60 bars)', () => {
   const barSec = 900;
+  // Formation exactly 100 bars back so the base frame shows the whole life.
   const base = { startSec: 1_000_000, lastSec: 1_090_000, barSec, bandLow: 2380, bandHigh: 2390 };
 
-  it('sizes the window so the band occupies 12–30% of the visible height', () => {
+  it('sizes the window so the band occupies 5–15% of the visible height', () => {
     const f = frameZone(base);
     const height = f.priceMax! - f.priceMin!;
     const occupancy = (2390 - 2380) / height;
     expect(occupancy).toBeGreaterThanOrEqual(ZONE_OCCUPANCY_MIN);
     expect(occupancy).toBeLessThanOrEqual(ZONE_OCCUPANCY_MAX);
-    // Target ~20% (relaxed from the old 42%), not the old tight frame.
-    expect(occupancy).toBeCloseTo(0.2, 2);
+    // Target ~10% (relaxed from 20%): the zone is spotted, not dominant.
+    expect(occupancy).toBeCloseTo(0.1, 2);
+  });
+
+  it('shows at least 60 candles — even for a freshly-formed zone', () => {
+    // The old bug: formation→current collapsed to ~6 bars for a recent zone.
+    const recent = { ...base, startSec: base.lastSec - 6 * barSec };
+    const f = frameZone(recent);
+    const bars = (f.to - f.from) / barSec;
+    expect(bars).toBeGreaterThanOrEqual(60);
+    // …and never absurdly wide (candles stay distinct).
+    expect(bars).toBeLessThanOrEqual(130);
+  });
+
+  it('keeps the current bar visible (frame extends to/just past it)', () => {
+    const f = frameZone(base);
+    expect(f.to).toBeGreaterThanOrEqual(base.lastSec);
   });
 
   it('keeps ≥40% vertical margin above and below the band (no price)', () => {
@@ -40,27 +56,23 @@ describe('frameZone (mission VZ-1b — zone 12–30%, ≥40% margins, price in v
   });
 
   it('folds the current price into the view when the gap allows it', () => {
-    // Price OUTSIDE the base window (2360..2410) but near enough to include
-    // without crushing the band → it must sit inside the framed window.
-    const f = frameZone({ ...base, price: 2430 });
-    expect(f.priceMax!).toBeGreaterThanOrEqual(2430);
-    // Band still legible (occupancy ≥ 12%).
+    // Price just outside the base window → it must sit inside the framed window.
+    const f = frameZone({ ...base, price: 2460 });
+    expect(f.priceMax!).toBeGreaterThanOrEqual(2460);
     const occ = (2390 - 2380) / (f.priceMax! - f.priceMin!);
     expect(occ).toBeGreaterThanOrEqual(ZONE_OCCUPANCY_MIN - 1e-9);
   });
 
-  it('does NOT dezoom past the 12% floor for a far price (legibility first)', () => {
-    // A price very far away must not crush the band below 12% occupancy.
+  it('does NOT dezoom past the 5% floor for a far price (legibility first)', () => {
     const f = frameZone({ ...base, price: 3000 });
     const occ = (2390 - 2380) / (f.priceMax! - f.priceMin!);
     expect(occ).toBeGreaterThanOrEqual(ZONE_OCCUPANCY_MIN - 1e-9);
-    // The far price is therefore NOT forced fully into view.
-    expect(f.priceMax!).toBeLessThan(3000);
+    expect(f.priceMax!).toBeLessThan(3000); // the far price is not forced in
   });
 
-  it('spans horizontally from the formation bar to the current bar (with margin)', () => {
+  it('includes the formation bar when it falls within the frame', () => {
     const f = frameZone(base);
-    expect(f.from).toBeLessThan(1_000_000); // left of formation
+    expect(f.from).toBeLessThan(1_000_000); // left of the formation bar
     expect(f.to).toBeGreaterThan(1_090_000); // right of the current bar
   });
 });
