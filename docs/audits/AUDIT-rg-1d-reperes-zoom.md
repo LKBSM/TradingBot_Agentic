@@ -4,6 +4,20 @@ Branche : `feat/rg-1d-reperes-zoom` (worktree dédié, depuis `main` = `8dde1e5`
 Cible : panneau « Régime de marché » → tuile « Niveaux de référence » + tracé chart.
 Les VALEURS étaient déjà correctes (RG-1c) ; ici, trois défauts d'interaction/présentation.
 
+> **Correctif live (post-merge, `fix/rg-1d-bring-view`) — DÉFAUT 2 « il ne ramène pas ».**
+> En live, le clic ne déplaçait PAS la vue verticale vers le niveau. Cause : la ré-application
+> `autoScale` false→true est **coalescée** par lightweight-charts quand la valeur nette est
+> inchangée (autoScale déjà à true), donc `autoscaleInfoProvider` n'était **jamais** ré-invoqué
+> et la vue ne bougeait pas. Fix : mécanisme **impératif** `IPriceScaleApi.setVisibleRange`
+> (lightweight-charts 5.2.0) — sur clic, on **fixe** la plage verticale = union `[niveau,
+> extrêmes des bougies visibles]` + marge 8 % (`webapp/lib/chart/referenceView.ts`,
+> `computeReferenceViewRange`, pur + testé) après `setAutoScale(false)` ; au re-clic,
+> `setAutoScale(true)` restaure l'échelle bougies. Le provider redevient « plancher only ».
+> **Ce correctif couvre TOUS les prix traçables** (canal `referenceLevel` unique) : niveaux de
+> référence, bornes Position, **journal d'événements BOS/CHOCH**, niveaux franchis, extrêmes —
+> cliquer l'un d'eux amène désormais réellement la vue au niveau. Validé live requis (chart non
+> montable en jsdom) ; `computeReferenceViewRange` couvert par tests unitaires.
+
 ---
 
 ## 1. Diagnostic (avant correctif)

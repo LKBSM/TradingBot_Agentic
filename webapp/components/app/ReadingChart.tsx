@@ -40,6 +40,7 @@ import type {
 import { DEFAULT_CHART_VIEW } from '@/lib/chart/viewActions';
 import { buildStructureMarkers } from '@/lib/chart/structureMarkers';
 import { buildLiquidityLines } from '@/lib/chart/liquidityLines';
+import { computeReferenceViewRange } from '@/lib/chart/referenceView';
 import {
   ZoneOverlayPrimitive,
   liquidityColor,
@@ -195,7 +196,6 @@ const MIN_VISIBLE_RANGE_FRAC = 0.003;
 // widened to hold BOTH the level and the current price, plus this margin on each
 // side, so neither sits on the very edge and the structure between them stays
 // readable (that context is what makes the trace useful — never a tight zoom).
-const REFERENCE_VIEW_MARGIN_FRAC = 0.08;
 
 /**
  * Theme-resolved palette. Lightweight-charts paints onto a canvas, so it needs
@@ -282,11 +282,8 @@ export function ReadingChart({
   // overlay recomputed in a rAF loop and committed a frame late → the boxes
   // "vibrated" against the candles.)
   const overlayRef = React.useRef<ZoneOverlayPrimitive | null>(null);
-  // Latest traced reference-level price, read by the series autoscaleInfoProvider
-  // (a stable closure) so it can widen the vertical range to include the level.
-  const referenceLevelPriceRef = React.useRef<number | null>(null);
-  // Previous traced price — so we react (scroll + re-autoscale) only when the
-  // trace actually CHANGES, never on every data refresh (RG-1d).
+  // Previous traced price — so we move the view only when the trace actually
+  // CHANGES (set / changed / cleared), never on every data refresh (RG-1d).
   const prevRefPriceRef = React.useRef<number | null>(null);
   // Hover tooltip — descriptive text for the box / pocket under the crosshair,
   // driven by the chart's crosshair-move event. One element, updated only on
@@ -524,34 +521,18 @@ export function ReadingChart({
       // range and, only when it is smaller than MIN_VISIBLE_RANGE_FRAC of the
       // mid price, widen it symmetrically to that minimum. A normal session's
       // range already exceeds the floor, so this is a no-op on weekdays.
+      // A traced reference level is brought into view IMPERATIVELY via the price
+      // scale's setVisibleRange (RG-1d) — autoScale is off while one is pinned, so
+      // this provider only governs the normal candle autoscale: floor the vertical
+      // span so a flat (closed-market) window never magnifies micro-candles.
       autoscaleInfoProvider: (baseImplementation: () => AutoscaleInfo | null) => {
         const res = baseImplementation();
         if (!res || !res.priceRange) return res;
-        let { minValue, maxValue } = res.priceRange;
-        // Bring a traced calendar reference level (RG-1c) into the vertical
-        // viewport: lightweight-charts does NOT include price lines in autoscale,
-        // so a level outside the candles' band would be painted off-screen and
-        // read as « nothing drawn ». Extending the range guarantees the line — and
-        // the price action around it — is actually visible. Read from a ref so
-        // this provider closure always sees the latest level without re-creating
-        // the series.
-        const lvl = referenceLevelPriceRef.current;
-        if (lvl != null && Number.isFinite(lvl)) {
-          minValue = Math.min(minValue, lvl);
-          maxValue = Math.max(maxValue, lvl);
-          // A margin so the level and the current price sit INSIDE the viewport,
-          // not on its edge (RG-1d). Falls back to a tiny relative pad if the
-          // union is degenerate.
-          const pad = (maxValue - minValue) * REFERENCE_VIEW_MARGIN_FRAC || Math.abs(maxValue) * 0.001;
-          minValue -= pad;
-          maxValue += pad;
-        }
+        const { minValue, maxValue } = res.priceRange;
         const mid = (minValue + maxValue) / 2;
         const span = maxValue - minValue;
         const minSpan = Math.abs(mid) * MIN_VISIBLE_RANGE_FRAC;
-        if (mid === 0 || span >= minSpan) {
-          return { ...res, priceRange: { minValue, maxValue } };
-        }
+        if (mid === 0 || span >= minSpan) return res;
         const half = minSpan / 2;
         return {
           ...res,
@@ -793,21 +774,35 @@ export function ReadingChart({
           }),
         ]
       : [];
-    // Publish the level to the autoscale closure. React ONLY when the trace
-    // actually changes (set / changed / cleared) — not on every data refresh, so
-    // a user's manual zoom is preserved between ticks (RG-1d):
-    //   · set/changed → re-autoscale (folds the level + margin into the range)
-    //     AND scroll the chart into view so the click visibly « leads » to it ;
-    //   · cleared (re-click) → re-autoscale returns to the prior candle-fitted
-    //     scale (« retour à l'échelle précédente »), no scroll.
-    referenceLevelPriceRef.current = referenceLevel ? referenceLevel.price : null;
+    // Bring the view to a traced level. React ONLY when the trace actually changes
+    // (set / changed / cleared) — not on every data refresh — so a user's manual
+    // zoom is preserved between ticks (RG-1d). The vertical range is set
+    // IMPERATIVELY via the price scale's setVisibleRange (reliable), NOT by toggling
+    // autoScale (which the library coalesces when the value is unchanged, so the
+    // view never moved — the live « il ne ramène pas » bug):
+    //   · set/changed → pin a range holding the level, the current price AND the
+    //     visible candles (context between the two), with a margin, and scroll the
+    //     chart element into view ;
+    //   · cleared (re-click) → setAutoScale(true) returns to the candle-fitted
+    //     scale (« retour à l'échelle précédente »).
     const curRefPrice = referenceLevel ? referenceLevel.price : null;
     if (curRefPrice !== prevRefPriceRef.current) {
       const ps = series.priceScale();
-      ps.applyOptions({ autoScale: false });
-      ps.applyOptions({ autoScale: true });
       if (curRefPrice != null) {
+        const logical = timeScale.getVisibleLogicalRange();
+        const target = computeReferenceViewRange(
+          curRefPrice,
+          validCandles,
+          logical ? Math.max(0, Math.floor(logical.from)) : 0,
+          logical ? Math.min(validCandles.length - 1, Math.ceil(logical.to)) : validCandles.length - 1,
+        );
+        if (target) {
+          ps.setAutoScale(false);
+          ps.setVisibleRange(target);
+        }
         containerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      } else {
+        ps.setAutoScale(true); // restore the candle-fitted autoscale
       }
       prevRefPriceRef.current = curRefPrice;
     }
