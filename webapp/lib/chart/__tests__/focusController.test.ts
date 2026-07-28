@@ -18,43 +18,48 @@ import {
  * fails loudly.
  */
 
-describe('frameZone (mission §B — zone 25–60%, ≥15% margins)', () => {
+describe('frameZone (mission VZ-1b — zone 12–30%, ≥40% margins, price in view)', () => {
   const barSec = 900;
-  it('sizes the window so the band occupies 25–60% of the visible height', () => {
-    const f = frameZone({
-      startSec: 1_000_000,
-      lastSec: 1_090_000,
-      barSec,
-      bandLow: 2380,
-      bandHigh: 2390,
-    });
+  const base = { startSec: 1_000_000, lastSec: 1_090_000, barSec, bandLow: 2380, bandHigh: 2390 };
+
+  it('sizes the window so the band occupies 12–30% of the visible height', () => {
+    const f = frameZone(base);
     const height = f.priceMax! - f.priceMin!;
     const occupancy = (2390 - 2380) / height;
     expect(occupancy).toBeGreaterThanOrEqual(ZONE_OCCUPANCY_MIN);
     expect(occupancy).toBeLessThanOrEqual(ZONE_OCCUPANCY_MAX);
+    // Target ~20% (relaxed from the old 42%), not the old tight frame.
+    expect(occupancy).toBeCloseTo(0.2, 2);
   });
 
-  it('keeps ≥15% vertical margin above and below the band', () => {
-    const f = frameZone({
-      startSec: 1_000_000,
-      lastSec: 1_090_000,
-      barSec,
-      bandLow: 2380,
-      bandHigh: 2390,
-    });
+  it('keeps ≥40% vertical margin above and below the band (no price)', () => {
+    const f = frameZone(base);
     const height = f.priceMax! - f.priceMin!;
-    expect((f.priceMax! - 2390) / height).toBeGreaterThanOrEqual(0.15 - 1e-9);
-    expect((2380 - f.priceMin!) / height).toBeGreaterThanOrEqual(0.15 - 1e-9);
+    expect((f.priceMax! - 2390) / height).toBeGreaterThanOrEqual(0.4 - 1e-9);
+    expect((2380 - f.priceMin!) / height).toBeGreaterThanOrEqual(0.4 - 1e-9);
+  });
+
+  it('folds the current price into the view when the gap allows it', () => {
+    // Price OUTSIDE the base window (2360..2410) but near enough to include
+    // without crushing the band → it must sit inside the framed window.
+    const f = frameZone({ ...base, price: 2430 });
+    expect(f.priceMax!).toBeGreaterThanOrEqual(2430);
+    // Band still legible (occupancy ≥ 12%).
+    const occ = (2390 - 2380) / (f.priceMax! - f.priceMin!);
+    expect(occ).toBeGreaterThanOrEqual(ZONE_OCCUPANCY_MIN - 1e-9);
+  });
+
+  it('does NOT dezoom past the 12% floor for a far price (legibility first)', () => {
+    // A price very far away must not crush the band below 12% occupancy.
+    const f = frameZone({ ...base, price: 3000 });
+    const occ = (2390 - 2380) / (f.priceMax! - f.priceMin!);
+    expect(occ).toBeGreaterThanOrEqual(ZONE_OCCUPANCY_MIN - 1e-9);
+    // The far price is therefore NOT forced fully into view.
+    expect(f.priceMax!).toBeLessThan(3000);
   });
 
   it('spans horizontally from the formation bar to the current bar (with margin)', () => {
-    const f = frameZone({
-      startSec: 1_000_000,
-      lastSec: 1_090_000,
-      barSec,
-      bandLow: 2380,
-      bandHigh: 2390,
-    });
+    const f = frameZone(base);
     expect(f.from).toBeLessThan(1_000_000); // left of formation
     expect(f.to).toBeGreaterThan(1_090_000); // right of the current bar
   });

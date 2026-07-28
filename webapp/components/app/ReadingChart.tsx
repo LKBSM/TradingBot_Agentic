@@ -881,7 +881,9 @@ export function ReadingChart({
     }
     if (selection?.family === 'event') {
       const arrow = selection.direction === 'bullish' ? '↑' : '↓';
-      const when = formatLocalHm(new Date(selection.atSec * 1000));
+      // VZ-1b — full date + time (« BOS ↓ · 28/07 14:00 ») so the couple reads
+      // completely; the broken LEVEL shows on the adjacent price-axis label.
+      const when = formatLocalDayHm(new Date(selection.atSec * 1000));
       selectionLines.push(
         series.createPriceLine({
           price: selection.level,
@@ -1273,6 +1275,8 @@ export function ReadingChart({
         barSec,
         bandLow: model.low,
         bandHigh: model.high,
+        // Keep the current price in view alongside the zone when the gap allows.
+        price: cs.length ? cs[cs.length - 1]!.close : null,
       });
     } else if (selection.family === 'event') {
       const cand = cs.find((c) => Math.abs((c.time as number) - selection.atSec) < barSec);
