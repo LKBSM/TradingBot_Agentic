@@ -118,6 +118,16 @@ describe('NW-1 CalendarWorkspace list', () => {
     expect(cpi?.textContent).toContain('affecte Or, EUR/USD');
   });
 
+  it('each row exposes an « En savoir plus » link to that event detail page', () => {
+    const { container } = renderCal();
+    const links = Array.from(container.querySelectorAll('a.cal-more'));
+    expect(links).toHaveLength(3);
+    for (const a of links) {
+      expect(a.getAttribute('href')).toMatch(/\/actualites\/forexfactory%3A/);
+      expect((a.textContent ?? '')).toContain(fr.calendar.seeMore);
+    }
+  });
+
   it('renders no raw i18n keys', () => {
     const { container } = renderCal();
     const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);

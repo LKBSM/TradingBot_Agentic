@@ -1853,6 +1853,37 @@
       "title": "Próximas publicaciones",
       "seeAll": "Ver todo",
       "empty": "Ninguna publicación próxima en este periodo."
+    },
+    "seeMore": "Saber más",
+    "detail": {
+      "back": "Volver al calendario",
+      "countdownLabel": "Publicación en",
+      "publishedFiguresTitle": "Cifras publicadas",
+      "publishedFiguresBadge": "Valor del indicador",
+      "publishedFiguresNote": "Estas cifras son el valor del propio indicador, en la unidad del organismo que lo publica — no movimientos de precio. El consenso es una previsión elaborada por terceros: MIA lo informa sin hacerlo suyo.",
+      "actualLabel": "Valor publicado",
+      "actualPending": "aún no publicado",
+      "forecastLabel": "Consenso de analistas",
+      "forecastNote": "previsión de terceros, no de MIA",
+      "previousLabel": "Publicación anterior",
+      "revisedFrom": "revisado desde {value}",
+      "unitMissing": "unidad no proporcionada por esta fuente",
+      "figuresEmpty": "La fuente actual no proporciona ninguna cifra para esta publicación.",
+      "measuresTitle": "Lo que el motor midió en publicaciones anteriores",
+      "measuresBadge": "Movimiento de precio",
+      "measuresPending": "Mediciones por venir: la amplitud recorrida por los mercados en las publicaciones pasadas de este indicador aparecerá aquí una vez conectada la medición del motor (NW-2).",
+      "sourceLine": "Fuente: {source}",
+      "notFoundTitle": "Publicación no encontrada",
+      "notFound": "Esta publicación no está en la ventana actual del calendario.",
+      "nono": {
+        "title": "Lo que esta página no dice",
+        "items": {
+          "0": "No predice ni el valor que se publicará, ni la reacción del mercado.",
+          "1": "No interpreta una desviación respecto al consenso como alcista o bajista.",
+          "2": "No recomienda ni intervenir, ni abstenerse, ni cerrar nada.",
+          "3": "Las amplitudes pasadas se miden sobre un número reducido de jornadas, en contextos distintos, y no tienen ningún valor predictivo."
+        }
+      }
     }
   }
 }

@@ -1853,6 +1853,37 @@
       "title": "Prochaines publications",
       "seeAll": "Tout voir",
       "empty": "Aucune publication à venir sur cette période."
+    },
+    "seeMore": "En savoir plus",
+    "detail": {
+      "back": "Retour au calendrier",
+      "countdownLabel": "Publication dans",
+      "publishedFiguresTitle": "Chiffres publiés",
+      "publishedFiguresBadge": "Valeur de l'indicateur",
+      "publishedFiguresNote": "Ces chiffres sont la valeur de l'indicateur lui-même, dans l'unité de l'organisme qui le publie — pas des mouvements de prix. Le consensus est une prévision produite par des tiers : MIA la rapporte sans la reprendre à son compte.",
+      "actualLabel": "Valeur publiée",
+      "actualPending": "non encore publiée",
+      "forecastLabel": "Consensus des analystes",
+      "forecastNote": "prévision de tiers, non de MIA",
+      "previousLabel": "Publication précédente",
+      "revisedFrom": "révisée depuis {value}",
+      "unitMissing": "unité non fournie par cette source",
+      "figuresEmpty": "Aucun chiffre fourni pour cette publication par la source actuelle.",
+      "measuresTitle": "Ce que le moteur a mesuré aux publications précédentes",
+      "measuresBadge": "Mouvement de prix",
+      "measuresPending": "Mesures à venir : l'amplitude parcourue par les marchés aux publications passées de cet indicateur s'affichera ici une fois la mesure moteur branchée (NW-2).",
+      "sourceLine": "Source : {source}",
+      "notFoundTitle": "Publication introuvable",
+      "notFound": "Cette publication n'est pas dans la fenêtre actuelle du calendrier.",
+      "nono": {
+        "title": "Ce que cette page ne dit pas",
+        "items": {
+          "0": "Elle ne prévoit ni la valeur qui sera publiée, ni la réaction du marché.",
+          "1": "Elle n'interprète pas un écart au consensus comme haussier ou baissier.",
+          "2": "Elle ne recommande ni d'intervenir, ni de s'abstenir, ni de fermer quoi que ce soit.",
+          "3": "Les amplitudes passées sont mesurées sur un petit nombre de journées, dans des contextes différents, et n'ont aucune valeur prédictive."
+        }
+      }
     }
   }
 }

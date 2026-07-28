@@ -1853,6 +1853,37 @@
       "title": "Next releases",
       "seeAll": "See all",
       "empty": "No upcoming release in this period."
+    },
+    "seeMore": "Learn more",
+    "detail": {
+      "back": "Back to the calendar",
+      "countdownLabel": "Release in",
+      "publishedFiguresTitle": "Published figures",
+      "publishedFiguresBadge": "Indicator value",
+      "publishedFiguresNote": "These figures are the value of the indicator itself, in the unit of the organism that publishes it — not price movements. The consensus is a forecast produced by third parties: MIA reports it without adopting it as its own.",
+      "actualLabel": "Published value",
+      "actualPending": "not yet published",
+      "forecastLabel": "Analyst consensus",
+      "forecastNote": "third-party forecast, not MIA's",
+      "previousLabel": "Previous release",
+      "revisedFrom": "revised from {value}",
+      "unitMissing": "unit not provided by this source",
+      "figuresEmpty": "No figures provided for this release by the current source.",
+      "measuresTitle": "What the engine measured at previous releases",
+      "measuresBadge": "Price movement",
+      "measuresPending": "Measurements to come: the amplitude the markets travelled at this indicator's past releases will appear here once the engine measurement is wired (NW-2).",
+      "sourceLine": "Source: {source}",
+      "notFoundTitle": "Release not found",
+      "notFound": "This release is not in the calendar's current window.",
+      "nono": {
+        "title": "What this page does not say",
+        "items": {
+          "0": "It predicts neither the value that will be published, nor the market's reaction.",
+          "1": "It does not interpret a deviation from consensus as bullish or bearish.",
+          "2": "It recommends neither to act, nor to abstain, nor to close anything.",
+          "3": "Past amplitudes are measured over a small number of days, in different contexts, and have no predictive value."
+        }
+      }
     }
   }
 }

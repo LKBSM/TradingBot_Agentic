@@ -1853,6 +1853,37 @@
       "title": "Najbliższe publikacje",
       "seeAll": "Zobacz wszystko",
       "empty": "Brak nadchodzącej publikacji w tym okresie."
+    },
+    "seeMore": "Dowiedz się więcej",
+    "detail": {
+      "back": "Powrót do kalendarza",
+      "countdownLabel": "Publikacja za",
+      "publishedFiguresTitle": "Opublikowane dane",
+      "publishedFiguresBadge": "Wartość wskaźnika",
+      "publishedFiguresNote": "Te dane to wartość samego wskaźnika, w jednostce instytucji, która go publikuje — a nie ruchy cen. Konsensus to prognoza opracowana przez podmioty trzecie: MIA ją przytacza, nie przyjmując jej za własną.",
+      "actualLabel": "Opublikowana wartość",
+      "actualPending": "jeszcze nieopublikowana",
+      "forecastLabel": "Konsensus analityków",
+      "forecastNote": "prognoza podmiotów trzecich, nie MIA",
+      "previousLabel": "Poprzednia publikacja",
+      "revisedFrom": "zrewidowana z {value}",
+      "unitMissing": "jednostka nie podana przez to źródło",
+      "figuresEmpty": "Brak danych dla tej publikacji z bieżącego źródła.",
+      "measuresTitle": "Co silnik zmierzył przy poprzednich publikacjach",
+      "measuresBadge": "Ruch ceny",
+      "measuresPending": "Pomiary wkrótce: amplituda przebyta przez rynki przy przeszłych publikacjach tego wskaźnika pojawi się tutaj, gdy pomiar silnika zostanie podłączony (NW-2).",
+      "sourceLine": "Źródło: {source}",
+      "notFoundTitle": "Nie znaleziono publikacji",
+      "notFound": "Ta publikacja nie mieści się w bieżącym oknie kalendarza.",
+      "nono": {
+        "title": "Czego ta strona nie mówi",
+        "items": {
+          "0": "Nie przewiduje ani wartości, która zostanie opublikowana, ani reakcji rynku.",
+          "1": "Nie interpretuje odchylenia od konsensusu jako wzrostowego ani spadkowego.",
+          "2": "Nie zaleca ani interweniowania, ani wstrzymywania się, ani zamykania czegokolwiek.",
+          "3": "Przeszłe amplitudy mierzone są na niewielkiej liczbie dni, w różnych kontekstach, i nie mają żadnej wartości prognostycznej."
+        }
+      }
     }
   }
 }

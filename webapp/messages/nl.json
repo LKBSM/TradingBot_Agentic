@@ -1853,6 +1853,37 @@
       "title": "Volgende publicaties",
       "seeAll": "Alles bekijken",
       "empty": "Geen aankomende publicatie in deze periode."
+    },
+    "seeMore": "Meer weten",
+    "detail": {
+      "back": "Terug naar de kalender",
+      "countdownLabel": "Publicatie over",
+      "publishedFiguresTitle": "Gepubliceerde cijfers",
+      "publishedFiguresBadge": "Indicatorwaarde",
+      "publishedFiguresNote": "Deze cijfers zijn de waarde van de indicator zelf, in de eenheid van de instantie die hem publiceert — geen koersbewegingen. De consensus is een prognose van derden: MIA geeft die weer zonder haar tot de hare te maken.",
+      "actualLabel": "Gepubliceerde waarde",
+      "actualPending": "nog niet gepubliceerd",
+      "forecastLabel": "Consensus van analisten",
+      "forecastNote": "prognose van derden, niet van MIA",
+      "previousLabel": "Vorige publicatie",
+      "revisedFrom": "herzien vanaf {value}",
+      "unitMissing": "eenheid niet opgegeven door deze bron",
+      "figuresEmpty": "Geen cijfers verstrekt voor deze publicatie door de huidige bron.",
+      "measuresTitle": "Wat de engine bij eerdere publicaties heeft gemeten",
+      "measuresBadge": "Koersbeweging",
+      "measuresPending": "Metingen volgen: de amplitude die de markten bij eerdere publicaties van deze indicator hebben afgelegd, verschijnt hier zodra de engine-meting is aangesloten (NW-2).",
+      "sourceLine": "Bron: {source}",
+      "notFoundTitle": "Publicatie niet gevonden",
+      "notFound": "Deze publicatie valt niet binnen het huidige venster van de kalender.",
+      "nono": {
+        "title": "Wat deze pagina niet zegt",
+        "items": {
+          "0": "Ze voorspelt noch de waarde die gepubliceerd zal worden, noch de reactie van de markt.",
+          "1": "Ze interpreteert een afwijking van de consensus niet als stijgend of dalend.",
+          "2": "Ze beveelt aan om noch in te grijpen, noch zich te onthouden, noch iets te sluiten.",
+          "3": "Amplitudes uit het verleden worden gemeten over een klein aantal dagen, in verschillende contexten, en hebben geen enkele voorspellende waarde."
+        }
+      }
     }
   }
 }

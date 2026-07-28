@@ -9,11 +9,20 @@ import en from '@/messages/en.json';
  * qualifies an event as major / to-watch / an opportunity / a bias / a target.
  */
 
-function collectStrings(node: unknown, out: string[]): void {
+// Paths whose strings deliberately QUOTE the forbidden terms in order to REFUSE
+// them ("n'interprète pas … comme haussier ou baissier"). Whitelisted from the
+// phrase scan, then separately asserted to remain a refusal (cf. scanner.note).
+const REFUSAL_PATHS = ['detail.nono'];
+
+function collectStrings(node: unknown, out: string[], path = ''): void {
+  if (REFUSAL_PATHS.some((p) => path === p || path.startsWith(`${p}.`))) return;
   if (typeof node === 'string') out.push(node);
-  else if (Array.isArray(node)) node.forEach((n) => collectStrings(n, out));
+  else if (Array.isArray(node))
+    node.forEach((n, i) => collectStrings(n, out, `${path}.${i}`));
   else if (node && typeof node === 'object')
-    Object.values(node).forEach((n) => collectStrings(n, out));
+    Object.entries(node).forEach(([k, n]) =>
+      collectStrings(n, out, path ? `${path}.${k}` : k),
+    );
 }
 
 // Predictive / directional tokens that must never appear (fr + en). Chosen so a
@@ -83,5 +92,18 @@ describe('NW-1 calendar copy honesty', () => {
     expect(cal.nono.body).toContain(
       'Une publication peut ne rien provoquer, et un marché calme peut bouger sans aucune publication.',
     );
+  });
+
+  it('the detail « ne dit pas » block quotes haussier/baissier only to REFUSE them', () => {
+    const items = (
+      fr as unknown as { calendar: { detail: { nono: { items: Record<string, string> } } } }
+    ).calendar.detail.nono.items;
+    const joined = Object.values(items).join(' ').toLowerCase();
+    // It is present…
+    expect(joined).toContain('haussier');
+    expect(joined).toContain('baissier');
+    // …strictly inside a refusal ("n'interprète pas … comme haussier ou baissier").
+    expect(joined).toContain("n'interprète pas");
+    expect(joined).toContain('aucune valeur prédictive');
   });
 });
