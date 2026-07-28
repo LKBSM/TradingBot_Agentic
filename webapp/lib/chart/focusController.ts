@@ -26,18 +26,37 @@ import type { Time, UTCTimestamp } from 'lightweight-charts';
 
 // ─── Framing thresholds (mission §B, validated 2026-07-27) ────────────────────
 
+// ── ZONE framing (OB / FVG). All the knobs live here; adjust these to re-tune
+//    how wide a zone click frames. VZ-1c widened the frame a lot: the zone is
+//    SITUATED in its market, the SURBRILLANCE (not the zoom) points to it. ──
 /**
- * Zone: target share of the visible height the zone band should occupy (VZ-1b —
- * relaxed from 0.42 so a click gives an immediately usable plan without a manual
- * zoom-out; ~20% ⇒ ~40% breathing room above AND below the band).
+ * Zone VERTICAL: target share of the visible height the band should occupy (VZ-1c
+ * — lowered from 0.20 to ~0.10 so the band is spotted, not dominant; ~45% of
+ * breathing room sits above AND below it).
  */
-export const ZONE_OCCUPANCY_TARGET = 0.2;
-/** Zone: hard bounds on that share — below is illegible, above loses context. */
-export const ZONE_OCCUPANCY_MIN = 0.12;
-export const ZONE_OCCUPANCY_MAX = 0.3;
-/** Zone: breathing room past the current price when it is folded into the view,
- *  as a fraction of the band height. */
+export const ZONE_OCCUPANCY_TARGET = 0.1;
+/** Zone VERTICAL: hard bounds on that share — below is a sliver, above dominates. */
+export const ZONE_OCCUPANCY_MIN = 0.05;
+export const ZONE_OCCUPANCY_MAX = 0.15;
+/** Zone VERTICAL: breathing room past the current price when it is folded into
+ *  the view, as a fraction of the band height. */
 export const ZONE_PRICE_PAD_FRAC = 0.25;
+/**
+ * Zone HORIZONTAL: how many candles the frame shows, anchored to the current bar.
+ * This MINIMUM prevails over any zone-size adjustment — a freshly-formed zone must
+ * still open on a full market view, never a handful of bars (VZ-1c fix: the old
+ * frame was formation→current, which collapsed to ~6 bars for a recent zone).
+ */
+export const ZONE_MIN_VISIBLE_BARS = 60;
+/** Zone HORIZONTAL: the frame we aim for (within the 80–120 target band). */
+export const ZONE_TARGET_VISIBLE_BARS = 100;
+/** Zone HORIZONTAL: never show more than this — keeps candles distinct even when
+ *  the formation bar is far in the past. */
+export const ZONE_MAX_VISIBLE_BARS = 120;
+/** Zone HORIZONTAL: extra bars kept left of the formation bar when it is in view. */
+export const ZONE_FORMATION_MARGIN_BARS = 10;
+/** Zone HORIZONTAL: bars of empty space kept to the RIGHT of the current bar. */
+export const ZONE_RIGHT_PAD_BARS = 4;
 /** Event: minimum candles kept on each side of the confirmation bar. */
 export const EVENT_BARS_BEFORE = 20;
 export const EVENT_BARS_AFTER = 10;
@@ -92,13 +111,15 @@ function clamp(v: number, lo: number, hi: number): number {
 }
 
 /**
- * ZONE (OB / FVG): the whole zone visible from its formation bar to the current
- * bar, the band occupying ~20% of the visible height (bounds [12%, 30%]) so ~40%
- * of breathing room sits above and below it (VZ-1b — a click gives an immediately
- * usable plan, never a frame so tight the user must zoom back out). The CURRENT
- * PRICE is kept in view alongside the band whenever the gap allows it without
- * pushing the band below the 12% floor (« voir la zone sans voir le prix n'a
- * aucune utilité »); past that floor we stop rather than crush the candles.
+ * ZONE (OB / FVG): a WIDE market view with the zone situated inside it — the
+ * SURBRILLANCE points to the zone, the zoom does not (VZ-1c). Horizontally the
+ * frame shows ~100 candles (bounds [60, 120]) anchored to the current bar; this
+ * minimum PREVAILS over the zone's size, so a freshly-formed zone still opens on
+ * a full market, never ~6 bars. The formation bar is included when it falls
+ * within that span. Vertically the band occupies only ~10% (bounds [5%, 15%]) so
+ * it is spotted, not dominant. The CURRENT PRICE stays in view alongside the band
+ * whenever the gap allows it without pushing the band below the 5% floor; past
+ * that floor we stop rather than crush the candles.
  */
 export function frameZone(args: {
   /** Formation candle time (epoch seconds). */
@@ -114,13 +135,21 @@ export function frameZone(args: {
   price?: number | null;
 }): CameraFrame {
   const { startSec, lastSec, barSec, bandLow, bandHigh } = args;
-  const marginX = Math.max(barSec * 3, (lastSec - startSec) * 0.08);
-  const from = startSec - marginX;
-  const to = lastSec + marginX;
+  // HORIZONTAL — anchored to the current bar, showing ~100 candles. Widen toward
+  // the formation bar (+ a margin) when it is recent enough to fit, but never
+  // fewer than 60 nor more than 120 bars. The minimum wins over the zone span.
+  const barsSinceFormation = Math.max(0, (lastSec - startSec) / barSec);
+  const visibleBars = clamp(
+    barsSinceFormation + ZONE_FORMATION_MARGIN_BARS,
+    Math.max(ZONE_MIN_VISIBLE_BARS, ZONE_TARGET_VISIBLE_BARS),
+    ZONE_MAX_VISIBLE_BARS,
+  );
+  const from = lastSec - visibleBars * barSec;
+  const to = lastSec + ZONE_RIGHT_PAD_BARS * barSec;
 
   const bandHeight = Math.max(bandHigh - bandLow, 0);
   const center = (bandHigh + bandLow) / 2;
-  // Base window: the band occupies the ~20% target (⇒ ~40% margin each side).
+  // VERTICAL — the band occupies the ~10% target (⇒ ~45% margin each side).
   // A degenerate (zero-height) band still gets a tiny window so the frame is valid.
   const height =
     bandHeight > 0 ? bandHeight / ZONE_OCCUPANCY_TARGET : Math.abs(center) * 0.01 || 1;

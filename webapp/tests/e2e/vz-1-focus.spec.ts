@@ -11,9 +11,13 @@ import { dismissCookieBanner } from './utils';
  */
 
 async function openFirstStructure(page: Page) {
-  await page.goto('/#multi-marche');
+  await page.goto('/#multi-marche', { waitUntil: 'domcontentloaded' });
   await dismissCookieBanner(page);
   const trigger = page.getByRole('button', { name: /Structure de marché/i }).first();
+  // Tolerate a cold `next dev` first-compile (can exceed the default action
+  // timeout on a loaded machine) before interacting — the gesture itself is fast.
+  await trigger.waitFor({ state: 'visible', timeout: 60_000 });
+  await trigger.scrollIntoViewIfNeeded();
   await trigger.click();
   return trigger;
 }
