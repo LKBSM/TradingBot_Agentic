@@ -191,6 +191,12 @@ const INITIAL_RIGHT_PAD_BARS = 3;
  */
 const MIN_VISIBLE_RANGE_FRAC = 0.003;
 
+// RG-1d: when a calendar reference level is traced, the vertical viewport is
+// widened to hold BOTH the level and the current price, plus this margin on each
+// side, so neither sits on the very edge and the structure between them stays
+// readable (that context is what makes the trace useful — never a tight zoom).
+const REFERENCE_VIEW_MARGIN_FRAC = 0.08;
+
 /**
  * Theme-resolved palette. Lightweight-charts paints onto a canvas, so it needs
  * concrete colour strings (CSS `var(--token)` does not resolve there). We read
@@ -279,6 +285,9 @@ export function ReadingChart({
   // Latest traced reference-level price, read by the series autoscaleInfoProvider
   // (a stable closure) so it can widen the vertical range to include the level.
   const referenceLevelPriceRef = React.useRef<number | null>(null);
+  // Previous traced price — so we react (scroll + re-autoscale) only when the
+  // trace actually CHANGES, never on every data refresh (RG-1d).
+  const prevRefPriceRef = React.useRef<number | null>(null);
   // Hover tooltip — descriptive text for the box / pocket under the crosshair,
   // driven by the chart's crosshair-move event. One element, updated only on
   // hover, so it never re-renders per frame.
@@ -530,6 +539,12 @@ export function ReadingChart({
         if (lvl != null && Number.isFinite(lvl)) {
           minValue = Math.min(minValue, lvl);
           maxValue = Math.max(maxValue, lvl);
+          // A margin so the level and the current price sit INSIDE the viewport,
+          // not on its edge (RG-1d). Falls back to a tiny relative pad if the
+          // union is degenerate.
+          const pad = (maxValue - minValue) * REFERENCE_VIEW_MARGIN_FRAC || Math.abs(maxValue) * 0.001;
+          minValue -= pad;
+          maxValue += pad;
         }
         const mid = (minValue + maxValue) / 2;
         const span = maxValue - minValue;
@@ -778,15 +793,23 @@ export function ReadingChart({
           }),
         ]
       : [];
-    // Publish the level to the autoscale closure and force a re-autoscale so the
-    // vertical viewport is brought to the level (RG-1c « n'y amène pas la vue »):
-    // toggling autoScale off→on re-invokes autoscaleInfoProvider, which now folds
-    // the level into the range. A no-op when the level already sits in-band.
+    // Publish the level to the autoscale closure. React ONLY when the trace
+    // actually changes (set / changed / cleared) — not on every data refresh, so
+    // a user's manual zoom is preserved between ticks (RG-1d):
+    //   · set/changed → re-autoscale (folds the level + margin into the range)
+    //     AND scroll the chart into view so the click visibly « leads » to it ;
+    //   · cleared (re-click) → re-autoscale returns to the prior candle-fitted
+    //     scale (« retour à l'échelle précédente »), no scroll.
     referenceLevelPriceRef.current = referenceLevel ? referenceLevel.price : null;
-    if (referenceLevel) {
+    const curRefPrice = referenceLevel ? referenceLevel.price : null;
+    if (curRefPrice !== prevRefPriceRef.current) {
       const ps = series.priceScale();
       ps.applyOptions({ autoScale: false });
       ps.applyOptions({ autoScale: true });
+      if (curRefPrice != null) {
+        containerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+      prevRefPriceRef.current = curRefPrice;
     }
 
     // Initial view ONCE; afterwards restore the pre-update view so data

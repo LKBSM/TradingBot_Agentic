@@ -218,6 +218,57 @@ describe('RG-1 — RegimeCard tiles', () => {
     expect(screen.getByTestId('ref')).toHaveTextContent('none');
   });
 
+  it('phrases the gap in WORDS, never a bare sign (RG-1d)', async () => {
+    const { container } = render(<Harness structure={FULL_STRUCT} marketStatus={OPEN_STATUS} />);
+    await waitFor(() => expect(screen.getByText('Niveaux de référence')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('Niveaux de référence').closest('.tile') as HTMLElement);
+
+    const dists = await waitFor(() => {
+      const els = Array.from(container.querySelectorAll('.ev-t')) as HTMLElement[];
+      expect(els.length).toBeGreaterThan(0);
+      return els.map((e) => e.textContent ?? '');
+    });
+    // At least one row reads « … au-dessus » / « … en dessous », and NO row carries
+    // a bare « + » / « − » sign — the word carries the direction.
+    expect(dists.some((d) => /au-dessus|en dessous|au prix courant/.test(d))).toBe(true);
+    for (const d of dists) expect(d).not.toMatch(/[+−]/);
+  });
+
+  it('labels a coincidence with a DETECTED pocket, plainly otherwise (RG-1d)', async () => {
+    const { container } = render(<Harness structure={FULL_STRUCT} marketStatus={OPEN_STATUS} />);
+    await waitFor(() => expect(screen.getByText('Niveaux de référence')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('Niveaux de référence').closest('.tile') as HTMLElement);
+
+    // prevDayHigh (2421.2) sits exactly on the BSL range-high pocket → « ≈ BSL »
+    // marker in the list AND a « BSL · … » prefix on the traced chart label.
+    await waitFor(() => expect(container.querySelectorAll('.pxbtn').length).toBeGreaterThan(2));
+    expect(container.querySelector('.coin')?.textContent).toContain('BSL');
+
+    const btns = Array.from(container.querySelectorAll('.pxbtn')) as HTMLElement[];
+    // Order: dayOpen, weekOpen, prevDayHigh, prevDayLow, prevWeekHigh, prevWeekLow.
+    fireEvent.click(btns[2]!); // prevDayHigh → coincides with BSL
+    expect(screen.getByTestId('ref')).toHaveTextContent('BSL · Haut de la veille ·');
+
+    fireEvent.click(btns[2]!); // clear
+    fireEvent.click(btns[0]!); // dayOpen (2398.6) → far from any pocket → plain
+    const ref = screen.getByTestId('ref').textContent ?? '';
+    expect(ref).toContain('Ouverture du jour ·');
+    expect(ref).not.toContain('BSL');
+    expect(ref).not.toContain('SSL');
+  });
+
+  it('never classes a repère as important / priority / target (RG-1d posture)', async () => {
+    const { container } = render(<Harness structure={FULL_STRUCT} marketStatus={OPEN_STATUS} />);
+    await waitFor(() => expect(screen.getByText('Niveaux de référence')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('Niveaux de référence').closest('.tile') as HTMLElement);
+    const panel = (await waitFor(() => {
+      const p = container.querySelector('.ev');
+      expect(p).toBeTruthy();
+      return p as HTMLElement;
+    })).closest('.card')?.textContent ?? '';
+    expect(panel).not.toMatch(/important|majeur|prioritaire|cible|la plus intéressante/i);
+  });
+
   it('drops a level whose period the cache could not fully cover, and names it « données insuffisantes »', async () => {
     render(
       <Harness

@@ -229,6 +229,19 @@
   flex: 1;
   line-height: 1.4;
 }
+/* RG-1d: factual mark when a repère coincides with a detected liquidity pocket.
+   Neutral, monospace, dim — a coincidence of levels, never a ranking or target. */
+.app-shell .ev-k .coin {
+  margin-left: 6px;
+  padding: 0 4px;
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--faint);
+  border: 1px solid var(--line, currentColor);
+  border-radius: 3px;
+  opacity: 0.8;
+  white-space: nowrap;
+}
 .app-shell .ev-v {
   font-family: var(--font-mono), 'JetBrains Mono', monospace;
   font-weight: 500;

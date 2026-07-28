@@ -15,6 +15,11 @@ import {
   distancePct,
   type ReferenceLevels,
 } from '@/lib/market-reading/reference-levels';
+import {
+  matchLiquidity,
+  coincidenceTolerance,
+} from '@/lib/market-reading/reference-coincidence';
+import { formatLiquiditySideShort } from '@/lib/market-reading/formatters';
 import { useChartViewOptional } from '@/lib/chart/viewState';
 import {
   computeSession,
@@ -27,6 +32,7 @@ import {
 import type {
   BOSRecent,
   CHOCHRecent,
+  LiquiditySide,
   MarketReadingHeader,
   MarketReadingRegime,
   MarketReadingStructure,
@@ -410,9 +416,26 @@ export function RegimeCard({
     onToggleHelp(`${RG}${key}:${tab}`);
   }
 
-  // Explicit chart-line label — « Haut de la veille · 4 202,03 » — so a calendar
-  // repère painted on the chart is never mistaken for a detected zone (RG-1c).
-  const refLabel = (label: string, value: number) => `${label} · ${px(value)}`;
+  // Coincidence of a repère with a DETECTED liquidity pocket (RG-1d). Tolerance =
+  // a quarter of the recent average candle amplitude; null when no basis → no
+  // coincidence claimed. Verified against real engine pools, never assumed — a
+  // « haut de la veille » is NOT a BSL, it may merely COINCIDE with one.
+  const coincidenceTol = coincidenceTolerance(regime.volatility_detail?.recent_avg);
+  const coincidentSide = React.useCallback(
+    (value: number): LiquiditySide | null =>
+      matchLiquidity(value, structure.liquidity_pools, coincidenceTol),
+    [structure.liquidity_pools, coincidenceTol],
+  );
+
+  // Explicit chart-line label — « Haut de la veille · 4 202,03 », prefixed with the
+  // pocket side when the level coincides with a detected pocket (« BSL · Haut de la
+  // veille · … ») — so a calendar repère painted on the chart is never mistaken for
+  // a detected zone (RG-1c) and a real level coincidence is named (RG-1d).
+  const refLabel = (label: string, value: number) => {
+    const side = coincidentSide(value);
+    const named = side ? `${formatLiquiditySideShort(side)} · ${label}` : label;
+    return `${named} · ${px(value)}`;
+  };
 
   function traceLevel(label: string, value: number) {
     const display = refLabel(label, value);
@@ -558,6 +581,7 @@ export function RegimeCard({
                 referenceLevel,
                 traceLevel,
                 refLabel,
+                sideOf: coincidentSide,
               })
             )}
           </div>
@@ -624,12 +648,22 @@ interface DataCtx {
   referenceLevel: { price: number; label: string } | null;
   traceLevel: (label: string, value: number) => void;
   refLabel: (label: string, value: number) => string;
+  /** Side of a detected pocket coinciding with a price level, or null (RG-1d). */
+  sideOf: (value: number) => LiquiditySide | null;
 }
 
-function fmtSigned(pct: number | null): string {
+/**
+ * A price gap expressed in WORDS, never a bare sign (RG-1d): « 1,33 % au-dessus »
+ * / « 1,23 % en dessous » / « au prix courant » when the gap rounds to 0,00 % at
+ * the displayed precision. The word carries the direction — no « + » / « − ».
+ * `pct` is (level − price) / price × 100 (positive ⇒ level above the price).
+ */
+function relWord(pct: number | null, t: (k: string, v?: Record<string, string>) => string): string {
   if (pct == null) return '';
-  const sign = pct > 0 ? '+ ' : pct < 0 ? '− ' : '';
-  return `${sign}${Math.abs(pct).toFixed(2)} %`;
+  const abs = Math.abs(pct);
+  if (abs < 0.005) return t('data.relAt'); // rounds to 0,00 % → « au prix courant »
+  const val = abs.toFixed(2);
+  return pct > 0 ? t('data.relAbove', { pct: val }) : t('data.relBelow', { pct: val });
 }
 
 function renderData(k: string, c: DataCtx): React.ReactNode {
@@ -703,8 +737,8 @@ function renderData(k: string, c: DataCtx): React.ReactNode {
           </div>
           <div className="ev">
             <EvRow k={t('data.currentPrice')} v={px(c.price)} />
-            <EvRow k={t('data.distTop')} v={px(c.range.high - c.price)} t={fmtSigned(distTop)} />
-            <EvRow k={t('data.distBottom')} v={px(c.price - c.range.low)} t={fmtSigned(distBottom)} />
+            <EvRow k={t('data.distTop')} v={px(c.range.high - c.price)} t={relWord(distTop, t)} />
+            <EvRow k={t('data.distBottom')} v={px(c.price - c.range.low)} t={relWord(distBottom, t)} />
             <EvRow k={t('data.rangeSpan')} v={px(c.range.high - c.range.low)} />
           </div>
           <Dp>{withBold(t('data.posNote'))}</Dp>
@@ -884,13 +918,25 @@ function renderData(k: string, c: DataCtx): React.ReactNode {
         <>
           <Dh4>{t('data.lvlHead', { price: px(c.price) })}</Dh4>
           <div className="ev">
-            {c.levelRows.map((r) => (
-              <div className="ev-r" key={r.key}>
-                <span className="ev-k">{r.label}</span>
-                <span className="ev-t">{fmtSigned(distancePct(r.value, c.price))}</span>
-                <PxBtn label={r.label} value={r.value} c={c} />
-              </div>
-            ))}
+            {c.levelRows.map((r) => {
+              // A small factual mark BEFORE clicking when the level coincides with
+              // a detected pocket — « ≈ BSL » — never a ranking or a target (RG-1d).
+              const side = c.sideOf(r.value);
+              return (
+                <div className="ev-r" key={r.key}>
+                  <span className="ev-k">
+                    {r.label}
+                    {side && (
+                      <span className="coin" title={t('data.coincidence')}>
+                        {t('data.coincidenceMark', { side: formatLiquiditySideShort(side) })}
+                      </span>
+                    )}
+                  </span>
+                  <span className="ev-t">{relWord(distancePct(r.value, c.price), t)}</span>
+                  <PxBtn label={r.label} value={r.value} c={c} />
+                </div>
+              );
+            })}
           </div>
           {c.levelsInsufficient.length > 0 && (
             <Dp>{t('data.lvlInsufficient', { periods: c.levelsInsufficient.join(', ') })}</Dp>
