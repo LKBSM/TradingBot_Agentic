@@ -13,8 +13,10 @@ import {
 } from '@/lib/market-reading/hooks';
 import { useSiblingZones } from '@/lib/zones/use-sibling-zones';
 import {
+  DEFAULT_INSTRUMENT,
+  DEFAULT_TIMEFRAME,
+  DISPLAY_TIMEFRAMES,
   SUPPORTED_INSTRUMENTS,
-  SUPPORTED_TIMEFRAMES,
 } from '@/lib/market-reading/perimeter';
 import { buildAppHref } from '@/lib/conditions/app-link';
 import { useReadingFormatters } from '@/lib/market-reading/use-reading-formatters';
@@ -114,10 +116,10 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
   );
 
   const [instrument, setInstrumentState] = React.useState<string>(
-    urlCombo?.instrument ?? SUPPORTED_INSTRUMENTS[0],
+    urlCombo?.instrument ?? DEFAULT_INSTRUMENT,
   );
   const [timeframe, setTimeframeState] = React.useState<string>(
-    urlCombo?.timeframe ?? SUPPORTED_TIMEFRAMES[0],
+    urlCombo?.timeframe ?? DEFAULT_TIMEFRAME,
   );
 
   // URL → state: reflect a deep-link / back-forward change into the selection.
@@ -296,7 +298,7 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
           ariaLabel={t('selector.instrument')}
         />
         <Segmented
-          options={SUPPORTED_TIMEFRAMES.map((tf) => ({ value: tf, label: fmt.timeframe(tf) }))}
+          options={DISPLAY_TIMEFRAMES.map((tf) => ({ value: tf, label: fmt.timeframe(tf) }))}
           value={timeframe}
           onChange={setTimeframe}
           ariaLabel={t('selector.timeframe')}

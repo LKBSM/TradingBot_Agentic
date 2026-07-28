@@ -22,9 +22,13 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["market-reading"])
 
-# V1 perimeter per docs/architecture/MIA_MARKETS_V2_VISION.md §1.3
-SUPPORTED_INSTRUMENTS = frozenset({"XAUUSD", "EURUSD"})
-SUPPORTED_TIMEFRAMES = frozenset({"M15", "H1", "H4"})
+# Perimeter — single source of truth = the LB-1 lookback config (M1..D1). A
+# request for a combo with no cached data simply 404s downstream; validation
+# accepts the full supported set so an M1 deep-link works once the gate is on.
+from src.intelligence.lookback_config import supported_instruments, supported_timeframes
+
+SUPPORTED_INSTRUMENTS = frozenset(supported_instruments())
+SUPPORTED_TIMEFRAMES = frozenset(supported_timeframes())
 
 
 @router.get("/market-reading", response_model=MarketReading)

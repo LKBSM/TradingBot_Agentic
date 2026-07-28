@@ -10,15 +10,19 @@ import {
 } from '../store';
 
 describe('active-combo store', () => {
-  it('exposes the 6 supported combos (XAUUSD/EURUSD × M15/H1/H4)', () => {
-    expect(SUPPORTED_COMBOS).toHaveLength(6);
+  it('exposes the displayed combos (XAUUSD/EURUSD × M5/M15/H1/H4/D1, M1 gated off)', () => {
+    expect(SUPPORTED_COMBOS).toHaveLength(10);
     expect(SUPPORTED_COMBOS.map(comboKey)).toEqual([
+      'XAUUSD:M5',
       'XAUUSD:M15',
       'XAUUSD:H1',
       'XAUUSD:H4',
+      'XAUUSD:D1',
+      'EURUSD:M5',
       'EURUSD:M15',
       'EURUSD:H1',
       'EURUSD:H4',
+      'EURUSD:D1',
     ]);
   });
 
@@ -48,7 +52,7 @@ describe('active-combo store', () => {
     const { result } = renderHook(() => useActiveCombo(), { wrapper });
 
     expect(result.current.active).toBeNull();
-    expect(result.current.combos).toHaveLength(6);
+    expect(result.current.combos).toHaveLength(10);
 
     act(() => result.current.select({ instrument: 'EURUSD', timeframe: 'H1' }));
     expect(result.current.active).toEqual({

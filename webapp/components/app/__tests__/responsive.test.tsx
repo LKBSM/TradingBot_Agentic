@@ -128,14 +128,15 @@ describe('responsive layout — phone + tablet (<1280px)', () => {
     renderApp();
 
     const marketsPanel = await screen.findByRole('tabpanel');
+    // First displayed combo is now XAUUSD M5 (M1 gated off → M5 leads the list).
     fireEvent.click(within(marketsPanel).getAllByRole('button')[0]!);
 
     // Switched to Lecture → the reading renders.
     await waitFor(() =>
       expect(screen.getByText('Tendance haussière')).toBeInTheDocument(),
     );
-    // Header now reflects the active combo.
-    expect(screen.getByText(/Or \(XAU\/USD\) · 15 minutes/)).toBeInTheDocument();
+    // Header now reflects the active combo (the selected M5).
+    expect(screen.getByText(/Or \(XAU\/USD\) · 5 minutes/)).toBeInTheDocument();
   });
 
   it('shows the chat sidebar when the Chat tab is opened', async () => {

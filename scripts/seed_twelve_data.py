@@ -1,7 +1,7 @@
 """Seed the local candles cache from Twelve Data for XAU + EURUSD.
 
 Usage:
-    python scripts/seed_twelve_data.py                          # default 6 combos
+    python scripts/seed_twelve_data.py                          # all enabled combos
     python scripts/seed_twelve_data.py --dry-run                # no API call
     python scripts/seed_twelve_data.py --instrument XAUUSD --timeframe M15
 
@@ -17,8 +17,13 @@ import sys
 import time
 from typing import Iterable, List, Tuple
 
-DEFAULT_INSTRUMENTS: List[str] = ["XAUUSD", "EURUSD"]
-DEFAULT_TIMEFRAMES: List[str] = ["M15", "H1", "H4"]
+from src.intelligence.lookback_config import enabled_timeframes, supported_instruments
+
+# Single source of truth = the LB-1 perimeter (M1 gated off by default). For a
+# DEEP, quota-aware, resumable fill use scripts/backfill_history.py instead — this
+# seeder is a quick shallow warm-up (``--lookback`` bars per combo).
+DEFAULT_INSTRUMENTS: List[str] = list(supported_instruments())
+DEFAULT_TIMEFRAMES: List[str] = list(enabled_timeframes())
 DEFAULT_LOOKBACK: int = 100
 
 
@@ -53,8 +58,8 @@ def main(argv: List[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Seed candles cache from Twelve Data"
     )
-    parser.add_argument("--instrument", help="Single instrument (default: all 2)")
-    parser.add_argument("--timeframe", help="Single timeframe (default: all 3)")
+    parser.add_argument("--instrument", help="Single instrument (default: all in perimeter)")
+    parser.add_argument("--timeframe", help="Single timeframe (default: all enabled)")
     parser.add_argument(
         "--lookback", type=int, default=DEFAULT_LOOKBACK,
         help=f"Bars per combo (default: {DEFAULT_LOOKBACK})",

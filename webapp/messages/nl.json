@@ -1620,7 +1620,7 @@
       "detail": "Marktgegevens via de Twelve Data API (gratis niveau, 800 aanvragen per dag in V1).",
       "providerLabel": "Leverancier",
       "coverageLabel": "Dekking V1",
-      "coverage": "XAU/USD en EUR/USD, op 15 minuten, 1 uur en 4 uur.",
+      "coverage": "XAU/USD en EUR/USD, van 5 minuten tot dagelijks.",
       "refreshLabel": "Frequentie",
       "refresh": "Update bij elke candle-sluiting."
     },

@@ -13,6 +13,7 @@ import logging
 import os
 import sqlite3
 import threading
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
@@ -20,6 +21,20 @@ from typing import List, Optional
 from src.intelligence.data_providers.twelve_data_provider import Candle
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class CandleCoverage:
+    """How much history is actually in the cache for one combo.
+
+    ``oldest_ts`` is the truthful start of coverage — what the UI shows as
+    "historique depuis le …". A partial fill must never be presented as complete,
+    so this is read straight from the rows, never inferred from a target.
+    """
+
+    count: int
+    oldest_ts: Optional[datetime]
+    newest_ts: Optional[datetime]
 
 
 class CandlesCacheStore:
@@ -226,3 +241,25 @@ class CandlesCacheStore:
                 return int(cur.fetchone()["n"])
             finally:
                 conn.close()
+
+    def get_coverage(self, instrument: str, timeframe: str) -> CandleCoverage:
+        """Count + oldest + newest cached candle for a combo, in one query.
+
+        The single source for honest coverage reporting (backfill skip-logic and
+        the "historique depuis le …" UI). Empty combo → count 0, timestamps None.
+        """
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                cur = conn.execute(
+                    "SELECT COUNT(*) AS n, MIN(ts) AS oldest, MAX(ts) AS newest "
+                    "FROM candles_cache WHERE instrument = ? AND timeframe = ?",
+                    (instrument, timeframe),
+                )
+                row = cur.fetchone()
+            finally:
+                conn.close()
+        count = int(row["n"]) if row and row["n"] is not None else 0
+        oldest = datetime.fromisoformat(row["oldest"]) if count and row["oldest"] else None
+        newest = datetime.fromisoformat(row["newest"]) if count and row["newest"] else None
+        return CandleCoverage(count=count, oldest_ts=oldest, newest_ts=newest)

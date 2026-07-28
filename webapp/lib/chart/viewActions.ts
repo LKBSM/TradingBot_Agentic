@@ -15,6 +15,14 @@
  * how to change the chart's display state.
  */
 
+// Single source of truth for the instrument/timeframe perimeter (LB-1). Kept in
+// the server-safe plain module; imported for local validation below and
+// re-exported so existing importers from viewActions keep working without a
+// second, drift-prone copy.
+import { SUPPORTED_INSTRUMENTS, SUPPORTED_TIMEFRAMES } from '@/lib/market-reading/perimeter';
+
+export { SUPPORTED_INSTRUMENTS, SUPPORTED_TIMEFRAMES };
+
 export type ChartLayer = 'fvg' | 'ob' | 'breaks' | 'liquidity' | 'all';
 
 export const ALLOWED_LAYERS: readonly ChartLayer[] = [
@@ -39,9 +47,6 @@ export const ALLOWED_MULTI_LAYERS: readonly MultiChartLayer[] = [
   'breaks',
   'liquidity',
 ];
-
-export const SUPPORTED_INSTRUMENTS = ['XAUUSD', 'EURUSD'] as const;
-export const SUPPORTED_TIMEFRAMES = ['M15', 'H1', 'H4'] as const;
 
 /** Geometry-shaped keys that must NEVER appear on a view action. */
 const GEOMETRY_KEYS = new Set([

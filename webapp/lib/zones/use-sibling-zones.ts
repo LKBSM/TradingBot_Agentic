@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { fetchMarketReading } from '@/lib/market-reading/api-client';
-import { SUPPORTED_TIMEFRAMES } from '@/lib/market-reading/perimeter';
+import { DISPLAY_TIMEFRAMES } from '@/lib/market-reading/perimeter';
 import { getMockReading, READING_DATA_SOURCE } from '@/lib/mockReadings';
 import type { ReadingSource } from '@/lib/market-reading/hooks';
 import { collectZones, type SiblingZone } from './lifecycle';
@@ -53,7 +53,7 @@ export function useSiblingZones(
       return;
     }
 
-    const others = SUPPORTED_TIMEFRAMES.filter((tf) => tf !== timeframe);
+    const others = DISPLAY_TIMEFRAMES.filter((tf) => tf !== timeframe);
     const seq = ++seqRef.current;
     setSiblings([]);
     setIsLoading(true);
