@@ -1620,7 +1620,7 @@
       "detail": "بيانات السوق عبر واجهة Twelve Data (الباقة المجانية، 800 طلب في اليوم في الإصدار الأول).",
       "providerLabel": "المزوّد",
       "coverageLabel": "التغطية في الإصدار الأول",
-      "coverage": "XAU/USD وEUR/USD، على 15 دقيقة وساعة و4 ساعات.",
+      "coverage": "XAU/USD وEUR/USD، من 5 دقائق إلى يومي.",
       "refreshLabel": "التواتر",
       "refresh": "تحديث عند كل إغلاق شمعة."
     },

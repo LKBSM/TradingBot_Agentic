@@ -21,12 +21,12 @@ beforeEach(() => {
 });
 
 describe('InstrumentSidebar — catalogue + search filter', () => {
-  it('lists both instruments and their 3 timeframes (6 select buttons)', () => {
+  it('lists both instruments and their displayed timeframes (M1 gated off)', () => {
     renderSidebar();
     expect(screen.getByText('Or (XAU/USD)')).toBeInTheDocument();
     expect(screen.getByText('Euro / Dollar (EUR/USD)')).toBeInTheDocument();
-    // 6 select buttons + 6 pin buttons = 12 buttons total.
-    expect(screen.getAllByRole('button', { name: /Épingler/ })).toHaveLength(6);
+    // 2 instruments × 5 displayed timeframes (M5/M15/H1/H4/D1) = 10 pin buttons.
+    expect(screen.getAllByRole('button', { name: /Épingler/ })).toHaveLength(10);
   });
 
   it('filters the catalogue by instrument name', () => {

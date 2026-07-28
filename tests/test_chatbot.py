@@ -259,8 +259,13 @@ def test_signal_summary_is_injected_in_system_prompt() -> None:
 # --------------------------------------------------------------------------- #
 
 
+# Pin the timeframe set so these tests are independent of the default perimeter
+# (which LB-1 widened to five enabled TFs).
+_TFS_3 = ("M15", "H1", "H4")
+
+
 def test_summary_format_has_seven_fields() -> None:
-    provider = SignalSummaryProvider(StubAssembler())
+    provider = SignalSummaryProvider(StubAssembler(), timeframes=_TFS_3)
     summary = provider.get()
     assert set(summary) == {"instruments_tracked"}
     assert len(summary["instruments_tracked"]) == 6  # 2 instruments × 3 TFs
@@ -275,7 +280,7 @@ def test_summary_format_has_seven_fields() -> None:
 def test_summary_cache_hit_within_ttl() -> None:
     clock = _Clock(datetime(2026, 6, 5, 14, 0, tzinfo=timezone.utc))
     assembler = StubAssembler()
-    provider = SignalSummaryProvider(assembler, clock=clock)
+    provider = SignalSummaryProvider(assembler, clock=clock, timeframes=_TFS_3)
     provider.get()
     clock.now += timedelta(seconds=30)
     provider.get()
@@ -285,7 +290,7 @@ def test_summary_cache_hit_within_ttl() -> None:
 def test_summary_cache_miss_after_ttl() -> None:
     clock = _Clock(datetime(2026, 6, 5, 14, 0, tzinfo=timezone.utc))
     assembler = StubAssembler()
-    provider = SignalSummaryProvider(assembler, clock=clock)
+    provider = SignalSummaryProvider(assembler, clock=clock, timeframes=_TFS_3)
     provider.get()
     clock.now += timedelta(seconds=61)
     provider.get()
@@ -294,7 +299,7 @@ def test_summary_cache_miss_after_ttl() -> None:
 
 def test_summary_graceful_degradation_per_combination() -> None:
     assembler = StubAssembler(fail_on={("EURUSD", "H4")})
-    provider = SignalSummaryProvider(assembler)
+    provider = SignalSummaryProvider(assembler, timeframes=_TFS_3)
     summary = provider.get()
     tracked = summary["instruments_tracked"]
     assert len(tracked) == 5  # 6 combos minus the failing one

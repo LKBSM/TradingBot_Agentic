@@ -1620,7 +1620,7 @@
       "detail": "Dane rynkowe przez API Twelve Data (poziom bezpłatny, 800 zapytań dziennie w V1).",
       "providerLabel": "Dostawca",
       "coverageLabel": "Zasięg V1",
-      "coverage": "XAU/USD i EUR/USD, na 15 minutach, 1 godzinie i 4 godzinach.",
+      "coverage": "XAU/USD i EUR/USD, od 5 minut do dziennego.",
       "refreshLabel": "Częstotliwość",
       "refresh": "Aktualizacja przy każdym zamknięciu świecy."
     },

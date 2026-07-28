@@ -70,7 +70,7 @@ describe('thread-store sanitisation (never trusts storage)', () => {
       JSON.stringify([
         makeThread('XAUUSD', 'H1', 1),
         makeThread('BTCUSD', 'H1', 2), // unsupported instrument
-        makeThread('XAUUSD', 'M5', 3), // unsupported timeframe
+        makeThread('XAUUSD', 'W1', 3), // unsupported timeframe (not in perimeter)
         { ...makeThread('EURUSD', 'H4', 4), id: 'app:XAUUSD:H4' }, // id mismatch
       ]),
     );

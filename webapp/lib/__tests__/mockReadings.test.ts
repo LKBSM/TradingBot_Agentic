@@ -4,11 +4,22 @@ import {
   getMockCandles,
   getMockReading,
 } from '@/lib/mockReadings';
-import { SUPPORTED_COMBOS } from '@/lib/market-reading/store';
+// The demo/mock data source curates a subset (XAUUSD/EURUSD × M15/H1/H4). It is
+// intentionally NOT the full LB-1 perimeter — the newer M5/D1 combos degrade to
+// "unavailable" in mock mode (getMockReading → null), which the UI handles like
+// any un-bootstrapped combo. This test pins the curated set, not the perimeter.
+const MOCK_COMBOS = [
+  { instrument: 'XAUUSD', timeframe: 'M15' },
+  { instrument: 'XAUUSD', timeframe: 'H1' },
+  { instrument: 'XAUUSD', timeframe: 'H4' },
+  { instrument: 'EURUSD', timeframe: 'M15' },
+  { instrument: 'EURUSD', timeframe: 'H1' },
+  { instrument: 'EURUSD', timeframe: 'H4' },
+] as const;
 
 describe('mockReadings — readings', () => {
-  it('covers every V1 combo with a schema-valid reading', () => {
-    for (const combo of SUPPORTED_COMBOS) {
+  it('covers every curated mock combo with a schema-valid reading', () => {
+    for (const combo of MOCK_COMBOS) {
       const reading = getMockReading(combo.instrument, combo.timeframe);
       expect(reading, `${combo.instrument}:${combo.timeframe}`).not.toBeNull();
       expect(reading!.header.instrument).toBe(combo.instrument);

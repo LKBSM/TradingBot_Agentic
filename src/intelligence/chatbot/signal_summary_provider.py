@@ -4,10 +4,11 @@ Produces the ``signal_summary`` that is injected into the chatbot system prompt
 by default (so most questions are answered without any tool call) and is also
 exposed as the ``get_signal_summary`` tool.
 
-It condenses the 6 tracked combinations (XAUUSD/EURUSD × M15/H1/H4) into a small
-dict. The result is cached for ``CACHE_TTL_SECONDS`` (60s) thread-safely: within
-a short user session the summary is stable (a new candle close is the only thing
-that would change it), so we avoid re-running the assembler 6× per message.
+It condenses the tracked combinations (XAUUSD/EURUSD × the enabled LB-1
+timeframes) into a small dict. The result is cached for ``CACHE_TTL_SECONDS``
+(60s) thread-safely: within a short user session the summary is stable (a new
+candle close is the only thing that would change it), so we avoid re-running the
+assembler once per combo per message.
 
 Degradation is per-combination: if one combination fails to generate, the other
 five still populate the summary.
@@ -20,10 +21,13 @@ import threading
 from datetime import datetime, timezone
 from typing import Any, Callable, Optional, Sequence
 
+from src.intelligence.lookback_config import enabled_timeframes, supported_instruments
+
 logger = logging.getLogger(__name__)
 
-DEFAULT_INSTRUMENTS: tuple[str, ...] = ("XAUUSD", "EURUSD")
-DEFAULT_TIMEFRAMES: tuple[str, ...] = ("M15", "H1", "H4")
+# Single source of truth = the LB-1 perimeter (M1 gated off by default).
+DEFAULT_INSTRUMENTS: tuple[str, ...] = supported_instruments()
+DEFAULT_TIMEFRAMES: tuple[str, ...] = enabled_timeframes()
 
 
 class SignalSummaryProvider:

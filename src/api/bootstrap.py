@@ -208,14 +208,17 @@ def build_market_reading_scheduler(assembler: Any) -> Any:
     """Instantiate the hybrid scheduler bound to an assembler's stores."""
     from src.intelligence.scheduler import MarketReadingScheduler
 
-    # Keep the Conditions Scanner perimeter (the 6 fixed combos) always warm so
-    # the scanner never opens onto a missing or aged reading after an idle
-    # window. SCAN_COMBOS is the single source of truth for that perimeter.
+    # Keep the affordable live perimeter warm so the scanner never opens onto a
+    # missing/aged reading after an idle window. This is the LIVE-warm set
+    # (lookback_config.live_warm_combos): the enabled combos minus M5, which is
+    # too costly to poll natively on the free plan until the M5-base resample
+    # path is wired (~254 req/day vs an 800/day cap). M5's deep history is still
+    # backfilled; only its live refresh waits. LB1_WARM_M5=1 to include it.
     always_warm: Tuple[Tuple[str, str], ...] = ()
     if env_flag("SCHEDULER_WARM_SCAN_COMBOS", True):
-        from src.api.routes.conditions_scan import SCAN_COMBOS
+        from src.intelligence.lookback_config import live_warm_combos
 
-        always_warm = SCAN_COMBOS
+        always_warm = live_warm_combos()
 
     return MarketReadingScheduler(
         assembler=assembler,

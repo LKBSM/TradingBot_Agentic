@@ -10,13 +10,15 @@ import { useLocalizedHref } from '@/lib/i18n/href';
 import { resolveComboFromQuery } from '@/lib/conditions/app-link';
 import { formatInstrument, formatTimeframe } from '@/lib/market-reading/formatters';
 import {
+  DEFAULT_INSTRUMENT,
+  DEFAULT_TIMEFRAME,
+  DISPLAY_TIMEFRAMES,
   SUPPORTED_INSTRUMENTS,
-  SUPPORTED_TIMEFRAMES,
   type Combo,
 } from '@/lib/market-reading/store';
 import { SearchField, Freshbox } from './primitives';
 
-const DEFAULT_COMBO: Combo = { instrument: 'XAUUSD', timeframe: 'M15' };
+const DEFAULT_COMBO: Combo = { instrument: DEFAULT_INSTRUMENT, timeframe: DEFAULT_TIMEFRAME };
 
 /** Two-glyph mono badge shown in the market row (reference `.mkt .ic`). */
 const MARKET_GLYPH: Record<string, string> = { XAUUSD: 'Au', EURUSD: '€' };
@@ -130,7 +132,7 @@ export function ShellRail({ activeSpace }: { activeSpace: string }) {
       <div>
         <div className="rail-lbl">{t('app.rail.timeframe')}</div>
         <div style={{ display: 'flex', gap: 5, padding: '0 4px' }}>
-          {SUPPORTED_TIMEFRAMES.map((timeframe) => {
+          {DISPLAY_TIMEFRAMES.map((timeframe) => {
             const isActive = onApp && active.timeframe === timeframe;
             return (
               <button
