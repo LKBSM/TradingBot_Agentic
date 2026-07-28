@@ -32,6 +32,7 @@ from src.intelligence.conditions_scanner import (
     PALETTE,
     evaluate_reading,
 )
+from src.intelligence.lookback_config import enabled_combos
 from src.intelligence.market_reading_assembler import expected_last_candle_close
 
 logger = logging.getLogger(__name__)
@@ -39,19 +40,16 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["conditions-scanner"])
 
 # Fixed scan order — NEVER sorted by match count (no implicit quality ranking).
-SCAN_COMBOS: Tuple[Tuple[str, str], ...] = (
-    ("XAUUSD", "M15"),
-    ("XAUUSD", "H1"),
-    ("XAUUSD", "H4"),
-    ("EURUSD", "M15"),
-    ("EURUSD", "H1"),
-    ("EURUSD", "H4"),
-)
+# Single source of truth = the LB-1 lookback config perimeter (M1 gated off by
+# default). Instrument-major, timeframe order as configured.
+SCAN_COMBOS: Tuple[Tuple[str, str], ...] = enabled_combos()
 
 # Candle duration per timeframe — used to express a reading's age in *bars*
 # (market-cadence units) rather than wall-clock, so freshness is comparable
 # across timeframes. Factual; no prediction.
-_TF_MINUTES: Dict[str, int] = {"M15": 15, "M30": 30, "H1": 60, "H4": 240, "D1": 1440}
+_TF_MINUTES: Dict[str, int] = {
+    "M1": 1, "M5": 5, "M15": 15, "M30": 30, "H1": 60, "H4": 240, "D1": 1440,
+}
 
 # Freshness tiers, in bars behind the latest expected close. A healthy combo
 # (the 60s scheduler keeps the scanner perimeter warm) sits at 0–1 bar.

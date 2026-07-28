@@ -135,8 +135,10 @@ def test_scan_returns_full_match_with_met_conditions():
     assert xau["conditions_unmet"] == []
     assert xau["context"]["trend"] == "bullish"
     assert xau["context"]["mtf_trends"] == {"h4": "bullish", "h1": "bullish", "m15": "bullish"}
-    # The 3 EURUSD combos have no reading → reported as unavailable, never invented.
-    assert len(body["unavailable"]) == 3
+    # Every perimeter combo without a seeded reading is reported as unavailable,
+    # never invented (here: all combos except the 3 seeded XAU readings).
+    assert len(body["unavailable"]) == len(SCAN_COMBOS) - len(readings)
+    assert all(u["reason"] == "no_reading_yet" for u in body["unavailable"])
 
 
 def test_scan_reports_partial_match_transparently():
@@ -164,7 +166,7 @@ def test_scan_reports_partial_match_transparently():
 
 
 def test_scan_is_read_only_touches_only_get_latest_reading():
-    # All 6 combos return a reading; writes/detection on the store raise.
+    # Every perimeter combo returns a reading; writes/detection on the store raise.
     readings = {combo: _reading(combo[0], combo[1]) for combo in SCAN_COMBOS}
     store = _RecordingStore(readings)
     app = _make_app(_RecordingAssembler(store))
@@ -175,9 +177,9 @@ def test_scan_is_read_only_touches_only_get_latest_reading():
         json={"logic": "OR", "conditions": [{"type": "mtf_aligned"}]},
     )
     assert resp.status_code == 200
-    # Exactly the 6 combos read, in fixed order, and nothing else mutated.
+    # Exactly the perimeter combos read, in fixed order, and nothing else mutated.
     assert store.read_calls == list(SCAN_COMBOS)
-    assert resp.json()["scanned"] == 6
+    assert resp.json()["scanned"] == len(SCAN_COMBOS)
 
 
 def test_scan_rejects_predictive_condition_type():

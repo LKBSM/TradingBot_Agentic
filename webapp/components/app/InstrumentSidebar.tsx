@@ -13,8 +13,8 @@ import { usePinnedCombos } from '@/lib/market-reading/pins';
 import {
   comboKey,
   sameCombo,
+  DISPLAY_TIMEFRAMES,
   SUPPORTED_INSTRUMENTS,
-  SUPPORTED_TIMEFRAMES,
   type Combo,
 } from '@/lib/market-reading/store';
 
@@ -46,15 +46,16 @@ function comboMatches(combo: Combo, query: string): boolean {
 }
 
 /**
- * Left column — the V1 perimeter (XAUUSD/EURUSD × M15/H1/H4). Adds a search
- * filter (restricted to the fixed catalogue — never queries anything external)
- * and a pin feature: pinned combos float to a quick-access section at the top,
- * persisted locally (localStorage). The active combo is highlighted with a gold
- * accent bar and a freshness indicator derived from the loaded reading.
+ * Left column — the perimeter (XAUUSD/EURUSD × the displayed timeframes, M1
+ * hidden while gated off). Adds a search filter (restricted to the fixed
+ * catalogue — never queries anything external) and a pin feature: pinned combos
+ * float to a quick-access section at the top, persisted locally (localStorage).
+ * The active combo is highlighted with a gold accent bar and a freshness
+ * indicator derived from the loaded reading.
  *
  * Note: only the active combo's reading is fetched, so the freshness marker is
- * shown on the active item only (a full 6-combo freshness grid would mean six
- * background fetches — deferred).
+ * shown on the active item only (a full per-combo freshness grid would mean one
+ * background fetch each — deferred).
  */
 export function InstrumentSidebar({
   active,
@@ -69,7 +70,7 @@ export function InstrumentSidebar({
 
   const groups = SUPPORTED_INSTRUMENTS.map((instrument) => ({
     instrument,
-    timeframes: SUPPORTED_TIMEFRAMES.filter((timeframe) =>
+    timeframes: DISPLAY_TIMEFRAMES.filter((timeframe) =>
       comboMatches({ instrument, timeframe }, query),
     ),
   })).filter((g) => g.timeframes.length > 0);

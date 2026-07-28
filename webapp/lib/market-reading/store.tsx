@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { SUPPORTED_INSTRUMENTS, SUPPORTED_TIMEFRAMES } from './perimeter';
+import { DISPLAY_TIMEFRAMES, SUPPORTED_INSTRUMENTS, SUPPORTED_TIMEFRAMES } from './perimeter';
 
 /**
  * Lightweight shared state for the active (instrument, timeframe) combination
@@ -15,15 +15,21 @@ export interface Combo {
 }
 
 /**
- * V1 perimeter per the backend endpoint (SUPPORTED_INSTRUMENTS ×
- * SUPPORTED_TIMEFRAMES = XAUUSD/EURUSD × M15/H1/H4). Order is the display
- * order in the instruments column.
+ * LB-1 perimeter (SUPPORTED_INSTRUMENTS × SUPPORTED_TIMEFRAMES = XAUUSD/EURUSD ×
+ * M1/M5/M15/H1/H4/D1). The tracked combos use the DISPLAY timeframes, so M1 is
+ * excluded while its gate is off. Order is the display order in the column.
  */
-export { SUPPORTED_INSTRUMENTS, SUPPORTED_TIMEFRAMES };
+export {
+  SUPPORTED_INSTRUMENTS,
+  SUPPORTED_TIMEFRAMES,
+  DISPLAY_TIMEFRAMES,
+  DEFAULT_INSTRUMENT,
+  DEFAULT_TIMEFRAME,
+} from './perimeter';
 
 export const SUPPORTED_COMBOS: readonly Combo[] = SUPPORTED_INSTRUMENTS.flatMap(
   (instrument) =>
-    SUPPORTED_TIMEFRAMES.map((timeframe) => ({ instrument, timeframe })),
+    DISPLAY_TIMEFRAMES.map((timeframe) => ({ instrument, timeframe })),
 );
 
 /** Stable string key for a combo (used for React keys + equality). */
