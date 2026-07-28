@@ -304,7 +304,32 @@ class MarketReadingAssembler:
             reading.market_status = self.market_status(instrument, timeframe).to_dict()
         except Exception:  # pragma: no cover — status must never break a reading
             logger.warning("market_status attach failed for %s/%s", instrument, timeframe)
+        try:
+            reading.reference_levels = self.reference_levels(instrument)
+        except Exception:  # pragma: no cover — levels must never break a reading
+            logger.warning("reference_levels attach failed for %s", instrument)
         return reading
+
+    # Intraday source for the calendar reference levels, coarsest-first that
+    # still covers the previous week with the assembler lookback: H1 (~4 weeks of
+    # trading hours) gives hourly precision for opens and extremes; H4/M15 are
+    # fallbacks. Independent of the displayed timeframe — the « day »/« week »
+    # boundary is the MC-1 trading calendar, one definition (see reference_levels).
+    _REFERENCE_SOURCE_TFS: tuple[str, ...] = ("H1", "H4", "M15")
+
+    def reference_levels(self, instrument: str) -> Optional[dict]:
+        """Fresh calendar reference levels for ``instrument`` (RG-1c).
+
+        A pure cache read + arithmetic: aggregates the six levels over MC-1
+        trading days/weeks from the intraday candles already cached. Returns
+        ``None`` when no usable source series is cached (caller shows nothing)."""
+        from src.intelligence.reference_levels import compute_reference_levels
+
+        for tf in self._REFERENCE_SOURCE_TFS:
+            candles = self._candles_store.get_last_n_candles(instrument, tf, self._lookback)
+            if candles:
+                return compute_reference_levels(instrument, candles, self._clock()).to_dict()
+        return None
 
     def refresh_if_reopened(self, instrument: str, timeframe: str) -> bool:
         """Infrequent safety probe (MC-1): the market may reopen *before* the

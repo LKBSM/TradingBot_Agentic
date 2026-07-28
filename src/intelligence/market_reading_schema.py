@@ -315,6 +315,11 @@ class MarketReading(BaseModel):
     # the last closed candle — NEVER persisted (it depends on "now"), so the
     # stored payload always carries None and the accessor fills it per request.
     market_status: Optional[dict] = None
+    # RG-1c calendar reference levels (day/week open + previous day/week
+    # extremes), aggregated server-side over the MC-1 trading calendar. Computed
+    # fresh at response time from the intraday candle cache — NEVER persisted, so
+    # the stored payload always carries None and the accessor fills it per request.
+    reference_levels: Optional[dict] = None
 
 
 __all__ = [
