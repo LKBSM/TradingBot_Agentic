@@ -110,6 +110,23 @@ def test_m1_gate_enables(monkeypatch):
     assert len(combos) == 12  # 2 × 6
 
 
+def test_live_warm_excludes_m5_by_default(_default_env):
+    """M5 is too costly to poll natively on the free plan → not live-warmed."""
+    warm = lb.live_warm_combos()
+    assert all(tf != "M5" for (_i, tf) in warm)
+    assert len(warm) == 8  # 2 instruments × {M15,H1,H4,D1}
+    assert ("XAUUSD", "M15") in warm and ("EURUSD", "D1") in warm
+
+
+def test_live_warm_includes_m5_when_flagged(monkeypatch):
+    monkeypatch.delenv("SENTINEL_LOOKBACK_DEPTHS_PATH", raising=False)
+    monkeypatch.delenv("LB1_ENABLE_M1", raising=False)
+    monkeypatch.setenv("LB1_WARM_M5", "1")
+    lb.reset_cache()
+    warm = lb.live_warm_combos()
+    assert ("XAUUSD", "M5") in warm and len(warm) == 10
+
+
 def test_enabled_combos_are_instrument_major_and_ordered(_default_env):
     combos = lb.enabled_combos()
     # All XAUUSD combos precede all EURUSD combos; timeframe order preserved.

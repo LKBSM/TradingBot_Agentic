@@ -200,6 +200,25 @@ def enabled_combos() -> Tuple[Tuple[str, str], ...]:
     return tuple((inst, tf) for inst in supported_instruments() for tf in tfs)
 
 
+# Combos the LIVE scheduler actively polls (one provider request per closed
+# candle). Distinct from enabled_combos: M5 polled natively costs ~288 req/day
+# per symbol, which alone pushes 2 symbols to ~830/day — over the 800/day free
+# cap. Until the live M5-base resample path is wired (M15/H1 derived from the M5
+# feed instead of polled), M5 is excluded from live warming (its DEEP history is
+# still backfilled and viewable; only its per-5-min live refresh waits). Set
+# LB1_WARM_M5=1 to warm it natively once a plan/cadence allows.
+_WARM_M5_ENV = "LB1_WARM_M5"
+
+
+def live_warm_combos() -> Tuple[Tuple[str, str], ...]:
+    """Combos safe to keep warm live within the free-plan quota (≈254 req/day)."""
+    warm_m5 = os.environ.get(_WARM_M5_ENV, "").strip().lower() in ("1", "true", "yes", "on")
+    return tuple(
+        (inst, tf) for (inst, tf) in enabled_combos()
+        if tf.upper() != "M5" or warm_m5
+    )
+
+
 # --------------------------------------------------------------------------- #
 # Depth resolution
 # --------------------------------------------------------------------------- #
