@@ -52,23 +52,31 @@ export const TREND_WINDOW_BARS = 500;
 /**
  * Coarse CALENDAR span of `bars` candles of `timeframe`, as a {unit, count} pair
  * the caller localizes. A fixed bar count means a wildly different span per unit
- * (≈ 3 weeks on H1, ≈ 2 years on D1) — the Concept tooltip states it so the
- * client knows what « the window » actually covers on the unit they view. This
- * is a continuous-time approximation (bars × minutes); real calendar coverage is
- * a bit longer because of week-end gaps — hence the « ≈ » on screen. Returns
- * null for an unknown timeframe.
+ * (≈ a month on H1, ≈ 2 years on D1) — the Concept tooltip states it so the
+ * client knows what « the window » actually covers on the unit they view.
+ *
+ * A candle covers `min` minutes of TRADING time, and the spot market trades
+ * ~120 h/week (24 h × 5 days for FX / metal), so the CALENDAR span stretches
+ * across the week-end gaps. Using a naive continuous day (1440 min) would badly
+ * UNDERSTATE the slow units — e.g. 500 D1 candles are ~500 trading days ≈ 2 years
+ * of calendar, not the ~1.4 years a continuous count gives. We therefore convert
+ * via the trading-week (120 h). Approximate by design (holidays vary) → « ≈ » on
+ * screen. Returns null for an unknown timeframe.
  */
+const _TRADING_HOURS_PER_WEEK = 120; // 24 h × 5 days (FX / metal spot)
+
 export function trendWindowSpan(
   timeframe: string,
   bars: number = TREND_WINDOW_BARS,
 ): { unit: 'days' | 'weeks' | 'months' | 'years'; count: number } | null {
   const min = timeframeMinutes(timeframe);
   if (!min) return null;
-  const days = (bars * min) / 1_440;
-  if (days >= 365) return { unit: 'years', count: Math.max(1, Math.round(days / 365)) };
-  if (days >= 60) return { unit: 'months', count: Math.max(1, Math.round(days / 30)) };
-  if (days >= 14) return { unit: 'weeks', count: Math.max(1, Math.round(days / 7)) };
-  return { unit: 'days', count: Math.max(1, Math.round(days)) };
+  const tradingHours = (bars * min) / 60;
+  const calendarDays = (tradingHours / _TRADING_HOURS_PER_WEEK) * 7;
+  if (calendarDays >= 300) return { unit: 'years', count: Math.max(1, Math.round(calendarDays / 365)) };
+  if (calendarDays >= 55) return { unit: 'months', count: Math.max(1, Math.round(calendarDays / 30)) };
+  if (calendarDays >= 12) return { unit: 'weeks', count: Math.max(1, Math.round(calendarDays / 7)) };
+  return { unit: 'days', count: Math.max(1, Math.round(calendarDays)) };
 }
 
 // ─── (b) Trend maturity — anchored on the last CHOCH ─────────────────────────
