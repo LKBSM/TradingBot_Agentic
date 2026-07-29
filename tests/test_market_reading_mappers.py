@@ -1031,6 +1031,18 @@ def test_collect_structure_events_falls_back_to_close_without_break_level():
     assert ev["bos_events"][0]["level"] == 103.0
 
 
+def test_collect_structure_events_emits_real_bars_ago():
+    """bars_ago is the ANALYSED-bar distance from the event to the window end
+    (idx − event_idx) — the real count the front shows instead of wall-clock
+    hours ÷ tf (DG-1 point 2)."""
+    rows = [{"close": 100.0 + i} for i in range(10)]
+    rows[2].update(BOS_EVENT=1.0, BOS_BREAK_LEVEL=102.0)   # k=2
+    rows[7].update(CHOCH_SIGNAL=-1.0, BOS_BREAK_LEVEL=107.0)  # k=7
+    ev = collect_structure_events(_events_frame(rows), idx=9)
+    assert ev["bos_events"][0]["bars_ago"] == 7   # 9 − 2
+    assert ev["choch_events"][0]["bars_ago"] == 2  # 9 − 7
+
+
 def test_mapper_exposes_event_lists_when_collector_injected():
     """confluence_signal_to_structure publishes bos_events/choch_events from the
     injected _structure_events (read-only history)."""

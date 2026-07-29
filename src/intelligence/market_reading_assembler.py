@@ -515,10 +515,27 @@ class MarketReadingAssembler:
         smc_features, confluence_signal = self._smc_pipeline(candles)
         current_price = float(candles[-1].close) if candles else 0.0
 
+        # Honesty (DG-1 point 1): the header timestamp must name the LAST CANDLE
+        # ACTUALLY ANALYSED — derived from the real data (candles[-1].ts + span),
+        # never the wall-clock/calendar ``expected_close``. Otherwise a stalled
+        # feed (e.g. provider quota) keeps advancing candle_close_ts on the clock
+        # while the data underneath is frozen, and the "Données en retard"
+        # detection (market_status compares expected vs this stamp) can never
+        # fire — a lag stays silent. ``expected_close`` remains the CACHE-MATCH
+        # target only. When the data is fresh the two are equal.
+        span = timedelta(minutes=_TIMEFRAME_MINUTES[timeframe.upper()])
+        if candles:
+            last_ts = candles[-1].ts
+            if last_ts.tzinfo is None:
+                last_ts = last_ts.replace(tzinfo=timezone.utc)
+            actual_close = last_ts.astimezone(timezone.utc) + span
+        else:
+            actual_close = expected_close
+
         structure = confluence_signal_to_structure(
             confluence_signal=confluence_signal,
             smc_features=smc_features,
-            bar_ts=expected_close,
+            bar_ts=actual_close,
             current_price=current_price,
         )
 
@@ -550,7 +567,7 @@ class MarketReadingAssembler:
         header = MarketReadingHeader(
             instrument=instrument,
             timeframe=timeframe,
-            candle_close_ts=expected_close,
+            candle_close_ts=actual_close,
             close_price=current_price,
         )
         conditions = MarketReadingConditions(

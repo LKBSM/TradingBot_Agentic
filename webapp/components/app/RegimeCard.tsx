@@ -7,7 +7,11 @@ import { useReadingFormatters } from '@/lib/market-reading/use-reading-formatter
 import { useMtfTrends } from '@/lib/market-reading/hooks';
 import { mtfOrderFor } from '@/lib/market-reading/mtf-trend';
 import { isSessionRelevant, isPrevLevelsRelevant } from '@/lib/timeframes';
-import { deriveTrendMaturity } from '@/lib/market-reading/regime-facts';
+import {
+  deriveTrendMaturity,
+  trendWindowSpan,
+  TREND_WINDOW_BARS,
+} from '@/lib/market-reading/regime-facts';
 import { formatLocalDayLong, parseUtc } from '@/lib/time/localTime';
 import {
   structureRange,
@@ -397,9 +401,25 @@ export function RegimeCard({
     {
       key: 'mat',
       label: t('tiles.mat'),
-      value: maturity?.bars != null ? t('value.mat', { count: maturity.bars }) : null,
+      value:
+        maturity?.bars != null
+          ? t('value.mat', {
+              count: maturity.bars,
+              // « ≈ » only when the count is a wall-clock estimate (no bars_ago on
+              // the event); empty when it is the engine's real analysed-bar count.
+              approx: maturity.barsApproximate ? '≈ ' : '',
+            })
+          : null,
       mono: true,
-      sub: maturity ? t('sub.mat', { date: dayHm(maturity.brokenAt) }) : null,
+      // Name the CHOCH DIRECTION next to the date so the anchor's orientation is
+      // legible right beside « Tendance » — a bullish CHOCH under a bearish trend
+      // is no longer silent (DG-1 point 2 / display incoherence D-1).
+      sub: maturity
+        ? t('sub.mat', {
+            dir: maturity.direction === 'bullish' ? t('value.dirUp') : t('value.dirDown'),
+            date: dayHm(maturity.brokenAt),
+          })
+        : null,
       available: maturity != null && maturity.bars != null,
     },
     {
@@ -762,17 +782,27 @@ function renderData(k: string, c: DataCtx): React.ReactNode {
           <Dp>{c.t('data.phaseNote')}</Dp>
         </>
       );
-    case 'trend':
+    case 'trend': {
+      // DG-1 point 5 — name the window: a FIXED bar count whose calendar span
+      // depends on the viewed unit (≈ 3 semaines en H1, ≈ 2 ans en D1).
+      const span = trendWindowSpan(tf);
+      const spanText = span ? t(`data.windowSpan_${span.unit}`, { count: span.count }) : '';
       return (
         <>
           <Dh4>{t('data.trendHead')}</Dh4>
           <div className="ev">
             <EvRow k={t('data.resultRow')} v={fmt.trend(c.regime.trend).label} />
             <EvRow k={t('data.measuredOnRow')} v={tf} />
+            <EvRow
+              k={t('data.windowRow')}
+              v={t('data.windowValue', { bars: TREND_WINDOW_BARS, span: spanText })}
+            />
           </div>
           <Dp>{t('data.trendNote', { tf })}</Dp>
+          <Dp>{t('data.windowNote')}</Dp>
         </>
       );
+    }
     case 'vol': {
       const vd = c.vd;
       if (!vd) return <Dp>{t('data.trendNote', { tf })}</Dp>;

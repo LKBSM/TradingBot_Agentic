@@ -26,7 +26,7 @@
       "trend": "measured on {tf}",
       "vol": "{recent} recent vs {baseline} preceding",
       "pos": "{low} – {high}",
-      "mat": "since the CHOCH of {date}",
+      "mat": "since the {dir} CHOCH of {date}",
       "dens": "open on {tf}",
       "lvl": "{count, plural, one {# marker} other {# markers}} · open the detail",
       "sess": "{label} in {delay}",
@@ -35,11 +35,13 @@
     },
     "value": {
       "pos": "{pct} %",
-      "mat": "{count, plural, one {# candle} other {# candles}}",
+      "mat": "{approx}{count, plural, one {# candle} other {# candles}}",
       "dens": "{ob} OB · {fvg} FVG active",
       "align": "{count}/{total} units {arrow}",
       "alignNone": "no higher unit",
-      "notApplicable": "not applicable"
+      "notApplicable": "not applicable",
+      "dirUp": "bullish",
+      "dirDown": "bearish"
     },
     "data": {
       "phaseHead": "The two measures it is built from",
@@ -120,7 +122,14 @@
         "upcoming": "upcoming",
         "ongoing": "ongoing",
         "ended": "ended"
-      }
+      },
+      "windowRow": "Analysed window",
+      "windowValue": "last {bars} candles (≈ {span})",
+      "windowSpan_days": "{count, plural, one {# day} other {# days}}",
+      "windowSpan_weeks": "{count, plural, one {# week} other {# weeks}}",
+      "windowSpan_months": "{count, plural, one {# month} other {# months}}",
+      "windowSpan_years": "{count, plural, one {# year} other {# years}}",
+      "windowNote": "The window is a FIXED number of candles, so its calendar span depends on the unit (≈ 3 weeks on H1, ≈ 2 years on D1). The same « bearish trend » does not cover the same duration from one unit to the next."
     },
     "state": {
       "open": "Market open",
