@@ -14,6 +14,20 @@ Two descriptive, read-only endpoints:
       recomputed here.
 
 Neither endpoint calls a provider or runs detection.
+
+DG-1 decision (b) — SINGLE JOURNAL SOURCE (2026-07-29):
+  These endpoints are backed by the persisted StructureStore, which today is
+  seeded by the backfill only (the scheduler → IncrementalDetector.refresh wiring
+  is deferred, cf. AUDIT-lb-1 §4.2), so its journal is FROZEN between backfills.
+  The App reads its structure / journal / maturity from the LIVE assembler
+  (/api/market-reading) instead — that is the single source of truth on screen.
+  These endpoints are therefore intentionally NOT wired to any UI surface. If a
+  future surface consumes them, it must first (1) wire the scheduler so the store
+  stops being frozen, and (2) reconcile the window (DG-1 point 5) and LABEL the
+  covered period — otherwise two journals covering different periods reach the
+  same screen (the exact state DG-1 forbids). A guard test locks the "no UI
+  consumer" invariant:
+  webapp/lib/market-reading/__tests__/single-journal-guard.test.ts.
 """
 
 from __future__ import annotations
