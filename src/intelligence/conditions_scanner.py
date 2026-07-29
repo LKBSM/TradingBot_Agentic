@@ -186,8 +186,11 @@ ALLOWED_CONDITION_TYPES = frozenset(p["type"] for p in PALETTE)
 
 _PALETTE_BY_TYPE = {p["type"]: p for p in PALETTE}
 
-#: Minutes per supported timeframe — used only to express BOS recency in bars.
-_TF_MINUTES = {"M15": 15, "H1": 60, "H4": 240}
+#: Minutes per timeframe — used only to express BOS recency in bars. Derived from
+#: the single timeframe registry (TF-1), never a hand-copied subset.
+from src.intelligence import timeframe_registry as _tfreg
+
+_TF_MINUTES = _tfreg.minutes_map()
 
 #: Default recency window (in bars) for ``bos_recent_confirmed``.
 DEFAULT_BOS_MAX_BARS = 5

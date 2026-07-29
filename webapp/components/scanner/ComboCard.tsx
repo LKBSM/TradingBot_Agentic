@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { buildAppHref } from '@/lib/conditions/app-link';
+import { mtfOrderFor } from '@/lib/market-reading/mtf-trend';
 import type { ComboMatch } from '@/lib/conditions/types';
 import { biasGlyph, instrumentLabel } from './labels';
 import { useScannerLabels } from './use-scanner-labels';
@@ -39,11 +40,13 @@ export function ComboCard({
   ).length;
 
   // Full context sentence: trend · phase · MTF · OB/FVG (+ BOS/news heads-up).
-  // Descriptive only — includes what goes against, never a recommendation.
-  const mtf = (['h4', 'h1', 'm15'] as const)
-    .map((k) => {
-      const mtfTrend = ctx.mtf_trends?.[k] ?? ctx.mtf_confluence?.[k];
-      return `${k.toUpperCase()} ${biasGlyph(mtfTrend)}`;
+  // Descriptive only — includes what goes against, never a recommendation. The
+  // MTF units are RELATIVE to this combo's timeframe (TF-1 decision C), not a
+  // fixed H4·H1·M15 triplet.
+  const mtf = mtfOrderFor(match.timeframe)
+    .map(({ key, label }) => {
+      const mtfTrend = ctx.mtf_trends?.[key] ?? ctx.mtf_confluence?.[key];
+      return `${label} ${biasGlyph(mtfTrend)}`;
     })
     .join(' · ');
 
