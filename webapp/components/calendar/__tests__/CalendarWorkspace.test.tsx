@@ -2,40 +2,61 @@ import { render, fireEvent } from '@/components/test-utils';
 import { describe, expect, it } from 'vitest';
 import fr from '@/messages/fr.json';
 import { CalendarWorkspace } from '../CalendarWorkspace';
-import type { CalendarEvent, CalendarResponse } from '@/types/calendar';
+import type {
+  CalendarAttribution,
+  CalendarEvent,
+  CalendarResponse,
+} from '@/types/calendar';
 
 const NOW = new Date('2026-07-28T06:00:00Z');
 
-function ev(p: Partial<CalendarEvent> & Pick<CalendarEvent, 'event_id' | 'event' | 'scheduled_at'>): CalendarEvent {
+function ev(
+  p: Partial<CalendarEvent> &
+    Pick<CalendarEvent, 'event_id' | 'event' | 'scheduled_at' | 'source'>,
+): CalendarEvent {
   return {
-    source: 'forexfactory',
     series_code: null,
     license_label: null,
     currency: 'USD',
-    impact: 'high',
     organism: null,
+    periodicity: 'monthly',
     source_timezone: 'America/New_York',
+    time_confirmed: true,
     markets: ['XAUUSD', 'EURUSD'],
     value_unit: null,
     actual: null,
-    forecast: null,
+    actual_initial: null,
     previous: null,
     revised: false,
-    previous_before_revision: null,
+    revised_at: null,
     ...p,
   };
 }
+
+const ATTRIBUTION: CalendarAttribution[] = [
+  { source: 'bls', organism: 'Bureau of Labor Statistics', license_label: 'Domaine public (17 U.S.C. §105)', policy_url: 'https://www.bls.gov/opub/copyright-information.htm' },
+  { source: 'ecb', organism: 'Banque centrale européenne', license_label: 'Réutilisation si source citée et non modifiée', policy_url: 'https://www.ecb.europa.eu/x' },
+  { source: 'census', organism: 'U.S. Census Bureau', license_label: 'Domaine public (17 U.S.C. §105)', policy_url: 'https://www.census.gov/x' },
+];
 
 const DATA: CalendarResponse = {
   window_start: '2026-07-25T06:00:00Z',
   window_end: '2026-08-04T06:00:00Z',
   generated_at: NOW.toISOString(),
-  coverage: { source: 'forexfactory', feed_start: null, feed_end: null, partial: false },
+  coverage: {
+    source: 'official',
+    feed_start: null,
+    feed_end: null,
+    partial: false,
+    last_success: {},
+    stale_sources: [],
+  },
+  attribution: ATTRIBUTION,
   events: [
-    ev({ event_id: 'forexfactory:e1', event: 'CPI y/y', scheduled_at: '2026-07-28T12:30:00Z', impact: 'high' }),
-    ev({ event_id: 'forexfactory:e2', event: 'ECB rate', scheduled_at: '2026-07-28T14:00:00Z', impact: 'medium', currency: 'EUR', markets: ['EURUSD'], organism: 'Eurostat' }),
-    ev({ event_id: 'forexfactory:e3', event: 'ADP jobs', scheduled_at: '2026-07-29T12:00:00Z', impact: 'low', revised: true }),
-    ev({ event_id: 'forexfactory:e4', event: 'Retail sales', scheduled_at: '2026-07-27T12:00:00Z', impact: 'high' }),
+    ev({ event_id: 'bls:us_cpi:2026-07-28', source: 'bls', event: 'IPC', currency: 'USD', scheduled_at: '2026-07-28T12:30:00Z', organism: 'Bureau of Labor Statistics', periodicity: 'monthly' }),
+    ev({ event_id: 'ecb:ea_ecb_rate:2026-07-28', source: 'ecb', event: 'Décision BCE', currency: 'EUR', scheduled_at: '2026-07-28T12:15:00Z', markets: ['EURUSD'], organism: 'Banque centrale européenne', periodicity: 'eight_per_year' }),
+    ev({ event_id: 'census:us_retail:2026-07-29', source: 'census', event: 'Ventes au détail', scheduled_at: '2026-07-29T12:30:00Z', organism: 'U.S. Census Bureau', periodicity: 'monthly', revised: true, actual: 322.9, actual_initial: 321.5, revised_at: '2026-07-27T12:30:00Z' }),
+    ev({ event_id: 'bls:us_retail:2026-07-27', source: 'bls', event: 'IPP', scheduled_at: '2026-07-27T12:30:00Z', organism: 'Bureau of Labor Statistics' }),
   ],
 };
 
@@ -54,21 +75,35 @@ function chip(c: HTMLElement, label: string): HTMLElement {
   return el as HTMLElement;
 }
 
-describe('NW-1 CalendarWorkspace list', () => {
+describe('NW-1b CalendarWorkspace list', () => {
   it('shows only upcoming events by default, grouped chronologically', () => {
     const { container } = renderCal();
-    // e1, e2 (today) + e3 (tomorrow); the past e4 is hidden.
+    // today: ECB 12:15 then IPC 12:30 ; tomorrow: retail. Past IPP hidden.
     expect(rows(container)).toHaveLength(3);
-    expect(evNames(container)).toEqual(['CPI y/y', 'ECB rate', 'ADP jobs']);
+    expect(evNames(container)).toEqual(['Décision BCE', 'IPC', 'Ventes au détail']);
   });
 
   it('the amplitude slot shows the « mesures à venir » placeholder (NW-2 fills it)', () => {
     const { container } = renderCal();
-    const vals = Array.from(container.querySelectorAll('.cal-ampl .v')).map(
-      (e) => e.textContent,
-    );
+    const vals = Array.from(container.querySelectorAll('.cal-ampl .v')).map((e) => e.textContent);
     expect(vals.length).toBe(3);
     for (const v of vals) expect(v).toBe(fr.calendar.amplitude.pending);
+  });
+
+  it('exposes NO impact ranking on any surface — no colour-graded badge', () => {
+    const { container } = renderCal();
+    expect(container.querySelectorAll('.cal-impact')).toHaveLength(0);
+    const text = (container.textContent ?? '').toLowerCase();
+    // the impact vocabulary (élevé/moyen/faible as a ranking) must be gone
+    expect(text).not.toContain('impact');
+  });
+
+  it('the filters are factual: organism, market, periodicity (no impact filter)', () => {
+    const { container } = renderCal();
+    const secs = Array.from(container.querySelectorAll('.fsec')).map((e) => e.textContent);
+    expect(secs).toContain(fr.calendar.filters.organismLabel);
+    expect(secs).toContain(fr.calendar.filters.marketLabel);
+    expect(secs).toContain(fr.calendar.filters.periodicityLabel);
   });
 
   it('exposes NO amplitude/magnitude sort control — chronological order only', () => {
@@ -76,32 +111,48 @@ describe('NW-1 CalendarWorkspace list', () => {
     expect(
       container.querySelectorAll('select, [role="combobox"], [role="listbox"]'),
     ).toHaveLength(0);
-    // Order is by time; toggling nothing, the first row is the earliest today.
-    expect(evNames(container)[0]).toBe('CPI y/y');
+    expect(evNames(container)[0]).toBe('Décision BCE');
   });
 
-  it('zero impact chip selected → empty list + explicit message, never a fallback', () => {
+  it('zero periodicity chip selected → empty list + explicit message, never a fallback', () => {
     const { container } = renderCal();
-    fireEvent.click(chip(container, fr.calendar.impact.high));
-    fireEvent.click(chip(container, fr.calendar.impact.medium));
-    fireEvent.click(chip(container, fr.calendar.impact.low));
+    fireEvent.click(chip(container, fr.calendar.periodicity.monthly));
+    fireEvent.click(chip(container, fr.calendar.periodicity.quarterly));
+    fireEvent.click(chip(container, fr.calendar.periodicity.eight_per_year));
     expect(rows(container)).toHaveLength(0);
     expect(container.querySelector('.cal-empty')?.textContent).toContain(
       fr.calendar.empty.noSelection,
     );
   });
 
-  it('a missing organism renders as visibly absent; a present one is shown', () => {
+  it('an organism filter keeps only that source', () => {
     const { container } = renderCal();
+    // deselect everything but BCE by toggling the others off.
+    for (const s of ['bls', 'bea', 'census', 'federal_reserve', 'eurostat', 'forexfactory']) {
+      fireEvent.click(chip(container, fr.calendar.organism[s as 'bls']));
+    }
+    expect(evNames(container)).toEqual(['Décision BCE']);
+  });
+
+  it('a missing organism renders as visibly absent; a present one is shown', () => {
+    const withNull: CalendarResponse = {
+      ...DATA,
+      attribution: [...ATTRIBUTION, { source: 'forexfactory', organism: 'ForexFactory (prototype)', license_label: 'dev', policy_url: 'https://x' }],
+      events: [
+        ...DATA.events,
+        ev({ event_id: 'forexfactory:x:1', source: 'forexfactory', event: 'ADP', scheduled_at: '2026-07-28T13:00:00Z', organism: null, periodicity: null }),
+      ],
+    };
+    const { container } = render(<CalendarWorkspace locale="fr" data={withNull} now={NOW} />);
     const text = container.textContent ?? '';
-    expect(text).toContain(fr.calendar.provenance.organismMissing); // e1/e3 (null)
-    expect(text).toContain('Eurostat'); // e2
+    expect(text).toContain(fr.calendar.provenance.organismMissing);
+    expect(text).toContain('Bureau of Labor Statistics');
   });
 
   it('a revised value is surfaced as revised', () => {
     const { container } = renderCal();
-    const adp = rows(container).find((r) => (r.textContent ?? '').includes('ADP jobs'));
-    expect(adp?.textContent).toContain(fr.calendar.revisedBadge);
+    const r = rows(container).find((x) => (x.textContent ?? '').includes('Ventes au détail'));
+    expect(r?.textContent).toContain(fr.calendar.revisedBadge);
   });
 
   it('« Publications passées » switches to past releases', () => {
@@ -109,12 +160,32 @@ describe('NW-1 CalendarWorkspace list', () => {
     fireEvent.click(container.querySelector('.cal-past')!);
     const shown = rows(container);
     expect(shown).toHaveLength(1);
-    expect(shown[0]!.textContent).toContain('Retail sales');
+    expect(shown[0]!.textContent).toContain('IPP');
+  });
+
+  it('every rendered event has an attribution for its source (licence condition)', () => {
+    const { container } = renderCal();
+    const attribSources = new Set(DATA.attribution.map((a) => a.source));
+    // the block itself is present, naming each source used…
+    const block = container.querySelector('.cal-attrib');
+    expect(block).not.toBeNull();
+    expect(block?.textContent).toContain('Bureau of Labor Statistics');
+    expect(block?.textContent).toContain('Banque centrale européenne');
+    // …and no served event lacks an attribution entry.
+    for (const e of DATA.events) expect(attribSources.has(e.source)).toBe(true);
+  });
+
+  it('the attribution block links each source reuse policy', () => {
+    const { container } = renderCal();
+    const links = Array.from(container.querySelectorAll('.cal-attrib a')).map((a) =>
+      a.getAttribute('href'),
+    );
+    expect(links).toContain('https://www.bls.gov/opub/copyright-information.htm');
   });
 
   it('the attached markets are named (affecte Or, EUR/USD)', () => {
     const { container } = renderCal();
-    const cpi = rows(container).find((r) => (r.textContent ?? '').includes('CPI y/y'));
+    const cpi = rows(container).find((r) => (r.textContent ?? '').includes('IPC'));
     expect(cpi?.textContent).toContain('affecte Or, EUR/USD');
   });
 
@@ -123,9 +194,20 @@ describe('NW-1 CalendarWorkspace list', () => {
     const links = Array.from(container.querySelectorAll('a.cal-more'));
     expect(links).toHaveLength(3);
     for (const a of links) {
-      expect(a.getAttribute('href')).toMatch(/\/actualites\/forexfactory%3A/);
-      expect((a.textContent ?? '')).toContain(fr.calendar.seeMore);
+      expect(a.getAttribute('href')).toMatch(/\/actualites\/[a-z]+%3A/);
+      expect(a.textContent ?? '').toContain(fr.calendar.seeMore);
     }
+  });
+
+  it('a publication whose time is not confirmed is marked', () => {
+    const withUnconf: CalendarResponse = {
+      ...DATA,
+      events: [ev({ event_id: 'census:x:1', source: 'census', event: 'Housing', scheduled_at: '2026-07-28T13:00:00Z', organism: 'U.S. Census Bureau', time_confirmed: false })],
+    };
+    const { container } = render(<CalendarWorkspace locale="fr" data={withUnconf} now={NOW} />);
+    expect(container.querySelector('.cal-unconf')?.textContent).toBe(
+      fr.calendar.timeUnconfirmed,
+    );
   });
 
   it('renders no raw i18n keys', () => {

@@ -2,103 +2,166 @@ import { render } from '@/components/test-utils';
 import { describe, expect, it } from 'vitest';
 import fr from '@/messages/fr.json';
 import { CalendarEventDetail } from '../CalendarEventDetail';
-import type { CalendarEvent, CalendarResponse } from '@/types/calendar';
+import type {
+  CalendarAttribution,
+  CalendarEvent,
+  CalendarResponse,
+} from '@/types/calendar';
 
 const NOW = new Date('2026-07-28T06:00:00Z');
 
-function ev(p: Partial<CalendarEvent> & Pick<CalendarEvent, 'event_id' | 'event'>): CalendarEvent {
+function ev(
+  p: Partial<CalendarEvent> & Pick<CalendarEvent, 'event_id' | 'event' | 'source'>,
+): CalendarEvent {
   return {
-    source: 'forexfactory',
     series_code: null,
     license_label: null,
     currency: 'USD',
-    impact: 'high',
     organism: null,
+    periodicity: 'monthly',
     scheduled_at: '2026-07-28T12:30:00Z',
     source_timezone: 'America/New_York',
+    time_confirmed: true,
     markets: ['XAUUSD', 'EURUSD'],
     value_unit: null,
     actual: null,
-    forecast: null,
+    actual_initial: null,
     previous: null,
     revised: false,
-    previous_before_revision: null,
+    revised_at: null,
     ...p,
   };
 }
 
-const EVENT = ev({
-  event_id: 'forexfactory:cpi',
-  event: 'CPI y/y',
-  forecast: 3.1,
-  previous: 3.3,
+const ATTRIBUTION: CalendarAttribution[] = [
+  { source: 'bls', organism: 'Bureau of Labor Statistics', license_label: 'Domaine public (17 U.S.C. §105)', policy_url: 'https://www.bls.gov/opub/copyright-information.htm' },
+];
+
+function makeData(event: CalendarEvent): CalendarResponse {
+  return {
+    window_start: '2026-06-28T06:00:00Z',
+    window_end: '2026-08-27T06:00:00Z',
+    generated_at: NOW.toISOString(),
+    coverage: { source: 'official', feed_start: null, feed_end: null, partial: false, last_success: {}, stale_sources: [] },
+    attribution: ATTRIBUTION,
+    events: [event],
+  };
+}
+
+const OFFICIAL = ev({
+  event_id: 'bls:us_cpi:2026-07-28',
+  source: 'bls',
+  event: 'IPC',
+  organism: 'Bureau of Labor Statistics',
+  value_unit: 'indice (1982-84 = 100)',
+  actual: 322.9,
+  actual_initial: 321.5,
+  previous: 320.0,
+  revised: true,
+  revised_at: '2026-07-27T12:30:00Z',
 });
 
-const DATA: CalendarResponse = {
-  window_start: '2026-06-28T06:00:00Z',
-  window_end: '2026-08-27T06:00:00Z',
-  generated_at: NOW.toISOString(),
-  coverage: { source: 'forexfactory', feed_start: null, feed_end: null, partial: false },
-  events: [EVENT],
-};
-
-function renderDetail(eventId: string, data: CalendarResponse | null = DATA) {
+function renderDetail(eventId: string, event: CalendarEvent = OFFICIAL) {
   return render(
-    <CalendarEventDetail eventId={eventId} locale="fr" data={data} now={NOW} />,
+    <CalendarEventDetail eventId={eventId} locale="fr" data={makeData(event)} now={NOW} />,
   );
 }
 
 describe('NW-1b CalendarEventDetail', () => {
-  it('shows the event title, attributed impact and attached markets', () => {
-    const { container } = renderDetail('forexfactory:cpi');
-    expect(container.querySelector('h1')?.textContent).toBe('CPI y/y');
+  it('shows the event title and attached markets, with NO impact ranking', () => {
+    const { container } = renderDetail('bls:us_cpi:2026-07-28');
+    expect(container.querySelector('h1')?.textContent).toBe('IPC');
     const text = container.textContent ?? '';
-    expect(text).toContain(fr.calendar.impact.high);
     expect(text).toContain('affecte Or, EUR/USD');
+    expect(container.querySelectorAll('.cal-impact')).toHaveLength(0);
   });
 
-  it('shows published figures with the honesty note when the feed carries them', () => {
-    const { container } = renderDetail('forexfactory:cpi');
+  it('shows the published value and previous, but NO consensus/forecast', () => {
+    const { container } = renderDetail('bls:us_cpi:2026-07-28');
     const text = container.textContent ?? '';
-    expect(text).toContain(fr.calendar.detail.forecastLabel);
+    expect(text).toContain(fr.calendar.detail.actualLabel);
     expect(text).toContain(fr.calendar.detail.previousLabel);
     expect(text).toContain(fr.calendar.detail.publishedFiguresNote);
+    // no consensus surface at all
+    expect(text.toLowerCase()).not.toContain('consensus');
+  });
+
+  it('shows values AS PUBLISHED — no re-rounding', () => {
+    const raw = ev({
+      event_id: 'bls:x:1', source: 'bls', event: 'X',
+      organism: 'Bureau of Labor Statistics', actual: 3.14159, previous: 2.71828,
+    });
+    const { container } = renderDetail('bls:x:1', raw);
+    const vals = Array.from(container.querySelectorAll('.cald-fig .v')).map((e) => e.textContent);
+    expect(vals).toContain('3.14159');
+    expect(vals).toContain('2.71828');
+  });
+
+  it('shows initial and current value coexisting, with the revision date', () => {
+    const { container } = renderDetail('bls:us_cpi:2026-07-28');
+    const revLine = container.querySelector('.cald-rev-line')?.textContent ?? '';
+    expect(revLine).toContain('321.5'); // initial, never overwritten
+    expect(revLine).toContain('322.9'); // current
+    // a bare date is present (no qualification like "major"/"up"/"surprise")
+    expect(revLine.toLowerCase()).not.toContain('surprise');
+  });
+
+  it('a never-revised value says so explicitly', () => {
+    const notRevised = ev({
+      event_id: 'bls:y:1', source: 'bls', event: 'Y',
+      organism: 'Bureau of Labor Statistics', actual: 100.0, revised: false,
+    });
+    const { container } = renderDetail('bls:y:1', notRevised);
+    expect(container.querySelector('.cald-rev-line')?.textContent).toBe(
+      fr.calendar.detail.notRevised,
+    );
+  });
+
+  it('renders the attribution for the event source (licence condition)', () => {
+    const { container } = renderDetail('bls:us_cpi:2026-07-28');
+    const block = container.querySelector('.cal-attrib');
+    expect(block?.textContent).toContain('Bureau of Labor Statistics');
+    expect(container.querySelector('.cal-attrib a')?.getAttribute('href')).toBe(
+      'https://www.bls.gov/opub/copyright-information.htm',
+    );
   });
 
   it('renders absent organism and unit as visibly absent, never fabricated', () => {
-    const { container } = renderDetail('forexfactory:cpi');
+    const bare = ev({ event_id: 'forexfactory:z:1', source: 'forexfactory', event: 'ADP', organism: null, value_unit: null });
+    const { container } = render(
+      <CalendarEventDetail eventId="forexfactory:z:1" locale="fr" data={{ ...makeData(bare), attribution: [] }} now={NOW} />,
+    );
     const text = container.textContent ?? '';
     expect(text).toContain(fr.calendar.provenance.organismMissing);
     expect(text).toContain(fr.calendar.detail.unitMissing);
   });
 
   it('marks the engine-measured history as « mesures à venir » (NW-2)', () => {
-    const { container } = renderDetail('forexfactory:cpi');
+    const { container } = renderDetail('bls:us_cpi:2026-07-28');
     expect(container.textContent ?? '').toContain(fr.calendar.detail.measuresPending);
   });
 
   it('renders the « ce que cette page ne dit pas » refusal list (4 items)', () => {
-    const { container } = renderDetail('forexfactory:cpi');
+    const { container } = renderDetail('bls:us_cpi:2026-07-28');
     const items = Array.from(container.querySelectorAll('.cal-nono li'));
     expect(items).toHaveLength(4);
     expect(container.textContent ?? '').toContain('haussier ou baissier');
   });
 
-  it('resolves a bare pipeline hash (App news deep-link, no source prefix)', () => {
-    // The App news module links with the raw hash « cpi » (no « forexfactory: »).
-    const { container } = renderDetail('cpi');
-    expect(container.querySelector('h1')?.textContent).toBe('CPI y/y');
+  it('resolves a bare pipeline ref (App news deep-link, no source prefix)', () => {
+    const { container } = renderDetail('2026-07-28'); // last segment of event_id
+    expect(container.querySelector('h1')?.textContent).toBe('IPC');
   });
 
   it('shows an honest « introuvable » state for an unknown id', () => {
-    const { container } = renderDetail('forexfactory:does-not-exist');
+    const { container } = renderDetail('bls:does-not-exist');
     expect(container.querySelector('.cal-empty')?.textContent).toContain(
       fr.calendar.detail.notFound,
     );
   });
 
   it('renders no raw i18n keys', () => {
-    const { container } = renderDetail('forexfactory:cpi');
+    const { container } = renderDetail('bls:us_cpi:2026-07-28');
     const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
     let n: Node | null;
     while ((n = walker.nextNode())) {

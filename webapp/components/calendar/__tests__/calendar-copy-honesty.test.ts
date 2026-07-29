@@ -94,6 +94,34 @@ describe('NW-1 calendar copy honesty', () => {
     );
   });
 
+  it('NW-1b: no impact ranking and no consensus keys survive anywhere', () => {
+    const frCal = (fr as Record<string, unknown>).calendar as Record<string, unknown>;
+    const enCal = (en as Record<string, unknown>).calendar as Record<string, unknown>;
+    for (const cal of [frCal, enCal]) {
+      // impact ranking removed (no organism grades its releases)
+      expect(cal.impact).toBeUndefined();
+      expect((cal.filters as Record<string, unknown>).impactLabel).toBeUndefined();
+      const detail = cal.detail as Record<string, unknown>;
+      // consensus removed (no organism publishes an analyst forecast)
+      expect(detail.forecastLabel).toBeUndefined();
+      expect(detail.forecastNote).toBeUndefined();
+      // factual filters + attribution + revision surfaces present
+      expect((cal.filters as Record<string, unknown>).organismLabel).toBeTypeOf('string');
+      expect((cal.filters as Record<string, unknown>).periodicityLabel).toBeTypeOf('string');
+      expect(cal.organism).toBeTypeOf('object');
+      expect(cal.periodicity).toBeTypeOf('object');
+      expect(cal.attribution).toBeTypeOf('object');
+      expect(detail.revisedFromTo).toBeTypeOf('string');
+      expect(detail.notRevised).toBeTypeOf('string');
+    }
+  });
+
+  it('NW-1b: the « ne dit pas » block states no forecast + no ranking, as choices', () => {
+    const nono = (fr as unknown as { calendar: { nono: { noForecast: string; noRanking: string } } }).calendar.nono;
+    expect(nono.noForecast.toLowerCase()).toContain('prévision');
+    expect(nono.noRanking.toLowerCase()).toContain('hiérarchie');
+  });
+
   it('the detail « ne dit pas » block quotes haussier/baissier only to REFUSE them', () => {
     const items = (
       fr as unknown as { calendar: { detail: { nono: { items: Record<string, string> } } } }

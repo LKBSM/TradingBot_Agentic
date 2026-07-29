@@ -1,9 +1,8 @@
-/* Calendrier de volatilité — vue liste (NW-1).
+/* Calendrier de volatilité — vue liste (NW-1 / NW-1b).
    Reproduit docs/design/reference-actualites.html (vue liste) avec les jetons
    de design existants (couverts par les 4 thèmes). Tout est préfixé « cal- »
-   pour ne pas heurter les classes produit. Aucun code couleur ne hiérarchise
-   les événements entre eux : le jeton d'impact reprend le vocabulaire du
-   fournisseur, rien de plus. */
+   pour ne pas heurter les classes produit. NW-1b : aucun code couleur, aucun
+   jeton d'impact — aucun organisme ne hiérarchise ses publications. */
 
 .cal-page {
   max-width: 1120px;
@@ -188,26 +187,12 @@
   opacity: 0.7;
 }
 
-.cal-impact {
+/* Time-not-confirmed marker — the release TIME is not established from an
+   official source, so it is flagged and excluded from amplitude measures. */
+.cal-unconf {
   font-size: 8.5px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-  text-transform: uppercase;
-  padding: 3px 7px;
-  border-radius: 4px;
-  flex-shrink: 0;
-}
-.cal-impact.high {
-  background: color-mix(in srgb, var(--liq) 13%, transparent);
   color: var(--liq);
-}
-.cal-impact.medium {
-  background: var(--panel-3);
-  color: var(--dim);
-}
-.cal-impact.low {
-  background: var(--panel-3);
-  color: var(--faint);
+  margin-top: 2px;
 }
 
 /* Amplitude slot — kept empty in NW-1 ("mesures à venir"); filled by NW-2. */
@@ -272,6 +257,90 @@
   font-size: 10.5px;
   color: var(--faint);
   line-height: 1.5;
+}
+
+.cal-nono-list {
+  margin: 7px 0 0;
+  padding-left: 15px;
+}
+.cal-nono-list li {
+  margin-bottom: 3px;
+  font-size: 11px;
+  color: var(--dim);
+  line-height: 1.55;
+}
+
+/* Attribution block — a licence condition: names every source used + links its
+   reuse policy. Also carries the "not refreshed since <date>" note. */
+.cal-attrib {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  background: var(--panel);
+}
+.cal-attrib .t {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 6px;
+}
+.cal-attrib .i {
+  font-size: 10.5px;
+  color: var(--dim);
+  line-height: 1.5;
+  margin-bottom: 7px;
+}
+.cal-attrib ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cal-attrib li {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  flex-wrap: wrap;
+  font-size: 10.5px;
+}
+.cal-attrib .org {
+  font-weight: 600;
+  color: var(--txt);
+}
+.cal-attrib .lic {
+  color: var(--faint);
+  flex: 1;
+  min-width: 120px;
+}
+.cal-attrib a {
+  color: var(--acc);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.cal-attrib a:hover {
+  text-decoration: underline;
+}
+.cal-attrib .stale {
+  margin-top: 8px;
+  font-size: 10px;
+  color: var(--liq);
+  line-height: 1.5;
+}
+
+/* Revision line on the detail card — before value, after value, date. No
+   qualification (never "major", "up", "surprise"). */
+.cald-rev {
+  margin-bottom: 11px;
+}
+.cald-rev-line {
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--dim);
 }
 
 .cal-empty {
@@ -363,6 +432,13 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--dim);
+}
+.calprev-per {
+  font-size: 8.5px;
+  color: var(--faint);
+  flex-shrink: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 .calprev-empty {
   font-size: 11px;
@@ -491,7 +567,7 @@
 }
 .cald-figs {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 9px;
   margin-bottom: 11px;
 }

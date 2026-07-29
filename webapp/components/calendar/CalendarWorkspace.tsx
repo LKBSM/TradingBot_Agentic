@@ -17,12 +17,22 @@ import {
   splitPastUpcoming,
 } from '@/lib/calendar/grouping';
 import { parseUtc, utcOffsetLabel } from '@/lib/time/localTime';
-import type { CalendarEvent, CalendarImpact, CalendarResponse } from '@/types/calendar';
+import type {
+  CalendarEvent,
+  CalendarPeriodicity,
+  CalendarResponse,
+} from '@/types/calendar';
 import '@/components/app/ui2c.css'; // reuse the shared .fchip filter chips
 import './calendar.css';
 
-const IMPACTS: readonly CalendarImpact[] = ['high', 'medium', 'low'];
+// The followed official sources (+ the dev prototype so local runs stay usable).
+const SOURCES = [
+  'bls', 'bea', 'census', 'federal_reserve', 'eurostat', 'ecb', 'forexfactory',
+] as const;
 const MARKETS = ['XAUUSD', 'EURUSD'] as const;
+const PERIODICITIES: readonly CalendarPeriodicity[] = [
+  'monthly', 'quarterly', 'eight_per_year',
+];
 const POLL_MS = 60_000;
 
 function capitalize(s: string): string {
@@ -37,12 +47,14 @@ function tzCity(iana: string | null): string | null {
 }
 
 /**
- * /actualites — the scheduled-volatility calendar (NW-1, LIST view only).
+ * /actualites — the scheduled-volatility calendar (NW-1b, LIST view only).
  * Announces MOMENTS, never DIRECTIONS. Chronological only — no amplitude sort,
- * no colour ranking. Fields the source does not provide render as absent.
+ * no impact ranking (no organism grades its releases), no consensus (no organism
+ * publishes one). Filters are factual: issuing organism, market, periodicity.
+ * Fields the source does not provide render as absent.
  *
  * `data`/`now` are injectable for tests; live it reads GET /api/calendar (whose
- * source defaults to the official stub until official feeds are wired).
+ * source defaults to the official aggregator).
  */
 export function CalendarWorkspace({
   locale,
@@ -54,13 +66,16 @@ export function CalendarWorkspace({
   now?: Date;
 }) {
   const t = useTranslations('calendar');
-  const hook = useCalendar({ pollMs: POLL_MS });
+  // A volatility calendar is useful across the coming weeks, not just 7 days —
+  // request the full forward horizon (API cap) so upcoming releases are visible.
+  const hook = useCalendar({ lookaheadDays: 30, lookbackDays: 3, pollMs: POLL_MS });
   const data = injectedData !== undefined ? injectedData : hook.data;
   const isLoading = injectedData !== undefined ? false : hook.isLoading;
   const error = injectedData !== undefined ? null : hook.error;
 
-  const impactFilter = useMultiFilter<CalendarImpact>(IMPACTS);
+  const sourceFilter = useMultiFilter<(typeof SOURCES)[number]>(SOURCES);
   const marketFilter = useMultiFilter<(typeof MARKETS)[number]>(MARKETS);
+  const periodicityFilter = useMultiFilter<CalendarPeriodicity>(PERIODICITIES);
   const [showPast, setShowPast] = React.useState(false);
 
   // A single "now" for the whole render (stable countdowns). Tests inject it.
@@ -71,9 +86,16 @@ export function CalendarWorkspace({
     (m: string) => t(`market.${m}` as 'market.XAUUSD'),
     [t],
   );
+  const organismName = React.useCallback(
+    (s: string) => t(`organism.${s}` as 'organism.bls'),
+    [t],
+  );
 
-  const impactOptions = IMPACTS.map((v) => ({ value: v, label: t(`impact.${v}`) }));
+  const sourceOptions = SOURCES.map((v) => ({ value: v, label: organismName(v) }));
   const marketOptions = MARKETS.map((v) => ({ value: v, label: marketName(v) }));
+  const periodicityOptions = PERIODICITIES.map((v) => ({
+    value: v, label: t(`periodicity.${v}`),
+  }));
 
   const marketsHeader = MARKETS.map(marketName).join(' · ');
 
@@ -92,9 +114,9 @@ export function CalendarWorkspace({
       <div className="cal-filtbar">
         <div>
           <FilterChipGroup
-            label={t('filters.impactLabel')}
-            options={impactOptions}
-            filter={impactFilter}
+            label={t('filters.organismLabel')}
+            options={sourceOptions}
+            filter={sourceFilter}
             resetLabel={t('filters.reset')}
           />
         </div>
@@ -103,6 +125,14 @@ export function CalendarWorkspace({
             label={t('filters.marketLabel')}
             options={marketOptions}
             filter={marketFilter}
+            resetLabel={t('filters.reset')}
+          />
+        </div>
+        <div>
+          <FilterChipGroup
+            label={t('filters.periodicityLabel')}
+            options={periodicityOptions}
+            filter={periodicityFilter}
             resetLabel={t('filters.reset')}
           />
         </div>
@@ -124,18 +154,29 @@ export function CalendarWorkspace({
         data={data}
         isLoading={isLoading}
         error={error}
-        noneSelected={impactFilter.noneSelected || marketFilter.noneSelected}
-        impacts={impactFilter.selected}
+        noneSelected={
+          sourceFilter.noneSelected ||
+          marketFilter.noneSelected ||
+          periodicityFilter.noneSelected
+        }
+        sources={sourceFilter.selected}
         markets={marketFilter.selected}
+        periodicities={periodicityFilter.selected}
         showPast={showPast}
         offsetLabel={offsetLabel}
         marketName={marketName}
       />
 
+      <Attribution t={t} data={data} organismName={organismName} locale={locale} />
+
       <div className="cal-nono" role="note">
         <div>
           <div className="t">{t('nono.title')}</div>
           <div className="b">{t('nono.body')}</div>
+          <ul className="cal-nono-list">
+            <li>{t('nono.noForecast')}</li>
+            <li>{t('nono.noRanking')}</li>
+          </ul>
         </div>
       </div>
     </div>
@@ -150,15 +191,16 @@ function Body(props: {
   isLoading: boolean;
   error: Error | null;
   noneSelected: boolean;
-  impacts: ReadonlySet<string>;
+  sources: ReadonlySet<string>;
   markets: ReadonlySet<string>;
+  periodicities: ReadonlySet<string>;
   showPast: boolean;
   offsetLabel: string;
   marketName: (m: string) => string;
 }) {
   const {
     t, locale, now, data, isLoading, error, noneSelected,
-    impacts, markets, showPast, offsetLabel, marketName,
+    sources, markets, periodicities, showPast, offsetLabel, marketName,
   } = props;
 
   if (isLoading) return <div className="cal-status">{t('loading')}</div>;
@@ -169,7 +211,7 @@ function Body(props: {
     return <div className="cal-empty">{t('empty.noSelection')}</div>;
   }
 
-  const filtered = filterEvents(data.events, impacts, markets);
+  const filtered = filterEvents(data.events, sources, markets, periodicities);
   const { past, upcoming } = splitPastUpcoming(filtered, now);
   const shown = showPast ? past : upcoming;
   const groups = groupEventsByDay(shown, now);
@@ -262,6 +304,9 @@ function Row({
         <div className="cal-local">
           {t('localTime', { time: localTime, offset: offsetLabel })}
         </div>
+        {!ev.time_confirmed && (
+          <div className="cal-unconf">{t('timeUnconfirmed')}</div>
+        )}
       </div>
 
       <div className="cal-mid">
@@ -270,6 +315,12 @@ function Row({
           <span className="cal-mkchip">{ev.currency}</span>
           <span className="sep">·</span>
           <span>{t('affects', { markets: affects })}</span>
+          {ev.periodicity && (
+            <>
+              <span className="sep">·</span>
+              <span>{t(`periodicity.${ev.periodicity}`)}</span>
+            </>
+          )}
           {ev.revised && (
             <>
               <span className="sep">·</span>
@@ -278,8 +329,6 @@ function Row({
           )}
         </div>
         <div className="cal-prov">
-          {t('provenance.source', { source: sourceLabel(ev.source, t) })}
-          {' · '}
           {ev.organism ? (
             t('provenance.organism', { organism: ev.organism })
           ) : (
@@ -287,8 +336,6 @@ function Row({
           )}
         </div>
       </div>
-
-      <span className={`cal-impact ${ev.impact}`}>{t(`impact.${ev.impact}`)}</span>
 
       <div className="cal-ampl">
         <div className="k">{t('amplitude.k')}</div>
@@ -307,10 +354,50 @@ function Row({
   );
 }
 
-function sourceLabel(source: string, t: ReturnType<typeof useTranslations>): string {
-  if (source === 'official') return t('provenance.sourceName.official');
-  if (source === 'forexfactory') return t('provenance.sourceName.forexfactory');
-  return source;
+/**
+ * Licence-required attribution block: names every source that actually produced
+ * a served event and links its reuse policy. Also surfaces any source that was
+ * NOT refreshed (its stored data is kept, its last-success date is shown).
+ */
+function Attribution({
+  t,
+  data,
+  organismName,
+  locale,
+}: {
+  t: ReturnType<typeof useTranslations>;
+  data: CalendarResponse | null | undefined;
+  organismName: (s: string) => string;
+  locale: string;
+}) {
+  if (!data || data.attribution.length === 0) return null;
+  return (
+    <div className="cal-attrib" role="contentinfo">
+      <div className="t">{t('attribution.title')}</div>
+      <p className="i">{t('attribution.intro')}</p>
+      <ul>
+        {data.attribution.map((a) => (
+          <li key={a.source}>
+            <span className="org">{a.organism}</span>
+            <span className="lic">{a.license_label}</span>
+            <a href={a.policy_url} target="_blank" rel="noreferrer noopener">
+              {t('attribution.policyLink')}
+            </a>
+          </li>
+        ))}
+      </ul>
+      {data.coverage.stale_sources.length > 0 && (
+        <p className="stale">
+          {data.coverage.stale_sources.map((s) => {
+            const iso = data.coverage.last_success[s];
+            const d = iso ? parseUtc(iso) : null;
+            const when = d ? d.toLocaleDateString(locale) : '—';
+            return t('attribution.stale', { organism: organismName(s), date: when });
+          }).join(' ')}
+        </p>
+      )}
+    </div>
+  );
 }
 
 function formatCountdown(

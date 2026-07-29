@@ -1797,7 +1797,7 @@
   "calendar": {
     "meta": {
       "title": "Actualités programmées — Calendrier de volatilité | MIA Markets",
-      "description": "Le calendrier des publications économiques dont l'heure est connue à l'avance. MIA annonce des moments, jamais des directions."
+      "description": "Le calendrier des publications économiques officielles dont l'heure est connue à l'avance. MIA annonce des moments, jamais des directions."
     },
     "title": "Actualités programmées",
     "badge": "Calendrier de volatilité",
@@ -1806,15 +1806,25 @@
       "rest": "Il liste les publications économiques dont l'heure est connue à l'avance et qui, par le passé, ont coïncidé avec une hausse d'activité sur tes marchés. MIA ne dit pas ce que le prix fera — elle mesure ce qui s'est produit les fois précédentes."
     },
     "filters": {
-      "impactLabel": "Impact",
+      "organismLabel": "Organisme",
       "marketLabel": "Marché",
+      "periodicityLabel": "Périodicité",
       "reset": "Tout cocher",
       "past": "Publications passées"
     },
-    "impact": {
-      "high": "Élevé",
-      "medium": "Moyen",
-      "low": "Faible"
+    "organism": {
+      "bls": "BLS",
+      "bea": "BEA",
+      "census": "Census",
+      "federal_reserve": "Réserve fédérale",
+      "eurostat": "Eurostat",
+      "ecb": "BCE",
+      "forexfactory": "ForexFactory"
+    },
+    "periodicity": {
+      "monthly": "Mensuel",
+      "quarterly": "Trimestriel",
+      "eight_per_year": "8 fois par an"
     },
     "market": {
       "XAUUSD": "Or",
@@ -1836,31 +1846,35 @@
     },
     "affects": "affecte {markets}",
     "localTime": "{time} ton heure ({offset})",
+    "timeUnconfirmed": "heure non confirmée",
     "revisedBadge": "valeur révisée",
     "amplitude": {
-      "k": "Amplitude médiane · 60 min",
+      "k": "Amplitude médiane à 60 min",
       "pending": "mesures à venir"
     },
     "provenance": {
-      "source": "Source : {source}",
       "organism": "Organisme : {organism}",
-      "organismMissing": "Organisme : non fourni par cette source",
-      "sourceName": {
-        "official": "Sources officielles (à connecter)",
-        "forexfactory": "ForexFactory (prototype)"
-      }
+      "organismMissing": "Organisme : non fourni par cette source"
+    },
+    "attribution": {
+      "title": "Sources et réutilisation",
+      "intro": "Chaque publication provient de l'organisme officiel qui l'émet. Réutilisation selon la politique de chaque source :",
+      "policyLink": "politique de réutilisation",
+      "stale": "{organism} : données non rafraîchies, dernier succès le {date}."
     },
     "coverage": {
       "partial": "Le calendrier est renseigné jusqu'au {date}. Au-delà, la période n'est pas encore couverte."
     },
     "nono": {
       "title": "Ce que ce calendrier ne dit pas",
-      "body": "Une amplitude médiane élevée signale que ces moments ont historiquement été agités. Elle ne dit ni la direction, ni ce qui se produira cette fois. Une publication peut ne rien provoquer, et un marché calme peut bouger sans aucune publication."
+      "body": "Une amplitude médiane élevée signale que ces moments ont historiquement été agités. Elle ne dit ni la direction, ni ce qui se produira cette fois. Une publication peut ne rien provoquer, et un marché calme peut bouger sans aucune publication.",
+      "noForecast": "Aucune prévision d'analystes n'est affichée : aucun organisme public n'en publie, et MIA n'en fabrique pas.",
+      "noRanking": "Aucune hiérarchie n'est attribuée aux publications : MIA ne les classe pas entre elles."
     },
     "empty": {
-      "noSelection": "Aucun filtre sélectionné : coche au moins un impact et un marché pour afficher des publications.",
+      "noSelection": "Aucun filtre sélectionné : coche au moins un organisme, un marché et une périodicité pour afficher des publications.",
       "noEvents": "Aucune publication programmée sur cette période pour tes marchés.",
-      "noSource": "Aucune publication pour l'instant : la source officielle du calendrier n'est pas encore connectée. Les publications s'afficheront ici une fois la source officielle intégrée."
+      "noSource": "Aucune publication pour l'instant : les sources officielles n'ont pas encore renseigné de date. Les publications s'afficheront ici une fois les parutions officielles chargées."
     },
     "loading": "Chargement du calendrier…",
     "error": "Le calendrier est momentanément indisponible.",
@@ -1875,26 +1889,23 @@
       "countdownLabel": "Publication dans",
       "publishedFiguresTitle": "Chiffres publiés",
       "publishedFiguresBadge": "Valeur de l'indicateur",
-      "publishedFiguresNote": "Ces chiffres sont la valeur de l'indicateur lui-même, dans l'unité de l'organisme qui le publie — pas des mouvements de prix. Le consensus est une prévision produite par des tiers : MIA la rapporte sans la reprendre à son compte.",
+      "publishedFiguresNote": "Ces chiffres sont la valeur de l'indicateur lui-même, dans l'unité de l'organisme qui le publie — pas des mouvements de prix. Ils sont affichés tels que publiés, sans conversion ni réarrondi.",
       "actualLabel": "Valeur publiée",
       "actualPending": "non encore publiée",
-      "forecastLabel": "Consensus des analystes",
-      "forecastNote": "prévision de tiers, non de MIA",
       "previousLabel": "Publication précédente",
-      "revisedFrom": "révisée depuis {value}",
+      "revisedFromTo": "Valeur initiale {initial}, révisée le {date} — valeur actuelle {current}.",
+      "notRevised": "Ce chiffre n'a pas été révisé depuis sa première publication.",
       "unitMissing": "unité non fournie par cette source",
-      "figuresEmpty": "Aucun chiffre fourni pour cette publication par la source actuelle.",
       "measuresTitle": "Ce que le moteur a mesuré aux publications précédentes",
       "measuresBadge": "Mouvement de prix",
       "measuresPending": "Mesures à venir : l'amplitude parcourue par les marchés aux publications passées de cet indicateur s'affichera ici une fois la mesure moteur branchée (NW-2).",
-      "sourceLine": "Source : {source}",
       "notFoundTitle": "Publication introuvable",
       "notFound": "Cette publication n'est pas dans la fenêtre actuelle du calendrier.",
       "nono": {
         "title": "Ce que cette page ne dit pas",
         "items": {
           "0": "Elle ne prévoit ni la valeur qui sera publiée, ni la réaction du marché.",
-          "1": "Elle n'interprète pas un écart au consensus comme haussier ou baissier.",
+          "1": "Elle n'interprète pas un écart entre la valeur publiée et la précédente comme haussier ou baissier.",
           "2": "Elle ne recommande ni d'intervenir, ni de s'abstenir, ni de fermer quoi que ce soit.",
           "3": "Les amplitudes passées sont mesurées sur un petit nombre de journées, dans des contextes différents, et n'ont aucune valeur prédictive."
         }

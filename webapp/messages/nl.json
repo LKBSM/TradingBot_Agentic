@@ -1790,107 +1790,118 @@
   },
   "calendar": {
     "meta": {
-      "title": "Geplande berichten — Volatiliteitskalender | MIA Markets",
-      "description": "De kalender van economische publicaties waarvan het tijdstip vooraf bekend is. MIA kondigt momenten aan, nooit richtingen."
+      "title": "Scheduled news — Volatility calendar | MIA Markets",
+      "description": "The calendar of official economic releases whose time is known in advance. MIA announces moments, never directions."
     },
-    "title": "Geplande berichten",
-    "badge": "Volatiliteitskalender",
+    "title": "Scheduled news",
+    "badge": "Volatility calendar",
     "intro": {
-      "lead": "Deze kalender kondigt momenten aan, geen richtingen.",
-      "rest": "Hij somt de economische publicaties op waarvan het tijdstip vooraf bekend is en die in het verleden samenvielen met een toename van activiteit op jouw markten. MIA zegt niet wat de prijs zal doen — ze meet wat de vorige keren is gebeurd."
+      "lead": "This calendar announces moments, not directions.",
+      "rest": "It lists the economic releases whose time is known in advance and that, in the past, coincided with a rise in activity on your markets. MIA does not say what the price will do — it measures what happened the previous times."
     },
     "filters": {
-      "impactLabel": "Impact",
-      "marketLabel": "Markt",
-      "reset": "Alles aanvinken",
-      "past": "Voorbije publicaties"
+      "organismLabel": "Organism",
+      "marketLabel": "Market",
+      "periodicityLabel": "Periodicity",
+      "reset": "Select all",
+      "past": "Past releases"
     },
-    "impact": {
-      "high": "Hoog",
-      "medium": "Gemiddeld",
-      "low": "Laag"
+    "organism": {
+      "bls": "BLS",
+      "bea": "BEA",
+      "census": "Census",
+      "federal_reserve": "Federal Reserve",
+      "eurostat": "Eurostat",
+      "ecb": "ECB",
+      "forexfactory": "ForexFactory"
+    },
+    "periodicity": {
+      "monthly": "Monthly",
+      "quarterly": "Quarterly",
+      "eight_per_year": "8 times a year"
     },
     "market": {
-      "XAUUSD": "Goud",
+      "XAUUSD": "Gold",
       "EURUSD": "EUR/USD"
     },
     "day": {
-      "today": "Vandaag",
-      "tomorrow": "Morgen",
-      "count": "{count, plural, one {# publicatie} other {# publicaties}}"
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "count": "{count, plural, one {# release} other {# releases}}"
     },
     "countdown": {
-      "days": "over {days} d",
-      "hours": "over {hours} u {minutes}",
-      "minutes": "over {minutes} min",
-      "now": "nu",
-      "agoDays": "{days} d geleden",
-      "agoHours": "{hours} u {minutes} geleden",
-      "agoMinutes": "{minutes} min geleden"
+      "days": "in {days}d",
+      "hours": "in {hours}h {minutes}",
+      "minutes": "in {minutes} min",
+      "now": "now",
+      "agoDays": "{days}d ago",
+      "agoHours": "{hours}h {minutes} ago",
+      "agoMinutes": "{minutes} min ago"
     },
-    "affects": "betreft {markets}",
-    "localTime": "{time} jouw tijd ({offset})",
-    "revisedBadge": "herziene waarde",
+    "affects": "affects {markets}",
+    "localTime": "{time} your time ({offset})",
+    "timeUnconfirmed": "time not confirmed",
+    "revisedBadge": "revised value",
     "amplitude": {
-      "k": "Mediane amplitude · 60 min",
-      "pending": "metingen volgen"
+      "k": "Median 60-min amplitude",
+      "pending": "measures to come"
     },
     "provenance": {
-      "source": "Bron: {source}",
-      "organism": "Instantie: {organism}",
-      "organismMissing": "Instantie: niet verstrekt door deze bron",
-      "sourceName": {
-        "official": "Officiële bronnen (te koppelen)",
-        "forexfactory": "ForexFactory (prototype)"
-      }
+      "organism": "Organism: {organism}",
+      "organismMissing": "Organism: not provided by this source"
+    },
+    "attribution": {
+      "title": "Sources and reuse",
+      "intro": "Each release comes from the official organism that issues it. Reuse follows each source's policy:",
+      "policyLink": "reuse policy",
+      "stale": "{organism}: data not refreshed, last success on {date}."
     },
     "coverage": {
-      "partial": "De kalender is ingevuld tot {date}. Daarna is de periode nog niet gedekt."
+      "partial": "The calendar is populated through {date}. Beyond that, the period is not yet covered."
     },
     "nono": {
-      "title": "Wat deze kalender niet zegt",
-      "body": "Een hoge mediane amplitude geeft aan dat deze momenten historisch gezien woelig waren. Ze zegt niet de richting, noch wat er deze keer zal gebeuren. Een publicatie kan niets teweegbrengen, en een rustige markt kan bewegen zonder enige publicatie."
+      "title": "What this calendar does not say",
+      "body": "A high median amplitude flags that these moments were historically active. It says neither the direction nor what will happen this time. A release may cause nothing, and a quiet market may move with no release at all.",
+      "noForecast": "No analyst forecast is shown: no public organism publishes one, and MIA does not fabricate one.",
+      "noRanking": "No hierarchy is assigned to the releases: MIA does not rank them against one another."
     },
     "empty": {
-      "noSelection": "Geen filter geselecteerd: vink minstens één impact en één markt aan om publicaties te tonen.",
-      "noEvents": "Geen geplande publicatie in deze periode voor jouw markten.",
-      "noSource": "Nog geen publicaties: de officiële bron van de kalender is nog niet gekoppeld. Publicaties verschijnen hier zodra de officiële bron is geïntegreerd."
+      "noSelection": "No filter selected: check at least one organism, one market and one periodicity to show releases.",
+      "noEvents": "No scheduled release in this period for your markets.",
+      "noSource": "No release yet: the official sources have not populated any date. Releases will appear here once the official schedules are loaded."
     },
-    "loading": "Kalender laden…",
-    "error": "De kalender is tijdelijk niet beschikbaar.",
+    "loading": "Loading the calendar…",
+    "error": "The calendar is momentarily unavailable.",
     "preview": {
-      "title": "Volgende publicaties",
-      "seeAll": "Alles bekijken",
-      "empty": "Geen aankomende publicatie in deze periode."
+      "title": "Next releases",
+      "seeAll": "See all",
+      "empty": "No upcoming release in this period."
     },
-    "seeMore": "Meer weten",
+    "seeMore": "Learn more",
     "detail": {
-      "back": "Terug naar de kalender",
-      "countdownLabel": "Publicatie over",
-      "publishedFiguresTitle": "Gepubliceerde cijfers",
-      "publishedFiguresBadge": "Indicatorwaarde",
-      "publishedFiguresNote": "Deze cijfers zijn de waarde van de indicator zelf, in de eenheid van de instantie die hem publiceert — geen koersbewegingen. De consensus is een prognose van derden: MIA geeft die weer zonder haar tot de hare te maken.",
-      "actualLabel": "Gepubliceerde waarde",
-      "actualPending": "nog niet gepubliceerd",
-      "forecastLabel": "Consensus van analisten",
-      "forecastNote": "prognose van derden, niet van MIA",
-      "previousLabel": "Vorige publicatie",
-      "revisedFrom": "herzien vanaf {value}",
-      "unitMissing": "eenheid niet opgegeven door deze bron",
-      "figuresEmpty": "Geen cijfers verstrekt voor deze publicatie door de huidige bron.",
-      "measuresTitle": "Wat de engine bij eerdere publicaties heeft gemeten",
-      "measuresBadge": "Koersbeweging",
-      "measuresPending": "Metingen volgen: de amplitude die de markten bij eerdere publicaties van deze indicator hebben afgelegd, verschijnt hier zodra de engine-meting is aangesloten (NW-2).",
-      "sourceLine": "Bron: {source}",
-      "notFoundTitle": "Publicatie niet gevonden",
-      "notFound": "Deze publicatie valt niet binnen het huidige venster van de kalender.",
+      "back": "Back to the calendar",
+      "countdownLabel": "Release in",
+      "publishedFiguresTitle": "Published figures",
+      "publishedFiguresBadge": "Indicator value",
+      "publishedFiguresNote": "These figures are the value of the indicator itself, in the unit of the organism that publishes it — not price moves. They are shown as published, without conversion or re-rounding.",
+      "actualLabel": "Published value",
+      "actualPending": "not yet published",
+      "previousLabel": "Previous release",
+      "revisedFromTo": "Initial value {initial}, revised on {date} — current value {current}.",
+      "notRevised": "This figure has not been revised since its first publication.",
+      "unitMissing": "unit not provided by this source",
+      "measuresTitle": "What the engine measured at previous releases",
+      "measuresBadge": "Price move",
+      "measuresPending": "Measures to come: the amplitude travelled by the markets at this indicator's past releases will appear here once the engine measure is wired (NW-2).",
+      "notFoundTitle": "Release not found",
+      "notFound": "This release is not in the calendar's current window.",
       "nono": {
-        "title": "Wat deze pagina niet zegt",
+        "title": "What this page does not say",
         "items": {
-          "0": "Ze voorspelt noch de waarde die gepubliceerd zal worden, noch de reactie van de markt.",
-          "1": "Ze interpreteert een afwijking van de consensus niet als stijgend of dalend.",
-          "2": "Ze beveelt aan om noch in te grijpen, noch zich te onthouden, noch iets te sluiten.",
-          "3": "Amplitudes uit het verleden worden gemeten over een klein aantal dagen, in verschillende contexten, en hebben geen enkele voorspellende waarde."
+          "0": "It does not predict the value that will be published, nor the market's reaction.",
+          "1": "It does not read a gap between the published value and the previous one as bullish or bearish.",
+          "2": "It recommends neither acting, nor abstaining, nor closing anything.",
+          "3": "Past amplitudes are measured over a small number of days, in different contexts, and have no predictive value."
         }
       }
     }
