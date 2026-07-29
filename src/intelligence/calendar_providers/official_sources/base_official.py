@@ -28,7 +28,7 @@ import os
 from dataclasses import dataclass
 from datetime import datetime, time, timezone
 from pathlib import Path
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Tuple
 from zoneinfo import ZoneInfo
 
 from src.intelligence.calendar_providers.base import (
@@ -72,6 +72,11 @@ class CatalogEvent:
     time_confirmed: bool
     organism: Optional[str]
     license_label: Optional[str]
+    # Live .ics feed wiring (opt-in): the source's iCalendar URL + the keyword
+    # rules that link a VEVENT SUMMARY to this event's key.
+    ics_feed: Optional[str] = None
+    ics_match: Tuple[str, ...] = ()
+    ics_exclude: Tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -115,6 +120,9 @@ def load_catalog(path: Optional[Path] = None) -> Dict[str, CatalogEvent]:
                 time_confirmed=bool(ev.get("time_confirmed", False)),
                 organism=smeta.get("organism"),
                 license_label=smeta.get("license_label"),
+                ics_feed=smeta.get("ics_feed"),
+                ics_match=tuple(str(s).lower() for s in ev.get("ics_match", [])),
+                ics_exclude=tuple(str(s).lower() for s in ev.get("ics_exclude", [])),
             )
         return out
     except (OSError, ValueError, TypeError, KeyError) as exc:
@@ -161,12 +169,81 @@ def _parse_dt(value: str) -> Optional[datetime]:
         return None
 
 
+_ENV_ICS_LIVE = "CALENDAR_ICS_LIVE"
+
+
 def _schedule_date_source(source_key: str) -> Callable[[Dict[str, CatalogEvent]], List[ReleaseInstance]]:
-    """Default date source: the schedule config, filtered to this source's keys."""
+    """Curated date source: the versioned schedule config, filtered to this source."""
 
     def _source(catalog: Dict[str, CatalogEvent]) -> List[ReleaseInstance]:
         mine = {k for k, c in catalog.items() if c.source == source_key}
         return [r for r in load_schedule() if r.event_key in mine]
+
+    return _source
+
+
+def match_ics_key(summary: str, events: Dict[str, CatalogEvent]) -> Optional[str]:
+    """Link an .ics VEVENT SUMMARY to a catalog key: all ``ics_match`` tokens
+    present AND no ``ics_exclude`` token present. First match wins. Case-insensitive."""
+    low = summary.lower()
+    for c in events.values():
+        if not c.ics_match:
+            continue
+        if all(tok in low for tok in c.ics_match) and not any(
+            tok in low for tok in c.ics_exclude
+        ):
+            return c.key
+    return None
+
+
+def ics_date_source(
+    source_key: str,
+    fetch_fn: Optional[Callable[[str], str]] = None,
+) -> Callable[[Dict[str, CatalogEvent]], List[ReleaseInstance]]:
+    """Live date source: fetch the source's .ics feed and map SUMMARY→key. Empty
+    on any failure (⇒ caller falls back to the curated schedule)."""
+    # Imported lazily so the network module is never loaded on the curated path.
+    from src.intelligence.calendar_providers.official_sources.ics_feed import (
+        fetch_ics,
+        parse_ics,
+    )
+
+    fetch = fetch_fn or fetch_ics
+
+    def _source(catalog: Dict[str, CatalogEvent]) -> List[ReleaseInstance]:
+        mine = {k: c for k, c in catalog.items() if c.source == source_key}
+        feed = next((c.ics_feed for c in mine.values() if c.ics_feed), None)
+        if not feed:
+            return []
+        text = fetch(feed)
+        if not text:
+            return []
+        seen = set()
+        out: List[ReleaseInstance] = []
+        for summary, day in parse_ics(text):
+            key = match_ics_key(summary, mine)
+            if key and (key, day) not in seen:
+                seen.add((key, day))
+                out.append(ReleaseInstance(event_key=key, release_date=day))
+        return out
+
+    return _source
+
+
+def _default_date_source(source_key: str) -> Callable[[Dict[str, CatalogEvent]], List[ReleaseInstance]]:
+    """Default: opt-in live .ics (``CALENDAR_ICS_LIVE=1``) with a curated fallback.
+
+    When the flag is set AND the live feed yields ≥1 release, the live dates win
+    for that source (auto-refreshing); otherwise the curated, verified schedule
+    is served. Absent the flag, only the curated schedule is used — deterministic
+    for tests and for a default deployment until the feed is validated live."""
+
+    def _source(catalog: Dict[str, CatalogEvent]) -> List[ReleaseInstance]:
+        if os.environ.get(_ENV_ICS_LIVE, "").strip().lower() in ("1", "true", "yes"):
+            live = ics_date_source(source_key)(catalog)
+            if live:
+                return live
+        return _schedule_date_source(source_key)(catalog)
 
     return _source
 
@@ -184,7 +261,7 @@ class OfficialSourceProvider(CalendarProvider):
         date_source: Optional[Callable[[Dict[str, CatalogEvent]], List[ReleaseInstance]]] = None,
     ) -> None:
         self._catalog = catalog if catalog is not None else load_catalog()
-        self._date_source = date_source or _schedule_date_source(self.SOURCE)
+        self._date_source = date_source or _default_date_source(self.SOURCE)
 
     @property
     def source_name(self) -> str:
@@ -272,4 +349,6 @@ __all__ = [
     "ReleaseInstance",
     "load_catalog",
     "load_schedule",
+    "match_ics_key",
+    "ics_date_source",
 ]

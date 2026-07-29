@@ -14,14 +14,17 @@
     "Elles doivent être re-vérifiées périodiquement (les calendriers officiels bougent, ex.",
     "reports de shutdown). Ne JAMAIS inscrire une date non vérifiée sur une page officielle.",
     "Non couverts à cette date (dates non confirmées de façon fiable, laissés absents plutôt",
-    "que fabriqués) : us_ppi (calendrier BLS perturbé par le lapse d'appropriations 2025-26),",
-    "ea_hicp_flash / ea_gdp_flash / ea_unemployment (calendrier Eurostat en JS/PDF, non extrait)."
+    "que fabriqués) : ea_hicp_flash / ea_gdp_flash / ea_unemployment (calendrier Eurostat servi",
+    "en JS + .ics paramétré non dérivable). À couvrir via le feed .ics live (CALENDAR_ICS_LIVE)",
+    "ou une vérification manuelle ultérieure."
   ],
   "version": 1,
   "releases": [
     { "event_key": "us_employment_situation", "date": "2026-08-07", "schedule_url": "https://www.bls.gov/schedule/news_release/empsit.htm", "last_verified": "2026-07-28" },
 
     { "event_key": "us_cpi", "date": "2026-08-12", "schedule_url": "https://www.bls.gov/schedule/news_release/cpi.htm", "last_verified": "2026-07-28" },
+
+    { "event_key": "us_ppi", "date": "2026-08-13", "schedule_url": "https://www.bls.gov/schedule/news_release/ppi.htm", "last_verified": "2026-07-29" },
 
     { "event_key": "us_gdp", "date": "2026-08-26", "schedule_url": "https://www.bea.gov/news/schedule", "last_verified": "2026-07-28" },
     { "event_key": "us_gdp", "date": "2026-09-30", "schedule_url": "https://www.bea.gov/news/schedule", "last_verified": "2026-07-28" },

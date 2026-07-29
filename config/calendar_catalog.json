@@ -12,7 +12,11 @@
     "   mesures d'amplitude (jamais approximée).",
     "AUCUN consensus (aucun organisme public n'en publie) ; AUCUN classement d'impact (aucun",
     "organisme ne grade ses publications). Les dates réelles de chaque parution proviennent des",
-    "flux/calendriers officiels via les adaptateurs — ce fichier ne fige QUE le récurrent."
+    "flux/calendriers officiels via les adaptateurs — ce fichier ne fige QUE le récurrent.",
+    "Feed live .ics (opt-in CALENDAR_ICS_LIVE=1) : sources.<src>.ics_feed = URL du flux iCalendar",
+    "officiel ; ics_match/ics_exclude par événement = mots-clés (minuscule) pour relier le SUMMARY",
+    "du VEVENT à la clé (ics_match = tous présents, ics_exclude = aucun présent). Repli sur le",
+    "planning curé si le feed est injoignable."
   ],
   "version": 1,
   "periodicities": ["monthly", "quarterly", "eight_per_year"],
@@ -20,12 +24,14 @@
     "bls": {
       "organism": "Bureau of Labor Statistics",
       "license_label": "Domaine public (17 U.S.C. §105) — citation : U.S. Bureau of Labor Statistics",
-      "policy_url": "https://www.bls.gov/opub/copyright-information.htm"
+      "policy_url": "https://www.bls.gov/opub/copyright-information.htm",
+      "ics_feed": "https://www.bls.gov/schedule/news_release/bls.ics"
     },
     "bea": {
       "organism": "Bureau of Economic Analysis",
       "license_label": "Domaine public (17 U.S.C. §105) — citation : U.S. Bureau of Economic Analysis",
-      "policy_url": "https://www.bea.gov/help/faq/147"
+      "policy_url": "https://www.bea.gov/help/faq/147",
+      "ics_feed": "https://www.bea.gov/news/schedule/ics/online-calendar-subscription.ics"
     },
     "census": {
       "organism": "U.S. Census Bureau",
@@ -55,6 +61,7 @@
       "event": "Rapport sur l'emploi (NFP, chômage, salaires)",
       "currency": "USD",
       "series_code": "CES0000000001",
+      "ics_match": ["employment situation"],
       "value_unit": "milliers d'emplois",
       "periodicity": "monthly",
       "source_timezone": "America/New_York",
@@ -69,6 +76,8 @@
       "event": "Indice des prix à la consommation (IPC)",
       "currency": "USD",
       "series_code": "CUUR0000SA0",
+      "ics_match": ["consumer price index"],
+      "ics_exclude": ["producer"],
       "value_unit": "indice (1982-84 = 100)",
       "periodicity": "monthly",
       "source_timezone": "America/New_York",
@@ -83,6 +92,7 @@
       "event": "Indice des prix à la production (IPP)",
       "currency": "USD",
       "series_code": "WPSFD4",
+      "ics_match": ["producer price index"],
       "value_unit": "indice (nov. 2009 = 100)",
       "periodicity": "monthly",
       "source_timezone": "America/New_York",
@@ -97,6 +107,8 @@
       "event": "Produit intérieur brut (PIB)",
       "currency": "USD",
       "series_code": "NIPA-T10101",
+      "ics_match": ["gross domestic product"],
+      "ics_exclude": ["state", "by state"],
       "value_unit": "% (variation du PIB réel)",
       "periodicity": "quarterly",
       "source_timezone": "America/New_York",
@@ -111,6 +123,7 @@
       "event": "Revenus et dépenses des ménages (indice de prix PCE)",
       "currency": "USD",
       "series_code": "NIPA-T20804",
+      "ics_match": ["personal income and outlays"],
       "value_unit": "indice de prix (PCE)",
       "periodicity": "monthly",
       "source_timezone": "America/New_York",

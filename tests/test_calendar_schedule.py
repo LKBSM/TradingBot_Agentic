@@ -72,8 +72,9 @@ def test_scheduled_times_are_dst_correct() -> None:
 
 
 def test_uncovered_events_are_absent_not_fabricated() -> None:
-    # us_ppi + the three Eurostat euro events have no reliably-verified dates yet,
-    # so they must NOT appear (honest gap, never a fabricated date).
+    # The three Eurostat euro events have no reliably-verified dates yet (calendar
+    # served in JS), so they must NOT appear — an honest gap, never a fabricated
+    # date. They are populated by the live .ics feed or a later verification.
     keys = {e.provider_ref.split(":")[0] for e in OfficialCalendarProvider().fetch().events}
-    for absent in ("us_ppi", "ea_hicp_flash", "ea_gdp_flash", "ea_unemployment"):
+    for absent in ("ea_hicp_flash", "ea_gdp_flash", "ea_unemployment"):
         assert absent not in keys

@@ -174,6 +174,7 @@ déploiement (le provider par défaut n'est plus vide). Fenêtre front élargie 
 |---|---|---|
 | Emploi US (NFP) | 07/08 | bls.gov/schedule/news_release/empsit.htm |
 | IPC (CPI) | 12/08 | bls.gov/schedule/news_release/cpi.htm |
+| IPP (PPI) | 13/08 | bls.gov/schedule/news_release/ppi.htm |
 | PIB (GDP) | 26/08, 30/09, 29/10 | bea.gov/news/schedule |
 | Revenus/dépenses (PCE) | 26/08, 30/09, 29/10 | bea.gov/news/schedule |
 | Décision FOMC | 16/09, 28/10, 09/12 | federalreserve.gov/…/fomccalendars.htm |
@@ -182,25 +183,41 @@ déploiement (le provider par défaut n'est plus vide). Fenêtre front élargie 
 | Biens durables | 26/08, 25/09, 27/10 | census.gov/…/calendar-listview.html |
 | Décision BCE | 10/09, 29/10, 17/12 | ecb.europa.eu/press/calendars/mgcgc |
 
-**Non couverts (dates laissées absentes, jamais fabriquées)** : `us_ppi` (calendrier
-BLS perturbé par le *lapse in appropriations* 2025-26), `ea_hicp_flash`,
-`ea_gdp_flash`, `ea_unemployment` (calendrier Eurostat servi en JS/PDF, non
-extractible de façon fiable). Ces types d'événements restent dans le catalogue ;
-leurs dates seront ajoutées à la prochaine vérification ou par le feed `.ics`.
+**Non couverts (dates laissées absentes, jamais fabriquées)** : `ea_hicp_flash`,
+`ea_gdp_flash`, `ea_unemployment` — le calendrier Eurostat est servi en JS et son
+`.ics` est paramétré (URL non dérivable sans le générateur). Ces types restent
+dans le catalogue ; leurs dates arriveront via le feed `.ics` (URL euro-indicators
+à confirmer) ou une vérification manuelle.
 
-**Maintenance** : chaque ligne porte `last_verified`. Les calendriers officiels
-bougent (reports de shutdown) → re-vérification périodique nécessaire. Le seam
-`date_source` injectable permet de brancher un **feed live `.ics`/API** par
-source (auto-rafraîchi) sans toucher au reste — étape d'automatisation suivante.
+## 6ter. Feed live `.ics` — auto-rafraîchissement (implémenté + validé)
+
+Les calendriers de BLS, BEA et Eurostat sont des flux iCalendar. Le module
+`official_sources/ics_feed.py` (stdlib, UA navigateur, timeout, gracieux) les
+récupère et parse les `VEVENT` (dépliage de lignes, SUMMARY déséchappé,
+`DTSTART` date/datetime → date). Le SUMMARY est relié à la clé d'événement par
+les mots-clés `ics_match`/`ics_exclude` du catalogue (auditable). Chaque adaptateur
+essaie son feed puis **retombe sur le planning curé** si le flux est injoignable
+— une source n'est jamais effacée.
+
+- **Opt-in** : `CALENDAR_ICS_LIVE=1` (défaut OFF pour le déterminisme des tests).
+  **Activé en production** (`render.yaml`). Absent le flag → planning curé seul.
+- **Validé en réel** : le flux BEA (`.../online-calendar-subscription.ics`,
+  31 Ko, 119 VEVENT) matche 36 parutions PIB/PCE, DST correct (jan → 13:30Z EST,
+  mar → 12:30Z EDT), « by State » exclu. BLS bloque le bot (403) → repli curé.
+- Quand le feed d'une source répond, ses dates **priment** (auto-rafraîchies) ;
+  sinon le planning curé, re-vérifiable (`last_verified` par ligne).
+
+**Maintenance** : les dates curées portent `last_verified` (re-vérification
+périodique) ; le feed `.ics` automatise les sources qui l'exposent.
 
 ## 7. Hors couverture (assumé)
 
-- **Feed live réseau auto-rafraîchi** : le seam `date_source` est en place et
-  testé ; le branchement HTTP/`.ics` par source (BLS/BEA/Eurostat) + clés BLS/BEA
-  automatiserait le rafraîchissement (aujourd'hui : planning curé versionné,
-  re-vérifié manuellement). BLS bloque le fetch bot (403) — à valider serveur.
-- **PPI + trio Eurostat** : dates à vérifier (voir 6bis).
-- **Valeurs/amplitude d'historique moteur** : « mesures à venir » (NW-2).
+- **URL du feed Eurostat euro-indicators** : le `.ics` Eurostat est paramétré
+  (généré par le bouton « subscribe ») ; l'URL directe reste à confirmer pour
+  brancher HICP/PIB/chômage en live. BEA validé, BLS à valider côté serveur (403 bot).
+- **Valeurs (actual/previous) + amplitude d'historique moteur** : le feed `.ics`
+  fournit les DATES ; l'enrichissement en valeurs via les API de données
+  (JSON-stat/SDMX/BLS v2) et l'amplitude sont « mesures à venir » (NW-2).
 - **Aperçu /app** : `CalendarPreview` prêt, placement sur /app différé (comme NW-1).
 - **Vintages ALFRED** : écartés (politique FRED). Vintages euro exploitables
   directement (Eurostat triangles, BCE `includeHistory`).
@@ -209,8 +226,9 @@ source (auto-rafraîchi) sans toucher au reste — étape d'automatisation suiva
 
 ## 8. Vérifications
 
-- Back : 52 tests calendrier verts (providers, service, store, endpoint, schedule),
-  dont l'intégration HTTP avec le **vrai** provider par défaut + le planning réel.
+- Back : 61 tests calendrier verts (providers, service, store, endpoint, schedule,
+  ics), dont l'intégration HTTP avec le **vrai** provider par défaut, le planning
+  réel, et le parseur/matching `.ics` (feed BEA validé en réseau réel).
 - Front : tests calendrier verts (workspace, detail, copy-honesty), suite front complète.
 - i18n : fr + en complets, parité stricte 9 locales (7 autres = fallback EN),
   aucune chaîne prédictive (garde copy-honesty), clés impact/consensus supprimées.

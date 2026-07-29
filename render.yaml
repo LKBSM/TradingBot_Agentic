@@ -67,6 +67,10 @@ services:
         value: /app/data/candles.db
       - key: MARKET_READINGS_DB_PATH
         value: /app/data/market_readings.db
+      - key: CALENDAR_CACHE_DB_PATH
+        value: /app/data/calendar_cache.db
+      - key: CALENDAR_ICS_LIVE          # auto-refresh calendar dates from official .ics feeds
+        value: "1"
       - key: BOOTSTRAP_ENABLED
         value: "true"
       - key: SCHEDULER_ENABLED
