@@ -47,7 +47,12 @@ export function CalendarEventDetail({
   const error = injectedData !== undefined ? null : hook.error;
   const now = React.useMemo(() => injectedNow ?? new Date(), [injectedNow]);
 
-  const ev = data?.events.find((e) => e.event_id === eventId) ?? null;
+  // Match the full id ("<source>:<hash>") or the bare hash — the App news module
+  // deep-links with the raw pipeline hash (no source prefix).
+  const ev =
+    data?.events.find(
+      (e) => e.event_id === eventId || e.event_id.split(':').pop() === eventId,
+    ) ?? null;
 
   return (
     <div className="cal-page cald">

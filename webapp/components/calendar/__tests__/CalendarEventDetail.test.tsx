@@ -84,6 +84,12 @@ describe('NW-1b CalendarEventDetail', () => {
     expect(container.textContent ?? '').toContain('haussier ou baissier');
   });
 
+  it('resolves a bare pipeline hash (App news deep-link, no source prefix)', () => {
+    // The App news module links with the raw hash « cpi » (no « forexfactory: »).
+    const { container } = renderDetail('cpi');
+    expect(container.querySelector('h1')?.textContent).toBe('CPI y/y');
+  });
+
   it('shows an honest « introuvable » state for an unknown id', () => {
     const { container } = renderDetail('forexfactory:does-not-exist');
     expect(container.querySelector('.cal-empty')?.textContent).toContain(

@@ -239,6 +239,8 @@ export interface NewsUpcoming {
   impact: ImpactLevel;
   currency: string;
   potential_effect_description: string;
+  /** Deterministic release id — deep-links the App news row to /actualites. */
+  event_id?: string | null;
 }
 
 export interface NewsJustPublished {
@@ -251,6 +253,7 @@ export interface NewsJustPublished {
   currency: string;
   impact: ImpactLevel;
   potential_effect_description: string;
+  event_id?: string | null;
 }
 
 export interface TechnicalTriggerRecent {
