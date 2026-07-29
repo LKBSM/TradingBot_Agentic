@@ -30,9 +30,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Optional
 
-# Combos covered by the product (mirror Chatbot.SUPPORTED_* / webapp store).
-SUPPORTED_INSTRUMENTS: tuple[str, ...] = ("XAUUSD", "EURUSD")
-SUPPORTED_TIMEFRAMES: tuple[str, ...] = ("M15", "H1", "H4")
+# Combos covered by the product — derived from the single sources (TF-1), never
+# a hand-listed subset.
+from src.intelligence.lookback_config import enabled_timeframes as _enabled_tfs
+from src.intelligence.lookback_config import supported_instruments as _supported_instruments
+
+SUPPORTED_INSTRUMENTS: tuple[str, ...] = tuple(_supported_instruments())
+SUPPORTED_TIMEFRAMES: tuple[str, ...] = tuple(_enabled_tfs())
 
 # Layers the chatbot may toggle. "all" is the convenience target (show/hide every
 # overlay at once); "breaks" = BOS / CHOCH / retest level lines + markers;

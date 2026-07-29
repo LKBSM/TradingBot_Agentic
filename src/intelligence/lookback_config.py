@@ -32,13 +32,12 @@ from typing import Dict, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
-# Candle duration in minutes. Local constant (not imported from the volatility
-# forecaster) to keep this module dependency-light — it is imported by the API
-# perimeter and by the backfill task.
-_TF_MINUTES: Dict[str, int] = {
-    "M1": 1, "M5": 5, "M15": 15, "M30": 30,
-    "H1": 60, "H4": 240, "D1": 1440, "W1": 10080,
-}
+# Candle duration in minutes — derived from the single timeframe registry
+# (TF-1), never a second copy. The registry is dependency-light, so importing it
+# keeps this module importable by the API perimeter and the backfill task.
+from src.intelligence import timeframe_registry as _tfreg
+
+_TF_MINUTES: Dict[str, int] = _tfreg.minutes_map()
 
 # A DURATION is turned into a bar count at CONTINUOUS density (1440 min/day, every
 # calendar day) — the densest a series can possibly be. Real Twelve Data series
@@ -176,8 +175,9 @@ def supported_instruments() -> Tuple[str, ...]:
 
 
 def supported_timeframes() -> Tuple[str, ...]:
-    """All configured timeframes, INCLUDING M1 regardless of the gate."""
-    return _load().timeframes
+    """The tradeable perimeter — the single source is the timeframe registry
+    (TF-1). Includes M1 regardless of the gate."""
+    return _tfreg.perimeter_ids()
 
 
 def is_m1_enabled() -> bool:
@@ -185,9 +185,9 @@ def is_m1_enabled() -> bool:
 
 
 def enabled_timeframes() -> Tuple[str, ...]:
-    """Configured timeframes minus M1 when the gate is off."""
+    """Perimeter timeframes minus M1 when the gate is off."""
     m1_on = is_m1_enabled()
-    return tuple(tf for tf in _load().timeframes if tf.upper() != "M1" or m1_on)
+    return tuple(tf for tf in supported_timeframes() if tf.upper() != "M1" or m1_on)
 
 
 def enabled_combos() -> Tuple[Tuple[str, str], ...]:

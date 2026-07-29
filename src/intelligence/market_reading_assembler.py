@@ -50,17 +50,11 @@ from src.intelligence.provider_snapshot import snapshot_provider_response
 logger = logging.getLogger(__name__)
 
 
-# Timeframe minute durations (aligned with TwelveDataProvider._TIMEFRAME_MAP keys).
-_TIMEFRAME_MINUTES: dict[str, int] = {
-    "M1": 1,
-    "M5": 5,
-    "M15": 15,
-    "M30": 30,
-    "H1": 60,
-    "H4": 240,
-    "D1": 1440,
-    "W1": 10080,
-}
+# Timeframe minute durations — derived from the single timeframe registry (TF-1),
+# not a second copy. Kept under the same name so existing importers are unchanged.
+from src.intelligence import timeframe_registry as _tfreg
+
+_TIMEFRAME_MINUTES: dict[str, int] = _tfreg.minutes_map()
 
 
 def expected_last_candle_close(timeframe: str, now: datetime) -> datetime:

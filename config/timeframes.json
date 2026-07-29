@@ -1,0 +1,13 @@
+{
+  "_comment": "TF-1 — SINGLE SOURCE OF TRUTH for every timeframe (unité de temps). Backend reads it via src/intelligence/timeframe_registry.py; the frontend consumes a GENERATED module (webapp/lib/timeframes.generated.ts via scripts/gen_timeframes.mjs) — never a hand-copied list. Adding a 7th unit = ONE edit here (+ regenerate). Every scattered enumeration (minutes/seconds/provider strings/labels/relevance/alignment subsets) derives from this. Order = the ladder order (fastest→slowest); neighbours (upper/lower) are derived from it. `perimeter`=tradeable unit; `reference`=served as a read-only reference series (W1); neither=known unit used only for conversions (M30). `sessionRelevant`/`prevLevelsRelevant`=false when a candle spans a whole day so the element must be hidden-with-mention (D1/W1).",
+  "timeframes": [
+    { "id": "M1",  "minutes": 1,     "provider": "1min",  "labelLong": "1 minute",   "dateFormat": "HH:mm",     "perimeter": true,  "reference": false, "sessionRelevant": true,  "prevLevelsRelevant": true },
+    { "id": "M5",  "minutes": 5,     "provider": "5min",  "labelLong": "5 minutes",  "dateFormat": "HH:mm",     "perimeter": true,  "reference": false, "sessionRelevant": true,  "prevLevelsRelevant": true },
+    { "id": "M15", "minutes": 15,    "provider": "15min", "labelLong": "15 minutes", "dateFormat": "HH:mm",     "perimeter": true,  "reference": false, "sessionRelevant": true,  "prevLevelsRelevant": true },
+    { "id": "M30", "minutes": 30,    "provider": "30min", "labelLong": "30 minutes", "dateFormat": "HH:mm",     "perimeter": false, "reference": false, "sessionRelevant": true,  "prevLevelsRelevant": true },
+    { "id": "H1",  "minutes": 60,    "provider": "1h",    "labelLong": "1 heure",    "dateFormat": "HH:mm",     "perimeter": true,  "reference": false, "sessionRelevant": true,  "prevLevelsRelevant": true },
+    { "id": "H4",  "minutes": 240,   "provider": "4h",    "labelLong": "4 heures",   "dateFormat": "dd MMM HH:mm", "perimeter": true, "reference": false, "sessionRelevant": true,  "prevLevelsRelevant": true },
+    { "id": "D1",  "minutes": 1440,  "provider": "1day",  "labelLong": "1 jour",     "dateFormat": "dd MMM",    "perimeter": true,  "reference": true,  "sessionRelevant": false, "prevLevelsRelevant": false },
+    { "id": "W1",  "minutes": 10080, "provider": "1week", "labelLong": "1 semaine",  "dateFormat": "dd MMM yyyy", "perimeter": false, "reference": true, "sessionRelevant": false, "prevLevelsRelevant": false }
+  ]
+}
