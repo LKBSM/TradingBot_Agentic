@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { useReadingFormatters } from '@/lib/market-reading/use-reading-formatters';
 import { useMtfTrends } from '@/lib/market-reading/hooks';
 import { mtfOrderFor } from '@/lib/market-reading/mtf-trend';
+import { isSessionRelevant, isPrevLevelsRelevant } from '@/lib/timeframes';
 import { deriveTrendMaturity } from '@/lib/market-reading/regime-facts';
 import { formatLocalDayLong, parseUtc } from '@/lib/time/localTime';
 import {
@@ -221,6 +222,10 @@ export function RegimeCard({
   // The units ABOVE the viewed one (TF-1 decision C) — relative, not a fixed
   // H4·H1·M15 triplet. Empty only at the very top of the ladder.
   const mtfOrder = mtfOrderFor(tf);
+  // TF-1 decision D — on a unit whose candle spans a whole day (D1/W1), Session
+  // and "veille" reference levels are not applicable → hidden WITH a mention.
+  const sessionRelevant = isSessionRelevant(tf);
+  const prevLevelsRelevant = isPrevLevelsRelevant(tf);
   const { referenceLevel, setReferenceLevel, selection, select, clearSelection } =
     useChartViewOptional();
 
@@ -417,15 +422,20 @@ export function RegimeCard({
       // VALUE = the current session (not the market state — the header badge
       // already shows open/closed; no value lives in two places).
       label: t('tiles.sess'),
-      value: session ? sessionName(session.current) : null,
-      sub: session ? sessionSub(session) : null,
-      available: session != null,
+      value: !sessionRelevant
+        ? t('value.notApplicable')
+        : session
+          ? sessionName(session.current)
+          : null,
+      sub: !sessionRelevant ? t('sub.sessNA', { tf }) : session ? sessionSub(session) : null,
+      available: !sessionRelevant || session != null,
     },
     {
       key: 'lvl',
       label: t('tiles.lvl'),
+      value: !prevLevelsRelevant ? t('value.notApplicable') : undefined,
       html:
-        levelRows.length > 0 ? (
+        prevLevelsRelevant && levelRows.length > 0 ? (
           <>
             {levelRows.slice(2, 4).map((r) => (
               <div className="lvlmini" key={r.key}>
@@ -435,8 +445,12 @@ export function RegimeCard({
             ))}
           </>
         ) : null,
-      sub: levelRows.length > 0 ? t('sub.lvl', { count: levelRows.length }) : null,
-      available: levelRows.length > 0,
+      sub: !prevLevelsRelevant
+        ? t('sub.lvlNA', { tf })
+        : levelRows.length > 0
+          ? t('sub.lvl', { count: levelRows.length })
+          : null,
+      available: !prevLevelsRelevant || levelRows.length > 0,
     },
   ];
 

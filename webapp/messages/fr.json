@@ -29,14 +29,17 @@
       "mat": "depuis le CHOCH du {date}",
       "dens": "ouverts sur {tf}",
       "lvl": "{count, plural, one {# repère} other {# repères}} · ouvre le détail",
-      "sess": "{label} dans {delay}"
+      "sess": "{label} dans {delay}",
+      "sessNA": "non applicable sur {tf} : la bougie couvre toutes les sessions",
+      "lvlNA": "non applicable sur {tf} : la veille est la bougie précédente"
     },
     "value": {
       "pos": "{pct} %",
       "mat": "{count, plural, one {# bougie} other {# bougies}}",
-      "dens": "{ob} OB · {fvg} FVG",
+      "dens": "{ob} OB · {fvg} FVG actifs",
       "align": "{count}/{total} unités {arrow}",
-      "alignNone": "aucune unité supérieure"
+      "alignNone": "aucune unité supérieure",
+      "notApplicable": "non applicable"
     },
     "data": {
       "phaseHead": "Les deux mesures qui la composent",
@@ -1214,7 +1217,8 @@
     "struct": {
       "title": "Structure de marché",
       "zonesCount": "{count, plural, one {# zone} other {# zones}}",
-      "countFiltered": "{n} sur {m} zones",
+      "countFiltered": "{n} sur {m} zones · {active} actives",
+      "unitLabel": "Unité de temps : {tf}",
       "reset": "Réinitialiser",
       "noneType": "Aucun type sélectionné. Choisis au moins un type pour voir des résultats.",
       "noneState": "Aucun état sélectionné. Choisis au moins un état pour voir des résultats.",
@@ -1248,8 +1252,8 @@
       },
       "dist": {
         "inside": "Prix dans la zone",
-        "above": "+{pct} % au-dessus",
-        "below": "−{pct} % en dessous"
+        "above": "{pct} % au-dessus",
+        "below": "{pct} % en dessous"
       },
       "fact": {
         "neverTested": "Jamais testée depuis sa formation.",
@@ -1305,8 +1309,8 @@
         "low": "Creux"
       },
       "dist": {
-        "above": "+{pct} % au-dessus",
-        "below": "−{pct} % en dessous"
+        "above": "{pct} % au-dessus",
+        "below": "{pct} % en dessous"
       },
       "fact": {
         "intact": "Jamais touchée depuis sa formation.",

@@ -29,14 +29,17 @@
       "mat": "since the CHOCH of {date}",
       "dens": "open on {tf}",
       "lvl": "{count, plural, one {# marker} other {# markers}} · open the detail",
-      "sess": "{label} in {delay}"
+      "sess": "{label} in {delay}",
+      "sessNA": "not applicable on {tf}: the candle spans every session",
+      "lvlNA": "not applicable on {tf}: the previous day is the previous candle"
     },
     "value": {
       "pos": "{pct} %",
       "mat": "{count, plural, one {# candle} other {# candles}}",
-      "dens": "{ob} OB · {fvg} FVG",
+      "dens": "{ob} OB · {fvg} FVG active",
       "align": "{count}/{total} units {arrow}",
-      "alignNone": "no higher unit"
+      "alignNone": "no higher unit",
+      "notApplicable": "not applicable"
     },
     "data": {
       "phaseHead": "The two measures it is built from",
@@ -1214,7 +1217,8 @@
     "struct": {
       "title": "Market structure",
       "zonesCount": "{count, plural, one {# zone} other {# zones}}",
-      "countFiltered": "{n} of {m} zones",
+      "countFiltered": "{n} of {m} zones · {active} active",
+      "unitLabel": "Timeframe: {tf}",
       "reset": "Reset",
       "noneType": "No type selected. Pick at least one type to see results.",
       "noneState": "No state selected. Pick at least one state to see results.",
@@ -1248,8 +1252,8 @@
       },
       "dist": {
         "inside": "Price inside the zone",
-        "above": "+{pct}% above",
-        "below": "−{pct}% below"
+        "above": "{pct}% above",
+        "below": "{pct}% below"
       },
       "fact": {
         "neverTested": "Never tested since it formed.",
@@ -1305,8 +1309,8 @@
         "low": "Low"
       },
       "dist": {
-        "above": "+{pct}% above",
-        "below": "−{pct}% below"
+        "above": "{pct}% above",
+        "below": "{pct}% below"
       },
       "fact": {
         "intact": "Never touched since it formed.",

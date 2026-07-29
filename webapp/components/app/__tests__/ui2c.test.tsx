@@ -44,6 +44,7 @@ function renderStructure(price = 2392.35) {
     <StructureCard
       structure={STRUCT}
       instrument="XAUUSD"
+      timeframe="M15"
       price={price}
       selectedId={null}
       onSelect={noop}
@@ -143,6 +144,7 @@ describe('UI-2c — Structure card list', () => {
       <StructureCard
         structure={STRUCT}
         instrument="XAUUSD"
+        timeframe="M15"
         price={2405.0}
         selectedId={null}
         onSelect={noop}

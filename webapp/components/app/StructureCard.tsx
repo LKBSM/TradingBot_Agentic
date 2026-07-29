@@ -67,6 +67,8 @@ function latestBreak<T extends BOSRecent | CHOCHRecent>(
 interface StructureCardProps {
   structure: MarketReadingStructure;
   instrument: string;
+  /** The unit this panel operates on — labelled like the Régime panel (TF-1 E3). */
+  timeframe: string;
   /** Current price — drives the distance badges (recomputed every render / tick). */
   price: number | null;
   /** Chart-highlighted zone id (single source of truth for the selected row). */
@@ -93,6 +95,7 @@ interface StructureCardProps {
 export function StructureCard({
   structure,
   instrument,
+  timeframe,
   price,
   selectedId,
   onSelect,
@@ -132,6 +135,18 @@ export function StructureCard({
   priceRef.current = price;
 
   const allZones = React.useMemo(() => collectZones(structure), [structure]);
+
+  // TF-1 E2 — the header states total AND active so it reconciles with the
+  // Régime « Densité » tile (which counts active/open only): total = active +
+  // consumed. Same active definition as Densité (OB active + FVG active/partial).
+  const activeCount = React.useMemo(
+    () =>
+      structure.order_blocks.filter((z) => z.status === 'active').length +
+      structure.fair_value_gaps.filter(
+        (z) => z.status === 'active' || z.status === 'partially_filled',
+      ).length,
+    [structure],
+  );
 
   const ordered = React.useMemo(() => {
     // (OB ∪ FVG) ET (active ∪ testée ∪ mitigée). No selection in a group ⇒ zero
@@ -198,8 +213,10 @@ export function StructureCard({
           <path d="M3 12h4l3-7 4 14 3-7h4" />
         </svg>
         <h3>{t('title')}</h3>
+        {/* TF-1 E3 — the panel carries its unit of time, like the Régime panel. */}
+        <span className="badge2" aria-label={t('unitLabel', { tf: timeframe })}>{timeframe}</span>
         <span className="hsp" />
-        <span className="badge2">{t('countFiltered', { n: ordered.length, m: allZones.length })}</span>
+        <span className="badge2">{t('countFiltered', { n: ordered.length, m: allZones.length, active: activeCount })}</span>
         <button
           type="button"
           className={cn('hbtn', helpOn && 'on')}

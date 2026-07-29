@@ -43,7 +43,7 @@ function renderLiq() {
 function renderStruct() {
   return render(
     <div className="app-shell">
-      <StructureCard structure={STRUCT} instrument="XAUUSD" price={2395} selectedId={null} onSelect={noop} onOpenZone={noop} openHelp={null} onToggleHelp={noop} />
+      <StructureCard structure={STRUCT} instrument="XAUUSD" timeframe="M15" price={2395} selectedId={null} onSelect={noop} onOpenZone={noop} openHelp={null} onToggleHelp={noop} />
     </div>,
   );
 }
@@ -109,11 +109,16 @@ describe('UI-3a — Liquidity multi-select filters', () => {
   });
 });
 
+// The Structure card now shows a leading TF chip (E3) then the count chip;
+// select the last .badge2 for the count, and tolerate the "· N actives" suffix.
+const countBadge = (c: HTMLElement) =>
+  Array.from(c.querySelectorAll('.badge2')).pop()?.textContent ?? '';
+
 describe('UI-3a — Structure multi-select filters', () => {
   it('default shows all zones with « N sur M »', () => {
     const { container } = renderStruct();
     expect(rows(container)).toHaveLength(4);
-    expect(badge(container)).toBe('4 sur 4 zones');
+    expect(countBadge(container)).toContain('4 sur 4 zones');
   });
 
   it('cross-group AND: type OB + state active → only the active OB', () => {
@@ -123,7 +128,7 @@ describe('UI-3a — Structure multi-select filters', () => {
     fireEvent.click(chip(container, fr.app.struct.st.mitig)); // state → {active}
     const shown = rows(container);
     expect(shown).toHaveLength(1); // ob1 (active)
-    expect(badge(container)).toBe('1 sur 4 zones');
+    expect(countBadge(container)).toContain('1 sur 4 zones');
   });
 
   it('zero type selected → empty + noneType message, no fallback', () => {
