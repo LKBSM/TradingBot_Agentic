@@ -1,0 +1,20 @@
+{
+  "_doc": [
+    "NW-1b — Planning daté des parutions officielles. AUDITABLE LIGNE PAR LIGNE.",
+    "Une entrée = une parution datée d'un événement du catalogue (calendar_catalog.json).",
+    "Chaque ligne DOIT porter :",
+    " - event_key : la clé de l'événement récurrent dans le catalogue.",
+    " - date : la date de parution 'YYYY-MM-DD' dans le fuseau de l'émetteur (l'heure vient du",
+    "   catalogue, appliquée dans ce fuseau, DST géré).",
+    " - schedule_url : la page/flux officiel d'où provient CETTE date.",
+    " - last_verified : la date de dernière vérification manuelle de cette parution.",
+    "Champs de valeurs, tous facultatifs et AFFICHÉS TELS QUE PUBLIÉS (jamais convertis) :",
+    " - actual : valeur courante ; actual_initial : valeur initialement publiée ; previous : période",
+    "   précédente ; revised (bool) + revised_at (date de révision).",
+    "Ce fichier est livré VIDE : sans dates vérifiées entrées ici (ou un feed live injecté dans",
+    "l'adaptateur), le calendrier est HONNÊTEMENT VIDE plutôt que d'afficher des dates fabriquées.",
+    "Ne JAMAIS remplir une date non vérifiée sur une page officielle."
+  ],
+  "version": 1,
+  "releases": []
+}

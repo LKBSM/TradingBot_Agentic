@@ -8,9 +8,10 @@
     built. It is NEVER the default source (see the provider factory) and must
     not be enabled in any client-facing deployment.
 
-All ForexFactory-specific parsing stays inside this file: nothing FF-shaped
-crosses the CalendarProvider boundary. The service, store, schema and front see
-only neutral ``ProviderEvent``s.
+NW-1b: the neutral event no longer carries an impact ranking (no organism grades
+its releases) nor a forecast/consensus (no organism publishes one). The FF feed's
+impact flag is used ONLY to drop holidays / non-economic rows, never emitted.
+All ForexFactory-specific parsing stays inside this file.
 """
 
 from __future__ import annotations
@@ -20,6 +21,7 @@ from typing import Callable, List, Optional
 
 from src.intelligence.calendar_providers.base import (
     CalendarProvider,
+    ProviderAttribution,
     ProviderEvent,
     ProviderFetch,
 )
@@ -35,9 +37,8 @@ from src.intelligence.news_pipeline import (
 
 logger = logging.getLogger(__name__)
 
-# Calendar keeps the full impact range (the page's "Faible" filter must be
-# honest). holiday / non-economic / empty are dropped.
-_FF_IMPACT_KEEP = {"high", "medium", "low"}
+# Used ONLY to drop holiday / non-economic / empty rows — never emitted.
+_FF_ECONOMIC_KEEP = {"high", "medium", "low"}
 
 _LICENSE_LABEL = (
     "ForexFactory (prototype dev) — aucun droit d'affichage commercial"
@@ -56,6 +57,16 @@ class ForexFactoryCalendarProvider(CalendarProvider):
     @property
     def source_name(self) -> str:
         return "forexfactory"
+
+    def attributions(self) -> List[ProviderAttribution]:
+        return [
+            ProviderAttribution(
+                source="forexfactory",
+                organism="ForexFactory (prototype)",
+                license_label=_LICENSE_LABEL,
+                policy_url="https://www.forexfactory.com/",
+            )
+        ]
 
     def fetch(self) -> ProviderFetch:
         try:
@@ -88,8 +99,8 @@ class ForexFactoryCalendarProvider(CalendarProvider):
         if not (title and currency and date_str):
             return None
 
-        impact = (ev.get("impact") or "").lower()
-        if impact not in _FF_IMPACT_KEEP:
+        # Drop holidays / non-economic rows (quality filter only — not emitted).
+        if (ev.get("impact") or "").lower() not in _FF_ECONOMIC_KEEP:
             return None
 
         scheduled_at = _parse_ff_datetime(date_str)
@@ -102,16 +113,17 @@ class ForexFactoryCalendarProvider(CalendarProvider):
             series_code=None,          # FF has no stable recurring id
             event=title,
             currency=currency,
-            impact=impact,
             scheduled_at=scheduled_at,
             source_timezone=_FF_SOURCE_TZ,
+            time_confirmed=True,       # prototype: the feed carries a datetime
             organism=None,             # FF does not name the issuing organism
+            periodicity=None,          # FF does not declare a cadence
             value_unit=None,           # FF does not carry a clean unit
             actual=_parse_numeric(ev.get("actual")),
-            forecast=_parse_numeric(ev.get("forecast")),
+            actual_initial=None,
             previous=_parse_numeric(ev.get("previous")),
             revised=False,
-            previous_before_revision=None,
+            revised_at=None,
             license_label=_LICENSE_LABEL,
         )
 

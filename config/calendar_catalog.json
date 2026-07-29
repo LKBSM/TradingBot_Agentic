@@ -1,0 +1,235 @@
+{
+  "_doc": [
+    "NW-1b — Catalogue des publications économiques officielles. SOURCE UNIQUE ET AUDITABLE.",
+    "Une entrée = une publication récurrente d'un organisme officiel. Chaque ligne porte :",
+    " - source / organism / license_label / policy_url : provenance et condition de réutilisation.",
+    " - series_code : identifiant stable et récurrent de la série chez l'émetteur.",
+    " - value_unit : unité DE L'INDICATEUR, telle que déclarée par l'émetteur (jamais un prix).",
+    " - source_timezone + release_time_local : l'heure officielle de publication, DST géré via IANA.",
+    " - time_source_url + time_last_verified : la page officielle qui documente l'heure, et la date",
+    "   de dernière vérification manuelle. La table est ainsi auditable ligne par ligne.",
+    " - time_confirmed : false → la publication est marquée « heure non confirmée » et EXCLUE des",
+    "   mesures d'amplitude (jamais approximée).",
+    "AUCUN consensus (aucun organisme public n'en publie) ; AUCUN classement d'impact (aucun",
+    "organisme ne grade ses publications). Les dates réelles de chaque parution proviennent des",
+    "flux/calendriers officiels via les adaptateurs — ce fichier ne fige QUE le récurrent."
+  ],
+  "version": 1,
+  "periodicities": ["monthly", "quarterly", "eight_per_year"],
+  "sources": {
+    "bls": {
+      "organism": "Bureau of Labor Statistics",
+      "license_label": "Domaine public (17 U.S.C. §105) — citation : U.S. Bureau of Labor Statistics",
+      "policy_url": "https://www.bls.gov/opub/copyright-information.htm"
+    },
+    "bea": {
+      "organism": "Bureau of Economic Analysis",
+      "license_label": "Domaine public (17 U.S.C. §105) — citation : U.S. Bureau of Economic Analysis",
+      "policy_url": "https://www.bea.gov/help/faq/147"
+    },
+    "census": {
+      "organism": "U.S. Census Bureau",
+      "license_label": "Domaine public (17 U.S.C. §105) — non approuvé ni certifié par le Census Bureau",
+      "policy_url": "https://www.census.gov/data/developers/about/terms-of-service.html"
+    },
+    "federal_reserve": {
+      "organism": "Federal Reserve Board",
+      "license_label": "Domaine public — citation : Federal Reserve Board",
+      "policy_url": "https://www.federalreserve.gov/disclaimer.htm"
+    },
+    "eurostat": {
+      "organism": "Eurostat",
+      "license_label": "CC BY 4.0 — attribution obligatoire : Source: Eurostat",
+      "policy_url": "https://ec.europa.eu/eurostat/help/copyright-notice"
+    },
+    "ecb": {
+      "organism": "Banque centrale européenne",
+      "license_label": "Réutilisation libre si la source est citée et les statistiques non modifiées — « Source: ECB »",
+      "policy_url": "https://www.ecb.europa.eu/stats/ecb_statistics/governance_and_quality_framework/html/usage_policy.en.html"
+    }
+  },
+  "events": [
+    {
+      "key": "us_employment_situation",
+      "source": "bls",
+      "event": "Rapport sur l'emploi (NFP, chômage, salaires)",
+      "currency": "USD",
+      "series_code": "CES0000000001",
+      "value_unit": "milliers d'emplois",
+      "periodicity": "monthly",
+      "source_timezone": "America/New_York",
+      "release_time_local": "08:30",
+      "time_confirmed": true,
+      "time_source_url": "https://www.bls.gov/schedule/news_release/empsit.htm",
+      "time_last_verified": "2026-07-28"
+    },
+    {
+      "key": "us_cpi",
+      "source": "bls",
+      "event": "Indice des prix à la consommation (IPC)",
+      "currency": "USD",
+      "series_code": "CUUR0000SA0",
+      "value_unit": "indice (1982-84 = 100)",
+      "periodicity": "monthly",
+      "source_timezone": "America/New_York",
+      "release_time_local": "08:30",
+      "time_confirmed": true,
+      "time_source_url": "https://www.bls.gov/news.release/cpi.htm",
+      "time_last_verified": "2026-07-28"
+    },
+    {
+      "key": "us_ppi",
+      "source": "bls",
+      "event": "Indice des prix à la production (IPP)",
+      "currency": "USD",
+      "series_code": "WPSFD4",
+      "value_unit": "indice (nov. 2009 = 100)",
+      "periodicity": "monthly",
+      "source_timezone": "America/New_York",
+      "release_time_local": "08:30",
+      "time_confirmed": true,
+      "time_source_url": "https://www.bls.gov/news.release/ppi.htm",
+      "time_last_verified": "2026-07-28"
+    },
+    {
+      "key": "us_gdp",
+      "source": "bea",
+      "event": "Produit intérieur brut (PIB)",
+      "currency": "USD",
+      "series_code": "NIPA-T10101",
+      "value_unit": "% (variation du PIB réel)",
+      "periodicity": "quarterly",
+      "source_timezone": "America/New_York",
+      "release_time_local": "08:30",
+      "time_confirmed": true,
+      "time_source_url": "https://www.bea.gov/news/schedule",
+      "time_last_verified": "2026-07-28"
+    },
+    {
+      "key": "us_pce",
+      "source": "bea",
+      "event": "Revenus et dépenses des ménages (indice de prix PCE)",
+      "currency": "USD",
+      "series_code": "NIPA-T20804",
+      "value_unit": "indice de prix (PCE)",
+      "periodicity": "monthly",
+      "source_timezone": "America/New_York",
+      "release_time_local": "08:30",
+      "time_confirmed": true,
+      "time_source_url": "https://www.bea.gov/news/schedule",
+      "time_last_verified": "2026-07-28"
+    },
+    {
+      "key": "us_fomc_rate",
+      "source": "federal_reserve",
+      "event": "Décision de taux (FOMC)",
+      "currency": "USD",
+      "series_code": null,
+      "value_unit": "fourchette du taux directeur (%)",
+      "periodicity": "eight_per_year",
+      "source_timezone": "America/New_York",
+      "release_time_local": "14:00",
+      "time_confirmed": true,
+      "time_source_url": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20130313a.htm",
+      "time_last_verified": "2026-07-28"
+    },
+    {
+      "key": "us_retail_sales",
+      "source": "census",
+      "event": "Ventes au détail (estimation avancée)",
+      "currency": "USD",
+      "series_code": "MARTS-RSAFS",
+      "value_unit": "millions de dollars",
+      "periodicity": "monthly",
+      "source_timezone": "America/New_York",
+      "release_time_local": "08:30",
+      "time_confirmed": true,
+      "time_source_url": "https://www.census.gov/retail/marts/www/marts_current.pdf",
+      "time_last_verified": "2026-07-28"
+    },
+    {
+      "key": "us_housing_starts",
+      "source": "census",
+      "event": "Mises en chantier",
+      "currency": "USD",
+      "series_code": "RESCONST-HOUST",
+      "value_unit": "milliers d'unités (rythme annualisé)",
+      "periodicity": "monthly",
+      "source_timezone": "America/New_York",
+      "release_time_local": "08:30",
+      "time_confirmed": true,
+      "time_source_url": "https://www.census.gov/economic-indicators/calendar-listview.html",
+      "time_last_verified": "2026-07-28"
+    },
+    {
+      "key": "us_durable_goods",
+      "source": "census",
+      "event": "Commandes de biens durables",
+      "currency": "USD",
+      "series_code": "ADVM3-DGORDER",
+      "value_unit": "millions de dollars",
+      "periodicity": "monthly",
+      "source_timezone": "America/New_York",
+      "release_time_local": "08:30",
+      "time_confirmed": true,
+      "time_source_url": "https://www.census.gov/economic-indicators/calendar-listview.html",
+      "time_last_verified": "2026-07-28"
+    },
+    {
+      "key": "ea_hicp_flash",
+      "source": "eurostat",
+      "event": "Inflation IPCH zone euro (estimation rapide)",
+      "currency": "EUR",
+      "series_code": "prc_hicp_manr",
+      "value_unit": "% (variation annuelle)",
+      "periodicity": "monthly",
+      "source_timezone": "Europe/Luxembourg",
+      "release_time_local": "11:00",
+      "time_confirmed": true,
+      "time_source_url": "https://ec.europa.eu/eurostat/about-us/impartiality-protocol",
+      "time_last_verified": "2026-07-28"
+    },
+    {
+      "key": "ea_gdp_flash",
+      "source": "eurostat",
+      "event": "PIB zone euro (estimation rapide)",
+      "currency": "EUR",
+      "series_code": "namq_10_gdp",
+      "value_unit": "% (variation trimestrielle)",
+      "periodicity": "quarterly",
+      "source_timezone": "Europe/Luxembourg",
+      "release_time_local": "11:00",
+      "time_confirmed": true,
+      "time_source_url": "https://ec.europa.eu/eurostat/about-us/impartiality-protocol",
+      "time_last_verified": "2026-07-28"
+    },
+    {
+      "key": "ea_unemployment",
+      "source": "eurostat",
+      "event": "Taux de chômage zone euro",
+      "currency": "EUR",
+      "series_code": "une_rt_m",
+      "value_unit": "% de la population active",
+      "periodicity": "monthly",
+      "source_timezone": "Europe/Luxembourg",
+      "release_time_local": "11:00",
+      "time_confirmed": true,
+      "time_source_url": "https://ec.europa.eu/eurostat/about-us/impartiality-protocol",
+      "time_last_verified": "2026-07-28"
+    },
+    {
+      "key": "ea_ecb_rate",
+      "source": "ecb",
+      "event": "Décision de taux (BCE)",
+      "currency": "EUR",
+      "series_code": "FM.D.U2.EUR.4F.KR.MRR_FR.LEV",
+      "value_unit": "taux directeur (% par an)",
+      "periodicity": "eight_per_year",
+      "source_timezone": "Europe/Berlin",
+      "release_time_local": "14:15",
+      "time_confirmed": true,
+      "time_source_url": "https://www.ecb.europa.eu/press/pr/date/2022/html/ecb.pr220627~73acedf868.en.html",
+      "time_last_verified": "2026-07-28"
+    }
+  ]
+}

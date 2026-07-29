@@ -1,17 +1,20 @@
-"""SQLite-backed cache of scheduled economic-calendar events (NW-1).
+"""SQLite-backed cache of scheduled economic-calendar events (NW-1 / NW-1b).
 
-Distinct from ``NewsCacheStore`` (which keeps only medium/high events to feed
-the MarketReading "events" block): the calendar page needs the FULL impact
-range (its "Faible" filter must be honest), the market-attachment, revisions,
-and the official-source-shaped provenance fields (source, series code, organism,
-unit, publisher timezone, license). Rather than widen the shared news cache
-(and risk a MarketReading regression), the calendar owns its own store.
+Distinct from ``NewsCacheStore`` (which feeds the MarketReading "events" block):
+the calendar owns its own store so widening it never risks a MarketReading
+regression. The persisted row is neutral — no provider-specific column.
 
-The persisted row is neutral (no provider-specific column). Revision handling
-(mission NW-1 §2A): on upsert, if a row already exists for an ``event_id`` and
-any published value CHANGED, the row is flagged ``revised=1`` and the prior
-``actual`` is kept in ``previous_before_revision`` — a revised value is surfaced
-as revised, never overwritten silently.
+NW-1b schema (v2): dropped ``impact`` (no organism ranks its releases) and
+``forecast`` (no organism publishes a consensus); added ``periodicity``,
+``time_confirmed``, ``actual_initial`` (the value first published for a release)
+and ``revised_at``. The cache is regenerable, so the v1→v2 migration simply
+rebuilds the table.
+
+Revision handling (mission NW-1b §2D): on upsert, if a row exists for an
+``event_id`` and ``actual`` CHANGED away from a known value, the row is flagged
+``revised=1`` with ``revised_at`` set, the first-published value is preserved in
+``actual_initial``, and the new value is stored in ``actual`` — initial and
+revised coexist, neither overwrites the other silently.
 
 Env-aware path (``CALENDAR_CACHE_DB_PATH`` → ``./data/calendar_cache.db``).
 """
@@ -26,7 +29,7 @@ import threading
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -47,35 +50,39 @@ def _parse_iso(value: str) -> datetime:
     return dt.astimezone(timezone.utc)
 
 
+def _opt_iso(ts: Optional[datetime]) -> Optional[str]:
+    return _utc_iso(ts) if ts is not None else None
+
+
 @dataclass(frozen=True)
 class CalendarCacheEvent:
     """A calendar event as persisted — neutral, source-agnostic.
 
-    ``impact`` may be "high" / "medium" / "low" (unlike the news cache).
-    ``markets`` is the attached-market list (never empty once stored).
-    """
+    NW-1b: no ``impact`` and no ``forecast``. ``markets`` is the attached-market
+    list (never empty once stored)."""
 
     event_id: str
     source: str
     event: str
     currency: str
-    impact: str
     scheduled_at: datetime
     markets: List[str] = field(default_factory=list)
     series_code: Optional[str] = None
     license_label: Optional[str] = None
     organism: Optional[str] = None
+    periodicity: Optional[str] = None
     source_timezone: Optional[str] = None
+    time_confirmed: bool = True
     value_unit: Optional[str] = None
     actual: Optional[float] = None
-    forecast: Optional[float] = None
+    actual_initial: Optional[float] = None
     previous: Optional[float] = None
     revised: bool = False
-    previous_before_revision: Optional[float] = None
+    revised_at: Optional[datetime] = None
 
 
 class CalendarCacheStore:
-    SCHEMA_VERSION = 1
+    SCHEMA_VERSION = 2
     DEFAULT_DB_PATH = "./data/calendar_cache.db"
     DB_PATH_ENV_VAR = "CALENDAR_CACHE_DB_PATH"
 
@@ -124,27 +131,31 @@ class CalendarCacheStore:
                 conn.close()
 
     def _migrate(self, conn: sqlite3.Connection, from_v: int) -> None:
-        if from_v < 1:
+        # The cache is regenerable from providers, so a schema change rebuilds
+        # the table rather than ALTER-ing it (the v1 shape carried impact/forecast).
+        if from_v < 2:
             conn.executescript(
                 """
-                CREATE TABLE IF NOT EXISTS calendar_cache (
+                DROP TABLE IF EXISTS calendar_cache;
+                CREATE TABLE calendar_cache (
                     event_id TEXT PRIMARY KEY,
                     source TEXT NOT NULL,
                     event TEXT NOT NULL,
                     currency TEXT NOT NULL,
-                    impact TEXT NOT NULL,
                     scheduled_at TEXT NOT NULL,
                     markets TEXT NOT NULL,
                     series_code TEXT,
                     license_label TEXT,
                     organism TEXT,
+                    periodicity TEXT,
                     source_timezone TEXT,
+                    time_confirmed INTEGER NOT NULL DEFAULT 1,
                     value_unit TEXT,
                     actual REAL,
-                    forecast REAL,
+                    actual_initial REAL,
                     previous REAL,
                     revised INTEGER NOT NULL DEFAULT 0,
-                    previous_before_revision REAL,
+                    revised_at TEXT,
                     fetched_at TEXT NOT NULL
                 );
                 CREATE INDEX IF NOT EXISTS idx_calendar_cache_window
@@ -160,73 +171,89 @@ class CalendarCacheStore:
         events: List[CalendarCacheEvent],
         fetched_at: Optional[datetime] = None,
     ) -> int:
-        """Upsert events (dedup by ``event_id``). Flags ``revised`` and captures
-        ``previous_before_revision`` when a published value changed vs the stored
-        row. Returns rows affected."""
+        """Upsert events (dedup by ``event_id``). When a stored ``actual`` value
+        changes, flags ``revised``, stamps ``revised_at``, and preserves the
+        first-published value in ``actual_initial``. Never deletes: a source that
+        returns nothing keeps its stored rows. Returns rows affected."""
         if not events:
             return 0
-        fetched_iso = _utc_iso(fetched_at)
+        fetched = fetched_at or datetime.now(timezone.utc)
+        fetched_iso = _utc_iso(fetched)
         with self._lock:
             conn = self._get_connection()
             try:
                 affected = 0
                 for e in events:
                     existing = conn.execute(
-                        "SELECT actual, forecast, previous, revised, "
-                        "previous_before_revision FROM calendar_cache "
-                        "WHERE event_id = ?",
+                        "SELECT actual, actual_initial, previous, revised, revised_at "
+                        "FROM calendar_cache WHERE event_id = ?",
                         (e.event_id,),
                     ).fetchone()
 
                     revised = e.revised
-                    prev_before = e.previous_before_revision
+                    revised_at = e.revised_at
+                    actual_initial = e.actual_initial
+
                     if existing is not None:
+                        prior_actual = existing["actual"]
+                        prior_initial = existing["actual_initial"]
                         changed = (
-                            existing["actual"] != e.actual
-                            or existing["forecast"] != e.forecast
-                            or existing["previous"] != e.previous
+                            prior_actual is not None
+                            and e.actual is not None
+                            and prior_actual != e.actual
                         )
-                        revised = revised or bool(existing["revised"]) or changed
-                        # Capture the pre-revision published value the first time
-                        # ``actual`` changes away from a known value.
-                        if prev_before is None:
-                            if (
-                                changed
-                                and existing["actual"] is not None
-                                and existing["actual"] != e.actual
-                            ):
-                                prev_before = existing["actual"]
+                        # First-published value is locked once known: keep the
+                        # prior initial, else the prior actual, else — when this
+                        # upsert is the first non-null print — the new value.
+                        if actual_initial is None:
+                            if prior_initial is not None:
+                                actual_initial = prior_initial
+                            elif prior_actual is not None:
+                                actual_initial = prior_actual
                             else:
-                                prev_before = existing["previous_before_revision"]
+                                actual_initial = e.actual
+                        if changed:
+                            revised = True
+                            if revised_at is None:
+                                revised_at = fetched
+                        else:
+                            revised = revised or bool(existing["revised"])
+                            if revised_at is None and existing["revised_at"]:
+                                revised_at = _parse_iso(existing["revised_at"])
+                    else:
+                        # First insert: a present value IS the initial print.
+                        if actual_initial is None and e.actual is not None:
+                            actual_initial = e.actual
 
                     conn.execute(
                         """
                         INSERT OR REPLACE INTO calendar_cache
-                            (event_id, source, event, currency, impact,
-                             scheduled_at, markets, series_code, license_label,
-                             organism, source_timezone, value_unit, actual,
-                             forecast, previous, revised,
-                             previous_before_revision, fetched_at)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            (event_id, source, event, currency, scheduled_at,
+                             markets, series_code, license_label, organism,
+                             periodicity, source_timezone, time_confirmed,
+                             value_unit, actual, actual_initial, previous,
+                             revised, revised_at, fetched_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         """,
                         (
                             e.event_id,
                             e.source,
                             e.event,
                             e.currency,
-                            e.impact,
                             _utc_iso(e.scheduled_at),
                             json.dumps(e.markets),
                             e.series_code,
                             e.license_label,
                             e.organism,
+                            e.periodicity,
                             e.source_timezone,
+                            1 if e.time_confirmed else 0,
                             e.value_unit,
                             e.actual,
-                            e.forecast,
+                            actual_initial,
                             e.previous,
                             1 if revised else 0,
-                            prev_before,
+                            _opt_iso(revised_at),
                             fetched_iso,
                         ),
                     )
@@ -285,6 +312,25 @@ class CalendarCacheStore:
             finally:
                 conn.close()
 
+    def source_last_success(self) -> Dict[str, datetime]:
+        """Per-source last successful refresh = MAX(fetched_at) grouped by source.
+        A source that failed to refresh keeps its prior timestamp here (its rows
+        are never deleted), so the page can say "not refreshed since <date>"."""
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                cur = conn.execute(
+                    "SELECT source, MAX(fetched_at) AS m FROM calendar_cache "
+                    "GROUP BY source"
+                )
+                return {
+                    row["source"]: _parse_iso(row["m"])
+                    for row in cur.fetchall()
+                    if row["m"] is not None
+                }
+            finally:
+                conn.close()
+
     def purge_old_events(self, older_than_days: int) -> int:
         with self._lock:
             conn = self._get_connection()
@@ -311,19 +357,20 @@ class CalendarCacheStore:
             source=row["source"],
             event=row["event"],
             currency=row["currency"],
-            impact=row["impact"],
             scheduled_at=_parse_iso(row["scheduled_at"]),
             markets=[str(m) for m in markets],
             series_code=row["series_code"],
             license_label=row["license_label"],
             organism=row["organism"],
+            periodicity=row["periodicity"],
             source_timezone=row["source_timezone"],
+            time_confirmed=bool(row["time_confirmed"]),
             value_unit=row["value_unit"],
             actual=row["actual"],
-            forecast=row["forecast"],
+            actual_initial=row["actual_initial"],
             previous=row["previous"],
             revised=bool(row["revised"]),
-            previous_before_revision=row["previous_before_revision"],
+            revised_at=_parse_iso(row["revised_at"]) if row["revised_at"] else None,
         )
 
 

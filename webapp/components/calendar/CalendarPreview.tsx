@@ -11,8 +11,11 @@ import { parseUtc } from '@/lib/time/localTime';
 import type { CalendarResponse } from '@/types/calendar';
 import './calendar.css';
 
-const ALL_IMPACTS = new Set(['high', 'medium', 'low']);
+const ALL_SOURCES = new Set([
+  'bls', 'bea', 'census', 'federal_reserve', 'eurostat', 'ecb', 'forexfactory',
+]);
 const ALL_MARKETS = new Set(['XAUUSD', 'EURUSD']);
+const ALL_PERIODICITIES = new Set(['monthly', 'quarterly', 'eight_per_year']);
 
 /**
  * Compact dashboard preview of the next few scheduled publications — the SAME
@@ -41,7 +44,7 @@ export function CalendarPreview({
 
   const upcoming = data
     ? splitPastUpcoming(
-        filterEvents(data.events, ALL_IMPACTS, ALL_MARKETS),
+        filterEvents(data.events, ALL_SOURCES, ALL_MARKETS, ALL_PERIODICITIES),
         now,
       ).upcoming.slice(0, limit)
     : [];
@@ -67,9 +70,11 @@ export function CalendarPreview({
                   {when ? hmInZone(when, ev.source_timezone ?? undefined) : '—'}
                 </span>
                 <span className="calprev-ev">{ev.event}</span>
-                <span className={`cal-impact ${ev.impact}`}>
-                  {t(`impact.${ev.impact}`)}
-                </span>
+                {ev.periodicity && (
+                  <span className="calprev-per">
+                    {t(`periodicity.${ev.periodicity}`)}
+                  </span>
+                )}
               </li>
             );
           })}

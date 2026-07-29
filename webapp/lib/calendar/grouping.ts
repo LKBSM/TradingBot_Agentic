@@ -109,18 +109,26 @@ export function hmInZone(d: Date, timeZone?: string): string {
 }
 
 /**
- * Only keep events whose impact is in `impacts` AND that are attached to at
- * least one market in `markets`. Empty sets keep nothing — the caller shows the
- * explicit empty message, never a silent fall-back to "all".
+ * Factual multi-facet filter (NW-1b): keep events whose SOURCE is in `sources`,
+ * that are attached to a MARKET in `markets`, and whose PERIODICITY is in
+ * `periodicities`. All three are factual — never a rank. Empty sets keep nothing
+ * (the caller shows the explicit empty message, never a silent fall-back).
+ *
+ * Periodicity is the only optional facet: a record the source does not tag with
+ * a cadence (`periodicity == null`, e.g. the dev prototype) is not filterable on
+ * that facet and passes it — organism and market stay strict.
  */
 export function filterEvents(
   events: CalendarEvent[],
-  impacts: ReadonlySet<string>,
+  sources: ReadonlySet<string>,
   markets: ReadonlySet<string>,
+  periodicities: ReadonlySet<string>,
 ): CalendarEvent[] {
   return events.filter(
     (e) =>
-      impacts.has(e.impact) && e.markets.some((m) => markets.has(m)),
+      sources.has(e.source) &&
+      e.markets.some((m) => markets.has(m)) &&
+      (e.periodicity == null || periodicities.has(e.periodicity)),
   );
 }
 

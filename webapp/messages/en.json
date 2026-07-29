@@ -1782,24 +1782,34 @@
   "calendar": {
     "meta": {
       "title": "Scheduled news — Volatility calendar | MIA Markets",
-      "description": "The calendar of economic releases whose time is known in advance. MIA announces moments, never directions."
+      "description": "The calendar of official economic releases whose time is known in advance. MIA announces moments, never directions."
     },
     "title": "Scheduled news",
     "badge": "Volatility calendar",
     "intro": {
       "lead": "This calendar announces moments, not directions.",
-      "rest": "It lists the economic releases whose time is known in advance and that, in the past, have coincided with a rise in activity on your markets. MIA does not say what price will do — it measures what happened the previous times."
+      "rest": "It lists the economic releases whose time is known in advance and that, in the past, coincided with a rise in activity on your markets. MIA does not say what the price will do — it measures what happened the previous times."
     },
     "filters": {
-      "impactLabel": "Impact",
+      "organismLabel": "Organism",
       "marketLabel": "Market",
+      "periodicityLabel": "Periodicity",
       "reset": "Select all",
       "past": "Past releases"
     },
-    "impact": {
-      "high": "High",
-      "medium": "Medium",
-      "low": "Low"
+    "organism": {
+      "bls": "BLS",
+      "bea": "BEA",
+      "census": "Census",
+      "federal_reserve": "Federal Reserve",
+      "eurostat": "Eurostat",
+      "ecb": "ECB",
+      "forexfactory": "ForexFactory"
+    },
+    "periodicity": {
+      "monthly": "Monthly",
+      "quarterly": "Quarterly",
+      "eight_per_year": "8 times a year"
     },
     "market": {
       "XAUUSD": "Gold",
@@ -1821,31 +1831,35 @@
     },
     "affects": "affects {markets}",
     "localTime": "{time} your time ({offset})",
+    "timeUnconfirmed": "time not confirmed",
     "revisedBadge": "revised value",
     "amplitude": {
-      "k": "Median amplitude · 60 min",
-      "pending": "measurements to come"
+      "k": "Median 60-min amplitude",
+      "pending": "measures to come"
     },
     "provenance": {
-      "source": "Source: {source}",
-      "organism": "Issuer: {organism}",
-      "organismMissing": "Issuer: not provided by this source",
-      "sourceName": {
-        "official": "Official sources (to be connected)",
-        "forexfactory": "ForexFactory (prototype)"
-      }
+      "organism": "Organism: {organism}",
+      "organismMissing": "Organism: not provided by this source"
+    },
+    "attribution": {
+      "title": "Sources and reuse",
+      "intro": "Each release comes from the official organism that issues it. Reuse follows each source's policy:",
+      "policyLink": "reuse policy",
+      "stale": "{organism}: data not refreshed, last success on {date}."
     },
     "coverage": {
       "partial": "The calendar is populated through {date}. Beyond that, the period is not yet covered."
     },
     "nono": {
       "title": "What this calendar does not say",
-      "body": "A high median amplitude signals that these moments have historically been busy. It says neither the direction, nor what will happen this time. A release may cause nothing, and a quiet market can move with no release at all."
+      "body": "A high median amplitude flags that these moments were historically active. It says neither the direction nor what will happen this time. A release may cause nothing, and a quiet market may move with no release at all.",
+      "noForecast": "No analyst forecast is shown: no public organism publishes one, and MIA does not fabricate one.",
+      "noRanking": "No hierarchy is assigned to the releases: MIA does not rank them against one another."
     },
     "empty": {
-      "noSelection": "No filter selected: check at least one impact and one market to show releases.",
+      "noSelection": "No filter selected: check at least one organism, one market and one periodicity to show releases.",
       "noEvents": "No scheduled release in this period for your markets.",
-      "noSource": "No releases yet: the calendar's official source is not connected yet. Releases will appear here once the official source is integrated."
+      "noSource": "No release yet: the official sources have not populated any date. Releases will appear here once the official schedules are loaded."
     },
     "loading": "Loading the calendar…",
     "error": "The calendar is momentarily unavailable.",
@@ -1860,27 +1874,24 @@
       "countdownLabel": "Release in",
       "publishedFiguresTitle": "Published figures",
       "publishedFiguresBadge": "Indicator value",
-      "publishedFiguresNote": "These figures are the value of the indicator itself, in the unit of the organism that publishes it — not price movements. The consensus is a forecast produced by third parties: MIA reports it without adopting it as its own.",
+      "publishedFiguresNote": "These figures are the value of the indicator itself, in the unit of the organism that publishes it — not price moves. They are shown as published, without conversion or re-rounding.",
       "actualLabel": "Published value",
       "actualPending": "not yet published",
-      "forecastLabel": "Analyst consensus",
-      "forecastNote": "third-party forecast, not MIA's",
       "previousLabel": "Previous release",
-      "revisedFrom": "revised from {value}",
+      "revisedFromTo": "Initial value {initial}, revised on {date} — current value {current}.",
+      "notRevised": "This figure has not been revised since its first publication.",
       "unitMissing": "unit not provided by this source",
-      "figuresEmpty": "No figures provided for this release by the current source.",
       "measuresTitle": "What the engine measured at previous releases",
-      "measuresBadge": "Price movement",
-      "measuresPending": "Measurements to come: the amplitude the markets travelled at this indicator's past releases will appear here once the engine measurement is wired (NW-2).",
-      "sourceLine": "Source: {source}",
+      "measuresBadge": "Price move",
+      "measuresPending": "Measures to come: the amplitude travelled by the markets at this indicator's past releases will appear here once the engine measure is wired (NW-2).",
       "notFoundTitle": "Release not found",
       "notFound": "This release is not in the calendar's current window.",
       "nono": {
         "title": "What this page does not say",
         "items": {
-          "0": "It predicts neither the value that will be published, nor the market's reaction.",
-          "1": "It does not interpret a deviation from consensus as bullish or bearish.",
-          "2": "It recommends neither to act, nor to abstain, nor to close anything.",
+          "0": "It does not predict the value that will be published, nor the market's reaction.",
+          "1": "It does not read a gap between the published value and the previous one as bullish or bearish.",
+          "2": "It recommends neither acting, nor abstaining, nor closing anything.",
           "3": "Past amplitudes are measured over a small number of days, in different contexts, and have no predictive value."
         }
       }

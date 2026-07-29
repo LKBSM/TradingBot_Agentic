@@ -15,6 +15,11 @@ import './calendar.css';
 const LOOKAHEAD_DAYS = 30;
 const LOOKBACK_DAYS = 30;
 
+/** Render a published value AS PUBLISHED — no conversion, no re-rounding. */
+function asPublished(n: number | null): string {
+  return n == null ? '—' : String(n);
+}
+
 function tzCity(iana: string | null): string | null {
   if (!iana) return null;
   const seg = iana.split('/').pop() ?? iana;
@@ -24,9 +29,10 @@ function tzCity(iana: string | null): string | null {
 /**
  * Per-event detail page (deep-linked from the list « En savoir plus »). Honest
  * and MINIMAL: it shows only the fields the source actually provides — market +
- * local time, attached markets, attributed impact, published figures when the
- * feed carries them, source + provenance — and marks the engine-measured history
- * as « mesures à venir » (NW-2). It announces a MOMENT, never a direction.
+ * local time, attached markets, periodicity, published figures with their
+ * revision history (initial value, current value, revision date), source +
+ * organism + unit + licence. NO consensus (no organism publishes one), NO impact
+ * ranking. It announces a MOMENT, never a direction.
  */
 export function CalendarEventDetail({
   eventId,
@@ -47,12 +53,16 @@ export function CalendarEventDetail({
   const error = injectedData !== undefined ? null : hook.error;
   const now = React.useMemo(() => injectedNow ?? new Date(), [injectedNow]);
 
-  // Match the full id ("<source>:<hash>") or the bare hash — the App news module
-  // deep-links with the raw pipeline hash (no source prefix).
+  // Match the full id ("<source>:<ref>") or the bare ref — the App news module
+  // deep-links with the raw pipeline ref (no source prefix).
   const ev =
     data?.events.find(
       (e) => e.event_id === eventId || e.event_id.split(':').pop() === eventId,
     ) ?? null;
+
+  const attribution = ev
+    ? data?.attribution.find((a) => a.source === ev.source) ?? null
+    : null;
 
   return (
     <div className="cal-page cald">
@@ -72,16 +82,10 @@ export function CalendarEventDetail({
           {t('detail.notFound')}
         </div>
       ) : (
-        <Detail ev={ev} now={now} locale={locale} t={t} />
+        <Detail ev={ev} attribution={attribution} now={now} locale={locale} t={t} />
       )}
     </div>
   );
-}
-
-function sourceLabel(source: string, t: ReturnType<typeof useTranslations>): string {
-  if (source === 'official') return t('provenance.sourceName.official');
-  if (source === 'forexfactory') return t('provenance.sourceName.forexfactory');
-  return source;
 }
 
 function fmtCountdown(
@@ -103,11 +107,13 @@ function fmtCountdown(
 
 function Detail({
   ev,
+  attribution,
   now,
   locale,
   t,
 }: {
   ev: CalendarEvent;
+  attribution: { organism: string; license_label: string; policy_url: string } | null;
   now: Date;
   locale: string;
   t: ReturnType<typeof useTranslations>;
@@ -119,8 +125,8 @@ function Detail({
   const localTime = when ? hmInZone(when) : '—';
   const dayLabel = when ? formatLocalDayLong(when, locale) : '—';
   const affects = ev.markets.map((m) => t(`market.${m}` as 'market.XAUUSD')).join(', ');
-  const fmtNum = (n: number) => n.toLocaleString(locale);
-  const hasFigures = ev.actual != null || ev.forecast != null || ev.previous != null;
+  const revisedDate = ev.revised_at ? parseUtc(ev.revised_at) : null;
+  const revisedDateLabel = revisedDate ? revisedDate.toLocaleDateString(locale) : '—';
 
   const nonoItems = Object.values(
     t.raw('detail.nono.items') as Record<string, string>,
@@ -133,9 +139,19 @@ function Detail({
         <div className="cald-headmain">
           <h1>{ev.event}</h1>
           <div className="cald-sub">
-            <span className={`cal-impact ${ev.impact}`}>{t(`impact.${ev.impact}`)}</span>
-            <span className="sep">·</span>
             <span>{t('affects', { markets: affects })}</span>
+            {ev.periodicity && (
+              <>
+                <span className="sep">·</span>
+                <span>{t(`periodicity.${ev.periodicity}`)}</span>
+              </>
+            )}
+            {!ev.time_confirmed && (
+              <>
+                <span className="sep">·</span>
+                <span>{t('timeUnconfirmed')}</span>
+              </>
+            )}
             {ev.revised && (
               <>
                 <span className="sep">·</span>
@@ -148,8 +164,6 @@ function Detail({
             {city ? ` ${city}` : ''} · {t('localTime', { time: localTime, offset: utcOffsetLabel() })}
           </div>
           <div className="cald-prov">
-            {t('detail.sourceLine', { source: sourceLabel(ev.source, t) })}
-            {' · '}
             {ev.organism ? (
               t('provenance.organism', { organism: ev.organism })
             ) : (
@@ -169,43 +183,39 @@ function Detail({
         )}
       </div>
 
-      {/* Chiffres publiés — valeur de l'indicateur, jamais un prix */}
+      {/* Chiffres publiés — valeur de l'indicateur, telle que publiée, jamais un prix */}
       <div className="cald-card">
         <div className="cald-card-h">
           <h3>{t('detail.publishedFiguresTitle')}</h3>
           <span className="cald-badge">{t('detail.publishedFiguresBadge')}</span>
         </div>
-        {hasFigures ? (
-          <div className="cald-figs">
-            <div className="cald-fig">
-              <div className="k">{t('detail.actualLabel')}</div>
-              <div className="v mono">
-                {ev.actual != null ? fmtNum(ev.actual) : '—'}
-              </div>
-              {ev.actual == null && <div className="n">{t('detail.actualPending')}</div>}
-              {ev.revised && ev.previous_before_revision != null && (
-                <div className="n">
-                  {t('detail.revisedFrom', { value: fmtNum(ev.previous_before_revision) })}
-                </div>
-              )}
-            </div>
-            <div className="cald-fig">
-              <div className="k">{t('detail.forecastLabel')}</div>
-              <div className="v mono">
-                {ev.forecast != null ? fmtNum(ev.forecast) : '—'}
-              </div>
-              <div className="n">{t('detail.forecastNote')}</div>
-            </div>
-            <div className="cald-fig">
-              <div className="k">{t('detail.previousLabel')}</div>
-              <div className="v mono">
-                {ev.previous != null ? fmtNum(ev.previous) : '—'}
-              </div>
-            </div>
+        <div className="cald-figs">
+          <div className="cald-fig">
+            <div className="k">{t('detail.actualLabel')}</div>
+            <div className="v mono">{asPublished(ev.actual)}</div>
+            {ev.actual == null && <div className="n">{t('detail.actualPending')}</div>}
           </div>
-        ) : (
-          <p className="cald-empty-line">{t('detail.figuresEmpty')}</p>
-        )}
+          <div className="cald-fig">
+            <div className="k">{t('detail.previousLabel')}</div>
+            <div className="v mono">{asPublished(ev.previous)}</div>
+          </div>
+        </div>
+
+        {/* Révisions — la valeur avant, la valeur après, la date. Aucune qualification. */}
+        <div className="cald-rev">
+          {ev.revised ? (
+            <p className="cald-rev-line">
+              {t('detail.revisedFromTo', {
+                initial: asPublished(ev.actual_initial),
+                current: asPublished(ev.actual),
+                date: revisedDateLabel,
+              })}
+            </p>
+          ) : ev.actual != null ? (
+            <p className="cald-rev-line">{t('detail.notRevised')}</p>
+          ) : null}
+        </div>
+
         <p className="cald-note">{t('detail.publishedFiguresNote')}</p>
       </div>
 
@@ -217,6 +227,22 @@ function Detail({
         </div>
         <p className="cald-pending">{t('detail.measuresPending')}</p>
       </div>
+
+      {/* Attribution — condition de licence de la source */}
+      {attribution && (
+        <div className="cal-attrib" role="contentinfo">
+          <div className="t">{t('attribution.title')}</div>
+          <ul>
+            <li>
+              <span className="org">{attribution.organism}</span>
+              <span className="lic">{attribution.license_label}</span>
+              <a href={attribution.policy_url} target="_blank" rel="noreferrer noopener">
+                {t('attribution.policyLink')}
+              </a>
+            </li>
+          </ul>
+        </div>
+      )}
 
       <div className="cal-nono" role="note">
         <div>
