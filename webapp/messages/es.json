@@ -29,7 +29,9 @@
       "mat": "since the {dir} CHOCH of {date}",
       "dens": "open on {tf}",
       "lvl": "{count, plural, one {# marker} other {# markers}} · open the detail",
-      "sess": "{label} in {delay}"
+      "sess": "{label} in {delay}",
+      "trendRef": "since the {dir} {kind} of {date}",
+      "trendNone": "no structural trend established"
     },
     "value": {
       "pos": "{pct} %",
@@ -37,7 +39,11 @@
       "dens": "{ob} OB · {fvg} FVG",
       "align": "{count}/{total} TF {arrow}",
       "dirUp": "bullish",
-      "dirDown": "bearish"
+      "dirDown": "bearish",
+      "kindChoch": "CHOCH",
+      "kindBos": "BOS",
+      "alignIndeterminate": "no structural trend established",
+      "alignIndetCount": "{count, plural, one {# indeterminate} other {# indeterminate}}"
     },
     "data": {
       "phaseHead": "The two measures it is built from",
@@ -124,7 +130,11 @@
       "windowSpan_weeks": "{count, plural, one {# week} other {# weeks}}",
       "windowSpan_months": "{count, plural, one {# month} other {# months}}",
       "windowSpan_years": "{count, plural, one {# year} other {# years}}",
-      "windowNote": "The window is a FIXED number of candles, so its calendar span depends on the unit (≈ one month on H1, ≈ two years on D1). The same « bearish trend » does not cover the same duration from one unit to the next."
+      "windowNote": "The window is a FIXED number of candles, so its calendar span depends on the unit (≈ one month on H1, ≈ two years on D1). The same « bearish trend » does not cover the same duration from one unit to the next.",
+      "trendAnchorRow": "Anchor",
+      "trendAnchorValue": "{dir} {kind}",
+      "trendAnchorNone": "no structural break",
+      "trendNoteStructural": "The trend follows the structure: the direction of the last non-contradicted BOS/CHOCH break. “Indeterminate” when no break exists in the analysed history — never a fallback “neutral”."
     },
     "state": {
       "open": "Market open",
@@ -145,9 +155,9 @@
         "notSay": "Neither the duration of the phase, nor its remaining amplitude, nor when it will change. A phase can flip on the next candle."
       },
       "trend": {
-        "title": "How the trend is measured",
-        "body": "The engine compares the **first and last close** of the analysed window to the total **range** travelled over the same period. If the net move is a large enough share of the range, it returns **bullish** or **bearish** by direction; otherwise, **range**. It is a reading of **already-formed** structure, on the displayed timeframe.\n\n**Scale trap:** an M15 in range inside a bearish H1 is not a contradiction — they describe different spans. That is what the Alignment tile makes visible.",
-        "notSay": "A trend describes the recent past. It extends nothing and does not say when it will end. Nor does it measure the “strength” of the move — only its direction."
+        "title": "How the trend is determined",
+        "body": "The trend **derives from the structure the engine detects**: it is the direction of the **last break** (BOS or CHOCH) not contradicted by an opposite one. As long as no protected level is broken on a close, a bullish trend **stays bullish**. It is anchored on a dated event (“since the bullish CHOCH of Jul 24”), the same one the Maturity tile names.\n\nWhen **no break** exists in the analysed history, the trend is **indeterminate** — never a fallback “neutral”. Consolidation is described by the Phase tile instead.",
+        "notSay": "A trend describes the recent past. It extends nothing and does not say when it will end. It does not measure the “strength” of the move — only its structural direction."
       },
       "vol": {
         "title": "What volatility counts",
@@ -725,7 +735,8 @@
       "liquidityKind_range_low": "extremo bajo del rango",
       "liquidityStatus_intact": "intacta",
       "liquidityStatus_swept": "barrida",
-      "liquidityStatus_broken": "rota"
+      "liquidityStatus_broken": "rota",
+      "trendAdj_indeterminate": "indeterminate"
     },
     "structure": {
       "title": "Estructura de mercado",
@@ -771,7 +782,7 @@
       "lastEvent": "{kind} {dir} {val} ({tf})",
       "zoneDensity": "{ob} OB · {fvg} FVG activos",
       "mtfAligned": "Los {count} TF están alineados ({dir}).",
-      "mtfNeutral": "Los {count} TF son neutrales.",
+      "mtfNeutral": "{count, plural, one {The upper unit has no structural trend established} other {The # upper units have no structural trend established}}.",
       "mtfPullback": "M15 retrocede contra la tendencia H4 {fem}.",
       "mtfDivergent": "Los TF divergen: {list}."
     },
@@ -818,7 +829,8 @@
       "retest_in_progress": "Retest en curso",
       "mtf_aligned": "Timeframes alineados",
       "mtf_divergent": "Timeframes divergentes",
-      "mtf_mixed": "Timeframes mixtos"
+      "mtf_mixed": "Timeframes mixtos",
+      "trend_indeterminate": "Indeterminate trend"
     },
     "help": {
       "regime": {

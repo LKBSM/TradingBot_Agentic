@@ -32,8 +32,7 @@ describe('reading.tags catalog (FR)', () => {
     const backendTags = [
       'trend_bullish',
       'trend_bearish',
-      'trend_neutral',
-      'trend_ranging',
+      'trend_indeterminate',
       'volatility_low',
       'volatility_normal',
       'volatility_elevated',

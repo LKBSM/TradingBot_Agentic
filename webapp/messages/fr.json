@@ -31,7 +31,9 @@
       "lvl": "{count, plural, one {# repère} other {# repères}} · ouvre le détail",
       "sess": "{label} dans {delay}",
       "sessNA": "non applicable sur {tf} : la bougie couvre toutes les sessions",
-      "lvlNA": "non applicable sur {tf} : la veille est la bougie précédente"
+      "lvlNA": "non applicable sur {tf} : la veille est la bougie précédente",
+      "trendRef": "depuis le {kind} {dir} du {date}",
+      "trendNone": "aucune tendance structurelle établie"
     },
     "value": {
       "pos": "{pct} %",
@@ -41,7 +43,11 @@
       "alignNone": "aucune unité supérieure",
       "dirUp": "haussier",
       "dirDown": "baissier",
-      "notApplicable": "non applicable"
+      "notApplicable": "non applicable",
+      "kindChoch": "CHOCH",
+      "kindBos": "BOS",
+      "alignIndeterminate": "aucune tendance structurelle établie",
+      "alignIndetCount": "{count, plural, one {# indéterminé} other {# indéterminés}}"
     },
     "data": {
       "phaseHead": "Les deux mesures qui la composent",
@@ -129,7 +135,11 @@
         "upcoming": "à venir",
         "ongoing": "en cours",
         "ended": "terminé"
-      }
+      },
+      "trendAnchorRow": "Ancrage",
+      "trendAnchorValue": "{kind} {dir}",
+      "trendAnchorNone": "aucune cassure structurelle",
+      "trendNoteStructural": "La tendance suit la structure : le sens de la dernière cassure BOS/CHOCH non contredite. « Indéterminée » quand aucune cassure n’existe dans l’historique analysé — jamais un repli « neutre »."
     },
     "state": {
       "open": "Marché ouvert",
@@ -150,9 +160,9 @@
         "notSay": "Ni la durée de la phase, ni son amplitude restante, ni le moment où elle changera. Une phase peut basculer à la bougie suivante."
       },
       "trend": {
-        "title": "Comment la tendance est mesurée",
-        "body": "Le moteur compare la **première et la dernière clôture** de la fenêtre analysée à l’**amplitude** totale parcourue sur la même période. Si le déplacement net représente une part suffisante de l’amplitude, il retient **haussière** ou **baissière** selon le sens ; sinon, **range**. C’est une lecture de structure **déjà formée**, sur l’unité de temps affichée.\n\n**Piège d’échelle :** un M15 en range dans un H1 baissier n’est pas une contradiction — les deux décrivent des empans différents. C’est ce que la tuile Alignement rend visible.",
-        "notSay": "Une tendance décrit le passé récent. Elle ne prolonge rien et ne dit pas quand elle cessera. Elle ne mesure pas non plus la « force » du mouvement — seulement son sens."
+        "title": "Comment la tendance est déterminée",
+        "body": "La tendance **dérive de la structure détectée par le moteur** : c’est le sens de la **dernière cassure** (BOS ou CHOCH) qui n’a pas été contredite par une cassure de sens opposé. Tant qu’aucun niveau protégé n’est cassé en clôture, une tendance haussière **reste haussière**. Elle est ancrée sur un événement daté (« depuis le CHOCH haussier du 24 juil. »), le même que la tuile Maturité.\n\nQuand **aucune cassure** n’existe dans l’historique analysé, la tendance est **indéterminée** — jamais un « neutre » de repli. La consolidation, elle, est décrite par la tuile Phase.",
+        "notSay": "Une tendance décrit le passé récent. Elle ne prolonge rien et ne dit pas quand elle cessera. Elle ne mesure pas la « force » du mouvement — seulement son sens structurel."
       },
       "vol": {
         "title": "Ce que la volatilité compte",
@@ -730,7 +740,8 @@
       "liquidityKind_range_low": "extrême bas de range",
       "liquidityStatus_intact": "intacte",
       "liquidityStatus_swept": "balayée",
-      "liquidityStatus_broken": "cassée"
+      "liquidityStatus_broken": "cassée",
+      "trendAdj_indeterminate": "indéterminé"
     },
     "structure": {
       "title": "Structure de marché",
@@ -776,7 +787,7 @@
       "lastEvent": "{kind} {dir} {val} ({tf})",
       "zoneDensity": "{ob} OB · {fvg} FVG actifs",
       "mtfAligned": "{count, plural, one {L'unité supérieure est orientée {dir}} other {Les # unités supérieures sont orientées {dir}}}.",
-      "mtfNeutral": "{count, plural, one {L'unité supérieure est neutre} other {Les # unités supérieures sont neutres}}.",
+      "mtfNeutral": "{count, plural, one {L'unité supérieure est sans tendance structurelle établie} other {Les # unités supérieures sont sans tendance structurelle établie}}.",
       "mtfPullback": "M15 se replie contre la tendance H4 {fem}.",
       "mtfDivergent": "Unités supérieures : {list}."
     },
@@ -823,7 +834,8 @@
       "retest_in_progress": "Retest en cours",
       "mtf_aligned": "Timeframes alignés",
       "mtf_divergent": "Timeframes divergents",
-      "mtf_mixed": "Timeframes mixtes"
+      "mtf_mixed": "Timeframes mixtes",
+      "trend_indeterminate": "Tendance indéterminée"
     },
     "help": {
       "regime": {

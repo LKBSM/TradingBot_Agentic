@@ -21,17 +21,17 @@ import type {
 export const CONDITION_PALETTE: readonly PaletteEntry[] = [
   {
     type: 'mtf_aligned',
-    label: '3 TF alignés',
+    label: '3 TF alignés (structure)',
     description:
-      'Les 3 timeframes (H4, H1, M15) pointent dans la même direction en ce moment.',
+      'Les 3 timeframes (H4, H1, M15) montrent la même direction de STRUCTURE en ce moment (dernière cassure BOS/CHOCH de même sens). Un timeframe sans tendance structurelle établie (indéterminé) empêche l’alignement.',
     controls: ['direction'],
     tense: 'present',
   },
   {
     type: 'trend_is',
-    label: 'Tendance actuelle',
+    label: 'Tendance actuelle (structure)',
     description:
-      'La tendance observée sur ce timeframe est, en ce moment, celle choisie.',
+      'La tendance de structure observée sur ce timeframe est, en ce moment, celle choisie (haussière, baissière, ou indéterminée quand aucune cassure ne l’a établie).',
     controls: ['trend'],
     tense: 'present',
   },
@@ -149,8 +149,7 @@ export const DIRECTION_LABELS: Record<string, string> = {
 export const TREND_OPTIONS: Array<{ value: TrendChoice; label: string }> = [
   { value: 'bullish', label: 'Haussière' },
   { value: 'bearish', label: 'Baissière' },
-  { value: 'ranging', label: 'Range' },
-  { value: 'neutral', label: 'Neutre' },
+  { value: 'indeterminate', label: 'Indéterminée' },
 ];
 
 export const PHASE_OPTIONS: Array<{ value: PhaseChoice; label: string }> = [

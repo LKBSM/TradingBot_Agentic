@@ -29,7 +29,8 @@ export type DirectionFilter = 'any' | 'bullish' | 'bearish';
 export type LiquiditySideFilter = 'any' | 'bsl' | 'ssl';
 export type ScanLogic = 'AND' | 'OR';
 
-export type TrendChoice = 'bullish' | 'bearish' | 'ranging' | 'neutral';
+// TR-1: structural trend vocabulary (matches backend TrendChoice / TrendValue).
+export type TrendChoice = 'bullish' | 'bearish' | 'indeterminate';
 export type PhaseChoice =
   | 'accumulation'
   | 'distribution'

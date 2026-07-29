@@ -229,7 +229,7 @@ const MOCK_EUR_M15: MarketReading = {
     trend: 'bearish',
     volatility_observed: 'normal',
     market_phase: 'distribution',
-    mtf_confluence: { m15: 'bearish', h1: 'neutral', h4: 'bearish' },
+    mtf_confluence: { m15: 'bearish', h1: 'indeterminate', h4: 'bearish' },
   },
   events: {
     news_upcoming: [],
@@ -284,10 +284,10 @@ const MOCK_EUR_H4: MarketReading = {
     retest_in_progress: null,
   },
   regime: {
-    trend: 'ranging',
+    trend: 'indeterminate',
     volatility_observed: 'low',
     market_phase: 'ranging',
-    mtf_confluence: { h1: 'neutral', h4: 'bearish' },
+    mtf_confluence: { h1: 'indeterminate', h4: 'bearish' },
   },
   events: {
     news_upcoming: [],

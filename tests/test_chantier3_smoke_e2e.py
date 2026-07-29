@@ -161,8 +161,8 @@ def test_endpoint_returns_complete_market_reading_with_news_and_structure(wired)
         # Structure — SMC stub produced an order block.
         assert len(data["structure"]["order_blocks"]) >= 1
 
-        # Regime — derived from the candles.
-        assert data["regime"]["trend"] in ("bullish", "bearish", "ranging", "neutral")
+        # Regime — TR-1: structural trend vocabulary (bullish/bearish/indeterminate).
+        assert data["regime"]["trend"] in ("bullish", "bearish", "indeterminate")
 
         # Events — REAL news pipeline filled news_upcoming (USD/EUR within 4h).
         assert len(data["events"]["news_upcoming"]) >= 1
