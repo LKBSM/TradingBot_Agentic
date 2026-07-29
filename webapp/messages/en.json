@@ -129,7 +129,7 @@
       "windowSpan_weeks": "{count, plural, one {# week} other {# weeks}}",
       "windowSpan_months": "{count, plural, one {# month} other {# months}}",
       "windowSpan_years": "{count, plural, one {# year} other {# years}}",
-      "windowNote": "The window is a FIXED number of candles, so its calendar span depends on the unit (≈ 3 weeks on H1, ≈ 2 years on D1). The same « bearish trend » does not cover the same duration from one unit to the next."
+      "windowNote": "The window is a FIXED number of candles, so its calendar span depends on the unit (≈ one month on H1, ≈ two years on D1). The same « bearish trend » does not cover the same duration from one unit to the next."
     },
     "state": {
       "open": "Market open",

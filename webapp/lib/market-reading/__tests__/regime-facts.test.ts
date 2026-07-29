@@ -7,6 +7,8 @@ import {
   formatTrendMaturity,
   formatZoneDensity,
   timeframeMinutes,
+  trendWindowSpan,
+  TREND_WINDOW_BARS,
 } from '../regime-facts';
 import type {
   BOSRecent,
@@ -162,6 +164,27 @@ describe('deriveTrendMaturity (b)', () => {
       header(),
     );
     expect(m?.bars).toBeNull();
+  });
+});
+
+describe('trendWindowSpan (DG-1 point 5)', () => {
+  // 500 candles of TRADING time over a ~120 h/week market → calendar span grows
+  // with the unit. The slow units must not be understated (D1 ≈ 2 years, not 1).
+  it.each([
+    ['M1', 'days', 1],
+    ['M5', 'days', 2],
+    ['M15', 'days', 7],
+    ['H1', 'weeks', 4],
+    ['H4', 'months', 4],
+    ['D1', 'years', 2],
+  ])('%s → %s', (tf, unit, count) => {
+    expect(trendWindowSpan(tf)).toEqual({ unit, count });
+  });
+  it('returns null for an unknown timeframe (never an invented span)', () => {
+    expect(trendWindowSpan('Z9')).toBeNull();
+  });
+  it('exposes the fixed bar count kept in sync with the backend lookback', () => {
+    expect(TREND_WINDOW_BARS).toBe(500);
   });
 });
 

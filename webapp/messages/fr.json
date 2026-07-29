@@ -58,7 +58,7 @@
       "windowSpan_weeks": "{count, plural, one {# semaine} other {# semaines}}",
       "windowSpan_months": "{count, plural, one {# mois} other {# mois}}",
       "windowSpan_years": "{count, plural, one {# an} other {# ans}}",
-      "windowNote": "La fenêtre est un nombre FIXE de bougies : son étendue calendaire change donc selon l’unité (≈ 3 semaines en H1, ≈ 2 ans en D1). Une même « tendance baissière » ne couvre pas la même durée d’une unité à l’autre.",
+      "windowNote": "La fenêtre est un nombre FIXE de bougies : son étendue calendaire change donc selon l’unité (≈ un mois en H1, ≈ deux ans en D1). Une même « tendance baissière » ne couvre pas la même durée d’une unité à l’autre.",
       "trendNote": "Le moteur compare le déplacement net (première → dernière clôture) à l’amplitude de la fenêtre, sur {tf}. Les valeurs intermédiaires restent côté moteur ; la règle et son résultat sont affichés ici.",
       "volHead": "Le calcul, en clair",
       "volRecent": "Amplitude moyenne — {n} dernières",
