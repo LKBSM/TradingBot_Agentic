@@ -8,6 +8,7 @@ import pytest
 
 from src.intelligence.market_reading_assembler import (
     MarketReadingAssembler,
+    READING_LOGIC_VERSION,
     build_cache_mtf_provider,
     expected_last_candle_close,
 )
@@ -205,10 +206,13 @@ def test_lazy_cache_hit_returns_stored_without_fetch(fixed_clock):
         smc_pipeline=_stub_smc_pipeline,
         clock=fixed_clock,
     )
-    seed_reading = seed_assembler.get_or_generate("XAUUSD", "M15")
+    seed_assembler.get_or_generate("XAUUSD", "M15")
 
-    # Now build a fresh assembler whose store is pre-populated with that payload.
-    payload = seed_reading.model_dump(mode="json")
+    # Now build a fresh assembler whose store is pre-populated with that payload
+    # AS THE STORE ACTUALLY HOLDS IT — i.e. stamped with the current logic version
+    # (via _persist_reading). Copying the model dump would drop that stamp and
+    # make the cache look stale, so we read it back from the seed store instead.
+    payload = seed_assembler.readings_store.get_latest_reading("XAUUSD", "M15")
     provider = _MockDataProvider(_build_candles(30))
     candles_store = _MockCandlesStore()
     readings_store = _MockReadingsStore(prepopulated=payload)
@@ -234,6 +238,79 @@ def test_lazy_cache_hit_returns_stored_without_fetch(fixed_clock):
     # But mark_combination_active is still called (lazy hybrid mode: every
     # access keeps the combination warm for Chantier 3 scheduler).
     assert readings_store.mark_active_calls == [("XAUUSD", "M15")]
+
+
+# ---------------------------------------------------------------------------
+# Stale LOGIC version — regeneration (LQ-D1: a pure logic fix must reach the
+# screen, not stay frozen behind a still-matching cache)
+# ---------------------------------------------------------------------------
+
+
+def _smc_pipeline_with_liquidity(candles):
+    feats, sig = _stub_smc_pipeline(candles)
+    feats["_liquidity"] = [
+        {
+            "side": "ssl", "kind": "equal_lows", "level": 1980.0, "touches": 2,
+            "is_external": True, "status": "intact",
+            "created_at": None, "swept_at": None, "broken_at": None,
+        }
+    ]
+    return feats, sig
+
+
+def test_stale_logic_version_forces_regeneration(fixed_clock):
+    # Seed a reading (persisted WITH the current logic stamp), then strip the
+    # stamp to mimic a payload produced by pre-fix logic whose candle_close_ts
+    # still matches. get_or_generate must rebuild it, not serve the stale state.
+    seed = MarketReadingAssembler(
+        data_provider=_MockDataProvider(_build_candles(57)),
+        readings_store=_MockReadingsStore(),
+        candles_store=_MockCandlesStore(),
+        smc_pipeline=_stub_smc_pipeline,
+        clock=fixed_clock,
+    )
+    seed.get_or_generate("XAUUSD", "M15")
+    payload = dict(seed.readings_store.get_latest_reading("XAUUSD", "M15"))
+    assert payload["_logic_version"] == READING_LOGIC_VERSION  # seed is stamped
+    payload.pop("_logic_version")  # ← pre-fix stored reading (no stamp)
+
+    provider = _MockDataProvider(_build_candles(57))
+    readings_store = _MockReadingsStore(prepopulated=payload)
+    assembler = MarketReadingAssembler(
+        data_provider=provider,
+        readings_store=readings_store,
+        candles_store=_MockCandlesStore(),
+        smc_pipeline=_stub_smc_pipeline,
+        clock=fixed_clock,
+    )
+    assembler.get_or_generate("XAUUSD", "M15")
+
+    # Rebuilt (fetch + save), NOT served from the stale-logic cache …
+    assert provider.call_count == 1
+    assert len(readings_store.save_calls) == 1
+    # … and the rebuilt payload carries the current stamp.
+    assert readings_store.save_calls[0][3]["_logic_version"] == READING_LOGIC_VERSION
+
+
+def test_liquidity_kill_switch_empties_pools(fixed_clock, monkeypatch):
+    # One reversible env value masks liquidity at the serve layer, on every
+    # response, without touching the stored data (LQ-D1 kill switch).
+    def _make():
+        return MarketReadingAssembler(
+            data_provider=_MockDataProvider(_build_candles(57)),
+            readings_store=_MockReadingsStore(),
+            candles_store=_MockCandlesStore(),
+            smc_pipeline=_smc_pipeline_with_liquidity,
+            clock=fixed_clock,
+        )
+
+    monkeypatch.delenv("SENTINEL_LIQUIDITY_DISABLED", raising=False)
+    baseline = _make().get_or_generate("XAUUSD", "M15")
+    assert baseline.structure.liquidity_pools != []  # the pocket surfaces
+
+    monkeypatch.setenv("SENTINEL_LIQUIDITY_DISABLED", "1")
+    masked = _make().get_or_generate("XAUUSD", "M15")
+    assert masked.structure.liquidity_pools == []  # same pocket, masked
 
 
 # ---------------------------------------------------------------------------
