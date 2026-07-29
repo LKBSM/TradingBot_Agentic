@@ -93,11 +93,16 @@ class MarketReadingHeader(BaseModel):
 # ---------------------------------------------------------------------------
 
 
+# Whole ANALYSED bars between the break and the last bar of the window (DG-1).
+# Emitted by collect_structure_events (idx − event_idx). Optional so older
+# payloads / fixtures without it still validate; the front counts real bougies
+# from it instead of wall-clock hours ÷ tf (which overcounts week-end gaps).
 class BOSRecent(BaseModel):
     direction: Direction
     level: float
     broken_at: datetime
     validation_status: ValidationStatus
+    bars_ago: Optional[int] = None
 
 
 class CHOCHRecent(BaseModel):
@@ -105,6 +110,7 @@ class CHOCHRecent(BaseModel):
     level: float
     broken_at: datetime
     validation_status: ValidationStatus
+    bars_ago: Optional[int] = None
 
 
 class OrderBlock(BaseModel):

@@ -41,6 +41,36 @@ export function formatBreakTimestamp(iso: string, timeZone?: string): string | n
   return formatLocalDayHm(d, timeZone);
 }
 
+// ─── Trend window span (DG-1 point 5) ────────────────────────────────────────
+
+/**
+ * The trend is measured over a FIXED bar count (the backend `DEFAULT_LOOKBACK`).
+ * Kept in sync with `MarketReadingAssembler.DEFAULT_LOOKBACK`.
+ */
+export const TREND_WINDOW_BARS = 500;
+
+/**
+ * Coarse CALENDAR span of `bars` candles of `timeframe`, as a {unit, count} pair
+ * the caller localizes. A fixed bar count means a wildly different span per unit
+ * (≈ 3 weeks on H1, ≈ 2 years on D1) — the Concept tooltip states it so the
+ * client knows what « the window » actually covers on the unit they view. This
+ * is a continuous-time approximation (bars × minutes); real calendar coverage is
+ * a bit longer because of week-end gaps — hence the « ≈ » on screen. Returns
+ * null for an unknown timeframe.
+ */
+export function trendWindowSpan(
+  timeframe: string,
+  bars: number = TREND_WINDOW_BARS,
+): { unit: 'days' | 'weeks' | 'months' | 'years'; count: number } | null {
+  const min = timeframeMinutes(timeframe);
+  if (!min) return null;
+  const days = (bars * min) / 1_440;
+  if (days >= 365) return { unit: 'years', count: Math.max(1, Math.round(days / 365)) };
+  if (days >= 60) return { unit: 'months', count: Math.max(1, Math.round(days / 30)) };
+  if (days >= 14) return { unit: 'weeks', count: Math.max(1, Math.round(days / 7)) };
+  return { unit: 'days', count: Math.max(1, Math.round(days)) };
+}
+
 // ─── (b) Trend maturity — anchored on the last CHOCH ─────────────────────────
 
 export interface TrendMaturity {
@@ -54,6 +84,15 @@ export interface TrendMaturity {
    * never a detection input.
    */
   bars: number | null;
+  /**
+   * True when ``bars`` is a wall-clock ESTIMATE (elapsed time ÷ timeframe) rather
+   * than a real analysed-bar count — the case for older payloads that carry no
+   * ``bars_ago`` on the CHOCH event. A wall-clock estimate overcounts week-end /
+   * holiday gaps (e.g. a Fri→Mon "114 bougies" that were never analysed), so the
+   * caller marks it « ≈ » (DG-1 point 2). False when read from the engine's real
+   * ``bars_ago``.
+   */
+  barsApproximate: boolean;
 }
 
 /**
@@ -73,36 +112,52 @@ export function deriveTrendMaturity(
   header: MarketReadingHeader,
 ): TrendMaturity | null {
   // Most recent CHOCH from the event history (max broken_at).
-  let anchor: { broken_at: string; direction: 'bullish' | 'bearish' } | null = null;
+  let anchor:
+    | { broken_at: string; direction: 'bullish' | 'bearish'; bars_ago?: number | null }
+    | null = null;
   for (const e of structure.choch_events ?? []) {
     if (
       anchor === null ||
       new Date(e.broken_at).getTime() > new Date(anchor.broken_at).getTime()
     ) {
-      anchor = { broken_at: e.broken_at, direction: e.direction };
+      anchor = { broken_at: e.broken_at, direction: e.direction, bars_ago: e.bars_ago };
     }
   }
   // Fall back to the point-in-time CHOCH when no history is present (older
   // payloads / fixtures). Still CHOCH-only — never a BOS.
   if (anchor === null && structure.choch) {
-    anchor = { broken_at: structure.choch.broken_at, direction: structure.choch.direction };
+    anchor = {
+      broken_at: structure.choch.broken_at,
+      direction: structure.choch.direction,
+      bars_ago: structure.choch.bars_ago,
+    };
   }
   if (anchor === null) return null;
 
+  // Prefer the engine's REAL analysed-bar count (DG-1 point 2): it excludes the
+  // week-end/holiday gaps that a wall-clock estimate would count as phantom
+  // bougies. Only when the payload carries no bars_ago do we fall back to the
+  // elapsed-time estimate, and we flag it « approximate » so the caller shows «≈».
   let bars: number | null = null;
-  const tfMin = timeframeMinutes(header.timeframe);
-  if (tfMin) {
-    const closeMs = new Date(header.candle_close_ts).getTime();
-    const breakMs = new Date(anchor.broken_at).getTime();
-    const diffMs = closeMs - breakMs;
-    // Guard against unparseable dates and the known « broken_at in the future »
-    // data glitch — we never show a negative or NaN candle count.
-    if (Number.isFinite(diffMs) && diffMs >= 0) {
-      bars = Math.floor(diffMs / (tfMin * 60_000));
+  let barsApproximate = false;
+  if (typeof anchor.bars_ago === 'number' && anchor.bars_ago >= 0) {
+    bars = anchor.bars_ago;
+  } else {
+    const tfMin = timeframeMinutes(header.timeframe);
+    if (tfMin) {
+      const closeMs = new Date(header.candle_close_ts).getTime();
+      const breakMs = new Date(anchor.broken_at).getTime();
+      const diffMs = closeMs - breakMs;
+      // Guard against unparseable dates and the known « broken_at in the future »
+      // data glitch — we never show a negative or NaN candle count.
+      if (Number.isFinite(diffMs) && diffMs >= 0) {
+        bars = Math.floor(diffMs / (tfMin * 60_000));
+        barsApproximate = true;
+      }
     }
   }
 
-  return { direction: anchor.direction, brokenAt: anchor.broken_at, bars };
+  return { direction: anchor.direction, brokenAt: anchor.broken_at, bars, barsApproximate };
 }
 
 /**
@@ -121,9 +176,10 @@ export function formatTrendMaturity(
   const orient = m.direction === 'bullish' ? 'haussière' : 'baissière';
   const when = formatBreakTimestamp(m.brokenAt, timeZone);
   const whenPart = when ? ` du ${when}` : '';
+  const approx = m.barsApproximate ? '≈ ' : '';
   const barsPart =
     m.bars != null
-      ? ` (≈ ${m.bars} bougie${m.bars > 1 ? 's' : ''} ${header.timeframe})`
+      ? ` (${approx}${m.bars} bougie${m.bars > 1 ? 's' : ''} ${header.timeframe})`
       : '';
   return `Structure orientée ${orient} depuis le CHOCH${whenPart}${barsPart}.`;
 }

@@ -101,11 +101,27 @@ describe('formatBreakTimestamp', () => {
 describe('deriveTrendMaturity (b)', () => {
   it('derives the candle count since the point-in-time CHOCH (fallback)', () => {
     const m = deriveTrendMaturity(structure({ choch: choch() }), header());
-    // 14:30 → 19:00 = 270 min / 15 = 18 candles.
+    // 14:30 → 19:00 = 270 min / 15 = 18 candles. No bars_ago on the fixture →
+    // wall-clock ESTIMATE, so barsApproximate is true.
     expect(m).toEqual({
       direction: 'bullish',
       brokenAt: '2026-06-24T14:30:00',
       bars: 18,
+      barsApproximate: true,
+    });
+  });
+  it('prefers the engine real bars_ago over the wall-clock estimate (no ≈)', () => {
+    // 14:30→19:00 would ESTIMATE 18 bars, but the event carries bars_ago=11 (real
+    // analysed bars, week-end gap excluded) → maturity uses 11, not approximate.
+    const m = deriveTrendMaturity(
+      structure({ choch: choch({ bars_ago: 11 }) }),
+      header(),
+    );
+    expect(m).toEqual({
+      direction: 'bullish',
+      brokenAt: '2026-06-24T14:30:00',
+      bars: 11,
+      barsApproximate: false,
     });
   });
   it('anchors on the MOST RECENT CHOCH from the event history (even bars ago)', () => {
@@ -122,11 +138,12 @@ describe('deriveTrendMaturity (b)', () => {
       }),
       header(),
     );
-    // Latest event = 14:00 → 19:00 = 300 min / 15 = 20 candles.
+    // Latest event = 14:00 → 19:00 = 300 min / 15 = 20 candles (estimate).
     expect(m).toEqual({
       direction: 'bearish',
       brokenAt: '2026-06-24T14:00:00',
       bars: 20,
+      barsApproximate: true,
     });
   });
   it('never uses a BOS for maturity — BOS-only → null', () => {
@@ -158,6 +175,11 @@ describe('formatTrendMaturity (b)', () => {
     expect(
       formatTrendMaturity(structure({ choch: choch({ direction: 'bearish' }) }), header(), 'UTC'),
     ).toBe('Structure orientée baissière depuis le CHOCH du 24/06 à 14:30 (≈ 18 bougies M15).');
+  });
+  it('drops the ≈ when the count is the engine real bars_ago', () => {
+    expect(
+      formatTrendMaturity(structure({ choch: choch({ bars_ago: 11 }) }), header(), 'UTC'),
+    ).toBe('Structure orientée haussière depuis le CHOCH du 24/06 à 14:30 (11 bougies M15).');
   });
   it('omits the candle count when the timeframe is unknown', () => {
     expect(

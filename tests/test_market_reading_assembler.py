@@ -160,7 +160,17 @@ def test_lazy_cache_miss_runs_full_pipeline(fixed_clock):
     assert isinstance(reading, MarketReading)
     assert reading.header.instrument == "XAUUSD"
     assert reading.header.timeframe == "M15"
+    # DG-1 point 1: candle_close_ts names the LAST CANDLE ANALYSED (07:15 open +
+    # 15 min), derived from the data — NOT the wall-clock expected close (14:15).
+    # Here the mock feed lags the clock, so the two differ and the header stays
+    # honest instead of claiming a candle that was never analysed.
     assert reading.header.candle_close_ts == datetime(
+        2026, 5, 28, 7, 30, 0, tzinfo=timezone.utc
+    )
+    # Decoupling proof: the CACHE key passed to save_reading is still the
+    # wall-clock/market-aware expected close (14:15) — only the displayed header
+    # follows the data.
+    assert readings_store.save_calls[0][2] == datetime(
         2026, 5, 28, 14, 15, 0, tzinfo=timezone.utc
     )
     assert reading.header.close_price == candles[-1].close
@@ -184,9 +194,12 @@ def test_lazy_cache_miss_runs_full_pipeline(fixed_clock):
 
 def test_lazy_cache_hit_returns_stored_without_fetch(fixed_clock):
     # Pre-build a valid MarketReading whose candle_close_ts matches the expected
-    # M15 close at 14:23:00Z → 14:15:00Z.
+    # M15 close at 14:23:00Z → 14:15:00Z. The feed must reach that close (57
+    # candles from 00:00 → last open 14:00 → close 14:15) so the honest
+    # candle_close_ts (DG-1) equals the expected close and the second access is a
+    # genuine cache hit.
     seed_assembler = MarketReadingAssembler(
-        data_provider=_MockDataProvider(_build_candles(30)),
+        data_provider=_MockDataProvider(_build_candles(57)),
         readings_store=_MockReadingsStore(),
         candles_store=_MockCandlesStore(),
         smc_pipeline=_stub_smc_pipeline,
@@ -268,14 +281,47 @@ def test_stale_cache_triggers_regeneration(fixed_clock):
 
     reading = assembler.get_or_generate("XAUUSD", "M15")
 
-    # Regenerated — fresh candle_close_ts
+    # Regenerated — candle_close_ts follows the ANALYSED data (07:30), not the
+    # wall-clock expected close (DG-1 point 1); the cache key stays 14:15.
     assert reading.header.candle_close_ts == datetime(
+        2026, 5, 28, 7, 30, 0, tzinfo=timezone.utc
+    )
+    assert readings_store.save_calls[0][2] == datetime(
         2026, 5, 28, 14, 15, 0, tzinfo=timezone.utc
     )
     assert provider.call_count == 1
     assert len(candles_store.upsert_calls) == 1
     assert len(readings_store.save_calls) == 1
     assert readings_store.mark_active_calls == [("XAUUSD", "M15")]
+
+
+# ---------------------------------------------------------------------------
+# DG-1 points 1 + 3 — a stalled feed makes a detection lag VISIBLE, not silent
+# ---------------------------------------------------------------------------
+
+
+def test_stale_feed_surfaces_data_lagged_status(fixed_clock):
+    """When the feed lags the clock, the honest candle_close_ts (DG-1 point 1)
+    lets market_status report ``data_lagged`` — the lag is no longer silent
+    (point 3). Before the fix, candle_close_ts was stamped from the clock, so
+    the age was always 0 and the lag could never surface."""
+    candles = _build_candles(30)  # feed ends 07:15 while the clock is 14:23
+    readings_store = _MockReadingsStore(prepopulated=None)
+    assembler = MarketReadingAssembler(
+        data_provider=_MockDataProvider(candles),
+        readings_store=readings_store,
+        candles_store=_MockCandlesStore(),
+        smc_pipeline=_stub_smc_pipeline,
+        clock=fixed_clock,
+    )
+
+    assembler.get_or_generate("XAUUSD", "M15")
+    status = assembler.market_status("XAUUSD", "M15")
+
+    # 07:30 stored vs 14:15 expected = 6h45 = 27 M15 bars behind (≥ 5 threshold).
+    assert status.state == "data_lagged"
+    assert status.bars_behind is not None and status.bars_behind >= 5
+    assert status.last_close_ts == datetime(2026, 5, 28, 7, 30, 0, tzinfo=timezone.utc)
 
 
 # ---------------------------------------------------------------------------

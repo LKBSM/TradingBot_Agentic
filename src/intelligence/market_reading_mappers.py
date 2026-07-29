@@ -639,6 +639,11 @@ def collect_structure_events(
                 "direction": "bullish" if v > 0 else "bearish",
                 "level": lvl,
                 "broken_at": _zone_created_at(enriched, k),
+                # Real ANALYSED-bar distance from the event to the last bar of the
+                # window (DG-1 point 2). Lets the front show maturity in bougies
+                # truly analysed — not wall-clock hours ÷ tf, which overcounts the
+                # week-end gap (a Fri→Mon "114 bougies" that were never analysed).
+                "bars_ago": pos - k,
                 "_k": k,
             })
         events.sort(key=lambda e: -e["_k"])  # most recent first
@@ -1228,6 +1233,7 @@ def _structure_events_to_models(
             level=float(e["level"]),
             broken_at=e.get("broken_at") or bar_ts,
             validation_status="confirmed",
+            bars_ago=e.get("bars_ago"),
         ))
     choch_events: list[CHOCHRecent] = []
     for e in events.get("choch_events", []):
@@ -1236,6 +1242,7 @@ def _structure_events_to_models(
             level=float(e["level"]),
             broken_at=e.get("broken_at") or bar_ts,
             validation_status="confirmed",
+            bars_ago=e.get("bars_ago"),
         ))
     return bos_events, choch_events
 

@@ -97,6 +97,9 @@ export interface BOSRecent {
   level: number;
   broken_at: string;
   validation_status: ValidationStatus;
+  /** Whole ANALYSED bars between the break and the last bar of the window (DG-1).
+   *  Absent on older payloads → callers fall back to a wall-clock estimate. */
+  bars_ago?: number | null;
 }
 
 export interface CHOCHRecent {
@@ -104,6 +107,7 @@ export interface CHOCHRecent {
   level: number;
   broken_at: string;
   validation_status: ValidationStatus;
+  bars_ago?: number | null;
 }
 
 export interface OrderBlock {
