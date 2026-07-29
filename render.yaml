@@ -71,6 +71,8 @@ services:
         value: /app/data/calendar_cache.db
       - key: CALENDAR_ICS_LIVE          # auto-refresh calendar dates from official .ics feeds
         value: "1"
+      - key: CALENDAR_VALUES_LIVE       # fetch published values by series code (ECB no-key; others key-gated)
+        value: "1"
       - key: BOOTSTRAP_ENABLED
         value: "true"
       - key: SCHEDULER_ENABLED

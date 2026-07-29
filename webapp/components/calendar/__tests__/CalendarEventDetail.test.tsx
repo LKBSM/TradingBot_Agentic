@@ -29,6 +29,8 @@ function ev(
     previous: null,
     revised: false,
     revised_at: null,
+    actual_state: 'pending',
+    refreshed_at: null,
     ...p,
   };
 }
@@ -59,6 +61,7 @@ const OFFICIAL = ev({
   previous: 320.0,
   revised: true,
   revised_at: '2026-07-27T12:30:00Z',
+  actual_state: 'published',
 });
 
 function renderDetail(eventId: string, event: CalendarEvent = OFFICIAL) {
@@ -91,11 +94,32 @@ describe('NW-1b CalendarEventDetail', () => {
     const raw = ev({
       event_id: 'bls:x:1', source: 'bls', event: 'X',
       organism: 'Bureau of Labor Statistics', actual: 3.14159, previous: 2.71828,
+      actual_state: 'published',
     });
     const { container } = renderDetail('bls:x:1', raw);
     const vals = Array.from(container.querySelectorAll('.cald-fig .v')).map((e) => e.textContent);
     expect(vals).toContain('3.14159');
     expect(vals).toContain('2.71828');
+  });
+
+  it('the three value absences are distinct on screen (pending / unfetched / unavailable)', () => {
+    // 1) PENDING — future date, value does not exist yet
+    const pend = ev({ event_id: 'bls:p:1', source: 'bls', event: 'P', organism: 'Bureau of Labor Statistics', actual: null, actual_state: 'pending' });
+    let c = renderDetail('bls:p:1', pend).container;
+    expect(c.textContent).toContain(fr.calendar.detail.actualPending);
+
+    // 2) UNFETCHED — published but not obtained; a PRODUCT state, with last attempt
+    const unf = ev({ event_id: 'bls:u:1', source: 'bls', event: 'U', organism: 'Bureau of Labor Statistics', actual: null, actual_state: 'unfetched', refreshed_at: '2026-07-20T12:30:00Z' });
+    c = renderDetail('bls:u:1', unf).container;
+    const utxt = c.textContent ?? '';
+    expect(utxt).toContain('non récupérée');
+    expect(utxt).not.toContain(fr.calendar.detail.actualPending); // never confused with "not yet published"
+
+    // 3) UNAVAILABLE — source exposes no single figure, organism named
+    const una = ev({ event_id: 'fed:f:1', source: 'federal_reserve', event: 'FOMC', organism: 'Federal Reserve Board', actual: null, actual_state: 'unavailable', series_code: null });
+    c = renderDetail('fed:f:1', una).container;
+    expect(c.textContent).toContain('non disponible');
+    expect(c.textContent).toContain('Federal Reserve Board');
   });
 
   it('shows initial and current value coexisting, with the revision date', () => {
@@ -111,6 +135,7 @@ describe('NW-1b CalendarEventDetail', () => {
     const notRevised = ev({
       event_id: 'bls:y:1', source: 'bls', event: 'Y',
       organism: 'Bureau of Labor Statistics', actual: 100.0, revised: false,
+      actual_state: 'published',
     });
     const { container } = renderDetail('bls:y:1', notRevised);
     expect(container.querySelector('.cald-rev-line')?.textContent).toBe(

@@ -302,11 +302,31 @@
 .cal-attrib a:hover {
   text-decoration: underline;
 }
-.cal-attrib .stale {
-  margin-top: 8px;
-  font-size: 10px;
+/* Per-organism freshness inside each attribution line. */
+.cal-attrib .fresh {
+  font-size: 9.5px;
+  color: var(--faint);
+  white-space: nowrap;
+}
+.cal-attrib .fresh.stale {
   color: var(--liq);
-  line-height: 1.5;
+}
+
+/* Value + its explicit state on a list row (right side). */
+.cal-val {
+  flex-shrink: 0;
+  min-width: 92px;
+  text-align: right;
+}
+.cal-val .v {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+}
+.cal-val .s {
+  font-size: 9.5px;
+  color: var(--faint);
+  font-style: italic;
 }
 
 /* Revision line on the detail card — before value, after value, date. No
@@ -585,5 +605,12 @@
   }
   .cald-cd {
     margin-left: 0;
+  }
+}
+@media (max-width: 560px) {
+  /* Keep list rows uncluttered on phones; the full value state lives on the
+     detail page (« En savoir plus »). */
+  .cal-val {
+    display: none;
   }
 }

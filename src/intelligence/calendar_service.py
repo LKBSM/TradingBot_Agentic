@@ -19,6 +19,7 @@ date of its last successful refresh.
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import logging
 import os
@@ -28,17 +29,26 @@ from typing import Callable, Dict, List, Optional, Tuple
 
 from src.intelligence.calendar_providers import CalendarProvider, build_calendar_provider
 from src.intelligence.calendar_providers.base import ProviderEvent
+from src.intelligence.calendar_providers.values import (
+    MultiValueFetcher,
+    build_value_fetcher,
+)
 from src.intelligence.calendar_schema import (
     CalendarAttribution,
     CalendarCoverage,
     CalendarEvent,
     CalendarResponse,
+    compute_value_state,
 )
 from src.storage.calendar_cache_store import CalendarCacheEvent, CalendarCacheStore
 
 logger = logging.getLogger(__name__)
 
 _ENV_MAP_PATH = "CALENDAR_EVENT_MAP_PATH"
+
+# Sentinel so `value_fetcher=None` (explicitly disable) is distinct from the
+# default (build the env-configured fetcher).
+_UNSET = object()
 
 
 def _default_map_path() -> Path:
@@ -75,6 +85,10 @@ class CalendarService:
     DEFAULT_TTL_SECONDS = 120
     DEFAULT_LOOKAHEAD_MIN = 7 * 24 * 60   # 7 days forward
     DEFAULT_LOOKBACK_MIN = 3 * 24 * 60    # 3 days back
+    # A source silent for longer than this is flagged "not refreshed recently".
+    # 24h: the .ics/data feeds are polled on the TTL cadence, so a full day of
+    # silence is a genuine retrieval delay worth surfacing.
+    STALE_AFTER_HOURS = 24
 
     def __init__(
         self,
@@ -83,12 +97,17 @@ class CalendarService:
         market_map: Optional[Dict[str, List[str]]] = None,
         ttl_seconds: int = DEFAULT_TTL_SECONDS,
         clock: Callable[[], datetime] = lambda: datetime.now(timezone.utc),
+        value_fetcher: Optional["MultiValueFetcher"] = _UNSET,  # type: ignore[assignment]
     ) -> None:
         self._provider = provider if provider is not None else build_calendar_provider()
         self._store = store if store is not None else CalendarCacheStore()
         self._market_map = market_map if market_map is not None else load_market_map()
         self._ttl_seconds = ttl_seconds
         self._clock = clock
+        # None disables enrichment; _UNSET (default) builds the env-configured one.
+        self._value_fetcher = (
+            build_value_fetcher() if value_fetcher is _UNSET else value_fetcher
+        )
         self._coverage: Tuple[Optional[datetime], Optional[datetime]] = (None, None)
 
     # ------------------------------------------------------------------ #
@@ -115,7 +134,15 @@ class CalendarService:
         window_end = now + timedelta(minutes=lookahead_minutes)
 
         cached = self._store.get_events_between(window_start, window_end)
-        events = [self._to_schema(e) for e in cached]
+        events = []
+        for e in cached:
+            ev = self._to_schema(e)
+            # Classify the value into one of the four explicit states (never a
+            # bare null) using this request's clock.
+            ev.actual_state = compute_value_state(
+                ev.series_code, ev.actual, ev.scheduled_at, now
+            )
+            events.append(ev)
 
         feed_start, feed_end = self._coverage
         if feed_start is None and feed_end is None:
@@ -126,7 +153,7 @@ class CalendarService:
         # coverage banner on a forward calendar.
         partial = bool(feed_end is not None and window_end > feed_end)
 
-        last_success, stale = self._freshness()
+        last_success, stale = self._freshness(now)
         coverage = CalendarCoverage(
             source=self._provider.source_name,
             feed_start=feed_start,
@@ -153,14 +180,19 @@ class CalendarService:
             return ts.replace(tzinfo=timezone.utc)
         return ts.astimezone(timezone.utc)
 
-    def _freshness(self) -> Tuple[Dict[str, datetime], List[str]]:
-        """Per-source last success + the sources that were NOT refreshed in the
-        latest successful cycle (their rows are kept, they are flagged stale)."""
+    def _freshness(self, now: datetime) -> Tuple[Dict[str, datetime], List[str]]:
+        """Per-source last success + the sources whose data is not fresh. A source
+        is stale if it was NOT refreshed in the latest cycle OR its last success is
+        older than ``STALE_AFTER_HOURS`` — a retrieval delay is never silent. Rows
+        are kept regardless; only the freshness flag changes."""
         last_success = self._store.source_last_success()
         if not last_success:
             return ({}, [])
         newest = max(last_success.values())
-        stale = sorted(s for s, ts in last_success.items() if ts < newest)
+        cutoff = now - timedelta(hours=self.STALE_AFTER_HOURS)
+        stale = sorted(
+            s for s, ts in last_success.items() if ts < newest or ts < cutoff
+        )
         return (last_success, stale)
 
     def _attribution_for(self, events: List[CalendarEvent]) -> List[CalendarAttribution]:
@@ -201,8 +233,30 @@ class CalendarService:
             if not markets:
                 continue  # no followed market → never attached, never displayed
             persisted.append(self._to_cache(ev, markets))
+        self._enrich_values(persisted, now)
         if persisted:
             self._store.upsert_events(persisted, fetched_at=now)
+
+    def _enrich_values(self, events: List[CalendarCacheEvent], now: datetime) -> None:
+        """Fetch the published value for PAST events that lack one, by stable
+        series code. A future event is left ``pending``; a series-less event is
+        left ``unavailable``; an unreachable fetch leaves the event ``unfetched``
+        (its ``fetched_at`` records the attempt). Never fabricates, never by title.
+        The store's upsert flags a revision if a stored value later changes."""
+        fetcher = self._value_fetcher
+        if fetcher is None:
+            return
+        for i, ce in enumerate(events):
+            if ce.actual is not None or ce.scheduled_at > now or not ce.series_code:
+                continue
+            point = fetcher.fetch_for(ce.source, ce.series_code)
+            if point is None:
+                continue  # stays unfetched — the attempt is recorded via fetched_at
+            events[i] = dataclasses.replace(
+                ce,
+                actual=point.actual,
+                previous=point.previous if point.previous is not None else ce.previous,
+            )
 
     def _to_cache(self, ev: ProviderEvent, markets: List[str]) -> CalendarCacheEvent:
         return CalendarCacheEvent(
@@ -247,6 +301,8 @@ class CalendarService:
             previous=e.previous,
             revised=e.revised,
             revised_at=e.revised_at,
+            refreshed_at=e.refreshed_at,
+            # actual_state is computed in get_calendar (needs the request clock).
         )
 
 

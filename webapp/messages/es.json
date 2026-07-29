@@ -1850,7 +1850,8 @@
       "title": "Sources and reuse",
       "intro": "Each release comes from the official organism that issues it. Reuse follows each source's policy:",
       "policyLink": "reuse policy",
-      "stale": "{organism}: data not refreshed, last success on {date}."
+      "stale": "not refreshed since {date}",
+      "refreshed": "refreshed on {date}"
     },
     "coverage": {
       "partial": "The calendar is populated through {date}. Beyond that, the period is not yet covered."
@@ -1897,7 +1898,13 @@
           "1": "It does not read a gap between the published value and the previous one as bullish or bearish.",
           "2": "It recommends neither acting, nor abstaining, nor closing anything."
         }
-      }
+      },
+      "actualUnfetched": "value not retrieved — last attempt on {date}",
+      "actualUnavailable": "not available — {organism} publishes no single figure for this release"
+    },
+    "list": {
+      "unfetched": "not retrieved",
+      "unavailable": "not available"
     }
   }
 }

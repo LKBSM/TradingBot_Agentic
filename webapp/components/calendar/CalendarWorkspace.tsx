@@ -39,6 +39,11 @@ function capitalize(s: string): string {
   return s.length ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 }
 
+/** Render a published value AS PUBLISHED — no conversion, no re-rounding. */
+function asPublished(n: number | null): string {
+  return n == null ? '—' : String(n);
+}
+
 /** Last IANA segment as a human label: "America/New_York" → "New York". */
 function tzCity(iana: string | null): string | null {
   if (!iana) return null;
@@ -167,7 +172,7 @@ export function CalendarWorkspace({
         marketName={marketName}
       />
 
-      <Attribution t={t} data={data} organismName={organismName} locale={locale} />
+      <Attribution t={t} data={data} locale={locale} />
 
       <div className="cal-nono" role="note">
         <div>
@@ -337,9 +342,20 @@ function Row({
         </div>
       </div>
 
-      {/* No amplitude slot while no measure exists: no data, no element (never a
-          future-content promise). The engine-measure column returns in a
-          follow-up once real amplitudes are computed. */}
+      {/* Value + its explicit state — consistent with the detail (no bare dash).
+          Pending shows nothing here: the countdown already states it's upcoming.
+          No amplitude slot while no measure exists (no future-content promise). */}
+      <div className="cal-val">
+        {ev.actual_state === 'published' && (
+          <span className="v mono">{asPublished(ev.actual)}</span>
+        )}
+        {ev.actual_state === 'unfetched' && (
+          <span className="s">{t('list.unfetched')}</span>
+        )}
+        {ev.actual_state === 'unavailable' && (
+          <span className="s">{t('list.unavailable')}</span>
+        )}
+      </div>
 
       <Link
         className="cal-more"
@@ -361,40 +377,43 @@ function Row({
 function Attribution({
   t,
   data,
-  organismName,
   locale,
 }: {
   t: ReturnType<typeof useTranslations>;
   data: CalendarResponse | null | undefined;
-  organismName: (s: string) => string;
   locale: string;
 }) {
   if (!data || data.attribution.length === 0) return null;
+  const staleSet = new Set(data.coverage.stale_sources);
   return (
     <div className="cal-attrib" role="contentinfo">
       <div className="t">{t('attribution.title')}</div>
       <p className="i">{t('attribution.intro')}</p>
       <ul>
-        {data.attribution.map((a) => (
-          <li key={a.source}>
-            <span className="org">{a.organism}</span>
-            <span className="lic">{a.license_label}</span>
-            <a href={a.policy_url} target="_blank" rel="noreferrer noopener">
-              {t('attribution.policyLink')}
-            </a>
-          </li>
-        ))}
+        {data.attribution.map((a) => {
+          // Per-organism freshness: the last successful refresh, and a marker when
+          // it is stale (older than the threshold or missed the latest cycle). A
+          // retrieval delay is never silent.
+          const iso = data.coverage.last_success[a.source];
+          const d = iso ? parseUtc(iso) : null;
+          const when = d ? d.toLocaleDateString(locale) : '—';
+          const isStale = staleSet.has(a.source);
+          return (
+            <li key={a.source}>
+              <span className="org">{a.organism}</span>
+              <span className="lic">{a.license_label}</span>
+              <a href={a.policy_url} target="_blank" rel="noreferrer noopener">
+                {t('attribution.policyLink')}
+              </a>
+              <span className={`fresh${isStale ? ' stale' : ''}`}>
+                {isStale
+                  ? t('attribution.stale', { date: when })
+                  : t('attribution.refreshed', { date: when })}
+              </span>
+            </li>
+          );
+        })}
       </ul>
-      {data.coverage.stale_sources.length > 0 && (
-        <p className="stale">
-          {data.coverage.stale_sources.map((s) => {
-            const iso = data.coverage.last_success[s];
-            const d = iso ? parseUtc(iso) : null;
-            const when = d ? d.toLocaleDateString(locale) : '—';
-            return t('attribution.stale', { organism: organismName(s), date: when });
-          }).join(' ')}
-        </p>
-      )}
     </div>
   );
 }

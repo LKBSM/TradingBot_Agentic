@@ -152,6 +152,8 @@ function Detail({
   const affects = ev.markets.map((m) => t(`market.${m}` as 'market.XAUUSD')).join(', ');
   const revisedDate = ev.revised_at ? parseUtc(ev.revised_at) : null;
   const revisedDateLabel = revisedDate ? revisedDate.toLocaleDateString(locale) : '—';
+  const lastAttempt = ev.refreshed_at ? parseUtc(ev.refreshed_at) : null;
+  const lastAttemptLabel = lastAttempt ? lastAttempt.toLocaleDateString(locale) : '—';
 
   const nonoItems = Object.values(
     t.raw('detail.nono.items') as Record<string, string>,
@@ -217,8 +219,19 @@ function Detail({
         <div className="cald-figs">
           <div className="cald-fig">
             <div className="k">{t('detail.actualLabel')}</div>
-            <div className="v mono">{asPublished(ev.actual)}</div>
-            {ev.actual == null && <div className="n">{t('detail.actualPending')}</div>}
+            <div className="v mono">
+              {ev.actual_state === 'published' ? asPublished(ev.actual) : '—'}
+            </div>
+            {/* The three absences are distinct — never a bare, ambiguous dash. */}
+            {ev.actual_state === 'pending' && (
+              <div className="n">{t('detail.actualPending')}</div>
+            )}
+            {ev.actual_state === 'unfetched' && (
+              <div className="n">{t('detail.actualUnfetched', { date: lastAttemptLabel })}</div>
+            )}
+            {ev.actual_state === 'unavailable' && (
+              <div className="n">{t('detail.actualUnavailable', { organism: ev.organism ?? '—' })}</div>
+            )}
           </div>
           <div className="cald-fig">
             <div className="k">{t('detail.previousLabel')}</div>

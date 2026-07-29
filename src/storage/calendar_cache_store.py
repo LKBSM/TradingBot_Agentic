@@ -79,6 +79,9 @@ class CalendarCacheEvent:
     previous: Optional[float] = None
     revised: bool = False
     revised_at: Optional[datetime] = None
+    # Read-only on the way out: when the row was last written / a value fetch was
+    # last attempted (drives the "unfetched — last attempt on <date>" state).
+    refreshed_at: Optional[datetime] = None
 
 
 class CalendarCacheStore:
@@ -371,6 +374,7 @@ class CalendarCacheStore:
             previous=row["previous"],
             revised=bool(row["revised"]),
             revised_at=_parse_iso(row["revised_at"]) if row["revised_at"] else None,
+            refreshed_at=_parse_iso(row["fetched_at"]) if row["fetched_at"] else None,
         )
 
 
