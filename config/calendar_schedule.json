@@ -9,12 +9,46 @@
     " - schedule_url : la page/flux officiel d'où provient CETTE date.",
     " - last_verified : la date de dernière vérification manuelle de cette parution.",
     "Champs de valeurs, tous facultatifs et AFFICHÉS TELS QUE PUBLIÉS (jamais convertis) :",
-    " - actual : valeur courante ; actual_initial : valeur initialement publiée ; previous : période",
-    "   précédente ; revised (bool) + revised_at (date de révision).",
-    "Ce fichier est livré VIDE : sans dates vérifiées entrées ici (ou un feed live injecté dans",
-    "l'adaptateur), le calendrier est HONNÊTEMENT VIDE plutôt que d'afficher des dates fabriquées.",
-    "Ne JAMAIS remplir une date non vérifiée sur une page officielle."
+    " - actual, actual_initial, previous, revised (bool), revised_at.",
+    "MAINTENANCE : ces dates sont vérifiées sur les pages officielles à la date last_verified.",
+    "Elles doivent être re-vérifiées périodiquement (les calendriers officiels bougent, ex.",
+    "reports de shutdown). Ne JAMAIS inscrire une date non vérifiée sur une page officielle.",
+    "Non couverts à cette date (dates non confirmées de façon fiable, laissés absents plutôt",
+    "que fabriqués) : us_ppi (calendrier BLS perturbé par le lapse d'appropriations 2025-26),",
+    "ea_hicp_flash / ea_gdp_flash / ea_unemployment (calendrier Eurostat en JS/PDF, non extrait)."
   ],
   "version": 1,
-  "releases": []
+  "releases": [
+    { "event_key": "us_employment_situation", "date": "2026-08-07", "schedule_url": "https://www.bls.gov/schedule/news_release/empsit.htm", "last_verified": "2026-07-28" },
+
+    { "event_key": "us_cpi", "date": "2026-08-12", "schedule_url": "https://www.bls.gov/schedule/news_release/cpi.htm", "last_verified": "2026-07-28" },
+
+    { "event_key": "us_gdp", "date": "2026-08-26", "schedule_url": "https://www.bea.gov/news/schedule", "last_verified": "2026-07-28" },
+    { "event_key": "us_gdp", "date": "2026-09-30", "schedule_url": "https://www.bea.gov/news/schedule", "last_verified": "2026-07-28" },
+    { "event_key": "us_gdp", "date": "2026-10-29", "schedule_url": "https://www.bea.gov/news/schedule", "last_verified": "2026-07-28" },
+
+    { "event_key": "us_pce", "date": "2026-08-26", "schedule_url": "https://www.bea.gov/news/schedule", "last_verified": "2026-07-28" },
+    { "event_key": "us_pce", "date": "2026-09-30", "schedule_url": "https://www.bea.gov/news/schedule", "last_verified": "2026-07-28" },
+    { "event_key": "us_pce", "date": "2026-10-29", "schedule_url": "https://www.bea.gov/news/schedule", "last_verified": "2026-07-28" },
+
+    { "event_key": "us_fomc_rate", "date": "2026-09-16", "schedule_url": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm", "last_verified": "2026-07-28" },
+    { "event_key": "us_fomc_rate", "date": "2026-10-28", "schedule_url": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm", "last_verified": "2026-07-28" },
+    { "event_key": "us_fomc_rate", "date": "2026-12-09", "schedule_url": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm", "last_verified": "2026-07-28" },
+
+    { "event_key": "us_retail_sales", "date": "2026-08-14", "schedule_url": "https://www.census.gov/economic-indicators/calendar-listview.html", "last_verified": "2026-07-28" },
+    { "event_key": "us_retail_sales", "date": "2026-09-16", "schedule_url": "https://www.census.gov/economic-indicators/calendar-listview.html", "last_verified": "2026-07-28" },
+    { "event_key": "us_retail_sales", "date": "2026-10-15", "schedule_url": "https://www.census.gov/economic-indicators/calendar-listview.html", "last_verified": "2026-07-28" },
+
+    { "event_key": "us_housing_starts", "date": "2026-08-18", "schedule_url": "https://www.census.gov/economic-indicators/calendar-listview.html", "last_verified": "2026-07-28" },
+    { "event_key": "us_housing_starts", "date": "2026-09-17", "schedule_url": "https://www.census.gov/economic-indicators/calendar-listview.html", "last_verified": "2026-07-28" },
+    { "event_key": "us_housing_starts", "date": "2026-10-20", "schedule_url": "https://www.census.gov/economic-indicators/calendar-listview.html", "last_verified": "2026-07-28" },
+
+    { "event_key": "us_durable_goods", "date": "2026-08-26", "schedule_url": "https://www.census.gov/economic-indicators/calendar-listview.html", "last_verified": "2026-07-28" },
+    { "event_key": "us_durable_goods", "date": "2026-09-25", "schedule_url": "https://www.census.gov/economic-indicators/calendar-listview.html", "last_verified": "2026-07-28" },
+    { "event_key": "us_durable_goods", "date": "2026-10-27", "schedule_url": "https://www.census.gov/economic-indicators/calendar-listview.html", "last_verified": "2026-07-28" },
+
+    { "event_key": "ea_ecb_rate", "date": "2026-09-10", "schedule_url": "https://www.ecb.europa.eu/press/calendars/mgcgc/html/index.en.html", "last_verified": "2026-07-28" },
+    { "event_key": "ea_ecb_rate", "date": "2026-10-29", "schedule_url": "https://www.ecb.europa.eu/press/calendars/mgcgc/html/index.en.html", "last_verified": "2026-07-28" },
+    { "event_key": "ea_ecb_rate", "date": "2026-12-17", "schedule_url": "https://www.ecb.europa.eu/press/calendars/mgcgc/html/index.en.html", "last_verified": "2026-07-28" }
+  ]
 }

@@ -120,9 +120,11 @@ class CalendarService:
         feed_start, feed_end = self._coverage
         if feed_start is None and feed_end is None:
             feed_start, feed_end = self._store.coverage_bounds()
-        partial = bool(feed_end is not None and window_end > feed_end) or bool(
-            feed_start is not None and window_start < feed_start
-        )
+        # Forward-looking only: "partial" means the window reaches BEYOND the last
+        # known release. A window that starts before the earliest event is not
+        # "uncovered" (there simply are no past events) — it must not raise the
+        # coverage banner on a forward calendar.
+        partial = bool(feed_end is not None and window_end > feed_end)
 
         last_success, stale = self._freshness()
         coverage = CalendarCoverage(

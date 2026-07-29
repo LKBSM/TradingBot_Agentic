@@ -162,12 +162,44 @@ périmètre visé.
 
 ---
 
+## 6bis. Données réelles peuplées — prêt pour les clients
+
+Le planning `config/calendar_schedule.json` est **peuplé de 23 parutions
+vérifiées** sur les pages officielles (2026-07-28), couvrant les 9 événements aux
+plus gros impacts FX/or. La page affiche donc de vraies parutions dès le
+déploiement (le provider par défaut n'est plus vide). Fenêtre front élargie à
+30 jours (cap API).
+
+| Événement | Dates vérifiées (Aoû–Déc 2026) | Source de la date |
+|---|---|---|
+| Emploi US (NFP) | 07/08 | bls.gov/schedule/news_release/empsit.htm |
+| IPC (CPI) | 12/08 | bls.gov/schedule/news_release/cpi.htm |
+| PIB (GDP) | 26/08, 30/09, 29/10 | bea.gov/news/schedule |
+| Revenus/dépenses (PCE) | 26/08, 30/09, 29/10 | bea.gov/news/schedule |
+| Décision FOMC | 16/09, 28/10, 09/12 | federalreserve.gov/…/fomccalendars.htm |
+| Ventes au détail | 14/08, 16/09, 15/10 | census.gov/economic-indicators/calendar-listview.html |
+| Mises en chantier | 18/08, 17/09, 20/10 | census.gov/…/calendar-listview.html |
+| Biens durables | 26/08, 25/09, 27/10 | census.gov/…/calendar-listview.html |
+| Décision BCE | 10/09, 29/10, 17/12 | ecb.europa.eu/press/calendars/mgcgc |
+
+**Non couverts (dates laissées absentes, jamais fabriquées)** : `us_ppi` (calendrier
+BLS perturbé par le *lapse in appropriations* 2025-26), `ea_hicp_flash`,
+`ea_gdp_flash`, `ea_unemployment` (calendrier Eurostat servi en JS/PDF, non
+extractible de façon fiable). Ces types d'événements restent dans le catalogue ;
+leurs dates seront ajoutées à la prochaine vérification ou par le feed `.ics`.
+
+**Maintenance** : chaque ligne porte `last_verified`. Les calendriers officiels
+bougent (reports de shutdown) → re-vérification périodique nécessaire. Le seam
+`date_source` injectable permet de brancher un **feed live `.ics`/API** par
+source (auto-rafraîchi) sans toucher au reste — étape d'automatisation suivante.
+
 ## 7. Hors couverture (assumé)
 
-- **Feed live réseau par source** : les adaptateurs exposent le seam
-  (`date_source` injectable) et les tests le prouvent avec des fixtures ; le
-  branchement HTTP/`.ics` réel par source (+ clés BLS/BEA) est l'étape opérationnelle
-  suivante. Livré **honnêtement vide** plutôt que sur dates fabriquées.
+- **Feed live réseau auto-rafraîchi** : le seam `date_source` est en place et
+  testé ; le branchement HTTP/`.ics` par source (BLS/BEA/Eurostat) + clés BLS/BEA
+  automatiserait le rafraîchissement (aujourd'hui : planning curé versionné,
+  re-vérifié manuellement). BLS bloque le fetch bot (403) — à valider serveur.
+- **PPI + trio Eurostat** : dates à vérifier (voir 6bis).
 - **Valeurs/amplitude d'historique moteur** : « mesures à venir » (NW-2).
 - **Aperçu /app** : `CalendarPreview` prêt, placement sur /app différé (comme NW-1).
 - **Vintages ALFRED** : écartés (politique FRED). Vintages euro exploitables
@@ -177,7 +209,8 @@ périmètre visé.
 
 ## 8. Vérifications
 
-- Back : 46 tests calendrier verts (providers, service, store, endpoint).
+- Back : 52 tests calendrier verts (providers, service, store, endpoint, schedule),
+  dont l'intégration HTTP avec le **vrai** provider par défaut + le planning réel.
 - Front : tests calendrier verts (workspace, detail, copy-honesty), suite front complète.
 - i18n : fr + en complets, parité stricte 9 locales (7 autres = fallback EN),
   aucune chaîne prédictive (garde copy-honesty), clés impact/consensus supprimées.

@@ -66,7 +66,9 @@ export function CalendarWorkspace({
   now?: Date;
 }) {
   const t = useTranslations('calendar');
-  const hook = useCalendar({ pollMs: POLL_MS });
+  // A volatility calendar is useful across the coming weeks, not just 7 days —
+  // request the full forward horizon (API cap) so upcoming releases are visible.
+  const hook = useCalendar({ lookaheadDays: 30, lookbackDays: 3, pollMs: POLL_MS });
   const data = injectedData !== undefined ? injectedData : hook.data;
   const isLoading = injectedData !== undefined ? false : hook.isLoading;
   const error = injectedData !== undefined ? null : hook.error;

@@ -121,3 +121,27 @@ def test_null_fields_serialize_as_null(tmp_path):
     # forexfactory event: series_code + unit absent, serialized as null not defaulted
     assert ev["series_code"] is None
     assert ev["value_unit"] is None
+
+
+def test_real_default_provider_serves_events_over_http(tmp_path):
+    """End-to-end production path: the REAL official aggregator (no injection) +
+    the shipped schedule serve real, attributed events over the HTTP endpoint —
+    the calendar is client-facing, not empty."""
+    app = FastAPI()
+    service = CalendarService(  # default provider = official aggregator + real config
+        store=CalendarCacheStore(db_path=str(tmp_path / "cal.db")),
+        market_map={"XAUUSD": ["USD"], "EURUSD": ["USD", "EUR"]},
+        ttl_seconds=0,
+        clock=lambda: NOW,
+    )
+    app.state.app_state = AppState(
+        signal_store=SignalStore(db_path=str(tmp_path / "signals.db")),
+        calendar_service=service,
+    )
+    app.include_router(calendar_router)
+    body = TestClient(app).get("/api/calendar?lookahead_days=30").json()
+    assert len(body["events"]) >= 5
+    assert len(body["attribution"]) >= 1
+    ev = body["events"][0]
+    assert ev["organism"] and ev["value_unit"] and ev["periodicity"]
+    assert FORBIDDEN_KEYS.isdisjoint(ev.keys())

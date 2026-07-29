@@ -133,8 +133,8 @@ def test_ecb_values_shown_as_published_not_converted():
 def test_aggregator_composes_all_sources_and_is_named_official():
     agg = OfficialCalendarProvider()
     assert agg.source_name == "official"
-    # empty schedule ships → honestly empty, not fabricated
-    assert agg.fetch().events == []
+    # the shipped schedule is populated → real events served (client-facing)
+    assert len(agg.fetch().events) >= 20
     # attribution is available for every organism it can emit
     assert {a.source for a in agg.attributions()} == {
         "bls", "bea", "census", "federal_reserve", "eurostat", "ecb",
@@ -143,9 +143,10 @@ def test_aggregator_composes_all_sources_and_is_named_official():
 
 def test_adapter_substitution_changes_nothing_in_the_interface():
     # Every official adapter honours the same interface: source_name + fetch +
-    # attributions. Substituting one for another needs no downstream change.
+    # attributions. Substituting one for another needs no downstream change; each
+    # returns the neutral shape regardless of whether its source has dates yet.
     for cls in ALL_OFFICIAL_PROVIDERS:
         p = cls()
         assert isinstance(p.source_name, str) and p.source_name
-        assert p.fetch().events == []  # empty schedule
+        assert isinstance(p.fetch().events, list)
         assert isinstance(p.attributions(), list)
