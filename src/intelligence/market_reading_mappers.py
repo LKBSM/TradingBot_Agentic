@@ -661,11 +661,19 @@ def collect_structure_events(
 #
 # Honesty / no-look-ahead: a fractal column is causal (shifted to its
 # confirmation bar), so the value at bar k is the swing price first KNOWABLE at
-# k. A pocket's lifecycle is therefore scanned only from the bar AFTER its last
-# constituent swing is confirmed — we never declare a level swept/broken before
-# the pocket itself could be observed. The output is purely factual: WHERE the
-# pocket sits and WHETHER it is intact / swept / broken. No target, draw, bias
-# or probability is ever produced (mission §0 inviolable line).
+# k. A pocket's lifecycle is scanned from the bar AFTER its FIRST constituent
+# swing (``first_k``) — the bar the level first exists and is knowable — through
+# the read bar ``pos``, EXACTLY like the OB/FVG lifecycle (which scans from the
+# zone's formation bar). "No look-ahead" means we never use bars beyond ``pos``;
+# it does NOT mean we ignore a breach that occurred between the first and last
+# swing of the cluster. A close net through the published level is a past,
+# observable fact at read time and must flip the state — the pocket is DISPLAYED
+# from ``first_k`` (``created_at``), so it must be JUDGED from ``first_k`` too, or
+# it would claim "intact" over a span it never evaluated (LQ-D1: the two anchors
+# had diverged — displayed from first_k, judged from last_k — so a plunge between
+# them stayed invisible and the pocket lied "intacte"). The output is purely
+# factual: WHERE the pocket sits and WHETHER it is intact / swept / broken. No
+# target, draw, bias or probability is ever produced (mission §0 inviolable line).
 # ---------------------------------------------------------------------------
 
 
@@ -753,8 +761,55 @@ def _cluster_swings(
             "touches": len(cl),
             "first_k": min(idxs),
             "last_k": max(idxs),
+            # The cluster's constituent swings, kept so the caller can split a
+            # price-cluster that straddles a net close-through of the level into
+            # separate pockets (LQ-D1 §clustering: two "equal" swings separated by
+            # a break are NOT one pocket — the level ceded between them).
+            "points": list(cl),
         })
     return out
+
+
+def _split_pocket_at_breaks(
+    points: list[tuple[int, float]],
+    side: str,
+    closes: Any,
+    level: float,
+) -> list[list[tuple[int, float]]]:
+    """Split a price-cluster's swings into time-ordered runs, cutting wherever a
+    bar CLOSED net through ``level`` strictly between two consecutive swings.
+
+    A liquidity pocket is a run of equal-price swings whose shared level was NOT
+    closed through while it was forming. If price closes beyond the level between
+    two members, the resting liquidity there was taken — the earlier swings are a
+    (now broken) pocket and the later swings begin a fresh one. ``level`` is the
+    whole cluster's breachable edge (min for sell-side, max for buy-side): a close
+    beyond THAT is an unambiguous break, so genuine equal levels (whose intra-
+    cluster closes never breach the edge) are never over-split. The forward life
+    of each run — sweeps/breaks AFTER its last swing — is still timed by
+    :func:`_pool_lifecycle`; this only separates already-broken segments.
+    """
+    if not points:
+        return []
+    pts = sorted(points, key=lambda p: p[0])  # chronological
+    runs: list[list[tuple[int, float]]] = []
+    run: list[tuple[int, float]] = [pts[0]]
+    for k, price in pts[1:]:
+        prev_k = run[-1][0]
+        broke = False
+        for j in range(prev_k + 1, k):
+            if (side == "bsl" and closes[j] > level) or (
+                side == "ssl" and closes[j] < level
+            ):
+                broke = True
+                break
+        if broke:
+            runs.append(run)
+            run = [(k, price)]
+        else:
+            run.append((k, price))
+    runs.append(run)
+    return runs
 
 
 def collect_liquidity_pools(
@@ -836,8 +891,14 @@ def collect_liquidity_pools(
 
     def _emit(side: str, kind: str, level: float, touches: int,
               first_k: int, last_k: int, is_external: bool) -> None:
+        # LQ-D1 root-cause fix: judge from ``first_k`` (formation / where the
+        # level first exists and is displayed), NOT ``last_k``. Scanning from
+        # last_k left the interval (first_k, last_k] drawn but never evaluated,
+        # so a close net through the level in that span stayed invisible and the
+        # pocket falsely read "intacte". Now display anchor == evaluation anchor
+        # == first_k, exactly like the OB/FVG lifecycle.
         status, swept_k, broken_k = _pool_lifecycle(
-            side, level, highs, lows, closes, scan_from=last_k, upto=pos
+            side, level, highs, lows, closes, scan_from=first_k, upto=pos
         )
         pools.append({
             "side": side,
@@ -854,15 +915,21 @@ def collect_liquidity_pools(
         })
 
     # --- Buy-side (equal highs) -----------------------------------------------
+    # Each price-cluster is split into time-runs at any net close-through of its
+    # level (LQ-D1): a run is a genuine equal-highs pocket only while the level
+    # held. A run seen fewer than eq_min_touches times is no longer "equal highs".
     top_cluster_external = False
     for cl in _cluster_swings(sh, eps, "max"):
-        if cl["touches"] < int(eq_min_touches):
-            continue
-        is_ext = range_high is not None and cl["level"] >= range_high - eps
-        if is_ext:
-            top_cluster_external = True
-        _emit("bsl", "equal_highs", cl["level"], cl["touches"],
-              cl["first_k"], cl["last_k"], is_ext)
+        for run in _split_pocket_at_breaks(cl["points"], "bsl", closes, cl["level"]):
+            if len(run) < int(eq_min_touches):
+                continue
+            r_level = max(p[1] for p in run)
+            r_first = min(p[0] for p in run)
+            r_last = max(p[0] for p in run)
+            is_ext = range_high is not None and r_level >= range_high - eps
+            if is_ext:
+                top_cluster_external = True
+            _emit("bsl", "equal_highs", r_level, len(run), r_first, r_last, is_ext)
     # Range high as a lone external pocket only if no equal-cluster holds the top.
     if range_high is not None and not top_cluster_external:
         at_top = [p for p in sh if p[1] >= range_high - eps]
@@ -872,13 +939,16 @@ def collect_liquidity_pools(
     # --- Sell-side (equal lows) -----------------------------------------------
     bot_cluster_external = False
     for cl in _cluster_swings(sl, eps, "min"):
-        if cl["touches"] < int(eq_min_touches):
-            continue
-        is_ext = range_low is not None and cl["level"] <= range_low + eps
-        if is_ext:
-            bot_cluster_external = True
-        _emit("ssl", "equal_lows", cl["level"], cl["touches"],
-              cl["first_k"], cl["last_k"], is_ext)
+        for run in _split_pocket_at_breaks(cl["points"], "ssl", closes, cl["level"]):
+            if len(run) < int(eq_min_touches):
+                continue
+            r_level = min(p[1] for p in run)
+            r_first = min(p[0] for p in run)
+            r_last = max(p[0] for p in run)
+            is_ext = range_low is not None and r_level <= range_low + eps
+            if is_ext:
+                bot_cluster_external = True
+            _emit("ssl", "equal_lows", r_level, len(run), r_first, r_last, is_ext)
     if range_low is not None and not bot_cluster_external:
         at_bot = [p for p in sl if p[1] <= range_low + eps]
         _emit("ssl", "range_low", range_low, len(at_bot),
