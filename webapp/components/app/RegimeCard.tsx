@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { useReadingFormatters } from '@/lib/market-reading/use-reading-formatters';
 import { useMtfTrends } from '@/lib/market-reading/hooks';
-import { MTF_TREND_ORDER } from '@/lib/market-reading/mtf-trend';
+import { mtfOrderFor } from '@/lib/market-reading/mtf-trend';
 import { deriveTrendMaturity } from '@/lib/market-reading/regime-facts';
 import { formatLocalDayLong, parseUtc } from '@/lib/time/localTime';
 import {
@@ -217,7 +217,10 @@ export function RegimeCard({
   const fmt = useReadingFormatters();
   const instrument = header.instrument;
   const tf = header.timeframe;
-  const { trends } = useMtfTrends(instrument);
+  const { trends } = useMtfTrends(instrument, tf);
+  // The units ABOVE the viewed one (TF-1 decision C) — relative, not a fixed
+  // H4·H1·M15 triplet. Empty only at the very top of the ladder.
+  const mtfOrder = mtfOrderFor(tf);
   const { referenceLevel, setReferenceLevel, selection, select, clearSelection } =
     useChartViewOptional();
 
@@ -236,7 +239,7 @@ export function RegimeCard({
   // ── Derived facts (all read-only over engine output) ────────────────────────
   const maturity = deriveTrendMaturity(structure, header);
 
-  const avail = MTF_TREND_ORDER.filter(({ key }) => trends[key] != null);
+  const avail = mtfOrder.filter(({ key }) => trends[key] != null);
   const dirs = avail.map(({ key }) =>
     trends[key] === 'bullish' ? 'up' : trends[key] === 'bearish' ? 'down' : 'flat',
   );
@@ -372,15 +375,19 @@ export function RegimeCard({
       key: 'align',
       label: t('tiles.align'),
       value:
-        avail.length > 0
-          ? t('value.align', { count: aligned, total: avail.length, arrow: domArrow })
-          : null,
+        mtfOrder.length === 0
+          ? t('value.alignNone')
+          : avail.length > 0
+            ? t('value.align', { count: aligned, total: avail.length, arrow: domArrow })
+            : null,
       mono: true,
+      // Name every upper unit; an unavailable one shows the neutral · glyph so it
+      // reads as indisponible, never counted as an agreement (TF-1 decision C).
       sub:
-        avail.length > 0
-          ? avail.map(({ key, label }) => `${label} ${arrowOf(trends[key])}`).join(' · ')
+        mtfOrder.length > 0
+          ? mtfOrder.map(({ key, label }) => `${label} ${arrowOf(trends[key] ?? null)}`).join(' · ')
           : null,
-      available: avail.length > 0,
+      available: mtfOrder.length === 0 || avail.length > 0,
     },
     {
       key: 'mat',
@@ -610,6 +617,7 @@ export function RegimeCard({
                 pos,
                 vd,
                 avail,
+                order: mtfOrder,
                 trends,
                 domKind,
                 maturity,
@@ -679,6 +687,7 @@ interface DataCtx {
   pos: number | null;
   vd: MarketReadingRegime['volatility_detail'];
   avail: { key: string; label: string }[];
+  order: { key: string; label: string; tf: string }[];
   trends: Record<string, 'bullish' | 'bearish' | 'neutral' | 'ranging' | null>;
   domKind: 'up' | 'down' | 'flat';
   maturity: ReturnType<typeof deriveTrendMaturity>;
@@ -808,18 +817,24 @@ function renderData(k: string, c: DataCtx): React.ReactNode {
         <>
           <Dh4>{t('data.alignHead')}</Dh4>
           <div className="ev">
-            {c.avail.map(({ key, label }) => {
-              const dir = c.trends[key];
-              const kind = dir === 'bullish' ? 'up' : dir === 'bearish' ? 'down' : 'flat';
-              const diverges = c.domKind !== 'flat' && kind !== 'flat' && kind !== c.domKind;
-              return (
-                <div className={cn('tfline', diverges && 'dis')} key={key}>
-                  <span className="tf">{label}</span>
-                  <span className="st">{fmt.trend(dir ?? 'neutral').label}</span>
-                  <span className="ev-t">{arrowOf(dir ?? null)}</span>
-                </div>
-              );
-            })}
+            {c.order.length === 0 ? (
+              <div className="tfline"><span className="st">{c.t('value.alignNone')}</span></div>
+            ) : (
+              c.order.map(({ key, label }) => {
+                const dir = c.trends[key];
+                const kind = dir === 'bullish' ? 'up' : dir === 'bearish' ? 'down' : 'flat';
+                const diverges = c.domKind !== 'flat' && kind !== 'flat' && kind !== c.domKind;
+                // An unavailable upper unit reads as indisponible, never an agreement.
+                const label2 = dir == null ? c.t('data.alignUnavailable') : fmt.trend(dir).label;
+                return (
+                  <div className={cn('tfline', diverges && 'dis')} key={key}>
+                    <span className="tf">{label}</span>
+                    <span className="st">{label2}</span>
+                    <span className="ev-t">{arrowOf(dir ?? null)}</span>
+                  </div>
+                );
+              })
+            )}
           </div>
           <Dp>{t('data.alignNote')}</Dp>
         </>

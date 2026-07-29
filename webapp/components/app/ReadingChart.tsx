@@ -57,6 +57,7 @@ import {
   type ZoneOverlayData,
 } from '@/lib/chart/zoneOverlayPrimitive';
 import { isPlausibleTick, isValidBar } from '@/lib/chart/sanitize';
+import { TF_SECONDS } from '@/lib/timeframes';
 import { badgeLabelKey } from '@/lib/market-reading/status';
 import type { Candle, MarketReadingStructure, MarketState } from '@/types/market-reading';
 
@@ -163,12 +164,9 @@ export interface ReadingChartProps {
   heightClassName?: string;
 }
 
-/** Timeframe → bar length in seconds (for the live forming candle bucket). */
-const TF_SECONDS: Record<string, number> = {
-  M15: 900,
-  H1: 3600,
-  H4: 14400,
-};
+// Timeframe → bar length in seconds, from the single registry (TF-1). Covers all
+// six units — the previous local {M15,H1,H4} map left barSec=0 on M5/D1, which
+// early-returned before framing (the reported click-to-frame failure).
 
 /** Candle bodies — muted bull / bear fallbacks (live values come from the
  *  `--bull` / `--bear` design tokens read in palette()). */

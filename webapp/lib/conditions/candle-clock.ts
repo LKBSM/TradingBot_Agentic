@@ -8,21 +8,11 @@
  * no live-tick path: we read what is already produced.
  */
 
-/** Minutes per timeframe. Mirrors the backend `_TIMEFRAME_MINUTES`. */
-const TIMEFRAME_MINUTES: Record<string, number> = {
-  M1: 1,
-  M5: 5,
-  M15: 15,
-  M30: 30,
-  H1: 60,
-  H4: 240,
-  D1: 1440,
-  W1: 10080,
-};
+import { TF_MINUTES } from '@/lib/timeframes';
 
-/** Minutes for a timeframe code, or null if unknown. */
+/** Minutes for a timeframe code, or null if unknown. Single source: registry. */
 export function timeframeToMinutes(timeframe: string): number | null {
-  return TIMEFRAME_MINUTES[timeframe.toUpperCase()] ?? null;
+  return TF_MINUTES[timeframe.toUpperCase()] ?? null;
 }
 
 /**

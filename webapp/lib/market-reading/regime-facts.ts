@@ -17,23 +17,14 @@ import type {
   ValidationStatus,
 } from '@/types/market-reading';
 import { formatLocalDayHm, parseUtc } from '@/lib/time/localTime';
+import { TF_MINUTES } from '@/lib/timeframes';
 
 // ─── Timeframe → minutes (for the « X bougies » derivation) ──────────────────
-
-const TIMEFRAME_MINUTES: Record<string, number> = {
-  M1: 1,
-  M5: 5,
-  M15: 15,
-  M30: 30,
-  H1: 60,
-  H4: 240,
-  D1: 1_440,
-  W1: 10_080,
-};
+// Single source: the timeframe registry (TF-1).
 
 /** Minutes per candle for a timeframe code, or null when the code is unknown. */
 export function timeframeMinutes(timeframe: string): number | null {
-  return TIMEFRAME_MINUTES[timeframe] ?? null;
+  return TF_MINUTES[(timeframe ?? '').toUpperCase()] ?? null;
 }
 
 // ─── Break timestamp (engine UTC → reader's local timezone) ───────────────────

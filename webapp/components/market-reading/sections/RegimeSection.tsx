@@ -14,7 +14,7 @@ import { type Tone } from '@/lib/market-reading/formatters';
 import { useReadingFormatters } from '@/lib/market-reading/use-reading-formatters';
 import { useMtfTrends } from '@/lib/market-reading/hooks';
 import {
-  MTF_TREND_ORDER,
+  mtfOrderFor,
   classifyMtfAlignment,
   mtfTrendGlyph,
 } from '@/lib/market-reading/mtf-trend';
@@ -85,12 +85,14 @@ function RegimeBody({
   const t = useTranslations('reading.regime');
   const fmt = useReadingFormatters();
   const instrument = header.instrument;
-  const { trends, isLoading } = useMtfTrends(instrument);
+  // Units above the viewed one (TF-1 decision C) — relative, not fixed H4·H1·M15.
+  const mtfOrder = mtfOrderFor(header.timeframe);
+  const { trends, isLoading } = useMtfTrends(instrument, header.timeframe);
   const volatility = fmt.volatility(regime.volatility_observed);
   const phaseLabel = fmt.marketPhaseShort(regime.market_phase);
-  const relation = classifyMtfAlignment(trends);
-  const mtfText = fmt.mtfAlignmentText(trends, relation.kind);
-  const hasAnyTrend = MTF_TREND_ORDER.some(({ key }) => trends[key] !== null);
+  const relation = classifyMtfAlignment(trends, mtfOrder);
+  const mtfText = fmt.mtfAlignmentText(trends, relation.kind, mtfOrder);
+  const hasAnyTrend = mtfOrder.some(({ key }) => trends[key] !== null);
 
   // (b)(c)(d) — present-tense facts read straight from the engine's structure.
   const maturity = fmt.regimeMaturity(structure, header);
@@ -140,8 +142,8 @@ function RegimeBody({
           <p className="text-xs text-muted-foreground">{t('mtfLoading')}</p>
         ) : hasAnyTrend ? (
           <div className="flex flex-wrap items-center gap-2">
-            {MTF_TREND_ORDER.map(({ key, label }) => {
-              const g = mtfTrendGlyph(trends[key]);
+            {mtfOrder.map(({ key, label }) => {
+              const g = mtfTrendGlyph(trends[key] ?? null);
               return (
                 <Badge
                   key={key}

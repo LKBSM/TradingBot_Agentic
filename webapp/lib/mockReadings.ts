@@ -25,6 +25,7 @@ import {
 } from '@/lib/market-reading/fixtures';
 import { comboKey, type Combo } from '@/lib/market-reading/store';
 import type { Candle, MarketReading } from '@/types/market-reading';
+import { TF_SECONDS } from '@/lib/timeframes';
 
 // Re-exported for existing importers (ReadingChart, tests). The canonical
 // definition now lives in the contract types alongside the live /api/candles
@@ -326,11 +327,9 @@ export function getMockReading(
 // La forme `Candle` est définie dans les types du contrat (cf. import en tête) :
 // `time` = timestamp UNIX en SECONDES (UTCTimestamp).
 
-const INTERVAL_SECONDS: Record<string, number> = {
-  M15: 15 * 60,
-  H1: 60 * 60,
-  H4: 4 * 60 * 60,
-};
+// Bar length in seconds, from the single registry (TF-1) — covers all six units
+// so mock candles render on M1/M5/D1 too, not only M15/H1/H4.
+const INTERVAL_SECONDS = TF_SECONDS;
 
 /** PRNG déterministe (mulberry32) — bougies stables entre les rendus / tests. */
 function mulberry32(seed: number): () => number {

@@ -35,7 +35,8 @@
       "pos": "{pct} %",
       "mat": "{count, plural, one {# candle} other {# candles}}",
       "dens": "{ob} OB · {fvg} FVG",
-      "align": "{count}/{total} TF {arrow}"
+      "align": "{count}/{total} units {arrow}",
+      "alignNone": "no higher unit"
     },
     "data": {
       "phaseHead": "The two measures it is built from",
@@ -65,7 +66,8 @@
       "boundHigh": "Range upper bound",
       "posNote": "These bounds are **structural**: the range extremes retained by the engine. Not to be confused with the reference levels, which are **temporal**.",
       "alignHead": "The per-timeframe detail",
-      "alignNote": "The available timeframes and their structural direction. When one diverges, its line is highlighted here rather than hidden.",
+      "alignUnavailable": "unavailable",
+      "alignNote": "The units above the one you are viewing and their structural direction. A unit without data is counted unavailable, never as an agreement; when one diverges, its line is highlighted here rather than hidden.",
       "matHead": "The counter’s anchor",
       "anchorEvent": "Anchor event",
       "crossedLevel": "Level crossed",
@@ -761,10 +763,10 @@
       "breakTimestamp": "{day}/{month} at {hh}:{mm}",
       "lastEvent": "{kind} {dir} {val} ({tf})",
       "zoneDensity": "{ob} OB · {fvg} FVG active",
-      "mtfAligned": "The {count} TFs are aligned ({dir}).",
-      "mtfNeutral": "The {count} TFs are neutral.",
+      "mtfAligned": "{count, plural, one {The higher unit is {dir}} other {The # higher units are {dir}}}.",
+      "mtfNeutral": "{count, plural, one {The higher unit is neutral} other {The # higher units are neutral}}.",
       "mtfPullback": "M15 pulls back against the {fem} H4 trend.",
-      "mtfDivergent": "The TFs diverge: {list}."
+      "mtfDivergent": "Higher units: {list}."
     },
     "conditions": {
       "title": "Narrated reading",

@@ -35,7 +35,8 @@
       "pos": "{pct} %",
       "mat": "{count, plural, one {# bougie} other {# bougies}}",
       "dens": "{ob} OB · {fvg} FVG",
-      "align": "{count}/{total} TF {arrow}"
+      "align": "{count}/{total} unités {arrow}",
+      "alignNone": "aucune unité supérieure"
     },
     "data": {
       "phaseHead": "Les deux mesures qui la composent",
@@ -65,7 +66,8 @@
       "boundHigh": "Borne haute du range",
       "posNote": "Ces bornes sont **structurelles** : les extrêmes de structure retenus par le moteur. À ne pas confondre avec les niveaux de référence, qui sont **temporels**.",
       "alignHead": "Le détail par unité de temps",
-      "alignNote": "Les unités de temps disponibles et leur direction de structure. Quand l’une diverge, sa ligne est mise en évidence ici plutôt que masquée.",
+      "alignUnavailable": "indisponible",
+      "alignNote": "Les unités supérieures à celle regardée et leur direction de structure. Une unité sans données est comptée indisponible, jamais comme un accord ; quand l’une diverge, sa ligne est mise en évidence ici plutôt que masquée.",
       "matHead": "L’ancrage du compteur",
       "anchorEvent": "Événement d’ancrage",
       "crossedLevel": "Niveau franchi",
@@ -692,8 +694,8 @@
       "trendAdj_ranging": "en range",
       "orient_bullish": "haussière",
       "orient_bearish": "baissière",
-      "alignedDir_up": "haussiers",
-      "alignedDir_down": "baissiers",
+      "alignedDir_up": "à la hausse",
+      "alignedDir_down": "à la baisse",
       "validationFem_confirmed": "confirmée",
       "validationFem_pending": "en attente de confirmation",
       "validationFem_invalidated": "invalidée",
@@ -761,10 +763,10 @@
       "breakTimestamp": "{day}/{month} à {hh}:{mm}",
       "lastEvent": "{kind} {dir} {val} ({tf})",
       "zoneDensity": "{ob} OB · {fvg} FVG actifs",
-      "mtfAligned": "Les {count} TF sont alignés ({dir}).",
-      "mtfNeutral": "Les {count} TF sont neutres.",
+      "mtfAligned": "{count, plural, one {L'unité supérieure est orientée {dir}} other {Les # unités supérieures sont orientées {dir}}}.",
+      "mtfNeutral": "{count, plural, one {L'unité supérieure est neutre} other {Les # unités supérieures sont neutres}}.",
       "mtfPullback": "M15 se replie contre la tendance H4 {fem}.",
-      "mtfDivergent": "Les TF divergent : {list}."
+      "mtfDivergent": "Unités supérieures : {list}."
     },
     "conditions": {
       "title": "Lecture narrée",

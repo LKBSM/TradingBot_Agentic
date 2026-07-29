@@ -83,27 +83,27 @@ beforeEach(() => mockUseMtfTrends.mockReset());
 
 describe('RegimeSection — header + existing facts', () => {
   it('keeps the panel title and the volatility badge', () => {
-    renderSection({ h4: 'bullish', h1: 'bullish', m15: 'bullish' });
+    renderSection({ h1: 'bullish', h4: 'bullish', d1: 'bullish' });
     expect(screen.getByText('Régime de marché')).toBeInTheDocument();
     expect(screen.getByText('Volatilité normale')).toBeInTheDocument();
   });
 
-  it('shows the three timeframes at a glance with arrows', () => {
-    renderSection({ h4: 'bullish', h1: 'bullish', m15: 'bearish' });
-    expect(screen.getByText(/H4\s*↗/)).toBeInTheDocument();
+  it('shows the upper units at a glance with arrows', () => {
+    renderSection({ h1: 'bullish', h4: 'bullish', d1: 'bearish' });
     expect(screen.getByText(/H1\s*↗/)).toBeInTheDocument();
-    expect(screen.getByText(/M15\s*↘/)).toBeInTheDocument();
+    expect(screen.getByText(/H4\s*↗/)).toBeInTheDocument();
+    expect(screen.getByText(/D1\s*↘/)).toBeInTheDocument();
   });
 
   it('keeps a descriptive (non-instruction) disclaimer', () => {
-    renderSection({ h4: 'neutral', h1: 'neutral', m15: 'neutral' });
+    renderSection({ h1: 'neutral', h4: 'neutral', d1: 'neutral' });
     expect(
       screen.getByText(/ne constitue.* pas une instruction adressée au trader/i),
     ).toBeInTheDocument();
   });
 
   it('degrades gracefully when no timeframe is available', () => {
-    renderSection({ h4: null, h1: null, m15: null });
+    renderSection({ h1: null, h4: null, d1: null });
     expect(
       screen.getByText('Alignement multi-timeframe indisponible.'),
     ).toBeInTheDocument();
@@ -112,14 +112,14 @@ describe('RegimeSection — header + existing facts', () => {
 
 describe('RegimeSection — (a) market phase', () => {
   it('shows the compact phase badge next to the regime', () => {
-    renderSection({ h4: 'bullish', h1: 'bullish', m15: 'bullish' });
+    renderSection({ h1: 'bullish', h4: 'bullish', d1: 'bullish' });
     expect(screen.getByText('Phase : Tendance')).toBeInTheDocument();
   });
 });
 
 describe('RegimeSection — (b) trend maturity, (c) last event, (d) zone density', () => {
   it('renders the real engine data for each fact', () => {
-    renderSection({ h4: 'bullish', h1: 'bullish', m15: 'bullish' });
+    renderSection({ h1: 'bullish', h4: 'bullish', d1: 'bullish' });
     // The clock is rendered in the reader's LOCAL timezone (the hour therefore
     // depends on the runtime zone); assert the stable structure, not the hour.
     expect(
@@ -132,7 +132,7 @@ describe('RegimeSection — (b) trend maturity, (c) last event, (d) zone density
   });
 
   it('shows « non disponible » for missing facts, never invents them', () => {
-    renderSection({ h4: 'bullish', h1: 'bullish', m15: 'bullish' }, {
+    renderSection({ h1: 'bullish', h4: 'bullish', d1: 'bullish' }, {
       structure: STRUCTURE_EMPTY,
     });
     // Maturity + last event have no engine datum → « non disponible » (×2).
@@ -144,26 +144,26 @@ describe('RegimeSection — (b) trend maturity, (c) last event, (d) zone density
 
 describe('RegimeSection — (e) multi-TF disagreement', () => {
   it('shows a distinct warn callout when a TF goes against the others', () => {
-    renderSection({ h4: 'bullish', h1: 'bullish', m15: 'bearish' });
+    renderSection({ h1: 'bullish', h4: 'bullish', d1: 'bearish' });
     expect(screen.getByText('Désaccord multi-timeframe')).toBeInTheDocument();
     expect(
-      screen.getByText('M15 se replie contre la tendance H4 haussière.'),
+      screen.getByText('Unités supérieures : H1 haussier, H4 haussier et D1 baissier.'),
     ).toBeInTheDocument();
   });
 
   it('does NOT show the disagreement callout when the TFs are aligned', () => {
-    renderSection({ h4: 'bullish', h1: 'bullish', m15: 'bullish' });
+    renderSection({ h1: 'bullish', h4: 'bullish', d1: 'bullish' });
     expect(screen.queryByText('Désaccord multi-timeframe')).not.toBeInTheDocument();
-    expect(screen.getByText('Les 3 TF sont alignés (haussiers).')).toBeInTheDocument();
+    expect(screen.getByText('Les 3 unités supérieures sont orientées à la hausse.')).toBeInTheDocument();
   });
 });
 
 describe('RegimeSection — no predictive output', () => {
   it('renders no probabilistic / directive vocabulary', () => {
     const { container } = renderSection({
-      h4: 'bullish',
       h1: 'bullish',
-      m15: 'bearish',
+      h4: 'bullish',
+      d1: 'bearish',
     });
     const text = container.textContent ?? '';
     for (const re of [/probab/i, /\d+\s*%/, /objectif/i, /acheter/i, /vendre/i]) {

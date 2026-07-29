@@ -16,6 +16,7 @@ import type {
   ValidationStatus,
   VolatilityObserved,
 } from '@/types/market-reading';
+import { tfLabelLong } from '@/lib/timeframes';
 
 /**
  * UI-facing strings derived from the raw MarketReading contract. Kept in a
@@ -46,19 +47,10 @@ export function formatInstrument(instrument: string): string {
   return INSTRUMENT_LABEL[instrument] ?? instrument;
 }
 
-const TIMEFRAME_LABEL: Record<string, string> = {
-  M1: '1 minute',
-  M5: '5 minutes',
-  M15: '15 minutes',
-  M30: '30 minutes',
-  H1: '1 heure',
-  H4: '4 heures',
-  D1: '1 jour',
-  W1: '1 semaine',
-};
-
 export function formatTimeframe(timeframe: string): string {
-  return TIMEFRAME_LABEL[timeframe] ?? timeframe;
+  // FR baseline label from the single registry (TF-1). Locale-correct rendering
+  // in i18n-aware components uses the `timeframes.<id>` messages key.
+  return tfLabelLong(timeframe);
 }
 
 // ─── Price ────────────────────────────────────────────────────────────────────
