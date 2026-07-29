@@ -169,7 +169,11 @@ export function buildLiquidityLines(
       side: p.side,
       status: p.status,
       title: `${sideShort} · ${KIND_SHORT[p.kind]}`,
-      description: `${labels.side(p.side)} · ${labels.kind(p.kind)} · ${status}`,
+      // Bridge the compact code shown on the axis title (e.g. "SSL · EQL") to its
+      // plain-language meaning IN THE SAME string, so the acronym is never
+      // surfaced without the reader being able to know what it designates
+      // (LQ-D1 §3): "liquidité vendeuse … · creux égaux (EQL) · intacte".
+      description: `${labels.side(p.side)} · ${labels.kind(p.kind)} (${KIND_SHORT[p.kind]}) · ${status}`,
       chartLabel: `${labels.sideChart(p.side)} · ${status}`,
       createdSec: isoToSec(p.created_at),
       contactSec: poolContactSec(p),

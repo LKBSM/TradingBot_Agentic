@@ -71,9 +71,9 @@ export const GLOSSARY: Record<GlossaryKey, GlossaryEntry> = {
     anchor: '#retest',
   },
   liquidity: {
-    term: 'Liquidité externe (BSL / SSL)',
+    term: 'Liquidité externe (BSL / SSL · EQH / EQL)',
     short:
-      'Des niveaux où des ordres en attente s’accumulent — au-dessus de sommets égaux (BSL) ou sous des creux égaux (SSL). On indique si le niveau est intact, pris (mèche puis retour — il tient encore) ou cassé.',
+      'Des niveaux où des ordres en attente s’accumulent. Côté achat (BSL) : au-dessus de sommets égaux (EQH, « equal highs »). Côté vente (SSL) : sous des creux égaux (EQL, « equal lows »). On indique si le niveau est intact, pris (mèche puis retour — il tient encore) ou cassé (clôture nette au-delà).',
     anchor: '#liquidite-externe',
   },
   mtf: {

@@ -226,17 +226,74 @@ def test_lifecycle_helper_direct():
     assert status == "broken" and broken == 3
 
 
-def test_no_lookahead_before_pocket_known():
-    # A breach that happens BEFORE the pocket's last swing is confirmed must not
-    # count: lifecycle scans only bars strictly after ``last_k``.
+def test_close_through_between_swings_is_not_equal_highs():
+    # LQ-D1: two highs at 100 separated by a bar that CLOSED above 100 are NOT
+    # equal highs — the level ceded between them. The price-cluster is split into
+    # two 1-swing runs (neither reaches eq_min_touches), so no equal_highs pocket
+    # is surfaced; the true breachable edge shows as the range extreme, broken at
+    # the close-through (never a silent "intacte" over a span price closed past).
     df = _frame()
     _set(df, 2, "UP_FRACTAL", 100.0)
-    _bar(df, 4, high=100.9, close=100.7)  # would "break" — but precedes 2nd swing
-    _set(df, 6, "UP_FRACTAL", 100.0)      # pocket only fully known at bar 6
+    _bar(df, 4, high=100.9, close=100.7)  # net close ABOVE 100 → the level ceded
+    _set(df, 6, "UP_FRACTAL", 100.0)      # a later touch at the same price
     _bar(df, 6, high=100.0, close=99.5)
     pools = collect_liquidity_pools(df, eq_tolerance_atr=0.10, eq_min_touches=2)
+    assert _pool(pools, "bsl", "equal_highs") is None
+    rh = _pool(pools, "bsl", "range_high")
+    assert rh is not None
+    assert rh["status"] == "broken"
+    assert rh["broken_at"] == df.index[4]
+
+
+def test_equal_highs_broken_after_last_touch_reads_broken():
+    # A GENUINE equal-highs cluster (two touches at the level, nothing closing
+    # through BETWEEN them) that is later closed through AFTER its last swing must
+    # read "broken", frozen at that later breach — the run stays one pocket.
+    df = _frame()
+    _set(df, 2, "UP_FRACTAL", 100.0)
+    _set(df, 6, "UP_FRACTAL", 100.0)
+    _bar(df, 9, high=101.0, close=100.8)  # closes above 100 AFTER both swings
+    pools = collect_liquidity_pools(df, eq_tolerance_atr=0.10, eq_min_touches=2)
     eqh = _pool(pools, "bsl", "equal_highs")
-    assert eqh["status"] == "intact"  # the pre-confirmation breach is ignored
+    assert eqh is not None
+    assert eqh["touches"] == 2
+    assert eqh["status"] == "broken"
+    assert eqh["broken_at"] == df.index[9]
+
+
+def test_cluster_straddling_a_break_splits_into_two_pockets():
+    # A price-cluster whose members straddle a net close-through of the level is
+    # TWO pockets: the earlier run (broken at the breach) and a later run that
+    # re-formed and still holds — never one pocket falsely spanning the break.
+    df = _frame(n=30)
+    _set(df, 2, "DOWN_FRACTAL", 95.00)
+    _set(df, 4, "DOWN_FRACTAL", 95.00)    # run 1 — two equal lows at 95
+    _bar(df, 6, low=89.0, close=90.0)     # closes NET below 95 → the level ceded
+    _set(df, 8, "DOWN_FRACTAL", 94.98)
+    _set(df, 10, "DOWN_FRACTAL", 94.98)   # run 2 — equal lows re-formed after
+    pools = collect_liquidity_pools(df, eq_tolerance_atr=0.10, eq_min_touches=2)
+    eqls = [p for p in pools if p["side"] == "ssl" and p["kind"] == "equal_lows"]
+    assert len(eqls) == 2
+    broken = [p for p in eqls if p["status"] == "broken"]
+    intact = [p for p in eqls if p["status"] == "intact"]
+    assert len(broken) == 1 and broken[0]["broken_at"] == df.index[6]
+    assert len(intact) == 1
+    assert intact[0]["created_at"] == df.index[8]  # starts AFTER the break
+
+
+def test_genuine_equal_lows_stay_intact_when_never_closed_through():
+    # The fix must NOT flip legitimate equal lows: two swing lows at the level
+    # with no close below it between them stay intact even scanning from first_k
+    # (a low exactly AT the level is not a strict breach).
+    df = _frame()
+    _set(df, 3, "DOWN_FRACTAL", 95.0)
+    _bar(df, 5, low=95.0, close=96.0)   # revisits the level, closes back above
+    _set(df, 7, "DOWN_FRACTAL", 95.0)
+    pools = collect_liquidity_pools(df, eq_tolerance_atr=0.10, eq_min_touches=2)
+    eql = _pool(pools, "ssl", "equal_lows")
+    assert eql is not None
+    assert eql["status"] == "intact"
+    assert eql["swept_at"] is None and eql["broken_at"] is None
 
 
 # --------------------------------------------------------------------------- #

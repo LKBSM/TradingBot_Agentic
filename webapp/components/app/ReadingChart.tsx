@@ -794,7 +794,27 @@ export function ReadingChart({
       Boolean(l),
     );
 
-    const created = priceLines.map((l) =>
+    // De-duplicate levels drawn twice (LQ-D1 §4): a BOS retest IS the return to
+    // the broken BOS level, so `retest_in_progress.level` equals the BOS level —
+    // two badges stacked at the same price. The product rule forbids repeating a
+    // value already shown elsewhere: keep ONE line per distinct price and fold
+    // any collided title into it ("BOS · Retest"), instead of a second pill.
+    const dedupedPriceLines = priceLines.reduce<
+      { price: number; color: string; title: string }[]
+    >((acc, l) => {
+      const eps = Math.max(Math.abs(l.price), 1) * 1e-6;
+      const hit = acc.find((k) => Math.abs(k.price - l.price) <= eps);
+      if (hit) {
+        if (!hit.title.split(' · ').includes(l.title)) {
+          hit.title = `${hit.title} · ${l.title}`;
+        }
+        return acc;
+      }
+      acc.push({ ...l });
+      return acc;
+    }, []);
+
+    const created = dedupedPriceLines.map((l) =>
       series.createPriceLine({
         price: l.price,
         color: l.color,
@@ -1428,14 +1448,16 @@ export function ReadingChart({
         </div>
       )}
 
-      {/* Session badge (top-right). "Marché fermé" is a PRESENT FACT and takes
-          precedence: when the spot market is closed we never show the live
-          badge — the app must not claim to be live when it isn't. Otherwise, the
-          amber "EN DIRECT · provisoire" badge appears only while a tick is
-          actually driving a provisional interaction. Neither predicts anything. */}
+      {/* Session badge (top-LEFT — kept clear of the right price scale so it
+          never covers an axis price label, LQ-D1 §4). "Marché fermé" is a
+          PRESENT FACT and takes precedence: when the spot market is closed we
+          never show the live badge — the app must not claim to be live when it
+          isn't. Otherwise, the amber "EN DIRECT · provisoire" badge appears only
+          while a tick is actually driving a provisional interaction. Neither
+          predicts anything. */}
       {marketClosed ? (
         <div
-          className="pointer-events-none absolute right-2 top-2 flex items-center gap-1 rounded-full border border-border/70 bg-muted/70 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground backdrop-blur-sm"
+          className="pointer-events-none absolute left-2 top-2 flex items-center gap-1 rounded-full border border-border/70 bg-muted/70 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground backdrop-blur-sm"
           title={t('chart.marketClosedTitle')}
           role="status"
           aria-live="polite"
@@ -1449,7 +1471,7 @@ export function ReadingChart({
       ) : (
         liveActive && (
           <div
-            className="pointer-events-none absolute right-2 top-2 flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold"
+            className="pointer-events-none absolute left-2 top-2 flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold"
             style={{
               color: LIVE_COLOR,
               backgroundColor: `rgba(${LIVE_RGB}, 0.12)`,
