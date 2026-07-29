@@ -29,13 +29,17 @@
       "mat": "depuis le CHOCH du {date}",
       "dens": "ouverts sur {tf}",
       "lvl": "{count, plural, one {# repère} other {# repères}} · ouvre le détail",
-      "sess": "{label} dans {delay}"
+      "sess": "{label} dans {delay}",
+      "sessNA": "non applicable sur {tf} : la bougie couvre toutes les sessions",
+      "lvlNA": "non applicable sur {tf} : la veille est la bougie précédente"
     },
     "value": {
       "pos": "{pct} %",
       "mat": "{count, plural, one {# bougie} other {# bougies}}",
-      "dens": "{ob} OB · {fvg} FVG",
-      "align": "{count}/{total} TF {arrow}"
+      "dens": "{ob} OB · {fvg} FVG actifs",
+      "align": "{count}/{total} unités {arrow}",
+      "alignNone": "aucune unité supérieure",
+      "notApplicable": "non applicable"
     },
     "data": {
       "phaseHead": "Les deux mesures qui la composent",
@@ -65,7 +69,8 @@
       "boundHigh": "Borne haute du range",
       "posNote": "Ces bornes sont **structurelles** : les extrêmes de structure retenus par le moteur. À ne pas confondre avec les niveaux de référence, qui sont **temporels**.",
       "alignHead": "Le détail par unité de temps",
-      "alignNote": "Les unités de temps disponibles et leur direction de structure. Quand l’une diverge, sa ligne est mise en évidence ici plutôt que masquée.",
+      "alignUnavailable": "indisponible",
+      "alignNote": "Les unités supérieures à celle regardée et leur direction de structure. Une unité sans données est comptée indisponible, jamais comme un accord ; quand l’une diverge, sa ligne est mise en évidence ici plutôt que masquée.",
       "matHead": "L’ancrage du compteur",
       "anchorEvent": "Événement d’ancrage",
       "crossedLevel": "Niveau franchi",
@@ -692,8 +697,8 @@
       "trendAdj_ranging": "en range",
       "orient_bullish": "haussière",
       "orient_bearish": "baissière",
-      "alignedDir_up": "haussiers",
-      "alignedDir_down": "baissiers",
+      "alignedDir_up": "à la hausse",
+      "alignedDir_down": "à la baisse",
       "validationFem_confirmed": "confirmée",
       "validationFem_pending": "en attente de confirmation",
       "validationFem_invalidated": "invalidée",
@@ -761,10 +766,10 @@
       "breakTimestamp": "{day}/{month} à {hh}:{mm}",
       "lastEvent": "{kind} {dir} {val} ({tf})",
       "zoneDensity": "{ob} OB · {fvg} FVG actifs",
-      "mtfAligned": "Les {count} TF sont alignés ({dir}).",
-      "mtfNeutral": "Les {count} TF sont neutres.",
+      "mtfAligned": "{count, plural, one {L'unité supérieure est orientée {dir}} other {Les # unités supérieures sont orientées {dir}}}.",
+      "mtfNeutral": "{count, plural, one {L'unité supérieure est neutre} other {Les # unités supérieures sont neutres}}.",
       "mtfPullback": "M15 se replie contre la tendance H4 {fem}.",
-      "mtfDivergent": "Les TF divergent : {list}."
+      "mtfDivergent": "Unités supérieures : {list}."
     },
     "conditions": {
       "title": "Lecture narrée",
@@ -1212,7 +1217,8 @@
     "struct": {
       "title": "Structure de marché",
       "zonesCount": "{count, plural, one {# zone} other {# zones}}",
-      "countFiltered": "{n} sur {m} zones",
+      "countFiltered": "{n} sur {m} zones · {active} actives",
+      "unitLabel": "Unité de temps : {tf}",
       "reset": "Réinitialiser",
       "noneType": "Aucun type sélectionné. Choisis au moins un type pour voir des résultats.",
       "noneState": "Aucun état sélectionné. Choisis au moins un état pour voir des résultats.",
@@ -1246,8 +1252,8 @@
       },
       "dist": {
         "inside": "Prix dans la zone",
-        "above": "+{pct} % au-dessus",
-        "below": "−{pct} % en dessous"
+        "above": "{pct} % au-dessus",
+        "below": "{pct} % en dessous"
       },
       "fact": {
         "neverTested": "Jamais testée depuis sa formation.",
@@ -1303,8 +1309,8 @@
         "low": "Creux"
       },
       "dist": {
-        "above": "+{pct} % au-dessus",
-        "below": "−{pct} % en dessous"
+        "above": "{pct} % au-dessus",
+        "below": "{pct} % en dessous"
       },
       "fact": {
         "intact": "Jamais touchée depuis sa formation.",

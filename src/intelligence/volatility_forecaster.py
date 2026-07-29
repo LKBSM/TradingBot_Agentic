@@ -157,10 +157,10 @@ def get_instrument_registry() -> Dict[str, "InstrumentConfig"]:
 # TIMEFRAME UTILITIES
 # =============================================================================
 
-TIMEFRAME_MINUTES: Dict[str, int] = {
-    "M1": 1, "M5": 5, "M15": 15, "M30": 30,
-    "H1": 60, "H4": 240, "D1": 1440, "W1": 10080,
-}
+# Derived from the single timeframe registry (TF-1) — not a second copy.
+from src.intelligence import timeframe_registry as _tfreg
+
+TIMEFRAME_MINUTES: Dict[str, int] = _tfreg.minutes_map()
 
 
 def timeframe_to_minutes(tf: str) -> int:

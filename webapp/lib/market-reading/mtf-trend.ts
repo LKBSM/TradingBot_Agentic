@@ -9,18 +9,26 @@
  */
 import type { TrendValue } from '@/types/market-reading';
 import type { Tone } from './formatters';
+import { alignmentTimeframes } from '@/lib/timeframes';
 
-/** The three timeframes summarised, highest → lowest (display order). */
-export const MTF_TREND_ORDER = [
-  { key: 'h4', label: 'H4', tf: 'H4' },
-  { key: 'h1', label: 'H1', tf: 'H1' },
-  { key: 'm15', label: 'M15', tf: 'M15' },
-] as const;
+export interface MtfEntry {
+  key: string;   // lowercase tf id (map key)
+  label: string; // display label (e.g. "H4")
+  tf: string;    // uppercase tf id (fetch target)
+}
 
-export type MtfKey = (typeof MTF_TREND_ORDER)[number]['key'];
+/**
+ * The units the MTF alignment tile compares for a GIVEN viewed timeframe (TF-1
+ * decision C): the units ABOVE it, highest-relevance first (D1 → W1 at the top;
+ * empty when there is no higher unit). No longer a fixed H4·H1·M15 triplet
+ * disconnected from what the user is looking at.
+ */
+export function mtfOrderFor(timeframe: string): MtfEntry[] {
+  return alignmentTimeframes(timeframe).map((tf) => ({ key: tf.toLowerCase(), label: tf, tf }));
+}
 
 /** Current trend per timeframe; null when that timeframe's read is unavailable. */
-export type MtfTrendMap = Record<MtfKey, TrendValue | null>;
+export type MtfTrendMap = Record<string, TrendValue | null>;
 
 /**
  * Arrow glyph + tone for a single timeframe's trend. Descriptive only:
@@ -94,70 +102,47 @@ export interface MtfRelation {
  *   · otherwise          → "Les TF divergent : H4 haussier, H1 neutre et M15 baissier."
  * Strictly descriptive — no future tense, no probability, no score, no action verdict.
  */
-export function classifyMtfAlignment(trends: MtfTrendMap): MtfRelation {
-  const entries = MTF_TREND_ORDER.map(({ key, label }) => ({
-    label: label as string,
-    trend: trends[key],
-  })).filter(
-    (e): e is { label: string; trend: TrendValue } => e.trend != null,
-  );
+export function classifyMtfAlignment(trends: MtfTrendMap, order: MtfEntry[]): MtfRelation {
+  const entries = order
+    .map(({ key, label }) => ({ label, trend: trends[key] }))
+    .filter((e): e is { label: string; trend: TrendValue } => e.trend != null);
 
   if (entries.length === 0) return { kind: 'none', text: '', disagreement: false };
 
   const dirs = entries.map((e) => dirOf(e.trend));
   const allSame = dirs.every((d) => d === dirs[0]);
-  const countWord = entries.length === 3 ? 'Les 3 TF' : `Les ${entries.length} TF`;
+  const unit = entries.length === 1 ? 'unité supérieure' : 'unités supérieures';
+  const countWord = `${entries.length === 1 ? "L'" : 'Les '}${entries.length === 1 ? '' : entries.length + ' '}${unit}`;
 
   if (allSame) {
     if (dirs[0] === 'flat') {
-      return { kind: 'neutral', text: `${countWord} sont neutres.`, disagreement: false };
+      const verb = entries.length === 1 ? 'est neutre' : 'sont neutres';
+      return { kind: 'neutral', text: `${countWord} ${verb}.`, disagreement: false };
     }
-    return {
-      kind: 'aligned',
-      text: `${countWord} sont alignés (${dirs[0] === 'up' ? 'haussiers' : 'baissiers'}).`,
-      disagreement: false,
-    };
+    const adj = dirs[0] === 'up'
+      ? entries.length === 1 ? 'haussière' : 'haussières'
+      : entries.length === 1 ? 'baissière' : 'baissières';
+    const verb = entries.length === 1 ? 'est' : 'sont';
+    return { kind: 'aligned', text: `${countWord} ${verb} ${adj}.`, disagreement: false };
   }
 
-  // A real « contre » exists only when an up and a down direction coexist.
+  // A real « contre » (disagreement) exists only when an up and a down direction
+  // coexist. A direction-vs-flat mix is not a disagreement. Named, descriptive —
+  // no wording implies alignment is favourable or better than disagreement.
   const contradiction = dirs.includes('up') && dirs.includes('down');
-
-  // Pullback: the two higher timeframes share one non-flat direction and M15 is
-  // the opposite non-flat direction — M15 is pulling back against them.
-  const { h4, h1, m15 } = trends;
-  if (
-    h4 != null &&
-    h1 != null &&
-    m15 != null &&
-    dirOf(h4) === dirOf(h1) &&
-    dirOf(h4) !== 'flat' &&
-    dirOf(m15) !== 'flat' &&
-    dirOf(m15) !== dirOf(h4)
-  ) {
-    // "tendance" is feminine → "haussière" / "baissière" (not the masculine adj).
-    const fem = dirOf(h4) === 'up' ? 'haussière' : 'baissière';
-    return {
-      kind: 'pullback',
-      text: `M15 se replie contre la tendance H4 ${fem}.`,
-      disagreement: true,
-    };
-  }
-
-  // General mix: list each available timeframe's observed trend. It is a
-  // disagreement only when a true contradiction (up AND down) is present.
   const parts = entries.map((e) => `${e.label} ${TREND_ADJ[e.trend]}`);
   return {
     kind: contradiction ? 'divergent' : 'partial',
-    text: `Les TF divergent : ${joinFr(parts)}.`,
+    text: `Unités supérieures : ${joinFr(parts)}.`,
     disagreement: contradiction,
   };
 }
 
 /**
- * One present-tense line characterising the RELATION between the timeframes.
- * Thin wrapper over {@link classifyMtfAlignment} — returns just its `text`
- * ('' when no timeframe is available, so the caller hides the line).
+ * One present-tense line characterising the RELATION between the units above the
+ * viewed one. Thin wrapper over {@link classifyMtfAlignment} — returns just its
+ * `text` ('' when none are available, so the caller hides the line).
  */
-export function describeMtfAlignment(trends: MtfTrendMap): string {
-  return classifyMtfAlignment(trends).text;
+export function describeMtfAlignment(trends: MtfTrendMap, order: MtfEntry[]): string {
+  return classifyMtfAlignment(trends, order).text;
 }

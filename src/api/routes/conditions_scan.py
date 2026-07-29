@@ -46,10 +46,11 @@ SCAN_COMBOS: Tuple[Tuple[str, str], ...] = enabled_combos()
 
 # Candle duration per timeframe — used to express a reading's age in *bars*
 # (market-cadence units) rather than wall-clock, so freshness is comparable
-# across timeframes. Factual; no prediction.
-_TF_MINUTES: Dict[str, int] = {
-    "M1": 1, "M5": 5, "M15": 15, "M30": 30, "H1": 60, "H4": 240, "D1": 1440,
-}
+# across timeframes. Factual; no prediction. Derived from the single timeframe
+# registry (TF-1), never a second copy.
+from src.intelligence import timeframe_registry as _tfreg
+
+_TF_MINUTES: Dict[str, int] = _tfreg.minutes_map()
 
 # Freshness tiers, in bars behind the latest expected close. A healthy combo
 # (the 60s scheduler keeps the scanner perimeter warm) sits at 0–1 bar.

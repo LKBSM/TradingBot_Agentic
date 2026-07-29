@@ -280,6 +280,7 @@ export function DesktopReading({
         <StructureCard
           structure={reading.structure}
           instrument={header.instrument}
+          timeframe={header.timeframe}
           price={price}
           selectedId={selectedId}
           onSelect={selectZone}

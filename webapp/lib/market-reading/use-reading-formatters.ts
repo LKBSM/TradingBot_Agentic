@@ -18,7 +18,7 @@ import type {
 } from '@/types/market-reading';
 import type { Tone } from './formatters';
 import { countActiveZones, deriveTrendMaturity } from './regime-facts';
-import { MTF_TREND_ORDER, type MtfRelation, type MtfTrendMap } from './mtf-trend';
+import { type MtfEntry, type MtfRelation, type MtfTrendMap } from './mtf-trend';
 
 /**
  * Locale-aware reading formatters — the i18n counterpart of the enum-label and
@@ -277,11 +277,14 @@ export function useReadingFormatters() {
    * `classifyMtfAlignment` (the RegimeSection already computes it for the
    * disagreement callout); this rebuilds the descriptive text per locale.
    */
-  function mtfAlignmentText(trends: MtfTrendMap, kind: MtfRelation['kind']): string {
-    const entries = MTF_TREND_ORDER.map(({ key, label }) => ({
-      label: label as string,
-      trend: trends[key],
-    })).filter((e): e is { label: string; trend: TrendValue } => e.trend != null);
+  function mtfAlignmentText(
+    trends: MtfTrendMap,
+    kind: MtfRelation['kind'],
+    order: MtfEntry[],
+  ): string {
+    const entries = order
+      .map(({ key, label }) => ({ label, trend: trends[key] }))
+      .filter((e): e is { label: string; trend: TrendValue } => e.trend != null);
     const count = entries.length;
     if (count === 0 || kind === 'none') return '';
     if (kind === 'neutral') return t('regime.mtfNeutral', { count });
@@ -289,12 +292,7 @@ export function useReadingFormatters() {
       const dir = dirOf(entries[0]!.trend) === 'up' ? 'up' : 'down';
       return t('regime.mtfAligned', { count, dir: t(`labels.alignedDir_${dir}`) });
     }
-    if (kind === 'pullback') {
-      const h4 = trends.h4;
-      const fem = t(`labels.orient_${h4 && dirOf(h4) === 'up' ? 'bullish' : 'bearish'}`);
-      return t('regime.mtfPullback', { fem });
-    }
-    // divergent | partial → list each TF's observed trend, joined per locale.
+    // divergent | partial → list each upper unit's observed trend, joined per locale.
     const parts = entries.map((e) => `${e.label} ${t(`labels.trendAdj_${e.trend}`)}`);
     const list = new Intl.ListFormat(locale, { style: 'long', type: 'conjunction' }).format(parts);
     return t('regime.mtfDivergent', { list });

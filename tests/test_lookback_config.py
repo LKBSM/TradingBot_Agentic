@@ -143,8 +143,10 @@ def test_malformed_depth_raises(monkeypatch, tmp_path):
     p.write_text(json.dumps({"default": {"H1": "banana"}}), encoding="utf-8")
     monkeypatch.setenv("SENTINEL_LOOKBACK_DEPTHS_PATH", str(p))
     lb.reset_cache()
+    # The perimeter now comes from the registry; depth-config validation fires
+    # when a depth is actually read.
     with pytest.raises(ValueError):
-        lb.supported_timeframes()
+        lb.depth_for("XAUUSD", "H1")
 
 
 def test_empty_default_raises(monkeypatch, tmp_path):
@@ -153,4 +155,4 @@ def test_empty_default_raises(monkeypatch, tmp_path):
     monkeypatch.setenv("SENTINEL_LOOKBACK_DEPTHS_PATH", str(p))
     lb.reset_cache()
     with pytest.raises(ValueError):
-        lb.supported_timeframes()
+        lb.depth_for("XAUUSD", "H1")

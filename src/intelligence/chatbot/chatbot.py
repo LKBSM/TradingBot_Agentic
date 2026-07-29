@@ -46,8 +46,13 @@ DEFAULT_MODEL = "claude-haiku-4-5-20251001"
 DEFAULT_MAX_TOKENS = 1024
 MAX_TOOL_TURNS = 3  # hard cap on tool-use rounds to avoid infinite loops
 
-SUPPORTED_INSTRUMENTS = ("XAUUSD", "EURUSD")
-SUPPORTED_TIMEFRAMES = ("M15", "H1", "H4")
+# Perimeter derived from the single sources (TF-1): the chat covers every
+# displayed instrument/timeframe, never a hand-listed subset.
+from src.intelligence.lookback_config import enabled_timeframes as _enabled_tfs
+from src.intelligence.lookback_config import supported_instruments as _supported_instruments
+
+SUPPORTED_INSTRUMENTS = tuple(_supported_instruments())
+SUPPORTED_TIMEFRAMES = tuple(_enabled_tfs())
 
 
 TOOL_SCHEMAS: list[dict[str, Any]] = [

@@ -22,11 +22,11 @@ logger = logging.getLogger(__name__)
 
 REQUIRED_COLUMNS = {"Open", "High", "Low", "Close", "Volume"}
 
-# Nominal bar intervals for gap detection (in minutes).
-TIMEFRAME_MINUTES = {
-    "M1": 1, "M5": 5, "M15": 15, "M30": 30,
-    "H1": 60, "H4": 240, "D1": 1440, "W1": 10080,
-}
+# Nominal bar intervals for gap detection (in minutes) — derived from the single
+# timeframe registry (TF-1), never a hand-copied map.
+from src.intelligence import timeframe_registry as _tfreg
+
+TIMEFRAME_MINUTES = _tfreg.minutes_map()
 
 
 class DataQualityError(ValueError):

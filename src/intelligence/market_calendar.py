@@ -253,13 +253,11 @@ def calendar_state(instrument: str, now: datetime) -> str:
 # Candle-boundary helpers (fact side)
 # --------------------------------------------------------------------------- #
 def _timeframe_minutes(timeframe: str) -> int:
-    # Local import avoids a circular import with market_reading_assembler, which
-    # imports market_aware_expected_close from this module.
-    from src.intelligence.market_reading_assembler import _TIMEFRAME_MINUTES
-    tf = timeframe.upper()
-    if tf not in _TIMEFRAME_MINUTES:
+    # Single source: the timeframe registry (TF-1). Dependency-light, no cycle.
+    from src.intelligence import timeframe_registry as _tfreg
+    if not _tfreg.has(timeframe):
         raise ValueError(f"Unsupported timeframe: {timeframe!r}")
-    return _TIMEFRAME_MINUTES[tf]
+    return _tfreg.minutes(timeframe)
 
 
 def _expected_last_candle_close(timeframe: str, now: datetime) -> datetime:

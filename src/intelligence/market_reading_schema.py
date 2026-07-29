@@ -48,7 +48,14 @@ LiquidityKind = Literal["equal_highs", "equal_lows", "range_high", "range_low"]
 LiquidityStatus = Literal["intact", "swept", "broken"]
 DescriptionSource = Literal["haiku_generated", "template_fallback"]
 
-VALID_MTF_KEYS = {"m15", "h1", "h4", "d1", "w1"}
+# Valid MTF alignment keys — any perimeter or reference unit can be an alignment
+# TARGET (the tile shows the units above the viewed one, TF-1 decision C).
+# Derived from the single timeframe registry, lowercased; never a hand-listed set.
+from src.intelligence import timeframe_registry as _tfreg
+
+VALID_MTF_KEYS = {
+    s.id.lower() for s in _tfreg.all_specs() if s.perimeter or s.reference
+}
 
 # Composite trigger type: <event>_<tf>_<direction> for bos/choch, <event>_<tf> for others.
 TRIGGER_TYPE_PATTERN = (

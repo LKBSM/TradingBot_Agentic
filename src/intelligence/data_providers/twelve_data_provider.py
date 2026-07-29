@@ -33,16 +33,11 @@ _SYMBOL_MAP: Dict[str, str] = {
     "EURUSD": "EUR/USD",
 }
 
-_TIMEFRAME_MAP: Dict[str, str] = {
-    "M1": "1min",
-    "M5": "5min",
-    "M15": "15min",
-    "M30": "30min",
-    "H1": "1h",
-    "H4": "4h",
-    "D1": "1day",
-    "W1": "1week",
-}
+# Timeframe → Twelve Data interval string, derived from the single timeframe
+# registry (TF-1), not a second copy.
+from src.intelligence import timeframe_registry as _tfreg
+
+_TIMEFRAME_MAP: Dict[str, str] = _tfreg.provider_map()
 
 
 @dataclass(frozen=True)

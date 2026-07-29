@@ -154,9 +154,13 @@ def test_focus_price_and_fit_and_reset_ok() -> None:
 def test_set_instrument_timeframe_enums() -> None:
     ok = v().validate({"action": "set_instrument_timeframe", "params": {"instrument": "EURUSD", "timeframe": "H4"}})
     assert ok.valid
+    # M5 is now in the perimeter (TF-1) → accepted.
+    ok_m5 = v().validate({"action": "set_instrument_timeframe", "params": {"instrument": "XAUUSD", "timeframe": "M5"}})
+    assert ok_m5.valid
     bad_i = v().validate({"action": "set_instrument_timeframe", "params": {"instrument": "BTCUSD", "timeframe": "H4"}})
     assert not bad_i.valid and bad_i.reason == "bad_instrument"
-    bad_tf = v().validate({"action": "set_instrument_timeframe", "params": {"instrument": "XAUUSD", "timeframe": "M5"}})
+    # W1 is a reference series, not a tradeable/interactive timeframe → rejected.
+    bad_tf = v().validate({"action": "set_instrument_timeframe", "params": {"instrument": "XAUUSD", "timeframe": "W1"}})
     assert not bad_tf.valid and bad_tf.reason == "bad_timeframe"
 
 
