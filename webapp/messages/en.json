@@ -1844,14 +1844,10 @@
       "agoHours": "{hours}h {minutes} ago",
       "agoMinutes": "{minutes} min ago"
     },
-    "affects": "affects {markets}",
+    "affects": "attached to {markets}",
     "localTime": "{time} your time ({offset})",
     "timeUnconfirmed": "time not confirmed",
     "revisedBadge": "revised value",
-    "amplitude": {
-      "k": "Median 60-min amplitude",
-      "pending": "measures to come"
-    },
     "provenance": {
       "organism": "Organism: {organism}",
       "organismMissing": "Organism: not provided by this source"
@@ -1867,7 +1863,7 @@
     },
     "nono": {
       "title": "What this calendar does not say",
-      "body": "A high median amplitude flags that these moments were historically active. It says neither the direction nor what will happen this time. A release may cause nothing, and a quiet market may move with no release at all.",
+      "body": "This calendar says neither the direction nor what will happen this time. A release may cause nothing, and a quiet market may move with no release at all.",
       "noForecast": "No analyst forecast is shown: no public organism publishes one, and MIA does not fabricate one.",
       "noRanking": "No hierarchy is assigned to the releases: MIA does not rank them against one another."
     },
@@ -1898,7 +1894,6 @@
       "unitMissing": "unit not provided by this source",
       "measuresTitle": "What the engine measured at previous releases",
       "measuresBadge": "Price move",
-      "measuresPending": "Measures to come: the amplitude travelled by the markets at this indicator's past releases will appear here once the engine measure is wired (NW-2).",
       "notFoundTitle": "Release not found",
       "notFound": "This release is not in the calendar's current window.",
       "nono": {
@@ -1906,8 +1901,7 @@
         "items": {
           "0": "It does not predict the value that will be published, nor the market's reaction.",
           "1": "It does not read a gap between the published value and the previous one as bullish or bearish.",
-          "2": "It recommends neither acting, nor abstaining, nor closing anything.",
-          "3": "Past amplitudes are measured over a small number of days, in different contexts, and have no predictive value."
+          "2": "It recommends neither acting, nor abstaining, nor closing anything."
         }
       }
     }

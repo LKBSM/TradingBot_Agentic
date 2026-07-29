@@ -72,7 +72,8 @@ describe('NW-1b CalendarEventDetail', () => {
     const { container } = renderDetail('bls:us_cpi:2026-07-28');
     expect(container.querySelector('h1')?.textContent).toBe('IPC');
     const text = container.textContent ?? '';
-    expect(text).toContain('affecte Or, EUR/USD');
+    expect(text).toContain('rattaché à Or, EUR/USD');
+    expect(text).not.toContain('affecte');
     expect(container.querySelectorAll('.cal-impact')).toHaveLength(0);
   });
 
@@ -136,16 +137,22 @@ describe('NW-1b CalendarEventDetail', () => {
     expect(text).toContain(fr.calendar.detail.unitMissing);
   });
 
-  it('marks the engine-measured history as « mesures à venir » (NW-2)', () => {
+  it('does NOT render the engine-measures card while no measure exists', () => {
     const { container } = renderDetail('bls:us_cpi:2026-07-28');
-    expect(container.textContent ?? '').toContain(fr.calendar.detail.measuresPending);
+    // no data, no element: no card title, no placeholder, no future promise
+    const text = (container.textContent ?? '').toLowerCase();
+    expect(text).not.toContain('à venir');
+    expect(container.querySelector('.cald-pending')).toBeNull();
+    expect(text).not.toContain(fr.calendar.detail.measuresTitle.toLowerCase());
   });
 
-  it('renders the « ce que cette page ne dit pas » refusal list (4 items)', () => {
+  it('renders the « ce que cette page ne dit pas » refusal list (3 items, no amplitude line)', () => {
     const { container } = renderDetail('bls:us_cpi:2026-07-28');
     const items = Array.from(container.querySelectorAll('.cal-nono li'));
-    expect(items).toHaveLength(4);
+    expect(items).toHaveLength(3);
     expect(container.textContent ?? '').toContain('haussier ou baissier');
+    // the past-amplitude refusal is gone while no amplitude is shown
+    expect((container.textContent ?? '').toLowerCase()).not.toContain('amplitudes passées');
   });
 
   it('resolves a bare pipeline ref (App news deep-link, no source prefix)', () => {

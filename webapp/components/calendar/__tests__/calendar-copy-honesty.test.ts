@@ -132,6 +132,54 @@ describe('NW-1 calendar copy honesty', () => {
     expect(joined).toContain('baissier');
     // …strictly inside a refusal ("n'interprète pas … comme haussier ou baissier").
     expect(joined).toContain("n'interprète pas");
-    expect(joined).toContain('aucune valeur prédictive');
+  });
+
+  it('NW-1c: no causality verb links an event to a market', () => {
+    // « affecte/impacte/influence… » would assert the publication ACTS on the
+    // market — exactly what the « ne dit pas » block denies. The attachment is a
+    // display convention (« rattaché à »), never a cause/effect.
+    const CAUSALITY = [
+      'affecte', 'affects', 'impacte', 'impacts', 'influence',
+      'agit sur', 'joue sur', 'pèse sur', 'pese sur',
+    ];
+    const all: string[] = [];
+    const collectAll = (node: unknown): void => {
+      if (typeof node === 'string') all.push(node);
+      else if (Array.isArray(node)) node.forEach(collectAll);
+      else if (node && typeof node === 'object') Object.values(node).forEach(collectAll);
+    };
+    collectAll((fr as Record<string, unknown>).calendar);
+    collectAll((en as Record<string, unknown>).calendar);
+    for (const s of all) {
+      const low = s.toLowerCase();
+      for (const v of CAUSALITY) {
+        expect(low.includes(v), `causal verb « ${v} » links an event to a market: "${s}"`).toBe(false);
+      }
+    }
+    // the attachment label is a relation, not a cause/effect
+    expect((fr as unknown as { calendar: { affects: string } }).calendar.affects).toMatch(/rattaché/);
+    expect((en as unknown as { calendar: { affects: string } }).calendar.affects).toMatch(/attached/);
+  });
+
+  it('NW-1c: no i18n string contains an internal mission/ticket code', () => {
+    // No mission/branch/ticket code (NW-2, RG-1, …) may appear in a user-visible
+    // string. `_comment` keys are dev-only metadata (never rendered) → skipped.
+    const CODE = /\b(?:NW|RG|LB|TF|VZ|UI|DG|MC)-\d/;
+    const offenders: string[] = [];
+    const walk = (node: unknown, path: string): void => {
+      if (typeof node === 'string') {
+        if (CODE.test(node)) offenders.push(`${path}: ${node}`);
+      } else if (Array.isArray(node)) {
+        node.forEach((n, i) => walk(n, `${path}.${i}`));
+      } else if (node && typeof node === 'object') {
+        for (const [k, v] of Object.entries(node)) {
+          if (k === '_comment') continue; // dev-only metadata, not rendered
+          walk(v, path ? `${path}.${k}` : k);
+        }
+      }
+    };
+    walk(fr, 'fr');
+    walk(en, 'en');
+    expect(offenders, offenders.join(' | ')).toEqual([]);
   });
 });

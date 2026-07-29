@@ -124,7 +124,7 @@
       "currency": "USD",
       "series_code": "NIPA-T20804",
       "ics_match": ["personal income and outlays"],
-      "value_unit": "indice de prix (PCE)",
+      "value_unit": "indice (2017 = 100)",
       "periodicity": "monthly",
       "source_timezone": "America/New_York",
       "release_time_local": "08:30",

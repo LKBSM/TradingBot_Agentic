@@ -337,10 +337,9 @@ function Row({
         </div>
       </div>
 
-      <div className="cal-ampl">
-        <div className="k">{t('amplitude.k')}</div>
-        <div className="v">{t('amplitude.pending')}</div>
-      </div>
+      {/* No amplitude slot while no measure exists: no data, no element (never a
+          future-content promise). The engine-measure column returns in a
+          follow-up once real amplitudes are computed. */}
 
       <Link
         className="cal-more"

@@ -105,6 +105,31 @@ function fmtCountdown(
   return t('countdown.now');
 }
 
+/**
+ * Engine-measured history card. Product invariant: no data, no element. It
+ * renders NOTHING until a measure exists for this event — the page never shows
+ * an empty tile, nor a promise of future content. The component stays in place,
+ * ready to display the moment the measure model is populated.
+ */
+function EngineMeasuresCard({
+  t,
+}: {
+  t: ReturnType<typeof useTranslations>;
+}) {
+  // No engine-measure model is attached to the event yet; while there is none,
+  // the card is not rendered (Section 3 populates and renders it).
+  const measures: readonly unknown[] = [];
+  if (measures.length === 0) return null;
+  return (
+    <div className="cald-card">
+      <div className="cald-card-h">
+        <h3>{t('detail.measuresTitle')}</h3>
+        <span className="cald-badge">{t('detail.measuresBadge')}</span>
+      </div>
+    </div>
+  );
+}
+
 function Detail({
   ev,
   attribution,
@@ -219,14 +244,7 @@ function Detail({
         <p className="cald-note">{t('detail.publishedFiguresNote')}</p>
       </div>
 
-      {/* Historique moteur — NW-2 */}
-      <div className="cald-card">
-        <div className="cald-card-h">
-          <h3>{t('detail.measuresTitle')}</h3>
-          <span className="cald-badge">{t('detail.measuresBadge')}</span>
-        </div>
-        <p className="cald-pending">{t('detail.measuresPending')}</p>
-      </div>
+      <EngineMeasuresCard t={t} />
 
       {/* Attribution — condition de licence de la source */}
       {attribution && (

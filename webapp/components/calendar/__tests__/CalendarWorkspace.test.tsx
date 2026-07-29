@@ -83,11 +83,12 @@ describe('NW-1b CalendarWorkspace list', () => {
     expect(evNames(container)).toEqual(['Décision BCE', 'IPC', 'Ventes au détail']);
   });
 
-  it('the amplitude slot shows the « mesures à venir » placeholder (NW-2 fills it)', () => {
+  it('renders NO amplitude slot while no measure exists (no future-content promise)', () => {
     const { container } = renderCal();
-    const vals = Array.from(container.querySelectorAll('.cal-ampl .v')).map((e) => e.textContent);
-    expect(vals.length).toBe(3);
-    for (const v of vals) expect(v).toBe(fr.calendar.amplitude.pending);
+    // no data, no element: the amplitude column is absent, and no « mesures à
+    // venir »-style promise appears anywhere in the list.
+    expect(container.querySelectorAll('.cal-ampl')).toHaveLength(0);
+    expect((container.textContent ?? '').toLowerCase()).not.toContain('à venir');
   });
 
   it('exposes NO impact ranking on any surface — no colour-graded badge', () => {
@@ -183,10 +184,11 @@ describe('NW-1b CalendarWorkspace list', () => {
     expect(links).toContain('https://www.bls.gov/opub/copyright-information.htm');
   });
 
-  it('the attached markets are named (affecte Or, EUR/USD)', () => {
+  it('the attached markets are named as a relation, not a cause (rattaché à Or, EUR/USD)', () => {
     const { container } = renderCal();
     const cpi = rows(container).find((r) => (r.textContent ?? '').includes('IPC'));
-    expect(cpi?.textContent).toContain('affecte Or, EUR/USD');
+    expect(cpi?.textContent).toContain('rattaché à Or, EUR/USD');
+    expect(cpi?.textContent).not.toContain('affecte');
   });
 
   it('each row exposes an « En savoir plus » link to that event detail page', () => {
