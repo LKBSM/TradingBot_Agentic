@@ -141,6 +141,11 @@ class TestMapping:
         assert u.time_to_event_min == 30
         assert u.currency == "USD"
         assert u.potential_effect_description
+        # event_id is exposed so the App news row can deep-link to /actualites.
+        assert u.event_id
+        from src.intelligence.news_pipeline import _event_id
+
+        assert u.event_id == _event_id("US NFP", "USD", u.scheduled_at)
 
     def test_lookahead_window_excludes_far_events(self, cache):
         raw = [

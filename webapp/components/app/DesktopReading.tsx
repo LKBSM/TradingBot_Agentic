@@ -2,7 +2,8 @@
 
 import * as React from 'react';
 import dynamic from 'next/dynamic';
-import { Loader2 } from 'lucide-react';
+import Link from 'next/link';
+import { ChevronRight, Loader2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import {
   ChartUnavailable,
@@ -483,6 +484,8 @@ function NarratedPanel({ conditions }: { conditions: MarketReadingConditions }) 
 
 function NewsPanel({ events }: { events: MarketReadingEvents }) {
   const t = useTranslations('app');
+  const tc = useTranslations('calendar');
+  const lh = useLocalizedHref();
   const fmt = useReadingFormatters();
   const upcoming = events.news_upcoming;
 
@@ -519,6 +522,16 @@ function NewsPanel({ events }: { events: MarketReadingEvents }) {
               </div>
               <span className={`impact ${n.impact === 'high' ? 'high' : 'mid'}`}>{impact.label}</span>
               <span className="when">{fmt.timeToEvent(n.time_to_event_min)}</span>
+              {n.event_id && (
+                <Link
+                  className="news-more"
+                  href={lh(`/actualites/${encodeURIComponent(n.event_id)}`)}
+                  aria-label={`${tc('seeMore')} — ${n.event}`}
+                >
+                  {tc('seeMore')}
+                  <ChevronRight width={12} height={12} aria-hidden />
+                </Link>
+              )}
             </div>
           );
         })

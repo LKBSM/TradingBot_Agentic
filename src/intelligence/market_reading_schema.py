@@ -261,11 +261,16 @@ class NewsUpcoming(BaseModel):
     impact: ImpactLevel
     currency: str
     potential_effect_description: str
+    # Deterministic id of this release (title|currency|scheduled_at hash) — the
+    # same value the calendar page uses, so the App news module can deep-link to
+    # /actualites/<event_id>. Optional/None on older payloads.
+    event_id: Optional[str] = None
 
 
 class NewsJustPublished(BaseModel):
     event: str
     published_at: datetime
+    event_id: Optional[str] = None
     actual: Optional[float] = None
     forecast: Optional[float] = None
     previous: Optional[float] = None

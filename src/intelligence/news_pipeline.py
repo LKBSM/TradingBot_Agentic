@@ -310,6 +310,7 @@ class NewsPipeline:
                     impact=ev.impact,  # type: ignore[arg-type]
                     currency=ev.currency,
                     potential_effect_description=_upcoming_effect_description(ev, minutes),
+                    event_id=ev.event_id,
                 )
             )
         return out
@@ -349,6 +350,7 @@ class NewsPipeline:
                     potential_effect_description=_just_published_effect_description(
                         ev, minutes_ago, surprise
                     ),
+                    event_id=ev.event_id,
                 )
             )
         return out
