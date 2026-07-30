@@ -31,6 +31,36 @@ from pydantic import BaseModel, Field
 # Factual publication cadence — a fact of the release, NOT a rank.
 CalendarPeriodicity = Literal["monthly", "quarterly", "eight_per_year"]
 
+# The distinct states of a value. A bare "—" reads three ways and a client can't
+# tell them apart, so the three ABSENCES are modelled explicitly (mission NW-1c
+# §3B), never collapsed to null:
+#   · published   — the value was obtained and is shown.
+#   · pending     — the publication date is in the future; it does not exist yet.
+#   · unfetched   — the publication happened but the value was NOT obtained. A
+#                   PRODUCT state (not a market state), shown with the last attempt.
+#   · unavailable — the source does not expose a fetchable value for this release
+#                   (e.g. a rate decision with no data series). Named organism.
+ValueState = Literal["published", "pending", "unfetched", "unavailable"]
+
+
+def compute_value_state(
+    series_code: Optional[str],
+    actual: Optional[float],
+    scheduled_at: datetime,
+    now: datetime,
+) -> ValueState:
+    """Classify an ``actual`` value into one of the four states. Order matters:
+    a future release is ``pending`` even without a series (the value cannot exist
+    yet); a past release with no series linkage is ``unavailable`` (nothing to
+    fetch); a past release with a series but no value is ``unfetched``."""
+    if actual is not None:
+        return "published"
+    if scheduled_at > now:
+        return "pending"
+    if not series_code:
+        return "unavailable"
+    return "unfetched"
+
 
 class CalendarEvent(BaseModel):
     """A single scheduled economic publication attached to ≥1 followed market."""
@@ -64,6 +94,11 @@ class CalendarEvent(BaseModel):
     previous: Optional[float] = None        # prior period's published value (factual)
     revised: bool = False
     revised_at: Optional[datetime] = None   # when ``actual`` was revised, if it was
+    # The explicit value state (see ``compute_value_state``) — never a bare null.
+    actual_state: ValueState = "pending"
+    # Last time this event was refreshed / a value fetch was attempted (the
+    # "last attempt" date shown for the ``unfetched`` state).
+    refreshed_at: Optional[datetime] = None
 
 
 class CalendarCoverage(BaseModel):
@@ -110,6 +145,8 @@ class CalendarResponse(BaseModel):
 
 __all__ = [
     "CalendarPeriodicity",
+    "ValueState",
+    "compute_value_state",
     "CalendarEvent",
     "CalendarCoverage",
     "CalendarAttribution",

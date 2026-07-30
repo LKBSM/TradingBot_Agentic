@@ -1802,21 +1802,21 @@
   },
   "calendar": {
     "meta": {
-      "title": "Scheduled news — Volatility calendar | MIA Markets",
-      "description": "The calendar of official economic releases whose time is known in advance. MIA announces moments, never directions."
+      "title": "Geplande publicaties — Volatiliteitskalender | MIA Markets",
+      "description": "De kalender van officiële economische publicaties waarvan het tijdstip vooraf bekend is. MIA kondigt momenten aan, nooit richtingen."
     },
-    "title": "Scheduled news",
-    "badge": "Volatility calendar",
+    "title": "Geplande publicaties",
+    "badge": "Volatiliteitskalender",
     "intro": {
-      "lead": "This calendar announces moments, not directions.",
-      "rest": "It lists the economic releases whose time is known in advance and that, in the past, coincided with a rise in activity on your markets. MIA does not say what the price will do — it measures what happened the previous times."
+      "lead": "Deze kalender kondigt momenten aan, geen richtingen.",
+      "rest": "Hij vermeldt de economische publicaties waarvan het tijdstip vooraf bekend is en die in het verleden samenvielen met meer activiteit op jouw markten. MIA zegt niet wat de koers zal doen — ze meet wat er de vorige keren gebeurde."
     },
     "filters": {
-      "organismLabel": "Organism",
-      "marketLabel": "Market",
-      "periodicityLabel": "Periodicity",
-      "reset": "Select all",
-      "past": "Past releases"
+      "organismLabel": "Instantie",
+      "marketLabel": "Markt",
+      "periodicityLabel": "Periodiciteit",
+      "reset": "Alles selecteren",
+      "past": "Vorige publicaties"
     },
     "organism": {
       "bls": "BLS",
@@ -1828,94 +1828,95 @@
       "forexfactory": "ForexFactory"
     },
     "periodicity": {
-      "monthly": "Monthly",
-      "quarterly": "Quarterly",
-      "eight_per_year": "8 times a year"
+      "monthly": "Maandelijks",
+      "quarterly": "Per kwartaal",
+      "eight_per_year": "8 keer per jaar"
     },
     "market": {
-      "XAUUSD": "Gold",
+      "XAUUSD": "Goud",
       "EURUSD": "EUR/USD"
     },
     "day": {
-      "today": "Today",
-      "tomorrow": "Tomorrow",
-      "count": "{count, plural, one {# release} other {# releases}}"
+      "today": "Vandaag",
+      "tomorrow": "Morgen",
+      "count": "{count, plural, one {# publicatie} other {# publicaties}}"
     },
     "countdown": {
-      "days": "in {days}d",
-      "hours": "in {hours}h {minutes}",
-      "minutes": "in {minutes} min",
-      "now": "now",
-      "agoDays": "{days}d ago",
-      "agoHours": "{hours}h {minutes} ago",
-      "agoMinutes": "{minutes} min ago"
+      "days": "over {days} d",
+      "hours": "over {hours} u {minutes}",
+      "minutes": "over {minutes} min",
+      "now": "nu",
+      "agoDays": "{days} d geleden",
+      "agoHours": "{hours} u {minutes} geleden",
+      "agoMinutes": "{minutes} min geleden"
     },
-    "affects": "affects {markets}",
-    "localTime": "{time} your time ({offset})",
-    "timeUnconfirmed": "time not confirmed",
-    "revisedBadge": "revised value",
-    "amplitude": {
-      "k": "Median 60-min amplitude",
-      "pending": "measures to come"
-    },
+    "affects": "gekoppeld aan {markets}",
+    "localTime": "{time} jouw tijd ({offset})",
+    "timeUnconfirmed": "tijd niet bevestigd",
+    "revisedBadge": "herziene waarde",
     "provenance": {
-      "organism": "Organism: {organism}",
-      "organismMissing": "Organism: not provided by this source"
+      "organism": "Instantie: {organism}",
+      "organismMissing": "Instantie: niet opgegeven door deze bron"
     },
     "attribution": {
-      "title": "Sources and reuse",
-      "intro": "Each release comes from the official organism that issues it. Reuse follows each source's policy:",
-      "policyLink": "reuse policy",
-      "stale": "{organism}: data not refreshed, last success on {date}."
+      "title": "Bronnen en hergebruik",
+      "intro": "Elke publicatie komt van de officiële instantie die haar uitgeeft. Hergebruik volgt het beleid van elke bron:",
+      "policyLink": "hergebruikbeleid",
+      "stale": "niet ververst sinds {date}",
+      "refreshed": "ververst op {date}"
     },
     "coverage": {
-      "partial": "The calendar is populated through {date}. Beyond that, the period is not yet covered."
+      "partial": "De kalender is gevuld tot {date}. Daarna is de periode nog niet gedekt."
     },
     "nono": {
-      "title": "What this calendar does not say",
-      "body": "A high median amplitude flags that these moments were historically active. It says neither the direction nor what will happen this time. A release may cause nothing, and a quiet market may move with no release at all.",
-      "noForecast": "No analyst forecast is shown: no public organism publishes one, and MIA does not fabricate one.",
-      "noRanking": "No hierarchy is assigned to the releases: MIA does not rank them against one another."
+      "title": "Wat deze kalender niet zegt",
+      "body": "Deze kalender noemt noch de richting, noch wat er deze keer zal gebeuren. Een publicatie kan niets veroorzaken, en een rustige markt kan bewegen zonder enige publicatie.",
+      "noForecast": "Er wordt geen analistenprognose getoond: geen enkele publieke instantie publiceert er een, en MIA verzint er geen.",
+      "noRanking": "Aan de publicaties wordt geen rangorde toegekend: MIA rangschikt ze niet onderling."
     },
     "empty": {
-      "noSelection": "No filter selected: check at least one organism, one market and one periodicity to show releases.",
-      "noEvents": "No scheduled release in this period for your markets.",
-      "noSource": "No release yet: the official sources have not populated any date. Releases will appear here once the official schedules are loaded."
+      "noSelection": "Geen filter geselecteerd: kies ten minste één instantie, één markt en één periodiciteit om publicaties te tonen.",
+      "noEvents": "Geen geplande publicatie in deze periode voor jouw markten.",
+      "noSource": "Nog geen publicatie: de officiële bronnen hebben nog geen datum ingevuld. Publicaties verschijnen hier zodra de officiële agenda's geladen zijn."
     },
-    "loading": "Loading the calendar…",
-    "error": "The calendar is momentarily unavailable.",
+    "loading": "Kalender laden…",
+    "error": "De kalender is tijdelijk niet beschikbaar.",
     "preview": {
-      "title": "Next releases",
-      "seeAll": "See all",
-      "empty": "No upcoming release in this period."
+      "title": "Volgende publicaties",
+      "seeAll": "Alles bekijken",
+      "empty": "Geen aankomende publicatie in deze periode."
     },
-    "seeMore": "Learn more",
+    "seeMore": "Meer weten",
     "detail": {
-      "back": "Back to the calendar",
-      "countdownLabel": "Release in",
-      "publishedFiguresTitle": "Published figures",
-      "publishedFiguresBadge": "Indicator value",
-      "publishedFiguresNote": "These figures are the value of the indicator itself, in the unit of the organism that publishes it — not price moves. They are shown as published, without conversion or re-rounding.",
-      "actualLabel": "Published value",
-      "actualPending": "not yet published",
-      "previousLabel": "Previous release",
-      "revisedFromTo": "Initial value {initial}, revised on {date} — current value {current}.",
-      "notRevised": "This figure has not been revised since its first publication.",
-      "unitMissing": "unit not provided by this source",
-      "measuresTitle": "What the engine measured at previous releases",
-      "measuresBadge": "Price move",
-      "measuresPending": "Measures to come: the amplitude travelled by the markets at this indicator's past releases will appear here once the engine measure is wired (NW-2).",
-      "notFoundTitle": "Release not found",
-      "notFound": "This release is not in the calendar's current window.",
+      "back": "Terug naar de kalender",
+      "countdownLabel": "Publicatie over",
+      "publishedFiguresTitle": "Gepubliceerde cijfers",
+      "publishedFiguresBadge": "Indicatorwaarde",
+      "publishedFiguresNote": "Deze cijfers zijn de waarde van de indicator zelf, in de eenheid van de instantie die hem publiceert — geen koersbewegingen. Ze worden getoond zoals gepubliceerd, zonder omrekening of afronding.",
+      "actualLabel": "Gepubliceerde waarde",
+      "actualPending": "nog niet gepubliceerd",
+      "previousLabel": "Vorige publicatie",
+      "revisedFromTo": "Aanvangswaarde {initial}, herzien op {date} — huidige waarde {current}.",
+      "notRevised": "Dit cijfer is sinds de eerste publicatie niet herzien.",
+      "unitMissing": "eenheid niet opgegeven door deze bron",
+      "measuresTitle": "Wat de engine bij vorige publicaties heeft gemeten",
+      "measuresBadge": "Koersbeweging",
+      "notFoundTitle": "Publicatie niet gevonden",
+      "notFound": "Deze publicatie valt niet binnen het huidige kalendervenster.",
       "nono": {
-        "title": "What this page does not say",
+        "title": "Wat deze pagina niet zegt",
         "items": {
-          "0": "It does not predict the value that will be published, nor the market's reaction.",
-          "1": "It does not read a gap between the published value and the previous one as bullish or bearish.",
-          "2": "It recommends neither acting, nor abstaining, nor closing anything.",
-          "3": "Past amplitudes are measured over a small number of days, in different contexts, and have no predictive value."
+          "0": "Ze voorspelt noch de waarde die gepubliceerd zal worden, noch de reactie van de markt.",
+          "1": "Ze duidt een verschil tussen de gepubliceerde en de vorige waarde niet als stijgend of dalend.",
+          "2": "Ze beveelt noch aan om in te grijpen, noch om af te wachten, noch om iets te sluiten."
         }
-      }
+      },
+      "actualUnfetched": "waarde niet opgehaald — laatste poging op {date}",
+      "actualUnavailable": "geen enkel cijfer — {organism} publiceert een besluit (een rentebandbreedte), geen datareeks"
+    },
+    "list": {
+      "unfetched": "niet opgehaald",
+      "unavailable": "niet beschikbaar"
     }
   }
 }

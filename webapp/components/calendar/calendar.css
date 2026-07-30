@@ -195,29 +195,6 @@
   margin-top: 2px;
 }
 
-/* Amplitude slot — kept empty in NW-1 ("mesures à venir"); filled by NW-2. */
-.cal-ampl {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-  flex-shrink: 0;
-  width: 130px;
-}
-.cal-ampl .k {
-  font-size: 8.5px;
-  color: var(--faint);
-  letter-spacing: 0.3px;
-  text-transform: uppercase;
-}
-.cal-ampl .v {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--faint);
-  font-style: italic;
-}
-
 .cal-nono {
   display: flex;
   gap: 9px;
@@ -325,11 +302,31 @@
 .cal-attrib a:hover {
   text-decoration: underline;
 }
-.cal-attrib .stale {
-  margin-top: 8px;
-  font-size: 10px;
+/* Per-organism freshness inside each attribution line. */
+.cal-attrib .fresh {
+  font-size: 9.5px;
+  color: var(--faint);
+  white-space: nowrap;
+}
+.cal-attrib .fresh.stale {
   color: var(--liq);
-  line-height: 1.5;
+}
+
+/* Value + its explicit state on a list row (right side). */
+.cal-val {
+  flex-shrink: 0;
+  min-width: 92px;
+  text-align: right;
+}
+.cal-val .v {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+}
+.cal-val .s {
+  font-size: 9.5px;
+  color: var(--faint);
+  font-style: italic;
 }
 
 /* Revision line on the detail card — before value, after value, date. No
@@ -602,21 +599,18 @@
 .cald-empty-line {
   margin-bottom: 10px;
 }
-.cald-pending {
-  font-size: 11.5px;
-  line-height: 1.6;
-  color: var(--dim);
-  font-style: italic;
-}
-
 @media (max-width: 900px) {
-  .cal-ampl {
-    display: none;
-  }
   .cald-figs {
     grid-template-columns: 1fr;
   }
   .cald-cd {
     margin-left: 0;
+  }
+}
+@media (max-width: 560px) {
+  /* Keep list rows uncluttered on phones; the full value state lives on the
+     detail page (« En savoir plus »). */
+  .cal-val {
+    display: none;
   }
 }

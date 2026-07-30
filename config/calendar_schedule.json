@@ -13,10 +13,10 @@
     "MAINTENANCE : ces dates sont vérifiées sur les pages officielles à la date last_verified.",
     "Elles doivent être re-vérifiées périodiquement (les calendriers officiels bougent, ex.",
     "reports de shutdown). Ne JAMAIS inscrire une date non vérifiée sur une page officielle.",
-    "Non couverts à cette date (dates non confirmées de façon fiable, laissés absents plutôt",
-    "que fabriqués) : ea_hicp_flash / ea_gdp_flash / ea_unemployment (calendrier Eurostat servi",
-    "en JS + .ics paramétré non dérivable). À couvrir via le feed .ics live (CALENDAR_ICS_LIVE)",
-    "ou une vérification manuelle ultérieure."
+    "Seul non couvert (date non confirmée de façon fiable, laissée absente plutôt que",
+    "fabriquée) : ea_unemployment (calendrier Eurostat servi en JS ; date exacte non vérifiée).",
+    "À couvrir via une vérification manuelle ultérieure. ea_hicp_flash et ea_gdp_flash sont",
+    "renseignés depuis les pages officielles Eurostat (HICP flash fin de mois ; QNA release calendar)."
   ],
   "version": 1,
   "releases": [
@@ -52,6 +52,11 @@
 
     { "event_key": "ea_ecb_rate", "date": "2026-09-10", "schedule_url": "https://www.ecb.europa.eu/press/calendars/mgcgc/html/index.en.html", "last_verified": "2026-07-28" },
     { "event_key": "ea_ecb_rate", "date": "2026-10-29", "schedule_url": "https://www.ecb.europa.eu/press/calendars/mgcgc/html/index.en.html", "last_verified": "2026-07-28" },
-    { "event_key": "ea_ecb_rate", "date": "2026-12-17", "schedule_url": "https://www.ecb.europa.eu/press/calendars/mgcgc/html/index.en.html", "last_verified": "2026-07-28" }
+    { "event_key": "ea_ecb_rate", "date": "2026-12-17", "schedule_url": "https://www.ecb.europa.eu/press/calendars/mgcgc/html/index.en.html", "last_verified": "2026-07-28" },
+
+    { "event_key": "ea_hicp_flash", "date": "2026-07-31", "schedule_url": "https://ec.europa.eu/eurostat/news/euro-indicators/release-calendar", "last_verified": "2026-07-30" },
+
+    { "event_key": "ea_gdp_flash", "date": "2026-07-30", "schedule_url": "https://ec.europa.eu/eurostat/documents/24987/6642470/QNA_release_calendar.pdf", "last_verified": "2026-07-30" },
+    { "event_key": "ea_gdp_flash", "date": "2026-10-30", "schedule_url": "https://ec.europa.eu/eurostat/documents/24987/6642470/QNA_release_calendar.pdf", "last_verified": "2026-07-30" }
   ]
 }

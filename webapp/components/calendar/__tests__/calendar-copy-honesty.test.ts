@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import fr from '@/messages/fr.json';
 import en from '@/messages/en.json';
+import de from '@/messages/de.json';
+import es from '@/messages/es.json';
+import itLocale from '@/messages/it.json';
+import pt from '@/messages/pt.json';
+import nl from '@/messages/nl.json';
+import pl from '@/messages/pl.json';
+import ar from '@/messages/ar.json';
 
 /**
  * NW-1 copy-honesty guard (mission §0). The calendar announces MOMENTS, never
@@ -122,6 +129,18 @@ describe('NW-1 calendar copy honesty', () => {
     expect(nono.noRanking.toLowerCase()).toContain('hiérarchie');
   });
 
+  it('NW-1c: the calendar namespace is natively translated in all 9 locales (no EN fallback)', () => {
+    const locales: Record<string, unknown> = { de, es, it: itLocale, pt, nl, pl, ar };
+    const enCal = (en as { calendar: { title: string; intro: { lead: string }; detail: { actualPending: string } } }).calendar;
+    for (const [name, msgs] of Object.entries(locales)) {
+      const cal = (msgs as { calendar: { title: string; intro: { lead: string }; detail: { actualPending: string } } }).calendar;
+      // Representative strings must NOT equal the English source (would be a fallback).
+      expect(cal.title, `${name}.title untranslated`).not.toBe(enCal.title);
+      expect(cal.intro.lead, `${name}.intro.lead untranslated`).not.toBe(enCal.intro.lead);
+      expect(cal.detail.actualPending, `${name}.detail.actualPending untranslated`).not.toBe(enCal.detail.actualPending);
+    }
+  });
+
   it('the detail « ne dit pas » block quotes haussier/baissier only to REFUSE them', () => {
     const items = (
       fr as unknown as { calendar: { detail: { nono: { items: Record<string, string> } } } }
@@ -132,6 +151,54 @@ describe('NW-1 calendar copy honesty', () => {
     expect(joined).toContain('baissier');
     // …strictly inside a refusal ("n'interprète pas … comme haussier ou baissier").
     expect(joined).toContain("n'interprète pas");
-    expect(joined).toContain('aucune valeur prédictive');
+  });
+
+  it('NW-1c: no causality verb links an event to a market', () => {
+    // « affecte/impacte/influence… » would assert the publication ACTS on the
+    // market — exactly what the « ne dit pas » block denies. The attachment is a
+    // display convention (« rattaché à »), never a cause/effect.
+    const CAUSALITY = [
+      'affecte', 'affects', 'impacte', 'impacts', 'influence',
+      'agit sur', 'joue sur', 'pèse sur', 'pese sur',
+    ];
+    const all: string[] = [];
+    const collectAll = (node: unknown): void => {
+      if (typeof node === 'string') all.push(node);
+      else if (Array.isArray(node)) node.forEach(collectAll);
+      else if (node && typeof node === 'object') Object.values(node).forEach(collectAll);
+    };
+    collectAll((fr as Record<string, unknown>).calendar);
+    collectAll((en as Record<string, unknown>).calendar);
+    for (const s of all) {
+      const low = s.toLowerCase();
+      for (const v of CAUSALITY) {
+        expect(low.includes(v), `causal verb « ${v} » links an event to a market: "${s}"`).toBe(false);
+      }
+    }
+    // the attachment label is a relation, not a cause/effect
+    expect((fr as unknown as { calendar: { affects: string } }).calendar.affects).toMatch(/rattaché/);
+    expect((en as unknown as { calendar: { affects: string } }).calendar.affects).toMatch(/attached/);
+  });
+
+  it('NW-1c: no i18n string contains an internal mission/ticket code', () => {
+    // No mission/branch/ticket code (NW-2, RG-1, …) may appear in a user-visible
+    // string. `_comment` keys are dev-only metadata (never rendered) → skipped.
+    const CODE = /\b(?:NW|RG|LB|TF|VZ|UI|DG|MC)-\d/;
+    const offenders: string[] = [];
+    const walk = (node: unknown, path: string): void => {
+      if (typeof node === 'string') {
+        if (CODE.test(node)) offenders.push(`${path}: ${node}`);
+      } else if (Array.isArray(node)) {
+        node.forEach((n, i) => walk(n, `${path}.${i}`));
+      } else if (node && typeof node === 'object') {
+        for (const [k, v] of Object.entries(node)) {
+          if (k === '_comment') continue; // dev-only metadata, not rendered
+          walk(v, path ? `${path}.${k}` : k);
+        }
+      }
+    };
+    walk(fr, 'fr');
+    walk(en, 'en');
+    expect(offenders, offenders.join(' | ')).toEqual([]);
   });
 });

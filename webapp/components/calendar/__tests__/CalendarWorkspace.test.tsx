@@ -29,6 +29,8 @@ function ev(
     previous: null,
     revised: false,
     revised_at: null,
+    actual_state: 'pending',
+    refreshed_at: null,
     ...p,
   };
 }
@@ -55,7 +57,7 @@ const DATA: CalendarResponse = {
   events: [
     ev({ event_id: 'bls:us_cpi:2026-07-28', source: 'bls', event: 'IPC', currency: 'USD', scheduled_at: '2026-07-28T12:30:00Z', organism: 'Bureau of Labor Statistics', periodicity: 'monthly' }),
     ev({ event_id: 'ecb:ea_ecb_rate:2026-07-28', source: 'ecb', event: 'Décision BCE', currency: 'EUR', scheduled_at: '2026-07-28T12:15:00Z', markets: ['EURUSD'], organism: 'Banque centrale européenne', periodicity: 'eight_per_year' }),
-    ev({ event_id: 'census:us_retail:2026-07-29', source: 'census', event: 'Ventes au détail', scheduled_at: '2026-07-29T12:30:00Z', organism: 'U.S. Census Bureau', periodicity: 'monthly', revised: true, actual: 322.9, actual_initial: 321.5, revised_at: '2026-07-27T12:30:00Z' }),
+    ev({ event_id: 'census:us_retail:2026-07-29', source: 'census', event: 'Ventes au détail', scheduled_at: '2026-07-29T12:30:00Z', organism: 'U.S. Census Bureau', periodicity: 'monthly', revised: true, actual: 322.9, actual_initial: 321.5, revised_at: '2026-07-27T12:30:00Z', actual_state: 'published' }),
     ev({ event_id: 'bls:us_retail:2026-07-27', source: 'bls', event: 'IPP', scheduled_at: '2026-07-27T12:30:00Z', organism: 'Bureau of Labor Statistics' }),
   ],
 };
@@ -83,11 +85,12 @@ describe('NW-1b CalendarWorkspace list', () => {
     expect(evNames(container)).toEqual(['Décision BCE', 'IPC', 'Ventes au détail']);
   });
 
-  it('the amplitude slot shows the « mesures à venir » placeholder (NW-2 fills it)', () => {
+  it('renders NO amplitude slot while no measure exists (no future-content promise)', () => {
     const { container } = renderCal();
-    const vals = Array.from(container.querySelectorAll('.cal-ampl .v')).map((e) => e.textContent);
-    expect(vals.length).toBe(3);
-    for (const v of vals) expect(v).toBe(fr.calendar.amplitude.pending);
+    // no data, no element: the amplitude column is absent, and no « mesures à
+    // venir »-style promise appears anywhere in the list.
+    expect(container.querySelectorAll('.cal-ampl')).toHaveLength(0);
+    expect((container.textContent ?? '').toLowerCase()).not.toContain('à venir');
   });
 
   it('exposes NO impact ranking on any surface — no colour-graded badge', () => {
@@ -183,10 +186,11 @@ describe('NW-1b CalendarWorkspace list', () => {
     expect(links).toContain('https://www.bls.gov/opub/copyright-information.htm');
   });
 
-  it('the attached markets are named (affecte Or, EUR/USD)', () => {
+  it('the attached markets are named as a relation, not a cause (rattaché à Or, EUR/USD)', () => {
     const { container } = renderCal();
     const cpi = rows(container).find((r) => (r.textContent ?? '').includes('IPC'));
-    expect(cpi?.textContent).toContain('affecte Or, EUR/USD');
+    expect(cpi?.textContent).toContain('rattaché à Or, EUR/USD');
+    expect(cpi?.textContent).not.toContain('affecte');
   });
 
   it('each row exposes an « En savoir plus » link to that event detail page', () => {
@@ -208,6 +212,48 @@ describe('NW-1b CalendarWorkspace list', () => {
     expect(container.querySelector('.cal-unconf')?.textContent).toBe(
       fr.calendar.timeUnconfirmed,
     );
+  });
+
+  it('the list shows the published value and distinguishes unfetched vs unavailable', () => {
+    const past = '2026-07-27T12:30:00Z'; // before NOW
+    const data: CalendarResponse = {
+      ...DATA,
+      attribution: [
+        ...ATTRIBUTION,
+        { source: 'federal_reserve', organism: 'Federal Reserve Board', license_label: 'Domaine public', policy_url: 'https://x' },
+      ],
+      events: [
+        ev({ event_id: 'bls:pub:1', source: 'bls', event: 'Pub', scheduled_at: past, organism: 'Bureau of Labor Statistics', actual: 3.2, actual_state: 'published' }),
+        ev({ event_id: 'bls:unf:1', source: 'bls', event: 'Unf', scheduled_at: past, organism: 'Bureau of Labor Statistics', actual_state: 'unfetched', refreshed_at: past }),
+        ev({ event_id: 'fed:una:1', source: 'federal_reserve', event: 'Fomc', scheduled_at: past, organism: 'Federal Reserve Board', actual_state: 'unavailable', series_code: null }),
+      ],
+    };
+    const { container } = render(<CalendarWorkspace locale="fr" data={data} now={NOW} />);
+    fireEvent.click(container.querySelector('.cal-past')!); // show past releases
+    const text = container.textContent ?? '';
+    expect(Array.from(container.querySelectorAll('.cal-val .v')).map((e) => e.textContent)).toContain('3.2');
+    expect(text).toContain('non récupérée');   // unfetched
+    expect(text).toContain('non disponible');  // unavailable
+  });
+
+  it('shows per-organism freshness and flags a stale source', () => {
+    const data: CalendarResponse = {
+      ...DATA,
+      coverage: {
+        ...DATA.coverage,
+        last_success: {
+          bls: '2026-07-28T00:00:00Z',
+          census: '2026-07-20T00:00:00Z',
+          ecb: '2026-07-28T00:00:00Z',
+        },
+        stale_sources: ['census'],
+      },
+    };
+    const { container } = render(<CalendarWorkspace locale="fr" data={data} now={NOW} />);
+    const attrib = container.querySelector('.cal-attrib');
+    expect(attrib?.textContent).toContain('rafraîchi le'); // fresh sources dated
+    const stale = container.querySelector('.cal-attrib .fresh.stale');
+    expect(stale?.textContent).toContain('non rafraîchi depuis'); // retrieval delay is not silent
   });
 
   it('renders no raw i18n keys', () => {
