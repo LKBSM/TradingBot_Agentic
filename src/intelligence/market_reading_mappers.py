@@ -234,9 +234,15 @@ def realized_levels(enriched: Any, idx: int = -1) -> dict[str, float]:
 # and via the MAX_ZONES_PER_TYPE env var (resolved in collect_zones).
 MAX_ZONES_PER_TYPE = 12
 
-# Default cap per structure-event type (BOS / CHOCH). Keeps the recent break
-# history readable; overridable via the MAX_STRUCTURE_EVENTS env var.
-MAX_STRUCTURE_EVENTS = 8
+# Payload guardrail per structure-event type (BOS / CHOCH) — NOT a display top-N.
+# The live surface shows EVERY break the analysis window holds (MT-D1 fix: the old
+# top-8 silently hid real events — 14 BOS detected in a 500-bar H1 window surfaced
+# as 8). A 500-bar window cannot realistically hold this many single-type breaks,
+# so this only guards a pathological payload; it never truncates a normal reading.
+# The window bound (MARKET_READING_LOOKBACK) is what scopes the journal, and the
+# front now LABELS it ("N événements · fenêtre X bougies ≈ Y"). Overridable via the
+# MAX_STRUCTURE_EVENTS env var.
+MAX_STRUCTURE_EVENTS = 250
 
 # Default cap on external liquidity pools surfaced per read. Keeps the surface
 # readable; overridable per call and via the MAX_LIQUIDITY_POOLS env var.

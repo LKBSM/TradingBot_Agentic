@@ -86,6 +86,11 @@ class MarketReadingHeader(BaseModel):
     timeframe: str
     candle_close_ts: datetime
     close_price: float
+    # Number of bars actually analysed for this reading — the per-timeframe live
+    # window (MT-D1). Optional so older payloads / fixtures without it still
+    # validate; the front labels « fenêtre de N bougies » from it, falling back to
+    # the legacy 500 constant when absent.
+    analysis_window_bars: Optional[int] = None
 
 
 # ---------------------------------------------------------------------------

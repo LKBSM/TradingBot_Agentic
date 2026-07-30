@@ -783,9 +783,12 @@ function renderData(k: string, c: DataCtx): React.ReactNode {
         </>
       );
     case 'trend': {
-      // DG-1 point 5 — name the window: a FIXED bar count whose calendar span
-      // depends on the viewed unit (≈ 3 semaines en H1, ≈ 2 ans en D1).
-      const span = trendWindowSpan(tf);
+      // DG-1 point 5 — name the window: a bar count whose calendar span depends
+      // on the viewed unit. MT-D1 — the window is now sized PER UNIT (fast units
+      // wider), so read the REAL analysed-bar count from the header rather than a
+      // fixed 500 constant; fall back to it only for older payloads.
+      const windowBars = c.header.analysis_window_bars ?? TREND_WINDOW_BARS;
+      const span = trendWindowSpan(tf, windowBars);
       const spanText = span ? t(`data.windowSpan_${span.unit}`, { count: span.count }) : '';
       return (
         <>
@@ -795,7 +798,7 @@ function renderData(k: string, c: DataCtx): React.ReactNode {
             <EvRow k={t('data.measuredOnRow')} v={tf} />
             <EvRow
               k={t('data.windowRow')}
-              v={t('data.windowValue', { bars: TREND_WINDOW_BARS, span: spanText })}
+              v={t('data.windowValue', { bars: windowBars, span: spanText })}
             />
           </div>
           <Dp>{t('data.trendNote', { tf })}</Dp>
@@ -919,7 +922,7 @@ function renderData(k: string, c: DataCtx): React.ReactNode {
             <>
               <Dh4 mt>{t('data.eventsSince')}</Dh4>
               <div className="ev">
-                {since.slice(0, 6).map(({ kind, e }, i) => {
+                {since.map(({ kind, e }, i) => {
                   const kLabel = `${kind.toUpperCase()} ${e.direction === 'bullish' ? '↑' : '↓'}`;
                   return (
                     <EvRow
@@ -960,8 +963,24 @@ function renderData(k: string, c: DataCtx): React.ReactNode {
           {journal.length > 0 && (
             <>
               <Dh4 mt>{t('data.journal', { tf })}</Dh4>
+              {(() => {
+                // MT-D1 fix: the journal shows EVERY break in the analysis window
+                // (no more silent slice(0,6)) and LABELS the window so the count is
+                // never mistaken for « all history ». Window size + span are the
+                // REAL per-unit analysed bars from the header (fallback 500).
+                const windowBars = c.header.analysis_window_bars ?? TREND_WINDOW_BARS;
+                const span = trendWindowSpan(tf, windowBars);
+                const spanText = span ? t(`data.windowSpan_${span.unit}`, { count: span.count }) : '';
+                return (
+                  <Dp>{t('data.journalCount', {
+                    count: journal.length,
+                    bars: windowBars,
+                    span: spanText,
+                  })}</Dp>
+                );
+              })()}
               <div className="ev">
-                {journal.slice(0, 6).map(({ kind, e }, i) => {
+                {journal.map(({ kind, e }, i) => {
                   const kLabel = `${kind} ${e.direction === 'bullish' ? '↑' : '↓'}`;
                   return (
                     <EvRow

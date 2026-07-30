@@ -88,6 +88,12 @@ export interface MarketReadingHeader {
   /** ISO-8601 timestamp of the candle close this reading describes. */
   candle_close_ts: string;
   close_price: number;
+  /**
+   * Number of bars actually analysed for this reading — the per-timeframe live
+   * window (MT-D1). Optional: older payloads omit it, and the UI then falls back
+   * to the legacy `TREND_WINDOW_BARS` (500) constant.
+   */
+  analysis_window_bars?: number | null;
 }
 
 // ─── Structure (Smart Money Concepts) ────────────────────────────────────────
