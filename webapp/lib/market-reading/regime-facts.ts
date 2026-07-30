@@ -44,8 +44,11 @@ export function formatBreakTimestamp(iso: string, timeZone?: string): string | n
 // ─── Trend window span (DG-1 point 5) ────────────────────────────────────────
 
 /**
- * The trend is measured over a FIXED bar count (the backend `DEFAULT_LOOKBACK`).
- * Kept in sync with `MarketReadingAssembler.DEFAULT_LOOKBACK`.
+ * Legacy FALLBACK window size, used only when a payload carries no
+ * `header.analysis_window_bars`. The live window is now sized PER TIMEFRAME on the
+ * backend (MT-D1, `lookback_config.analysis_window_bars`), so callers should
+ * prefer `header.analysis_window_bars` and fall back to this constant. Kept in
+ * sync with `MarketReadingAssembler.DEFAULT_LOOKBACK`.
  */
 export const TREND_WINDOW_BARS = 500;
 

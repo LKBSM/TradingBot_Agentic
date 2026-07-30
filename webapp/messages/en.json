@@ -89,6 +89,7 @@
       "typeRow": "Type",
       "crossedExtreme": "Extreme crossed",
       "journal": "Event journal · {tf}",
+      "journalCount": "{count, plural, one {# event} other {# events}} over the analysed window ({bars} candles, ≈ {span})",
       "seeOnChart": "Show these events on the chart",
       "densHead": "Zone inventory · {tf}",
       "obActive": "Order Blocks — active",

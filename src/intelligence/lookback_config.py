@@ -242,3 +242,38 @@ def depth_for(instrument: str, timeframe: str) -> LookbackDepth:
 def target_bars(instrument: str, timeframe: str) -> int:
     """Candle count to hold in storage for this combo, from its configured DURATION."""
     return depth_for(instrument, timeframe).target_bars
+
+
+# --------------------------------------------------------------------------- #
+# Live analysis window (detection + trend tile + event journal), PER TIMEFRAME
+# --------------------------------------------------------------------------- #
+# Distinct from STORAGE depth (above) and from the deep detector window. The live
+# reading used to analyse a FIXED 500-bar window on every unit — which spans ~5
+# days on M15 but ~2 years on D1 (MT-D1 audit §D). Sizing it by a target CALENDAR
+# span instead gives the fast units a comparable recent horizon (so M15 stops
+# showing a 5-day keyhole) while the slow units keep their current depth via the
+# floor. It stays ONE provider request (bounded < 5000) so the quota is unchanged
+# — Twelve Data bills per request, not per bar. Overridable via env.
+_ANALYSIS_TARGET_DAYS = 30.0       # ~1 month of recent context, all units
+_ANALYSIS_MIN_BARS = 500           # floor: enough swings + unchanged slow-unit depth
+_ANALYSIS_MAX_BARS = 3000          # ceiling: 1 request (< 5000) + bounded detection cost
+_ANALYSIS_WINDOW_DAYS_ENV = "MARKET_READING_WINDOW_DAYS"
+
+
+def analysis_window_bars(timeframe: str) -> int:
+    """Bars of live context to analyse for a reading on ``timeframe``.
+
+    A target calendar span (``MARKET_READING_WINDOW_DAYS`` days, default 30)
+    converted to bars at continuous density, clamped to [500, 3000]. Fast units
+    widen (M15 ≈ 2880 ≈ 1 month), slow units stay floored at 500 (D1 500 ≈ 2 y,
+    unchanged). Raises on an unknown timeframe — a config bug we want surfaced.
+    """
+    tf_min = _TF_MINUTES.get(timeframe.upper())
+    if not tf_min:
+        raise ValueError(f"Unknown timeframe {timeframe!r}")
+    try:
+        days = float(os.environ.get(_ANALYSIS_WINDOW_DAYS_ENV, _ANALYSIS_TARGET_DAYS))
+    except (TypeError, ValueError):
+        days = _ANALYSIS_TARGET_DAYS
+    bars = math.ceil(days * _MINUTES_PER_CALENDAR_DAY / tf_min)
+    return max(_ANALYSIS_MIN_BARS, min(_ANALYSIS_MAX_BARS, bars))

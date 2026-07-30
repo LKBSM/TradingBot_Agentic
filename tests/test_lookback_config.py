@@ -156,3 +156,35 @@ def test_empty_default_raises(monkeypatch, tmp_path):
     lb.reset_cache()
     with pytest.raises(ValueError):
         lb.depth_for("XAUUSD", "H1")
+
+
+# --------------------------------------------------------------------------- #
+# MT-D1 — per-timeframe LIVE analysis window (detection + trend + journal)
+# --------------------------------------------------------------------------- #
+def test_analysis_window_widens_fast_units_floors_slow(_default_env):
+    # Fast units get a wider recent horizon than the legacy fixed 500; slow units
+    # stay floored at 500 (their 500-bar span is already deep — D1 ≈ 2 y).
+    assert lb.analysis_window_bars("M15") > 500          # ~1 month, was ~5 days
+    assert lb.analysis_window_bars("H1") > 500
+    assert lb.analysis_window_bars("H4") == 500          # floor
+    assert lb.analysis_window_bars("D1") == 500          # floor
+    assert lb.analysis_window_bars("W1") == 500          # floor
+
+
+def test_analysis_window_bounded_to_single_request(_default_env):
+    # Never exceed the ceiling (bounded detection cost + one provider request).
+    for tf in ("M5", "M15", "H1", "H4", "D1", "W1"):
+        assert 500 <= lb.analysis_window_bars(tf) <= 3000
+
+
+def test_analysis_window_env_override(monkeypatch):
+    # A larger target span widens fast units further; slow units still floor.
+    monkeypatch.setenv("MARKET_READING_WINDOW_DAYS", "60")
+    assert lb.analysis_window_bars("M15") > lb.analysis_window_bars("H1")
+    assert lb.analysis_window_bars("D1") == 500
+    monkeypatch.delenv("MARKET_READING_WINDOW_DAYS", raising=False)
+
+
+def test_analysis_window_unknown_tf_raises(_default_env):
+    with pytest.raises(ValueError):
+        lb.analysis_window_bars("ZZ9")

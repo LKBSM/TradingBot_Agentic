@@ -7,7 +7,11 @@ import { useReadingFormatters } from '@/lib/market-reading/use-reading-formatter
 import { useMtfTrends } from '@/lib/market-reading/hooks';
 import { mtfOrderFor } from '@/lib/market-reading/mtf-trend';
 import { isSessionRelevant, isPrevLevelsRelevant } from '@/lib/timeframes';
-import { deriveTrendMaturity } from '@/lib/market-reading/regime-facts';
+import {
+  deriveTrendMaturity,
+  trendWindowSpan,
+  TREND_WINDOW_BARS,
+} from '@/lib/market-reading/regime-facts';
 import { formatLocalDayLong, parseUtc } from '@/lib/time/localTime';
 import {
   structureRange,
@@ -812,7 +816,9 @@ function renderData(k: string, c: DataCtx): React.ReactNode {
     case 'trend': {
       // TR-1: the trend is STRUCTURAL — the direction of the last non-contradicted
       // BOS/CHOCH — not a close-delta over a fixed window. Name the anchoring
-      // event so the client can trace WHY it reads as it does.
+      // event so the client can trace WHY it reads as it does. (The MT-D1
+      // per-unit analysis window no longer describes the trend — it bounds the
+      // event journal, surfaced on the Structure card, not here.)
       const ref = c.regime.trend_reference ?? null;
       return (
         <>
@@ -953,7 +959,7 @@ function renderData(k: string, c: DataCtx): React.ReactNode {
             <>
               <Dh4 mt>{t('data.eventsSince')}</Dh4>
               <div className="ev">
-                {since.slice(0, 6).map(({ kind, e }, i) => {
+                {since.map(({ kind, e }, i) => {
                   const kLabel = `${kind.toUpperCase()} ${e.direction === 'bullish' ? '↑' : '↓'}`;
                   return (
                     <EvRow
@@ -994,8 +1000,24 @@ function renderData(k: string, c: DataCtx): React.ReactNode {
           {journal.length > 0 && (
             <>
               <Dh4 mt>{t('data.journal', { tf })}</Dh4>
+              {(() => {
+                // MT-D1 fix: the journal shows EVERY break in the analysis window
+                // (no more silent slice(0,6)) and LABELS the window so the count is
+                // never mistaken for « all history ». Window size + span are the
+                // REAL per-unit analysed bars from the header (fallback 500).
+                const windowBars = c.header.analysis_window_bars ?? TREND_WINDOW_BARS;
+                const span = trendWindowSpan(tf, windowBars);
+                const spanText = span ? t(`data.windowSpan_${span.unit}`, { count: span.count }) : '';
+                return (
+                  <Dp>{t('data.journalCount', {
+                    count: journal.length,
+                    bars: windowBars,
+                    span: spanText,
+                  })}</Dp>
+                );
+              })()}
               <div className="ev">
-                {journal.slice(0, 6).map(({ kind, e }, i) => {
+                {journal.map(({ kind, e }, i) => {
                   const kLabel = `${kind} ${e.direction === 'bullish' ? '↑' : '↓'}`;
                   return (
                     <EvRow
