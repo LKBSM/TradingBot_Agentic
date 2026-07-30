@@ -72,9 +72,10 @@ def test_scheduled_times_are_dst_correct() -> None:
 
 
 def test_uncovered_events_are_absent_not_fabricated() -> None:
-    # The three Eurostat euro events have no reliably-verified dates yet (calendar
-    # served in JS), so they must NOT appear — an honest gap, never a fabricated
-    # date. They are populated by the live .ics feed or a later verification.
+    # Only euro-area unemployment lacks a reliably-verified date (Eurostat calendar
+    # served in JS), so it must NOT appear — an honest gap, never a fabricated date.
+    # HICP flash and GDP flash are now populated from official Eurostat pages.
     keys = {e.provider_ref.split(":")[0] for e in OfficialCalendarProvider().fetch().events}
-    for absent in ("ea_hicp_flash", "ea_gdp_flash", "ea_unemployment"):
-        assert absent not in keys
+    assert "ea_unemployment" not in keys
+    assert "ea_hicp_flash" in keys      # populated from the euro-indicators calendar
+    assert "ea_gdp_flash" in keys       # populated from the QNA release calendar

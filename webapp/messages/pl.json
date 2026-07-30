@@ -1790,121 +1790,121 @@
   },
   "calendar": {
     "meta": {
-      "title": "Scheduled news — Volatility calendar | MIA Markets",
-      "description": "The calendar of official economic releases whose time is known in advance. MIA announces moments, never directions."
+      "title": "Zaplanowane publikacje — Kalendarz zmienności | MIA Markets",
+      "description": "Kalendarz oficjalnych publikacji gospodarczych, których godzina jest znana z wyprzedzeniem. MIA zapowiada momenty, nigdy kierunki."
     },
-    "title": "Scheduled news",
-    "badge": "Volatility calendar",
+    "title": "Zaplanowane publikacje",
+    "badge": "Kalendarz zmienności",
     "intro": {
-      "lead": "This calendar announces moments, not directions.",
-      "rest": "It lists the economic releases whose time is known in advance and that, in the past, coincided with a rise in activity on your markets. MIA does not say what the price will do — it measures what happened the previous times."
+      "lead": "Ten kalendarz zapowiada momenty, nie kierunki.",
+      "rest": "Wymienia publikacje gospodarcze, których godzina jest znana z wyprzedzeniem i które w przeszłości zbiegały się ze wzrostem aktywności na twoich rynkach. MIA nie mówi, co zrobi cena — mierzy, co działo się poprzednimi razy."
     },
     "filters": {
-      "organismLabel": "Organism",
-      "marketLabel": "Market",
-      "periodicityLabel": "Periodicity",
-      "reset": "Select all",
-      "past": "Past releases"
+      "organismLabel": "Instytucja",
+      "marketLabel": "Rynek",
+      "periodicityLabel": "Częstotliwość",
+      "reset": "Zaznacz wszystko",
+      "past": "Minione publikacje"
     },
     "organism": {
       "bls": "BLS",
       "bea": "BEA",
       "census": "Census",
-      "federal_reserve": "Federal Reserve",
+      "federal_reserve": "Rezerwa Federalna",
       "eurostat": "Eurostat",
-      "ecb": "ECB",
+      "ecb": "EBC",
       "forexfactory": "ForexFactory"
     },
     "periodicity": {
-      "monthly": "Monthly",
-      "quarterly": "Quarterly",
-      "eight_per_year": "8 times a year"
+      "monthly": "Miesięcznie",
+      "quarterly": "Kwartalnie",
+      "eight_per_year": "8 razy w roku"
     },
     "market": {
-      "XAUUSD": "Gold",
+      "XAUUSD": "Złoto",
       "EURUSD": "EUR/USD"
     },
     "day": {
-      "today": "Today",
-      "tomorrow": "Tomorrow",
-      "count": "{count, plural, one {# release} other {# releases}}"
+      "today": "Dziś",
+      "tomorrow": "Jutro",
+      "count": "{count, plural, one {# publikacja} few {# publikacje} many {# publikacji} other {# publikacji}}"
     },
     "countdown": {
-      "days": "in {days}d",
-      "hours": "in {hours}h {minutes}",
-      "minutes": "in {minutes} min",
-      "now": "now",
-      "agoDays": "{days}d ago",
-      "agoHours": "{hours}h {minutes} ago",
-      "agoMinutes": "{minutes} min ago"
+      "days": "za {days} dn",
+      "hours": "za {hours} godz {minutes}",
+      "minutes": "za {minutes} min",
+      "now": "teraz",
+      "agoDays": "{days} dn temu",
+      "agoHours": "{hours} godz {minutes} temu",
+      "agoMinutes": "{minutes} min temu"
     },
-    "affects": "attached to {markets}",
-    "localTime": "{time} your time ({offset})",
-    "timeUnconfirmed": "time not confirmed",
-    "revisedBadge": "revised value",
+    "affects": "powiązane z {markets}",
+    "localTime": "{time} twój czas ({offset})",
+    "timeUnconfirmed": "godzina niepotwierdzona",
+    "revisedBadge": "wartość skorygowana",
     "provenance": {
-      "organism": "Organism: {organism}",
-      "organismMissing": "Organism: not provided by this source"
+      "organism": "Instytucja: {organism}",
+      "organismMissing": "Instytucja: nie podana przez to źródło"
     },
     "attribution": {
-      "title": "Sources and reuse",
-      "intro": "Each release comes from the official organism that issues it. Reuse follows each source's policy:",
-      "policyLink": "reuse policy",
-      "stale": "not refreshed since {date}",
-      "refreshed": "refreshed on {date}"
+      "title": "Źródła i ponowne wykorzystanie",
+      "intro": "Każda publikacja pochodzi od oficjalnej instytucji, która ją wydaje. Ponowne wykorzystanie zgodnie z polityką każdego źródła:",
+      "policyLink": "polityka ponownego wykorzystania",
+      "stale": "nieodświeżone od {date}",
+      "refreshed": "odświeżono {date}"
     },
     "coverage": {
-      "partial": "The calendar is populated through {date}. Beyond that, the period is not yet covered."
+      "partial": "Kalendarz jest wypełniony do {date}. Poza tym okres nie jest jeszcze objęty."
     },
     "nono": {
-      "title": "What this calendar does not say",
-      "body": "This calendar says neither the direction nor what will happen this time. A release may cause nothing, and a quiet market may move with no release at all.",
-      "noForecast": "No analyst forecast is shown: no public organism publishes one, and MIA does not fabricate one.",
-      "noRanking": "No hierarchy is assigned to the releases: MIA does not rank them against one another."
+      "title": "Czego ten kalendarz nie mówi",
+      "body": "Ten kalendarz nie podaje ani kierunku, ani tego, co stanie się tym razem. Publikacja może nic nie wywołać, a spokojny rynek może się poruszyć bez żadnej publikacji.",
+      "noForecast": "Nie pokazujemy żadnej prognozy analityków: żadna publiczna instytucja jej nie publikuje, a MIA jej nie tworzy.",
+      "noRanking": "Publikacjom nie przypisuje się żadnej hierarchii: MIA nie porządkuje ich względem siebie."
     },
     "empty": {
-      "noSelection": "No filter selected: check at least one organism, one market and one periodicity to show releases.",
-      "noEvents": "No scheduled release in this period for your markets.",
-      "noSource": "No release yet: the official sources have not populated any date. Releases will appear here once the official schedules are loaded."
+      "noSelection": "Nie wybrano żadnego filtra: zaznacz co najmniej jedną instytucję, jeden rynek i jedną częstotliwość, aby wyświetlić publikacje.",
+      "noEvents": "Brak zaplanowanej publikacji w tym okresie dla twoich rynków.",
+      "noSource": "Na razie brak publikacji: oficjalne źródła nie wypełniły jeszcze żadnej daty. Publikacje pojawią się tutaj po wczytaniu oficjalnych kalendarzy."
     },
-    "loading": "Loading the calendar…",
-    "error": "The calendar is momentarily unavailable.",
+    "loading": "Wczytywanie kalendarza…",
+    "error": "Kalendarz jest chwilowo niedostępny.",
     "preview": {
-      "title": "Next releases",
-      "seeAll": "See all",
-      "empty": "No upcoming release in this period."
+      "title": "Następne publikacje",
+      "seeAll": "Zobacz wszystko",
+      "empty": "Brak nadchodzącej publikacji w tym okresie."
     },
-    "seeMore": "Learn more",
+    "seeMore": "Dowiedz się więcej",
     "detail": {
-      "back": "Back to the calendar",
-      "countdownLabel": "Release in",
-      "publishedFiguresTitle": "Published figures",
-      "publishedFiguresBadge": "Indicator value",
-      "publishedFiguresNote": "These figures are the value of the indicator itself, in the unit of the organism that publishes it — not price moves. They are shown as published, without conversion or re-rounding.",
-      "actualLabel": "Published value",
-      "actualPending": "not yet published",
-      "previousLabel": "Previous release",
-      "revisedFromTo": "Initial value {initial}, revised on {date} — current value {current}.",
-      "notRevised": "This figure has not been revised since its first publication.",
-      "unitMissing": "unit not provided by this source",
-      "measuresTitle": "What the engine measured at previous releases",
-      "measuresBadge": "Price move",
-      "notFoundTitle": "Release not found",
-      "notFound": "This release is not in the calendar's current window.",
+      "back": "Powrót do kalendarza",
+      "countdownLabel": "Publikacja za",
+      "publishedFiguresTitle": "Opublikowane dane",
+      "publishedFiguresBadge": "Wartość wskaźnika",
+      "publishedFiguresNote": "Te liczby to wartość samego wskaźnika, w jednostce instytucji, która go publikuje — nie ruchy ceny. Są pokazane tak jak opublikowano, bez przeliczania ani zaokrąglania.",
+      "actualLabel": "Opublikowana wartość",
+      "actualPending": "jeszcze nieopublikowane",
+      "previousLabel": "Poprzednia publikacja",
+      "revisedFromTo": "Wartość początkowa {initial}, skorygowana {date} — wartość bieżąca {current}.",
+      "notRevised": "Ta liczba nie została skorygowana od pierwszej publikacji.",
+      "unitMissing": "jednostka nie podana przez to źródło",
+      "measuresTitle": "Co silnik zmierzył przy poprzednich publikacjach",
+      "measuresBadge": "Ruch ceny",
+      "notFoundTitle": "Nie znaleziono publikacji",
+      "notFound": "Ta publikacja nie znajduje się w bieżącym oknie kalendarza.",
       "nono": {
-        "title": "What this page does not say",
+        "title": "Czego ta strona nie mówi",
         "items": {
-          "0": "It does not predict the value that will be published, nor the market's reaction.",
-          "1": "It does not read a gap between the published value and the previous one as bullish or bearish.",
-          "2": "It recommends neither acting, nor abstaining, nor closing anything."
+          "0": "Nie przewiduje ani wartości, która zostanie opublikowana, ani reakcji rynku.",
+          "1": "Nie interpretuje różnicy między wartością opublikowaną a poprzednią jako wzrostowej lub spadkowej.",
+          "2": "Nie zaleca ani działania, ani wstrzymania się, ani zamknięcia czegokolwiek."
         }
       },
-      "actualUnfetched": "value not retrieved — last attempt on {date}",
-      "actualUnavailable": "not available — {organism} publishes no single figure for this release"
+      "actualUnfetched": "wartość nieuzyskana — ostatnia próba {date}",
+      "actualUnavailable": "brak pojedynczej liczby — {organism} publikuje decyzję (przedział stóp), a nie szereg danych"
     },
     "list": {
-      "unfetched": "not retrieved",
-      "unavailable": "not available"
+      "unfetched": "nieuzyskane",
+      "unavailable": "niedostępne"
     }
   }
 }

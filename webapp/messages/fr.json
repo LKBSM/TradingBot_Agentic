@@ -1906,7 +1906,7 @@
         }
       },
       "actualUnfetched": "valeur non récupérée — dernier essai le {date}",
-      "actualUnavailable": "non disponible — {organism} ne publie pas de valeur chiffrée unique pour cette parution"
+      "actualUnavailable": "sans valeur chiffrée unique — {organism} publie une décision (fourchette de taux), pas une série de données"
     },
     "list": {
       "unfetched": "non récupérée",

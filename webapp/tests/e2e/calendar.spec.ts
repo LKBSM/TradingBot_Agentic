@@ -172,9 +172,9 @@ test('1280×800: detail states — pending, unfetched, unavailable are distinct'
   await gotoDetail(page, 'bls:us_nfp:past');
   await expect(page.locator('.cald-figs')).toContainText('non récupérée');
   await expect(page.locator('.cald-figs')).not.toContainText('non encore publiée');
-  // unavailable (source publishes no single figure, organism named)
+  // unavailable (source publishes a decision/range, not a single figure; organism named)
   await gotoDetail(page, 'federal_reserve:us_fomc:past');
-  await expect(page.locator('.cald-figs')).toContainText('non disponible');
+  await expect(page.locator('.cald-figs')).toContainText('sans valeur chiffrée unique');
   await expect(page.locator('.cald-figs')).toContainText('Federal Reserve Board');
 });
 

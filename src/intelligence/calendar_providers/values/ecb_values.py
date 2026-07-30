@@ -15,7 +15,7 @@ import json
 import logging
 import urllib.error
 import urllib.request
-from typing import Optional
+from typing import List, Optional
 
 from src.intelligence.calendar_providers.values.base_value import ValueFetcher, ValuePoint
 
@@ -36,7 +36,11 @@ class ECBValueFetcher(ValueFetcher):
         flow, _, key = series_code.partition(".")
         if not flow or not key:
             return None
-        url = f"{_BASE}/{flow}/{key}?lastNObservations=2&format=jsondata"
+        # A policy rate is a STEP series (a value persists until it changes), so
+        # ask for a wider window and derive "previous" as the last DISTINCT prior
+        # value — not the mechanical second-to-last observation, which on a step
+        # series is almost always equal to the current one (NW-1c §4).
+        url = f"{_BASE}/{flow}/{key}?lastNObservations=250&format=jsondata"
         text = self._get(url)
         if not text:
             return None
@@ -44,8 +48,18 @@ class ECBValueFetcher(ValueFetcher):
         if not obs:
             return None
         actual = obs[-1]
-        previous = obs[-2] if len(obs) >= 2 else None
+        previous = _last_distinct_before(obs, actual)
         return ValuePoint(actual=actual, previous=previous)
+
+
+def _last_distinct_before(obs: List[float], actual: float) -> Optional[float]:
+    """The most recent value in ``obs`` (chronological) that differs from
+    ``actual`` — i.e. the prior level on a step series. ``None`` if the series
+    never changed within the window."""
+    for v in reversed(obs[:-1]):
+        if v != actual:
+            return v
+    return None
 
 
 def _http_get(url: str) -> str:

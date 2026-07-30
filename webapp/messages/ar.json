@@ -1790,121 +1790,121 @@
   },
   "calendar": {
     "meta": {
-      "title": "Scheduled news — Volatility calendar | MIA Markets",
-      "description": "The calendar of official economic releases whose time is known in advance. MIA announces moments, never directions."
+      "title": "إصدارات مجدولة — تقويم التقلّب | MIA Markets",
+      "description": "تقويم الإصدارات الاقتصادية الرسمية التي يُعرف موعدها مسبقًا. تعلن MIA عن لحظات، لا عن اتجاهات."
     },
-    "title": "Scheduled news",
-    "badge": "Volatility calendar",
+    "title": "إصدارات مجدولة",
+    "badge": "تقويم التقلّب",
     "intro": {
-      "lead": "This calendar announces moments, not directions.",
-      "rest": "It lists the economic releases whose time is known in advance and that, in the past, coincided with a rise in activity on your markets. MIA does not say what the price will do — it measures what happened the previous times."
+      "lead": "يعلن هذا التقويم عن لحظات، لا عن اتجاهات.",
+      "rest": "يسرد الإصدارات الاقتصادية التي يُعرف موعدها مسبقًا والتي تزامنت في الماضي مع ارتفاع النشاط في أسواقك. لا تقول MIA ما سيفعله السعر — بل تقيس ما حدث في المرّات السابقة."
     },
     "filters": {
-      "organismLabel": "Organism",
-      "marketLabel": "Market",
-      "periodicityLabel": "Periodicity",
-      "reset": "Select all",
-      "past": "Past releases"
+      "organismLabel": "الجهة",
+      "marketLabel": "السوق",
+      "periodicityLabel": "الدورية",
+      "reset": "تحديد الكل",
+      "past": "إصدارات سابقة"
     },
     "organism": {
       "bls": "BLS",
       "bea": "BEA",
       "census": "Census",
-      "federal_reserve": "Federal Reserve",
+      "federal_reserve": "الاحتياطي الفيدرالي",
       "eurostat": "Eurostat",
-      "ecb": "ECB",
+      "ecb": "البنك المركزي الأوروبي",
       "forexfactory": "ForexFactory"
     },
     "periodicity": {
-      "monthly": "Monthly",
-      "quarterly": "Quarterly",
-      "eight_per_year": "8 times a year"
+      "monthly": "شهري",
+      "quarterly": "ربع سنوي",
+      "eight_per_year": "8 مرّات في السنة"
     },
     "market": {
-      "XAUUSD": "Gold",
+      "XAUUSD": "الذهب",
       "EURUSD": "EUR/USD"
     },
     "day": {
-      "today": "Today",
-      "tomorrow": "Tomorrow",
-      "count": "{count, plural, one {# release} other {# releases}}"
+      "today": "اليوم",
+      "tomorrow": "غدًا",
+      "count": "{count, plural, zero {لا إصدارات} one {إصدار واحد} two {إصداران} few {# إصدارات} many {# إصدارًا} other {# إصدار}}"
     },
     "countdown": {
-      "days": "in {days}d",
-      "hours": "in {hours}h {minutes}",
-      "minutes": "in {minutes} min",
-      "now": "now",
-      "agoDays": "{days}d ago",
-      "agoHours": "{hours}h {minutes} ago",
-      "agoMinutes": "{minutes} min ago"
+      "days": "خلال {days} ي",
+      "hours": "خلال {hours} س {minutes}",
+      "minutes": "خلال {minutes} د",
+      "now": "الآن",
+      "agoDays": "قبل {days} ي",
+      "agoHours": "قبل {hours} س {minutes}",
+      "agoMinutes": "قبل {minutes} د"
     },
-    "affects": "attached to {markets}",
-    "localTime": "{time} your time ({offset})",
-    "timeUnconfirmed": "time not confirmed",
-    "revisedBadge": "revised value",
+    "affects": "مرتبط بـ {markets}",
+    "localTime": "{time} بتوقيتك ({offset})",
+    "timeUnconfirmed": "الموعد غير مؤكّد",
+    "revisedBadge": "قيمة منقّحة",
     "provenance": {
-      "organism": "Organism: {organism}",
-      "organismMissing": "Organism: not provided by this source"
+      "organism": "الجهة: {organism}",
+      "organismMissing": "الجهة: غير متوفّرة من هذا المصدر"
     },
     "attribution": {
-      "title": "Sources and reuse",
-      "intro": "Each release comes from the official organism that issues it. Reuse follows each source's policy:",
-      "policyLink": "reuse policy",
-      "stale": "not refreshed since {date}",
-      "refreshed": "refreshed on {date}"
+      "title": "المصادر وإعادة الاستخدام",
+      "intro": "يأتي كل إصدار من الجهة الرسمية التي تصدره. تخضع إعادة الاستخدام لسياسة كل مصدر:",
+      "policyLink": "سياسة إعادة الاستخدام",
+      "stale": "لم يُحدَّث منذ {date}",
+      "refreshed": "حُدِّث في {date}"
     },
     "coverage": {
-      "partial": "The calendar is populated through {date}. Beyond that, the period is not yet covered."
+      "partial": "التقويم مُعبّأ حتى {date}. بعد ذلك، الفترة غير مُغطّاة بعد."
     },
     "nono": {
-      "title": "What this calendar does not say",
-      "body": "This calendar says neither the direction nor what will happen this time. A release may cause nothing, and a quiet market may move with no release at all.",
-      "noForecast": "No analyst forecast is shown: no public organism publishes one, and MIA does not fabricate one.",
-      "noRanking": "No hierarchy is assigned to the releases: MIA does not rank them against one another."
+      "title": "ما لا يقوله هذا التقويم",
+      "body": "لا يذكر هذا التقويم الاتجاه ولا ما سيحدث هذه المرّة. قد لا يُحدث إصدار أي شيء، وقد يتحرّك سوق هادئ دون أي إصدار.",
+      "noForecast": "لا تُعرض أي توقّعات للمحلّلين: لا تنشرها أي جهة عامة، وMIA لا تختلقها.",
+      "noRanking": "لا تُسنَد أي مرتبة إلى الإصدارات: MIA لا تُصنّفها فيما بينها."
     },
     "empty": {
-      "noSelection": "No filter selected: check at least one organism, one market and one periodicity to show releases.",
-      "noEvents": "No scheduled release in this period for your markets.",
-      "noSource": "No release yet: the official sources have not populated any date. Releases will appear here once the official schedules are loaded."
+      "noSelection": "لم يُحدَّد أي مرشّح: اختر جهة وسوقًا ودورية واحدة على الأقل لعرض الإصدارات.",
+      "noEvents": "لا يوجد إصدار مجدول في هذه الفترة لأسواقك.",
+      "noSource": "لا إصدار حتى الآن: لم تُعبّئ المصادر الرسمية أي تاريخ بعد. ستظهر الإصدارات هنا بمجرّد تحميل التقويمات الرسمية."
     },
-    "loading": "Loading the calendar…",
-    "error": "The calendar is momentarily unavailable.",
+    "loading": "جارٍ تحميل التقويم…",
+    "error": "التقويم غير متاح مؤقّتًا.",
     "preview": {
-      "title": "Next releases",
-      "seeAll": "See all",
-      "empty": "No upcoming release in this period."
+      "title": "الإصدارات التالية",
+      "seeAll": "عرض الكل",
+      "empty": "لا إصدار قادم في هذه الفترة."
     },
-    "seeMore": "Learn more",
+    "seeMore": "معرفة المزيد",
     "detail": {
-      "back": "Back to the calendar",
-      "countdownLabel": "Release in",
-      "publishedFiguresTitle": "Published figures",
-      "publishedFiguresBadge": "Indicator value",
-      "publishedFiguresNote": "These figures are the value of the indicator itself, in the unit of the organism that publishes it — not price moves. They are shown as published, without conversion or re-rounding.",
-      "actualLabel": "Published value",
-      "actualPending": "not yet published",
-      "previousLabel": "Previous release",
-      "revisedFromTo": "Initial value {initial}, revised on {date} — current value {current}.",
-      "notRevised": "This figure has not been revised since its first publication.",
-      "unitMissing": "unit not provided by this source",
-      "measuresTitle": "What the engine measured at previous releases",
-      "measuresBadge": "Price move",
-      "notFoundTitle": "Release not found",
-      "notFound": "This release is not in the calendar's current window.",
+      "back": "العودة إلى التقويم",
+      "countdownLabel": "الإصدار خلال",
+      "publishedFiguresTitle": "الأرقام المنشورة",
+      "publishedFiguresBadge": "قيمة المؤشّر",
+      "publishedFiguresNote": "هذه الأرقام هي قيمة المؤشّر نفسه، بوحدة الجهة التي تنشره — لا تحرّكات سعرية. تُعرض كما نُشرت، دون تحويل أو إعادة تقريب.",
+      "actualLabel": "القيمة المنشورة",
+      "actualPending": "لم تُنشر بعد",
+      "previousLabel": "الإصدار السابق",
+      "revisedFromTo": "القيمة الأولية {initial}، نُقّحت في {date} — القيمة الحالية {current}.",
+      "notRevised": "لم تُنقَّح هذه القيمة منذ نشرها الأول.",
+      "unitMissing": "الوحدة غير متوفّرة من هذا المصدر",
+      "measuresTitle": "ما قاسه المحرّك في الإصدارات السابقة",
+      "measuresBadge": "تحرّك السعر",
+      "notFoundTitle": "الإصدار غير موجود",
+      "notFound": "هذا الإصدار ليس ضمن نافذة التقويم الحالية.",
       "nono": {
-        "title": "What this page does not say",
+        "title": "ما لا تقوله هذه الصفحة",
         "items": {
-          "0": "It does not predict the value that will be published, nor the market's reaction.",
-          "1": "It does not read a gap between the published value and the previous one as bullish or bearish.",
-          "2": "It recommends neither acting, nor abstaining, nor closing anything."
+          "0": "لا تتنبّأ بالقيمة التي ستُنشر ولا بردّ فعل السوق.",
+          "1": "لا تُفسّر فارقًا بين القيمة المنشورة والسابقة على أنه صعودي أو هبوطي.",
+          "2": "لا توصي بالتدخّل ولا بالامتناع ولا بإغلاق أي شيء."
         }
       },
-      "actualUnfetched": "value not retrieved — last attempt on {date}",
-      "actualUnavailable": "not available — {organism} publishes no single figure for this release"
+      "actualUnfetched": "لم تُسترجَع القيمة — آخر محاولة في {date}",
+      "actualUnavailable": "لا قيمة رقمية واحدة — تنشر {organism} قرارًا (نطاق فائدة)، لا سلسلة بيانات"
     },
     "list": {
-      "unfetched": "not retrieved",
-      "unavailable": "not available"
+      "unfetched": "لم تُسترجَع",
+      "unavailable": "غير متاح"
     }
   }
 }

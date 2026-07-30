@@ -72,10 +72,21 @@ def build_value_fetcher() -> Optional[MultiValueFetcher]:
     if os.environ.get(_ENV_VALUES_LIVE, "").strip().lower() not in ("1", "true", "yes"):
         return None
     from src.intelligence.calendar_providers.values.ecb_values import ECBValueFetcher
+    from src.intelligence.calendar_providers.values.eurostat_values import (
+        EurostatValueFetcher,
+    )
 
-    by_source: Dict[str, ValueFetcher] = {"ecb": ECBValueFetcher()}
-    # BEA / BLS / Census fetchers register here once their (free) API key envs are
-    # provided — kept absent by default so no half-configured call is made.
+    # No-key sources are always wired when live values are on.
+    by_source: Dict[str, ValueFetcher] = {
+        "ecb": ECBValueFetcher(),
+        "eurostat": EurostatValueFetcher(),
+    }
+    # Key-gated sources register ONLY when their free API key env is present, so
+    # no half-configured call is ever made; otherwise their events stay unfetched.
+    if os.environ.get("BLS_API_KEY"):
+        from src.intelligence.calendar_providers.values.bls_values import BLSValueFetcher
+
+        by_source["bls"] = BLSValueFetcher()
     return MultiValueFetcher(by_source)
 
 

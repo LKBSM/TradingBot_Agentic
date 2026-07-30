@@ -95,30 +95,49 @@ Un organisme injoignable conserve ses données (l'upsert ne supprime jamais).
 | fr + en complets, aucune clé manquante/en dur | ✅ (parité 9 locales, test « no raw key ») |
 | Rendu correct en 390 px | ✅ (e2e 390, overflow ≤ 1) |
 
-### Ce qui reste imparfait (franchement)
-1. **Valeurs live** : seul le fetcher **BCE** est implémenté+validé (sans clé).
-   BEA/BLS/Census (clés gratuites) + Eurostat restent des seams à écrire →
-   leurs événements passés afficheront `unfetched` jusque-là. (Sans effet visible
-   aujourd'hui : tout est `pending`.)
-2. **Dates Eurostat** (HICP/PIB/chômage) toujours absentes (calendrier JS) →
-   via feed `.ics` euro-indicators (URL à confirmer) ou vérification manuelle.
-3. **7 locales non-fr/en** : le namespace `calendar` est en **repli anglais**
-   (pas de traduction native de/es/it/pt/nl/pl/ar).
-4. **« previous » sur séries en escalier** (taux) = avant-dernière observation,
-   souvent égale à l'actuelle ; révisions US par snapshot (pas de vintages ALFRED,
-   écarté). 
-5. **FOMC `unavailable`** : la Fed publie une fourchette (numérique) ; on la
-   qualifie « pas de valeur chiffrée unique » — défendable mais nuancé.
-6. **Feed `.ics` BLS** : bloque le bot (403) → repli sur le planning curé (les
-   valeurs ne changent pas ; seules les dates viennent du curé pour BLS).
+### Section 4 corrigée (post-revue)
+
+Les six imperfections de la revue ont été traitées :
+
+1. **Valeurs live — élargi.** Fetchers implémentés : **BCE** (SDMX, sans clé,
+   validé), **Eurostat** (JSON-stat, sans clé, HICP + PIB validés en réseau —
+   `prc_hicp_manr`→2,0 ; `namq_10_gdp`→0,4), **BLS** (v2, clé gratuite, code réel
+   + fixture-testé, s'enregistre si `BLS_API_KEY`). Le chômage Eurostat renvoie
+   `None` proprement (combinaison de dimensions à affiner ; aucun impact : pas de
+   date programmée). Census/BEA restent des seams (sélection de programme/ligne)
+   — documentés, non « au jugé ».
+2. **Dates Eurostat — ajoutées.** `ea_hicp_flash` 31/07/2026 (page euro-indicators)
+   et `ea_gdp_flash` 30/07 + 30/10/2026 (QNA release calendar, extrait du PDF
+   officiel). Seul `ea_unemployment` reste sans date (non vérifiée) — laissé absent.
+3. **7 locales — traduites nativement.** `de/es/it/pt/nl/pl/ar` : namespace
+   `calendar` traduit (plus de repli anglais), ICU pluriels adaptés (pl few/many,
+   ar zero/one/two/few/many/other), acronymes localisés (EZB/BCE/EBC…). Test qui
+   échoue si une locale retombe sur l'anglais.
+4. **« previous » sur séries en escalier — corrigé.** L'ECB renvoie désormais la
+   **dernière valeur distincte** avant le niveau courant (validé : MRO 2,4 →
+   previous 2,15, plus l'avant-dernière observation égale).
+5. **FOMC — reformulé.** « sans valeur chiffrée unique — {organism} publie une
+   décision (fourchette de taux), pas une série de données » : précis (la Fed
+   publie bien une fourchette), sans laisser croire que « rien n'est publié ».
+6. **Feed `.ics` BLS (403 bot)** : hors de notre contrôle (BLS bloque les UA non
+   navigateur). Repli automatique sur le planning curé conservé — les dates BLS
+   restent correctes ; seul l'auto-refresh BLS est indisponible. Documenté.
+
+### Reste hors périmètre (assumé, sans impact client aujourd'hui)
+- Fetchers **BEA/Census** (sélection ligne/programme) non écrits — leurs
+  événements passés afficheront `unfetched` le moment venu. **Aujourd'hui toutes
+  les parutions sont futures → `pending`**, donc aucun `unfetched` visible.
+- Chômage zone euro : sans date + filtre de valeur à affiner.
+- Révisions US par snapshot-au-relâchement (pas de vintages ALFRED : ToS FRED).
 
 ---
 
 ## Vérifications
-- Back : 73 tests calendrier verts (providers, service, store, endpoint, schedule,
-  ics, **values** : 4 états, enrichisseur, révision, seuil 24 h, parseur ECB).
-- Front : 693 tests verts (dont calendrier : 3 états, liste, fraîcheur).
+- Back : **85 tests calendrier verts** (providers, service, store, endpoint,
+  schedule, ics, values, **value_fetchers** : Eurostat/BLS/ECB parse + wiring).
+- Front : suite complète verte (calendrier : 3 états, liste, fraîcheur, **9
+  locales traduites**).
 - Playwright 1280×800 + 390×844 : détail avec valeur, détail sans valeur
   (pending/unfetched/unavailable), détail avec révision, liste, filtres vides,
   **période sans événement**, fraîcheur.
-- tsc 0, build vert. i18n fr+en complets, parité 9 locales.
+- tsc 0, build vert. i18n **9 locales natives**, parité stricte.

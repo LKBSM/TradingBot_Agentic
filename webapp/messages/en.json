@@ -1906,7 +1906,7 @@
         }
       },
       "actualUnfetched": "value not retrieved — last attempt on {date}",
-      "actualUnavailable": "not available — {organism} publishes no single figure for this release"
+      "actualUnavailable": "no single figure — {organism} publishes a decision (a rate range), not a data series"
     },
     "list": {
       "unfetched": "not retrieved",

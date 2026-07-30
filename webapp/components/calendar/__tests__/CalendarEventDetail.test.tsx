@@ -115,11 +115,14 @@ describe('NW-1b CalendarEventDetail', () => {
     expect(utxt).toContain('non récupérée');
     expect(utxt).not.toContain(fr.calendar.detail.actualPending); // never confused with "not yet published"
 
-    // 3) UNAVAILABLE — source exposes no single figure, organism named
+    // 3) UNAVAILABLE — source publishes a decision (a range), not a single figure;
+    //    organism named. Distinct wording from unfetched, never a bare dash.
     const una = ev({ event_id: 'fed:f:1', source: 'federal_reserve', event: 'FOMC', organism: 'Federal Reserve Board', actual: null, actual_state: 'unavailable', series_code: null });
     c = renderDetail('fed:f:1', una).container;
-    expect(c.textContent).toContain('non disponible');
-    expect(c.textContent).toContain('Federal Reserve Board');
+    const atxt = c.textContent ?? '';
+    expect(atxt).toContain('sans valeur chiffrée unique'); // accurate: a range, not "nothing published"
+    expect(atxt).toContain('Federal Reserve Board');
+    expect(atxt).not.toContain('non récupérée'); // distinct from unfetched
   });
 
   it('shows initial and current value coexisting, with the revision date', () => {
