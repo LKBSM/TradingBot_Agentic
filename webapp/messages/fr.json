@@ -90,6 +90,7 @@
       "typeRow": "Type",
       "crossedExtreme": "Extrême franchi",
       "journal": "Journal des événements · {tf}",
+      "journalCount": "{count, plural, one {# événement} other {# événements}} sur la fenêtre analysée ({bars} bougies, ≈ {span})",
       "seeOnChart": "Voir ces événements sur le graphique",
       "densHead": "Inventaire des zones · {tf}",
       "obActive": "Order Blocks — actifs",
