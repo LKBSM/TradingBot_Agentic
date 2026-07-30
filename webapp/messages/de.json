@@ -536,8 +536,6 @@
       "directionBearish": "Bärisch",
       "trendBullish": "Bullisch",
       "trendBearish": "Bärisch",
-      "trendRanging": "Range",
-      "trendNeutral": "Neutral",
       "phaseAccumulation": "Akkumulation",
       "phaseDistribution": "Distribution",
       "phaseTrend": "Trend",
@@ -548,13 +546,14 @@
       "volatilityElevated": "Erhöht",
       "sideAny": "Beide (SSL + BSL)",
       "sideBsl": "BSL (Liquidität oberhalb)",
-      "sideSsl": "SSL (Liquidität unterhalb)"
+      "sideSsl": "SSL (Liquidität unterhalb)",
+      "trendIndeterminate": "Indeterminate"
     },
     "palette": {
-      "mtf_aligned_label": "3 TF ausgerichtet",
-      "mtf_aligned_desc": "Die 3 Zeitrahmen (H4, H1, M15) weisen im Moment in dieselbe Richtung.",
-      "trend_is_label": "Aktueller Trend",
-      "trend_is_desc": "Der auf diesem Zeitrahmen beobachtete Trend ist im Moment der gewählte.",
+      "mtf_aligned_label": "3 TF aligned (structure)",
+      "mtf_aligned_desc": "The 3 timeframes (H4, H1, M15) show the same STRUCTURAL direction right now (last BOS/CHOCH break in the same direction). A timeframe with no structural trend established (indeterminate) prevents alignment.",
+      "trend_is_label": "Current trend (structure)",
+      "trend_is_desc": "The structural trend observed on this timeframe is, right now, the one you selected (bullish, bearish, or indeterminate when no break established it).",
       "market_phase_is_label": "Marktphase",
       "market_phase_is_desc": "Die beobachtete Marktphase entspricht im Moment der gewählten.",
       "volatility_is_label": "Beobachtete Volatilität",

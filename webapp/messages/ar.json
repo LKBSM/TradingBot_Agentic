@@ -536,8 +536,6 @@
       "directionBearish": "هابط",
       "trendBullish": "صاعد",
       "trendBearish": "هابط",
-      "trendRanging": "تداول عرضي",
-      "trendNeutral": "محايد",
       "phaseAccumulation": "تجميع",
       "phaseDistribution": "تصريف",
       "phaseTrend": "اتجاه",
@@ -548,13 +546,14 @@
       "volatilityElevated": "مرتفع",
       "sideAny": "كلاهما (SSL + BSL)",
       "sideBsl": "BSL (سيولة في الأعلى)",
-      "sideSsl": "SSL (سيولة في الأسفل)"
+      "sideSsl": "SSL (سيولة في الأسفل)",
+      "trendIndeterminate": "Indeterminate"
     },
     "palette": {
-      "mtf_aligned_label": "3 أطر زمنية متوائمة",
-      "mtf_aligned_desc": "الأطر الزمنية الثلاثة (H4, H1, M15) تشير جميعها إلى الاتجاه نفسه في هذه اللحظة.",
-      "trend_is_label": "الاتجاه الحالي",
-      "trend_is_desc": "الاتجاه المرصود على هذا الإطار الزمني هو، في هذه اللحظة، الاتجاه المختار.",
+      "mtf_aligned_label": "3 TF aligned (structure)",
+      "mtf_aligned_desc": "The 3 timeframes (H4, H1, M15) show the same STRUCTURAL direction right now (last BOS/CHOCH break in the same direction). A timeframe with no structural trend established (indeterminate) prevents alignment.",
+      "trend_is_label": "Current trend (structure)",
+      "trend_is_desc": "The structural trend observed on this timeframe is, right now, the one you selected (bullish, bearish, or indeterminate when no break established it).",
       "market_phase_is_label": "مرحلة السوق",
       "market_phase_is_desc": "مرحلة السوق المرصودة تطابق، في هذه اللحظة، المرحلة المختارة.",
       "volatility_is_label": "التقلّب المرصود",

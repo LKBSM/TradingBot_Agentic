@@ -541,8 +541,6 @@
       "directionBearish": "Baissier",
       "trendBullish": "Haussière",
       "trendBearish": "Baissière",
-      "trendRanging": "Range",
-      "trendNeutral": "Neutre",
       "phaseAccumulation": "Accumulation",
       "phaseDistribution": "Distribution",
       "phaseTrend": "Tendance",
@@ -553,13 +551,14 @@
       "volatilityElevated": "Élevée",
       "sideAny": "Les deux (SSL + BSL)",
       "sideBsl": "BSL (liquidité au-dessus)",
-      "sideSsl": "SSL (liquidité en dessous)"
+      "sideSsl": "SSL (liquidité en dessous)",
+      "trendIndeterminate": "Indéterminée"
     },
     "palette": {
-      "mtf_aligned_label": "3 TF alignés",
-      "mtf_aligned_desc": "Les 3 timeframes (H4, H1, M15) pointent dans la même direction en ce moment.",
-      "trend_is_label": "Tendance actuelle",
-      "trend_is_desc": "La tendance observée sur ce timeframe est, en ce moment, celle choisie.",
+      "mtf_aligned_label": "3 TF alignés (structure)",
+      "mtf_aligned_desc": "Les 3 timeframes (H4, H1, M15) montrent la même direction de STRUCTURE en ce moment (dernière cassure BOS/CHOCH de même sens). Un timeframe sans tendance structurelle établie (indéterminé) empêche l’alignement.",
+      "trend_is_label": "Tendance actuelle (structure)",
+      "trend_is_desc": "La tendance de structure observée sur ce timeframe est, en ce moment, celle choisie (haussière, baissière, ou indéterminée quand aucune cassure ne l’a établie).",
       "market_phase_is_label": "Phase de marché",
       "market_phase_is_desc": "La phase de marché observée correspond, en ce moment, à celle choisie.",
       "volatility_is_label": "Volatilité observée",

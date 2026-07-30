@@ -536,8 +536,6 @@
       "directionBearish": "Bearish",
       "trendBullish": "Bullish",
       "trendBearish": "Bearish",
-      "trendRanging": "Range",
-      "trendNeutral": "Neutraal",
       "phaseAccumulation": "Accumulatie",
       "phaseDistribution": "Distributie",
       "phaseTrend": "Trend",
@@ -548,13 +546,14 @@
       "volatilityElevated": "Verhoogd",
       "sideAny": "Beide (SSL + BSL)",
       "sideBsl": "BSL (liquiditeit boven)",
-      "sideSsl": "SSL (liquiditeit onder)"
+      "sideSsl": "SSL (liquiditeit onder)",
+      "trendIndeterminate": "Indeterminate"
     },
     "palette": {
-      "mtf_aligned_label": "3 TF's uitgelijnd",
-      "mtf_aligned_desc": "De 3 timeframes (H4, H1, M15) wijzen op dit moment in dezelfde richting.",
-      "trend_is_label": "Huidige trend",
-      "trend_is_desc": "De op dit timeframe waargenomen trend is op dit moment de gekozen trend.",
+      "mtf_aligned_label": "3 TF aligned (structure)",
+      "mtf_aligned_desc": "The 3 timeframes (H4, H1, M15) show the same STRUCTURAL direction right now (last BOS/CHOCH break in the same direction). A timeframe with no structural trend established (indeterminate) prevents alignment.",
+      "trend_is_label": "Current trend (structure)",
+      "trend_is_desc": "The structural trend observed on this timeframe is, right now, the one you selected (bullish, bearish, or indeterminate when no break established it).",
       "market_phase_is_label": "Marktfase",
       "market_phase_is_desc": "De waargenomen marktfase komt op dit moment overeen met de gekozen fase.",
       "volatility_is_label": "Waargenomen volatiliteit",
