@@ -31,7 +31,9 @@ from typing import Any, Dict, List, Optional
 DIRECTION_VALUES = ("any", "bullish", "bearish")
 
 #: Allowed values for the regime selectors (present-tense facts in the reading).
-TREND_VALUES = ("bullish", "bearish", "ranging", "neutral")
+#: TR-1: the trend is structural (bullish/bearish/indeterminate); ``ranging`` and
+#: ``neutral`` are gone (consolidation now lives on the Phase tile only).
+TREND_VALUES = ("bullish", "bearish", "indeterminate")
 PHASE_VALUES = ("accumulation", "distribution", "trend", "ranging", "expansion")
 VOLATILITY_VALUES = ("low", "normal", "elevated")
 
@@ -41,20 +43,23 @@ VOLATILITY_VALUES = ("low", "normal", "elevated")
 PALETTE: List[Dict[str, Any]] = [
     {
         "type": "mtf_aligned",
-        "label": "3 TF alignés",
+        "label": "3 TF alignés (structure)",
         "description": (
-            "Les 3 timeframes (H4, H1, M15) pointent dans la même direction "
-            "en ce moment."
+            "Les 3 timeframes (H4, H1, M15) montrent la même direction de "
+            "STRUCTURE en ce moment (dernière cassure BOS/CHOCH de même sens). "
+            "Un timeframe sans tendance structurelle établie (indéterminé) "
+            "empêche l'alignement."
         ),
         "supports_direction": True,
         "tense": "present",
     },
     {
         "type": "trend_is",
-        "label": "Tendance actuelle",
+        "label": "Tendance actuelle (structure)",
         "description": (
-            "La tendance observée sur ce timeframe est, en ce moment, "
-            "celle choisie (haussière, baissière ou en range)."
+            "La tendance de structure observée sur ce timeframe est, en ce "
+            "moment, celle choisie (haussière, baissière, ou indéterminée "
+            "quand aucune cassure ne l'a établie)."
         ),
         "supports_direction": False,
         "tense": "present",
@@ -302,7 +307,7 @@ def _result(cond_type: str, met: bool, detail: str, *, available: bool = True) -
 #: "Régime" panel describe alignment identically.
 _MTF_ALIGN_TFS = (("H4", "h4"), ("H1", "h1"), ("M15", "m15"))
 
-_TREND_ADJ = {"bullish": "haussier", "bearish": "baissier", "neutral": "neutre", "ranging": "en range"}
+_TREND_ADJ = {"bullish": "haussier", "bearish": "baissier", "indeterminate": "indéterminé"}
 
 
 def _eval_mtf_aligned(
@@ -334,6 +339,19 @@ def _eval_mtf_aligned(
             "mtf_aligned", False,
             f"Alignement indisponible — lecture manquante : {', '.join(missing)} ({summary}).",
             available=False,
+        )
+
+    # TR-1: a timeframe with NO structural trend established (indeterminate) is
+    # counted as INDETERMINATE — never as an agreement nor a disagreement. Its
+    # presence means the alignment cannot hold; surface it explicitly (a combo
+    # with any indeterminate unit is never presented as meeting the condition).
+    indeterminate = [tf for tf, _ in _MTF_ALIGN_TFS if by_tf[tf] == "indeterminate"]
+    if indeterminate:
+        n = len(indeterminate)
+        return _result(
+            "mtf_aligned", False,
+            f"Alignement structurel incomplet — {n} TF sur 3 sans tendance "
+            f"structurelle établie ({', '.join(indeterminate)}) — {summary}.",
         )
 
     axes = {tf: _trend_axis(by_tf[tf]) for tf, _ in _MTF_ALIGN_TFS}

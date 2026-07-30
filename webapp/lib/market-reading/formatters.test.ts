@@ -63,8 +63,8 @@ describe('market-reading formatters', () => {
       tone: 'bull',
     });
     expect(formatTrend('bearish').tone).toBe('bear');
-    expect(formatTrend('ranging')).toEqual({
-      label: 'Marché en range',
+    expect(formatTrend('indeterminate')).toEqual({
+      label: 'Tendance indéterminée',
       tone: 'neutral',
     });
   });
@@ -81,7 +81,7 @@ describe('market-reading formatters', () => {
 
   it('maps MTF bias to label + tone', () => {
     expect(formatMtfBias('bullish')).toEqual({ label: 'haussier', tone: 'bull' });
-    expect(formatMtfBias('ranging').tone).toBe('neutral');
+    expect(formatMtfBias('indeterminate').tone).toBe('neutral');
   });
 
   it('maps high impact to a warn tone', () => {

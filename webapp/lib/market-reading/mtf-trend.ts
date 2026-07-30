@@ -31,8 +31,10 @@ export function mtfOrderFor(timeframe: string): MtfEntry[] {
 export type MtfTrendMap = Record<string, TrendValue | null>;
 
 /**
- * Arrow glyph + tone for a single timeframe's trend. Descriptive only:
- * bullish ↗, bearish ↘, neutral/ranging →, unavailable ·.
+ * Arrow glyph + tone for a single timeframe's trend. Descriptive only (TR-1):
+ * bullish ↗, bearish ↘, indeterminate – (no structural direction), unavailable ·.
+ * Indeterminate and unavailable read DIFFERENTLY — one is "no trend established",
+ * the other is "no reading yet".
  */
 export function mtfTrendGlyph(trend: TrendValue | null): {
   arrow: string;
@@ -43,9 +45,8 @@ export function mtfTrendGlyph(trend: TrendValue | null): {
       return { arrow: '↗', tone: 'bull' };
     case 'bearish':
       return { arrow: '↘', tone: 'bear' };
-    case 'neutral':
-    case 'ranging':
-      return { arrow: '→', tone: 'neutral' };
+    case 'indeterminate':
+      return { arrow: '–', tone: 'neutral' };
     default:
       return { arrow: '·', tone: 'neutral' };
   }
@@ -54,11 +55,12 @@ export function mtfTrendGlyph(trend: TrendValue | null): {
 const TREND_ADJ: Record<TrendValue, string> = {
   bullish: 'haussier',
   bearish: 'baissier',
-  neutral: 'neutre',
-  ranging: 'en range',
+  indeterminate: 'indéterminé',
 };
 
 type Dir = 'up' | 'down' | 'flat';
+// TR-1: `indeterminate` collapses to 'flat' for the coexistence test — it is
+// neither an agreement nor a disagreement (it never makes a « contre »).
 const dirOf = (t: TrendValue): Dir =>
   t === 'bullish' ? 'up' : t === 'bearish' ? 'down' : 'flat';
 
@@ -116,7 +118,9 @@ export function classifyMtfAlignment(trends: MtfTrendMap, order: MtfEntry[]): Mt
 
   if (allSame) {
     if (dirs[0] === 'flat') {
-      const verb = entries.length === 1 ? 'est neutre' : 'sont neutres';
+      // TR-1: a flat unit here has NO structural trend established (indeterminate),
+      // not a manufactured « neutre ».
+      const verb = entries.length === 1 ? 'est sans tendance structurelle établie' : 'sont sans tendance structurelle établie';
       return { kind: 'neutral', text: `${countWord} ${verb}.`, disagreement: false };
     }
     const adj = dirs[0] === 'up'

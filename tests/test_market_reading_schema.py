@@ -356,7 +356,7 @@ def test_mtf_confluence_rejects_invalid_keys_and_values():
         trend="bullish",
         volatility_observed="normal",
         market_phase="trend",
-        mtf_confluence={"h1": "bullish", "h4": "bearish", "d1": "ranging"},
+        mtf_confluence={"h1": "bullish", "h4": "bearish", "d1": "indeterminate"},
     )
     with pytest.raises(ValidationError):
         MarketReadingRegime(

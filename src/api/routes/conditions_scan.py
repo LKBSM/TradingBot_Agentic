@@ -109,7 +109,7 @@ ConditionType = Literal[
 ]
 DirectionFilter = Literal["any", "bullish", "bearish"]
 LiquiditySideFilter = Literal["any", "bsl", "ssl"]
-TrendChoice = Literal["bullish", "bearish", "ranging", "neutral"]
+TrendChoice = Literal["bullish", "bearish", "indeterminate"]
 PhaseChoice = Literal["accumulation", "distribution", "trend", "ranging", "expansion"]
 VolatilityChoice = Literal["low", "normal", "elevated"]
 

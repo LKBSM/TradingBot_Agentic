@@ -595,6 +595,21 @@ def _rising(n: int, base: float = 100.0) -> list[_MockCandle]:
     return [_MockCandle(start + timedelta(hours=i), base + i) for i in range(n)]
 
 
+def _zigzag(n: int, drift: float, base: float = 100.0) -> list[_MockCandle]:
+    """Rising/falling zigzag with pullbacks so the ENGINE forms swings and fires a
+    BOS/CHOCH. TR-1's bias is STRUCTURAL: a monotone ramp has no swings and reads
+    ``indeterminate`` by design; ``drift`` > 0 → bullish, < 0 → bearish."""
+    start = datetime(2026, 5, 28, tzinfo=timezone.utc)
+    amp = 25.0
+    out = []
+    for i in range(n):
+        phase = i % 8
+        local = amp if phase in (3, 4) else (-amp if phase in (7, 0) else 0.0)
+        close = base + (i // 8) * drift * 8 + local
+        out.append(_MockCandle(start + timedelta(hours=i), close))
+    return out
+
+
 def test_mtf_provider_returns_upper_timeframes_only():
     store = _MtfStore({"H1": _rising(30), "H4": _rising(30)})
     provider = build_cache_mtf_provider(store, lookback=20)
@@ -614,11 +629,11 @@ def test_mtf_provider_skips_unknown_timeframe_and_empty_cache():
 
 
 def test_mtf_provider_feeds_candles_to_regime_bias():
-    """End-to-end: a rising upper-TF series yields a bullish bias via the engine's
-    existing trend logic (no new detection)."""
+    """End-to-end: a rising STRUCTURAL upper-TF series yields a bullish bias via
+    the engine's detection (TR-1: bias = last BOS/CHOCH sign, no new detection)."""
     from src.intelligence.market_reading_mappers import candles_to_regime
 
-    store = _MtfStore({"H1": _rising(40), "H4": _rising(40)})
+    store = _MtfStore({"H1": _zigzag(64, drift=6.0), "H4": _zigzag(64, drift=6.0)})
     provider = build_cache_mtf_provider(store)
     mtf = provider("XAUUSD", "M15")
     regime = candles_to_regime(

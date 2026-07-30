@@ -38,6 +38,7 @@ from src.intelligence.market_reading_schema import (
     MTFBiasValue,
     OrderBlock,
     RetestInProgress,
+    TrendReference,
     TrendValue,
     VALID_MTF_KEYS,
     VolatilityDetail,
@@ -1332,20 +1333,130 @@ def _closes(candles: Sequence[dict]) -> list[float]:
     return [float(c["close"]) for c in candles if "close" in c]
 
 
-def _derive_trend(closes: Sequence[float]) -> TrendValue:
+# TR-1 — the trend is DERIVED from the engine's structure, never a parallel
+# close-delta. `_derive_trend` (first-vs-last close over ~500 bars) is GONE:
+# no second source of truth survives.
+
+# The range threshold that used to gate the old close-based trend now belongs to
+# the Phase tile ONLY (it describes consolidation, not direction). Named so the
+# (undocumented in origin) 0.3 magic number is at least visible and single-sourced.
+_RANGE_CONSOLIDATION_RATIO = 0.3
+
+
+def _is_close_range_bound(closes: Sequence[float]) -> bool:
+    """True when price OSCILLATED but barely progressed over the window — the net
+    move is < 30 % of the range travelled. Descriptive consolidation signal, used
+    ONLY by the Phase tile (TR-1 removed it from the Trend tile)."""
     if len(closes) < 5:
-        return "neutral"
-    first = closes[0]
-    last = closes[-1]
+        return False
+    first, last = closes[0], closes[-1]
     rng = max(closes) - min(closes)
     if rng <= 0:
-        return "neutral"
+        return False
     base = max(abs(first), 1e-9)
-    pct_move = abs(last - first) / base
-    rng_pct = rng / base
-    if pct_move < rng_pct * 0.3:
-        return "ranging"
-    return "bullish" if last > first else "bearish"
+    return (abs(last - first) / base) < (rng / base) * _RANGE_CONSOLIDATION_RATIO
+
+
+def _most_recent_event(events: Sequence[dict]) -> Optional[dict]:
+    """Most recent event from a :func:`collect_structure_events` list (already
+    most-recent-first; guarded by ``bars_ago`` for safety)."""
+    if not events:
+        return None
+    return min(
+        events,
+        key=lambda e: e.get("bars_ago") if e.get("bars_ago") is not None else 10 ** 9,
+    )
+
+
+def derive_structural_trend(
+    structure_events: dict,
+) -> tuple[TrendValue, Optional[TrendReference]]:
+    """Derive the trend from the engine's discrete BOS/CHOCH events — the SINGLE
+    source of truth (TR-1, definition (a)): the direction of the last structural
+    break not contradicted by an opposite one.
+
+    The current direction is set by the last CHANGE OF CHARACTER (CHOCH); every
+    BOS after it is a same-direction continuation. So the anchoring event is the
+    most recent CHOCH when one exists, else the most recent BOS — which also makes
+    the Trend tile and the Maturité tile tell the SAME story. Returns
+    ``("indeterminate", None)`` when NO structural break exists in the analysed
+    history: a first-class state, never a silent default to ``neutral``.
+    """
+    bos = structure_events.get("bos_events") or []
+    choch = structure_events.get("choch_events") or []
+    ref_ev = _most_recent_event(choch)
+    kind = "choch"
+    if ref_ev is None:
+        ref_ev = _most_recent_event(bos)
+        kind = "bos"
+    if ref_ev is None or ref_ev.get("direction") not in ("bullish", "bearish"):
+        return "indeterminate", None
+    direction: TrendValue = ref_ev["direction"]
+    broken_at = ref_ev.get("broken_at")
+    if broken_at is None:
+        # No honest timestamp to anchor on — still report the direction.
+        return direction, None
+    reference = TrendReference(
+        kind=kind,
+        direction=ref_ev["direction"],
+        level=float(ref_ev["level"]),
+        broken_at=broken_at,
+        bars_ago=ref_ev.get("bars_ago"),
+    )
+    return direction, reference
+
+
+def _structural_bias_from_candle_dicts(candles: Sequence[dict]) -> MTFBiasValue:
+    """Structural bias (DIRECTION only) for a timeframe — runs the REAL engine on
+    OHLC dicts and returns the sign of the last CHOCH (else last BOS), mirroring
+    :func:`derive_structural_trend`. Used for upper-timeframe alignment bias and
+    for standalone callers that have no pre-collected events. ``indeterminate``
+    when the frame is too short or carries no structural break. No timestamp is
+    needed here (a bias is a direction, not an anchored reference)."""
+    rows = [c for c in candles if all(k in c for k in ("open", "high", "low", "close"))]
+    if len(rows) < 5:
+        return "indeterminate"
+    import pandas as pd
+
+    from src.intelligence.smart_money import SmartMoneyEngine
+
+    try:
+        df = pd.DataFrame(
+            [
+                {
+                    "open": float(c["open"]),
+                    "high": float(c["high"]),
+                    "low": float(c["low"]),
+                    "close": float(c["close"]),
+                    # SmartMoneyEngine requires an OHLCV frame; volume is unused by
+                    # the structure detection, so a constant column is faithful.
+                    "volume": float(c.get("volume", 0.0) or 0.0),
+                }
+                for c in rows
+            ]
+        )
+        enriched = SmartMoneyEngine(data=df, config={}, verbose=False).analyze(
+            compute_divergence=False
+        )
+    except Exception:
+        return "indeterminate"
+
+    def _last_sign(col: str) -> Optional[int]:
+        if col not in enriched.columns:
+            return None
+        vals = enriched[col].values
+        for k in range(len(vals) - 1, -1, -1):
+            v = vals[k]
+            if not pd.isna(v) and v != 0:
+                return 1 if v > 0 else -1
+        return None
+
+    d = _last_sign("CHOCH_SIGNAL")
+    if d is None:
+        d = _last_sign("BOS_EVENT")
+    if d is None:
+        return "indeterminate"
+    return "bullish" if d > 0 else "bearish"
 
 
 # Volatility thresholds & window — single source of truth, mirrored to the
@@ -1415,37 +1526,48 @@ def _derive_volatility(candles: Sequence[dict]) -> VolatilityObserved:
     return _volatility_from_candles(candles)[0]
 
 
-def _derive_market_phase(trend: TrendValue, volatility: VolatilityObserved) -> MarketPhase:
+def _derive_market_phase(
+    trend: TrendValue,
+    volatility: VolatilityObserved,
+    closes: Sequence[float],
+) -> MarketPhase:
     if trend in ("bullish", "bearish"):
         return "expansion" if volatility == "elevated" else "trend"
-    if trend == "ranging":
+    # trend == "indeterminate": no structural direction. Tell an actively
+    # OSCILLATING market (ranging) apart from a quiet, directionless one
+    # (accumulation) via the close-range test TR-1 moved OFF the Trend tile.
+    if _is_close_range_bound(closes):
         return "ranging"
     return "accumulation"
-
-
-def _derive_bias_from_candles(candles: Sequence[dict]) -> MTFBiasValue:
-    closes = _closes(candles)
-    trend = _derive_trend(closes)
-    if trend in ("bullish", "bearish", "ranging", "neutral"):
-        return trend  # type: ignore[return-value]
-    return "neutral"
 
 
 def candles_to_regime(
     candles: Sequence[dict],
     mtf_candles_above: dict[str, Sequence[dict]],
+    *,
+    current_structure_events: Optional[dict] = None,
 ) -> MarketReadingRegime:
-    """Derive regime from current-TF candles + bias from upper timeframes.
+    """Derive regime from the current-TF STRUCTURE + structural bias from upper
+    timeframes (TR-1).
 
     `candles` : OHLCV rows for the requested TF, oldest first. Each item must
     expose at minimum `close`, `high`, `low` keys.
     `mtf_candles_above` : mapping from upper-TF key (`h1`, `h4`, ...) to its
     candles list. Only keys in `VALID_MTF_KEYS` are kept.
+    `current_structure_events` : the BOS/CHOCH events the assembler already
+    collected for THIS timeframe (``{"bos_events": [...], "choch_events": [...]}``).
+    When provided, the trend is derived from them WITH an anchored reference (the
+    honest, on-screen « depuis le CHOCH … »). When absent (standalone/test
+    callers), the engine is re-run for the direction only (no anchored reference).
     """
     closes = _closes(candles)
-    trend = _derive_trend(closes)
+    if current_structure_events is not None:
+        trend, trend_reference = derive_structural_trend(current_structure_events)
+    else:
+        trend = _structural_bias_from_candle_dicts(candles)
+        trend_reference = None
     volatility, volatility_detail = _volatility_from_candles(candles)
-    market_phase = _derive_market_phase(trend, volatility)
+    market_phase = _derive_market_phase(trend, volatility, closes)
 
     mtf_confluence: dict[str, MTFBiasValue] = {}
     for key, tf_candles in mtf_candles_above.items():
@@ -1453,7 +1575,7 @@ def candles_to_regime(
             continue
         if not tf_candles:
             continue
-        mtf_confluence[key] = _derive_bias_from_candles(tf_candles)
+        mtf_confluence[key] = _structural_bias_from_candle_dicts(tf_candles)
 
     return MarketReadingRegime(
         trend=trend,
@@ -1461,6 +1583,7 @@ def candles_to_regime(
         market_phase=market_phase,
         mtf_confluence=mtf_confluence,
         volatility_detail=volatility_detail,
+        trend_reference=trend_reference,
     )
 
 
@@ -1482,8 +1605,7 @@ def empty_events() -> MarketReadingEvents:
 _TREND_FR = {
     "bullish": "haussière",
     "bearish": "baissière",
-    "neutral": "neutre",
-    "ranging": "en range",
+    "indeterminate": "indéterminée",
 }
 
 _VOL_FR = {

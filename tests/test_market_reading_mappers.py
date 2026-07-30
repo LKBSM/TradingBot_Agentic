@@ -442,18 +442,45 @@ def _candles_volatile(n: int = 30) -> list[dict]:
     return out
 
 
+def _candles_structural(n: int = 80, drift: float = 6.0, base: float = 2300.0) -> list[dict]:
+    """Zigzag with pullbacks so the ENGINE forms swing highs/lows and fires a
+    BOS/CHOCH. TR-1's trend is STRUCTURAL: a monotone ramp has no swings and is
+    ``indeterminate`` by design, so trend tests need real structure. ``drift`` > 0
+    → bullish (higher highs break upward), < 0 → bearish."""
+    amp = 25.0
+    out = []
+    for i in range(n):
+        phase = i % 8
+        local = amp if phase in (3, 4) else (-amp if phase in (7, 0) else 0.0)
+        close = base + (i // 8) * drift * 8 + local
+        out.append({"open": close, "high": close + 3, "low": close - 3, "close": close})
+    return out
+
+
 def test_candles_to_regime_bullish_trend():
-    candles = _candles_uptrend()
+    # TR-1: trend is derived from STRUCTURE — needs swings + a bullish break.
+    candles = _candles_structural(drift=6.0)
     r = candles_to_regime(candles, mtf_candles_above={})
     assert r.trend == "bullish"
     assert r.market_phase in ("trend", "expansion")
     assert r.mtf_confluence == {}
 
 
-def test_candles_to_regime_ranging():
+def test_candles_to_regime_bearish_trend():
+    candles = _candles_structural(drift=-6.0)
+    r = candles_to_regime(candles, mtf_candles_above={})
+    assert r.trend == "bearish"
+    assert r.market_phase in ("trend", "expansion")
+
+
+def test_candles_to_regime_directionless_is_indeterminate():
+    # TR-1: a symmetric oscillation has no net structural break → ``indeterminate``
+    # (never a silent 'neutral'/'ranging'). The consolidation shows on the PHASE
+    # tile, not the Trend tile (no redundancy).
     candles = _candles_flat()
     r = candles_to_regime(candles, mtf_candles_above={})
-    assert r.trend in ("ranging", "neutral")
+    assert r.trend == "indeterminate"
+    assert r.trend_reference is None
     assert r.market_phase in ("ranging", "accumulation")
 
 
@@ -508,11 +535,11 @@ def test_volatility_baseline_window_is_bounded_to_20():
 
 
 def test_candles_to_regime_mtf_confluence_keys_filtered():
-    candles = _candles_uptrend()
+    candles = _candles_structural(drift=6.0)
     mtf = {
-        "h1": _candles_uptrend(),
-        "h4": _candles_uptrend(),
-        "INVALID_KEY": _candles_uptrend(),  # should be silently dropped
+        "h1": _candles_structural(drift=6.0),
+        "h4": _candles_structural(drift=6.0),
+        "INVALID_KEY": _candles_structural(drift=6.0),  # should be silently dropped
     }
     r = candles_to_regime(candles, mtf_candles_above=mtf)
     assert "h1" in r.mtf_confluence
@@ -591,7 +618,7 @@ def test_description_no_forbidden_tokens_across_many_combinations(bar_ts):
     regimes = [
         MarketReadingRegime(trend=t, volatility_observed=v, market_phase=p,
                             mtf_confluence=mtf)
-        for t in ("bullish", "bearish", "neutral", "ranging")
+        for t in ("bullish", "bearish", "indeterminate")
         for v in ("low", "normal", "elevated")
         for p in ("accumulation", "distribution", "trend", "ranging", "expansion")
         for mtf in ({}, {"h1": "bullish"}, {"h1": "bullish", "h4": "bearish"},

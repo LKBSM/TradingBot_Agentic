@@ -155,8 +155,9 @@ export function formatMinutesAgo(minutes: number): string {
 const TREND_LABEL: Record<TrendValue, string> = {
   bullish: 'Tendance haussière',
   bearish: 'Tendance baissière',
-  neutral: 'Tendance neutre',
-  ranging: 'Marché en range',
+  // TR-1: no structural break established → honest « indéterminé », never a
+  // manufactured « neutre ». Consolidation is described by the Phase tile.
+  indeterminate: 'Tendance indéterminée',
 };
 
 export function formatTrend(trend: TrendValue): { label: string; tone: Tone } {
@@ -213,8 +214,7 @@ export function formatMarketPhaseShort(phase: MarketPhase): string {
 const MTF_BIAS_LABEL: Record<MTFBiasValue, string> = {
   bullish: 'haussier',
   bearish: 'baissier',
-  neutral: 'neutre',
-  ranging: 'range',
+  indeterminate: 'indéterminé',
 };
 
 export function formatMtfBias(bias: MTFBiasValue): { label: string; tone: Tone } {

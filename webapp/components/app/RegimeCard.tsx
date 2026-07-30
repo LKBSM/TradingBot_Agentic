@@ -74,8 +74,16 @@ function withBold(text: string): React.ReactNode {
   );
 }
 
-function arrowOf(dir: 'bullish' | 'bearish' | 'neutral' | 'ranging' | null): string {
-  return dir === 'bullish' ? '↑' : dir === 'bearish' ? '↓' : '→';
+function arrowOf(dir: 'bullish' | 'bearish' | 'indeterminate' | null): string {
+  // TR-1: indeterminate (– no structural trend) and unavailable (· no reading)
+  // read differently — neither is ever counted as an agreement.
+  return dir === 'bullish'
+    ? '↑'
+    : dir === 'bearish'
+      ? '↓'
+      : dir === 'indeterminate'
+        ? '–'
+        : '·';
 }
 
 function latestBreak<T extends BOSRecent | CHOCHRecent>(
@@ -248,21 +256,38 @@ export function RegimeCard({
   // ── Derived facts (all read-only over engine output) ────────────────────────
   const maturity = deriveTrendMaturity(structure, header);
 
+  // TR-1: the Trend tile names the structural event it rides on (« depuis le
+  // CHOCH haussier du 24 juil. ») so it tells the SAME story as the Maturité
+  // tile; when indeterminate it says so, never a manufactured window.
+  const tref = regime.trend_reference ?? null;
+  const trendSub = tref
+    ? t('sub.trendRef', {
+        kind: tref.kind === 'choch' ? t('value.kindChoch') : t('value.kindBos'),
+        dir: tref.direction === 'bullish' ? t('value.dirUp') : t('value.dirDown'),
+        date: dayHm(tref.broken_at),
+      })
+    : t('sub.trendNone');
+
   const avail = mtfOrder.filter(({ key }) => trends[key] != null);
-  const dirs = avail.map(({ key }) =>
-    trends[key] === 'bullish' ? 'up' : trends[key] === 'bearish' ? 'down' : 'flat',
+  // TR-1: only units with a DETERMINATE structural trend form the alignment
+  // denominator. Indeterminate units are counted apart (never agreement nor
+  // disagreement) and surfaced with their own glyph — the ratio is « N sur M »
+  // where M excludes them, and M is shown so the adjustment is visible.
+  const directional = avail.filter(
+    ({ key }) => trends[key] === 'bullish' || trends[key] === 'bearish',
   );
+  const indeterminateCount = avail.length - directional.length;
+  const dirs = directional.map(({ key }) => (trends[key] === 'bullish' ? 'up' : 'down'));
   const up = dirs.filter((d) => d === 'up').length;
   const down = dirs.filter((d) => d === 'down').length;
-  const flat = dirs.filter((d) => d === 'flat').length;
-  let domArrow = '→';
+  let domArrow = '–';
   let domKind: 'up' | 'down' | 'flat' = 'flat';
-  let aligned = flat;
-  if (up >= down && up >= flat) {
+  let aligned = 0;
+  if (directional.length > 0 && up >= down) {
     domArrow = '↑';
     domKind = 'up';
     aligned = up;
-  } else if (down >= up && down >= flat) {
+  } else if (directional.length > 0) {
     domArrow = '↓';
     domKind = 'down';
     aligned = down;
@@ -360,7 +385,7 @@ export function RegimeCard({
       key: 'trend',
       label: t('tiles.trend'),
       value: fmt.trend(regime.trend).label,
-      sub: t('sub.trend', { tf }),
+      sub: trendSub,
       available: true,
     },
     {
@@ -386,15 +411,21 @@ export function RegimeCard({
       value:
         mtfOrder.length === 0
           ? t('value.alignNone')
-          : avail.length > 0
-            ? t('value.align', { count: aligned, total: avail.length, arrow: domArrow })
-            : null,
+          : directional.length > 0
+            ? t('value.align', { count: aligned, total: directional.length, arrow: domArrow })
+            : avail.length > 0
+              ? t('value.alignIndeterminate')
+              : null,
       mono: true,
-      // Name every upper unit; an unavailable one shows the neutral · glyph so it
-      // reads as indisponible, never counted as an agreement (TF-1 decision C).
+      // Name every upper unit; indeterminate shows –, unavailable shows · — TR-1:
+      // neither is ever counted as an agreement. When some units are
+      // indeterminate, name how many so the « N sur M » denominator is honest.
       sub:
         mtfOrder.length > 0
-          ? mtfOrder.map(({ key, label }) => `${label} ${arrowOf(trends[key] ?? null)}`).join(' · ')
+          ? mtfOrder.map(({ key, label }) => `${label} ${arrowOf(trends[key] ?? null)}`).join(' · ') +
+            (indeterminateCount > 0
+              ? ` · ${t('value.alignIndetCount', { count: indeterminateCount })}`
+              : '')
           : null,
       available: mtfOrder.length === 0 || avail.length > 0,
     },
@@ -722,7 +753,7 @@ interface DataCtx {
   vd: MarketReadingRegime['volatility_detail'];
   avail: { key: string; label: string }[];
   order: { key: string; label: string; tf: string }[];
-  trends: Record<string, 'bullish' | 'bearish' | 'neutral' | 'ranging' | null>;
+  trends: Record<string, 'bullish' | 'bearish' | 'indeterminate' | null>;
   domKind: 'up' | 'down' | 'flat';
   maturity: ReturnType<typeof deriveTrendMaturity>;
   last: (BOSRecent | CHOCHRecent) | null;
@@ -783,26 +814,32 @@ function renderData(k: string, c: DataCtx): React.ReactNode {
         </>
       );
     case 'trend': {
-      // DG-1 point 5 — name the window: a bar count whose calendar span depends
-      // on the viewed unit. MT-D1 — the window is now sized PER UNIT (fast units
-      // wider), so read the REAL analysed-bar count from the header rather than a
-      // fixed 500 constant; fall back to it only for older payloads.
-      const windowBars = c.header.analysis_window_bars ?? TREND_WINDOW_BARS;
-      const span = trendWindowSpan(tf, windowBars);
-      const spanText = span ? t(`data.windowSpan_${span.unit}`, { count: span.count }) : '';
+      // TR-1: the trend is STRUCTURAL — the direction of the last non-contradicted
+      // BOS/CHOCH — not a close-delta over a fixed window. Name the anchoring
+      // event so the client can trace WHY it reads as it does. (The MT-D1
+      // per-unit analysis window no longer describes the trend — it bounds the
+      // event journal, surfaced on the Structure card, not here.)
+      const ref = c.regime.trend_reference ?? null;
       return (
         <>
           <Dh4>{t('data.trendHead')}</Dh4>
           <div className="ev">
             <EvRow k={t('data.resultRow')} v={fmt.trend(c.regime.trend).label} />
             <EvRow k={t('data.measuredOnRow')} v={tf} />
-            <EvRow
-              k={t('data.windowRow')}
-              v={t('data.windowValue', { bars: windowBars, span: spanText })}
-            />
+            {ref ? (
+              <EvRow
+                k={t('data.trendAnchorRow')}
+                v={t('data.trendAnchorValue', {
+                  kind: ref.kind === 'choch' ? t('value.kindChoch') : t('value.kindBos'),
+                  dir: ref.direction === 'bullish' ? t('value.dirUp') : t('value.dirDown'),
+                })}
+                t={dayHm(ref.broken_at)}
+              />
+            ) : (
+              <EvRow k={t('data.trendAnchorRow')} v={t('data.trendAnchorNone')} />
+            )}
           </div>
-          <Dp>{t('data.trendNote', { tf })}</Dp>
-          <Dp>{t('data.windowNote')}</Dp>
+          <Dp>{t('data.trendNoteStructural')}</Dp>
         </>
       );
     }

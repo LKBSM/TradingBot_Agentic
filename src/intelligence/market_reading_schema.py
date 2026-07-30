@@ -34,10 +34,18 @@ Direction = Literal["bullish", "bearish"]
 ValidationStatus = Literal["confirmed", "pending", "invalidated"]
 ImpactLevel = Literal["low", "medium", "high"]
 SurpriseDirection = Literal["beat", "miss", "in_line"]
-TrendValue = Literal["bullish", "bearish", "neutral", "ranging"]
+# TR-1: the trend is now DERIVED from the engine's structure (last BOS/CHOCH not
+# contradicted), never a parallel close-delta. Three first-class states only:
+# a direction, or ``indeterminate`` when NO structural break exists in the
+# analysed history. ``neutral``/``ranging`` were artefacts of the old close-based
+# calculation and are gone — consolidation now lives on the Phase tile.
+TrendValue = Literal["bullish", "bearish", "indeterminate"]
 VolatilityObserved = Literal["low", "normal", "elevated"]
 MarketPhase = Literal["accumulation", "distribution", "trend", "ranging", "expansion"]
-MTFBiasValue = Literal["bullish", "bearish", "neutral", "ranging"]
+# Per-upper-timeframe structural bias — same vocabulary as TrendValue (TR-1).
+MTFBiasValue = Literal["bullish", "bearish", "indeterminate"]
+# The structural event that anchors ``trend`` (a break is always directional).
+TrendReferenceKind = Literal["bos", "choch"]
 OBStatus = Literal["active", "mitigated", "invalidated"]
 FVGStatus = Literal["active", "partially_filled", "filled"]
 OBImportance = Literal["low", "medium", "high"]
@@ -245,11 +253,30 @@ class VolatilityDetail(BaseModel):
     threshold_high: float
 
 
+class TrendReference(BaseModel):
+    """The structural event that anchors the current ``trend`` — the last change
+    of character (CHOCH) that set the direction, or the last BOS when no CHOCH
+    exists in the analysed history. Read-only/descriptive: it names WHY the trend
+    reads as it does, so the Trend tile and the Maturité tile tell the same story
+    (« depuis le CHOCH haussier du 24 juil. »). ``None`` on the regime when the
+    trend is ``indeterminate`` (no structural break in the analysed history)."""
+
+    kind: TrendReferenceKind
+    direction: Direction
+    level: float
+    broken_at: datetime
+    bars_ago: Optional[int] = None
+
+
 class MarketReadingRegime(BaseModel):
     trend: TrendValue
     volatility_observed: VolatilityObserved
     market_phase: MarketPhase
     mtf_confluence: dict[str, MTFBiasValue]
+    # TR-1: the structural event anchoring ``trend`` (last CHOCH/BOS). ``None``
+    # when trend is ``indeterminate``. Optional so minimal fixtures / older
+    # payloads still validate; live readings always carry it when a break exists.
+    trend_reference: Optional[TrendReference] = None
     # Numeric proof behind ``volatility_observed`` (recent vs baseline True Range,
     # ratio, thresholds). None when the window is too short to compute it (< 14
     # candles) or on older payloads. Read-only/descriptive — see VolatilityDetail.
@@ -376,6 +403,8 @@ __all__ = [
     "SurpriseDirection",
     "TechnicalTriggerRecent",
     "TRIGGER_TYPE_PATTERN",
+    "TrendReference",
+    "TrendReferenceKind",
     "TrendValue",
     "VALID_MTF_KEYS",
     "ValidationStatus",

@@ -28,8 +28,13 @@ export type ImpactLevel = 'low' | 'medium' | 'high';
 /** Direction of a news surprise vs forecast. */
 export type SurpriseDirection = 'beat' | 'miss' | 'in_line';
 
-/** Observed market trend on the reading timeframe. */
-export type TrendValue = 'bullish' | 'bearish' | 'neutral' | 'ranging';
+/**
+ * Structural market trend on the reading timeframe (TR-1). Derived from the
+ * engine's last non-contradicted BOS/CHOCH — a direction, or `indeterminate`
+ * when NO structural break exists in the analysed history. `neutral`/`ranging`
+ * are gone (consolidation now lives on the Phase tile only).
+ */
+export type TrendValue = 'bullish' | 'bearish' | 'indeterminate';
 
 /** Observed volatility bucket. */
 export type VolatilityObserved = 'low' | 'normal' | 'elevated';
@@ -43,7 +48,25 @@ export type MarketPhase =
   | 'expansion';
 
 /** Per-timeframe directional bias used in MTF confluence. */
-export type MTFBiasValue = 'bullish' | 'bearish' | 'neutral' | 'ranging';
+export type MTFBiasValue = 'bullish' | 'bearish' | 'indeterminate';
+
+/** Kind of structural break that anchors a trend (TR-1). */
+export type TrendReferenceKind = 'bos' | 'choch';
+
+/**
+ * The structural event anchoring the current `trend` — the last CHOCH (change of
+ * character) that set the direction, or the last BOS when no CHOCH exists. Lets
+ * the Trend tile name WHY it reads as it does (« depuis le CHOCH haussier du
+ * 24 juil. »), telling the same story as the Maturité tile. Absent (null) when
+ * the trend is `indeterminate`.
+ */
+export interface TrendReference {
+  kind: TrendReferenceKind;
+  direction: 'bullish' | 'bearish';
+  level: number;
+  broken_at: string;
+  bars_ago?: number | null;
+}
 
 /** Order Block lifecycle status. */
 export type OBStatus = 'active' | 'mitigated' | 'invalidated';
@@ -238,6 +261,8 @@ export interface MarketReadingRegime {
   mtf_confluence: Partial<Record<MTFTimeframeKey, MTFBiasValue>>;
   /** Numeric proof behind `volatility_observed`; absent on short windows. */
   volatility_detail?: VolatilityDetail | null;
+  /** Structural event anchoring `trend` (TR-1); null when `indeterminate`. */
+  trend_reference?: TrendReference | null;
 }
 
 // ─── Events ────────────────────────────────────────────────────────────────

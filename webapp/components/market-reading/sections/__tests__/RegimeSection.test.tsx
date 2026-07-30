@@ -96,7 +96,7 @@ describe('RegimeSection — header + existing facts', () => {
   });
 
   it('keeps a descriptive (non-instruction) disclaimer', () => {
-    renderSection({ h1: 'neutral', h4: 'neutral', d1: 'neutral' });
+    renderSection({ h1: 'indeterminate', h4: 'indeterminate', d1: 'indeterminate' });
     expect(
       screen.getByText(/ne constitue.* pas une instruction adressée au trader/i),
     ).toBeInTheDocument();

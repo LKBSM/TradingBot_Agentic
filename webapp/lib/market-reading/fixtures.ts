@@ -149,7 +149,7 @@ export const FIXTURE_XAU_M15: MarketReading = {
     mtf_confluence: {
       m15: 'bullish',
       h1: 'bullish',
-      h4: 'neutral',
+      h4: 'indeterminate',
     },
   },
   events: {
@@ -214,12 +214,12 @@ export const FIXTURE_EUR_H1: MarketReading = {
     retest_in_progress: null,
   },
   regime: {
-    trend: 'ranging',
+    trend: 'indeterminate',
     volatility_observed: 'low',
     market_phase: 'ranging',
     mtf_confluence: {
-      m15: 'neutral',
-      h1: 'ranging',
+      m15: 'indeterminate',
+      h1: 'indeterminate',
       h4: 'bearish',
     },
   },
@@ -266,10 +266,10 @@ export const FIXTURE_QUIET_XAU_H4: MarketReading = {
     retest_in_progress: null,
   },
   regime: {
-    trend: 'neutral',
+    trend: 'indeterminate',
     volatility_observed: 'low',
     market_phase: 'accumulation',
-    mtf_confluence: { h4: 'neutral' },
+    mtf_confluence: { h4: 'indeterminate' },
   },
   events: {
     news_upcoming: [],

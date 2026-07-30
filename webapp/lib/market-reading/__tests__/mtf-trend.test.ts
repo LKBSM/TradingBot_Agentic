@@ -35,7 +35,7 @@ describe('mtfTrendGlyph', () => {
   it('maps each trend to a descriptive arrow + tone', () => {
     expect(mtfTrendGlyph('bullish')).toEqual({ arrow: '↗', tone: 'bull' });
     expect(mtfTrendGlyph('bearish')).toEqual({ arrow: '↘', tone: 'bear' });
-    expect(mtfTrendGlyph('neutral')).toEqual({ arrow: '→', tone: 'neutral' });
+    expect(mtfTrendGlyph('indeterminate')).toEqual({ arrow: '–', tone: 'neutral' });
     expect(mtfTrendGlyph(null)).toEqual({ arrow: '·', tone: 'neutral' });
   });
 });
@@ -53,9 +53,9 @@ describe('describeMtfAlignment', () => {
     );
   });
 
-  it('ranging/neutral treated as flat → all neutres', () => {
-    expect(describeMtfAlignment(map('neutral', 'ranging', 'neutral'), ORDER)).toBe(
-      'Les 3 unités supérieures sont neutres.',
+  it('indeterminate treated as flat → all sans tendance structurelle établie', () => {
+    expect(describeMtfAlignment(map('indeterminate', 'indeterminate', 'indeterminate'), ORDER)).toBe(
+      'Les 3 unités supérieures sont sans tendance structurelle établie.',
     );
   });
 
@@ -66,8 +66,8 @@ describe('describeMtfAlignment', () => {
   });
 
   it('mixed directions → named listing in order', () => {
-    expect(describeMtfAlignment(map('bullish', 'neutral', 'bearish'), ORDER)).toBe(
-      'Unités supérieures : H1 haussier, H4 neutre et D1 baissier.',
+    expect(describeMtfAlignment(map('bullish', 'indeterminate', 'bearish'), ORDER)).toBe(
+      'Unités supérieures : H1 haussier, H4 indéterminé et D1 baissier.',
     );
   });
 
@@ -86,8 +86,8 @@ describe('describeMtfAlignment', () => {
     const samples = [
       describeMtfAlignment(map('bullish', 'bullish', 'bullish'), ORDER),
       describeMtfAlignment(map('bullish', 'bullish', 'bearish'), ORDER),
-      describeMtfAlignment(map('bullish', 'neutral', 'bearish'), ORDER),
-      describeMtfAlignment(map('neutral', 'neutral', 'neutral'), ORDER),
+      describeMtfAlignment(map('bullish', 'indeterminate', 'bearish'), ORDER),
+      describeMtfAlignment(map('indeterminate', 'indeterminate', 'indeterminate'), ORDER),
     ].join(' ');
     const forbidden = [/va\s/i, /attends/i, /\d+\s*%/, /setup/i, /fort/i, /évite/i, /risqu/i, /probab/i];
     for (const re of forbidden) expect(samples).not.toMatch(re);
@@ -102,19 +102,19 @@ describe('classifyMtfAlignment (relation kind + disagreement flag)', () => {
   });
 
   it('all flat → kind neutral, no disagreement', () => {
-    const r = classifyMtfAlignment(map('neutral', 'ranging', 'neutral'), ORDER);
+    const r = classifyMtfAlignment(map('indeterminate', 'indeterminate', 'indeterminate'), ORDER);
     expect(r.kind).toBe('neutral');
     expect(r.disagreement).toBe(false);
   });
 
   it('up AND down both present → kind divergent, DISAGREEMENT', () => {
-    const r = classifyMtfAlignment(map('bullish', 'neutral', 'bearish'), ORDER);
+    const r = classifyMtfAlignment(map('bullish', 'indeterminate', 'bearish'), ORDER);
     expect(r.kind).toBe('divergent');
     expect(r.disagreement).toBe(true);
   });
 
   it('one direction + flats (no opposite) → kind partial, NO disagreement', () => {
-    const r = classifyMtfAlignment(map('bullish', 'neutral', 'bullish'), ORDER);
+    const r = classifyMtfAlignment(map('bullish', 'indeterminate', 'bullish'), ORDER);
     expect(r.kind).toBe('partial');
     expect(r.disagreement).toBe(false);
   });
