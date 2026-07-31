@@ -31,4 +31,28 @@ describe('fetchAccess', () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('boom', { status: 500 })));
     await expect(fetchAccess()).rejects.toThrow(/access summary unavailable/);
   });
+
+  it('REC-1: aborts on timeout so the gate can never spin forever', async () => {
+    // A backend that never responds must not leave the SubscriptionGate (on every
+    // product page) stuck on the loading skeleton. fetchAccess bounds the wait:
+    // the fetch is passed an AbortSignal that trips on timeout → it rejects.
+    vi.useFakeTimers();
+    const fetchMock = vi.fn(
+      (_url: string, init: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          // Never resolves; only rejects when the internal timeout aborts it.
+          init.signal?.addEventListener('abort', () =>
+            reject(new DOMException('aborted', 'AbortError')),
+          );
+        }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const promise = fetchAccess();
+    const assertion = expect(promise).rejects.toThrow();
+    await vi.advanceTimersByTimeAsync(8_000); // ACCESS_TIMEOUT_MS
+    await assertion;
+    expect(fetchMock).toHaveBeenCalled();
+    vi.useRealTimers();
+  });
 });

@@ -162,3 +162,19 @@ def test_endpoint_router_is_wired_into_app_module():
     from src.api import app as app_module
     # The module imports `market_reading` from routes
     assert hasattr(app_module, "market_reading") or "market_reading" in dir(app_module)
+
+
+def test_endpoint_is_sync_so_it_never_blocks_the_event_loop():
+    """REC-1 regression guard. ``get_or_generate`` does ~1.7s of blocking work
+    (detection + provider fetch). If this endpoint were ``async def`` that work
+    would run ON the event loop and freeze EVERY concurrent request — including
+    the access gate's /api/access/me — leaving all pages stuck on the loading
+    skeleton. A plain ``def`` path operation runs in FastAPI's worker threadpool,
+    so a slow reading no longer blocks the loop. This must stay ``def``."""
+    import inspect
+    from src.api.routes.market_reading import get_market_reading
+
+    assert not inspect.iscoroutinefunction(get_market_reading), (
+        "get_market_reading must be a sync `def` so FastAPI threadpools it and a "
+        "slow reading cannot freeze the event loop (REC-1)."
+    )
