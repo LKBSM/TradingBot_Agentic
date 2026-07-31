@@ -209,6 +209,9 @@ class ComboMatch(BaseModel):
     conditions_met: List[ConditionOutcome]
     conditions_unmet: List[ConditionOutcome]
     conditions_non_evaluable: List[ConditionOutcome] = Field(default_factory=list)
+    # Factual against-signals (multi-unit disagreement, contracted volatility,
+    # tested zone), surfaced even on a full match — the « à l'encontre » block.
+    context_against: List[Dict[str, str]] = Field(default_factory=list)
     context: Dict[str, Any]
     # Reading age in candles behind the latest expected close, and its tier.
     # Lets the UI avoid asserting an aged reading as "présent maintenant".

@@ -76,6 +76,23 @@ describe('ComboCard — three blocks (SC-1)', () => {
     expect(screen.getByText(/1 non évaluable/)).toBeInTheDocument();
   });
 
+  it('renders enriched against-signals in the against block on a FULL match', () => {
+    const m = combo({
+      matched: true, met_count: 1, total: 1,
+      conditions_unmet: [],
+      context_against: [
+        { label: 'Le 4 h est en tendance haussière', detail: 'désaccord multi-unités' },
+        { label: 'La volatilité est contractée', detail: '7 dernières vs 20' },
+      ],
+    });
+    render(<ComboCard match={m} locale="fr" now={Date.now()} />);
+    // The block is present AND carries the against-signals (not the empty note).
+    expect(screen.getByTestId('against-block')).toBeInTheDocument();
+    expect(screen.getByText('Le 4 h est en tendance haussière')).toBeInTheDocument();
+    expect(screen.getByText(/désaccord multi-unités/)).toBeInTheDocument();
+    expect(screen.queryByText(/Rien ne va à l’encontre/)).not.toBeInTheDocument();
+  });
+
   it('offers « Analyser » and « Ouvrir dans le graphique », never « Trader »', () => {
     render(<ComboCard match={combo()} locale="fr" now={Date.now()} />);
     expect(screen.getByText(/Analyser/)).toBeInTheDocument();

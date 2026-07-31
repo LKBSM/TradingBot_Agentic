@@ -193,6 +193,8 @@ export interface ComboMatch {
   conditions_met: ConditionOutcome[];
   conditions_unmet: ConditionOutcome[];
   conditions_non_evaluable?: ConditionOutcome[];
+  /** Factual against-signals surfaced even on a full match (« à l'encontre »). */
+  context_against?: Array<{ label: string; detail: string }>;
   context: ComboContext;
   bars_behind?: number;
   freshness?: Freshness;

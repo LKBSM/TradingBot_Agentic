@@ -15,6 +15,7 @@ from src.intelligence.conditions_scanner import (
     BLOCKED_PALETTE,
     FAMILIES,
     PALETTE,
+    build_context_against,
     evaluate_condition,
     evaluate_reading,
 )
@@ -358,6 +359,41 @@ def test_or_logic_matches_on_any_evaluable():
     r = _reading(close_price=2000.0, order_blocks=[_ob(1990, 2010)])
     out = evaluate_reading(r, [{"type": "price_in_ob"}, {"type": "price_in_fvg"}], "OR", _ALIGNED_BULL)
     assert out["matched"] is True and out["met_count"] == 1
+
+
+# ── context-against (« ce qui va à l'encontre », enriched) ───────────────────
+
+
+def test_context_against_multi_unit_disagreement():
+    # M15 bearish, H1 bullish → the higher unit disagrees → an against item.
+    r = _reading(timeframe="M15", trend="bearish")
+    items = build_context_against(r, {"M15": "bearish", "H1": "bullish", "H4": "bullish"})
+    assert any("désaccord multi-unités" in it["detail"] for it in items)
+    assert any("1 h" in it["label"] or "4 h" in it["label"] for it in items)
+
+
+def test_context_against_contracted_volatility():
+    r = _reading(volatility="low")
+    items = build_context_against(r, {})
+    assert any("contractée" in it["label"] for it in items)
+
+
+def test_context_against_surfaced_even_on_full_match():
+    # A combo can fully match AND still carry against-signals (multi-unit
+    # disagreement) — the « à l'encontre » block is never empty by construction
+    # of a match.
+    r = _reading(timeframe="M15", trend="bearish", order_blocks=[_ob(1990, 2010)])
+    out = evaluate_reading(
+        r, [{"type": "price_in_ob"}], "AND", {"M15": "bearish", "H1": "bullish"},
+    )
+    assert out["matched"] is True
+    assert len(out["context_against"]) >= 1
+
+
+def test_context_against_empty_when_nothing_opposes():
+    r = _reading(timeframe="M15", trend="bullish", volatility="normal")
+    items = build_context_against(r, {"M15": "bullish", "H1": "bullish"})
+    assert items == []
 
 
 # ── palette invariants ───────────────────────────────────────────────────────

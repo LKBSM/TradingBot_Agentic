@@ -37,6 +37,7 @@ export function ComboCard({
 
   const nonEvaluable: ConditionOutcome[] = match.conditions_non_evaluable ?? [];
   const nonEvaluableCount = match.non_evaluable_count ?? nonEvaluable.length;
+  const againstItems = match.context_against ?? [];
 
   const importantNewsCount = ctx.news_upcoming.filter((n) => n.impact === 'high').length;
 
@@ -75,20 +76,34 @@ export function ComboCard({
         ))
       )}
 
-      {/* Block 2 — Ce qui va à l'encontre (NEVER hidden nor collapsible) */}
+      {/* Block 2 — Ce qui va à l'encontre (NEVER hidden nor collapsible).
+          Holds the UNMET selected conditions AND the factual against-signals
+          (multi-unit disagreement, contracted volatility, tested zone) that the
+          engine surfaces even on a full match. */}
       <div className="blk-lbl" data-testid="against-block">{t('againstBlock')}</div>
-      {match.conditions_unmet.length === 0 ? (
+      {match.conditions_unmet.length === 0 && againstItems.length === 0 ? (
         <p className="blk-empty">{t('againstNone')}</p>
       ) : (
-        match.conditions_unmet.map((c) => (
-          <div key={`unmet-${c.type}`} className="cl no">
-            <span className="mk2" aria-hidden />
-            <span>
-              <span className="font-medium">{c.label}</span>
-              <span className="text-[color:var(--faint)]"> — {c.detail}</span>
-            </span>
-          </div>
-        ))
+        <>
+          {match.conditions_unmet.map((c) => (
+            <div key={`unmet-${c.type}`} className="cl no">
+              <span className="mk2" aria-hidden />
+              <span>
+                <span className="font-medium">{c.label}</span>
+                <span className="text-[color:var(--faint)]"> — {c.detail}</span>
+              </span>
+            </div>
+          ))}
+          {againstItems.map((it, i) => (
+            <div key={`against-${i}`} className="cl no">
+              <span className="mk2" aria-hidden>✗</span>
+              <span>
+                <span className="font-medium">{it.label}</span>
+                <span className="text-[color:var(--faint)]"> — {it.detail}</span>
+              </span>
+            </div>
+          ))}
+        </>
       )}
 
       {/* Non-evaluable — a third state, adjusts the denominator (not met, not against) */}

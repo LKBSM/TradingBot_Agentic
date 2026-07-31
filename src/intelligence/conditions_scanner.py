@@ -1226,6 +1226,54 @@ def build_context(reading: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+def build_context_against(
+    reading: Dict[str, Any],
+    instrument_trends: Optional[Dict[str, Optional[str]]] = None,
+) -> List[Dict[str, str]]:
+    """Factual observations that go AGAINST the reading's thesis — surfaced EVEN
+    when every selected condition is met. This is the « ce qui va à l'encontre »
+    material the scanner shows unmasked; each item is a PRESENT FACT (a
+    disagreeing unit, a contracted volatility, a tested zone), never a
+    recommendation and never a prediction. Returns ``[{label, detail}]``.
+    """
+    out: List[Dict[str, str]] = []
+    regime = reading.get("regime", {})
+    trend = regime.get("trend")
+    current_tf = reading.get("header", {}).get("timeframe") or ""
+    trends = instrument_trends or {}
+
+    # 1) Multi-unit disagreement — tracked units whose STRUCTURAL trend opposes
+    #    this unit's (only meaningful when this unit is itself directional).
+    if trend in ("bullish", "bearish"):
+        opp = "bearish" if trend == "bullish" else "bullish"
+        opposers = [tf for tf, t in trends.items() if tf != current_tf and t == opp]
+        opposers.sort(key=lambda tf: _tfreg.minutes(tf) if _tfreg.has(tf) else 0)
+        if opposers:
+            names = ", ".join(_tf_label(tf) for tf in opposers)
+            adj = "haussière" if opp == "bullish" else "baissière"
+            verb = "sont" if len(opposers) > 1 else "est"
+            out.append(
+                {"label": f"Le {names} {verb} en tendance {adj}", "detail": "désaccord multi-unités"}
+            )
+
+    # 2) Contracted volatility goes against a directional expansion.
+    if regime.get("volatility_observed") == "low":
+        vd = regime.get("volatility_detail") or {}
+        detail = f"{vd.get('recent_n', 7)} dernières vs {vd.get('baseline_n', 20)}" if vd else "observée"
+        out.append({"label": "La volatilité est contractée", "detail": detail})
+
+    # 3) The price sits in a zone that has ALREADY been tested (weaker than fresh).
+    price = reading.get("header", {}).get("close_price")
+    if price is not None:
+        for tag, z in _zones_of_kind(reading, "any"):
+            b = _zone_bounds(z)
+            if b and b[0] < price < b[1] and z.get("tested"):
+                out.append({"label": f"La zone au prix ({tag}) a déjà été testée", "detail": _fmt_band(z)})
+                break
+
+    return out
+
+
 def evaluate_reading(
     reading: Dict[str, Any],
     conditions: List[Dict[str, Any]],
@@ -1273,6 +1321,9 @@ def evaluate_reading(
         "conditions_met": met,
         "conditions_unmet": unmet,
         "conditions_non_evaluable": non_evaluable,
+        # Factual against-signals, surfaced even on a full match. Rendered in the
+        # « à l'encontre » block, which is ALWAYS shown and never maskable.
+        "context_against": build_context_against(reading, instrument_trends),
         "context": context,
     }
 
@@ -1289,6 +1340,7 @@ __all__ = [
     "LIQUIDITY_SIDE_VALUES",
     "PALETTE",
     "build_context",
+    "build_context_against",
     "evaluate_condition",
     "evaluate_reading",
 ]
