@@ -2,99 +2,62 @@
 
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
+import { ChevronDown, Copy, Check, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import {
   CONDITION_PALETTE,
-  DEFAULT_BOS_MAX_BARS,
-  DEFAULT_PROXIMITY_PCT,
-  LIQUIDITY_SIDE_OPTIONS,
-  PHASE_OPTIONS,
-  TREND_OPTIONS,
-  VOLATILITY_OPTIONS,
+  DEFAULT_OPEN_FAMILIES,
+  groupByFamily,
+  optionLabelFallback,
   paletteEntry,
 } from '@/lib/conditions/palette';
 import type {
   ConditionType,
   ConditionsConfig,
-  DirectionFilter,
-  LiquiditySideFilter,
-  PhaseChoice,
+  ControlDescriptor,
+  ControlName,
+  Family,
+  PaletteEntry,
   ScanCondition,
   ScanLogic,
-  TrendChoice,
-  VolatilityChoice,
 } from '@/lib/conditions/types';
-import {
-  MAX_NAME_CHARS,
-  type StrategyMutationResult,
-} from '@/lib/conditions/strategy-store';
+import { MAX_NAME_CHARS, type StrategyMutationResult } from '@/lib/conditions/strategy-store';
 import { mutationErrorMessage } from './StrategyPanel';
-
-/** Capitalise a locale-agnostic enum value to build an ICU key suffix. */
-function cap(v: string): string {
-  return v.charAt(0).toUpperCase() + v.slice(1);
-}
-
-/**
- * Builder where the user COMPOSES their conditions from the present-tense
- * palette + an AND/OR logic. Used both for first-visit onboarding and for later
- * editing. Descriptive only — no condition here speaks of a future outcome.
- */
+import { Segmented } from './Segmented';
 
 interface RowState {
   selected: boolean;
-  direction: DirectionFilter;
-  maxBars: number;
-  trend: TrendChoice;
-  phase: PhaseChoice;
-  volatility: VolatilityChoice;
-  proximityPct: number;
-  side: LiquiditySideFilter;
+  values: Record<string, string | number>;
 }
 
 type BuilderState = Record<ConditionType, RowState>;
 
-const DEFAULT_ROW: RowState = {
-  selected: false,
-  direction: 'any',
-  maxBars: DEFAULT_BOS_MAX_BARS,
-  trend: 'bullish',
-  phase: 'trend',
-  volatility: 'elevated',
-  proximityPct: DEFAULT_PROXIMITY_PCT,
-  side: 'any',
-};
+function defaultRow(entry: PaletteEntry): RowState {
+  const values: Record<string, string | number> = {};
+  for (const c of entry.controls) values[c.name] = c.default;
+  return { selected: false, values };
+}
 
 function initialState(config: ConditionsConfig | null): BuilderState {
   const base = {} as BuilderState;
-  for (const entry of CONDITION_PALETTE) {
-    base[entry.type] = { ...DEFAULT_ROW };
-  }
+  for (const entry of CONDITION_PALETTE) base[entry.type] = defaultRow(entry);
   if (config) {
     for (const cond of config.conditions) {
+      const entry = paletteEntry(cond.type);
       const row = base[cond.type];
-      if (row) {
-        base[cond.type] = {
-          ...row,
-          selected: true,
-          direction: cond.direction ?? row.direction,
-          maxBars: cond.max_bars ?? row.maxBars,
-          trend: cond.trend ?? row.trend,
-          phase: cond.phase ?? row.phase,
-          volatility: cond.volatility ?? row.volatility,
-          proximityPct: cond.proximity_pct ?? row.proximityPct,
-          side: cond.side ?? row.side,
-        };
+      if (!entry || !row) continue;
+      const values = { ...row.values };
+      for (const c of entry.controls) {
+        const v = (cond as unknown as Record<string, unknown>)[c.name];
+        if (v !== undefined && (typeof v === 'string' || typeof v === 'number')) values[c.name] = v;
       }
+      base[cond.type] = { selected: true, values };
     }
   }
   return base;
 }
-
-const SELECT_CLASS =
-  'rounded-md border border-input bg-background px-2 py-1 text-xs text-foreground';
 
 export function ConditionsBuilder({
   config,
@@ -108,326 +71,315 @@ export function ConditionsBuilder({
   onSubmit(config: ConditionsConfig): void;
   onCancel?(): void;
   mode: 'onboarding' | 'edit';
-  /** When provided, the builder offers to save the composition as a named strategy (client-only). */
   onSaveStrategy?(name: string, config: ConditionsConfig): StrategyMutationResult;
-  /** Prefilled strategy name when the palette was repopulated from a saved strategy. */
   initialStrategyName?: string;
 }) {
   const t = useTranslations('scanner');
-  // Palette label/description: translated when a key exists, else the palette's
-  // own FR label (covers conditions added after the i18n pass — deferred).
+
   const plabel = (type: ConditionType): string =>
     t.has(`palette.${type}_label`) ? t(`palette.${type}_label`) : paletteEntry(type)?.label ?? type;
   const pdesc = (type: ConditionType): string =>
     t.has(`palette.${type}_desc`) ? t(`palette.${type}_desc`) : paletteEntry(type)?.description ?? '';
+  const optLabel = (control: ControlName, value: string | number): string => {
+    const key = `opt.${control}.${value}`;
+    return t.has(key) ? t(key) : optionLabelFallback(control, value);
+  };
+
   const [rows, setRows] = React.useState<BuilderState>(() => initialState(config));
   const [logic, setLogic] = React.useState<ScanLogic>(config?.logic ?? 'AND');
+  const [open, setOpen] = React.useState<Set<Family>>(() => new Set(DEFAULT_OPEN_FAMILIES));
+  const [concept, setConcept] = React.useState<ConditionType | null>(null);
   const [strategyName, setStrategyName] = React.useState(initialStrategyName ?? '');
-  const [strategyFeedback, setStrategyFeedback] = React.useState<{
-    kind: 'ok' | 'error';
-    text: string;
-  } | null>(null);
+  const [strategyFeedback, setStrategyFeedback] = React.useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
+  const [copied, setCopied] = React.useState(false);
 
+  const groups = React.useMemo(() => groupByFamily(CONDITION_PALETTE), []);
   const selectedCount = CONDITION_PALETTE.filter((e) => rows[e.type].selected).length;
+  const activeInFamily = (family: Family): number =>
+    CONDITION_PALETTE.filter((e) => e.family === family && rows[e.type].selected).length;
+
+  function toggleFamily(family: Family) {
+    setOpen((prev) => {
+      const next = new Set(prev);
+      if (next.has(family)) next.delete(family);
+      else next.add(family);
+      return next;
+    });
+  }
 
   function patch(type: ConditionType, partial: Partial<RowState>) {
     setRows((prev) => ({ ...prev, [type]: { ...prev[type], ...partial } }));
   }
+  function setValue(type: ConditionType, name: string, value: string | number) {
+    setRows((prev) => ({
+      ...prev,
+      [type]: { ...prev[type], values: { ...prev[type].values, [name]: value } },
+    }));
+  }
 
   function composeConfig(): ConditionsConfig {
-    const conditions: ScanCondition[] = CONDITION_PALETTE.filter(
-      (e) => rows[e.type].selected,
-    ).map((e) => {
-      const row = rows[e.type];
-      const cond: ScanCondition = { type: e.type };
-      if (e.controls.includes('direction')) cond.direction = row.direction;
-      if (e.controls.includes('bars')) cond.max_bars = row.maxBars;
-      if (e.controls.includes('trend')) cond.trend = row.trend;
-      if (e.controls.includes('phase')) cond.phase = row.phase;
-      if (e.controls.includes('volatility')) cond.volatility = row.volatility;
-      if (e.controls.includes('proximity')) cond.proximity_pct = row.proximityPct;
-      if (e.controls.includes('side')) cond.side = row.side;
+    const conditions: ScanCondition[] = CONDITION_PALETTE.filter((e) => rows[e.type].selected).map((e) => {
+      const cond = { type: e.type } as ScanCondition;
+      const target = cond as unknown as Record<string, unknown>;
+      for (const c of e.controls) target[c.name] = rows[e.type].values[c.name];
       return cond;
     });
     return { logic, conditions };
   }
 
-  function submit() {
-    onSubmit(composeConfig());
+  // Read-only recap sentence, present/passé composé, composed from the ticked
+  // conditions. Each condition's own label already reads at the present or past
+  // — we only append the chosen values and join with the logic connector.
+  const recap = React.useMemo(() => {
+    const parts = CONDITION_PALETTE.filter((e) => rows[e.type].selected).map((e) => {
+      const vals = e.controls
+        .map((c) => optLabel(c.name, rows[e.type].values[c.name] ?? c.default))
+        .join(', ');
+      return vals ? `${plabel(e.type)} (${vals})` : plabel(e.type);
+    });
+    if (parts.length === 0) return '';
+    const joiner = logic === 'AND' ? ` ${t('recap.and')} ` : ` ${t('recap.or')} `;
+    return parts.join(joiner) + '.';
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, logic]);
+
+  async function copyRecap() {
+    try {
+      await navigator.clipboard.writeText(recap);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* clipboard unavailable — no-op */
+    }
   }
 
   function saveAsStrategy() {
     if (!onSaveStrategy) return;
     const result = onSaveStrategy(strategyName, composeConfig());
-    if (result.ok) {
-      setStrategyFeedback({
-        kind: 'ok',
-        text: t('saveStrategy.saved', { name: result.strategy.name }),
-      });
-    } else {
-      setStrategyFeedback({
-        kind: 'error',
-        text: mutationErrorMessage(result, t) ?? t('saveStrategy.saveFailed'),
-      });
-    }
+    setStrategyFeedback(
+      result.ok
+        ? { kind: 'ok', text: t('saveStrategy.saved', { name: result.strategy.name }) }
+        : { kind: 'error', text: mutationErrorMessage(result, t) ?? t('saveStrategy.saveFailed') },
+    );
+  }
+
+  function renderControl(entry: PaletteEntry, control: ControlDescriptor, disabled: boolean) {
+    const options = control.values.map((v) => ({ value: v, label: optLabel(control.name, v) }));
+    const current = rows[entry.type].values[control.name] ?? control.default;
+    return (
+      <div key={control.name} className="flex flex-col gap-1">
+        <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
+          {t.has(`control.${control.name}`) ? t(`control.${control.name}`) : control.name}
+        </span>
+        <Segmented
+          options={options}
+          value={current}
+          onChange={(v) => setValue(entry.type, control.name, v)}
+          disabled={disabled}
+          ariaLabel={`${plabel(entry.type)} — ${control.name}`}
+        />
+      </div>
+    );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">
-          {mode === 'onboarding' ? t('builder.composeTitle') : t('builder.editTitle')}
-        </CardTitle>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {t.rich('builder.intro', { b: (chunks) => <strong>{chunks}</strong> })}
-        </p>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <ul className="space-y-2">
-          {CONDITION_PALETTE.map((entry) => {
-            const row = rows[entry.type];
-            const hasControls = entry.controls.length > 0;
+    <div className="space-y-4 pb-24">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">
+            {mode === 'onboarding' ? t('builder.composeTitle') : t('builder.editTitle')}
+          </CardTitle>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {t.rich('builder.intro', { b: (chunks) => <strong>{chunks}</strong> })}
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {groups.map(({ family, entries }, familyIndex) => {
+            const isOpen = open.has(family);
+            const count = activeInFamily(family);
             return (
-              <li
-                key={entry.type}
-                className={cn(
-                  'rounded-lg border p-3 transition-colors',
-                  row.selected ? 'border-primary/60 bg-primary/5' : 'border-border/60',
-                )}
-              >
-                <label className="flex cursor-pointer items-start gap-3">
-                  <input
-                    type="checkbox"
-                    checked={row.selected}
-                    onChange={() => patch(entry.type, { selected: !row.selected })}
-                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-input accent-primary"
-                    aria-label={plabel(entry.type)}
-                  />
-                  <span className="flex flex-col">
-                    <span className="text-sm font-medium text-foreground">
-                      {plabel(entry.type)}
-                    </span>
-                    <span className="text-xs leading-snug text-muted-foreground">
-                      {pdesc(entry.type)}
-                    </span>
+              <section key={family} className="rounded-lg border border-border/60">
+                <button
+                  type="button"
+                  onClick={() => toggleFamily(family)}
+                  aria-expanded={isOpen}
+                  className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left"
+                >
+                  <span className="flex items-baseline gap-2">
+                    <span className="text-xs text-muted-foreground">{familyIndex + 1}.</span>
+                    <span className="text-sm font-semibold text-foreground">{t(`family.${family}.title`)}</span>
+                    <span className="text-xs text-muted-foreground">{t(`family.${family}.desc`)}</span>
                   </span>
-                </label>
+                  <span className="flex items-center gap-2">
+                    <span
+                      className={cn(
+                        'rounded-full px-2 py-0.5 text-[11px]',
+                        count > 0 ? 'bg-foreground/10 text-foreground' : 'text-muted-foreground',
+                      )}
+                    >
+                      {t('builder.activeInFamily', { count })}
+                    </span>
+                    <ChevronDown className={cn('h-4 w-4 transition-transform', isOpen && 'rotate-180')} />
+                  </span>
+                </button>
 
-                {row.selected && hasControls && (
-                  <div className="mt-3 flex flex-wrap items-center gap-3 pl-7">
-                    {entry.controls.includes('direction') && (
-                      <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                        {t('builder.direction')}
-                        <select
-                          value={row.direction}
-                          onChange={(e) =>
-                            patch(entry.type, { direction: e.target.value as DirectionFilter })
-                          }
-                          className={SELECT_CLASS}
+                {isOpen && (
+                  <ul className="space-y-2 p-2">
+                    {entries.map((entry) => {
+                      const row = rows[entry.type];
+                      const showConcept = concept === entry.type;
+                      return (
+                        <li
+                          key={entry.type}
+                          className={cn(
+                            'rounded-lg border p-3 transition-colors',
+                            row.selected ? 'border-foreground/40 bg-foreground/5' : 'border-border/50',
+                          )}
                         >
-                          {(['any', 'bullish', 'bearish'] as DirectionFilter[]).map((d) => (
-                            <option key={d} value={d}>
-                              {t(`options.direction${cap(d)}`)}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                    )}
-                    {entry.controls.includes('trend') && (
-                      <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                        {t('builder.trend')}
-                        <select
-                          value={row.trend}
-                          onChange={(e) =>
-                            patch(entry.type, { trend: e.target.value as TrendChoice })
-                          }
-                          className={SELECT_CLASS}
-                        >
-                          {TREND_OPTIONS.map((o) => (
-                            <option key={o.value} value={o.value}>
-                              {t(`options.trend${cap(o.value)}`)}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                    )}
-                    {entry.controls.includes('phase') && (
-                      <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                        {t('builder.phase')}
-                        <select
-                          value={row.phase}
-                          onChange={(e) =>
-                            patch(entry.type, { phase: e.target.value as PhaseChoice })
-                          }
-                          className={SELECT_CLASS}
-                        >
-                          {PHASE_OPTIONS.map((o) => (
-                            <option key={o.value} value={o.value}>
-                              {t(`options.phase${cap(o.value)}`)}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                    )}
-                    {entry.controls.includes('volatility') && (
-                      <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                        {t('builder.volatility')}
-                        <select
-                          value={row.volatility}
-                          onChange={(e) =>
-                            patch(entry.type, { volatility: e.target.value as VolatilityChoice })
-                          }
-                          className={SELECT_CLASS}
-                        >
-                          {VOLATILITY_OPTIONS.map((o) => (
-                            <option key={o.value} value={o.value}>
-                              {t(`options.volatility${cap(o.value)}`)}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                    )}
-                    {entry.controls.includes('bars') && (
-                      <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                        {t('builder.inLast')}
-                        <input
-                          type="number"
-                          min={1}
-                          max={50}
-                          value={row.maxBars}
-                          onChange={(e) =>
-                            patch(entry.type, {
-                              maxBars: Math.min(50, Math.max(1, Number(e.target.value) || 1)),
-                            })
-                          }
-                          className="w-16 rounded-md border border-input bg-background px-2 py-1 text-xs text-foreground"
-                        />
-                        {t('builder.lastCandles')}
-                      </label>
-                    )}
-                    {entry.controls.includes('proximity') && (
-                      <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                        {t('builder.proximityWithin')}
-                        <input
-                          type="number"
-                          min={0.05}
-                          max={10}
-                          step={0.05}
-                          value={row.proximityPct}
-                          onChange={(e) =>
-                            patch(entry.type, {
-                              proximityPct: Math.min(
-                                10,
-                                Math.max(0.05, Number(e.target.value) || DEFAULT_PROXIMITY_PCT),
-                              ),
-                            })
-                          }
-                          className="w-16 rounded-md border border-input bg-background px-2 py-1 text-xs text-foreground"
-                        />
-                        {t('builder.proximityOfPrice')}
-                      </label>
-                    )}
-                    {entry.controls.includes('side') && (
-                      <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                        {t('builder.side')}
-                        <select
-                          value={row.side}
-                          onChange={(e) =>
-                            patch(entry.type, { side: e.target.value as LiquiditySideFilter })
-                          }
-                          className={SELECT_CLASS}
-                        >
-                          {LIQUIDITY_SIDE_OPTIONS.map((o) => (
-                            <option key={o.value} value={o.value}>
-                              {t(`options.side${cap(o.value)}`)}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                    )}
-                  </div>
+                          <div className="flex items-start justify-between gap-2">
+                            <label className="flex cursor-pointer items-start gap-3">
+                              <input
+                                type="checkbox"
+                                checked={row.selected}
+                                onChange={() => patch(entry.type, { selected: !row.selected })}
+                                className="mt-0.5 h-4 w-4 shrink-0 rounded border-input accent-foreground"
+                                aria-label={plabel(entry.type)}
+                              />
+                              <span className="text-sm font-medium text-foreground">{plabel(entry.type)}</span>
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => setConcept(showConcept ? null : entry.type)}
+                              aria-expanded={showConcept}
+                              aria-label={t('builder.conceptAria', { label: plabel(entry.type) })}
+                              className="shrink-0 rounded p-1 text-muted-foreground hover:text-foreground"
+                            >
+                              <Info className="h-4 w-4" />
+                            </button>
+                          </div>
+
+                          {showConcept && (
+                            <dl className="mt-2 space-y-1 rounded-md border border-border/50 bg-background/40 p-2 text-xs">
+                              <div>
+                                <dt className="font-semibold text-foreground">{t('concept.whatLabel')}</dt>
+                                <dd className="text-muted-foreground">
+                                  {t.has(`concept.${entry.type}.what`) ? t(`concept.${entry.type}.what`) : pdesc(entry.type)}
+                                </dd>
+                              </div>
+                              {t.has(`concept.${entry.type}.smc`) && (
+                                <div>
+                                  <dt className="font-semibold text-foreground">{t('concept.smcLabel')}</dt>
+                                  <dd className="text-muted-foreground">{t(`concept.${entry.type}.smc`)}</dd>
+                                </div>
+                              )}
+                              <div>
+                                <dt className="font-semibold text-foreground">{t('concept.notLabel')}</dt>
+                                <dd className="text-muted-foreground">
+                                  {t.has(`concept.${entry.type}.not`) ? t(`concept.${entry.type}.not`) : t('concept.notDefault')}
+                                </dd>
+                              </div>
+                            </dl>
+                          )}
+
+                          {entry.controls.length > 0 && (
+                            <div className="mt-3 flex flex-wrap gap-4 pl-7">
+                              {entry.controls.map((c) => renderControl(entry, c, !row.selected))}
+                            </div>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
                 )}
-              </li>
+              </section>
             );
           })}
-        </ul>
 
-        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border/60 p-3">
-          <span className="text-sm text-muted-foreground">{t('builder.combination')}</span>
-          <div className="flex gap-1">
-            {(['AND', 'OR'] as ScanLogic[]).map((l) => (
-              <Button
-                key={l}
-                type="button"
-                size="sm"
-                variant={logic === l ? 'default' : 'outline'}
-                onClick={() => setLogic(l)}
-              >
-                {l === 'AND' ? t('builder.logicAnd') : t('builder.logicOr')}
-              </Button>
-            ))}
+          <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border/60 p-3">
+            <span className="text-sm text-muted-foreground">{t('builder.combination')}</span>
+            <Segmented
+              options={[
+                { value: 'AND' as ScanLogic, label: t('builder.logicAnd') },
+                { value: 'OR' as ScanLogic, label: t('builder.logicOr') },
+              ]}
+              value={logic}
+              onChange={(v) => setLogic(v as ScanLogic)}
+              ariaLabel={t('builder.combination')}
+            />
           </div>
-        </div>
 
-        {onSaveStrategy && (
-          <div className="space-y-2 rounded-lg border border-border/60 p-3">
-            <p className="text-sm text-muted-foreground">
-              {t('saveStrategy.prompt')}
-            </p>
-            <div className="flex flex-wrap items-center gap-2">
-              <input
-                value={strategyName}
-                onChange={(e) => {
-                  setStrategyName(e.target.value);
-                  setStrategyFeedback(null);
-                }}
-                maxLength={MAX_NAME_CHARS}
-                placeholder={t('saveStrategy.placeholder')}
-                aria-label={t('saveStrategy.nameAria')}
-                className="min-w-0 flex-1 rounded-md border border-input bg-background px-2 py-1 text-sm text-foreground"
-              />
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={saveAsStrategy}
-                disabled={selectedCount === 0 || strategyName.trim().length === 0}
-              >
-                {t('saveStrategy.save')}
-              </Button>
+          {recap && (
+            <div className="space-y-2 rounded-lg border border-border/60 bg-background/40 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs uppercase tracking-wide text-muted-foreground">{t('recap.title')}</span>
+                <Button type="button" size="sm" variant="ghost" onClick={copyRecap} className="h-7 gap-1">
+                  {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                  {copied ? t('recap.copied') : t('recap.copy')}
+                </Button>
+              </div>
+              <p className="text-sm text-foreground">{recap}</p>
             </div>
-            {strategyFeedback && (
-              <p
-                role={strategyFeedback.kind === 'error' ? 'alert' : 'status'}
-                className={cn(
-                  'text-xs',
-                  strategyFeedback.kind === 'error'
-                    ? 'text-destructive'
-                    : 'text-muted-foreground',
-                )}
-              >
-                {strategyFeedback.text}
-              </p>
-            )}
-          </div>
-        )}
+          )}
 
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" onClick={submit} disabled={selectedCount === 0}>
-            {mode === 'onboarding' ? t('builder.submitOnboarding') : t('builder.submitEdit')}
-          </Button>
-          {onCancel && (
-            <Button type="button" variant="ghost" onClick={onCancel}>
-              {t('builder.cancel')}
+          {onSaveStrategy && (
+            <div className="space-y-2 rounded-lg border border-border/60 p-3">
+              <p className="text-sm text-muted-foreground">{t('saveStrategy.prompt')}</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  value={strategyName}
+                  onChange={(e) => {
+                    setStrategyName(e.target.value);
+                    setStrategyFeedback(null);
+                  }}
+                  maxLength={MAX_NAME_CHARS}
+                  placeholder={t('saveStrategy.placeholder')}
+                  aria-label={t('saveStrategy.nameAria')}
+                  className="min-w-0 flex-1 rounded-md border border-input bg-background px-2 py-1 text-sm text-foreground"
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={saveAsStrategy}
+                  disabled={selectedCount === 0 || strategyName.trim().length === 0}
+                >
+                  {t('saveStrategy.save')}
+                </Button>
+              </div>
+              {strategyFeedback && (
+                <p
+                  role={strategyFeedback.kind === 'error' ? 'alert' : 'status'}
+                  className={cn('text-xs', strategyFeedback.kind === 'error' ? 'text-destructive' : 'text-muted-foreground')}
+                >
+                  {strategyFeedback.text}
+                </p>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Sticky action bar — selected count + go to results. */}
+      <div className="fixed inset-x-0 bottom-0 z-10 border-t border-border/60 bg-background/95 backdrop-blur">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
+          <span className="text-sm text-muted-foreground">
+            {t('builder.selectedCount', { count: selectedCount })}
+          </span>
+          <div className="flex flex-wrap gap-2">
+            {onCancel && (
+              <Button type="button" variant="ghost" onClick={onCancel}>
+                {t('builder.cancel')}
+              </Button>
+            )}
+            <Button type="button" onClick={() => onSubmit(composeConfig())} disabled={selectedCount === 0}>
+              {mode === 'onboarding' ? t('builder.submitOnboarding') : t('builder.submitEdit')}
             </Button>
-          )}
-          {selectedCount === 0 && (
-            <span className="self-center text-xs text-muted-foreground">
-              {t('builder.selectAtLeastOne')}
-            </span>
-          )}
+          </div>
         </div>
-      </CardContent>
-    </Card>
+        {selectedCount === 0 && (
+          <p className="px-4 pb-2 text-center text-xs text-muted-foreground">{t('builder.selectAtLeastOne')}</p>
+        )}
+      </div>
+    </div>
   );
 }

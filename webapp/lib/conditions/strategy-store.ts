@@ -1,14 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import type { ConditionsConfig, ScanCondition } from './types';
-import {
-  CONDITION_TYPES,
-  DIRECTION_LABELS,
-  PHASE_OPTIONS,
-  TREND_OPTIONS,
-  VOLATILITY_OPTIONS,
-} from './palette';
+import type { ConditionsConfig } from './types';
+import { CONDITION_TYPES } from './palette';
 
 /**
  * Named scanner strategies — CLIENT-ONLY (localStorage), Loi 25 boundary.
@@ -64,18 +58,36 @@ export type StrategyMutationResult =
 // ── Validation against the CURRENT schema ────────────────────────────────────
 
 const VALID_TYPES = new Set<string>(CONDITION_TYPES);
-const VALID_DIRECTIONS = new Set<string>(Object.keys(DIRECTION_LABELS));
-const VALID_TRENDS = new Set<string>(TREND_OPTIONS.map((o) => o.value));
-const VALID_PHASES = new Set<string>(PHASE_OPTIONS.map((o) => o.value));
-const VALID_VOLATILITIES = new Set<string>(VOLATILITY_OPTIONS.map((o) => o.value));
+const VALID_DIRECTIONS = new Set(['any', 'bullish', 'bearish']);
+const VALID_TRENDS = new Set(['bullish', 'bearish', 'indeterminate']);
+const VALID_PHASES = new Set(['accumulation', 'trend', 'ranging', 'expansion']);
+const VALID_VOLATILITIES = new Set(['low', 'normal', 'elevated']);
+const VALID_SIDES = new Set(['any', 'bsl', 'ssl']);
+const VALID_ZONE_KINDS = new Set(['any', 'ob', 'fvg']);
+const VALID_EVENTS = new Set(['bos_up', 'bos_down', 'choch_up', 'choch_down']);
+const VALID_AGE_BUCKETS = new Set(['lt10', '10to50', 'gt50']);
+const VALID_THIRDS = new Set(['bottom', 'middle', 'top']);
+const VALID_EQ_KINDS = new Set(['any', 'highs', 'lows']);
+const VALID_SESSIONS = new Set(['asia', 'london', 'new_york', 'overlap']);
 const KNOWN_CONDITION_KEYS = new Set([
-  'type',
-  'direction',
-  'max_bars',
-  'trend',
-  'phase',
-  'volatility',
+  'type', 'direction', 'max_bars', 'trend', 'phase', 'volatility',
+  'proximity_pct', 'side', 'zone_kind', 'event', 'age_bucket', 'third',
+  'eq_kind', 'session',
 ]);
+
+const ENUM_CHECKS: Array<{ key: string; set: Set<string>; label: string }> = [
+  { key: 'direction', set: VALID_DIRECTIONS, label: 'Direction' },
+  { key: 'trend', set: VALID_TRENDS, label: 'Tendance' },
+  { key: 'phase', set: VALID_PHASES, label: 'Phase' },
+  { key: 'volatility', set: VALID_VOLATILITIES, label: 'Volatilité' },
+  { key: 'side', set: VALID_SIDES, label: 'Côté' },
+  { key: 'zone_kind', set: VALID_ZONE_KINDS, label: 'Type de zone' },
+  { key: 'event', set: VALID_EVENTS, label: 'Événement' },
+  { key: 'age_bucket', set: VALID_AGE_BUCKETS, label: 'Tranche' },
+  { key: 'third', set: VALID_THIRDS, label: 'Tiers' },
+  { key: 'eq_kind', set: VALID_EQ_KINDS, label: 'Type d’égalité' },
+  { key: 'session', set: VALID_SESSIONS, label: 'Session' },
+];
 
 /**
  * Validate a saved strategy against the CURRENT condition schema.
@@ -128,34 +140,25 @@ export function validateStrategy(strategy: SavedStrategy): string[] {
         problems.push(`Champ non reconnu sur « ${type} » : « ${key} » (${where}).`);
       }
     }
-    if (cond.direction !== undefined && !VALID_DIRECTIONS.has(String(cond.direction))) {
-      problems.push(
-        `Direction non reconnue sur « ${type} » : « ${String(cond.direction)} » (${where}).`,
-      );
-    }
-    if (cond.trend !== undefined && !VALID_TRENDS.has(String(cond.trend))) {
-      problems.push(
-        `Tendance non reconnue sur « ${type} » : « ${String(cond.trend)} » (${where}).`,
-      );
-    }
-    if (cond.phase !== undefined && !VALID_PHASES.has(String(cond.phase))) {
-      problems.push(
-        `Phase non reconnue sur « ${type} » : « ${String(cond.phase)} » (${where}).`,
-      );
-    }
-    if (
-      cond.volatility !== undefined &&
-      !VALID_VOLATILITIES.has(String(cond.volatility))
-    ) {
-      problems.push(
-        `Volatilité non reconnue sur « ${type} » : « ${String(cond.volatility)} » (${where}).`,
-      );
+    for (const { key, set, label } of ENUM_CHECKS) {
+      const value = cond[key];
+      if (value !== undefined && !set.has(String(value))) {
+        problems.push(`${label} non reconnue sur « ${type} » : « ${String(value)} » (${where}).`);
+      }
     }
     if (cond.max_bars !== undefined) {
       const n = cond.max_bars;
       if (typeof n !== 'number' || !Number.isInteger(n) || n < 1 || n > 50) {
         problems.push(
           `Fenêtre de bougies invalide sur « ${type} » : ${String(n)} (attendu : entier 1–50) (${where}).`,
+        );
+      }
+    }
+    if (cond.proximity_pct !== undefined) {
+      const n = cond.proximity_pct;
+      if (typeof n !== 'number' || !(n > 0) || n > 10) {
+        problems.push(
+          `Distance invalide sur « ${type} » : ${String(n)} (attendu : 0 < % ≤ 10) (${where}).`,
         );
       }
     }
@@ -257,6 +260,70 @@ function writeStrategies(strategies: SavedStrategy[]): boolean {
   }
 }
 
+// ── Text export / import (device portability — decision #4a) ─────────────────
+//
+// Saved readings live on this device only (no server sync). Export/import lets a
+// user MOVE them between devices themselves — a plain-text envelope they can copy
+// or download. The interface abstraction (this seam) is where a future server
+// adapter would plug in without a rewrite.
+
+export const EXPORT_FORMAT = 'mia.scanner.savedReadings';
+
+export interface ExportEnvelope {
+  format: string;
+  schema_version: number;
+  exported_at: number;
+  readings: Array<{ name: string; config: ConditionsConfig; schema_version: number }>;
+}
+
+/** Serialise saved readings to a portable text envelope. */
+export function exportStrategiesText(strategies: SavedStrategy[], now: number): string {
+  const envelope: ExportEnvelope = {
+    format: EXPORT_FORMAT,
+    schema_version: CURRENT_STRATEGY_SCHEMA_VERSION,
+    exported_at: now,
+    readings: strategies.map((s) => ({
+      name: s.name,
+      config: s.config,
+      schema_version: s.schema_version,
+    })),
+  };
+  return JSON.stringify(envelope, null, 2);
+}
+
+export type ImportResult =
+  | { ok: true; readings: Array<{ name: string; config: ConditionsConfig; schema_version: number }> }
+  | { ok: false; error: 'malformed' | 'wrong_format' | 'empty' };
+
+/** Parse a text envelope. Strict: wrong shape/format is refused, never guessed. */
+export function parseStrategiesText(text: string): ImportResult {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    return { ok: false, error: 'malformed' };
+  }
+  if (typeof parsed !== 'object' || parsed === null) return { ok: false, error: 'malformed' };
+  const env = parsed as Record<string, unknown>;
+  if (env.format !== EXPORT_FORMAT) return { ok: false, error: 'wrong_format' };
+  if (!Array.isArray(env.readings)) return { ok: false, error: 'malformed' };
+  const readings: Array<{ name: string; config: ConditionsConfig; schema_version: number }> = [];
+  for (const raw of env.readings) {
+    if (typeof raw !== 'object' || raw === null) continue;
+    const r = raw as Record<string, unknown>;
+    if (typeof r.name !== 'string' || r.name.trim().length === 0) continue;
+    if (typeof r.config !== 'object' || r.config === null) continue;
+    readings.push({
+      name: normalizeName(r.name),
+      config: r.config as ConditionsConfig,
+      schema_version:
+        typeof r.schema_version === 'number' ? r.schema_version : CURRENT_STRATEGY_SCHEMA_VERSION,
+    });
+  }
+  if (readings.length === 0) return { ok: false, error: 'empty' };
+  return { ok: true, readings };
+}
+
 // ── React hook ────────────────────────────────────────────────────────────────
 
 export interface UseSavedStrategiesResult {
@@ -274,6 +341,10 @@ export interface UseSavedStrategiesResult {
   deleteStrategy(id: string): boolean;
   /** Stamp a strategy as just used (drives the most-recent-first ordering). */
   markUsed(id: string): void;
+  /** Serialise all saved readings to a portable text envelope. */
+  exportText(): string;
+  /** Merge readings from a text envelope (upsert by name, honouring the cap). */
+  importText(text: string): { ok: true; imported: number; skipped: number } | { ok: false; error: string };
 }
 
 export function useSavedStrategies(): UseSavedStrategiesResult {
@@ -393,6 +464,51 @@ export function useSavedStrategies(): UseSavedStrategiesResult {
     [strategies, commit],
   );
 
+  const exportText = React.useCallback(
+    (): string => exportStrategiesText(strategies, Date.now()),
+    [strategies],
+  );
+
+  const importText = React.useCallback(
+    (text: string): { ok: true; imported: number; skipped: number } | { ok: false; error: string } => {
+      const parsed = parseStrategiesText(text);
+      if (!parsed.ok) return { ok: false, error: parsed.error };
+      const now = Date.now();
+      const byName = new Map(strategies.map((s) => [s.name.trim().toLowerCase(), s]));
+      let imported = 0;
+      let skipped = 0;
+      const next = [...strategies];
+      for (const r of parsed.readings) {
+        const key = r.name.trim().toLowerCase();
+        const existing = byName.get(key);
+        if (existing) {
+          const idx = next.findIndex((s) => s.id === existing.id);
+          next[idx] = { ...existing, config: r.config, schema_version: r.schema_version, lastUsedAt: now };
+          imported += 1;
+          continue;
+        }
+        if (next.length >= MAX_STRATEGIES) {
+          skipped += 1;
+          continue;
+        }
+        const created: SavedStrategy = {
+          id: newId(),
+          name: r.name,
+          schema_version: r.schema_version,
+          config: r.config,
+          createdAt: now,
+          lastUsedAt: now,
+        };
+        next.push(created);
+        byName.set(key, created);
+        imported += 1;
+      }
+      if (!commit(next)) return { ok: false, error: 'storage_failed' };
+      return { ok: true, imported, skipped };
+    },
+    [strategies, commit],
+  );
+
   return {
     strategies,
     ready,
@@ -401,5 +517,7 @@ export function useSavedStrategies(): UseSavedStrategiesResult {
     duplicateStrategy,
     deleteStrategy,
     markUsed,
+    exportText,
+    importText,
   };
 }

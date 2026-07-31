@@ -513,7 +513,44 @@
       "selectAtLeastOne": "Select at least one condition.",
       "proximityWithin": "Within",
       "proximityOfPrice": "% of price",
-      "side": "Side"
+      "side": "Side",
+      "activeInFamily": "{count, plural, =0 {none active} one {# active} other {# active}}",
+      "selectedCount": "{count, plural, =0 {No condition ticked} one {# condition ticked} other {# conditions ticked}}",
+      "conceptAria": "Concept — {label}"
+    },
+    "family": {
+      "structure": { "title": "Structure", "desc": "trend, breaks, events" },
+      "zones": { "title": "Zones", "desc": "Order Blocks, Fair Value Gaps" },
+      "liquidity": { "title": "Liquidity", "desc": "pockets, sweeps, equal highs/lows" },
+      "context": { "title": "Context", "desc": "phase, volatility, range, session" }
+    },
+    "recap": {
+      "title": "Your reading, in one sentence",
+      "and": "and",
+      "or": "or",
+      "copy": "Copy",
+      "copied": "Copied"
+    },
+    "concept": {
+      "whatLabel": "What it counts",
+      "smcLabel": "SMC convention",
+      "notLabel": "What it does not say",
+      "notDefault": "A present fact, never a forecast: the condition does not say what price will do next."
+    },
+    "control": {
+      "direction": "Direction",
+      "max_bars": "Window (candles)",
+      "trend": "Trend",
+      "phase": "Phase",
+      "volatility": "Volatility",
+      "proximity_pct": "Distance",
+      "side": "Side",
+      "zone_kind": "Zone type",
+      "event": "Event",
+      "age_bucket": "Age",
+      "third": "Third",
+      "eq_kind": "Type",
+      "session": "Session"
     },
     "bias": {
       "bullish": "Bullish",

@@ -513,7 +513,44 @@
       "selectAtLeastOne": "Sélectionne au moins une condition.",
       "proximityWithin": "À moins de",
       "proximityOfPrice": "% du prix",
-      "side": "Côté"
+      "side": "Côté",
+      "activeInFamily": "{count, plural, =0 {aucune active} one {# active} other {# actives}}",
+      "selectedCount": "{count, plural, =0 {Aucune condition cochée} one {# condition cochée} other {# conditions cochées}}",
+      "conceptAria": "Concept — {label}"
+    },
+    "family": {
+      "structure": { "title": "Structure", "desc": "tendance, cassures, événements" },
+      "zones": { "title": "Zones", "desc": "Order Blocks, Fair Value Gaps" },
+      "liquidity": { "title": "Liquidité", "desc": "poches, prises, creux/sommets égaux" },
+      "context": { "title": "Contexte", "desc": "phase, volatilité, range, session" }
+    },
+    "recap": {
+      "title": "Ta lecture, en une phrase",
+      "and": "et",
+      "or": "ou",
+      "copy": "Copier",
+      "copied": "Copié"
+    },
+    "concept": {
+      "whatLabel": "Ce que ça compte",
+      "smcLabel": "Convention SMC",
+      "notLabel": "Ce que ça ne dit pas",
+      "notDefault": "Un fait présent, jamais une prévision : la condition ne dit pas ce que le prix va faire ensuite."
+    },
+    "control": {
+      "direction": "Direction",
+      "max_bars": "Fenêtre (bougies)",
+      "trend": "Tendance",
+      "phase": "Phase",
+      "volatility": "Volatilité",
+      "proximity_pct": "Distance",
+      "side": "Côté",
+      "zone_kind": "Type de zone",
+      "event": "Événement",
+      "age_bucket": "Ancienneté",
+      "third": "Tiers",
+      "eq_kind": "Type",
+      "session": "Session"
     },
     "bias": {
       "bullish": "Haussier",
