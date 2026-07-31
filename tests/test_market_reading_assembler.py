@@ -292,6 +292,54 @@ def test_stale_logic_version_forces_regeneration(fixed_clock):
     assert readings_store.save_calls[0][3]["_logic_version"] == READING_LOGIC_VERSION
 
 
+class _FailingDataProvider:
+    """Provider that cannot fetch (feed down / no CSV / MT5 offline / quota)."""
+
+    def fetch_candles(self, instrument, timeframe, count):
+        raise RuntimeError("provider unavailable")
+
+
+def test_build_failure_serves_stored_reading_not_blank(fixed_clock):
+    # A logic-version bump invalidates the cache and forces a rebuild. If the
+    # feed is then down, the app must serve the LAST STORED reading (degraded,
+    # flagged behind by the freshness badge) — never a blank screen.
+    seed = MarketReadingAssembler(
+        data_provider=_MockDataProvider(_build_candles(57)),
+        readings_store=_MockReadingsStore(),
+        candles_store=_MockCandlesStore(),
+        smc_pipeline=_stub_smc_pipeline,
+        clock=fixed_clock,
+    )
+    seed.get_or_generate("XAUUSD", "M15")
+    payload = dict(seed.readings_store.get_latest_reading("XAUUSD", "M15"))
+    payload.pop("_logic_version")  # simulate an older-version stored reading
+
+    readings_store = _MockReadingsStore(prepopulated=payload)
+    assembler = MarketReadingAssembler(
+        data_provider=_FailingDataProvider(),  # rebuild WILL fail
+        readings_store=readings_store,
+        candles_store=_MockCandlesStore(),
+        smc_pipeline=_stub_smc_pipeline,
+        clock=fixed_clock,
+    )
+    reading = assembler.get_or_generate("XAUUSD", "M15")
+    assert reading is not None  # served the stored reading, not a blank/raise
+    assert len(readings_store.save_calls) == 0  # nothing new persisted on failure
+
+
+def test_build_failure_with_nothing_stored_raises(fixed_clock):
+    # No stored reading to fall back to → the failure is surfaced honestly.
+    assembler = MarketReadingAssembler(
+        data_provider=_FailingDataProvider(),
+        readings_store=_MockReadingsStore(),
+        candles_store=_MockCandlesStore(),
+        smc_pipeline=_stub_smc_pipeline,
+        clock=fixed_clock,
+    )
+    with pytest.raises(Exception):
+        assembler.get_or_generate("XAUUSD", "M15")
+
+
 def test_liquidity_kill_switch_empties_pools(fixed_clock, monkeypatch):
     # One reversible env value masks liquidity at the serve layer, on every
     # response, without touching the stored data (LQ-D1 kill switch).

@@ -317,7 +317,24 @@ class MarketReadingAssembler:
                 MarketReading.model_validate(existing), instrument, timeframe
             )
 
-        reading = self._build_fresh(instrument, timeframe, expected_close)
+        try:
+            reading = self._build_fresh(instrument, timeframe, expected_close)
+        except Exception:
+            # Provider unavailable / rebuild failed (e.g. no CSV, MT5 down, quota).
+            # Serve the LAST STORED reading rather than a blank screen — degraded
+            # but honest: the freshness badge (market_status vs candle_close_ts)
+            # already flags it as behind, and stored data is still real data. This
+            # is what keeps a logic-version bump (which invalidates the cache and
+            # forces a rebuild) from wiping the app when the feed is down. Only
+            # when there is NOTHING stored do we surface the failure.
+            logger.exception("build_fresh failed for %s/%s — serving stored reading if any",
+                             instrument, timeframe)
+            if existing is not None:
+                self._readings_store.mark_combination_active(instrument, timeframe)
+                return self._with_status(
+                    MarketReading.model_validate(existing), instrument, timeframe
+                )
+            raise
         self._persist_reading(instrument, timeframe, expected_close, reading)
         self._readings_store.mark_combination_active(instrument, timeframe)
         return self._with_status(reading, instrument, timeframe)
