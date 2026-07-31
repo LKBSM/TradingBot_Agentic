@@ -231,10 +231,38 @@ def test_zone_untested_met_when_an_active_zone_never_tested():
     assert evaluate_condition(r2, {"type": "zone_untested"})["met"] is False
 
 
-def test_zone_untested_zone_kind_filter():
-    r = _reading(order_blocks=[_ob(1990, 2010, tested=True)], fair_value_gaps=[_fvg(1980, 1985, tested=False)])
+def test_zone_untested_is_at_price_with_kind_filter():
+    # AT-PRICE: price 2000 inside a TESTED OB and inside an UNTESTED FVG.
+    r = _reading(close_price=2000.0,
+                 order_blocks=[_ob(1990, 2010, tested=True)],
+                 fair_value_gaps=[_fvg(1995, 2005, tested=False)])
     assert evaluate_condition(r, {"type": "zone_untested", "zone_kind": "ob"})["met"] is False
     assert evaluate_condition(r, {"type": "zone_untested", "zone_kind": "fvg"})["met"] is True
+    # A zone NOT at price does NOT count (the scope trap is gone).
+    away = _reading(close_price=3000.0, fair_value_gaps=[_fvg(1995, 2005, tested=False)])
+    assert evaluate_condition(away, {"type": "zone_untested"})["met"] is False
+
+
+def test_zone_tested_at_most_at_price_1_to_N():
+    ob = _ob(1990, 2010, tested=True)
+    ob["touch_count"] = 2
+    r = _reading(close_price=2000.0, order_blocks=[ob])
+    assert evaluate_condition(r, {"type": "zone_tested_at_most", "max_touches": 2})["met"] is True
+    assert evaluate_condition(r, {"type": "zone_tested_at_most", "max_touches": 1})["met"] is False  # 2 > 1
+    # touch_count 0 (never tested) is #8's domain, never #9 (1 ≤ N).
+    fresh = _ob(1990, 2010, tested=False)
+    fresh["touch_count"] = 0
+    r0 = _reading(close_price=2000.0, order_blocks=[fresh])
+    assert evaluate_condition(r0, {"type": "zone_tested_at_most", "max_touches": 3})["met"] is False
+    # No zone at price → unmet (at-price scope).
+    away = _reading(close_price=3000.0, order_blocks=[ob])
+    assert evaluate_condition(away, {"type": "zone_tested_at_most", "max_touches": 3})["met"] is False
+
+
+def test_zone_formed_recent_is_at_price():
+    # A recent zone NOT at price does not satisfy the (now at-price) condition.
+    recent_away = _reading(close_price=3000.0, order_blocks=[_ob(1990, 2010, created_at="2026-05-28T13:45:00+00:00")])
+    assert evaluate_condition(recent_away, {"type": "zone_formed_recent", "max_bars": 10})["met"] is False
 
 
 def test_zone_formed_recent_counts_bars():

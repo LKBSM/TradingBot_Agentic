@@ -39,6 +39,7 @@ const SESSION = ['asia', 'london', 'new_york', 'overlap'] as const;
 const RELATION = ['same', 'opposite'] as const;
 const BARS_RECENCY = [5, 10, 20, 50] as const;
 const BARS_FORMED = [10, 20, 50] as const;
+const MAX_TOUCHES = [1, 2, 3] as const;
 const PROX_ZONE = [0.1, 0.25, 0.5] as const;
 const PROX_LIQ = [0.25, 0.5, 1] as const;
 
@@ -130,18 +131,27 @@ export const CONDITION_PALETTE: readonly PaletteEntry[] = [
   {
     type: 'zone_untested',
     family: 'zones',
-    label: 'Une zone n’a jamais été testée depuis sa formation',
+    label: 'Le prix est dans une zone jamais testée',
     description:
-      'Il existe une zone active (Order Block ou Fair Value Gap) qui n’a jamais été retestée depuis sa formation.',
+      'Le prix courant est à l’intérieur d’une zone active (Order Block ou Fair Value Gap) qui n’a jamais été retestée depuis sa formation.',
     controls: [ctrl('zone_kind', ZONE_KIND, 'any')],
+    tense: 'present',
+  },
+  {
+    type: 'zone_tested_at_most',
+    family: 'zones',
+    label: 'Le prix est dans une zone testée au plus N fois',
+    description:
+      'Le prix courant est à l’intérieur d’une zone active (Order Block ou Fair Value Gap) touchée entre 1 et N fois depuis sa formation — une touche = un passage du prix dans la zone. Une zone jamais touchée relève de « jamais testée ».',
+    controls: [ctrl('zone_kind', ZONE_KIND, 'any'), ctrl('max_touches', MAX_TOUCHES, 2)],
     tense: 'present',
   },
   {
     type: 'zone_formed_recent',
     family: 'zones',
-    label: 'Une zone s’est formée dans les N dernières bougies',
+    label: 'Le prix est dans une zone formée dans les N dernières bougies',
     description:
-      'Il existe une zone active (Order Block ou Fair Value Gap) formée il y a au plus N bougies — compté en bougies.',
+      'Le prix courant est à l’intérieur d’une zone active (Order Block ou Fair Value Gap) formée il y a au plus N bougies — compté en bougies.',
     controls: [ctrl('zone_kind', ZONE_KIND, 'any'), ctrl('max_bars', BARS_FORMED, 20)],
     tense: 'present',
   },
@@ -286,11 +296,13 @@ export const OPTION_LABELS_FR: Record<ControlName, Record<string, string>> = {
   relation: { same: 'Dans le même sens', opposite: 'En sens opposé' },
   max_bars: {},
   proximity_pct: {},
+  max_touches: {},
 };
 
 /** Human label for a segmented value (numbers stay factual: bars / %). */
 export function optionLabelFallback(control: ControlName, value: string | number): string {
   if (control === 'max_bars') return `${value} bougies`;
   if (control === 'proximity_pct') return `${value} %`;
+  if (control === 'max_touches') return `${value} fois`;
   return OPTION_LABELS_FR[control]?.[String(value)] ?? String(value);
 }

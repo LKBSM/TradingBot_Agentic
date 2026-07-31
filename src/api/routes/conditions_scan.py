@@ -109,6 +109,7 @@ ConditionType = Literal[
     "price_in_fvg",
     "price_in_tested_zone",
     "zone_untested",
+    "zone_tested_at_most",
     "zone_formed_recent",
     "price_near_ob",
     "price_near_fvg",
@@ -166,6 +167,8 @@ class ScanCondition(BaseModel):
     side: LiquiditySideFilter = "any"
     # Zone family filter (price_in_tested_zone / zone_untested / zone_formed_recent).
     zone_kind: ZoneKindFilter = "any"
+    # Max distinct touches for zone_tested_at_most (#9): 1 ≤ N ≤ 3.
+    max_touches: int = Field(default=2, ge=1, le=3)
     # Structural-event selectors.
     event: Optional[EventChoice] = None
     age_bucket: Optional[AgeBucketChoice] = None

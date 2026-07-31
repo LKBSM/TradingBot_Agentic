@@ -139,6 +139,11 @@ class OrderBlock(BaseModel):
     # untouched/active. Lets the frontend bound the box formation → mitigation,
     # or → current price when still active. Descriptive, not predictive.
     mitigated_at: Optional[datetime] = None
+    # Number of DISTINCT taps since formation (a run of consecutive in-zone bars
+    # counts once), and the ENTRY timestamp of each. touch_count >= 1 ⟺ tested;
+    # touch_ats[0] == mitigated_at. Defaults keep older payloads valid.
+    touch_count: int = 0
+    touch_ats: list[datetime] = Field(default_factory=list)
     user_flagged: bool = False
 
 
@@ -160,6 +165,11 @@ class FairValueGap(BaseModel):
     # lifecycle measurement over engine-emitted highs/lows — never a detection
     # threshold and never recomputes the gap.
     fill_level: Optional[float] = None
+    # Distinct entries since formation (a run of consecutive in-band bars counts
+    # once) and each entry's timestamp. touch_count >= 1 ⟺ tested; touch_ats[0]
+    # == mitigated_at. Defaults keep older payloads valid.
+    touch_count: int = 0
+    touch_ats: list[datetime] = Field(default_factory=list)
     user_flagged: bool = False
 
 

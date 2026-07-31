@@ -45,7 +45,9 @@ from typing import Any, Callable, Mapping, Optional, Sequence, Tuple
 # definitions never mix on screen). NB: this supersedes MT-D1's bump to 3
 # (per-timeframe analysis window + uncapped journal) — a stored v3 payload still
 # carries the old close-based trend, so it MUST be rebuilt: hence 4, not 3.
-READING_LOGIC_VERSION = 4
+# v5: OB/FVG carry a distinct-touch count + timestamps (touch_count/touch_ats) —
+# an ADDITIVE lifecycle field; a stored v4 payload lacks it, so rebuild.
+READING_LOGIC_VERSION = 5
 
 # Env kill switch (LQ-D1): masks ALL external-liquidity pockets at the serve
 # layer — cache-hit AND fresh build — in one reversible value. Data is untouched
@@ -315,7 +317,24 @@ class MarketReadingAssembler:
                 MarketReading.model_validate(existing), instrument, timeframe
             )
 
-        reading = self._build_fresh(instrument, timeframe, expected_close)
+        try:
+            reading = self._build_fresh(instrument, timeframe, expected_close)
+        except Exception:
+            # Provider unavailable / rebuild failed (e.g. no CSV, MT5 down, quota).
+            # Serve the LAST STORED reading rather than a blank screen — degraded
+            # but honest: the freshness badge (market_status vs candle_close_ts)
+            # already flags it as behind, and stored data is still real data. This
+            # is what keeps a logic-version bump (which invalidates the cache and
+            # forces a rebuild) from wiping the app when the feed is down. Only
+            # when there is NOTHING stored do we surface the failure.
+            logger.exception("build_fresh failed for %s/%s — serving stored reading if any",
+                             instrument, timeframe)
+            if existing is not None:
+                self._readings_store.mark_combination_active(instrument, timeframe)
+                return self._with_status(
+                    MarketReading.model_validate(existing), instrument, timeframe
+                )
+            raise
         self._persist_reading(instrument, timeframe, expected_close, reading)
         self._readings_store.mark_combination_active(instrument, timeframe)
         return self._with_status(reading, instrument, timeframe)

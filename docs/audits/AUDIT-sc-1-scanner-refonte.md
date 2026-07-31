@@ -198,7 +198,20 @@ mention « ne pas assouplir ». Écarts **cosmétiques** restants (à trancher l
 
 ## 10. Mission de suivi (constats, RIEN implémenté ici)
 
-### 10.A — Compteur de touches horodatées par zone (débloque #9 ET la page Zones)
+### 10.A — Compteur de touches horodatées par zone — ✅ **LIVRÉE** (branche `feat/zone-touch-counter`)
+
+**Réalisé** conformément au plan : `_ob_lifecycle` / `_fvg_lifecycle` comptent les
+**touches distinctes** (run de bougies consécutives = 1 touche) + horodatent
+l'entrée → `touch_count` + `touch_ats` sur `OrderBlock`/`FairValueGap` (schéma).
+ADDITIF : `touch_count ≥ 1 ⟺ tested`, `touch_ats[0] == mitigated_at`, flux de
+contrôle **byte-identique**. Dans les **mappers** (pas le moteur). `READING_LOGIC_VERSION`
+4→5. **Non-régression détection BOS/CHOCH/OB/FVG prouvée** (61 tests mappers
+INCHANGÉS + test de garde sur les sorties). Validé **données réelles** : 131 zones,
+distribution réaliste (0→64/1→36/2→17/3→9/4→2/5→3), **0 violation d'invariant**.
+**#9 `zone_tested_at_most` exposée** (1 ≤ touch_count ≤ N, au prix, contrôle
+max_touches [1/2/3]). Page Zones = chantier front séparé, hors périmètre (flaggé).
+
+**Constat d'origine (conservé) :**
 
 - **Ce que le moteur enregistre aujourd'hui** : `_ob_lifecycle` / `_fvg_lifecycle`
   (`market_reading_mappers.py`) parcourent déjà les bougies APRÈS la formation de
@@ -240,3 +253,22 @@ mention « ne pas assouplir ». Écarts **cosmétiques** restants (à trancher l
   d'émission fondée sur un essoufflement mesurable (volume/divergence/rejet au
   sommet), ou (b) acter officiellement 4 phases et retirer `distribution` du
   schéma `MarketPhase`. Retiré de la palette scanner en attendant.
+
+### 10.C — Portée AU PRIX de la famille Zones — ✅ **CORRIGÉ** (même branche)
+
+Diagnostic soulevé pendant la mission compteur : **#8 `zone_untested` et #10
+`zone_formed_recent` portaient sur l'EXISTENCE** d'une zone (« une zone jamais
+testée existe **quelque part** dans le range »), pas sur la zone **au prix**.
+**Piège silencieux** : cocher #6 « prix dans un OB » + #8 se lisait « un OB non
+testé où le prix se trouve » mais demandait deux choses sans rapport (prix dans un
+OB quelconque, ET une zone non testée ailleurs). Résultat techniquement correct,
+faux pour le client.
+
+**Décision fondateur + correction** : toutes les conditions d'ÉTAT de zone sont
+désormais **AU PRIX** (`_zones_at_price`) — #6/#7/#9/#10/#21 + #8 : « le prix est
+dans une zone qui [propriété] », `met`/`unmet`. Libellés « Une zone… » → « Le prix
+est dans une zone… ». #11 `price_near_ob/_fvg` reste la portée **PROXIMITÉ**
+distincte (prix dehors, « sans y être »). Toute future condition d'existence dans
+le range portera un libellé explicite (« une zone jamais testée **existe dans le
+range** »). Coût : faible, absorbé dans cette mission. Tests : #8/#10 au prix,
+zone hors prix non comptée.
