@@ -480,7 +480,8 @@
       "noComboBody": "Tes conditions sont réunies nulle part en ce moment. Un scan qui ne remonte rien est une réponse, pas une panne — rien n’est masqué, rien n’est assoupli.",
       "isolatedIntro": "Combos remplissant chaque condition ISOLÉMENT :",
       "isolatedCount": "{count, plural, =0 {0 combo} one {# combo} other {# combos}}",
-      "isolatedNote": "Ces comptes sont indépendants : ils ne s’additionnent pas et ne disent rien de ce que donnerait une combinaison partielle."
+      "isolatedNote": "Ces comptes sont indépendants : ils ne s’additionnent pas et ne disent rien de ce que donnerait une combinaison partielle.",
+      "noLoosening": "Le scanner ne propose pas de « relâcher » une condition pour obtenir des résultats. Un scanner qui suggère d’assouplir jusqu’à trouver quelque chose apprend à chercher une réponse plutôt qu’à la lire."
     },
     "combo": {
       "conditionsPresent": "{met} de tes {total, plural, one {# condition présente} other {# conditions présentes}}",

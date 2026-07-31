@@ -197,18 +197,6 @@ PALETTE: List[Dict[str, Any]] = [
             _control("max_bars", BARS_RECENCY_CHOICES, DEFAULT_BOS_MAX_BARS),
         ],
     },
-    {
-        "type": "last_event_age",
-        "family": "structure",
-        "label": "Le dernier événement remonte à",
-        "description": (
-            "Le dernier événement de structure daté remonte à moins de 10 bougies, "
-            "entre 10 et 50, ou plus de 50 — compté en bougies."
-        ),
-        "supports_direction": False,
-        "tense": "present",
-        "controls": [_control("age_bucket", AGE_BUCKET_VALUES, "lt10")],
-    },
     # ── ZONES ────────────────────────────────────────────────────────────────
     {
         "type": "price_in_ob",
@@ -407,6 +395,18 @@ PALETTE: List[Dict[str, Any]] = [
         "supports_direction": False,
         "tense": "present",
         "controls": [_control("session", SESSION_VALUES, "london")],
+    },
+    {
+        "type": "last_event_age",
+        "family": "context",
+        "label": "Le dernier événement remonte à",
+        "description": (
+            "Le dernier événement de structure daté remonte à moins de 10 bougies, "
+            "entre 10 et 50, ou plus de 50 — compté en bougies."
+        ),
+        "supports_direction": False,
+        "tense": "present",
+        "controls": [_control("age_bucket", AGE_BUCKET_VALUES, "lt10")],
     },
 ]
 

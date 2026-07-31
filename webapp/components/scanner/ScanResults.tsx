@@ -182,6 +182,10 @@ export function ScanResults({
             </ul>
             <p className="mt-2 text-xs text-muted-foreground">{t('results.isolatedNote')}</p>
           </div>
+          {/* Product line: never offer to loosen a condition to get results. */}
+          <p className="mt-3 rounded-md border-l-2 border-amber-500/60 bg-amber-500/5 p-3 text-xs text-muted-foreground">
+            {t('results.noLoosening')}
+          </p>
         </section>
       )}
 

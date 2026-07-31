@@ -99,15 +99,6 @@ export const CONDITION_PALETTE: readonly PaletteEntry[] = [
     tense: 'present',
     supports_direction: true,
   },
-  {
-    type: 'last_event_age',
-    family: 'structure',
-    label: 'Le dernier événement remonte à',
-    description:
-      'Le dernier événement de structure daté remonte à moins de 10 bougies, entre 10 et 50, ou plus de 50 — compté en bougies.',
-    controls: [ctrl('age_bucket', AGE_BUCKET, 'lt10')],
-    tense: 'present',
-  },
   // ── ZONES ──────────────────────────────────────────────────────────────────
   {
     type: 'price_in_ob',
@@ -246,6 +237,15 @@ export const CONDITION_PALETTE: readonly PaletteEntry[] = [
     description:
       'Au moment de la dernière bougie clôturée, la session de marché est celle choisie — Asie, Londres, New York, ou le chevauchement Londres/New York.',
     controls: [ctrl('session', SESSION, 'london')],
+    tense: 'present',
+  },
+  {
+    type: 'last_event_age',
+    family: 'context',
+    label: 'Le dernier événement remonte à',
+    description:
+      'Le dernier événement de structure daté remonte à moins de 10 bougies, entre 10 et 50, ou plus de 50 — compté en bougies.',
+    controls: [ctrl('age_bucket', AGE_BUCKET, 'lt10')],
     tense: 'present',
   },
 ] as const;

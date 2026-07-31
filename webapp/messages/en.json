@@ -480,7 +480,8 @@
       "noComboBody": "Your conditions are met nowhere right now. A scan that returns nothing is an answer, not a fault — nothing is hidden, nothing is loosened.",
       "isolatedIntro": "Combos meeting each condition IN ISOLATION:",
       "isolatedCount": "{count, plural, =0 {0 combo} one {# combo} other {# combos}}",
-      "isolatedNote": "These counts are independent: they do not add up and say nothing about what a partial combination would return."
+      "isolatedNote": "These counts are independent: they do not add up and say nothing about what a partial combination would return.",
+      "noLoosening": "The scanner never offers to “loosen” a condition to get results. A scanner that suggests relaxing until it finds something teaches you to look for an answer rather than to read it."
     },
     "combo": {
       "conditionsPresent": "{met} of your {total, plural, one {# condition present} other {# conditions present}}",
