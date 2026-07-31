@@ -111,3 +111,41 @@ data/candles.db-wal
 
 # Node — root-level node_modules (build/test caches, never tracked)
 node_modules/
+
+# ── ORD-1 : artefacts jetables (captures de test, sorties de build, dumps) ──
+# Motifs CIBLÉS et ancrés à la racine — jamais une extension entière (*.png…),
+# jamais docs/ webapp/src/ ni scripts/ hors caches. __pycache__/ déjà couvert.
+# Captures d'écran de debug (racine)
+/app_chat_live.png
+/app_chat_reply.png
+/app_chat_top.png
+/app_home.png
+/img.png
+/scanner_results.png
+# Captures d'écran de debug (webapp)
+/webapp/run_shot.png
+/webapp/shot_h4_chart_after_fix.png
+/webapp/shot_h4_left_edge_after_fix.png
+/webapp/shot_h4_left_zoom.png
+/webapp/shot_scanner_1.png
+/webapp/shot_scanner_results.png
+# Sorties de build / tsc / backend capturées
+/be_out.txt
+/fe_build2.txt
+/fe_t.txt
+/fe_tsc2.txt
+/fe_tsc3.txt
+# Scripts jetables
+/drive_tmp.mjs
+/webapp/drive_scanner.mjs
+/webapp/shot.mjs
+/test_env_debug.py
+# Dumps / notes de debug
+/mr.json
+/MT-D1_calcul_tendance.txt
+# Script d'entraînement Colab (perso, hors dépôt)
+/Script collab
+# Données volumineuses régénérables (snapshots fournisseur, ~38 Mo de .jsonl)
+/data/provider_snapshots/
+# Cache régénérable de l'échantillon MT-D1 (le livrable lui-même est versionné)
+/docs/audits/ECHANTILLON-DETECTION-2026-07-29/_cache/
