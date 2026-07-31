@@ -584,7 +584,8 @@
       "third": "Tiers",
       "eq_kind": "Type",
       "session": "Session",
-      "relation": "Unité supérieure"
+      "relation": "Unité supérieure",
+      "max_touches": "Nombre de touches"
     },
     "opt": {
       "relation": {
@@ -592,7 +593,8 @@
         "opposite": "En sens opposé"
       },
       "bars": "{n} bougies",
-      "pct": "{n} %"
+      "pct": "{n} %",
+      "touches": "{n} fois"
     },
     "bias": {
       "bullish": "Haussier",
@@ -639,6 +641,12 @@
       "higher_tf_agrees_desc": "La tendance de structure de l’unité de temps immédiatement supérieure va, en ce moment, dans le même sens que l’unité scannée ou en sens opposé. L’unité comparée est nommée dans le résultat (« le 1 h va dans le même sens »). Non évaluable dans trois cas : pas d’unité au-dessus (unité la plus haute suivie), unité supérieure sans tendance établie, ou cette unité sans tendance établie.",
       "price_in_tested_zone_label": "Le prix est dans une zone déjà testée au moins une fois",
       "price_in_tested_zone_desc": "Le prix courant est à l’intérieur d’une zone active — Order Block ou Fair Value Gap — qui a déjà été touchée au moins une fois depuis sa formation.",
+      "zone_untested_label": "Le prix est dans une zone jamais testée",
+      "zone_untested_desc": "Le prix courant est à l’intérieur d’une zone active (Order Block ou Fair Value Gap) qui n’a jamais été retestée depuis sa formation.",
+      "zone_tested_at_most_label": "Le prix est dans une zone testée au plus N fois",
+      "zone_tested_at_most_desc": "Le prix courant est à l’intérieur d’une zone active (Order Block ou Fair Value Gap) touchée entre 1 et N fois depuis sa formation — une touche = un passage du prix dans la zone. Une zone jamais touchée relève de « jamais testée ».",
+      "zone_formed_recent_label": "Le prix est dans une zone formée dans les N dernières bougies",
+      "zone_formed_recent_desc": "Le prix courant est à l’intérieur d’une zone active (Order Block ou Fair Value Gap) formée il y a au plus N bougies — compté en bougies.",
       "trend_is_label": "Tendance actuelle (structure)",
       "trend_is_desc": "La tendance de structure observée sur ce timeframe est, en ce moment, celle choisie (haussière, baissière, ou indéterminée quand aucune cassure ne l’a établie).",
       "market_phase_is_label": "Phase de marché",

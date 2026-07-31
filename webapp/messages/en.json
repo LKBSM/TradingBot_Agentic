@@ -584,7 +584,8 @@
       "third": "Third",
       "eq_kind": "Type",
       "session": "Session",
-      "relation": "Higher unit"
+      "relation": "Higher unit",
+      "max_touches": "Touch count"
     },
     "opt": {
       "relation": {
@@ -593,6 +594,7 @@
       },
       "bars": "{n} candles",
       "pct": "{n}%",
+      "touches": "{n} times",
       "direction": { "any": "Any direction", "bullish": "Bullish", "bearish": "Bearish" },
       "trend": { "bullish": "Bullish", "bearish": "Bearish", "indeterminate": "Indeterminate" },
       "phase": { "accumulation": "Accumulation", "trend": "Trend", "ranging": "Range", "expansion": "Expansion" },
@@ -650,6 +652,12 @@
       "higher_tf_agrees_desc": "The structural trend of the immediately higher timeframe is currently going the same way as the scanned unit or the opposite way. The compared unit is named in the result (\"the 1h goes the same way\"). Non-evaluable in three cases: no unit above (highest tracked unit), the higher unit has no trend established, or this unit has no trend established.",
       "price_in_tested_zone_label": "Price is inside a zone tested at least once",
       "price_in_tested_zone_desc": "The current price is inside an active zone — Order Block or Fair Value Gap — that has already been touched at least once since it formed.",
+      "zone_untested_label": "Price is inside a never-tested zone",
+      "zone_untested_desc": "The current price is inside an active zone (Order Block or Fair Value Gap) that has never been re-tested since it formed.",
+      "zone_tested_at_most_label": "Price is inside a zone tested at most N times",
+      "zone_tested_at_most_desc": "The current price is inside an active zone (Order Block or Fair Value Gap) touched between 1 and N times since it formed — one touch = one pass of price through the zone. A never-touched zone belongs to “never tested”.",
+      "zone_formed_recent_label": "Price is inside a zone formed within the last N candles",
+      "zone_formed_recent_desc": "The current price is inside an active zone (Order Block or Fair Value Gap) formed at most N candles ago — counted in candles.",
       "trend_is_label": "Current trend (structure)",
       "trend_is_desc": "The structural trend observed on this timeframe is, right now, the one you selected (bullish, bearish, or indeterminate when no break established it).",
       "market_phase_is_label": "Market phase",

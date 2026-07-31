@@ -28,6 +28,7 @@ export type ConditionType =
   | 'price_in_fvg'
   | 'price_in_tested_zone'
   | 'zone_untested'
+  | 'zone_tested_at_most'
   | 'zone_formed_recent'
   | 'price_near_ob'
   | 'price_near_fvg'
@@ -76,7 +77,8 @@ export type ControlName =
   | 'third'
   | 'eq_kind'
   | 'session'
-  | 'relation';
+  | 'relation'
+  | 'max_touches';
 
 /** One condition in the user's set (wire-shaped: matches the POST body). */
 export interface ScanCondition {
@@ -97,6 +99,8 @@ export interface ScanCondition {
   eq_kind?: EqKindChoice;
   session?: SessionChoice;
   relation?: RelationChoice;
+  /** Max distinct touches for zone_tested_at_most (#9): 1 ≤ N ≤ 3. */
+  max_touches?: number;
 }
 
 /** The user's saved reading (their conditions + AND/OR logic). */

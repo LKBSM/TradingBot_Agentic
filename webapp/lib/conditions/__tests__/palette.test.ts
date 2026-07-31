@@ -7,7 +7,7 @@ const EXPECTED_TYPES = new Set([
   'bos_recent_confirmed', 'choch_recent_confirmed',
   // zones
   'price_in_ob', 'price_in_fvg', 'price_in_tested_zone', 'zone_untested',
-  'zone_formed_recent', 'price_near_ob', 'price_near_fvg',
+  'zone_tested_at_most', 'zone_formed_recent', 'price_near_ob', 'price_near_fvg',
   // liquidity
   'price_near_liquidity', 'liquidity_swept_recent', 'liquidity_broken_recent', 'equal_levels_present',
   // context

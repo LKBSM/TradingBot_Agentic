@@ -73,7 +73,7 @@ const VALID_RELATIONS = new Set(['same', 'opposite']);
 const KNOWN_CONDITION_KEYS = new Set([
   'type', 'direction', 'max_bars', 'trend', 'phase', 'volatility',
   'proximity_pct', 'side', 'zone_kind', 'event', 'age_bucket', 'third',
-  'eq_kind', 'session', 'relation',
+  'eq_kind', 'session', 'relation', 'max_touches',
 ]);
 
 const ENUM_CHECKS: Array<{ key: string; set: Set<string>; label: string }> = [
@@ -153,6 +153,14 @@ export function validateStrategy(strategy: SavedStrategy): string[] {
       if (typeof n !== 'number' || !Number.isInteger(n) || n < 1 || n > 50) {
         problems.push(
           `Fenêtre de bougies invalide sur « ${type} » : ${String(n)} (attendu : entier 1–50) (${where}).`,
+        );
+      }
+    }
+    if (cond.max_touches !== undefined) {
+      const n = cond.max_touches;
+      if (typeof n !== 'number' || !Number.isInteger(n) || n < 1 || n > 3) {
+        problems.push(
+          `Nombre de touches invalide sur « ${type} » : ${String(n)} (attendu : entier 1–3) (${where}).`,
         );
       }
     }

@@ -88,6 +88,7 @@ export function ConditionsBuilder({
     // i18n rather than the French fallback.
     if (control === 'max_bars') return t('opt.bars', { n: value });
     if (control === 'proximity_pct') return t('opt.pct', { n: value });
+    if (control === 'max_touches') return t('opt.touches', { n: value });
     const key = `opt.${control}.${value}`;
     return t.has(key) ? t(key) : optionLabelFallback(control, value);
   };
