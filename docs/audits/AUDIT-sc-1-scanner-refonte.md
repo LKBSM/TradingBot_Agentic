@@ -75,9 +75,15 @@ Garanties livrées :
   (unité la plus haute suivie) ; (2) unité supérieure sans tendance établie ;
   (3) cette unité sans tendance établie. « indéterminée » retirée des cibles de
   relation (choix mort sous cette règle) → `relation` = même sens / sens opposé.
-- **Chiffre C1-c** (proportion réelle d'`indeterminate`) : **non mesurable dans le
-  worktree** (pas de `market_readings.db` ni backend live) → à mesurer à l'étape
-  Playwright/`:8000`.
+- **Chiffre C1-c (MESURÉ, données réelles)** : `derive_structural_trend` sur les
+  **74 snapshots réels** (XAU/EUR × M15/H1/H4, 500–2880 bougies) + les 6 combos
+  courants du `market_readings.db` → **0 % indéterminé**. Avec 500+ bougies il y a
+  toujours un BOS/CHOCH récent, donc la tendance structurelle **se tranche presque
+  toujours**. Conséquence : `higher_tf_agrees` est **évaluable quasi tout le
+  temps** côté tendance ; en pratique le NON-ÉVALUABLE vient surtout de « **pas de
+  lecture pour l'unité supérieure** » (ex. H4 quand le D1 n'est pas chaud), un
+  sujet de **couverture**, pas de tendance. (Le « ranging » 34 % de l'ancien DB
+  est la **phase**, pas la tendance — cohérent §4/§10.B.)
 
 ⚠️ À la prochaine itération : trancher `mtf_aligned` (fixe) → `higher_tf_agrees`
 (relatif, « unité au-dessus », valeurs même/opposé/indéterminée) et retirer l'un.
@@ -172,15 +178,22 @@ mention « ne pas assouplir ». Écarts **cosmétiques** restants (à trancher l
 - Front : `tsc` 0, **`next build` exit 0**, **78 vitest** (palette 4 familles,
   garde-fous résultats + bloc « à l'encontre » full-match, non-régression store,
   **vocabulaire interdit fr+en négation-aware**).
-- Playwright 1280×800 + 390×844 sur les 5 états : specs fournies ; exécution
-  complète + **mesure C1-c** (proportion d'indéterminées) nécessitent le backend
-  `:8000` (données réelles) — à lancer live.
+- **Playwright 8/8 verts** (5 états × 2 viewports, 1280×800 + 390×844) contre
+  `next dev` (API mockée) : compte live, bloc « à l'encontre » enrichi, compte C4,
+  « ne pas assouplir », aucun débordement, aucune clé i18n brute.
+- **Validation données réelles (TestClient sur le vrai `market_readings.db`)** :
+  scan **200**, `higher_tf_agrees` nomme l'unité (« Le 1 h va dans le même sens »),
+  cas NON ÉVALUABLE réel sur H4 (D1 non chaud) avec dénominateur ajusté,
+  `context_against` peuplé (1–3 signaux/combo), 4 combos `unavailable` non inventés.
+- Reste **live** : Playwright contre le vrai backend `:8000` (uvicorn + provider)
+  pour l'e2e navigateur bout-en-bout — la logique est déjà prouvée en TestClient.
 
 ## 9. Reste à faire avant merge
 
-1. Réconciliation live de la maquette (écarts cosmétiques §7).
-2. Exécuter Playwright contre le backend réel + mesurer la proportion
-   d'indéterminées (C1-c).
+1. **Réconciliation live de la maquette** (écarts cosmétiques §7) — avec le
+   fondateur, app + maquette côte à côte.
+2. (Optionnel) Playwright bout-en-bout contre le vrai backend `:8000` — la logique
+   est déjà prouvée en TestClient sur données réelles ; C1-c mesuré (0 %).
 3. **Merge sur main SEULEMENT après confirmation live du fondateur.**
 
 ## 10. Mission de suivi (constats, RIEN implémenté ici)
