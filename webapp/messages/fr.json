@@ -475,20 +475,42 @@
       "partialMatches": "Correspondances partielles ({count})",
       "nonePresent": "Aucune de tes conditions présente : {list}.",
       "notGenerated": "Lecture pas encore générée : {list}.",
-      "scannedFooter": "{count} combos analysés en lecture seule sur les dernières lectures déjà produites."
+      "scannedFooter": "{count} combos analysés en lecture seule sur les dernières lectures déjà produites.",
+      "noComboTitle": "Aucun combo ne réunit ta lecture. Ce n’est pas une erreur.",
+      "noComboBody": "Tes conditions sont réunies nulle part en ce moment. Un scan qui ne remonte rien est une réponse, pas une panne — rien n’est masqué, rien n’est assoupli.",
+      "isolatedIntro": "Combos remplissant chaque condition ISOLÉMENT :",
+      "isolatedCount": "{count, plural, =0 {0 combo} one {# combo} other {# combos}}",
+      "isolatedNote": "Ces comptes sont indépendants : ils ne s’additionnent pas et ne disent rien de ce que donnerait une combinaison partielle."
     },
     "combo": {
       "conditionsPresent": "{met} de tes {total, plural, one {# condition présente} other {# conditions présentes}}",
+      "nonEvaluableCount": "{count, plural, one {# non évaluable} other {# non évaluables}}",
       "price": "Prix {price}",
       "reading": "lecture {age}",
+      "freshCandle": "bougie clôturée {age}",
       "fullContext": "Contexte complet",
+      "matchBlock": "Ce qui correspond",
+      "matchNone": "Aucune condition remplie ici.",
+      "againstBlock": "Ce qui va à l’encontre",
+      "againstNone": "Rien ne va à l’encontre parmi tes conditions évaluables.",
+      "nonEvaluableBlock": "Non évaluable ici (donnée absente)",
+      "contextBlock": "Contexte que tu n’as pas demandé",
       "trend": "Tendance : {label}",
       "obFvg": "{ob} OB · {fvg} FVG actifs",
       "bosSuffix": " · BOS {dir}",
+      "range": "range {low}–{high}",
       "importantNews": "{count, plural, one {# actu importante à venir — à garder en tête.} other {# actus importantes à venir — à garder en tête.}}",
       "analyse": "Analyser",
+      "openChart": "Ouvrir dans le graphique",
       "disclaimer": "Faits structurels observés au présent. Le scanner ne prédit rien et ne recommande rien — à toi le jugement.",
       "unavailable": "indisponible"
+    },
+    "filters": {
+      "aria": "Filtres d’affichage",
+      "matches": "Correspondances ({count})",
+      "almost": "Presque ({count})",
+      "nonmatch": "Non correspondants ({count})",
+      "noneval": "Non évaluables ({count})"
     },
     "toggle": {
       "label": "Actualisation auto (à chaque clôture)",
@@ -516,7 +538,8 @@
       "side": "Côté",
       "activeInFamily": "{count, plural, =0 {aucune active} one {# active} other {# actives}}",
       "selectedCount": "{count, plural, =0 {Aucune condition cochée} one {# condition cochée} other {# conditions cochées}}",
-      "conceptAria": "Concept — {label}"
+      "conceptAria": "Concept — {label}",
+      "zeroNote": "Zéro condition ne signifie pas « tous les marchés » : sans condition, il n’y a rien à lire."
     },
     "family": {
       "structure": { "title": "Structure", "desc": "tendance, cassures, événements" },
@@ -631,8 +654,22 @@
       "saveFailed": "Sauvegarde impossible."
     },
     "strategyPanel": {
-      "title": "Mes stratégies",
-      "subtitle": "Sauvegardées sur cet appareil uniquement — rien n’est envoyé au serveur.",
+      "title": "Mes lectures enregistrées",
+      "subtitle": "Conservées sur cet appareil uniquement — elles ne sont pas synchronisées. Change d’ordinateur et elles ne suivent pas, sauf à les exporter.",
+      "notRankingNote": "Le compte de combos est un constat, pas un classement : une lecture qui remonte sept combos n’est pas meilleure qu’une lecture qui n’en remonte aucun — elle est plus large.",
+      "export": "Exporter",
+      "import": "Importer",
+      "transferHint": "Déplace tes lectures d’un appareil à l’autre en texte.",
+      "exportLabel": "Texte à copier",
+      "importPlaceholder": "Colle ici le texte exporté depuis un autre appareil…",
+      "importDo": "Importer ce texte",
+      "importResult": "{imported} importée(s), {skipped} ignorée(s) (plafond atteint).",
+      "importErrors": {
+        "malformed": "Texte illisible — ce n’est pas un export valide.",
+        "wrong_format": "Ce texte n’est pas un export de lectures du scanner.",
+        "empty": "Aucune lecture à importer dans ce texte.",
+        "storage_failed": "Impossible d’écrire dans le stockage local (quota ou navigation privée)."
+      },
       "invalid": "Invalide",
       "meta": "{count, plural, one {# condition} other {# conditions}} · {logic} · utilisée le {when}",
       "logicAnd": "ET",

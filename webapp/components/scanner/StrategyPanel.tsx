@@ -56,6 +56,8 @@ export function StrategyPanel({
   onRename,
   onDuplicate,
   onDelete,
+  onExport = () => '',
+  onImport = () => ({ ok: false, error: 'malformed' }),
 }: {
   strategies: SavedStrategy[];
   locale: string;
@@ -63,14 +65,43 @@ export function StrategyPanel({
   onRename(id: string, name: string): StrategyMutationResult;
   onDuplicate(id: string): StrategyMutationResult;
   onDelete(id: string): void;
+  /** Serialise all readings to portable text (device portability). */
+  onExport?(): string;
+  /** Merge readings from a text envelope. */
+  onImport?(text: string): { ok: true; imported: number; skipped: number } | { ok: false; error: string };
 }) {
   const t = useTranslations('scanner');
   const [renamingId, setRenamingId] = React.useState<string | null>(null);
   const [renameDraft, setRenameDraft] = React.useState('');
   const [confirmDeleteId, setConfirmDeleteId] = React.useState<string | null>(null);
   const [feedback, setFeedback] = React.useState<string | null>(null);
+  const [transfer, setTransfer] = React.useState(false);
+  const [exportText, setExportText] = React.useState('');
+  const [importDraft, setImportDraft] = React.useState('');
+  const [transferMsg, setTransferMsg] = React.useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
 
   if (strategies.length === 0) return null;
+
+  function doExport() {
+    setExportText(onExport());
+    setImportDraft('');
+    setTransferMsg(null);
+    setTransfer(true);
+  }
+  function doImport() {
+    const res = onImport(importDraft);
+    if (res.ok) {
+      setTransferMsg({ kind: 'ok', text: t('strategyPanel.importResult', { imported: res.imported, skipped: res.skipped }) });
+      setImportDraft('');
+    } else {
+      setTransferMsg({
+        kind: 'error',
+        text: t.has(`strategyPanel.importErrors.${res.error}`)
+          ? t(`strategyPanel.importErrors.${res.error}`)
+          : t('strategyPanel.importErrors.malformed'),
+      });
+    }
+  }
 
   function submitRename(id: string) {
     const result = onRename(id, renameDraft);
@@ -86,8 +117,12 @@ export function StrategyPanel({
     <Card>
       <CardHeader>
         <CardTitle className="text-base">{t('strategyPanel.title')}</CardTitle>
-        <p className="mt-1 text-xs text-muted-foreground">
-          {t('strategyPanel.subtitle')}
+        {/* Mandatory, non-maskable: on-device only, and the count is a finding
+            not a ranking (a reading returning seven combos is not "better" than
+            one returning none — it is wider). */}
+        <p className="mt-1 text-xs text-muted-foreground">{t('strategyPanel.subtitle')}</p>
+        <p className="mt-1 rounded-md border border-border/50 bg-background/40 p-2 text-[11px] text-muted-foreground">
+          {t('strategyPanel.notRankingNote')}
         </p>
       </CardHeader>
       <CardContent className="space-y-2">
@@ -96,6 +131,56 @@ export function StrategyPanel({
             {feedback}
           </p>
         )}
+
+        {/* Transfer — export/import readings as text (device portability). */}
+        <div className="rounded-lg border border-border/60 p-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button type="button" className="btn" onClick={doExport}>{t('strategyPanel.export')}</button>
+            <button
+              type="button"
+              className="btn"
+              onClick={() => {
+                setTransfer(true);
+                setExportText('');
+                setTransferMsg(null);
+              }}
+            >
+              {t('strategyPanel.import')}
+            </button>
+            <span className="text-[11px] text-muted-foreground">{t('strategyPanel.transferHint')}</span>
+          </div>
+          {transfer && (
+            <div className="mt-2 space-y-2">
+              {exportText && (
+                <textarea
+                  readOnly
+                  value={exportText}
+                  aria-label={t('strategyPanel.exportLabel')}
+                  onFocus={(e) => e.currentTarget.select()}
+                  className="h-24 w-full rounded-md border border-input bg-background p-2 font-mono text-[11px] text-foreground"
+                />
+              )}
+              <textarea
+                value={importDraft}
+                onChange={(e) => setImportDraft(e.target.value)}
+                placeholder={t('strategyPanel.importPlaceholder')}
+                aria-label={t('strategyPanel.importPlaceholder')}
+                className="h-20 w-full rounded-md border border-input bg-background p-2 font-mono text-[11px] text-foreground"
+              />
+              <div className="flex items-center gap-2">
+                <button type="button" className="btn" onClick={doImport} disabled={importDraft.trim().length === 0}>
+                  {t('strategyPanel.importDo')}
+                </button>
+                <button type="button" className="btn" onClick={() => setTransfer(false)}>{t('strategyPanel.cancel')}</button>
+                {transferMsg && (
+                  <span className={cn('text-[11px]', transferMsg.kind === 'error' ? 'text-destructive' : 'text-muted-foreground')}>
+                    {transferMsg.text}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
         <ul className="space-y-2">
           {strategies.map((strategy) => {
             const problems = validateStrategy(strategy);

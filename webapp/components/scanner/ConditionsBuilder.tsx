@@ -377,7 +377,9 @@ export function ConditionsBuilder({
           </div>
         </div>
         {selectedCount === 0 && (
-          <p className="px-4 pb-2 text-center text-xs text-muted-foreground">{t('builder.selectAtLeastOne')}</p>
+          <p className="px-4 pb-2 text-center text-xs text-muted-foreground">
+            {t('builder.selectAtLeastOne')} {t('builder.zeroNote')}
+          </p>
         )}
       </div>
     </div>

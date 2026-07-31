@@ -475,20 +475,42 @@
       "partialMatches": "Partial matches ({count})",
       "nonePresent": "None of your conditions present: {list}.",
       "notGenerated": "Reading not generated yet: {list}.",
-      "scannedFooter": "{count} combos analysed read-only on the latest readings already produced."
+      "scannedFooter": "{count} combos analysed read-only on the latest readings already produced.",
+      "noComboTitle": "No combo meets your reading. This is not an error.",
+      "noComboBody": "Your conditions are met nowhere right now. A scan that returns nothing is an answer, not a fault — nothing is hidden, nothing is loosened.",
+      "isolatedIntro": "Combos meeting each condition IN ISOLATION:",
+      "isolatedCount": "{count, plural, =0 {0 combo} one {# combo} other {# combos}}",
+      "isolatedNote": "These counts are independent: they do not add up and say nothing about what a partial combination would return."
     },
     "combo": {
       "conditionsPresent": "{met} of your {total, plural, one {# condition present} other {# conditions present}}",
+      "nonEvaluableCount": "{count, plural, one {# non-evaluable} other {# non-evaluable}}",
       "price": "Price {price}",
       "reading": "reading {age}",
+      "freshCandle": "candle closed {age}",
       "fullContext": "Full context",
+      "matchBlock": "What matches",
+      "matchNone": "No condition met here.",
+      "againstBlock": "What goes against",
+      "againstNone": "Nothing goes against among your evaluable conditions.",
+      "nonEvaluableBlock": "Non-evaluable here (data absent)",
+      "contextBlock": "Context you did not ask for",
       "trend": "Trend: {label}",
       "obFvg": "{ob} OB · {fvg} FVG active",
       "bosSuffix": " · BOS {dir}",
+      "range": "range {low}–{high}",
       "importantNews": "{count, plural, one {# important news event upcoming — keep it in mind.} other {# important news events upcoming — keep them in mind.}}",
       "analyse": "Analyse",
+      "openChart": "Open in the chart",
       "disclaimer": "Structural facts observed in the present. The scanner predicts nothing and recommends nothing — the judgement is yours.",
       "unavailable": "unavailable"
+    },
+    "filters": {
+      "aria": "Display filters",
+      "matches": "Matches ({count})",
+      "almost": "Almost ({count})",
+      "nonmatch": "Non-matching ({count})",
+      "noneval": "Non-evaluable ({count})"
     },
     "toggle": {
       "label": "Auto-refresh (at every close)",
@@ -516,7 +538,8 @@
       "side": "Side",
       "activeInFamily": "{count, plural, =0 {none active} one {# active} other {# active}}",
       "selectedCount": "{count, plural, =0 {No condition ticked} one {# condition ticked} other {# conditions ticked}}",
-      "conceptAria": "Concept — {label}"
+      "conceptAria": "Concept — {label}",
+      "zeroNote": "Zero conditions does not mean “all markets”: with no condition, there is nothing to read."
     },
     "family": {
       "structure": { "title": "Structure", "desc": "trend, breaks, events" },
@@ -631,8 +654,22 @@
       "saveFailed": "Unable to save."
     },
     "strategyPanel": {
-      "title": "My strategies",
-      "subtitle": "Saved on this device only — nothing is sent to the server.",
+      "title": "My saved readings",
+      "subtitle": "Kept on this device only — they are not synced. Switch computers and they do not follow, unless you export them.",
+      "notRankingNote": "The combo count is a finding, not a ranking: a reading returning seven combos is not better than one returning none — it is wider.",
+      "export": "Export",
+      "import": "Import",
+      "transferHint": "Move your readings between devices as text.",
+      "exportLabel": "Text to copy",
+      "importPlaceholder": "Paste here the text exported from another device…",
+      "importDo": "Import this text",
+      "importResult": "{imported} imported, {skipped} skipped (cap reached).",
+      "importErrors": {
+        "malformed": "Unreadable text — this is not a valid export.",
+        "wrong_format": "This text is not a scanner readings export.",
+        "empty": "No reading to import in this text.",
+        "storage_failed": "Could not write to local storage (quota or private browsing)."
+      },
       "invalid": "Invalid",
       "meta": "{count, plural, one {# condition} other {# conditions}} · {logic} · last used {when}",
       "logicAnd": "AND",
