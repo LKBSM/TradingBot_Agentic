@@ -1,213 +1,437 @@
 """Conditions Scanner — read-only structural condition matching over existing reads.
 
 This module evaluates a user-defined set of **structural conditions** (their
-"strategy") against MarketReading payloads that the detection engine has
-**already produced**. It is strictly DESCRIPTIVE and PRESENT-TENSE:
+"reading") against MarketReading payloads that the detection engine has
+**already produced** (SC-1). It is strictly DESCRIPTIVE and PRESENT-TENSE:
 
 - Every condition in the palette is a fact about the market *right now*
-  (e.g. "price is currently inside an Order Block"). There is **no** predictive
-  / outcome condition ("will bounce", "will break") — such types are not even
-  representable here (see :data:`PALETTE` / :data:`ALLOWED_CONDITION_TYPES`).
+  (e.g. "price is currently inside an Order Block") or a dated past event counted
+  IN BARS (e.g. "a CHOCH occurred within the last 10 candles"). There is **no**
+  predictive / outcome condition ("will bounce", "will break") — such types are
+  not even representable here (see :data:`PALETTE` / :data:`ALLOWED_CONDITION_TYPES`).
 - The evaluator is a **pure function** over a reading dict. It never fetches,
   never detects, never mutates anything. The scan endpoint feeds it readings
   obtained via a read-only store accessor.
-- Matching is **transparent**: each combo reports which conditions are met AND
-  which are unmet, plus the full context (including what goes against). There is
-  no opaque similarity score and no quality ranking.
+- Matching is **transparent**: each combo reports which conditions are met, which
+  are unmet, and which are NON-EVALUABLE (a third state that adjusts the visible
+  denominator), plus the full context — including what goes against. There is no
+  opaque similarity score and no quality ranking. Order is fixed (market, then
+  timeframe); nothing here sorts by how many conditions a combo meets.
 
-The palette is the single source of truth for what the builder may offer.
+The palette (grouped in four families: structure / zones / liquidity / context)
+is the single source of truth for what the builder may offer, so the interface
+DERIVES from the schema instead of copying it.
+
+SC-1 palette changes vs the legacy 14-type palette:
+- REMOVED ``ob_fvg_confluence`` — it is exactly « price in OB » AND « price in
+  FVG »; offering the same thing twice under a third name is forbidden.
+- REMOVED the legacy ``retest_in_progress`` (a BOS-level retest state-machine
+  flag) and REPLACED it with the factual :data:`price_in_tested_zone` (« price is
+  inside an OB/FVG that has already been tested at least once »).
+- ``mtf_aligned`` is KEPT temporarily, relabelled to say EXACTLY what it compares
+  today (three fixed timeframes' structural trend). It will be retired in favour
+  of a per-« unit above » agreement condition once that alignment rule is wired.
+- ``distribution`` is REMOVED from the exposed market-phase values: the phase
+  derivation can no longer emit it (see the audit), and a condition that can only
+  ever return zero is worse than an absent one.
+- ``zone_tested_at_most`` (« tested at most N times ») is DOCUMENTED in
+  :data:`BLOCKED_PALETTE` but NOT exposed: OB/FVG carry only a ``tested`` boolean,
+  not a touch count. It becomes offerable once that count exists in the engine.
 """
 
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Any, Dict, List, Optional
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional, Tuple
+from zoneinfo import ZoneInfo
 
 # ---------------------------------------------------------------------------
-# Palette — present-tense structural conditions ONLY
+# Palette vocabulary — present-tense structural values ONLY
 # ---------------------------------------------------------------------------
+
+#: The four families the interface groups conditions under. Structure and Zones
+#: open by default (see the builder). Order is fixed and meaningful.
+FAMILIES: Tuple[str, ...] = ("structure", "zones", "liquidity", "context")
 
 #: Direction filter accepted by direction-aware conditions.
 DIRECTION_VALUES = ("any", "bullish", "bearish")
 
-#: Allowed values for the regime selectors (present-tense facts in the reading).
-#: TR-1: the trend is structural (bullish/bearish/indeterminate); ``ranging`` and
-#: ``neutral`` are gone (consolidation now lives on the Phase tile only).
+#: Structural trend (TR-1): bullish / bearish / indeterminate. ``ranging`` and
+#: ``neutral`` are gone (consolidation lives on the Phase tile only).
 TREND_VALUES = ("bullish", "bearish", "indeterminate")
-PHASE_VALUES = ("accumulation", "distribution", "trend", "ranging", "expansion")
+
+#: Market-phase values OFFERED by the palette. ``distribution`` is intentionally
+#: excluded: the engine's phase derivation has no path that emits it, so exposing
+#: it would create a condition that can only ever return zero. Full engine
+#: vocabulary (incl. the dead ``distribution``) stays in the schema; the palette
+#: advertises only what the engine can actually produce.
+PHASE_VALUES = ("accumulation", "trend", "ranging", "expansion")
+
+#: Observed-volatility values.
 VOLATILITY_VALUES = ("low", "normal", "elevated")
 
-#: The complete, closed palette. Each entry is a fact AT THE PRESENT. Adding a
-#: predictive/outcome condition here is forbidden — the test-suite asserts every
-#: entry carries ``tense == "present"`` and uses no predictive vocabulary.
+#: Liquidity-side filter (BSL above / SSL below the price).
+LIQUIDITY_SIDE_VALUES = ("any", "bsl", "ssl")
+
+#: Which zone family a zone-condition looks at.
+ZONE_KIND_VALUES = ("any", "ob", "fvg")
+
+#: The last detected structural event, as a signed break.
+EVENT_VALUES = ("bos_up", "bos_down", "choch_up", "choch_down")
+
+#: Age buckets (IN BARS) for « the last event dates back … ».
+AGE_BUCKET_VALUES = ("lt10", "10to50", "gt50")
+
+#: Which third of the structural range the price sits in.
+RANGE_THIRD_VALUES = ("bottom", "middle", "top")
+
+#: Equal-level kind for « equal highs / lows present ».
+EQ_KIND_VALUES = ("any", "highs", "lows")
+
+#: Intraday session (reading convention, from market_calendar — single source).
+SESSION_VALUES = ("asia", "london", "new_york", "overlap")
+
+#: Recency windows (IN BARS) offered for the « occurred within N candles » family.
+BARS_RECENCY_CHOICES = (5, 10, 20, 50)
+#: Recency windows (IN BARS) offered for « zone formed within N candles ».
+BARS_FORMED_CHOICES = (10, 20, 50)
+#: Proximity thresholds (% of price) for the « price near a zone » family.
+PROXIMITY_ZONE_CHOICES = (0.1, 0.25, 0.5)
+#: Proximity thresholds (% of price) for the « intact pocket near price » family.
+PROXIMITY_LIQ_CHOICES = (0.25, 0.5, 1.0)
+
+#: Defaults (used when a request omits a control — the request model repeats them).
+DEFAULT_BOS_MAX_BARS = 10
+DEFAULT_LIQ_MAX_BARS = 10
+DEFAULT_FORMED_MAX_BARS = 20
+DEFAULT_PROXIMITY_PCT = 0.25
+
+
+def _control(name: str, values: Tuple[Any, ...], default: Any) -> Dict[str, Any]:
+    """One segmented control descriptor the interface renders as buttons."""
+    return {"name": name, "values": list(values), "default": default}
+
+
+#: The complete, closed, family-grouped palette. Each entry is a fact AT THE
+#: PRESENT (or a past event counted in bars). Adding a predictive/outcome
+#: condition here is forbidden — the test-suite asserts every entry carries
+#: ``tense == "present"`` and uses no predictive vocabulary. ``controls`` lets the
+#: UI derive its segmented buttons from the schema instead of recopying it.
 PALETTE: List[Dict[str, Any]] = [
-    {
-        "type": "mtf_aligned",
-        "label": "3 TF alignés (structure)",
-        "description": (
-            "Les 3 timeframes (H4, H1, M15) montrent la même direction de "
-            "STRUCTURE en ce moment (dernière cassure BOS/CHOCH de même sens). "
-            "Un timeframe sans tendance structurelle établie (indéterminé) "
-            "empêche l'alignement."
-        ),
-        "supports_direction": True,
-        "tense": "present",
-    },
+    # ── STRUCTURE ────────────────────────────────────────────────────────────
     {
         "type": "trend_is",
-        "label": "Tendance actuelle (structure)",
+        "family": "structure",
+        "label": "La tendance structurelle est",
         "description": (
-            "La tendance de structure observée sur ce timeframe est, en ce "
-            "moment, celle choisie (haussière, baissière, ou indéterminée "
-            "quand aucune cassure ne l'a établie)."
+            "La tendance de STRUCTURE sur ce timeframe (dernière cassure BOS/CHOCH "
+            "non contredite) est, en ce moment, celle choisie — haussière, "
+            "baissière, ou indéterminée quand aucune cassure ne l'a établie."
         ),
         "supports_direction": False,
         "tense": "present",
+        "controls": [_control("trend", TREND_VALUES, "bullish")],
     },
     {
-        "type": "market_phase_is",
-        "label": "Phase de marché",
+        "type": "mtf_aligned",
+        "label": "Les 3 unités H4/H1/M15 s'accordent (structure)",
+        "family": "structure",
         "description": (
-            "La phase de marché observée correspond, en ce moment, à celle "
-            "choisie (accumulation, distribution, tendance, range, expansion)."
-        ),
-        "supports_direction": False,
-        "tense": "present",
-    },
-    {
-        "type": "volatility_is",
-        "label": "Volatilité observée",
-        "description": (
-            "La volatilité observée en ce moment correspond au niveau choisi "
-            "(faible, normale, élevée)."
-        ),
-        "supports_direction": False,
-        "tense": "present",
-    },
-    {
-        "type": "price_in_ob",
-        "label": "Prix dans un Order Block",
-        "description": (
-            "Le prix courant se situe à l'intérieur d'un Order Block actif."
+            "Les trois timeframes H4, H1 et M15 montrent la MÊME direction de "
+            "structure en ce moment (dernière cassure de même sens). Un timeframe "
+            "sans tendance structurelle établie (indéterminé) empêche l'accord. "
+            "Condition transitoire : elle compare trois unités fixes, non « l'unité "
+            "au-dessus » de celle scannée."
         ),
         "supports_direction": True,
         "tense": "present",
+        "controls": [_control("direction", DIRECTION_VALUES, "any")],
     },
     {
-        "type": "price_in_fvg",
-        "label": "Prix dans un Fair Value Gap",
+        "type": "last_event_is",
+        "family": "structure",
+        "label": "Le dernier événement détecté est",
         "description": (
-            "Le prix courant se situe à l'intérieur d'un Fair Value Gap "
-            "non comblé."
-        ),
-        "supports_direction": True,
-        "tense": "present",
-    },
-    {
-        "type": "ob_fvg_confluence",
-        "label": "Confluence OB + FVG au prix courant",
-        "description": (
-            "Le prix courant se situe simultanément dans un Order Block actif "
-            "et dans un Fair Value Gap non comblé."
+            "Le tout dernier événement de structure daté (le plus récent entre BOS "
+            "et CHOCH, haussier ou baissier) est celui choisi."
         ),
         "supports_direction": False,
         "tense": "present",
+        "controls": [_control("event", EVENT_VALUES, "bos_up")],
     },
     {
         "type": "bos_recent_confirmed",
-        "label": "BOS confirmé récent",
+        "family": "structure",
+        "label": "Un BOS est survenu dans les N dernières bougies",
         "description": (
-            "Une cassure de structure (BOS) confirmée est datée des dernières "
-            "bougies."
+            "Une cassure de structure (BOS) confirmée est datée d'au plus N bougies "
+            "— une distance comptée en bougies, jamais en minutes."
         ),
         "supports_direction": True,
         "tense": "present",
+        "controls": [
+            _control("direction", DIRECTION_VALUES, "any"),
+            _control("max_bars", BARS_RECENCY_CHOICES, DEFAULT_BOS_MAX_BARS),
+        ],
     },
     {
         "type": "choch_recent_confirmed",
-        "label": "CHOCH confirmé récent",
+        "family": "structure",
+        "label": "Un CHOCH est survenu dans les N dernières bougies",
         "description": (
-            "Un changement de caractère (CHOCH) confirmé est daté des "
-            "dernières bougies."
+            "Un changement de caractère (CHOCH) confirmé est daté d'au plus N "
+            "bougies — une distance comptée en bougies, jamais en minutes."
         ),
         "supports_direction": True,
         "tense": "present",
+        "controls": [
+            _control("direction", DIRECTION_VALUES, "any"),
+            _control("max_bars", BARS_RECENCY_CHOICES, DEFAULT_BOS_MAX_BARS),
+        ],
     },
     {
-        "type": "retest_in_progress",
-        "label": "Retest en cours",
+        "type": "last_event_age",
+        "family": "structure",
+        "label": "Le dernier événement remonte à",
         "description": (
-            "Un retest d'un niveau (BOS, CHOCH, OB ou FVG) est en cours "
-            "en ce moment."
+            "Le dernier événement de structure daté remonte à moins de 10 bougies, "
+            "entre 10 et 50, ou plus de 50 — compté en bougies."
         ),
         "supports_direction": False,
         "tense": "present",
+        "controls": [_control("age_bucket", AGE_BUCKET_VALUES, "lt10")],
+    },
+    # ── ZONES ────────────────────────────────────────────────────────────────
+    {
+        "type": "price_in_ob",
+        "family": "zones",
+        "label": "Le prix est dans un Order Block",
+        "description": "Le prix courant se situe à l'intérieur d'un Order Block actif.",
+        "supports_direction": True,
+        "tense": "present",
+        "controls": [_control("direction", DIRECTION_VALUES, "any")],
+    },
+    {
+        "type": "price_in_fvg",
+        "family": "zones",
+        "label": "Le prix est dans un Fair Value Gap",
+        "description": "Le prix courant se situe à l'intérieur d'un Fair Value Gap non comblé.",
+        "supports_direction": True,
+        "tense": "present",
+        "controls": [_control("direction", DIRECTION_VALUES, "any")],
+    },
+    {
+        "type": "price_in_tested_zone",
+        "family": "zones",
+        "label": "Le prix est dans une zone déjà testée",
+        "description": (
+            "Le prix courant est à l'intérieur d'une zone active (Order Block ou "
+            "Fair Value Gap) qui a déjà été testée au moins une fois depuis sa "
+            "formation."
+        ),
+        "supports_direction": False,
+        "tense": "present",
+        "controls": [_control("zone_kind", ZONE_KIND_VALUES, "any")],
+    },
+    {
+        "type": "zone_untested",
+        "family": "zones",
+        "label": "Une zone n'a jamais été testée depuis sa formation",
+        "description": (
+            "Il existe une zone active (Order Block ou Fair Value Gap) qui n'a "
+            "jamais été retestée depuis sa formation."
+        ),
+        "supports_direction": False,
+        "tense": "present",
+        "controls": [_control("zone_kind", ZONE_KIND_VALUES, "any")],
+    },
+    {
+        "type": "zone_formed_recent",
+        "family": "zones",
+        "label": "Une zone s'est formée dans les N dernières bougies",
+        "description": (
+            "Il existe une zone active (Order Block ou Fair Value Gap) formée il y "
+            "a au plus N bougies — compté en bougies."
+        ),
+        "supports_direction": False,
+        "tense": "present",
+        "controls": [
+            _control("zone_kind", ZONE_KIND_VALUES, "any"),
+            _control("max_bars", BARS_FORMED_CHOICES, DEFAULT_FORMED_MAX_BARS),
+        ],
     },
     {
         "type": "price_near_ob",
-        "label": "Prix proche d'un Order Block",
+        "family": "zones",
+        "label": "Le prix est à moins de X % d'un Order Block, sans y être",
         "description": (
-            "Le prix courant est proche d'un Order Block actif (à moins de la "
-            "distance choisie), sans être nécessairement à l'intérieur."
+            "Le prix courant est à moins de la distance choisie d'un Order Block "
+            "actif, SANS être à l'intérieur."
         ),
         "supports_direction": True,
         "tense": "present",
+        "controls": [
+            _control("direction", DIRECTION_VALUES, "any"),
+            _control("proximity_pct", PROXIMITY_ZONE_CHOICES, 0.25),
+        ],
     },
     {
         "type": "price_near_fvg",
-        "label": "Prix proche d'un Fair Value Gap",
+        "family": "zones",
+        "label": "Le prix est à moins de X % d'un Fair Value Gap, sans y être",
         "description": (
-            "Le prix courant est proche d'un Fair Value Gap non comblé "
-            "(à moins de la distance choisie), sans être nécessairement dedans."
+            "Le prix courant est à moins de la distance choisie d'un Fair Value Gap "
+            "non comblé, SANS être à l'intérieur."
         ),
         "supports_direction": True,
         "tense": "present",
+        "controls": [
+            _control("direction", DIRECTION_VALUES, "any"),
+            _control("proximity_pct", PROXIMITY_ZONE_CHOICES, 0.25),
+        ],
     },
+    # ── LIQUIDITY ────────────────────────────────────────────────────────────
     {
         "type": "price_near_liquidity",
-        "label": "Prix proche d'une liquidité (SSL/BSL)",
+        "family": "liquidity",
+        "label": "Une poche intacte est à moins de X % du prix",
         "description": (
-            "Le prix courant est proche d'une poche de liquidité intacte "
-            "(BSL au-dessus / SSL en dessous), à moins de la distance choisie."
+            "Le prix courant est à moins de la distance choisie d'une poche de "
+            "liquidité INTACTE (BSL au-dessus / SSL en dessous)."
         ),
         "supports_direction": False,
         "tense": "present",
+        "controls": [
+            _control("side", LIQUIDITY_SIDE_VALUES, "any"),
+            _control("proximity_pct", PROXIMITY_LIQ_CHOICES, 0.5),
+        ],
     },
     {
         "type": "liquidity_swept_recent",
-        "label": "Prise de liquidité récente",
+        "family": "liquidity",
+        "label": "Une poche a été prise dans les N dernières bougies",
         "description": (
-            "Une poche de liquidité (SSL/BSL) a été balayée au cours des "
-            "dernières bougies — un point de prise de liquidité observé."
+            "Une poche de liquidité (SSL/BSL) a été balayée — sa liquidité prise — "
+            "il y a au plus N bougies. Compté en bougies."
         ),
         "supports_direction": False,
         "tense": "present",
+        "controls": [
+            _control("side", LIQUIDITY_SIDE_VALUES, "any"),
+            _control("max_bars", BARS_RECENCY_CHOICES, DEFAULT_LIQ_MAX_BARS),
+        ],
+    },
+    {
+        "type": "liquidity_broken_recent",
+        "family": "liquidity",
+        "label": "Une poche a été cassée dans les N dernières bougies",
+        "description": (
+            "Une poche de liquidité (SSL/BSL) a été cassée nettement — clôture au "
+            "travers, état terminal — il y a au plus N bougies. À distinguer d'une "
+            "simple prise (balayage). Compté en bougies."
+        ),
+        "supports_direction": False,
+        "tense": "present",
+        "controls": [
+            _control("side", LIQUIDITY_SIDE_VALUES, "any"),
+            _control("max_bars", BARS_RECENCY_CHOICES, DEFAULT_LIQ_MAX_BARS),
+        ],
+    },
+    {
+        "type": "equal_levels_present",
+        "family": "liquidity",
+        "label": "Des creux ou sommets égaux sont présents",
+        "description": (
+            "Au moins une poche de liquidité intacte formée de creux égaux (EQL) ou "
+            "de sommets égaux (EQH) est présente."
+        ),
+        "supports_direction": False,
+        "tense": "present",
+        "controls": [_control("eq_kind", EQ_KIND_VALUES, "any")],
+    },
+    # ── CONTEXT ──────────────────────────────────────────────────────────────
+    {
+        "type": "market_phase_is",
+        "family": "context",
+        "label": "La phase de marché est",
+        "description": (
+            "La phase de marché observée correspond à celle choisie — accumulation, "
+            "tendance, range ou expansion."
+        ),
+        "supports_direction": False,
+        "tense": "present",
+        "controls": [_control("phase", PHASE_VALUES, "expansion")],
+    },
+    {
+        "type": "volatility_is",
+        "family": "context",
+        "label": "La volatilité est",
+        "description": (
+            "La volatilité observée en ce moment correspond au niveau choisi — "
+            "contractée (faible), normale, ou étendue (élevée)."
+        ),
+        "supports_direction": False,
+        "tense": "present",
+        "controls": [_control("volatility", VOLATILITY_VALUES, "elevated")],
+    },
+    {
+        "type": "price_in_range_third",
+        "family": "context",
+        "label": "Le prix est dans le tiers … du range",
+        "description": (
+            "Le prix courant se situe dans le tiers haut, milieu ou bas du range "
+            "STRUCTUREL de la fenêtre d'analyse (mêmes bornes que la tuile "
+            "« Position dans le range » du panneau Régime)."
+        ),
+        "supports_direction": False,
+        "tense": "present",
+        "controls": [_control("third", RANGE_THIRD_VALUES, "bottom")],
+    },
+    {
+        "type": "session_is",
+        "family": "context",
+        "label": "La session en cours est",
+        "description": (
+            "Au moment de la dernière bougie clôturée, la session de marché est "
+            "celle choisie — Asie, Londres, New York, ou le chevauchement "
+            "Londres/New York."
+        ),
+        "supports_direction": False,
+        "tense": "present",
+        "controls": [_control("session", SESSION_VALUES, "london")],
+    },
+]
+
+#: Conditions PREPARED in the model but NOT exposed — their underlying data is
+#: known to be missing or unreliable. They appear in the interface only once the
+#: blocking work lands. The request Literal deliberately excludes them, so asking
+#: for one is a 422 (out of palette) — never a silent wrong answer.
+BLOCKED_PALETTE: List[Dict[str, Any]] = [
+    {
+        "type": "zone_tested_at_most",
+        "family": "zones",
+        "label": "Une zone a été testée au plus N fois",
+        "tense": "present",
+        "blocked_reason": (
+            "Le moteur n'expose qu'un booléen ``tested`` par Order Block / Fair "
+            "Value Gap, pas un compteur de touches. « Au plus N fois » exige de "
+            "compter les ré-entrées par zone — chantier moteur non fait."
+        ),
     },
 ]
 
 #: Closed allowlist of condition types. Anything outside is rejected by the
-#: endpoint — there is intentionally no path to a predictive condition.
+#: endpoint — there is intentionally no path to a predictive condition, and no
+#: path to a BLOCKED condition either.
 ALLOWED_CONDITION_TYPES = frozenset(p["type"] for p in PALETTE)
 
 _PALETTE_BY_TYPE = {p["type"]: p for p in PALETTE}
 
-#: Minutes per timeframe — used only to express BOS recency in bars. Derived from
-#: the single timeframe registry (TF-1), never a hand-copied subset.
+#: Minutes per timeframe — used only to express recency in bars. Derived from the
+#: single timeframe registry (TF-1), never a hand-copied subset.
 from src.intelligence import timeframe_registry as _tfreg
 
 _TF_MINUTES = _tfreg.minutes_map()
-
-#: Default recency window (in bars) for ``bos_recent_confirmed``.
-DEFAULT_BOS_MAX_BARS = 5
-
-#: Default proximity threshold (in % of price) for the "price near …" conditions.
-DEFAULT_PROXIMITY_PCT = 0.3
-
-#: Default recency window (in bars) for ``liquidity_swept_recent``.
-DEFAULT_LIQ_MAX_BARS = 10
-
-#: Accepted liquidity-side filter values.
-LIQUIDITY_SIDE_VALUES = ("any", "bsl", "ssl")
 
 
 # ---------------------------------------------------------------------------
@@ -225,7 +449,7 @@ def _direction_word(direction: str) -> str:
 
 
 def _trend_axis(value: Optional[str]) -> str:
-    """Collapse a trend/bias value to an axis: 'up' / 'down' / 'flat'."""
+    """Collapse a trend value to an axis: 'up' / 'down' / 'flat' (indeterminate)."""
     if value == "bullish":
         return "up"
     if value == "bearish":
@@ -286,10 +510,11 @@ def _result(cond_type: str, met: bool, detail: str, *, available: bool = True) -
     """A single condition outcome.
 
     ``available`` distinguishes "the data needed to judge this condition is
-    missing" (``available=False``, e.g. a sibling timeframe has no reading yet)
-    from "the condition was judged and is not met" (``available=True, met=False``).
-    A condition that is not available is never met. The UI surfaces the two
-    states differently so the client never reads a data gap as a real "non".
+    missing" (``available=False`` — a NON-EVALUABLE third state) from "the
+    condition was judged and is not met" (``available=True, met=False``). A
+    non-evaluable condition is never met AND never counted as unmet: the visible
+    denominator adjusts. ``detail`` always carries the OBSERVED VALUE, so the UI
+    never shows a bare check.
     """
     if not available:
         met = False
@@ -302,160 +527,143 @@ def _result(cond_type: str, met: bool, detail: str, *, available: bool = True) -
     }
 
 
-#: Display order + label for the multi-timeframe alignment (highest → lowest),
-#: mirroring the frontend ``MTF_TREND_ORDER`` so the scanner and the chart's
-#: "Régime" panel describe alignment identically.
-_MTF_ALIGN_TFS = (("H4", "h4"), ("H1", "h1"), ("M15", "m15"))
+# ── structure: mtf_aligned (kept, relabelled) ────────────────────────────────
 
+_MTF_ALIGN_TFS = (("H4", "h4"), ("H1", "h1"), ("M15", "m15"))
 _TREND_ADJ = {"bullish": "haussier", "bearish": "baissier", "indeterminate": "indéterminé"}
 
 
 def _eval_mtf_aligned(
     reading: Dict[str, Any], direction: str, instrument_trends: Optional[Dict[str, Optional[str]]]
 ) -> Dict[str, Any]:
-    """Are the instrument's M15/H1/H4 trends aligned in one direction right now?
+    """Do the instrument's H4/H1/M15 STRUCTURAL trends point the same way now?
 
-    Reads each timeframe's OWN ``regime.trend`` (the same source the chart's
-    "Régime" panel uses via ``useMtfTrends``) — NOT the per-reading
-    ``mtf_confluence`` field, which by construction only carries the bias of
-    timeframes ABOVE the current one and therefore can never hold all three.
-    ``instrument_trends`` maps "M15"/"H1"/"H4" → trend for THIS instrument,
-    assembled by the scan route from the sibling readings it already loads.
-    Alignment semantics match the frontend ``describeMtfAlignment`` exactly.
+    Reads each timeframe's OWN ``regime.trend`` (structural, TR-1), supplied by
+    the scan route as ``instrument_trends``. A missing sibling reading is a DATA
+    gap (non-evaluable), never a "no". A timeframe with an indeterminate
+    structural trend blocks the accord (never counted as agree nor disagree).
     """
     trends = instrument_trends or {}
     by_tf = {tf: trends.get(tf) for tf, _ in _MTF_ALIGN_TFS}
-    present = {tf: v for tf, v in by_tf.items() if v}
     summary = ", ".join(
         f"{tf} {(_TREND_ADJ.get(by_tf[tf]) or by_tf[tf]) if by_tf[tf] else '·'}"
         for tf, _ in _MTF_ALIGN_TFS
     )
 
-    # Need all three timeframes to judge "3 TF alignés". A missing sibling read
-    # is a DATA gap, not a "no" — surface it as unavailable.
     missing = [tf for tf, _ in _MTF_ALIGN_TFS if not by_tf[tf]]
     if missing:
         return _result(
             "mtf_aligned", False,
-            f"Alignement indisponible — lecture manquante : {', '.join(missing)} ({summary}).",
+            f"Accord indisponible — lecture manquante : {', '.join(missing)} ({summary}).",
             available=False,
         )
 
-    # TR-1: a timeframe with NO structural trend established (indeterminate) is
-    # counted as INDETERMINATE — never as an agreement nor a disagreement. Its
-    # presence means the alignment cannot hold; surface it explicitly (a combo
-    # with any indeterminate unit is never presented as meeting the condition).
     indeterminate = [tf for tf, _ in _MTF_ALIGN_TFS if by_tf[tf] == "indeterminate"]
     if indeterminate:
         n = len(indeterminate)
         return _result(
             "mtf_aligned", False,
-            f"Alignement structurel incomplet — {n} TF sur 3 sans tendance "
+            f"Accord structurel incomplet — {n} unité(s) sur 3 sans tendance "
             f"structurelle établie ({', '.join(indeterminate)}) — {summary}.",
         )
 
     axes = {tf: _trend_axis(by_tf[tf]) for tf, _ in _MTF_ALIGN_TFS}
     axis_values = list(axes.values())
-    axes_aligned = axis_values[0] != "flat" and all(a == axis_values[0] for a in axis_values)
+    axes_aligned = all(a == axis_values[0] for a in axis_values)
 
     if axes_aligned:
         word = "haussiers" if axis_values[0] == "up" else "baissiers"
         if direction == "any" or axis_values[0] == _trend_axis(direction):
-            return _result("mtf_aligned", True, f"Les 3 TF sont alignés ({word}) — {summary}.")
-        # Aligned, but in the opposite direction to the one requested.
+            return _result("mtf_aligned", True, f"Les 3 unités s'accordent ({word}) — {summary}.")
         wanted = "haussiers" if direction == "bullish" else "baissiers"
         return _result(
             "mtf_aligned", False,
-            f"Les 3 TF sont alignés ({word}), pas {wanted} comme demandé — {summary}.",
+            f"Les 3 unités s'accordent ({word}), pas {wanted} comme demandé — {summary}.",
         )
 
-    # Not aligned: mirror the chart's descriptive phrasing so both surfaces agree.
     h4, h1, m15 = axes["H4"], axes["H1"], axes["M15"]
-    if h4 == h1 != "flat" and m15 != "flat" and m15 != h4:
+    if h4 == h1 and m15 != h4:
         fem = "haussière" if h4 == "up" else "baissière"
-        return _result("mtf_aligned", False, f"M15 se replie contre la tendance H4 {fem} — {summary}.")
-    if all(a == "flat" for a in axis_values):
-        return _result("mtf_aligned", False, f"Les 3 TF sont neutres — {summary}.")
-    return _result("mtf_aligned", False, f"Les TF divergent — {summary}.")
+        return _result("mtf_aligned", False, f"M15 diverge de la structure H4 {fem} — {summary}.")
+    return _result("mtf_aligned", False, f"Les unités divergent — {summary}.")
 
 
-def _active_obs_at_price(reading: Dict[str, Any], price: float, direction: str) -> List[Dict[str, Any]]:
-    out = []
-    for ob in reading.get("structure", {}).get("order_blocks", []) or []:
-        if ob.get("status") != "active":
-            continue
-        bounds = _zone_bounds(ob)
-        if bounds is None:
-            continue
-        lo, hi = bounds
-        if lo < price < hi and _direction_matches(ob.get("direction"), direction):
-            out.append(ob)
+# ── structure: trend_is / last_event_is / last_event_age ─────────────────────
+
+
+def _eval_trend_is(reading: Dict[str, Any], trend: Optional[str]) -> Dict[str, Any]:
+    if not trend:
+        return _result("trend_is", False, "Tendance cible non précisée.")
+    observed = reading.get("regime", {}).get("trend")
+    if not observed:
+        return _result("trend_is", False, "Tendance observée indisponible.", available=False)
+    adj = _TREND_ADJ.get(observed, observed)
+    tgt = _TREND_ADJ.get(trend, trend)
+    return _result("trend_is", observed == trend, f"Tendance structurelle observée : {adj} (cible : {tgt}).")
+
+
+def _all_events(reading: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """BOS + CHOCH journal entries tagged with their kind, most-recent first.
+
+    Uses the discrete event journals (``bos_events`` / ``choch_events``), each
+    carrying ``direction`` and ``bars_ago``. Entries without a usable
+    ``bars_ago`` are dropped (their recency is unknown).
+    """
+    struct = reading.get("structure", {})
+    out: List[Dict[str, Any]] = []
+    for kind, key in (("bos", "bos_events"), ("choch", "choch_events")):
+        for ev in struct.get(key, []) or []:
+            bars_ago = ev.get("bars_ago")
+            if bars_ago is None:
+                continue
+            out.append({"kind": kind, "direction": ev.get("direction"), "bars_ago": int(bars_ago)})
+    out.sort(key=lambda e: e["bars_ago"])
     return out
 
 
-def _active_fvgs_at_price(reading: Dict[str, Any], price: float, direction: str) -> List[Dict[str, Any]]:
-    out = []
-    for fvg in reading.get("structure", {}).get("fair_value_gaps", []) or []:
-        if fvg.get("status") not in ("active", "partially_filled"):
-            continue
-        bounds = _zone_bounds(fvg)
-        if bounds is None:
-            continue
-        lo, hi = bounds
-        if lo < price < hi and _direction_matches(fvg.get("direction"), direction):
-            out.append(fvg)
-    return out
+def _event_label(kind: str, direction: Optional[str]) -> str:
+    arrow = "↑" if direction == "bullish" else "↓" if direction == "bearish" else "?"
+    return f"{kind.upper()} {arrow}"
 
 
-def _eval_price_in_ob(reading: Dict[str, Any], direction: str) -> Dict[str, Any]:
-    price = reading.get("header", {}).get("close_price")
-    if price is None:
-        return _result("price_in_ob", False, "Prix courant indisponible.", available=False)
-    hits = _active_obs_at_price(reading, price, direction)
-    if hits:
-        dirs = ", ".join(sorted({h.get("direction") or "n/d" for h in hits}))
-        return _result(
-            "price_in_ob", True,
-            f"Prix dans {len(hits)} Order Block actif(s) (direction : {dirs}).",
-        )
-    suffix = f" {_direction_word(direction)}" if direction != "any" else ""
-    return _result("price_in_ob", False, f"Prix hors de tout Order Block actif{suffix}.")
-
-
-def _eval_price_in_fvg(reading: Dict[str, Any], direction: str) -> Dict[str, Any]:
-    price = reading.get("header", {}).get("close_price")
-    if price is None:
-        return _result("price_in_fvg", False, "Prix courant indisponible.", available=False)
-    hits = _active_fvgs_at_price(reading, price, direction)
-    if hits:
-        dirs = ", ".join(sorted({h.get("direction") or "n/d" for h in hits}))
-        return _result(
-            "price_in_fvg", True,
-            f"Prix dans {len(hits)} Fair Value Gap non comblé(s) (direction : {dirs}).",
-        )
-    suffix = f" {_direction_word(direction)}" if direction != "any" else ""
-    return _result("price_in_fvg", False, f"Prix hors de tout Fair Value Gap non comblé{suffix}.")
-
-
-def _eval_ob_fvg_confluence(reading: Dict[str, Any]) -> Dict[str, Any]:
-    price = reading.get("header", {}).get("close_price")
-    if price is None:
-        return _result("ob_fvg_confluence", False, "Prix courant indisponible.", available=False)
-    in_ob = bool(_active_obs_at_price(reading, price, "any"))
-    in_fvg = bool(_active_fvgs_at_price(reading, price, "any"))
-    if in_ob and in_fvg:
-        return _result("ob_fvg_confluence", True, "Prix dans un OB actif ET un FVG non comblé.")
-    have = []
-    if in_ob:
-        have.append("OB")
-    if in_fvg:
-        have.append("FVG")
-    detail = (
-        f"Seulement {have[0]} au prix courant (pas de confluence)."
-        if have
-        else "Ni OB ni FVG au prix courant."
+def _eval_last_event_is(reading: Dict[str, Any], event: Optional[str]) -> Dict[str, Any]:
+    if event not in EVENT_VALUES:
+        return _result("last_event_is", False, "Événement cible non précisé.")
+    events = _all_events(reading)
+    if not events:
+        return _result("last_event_is", False, "Aucun événement de structure daté.", available=False)
+    last = events[0]
+    want_kind, want_dir = event.split("_")
+    want_dir = "bullish" if want_dir == "up" else "bearish"
+    observed = _event_label(last["kind"], last["direction"])
+    met = last["kind"] == want_kind and last["direction"] == want_dir
+    return _result(
+        "last_event_is", met,
+        f"Dernier événement : {observed} il y a {last['bars_ago']} bougie(s) "
+        f"(cible : {_event_label(want_kind, want_dir)}).",
     )
-    return _result("ob_fvg_confluence", False, detail)
+
+
+def _eval_last_event_age(reading: Dict[str, Any], age_bucket: Optional[str]) -> Dict[str, Any]:
+    if age_bucket not in AGE_BUCKET_VALUES:
+        return _result("last_event_age", False, "Tranche d'ancienneté non précisée.")
+    events = _all_events(reading)
+    if not events:
+        return _result("last_event_age", False, "Aucun événement de structure daté.", available=False)
+    bars = events[0]["bars_ago"]
+    observed = _event_label(events[0]["kind"], events[0]["direction"])
+    if bars < 10:
+        bucket = "lt10"
+    elif bars <= 50:
+        bucket = "10to50"
+    else:
+        bucket = "gt50"
+    labels = {"lt10": "moins de 10", "10to50": "10 à 50", "gt50": "plus de 50"}
+    return _result(
+        "last_event_age", bucket == age_bucket,
+        f"Dernier événement ({observed}) il y a {bars} bougie(s) — tranche « {labels[bucket]} » "
+        f"(cible : « {labels[age_bucket]} »).",
+    )
 
 
 def _eval_break_recent_confirmed(
@@ -495,48 +703,129 @@ def _eval_break_recent_confirmed(
     )
 
 
-def _eval_trend_is(reading: Dict[str, Any], trend: Optional[str]) -> Dict[str, Any]:
-    if not trend:
-        return _result("trend_is", False, "Tendance cible non précisée.")
-    observed = reading.get("regime", {}).get("trend")
-    if not observed:
-        return _result("trend_is", False, "Tendance observée indisponible.", available=False)
+# ── zones: price in / near / tested / untested / formed-recent ───────────────
+
+
+def _zones_of_kind(reading: Dict[str, Any], zone_kind: str) -> List[Tuple[str, Dict[str, Any]]]:
+    """Active zones (OB and/or FVG) with their family tag, honouring ``zone_kind``."""
+    struct = reading.get("structure", {})
+    out: List[Tuple[str, Dict[str, Any]]] = []
+    if zone_kind in ("any", "ob"):
+        for ob in struct.get("order_blocks", []) or []:
+            if ob.get("status") == "active":
+                out.append(("OB", ob))
+    if zone_kind in ("any", "fvg"):
+        for fvg in struct.get("fair_value_gaps", []) or []:
+            if fvg.get("status") in ("active", "partially_filled"):
+                out.append(("FVG", fvg))
+    return out
+
+
+def _active_obs_at_price(reading: Dict[str, Any], price: float, direction: str) -> List[Dict[str, Any]]:
+    out = []
+    for ob in reading.get("structure", {}).get("order_blocks", []) or []:
+        if ob.get("status") != "active":
+            continue
+        bounds = _zone_bounds(ob)
+        if bounds is None:
+            continue
+        lo, hi = bounds
+        if lo < price < hi and _direction_matches(ob.get("direction"), direction):
+            out.append(ob)
+    return out
+
+
+def _active_fvgs_at_price(reading: Dict[str, Any], price: float, direction: str) -> List[Dict[str, Any]]:
+    out = []
+    for fvg in reading.get("structure", {}).get("fair_value_gaps", []) or []:
+        if fvg.get("status") not in ("active", "partially_filled"):
+            continue
+        bounds = _zone_bounds(fvg)
+        if bounds is None:
+            continue
+        lo, hi = bounds
+        if lo < price < hi and _direction_matches(fvg.get("direction"), direction):
+            out.append(fvg)
+    return out
+
+
+def _fmt_band(zone: Dict[str, Any]) -> str:
+    b = _zone_bounds(zone)
+    return f"{b[0]:g} – {b[1]:g}" if b else "n/d"
+
+
+def _eval_price_in_ob(reading: Dict[str, Any], direction: str) -> Dict[str, Any]:
+    price = reading.get("header", {}).get("close_price")
+    if price is None:
+        return _result("price_in_ob", False, "Prix courant indisponible.", available=False)
+    hits = _active_obs_at_price(reading, price, direction)
+    if hits:
+        return _result("price_in_ob", True, f"Prix dans un Order Block actif ({_fmt_band(hits[0])}).")
+    suffix = f" {_direction_word(direction)}" if direction != "any" else ""
+    return _result("price_in_ob", False, f"Prix hors de tout Order Block actif{suffix}.")
+
+
+def _eval_price_in_fvg(reading: Dict[str, Any], direction: str) -> Dict[str, Any]:
+    price = reading.get("header", {}).get("close_price")
+    if price is None:
+        return _result("price_in_fvg", False, "Prix courant indisponible.", available=False)
+    hits = _active_fvgs_at_price(reading, price, direction)
+    if hits:
+        return _result("price_in_fvg", True, f"Prix dans un Fair Value Gap non comblé ({_fmt_band(hits[0])}).")
+    suffix = f" {_direction_word(direction)}" if direction != "any" else ""
+    return _result("price_in_fvg", False, f"Prix hors de tout Fair Value Gap non comblé{suffix}.")
+
+
+def _eval_price_in_tested_zone(reading: Dict[str, Any], zone_kind: str) -> Dict[str, Any]:
+    price = reading.get("header", {}).get("close_price")
+    if price is None:
+        return _result("price_in_tested_zone", False, "Prix courant indisponible.", available=False)
+    for tag, z in _zones_of_kind(reading, zone_kind):
+        bounds = _zone_bounds(z)
+        if bounds is None:
+            continue
+        lo, hi = bounds
+        if lo < price < hi and z.get("tested"):
+            return _result(
+                "price_in_tested_zone", True,
+                f"Prix dans un {tag} déjà testé ({_fmt_band(z)}).",
+            )
+    return _result("price_in_tested_zone", False, "Prix dans aucune zone déjà testée.")
+
+
+def _eval_zone_untested(reading: Dict[str, Any], zone_kind: str) -> Dict[str, Any]:
+    for tag, z in _zones_of_kind(reading, zone_kind):
+        if not z.get("tested"):
+            return _result("zone_untested", True, f"{tag} jamais testé depuis sa formation ({_fmt_band(z)}).")
+    return _result("zone_untested", False, "Toutes les zones actives ont déjà été testées.")
+
+
+def _eval_zone_formed_recent(reading: Dict[str, Any], zone_kind: str, max_bars: int) -> Dict[str, Any]:
+    tf = reading.get("header", {}).get("timeframe", "")
+    candle_ts = reading.get("header", {}).get("candle_close_ts")
+    best: Optional[Tuple[float, str, Dict[str, Any]]] = None
+    saw_dateable = False
+    for tag, z in _zones_of_kind(reading, zone_kind):
+        bars = _bars_between(z.get("created_at"), candle_ts, tf)
+        if bars is None:
+            continue
+        saw_dateable = True
+        if best is None or bars < best[0]:
+            best = (bars, tag, z)
+    if best is None:
+        if not saw_dateable and _zones_of_kind(reading, zone_kind):
+            return _result("zone_formed_recent", False, "Âge de formation des zones inconnu.", available=False)
+        return _result("zone_formed_recent", False, "Aucune zone active à dater.")
+    bars, tag, z = best
+    if bars <= max_bars:
+        return _result(
+            "zone_formed_recent", True,
+            f"{tag} formé il y a ~{round(bars)} bougie(s) (≤ {max_bars}) ({_fmt_band(z)}).",
+        )
     return _result(
-        "trend_is", observed == trend,
-        f"Tendance observée : {observed} (cible : {trend}).",
+        "zone_formed_recent", False,
+        f"Zone la plus récente formée il y a ~{round(bars)} bougies (> {max_bars}).",
     )
-
-
-def _eval_market_phase_is(reading: Dict[str, Any], phase: Optional[str]) -> Dict[str, Any]:
-    if not phase:
-        return _result("market_phase_is", False, "Phase cible non précisée.")
-    observed = reading.get("regime", {}).get("market_phase")
-    if not observed:
-        return _result("market_phase_is", False, "Phase observée indisponible.", available=False)
-    return _result(
-        "market_phase_is", observed == phase,
-        f"Phase observée : {observed} (cible : {phase}).",
-    )
-
-
-def _eval_volatility_is(reading: Dict[str, Any], volatility: Optional[str]) -> Dict[str, Any]:
-    if not volatility:
-        return _result("volatility_is", False, "Niveau de volatilité cible non précisé.")
-    observed = reading.get("regime", {}).get("volatility_observed")
-    if not observed:
-        return _result("volatility_is", False, "Volatilité observée indisponible.", available=False)
-    return _result(
-        "volatility_is", observed == volatility,
-        f"Volatilité observée : {observed} (cible : {volatility}).",
-    )
-
-
-def _eval_retest_in_progress(reading: Dict[str, Any]) -> Dict[str, Any]:
-    retest = reading.get("structure", {}).get("retest_in_progress")
-    if retest:
-        kind = retest.get("type", "niveau")
-        return _result("retest_in_progress", True, f"Retest en cours ({kind}).")
-    return _result("retest_in_progress", False, "Aucun retest en cours.")
 
 
 def _distance_pct(price: float, lo: float, hi: float) -> float:
@@ -549,13 +838,14 @@ def _distance_pct(price: float, lo: float, hi: float) -> float:
     return abs(price - edge) / price * 100.0
 
 
-def _nearest_zone_pct(
-    reading: Dict[str, Any], struct_key: str, active_statuses: tuple, direction: str
-) -> Optional[float]:
-    """Smallest %-distance from price to an active zone of ``struct_key`` (or None)."""
+def _eval_price_near_zone(
+    reading: Dict[str, Any], cond_type: str, struct_key: str, name: str,
+    active_statuses: tuple, direction: str, proximity_pct: float,
+) -> Dict[str, Any]:
+    """« Price near an OB / FVG, WITHOUT being inside » (0 < distance ≤ threshold)."""
     price = reading.get("header", {}).get("close_price")
     if price is None:
-        return None
+        return _result(cond_type, False, "Prix courant indisponible.", available=False)
     best: Optional[float] = None
     for z in reading.get("structure", {}).get(struct_key, []) or []:
         if z.get("status") not in active_statuses:
@@ -566,25 +856,16 @@ def _nearest_zone_pct(
         d = _distance_pct(price, bounds[0], bounds[1])
         if best is None or d < best:
             best = d
-    return best
-
-
-def _eval_price_near_zone(
-    reading: Dict[str, Any], cond_type: str, struct_key: str, name: str,
-    active_statuses: tuple, direction: str, proximity_pct: float,
-) -> Dict[str, Any]:
-    """Shared evaluator for « price near an OB / FVG » (within proximity_pct %)."""
-    if reading.get("header", {}).get("close_price") is None:
-        return _result(cond_type, False, "Prix courant indisponible.", available=False)
-    best = _nearest_zone_pct(reading, struct_key, active_statuses, direction)
     if best is None:
         suffix = f" {_direction_word(direction)}" if direction != "any" else ""
         return _result(cond_type, False, f"Aucun {name} actif{suffix}.")
+    if best == 0.0:
+        # Inside the zone → this "near, without being inside" condition is NOT met.
+        return _result(cond_type, False, f"Prix à l'intérieur d'un {name} (donc pas « proche sans y être »).")
     if best <= proximity_pct:
-        where = "dedans" if best == 0.0 else f"à ~{best:.2f} %"
         return _result(
             cond_type, True,
-            f"Prix proche d'un {name} actif ({where} ; seuil {proximity_pct:.2f} %).",
+            f"Prix à ~{best:.2f} % d'un {name} actif, sans y être (seuil {proximity_pct:.2f} %).",
         )
     return _result(
         cond_type, False,
@@ -592,16 +873,17 @@ def _eval_price_near_zone(
     )
 
 
-def _eval_price_near_liquidity(
-    reading: Dict[str, Any], side: str, proximity_pct: float
-) -> Dict[str, Any]:
+# ── liquidity ────────────────────────────────────────────────────────────────
+
+
+def _eval_price_near_liquidity(reading: Dict[str, Any], side: str, proximity_pct: float) -> Dict[str, Any]:
     price = reading.get("header", {}).get("close_price")
     if price is None:
         return _result("price_near_liquidity", False, "Prix courant indisponible.", available=False)
     best: Optional[float] = None
     best_side: Optional[str] = None
     for lp in reading.get("structure", {}).get("liquidity_pools", []) or []:
-        if lp.get("status") != "intact":  # only resting (not-yet-taken) liquidity
+        if lp.get("status") != "intact":
             continue
         if side != "any" and lp.get("side") != side:
             continue
@@ -618,28 +900,29 @@ def _eval_price_near_liquidity(
     if best <= proximity_pct:
         return _result(
             "price_near_liquidity", True,
-            f"Prix proche d'une liquidité {(best_side or '').upper()} intacte "
-            f"(à ~{best:.2f} % ; seuil {proximity_pct:.2f} %).",
+            f"Poche {(best_side or '').upper()} intacte à ~{best:.2f} % (seuil {proximity_pct:.2f} %).",
         )
     return _result(
         "price_near_liquidity", False,
-        f"Liquidité intacte la plus proche à ~{best:.2f} % (> seuil {proximity_pct:.2f} %).",
+        f"Poche intacte la plus proche à ~{best:.2f} % (> seuil {proximity_pct:.2f} %).",
     )
 
 
-def _eval_liquidity_swept_recent(
-    reading: Dict[str, Any], side: str, max_bars: int
+def _eval_liquidity_event_recent(
+    reading: Dict[str, Any], cond_type: str, status: str, ts_key: str, verb: str,
+    side: str, max_bars: int,
 ) -> Dict[str, Any]:
+    """Shared evaluator for « a pocket was swept / broken within N bars »."""
     tf = reading.get("header", {}).get("timeframe", "")
     candle_ts = reading.get("header", {}).get("candle_close_ts")
     best_bars: Optional[float] = None
     best_side: Optional[str] = None
     for lp in reading.get("structure", {}).get("liquidity_pools", []) or []:
-        if lp.get("status") != "swept":
+        if lp.get("status") != status:
             continue
         if side != "any" and lp.get("side") != side:
             continue
-        bars = _bars_between(lp.get("swept_at"), candle_ts, tf)
+        bars = _bars_between(lp.get(ts_key), candle_ts, tf)
         if bars is None:
             continue
         if best_bars is None or bars < best_bars:
@@ -647,16 +930,142 @@ def _eval_liquidity_swept_recent(
             best_side = lp.get("side")
     if best_bars is None:
         s = f" {side.upper()}" if side != "any" else ""
-        return _result("liquidity_swept_recent", False, f"Aucune prise de liquidité{s} récente.")
+        return _result(cond_type, False, f"Aucune poche{s} {verb} récemment.")
     if best_bars <= max_bars:
         return _result(
-            "liquidity_swept_recent", True,
-            f"Liquidité {(best_side or '').upper()} balayée il y a ~{round(best_bars)} "
-            f"bougie(s) (≤ {max_bars}).",
+            cond_type, True,
+            f"Poche {(best_side or '').upper()} {verb} il y a ~{round(best_bars)} bougie(s) (≤ {max_bars}).",
         )
     return _result(
-        "liquidity_swept_recent", False,
-        f"Prise de liquidité trop ancienne (~{round(best_bars)} bougies > {max_bars}).",
+        cond_type, False,
+        f"Poche {verb} trop ancienne (~{round(best_bars)} bougies > {max_bars}).",
+    )
+
+
+def _eval_equal_levels_present(reading: Dict[str, Any], eq_kind: str) -> Dict[str, Any]:
+    wanted = {"any": ("equal_highs", "equal_lows"), "highs": ("equal_highs",), "lows": ("equal_lows",)}[eq_kind]
+    hits = [
+        lp for lp in reading.get("structure", {}).get("liquidity_pools", []) or []
+        if lp.get("status") == "intact" and lp.get("kind") in wanted
+    ]
+    if hits:
+        kinds = ", ".join(sorted({("sommets égaux" if h.get("kind") == "equal_highs" else "creux égaux") for h in hits}))
+        return _result("equal_levels_present", True, f"{len(hits)} poche(s) présente(s) : {kinds}.")
+    label = {"any": "creux ou sommets", "highs": "sommets", "lows": "creux"}[eq_kind]
+    return _result("equal_levels_present", False, f"Aucun(e) {label} égaux intacts.")
+
+
+# ── context: phase / volatility / range-third / session ──────────────────────
+
+
+def _eval_market_phase_is(reading: Dict[str, Any], phase: Optional[str]) -> Dict[str, Any]:
+    if not phase:
+        return _result("market_phase_is", False, "Phase cible non précisée.")
+    observed = reading.get("regime", {}).get("market_phase")
+    if not observed:
+        return _result("market_phase_is", False, "Phase observée indisponible.", available=False)
+    return _result("market_phase_is", observed == phase, f"Phase observée : {observed} (cible : {phase}).")
+
+
+def _eval_volatility_is(reading: Dict[str, Any], volatility: Optional[str]) -> Dict[str, Any]:
+    if not volatility:
+        return _result("volatility_is", False, "Niveau de volatilité cible non précisé.")
+    observed = reading.get("regime", {}).get("volatility_observed")
+    if not observed:
+        return _result("volatility_is", False, "Volatilité observée indisponible.", available=False)
+    words = {"low": "contractée", "normal": "normale", "elevated": "étendue"}
+    return _result(
+        "volatility_is", observed == volatility,
+        f"Volatilité observée : {words.get(observed, observed)} (cible : {words.get(volatility, volatility)}).",
+    )
+
+
+def _structural_range(reading: Dict[str, Any]) -> Optional[Tuple[float, float]]:
+    """(low, high) of the STRUCTURAL range — same definition as the Régime
+    « Position dans le range » tile (webapp structureRange): the pools' explicit
+    ``range_high``/``range_low``, falling back to the highest external BSL / lowest
+    external SSL pocket. Returns None when the range is missing or degenerate.
+    """
+    pools = reading.get("structure", {}).get("liquidity_pools", []) or []
+    high: Optional[float] = None
+    low: Optional[float] = None
+    for p in pools:
+        if p.get("kind") == "range_high" and p.get("level") is not None:
+            high = float(p["level"])
+        elif p.get("kind") == "range_low" and p.get("level") is not None:
+            low = float(p["level"])
+    if high is None:
+        for p in pools:
+            if p.get("is_external") and p.get("side") == "bsl" and p.get("level") is not None:
+                lvl = float(p["level"])
+                if high is None or lvl > high:
+                    high = lvl
+    if low is None:
+        for p in pools:
+            if p.get("is_external") and p.get("side") == "ssl" and p.get("level") is not None:
+                lvl = float(p["level"])
+                if low is None or lvl < low:
+                    low = lvl
+    if high is None or low is None or high <= low:
+        return None
+    return (low, high)
+
+
+def _eval_price_in_range_third(reading: Dict[str, Any], third: Optional[str]) -> Dict[str, Any]:
+    if third not in RANGE_THIRD_VALUES:
+        return _result("price_in_range_third", False, "Tiers cible non précisé.")
+    price = reading.get("header", {}).get("close_price")
+    if price is None:
+        return _result("price_in_range_third", False, "Prix courant indisponible.", available=False)
+    rng = _structural_range(reading)
+    if rng is None:
+        return _result(
+            "price_in_range_third", False,
+            "Range structurel indisponible (structure insuffisante).", available=False,
+        )
+    low, high = rng
+    pos = max(0.0, min(1.0, (price - low) / (high - low)))
+    observed = "bottom" if pos < 1 / 3 else "middle" if pos < 2 / 3 else "top"
+    words = {"bottom": "bas", "middle": "milieu", "top": "haut"}
+    window = reading.get("header", {}).get("analysis_window_bars")
+    window_txt = f" sur {window} bougies" if window else ""
+    return _result(
+        "price_in_range_third", observed == third,
+        f"Prix à {pos * 100:.0f} % du range structurel [{low:g} – {high:g}]{window_txt} "
+        f"— tiers {words[observed]} (cible : tiers {words[third]}).",
+    )
+
+
+def _eval_session_is(reading: Dict[str, Any], session: Optional[str]) -> Dict[str, Any]:
+    if session not in SESSION_VALUES:
+        return _result("session_is", False, "Session cible non précisée.")
+    from src.intelligence import market_calendar as _mc
+
+    instrument = reading.get("header", {}).get("instrument") or ""
+    candle_ts = _parse_dt(reading.get("header", {}).get("candle_close_ts"))
+    if candle_ts is None:
+        return _result("session_is", False, "Horodatage de bougie indisponible.", available=False)
+    windows = _mc.sessions_for(instrument)
+    if not windows:
+        return _result("session_is", False, "Marché continu — pas de découpage en sessions.", available=False)
+    hours = _mc.hours_for(instrument)
+    if candle_ts.tzinfo is None:
+        candle_ts = candle_ts.replace(tzinfo=timezone.utc)
+    local = candle_ts.astimezone(ZoneInfo(hours.tz)).time()
+
+    def _in_window(w) -> bool:
+        if w.start <= w.end:
+            return w.start <= local < w.end
+        return local >= w.start or local < w.end  # wraps past midnight (Asia)
+
+    active = [w.name for w in windows if _in_window(w)]
+    # Overlap = simultaneously inside ≥2 sessions (London∩NY, derived — never stored).
+    observed = "overlap" if len(active) >= 2 else (active[0] if active else "none")
+    names = {"asia": "Asie", "london": "Londres", "new_york": "New York", "overlap": "chevauchement", "none": "hors session"}
+    met = observed == session
+    return _result(
+        "session_is", met,
+        f"Session à la clôture : {names.get(observed, observed)} (cible : {names.get(session, session)}).",
     )
 
 
@@ -672,59 +1081,79 @@ def evaluate_condition(
 ) -> Dict[str, Any]:
     """Evaluate a single condition against a reading payload (pure).
 
-    ``cond`` is ``{"type": str, "direction"?: str, "max_bars"?: int}``.
     Returns ``{"type", "label", "met": bool, "available": bool, "detail": str}``.
-    ``instrument_trends`` maps "M15"/"H1"/"H4" → the instrument's per-timeframe
-    trend (used only by ``mtf_aligned``); the scan route supplies it from the
-    sibling readings it loads. Unknown types raise ``ValueError`` (callers
-    validate against the palette).
+    ``detail`` always carries the observed value. ``instrument_trends`` (M15/H1/H4
+    → structural trend for THIS instrument) is used only by ``mtf_aligned``.
+    Unknown types raise ``ValueError`` (callers validate against the palette).
     """
     cond_type = cond.get("type")
     direction = cond.get("direction", "any") or "any"
-    if cond_type == "mtf_aligned":
-        return _eval_mtf_aligned(reading, direction, instrument_trends)
+
     if cond_type == "trend_is":
         return _eval_trend_is(reading, cond.get("trend"))
-    if cond_type == "market_phase_is":
-        return _eval_market_phase_is(reading, cond.get("phase"))
-    if cond_type == "volatility_is":
-        return _eval_volatility_is(reading, cond.get("volatility"))
+    if cond_type == "mtf_aligned":
+        return _eval_mtf_aligned(reading, direction, instrument_trends)
+    if cond_type == "last_event_is":
+        return _eval_last_event_is(reading, cond.get("event"))
+    if cond_type == "last_event_age":
+        return _eval_last_event_age(reading, cond.get("age_bucket"))
+    if cond_type == "bos_recent_confirmed":
+        return _eval_break_recent_confirmed(
+            reading, "bos_recent_confirmed", "bos", "BOS", direction,
+            int(cond.get("max_bars") or DEFAULT_BOS_MAX_BARS),
+        )
+    if cond_type == "choch_recent_confirmed":
+        return _eval_break_recent_confirmed(
+            reading, "choch_recent_confirmed", "choch", "CHOCH", direction,
+            int(cond.get("max_bars") or DEFAULT_BOS_MAX_BARS),
+        )
     if cond_type == "price_in_ob":
         return _eval_price_in_ob(reading, direction)
     if cond_type == "price_in_fvg":
         return _eval_price_in_fvg(reading, direction)
-    if cond_type == "ob_fvg_confluence":
-        return _eval_ob_fvg_confluence(reading)
-    if cond_type == "bos_recent_confirmed":
-        max_bars = int(cond.get("max_bars") or DEFAULT_BOS_MAX_BARS)
-        return _eval_break_recent_confirmed(
-            reading, "bos_recent_confirmed", "bos", "BOS", direction, max_bars
+    if cond_type == "price_in_tested_zone":
+        return _eval_price_in_tested_zone(reading, cond.get("zone_kind", "any") or "any")
+    if cond_type == "zone_untested":
+        return _eval_zone_untested(reading, cond.get("zone_kind", "any") or "any")
+    if cond_type == "zone_formed_recent":
+        return _eval_zone_formed_recent(
+            reading, cond.get("zone_kind", "any") or "any",
+            int(cond.get("max_bars") or DEFAULT_FORMED_MAX_BARS),
         )
-    if cond_type == "choch_recent_confirmed":
-        max_bars = int(cond.get("max_bars") or DEFAULT_BOS_MAX_BARS)
-        return _eval_break_recent_confirmed(
-            reading, "choch_recent_confirmed", "choch", "CHOCH", direction, max_bars
-        )
-    if cond_type == "retest_in_progress":
-        return _eval_retest_in_progress(reading)
     if cond_type == "price_near_ob":
-        prox = float(cond.get("proximity_pct") or DEFAULT_PROXIMITY_PCT)
         return _eval_price_near_zone(
             reading, "price_near_ob", "order_blocks", "Order Block",
-            ("active",), direction, prox,
+            ("active",), direction, float(cond.get("proximity_pct") or DEFAULT_PROXIMITY_PCT),
         )
     if cond_type == "price_near_fvg":
-        prox = float(cond.get("proximity_pct") or DEFAULT_PROXIMITY_PCT)
         return _eval_price_near_zone(
             reading, "price_near_fvg", "fair_value_gaps", "Fair Value Gap",
-            ("active", "partially_filled"), direction, prox,
+            ("active", "partially_filled"), direction, float(cond.get("proximity_pct") or DEFAULT_PROXIMITY_PCT),
         )
     if cond_type == "price_near_liquidity":
-        prox = float(cond.get("proximity_pct") or DEFAULT_PROXIMITY_PCT)
-        return _eval_price_near_liquidity(reading, cond.get("side", "any") or "any", prox)
+        return _eval_price_near_liquidity(
+            reading, cond.get("side", "any") or "any", float(cond.get("proximity_pct") or DEFAULT_PROXIMITY_PCT),
+        )
     if cond_type == "liquidity_swept_recent":
-        max_bars = int(cond.get("max_bars") or DEFAULT_LIQ_MAX_BARS)
-        return _eval_liquidity_swept_recent(reading, cond.get("side", "any") or "any", max_bars)
+        return _eval_liquidity_event_recent(
+            reading, "liquidity_swept_recent", "swept", "swept_at", "balayée",
+            cond.get("side", "any") or "any", int(cond.get("max_bars") or DEFAULT_LIQ_MAX_BARS),
+        )
+    if cond_type == "liquidity_broken_recent":
+        return _eval_liquidity_event_recent(
+            reading, "liquidity_broken_recent", "broken", "broken_at", "cassée",
+            cond.get("side", "any") or "any", int(cond.get("max_bars") or DEFAULT_LIQ_MAX_BARS),
+        )
+    if cond_type == "equal_levels_present":
+        return _eval_equal_levels_present(reading, cond.get("eq_kind", "any") or "any")
+    if cond_type == "market_phase_is":
+        return _eval_market_phase_is(reading, cond.get("phase"))
+    if cond_type == "volatility_is":
+        return _eval_volatility_is(reading, cond.get("volatility"))
+    if cond_type == "price_in_range_third":
+        return _eval_price_in_range_third(reading, cond.get("third"))
+    if cond_type == "session_is":
+        return _eval_session_is(reading, cond.get("session"))
     raise ValueError(f"Unknown condition type: {cond_type!r}")
 
 
@@ -745,6 +1174,7 @@ def build_context(reading: Dict[str, Any]) -> Dict[str, Any]:
 
     obs = structure.get("order_blocks", []) or []
     fvgs = structure.get("fair_value_gaps", []) or []
+    rng = _structural_range(reading)
     return {
         "trend": regime.get("trend"),
         "market_phase": regime.get("market_phase"),
@@ -756,6 +1186,7 @@ def build_context(reading: Dict[str, Any]) -> Dict[str, Any]:
         "active_fair_value_gaps": sum(
             1 for f in fvgs if f.get("status") in ("active", "partially_filled")
         ),
+        "structural_range": {"low": rng[0], "high": rng[1]} if rng else None,
         "news_upcoming": [
             {
                 "event": n.get("event"),
@@ -775,24 +1206,25 @@ def evaluate_reading(
 ) -> Dict[str, Any]:
     """Evaluate all conditions against one reading and assemble a combo result.
 
-    ``logic`` is ``"AND"`` (all met) or ``"OR"`` (any met). Returns the per-combo
-    breakdown with met/unmet conditions and the full neutral context.
-    ``instrument_trends`` (M15/H1/H4 → trend for this instrument) is forwarded to
-    ``mtf_aligned``. Pure: never mutates ``reading`` or any external state.
+    ``logic`` is ``"AND"`` (all met) or ``"OR"`` (any met). A NON-EVALUABLE
+    condition (``available=False``) is excluded from the AND/OR denominator: it is
+    neither met nor unmet. Under AND a combo matches only if there is at least one
+    evaluable condition and every evaluable one is met; under OR if any evaluable
+    condition is met. Pure: never mutates ``reading`` or any external state.
     """
     results = [evaluate_condition(reading, c, instrument_trends) for c in conditions]
+    evaluable = [r for r in results if r["available"]]
     met = [r for r in results if r["met"]]
-    unmet = [r for r in results if not r["met"]]
+    unmet = [r for r in results if r["available"] and not r["met"]]
+    non_evaluable = [r for r in results if not r["available"]]
+
     if logic == "OR":
-        matched = any(r["met"] for r in results)
-    else:  # default / "AND"
-        matched = all(r["met"] for r in results) and bool(results)
+        matched = any(r["met"] for r in evaluable)
+    else:  # default / "AND" — every EVALUABLE condition met, at least one evaluable
+        matched = bool(evaluable) and all(r["met"] for r in evaluable)
 
     header = reading.get("header", {})
     context = build_context(reading)
-    # Surface the authoritative per-timeframe trends (each TF's own regime.trend,
-    # same source as mtf_aligned and the chart's Régime panel) so the result card
-    # shows real alignment — NOT the structurally-incomplete mtf_confluence.
     if instrument_trends:
         context["mtf_trends"] = {
             "h4": instrument_trends.get("H4"),
@@ -806,19 +1238,26 @@ def evaluate_reading(
         "close_price": header.get("close_price"),
         "matched": matched,
         "met_count": len(met),
-        "total": len(results),
+        # Denominator counts only EVALUABLE conditions; non-evaluable ones are
+        # surfaced separately so the UI can show the adjusted denominator honestly.
+        "total": len(evaluable),
+        "non_evaluable_count": len(non_evaluable),
         "conditions_met": met,
         "conditions_unmet": unmet,
+        "conditions_non_evaluable": non_evaluable,
         "context": context,
     }
 
 
 __all__ = [
     "ALLOWED_CONDITION_TYPES",
+    "BLOCKED_PALETTE",
     "DEFAULT_BOS_MAX_BARS",
+    "DEFAULT_FORMED_MAX_BARS",
     "DEFAULT_LIQ_MAX_BARS",
     "DEFAULT_PROXIMITY_PCT",
     "DIRECTION_VALUES",
+    "FAMILIES",
     "LIQUIDITY_SIDE_VALUES",
     "PALETTE",
     "build_context",
