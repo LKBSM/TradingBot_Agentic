@@ -31,7 +31,9 @@ function match(over: Record<string, unknown> = {}) {
       { type: 'trend_is', label: 'La tendance', met: true, detail: 'Baissière.' },
       { type: 'price_in_ob', label: 'Prix dans un OB', met: true, detail: 'OB 4028–4030.' },
     ],
-    conditions_unmet: [], conditions_non_evaluable: [], context: CTX,
+    conditions_unmet: [], conditions_non_evaluable: [],
+    context_against: [{ label: 'Le 4 h est en tendance haussière', detail: 'désaccord multi-unités' }],
+    context: CTX,
     freshness: 'fresh', bars_behind: 0, ...over,
   };
 }
@@ -106,6 +108,9 @@ for (const vp of [
       await expect(page.getByText(/tous les marchés/)).toBeVisible();
       expect(await page.evaluate(RAW_KEY_SCAN)).toEqual([]);
       expect(await overflow(page)).toBeLessThanOrEqual(1);
+      // Ticking a condition makes the sticky bar's LIVE combo count appear.
+      await page.getByRole('checkbox').first().check();
+      await expect(page.getByTestId('live-combo-count')).toHaveText('1', { timeout: 6000 });
     });
 
     test('résultats: three blocks, non-maskable « à l\'encontre », open-in-chart', async ({ page }) => {
@@ -113,6 +118,8 @@ for (const vp of [
       await mock(page, RESULTS);
       await page.goto('/scanner');
       await expect(page.getByTestId('against-block').first()).toBeVisible();
+      // Enriched against-signal surfaced even on a full match.
+      await expect(page.getByText('Le 4 h est en tendance haussière').first()).toBeVisible();
       await expect(page.getByText('Ouvrir dans le graphique').first()).toBeVisible();
       await expect(page.getByText(/Correspondances \(/)).toBeVisible();
       await expect(page.getByText(/Trader/)).toHaveCount(0);
@@ -127,6 +134,8 @@ for (const vp of [
       await expect(page.getByTestId('scan-no-combo')).toBeVisible();
       await expect(page.getByText(/Ce n’est pas une erreur/)).toBeVisible();
       await expect(page.getByText(/ne s’additionnent pas/)).toBeVisible();
+      // Never proposes to loosen a condition (product line #3).
+      await expect(page.getByText(/ne propose pas de/)).toBeVisible();
       expect(await overflow(page)).toBeLessThanOrEqual(1);
     });
 
@@ -137,6 +146,8 @@ for (const vp of [
       await expect(page.getByText(/ne sont pas synchronisées/)).toBeVisible();
       await expect(page.getByText(/pas un classement/)).toBeVisible();
       await expect(page.getByRole('button', { name: 'Exporter' })).toBeVisible();
+      // C4: the saved reading's combo count (re-evaluated on open).
+      await expect(page.getByText(/1 combo/).first()).toBeVisible({ timeout: 6000 });
       expect(await overflow(page)).toBeLessThanOrEqual(1);
     });
   });
