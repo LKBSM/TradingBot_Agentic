@@ -10,6 +10,9 @@ import {
   type SavedStrategy,
   type StrategyMutationResult,
 } from '@/lib/conditions/strategy-store';
+import { useSavedReadingCounts } from '@/lib/conditions/use-saved-reading-counts';
+import { useNow } from '@/lib/conditions/use-now';
+import { useScannerLabels } from './use-scanner-labels';
 
 /**
  * "Mes stratégies" — the saved-strategy list (client-only, localStorage).
@@ -71,6 +74,10 @@ export function StrategyPanel({
   onImport?(text: string): { ok: true; imported: number; skipped: number } | { ok: false; error: string };
 }) {
   const t = useTranslations('scanner');
+  // C4: counts re-evaluated ON OPEN, per-combo staleness on its own timeframe.
+  const { counts, rescan } = useSavedReadingCounts(strategies, true);
+  const { age } = useScannerLabels();
+  const now = useNow(30_000);
   const [renamingId, setRenamingId] = React.useState<string | null>(null);
   const [renameDraft, setRenameDraft] = React.useState('');
   const [confirmDeleteId, setConfirmDeleteId] = React.useState<string | null>(null);
@@ -240,6 +247,52 @@ export function StrategyPanel({
                     </>
                   )}
                 </div>
+
+                {/* C4 — combo count re-evaluated on open; per-combo staleness on
+                    its own timeframe; a partial count is NEVER shown as complete. */}
+                {!invalid && (() => {
+                  const c = counts[strategy.id];
+                  if (!c || c.status === 'loading') {
+                    return <p className="mt-1 text-xs text-muted-foreground">{t('strategyPanel.counting')}</p>;
+                  }
+                  if (c.status === 'error') {
+                    return (
+                      <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                        {t('strategyPanel.countError')}
+                        <Button size="sm" variant="ghost" className="h-6" onClick={() => rescan(strategy.id)}>
+                          {t('strategyPanel.rescan')}
+                        </Button>
+                      </div>
+                    );
+                  }
+                  const evaluated = age(c.evaluatedAt, now);
+                  return (
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                      <span className="text-sm font-semibold text-foreground">
+                        {t('strategyPanel.comboCount', { count: c.count })}
+                      </span>
+                      {c.staleCount > 0 ? (
+                        <>
+                          <span className="rounded-full border border-amber-500/50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-600">
+                            {t('strategyPanel.incompleteBadge')}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {t('strategyPanel.incompleteDetail', { count: c.staleCount })}
+                          </span>
+                          <Button size="sm" variant="ghost" className="h-6" onClick={() => rescan(strategy.id)}>
+                            {t('strategyPanel.rescan')}
+                          </Button>
+                        </>
+                      ) : (
+                        evaluated && (
+                          <span className="text-xs text-muted-foreground">
+                            {t('strategyPanel.evaluatedAgo', { age: evaluated })}
+                          </span>
+                        )
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {invalid && (
                   <ul className="mt-2 list-disc space-y-0.5 pl-5 text-xs text-destructive">
