@@ -106,7 +106,7 @@ def _make_app(assembler=None, *, with_assembler=True):
 
 
 def test_scan_returns_full_match_with_met_conditions():
-    # mtf_aligned is judged from each timeframe's OWN regime.trend (all bullish by
+    # higher_tf_agrees compares the nearest higher unit's regime.trend (all bullish by
     # default), so the three XAU readings must all be present.
     readings = {
         ("XAUUSD", "M15"): _reading("XAUUSD", "M15", order_blocks=[_ob(1990, 2010)]),
@@ -122,7 +122,7 @@ def test_scan_returns_full_match_with_met_conditions():
         json={
             "logic": "AND",
             "conditions": [
-                {"type": "mtf_aligned", "direction": "bullish"},
+                {"type": "higher_tf_agrees", "relation": "same"},
                 {"type": "price_in_ob", "direction": "any"},
             ],
         },
@@ -154,7 +154,7 @@ def test_scan_reports_partial_match_transparently():
         "/api/conditions-scan",
         json={
             "logic": "AND",
-            "conditions": [{"type": "mtf_aligned"}, {"type": "price_in_ob"}],
+            "conditions": [{"type": "higher_tf_agrees", "relation": "same"}, {"type": "price_in_ob"}],
         },
     )
     assert resp.status_code == 200
@@ -162,7 +162,7 @@ def test_scan_reports_partial_match_transparently():
     assert xau["matched"] is False
     assert xau["met_count"] == 1
     assert {c["type"] for c in xau["conditions_unmet"]} == {"price_in_ob"}
-    assert {c["type"] for c in xau["conditions_met"]} == {"mtf_aligned"}
+    assert {c["type"] for c in xau["conditions_met"]} == {"higher_tf_agrees"}
 
 
 def test_scan_is_read_only_touches_only_get_latest_reading():
@@ -174,7 +174,7 @@ def test_scan_is_read_only_touches_only_get_latest_reading():
 
     resp = client.post(
         "/api/conditions-scan",
-        json={"logic": "OR", "conditions": [{"type": "mtf_aligned"}]},
+        json={"logic": "OR", "conditions": [{"type": "higher_tf_agrees", "relation": "same"}]},
     )
     assert resp.status_code == 200
     # Exactly the perimeter combos read, in fixed order, and nothing else mutated.
@@ -204,7 +204,7 @@ def test_scan_503_when_assembler_not_wired():
     app = _make_app(with_assembler=False)
     client = TestClient(app)
     resp = client.post(
-        "/api/conditions-scan", json={"logic": "AND", "conditions": [{"type": "mtf_aligned"}]}
+        "/api/conditions-scan", json={"logic": "AND", "conditions": [{"type": "higher_tf_agrees", "relation": "same"}]}
     )
     assert resp.status_code == 503
 
@@ -248,7 +248,7 @@ def test_scan_response_carries_freshness_fields():
 
     resp = client.post(
         "/api/conditions-scan",
-        json={"logic": "OR", "conditions": [{"type": "mtf_aligned"}]},
+        json={"logic": "OR", "conditions": [{"type": "higher_tf_agrees", "relation": "same"}]},
     )
     assert resp.status_code == 200
     m = next(x for x in resp.json()["matches"] if x["timeframe"] == "M15")
@@ -258,11 +258,95 @@ def test_scan_response_carries_freshness_fields():
     assert m["matched"] is True
 
 
-def test_palette_endpoint_lists_present_tense_only():
+def test_palette_endpoint_lists_present_tense_families_and_blocked():
+    from src.intelligence.conditions_scanner import ALLOWED_CONDITION_TYPES
+
     app = _make_app(_RecordingAssembler(_RecordingStore({})))
     client = TestClient(app)
     resp = client.get("/api/conditions-scan/palette")
     assert resp.status_code == 200
-    palette = resp.json()["palette"]
-    assert len(palette) == 14
+    body = resp.json()
+    palette = body["palette"]
+    assert {p["type"] for p in palette} == set(ALLOWED_CONDITION_TYPES)
     assert all(p["tense"] == "present" for p in palette)
+    # The interface derives its four groups + segmented buttons from the schema.
+    assert body["families"] == ["structure", "zones", "liquidity", "context"]
+    assert all(p["family"] in body["families"] and p["controls"] for p in palette)
+    # Blocked conditions are surfaced (for transparency) but never offered.
+    assert {b["type"] for b in body["blocked"]} == {"zone_tested_at_most"}
+    assert all(b["type"] not in {p["type"] for p in palette} for b in body["blocked"])
+
+
+def test_scan_rejects_out_of_palette_value_before_evaluation():
+    # ``distribution`` is a real engine phase but is NOT offered (unreachable), so
+    # a request for it is a 422 at the schema boundary — never a silent zero.
+    app = _make_app(_RecordingAssembler(_RecordingStore({})))
+    client = TestClient(app)
+    resp = client.post(
+        "/api/conditions-scan",
+        json={"logic": "AND", "conditions": [{"type": "market_phase_is", "phase": "distribution"}]},
+    )
+    assert resp.status_code == 422
+
+
+def test_scan_rejects_unknown_control_field():
+    # An out-of-palette control name must be rejected, not silently ignored.
+    app = _make_app(_RecordingAssembler(_RecordingStore({})))
+    client = TestClient(app)
+    resp = client.post(
+        "/api/conditions-scan",
+        json={"logic": "AND", "conditions": [{"type": "trend_is", "trend": "bullish", "will_bounce": True}]},
+    )
+    assert resp.status_code == 422
+
+
+def test_scan_rejects_blocked_condition_type():
+    # A condition classified BLOCKED at diagnosis (no touch-count in the engine)
+    # is not representable in the schema → 422, never exposed.
+    app = _make_app(_RecordingAssembler(_RecordingStore({})))
+    client = TestClient(app)
+    resp = client.post(
+        "/api/conditions-scan",
+        json={"logic": "AND", "conditions": [{"type": "zone_tested_at_most", "max_bars": 2}]},
+    )
+    assert resp.status_code == 422
+
+
+def test_scan_never_sorts_by_match_count():
+    # Matches are returned in the fixed SCAN_COMBOS order regardless of how many
+    # conditions each combo meets — no implicit quality ranking.
+    readings = {combo: _reading(combo[0], combo[1]) for combo in SCAN_COMBOS}
+    # Seed an OB only on a LATE combo so it would jump to the top under any sort.
+    late = SCAN_COMBOS[-1]
+    readings[late] = _reading(late[0], late[1], order_blocks=[_ob(1990, 2010)])
+    app = _make_app(_RecordingAssembler(_RecordingStore(readings)))
+    client = TestClient(app)
+    resp = client.post(
+        "/api/conditions-scan",
+        json={"logic": "OR", "conditions": [{"type": "price_in_ob"}]},
+    )
+    assert resp.status_code == 200
+    order = [(m["instrument"], m["timeframe"]) for m in resp.json()["matches"]]
+    assert order == list(SCAN_COMBOS)
+
+
+def test_scan_surfaces_non_evaluable_denominator():
+    readings = {
+        ("XAUUSD", "M15"): _reading("XAUUSD", "M15", order_blocks=[_ob(1990, 2010)]),
+        ("XAUUSD", "H1"): _reading("XAUUSD", "H1"),
+        ("XAUUSD", "H4"): _reading("XAUUSD", "H4"),
+    }
+    app = _make_app(_RecordingAssembler(_RecordingStore(readings)))
+    client = TestClient(app)
+    resp = client.post(
+        "/api/conditions-scan",
+        json={"logic": "AND", "conditions": [
+            {"type": "price_in_ob"},
+            {"type": "last_event_is", "event": "bos_up"},  # no events → non-evaluable
+        ]},
+    )
+    assert resp.status_code == 200
+    m = next(x for x in resp.json()["matches"] if x["timeframe"] == "M15")
+    assert m["total"] == 1 and m["met_count"] == 1 and m["non_evaluable_count"] == 1
+    assert len(m["conditions_unmet"]) == 0
+    assert m["matched"] is True

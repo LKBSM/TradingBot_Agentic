@@ -2,39 +2,29 @@
 
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
 import type { ConditionsConfig, ConditionsScanResponse, ScanCondition } from '@/lib/conditions/types';
 import { paletteEntry } from '@/lib/conditions/palette';
 import { useNow } from '@/lib/conditions/use-now';
+import { cn } from '@/lib/utils';
 import { ComboCard } from './ComboCard';
 import { AutoRefreshToggle } from './AutoRefreshToggle';
 import { instrumentLabel } from './labels';
 import { useScannerLabels } from './use-scanner-labels';
 
-/** Re-render the freshness/age labels twice a minute (no re-fetch). */
 const CLOCK_TICK_MS = 30_000;
 
-/** Capitalise a locale-agnostic enum value to build an ICU key suffix. */
-function cap(v: string): string {
-  return v.charAt(0).toUpperCase() + v.slice(1);
-}
+type FilterKey = 'matches' | 'almost' | 'nonmatch' | 'noneval';
 
 /**
- * Results view (UI-2 terminal reference). A neutral, descriptive grid — never a
- * ranking, never a score.
- *  · "Conditions présentes maintenant" = combos satisfying the full AND/OR
- *    logic ON A CURRENT reading (fresh/aging). A combo that satisfies it only
- *    on a STALE reading is held back into its own "lecture plus ancienne"
- *    section — we never assert an aged reading as "présent maintenant".
- *  · "Correspondances partielles" = combos meeting ≥1 condition (transparency).
- *  · Combos meeting nothing are listed plainly so coverage is honest.
- *  · Combos WITHOUT a fresh reading render as a degraded `.combo.na` card —
- *    honest "Non disponible", never fabricated.
+ * Results view (SC-1). A neutral, descriptive grid — never a ranking, never a
+ * score, never sorted by how many conditions a combo meets. Order is fixed
+ * (market, then timeframe, as scanned).
+ *
+ * DISPLAY filters (Correspondances / Presque / Non correspondants / Non
+ * évaluables) only SHOW or HIDE groups — no data is removed and each group
+ * shows its own count. When nothing matches, an explicit "ce n'est pas une
+ * erreur" state lists, per condition, how many combos meet it in ISOLATION
+ * (counts that are independent and do not add up).
  */
 export function ScanResults({
   response,
@@ -58,52 +48,64 @@ export function ScanResults({
   const t = useTranslations('scanner');
   const { age } = useScannerLabels();
 
-  // Condition label: translated when a key exists, else the palette's own FR
-  // label (covers conditions added after the i18n pass — deferred).
   const plabel = (type: ScanCondition['type']): string =>
     t.has(`palette.${type}_label`) ? t(`palette.${type}_label`) : paletteEntry(type)?.label ?? type;
 
-  /** Compact human description of a condition's chosen parameter, if any. */
-  const conditionParam = (c: ScanCondition): string => {
-    if (c.trend) return t(`options.trend${cap(c.trend)}`);
-    if (c.phase) return t(`options.phase${cap(c.phase)}`);
-    if (c.volatility) return t(`options.volatility${cap(c.volatility)}`);
-    if (c.direction && c.direction !== 'any') return t(`options.direction${cap(c.direction)}`);
-    return '';
-  };
-
-  // A full match on a STALE reading (server-reported freshness) is held back
-  // from the "maintenant" section so we never assert an aged reading as present.
-  // Auto-refresh self-heals most staleness; this is the honest fallback when a
-  // reading hasn't been regenerated yet (cold open, weekend, quiet market).
   const isStale = (m: (typeof response.matches)[number]) => m.freshness === 'stale';
-  // MC-1: when every combo is stale the feed has stopped closing candles (weekend
-  // / holiday / lagged). Relaunching won't invent a new close — say so honestly
-  // instead of simulating a refresh.
   const allStale = response.matches.length > 0 && response.matches.every(isStale);
+
+  // Groups. "Non évaluables" = combos with no fresh reading (unavailable) OR a
+  // combo whose every condition was non-evaluable (denominator 0).
   const full = response.matches.filter((m) => m.matched && !isStale(m));
   const staleFull = response.matches.filter((m) => m.matched && isStale(m));
-  const partial = response.matches.filter((m) => !m.matched && m.met_count > 0);
-  const none = response.matches.filter((m) => m.met_count === 0);
+  const almost = response.matches.filter((m) => !m.matched && m.met_count > 0);
+  const nonmatch = response.matches.filter((m) => !m.matched && m.met_count === 0 && m.total > 0);
+  const nonEvalCombos = response.matches.filter((m) => m.total === 0);
 
-  // Ticking clock so "dernière analyse il y a X" / per-combo ages stay honest
-  // while the page is open — without triggering any network request.
+  const counts: Record<FilterKey, number> = {
+    matches: full.length + staleFull.length,
+    almost: almost.length,
+    nonmatch: nonmatch.length,
+    noneval: nonEvalCombos.length + response.unavailable.length,
+  };
+
+  const [active, setActive] = React.useState<Set<FilterKey>>(
+    () => new Set<FilterKey>(['matches', 'almost', 'nonmatch', 'noneval']),
+  );
+  const show = (k: FilterKey) => active.has(k);
+  const toggle = (k: FilterKey) =>
+    setActive((prev) => {
+      const next = new Set(prev);
+      if (next.has(k)) next.delete(k);
+      else next.add(k);
+      return next;
+    });
+
   const now = useNow(CLOCK_TICK_MS);
   const freshness = age(response.as_of, now);
-
-  // Compact results meta: "6 combos · il y a 3 min · aucun classement". Present
-  // tense, honest — the "aucun classement" note makes the no-ranking promise
-  // visible on screen.
   const resultsMeta = t('resultsMeta', {
     count: response.scanned,
-    when: isRefreshing
-      ? t('results.analysisInProgress')
-      : freshness ?? t('results.lastAnalysisNone'),
+    when: isRefreshing ? t('results.analysisInProgress') : freshness ?? t('results.lastAnalysisNone'),
   });
+
+  // "Aucun combo" = no full match at all (fresh or stale). Per-condition ISOLATED
+  // counts: how many combos meet each condition on its own. Independent counts —
+  // they do not add up and do not describe any partial combination.
+  const noCombo = full.length === 0 && staleFull.length === 0;
+  const isolated = config.conditions.map((c) => ({
+    type: c.type,
+    count: response.matches.filter((m) => m.conditions_met.some((x) => x.type === c.type)).length,
+  }));
+
+  const FILTERS: Array<{ key: FilterKey; label: string }> = [
+    { key: 'matches', label: t('filters.matches', { count: counts.matches }) },
+    { key: 'almost', label: t('filters.almost', { count: counts.almost }) },
+    { key: 'nonmatch', label: t('filters.nonmatch', { count: counts.nonmatch }) },
+    { key: 'noneval', label: t('filters.noneval', { count: counts.noneval }) },
+  ];
 
   return (
     <div className="pagewrap">
-      {/* Page head — title, live badge, refresh */}
       <div className="pghead">
         <div>
           <h1>{t('page.title')}</h1>
@@ -114,67 +116,81 @@ export function ScanResults({
           <span className="dot" />
           <span className="mono">{t('livebadge')}</span>
         </div>
-        <button
-          className="btn"
-          onClick={onRefresh}
-          disabled={isRefreshing}
-          title={allStale ? t('noNewClose') : undefined}
-        >
+        <button className="btn" onClick={onRefresh} disabled={isRefreshing} title={allStale ? t('noNewClose') : undefined}>
           {isRefreshing ? t('results.scanning') : t('results.rescan')}
         </button>
-        <button className="btn" onClick={onEdit}>
-          {t('editConditions')}
-        </button>
+        <button className="btn" onClick={onEdit}>{t('editConditions')}</button>
         <AutoRefreshToggle enabled={autoRefreshEnabled} onChange={onToggleAutoRefresh} />
       </div>
 
       {allStale && (
-        <div className="sub" role="status" data-testid="scan-no-new-close">
-          {t('noNewClose')}
-        </div>
+        <div className="sub" role="status" data-testid="scan-no-new-close">{t('noNewClose')}</div>
       )}
 
-      {/* Active-conditions palette (read-only reflection of the saved strategy) */}
+      {/* Active reading (read-only reflection of the saved conditions) */}
       <div className="rail-lbl">{t('activeStrategy')}</div>
       <div className="condpal">
         <span className="cond on" data-logic={config.logic}>
           {config.logic === 'AND' ? t('results.yourConditionsAll') : t('results.yourConditionsAny')}
         </span>
-        {config.conditions.map((c) => {
-          const param = conditionParam(c);
-          return (
-            <span key={c.type} className="cond on">
-              {plabel(c.type)}
-              {param ? ` · ${param}` : ''}
-            </span>
-          );
-        })}
+        {config.conditions.map((c) => (
+          <span key={c.type} className="cond on">{plabel(c.type)}</span>
+        ))}
       </div>
-      <div className="scannote">
-        <svg viewBox="0 0 24 24" aria-hidden>
-          <circle cx="12" cy="12" r="9" />
-          <path d="M12 8v4M12 16h.01" />
-        </svg>
-        {t('note')}
-      </div>
+      <div className="scannote">{t('note')}</div>
 
-      {/* Results head — count · freshness · no ranking */}
+      {/* Results head + no-ranking meta */}
       <div className="pghead">
         <h1 style={{ fontSize: '14px' }}>{t('results.title')}</h1>
-        <span className="mono" data-testid="scan-freshness" aria-live="polite">
-          {resultsMeta}
-        </span>
+        <span className="mono" data-testid="scan-freshness" aria-live="polite">{resultsMeta}</span>
       </div>
 
-      {/* Full matches — on current readings only */}
-      {full.length === 0 ? (
-        staleFull.length === 0 &&
-        response.unavailable.length === 0 && (
-          <p className="scannote">
-            {config.logic === 'AND' ? t('results.noMarketsAll') : t('results.noMarketsAny')}
+      {/* DISPLAY filters — show/hide only, each with its count, nothing removed */}
+      <div className="flex flex-wrap gap-2" role="group" aria-label={t('filters.aria')}>
+        {FILTERS.map((f) => (
+          <button
+            key={f.key}
+            type="button"
+            aria-pressed={show(f.key)}
+            onClick={() => toggle(f.key)}
+            className={cn(
+              'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+              show(f.key) ? 'border-foreground/40 bg-foreground/10 text-foreground' : 'border-border/60 text-muted-foreground',
+            )}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {/* No-combo state — explicitly NOT an error; isolated per-condition counts */}
+      {noCombo && (
+        <section className="mt-3 rounded-lg border border-border/60 p-4" data-testid="scan-no-combo">
+          <p className="text-sm text-foreground">{t('results.noComboTitle')}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{t('results.noComboBody')}</p>
+          <div className="mt-3 space-y-1">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('results.isolatedIntro')}</p>
+            <ul className="space-y-1">
+              {isolated.map((iso) => (
+                <li key={iso.type} className="flex items-center justify-between gap-3 text-sm">
+                  <span className="text-foreground">{plabel(iso.type)}</span>
+                  <span className="mono text-xs text-muted-foreground">
+                    {t('results.isolatedCount', { count: iso.count })}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-2 text-xs text-muted-foreground">{t('results.isolatedNote')}</p>
+          </div>
+          {/* Product line: never offer to loosen a condition to get results. */}
+          <p className="mt-3 rounded-md border-l-2 border-amber-500/60 bg-amber-500/5 p-3 text-xs text-muted-foreground">
+            {t('results.noLoosening')}
           </p>
-        )
-      ) : (
+        </section>
+      )}
+
+      {/* Matches (fresh) */}
+      {show('matches') && full.length > 0 && (
         <div className="resgrid">
           {full.map((m) => (
             <ComboCard key={`${m.instrument}:${m.timeframe}`} match={m} locale={locale} now={now} />
@@ -182,8 +198,8 @@ export function ScanResults({
         </div>
       )}
 
-      {/* Full matches on a STALE reading — held back from "maintenant" */}
-      {staleFull.length > 0 && (
+      {/* Matches on a stale reading — held back from "maintenant" */}
+      {show('matches') && staleFull.length > 0 && (
         <section className="mt-5">
           <div className="rail-lbl">{t('results.olderTitle')}</div>
           <p className="scannote">{t('results.olderBody')}</p>
@@ -195,50 +211,54 @@ export function ScanResults({
         </section>
       )}
 
-      {/* Combos without a fresh reading — honest degraded cards, never fabricated */}
-      {response.unavailable.length > 0 && (
-        <div className="resgrid mt-3">
-          {response.unavailable.map((u) => (
-            <div key={`${u.instrument}:${u.timeframe}`} className="combo na">
-              <div className="t1">
-                <span className="nm">{instrumentLabel(u.instrument)}</span>
-                <span className="tf2">· {u.timeframe}</span>
-              </div>
-              <div className="natag">{t('unavailable')}</div>
-            </div>
-          ))}
-        </div>
+      {/* Almost (partial) */}
+      {show('almost') && almost.length > 0 && (
+        <section className="mt-5">
+          <div className="rail-lbl">{t('filters.almost', { count: almost.length })}</div>
+          <div className="resgrid">
+            {almost.map((m) => (
+              <ComboCard key={`${m.instrument}:${m.timeframe}`} match={m} locale={locale} now={now} />
+            ))}
+          </div>
+        </section>
       )}
 
-      {/* Partial matches — transparency */}
-      {partial.length > 0 && (
-        <Accordion type="single" collapsible className="mt-4">
-          <AccordionItem value="partial">
-            <AccordionTrigger className="text-sm">
-              {t('results.partialMatches', { count: partial.length })}
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="resgrid pt-2">
-                {partial.map((m) => (
-                  <ComboCard key={`${m.instrument}:${m.timeframe}`} match={m} locale={locale} now={now} />
-                ))}
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
+      {/* Non-matching */}
+      {show('nonmatch') && nonmatch.length > 0 && (
+        <section className="mt-5">
+          <div className="rail-lbl">{t('filters.nonmatch', { count: nonmatch.length })}</div>
+          <div className="resgrid">
+            {nonmatch.map((m) => (
+              <ComboCard key={`${m.instrument}:${m.timeframe}`} match={m} locale={locale} now={now} />
+            ))}
+          </div>
+        </section>
       )}
 
-      {/* Honest coverage footer */}
-      {none.length > 0 && (
-        <footer className="mt-4 border-t border-[color:var(--line)] pt-4 text-[11px] text-[color:var(--faint)]">
-          <p>
-            {t('results.nonePresent', {
-              list: none.map((m) => `${instrumentLabel(m.instrument)} ${m.timeframe}`).join(' · '),
-            })}
-          </p>
-          <p>{t('results.scannedFooter', { count: response.scanned })}</p>
-        </footer>
+      {/* Non-evaluable — no fresh reading, or every condition non-evaluable */}
+      {show('noneval') && counts.noneval > 0 && (
+        <section className="mt-5">
+          <div className="rail-lbl">{t('filters.noneval', { count: counts.noneval })}</div>
+          <div className="resgrid">
+            {nonEvalCombos.map((m) => (
+              <ComboCard key={`${m.instrument}:${m.timeframe}`} match={m} locale={locale} now={now} />
+            ))}
+            {response.unavailable.map((u) => (
+              <div key={`${u.instrument}:${u.timeframe}`} className="combo na">
+                <div className="t1">
+                  <span className="nm">{instrumentLabel(u.instrument)}</span>
+                  <span className="tf2">· {u.timeframe}</span>
+                </div>
+                <div className="natag">{t('unavailable')}</div>
+              </div>
+            ))}
+          </div>
+        </section>
       )}
+
+      <footer className="mt-4 border-t border-[color:var(--line)] pt-4 text-[11px] text-[color:var(--faint)]">
+        <p>{t('results.scannedFooter', { count: response.scanned })}</p>
+      </footer>
     </div>
   );
 }

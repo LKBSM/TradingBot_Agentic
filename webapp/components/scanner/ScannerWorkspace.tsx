@@ -128,6 +128,8 @@ export function ScannerWorkspace({ locale }: { locale: string }) {
       onRename={saved.renameStrategy}
       onDuplicate={saved.duplicateStrategy}
       onDelete={saved.deleteStrategy}
+      onExport={saved.exportText}
+      onImport={saved.importText}
     />
   ) : null;
 

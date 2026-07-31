@@ -475,20 +475,43 @@
       "partialMatches": "Partial matches ({count})",
       "nonePresent": "None of your conditions present: {list}.",
       "notGenerated": "Reading not generated yet: {list}.",
-      "scannedFooter": "{count} combos analysed read-only on the latest readings already produced."
+      "scannedFooter": "{count} combos analysed read-only on the latest readings already produced.",
+      "noComboTitle": "No combo meets your reading. This is not an error.",
+      "noComboBody": "Your conditions are met nowhere right now. A scan that returns nothing is an answer, not a fault — nothing is hidden, nothing is loosened.",
+      "isolatedIntro": "Combos meeting each condition IN ISOLATION:",
+      "isolatedCount": "{count, plural, =0 {0 combo} one {# combo} other {# combos}}",
+      "isolatedNote": "These counts are independent: they do not add up and say nothing about what a partial combination would return.",
+      "noLoosening": "The scanner never offers to “loosen” a condition to get results. A scanner that suggests relaxing until it finds something teaches you to look for an answer rather than to read it."
     },
     "combo": {
       "conditionsPresent": "{met} of your {total, plural, one {# condition present} other {# conditions present}}",
+      "nonEvaluableCount": "{count, plural, one {# non-evaluable} other {# non-evaluable}}",
       "price": "Price {price}",
       "reading": "reading {age}",
+      "freshCandle": "candle closed {age}",
       "fullContext": "Full context",
+      "matchBlock": "What matches",
+      "matchNone": "No condition met here.",
+      "againstBlock": "What goes against",
+      "againstNone": "Nothing goes against among your evaluable conditions.",
+      "nonEvaluableBlock": "Non-evaluable here (data absent)",
+      "contextBlock": "Context you did not ask for",
       "trend": "Trend: {label}",
       "obFvg": "{ob} OB · {fvg} FVG active",
       "bosSuffix": " · BOS {dir}",
+      "range": "range {low}–{high}",
       "importantNews": "{count, plural, one {# important news event upcoming — keep it in mind.} other {# important news events upcoming — keep them in mind.}}",
       "analyse": "Analyse",
+      "openChart": "Open in the chart",
       "disclaimer": "Structural facts observed in the present. The scanner predicts nothing and recommends nothing — the judgement is yours.",
       "unavailable": "unavailable"
+    },
+    "filters": {
+      "aria": "Display filters",
+      "matches": "Matches ({count})",
+      "almost": "Almost ({count})",
+      "nonmatch": "Non-matching ({count})",
+      "noneval": "Non-evaluable ({count})"
     },
     "toggle": {
       "label": "Auto-refresh (at every close)",
@@ -513,7 +536,74 @@
       "selectAtLeastOne": "Select at least one condition.",
       "proximityWithin": "Within",
       "proximityOfPrice": "% of price",
-      "side": "Side"
+      "side": "Side",
+      "activeInFamily": "{count, plural, =0 {none active} one {# active} other {# active}}",
+      "selectedCount": "{count, plural, =0 {No condition ticked} one {# condition ticked} other {# conditions ticked}}",
+      "conceptAria": "Concept — {label}",
+      "zeroNote": "Zero conditions does not mean “all markets”: with no condition, there is nothing to read.",
+      "liveCombos": "{count, plural, one {combo matches} other {combos match}} your reading · across {scanned} tracked markets",
+      "liveFreshness": "evaluated {age}",
+      "liveError": "count unavailable",
+      "rescan": "Rescan"
+    },
+    "family": {
+      "structure": { "title": "Structure", "desc": "trend, breaks, events" },
+      "zones": { "title": "Zones", "desc": "Order Blocks, Fair Value Gaps" },
+      "liquidity": { "title": "Liquidity", "desc": "pockets, sweeps, equal highs/lows" },
+      "context": { "title": "Context", "desc": "phase, volatility, range, session" }
+    },
+    "recap": {
+      "title": "Your reading, in one sentence",
+      "and": "and",
+      "or": "or",
+      "copy": "Copy",
+      "copied": "Copied"
+    },
+    "concept": {
+      "whatLabel": "What it counts",
+      "smcLabel": "SMC convention",
+      "notLabel": "What it does not say",
+      "notDefault": "A present fact, never a forecast: the condition does not say what price will do next.",
+      "price_in_tested_zone": {
+        "what": "The current price is inside an active zone — Order Block or Fair Value Gap — that has already been touched at least once since it formed.",
+        "smc": "A zone is 'tested' once price has re-touched it after forming; its opposite is 'never tested'.",
+        "not": "Nothing about what comes next — no bounce, no rejection, no continuation. It is a present positional fact, not an expectation."
+      }
+    },
+    "control": {
+      "direction": "Direction",
+      "max_bars": "Window (candles)",
+      "trend": "Trend",
+      "phase": "Phase",
+      "volatility": "Volatility",
+      "proximity_pct": "Distance",
+      "side": "Side",
+      "zone_kind": "Zone type",
+      "event": "Event",
+      "age_bucket": "Age",
+      "third": "Third",
+      "eq_kind": "Type",
+      "session": "Session",
+      "relation": "Higher unit"
+    },
+    "opt": {
+      "relation": {
+        "same": "Same direction",
+        "opposite": "Opposite direction"
+      },
+      "bars": "{n} candles",
+      "pct": "{n}%",
+      "direction": { "any": "Any direction", "bullish": "Bullish", "bearish": "Bearish" },
+      "trend": { "bullish": "Bullish", "bearish": "Bearish", "indeterminate": "Indeterminate" },
+      "phase": { "accumulation": "Accumulation", "trend": "Trend", "ranging": "Range", "expansion": "Expansion" },
+      "volatility": { "low": "Contracted", "normal": "Normal", "elevated": "Extended" },
+      "side": { "any": "Both", "bsl": "BSL (above)", "ssl": "SSL (below)" },
+      "zone_kind": { "any": "OB or FVG", "ob": "Order Block", "fvg": "Fair Value Gap" },
+      "event": { "bos_up": "BOS ↑", "bos_down": "BOS ↓", "choch_up": "CHOCH ↑", "choch_down": "CHOCH ↓" },
+      "age_bucket": { "lt10": "Under 10", "10to50": "10 to 50", "gt50": "Over 50" },
+      "third": { "bottom": "Lower", "middle": "Middle", "top": "Upper" },
+      "eq_kind": { "any": "Lows or highs", "highs": "Highs", "lows": "Lows" },
+      "session": { "asia": "Asia", "london": "London", "new_york": "New York", "overlap": "Overlap" }
     },
     "bias": {
       "bullish": "Bullish",
@@ -556,8 +646,10 @@
       "trendIndeterminate": "Indeterminate"
     },
     "palette": {
-      "mtf_aligned_label": "3 TF aligned (structure)",
-      "mtf_aligned_desc": "The 3 timeframes (H4, H1, M15) show the same STRUCTURAL direction right now (last BOS/CHOCH break in the same direction). A timeframe with no structural trend established (indeterminate) prevents alignment.",
+      "higher_tf_agrees_label": "The higher unit goes",
+      "higher_tf_agrees_desc": "The structural trend of the immediately higher timeframe is currently going the same way as the scanned unit or the opposite way. The compared unit is named in the result (\"the 1h goes the same way\"). Non-evaluable in three cases: no unit above (highest tracked unit), the higher unit has no trend established, or this unit has no trend established.",
+      "price_in_tested_zone_label": "Price is inside a zone tested at least once",
+      "price_in_tested_zone_desc": "The current price is inside an active zone — Order Block or Fair Value Gap — that has already been touched at least once since it formed.",
       "trend_is_label": "Current trend (structure)",
       "trend_is_desc": "The structural trend observed on this timeframe is, right now, the one you selected (bullish, bearish, or indeterminate when no break established it).",
       "market_phase_is_label": "Market phase",
@@ -594,8 +686,29 @@
       "saveFailed": "Unable to save."
     },
     "strategyPanel": {
-      "title": "My strategies",
-      "subtitle": "Saved on this device only — nothing is sent to the server.",
+      "title": "My saved readings",
+      "subtitle": "Kept on this device only — they are not synced. Switch computers and they do not follow, unless you export them.",
+      "notRankingNote": "The combo count is a finding, not a ranking: a reading returning seven combos is not better than one returning none — it is wider.",
+      "export": "Export",
+      "import": "Import",
+      "counting": "Evaluating…",
+      "countError": "Count unavailable.",
+      "comboCount": "{count, plural, =0 {0 combo} one {# combo} other {# combos}}",
+      "evaluatedAgo": "evaluated {age}",
+      "incompleteBadge": "Incomplete count",
+      "incompleteDetail": "{count, plural, one {# combo awaiting a new candle on its unit — rescan for an up-to-date count.} other {# combos awaiting a new candle on their unit — rescan for an up-to-date count.}}",
+      "rescan": "Rescan",
+      "transferHint": "Move your readings between devices as text.",
+      "exportLabel": "Text to copy",
+      "importPlaceholder": "Paste here the text exported from another device…",
+      "importDo": "Import this text",
+      "importResult": "{imported} imported, {skipped} skipped (cap reached).",
+      "importErrors": {
+        "malformed": "Unreadable text — this is not a valid export.",
+        "wrong_format": "This text is not a scanner readings export.",
+        "empty": "No reading to import in this text.",
+        "storage_failed": "Could not write to local storage (quota or private browsing)."
+      },
       "invalid": "Invalid",
       "meta": "{count, plural, one {# condition} other {# conditions}} · {logic} · last used {when}",
       "logicAnd": "AND",

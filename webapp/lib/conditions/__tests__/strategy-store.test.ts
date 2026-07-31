@@ -14,7 +14,7 @@ import type { ConditionsConfig } from '../types';
 const SAMPLE_CONFIG: ConditionsConfig = {
   logic: 'AND',
   conditions: [
-    { type: 'mtf_aligned', direction: 'bullish' },
+    { type: 'higher_tf_agrees', direction: 'bullish' },
     { type: 'bos_recent_confirmed', direction: 'any', max_bars: 5 },
   ],
 };
@@ -177,7 +177,7 @@ describe('validateStrategy — corrupt / out-of-schema strategies are flagged, n
       config: {
         logic: 'AND',
         conditions: [
-          { type: 'mtf_aligned', direction: 'bullish' },
+          { type: 'higher_tf_agrees', direction: 'bullish' },
           // e.g. a condition from a FUTURE schema this build does not know
           { type: 'per_tf_trend_is' } as never,
         ],
@@ -284,12 +284,12 @@ describe('legal boundary — client-only, name never a condition', () => {
     act(() => {
       result.current.saveStrategy('price_in_ob', {
         logic: 'AND',
-        conditions: [{ type: 'retest_in_progress' }],
+        conditions: [{ type: 'price_in_fvg' }],
       });
     });
     const s = result.current.strategies[0]!;
     expect(s.name).toBe('price_in_ob');
-    expect(s.config.conditions).toEqual([{ type: 'retest_in_progress' }]);
+    expect(s.config.conditions).toEqual([{ type: 'price_in_fvg' }]);
     // The scan payload is the config alone — serialized, it carries no name.
     expect(JSON.stringify(s.config)).not.toContain('price_in_ob');
     expect(validateStrategy(s)).toEqual([]);

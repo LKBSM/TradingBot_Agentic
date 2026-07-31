@@ -27,8 +27,10 @@ from src.api.entitlements import enforce_scanner_access
 from src.api.session_auth import optional_account
 from src.intelligence.conditions_scanner import (
     ALLOWED_CONDITION_TYPES,
+    BLOCKED_PALETTE,
     DEFAULT_BOS_MAX_BARS,
     DEFAULT_PROXIMITY_PCT,
+    FAMILIES,
     PALETTE,
     evaluate_reading,
 )
@@ -90,31 +92,54 @@ def _compute_freshness(
     return bars_behind, "stale"
 
 
-# Present-tense condition types ONLY. Drift from the palette is caught below.
+# Present-tense condition types ONLY (SC-1 palette). Drift from the engine
+# palette is caught by the assert below. Predictive types are not representable;
+# BLOCKED types (e.g. zone_tested_at_most) are deliberately absent, so requesting
+# one is a 422 (out of palette) — never a silent wrong answer.
 ConditionType = Literal[
-    "mtf_aligned",
+    # structure
     "trend_is",
-    "market_phase_is",
-    "volatility_is",
-    "price_in_ob",
-    "price_in_fvg",
-    "ob_fvg_confluence",
+    "higher_tf_agrees",
+    "last_event_is",
+    "last_event_age",
     "bos_recent_confirmed",
     "choch_recent_confirmed",
-    "retest_in_progress",
+    # zones
+    "price_in_ob",
+    "price_in_fvg",
+    "price_in_tested_zone",
+    "zone_untested",
+    "zone_formed_recent",
     "price_near_ob",
     "price_near_fvg",
+    # liquidity
     "price_near_liquidity",
     "liquidity_swept_recent",
+    "liquidity_broken_recent",
+    "equal_levels_present",
+    # context
+    "market_phase_is",
+    "volatility_is",
+    "price_in_range_third",
+    "session_is",
 ]
 DirectionFilter = Literal["any", "bullish", "bearish"]
 LiquiditySideFilter = Literal["any", "bsl", "ssl"]
+ZoneKindFilter = Literal["any", "ob", "fvg"]
 TrendChoice = Literal["bullish", "bearish", "indeterminate"]
-PhaseChoice = Literal["accumulation", "distribution", "trend", "ranging", "expansion"]
+# ``distribution`` is intentionally NOT offered — the engine cannot emit it, so a
+# request for it is rejected (422) rather than silently returning zero.
+PhaseChoice = Literal["accumulation", "trend", "ranging", "expansion"]
 VolatilityChoice = Literal["low", "normal", "elevated"]
+EventChoice = Literal["bos_up", "bos_down", "choch_up", "choch_down"]
+AgeBucketChoice = Literal["lt10", "10to50", "gt50"]
+RangeThirdChoice = Literal["bottom", "middle", "top"]
+EqKindChoice = Literal["any", "highs", "lows"]
+SessionChoice = Literal["asia", "london", "new_york", "overlap"]
+RelationChoice = Literal["same", "opposite"]
 
 # Guard: the request-model vocabulary must equal the engine palette exactly, so a
-# predictive type can never slip in on one side only.
+# predictive (or blocked) type can never slip in on one side only.
 assert set(ConditionType.__args__) == set(ALLOWED_CONDITION_TYPES), (  # noqa: S101
     "ConditionType Literal drifted from conditions_scanner.PALETTE"
 )
@@ -124,6 +149,10 @@ assert set(ConditionType.__args__) == set(ALLOWED_CONDITION_TYPES), (  # noqa: S
 
 
 class ScanCondition(BaseModel):
+    # Reject any unknown field: an out-of-palette control name is a 422, never
+    # silently ignored.
+    model_config = {"extra": "forbid"}
+
     type: ConditionType
     direction: DirectionFilter = "any"
     max_bars: int = Field(default=DEFAULT_BOS_MAX_BARS, ge=1, le=50)
@@ -135,6 +164,17 @@ class ScanCondition(BaseModel):
     proximity_pct: float = Field(default=DEFAULT_PROXIMITY_PCT, gt=0, le=10)
     # Liquidity-side filter for the liquidity conditions (bsl above / ssl below).
     side: LiquiditySideFilter = "any"
+    # Zone family filter (price_in_tested_zone / zone_untested / zone_formed_recent).
+    zone_kind: ZoneKindFilter = "any"
+    # Structural-event selectors.
+    event: Optional[EventChoice] = None
+    age_bucket: Optional[AgeBucketChoice] = None
+    # Context selectors.
+    third: Optional[RangeThirdChoice] = None
+    eq_kind: EqKindChoice = "any"
+    session: Optional[SessionChoice] = None
+    # Higher-timeframe relation (higher_tf_agrees).
+    relation: Optional[RelationChoice] = None
 
 
 class ConditionsScanRequest(BaseModel):
@@ -162,9 +202,16 @@ class ComboMatch(BaseModel):
     close_price: Optional[float]
     matched: bool
     met_count: int
+    # Denominator counts only EVALUABLE conditions; non-evaluable ones are surfaced
+    # separately so the UI shows the adjusted denominator honestly.
     total: int
+    non_evaluable_count: int = 0
     conditions_met: List[ConditionOutcome]
     conditions_unmet: List[ConditionOutcome]
+    conditions_non_evaluable: List[ConditionOutcome] = Field(default_factory=list)
+    # Factual against-signals (multi-unit disagreement, contracted volatility,
+    # tested zone), surfaced even on a full match — the « à l'encontre » block.
+    context_against: List[Dict[str, str]] = Field(default_factory=list)
     context: Dict[str, Any]
     # Reading age in candles behind the latest expected close, and its tier.
     # Lets the UI avoid asserting an aged reading as "présent maintenant".
@@ -187,7 +234,14 @@ class ConditionsScanResponse(BaseModel):
 
 
 class PaletteResponse(BaseModel):
+    # ``families`` gives the interface its fixed group order (structure / zones /
+    # liquidity / context); ``palette`` carries each condition's family + controls
+    # so the UI derives its segmented buttons from the schema. ``blocked`` lists
+    # conditions prepared but not yet offerable (with the reason) — never rendered
+    # as selectable, surfaced only for transparency.
+    families: List[str]
     palette: List[Dict[str, Any]]
+    blocked: List[Dict[str, Any]]
 
 
 # ── Routes ──────────────────────────────────────────────────────────────────
@@ -196,7 +250,7 @@ class PaletteResponse(BaseModel):
 @router.get("/conditions-scan/palette", response_model=PaletteResponse)
 async def get_palette() -> PaletteResponse:
     """The closed, present-tense palette — single source of truth for the builder."""
-    return PaletteResponse(palette=PALETTE)
+    return PaletteResponse(families=list(FAMILIES), palette=PALETTE, blocked=BLOCKED_PALETTE)
 
 
 @router.post("/conditions-scan", response_model=ConditionsScanResponse)
