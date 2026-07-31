@@ -437,6 +437,20 @@
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
+.calprev-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  color: var(--acc);
+  font-size: 10px;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.calprev-more:hover {
+  text-decoration: underline;
+}
 .calprev-empty {
   font-size: 11px;
   color: var(--faint);

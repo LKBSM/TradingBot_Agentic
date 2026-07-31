@@ -75,6 +75,15 @@ export function CalendarPreview({
                     {t(`periodicity.${ev.periodicity}`)}
                   </span>
                 )}
+                {/* Deep-link to the OFFICIAL event detail (loads by id, REC 1). */}
+                <Link
+                  className="calprev-more"
+                  href={lh(`/actualites/${encodeURIComponent(ev.event_id)}`)}
+                  aria-label={`${t('seeMore')} — ${ev.event}`}
+                >
+                  {t('seeMore')}
+                  <ChevronRight width={12} height={12} aria-hidden />
+                </Link>
               </li>
             );
           })}

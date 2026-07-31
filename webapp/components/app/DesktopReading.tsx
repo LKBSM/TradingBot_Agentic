@@ -3,7 +3,7 @@
 import * as React from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { ChevronRight, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import {
   ChartUnavailable,
@@ -33,6 +33,7 @@ import { useLocalizedHref } from '@/lib/i18n/href';
 import { StructureCard } from './StructureCard';
 import { LiquidityCard } from './LiquidityCard';
 import { RegimeCard } from './RegimeCard';
+import { CalendarPreview } from '@/components/calendar/CalendarPreview';
 import './ui2c.css';
 import type { Combo } from '@/lib/market-reading/store';
 import type {
@@ -295,7 +296,11 @@ export function DesktopReading({
           openHelp={openHelp}
           onToggleHelp={onToggleHelp}
         />
-        <NewsPanel events={reading.events} />
+        {/* REC point 1A: the /app "Actus" panel now shows the OFFICIAL calendar's
+            next releases (CalendarPreview), whose "en savoir plus" links resolve
+            to real event detail pages — instead of the news-pipeline events whose
+            ids never existed in the official calendar (introuvable). */}
+        <CalendarPreview limit={4} />
       </div>
     </div>
   );
@@ -483,60 +488,7 @@ function NarratedPanel({ conditions }: { conditions: MarketReadingConditions }) 
   );
 }
 
-function NewsPanel({ events }: { events: MarketReadingEvents }) {
-  const t = useTranslations('app');
-  const tc = useTranslations('calendar');
-  const lh = useLocalizedHref();
-  const fmt = useReadingFormatters();
-  const upcoming = events.news_upcoming;
-
-  return (
-    <div className="card">
-      <div className="card-h">
-        <svg viewBox="0 0 24 24" aria-hidden>
-          <rect x="3" y="4" width="18" height="17" rx="2" />
-          <path d="M3 9h18M8 2v4M16 2v4" />
-        </svg>
-        <h3>{t('desktop.news.title')}</h3>
-        <span className="badge2">{t('desktop.news.badge')}</span>
-      </div>
-      {upcoming.length === 0 ? (
-        <p className="emptyrow">{t('desktop.news.empty')}</p>
-      ) : (
-        upcoming.map((n, i) => {
-          const impact = fmt.impact(n.impact);
-          return (
-            <div className="newsrow" key={i}>
-              <div className="nic">
-                <svg viewBox="0 0 24 24" aria-hidden>
-                  <circle cx="12" cy="12" r="9" />
-                  <path d="M12 7v5l3 2" />
-                </svg>
-              </div>
-              <div className="main3">
-                <div className="ev">
-                  {n.event} · {fmt.currency(n.currency)}
-                </div>
-                <div className="mk3">
-                  {t('desktop.news.scheduledOn', { currency: fmt.currency(n.currency) })}
-                </div>
-              </div>
-              <span className={`impact ${n.impact === 'high' ? 'high' : 'mid'}`}>{impact.label}</span>
-              <span className="when">{fmt.timeToEvent(n.time_to_event_min)}</span>
-              {n.event_id && (
-                <Link
-                  className="news-more"
-                  href={lh(`/actualites/${encodeURIComponent(n.event_id)}`)}
-                  aria-label={`${tc('seeMore')} — ${n.event}`}
-                >
-                  {tc('seeMore')}
-                  <ChevronRight width={12} height={12} aria-hidden />
-                </Link>
-              )}
-            </div>
-          );
-        })
-      )}
-    </div>
-  );
-}
+// NewsPanel (forexfactory news_upcoming) removed in REC point 1A: its deep-links
+// pointed at ids that never existed in the official calendar (introuvable). The
+// /app "Actus" panel is now <CalendarPreview />, sourced from the official
+// calendar, whose "en savoir plus" links resolve to real event detail pages.
