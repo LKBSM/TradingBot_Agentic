@@ -539,7 +539,11 @@
       "activeInFamily": "{count, plural, =0 {aucune active} one {# active} other {# actives}}",
       "selectedCount": "{count, plural, =0 {Aucune condition cochée} one {# condition cochée} other {# conditions cochées}}",
       "conceptAria": "Concept — {label}",
-      "zeroNote": "Zéro condition ne signifie pas « tous les marchés » : sans condition, il n’y a rien à lire."
+      "zeroNote": "Zéro condition ne signifie pas « tous les marchés » : sans condition, il n’y a rien à lire.",
+      "liveCombos": "{count, plural, one {combo correspond} other {combos correspondent}} à ta lecture · sur {scanned} marchés suivis",
+      "liveFreshness": "évalué {age}",
+      "liveError": "compte indisponible",
+      "rescan": "Relancer"
     },
     "family": {
       "structure": { "title": "Structure", "desc": "tendance, cassures, événements" },

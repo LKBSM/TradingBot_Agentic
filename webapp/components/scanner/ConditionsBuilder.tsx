@@ -24,8 +24,11 @@ import type {
   ScanLogic,
 } from '@/lib/conditions/types';
 import { MAX_NAME_CHARS, type StrategyMutationResult } from '@/lib/conditions/strategy-store';
+import { useLiveComboCount } from '@/lib/conditions/use-live-combo-count';
+import { useNow } from '@/lib/conditions/use-now';
 import { mutationErrorMessage } from './StrategyPanel';
 import { Segmented } from './Segmented';
+import { useScannerLabels } from './use-scanner-labels';
 
 interface RowState {
   selected: boolean;
@@ -97,6 +100,18 @@ export function ConditionsBuilder({
   const selectedCount = CONDITION_PALETTE.filter((e) => rows[e.type].selected).length;
   const activeInFamily = (family: Family): number =>
     CONDITION_PALETTE.filter((e) => e.family === family && rows[e.type].selected).length;
+
+  // Live combo count while composing — makes the page feel alive as conditions
+  // are ticked. Descriptive count only; never a ranking.
+  const liveConfig = React.useMemo(
+    () => (selectedCount > 0 ? composeConfig() : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rows, logic],
+  );
+  const { live, refresh } = useLiveComboCount(liveConfig);
+  const { age } = useScannerLabels();
+  const liveNow = useNow(30_000);
+  const liveAge = age(live.asOf, liveNow);
 
   function toggleFamily(family: Family) {
     setOpen((prev) => {
@@ -359,13 +374,43 @@ export function ConditionsBuilder({
         </CardContent>
       </Card>
 
-      {/* Sticky action bar — selected count + go to results. */}
+      {/* Sticky action bar — LIVE combo count while composing + go to results. */}
       <div className="fixed inset-x-0 bottom-0 z-10 border-t border-border/60 bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
-          <span className="text-sm text-muted-foreground">
-            {t('builder.selectedCount', { count: selectedCount })}
-          </span>
+          {selectedCount === 0 ? (
+            <span className="text-sm text-muted-foreground">
+              {t('builder.selectedCount', { count: 0 })}
+            </span>
+          ) : (
+            <div className="flex flex-wrap items-baseline gap-2">
+              <span
+                className="text-2xl font-bold leading-none text-foreground"
+                data-testid="live-combo-count"
+              >
+                {live.status === 'ready' ? live.count : '…'}
+              </span>
+              <span className="text-sm text-muted-foreground">
+                {t('builder.liveCombos', {
+                  count: live.status === 'ready' ? live.count : 0,
+                  scanned: live.scanned || 0,
+                })}
+              </span>
+              {live.status === 'ready' && liveAge && (
+                <span className="text-xs text-[color:var(--faint)]">
+                  {t('builder.liveFreshness', { age: liveAge })}
+                </span>
+              )}
+              {live.status === 'error' && (
+                <span className="text-xs text-muted-foreground">{t('builder.liveError')}</span>
+              )}
+            </div>
+          )}
           <div className="flex flex-wrap gap-2">
+            {selectedCount > 0 && (
+              <Button type="button" variant="ghost" onClick={refresh}>
+                {t('builder.rescan')}
+              </Button>
+            )}
             {onCancel && (
               <Button type="button" variant="ghost" onClick={onCancel}>
                 {t('builder.cancel')}

@@ -539,7 +539,11 @@
       "activeInFamily": "{count, plural, =0 {none active} one {# active} other {# active}}",
       "selectedCount": "{count, plural, =0 {No condition ticked} one {# condition ticked} other {# conditions ticked}}",
       "conceptAria": "Concept — {label}",
-      "zeroNote": "Zero conditions does not mean “all markets”: with no condition, there is nothing to read."
+      "zeroNote": "Zero conditions does not mean “all markets”: with no condition, there is nothing to read.",
+      "liveCombos": "{count, plural, one {combo matches} other {combos match}} your reading · across {scanned} tracked markets",
+      "liveFreshness": "evaluated {age}",
+      "liveError": "count unavailable",
+      "rescan": "Rescan"
     },
     "family": {
       "structure": { "title": "Structure", "desc": "trend, breaks, events" },
