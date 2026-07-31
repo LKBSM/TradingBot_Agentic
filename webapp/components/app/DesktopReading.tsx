@@ -300,7 +300,7 @@ export function DesktopReading({
             next releases (CalendarPreview), whose "en savoir plus" links resolve
             to real event detail pages — instead of the news-pipeline events whose
             ids never existed in the official calendar (introuvable). */}
-        <CalendarPreview limit={4} />
+        <CalendarPreview />
       </div>
     </div>
   );

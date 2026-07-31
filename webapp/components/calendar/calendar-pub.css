@@ -1,0 +1,248 @@
+/* Publication detail — refonte NW-3.
+   Sections : courbe des valeurs publiées, quatre questions mesurées, bloc MIA,
+   aller à la source, fiche pédagogique. Style seulement : reprend l'esthétique
+   sombre en cartes de docs/design/reference-actualites.html via les jetons de
+   design partagés (couverts par les 4 thèmes). Aucun libellé n'est en dur ici —
+   tout le texte vient de next-intl côté composant. Préfixe « pub- ». */
+
+/* ---- Courbe des valeurs publiées ---- */
+.pub-curve {
+  margin: 4px 0 14px;
+}
+.pub-curve-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+.pub-curve-svg .line {
+  fill: none;
+  stroke: var(--acc);
+  stroke-width: 1.5;
+}
+.pub-curve-svg .dot {
+  fill: var(--acc);
+  stroke: var(--panel);
+  stroke-width: 1;
+}
+.pub-curve-svg .dot-upcoming {
+  fill: var(--panel);
+  stroke: var(--acc);
+  stroke-width: 1.4;
+  stroke-dasharray: 2 2;
+}
+.pub-curve-svg .line-upcoming {
+  fill: none;
+  stroke: var(--acc);
+  stroke-width: 1.3;
+  stroke-dasharray: 4 3;
+  opacity: 0.7;
+}
+.pub-curve-svg .pt-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8.5px;
+  fill: var(--dim);
+}
+.pub-curve-svg .pt-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  fill: var(--faint);
+}
+.pub-curve-svg .pt-upcoming-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  fill: var(--acc);
+  font-style: italic;
+}
+.pub-source-line {
+  font-size: 10px;
+  color: var(--faint);
+  line-height: 1.5;
+  margin-top: 9px;
+}
+
+/* ---- Quatre questions mesurées ---- */
+.pub-qsection {
+  margin-top: 4px;
+}
+.pub-qcard {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  padding: 13px 14px;
+  margin-bottom: 10px;
+}
+.pub-qcard:last-child {
+  margin-bottom: 0;
+}
+.pub-q {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--txt);
+  line-height: 1.5;
+  margin-bottom: 7px;
+}
+.pub-a {
+  font-size: 12px;
+  line-height: 1.6;
+  color: color-mix(in srgb, var(--txt) 88%, var(--dim));
+}
+.pub-a b {
+  color: var(--txt);
+  font-weight: 600;
+}
+.pub-detail {
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--dim);
+  margin-top: 7px;
+}
+.pub-detail b {
+  color: var(--txt);
+  font-weight: 600;
+}
+.pub-now {
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--dim);
+  margin-top: 7px;
+  padding-top: 7px;
+  border-top: 1px solid var(--line);
+}
+.pub-never {
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--liq);
+  margin-top: 6px;
+}
+.pub-qsource {
+  font-size: 9.5px;
+  color: var(--faint);
+  line-height: 1.5;
+  margin-top: 8px;
+}
+
+/* ---- Bloc MIA ---- */
+.pub-mia {
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+}
+.pub-mia-sub {
+  font-size: 11.5px;
+  color: var(--dim);
+  line-height: 1.55;
+  margin-bottom: 11px;
+}
+.pub-mia-suggests {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 11px;
+}
+.pub-mia-chip {
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 7px 11px;
+  border-radius: 18px;
+  border: 1px solid var(--line-2);
+  background: var(--panel-2);
+  color: var(--dim);
+  cursor: pointer;
+  text-align: left;
+}
+.pub-mia-chip:hover {
+  border-color: var(--acc);
+  color: var(--acc);
+}
+.pub-mia-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.pub-mia-input {
+  flex: 1;
+  min-width: 0;
+  font-family: inherit;
+  font-size: 12px;
+  padding: 9px 12px;
+  border-radius: var(--r-s);
+  border: 1px solid var(--line-2);
+  background: var(--panel);
+  color: var(--txt);
+}
+.pub-mia-input::placeholder {
+  color: var(--faint);
+}
+.pub-mia-send {
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 9px 15px;
+  border-radius: var(--r-s);
+  border: 1px solid var(--acc);
+  background: var(--acc-dim);
+  color: var(--acc);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.pub-mia-send:hover {
+  background: var(--acc);
+  color: var(--bg);
+}
+.pub-mia-cap {
+  font-size: 10px;
+  color: var(--faint);
+  line-height: 1.55;
+  margin-top: 10px;
+}
+
+/* ---- Aller à la source ---- */
+.pub-src-intro {
+  font-size: 11.5px;
+  color: var(--dim);
+  line-height: 1.55;
+  margin-bottom: 9px;
+}
+.pub-src-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--acc);
+  text-decoration: none;
+  padding: 8px 13px;
+  border-radius: var(--r-s);
+  border: 1px solid var(--line-2);
+  background: var(--panel-2);
+}
+.pub-src-link:hover {
+  border-color: var(--acc);
+}
+
+/* ---- Fiche pédagogique ---- */
+.pub-ped-body {
+  font-size: 12px;
+  line-height: 1.65;
+  color: color-mix(in srgb, var(--txt) 86%, var(--dim));
+}
+.pub-ped-nono {
+  margin-top: 11px;
+  padding: 11px 13px;
+  border-left: 2px solid var(--liq);
+  background: color-mix(in srgb, var(--liq) 6%, transparent);
+  border-radius: 0 var(--r-s) var(--r-s) 0;
+}
+.pub-ped-nono .t {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--liq);
+  margin-bottom: 5px;
+}
+.pub-ped-nono .b {
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--dim);
+}

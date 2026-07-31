@@ -14,7 +14,7 @@ import logging
 import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +29,16 @@ class ValuePoint:
     previous: Optional[float] = None
 
 
+@dataclass(frozen=True)
+class SeriesPoint:
+    """One observation in a published series — the reference PERIOD label (e.g.
+    "2026-06", as the organism labels it) and the value AS PUBLISHED. The period
+    is the indicator's own reference month/quarter, NOT a release date."""
+
+    period: str
+    value: float
+
+
 class ValueFetcher(ABC):
     """Fetches the published value for one series of one source."""
 
@@ -36,6 +46,13 @@ class ValueFetcher(ABC):
     def fetch(self, series_code: str) -> Optional[ValuePoint]:
         """Return the latest published value (+ previous) for ``series_code``, or
         ``None`` on any failure/absence (never raises, never fabricates)."""
+
+    def fetch_series(self, series_code: str, limit: int = 12) -> List[SeriesPoint]:
+        """Return the last ``limit`` published observations (oldest→newest) for
+        ``series_code``, each with its reference-period label. Default: empty —
+        a source that cannot serve a series (or has none) returns [] and the page
+        simply shows no curve. Never fabricates, never raises."""
+        return []
 
 
 class MultiValueFetcher(ValueFetcher):
@@ -56,6 +73,23 @@ class MultiValueFetcher(ValueFetcher):
         except Exception as exc:  # defensive — a fetch failure is graceful
             logger.warning("value fetch failed for %s/%s: %s", source, series_code, exc)
             return None
+
+    def series_for(
+        self, source: str, series_code: Optional[str], limit: int = 12
+    ) -> List[SeriesPoint]:
+        """Route a series-of-observations request to its source's fetcher. A
+        source with no registered fetcher, or one that serves no series, yields
+        [] (→ no curve, honestly). Never raises, never fabricates."""
+        if not series_code:
+            return []
+        fetcher = self._by_source.get(source)
+        if fetcher is None:
+            return []
+        try:
+            return fetcher.fetch_series(series_code, limit)
+        except Exception as exc:  # defensive — a fetch failure is graceful
+            logger.warning("value series fetch failed for %s/%s: %s", source, series_code, exc)
+            return []
 
     def fetch(self, series_code: str) -> Optional[ValuePoint]:  # pragma: no cover
         raise NotImplementedError("use fetch_for(source, series_code)")
@@ -90,4 +124,10 @@ def build_value_fetcher() -> Optional[MultiValueFetcher]:
     return MultiValueFetcher(by_source)
 
 
-__all__ = ["ValuePoint", "ValueFetcher", "MultiValueFetcher", "build_value_fetcher"]
+__all__ = [
+    "ValuePoint",
+    "SeriesPoint",
+    "ValueFetcher",
+    "MultiValueFetcher",
+    "build_value_fetcher",
+]

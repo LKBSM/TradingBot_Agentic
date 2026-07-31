@@ -21,6 +21,16 @@ export type CalendarPeriodicity = 'monthly' | 'quarterly' | 'eight_per_year';
  */
 export type ValueState = 'published' | 'pending' | 'unfetched' | 'unavailable';
 
+/**
+ * One observation in an indicator's published history — the reference PERIOD
+ * label (as the organism labels it, e.g. "2026-06") and the value AS PUBLISHED.
+ * The period is the reference month/quarter, never a release date, never converted.
+ */
+export interface CalendarSeriesPoint {
+  period: string;
+  value: number;
+}
+
 export interface CalendarEvent {
   event_id: string;
   source: string;
@@ -42,6 +52,13 @@ export interface CalendarEvent {
   revised_at: string | null; // ISO UTC
   actual_state: ValueState;
   refreshed_at: string | null; // ISO UTC — last refresh / value-fetch attempt
+  /**
+   * The indicator's published history (oldest→newest), when the source serves a
+   * series. Absent/empty ⇒ no curve is shown (never fabricated). Attached only by
+   * the per-event detail endpoint, never by the list/month window — hence optional
+   * on the wire; readers treat a missing value as no curve (`?? []`).
+   */
+  value_series?: CalendarSeriesPoint[];
 }
 
 export interface CalendarCoverage {

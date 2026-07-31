@@ -6,7 +6,12 @@ import { useTranslations } from 'next-intl';
 import { ChevronRight } from 'lucide-react';
 import { useLocalizedHref } from '@/lib/i18n/href';
 import { useCalendar } from '@/lib/calendar/useCalendar';
-import { filterEvents, hmInZone, splitPastUpcoming } from '@/lib/calendar/grouping';
+import {
+  countdown,
+  filterEvents,
+  hmInZone,
+  splitPastUpcoming,
+} from '@/lib/calendar/grouping';
 import { parseUtc } from '@/lib/time/localTime';
 import type { CalendarResponse } from '@/types/calendar';
 import './calendar.css';
@@ -17,18 +22,19 @@ const ALL_SOURCES = new Set([
 const ALL_MARKETS = new Set(['XAUUSD', 'EURUSD']);
 const ALL_PERIODICITIES = new Set(['monthly', 'quarterly', 'eight_per_year']);
 
+// No cap by default: the dashboard shows the FULL forward horizon in a scrollable
+// list (mission NW-3 §2C). `limit` stays injectable but defaults to "show all".
+const NO_CAP = Number.POSITIVE_INFINITY;
+
 /**
- * Compact dashboard preview of the next few scheduled publications — the SAME
- * source and helpers as the full /actualites page (no logic duplication), just
- * capped and linking through. Announces moments only.
- *
- * NOTE (NW-1): this component is ready but is intentionally NOT yet placed on
- * /app. Swapping the existing events module for it is deferred to the
- * official-source integration mission, so the preview shows real publications
- * instead of emptying /app while only the prototype/stub source exists.
+ * Dashboard preview of ALL upcoming scheduled publications — the SAME source and
+ * helpers as the full /actualites page (no logic duplication). The list is
+ * scrollable and shows every forward release over the fetched horizon (30 days),
+ * each row carrying its countdown, local time, name, organism, periodicity, the
+ * attached markets and a deep link to the official detail. Announces moments only.
  */
 export function CalendarPreview({
-  limit = 3,
+  limit = NO_CAP,
   data: injectedData,
   now: injectedNow,
 }: {
@@ -38,9 +44,16 @@ export function CalendarPreview({
 }) {
   const t = useTranslations('calendar');
   const lh = useLocalizedHref();
-  const hook = useCalendar();
+  // A volatility calendar is useful across the coming weeks, not just 7 days —
+  // request the full forward horizon so every upcoming release is listed.
+  const hook = useCalendar({ lookaheadDays: 30 });
   const data = injectedData !== undefined ? injectedData : hook.data;
   const now = React.useMemo(() => injectedNow ?? new Date(), [injectedNow]);
+
+  const marketName = React.useCallback(
+    (m: string) => t(`market.${m}` as 'market.XAUUSD'),
+    [t],
+  );
 
   const upcoming = data
     ? splitPastUpcoming(
@@ -64,17 +77,39 @@ export function CalendarPreview({
         <ul className="calprev-list">
           {upcoming.map((ev) => {
             const when = parseUtc(ev.scheduled_at);
+            const cd = when ? countdown(now.getTime(), when.getTime()) : null;
+            const localTime = when ? hmInZone(when) : '—';
+            const affects = ev.markets.map(marketName).join(', ');
             return (
               <li key={ev.event_id} className="calprev-row">
-                <span className="calprev-time mono">
-                  {when ? hmInZone(when, ev.source_timezone ?? undefined) : '—'}
-                </span>
-                <span className="calprev-ev">{ev.event}</span>
-                {ev.periodicity && (
-                  <span className="calprev-per">
-                    {t(`periodicity.${ev.periodicity}`)}
-                  </span>
-                )}
+                <div className="calprev-when">
+                  {cd && (
+                    <span className="calprev-cd">{formatCountdown(cd, t)}</span>
+                  )}
+                  <span className="calprev-time mono">{localTime}</span>
+                </div>
+                <div className="calprev-mid">
+                  <div className="calprev-ev">{ev.event}</div>
+                  <div className="calprev-meta">
+                    <span className="calprev-prov">
+                      {ev.organism
+                        ? t('provenance.organism', { organism: ev.organism })
+                        : t('provenance.organismMissing')}
+                    </span>
+                    {ev.periodicity && (
+                      <>
+                        <span className="calprev-sep">·</span>
+                        <span>{t(`periodicity.${ev.periodicity}`)}</span>
+                      </>
+                    )}
+                    {ev.markets.length > 0 && (
+                      <>
+                        <span className="calprev-sep">·</span>
+                        <span>{t('affects', { markets: affects })}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
                 {/* Deep-link to the OFFICIAL event detail (loads by id, REC 1). */}
                 <Link
                   className="calprev-more"
@@ -91,4 +126,21 @@ export function CalendarPreview({
       )}
     </section>
   );
+}
+
+function formatCountdown(
+  cd: ReturnType<typeof countdown>,
+  t: ReturnType<typeof useTranslations>,
+): string {
+  const { past, days, hours, minutes } = cd;
+  const mm = String(minutes).padStart(2, '0');
+  if (past) {
+    if (days >= 1) return t('countdown.agoDays', { days });
+    if (hours >= 1) return t('countdown.agoHours', { hours, minutes: mm });
+    return t('countdown.agoMinutes', { minutes });
+  }
+  if (days >= 1) return t('countdown.days', { days });
+  if (hours >= 1) return t('countdown.hours', { hours, minutes: mm });
+  if (minutes >= 1) return t('countdown.minutes', { minutes });
+  return t('countdown.now');
 }

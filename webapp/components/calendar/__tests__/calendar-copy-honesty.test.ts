@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import fr from '@/messages/fr.json';
 import en from '@/messages/en.json';
@@ -178,6 +180,67 @@ describe('NW-1 calendar copy honesty', () => {
     // the attachment label is a relation, not a cause/effect
     expect((fr as unknown as { calendar: { affects: string } }).calendar.affects).toMatch(/rattaché/);
     expect((en as unknown as { calendar: { affects: string } }).calendar.affects).toMatch(/attached/);
+  });
+
+  it('NW-3: no visible calendar string names a central statistic or a candle', () => {
+    // The publication page shows FULL distributions in tranches + dated extremes,
+    // never a single central value; and durations are hours/minutes, never candles
+    // (the reader picked no timeframe here). Refusal paths are exempt (they quote
+    // to deny). "médian(e)" the statistic is banned; "tiers médian" (the middle
+    // third) is a position band — the \b…e\b form separates them.
+    const STAT_CANDLE = [
+      /\bmédianes?\b/i, /\bmoyennes?\b/i, /écart[- ]type/i,
+      /\bmedians?\b/i, /\bmeans?\b/i, /standard deviation/i,
+      /\bbougies?\b/i, /\bcandles?\b/i,
+    ];
+    for (const s of strings) {
+      for (const re of STAT_CANDLE) {
+        expect(re.test(s), `« ${re} » leaked in: "${s}"`).toBe(false);
+      }
+    }
+  });
+
+  it('NW-3: every external URL in the calendar catalog points to an issuing organism (allowlist)', () => {
+    // Choosing an external link is recommending it. The only links the surface may
+    // emit go to the ISSUING ORGANISM — enforced by a domain allowlist. The
+    // catalog is the single source of the source/policy URLs the page renders.
+    const ALLOWED = [
+      'bls.gov', 'bea.gov', 'census.gov', 'federalreserve.gov',
+      'ec.europa.eu', 'ecb.europa.eu',
+    ];
+    const raw = readFileSync(
+      join(process.cwd(), '..', 'config', 'calendar_catalog.json'),
+      'utf-8',
+    );
+    const urls = raw.match(/https?:\/\/[^\s"'\\]+/g) ?? [];
+    expect(urls.length).toBeGreaterThan(0);
+    for (const u of urls) {
+      const host = new URL(u).hostname.replace(/^www\./, '');
+      const ok = ALLOWED.some((d) => host === d || host.endsWith(`.${d}`));
+      expect(ok, `external URL is not an issuing-organism domain: ${u}`).toBe(true);
+    }
+  });
+
+  it('NW-3: the four-question + curve i18n blocks exist in fr and en', () => {
+    for (const msgs of [fr, en]) {
+      const cal = (msgs as Record<string, unknown>).calendar as Record<string, unknown>;
+      const pub = cal.pub as Record<string, unknown>;
+      expect(pub).toBeTypeOf('object');
+      const q = pub.questions as Record<string, unknown>;
+      expect(q.calmBefore).toBeTypeOf('object');
+      expect(q.structure).toBeTypeOf('object');
+      expect(q.returnToCalm).toBeTypeOf('object');
+      // Each question carries its source line (the denominator lives there).
+      for (const key of ['calmBefore', 'structure', 'returnToCalm']) {
+        const block = q[key] as Record<string, unknown>;
+        expect(block.q, `${key}.q`).toBeTypeOf('string');
+        expect(block.a, `${key}.a`).toBeTypeOf('string');
+        expect(block.source, `${key}.source`).toBeTypeOf('string');
+        expect((block.source as string).toLowerCase()).toMatch(/base|base:/);
+      }
+      expect((pub.curve as Record<string, unknown>).title).toBeTypeOf('string');
+      expect((cal.month as Record<string, unknown>).filterEmpty).toBeTypeOf('string');
+    }
   });
 
   it('NW-1c: no i18n string contains an internal mission/ticket code', () => {

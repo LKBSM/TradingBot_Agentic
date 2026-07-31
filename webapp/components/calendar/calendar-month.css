@@ -1,0 +1,291 @@
+/* Calendrier de volatilité — vue GRILLE MENSUELLE (NW-3).
+   Reprend les jetons de design existants (couverts par les 4 thèmes) et le
+   préfixe « calm- » (calendar-month) pour ne pas heurter les autres classes.
+   NW-3 : aucun code couleur d'impact, aucune direction — la grille annonce des
+   MOMENTS. Un jour sans publication reste visible et vide. */
+
+.calm-page {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 20px 18px 64px;
+}
+
+/* Month navigation bar. */
+.calm-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 10px;
+  flex-wrap: wrap;
+}
+.calm-navbtn {
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: var(--r-s);
+  border: 1px solid var(--line-2);
+  background: var(--panel-2);
+  color: var(--dim);
+  cursor: pointer;
+  font-family: inherit;
+}
+.calm-navbtn:hover {
+  border-color: var(--acc);
+  color: var(--acc);
+}
+.calm-now {
+  margin-left: auto;
+}
+.calm-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--txt);
+  text-transform: capitalize;
+}
+
+/* Two-column layout: grid on the left, side panel + this-month box on the right. */
+.calm-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 16px;
+  align-items: start;
+}
+
+.calm-grid-wrap {
+  min-width: 0;
+}
+
+.calm-weekhdr {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+  margin-bottom: 5px;
+}
+.calm-wd {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--faint);
+  text-align: center;
+  padding: 3px 0;
+}
+
+.calm-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+}
+.calm-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-height: 92px;
+  padding: 6px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  overflow: hidden;
+}
+.calm-cell:hover {
+  border-color: var(--line-2);
+}
+.calm-cell.blank {
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: default;
+  min-height: 92px;
+}
+.calm-cell.empty {
+  background: var(--panel);
+}
+.calm-cell.today {
+  border-color: var(--acc);
+}
+.calm-cell.selected {
+  border-color: var(--acc);
+  background: var(--acc-dim);
+}
+.calm-daynum {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--dim);
+}
+.calm-cell.today .calm-daynum {
+  color: var(--acc);
+}
+.calm-cell-events {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.calm-chip {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  background: var(--panel-3);
+  min-width: 0;
+}
+.calm-chip-time {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8.5px;
+  font-weight: 600;
+  color: var(--faint);
+  flex-shrink: 0;
+}
+.calm-chip-name {
+  font-size: 9.5px;
+  color: var(--dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.calm-more {
+  font-size: 8.5px;
+  font-weight: 600;
+  color: var(--acc);
+  padding-left: 4px;
+}
+
+/* Side column. */
+.calm-side {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: sticky;
+  top: 12px;
+}
+
+.calm-panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 13px 14px;
+}
+.calm-panel-head {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--txt);
+  margin-bottom: 10px;
+  text-transform: capitalize;
+}
+.calm-panel-empty {
+  font-size: 11.5px;
+  color: var(--faint);
+  line-height: 1.5;
+}
+.calm-panel-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.calm-panel-row {
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  background: var(--panel-2);
+}
+.calm-panel-link {
+  position: relative;
+  display: block;
+  padding: 9px 26px 9px 11px;
+  text-decoration: none;
+}
+.calm-panel-link:hover {
+  background: var(--panel-3);
+}
+.calm-panel-ev {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--txt);
+  margin-bottom: 3px;
+}
+.calm-panel-time {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--dim);
+}
+.calm-panel-time.local {
+  color: var(--faint);
+  margin-top: 1px;
+}
+.calm-panel-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: 5px;
+  font-size: 9.5px;
+  color: var(--faint);
+}
+.calm-panel-meta .missing {
+  opacity: 0.75;
+}
+.calm-panel-chev {
+  position: absolute;
+  right: 9px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--faint);
+}
+
+/* "This month" descriptive box. */
+.calm-thismonth {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 13px 14px;
+}
+.calm-tm-title {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 7px;
+}
+.calm-tm-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--txt);
+  margin-bottom: 8px;
+}
+.calm-tm-list {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11px;
+  color: var(--dim);
+}
+.calm-tm-note {
+  font-size: 10px;
+  line-height: 1.5;
+  color: var(--faint);
+}
+
+@media (max-width: 900px) {
+  .calm-body {
+    grid-template-columns: 1fr;
+  }
+  .calm-side {
+    position: static;
+  }
+  .calm-cell {
+    min-height: 70px;
+  }
+}

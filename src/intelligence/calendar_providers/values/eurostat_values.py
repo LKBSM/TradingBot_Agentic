@@ -19,7 +19,11 @@ import urllib.parse
 import urllib.request
 from typing import Dict, List, Optional
 
-from src.intelligence.calendar_providers.values.base_value import ValueFetcher, ValuePoint
+from src.intelligence.calendar_providers.values.base_value import (
+    SeriesPoint,
+    ValueFetcher,
+    ValuePoint,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +64,25 @@ class EurostatValueFetcher(ValueFetcher):
         previous = obs[-2] if len(obs) >= 2 else None
         return ValuePoint(actual=actual, previous=previous)
 
+    def fetch_series(self, series_code: str, limit: int = 12) -> List[SeriesPoint]:
+        """Last ``limit`` published observations (oldest→newest) with their
+        reference-period labels. Values AS PUBLISHED; [] on any failure/absence.
+
+        The dissemination API serves the CURRENT (possibly revised) value for each
+        period — it does not expose the initial-vs-revised history per point, so
+        this is the published series, not a revision log. The page surfaces the
+        single tracked revision (initial vs current) separately, at release level."""
+        filters = _DATASET_FILTERS.get(series_code)
+        if filters is None or limit < 1:
+            return []
+        params = [("format", "JSON"), ("lang", "EN"), ("lastTimePeriod", str(int(limit)))]
+        params += list(filters.items())
+        url = f"{_BASE}/{series_code}?{urllib.parse.urlencode(params)}"
+        text = self._get(url)
+        if not text:
+            return []
+        return _parse_jsonstat_points(text)
+
 
 def _http_get(url: str) -> str:
     try:
@@ -99,6 +122,32 @@ def _parse_jsonstat(text: str) -> List[float]:
             v = values[k]
             if isinstance(v, (int, float)):
                 out.append(float(v))
+        return out
+    except (ValueError, TypeError, KeyError):
+        return []
+
+
+def _parse_jsonstat_points(text: str) -> List[SeriesPoint]:
+    """Extract (period, value) observations in chronological order from a
+    JSON-stat 2.0 message reduced to a single series. The period label comes from
+    the time dimension's category index keys (e.g. "2026-06"). Returns [] on any
+    shape mismatch — never fabricates a period or a value."""
+    try:
+        data = json.loads(text)
+        values = data.get("value")
+        if not isinstance(values, dict) or not values:
+            return []
+        time = ((data.get("dimension") or {}).get("time") or {})
+        index = ((time.get("category") or {}).get("index") or {})
+        if not isinstance(index, dict) or not index:
+            return []
+        # {period_label: position}; value dict keys the observation by position.
+        ordered = sorted(index.items(), key=lambda kv: kv[1])
+        out: List[SeriesPoint] = []
+        for period, pos in ordered:
+            v = values.get(str(pos))
+            if isinstance(v, (int, float)):
+                out.append(SeriesPoint(period=str(period), value=float(v)))
         return out
     except (ValueError, TypeError, KeyError):
         return []

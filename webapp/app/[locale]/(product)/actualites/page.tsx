@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { CalendarWorkspace } from '@/components/calendar/CalendarWorkspace';
+import { CalendarMonthView } from '@/components/calendar/CalendarMonthView';
 import { SubscriptionGate } from '@/components/access/SubscriptionGate';
 
 export async function generateMetadata({
@@ -31,7 +31,7 @@ export default async function ActualitesPage({
   const { locale } = await params;
   return (
     <SubscriptionGate>
-      <CalendarWorkspace locale={locale} />
+      <CalendarMonthView locale={locale} />
     </SubscriptionGate>
   );
 }
