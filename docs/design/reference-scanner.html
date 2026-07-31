@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Référence — Scanner (SC-1)</title>
+<style>
+  :root{
+    --bg:#0c0e12; --panel:#12151b; --line:#232833; --fg:#e7ebf2; --muted:#8b93a3;
+    --faint:#5c6472; --acc:#e7ebf2; --bull:#4ec9a8; --bear:#e06c74; --r:10px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 "JetBrains Mono",ui-monospace,monospace}
+  .wrap{max-width:1120px;margin:0 auto;padding:20px 16px 96px}
+  .tabs{display:flex;flex-wrap:wrap;gap:6px;position:sticky;top:0;background:var(--bg);padding:10px 0;border-bottom:1px solid var(--line);z-index:5}
+  .tabs button{background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:6px 12px;font:inherit;cursor:pointer}
+  .tabs button[aria-selected=true]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+  .state{display:none;padding-top:16px}
+  .state.on{display:block}
+  h1{font-size:18px;margin:0}
+  h2{font-size:14px;margin:18px 0 8px}
+  .sub{color:var(--muted);font-size:12px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:12px}
+  .fam{border:1px solid var(--line);border-radius:var(--r);margin-bottom:10px}
+  .fam>.head{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;cursor:pointer}
+  .fam .idx{color:var(--faint);margin-right:6px}
+  .fam .cnt{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 8px}
+  .cond{border:1px solid var(--line);border-radius:8px;padding:10px;margin:8px}
+  .cond.sel{border-color:#3a4658;background:#161b22}
+  .seg{display:inline-flex;gap:4px;border:1px solid var(--line);border-radius:8px;padding:2px;margin-top:6px}
+  .seg button{background:transparent;border:0;color:var(--muted);border-radius:6px;padding:3px 8px;font:inherit;cursor:pointer}
+  .seg button.on{background:var(--fg);color:var(--bg)}
+  .seg.off{opacity:.4;pointer-events:none}
+  .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:8px 0 4px}
+  .recap{border:1px solid var(--line);border-radius:8px;padding:10px;background:#0f1218}
+  .sticky{position:fixed;left:0;right:0;bottom:0;background:#0c0e12ee;border-top:1px solid var(--line);backdrop-filter:blur(6px)}
+  .sticky .in{max-width:1120px;margin:0 auto;padding:12px 16px;display:flex;justify-content:space-between;gap:12px;align-items:center}
+  .btn{background:transparent;border:1px solid var(--line);color:var(--fg);border-radius:8px;padding:6px 12px;font:inherit;cursor:pointer}
+  .btn.pri{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+  .chip{border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:12px;color:var(--muted);cursor:pointer}
+  .chip.on{border-color:#3a4658;background:#161b22;color:var(--fg)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+  .combo{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px}
+  .blk{font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);margin:10px 0 4px;border-top:1px dashed var(--line);padding-top:8px}
+  .cl{display:flex;gap:8px;font-size:12.5px;margin:3px 0}
+  .cl .v{color:var(--faint)}
+  .yes .mk{color:var(--bull)} .no .mk{color:var(--bear)} .na .mk{color:var(--faint)}
+  .mention{border:1px solid var(--line);border-radius:8px;padding:8px;font-size:11px;color:var(--muted);background:#0f1218;margin:8px 0}
+  @media(max-width:430px){ .grid{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-s="build">Construction</button>
+    <button role="tab" aria-selected="false" data-s="results">Résultats</button>
+    <button role="tab" aria-selected="false" data-s="saved">Lectures enregistrées</button>
+    <button role="tab" aria-selected="false" data-s="empty0">Aucune condition</button>
+    <button role="tab" aria-selected="false" data-s="empty1">Aucun combo</button>
+  </div>
+
+  <!-- ÉTAT 1 — CONSTRUCTION -->
+  <section class="state on" data-state="build">
+    <h1>Compose ta lecture</h1>
+    <p class="sub">Choisis les faits structurels présents. Le scanner montre où ils sont réunis en ce moment. À toi le jugement.</p>
+
+    <div class="card" style="margin-top:12px">
+      <div class="fam">
+        <div class="head"><span><span class="idx">1.</span><b>Structure</b> <span class="sub">tendance, cassures, événements</span></span><span class="cnt">2 actives</span></div>
+        <div class="cond sel">
+          <label><input type="checkbox" checked> La tendance structurelle est <span title="Concept" style="color:var(--faint)">ⓘ</span></label>
+          <div><div class="lbl">Tendance</div><div class="seg"><button>Haussière</button><button class="on">Baissière</button><button>Indéterminée</button></div></div>
+        </div>
+        <div class="cond sel">
+          <label><input type="checkbox" checked> Un BOS est survenu dans les N dernières bougies <span style="color:var(--faint)">ⓘ</span></label>
+          <div><div class="lbl">Fenêtre (bougies)</div><div class="seg"><button>5</button><button class="on">10</button><button>20</button><button>50</button></div></div>
+        </div>
+        <div class="cond">
+          <label><input type="checkbox"> Le dernier événement détecté est <span style="color:var(--faint)">ⓘ</span></label>
+          <div><div class="lbl">Événement</div><div class="seg off"><button class="on">BOS ↑</button><button>BOS ↓</button><button>CHOCH ↑</button><button>CHOCH ↓</button></div></div>
+        </div>
+      </div>
+      <div class="fam">
+        <div class="head"><span><span class="idx">2.</span><b>Zones</b> <span class="sub">Order Blocks, Fair Value Gaps</span></span><span class="cnt">1 active</span></div>
+        <div class="cond sel">
+          <label><input type="checkbox" checked> Le prix est dans un Order Block</label>
+          <div><div class="lbl">Direction</div><div class="seg"><button class="on">Toute</button><button>Haussier</button><button>Baissier</button></div></div>
+        </div>
+      </div>
+      <div class="fam"><div class="head"><span><span class="idx">3.</span><b>Liquidité</b> <span class="sub">poches, prises, égaux</span></span><span class="cnt">aucune active</span></div></div>
+      <div class="fam"><div class="head"><span><span class="idx">4.</span><b>Contexte</b> <span class="sub">phase, volatilité, range, session</span></span><span class="cnt">aucune active</span></div></div>
+
+      <div style="margin-top:10px" class="card">
+        <span class="sub">Combinaison :</span> <span class="seg"><button class="on">Toutes (ET)</button><button>Au moins une (OU)</button></span>
+      </div>
+
+      <div class="recap">
+        <div class="lbl">Ta lecture, en une phrase <span style="float:right;color:var(--muted)">⧉ Copier</span></div>
+        La tendance structurelle est (Baissière) et Un BOS est survenu dans les N dernières bougies (10 bougies) et Le prix est dans un Order Block (Toute).
+      </div>
+    </div>
+  </section>
+
+  <!-- ÉTAT 2 — RÉSULTATS -->
+  <section class="state" data-state="results">
+    <h1>Scanner</h1><p class="sub">Tes conditions, présentes et factuelles — sans score, sans classement.</p>
+    <div class="lbl" style="margin-top:12px">Ma lecture — conditions actives</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap"><span class="chip on">Tes conditions (toutes)</span><span class="chip on">La tendance structurelle est</span><span class="chip on">Prix dans un OB</span></div>
+    <div class="mention">Palette fermée, au présent. Toute condition prédictive est refusée. Aucun classement.</div>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0">
+      <span class="chip on">Correspondances (1)</span><span class="chip on">Presque (2)</span><span class="chip on">Non correspondants (1)</span><span class="chip on">Non évaluables (1)</span>
+    </div>
+
+    <div class="grid">
+      <div class="combo">
+        <b>XAU/USD</b> <span class="sub">· M15</span> <span style="float:right;color:var(--faint);font-size:11px">2 de tes 2 · 1 non évaluable</span>
+        <div class="blk">Ce qui correspond</div>
+        <div class="cl yes"><span class="mk">✓</span><span>La tendance <span class="v">— baissière observée (cible : baissière).</span></span></div>
+        <div class="cl yes"><span class="mk">✓</span><span>Prix dans un OB <span class="v">— OB 4028.59 – 4030.15.</span></span></div>
+        <div class="blk">Ce qui va à l'encontre</div>
+        <div class="cl no"><span class="mk">·</span><span class="v">Rien parmi tes conditions évaluables.</span></div>
+        <div class="blk">Non évaluable ici (donnée absente)</div>
+        <div class="cl na"><span class="mk">–</span><span>Dernier événement <span class="v">— aucun événement daté.</span></span></div>
+        <div class="blk">Contexte que tu n'as pas demandé</div>
+        <div class="sub">Tendance : baissière · Tendance · MTF H4 ↘ · H1 ↘ · 2 OB · 1 FVG actifs · range 4010–4055</div>
+        <div class="sub" style="margin-top:4px">Prix 4029.30 · bougie clôturée il y a 2 min</div>
+        <div style="margin-top:8px"><span class="btn">Analyser →</span> <span class="btn">Ouvrir dans le graphique</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ÉTAT 3 — LECTURES ENREGISTRÉES -->
+  <section class="state" data-state="saved">
+    <h1>Mes lectures enregistrées</h1>
+    <p class="sub">Conservées sur cet appareil uniquement — elles ne sont pas synchronisées. Change d'ordinateur et elles ne suivent pas, sauf à les exporter.</p>
+    <div class="mention">Le compte de combos est un constat, pas un classement : une lecture qui remonte sept combos n'est pas meilleure qu'une lecture qui n'en remonte aucun — elle est plus large.</div>
+    <div class="card"><span class="btn">Exporter</span> <span class="btn">Importer</span> <span class="sub">Déplace tes lectures d'un appareil à l'autre en texte.</span></div>
+    <div class="card">
+      <b>London sweep M15</b> <span class="sub">· 3 conditions · ET · utilisée le 30 juil.</span>
+      <div style="margin-top:8px"><span class="btn">Charger</span> <span class="btn">Renommer</span> <span class="btn">Dupliquer</span> <span class="btn">Supprimer</span></div>
+    </div>
+    <div class="card" style="border-color:var(--bear)">
+      <b>Vieille lecture</b> <span class="chip" style="color:var(--bear);border-color:var(--bear)">Invalide</span>
+      <ul style="color:var(--bear);font-size:12px"><li>Condition non reconnue : « ob_fvg_confluence » (condition 2).</li></ul>
+      <span class="sub">Chargement désactivé — condition disparue signalée, jamais modifiée en silence.</span>
+    </div>
+  </section>
+
+  <!-- ÉTAT 4 — AUCUNE CONDITION -->
+  <section class="state" data-state="empty0">
+    <h1>Compose ta lecture</h1>
+    <div class="card">
+      <p>Aucune condition cochée. Choisis des faits dans les familles ci-dessous, ou charge une lecture enregistrée.</p>
+      <div style="display:flex;gap:6px;flex-wrap:wrap"><span class="chip">Structure</span><span class="chip">Zones</span><span class="chip">Liquidité</span><span class="chip">Contexte</span><span class="chip">Mes lectures enregistrées</span></div>
+      <div class="mention">Zéro condition ne signifie pas « tous les marchés » : sans condition, il n'y a rien à lire.</div>
+    </div>
+  </section>
+
+  <!-- ÉTAT 5 — AUCUN COMBO -->
+  <section class="state" data-state="empty1">
+    <h1>Scanner</h1>
+    <div class="card">
+      <p><b>Aucun combo ne réunit ta lecture. Ce n'est pas une erreur.</b></p>
+      <p class="sub">Tes conditions sont réunies nulle part en ce moment. Un scan qui ne remonte rien est une réponse, pas une panne — rien n'est masqué, rien n'est assoupli.</p>
+      <div class="lbl">Combos remplissant chaque condition ISOLÉMENT :</div>
+      <div style="display:flex;justify-content:space-between"><span>La tendance structurelle est</span><span class="sub">3 combos</span></div>
+      <div style="display:flex;justify-content:space-between"><span>Prix dans un Order Block</span><span class="sub">1 combo</span></div>
+      <div style="display:flex;justify-content:space-between"><span>Un BOS est survenu…</span><span class="sub">0 combo</span></div>
+      <p class="sub" style="margin-top:8px">Ces comptes sont indépendants : ils ne s'additionnent pas et ne disent rien de ce que donnerait une combinaison partielle.</p>
+    </div>
+  </section>
+</div>
+
+<div class="sticky"><div class="in"><span class="sub">3 conditions cochées</span><span><span class="btn">Annuler</span> <span class="btn pri">Voir les résultats</span></span></div></div>
+
+<script>
+  const tabs=[...document.querySelectorAll('.tabs button')];
+  const states=[...document.querySelectorAll('.state')];
+  tabs.forEach(t=>t.onclick=()=>{
+    tabs.forEach(x=>x.setAttribute('aria-selected', x===t));
+    states.forEach(s=>s.classList.toggle('on', s.dataset.state===t.dataset.s));
+  });
+</script>
+</body>
+</html>
