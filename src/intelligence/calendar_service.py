@@ -171,6 +171,46 @@ class CalendarService:
             generated_at=now,
         )
 
+    def get_event(
+        self, event_id: str, now: Optional[datetime] = None
+    ) -> CalendarResponse:
+        """Serve ONE event by its stable id, WITHOUT any window (REC point 1).
+
+        The per-event detail page must never depend on a list window: a
+        deep-linked event exists by definition. Returns a CalendarResponse whose
+        ``events`` holds exactly the matching event (or is empty when the id
+        genuinely does not exist), plus its source attribution and freshness —
+        the same shape the detail page already renders."""
+        now = self._coerce_now(now)
+        self._maybe_refresh(now)
+
+        cached = self._store.get_event_by_id(event_id)
+        events = []
+        if cached is not None:
+            ev = self._to_schema(cached)
+            ev.actual_state = compute_value_state(
+                ev.series_code, ev.actual, ev.scheduled_at, now
+            )
+            events.append(ev)
+
+        last_success, stale = self._freshness(now)
+        coverage = CalendarCoverage(
+            source=self._provider.source_name,
+            feed_start=None,
+            feed_end=None,
+            partial=False,
+            last_success=last_success,
+            stale_sources=stale,
+        )
+        return CalendarResponse(
+            events=events,
+            window_start=now,
+            window_end=now,
+            coverage=coverage,
+            attribution=self._attribution_for(events),
+            generated_at=now,
+        )
+
     # ------------------------------------------------------------------ #
     # Internals
     # ------------------------------------------------------------------ #
@@ -238,25 +278,40 @@ class CalendarService:
             self._store.upsert_events(persisted, fetched_at=now)
 
     def _enrich_values(self, events: List[CalendarCacheEvent], now: datetime) -> None:
-        """Fetch the published value for PAST events that lack one, by stable
-        series code. A future event is left ``pending``; a series-less event is
-        left ``unavailable``; an unreachable fetch leaves the event ``unfetched``
-        (its ``fetched_at`` records the attempt). Never fabricates, never by title.
-        The store's upsert flags a revision if a stored value later changes."""
+        """Fetch published values by stable series code — never by title, never
+        fabricated. Two cases:
+
+        · PAST release (already published): fill its own ``actual`` (the value
+          published for that release) and ``previous`` (the prior period).
+        · FUTURE release (not published yet → stays ``pending``): its own value
+          does not exist, but the PREVIOUS period's value IS published. The latest
+          published observation (``point.actual``) is exactly that prior period, so
+          it fills ``previous`` — the upcoming release shows the last known figure
+          for context while its own value remains ``pending``.
+
+        A series-less event is left ``unavailable``; an unreachable fetch leaves
+        the event ``unfetched`` (its ``fetched_at`` records the attempt). The
+        store's upsert flags a revision only if a stored ``actual`` later changes."""
         fetcher = self._value_fetcher
         if fetcher is None:
             return
         for i, ce in enumerate(events):
-            if ce.actual is not None or ce.scheduled_at > now or not ce.series_code:
+            if not ce.series_code or ce.actual is not None:
                 continue
             point = fetcher.fetch_for(ce.source, ce.series_code)
             if point is None:
                 continue  # stays unfetched — the attempt is recorded via fetched_at
-            events[i] = dataclasses.replace(
-                ce,
-                actual=point.actual,
-                previous=point.previous if point.previous is not None else ce.previous,
-            )
+            if ce.scheduled_at > now:
+                # Upcoming: leave ``actual`` pending; the latest published value is
+                # the period BEFORE this release → it is the "previous".
+                if point.actual is not None:
+                    events[i] = dataclasses.replace(ce, previous=point.actual)
+            else:
+                events[i] = dataclasses.replace(
+                    ce,
+                    actual=point.actual,
+                    previous=point.previous if point.previous is not None else ce.previous,
+                )
 
     def _to_cache(self, ev: ProviderEvent, markets: List[str]) -> CalendarCacheEvent:
         return CalendarCacheEvent(

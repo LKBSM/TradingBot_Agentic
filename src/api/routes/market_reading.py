@@ -31,8 +31,14 @@ SUPPORTED_INSTRUMENTS = frozenset(supported_instruments())
 SUPPORTED_TIMEFRAMES = frozenset(supported_timeframes())
 
 
+# REC-1: SYNC endpoint on purpose. ``get_or_generate`` does blocking work
+# (detection + provider fetch, ~1.7s). As ``async def`` it ran ON the event loop
+# and froze EVERY other request — including the SubscriptionGate's
+# ``/api/access/me`` — for its whole duration, which left all pages stuck on the
+# loading skeleton. FastAPI runs a plain ``def`` path operation in a worker
+# thread, so a slow reading no longer blocks the loop. No behaviour/data change.
 @router.get("/market-reading", response_model=MarketReading)
-async def get_market_reading(
+def get_market_reading(
     request: Request,
     instrument: str = Query(..., description="XAUUSD or EURUSD"),
     timeframe: str = Query(..., description="M15, H1, or H4"),

@@ -1902,7 +1902,7 @@
       "measuresTitle": "Was die Engine bei früheren Veröffentlichungen gemessen hat",
       "measuresBadge": "Kursbewegung",
       "notFoundTitle": "Veröffentlichung nicht gefunden",
-      "notFound": "Diese Veröffentlichung liegt nicht im aktuellen Kalenderfenster.",
+      "notFound": "Diese Veröffentlichung existiert nicht: der Link ist möglicherweise falsch, oder die Veröffentlichung wurde entfernt.",
       "nono": {
         "title": "Was diese Seite nicht sagt",
         "items": {

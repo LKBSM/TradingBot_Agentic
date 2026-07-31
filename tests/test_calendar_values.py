@@ -115,6 +115,20 @@ def test_three_absences_are_distinct(tmp_path):
     assert by["fomc"].actual_state == "unavailable"
 
 
+def test_upcoming_event_gets_previous_value_stays_pending(tmp_path):
+    # REC point 2: an UPCOMING release does not have its own value yet (pending),
+    # but the previous period's value IS published and must be shown. The latest
+    # published observation (fetcher.actual) fills `previous`; `actual` stays None.
+    events = [_pe("future_series", when=NOW + timedelta(days=5))]
+    resp = _svc(
+        events, tmp_path, fetcher=MultiValueFetcher({"bls": _FakeFetcher(2.0)})
+    ).get_calendar(now=NOW, lookahead_minutes=30 * 1440, lookback_minutes=1440)
+    e = resp.events[0]
+    assert e.actual is None            # its own value does not exist yet
+    assert e.actual_state == "pending"
+    assert e.previous == 2.0           # last published value, shown for context
+
+
 def test_enricher_publishes_a_past_value(tmp_path):
     events = [_pe("past_series", when=NOW - timedelta(days=5))]
     resp = _svc(events, tmp_path, fetcher=MultiValueFetcher({"bls": _FakeFetcher(3.4)})).get_calendar(

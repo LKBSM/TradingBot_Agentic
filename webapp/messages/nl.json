@@ -1902,7 +1902,7 @@
       "measuresTitle": "Wat de engine bij vorige publicaties heeft gemeten",
       "measuresBadge": "Koersbeweging",
       "notFoundTitle": "Publicatie niet gevonden",
-      "notFound": "Deze publicatie valt niet binnen het huidige kalendervenster.",
+      "notFound": "Deze publicatie bestaat niet: de link is mogelijk onjuist, of de publicatie is verwijderd.",
       "nono": {
         "title": "Wat deze pagina niet zegt",
         "items": {

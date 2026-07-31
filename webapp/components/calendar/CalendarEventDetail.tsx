@@ -5,15 +5,11 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { ChevronLeft } from 'lucide-react';
 import { useLocalizedHref } from '@/lib/i18n/href';
-import { useCalendar } from '@/lib/calendar/useCalendar';
+import { useCalendarEvent } from '@/lib/calendar/useCalendar';
 import { countdown, hmInZone } from '@/lib/calendar/grouping';
 import { parseUtc, utcOffsetLabel, formatLocalDayLong } from '@/lib/time/localTime';
 import type { CalendarEvent, CalendarResponse } from '@/types/calendar';
 import './calendar.css';
-
-// Wide window so a deep-linked event is found even if the list scrolled.
-const LOOKAHEAD_DAYS = 30;
-const LOOKBACK_DAYS = 30;
 
 /** Render a published value AS PUBLISHED — no conversion, no re-rounding. */
 function asPublished(n: number | null): string {
@@ -47,14 +43,17 @@ export function CalendarEventDetail({
 }) {
   const t = useTranslations('calendar');
   const lh = useLocalizedHref();
-  const hook = useCalendar({ lookaheadDays: LOOKAHEAD_DAYS, lookbackDays: LOOKBACK_DAYS });
+  // REC point 1: load the event by its STABLE ID from storage, independent of any
+  // window. A deep-linked event exists by definition; "introuvable" now means the
+  // id genuinely does not exist (bad manual URL / deleted), never "out of window".
+  const hook = useCalendarEvent(eventId);
   const data = injectedData !== undefined ? injectedData : hook.data;
   const isLoading = injectedData !== undefined ? false : hook.isLoading;
   const error = injectedData !== undefined ? null : hook.error;
   const now = React.useMemo(() => injectedNow ?? new Date(), [injectedNow]);
 
-  // Match the full id ("<source>:<ref>") or the bare ref — the App news module
-  // deep-links with the raw pipeline ref (no source prefix).
+  // The by-id endpoint returns exactly the matching event (or none). Match the
+  // full id, or the bare ref — the App news module deep-links with a raw ref.
   const ev =
     data?.events.find(
       (e) => e.event_id === eventId || e.event_id.split(':').pop() === eventId,

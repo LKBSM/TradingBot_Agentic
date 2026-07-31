@@ -123,6 +123,48 @@ def test_null_fields_serialize_as_null(tmp_path):
     assert ev["value_unit"] is None
 
 
+def test_event_by_id_loads_outside_the_list_window(tmp_path):
+    """REC point 1: an event far beyond the list window (±30 days) is NOT in the
+    list, but the per-event endpoint returns it by id — the detail no longer
+    depends on a window."""
+    far = _pe("USD", ref="far", when=NOW + timedelta(days=60))
+    client = TestClient(_make_app(tmp_path, [far], _BLS_ATT))
+    # not in the list (server caps at 30 days)
+    assert client.get("/api/calendar?lookahead_days=30").json()["events"] == []
+    # …but reachable by id, with its attribution
+    body = client.get("/api/calendar/event/bls:far").json()
+    assert len(body["events"]) == 1
+    assert body["events"][0]["event_id"] == "bls:far"
+    assert len(body["attribution"]) == 1
+
+
+def test_event_by_id_empty_only_for_a_genuinely_unknown_id(tmp_path):
+    client = TestClient(_make_app(tmp_path, [_pe("USD", ref="known")], _BLS_ATT))
+    assert len(client.get("/api/calendar/event/bls:known").json()["events"]) == 1
+    # a genuinely non-existent id → 200 with no event (never a 500)
+    r = client.get("/api/calendar/event/bogus:nope")
+    assert r.status_code == 200
+    assert r.json()["events"] == []
+
+
+def test_every_listed_event_is_reachable_by_id(tmp_path):
+    """Mandatory REC test: every event shown in the calendar leads to a detail
+    page that loads — no exception. Covers in-window AND far events together."""
+    events = [
+        _pe("USD", ref="a", when=NOW + timedelta(hours=2)),
+        _pe("EUR", ref="b", when=NOW + timedelta(days=5)),
+        _pe("USD", ref="c", when=NOW + timedelta(days=29)),
+    ]
+    atts = _BLS_ATT + [ProviderAttribution("bls", "Bureau of Labor Statistics", "pub", "https://x")]
+    client = TestClient(_make_app(tmp_path, events, atts))
+    listed = client.get("/api/calendar?lookahead_days=30&lookback_days=3").json()["events"]
+    assert len(listed) >= 3
+    for ev in listed:
+        body = client.get(f"/api/calendar/event/{ev['event_id']}").json()
+        assert len(body["events"]) == 1, f"{ev['event_id']} not reachable by id"
+        assert body["events"][0]["event_id"] == ev["event_id"]
+
+
 def test_real_default_provider_serves_events_over_http(tmp_path):
     """End-to-end production path: the REAL official aggregator (no injection) +
     the shipped schedule serve real, attributed events over the HTTP endpoint —
