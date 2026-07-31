@@ -92,6 +92,68 @@ export async function fetchCalendar(
   return parsed;
 }
 
+/**
+ * Fetch ONE event by its stable id, independent of any window (REC point 1).
+ * Returns a CalendarResponse whose `events` holds the matching event, or is
+ * empty when the id genuinely does not exist. Same timeout/shape guarantees.
+ */
+export async function fetchCalendarEvent(
+  eventId: string,
+  options: { signal?: AbortSignal; timeoutMs?: number } = {},
+): Promise<CalendarResponse> {
+  const { signal, timeoutMs = DEFAULT_TIMEOUT_MS } = options;
+  const url = `${ENDPOINT}/event/${encodeURIComponent(eventId)}`;
+
+  const controller = new AbortController();
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs);
+  const onCallerAbort = () => controller.abort();
+  if (signal) {
+    if (signal.aborted) controller.abort();
+    else signal.addEventListener('abort', onCallerAbort, { once: true });
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: 'GET',
+      headers: { accept: 'application/json' },
+      signal: controller.signal,
+    });
+  } catch (err) {
+    const message = timedOut
+      ? 'Délai dépassé en interrogeant le calendrier.'
+      : err instanceof Error
+        ? err.message
+        : 'Erreur réseau';
+    throw new CalendarError(0, `Service de calendrier injoignable : ${message}`);
+  } finally {
+    clearTimeout(timer);
+    signal?.removeEventListener('abort', onCallerAbort);
+  }
+
+  if (!res.ok) {
+    throw new CalendarError(
+      res.status,
+      'Le calendrier a rencontré une erreur. Réessaie dans un instant.',
+    );
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = await res.json();
+  } catch {
+    throw new CalendarError(res.status, 'Réponse du calendrier illisible.');
+  }
+  if (!isCalendarShape(parsed)) {
+    throw new CalendarError(res.status, 'Réponse du calendrier malformée.');
+  }
+  return parsed;
+}
+
 function isCalendarShape(value: unknown): value is CalendarResponse {
   if (typeof value !== 'object' || value === null) return false;
   const v = value as Record<string, unknown>;

@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { fetchCalendar } from './api';
+import { fetchCalendar, fetchCalendarEvent } from './api';
 import type { CalendarResponse } from '@/types/calendar';
 
 export interface UseCalendarResult {
@@ -59,6 +59,51 @@ export function useCalendar(options: {
       if (timer) clearInterval(timer);
     };
   }, [lookaheadDays, lookbackDays, pollMs, nonce, refresh]);
+
+  return { data, isLoading, error, refresh };
+}
+
+/**
+ * Fetch ONE event by its stable id (REC point 1). The per-event detail must not
+ * depend on a list window — a deep-linked event exists by definition. Returns
+ * the same CalendarResponse shape, holding the single event (or empty when the
+ * id genuinely does not exist).
+ */
+export function useCalendarEvent(eventId: string): UseCalendarResult {
+  const [data, setData] = React.useState<CalendarResponse | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<Error | null>(null);
+  const [nonce, setNonce] = React.useState(0);
+  const seq = React.useRef(0);
+
+  const refresh = React.useCallback(() => setNonce((n) => n + 1), []);
+
+  React.useEffect(() => {
+    const token = ++seq.current;
+    const controller = new AbortController();
+    let cancelled = false;
+    setIsLoading(true);
+
+    fetchCalendarEvent(eventId, { signal: controller.signal })
+      .then((resp) => {
+        if (cancelled || token !== seq.current) return;
+        setData(resp);
+        setError(null);
+      })
+      .catch((err: unknown) => {
+        if (cancelled || token !== seq.current) return;
+        setError(err instanceof Error ? err : new Error('calendar error'));
+      })
+      .finally(() => {
+        if (cancelled || token !== seq.current) return;
+        setIsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [eventId, nonce]);
 
   return { data, isLoading, error, refresh };
 }

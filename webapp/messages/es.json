@@ -1902,7 +1902,7 @@
       "measuresTitle": "Lo que el motor midió en publicaciones anteriores",
       "measuresBadge": "Movimiento de precio",
       "notFoundTitle": "Publicación no encontrada",
-      "notFound": "Esta publicación no está en la ventana actual del calendario.",
+      "notFound": "Esta publicación no existe: puede que el enlace sea erróneo, o que la publicación se haya retirado.",
       "nono": {
         "title": "Lo que esta página no dice",
         "items": {

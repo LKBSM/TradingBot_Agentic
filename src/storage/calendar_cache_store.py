@@ -286,6 +286,22 @@ class CalendarCacheStore:
             finally:
                 conn.close()
 
+    def get_event_by_id(self, event_id: str) -> Optional[CalendarCacheEvent]:
+        """Fetch ONE event by its stable id, independent of any time window.
+        Returns None only when that id genuinely does not exist in storage.
+        Backs the per-event detail page so a deep-linked event always loads,
+        even outside the list's window (REC point 1)."""
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                cur = conn.execute(
+                    "SELECT * FROM calendar_cache WHERE event_id = ?", (event_id,)
+                )
+                row = cur.fetchone()
+                return self._row_to_event(row) if row is not None else None
+            finally:
+                conn.close()
+
     def coverage_bounds(self) -> Tuple[Optional[datetime], Optional[datetime]]:
         """Earliest and latest ``scheduled_at`` across ALL cached rows, or
         (None, None) when empty. Feeds the honest coverage indicator."""

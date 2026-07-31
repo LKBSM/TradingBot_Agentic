@@ -1908,7 +1908,7 @@
       "measuresTitle": "What the engine measured at previous releases",
       "measuresBadge": "Price move",
       "notFoundTitle": "Release not found",
-      "notFound": "This release is not in the calendar's current window.",
+      "notFound": "This release does not exist: the link may be wrong, or the release was removed.",
       "nono": {
         "title": "What this page does not say",
         "items": {

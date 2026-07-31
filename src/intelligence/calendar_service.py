@@ -171,6 +171,46 @@ class CalendarService:
             generated_at=now,
         )
 
+    def get_event(
+        self, event_id: str, now: Optional[datetime] = None
+    ) -> CalendarResponse:
+        """Serve ONE event by its stable id, WITHOUT any window (REC point 1).
+
+        The per-event detail page must never depend on a list window: a
+        deep-linked event exists by definition. Returns a CalendarResponse whose
+        ``events`` holds exactly the matching event (or is empty when the id
+        genuinely does not exist), plus its source attribution and freshness —
+        the same shape the detail page already renders."""
+        now = self._coerce_now(now)
+        self._maybe_refresh(now)
+
+        cached = self._store.get_event_by_id(event_id)
+        events = []
+        if cached is not None:
+            ev = self._to_schema(cached)
+            ev.actual_state = compute_value_state(
+                ev.series_code, ev.actual, ev.scheduled_at, now
+            )
+            events.append(ev)
+
+        last_success, stale = self._freshness(now)
+        coverage = CalendarCoverage(
+            source=self._provider.source_name,
+            feed_start=None,
+            feed_end=None,
+            partial=False,
+            last_success=last_success,
+            stale_sources=stale,
+        )
+        return CalendarResponse(
+            events=events,
+            window_start=now,
+            window_end=now,
+            coverage=coverage,
+            attribution=self._attribution_for(events),
+            generated_at=now,
+        )
+
     # ------------------------------------------------------------------ #
     # Internals
     # ------------------------------------------------------------------ #
