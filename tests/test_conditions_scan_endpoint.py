@@ -106,7 +106,7 @@ def _make_app(assembler=None, *, with_assembler=True):
 
 
 def test_scan_returns_full_match_with_met_conditions():
-    # mtf_aligned is judged from each timeframe's OWN regime.trend (all bullish by
+    # higher_tf_agrees compares the nearest higher unit's regime.trend (all bullish by
     # default), so the three XAU readings must all be present.
     readings = {
         ("XAUUSD", "M15"): _reading("XAUUSD", "M15", order_blocks=[_ob(1990, 2010)]),
@@ -122,7 +122,7 @@ def test_scan_returns_full_match_with_met_conditions():
         json={
             "logic": "AND",
             "conditions": [
-                {"type": "mtf_aligned", "direction": "bullish"},
+                {"type": "higher_tf_agrees", "relation": "same"},
                 {"type": "price_in_ob", "direction": "any"},
             ],
         },
@@ -154,7 +154,7 @@ def test_scan_reports_partial_match_transparently():
         "/api/conditions-scan",
         json={
             "logic": "AND",
-            "conditions": [{"type": "mtf_aligned"}, {"type": "price_in_ob"}],
+            "conditions": [{"type": "higher_tf_agrees", "relation": "same"}, {"type": "price_in_ob"}],
         },
     )
     assert resp.status_code == 200
@@ -162,7 +162,7 @@ def test_scan_reports_partial_match_transparently():
     assert xau["matched"] is False
     assert xau["met_count"] == 1
     assert {c["type"] for c in xau["conditions_unmet"]} == {"price_in_ob"}
-    assert {c["type"] for c in xau["conditions_met"]} == {"mtf_aligned"}
+    assert {c["type"] for c in xau["conditions_met"]} == {"higher_tf_agrees"}
 
 
 def test_scan_is_read_only_touches_only_get_latest_reading():
@@ -174,7 +174,7 @@ def test_scan_is_read_only_touches_only_get_latest_reading():
 
     resp = client.post(
         "/api/conditions-scan",
-        json={"logic": "OR", "conditions": [{"type": "mtf_aligned"}]},
+        json={"logic": "OR", "conditions": [{"type": "higher_tf_agrees", "relation": "same"}]},
     )
     assert resp.status_code == 200
     # Exactly the perimeter combos read, in fixed order, and nothing else mutated.
@@ -204,7 +204,7 @@ def test_scan_503_when_assembler_not_wired():
     app = _make_app(with_assembler=False)
     client = TestClient(app)
     resp = client.post(
-        "/api/conditions-scan", json={"logic": "AND", "conditions": [{"type": "mtf_aligned"}]}
+        "/api/conditions-scan", json={"logic": "AND", "conditions": [{"type": "higher_tf_agrees", "relation": "same"}]}
     )
     assert resp.status_code == 503
 
@@ -248,7 +248,7 @@ def test_scan_response_carries_freshness_fields():
 
     resp = client.post(
         "/api/conditions-scan",
-        json={"logic": "OR", "conditions": [{"type": "mtf_aligned"}]},
+        json={"logic": "OR", "conditions": [{"type": "higher_tf_agrees", "relation": "same"}]},
     )
     assert resp.status_code == 200
     m = next(x for x in resp.json()["matches"] if x["timeframe"] == "M15")

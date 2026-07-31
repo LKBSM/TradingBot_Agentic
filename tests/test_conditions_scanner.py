@@ -111,26 +111,36 @@ def test_trend_is_indeterminate_supported():
     assert evaluate_condition(r, {"type": "trend_is", "trend": "indeterminate"})["met"] is True
 
 
-def test_mtf_aligned_met_when_three_tf_same_direction():
-    res = evaluate_condition(_reading(), {"type": "mtf_aligned", "direction": "any"}, _ALIGNED_BULL)
+def test_higher_tf_agrees_same_when_higher_unit_matches():
+    # M15 bullish, nearest higher unit (H1) bullish → « même sens ».
+    res = evaluate_condition(_reading(trend="bullish"), {"type": "higher_tf_agrees", "relation": "same"}, _ALIGNED_BULL)
     assert res["met"] is True and res["available"] is True
 
 
-def test_mtf_aligned_unavailable_when_a_timeframe_is_missing():
-    res = evaluate_condition(_reading(), {"type": "mtf_aligned"}, {"M15": "bullish", "H1": "bullish"})
-    assert res["met"] is False and res["available"] is False
+def test_higher_tf_agrees_opposite():
+    trends = {"M15": "bullish", "H1": "bearish", "H4": "bearish"}
+    r = _reading(trend="bullish")
+    assert evaluate_condition(r, {"type": "higher_tf_agrees", "relation": "opposite"}, trends)["met"] is True
+    assert evaluate_condition(r, {"type": "higher_tf_agrees", "relation": "same"}, trends)["met"] is False
 
 
-def test_mtf_aligned_indeterminate_blocks_accord():
-    trends = {"M15": "indeterminate", "H1": "bullish", "H4": "bullish"}
-    res = evaluate_condition(_reading(), {"type": "mtf_aligned"}, trends)
-    assert res["met"] is False and res["available"] is True
+def test_higher_tf_agrees_indeterminate_when_higher_unit_indeterminate():
+    trends = {"M15": "bullish", "H1": "indeterminate"}
+    res = evaluate_condition(_reading(trend="bullish"), {"type": "higher_tf_agrees", "relation": "indeterminate"}, trends)
+    assert res["met"] is True and res["available"] is True
 
 
-def test_mtf_aligned_respects_requested_direction():
-    r = _reading()
-    assert evaluate_condition(r, {"type": "mtf_aligned", "direction": "bearish"}, _ALIGNED_BEAR)["met"] is True
-    assert evaluate_condition(r, {"type": "mtf_aligned", "direction": "bullish"}, _ALIGNED_BEAR)["met"] is False
+def test_higher_tf_agrees_non_evaluable_without_higher_unit():
+    # Only the scanned unit is loaded → no higher unit → NON-EVALUABLE (C1-c),
+    # never met by default nor a failure.
+    res = evaluate_condition(_reading(trend="bullish"), {"type": "higher_tf_agrees", "relation": "same"}, {"M15": "bullish"})
+    assert res["available"] is False and res["met"] is False
+
+
+def test_higher_tf_agrees_names_the_compared_unit():
+    # C1-b: the higher unit is NAMED in the result, not "unité supérieure".
+    res = evaluate_condition(_reading(trend="bullish"), {"type": "higher_tf_agrees", "relation": "same"}, _ALIGNED_BULL)
+    assert "1 h" in res["detail"] or "4 h" in res["detail"]
 
 
 def test_last_event_is_uses_most_recent_journal_entry():
@@ -301,7 +311,7 @@ def test_session_is_non_evaluable_for_continuous_market():
 def test_and_logic_full_match():
     r = _reading(close_price=2000.0, order_blocks=[_ob(1990, 2010)])
     out = evaluate_reading(
-        r, [{"type": "mtf_aligned"}, {"type": "price_in_ob"}], "AND", _ALIGNED_BULL,
+        r, [{"type": "higher_tf_agrees", "relation": "same"}, {"type": "price_in_ob"}], "AND", _ALIGNED_BULL,
     )
     assert out["matched"] is True and out["met_count"] == 2 and out["total"] == 2
     assert out["conditions_unmet"] == []
@@ -352,9 +362,12 @@ def test_every_palette_entry_present_tense_with_family_and_controls():
 
 def test_removed_and_blocked_types_are_not_exposed():
     types = {p["type"] for p in PALETTE}
-    # Removed: the redundant confluence and the legacy BOS-level retest.
+    # Removed: the redundant confluence, the legacy BOS-level retest, and the
+    # fixed 3-TF alignment (replaced by the relative higher_tf_agrees, C1).
     assert "ob_fvg_confluence" not in types
     assert "retest_in_progress" not in types
+    assert "mtf_aligned" not in types
+    assert "higher_tf_agrees" in types
     # Blocked (documented but not offerable) must not be in the palette/allowlist.
     for b in BLOCKED_PALETTE:
         assert b["type"] not in types

@@ -28,9 +28,11 @@ SC-1 palette changes vs the legacy 14-type palette:
 - REMOVED the legacy ``retest_in_progress`` (a BOS-level retest state-machine
   flag) and REPLACED it with the factual :data:`price_in_tested_zone` (« price is
   inside an OB/FVG that has already been tested at least once »).
-- ``mtf_aligned`` is KEPT temporarily, relabelled to say EXACTLY what it compares
-  today (three fixed timeframes' structural trend). It will be retired in favour
-  of a per-« unit above » agreement condition once that alignment rule is wired.
+- The fixed 3-TF ``mtf_aligned`` is REMOVED in favour of :func:`_eval_higher_tf_agrees`
+  (« l'unité supérieure va… »): a RELATIVE comparison to the immediately-higher
+  unit, which works identically on all six units (a fixed set breaks at the top —
+  nothing above D1). The compared unit is NAMED in the result; on the highest
+  tracked unit the condition is non-evaluable (C1).
 - ``distribution`` is REMOVED from the exposed market-phase values: the phase
   derivation can no longer emit it (see the audit), and a condition that can only
   ever return zero is worse than an absent one.
@@ -91,6 +93,9 @@ EQ_KIND_VALUES = ("any", "highs", "lows")
 #: Intraday session (reading convention, from market_calendar — single source).
 SESSION_VALUES = ("asia", "london", "new_york", "overlap")
 
+#: How the immediately-higher timeframe relates to the scanned one (C1).
+RELATION_VALUES = ("same", "opposite", "indeterminate")
+
 #: Recency windows (IN BARS) offered for the « occurred within N candles » family.
 BARS_RECENCY_CHOICES = (5, 10, 20, 50)
 #: Recency windows (IN BARS) offered for « zone formed within N candles ».
@@ -133,19 +138,20 @@ PALETTE: List[Dict[str, Any]] = [
         "controls": [_control("trend", TREND_VALUES, "bullish")],
     },
     {
-        "type": "mtf_aligned",
-        "label": "Les 3 unités H4/H1/M15 s'accordent (structure)",
+        "type": "higher_tf_agrees",
         "family": "structure",
+        "label": "L'unité supérieure va",
         "description": (
-            "Les trois timeframes H4, H1 et M15 montrent la MÊME direction de "
-            "structure en ce moment (dernière cassure de même sens). Un timeframe "
-            "sans tendance structurelle établie (indéterminé) empêche l'accord. "
-            "Condition transitoire : elle compare trois unités fixes, non « l'unité "
-            "au-dessus » de celle scannée."
+            "La tendance de structure de l'unité de temps IMMÉDIATEMENT supérieure "
+            "va, en ce moment, dans le même sens que l'unité scannée, en sens "
+            "opposé, ou reste indéterminée. L'unité comparée est nommée dans le "
+            "résultat (« le 1 h va dans le même sens »). Sur l'unité la plus haute "
+            "suivie, il n'y a pas d'unité supérieure : la condition est non "
+            "évaluable — jamais remplie par défaut."
         ),
-        "supports_direction": True,
+        "supports_direction": False,
         "tense": "present",
-        "controls": [_control("direction", DIRECTION_VALUES, "any")],
+        "controls": [_control("relation", RELATION_VALUES, "same")],
     },
     {
         "type": "last_event_is",
@@ -527,65 +533,76 @@ def _result(cond_type: str, met: bool, detail: str, *, available: bool = True) -
     }
 
 
-# ── structure: mtf_aligned (kept, relabelled) ────────────────────────────────
+# ── structure: higher_tf_agrees (C1 — replaces the fixed 3-TF alignment) ──────
 
-_MTF_ALIGN_TFS = (("H4", "h4"), ("H1", "h1"), ("M15", "m15"))
 _TREND_ADJ = {"bullish": "haussier", "bearish": "baissier", "indeterminate": "indéterminé"}
 
+#: Friendly French unit labels, so the result NAMES the compared unit
+#: (« le 1 h va dans le même sens ») rather than a raw id (C1-b).
+_TF_LABEL_FR = {
+    "M1": "1 min", "M5": "5 min", "M15": "15 min", "H1": "1 h",
+    "H4": "4 h", "D1": "1 jour", "W1": "1 semaine",
+}
 
-def _eval_mtf_aligned(
-    reading: Dict[str, Any], direction: str, instrument_trends: Optional[Dict[str, Optional[str]]]
+
+def _tf_label(tf: str) -> str:
+    return _TF_LABEL_FR.get((tf or "").upper(), tf)
+
+
+def _relation_of(current: Optional[str], higher: Optional[str]) -> str:
+    """Relation of the higher-unit structural trend to the current one."""
+    if current in (None, "indeterminate") or higher in (None, "indeterminate"):
+        return "indeterminate"
+    return "same" if current == higher else "opposite"
+
+
+def _eval_higher_tf_agrees(
+    reading: Dict[str, Any], relation: Optional[str],
+    instrument_trends: Optional[Dict[str, Optional[str]]],
 ) -> Dict[str, Any]:
-    """Do the instrument's H4/H1/M15 STRUCTURAL trends point the same way now?
+    """Does the IMMEDIATELY-higher timeframe's STRUCTURAL trend go the chosen way?
 
-    Reads each timeframe's OWN ``regime.trend`` (structural, TR-1), supplied by
-    the scan route as ``instrument_trends``. A missing sibling reading is a DATA
-    gap (non-evaluable), never a "no". A timeframe with an indeterminate
-    structural trend blocks the accord (never counted as agree nor disagree).
+    TR-1 is live on main: each reading's ``regime.trend`` is already the
+    structural trend (last uncontested BOS/CHOCH), so this compares STRUCTURE —
+    never a mere close displacement. The higher unit is the NEAREST perimeter
+    unit above the scanned one (registry ``alignment_timeframes``), and it is
+    NAMED in the detail (C1-b). On the highest tracked unit there is no unit
+    above → NON-EVALUABLE, never met by default nor counted as a failure (C1-c).
+    ``relation`` is the required relation: same / opposite / indeterminate.
     """
+    if relation not in RELATION_VALUES:
+        return _result("higher_tf_agrees", False, "Relation cible non précisée.")
     trends = instrument_trends or {}
-    by_tf = {tf: trends.get(tf) for tf, _ in _MTF_ALIGN_TFS}
-    summary = ", ".join(
-        f"{tf} {(_TREND_ADJ.get(by_tf[tf]) or by_tf[tf]) if by_tf[tf] else '·'}"
-        for tf, _ in _MTF_ALIGN_TFS
+    current_tf = reading.get("header", {}).get("timeframe") or ""
+    if not _tfreg.has(current_tf):
+        return _result("higher_tf_agrees", False, "Unité de temps inconnue.", available=False)
+    # Nearest higher unit we actually hold a reading for (named in the result).
+    higher_tf = next(
+        (tf for tf in _tfreg.alignment_timeframes(current_tf) if trends.get(tf)), None
     )
-
-    missing = [tf for tf, _ in _MTF_ALIGN_TFS if not by_tf[tf]]
-    if missing:
+    if higher_tf is None:
         return _result(
-            "mtf_aligned", False,
-            f"Accord indisponible — lecture manquante : {', '.join(missing)} ({summary}).",
+            "higher_tf_agrees", False,
+            "Aucune unité supérieure suivie au-dessus de cette unité — non évaluable.",
             available=False,
         )
-
-    indeterminate = [tf for tf, _ in _MTF_ALIGN_TFS if by_tf[tf] == "indeterminate"]
-    if indeterminate:
-        n = len(indeterminate)
+    current_trend = reading.get("regime", {}).get("trend")
+    if not current_trend:
         return _result(
-            "mtf_aligned", False,
-            f"Accord structurel incomplet — {n} unité(s) sur 3 sans tendance "
-            f"structurelle établie ({', '.join(indeterminate)}) — {summary}.",
+            "higher_tf_agrees", False, "Tendance de cette unité indisponible.", available=False
         )
-
-    axes = {tf: _trend_axis(by_tf[tf]) for tf, _ in _MTF_ALIGN_TFS}
-    axis_values = list(axes.values())
-    axes_aligned = all(a == axis_values[0] for a in axis_values)
-
-    if axes_aligned:
-        word = "haussiers" if axis_values[0] == "up" else "baissiers"
-        if direction == "any" or axis_values[0] == _trend_axis(direction):
-            return _result("mtf_aligned", True, f"Les 3 unités s'accordent ({word}) — {summary}.")
-        wanted = "haussiers" if direction == "bullish" else "baissiers"
-        return _result(
-            "mtf_aligned", False,
-            f"Les 3 unités s'accordent ({word}), pas {wanted} comme demandé — {summary}.",
-        )
-
-    h4, h1, m15 = axes["H4"], axes["H1"], axes["M15"]
-    if h4 == h1 and m15 != h4:
-        fem = "haussière" if h4 == "up" else "baissière"
-        return _result("mtf_aligned", False, f"M15 diverge de la structure H4 {fem} — {summary}.")
-    return _result("mtf_aligned", False, f"Les unités divergent — {summary}.")
+    higher_trend = trends.get(higher_tf)
+    observed = _relation_of(current_trend, higher_trend)
+    phrases = {
+        "same": f"Le {_tf_label(higher_tf)} va dans le même sens",
+        "opposite": f"Le {_tf_label(higher_tf)} va en sens opposé",
+        "indeterminate": f"Le {_tf_label(higher_tf)} est indéterminé",
+    }
+    want = {"same": "même sens", "opposite": "sens opposé", "indeterminate": "indéterminé"}[relation]
+    return _result(
+        "higher_tf_agrees", observed == relation,
+        f"{phrases[observed]} ({_TREND_ADJ.get(higher_trend, higher_trend)}) — cible : {want}.",
+    )
 
 
 # ── structure: trend_is / last_event_is / last_event_age ─────────────────────
@@ -1082,8 +1099,8 @@ def evaluate_condition(
     """Evaluate a single condition against a reading payload (pure).
 
     Returns ``{"type", "label", "met": bool, "available": bool, "detail": str}``.
-    ``detail`` always carries the observed value. ``instrument_trends`` (M15/H1/H4
-    → structural trend for THIS instrument) is used only by ``mtf_aligned``.
+    ``detail`` always carries the observed value. ``instrument_trends`` (per-TF
+    structural trend for THIS instrument) is used only by ``higher_tf_agrees``.
     Unknown types raise ``ValueError`` (callers validate against the palette).
     """
     cond_type = cond.get("type")
@@ -1091,8 +1108,8 @@ def evaluate_condition(
 
     if cond_type == "trend_is":
         return _eval_trend_is(reading, cond.get("trend"))
-    if cond_type == "mtf_aligned":
-        return _eval_mtf_aligned(reading, direction, instrument_trends)
+    if cond_type == "higher_tf_agrees":
+        return _eval_higher_tf_agrees(reading, cond.get("relation"), instrument_trends)
     if cond_type == "last_event_is":
         return _eval_last_event_is(reading, cond.get("event"))
     if cond_type == "last_event_age":
