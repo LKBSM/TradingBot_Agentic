@@ -155,6 +155,16 @@ describe('ScanResults — no-combo state & filters (SC-1)', () => {
     expect(screen.getByText('1 combo')).toBeInTheDocument();
   });
 
+  it('never proposes to loosen or remove a condition (product line #3)', () => {
+    renderResults(noComboResponse());
+    // The explicit reassurance is shown (the word « assouplir » appears only
+    // inside this denial, never as an action)…
+    expect(screen.getByText(/ne propose pas de/)).toBeInTheDocument();
+    // …and there is NO actionable affordance to relax / remove / widen a condition.
+    expect(screen.queryByRole('button', { name: /assouplir|relâcher|retirer|élargir/i })).toBeNull();
+    expect(screen.queryByRole('link', { name: /assouplir|relâcher|retirer|élargir/i })).toBeNull();
+  });
+
   it('renders the four display filters, each with its count, and never a sort control', () => {
     renderResults(noComboResponse());
     // Each label may appear both as a filter chip and as a section header — the

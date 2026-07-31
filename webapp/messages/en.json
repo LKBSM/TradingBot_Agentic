@@ -601,7 +601,7 @@
       "zone_kind": { "any": "OB or FVG", "ob": "Order Block", "fvg": "Fair Value Gap" },
       "event": { "bos_up": "BOS ↑", "bos_down": "BOS ↓", "choch_up": "CHOCH ↑", "choch_down": "CHOCH ↓" },
       "age_bucket": { "lt10": "Under 10", "10to50": "10 to 50", "gt50": "Over 50" },
-      "third": { "bottom": "Bottom", "middle": "Middle", "top": "Top" },
+      "third": { "bottom": "Lower", "middle": "Middle", "top": "Upper" },
       "eq_kind": { "any": "Lows or highs", "highs": "Highs", "lows": "Lows" },
       "session": { "asia": "Asia", "london": "London", "new_york": "New York", "overlap": "Overlap" }
     },
