@@ -57,7 +57,9 @@ export type AgeBucketChoice = 'lt10' | '10to50' | 'gt50';
 export type RangeThirdChoice = 'bottom' | 'middle' | 'top';
 export type EqKindChoice = 'any' | 'highs' | 'lows';
 export type SessionChoice = 'asia' | 'london' | 'new_york' | 'overlap';
-export type RelationChoice = 'same' | 'opposite' | 'indeterminate';
+// Only directional relations are selectable; an indeterminate unit (current or
+// higher) makes the comparison non-evaluable, not a target one can require (C1-b).
+export type RelationChoice = 'same' | 'opposite';
 
 /** The name of a segmented control — also the ScanCondition field it drives. */
 export type ControlName =

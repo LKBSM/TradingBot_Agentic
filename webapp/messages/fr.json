@@ -558,7 +558,12 @@
       "whatLabel": "Ce que ça compte",
       "smcLabel": "Convention SMC",
       "notLabel": "Ce que ça ne dit pas",
-      "notDefault": "Un fait présent, jamais une prévision : la condition ne dit pas ce que le prix va faire ensuite."
+      "notDefault": "Un fait présent, jamais une prévision : la condition ne dit pas ce que le prix va faire ensuite.",
+      "price_in_tested_zone": {
+        "what": "Le prix courant est à l’intérieur d’une zone active — Order Block ou Fair Value Gap — qui a déjà été touchée au moins une fois depuis sa formation.",
+        "smc": "Une zone est dite « testée » quand le prix l’a retouchée après sa formation ; son opposé est « jamais testée ».",
+        "not": "Rien sur la suite : ni rebond, ni rejet, ni poursuite. C’est un fait de position au présent, pas une attente."
+      }
     },
     "control": {
       "direction": "Direction",
@@ -579,8 +584,7 @@
     "opt": {
       "relation": {
         "same": "Dans le même sens",
-        "opposite": "En sens opposé",
-        "indeterminate": "Indéterminée"
+        "opposite": "En sens opposé"
       }
     },
     "bias": {
@@ -625,7 +629,9 @@
     },
     "palette": {
       "higher_tf_agrees_label": "L’unité supérieure va",
-      "higher_tf_agrees_desc": "La tendance de structure de l’unité de temps immédiatement supérieure va, en ce moment, dans le même sens que l’unité scannée, en sens opposé, ou reste indéterminée. L’unité comparée est nommée dans le résultat (« le 1 h va dans le même sens »). Sur l’unité la plus haute suivie, il n’y a pas d’unité supérieure : la condition est non évaluable.",
+      "higher_tf_agrees_desc": "La tendance de structure de l’unité de temps immédiatement supérieure va, en ce moment, dans le même sens que l’unité scannée ou en sens opposé. L’unité comparée est nommée dans le résultat (« le 1 h va dans le même sens »). Non évaluable dans trois cas : pas d’unité au-dessus (unité la plus haute suivie), unité supérieure sans tendance établie, ou cette unité sans tendance établie.",
+      "price_in_tested_zone_label": "Le prix est dans une zone déjà testée au moins une fois",
+      "price_in_tested_zone_desc": "Le prix courant est à l’intérieur d’une zone active — Order Block ou Fair Value Gap — qui a déjà été touchée au moins une fois depuis sa formation.",
       "trend_is_label": "Tendance actuelle (structure)",
       "trend_is_desc": "La tendance de structure observée sur ce timeframe est, en ce moment, celle choisie (haussière, baissière, ou indéterminée quand aucune cassure ne l’a établie).",
       "market_phase_is_label": "Phase de marché",

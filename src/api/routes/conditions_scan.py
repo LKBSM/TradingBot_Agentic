@@ -136,7 +136,7 @@ AgeBucketChoice = Literal["lt10", "10to50", "gt50"]
 RangeThirdChoice = Literal["bottom", "middle", "top"]
 EqKindChoice = Literal["any", "highs", "lows"]
 SessionChoice = Literal["asia", "london", "new_york", "overlap"]
-RelationChoice = Literal["same", "opposite", "indeterminate"]
+RelationChoice = Literal["same", "opposite"]
 
 # Guard: the request-model vocabulary must equal the engine palette exactly, so a
 # predictive (or blocked) type can never slip in on one side only.

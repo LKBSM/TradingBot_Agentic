@@ -93,8 +93,10 @@ EQ_KIND_VALUES = ("any", "highs", "lows")
 #: Intraday session (reading convention, from market_calendar — single source).
 SESSION_VALUES = ("asia", "london", "new_york", "overlap")
 
-#: How the immediately-higher timeframe relates to the scanned one (C1).
-RELATION_VALUES = ("same", "opposite", "indeterminate")
+#: How the immediately-higher timeframe relates to the scanned one (C1). Only the
+#: two DIRECTIONAL relations are selectable: an indeterminate unit (current OR
+#: higher) makes the comparison NON-EVALUABLE, not a target one can require.
+RELATION_VALUES = ("same", "opposite")
 
 #: Recency windows (IN BARS) offered for the « occurred within N candles » family.
 BARS_RECENCY_CHOICES = (5, 10, 20, 50)
@@ -143,11 +145,11 @@ PALETTE: List[Dict[str, Any]] = [
         "label": "L'unité supérieure va",
         "description": (
             "La tendance de structure de l'unité de temps IMMÉDIATEMENT supérieure "
-            "va, en ce moment, dans le même sens que l'unité scannée, en sens "
-            "opposé, ou reste indéterminée. L'unité comparée est nommée dans le "
-            "résultat (« le 1 h va dans le même sens »). Sur l'unité la plus haute "
-            "suivie, il n'y a pas d'unité supérieure : la condition est non "
-            "évaluable — jamais remplie par défaut."
+            "va, en ce moment, dans le même sens que l'unité scannée ou en sens "
+            "opposé. L'unité comparée est nommée dans le résultat (« le 1 h va dans "
+            "le même sens »). La condition est non évaluable dans trois cas : pas "
+            "d'unité au-dessus (unité la plus haute suivie), unité supérieure sans "
+            "tendance établie, ou cette unité sans tendance établie."
         ),
         "supports_direction": False,
         "tense": "present",
@@ -229,10 +231,10 @@ PALETTE: List[Dict[str, Any]] = [
     {
         "type": "price_in_tested_zone",
         "family": "zones",
-        "label": "Le prix est dans une zone déjà testée",
+        "label": "Le prix est dans une zone déjà testée au moins une fois",
         "description": (
-            "Le prix courant est à l'intérieur d'une zone active (Order Block ou "
-            "Fair Value Gap) qui a déjà été testée au moins une fois depuis sa "
+            "Le prix courant est à l'intérieur d'une zone active — Order Block ou "
+            "Fair Value Gap — qui a déjà été touchée au moins une fois depuis sa "
             "formation."
         ),
         "supports_direction": False,
@@ -549,13 +551,6 @@ def _tf_label(tf: str) -> str:
     return _TF_LABEL_FR.get((tf or "").upper(), tf)
 
 
-def _relation_of(current: Optional[str], higher: Optional[str]) -> str:
-    """Relation of the higher-unit structural trend to the current one."""
-    if current in (None, "indeterminate") or higher in (None, "indeterminate"):
-        return "indeterminate"
-    return "same" if current == higher else "opposite"
-
-
 def _eval_higher_tf_agrees(
     reading: Dict[str, Any], relation: Optional[str],
     instrument_trends: Optional[Dict[str, Optional[str]]],
@@ -565,10 +560,13 @@ def _eval_higher_tf_agrees(
     TR-1 is live on main: each reading's ``regime.trend`` is already the
     structural trend (last uncontested BOS/CHOCH), so this compares STRUCTURE —
     never a mere close displacement. The higher unit is the NEAREST perimeter
-    unit above the scanned one (registry ``alignment_timeframes``), and it is
-    NAMED in the detail (C1-b). On the highest tracked unit there is no unit
-    above → NON-EVALUABLE, never met by default nor counted as a failure (C1-c).
-    ``relation`` is the required relation: same / opposite / indeterminate.
+    unit above the scanned one (registry ``alignment_timeframes``), NAMED in the
+    detail (C1-b). ``relation`` is the required DIRECTIONAL relation (same /
+    opposite). Three distinct NON-EVALUABLE cases, each with its own on-screen
+    message (C1-b/c) — never met by default, never counted as a failure:
+      1. no unit above the scanned one (top of the registry);
+      2. the higher unit has no structural trend established (indeterminate);
+      3. THIS unit has no structural trend established (indeterminate).
     """
     if relation not in RELATION_VALUES:
         return _result("higher_tf_agrees", False, "Relation cible non précisée.")
@@ -592,13 +590,26 @@ def _eval_higher_tf_agrees(
             "higher_tf_agrees", False, "Tendance de cette unité indisponible.", available=False
         )
     higher_trend = trends.get(higher_tf)
-    observed = _relation_of(current_trend, higher_trend)
+    # An indeterminate unit makes the relation non-evaluable — distinct messages
+    # so « unité sans tendance » is never confused with « pas d'unité supérieure ».
+    if current_trend == "indeterminate":
+        return _result(
+            "higher_tf_agrees", False,
+            "Cette unité n'a pas de tendance structurelle établie — non évaluable.",
+            available=False,
+        )
+    if higher_trend == "indeterminate":
+        return _result(
+            "higher_tf_agrees", False,
+            f"Le {_tf_label(higher_tf)} n'a pas de tendance structurelle établie — non évaluable.",
+            available=False,
+        )
+    observed = "same" if current_trend == higher_trend else "opposite"
     phrases = {
         "same": f"Le {_tf_label(higher_tf)} va dans le même sens",
         "opposite": f"Le {_tf_label(higher_tf)} va en sens opposé",
-        "indeterminate": f"Le {_tf_label(higher_tf)} est indéterminé",
     }
-    want = {"same": "même sens", "opposite": "sens opposé", "indeterminate": "indéterminé"}[relation]
+    want = {"same": "même sens", "opposite": "sens opposé"}[relation]
     return _result(
         "higher_tf_agrees", observed == relation,
         f"{phrases[observed]} ({_TREND_ADJ.get(higher_trend, higher_trend)}) — cible : {want}.",

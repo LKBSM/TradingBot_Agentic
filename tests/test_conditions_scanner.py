@@ -124,10 +124,26 @@ def test_higher_tf_agrees_opposite():
     assert evaluate_condition(r, {"type": "higher_tf_agrees", "relation": "same"}, trends)["met"] is False
 
 
-def test_higher_tf_agrees_indeterminate_when_higher_unit_indeterminate():
-    trends = {"M15": "bullish", "H1": "indeterminate"}
-    res = evaluate_condition(_reading(trend="bullish"), {"type": "higher_tf_agrees", "relation": "indeterminate"}, trends)
-    assert res["met"] is True and res["available"] is True
+def test_higher_tf_agrees_indeterminate_higher_is_non_evaluable_and_distinct():
+    # C1-b: an indeterminate HIGHER unit → NON-EVALUABLE (not a failure), with a
+    # message DISTINCT from « no higher unit exists » (both must be tellable apart).
+    r = _reading(trend="bullish")
+    indet = evaluate_condition(r, {"type": "higher_tf_agrees", "relation": "same"}, {"M15": "bullish", "H1": "indeterminate"})
+    assert indet["available"] is False and indet["met"] is False
+    assert "établie" in indet["detail"]
+    top = evaluate_condition(r, {"type": "higher_tf_agrees", "relation": "same"}, {"M15": "bullish"})
+    assert top["available"] is False
+    assert indet["detail"] != top["detail"]  # distinguishable on screen
+
+
+def test_higher_tf_agrees_indeterminate_current_is_non_evaluable():
+    # This unit itself indeterminate → non-evaluable too, with its own message.
+    res = evaluate_condition(
+        _reading(trend="indeterminate"),
+        {"type": "higher_tf_agrees", "relation": "same"},
+        {"M15": "indeterminate", "H1": "bullish"},
+    )
+    assert res["available"] is False and res["met"] is False
 
 
 def test_higher_tf_agrees_non_evaluable_without_higher_unit():

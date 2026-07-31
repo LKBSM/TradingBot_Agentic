@@ -69,7 +69,7 @@ const VALID_AGE_BUCKETS = new Set(['lt10', '10to50', 'gt50']);
 const VALID_THIRDS = new Set(['bottom', 'middle', 'top']);
 const VALID_EQ_KINDS = new Set(['any', 'highs', 'lows']);
 const VALID_SESSIONS = new Set(['asia', 'london', 'new_york', 'overlap']);
-const VALID_RELATIONS = new Set(['same', 'opposite', 'indeterminate']);
+const VALID_RELATIONS = new Set(['same', 'opposite']);
 const KNOWN_CONDITION_KEYS = new Set([
   'type', 'direction', 'max_bars', 'trend', 'phase', 'volatility',
   'proximity_pct', 'side', 'zone_kind', 'event', 'age_bucket', 'third',

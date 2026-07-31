@@ -558,7 +558,12 @@
       "whatLabel": "What it counts",
       "smcLabel": "SMC convention",
       "notLabel": "What it does not say",
-      "notDefault": "A present fact, never a forecast: the condition does not say what price will do next."
+      "notDefault": "A present fact, never a forecast: the condition does not say what price will do next.",
+      "price_in_tested_zone": {
+        "what": "The current price is inside an active zone — Order Block or Fair Value Gap — that has already been touched at least once since it formed.",
+        "smc": "A zone is 'tested' once price has re-touched it after forming; its opposite is 'never tested'.",
+        "not": "Nothing about what comes next — no bounce, no rejection, no continuation. It is a present positional fact, not an expectation."
+      }
     },
     "control": {
       "direction": "Direction",
@@ -579,8 +584,7 @@
     "opt": {
       "relation": {
         "same": "Same direction",
-        "opposite": "Opposite direction",
-        "indeterminate": "Indeterminate"
+        "opposite": "Opposite direction"
       }
     },
     "bias": {
@@ -625,7 +629,9 @@
     },
     "palette": {
       "higher_tf_agrees_label": "The higher unit goes",
-      "higher_tf_agrees_desc": "The structural trend of the immediately higher timeframe is currently going the same way as the scanned unit, the opposite way, or stays indeterminate. The compared unit is named in the result (\"the 1h goes the same way\"). On the highest tracked unit there is no higher unit: the condition is non-evaluable.",
+      "higher_tf_agrees_desc": "The structural trend of the immediately higher timeframe is currently going the same way as the scanned unit or the opposite way. The compared unit is named in the result (\"the 1h goes the same way\"). Non-evaluable in three cases: no unit above (highest tracked unit), the higher unit has no trend established, or this unit has no trend established.",
+      "price_in_tested_zone_label": "Price is inside a zone tested at least once",
+      "price_in_tested_zone_desc": "The current price is inside an active zone — Order Block or Fair Value Gap — that has already been touched at least once since it formed.",
       "trend_is_label": "Current trend (structure)",
       "trend_is_desc": "The structural trend observed on this timeframe is, right now, the one you selected (bullish, bearish, or indeterminate when no break established it).",
       "market_phase_is_label": "Market phase",

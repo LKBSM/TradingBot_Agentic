@@ -36,7 +36,7 @@ const AGE_BUCKET = ['lt10', '10to50', 'gt50'] as const;
 const THIRD = ['bottom', 'middle', 'top'] as const;
 const EQ_KIND = ['any', 'highs', 'lows'] as const;
 const SESSION = ['asia', 'london', 'new_york', 'overlap'] as const;
-const RELATION = ['same', 'opposite', 'indeterminate'] as const;
+const RELATION = ['same', 'opposite'] as const;
 const BARS_RECENCY = [5, 10, 20, 50] as const;
 const BARS_FORMED = [10, 20, 50] as const;
 const PROX_ZONE = [0.1, 0.25, 0.5] as const;
@@ -66,7 +66,7 @@ export const CONDITION_PALETTE: readonly PaletteEntry[] = [
     family: 'structure',
     label: 'L’unité supérieure va',
     description:
-      'La tendance de structure de l’unité de temps immédiatement supérieure va, en ce moment, dans le même sens que l’unité scannée, en sens opposé, ou reste indéterminée. L’unité comparée est nommée dans le résultat (« le 1 h va dans le même sens »). Sur l’unité la plus haute suivie, il n’y a pas d’unité supérieure : la condition est non évaluable.',
+      'La tendance de structure de l’unité de temps immédiatement supérieure va, en ce moment, dans le même sens que l’unité scannée ou en sens opposé. L’unité comparée est nommée dans le résultat (« le 1 h va dans le même sens »). Non évaluable dans trois cas : pas d’unité au-dessus (unité la plus haute suivie), unité supérieure sans tendance établie, ou cette unité sans tendance établie.',
     controls: [ctrl('relation', RELATION, 'same')],
     tense: 'present',
   },
@@ -130,9 +130,9 @@ export const CONDITION_PALETTE: readonly PaletteEntry[] = [
   {
     type: 'price_in_tested_zone',
     family: 'zones',
-    label: 'Le prix est dans une zone déjà testée',
+    label: 'Le prix est dans une zone déjà testée au moins une fois',
     description:
-      'Le prix courant est à l’intérieur d’une zone active (Order Block ou Fair Value Gap) qui a déjà été testée au moins une fois depuis sa formation.',
+      'Le prix courant est à l’intérieur d’une zone active — Order Block ou Fair Value Gap — qui a déjà été touchée au moins une fois depuis sa formation.',
     controls: [ctrl('zone_kind', ZONE_KIND, 'any')],
     tense: 'present',
   },
@@ -283,7 +283,7 @@ export const OPTION_LABELS_FR: Record<ControlName, Record<string, string>> = {
   third: { bottom: 'Bas', middle: 'Milieu', top: 'Haut' },
   eq_kind: { any: 'Creux ou sommets', highs: 'Sommets', lows: 'Creux' },
   session: { asia: 'Asie', london: 'Londres', new_york: 'New York', overlap: 'Chevauchement' },
-  relation: { same: 'Dans le même sens', opposite: 'En sens opposé', indeterminate: 'Indéterminée' },
+  relation: { same: 'Dans le même sens', opposite: 'En sens opposé' },
   max_bars: {},
   proximity_pct: {},
 };
