@@ -946,10 +946,42 @@ def test_ob_lifecycle_returns_tap_index_and_is_conservative():
     highs = [100, 100, 100, 100, 100]
     lows = [99, 99, 99, 97.5, 99]   # j=3 dips into [97,98]
     closes = [100, 100, 100, 99, 100]
-    status, tested, tap, invalidated_idx = _ob_lifecycle(
+    status, tested, tap, invalidated_idx, touch_count, touch_bars = _ob_lifecycle(
         "bullish", 98.0, 97.0, highs, lows, closes, created=0, upto=4
     )
     assert (status, tested, tap, invalidated_idx) == ("mitigated", True, 3, None)
+    # Additive touch fields, consistent with tested/tap: one tap at j=3.
+    assert (touch_count, touch_bars) == (1, [3])
+
+
+def test_ob_touch_count_counts_distinct_taps_not_bars():
+    # Zone [97,98]. A run of consecutive in-zone bars is ONE touch; leaving and
+    # re-entering is a NEW touch. Taps at j=1,2 (one run) then j=4 (another).
+    highs = [100] * 7
+    lows = [99, 97.5, 97.5, 99, 97.5, 99, 99]
+    closes = [100] * 7
+    status, tested, tap, inv, tc, tb = _ob_lifecycle(
+        "bullish", 98.0, 97.0, highs, lows, closes, created=0, upto=6
+    )
+    assert status == "mitigated" and tested is True and tap == 1
+    assert (tc, tb) == (2, [1, 4])  # 2 distinct touches, entry bars 1 and 4
+
+
+def test_ob_touch_count_zero_iff_untested():
+    highs = [100] * 4
+    lows = [99] * 4  # never dips into [97,98]
+    closes = [100] * 4
+    status, tested, tap, inv, tc, tb = _ob_lifecycle("bullish", 98.0, 97.0, highs, lows, closes, 0, 3)
+    assert status == "active" and tested is False and (tc, tb) == (0, [])
+
+
+def test_fvg_touch_count_counts_distinct_entries():
+    # Bullish gap [97,98]; entry = low <= 98, fill only if low <= 97 (fraction 1.0).
+    highs = [100] * 7
+    lows = [99, 97.5, 97.5, 99, 97.5, 99, 99]  # entries j=1,2 (one run) then j=4
+    status, entered, fe, deep, tc, tb = _fvg_lifecycle("bullish", 98.0, 97.0, highs, lows, 0, 6)
+    assert status == "partially_filled" and entered is True and fe == 1
+    assert (tc, tb) == (2, [1, 4])
 
 
 def test_penetration_threshold_is_a_single_tunable_knob():

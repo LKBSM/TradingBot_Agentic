@@ -312,11 +312,11 @@ def _ob_lifecycle(
     created: int,
     upto: int,
     policy: MitigationPolicy = MITIGATION_POLICY,
-) -> tuple[str, bool, Optional[int], Optional[int]]:
+) -> tuple[str, bool, Optional[int], Optional[int], int, list[int]]:
     """Classify an order-block zone over bars (created, upto].
 
-    Returns ``(status, tested, first_tap_idx, invalidated_idx)`` where status ∈
-    {active, mitigated, invalidated}:
+    Returns ``(status, tested, first_tap_idx, invalidated_idx, touch_count,
+    touch_bars)`` where status ∈ {active, mitigated, invalidated}:
       * invalidated — a later candle CLOSED through the zone (support lost for a
         bullish OB, resistance reclaimed for a bearish OB) → consumed/dropped.
         ``invalidated_idx`` is that candle's bar (None otherwise). Reported by
@@ -325,6 +325,12 @@ def _ob_lifecycle(
         held (a tap). ``first_tap_idx`` is the bar of the first such tap.
       * active      — price has not returned to the zone yet.
 
+    ``touch_count`` counts DISTINCT taps — a maximal run of consecutive in-zone
+    bars is ONE touch — and ``touch_bars`` holds each touch's ENTRY bar. Both are
+    ADDITIVE: they reuse the exact same per-bar tap predicate as ``tested``, so
+    ``touch_count >= 1 ⟺ tested`` and ``touch_bars[0] == first_tap_idx``. The
+    status/tested/first_tap/invalidation logic is byte-identical to before.
+
     All thresholds come from ``policy`` (the single source of truth). The zone
     geometry is the engine's; this only times the interaction.
     """
@@ -332,26 +338,33 @@ def _ob_lifecycle(
     depth = policy.ob_mitigation_penetration * height
     tested = False
     first_tap: Optional[int] = None
+    touch_count = 0
+    touch_bars: list[int] = []
+    in_zone = False  # was the bar INSIDE the zone on the previous iteration?
     for j in range(created + 1, upto + 1):
         if side == "bullish":
             # Support: price dips from above; require it to reach depth into the
             # block from the near (top) edge, and not be entirely below it.
-            if lows[j] <= zhigh - depth and highs[j] >= zlow:
-                tested = True
-                if first_tap is None:
-                    first_tap = j
-            if policy.ob_invalidate_on_close_through and closes[j] < zlow:
-                return "invalidated", tested, first_tap, j
+            tap = lows[j] <= zhigh - depth and highs[j] >= zlow
         else:
             # Resistance: price rises from below; require it to reach depth into
             # the block from the near (bottom) edge.
-            if highs[j] >= zlow + depth and lows[j] <= zhigh:
-                tested = True
-                if first_tap is None:
-                    first_tap = j
-            if policy.ob_invalidate_on_close_through and closes[j] > zhigh:
-                return "invalidated", tested, first_tap, j
-    return ("mitigated" if tested else "active"), tested, first_tap, None
+            tap = highs[j] >= zlow + depth and lows[j] <= zhigh
+        if tap:
+            tested = True
+            if first_tap is None:
+                first_tap = j
+            if not in_zone:  # rising edge out→in → a new DISTINCT touch
+                touch_count += 1
+                touch_bars.append(j)
+            in_zone = True
+        else:
+            in_zone = False
+        if policy.ob_invalidate_on_close_through and (
+            (side == "bullish" and closes[j] < zlow) or (side != "bullish" and closes[j] > zhigh)
+        ):
+            return "invalidated", tested, first_tap, j, touch_count, touch_bars
+    return ("mitigated" if tested else "active"), tested, first_tap, None, touch_count, touch_bars
 
 
 def _fvg_lifecycle(
@@ -363,16 +376,22 @@ def _fvg_lifecycle(
     created: int,
     upto: int,
     policy: MitigationPolicy = MITIGATION_POLICY,
-) -> tuple[str, bool, Optional[int], Optional[float]]:
+) -> tuple[str, bool, Optional[int], Optional[float], int, list[int]]:
     """Classify a fair-value-gap over bars (created, upto].
 
-    Returns ``(status, entered, first_entry_idx, fill_level)`` where status ∈
-    {active, partially_filled, filled}. A bullish gap (price gapped up, empty
-    band ``[zlow, zhigh]``) fills from above: ``filled`` once a later low
-    retraces ``policy.fvg_fill_fraction`` of the gap height (1.0 = far edge
-    ``zlow``), ``partially_filled`` once a later low dips below ``zhigh`` (near
-    edge). Bearish gap is the mirror, filled from below. ``first_entry_idx`` is
-    the bar of the first partial entry.
+    Returns ``(status, entered, first_entry_idx, fill_level, touch_count,
+    touch_bars)`` where status ∈ {active, partially_filled, filled}. A bullish
+    gap (price gapped up, empty band ``[zlow, zhigh]``) fills from above:
+    ``filled`` once a later low retraces ``policy.fvg_fill_fraction`` of the gap
+    height (1.0 = far edge ``zlow``), ``partially_filled`` once a later low dips
+    below ``zhigh`` (near edge). Bearish gap is the mirror, filled from below.
+    ``first_entry_idx`` is the bar of the first partial entry.
+
+    ``touch_count`` counts DISTINCT entries (a maximal run of consecutive in-band
+    bars is ONE) and ``touch_bars`` holds each entry bar — ADDITIVE, reusing the
+    exact same per-bar entry predicate as ``entered`` (``touch_count >= 1 ⟺
+    entered``, ``touch_bars[0] == first_entry_idx``). Status/entered/fill logic
+    is byte-identical to before.
 
     ``fill_level`` is the DEEPEST price the wicks reached INTO the band (clamped
     to ``[zlow, zhigh]``): the lowest low for a bullish gap (it fills downward),
@@ -385,11 +404,15 @@ def _fvg_lifecycle(
     entered = False
     first_entry: Optional[int] = None
     deepest: Optional[float] = None  # deepest penetration price into the band
+    touch_count = 0
+    touch_bars: list[int] = []
+    in_band = False
     for j in range(created + 1, upto + 1):
         if side == "bullish":
             if lows[j] <= zhigh - fill:  # retraced enough → filled
-                return "filled", True, (first_entry if first_entry is not None else j), zlow
-            if lows[j] <= zhigh:
+                return "filled", True, (first_entry if first_entry is not None else j), zlow, touch_count, touch_bars
+            entry = lows[j] <= zhigh
+            if entry:
                 entered = True
                 if first_entry is None:
                     first_entry = j
@@ -398,15 +421,23 @@ def _fvg_lifecycle(
                     deepest = pen
         else:
             if highs[j] >= zlow + fill:
-                return "filled", True, (first_entry if first_entry is not None else j), zhigh
-            if highs[j] >= zlow:
+                return "filled", True, (first_entry if first_entry is not None else j), zhigh, touch_count, touch_bars
+            entry = highs[j] >= zlow
+            if entry:
                 entered = True
                 if first_entry is None:
                     first_entry = j
                 pen = min(float(highs[j]), zhigh)  # clamp into the band
                 if deepest is None or pen > deepest:
                     deepest = pen
-    return ("partially_filled" if entered else "active"), entered, first_entry, deepest
+        if entry:
+            if not in_band:  # rising edge → a new DISTINCT entry
+                touch_count += 1
+                touch_bars.append(j)
+            in_band = True
+        else:
+            in_band = False
+    return ("partially_filled" if entered else "active"), entered, first_entry, deepest, touch_count, touch_bars
 
 
 def _zone_created_at(enriched: Any, k: int) -> Optional[datetime]:
@@ -489,7 +520,7 @@ def collect_zones(
                     continue
                 zhigh, zlow = float(max(hv, lv)), float(min(hv, lv))
                 st = float(strength[k]) if strength is not None and not pd.isna(strength[k]) else 0.0
-                status, tested, tap_idx, invalidated_idx = _ob_lifecycle(
+                status, tested, tap_idx, invalidated_idx, touch_count, touch_bars = _ob_lifecycle(
                     side, zhigh, zlow, highs, lows, closes, k, pos
                 )
                 created_at = _zone_created_at(enriched, k)
@@ -504,6 +535,8 @@ def collect_zones(
                     "mitigated_at": (
                         _zone_created_at(enriched, tap_idx) if tap_idx is not None else None
                     ),
+                    "touch_count": touch_count,
+                    "touch_ats": [_zone_created_at(enriched, b) for b in touch_bars],
                     "_strength": st,
                     "_k": k,
                 }
@@ -556,7 +589,7 @@ def collect_zones(
                 a, b = float(highs[k]), float(lows[k - 2])
                 side = "bearish"
             zhigh, zlow = max(a, b), min(a, b)
-            status, tested, entry_idx, fill_level = _fvg_lifecycle(
+            status, tested, entry_idx, fill_level, touch_count, touch_bars = _fvg_lifecycle(
                 side, zhigh, zlow, highs, lows, k, pos
             )
             # Honesty guardrail (mission §C): never surface a consumed zone.
@@ -574,6 +607,8 @@ def collect_zones(
                 "created_at": _zone_created_at(enriched, k),
                 "mitigated_at": _zone_created_at(enriched, entry_idx) if entry_idx is not None else None,
                 "fill_level": fill_level,
+                "touch_count": touch_count,
+                "touch_ats": [_zone_created_at(enriched, b) for b in touch_bars],
                 "_size": sz,
                 "_k": k,
             })
@@ -1244,6 +1279,8 @@ def _zones_to_models(
             created_at=created,
             tested=z["tested"],
             mitigated_at=z.get("mitigated_at"),
+            touch_count=z.get("touch_count", 0),
+            touch_ats=z.get("touch_ats", []),
             user_flagged=False,
         ))
     fair_value_gaps: list[FairValueGap] = []
@@ -1259,6 +1296,8 @@ def _zones_to_models(
             tested=z["tested"],
             mitigated_at=z.get("mitigated_at"),
             fill_level=z.get("fill_level"),
+            touch_count=z.get("touch_count", 0),
+            touch_ats=z.get("touch_ats", []),
             user_flagged=False,
         ))
     return order_blocks, fair_value_gaps

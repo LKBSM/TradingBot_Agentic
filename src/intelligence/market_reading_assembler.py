@@ -45,7 +45,9 @@ from typing import Any, Callable, Mapping, Optional, Sequence, Tuple
 # definitions never mix on screen). NB: this supersedes MT-D1's bump to 3
 # (per-timeframe analysis window + uncapped journal) — a stored v3 payload still
 # carries the old close-based trend, so it MUST be rebuilt: hence 4, not 3.
-READING_LOGIC_VERSION = 4
+# v5: OB/FVG carry a distinct-touch count + timestamps (touch_count/touch_ats) —
+# an ADDITIVE lifecycle field; a stored v4 payload lacks it, so rebuild.
+READING_LOGIC_VERSION = 5
 
 # Env kill switch (LQ-D1): masks ALL external-liquidity pockets at the serve
 # layer — cache-hit AND fresh build — in one reversible value. Data is untouched
