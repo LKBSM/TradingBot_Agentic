@@ -13,7 +13,7 @@ sont mergés sur main (`trend` = bullish/bearish/**indeterminate**,
 | # | Condition | Statut diagnostic | Livré ? | Type exposé |
 |---|-----------|-------------------|---------|-------------|
 | 1 | Tendance structurelle (haussière/baissière/indéterminée) | (1) déjà | ✅ | `trend_is` |
-| 2 | L'unité supérieure va (même/opposé/indéterminée) | (2) calculable | ⏸ **différé** | — (voir §2) |
+| 2 | L'unité supérieure va (même sens / sens opposé) | (2) calculable | ✅ | `higher_tf_agrees` |
 | 3 | Dernier événement (BOS↑/↓, CHOCH↑/↓) | (2) calculable | ✅ | `last_event_is` |
 | 4 | CHOCH dans les N dernières bougies | (1) déjà | ✅ | `choch_recent_confirmed` |
 | 5 | BOS dans les N dernières bougies | (1) déjà | ✅ | `bos_recent_confirmed` |
@@ -31,11 +31,12 @@ sont mergés sur main (`trend` = bullish/bearish/**indeterminate**,
 | 17 | Volatilité (étendue/normale/contractée) | (1) déjà | ✅ | `volatility_is` |
 | 18 | Prix dans le tiers … du range | (2) calculable | ✅ | `price_in_range_third` |
 | 19 | Session en cours | (2) calculable | ✅ | `session_is` |
-| 20 | Dernier événement remonte à (<10/10-50/>50) | (2) calculable | ✅ | `last_event_age` |
+| 20 | Dernier événement remonte à (<10/10-50/>50) | (2) calculable | ✅ | `last_event_age` (famille Contexte) |
+| 21 | Prix dans une zone déjà testée au moins une fois | nouveau (booléen `tested`) | ✅ | `price_in_tested_zone` |
 
-**Décompte** : (1) déjà = 10 · (2) calculable = 9 · (3) bloquée = 1.
-**Livrées : 18 des 20** + `price_in_tested_zone` (#21 nouveau). Non livrées : #9
-(bloquée) et #2 (différée, cf. §2). Conservée transitoirement : `mtf_aligned`.
+**Décompte** : (1) déjà = 10 · (2) calculable = 9 · (3) bloquée = 1, + #21 nouveau.
+**Livrées : 19 des 20 + #21 = 20 conditions exposées.** Seule non livrée : **#9**
+(bloquée, cf. §3). `mtf_aligned` **retiré**, remplacé par #2 `higher_tf_agrees`.
 
 Conditions **retirées** (signalées, pas supprimées en silence) :
 - `ob_fvg_confluence` — exactement « prix dans OB » ET « prix dans FVG » ; la règle
@@ -43,15 +44,40 @@ Conditions **retirées** (signalées, pas supprimées en silence) :
 - ancien `retest_in_progress` — c'était un flag de retest de **NIVEAU BOS** (état
   ARMED du state-machine), pas « prix dans une zone testée ». Décision fondateur :
   retirer et le remplacer par le fait `price_in_tested_zone`.
+- `mtf_aligned` (3 unités fixes H4/H1/M15) — remplacé par #2 `higher_tf_agrees`
+  (comparaison RELATIVE à l'unité immédiatement supérieure ; cf. §2).
 
-## 2. Condition #2 différée (et non bloquée)
+**#21 — formulation figée (validée fondateur), fr + en :**
+- Libellé : « Le prix est dans une zone déjà testée au moins une fois » /
+  « Price is inside a zone tested at least once ».
+- Concept 3-temps : *ce que ça compte* (prix à l'intérieur d'un OB/FVG actif
+  touché ≥1× depuis sa formation) · *convention SMC* (« testée » = retouchée après
+  formation ; opposé « jamais testée ») · *ce que ça ne dit pas* (ni rebond, ni
+  rejet, ni poursuite — un fait de position au présent, pas une attente).
+- Ne dépend que du booléen `tested` (existant). Aucun mot d'attente/continuation.
 
-#2 « l'unité supérieure va » est **calculable** aujourd'hui (TF-1 a tranché
-l'alignement relatif ; `mtf_confluence` porte le biais structurel des unités
-au-dessus). Elle est **différée par décision fondateur** (point 5) : `mtf_aligned`
-est conservé transitoirement, relibellé pour dire exactement ce qu'il compare
-(**3 unités FIXES H4/H1/M15**, pas « l'unité au-dessus » de l'unité scannée). Pour
-**ne pas se retrouver avec les deux**, #2 arrivera quand `mtf_aligned` sera retiré.
+## 2. Condition #2 livrée — `higher_tf_agrees` (arbitrage C1)
+
+Décision fondateur (arbitrage C1) : **#2 devient la seule condition d'alignement,
+`mtf_aligned` est retiré.** Motif : une comparaison RELATIVE à l'unité
+immédiatement supérieure fonctionne identiquement sur les six unités ; un ensemble
+fixe casse au sommet (rien au-dessus du D1).
+
+Garanties livrées :
+- **Structurel** : TR-1 étant sur main, `regime.trend` est déjà structurel
+  (dernier BOS/CHOCH). `derive_structural_trend` est la **seule** source (vérifié :
+  `_derive_trend` supprimé). Le caveat « déplacement de clôtures » de C1-a est donc
+  **sans objet** et n'a pas été ajouté.
+- **Unité nommée** dans le résultat (C1-b) : « Le 1 h va dans le même sens » (via
+  `alignment_timeframes`, registre TF-1).
+- **Trois cas NON ÉVALUABLES distincts** (C1-b/c), messages différents à l'écran,
+  jamais remplis par défaut ni comptés comme échec : (1) pas d'unité au-dessus
+  (unité la plus haute suivie) ; (2) unité supérieure sans tendance établie ;
+  (3) cette unité sans tendance établie. « indéterminée » retirée des cibles de
+  relation (choix mort sous cette règle) → `relation` = même sens / sens opposé.
+- **Chiffre C1-c** (proportion réelle d'`indeterminate`) : **non mesurable dans le
+  worktree** (pas de `market_readings.db` ni backend live) → à mesurer à l'étape
+  Playwright/`:8000`.
 
 ⚠️ À la prochaine itération : trancher `mtf_aligned` (fixe) → `higher_tf_agrees`
 (relatif, « unité au-dessus », valeurs même/opposé/indéterminée) et retirer l'un.
@@ -86,10 +112,15 @@ acter à 4 phases). Rien corrigé ici.
 
 - **localStorage** conservé (`mia.scannerStrategies.v1`), derrière l'**interface**
   du store (seam : un futur adaptateur serveur = un adaptateur, pas une refonte).
-- **Réévaluation** : à l'ouverture uniquement (recommandé). Le compte de combos
-  par lecture enregistrée « à jour » (mission D) est **différé** (nécessite un scan
-  par lecture ; l'arrière-plan n'apporte rien tant que le store n'est rafraîchi
-  que par le scheduler 60 s). À câbler avec la réévaluation on-open.
+- **Réévaluation (C4, LIVRÉE)** : compte de combos par lecture **réévalué à
+  l'ouverture** (jamais en arrière-plan). **Péremption PAR COMBO sur son pas de
+  temps** — réutilise `bars_behind` / `_compute_freshness` : un combo est périmé
+  dès qu'une bougie de SON unité a clôturé depuis la lecture (M15 → 15 min,
+  D1 → 1 jour ; **pas de seuil global**, qui aurait traité un combo journalier
+  comme un M15). Affichage : compte + « évalué il y a X » quand tout est frais ;
+  dès qu'un combo est périmé (ou sans lecture) → badge **« Compte incomplet »** +
+  nombre de combos en attente + **Relancer**. Un compte partiel n'est **jamais**
+  présenté comme complet.
 - **Mention obligatoire non masquable** : « le compte est un constat, pas un
   classement ; 7 combos n'est pas meilleur, c'est plus large » + « conservées sur
   cet appareil, non synchronisées ».
@@ -117,27 +148,82 @@ acter à 4 phases). Rien corrigé ici.
 - **Read-only** : `test_scan_is_read_only_touches_only_get_latest_reading`
   conservé (writes/détection lèvent).
 
-## 7. Écarts avec la maquette
+## 7. Écarts restants avec la maquette (`reference-scanner.html`, la vraie)
 
-`docs/design/reference-scanner.html` était **absent** ; le fondateur a demandé de
-concevoir la maquette moi-même et de réconcilier l'écran ensemble ensuite. La
-maquette 5 états jointe reflète l'implémentation. **Réconciliation live à faire
-avec le fondateur** (verrou de merge). Écarts connus à ce stade :
-- Compte de combos par lecture enregistrée : non affiché (différé, §5).
-- `higher_tf_agrees` (#2) absent (différé, §2).
+La vraie maquette est sur `main`. Réconciliation live à faire avec le fondateur
+(verrou de merge). Alignés depuis l'arbitrage : #2 `higher_tf_agrees`, bloc
+« à l'encontre » enrichi, filtres d'affichage, compte live (construction) + par
+lecture (C4), `last_event_age`→Contexte, phrase récap + Copier, états vides,
+mention « ne pas assouplir ». Écarts **cosmétiques** restants (à trancher live) :
+- En-têtes de carte résultat : badge symbole + noms amicaux (« Or · 15 min ») +
+  valeur constatée alignée à droite (mono) — mon rendu inline le détail.
+- Boutons segmentés : la maquette les pose inline à droite de la ligne ; mon
+  rendu les met sous la condition avec un libellé de contrôle.
+- État « aucune condition » : la maquette a une carte centrée à icône ; mon rendu
+  replie la note dans la barre collante du builder.
+- **C2 divergence assumée** : la maquette expose #9 « testée au plus N fois » —
+  **non livrée** (donnée absente, cf. §3 et §10).
+- **C3 divergence assumée** : la maquette montre la phase en binaire
+  (expansion/consolidation) ; livré = **4 phases réelles** (décision GO-2).
 
 ## 8. Vérifications
 
-- Backend : 56 tests scanner + 42 adjacents verts.
-- Front : `tsc` 0, `next build` exit 0, vitest scanner verts (palette 4 familles,
-  garde-fous résultats, non-régression store).
+- Backend : **62 tests scanner** + 42 adjacents verts.
+- Front : `tsc` 0, **`next build` exit 0**, **78 vitest** (palette 4 familles,
+  garde-fous résultats + bloc « à l'encontre » full-match, non-régression store,
+  **vocabulaire interdit fr+en négation-aware**).
 - Playwright 1280×800 + 390×844 sur les 5 états : specs fournies ; exécution
-  complète nécessite le backend `:8000` (données réelles) — à lancer live.
+  complète + **mesure C1-c** (proportion d'indéterminées) nécessitent le backend
+  `:8000` (données réelles) — à lancer live.
 
 ## 9. Reste à faire avant merge
 
-1. Réconciliation live de la maquette avec le fondateur.
-2. Trancher #2 vs `mtf_aligned` (ne pas garder les deux).
-3. Compte de combos par lecture enregistrée (réévaluation on-open).
-4. Exécuter Playwright contre un backend réel.
-5. **Merge sur main SEULEMENT après confirmation live du fondateur.**
+1. Réconciliation live de la maquette (écarts cosmétiques §7).
+2. Exécuter Playwright contre le backend réel + mesurer la proportion
+   d'indéterminées (C1-c).
+3. **Merge sur main SEULEMENT après confirmation live du fondateur.**
+
+## 10. Mission de suivi (constats, RIEN implémenté ici)
+
+### 10.A — Compteur de touches horodatées par zone (débloque #9 ET la page Zones)
+
+- **Ce que le moteur enregistre aujourd'hui** : `_ob_lifecycle` / `_fvg_lifecycle`
+  (`market_reading_mappers.py`) parcourent déjà les bougies APRÈS la formation de
+  la zone et retiennent la **PREMIÈRE touche** (`first_tap` / `entry_idx` →
+  `mitigated_at`) + un **booléen `tested`**. La boucle voit chaque bougie mais
+  **ne compte pas** les ré-entrées suivantes ; après la 1re touche le statut passe
+  à `mitigated` et le décompte s'arrête.
+- **Ce qu'il faudrait ajouter** : dans cette même boucle, compter chaque **touche
+  DISTINCTE** (le prix est ressorti de la zone puis y est revenu — pas chaque
+  bougie consécutive à l'intérieur) avec son horodatage → champs
+  `touch_count: int` + `touch_timestamps: list[datetime]` sur `OrderBlock`/
+  `FairValueGap`. Définir « touche distincte » = transition dehors→dedans.
+- **Où** : dans les **mappers** (lifecycle), **pas** dans `SmartMoneyEngine`. Le
+  moteur détecte les zones ; le mapper calcule leur cycle de vie. La boucle existe
+  déjà là. **Recommandation : mappers** (léger, local, testable en isolation).
+- **Risque de régression** : **BOS / CHOCH = nul** (collecteurs séparés, non
+  touchés). **OB / FVG = faible si confiné au compteur** — ne PAS toucher la règle
+  de `mitigated` (mitigé dès la 1re touche) ni l'invalidation. Deux points de
+  vigilance : (1) bump `READING_LOGIC_VERSION` → ré-émission de TOUT le cache →
+  rejouer la garde LB-1 « incrémental == complet » sur les 6 unités ; (2) valider
+  le décompte sur l'échantillon MT-D1 (sur/sous-comptage des touches).
+- **Coût estimé** : **moyen** (~1–2 j) — compteur + horodatage + champs schéma +
+  tests + bump cache + validation échantillon. Débloque `zone_tested_at_most` (#9)
+  ET la chronologie « Formé → Testé ×N → Mitigé » de la page Zones (sans lui, cette
+  page n'a rien à raconter).
+
+### 10.B — Phase `distribution` inatteignable (défaut de détection)
+
+- **Phases réellement émettables** (`_derive_market_phase`, unique producteur) :
+  **expansion** (directionnel + vol. élevée), **trend** (directionnel + vol.
+  normale/faible), **ranging** (indéterminé + clôtures oscillantes),
+  **accumulation** (indéterminé sinon).
+- **Inatteignable** : **`distribution`** — aucun chemin ne l'émet.
+- **Hypothèse de cause** : post-TR-1, la tendance ne vaut plus que
+  bull/bear/indéterminée ; la dérivation ne branche que sur (directionnel + vol.)
+  ou (indéterminé + oscillation). `distribution` (phase directionnelle-mais-en-
+  essoufflement, jadis appariée à un sommet/retournement) n'a plus de règle
+  d'entrée. Deux issues possibles pour la mission : (a) réintroduire une règle
+  d'émission fondée sur un essoufflement mesurable (volume/divergence/rejet au
+  sommet), ou (b) acter officiellement 4 phases et retirer `distribution` du
+  schéma `MarketPhase`. Retiré de la palette scanner en attendant.
