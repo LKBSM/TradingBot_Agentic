@@ -14,7 +14,7 @@ import type { ConditionsConfig } from '../types';
 const SAMPLE_CONFIG: ConditionsConfig = {
   logic: 'AND',
   conditions: [
-    { type: 'mtf_aligned', direction: 'bullish' },
+    { type: 'higher_tf_agrees', direction: 'bullish' },
     { type: 'bos_recent_confirmed', direction: 'any', max_bars: 5 },
   ],
 };
@@ -177,7 +177,7 @@ describe('validateStrategy — corrupt / out-of-schema strategies are flagged, n
       config: {
         logic: 'AND',
         conditions: [
-          { type: 'mtf_aligned', direction: 'bullish' },
+          { type: 'higher_tf_agrees', direction: 'bullish' },
           // e.g. a condition from a FUTURE schema this build does not know
           { type: 'per_tf_trend_is' } as never,
         ],

@@ -3,7 +3,7 @@ import { CONDITION_PALETTE, CONDITION_TYPES, FAMILIES, groupByFamily } from '../
 
 const EXPECTED_TYPES = new Set([
   // structure
-  'trend_is', 'mtf_aligned', 'last_event_is', 'last_event_age',
+  'trend_is', 'higher_tf_agrees', 'last_event_is', 'last_event_age',
   'bos_recent_confirmed', 'choch_recent_confirmed',
   // zones
   'price_in_ob', 'price_in_fvg', 'price_in_tested_zone', 'zone_untested',
@@ -22,6 +22,7 @@ describe('conditions palette (SC-1)', () => {
   it('no longer offers the removed conditions', () => {
     expect(CONDITION_TYPES).not.toContain('ob_fvg_confluence');
     expect(CONDITION_TYPES).not.toContain('retest_in_progress');
+    expect(CONDITION_TYPES).not.toContain('mtf_aligned');
   });
 
   it('groups every entry into one of the four families, with controls', () => {

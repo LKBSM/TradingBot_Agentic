@@ -25,7 +25,7 @@ function makeMatch(overrides: Partial<ComboMatch> = {}): ComboMatch {
     met_count: 2,
     total: 3,
     conditions_met: [
-      { type: 'mtf_aligned', label: '3 TF alignés', met: true, detail: 'Les 3 TF sont alignés.' },
+      { type: 'higher_tf_agrees', label: '3 TF alignés', met: true, detail: 'Les 3 TF sont alignés.' },
       { type: 'price_in_ob', label: 'Prix dans un Order Block', met: true, detail: 'Prix dans 1 OB.' },
     ],
     conditions_unmet: [

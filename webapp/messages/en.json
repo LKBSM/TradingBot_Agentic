@@ -573,7 +573,15 @@
       "age_bucket": "Age",
       "third": "Third",
       "eq_kind": "Type",
-      "session": "Session"
+      "session": "Session",
+      "relation": "Higher unit"
+    },
+    "opt": {
+      "relation": {
+        "same": "Same direction",
+        "opposite": "Opposite direction",
+        "indeterminate": "Indeterminate"
+      }
     },
     "bias": {
       "bullish": "Bullish",
@@ -616,8 +624,8 @@
       "trendIndeterminate": "Indeterminate"
     },
     "palette": {
-      "mtf_aligned_label": "3 TF aligned (structure)",
-      "mtf_aligned_desc": "The 3 timeframes (H4, H1, M15) show the same STRUCTURAL direction right now (last BOS/CHOCH break in the same direction). A timeframe with no structural trend established (indeterminate) prevents alignment.",
+      "higher_tf_agrees_label": "The higher unit goes",
+      "higher_tf_agrees_desc": "The structural trend of the immediately higher timeframe is currently going the same way as the scanned unit, the opposite way, or stays indeterminate. The compared unit is named in the result (\"the 1h goes the same way\"). On the highest tracked unit there is no higher unit: the condition is non-evaluable.",
       "trend_is_label": "Current trend (structure)",
       "trend_is_desc": "The structural trend observed on this timeframe is, right now, the one you selected (bullish, bearish, or indeterminate when no break established it).",
       "market_phase_is_label": "Market phase",

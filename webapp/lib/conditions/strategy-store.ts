@@ -69,10 +69,11 @@ const VALID_AGE_BUCKETS = new Set(['lt10', '10to50', 'gt50']);
 const VALID_THIRDS = new Set(['bottom', 'middle', 'top']);
 const VALID_EQ_KINDS = new Set(['any', 'highs', 'lows']);
 const VALID_SESSIONS = new Set(['asia', 'london', 'new_york', 'overlap']);
+const VALID_RELATIONS = new Set(['same', 'opposite', 'indeterminate']);
 const KNOWN_CONDITION_KEYS = new Set([
   'type', 'direction', 'max_bars', 'trend', 'phase', 'volatility',
   'proximity_pct', 'side', 'zone_kind', 'event', 'age_bucket', 'third',
-  'eq_kind', 'session',
+  'eq_kind', 'session', 'relation',
 ]);
 
 const ENUM_CHECKS: Array<{ key: string; set: Set<string>; label: string }> = [
@@ -87,6 +88,7 @@ const ENUM_CHECKS: Array<{ key: string; set: Set<string>; label: string }> = [
   { key: 'third', set: VALID_THIRDS, label: 'Tiers' },
   { key: 'eq_kind', set: VALID_EQ_KINDS, label: 'Type d’égalité' },
   { key: 'session', set: VALID_SESSIONS, label: 'Session' },
+  { key: 'relation', set: VALID_RELATIONS, label: 'Relation' },
 ];
 
 /**

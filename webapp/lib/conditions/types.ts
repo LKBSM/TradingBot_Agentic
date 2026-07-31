@@ -18,7 +18,7 @@ export type Family = 'structure' | 'zones' | 'liquidity' | 'context';
 export type ConditionType =
   // structure
   | 'trend_is'
-  | 'mtf_aligned'
+  | 'higher_tf_agrees'
   | 'last_event_is'
   | 'last_event_age'
   | 'bos_recent_confirmed'
@@ -57,6 +57,7 @@ export type AgeBucketChoice = 'lt10' | '10to50' | 'gt50';
 export type RangeThirdChoice = 'bottom' | 'middle' | 'top';
 export type EqKindChoice = 'any' | 'highs' | 'lows';
 export type SessionChoice = 'asia' | 'london' | 'new_york' | 'overlap';
+export type RelationChoice = 'same' | 'opposite' | 'indeterminate';
 
 /** The name of a segmented control — also the ScanCondition field it drives. */
 export type ControlName =
@@ -72,7 +73,8 @@ export type ControlName =
   | 'age_bucket'
   | 'third'
   | 'eq_kind'
-  | 'session';
+  | 'session'
+  | 'relation';
 
 /** One condition in the user's set (wire-shaped: matches the POST body). */
 export interface ScanCondition {
@@ -92,6 +94,7 @@ export interface ScanCondition {
   third?: RangeThirdChoice;
   eq_kind?: EqKindChoice;
   session?: SessionChoice;
+  relation?: RelationChoice;
 }
 
 /** The user's saved reading (their conditions + AND/OR logic). */

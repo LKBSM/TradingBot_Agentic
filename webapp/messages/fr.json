@@ -573,7 +573,15 @@
       "age_bucket": "Ancienneté",
       "third": "Tiers",
       "eq_kind": "Type",
-      "session": "Session"
+      "session": "Session",
+      "relation": "Unité supérieure"
+    },
+    "opt": {
+      "relation": {
+        "same": "Dans le même sens",
+        "opposite": "En sens opposé",
+        "indeterminate": "Indéterminée"
+      }
     },
     "bias": {
       "bullish": "Haussier",
@@ -616,8 +624,8 @@
       "trendIndeterminate": "Indéterminée"
     },
     "palette": {
-      "mtf_aligned_label": "3 TF alignés (structure)",
-      "mtf_aligned_desc": "Les 3 timeframes (H4, H1, M15) montrent la même direction de STRUCTURE en ce moment (dernière cassure BOS/CHOCH de même sens). Un timeframe sans tendance structurelle établie (indéterminé) empêche l’alignement.",
+      "higher_tf_agrees_label": "L’unité supérieure va",
+      "higher_tf_agrees_desc": "La tendance de structure de l’unité de temps immédiatement supérieure va, en ce moment, dans le même sens que l’unité scannée, en sens opposé, ou reste indéterminée. L’unité comparée est nommée dans le résultat (« le 1 h va dans le même sens »). Sur l’unité la plus haute suivie, il n’y a pas d’unité supérieure : la condition est non évaluable.",
       "trend_is_label": "Tendance actuelle (structure)",
       "trend_is_desc": "La tendance de structure observée sur ce timeframe est, en ce moment, celle choisie (haussière, baissière, ou indéterminée quand aucune cassure ne l’a établie).",
       "market_phase_is_label": "Phase de marché",

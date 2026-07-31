@@ -5,7 +5,7 @@ import type { ConditionsConfig } from '../types';
 
 const SAMPLE: ConditionsConfig = {
   logic: 'AND',
-  conditions: [{ type: 'mtf_aligned', direction: 'bullish' }],
+  conditions: [{ type: 'higher_tf_agrees', direction: 'bullish' }],
 };
 
 beforeEach(() => {

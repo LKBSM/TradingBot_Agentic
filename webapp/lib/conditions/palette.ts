@@ -36,6 +36,7 @@ const AGE_BUCKET = ['lt10', '10to50', 'gt50'] as const;
 const THIRD = ['bottom', 'middle', 'top'] as const;
 const EQ_KIND = ['any', 'highs', 'lows'] as const;
 const SESSION = ['asia', 'london', 'new_york', 'overlap'] as const;
+const RELATION = ['same', 'opposite', 'indeterminate'] as const;
 const BARS_RECENCY = [5, 10, 20, 50] as const;
 const BARS_FORMED = [10, 20, 50] as const;
 const PROX_ZONE = [0.1, 0.25, 0.5] as const;
@@ -61,14 +62,13 @@ export const CONDITION_PALETTE: readonly PaletteEntry[] = [
     tense: 'present',
   },
   {
-    type: 'mtf_aligned',
+    type: 'higher_tf_agrees',
     family: 'structure',
-    label: 'Les 3 unités H4/H1/M15 s’accordent (structure)',
+    label: 'L’unité supérieure va',
     description:
-      'Les trois timeframes H4, H1 et M15 montrent la MÊME direction de structure en ce moment. Un timeframe sans tendance structurelle établie (indéterminé) empêche l’accord. Condition transitoire : elle compare trois unités fixes, non « l’unité au-dessus » de celle scannée.',
-    controls: [ctrl('direction', DIRECTION, 'any')],
+      'La tendance de structure de l’unité de temps immédiatement supérieure va, en ce moment, dans le même sens que l’unité scannée, en sens opposé, ou reste indéterminée. L’unité comparée est nommée dans le résultat (« le 1 h va dans le même sens »). Sur l’unité la plus haute suivie, il n’y a pas d’unité supérieure : la condition est non évaluable.',
+    controls: [ctrl('relation', RELATION, 'same')],
     tense: 'present',
-    supports_direction: true,
   },
   {
     type: 'last_event_is',
@@ -283,6 +283,7 @@ export const OPTION_LABELS_FR: Record<ControlName, Record<string, string>> = {
   third: { bottom: 'Bas', middle: 'Milieu', top: 'Haut' },
   eq_kind: { any: 'Creux ou sommets', highs: 'Sommets', lows: 'Creux' },
   session: { asia: 'Asie', london: 'Londres', new_york: 'New York', overlap: 'Chevauchement' },
+  relation: { same: 'Dans le même sens', opposite: 'En sens opposé', indeterminate: 'Indéterminée' },
   max_bars: {},
   proximity_pct: {},
 };

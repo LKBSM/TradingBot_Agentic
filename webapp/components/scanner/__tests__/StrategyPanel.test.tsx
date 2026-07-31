@@ -11,7 +11,7 @@ function makeStrategy(overrides: Partial<SavedStrategy> = {}): SavedStrategy {
     id: 'id-1',
     name: 'London sweep M15',
     schema_version: CURRENT_STRATEGY_SCHEMA_VERSION,
-    config: { logic: 'AND', conditions: [{ type: 'mtf_aligned', direction: 'bullish' }] },
+    config: { logic: 'AND', conditions: [{ type: 'higher_tf_agrees', direction: 'bullish' }] },
     createdAt: 1_700_000_000_000,
     lastUsedAt: 1_700_000_000_000,
     ...overrides,
