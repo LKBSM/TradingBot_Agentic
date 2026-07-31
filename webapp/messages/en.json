@@ -802,6 +802,7 @@
       "trend_bearish": "Bearish trend",
       "trend_neutral": "Neutral trend",
       "trend_ranging": "Ranging market",
+      "trend_indeterminate": "Indeterminate trend",
       "volatility_low": "Low volatility",
       "volatility_normal": "Normal volatility",
       "volatility_elevated": "Elevated volatility",
@@ -2044,6 +2045,103 @@
     "list": {
       "unfetched": "not retrieved",
       "unavailable": "not available"
+    },
+    "month": {
+      "prev": "Previous month",
+      "next": "Next month",
+      "current": "Current month",
+      "weekdays": "Mon Tue Wed Thu Fri Sat Sun",
+      "moreCount": "+{count}",
+      "thisMonth": {
+        "title": "This month",
+        "count": "{count, plural, one {# publication} other {# publications}}",
+        "byMarket": "{market}: {count}",
+        "emptyDays": "{count, plural, one {# day with no publication} other {# days with no publication}}",
+        "note": "These counts describe the calendar, not expected activity."
+      },
+      "panel": {
+        "empty": "No publication on this day.",
+        "organismTime": "{time} {city}",
+        "localTime": "{time} your time ({offset})"
+      },
+      "filterEmpty": "No publication matches these filters this month. Change a filter or reset them.",
+      "empty": "No publication scheduled this month for your markets."
+    },
+    "pub": {
+      "curve": {
+        "title": "The last twelve published figures",
+        "badge": "Indicator value",
+        "note": "Each point is the indicator's value as published by the organism, in its own unit — not a price move. The upcoming point is left empty: its value does not exist yet and MIA does not estimate it.",
+        "upcoming": "upcoming",
+        "empty": "The published series is not available for this indicator.",
+        "revisedFromTo": "The latest figure was corrected after its release: {initial} first, then {current} on {date}.",
+        "notRevised": "None of the figures shown was corrected after its release.",
+        "source": "Series published by {organism}, in the organism's unit, as published — no conversion, no re-rounding."
+      },
+      "questions": {
+        "sectionTitle": "What the engine measured at previous publications",
+        "sectionBadge": "Price move — {market}",
+        "calmBefore": {
+          "q": "Is the hour before quieter or busier than usual?",
+          "a": "Across <b>{sample}</b> publications measured on {market}, the hour before the release was quieter than usual <b>{calmer} times</b> and busier <b>{busier} times</b>.",
+          "detail": "Ordinary-hour benchmark, outside publications: <b>{reference} {unit}</b> of travel over sixty minutes. Quietest observed: {calmest} {unit} on {calmestDate}. Busiest: {busiest} {unit} on {busiestDate}.",
+          "source": "Travel = highest minus lowest over the sixty minutes before the release, on {market}. Benchmark built from {referenceDays} publication-free days at the same hour of day. Base: {sample} publications, from {periodStart} to {periodEnd}."
+        },
+        "structure": {
+          "q": "What state was the market structure in at the instant of the release?",
+          "a": "Across <b>{sample}</b> publications, price was already inside a zone <b>{insideZone} times</b>, and an intact liquidity pocket sat within 0.5% of price <b>{intactPocket} times</b>.",
+          "detail": "Position within the prevailing range: <b>{lower}</b> in the lower third, <b>{middle}</b> in the middle third, <b>{upper}</b> in the upper third. A \"zone\" is a block of price the market left behind (an order block or an unfilled imbalance); a \"liquidity pocket\" is a level where resting orders build up, called \"intact\" as long as it has not been reached.",
+          "now": "Right now, before the next release: price is {nowInside} inside a zone; {nowPocket}; its position within the range is {nowRange}.",
+          "nowInsideYes": "already",
+          "nowInsideNo": "not",
+          "nowPocketYes": "an intact pocket sits within 0.5%",
+          "nowPocketNo": "no intact pocket is within 0.5%",
+          "rangeLower": "low",
+          "rangeMiddle": "mid",
+          "rangeUpper": "high",
+          "source": "State obtained by replaying detection on the window ending at each release instant, seeing nothing of what followed. Base: {sample} publications on {market}, from {periodStart} to {periodEnd}."
+        },
+        "returnToCalm": {
+          "q": "How long did the market take to settle back down?",
+          "a": "Across <b>{sample}</b> publications measured on {market}, per-minute travel returned to its ordinary level in <b>under one hour {t0} times</b>, between one and three hours <b>{t1} times</b>, beyond three hours <b>{t2} times</b>.",
+          "detail": "Fastest: {fastest} on {fastestDate}. Slowest: {slowest} on {slowestDate}.",
+          "neverSettled": "{count, plural, =0 {} one {# publication had not settled within the six hours tracked.} other {# publications had not settled within the six hours tracked.}}",
+          "source": "Settle = the first time per-minute travel drops back below the hour's ordinary benchmark and stays there. Durations in hours and minutes. Base: {sample} publications on {market}, from {periodStart} to {periodEnd}."
+        }
+      },
+      "mia": {
+        "title": "Ask M.I.A",
+        "subtitle": "M.I.A explains concepts and describes what the engine measured.",
+        "s1": "Explain what this indicator measures",
+        "s2": "What did the engine measure at previous releases?",
+        "s3": "Show the current market structure",
+        "placeholder": "Ask your question…",
+        "send": "Send",
+        "capability": "M.I.A describes measured facts and explains concepts. It will not say what price will do, what value will be published, or whether to act — and will say so if asked."
+      },
+      "source": {
+        "title": "Go to the source",
+        "intro": "The indicator's value comes only from the organism that issues it:",
+        "link": "organism website"
+      },
+      "pedagogy": {
+        "title": "What this indicator measures",
+        "badge": "Explainer",
+        "nonoTitle": "What this explainer does not say",
+        "us_cpi": {
+          "body": "The Consumer Price Index tracks the change in the price of a basket of goods and services bought by U.S. households. It is published each month by the Bureau of Labor Statistics and expressed as a change from the same month a year earlier. The so-called core version excludes food and energy, seen as more volatile; both figures are released together.",
+          "nono": "This explainer says what the indicator measures. It does not say how the market will react to a figure higher or lower than the previous one: that relationship is neither constant nor mechanical, and MIA does not model it."
+        },
+        "ea_hicp_flash": {
+          "body": "The Harmonised Index of Consumer Prices tracks the change in the price of a basket of goods and services across the euro area, using a method common to all member states. Eurostat publishes a flash estimate at the end of each month, expressed as a change from the same month a year earlier; the figure is confirmed a few weeks later.",
+          "nono": "This explainer says what the indicator measures. It does not say how the market will react to a given figure: that relationship is neither constant nor mechanical, and MIA does not model it."
+        },
+        "default": {
+          "body": "This publication is an official economic indicator, released on a schedule known in advance. Its value is expressed in the unit of the organism that issues it.",
+          "nono": "This explainer says what the indicator measures. It does not say how the market will react, and MIA models no reaction."
+        }
+      },
+      "noMeasures": "No measurement is available for this indicator: the price history aligned to its past releases is not assembled. This page therefore stays with the published figures."
     }
   }
 }

@@ -62,6 +62,16 @@ def compute_value_state(
     return "unfetched"
 
 
+class CalendarSeriesPoint(BaseModel):
+    """One observation in an indicator's published history — the reference PERIOD
+    label (as the organism labels it, e.g. "2026-06") and the value AS PUBLISHED.
+    The period is the indicator's own reference month/quarter, never a release
+    date and never converted. Feeds the detail page's twelve-figure curve."""
+
+    period: str
+    value: float
+
+
 class CalendarEvent(BaseModel):
     """A single scheduled economic publication attached to ≥1 followed market."""
 
@@ -99,6 +109,11 @@ class CalendarEvent(BaseModel):
     # Last time this event was refreshed / a value fetch was attempted (the
     # "last attempt" date shown for the ``unfetched`` state).
     refreshed_at: Optional[datetime] = None
+    # The indicator's published history (oldest→newest), when the source serves a
+    # series. Empty for events with no series or no live value flow — the detail
+    # page then shows no curve (never a fabricated one). Attached ONLY by the
+    # per-event detail path, never by the list/month window (one call per detail).
+    value_series: List["CalendarSeriesPoint"] = Field(default_factory=list)
 
 
 class CalendarCoverage(BaseModel):
@@ -147,6 +162,7 @@ __all__ = [
     "CalendarPeriodicity",
     "ValueState",
     "compute_value_state",
+    "CalendarSeriesPoint",
     "CalendarEvent",
     "CalendarCoverage",
     "CalendarAttribution",

@@ -12,9 +12,16 @@ stable default deployment). A fetch never destroys stored data.
 
 from src.intelligence.calendar_providers.values.base_value import (
     MultiValueFetcher,
+    SeriesPoint,
     ValueFetcher,
     ValuePoint,
     build_value_fetcher,
 )
 
-__all__ = ["ValueFetcher", "ValuePoint", "MultiValueFetcher", "build_value_fetcher"]
+__all__ = [
+    "ValueFetcher",
+    "ValuePoint",
+    "SeriesPoint",
+    "MultiValueFetcher",
+    "build_value_fetcher",
+]

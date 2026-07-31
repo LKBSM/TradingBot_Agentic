@@ -38,6 +38,7 @@ from src.intelligence.calendar_schema import (
     CalendarCoverage,
     CalendarEvent,
     CalendarResponse,
+    CalendarSeriesPoint,
     compute_value_state,
 )
 from src.storage.calendar_cache_store import CalendarCacheEvent, CalendarCacheStore
@@ -171,6 +172,54 @@ class CalendarService:
             generated_at=now,
         )
 
+    def get_calendar_range(
+        self,
+        window_start: datetime,
+        window_end: datetime,
+        now: Optional[datetime] = None,
+    ) -> CalendarResponse:
+        """Serve every attached event in an ARBITRARY [start, end] range — the
+        month grid needs whole months forward AND backward, which the now-relative
+        lookahead/lookback window cannot express. Same shape, coverage and
+        attribution as ``get_calendar``; values are classified with this request's
+        clock. No per-event series is attached (that is the detail path only)."""
+        now = self._coerce_now(now)
+        window_start = self._coerce_now(window_start)
+        window_end = self._coerce_now(window_end)
+        self._maybe_refresh(now)
+
+        cached = self._store.get_events_between(window_start, window_end)
+        events = []
+        for e in cached:
+            ev = self._to_schema(e)
+            ev.actual_state = compute_value_state(
+                ev.series_code, ev.actual, ev.scheduled_at, now
+            )
+            events.append(ev)
+
+        feed_start, feed_end = self._coverage
+        if feed_start is None and feed_end is None:
+            feed_start, feed_end = self._store.coverage_bounds()
+        partial = bool(feed_end is not None and window_end > feed_end)
+
+        last_success, stale = self._freshness(now)
+        coverage = CalendarCoverage(
+            source=self._provider.source_name,
+            feed_start=feed_start,
+            feed_end=feed_end,
+            partial=partial,
+            last_success=last_success,
+            stale_sources=stale,
+        )
+        return CalendarResponse(
+            events=events,
+            window_start=window_start,
+            window_end=window_end,
+            coverage=coverage,
+            attribution=self._attribution_for(events),
+            generated_at=now,
+        )
+
     def get_event(
         self, event_id: str, now: Optional[datetime] = None
     ) -> CalendarResponse:
@@ -191,6 +240,14 @@ class CalendarService:
             ev.actual_state = compute_value_state(
                 ev.series_code, ev.actual, ev.scheduled_at, now
             )
+            # The published history (twelve-figure curve) is attached ONLY here, on
+            # the per-event detail path — one series call per detail, never per row
+            # of the list/month window. Absent series/fetcher ⇒ empty ⇒ no curve.
+            if self._value_fetcher is not None and ev.series_code:
+                ev.value_series = [
+                    CalendarSeriesPoint(period=p.period, value=p.value)
+                    for p in self._value_fetcher.series_for(ev.source, ev.series_code)
+                ]
             events.append(ev)
 
         last_success, stale = self._freshness(now)

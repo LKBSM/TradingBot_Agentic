@@ -791,6 +791,7 @@
       "trend_bearish": "Tendance baissière",
       "trend_neutral": "Tendance neutre",
       "trend_ranging": "Marché en range",
+      "trend_indeterminate": "Tendance indéterminée",
       "volatility_low": "Volatilité basse",
       "volatility_normal": "Volatilité normale",
       "volatility_elevated": "Volatilité élevée",
@@ -2033,6 +2034,103 @@
     "list": {
       "unfetched": "non récupérée",
       "unavailable": "non disponible"
+    },
+    "month": {
+      "prev": "Mois précédent",
+      "next": "Mois suivant",
+      "current": "Mois courant",
+      "weekdays": "lun mar mer jeu ven sam dim",
+      "moreCount": "+{count}",
+      "thisMonth": {
+        "title": "Ce mois-ci",
+        "count": "{count, plural, one {# publication} other {# publications}}",
+        "byMarket": "{market} : {count}",
+        "emptyDays": "{count, plural, one {# jour sans publication} other {# jours sans publication}}",
+        "note": "Ces comptes décrivent le calendrier, pas l'activité attendue."
+      },
+      "panel": {
+        "empty": "Aucune publication ce jour.",
+        "organismTime": "{time} {city}",
+        "localTime": "{time} ton heure ({offset})"
+      },
+      "filterEmpty": "Aucune publication ne correspond à ces filtres sur ce mois. Modifie un filtre ou réinitialise-les.",
+      "empty": "Aucune publication programmée sur ce mois pour tes marchés."
+    },
+    "pub": {
+      "curve": {
+        "title": "Les douze derniers chiffres publiés",
+        "badge": "Valeur de l'indicateur",
+        "note": "Chaque point est la valeur de l'indicateur telle que publiée par l'organisme, dans son unité — pas un mouvement de prix. Le point à venir est laissé vide : sa valeur n'existe pas encore et MIA ne l'estime pas.",
+        "upcoming": "à venir",
+        "empty": "La série publiée n'est pas disponible pour cet indicateur.",
+        "revisedFromTo": "Le dernier chiffre a été corrigé après sa parution : {initial} d'abord, puis {current} le {date}.",
+        "notRevised": "Aucun des chiffres affichés n'a été corrigé après sa parution.",
+        "source": "Série publiée par {organism}, dans l'unité de l'organisme, telle que publiée — sans conversion ni réarrondi."
+      },
+      "questions": {
+        "sectionTitle": "Ce que le moteur a mesuré aux publications précédentes",
+        "sectionBadge": "Mouvement de prix — {market}",
+        "calmBefore": {
+          "q": "L'heure qui précède est-elle plus calme ou plus agitée que d'habitude ?",
+          "a": "Sur <b>{sample}</b> publications mesurées sur {market}, l'heure précédant la parution a été plus calme que d'ordinaire <b>{calmer} fois</b> et plus agitée <b>{busier} fois</b>.",
+          "detail": "Repère de l'heure ordinaire, hors publication : <b>{reference} {unit}</b> de parcours sur soixante minutes. La plus calme observée : {calmest} {unit} le {calmestDate}. La plus agitée : {busiest} {unit} le {busiestDate}.",
+          "source": "Parcours = plus haut moins plus bas sur les soixante minutes précédant la parution, sur {market}. Repère établi sur {referenceDays} journées sans publication, à la même heure de la journée. Base : {sample} publications, du {periodStart} au {periodEnd}."
+        },
+        "structure": {
+          "q": "Dans quel état était la structure du marché à l'instant de la parution ?",
+          "a": "Sur <b>{sample}</b> publications, le prix était déjà dans une zone <b>{insideZone} fois</b>, et une poche de liquidité intacte se trouvait à moins de 0,5 % du prix <b>{intactPocket} fois</b>.",
+          "detail": "Position dans l'amplitude du moment : <b>{lower}</b> dans le tiers bas, <b>{middle}</b> dans le tiers central, <b>{upper}</b> dans le tiers haut. Une « zone » est un bloc de prix laissé par le marché (bloc d'ordres ou déséquilibre non comblé) ; une « poche de liquidité » est un niveau où des ordres en attente s'accumulent, dit « intact » tant qu'il n'a pas été atteint.",
+          "now": "Maintenant, avant la prochaine parution : le prix est {nowInside} dans une zone ; {nowPocket} ; sa position dans l'amplitude est {nowRange}.",
+          "nowInsideYes": "déjà",
+          "nowInsideNo": "n'est pas",
+          "nowPocketYes": "une poche intacte se trouve à moins de 0,5 %",
+          "nowPocketNo": "aucune poche intacte n'est à moins de 0,5 %",
+          "rangeLower": "basse",
+          "rangeMiddle": "centrale",
+          "rangeUpper": "haute",
+          "source": "État obtenu en rejouant la détection sur la fenêtre s'arrêtant à l'instant de chaque parution, sans rien voir de ce qui a suivi. Base : {sample} publications sur {market}, du {periodStart} au {periodEnd}."
+        },
+        "returnToCalm": {
+          "q": "Combien de temps le marché a-t-il mis à retrouver son calme ?",
+          "a": "Sur <b>{sample}</b> publications mesurées sur {market}, le parcours par minute est revenu à son niveau ordinaire en <b>moins d'une heure {t0} fois</b>, entre une et trois heures <b>{t1} fois</b>, au-delà de trois heures <b>{t2} fois</b>.",
+          "detail": "Le plus rapide : {fastest} le {fastestDate}. Le plus lent : {slowest} le {slowestDate}.",
+          "neverSettled": "{count, plural, =0 {} one {# publication n'était pas revenue au calme dans les six heures suivies.} other {# publications n'étaient pas revenues au calme dans les six heures suivies.}}",
+          "source": "Retour au calme = première fois que le parcours par minute repasse sous le repère ordinaire de l'heure et s'y maintient. Durées en heures et minutes. Base : {sample} publications sur {market}, du {periodStart} au {periodEnd}."
+        }
+      },
+      "mia": {
+        "title": "Demander à M.I.A",
+        "subtitle": "M.I.A explique les concepts et décrit ce que le moteur a mesuré.",
+        "s1": "Explique-moi ce que mesure cet indicateur",
+        "s2": "Qu'a mesuré le moteur aux parutions précédentes ?",
+        "s3": "Montre la structure actuelle du marché",
+        "placeholder": "Pose ta question…",
+        "send": "Envoyer",
+        "capability": "M.I.A décrit des faits mesurés et explique des concepts. Elle ne dit pas ce que le prix fera, ni quelle valeur sera publiée, ni s'il faut intervenir — et le dira si tu le lui demandes."
+      },
+      "source": {
+        "title": "Aller à la source",
+        "intro": "La valeur de l'indicateur provient uniquement de l'organisme qui l'émet :",
+        "link": "site de l'organisme"
+      },
+      "pedagogy": {
+        "title": "Ce que mesure cet indicateur",
+        "badge": "Fiche pédagogique",
+        "nonoTitle": "Ce que cette fiche ne dit pas",
+        "us_cpi": {
+          "body": "L'indice des prix à la consommation suit l'évolution du prix d'un panier de biens et de services achetés par les ménages américains. Il est publié chaque mois par le Bureau of Labor Statistics et exprimé en variation par rapport au même mois de l'année précédente. La version dite sous-jacente exclut l'alimentation et l'énergie, jugées plus instables ; les deux chiffres paraissent en même temps.",
+          "nono": "Cette fiche explique ce que l'indicateur mesure. Elle ne dit pas comment le marché réagira à un chiffre plus haut ou plus bas que le précédent : cette relation n'est ni constante ni mécanique, et MIA ne la modélise pas."
+        },
+        "ea_hicp_flash": {
+          "body": "L'indice des prix à la consommation harmonisé suit l'évolution du prix d'un panier de biens et de services dans la zone euro, selon une méthode commune à tous les pays membres. Eurostat en publie une estimation rapide à la fin de chaque mois, exprimée en variation par rapport au même mois de l'année précédente ; le chiffre est ensuite confirmé quelques semaines plus tard.",
+          "nono": "Cette fiche explique ce que l'indicateur mesure. Elle ne dit pas comment le marché réagira à un chiffre donné : cette relation n'est ni constante ni mécanique, et MIA ne la modélise pas."
+        },
+        "default": {
+          "body": "Cette publication est un indicateur économique officiel, paru selon un calendrier connu à l'avance. Sa valeur est exprimée dans l'unité de l'organisme qui l'émet.",
+          "nono": "Cette fiche explique ce que l'indicateur mesure. Elle ne dit pas comment le marché réagira, et MIA ne modélise aucune réaction."
+        }
+      },
+      "noMeasures": "Aucune mesure n'est disponible pour cet indicateur : l'historique de prix aligné sur ses parutions passées n'est pas réuni. Cette fiche s'en tient donc aux chiffres publiés."
     }
   }
 }
