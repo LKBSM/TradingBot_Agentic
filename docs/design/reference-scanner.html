@@ -1,0 +1,395 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MIA Markets — Scanner A, toutes les pages</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#080d16;--card:#101a2c;--card2:#0d1626;--line:#1c2942;--line2:#25344f;
+--tx:#e6edf7;--dim:#93a4bd;--faint:#61728c;--acc:#5b9dff;--pos:#3ddc97;--neg:#ff6b81;--amb:#f5b544;--vio:#a78bfa}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font-family:'Inter',system-ui,sans-serif;font-size:13px;line-height:1.55;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:'Space Grotesk',sans-serif}
+.mono{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums}
+.wrap{max-width:1080px;margin:0 auto;padding:16px 24px 90px}
+.pbar{position:sticky;top:0;z-index:70;background:linear-gradient(180deg,var(--bg) 76%,transparent);padding:12px 0 14px}
+.pbar .in{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.brand{font-family:'Space Grotesk';font-weight:700;font-size:14px;letter-spacing:-.02em;margin-right:6px}
+.brand span{color:var(--faint);font-weight:500}
+.ptab{font-family:'Space Grotesk';font-size:11px;font-weight:600;padding:6px 12px;border-radius:7px;border:1px solid var(--line);background:transparent;color:var(--dim);cursor:pointer;transition:.15s}
+.ptab:hover{border-color:var(--line2);color:var(--tx)}
+.ptab.on{background:var(--acc);border-color:var(--acc);color:#04101f}
+body[data-p="build"] .p-build,body[data-p="res"] .p-res,body[data-p="empty"] .p-empty,
+body[data-p="none"] .p-none,body[data-p="saved"] .p-saved{display:block}
+.p-build,.p-res,.p-empty,.p-none,.p-saved{display:none}
+
+.head{display:flex;align-items:flex-start;gap:16px;margin-bottom:18px}
+.head h1{font-size:22px;font-weight:600;letter-spacing:-.025em;margin-bottom:4px}
+.head .sub{color:var(--faint);font-size:12px}
+.head .act{margin-left:auto;display:flex;gap:8px;flex-shrink:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:13px}
+.pad{padding:16px 18px}
+.btn{font-family:'Space Grotesk';font-size:11.5px;font-weight:600;padding:7px 14px;border-radius:8px;border:1px solid var(--line2);background:transparent;color:var(--tx);cursor:pointer;transition:.15s;white-space:nowrap}
+.btn:hover{border-color:var(--acc);color:var(--acc)}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:#04101f}
+.btn.pri:hover{background:#7bb0ff;color:#04101f}
+.btn.sm{font-size:10.5px;padding:5px 10px}
+
+/* tiroirs */
+.fam{border:1px solid var(--line);border-radius:12px;margin-bottom:9px;overflow:hidden;background:var(--card)}
+.fh{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;user-select:none}
+.fh:hover{background:#0e1828}
+.fnum{font-family:'JetBrains Mono';font-size:10px;color:var(--faint);width:16px}
+.fnm{font-family:'Space Grotesk';font-size:13.5px;font-weight:600;letter-spacing:-.01em}
+.fdesc{font-size:11.5px;color:var(--faint)}
+.fmeta{margin-left:auto;display:flex;align-items:center;gap:11px}
+.pill{font-family:'JetBrains Mono';font-size:10px;padding:2.5px 9px;border-radius:20px;background:#0a1322;border:1px solid var(--line2);color:var(--faint)}
+.pill.act{background:#12294a;border-color:#2f5f9e;color:var(--acc)}
+.chev{color:var(--faint);font-size:11px;transition:.2s}
+.fam.open .chev{transform:rotate(90deg)}
+.fbody{display:none;padding:2px 16px 12px;border-top:1px solid var(--line)}
+.fam.open .fbody{display:block}
+.crow{display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:1px solid #16223a;flex-wrap:wrap}
+.crow:last-child{border-bottom:none}
+.tick{width:16px;height:16px;border-radius:5px;border:1.5px solid var(--line2);flex-shrink:0;display:grid;place-items:center;cursor:pointer;transition:.14s}
+.crow.on .tick{background:var(--acc);border-color:var(--acc)}
+.tick svg{width:9px;height:9px;stroke:#04101f;stroke-width:3.4;fill:none;opacity:0}
+.crow.on .tick svg{opacity:1}
+.cname{font-size:12.5px;cursor:pointer}
+.crow.on .cname{font-weight:500}
+.qm{display:inline-grid;place-items:center;width:14px;height:14px;border-radius:50%;border:1px solid var(--line2);color:var(--faint);font-size:8.5px;margin-left:5px;cursor:help;vertical-align:1px}
+.qm:hover{border-color:var(--acc);color:var(--acc)}
+.seg{display:flex;margin-left:auto;border:1px solid var(--line2);border-radius:7px;overflow:hidden;flex-shrink:0}
+.seg button{font-family:'JetBrains Mono';font-size:10.5px;padding:4px 10px;background:transparent;border:none;border-right:1px solid var(--line2);color:var(--faint);cursor:pointer;transition:.13s}
+.seg button:last-child{border-right:none}
+.seg button:hover{color:var(--tx)}
+.seg button.sel{background:#12294a;color:var(--acc)}
+.crow:not(.on) .seg{opacity:.35;pointer-events:none}
+/* phrase récap */
+.recap{margin-top:14px;border:1px solid var(--line);border-left:2px solid var(--acc);border-radius:0 11px 11px 0;background:var(--card2);padding:14px 17px}
+.recap .rl{font-family:'JetBrains Mono';font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);margin-bottom:8px;display:flex;align-items:center;gap:9px}
+.recap .rl button{margin-left:auto}
+.recap p{font-family:'Space Grotesk';font-size:14px;line-height:1.75;color:var(--dim);font-weight:400}
+.recap p b{color:var(--tx);font-weight:500}
+
+/* barre collante */
+.sticky{position:fixed;left:0;right:0;bottom:0;z-index:80;background:rgba(9,14,24,.93);backdrop-filter:blur(10px);border-top:1px solid var(--line2)}
+.sticky .in{max-width:1080px;margin:0 auto;padding:11px 24px;display:flex;align-items:center;gap:15px}
+.sticky .n{font-family:'Space Grotesk';font-size:26px;font-weight:700;letter-spacing:-.03em;line-height:1}
+.sticky .l{font-size:12px;color:var(--dim)}
+.sticky .l b{color:var(--tx);font-weight:500}
+.sticky .fr{margin-left:auto;font-family:'JetBrains Mono';font-size:10px;color:var(--faint);text-align:right;line-height:1.5}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--pos);display:inline-block;margin-right:5px}
+
+/* résultats */
+.rescard{border:1px solid var(--line);border-radius:13px;background:var(--card);margin-bottom:10px;overflow:hidden}
+.rescard.partial{background:var(--card2)}
+.rh{display:flex;align-items:center;gap:13px;padding:13px 16px;border-bottom:1px solid var(--line)}
+.sym{width:32px;height:32px;border-radius:9px;background:#12213a;border:1px solid var(--line2);display:grid;place-items:center;font-family:'JetBrains Mono';font-size:10.5px;font-weight:600;color:var(--acc);flex-shrink:0}
+.rh .nm{font-family:'Space Grotesk';font-size:14px;font-weight:600;letter-spacing:-.01em}
+.rh .px{font-family:'JetBrains Mono';font-size:10.5px;color:var(--faint)}
+.rh .tl{margin-left:auto;text-align:right;margin-right:4px}
+.rh .tl .t{font-family:'JetBrains Mono';font-size:13px;font-weight:600}
+.rh .tl .t.all{color:var(--pos)}
+.rh .tl .l{font-size:9px;color:var(--faint);font-family:'JetBrains Mono';letter-spacing:.07em}
+.rb{padding:13px 16px}
+.grp2{margin-bottom:12px}.grp2:last-child{margin-bottom:0}
+.gl2{font-family:'JetBrains Mono';font-size:9px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:7px}
+.gl2.y{color:var(--pos)}.gl2.n{color:var(--neg)}.gl2.c{color:var(--amb)}
+.li{display:flex;gap:9px;align-items:flex-start;font-size:12px;padding:3.5px 0;color:var(--dim)}
+.li b{color:var(--tx);font-weight:500}
+.li .mk{flex-shrink:0;font-family:'JetBrains Mono';font-size:10.5px;margin-top:2px}
+.grp2.y .mk{color:var(--pos)}.grp2.n .mk{color:var(--neg)}.grp2.c .mk{color:var(--amb)}
+.li .vv{margin-left:auto;font-family:'JetBrains Mono';font-size:10px;color:var(--faint);white-space:nowrap;padding-left:12px}
+.ctxb{background:#1a1508;border-left:2px solid var(--amb);border-radius:0 8px 8px 0;padding:9px 13px}
+.ctxb .li{color:#d5c49b;padding:2.5px 0}
+.rf{padding:10px 16px;border-top:1px solid var(--line);display:flex;align-items:center;gap:10px}
+.rf .st{font-family:'JetBrains Mono';font-size:10px;color:var(--faint);margin-right:auto}
+.filtres{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:11px 16px;border:1px solid var(--line);border-radius:11px;background:var(--card2);margin-bottom:13px}
+.filtres .fl{font-family:'JetBrains Mono';font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+.fchip{font-size:11px;padding:4px 11px;border-radius:20px;border:1px solid var(--line2);color:var(--dim);cursor:pointer;background:transparent}
+.fchip.on{background:#12294a;border-color:#2f5f9e;color:var(--acc)}
+
+/* états vides */
+.state{text-align:center;padding:60px 30px;border:1px dashed var(--line2);border-radius:14px;background:var(--card2)}
+.state .ico{width:46px;height:46px;border-radius:13px;background:#12213a;border:1px solid var(--line2);display:grid;place-items:center;margin:0 auto 16px}
+.state .ico svg{width:20px;height:20px;stroke:var(--acc);fill:none;stroke-width:1.8}
+.state h3{font-size:17px;font-weight:600;letter-spacing:-.02em;margin-bottom:8px}
+.state p{color:var(--dim);font-size:12.5px;max-width:430px;margin:0 auto 18px}
+.sugg2{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+
+/* stratégies */
+.strat{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:14px 16px;margin-bottom:9px;display:flex;align-items:flex-start;gap:14px}
+.strat .sinfo{flex:1;min-width:0}
+.strat .snm{font-family:'Space Grotesk';font-size:13.5px;font-weight:600;margin-bottom:3px}
+.strat .sph{font-size:11.5px;color:var(--faint);line-height:1.6}
+.strat .sres{text-align:right;flex-shrink:0}
+.strat .sres .n2{font-family:'Space Grotesk';font-size:20px;font-weight:700;letter-spacing:-.02em;line-height:1}
+.strat .sres .l2{font-size:9.5px;color:var(--faint);font-family:'JetBrains Mono'}
+.strat .sact{display:flex;flex-direction:column;gap:6px;flex-shrink:0}
+.newstrat{border:1px dashed var(--line2);border-radius:12px;padding:16px;text-align:center;color:var(--faint);font-size:12.5px;cursor:pointer}
+.newstrat:hover{border-color:var(--acc);color:var(--acc)}
+@media(max-width:760px){.crow{align-items:flex-start}.seg{margin-left:0;width:100%;margin-top:6px}.seg button{flex:1}}
+</style></head><body data-p="build"><div class="wrap">
+<div class="pbar"><div class="in">
+  <div class="brand">MIA <span>· Scanner</span></div>
+  <button class="ptab on" onclick="sp('build',this)">1 · Construction</button>
+  <button class="ptab" onclick="sp('res',this)">2 · Résultats</button>
+  <button class="ptab" onclick="sp('saved',this)">3 · Mes stratégies</button>
+  <button class="ptab" onclick="sp('empty',this)">4 · Aucune condition</button>
+  <button class="ptab" onclick="sp('none',this)">5 · Aucun combo</button>
+</div></div>
+<!-- ========= 1 CONSTRUCTION ========= -->
+<div class="p-build">
+<div class="head"><div><h1>Construis ta lecture</h1>
+  <div class="sub">Coche les conditions qui t'intéressent. Elles décrivent l'état actuel du marché — jamais ce qu'il va faire.</div></div>
+  <div class="act"><button class="btn sm">Tout décocher</button><button class="btn sm">Enregistrer</button></div></div>
+
+<div class="fam open"><div class="fh" onclick="fo(this)"><span class="fnum">01</span>
+  <span><span class="fnm">Structure</span> <span class="fdesc">· tendance, cassures, changements de caractère</span></span>
+  <span class="fmeta"><span class="pill act">3 actives</span><span class="chev">›</span></span></div>
+  <div class="fbody">
+    <div class="crow on"><span class="tick" onclick="tk(this)"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span class="cname">La tendance structurelle est<span class="qm">?</span></span>
+      <span class="seg"><button>haussière</button><button class="sel">baissière</button><button>indéterminée</button></span></div>
+    <div class="crow on"><span class="tick" onclick="tk(this)"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span class="cname">L'unité supérieure va<span class="qm">?</span></span>
+      <span class="seg"><button class="sel">dans le même sens</button><button>en sens opposé</button><button>indéterminée</button></span></div>
+    <div class="crow"><span class="tick" onclick="tk(this)"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span class="cname">Le dernier événement détecté est<span class="qm">?</span></span>
+      <span class="seg"><button>BOS ↑</button><button>BOS ↓</button><button>CHOCH ↑</button><button class="sel">CHOCH ↓</button></span></div>
+    <div class="crow on"><span class="tick" onclick="tk(this)"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span class="cname">Un CHOCH est survenu dans les N dernières bougies<span class="qm">?</span></span>
+      <span class="seg"><button>5</button><button>10</button><button class="sel">20</button><button>50</button></span></div>
+    <div class="crow"><span class="tick" onclick="tk(this)"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span class="cname">Un BOS est survenu dans les N dernières bougies<span class="qm">?</span></span>
+      <span class="seg"><button>5</button><button>10</button><button class="sel">20</button><button>50</button></span></div>
+  </div></div>
+
+<div class="fam open"><div class="fh" onclick="fo(this)"><span class="fnum">02</span>
+  <span><span class="fnm">Zones</span> <span class="fdesc">· Order Blocks, Fair Value Gaps, cycle de vie</span></span>
+  <span class="fmeta"><span class="pill act">2 actives</span><span class="chev">›</span></span></div>
+  <div class="fbody">
+    <div class="crow on"><span class="tick" onclick="tk(this)"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span class="cname">Le prix est dans un Order Block<span class="qm">?</span></span>
+      <span class="seg"><button>haussier</button><button>baissier</button><button class="sel">l'un ou l'autre</button></span></div>
+    <div class="crow"><span class="tick" onclick="tk(this)"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span class="cname">Le prix est dans un Fair Value Gap<span class="qm">?</span></span>
+      <span class="seg"><button>haussier</button><button>baissier</button><button class="sel">l'un ou l'autre</button></span></div>
+    <div class="crow on"><span class="tick" onclick="tk(this)"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span class="cname">La zone n'a jamais été testée depuis sa formation<span class="qm">?</span></span>
+      <span class="seg"><button class="sel">oui</button></span></div>
+    <div class="crow"><span class="tick" onclick="tk(this)"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span class="cname">La zone a été testée au plus N fois<span class="qm">?</span></span>
+      <span class="seg"><button class="sel">1</button><button>2</button><button>3</button></span></div>
+    <div class="crow"><span class="tick" onclick="tk(this)"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span class="cname">La zone s'est formée dans les N dernières bougies<span class="qm">?</span></span>
+      <span class="seg"><button>10</button><button class="sel">20</button><button>50</button></span></div>
+    <div class="crow"><span class="tick" onclick="tk(this)"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span class="cname">Le prix est à moins de X % d'une zone, sans y être<span class="qm">?</span></span>
+      <span class="seg"><button>0,1 %</button><button class="sel">0,25 %</button><button>0,5 %</button></span></div>
+  </div></div>
+
+<div class="fam"><div class="fh" onclick="fo(this)"><span class="fnum">03</span>
+  <span><span class="fnm">Liquidité</span> <span class="fdesc">· poches, état, creux et sommets égaux</span></span>
+  <span class="fmeta"><span class="pill act">1 active</span><span class="chev">›</span></span></div>
+  <div class="fbody">
+    <div class="crow on"><span class="tick" onclick="tk(this)"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span class="cname">Une poche a été prise dans les N dernières bougies<span class="qm">?</span></span>
+      <span class="seg"><button>5</button><button class="sel">10</button><button>20</button><button>50</button></span></div>
+    <div class="crow"><span class="tick" onclick="tk(this)"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span class="cname">Une poche intacte est à moins de X % du prix<span class="qm">?</span></span>
+      <span class="seg"><button>0,25 %</button><button class="sel">0,5 %</button><button>1 %</button></span></div>
+    <div class="crow"><span class="tick" onclick="tk(this)"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span class="cname">Une poche a été cassée dans les N dernières bougies<span class="qm">?</span></span>
+      <span class="seg"><button>5</button><button>10</button><button class="sel">20</button><button>50</button></span></div>
+    <div class="crow"><span class="tick" onclick="tk(this)"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span class="cname">Des creux ou sommets égaux sont présents<span class="qm">?</span></span>
+      <span class="seg"><button>creux</button><button>sommets</button><button class="sel">l'un ou l'autre</button></span></div>
+  </div></div>
+
+<div class="fam"><div class="fh" onclick="fo(this)"><span class="fnum">04</span>
+  <span><span class="fnm">Contexte</span> <span class="fdesc">· phase, volatilité, range, session</span></span>
+  <span class="fmeta"><span class="pill">aucune active</span><span class="chev">›</span></span></div>
+  <div class="fbody">
+    <div class="crow"><span class="tick" onclick="tk(this)"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span class="cname">La phase de marché est<span class="qm">?</span></span>
+      <span class="seg"><button class="sel">expansion</button><button>consolidation</button></span></div>
+    <div class="crow"><span class="tick" onclick="tk(this)"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span class="cname">La volatilité est<span class="qm">?</span></span>
+      <span class="seg"><button class="sel">étendue</button><button>normale</button><button>contractée</button></span></div>
+    <div class="crow"><span class="tick" onclick="tk(this)"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span class="cname">Le prix est dans le tiers … du range<span class="qm">?</span></span>
+      <span class="seg"><button>haut</button><button>milieu</button><button class="sel">bas</button></span></div>
+    <div class="crow"><span class="tick" onclick="tk(this)"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span class="cname">La session en cours est<span class="qm">?</span></span>
+      <span class="seg"><button>Asie</button><button class="sel">Londres</button><button>New York</button><button>chevauchement</button></span></div>
+    <div class="crow"><span class="tick" onclick="tk(this)"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span class="cname">Le dernier événement remonte à<span class="qm">?</span></span>
+      <span class="seg"><button class="sel">moins de 10</button><button>10 à 50</button><button>plus de 50</button></span></div>
+  </div></div>
+
+<div class="recap"><div class="rl">Ta lecture, en toutes lettres <button class="btn sm">Copier</button></div>
+  <p>Montre-moi les marchés où, en ce moment, la tendance structurelle est <b>baissière</b>, l'unité supérieure va <b>dans le même sens</b>, un <b>CHOCH</b> est survenu dans les <b>20</b> dernières bougies, une poche de liquidité a été <b>prise</b> dans les <b>10</b> dernières bougies, et le prix est <b>dans un Order Block</b> <b>jamais testé</b>.</p></div>
+</div>
+
+<div class="sticky"><div class="in"><div class="n">3</div>
+  <div class="l"><b>combos correspondent</b> à tes 6 conditions<br><span style="color:var(--faint);font-size:11.5px">sur 12 marchés et unités de temps suivis</span></div>
+  <div class="fr"><span class="dot"></span>réévalué à chaque clôture<br>dernière il y a 4 min</div>
+  <button class="btn">Relancer</button><button class="btn pri">Voir les résultats</button></div></div>
+<!-- ========= 2 RÉSULTATS ========= -->
+<div class="p-res">
+<div class="head"><div><h1>3 combos correspondent</h1>
+  <div class="sub">Sur 12 marchés et unités de temps suivis · réévalué à chaque clôture de bougie</div></div>
+  <div class="act"><button class="btn sm">Relancer</button><button class="btn sm">Modifier les conditions</button></div></div>
+
+<div class="recap" style="margin-top:0;margin-bottom:14px"><div class="rl">Ta lecture</div>
+  <p style="font-size:13px">Tendance structurelle <b>baissière</b>, unité supérieure <b>dans le même sens</b>, <b>CHOCH</b> dans les <b>20</b> dernières bougies, poche de liquidité <b>prise</b> dans les <b>10</b> dernières, prix <b>dans un Order Block jamais testé</b>.</p></div>
+
+<div class="filtres"><span class="fl">Afficher</span>
+  <button class="fchip on">Correspondances (3)</button>
+  <button class="fchip">Presque (4)</button>
+  <button class="fchip">Non correspondants (5)</button>
+  <button class="fchip">Non évaluables (2)</button>
+</div>
+
+<div class="rescard">
+  <div class="rh"><div class="sym">Au</div><div><div class="nm">Or · 15 min</div><div class="px">XAU/USD · 4 030,80</div></div>
+    <div class="tl"><div class="t all">6 / 6</div><div class="l">conditions</div></div><button class="btn">Analyser</button></div>
+  <div class="rb">
+    <div class="grp2 y"><div class="gl2 y">Ce qui correspond</div>
+      <div class="li"><span class="mk">✓</span><span><b>Tendance baissière</b> — dernier BOS baissier non contredit</span><span class="vv">depuis le 28 juil. 11:10</span></div>
+      <div class="li"><span class="mk">✓</span><span><b>Le 1 h va dans le même sens</b></span><span class="vv">baissier</span></div>
+      <div class="li"><span class="mk">✓</span><span><b>CHOCH il y a 6 bougies</b></span><span class="vv">4 029,33</span></div>
+      <div class="li"><span class="mk">✓</span><span><b>Poche de liquidité prise il y a 8 bougies</b></span><span class="vv">SSL · 4 022,74</span></div>
+      <div class="li"><span class="mk">✓</span><span><b>Prix dans un Order Block</b> — entré il y a 2 bougies</span><span class="vv">4 028,59 – 4 030,15</span></div>
+      <div class="li"><span class="mk">✓</span><span><b>Zone jamais testée depuis sa formation</b></span><span class="vv">formée il y a 14 bougies</span></div>
+    </div>
+    <div class="grp2 n"><div class="gl2 n">Ce qui va à l'encontre</div>
+      <div class="li"><span class="mk">✗</span><span>Le 4 h et le 1 jour sont en tendance haussière</span><span class="vv">désaccord multi-unités</span></div>
+      <div class="li"><span class="mk">✗</span><span>La volatilité est contractée, pas étendue</span><span class="vv">7 dernières vs 20</span></div>
+    </div>
+    <div class="grp2 c"><div class="gl2 c">Contexte que tu n'as pas demandé</div>
+      <div class="ctxb">
+        <div class="li"><span class="mk">·</span><span>Une poche intacte se trouve à 0,2 % au-dessus</span><span class="vv">4 032,10</span></div>
+        <div class="li"><span class="mk">·</span><span>Publication de l'IPC américain dans 2 h 14</span><span class="vv">impact élevé</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="rf"><span class="st">bougie clôturée il y a 4 min · lecture à jour</span><button class="btn">Ouvrir dans le graphique</button></div>
+</div>
+
+<div class="rescard">
+  <div class="rh"><div class="sym">Au</div><div><div class="nm">Or · 1 h</div><div class="px">XAU/USD · 4 030,80</div></div>
+    <div class="tl"><div class="t all">6 / 6</div><div class="l">conditions</div></div><button class="btn">Analyser</button></div>
+  <div class="rb">
+    <div class="grp2 y"><div class="gl2 y">Ce qui correspond</div>
+      <div class="li"><span class="mk">✓</span><span><b>Tendance baissière</b></span><span class="vv">depuis le 27 juil. 22:00</span></div>
+      <div class="li"><span class="mk">✓</span><span><b>Le 4 h va dans le même sens</b></span><span class="vv">baissier</span></div>
+      <div class="li"><span class="mk">✓</span><span><b>CHOCH il y a 11 bougies</b></span><span class="vv">4 041,60</span></div>
+      <div class="li"><span class="mk">✓</span><span><b>Poche prise il y a 4 bougies</b></span><span class="vv">SSL · EQL 4 020,91</span></div>
+      <div class="li"><span class="mk">✓</span><span><b>Prix dans un Order Block</b> — entré il y a 1 bougie</span><span class="vv">4 021,28 – 4 024,05</span></div>
+      <div class="li"><span class="mk">✓</span><span><b>Zone jamais testée</b></span><span class="vv">formée il y a 6 bougies</span></div>
+    </div>
+    <div class="grp2 n"><div class="gl2 n">Ce qui va à l'encontre</div>
+      <div class="li"><span class="mk">✗</span><span>Aucune tendance structurelle établie sur le 1 jour</span><span class="vv">pas d'événement dans la fenêtre</span></div>
+    </div>
+    <div class="grp2 c"><div class="gl2 c">Contexte que tu n'as pas demandé</div>
+      <div class="ctxb"><div class="li"><span class="mk">·</span><span>Deux poches intactes sous le prix</span><span class="vv">4 012,40 · 4 008,15</span></div></div>
+    </div>
+  </div>
+  <div class="rf"><span class="st">bougie clôturée il y a 22 min · lecture à jour</span><button class="btn">Ouvrir dans le graphique</button></div>
+</div>
+
+<div class="rescard partial">
+  <div class="rh"><div class="sym">€</div><div><div class="nm">Euro · 5 min</div><div class="px">EUR/USD · 1,0842</div></div>
+    <div class="tl"><div class="t">5 / 6</div><div class="l">conditions</div></div><button class="btn">Analyser</button></div>
+  <div class="rb">
+    <div class="grp2 y"><div class="gl2 y">Ce qui correspond</div>
+      <div class="li"><span class="mk">✓</span><span><b>Tendance baissière</b></span><span class="vv">depuis le 30 juil. 06:20</span></div>
+      <div class="li"><span class="mk">✓</span><span><b>CHOCH il y a 3 bougies</b></span><span class="vv">1,0851</span></div>
+      <div class="li"><span class="mk">✓</span><span><b>Poche prise il y a 9 bougies</b></span><span class="vv">SSL · 1,0836</span></div>
+      <div class="li"><span class="mk">✓</span><span><b>Prix dans un Order Block</b></span><span class="vv">1,0838 – 1,0845</span></div>
+      <div class="li"><span class="mk">✓</span><span><b>Zone jamais testée</b></span><span class="vv">formée il y a 5 bougies</span></div>
+    </div>
+    <div class="grp2 n"><div class="gl2 n">Ce qui ne correspond pas</div>
+      <div class="li"><span class="mk">✗</span><span><b>Le 15 min va en sens opposé</b> — tendance haussière</span><span class="vv">condition non remplie</span></div>
+    </div>
+  </div>
+  <div class="rf"><span class="st">bougie clôturée il y a 2 min · lecture à jour</span><button class="btn">Ouvrir dans le graphique</button></div>
+</div>
+</div>
+<!-- ========= 3 MES STRATÉGIES ========= -->
+<div class="p-saved">
+<div class="head"><div><h1>Mes lectures enregistrées</h1>
+  <div class="sub">Chaque lecture est réévaluée à chaque clôture de bougie. Tu retrouves l'état à jour sans rien recocher.</div></div>
+  <div class="act"><button class="btn pri sm">Nouvelle lecture</button></div></div>
+
+<div class="strat">
+  <div class="sinfo"><div class="snm">Balayage puis changement de caractère</div>
+    <div class="sph">Tendance baissière · unité supérieure dans le même sens · CHOCH ≤ 20 bougies · poche prise ≤ 10 bougies · dans un Order Block jamais testé</div></div>
+  <div class="sres"><div class="n2">3</div><div class="l2">combos</div></div>
+  <div class="sact"><button class="btn sm">Ouvrir</button><button class="btn sm">Modifier</button></div>
+</div>
+
+<div class="strat">
+  <div class="sinfo"><div class="snm">Retour dans un FVG récent</div>
+    <div class="sph">Tendance haussière · dans un Fair Value Gap · zone formée ≤ 20 bougies · zone testée au plus 1 fois</div></div>
+  <div class="sres"><div class="n2">1</div><div class="l2">combo</div></div>
+  <div class="sact"><button class="btn sm">Ouvrir</button><button class="btn sm">Modifier</button></div>
+</div>
+
+<div class="strat">
+  <div class="sinfo"><div class="snm">Approche de poche intacte</div>
+    <div class="sph">Poche intacte à moins de 0,5 % du prix · prix à moins de 0,25 % d'une zone sans y être · volatilité étendue</div></div>
+  <div class="sres"><div class="n2">0</div><div class="l2">combo</div></div>
+  <div class="sact"><button class="btn sm">Ouvrir</button><button class="btn sm">Modifier</button></div>
+</div>
+
+<div class="strat">
+  <div class="sinfo"><div class="snm">Lecture large — structure seule</div>
+    <div class="sph">Tendance baissière · un BOS est survenu dans les 50 dernières bougies</div></div>
+  <div class="sres"><div class="n2">7</div><div class="l2">combos</div></div>
+  <div class="sact"><button class="btn sm">Ouvrir</button><button class="btn sm">Modifier</button></div>
+</div>
+
+<div class="newstrat">+ Enregistrer la lecture en cours de construction</div>
+
+<div style="margin-top:18px;padding:13px 16px;border:1px solid var(--line);border-left:2px solid var(--faint);border-radius:0 10px 10px 0;background:var(--card2);font-size:12px;color:var(--dim)">
+  Le nombre affiché à côté de chaque lecture est un <b style="color:var(--tx);font-weight:500">constat</b>, pas un classement. Une lecture qui remonte sept combos n'est pas meilleure qu'une lecture qui n'en remonte aucun — elle est simplement plus large.
+</div>
+</div>
+
+<!-- ========= 4 AUCUNE CONDITION ========= -->
+<div class="p-empty">
+<div class="head"><div><h1>Construis ta lecture</h1>
+  <div class="sub">Aucune condition n'est cochée pour l'instant.</div></div></div>
+<div class="state">
+  <div class="ico"><svg viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></svg></div>
+  <h3>Coche au moins une condition</h3>
+  <p>Sans condition, il n'y a rien à chercher. Ouvre une famille ci-dessus et coche ce qui t'intéresse — la liste des marchés correspondants apparaîtra au fur et à mesure.</p>
+  <div class="sugg2"><button class="btn">Ouvrir Structure</button><button class="btn">Ouvrir Zones</button><button class="btn">Reprendre une lecture enregistrée</button></div>
+</div>
+<div style="margin-top:16px;padding:13px 16px;border:1px solid var(--line);border-left:2px solid var(--faint);border-radius:0 10px 10px 0;background:var(--card2);font-size:12px;color:var(--dim)">
+  Aucune condition cochée ne veut pas dire « tous les marchés ». Le scanner ne se rabat jamais sur un résultat par défaut : il attend que tu lui dises quoi regarder.
+</div>
+</div>
+
+<!-- ========= 5 AUCUN COMBO ========= -->
+<div class="p-none">
+<div class="head"><div><h1>Aucun combo ne correspond</h1>
+  <div class="sub">Sur 12 marchés et unités de temps suivis · réévalué à chaque clôture de bougie</div></div>
+  <div class="act"><button class="btn sm">Relancer</button><button class="btn sm">Modifier les conditions</button></div></div>
+
+<div class="state" style="padding:44px 30px">
+  <div class="ico"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></div>
+  <h3>Rien ne correspond en ce moment</h3>
+  <p>Ce n'est pas une erreur. Tes 6 conditions ne sont réunies sur aucun des marchés suivis à cet instant. C'est une réponse aussi valable qu'une liste de résultats.</p>
+</div>
+
+<div class="card pad" style="margin-top:14px">
+  <div style="font-family:'JetBrains Mono';font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:11px">Ce qui bloque, condition par condition</div>
+  <div class="li"><span class="mk" style="color:var(--pos)">✓</span><span>Tendance baissière</span><span class="vv">7 combos sur 12</span></div>
+  <div class="li"><span class="mk" style="color:var(--pos)">✓</span><span>Unité supérieure dans le même sens</span><span class="vv">4 combos</span></div>
+  <div class="li"><span class="mk" style="color:var(--pos)">✓</span><span>CHOCH dans les 20 dernières bougies</span><span class="vv">3 combos</span></div>
+  <div class="li"><span class="mk" style="color:var(--neg)">✗</span><span><b>Poche prise dans les 10 dernières bougies</b></span><span class="vv" style="color:var(--neg)">0 combo</span></div>
+  <div class="li"><span class="mk" style="color:var(--pos)">✓</span><span>Prix dans un Order Block</span><span class="vv">3 combos</span></div>
+  <div class="li"><span class="mk" style="color:var(--pos)">✓</span><span>Zone jamais testée</span><span class="vv">6 combos</span></div>
+  <div style="margin-top:13px;padding-top:12px;border-top:1px solid var(--line);font-size:12px;color:var(--dim)">
+    Une seule condition n'est réunie nulle part en ce moment. Les comptes ci-dessus sont indépendants les uns des autres : ils ne s'additionnent pas et ne disent pas combien de combos réuniraient une combinaison partielle.
+  </div>
+</div>
+
+<div style="margin-top:16px;padding:13px 16px;border:1px solid var(--line);border-left:2px solid var(--amb);border-radius:0 10px 10px 0;background:#1a1508;font-size:12px;color:#d5c49b">
+  Le produit ne propose pas de « relâcher » une condition pour obtenir des résultats. Un scanner qui suggère d'assouplir jusqu'à trouver quelque chose apprend à chercher une réponse plutôt qu'à la lire.
+</div>
+</div>
+
+</div>
+<script>
+function sp(p,el){document.body.dataset.p=p;document.querySelectorAll('.ptab').forEach(b=>b.classList.remove('on'));el.classList.add('on');window.scrollTo({top:0});}
+function fo(el){el.parentElement.classList.toggle('open');}
+function tk(el){el.parentElement.classList.toggle('on');}
+document.querySelectorAll('.seg button').forEach(function(b){b.onclick=function(e){e.stopPropagation();
+  this.parentElement.querySelectorAll('button').forEach(x=>x.classList.remove('sel'));this.classList.add('sel');};});
+document.querySelectorAll('.cname').forEach(function(c){c.onclick=function(){this.parentElement.classList.toggle('on');};});
+</script></body></html>
