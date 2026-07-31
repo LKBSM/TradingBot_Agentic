@@ -84,6 +84,10 @@ export function ConditionsBuilder({
   const pdesc = (type: ConditionType): string =>
     t.has(`palette.${type}_desc`) ? t(`palette.${type}_desc`) : paletteEntry(type)?.description ?? '';
   const optLabel = (control: ControlName, value: string | number): string => {
+    // Numbers carry a UNIT that must localise (bars / %), so route them through
+    // i18n rather than the French fallback.
+    if (control === 'max_bars') return t('opt.bars', { n: value });
+    if (control === 'proximity_pct') return t('opt.pct', { n: value });
     const key = `opt.${control}.${value}`;
     return t.has(key) ? t(key) : optionLabelFallback(control, value);
   };

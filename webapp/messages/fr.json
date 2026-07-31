@@ -590,7 +590,9 @@
       "relation": {
         "same": "Dans le même sens",
         "opposite": "En sens opposé"
-      }
+      },
+      "bars": "{n} bougies",
+      "pct": "{n} %"
     },
     "bias": {
       "bullish": "Haussier",
