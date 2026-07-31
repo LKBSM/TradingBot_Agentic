@@ -1,0 +1,661 @@
+{
+  "events": [
+    {
+      "id": "EVT-01",
+      "tf": "M15",
+      "ts": "2026-06-10 21:45:00+00:00",
+      "type": "BOS",
+      "direction": "bearish",
+      "level": 4155.41,
+      "image": "EVT-01.png"
+    },
+    {
+      "id": "EVT-02",
+      "tf": "H1",
+      "ts": "2026-07-23 17:00:00+00:00",
+      "type": "CHOCH",
+      "direction": "bearish",
+      "level": 4109.15,
+      "image": "EVT-02.png"
+    },
+    {
+      "id": "EVT-03",
+      "tf": "H1",
+      "ts": "2026-07-09 01:00:00+00:00",
+      "type": "BOS",
+      "direction": "bearish",
+      "level": 4041.55,
+      "image": "EVT-03.png"
+    },
+    {
+      "id": "EVT-04",
+      "tf": "H1",
+      "ts": "2026-07-24 23:00:00+00:00",
+      "type": "BOS",
+      "direction": "bullish",
+      "level": 4064.73,
+      "image": "EVT-04.png"
+    },
+    {
+      "id": "EVT-05",
+      "tf": "H1",
+      "ts": "2026-06-04 21:00:00+00:00",
+      "type": "CHOCH",
+      "direction": "bullish",
+      "level": 4496.2,
+      "image": "EVT-05.png"
+    },
+    {
+      "id": "EVT-06",
+      "tf": "M15",
+      "ts": "2026-07-14 12:15:00+00:00",
+      "type": "CHOCH",
+      "direction": "bullish",
+      "level": 4017.52,
+      "image": "EVT-06.png"
+    },
+    {
+      "id": "EVT-07",
+      "tf": "M15",
+      "ts": "2026-06-12 03:30:00+00:00",
+      "type": "BOS",
+      "direction": "bullish",
+      "level": 4116.97,
+      "image": "EVT-07.png"
+    },
+    {
+      "id": "EVT-08",
+      "tf": "M15",
+      "ts": "2026-07-16 22:30:00+00:00",
+      "type": "CHOCH",
+      "direction": "bearish",
+      "level": 4012.55,
+      "image": "EVT-08.png"
+    },
+    {
+      "id": "EVT-09",
+      "tf": "M15",
+      "ts": "2026-06-03 04:30:00+00:00",
+      "type": "BOS",
+      "direction": "bearish",
+      "level": 4482.64,
+      "image": "EVT-09.png"
+    },
+    {
+      "id": "EVT-10",
+      "tf": "H1",
+      "ts": "2026-06-18 04:00:00+00:00",
+      "type": "CHOCH",
+      "direction": "bearish",
+      "level": 4320.03,
+      "image": "EVT-10.png"
+    },
+    {
+      "id": "EVT-11",
+      "tf": "H1",
+      "ts": "2026-06-19 09:00:00+00:00",
+      "type": "BOS",
+      "direction": "bearish",
+      "level": 4202.12,
+      "image": "EVT-11.png"
+    },
+    {
+      "id": "EVT-12",
+      "tf": "H1",
+      "ts": "2026-07-22 10:00:00+00:00",
+      "type": "BOS",
+      "direction": "bullish",
+      "level": 4086.91,
+      "image": "EVT-12.png"
+    },
+    {
+      "id": "EVT-13",
+      "tf": "H1",
+      "ts": "2026-07-02 22:00:00+00:00",
+      "type": "CHOCH",
+      "direction": "bullish",
+      "level": 4115.77,
+      "image": "EVT-13.png"
+    },
+    {
+      "id": "EVT-14",
+      "tf": "M15",
+      "ts": "2026-06-26 22:45:00+00:00",
+      "type": "CHOCH",
+      "direction": "bullish",
+      "level": 4056.47,
+      "image": "EVT-14.png"
+    },
+    {
+      "id": "EVT-15",
+      "tf": "M15",
+      "ts": "2026-07-01 00:00:00+00:00",
+      "type": "BOS",
+      "direction": "bullish",
+      "level": 4036.94,
+      "image": "EVT-15.png"
+    },
+    {
+      "id": "EVT-16",
+      "tf": "M15",
+      "ts": "2026-06-16 03:30:00+00:00",
+      "type": "CHOCH",
+      "direction": "bearish",
+      "level": 4325.82,
+      "image": "EVT-16.png"
+    },
+    {
+      "id": "EVT-17",
+      "tf": "M15",
+      "ts": "2026-06-02 22:45:00+00:00",
+      "type": "BOS",
+      "direction": "bearish",
+      "level": 4516.71,
+      "image": "EVT-17.png"
+    },
+    {
+      "id": "EVT-18",
+      "tf": "H1",
+      "ts": "2026-07-08 18:00:00+00:00",
+      "type": "CHOCH",
+      "direction": "bearish",
+      "level": 4093.98,
+      "image": "EVT-18.png"
+    },
+    {
+      "id": "EVT-19",
+      "tf": "H1",
+      "ts": "2026-06-01 23:00:00+00:00",
+      "type": "BOS",
+      "direction": "bearish",
+      "level": 4490.95,
+      "image": "EVT-19.png"
+    },
+    {
+      "id": "EVT-20",
+      "tf": "H1",
+      "ts": "2026-07-18 01:00:00+00:00",
+      "type": "BOS",
+      "direction": "bullish",
+      "level": 4002.4,
+      "image": "EVT-20.png"
+    },
+    {
+      "id": "EVT-21",
+      "tf": "H1",
+      "ts": "2026-06-02 14:00:00+00:00",
+      "type": "CHOCH",
+      "direction": "bullish",
+      "level": 4512.23,
+      "image": "EVT-21.png"
+    },
+    {
+      "id": "EVT-22",
+      "tf": "M15",
+      "ts": "2026-06-16 22:45:00+00:00",
+      "type": "CHOCH",
+      "direction": "bullish",
+      "level": 4349.34,
+      "image": "EVT-22.png"
+    },
+    {
+      "id": "EVT-23",
+      "tf": "M15",
+      "ts": "2026-07-01 18:15:00+00:00",
+      "type": "BOS",
+      "direction": "bullish",
+      "level": 3979.16,
+      "image": "EVT-23.png"
+    },
+    {
+      "id": "EVT-24",
+      "tf": "M15",
+      "ts": "2026-06-05 22:30:00+00:00",
+      "type": "CHOCH",
+      "direction": "bearish",
+      "level": 4460.9,
+      "image": "EVT-24.png"
+    },
+    {
+      "id": "EVT-25",
+      "tf": "M15",
+      "ts": "2026-06-03 23:30:00+00:00",
+      "type": "BOS",
+      "direction": "bearish",
+      "level": 4438.96,
+      "image": "EVT-25.png"
+    }
+  ],
+  "non_events": [
+    {
+      "id": "NON-01",
+      "tf": "M15",
+      "ts": "2026-07-08 20:15:00+00:00",
+      "side": "down",
+      "reason": "level_already_broken",
+      "level": 4114.4,
+      "bar_high": null,
+      "bar_low": 4041.88475,
+      "bar_close": 4050.05639,
+      "image": "NON-01.png"
+    },
+    {
+      "id": "NON-02",
+      "tf": "H1",
+      "ts": "2026-06-15 21:00:00+00:00",
+      "side": "up",
+      "reason": "wick_only_close_inside",
+      "level": 4345.37,
+      "bar_high": 4347.25905,
+      "bar_low": null,
+      "bar_close": 4335.50629,
+      "image": "NON-02.png"
+    },
+    {
+      "id": "NON-03",
+      "tf": "M15",
+      "ts": "2026-06-06 02:45:00+00:00",
+      "side": "down",
+      "reason": "wick_only_close_inside",
+      "level": 4342.9,
+      "bar_high": null,
+      "bar_low": 4327.50563,
+      "bar_close": 4343.24563,
+      "image": "NON-03.png"
+    },
+    {
+      "id": "NON-04",
+      "tf": "M15",
+      "ts": "2026-07-21 16:45:00+00:00",
+      "side": "up",
+      "reason": "level_already_broken",
+      "level": 4051.21,
+      "bar_high": 4085.13447,
+      "bar_low": null,
+      "bar_close": 4078.94312,
+      "image": "NON-04.png"
+    },
+    {
+      "id": "NON-05",
+      "tf": "M15",
+      "ts": "2026-06-05 13:00:00+00:00",
+      "side": "down",
+      "reason": "level_already_broken",
+      "level": 4451.57,
+      "bar_high": null,
+      "bar_low": 4436.95093,
+      "bar_close": 4440.43455,
+      "image": "NON-05.png"
+    },
+    {
+      "id": "NON-06",
+      "tf": "M15",
+      "ts": "2026-06-03 20:15:00+00:00",
+      "side": "up",
+      "reason": "wick_only_close_inside",
+      "level": 4459.71,
+      "bar_high": 4464.08642,
+      "bar_low": null,
+      "bar_close": 4458.8171,
+      "image": "NON-06.png"
+    },
+    {
+      "id": "NON-07",
+      "tf": "M15",
+      "ts": "2026-06-23 13:30:00+00:00",
+      "side": "down",
+      "reason": "wick_only_close_inside",
+      "level": 4135.47,
+      "bar_high": null,
+      "bar_low": 4134.79429,
+      "bar_close": 4137.39652,
+      "image": "NON-07.png"
+    },
+    {
+      "id": "NON-08",
+      "tf": "M15",
+      "ts": "2026-06-08 22:45:00+00:00",
+      "side": "up",
+      "reason": "level_already_broken",
+      "level": 4302.27,
+      "bar_high": 4338.28064,
+      "bar_low": null,
+      "bar_close": 4332.80719,
+      "image": "NON-08.png"
+    },
+    {
+      "id": "NON-09",
+      "tf": "M15",
+      "ts": "2026-06-27 04:15:00+00:00",
+      "side": "down",
+      "reason": "level_already_broken",
+      "level": 4082.3,
+      "bar_high": null,
+      "bar_low": 4071.3297,
+      "bar_close": 4072.74154,
+      "image": "NON-09.png"
+    },
+    {
+      "id": "NON-10",
+      "tf": "M15",
+      "ts": "2026-07-09 23:45:00+00:00",
+      "side": "up",
+      "reason": "wick_only_close_inside",
+      "level": 4124.17,
+      "bar_high": 4127.6262,
+      "bar_low": null,
+      "bar_close": 4120.92721,
+      "image": "NON-10.png"
+    },
+    {
+      "id": "NON-11",
+      "tf": "M15",
+      "ts": "2026-06-01 13:45:00+00:00",
+      "side": "down",
+      "reason": "wick_only_close_inside",
+      "level": 4513.56,
+      "bar_high": null,
+      "bar_low": 4510.39646,
+      "bar_close": 4515.22934,
+      "image": "NON-11.png"
+    },
+    {
+      "id": "NON-12",
+      "tf": "M15",
+      "ts": "2026-07-18 01:30:00+00:00",
+      "side": "up",
+      "reason": "level_already_broken",
+      "level": 4003.04,
+      "bar_high": 4017.39858,
+      "bar_low": null,
+      "bar_close": 4014.71751,
+      "image": "NON-12.png"
+    },
+    {
+      "id": "NON-13",
+      "tf": "H1",
+      "ts": "2026-06-11 07:00:00+00:00",
+      "side": "down",
+      "reason": "level_already_broken",
+      "level": 4172.57,
+      "bar_high": null,
+      "bar_low": 4071.16395,
+      "bar_close": 4075.20669,
+      "image": "NON-13.png"
+    },
+    {
+      "id": "NON-14",
+      "tf": "M15",
+      "ts": "2026-07-22 04:15:00+00:00",
+      "side": "up",
+      "reason": "wick_only_close_inside",
+      "level": 4085.13,
+      "bar_high": 4086.6367,
+      "bar_low": null,
+      "bar_close": 4084.30895,
+      "image": "NON-14.png"
+    },
+    {
+      "id": "NON-15",
+      "tf": "M15",
+      "ts": "2026-06-08 08:00:00+00:00",
+      "side": "down",
+      "reason": "wick_only_close_inside",
+      "level": 4312.2,
+      "bar_high": null,
+      "bar_low": 4309.97328,
+      "bar_close": 4326.50085,
+      "image": "NON-15.png"
+    },
+    {
+      "id": "NON-16",
+      "tf": "H1",
+      "ts": "2026-07-22 12:00:00+00:00",
+      "side": "up",
+      "reason": "level_already_broken",
+      "level": 4086.91,
+      "bar_high": 4130.35397,
+      "bar_low": null,
+      "bar_close": 4129.10479,
+      "image": "NON-16.png"
+    },
+    {
+      "id": "NON-17",
+      "tf": "H1",
+      "ts": "2026-06-06 02:00:00+00:00",
+      "side": "down",
+      "reason": "level_already_broken",
+      "level": 4429.15,
+      "bar_high": null,
+      "bar_low": 4325.63371,
+      "bar_close": 4343.24563,
+      "image": "NON-17.png"
+    },
+    {
+      "id": "NON-18",
+      "tf": "H1",
+      "ts": "2026-07-02 00:00:00+00:00",
+      "side": "up",
+      "reason": "wick_only_close_inside",
+      "level": 4096.68,
+      "bar_high": 4115.23508,
+      "bar_low": null,
+      "bar_close": 4092.71283,
+      "image": "NON-18.png"
+    },
+    {
+      "id": "NON-19",
+      "tf": "M15",
+      "ts": "2026-07-13 14:15:00+00:00",
+      "side": "down",
+      "reason": "wick_only_close_inside",
+      "level": 4053.01,
+      "bar_high": null,
+      "bar_low": 4051.20726,
+      "bar_close": 4054.35952,
+      "image": "NON-19.png"
+    },
+    {
+      "id": "NON-20",
+      "tf": "M15",
+      "ts": "2026-06-22 11:00:00+00:00",
+      "side": "up",
+      "reason": "level_already_broken",
+      "level": 4164.58,
+      "bar_high": 4216.38487,
+      "bar_low": null,
+      "bar_close": 4210.58408,
+      "image": "NON-20.png"
+    },
+    {
+      "id": "NON-21",
+      "tf": "M15",
+      "ts": "2026-06-05 22:45:00+00:00",
+      "side": "down",
+      "reason": "level_already_broken",
+      "level": 4460.9,
+      "bar_high": null,
+      "bar_low": 4408.76939,
+      "bar_close": 4411.66698,
+      "image": "NON-21.png"
+    },
+    {
+      "id": "NON-22",
+      "tf": "M15",
+      "ts": "2026-07-10 00:00:00+00:00",
+      "side": "up",
+      "reason": "wick_only_close_inside",
+      "level": 4124.17,
+      "bar_high": 4136.3357,
+      "bar_low": null,
+      "bar_close": 4122.20907,
+      "image": "NON-22.png"
+    },
+    {
+      "id": "NON-23",
+      "tf": "M15",
+      "ts": "2026-07-13 16:00:00+00:00",
+      "side": "down",
+      "reason": "wick_only_close_inside",
+      "level": 4051.21,
+      "bar_high": null,
+      "bar_low": 4044.81657,
+      "bar_close": 4051.57793,
+      "image": "NON-23.png"
+    },
+    {
+      "id": "NON-24",
+      "tf": "M15",
+      "ts": "2026-07-03 11:30:00+00:00",
+      "side": "up",
+      "reason": "level_already_broken",
+      "level": 4142.4,
+      "bar_high": 4195.33479,
+      "bar_low": null,
+      "bar_close": 4180.69731,
+      "image": "NON-24.png"
+    },
+    {
+      "id": "NON-25",
+      "tf": "H1",
+      "ts": "2026-07-13 16:00:00+00:00",
+      "side": "down",
+      "reason": "level_already_broken",
+      "level": 4065.54,
+      "bar_high": null,
+      "bar_low": 4044.81657,
+      "bar_close": 4052.84182,
+      "image": "NON-25.png"
+    }
+  ],
+  "extra_events": [
+    {
+      "id": "EXTRA-01",
+      "tf": "H1",
+      "ts": "2026-07-07 03:00:00+00:00",
+      "direction": "bullish",
+      "level": 4160.63,
+      "image": "EXTRA-01.png"
+    },
+    {
+      "id": "EXTRA-02",
+      "tf": "M15",
+      "ts": "2026-07-21 12:30:00+00:00",
+      "direction": "bullish",
+      "level": 4034.86,
+      "image": "EXTRA-02.png"
+    },
+    {
+      "id": "EXTRA-03",
+      "tf": "H1",
+      "ts": "2026-07-09 04:00:00+00:00",
+      "direction": "bullish",
+      "level": 4085.91,
+      "image": "EXTRA-03.png"
+    },
+    {
+      "id": "EXTRA-04",
+      "tf": "M15",
+      "ts": "2026-06-01 14:45:00+00:00",
+      "direction": "bearish",
+      "level": 4510.4,
+      "image": "EXTRA-04.png"
+    },
+    {
+      "id": "EXTRA-05",
+      "tf": "H1",
+      "ts": "2026-07-10 23:00:00+00:00",
+      "direction": "bearish",
+      "level": 4094.84,
+      "image": "EXTRA-05.png"
+    },
+    {
+      "id": "EXTRA-06",
+      "tf": "M15",
+      "ts": "2026-06-09 02:30:00+00:00",
+      "direction": "bullish",
+      "level": 4345.38,
+      "image": "EXTRA-06.png"
+    },
+    {
+      "id": "EXTRA-07",
+      "tf": "H1",
+      "ts": "2026-07-16 22:00:00+00:00",
+      "direction": "bearish",
+      "level": 4012.55,
+      "image": "EXTRA-07.png"
+    },
+    {
+      "id": "EXTRA-08",
+      "tf": "M15",
+      "ts": "2026-07-23 03:15:00+00:00",
+      "direction": "bearish",
+      "level": 4145.12,
+      "image": "EXTRA-08.png"
+    },
+    {
+      "id": "EXTRA-09",
+      "tf": "H1",
+      "ts": "2026-07-21 12:00:00+00:00",
+      "direction": "bullish",
+      "level": 4039.42,
+      "image": "EXTRA-09.png"
+    },
+    {
+      "id": "EXTRA-10",
+      "tf": "M15",
+      "ts": "2026-06-16 05:30:00+00:00",
+      "direction": "bearish",
+      "level": 4319.09,
+      "image": "EXTRA-10.png"
+    },
+    {
+      "id": "EXTRA-11",
+      "tf": "H1",
+      "ts": "2026-07-07 11:00:00+00:00",
+      "direction": "bearish",
+      "level": 4129.33,
+      "image": "EXTRA-11.png"
+    },
+    {
+      "id": "EXTRA-12",
+      "tf": "M15",
+      "ts": "2026-07-01 12:00:00+00:00",
+      "direction": "bearish",
+      "level": 3972.92,
+      "image": "EXTRA-12.png"
+    },
+    {
+      "id": "EXTRA-13",
+      "tf": "H1",
+      "ts": "2026-07-27 08:00:00+00:00",
+      "direction": "bearish",
+      "level": 4022.09,
+      "image": "EXTRA-13.png"
+    },
+    {
+      "id": "EXTRA-14",
+      "tf": "M15",
+      "ts": "2026-06-23 16:00:00+00:00",
+      "direction": "bearish",
+      "level": 4116.92,
+      "image": "EXTRA-14.png"
+    },
+    {
+      "id": "EXTRA-15",
+      "tf": "H1",
+      "ts": "2026-06-08 11:00:00+00:00",
+      "direction": "bearish",
+      "level": 4309.97,
+      "image": "EXTRA-15.png"
+    }
+  ],
+  "open_case": {
+    "tf": "H1",
+    "bos_ts": "2026-07-24 23:00:00+00:00",
+    "protected_low": 4012.26,
+    "lowest_close": 4043.43,
+    "verdict": "drift_no_close_below_protected_low",
+    "image": "OPENCASE.png"
+  }
+}
