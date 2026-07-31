@@ -272,9 +272,10 @@ def test_palette_endpoint_lists_present_tense_families_and_blocked():
     # The interface derives its four groups + segmented buttons from the schema.
     assert body["families"] == ["structure", "zones", "liquidity", "context"]
     assert all(p["family"] in body["families"] and p["controls"] for p in palette)
-    # Blocked conditions are surfaced (for transparency) but never offered.
-    assert {b["type"] for b in body["blocked"]} == {"zone_tested_at_most"}
-    assert all(b["type"] not in {p["type"] for p in palette} for b in body["blocked"])
+    # No blocked condition left: the touch-counter mission unblocked #9, which is
+    # now offered in the palette.
+    assert body["blocked"] == []
+    assert "zone_tested_at_most" in {p["type"] for p in palette}
 
 
 def test_scan_rejects_out_of_palette_value_before_evaluation():
@@ -300,16 +301,21 @@ def test_scan_rejects_unknown_control_field():
     assert resp.status_code == 422
 
 
-def test_scan_rejects_blocked_condition_type():
-    # A condition classified BLOCKED at diagnosis (no touch-count in the engine)
-    # is not representable in the schema → 422, never exposed.
+def test_scan_accepts_zone_tested_at_most_now_unblocked():
+    # #9 is offerable since OB/FVG carry a touch count. Accepted (200), and an
+    # out-of-range max_touches is still a 422 (1 ≤ N ≤ 3).
     app = _make_app(_RecordingAssembler(_RecordingStore({})))
     client = TestClient(app)
-    resp = client.post(
+    ok = client.post(
         "/api/conditions-scan",
-        json={"logic": "AND", "conditions": [{"type": "zone_tested_at_most", "max_bars": 2}]},
+        json={"logic": "AND", "conditions": [{"type": "zone_tested_at_most", "max_touches": 2}]},
     )
-    assert resp.status_code == 422
+    assert ok.status_code == 200
+    bad = client.post(
+        "/api/conditions-scan",
+        json={"logic": "AND", "conditions": [{"type": "zone_tested_at_most", "max_touches": 5}]},
+    )
+    assert bad.status_code == 422
 
 
 def test_scan_never_sorts_by_match_count():

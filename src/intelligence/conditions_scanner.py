@@ -36,9 +36,16 @@ SC-1 palette changes vs the legacy 14-type palette:
 - ``distribution`` is REMOVED from the exposed market-phase values: the phase
   derivation can no longer emit it (see the audit), and a condition that can only
   ever return zero is worse than an absent one.
-- ``zone_tested_at_most`` (« tested at most N times ») is DOCUMENTED in
-  :data:`BLOCKED_PALETTE` but NOT exposed: OB/FVG carry only a ``tested`` boolean,
-  not a touch count. It becomes offerable once that count exists in the engine.
+- ``zone_tested_at_most`` (« price is in a zone tested at most N times ») is now
+  EXPOSED: OB/FVG carry ``touch_count`` (distinct taps, touch-counter mission), so
+  ``BLOCKED_PALETTE`` is empty. Semantics ``1 ≤ touch_count ≤ N`` (never-tested is
+  ``zone_untested``'s domain, #8).
+- All ZONE-STATE conditions are AT-PRICE: ``price_in_ob``/``_fvg``, ``zone_untested``
+  (#8), ``zone_tested_at_most`` (#9), ``zone_formed_recent`` (#10) and
+  ``price_in_tested_zone`` (#21) describe THE zone the price is in — never « a zone
+  existing somewhere in the range » (which would let a trader read two unrelated
+  conditions as one). ``price_near_ob``/``_fvg`` (#11) is the distinct PROXIMITY
+  scope (price outside, « sans y être »).
 """
 
 from __future__ import annotations
@@ -102,6 +109,10 @@ RELATION_VALUES = ("same", "opposite")
 BARS_RECENCY_CHOICES = (5, 10, 20, 50)
 #: Recency windows (IN BARS) offered for « zone formed within N candles ».
 BARS_FORMED_CHOICES = (10, 20, 50)
+#: Max touch counts offered for « zone tested at most N times » (#9). Excludes 0
+#: (a never-tested zone is #8's domain — 1 ≤ touch_count ≤ N).
+MAX_TOUCHES_CHOICES = (1, 2, 3)
+DEFAULT_MAX_TOUCHES = 2
 #: Proximity thresholds (% of price) for the « price near a zone » family.
 PROXIMITY_ZONE_CHOICES = (0.1, 0.25, 0.5)
 #: Proximity thresholds (% of price) for the « intact pocket near price » family.
@@ -232,22 +243,39 @@ PALETTE: List[Dict[str, Any]] = [
     {
         "type": "zone_untested",
         "family": "zones",
-        "label": "Une zone n'a jamais été testée depuis sa formation",
+        "label": "Le prix est dans une zone jamais testée",
         "description": (
-            "Il existe une zone active (Order Block ou Fair Value Gap) qui n'a "
-            "jamais été retestée depuis sa formation."
+            "Le prix courant est à l'intérieur d'une zone active (Order Block ou "
+            "Fair Value Gap) qui n'a jamais été retestée depuis sa formation."
         ),
         "supports_direction": False,
         "tense": "present",
         "controls": [_control("zone_kind", ZONE_KIND_VALUES, "any")],
     },
     {
+        "type": "zone_tested_at_most",
+        "family": "zones",
+        "label": "Le prix est dans une zone testée au plus N fois",
+        "description": (
+            "Le prix courant est à l'intérieur d'une zone active (Order Block ou "
+            "Fair Value Gap) qui a été touchée entre 1 et N fois depuis sa "
+            "formation — une touche = un passage du prix dans la zone. Une zone "
+            "jamais touchée relève de « jamais testée »."
+        ),
+        "supports_direction": False,
+        "tense": "present",
+        "controls": [
+            _control("zone_kind", ZONE_KIND_VALUES, "any"),
+            _control("max_touches", MAX_TOUCHES_CHOICES, DEFAULT_MAX_TOUCHES),
+        ],
+    },
+    {
         "type": "zone_formed_recent",
         "family": "zones",
-        "label": "Une zone s'est formée dans les N dernières bougies",
+        "label": "Le prix est dans une zone formée dans les N dernières bougies",
         "description": (
-            "Il existe une zone active (Order Block ou Fair Value Gap) formée il y "
-            "a au plus N bougies — compté en bougies."
+            "Le prix courant est à l'intérieur d'une zone active (Order Block ou "
+            "Fair Value Gap) formée il y a au plus N bougies — compté en bougies."
         ),
         "supports_direction": False,
         "tense": "present",
@@ -414,19 +442,11 @@ PALETTE: List[Dict[str, Any]] = [
 #: known to be missing or unreliable. They appear in the interface only once the
 #: blocking work lands. The request Literal deliberately excludes them, so asking
 #: for one is a 422 (out of palette) — never a silent wrong answer.
-BLOCKED_PALETTE: List[Dict[str, Any]] = [
-    {
-        "type": "zone_tested_at_most",
-        "family": "zones",
-        "label": "Une zone a été testée au plus N fois",
-        "tense": "present",
-        "blocked_reason": (
-            "Le moteur n'expose qu'un booléen ``tested`` par Order Block / Fair "
-            "Value Gap, pas un compteur de touches. « Au plus N fois » exige de "
-            "compter les ré-entrées par zone — chantier moteur non fait."
-        ),
-    },
-]
+#:
+#: EMPTY since the touch-counter mission: ``zone_tested_at_most`` (#9) is now
+#: offerable — OB/FVG carry ``touch_count`` (distinct taps) — so it moved to
+#: :data:`PALETTE`.
+BLOCKED_PALETTE: List[Dict[str, Any]] = []
 
 #: Closed allowlist of condition types. Anything outside is rejected by the
 #: endpoint — there is intentionally no path to a predictive condition, and no
@@ -782,6 +802,28 @@ def _fmt_band(zone: Dict[str, Any]) -> str:
     return f"{b[0]:g} – {b[1]:g}" if b else "n/d"
 
 
+def _zones_at_price(
+    reading: Dict[str, Any], zone_kind: str
+) -> Optional[List[Tuple[str, Dict[str, Any]]]]:
+    """Active zones of ``zone_kind`` whose band CONTAINS the current price.
+
+    The uniform anchor for every zone-STATE condition (#8/#9/#10/#21): the
+    scanner describes the market NOW, so « the zone » means the zone the price is
+    IN — never « a zone existing somewhere in the range » (which would let a
+    trader read two unrelated conditions as one). Returns ``None`` when the price
+    is unknown (the caller then reports the condition non-evaluable).
+    """
+    price = reading.get("header", {}).get("close_price")
+    if price is None:
+        return None
+    out: List[Tuple[str, Dict[str, Any]]] = []
+    for tag, z in _zones_of_kind(reading, zone_kind):
+        b = _zone_bounds(z)
+        if b and b[0] < price < b[1]:
+            out.append((tag, z))
+    return out
+
+
 def _eval_price_in_ob(reading: Dict[str, Any], direction: str) -> Dict[str, Any]:
     price = reading.get("header", {}).get("close_price")
     if price is None:
@@ -822,37 +864,60 @@ def _eval_price_in_tested_zone(reading: Dict[str, Any], zone_kind: str) -> Dict[
 
 
 def _eval_zone_untested(reading: Dict[str, Any], zone_kind: str) -> Dict[str, Any]:
-    for tag, z in _zones_of_kind(reading, zone_kind):
+    # AT-PRICE: « le prix est dans une zone jamais testée » (not « une zone
+    # jamais testée existe quelque part »).
+    at = _zones_at_price(reading, zone_kind)
+    if at is None:
+        return _result("zone_untested", False, "Prix courant indisponible.", available=False)
+    for tag, z in at:
         if not z.get("tested"):
-            return _result("zone_untested", True, f"{tag} jamais testé depuis sa formation ({_fmt_band(z)}).")
-    return _result("zone_untested", False, "Toutes les zones actives ont déjà été testées.")
+            return _result("zone_untested", True, f"Prix dans un {tag} jamais testé ({_fmt_band(z)}).")
+    return _result("zone_untested", False, "Le prix n'est dans aucune zone jamais testée.")
 
 
 def _eval_zone_formed_recent(reading: Dict[str, Any], zone_kind: str, max_bars: int) -> Dict[str, Any]:
+    # AT-PRICE: « le prix est dans une zone formée dans les N dernières bougies ».
+    at = _zones_at_price(reading, zone_kind)
+    if at is None:
+        return _result("zone_formed_recent", False, "Prix courant indisponible.", available=False)
     tf = reading.get("header", {}).get("timeframe", "")
     candle_ts = reading.get("header", {}).get("candle_close_ts")
     best: Optional[Tuple[float, str, Dict[str, Any]]] = None
-    saw_dateable = False
-    for tag, z in _zones_of_kind(reading, zone_kind):
+    for tag, z in at:
         bars = _bars_between(z.get("created_at"), candle_ts, tf)
         if bars is None:
             continue
-        saw_dateable = True
         if best is None or bars < best[0]:
             best = (bars, tag, z)
     if best is None:
-        if not saw_dateable and _zones_of_kind(reading, zone_kind):
-            return _result("zone_formed_recent", False, "Âge de formation des zones inconnu.", available=False)
-        return _result("zone_formed_recent", False, "Aucune zone active à dater.")
+        return _result("zone_formed_recent", False, "Le prix n'est dans aucune zone datable.")
     bars, tag, z = best
     if bars <= max_bars:
         return _result(
             "zone_formed_recent", True,
-            f"{tag} formé il y a ~{round(bars)} bougie(s) (≤ {max_bars}) ({_fmt_band(z)}).",
+            f"Prix dans un {tag} formé il y a ~{round(bars)} bougie(s) (≤ {max_bars}) ({_fmt_band(z)}).",
         )
     return _result(
         "zone_formed_recent", False,
-        f"Zone la plus récente formée il y a ~{round(bars)} bougies (> {max_bars}).",
+        f"Prix dans un {tag}, mais formé il y a ~{round(bars)} bougies (> {max_bars}).",
+    )
+
+
+def _eval_zone_tested_at_most(reading: Dict[str, Any], zone_kind: str, max_touches: int) -> Dict[str, Any]:
+    # AT-PRICE, 1 ≤ touch_count ≤ N (0 est le domaine de « jamais testée », #8).
+    at = _zones_at_price(reading, zone_kind)
+    if at is None:
+        return _result("zone_tested_at_most", False, "Prix courant indisponible.", available=False)
+    for tag, z in at:
+        tc = int(z.get("touch_count", 0) or 0)
+        if 1 <= tc <= max_touches:
+            return _result(
+                "zone_tested_at_most", True,
+                f"Prix dans un {tag} testé {tc} fois (entre 1 et {max_touches}) ({_fmt_band(z)}).",
+            )
+    return _result(
+        "zone_tested_at_most", False,
+        f"Le prix n'est dans aucune zone testée entre 1 et {max_touches} fois.",
     )
 
 
@@ -1147,6 +1212,11 @@ def evaluate_condition(
         return _eval_zone_formed_recent(
             reading, cond.get("zone_kind", "any") or "any",
             int(cond.get("max_bars") or DEFAULT_FORMED_MAX_BARS),
+        )
+    if cond_type == "zone_tested_at_most":
+        return _eval_zone_tested_at_most(
+            reading, cond.get("zone_kind", "any") or "any",
+            int(cond.get("max_touches") or DEFAULT_MAX_TOUCHES),
         )
     if cond_type == "price_near_ob":
         return _eval_price_near_zone(
