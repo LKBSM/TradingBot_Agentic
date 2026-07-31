@@ -16,7 +16,10 @@ Usage:
     #   LOG_FORMAT            — text or json (default: text)
     #   SENTINEL_TESTING_MODE — 1=all features unlocked (default: 0, fail-closed)
     #   NARRATIVE_MODE        — template or llm (default: template — zero-cost, deterministic)
-    #   DATA_SOURCE           — csv or mt5 (default: csv)
+    #   DATA_SOURCE           — twelvedata | mt5 | csv (default: csv).
+    #                            twelvedata = same live source as prod (asgi:app),
+    #                            reads TWELVE_DATA_API_KEY; no MT5 terminal needed.
+    #   TWELVE_DATA_API_KEY   — Twelve Data REST key (when DATA_SOURCE=twelvedata)
     #   MT5_LOGIN             — MT5 account number (when DATA_SOURCE=mt5)
     #   MT5_PASSWORD          — MT5 password (when DATA_SOURCE=mt5)
     #   MT5_SERVER            — MT5 broker server (when DATA_SOURCE=mt5)
@@ -151,8 +154,16 @@ def build_system(
     # 1. Instrument registry
     registry = get_instrument_registry()
 
-    # 2. Data provider (CSV or MT5 live)
-    if data_source == "mt5":
+    # 2. Data provider — twelvedata (prod, same as asgi:app), mt5 live, or CSV.
+    if data_source in ("twelvedata", "twelve", "twelve_data"):
+        # Same source the production ASGI app uses (uvicorn src.api.asgi:app →
+        # bootstrap → TwelveDataProvider). Reads TWELVE_DATA_API_KEY from env; no
+        # MT5 terminal required.
+        from src.intelligence.data_providers import TwelveDataProvider
+
+        data_provider = TwelveDataProvider()
+        logger.info("Data provider: TwelveData (live REST)")
+    elif data_source == "mt5":
         data_provider = MT5DataProvider()
         connected = data_provider.connect(
             login=mt5_login,
