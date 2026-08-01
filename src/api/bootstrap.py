@@ -58,6 +58,17 @@ def env_int(name: str, default: int) -> int:
         return default
 
 
+def env_float(name: str, default: float) -> float:
+    raw = os.environ.get(name)
+    if raw is None or raw == "":
+        return default
+    try:
+        return float(raw)
+    except ValueError:
+        logger.warning("env %s=%r is not a float — using default %s", name, raw, default)
+        return default
+
+
 def is_bootstrap_enabled() -> bool:
     """Return True when the runtime bootstrap should run at app startup.
 
@@ -129,6 +140,12 @@ def build_market_reading_assembler(enable_news: Optional[bool] = None) -> Any:
         ),
         news_lookback_min=env_int(
             "NEWS_LOOKBACK_MIN", MarketReadingAssembler.DEFAULT_NEWS_LOOKBACK_MIN
+        ),
+        # PERF-1: wall-clock budget for the interactive provider fetch before the
+        # read-through to candles.db kicks in. Env-overridable per deployment.
+        provider_fetch_timeout_s=env_float(
+            "SENTINEL_PROVIDER_FETCH_TIMEOUT_S",
+            MarketReadingAssembler.DEFAULT_PROVIDER_FETCH_TIMEOUT_S,
         ),
     )
     logger.info(

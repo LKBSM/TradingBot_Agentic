@@ -1156,6 +1156,10 @@
       "errorGeneric": "De lezing kon niet worden opgehaald. Probeer het zo dadelijk opnieuw.",
       "dataUnavailableTitle": "Gegevens niet beschikbaar",
       "retry": "Opnieuw proberen",
+      "errorTimeout": "De leesdienst reageert te traag. Probeer het zo opnieuw.",
+      "errorUnreachable": "De server reageert niet. Controleer je verbinding en probeer het opnieuw.",
+      "errorNoData": "Er zijn nog geen gegevens beschikbaar voor deze combinatie.",
+      "slowLoading": "Het laden duurt langer dan verwacht — de gegevens worden nog opgehaald.",
       "chartUnavailableTitle": "Grafiek niet beschikbaar",
       "chartUnavailableBody": "De candlestream is niet verbonden voor deze combinatie. De lezing hieronder blijft beschikbaar."
     },

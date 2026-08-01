@@ -1156,6 +1156,10 @@
       "errorGeneric": "La lettura non è stata recuperata. Riprova tra un istante.",
       "dataUnavailableTitle": "Dati non disponibili",
       "retry": "Riprova",
+      "errorTimeout": "Il servizio di lettura impiega troppo tempo a rispondere. Riprova tra un istante.",
+      "errorUnreachable": "Il server non risponde. Controlla la connessione e riprova.",
+      "errorNoData": "Nessun dato disponibile per questa combinazione al momento.",
+      "slowLoading": "Il caricamento richiede più tempo del previsto — recupero dei dati in corso.",
       "chartUnavailableTitle": "Grafico non disponibile",
       "chartUnavailableBody": "Il flusso di candele non è connesso per questa combinazione. La lettura qui sotto resta disponibile."
     },

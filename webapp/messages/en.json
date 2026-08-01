@@ -1283,6 +1283,10 @@
       "errorGeneric": "The reading could not be retrieved. Try again in a moment.",
       "dataUnavailableTitle": "Data unavailable",
       "retry": "Try again",
+      "errorTimeout": "The reading service is taking too long to respond. Try again in a moment.",
+      "errorUnreachable": "The server isn't responding. Check your connection, then try again.",
+      "errorNoData": "No data is available for this combination yet.",
+      "slowLoading": "Loading is taking longer than expected — still fetching the data.",
       "chartUnavailableTitle": "Chart unavailable",
       "chartUnavailableBody": "The candle feed is not connected for this combination. The reading below remains available."
     },

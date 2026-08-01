@@ -9,6 +9,7 @@ import {
   ChartUnavailable,
   EmptyReadingState,
   ReadingErrorState,
+  SlowLoadHint,
 } from './ReadingPlaceholders';
 import { ReadingSkeleton } from './ReadingSkeleton';
 import { READING_DATA_SOURCE } from '@/lib/mockReadings';
@@ -157,8 +158,6 @@ export function ReadingColumn({
     body = <EmptyReadingState />;
   } else if (error) {
     body = <ReadingErrorState error={error} onRetry={onRetry} />;
-  } else if (isLoading && !reading) {
-    body = <ReadingSkeleton />;
   } else if (reading) {
     body = (
       <MarketReadingCard
@@ -172,7 +171,15 @@ export function ReadingColumn({
       />
     );
   } else {
-    body = <ReadingSkeleton />;
+    // Reading not here yet (loading, or the effect hasn't fired): skeleton now,
+    // and after a threshold the "prend plus de temps" hint so a slow load never
+    // reads as a frozen screen (PERF-1) — same behaviour as DesktopReading.
+    body = (
+      <>
+        <ReadingSkeleton />
+        <SlowLoadHint />
+      </>
+    );
   }
 
   return (

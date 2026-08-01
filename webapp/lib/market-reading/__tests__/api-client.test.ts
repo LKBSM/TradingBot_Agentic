@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   fetchMarketReading,
   MarketReadingError,
+  MarketReadingNoDataError,
   MarketReadingNotAvailableError,
   MarketReadingValidationError,
 } from '../api-client';
@@ -110,5 +111,62 @@ describe('fetchMarketReading', () => {
 
     await fetchMarketReading('ZZZ', 'M15').catch(() => {});
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  // ── PERF-1: honest error taxonomy ──────────────────────────────────────────
+
+  it('throws MarketReadingNoDataError on 404 (valid combo, no data yet)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        jsonResponse({ detail: 'No market data available yet.' }, 404),
+      ),
+    );
+    const err = await fetchMarketReading('XAUUSD', 'M15').catch((e) => e);
+    expect(err).toBeInstanceOf(MarketReadingNoDataError);
+    expect(err.status).toBe(404);
+  });
+
+  it('does not retry a deterministic 404', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({}, 404));
+    vi.stubGlobal('fetch', fetchMock);
+    await fetchMarketReading('XAUUSD', 'M15').catch(() => {});
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('tags a network failure with reason "network"', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('offline')));
+    const err = await fetchMarketReading('XAUUSD', 'M15').catch((e) => e);
+    expect(err).toBeInstanceOf(MarketReadingError);
+    expect(err.reason).toBe('network');
+  });
+
+  it('tags a timeout with reason "timeout" and does NOT retry it', async () => {
+    vi.useFakeTimers();
+    try {
+      // Never resolves on its own — only the internal timeout can abort it.
+      const fetchMock = vi.fn().mockImplementation(
+        (_url: string, opts: { signal: AbortSignal }) =>
+          new Promise((_resolve, reject) => {
+            opts.signal.addEventListener('abort', () =>
+              reject(new DOMException('aborted', 'AbortError')),
+            );
+          }),
+      );
+      vi.stubGlobal('fetch', fetchMock);
+
+      // Attach the handler synchronously so the rejection is never momentarily
+      // unhandled while we advance the fake timer past the timeout.
+      const p = fetchMarketReading('XAUUSD', 'M15', { timeoutMs: 8000 }).catch((e) => e);
+      await vi.advanceTimersByTimeAsync(8000);
+      const err = await p;
+
+      expect(err).toBeInstanceOf(MarketReadingError);
+      expect(err.reason).toBe('timeout');
+      // A timeout already spent the full budget — retrying would double the wait.
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

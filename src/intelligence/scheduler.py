@@ -186,7 +186,12 @@ class MarketReadingScheduler:
                 if self._needs_regeneration(instrument, timeframe, now):
                     # market-aware: while the market is closed this is False, so
                     # no Twelve Data call and no re-emitted reading (MC-1 lock).
-                    self._assembler.get_or_generate(instrument, timeframe)
+                    # PERF-1: background regen is PATIENT (bound_provider=False) —
+                    # it must wait for the feed to actually advance candles.db so
+                    # the interactive read-through has fresh bars to serve.
+                    self._assembler.get_or_generate(
+                        instrument, timeframe, bound_provider=False
+                    )
                     regenerated += 1
                 elif self._should_safety_probe(instrument, timeframe, now):
                     # Holiday-only, low-frequency probe for an early reopen.
