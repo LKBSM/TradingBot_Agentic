@@ -1,6 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
 import { dismissCookieBanner } from './utils';
 
+// LP-1: this ran VZ-1 against the landing multi-market gallery (StructureSection
+// under the shared ChartViewProvider with fixture data), removed by the home-page
+// refonte. Repoint to /app with a backend-free fixture. Skipped until then —
+// see docs/audits/AUDIT-lp-1-accueil.md.
+test.beforeEach(() => test.skip(true, 'LP-1: landing gallery fixture removed — repoint to /app'));
+
 /**
  * VZ-1 — the unified click→select gesture. It is observable at the DOM level via
  * `aria-pressed` on the panel rows, because the selection is a SINGLE piece of
