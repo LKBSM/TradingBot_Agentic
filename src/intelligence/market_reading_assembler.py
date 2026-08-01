@@ -26,8 +26,9 @@ from __future__ import annotations
 
 import logging
 import os
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
 from datetime import datetime, timedelta, timezone
-from typing import Any, Callable, Mapping, Optional, Sequence, Tuple
+from typing import Any, Callable, List, Mapping, Optional, Sequence, Tuple
 
 # Version of the reading-derivation LOGIC (SMC mapping / lifecycle rules).
 # The store keeps a computed MarketReading payload keyed by candle_close_ts; the
@@ -60,6 +61,29 @@ def _liquidity_display_disabled() -> bool:
     return os.environ.get(_LIQUIDITY_DISABLED_ENV, "").strip().lower() in (
         "1", "true", "yes", "on",
     )
+
+
+# PERF-1: interactive reads must never hang on a slow/failing data feed. On the
+# on-demand path a cache miss bounds the provider fetch to this wall-clock budget
+# and then reads THROUGH the local candle cache (candles.db) — real bars, whose
+# lag is already surfaced by the freshness badge (market_status vs the derived
+# candle_close_ts). The background scheduler/backfill is NOT bounded: it must
+# wait for the provider to actually advance the cache. Env-overridable so it can
+# be tuned per deployment; <=0 disables the bound (patient fetch everywhere).
+_PROVIDER_FETCH_TIMEOUT_ENV = "SENTINEL_PROVIDER_FETCH_TIMEOUT_S"
+
+
+class MarketReadingDataUnavailable(RuntimeError):
+    """No candles could be sourced for a VALID combo — neither the live feed, nor
+    the local candle cache, nor a stored reading has any data (PERF-1). Distinct
+    from an internal bug: the route maps it to a dedicated HTTP status so the UI
+    can say « aucune donnée pour cette combinaison » instead of a generic error.
+    """
+
+# Concurrency of the bounded-fetch pool. A slow fetch that times out keeps running
+# in its worker (warming the provider's own TTL cache for the next read); a few
+# workers absorb concurrent misses without ever blocking the user past the budget.
+_FETCH_POOL_WORKERS = 4
 
 from src.intelligence.market_reading_mappers import (
     candles_to_regime,
@@ -248,6 +272,10 @@ class MarketReadingAssembler:
     DEFAULT_LOOKBACK = 500
     DEFAULT_NEWS_LOOKAHEAD_MIN = 4320   # 3 days — captures FOMC/NFP ahead
     DEFAULT_NEWS_LOOKBACK_MIN = 1440    # 24h — what moved the market today
+    # PERF-1: wall-clock budget for the provider fetch on the INTERACTIVE path
+    # before degrading to the local candle cache. 5s keeps a fresh build under
+    # the product's "<5s cache vide" target while still letting a healthy feed win.
+    DEFAULT_PROVIDER_FETCH_TIMEOUT_S = 5.0
 
     def __init__(
         self,
@@ -262,6 +290,7 @@ class MarketReadingAssembler:
         clock: Callable[[], datetime] = lambda: datetime.now(timezone.utc),
         news_lookahead_min: int = DEFAULT_NEWS_LOOKAHEAD_MIN,
         news_lookback_min: int = DEFAULT_NEWS_LOOKBACK_MIN,
+        provider_fetch_timeout_s: float = DEFAULT_PROVIDER_FETCH_TIMEOUT_S,
     ) -> None:
         self._data_provider = data_provider
         self._readings_store = readings_store
@@ -274,6 +303,11 @@ class MarketReadingAssembler:
         self._clock = clock
         self._news_lookahead_min = news_lookahead_min
         self._news_lookback_min = news_lookback_min
+        # PERF-1: bounded-fetch budget + pool for the interactive read-through.
+        self._provider_fetch_timeout_s = provider_fetch_timeout_s
+        # Lazily-populated: ThreadPoolExecutor spawns no threads until the first
+        # bounded fetch, so unit tests that never hit a slow provider pay nothing.
+        self._fetch_pool: Optional[ThreadPoolExecutor] = None
 
     # ------------------------------------------------------------------ #
     # Public accessors (used by the Chantier 3 scheduler / bootstrap)
@@ -289,7 +323,9 @@ class MarketReadingAssembler:
     # ------------------------------------------------------------------ #
     # Public API
     # ------------------------------------------------------------------ #
-    def get_or_generate(self, instrument: str, timeframe: str) -> MarketReading:
+    def get_or_generate(
+        self, instrument: str, timeframe: str, *, bound_provider: bool = True
+    ) -> MarketReading:
         """Return the current MarketReading for (instrument, timeframe).
 
         Lazy: re-uses the stored payload if it matches the expected last
@@ -303,6 +339,12 @@ class MarketReadingAssembler:
         re-fetched from Twelve Data and no "new" structure is re-emitted. This
         is the server-side verrou, not a display filter: the reading is never
         rebuilt without a genuinely new closed candle.
+
+        PERF-1 ``bound_provider``: on the INTERACTIVE path (default True) a cache
+        miss bounds the provider fetch and reads through the local candle cache
+        so the request never hangs on a slow/failing feed. The background
+        scheduler passes ``False`` — it must wait for the provider to actually
+        advance the cache, otherwise the data would never get fresh.
         """
         expected_close = market_aware_expected_close(instrument, timeframe, self._clock())
 
@@ -318,7 +360,9 @@ class MarketReadingAssembler:
             )
 
         try:
-            reading = self._build_fresh(instrument, timeframe, expected_close)
+            reading = self._build_fresh(
+                instrument, timeframe, expected_close, bound_provider=bound_provider
+            )
         except Exception:
             # Provider unavailable / rebuild failed (e.g. no CSV, MT5 down, quota).
             # Serve the LAST STORED reading rather than a blank screen — degraded
@@ -566,16 +610,105 @@ class MarketReadingAssembler:
         except Exception:
             return self._lookback
 
+    def _fetch_candles_for_build(
+        self,
+        instrument: str,
+        timeframe: str,
+        window: int,
+        *,
+        bound_provider: bool,
+    ) -> Sequence[Any]:
+        """Source the candles a fresh build runs on (PERF-1 read-through).
+
+        Background path (``bound_provider=False``, scheduler/backfill): unchanged
+        — call the provider directly and let it take as long as it needs; this is
+        what actually advances ``candles.db``.
+
+        Interactive path (``bound_provider=True``, /app read): the feed must never
+        hang the user. Try the provider within a wall-clock budget; on timeout,
+        failure, or an empty response, read THROUGH the local candle cache. Cached
+        candles are REAL bars — when they lag, the freshness badge already flags
+        the reading as behind (no silent staleness, no synthetic data). Only when
+        BOTH the provider and the cache yield nothing do we surface the failure —
+        never swallowed into a blank reading.
+        """
+        if not bound_provider:
+            return self._data_provider.fetch_candles(instrument, timeframe, window)
+
+        provider_error: Optional[BaseException] = None
+        try:
+            raw = self._fetch_from_provider_bounded(instrument, timeframe, window)
+            if raw:
+                return raw
+            logger.warning(
+                "provider returned no candles for %s/%s - reading through candle cache",
+                instrument, timeframe,
+            )
+        except Exception as exc:  # bounded timeout, network, quota, auth, ...
+            provider_error = exc
+            logger.warning(
+                "provider fetch unavailable/slow for %s/%s: %s - reading through candle cache",
+                instrument, timeframe, exc,
+            )
+
+        cached = self._candles_store.get_last_n_candles(instrument, timeframe, window)
+        if cached:
+            logger.info(
+                "read-through: %s/%s served from candle cache (%d bars); "
+                "freshness badge flags any lag",
+                instrument, timeframe, len(cached),
+            )
+            return cached
+
+        # No live data AND nothing cached → genuine no-data for this combo. Raise a
+        # TYPED error so the route can report it distinctly (« aucune donnée ») —
+        # the underlying provider failure is chained (never swallowed) for the logs.
+        raise MarketReadingDataUnavailable(
+            f"no candles available from provider or cache for {instrument}/{timeframe}"
+        ) from provider_error
+
+    def _fetch_from_provider_bounded(
+        self, instrument: str, timeframe: str, window: int
+    ) -> List[Any]:
+        """Call ``fetch_candles`` but stop waiting after the configured budget.
+
+        A timed-out request keeps running in its pool worker and warms the
+        provider's own 60s TTL cache, so the *next* interactive read gets the
+        fresh bars for free — we simply don't block THIS read on it. A non-positive
+        budget disables the bound (used by tests / patient deployments)."""
+        timeout = self._provider_fetch_timeout_s
+        if not timeout or timeout <= 0:
+            return self._data_provider.fetch_candles(instrument, timeframe, window)
+
+        if self._fetch_pool is None:
+            self._fetch_pool = ThreadPoolExecutor(
+                max_workers=_FETCH_POOL_WORKERS, thread_name_prefix="mr-provider-fetch"
+            )
+        future = self._fetch_pool.submit(
+            self._data_provider.fetch_candles, instrument, timeframe, window
+        )
+        try:
+            return future.result(timeout=timeout)
+        except FuturesTimeout as exc:
+            raise TimeoutError(
+                f"provider fetch exceeded {timeout:.1f}s for {instrument}/{timeframe}"
+            ) from exc
+
     def _build_fresh(
         self,
         instrument: str,
         timeframe: str,
         expected_close: datetime,
         raw_candles: Optional[Sequence[Any]] = None,
+        *,
+        bound_provider: bool = True,
     ) -> MarketReading:
         if raw_candles is None:
-            raw_candles = self._data_provider.fetch_candles(
-                instrument, timeframe, self._window_bars(timeframe)
+            raw_candles = self._fetch_candles_for_build(
+                instrument,
+                timeframe,
+                self._window_bars(timeframe),
+                bound_provider=bound_provider,
             )
         # Raw response snapshot BEFORE any filtering — the only way to replay
         # a reading bit-for-bit later (the feed revises forming bars; audit §T3

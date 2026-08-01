@@ -10,7 +10,7 @@ vi.mock('@/lib/mockReadings', () => ({
   getMockCandles: vi.fn(),
 }));
 
-import { useCandles } from '../hooks';
+import { useCandles, __resetReadingRetention } from '../hooks';
 import { fetchCandles } from '../api-client';
 import { getMockCandles } from '@/lib/mockReadings';
 
@@ -25,6 +25,8 @@ const SERIES = [
 beforeEach(() => {
   mockFetchCandles.mockReset();
   mockGetMockCandles.mockReset();
+  // Module-state retention caches — clear so each test starts cold.
+  __resetReadingRetention();
 });
 
 afterEach(() => {

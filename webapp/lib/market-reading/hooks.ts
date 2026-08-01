@@ -37,6 +37,31 @@ export interface UseMarketReadingOptions {
 const MOCK_LATENCY_MS = 220;
 
 /**
+ * PERF-1 — in-memory retention across combo switches AND navigation
+ * (unmount/remount when leaving /app for Scanner/Zones and back). Keyed by
+ * source+instrument+timeframe. On a revisit the last value for that exact combo
+ * shows INSTANTLY while a background revalidation refreshes it (SWR-style): the
+ * `isRefreshing` indicator is the honesty signal, and every cache hit is
+ * revalidated, so nothing stale is ever shown WITHOUT saying so. Bounded by the
+ * combo count (≤ 6 instruments × 6 timeframes), so no eviction is needed; it is
+ * process-memory only (never persisted) and dies with the tab.
+ */
+const readingCache = new Map<string, MarketReading>();
+const candlesCache = new Map<string, Candle[]>();
+const comboCacheKey = (source: string, instrument: string, timeframe: string) =>
+  `${source}:${instrument}:${timeframe}`;
+
+/**
+ * Test-only: clear the retention caches so a test's initial-load assertions
+ * aren't seeded by a previous test in the same file (the caches are module
+ * state, shared across tests within a file). Call it in `beforeEach`.
+ */
+export function __resetReadingRetention(): void {
+  readingCache.clear();
+  candlesCache.clear();
+}
+
+/**
  * Fetch + cache a single market reading for `(instrument, timeframe)`.
  *
  * State management is intentionally light (useState + useEffect, no SWR /
@@ -91,12 +116,24 @@ export function useMarketReading(
 
     const seq = ++requestSeq.current;
     const controller = new AbortController();
+    const ck = comboCacheKey(source, instrument, timeframe);
 
     setError(null);
     if (isComboChange) {
-      setData(null);
-      setIsLoading(true);
-      setIsRefreshing(false);
+      // PERF-1: on a revisit (TF/instrument switch, or return from another page)
+      // seed the last known reading for THIS combo instantly and revalidate in
+      // the background — no blank skeleton, no full re-wait. A first visit still
+      // blanks + shows the skeleton.
+      const cached = readingCache.get(ck) ?? null;
+      if (cached) {
+        setData(cached);
+        setIsLoading(false);
+        setIsRefreshing(true);
+      } else {
+        setData(null);
+        setIsLoading(true);
+        setIsRefreshing(false);
+      }
     } else {
       setIsRefreshing(true);
     }
@@ -107,6 +144,7 @@ export function useMarketReading(
         if (seq !== requestSeq.current) return; // stale
         const mock = getMockReading(instrument, timeframe);
         if (mock) {
+          readingCache.set(ck, mock);
           setData(mock);
           setError(null);
         } else {
@@ -126,6 +164,7 @@ export function useMarketReading(
     fetchMarketReading(instrument, timeframe, { signal: controller.signal })
       .then((reading) => {
         if (seq !== requestSeq.current) return; // stale
+        readingCache.set(ck, reading);
         setData(reading);
         setError(null);
       })
@@ -287,9 +326,11 @@ export function useCandles(
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<Error | null>(null);
   const requestSeq = React.useRef(0);
+  const loadedKey = React.useRef<string | null>(null);
 
   React.useEffect(() => {
     if (!instrument || !timeframe) {
+      loadedKey.current = null;
       setCandles(null);
       setIsLoading(false);
       setError(null);
@@ -297,6 +338,10 @@ export function useCandles(
     }
 
     const seq = ++requestSeq.current;
+    const key = `${instrument}:${timeframe}`;
+    const isComboChange = loadedKey.current !== key;
+    loadedKey.current = key;
+    const ck = comboCacheKey(source, instrument, timeframe);
 
     // ── Mock source: resolve locally, no network. TEMPORAIRE (cf. mockReadings). ──
     if (source === 'mock') {
@@ -304,6 +349,14 @@ export function useCandles(
       setIsLoading(false);
       setError(null);
       return;
+    }
+
+    // PERF-1: on a combo revisit, show THIS combo's cached candles instantly
+    // (correct series, no wrong-combo flash) and revalidate below. A same-combo
+    // re-pull (a candle just closed) keeps the current series while it refreshes.
+    if (isComboChange) {
+      const cached = candlesCache.get(ck) ?? null;
+      if (cached) setCandles(cached);
     }
 
     const controller = new AbortController();
@@ -316,6 +369,7 @@ export function useCandles(
     })
       .then((data) => {
         if (seq !== requestSeq.current) return; // stale
+        if (data.length > 0) candlesCache.set(ck, data);
         setCandles(data.length > 0 ? data : null);
         setError(null);
       })

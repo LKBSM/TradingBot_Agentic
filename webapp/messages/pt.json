@@ -1156,6 +1156,10 @@
       "errorGeneric": "Não foi possível obter a leitura. Tente novamente dentro de instantes.",
       "dataUnavailableTitle": "Dados indisponíveis",
       "retry": "Tentar novamente",
+      "errorTimeout": "O serviço de leitura está a demorar demasiado a responder. Tente novamente daqui a instantes.",
+      "errorUnreachable": "O servidor não responde. Verifique a sua ligação e tente novamente.",
+      "errorNoData": "Ainda não há dados disponíveis para esta combinação.",
+      "slowLoading": "O carregamento está a demorar mais do que o previsto — a obter os dados.",
       "chartUnavailableTitle": "Gráfico indisponível",
       "chartUnavailableBody": "O fluxo de velas não está ligado para esta combinação. A leitura abaixo permanece disponível."
     },

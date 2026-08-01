@@ -74,10 +74,14 @@ class _MockAssembler:
 
     def __init__(self, raise_for: Optional[set[tuple[str, str]]] = None):
         self.calls: list[tuple[str, str]] = []
+        self.bound_provider_calls: list[bool] = []
         self._raise_for = raise_for or set()
 
-    def get_or_generate(self, instrument, timeframe):
+    def get_or_generate(self, instrument, timeframe, *, bound_provider=True):
+        # PERF-1: the scheduler is the PATIENT background path — it must ask for
+        # an unbounded fetch (bound_provider=False) so candles.db actually advances.
         self.calls.append((instrument, timeframe))
+        self.bound_provider_calls.append(bound_provider)
         if (instrument, timeframe) in self._raise_for:
             raise RuntimeError(f"assembler boom for {instrument}/{timeframe}")
         return None  # return value is ignored by the scheduler
@@ -200,7 +204,7 @@ class TestTick:
         class _RefreshingAssembler:
             calls: list[tuple[str, str]] = []
 
-            def get_or_generate(self, instrument, timeframe):
+            def get_or_generate(self, instrument, timeframe, *, bound_provider=True):
                 _RefreshingAssembler.calls.append((instrument, timeframe))
                 _refresh(instrument, timeframe)
 

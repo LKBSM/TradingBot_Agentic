@@ -1310,6 +1310,10 @@
       "errorGeneric": "La lecture n’a pas pu être récupérée. Réessayez dans un instant.",
       "dataUnavailableTitle": "Données indisponibles",
       "retry": "Réessayer",
+      "errorTimeout": "Le service met trop de temps à répondre. Réessayez dans un instant.",
+      "errorUnreachable": "Le serveur ne répond pas. Vérifiez votre connexion, puis réessayez.",
+      "errorNoData": "Aucune donnée n'est disponible pour cette combinaison pour le moment.",
+      "slowLoading": "Le chargement prend plus de temps que prévu — récupération des données en cours.",
       "chartUnavailableTitle": "Graphique indisponible",
       "chartUnavailableBody": "Le flux de bougies n’est pas connecté pour cette combinaison. La lecture ci-dessous reste disponible."
     },

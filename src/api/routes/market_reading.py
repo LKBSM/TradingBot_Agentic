@@ -16,6 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from src.api.entitlements import enforce_combo_access
 from src.api.session_auth import optional_account
+from src.intelligence.market_reading_assembler import MarketReadingDataUnavailable
 from src.intelligence.market_reading_schema import MarketReading
 
 logger = logging.getLogger(__name__)
@@ -75,6 +76,15 @@ def get_market_reading(
         return assembler.get_or_generate(instrument, timeframe)
     except HTTPException:
         raise
+    except MarketReadingDataUnavailable as exc:
+        # Valid combo, but no data anywhere (feed down AND cache empty AND nothing
+        # stored). Distinct 404 so the UI says « aucune donnée pour cette
+        # combinaison » rather than a generic failure. Not an internal bug.
+        logger.warning("market-reading: no data for %s/%s: %s", instrument, timeframe, exc)
+        raise HTTPException(
+            status_code=404,
+            detail="No market data available for this instrument/timeframe yet.",
+        )
     except Exception:
         logger.exception("market-reading generation failed for %s/%s", instrument, timeframe)
         raise HTTPException(status_code=500, detail="Internal server error")

@@ -1156,6 +1156,10 @@
       "errorGeneric": "Die Lesart konnte nicht abgerufen werden. Versuchen Sie es gleich erneut.",
       "dataUnavailableTitle": "Daten nicht verfügbar",
       "retry": "Erneut versuchen",
+      "errorTimeout": "Der Lesedienst antwortet zu langsam. Versuchen Sie es gleich erneut.",
+      "errorUnreachable": "Der Server antwortet nicht. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+      "errorNoData": "Für diese Kombination sind noch keine Daten verfügbar.",
+      "slowLoading": "Das Laden dauert länger als erwartet — die Daten werden noch abgerufen.",
       "chartUnavailableTitle": "Chart nicht verfügbar",
       "chartUnavailableBody": "Der Kerzen-Feed ist für diese Kombination nicht verbunden. Die Lesart unten bleibt verfügbar."
     },

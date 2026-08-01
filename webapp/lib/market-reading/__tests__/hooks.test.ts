@@ -1,6 +1,6 @@
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useMarketReading } from '../hooks';
+import { useMarketReading, __resetReadingRetention } from '../hooks';
 import { FIXTURE_EUR_H1, FIXTURE_XAU_M15 } from '../fixtures';
 
 // Mock the network layer — hooks are tested against fetchMarketReading's contract.
@@ -14,6 +14,9 @@ const mockFetch = vi.mocked(fetchMarketReading);
 
 beforeEach(() => {
   mockFetch.mockReset();
+  // The retention caches are module state shared across tests in this file —
+  // clear them so each test's initial-load assertions start from a cold cache.
+  __resetReadingRetention();
 });
 
 afterEach(() => {
@@ -89,5 +92,34 @@ describe('useMarketReading', () => {
       expect(result.current.data?.header.instrument).toBe('EURUSD'),
     );
     expect(mockFetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('PERF-1: revisiting a cached combo shows it instantly (isRefreshing, not isLoading)', async () => {
+    mockFetch.mockResolvedValue(FIXTURE_XAU_M15);
+
+    // First visit populates the retention cache.
+    const first = renderHook(() => useMarketReading('XAUUSD', 'M15', { source: 'live' }));
+    await waitFor(() => expect(first.result.current.data?.header.instrument).toBe('XAUUSD'));
+    first.unmount();
+
+    // Revisit (TF switch / return from another page): the cached reading shows on
+    // the FIRST synchronous render — no blank skeleton — and a background refresh
+    // (isRefreshing, the honesty signal) revalidates it.
+    const second = renderHook(() => useMarketReading('XAUUSD', 'M15', { source: 'live' }));
+    expect(second.result.current.data?.header.instrument).toBe('XAUUSD');
+    expect(second.result.current.isLoading).toBe(false);
+    expect(second.result.current.isRefreshing).toBe(true);
+
+    await waitFor(() => expect(second.result.current.isRefreshing).toBe(false));
+    expect(mockFetch).toHaveBeenCalledTimes(2); // still revalidated, never served blind
+  });
+
+  it('PERF-1: a first, uncached visit still blanks + shows the skeleton', async () => {
+    mockFetch.mockResolvedValue(FIXTURE_XAU_M15);
+    const { result } = renderHook(() => useMarketReading('XAUUSD', 'M15', { source: 'live' }));
+    // Cold cache → honest skeleton, no phantom data.
+    expect(result.current.isLoading).toBe(true);
+    expect(result.current.data).toBeNull();
+    await waitFor(() => expect(result.current.data?.header.instrument).toBe('XAUUSD'));
   });
 });

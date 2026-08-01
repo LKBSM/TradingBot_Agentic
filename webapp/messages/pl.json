@@ -1156,6 +1156,10 @@
       "errorGeneric": "Nie udało się pobrać odczytu. Spróbuj ponownie za chwilę.",
       "dataUnavailableTitle": "Dane niedostępne",
       "retry": "Spróbuj ponownie",
+      "errorTimeout": "Usługa odczytu odpowiada zbyt długo. Spróbuj ponownie za chwilę.",
+      "errorUnreachable": "Serwer nie odpowiada. Sprawdź połączenie i spróbuj ponownie.",
+      "errorNoData": "Brak danych dla tej kombinacji w tej chwili.",
+      "slowLoading": "Ładowanie trwa dłużej niż zwykle — trwa pobieranie danych.",
       "chartUnavailableTitle": "Wykres niedostępny",
       "chartUnavailableBody": "Strumień świec nie jest podłączony dla tej kombinacji. Poniższy odczyt pozostaje dostępny."
     },
