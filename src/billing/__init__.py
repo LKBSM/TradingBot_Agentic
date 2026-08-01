@@ -1,8 +1,14 @@
-"""Billing module — INFRA-2B.3."""
+"""Billing module — mission PRIX-1 (single USD plan)."""
 
 from src.billing.pricing import (
-    TIER_FREE, TIER_LITE, TIER_PRO, TIER_PRO_PLUS,
-    PRICING_TIERS, PricingTier, get_tier,
+    PLAN_ANNUAL,
+    PLAN_FREE,
+    PLAN_MONTHLY,
+    PricingPlan,
+    currency,
+    get_plan,
+    list_paid_plans,
+    list_plans,
 )
 from src.billing.stripe_client import (
     ACCOUNT_SUBSCRIPTION_EVENTS,
@@ -14,8 +20,8 @@ from src.billing.stripe_client import (
 )
 
 __all__ = [
-    "PRICING_TIERS", "PricingTier", "get_tier",
-    "TIER_FREE", "TIER_LITE", "TIER_PRO", "TIER_PRO_PLUS",
+    "PLAN_ANNUAL", "PLAN_FREE", "PLAN_MONTHLY",
+    "PricingPlan", "currency", "get_plan", "list_paid_plans", "list_plans",
     "ACCOUNT_SUBSCRIPTION_EVENTS", "AccountSubscriptionEvent",
     "StripeClient", "StripeWebhookEvent",
     "parse_account_event", "parse_webhook_event",

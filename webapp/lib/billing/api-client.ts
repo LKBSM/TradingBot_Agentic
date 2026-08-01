@@ -25,7 +25,6 @@ export interface Plan {
 export interface Pricing {
   plans: Plan[];
   trial_days: number;
-  tax_enabled: boolean;
 }
 
 export interface Subscription {

@@ -7,26 +7,26 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { PRICING } from '@/lib/pricing.generated';
 
 /**
- * Section L5.1 — Pricing.
+ * Section L5.1 — Pricing (mission PRIX-1).
  *
- * Décision fondateur 2026-07-07 : plan unique payant, tout l'outil inclus,
- * avec bascule mensuel / annuel. Les anciens tiers FREE / 9 € / 19 € sont
- * retirés — les démos de la landing restent l'unique surface gratuite.
+ * ONE paid plan, two billing cadences, US dollars everywhere (including
+ * Canadian customers). Amounts come EXCLUSIVELY from `@/lib/pricing.generated`
+ * (single source: config/pricing.json) — nothing is hard-coded here.
  *
- *   Mensuel : 49,99 $ / mois, sans engagement.
- *   Annuel  : 39,99 $ / mois (facturé 479,88 $ / an), soit −20 %.
+ *   Monthly : $39 US / month, cancel anytime.
+ *   Annual  : $348 US / year — i.e. $29 US / month.
  *
- * Règle éditoriale (nettoyage claims 2026-07-04, garde-fou
- * `tests/claims-cleanup.test.ts`) : aucun compteur de places, aucune
- * référence réglementaire non vérifiée, aucune promesse (remboursement,
- * périmètre géographique) non implémentée. On ne promet donc PAS de
- * remboursement tant qu'il n'est pas câblé côté produit.
+ * The annual figure ALWAYS shows the total billed AND the monthly equivalent —
+ * a per-month price shown for a yearly single charge would be misleading.
+ *
+ * Forbidden here (the product sells honesty): NO struck-through price, NO
+ * discount/promotion, NO countdown, NO false scarcity, NO return/profit
+ * promise. The four mandatory mentions sit next to the price, visible without a
+ * click, in both languages.
  */
-const MONTHLY_PRICE = '49,99';
-const ANNUAL_PRICE = '39,99';
-const ANNUAL_TOTAL = '479,88';
 
 const FEATURES: ReadonlyArray<string> = [
   'feature1',
@@ -37,6 +37,16 @@ const FEATURES: ReadonlyArray<string> = [
   'feature6',
   'feature7',
   'feature8',
+];
+
+// The four mandatory mentions (PRIX-1 §4) + the renewal-notice line (§3, Quebec
+// consumer law). Rendered next to the price, no click required.
+const MENTIONS: ReadonlyArray<string> = [
+  'mentionCancel',
+  'mentionCurrency',
+  'mentionRenewal',
+  'mentionEducational',
+  'mentionRisk',
 ];
 
 const REASSURANCE: ReadonlyArray<string> = [
@@ -52,7 +62,11 @@ export function PricingSection() {
   const t = useTranslations('landing.pricing');
   const [cadence, setCadence] = useState<Cadence>('annual');
   const isAnnual = cadence === 'annual';
-  const price = isAnnual ? ANNUAL_PRICE : MONTHLY_PRICE;
+
+  // Primary figure: for the annual cadence we headline the TOTAL billed (never
+  // the per-month figure alone), with the monthly equivalent right below.
+  const amount = isAnnual ? PRICING.annualPerYear : PRICING.monthly;
+  const currency = t('currency'); // "$ US" (fr) / "US$" (en) — currency is explicit.
 
   return (
     <section
@@ -84,7 +98,7 @@ export function PricingSection() {
         </p>
       </header>
 
-      {/* Bascule mensuel / annuel */}
+      {/* Bascule mensuel / annuel — un choix de facturation, PAS une remise. */}
       <div
         className="inline-flex items-center rounded-full border border-border/70 bg-muted/40 p-1 text-sm"
         role="group"
@@ -110,16 +124,13 @@ export function PricingSection() {
           aria-pressed={isAnnual}
           className={cn(
             // ≥44px tap target on touch; compact on xl desktop.
-            'inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full px-4 py-1.5 font-medium transition-colors xl:min-h-0',
+            'inline-flex min-h-[44px] items-center justify-center rounded-full px-4 py-1.5 font-medium transition-colors xl:min-h-0',
             isAnnual
               ? 'bg-background text-foreground shadow-sm'
               : 'text-muted-foreground hover:text-foreground',
           )}
         >
           {t('annualToggle')}
-          <span className="rounded-full bg-sentinel-bull/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-sentinel-bull">
-            {t('discountBadge')}
-          </span>
         </button>
       </div>
 
@@ -144,13 +155,18 @@ export function PricingSection() {
             <div className="space-y-1">
               <p className="flex items-baseline gap-1 tabular-nums">
                 <span className="text-4xl font-semibold">
-                  {price}&nbsp;{t('currency')}
+                  {amount}&nbsp;{currency}
                 </span>
-                <span className="text-sm text-muted-foreground">{t('perMonth')}</span>
+                <span className="text-sm text-muted-foreground">
+                  {isAnnual ? t('perYear') : t('perMonth')}
+                </span>
               </p>
               <p className="text-xs text-muted-foreground">
                 {isAnnual
-                  ? t('annualBilling', { total: ANNUAL_TOTAL })
+                  ? t('annualBilling', {
+                      perMonth: PRICING.annualPerMonth,
+                      currency,
+                    })
                   : t('monthlyBilling')}
               </p>
             </div>
@@ -164,6 +180,13 @@ export function PricingSection() {
                   />
                   <span>{t(feature)}</span>
                 </li>
+              ))}
+            </ul>
+
+            {/* Mentions obligatoires — visibles sans clic, à côté du prix. */}
+            <ul className="space-y-1.5 border-t border-border/60 pt-4 text-xs text-muted-foreground">
+              {MENTIONS.map((mention) => (
+                <li key={mention}>{t(mention)}</li>
               ))}
             </ul>
 
