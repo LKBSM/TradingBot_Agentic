@@ -3,8 +3,17 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { ChevronLeft } from 'lucide-react';
+import {
+  ChevronLeft,
+  ArrowUpRight,
+  BookText,
+  FileText,
+  LineChart,
+  CalendarDays,
+} from 'lucide-react';
+import { AgentAvatar } from '@/components/chat/AgentAvatar';
 import { useLocalizedHref } from '@/lib/i18n/href';
+import { sourceLinksFor, type SourceDocKind } from '@/lib/calendar/sourceLinks';
 import { useCalendarEvent, usePublicationMeasures } from '@/lib/calendar/useCalendar';
 import { countdown, hmInZone } from '@/lib/calendar/grouping';
 import { parseUtc, utcOffsetLabel, formatLocalDayLong } from '@/lib/time/localTime';
@@ -41,6 +50,26 @@ function tzCity(iana: string | null): string | null {
   if (!iana) return null;
   const seg = iana.split('/').pop() ?? iana;
   return seg.replace(/_/g, ' ');
+}
+
+/** "2026-06" → localized short month ("juin", "Jun") for the curve x-axis. */
+function periodShort(period: string, locale: string): string {
+  const m = /^(\d{4})-(\d{2})$/.exec(period);
+  if (!m) return period;
+  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, 1));
+  return new Intl.DateTimeFormat(locale, { month: 'short', timeZone: 'UTC' }).format(d);
+}
+
+/** "2026-06" → localized "juin 2026" for the "last value" line under the curve. */
+function periodLong(period: string, locale: string): string {
+  const m = /^(\d{4})-(\d{2})$/.exec(period);
+  if (!m) return period;
+  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, 1));
+  return new Intl.DateTimeFormat(locale, {
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(d);
 }
 
 /** Bold-highlight callback shared by every t.rich() call. */
@@ -175,11 +204,11 @@ function CurveCard({
   const span = max - min || 1; // avoid /0 on a flat series
 
   // Geometry — evenly-spaced x for the real points plus ONE trailing upcoming.
-  const W = 640;
-  const H = 150;
+  const W = 760;
+  const H = 156;
   const padX = 34;
-  const padTop = 22;
-  const padBottom = 26;
+  const padTop = 20;
+  const padBottom = 32;
   const plotW = W - padX * 2;
   const plotH = H - padTop - padBottom;
   const total = pts.length + 1; // + upcoming slot
@@ -194,7 +223,10 @@ function CurveCard({
   const lastReal = pts[pts.length - 1];
   const upcomingIdx = pts.length; // slot after the newest real point
   const upcomingX = xAt(upcomingIdx);
-  const upcomingY = yAt((min + max) / 2); // midline — it carries NO value
+  const upcomingY = lastReal ? yAt(lastReal.value) : yAt((min + max) / 2);
+
+  // Three horizontal guides (low / mid / high) with the value AS PUBLISHED.
+  const guides = [min, (min + max) / 2, max];
 
   const revisedDate = ev.revised_at ? parseUtc(ev.revised_at) : null;
   const revisedDateLabel = revisedDate ? revisedDate.toLocaleDateString(locale) : '—';
@@ -215,6 +247,21 @@ function CurveCard({
           role="img"
           aria-label={t('pub.curve.title')}
         >
+          {/* Horizontal guides + value labels (as published, no re-rounding) */}
+          {guides.map((v, i) => (
+            <g key={`g${i}`}>
+              <line
+                className="grid"
+                x1={padX}
+                y1={yAt(v).toFixed(1)}
+                x2={W - padX}
+                y2={yAt(v).toFixed(1)}
+              />
+              <text className="grid-val" x={padX - 6} y={(yAt(v) + 3).toFixed(1)} textAnchor="end">
+                {Number(v.toFixed(2))}
+              </text>
+            </g>
+          ))}
           {/* Dashed connector from the last real point to the hollow upcoming one */}
           {lastReal && (
             <path
@@ -225,14 +272,19 @@ function CurveCard({
           <path className="line" d={linePath} />
           {pts.map((p, i) => (
             <g key={`${p.period}-${i}`}>
-              <circle className="dot" cx={xAt(i)} cy={yAt(p.value)} r={3} />
-              <text
-                className="pt-val"
-                x={xAt(i)}
-                y={yAt(p.value) - 7}
-                textAnchor="middle"
-              >
-                {p.value}
+              <circle
+                className={i === pts.length - 1 ? 'dot dot-last' : 'dot'}
+                cx={xAt(i)}
+                cy={yAt(p.value)}
+                r={i === pts.length - 1 ? 4 : 3}
+              />
+              {i === pts.length - 1 && (
+                <text className="pt-val" x={xAt(i)} y={yAt(p.value) - 9} textAnchor="middle">
+                  {p.value}
+                </text>
+              )}
+              <text className="pt-label" x={xAt(i)} y={H - 12} textAnchor="middle">
+                {periodShort(p.period, locale)}
               </text>
             </g>
           ))}
@@ -247,13 +299,36 @@ function CurveCard({
           <text
             className="pt-upcoming-label"
             x={upcomingX}
-            y={upcomingY - 9}
+            y={upcomingY - 10}
             textAnchor="middle"
           >
             {t('pub.curve.upcoming')}
           </text>
+          <text className="pt-label" x={upcomingX} y={H - 12} textAnchor="middle">
+            ?
+          </text>
         </svg>
       </div>
+
+      {/* Stats row — last value + its period, and the range observed over the series. */}
+      {lastReal && (
+        <div className="pub-curve-stats">
+          <div>
+            {t.rich('pub.curve.lastValue', {
+              ...RICH,
+              value: lastReal.value,
+              period: periodLong(lastReal.period, locale),
+            })}
+          </div>
+          <div>
+            {t.rich('pub.curve.range', {
+              ...RICH,
+              min: Number(min.toFixed(2)),
+              max: Number(max.toFixed(2)),
+            })}
+          </div>
+        </div>
+      )}
 
       <p className="cald-note">{t('pub.curve.note')}</p>
 
@@ -331,10 +406,12 @@ function SourceLine({
 }
 
 function CalmBeforeCard({
+  n,
   m,
   locale,
   t,
 }: {
+  n: number;
   m: CalmBeforeMeasure;
   locale: string;
   t: ReturnType<typeof useTranslations>;
@@ -342,6 +419,7 @@ function CalmBeforeCard({
   const market = t(`market.${m.provenance.market}` as 'market.XAUUSD');
   return (
     <div className="pub-qcard">
+      <div className="pub-qn">{t('pub.questions.qLabel', { n })}</div>
       <p className="pub-q">{t('pub.questions.calmBefore.q')}</p>
       <p className="pub-a">
         {t.rich('pub.questions.calmBefore.a', {
@@ -374,10 +452,12 @@ function CalmBeforeCard({
 }
 
 function StructureCard({
+  n,
   m,
   locale,
   t,
 }: {
+  n: number;
   m: StructureStateMeasure;
   locale: string;
   t: ReturnType<typeof useTranslations>;
@@ -385,6 +465,7 @@ function StructureCard({
   const market = t(`market.${m.provenance.market}` as 'market.XAUUSD');
   return (
     <div className="pub-qcard">
+      <div className="pub-qn">{t('pub.questions.qLabel', { n })}</div>
       <p className="pub-q">{t('pub.questions.structure.q')}</p>
       <p className="pub-a">
         {t.rich('pub.questions.structure.a', {
@@ -434,10 +515,12 @@ function StructureCard({
 }
 
 function ReturnToCalmCard({
+  n,
   m,
   locale,
   t,
 }: {
+  n: number;
   m: ReturnToCalmMeasure;
   locale: string;
   t: ReturnType<typeof useTranslations>;
@@ -448,6 +531,7 @@ function ReturnToCalmCard({
   const t2 = m.tranches[2]?.count ?? 0;
   return (
     <div className="pub-qcard">
+      <div className="pub-qn">{t('pub.questions.qLabel', { n })}</div>
       <p className="pub-q">{t('pub.questions.returnToCalm.q')}</p>
       <p className="pub-a">
         {t.rich('pub.questions.returnToCalm.a', {
@@ -495,6 +579,9 @@ function QuestionsSection({
   t: ReturnType<typeof useTranslations>;
 }) {
   const market = t(`market.${measures.market}` as 'market.XAUUSD');
+  // Number the cards in render order — only the measures that exist are shown,
+  // so a deferred measure (zone lifecycle, #3) leaves no gap and no empty card.
+  let n = 0;
   return (
     <div className="cald-card pub-qsection">
       <div className="cald-card-h">
@@ -503,15 +590,22 @@ function QuestionsSection({
           {t('pub.questions.sectionBadge', { market })}
         </span>
       </div>
-      {measures.calm_before && (
-        <CalmBeforeCard m={measures.calm_before} locale={locale} t={t} />
-      )}
-      {measures.structure_state && (
-        <StructureCard m={measures.structure_state} locale={locale} t={t} />
-      )}
-      {measures.return_to_calm && (
-        <ReturnToCalmCard m={measures.return_to_calm} locale={locale} t={t} />
-      )}
+      <div className="pub-qgrid">
+        {measures.calm_before && (
+          <CalmBeforeCard n={++n} m={measures.calm_before} locale={locale} t={t} />
+        )}
+        {measures.structure_state && (
+          <StructureCard n={++n} m={measures.structure_state} locale={locale} t={t} />
+        )}
+        {measures.return_to_calm && (
+          <ReturnToCalmCard n={++n} m={measures.return_to_calm} locale={locale} t={t} />
+        )}
+      </div>
+      {/* Common reading guide under the cards — decounts, not probabilities. */}
+      <div className="pub-qwarn" role="note">
+        <div className="t">{t('pub.questions.readGuide.title')}</div>
+        <div className="b">{t('pub.questions.readGuide.body')}</div>
+      </div>
     </div>
   );
 }
@@ -520,20 +614,38 @@ function QuestionsSection({
  * Section 4 — MIA (presentational only)
  * ------------------------------------------------------------------------ */
 
-function MiaBlock({ t }: { t: ReturnType<typeof useTranslations> }) {
+function MiaBlock({
+  pedKey,
+  t,
+}: {
+  pedKey: string;
+  t: ReturnType<typeof useTranslations>;
+}) {
+  // Suggested questions adapted to the publication (bespoke for us_cpi /
+  // ea_hicp_flash, a concept-only default otherwise). next-intl rejects arrays,
+  // so the set is an object; we keep only the keys present for this publication.
+  const suggests = t.raw(`pub.mia.suggests.${pedKey}`) as Record<string, string>;
+  const chips = Object.values(suggests);
   return (
     <div className="cald-card pub-mia">
-      <div className="cald-card-h">
-        <h3>{t('pub.mia.title')}</h3>
+      <div className="pub-mia-head">
+        {/* SAME shared avatar and candlestick icon as the /app M.I.A Agent. */}
+        <AgentAvatar size="md" presence />
+        <div className="pub-mia-id">
+          <div className="pub-mia-name">{t('pub.mia.title')}</div>
+          <div className="pub-mia-sub">{t('pub.mia.subtitle')}</div>
+        </div>
       </div>
-      <p className="pub-mia-sub">{t('pub.mia.subtitle')}</p>
+      <div className="pub-mia-suggests-label">{t('pub.mia.suggestsLabel')}</div>
       <div className="pub-mia-suggests">
-        {(['s1', 's2', 's3'] as const).map((s) => (
-          <button key={s} type="button" className="pub-mia-chip">
-            {t(`pub.mia.${s}`)}
+        {chips.map((label, i) => (
+          <button key={i} type="button" className="pub-mia-chip">
+            <span>{label}</span>
+            <ArrowUpRight className="pub-mia-chip-ar" width={13} height={13} aria-hidden />
           </button>
         ))}
       </div>
+      <p className="pub-mia-cap">{t('pub.mia.capability')}</p>
       <div className="pub-mia-form">
         <input
           className="pub-mia-input"
@@ -545,7 +657,79 @@ function MiaBlock({ t }: { t: ReturnType<typeof useTranslations> }) {
           {t('pub.mia.send')}
         </button>
       </div>
-      <p className="pub-mia-cap">{t('pub.mia.capability')}</p>
+    </div>
+  );
+}
+
+/* --------------------------------------------------------------------------
+ * Section 5 — GO TO SOURCE (up to four NAMED links, issuing organism only)
+ * ------------------------------------------------------------------------ */
+
+const DOC_ICON: Record<SourceDocKind, React.ComponentType<{ className?: string }>> = {
+  methodology: BookText,
+  release: FileText,
+  series: LineChart,
+  schedule: CalendarDays,
+};
+
+function SourceSection({
+  eventKey,
+  attribution,
+  t,
+}: {
+  eventKey: string | null;
+  attribution: { source: string; organism: string; license_label: string; policy_url: string } | null;
+  t: ReturnType<typeof useTranslations>;
+}) {
+  const links = sourceLinksFor(eventKey);
+  return (
+    <div className="cald-card">
+      <div className="cald-card-h">
+        <h3>{t('pub.source.title')}</h3>
+      </div>
+      <p className="pub-src-intro">{t('pub.source.intro')}</p>
+
+      {links.length > 0 ? (
+        <div className="pub-src-grid">
+          {links.map(({ kind, url }) => {
+            const Icon = DOC_ICON[kind];
+            return (
+              <a
+                key={kind}
+                className="pub-src-doc"
+                href={url}
+                target="_blank"
+                rel="noreferrer noopener"
+              >
+                <span className="pub-src-ic">
+                  <Icon className="pub-src-ic-svg" />
+                </span>
+                <span className="pub-src-txt">
+                  <span className="pub-src-name">{t(`pub.source.docs.${kind}.label`)}</span>
+                  <span className="pub-src-desc">{t(`pub.source.docs.${kind}.desc`)}</span>
+                </span>
+                <ArrowUpRight className="pub-src-ext" width={14} height={14} aria-hidden />
+              </a>
+            );
+          })}
+        </div>
+      ) : (
+        // No precise per-document URLs known for this organism yet: the generic
+        // policy link is NOT a substitute — we show the honest fallback line.
+        <p className="pub-src-none">{t('pub.source.noneYet')}</p>
+      )}
+
+      {attribution && (
+        <div className="pub-src-foot">
+          <span className="pub-src-only">{t('pub.source.organismOnly')}</span>
+          <span className="pub-src-note">{t('pub.source.onlyNote')}</span>
+        </div>
+      )}
+      {attribution && (
+        <p className="pub-src-license">
+          {attribution.organism} · {attribution.license_label}
+        </p>
+      )}
     </div>
   );
 }
@@ -655,25 +839,10 @@ function Detail({
       )}
 
       {/* 4 — MIA */}
-      <MiaBlock t={t} />
+      <MiaBlock pedKey={pedKey} t={t} />
 
       {/* 5 — GO TO SOURCE (issuing organism only) */}
-      <div className="cald-card">
-        <div className="cald-card-h">
-          <h3>{t('pub.source.title')}</h3>
-        </div>
-        <p className="pub-src-intro">{t('pub.source.intro')}</p>
-        {attribution && (
-          <a
-            className="pub-src-link"
-            href={attribution.policy_url}
-            target="_blank"
-            rel="noreferrer noopener"
-          >
-            {t('pub.source.link')}
-          </a>
-        )}
-      </div>
+      <SourceSection eventKey={eventKey} attribution={attribution} t={t} />
 
       {/* 6 — PEDAGOGY */}
       <div className="cald-card">

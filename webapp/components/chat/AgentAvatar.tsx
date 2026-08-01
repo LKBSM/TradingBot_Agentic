@@ -17,9 +17,15 @@ const FILL =
 interface AgentAvatarProps {
   size?: 'sm' | 'md' | 'lg';
   className?: string;
+  /**
+   * Render the small "online" presence pastille at the bottom-right (the green
+   * dot shown on the publication M.I.A header). Off by default so /app keeps its
+   * own inline dot untouched — same shared avatar, opt-in decoration.
+   */
+  presence?: boolean;
 }
 
-export function AgentAvatar({ size = 'md', className }: AgentAvatarProps) {
+export function AgentAvatar({ size = 'md', className, presence = false }: AgentAvatarProps) {
   const box =
     size === 'lg'
       ? 'h-14 w-14 rounded-2xl'
@@ -28,12 +34,21 @@ export function AgentAvatar({ size = 'md', className }: AgentAvatarProps) {
         : 'h-9 w-9 rounded-full';
   const glyph = size === 'lg' ? 'h-8 w-8' : size === 'sm' ? 'h-4 w-4' : 'h-5 w-5';
   return (
-    <div
-      aria-hidden
-      className={cn('flex shrink-0 items-center justify-center border', box, className)}
-      style={{ background: FILL, borderColor: RING }}
-    >
-      <MiaAgentLogo className={glyph} />
+    <div className="relative shrink-0">
+      <div
+        aria-hidden
+        className={cn('flex items-center justify-center border', box, className)}
+        style={{ background: FILL, borderColor: RING }}
+      >
+        <MiaAgentLogo className={glyph} />
+      </div>
+      {presence && (
+        <span
+          aria-hidden
+          data-presence="1"
+          className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-card bg-[hsl(var(--sentinel-bull))]"
+        />
+      )}
     </div>
   );
 }

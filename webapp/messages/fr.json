@@ -2069,11 +2069,18 @@
         "empty": "La série publiée n'est pas disponible pour cet indicateur.",
         "revisedFromTo": "Le dernier chiffre a été corrigé après sa parution : {initial} d'abord, puis {current} le {date}.",
         "notRevised": "Aucun des chiffres affichés n'a été corrigé après sa parution.",
-        "source": "Série publiée par {organism}, dans l'unité de l'organisme, telle que publiée — sans conversion ni réarrondi."
+        "source": "Série publiée par {organism}, dans l'unité de l'organisme, telle que publiée — sans conversion ni réarrondi.",
+        "lastValue": "Dernière valeur <b>{value}</b> — {period}",
+        "range": "Sur la série affichée <b>{min}</b> à <b>{max}</b>"
       },
       "questions": {
         "sectionTitle": "Ce que le moteur a mesuré aux publications précédentes",
         "sectionBadge": "Mouvement de prix — {market}",
+        "qLabel": "Question {n}",
+        "readGuide": {
+          "title": "Comment lire ces réponses",
+          "body": "Chaque réponse est un décompte de journées passées, chacune avec son contexte propre. « 10 fois sur 12 » décrit ce qui a été observé, pas une probabilité pour la prochaine fois, et rien ici ne s'applique à la publication à venir. Les questions sont indépendantes : aucune n'explique une autre."
+        },
         "calmBefore": {
           "q": "L'heure qui précède est-elle plus calme ou plus agitée que d'habitude ?",
           "a": "Sur <b>{sample}</b> publications mesurées sur {market}, l'heure précédant la parution a été plus calme que d'ordinaire <b>{calmer} fois</b> et plus agitée <b>{busier} fois</b>.",
@@ -2104,18 +2111,55 @@
       },
       "mia": {
         "title": "Demander à M.I.A",
-        "subtitle": "M.I.A explique les concepts et décrit ce que le moteur a mesuré.",
-        "s1": "Explique-moi ce que mesure cet indicateur",
-        "s2": "Qu'a mesuré le moteur aux parutions précédentes ?",
-        "s3": "Montre la structure actuelle du marché",
-        "placeholder": "Pose ta question…",
+        "subtitle": "Elle explique les concepts et décrit ce que le moteur a mesuré sur cette publication.",
+        "suggestsLabel": "Questions fréquentes sur cette publication",
+        "suggests": {
+          "us_cpi": {
+            "s1": "Quelle différence entre l'IPC et l'IPC sous-jacent ?",
+            "s2": "Pourquoi un chiffre est-il parfois corrigé un mois après sa parution ?",
+            "s3": "Que veut dire « le marché est revenu au calme » après une publication ?",
+            "s4": "Montre-moi la structure actuelle de l'or"
+          },
+          "ea_hicp_flash": {
+            "s1": "Qu'est-ce que l'IPCH et en quoi diffère-t-il des indices nationaux ?",
+            "s2": "Pourquoi l'estimation rapide est-elle révisée quelques semaines après ?",
+            "s3": "Que veut dire « poche de liquidité intacte » ?",
+            "s4": "Montre-moi la structure actuelle de l'or"
+          },
+          "default": {
+            "s1": "Explique-moi ce que mesure cet indicateur",
+            "s2": "Qu'a mesuré le moteur aux parutions précédentes ?",
+            "s3": "Montre la structure actuelle du marché"
+          }
+        },
+        "placeholder": "Pose ta question sur cette publication…",
         "send": "Envoyer",
         "capability": "M.I.A décrit des faits mesurés et explique des concepts. Elle ne dit pas ce que le prix fera, ni quelle valeur sera publiée, ni s'il faut intervenir — et le dira si tu le lui demandes."
       },
       "source": {
         "title": "Aller à la source",
-        "intro": "La valeur de l'indicateur provient uniquement de l'organisme qui l'émet :",
-        "link": "site de l'organisme"
+        "intro": "Ces liens mènent à l'organisme qui émet la publication, et à lui seul :",
+        "docs": {
+          "methodology": {
+            "label": "Méthodologie de l'indicateur",
+            "desc": "Comment l'indicateur est défini, construit et calculé."
+          },
+          "release": {
+            "label": "Dernier communiqué officiel",
+            "desc": "Le texte de parution le plus récent, dans le détail."
+          },
+          "series": {
+            "label": "Série historique complète",
+            "desc": "Toutes les valeurs publiées, révisions comprises."
+          },
+          "schedule": {
+            "label": "Calendrier officiel des publications",
+            "desc": "Les dates et heures de parution de l'organisme."
+          }
+        },
+        "organismOnly": "organisme émetteur uniquement",
+        "onlyNote": "Ces liens mènent à l'organisme officiel et à lui seul. MIA ne renvoie vers aucun site de commentaire ni de prévision : choisir un tel lien, ce serait le recommander.",
+        "noneYet": "Les documents précis de cet organisme ne sont pas encore référencés ici. Aucun lien générique ne les remplace."
       },
       "pedagogy": {
         "title": "Ce que mesure cet indicateur",
