@@ -1872,7 +1872,8 @@
       "title": "Lo que este calendario no dice",
       "body": "Este calendario no indica ni la dirección ni lo que ocurrirá esta vez. Una publicación puede no provocar nada, y un mercado tranquilo puede moverse sin ninguna publicación.",
       "noForecast": "No se muestra ninguna previsión de analistas: ningún organismo público publica una, y MIA no fabrica ninguna.",
-      "noRanking": "No se asigna ninguna jerarquía a las publicaciones: MIA no las clasifica entre sí."
+      "noRanking": "No se asigna ninguna jerarquía a las publicaciones: MIA no las clasifica entre sí.",
+      "noUnscheduled": "Este calendario anuncia momentos programados. Una decisión fuera de calendario, un choque geopolítico o una declaración inesperada no figuran aquí: no tienen una hora conocida de antemano."
     },
     "empty": {
       "noSelection": "Ningún filtro seleccionado: marca al menos un organismo, un mercado y una periodicidad para mostrar publicaciones.",

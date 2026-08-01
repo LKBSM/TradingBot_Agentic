@@ -1872,7 +1872,8 @@
       "title": "Czego ten kalendarz nie mówi",
       "body": "Ten kalendarz nie podaje ani kierunku, ani tego, co stanie się tym razem. Publikacja może nic nie wywołać, a spokojny rynek może się poruszyć bez żadnej publikacji.",
       "noForecast": "Nie pokazujemy żadnej prognozy analityków: żadna publiczna instytucja jej nie publikuje, a MIA jej nie tworzy.",
-      "noRanking": "Publikacjom nie przypisuje się żadnej hierarchii: MIA nie porządkuje ich względem siebie."
+      "noRanking": "Publikacjom nie przypisuje się żadnej hierarchii: MIA nie porządkuje ich względem siebie.",
+      "noUnscheduled": "Ten kalendarz zapowiada zaplanowane momenty. Decyzja poza kalendarzem, wstrząs geopolityczny czy nieoczekiwane oświadczenie nie figurują tutaj: nie mają godziny znanej z wyprzedzeniem."
     },
     "empty": {
       "noSelection": "Nie wybrano żadnego filtra: zaznacz co najmniej jedną instytucję, jeden rynek i jedną częstotliwość, aby wyświetlić publikacje.",

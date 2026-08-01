@@ -181,6 +181,7 @@ export function CalendarWorkspace({
           <ul className="cal-nono-list">
             <li>{t('nono.noForecast')}</li>
             <li>{t('nono.noRanking')}</li>
+            <li>{t('nono.noUnscheduled')}</li>
           </ul>
         </div>
       </div>

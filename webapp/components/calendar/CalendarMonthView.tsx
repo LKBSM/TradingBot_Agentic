@@ -309,6 +309,20 @@ export function CalendarMonthView({
             </ul>
             <div className="calm-tm-note">{t('month.thisMonth.note')}</div>
           </div>
+
+          {/* Honesty note — visible on the month view as on the list view: this
+              calendar covers SCHEDULED moments only, never the unscheduled. */}
+          <div className="cal-nono" role="note">
+            <div>
+              <div className="t">{t('nono.title')}</div>
+              <div className="b">{t('nono.body')}</div>
+              <ul className="cal-nono-list">
+                <li>{t('nono.noForecast')}</li>
+                <li>{t('nono.noRanking')}</li>
+                <li>{t('nono.noUnscheduled')}</li>
+              </ul>
+            </div>
+          </div>
         </aside>
       </div>
     </div>

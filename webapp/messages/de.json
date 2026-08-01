@@ -1872,7 +1872,8 @@
       "title": "Was dieser Kalender nicht sagt",
       "body": "Dieser Kalender nennt weder die Richtung noch was diesmal geschehen wird. Eine Veröffentlichung kann nichts auslösen, und ein ruhiger Markt kann sich ohne jede Veröffentlichung bewegen.",
       "noForecast": "Es wird keine Analystenprognose angezeigt: keine öffentliche Institution veröffentlicht eine, und MIA erfindet keine.",
-      "noRanking": "Den Veröffentlichungen wird keine Rangfolge zugewiesen: MIA bewertet sie nicht gegeneinander."
+      "noRanking": "Den Veröffentlichungen wird keine Rangfolge zugewiesen: MIA bewertet sie nicht gegeneinander.",
+      "noUnscheduled": "Dieser Kalender kündigt geplante Zeitpunkte an. Eine außerplanmäßige Entscheidung, ein geopolitischer Schock oder eine unerwartete Erklärung erscheinen hier nicht: Ihr Zeitpunkt ist nicht im Voraus bekannt."
     },
     "empty": {
       "noSelection": "Kein Filter ausgewählt: wähle mindestens eine Institution, einen Markt und eine Periodizität, um Veröffentlichungen anzuzeigen.",
