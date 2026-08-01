@@ -56,7 +56,11 @@ def test_served_events_carry_full_official_shape() -> None:
         assert e.periodicity in {"monthly", "quarterly", "eight_per_year"}
         assert e.license_label
         assert e.scheduled_at.tzinfo is not None
-        assert e.time_confirmed is True
+        # The publication TIME may be confirmed or not — both are honest (NW-4):
+        # an unconfirmed time is flagged, never approximated or hidden. The field
+        # is always a real boolean; the "confirmed ⇒ proof" invariant is enforced
+        # at load and covered by test_calendar_time_confirmation_guard.
+        assert isinstance(e.time_confirmed, bool)
 
 
 def test_scheduled_times_are_dst_correct() -> None:

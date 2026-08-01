@@ -18,6 +18,8 @@ from src.intelligence.calendar_providers.values.eurostat_values import (
     EurostatValueFetcher,
     _parse_jsonstat,
 )
+from src.intelligence.calendar_providers.values.bea_values import BEAValueFetcher
+from src.intelligence.calendar_providers.values.census_values import CensusValueFetcher
 
 
 # --------------------------------------------------------------------------- #
@@ -110,6 +112,89 @@ def test_ecb_previous_is_last_distinct():
 
 
 # --------------------------------------------------------------------------- #
+# BEA NIPA
+# --------------------------------------------------------------------------- #
+_BEA_OK = json.dumps({
+    "BEAAPI": {"Results": {"Data": [
+        {"LineNumber": "1", "TimePeriod": "2026Q1", "DataValue": "2.4"},
+        {"LineNumber": "1", "TimePeriod": "2026Q2", "DataValue": "3.1"},
+        {"LineNumber": "2", "TimePeriod": "2026Q2", "DataValue": "9.9"},
+    ]}}
+})
+
+
+def test_bea_fetch_reads_headline_line_actual_and_previous():
+    f = BEAValueFetcher(api_key="KEY", http_get=lambda url: _BEA_OK)
+    vp = f.fetch("NIPA-T10101")
+    assert vp is not None
+    # Chronological: Q2 latest (line 1 only), Q1 previous — line 2 ignored.
+    assert vp.actual == 3.1
+    assert vp.previous == 2.4
+
+
+def test_bea_strips_thousands_comma_as_published():
+    payload = json.dumps({"BEAAPI": {"Results": {"Data": [
+        {"LineNumber": "1", "TimePeriod": "2026M05", "DataValue": "1,234.5"},
+        {"LineNumber": "1", "TimePeriod": "2026M06", "DataValue": "1,240.0"},
+    ]}}})
+    f = BEAValueFetcher(api_key="KEY", http_get=lambda url: payload)
+    vp = f.fetch("NIPA-T20804")
+    assert vp is not None and vp.actual == 1240.0 and vp.previous == 1234.5
+
+
+def test_bea_without_key_returns_none():
+    f = BEAValueFetcher(api_key="", http_get=lambda url: _BEA_OK)
+    assert f.fetch("NIPA-T10101") is None
+
+
+def test_bea_unknown_series_returns_none():
+    f = BEAValueFetcher(api_key="KEY", http_get=lambda url: _BEA_OK)
+    assert f.fetch("NIPA-TZZZZZ") is None
+
+
+def test_bea_graceful_on_error_and_unreachable():
+    err = json.dumps({"BEAAPI": {"Results": {"Error": {"APIErrorCode": "1"}}}})
+    assert BEAValueFetcher(api_key="KEY", http_get=lambda url: err).fetch("NIPA-T10101") is None
+    # Unreachable → "" → None, and the cache is never touched (fetch just returns None).
+    assert BEAValueFetcher(api_key="KEY", http_get=lambda url: "").fetch("NIPA-T10101") is None
+
+
+# --------------------------------------------------------------------------- #
+# Census EITS
+# --------------------------------------------------------------------------- #
+_CENSUS_OK = json.dumps([
+    ["cell_value", "time", "us"],
+    ["612345", "2026-05", "1"],
+    ["615000", "2026-06", "1"],
+])
+
+
+def test_census_fetch_actual_and_previous_chronological():
+    f = CensusValueFetcher(api_key="KEY", http_get=lambda url: _CENSUS_OK)
+    vp = f.fetch("MARTS-RSAFS")
+    assert vp is not None
+    assert vp.actual == 615000.0
+    assert vp.previous == 612345.0
+
+
+def test_census_without_key_returns_none():
+    f = CensusValueFetcher(api_key="", http_get=lambda url: _CENSUS_OK)
+    assert f.fetch("MARTS-RSAFS") is None
+
+
+def test_census_unknown_series_returns_none():
+    f = CensusValueFetcher(api_key="KEY", http_get=lambda url: _CENSUS_OK)
+    assert f.fetch("MARTS-ZZZZ") is None
+
+
+def test_census_graceful_on_missing_key_html_page():
+    # The keyless "Missing Key" response is HTML, not JSON → parsed to None,
+    # never a fabricated value; the event stays unfetched.
+    f = CensusValueFetcher(api_key="KEY", http_get=lambda url: "<html>Missing Key</html>")
+    assert f.fetch("MARTS-RSAFS") is None
+
+
+# --------------------------------------------------------------------------- #
 # Registry wiring
 # --------------------------------------------------------------------------- #
 def test_no_key_sources_wired_when_live(monkeypatch):
@@ -130,3 +215,20 @@ def test_bls_wired_when_key_present(monkeypatch):
     f = build_value_fetcher()
     assert f is not None
     assert "bls" in f._by_source                       # type: ignore[attr-defined]
+
+
+def test_bea_and_census_wired_only_when_their_key_present(monkeypatch):
+    monkeypatch.setenv("CALENDAR_VALUES_LIVE", "1")
+    monkeypatch.delenv("BEA_API_KEY", raising=False)
+    monkeypatch.delenv("CENSUS_API_KEY", raising=False)
+    f = build_value_fetcher()
+    assert f is not None
+    assert "bea" not in f._by_source                   # type: ignore[attr-defined]
+    assert "census" not in f._by_source                # type: ignore[attr-defined]
+
+    monkeypatch.setenv("BEA_API_KEY", "k1")
+    monkeypatch.setenv("CENSUS_API_KEY", "k2")
+    f2 = build_value_fetcher()
+    assert f2 is not None
+    assert "bea" in f2._by_source                      # type: ignore[attr-defined]
+    assert "census" in f2._by_source                   # type: ignore[attr-defined]
