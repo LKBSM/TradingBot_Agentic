@@ -1,0 +1,316 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MIA Markets — Page d'une publication</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#080d16;--card:#101a2c;--card2:#0d1626;--line:#1c2942;--line2:#25344f;
+--tx:#e6edf7;--dim:#93a4bd;--faint:#61728c;--acc:#5b9dff;--pos:#3ddc97;--neg:#ff6b81;--amb:#f5b544;--vio:#a78bfa}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font-family:'Inter',system-ui,sans-serif;font-size:13px;line-height:1.55;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:'Space Grotesk',sans-serif}
+.mono{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums}
+.wrap{max-width:1030px;margin:0 auto;padding:22px 24px 70px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:13px}
+.pad{padding:16px 18px}
+.sec{margin-bottom:12px}
+.ttl{font-family:'JetBrains Mono';font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:13px;display:flex;align-items:center;gap:9px}
+.ttl .r{margin-left:auto;text-transform:none;letter-spacing:0}
+.btn{font-family:'Space Grotesk';font-size:11.5px;font-weight:600;padding:7px 13px;border-radius:8px;border:1px solid var(--line2);background:transparent;color:var(--tx);cursor:pointer;transition:.15s;white-space:nowrap}
+.btn:hover{border-color:var(--acc);color:var(--acc)}
+.btn.sm{font-size:10.5px;padding:5px 10px}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:#04101f}
+.crumb{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--faint);margin-bottom:13px}
+.crumb a{color:var(--acc);cursor:pointer}
+.sechead{font-family:'Space Grotesk';font-size:16px;font-weight:600;letter-spacing:-.02em;margin:22px 0 12px;display:flex;align-items:baseline;gap:10px}
+.sechead .s{font-family:'JetBrains Mono';font-size:10.5px;color:var(--faint);font-weight:400}
+
+.ph{display:flex;gap:15px;align-items:flex-start;padding:18px 20px;border:1px solid var(--line);border-radius:13px;background:linear-gradient(150deg,#12213a,#0d1626);margin-bottom:12px}
+.flag{width:44px;height:44px;border-radius:11px;background:#0e1a2e;border:1px solid var(--line2);display:grid;place-items:center;font-family:'JetBrains Mono';font-size:11px;font-weight:600;color:var(--acc);flex-shrink:0}
+.ph h1{font-size:21px;font-weight:600;letter-spacing:-.025em;margin-bottom:5px;line-height:1.22}
+.ph .meta{font-family:'JetBrains Mono';font-size:10.5px;color:var(--faint);line-height:1.75}
+.ph .cd{margin-left:auto;text-align:right;flex-shrink:0}
+.ph .cd .k{font-family:'JetBrains Mono';font-size:9px;letter-spacing:.11em;text-transform:uppercase;color:var(--faint)}
+.ph .cd .v{font-family:'Space Grotesk';font-size:25px;font-weight:700;color:var(--amb);letter-spacing:-.02em;line-height:1.1}
+.ph .cd .d{font-family:'JetBrains Mono';font-size:9.5px;color:var(--faint);margin-top:2px}
+
+.qgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.qc{border:1px solid var(--line);border-radius:12px;background:var(--card);overflow:hidden;display:flex;flex-direction:column}
+.qc .qh{padding:14px 16px 12px;border-bottom:1px solid var(--line)}
+.qc .qn{font-family:'JetBrains Mono';font-size:9px;letter-spacing:.13em;color:var(--acc);margin-bottom:6px}
+.qc .qq{font-family:'Space Grotesk';font-size:15px;font-weight:600;letter-spacing:-.015em;line-height:1.3;margin-bottom:5px}
+.qc .qs2{font-size:10.5px;color:var(--faint);font-family:'JetBrains Mono';line-height:1.5}
+.qc .qb2{padding:14px 16px;flex:1;display:flex;flex-direction:column}
+.answer{font-family:'Space Grotesk';font-size:14.5px;line-height:1.62;color:var(--dim);font-weight:400;margin-bottom:13px}
+.answer b{color:var(--tx);font-weight:600;font-size:16.5px}
+.detail{border-top:1px solid var(--line);padding-top:11px;margin-top:auto}
+.drow{display:flex;align-items:center;gap:10px;padding:4.5px 0;font-size:11.5px;color:var(--dim)}
+.drow .dk{flex:1}
+.drow .dv{font-family:'JetBrains Mono';font-size:11px;color:var(--tx);white-space:nowrap}
+.dots{display:flex;gap:3px}
+.dots i{width:9px;height:9px;border-radius:2px;background:#1c2942}
+.dots i.y{background:var(--acc)}
+.dots i.n{background:#22304a}
+.cmp{display:flex;align-items:center;gap:8px;flex:1;max-width:150px}
+.cbar{flex:1;height:15px;background:#0d1727;border-radius:4px;overflow:hidden}
+.cbar i{display:block;height:100%;border-radius:4px}
+.cbar i.mia{background:linear-gradient(90deg,#2a4a78,#4d86d4)}
+.cbar i.ord{background:#2b3a52}
+.src{font-family:'JetBrains Mono';font-size:9.5px;color:var(--faint);margin-top:10px;padding-top:9px;border-top:1px solid var(--line);line-height:1.6}
+.warn{background:#1a1508;border-left:2px solid var(--amb);border-radius:0 9px 9px 0;padding:12px 15px;margin-top:12px}
+.warn .wt{font-family:'JetBrains Mono';font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--amb);margin-bottom:5px}
+.warn .wb{font-size:12px;color:#d5c49b;line-height:1.65}
+/* détail repliable */
+.fold{border:1px solid var(--line);border-radius:12px;background:var(--card);overflow:hidden}
+.foldh{padding:13px 17px;display:flex;align-items:center;gap:11px;cursor:pointer;user-select:none}
+.foldh:hover{background:#0e1828}
+.foldh .ft{font-family:'Space Grotesk';font-size:13.5px;font-weight:600}
+.foldh .fs{font-size:11.5px;color:var(--faint)}
+.foldh .fc{margin-left:auto;color:var(--faint);font-size:11px;transition:.2s}
+.fold.open .fc{transform:rotate(90deg)}
+.foldb{display:none;padding:2px 17px 16px;border-top:1px solid var(--line)}
+.fold.open .foldb{display:block}
+table.x{width:100%;border-collapse:collapse;font-size:12px}
+table.x th{font-family:'JetBrains Mono';font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);font-weight:500;text-align:left;padding:10px 9px 9px;border-bottom:1px solid var(--line2);vertical-align:bottom}
+table.x td{padding:11px 9px;border-bottom:1px solid #141f33;vertical-align:middle}
+table.x tr:last-child td{border-bottom:none}
+table.x tr:hover td{background:#0e1828}
+.dt{font-family:'JetBrains Mono';font-size:11.5px;color:var(--dim);white-space:nowrap}
+.dt small{display:block;font-size:9px;color:var(--faint)}
+.ampcell{display:flex;align-items:center;gap:8px}
+.trk{flex:1;min-width:52px;height:15px;background:#0d1727;border-radius:4px;position:relative;overflow:hidden}
+.fll{height:100%;background:linear-gradient(90deg,#2a4a78,#4d86d4);border-radius:4px}
+.bse{position:absolute;top:0;bottom:0;width:2px;background:repeating-linear-gradient(180deg,#93a4bd 0 3px,transparent 3px 6px);opacity:.75}
+.amt{font-family:'JetBrains Mono';font-size:11px;width:54px;text-align:right;flex-shrink:0}
+.evs{display:flex;gap:4px;flex-wrap:wrap}
+.evc{font-family:'JetBrains Mono';font-size:9px;padding:2px 6px;border-radius:4px;background:#0b1424;border:1px solid #1e2c45;color:var(--faint);white-space:nowrap}
+.evc.b{background:#0d2a22;border-color:#1f5c46;color:var(--pos)}
+.evc.s{background:#26121a;border-color:#5c2632;color:#ffa5b3}
+.evc.none{border-style:dashed}
+.rev{font-family:'JetBrains Mono';font-size:9px;padding:1.5px 6px;border-radius:4px;background:#231b09;color:var(--amb);border:1px solid #6b5220;margin-left:5px}
+.pend td{background:#0c1527;color:var(--faint)}
+/* sources */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.lnk{display:flex;align-items:center;gap:11px;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:var(--card2);margin-bottom:7px;cursor:pointer;transition:.15s}
+.lnk:hover{border-color:var(--acc)}
+.lnk .li{width:26px;height:26px;border-radius:7px;background:#12213a;border:1px solid var(--line2);display:grid;place-items:center;flex-shrink:0}
+.lnk .li svg{width:12px;height:12px;stroke:var(--acc);fill:none;stroke-width:2}
+.lnk .lt3{font-size:12.5px;font-weight:500}
+.lnk .ld{font-size:10.5px;color:var(--faint)}
+.lnk .ext{margin-left:auto;color:var(--faint);font-size:11px}
+.srcb{font-family:'JetBrains Mono';font-size:9px;padding:2px 7px;border-radius:5px;background:#0d2a22;color:var(--pos);border:1px solid #1f5c46;text-transform:none;letter-spacing:0}
+.prose{font-size:12.5px;line-height:1.75;color:var(--dim);font-family:'Space Grotesk';font-weight:400}
+.prose b{color:var(--tx);font-weight:500}
+.prose p{margin-bottom:10px}.prose p:last-child{margin-bottom:0}
+/* MIA */
+.mia{border:1px solid var(--line2);border-radius:13px;background:linear-gradient(155deg,#12213a,#0d1626);overflow:hidden}
+.miah{display:flex;align-items:center;gap:13px;padding:15px 17px;border-bottom:1px solid var(--line)}
+.avatar{width:40px;height:40px;border-radius:12px;background:linear-gradient(140deg,#5b9dff,#3060b8);display:grid;place-items:center;flex-shrink:0;position:relative;box-shadow:0 4px 14px -4px rgba(91,157,255,.55)}
+.avatar svg{width:20px;height:20px;stroke:#04101f;fill:none;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round}
+.avatar .on{position:absolute;right:-2px;bottom:-2px;width:11px;height:11px;border-radius:50%;background:var(--pos);border:2.5px solid #0f1c31}
+.miah .nm{font-family:'Space Grotesk';font-size:15px;font-weight:600;letter-spacing:-.01em}
+.miah .sb{font-size:11.5px;color:var(--dim)}
+.miab{padding:14px 17px}
+.mial{font-family:'JetBrains Mono';font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:9px}
+.qs{display:flex;flex-direction:column;gap:7px}
+.qb{font-size:12.5px;padding:10px 13px;border-radius:10px;border:1px solid var(--line2);background:rgba(10,19,34,.5);color:var(--dim);cursor:pointer;text-align:left;transition:.15s;display:flex;align-items:center;gap:9px}
+.qb:hover{border-color:var(--acc);color:var(--tx);background:#12213a}
+.qb .ar{margin-left:auto;color:var(--faint);font-size:12px}
+.qb:hover .ar{color:var(--acc)}
+.miaf{padding:12px 17px;border-top:1px solid var(--line);display:flex;gap:9px;align-items:center;background:rgba(8,13,22,.4)}
+.miaf input{flex:1;background:#0a1322;border:1px solid var(--line2);border-radius:9px;padding:10px 13px;color:var(--tx);font-family:'Inter';font-size:12.5px}
+.miaf input:focus{outline:none;border-color:var(--acc)}
+.miaf input::placeholder{color:var(--faint)}
+.refus{font-size:11.5px;color:#d5c49b;background:#1a1508;border-left:2px solid var(--amb);border-radius:0 8px 8px 0;padding:10px 13px;margin-top:11px;line-height:1.6}
+
+.qs2g{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.srcgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.srcgrid .lnk{margin-bottom:0}
+@media(max-width:880px){.qs2g,.srcgrid{grid-template-columns:1fr}}
+@media(max-width:880px){.qgrid,.two{grid-template-columns:1fr}}
+</style></head><body><div class="wrap">
+
+<div class="crumb"><a>Actualités</a> › <a>Août 2026</a> › <span>IPC · États-Unis</span></div>
+
+<div class="ph"><div class="flag">USD</div>
+  <div><h1>Indice des prix à la consommation (IPC)</h1>
+    <div class="meta">Bureau of Labor Statistics · % de variation annuelle · mensuel<br>
+      12 août 2026 · 08:30 New York · 08:30 ton heure (UTC−4) · rattaché à Or et EUR/USD</div></div>
+  <div class="cd"><div class="k">Publication dans</div><div class="v">12 j</div><div class="d">mer. 12 août</div></div></div>
+
+<div class="card pad sec"><div class="ttl">Les douze derniers chiffres publiés <span class="r mono">% de variation annuelle · source BLS</span></div>
+<svg viewBox="0 0 760 150" style="width:100%;height:auto">
+<line x1="28" y1="105.0" x2="732" y2="105.0" stroke="#1c2942" stroke-width="1"/>
+<text x="22" y="108.0" fill="#61728c" font-size="9" font-family="JetBrains Mono" text-anchor="end">2,5</text>
+<line x1="28" y1="70.0" x2="732" y2="70.0" stroke="#1c2942" stroke-width="1"/>
+<text x="22" y="73.0" fill="#61728c" font-size="9" font-family="JetBrains Mono" text-anchor="end">3,0</text>
+<line x1="28" y1="35.0" x2="732" y2="35.0" stroke="#1c2942" stroke-width="1"/>
+<text x="22" y="38.0" fill="#61728c" font-size="9" font-family="JetBrains Mono" text-anchor="end">3,5</text>
+<polygon points="28.0,126.0 28.0,112.0 92.0,98.0 156.0,91.0 220.0,77.0 284.0,70.0 348.0,56.0 412.0,42.0 476.0,49.0 540.0,56.0 604.0,49.0 668.0,63.0 668.0,126.0" fill="url(#gr)" opacity=".22"/>
+<defs><linearGradient id="gr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5b9dff"/><stop offset="1" stop-color="#5b9dff" stop-opacity="0"/></linearGradient></defs>
+<polyline points="28.0,112.0 92.0,98.0 156.0,91.0 220.0,77.0 284.0,70.0 348.0,56.0 412.0,42.0 476.0,49.0 540.0,56.0 604.0,49.0 668.0,63.0" fill="none" stroke="#5b9dff" stroke-width="2" stroke-linejoin="round"/>
+<circle cx="28.0" cy="112.0" r="3" fill="#0b1220" stroke="#5b9dff" stroke-width="1.6"/>
+<circle cx="92.0" cy="98.0" r="3" fill="#0b1220" stroke="#5b9dff" stroke-width="1.6"/>
+<circle cx="156.0" cy="91.0" r="3" fill="#0b1220" stroke="#5b9dff" stroke-width="1.6"/>
+<circle cx="220.0" cy="77.0" r="3" fill="#0b1220" stroke="#5b9dff" stroke-width="1.6"/>
+<circle cx="284.0" cy="70.0" r="3" fill="#0b1220" stroke="#5b9dff" stroke-width="1.6"/>
+<circle cx="348.0" cy="56.0" r="3" fill="#0b1220" stroke="#5b9dff" stroke-width="1.6"/>
+<circle cx="412.0" cy="42.0" r="3" fill="#0b1220" stroke="#5b9dff" stroke-width="1.6"/>
+<circle cx="476.0" cy="49.0" r="3" fill="#0b1220" stroke="#5b9dff" stroke-width="1.6"/>
+<circle cx="540.0" cy="56.0" r="3" fill="#0b1220" stroke="#5b9dff" stroke-width="1.6"/>
+<circle cx="604.0" cy="49.0" r="3" fill="#0b1220" stroke="#5b9dff" stroke-width="1.6"/>
+<circle cx="668.0" cy="63.0" r="3" fill="#0b1220" stroke="#5b9dff" stroke-width="1.6"/>
+<circle cx="668.0" cy="63.0" r="4.5" fill="#5b9dff"/>
+<text x="668.0" y="52.0" fill="#e6edf7" font-size="11" font-family="JetBrains Mono" text-anchor="middle">3,1 %</text>
+<circle cx="732.0" cy="63.0" r="4" fill="none" stroke="#61728c" stroke-width="1.5" stroke-dasharray="2 2"/>
+<text x="732.0" y="52.0" fill="#61728c" font-size="9" font-family="JetBrains Mono" text-anchor="middle">12 août</text>
+<text x="28.0" y="142" fill="#61728c" font-size="9" font-family="JetBrains Mono" text-anchor="middle">sep</text>
+<text x="92.0" y="142" fill="#61728c" font-size="9" font-family="JetBrains Mono" text-anchor="middle">oct</text>
+<text x="156.0" y="142" fill="#61728c" font-size="9" font-family="JetBrains Mono" text-anchor="middle">nov</text>
+<text x="220.0" y="142" fill="#61728c" font-size="9" font-family="JetBrains Mono" text-anchor="middle">déc</text>
+<text x="284.0" y="142" fill="#61728c" font-size="9" font-family="JetBrains Mono" text-anchor="middle">jan</text>
+<text x="348.0" y="142" fill="#61728c" font-size="9" font-family="JetBrains Mono" text-anchor="middle">fév</text>
+<text x="412.0" y="142" fill="#61728c" font-size="9" font-family="JetBrains Mono" text-anchor="middle">mar</text>
+<text x="476.0" y="142" fill="#61728c" font-size="9" font-family="JetBrains Mono" text-anchor="middle">avr</text>
+<text x="540.0" y="142" fill="#61728c" font-size="9" font-family="JetBrains Mono" text-anchor="middle">mai</text>
+<text x="604.0" y="142" fill="#61728c" font-size="9" font-family="JetBrains Mono" text-anchor="middle">jun</text>
+<text x="668.0" y="142" fill="#61728c" font-size="9" font-family="JetBrains Mono" text-anchor="middle">jul</text>
+<text x="732.0" y="142" fill="#61728c" font-size="9" font-family="JetBrains Mono" text-anchor="middle">?</text>
+</svg>  <div style="display:flex;gap:22px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--line);font-size:12px;color:var(--dim)">
+    <div>Dernière valeur <b style="color:var(--tx)" class="mono">3,1 %</b> <span style="color:var(--faint)">15 juillet</span></div>
+    <div>Sur douze mois <b style="color:var(--tx)" class="mono">2,4 %</b> à <b style="color:var(--tx)" class="mono">3,4 %</b></div>
+    <div>Écart typique d'un mois à l'autre <b style="color:var(--tx)" class="mono">0,1 à 0,2 pt</b></div>
+  </div>
+  <div style="margin-top:9px;font-size:11.5px;color:var(--faint);line-height:1.65">Valeurs telles que publiées par le Bureau of Labor Statistics, sans conversion ni réarrondi. Le point en pointillé marque la publication à venir : aucune valeur n'y est estimée.<br>
+  <span style="color:var(--dim)">Deux de ces chiffres ont été corrigés par le BLS un mois après leur parution</span> — juin, publié à 3,2 % puis porté à 3,3 %, et février, publié à 3,3 % puis ramené à 3,2 %. La courbe affiche les valeurs actuelles ; les valeurs d'origine restent consultables au survol.</div></div>
+<div class="sechead">Ce que le moteur a observé aux publications passées <span class="s">or · 12 publications de l'IPC</span></div>
+
+<div class="qgrid sec">
+  <div class="qc"><div class="qh"><div class="qn">QUESTION 1</div>
+    <div class="qq">Le marché se calme-t-il juste avant ?</div>
+    <div class="qs2">l'heure qui précède la publication</div></div>
+    <div class="qb2">
+      <div class="answer">Oui, presque toujours. <b>10 des 12</b> dernières publications ont été précédées d'une heure inhabituellement calme sur l'or.</div>
+      <div class="detail">
+        <div class="drow"><span class="dk">Ce que l'or parcourt d'ordinaire dans cette heure-là</span><span class="dv">9,00 $</span></div>
+        <div class="drow"><span class="dk">Ce qu'il a parcouru avant les publications d'IPC</span><span class="dv">3,40 $</span></div>
+        <div class="drow" style="padding-top:9px;margin-top:5px;border-top:1px solid var(--line)"><span class="dk">Publications précédées d'une heure calme<br><span style="color:var(--faint);font-size:10.5px">chaque carré est une publication</span></span>
+          <span style="text-align:right"><span class="dv" style="display:block;margin-bottom:5px">10 sur 12</span>
+          <span class="dots"><i class="y"></i><i class="y"></i><i class="y"></i><i class="y"></i><i class="y"></i><i class="y"></i><i class="y"></i><i class="y"></i><i class="y"></i><i class="y"></i><i class="n"></i><i class="n"></i></span></span></div>
+        <div class="drow"><span class="dk">Les 2 exceptions</span><span class="dv">avril et décembre</span></div>
+      </div>
+      <div class="src">Comparaison entre le parcours de l'or dans l'heure précédant la publication et son parcours dans la même heure de la journée sur 60 jours sans publication.</div></div></div>
+
+  <div class="qc"><div class="qh"><div class="qn">QUESTION 2</div>
+    <div class="qq">Où en est la structure au moment où ça tombe ?</div>
+    <div class="qs2">état du marché lu à l'instant de la publication</div></div>
+    <div class="qb2">
+      <div class="answer">Le prix était dans le <b>tiers haut</b> de son range <b>8 fois sur 12</b>, et une poche de liquidité jamais prise se trouvait juste à côté <b>9 fois sur 12</b>.</div>
+      <div class="detail">
+        <div class="drow"><span class="dk">Prix dans le tiers haut du range</span><span class="dv">8 / 12</span></div>
+        <div class="drow"><span class="dk">Prix dans le tiers milieu</span><span class="dv">2 / 12</span></div>
+        <div class="drow"><span class="dk">Prix dans le tiers bas</span><span class="dv">2 / 12</span></div>
+        <div class="drow" style="padding-top:9px;margin-top:5px;border-top:1px solid var(--line)"><span class="dk">Poche de liquidité jamais prise à moins de 0,5 %</span><span class="dv">9 / 12</span></div>
+        <div class="drow"><span class="dk">Prix déjà à l'intérieur d'une zone active</span><span class="dv">5 / 12</span></div>
+      </div>
+      <div class="src">Range = fenêtre d'analyse de l'or sur environ 5 jours, bornes affichées sur le panneau Régime. État lu dans la dernière lecture enregistrée avant l'heure de publication.</div></div></div>
+
+  <div class="qc"><div class="qh"><div class="qn">QUESTION 3</div>
+    <div class="qq">Les zones créées pendant la publication tiennent-elles ?</div>
+    <div class="qs2">Order Blocks et Fair Value Gaps nés dans l'heure qui suit</div></div>
+    <div class="qb2">
+      <div class="answer">Rarement. Ces 12 publications ont créé <b>34 zones</b>. <b>26</b> avaient été traversées par le prix dans les deux heures, et <b>31</b> avant la fin de la journée.</div>
+      <div class="detail">
+        <div class="drow"><span class="dk">Traversées en moins d'1 heure</span>
+          <span class="cmp"><span class="cbar"><i class="mia" style="width:53%"></i></span></span><span class="dv">18 zones</span></div>
+        <div class="drow"><span class="dk">Entre 1 et 2 heures</span>
+          <span class="cmp"><span class="cbar"><i class="mia" style="width:24%"></i></span></span><span class="dv">8 zones</span></div>
+        <div class="drow"><span class="dk">Entre 2 heures et la fin de la journée</span>
+          <span class="cmp"><span class="cbar"><i class="mia" style="width:15%"></i></span></span><span class="dv">5 zones</span></div>
+        <div class="drow"><span class="dk">Toujours intactes le lendemain</span>
+          <span class="cmp"><span class="cbar"><i class="ord" style="width:9%"></i></span></span><span class="dv">3 zones</span></div>
+        <div class="drow" style="padding-top:9px;margin-top:5px;border-top:1px solid var(--line)"><span class="dk">Zones qui existaient déjà et que le prix a traversées</span><span class="dv">24 au total</span></div>
+        <div class="drow"><span class="dk">Poches de liquidité prises dans l'heure</span><span class="dv">7 / 12 publications</span></div>
+      </div>
+      <div class="src">Une zone est dite traversée quand le prix y revient et la comble — c'est ce que le produit appelle mitigation. Décompte des 34 zones créées dans l'heure suivant les 12 publications, réparties selon le temps écoulé jusqu'à leur mitigation.</div></div></div>
+
+  <div class="qc"><div class="qh"><div class="qn">QUESTION 4</div>
+    <div class="qq">Combien de temps le marché reste-t-il agité ?</div>
+    <div class="qs2">après la publication, jusqu'au retour au rythme habituel</div></div>
+    <div class="qb2">
+      <div class="answer">Le plus souvent <b>entre 1 et 3 heures</b>. Mais l'écart est large : de <b>15 minutes</b> à <b>4 h 45</b> selon les publications.</div>
+      <div class="detail">
+        <div class="drow"><span class="dk">Calmé en moins d'1 heure</span>
+          <span class="cmp"><span class="cbar"><i class="mia" style="width:33%"></i></span></span><span class="dv">4 publications</span></div>
+        <div class="drow"><span class="dk">Entre 1 et 3 heures</span>
+          <span class="cmp"><span class="cbar"><i class="mia" style="width:42%"></i></span></span><span class="dv">5 publications</span></div>
+        <div class="drow"><span class="dk">Plus de 3 heures</span>
+          <span class="cmp"><span class="cbar"><i class="mia" style="width:25%"></i></span></span><span class="dv">3 publications</span></div>
+        <div class="drow" style="padding-top:9px;margin-top:5px;border-top:1px solid var(--line)"><span class="dk">Le plus court observé</span><span class="dv">15 min · 12 mars</span></div>
+        <div class="drow"><span class="dk">Le plus long observé</span><span class="dv">4 h 45 · 13 mai</span></div>
+      </div>
+      <div class="src">Temps écoulé après la publication avant que le parcours de l'or redescende à son niveau ordinaire pour cette heure de la journée, hors jours de publication. La répartition est donnée entière plutôt qu'en un seul chiffre : avec douze journées très différentes, une valeur unique masquerait l'écart réel.</div></div></div>
+</div>
+
+<div class="warn"><div class="wt">Comment lire ces quatre réponses</div>
+  <div class="wb">Chaque réponse est un décompte de journées passées, chacune avec son contexte propre — un rapport différent, une actualité géopolitique, un régime de volatilité particulier. « 10 fois sur 12 » décrit ce qui a été observé, pas une probabilité pour la prochaine fois, et rien ici ne s'applique à la publication du 12 août. Les quatre questions sont indépendantes : aucune n'explique une autre.</div></div>
+<div class="sechead">Des questions sur cette publication ?</div>
+
+<div class="mia sec">
+  <div class="miah">
+    <div class="avatar">
+      <svg viewBox="0 0 24 24"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.4L12 15l-1.9-4.6L5.5 9l4.6-1.4z"/><path d="M18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></svg>
+      <span class="on"></span></div>
+    <div><div class="nm">Pose une question à M.I.A</div>
+      <div class="sb">Elle explique les concepts et décrit ce qui a été mesuré sur cette publication.</div></div>
+    <button class="btn sm" style="margin-left:auto">Ouvrir le chat</button></div>
+  <div class="miab">
+    <div class="mial">Questions fréquentes sur cette publication</div>
+    <div class="qs2g">
+      <button class="qb">Quelle différence entre l'IPC et l'IPC sous-jacent ?<span class="ar">›</span></button>
+      <button class="qb">Pourquoi le chiffre de juin a-t-il été corrigé un mois après ?<span class="ar">›</span></button>
+      <button class="qb">Pourquoi les zones créées pendant une publication tiennent-elles moins longtemps ?<span class="ar">›</span></button>
+      <button class="qb">Que veut dire « le marché s'est contracté à 38 % » ?<span class="ar">›</span></button>
+      <button class="qb">Que s'est-il passé sur l'or le 13 mai ?<span class="ar">›</span></button>
+      <button class="qb">Montre-moi la structure actuelle de l'or sur H1<span class="ar">›</span></button>
+    </div>
+    <div class="refus"><b>M.I.A refusera</b> de dire ce que le prix fera après la publication, quelle valeur sera publiée, ou ce qu'il faudrait faire. Ce n'est pas une limite technique : c'est ce pour quoi elle est faite.</div>
+  </div>
+  <div class="miaf"><input placeholder="Pose ta question sur cette publication…">
+    <button class="btn pri">Envoyer</button></div>
+</div>
+
+<div class="sechead">Aller à la source <span class="s">Bureau of Labor Statistics · documents officiels</span></div>
+
+<div class="card pad sec">
+  <div class="srcgrid">
+    <div class="lnk"><span class="li"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></span>
+      <span><span class="lt3">Méthodologie de l'indice</span><br><span class="ld">Comment le panier est composé, pondéré et calculé</span></span><span class="ext">↗</span></div>
+    <div class="lnk"><span class="li"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg></span>
+      <span><span class="lt3">Communiqué de juillet, texte intégral</span><br><span class="ld">Le détail poste de dépense par poste de dépense</span></span><span class="ext">↗</span></div>
+    <div class="lnk"><span class="li"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg></span>
+      <span><span class="lt3">Série historique depuis 1913</span><br><span class="ld">Toutes les valeurs, révisions comprises, téléchargeables</span></span><span class="ext">↗</span></div>
+    <div class="lnk"><span class="li"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></span>
+      <span><span class="lt3">Calendrier officiel des publications</span><br><span class="ld">Dates et heures de l'année en cours</span></span><span class="ext">↗</span></div>
+  </div>
+  <div style="margin-top:12px;padding-top:11px;border-top:1px solid var(--line);display:flex;align-items:center;gap:11px;flex-wrap:wrap">
+    <span class="srcb">organisme émetteur uniquement</span>
+    <span style="font-size:11.5px;color:var(--faint);line-height:1.6;flex:1;min-width:260px">Ces quatre liens mènent au Bureau of Labor Statistics et à lui seul. MIA ne renvoie vers aucun site de commentaire ni de prévision : choisir un lien, ce serait le recommander.</span>
+  </div>
+  <div style="margin-top:11px;padding-top:10px;border-top:1px solid var(--line);font-family:'JetBrains Mono';font-size:9.5px;color:var(--faint);line-height:1.6">
+    Bureau of Labor Statistics · domaine public (17 U.S.C. §105) · citation : U.S. Bureau of Labor Statistics</div>
+</div>
+
+<div class="sechead">Ce que mesure l'indicateur</div>
+
+<div class="card pad sec">
+  <div class="prose" style="max-width:760px">
+    <p>L'<b>indice des prix à la consommation</b> suit le prix d'un panier de biens et de services achetés par les ménages américains, exprimé en variation sur douze mois. Il est publié chaque mois par le Bureau of Labor Statistics.</p>
+    <p>La version dite <b>sous-jacente</b> exclut l'alimentation et l'énergie, jugées trop volatiles pour refléter la tendance de fond. Les deux chiffres sortent en même temps, et c'est souvent le second que les commentateurs citent.</p>
+    <p>La Réserve fédérale s'appuie notamment sur l'inflation pour fixer ses taux directeurs. Les taux influencent la valeur du dollar, qui est la contrepartie de l'or comme de l'EUR/USD — c'est cette chaîne qui explique l'attention portée à ce chiffre sur ces deux marchés.</p></div>
+  <div class="warn" style="max-width:760px"><div class="wt">Ce que cette fiche ne dit pas</div>
+    <div class="wb">Elle décrit ce que l'indicateur mesure et pourquoi il est suivi. Elle ne dit ni la valeur qui sera publiée, ni la réaction du marché, ni dans quel sens. La relation entre inflation, taux et prix de l'or n'est ni constante ni mécanique, et MIA ne la modélise pas.</div></div>
+</div>
+
+</div>
+</body></html>
