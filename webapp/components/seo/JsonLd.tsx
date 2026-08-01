@@ -47,14 +47,14 @@ export const softwareApplicationLd = {
     {
       '@type': 'Offer',
       name: 'Accès intégral MIA · mensuel',
-      price: '49.99',
+      price: '39',
       priceCurrency: 'USD',
       category: 'Subscription',
     },
     {
       '@type': 'Offer',
       name: 'Accès intégral MIA · annuel',
-      price: '39.99',
+      price: '348',
       priceCurrency: 'USD',
       category: 'Subscription',
     },

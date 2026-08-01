@@ -121,9 +121,11 @@ NB : le pied de page global (`Footer`, hors périmètre `home`) conserve sa ment
 
 ## 8. Écarts assumés & points à trancher
 
-- **Prix vs page /abonnement.** L'accueil livre 39/348/29 $ (mission). La page `/abonnement` et l'i18n
-  `landing.pricing` existants affichent encore **49,99/39,99 $**. À réconcilier — non touché ici pour
-  rester dans le périmètre de l'accueil.
+- **Prix vs page /abonnement — RÉCONCILIÉ.** `/abonnement` (`SubscriptionPanel`, namespace `billing`)
+  alignée sur **39 $/mois · 348 $/an (29 $/mois)** dans les 9 locales (`billing.planMonthly`/`planAnnual`),
+  + JSON-LD SEO (`components/seo/JsonLd.tsx` : offres 39 / 348 USD). Restent inchangés car **code mort**
+  (plus référencés par aucune page) : `components/landing/PricingSection.tsx` et le namespace
+  `landing.pricing` — à supprimer dans un nettoyage ultérieur.
 - **i18n 7 locales.** fr + en sont natifs et complets (exigence mission). de/es/it/pt/nl/pl/ar reçoivent
   le bloc **en** en repli (documenté, sans clé brute ni plantage) — traduction native à faire en suivi.
 - **Blast radius e2e.** La refonte retire du homepage la galerie multi-marché qui servait de fixture
