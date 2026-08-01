@@ -5,6 +5,8 @@
  * compliance-safe — what's in here is publicly indexable.
  */
 
+import { PRICING } from '@/lib/pricing.generated';
+
 interface JsonLdProps {
   data: Record<string, unknown>;
 }
@@ -43,19 +45,22 @@ export const softwareApplicationLd = {
     'MIA Markets est un indicateur de marché conversationnel pour XAU/USD et le forex. Lectures algorithmiques contextuelles, posture éducative, chatbot M.I.A Agent.',
   inLanguage: 'fr-FR',
   isAccessibleForFree: false,
+  // Amounts come from the single pricing source (config/pricing.json) — never
+  // hard-coded. Currency is USD everywhere. The annual offer is the yearly
+  // total ($348), consistent with what the pricing section headlines.
   offers: [
     {
       '@type': 'Offer',
       name: 'Accès intégral MIA · mensuel',
-      price: '49.99',
-      priceCurrency: 'USD',
+      price: String(PRICING.monthly),
+      priceCurrency: PRICING.currency,
       category: 'Subscription',
     },
     {
       '@type': 'Offer',
       name: 'Accès intégral MIA · annuel',
-      price: '39.99',
-      priceCurrency: 'USD',
+      price: String(PRICING.annualPerYear),
+      priceCurrency: PRICING.currency,
       category: 'Subscription',
     },
   ],

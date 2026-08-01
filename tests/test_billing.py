@@ -1,8 +1,14 @@
-"""Tests for the INFRA-2B.3 billing module."""
+"""Tests for the billing module — mission PRIX-1 (single USD plan).
+
+One paid plan, two cadences (MONTHLY / ANNUAL), US dollars, plus the kept FREE
+tier. Amounts come from the single source ``config/pricing.json`` — the tests
+assert the module and the JSON agree, so no amount can drift.
+"""
 
 from __future__ import annotations
 
-import os
+import json
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -10,15 +16,20 @@ from fastapi.testclient import TestClient
 
 from src.api.app import create_app
 from src.billing import (
-    PRICING_TIERS,
-    PricingTier,
+    PLAN_ANNUAL,
+    PLAN_FREE,
+    PLAN_MONTHLY,
+    PricingPlan,
     StripeClient,
-    TIER_FREE,
-    TIER_LITE,
-    TIER_PRO,
-    TIER_PRO_PLUS,
-    get_tier,
+    currency,
+    get_plan,
+    list_paid_plans,
+    list_plans,
     parse_webhook_event,
+)
+
+_CONFIG = json.loads(
+    (Path(__file__).resolve().parents[1] / "config" / "pricing.json").read_text("utf-8")
 )
 
 
@@ -29,52 +40,65 @@ def _testing_mode():
 
 
 # ---------------------------------------------------------------------------
-# Pricing grid
+# Single source of truth — the module mirrors config/pricing.json exactly
 # ---------------------------------------------------------------------------
 
 
-def test_all_four_b2c_tiers_present():
-    keys = {TIER_FREE, TIER_LITE, TIER_PRO, TIER_PRO_PLUS}
-    assert keys.issubset(PRICING_TIERS.keys())
+def test_currency_is_usd_everywhere():
+    assert currency() == "USD"
+    assert all(p.currency == "USD" for p in list_plans())
 
 
-def test_free_is_zero_eur():
-    assert PRICING_TIERS[TIER_FREE].monthly_price_eur == 0.0
+def test_amounts_come_from_the_single_source():
+    monthly = get_plan(PLAN_MONTHLY)
+    annual = get_plan(PLAN_ANNUAL)
+    assert monthly.amount_usd == float(_CONFIG["plans"]["monthly"]["amount"])
+    assert annual.amount_usd == float(_CONFIG["plans"]["annual"]["amountPerYear"])
 
 
-def test_pricing_grid_monotonic():
-    prices = [
-        PRICING_TIERS[k].monthly_price_eur
-        for k in (TIER_FREE, TIER_LITE, TIER_PRO, TIER_PRO_PLUS)
-    ]
-    assert prices == sorted(prices)
+def test_target_prices_39_and_348():
+    assert get_plan(PLAN_MONTHLY).amount_usd == 39.0
+    assert get_plan(PLAN_ANNUAL).amount_usd == 348.0
 
 
-def test_trial_days_only_on_paid_b2c_tiers():
-    assert PRICING_TIERS[TIER_FREE].trial_days == 0
-    assert PRICING_TIERS[TIER_LITE].trial_days == 14
-    assert PRICING_TIERS[TIER_PRO].trial_days == 14
+def test_annual_monthly_equivalent_is_exact_29():
+    annual = get_plan(PLAN_ANNUAL)
+    # Derived, must be whole and equal to 348/12.
+    assert annual.monthly_equivalent_usd == 29.0
+    assert annual.amount_usd / 12.0 == annual.monthly_equivalent_usd
 
 
-def test_b2b_tiers_flagged():
-    b2b = [t for t in PRICING_TIERS.values() if t.is_b2b]
-    assert len(b2b) >= 2  # at least basic + pro
-    assert all(t.is_b2b for t in b2b)
+def test_free_tier_kept_and_zero():
+    free = get_plan(PLAN_FREE)
+    assert free is not None
+    assert free.is_free is True
+    assert free.amount_usd == 0.0
 
 
-def test_get_tier_case_insensitive():
-    assert get_tier("free").key == TIER_FREE
-    assert get_tier("PRO_PLUS").key == TIER_PRO_PLUS
-    assert get_tier("nope") is None
+def test_only_two_paid_plans():
+    paid = list_paid_plans()
+    assert {p.key for p in paid} == {PLAN_MONTHLY, PLAN_ANNUAL}
+    assert all(not p.is_free for p in paid)
+
+
+def test_get_plan_case_insensitive():
+    assert get_plan("monthly").key == PLAN_MONTHLY
+    assert get_plan("ANNUAL").key == PLAN_ANNUAL
+    assert get_plan("nope") is None
 
 
 def test_to_dict_serialisable():
-    import json
-
-    d = PRICING_TIERS[TIER_PRO].to_dict()
+    d = get_plan(PLAN_MONTHLY).to_dict()
     json.dumps(d)
-    assert d["key"] == TIER_PRO
-    assert d["monthly_price_eur"] == 39.0
+    assert d["key"] == PLAN_MONTHLY
+    assert d["amount_usd"] == 39.0
+    assert d["currency"] == "USD"
+
+
+def test_no_tax_field_anywhere_in_the_model():
+    blob = json.dumps([p.to_dict() for p in list_plans()]).lower()
+    assert "tax" not in blob
+    assert "tva" not in blob and "tps" not in blob and "tvq" not in blob
 
 
 # ---------------------------------------------------------------------------
@@ -103,7 +127,7 @@ def test_configured_client_has_credentials():
 
 
 # ---------------------------------------------------------------------------
-# parse_webhook_event
+# parse_webhook_event — resolves the plan from the price id via env
 # ---------------------------------------------------------------------------
 
 
@@ -112,19 +136,8 @@ def test_parse_ignores_unrelated_event():
     assert out is None
 
 
-def test_parse_subscription_updated_resolves_tier_from_env(monkeypatch):
-    # Wire a known price ID → tier mapping via env
-    monkeypatch.setenv("STRIPE_PRICE_PRO", "price_pro_123")
-    # Force re-import to pick up the env
-    import importlib
-
-    import src.billing.pricing as pricing_mod
-
-    importlib.reload(pricing_mod)
-    import src.billing.stripe_client as sc_mod
-
-    importlib.reload(sc_mod)
-
+def test_parse_subscription_updated_resolves_plan_from_env(monkeypatch):
+    monkeypatch.setenv("STRIPE_PRICE_MONTHLY", "price_monthly_123")
     payload = {
         "type": "customer.subscription.updated",
         "data": {
@@ -132,17 +145,16 @@ def test_parse_subscription_updated_resolves_tier_from_env(monkeypatch):
                 "id": "sub_123",
                 "customer": "cus_abc",
                 "status": "active",
-                "items": {"data": [{"price": {"id": "price_pro_123"}}]},
+                "items": {"data": [{"price": {"id": "price_monthly_123"}}]},
             }
         },
     }
-    out = sc_mod.parse_webhook_event(payload)
+    out = parse_webhook_event(payload)
     assert out is not None
-    assert out.event_type == "customer.subscription.updated"
     assert out.customer_id == "cus_abc"
     assert out.subscription_id == "sub_123"
-    assert out.price_id == "price_pro_123"
-    assert out.tier_key == "PRO"
+    assert out.price_id == "price_monthly_123"
+    assert out.plan_key == PLAN_MONTHLY
     assert out.status == "active"
 
 
@@ -164,42 +176,56 @@ def test_parse_subscription_deleted():
 
 
 # ---------------------------------------------------------------------------
-# Pricing endpoint
+# Pricing endpoint (legacy /api/v1/billing surface)
 # ---------------------------------------------------------------------------
 
 
-def test_pricing_endpoint_returns_table():
+def test_pricing_endpoint_returns_plans():
     c = TestClient(create_app())
     resp = c.get("/api/v1/billing/pricing")
     assert resp.status_code == 200
     body = resp.json()
-    assert "b2c" in body and "b2b" in body
-    b2c_keys = {t["key"] for t in body["b2c"]}
-    assert {TIER_FREE, TIER_LITE, TIER_PRO, TIER_PRO_PLUS}.issubset(b2c_keys)
+    keys = {p["key"] for p in body["plans"]}
+    assert {PLAN_FREE, PLAN_MONTHLY, PLAN_ANNUAL}.issubset(keys)
+    # Every advertised amount is in USD.
+    assert all(p["currency"] == "USD" for p in body["plans"])
 
 
-def test_checkout_503_without_stripe():
-    c = TestClient(create_app())  # no stripe_client wired
+def test_checkout_503_or_400_without_stripe():
+    c = TestClient(create_app())  # no stripe_client wired, no price env
     resp = c.post(
         "/api/v1/billing/checkout",
         json={
-            "tier_key": "PRO",
+            "plan_key": "MONTHLY",
             "email": "a@b.com",
             "success_url": "https://x.com/ok",
             "cancel_url": "https://x.com/cancel",
         },
     )
-    # Tier exists but price_id is None (env unset) → 400
-    # OR stripe_client is None → 503
+    # Plan exists but price_id is None (env unset) → 400, OR no stripe → 503.
     assert resp.status_code in (400, 503)
 
 
-def test_checkout_400_for_unknown_tier():
+def test_checkout_400_for_unknown_plan():
     c = TestClient(create_app())
     resp = c.post(
         "/api/v1/billing/checkout",
         json={
-            "tier_key": "MEGA_ULTRA",
+            "plan_key": "MEGA_ULTRA",
+            "email": "a@b.com",
+            "success_url": "https://x.com/ok",
+            "cancel_url": "https://x.com/cancel",
+        },
+    )
+    assert resp.status_code == 400
+
+
+def test_checkout_400_for_free_plan():
+    c = TestClient(create_app())
+    resp = c.post(
+        "/api/v1/billing/checkout",
+        json={
+            "plan_key": "FREE",
             "email": "a@b.com",
             "success_url": "https://x.com/ok",
             "cancel_url": "https://x.com/cancel",

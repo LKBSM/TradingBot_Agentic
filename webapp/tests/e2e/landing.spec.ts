@@ -80,20 +80,44 @@ test.describe('Landing — golden paths (architecture L1-L6 2026-05-27)', () => 
 
   test('pricing section shows the single plan with monthly/annual toggle', async ({ page }) => {
     await page.goto('/#tarifs');
+    // Mobile: the cookie banner overlays the bottom and intercepts the toggle.
+    await dismissCookieBanner(page);
     await expect(page.getByRole('heading', { name: /Un seul plan/i })).toBeVisible();
     await expect(
       page.getByRole('heading', { name: 'Accès intégral MIA' }),
     ).toBeVisible();
-    // Annual is the default cadence → 39,99 $ shown.
-    await expect(page.getByText(/39,99/).first()).toBeVisible();
-    // Switching to monthly reveals 49,99 $.
+    // Annual is the default cadence → the yearly total (348) + monthly
+    // equivalent (29), both in explicit US dollars ("$ US").
+    await expect(page.getByText(/348\s*\$\s*US/).first()).toBeVisible();
+    await expect(page.getByText(/29\s*\$\s*US/).first()).toBeVisible();
+    // Switching to monthly reveals 39 $ US.
     await page.getByRole('button', { name: /^Mensuel$/i }).click();
-    await expect(page.getByText(/49,99/).first()).toBeVisible();
-    // Old tiers are gone.
-    await expect(page.getByText(/Approfondie/)).toHaveCount(0);
-    await expect(page.getByText(/Intégrale/)).toHaveCount(0);
+    await expect(page.getByText(/39\s*\$\s*US/).first()).toBeVisible();
+    // No legacy price, no discount badge.
+    await expect(page.getByText(/49,99|39,99|479/)).toHaveCount(0);
+    await expect(page.getByText(/−20\s*%/)).toHaveCount(0);
+    // Mandatory mentions visible without a click.
+    await expect(page.getByText(/Annulable à tout moment/i)).toBeVisible();
+    await expect(page.getByText(/Prix en dollars américains/i)).toBeVisible();
     // B2B contact block conservé.
     await expect(page.getByText(/Réserver une démo/i)).toBeVisible();
+  });
+
+  test('pricing section in English shows USD amounts + English mentions', async ({ page }) => {
+    await page.goto('/en/#tarifs');
+    await dismissCookieBanner(page);
+    // Annual default: yearly total (348) + monthly equivalent (29), in USD.
+    await expect(page.getByText(/348\s*USD/).first()).toBeVisible();
+    await expect(page.getByText(/29\s*USD/).first()).toBeVisible();
+    // Monthly cadence: 39 USD.
+    await page.getByRole('button', { name: /^Monthly$/i }).click();
+    await expect(page.getByText(/39\s*USD/).first()).toBeVisible();
+    // No legacy price / discount.
+    await expect(page.getByText(/49\.99|39\.99|479/)).toHaveCount(0);
+    // Mandatory mentions (English). Exact match: "Cancel anytime." the mention,
+    // distinct from the "No commitment, cancel anytime." billing line.
+    await expect(page.getByText('Cancel anytime.', { exact: true })).toBeVisible();
+    await expect(page.getByText(/Prices in US dollars/i)).toBeVisible();
   });
 
   test('FAQ accordion exposes 6 questions and opens the first one', async ({ page }) => {

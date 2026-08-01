@@ -15,6 +15,7 @@ import {
 } from '@/lib/billing/api-client';
 import { useAuth } from '@/lib/auth/store';
 import { useLocalizedHref } from '@/lib/i18n/href';
+import { PRICING } from '@/lib/pricing.generated';
 import { Button } from '@/components/ui/button';
 import { FormError, FormSuccess } from '@/components/auth/fields';
 
@@ -23,15 +24,24 @@ const ACTIVE_STATUSES = new Set(['active', 'trialing']);
 /**
  * Human label for a plan key (AUTH-15). The backend /pricing intentionally
  * returns only the key + price_id (no amount hard-coded server-side), so the
- * readable label + price live here, mirroring the landing. Unknown keys fall
- * back to the raw key rather than showing nothing.
+ * readable label + price live here — amounts come from `@/lib/pricing.generated`
+ * (single source), the currency is always explicit US dollars. Unknown keys
+ * fall back to the raw key rather than showing nothing.
  */
-function planLabel(key: string, t: (k: string) => string): string {
+function planLabel(
+  key: string,
+  t: (k: string, values?: Record<string, string | number>) => string,
+): string {
+  const currency = t('currency');
   switch (key) {
     case 'MONTHLY':
-      return t('planMonthly');
+      return t('planMonthly', { amount: PRICING.monthly, currency });
     case 'ANNUAL':
-      return t('planAnnual');
+      return t('planAnnual', {
+        total: PRICING.annualPerYear,
+        perMonth: PRICING.annualPerMonth,
+        currency,
+      });
     default:
       return key;
   }

@@ -1,0 +1,16 @@
+{
+  "_comment": "PRIX-1 — SINGLE SOURCE OF TRUTH for the MIA subscription price. ONE paid plan, two billing cadences, US dollars everywhere (including Canadian customers). Amounts are whole USD. `annualPerMonth` is DERIVED (annualPerYear / 12) — never write it by hand. Edit here, then regenerate the frontend module: `node scripts/gen_pricing.mjs`. The backend reads THIS file directly (src/billing/pricing.py). No amount may be hard-coded anywhere else. No tax is ever added or displayed. No struck-through price, no discount, no countdown.",
+  "currency": "USD",
+  "plans": {
+    "monthly": {
+      "key": "MONTHLY",
+      "amount": 39,
+      "stripeEnvVar": "STRIPE_PRICE_MONTHLY"
+    },
+    "annual": {
+      "key": "ANNUAL",
+      "amountPerYear": 348,
+      "stripeEnvVar": "STRIPE_PRICE_ANNUAL"
+    }
+  }
+}

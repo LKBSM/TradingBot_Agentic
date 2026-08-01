@@ -17,7 +17,7 @@ import { PricingSection } from '@/components/landing/PricingSection';
  *   L3  · ConversationReplaySection  (S3 conversations rejouables)
  *   L4  · BeforeAfterSection         (S4 avant/après — chaos vs lecture MIA)
  *   L4  · HonestConfidenceSection    (S5 vrais chiffres + citation imposée, full-width)
- *   L5  · PricingSection             (plan unique 49,99 $ mensuel / 39,99 $ annuel + contact B2B)
+ *   L5  · PricingSection             (plan unique 39 $ US mensuel / 348 $ US annuel + contact B2B)
  *   L5  · FaqSection                 (6 questions clés)
  *   (Footer partagé dans <Footer /> du layout)
  */

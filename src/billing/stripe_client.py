@@ -35,13 +35,13 @@ logger = logging.getLogger(__name__)
 STRIPE_API_KEY_ENV = "STRIPE_SECRET_KEY"
 STRIPE_WEBHOOK_SECRET_ENV = "STRIPE_WEBHOOK_SECRET"
 
-# Map Stripe price IDs → internal tier keys. Populated at boot from env.
-def _build_price_to_tier() -> dict[str, str]:
-    from src.billing.pricing import PRICING_TIERS
+# Map Stripe price IDs → internal plan keys. Populated at boot from env.
+def _build_price_to_plan() -> dict[str, str]:
+    from src.billing.pricing import list_paid_plans
     out = {}
-    for t in PRICING_TIERS.values():
-        if t.stripe_price_id:
-            out[t.stripe_price_id] = t.key
+    for p in list_paid_plans():
+        if p.stripe_price_id:
+            out[p.stripe_price_id] = p.key
     return out
 
 
@@ -51,7 +51,7 @@ class StripeWebhookEvent:
     customer_id: str
     subscription_id: Optional[str]
     price_id: Optional[str]
-    tier_key: Optional[str]    # resolved from price_id via PRICING_TIERS
+    plan_key: Optional[str]    # resolved from price_id (MONTHLY / ANNUAL)
     status: Optional[str]      # active / trialing / past_due / canceled
     raw: dict
 
@@ -84,8 +84,8 @@ def parse_webhook_event(payload: dict) -> Optional[StripeWebhookEvent]:
         if lines:
             price_id = (lines[0].get("price") or {}).get("id")
 
-    price_to_tier = _build_price_to_tier()
-    tier_key = price_to_tier.get(price_id) if price_id else None
+    price_to_plan = _build_price_to_plan()
+    plan_key = price_to_plan.get(price_id) if price_id else None
     status = data.get("status")
 
     return StripeWebhookEvent(
@@ -93,7 +93,7 @@ def parse_webhook_event(payload: dict) -> Optional[StripeWebhookEvent]:
         customer_id=customer_id,
         subscription_id=subscription_id,
         price_id=price_id,
-        tier_key=tier_key,
+        plan_key=plan_key,
         status=status,
         raw=payload,
     )
@@ -287,9 +287,10 @@ class StripeClient:
         Pass EITHER an existing ``customer`` id (preferred — keeps one customer
         per account) OR a ``customer_email`` (Stripe creates the customer). When
         ``account_id`` is given it is stamped on the session AND propagated to the
-        subscription metadata so webhooks can resolve the account. ``automatic_tax``
-        turns on Stripe Tax (TPS/TVQ etc.) — it also requires collecting the
-        customer's billing address, which Checkout does automatically when on.
+        subscription metadata so webhooks can resolve the account.
+
+        PRIX-1: ``automatic_tax`` stays False — the price shown is the price paid,
+        no tax is ever added at Checkout.
         """
         stripe = self._require()
         sub_data: dict = {}
@@ -303,7 +304,9 @@ class StripeClient:
             "line_items": [{"price": price_id, "quantity": 1}],
             "success_url": success_url,
             "cancel_url": cancel_url,
-            "allow_promotion_codes": True,
+            # PRIX-1: no discount surface. The price shown is the price paid — no
+            # promotion-code box on the hosted Checkout, no struck-through price.
+            "allow_promotion_codes": False,
         }
         if customer:
             params["customer"] = customer

@@ -19,7 +19,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from src.api.auth import require_api_key
-from src.billing.pricing import PRICING_TIERS, list_b2b_tiers, list_b2c_tiers
+from src.billing.pricing import get_plan, list_plans
 from src.billing.stripe_client import parse_webhook_event
 
 logger = logging.getLogger(__name__)
@@ -29,7 +29,7 @@ router = APIRouter(prefix="/api/v1/billing", tags=["billing"])
 
 
 class CheckoutBody(BaseModel):
-    tier_key: str = Field(..., description="One of LITE / PRO / PRO_PLUS")
+    plan_key: str = Field(..., description="One of MONTHLY / ANNUAL")
     # Email validation kept as a regex pattern to avoid an extra
     # email-validator dependency just for this surface.
     email: str = Field(..., min_length=5, max_length=200, pattern=r"^[^@]+@[^@]+\.[^@]+$")
@@ -46,12 +46,12 @@ async def create_checkout(
 
     No-auth: a user signing up isn't yet authenticated. The Stripe
     customer_email is the join key — when the webhook fires later we
-    look up the local user by email and bind the new tier.
+    look up the local user by email and bind the new plan.
     """
-    tier = PRICING_TIERS.get(body.tier_key.upper())
-    if tier is None or not tier.stripe_price_id:
+    plan = get_plan(body.plan_key)
+    if plan is None or plan.is_free or not plan.stripe_price_id:
         raise HTTPException(
-            status_code=400, detail=f"unknown or non-purchasable tier: {body.tier_key}"
+            status_code=400, detail=f"unknown or non-purchasable plan: {body.plan_key}"
         )
 
     stripe = getattr(request.app.state.app_state, "stripe_client", None)
@@ -61,11 +61,10 @@ async def create_checkout(
         )
 
     session = stripe.create_checkout_session(
-        price_id=tier.stripe_price_id,
+        price_id=plan.stripe_price_id,
         success_url=body.success_url,
         cancel_url=body.cancel_url,
         customer_email=body.email,
-        trial_days=tier.trial_days,
     )
     return {"checkout_url": session.get("url"), "session_id": session.get("id")}
 
@@ -102,8 +101,8 @@ async def stripe_webhook(
         return {"received": True, "ignored": True, "reason": "no_tier_manager"}
 
     # Apply the side effect — every event boils down to "set this customer
-    # to tier X with status Y". Deletion → FREE.
-    new_tier = event.tier_key or "FREE"
+    # to plan X with status Y". Deletion → FREE.
+    new_tier = event.plan_key or "FREE"
     if event.event_type == "customer.subscription.deleted":
         new_tier = "FREE"
     elif event.event_type == "invoice.payment_failed":
@@ -135,8 +134,5 @@ async def stripe_webhook(
 
 @router.get("/pricing")
 async def get_pricing():
-    """Public pricing table — fed to /pricing webapp page."""
-    return {
-        "b2c": [t.to_dict() for t in list_b2c_tiers()],
-        "b2b": [t.to_dict() for t in list_b2b_tiers()],
-    }
+    """Public pricing table — the single USD plan (FREE + MONTHLY + ANNUAL)."""
+    return {"plans": [p.to_dict() for p in list_plans()]}

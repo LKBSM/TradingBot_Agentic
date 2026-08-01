@@ -1,182 +1,142 @@
-"""Pricing grid — Sprint INFRA-2B.3.
+"""Pricing — mission PRIX-1.
 
-Phase 2B 4-tier grid (eval_27 v1):
+ONE paid plan, two billing cadences, US dollars everywhere (including Canadian
+customers). The FREE tier is kept (the interactive demos are the free surface).
 
-    FREE         €0/mo     — public surface + 1 chat/day
-    LITE         €19/mo    — 10 chats/day + Telegram delivery
-    PRO          €39/mo    — unlimited chat, multi-asset, read-only API
-    PRO+         €99/mo    — full API, regime + correlations, priority support
+    FREE       $0             public demos + gated read surface
+    MONTHLY    $39 / month    the full tool, cancel anytime
+    ANNUAL     $348 / year    the full tool, i.e. $29 / month billed yearly
 
-B2B basic     €499/mo     — /enrich 1k req/mo
-B2B pro       €1500/mo    — /enrich 10k req/mo
-B2B enterprise €3000+     — custom invoicing, dedicated support
-
-Trial: 14 days no card on LITE + PRO (sticky bucket per signup).
-
-Stripe price IDs are read from env at runtime — defaults are fixture
-values for dev. Production sets ``STRIPE_PRICE_LITE`` etc.
+The amounts live in EXACTLY ONE place — ``config/pricing.json`` — which the
+frontend also consumes (via the generated ``webapp/lib/pricing.generated.ts``).
+Nothing here is hard-coded; we read the JSON at import. Stripe price IDs come
+from env at runtime (``STRIPE_PRICE_MONTHLY`` / ``STRIPE_PRICE_ANNUAL``); they
+are NEVER committed. No tax is ever added. No discount, no struck-through price.
 """
 
 from __future__ import annotations
 
+import json
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from functools import lru_cache
+from pathlib import Path
 from typing import Optional
 
 
-TIER_FREE = "FREE"
-TIER_LITE = "LITE"
-TIER_PRO = "PRO"
-TIER_PRO_PLUS = "PRO_PLUS"
-TIER_B2B_BASIC = "B2B_BASIC"
-TIER_B2B_PRO = "B2B_PRO"
-TIER_B2B_ENTERPRISE = "B2B_ENTERPRISE"
+# Plan keys — used as the Stripe checkout ``plan_key`` and in webhook routing.
+PLAN_FREE = "FREE"
+PLAN_MONTHLY = "MONTHLY"
+PLAN_ANNUAL = "ANNUAL"
+
+# Repo root: src/billing/pricing.py → parents[2].
+_CONFIG_PATH = Path(__file__).resolve().parents[2] / "config" / "pricing.json"
+
+
+@lru_cache(maxsize=1)
+def _config() -> dict:
+    """Load the single-source pricing config (cached for the process)."""
+    with _CONFIG_PATH.open(encoding="utf-8") as fh:
+        return json.load(fh)
 
 
 @dataclass(frozen=True)
-class PricingTier:
+class PricingPlan:
     key: str
     display_name: str
-    monthly_price_eur: float
+    cadence: str                  # "free" | "monthly" | "annual"
+    amount_usd: float             # amount billed for the cadence (0 / 39 / 348)
+    monthly_equivalent_usd: float # per-month equivalent (0 / 39 / 29)
+    currency: str                 # ISO 4217 — always "USD"
     stripe_price_id: Optional[str]
-    chat_per_day: int        # rate-limit knob; -1 = unlimited
-    enrich_per_month: int    # B2B knob; -1 = unlimited
-    features: tuple[str, ...] = ()
-    trial_days: int = 0
-    is_b2b: bool = False
+    is_free: bool = False
 
     def to_dict(self) -> dict:
         return {
             "key": self.key,
             "display_name": self.display_name,
-            "monthly_price_eur": self.monthly_price_eur,
+            "cadence": self.cadence,
+            "amount_usd": self.amount_usd,
+            "monthly_equivalent_usd": self.monthly_equivalent_usd,
+            "currency": self.currency,
             "stripe_price_id": self.stripe_price_id,
-            "chat_per_day": self.chat_per_day,
-            "enrich_per_month": self.enrich_per_month,
-            "features": list(self.features),
-            "trial_days": self.trial_days,
-            "is_b2b": self.is_b2b,
+            "is_free": self.is_free,
         }
 
 
-PRICING_TIERS: dict[str, PricingTier] = {
-    TIER_FREE: PricingTier(
-        key=TIER_FREE,
-        display_name="FREE",
-        monthly_price_eur=0.0,
-        stripe_price_id=None,
-        chat_per_day=1,
-        enrich_per_month=0,
-        features=(
-            "Analyses publiques",
-            "Transparence en direct",
-            "1 chat/jour",
+def _build_plans() -> "dict[str, PricingPlan]":
+    cfg = _config()
+    currency_code = cfg["currency"]
+    monthly_amount = float(cfg["plans"]["monthly"]["amount"])
+    annual_year = float(cfg["plans"]["annual"]["amountPerYear"])
+    # Derived — never authored. The config keeps annual divisible by 12 so this
+    # is exact (guarded in the generator too).
+    annual_month = annual_year / 12.0
+
+    return {
+        PLAN_FREE: PricingPlan(
+            key=PLAN_FREE,
+            display_name="Gratuit",
+            cadence="free",
+            amount_usd=0.0,
+            monthly_equivalent_usd=0.0,
+            currency=currency_code,
+            stripe_price_id=None,
+            is_free=True,
         ),
-    ),
-    TIER_LITE: PricingTier(
-        key=TIER_LITE,
-        display_name="LITE",
-        monthly_price_eur=19.0,
-        stripe_price_id=os.environ.get("STRIPE_PRICE_LITE"),
-        chat_per_day=10,
-        enrich_per_month=0,
-        features=(
-            "10 chats/jour",
-            "Notification Telegram",
-            "Glossaire interactif",
+        PLAN_MONTHLY: PricingPlan(
+            key=PLAN_MONTHLY,
+            display_name="Mensuel",
+            cadence="monthly",
+            amount_usd=monthly_amount,
+            monthly_equivalent_usd=monthly_amount,
+            currency=currency_code,
+            stripe_price_id=os.environ.get(cfg["plans"]["monthly"]["stripeEnvVar"]),
         ),
-        trial_days=14,
-    ),
-    TIER_PRO: PricingTier(
-        key=TIER_PRO,
-        display_name="PRO",
-        monthly_price_eur=39.0,
-        stripe_price_id=os.environ.get("STRIPE_PRICE_PRO"),
-        chat_per_day=-1,
-        enrich_per_month=100,
-        features=(
-            "Chat illimité",
-            "Multi-asset (XAU, EURUSD, BTC)",
-            "API read-only 100 req/mois",
+        PLAN_ANNUAL: PricingPlan(
+            key=PLAN_ANNUAL,
+            display_name="Annuel",
+            cadence="annual",
+            amount_usd=annual_year,
+            monthly_equivalent_usd=annual_month,
+            currency=currency_code,
+            stripe_price_id=os.environ.get(cfg["plans"]["annual"]["stripeEnvVar"]),
         ),
-        trial_days=14,
-    ),
-    TIER_PRO_PLUS: PricingTier(
-        key=TIER_PRO_PLUS,
-        display_name="PRO+",
-        monthly_price_eur=99.0,
-        stripe_price_id=os.environ.get("STRIPE_PRICE_PRO_PLUS"),
-        chat_per_day=-1,
-        enrich_per_month=1000,
-        features=(
-            "Tout PRO inclus",
-            "Régime + corrélations",
-            "API full 1000 req/mois",
-            "Support prioritaire",
-        ),
-        trial_days=14,
-    ),
-    TIER_B2B_BASIC: PricingTier(
-        key=TIER_B2B_BASIC,
-        display_name="B2B Basic",
-        monthly_price_eur=499.0,
-        stripe_price_id=os.environ.get("STRIPE_PRICE_B2B_BASIC"),
-        chat_per_day=-1,
-        enrich_per_month=1000,
-        features=(
-            "/enrich 1 000 req/mois",
-            "Audit trail B2B complet",
-            "Multi-langue FR/EN/DE/ES",
-        ),
-        is_b2b=True,
-    ),
-    TIER_B2B_PRO: PricingTier(
-        key=TIER_B2B_PRO,
-        display_name="B2B Pro",
-        monthly_price_eur=1500.0,
-        stripe_price_id=os.environ.get("STRIPE_PRICE_B2B_PRO"),
-        chat_per_day=-1,
-        enrich_per_month=10_000,
-        features=(
-            "/enrich 10 000 req/mois",
-            "SLA 99.9%, support dédié",
-            "Webhook delivery acked",
-        ),
-        is_b2b=True,
-    ),
-    TIER_B2B_ENTERPRISE: PricingTier(
-        key=TIER_B2B_ENTERPRISE,
-        display_name="B2B Enterprise",
-        monthly_price_eur=3000.0,
-        stripe_price_id=None,  # custom invoicing
-        chat_per_day=-1,
-        enrich_per_month=-1,
-        features=(
-            "/enrich illimité",
-            "Facturation personnalisée",
-            "Contrat-cadre + SLA négocié",
-        ),
-        is_b2b=True,
-    ),
-}
+    }
 
 
-def get_tier(key: str) -> Optional[PricingTier]:
-    return PRICING_TIERS.get(key.upper())
+# Rebuilt per access so a test/monkeypatch of the Stripe env is reflected without
+# reimporting the module. The amounts come from the cached config; only the env
+# lookups vary.
+def _plans() -> "dict[str, PricingPlan]":
+    return _build_plans()
 
 
-def list_b2c_tiers() -> list[PricingTier]:
-    return [t for t in PRICING_TIERS.values() if not t.is_b2b]
+def get_plan(key: str) -> Optional[PricingPlan]:
+    return _plans().get(key.upper())
 
 
-def list_b2b_tiers() -> list[PricingTier]:
-    return [t for t in PRICING_TIERS.values() if t.is_b2b]
+def list_plans() -> "list[PricingPlan]":
+    """All plans, FREE first."""
+    return list(_plans().values())
+
+
+def list_paid_plans() -> "list[PricingPlan]":
+    """The purchasable cadences (MONTHLY, ANNUAL) — FREE excluded."""
+    return [p for p in _plans().values() if not p.is_free]
+
+
+def currency() -> str:
+    return _config()["currency"]
 
 
 __all__ = [
-    "PRICING_TIERS",
-    "PricingTier",
-    "TIER_B2B_BASIC", "TIER_B2B_ENTERPRISE", "TIER_B2B_PRO",
-    "TIER_FREE", "TIER_LITE", "TIER_PRO", "TIER_PRO_PLUS",
-    "get_tier", "list_b2b_tiers", "list_b2c_tiers",
+    "PLAN_ANNUAL",
+    "PLAN_FREE",
+    "PLAN_MONTHLY",
+    "PricingPlan",
+    "currency",
+    "get_plan",
+    "list_paid_plans",
+    "list_plans",
 ]
