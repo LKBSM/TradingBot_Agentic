@@ -52,7 +52,11 @@ def test_default_provider_serves_real_events_not_empty() -> None:
 def test_served_events_carry_full_official_shape() -> None:
     for e in OfficialCalendarProvider().fetch().events:
         assert e.organism, f"{e.event_id} missing organism"
-        assert e.value_unit, f"{e.event_id} missing unit"
+        # A MEASURABLE event (one with a data series) must declare its unit; a
+        # moment-only event (no series — FOMC minutes, dot plot) has no numeric
+        # value and therefore no unit, honestly (NW-4 ch.4). Never a fake unit.
+        if e.series_code:
+            assert e.value_unit, f"{e.event_id} missing unit"
         assert e.periodicity in {"monthly", "quarterly", "eight_per_year"}
         assert e.license_label
         assert e.scheduled_at.tzinfo is not None
@@ -83,6 +87,22 @@ def test_uncovered_events_are_absent_not_fabricated() -> None:
     assert "ea_unemployment" not in keys
     assert "ea_hicp_flash" in keys      # populated from the euro-indicators calendar
     assert "ea_gdp_flash" in keys       # populated from the QNA release calendar
+
+
+def test_nw4_added_events_present_and_honestly_shaped() -> None:
+    cat = load_catalog()
+    # JOLTS — BLS series, released at 10:00 ET (not 08:30), measurable (has unit).
+    assert cat["us_jolts"].series_code
+    assert cat["us_jolts"].release_time_local == "10:00"
+    assert cat["us_jolts"].value_unit
+    # Core CPI — its OWN BLS series, distinct from the headline.
+    assert cat["us_cpi_core"].series_code == "CUUR0000SA0L1E"
+    # Moment-only Fed events — no series, no unit (honest), time confirmed w/ proof.
+    for k in ("us_fomc_minutes", "us_fomc_dotplot"):
+        assert cat[k].source == "federal_reserve"
+        assert cat[k].series_code is None
+        assert cat[k].value_unit is None
+        assert cat[k].time_confirmed is True
 
 
 def test_undatable_events_are_signalled_never_silent() -> None:

@@ -207,18 +207,27 @@ def _schedule_date_source(source_key: str) -> Callable[[Dict[str, CatalogEvent]]
     return _source
 
 
-def match_ics_key(summary: str, events: Dict[str, CatalogEvent]) -> Optional[str]:
-    """Link an .ics VEVENT SUMMARY to a catalog key: all ``ics_match`` tokens
-    present AND no ``ics_exclude`` token present. First match wins. Case-insensitive."""
+def match_ics_keys(summary: str, events: Dict[str, CatalogEvent]) -> List[str]:
+    """Link an .ics VEVENT SUMMARY to ALL matching catalog keys: each key whose
+    ``ics_match`` tokens are all present AND no ``ics_exclude`` token is present.
+    Case-insensitive. Returning every match (not just the first) lets a single
+    release date a headline AND its derived series — e.g. one "Consumer Price
+    Index" VEVENT dates both ``us_cpi`` and ``us_cpi_core``."""
     low = summary.lower()
-    for c in events.values():
-        if not c.ics_match:
-            continue
-        if all(tok in low for tok in c.ics_match) and not any(
-            tok in low for tok in c.ics_exclude
-        ):
-            return c.key
-    return None
+    return [
+        c.key
+        for c in events.values()
+        if c.ics_match
+        and all(tok in low for tok in c.ics_match)
+        and not any(tok in low for tok in c.ics_exclude)
+    ]
+
+
+def match_ics_key(summary: str, events: Dict[str, CatalogEvent]) -> Optional[str]:
+    """First matching key (or None). Kept for callers that want a single key;
+    the date source uses :func:`match_ics_keys` so co-released series both date."""
+    keys = match_ics_keys(summary, events)
+    return keys[0] if keys else None
 
 
 def ics_date_source(
@@ -246,10 +255,10 @@ def ics_date_source(
         seen = set()
         out: List[ReleaseInstance] = []
         for summary, day in parse_ics(text):
-            key = match_ics_key(summary, mine)
-            if key and (key, day) not in seen:
-                seen.add((key, day))
-                out.append(ReleaseInstance(event_key=key, release_date=day))
+            for key in match_ics_keys(summary, mine):
+                if (key, day) not in seen:
+                    seen.add((key, day))
+                    out.append(ReleaseInstance(event_key=key, release_date=day))
         return out
 
     return _source
@@ -375,5 +384,6 @@ __all__ = [
     "load_catalog",
     "load_schedule",
     "match_ics_key",
+    "match_ics_keys",
     "ics_date_source",
 ]

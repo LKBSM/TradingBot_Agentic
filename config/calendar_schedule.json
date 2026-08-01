@@ -50,6 +50,13 @@
     { "event_key": "us_durable_goods", "date": "2026-09-25", "schedule_url": "https://www.census.gov/economic-indicators/calendar-listview.html", "last_verified": "2026-07-28" },
     { "event_key": "us_durable_goods", "date": "2026-10-27", "schedule_url": "https://www.census.gov/economic-indicators/calendar-listview.html", "last_verified": "2026-07-28" },
 
+    { "event_key": "us_jolts", "date": "2026-08-04", "schedule_url": "https://www.bls.gov/schedule/news_release/jolts.htm", "last_verified": "2026-08-01" },
+
+    { "event_key": "us_cpi_core", "date": "2026-08-12", "schedule_url": "https://www.bls.gov/schedule/news_release/cpi.htm", "last_verified": "2026-08-01" },
+
+    { "event_key": "us_fomc_dotplot", "date": "2026-09-16", "schedule_url": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm", "last_verified": "2026-08-01" },
+    { "event_key": "us_fomc_dotplot", "date": "2026-12-09", "schedule_url": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm", "last_verified": "2026-08-01" },
+
     { "event_key": "ea_ecb_rate", "date": "2026-09-10", "schedule_url": "https://www.ecb.europa.eu/press/calendars/mgcgc/html/index.en.html", "last_verified": "2026-07-28" },
     { "event_key": "ea_ecb_rate", "date": "2026-10-29", "schedule_url": "https://www.ecb.europa.eu/press/calendars/mgcgc/html/index.en.html", "last_verified": "2026-07-28" },
     { "event_key": "ea_ecb_rate", "date": "2026-12-17", "schedule_url": "https://www.ecb.europa.eu/press/calendars/mgcgc/html/index.en.html", "last_verified": "2026-07-28" },

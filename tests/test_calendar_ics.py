@@ -11,6 +11,7 @@ from src.intelligence.calendar_providers.official_sources.base_official import (
     ics_date_source,
     load_catalog,
     match_ics_key,
+    match_ics_keys,
 )
 from src.intelligence.calendar_providers.official_sources.ics_feed import parse_ics
 
@@ -59,6 +60,17 @@ def test_cpi_ppi_disambiguated():
     assert match_ics_key("Consumer Price Index - August 2026", bls) == "us_cpi"
     assert match_ics_key("Producer Price Index - August 2026", bls) == "us_ppi"
     assert match_ics_key("Employment Situation - August 2026", bls) == "us_employment_situation"
+
+
+def test_ics_all_match_dates_headline_and_core_cpi():
+    # NW-4: one "Consumer Price Index" VEVENT dates BOTH the headline and the core
+    # series (co-released). PPI stays disambiguated — no cross-match.
+    bls = {k: c for k, c in load_catalog().items() if c.source == "bls"}
+    assert set(match_ics_keys("Consumer Price Index - August 2026", bls)) == {
+        "us_cpi",
+        "us_cpi_core",
+    }
+    assert match_ics_keys("Producer Price Index - August 2026", bls) == ["us_ppi"]
 
 
 def test_ics_date_source_yields_matched_releases():
