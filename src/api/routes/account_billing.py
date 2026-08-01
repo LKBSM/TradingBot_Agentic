@@ -35,6 +35,7 @@ from pydantic import BaseModel, Field
 from src.api.account_store import AccountStore
 from src.api.session_auth import require_account
 from src.api.subscription_gate import account_has_access
+from src.billing.pricing import list_paid_plans
 from src.billing.stripe_client import parse_account_event
 
 logger = logging.getLogger(__name__)
@@ -43,25 +44,19 @@ router = APIRouter(prefix="/api/billing", tags=["billing-account"])
 
 
 # =============================================================================
-# Configurable plan catalogue (env-driven — the GRID is decided in Stripe)
+# Purchasable plans — the SINGLE SOURCE is config/pricing.json (via
+# src.billing.pricing). PRIX-1: one paid plan, two cadences (MONTHLY / ANNUAL),
+# USD. Only cadences whose Stripe price id is configured in env are offered.
+# Amounts/labels are NOT hard-coded here — the webapp renders them from the
+# generated pricing module + i18n.
 # =============================================================================
-# Plan key → env var holding its Stripe price id. Only plans whose env var is
-# set are offered. Labels/amounts are intentionally NOT hard-coded here; the
-# webapp can render names from Stripe or a future config without code changes.
-_PLAN_ENV: Dict[str, str] = {
-    "STANDARD": "STRIPE_PRICE_STANDARD",
-    "PREMIUM": "STRIPE_PRICE_PREMIUM",
-}
-
-
 def _configured_plans() -> List[Dict[str, str]]:
     """Return the list of purchasable plans whose price id is configured."""
-    plans: List[Dict[str, str]] = []
-    for key, env_var in _PLAN_ENV.items():
-        price_id = os.environ.get(env_var)
-        if price_id:
-            plans.append({"key": key, "price_id": price_id})
-    return plans
+    return [
+        {"key": p.key, "price_id": p.stripe_price_id}
+        for p in list_paid_plans()
+        if p.stripe_price_id
+    ]
 
 
 def _configured_price_ids() -> set[str]:
@@ -73,12 +68,6 @@ def _trial_days() -> int:
         return max(0, int(os.environ.get("STRIPE_TRIAL_DAYS", "0")))
     except ValueError:
         return 0
-
-
-def _tax_enabled() -> bool:
-    return os.environ.get("STRIPE_TAX_ENABLED", "0").strip().lower() in (
-        "1", "true", "yes", "on",
-    )
 
 
 def _success_url() -> str:
@@ -165,10 +154,11 @@ def _resolve_price_id(body: CheckoutBody) -> str:
 @router.get("/pricing")
 async def pricing():
     """Public — the plans currently purchasable (price ids configured in env)."""
+    # PRIX-1: no tax is ever added or displayed — the price shown is the price
+    # paid. No ``tax_enabled`` flag is exposed.
     return {
         "plans": _configured_plans(),
         "trial_days": _trial_days(),
-        "tax_enabled": _tax_enabled(),
     }
 
 
@@ -207,7 +197,6 @@ async def checkout(
             customer=customer_id,
             account_id=account["id"],
             trial_days=_trial_days(),
-            automatic_tax=_tax_enabled(),
         )
     except Exception as exc:  # Stripe/network error — never leak internals
         logger.exception("checkout session creation failed for account=%s", account["id"])

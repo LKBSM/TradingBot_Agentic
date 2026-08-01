@@ -7,6 +7,7 @@ import styles from './lp1.module.css';
 import { DemoTabs } from './DemoTabs';
 import { CandleSvg } from './CandleSvg';
 import { LANDING_STATS, LANDING_STAT_ORDER } from '@/lib/landing/stats';
+import { PRICING } from '@/lib/pricing.generated';
 
 function Check() {
   return <span className={styles.ck} aria-hidden="true">✓</span>;
@@ -281,8 +282,8 @@ export function HomeLanding() {
             <span className={styles.pcLbl}>{t('pricing.paid.label')}</span>
             <h4>{t('pricing.paid.name')}</h4>
             <div className={styles.pcSub}>{t('pricing.paid.sub')}</div>
-            <div className={styles.amt}><span className={styles.amtV}>39 $</span><span className={styles.amtU}>US / {t('pricing.paid.perMonth')}</span></div>
-            <div className={styles.bill}>{t('pricing.paid.bill')}</div>
+            <div className={styles.amt}><span className={styles.amtV}>{PRICING.monthly} $</span><span className={styles.amtU}>US / {t('pricing.paid.perMonth')}</span></div>
+            <div className={styles.bill}>{t('pricing.paid.bill', { total: String(PRICING.annualPerYear), perMonth: String(PRICING.annualPerMonth) })}</div>
             <div className={styles.pfeat}>
               {['1', '2', '3', '4', '5', '6'].map((i) => (<div key={i} className={styles.pf}><Check />{t.rich(`pricing.paid.f${i}`, { b: (c) => <b>{c}</b> })}</div>))}
             </div>

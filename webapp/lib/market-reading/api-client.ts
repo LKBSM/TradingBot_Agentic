@@ -36,12 +36,33 @@ export class MarketReadingValidationError extends Error {
   }
 }
 
-/** 500 / other HTTP / network / parse failures. `status` is 0 for transport errors. */
+/** 404 — valid combo, but no data anywhere yet (feed down + cache empty). PERF-1:
+ *  a distinct signal so the UI says "no data for this combo" — not "it broke". */
+export class MarketReadingNoDataError extends Error {
+  readonly status = 404;
+  constructor(message: string) {
+    super(message);
+    this.name = 'MarketReadingNoDataError';
+  }
+}
+
+/**
+ * 500 / other HTTP / network / parse failures. `status` is 0 for transport errors.
+ * `reason` distinguishes the honesty-of-loading cases the UI must NOT conflate:
+ *   · 'timeout'  → our request budget elapsed (the service is slow / not answering)
+ *   · 'network'  → the connection itself failed (server unreachable / offline)
+ *   · 'server'   → the backend answered with a 5xx (it broke internally)
+ *   · 'parse'    → a 2xx body we couldn't read/validate
+ */
+export type MarketReadingErrorReason = 'timeout' | 'network' | 'server' | 'parse';
+
 export class MarketReadingError extends Error {
   readonly status: number;
-  constructor(status: number, message: string) {
+  readonly reason: MarketReadingErrorReason;
+  constructor(status: number, message: string, reason: MarketReadingErrorReason = 'server') {
     super(message);
     this.status = status;
+    this.reason = reason;
     this.name = 'MarketReadingError';
   }
 }
@@ -72,12 +93,14 @@ export async function fetchMarketReading(
   try {
     return await attempt(instrument, timeframe, signal, timeoutMs);
   } catch (err) {
-    // Retry once on a transient transport error or timeout — never on a
-    // deterministic HTTP error (400/500/503) or a caller-initiated abort.
-    const isTransient =
-      err instanceof MarketReadingError && err.status === 0;
+    // Retry once ONLY on a genuine network transient — never on a deterministic
+    // HTTP error (400/404/500/503), a caller abort, or a TIMEOUT. A timeout has
+    // already spent the full budget; retrying it would double the wait the user
+    // stares at (PERF-1) for no honest gain — surface it instead.
+    const isRetriable =
+      err instanceof MarketReadingError && err.reason === 'network';
     const callerAborted = signal?.aborted ?? false;
-    if (retry && isTransient && !callerAborted) {
+    if (retry && isRetriable && !callerAborted) {
       return attempt(instrument, timeframe, signal, timeoutMs);
     }
     throw err;
@@ -115,13 +138,18 @@ async function attempt(
     });
   } catch (err) {
     // AbortError (timeout or caller abort) and genuine network failures land
-    // here. We surface them as a transient transport error (status 0).
+    // here. We surface them as a transient transport error (status 0) but tag the
+    // reason so the UI can say "trop lent" vs "serveur injoignable" honestly.
     const message = timedOut
       ? 'Délai dépassé en interrogeant le service de lecture.'
       : err instanceof Error
         ? err.message
         : 'Erreur réseau';
-    throw new MarketReadingError(0, `Service de lecture injoignable : ${message}`);
+    throw new MarketReadingError(
+      0,
+      `Service de lecture injoignable : ${message}`,
+      timedOut ? 'timeout' : 'network',
+    );
   } finally {
     clearTimeout(timer);
     callerSignal?.removeEventListener('abort', onCallerAbort);
@@ -141,6 +169,14 @@ async function attempt(
     );
   }
 
+  // 404 — valid combo, but no data available for it yet (feed down + cache empty).
+  if (res.status === 404) {
+    const detail = await readErrorDetail(res);
+    throw new MarketReadingNoDataError(
+      detail ?? 'Aucune donnée disponible pour cette combinaison pour le moment.',
+    );
+  }
+
   // 401/402 — the freemium gate. Surface the clean upsell, not a raw error.
   const accessErr = await accessErrorFromResponse(res);
   if (accessErr) throw accessErr;
@@ -150,6 +186,7 @@ async function attempt(
     throw new MarketReadingError(
       res.status,
       'Le service de lecture a rencontré une erreur interne. Réessaie dans un instant.',
+      'server',
     );
   }
 
@@ -157,11 +194,11 @@ async function attempt(
   try {
     parsed = await res.json();
   } catch {
-    throw new MarketReadingError(res.status, 'Réponse du service illisible.');
+    throw new MarketReadingError(res.status, 'Réponse du service illisible.', 'parse');
   }
 
   if (!isMarketReadingShape(parsed)) {
-    throw new MarketReadingError(res.status, 'Réponse du service malformée.');
+    throw new MarketReadingError(res.status, 'Réponse du service malformée.', 'parse');
   }
 
   return parsed;

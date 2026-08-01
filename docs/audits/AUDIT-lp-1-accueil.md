@@ -121,11 +121,12 @@ NB : le pied de page global (`Footer`, hors périmètre `home`) conserve sa ment
 
 ## 8. Écarts assumés & points à trancher
 
-- **Prix vs page /abonnement — RÉCONCILIÉ.** `/abonnement` (`SubscriptionPanel`, namespace `billing`)
-  alignée sur **39 $/mois · 348 $/an (29 $/mois)** dans les 9 locales (`billing.planMonthly`/`planAnnual`),
-  + JSON-LD SEO (`components/seo/JsonLd.tsx` : offres 39 / 348 USD). Restent inchangés car **code mort**
-  (plus référencés par aucune page) : `components/landing/PricingSection.tsx` et le namespace
-  `landing.pricing` — à supprimer dans un nettoyage ultérieur.
+- **Prix — RÉCONCILIÉ via la source unique PRIX-1.** À la fusion avec `origin/main`, PRIX-1 (#110) a
+  introduit `config/pricing.json` → `lib/pricing.generated.ts` (`PRICING` = 39 / 348 / 29 USD, mêmes
+  chiffres que LP-1). L'accueil consomme désormais `PRICING` (montant mensuel + « bill » annuel par
+  placeholders `{total}`/`{perMonth}`) ; `/abonnement` (`billing.*` en placeholders) et le JSON-LD SEO
+  passent aussi par la source unique. Le tarif gratuit reste « 0 $ » littéral. Le guard PRIX-1
+  (`pricing-prix-1.test.ts`) passe.
 - **i18n 7 locales.** fr + en sont natifs et complets (exigence mission). de/es/it/pt/nl/pl/ar reçoivent
   le bloc **en** en repli (documenté, sans clé brute ni plantage) — traduction native à faire en suivi.
 - **Blast radius e2e.** La refonte retire du homepage la galerie multi-marché qui servait de fixture

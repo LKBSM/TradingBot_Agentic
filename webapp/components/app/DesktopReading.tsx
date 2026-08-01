@@ -9,6 +9,7 @@ import {
   ChartUnavailable,
   EmptyReadingState,
   ReadingErrorState,
+  SlowLoadHint,
 } from './ReadingPlaceholders';
 import { ReadingSkeleton } from './ReadingSkeleton';
 import { READING_DATA_SOURCE } from '@/lib/mockReadings';
@@ -197,8 +198,13 @@ export function DesktopReading({
 
   if (!active) return <EmptyReadingState />;
   if (error) return <ReadingErrorState error={error} onRetry={onRetry} />;
-  if (isLoading && !reading) return <ReadingSkeleton />;
-  if (!reading) return <ReadingSkeleton />;
+  if (!reading)
+    return (
+      <>
+        <ReadingSkeleton />
+        <SlowLoadHint />
+      </>
+    );
 
   const header = reading.header;
   const price = liveHeader?.price ?? header.close_price;

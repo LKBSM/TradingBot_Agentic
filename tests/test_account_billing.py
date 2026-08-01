@@ -74,7 +74,7 @@ def client(account_store, stripe, monkeypatch):
     monkeypatch.setenv("SESSION_COOKIE_SECURE", "0")
     monkeypatch.setenv("SESSION_SECRET", "test-session-secret-value")
     # A purchasable plan so /checkout has a valid price to resolve.
-    monkeypatch.setenv("STRIPE_PRICE_STANDARD", "price_standard_test")
+    monkeypatch.setenv("STRIPE_PRICE_MONTHLY", "price_monthly_test")
     app = create_app(account_store=account_store, stripe_client=stripe)
     return TestClient(app)
 
@@ -96,7 +96,7 @@ def _register(client, username="alice", email="alice@example.com"):
 
 
 def _sub_event(event_id, event_type, account_id, *, status="active",
-               customer="cus_test_1", price="price_standard_test",
+               customer="cus_test_1", price="price_monthly_test",
                current_period_end=None, cancel_at_period_end=False):
     return {
         "id": event_id,
@@ -130,16 +130,19 @@ class TestCheckoutFlow:
     def test_pricing_lists_configured_plan(self, client):
         resp = client.get("/api/billing/pricing")
         assert resp.status_code == 200
-        keys = {p["key"] for p in resp.json()["plans"]}
-        assert "STANDARD" in keys
+        body = resp.json()
+        keys = {p["key"] for p in body["plans"]}
+        assert "MONTHLY" in keys
+        # PRIX-1: no tax flag is ever exposed on the pricing surface.
+        assert "tax_enabled" not in body
 
     def test_checkout_requires_auth(self, client):
-        resp = client.post("/api/billing/checkout", json={"plan_key": "STANDARD"})
+        resp = client.post("/api/billing/checkout", json={"plan_key": "MONTHLY"})
         assert resp.status_code == 401
 
     def test_checkout_creates_customer_and_returns_url(self, client, account_store):
         acct = _register(client)
-        resp = client.post("/api/billing/checkout", json={"plan_key": "STANDARD"})
+        resp = client.post("/api/billing/checkout", json={"plan_key": "MONTHLY"})
         assert resp.status_code == 200, resp.text
         assert resp.json()["url"].startswith("https://checkout.stripe.test/")
         # The account is now linked to a Stripe customer.
@@ -159,7 +162,7 @@ class TestCheckoutFlow:
 
     def test_portal_after_checkout(self, client):
         _register(client)
-        client.post("/api/billing/checkout", json={"plan_key": "STANDARD"})
+        client.post("/api/billing/checkout", json={"plan_key": "MONTHLY"})
         resp = client.post("/api/billing/portal")
         assert resp.status_code == 200
         assert resp.json()["url"].startswith("https://portal.stripe.test/")

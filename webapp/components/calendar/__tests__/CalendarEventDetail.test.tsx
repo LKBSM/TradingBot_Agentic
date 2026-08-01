@@ -262,30 +262,43 @@ describe('NW-3 CalendarEventDetail', () => {
     expect(other.textContent).toContain(fr.calendar.pub.pedagogy.default.body);
   });
 
-  it('(e) the go-to-source link points to the issuing organism domain', () => {
+  it('(e) the named go-to-source links point only to the issuing organism domain', () => {
     const { container } = renderDetail('bls:us_cpi:2026-07-28');
-    const link = container.querySelector('.pub-src-link');
-    expect(link?.getAttribute('href')).toBe(
-      'https://www.bls.gov/opub/copyright-information.htm',
+    const docs = Array.from(container.querySelectorAll('.pub-src-doc'));
+    // us_cpi ships four named documents, all on bls.gov
+    expect(docs.length).toBe(4);
+    for (const a of docs) {
+      const href = a.getAttribute('href') ?? '';
+      const host = new URL(href).hostname.replace(/^www\./, '');
+      expect(host === 'bls.gov' || host.endsWith('.bls.gov'), href).toBe(true);
+      expect(a.getAttribute('target')).toBe('_blank');
+      expect(a.getAttribute('rel')).toBe('noreferrer noopener');
+    }
+    // the license line is preserved
+    expect(container.querySelector('.pub-src-license')?.textContent).toContain(
+      'Bureau of Labor Statistics',
     );
-    expect(link?.getAttribute('target')).toBe('_blank');
-    expect(link?.getAttribute('rel')).toBe('noreferrer noopener');
-    expect(link?.textContent).toBe(fr.calendar.pub.source.link);
   });
 
-  it('omits the go-to-source link when there is no attribution', () => {
+  it('(e) shows no named links and no license for an unknown organism/event, never a generic link', () => {
     const bare = ev({ event_id: 'forexfactory:z:1', source: 'forexfactory', event: 'ADP', organism: null, value_unit: null, value_series: SERIES });
     const { container } = render(
       <CalendarEventDetail eventId="forexfactory:z:1" locale="fr" data={{ ...makeData(bare), attribution: [] }} now={NOW} measures={null} />,
     );
-    // the section header is still present, but no link
+    // the section header is still present, but no named link and no license
     expect(container.textContent ?? '').toContain(fr.calendar.pub.source.title);
-    expect(container.querySelector('.pub-src-link')).toBeNull();
+    expect(container.querySelector('.pub-src-doc')).toBeNull();
+    expect(container.querySelector('.pub-src-license')).toBeNull();
+    expect(container.textContent ?? '').toContain(fr.calendar.pub.source.noneYet);
   });
 
-  it('the MIA block offers three clickable suggestions and a send action', () => {
+  it('(d) the MIA block reuses the shared avatar (presence dot) and offers publication-specific suggestions', () => {
     const { container } = renderDetail('bls:us_cpi:2026-07-28');
-    expect(container.querySelectorAll('.pub-mia-chip')).toHaveLength(3);
+    // shared AgentAvatar: the candlestick logo SVG + the presence pastille
+    expect(container.querySelector('.pub-mia-head svg')).not.toBeNull();
+    expect(container.querySelector('.pub-mia-head [data-presence="1"]')).not.toBeNull();
+    // us_cpi has four bespoke suggestions
+    expect(container.querySelectorAll('.pub-mia-chip')).toHaveLength(4);
     expect(container.querySelector('.pub-mia-send')?.textContent).toBe(fr.calendar.pub.mia.send);
     expect(container.querySelector('.pub-mia-input')?.getAttribute('placeholder')).toBe(
       fr.calendar.pub.mia.placeholder,

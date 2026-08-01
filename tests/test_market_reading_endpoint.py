@@ -129,6 +129,26 @@ def test_endpoint_returns_500_on_assembler_exception(tmp_path):
     assert resp.json()["detail"] == "Internal server error"
 
 
+def test_endpoint_returns_404_on_no_data_available(tmp_path):
+    """PERF-1: a valid combo with no data anywhere (feed down + cache empty +
+    nothing stored) maps to a DISTINCT 404 — not the generic 500 — so the UI can
+    say « aucune donnée pour cette combinaison » rather than « ça a cassé »."""
+    from src.intelligence.market_reading_assembler import MarketReadingDataUnavailable
+
+    class _NoDataAssembler:
+        def get_or_generate(self, instrument, timeframe):
+            raise MarketReadingDataUnavailable(f"nothing for {instrument}/{timeframe}")
+
+    app = _make_app(assembler=_NoDataAssembler(), tmp_path=tmp_path)
+    client = TestClient(app)
+
+    resp = client.get("/api/market-reading", params={"instrument": "XAUUSD", "timeframe": "M15"})
+    assert resp.status_code == 404
+    # Distinct from a 500, and never leaks the raw internal message.
+    assert "nothing for" not in resp.json()["detail"]
+    assert "No market data available" in resp.json()["detail"]
+
+
 def test_endpoint_passes_query_params_to_assembler(tmp_path):
     stub = _StubAssembler()
     app = _make_app(assembler=stub, tmp_path=tmp_path)
