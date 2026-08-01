@@ -1863,7 +1863,8 @@
       "intro": "Każda publikacja pochodzi od oficjalnej instytucji, która ją wydaje. Ponowne wykorzystanie zgodnie z polityką każdego źródła:",
       "policyLink": "polityka ponownego wykorzystania",
       "stale": "nieodświeżone od {date}",
-      "refreshed": "odświeżono {date}"
+      "refreshed": "odświeżono {date}",
+      "lastUpdated": "Ostatnia aktualizacja: {date}"
     },
     "coverage": {
       "partial": "Kalendarz jest wypełniony do {date}. Poza tym okres nie jest jeszcze objęty."

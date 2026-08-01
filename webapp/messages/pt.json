@@ -1863,7 +1863,8 @@
       "intro": "Cada publicação provém do organismo oficial que a emite. A reutilização segue a política de cada fonte:",
       "policyLink": "política de reutilização",
       "stale": "não atualizado desde {date}",
-      "refreshed": "atualizado a {date}"
+      "refreshed": "atualizado a {date}",
+      "lastUpdated": "Última atualização: {date}"
     },
     "coverage": {
       "partial": "O calendário está preenchido até {date}. Para além disso, o período ainda não está coberto."

@@ -1980,7 +1980,8 @@
       "intro": "Chaque publication provient de l'organisme officiel qui l'émet. Réutilisation selon la politique de chaque source :",
       "policyLink": "politique de réutilisation",
       "stale": "non rafraîchi depuis le {date}",
-      "refreshed": "rafraîchi le {date}"
+      "refreshed": "rafraîchi le {date}",
+      "lastUpdated": "Dernière mise à jour : {date}"
     },
     "coverage": {
       "partial": "Le calendrier est renseigné jusqu'au {date}. Au-delà, la période n'est pas encore couverte."

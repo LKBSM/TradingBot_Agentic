@@ -83,3 +83,16 @@ def test_uncovered_events_are_absent_not_fabricated() -> None:
     assert "ea_unemployment" not in keys
     assert "ea_hicp_flash" in keys      # populated from the euro-indicators calendar
     assert "ea_gdp_flash" in keys       # populated from the QNA release calendar
+
+
+def test_undatable_events_are_signalled_never_silent() -> None:
+    # NW-4 ch.5A: an event that no wired source can date must be SURFACED, not
+    # allowed to vanish silently. undatable_events() reports it (and fetch() logs
+    # it). A datable event is never in the list.
+    provider = OfficialCalendarProvider()
+    undatable = provider.undatable_events()
+    assert "ea_unemployment" in undatable      # honest gap, now explicitly reported
+    assert "us_cpi" not in undatable           # datable via the curated schedule
+    # Every reported key is a real catalog event (never a phantom).
+    catalog = load_catalog()
+    assert all(k in catalog for k in undatable)

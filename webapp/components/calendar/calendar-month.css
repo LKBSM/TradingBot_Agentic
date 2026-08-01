@@ -302,3 +302,10 @@
   color: var(--liq);
   margin-top: 2px;
 }
+
+/* Permanent "last updated" proof next to the month title (NW-4 ch.5). */
+.calm-fresh {
+  font-size: 11px;
+  color: var(--faint);
+  margin-left: 10px;
+}

@@ -1863,7 +1863,8 @@
       "intro": "Elke publicatie komt van de officiële instantie die haar uitgeeft. Hergebruik volgt het beleid van elke bron:",
       "policyLink": "hergebruikbeleid",
       "stale": "niet ververst sinds {date}",
-      "refreshed": "ververst op {date}"
+      "refreshed": "ververst op {date}",
+      "lastUpdated": "Laatst bijgewerkt: {date}"
     },
     "coverage": {
       "partial": "De kalender is gevuld tot {date}. Daarna is de periode nog niet gedekt."

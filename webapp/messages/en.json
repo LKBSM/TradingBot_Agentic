@@ -1991,7 +1991,8 @@
       "intro": "Each release comes from the official organism that issues it. Reuse follows each source's policy:",
       "policyLink": "reuse policy",
       "stale": "not refreshed since {date}",
-      "refreshed": "refreshed on {date}"
+      "refreshed": "refreshed on {date}",
+      "lastUpdated": "Last updated: {date}"
     },
     "coverage": {
       "partial": "The calendar is populated through {date}. Beyond that, the period is not yet covered."

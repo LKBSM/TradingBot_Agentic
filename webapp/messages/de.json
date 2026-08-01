@@ -1863,7 +1863,8 @@
       "intro": "Jede Veröffentlichung stammt von der offiziellen Institution, die sie herausgibt. Weiterverwendung gemäß der Richtlinie jeder Quelle:",
       "policyLink": "Nutzungsrichtlinie",
       "stale": "nicht aktualisiert seit {date}",
-      "refreshed": "aktualisiert am {date}"
+      "refreshed": "aktualisiert am {date}",
+      "lastUpdated": "Zuletzt aktualisiert: {date}"
     },
     "coverage": {
       "partial": "Der Kalender ist bis {date} gefüllt. Darüber hinaus ist der Zeitraum noch nicht abgedeckt."

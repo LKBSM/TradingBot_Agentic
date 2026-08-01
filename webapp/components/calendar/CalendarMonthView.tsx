@@ -8,7 +8,7 @@ import { useLocalizedHref } from '@/lib/i18n/href';
 import { useMultiFilter } from '@/lib/market-reading/use-multi-filter';
 import { FilterChipGroup } from '@/components/app/FilterChipGroup';
 import { useCalendarMonth } from '@/lib/calendar/useCalendar';
-import { dayKey, filterEvents, hmInZone } from '@/lib/calendar/grouping';
+import { dayKey, filterEvents, hmInZone, latestSuccess } from '@/lib/calendar/grouping';
 import { parseUtc, utcOffsetLabel } from '@/lib/time/localTime';
 import type {
   CalendarEvent,
@@ -197,6 +197,13 @@ export function CalendarMonthView({
 
   const selectedEvents = selectedDay ? byDay.get(selectedDay) ?? [] : [];
 
+  // Permanent proof of freshness — the most recent successful refresh across all
+  // sources, shown always (not only when something is stale). NW-4 ch.5.
+  const lastUpdated = React.useMemo(
+    () => latestSuccess(data?.coverage.last_success),
+    [data],
+  );
+
   return (
     <div className="calm-page">
       <div className="cal-head">
@@ -243,6 +250,13 @@ export function CalendarMonthView({
           {t('month.prev')}
         </button>
         <span className="calm-title mono">{monthLabel}</span>
+        {lastUpdated && (
+          <span className="calm-fresh">
+            {t('attribution.lastUpdated', {
+              date: lastUpdated.toLocaleDateString(locale),
+            })}
+          </span>
+        )}
         <button
           type="button"
           className="calm-navbtn"

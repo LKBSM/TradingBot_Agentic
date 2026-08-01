@@ -672,3 +672,10 @@
     display: none;
   }
 }
+
+/* Permanent freshness proof in the attribution block (NW-4 ch.5). */
+.cal-attrib .lastup {
+  font-size: 11px;
+  color: var(--dim);
+  margin: 2px 0 6px;
+}

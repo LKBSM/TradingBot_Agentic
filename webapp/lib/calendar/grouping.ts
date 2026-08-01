@@ -150,3 +150,22 @@ export function splitPastUpcoming(
 function toMs(iso: string): number {
   return parseUtc(iso)?.getTime() ?? 0;
 }
+
+/**
+ * The most recent successful refresh across all sources (NW-4 ch.5): the max of
+ * the per-source `last_success` map. Returned so a calendar view can show the
+ * PROOF of freshness permanently — not just a stale marker when something breaks.
+ * Null when no success is recorded yet (the view then shows nothing rather than a
+ * fabricated date).
+ */
+export function latestSuccess(
+  lastSuccess: Record<string, string> | null | undefined,
+): Date | null {
+  if (!lastSuccess) return null;
+  let best = 0;
+  for (const iso of Object.values(lastSuccess)) {
+    const ms = parseUtc(iso)?.getTime() ?? 0;
+    if (ms > best) best = ms;
+  }
+  return best > 0 ? new Date(best) : null;
+}
