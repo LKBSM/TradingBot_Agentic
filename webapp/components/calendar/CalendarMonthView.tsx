@@ -401,7 +401,17 @@ function GridArea(props: {
                   const time = d ? hmInZone(d) : '';
                   return (
                     <span key={ev.event_id} className="calm-chip">
-                      <span className="calm-chip-time mono">{time}</span>
+                      <span
+                        className={`calm-chip-time mono${
+                          ev.time_confirmed ? '' : ' unconf'
+                        }`}
+                        title={ev.time_confirmed ? undefined : t('timeUnconfirmed')}
+                      >
+                        {time}
+                        {!ev.time_confirmed && (
+                          <span className="calm-chip-approx" aria-hidden> ≈</span>
+                        )}
+                      </span>
                       <span className="calm-chip-name">{shortName(ev)}</span>
                     </span>
                   );
@@ -490,6 +500,9 @@ function DayPanel({
                       offset: offsetLabel,
                     })}
                   </div>
+                  {!ev.time_confirmed && (
+                    <div className="calm-panel-unconf">{t('timeUnconfirmed')}</div>
+                  )}
                   <div className="calm-panel-meta">
                     {ev.organism ? (
                       <span>{t('provenance.organism', { organism: ev.organism })}</span>

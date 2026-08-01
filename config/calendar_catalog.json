@@ -197,10 +197,10 @@
       "value_unit": "% (variation annuelle)",
       "periodicity": "monthly",
       "source_timezone": "Europe/Luxembourg",
-      "release_time_local": "11:00",
+      "release_time_local": "15:00",
       "time_confirmed": true,
-      "time_source_url": "https://ec.europa.eu/eurostat/about-us/impartiality-protocol",
-      "time_last_verified": "2026-07-28"
+      "time_source_url": "https://www.ecb.europa.eu/press/calendars/statscal/ges/html/sthicp.en.html",
+      "time_last_verified": "2026-08-01"
     },
     {
       "key": "ea_gdp_flash",
@@ -212,9 +212,9 @@
       "periodicity": "quarterly",
       "source_timezone": "Europe/Luxembourg",
       "release_time_local": "11:00",
-      "time_confirmed": true,
-      "time_source_url": "https://ec.europa.eu/eurostat/about-us/impartiality-protocol",
-      "time_last_verified": "2026-07-28"
+      "time_confirmed": false,
+      "time_source_url": "https://ec.europa.eu/eurostat/en/web/main/news/euro-indicators",
+      "time_last_verified": "2026-08-01"
     },
     {
       "key": "ea_unemployment",
@@ -226,9 +226,9 @@
       "periodicity": "monthly",
       "source_timezone": "Europe/Luxembourg",
       "release_time_local": "11:00",
-      "time_confirmed": true,
-      "time_source_url": "https://ec.europa.eu/eurostat/about-us/impartiality-protocol",
-      "time_last_verified": "2026-07-28"
+      "time_confirmed": false,
+      "time_source_url": "https://ec.europa.eu/eurostat/en/web/main/news/euro-indicators",
+      "time_last_verified": "2026-08-01"
     },
     {
       "key": "ea_ecb_rate",

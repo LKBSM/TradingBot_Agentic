@@ -70,6 +70,11 @@ class CatalogEvent:
     source_timezone: Optional[str]
     release_time_local: Optional[str]
     time_confirmed: bool
+    # Proof of the confirmed time: the official page documenting it + the date it
+    # was last checked there. A confirmed flag is meaningless without both, so
+    # ``load_catalog`` refuses ``time_confirmed`` unless BOTH are present.
+    time_source_url: Optional[str]
+    time_last_verified: Optional[str]
     organism: Optional[str]
     license_label: Optional[str]
     # Live .ics feed wiring (opt-in): the source's iCalendar URL + the keyword
@@ -107,6 +112,24 @@ def load_catalog(path: Optional[Path] = None) -> Dict[str, CatalogEvent]:
         for ev in raw.get("events", []):
             src = str(ev.get("source", ""))
             smeta = sources.get(src, {}) if isinstance(sources, dict) else {}
+            time_source_url = ev.get("time_source_url")
+            time_last_verified = ev.get("time_last_verified")
+            # A "confirmed time" flag is only trustworthy with PROOF: the official
+            # page documenting the time AND the date it was last checked there.
+            # Absent either, the flag is downgraded to unconfirmed at load — a
+            # confidence flag without evidence is made impossible (NW-4 ch.1).
+            declared_confirmed = bool(ev.get("time_confirmed", False))
+            time_confirmed = bool(
+                declared_confirmed
+                and str(time_source_url or "").strip()
+                and str(time_last_verified or "").strip()
+            )
+            if declared_confirmed and not time_confirmed:
+                logger.warning(
+                    "calendar event %s declares time_confirmed=true without a "
+                    "source_url and last_verified date — downgraded to unconfirmed",
+                    ev.get("key"),
+                )
             out[str(ev["key"])] = CatalogEvent(
                 key=str(ev["key"]),
                 source=src,
@@ -117,7 +140,9 @@ def load_catalog(path: Optional[Path] = None) -> Dict[str, CatalogEvent]:
                 periodicity=ev.get("periodicity"),
                 source_timezone=ev.get("source_timezone"),
                 release_time_local=ev.get("release_time_local"),
-                time_confirmed=bool(ev.get("time_confirmed", False)),
+                time_confirmed=time_confirmed,
+                time_source_url=time_source_url,
+                time_last_verified=time_last_verified,
                 organism=smeta.get("organism"),
                 license_label=smeta.get("license_label"),
                 ics_feed=smeta.get("ics_feed"),

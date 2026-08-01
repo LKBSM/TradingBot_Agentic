@@ -289,3 +289,16 @@
     min-height: 70px;
   }
 }
+
+/* Time-not-confirmed markers (NW-4 ch.1): a SUPPOSED release time must be
+   visibly distinct from a source-verified one, in the grid chip and the day
+   panel. Same amber cue as the list view's .cal-unconf. */
+.calm-chip-time.unconf,
+.calm-chip-approx {
+  color: var(--liq);
+}
+.calm-panel-unconf {
+  font-size: 10px;
+  color: var(--liq);
+  margin-top: 2px;
+}
