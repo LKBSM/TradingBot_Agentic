@@ -374,15 +374,18 @@ test('1280×800: CPI publication — four questions honest & sourced', async ({ 
   expect(pageText.toLowerCase()).not.toContain('bougie');
   expect(pageText.toLowerCase()).not.toContain('candle');
 
-  // The MIA block + suggestion chips render.
+  // The MIA block + suggestion chips render, reusing the shared avatar.
   await expect(page.locator('.pub-mia')).toBeVisible();
   expect(await page.locator('.pub-mia-chip').count()).toBeGreaterThan(0);
+  await expect(page.locator('.pub-mia-head [data-presence="1"]')).toBeVisible();
 
-  // The "go to source" external link points at the issuing organism (bls.gov).
-  const srcLink = page.locator('.pub-src-link');
-  await expect(srcLink).toBeVisible();
-  const href = await srcLink.getAttribute('href');
-  expect(new URL(href ?? '').host).toBe('www.bls.gov');
+  // The named "go to source" links all point at the issuing organism (bls.gov).
+  const srcDocs = page.locator('.pub-src-doc');
+  expect(await srcDocs.count()).toBeGreaterThan(0);
+  for (const a of await srcDocs.all()) {
+    const href = await a.getAttribute('href');
+    expect(new URL(href ?? '').host.replace(/^www\./, '')).toBe('bls.gov');
+  }
 
   // No directional / statistical-forecast wording in the MEASURES section — the
   // engine-measured facts must never read as a call or a consensus. (The page's

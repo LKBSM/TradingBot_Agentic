@@ -2076,11 +2076,18 @@
         "empty": "The published series is not available for this indicator.",
         "revisedFromTo": "The latest figure was corrected after its release: {initial} first, then {current} on {date}.",
         "notRevised": "None of the figures shown was corrected after its release.",
-        "source": "Series published by {organism}, in the organism's unit, as published — no conversion, no re-rounding."
+        "source": "Series published by {organism}, in the organism's unit, as published — no conversion, no re-rounding.",
+        "lastValue": "Latest value <b>{value}</b> — {period}",
+        "range": "Across the series shown <b>{min}</b> to <b>{max}</b>"
       },
       "questions": {
         "sectionTitle": "What the engine measured at previous publications",
         "sectionBadge": "Price move — {market}",
+        "qLabel": "Question {n}",
+        "readGuide": {
+          "title": "How to read these answers",
+          "body": "Each answer is a count of past days, each with its own context. \"10 times out of 12\" describes what was observed, not a probability for next time, and nothing here applies to the upcoming publication. The questions are independent: none explains another."
+        },
         "calmBefore": {
           "q": "Is the hour before quieter or busier than usual?",
           "a": "Across <b>{sample}</b> publications measured on {market}, the hour before the release was quieter than usual <b>{calmer} times</b> and busier <b>{busier} times</b>.",
@@ -2111,18 +2118,55 @@
       },
       "mia": {
         "title": "Ask M.I.A",
-        "subtitle": "M.I.A explains concepts and describes what the engine measured.",
-        "s1": "Explain what this indicator measures",
-        "s2": "What did the engine measure at previous releases?",
-        "s3": "Show the current market structure",
-        "placeholder": "Ask your question…",
+        "subtitle": "It explains concepts and describes what the engine measured on this publication.",
+        "suggestsLabel": "Common questions about this publication",
+        "suggests": {
+          "us_cpi": {
+            "s1": "What's the difference between CPI and core CPI?",
+            "s2": "Why is a figure sometimes corrected a month after its release?",
+            "s3": "What counts as the market settling back down after a publication?",
+            "s4": "Show me gold's current structure"
+          },
+          "ea_hicp_flash": {
+            "s1": "What is the HICP and how does it differ from national indices?",
+            "s2": "Why is the flash estimate revised a few weeks later?",
+            "s3": "What is an \"intact liquidity pocket\"?",
+            "s4": "Show me gold's current structure"
+          },
+          "default": {
+            "s1": "Explain what this indicator measures",
+            "s2": "What did the engine measure at previous releases?",
+            "s3": "Show the current market structure"
+          }
+        },
+        "placeholder": "Ask your question about this publication…",
         "send": "Send",
         "capability": "M.I.A describes measured facts and explains concepts. It will not say what price will do, what value will be published, or whether to act — and will say so if asked."
       },
       "source": {
         "title": "Go to the source",
-        "intro": "The indicator's value comes only from the organism that issues it:",
-        "link": "organism website"
+        "intro": "These links lead to the organism that issues the publication, and to it alone:",
+        "docs": {
+          "methodology": {
+            "label": "Indicator methodology",
+            "desc": "How the indicator is defined, built and computed."
+          },
+          "release": {
+            "label": "Latest official release",
+            "desc": "The most recent release text, in detail."
+          },
+          "series": {
+            "label": "Full historical series",
+            "desc": "Every published value, revisions included."
+          },
+          "schedule": {
+            "label": "Official release calendar",
+            "desc": "The organism's publication dates and times."
+          }
+        },
+        "organismOnly": "issuing organism only",
+        "onlyNote": "These links lead to the official organism and to it alone. MIA points to no commentary or forecast site: picking such a link would be recommending it.",
+        "noneYet": "The precise documents for this organism are not referenced here yet. No generic link stands in for them."
       },
       "pedagogy": {
         "title": "What this indicator measures",
