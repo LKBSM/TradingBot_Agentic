@@ -67,8 +67,10 @@ function monthFixture() {
     generated_at: iso(0),
     coverage: {
       source: 'official', feed_start: null, feed_end: null, partial: false,
-      last_success: { bls: iso(0), eurostat: iso(0) },
-      stale_sources: [],
+      last_success: { bls: iso(0), eurostat: iso(0) } as Record<string, string>,
+      // DETTE-1: annotate so staleMonthFixture() can push source ids (was
+      // inferred `never[]`, a pre-existing tsc error from the #114 calendar work).
+      stale_sources: [] as string[],
     },
     attribution: [
       { source: 'bls', organism: 'Bureau of Labor Statistics', license_label: 'Domaine public', policy_url: 'https://www.bls.gov/opub/copyright-information.htm' },
