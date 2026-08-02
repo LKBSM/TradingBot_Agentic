@@ -386,225 +386,225 @@
     }
   },
   "regimePanel": {
-    "help": "Learn more",
-    "measureHelp": "Explain this measure",
-    "close": "Close",
-    "tabData": "Data",
+    "help": "اعرف المزيد",
+    "measureHelp": "اشرح هذا القياس",
+    "close": "إغلاق",
+    "tabData": "البيانات",
     "tabConcept": "Concept",
-    "unavailable": "not available",
-    "notSayLabel": "What it doesn't say",
-    "continuous": "Continuous market · 24/7",
-    "headerBadge": "{tf} · last close {time}",
+    "unavailable": "غير متاح",
+    "notSayLabel": "ما لا يقوله",
+    "continuous": "سوق مستمر · 24/7",
+    "headerBadge": "{tf} · آخر إغلاق {time}",
     "tiles": {
-      "phase": "Market phase",
-      "trend": "Trend",
-      "vol": "Volatility",
-      "pos": "Position in range",
-      "align": "Alignment",
-      "mat": "Maturity",
-      "last": "Last event",
-      "dens": "Density",
+      "phase": "طور السوق",
+      "trend": "الاتجاه",
+      "vol": "التقلب",
+      "pos": "الموضع داخل المدى",
+      "align": "التوافق",
+      "mat": "النضج",
+      "last": "آخر حدث",
+      "dens": "الكثافة",
       "sess": "Session",
-      "lvl": "Reference levels"
+      "lvl": "مستويات المرجع"
     },
     "sub": {
-      "phase": "derived from trend and volatility",
-      "trend": "measured on {tf}",
-      "vol": "{recent} recent vs {baseline} preceding",
+      "phase": "مشتقة من الاتجاه والتقلب",
+      "trend": "مقيسة على {tf}",
+      "vol": "{recent} الأخيرة مقابل {baseline} السابقة",
       "pos": "{low} – {high}",
-      "mat": "since the {dir} CHOCH of {date}",
-      "dens": "open on {tf}",
-      "lvl": "{count, plural, one {# marker} other {# markers}} · open the detail",
-      "sess": "{label} in {delay}",
-      "trendRef": "since the {dir} {kind} of {date}",
-      "trendNone": "no structural trend established",
+      "mat": "منذ CHOCH {dir} في {date}",
+      "dens": "مفتوحة على {tf}",
+      "lvl": "{count, plural, zero {# معلم} one {# معلم} two {معلمان} few {# معالم} many {# معلمًا} other {# معلم}} · افتح التفصيل",
+      "sess": "{label} خلال {delay}",
+      "trendRef": "منذ {kind} {dir} في {date}",
+      "trendNone": "لا اتجاه بنيوي مستقر",
       "lvlNA": "غير قابل للتطبيق على {tf}: اليوم السابق هو الشمعة السابقة",
       "sessNA": "غير قابل للتطبيق على {tf}: الشمعة تغطّي كل الجلسات"
     },
     "value": {
       "pos": "{pct} %",
-      "mat": "{approx}{count, plural, one {# candle} other {# candles}}",
+      "mat": "{approx}{count, plural, zero {# شمعة} one {# شمعة} two {شمعتان} few {# شمعات} many {# شمعة} other {# شمعة}}",
       "dens": "{ob} OB · {fvg} FVG",
       "align": "{count}/{total} TF {arrow}",
-      "dirUp": "bullish",
-      "dirDown": "bearish",
+      "dirUp": "صعودي",
+      "dirDown": "هبوطي",
       "kindChoch": "CHOCH",
       "kindBos": "BOS",
-      "alignIndeterminate": "no structural trend established",
-      "alignIndetCount": "{count, plural, one {# indeterminate} other {# indeterminate}}",
+      "alignIndeterminate": "لا اتجاه بنيوي مستقر",
+      "alignIndetCount": "{count, plural, zero {# غير محدَّد} one {# غير محدَّد} two {# غير محدَّدين} few {# غير محدَّدة} many {# غير محدَّدة} other {# غير محدَّد}}",
       "alignNone": "لا وحدة أعلى",
       "notApplicable": "غير قابل للتطبيق"
     },
     "data": {
-      "phaseHead": "The two measures it is built from",
-      "trendRow": "Trend",
-      "volRow": "Volatility",
-      "ruleRow": "Rule applied",
-      "phaseNote": "The phase is fully recomposed from these two measures: no information is added, only summarised.",
-      "trendHead": "The rule, in plain terms",
-      "resultRow": "Result",
-      "measuredOnRow": "Measured on",
-      "trendNote": "The engine compares the net move (first → last close) to the window’s range, on {tf}. The intermediate values stay engine-side; the rule and its result are shown here.",
-      "volHead": "The calculation, in plain terms",
-      "volRecent": "Average range — last {n}",
-      "volBaseline": "Average range — preceding {n}",
-      "volRatio": "Ratio",
-      "volThresholds": "Thresholds",
-      "volThresholdsValue": "<{low} low · >{high} elevated",
-      "volNote": "The denominator is named: the comparison uses the {n} candles preceding the last 7, on the same timeframe.",
-      "posHead": "Where the price sits between the structural bounds",
-      "currentPrice": "Current price",
-      "distTop": "Distance to upper bound",
-      "distBottom": "Distance to lower bound",
-      "rangeSpan": "Bound span",
-      "barLow": "{v} · low",
-      "barHigh": "{v} · high",
-      "boundLow": "Range lower bound",
-      "boundHigh": "Range upper bound",
-      "posNote": "These bounds are **structural**: the range extremes retained by the engine. Not to be confused with the reference levels, which are **temporal**.",
-      "alignHead": "The per-timeframe detail",
+      "phaseHead": "القياسان اللذان يتألف منهما",
+      "trendRow": "الاتجاه",
+      "volRow": "التقلب",
+      "ruleRow": "القاعدة المطبَّقة",
+      "phaseNote": "يُعاد تركيب الطور بالكامل من هذين القياسين: لا تُضاف أي معلومة، بل تُلخَّص فقط.",
+      "trendHead": "القاعدة، بوضوح",
+      "resultRow": "النتيجة",
+      "measuredOnRow": "مقيسة على",
+      "trendNote": "يقارن المحرك الحركة الصافية (أول ← آخر إغلاق) بمدى النافذة، على {tf}. تبقى القيم الوسيطة لدى المحرك؛ وتُعرَض هنا القاعدة ونتيجتها.",
+      "volHead": "الحساب، بوضوح",
+      "volRecent": "المدى المتوسط — {n} الأخيرة",
+      "volBaseline": "المدى المتوسط — {n} السابقة",
+      "volRatio": "النسبة",
+      "volThresholds": "العتبات",
+      "volThresholdsValue": "<{low} منخفض · >{high} مرتفع",
+      "volNote": "المقام مذكور: تجري المقارنة على {n} شمعة تسبق آخر 7، على الإطار الزمني نفسه.",
+      "posHead": "أين يقع السعر بين حدود البنية",
+      "currentPrice": "السعر الحالي",
+      "distTop": "المسافة إلى الحافة العليا",
+      "distBottom": "المسافة إلى الحافة السفلى",
+      "rangeSpan": "سعة الحدود",
+      "barLow": "{v} · أدنى",
+      "barHigh": "{v} · أعلى",
+      "boundLow": "الحد الأدنى للمدى",
+      "boundHigh": "الحد الأعلى للمدى",
+      "posNote": "هذه الحدود **بنيوية**: أطراف البنية المعتمَدة من المحرك. لا تُخلَط بمستويات المرجع، التي هي **زمنية**.",
+      "alignHead": "التفصيل لكل إطار زمني",
       "alignNote": "The available timeframes and their structural direction. When one diverges, its line is highlighted here rather than hidden.",
-      "matHead": "The counter’s anchor",
-      "anchorEvent": "Anchor event",
-      "crossedLevel": "Level crossed",
-      "barsSince": "Candles closed since",
-      "elapsed": "Time elapsed",
-      "eventsSince": "Events since then",
-      "lastHead": "The most recent event",
+      "matHead": "مرساة العدّاد",
+      "anchorEvent": "حدث المرساة",
+      "crossedLevel": "المستوى المتجاوَز",
+      "barsSince": "الشموع المغلَقة منذئذٍ",
+      "elapsed": "الزمن المنقضي",
+      "eventsSince": "الأحداث الواقعة منذئذٍ",
+      "lastHead": "الحدث الأحدث",
       "typeRow": "Type",
-      "crossedExtreme": "Extreme crossed",
-      "journal": "Event journal · {tf}",
-      "journalCount": "{count, plural, one {# event} other {# events}} over the analysed window ({bars} candles, ≈ {span})",
-      "seeOnChart": "Show these events on the chart",
-      "densHead": "Zone inventory · {tf}",
-      "obActive": "Order Blocks — active",
-      "obTested": "Order Blocks — tested (unmitigated)",
-      "obMitigated": "Order Blocks — mitigated",
-      "fvgOpen": "FVG open — total",
-      "fvgUntouched": "— of which never touched",
-      "fvgPartial": "— of which partially filled",
-      "densNote": "Partially filled ones are **included** in the total of open FVGs. A fully filled FVG leaves the count (the engine no longer keeps it).",
-      "filterInStructure": "Filter these zones in Market structure",
-      "sessHead": "Hours · New York time",
-      "marketState": "Market state",
-      "marketLocalTime": "Market local time",
-      "weeklyClose": "Weekly close",
-      "weeklyCloseValue": "Fri 17:00",
-      "nextOpen": "Next open",
-      "lvlHead": "Temporal markers · current price {price}",
-      "dayOpen": "Day open",
-      "weekOpen": "Week open",
-      "prevDayHigh": "Previous day high",
-      "prevDayLow": "Previous day low",
-      "prevWeekHigh": "Previous week high",
-      "prevWeekLow": "Previous week low",
-      "lvlNote": "Click a price: the level is traced on the chart and brought into view. Click again to remove it.",
-      "lvlPeriodDay": "the previous day",
-      "lvlPeriodWeek": "the previous week",
-      "lvlInsufficient": "Insufficient data for {periods}: the period is not fully covered by the available history.",
-      "relAbove": "{pct} % above",
-      "relBelow": "{pct} % below",
-      "relAt": "at the current price",
+      "crossedExtreme": "الطرف المتجاوَز",
+      "journal": "سجل الأحداث · {tf}",
+      "journalCount": "{count, plural, zero {# حدث} one {# حدث} two {حدثان} few {# أحداث} many {# حدثًا} other {# حدث}} على النافذة المحلَّلة ({bars} شمعة، ≈ {span})",
+      "seeOnChart": "عرض هذه الأحداث على الرسم البياني",
+      "densHead": "جرد المناطق · {tf}",
+      "obActive": "Order Blocks — نشطة",
+      "obTested": "Order Blocks — مُختبَرة (غير مُخفَّفة)",
+      "obMitigated": "Order Blocks — مُخفَّفة",
+      "fvgOpen": "FVG مفتوحة — الإجمالي",
+      "fvgUntouched": "— منها التي لم تُلمَس قط",
+      "fvgPartial": "— منها المملوءة جزئيًا",
+      "densNote": "المملوءة جزئيًا **مُدرَجة** في إجمالي FVG المفتوحة. وأي FVG مملوءة بالكامل تخرج من العدّ (لا يعود المحرك يحتفظ بها).",
+      "filterInStructure": "تصفية هذه المناطق في بنية السوق",
+      "sessHead": "المواعيد · توقيت New York",
+      "marketState": "حالة السوق",
+      "marketLocalTime": "التوقيت المحلي للسوق",
+      "weeklyClose": "الإغلاق الأسبوعي",
+      "weeklyCloseValue": "الجمعة 17:00",
+      "nextOpen": "الافتتاح التالي",
+      "lvlHead": "معالم زمنية · السعر الحالي {price}",
+      "dayOpen": "افتتاح اليوم",
+      "weekOpen": "افتتاح الأسبوع",
+      "prevDayHigh": "أعلى الأمس",
+      "prevDayLow": "أدنى الأمس",
+      "prevWeekHigh": "أعلى الأسبوع",
+      "prevWeekLow": "أدنى الأسبوع",
+      "lvlNote": "انقر سعرًا: يُرسَم المستوى على الرسم البياني ويُحضَر إلى العرض. انقر ثانيةً لإزالته.",
+      "lvlPeriodDay": "الأمس",
+      "lvlPeriodWeek": "الأسبوع السابق",
+      "lvlInsufficient": "بيانات غير كافية لـ {periods}: الفترة غير مغطّاة بالكامل بالتاريخ المتاح.",
+      "relAbove": "{pct} % فوق",
+      "relBelow": "{pct} % تحت",
+      "relAt": "عند السعر الحالي",
       "coincidenceMark": "≈ {side}",
-      "coincidence": "Coincides with a liquidity pocket detected at this level (an observed level coincidence).",
-      "sessCurrent": "Current session",
-      "sessNext": "Next transition",
-      "sessOverlap": "London / New York overlap",
+      "coincidence": "يتوافق مع جيب سيولة مكتشَف عند هذا المستوى (توافق مستويات ملاحَظ).",
+      "sessCurrent": "الجلسة الجارية",
+      "sessNext": "الانتقال التالي",
+      "sessOverlap": "تداخل London / New York",
       "overlap": {
-        "upcoming": "upcoming",
-        "ongoing": "ongoing",
-        "ended": "ended"
+        "upcoming": "قادم",
+        "ongoing": "جارٍ",
+        "ended": "منتهٍ"
       },
-      "windowRow": "Analysed window",
-      "windowValue": "last {bars} candles (≈ {span})",
-      "windowSpan_days": "{count, plural, one {# day} other {# days}}",
-      "windowSpan_weeks": "{count, plural, one {# week} other {# weeks}}",
-      "windowSpan_months": "{count, plural, one {# month} other {# months}}",
-      "windowSpan_years": "{count, plural, one {# year} other {# years}}",
-      "windowNote": "The window is a FIXED number of candles, so its calendar span depends on the unit (≈ one month on H1, ≈ two years on D1). The same « bearish trend » does not cover the same duration from one unit to the next.",
-      "trendAnchorRow": "Anchor",
-      "trendAnchorValue": "{dir} {kind}",
-      "trendAnchorNone": "no structural break",
-      "trendNoteStructural": "The trend follows the structure: the direction of the last non-contradicted BOS/CHOCH break. “Indeterminate” when no break exists in the analysed history — never a fallback “neutral”.",
+      "windowRow": "النافذة المحلَّلة",
+      "windowValue": "آخر {bars} شمعة (≈ {span})",
+      "windowSpan_days": "{count, plural, zero {# يوم} one {# يوم} two {يومان} few {# أيام} many {# يومًا} other {# يوم}}",
+      "windowSpan_weeks": "{count, plural, zero {# أسبوع} one {# أسبوع} two {أسبوعان} few {# أسابيع} many {# أسبوعًا} other {# أسبوع}}",
+      "windowSpan_months": "{count, plural, zero {# شهر} one {# شهر} two {شهران} few {# أشهر} many {# شهرًا} other {# شهر}}",
+      "windowSpan_years": "{count, plural, zero {# سنة} one {# سنة} two {سنتان} few {# سنوات} many {# سنة} other {# سنة}}",
+      "windowNote": "النافذة عدد ثابت من الشموع: لذا يتغيّر امتدادها التقويمي حسب الوحدة (≈ شهر على H1، ≈ سنتان على D1). فـ«اتجاه هبوطي» واحد لا يغطي المدة نفسها من وحدة إلى أخرى.",
+      "trendAnchorRow": "المرساة",
+      "trendAnchorValue": "{kind} {dir}",
+      "trendAnchorNone": "لا كسر بنيوي",
+      "trendNoteStructural": "الاتجاه يتبع البنية: اتجاه آخر كسر BOS/CHOCH غير مُناقَض. «غير محدَّد» حين لا يوجد أي كسر في التاريخ المحلَّل — لا «محايد» احتياطي أبدًا.",
       "alignUnavailable": "غير متوفّر"
     },
     "state": {
-      "open": "Market open",
-      "closed_weekend": "Closed — weekend",
-      "closed_holiday": "Closed — holiday",
-      "daily_break": "Daily break",
-      "data_lagged": "Data lagging"
+      "open": "السوق مفتوح",
+      "closed_weekend": "مغلق — عطلة نهاية الأسبوع",
+      "closed_holiday": "مغلق — عطلة رسمية",
+      "daily_break": "استراحة يومية",
+      "data_lagged": "بيانات متأخرة"
     },
     "concept": {
       "regime": {
-        "title": "Why there is no combined score",
-        "body": "Reducing nine measures to a single index would force a choice of which one matters most. That choice is an **opinion**, and a weighted opinion is still an opinion — even shown with two decimals.\n\nMIA therefore shows the nine measures side by side, each verifiable, and leaves the synthesis to whoever takes the risk.",
-        "notSay": "None of these measures, alone or combined, tells you what to do. They describe a present state and past facts."
+        "title": "لماذا لا توجد درجة إجمالية",
+        "body": "اختزال تسعة قياسات في مؤشر واحد سيفرض تقرير أيها الأهم. هذا الاختيار **رأي**، والرأي الموزون يبقى رأيًا — ولو عُرِض بمنزلتين عشريتين.\n\nلذا تعرض MIA القياسات التسعة جنبًا إلى جنب، كلٌّ قابل للتحقق، وتترك التركيب لمن يتحمّل المخاطرة.",
+        "notSay": "لا شيء من هذه القياسات، منفردًا أو مجتمعًا، يدل على ما يجب فعله. إنها تصف حالة راهنة ووقائع ماضية."
       },
       "phase": {
-        "title": "What the phase describes",
-        "body": "The phase summarises **how** the price moves, not **where** it goes. The engine derives it from two measures already shown: the **trend** and the **volatility**. A clear trend in high volatility reads as an **expansion**; a clear trend in contained volatility, as a **trend**; a directionless market, as a **range** or **accumulation**.\n\nIt is a summary, not one more measure: it is fully recomposed from trend and volatility, and the Data tab shows which produced the label.",
-        "notSay": "Neither the duration of the phase, nor its remaining amplitude, nor when it will change. A phase can flip on the next candle."
+        "title": "ما يصفه الطور",
+        "body": "يلخّص الطور **كيف** يتحرك السعر، لا **إلى أين** يذهب. يستنبطه المحرك من قياسين معروضين سلفًا: **الاتجاه** و**التقلب**. اتجاه واضح في تقلب مرتفع يُقرأ **توسّعًا**؛ واتجاه واضح في تقلب محدود، **اتجاهًا**؛ وسوق بلا وجهة، **مدى** أو **تجميعًا**.\n\nفهو إذن خلاصة، لا قياس إضافي: يُعاد تركيبه بالكامل من الاتجاه والتقلب، وتُظهِر علامة تبويب البيانات أيهما أنتج الوسم.",
+        "notSay": "لا مدة الطور، ولا سعته المتبقية، ولا لحظة تغيّره. قد ينقلب طور عند الشمعة التالية."
       },
       "trend": {
-        "title": "How the trend is determined",
-        "body": "The trend **derives from the structure the engine detects**: it is the direction of the **last break** (BOS or CHOCH) not contradicted by an opposite one. As long as no protected level is broken on a close, a bullish trend **stays bullish**. It is anchored on a dated event (“since the bullish CHOCH of Jul 24”), the same one the Maturity tile names.\n\nWhen **no break** exists in the analysed history, the trend is **indeterminate** — never a fallback “neutral”. Consolidation is described by the Phase tile instead.",
-        "notSay": "A trend describes the recent past. It extends nothing and does not say when it will end. It does not measure the “strength” of the move — only its structural direction."
+        "title": "كيف يُحدَّد الاتجاه",
+        "body": "الاتجاه **مشتق من البنية التي يكتشفها المحرك**: إنه اتجاه **آخر كسر** (BOS أو CHOCH) لم يُناقَض بكسر معاكس. وما دام لا مستوى محمي يُكسَر عند الإغلاق، يبقى الاتجاه الصعودي **صعوديًا**. وهو مرتكز على حدث مؤرَّخ («منذ CHOCH الصعودي في 24 يوليو»)، ذاته الذي تسمّيه خانة النضج.\n\nوحين **لا يوجد أي كسر** في التاريخ المحلَّل، يكون الاتجاه **غير محدَّد** — لا «محايدًا» احتياطيًا أبدًا. أما التماسك فتصفه خانة الطور.",
+        "notSay": "الاتجاه يصف الماضي القريب. لا يطيل شيئًا ولا يقول متى سينتهي. لا يقيس «قوة» الحركة — بل اتجاهها البنيوي فقط."
       },
       "vol": {
-        "title": "What volatility counts",
-        "body": "The **average range** (high − low) of the **last 7** candles, compared to that of **all the candles preceding them** in the window — never a fixed number. The denominator is therefore always named, and the Data tab shows the full calculation so it can be redone.\n\n**Why it matters in SMC:** volatility sets the **width** of zones. An OB formed in high volatility is wider, and so takes longer to cross. It is a dimension, not a quality.",
-        "notSay": "No direction. Low volatility precedes a rise no more than a fall."
+        "title": "ما يحسبه التقلب",
+        "body": "**المدى المتوسط** (أعلى − أدنى) لآخر **7** شموع، منسوبًا إلى مدى **كل الشموع التي تسبقها** في النافذة — لا عددًا ثابتًا أبدًا. فالمقام مذكور دائمًا، وتُظهِر علامة تبويب البيانات الحساب الكامل ليكون قابلًا لإعادة الإجراء.\n\n**لماذا يهم في SMC:** التقلب يحدد **عرض** المناطق. OB متكوّن في تقلب مرتفع يكون أعرض، ومن ثمّ أطول عبورًا. إنه بُعد، لا ميزة.",
+        "notSay": "لا اتجاه. التقلب المنخفض لا يسبق صعودًا أكثر مما يسبق هبوطًا."
       },
       "pos": {
-        "title": "A measure, nothing more",
-        "body": "The position expresses as a percentage where the price sits between the retained structural low and high. 0 % = lower bound, 100 % = upper bound.\n\nIt is a **coordinate**. It makes two markets of very different scales comparable and immediately locates a zone relative to the bounds.",
-        "notSay": "Being at 43 % makes nothing more likely. Neither “mid-range so it will pick a side” nor the reverse: it is a location."
+        "title": "قياس، لا أكثر",
+        "body": "يعبّر الموضع بالنسبة المئوية عن مكان السعر بين قاع البنية وقمتها المعتمَدين. 0 % = الحافة السفلى، 100 % = الحافة العليا.\n\nإنه **إحداثي**. يجعل سوقين مختلفَي المقياس جدًا قابلين للمقارنة ويحدد فورًا موضع منطقة بالنسبة إلى الحدود.",
+        "notSay": "كون السعر عند 43 % لا يجعل أي شيء أكثر رجحانًا. لا «في المنتصف إذن سيختار جهة» ولا العكس: إنه موضع."
       },
       "align": {
-        "title": "Multi-timeframe alignment",
-        "body": "**What it counts:** how many timeframes show **right now** the same structural direction. When they diverge, MIA shows it just as plainly: disagreement is information, not a failure.\n\n**What the SMC convention makes of it:** many traders treat alignment as a **confluence** criterion in their own method.",
-        "notSay": "That an alignment makes an entry safer, more likely or less risky. No one can measure that on your account, your horizon and your risk management. MIA describes the fact — the interpretation is yours."
+        "title": "التوافق متعدد الأطر الزمنية",
+        "body": "**ما الذي يحسبه:** كم من الأطر الزمنية تُظهر **في هذه اللحظة** الاتجاه البنيوي نفسه. وعندما تتباين، تُظهر MIA ذلك بالوضوح نفسه: التعارُض معلومة، لا فشل.\n\n**ما تصنعه منه عُرف SMC:** كثير من المتداولين يعاملون التوافق بوصفه معيار **تقارُب** ضمن منهجهم الخاص.",
+        "notSay": "أن التوافق يجعل الدخول أكثر أمانًا أو أكثر رجحانًا أو أقل مخاطرة. لا أحد يستطيع قياس ذلك على حسابك وأفقك وإدارتك للمخاطر. MIA تصف الواقعة — والتفسير يبقى لك."
       },
       "mat": {
-        "title": "Structure maturity",
-        "body": "**What it counts:** the number of candles closed on the displayed timeframe since the **last confirmed CHOCH**. The starting point is always named with its date: once a counter exceeds a day, “11:00” alone becomes ambiguous.\n\nThe counter resets at the next CHOCH, never on a BOS — a BOS extends the structure, it does not restart it.",
-        "notSay": "An old structure is neither more nor less likely to continue. No probability is computed, and no comparison with the duration of past structures is made — that would invite a conclusion no one holds."
+        "title": "نضج البنية",
+        "body": "**ما الذي يحسبه:** عدد الشموع المغلَقة على الإطار الزمني المعروض منذ **آخر CHOCH مؤكَّد**. نقطة البداية مذكورة دائمًا مع تاريخها: ما إن يتجاوز العدّاد اليوم حتى تصبح «11:00» وحدها ملتبسة.\n\nيعود العدّاد إلى الصفر عند CHOCH التالي، ولا يعود أبدًا عند BOS — فـ BOS يطيل البنية، لا يعيد تشغيلها.",
+        "notSay": "بنية قديمة ليست أكثر ولا أقل عرضةً للاستمرار. لا يُحسَب أي رجحان، ولا تُجرى أي مقارنة مع مدة البنى الماضية — فذلك يغري بخلاصة لا يملكها أحد."
       },
       "last": {
-        "title": "BOS and CHOCH",
-        "body": "**BOS** — a break of an extreme **in the direction** of the current structure: it extends it. **CHOCH** — the first break **in the opposite direction**: the change of character, and the anchor of maturity.\n\nIn both cases MIA requires a **close** beyond the extreme, not a mere wick. That is what separates a level touched from a level given up.",
-        "notSay": "A BOS does not say the move will continue, a CHOCH does not say the trend is over. They are dated facts, not announcements."
+        "title": "BOS و CHOCH",
+        "body": "**BOS** — كسر لطرف **في اتجاه** البنية الجارية: يطيلها. **CHOCH** — أول كسر **في الاتجاه المعاكس**: إنه تغيّر الطابع، ويصلح مرساةً للنضج.\n\nفي كلتا الحالتين، تشترط MIA **إغلاقًا** وراء الطرف، لا مجرد فتيل. هذا ما يميّز مستوى ملموسًا عن مستوى متراجع.",
+        "notSay": "لا يقول BOS إن الحركة ستستمر، ولا يقول CHOCH إن الاتجاه انتهى. إنهما واقعتان مؤرَّختان، لا إعلانان."
       },
       "dens": {
-        "title": "Zone density",
-        "body": "**What it counts:** the zones still open detected on this timeframe, split by type and by state. Each zone is counted once, in a single state.\n\n**How to read it:** high density describes a market that has left many imbalances behind; low density, a market that has already filled its own.",
-        "notSay": "More zones does not mean more opportunities, and none is presented as better. Nothing indicates which will be reached, nor whether it will be."
+        "title": "كثافة المناطق",
+        "body": "**ما الذي يحسبه:** المناطق التي لا تزال مفتوحة والمكتشَفة على هذا الإطار الزمني، موزَّعة حسب النوع والحالة. تُحسَب كل منطقة مرة واحدة فقط، في حالة واحدة فقط.\n\n**كيف تقرؤه:** الكثافة العالية تصف سوقًا ترك وراءه اختلالات كثيرة؛ والكثافة المنخفضة، سوقًا ملأ بالفعل اختلالاته.",
+        "notSay": "المزيد من المناطق لا يعني المزيد من الفرص، ولا تُقدَّم أي منها على أنها أفضل. لا شيء يدل على أيها ستُبلَغ، ولا على ما إذا كانت ستُبلَغ."
       },
       "sess": {
-        "title": "The sessions",
-        "body": "Published **time windows**, like the volatility calendar: published facts, not market measurements.\n\nMany SMC traders read the market by session rather than treating the day as one block. The tile places the journal’s events within that segmentation.\n\n**On a continuous market** (crypto), the tile shows “Continuous market · 24/7”: there is no weekly open or close. Splitting the day into Asia / Europe / America hours is then a reading convention, not a market property.",
-        "notSay": "No session is presented as better or more reliable. MIA does not say what the New York close will do."
+        "title": "الجلسات",
+        "body": "**نوافذ زمنية**، شأنها شأن تقويم التقلب: وقائع منشورة، لا قياسات سوق.\n\nكثير من متداولي SMC يقرؤون السوق حسب الجلسة بدل معاملة اليوم ككتلة واحدة. تفيد الخانة في تحديد موضع أحداث السجل ضمن هذا التقطيع.\n\n**في سوق مستمر** (العملات المشفّرة)، تعرض الخانة «سوق مستمر · 24/7»: لا افتتاح ولا إغلاق أسبوعي. وحينئذٍ يبقى تقطيع اليوم إلى ساعات Asia / Europe / America عُرف قراءة، لا خاصية للسوق.",
+        "notSay": "لا تُقدَّم أي جلسة على أنها أفضل أو أوثق. لا تقول MIA ما سيفعله إغلاق New York."
       },
       "lvl": {
-        "title": "Markers, not zones",
-        "body": "These levels are not **detected**: they exist because time passes. The day open is the opening price of the current daily candle; the previous day high is simply the previous day’s extreme.\n\nThat is the difference with the **Position in range** tile, which uses **structural** bounds. Here the bounds are **temporal**: two distinct references, never the same figures.\n\nEach price is clickable: MIA traces the level on the chart and brings it into view. In the ICT approach these markers are often looked at before anything else, because everyone sees them the same way.",
-        "notSay": "Being below the day open foretells nothing about the close. A previous-day extreme is neither a support, nor a resistance, nor a target: it is a price reached yesterday, nothing more."
+        "title": "معالم، لا مناطق",
+        "body": "هذه المستويات ليست **مكتشَفة**: إنها موجودة لأن الزمن يمضي. افتتاح اليوم هو سعر افتتاح الشمعة اليومية الجارية؛ وأعلى الأمس هو ببساطة طرف اليوم السابق.\n\nهذا هو الفارق مع خانة **الموضع داخل المدى**، التي تستخدم حدودًا **بنيوية**. أما هنا فالحدود **زمنية**: مرجعان متمايزان، ليسا الأرقام نفسها أبدًا.\n\nكل سعر قابل للنقر: ترسم MIA المستوى على الرسم البياني وتحضره إلى العرض. في مقاربة ICT كثيرًا ما يُنظَر إلى هذه المعالم قبل أي شيء آخر، لأن الجميع يراها على النحو نفسه.",
+        "notSay": "كون السعر تحت افتتاح اليوم لا ينبئ بشيء عن الإغلاق. طرف الأمس ليس دعمًا ولا مقاومة ولا هدفًا: إنه سعر بُلِغ أمس، لا أكثر."
       }
     },
     "session": {
       "asia": "Asia",
       "london": "London",
       "new_york": "New York",
-      "overlap": "London / NY overlap",
-      "outside": "Between sessions",
-      "continuous": "Continuous market · 24/7",
-      "close": "close",
-      "open": "open"
+      "overlap": "تداخل London / NY",
+      "outside": "بين الجلسات",
+      "continuous": "سوق مستمر · 24/7",
+      "close": "إغلاق",
+      "open": "افتتاح"
     },
     "delay": {
-      "dh": "{d}d {h}h",
-      "hm": "{h}h {mm}",
+      "dh": "{d} ي {h} س",
+      "hm": "{h} س {mm}",
       "m": "{m} min"
     }
   },
@@ -968,13 +968,11 @@
       "sideAny": "كلاهما (SSL + BSL)",
       "sideBsl": "BSL (سيولة في الأعلى)",
       "sideSsl": "SSL (سيولة في الأسفل)",
-      "trendIndeterminate": "Indeterminate"
+      "trendIndeterminate": "غير محدَّدة"
     },
     "palette": {
-      "mtf_aligned_label": "3 TF aligned (structure)",
-      "mtf_aligned_desc": "The 3 timeframes (H4, H1, M15) show the same STRUCTURAL direction right now (last BOS/CHOCH break in the same direction). A timeframe with no structural trend established (indeterminate) prevents alignment.",
-      "trend_is_label": "Current trend (structure)",
-      "trend_is_desc": "The structural trend observed on this timeframe is, right now, the one you selected (bullish, bearish, or indeterminate when no break established it).",
+      "trend_is_label": "الاتجاه الحالي (البنية)",
+      "trend_is_desc": "الاتجاه البنيوي المُلاحَظ على هذا الإطار الزمني هو، في هذه اللحظة، الاتجاه المختار (صعودي أو هبوطي أو غير محدَّد حين لا يقرّره أي كسر).",
       "market_phase_is_label": "مرحلة السوق",
       "market_phase_is_desc": "مرحلة السوق المرصودة تطابق، في هذه اللحظة، المرحلة المختارة.",
       "volatility_is_label": "التقلّب المرصود",
@@ -1133,7 +1131,65 @@
         "opposite": "في الاتجاه المعاكس",
         "same": "في الاتجاه ذاته"
       },
-      "touches": "{n} مرة"
+      "touches": "{n} مرة",
+      "age_bucket": {
+        "10to50": "10 إلى 50",
+        "gt50": "أكثر من 50",
+        "lt10": "أقل من 10"
+      },
+      "direction": {
+        "any": "أي اتجاه",
+        "bearish": "هبوطي",
+        "bullish": "صعودي"
+      },
+      "eq_kind": {
+        "any": "قيعان أو قمم",
+        "highs": "قمم",
+        "lows": "قيعان"
+      },
+      "event": {
+        "bos_down": "BOS ↓",
+        "bos_up": "BOS ↑",
+        "choch_down": "CHOCH ↓",
+        "choch_up": "CHOCH ↑"
+      },
+      "phase": {
+        "accumulation": "تجميع",
+        "expansion": "توسّع",
+        "ranging": "مدى",
+        "trend": "اتجاه"
+      },
+      "session": {
+        "asia": "Asia",
+        "london": "London",
+        "new_york": "New York",
+        "overlap": "تداخل"
+      },
+      "side": {
+        "any": "كلاهما",
+        "bsl": "BSL (فوق)",
+        "ssl": "SSL (تحت)"
+      },
+      "third": {
+        "bottom": "سفلي",
+        "middle": "أوسط",
+        "top": "علوي"
+      },
+      "trend": {
+        "bearish": "هبوطية",
+        "bullish": "صعودية",
+        "indeterminate": "غير محدَّدة"
+      },
+      "volatility": {
+        "elevated": "ممتدة",
+        "low": "منكمشة",
+        "normal": "عادية"
+      },
+      "zone_kind": {
+        "any": "OB أو FVG",
+        "fvg": "Fair Value Gap",
+        "ob": "Order Block"
+      }
     },
     "recap": {
       "and": "و",
@@ -1330,7 +1386,7 @@
       "liquidityStatus_intact": "سليمة",
       "liquidityStatus_swept": "مكنوسة",
       "liquidityStatus_broken": "مكسورة",
-      "trendAdj_indeterminate": "indeterminate",
+      "trendAdj_indeterminate": "غير محدَّد",
       "trend_indeterminate": "اتجاه غير محدَّد"
     },
     "structure": {
@@ -1377,7 +1433,7 @@
       "lastEvent": "{kind} {dir} {val} ({tf})",
       "zoneDensity": "{ob} OB · {fvg} FVG نشطة",
       "mtfAligned": "الأُطُر الزمنية الـ {count} متوائمة ({dir}).",
-      "mtfNeutral": "{count, plural, one {The upper unit has no structural trend established} other {The # upper units have no structural trend established}}.",
+      "mtfNeutral": "{count, plural, zero {الوحدات العليا بلا اتجاه بنيوي مستقر} one {الوحدة العليا بلا اتجاه بنيوي مستقر} two {الوحدتان العلويتان بلا اتجاه بنيوي مستقر} few {الوحدات # العليا بلا اتجاه بنيوي مستقر} many {الوحدات # العليا بلا اتجاه بنيوي مستقر} other {الوحدات # العليا بلا اتجاه بنيوي مستقر}}.",
       "mtfPullback": "يرتدّ M15 عكس اتجاه H4 {fem}.",
       "mtfDivergent": "تتباعد الأُطُر الزمنية: {list}."
     },
@@ -1424,40 +1480,40 @@
       "mtf_aligned": "أُطُر زمنية متوائمة",
       "mtf_divergent": "أُطُر زمنية متباعدة",
       "mtf_mixed": "أُطُر زمنية مختلطة",
-      "trend_indeterminate": "Indeterminate trend"
+      "trend_indeterminate": "اتجاه غير محدَّد"
     },
     "help": {
       "regime": {
-        "title": "Reading the market regime",
-        "body": "These six measures describe the **current** state of the market, each with its source shown below it. None is a forecast, none is weighted.\n\nThe little **?** on each measure explains exactly what it counts, and what it does not say."
+        "title": "قراءة نظام السوق",
+        "body": "هذه القياسات الستة تصف الحالة **الراهنة** للسوق، لكلٍّ منها مصدره المعروض تحته. لا شيء منها تنبؤ، ولا شيء منها موزون.\n\nعلامة **؟** الصغيرة لكل قياس تشرح ما يحسبه بالضبط، وما لا يقوله."
       },
       "trend": {
-        "title": "Trend",
-        "body": "**What it counts:** the sequence of highs and lows on **the displayed timeframe** (here H1). Falling highs and lows → bearish. This is a reading of past structure, not a projection.\n\n**Classic trap:** the trend is not the same across all timeframes. A bearish M15 inside a bullish H4 is not a contradiction — it's a matter of scale. Change the TF and the answer changes."
+        "title": "الاتجاه",
+        "body": "**ما الذي يحسبه:** تعاقب القمم والقيعان على **الإطار الزمني المعروض** (هنا H1). قمم وقيعان متناقصة ← هبوطي. إنها قراءة لبنية ماضية، لا إسقاط.\n\n**فخ كلاسيكي:** الاتجاه ليس نفسه على كل الأطر الزمنية. M15 هبوطي داخل H4 صعودي ليس تناقضًا — بل مسألة مقياس. غيّر الإطار الزمني تتغيّر الإجابة."
       },
       "vol": {
-        "title": "Volatility",
-        "body": "**What it counts:** the average range of the most recent candles compared with that of the candles preceding them. \"Normal\" = within its usual range.\n\n**Why it's useful in SMC:** volatility changes the **size** of zones. An OB formed in high volatility is wider, and therefore takes longer to cross. This isn't a quality, it's a dimension.\n\n**What it does not say:** no direction. Low volatility can precede anything."
+        "title": "التقلب",
+        "body": "**ما الذي يحسبه:** المدى المتوسط لآخر الشموع مقارنًا بمدى الشموع التي تسبقها. «عادية» = ضمن نطاقها المعتاد.\n\n**لماذا هي مفيدة في SMC:** التقلب يغيّر **حجم** المناطق. OB متكوّن في تقلب مرتفع يكون أعرض، ومن ثمّ أطول عبورًا. هذه ليست ميزة، بل بُعد.\n\n**ما لا يقوله:** لا اتجاه. قد يسبق التقلب المنخفض أي شيء."
       },
       "mat": {
-        "title": "Structure maturity",
-        "body": "**What it counts:** the number of candles closed on the displayed timeframe **since the last confirmed CHOCH** (here, the one at 14:00). The starting point is always named below the value — a counter without an origin means nothing.\n\n**What it does not say:** an older structure is neither more nor less likely to continue. No probability is computed here."
+        "title": "نضج البنية",
+        "body": "**ما الذي يحسبه:** عدد الشموع المغلَقة على الإطار الزمني المعروض **منذ آخر CHOCH مؤكَّد** (هنا، ذاك الذي عند 14:00). نقطة البداية مذكورة دائمًا تحت القيمة — عدّاد بلا أصل لا يعني شيئًا.\n\n**ما لا يقوله:** بنية قديمة ليست أكثر ولا أقل عرضةً للاستمرار. لا يُحسَب هنا أي رجحان."
       },
       "align": {
-        "title": "Multi-timeframe alignment",
-        "body": "**What it counts:** the three analysed timeframes are **right now** showing the same structural direction. When they diverge, MIA shows that just as plainly (\"Disagreement\") — disagreement is information, not a failure.\n\n**What the SMC convention makes of it:** many traders treat alignment as a **confluence** criterion within their own method, and read disagreement as the sign that two scales are telling two different stories.\n\n**What MIA will never assert:** that an alignment makes an entry safer, more likely or less risky. No one can measure that on your account, your horizon and your risk management. MIA describes the fact; the interpretation stays yours."
+        "title": "التوافق متعدد الأطر الزمنية",
+        "body": "**ما الذي يحسبه:** الأطر الزمنية الثلاثة المحلَّلة تُظهر **في هذه اللحظة** الاتجاه البنيوي نفسه. وعندما تتباين، تُظهر MIA ذلك بالوضوح نفسه («تعارُض») — التعارُض معلومة، لا فشل.\n\n**ما تصنعه منه عُرف SMC:** كثير من المتداولين يعاملون التوافق بوصفه معيار **تقارُب** ضمن منهجهم الخاص، ويقرؤون التعارُض علامةً على أن مقياسين يرويان حكايتين مختلفتين.\n\n**ما لن تؤكّده MIA أبدًا:** أن التوافق يجعل الدخول أكثر أمانًا أو أكثر رجحانًا أو أقل مخاطرة. لا أحد يستطيع قياس ذلك على حسابك وأفقك وإدارتك للمخاطر. MIA تصف الواقعة؛ والتفسير يبقى لك."
       },
       "dens": {
-        "title": "Zone density",
-        "body": "**What it counts:** the number of still-active zones detected on this timeframe.\n\n**How to read it:** high density describes a market that has left many imbalances behind it; low density, a market that has already filled most of its own. More zones does not mean more opportunities — only more levels to watch."
+        "title": "كثافة المناطق",
+        "body": "**ما الذي يحسبه:** عدد المناطق التي لا تزال نشطة والمكتشَفة على هذا الإطار الزمني.\n\n**كيف تقرؤه:** الكثافة العالية تصف سوقًا ترك وراءه اختلالات كثيرة؛ والكثافة المنخفضة، سوقًا ملأ بالفعل معظم اختلالاته. المزيد من المناطق لا يعني المزيد من الفرص — بل مجرد مستويات أكثر للمراقبة."
       },
       "struct": {
-        "title": "The four structure objects",
-        "body": "**OB (Order Block)** — the last candle of opposite direction before the impulsive move that broke the structure.\n\n**FVG (Fair Value Gap)** — the gap left by three candles whose wicks do not overlap. It fills progressively: MIA shows the percentage actually filled.\n\n**BOS** — break of an extreme **in the direction** of the current structure. **CHOCH** — first break **in the opposite direction**: this is the change of character.\n\nMIA detects, describes and dates these objects. It never says which one \"is going to work\"."
+        "title": "أشياء البنية الأربعة",
+        "body": "**OB (Order Block)** — آخر شمعة معاكسة الاتجاه قبل الحركة الاندفاعية التي كسرت البنية.\n\n**FVG (Fair Value Gap)** — الفجوة التي تتركها ثلاث شموع لا تتداخل فتائلها. تُملأ تدريجيًا: تعرض MIA النسبة المملوءة فعليًا.\n\n**BOS** — كسر لطرف **في اتجاه** البنية الجارية. **CHOCH** — أول كسر **في الاتجاه المعاكس**: إنه تغيّر الطابع.\n\nتكتشف MIA هذه الأشياء وتصفها وتؤرِّخها. ولا تقول أبدًا أيها «سينجح»."
       },
       "liq": {
-        "title": "External liquidity: where and in what state",
-        "body": "**BSL** — buy-side liquidity, above highs and equal highs. **SSL** — sell-side liquidity, below lows and equal lows.\n\n**Intact** — never touched. **Swept** — a wick went beyond but the close came back short of it: the level **still holds**. **Broken** — a clean close beyond: it gave way.\n\n**The distinction to remember:** touched does not equal broken. That's the nuance most tools flatten into a single binary state.\n\nMIA will never write that a pocket will be \"taken\": that's a prediction, and no one knows it."
+        "title": "السيولة الخارجية: أين وفي أي حالة",
+        "body": "**BSL** — سيولة الشراء، فوق القمم والقمم المتساوية. **SSL** — سيولة البيع، تحت القيعان والقيعان المتساوية.\n\n**سليمة** — لم تُلمَس قط. **مكتسحة** — تجاوزها فتيل لكن الإغلاق عاد دونها: المستوى **لا يزال صامدًا**. **مكسورة** — إغلاق واضح وراءها: تراجعت.\n\n**الفارق الذي يجب تذكّره:** ملموس لا يعني مكسورًا. هذه هي الفروق الدقيقة التي تسحقها معظم الأدوات في حالة ثنائية واحدة.\n\nلن تكتب MIA أبدًا أن جيبًا «سيُؤخَذ»: فذلك تنبؤ، ولا أحد يعرفه."
       }
     }
   },
@@ -1631,7 +1687,7 @@
       "sessionRow": "الجلسة",
       "sessionValue": "مُسجَّل الدخول على هذا الجهاز",
       "sectionAppearance": "المظهر",
-      "sectionLanguage": "Language",
+      "sectionLanguage": "اللغة",
       "appearanceBadge": "يُطبَّق فورًا · محفوظ",
       "sectionSubscription": "الاشتراك",
       "planRow": "الخطة الحالية",
@@ -1754,120 +1810,120 @@
       }
     },
     "struct": {
-      "title": "Market structure",
+      "title": "بنية السوق",
       "zonesCount": "{count, plural, one {# zone} other {# zones}}",
       "countFiltered": "{n} of {m} zones",
-      "reset": "Reset",
-      "noneType": "No type selected. Pick at least one type to see results.",
-      "noneState": "No state selected. Pick at least one state to see results.",
-      "noMatch1": "No zone matches these filters.",
-      "noMatch2": "Nothing is invented to fill the list.",
-      "sortAria": "Sort and filter",
-      "helpAria": "Learn more",
+      "reset": "إعادة تعيين",
+      "noneType": "لم يُختَر أي نوع. اختر نوعًا واحدًا على الأقل لعرض النتائج.",
+      "noneState": "لم تُختَر أي حالة. اختر حالة واحدة على الأقل لعرض النتائج.",
+      "noMatch1": "لا توجد منطقة تطابق هذه المرشّحات.",
+      "noMatch2": "لا شيء يُختلَق لملء القائمة.",
+      "sortAria": "الترتيب والتصفية",
+      "helpAria": "اعرف المزيد",
       "filterType": "Type",
-      "filterState": "State",
-      "filterSort": "Sort by",
+      "filterState": "الحالة",
+      "filterSort": "الترتيب حسب",
       "type": {
-        "all": "All",
+        "all": "الكل",
         "ob": "OB",
         "fvg": "FVG"
       },
       "st": {
-        "all": "All",
-        "active": "Active",
-        "tested": "Tested",
-        "mitig": "Mitigated"
+        "all": "الكل",
+        "active": "نشطة",
+        "tested": "مُختبَرة",
+        "mitig": "مُخفَّفة"
       },
       "sort": {
-        "near": "Near price",
-        "recent": "Recent",
-        "big": "Wide"
+        "near": "قريبة من السعر",
+        "recent": "حديثة",
+        "big": "واسعة"
       },
       "badge": {
-        "active": "Active",
-        "tested": "Tested",
-        "mitig": "Mitigated"
+        "active": "نشط",
+        "tested": "مُختبَر",
+        "mitig": "مُخفَّف"
       },
       "dist": {
-        "inside": "Price inside the zone",
+        "inside": "السعر داخل المنطقة",
         "above": "+{pct}% above",
         "below": "−{pct}% below"
       },
       "fact": {
-        "neverTested": "Never tested since it formed.",
-        "tested": "Tested.",
-        "mitigatedAt": "Mitigated at {time}.",
-        "mitigated": "Mitigated.",
-        "filled": "Fully filled.",
-        "partial": "Filled to {pct}%.",
-        "fvgOpen": "Gap open."
+        "neverTested": "لم تُختبَر منذ تكوّنها.",
+        "tested": "مُختبَرة.",
+        "mitigatedAt": "مُخفَّفة عند {time}.",
+        "mitigated": "مُخفَّفة.",
+        "filled": "مملوءة بالكامل.",
+        "partial": "مملوءة بنسبة {pct} %.",
+        "fvgOpen": "فجوة مفتوحة."
       },
-      "more": "Learn more",
-      "hint": "Click a zone = highlight on the chart.",
-      "empty1": "No zone matches these filters.",
-      "empty2": "Nothing is invented to pad the list.",
-      "evChoch": "Confirmed change of character",
-      "evBosBull": "Bullish break of structure",
-      "evBosBear": "Bearish break of structure",
+      "more": "اعرف المزيد",
+      "hint": "النقر على منطقة = إبرازها على الرسم البياني.",
+      "empty1": "لا توجد منطقة تطابق هذه المرشّحات.",
+      "empty2": "لا شيء يُختلَق لملء القائمة.",
+      "evChoch": "تغيّر طابع مؤكَّد",
+      "evBosBull": "كسر بنية صعودي",
+      "evBosBear": "كسر بنية هبوطي",
       "evSelectAria": "تأطير الحدث {kind} على الرسم البياني",
       "unitLabel": "الوحدة الزمنية: {tf}"
     },
     "liq2": {
-      "title": "External liquidity",
-      "pochesCount": "{count, plural, one {# pocket} other {# pockets}}",
-      "countFiltered": "{n} of {m} pockets",
-      "reset": "Reset",
-      "noneSide": "No side selected. Pick at least one side to see results.",
-      "noneState": "No state selected. Pick at least one state to see results.",
-      "noMatch1": "No pocket matches these filters.",
-      "noMatch2": "Nothing is invented to fill the list.",
-      "sortAria": "Sort and filter",
-      "helpAria": "Learn more",
-      "filterSide": "Side",
-      "filterState": "State",
+      "title": "السيولة الخارجية",
+      "pochesCount": "{count, plural, zero {# جيب} one {# جيب} two {جيبان} few {# جيوب} many {# جيبًا} other {# جيب}}",
+      "countFiltered": "{n} من {m} جيوب",
+      "reset": "إعادة تعيين",
+      "noneSide": "لم تُختَر أي جهة. اختر جهة واحدة على الأقل لعرض النتائج.",
+      "noneState": "لم تُختَر أي حالة. اختر حالة واحدة على الأقل لعرض النتائج.",
+      "noMatch1": "لا يوجد جيب يطابق هذه المرشّحات.",
+      "noMatch2": "لا شيء يُختلَق لملء القائمة.",
+      "sortAria": "الترتيب والتصفية",
+      "helpAria": "اعرف المزيد",
+      "filterSide": "الجهة",
+      "filterState": "الحالة",
       "side": {
-        "all": "Both",
-        "bsl": "BSL (buy)",
-        "ssl": "SSL (sell)"
+        "all": "كلاهما",
+        "bsl": "BSL (شراء)",
+        "ssl": "SSL (بيع)"
       },
       "st": {
-        "all": "All",
-        "intact": "Intact",
-        "swept": "Swept",
-        "broken": "Broken"
+        "all": "الكل",
+        "intact": "سليمة",
+        "swept": "مكتسحة",
+        "broken": "مكسورة"
       },
       "badge": {
-        "intact": "Intact",
-        "swept": "Swept",
-        "broken": "Broken"
+        "intact": "سليمة",
+        "swept": "مكتسحة",
+        "broken": "مكسورة"
       },
       "src": {
         "eqh": "EQH",
         "eql": "EQL",
-        "high": "High",
-        "low": "Low"
+        "high": "قمة",
+        "low": "قاع"
       },
       "dist": {
         "above": "+{pct}% above",
         "below": "−{pct}% below"
       },
       "fact": {
-        "intact": "Never touched since it formed.",
-        "swept": "Wick beyond, close came back. Still holds.",
-        "broken": "Clean close beyond. Gave way."
+        "intact": "لم تُلمَس منذ تكوّنها.",
+        "swept": "فتيل تجاوزها، والإغلاق عاد. لا تزال صامدة.",
+        "broken": "إغلاق واضح وراءها. تراجعت."
       },
-      "hint": "Click a pocket = highlight its level.",
-      "empty1": "No pocket matches this filter.",
-      "empty2": "Nothing is invented to pad the list."
+      "hint": "النقر على جيب = إبراز مستواه.",
+      "empty1": "لا يوجد جيب يطابق هذا المرشّح.",
+      "empty2": "لا شيء يُختلَق لملء القائمة."
     },
     "reg2": {
-      "trendSub": "measured on {tf}",
-      "volSub": "7 recent vs preceding",
-      "matSub": "since the CHOCH at {time}",
-      "matValue": "{count, plural, one {# candle} other {# candles}}",
-      "densSub": "active on {tf}",
-      "measureHelpAria": "Help on this measure",
-      "helpAria": "Learn more"
+      "trendSub": "مقيسة على {tf}",
+      "volSub": "7 حديثة مقابل السابقة",
+      "matSub": "منذ CHOCH عند {time}",
+      "matValue": "{count, plural, zero {# شمعة} one {# شمعة} two {شمعتان} few {# شمعات} many {# شمعة} other {# شمعة}}",
+      "densSub": "نشطة على {tf}",
+      "measureHelpAria": "مساعدة حول هذا القياس",
+      "helpAria": "اعرف المزيد"
     }
   },
   "samples": {
@@ -2301,7 +2357,7 @@
       "filledPct": "ممتلئة {pct} %"
     },
     "deeplink": {
-      "staleNotice": "This zone is no longer detected in the current reading."
+      "staleNotice": "لم تعد هذه المنطقة مكتشَفة في القراءة الحالية."
     }
   },
   "appearance": {

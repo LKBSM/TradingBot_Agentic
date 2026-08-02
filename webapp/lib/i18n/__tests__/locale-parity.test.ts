@@ -45,31 +45,17 @@ function flattenKeys(obj: unknown, prefix = '', out: Set<string> = new Set()): S
 const REFERENCE = flattenKeys(MESSAGES[DEFAULT_LOCALE]);
 
 /**
- * DEBT RATCHET (DETTE-1). MISSING keys are now paid down to ZERO for every
- * locale — the 196 fr keys that were absent from the 7 non-en locales
- * (scanner 98 + calendar 91 + regimePanel 5 + reading 1 + app 1) have been
- * translated and filled, so no client sees a raw key. `missing: 0` is therefore
- * ENFORCED for all locales: add a key to fr without propagating it and this
- * fails at `npm test` (CI), never in front of a client.
+ * STRICT PARITY (DETTE-1). Every non-fr locale now carries EXACTLY the same key
+ * set as fr — the 196 absent keys were filled, the scanner opt.* divergence was
+ * healed (added to fr), and the dead `mtf_aligned` orphans were removed. So this
+ * guard enforces zero missing AND zero orphan keys: add a key to fr without
+ * propagating it (or leave an orphan) and it fails at `npm test` (in CI), never
+ * in front of a client staring at a raw `namespace.key`.
  *
- * ORPHAN keys (present in a locale, absent in fr) remain as a smaller,
- * pre-existing debt — all in `scanner` (en 36, the 7 non-en 2 each): fr never
- * received those keys. Ratcheted so it can't grow; to burn down, add the keys to
- * fr (if used) or delete the orphans (if dead). Separately, some namespaces still
- * hold English VALUES in the 7 locales (regimePanel/app/reading) — the ACCUEIL
- * (home) is fully translated; the rest is a follow-up (see AUDIT-dette-1.md).
+ * (This is KEY parity. A stricter "no English VALUE" check is separate — the
+ * ACCUEIL is fully translated and most other namespaces now are too; a few
+ * legitimately-same-as-English tokens remain, see AUDIT-dette-1.md.)
  */
-const BASELINE: Record<string, { missing: number; orphan: number }> = {
-  en: { missing: 0, orphan: 36 },
-  de: { missing: 0, orphan: 2 },
-  es: { missing: 0, orphan: 2 },
-  it: { missing: 0, orphan: 2 },
-  pt: { missing: 0, orphan: 2 },
-  nl: { missing: 0, orphan: 2 },
-  pl: { missing: 0, orphan: 2 },
-  ar: { missing: 0, orphan: 2 },
-};
-
 describe('i18n locale parity (guard e)', () => {
   it('ships a message file for every SUPPORTED_LOCALE', () => {
     for (const loc of SUPPORTED_LOCALES) {
@@ -83,24 +69,14 @@ describe('i18n locale parity (guard e)', () => {
 
   for (const loc of SUPPORTED_LOCALES) {
     if (loc === DEFAULT_LOCALE) continue;
-    it(`${loc} never drifts FURTHER from ${DEFAULT_LOCALE} (missing/orphan ≤ baseline)`, () => {
+    it(`${loc} has exactly the same keys as ${DEFAULT_LOCALE} (no missing, no orphan)`, () => {
       const keys = flattenKeys(MESSAGES[loc]);
       const missing = [...REFERENCE].filter((k) => !keys.has(k));
       const orphan = [...keys].filter((k) => !REFERENCE.has(k));
-      const base = BASELINE[loc] ?? { missing: 0, orphan: 0 };
-      // A NEW missing key (regression) trips this — it must be added to `${loc}`
-      // too (translated, or the parity debt burned down; never left for a client).
       expect(
-        missing.length,
-        `${loc}: ${missing.length} missing key(s) — baseline ${base.missing}. New drift: ${missing
-          .filter((k) => true)
-          .slice(0, 20)
-          .join(', ')}`,
-      ).toBeLessThanOrEqual(base.missing);
-      expect(
-        orphan.length,
-        `${loc}: ${orphan.length} orphan key(s) — baseline ${base.orphan}`,
-      ).toBeLessThanOrEqual(base.orphan);
+        { missing: missing.slice(0, 25), orphan: orphan.slice(0, 25) },
+        `${loc}: ${missing.length} missing, ${orphan.length} orphan key(s)`,
+      ).toEqual({ missing: [], orphan: [] });
     });
   }
 });

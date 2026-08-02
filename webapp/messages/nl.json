@@ -386,38 +386,38 @@
     }
   },
   "regimePanel": {
-    "help": "Learn more",
-    "measureHelp": "Explain this measure",
-    "close": "Close",
-    "tabData": "Data",
+    "help": "Meer weten",
+    "measureHelp": "Deze meting uitleggen",
+    "close": "Sluiten",
+    "tabData": "Gegevens",
     "tabConcept": "Concept",
-    "unavailable": "not available",
-    "notSayLabel": "What it doesn't say",
-    "continuous": "Continuous market · 24/7",
-    "headerBadge": "{tf} · last close {time}",
+    "unavailable": "niet beschikbaar",
+    "notSayLabel": "Wat het niet zegt",
+    "continuous": "Continue markt · 24/7",
+    "headerBadge": "{tf} · laatste close {time}",
     "tiles": {
-      "phase": "Market phase",
+      "phase": "Marktfase",
       "trend": "Trend",
-      "vol": "Volatility",
-      "pos": "Position in range",
-      "align": "Alignment",
-      "mat": "Maturity",
-      "last": "Last event",
-      "dens": "Density",
+      "vol": "Volatiliteit",
+      "pos": "Positie in de range",
+      "align": "Alignering",
+      "mat": "Rijpheid",
+      "last": "Laatste gebeurtenis",
+      "dens": "Dichtheid",
       "sess": "Session",
-      "lvl": "Reference levels"
+      "lvl": "Referentieniveaus"
     },
     "sub": {
-      "phase": "derived from trend and volatility",
-      "trend": "measured on {tf}",
-      "vol": "{recent} recent vs {baseline} preceding",
+      "phase": "afgeleid van de trend en de volatiliteit",
+      "trend": "gemeten op {tf}",
+      "vol": "{recent} laatste vs {baseline} voorgaande",
       "pos": "{low} – {high}",
-      "mat": "since the {dir} CHOCH of {date}",
-      "dens": "open on {tf}",
-      "lvl": "{count, plural, one {# marker} other {# markers}} · open the detail",
-      "sess": "{label} in {delay}",
-      "trendRef": "since the {dir} {kind} of {date}",
-      "trendNone": "no structural trend established",
+      "mat": "sinds de CHOCH {dir} van {date}",
+      "dens": "open op {tf}",
+      "lvl": "{count, plural, one {# baken} other {# bakens}} · open het detail",
+      "sess": "{label} over {delay}",
+      "trendRef": "sinds de {kind} {dir} van {date}",
+      "trendNone": "geen vastgestelde structurele trend",
       "lvlNA": "niet van toepassing op {tf}: de vorige dag is de vorige kaars",
       "sessNA": "niet van toepassing op {tf}: de kaars omvat alle sessies"
     },
@@ -426,185 +426,185 @@
       "mat": "{approx}{count, plural, one {# candle} other {# candles}}",
       "dens": "{ob} OB · {fvg} FVG",
       "align": "{count}/{total} TF {arrow}",
-      "dirUp": "bullish",
-      "dirDown": "bearish",
+      "dirUp": "haussier",
+      "dirDown": "baissier",
       "kindChoch": "CHOCH",
       "kindBos": "BOS",
-      "alignIndeterminate": "no structural trend established",
-      "alignIndetCount": "{count, plural, one {# indeterminate} other {# indeterminate}}",
+      "alignIndeterminate": "geen vastgestelde structurele trend",
+      "alignIndetCount": "{count, plural, one {# onbepaald} other {# onbepaald}}",
       "alignNone": "geen hogere eenheid",
       "notApplicable": "niet van toepassing"
     },
     "data": {
-      "phaseHead": "The two measures it is built from",
+      "phaseHead": "De twee metingen waaruit ze is opgebouwd",
       "trendRow": "Trend",
-      "volRow": "Volatility",
-      "ruleRow": "Rule applied",
-      "phaseNote": "The phase is fully recomposed from these two measures: no information is added, only summarised.",
-      "trendHead": "The rule, in plain terms",
-      "resultRow": "Result",
-      "measuredOnRow": "Measured on",
-      "trendNote": "The engine compares the net move (first → last close) to the window’s range, on {tf}. The intermediate values stay engine-side; the rule and its result are shown here.",
-      "volHead": "The calculation, in plain terms",
-      "volRecent": "Average range — last {n}",
-      "volBaseline": "Average range — preceding {n}",
-      "volRatio": "Ratio",
-      "volThresholds": "Thresholds",
-      "volThresholdsValue": "<{low} low · >{high} elevated",
-      "volNote": "The denominator is named: the comparison uses the {n} candles preceding the last 7, on the same timeframe.",
-      "posHead": "Where the price sits between the structural bounds",
-      "currentPrice": "Current price",
-      "distTop": "Distance to upper bound",
-      "distBottom": "Distance to lower bound",
-      "rangeSpan": "Bound span",
-      "barLow": "{v} · low",
-      "barHigh": "{v} · high",
-      "boundLow": "Range lower bound",
-      "boundHigh": "Range upper bound",
-      "posNote": "These bounds are **structural**: the range extremes retained by the engine. Not to be confused with the reference levels, which are **temporal**.",
-      "alignHead": "The per-timeframe detail",
+      "volRow": "Volatiliteit",
+      "ruleRow": "Toegepaste regel",
+      "phaseNote": "De fase wordt volledig heropgebouwd uit deze twee metingen: er wordt geen informatie toegevoegd, alleen samengevat.",
+      "trendHead": "De regel, in het kort",
+      "resultRow": "Resultaat",
+      "measuredOnRow": "Gemeten op",
+      "trendNote": "De engine vergelijkt de netto verplaatsing (eerste → laatste close) met de amplitude van het venster, op {tf}. De tussenliggende waarden blijven aan de engine-kant; de regel en het resultaat ervan worden hier weergegeven.",
+      "volHead": "De berekening, in het kort",
+      "volRecent": "Gemiddelde range — laatste {n}",
+      "volBaseline": "Gemiddelde range — voorgaande {n}",
+      "volRatio": "Verhouding",
+      "volThresholds": "Drempels",
+      "volThresholdsValue": "<{low} laag · >{high} verhoogd",
+      "volNote": "De noemer wordt genoemd: de vergelijking betreft de {n} candles die aan de laatste 7 voorafgaan, op dezelfde tijdseenheid.",
+      "posHead": "Waar de prijs zich bevindt tussen de structurele grenzen",
+      "currentPrice": "Huidige prijs",
+      "distTop": "Afstand tot de bovenrand",
+      "distBottom": "Afstand tot de onderrand",
+      "rangeSpan": "Amplitude van de grenzen",
+      "barLow": "{v} · laag",
+      "barHigh": "{v} · hoog",
+      "boundLow": "Ondergrens van de range",
+      "boundHigh": "Bovengrens van de range",
+      "posNote": "Deze grenzen zijn **structureel**: de door de engine weerhouden range-extremen. Niet te verwarren met de referentieniveaus, die **temporeel** zijn.",
+      "alignHead": "Het detail per tijdseenheid",
       "alignNote": "The available timeframes and their structural direction. When one diverges, its line is highlighted here rather than hidden.",
-      "matHead": "The counter’s anchor",
-      "anchorEvent": "Anchor event",
-      "crossedLevel": "Level crossed",
-      "barsSince": "Candles closed since",
-      "elapsed": "Time elapsed",
-      "eventsSince": "Events since then",
-      "lastHead": "The most recent event",
+      "matHead": "Het anker van de teller",
+      "anchorEvent": "Ankergebeurtenis",
+      "crossedLevel": "Niveau overschreden",
+      "barsSince": "Candles gesloten sindsdien",
+      "elapsed": "Verstreken tijd",
+      "eventsSince": "Gebeurtenissen sindsdien",
+      "lastHead": "De meest recente gebeurtenis",
       "typeRow": "Type",
-      "crossedExtreme": "Extreme crossed",
-      "journal": "Event journal · {tf}",
-      "journalCount": "{count, plural, one {# event} other {# events}} over the analysed window ({bars} candles, ≈ {span})",
-      "seeOnChart": "Show these events on the chart",
-      "densHead": "Zone inventory · {tf}",
-      "obActive": "Order Blocks — active",
-      "obTested": "Order Blocks — tested (unmitigated)",
-      "obMitigated": "Order Blocks — mitigated",
-      "fvgOpen": "FVG open — total",
-      "fvgUntouched": "— of which never touched",
-      "fvgPartial": "— of which partially filled",
-      "densNote": "Partially filled ones are **included** in the total of open FVGs. A fully filled FVG leaves the count (the engine no longer keeps it).",
-      "filterInStructure": "Filter these zones in Market structure",
-      "sessHead": "Hours · New York time",
-      "marketState": "Market state",
-      "marketLocalTime": "Market local time",
-      "weeklyClose": "Weekly close",
-      "weeklyCloseValue": "Fri 17:00",
-      "nextOpen": "Next open",
-      "lvlHead": "Temporal markers · current price {price}",
-      "dayOpen": "Day open",
-      "weekOpen": "Week open",
-      "prevDayHigh": "Previous day high",
-      "prevDayLow": "Previous day low",
-      "prevWeekHigh": "Previous week high",
-      "prevWeekLow": "Previous week low",
-      "lvlNote": "Click a price: the level is traced on the chart and brought into view. Click again to remove it.",
-      "lvlPeriodDay": "the previous day",
-      "lvlPeriodWeek": "the previous week",
-      "lvlInsufficient": "Insufficient data for {periods}: the period is not fully covered by the available history.",
-      "relAbove": "{pct} % above",
-      "relBelow": "{pct} % below",
-      "relAt": "at the current price",
+      "crossedExtreme": "Extreem overschreden",
+      "journal": "Journaal van de gebeurtenissen · {tf}",
+      "journalCount": "{count, plural, one {# gebeurtenis} other {# gebeurtenissen}} over het geanalyseerde venster ({bars} candles, ≈ {span})",
+      "seeOnChart": "Deze gebeurtenissen op de grafiek tonen",
+      "densHead": "Inventaris van de zones · {tf}",
+      "obActive": "Order Blocks — actief",
+      "obTested": "Order Blocks — getest (niet gemitigeerd)",
+      "obMitigated": "Order Blocks — gemitigeerd",
+      "fvgOpen": "Open FVG's — totaal",
+      "fvgUntouched": "— waarvan nooit aangeraakt",
+      "fvgPartial": "— waarvan gedeeltelijk opgevuld",
+      "densNote": "De gedeeltelijk opgevulde worden in het totaal van de open FVG's **meegeteld**. Een volledig opgevulde FVG verlaat de telling (de engine bewaart die niet meer).",
+      "filterInStructure": "Deze zones filteren in Marktstructuur",
+      "sessHead": "Uren · tijd van New York",
+      "marketState": "Staat van de markt",
+      "marketLocalTime": "Lokale tijd van de markt",
+      "weeklyClose": "Wekelijkse sluiting",
+      "weeklyCloseValue": "vr 17:00",
+      "nextOpen": "Volgende opening",
+      "lvlHead": "Temporele bakens · huidige prijs {price}",
+      "dayOpen": "Opening van de dag",
+      "weekOpen": "Opening van de week",
+      "prevDayHigh": "Hoog van de vorige dag",
+      "prevDayLow": "Laag van de vorige dag",
+      "prevWeekHigh": "Hoog van de week",
+      "prevWeekLow": "Laag van de week",
+      "lvlNote": "Klik op een prijs: het niveau wordt op de grafiek getekend en in beeld gebracht. Klik opnieuw om het te verwijderen.",
+      "lvlPeriodDay": "de vorige dag",
+      "lvlPeriodWeek": "de voorgaande week",
+      "lvlInsufficient": "Onvoldoende gegevens voor {periods}: de periode wordt niet volledig gedekt door de beschikbare historiek.",
+      "relAbove": "{pct} % erboven",
+      "relBelow": "{pct} % eronder",
+      "relAt": "op de huidige prijs",
       "coincidenceMark": "≈ {side}",
-      "coincidence": "Coincides with a liquidity pocket detected at this level (an observed level coincidence).",
-      "sessCurrent": "Current session",
-      "sessNext": "Next transition",
-      "sessOverlap": "London / New York overlap",
+      "coincidence": "Valt samen met een op dit niveau gedetecteerde liquiditeitspocket (een vastgestelde niveausamenval).",
+      "sessCurrent": "Lopende sessie",
+      "sessNext": "Volgende overgang",
+      "sessOverlap": "Overlap Londen / New York",
       "overlap": {
-        "upcoming": "upcoming",
-        "ongoing": "ongoing",
-        "ended": "ended"
+        "upcoming": "aankomend",
+        "ongoing": "bezig",
+        "ended": "beëindigd"
       },
-      "windowRow": "Analysed window",
-      "windowValue": "last {bars} candles (≈ {span})",
-      "windowSpan_days": "{count, plural, one {# day} other {# days}}",
-      "windowSpan_weeks": "{count, plural, one {# week} other {# weeks}}",
-      "windowSpan_months": "{count, plural, one {# month} other {# months}}",
-      "windowSpan_years": "{count, plural, one {# year} other {# years}}",
-      "windowNote": "The window is a FIXED number of candles, so its calendar span depends on the unit (≈ one month on H1, ≈ two years on D1). The same « bearish trend » does not cover the same duration from one unit to the next.",
-      "trendAnchorRow": "Anchor",
-      "trendAnchorValue": "{dir} {kind}",
-      "trendAnchorNone": "no structural break",
-      "trendNoteStructural": "The trend follows the structure: the direction of the last non-contradicted BOS/CHOCH break. “Indeterminate” when no break exists in the analysed history — never a fallback “neutral”.",
+      "windowRow": "Geanalyseerd venster",
+      "windowValue": "laatste {bars} candles (≈ {span})",
+      "windowSpan_days": "{count, plural, one {# dag} other {# dagen}}",
+      "windowSpan_weeks": "{count, plural, one {# week} other {# weken}}",
+      "windowSpan_months": "{count, plural, one {# maand} other {# maanden}}",
+      "windowSpan_years": "{count, plural, one {# jaar} other {# jaar}}",
+      "windowNote": "Het venster is een VAST aantal candles: de kalenderomvang ervan verandert dus per eenheid (≈ een maand in H1, ≈ twee jaar in D1). Eenzelfde « baissière trend » beslaat niet dezelfde duur van de ene eenheid tot de andere.",
+      "trendAnchorRow": "Anker",
+      "trendAnchorValue": "{kind} {dir}",
+      "trendAnchorNone": "geen structurele breuk",
+      "trendNoteStructural": "De trend volgt de structuur: de richting van de laatste niet-tegengesproken BOS/CHOCH-breuk. « Onbepaald » wanneer er geen breuk bestaat in de geanalyseerde historiek — nooit een « neutraal » bij gebrek aan beter.",
       "alignUnavailable": "niet beschikbaar"
     },
     "state": {
-      "open": "Market open",
-      "closed_weekend": "Closed — weekend",
-      "closed_holiday": "Closed — holiday",
-      "daily_break": "Daily break",
-      "data_lagged": "Data lagging"
+      "open": "Markt open",
+      "closed_weekend": "Gesloten — weekend",
+      "closed_holiday": "Gesloten — feestdag",
+      "daily_break": "Dagelijkse pauze",
+      "data_lagged": "Gegevens lopen achter"
     },
     "concept": {
       "regime": {
-        "title": "Why there is no combined score",
-        "body": "Reducing nine measures to a single index would force a choice of which one matters most. That choice is an **opinion**, and a weighted opinion is still an opinion — even shown with two decimals.\n\nMIA therefore shows the nine measures side by side, each verifiable, and leaves the synthesis to whoever takes the risk.",
-        "notSay": "None of these measures, alone or combined, tells you what to do. They describe a present state and past facts."
+        "title": "Waarom er geen totaalscore is",
+        "body": "Negen metingen tot één enkele index herleiden zou dwingen te beslissen welke het meest telt. Die keuze is een **mening**, en een gewogen mening blijft een mening — zelfs weergegeven met twee decimalen.\n\nMIA toont daarom de negen metingen naast elkaar, elk verifieerbaar, en laat de synthese over aan wie het risico neemt.",
+        "notSay": "Geen van deze metingen, alleen of gecombineerd, geeft aan wat te doen. Ze beschrijven een huidige staat en voorbije feiten."
       },
       "phase": {
-        "title": "What the phase describes",
-        "body": "The phase summarises **how** the price moves, not **where** it goes. The engine derives it from two measures already shown: the **trend** and the **volatility**. A clear trend in high volatility reads as an **expansion**; a clear trend in contained volatility, as a **trend**; a directionless market, as a **range** or **accumulation**.\n\nIt is a summary, not one more measure: it is fully recomposed from trend and volatility, and the Data tab shows which produced the label.",
-        "notSay": "Neither the duration of the phase, nor its remaining amplitude, nor when it will change. A phase can flip on the next candle."
+        "title": "Wat de fase beschrijft",
+        "body": "De fase vat samen **hoe** de prijs zich beweegt, niet **waar** hij naartoe gaat. De engine leidt haar af uit twee reeds weergegeven metingen: de **trend** en de **volatiliteit**. Een duidelijke trend in hoge volatiliteit wordt gelezen als een **expansie**; een duidelijke trend in ingehouden volatiliteit, als een **trend**; een markt zonder richting, als een **range** of een **accumulatie**.\n\nHet is dus een samenvatting, geen extra meting: ze wordt volledig heropgebouwd uit de trend en de volatiliteit, en het tabblad Gegevens toont welke het label heeft geproduceerd.",
+        "notSay": "Noch de duur van de fase, noch de resterende amplitude, noch het moment waarop ze zal veranderen. Een fase kan bij de volgende candle omslaan."
       },
       "trend": {
-        "title": "How the trend is determined",
-        "body": "The trend **derives from the structure the engine detects**: it is the direction of the **last break** (BOS or CHOCH) not contradicted by an opposite one. As long as no protected level is broken on a close, a bullish trend **stays bullish**. It is anchored on a dated event (“since the bullish CHOCH of Jul 24”), the same one the Maturity tile names.\n\nWhen **no break** exists in the analysed history, the trend is **indeterminate** — never a fallback “neutral”. Consolidation is described by the Phase tile instead.",
-        "notSay": "A trend describes the recent past. It extends nothing and does not say when it will end. It does not measure the “strength” of the move — only its structural direction."
+        "title": "Hoe de trend wordt bepaald",
+        "body": "De trend **komt voort uit de door de engine gedetecteerde structuur**: het is de richting van de **laatste breuk** (BOS of CHOCH) die niet is tegengesproken door een breuk in tegengestelde richting. Zolang geen enkel beschermd niveau op een close wordt gebroken, **blijft** een haussière trend haussière. Ze is verankerd aan een gedateerde gebeurtenis (« sinds de haussière CHOCH van 24 jul »), dezelfde als de tegel Rijpheid.\n\nWanneer er **geen enkele breuk** bestaat in de geanalyseerde historiek, is de trend **onbepaald** — nooit een « neutraal » bij gebrek aan beter. De consolidatie wordt beschreven door de tegel Fase.",
+        "notSay": "Een trend beschrijft het recente verleden. Ze verlengt niets en zegt niet wanneer ze zal ophouden. Ze meet niet de « kracht » van de beweging — alleen de structurele richting ervan."
       },
       "vol": {
-        "title": "What volatility counts",
-        "body": "The **average range** (high − low) of the **last 7** candles, compared to that of **all the candles preceding them** in the window — never a fixed number. The denominator is therefore always named, and the Data tab shows the full calculation so it can be redone.\n\n**Why it matters in SMC:** volatility sets the **width** of zones. An OB formed in high volatility is wider, and so takes longer to cross. It is a dimension, not a quality.",
-        "notSay": "No direction. Low volatility precedes a rise no more than a fall."
+        "title": "Wat de volatiliteit telt",
+        "body": "De **gemiddelde range** (hoog − laag) van de **laatste 7** candles, afgezet tegen die van **alle candles die eraan voorafgaan** in het venster — nooit een vast getal. De noemer wordt dus altijd genoemd, en het tabblad Gegevens toont de volledige berekening zodat ze overgedaan kan worden.\n\n**Waarom het telt in SMC:** volatiliteit bepaalt de **breedte** van de zones. Een OB die in hoge volatiliteit is gevormd is breder, dus duurt het langer om er doorheen te gaan. Het is een dimensie, geen kwaliteit.",
+        "notSay": "Geen richting. Lage volatiliteit gaat niet meer aan een stijging dan aan een daling vooraf."
       },
       "pos": {
-        "title": "A measure, nothing more",
-        "body": "The position expresses as a percentage where the price sits between the retained structural low and high. 0 % = lower bound, 100 % = upper bound.\n\nIt is a **coordinate**. It makes two markets of very different scales comparable and immediately locates a zone relative to the bounds.",
-        "notSay": "Being at 43 % makes nothing more likely. Neither “mid-range so it will pick a side” nor the reverse: it is a location."
+        "title": "Een meting, meer niet",
+        "body": "De positie drukt in percentage uit waar de prijs zich bevindt tussen de weerhouden structurele bodem en top. 0 % = onderrand, 100 % = bovenrand.\n\nHet is een **coördinaat**. Ze maakt twee markten van zeer verschillende schaal vergelijkbaar en situeert onmiddellijk een zone ten opzichte van de grenzen.",
+        "notSay": "Op 43 % zijn maakt niets waarschijnlijker. Noch « in het midden dus het gaat een kant kiezen », noch het omgekeerde: het is een locatie."
       },
       "align": {
-        "title": "Multi-timeframe alignment",
-        "body": "**What it counts:** how many timeframes show **right now** the same structural direction. When they diverge, MIA shows it just as plainly: disagreement is information, not a failure.\n\n**What the SMC convention makes of it:** many traders treat alignment as a **confluence** criterion in their own method.",
-        "notSay": "That an alignment makes an entry safer, more likely or less risky. No one can measure that on your account, your horizon and your risk management. MIA describes the fact — the interpretation is yours."
+        "title": "Multi-tijdseenheid-alignering",
+        "body": "**Wat het telt:** hoeveel van de tijdseenheden **op dit moment** dezelfde structuurrichting tonen. Wanneer ze uiteenlopen, toont MIA dat net zo goed: onenigheid is informatie, geen mislukking.\n\n**Wat de SMC-conventie ermee doet:** veel traders behandelen alignering als een **confluentie**-criterium binnen hun eigen methode.",
+        "notSay": "Dat een alignering een instap veiliger, waarschijnlijker of minder riskant maakt. Niemand kan dat meten op jouw account, jouw horizon en jouw risicobeheer. MIA beschrijft het feit — de interpretatie blijft de jouwe."
       },
       "mat": {
-        "title": "Structure maturity",
-        "body": "**What it counts:** the number of candles closed on the displayed timeframe since the **last confirmed CHOCH**. The starting point is always named with its date: once a counter exceeds a day, “11:00” alone becomes ambiguous.\n\nThe counter resets at the next CHOCH, never on a BOS — a BOS extends the structure, it does not restart it.",
-        "notSay": "An old structure is neither more nor less likely to continue. No probability is computed, and no comparison with the duration of past structures is made — that would invite a conclusion no one holds."
+        "title": "Rijpheid van de structuur",
+        "body": "**Wat het telt:** het aantal candles dat is gesloten op de weergegeven tijdseenheid sinds de **laatste bevestigde CHOCH**. Het startpunt wordt altijd genoemd met zijn datum: zodra een teller de dag overschrijdt, wordt « 11:00 » op zichzelf dubbelzinnig.\n\nDe teller begint opnieuw bij nul bij de volgende CHOCH, nooit bij een BOS — een BOS verlengt de structuur, het herstart ze niet.",
+        "notSay": "Een oude structuur is niet meer en niet minder geneigd zich voort te zetten. Er wordt geen enkele waarschijnlijkheid berekend, en er wordt geen vergelijking gemaakt met de duur van voorbije structuren — dat zou ertoe uitnodigen te concluderen wat niemand weet."
       },
       "last": {
-        "title": "BOS and CHOCH",
-        "body": "**BOS** — a break of an extreme **in the direction** of the current structure: it extends it. **CHOCH** — the first break **in the opposite direction**: the change of character, and the anchor of maturity.\n\nIn both cases MIA requires a **close** beyond the extreme, not a mere wick. That is what separates a level touched from a level given up.",
-        "notSay": "A BOS does not say the move will continue, a CHOCH does not say the trend is over. They are dated facts, not announcements."
+        "title": "BOS en CHOCH",
+        "body": "**BOS** — breuk van een extreem **in de richting** van de lopende structuur: het verlengt ze. **CHOCH** — eerste breuk **in de tegengestelde richting**: dat is de karakterverandering, en het dient als anker voor de rijpheid.\n\nIn beide gevallen vereist MIA een **close** voorbij het extreem, niet zomaar een wick. Dat is wat een aangeraakt niveau onderscheidt van een prijsgegeven niveau.",
+        "notSay": "Een BOS zegt niet dat de beweging zich zal voortzetten, een CHOCH zegt niet dat de trend voorbij is. Het zijn gedateerde feiten, geen aankondigingen."
       },
       "dens": {
-        "title": "Zone density",
-        "body": "**What it counts:** the zones still open detected on this timeframe, split by type and by state. Each zone is counted once, in a single state.\n\n**How to read it:** high density describes a market that has left many imbalances behind; low density, a market that has already filled its own.",
-        "notSay": "More zones does not mean more opportunities, and none is presented as better. Nothing indicates which will be reached, nor whether it will be."
+        "title": "Zonedichtheid",
+        "body": "**Wat het telt:** de nog open zones die op deze tijdseenheid zijn gedetecteerd, verdeeld per type en per staat. Elke zone wordt maar één keer geteld, in één enkele staat.\n\n**Hoe je het leest:** een hoge dichtheid beschrijft een markt die veel onevenwichten achter zich heeft gelaten; een lage dichtheid, een markt die de zijne al heeft opgevuld.",
+        "notSay": "Meer zones betekent niet meer mogelijkheden, en geen enkele wordt als beter voorgesteld. Niets geeft aan welke bereikt zal worden, noch of dat zal gebeuren."
       },
       "sess": {
-        "title": "The sessions",
-        "body": "Published **time windows**, like the volatility calendar: published facts, not market measurements.\n\nMany SMC traders read the market by session rather than treating the day as one block. The tile places the journal’s events within that segmentation.\n\n**On a continuous market** (crypto), the tile shows “Continuous market · 24/7”: there is no weekly open or close. Splitting the day into Asia / Europe / America hours is then a reading convention, not a market property.",
-        "notSay": "No session is presented as better or more reliable. MIA does not say what the New York close will do."
+        "title": "De sessies",
+        "body": "**Tijdvensters**, net zoals de volatiliteitskalender: gepubliceerde feiten, geen marktmetingen.\n\nVeel SMC-traders segmenteren hun lezing per sessie in plaats van de dag als één blok te behandelen. De tegel dient om de gebeurtenissen uit het journaal binnen die opdeling te situeren.\n\n**Op een continue markt** (crypto) toont de tegel « Continue markt · 24/7 »: er is geen wekelijkse opening of sluiting. De dag opdelen in Azië / Europa / Amerika-uren blijft dan een leesconventie, geen eigenschap van de markt.",
+        "notSay": "Geen enkele sessie wordt als beter of betrouwbaarder voorgesteld. MIA zegt niet wat de close van New York zal doen."
       },
       "lvl": {
-        "title": "Markers, not zones",
-        "body": "These levels are not **detected**: they exist because time passes. The day open is the opening price of the current daily candle; the previous day high is simply the previous day’s extreme.\n\nThat is the difference with the **Position in range** tile, which uses **structural** bounds. Here the bounds are **temporal**: two distinct references, never the same figures.\n\nEach price is clickable: MIA traces the level on the chart and brings it into view. In the ICT approach these markers are often looked at before anything else, because everyone sees them the same way.",
-        "notSay": "Being below the day open foretells nothing about the close. A previous-day extreme is neither a support, nor a resistance, nor a target: it is a price reached yesterday, nothing more."
+        "title": "Bakens, geen zones",
+        "body": "Deze niveaus worden niet **gedetecteerd**: ze bestaan omdat de tijd verstrijkt. De opening van de dag is de openingsprijs van de lopende dagcandle; de hoogste van de vorige dag is simpelweg het extreem van de voorgaande dag.\n\nDat is het verschil met de tegel **Positie in de range**, die **structurele** grenzen gebruikt. Hier zijn de grenzen **temporeel**: twee verschillende referentiekaders, nooit dezelfde cijfers.\n\nElke prijs is aanklikbaar: MIA tekent het niveau op de grafiek en brengt het in beeld. In de ICT-benadering worden deze bakens vaak vóór al het andere bekeken, omdat iedereen ze op dezelfde manier ziet.",
+        "notSay": "Onder de opening van de dag zijn voorspelt niets over de close. Een extreem van de vorige dag is geen steun, geen weerstand en geen doel: het is een prijs die gisteren is bereikt, meer niet."
       }
     },
     "session": {
-      "asia": "Asia",
-      "london": "London",
+      "asia": "Azië",
+      "london": "Londen",
       "new_york": "New York",
-      "overlap": "London / NY overlap",
-      "outside": "Between sessions",
-      "continuous": "Continuous market · 24/7",
+      "overlap": "Overlap Londen / NY",
+      "outside": "Tussen sessies",
+      "continuous": "Continue markt · 24/7",
       "close": "close",
       "open": "open"
     },
     "delay": {
-      "dh": "{d}d {h}h",
-      "hm": "{h}h {mm}",
+      "dh": "{d} d {h} u",
+      "hm": "{h} u {mm}",
       "m": "{m} min"
     }
   },
@@ -636,8 +636,8 @@
       "thinking": "M.I.A Agent leest de markt",
       "thinkingAria": "M.I.A Agent denkt na",
       "greeting": "Hallo, ik ben M.I.A Agent — de assistent van MIA Markets. Ik heb zojuist de markt {instrument} gelezen: de structuur wijst op een {trend} opzet.",
-      "trendBullish": "bullish",
-      "trendBearish": "bearish",
+      "trendBullish": "haussière",
+      "trendBearish": "baissière",
       "trendNeutral": "neutrale",
       "disclaimer": "Stel me om het even welke vraag — ik geef geen kooporder en geen persoonlijk advies.",
       "suggested": "Voorgestelde vragen",
@@ -931,8 +931,8 @@
       "zeroNote": "Nul voorwaarden betekent niet \"alle markten\": zonder voorwaarde valt er niets te lezen."
     },
     "bias": {
-      "bullish": "Bullish",
-      "bearish": "Bearish",
+      "bullish": "Haussier",
+      "bearish": "Baissier",
       "ranging": "Range",
       "neutral": "Neutraal",
       "unknown": "—"
@@ -953,10 +953,10 @@
     },
     "options": {
       "directionAny": "Elke richting",
-      "directionBullish": "Bullish",
-      "directionBearish": "Bearish",
-      "trendBullish": "Bullish",
-      "trendBearish": "Bearish",
+      "directionBullish": "Haussier",
+      "directionBearish": "Baissier",
+      "trendBullish": "Haussière",
+      "trendBearish": "Baissière",
       "phaseAccumulation": "Accumulatie",
       "phaseDistribution": "Distributie",
       "phaseTrend": "Trend",
@@ -968,13 +968,11 @@
       "sideAny": "Beide (SSL + BSL)",
       "sideBsl": "BSL (liquiditeit boven)",
       "sideSsl": "SSL (liquiditeit onder)",
-      "trendIndeterminate": "Indeterminate"
+      "trendIndeterminate": "Onbepaald"
     },
     "palette": {
-      "mtf_aligned_label": "3 TF aligned (structure)",
-      "mtf_aligned_desc": "The 3 timeframes (H4, H1, M15) show the same STRUCTURAL direction right now (last BOS/CHOCH break in the same direction). A timeframe with no structural trend established (indeterminate) prevents alignment.",
-      "trend_is_label": "Current trend (structure)",
-      "trend_is_desc": "The structural trend observed on this timeframe is, right now, the one you selected (bullish, bearish, or indeterminate when no break established it).",
+      "trend_is_label": "Huidige trend (structuur)",
+      "trend_is_desc": "De op dit timeframe waargenomen structuurtrend is op dit moment de gekozen trend (haussière, baissière, of onbepaald wanneer geen breuk hem heeft vastgesteld).",
       "market_phase_is_label": "Marktfase",
       "market_phase_is_desc": "De waargenomen marktfase komt op dit moment overeen met de gekozen fase.",
       "volatility_is_label": "Waargenomen volatiliteit",
@@ -1133,7 +1131,65 @@
         "opposite": "In tegengestelde richting",
         "same": "In dezelfde richting"
       },
-      "touches": "{n} keer"
+      "touches": "{n} keer",
+      "age_bucket": {
+        "10to50": "10 tot 50",
+        "gt50": "Meer dan 50",
+        "lt10": "Minder dan 10"
+      },
+      "direction": {
+        "any": "Elke richting",
+        "bearish": "Baissier",
+        "bullish": "Haussier"
+      },
+      "eq_kind": {
+        "any": "Bodems of toppen",
+        "highs": "Toppen",
+        "lows": "Bodems"
+      },
+      "event": {
+        "bos_down": "BOS ↓",
+        "bos_up": "BOS ↑",
+        "choch_down": "CHOCH ↓",
+        "choch_up": "CHOCH ↑"
+      },
+      "phase": {
+        "accumulation": "Accumulatie",
+        "expansion": "Expansie",
+        "ranging": "Range",
+        "trend": "Trend"
+      },
+      "session": {
+        "asia": "Azië",
+        "london": "Londen",
+        "new_york": "New York",
+        "overlap": "Overlap"
+      },
+      "side": {
+        "any": "Beide",
+        "bsl": "BSL (erboven)",
+        "ssl": "SSL (eronder)"
+      },
+      "third": {
+        "bottom": "Onder",
+        "middle": "Midden",
+        "top": "Boven"
+      },
+      "trend": {
+        "bearish": "Baissière",
+        "bullish": "Haussière",
+        "indeterminate": "Onbepaald"
+      },
+      "volatility": {
+        "elevated": "Uitgebreid",
+        "low": "Samengetrokken",
+        "normal": "Normaal"
+      },
+      "zone_kind": {
+        "any": "OB of FVG",
+        "fvg": "Fair Value Gap",
+        "ob": "Order Block"
+      }
     },
     "recap": {
       "and": "en",
@@ -1254,7 +1310,7 @@
       "liquidityStatus_intact": "intact",
       "liquidityStatus_swept": "geveegd",
       "liquidityStatus_broken": "gebroken",
-      "trendAdj_indeterminate": "indeterminate",
+      "trendAdj_indeterminate": "onbepaald",
       "trend_indeterminate": "Onbepaalde trend"
     },
     "structure": {
@@ -1301,7 +1357,7 @@
       "lastEvent": "{kind} {dir} {val} ({tf})",
       "zoneDensity": "{ob} OB · {fvg} FVG actief",
       "mtfAligned": "De {count} TF's zijn uitgelijnd ({dir}).",
-      "mtfNeutral": "{count, plural, one {The upper unit has no structural trend established} other {The # upper units have no structural trend established}}.",
+      "mtfNeutral": "{count, plural, one {De hogere eenheid heeft geen vastgestelde structurele trend} other {De # hogere eenheden hebben geen vastgestelde structurele trend}}.",
       "mtfPullback": "M15 keert terug tegen de {fem} H4-trend.",
       "mtfDivergent": "De TF's divergeren: {list}."
     },
@@ -1348,40 +1404,40 @@
       "mtf_aligned": "Timeframes uitgelijnd",
       "mtf_divergent": "Timeframes divergerend",
       "mtf_mixed": "Timeframes gemengd",
-      "trend_indeterminate": "Indeterminate trend"
+      "trend_indeterminate": "Onbepaalde trend"
     },
     "help": {
       "regime": {
-        "title": "Reading the market regime",
-        "body": "These six measures describe the **current** state of the market, each with its source shown below it. None is a forecast, none is weighted.\n\nThe little **?** on each measure explains exactly what it counts, and what it does not say."
+        "title": "Het marktregime lezen",
+        "body": "Deze zes metingen beschrijven de **huidige** staat van de markt, elk met de bron eronder weergegeven. Geen enkele is een voorspelling, geen enkele is gewogen.\n\nHet kleine **?** bij elke meting legt uit wat ze precies telt, en wat ze niet zegt."
       },
       "trend": {
         "title": "Trend",
-        "body": "**What it counts:** the sequence of highs and lows on **the displayed timeframe** (here H1). Falling highs and lows → bearish. This is a reading of past structure, not a projection.\n\n**Classic trap:** the trend is not the same across all timeframes. A bearish M15 inside a bullish H4 is not a contradiction — it's a matter of scale. Change the TF and the answer changes."
+        "body": "**Wat het telt:** de opeenvolging van toppen en bodems op **de weergegeven tijdseenheid** (hier H1). Dalende toppen en bodems → baissière. Dit is een lezing van voorbije structuur, geen projectie.\n\n**Klassieke valkuil:** de trend is niet dezelfde op alle tijdseenheden. Een baissière M15 binnen een haussière H4 is geen tegenspraak — het is een kwestie van schaal. Wissel van TF en het antwoord verandert."
       },
       "vol": {
-        "title": "Volatility",
-        "body": "**What it counts:** the average range of the most recent candles compared with that of the candles preceding them. \"Normal\" = within its usual range.\n\n**Why it's useful in SMC:** volatility changes the **size** of zones. An OB formed in high volatility is wider, and therefore takes longer to cross. This isn't a quality, it's a dimension.\n\n**What it does not say:** no direction. Low volatility can precede anything."
+        "title": "Volatiliteit",
+        "body": "**Wat het telt:** de gemiddelde range van de laatste candles vergeleken met die van de candles die eraan voorafgaan. « Normaal » = binnen de gebruikelijke bandbreedte.\n\n**Waarom het nuttig is in SMC:** volatiliteit verandert de **omvang** van de zones. Een OB die in hoge volatiliteit is gevormd is breder, dus duurt het langer om er doorheen te gaan. Dat is geen kwaliteit, het is een dimensie.\n\n**Wat het niet zegt:** geen richting. Lage volatiliteit kan aan om het even wat voorafgaan."
       },
       "mat": {
-        "title": "Structure maturity",
-        "body": "**What it counts:** the number of candles closed on the displayed timeframe **since the last confirmed CHOCH** (here, the one at 14:00). The starting point is always named below the value — a counter without an origin means nothing.\n\n**What it does not say:** an older structure is neither more nor less likely to continue. No probability is computed here."
+        "title": "Rijpheid van de structuur",
+        "body": "**Wat het telt:** het aantal candles dat is gesloten op de weergegeven tijdseenheid **sinds de laatste bevestigde CHOCH** (hier die van 14:00). Het startpunt wordt altijd genoemd onder de waarde — een teller zonder oorsprong betekent niets.\n\n**Wat het niet zegt:** een oude structuur is niet meer en niet minder geneigd zich voort te zetten. Er wordt hier geen enkele waarschijnlijkheid berekend."
       },
       "align": {
-        "title": "Multi-timeframe alignment",
-        "body": "**What it counts:** the three analysed timeframes are **right now** showing the same structural direction. When they diverge, MIA shows that just as plainly (\"Disagreement\") — disagreement is information, not a failure.\n\n**What the SMC convention makes of it:** many traders treat alignment as a **confluence** criterion within their own method, and read disagreement as the sign that two scales are telling two different stories.\n\n**What MIA will never assert:** that an alignment makes an entry safer, more likely or less risky. No one can measure that on your account, your horizon and your risk management. MIA describes the fact; the interpretation stays yours."
+        "title": "Multi-tijdseenheid-alignering",
+        "body": "**Wat het telt:** de drie geanalyseerde tijdseenheden tonen **op dit moment** dezelfde structuurrichting. Wanneer ze uiteenlopen, toont MIA dat net zo duidelijk (« Onenigheid ») — onenigheid is informatie, geen mislukking.\n\n**Wat de SMC-conventie ermee doet:** veel traders behandelen alignering als een **confluentie**-criterium binnen hun eigen methode, en lezen onenigheid als het teken dat twee schalen twee verschillende verhalen vertellen.\n\n**Wat MIA nooit zal beweren:** dat een alignering een instap veiliger, waarschijnlijker of minder riskant maakt. Niemand kan dat meten op jouw account, jouw horizon en jouw risicobeheer. MIA beschrijft het feit; de interpretatie blijft de jouwe."
       },
       "dens": {
-        "title": "Zone density",
-        "body": "**What it counts:** the number of still-active zones detected on this timeframe.\n\n**How to read it:** high density describes a market that has left many imbalances behind it; low density, a market that has already filled most of its own. More zones does not mean more opportunities — only more levels to watch."
+        "title": "Zonedichtheid",
+        "body": "**Wat het telt:** het aantal nog actieve zones dat op deze tijdseenheid is gedetecteerd.\n\n**Hoe je het leest:** een hoge dichtheid beschrijft een markt die veel onevenwichten achter zich heeft gelaten; een lage dichtheid, een markt die de meeste van de zijne al heeft opgevuld. Meer zones betekent niet meer mogelijkheden — alleen meer niveaus om in de gaten te houden."
       },
       "struct": {
-        "title": "The four structure objects",
-        "body": "**OB (Order Block)** — the last candle of opposite direction before the impulsive move that broke the structure.\n\n**FVG (Fair Value Gap)** — the gap left by three candles whose wicks do not overlap. It fills progressively: MIA shows the percentage actually filled.\n\n**BOS** — break of an extreme **in the direction** of the current structure. **CHOCH** — first break **in the opposite direction**: this is the change of character.\n\nMIA detects, describes and dates these objects. It never says which one \"is going to work\"."
+        "title": "De vier structuurobjecten",
+        "body": "**OB (Order Block)** — de laatste candle van tegengestelde richting vóór de impulsieve beweging die de structuur heeft gebroken.\n\n**FVG (Fair Value Gap)** — het gat dat wordt gelaten door drie candles waarvan de wicks elkaar niet overlappen. Het vult zich geleidelijk: MIA toont het percentage dat werkelijk is opgevuld.\n\n**BOS** — breuk van een extreem **in de richting** van de lopende structuur. **CHOCH** — eerste breuk **in de tegengestelde richting**: dat is de karakterverandering.\n\nMIA detecteert, beschrijft en dateert deze objecten. Ze zegt nooit welke « gaat werken »."
       },
       "liq": {
-        "title": "External liquidity: where and in what state",
-        "body": "**BSL** — buy-side liquidity, above highs and equal highs. **SSL** — sell-side liquidity, below lows and equal lows.\n\n**Intact** — never touched. **Swept** — a wick went beyond but the close came back short of it: the level **still holds**. **Broken** — a clean close beyond: it gave way.\n\n**The distinction to remember:** touched does not equal broken. That's the nuance most tools flatten into a single binary state.\n\nMIA will never write that a pocket will be \"taken\": that's a prediction, and no one knows it."
+        "title": "Externe liquiditeit: waar en in welke staat",
+        "body": "**BSL** — koopzijde-liquiditeit, boven de toppen en gelijke toppen. **SSL** — verkoopzijde-liquiditeit, onder de bodems en gelijke bodems.\n\n**Intact** — nooit aangeraakt. **Geveegd** — een wick ging ervoorbij maar de close keerde eronder terug: het niveau **houdt nog stand**. **Gebroken** — een nette close ervoorbij: het heeft het begeven.\n\n**Het onderscheid om te onthouden:** aangeraakt is niet hetzelfde als gebroken. Dat is de nuance die de meeste tools platslaan tot één binaire staat.\n\nMIA zal nooit schrijven dat een pocket « genomen » zal worden: dat is een voorspelling, en niemand kent die."
       }
     }
   },
@@ -1631,7 +1687,7 @@
       "sessionRow": "Sessie",
       "sessionValue": "Aangemeld op dit apparaat",
       "sectionAppearance": "Weergave",
-      "sectionLanguage": "Language",
+      "sectionLanguage": "Taal",
       "appearanceBadge": "Direct toegepast · onthouden",
       "sectionSubscription": "Abonnement",
       "planRow": "Huidig abonnement",
@@ -1754,120 +1810,120 @@
       }
     },
     "struct": {
-      "title": "Market structure",
+      "title": "Marktstructuur",
       "zonesCount": "{count, plural, one {# zone} other {# zones}}",
       "countFiltered": "{n} of {m} zones",
-      "reset": "Reset",
-      "noneType": "No type selected. Pick at least one type to see results.",
-      "noneState": "No state selected. Pick at least one state to see results.",
-      "noMatch1": "No zone matches these filters.",
-      "noMatch2": "Nothing is invented to fill the list.",
-      "sortAria": "Sort and filter",
-      "helpAria": "Learn more",
+      "reset": "Opnieuw instellen",
+      "noneType": "Geen type geselecteerd. Kies minstens één type om resultaten te zien.",
+      "noneState": "Geen staat geselecteerd. Kies minstens één staat om resultaten te zien.",
+      "noMatch1": "Geen enkele zone komt overeen met deze filters.",
+      "noMatch2": "Er wordt niets verzonnen om de lijst te vullen.",
+      "sortAria": "Sorteren en filteren",
+      "helpAria": "Meer weten",
       "filterType": "Type",
-      "filterState": "State",
-      "filterSort": "Sort by",
+      "filterState": "Staat",
+      "filterSort": "Sorteren op",
       "type": {
-        "all": "All",
+        "all": "Alle",
         "ob": "OB",
         "fvg": "FVG"
       },
       "st": {
-        "all": "All",
-        "active": "Active",
-        "tested": "Tested",
-        "mitig": "Mitigated"
+        "all": "Alle",
+        "active": "Actief",
+        "tested": "Getest",
+        "mitig": "Gemitigeerd"
       },
       "sort": {
-        "near": "Near price",
+        "near": "Dicht bij de prijs",
         "recent": "Recent",
-        "big": "Wide"
+        "big": "Breed"
       },
       "badge": {
-        "active": "Active",
-        "tested": "Tested",
-        "mitig": "Mitigated"
+        "active": "Actief",
+        "tested": "Getest",
+        "mitig": "Gemitigeerd"
       },
       "dist": {
-        "inside": "Price inside the zone",
+        "inside": "Prijs binnen de zone",
         "above": "+{pct}% above",
         "below": "−{pct}% below"
       },
       "fact": {
-        "neverTested": "Never tested since it formed.",
-        "tested": "Tested.",
-        "mitigatedAt": "Mitigated at {time}.",
-        "mitigated": "Mitigated.",
-        "filled": "Fully filled.",
-        "partial": "Filled to {pct}%.",
-        "fvgOpen": "Gap open."
+        "neverTested": "Nooit getest sinds de vorming.",
+        "tested": "Getest.",
+        "mitigatedAt": "Gemitigeerd om {time}.",
+        "mitigated": "Gemitigeerd.",
+        "filled": "Volledig opgevuld.",
+        "partial": "Voor {pct} % opgevuld.",
+        "fvgOpen": "Gat open."
       },
-      "more": "Learn more",
-      "hint": "Click a zone = highlight on the chart.",
-      "empty1": "No zone matches these filters.",
-      "empty2": "Nothing is invented to pad the list.",
-      "evChoch": "Confirmed change of character",
-      "evBosBull": "Bullish break of structure",
-      "evBosBear": "Bearish break of structure",
+      "more": "Meer weten",
+      "hint": "Klik op een zone = oplichten op de grafiek.",
+      "empty1": "Geen enkele zone komt overeen met deze filters.",
+      "empty2": "Er wordt niets verzonnen om de lijst te vullen.",
+      "evChoch": "Bevestigde karakterverandering",
+      "evBosBull": "Haussière structuurbreuk",
+      "evBosBear": "Baissière structuurbreuk",
       "evSelectAria": "Het {kind}-event op de grafiek kaderen",
       "unitLabel": "Tijdseenheid: {tf}"
     },
     "liq2": {
-      "title": "External liquidity",
+      "title": "Externe liquiditeit",
       "pochesCount": "{count, plural, one {# pocket} other {# pockets}}",
-      "countFiltered": "{n} of {m} pockets",
-      "reset": "Reset",
-      "noneSide": "No side selected. Pick at least one side to see results.",
-      "noneState": "No state selected. Pick at least one state to see results.",
-      "noMatch1": "No pocket matches these filters.",
-      "noMatch2": "Nothing is invented to fill the list.",
-      "sortAria": "Sort and filter",
-      "helpAria": "Learn more",
-      "filterSide": "Side",
-      "filterState": "State",
+      "countFiltered": "{n} van {m} pockets",
+      "reset": "Opnieuw instellen",
+      "noneSide": "Geen zijde geselecteerd. Kies minstens één zijde om resultaten te zien.",
+      "noneState": "Geen staat geselecteerd. Kies minstens één staat om resultaten te zien.",
+      "noMatch1": "Geen enkele pocket komt overeen met deze filters.",
+      "noMatch2": "Er wordt niets verzonnen om de lijst te vullen.",
+      "sortAria": "Sorteren en filteren",
+      "helpAria": "Meer weten",
+      "filterSide": "Zijde",
+      "filterState": "Staat",
       "side": {
-        "all": "Both",
-        "bsl": "BSL (buy)",
-        "ssl": "SSL (sell)"
+        "all": "Beide",
+        "bsl": "BSL (koop)",
+        "ssl": "SSL (verkoop)"
       },
       "st": {
-        "all": "All",
+        "all": "Alle",
         "intact": "Intact",
-        "swept": "Swept",
-        "broken": "Broken"
+        "swept": "Geveegd",
+        "broken": "Gebroken"
       },
       "badge": {
         "intact": "Intact",
-        "swept": "Swept",
-        "broken": "Broken"
+        "swept": "Geveegd",
+        "broken": "Gebroken"
       },
       "src": {
         "eqh": "EQH",
         "eql": "EQL",
-        "high": "High",
-        "low": "Low"
+        "high": "Top",
+        "low": "Bodem"
       },
       "dist": {
         "above": "+{pct}% above",
         "below": "−{pct}% below"
       },
       "fact": {
-        "intact": "Never touched since it formed.",
-        "swept": "Wick beyond, close came back. Still holds.",
-        "broken": "Clean close beyond. Gave way."
+        "intact": "Nooit aangeraakt sinds de vorming.",
+        "swept": "Wick ervoorbij, close teruggekeerd. Houdt nog stand.",
+        "broken": "Nette close ervoorbij. Heeft het begeven."
       },
-      "hint": "Click a pocket = highlight its level.",
-      "empty1": "No pocket matches this filter.",
-      "empty2": "Nothing is invented to pad the list."
+      "hint": "Klik op een pocket = het niveau ervan oplichten.",
+      "empty1": "Geen enkele pocket komt overeen met dit filter.",
+      "empty2": "Er wordt niets verzonnen om de lijst te vullen."
     },
     "reg2": {
-      "trendSub": "measured on {tf}",
-      "volSub": "7 recent vs preceding",
-      "matSub": "since the CHOCH at {time}",
+      "trendSub": "gemeten op {tf}",
+      "volSub": "7 recente vs voorgaande",
+      "matSub": "sinds de CHOCH van {time}",
       "matValue": "{count, plural, one {# candle} other {# candles}}",
-      "densSub": "active on {tf}",
-      "measureHelpAria": "Help on this measure",
-      "helpAria": "Learn more"
+      "densSub": "actief op {tf}",
+      "measureHelpAria": "Hulp bij deze meting",
+      "helpAria": "Meer weten"
     }
   },
   "samples": {
@@ -2301,7 +2357,7 @@
       "filledPct": "Opgevuld {pct} %"
     },
     "deeplink": {
-      "staleNotice": "This zone is no longer detected in the current reading."
+      "staleNotice": "Deze zone wordt niet meer gedetecteerd in de huidige lezing."
     }
   },
   "appearance": {

@@ -188,16 +188,30 @@ dans les 7 langues (7 sous-agents, source fr + référence en). Validé sans fai
   de/pl est la **négation** du texte source `readGuide.body` : « …pas une probabilité », posture
   d'honnêteté — conservée).
 
-⚠️ **Reste (hors périmètre)** : des VALEURS anglaises subsistent hors accueil (`regimePanel` 163×7,
-`app` ~77×7, `reading` ~21×7) ; et des **orphelines scanner** (en 36, les 7 : 2 chacune) = clés que
-`fr` n'a jamais reçues (à ajouter à fr si utilisées, ou supprimer si mortes). Options 1–3 ci-dessous.
+### Valeurs anglaises restantes + orphelines scanner — TRAITÉES (sur ta demande « enchaîne »)
+- **Orphelines scanner résolues** : les 36 `opt.*` (direction/trend/phase/session/side/third/
+  volatility/zone_kind/event/age_bucket/eq_kind) que **seul `en` avait** — le code
+  (`ConditionsBuilder` `opt.${control}.${value}`) retombait sinon sur un fallback **français**, donc
+  de/es/… affichaient des libellés FRANÇAIS. **Ajoutées à `fr`** (source `OPTION_LABELS_FR`) puis
+  traduites partout. Les 2 `mtf_aligned_*` (condition retirée par SC-1) **supprimées** des 7 locales.
+- **Valeurs anglaises restantes traduites** : union de **350 clés** (regimePanel 163 + app 81 +
+  scanner 54 + reading 27 + éparses) traduites ×7 (7 sous-agents, source fr + réf en). ICU vérifié :
+  **350×7 = 2 450 messages compilés `intl-messageformat`, 0 erreur** (pluriels few/many pl, zero/two/
+  few/many ar). Vocabulaire interdit : corrigé 4 cognats (es/pt « señal/sinal » pour « le signe »,
+  « oportunidades » pour « occasions ») ; le « probabilité » restant est la **négation** du texte
+  source (`concept.mat.notSay` : « Aucune probabilité n'est calculée »).
+- **Parité PARFAITE atteinte** : `missing 0 / orphan 0` pour les 9 locales.
+
+**Reliquat mineur** : ~5–44 clés/locale dont la valeur native **coïncide légitimement** avec l'anglais
+(de « Trend »/« Normal »/« Demo », « USD », noms propres New York/London) + une poignée de libellés
+courts qu'une relecture native pourrait polir (de « Asia »→« Asien », nl « open/close »). Sans impact
+fonctionnel ; parité et clés brutes réglées.
 
 ### e) Tests de garde — LIVRÉS
-- **Parité de clés** : `webapp/lib/i18n/__tests__/locale-parity.test.ts`, exécuté par `npm test` (CI,
-  pas devant un client). Comme la dette de **clés absentes** est massive et pré-existante, le garde
-  **ratchet** : plafond = dette actuelle (en 0/36 ; les 7 à 196/2), **échoue si l'écart CROÎT** —
-  ajouter une clé à `fr` sans la propager casse le build. Chaque nombre du baseline est une dette à
-  ramener à 0.
+- **Parité de clés — STRICTE** : `webapp/lib/i18n/__tests__/locale-parity.test.ts`, exécuté par
+  `npm test` (CI). La dette de clés étant **entièrement payée** (0 manquante, 0 orpheline), le garde
+  exige désormais une **parité exacte** : ajouter une clé à `fr` sans la propager (ou laisser une
+  orpheline) casse le build — jamais devant un client.
 - **Vocabulaire interdit, 9 langues** : `home.test.tsx` étendu — scanne le namespace `home` des 9
   locales pour les mots interdits par langue (setup, signal/إشارة/señal/segnale/…, opportunité,
   probabilité…). Aurait attrapé l'arabe « إشارة » ; échoue au build si une traduction future en

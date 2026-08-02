@@ -386,225 +386,225 @@
     }
   },
   "regimePanel": {
-    "help": "Learn more",
-    "measureHelp": "Explain this measure",
-    "close": "Close",
-    "tabData": "Data",
+    "help": "Saber mais",
+    "measureHelp": "Explicar esta medida",
+    "close": "Fechar",
+    "tabData": "Dado",
     "tabConcept": "Concept",
-    "unavailable": "not available",
-    "notSayLabel": "What it doesn't say",
-    "continuous": "Continuous market · 24/7",
-    "headerBadge": "{tf} · last close {time}",
+    "unavailable": "não disponível",
+    "notSayLabel": "O que ela não diz",
+    "continuous": "Mercado contínuo · 24/7",
+    "headerBadge": "{tf} · último fechamento {time}",
     "tiles": {
-      "phase": "Market phase",
-      "trend": "Trend",
-      "vol": "Volatility",
-      "pos": "Position in range",
-      "align": "Alignment",
-      "mat": "Maturity",
-      "last": "Last event",
-      "dens": "Density",
+      "phase": "Fase de mercado",
+      "trend": "Tendência",
+      "vol": "Volatilidade",
+      "pos": "Posição no range",
+      "align": "Alinhamento",
+      "mat": "Maturidade",
+      "last": "Último evento",
+      "dens": "Densidade",
       "sess": "Session",
-      "lvl": "Reference levels"
+      "lvl": "Níveis de referência"
     },
     "sub": {
-      "phase": "derived from trend and volatility",
-      "trend": "measured on {tf}",
-      "vol": "{recent} recent vs {baseline} preceding",
+      "phase": "derivada da tendência e da volatilidade",
+      "trend": "medida em {tf}",
+      "vol": "{recent} últimas vs {baseline} anteriores",
       "pos": "{low} – {high}",
-      "mat": "since the {dir} CHOCH of {date}",
-      "dens": "open on {tf}",
-      "lvl": "{count, plural, one {# marker} other {# markers}} · open the detail",
-      "sess": "{label} in {delay}",
-      "trendRef": "since the {dir} {kind} of {date}",
-      "trendNone": "no structural trend established",
+      "mat": "desde o CHOCH {dir} de {date}",
+      "dens": "abertos em {tf}",
+      "lvl": "{count, plural, one {# marco} other {# marcos}} · abre o detalhe",
+      "sess": "{label} em {delay}",
+      "trendRef": "desde o {kind} {dir} de {date}",
+      "trendNone": "nenhuma tendência estrutural estabelecida",
       "lvlNA": "não aplicável em {tf}: a véspera é a vela anterior",
       "sessNA": "não aplicável em {tf}: a vela abrange todas as sessões"
     },
     "value": {
       "pos": "{pct} %",
-      "mat": "{approx}{count, plural, one {# candle} other {# candles}}",
+      "mat": "{approx}{count, plural, one {# vela} other {# velas}}",
       "dens": "{ob} OB · {fvg} FVG",
       "align": "{count}/{total} TF {arrow}",
-      "dirUp": "bullish",
-      "dirDown": "bearish",
+      "dirUp": "de alta",
+      "dirDown": "de baixa",
       "kindChoch": "CHOCH",
       "kindBos": "BOS",
-      "alignIndeterminate": "no structural trend established",
-      "alignIndetCount": "{count, plural, one {# indeterminate} other {# indeterminate}}",
+      "alignIndeterminate": "nenhuma tendência estrutural estabelecida",
+      "alignIndetCount": "{count, plural, one {# indeterminada} other {# indeterminadas}}",
       "alignNone": "nenhuma unidade superior",
       "notApplicable": "não aplicável"
     },
     "data": {
-      "phaseHead": "The two measures it is built from",
-      "trendRow": "Trend",
-      "volRow": "Volatility",
-      "ruleRow": "Rule applied",
-      "phaseNote": "The phase is fully recomposed from these two measures: no information is added, only summarised.",
-      "trendHead": "The rule, in plain terms",
-      "resultRow": "Result",
-      "measuredOnRow": "Measured on",
-      "trendNote": "The engine compares the net move (first → last close) to the window’s range, on {tf}. The intermediate values stay engine-side; the rule and its result are shown here.",
-      "volHead": "The calculation, in plain terms",
-      "volRecent": "Average range — last {n}",
-      "volBaseline": "Average range — preceding {n}",
-      "volRatio": "Ratio",
-      "volThresholds": "Thresholds",
-      "volThresholdsValue": "<{low} low · >{high} elevated",
-      "volNote": "The denominator is named: the comparison uses the {n} candles preceding the last 7, on the same timeframe.",
-      "posHead": "Where the price sits between the structural bounds",
-      "currentPrice": "Current price",
-      "distTop": "Distance to upper bound",
-      "distBottom": "Distance to lower bound",
-      "rangeSpan": "Bound span",
-      "barLow": "{v} · low",
-      "barHigh": "{v} · high",
-      "boundLow": "Range lower bound",
-      "boundHigh": "Range upper bound",
-      "posNote": "These bounds are **structural**: the range extremes retained by the engine. Not to be confused with the reference levels, which are **temporal**.",
-      "alignHead": "The per-timeframe detail",
+      "phaseHead": "As duas medidas que a compõem",
+      "trendRow": "Tendência",
+      "volRow": "Volatilidade",
+      "ruleRow": "Regra aplicada",
+      "phaseNote": "A fase se recompõe inteiramente dessas duas medidas: nenhuma informação é acrescentada, apenas resumida.",
+      "trendHead": "A regra, em termos claros",
+      "resultRow": "Resultado",
+      "measuredOnRow": "Medida em",
+      "trendNote": "O motor compara o deslocamento líquido (primeiro → último fechamento) à amplitude da janela, em {tf}. Os valores intermediários permanecem no lado do motor; a regra e o seu resultado são exibidos aqui.",
+      "volHead": "O cálculo, em termos claros",
+      "volRecent": "Amplitude média — {n} últimas",
+      "volBaseline": "Amplitude média — {n} anteriores",
+      "volRatio": "Razão",
+      "volThresholds": "Limiares",
+      "volThresholdsValue": "<{low} baixa · >{high} elevada",
+      "volNote": "O denominador é nomeado: a comparação incide sobre as {n} velas que precedem as 7 últimas, na mesma unidade de tempo.",
+      "posHead": "Onde se encontra o preço entre os limites de estrutura",
+      "currentPrice": "Preço atual",
+      "distTop": "Distância à borda superior",
+      "distBottom": "Distância à borda inferior",
+      "rangeSpan": "Amplitude dos limites",
+      "barLow": "{v} · baixa",
+      "barHigh": "{v} · alta",
+      "boundLow": "Limite inferior do range",
+      "boundHigh": "Limite superior do range",
+      "posNote": "Estes limites são **estruturais**: os extremos de estrutura retidos pelo motor. Não confundir com os níveis de referência, que são **temporais**.",
+      "alignHead": "O detalhe por unidade de tempo",
       "alignNote": "The available timeframes and their structural direction. When one diverges, its line is highlighted here rather than hidden.",
-      "matHead": "The counter’s anchor",
-      "anchorEvent": "Anchor event",
-      "crossedLevel": "Level crossed",
-      "barsSince": "Candles closed since",
-      "elapsed": "Time elapsed",
-      "eventsSince": "Events since then",
-      "lastHead": "The most recent event",
+      "matHead": "A ancoragem do contador",
+      "anchorEvent": "Evento de ancoragem",
+      "crossedLevel": "Nível ultrapassado",
+      "barsSince": "Velas fechadas desde então",
+      "elapsed": "Tempo decorrido",
+      "eventsSince": "Eventos ocorridos desde então",
+      "lastHead": "O evento mais recente",
       "typeRow": "Type",
-      "crossedExtreme": "Extreme crossed",
-      "journal": "Event journal · {tf}",
-      "journalCount": "{count, plural, one {# event} other {# events}} over the analysed window ({bars} candles, ≈ {span})",
-      "seeOnChart": "Show these events on the chart",
-      "densHead": "Zone inventory · {tf}",
-      "obActive": "Order Blocks — active",
-      "obTested": "Order Blocks — tested (unmitigated)",
-      "obMitigated": "Order Blocks — mitigated",
-      "fvgOpen": "FVG open — total",
-      "fvgUntouched": "— of which never touched",
-      "fvgPartial": "— of which partially filled",
-      "densNote": "Partially filled ones are **included** in the total of open FVGs. A fully filled FVG leaves the count (the engine no longer keeps it).",
-      "filterInStructure": "Filter these zones in Market structure",
-      "sessHead": "Hours · New York time",
-      "marketState": "Market state",
-      "marketLocalTime": "Market local time",
-      "weeklyClose": "Weekly close",
-      "weeklyCloseValue": "Fri 17:00",
-      "nextOpen": "Next open",
-      "lvlHead": "Temporal markers · current price {price}",
-      "dayOpen": "Day open",
-      "weekOpen": "Week open",
-      "prevDayHigh": "Previous day high",
-      "prevDayLow": "Previous day low",
-      "prevWeekHigh": "Previous week high",
-      "prevWeekLow": "Previous week low",
-      "lvlNote": "Click a price: the level is traced on the chart and brought into view. Click again to remove it.",
-      "lvlPeriodDay": "the previous day",
-      "lvlPeriodWeek": "the previous week",
-      "lvlInsufficient": "Insufficient data for {periods}: the period is not fully covered by the available history.",
-      "relAbove": "{pct} % above",
-      "relBelow": "{pct} % below",
-      "relAt": "at the current price",
+      "crossedExtreme": "Extremo ultrapassado",
+      "journal": "Diário dos eventos · {tf}",
+      "journalCount": "{count, plural, one {# evento} other {# eventos}} na janela analisada ({bars} velas, ≈ {span})",
+      "seeOnChart": "Ver esses eventos no gráfico",
+      "densHead": "Inventário das zonas · {tf}",
+      "obActive": "Order Blocks — ativos",
+      "obTested": "Order Blocks — testados (não mitigados)",
+      "obMitigated": "Order Blocks — mitigados",
+      "fvgOpen": "FVG abertos — total",
+      "fvgUntouched": "— dos quais nunca tocados",
+      "fvgPartial": "— dos quais parcialmente preenchidos",
+      "densNote": "Os parcialmente preenchidos estão **incluídos** no total dos FVG abertos. Um FVG totalmente preenchido sai da contagem (o motor não o conserva mais).",
+      "filterInStructure": "Filtrar essas zonas em Estrutura de mercado",
+      "sessHead": "Horários · hora de New York",
+      "marketState": "Estado do mercado",
+      "marketLocalTime": "Hora local do mercado",
+      "weeklyClose": "Fechamento semanal",
+      "weeklyCloseValue": "sex. 17:00",
+      "nextOpen": "Próxima abertura",
+      "lvlHead": "Marcos temporais · preço atual {price}",
+      "dayOpen": "Abertura do dia",
+      "weekOpen": "Abertura da semana",
+      "prevDayHigh": "Alta do dia anterior",
+      "prevDayLow": "Baixa do dia anterior",
+      "prevWeekHigh": "Alta da semana",
+      "prevWeekLow": "Baixa da semana",
+      "lvlNote": "Clique num preço: o nível é traçado no gráfico e trazido para a vista. Clique de novo para removê-lo.",
+      "lvlPeriodDay": "o dia anterior",
+      "lvlPeriodWeek": "a semana anterior",
+      "lvlInsufficient": "Dados insuficientes para {periods}: o período não está totalmente coberto pelo histórico disponível.",
+      "relAbove": "{pct} % acima",
+      "relBelow": "{pct} % abaixo",
+      "relAt": "no preço atual",
       "coincidenceMark": "≈ {side}",
-      "coincidence": "Coincides with a liquidity pocket detected at this level (an observed level coincidence).",
-      "sessCurrent": "Current session",
-      "sessNext": "Next transition",
-      "sessOverlap": "London / New York overlap",
+      "coincidence": "Coincide com um bolsão de liquidez detectado neste nível (coincidência de níveis constatada).",
+      "sessCurrent": "Sessão em curso",
+      "sessNext": "Próxima transição",
+      "sessOverlap": "Sobreposição Londres / New York",
       "overlap": {
-        "upcoming": "upcoming",
-        "ongoing": "ongoing",
-        "ended": "ended"
+        "upcoming": "por vir",
+        "ongoing": "em curso",
+        "ended": "terminado"
       },
-      "windowRow": "Analysed window",
-      "windowValue": "last {bars} candles (≈ {span})",
-      "windowSpan_days": "{count, plural, one {# day} other {# days}}",
-      "windowSpan_weeks": "{count, plural, one {# week} other {# weeks}}",
-      "windowSpan_months": "{count, plural, one {# month} other {# months}}",
-      "windowSpan_years": "{count, plural, one {# year} other {# years}}",
-      "windowNote": "The window is a FIXED number of candles, so its calendar span depends on the unit (≈ one month on H1, ≈ two years on D1). The same « bearish trend » does not cover the same duration from one unit to the next.",
-      "trendAnchorRow": "Anchor",
-      "trendAnchorValue": "{dir} {kind}",
-      "trendAnchorNone": "no structural break",
-      "trendNoteStructural": "The trend follows the structure: the direction of the last non-contradicted BOS/CHOCH break. “Indeterminate” when no break exists in the analysed history — never a fallback “neutral”.",
+      "windowRow": "Janela analisada",
+      "windowValue": "últimas {bars} velas (≈ {span})",
+      "windowSpan_days": "{count, plural, one {# dia} other {# dias}}",
+      "windowSpan_weeks": "{count, plural, one {# semana} other {# semanas}}",
+      "windowSpan_months": "{count, plural, one {# mês} other {# meses}}",
+      "windowSpan_years": "{count, plural, one {# ano} other {# anos}}",
+      "windowNote": "A janela é um número FIXO de velas: a sua extensão de calendário muda, portanto, conforme a unidade (≈ um mês em H1, ≈ dois anos em D1). Uma mesma «tendência de baixa» não cobre a mesma duração de uma unidade para outra.",
+      "trendAnchorRow": "Ancoragem",
+      "trendAnchorValue": "{kind} {dir}",
+      "trendAnchorNone": "nenhum rompimento estrutural",
+      "trendNoteStructural": "A tendência segue a estrutura: o sentido do último rompimento BOS/CHOCH não contradito. «Indeterminada» quando nenhum rompimento existe no histórico analisado — nunca um recuo «neutro».",
       "alignUnavailable": "indisponível"
     },
     "state": {
-      "open": "Market open",
-      "closed_weekend": "Closed — weekend",
-      "closed_holiday": "Closed — holiday",
-      "daily_break": "Daily break",
-      "data_lagged": "Data lagging"
+      "open": "Mercado aberto",
+      "closed_weekend": "Fechado — fim de semana",
+      "closed_holiday": "Fechado — feriado",
+      "daily_break": "Pausa diária",
+      "data_lagged": "Dados atrasados"
     },
     "concept": {
       "regime": {
-        "title": "Why there is no combined score",
-        "body": "Reducing nine measures to a single index would force a choice of which one matters most. That choice is an **opinion**, and a weighted opinion is still an opinion — even shown with two decimals.\n\nMIA therefore shows the nine measures side by side, each verifiable, and leaves the synthesis to whoever takes the risk.",
-        "notSay": "None of these measures, alone or combined, tells you what to do. They describe a present state and past facts."
+        "title": "Por que não há nota global",
+        "body": "Reduzir nove medidas a um único índice obrigaria a decidir qual conta mais. Essa escolha é uma **opinião**, e uma opinião ponderada continua sendo uma opinião — mesmo apresentada com duas casas decimais.\n\nA MIA exibe, portanto, as nove medidas lado a lado, cada uma verificável, e deixa a síntese para quem assume o risco.",
+        "notSay": "Nenhuma dessas medidas, sozinha ou combinada, indica o que fazer. Elas descrevem um estado presente e fatos passados."
       },
       "phase": {
-        "title": "What the phase describes",
-        "body": "The phase summarises **how** the price moves, not **where** it goes. The engine derives it from two measures already shown: the **trend** and the **volatility**. A clear trend in high volatility reads as an **expansion**; a clear trend in contained volatility, as a **trend**; a directionless market, as a **range** or **accumulation**.\n\nIt is a summary, not one more measure: it is fully recomposed from trend and volatility, and the Data tab shows which produced the label.",
-        "notSay": "Neither the duration of the phase, nor its remaining amplitude, nor when it will change. A phase can flip on the next candle."
+        "title": "O que a fase descreve",
+        "body": "A fase resume **como** o preço se desloca, não **para onde** ele vai. O motor a deduz de duas medidas já exibidas: a **tendência** e a **volatilidade**. Uma tendência nítida em forte volatilidade é lida como uma **expansão**; uma tendência nítida em volatilidade contida, como uma **tendência**; um mercado sem direção, como um **range** ou uma **acumulação**.\n\nÉ, portanto, um resumo, não uma medida a mais: ela se recompõe inteiramente a partir da tendência e da volatilidade, e a aba Dado mostra qual produziu o rótulo.",
+        "notSay": "Nem a duração da fase, nem a sua amplitude restante, nem o momento em que ela mudará. Uma fase pode virar na vela seguinte."
       },
       "trend": {
-        "title": "How the trend is determined",
-        "body": "The trend **derives from the structure the engine detects**: it is the direction of the **last break** (BOS or CHOCH) not contradicted by an opposite one. As long as no protected level is broken on a close, a bullish trend **stays bullish**. It is anchored on a dated event (“since the bullish CHOCH of Jul 24”), the same one the Maturity tile names.\n\nWhen **no break** exists in the analysed history, the trend is **indeterminate** — never a fallback “neutral”. Consolidation is described by the Phase tile instead.",
-        "notSay": "A trend describes the recent past. It extends nothing and does not say when it will end. It does not measure the “strength” of the move — only its structural direction."
+        "title": "Como a tendência é determinada",
+        "body": "A tendência **deriva da estrutura detectada pelo motor**: é o sentido do **último rompimento** (BOS ou CHOCH) que não foi contradito por um rompimento de sentido oposto. Enquanto nenhum nível protegido for rompido no fechamento, uma tendência de alta **continua de alta**. Ela é ancorada num evento datado («desde o CHOCH de alta de 24 jul.»), o mesmo do quadro Maturidade.\n\nQuando **nenhum rompimento** existe no histórico analisado, a tendência é **indeterminada** — nunca um «neutro» de recuo. A consolidação, por sua vez, é descrita pelo quadro Fase.",
+        "notSay": "Uma tendência descreve o passado recente. Ela não prolonga nada e não diz quando cessará. Ela não mede a «força» do movimento — apenas o seu sentido estrutural."
       },
       "vol": {
-        "title": "What volatility counts",
-        "body": "The **average range** (high − low) of the **last 7** candles, compared to that of **all the candles preceding them** in the window — never a fixed number. The denominator is therefore always named, and the Data tab shows the full calculation so it can be redone.\n\n**Why it matters in SMC:** volatility sets the **width** of zones. An OB formed in high volatility is wider, and so takes longer to cross. It is a dimension, not a quality.",
-        "notSay": "No direction. Low volatility precedes a rise no more than a fall."
+        "title": "O que a volatilidade conta",
+        "body": "A **amplitude média** (alta − baixa) das **7 últimas** velas, comparada à de **todas as velas que as precedem** na janela — nunca um número fixo. O denominador é, portanto, sempre nomeado, e a aba Dado mostra o cálculo completo para que possa ser refeito.\n\n**Por que isso conta em SMC:** a volatilidade fixa a **largura** das zonas. Um OB formado em forte volatilidade é mais amplo, portanto leva mais tempo para ser atravessado. É uma dimensão, não uma qualidade.",
+        "notSay": "Nenhuma direção. Uma volatilidade baixa não precede mais uma alta do que uma baixa."
       },
       "pos": {
-        "title": "A measure, nothing more",
-        "body": "The position expresses as a percentage where the price sits between the retained structural low and high. 0 % = lower bound, 100 % = upper bound.\n\nIt is a **coordinate**. It makes two markets of very different scales comparable and immediately locates a zone relative to the bounds.",
-        "notSay": "Being at 43 % makes nothing more likely. Neither “mid-range so it will pick a side” nor the reverse: it is a location."
+        "title": "Uma medida, nada mais",
+        "body": "A posição exprime em porcentagem onde se situa o preço entre o fundo e o topo de estrutura retidos. 0 % = borda inferior, 100 % = borda superior.\n\nÉ uma **coordenada**. Ela torna comparáveis dois mercados de escalas muito diferentes e situa imediatamente uma zona em relação aos limites.",
+        "notSay": "Estar a 43 % não torna nada mais provável. Nem «no meio, então vai escolher um lado», nem o inverso: é uma localização."
       },
       "align": {
-        "title": "Multi-timeframe alignment",
-        "body": "**What it counts:** how many timeframes show **right now** the same structural direction. When they diverge, MIA shows it just as plainly: disagreement is information, not a failure.\n\n**What the SMC convention makes of it:** many traders treat alignment as a **confluence** criterion in their own method.",
-        "notSay": "That an alignment makes an entry safer, more likely or less risky. No one can measure that on your account, your horizon and your risk management. MIA describes the fact — the interpretation is yours."
+        "title": "Alinhamento multiunidades de tempo",
+        "body": "**O que ela conta:** quantas das unidades de tempo mostram **neste momento** a mesma direção de estrutura. Quando divergem, a MIA também o mostra: o desacordo é uma informação, não uma falha.\n\n**O que a convenção SMC faz disso:** muitos traders tratam o alinhamento como um critério de **confluência** no seu próprio método.",
+        "notSay": "Que um alinhamento torne uma entrada mais segura, mais provável ou menos arriscada. Ninguém pode medir isso na sua conta, no seu horizonte e na sua gestão de risco. A MIA descreve o fato — a interpretação continua sendo sua."
       },
       "mat": {
-        "title": "Structure maturity",
-        "body": "**What it counts:** the number of candles closed on the displayed timeframe since the **last confirmed CHOCH**. The starting point is always named with its date: once a counter exceeds a day, “11:00” alone becomes ambiguous.\n\nThe counter resets at the next CHOCH, never on a BOS — a BOS extends the structure, it does not restart it.",
-        "notSay": "An old structure is neither more nor less likely to continue. No probability is computed, and no comparison with the duration of past structures is made — that would invite a conclusion no one holds."
+        "title": "Maturidade da estrutura",
+        "body": "**O que ela conta:** o número de velas fechadas na unidade de tempo exibida desde o **último CHOCH confirmado**. O ponto de partida é sempre nomeado com a sua data: assim que um contador ultrapassa o dia, «11:00» sozinho torna-se ambíguo.\n\nO contador reinicia no CHOCH seguinte, nunca num BOS — um BOS prolonga a estrutura, não a reinicia.",
+        "notSay": "Uma estrutura antiga não é nem mais nem menos suscetível de prosseguir. Nenhuma probabilidade é calculada, e nenhuma comparação com a duração das estruturas passadas é feita — ela convidaria a concluir o que ninguém sabe."
       },
       "last": {
-        "title": "BOS and CHOCH",
-        "body": "**BOS** — a break of an extreme **in the direction** of the current structure: it extends it. **CHOCH** — the first break **in the opposite direction**: the change of character, and the anchor of maturity.\n\nIn both cases MIA requires a **close** beyond the extreme, not a mere wick. That is what separates a level touched from a level given up.",
-        "notSay": "A BOS does not say the move will continue, a CHOCH does not say the trend is over. They are dated facts, not announcements."
+        "title": "BOS e CHOCH",
+        "body": "**BOS** — rompimento de um extremo **no sentido** da estrutura em curso: ela a prolonga. **CHOCH** — primeiro rompimento **em sentido inverso**: é a mudança de caráter, e serve de âncora à maturidade.\n\nNos dois casos, a MIA exige um **fechamento** além do extremo, não um simples pavio. É o que distingue um nível tocado de um nível cedido.",
+        "notSay": "Um BOS não diz que o movimento continuará, um CHOCH não diz que a tendência terminou. São fatos datados, não anúncios."
       },
       "dens": {
-        "title": "Zone density",
-        "body": "**What it counts:** the zones still open detected on this timeframe, split by type and by state. Each zone is counted once, in a single state.\n\n**How to read it:** high density describes a market that has left many imbalances behind; low density, a market that has already filled its own.",
-        "notSay": "More zones does not mean more opportunities, and none is presented as better. Nothing indicates which will be reached, nor whether it will be."
+        "title": "Densidade de zonas",
+        "body": "**O que ela conta:** as zonas ainda abertas detectadas nesta unidade de tempo, distribuídas por tipo e por estado. Cada zona é contada apenas uma vez, num único estado.\n\n**Como lê-la:** uma densidade elevada descreve um mercado que deixou muitos desequilíbrios para trás; uma densidade baixa, um mercado que já preencheu os seus.",
+        "notSay": "Mais zonas não significa mais ocasiões, e nenhuma é apresentada como melhor. Nada indica qual será atingida, nem se o será."
       },
       "sess": {
-        "title": "The sessions",
-        "body": "Published **time windows**, like the volatility calendar: published facts, not market measurements.\n\nMany SMC traders read the market by session rather than treating the day as one block. The tile places the journal’s events within that segmentation.\n\n**On a continuous market** (crypto), the tile shows “Continuous market · 24/7”: there is no weekly open or close. Splitting the day into Asia / Europe / America hours is then a reading convention, not a market property.",
-        "notSay": "No session is presented as better or more reliable. MIA does not say what the New York close will do."
+        "title": "As sessões",
+        "body": "**Faixas horárias**, tal como o calendário de volatilidade: fatos publicados, não medidas de mercado.\n\nMuitos traders SMC segmentam a sua leitura por sessão em vez de tratar o dia como um bloco. O quadro serve para situar os eventos do diário nesse recorte.\n\n**Num mercado contínuo** (cripto), o quadro exibe «Mercado contínuo · 24/7»: não há abertura nem fechamento semanal. Recortar o dia em horas Ásia / Europa / América continua sendo então uma convenção de leitura, não uma propriedade do mercado.",
+        "notSay": "Nenhuma sessão é apresentada como melhor ou mais confiável. A MIA não diz o que fará o fechamento de New York."
       },
       "lvl": {
-        "title": "Markers, not zones",
-        "body": "These levels are not **detected**: they exist because time passes. The day open is the opening price of the current daily candle; the previous day high is simply the previous day’s extreme.\n\nThat is the difference with the **Position in range** tile, which uses **structural** bounds. Here the bounds are **temporal**: two distinct references, never the same figures.\n\nEach price is clickable: MIA traces the level on the chart and brings it into view. In the ICT approach these markers are often looked at before anything else, because everyone sees them the same way.",
-        "notSay": "Being below the day open foretells nothing about the close. A previous-day extreme is neither a support, nor a resistance, nor a target: it is a price reached yesterday, nothing more."
+        "title": "Marcos, não zonas",
+        "body": "Estes níveis não são **detectados**: existem porque o tempo passa. A abertura do dia é o preço de abertura da vela diária em curso; o topo do dia anterior é simplesmente o extremo do dia precedente.\n\nÉ a diferença com o quadro **Posição no range**, que usa limites **estruturais**. Aqui, os limites são **temporais**: dois referenciais distintos, nunca os mesmos números.\n\nCada preço é clicável: a MIA traça o nível no gráfico e o traz para a vista. Na abordagem ICT, esses marcos são frequentemente observados antes de tudo o mais, porque são visíveis por todos da mesma forma.",
+        "notSay": "Estar abaixo da abertura do dia não pressagia nada sobre o fechamento. Um extremo do dia anterior não é nem um suporte, nem uma resistência, nem um alvo: é um preço atingido ontem, nada mais."
       }
     },
     "session": {
-      "asia": "Asia",
-      "london": "London",
+      "asia": "Ásia",
+      "london": "Londres",
       "new_york": "New York",
-      "overlap": "London / NY overlap",
-      "outside": "Between sessions",
-      "continuous": "Continuous market · 24/7",
-      "close": "close",
-      "open": "open"
+      "overlap": "Sobreposição Londres / NY",
+      "outside": "Entre sessões",
+      "continuous": "Mercado contínuo · 24/7",
+      "close": "fechamento",
+      "open": "abertura"
     },
     "delay": {
-      "dh": "{d}d {h}h",
-      "hm": "{h}h {mm}",
+      "dh": "{d} d {h} h",
+      "hm": "{h} h {mm}",
       "m": "{m} min"
     }
   },
@@ -659,7 +659,7 @@
       "card1Title": "Compreender uma leitura",
       "card1Kicker": "Pedagogia",
       "card2Title": "Contextualizar um evento",
-      "card2Kicker": "Macro · blackout",
+      "card2Kicker": "Macro · volatilidade",
       "card3Title": "Recusar uma ordem",
       "card3Kicker": "Recusa pedagógica",
       "footnote": "As respostas acima são predefinidas para a demonstração. Em produção, o M.I.A Agent utiliza o Claude (Anthropic) com o contexto InsightSignal v2.1.0 injetado e um prompt de sistema que proíbe qualquer recomendação personalizada."
@@ -698,7 +698,7 @@
       "planName": "Acesso integral MIA",
       "allIncludedBadge": "Tudo incluído",
       "planSubtitle": "Uma única subscrição, a ferramenta completa — leitura, chatbot, scanner, zonas.",
-      "currency": "USD",
+      "currency": "US$",
       "perMonth": "/ mês",
       "annualBilling": "ou seja {perMonth} {currency} por mês · cancele quando quiser.",
       "monthlyBilling": "Sem compromisso, cancelável a qualquer momento.",
@@ -968,13 +968,11 @@
       "sideAny": "Ambos (SSL + BSL)",
       "sideBsl": "BSL (liquidez acima)",
       "sideSsl": "SSL (liquidez abaixo)",
-      "trendIndeterminate": "Indeterminate"
+      "trendIndeterminate": "Indeterminada"
     },
     "palette": {
-      "mtf_aligned_label": "3 TF aligned (structure)",
-      "mtf_aligned_desc": "The 3 timeframes (H4, H1, M15) show the same STRUCTURAL direction right now (last BOS/CHOCH break in the same direction). A timeframe with no structural trend established (indeterminate) prevents alignment.",
-      "trend_is_label": "Current trend (structure)",
-      "trend_is_desc": "The structural trend observed on this timeframe is, right now, the one you selected (bullish, bearish, or indeterminate when no break established it).",
+      "trend_is_label": "Tendência atual (estrutura)",
+      "trend_is_desc": "A tendência de estrutura observada neste timeframe é, neste momento, a escolhida (de alta, de baixa, ou indeterminada quando nenhum rompimento a estabeleceu).",
       "market_phase_is_label": "Fase de mercado",
       "market_phase_is_desc": "A fase de mercado observada corresponde, neste momento, à que escolheu.",
       "volatility_is_label": "Volatilidade observada",
@@ -1133,7 +1131,65 @@
         "opposite": "Em sentido oposto",
         "same": "No mesmo sentido"
       },
-      "touches": "{n} vezes"
+      "touches": "{n} vezes",
+      "age_bucket": {
+        "10to50": "10 a 50",
+        "gt50": "Mais de 50",
+        "lt10": "Menos de 10"
+      },
+      "direction": {
+        "any": "Qualquer direção",
+        "bearish": "De baixa",
+        "bullish": "De alta"
+      },
+      "eq_kind": {
+        "any": "Fundos ou topos",
+        "highs": "Topos",
+        "lows": "Fundos"
+      },
+      "event": {
+        "bos_down": "BOS ↓",
+        "bos_up": "BOS ↑",
+        "choch_down": "CHOCH ↓",
+        "choch_up": "CHOCH ↑"
+      },
+      "phase": {
+        "accumulation": "Acumulação",
+        "expansion": "Expansão",
+        "ranging": "Range",
+        "trend": "Tendência"
+      },
+      "session": {
+        "asia": "Ásia",
+        "london": "Londres",
+        "new_york": "New York",
+        "overlap": "Sobreposição"
+      },
+      "side": {
+        "any": "Ambos",
+        "bsl": "BSL (acima)",
+        "ssl": "SSL (abaixo)"
+      },
+      "third": {
+        "bottom": "Inferior",
+        "middle": "Meio",
+        "top": "Superior"
+      },
+      "trend": {
+        "bearish": "De baixa",
+        "bullish": "De alta",
+        "indeterminate": "Indeterminada"
+      },
+      "volatility": {
+        "elevated": "Estendida",
+        "low": "Contraída",
+        "normal": "Normal"
+      },
+      "zone_kind": {
+        "any": "OB ou FVG",
+        "fvg": "Fair Value Gap",
+        "ob": "Order Block"
+      }
     },
     "recap": {
       "and": "e",
@@ -1254,7 +1310,7 @@
       "liquidityStatus_intact": "intacta",
       "liquidityStatus_swept": "varrida",
       "liquidityStatus_broken": "quebrada",
-      "trendAdj_indeterminate": "indeterminate",
+      "trendAdj_indeterminate": "indeterminada",
       "trend_indeterminate": "Tendência indeterminada"
     },
     "structure": {
@@ -1301,7 +1357,7 @@
       "lastEvent": "{kind} {dir} {val} ({tf})",
       "zoneDensity": "{ob} OB · {fvg} FVG ativos",
       "mtfAligned": "Os {count} TF estão alinhados ({dir}).",
-      "mtfNeutral": "{count, plural, one {The upper unit has no structural trend established} other {The # upper units have no structural trend established}}.",
+      "mtfNeutral": "{count, plural, one {A unidade superior está sem tendência estrutural estabelecida} other {As # unidades superiores estão sem tendência estrutural estabelecida}}.",
       "mtfPullback": "M15 recua contra a tendência H4 {fem}.",
       "mtfDivergent": "Os TF divergem: {list}."
     },
@@ -1348,40 +1404,40 @@
       "mtf_aligned": "Timeframes alinhados",
       "mtf_divergent": "Timeframes divergentes",
       "mtf_mixed": "Timeframes mistos",
-      "trend_indeterminate": "Indeterminate trend"
+      "trend_indeterminate": "Tendência indeterminada"
     },
     "help": {
       "regime": {
-        "title": "Reading the market regime",
-        "body": "These six measures describe the **current** state of the market, each with its source shown below it. None is a forecast, none is weighted.\n\nThe little **?** on each measure explains exactly what it counts, and what it does not say."
+        "title": "Ler o regime de mercado",
+        "body": "Estas seis medidas descrevem o estado **atual** do mercado, cada uma com a sua fonte exibida abaixo. Nenhuma é uma previsão, nenhuma é ponderada.\n\nO pequeno **?** de cada medida explica o que ela conta exatamente, e o que ela não diz."
       },
       "trend": {
-        "title": "Trend",
-        "body": "**What it counts:** the sequence of highs and lows on **the displayed timeframe** (here H1). Falling highs and lows → bearish. This is a reading of past structure, not a projection.\n\n**Classic trap:** the trend is not the same across all timeframes. A bearish M15 inside a bullish H4 is not a contradiction — it's a matter of scale. Change the TF and the answer changes."
+        "title": "Tendência",
+        "body": "**O que ela conta:** a sucessão dos topos e fundos na **unidade de tempo exibida** (aqui H1). Topos e fundos decrescentes → de baixa. É uma leitura da estrutura passada, não uma projeção.\n\n**Armadilha clássica:** a tendência não é a mesma em todas as unidades de tempo. Um M15 de baixa dentro de um H4 de alta não é uma contradição — é uma questão de escala. Mude de TF e a resposta muda."
       },
       "vol": {
-        "title": "Volatility",
-        "body": "**What it counts:** the average range of the most recent candles compared with that of the candles preceding them. \"Normal\" = within its usual range.\n\n**Why it's useful in SMC:** volatility changes the **size** of zones. An OB formed in high volatility is wider, and therefore takes longer to cross. This isn't a quality, it's a dimension.\n\n**What it does not say:** no direction. Low volatility can precede anything."
+        "title": "Volatilidade",
+        "body": "**O que ela conta:** a amplitude média das últimas velas comparada à das velas que as precedem. «Normal» = dentro da sua faixa habitual.\n\n**Por que é útil em SMC:** a volatilidade muda o **tamanho** das zonas. Um OB formado em forte volatilidade é mais amplo, portanto leva mais tempo para ser atravessado. Isso não é uma qualidade, é uma dimensão.\n\n**O que ela não diz:** nenhuma direção. Uma baixa volatilidade pode preceder qualquer coisa."
       },
       "mat": {
-        "title": "Structure maturity",
-        "body": "**What it counts:** the number of candles closed on the displayed timeframe **since the last confirmed CHOCH** (here, the one at 14:00). The starting point is always named below the value — a counter without an origin means nothing.\n\n**What it does not say:** an older structure is neither more nor less likely to continue. No probability is computed here."
+        "title": "Maturidade da estrutura",
+        "body": "**O que ela conta:** o número de velas fechadas na unidade de tempo exibida **desde o último CHOCH confirmado** (aqui, o das 14:00). O ponto de partida é sempre nomeado sob o valor — um contador sem origem não significa nada.\n\n**O que ela não diz:** uma estrutura antiga não é nem mais nem menos suscetível de prosseguir. Nenhuma probabilidade é calculada aqui."
       },
       "align": {
-        "title": "Multi-timeframe alignment",
-        "body": "**What it counts:** the three analysed timeframes are **right now** showing the same structural direction. When they diverge, MIA shows that just as plainly (\"Disagreement\") — disagreement is information, not a failure.\n\n**What the SMC convention makes of it:** many traders treat alignment as a **confluence** criterion within their own method, and read disagreement as the sign that two scales are telling two different stories.\n\n**What MIA will never assert:** that an alignment makes an entry safer, more likely or less risky. No one can measure that on your account, your horizon and your risk management. MIA describes the fact; the interpretation stays yours."
+        "title": "Alinhamento multiunidades de tempo",
+        "body": "**O que ela conta:** as três unidades de tempo analisadas mostram **neste momento** a mesma direção de estrutura. Quando divergem, a MIA também o mostra («Desacordo») — o desacordo é uma informação, não uma falha.\n\n**O que a convenção SMC faz disso:** muitos traders tratam o alinhamento como um critério de **confluência** no seu próprio método, e leem o desacordo como o indício de que duas escalas contam duas histórias diferentes.\n\n**O que a MIA nunca afirmará:** que um alinhamento torna uma entrada mais segura, mais provável ou menos arriscada. Ninguém pode medir isso na sua conta, no seu horizonte e na sua gestão de risco. A MIA descreve o fato; a interpretação continua sendo sua."
       },
       "dens": {
-        "title": "Zone density",
-        "body": "**What it counts:** the number of still-active zones detected on this timeframe.\n\n**How to read it:** high density describes a market that has left many imbalances behind it; low density, a market that has already filled most of its own. More zones does not mean more opportunities — only more levels to watch."
+        "title": "Densidade de zonas",
+        "body": "**O que ela conta:** o número de zonas ainda ativas detectadas nesta unidade de tempo.\n\n**Como lê-la:** uma densidade elevada descreve um mercado que deixou muitos desequilíbrios para trás; uma densidade baixa, um mercado que já preencheu a maioria dos seus. Mais zonas não significa mais ocasiões — apenas mais níveis a observar."
       },
       "struct": {
-        "title": "The four structure objects",
-        "body": "**OB (Order Block)** — the last candle of opposite direction before the impulsive move that broke the structure.\n\n**FVG (Fair Value Gap)** — the gap left by three candles whose wicks do not overlap. It fills progressively: MIA shows the percentage actually filled.\n\n**BOS** — break of an extreme **in the direction** of the current structure. **CHOCH** — first break **in the opposite direction**: this is the change of character.\n\nMIA detects, describes and dates these objects. It never says which one \"is going to work\"."
+        "title": "Os quatro objetos de estrutura",
+        "body": "**OB (Order Block)** — a última vela de sentido oposto antes do movimento impulsivo que rompeu a estrutura.\n\n**FVG (Fair Value Gap)** — a lacuna deixada por três velas cujos pavios não se sobrepõem. Ela se preenche progressivamente: a MIA exibe a porcentagem realmente preenchida.\n\n**BOS** — rompimento de um extremo **no sentido** da estrutura em curso. **CHOCH** — primeiro rompimento **em sentido inverso**: é a mudança de caráter.\n\nA MIA detecta, descreve e data esses objetos. Ela nunca diz qual «vai funcionar»."
       },
       "liq": {
-        "title": "External liquidity: where and in what state",
-        "body": "**BSL** — buy-side liquidity, above highs and equal highs. **SSL** — sell-side liquidity, below lows and equal lows.\n\n**Intact** — never touched. **Swept** — a wick went beyond but the close came back short of it: the level **still holds**. **Broken** — a clean close beyond: it gave way.\n\n**The distinction to remember:** touched does not equal broken. That's the nuance most tools flatten into a single binary state.\n\nMIA will never write that a pocket will be \"taken\": that's a prediction, and no one knows it."
+        "title": "Liquidez externa: onde e em que estado",
+        "body": "**BSL** — liquidez de compra, acima dos topos e dos topos iguais. **SSL** — liquidez de venda, abaixo dos fundos e fundos iguais.\n\n**Intacta** — nunca tocada. **Varrida** — um pavio foi além, mas o fechamento voltou aquém dele: o nível **ainda se mantém**. **Rompida** — um fechamento nítido além: cedeu.\n\n**A distinção a lembrar:** tocado não é o mesmo que rompido. É a nuance que a maioria das ferramentas achata num único estado binário.\n\nA MIA nunca escreverá que um bolsão será «capturado»: isso é uma previsão, e ninguém a conhece."
       }
     }
   },
@@ -1442,7 +1498,7 @@
     "description": "Indicador de mercado conversacional. Postura educativa, compreensão aumentada do mercado — não uma performance financeira prometida.",
     "earlyAccessBadge": "Acesso antecipado",
     "productHeading": "Produto",
-    "legalHeading": "Legal",
+    "legalHeading": "Jurídico",
     "product": {
       "multiAsset": "Multiativo",
       "chatbot": "Chatbot M.I.A Agent",
@@ -1542,7 +1598,7 @@
     "manage": "Gerir a minha subscrição",
     "choosePlanTitle": "Escolher um plano",
     "noPlans": "Nenhum plano está disponível de momento.",
-    "currency": "USD",
+    "currency": "US$",
     "planMonthly": "Mensal — {amount} {currency} / mês",
     "planAnnual": "Anual — {total} {currency} / ano, ou seja {perMonth} {currency} / mês",
     "subscribe": "Subscrever",
@@ -1631,7 +1687,7 @@
       "sessionRow": "Sessão",
       "sessionValue": "Ligado neste dispositivo",
       "sectionAppearance": "Aparência",
-      "sectionLanguage": "Language",
+      "sectionLanguage": "Idioma",
       "appearanceBadge": "Aplica-se de imediato · memorizado",
       "sectionSubscription": "Subscrição",
       "planRow": "Plano atual",
@@ -1754,120 +1810,120 @@
       }
     },
     "struct": {
-      "title": "Market structure",
+      "title": "Estrutura de mercado",
       "zonesCount": "{count, plural, one {# zone} other {# zones}}",
       "countFiltered": "{n} of {m} zones",
-      "reset": "Reset",
-      "noneType": "No type selected. Pick at least one type to see results.",
-      "noneState": "No state selected. Pick at least one state to see results.",
-      "noMatch1": "No zone matches these filters.",
-      "noMatch2": "Nothing is invented to fill the list.",
-      "sortAria": "Sort and filter",
-      "helpAria": "Learn more",
+      "reset": "Redefinir",
+      "noneType": "Nenhum tipo selecionado. Escolha ao menos um tipo para ver resultados.",
+      "noneState": "Nenhum estado selecionado. Escolha ao menos um estado para ver resultados.",
+      "noMatch1": "Nenhuma zona corresponde a estes filtros.",
+      "noMatch2": "Nada é inventado para preencher a lista.",
+      "sortAria": "Ordenar e filtrar",
+      "helpAria": "Saber mais",
       "filterType": "Type",
-      "filterState": "State",
-      "filterSort": "Sort by",
+      "filterState": "Estado",
+      "filterSort": "Ordenar por",
       "type": {
-        "all": "All",
+        "all": "Todos",
         "ob": "OB",
         "fvg": "FVG"
       },
       "st": {
-        "all": "All",
-        "active": "Active",
-        "tested": "Tested",
-        "mitig": "Mitigated"
+        "all": "Todos",
+        "active": "Ativas",
+        "tested": "Testadas",
+        "mitig": "Mitigadas"
       },
       "sort": {
-        "near": "Near price",
-        "recent": "Recent",
-        "big": "Wide"
+        "near": "Próxima do preço",
+        "recent": "Recente",
+        "big": "Ampla"
       },
       "badge": {
-        "active": "Active",
-        "tested": "Tested",
-        "mitig": "Mitigated"
+        "active": "Ativo",
+        "tested": "Testado",
+        "mitig": "Mitigado"
       },
       "dist": {
-        "inside": "Price inside the zone",
+        "inside": "Preço dentro da zona",
         "above": "+{pct}% above",
         "below": "−{pct}% below"
       },
       "fact": {
-        "neverTested": "Never tested since it formed.",
-        "tested": "Tested.",
-        "mitigatedAt": "Mitigated at {time}.",
-        "mitigated": "Mitigated.",
-        "filled": "Fully filled.",
-        "partial": "Filled to {pct}%.",
-        "fvgOpen": "Gap open."
+        "neverTested": "Nunca testada desde a sua formação.",
+        "tested": "Testada.",
+        "mitigatedAt": "Mitigada às {time}.",
+        "mitigated": "Mitigada.",
+        "filled": "Totalmente preenchida.",
+        "partial": "Preenchida em {pct} %.",
+        "fvgOpen": "Lacuna aberta."
       },
-      "more": "Learn more",
-      "hint": "Click a zone = highlight on the chart.",
-      "empty1": "No zone matches these filters.",
-      "empty2": "Nothing is invented to pad the list.",
-      "evChoch": "Confirmed change of character",
-      "evBosBull": "Bullish break of structure",
-      "evBosBear": "Bearish break of structure",
+      "more": "Saber mais",
+      "hint": "Clique numa zona = destaque no gráfico.",
+      "empty1": "Nenhuma zona corresponde a estes filtros.",
+      "empty2": "Nada é inventado para preencher a lista.",
+      "evChoch": "Mudança de caráter confirmada",
+      "evBosBull": "Rompimento de estrutura de alta",
+      "evBosBear": "Rompimento de estrutura de baixa",
       "evSelectAria": "Enquadrar o evento {kind} no gráfico",
       "unitLabel": "Unidade de tempo: {tf}"
     },
     "liq2": {
-      "title": "External liquidity",
-      "pochesCount": "{count, plural, one {# pocket} other {# pockets}}",
-      "countFiltered": "{n} of {m} pockets",
-      "reset": "Reset",
-      "noneSide": "No side selected. Pick at least one side to see results.",
-      "noneState": "No state selected. Pick at least one state to see results.",
-      "noMatch1": "No pocket matches these filters.",
-      "noMatch2": "Nothing is invented to fill the list.",
-      "sortAria": "Sort and filter",
-      "helpAria": "Learn more",
-      "filterSide": "Side",
-      "filterState": "State",
+      "title": "Liquidez externa",
+      "pochesCount": "{count, plural, one {# bolsão} other {# bolsões}}",
+      "countFiltered": "{n} de {m} bolsões",
+      "reset": "Redefinir",
+      "noneSide": "Nenhum lado selecionado. Escolha ao menos um lado para ver resultados.",
+      "noneState": "Nenhum estado selecionado. Escolha ao menos um estado para ver resultados.",
+      "noMatch1": "Nenhum bolsão corresponde a estes filtros.",
+      "noMatch2": "Nada é inventado para preencher a lista.",
+      "sortAria": "Ordenar e filtrar",
+      "helpAria": "Saber mais",
+      "filterSide": "Lado",
+      "filterState": "Estado",
       "side": {
-        "all": "Both",
-        "bsl": "BSL (buy)",
-        "ssl": "SSL (sell)"
+        "all": "Ambos",
+        "bsl": "BSL (compra)",
+        "ssl": "SSL (venda)"
       },
       "st": {
-        "all": "All",
-        "intact": "Intact",
-        "swept": "Swept",
-        "broken": "Broken"
+        "all": "Todos",
+        "intact": "Intactas",
+        "swept": "Varridas",
+        "broken": "Rompidas"
       },
       "badge": {
-        "intact": "Intact",
-        "swept": "Swept",
-        "broken": "Broken"
+        "intact": "Intacta",
+        "swept": "Varrida",
+        "broken": "Rompida"
       },
       "src": {
         "eqh": "EQH",
         "eql": "EQL",
-        "high": "High",
-        "low": "Low"
+        "high": "Topo",
+        "low": "Fundo"
       },
       "dist": {
         "above": "+{pct}% above",
         "below": "−{pct}% below"
       },
       "fact": {
-        "intact": "Never touched since it formed.",
-        "swept": "Wick beyond, close came back. Still holds.",
-        "broken": "Clean close beyond. Gave way."
+        "intact": "Nunca tocada desde a sua formação.",
+        "swept": "Pavio além, fechamento voltou. Ainda se mantém.",
+        "broken": "Fechamento nítido além. Cedeu."
       },
-      "hint": "Click a pocket = highlight its level.",
-      "empty1": "No pocket matches this filter.",
-      "empty2": "Nothing is invented to pad the list."
+      "hint": "Clique num bolsão = destaque do seu nível.",
+      "empty1": "Nenhum bolsão corresponde a este filtro.",
+      "empty2": "Nada é inventado para preencher a lista."
     },
     "reg2": {
-      "trendSub": "measured on {tf}",
-      "volSub": "7 recent vs preceding",
-      "matSub": "since the CHOCH at {time}",
-      "matValue": "{count, plural, one {# candle} other {# candles}}",
-      "densSub": "active on {tf}",
-      "measureHelpAria": "Help on this measure",
-      "helpAria": "Learn more"
+      "trendSub": "medida em {tf}",
+      "volSub": "7 recentes vs anteriores",
+      "matSub": "desde o CHOCH de {time}",
+      "matValue": "{count, plural, one {# vela} other {# velas}}",
+      "densSub": "ativas em {tf}",
+      "measureHelpAria": "Ajuda sobre esta medida",
+      "helpAria": "Saber mais"
     }
   },
   "samples": {
@@ -2211,7 +2267,7 @@
     "emptyFilter": "Nenhuma zona corresponde a este filtro.",
     "selector": {
       "instrument": "Instrumento",
-      "timeframe": "Timeframe"
+      "timeframe": "Unidade de tempo"
     },
     "filters": {
       "all": "Todas",
@@ -2301,7 +2357,7 @@
       "filledPct": "Preenchida {pct} %"
     },
     "deeplink": {
-      "staleNotice": "This zone is no longer detected in the current reading."
+      "staleNotice": "Esta zona não é mais detectada na leitura atual."
     }
   },
   "appearance": {
