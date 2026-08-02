@@ -417,7 +417,9 @@
       "lvl": "{count, plural, one {# marker} other {# markers}} · open the detail",
       "sess": "{label} in {delay}",
       "trendRef": "since the {dir} {kind} of {date}",
-      "trendNone": "no structural trend established"
+      "trendNone": "no structural trend established",
+      "lvlNA": "niet van toepassing op {tf}: de vorige dag is de vorige kaars",
+      "sessNA": "niet van toepassing op {tf}: de kaars omvat alle sessies"
     },
     "value": {
       "pos": "{pct} %",
@@ -429,7 +431,9 @@
       "kindChoch": "CHOCH",
       "kindBos": "BOS",
       "alignIndeterminate": "no structural trend established",
-      "alignIndetCount": "{count, plural, one {# indeterminate} other {# indeterminate}}"
+      "alignIndetCount": "{count, plural, one {# indeterminate} other {# indeterminate}}",
+      "alignNone": "geen hogere eenheid",
+      "notApplicable": "niet van toepassing"
     },
     "data": {
       "phaseHead": "The two measures it is built from",
@@ -521,7 +525,8 @@
       "trendAnchorRow": "Anchor",
       "trendAnchorValue": "{dir} {kind}",
       "trendAnchorNone": "no structural break",
-      "trendNoteStructural": "The trend follows the structure: the direction of the last non-contradicted BOS/CHOCH break. “Indeterminate” when no break exists in the analysed history — never a fallback “neutral”."
+      "trendNoteStructural": "The trend follows the structure: the direction of the last non-contradicted BOS/CHOCH break. “Indeterminate” when no break exists in the analysed history — never a fallback “neutral”.",
+      "alignUnavailable": "niet beschikbaar"
     },
     "state": {
       "open": "Market open",
@@ -861,7 +866,13 @@
       "partialMatches": "Gedeeltelijke overeenkomsten ({count})",
       "nonePresent": "Geen van uw voorwaarden aanwezig: {list}.",
       "notGenerated": "Lezing nog niet gegenereerd: {list}.",
-      "scannedFooter": "{count} combo's alleen-lezen geanalyseerd op de laatst reeds geproduceerde lezingen."
+      "scannedFooter": "{count} combo's alleen-lezen geanalyseerd op de laatst reeds geproduceerde lezingen.",
+      "isolatedCount": "{count, plural, =0 {0 combo} one {# combo} other {# combo's}}",
+      "isolatedIntro": "Combo's die elke voorwaarde AFZONDERLIJK vervullen:",
+      "isolatedNote": "Deze aantallen staan los van elkaar: ze tellen niet op en zeggen niets over wat een gedeeltelijke combinatie zou opleveren.",
+      "noComboBody": "Je voorwaarden zijn op dit moment nergens verenigd. Een scan die niets oplevert is een antwoord, geen storing — niets wordt verborgen, niets wordt versoepeld.",
+      "noComboTitle": "Geen enkele combo verenigt je lezing. Dit is geen fout.",
+      "noLoosening": "De scanner biedt niet aan om een voorwaarde te \"versoepelen\" om resultaten te krijgen. Een scanner die voorstelt te versoepelen tot hij iets vindt, leert je een antwoord te zoeken in plaats van het te lezen."
     },
     "combo": {
       "conditionsPresent": "{met} van uw {total, plural, one {# voorwaarde aanwezig} other {# voorwaarden aanwezig}}",
@@ -874,7 +885,17 @@
       "importantNews": "{count, plural, one {# belangrijk nieuwsbericht op komst — om in gedachten te houden.} other {# belangrijke nieuwsberichten op komst — om in gedachten te houden.}}",
       "analyse": "Analyseren",
       "disclaimer": "Structurele feiten waargenomen in het heden. De scanner voorspelt niets en beveelt niets aan — het oordeel is aan u.",
-      "unavailable": "niet beschikbaar"
+      "unavailable": "niet beschikbaar",
+      "againstBlock": "Wat ertegen ingaat",
+      "againstNone": "Niets gaat ertegen in onder je evalueerbare voorwaarden.",
+      "contextBlock": "Context waar je niet om vroeg",
+      "freshCandle": "kaars gesloten {age}",
+      "matchBlock": "Wat overeenkomt",
+      "matchNone": "Geen voorwaarde vervuld hier.",
+      "nonEvaluableBlock": "Niet evalueerbaar hier (gegeven ontbreekt)",
+      "nonEvaluableCount": "{count, plural, one {# niet evalueerbaar} other {# niet evalueerbaar}}",
+      "openChart": "Openen in de grafiek",
+      "range": "range {low}–{high}"
     },
     "toggle": {
       "label": "Automatische verversing (bij elke sluiting)",
@@ -899,7 +920,15 @@
       "selectAtLeastOne": "Selecteer ten minste één voorwaarde.",
       "proximityWithin": "Binnen",
       "proximityOfPrice": "% van de prijs",
-      "side": "Zijde"
+      "side": "Zijde",
+      "activeInFamily": "{count, plural, =0 {geen actief} one {# actief} other {# actief}}",
+      "conceptAria": "Begrip — {label}",
+      "liveCombos": "{count, plural, one {combo komt overeen} other {combo's komen overeen}} met je lezing · over {scanned} gevolgde markten",
+      "liveError": "telling niet beschikbaar",
+      "liveFreshness": "geëvalueerd {age}",
+      "rescan": "Opnieuw scannen",
+      "selectedCount": "{count, plural, =0 {Geen voorwaarde aangevinkt} one {# voorwaarde aangevinkt} other {# voorwaarden aangevinkt}}",
+      "zeroNote": "Nul voorwaarden betekent niet \"alle markten\": zonder voorwaarde valt er niets te lezen."
     },
     "bias": {
       "bullish": "Bullish",
@@ -969,7 +998,17 @@
       "price_near_liquidity_label": "Prijs dicht bij liquiditeit (SSL/BSL)",
       "price_near_liquidity_desc": "De huidige prijs bevindt zich dicht bij een intacte liquiditeitspocket (BSL boven / SSL onder).",
       "liquidity_swept_recent_label": "Recente liquiditeitsafname",
-      "liquidity_swept_recent_desc": "Een liquiditeitspocket (SSL/BSL) is tijdens de laatste candles weggeveegd."
+      "liquidity_swept_recent_desc": "Een liquiditeitspocket (SSL/BSL) is tijdens de laatste candles weggeveegd.",
+      "higher_tf_agrees_desc": "De structuurtrend van de eerstvolgende hogere tijdseenheid gaat op dit moment dezelfde kant op als de gescande eenheid of de tegengestelde kant. De vergeleken eenheid wordt in het resultaat genoemd (\"het 1 u gaat dezelfde kant op\"). Niet evalueerbaar in drie gevallen: geen eenheid erboven (hoogste gevolgde eenheid), hogere eenheid zonder gevestigde trend, of deze eenheid zonder gevestigde trend.",
+      "higher_tf_agrees_label": "De hogere eenheid gaat",
+      "price_in_tested_zone_desc": "De huidige prijs bevindt zich binnen een actieve zone — Order Block of Fair Value Gap — die sinds haar vorming al minstens één keer is aangeraakt.",
+      "price_in_tested_zone_label": "De prijs bevindt zich in een zone die minstens één keer is getest",
+      "zone_formed_recent_desc": "De huidige prijs bevindt zich binnen een actieve zone (Order Block of Fair Value Gap) die ten hoogste N kaarsen geleden is gevormd — geteld in kaarsen.",
+      "zone_formed_recent_label": "De prijs bevindt zich in een zone die in de laatste N kaarsen is gevormd",
+      "zone_tested_at_most_desc": "De huidige prijs bevindt zich binnen een actieve zone (Order Block of Fair Value Gap) die sinds haar vorming tussen 1 en N keer is aangeraakt — één aanraking = één doorgang van de prijs door de zone. Een nooit aangeraakte zone valt onder \"nooit getest\".",
+      "zone_tested_at_most_label": "De prijs bevindt zich in een zone die ten hoogste N keer is getest",
+      "zone_untested_desc": "De huidige prijs bevindt zich binnen een actieve zone (Order Block of Fair Value Gap) die sinds haar vorming nooit opnieuw is getest.",
+      "zone_untested_label": "De prijs bevindt zich in een nooit geteste zone"
     },
     "saveStrategy": {
       "prompt": "Bewaar deze combinatie als benoemde strategie (alleen op dit apparaat — er wordt niets naar de server verzonden):",
@@ -1001,7 +1040,28 @@
         "limit_reached": "Strategielimiet bereikt — verwijder een bestaande strategie om een nieuwe aan te maken.",
         "not_found": "Strategie niet gevonden.",
         "storage_failed": "Kan niet naar de lokale opslag schrijven (quota of privénavigatie). Er is niets bewaard."
-      }
+      },
+      "comboCount": "{count, plural, =0 {0 combo} one {# combo} other {# combo's}}",
+      "countError": "Telling niet beschikbaar.",
+      "counting": "Evalueren…",
+      "evaluatedAgo": "geëvalueerd {age}",
+      "export": "Exporteren",
+      "exportLabel": "Te kopiëren tekst",
+      "import": "Importeren",
+      "importDo": "Deze tekst importeren",
+      "importErrors": {
+        "empty": "Geen lezing om te importeren in deze tekst.",
+        "malformed": "Onleesbare tekst — dit is geen geldige export.",
+        "storage_failed": "Kan niet naar de lokale opslag schrijven (quota of privénavigatie).",
+        "wrong_format": "Deze tekst is geen export van scannerlezingen."
+      },
+      "importPlaceholder": "Plak hier de tekst die vanaf een ander apparaat is geëxporteerd…",
+      "importResult": "{imported} geïmporteerd, {skipped} overgeslagen (limiet bereikt).",
+      "incompleteBadge": "Onvolledige telling",
+      "incompleteDetail": "{count, plural, one {# combo wacht op een nieuwe kaars op zijn eenheid — scan opnieuw voor een bijgewerkte telling.} other {# combo's wachten op een nieuwe kaars op hun eenheid — scan opnieuw voor een bijgewerkte telling.}}",
+      "notRankingNote": "De combotelling is een vaststelling, geen rangschikking: een lezing die zeven combo's oplevert is niet beter dan een die er geen oplevert — ze is breder.",
+      "rescan": "Opnieuw scannen",
+      "transferHint": "Verplaats je lezingen van het ene apparaat naar het andere als tekst."
     },
     "page": {
       "title": "Scanner",
@@ -1012,7 +1072,76 @@
     "note": "Gesloten palet, tegenwoordige tijd. Elke voorspellende voorwaarde wordt geweigerd — geen “gaat stuiteren”, geen doel.",
     "resultsMeta": "{count} combinaties · {when} · geen rangschikking",
     "unavailable": "Niet beschikbaar — geen verse analyse voor deze combinatie. Niets wordt verzonnen.",
-    "noNewClose": "Geen nieuw gesloten candle om te analyseren sinds de laatste scan."
+    "noNewClose": "Geen nieuw gesloten candle om te analyseren sinds de laatste scan.",
+    "concept": {
+      "notDefault": "Een aanwezig feit, nooit een voorspelling: de voorwaarde zegt niet wat de prijs daarna zal doen.",
+      "notLabel": "Wat het niet zegt",
+      "price_in_tested_zone": {
+        "not": "Niets over het vervolg — geen terugkaatsing, geen afwijzing, geen voortzetting. Het is een positioneel feit in het heden, geen verwachting.",
+        "smc": "Een zone heet \"getest\" zodra de prijs haar na de vorming opnieuw heeft aangeraakt; het tegenovergestelde is \"nooit getest\".",
+        "what": "De huidige prijs bevindt zich binnen een actieve zone — Order Block of Fair Value Gap — die sinds haar vorming al minstens één keer is aangeraakt."
+      },
+      "smcLabel": "SMC-conventie",
+      "whatLabel": "Wat het telt"
+    },
+    "control": {
+      "age_bucket": "Ouderdom",
+      "direction": "Richting",
+      "eq_kind": "Type",
+      "event": "Gebeurtenis",
+      "max_bars": "Venster (kaarsen)",
+      "max_touches": "Aantal aanrakingen",
+      "phase": "Fase",
+      "proximity_pct": "Afstand",
+      "relation": "Hogere eenheid",
+      "session": "Sessie",
+      "side": "Zijde",
+      "third": "Derde",
+      "trend": "Trend",
+      "volatility": "Volatiliteit",
+      "zone_kind": "Zonetype"
+    },
+    "family": {
+      "context": {
+        "desc": "fase, volatiliteit, range, sessie",
+        "title": "Context"
+      },
+      "liquidity": {
+        "desc": "pockets, sweeps, gelijke highs/lows",
+        "title": "Liquiditeit"
+      },
+      "structure": {
+        "desc": "trend, breaks, gebeurtenissen",
+        "title": "Structuur"
+      },
+      "zones": {
+        "desc": "Order Blocks, Fair Value Gaps",
+        "title": "Zones"
+      }
+    },
+    "filters": {
+      "almost": "Bijna ({count})",
+      "aria": "Weergavefilters",
+      "matches": "Overeenkomsten ({count})",
+      "noneval": "Niet evalueerbaar ({count})",
+      "nonmatch": "Geen overeenkomst ({count})"
+    },
+    "opt": {
+      "bars": "{n} kaarsen",
+      "pct": "{n} %",
+      "relation": {
+        "opposite": "In tegengestelde richting",
+        "same": "In dezelfde richting"
+      },
+      "touches": "{n} keer"
+    },
+    "recap": {
+      "and": "en",
+      "copied": "Gekopieerd",
+      "copy": "Kopiëren",
+      "or": "of",
+      "title": "Je lezing, in één zin"
+    }
   },
   "reading": {
     "card": {
@@ -1125,7 +1254,8 @@
       "liquidityStatus_intact": "intact",
       "liquidityStatus_swept": "geveegd",
       "liquidityStatus_broken": "gebroken",
-      "trendAdj_indeterminate": "indeterminate"
+      "trendAdj_indeterminate": "indeterminate",
+      "trend_indeterminate": "Onbepaalde trend"
     },
     "structure": {
       "title": "Marktstructuur",
@@ -1679,7 +1809,8 @@
       "evChoch": "Confirmed change of character",
       "evBosBull": "Bullish break of structure",
       "evBosBear": "Bearish break of structure",
-      "evSelectAria": "Het {kind}-event op de grafiek kaderen"
+      "evSelectAria": "Het {kind}-event op de grafiek kaderen",
+      "unitLabel": "Tijdseenheid: {tf}"
     },
     "liq2": {
       "title": "External liquidity",
@@ -2312,6 +2443,147 @@
     "list": {
       "unfetched": "niet opgehaald",
       "unavailable": "niet beschikbaar"
+    },
+    "month": {
+      "current": "Huidige maand",
+      "empty": "Geen publicatie gepland deze maand voor jouw markten.",
+      "filterEmpty": "Geen publicatie komt overeen met deze filters deze maand. Wijzig een filter of stel ze opnieuw in.",
+      "moreCount": "+{count}",
+      "next": "Volgende maand",
+      "panel": {
+        "empty": "Geen publicatie op deze dag.",
+        "localTime": "{time} jouw tijd ({offset})",
+        "organismTime": "{time} {city}"
+      },
+      "prev": "Vorige maand",
+      "thisMonth": {
+        "byMarket": "{market}: {count}",
+        "count": "{count, plural, one {# publicatie} other {# publicaties}}",
+        "emptyDays": "{count, plural, one {# dag zonder publicatie} other {# dagen zonder publicatie}}",
+        "note": "Deze aantallen beschrijven de kalender, niet de verwachte activiteit.",
+        "title": "Deze maand"
+      },
+      "weekdays": "ma di wo do vr za zo"
+    },
+    "pub": {
+      "curve": {
+        "badge": "Waarde van de indicator",
+        "empty": "De gepubliceerde reeks is niet beschikbaar voor deze indicator.",
+        "lastValue": "Laatste waarde <b>{value}</b> — {period}",
+        "notRevised": "Geen van de weergegeven cijfers is na publicatie gecorrigeerd.",
+        "note": "Elk punt is de waarde van de indicator zoals gepubliceerd door de instantie, in haar eigen eenheid — geen prijsbeweging. Het komende punt blijft leeg: de waarde bestaat nog niet en MIA schat haar niet.",
+        "range": "Over de weergegeven reeks <b>{min}</b> tot <b>{max}</b>",
+        "revisedFromTo": "Het laatste cijfer is na publicatie gecorrigeerd: eerst {initial}, daarna {current} op {date}.",
+        "source": "Reeks gepubliceerd door {organism}, in de eenheid van de instantie, zoals gepubliceerd — zonder omrekening of herafronding.",
+        "title": "De laatste twaalf gepubliceerde cijfers",
+        "upcoming": "komend"
+      },
+      "mia": {
+        "capability": "M.I.A beschrijft gemeten feiten en legt begrippen uit. Ze zegt niet wat de prijs zal doen, welke waarde gepubliceerd zal worden, of dat je moet ingrijpen — en zal dat ook zeggen als je erom vraagt.",
+        "placeholder": "Stel je vraag over deze publicatie…",
+        "send": "Verzenden",
+        "subtitle": "Ze legt de begrippen uit en beschrijft wat de engine bij deze publicatie heeft gemeten.",
+        "suggests": {
+          "default": {
+            "s1": "Leg me uit wat deze indicator meet",
+            "s2": "Wat heeft de engine bij de vorige publicaties gemeten?",
+            "s3": "Toon de huidige marktstructuur"
+          },
+          "ea_hicp_flash": {
+            "s1": "Wat is de HICP en waarin verschilt hij van de nationale indices?",
+            "s2": "Waarom wordt de flashraming een paar weken later herzien?",
+            "s3": "Wat betekent \"intacte liquiditeitspocket\"?",
+            "s4": "Toon me de huidige structuur van goud"
+          },
+          "us_cpi": {
+            "s1": "Wat is het verschil tussen CPI en kern-CPI?",
+            "s2": "Waarom wordt een cijfer soms een maand na publicatie gecorrigeerd?",
+            "s3": "Wat betekent \"de markt is weer tot rust gekomen\" na een publicatie?",
+            "s4": "Toon me de huidige structuur van goud"
+          }
+        },
+        "suggestsLabel": "Veelgestelde vragen over deze publicatie",
+        "title": "Vraag het M.I.A"
+      },
+      "noMeasures": "Er is geen meting beschikbaar voor deze indicator: de op zijn eerdere publicaties uitgelijnde prijsgeschiedenis is niet samengesteld. Deze fiche houdt het daarom bij de gepubliceerde cijfers.",
+      "pedagogy": {
+        "badge": "Toelichting",
+        "default": {
+          "body": "Deze publicatie is een officiële economische indicator, die verschijnt volgens een vooraf bekend schema. De waarde ervan wordt uitgedrukt in de eenheid van de instantie die hem uitgeeft.",
+          "nono": "Deze toelichting zegt wat de indicator meet. Ze zegt niet hoe de markt zal reageren, en MIA modelleert geen enkele reactie."
+        },
+        "ea_hicp_flash": {
+          "body": "De geharmoniseerde consumptieprijsindex volgt de prijsevolutie van een korf goederen en diensten in de eurozone, volgens een methode die alle lidstaten gemeen hebben. Eurostat publiceert er aan het einde van elke maand een flashraming van, uitgedrukt als verandering ten opzichte van dezelfde maand een jaar eerder; het cijfer wordt enkele weken later bevestigd.",
+          "nono": "Deze toelichting zegt wat de indicator meet. Ze zegt niet hoe de markt op een bepaald cijfer zal reageren: die relatie is noch constant noch mechanisch, en MIA modelleert haar niet."
+        },
+        "nonoTitle": "Wat deze toelichting niet zegt",
+        "title": "Wat deze indicator meet",
+        "us_cpi": {
+          "body": "De consumptieprijsindex volgt de prijsevolutie van een korf goederen en diensten die Amerikaanse huishoudens aankopen. Hij wordt elke maand gepubliceerd door het Bureau of Labor Statistics en uitgedrukt als verandering ten opzichte van dezelfde maand een jaar eerder. De zogenoemde kernversie sluit voeding en energie uit, die als beweeglijker gelden; beide cijfers verschijnen tegelijk.",
+          "nono": "Deze toelichting zegt wat de indicator meet. Ze zegt niet hoe de markt zal reageren op een cijfer dat hoger of lager is dan het vorige: die relatie is noch constant noch mechanisch, en MIA modelleert haar niet."
+        }
+      },
+      "questions": {
+        "calmBefore": {
+          "a": "Over <b>{sample}</b> gemeten publicaties op {market} was het uur vóór de publicatie <b>{calmer} keer</b> rustiger dan gewoonlijk en <b>{busier} keer</b> drukker.",
+          "detail": "IJkpunt van het gewone uur, buiten publicaties: <b>{reference} {unit}</b> afstand over zestig minuten. Rustigste waargenomen: {calmest} {unit} op {calmestDate}. Drukste: {busiest} {unit} op {busiestDate}.",
+          "q": "Is het voorafgaande uur rustiger of drukker dan gewoonlijk?",
+          "source": "Afstand = hoogste minus laagste over de zestig minuten vóór de publicatie, op {market}. IJkpunt opgebouwd uit {referenceDays} dagen zonder publicatie, op hetzelfde uur van de dag. Basis: {sample} publicaties, van {periodStart} tot {periodEnd}."
+        },
+        "qLabel": "Vraag {n}",
+        "readGuide": {
+          "body": "Elk antwoord is een telling van voorbije dagen, elk met zijn eigen context. \"10 keer op 12\" beschrijft wat is waargenomen, geen kans voor de volgende keer, en niets hiervan geldt voor de komende publicatie. De vragen staan los van elkaar: geen enkele verklaart een andere.",
+          "title": "Hoe je deze antwoorden leest"
+        },
+        "returnToCalm": {
+          "a": "Over <b>{sample}</b> gemeten publicaties op {market} keerde de afstand per minuut <b>in minder dan een uur {t0} keer</b> terug naar zijn gewone niveau, tussen één en drie uur <b>{t1} keer</b>, meer dan drie uur <b>{t2} keer</b>.",
+          "detail": "Snelste: {fastest} op {fastestDate}. Traagste: {slowest} op {slowestDate}.",
+          "neverSettled": "{count, plural, =0 {} one {# publicatie was binnen de zes gevolgde uren niet tot rust gekomen.} other {# publicaties waren binnen de zes gevolgde uren niet tot rust gekomen.}}",
+          "q": "Hoe lang deed de markt erover om weer tot rust te komen?",
+          "source": "Terug tot rust = de eerste keer dat de afstand per minuut weer onder het gewone uur-ijkpunt zakt en daar blijft. Duren in uren en minuten. Basis: {sample} publicaties op {market}, van {periodStart} tot {periodEnd}."
+        },
+        "sectionBadge": "Prijsbeweging — {market}",
+        "sectionTitle": "Wat de engine bij de vorige publicaties heeft gemeten",
+        "structure": {
+          "a": "Over <b>{sample}</b> publicaties bevond de prijs zich al <b>{insideZone} keer</b> in een zone, en lag er <b>{intactPocket} keer</b> een intacte liquiditeitspocket binnen 0,5% van de prijs.",
+          "detail": "Positie binnen de heersende amplitude: <b>{lower}</b> in het onderste derde, <b>{middle}</b> in het middelste derde, <b>{upper}</b> in het bovenste derde. Een \"zone\" is een prijsblok dat de markt heeft achtergelaten (een Order Block of een ongevulde onevenwicht); een \"liquiditeitspocket\" is een niveau waar wachtende orders zich opstapelen, \"intact\" genoemd zolang het niet is bereikt.",
+          "now": "Nu, vóór de volgende publicatie: de prijs bevindt zich {nowInside} in een zone; {nowPocket}; zijn positie in de amplitude is {nowRange}.",
+          "nowInsideNo": "niet",
+          "nowInsideYes": "al",
+          "nowPocketNo": "geen intacte pocket ligt binnen 0,5%",
+          "nowPocketYes": "een intacte pocket ligt binnen 0,5%",
+          "q": "In welke staat was de marktstructuur op het moment van de publicatie?",
+          "rangeLower": "laag",
+          "rangeMiddle": "midden",
+          "rangeUpper": "hoog",
+          "source": "Staat verkregen door de detectie opnieuw af te spelen op het venster dat eindigt op elk publicatiemoment, zonder iets te zien van wat erop volgde. Basis: {sample} publicaties op {market}, van {periodStart} tot {periodEnd}."
+        }
+      },
+      "source": {
+        "docs": {
+          "methodology": {
+            "desc": "Hoe de indicator wordt gedefinieerd, opgebouwd en berekend.",
+            "label": "Methodologie van de indicator"
+          },
+          "release": {
+            "desc": "De meest recente publicatietekst, in detail.",
+            "label": "Laatste officiële communiqué"
+          },
+          "schedule": {
+            "desc": "De publicatiedata en -tijden van de instantie.",
+            "label": "Officiële publicatiekalender"
+          },
+          "series": {
+            "desc": "Alle gepubliceerde waarden, herzieningen inbegrepen.",
+            "label": "Volledige historische reeks"
+          }
+        },
+        "intro": "Deze links leiden naar de instantie die de publicatie uitgeeft, en naar haar alleen:",
+        "noneYet": "De precieze documenten van deze instantie zijn hier nog niet opgenomen. Geen enkele generieke link vervangt ze.",
+        "onlyNote": "Deze links leiden naar de officiële instantie en naar haar alleen. MIA verwijst naar geen enkele commentaar- of voorspellingssite: zo'n link kiezen zou hem aanbevelen zijn.",
+        "organismOnly": "alleen de uitgevende instantie",
+        "title": "Naar de bron"
+      }
     }
   }
 }

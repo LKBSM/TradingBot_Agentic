@@ -176,10 +176,21 @@ l'arabe avait glissé « إشارة » (signal) dans `pricing.legal` → **corri
 sans mot « signal »). Intégration en diff minimal (bloc `home` uniquement, remplacé par correspondance
 d'accolades). **L'accueil n'est plus en repli anglais dans aucune locale.**
 
-⚠️ **Le reste du produit reste à traduire** (hors accueil, hors périmètre « avant facturation ») :
-`regimePanel` 163×7, `app` ~77×7, `reading` ~21×7… + **combler les 196 clés ABSENTES**
-(scanner 98 + calendar 91) qui montrent des clés brutes aux clients non-fr/en. À planifier
-séparément (les options 1–3 ci-dessous restent valables pour ce reliquat).
+### 196 clés ABSENTES — COMBLÉES (sur ta demande « en priorité »)
+Les 196 clés `fr` absentes des 7 locales (scanner 98 + calendar 91 + regimePanel 5 + reading 1 +
+app 1) — qui montraient des **clés brutes** aux clients non-fr/en — ont été **traduites et remplies**
+dans les 7 langues (7 sous-agents, source fr + référence en). Validé sans faille :
+- parité de clés → **`missing: 0` pour les 9 locales** (garde durci : toute nouvelle clé fr non
+  propagée casse désormais le build) ;
+- **ICU compilé** : les 196×7 = 1 372 messages passent `intl-messageformat` (moteur de next-intl) —
+  0 erreur, y compris les 10 pluriels ICU (arms `few`/`many` ajoutés pour pl/ar) ;
+- placeholders + balises `<b>` préservés ; vocabulaire interdit propre (le seul « probabilité » en
+  de/pl est la **négation** du texte source `readGuide.body` : « …pas une probabilité », posture
+  d'honnêteté — conservée).
+
+⚠️ **Reste (hors périmètre)** : des VALEURS anglaises subsistent hors accueil (`regimePanel` 163×7,
+`app` ~77×7, `reading` ~21×7) ; et des **orphelines scanner** (en 36, les 7 : 2 chacune) = clés que
+`fr` n'a jamais reçues (à ajouter à fr si utilisées, ou supprimer si mortes). Options 1–3 ci-dessous.
 
 ### e) Tests de garde — LIVRÉS
 - **Parité de clés** : `webapp/lib/i18n/__tests__/locale-parity.test.ts`, exécuté par `npm test` (CI,

@@ -417,7 +417,9 @@
       "lvl": "{count, plural, one {# marker} other {# markers}} · open the detail",
       "sess": "{label} in {delay}",
       "trendRef": "since the {dir} {kind} of {date}",
-      "trendNone": "no structural trend established"
+      "trendNone": "no structural trend established",
+      "lvlNA": "nie dotyczy na {tf}: dniem poprzednim jest poprzednia świeca",
+      "sessNA": "nie dotyczy na {tf}: świeca obejmuje wszystkie sesje"
     },
     "value": {
       "pos": "{pct} %",
@@ -429,7 +431,9 @@
       "kindChoch": "CHOCH",
       "kindBos": "BOS",
       "alignIndeterminate": "no structural trend established",
-      "alignIndetCount": "{count, plural, one {# indeterminate} other {# indeterminate}}"
+      "alignIndetCount": "{count, plural, one {# indeterminate} other {# indeterminate}}",
+      "alignNone": "brak wyższego interwału",
+      "notApplicable": "nie dotyczy"
     },
     "data": {
       "phaseHead": "The two measures it is built from",
@@ -521,7 +525,8 @@
       "trendAnchorRow": "Anchor",
       "trendAnchorValue": "{dir} {kind}",
       "trendAnchorNone": "no structural break",
-      "trendNoteStructural": "The trend follows the structure: the direction of the last non-contradicted BOS/CHOCH break. “Indeterminate” when no break exists in the analysed history — never a fallback “neutral”."
+      "trendNoteStructural": "The trend follows the structure: the direction of the last non-contradicted BOS/CHOCH break. “Indeterminate” when no break exists in the analysed history — never a fallback “neutral”.",
+      "alignUnavailable": "niedostępne"
     },
     "state": {
       "open": "Market open",
@@ -861,7 +866,13 @@
       "partialMatches": "Częściowe dopasowania ({count})",
       "nonePresent": "Żaden z Twoich warunków nie jest obecny: {list}.",
       "notGenerated": "Odczyt jeszcze niewygenerowany: {list}.",
-      "scannedFooter": "{count} combo przeanalizowanych w trybie tylko do odczytu na podstawie już wygenerowanych odczytów."
+      "scannedFooter": "{count} combo przeanalizowanych w trybie tylko do odczytu na podstawie już wygenerowanych odczytów.",
+      "isolatedCount": "{count, plural, =0 {0 kombinacji} one {# kombinacja} few {# kombinacje} many {# kombinacji} other {# kombinacji}}",
+      "isolatedIntro": "Kombinacje spełniające każdy warunek OSOBNO:",
+      "isolatedNote": "Te liczby są niezależne: nie sumują się i nic nie mówią o tym, co dałaby częściowa kombinacja.",
+      "noComboBody": "Twoje warunki nie są w tej chwili nigdzie spełnione. Skan, który nic nie zwraca, jest odpowiedzią, a nie awarią — nic nie jest ukrywane, nic nie jest łagodzone.",
+      "noComboTitle": "Żadna kombinacja nie spełnia Twojego odczytu. To nie jest błąd.",
+      "noLoosening": "Skaner nie proponuje „złagodzenia” warunku, aby uzyskać wyniki. Skaner, który sugeruje rozluźnianie, aż coś znajdzie, uczy szukania odpowiedzi zamiast jej odczytywania."
     },
     "combo": {
       "conditionsPresent": "{met} z Twoich {total, plural, one {# warunek obecny} few {# warunki obecne} many {# warunków obecnych} other {# warunku obecnego}}",
@@ -874,7 +885,17 @@
       "importantNews": "{count, plural, one {# ważna wiadomość nadchodzi — miej ją na uwadze.} few {# ważne wiadomości nadchodzą — miej je na uwadze.} many {# ważnych wiadomości nadchodzi — miej je na uwadze.} other {# ważnej wiadomości nadchodzi — miej ją na uwadze.}}",
       "analyse": "Analizuj",
       "disclaimer": "Fakty strukturalne obserwowane w czasie teraźniejszym. Skaner niczego nie przewiduje ani niczego nie rekomenduje — ocena należy do Ciebie.",
-      "unavailable": "niedostępne"
+      "unavailable": "niedostępne",
+      "againstBlock": "Co przemawia przeciw",
+      "againstNone": "Nic nie przemawia przeciw wśród Twoich ocenialnych warunków.",
+      "contextBlock": "Kontekst, o który nie prosiłeś",
+      "freshCandle": "świeca zamknięta {age}",
+      "matchBlock": "Co pasuje",
+      "matchNone": "Żaden warunek nie jest tu spełniony.",
+      "nonEvaluableBlock": "Nieoceniane tutaj (brak danych)",
+      "nonEvaluableCount": "{count, plural, one {# nieocenialny} few {# nieocenialne} many {# nieocenialnych} other {# nieocenialnych}}",
+      "openChart": "Otwórz na wykresie",
+      "range": "zakres {low}–{high}"
     },
     "toggle": {
       "label": "Automatyczne odświeżanie (przy każdym zamknięciu)",
@@ -899,7 +920,15 @@
       "selectAtLeastOne": "Wybierz co najmniej jeden warunek.",
       "proximityWithin": "W odległości mniejszej niż",
       "proximityOfPrice": "% ceny",
-      "side": "Strona"
+      "side": "Strona",
+      "activeInFamily": "{count, plural, =0 {brak aktywnych} one {# aktywna} few {# aktywne} many {# aktywnych} other {# aktywnych}}",
+      "conceptAria": "Pojęcie — {label}",
+      "liveCombos": "{count, plural, one {kombinacja pasuje} few {kombinacje pasują} many {kombinacji pasuje} other {kombinacji pasuje}} do Twojego odczytu · na {scanned} śledzonych rynkach",
+      "liveError": "liczba niedostępna",
+      "liveFreshness": "oceniono {age}",
+      "rescan": "Uruchom ponownie",
+      "selectedCount": "{count, plural, =0 {Brak zaznaczonych warunków} one {# zaznaczony warunek} few {# zaznaczone warunki} many {# zaznaczonych warunków} other {# zaznaczonych warunków}}",
+      "zeroNote": "Zero warunków nie oznacza „wszystkich rynków”: bez warunku nie ma nic do odczytania."
     },
     "bias": {
       "bullish": "Wzrostowy",
@@ -969,7 +998,17 @@
       "price_near_liquidity_label": "Cena blisko płynności (SSL/BSL)",
       "price_near_liquidity_desc": "Bieżąca cena jest blisko nienaruszonej kieszeni płynności (BSL powyżej / SSL poniżej).",
       "liquidity_swept_recent_label": "Niedawne zebranie płynności",
-      "liquidity_swept_recent_desc": "Kieszeń płynności (SSL/BSL) została zebrana w ciągu ostatnich świec."
+      "liquidity_swept_recent_desc": "Kieszeń płynności (SSL/BSL) została zebrana w ciągu ostatnich świec.",
+      "higher_tf_agrees_desc": "Trend strukturalny bezpośrednio wyższego interwału czasowego idzie w tej chwili w tym samym kierunku co skanowany interwał lub w przeciwnym. Porównywany interwał jest nazwany w wyniku („1 h idzie w tym samym kierunku”). Nieocenialny w trzech przypadkach: brak interwału powyżej (najwyższy śledzony interwał), wyższy interwał bez ustalonego trendu lub ten interwał bez ustalonego trendu.",
+      "higher_tf_agrees_label": "Wyższy interwał idzie",
+      "price_in_tested_zone_desc": "Bieżąca cena znajduje się wewnątrz aktywnej strefy — Order Block lub Fair Value Gap — której dotknięto już co najmniej raz od jej uformowania.",
+      "price_in_tested_zone_label": "Cena jest w strefie testowanej co najmniej raz",
+      "zone_formed_recent_desc": "Bieżąca cena znajduje się wewnątrz aktywnej strefy (Order Block lub Fair Value Gap) uformowanej najwyżej N świec temu — liczone w świecach.",
+      "zone_formed_recent_label": "Cena jest w strefie uformowanej w ciągu ostatnich N świec",
+      "zone_tested_at_most_desc": "Bieżąca cena znajduje się wewnątrz aktywnej strefy (Order Block lub Fair Value Gap) dotkniętej od 1 do N razy od jej uformowania — jedno dotknięcie = jedno przejście ceny przez strefę. Strefa nigdy niedotknięta należy do „nigdy nietestowanych”.",
+      "zone_tested_at_most_label": "Cena jest w strefie testowanej najwyżej N razy",
+      "zone_untested_desc": "Bieżąca cena znajduje się wewnątrz aktywnej strefy (Order Block lub Fair Value Gap), która nigdy nie została ponownie przetestowana od jej uformowania.",
+      "zone_untested_label": "Cena jest w strefie nigdy nietestowanej"
     },
     "saveStrategy": {
       "prompt": "Zapisz tę kombinację jako nazwaną strategię (tylko na tym urządzeniu — nic nie jest wysyłane na serwer):",
@@ -1001,7 +1040,28 @@
         "limit_reached": "Osiągnięto limit strategii — usuń istniejącą strategię, aby utworzyć nową.",
         "not_found": "Nie znaleziono strategii.",
         "storage_failed": "Nie można zapisać w pamięci lokalnej (limit lub tryb prywatny). Nic nie zostało zapisane."
-      }
+      },
+      "comboCount": "{count, plural, =0 {0 kombinacji} one {# kombinacja} few {# kombinacje} many {# kombinacji} other {# kombinacji}}",
+      "countError": "Liczba niedostępna.",
+      "counting": "Ocenianie…",
+      "evaluatedAgo": "oceniono {age}",
+      "export": "Eksportuj",
+      "exportLabel": "Tekst do skopiowania",
+      "import": "Importuj",
+      "importDo": "Importuj ten tekst",
+      "importErrors": {
+        "empty": "Brak odczytu do zaimportowania w tym tekście.",
+        "malformed": "Tekst nieczytelny — to nie jest prawidłowy eksport.",
+        "storage_failed": "Nie można zapisać w pamięci lokalnej (limit lub tryb prywatny).",
+        "wrong_format": "Ten tekst nie jest eksportem odczytów skanera."
+      },
+      "importPlaceholder": "Wklej tutaj tekst wyeksportowany z innego urządzenia…",
+      "importResult": "{imported} zaimportowano, {skipped} pominięto (osiągnięto limit).",
+      "incompleteBadge": "Niekompletna liczba",
+      "incompleteDetail": "{count, plural, one {# kombinacja czeka na nową świecę na swoim interwale — uruchom ponownie, aby uzyskać aktualną liczbę.} few {# kombinacje czekają na nową świecę na swoim interwale — uruchom ponownie, aby uzyskać aktualną liczbę.} many {# kombinacji czeka na nową świecę na swoim interwale — uruchom ponownie, aby uzyskać aktualną liczbę.} other {# kombinacji czeka na nową świecę na swoim interwale — uruchom ponownie, aby uzyskać aktualną liczbę.}}",
+      "notRankingNote": "Liczba kombinacji jest stwierdzeniem, a nie rankingiem: odczyt zwracający siedem kombinacji nie jest lepszy niż taki, który nie zwraca żadnej — jest szerszy.",
+      "rescan": "Uruchom ponownie",
+      "transferHint": "Przenoś swoje odczyty między urządzeniami w postaci tekstu."
     },
     "page": {
       "title": "Skaner",
@@ -1012,7 +1072,76 @@
     "note": "Zamknięta paleta, czas teraźniejszy. Każdy warunek predykcyjny jest odrzucany — żadnego „odbije się”, bez celu.",
     "resultsMeta": "{count} kombinacji · {when} · bez rankingu",
     "unavailable": "Niedostępne — brak świeżego odczytu dla tej kombinacji. Nic nie jest zmyślane.",
-    "noNewClose": "Brak nowo zamkniętej świecy do analizy od ostatniego skanu."
+    "noNewClose": "Brak nowo zamkniętej świecy do analizy od ostatniego skanu.",
+    "concept": {
+      "notDefault": "Fakt obecny, nigdy prognoza: warunek nie mówi, co cena zrobi później.",
+      "notLabel": "Czego to nie mówi",
+      "price_in_tested_zone": {
+        "not": "Nic o tym, co nastąpi później — ani odbicie, ani odrzucenie, ani kontynuacja. To fakt pozycyjny w teraźniejszości, a nie oczekiwanie.",
+        "smc": "Strefę nazywa się „testowaną”, gdy cena ponownie jej dotknęła po jej uformowaniu; jej przeciwieństwem jest „nigdy nietestowana”.",
+        "what": "Bieżąca cena znajduje się wewnątrz aktywnej strefy — Order Block lub Fair Value Gap — której dotknięto już co najmniej raz od jej uformowania."
+      },
+      "smcLabel": "Konwencja SMC",
+      "whatLabel": "Co to zlicza"
+    },
+    "control": {
+      "age_bucket": "Wiek",
+      "direction": "Kierunek",
+      "eq_kind": "Typ",
+      "event": "Wydarzenie",
+      "max_bars": "Okno (świece)",
+      "max_touches": "Liczba dotknięć",
+      "phase": "Faza",
+      "proximity_pct": "Odległość",
+      "relation": "Wyższy interwał",
+      "session": "Sesja",
+      "side": "Strona",
+      "third": "Tercja",
+      "trend": "Trend",
+      "volatility": "Zmienność",
+      "zone_kind": "Typ strefy"
+    },
+    "family": {
+      "context": {
+        "desc": "faza, zmienność, zakres, sesja",
+        "title": "Kontekst"
+      },
+      "liquidity": {
+        "desc": "kieszenie, zgarnięcia, równe szczyty/dołki",
+        "title": "Płynność"
+      },
+      "structure": {
+        "desc": "trend, wybicia, wydarzenia",
+        "title": "Struktura"
+      },
+      "zones": {
+        "desc": "Order Blocks, Fair Value Gaps",
+        "title": "Strefy"
+      }
+    },
+    "filters": {
+      "almost": "Prawie ({count})",
+      "aria": "Filtry wyświetlania",
+      "matches": "Dopasowania ({count})",
+      "noneval": "Nieocenialne ({count})",
+      "nonmatch": "Niedopasowane ({count})"
+    },
+    "opt": {
+      "bars": "{n} świec",
+      "pct": "{n}%",
+      "relation": {
+        "opposite": "W przeciwnym kierunku",
+        "same": "W tym samym kierunku"
+      },
+      "touches": "{n} razy"
+    },
+    "recap": {
+      "and": "i",
+      "copied": "Skopiowano",
+      "copy": "Kopiuj",
+      "or": "lub",
+      "title": "Twój odczyt w jednym zdaniu"
+    }
   },
   "reading": {
     "card": {
@@ -1125,7 +1254,8 @@
       "liquidityStatus_intact": "nienaruszona",
       "liquidityStatus_swept": "zebrana",
       "liquidityStatus_broken": "złamana",
-      "trendAdj_indeterminate": "indeterminate"
+      "trendAdj_indeterminate": "indeterminate",
+      "trend_indeterminate": "Trend nieokreślony"
     },
     "structure": {
       "title": "Struktura rynku",
@@ -1679,7 +1809,8 @@
       "evChoch": "Confirmed change of character",
       "evBosBull": "Bullish break of structure",
       "evBosBear": "Bearish break of structure",
-      "evSelectAria": "Wykadruj zdarzenie {kind} na wykresie"
+      "evSelectAria": "Wykadruj zdarzenie {kind} na wykresie",
+      "unitLabel": "Interwał czasowy: {tf}"
     },
     "liq2": {
       "title": "External liquidity",
@@ -2312,6 +2443,147 @@
     "list": {
       "unfetched": "nieuzyskane",
       "unavailable": "niedostępne"
+    },
+    "month": {
+      "current": "Bieżący miesiąc",
+      "empty": "Brak zaplanowanych publikacji w tym miesiącu dla Twoich rynków.",
+      "filterEmpty": "Żadna publikacja nie pasuje do tych filtrów w tym miesiącu. Zmień filtr lub zresetuj filtry.",
+      "moreCount": "+{count}",
+      "next": "Następny miesiąc",
+      "panel": {
+        "empty": "Brak publikacji tego dnia.",
+        "localTime": "{time} Twojego czasu ({offset})",
+        "organismTime": "{time} {city}"
+      },
+      "prev": "Poprzedni miesiąc",
+      "thisMonth": {
+        "byMarket": "{market}: {count}",
+        "count": "{count, plural, one {# publikacja} few {# publikacje} many {# publikacji} other {# publikacji}}",
+        "emptyDays": "{count, plural, one {# dzień bez publikacji} few {# dni bez publikacji} many {# dni bez publikacji} other {# dni bez publikacji}}",
+        "note": "Te liczby opisują kalendarz, a nie oczekiwaną aktywność.",
+        "title": "W tym miesiącu"
+      },
+      "weekdays": "pon wt śr czw pt sob niedz"
+    },
+    "pub": {
+      "curve": {
+        "badge": "Wartość wskaźnika",
+        "empty": "Opublikowana seria nie jest dostępna dla tego wskaźnika.",
+        "lastValue": "Ostatnia wartość <b>{value}</b> — {period}",
+        "notRevised": "Żadna z wyświetlanych liczb nie została skorygowana po publikacji.",
+        "note": "Każdy punkt to wartość wskaźnika w postaci opublikowanej przez organizację, w jej własnej jednostce — a nie ruch ceny. Nadchodzący punkt pozostaje pusty: jego wartość jeszcze nie istnieje, a MIA jej nie szacuje.",
+        "range": "W wyświetlanej serii od <b>{min}</b> do <b>{max}</b>",
+        "revisedFromTo": "Ostatnia liczba została skorygowana po publikacji: najpierw {initial}, następnie {current} dnia {date}.",
+        "source": "Seria opublikowana przez {organism}, w jednostce organizacji, w postaci opublikowanej — bez przeliczeń i bez ponownego zaokrąglania.",
+        "title": "Dwanaście ostatnich opublikowanych liczb",
+        "upcoming": "nadchodzące"
+      },
+      "mia": {
+        "capability": "M.I.A opisuje zmierzone fakty i wyjaśnia pojęcia. Nie powie, co zrobi cena, jaka wartość zostanie opublikowana ani czy należy działać — i powie o tym, jeśli zapytasz.",
+        "placeholder": "Zadaj pytanie o tę publikację…",
+        "send": "Wyślij",
+        "subtitle": "Wyjaśnia pojęcia i opisuje to, co silnik zmierzył przy tej publikacji.",
+        "suggests": {
+          "default": {
+            "s1": "Wyjaśnij, co mierzy ten wskaźnik",
+            "s2": "Co silnik zmierzył przy poprzednich publikacjach?",
+            "s3": "Pokaż bieżącą strukturę rynku"
+          },
+          "ea_hicp_flash": {
+            "s1": "Czym jest HICP i czym różni się od indeksów krajowych?",
+            "s2": "Dlaczego szybki szacunek jest korygowany kilka tygodni później?",
+            "s3": "Co oznacza „nienaruszona kieszeń płynności”?",
+            "s4": "Pokaż mi bieżącą strukturę złota"
+          },
+          "us_cpi": {
+            "s1": "Jaka jest różnica między CPI a bazowym CPI?",
+            "s2": "Dlaczego liczba bywa korygowana miesiąc po publikacji?",
+            "s3": "Co oznacza „rynek wrócił do spokoju” po publikacji?",
+            "s4": "Pokaż mi bieżącą strukturę złota"
+          }
+        },
+        "suggestsLabel": "Częste pytania o tę publikację",
+        "title": "Zapytaj M.I.A"
+      },
+      "noMeasures": "Dla tego wskaźnika nie jest dostępny żaden pomiar: historia cen dopasowana do jego wcześniejszych publikacji nie została zebrana. Ta karta ogranicza się zatem do opublikowanych liczb.",
+      "pedagogy": {
+        "badge": "Karta objaśniająca",
+        "default": {
+          "body": "Ta publikacja to oficjalny wskaźnik gospodarczy, ogłaszany według harmonogramu znanego z wyprzedzeniem. Jego wartość jest wyrażona w jednostce organizacji, która go wydaje.",
+          "nono": "Ta karta wyjaśnia, co mierzy wskaźnik. Nie mówi, jak zareaguje rynek, a MIA nie modeluje żadnej reakcji."
+        },
+        "ea_hicp_flash": {
+          "body": "Zharmonizowany indeks cen konsumpcyjnych śledzi zmianę ceny koszyka towarów i usług w strefie euro, przy użyciu metody wspólnej dla wszystkich państw członkowskich. Eurostat publikuje szybki szacunek pod koniec każdego miesiąca, wyrażony jako zmiana względem tego samego miesiąca rok wcześniej; liczba jest następnie potwierdzana kilka tygodni później.",
+          "nono": "Ta karta wyjaśnia, co mierzy wskaźnik. Nie mówi, jak rynek zareaguje na daną liczbę: ta zależność nie jest ani stała, ani mechaniczna, a MIA jej nie modeluje."
+        },
+        "nonoTitle": "Czego ta karta nie mówi",
+        "title": "Co mierzy ten wskaźnik",
+        "us_cpi": {
+          "body": "Indeks cen konsumpcyjnych śledzi zmianę ceny koszyka towarów i usług kupowanych przez amerykańskie gospodarstwa domowe. Jest publikowany co miesiąc przez Bureau of Labor Statistics i wyrażony jako zmiana względem tego samego miesiąca rok wcześniej. Tak zwana wersja bazowa wyłącza żywność i energię, uznawane za bardziej zmienne; obie liczby ukazują się jednocześnie.",
+          "nono": "Ta karta wyjaśnia, co mierzy wskaźnik. Nie mówi, jak rynek zareaguje na liczbę wyższą lub niższą od poprzedniej: ta zależność nie jest ani stała, ani mechaniczna, a MIA jej nie modeluje."
+        }
+      },
+      "questions": {
+        "calmBefore": {
+          "a": "Na <b>{sample}</b> publikacjach zmierzonych na {market} godzina poprzedzająca publikację była spokojniejsza niż zwykle <b>{calmer} razy</b> i bardziej ruchliwa <b>{busier} razy</b>.",
+          "detail": "Punkt odniesienia dla zwykłej godziny, poza publikacjami: <b>{reference} {unit}</b> przebytej drogi w ciągu sześćdziesięciu minut. Najspokojniejsza zaobserwowana: {calmest} {unit} dnia {calmestDate}. Najbardziej ruchliwa: {busiest} {unit} dnia {busiestDate}.",
+          "q": "Czy poprzedzająca godzina jest spokojniejsza czy bardziej ruchliwa niż zwykle?",
+          "source": "Przebyta droga = najwyższy minus najniższy poziom w ciągu sześćdziesięciu minut przed publikacją, na {market}. Punkt odniesienia ustalony na podstawie {referenceDays} dni bez publikacji, o tej samej porze dnia. Podstawa: {sample} publikacji, od {periodStart} do {periodEnd}."
+        },
+        "qLabel": "Pytanie {n}",
+        "readGuide": {
+          "body": "Każda odpowiedź to zliczenie minionych dni, z których każdy ma własny kontekst. „10 razy na 12” opisuje to, co zaobserwowano, a nie prawdopodobieństwo na następny raz, i nic tutaj nie odnosi się do nadchodzącej publikacji. Pytania są niezależne: żadne nie wyjaśnia innego.",
+          "title": "Jak czytać te odpowiedzi"
+        },
+        "returnToCalm": {
+          "a": "Na <b>{sample}</b> publikacjach zmierzonych na {market} przebyta droga na minutę wróciła do zwykłego poziomu w <b>mniej niż godzinę {t0} razy</b>, między jedną a trzema godzinami <b>{t1} razy</b>, powyżej trzech godzin <b>{t2} razy</b>.",
+          "detail": "Najszybszy: {fastest} dnia {fastestDate}. Najwolniejszy: {slowest} dnia {slowestDate}.",
+          "neverSettled": "{count, plural, =0 {} one {# publikacja nie wróciła do spokoju w ciągu śledzonych sześciu godzin.} few {# publikacje nie wróciły do spokoju w ciągu śledzonych sześciu godzin.} many {# publikacji nie wróciło do spokoju w ciągu śledzonych sześciu godzin.} other {# publikacji nie wróciło do spokoju w ciągu śledzonych sześciu godzin.}}",
+          "q": "Ile czasu zajęło rynkowi ponowne uspokojenie się?",
+          "source": "Powrót do spokoju = pierwszy moment, w którym przebyta droga na minutę ponownie spada poniżej zwykłego punktu odniesienia dla godziny i się na nim utrzymuje. Czasy trwania w godzinach i minutach. Podstawa: {sample} publikacji na {market}, od {periodStart} do {periodEnd}."
+        },
+        "sectionBadge": "Ruch ceny — {market}",
+        "sectionTitle": "Co silnik zmierzył przy poprzednich publikacjach",
+        "structure": {
+          "a": "Na <b>{sample}</b> publikacjach cena znajdowała się już wewnątrz strefy <b>{insideZone} razy</b>, a nienaruszona kieszeń płynności leżała bliżej niż 0,5% od ceny <b>{intactPocket} razy</b>.",
+          "detail": "Pozycja w bieżącej amplitudzie: <b>{lower}</b> w dolnej tercji, <b>{middle}</b> w środkowej tercji, <b>{upper}</b> w górnej tercji. „Strefa” to blok ceny pozostawiony przez rynek (Order Block lub niezapełniona nierównowaga); „kieszeń płynności” to poziom, na którym gromadzą się zlecenia oczekujące, nazywany „nienaruszonym”, dopóki nie został osiągnięty.",
+          "now": "Teraz, przed następną publikacją: cena {nowInside} wewnątrz strefy; {nowPocket}; jej pozycja w amplitudzie to {nowRange}.",
+          "nowInsideNo": "nie znajduje się",
+          "nowInsideYes": "już znajduje się",
+          "nowPocketNo": "żadna nienaruszona kieszeń nie leży bliżej niż 0,5%",
+          "nowPocketYes": "nienaruszona kieszeń leży bliżej niż 0,5%",
+          "q": "W jakim stanie była struktura rynku w chwili publikacji?",
+          "rangeLower": "niska",
+          "rangeMiddle": "środkowa",
+          "rangeUpper": "wysoka",
+          "source": "Stan uzyskany przez ponowne odtworzenie detekcji na oknie kończącym się w chwili każdej publikacji, bez wglądu w to, co nastąpiło później. Podstawa: {sample} publikacji na {market}, od {periodStart} do {periodEnd}."
+        }
+      },
+      "source": {
+        "docs": {
+          "methodology": {
+            "desc": "Jak wskaźnik jest zdefiniowany, zbudowany i obliczany.",
+            "label": "Metodologia wskaźnika"
+          },
+          "release": {
+            "desc": "Najnowszy tekst publikacji, w szczegółach.",
+            "label": "Ostatni oficjalny komunikat"
+          },
+          "schedule": {
+            "desc": "Daty i godziny publikacji organizacji.",
+            "label": "Oficjalny kalendarz publikacji"
+          },
+          "series": {
+            "desc": "Wszystkie opublikowane wartości, wraz z korektami.",
+            "label": "Pełna seria historyczna"
+          }
+        },
+        "intro": "Te linki prowadzą do organizacji wydającej publikację i wyłącznie do niej:",
+        "noneYet": "Dokładne dokumenty tej organizacji nie są tu jeszcze wskazane. Żaden ogólny link ich nie zastępuje.",
+        "onlyNote": "Te linki prowadzą do oficjalnej organizacji i wyłącznie do niej. MIA nie odsyła do żadnego serwisu z komentarzami ani prognozami: wybranie takiego linku byłoby jego rekomendowaniem.",
+        "organismOnly": "wyłącznie organizacja wydająca",
+        "title": "Przejdź do źródła"
+      }
     }
   }
 }

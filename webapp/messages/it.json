@@ -417,7 +417,9 @@
       "lvl": "{count, plural, one {# marker} other {# markers}} · open the detail",
       "sess": "{label} in {delay}",
       "trendRef": "since the {dir} {kind} of {date}",
-      "trendNone": "no structural trend established"
+      "trendNone": "no structural trend established",
+      "lvlNA": "non applicabile su {tf}: il giorno precedente è la candela precedente",
+      "sessNA": "non applicabile su {tf}: la candela copre tutte le sessioni"
     },
     "value": {
       "pos": "{pct} %",
@@ -429,7 +431,9 @@
       "kindChoch": "CHOCH",
       "kindBos": "BOS",
       "alignIndeterminate": "no structural trend established",
-      "alignIndetCount": "{count, plural, one {# indeterminate} other {# indeterminate}}"
+      "alignIndetCount": "{count, plural, one {# indeterminate} other {# indeterminate}}",
+      "alignNone": "nessuna unità superiore",
+      "notApplicable": "non applicabile"
     },
     "data": {
       "phaseHead": "The two measures it is built from",
@@ -521,7 +525,8 @@
       "trendAnchorRow": "Anchor",
       "trendAnchorValue": "{dir} {kind}",
       "trendAnchorNone": "no structural break",
-      "trendNoteStructural": "The trend follows the structure: the direction of the last non-contradicted BOS/CHOCH break. “Indeterminate” when no break exists in the analysed history — never a fallback “neutral”."
+      "trendNoteStructural": "The trend follows the structure: the direction of the last non-contradicted BOS/CHOCH break. “Indeterminate” when no break exists in the analysed history — never a fallback “neutral”.",
+      "alignUnavailable": "non disponibile"
     },
     "state": {
       "open": "Market open",
@@ -861,7 +866,13 @@
       "partialMatches": "Corrispondenze parziali ({count})",
       "nonePresent": "Nessuna delle tue condizioni presente: {list}.",
       "notGenerated": "Lettura non ancora generata: {list}.",
-      "scannedFooter": "{count} combo analizzati in sola lettura sulle ultime letture già prodotte."
+      "scannedFooter": "{count} combo analizzati in sola lettura sulle ultime letture già prodotte.",
+      "isolatedCount": "{count, plural, =0 {0 combo} one {# combo} other {# combo}}",
+      "isolatedIntro": "Combo che soddisfano ogni condizione ISOLATAMENTE:",
+      "isolatedNote": "Questi conteggi sono indipendenti: non si sommano e non dicono nulla su cosa darebbe una combinazione parziale.",
+      "noComboBody": "Le tue condizioni non sono soddisfatte da nessuna parte in questo momento. Una scansione che non riporta nulla è una risposta, non un guasto — nulla è nascosto, nulla è allentato.",
+      "noComboTitle": "Nessun combo soddisfa la tua lettura. Non è un errore.",
+      "noLoosening": "Lo scanner non propone di « allentare » una condizione per ottenere risultati. Uno scanner che suggerisce di allentare finché trova qualcosa insegna a cercare una risposta anziché a leggerla."
     },
     "combo": {
       "conditionsPresent": "{met} delle tue {total, plural, one {# condizione presente} other {# condizioni presenti}}",
@@ -874,7 +885,17 @@
       "importantNews": "{count, plural, one {# notizia importante in arrivo — da tenere a mente.} other {# notizie importanti in arrivo — da tenere a mente.}}",
       "analyse": "Analizzare",
       "disclaimer": "Fatti strutturali osservati al presente. Lo scanner non prevede nulla e non raccomanda nulla — a te il giudizio.",
-      "unavailable": "non disponibile"
+      "unavailable": "non disponibile",
+      "againstBlock": "Ciò che va in senso contrario",
+      "againstNone": "Nulla va in senso contrario tra le tue condizioni valutabili.",
+      "contextBlock": "Contesto che non hai richiesto",
+      "freshCandle": "candela chiusa {age}",
+      "matchBlock": "Ciò che corrisponde",
+      "matchNone": "Nessuna condizione soddisfatta qui.",
+      "nonEvaluableBlock": "Non valutabile qui (dato assente)",
+      "nonEvaluableCount": "{count, plural, one {# non valutabile} other {# non valutabili}}",
+      "openChart": "Apri nel grafico",
+      "range": "range {low}–{high}"
     },
     "toggle": {
       "label": "Aggiornamento automatico (ad ogni chiusura)",
@@ -899,7 +920,15 @@
       "selectAtLeastOne": "Seleziona almeno una condizione.",
       "proximityWithin": "Entro",
       "proximityOfPrice": "% del prezzo",
-      "side": "Lato"
+      "side": "Lato",
+      "activeInFamily": "{count, plural, =0 {nessuna attiva} one {# attiva} other {# attive}}",
+      "conceptAria": "Concetto — {label}",
+      "liveCombos": "{count, plural, one {combo corrisponde} other {combo corrispondono}} alla tua lettura · su {scanned} mercati seguiti",
+      "liveError": "conteggio non disponibile",
+      "liveFreshness": "valutato {age}",
+      "rescan": "Riavvia",
+      "selectedCount": "{count, plural, =0 {Nessuna condizione selezionata} one {# condizione selezionata} other {# condizioni selezionate}}",
+      "zeroNote": "Zero condizioni non significa « tutti i mercati »: senza condizioni, non c'è nulla da leggere."
     },
     "bias": {
       "bullish": "Rialzista",
@@ -969,7 +998,17 @@
       "price_near_liquidity_label": "Prezzo vicino a una liquidità (SSL/BSL)",
       "price_near_liquidity_desc": "Il prezzo attuale è vicino a una sacca di liquidità intatta (BSL sopra / SSL sotto).",
       "liquidity_swept_recent_label": "Presa di liquidità recente",
-      "liquidity_swept_recent_desc": "Una sacca di liquidità (SSL/BSL) è stata spazzata nel corso delle ultime candele."
+      "liquidity_swept_recent_desc": "Una sacca di liquidità (SSL/BSL) è stata spazzata nel corso delle ultime candele.",
+      "higher_tf_agrees_desc": "La tendenza di struttura dell'unità di tempo immediatamente superiore va, in questo momento, nello stesso senso dell'unità scansionata o in senso opposto. L'unità confrontata è nominata nel risultato (« l'1 h va nello stesso senso »). Non valutabile in tre casi: nessuna unità al di sopra (unità più alta seguita), unità superiore senza tendenza stabilita, o questa unità senza tendenza stabilita.",
+      "higher_tf_agrees_label": "L'unità superiore va",
+      "price_in_tested_zone_desc": "Il prezzo corrente è all'interno di una zona attiva — Order Block o Fair Value Gap — che è già stata toccata almeno una volta dalla sua formazione.",
+      "price_in_tested_zone_label": "Il prezzo è in una zona già testata almeno una volta",
+      "zone_formed_recent_desc": "Il prezzo corrente è all'interno di una zona attiva (Order Block o Fair Value Gap) formata al massimo N candele fa — contato in candele.",
+      "zone_formed_recent_label": "Il prezzo è in una zona formata nelle ultime N candele",
+      "zone_tested_at_most_desc": "Il prezzo corrente è all'interno di una zona attiva (Order Block o Fair Value Gap) toccata tra 1 e N volte dalla sua formazione — un tocco = un passaggio del prezzo nella zona. Una zona mai toccata rientra in « mai testata ».",
+      "zone_tested_at_most_label": "Il prezzo è in una zona testata al massimo N volte",
+      "zone_untested_desc": "Il prezzo corrente è all'interno di una zona attiva (Order Block o Fair Value Gap) che non è mai stata ritestata dalla sua formazione.",
+      "zone_untested_label": "Il prezzo è in una zona mai testata"
     },
     "saveStrategy": {
       "prompt": "Salva questa combinazione come strategia con nome (solo su questo dispositivo — nulla viene inviato al server):",
@@ -1001,7 +1040,28 @@
         "limit_reached": "Limite di strategie raggiunto — elimina una strategia esistente per crearne una nuova.",
         "not_found": "Strategia non trovata.",
         "storage_failed": "Impossibile scrivere nella memoria locale (quota o navigazione privata). Nulla è stato salvato."
-      }
+      },
+      "comboCount": "{count, plural, =0 {0 combo} one {# combo} other {# combo}}",
+      "countError": "Conteggio non disponibile.",
+      "counting": "Valutazione…",
+      "evaluatedAgo": "valutato {age}",
+      "export": "Esporta",
+      "exportLabel": "Testo da copiare",
+      "import": "Importa",
+      "importDo": "Importa questo testo",
+      "importErrors": {
+        "empty": "Nessuna lettura da importare in questo testo.",
+        "malformed": "Testo illeggibile — non è un export valido.",
+        "storage_failed": "Impossibile scrivere nell'archivio locale (quota o navigazione privata).",
+        "wrong_format": "Questo testo non è un export di letture dello scanner."
+      },
+      "importPlaceholder": "Incolla qui il testo esportato da un altro dispositivo…",
+      "importResult": "{imported} importata/e, {skipped} ignorata/e (limite raggiunto).",
+      "incompleteBadge": "Conteggio incompleto",
+      "incompleteDetail": "{count, plural, one {# combo attende una nuova candela sulla sua unità — riavvia per un conteggio aggiornato.} other {# combo attendono una nuova candela sulla loro unità — riavvia per un conteggio aggiornato.}}",
+      "notRankingNote": "Il conteggio dei combo è una constatazione, non una classifica: una lettura che riporta sette combo non è migliore di una che non ne riporta nessuno — è più ampia.",
+      "rescan": "Riavvia",
+      "transferHint": "Sposta le tue letture da un dispositivo all'altro come testo."
     },
     "page": {
       "title": "Scanner",
@@ -1012,7 +1072,76 @@
     "note": "Palette chiusa, al presente. Ogni condizione predittiva è rifiutata — niente «rimbalzerà», nessun target.",
     "resultsMeta": "{count} combo · {when} · nessuna classifica",
     "unavailable": "Non disponibile — nessuna lettura recente per questo combo. Niente è inventato.",
-    "noNewClose": "Nessuna candela appena chiusa da analizzare dall'ultima scansione."
+    "noNewClose": "Nessuna candela appena chiusa da analizzare dall'ultima scansione.",
+    "concept": {
+      "notDefault": "Un fatto presente, mai una previsione: la condizione non dice cosa farà il prezzo in seguito.",
+      "notLabel": "Ciò che non dice",
+      "price_in_tested_zone": {
+        "not": "Nulla sul seguito: né rimbalzo, né rifiuto, né prosecuzione. È un fatto di posizione al presente, non un'attesa.",
+        "smc": "Una zona si dice « testata » quando il prezzo l'ha ritoccata dopo la sua formazione; il suo opposto è « mai testata ».",
+        "what": "Il prezzo corrente è all'interno di una zona attiva — Order Block o Fair Value Gap — che è già stata toccata almeno una volta dalla sua formazione."
+      },
+      "smcLabel": "Convenzione SMC",
+      "whatLabel": "Ciò che conta"
+    },
+    "control": {
+      "age_bucket": "Anzianità",
+      "direction": "Direzione",
+      "eq_kind": "Tipo",
+      "event": "Evento",
+      "max_bars": "Finestra (candele)",
+      "max_touches": "Numero di tocchi",
+      "phase": "Fase",
+      "proximity_pct": "Distanza",
+      "relation": "Unità superiore",
+      "session": "Sessione",
+      "side": "Lato",
+      "third": "Terzo",
+      "trend": "Tendenza",
+      "volatility": "Volatilità",
+      "zone_kind": "Tipo di zona"
+    },
+    "family": {
+      "context": {
+        "desc": "fase, volatilità, range, sessione",
+        "title": "Contesto"
+      },
+      "liquidity": {
+        "desc": "sacche, prese, minimi/massimi uguali",
+        "title": "Liquidità"
+      },
+      "structure": {
+        "desc": "tendenza, rotture, eventi",
+        "title": "Struttura"
+      },
+      "zones": {
+        "desc": "Order Blocks, Fair Value Gaps",
+        "title": "Zone"
+      }
+    },
+    "filters": {
+      "almost": "Quasi ({count})",
+      "aria": "Filtri di visualizzazione",
+      "matches": "Corrispondenze ({count})",
+      "noneval": "Non valutabili ({count})",
+      "nonmatch": "Non corrispondenti ({count})"
+    },
+    "opt": {
+      "bars": "{n} candele",
+      "pct": "{n} %",
+      "relation": {
+        "opposite": "In senso opposto",
+        "same": "Nello stesso senso"
+      },
+      "touches": "{n} volte"
+    },
+    "recap": {
+      "and": "e",
+      "copied": "Copiato",
+      "copy": "Copia",
+      "or": "o",
+      "title": "La tua lettura, in una frase"
+    }
   },
   "reading": {
     "card": {
@@ -1125,7 +1254,8 @@
       "liquidityStatus_intact": "intatta",
       "liquidityStatus_swept": "spazzata",
       "liquidityStatus_broken": "rotta",
-      "trendAdj_indeterminate": "indeterminate"
+      "trendAdj_indeterminate": "indeterminate",
+      "trend_indeterminate": "Tendenza indeterminata"
     },
     "structure": {
       "title": "Struttura di mercato",
@@ -1679,7 +1809,8 @@
       "evChoch": "Confirmed change of character",
       "evBosBull": "Bullish break of structure",
       "evBosBear": "Bearish break of structure",
-      "evSelectAria": "Inquadra l'evento {kind} sul grafico"
+      "evSelectAria": "Inquadra l'evento {kind} sul grafico",
+      "unitLabel": "Unità di tempo: {tf}"
     },
     "liq2": {
       "title": "External liquidity",
@@ -2312,6 +2443,147 @@
     "list": {
       "unfetched": "non recuperato",
       "unavailable": "non disponibile"
+    },
+    "month": {
+      "current": "Mese corrente",
+      "empty": "Nessuna pubblicazione in programma questo mese per i tuoi mercati.",
+      "filterEmpty": "Nessuna pubblicazione corrisponde a questi filtri in questo mese. Modifica un filtro o reimpostali.",
+      "moreCount": "+{count}",
+      "next": "Mese successivo",
+      "panel": {
+        "empty": "Nessuna pubblicazione in questo giorno.",
+        "localTime": "{time} ora tua ({offset})",
+        "organismTime": "{time} {city}"
+      },
+      "prev": "Mese precedente",
+      "thisMonth": {
+        "byMarket": "{market}: {count}",
+        "count": "{count, plural, one {# pubblicazione} other {# pubblicazioni}}",
+        "emptyDays": "{count, plural, one {# giorno senza pubblicazioni} other {# giorni senza pubblicazioni}}",
+        "note": "Questi conteggi descrivono il calendario, non l'attività attesa.",
+        "title": "Questo mese"
+      },
+      "weekdays": "lun mar mer gio ven sab dom"
+    },
+    "pub": {
+      "curve": {
+        "badge": "Valore dell'indicatore",
+        "empty": "La serie pubblicata non è disponibile per questo indicatore.",
+        "lastValue": "Ultimo valore <b>{value}</b> — {period}",
+        "notRevised": "Nessuna delle cifre mostrate è stata corretta dopo la sua uscita.",
+        "note": "Ogni punto è il valore dell'indicatore così come pubblicato dall'organismo, nella sua unità — non un movimento di prezzo. Il punto in arrivo è lasciato vuoto: il suo valore non esiste ancora e MIA non lo stima.",
+        "range": "Sulla serie mostrata da <b>{min}</b> a <b>{max}</b>",
+        "revisedFromTo": "L'ultima cifra è stata corretta dopo la sua uscita: prima {initial}, poi {current} il {date}.",
+        "source": "Serie pubblicata da {organism}, nell'unità dell'organismo, così come pubblicata — senza conversione né riarrotondamento.",
+        "title": "Le ultime dodici cifre pubblicate",
+        "upcoming": "in arrivo"
+      },
+      "mia": {
+        "capability": "M.I.A descrive fatti misurati e spiega concetti. Non dice cosa farà il prezzo, né quale valore sarà pubblicato, né se intervenire — e lo dirà se glielo chiedi.",
+        "placeholder": "Fai la tua domanda su questa pubblicazione…",
+        "send": "Invia",
+        "subtitle": "Spiega i concetti e descrive ciò che il motore ha misurato su questa pubblicazione.",
+        "suggests": {
+          "default": {
+            "s1": "Spiegami cosa misura questo indicatore",
+            "s2": "Cosa ha misurato il motore alle uscite precedenti?",
+            "s3": "Mostra la struttura attuale del mercato"
+          },
+          "ea_hicp_flash": {
+            "s1": "Cos'è l'IPCA e in cosa differisce dagli indici nazionali?",
+            "s2": "Perché la stima rapida viene rivista qualche settimana dopo?",
+            "s3": "Cosa significa « sacca di liquidità intatta »?",
+            "s4": "Mostrami la struttura attuale dell'oro"
+          },
+          "us_cpi": {
+            "s1": "Che differenza c'è tra l'IPC e l'IPC di fondo?",
+            "s2": "Perché una cifra viene talvolta corretta un mese dopo la sua uscita?",
+            "s3": "Cosa significa « il mercato è tornato alla calma » dopo una pubblicazione?",
+            "s4": "Mostrami la struttura attuale dell'oro"
+          }
+        },
+        "suggestsLabel": "Domande frequenti su questa pubblicazione",
+        "title": "Chiedi a M.I.A"
+      },
+      "noMeasures": "Nessuna misura è disponibile per questo indicatore: lo storico dei prezzi allineato alle sue uscite passate non è disponibile. Questa scheda si limita quindi alle cifre pubblicate.",
+      "pedagogy": {
+        "badge": "Scheda didattica",
+        "default": {
+          "body": "Questa pubblicazione è un indicatore economico ufficiale, uscito secondo un calendario noto in anticipo. Il suo valore è espresso nell'unità dell'organismo che lo emette.",
+          "nono": "Questa scheda spiega cosa misura l'indicatore. Non dice come reagirà il mercato, e MIA non modella alcuna reazione."
+        },
+        "ea_hicp_flash": {
+          "body": "L'indice armonizzato dei prezzi al consumo segue l'evoluzione del prezzo di un paniere di beni e servizi nell'area euro, secondo un metodo comune a tutti gli Stati membri. Eurostat ne pubblica una stima rapida alla fine di ogni mese, espressa come variazione rispetto allo stesso mese dell'anno precedente; la cifra viene poi confermata qualche settimana dopo.",
+          "nono": "Questa scheda spiega cosa misura l'indicatore. Non dice come reagirà il mercato a una cifra data: questa relazione non è né costante né meccanica, e MIA non la modella."
+        },
+        "nonoTitle": "Ciò che questa scheda non dice",
+        "title": "Cosa misura questo indicatore",
+        "us_cpi": {
+          "body": "L'indice dei prezzi al consumo segue l'evoluzione del prezzo di un paniere di beni e servizi acquistati dalle famiglie statunitensi. È pubblicato ogni mese dal Bureau of Labor Statistics ed espresso come variazione rispetto allo stesso mese dell'anno precedente. La versione detta di fondo esclude alimentari ed energia, ritenuti più instabili; le due cifre escono contemporaneamente.",
+          "nono": "Questa scheda spiega cosa misura l'indicatore. Non dice come reagirà il mercato a una cifra più alta o più bassa della precedente: questa relazione non è né costante né meccanica, e MIA non la modella."
+        }
+      },
+      "questions": {
+        "calmBefore": {
+          "a": "Su <b>{sample}</b> pubblicazioni misurate su {market}, l'ora precedente all'uscita è stata più calma del solito <b>{calmer} volte</b> e più movimentata <b>{busier} volte</b>.",
+          "detail": "Riferimento dell'ora ordinaria, fuori pubblicazione: <b>{reference} {unit}</b> di percorso su sessanta minuti. La più calma osservata: {calmest} {unit} il {calmestDate}. La più movimentata: {busiest} {unit} il {busiestDate}.",
+          "q": "L'ora precedente è più calma o più movimentata del solito?",
+          "source": "Percorso = massimo meno minimo sui sessanta minuti precedenti all'uscita, su {market}. Riferimento stabilito su {referenceDays} giornate senza pubblicazioni, alla stessa ora del giorno. Base: {sample} pubblicazioni, dal {periodStart} al {periodEnd}."
+        },
+        "qLabel": "Domanda {n}",
+        "readGuide": {
+          "body": "Ogni risposta è un conteggio di giornate passate, ciascuna con il proprio contesto. « 10 volte su 12 » descrive ciò che è stato osservato, non una previsione per la prossima volta, e nulla qui si applica alla pubblicazione in arrivo. Le domande sono indipendenti: nessuna spiega un'altra.",
+          "title": "Come leggere queste risposte"
+        },
+        "returnToCalm": {
+          "a": "Su <b>{sample}</b> pubblicazioni misurate su {market}, il percorso al minuto è tornato al livello ordinario in <b>meno di un'ora {t0} volte</b>, tra una e tre ore <b>{t1} volte</b>, oltre tre ore <b>{t2} volte</b>.",
+          "detail": "Il più rapido: {fastest} il {fastestDate}. Il più lento: {slowest} il {slowestDate}.",
+          "neverSettled": "{count, plural, =0 {} one {# pubblicazione non era tornata alla calma nelle sei ore seguite.} other {# pubblicazioni non erano tornate alla calma nelle sei ore seguite.}}",
+          "q": "Quanto tempo ha impiegato il mercato a ritrovare la calma?",
+          "source": "Ritorno alla calma = la prima volta che il percorso al minuto scende di nuovo sotto il riferimento ordinario dell'ora e vi si mantiene. Durate in ore e minuti. Base: {sample} pubblicazioni su {market}, dal {periodStart} al {periodEnd}."
+        },
+        "sectionBadge": "Movimento di prezzo — {market}",
+        "sectionTitle": "Ciò che il motore ha misurato alle pubblicazioni precedenti",
+        "structure": {
+          "a": "Su <b>{sample}</b> pubblicazioni, il prezzo era già dentro una zona <b>{insideZone} volte</b>, e una sacca di liquidità intatta si trovava a meno dello 0,5% dal prezzo <b>{intactPocket} volte</b>.",
+          "detail": "Posizione nell'ampiezza del momento: <b>{lower}</b> nel terzo basso, <b>{middle}</b> nel terzo centrale, <b>{upper}</b> nel terzo alto. Una « zona » è un blocco di prezzo lasciato dal mercato (Order Block o squilibrio non colmato); una « sacca di liquidità » è un livello dove si accumulano ordini in attesa, detto « intatto » finché non è stato raggiunto.",
+          "now": "Adesso, prima della prossima uscita: il prezzo {nowInside} dentro una zona; {nowPocket}; la sua posizione nell'ampiezza è {nowRange}.",
+          "nowInsideNo": "non è",
+          "nowInsideYes": "è già",
+          "nowPocketNo": "nessuna sacca intatta è a meno dello 0,5%",
+          "nowPocketYes": "una sacca intatta si trova a meno dello 0,5%",
+          "q": "In che stato era la struttura del mercato all'istante dell'uscita?",
+          "rangeLower": "bassa",
+          "rangeMiddle": "centrale",
+          "rangeUpper": "alta",
+          "source": "Stato ottenuto rigiocando la rilevazione sulla finestra che si arresta all'istante di ogni uscita, senza vedere nulla di ciò che è seguito. Base: {sample} pubblicazioni su {market}, dal {periodStart} al {periodEnd}."
+        }
+      },
+      "source": {
+        "docs": {
+          "methodology": {
+            "desc": "Come l'indicatore è definito, costruito e calcolato.",
+            "label": "Metodologia dell'indicatore"
+          },
+          "release": {
+            "desc": "Il testo di uscita più recente, nel dettaglio.",
+            "label": "Ultimo comunicato ufficiale"
+          },
+          "schedule": {
+            "desc": "Le date e gli orari di uscita dell'organismo.",
+            "label": "Calendario ufficiale delle pubblicazioni"
+          },
+          "series": {
+            "desc": "Tutti i valori pubblicati, revisioni comprese.",
+            "label": "Serie storica completa"
+          }
+        },
+        "intro": "Questi link portano all'organismo che emette la pubblicazione, e a esso soltanto:",
+        "noneYet": "I documenti precisi di questo organismo non sono ancora referenziati qui. Nessun link generico li sostituisce.",
+        "onlyNote": "Questi link portano all'organismo ufficiale e a esso soltanto. MIA non rimanda ad alcun sito di commento o di previsione: scegliere un simile link significherebbe raccomandarlo.",
+        "organismOnly": "solo organismo emittente",
+        "title": "Vai alla fonte"
+      }
     }
   }
 }
