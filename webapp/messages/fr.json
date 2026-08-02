@@ -1,4 +1,390 @@
 {
+  "home": {
+    "hero": {
+      "pill": "2 marchés · 6 unités de temps · analysés à chaque clôture",
+      "h1a": "Le marché a déjà tout écrit.",
+      "h1b": "MIA te le lit.",
+      "lead": "Order Blocks, Fair Value Gaps, cassures de structure, poches de liquidité — détectés sur l'or et l'euro, à travers 6 unités de temps, et décrits en langage clair. Tu arrêtes de tout tracer à la main et tu passes au travail qui compte.",
+      "ctaPrimary": "Essayer gratuitement",
+      "ctaSecondary": "Voir les outils",
+      "micro": "Sans carte de crédit · Accès gratuit permanent"
+    },
+    "stats": {
+      "markets": "marchés suivis",
+      "combinations": "combinaisons analysées",
+      "conditions": "conditions de recherche",
+      "timeframes": "unités de temps"
+    },
+    "tools": {
+      "eyebrow": "Cinq outils, un même moteur",
+      "title": "Tout ce dont tu as besoin pour lire une structure",
+      "subtitle": "Chaque outil répond à une question que tu te poses déjà. La différence, c'est le temps que tu mets à obtenir la réponse.",
+      "app": {
+        "tag": "L'espace de lecture",
+        "h3": "Ouvre un graphique, la lecture est déjà faite",
+        "p": "Le moteur a marqué les zones, daté les cassures, positionné la liquidité. En dessous, un paragraphe te dit où en est le marché — <b>pas ce qu'il va faire, ce qu'il a fait</b>. Tu comprends la situation en dix secondes au lieu de vingt minutes de traçage.",
+        "b1": "<b>Order Blocks et Fair Value Gaps</b> bornés, avec leur direction et leur état",
+        "b2": "<b>BOS et CHOCH</b> horodatés, avec le niveau exact de la cassure",
+        "b3": "<b>Poches de liquidité</b> intactes, balayées ou cassées — trois états distincts",
+        "b4": "<b>Panneau de régime</b> : dix tuiles — tendance, volatilité, position, alignement, maturité, densité, session…",
+        "visTitle": "Or · XAU/USD · 15 minutes",
+        "lblLiq": "Liquidité intacte",
+        "lblOb": "OB · non testé",
+        "lblChoch": "CHOCH ↑",
+        "narr": "Le prix est <b>actuellement dans un Order Block haussier</b> formé il y a 14 bougies, entre 4 026,80 et 4 028,90, et cette zone <b>n'a jamais été testée</b>. Une poche de liquidité vente <b>a été balayée</b> il y a 17 bougies. Le 1 h va dans le même sens."
+      },
+      "scanner": {
+        "tag": "Le scanner",
+        "h3": "Tu ne peux pas surveiller tes marchés en continu. Lui, oui.",
+        "p": "Coche les conditions qui t'intéressent — tendance, zone non testée, liquidité récemment prise — et le scanner te dit <b>où elles sont réunies en ce moment</b>, sur les 12 combinaisons de marchés et d'unités de temps. Réévalué à chaque clôture de bougie.",
+        "b1": "<b>22 conditions factuelles</b> réparties en structure, zones, liquidité et contexte",
+        "b2": "<b>Ce qui va à l'encontre</b> est affiché aussi — désaccord entre unités, zone usée",
+        "b3": "<b>Aucun classement</b> : les résultats ne sont jamais triés par « qualité »",
+        "b4": "<b>Lectures enregistrées</b> : retrouve tes conditions habituelles, exporte-les d'un appareil à l'autre",
+        "visTitle": "Scanner · 4 conditions actives",
+        "chip": {
+          "c1": "tendance haussière",
+          "c2": "unités alignées",
+          "c3": "dans un OB",
+          "c4": "jamais testée"
+        },
+        "row": {
+          "gold15": "Or · 15 min",
+          "euro15": "Euro · 15 min",
+          "goldH4": "Or · 4 h"
+        },
+        "foot": "réévalué à chaque clôture · il y a 4 min"
+      },
+      "zones": {
+        "tag": "Les zones",
+        "h3": "Une zone vierge et une zone usée ne valent pas la même chose",
+        "p": "La plupart des outils te montrent qu'un Order Block existe. MIA te raconte <b>sa vie entière</b> : quand il s'est formé, s'il a été touché, à quelle heure, et s'il a fini par être comblé. C'est la différence entre voir un rectangle et savoir ce qu'il vaut.",
+        "b1": "<b>Chronologie complète</b> : formée → testée → comblée, horodatée",
+        "b2": "<b>Taux de remplissage</b> pour un Fair Value Gap partiellement comblé",
+        "b3": "<b>Recoupements</b> avec les zones détectées sur d'autres unités de temps",
+        "b4": "<b>Masquable une par une</b> pour garder un graphique lisible",
+        "visTitle": "Zones · Or · 15 minutes",
+        "now": "Maintenant",
+        "card1": {
+          "tag": "ORDER BLOCK ↑",
+          "state": "jamais testée",
+          "formed": "Formée · il y a 3 h 30"
+        },
+        "card2": {
+          "tag": "FAIR VALUE GAP ↓",
+          "state": "comblée à 60 %",
+          "fill": "comblée à 60 %"
+        }
+      },
+      "news": {
+        "tag": "Les actualités",
+        "h3": "Sache quand le marché va bouger — et ce qui s'est passé les fois d'avant",
+        "p": "Un calendrier des publications économiques, rattachées aux marchés qu'elles concernent. Et pour chacune, <b>ce que le moteur a réellement mesuré aux parutions précédentes</b> : le calme qui précède, l'agitation qui suit, la durée de vie des zones créées ce jour-là.",
+        "b1": "<b>Calendrier mensuel</b> avec heure locale et heure de l'organisme",
+        "b2": "<b>Les douze derniers chiffres publiés</b> de chaque indicateur, tels que publiés",
+        "b3": "<b>Mesures du moteur</b> aux parutions passées — des décomptes, pas des prévisions",
+        "b4": "<b>Sources officielles uniquement</b> : BLS, BEA, Census, Réserve fédérale, Eurostat, BCE",
+        "visTitle": "Indice des prix à la consommation · 12 août",
+        "q1": {
+          "q": "Le marché se calme-t-il avant ?",
+          "a": "Sur les parutions mesurées, l'heure qui précède a été plus calme <b>10 fois sur 12</b>."
+        },
+        "q2": {
+          "q": "Combien de temps ça dure ?",
+          "a": "Le plus souvent <b>1 à 3 h</b>. De 15 min à 4 h 45 selon les parutions."
+        },
+        "q3": {
+          "q": "Les zones créées tiennent-elles ?",
+          "a": "Rarement. Sur <b>34 zones</b> créées, 26 traversées en deux heures."
+        },
+        "q4": {
+          "q": "Où en est la structure ?",
+          "a": "Tiers haut du range <b>8 fois sur 12</b>, poche intacte proche 9 fois."
+        },
+        "foot": "Décomptes de journées passées. Rien ne s'applique à la parution à venir."
+      },
+      "mia": {
+        "tag": "M.I.A Agent",
+        "h3": "Un mentor SMC qui ne dort jamais",
+        "p": "Tu ne comprends pas pourquoi cette bougie est un Order Block ? Demande-lui. Elle <b>enseigne les concepts et décrit ce que le moteur a détecté</b> — et elle peut piloter ton graphique : masquer une couche, isoler une zone, changer d'unité de temps.",
+        "b1": "<b>Explique chaque concept SMC</b> avec l'exemple sous les yeux",
+        "b2": "<b>Ancrée au moteur</b> : elle ne cite que des niveaux réellement détectés",
+        "b3": "<b>Contrôle l'affichage</b> : « montre-moi seulement les OB non testés »",
+        "b4": "<b>Sur le graphique et les publications</b> — jamais un mot de prédiction",
+        "visTitle": "M.I.A Agent",
+        "chat": {
+          "u1": "c'est quoi un order block exactement ?",
+          "a1": "C'est la dernière bougie de sens opposé avant le mouvement qui casse la structure. Celui où le prix se trouve s'est formé <b>il y a 14 bougies</b>, juste avant le BOS haussier de 14:15.",
+          "u2": "montre-moi seulement les OB non testés",
+          "a2": "C'est fait. J'ai masqué les FVG et la liquidité. <b>3 Order Blocks</b> non testés restent affichés.",
+          "u3": "tu penses que ça va rebondir ?",
+          "a3": "Je ne réponds pas à ça. Je ne prédis pas les mouvements de prix — je peux te décrire l'état de la zone ou t'expliquer le concept."
+        }
+      }
+    },
+    "demoSection": {
+      "eyebrow": "Essaie sans créer de compte",
+      "title": "Voilà à quoi ça ressemble",
+      "subtitle": "Une lecture d'illustration, manipulable ici même. Clique, coche, pose une question — tout fonctionne sans compte.",
+      "cta": "Créer un compte gratuit",
+      "illus": "Données d'illustration · le produit affiche les vraies lectures de marché"
+    },
+    "demo": {
+      "illus": "Données d'illustration",
+      "tabs": {
+        "structure": "Lire une structure",
+        "scanner": "Chercher un marché",
+        "zones": "Suivre une zone",
+        "mia": "Poser une question",
+        "calcul": "Ouvrir le calcul"
+      },
+      "structure": {
+        "prefix": "Sur l'or en 15 minutes :",
+        "empty": "Aucune couche affichée. La lecture ne décrit que ce qui est visible — elle n'invente rien pour remplir le vide.",
+        "labels": {
+          "ob": "OB haussier · jamais testé",
+          "fvg": "FVG · comblé à 60 %",
+          "liqIntact": "Liquidité achat · intacte",
+          "liqSwept": "Liquidité vente · balayée",
+          "choch": "CHOCH ↑ · 4 021,45",
+          "bos": "BOS ↑ · 4 025,10"
+        },
+        "frag": {
+          "str": "Un <b>CHOCH haussier s'est confirmé</b> à 4 021,45, suivi d'un <b>BOS haussier</b> à 4 025,10.",
+          "ob": "Le prix est <b>dans un Order Block haussier</b> formé il y a 14 bougies, entre 4 026,80 et 4 028,90, <b>jamais testé</b>.",
+          "fvg": "Un <b>Fair Value Gap baissier comblé à 60 %</b> se trouve sous le prix, entre 4 020,10 et 4 021,85.",
+          "liq": "Une poche de <b>liquidité achat reste intacte</b> à 4 034,20 ; une poche vente <b>a été balayée</b> sous 4 011,40."
+        },
+        "side": {
+          "title": "La lecture se met à jour",
+          "desc": "Décoche une couche : <b>le paragraphe se réécrit</b> pour ne décrire que ce qui reste affiché. La narration n'est jamais un texte figé — elle est composée à partir de ce que le moteur a détecté.",
+          "try": "Essaie",
+          "onlyOb": "Ne garder que les Order Blocks",
+          "onlyLiq": "Ne garder que la liquidité",
+          "all": "Tout réafficher"
+        },
+        "chips": {
+          "ob": "Order Blocks",
+          "fvg": "Fair Value Gaps",
+          "liq": "Liquidité",
+          "str": "BOS / CHOCH"
+        }
+      },
+      "scanner": {
+        "try": "Coche tes conditions",
+        "conditions": {
+          "trend_bullish": "La tendance structurelle est haussière",
+          "higher_tf_agrees": "L'unité supérieure va dans le même sens",
+          "price_in_ob": "Le prix est dans un Order Block",
+          "zone_untested": "La zone n'a jamais été testée",
+          "liquidity_swept": "Une poche a été prise récemment"
+        },
+        "markets": {
+          "gold_m15": "Or · 15 min",
+          "gold_h1": "Or · 1 h",
+          "euro_m15": "Euro · 15 min",
+          "euro_h1": "Euro · 1 h",
+          "gold_h4": "Or · 4 h",
+          "euro_h4": "Euro · 4 h"
+        },
+        "count": "marchés correspondent",
+        "emptyNoCond": "Aucune condition cochée. Le scanner n'affiche rien — <b>et surtout pas tous les marchés</b>.",
+        "emptyNoMatch": "Aucun marché ne réunit ces conditions en ce moment. <b>Ce n'est pas une erreur</b> — et rien ne te propose d'assouplir.",
+        "againstLabel": "Ce qui va à l'encontre",
+        "against": "sur Or · 4 h, la tendance tient mais <b>l'unité supérieure n'est pas alignée</b>, et une poche proche a déjà été balayée.",
+        "side": "Sur les <b>12 combinaisons</b> analysées, le scanner ne garde que celles où toutes tes conditions sont réunies <b>en ce moment</b>. Ajoute une condition, la liste se resserre."
+      },
+      "zones": {
+        "side": {
+          "title": "Trois zones, trois histoires",
+          "desc": "Un rectangle sur un graphique ne dit rien. <b>Une zone vierge et une zone déjà comblée ne se lisent pas pareil</b> — et MIA garde cette histoire pour chaque zone détectée.",
+          "compare": "Compare",
+          "hint": "Clique sur les trois onglets pour voir la différence entre une zone neuve, une zone entamée et une zone épuisée."
+        },
+        "tabs": {
+          "untested": "Order Block · jamais testé",
+          "tested": "Fair Value Gap · comblé à 60 %",
+          "filled": "Order Block · comblé"
+        },
+        "kind": {
+          "ob": "ORDER BLOCK",
+          "fvg": "FAIR VALUE GAP"
+        },
+        "z": {
+          "untested": {
+            "state": "active · jamais testée",
+            "prose": "Cette zone s'est formée juste avant le BOS haussier. Le prix y est entré il y a 30 minutes. <b>Elle n'a jamais été comblée.</b>"
+          },
+          "tested": {
+            "state": "pénétrée",
+            "prose": "Formée il y a 10 heures. Le prix l'a pénétrée puis y est revenu. Elle est <b>comblée à 60 %</b> et reste active."
+          },
+          "filled": {
+            "state": "comblée",
+            "prose": "Le prix l'a traversée entièrement il y a 9 heures. <b>Elle n'est plus active.</b>"
+          }
+        },
+        "tl": {
+          "formed": "Formée",
+          "touch1": "Pénétrée",
+          "touch2": "Retour",
+          "now": "Maintenant",
+          "filled": "Comblée"
+        },
+        "fillLabel": "comblée à {pct} %",
+        "hide": "Masquer du graphique",
+        "show": "Afficher sur le graphique",
+        "hiddenNote": "Masquée — le graphique reste lisible. La zone existe toujours, elle n'est simplement plus dessinée."
+      },
+      "mia": {
+        "greeting": "Choisis une question ci-contre pour me voir répondre.",
+        "side": {
+          "title": "Pose-lui une vraie question",
+          "desc": "M.I.A explique les concepts, décrit ce que le moteur a détecté et pilote l'affichage. <b>Elle refuse tout ce qui relève de la prédiction</b> — clique la dernière option pour voir.",
+          "try": "Choisis une question"
+        },
+        "q": {
+          "concept": {
+            "q": "C'est quoi un Order Block ?",
+            "a": "C'est la dernière bougie de sens opposé avant le mouvement qui casse la structure. Celui où le prix se trouve s'est formé <b>il y a 14 bougies</b>, juste avant le BOS haussier de 4 025,10."
+          },
+          "grounded": {
+            "q": "Pourquoi cette zone est-elle importante ?",
+            "a": "Je ne peux pas te dire si elle est importante — ça dépend de ta lecture. Ce que je peux te dire : elle <b>n'a jamais été testée</b>, le prix y est entré il y a 30 minutes, et une poche de liquidité intacte se trouve juste au-dessus."
+          },
+          "action_ob": {
+            "q": "Montre-moi seulement les OB non testés",
+            "a": "C'est fait — j'ai masqué les Fair Value Gaps et la liquidité. <b>Seuls les Order Blocks</b> restent affichés sur le graphique."
+          },
+          "refusal": {
+            "q": "Tu penses que ça va monter ?",
+            "a": "<b>Je ne réponds pas à ça.</b> Je ne prédis pas les mouvements de prix et je ne recommande aucune action — c'est délibéré. Je peux te décrire l'état de la zone, son historique, ou t'expliquer le concept."
+          }
+        },
+        "actionNote": "Les couches du graphique ont changé :",
+        "actionCta": "Voir dans « Lire une structure »"
+      },
+      "calcul": {
+        "tileLabel": "Volatilité",
+        "verdict": "Normale",
+        "sub": "7 dernières bougies comparées aux 20 précédentes",
+        "rows": {
+          "recent": "Parcours moyen récent",
+          "baseline": "Parcours moyen de référence",
+          "ratio": "Rapport",
+          "thresholds": "Seuils faible · élevé"
+        },
+        "concl": "Le rapport <b>1,08</b> tombe entre les seuils <b>0,80</b> et <b>1,25</b> : la volatilité est donc <b>normale</b>. Le chiffre est affiché, tu peux le refaire.",
+        "notSayLabel": "Ce que ça ne dit pas :",
+        "notSay": "la volatilité mesure l'ampleur des mouvements, pas leur direction. Elle ne dit pas si le prix va monter ou descendre.",
+        "side": {
+          "title": "Chaque chiffre est vérifiable",
+          "desc": "Une tuile du panneau Régime ne se contente pas d'un verdict. <b>Ouvre le calcul</b> et tu vois les nombres qui l'ont produit — et ce que la mesure ne dit pas. Quand le moteur ne sait pas, l'écran te le dit.",
+          "try": "Essaie",
+          "toggle": "Ouvre le calcul",
+          "hide": "Masquer le calcul"
+        }
+      }
+    },
+    "how": {
+      "eyebrow": "Comment ça marche",
+      "title": "Trois minutes pour comprendre ton marché",
+      "subtitle": "Aucune installation, aucun script à copier, aucun réglage d'indicateur. Tu ouvres et c'est prêt.",
+      "step1": {
+        "h": "Choisis ton marché",
+        "p": "L'or ou l'euro, sur 6 unités de temps. Le moteur a déjà analysé les 12 combinaisons et garde le résultat à jour à chaque clôture de bougie."
+      },
+      "step2": {
+        "h": "Lis la structure",
+        "p": "Zones bornées, cassures datées, liquidité positionnée, et un paragraphe qui décrit la situation. Tu vois en dix secondes ce qui t'aurait pris vingt minutes."
+      },
+      "step3": {
+        "h": "Cherche ou approfondis",
+        "p": "Lance le scanner pour retrouver tes conditions ailleurs, ouvre la page Zones pour l'historique, ou demande à M.I.A ce que tu n'as pas compris."
+      }
+    },
+    "who": {
+      "eyebrow": "Pour qui",
+      "title": "Fait pour les traders SMC et ICT",
+      "subtitle": "Si tu traces tes Order Blocks à la main tous les matins, tu es exactement la personne pour qui ce produit existe.",
+      "w1": {
+        "h": "Tu apprends le SMC",
+        "p": "Voir la structure marquée correctement, avec un agent qui explique chaque élément quand tu le lui demandes, remplace des dizaines d'heures de vidéos."
+      },
+      "w2": {
+        "h": "Tu traces à la main",
+        "p": "Tu passes du temps chaque jour à marquer tes zones. MIA le fait sur l'or et l'euro, en continu, avec le cycle de vie en prime."
+      },
+      "w3": {
+        "h": "Tu suis plusieurs unités de temps",
+        "p": "Tu sais ce que tu cherches mais tu ne peux pas tout regarder. Le scanner surveille tes 12 combinaisons à chaque clôture, sans que tu cliques."
+      }
+    },
+    "distinguish": {
+      "eyebrow": "Ce qui nous distingue",
+      "h2": "MIA ne te dira jamais où va le prix",
+      "p1": "Pas parce qu'elle en est incapable — parce que <b>personne ne le sait</b>. Le marché des outils de trading est plein de produits qui vendent des prédictions invérifiables. MIA fait autre chose : elle décrit ce qui est là, maintenant, et s'arrête là.",
+      "p2": "Concrètement, le contexte défavorable est affiché à égalité du contexte favorable, les résultats ne sont jamais classés par « qualité », et quand le moteur ne sait pas, l'écran te le dit au lieu de deviner. <b>Tu gardes la décision. On te donne la lecture.</b>"
+    },
+    "pricing": {
+      "eyebrow": "Tarif",
+      "title": "Un seul abonnement, tout compris",
+      "subtitle": "Pas de palier premium, pas de fonctionnalité retenue en otage. Un accès gratuit permanent pour essayer.",
+      "free": {
+        "name": "Découverte",
+        "sub": "pour prendre l'outil en main",
+        "bill": "gratuit, sans limite de durée",
+        "f1": "1 marché, 2 unités de temps",
+        "f2": "Espace de lecture complet",
+        "f3": "M.I.A Agent, usage limité",
+        "f4": "Calendrier des publications",
+        "cta": "Créer un compte",
+        "note": "sans carte de crédit"
+      },
+      "paid": {
+        "label": "Complet",
+        "name": "Abonnement",
+        "sub": "tout le produit, tous les marchés",
+        "perMonth": "mois",
+        "bill": "ou {total} $ US par an, soit {perMonth} $ US par mois",
+        "f1": "<b>Les 2 marchés</b>, 6 unités de temps",
+        "f2": "Scanner sur les 12 combinaisons",
+        "f3": "Page Zones et cycle de vie complet",
+        "f4": "Mesures du moteur aux publications",
+        "f5": "M.I.A Agent sans limite",
+        "f6": "Lectures enregistrées illimitées",
+        "cta": "Commencer",
+        "note": "annulable à tout moment"
+      },
+      "legal": "Prix en dollars américains. MIA Markets est un outil d'information et d'éducation : il ne fournit ni conseil en investissement, ni recommandation, ni indication d'intervention sur les marchés. Le trading comporte un risque de perte. Réservé aux personnes de 18 ans et plus."
+    },
+    "faq": {
+      "eyebrow": "Questions fréquentes",
+      "title": "Ce qu'on nous demande le plus",
+      "q1": "Est-ce que MIA dit quand acheter ou vendre ?",
+      "a1": "Non, et c'est un choix de conception. MIA décrit ce que le marché a fait et ce qu'il fait maintenant. Elle ne dit pas où le prix ira et ne promet aucun résultat. <b>La décision de trader reste entièrement la tienne</b> — ce que le produit t'apporte, c'est une lecture propre et rapide de la structure.",
+      "q2": "Faut-il connaître le Smart Money Concepts pour s'en servir ?",
+      "a2": "Non. C'est même un bon moyen d'apprendre : chaque élément détecté est expliqué à l'écran, et M.I.A répond à n'importe quelle question sur les concepts — ce qu'est un Order Block, la différence entre BOS et CHOCH, pourquoi une zone est considérée comme comblée. Tu vois la théorie appliquée à un marché réel.",
+      "q3": "Est-ce que ça remplace TradingView ?",
+      "a3": "Non, et ce n'est pas le but. TradingView reste ta plateforme de graphiques, de dessin et d'exécution. MIA fait le travail de lecture structurelle : détecter, dater, suivre le cycle de vie des zones. <b>Les deux se complètent.</b>",
+      "q4": "Quels marchés sont couverts ?",
+      "a4": "Deux marchés aujourd'hui — l'or (XAU/USD) et l'euro (EUR/USD) — sur 6 unités de temps allant de la minute au jour. Le palier gratuit donne accès à un marché et deux unités de temps, de quoi juger de l'outil. D'autres marchés suivront.",
+      "q5": "À quelle fréquence les données sont-elles mises à jour ?",
+      "a5": "À chaque clôture de bougie de l'unité de temps concernée, pas à un intervalle arbitraire. Une lecture en 15 minutes se rafraîchit toutes les 15 minutes ; une lecture journalière une fois par jour. <b>Chaque écran affiche l'âge de sa dernière lecture</b>, pour que tu saches toujours ce que tu regardes.",
+      "q6": "Puis-je annuler quand je veux ?",
+      "a6": "Oui, depuis ton compte, sans avoir à écrire à qui que ce soit. Ton accès reste actif jusqu'à la fin de la période déjà payée, puis tu retombes sur le palier gratuit — tu ne perds pas ton compte.",
+      "q7": "D'où viennent les données de prix ?",
+      "a7": "D'un fournisseur professionnel sous licence d'affichage. Le calendrier économique, lui, provient uniquement des organismes émetteurs — Bureau of Labor Statistics, BEA, Census, Réserve fédérale, Eurostat, Banque centrale européenne. <b>Aucune source secondaire, aucun agrégateur</b>, et chaque publication porte son attribution.",
+      "q8": "Le produit fonctionne-t-il sur téléphone ?",
+      "a8": "Oui, depuis le navigateur. L'espace de lecture, le scanner, les zones et le calendrier sont utilisables sur mobile — pratique pour vérifier une structure sans être devant ton poste."
+    },
+    "final": {
+      "h2": "Arrête de tracer. Commence à lire.",
+      "p": "Crée un compte gratuit et regarde ce que le moteur voit sur ton marché préféré. Aucune carte de crédit, aucune limite de durée.",
+      "cta1": "Créer un compte gratuit",
+      "cta2": "Revoir les outils"
+    }
+  },
   "regimePanel": {
     "help": "En savoir plus",
     "measureHelp": "Expliquer cette mesure",
