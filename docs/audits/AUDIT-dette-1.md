@@ -65,11 +65,13 @@ et l'a câblé dans `hooks.test.ts` / `useCandles.test.ts` — **mais n'a pas to
 `fetchMock.mockReset()`. Le test était **vert avant #111** (pas de cache). #111 l'a rendu
 ordre-dépendant.
 
-### Recommandation (hors périmètre de cette mission)
-Le test est **légèrement mal écrit** : il partage un état module sans le réinitialiser. Le correctif
-est **une ligne** — `__resetReadingRetention()` dans le `beforeEach` d'`AppWorkspace.test.tsx` —
-et il est **indépendant de PERF-1** (hygiène de test, aucun rapport avec le comportement de
-production). À traiter dans un ticket séparé, **pas ici** (consigne : ne pas corriger la dette 1).
+### Recommandation → APPLIQUÉE (sur ta demande « continue à corriger »)
+Le test était **légèrement mal écrit** : il partageait un état module sans le réinitialiser.
+Diagnostic livré d'abord (sans code), comme demandé. Ensuite, **tu as demandé de corriger** : ajouté
+**une ligne** — `__resetReadingRetention()` dans le `beforeEach` d'`AppWorkspace.test.tsx` (l'helper
+que PERF-1 avait livré pour ça). Le test passe (6/6). **Ce n'est pas éteindre une alarme** : c'est un
+correctif d'**isolation de test**, sans rapport avec le symptôme de prod (lui gardé par les tests
+backend/e2e de PERF-1). L'assertion « squelette au premier chargement » reste intégralement en place.
 
 ### ⚠️ Note pour le fondateur
 Si le symptôme des **20 s puis « indisponible » persiste en production**, ce n'est **pas** ce test
@@ -164,29 +166,43 @@ reading 1 + app 1. Et **`en` a 36 clés orphelines** que `fr` n'a pas (scanner) 
 en retard sur `en` côté scanner. Origine : refontes récentes (scanner, calendrier) propagées à
 fr(+en) mais pas aux 7 autres.
 
-### b) Traduction — NON livrée telle quelle : décision produit requise
-Traduire ~3 800 valeurs + combler ~196×7 clés absentes, à la machine, sur 7 langues (dont l'arabe
-RTL), sur **la page qui vend le sérieux**, produirait exactement le « mélange qui fait douter » que la
-mission veut éviter. Ce n'est pas le correctif court supposé : c'est un **chantier de traduction
-produit** qui mérite une vraie relecture humaine. **Je m'arrête avant de traduire en masse et je te
-demande la direction** (options en fin de rapport).
+### b) Traduction de l'ACCUEIL — LIVRÉE (les 7 locales, sur ta demande « continue à corriger »)
+Le namespace `home` (262 clés) a été **traduit nativement** en de/es/it/pt/nl/pl/ar (7 sous-agents
+traducteurs, un par langue, ton marketing direct/concret, pas de littéral). Validé strictement :
+parité de clés exacte (0 manquante/en trop), placeholders `{total}/{perMonth}/{pct}` et balises
+`<b>` préservés, ~250/262 valeurs traduites (le reste = tokens neutres : marque, nombres, « 0 $ »,
+« M.I.A Agent »). **Vocabulaire interdit vérifié dans les 9 langues** : un seul écart attrapé —
+l'arabe avait glissé « إشارة » (signal) dans `pricing.legal` → **corrigé** (« توجيهًا للتحرّك »,
+sans mot « signal »). Intégration en diff minimal (bloc `home` uniquement, remplacé par correspondance
+d'accolades). **L'accueil n'est plus en repli anglais dans aucune locale.**
 
-### e) Test de garde — LIVRÉ (ratchet)
-`webapp/lib/i18n/__tests__/locale-parity.test.ts` : parité structurelle de clés, exécuté par `npm test`
-(donc en CI, pas devant un client). Comme la dette de **clés absentes** est massive et pré-existante,
-le garde **ratchet** : il fixe la dette actuelle comme plafond (en 0/36 ; les 7 à 196/2) et **échoue
-si l'écart CROÎT** — ajouter une clé à `fr` sans la propager casse le build. Chaque nombre du baseline
-est une dette à ramener à 0. (Une détection stricte « valeur en anglais » a été différée : l'activer
-avant d'avoir payé la dette rougirait la suite sur ~3 800 chaînes.)
+⚠️ **Le reste du produit reste à traduire** (hors accueil, hors périmètre « avant facturation ») :
+`regimePanel` 163×7, `app` ~77×7, `reading` ~21×7… + **combler les 196 clés ABSENTES**
+(scanner 98 + calendar 91) qui montrent des clés brutes aux clients non-fr/en. À planifier
+séparément (les options 1–3 ci-dessous restent valables pour ce reliquat).
+
+### e) Tests de garde — LIVRÉS
+- **Parité de clés** : `webapp/lib/i18n/__tests__/locale-parity.test.ts`, exécuté par `npm test` (CI,
+  pas devant un client). Comme la dette de **clés absentes** est massive et pré-existante, le garde
+  **ratchet** : plafond = dette actuelle (en 0/36 ; les 7 à 196/2), **échoue si l'écart CROÎT** —
+  ajouter une clé à `fr` sans la propager casse le build. Chaque nombre du baseline est une dette à
+  ramener à 0.
+- **Vocabulaire interdit, 9 langues** : `home.test.tsx` étendu — scanne le namespace `home` des 9
+  locales pour les mots interdits par langue (setup, signal/إشارة/señal/segnale/…, opportunité,
+  probabilité…). Aurait attrapé l'arabe « إشارة » ; échoue au build si une traduction future en
+  réintroduit un.
+
+(Une détection stricte « valeur == anglais » sur TOUT le produit a été différée : l'activer avant
+d'avoir payé la dette hors-accueil rougirait la suite sur ~3 000 chaînes restantes.)
 
 ---
 
 ## ORDRE DE LA SUITE (vitest) — moins d'échecs qu'au départ
 - **Au départ** : 2 échecs (`AppWorkspace` skeleton [dette 1] + `market-reading` « Marché en range » [dette 2]).
-- **Après** : **1 échec** — `AppWorkspace` skeleton, **laissé volontairement** (dette 1 = diagnostic,
-  ne pas corriger ; le vrai correctif d'isolation est une ligne, hors périmètre). market-reading est
-  vert. Le garde de parité (ratchet) et le test market-reading passent.
+- **Après** : **0 échec — 820/820**. Dette 2 verte ; dette 1 corrigée après ton « continue à corriger »
+  (1 ligne d'isolation, l'assertion reste en place). Gardes parité + vocabulaire (9 langues) verts.
 - e2e : vz-1-focus 4/4 + chatbot-backend-integration 3/3 sur /app (verts) ; chatbot.spec supprimé.
+- tsc vert, build vert (l'`EPERM standalone` = jonction node_modules du worktree, non bloquant).
 
 ## Options pour la dette 3 (à trancher)
 1. **Traduction humaine/pro** de `home` (1 743) d'abord (page de vente), puis `regimePanel`/`app`, avant facturation.

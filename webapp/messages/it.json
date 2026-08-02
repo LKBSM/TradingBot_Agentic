@@ -1,210 +1,210 @@
 {
   "home": {
     "hero": {
-      "pill": "2 markets · 6 timeframes · analysed on every candle close",
-      "h1a": "The market already wrote it all.",
-      "h1b": "MIA reads it to you.",
-      "lead": "Order Blocks, Fair Value Gaps, structure breaks, liquidity pockets — detected on gold and the euro, across 6 timeframes, and described in plain language. Stop drawing everything by hand and get to the work that matters.",
-      "ctaPrimary": "Try it free",
-      "ctaSecondary": "See the tools",
-      "micro": "No credit card · Free tier forever"
+      "pill": "2 mercati · 6 unità temporali · analizzati a ogni chiusura",
+      "h1a": "Il mercato ha già scritto tutto.",
+      "h1b": "MIA te lo legge.",
+      "lead": "Order Blocks, Fair Value Gaps, rotture di struttura, pozze di liquidità — rilevati su oro ed euro, attraverso 6 unità temporali, e descritti in linguaggio chiaro. Smetti di tracciare tutto a mano e passi al lavoro che conta.",
+      "ctaPrimary": "Prova gratis",
+      "ctaSecondary": "Scopri gli strumenti",
+      "micro": "Senza carta di credito · Accesso gratuito permanente"
     },
     "stats": {
-      "markets": "markets tracked",
-      "combinations": "combinations analysed",
-      "conditions": "search conditions",
-      "timeframes": "timeframes"
+      "markets": "mercati seguiti",
+      "combinations": "combinazioni analizzate",
+      "conditions": "condizioni di ricerca",
+      "timeframes": "unità temporali"
     },
     "tools": {
-      "eyebrow": "Five tools, one engine",
-      "title": "Everything you need to read a structure",
-      "subtitle": "Each tool answers a question you already ask yourself. The difference is how long it takes you to get the answer.",
+      "eyebrow": "Cinque strumenti, un solo motore",
+      "title": "Tutto ciò che ti serve per leggere una struttura",
+      "subtitle": "Ogni strumento risponde a una domanda che ti stai già ponendo. La differenza è il tempo che impieghi per ottenere la risposta.",
       "app": {
-        "tag": "The reading space",
-        "h3": "Open a chart — the reading is already done",
-        "p": "The engine has marked the zones, dated the breaks, placed the liquidity. Below it, a paragraph tells you where the market stands — <b>not what it will do, what it has done</b>. You understand the situation in ten seconds instead of twenty minutes of drawing.",
-        "b1": "<b>Order Blocks and Fair Value Gaps</b> bounded, with their direction and state",
-        "b2": "<b>BOS and CHOCH</b> timestamped, with the exact break level",
-        "b3": "<b>Liquidity pockets</b> intact, swept or broken — three distinct states",
-        "b4": "<b>Regime panel</b>: ten tiles — trend, volatility, position, alignment, maturity, density, session…",
-        "visTitle": "Gold · XAU/USD · 15 minutes",
-        "lblLiq": "Liquidity intact",
-        "lblOb": "OB · untested",
+        "tag": "Lo spazio di lettura",
+        "h3": "Apri un grafico, la lettura è già fatta",
+        "p": "Il motore ha segnato le zone, datato le rotture, posizionato la liquidità. Sotto, un paragrafo ti dice a che punto è il mercato — <b>non cosa farà, ma cosa ha fatto</b>. Capisci la situazione in dieci secondi invece di venti minuti di tracciatura.",
+        "b1": "<b>Order Blocks e Fair Value Gaps</b> delimitati, con la loro direzione e il loro stato",
+        "b2": "<b>BOS e CHOCH</b> con marca temporale, con il livello esatto della rottura",
+        "b3": "<b>Pozze di liquidità</b> intatte, spazzate o rotte — tre stati distinti",
+        "b4": "<b>Pannello di regime</b>: dieci riquadri — tendenza, volatilità, posizione, allineamento, maturità, densità, sessione…",
+        "visTitle": "Oro · XAU/USD · 15 minuti",
+        "lblLiq": "Liquidità intatta",
+        "lblOb": "OB · non testato",
         "lblChoch": "CHOCH ↑",
-        "narr": "Price is <b>currently inside a bullish Order Block</b> formed 14 candles ago, between 4,026.80 and 4,028.90, and this zone <b>has never been tested</b>. A sell-side liquidity pocket <b>was swept</b> 17 candles ago. The 1h agrees."
+        "narr": "Il prezzo è <b>attualmente in un Order Block rialzista</b> formato 14 candele fa, tra 4.026,80 e 4.028,90, e questa zona <b>non è mai stata testata</b>. Una pozza di liquidità vendita <b>è stata spazzata</b> 17 candele fa. L'1 h va nella stessa direzione."
       },
       "scanner": {
-        "tag": "The scanner",
-        "h3": "You can't watch your markets non-stop. It can.",
-        "p": "Tick the conditions you care about — trend, untested zone, liquidity recently taken — and the scanner tells you <b>where they line up right now</b>, across the 12 market-and-timeframe combinations. Re-evaluated on every candle close.",
-        "b1": "<b>22 factual conditions</b> across structure, zones, liquidity and context",
-        "b2": "<b>What goes against it</b> is shown too — disagreement between units, worn zone",
-        "b3": "<b>No ranking</b>: results are never sorted by « quality »",
-        "b4": "<b>Saved readings</b>: recall your usual conditions, export them from one device to another",
-        "visTitle": "Scanner · 4 active conditions",
+        "tag": "Lo scanner",
+        "h3": "Non puoi sorvegliare i tuoi mercati di continuo. Lui sì.",
+        "p": "Spunta le condizioni che ti interessano — tendenza, zona non testata, liquidità presa di recente — e lo scanner ti dice <b>dove sono riunite in questo momento</b>, sulle 12 combinazioni di mercati e unità temporali. Rivalutato a ogni chiusura di candela.",
+        "b1": "<b>22 condizioni fattuali</b> ripartite tra struttura, zone, liquidità e contesto",
+        "b2": "<b>Ciò che va nella direzione opposta</b> viene mostrato anche — disaccordo tra unità, zona consumata",
+        "b3": "<b>Nessuna classifica</b>: i risultati non sono mai ordinati per «qualità»",
+        "b4": "<b>Letture salvate</b>: ritrova le tue condizioni abituali, esportale da un dispositivo all'altro",
+        "visTitle": "Scanner · 4 condizioni attive",
         "chip": {
-          "c1": "bullish trend",
-          "c2": "units aligned",
-          "c3": "inside an OB",
-          "c4": "never tested"
+          "c1": "tendenza rialzista",
+          "c2": "unità allineate",
+          "c3": "in un OB",
+          "c4": "mai testata"
         },
         "row": {
-          "gold15": "Gold · 15 min",
+          "gold15": "Oro · 15 min",
           "euro15": "Euro · 15 min",
-          "goldH4": "Gold · 4h"
+          "goldH4": "Oro · 4 h"
         },
-        "foot": "re-evaluated on every close · 4 min ago"
+        "foot": "rivalutato a ogni chiusura · 4 min fa"
       },
       "zones": {
-        "tag": "The zones",
-        "h3": "A pristine zone and a worn one are not worth the same",
-        "p": "Most tools show you that an Order Block exists. MIA tells you <b>its whole life</b>: when it formed, whether it was touched, at what time, and whether it ended up filled. That's the difference between seeing a rectangle and knowing what it's worth.",
-        "b1": "<b>Full timeline</b>: formed → tested → filled, timestamped",
-        "b2": "<b>Fill rate</b> for a partially filled Fair Value Gap",
-        "b3": "<b>Overlaps</b> with zones detected on other timeframes",
-        "b4": "<b>Hideable one by one</b> to keep a readable chart",
-        "visTitle": "Zones · Gold · 15 minutes",
-        "now": "Now",
+        "tag": "Le zone",
+        "h3": "Una zona vergine e una zona consumata non valgono la stessa cosa",
+        "p": "La maggior parte degli strumenti ti mostra che un Order Block esiste. MIA ti racconta <b>tutta la sua vita</b>: quando si è formato, se è stato toccato, a che ora, e se alla fine è stato colmato. È la differenza tra vedere un rettangolo e sapere quanto vale.",
+        "b1": "<b>Cronologia completa</b>: formata → testata → colmata, con marca temporale",
+        "b2": "<b>Tasso di riempimento</b> per un Fair Value Gap parzialmente colmato",
+        "b3": "<b>Incroci</b> con le zone rilevate su altre unità temporali",
+        "b4": "<b>Nascondibili una a una</b> per mantenere un grafico leggibile",
+        "visTitle": "Zone · Oro · 15 minuti",
+        "now": "Adesso",
         "card1": {
           "tag": "ORDER BLOCK ↑",
-          "state": "never tested",
-          "formed": "Formed · 3h 30 ago"
+          "state": "mai testata",
+          "formed": "Formata · 3 h 30 fa"
         },
         "card2": {
           "tag": "FAIR VALUE GAP ↓",
-          "state": "60 % filled",
-          "fill": "60 % filled"
+          "state": "colmata al 60 %",
+          "fill": "colmata al 60 %"
         }
       },
       "news": {
-        "tag": "The news",
-        "h3": "Know when the market will move — and what happened the times before",
-        "p": "A calendar of economic releases, attached to the markets they concern. And for each one, <b>what the engine actually measured at previous releases</b>: the calm before, the agitation after, the lifespan of the zones created that day.",
-        "b1": "<b>Monthly calendar</b> with local time and the issuing body's time",
-        "b2": "<b>The last twelve published figures</b> of each indicator, as published",
-        "b3": "<b>Engine measures</b> at past releases — counts, not forecasts",
-        "b4": "<b>Official sources only</b>: BLS, BEA, Census, Federal Reserve, Eurostat, ECB",
-        "visTitle": "Consumer Price Index · 12 August",
+        "tag": "Le notizie",
+        "h3": "Sappi quando il mercato si muoverà — e cosa è successo le volte precedenti",
+        "p": "Un calendario delle pubblicazioni economiche, collegate ai mercati che riguardano. E per ciascuna, <b>ciò che il motore ha realmente misurato nelle uscite precedenti</b>: la calma che precede, l'agitazione che segue, la durata di vita delle zone create quel giorno.",
+        "b1": "<b>Calendario mensile</b> con ora locale e ora dell'organismo",
+        "b2": "<b>Le ultime dodici cifre pubblicate</b> di ogni indicatore, così come pubblicate",
+        "b3": "<b>Misure del motore</b> alle uscite passate — conteggi, non previsioni",
+        "b4": "<b>Solo fonti ufficiali</b>: BLS, BEA, Census, Federal Reserve (Fed), Eurostat, BCE",
+        "visTitle": "Indice dei prezzi al consumo · 12 agosto",
         "q1": {
-          "q": "Does the market calm down before?",
-          "a": "Across the releases measured, the hour before was calmer <b>10 times out of 12</b>."
+          "q": "Il mercato si calma prima?",
+          "a": "Sulle uscite misurate, l'ora che precede è stata più calma <b>10 volte su 12</b>."
         },
         "q2": {
-          "q": "How long does it last?",
-          "a": "Most often <b>1 to 3h</b>. From 15 min to 4h 45 depending on the release."
+          "q": "Quanto dura?",
+          "a": "Il più delle volte <b>da 1 a 3 h</b>. Da 15 min a 4 h 45 a seconda delle uscite."
         },
         "q3": {
-          "q": "Do the zones created hold?",
-          "a": "Rarely. Of <b>34 zones</b> created, 26 crossed within two hours."
+          "q": "Le zone create tengono?",
+          "a": "Raramente. Su <b>34 zone</b> create, 26 attraversate in due ore."
         },
         "q4": {
-          "q": "Where does the structure stand?",
-          "a": "Top third of the range <b>8 times out of 12</b>, intact pocket nearby 9 times."
+          "q": "A che punto è la struttura?",
+          "a": "Terzo alto del range <b>8 volte su 12</b>, pozza intatta vicina 9 volte."
         },
-        "foot": "Counts of past days. Nothing applies to the upcoming release."
+        "foot": "Conteggi di giornate passate. Nulla si applica all'uscita futura."
       },
       "mia": {
         "tag": "M.I.A Agent",
-        "h3": "An SMC mentor that never sleeps",
-        "p": "Don't get why that candle is an Order Block? Ask her. She <b>teaches the concepts and describes what the engine detected</b> — and she can drive your chart: hide a layer, isolate a zone, change the timeframe.",
-        "b1": "<b>Explains every SMC concept</b> with the example in front of you",
-        "b2": "<b>Anchored to the engine</b>: she only cites levels that were actually detected",
-        "b3": "<b>Controls the display</b>: « show me only the untested OBs »",
-        "b4": "<b>On the chart and the publications</b> — never a word of prediction",
+        "h3": "Un mentore SMC che non dorme mai",
+        "p": "Non capisci perché questa candela è un Order Block? Chiediglielo. <b>Insegna i concetti e descrive ciò che il motore ha rilevato</b> — e può pilotare il tuo grafico: nascondere un livello, isolare una zona, cambiare unità temporale.",
+        "b1": "<b>Spiega ogni concetto SMC</b> con l'esempio sotto gli occhi",
+        "b2": "<b>Ancorata al motore</b>: cita solo livelli realmente rilevati",
+        "b3": "<b>Controlla la visualizzazione</b>: «mostrami solo gli OB non testati»",
+        "b4": "<b>Sul grafico e sulle pubblicazioni</b> — mai una parola di previsione",
         "visTitle": "M.I.A Agent",
         "chat": {
-          "u1": "what exactly is an order block?",
-          "a1": "It's the last opposite-direction candle before the move that breaks structure. The one price sits in formed <b>14 candles ago</b>, right before the bullish BOS at 14:15.",
-          "u2": "show me only the untested OBs",
-          "a2": "Done. I hid the FVGs and the liquidity. <b>3 untested Order Blocks</b> remain on screen.",
-          "u3": "do you think it will bounce?",
-          "a3": "I don't answer that. I don't predict price moves — I can describe the state of the zone or explain the concept."
+          "u1": "cos'è esattamente un order block?",
+          "a1": "È l'ultima candela di direzione opposta prima del movimento che rompe la struttura. Quello in cui si trova il prezzo si è formato <b>14 candele fa</b>, appena prima del BOS rialzista delle 14:15.",
+          "u2": "mostrami solo gli OB non testati",
+          "a2": "Fatto. Ho nascosto i FVG e la liquidità. Restano visualizzati <b>3 Order Blocks</b> non testati.",
+          "u3": "pensi che rimbalzerà?",
+          "a3": "Non rispondo a questo. Non prevedo i movimenti di prezzo — posso descriverti lo stato della zona o spiegarti il concetto."
         }
       }
     },
     "demoSection": {
-      "eyebrow": "Try it without creating an account",
-      "title": "Here's what it looks like",
-      "subtitle": "An illustration reading, editable right here. Click, tick, ask a question — everything works with no account.",
-      "cta": "Create a free account",
-      "illus": "Illustration data · the product shows the real market readings"
+      "eyebrow": "Prova senza creare un account",
+      "title": "Ecco come si presenta",
+      "subtitle": "Una lettura d'illustrazione, manipolabile proprio qui. Clicca, spunta, poni una domanda — tutto funziona senza account.",
+      "cta": "Crea un account gratuito",
+      "illus": "Dati d'illustrazione · il prodotto mostra le vere letture di mercato"
     },
     "demo": {
-      "illus": "Illustration data",
+      "illus": "Dati d'illustrazione",
       "tabs": {
-        "structure": "Read a structure",
-        "scanner": "Search a market",
-        "zones": "Track a zone",
-        "mia": "Ask a question",
-        "calcul": "Open the calculation"
+        "structure": "Leggere una struttura",
+        "scanner": "Cercare un mercato",
+        "zones": "Seguire una zona",
+        "mia": "Porre una domanda",
+        "calcul": "Aprire il calcolo"
       },
       "structure": {
-        "prefix": "On gold, 15 minutes:",
-        "empty": "No layer shown. The reading describes only what is visible — it invents nothing to fill the void.",
+        "prefix": "Sull'oro in 15 minuti:",
+        "empty": "Nessun livello visualizzato. La lettura descrive solo ciò che è visibile — non inventa nulla per riempire il vuoto.",
         "labels": {
-          "ob": "Bullish OB · untested",
-          "fvg": "FVG · 60 % filled",
-          "liqIntact": "Buy liquidity · intact",
-          "liqSwept": "Sell liquidity · swept",
-          "choch": "CHOCH ↑ · 4,021.45",
-          "bos": "BOS ↑ · 4,025.10"
+          "ob": "OB rialzista · mai testato",
+          "fvg": "FVG · colmato al 60 %",
+          "liqIntact": "Liquidità acquisto · intatta",
+          "liqSwept": "Liquidità vendita · spazzata",
+          "choch": "CHOCH ↑ · 4.021,45",
+          "bos": "BOS ↑ · 4.025,10"
         },
         "frag": {
-          "str": "A <b>bullish CHOCH confirmed</b> at 4,021.45, followed by a <b>bullish BOS</b> at 4,025.10.",
-          "ob": "Price is <b>inside a bullish Order Block</b> formed 14 candles ago, between 4,026.80 and 4,028.90, <b>never tested</b>.",
-          "fvg": "A <b>bearish Fair Value Gap, 60 % filled</b> sits below price, between 4,020.10 and 4,021.85.",
-          "liq": "A <b>buy-side liquidity pocket stays intact</b> at 4,034.20; a sell-side pocket <b>was swept</b> below 4,011.40."
+          "str": "Un <b>CHOCH rialzista si è confermato</b> a 4.021,45, seguito da un <b>BOS rialzista</b> a 4.025,10.",
+          "ob": "Il prezzo è <b>in un Order Block rialzista</b> formato 14 candele fa, tra 4.026,80 e 4.028,90, <b>mai testato</b>.",
+          "fvg": "Un <b>Fair Value Gap ribassista colmato al 60 %</b> si trova sotto il prezzo, tra 4.020,10 e 4.021,85.",
+          "liq": "Una pozza di <b>liquidità acquisto resta intatta</b> a 4.034,20; una pozza vendita <b>è stata spazzata</b> sotto 4.011,40."
         },
         "side": {
-          "title": "The reading updates itself",
-          "desc": "Untick a layer: <b>the paragraph rewrites itself</b> to describe only what stays on screen. The narration is never a fixed text — it is composed from what the engine actually detected.",
-          "try": "Try it",
-          "onlyOb": "Keep only the Order Blocks",
-          "onlyLiq": "Keep only the liquidity",
-          "all": "Show everything again"
+          "title": "La lettura si aggiorna",
+          "desc": "Deseleziona un livello: <b>il paragrafo si riscrive</b> per descrivere solo ciò che resta visualizzato. La narrazione non è mai un testo fisso — è composta a partire da ciò che il motore ha rilevato.",
+          "try": "Prova",
+          "onlyOb": "Mantieni solo gli Order Blocks",
+          "onlyLiq": "Mantieni solo la liquidità",
+          "all": "Mostra tutto di nuovo"
         },
         "chips": {
           "ob": "Order Blocks",
           "fvg": "Fair Value Gaps",
-          "liq": "Liquidity",
+          "liq": "Liquidità",
           "str": "BOS / CHOCH"
         }
       },
       "scanner": {
-        "try": "Tick your conditions",
+        "try": "Spunta le tue condizioni",
         "conditions": {
-          "trend_bullish": "The structural trend is bullish",
-          "higher_tf_agrees": "The higher timeframe agrees",
-          "price_in_ob": "Price is inside an Order Block",
-          "zone_untested": "The zone has never been tested",
-          "liquidity_swept": "A pocket was taken recently"
+          "trend_bullish": "La tendenza strutturale è rialzista",
+          "higher_tf_agrees": "L'unità superiore va nella stessa direzione",
+          "price_in_ob": "Il prezzo è in un Order Block",
+          "zone_untested": "La zona non è mai stata testata",
+          "liquidity_swept": "Una pozza è stata presa di recente"
         },
         "markets": {
-          "gold_m15": "Gold · 15 min",
-          "gold_h1": "Gold · 1h",
+          "gold_m15": "Oro · 15 min",
+          "gold_h1": "Oro · 1 h",
           "euro_m15": "Euro · 15 min",
-          "euro_h1": "Euro · 1h",
-          "gold_h4": "Gold · 4h",
-          "euro_h4": "Euro · 4h"
+          "euro_h1": "Euro · 1 h",
+          "gold_h4": "Oro · 4 h",
+          "euro_h4": "Euro · 4 h"
         },
-        "count": "markets match",
-        "emptyNoCond": "No condition ticked. The scanner shows nothing — <b>and above all not every market</b>.",
-        "emptyNoMatch": "No market meets these conditions right now. <b>This is not an error</b> — and nothing offers to loosen anything.",
-        "againstLabel": "What goes against it",
-        "against": "on Gold · 4h, the trend holds but <b>the higher timeframe is not aligned</b>, and a nearby pocket has already been swept.",
-        "side": "Across the <b>12 combinations</b> analysed, the scanner keeps only those where all your conditions line up <b>right now</b>. Add a condition and the list narrows."
+        "count": "mercati corrispondono",
+        "emptyNoCond": "Nessuna condizione spuntata. Lo scanner non mostra nulla — <b>e soprattutto non tutti i mercati</b>.",
+        "emptyNoMatch": "Nessun mercato riunisce queste condizioni in questo momento. <b>Non è un errore</b> — e nulla ti propone di allentare i criteri.",
+        "againstLabel": "Ciò che va nella direzione opposta",
+        "against": "su Oro · 4 h, la tendenza tiene ma <b>l'unità superiore non è allineata</b>, e una pozza vicina è già stata spazzata.",
+        "side": "Sulle <b>12 combinazioni</b> analizzate, lo scanner mantiene solo quelle in cui tutte le tue condizioni sono riunite <b>in questo momento</b>. Aggiungi una condizione e la lista si restringe."
       },
       "zones": {
         "side": {
-          "title": "Three zones, three histories",
-          "desc": "A rectangle on a chart says nothing. <b>A pristine zone and an already-filled one do not read the same</b> — and MIA keeps that history for every detected zone.",
-          "compare": "Compare",
-          "hint": "Click the three tabs to see the difference between a fresh zone, a started one and a spent one."
+          "title": "Tre zone, tre storie",
+          "desc": "Un rettangolo su un grafico non dice nulla. <b>Una zona vergine e una zona già colmata non si leggono allo stesso modo</b> — e MIA conserva questa storia per ogni zona rilevata.",
+          "compare": "Confronta",
+          "hint": "Clicca sulle tre schede per vedere la differenza tra una zona nuova, una zona intaccata e una zona esaurita."
         },
         "tabs": {
-          "untested": "Order Block · never tested",
-          "tested": "Fair Value Gap · 60 % filled",
-          "filled": "Order Block · filled"
+          "untested": "Order Block · mai testato",
+          "tested": "Fair Value Gap · colmato al 60 %",
+          "filled": "Order Block · colmato"
         },
         "kind": {
           "ob": "ORDER BLOCK",
@@ -212,177 +212,177 @@
         },
         "z": {
           "untested": {
-            "state": "active · never tested",
-            "prose": "This zone formed just before the bullish BOS. Price entered it 30 minutes ago. <b>It has never been filled.</b>"
+            "state": "attiva · mai testata",
+            "prose": "Questa zona si è formata appena prima del BOS rialzista. Il prezzo vi è entrato 30 minuti fa. <b>Non è mai stata colmata.</b>"
           },
           "tested": {
-            "state": "penetrated",
-            "prose": "Formed 10 hours ago. Price penetrated it, then came back. It is <b>60 % filled</b> and still active."
+            "state": "penetrata",
+            "prose": "Formata 10 ore fa. Il prezzo l'ha penetrata poi vi è tornato. È <b>colmata al 60 %</b> e resta attiva."
           },
           "filled": {
-            "state": "filled",
-            "prose": "Price went entirely through it 9 hours ago. <b>It is no longer active.</b>"
+            "state": "colmata",
+            "prose": "Il prezzo l'ha attraversata interamente 9 ore fa. <b>Non è più attiva.</b>"
           }
         },
         "tl": {
-          "formed": "Formed",
-          "touch1": "Penetrated",
-          "touch2": "Return",
-          "now": "Now",
-          "filled": "Filled"
+          "formed": "Formata",
+          "touch1": "Penetrata",
+          "touch2": "Ritorno",
+          "now": "Adesso",
+          "filled": "Colmata"
         },
-        "fillLabel": "{pct} % filled",
-        "hide": "Hide from chart",
-        "show": "Show on chart",
-        "hiddenNote": "Hidden — the chart stays readable. The zone still exists, it is simply no longer drawn."
+        "fillLabel": "colmata al {pct} %",
+        "hide": "Nascondi dal grafico",
+        "show": "Mostra sul grafico",
+        "hiddenNote": "Nascosta — il grafico resta leggibile. La zona esiste ancora, semplicemente non è più disegnata."
       },
       "mia": {
-        "greeting": "Pick a question on the right to see me answer.",
+        "greeting": "Scegli una domanda qui accanto per vedermi rispondere.",
         "side": {
-          "title": "Ask her a real question",
-          "desc": "M.I.A explains the concepts, describes what the engine detected and drives the display. <b>She refuses anything that amounts to prediction</b> — click the last option to see.",
-          "try": "Pick a question"
+          "title": "Poni una vera domanda",
+          "desc": "M.I.A spiega i concetti, descrive ciò che il motore ha rilevato e pilota la visualizzazione. <b>Rifiuta tutto ciò che riguarda la previsione</b> — clicca l'ultima opzione per vedere.",
+          "try": "Scegli una domanda"
         },
         "q": {
           "concept": {
-            "q": "What is an Order Block?",
-            "a": "It's the last opposite-direction candle before the move that breaks structure. The one price sits in formed <b>14 candles ago</b>, right before the bullish BOS at 4,025.10."
+            "q": "Cos'è un Order Block?",
+            "a": "È l'ultima candela di direzione opposta prima del movimento che rompe la struttura. Quello in cui si trova il prezzo si è formato <b>14 candele fa</b>, appena prima del BOS rialzista di 4.025,10."
           },
           "grounded": {
-            "q": "Why does this zone matter?",
-            "a": "I can't tell you whether it matters — that depends on your reading. What I can tell you: it <b>has never been tested</b>, price entered it 30 minutes ago, and an intact liquidity pocket sits just above."
+            "q": "Perché questa zona è importante?",
+            "a": "Non posso dirti se è importante — dipende dalla tua lettura. Ciò che posso dirti: <b>non è mai stata testata</b>, il prezzo vi è entrato 30 minuti fa, e una pozza di liquidità intatta si trova appena sopra."
           },
           "action_ob": {
-            "q": "Show me only the untested OBs",
-            "a": "Done — I hid the Fair Value Gaps and the liquidity. <b>Only the Order Blocks</b> remain on the chart."
+            "q": "Mostrami solo gli OB non testati",
+            "a": "Fatto — ho nascosto i Fair Value Gaps e la liquidità. <b>Solo gli Order Blocks</b> restano visualizzati sul grafico."
           },
           "refusal": {
-            "q": "Do you think it will go up?",
-            "a": "<b>I don't answer that.</b> I don't predict price moves and I recommend no action — that's deliberate. I can describe the state of the zone, its history, or explain the concept."
+            "q": "Pensi che salirà?",
+            "a": "<b>Non rispondo a questo.</b> Non prevedo i movimenti di prezzo e non raccomando alcuna azione — è deliberato. Posso descriverti lo stato della zona, la sua storia, o spiegarti il concetto."
           }
         },
-        "actionNote": "The chart layers changed:",
-        "actionCta": "See it in « Read a structure »"
+        "actionNote": "I livelli del grafico sono cambiati:",
+        "actionCta": "Vedi in «Leggere una struttura»"
       },
       "calcul": {
-        "tileLabel": "Volatility",
-        "verdict": "Normal",
-        "sub": "last 7 candles compared with the previous 20",
+        "tileLabel": "Volatilità",
+        "verdict": "Normale",
+        "sub": "Ultime 7 candele confrontate con le 20 precedenti",
         "rows": {
-          "recent": "Recent average range",
-          "baseline": "Baseline average range",
-          "ratio": "Ratio",
-          "thresholds": "Low · high thresholds"
+          "recent": "Percorso medio recente",
+          "baseline": "Percorso medio di riferimento",
+          "ratio": "Rapporto",
+          "thresholds": "Soglie bassa · alta"
         },
-        "concl": "The ratio <b>1.08</b> falls between the <b>0.80</b> and <b>1.25</b> thresholds: volatility is therefore <b>normal</b>. The figure is shown — you can redo it.",
-        "notSayLabel": "What it does not say:",
-        "notSay": "volatility measures the size of moves, not their direction. It does not say whether price will go up or down.",
+        "concl": "Il rapporto <b>1,08</b> cade tra le soglie <b>0,80</b> e <b>1,25</b>: la volatilità è quindi <b>normale</b>. La cifra è mostrata, puoi rifare il calcolo.",
+        "notSayLabel": "Ciò che non dice:",
+        "notSay": "la volatilità misura l'ampiezza dei movimenti, non la loro direzione. Non dice se il prezzo salirà o scenderà.",
         "side": {
-          "title": "Every figure is verifiable",
-          "desc": "A Regime-panel tile does not stop at a verdict. <b>Open the calculation</b> and you see the numbers that produced it — and what the measure does not say. When the engine doesn't know, the screen tells you.",
-          "try": "Try it",
-          "toggle": "Open the calculation",
-          "hide": "Hide the calculation"
+          "title": "Ogni cifra è verificabile",
+          "desc": "Un riquadro del pannello Regime non si limita a un verdetto. <b>Apri il calcolo</b> e vedi i numeri che l'hanno prodotto — e ciò che la misura non dice. Quando il motore non sa, lo schermo te lo dice.",
+          "try": "Prova",
+          "toggle": "Apri il calcolo",
+          "hide": "Nascondi il calcolo"
         }
       }
     },
     "how": {
-      "eyebrow": "How it works",
-      "title": "Three minutes to understand your market",
-      "subtitle": "No install, no script to copy, no indicator to tune. You open it and it's ready.",
+      "eyebrow": "Come funziona",
+      "title": "Tre minuti per capire il tuo mercato",
+      "subtitle": "Nessuna installazione, nessuno script da copiare, nessuna regolazione di indicatore. Apri ed è pronto.",
       "step1": {
-        "h": "Choose your market",
-        "p": "Gold or the euro, across 6 timeframes. The engine has already analysed the 12 combinations and keeps the result up to date on every candle close."
+        "h": "Scegli il tuo mercato",
+        "p": "L'oro o l'euro, su 6 unità temporali. Il motore ha già analizzato le 12 combinazioni e mantiene il risultato aggiornato a ogni chiusura di candela."
       },
       "step2": {
-        "h": "Read the structure",
-        "p": "Bounded zones, dated breaks, placed liquidity, and a paragraph describing the situation. You see in ten seconds what would have taken you twenty minutes."
+        "h": "Leggi la struttura",
+        "p": "Zone delimitate, rotture datate, liquidità posizionata, e un paragrafo che descrive la situazione. Vedi in dieci secondi ciò che ti avrebbe preso venti minuti."
       },
       "step3": {
-        "h": "Search or go deeper",
-        "p": "Run the scanner to find your conditions elsewhere, open the Zones page for the history, or ask M.I.A what you didn't understand."
+        "h": "Cerca o approfondisci",
+        "p": "Avvia lo scanner per ritrovare le tue condizioni altrove, apri la pagina Zone per la cronologia, o chiedi a M.I.A ciò che non hai capito."
       }
     },
     "who": {
-      "eyebrow": "Who it's for",
-      "title": "Built for SMC and ICT traders",
-      "subtitle": "If you draw your Order Blocks by hand every morning, you're exactly the person this product exists for.",
+      "eyebrow": "Per chi",
+      "title": "Fatto per i trader SMC e ICT",
+      "subtitle": "Se tracci i tuoi Order Blocks a mano ogni mattina, sei esattamente la persona per cui questo prodotto esiste.",
       "w1": {
-        "h": "You're learning SMC",
-        "p": "Seeing the structure marked correctly, with an agent that explains each element when you ask, replaces dozens of hours of videos."
+        "h": "Stai imparando lo SMC",
+        "p": "Vedere la struttura segnata correttamente, con un agente che spiega ogni elemento quando glielo chiedi, sostituisce decine di ore di video."
       },
       "w2": {
-        "h": "You draw by hand",
-        "p": "You spend time every day marking your zones. MIA does it on gold and the euro, continuously, with the lifecycle as a bonus."
+        "h": "Tracci a mano",
+        "p": "Passi tempo ogni giorno a segnare le tue zone. MIA lo fa su oro ed euro, di continuo, con il ciclo di vita in più."
       },
       "w3": {
-        "h": "You follow several timeframes",
-        "p": "You know what you're looking for but you can't watch everything. The scanner watches your 12 combinations on every close, without you clicking."
+        "h": "Segui più unità temporali",
+        "p": "Sai cosa cerchi ma non puoi guardare tutto. Lo scanner sorveglia le tue 12 combinazioni a ogni chiusura, senza che tu clicchi."
       }
     },
     "distinguish": {
-      "eyebrow": "What sets us apart",
-      "h2": "MIA will never tell you where price is going",
-      "p1": "Not because she can't — because <b>nobody knows</b>. The trading-tools market is full of products selling predictions with unverifiable success rates. MIA does something else: it describes what is there, now, and stops there.",
-      "p2": "In practice, the unfavourable context is shown on equal footing with the favourable one, results are never sorted by « quality », and when the engine doesn't know, the screen tells you instead of guessing. <b>You keep the decision. We give you the reading.</b>"
+      "eyebrow": "Ciò che ci distingue",
+      "h2": "MIA non ti dirà mai dove va il prezzo",
+      "p1": "Non perché ne sia incapace — perché <b>nessuno lo sa</b>. Il mercato degli strumenti di trading è pieno di prodotti che vendono previsioni non verificabili. MIA fa qualcos'altro: descrive ciò che c'è, adesso, e si ferma lì.",
+      "p2": "In concreto, il contesto sfavorevole è mostrato alla pari di quello favorevole, i risultati non sono mai classificati per «qualità», e quando il motore non sa, lo schermo te lo dice invece di indovinare. <b>La decisione resta tua. Noi ti diamo la lettura.</b>"
     },
     "pricing": {
-      "eyebrow": "Pricing",
-      "title": "One subscription, everything included",
-      "subtitle": "No premium tier, no feature held hostage. A permanent free tier to try it out.",
+      "eyebrow": "Prezzo",
+      "title": "Un solo abbonamento, tutto incluso",
+      "subtitle": "Nessun livello premium, nessuna funzionalità tenuta in ostaggio. Un accesso gratuito permanente per provare.",
       "free": {
-        "name": "Discovery",
-        "sub": "to get a feel for the tool",
-        "bill": "free, no time limit",
-        "f1": "1 market, 2 timeframes",
-        "f2": "Full reading space",
-        "f3": "M.I.A Agent, limited use",
-        "f4": "Publications calendar",
-        "cta": "Create an account",
-        "note": "no credit card"
+        "name": "Scoperta",
+        "sub": "per prendere confidenza con lo strumento",
+        "bill": "gratuito, senza limiti di durata",
+        "f1": "1 mercato, 2 unità temporali",
+        "f2": "Spazio di lettura completo",
+        "f3": "M.I.A Agent, uso limitato",
+        "f4": "Calendario delle pubblicazioni",
+        "cta": "Crea un account",
+        "note": "senza carta di credito"
       },
       "paid": {
-        "label": "Complete",
-        "name": "Subscription",
-        "sub": "the whole product, all markets",
-        "perMonth": "month",
-        "bill": "or {total} $ US per year, i.e. {perMonth} $ US per month",
-        "f1": "<b>Both markets</b>, 6 timeframes",
-        "f2": "Scanner across the 12 combinations",
-        "f3": "Zones page and full lifecycle",
-        "f4": "Engine measures at publications",
-        "f5": "M.I.A Agent unlimited",
-        "f6": "Unlimited saved readings",
-        "cta": "Get started",
-        "note": "cancel any time"
+        "label": "Completo",
+        "name": "Abbonamento",
+        "sub": "tutto il prodotto, tutti i mercati",
+        "perMonth": "mese",
+        "bill": "oppure {total} $ US all'anno, cioè {perMonth} $ US al mese",
+        "f1": "<b>Entrambi i mercati</b>, 6 unità temporali",
+        "f2": "Scanner sulle 12 combinazioni",
+        "f3": "Pagina Zone e ciclo di vita completo",
+        "f4": "Misure del motore alle pubblicazioni",
+        "f5": "M.I.A Agent senza limiti",
+        "f6": "Letture salvate illimitate",
+        "cta": "Inizia",
+        "note": "annullabile in qualsiasi momento"
       },
-      "legal": "Prices in US dollars. MIA Markets is an information and education tool: it provides no investment advice, no recommendation, and no cue to act on the markets. Trading carries a risk of loss. For persons aged 18 and over only."
+      "legal": "Prezzi in dollari americani. MIA Markets è uno strumento di informazione ed educazione: non fornisce né consulenza in investimenti, né raccomandazioni, né indicazioni di intervento sui mercati. Il trading comporta un rischio di perdita. Riservato alle persone di 18 anni e oltre."
     },
     "faq": {
-      "eyebrow": "Frequently asked",
-      "title": "What we're asked most",
-      "q1": "Does MIA tell you when to buy or sell?",
-      "a1": "No, and that's a design choice. MIA describes what the market has done and what it's doing now. It doesn't say where price will go and promises no result. <b>The decision to trade stays entirely yours</b> — what the product gives you is a clean, fast reading of the structure.",
-      "q2": "Do you need to know Smart Money Concepts to use it?",
-      "a2": "No. It's even a good way to learn: every detected element is explained on screen, and M.I.A answers any question about the concepts — what an Order Block is, the difference between BOS and CHOCH, why a zone is considered filled. You see the theory applied to a real market.",
-      "q3": "Does it replace TradingView?",
-      "a3": "No, and that's not the point. TradingView stays your charting, drawing and execution platform. MIA does the structural reading work: detect, date, track the lifecycle of zones. <b>The two complement each other.</b>",
-      "q4": "Which markets are covered?",
-      "a4": "Two markets today — gold (XAU/USD) and the euro (EUR/USD) — across 6 timeframes from the minute to the day. The free tier gives access to one market and two timeframes, enough to judge the tool. More markets will follow.",
-      "q5": "How often is the data updated?",
-      "a5": "On every candle close of the timeframe concerned, not on an arbitrary interval. A 15-minute reading refreshes every 15 minutes; a daily reading once a day. <b>Each screen shows the age of its last reading</b>, so you always know what you're looking at.",
-      "q6": "Can I cancel whenever I want?",
-      "a6": "Yes, from your account, without having to write to anyone. Your access stays active until the end of the period already paid for, then you drop back to the free tier — you don't lose your account.",
-      "q7": "Where does the price data come from?",
-      "a7": "From a professional provider under a display licence. The economic calendar comes solely from the issuing bodies — Bureau of Labor Statistics, BEA, Census, Federal Reserve, Eurostat, European Central Bank. <b>No secondary source, no aggregator</b>, and every publication carries its attribution.",
-      "q8": "Does the product work on a phone?",
-      "a8": "Yes, from the browser. The reading space, the scanner, the zones and the calendar are usable on mobile — handy to check a structure without being at your desk."
+      "eyebrow": "Domande frequenti",
+      "title": "Ciò che ci chiedono di più",
+      "q1": "MIA dice quando comprare o vendere?",
+      "a1": "No, ed è una scelta di progettazione. MIA descrive ciò che il mercato ha fatto e ciò che fa adesso. Non dice dove andrà il prezzo e non promette alcun risultato. <b>La decisione di fare trading resta interamente tua</b> — ciò che il prodotto ti offre è una lettura pulita e rapida della struttura.",
+      "q2": "Bisogna conoscere gli Smart Money Concepts per usarlo?",
+      "a2": "No. Anzi è un buon modo per imparare: ogni elemento rilevato è spiegato sullo schermo, e M.I.A risponde a qualsiasi domanda sui concetti — cos'è un Order Block, la differenza tra BOS e CHOCH, perché una zona è considerata colmata. Vedi la teoria applicata a un mercato reale.",
+      "q3": "Sostituisce TradingView?",
+      "a3": "No, e non è questo lo scopo. TradingView resta la tua piattaforma di grafici, disegno ed esecuzione. MIA fa il lavoro di lettura strutturale: rilevare, datare, seguire il ciclo di vita delle zone. <b>I due si completano.</b>",
+      "q4": "Quali mercati sono coperti?",
+      "a4": "Due mercati oggi — l'oro (XAU/USD) e l'euro (EUR/USD) — su 6 unità temporali che vanno dal minuto al giorno. Il livello gratuito dà accesso a un mercato e due unità temporali, quanto basta per valutare lo strumento. Altri mercati seguiranno.",
+      "q5": "Con quale frequenza vengono aggiornati i dati?",
+      "a5": "A ogni chiusura di candela dell'unità temporale interessata, non a un intervallo arbitrario. Una lettura in 15 minuti si aggiorna ogni 15 minuti; una lettura giornaliera una volta al giorno. <b>Ogni schermata mostra l'età della sua ultima lettura</b>, così sai sempre cosa stai guardando.",
+      "q6": "Posso annullare quando voglio?",
+      "a6": "Sì, dal tuo account, senza dover scrivere a nessuno. Il tuo accesso resta attivo fino alla fine del periodo già pagato, poi torni al livello gratuito — non perdi il tuo account.",
+      "q7": "Da dove vengono i dati di prezzo?",
+      "a7": "Da un fornitore professionale con licenza di visualizzazione. Il calendario economico, invece, proviene unicamente dagli organismi emittenti — Bureau of Labor Statistics, BEA, Census, Federal Reserve (Fed), Eurostat, Banca centrale europea. <b>Nessuna fonte secondaria, nessun aggregatore</b>, e ogni pubblicazione porta la sua attribuzione.",
+      "q8": "Il prodotto funziona su telefono?",
+      "a8": "Sì, dal browser. Lo spazio di lettura, lo scanner, le zone e il calendario sono utilizzabili da mobile — comodo per verificare una struttura senza essere davanti alla tua postazione."
     },
     "final": {
-      "h2": "Stop drawing. Start reading.",
-      "p": "Create a free account and see what the engine sees on your favourite market. No credit card, no time limit.",
-      "cta1": "Create a free account",
-      "cta2": "Review the tools"
+      "h2": "Smetti di tracciare. Inizia a leggere.",
+      "p": "Crea un account gratuito e guarda ciò che il motore vede sul tuo mercato preferito. Nessuna carta di credito, nessun limite di durata.",
+      "cta1": "Crea un account gratuito",
+      "cta2": "Rivedi gli strumenti"
     }
   },
   "regimePanel": {
