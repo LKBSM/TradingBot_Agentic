@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maquette — Actualités après NW-4</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0f14; --panel:#12171f; --panel-2:#161c26; --panel-3:#1b222d;
+    --line:#232b36; --line-2:#2b3542; --line-3:#3a4552;
+    --txt:#e6edf3; --dim:#9aa4b2; --faint:#6b7787;
+    --acc:#4bb3a5; --acc-dim:rgba(75,179,165,.14);
+    --liq:#d9a441; /* marqueur "heure non confirmée" / non-programmé (ambre) */
+    --r:12px; --r-s:8px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);
+    font-family:Inter,system-ui,sans-serif;font-size:14px;line-height:1.5;padding:26px 20px 80px}
+  .mono{font-family:'JetBrains Mono',monospace}
+  .wrap{max-width:1180px;margin:0 auto}
+  h1.page{font-size:15px;font-weight:600;margin:0}
+  .sublead{color:var(--faint);font-size:12px;margin:2px 0 22px}
+  .new{display:inline-flex;align-items:center;gap:4px;background:var(--acc-dim);color:var(--acc);
+    font-size:9.5px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;
+    padding:2px 7px;border-radius:20px;border:1px solid color-mix(in srgb,var(--acc) 40%,transparent)}
+  .callout{border-left:2px solid var(--acc);background:color-mix(in srgb,var(--acc) 6%,transparent);
+    padding:7px 11px;border-radius:0 var(--r-s) var(--r-s) 0;font-size:11.5px;color:var(--dim);margin:8px 0 20px}
+  .callout b{color:var(--acc)}
+
+  .surface-title{display:flex;align-items:center;gap:10px;margin:34px 0 12px}
+  .surface-title .u{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--faint)}
+  .surface-title h2{font-size:13px;font-weight:600;margin:0;letter-spacing:.2px}
+
+  /* ---- month view ---- */
+  .cal-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .cal-head h3{font-size:15px;font-weight:600;margin:0}
+  .cal-badge{font-size:9px;font-weight:500;color:var(--faint);letter-spacing:.35px;text-transform:uppercase}
+  .filtbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+  .fchip{font-size:11px;padding:5px 11px;border-radius:18px;border:1px solid var(--line-2);
+    background:var(--panel);color:var(--dim)}
+  .fchip.on{background:var(--acc-dim);border-color:var(--acc);color:var(--acc)}
+
+  .calm-body{display:grid;grid-template-columns:1fr 320px;gap:16px}
+  @media(max-width:900px){.calm-body{grid-template-columns:1fr}}
+  .calm-nav{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .calm-navbtn{font-size:11.5px;padding:5px 11px;border-radius:8px;border:1px solid var(--line-2);
+    background:var(--panel);color:var(--dim);cursor:pointer}
+  .calm-title{font-size:12.5px;font-weight:600}
+  .calm-fresh{font-size:11px;color:var(--faint);margin-left:6px}
+  .weekhdr{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:5px}
+  .wd{font-size:10px;color:var(--faint);text-align:center;text-transform:uppercase;letter-spacing:.4px;padding:2px}
+  .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+  .cell{min-height:92px;background:var(--panel);border:1px solid var(--line);border-radius:8px;
+    padding:5px 5px 6px;display:flex;flex-direction:column;gap:3px}
+  .cell.blank{background:transparent;border:none}
+  .cell.empty{opacity:.55}
+  .cell.today{border-color:var(--acc);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--acc) 45%,transparent)}
+  .cell.sel{background:var(--panel-3);border-color:var(--line-3)}
+  .daynum{font-size:10.5px;color:var(--faint)}
+  .chip{display:flex;flex-direction:column;background:var(--panel-3);border-radius:5px;padding:2px 5px}
+  .chip-time{font-size:9.5px;font-weight:600}
+  .chip-time.unconf{color:var(--liq)}
+  .chip-name{font-size:9px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .more{font-size:9px;color:var(--faint)}
+
+  .side{display:flex;flex-direction:column;gap:14px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-s);padding:12px 13px}
+  .panel-head{font-size:11.5px;font-weight:600;margin-bottom:9px}
+  .prow{padding:8px 0;border-top:1px solid var(--line)}
+  .prow:first-of-type{border-top:none}
+  .pev{font-size:12.5px;font-weight:500}
+  .ptime{font-size:11px;margin-top:2px}
+  .ptime.local{color:var(--faint)}
+  .punconf{font-size:10px;color:var(--liq);margin-top:2px}
+  .pmeta{font-size:10px;color:var(--faint);display:flex;gap:7px;flex-wrap:wrap;margin-top:3px}
+  .pill{font-size:9px;padding:2px 6px;border-radius:4px;background:var(--panel-3);color:var(--dim)}
+
+  .tmbox{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-s);padding:12px 13px}
+  .tm-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--faint)}
+  .tm-count{font-size:16px;font-weight:600;margin:4px 0 6px}
+  .tm-list{margin:0;padding-left:16px;font-size:11px;color:var(--dim)}
+
+  .nono{border-left:2px solid var(--liq);background:color-mix(in srgb,var(--liq) 6%,transparent);
+    border-radius:0 var(--r-s) var(--r-s) 0;padding:11px 13px}
+  .nono .t{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--liq);margin-bottom:5px}
+  .nono .b{font-size:11.5px;color:var(--dim);line-height:1.55}
+  .nono ul{margin:7px 0 0;padding-left:15px}
+  .nono li{font-size:11px;color:var(--dim);margin-bottom:4px;line-height:1.5}
+  .nono li.hl{color:var(--txt)}
+  .nono li.hl::marker{color:var(--liq)}
+
+  .attrib{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-s);padding:12px 14px}
+  .attrib .t{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);margin-bottom:6px}
+  .attrib .lastup{font-size:11px;color:var(--dim);margin:2px 0 8px}
+  .attrib ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+  .attrib li{display:flex;gap:8px;flex-wrap:wrap;align-items:baseline;font-size:10.5px}
+  .attrib .org{font-weight:600}
+  .attrib .lic{color:var(--faint);flex:1;min-width:140px}
+  .attrib .fresh{font-size:9.5px;color:var(--faint)}
+  .attrib .fresh.stale{color:var(--liq)}
+
+  /* ---- detail cards ---- */
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:900px){.cards{grid-template-columns:1fr}}
+  .cald{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px 17px}
+  .cald-head{display:flex;gap:12px;align-items:flex-start;margin-bottom:6px}
+  .cald-flag{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;padding:3px 8px;
+    border-radius:6px;background:var(--panel-3);color:var(--dim)}
+  .cald h4{font-size:15px;font-weight:600;margin:0 0 4px}
+  .cald-sub{font-size:11px;color:var(--faint);display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+  .cald-sub .sep{color:var(--line-3)}
+  .cald-sub .unconf{color:var(--liq);font-weight:500}
+  .cald-clock{font-family:'JetBrains Mono',monospace;font-size:12px;margin:12px 0 2px}
+  .cald-clock b{font-weight:600}
+  .cald-localclock{font-size:10.5px;color:var(--faint)}
+  .curve{margin:14px 0 6px;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:10px}
+  .revline{font-size:11px;color:var(--dim);line-height:1.55;margin:2px 0}
+  .state{font-size:11px;line-height:1.55;margin:2px 0;font-style:italic;color:var(--faint)}
+  .val{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:600}
+  .val .u{font-size:11px;color:var(--faint);font-style:normal;font-weight:400;margin-left:4px}
+  .source{font-size:10px;color:var(--faint);margin-top:10px}
+  .legend{font-size:11px;color:var(--dim);margin-top:26px;border-top:1px solid var(--line);padding-top:14px}
+  .legend b{color:var(--txt)}
+  .swatch{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:-1px;margin-right:5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 class="page">Actualités programmées — aperçu après NW-4</h1>
+  <div class="sublead">Maquette statique (non connectée). Thème sombre « Terminal ». Les pastilles
+    <span class="new">nouveau</span> repèrent ce que NW-4 ajoute ou corrige.</div>
+
+  <div class="callout">Rappels préservés : sources officielles, aucun classement d'impact, aucun consensus,
+    aucun verbe de causalité, <b>aucune valeur inventée</b>. NW-4 n'affiche jamais un chiffre faux ni une heure supposée sans le dire.</div>
+
+  <!-- ============ MONTH VIEW ============ -->
+  <div class="surface-title"><span class="u">/actualites</span><h2>Vue mensuelle</h2></div>
+
+  <div class="cal-head"><h3>Actualités programmées</h3><span class="cal-badge">Moments programmés</span></div>
+  <div class="filtbar">
+    <span class="fchip on">Tous les organismes</span>
+    <span class="fchip on">XAU/USD</span><span class="fchip on">EUR/USD</span>
+    <span class="fchip on">Mensuel</span><span class="fchip on">Trimestriel</span><span class="fchip on">8×/an</span>
+  </div>
+
+  <div class="calm-nav">
+    <button class="calm-navbtn">‹ Mois préc.</button>
+    <span class="calm-title mono">août 2026</span>
+    <button class="calm-navbtn">Mois suiv. ›</button>
+    <button class="calm-navbtn">Ce mois</button>
+    <span class="calm-fresh">Dernière mise à jour&nbsp;: 01/08/2026 <span class="new">nouveau · fraîcheur permanente</span></span>
+  </div>
+
+  <div class="calm-body">
+    <div>
+      <div class="weekhdr">
+        <div class="wd">lun</div><div class="wd">mar</div><div class="wd">mer</div><div class="wd">jeu</div>
+        <div class="wd">ven</div><div class="wd">sam</div><div class="wd">dim</div>
+      </div>
+      <div class="grid">
+        <!-- Aug 2026 starts Saturday -->
+        <div class="cell blank"></div><div class="cell blank"></div><div class="cell blank"></div>
+        <div class="cell blank"></div><div class="cell blank"></div>
+        <div class="cell"><span class="daynum mono">1</span></div>
+        <div class="cell empty"><span class="daynum mono">2</span></div>
+
+        <div class="cell empty"><span class="daynum mono">3</span></div>
+        <div class="cell"><span class="daynum mono">4</span>
+          <span class="chip"><span class="chip-time mono">10:00</span><span class="chip-name">Ouvertures de postes (JOLTS)</span></span>
+        </div>
+        <div class="cell empty"><span class="daynum mono">5</span></div>
+        <div class="cell empty"><span class="daynum mono">6</span></div>
+        <div class="cell"><span class="daynum mono">7</span>
+          <span class="chip"><span class="chip-time mono">08:30</span><span class="chip-name">Rapport sur l'emploi (NFP)</span></span>
+        </div>
+        <div class="cell empty"><span class="daynum mono">8</span></div>
+        <div class="cell empty"><span class="daynum mono">9</span></div>
+
+        <div class="cell empty"><span class="daynum mono">10</span></div>
+        <div class="cell empty"><span class="daynum mono">11</span></div>
+        <div class="cell sel"><span class="daynum mono">12</span>
+          <span class="chip"><span class="chip-time mono">08:30</span><span class="chip-name">IPC</span></span>
+          <span class="chip"><span class="chip-time mono">08:30</span><span class="chip-name">IPC sous-jacent</span></span>
+        </div>
+        <div class="cell"><span class="daynum mono">13</span>
+          <span class="chip"><span class="chip-time mono">08:30</span><span class="chip-name">IPP</span></span>
+        </div>
+        <div class="cell"><span class="daynum mono">14</span>
+          <span class="chip"><span class="chip-time mono">08:30</span><span class="chip-name">Ventes au détail</span></span>
+        </div>
+        <div class="cell empty"><span class="daynum mono">15</span></div>
+        <div class="cell empty"><span class="daynum mono">16</span></div>
+
+        <div class="cell empty"><span class="daynum mono">17</span></div>
+        <div class="cell"><span class="daynum mono">18</span>
+          <span class="chip"><span class="chip-time mono">08:30</span><span class="chip-name">Mises en chantier</span></span>
+        </div>
+        <div class="cell empty"><span class="daynum mono">19</span></div>
+        <div class="cell empty"><span class="daynum mono">20</span></div>
+        <div class="cell empty"><span class="daynum mono">21</span></div>
+        <div class="cell empty"><span class="daynum mono">22</span></div>
+        <div class="cell empty"><span class="daynum mono">23</span></div>
+
+        <div class="cell empty"><span class="daynum mono">24</span></div>
+        <div class="cell empty"><span class="daynum mono">25</span></div>
+        <div class="cell"><span class="daynum mono">26</span>
+          <span class="chip"><span class="chip-time mono">08:30</span><span class="chip-name">PIB (États-Unis)</span></span>
+          <span class="chip"><span class="chip-time mono">08:30</span><span class="chip-name">PCE</span></span>
+          <span class="more">+1</span>
+        </div>
+        <div class="cell"><span class="daynum mono">27</span>
+          <span class="chip"><span class="chip-time mono unconf">11:00 ≈</span><span class="chip-name">PIB zone euro (est. rapide)</span></span>
+        </div>
+        <div class="cell empty"><span class="daynum mono">28</span></div>
+        <div class="cell empty"><span class="daynum mono">29</span></div>
+        <div class="cell empty"><span class="daynum mono">30</span></div>
+
+        <div class="cell"><span class="daynum mono">31</span>
+          <span class="chip"><span class="chip-time mono">15:00</span><span class="chip-name">Inflation IPCH zone euro</span></span>
+        </div>
+      </div>
+      <div style="font-size:10.5px;color:var(--faint);margin-top:8px">
+        Le <b class="mono" style="color:var(--liq)">≈</b> et la couleur ambre signalent une <b style="color:var(--liq)">heure non confirmée</b>
+        (le PIB zone euro : 11:00 supposé, non ancré à une page officielle). <span class="new">nouveau</span>
+        &nbsp;·&nbsp; L'IPCH est désormais à <b>15:00</b>, corrigé depuis 11:00. <span class="new">corrigé</span>
+      </div>
+    </div>
+
+    <aside class="side">
+      <div class="panel">
+        <div class="panel-head mono">mercredi 12 août</div>
+        <div class="prow">
+          <div class="pev">Indice des prix à la consommation (IPC)</div>
+          <div class="ptime mono">08:30 New York</div>
+          <div class="ptime local">14:30 heure locale (UTC+2)</div>
+          <div class="pmeta"><span class="pill">USD</span><span>rattaché à Or, EUR/USD</span><span>Mensuel</span></div>
+        </div>
+        <div class="prow">
+          <div class="pev">Indice des prix à la consommation sous-jacent (IPC core)</div>
+          <div class="ptime mono">08:30 New York</div>
+          <div class="ptime local">14:30 heure locale (UTC+2)</div>
+          <div class="pmeta"><span class="pill">USD</span><span>rattaché à Or, EUR/USD</span><span>Mensuel</span>
+            <span class="new">nouveau</span></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head mono">jeudi 27 août</div>
+        <div class="prow">
+          <div class="pev">PIB zone euro (estimation rapide)</div>
+          <div class="ptime mono">11:00 Luxembourg</div>
+          <div class="ptime local">11:00 heure locale (UTC+2)</div>
+          <div class="punconf">heure non confirmée <span class="new">nouveau</span></div>
+          <div class="pmeta"><span class="pill">EUR</span><span>rattaché à EUR/USD</span><span>Trimestriel</span></div>
+        </div>
+      </div>
+
+      <div class="tmbox">
+        <div class="tm-title">Ce mois-ci</div>
+        <div class="tm-count mono">9 publications</div>
+        <ul class="tm-list">
+          <li>Or : 7 publications</li>
+          <li>EUR/USD : 6 publications</li>
+          <li>25 jours sans publication</li>
+        </ul>
+      </div>
+
+      <div class="nono">
+        <div class="t">Ce que ce calendrier ne dit pas</div>
+        <div class="b">Ce calendrier ne dit ni la direction, ni ce qui se produira cette fois.</div>
+        <ul>
+          <li>Aucune prévision d'analystes n'est affichée : aucun organisme public n'en publie.</li>
+          <li>Aucune hiérarchie n'est attribuée aux publications : MIA ne les classe pas entre elles.</li>
+          <li class="hl">Ce calendrier annonce des moments programmés. Une décision hors calendrier, un choc
+            géopolitique ou une déclaration inattendue n'y figurent pas : ils n'ont pas d'heure connue à l'avance.
+            <span class="new">nouveau · limite écrite</span></li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ============ DETAIL CARDS ============ -->
+  <div class="surface-title"><span class="u">/actualites/[id]</span><h2>Page de publication (3 états)</h2></div>
+  <div class="cards">
+
+    <!-- with value -->
+    <div class="cald">
+      <div class="cald-head">
+        <div class="cald-flag mono">EUR</div>
+        <div>
+          <h4>Inflation IPCH zone euro (estimation rapide)</h4>
+          <div class="cald-sub"><span>rattaché à EUR/USD</span><span class="sep">·</span><span>Mensuel</span></div>
+        </div>
+      </div>
+      <div class="cald-clock mono"><b>15:00</b> Luxembourg <span class="new">15:00 corrigé</span></div>
+      <div class="cald-localclock">15:00 heure locale (UTC+2)</div>
+      <div class="curve">
+        <svg viewBox="0 0 300 70" width="100%" height="64">
+          <polyline fill="none" stroke="#4bb3a5" stroke-width="1.5"
+            points="8,20 34,24 60,28 86,32 112,28 138,32 164,36 190,32 216,40 242,36 268,40 292,44"/>
+          <g fill="#9aa4b2" font-size="7" font-family="JetBrains Mono">
+            <text x="8" y="14">2,6</text><text x="268" y="34">2,0</text>
+          </g>
+          <circle cx="292" cy="44" r="3" fill="none" stroke="#6b7787" stroke-dasharray="2 2"/>
+        </svg>
+      </div>
+      <div class="val">2,0<span class="u">% (variation annuelle)</span></div>
+      <div class="revline">Valeur initiale 2,1 → actuelle 2,0 (révisée le 30 juin) · telle que publiée</div>
+      <div class="source">Source : Eurostat — CC BY 4.0. Valeur récupérée sans clé.</div>
+    </div>
+
+    <!-- unconfirmed time -->
+    <div class="cald">
+      <div class="cald-head">
+        <div class="cald-flag mono">EUR</div>
+        <div>
+          <h4>PIB zone euro (estimation rapide)</h4>
+          <div class="cald-sub"><span>rattaché à EUR/USD</span><span class="sep">·</span><span>Trimestriel</span>
+            <span class="sep">·</span><span class="unconf">heure non confirmée <span class="new">nouveau</span></span></div>
+        </div>
+      </div>
+      <div class="cald-clock mono"><b>11:00</b> Luxembourg</div>
+      <div class="cald-localclock">11:00 heure locale (UTC+2)</div>
+      <div class="curve">
+        <svg viewBox="0 0 300 70" width="100%" height="64">
+          <polyline fill="none" stroke="#4bb3a5" stroke-width="1.5"
+            points="8,40 40,36 72,38 104,30 136,34 168,28 200,32 232,26 264,30 292,28"/>
+        </svg>
+      </div>
+      <div class="val">0,3<span class="u">% (variation trimestrielle)</span></div>
+      <div class="revline">Valeur telle que publiée par Eurostat.</div>
+      <div class="source">Source : Eurostat — CC BY 4.0. Heure de publication non ancrée à une page officielle → signalée, jamais approximée.</div>
+    </div>
+
+    <!-- value-less event -->
+    <div class="cald">
+      <div class="cald-head">
+        <div class="cald-flag mono">USD</div>
+        <div>
+          <h4>Procès-verbaux du FOMC (minutes)</h4>
+          <div class="cald-sub"><span>rattaché à Or, EUR/USD</span><span class="sep">·</span><span>8×/an</span></div>
+        </div>
+      </div>
+      <div class="cald-clock mono"><b>14:00</b> New York</div>
+      <div class="cald-localclock">20:00 heure locale (UTC+2)</div>
+      <div class="state">Cette publication n'expose pas de valeur chiffrée (compte rendu). Réserve fédérale.</div>
+      <div class="revline" style="color:var(--liq)">Date exacte pas encore publiée par la Fed pour 2026 →
+        signalée « non datable », jamais une date inventée. <span class="new">nouveau · jamais silencieux</span></div>
+      <div class="source">Source : Federal Reserve Board — domaine public.</div>
+    </div>
+
+    <!-- US value pending key -->
+    <div class="cald">
+      <div class="cald-head">
+        <div class="cald-flag mono">USD</div>
+        <div>
+          <h4>Indice des prix à la consommation (IPC)</h4>
+          <div class="cald-sub"><span>rattaché à Or, EUR/USD</span><span class="sep">·</span><span>Mensuel</span></div>
+        </div>
+      </div>
+      <div class="cald-clock mono"><b>08:30</b> New York</div>
+      <div class="cald-localclock">14:30 heure locale (UTC+2)</div>
+      <div class="state">Publication survenue ; valeur non encore récupérée (clé BLS à poser). Bureau of Labor Statistics.</div>
+      <div class="revline">État honnête <b class="mono">unfetched</b> — aucun chiffre inventé. Le nombre remonte dès la clé posée. <span class="new">récupérateur prêt</span></div>
+      <div class="source">Source : U.S. Bureau of Labor Statistics — domaine public.</div>
+    </div>
+  </div>
+
+  <!-- attribution -->
+  <div class="surface-title"><span class="u">bas de page</span><h2>Attribution &amp; fraîcheur</h2></div>
+  <div class="attrib">
+    <div class="t">Sources et réutilisation</div>
+    <div class="lastup">Dernière mise à jour : 01/08/2026 <span class="new">nouveau · toujours affichée</span></div>
+    <ul>
+      <li><span class="org">Bureau of Labor Statistics</span><span class="lic">Domaine public — citation obligatoire</span><span class="fresh">rafraîchi le 01/08/2026</span></li>
+      <li><span class="org">Eurostat</span><span class="lic">CC BY 4.0 — « Source: Eurostat »</span><span class="fresh">rafraîchi le 01/08/2026</span></li>
+      <li><span class="org">Census Bureau</span><span class="lic">Domaine public</span><span class="fresh stale">non rafraîchi depuis le 29/07/2026</span></li>
+    </ul>
+    <div style="font-size:10.5px;color:var(--faint);margin-top:8px">Une source injoignable (Census ici) conserve ses données
+      et affiche sa dernière réussite — un calendrier partiel ne paraît jamais complet.</div>
+  </div>
+
+  <!-- legend -->
+  <div class="legend">
+    <b>Ce que NW-4 change à l'écran :</b><br>
+    <span class="swatch" style="background:var(--liq)"></span><b style="color:var(--liq)">Ambre + « ≈ »</b> = heure non confirmée (distincte d'une heure vérifiée) — vues grille, panneau, fiche.<br>
+    <span class="swatch" style="background:var(--acc)"></span><b style="color:var(--acc)">Ligne « Dernière mise à jour »</b> permanente (vue mois + attribution).<br>
+    &nbsp;&nbsp;&nbsp;• 3ᵉ item « ne dit pas » : la limite des <b>événements non programmés</b>, écrite noir sur blanc, sur toutes les vues.<br>
+    &nbsp;&nbsp;&nbsp;• Nouvelles publications : <b>JOLTS</b> (10:00), <b>IPC sous-jacent</b>, <b>dot plot</b>, <b>minutes FOMC</b> (signalée non datable tant que la Fed n'a pas publié les dates).<br>
+    &nbsp;&nbsp;&nbsp;• <b>IPCH flash corrigé à 15:00</b> ; valeurs US prêtes (récupérateurs BEA/Census), en attente des clés.
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,122 @@
+===========================================================
+  MISSION NW-4 - CE QUE J'AI AMELIORE (resume simple)
+  Le calendrier des actualites economiques de MIA
+  Date : 01/08/2026
+===========================================================
+
+EN UNE PHRASE
+-------------
+Avant de facturer, j'ai rendu le calendrier plus HONNETE et plus COMPLET :
+il ne ment plus sur les heures, il affiche bientot les chiffres des grandes
+publications americaines, et il dit clairement ce qu'il ne peut pas couvrir.
+
+
+-----------------------------------------------------------
+1. UNE HEURE FAUSSE QUI SE FAISAIT PASSER POUR "VERIFIEE"
+-----------------------------------------------------------
+LE PROBLEME :
+   L'inflation europeenne (IPCH) etait affichee a 11h00 avec une petite
+   etiquette "verifie a la source". En realite c'est 15h00, et personne
+   n'avait vraiment verifie. Une fausse certitude, c'est pire que rien :
+   ca endort la vigilance du client la ou il en aurait besoin.
+
+CE QUE J'AI FAIT :
+   - Corrige l'heure : 11h00 -> 15h00 (l'heure officielle de la BCE).
+   - Verifie LES 13 heures du calendrier une par une, sur les pages
+     officielles. Les autres etaient bonnes.
+   - Deux heures europeennes n'etaient qu'une supposition : je les ai
+     marquees "heure non confirmee" au lieu de faire semblant.
+   - A l'ecran, une heure supposee est maintenant VISIBLEMENT differente
+     (couleur ambre + petit symbole). Le client voit la difference.
+   - Regle de securite : impossible desormais de mettre l'etiquette
+     "verifie" sans fournir la preuve (la page officielle + la date).
+
+
+-----------------------------------------------------------
+2. LES CHIFFRES AMERICAINS ENFIN DISPONIBLES
+-----------------------------------------------------------
+LE PROBLEME :
+   Le calendrier montrait le MOMENT de l'inflation US, de l'emploi (NFP),
+   du PIB... mais PAS le chiffre publie. Pour l'or, qui bouge avec
+   l'economie americaine, c'etait le manque central.
+
+CE QUE J'AI FAIT :
+   - Ecrit deux nouveaux "recuperateurs" de valeurs (BEA et Census) qui
+     vont chercher le chiffre officiel, tel que publie, sans le modifier.
+   - Tout est pret. Il te reste juste a creer 3 cles gratuites et a les
+     coller dans le tableau de bord (Render). Aucune cle n'est dans le code.
+   - Resultat : on passe de 3 publications completes a 11, sans une seule
+     ligne de code en plus - juste les cles.
+   - Decouverte importante : le site du Census exige maintenant une cle
+     (avant, c'etait gratuit sans cle). Corrige.
+
+
+-----------------------------------------------------------
+3. DIRE CE QU'ON NE PEUT PAS COUVRIR (HONNETETE)
+-----------------------------------------------------------
+LE PROBLEME :
+   Un calendrier ne voit que ce qui est prevu a l'avance. Il ne verra
+   jamais une decision surprise d'une banque centrale, une guerre, une
+   faillite. Ce n'etait ecrit NULLE PART. Un client pouvait croire qu'il
+   serait prevenu de tout.
+
+CE QUE J'AI FAIT :
+   Ajoute une phrase claire, sur toutes les vues, dans les 2 langues :
+   "Ce calendrier annonce des moments programmes. Une decision hors
+   calendrier, un choc geopolitique ou une declaration inattendue n'y
+   figurent pas : ils n'ont pas d'heure connue a l'avance."
+
+
+-----------------------------------------------------------
+4. QUATRE PUBLICATIONS QUI MANQUAIENT
+-----------------------------------------------------------
+   Ajoute des publications que les traders suivent de pres :
+   - JOLTS (offres d'emploi US)
+   - Inflation US "sous-jacente" (souvent plus regardee que la principale)
+   - "Dot plot" de la Fed (projections de taux)
+   - Comptes rendus (minutes) de la Fed
+
+   Note honnete : la Fed n'a pas encore publie les dates 2026 des minutes.
+   Plutot que d'inventer une date, le calendrier la marque "non datable"
+   et le signale - jamais une date bidon.
+
+
+-----------------------------------------------------------
+5. DEUX PETITS DEFAUTS CORRIGES
+-----------------------------------------------------------
+   a) Une publication (chomage zone euro) risquait de disparaitre en
+      silence faute de date. Maintenant elle est SIGNALEE, jamais
+      escamotee sans qu'on le sache.
+
+   b) Quand tout allait bien, rien ne prouvait que les donnees etaient
+      fraiches. Ajoute une ligne permanente "Derniere mise a jour : ..."
+      Le client voit la preuve de fraicheur, pas juste l'absence d'alerte.
+
+
+-----------------------------------------------------------
+6. PREPARER UN NOUVEAU MARCHE (ex : Bitcoin)
+-----------------------------------------------------------
+   Ecrit une note technique : ajouter un marche comme le Bitcoin se fait
+   en une ligne de configuration (il recupere les publications US
+   existantes). Seul cas particulier explique : le "halving" du Bitcoin
+   n'a pas d'organisme qui le publie - il demanderait une petite
+   adaptation. C'est documente pour une decision future.
+
+
+===========================================================
+  LE RESULTAT
+===========================================================
+   - Le calendrier ne ment plus sur les heures.
+   - Il n'affiche jamais un chiffre invente ni une heure supposee en
+     cachette.
+   - Les grandes publications US seront completes des que tu poses les cles.
+   - Il dit franchement ce qu'il ne couvre pas.
+
+   Verifie : ecran (tests automatiques), construction du site (OK),
+   3 tailles d'ecran (OK). Tout est pousse, PRET A RELIRE.
+   Le passage en production se fera seulement apres TA validation.
+
+   IL TE RESTE 2 CHOSES A FAIRE :
+   1) Creer 3 cles gratuites (BLS, BEA, Census) et les coller dans Render.
+   2) Me dire quand c'est fait : je verifie que les chiffres tombent
+      juste, puis je mets en production.
