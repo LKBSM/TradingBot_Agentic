@@ -70,6 +70,11 @@ class CatalogEvent:
     source_timezone: Optional[str]
     release_time_local: Optional[str]
     time_confirmed: bool
+    # Proof of the confirmed time: the official page documenting it + the date it
+    # was last checked there. A confirmed flag is meaningless without both, so
+    # ``load_catalog`` refuses ``time_confirmed`` unless BOTH are present.
+    time_source_url: Optional[str]
+    time_last_verified: Optional[str]
     organism: Optional[str]
     license_label: Optional[str]
     # Live .ics feed wiring (opt-in): the source's iCalendar URL + the keyword
@@ -107,6 +112,24 @@ def load_catalog(path: Optional[Path] = None) -> Dict[str, CatalogEvent]:
         for ev in raw.get("events", []):
             src = str(ev.get("source", ""))
             smeta = sources.get(src, {}) if isinstance(sources, dict) else {}
+            time_source_url = ev.get("time_source_url")
+            time_last_verified = ev.get("time_last_verified")
+            # A "confirmed time" flag is only trustworthy with PROOF: the official
+            # page documenting the time AND the date it was last checked there.
+            # Absent either, the flag is downgraded to unconfirmed at load — a
+            # confidence flag without evidence is made impossible (NW-4 ch.1).
+            declared_confirmed = bool(ev.get("time_confirmed", False))
+            time_confirmed = bool(
+                declared_confirmed
+                and str(time_source_url or "").strip()
+                and str(time_last_verified or "").strip()
+            )
+            if declared_confirmed and not time_confirmed:
+                logger.warning(
+                    "calendar event %s declares time_confirmed=true without a "
+                    "source_url and last_verified date — downgraded to unconfirmed",
+                    ev.get("key"),
+                )
             out[str(ev["key"])] = CatalogEvent(
                 key=str(ev["key"]),
                 source=src,
@@ -117,7 +140,9 @@ def load_catalog(path: Optional[Path] = None) -> Dict[str, CatalogEvent]:
                 periodicity=ev.get("periodicity"),
                 source_timezone=ev.get("source_timezone"),
                 release_time_local=ev.get("release_time_local"),
-                time_confirmed=bool(ev.get("time_confirmed", False)),
+                time_confirmed=time_confirmed,
+                time_source_url=time_source_url,
+                time_last_verified=time_last_verified,
                 organism=smeta.get("organism"),
                 license_label=smeta.get("license_label"),
                 ics_feed=smeta.get("ics_feed"),
@@ -182,18 +207,27 @@ def _schedule_date_source(source_key: str) -> Callable[[Dict[str, CatalogEvent]]
     return _source
 
 
-def match_ics_key(summary: str, events: Dict[str, CatalogEvent]) -> Optional[str]:
-    """Link an .ics VEVENT SUMMARY to a catalog key: all ``ics_match`` tokens
-    present AND no ``ics_exclude`` token present. First match wins. Case-insensitive."""
+def match_ics_keys(summary: str, events: Dict[str, CatalogEvent]) -> List[str]:
+    """Link an .ics VEVENT SUMMARY to ALL matching catalog keys: each key whose
+    ``ics_match`` tokens are all present AND no ``ics_exclude`` token is present.
+    Case-insensitive. Returning every match (not just the first) lets a single
+    release date a headline AND its derived series — e.g. one "Consumer Price
+    Index" VEVENT dates both ``us_cpi`` and ``us_cpi_core``."""
     low = summary.lower()
-    for c in events.values():
-        if not c.ics_match:
-            continue
-        if all(tok in low for tok in c.ics_match) and not any(
-            tok in low for tok in c.ics_exclude
-        ):
-            return c.key
-    return None
+    return [
+        c.key
+        for c in events.values()
+        if c.ics_match
+        and all(tok in low for tok in c.ics_match)
+        and not any(tok in low for tok in c.ics_exclude)
+    ]
+
+
+def match_ics_key(summary: str, events: Dict[str, CatalogEvent]) -> Optional[str]:
+    """First matching key (or None). Kept for callers that want a single key;
+    the date source uses :func:`match_ics_keys` so co-released series both date."""
+    keys = match_ics_keys(summary, events)
+    return keys[0] if keys else None
 
 
 def ics_date_source(
@@ -221,10 +255,10 @@ def ics_date_source(
         seen = set()
         out: List[ReleaseInstance] = []
         for summary, day in parse_ics(text):
-            key = match_ics_key(summary, mine)
-            if key and (key, day) not in seen:
-                seen.add((key, day))
-                out.append(ReleaseInstance(event_key=key, release_date=day))
+            for key in match_ics_keys(summary, mine):
+                if (key, day) not in seen:
+                    seen.add((key, day))
+                    out.append(ReleaseInstance(event_key=key, release_date=day))
         return out
 
     return _source
@@ -350,5 +384,6 @@ __all__ = [
     "load_catalog",
     "load_schedule",
     "match_ics_key",
+    "match_ics_keys",
     "ics_date_source",
 ]

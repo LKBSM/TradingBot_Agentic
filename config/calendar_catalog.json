@@ -189,6 +189,65 @@
       "time_last_verified": "2026-07-28"
     },
     {
+      "key": "us_jolts",
+      "source": "bls",
+      "event": "Ouvertures de postes (JOLTS)",
+      "currency": "USD",
+      "series_code": "JTS000000000000000JOL",
+      "ics_match": ["job openings and labor turnover"],
+      "value_unit": "milliers de postes",
+      "periodicity": "monthly",
+      "source_timezone": "America/New_York",
+      "release_time_local": "10:00",
+      "time_confirmed": true,
+      "time_source_url": "https://www.bls.gov/schedule/news_release/jolts.htm",
+      "time_last_verified": "2026-08-01"
+    },
+    {
+      "key": "us_cpi_core",
+      "source": "bls",
+      "event": "Indice des prix à la consommation sous-jacent (IPC core)",
+      "currency": "USD",
+      "series_code": "CUUR0000SA0L1E",
+      "ics_match": ["consumer price index"],
+      "ics_exclude": ["producer"],
+      "value_unit": "indice (1982-84 = 100)",
+      "periodicity": "monthly",
+      "source_timezone": "America/New_York",
+      "release_time_local": "08:30",
+      "time_confirmed": true,
+      "time_source_url": "https://www.bls.gov/news.release/cpi.htm",
+      "time_last_verified": "2026-08-01"
+    },
+    {
+      "key": "us_fomc_minutes",
+      "source": "federal_reserve",
+      "event": "Procès-verbaux du FOMC (minutes)",
+      "currency": "USD",
+      "series_code": null,
+      "value_unit": null,
+      "periodicity": "eight_per_year",
+      "source_timezone": "America/New_York",
+      "release_time_local": "14:00",
+      "time_confirmed": true,
+      "time_source_url": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+      "time_last_verified": "2026-08-01"
+    },
+    {
+      "key": "us_fomc_dotplot",
+      "source": "federal_reserve",
+      "event": "Projections économiques et dot plot (FOMC)",
+      "currency": "USD",
+      "series_code": null,
+      "value_unit": null,
+      "periodicity": "quarterly",
+      "source_timezone": "America/New_York",
+      "release_time_local": "14:00",
+      "time_confirmed": true,
+      "time_source_url": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+      "time_last_verified": "2026-08-01"
+    },
+    {
       "key": "ea_hicp_flash",
       "source": "eurostat",
       "event": "Inflation IPCH zone euro (estimation rapide)",
@@ -197,10 +256,10 @@
       "value_unit": "% (variation annuelle)",
       "periodicity": "monthly",
       "source_timezone": "Europe/Luxembourg",
-      "release_time_local": "11:00",
+      "release_time_local": "15:00",
       "time_confirmed": true,
-      "time_source_url": "https://ec.europa.eu/eurostat/about-us/impartiality-protocol",
-      "time_last_verified": "2026-07-28"
+      "time_source_url": "https://www.ecb.europa.eu/press/calendars/statscal/ges/html/sthicp.en.html",
+      "time_last_verified": "2026-08-01"
     },
     {
       "key": "ea_gdp_flash",
@@ -212,9 +271,9 @@
       "periodicity": "quarterly",
       "source_timezone": "Europe/Luxembourg",
       "release_time_local": "11:00",
-      "time_confirmed": true,
-      "time_source_url": "https://ec.europa.eu/eurostat/about-us/impartiality-protocol",
-      "time_last_verified": "2026-07-28"
+      "time_confirmed": false,
+      "time_source_url": "https://ec.europa.eu/eurostat/en/web/main/news/euro-indicators",
+      "time_last_verified": "2026-08-01"
     },
     {
       "key": "ea_unemployment",
@@ -226,9 +285,9 @@
       "periodicity": "monthly",
       "source_timezone": "Europe/Luxembourg",
       "release_time_local": "11:00",
-      "time_confirmed": true,
-      "time_source_url": "https://ec.europa.eu/eurostat/about-us/impartiality-protocol",
-      "time_last_verified": "2026-07-28"
+      "time_confirmed": false,
+      "time_source_url": "https://ec.europa.eu/eurostat/en/web/main/news/euro-indicators",
+      "time_last_verified": "2026-08-01"
     },
     {
       "key": "ea_ecb_rate",

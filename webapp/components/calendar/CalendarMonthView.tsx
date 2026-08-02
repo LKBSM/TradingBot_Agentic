@@ -8,7 +8,7 @@ import { useLocalizedHref } from '@/lib/i18n/href';
 import { useMultiFilter } from '@/lib/market-reading/use-multi-filter';
 import { FilterChipGroup } from '@/components/app/FilterChipGroup';
 import { useCalendarMonth } from '@/lib/calendar/useCalendar';
-import { dayKey, filterEvents, hmInZone } from '@/lib/calendar/grouping';
+import { dayKey, filterEvents, hmInZone, latestSuccess } from '@/lib/calendar/grouping';
 import { parseUtc, utcOffsetLabel } from '@/lib/time/localTime';
 import type {
   CalendarEvent,
@@ -197,6 +197,13 @@ export function CalendarMonthView({
 
   const selectedEvents = selectedDay ? byDay.get(selectedDay) ?? [] : [];
 
+  // Permanent proof of freshness — the most recent successful refresh across all
+  // sources, shown always (not only when something is stale). NW-4 ch.5.
+  const lastUpdated = React.useMemo(
+    () => latestSuccess(data?.coverage.last_success),
+    [data],
+  );
+
   return (
     <div className="calm-page">
       <div className="cal-head">
@@ -243,6 +250,13 @@ export function CalendarMonthView({
           {t('month.prev')}
         </button>
         <span className="calm-title mono">{monthLabel}</span>
+        {lastUpdated && (
+          <span className="calm-fresh">
+            {t('attribution.lastUpdated', {
+              date: lastUpdated.toLocaleDateString(locale),
+            })}
+          </span>
+        )}
         <button
           type="button"
           className="calm-navbtn"
@@ -308,6 +322,20 @@ export function CalendarMonthView({
               <li>{t('month.thisMonth.emptyDays', { count: emptyDays })}</li>
             </ul>
             <div className="calm-tm-note">{t('month.thisMonth.note')}</div>
+          </div>
+
+          {/* Honesty note — visible on the month view as on the list view: this
+              calendar covers SCHEDULED moments only, never the unscheduled. */}
+          <div className="cal-nono" role="note">
+            <div>
+              <div className="t">{t('nono.title')}</div>
+              <div className="b">{t('nono.body')}</div>
+              <ul className="cal-nono-list">
+                <li>{t('nono.noForecast')}</li>
+                <li>{t('nono.noRanking')}</li>
+                <li>{t('nono.noUnscheduled')}</li>
+              </ul>
+            </div>
           </div>
         </aside>
       </div>
@@ -401,7 +429,17 @@ function GridArea(props: {
                   const time = d ? hmInZone(d) : '';
                   return (
                     <span key={ev.event_id} className="calm-chip">
-                      <span className="calm-chip-time mono">{time}</span>
+                      <span
+                        className={`calm-chip-time mono${
+                          ev.time_confirmed ? '' : ' unconf'
+                        }`}
+                        title={ev.time_confirmed ? undefined : t('timeUnconfirmed')}
+                      >
+                        {time}
+                        {!ev.time_confirmed && (
+                          <span className="calm-chip-approx" aria-hidden> ≈</span>
+                        )}
+                      </span>
                       <span className="calm-chip-name">{shortName(ev)}</span>
                     </span>
                   );
@@ -490,6 +528,9 @@ function DayPanel({
                       offset: offsetLabel,
                     })}
                   </div>
+                  {!ev.time_confirmed && (
+                    <div className="calm-panel-unconf">{t('timeUnconfirmed')}</div>
+                  )}
                   <div className="calm-panel-meta">
                     {ev.organism ? (
                       <span>{t('provenance.organism', { organism: ev.organism })}</span>

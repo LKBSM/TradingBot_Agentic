@@ -2259,7 +2259,8 @@
       "intro": "Elke publicatie komt van de officiële instantie die haar uitgeeft. Hergebruik volgt het beleid van elke bron:",
       "policyLink": "hergebruikbeleid",
       "stale": "niet ververst sinds {date}",
-      "refreshed": "ververst op {date}"
+      "refreshed": "ververst op {date}",
+      "lastUpdated": "Laatst bijgewerkt: {date}"
     },
     "coverage": {
       "partial": "De kalender is gevuld tot {date}. Daarna is de periode nog niet gedekt."
@@ -2268,7 +2269,8 @@
       "title": "Wat deze kalender niet zegt",
       "body": "Deze kalender noemt noch de richting, noch wat er deze keer zal gebeuren. Een publicatie kan niets veroorzaken, en een rustige markt kan bewegen zonder enige publicatie.",
       "noForecast": "Er wordt geen analistenprognose getoond: geen enkele publieke instantie publiceert er een, en MIA verzint er geen.",
-      "noRanking": "Aan de publicaties wordt geen rangorde toegekend: MIA rangschikt ze niet onderling."
+      "noRanking": "Aan de publicaties wordt geen rangorde toegekend: MIA rangschikt ze niet onderling.",
+      "noUnscheduled": "Deze kalender kondigt geplande momenten aan. Een beslissing buiten de kalender, een geopolitieke schok of een onverwachte verklaring staan hier niet: hun tijdstip is niet vooraf bekend."
     },
     "empty": {
       "noSelection": "Geen filter geselecteerd: kies ten minste één instantie, één markt en één periodiciteit om publicaties te tonen.",

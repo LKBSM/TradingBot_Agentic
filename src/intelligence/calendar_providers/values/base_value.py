@@ -99,9 +99,9 @@ def build_value_fetcher() -> Optional[MultiValueFetcher]:
     """Build the configured value fetcher, or ``None`` when live values are OFF.
 
     Default OFF (deterministic tests / stable default). With ``CALENDAR_VALUES_LIVE=1``
-    the no-key sources are wired live (ECB); key-gated sources (BEA/BLS/Census)
-    register only when their key env is present — otherwise they stay absent and
-    their events remain honestly ``unfetched``.
+    the no-key sources are wired live (ECB, Eurostat); key-gated sources
+    (BLS/BEA/Census) register only when their key env is present — otherwise they
+    stay absent and their events remain honestly ``unfetched``.
     """
     if os.environ.get(_ENV_VALUES_LIVE, "").strip().lower() not in ("1", "true", "yes"):
         return None
@@ -121,6 +121,16 @@ def build_value_fetcher() -> Optional[MultiValueFetcher]:
         from src.intelligence.calendar_providers.values.bls_values import BLSValueFetcher
 
         by_source["bls"] = BLSValueFetcher()
+    if os.environ.get("BEA_API_KEY"):
+        from src.intelligence.calendar_providers.values.bea_values import BEAValueFetcher
+
+        by_source["bea"] = BEAValueFetcher()
+    if os.environ.get("CENSUS_API_KEY"):
+        from src.intelligence.calendar_providers.values.census_values import (
+            CensusValueFetcher,
+        )
+
+        by_source["census"] = CensusValueFetcher()
     return MultiValueFetcher(by_source)
 
 

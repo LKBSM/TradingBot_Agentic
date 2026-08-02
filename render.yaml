@@ -91,6 +91,14 @@ services:
         sync: false
       - key: TWELVE_DATA_API_KEY
         sync: false
+      # Calendar published-value keys (free registration). Set the VALUES in the
+      # Render dashboard; absent a key its source stays honestly ``unfetched``.
+      - key: BLS_API_KEY          # NFP / CPI / PPI — data.bls.gov/registrationEngine
+        sync: false
+      - key: BEA_API_KEY          # GDP / PCE — apps.bea.gov/API/signup
+        sync: false
+      - key: CENSUS_API_KEY       # retail sales / durable goods / housing starts — api.census.gov/data/key_signup.html
+        sync: false
       - key: LOG_LEVEL
         value: INFO
       - key: LOG_FORMAT

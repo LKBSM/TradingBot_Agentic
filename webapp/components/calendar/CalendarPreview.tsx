@@ -87,6 +87,9 @@ export function CalendarPreview({
                     <span className="calprev-cd">{formatCountdown(cd, t)}</span>
                   )}
                   <span className="calprev-time mono">{localTime}</span>
+                  {!ev.time_confirmed && (
+                    <span className="calprev-unconf">{t('timeUnconfirmed')}</span>
+                  )}
                 </div>
                 <div className="calprev-mid">
                   <div className="calprev-ev">{ev.event}</div>

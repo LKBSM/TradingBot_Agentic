@@ -2387,7 +2387,8 @@
       "intro": "Each release comes from the official organism that issues it. Reuse follows each source's policy:",
       "policyLink": "reuse policy",
       "stale": "not refreshed since {date}",
-      "refreshed": "refreshed on {date}"
+      "refreshed": "refreshed on {date}",
+      "lastUpdated": "Last updated: {date}"
     },
     "coverage": {
       "partial": "The calendar is populated through {date}. Beyond that, the period is not yet covered."
@@ -2396,7 +2397,8 @@
       "title": "What this calendar does not say",
       "body": "This calendar says neither the direction nor what will happen this time. A release may cause nothing, and a quiet market may move with no release at all.",
       "noForecast": "No analyst forecast is shown: no public organism publishes one, and MIA does not fabricate one.",
-      "noRanking": "No hierarchy is assigned to the releases: MIA does not rank them against one another."
+      "noRanking": "No hierarchy is assigned to the releases: MIA does not rank them against one another.",
+      "noUnscheduled": "This calendar announces scheduled moments. An unscheduled decision, a geopolitical shock or an unexpected statement will not appear here: they have no time known in advance."
     },
     "empty": {
       "noSelection": "No filter selected: check at least one organism, one market and one periodicity to show releases.",

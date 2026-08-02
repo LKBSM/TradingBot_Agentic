@@ -195,6 +195,13 @@
   margin-top: 2px;
 }
 
+/* Same marker in the /app preview list. */
+.calprev-unconf {
+  font-size: 8.5px;
+  color: var(--liq);
+  margin-top: 2px;
+}
+
 .cal-nono {
   display: flex;
   gap: 9px;
@@ -664,4 +671,11 @@
   .cal-val {
     display: none;
   }
+}
+
+/* Permanent freshness proof in the attribution block (NW-4 ch.5). */
+.cal-attrib .lastup {
+  font-size: 11px;
+  color: var(--dim);
+  margin: 2px 0 6px;
 }

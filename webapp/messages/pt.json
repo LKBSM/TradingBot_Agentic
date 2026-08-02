@@ -2259,7 +2259,8 @@
       "intro": "Cada publicação provém do organismo oficial que a emite. A reutilização segue a política de cada fonte:",
       "policyLink": "política de reutilização",
       "stale": "não atualizado desde {date}",
-      "refreshed": "atualizado a {date}"
+      "refreshed": "atualizado a {date}",
+      "lastUpdated": "Última atualização: {date}"
     },
     "coverage": {
       "partial": "O calendário está preenchido até {date}. Para além disso, o período ainda não está coberto."
@@ -2268,7 +2269,8 @@
       "title": "O que este calendário não diz",
       "body": "Este calendário não indica nem a direção nem o que acontecerá desta vez. Uma publicação pode não provocar nada, e um mercado calmo pode mover-se sem qualquer publicação.",
       "noForecast": "Não é mostrada nenhuma previsão de analistas: nenhum organismo público publica uma, e a MIA não fabrica nenhuma.",
-      "noRanking": "Não é atribuída nenhuma hierarquia às publicações: a MIA não as classifica entre si."
+      "noRanking": "Não é atribuída nenhuma hierarquia às publicações: a MIA não as classifica entre si.",
+      "noUnscheduled": "Este calendário anuncia momentos programados. Uma decisão fora do calendário, um choque geopolítico ou uma declaração inesperada não aparecem aqui: não têm uma hora conhecida antecipadamente."
     },
     "empty": {
       "noSelection": "Nenhum filtro selecionado: marca pelo menos um organismo, um mercado e uma periodicidade para mostrar publicações.",

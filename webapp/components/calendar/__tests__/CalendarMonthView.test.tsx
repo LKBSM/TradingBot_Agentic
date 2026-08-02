@@ -202,6 +202,35 @@ describe('NW-3 CalendarMonthView', () => {
     expect(dayCells(container)).toHaveLength(30);
   });
 
+  it('a time-not-confirmed publication is visibly distinct from a verified one (grid + panel)', () => {
+    // Two events on July 8: a confirmed BLS one and an unconfirmed Eurostat one.
+    const data = makeData([
+      ev({
+        event_id: 'bls:cpi:2026-07-08', source: 'bls', event: 'IPC',
+        scheduled_at: '2026-07-08T12:30:00Z', time_confirmed: true,
+      }),
+      ev({
+        event_id: 'eurostat:hicp:2026-07-08', source: 'eurostat', event: 'IPCH',
+        scheduled_at: '2026-07-08T13:00:00Z', currency: 'EUR', markets: ['EURUSD'],
+        organism: 'Eurostat', time_confirmed: false,
+      }),
+    ]);
+    const { container } = render(
+      <CalendarMonthView locale="fr" data={data} now={NOW} />,
+    );
+    // In the grid: exactly one chip time carries the "unconfirmed" marker class,
+    // and the approximate glyph is present — the verified time has neither.
+    const c8 = cellForDay(container, 8);
+    expect(c8.querySelectorAll('.calm-chip-time.unconf')).toHaveLength(1);
+    expect(c8.querySelector('.calm-chip-approx')).not.toBeNull();
+    // In the day panel: the explicit label appears once, for the unconfirmed row only.
+    fireEvent.click(c8);
+    const panel = container.querySelector('.calm-panel') as HTMLElement;
+    const marks = panel.querySelectorAll('.calm-panel-unconf');
+    expect(marks).toHaveLength(1);
+    expect(marks[0]?.textContent).toBe(fr.calendar.timeUnconfirmed);
+  });
+
   it('renders no raw i18n keys', () => {
     const { container } = renderCal();
     const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);

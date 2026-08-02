@@ -13,6 +13,7 @@ import {
   filterEvents,
   groupEventsByDay,
   hmInZone,
+  latestSuccess,
   longDayLabel,
   splitPastUpcoming,
 } from '@/lib/calendar/grouping';
@@ -181,6 +182,7 @@ export function CalendarWorkspace({
           <ul className="cal-nono-list">
             <li>{t('nono.noForecast')}</li>
             <li>{t('nono.noRanking')}</li>
+            <li>{t('nono.noUnscheduled')}</li>
           </ul>
         </div>
       </div>
@@ -385,10 +387,20 @@ function Attribution({
 }) {
   if (!data || data.attribution.length === 0) return null;
   const staleSet = new Set(data.coverage.stale_sources);
+  // Overall last successful refresh — shown permanently, so the client sees the
+  // PROOF of freshness, not merely the absence of a stale marker (NW-4 ch.5).
+  const lastUpdated = latestSuccess(data.coverage.last_success);
   return (
     <div className="cal-attrib" role="contentinfo">
       <div className="t">{t('attribution.title')}</div>
       <p className="i">{t('attribution.intro')}</p>
+      {lastUpdated && (
+        <p className="lastup">
+          {t('attribution.lastUpdated', {
+            date: lastUpdated.toLocaleDateString(locale),
+          })}
+        </p>
+      )}
       <ul>
         {data.attribution.map((a) => {
           // Per-organism freshness: the last successful refresh, and a marker when

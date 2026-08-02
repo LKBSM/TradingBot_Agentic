@@ -21,13 +21,27 @@ from typing import List, Optional, Sequence
 from src.intelligence.calendar_providers.base import (
     CalendarProvider,
     ProviderAttribution,
+    ProviderEvent,
     ProviderFetch,
 )
+from src.intelligence.calendar_providers.official_sources.base_official import load_catalog
 from src.intelligence.calendar_providers.official_sources.organisms import (
     ALL_OFFICIAL_PROVIDERS,
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _served_keys(events: Sequence[ProviderEvent]) -> set:
+    """Catalog keys that produced ≥1 dated instance. ``provider_ref`` is
+    ``"<event_key>:<date>"`` and event keys never contain ':'."""
+    keys = set()
+    for e in events:
+        ref = getattr(e, "provider_ref", "") or ""
+        key = ref.split(":", 1)[0]
+        if key:
+            keys.add(key)
+    return keys
 
 
 class OfficialCalendarProvider(CalendarProvider):
@@ -57,6 +71,7 @@ class OfficialCalendarProvider(CalendarProvider):
                 starts.append(sub.coverage_start)
             if sub.coverage_end is not None:
                 ends.append(sub.coverage_end)
+        self._warn_undatable(all_events)
         return ProviderFetch(
             events=all_events,
             coverage_start=min(starts) if starts else None,
@@ -68,6 +83,26 @@ class OfficialCalendarProvider(CalendarProvider):
         for provider in self._providers:
             out.extend(provider.attributions())
         return out
+
+    def undatable_events(self, events: Optional[Sequence[ProviderEvent]] = None) -> List[str]:
+        """Catalog events that produced NO dated instance from any wired source —
+        i.e. events that would silently vanish from the calendar (NW-4 ch.5). The
+        rule: such an event is SIGNALLED (logged + auditable here), never dropped
+        without trace. ``events`` may be passed to avoid a second fetch."""
+        served = _served_keys(events if events is not None else self.fetch().events)
+        catalog = load_catalog()
+        return sorted(k for k in catalog if k not in served)
+
+    def _warn_undatable(self, events: Sequence[ProviderEvent]) -> None:
+        undatable = self.undatable_events(events)
+        if undatable:
+            logger.warning(
+                "calendar: %d catalog event(s) produced NO dated instance — "
+                "not datable by any wired source (curated schedule or live feed), "
+                "surfaced instead of silently dropped: %s",
+                len(undatable),
+                ", ".join(undatable),
+            )
 
 
 __all__ = ["OfficialCalendarProvider"]

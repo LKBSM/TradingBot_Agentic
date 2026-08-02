@@ -501,3 +501,99 @@ test('390×844: publication page has no horizontal overflow', async ({ page }) =
   await expect(page.locator('.cald')).toBeVisible();
   expect(await overflow(page)).toBeLessThanOrEqual(1);
 });
+
+// ===========================================================================
+// NW-4 — couverture & fiabilité. Four surfaces at BOTH viewports:
+//   A. calendar WITH values (published series curve, as published);
+//   B. calendar with a SOURCE UNREACHABLE (grid kept + freshness still shown);
+//   C. publication with an UNCONFIRMED time (flagged, distinct from verified);
+//   D. publication WITHOUT a value (no fabricated number).
+// Plus the unscheduled-events limit + permanent "last updated" on the month view.
+// ===========================================================================
+
+function respWith(events: unknown[], coverage?: unknown) {
+  return {
+    window_start: iso(-30 * D), window_end: iso(30 * D), generated_at: iso(0),
+    coverage: coverage ?? {
+      source: 'official', feed_start: null, feed_end: null, partial: false,
+      last_success: {}, stale_sources: [],
+    },
+    attribution: [
+      { source: 'bls', organism: 'Bureau of Labor Statistics', license_label: 'Domaine public', policy_url: 'https://www.bls.gov/opub/copyright-information.htm' },
+    ],
+    events,
+  };
+}
+
+/** An event whose publication TIME is not confirmed (NW-4 ch.1). */
+function unconfirmedEventFixture() {
+  return respWith([
+    baseEvent('eurostat:ea_gdp_flash:x', 'eurostat', 'PIB zone euro (estimation rapide)', 'EUR', iso(2 * D), 'Eurostat', ['EURUSD'], {
+      time_confirmed: false, actual_state: 'pending', value_unit: '% (variation trimestrielle)',
+    }),
+  ]);
+}
+
+/** A moment-only event with NO value (FOMC minutes) — never a fabricated number. */
+function valuelessEventFixture() {
+  return respWith([
+    baseEvent('federal_reserve:us_fomc_minutes:x', 'federal_reserve', 'Procès-verbaux du FOMC (minutes)', 'USD', iso(-2 * D), 'Federal Reserve Board', ['XAUUSD', 'EURUSD'], {
+      series_code: null, value_unit: null, actual: null, actual_state: 'unavailable', value_series: [],
+    }),
+  ]);
+}
+
+/** Month with one source stale (unreachable at the last cycle) — data kept. */
+function staleMonthFixture() {
+  const f = monthFixture();
+  f.coverage.stale_sources = ['bls'];
+  f.coverage.last_success = { bls: iso(-3 * D), eurostat: iso(0) };
+  return f;
+}
+
+for (const vp of [
+  { w: 1280, h: 800, name: '1280×800' },
+  { w: 390, h: 844, name: '390×844' },
+]) {
+  test(`${vp.name}: NW-4 month — unscheduled-events limit + permanent last-updated`, async ({ page }) => {
+    await page.setViewportSize({ width: vp.w, height: vp.h });
+    if (!(await gotoMonth(page))) { test.skip(true, 'gated'); return; }
+    // Ch3 — the unscheduled-events limit is written on the month view.
+    await expect(page.locator('.cal-nono')).toContainText('hors calendrier');
+    // Ch5B — permanent proof of freshness (not only a stale marker).
+    await expect(page.locator('.calm-fresh')).toBeVisible();
+  });
+
+  test(`${vp.name}: NW-4 calendar with a source unreachable → grid kept + freshness shown`, async ({ page }) => {
+    await page.setViewportSize({ width: vp.w, height: vp.h });
+    if (!(await gotoMonth(page, staleMonthFixture()))) { test.skip(true, 'gated'); return; }
+    // A failing source never empties the calendar (stored data is kept).
+    expect(await page.locator('.calm-cell:not(.blank):not(.empty)').count()).toBeGreaterThan(0);
+    // Freshness proof still shown (max of last_success across sources).
+    await expect(page.locator('.calm-fresh')).toBeVisible();
+  });
+
+  test(`${vp.name}: NW-4 publication WITH values → published series renders`, async ({ page }) => {
+    await page.setViewportSize({ width: vp.w, height: vp.h });
+    const ok = await gotoPublication(page, 'eurostat:ea_hicp_flash:2026-06-30', hicpEventFixture(), 'ea_hicp_flash', emptyMeasures());
+    if (!ok) { test.skip(true, 'gated'); return; }
+    // The published curve values are drawn AS PUBLISHED (never fabricated).
+    expect(await page.locator('.pt-val').count()).toBeGreaterThan(0);
+  });
+
+  test(`${vp.name}: NW-4 publication with an UNCONFIRMED time → flagged`, async ({ page }) => {
+    await page.setViewportSize({ width: vp.w, height: vp.h });
+    const ok = await gotoPublication(page, 'eurostat:ea_gdp_flash:x', unconfirmedEventFixture(), 'ea_gdp_flash', emptyMeasures());
+    if (!ok) { test.skip(true, 'gated'); return; }
+    await expect(page.locator('.cald-sub')).toContainText('heure non confirmée');
+  });
+
+  test(`${vp.name}: NW-4 publication WITHOUT a value → no fabricated number`, async ({ page }) => {
+    await page.setViewportSize({ width: vp.w, height: vp.h });
+    const ok = await gotoPublication(page, 'federal_reserve:us_fomc_minutes:x', valuelessEventFixture(), 'us_fomc_minutes', emptyMeasures());
+    if (!ok) { test.skip(true, 'gated'); return; }
+    // A value-less event draws no curve value — never an invented number.
+    expect(await page.locator('.pt-val').count()).toBe(0);
+    await expect(page.locator('.cald').first()).toBeVisible();
+  });
+}

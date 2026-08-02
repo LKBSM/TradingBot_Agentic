@@ -131,6 +131,17 @@ describe('NW-1 calendar copy honesty', () => {
     expect(nono.noRanking.toLowerCase()).toContain('hiérarchie');
   });
 
+  it('NW-4: the « ne dit pas » block states the unscheduled-events limit, in fr and en', () => {
+    const frNono = (fr as unknown as { calendar: { nono: { noUnscheduled: string } } }).calendar.nono;
+    const enNono = (en as unknown as { calendar: { nono: { noUnscheduled: string } } }).calendar.nono;
+    expect(frNono.noUnscheduled).toBeTypeOf('string');
+    expect(frNono.noUnscheduled.toLowerCase()).toContain('programmés');
+    expect(frNono.noUnscheduled.toLowerCase()).toContain('hors calendrier');
+    expect(enNono.noUnscheduled).toBeTypeOf('string');
+    expect(enNono.noUnscheduled.toLowerCase()).toContain('scheduled moments');
+    expect(enNono.noUnscheduled.toLowerCase()).toContain('unscheduled');
+  });
+
   it('NW-1c: the calendar namespace is natively translated in all 9 locales (no EN fallback)', () => {
     const locales: Record<string, unknown> = { de, es, it: itLocale, pt, nl, pl, ar };
     const enCal = (en as { calendar: { title: string; intro: { lead: string }; detail: { actualPending: string } } }).calendar;
