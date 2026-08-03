@@ -938,10 +938,22 @@
       "rescan": "Relancer"
     },
     "family": {
-      "structure": { "title": "Structure", "desc": "tendance, cassures, événements" },
-      "zones": { "title": "Zones", "desc": "Order Blocks, Fair Value Gaps" },
-      "liquidity": { "title": "Liquidité", "desc": "poches, prises, creux/sommets égaux" },
-      "context": { "title": "Contexte", "desc": "phase, volatilité, range, session" }
+      "structure": {
+        "title": "Structure",
+        "desc": "tendance, cassures, événements"
+      },
+      "zones": {
+        "title": "Zones",
+        "desc": "Order Blocks, Fair Value Gaps"
+      },
+      "liquidity": {
+        "title": "Liquidité",
+        "desc": "poches, prises, creux/sommets égaux"
+      },
+      "context": {
+        "title": "Contexte",
+        "desc": "phase, volatilité, range, session"
+      }
     },
     "recap": {
       "title": "Ta lecture, en une phrase",
@@ -985,7 +997,65 @@
       },
       "bars": "{n} bougies",
       "pct": "{n} %",
-      "touches": "{n} fois"
+      "touches": "{n} fois",
+      "direction": {
+        "any": "Toute direction",
+        "bullish": "Haussier",
+        "bearish": "Baissier"
+      },
+      "trend": {
+        "bullish": "Haussière",
+        "bearish": "Baissière",
+        "indeterminate": "Indéterminée"
+      },
+      "phase": {
+        "accumulation": "Accumulation",
+        "trend": "Tendance",
+        "ranging": "Range",
+        "expansion": "Expansion"
+      },
+      "volatility": {
+        "low": "Contractée",
+        "normal": "Normale",
+        "elevated": "Étendue"
+      },
+      "side": {
+        "any": "Les deux",
+        "bsl": "BSL (au-dessus)",
+        "ssl": "SSL (en dessous)"
+      },
+      "zone_kind": {
+        "any": "OB ou FVG",
+        "ob": "Order Block",
+        "fvg": "Fair Value Gap"
+      },
+      "event": {
+        "bos_up": "BOS ↑",
+        "bos_down": "BOS ↓",
+        "choch_up": "CHOCH ↑",
+        "choch_down": "CHOCH ↓"
+      },
+      "age_bucket": {
+        "lt10": "Moins de 10",
+        "10to50": "10 à 50",
+        "gt50": "Plus de 50"
+      },
+      "third": {
+        "bottom": "Bas",
+        "middle": "Milieu",
+        "top": "Haut"
+      },
+      "eq_kind": {
+        "any": "Creux ou sommets",
+        "highs": "Sommets",
+        "lows": "Creux"
+      },
+      "session": {
+        "asia": "Asie",
+        "london": "Londres",
+        "new_york": "New York",
+        "overlap": "Chevauchement"
+      }
     },
     "bias": {
       "bullish": "Haussier",
@@ -1181,7 +1251,6 @@
       "trend_bullish": "Tendance haussière",
       "trend_bearish": "Tendance baissière",
       "trend_neutral": "Tendance neutre",
-      "trend_ranging": "Marché en range",
       "trend_indeterminate": "Tendance indéterminée",
       "volatility_low": "Volatilité basse",
       "volatility_normal": "Volatilité normale",
@@ -1215,7 +1284,6 @@
       "trendAdj_bullish": "haussier",
       "trendAdj_bearish": "baissier",
       "trendAdj_neutral": "neutre",
-      "trendAdj_ranging": "en range",
       "orient_bullish": "haussière",
       "orient_bearish": "baissière",
       "alignedDir_up": "à la hausse",
@@ -1320,7 +1388,6 @@
       "trend_bullish": "Tendance haussière",
       "trend_bearish": "Tendance baissière",
       "trend_neutral": "Tendance neutre",
-      "trend_ranging": "Marché en range",
       "volatility_low": "Volatilité basse",
       "volatility_normal": "Volatilité normale",
       "volatility_elevated": "Volatilité élevée",

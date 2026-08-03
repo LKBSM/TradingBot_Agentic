@@ -34,10 +34,15 @@ describe('MarketPhasePanel (ex-ConvictionGauge)', () => {
     expect(screen.getByRole('group', { name: /phase de marché/i })).toBeInTheDocument();
   });
 
-  it('reflects a ranging / low-vol regime', () => {
+  it('reflects an indeterminate trend, a ranging phase and low volatility', () => {
+    // TR-1: "range" is a PHASE, not a trend state. FIXTURE_EUR_H1 emits
+    // trend='indeterminate' + market_phase='ranging' + volatility='low', so the
+    // panel shows an indeterminate trend badge and carries "range" in the PHASE
+    // badge — never a "Marché en range" TREND badge (that vocabulary was removed).
     render(<MarketPhasePanel regime={FIXTURE_EUR_H1.regime} />);
-    expect(screen.getByText('Marché en range')).toBeInTheDocument();
+    expect(screen.getByText('Tendance indéterminée')).toBeInTheDocument();
     expect(screen.getByText('Volatilité basse')).toBeInTheDocument();
+    expect(screen.getByText('Phase de range')).toBeInTheDocument();
   });
 });
 

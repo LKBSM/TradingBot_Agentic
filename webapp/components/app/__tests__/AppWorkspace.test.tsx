@@ -4,6 +4,7 @@ import { AppWorkspace } from '../AppWorkspace';
 import { ChatProvider } from '@/components/chat/ChatProvider';
 import { ChartViewProvider } from '@/lib/chart/viewState';
 import { FIXTURE_XAU_M15 } from '@/lib/market-reading/fixtures';
+import { __resetReadingRetention } from '@/lib/market-reading/hooks';
 import type { Combo } from '@/lib/market-reading/store';
 
 const XAU_M15: Combo = { instrument: 'XAUUSD', timeframe: 'M15' };
@@ -61,6 +62,12 @@ function renderApp(initialCombo: Combo | null = null) {
 
 beforeEach(() => {
   fetchMock.mockReset();
+  // DETTE-1: reset PERF-1's module-level SWR retention cache between tests, so a
+  // prior test's cached XAU/M15 reading doesn't suppress the first-load skeleton
+  // (the caches are module state, shared across tests in this file). This is the
+  // harness fix PERF-1 shipped __resetReadingRetention() for; it was wired into
+  // hooks.test.ts / useCandles.test.ts but not here.
+  __resetReadingRetention();
 });
 
 afterEach(() => {

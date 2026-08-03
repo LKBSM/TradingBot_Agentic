@@ -1,210 +1,210 @@
 {
   "home": {
     "hero": {
-      "pill": "2 markets · 6 timeframes · analysed on every candle close",
-      "h1a": "The market already wrote it all.",
-      "h1b": "MIA reads it to you.",
-      "lead": "Order Blocks, Fair Value Gaps, structure breaks, liquidity pockets — detected on gold and the euro, across 6 timeframes, and described in plain language. Stop drawing everything by hand and get to the work that matters.",
-      "ctaPrimary": "Try it free",
-      "ctaSecondary": "See the tools",
-      "micro": "No credit card · Free tier forever"
+      "pill": "2 rynki · 6 interwałów czasowych · analiza przy każdym zamknięciu świecy",
+      "h1a": "Rynek już wszystko zapisał.",
+      "h1b": "MIA czyta ci to na głos.",
+      "lead": "Order Blocks, Fair Value Gaps, złamania struktury, poziomy płynności — wykrywane na złocie i euro, w 6 interwałach czasowych, opisane prostym językiem. Przestajesz rysować wszystko ręcznie i zajmujesz się tym, co naprawdę ważne.",
+      "ctaPrimary": "Wypróbuj za darmo",
+      "ctaSecondary": "Zobacz narzędzia",
+      "micro": "Bez karty płatniczej · Stały darmowy dostęp"
     },
     "stats": {
-      "markets": "markets tracked",
-      "combinations": "combinations analysed",
-      "conditions": "search conditions",
-      "timeframes": "timeframes"
+      "markets": "śledzone rynki",
+      "combinations": "przeanalizowane kombinacje",
+      "conditions": "kryteria wyszukiwania",
+      "timeframes": "interwały czasowe"
     },
     "tools": {
-      "eyebrow": "Five tools, one engine",
-      "title": "Everything you need to read a structure",
-      "subtitle": "Each tool answers a question you already ask yourself. The difference is how long it takes you to get the answer.",
+      "eyebrow": "Pięć narzędzi, jeden silnik",
+      "title": "Wszystko, czego potrzebujesz, by odczytać strukturę",
+      "subtitle": "Każde narzędzie odpowiada na pytanie, które już sobie zadajesz. Różnica polega na tym, ile czasu zajmuje ci uzyskanie odpowiedzi.",
       "app": {
-        "tag": "The reading space",
-        "h3": "Open a chart — the reading is already done",
-        "p": "The engine has marked the zones, dated the breaks, placed the liquidity. Below it, a paragraph tells you where the market stands — <b>not what it will do, what it has done</b>. You understand the situation in ten seconds instead of twenty minutes of drawing.",
-        "b1": "<b>Order Blocks and Fair Value Gaps</b> bounded, with their direction and state",
-        "b2": "<b>BOS and CHOCH</b> timestamped, with the exact break level",
-        "b3": "<b>Liquidity pockets</b> intact, swept or broken — three distinct states",
-        "b4": "<b>Regime panel</b>: ten tiles — trend, volatility, position, alignment, maturity, density, session…",
-        "visTitle": "Gold · XAU/USD · 15 minutes",
-        "lblLiq": "Liquidity intact",
-        "lblOb": "OB · untested",
+        "tag": "Przestrzeń do odczytu",
+        "h3": "Otwierasz wykres, a odczyt jest już gotowy",
+        "p": "Silnik oznaczył strefy, opatrzył datami złamania struktury, wyznaczył płynność. Poniżej akapit mówi ci, w jakim stanie jest rynek — <b>nie co zamierza zrobić, lecz co zrobił</b>. Rozumiesz sytuację w dziesięć sekund zamiast dwudziestu minut rysowania.",
+        "b1": "<b>Order Blocks i Fair Value Gaps</b> wyznaczone, z kierunkiem i stanem",
+        "b2": "<b>BOS i CHOCH</b> z sygnaturą czasową i dokładnym poziomem złamania",
+        "b3": "<b>Poziomy płynności</b> nienaruszone, zdjęte lub złamane — trzy odrębne stany",
+        "b4": "<b>Panel reżimu</b>: dziesięć kafelków — trend, zmienność, położenie, spójność, dojrzałość, gęstość, sesja…",
+        "visTitle": "Złoto · XAU/USD · 15 minut",
+        "lblLiq": "Płynność nienaruszona",
+        "lblOb": "OB · nietestowany",
         "lblChoch": "CHOCH ↑",
-        "narr": "Price is <b>currently inside a bullish Order Block</b> formed 14 candles ago, between 4,026.80 and 4,028.90, and this zone <b>has never been tested</b>. A sell-side liquidity pocket <b>was swept</b> 17 candles ago. The 1h agrees."
+        "narr": "Cena znajduje się <b>obecnie w byczym Order Blocku</b> uformowanym 14 świec temu, między 4 026,80 a 4 028,90, a strefa ta <b>nigdy nie była testowana</b>. Poziom płynności po stronie sprzedaży <b>został zdjęty</b> 17 świec temu. Interwał 1 h idzie w tym samym kierunku."
       },
       "scanner": {
-        "tag": "The scanner",
-        "h3": "You can't watch your markets non-stop. It can.",
-        "p": "Tick the conditions you care about — trend, untested zone, liquidity recently taken — and the scanner tells you <b>where they line up right now</b>, across the 12 market-and-timeframe combinations. Re-evaluated on every candle close.",
-        "b1": "<b>22 factual conditions</b> across structure, zones, liquidity and context",
-        "b2": "<b>What goes against it</b> is shown too — disagreement between units, worn zone",
-        "b3": "<b>No ranking</b>: results are never sorted by « quality »",
-        "b4": "<b>Saved readings</b>: recall your usual conditions, export them from one device to another",
-        "visTitle": "Scanner · 4 active conditions",
+        "tag": "Skaner",
+        "h3": "Nie możesz obserwować rynków bez przerwy. On może.",
+        "p": "Zaznacz interesujące cię kryteria — trend, nietestowana strefa, niedawno zdjęta płynność — a skaner powie ci, <b>gdzie są one obecnie spełnione jednocześnie</b>, we wszystkich 12 kombinacjach rynków i interwałów czasowych. Przeliczane przy każdym zamknięciu świecy.",
+        "b1": "<b>22 obiektywne kryteria</b> podzielone na strukturę, strefy, płynność i kontekst",
+        "b2": "<b>To, co przemawia przeciwnie</b>, jest wyświetlane również — niezgodność między interwałami, zużyta strefa",
+        "b3": "<b>Żadnego rankingu</b>: wyniki nigdy nie są sortowane według „jakości”",
+        "b4": "<b>Zapisane odczyty</b>: odnajdujesz swoje typowe kryteria, przenosisz je z jednego urządzenia na drugie",
+        "visTitle": "Skaner · 4 aktywne kryteria",
         "chip": {
-          "c1": "bullish trend",
-          "c2": "units aligned",
-          "c3": "inside an OB",
-          "c4": "never tested"
+          "c1": "trend byczy",
+          "c2": "interwały spójne",
+          "c3": "wewnątrz OB",
+          "c4": "nigdy nietestowana"
         },
         "row": {
-          "gold15": "Gold · 15 min",
+          "gold15": "Złoto · 15 min",
           "euro15": "Euro · 15 min",
-          "goldH4": "Gold · 4h"
+          "goldH4": "Złoto · 4 h"
         },
-        "foot": "re-evaluated on every close · 4 min ago"
+        "foot": "przeliczane przy każdym zamknięciu · 4 min temu"
       },
       "zones": {
-        "tag": "The zones",
-        "h3": "A pristine zone and a worn one are not worth the same",
-        "p": "Most tools show you that an Order Block exists. MIA tells you <b>its whole life</b>: when it formed, whether it was touched, at what time, and whether it ended up filled. That's the difference between seeing a rectangle and knowing what it's worth.",
-        "b1": "<b>Full timeline</b>: formed → tested → filled, timestamped",
-        "b2": "<b>Fill rate</b> for a partially filled Fair Value Gap",
-        "b3": "<b>Overlaps</b> with zones detected on other timeframes",
-        "b4": "<b>Hideable one by one</b> to keep a readable chart",
-        "visTitle": "Zones · Gold · 15 minutes",
-        "now": "Now",
+        "tag": "Strefy",
+        "h3": "Nietknięta strefa i zużyta strefa to nie to samo",
+        "p": "Większość narzędzi pokazuje ci, że Order Block istnieje. MIA opowiada ci <b>całe jego życie</b>: kiedy się uformował, czy został dotknięty, o której godzinie i czy ostatecznie został wypełniony. To różnica między zobaczeniem prostokąta a wiedzą, ile jest wart.",
+        "b1": "<b>Pełna oś czasu</b>: uformowana → testowana → wypełniona, z sygnaturą czasową",
+        "b2": "<b>Stopień wypełnienia</b> dla częściowo wypełnionego Fair Value Gapu",
+        "b3": "<b>Nakładanie się</b> ze strefami wykrytymi na innych interwałach czasowych",
+        "b4": "<b>Możliwość ukrywania pojedynczo</b>, by zachować czytelny wykres",
+        "visTitle": "Strefy · Złoto · 15 minut",
+        "now": "Teraz",
         "card1": {
           "tag": "ORDER BLOCK ↑",
-          "state": "never tested",
-          "formed": "Formed · 3h 30 ago"
+          "state": "nigdy nietestowana",
+          "formed": "Uformowana · 3 h 30 temu"
         },
         "card2": {
           "tag": "FAIR VALUE GAP ↓",
-          "state": "60 % filled",
-          "fill": "60 % filled"
+          "state": "wypełniona w 60 %",
+          "fill": "wypełniona w 60 %"
         }
       },
       "news": {
-        "tag": "The news",
-        "h3": "Know when the market will move — and what happened the times before",
-        "p": "A calendar of economic releases, attached to the markets they concern. And for each one, <b>what the engine actually measured at previous releases</b>: the calm before, the agitation after, the lifespan of the zones created that day.",
-        "b1": "<b>Monthly calendar</b> with local time and the issuing body's time",
-        "b2": "<b>The last twelve published figures</b> of each indicator, as published",
-        "b3": "<b>Engine measures</b> at past releases — counts, not forecasts",
-        "b4": "<b>Official sources only</b>: BLS, BEA, Census, Federal Reserve, Eurostat, ECB",
-        "visTitle": "Consumer Price Index · 12 August",
+        "tag": "Aktualności",
+        "h3": "Wiedz, kiedy rynek się poruszy — i co działo się poprzednim razem",
+        "p": "Kalendarz publikacji gospodarczych, powiązanych z rynkami, których dotyczą. A dla każdej z nich <b>to, co silnik faktycznie zmierzył przy poprzednich odczytach</b>: spokój, który poprzedza, wzburzenie, które następuje, czas życia stref utworzonych tego dnia.",
+        "b1": "<b>Kalendarz miesięczny</b> z czasem lokalnym i czasem organu publikującego",
+        "b2": "<b>Dwanaście ostatnich opublikowanych odczytów</b> każdego wskaźnika, w formie opublikowanej",
+        "b3": "<b>Pomiary silnika</b> przy przeszłych publikacjach — zestawienia, nie prognozy",
+        "b4": "<b>Wyłącznie źródła oficjalne</b>: BLS, BEA, Census, Rezerwa Federalna (Fed), Eurostat, EBC",
+        "visTitle": "Indeks cen towarów i usług konsumpcyjnych · 12 sierpnia",
         "q1": {
-          "q": "Does the market calm down before?",
-          "a": "Across the releases measured, the hour before was calmer <b>10 times out of 12</b>."
+          "q": "Czy rynek wycisza się przed publikacją?",
+          "a": "Na zmierzonych publikacjach poprzedzająca godzina była spokojniejsza <b>10 razy na 12</b>."
         },
         "q2": {
-          "q": "How long does it last?",
-          "a": "Most often <b>1 to 3h</b>. From 15 min to 4h 45 depending on the release."
+          "q": "Jak długo to trwa?",
+          "a": "Najczęściej <b>1 do 3 h</b>. Od 15 min do 4 h 45 w zależności od publikacji."
         },
         "q3": {
-          "q": "Do the zones created hold?",
-          "a": "Rarely. Of <b>34 zones</b> created, 26 crossed within two hours."
+          "q": "Czy utworzone strefy się utrzymują?",
+          "a": "Rzadko. Z <b>34 stref</b> utworzonych 26 zostało przebitych w dwie godziny."
         },
         "q4": {
-          "q": "Where does the structure stand?",
-          "a": "Top third of the range <b>8 times out of 12</b>, intact pocket nearby 9 times."
+          "q": "W jakim stanie jest struktura?",
+          "a": "Górna tercja zakresu <b>8 razy na 12</b>, nienaruszony poziom w pobliżu 9 razy."
         },
-        "foot": "Counts of past days. Nothing applies to the upcoming release."
+        "foot": "Zestawienia z minionych dni. Nic nie odnosi się do nadchodzącej publikacji."
       },
       "mia": {
         "tag": "M.I.A Agent",
-        "h3": "An SMC mentor that never sleeps",
-        "p": "Don't get why that candle is an Order Block? Ask her. She <b>teaches the concepts and describes what the engine detected</b> — and she can drive your chart: hide a layer, isolate a zone, change the timeframe.",
-        "b1": "<b>Explains every SMC concept</b> with the example in front of you",
-        "b2": "<b>Anchored to the engine</b>: she only cites levels that were actually detected",
-        "b3": "<b>Controls the display</b>: « show me only the untested OBs »",
-        "b4": "<b>On the chart and the publications</b> — never a word of prediction",
+        "h3": "Mentor SMC, który nigdy nie śpi",
+        "p": "Nie rozumiesz, dlaczego ta świeca to Order Block? Zapytaj ją. <b>Uczy pojęć i opisuje to, co silnik wykrył</b> — i potrafi sterować twoim wykresem: ukryć warstwę, wyodrębnić strefę, zmienić interwał czasowy.",
+        "b1": "<b>Objaśnia każde pojęcie SMC</b> z przykładem przed oczami",
+        "b2": "<b>Zakotwiczona w silniku</b>: wskazuje wyłącznie poziomy faktycznie wykryte",
+        "b3": "<b>Steruje wyświetlaniem</b>: „pokaż mi tylko nietestowane OB”",
+        "b4": "<b>Na wykresie i na publikacjach</b> — nigdy ani słowa prognozy",
         "visTitle": "M.I.A Agent",
         "chat": {
-          "u1": "what exactly is an order block?",
-          "a1": "It's the last opposite-direction candle before the move that breaks structure. The one price sits in formed <b>14 candles ago</b>, right before the bullish BOS at 14:15.",
-          "u2": "show me only the untested OBs",
-          "a2": "Done. I hid the FVGs and the liquidity. <b>3 untested Order Blocks</b> remain on screen.",
-          "u3": "do you think it will bounce?",
-          "a3": "I don't answer that. I don't predict price moves — I can describe the state of the zone or explain the concept."
+          "u1": "co to dokładnie jest order block?",
+          "a1": "To ostatnia świeca o przeciwnym kierunku przed ruchem, który łamie strukturę. Ta, na której znajduje się cena, uformowała się <b>14 świec temu</b>, tuż przed byczym BOS o 14:15.",
+          "u2": "pokaż mi tylko nietestowane OB",
+          "a2": "Gotowe. Ukryłam FVG i płynność. Na wykresie pozostają <b>3 Order Blocks</b> nietestowane.",
+          "u3": "myślisz, że się odbije?",
+          "a3": "Nie odpowiadam na to. Nie prognozuję ruchów ceny — mogę opisać ci stan strefy albo wyjaśnić pojęcie."
         }
       }
     },
     "demoSection": {
-      "eyebrow": "Try it without creating an account",
-      "title": "Here's what it looks like",
-      "subtitle": "An illustration reading, editable right here. Click, tick, ask a question — everything works with no account.",
-      "cta": "Create a free account",
-      "illus": "Illustration data · the product shows the real market readings"
+      "eyebrow": "Wypróbuj bez zakładania konta",
+      "title": "Tak to wygląda",
+      "subtitle": "Poglądowy odczyt, którym możesz manipulować tu i teraz. Klikaj, zaznaczaj, zadaj pytanie — wszystko działa bez konta.",
+      "cta": "Załóż darmowe konto",
+      "illus": "Dane poglądowe · produkt wyświetla prawdziwe odczyty rynku"
     },
     "demo": {
-      "illus": "Illustration data",
+      "illus": "Dane poglądowe",
       "tabs": {
-        "structure": "Read a structure",
-        "scanner": "Search a market",
-        "zones": "Track a zone",
-        "mia": "Ask a question",
-        "calcul": "Open the calculation"
+        "structure": "Odczytaj strukturę",
+        "scanner": "Znajdź rynek",
+        "zones": "Śledź strefę",
+        "mia": "Zadaj pytanie",
+        "calcul": "Otwórz obliczenie"
       },
       "structure": {
-        "prefix": "On gold, 15 minutes:",
-        "empty": "No layer shown. The reading describes only what is visible — it invents nothing to fill the void.",
+        "prefix": "Na złocie w 15 minutach:",
+        "empty": "Żadna warstwa nie jest wyświetlana. Odczyt opisuje tylko to, co widoczne — nie wymyśla niczego, by wypełnić pustkę.",
         "labels": {
-          "ob": "Bullish OB · untested",
-          "fvg": "FVG · 60 % filled",
-          "liqIntact": "Buy liquidity · intact",
-          "liqSwept": "Sell liquidity · swept",
-          "choch": "CHOCH ↑ · 4,021.45",
-          "bos": "BOS ↑ · 4,025.10"
+          "ob": "OB byczy · nigdy nietestowany",
+          "fvg": "FVG · wypełniony w 60 %",
+          "liqIntact": "Płynność kupna · nienaruszona",
+          "liqSwept": "Płynność sprzedaży · zdjęta",
+          "choch": "CHOCH ↑ · 4 021,45",
+          "bos": "BOS ↑ · 4 025,10"
         },
         "frag": {
-          "str": "A <b>bullish CHOCH confirmed</b> at 4,021.45, followed by a <b>bullish BOS</b> at 4,025.10.",
-          "ob": "Price is <b>inside a bullish Order Block</b> formed 14 candles ago, between 4,026.80 and 4,028.90, <b>never tested</b>.",
-          "fvg": "A <b>bearish Fair Value Gap, 60 % filled</b> sits below price, between 4,020.10 and 4,021.85.",
-          "liq": "A <b>buy-side liquidity pocket stays intact</b> at 4,034.20; a sell-side pocket <b>was swept</b> below 4,011.40."
+          "str": "<b>Byczy CHOCH potwierdził się</b> na 4 021,45, po czym nastąpił <b>byczy BOS</b> na 4 025,10.",
+          "ob": "Cena znajduje się <b>w byczym Order Blocku</b> uformowanym 14 świec temu, między 4 026,80 a 4 028,90, <b>nigdy nietestowanym</b>.",
+          "fvg": "<b>Niedźwiedzi Fair Value Gap wypełniony w 60 %</b> znajduje się poniżej ceny, między 4 020,10 a 4 021,85.",
+          "liq": "Poziom <b>płynności kupna pozostaje nienaruszony</b> na 4 034,20; poziom sprzedaży <b>został zdjęty</b> poniżej 4 011,40."
         },
         "side": {
-          "title": "The reading updates itself",
-          "desc": "Untick a layer: <b>the paragraph rewrites itself</b> to describe only what stays on screen. The narration is never a fixed text — it is composed from what the engine actually detected.",
-          "try": "Try it",
-          "onlyOb": "Keep only the Order Blocks",
-          "onlyLiq": "Keep only the liquidity",
-          "all": "Show everything again"
+          "title": "Odczyt się aktualizuje",
+          "desc": "Odznacz warstwę: <b>akapit napisze się na nowo</b>, by opisać tylko to, co pozostaje wyświetlone. Narracja nigdy nie jest sztywnym tekstem — powstaje z tego, co silnik wykrył.",
+          "try": "Wypróbuj",
+          "onlyOb": "Zostaw tylko Order Blocks",
+          "onlyLiq": "Zostaw tylko płynność",
+          "all": "Pokaż wszystko ponownie"
         },
         "chips": {
           "ob": "Order Blocks",
           "fvg": "Fair Value Gaps",
-          "liq": "Liquidity",
+          "liq": "Płynność",
           "str": "BOS / CHOCH"
         }
       },
       "scanner": {
-        "try": "Tick your conditions",
+        "try": "Zaznacz swoje kryteria",
         "conditions": {
-          "trend_bullish": "The structural trend is bullish",
-          "higher_tf_agrees": "The higher timeframe agrees",
-          "price_in_ob": "Price is inside an Order Block",
-          "zone_untested": "The zone has never been tested",
-          "liquidity_swept": "A pocket was taken recently"
+          "trend_bullish": "Trend strukturalny jest byczy",
+          "higher_tf_agrees": "Wyższy interwał idzie w tym samym kierunku",
+          "price_in_ob": "Cena jest w Order Blocku",
+          "zone_untested": "Strefa nigdy nie była testowana",
+          "liquidity_swept": "Poziom został niedawno zdjęty"
         },
         "markets": {
-          "gold_m15": "Gold · 15 min",
-          "gold_h1": "Gold · 1h",
+          "gold_m15": "Złoto · 15 min",
+          "gold_h1": "Złoto · 1 h",
           "euro_m15": "Euro · 15 min",
-          "euro_h1": "Euro · 1h",
-          "gold_h4": "Gold · 4h",
-          "euro_h4": "Euro · 4h"
+          "euro_h1": "Euro · 1 h",
+          "gold_h4": "Złoto · 4 h",
+          "euro_h4": "Euro · 4 h"
         },
-        "count": "markets match",
-        "emptyNoCond": "No condition ticked. The scanner shows nothing — <b>and above all not every market</b>.",
-        "emptyNoMatch": "No market meets these conditions right now. <b>This is not an error</b> — and nothing offers to loosen anything.",
-        "againstLabel": "What goes against it",
-        "against": "on Gold · 4h, the trend holds but <b>the higher timeframe is not aligned</b>, and a nearby pocket has already been swept.",
-        "side": "Across the <b>12 combinations</b> analysed, the scanner keeps only those where all your conditions line up <b>right now</b>. Add a condition and the list narrows."
+        "count": "rynków spełnia kryteria",
+        "emptyNoCond": "Żadne kryterium nie jest zaznaczone. Skaner nie wyświetla niczego — <b>a już na pewno nie wszystkich rynków</b>.",
+        "emptyNoMatch": "Żaden rynek nie spełnia obecnie tych kryteriów jednocześnie. <b>To nie jest błąd</b> — i nic nie proponuje ci ich złagodzenia.",
+        "againstLabel": "To, co przemawia przeciwnie",
+        "against": "na Złoto · 4 h trend się utrzymuje, ale <b>wyższy interwał nie jest spójny</b>, a pobliski poziom został już zdjęty.",
+        "side": "Spośród <b>12 kombinacji</b> poddanych analizie skaner zachowuje tylko te, w których wszystkie twoje kryteria są spełnione <b>w tej chwili</b>. Dodaj kryterium, a lista się zawęża."
       },
       "zones": {
         "side": {
-          "title": "Three zones, three histories",
-          "desc": "A rectangle on a chart says nothing. <b>A pristine zone and an already-filled one do not read the same</b> — and MIA keeps that history for every detected zone.",
-          "compare": "Compare",
-          "hint": "Click the three tabs to see the difference between a fresh zone, a started one and a spent one."
+          "title": "Trzy strefy, trzy historie",
+          "desc": "Prostokąt na wykresie nic nie mówi. <b>Nietknięta strefa i już wypełniona strefa czyta się inaczej</b> — a MIA zachowuje tę historię dla każdej wykrytej strefy.",
+          "compare": "Porównaj",
+          "hint": "Kliknij trzy zakładki, by zobaczyć różnicę między świeżą strefą, strefą naruszoną a strefą wyczerpaną."
         },
         "tabs": {
-          "untested": "Order Block · never tested",
-          "tested": "Fair Value Gap · 60 % filled",
-          "filled": "Order Block · filled"
+          "untested": "Order Block · nigdy nietestowany",
+          "tested": "Fair Value Gap · wypełniony w 60 %",
+          "filled": "Order Block · wypełniony"
         },
         "kind": {
           "ob": "ORDER BLOCK",
@@ -212,394 +212,399 @@
         },
         "z": {
           "untested": {
-            "state": "active · never tested",
-            "prose": "This zone formed just before the bullish BOS. Price entered it 30 minutes ago. <b>It has never been filled.</b>"
+            "state": "aktywna · nigdy nietestowana",
+            "prose": "Ta strefa uformowała się tuż przed byczym BOS. Cena weszła w nią 30 minut temu. <b>Nigdy nie została wypełniona.</b>"
           },
           "tested": {
-            "state": "penetrated",
-            "prose": "Formed 10 hours ago. Price penetrated it, then came back. It is <b>60 % filled</b> and still active."
+            "state": "penetrowana",
+            "prose": "Uformowana 10 godzin temu. Cena ją spenetrowała, po czym do niej wróciła. Jest <b>wypełniona w 60 %</b> i pozostaje aktywna."
           },
           "filled": {
-            "state": "filled",
-            "prose": "Price went entirely through it 9 hours ago. <b>It is no longer active.</b>"
+            "state": "wypełniona",
+            "prose": "Cena przeszła przez nią w całości 9 godzin temu. <b>Nie jest już aktywna.</b>"
           }
         },
         "tl": {
-          "formed": "Formed",
-          "touch1": "Penetrated",
-          "touch2": "Return",
-          "now": "Now",
-          "filled": "Filled"
+          "formed": "Uformowana",
+          "touch1": "Penetrowana",
+          "touch2": "Powrót",
+          "now": "Teraz",
+          "filled": "Wypełniona"
         },
-        "fillLabel": "{pct} % filled",
-        "hide": "Hide from chart",
-        "show": "Show on chart",
-        "hiddenNote": "Hidden — the chart stays readable. The zone still exists, it is simply no longer drawn."
+        "fillLabel": "wypełniona w {pct} %",
+        "hide": "Ukryj z wykresu",
+        "show": "Pokaż na wykresie",
+        "hiddenNote": "Ukryta — wykres pozostaje czytelny. Strefa nadal istnieje, po prostu nie jest już rysowana."
       },
       "mia": {
-        "greeting": "Pick a question on the right to see me answer.",
+        "greeting": "Wybierz pytanie obok, by zobaczyć moją odpowiedź.",
         "side": {
-          "title": "Ask her a real question",
-          "desc": "M.I.A explains the concepts, describes what the engine detected and drives the display. <b>She refuses anything that amounts to prediction</b> — click the last option to see.",
-          "try": "Pick a question"
+          "title": "Zadaj jej prawdziwe pytanie",
+          "desc": "M.I.A objaśnia pojęcia, opisuje to, co silnik wykrył, i steruje wyświetlaniem. <b>Odmawia wszystkiego, co dotyczy prognozowania</b> — kliknij ostatnią opcję, by zobaczyć.",
+          "try": "Wybierz pytanie"
         },
         "q": {
           "concept": {
-            "q": "What is an Order Block?",
-            "a": "It's the last opposite-direction candle before the move that breaks structure. The one price sits in formed <b>14 candles ago</b>, right before the bullish BOS at 4,025.10."
+            "q": "Co to jest Order Block?",
+            "a": "To ostatnia świeca o przeciwnym kierunku przed ruchem, który łamie strukturę. Ta, na której znajduje się cena, uformowała się <b>14 świec temu</b>, tuż przed byczym BOS na 4 025,10."
           },
           "grounded": {
-            "q": "Why does this zone matter?",
-            "a": "I can't tell you whether it matters — that depends on your reading. What I can tell you: it <b>has never been tested</b>, price entered it 30 minutes ago, and an intact liquidity pocket sits just above."
+            "q": "Dlaczego ta strefa jest ważna?",
+            "a": "Nie mogę ci powiedzieć, czy jest ważna — to zależy od twojego odczytu. To, co mogę ci powiedzieć: <b>nigdy nie była testowana</b>, cena weszła w nią 30 minut temu, a tuż powyżej znajduje się nienaruszony poziom płynności."
           },
           "action_ob": {
-            "q": "Show me only the untested OBs",
-            "a": "Done — I hid the Fair Value Gaps and the liquidity. <b>Only the Order Blocks</b> remain on the chart."
+            "q": "Pokaż mi tylko nietestowane OB",
+            "a": "Gotowe — ukryłam Fair Value Gaps i płynność. Na wykresie pozostają <b>wyłącznie Order Blocks</b>."
           },
           "refusal": {
-            "q": "Do you think it will go up?",
-            "a": "<b>I don't answer that.</b> I don't predict price moves and I recommend no action — that's deliberate. I can describe the state of the zone, its history, or explain the concept."
+            "q": "Myślisz, że wzrośnie?",
+            "a": "<b>Nie odpowiadam na to.</b> Nie prognozuję ruchów ceny i nie zalecam żadnego działania — to zamierzone. Mogę opisać ci stan strefy, jej historię albo wyjaśnić pojęcie."
           }
         },
-        "actionNote": "The chart layers changed:",
-        "actionCta": "See it in « Read a structure »"
+        "actionNote": "Warstwy wykresu się zmieniły:",
+        "actionCta": "Zobacz w „Odczytaj strukturę”"
       },
       "calcul": {
-        "tileLabel": "Volatility",
-        "verdict": "Normal",
-        "sub": "last 7 candles compared with the previous 20",
+        "tileLabel": "Zmienność",
+        "verdict": "Normalna",
+        "sub": "7 ostatnich świec porównanych z 20 poprzednimi",
         "rows": {
-          "recent": "Recent average range",
-          "baseline": "Baseline average range",
-          "ratio": "Ratio",
-          "thresholds": "Low · high thresholds"
+          "recent": "Średni zasięg z ostatniego okresu",
+          "baseline": "Średni zasięg odniesienia",
+          "ratio": "Stosunek",
+          "thresholds": "Progi niski · wysoki"
         },
-        "concl": "The ratio <b>1.08</b> falls between the <b>0.80</b> and <b>1.25</b> thresholds: volatility is therefore <b>normal</b>. The figure is shown — you can redo it.",
-        "notSayLabel": "What it does not say:",
-        "notSay": "volatility measures the size of moves, not their direction. It does not say whether price will go up or down.",
+        "concl": "Stosunek <b>1,08</b> mieści się między progami <b>0,80</b> a <b>1,25</b>: zmienność jest zatem <b>normalna</b>. Liczba jest pokazana, możesz to przeliczyć sam.",
+        "notSayLabel": "Czego to nie mówi:",
+        "notSay": "zmienność mierzy skalę ruchów, a nie ich kierunek. Nie mówi, czy cena wzrośnie, czy spadnie.",
         "side": {
-          "title": "Every figure is verifiable",
-          "desc": "A Regime-panel tile does not stop at a verdict. <b>Open the calculation</b> and you see the numbers that produced it — and what the measure does not say. When the engine doesn't know, the screen tells you.",
-          "try": "Try it",
-          "toggle": "Open the calculation",
-          "hide": "Hide the calculation"
+          "title": "Każda liczba jest sprawdzalna",
+          "desc": "Kafelek panelu Reżim nie poprzestaje na werdykcie. <b>Otwórz obliczenie</b>, a zobaczysz liczby, które go utworzyły — oraz to, czego pomiar nie mówi. Gdy silnik nie wie, ekran ci to komunikuje.",
+          "try": "Wypróbuj",
+          "toggle": "Otwórz obliczenie",
+          "hide": "Ukryj obliczenie"
         }
       }
     },
     "how": {
-      "eyebrow": "How it works",
-      "title": "Three minutes to understand your market",
-      "subtitle": "No install, no script to copy, no indicator to tune. You open it and it's ready.",
+      "eyebrow": "Jak to działa",
+      "title": "Trzy minuty, by zrozumieć swój rynek",
+      "subtitle": "Żadnej instalacji, żadnego skryptu do skopiowania, żadnej konfiguracji wskaźnika. Otwierasz i jest gotowe.",
       "step1": {
-        "h": "Choose your market",
-        "p": "Gold or the euro, across 6 timeframes. The engine has already analysed the 12 combinations and keeps the result up to date on every candle close."
+        "h": "Wybierz swój rynek",
+        "p": "Złoto lub euro, w 6 interwałach czasowych. Silnik przeanalizował już wszystkie 12 kombinacji i utrzymuje wynik na bieżąco przy każdym zamknięciu świecy."
       },
       "step2": {
-        "h": "Read the structure",
-        "p": "Bounded zones, dated breaks, placed liquidity, and a paragraph describing the situation. You see in ten seconds what would have taken you twenty minutes."
+        "h": "Odczytaj strukturę",
+        "p": "Wyznaczone strefy, opatrzone datami złamania, wyznaczona płynność i akapit opisujący sytuację. Widzisz w dziesięć sekund to, co zajęłoby ci dwadzieścia minut."
       },
       "step3": {
-        "h": "Search or go deeper",
-        "p": "Run the scanner to find your conditions elsewhere, open the Zones page for the history, or ask M.I.A what you didn't understand."
+        "h": "Szukaj lub pogłębiaj",
+        "p": "Uruchom skaner, by odnaleźć swoje kryteria gdzie indziej, otwórz stronę Strefy po historię albo zapytaj M.I.A o to, czego nie zrozumiałeś."
       }
     },
     "who": {
-      "eyebrow": "Who it's for",
-      "title": "Built for SMC and ICT traders",
-      "subtitle": "If you draw your Order Blocks by hand every morning, you're exactly the person this product exists for.",
+      "eyebrow": "Dla kogo",
+      "title": "Stworzone dla traderów SMC i ICT",
+      "subtitle": "Jeśli co rano rysujesz swoje Order Blocks ręcznie, jesteś dokładnie tą osobą, dla której ten produkt powstał.",
       "w1": {
-        "h": "You're learning SMC",
-        "p": "Seeing the structure marked correctly, with an agent that explains each element when you ask, replaces dozens of hours of videos."
+        "h": "Uczysz się SMC",
+        "p": "Zobaczenie poprawnie oznaczonej struktury, z agentem, który wyjaśnia każdy element, gdy o to poprosisz, zastępuje dziesiątki godzin filmów."
       },
       "w2": {
-        "h": "You draw by hand",
-        "p": "You spend time every day marking your zones. MIA does it on gold and the euro, continuously, with the lifecycle as a bonus."
+        "h": "Rysujesz ręcznie",
+        "p": "Codziennie tracisz czas na oznaczanie swoich stref. MIA robi to na złocie i euro, bez przerwy, z cyklem życia w bonusie."
       },
       "w3": {
-        "h": "You follow several timeframes",
-        "p": "You know what you're looking for but you can't watch everything. The scanner watches your 12 combinations on every close, without you clicking."
+        "h": "Śledzisz kilka interwałów czasowych",
+        "p": "Wiesz, czego szukasz, ale nie możesz wszystkiego obserwować. Skaner pilnuje twoich 12 kombinacji przy każdym zamknięciu, bez jednego kliknięcia z twojej strony."
       }
     },
     "distinguish": {
-      "eyebrow": "What sets us apart",
-      "h2": "MIA will never tell you where price is going",
-      "p1": "Not because she can't — because <b>nobody knows</b>. The trading-tools market is full of products selling predictions with unverifiable success rates. MIA does something else: it describes what is there, now, and stops there.",
-      "p2": "In practice, the unfavourable context is shown on equal footing with the favourable one, results are never sorted by « quality », and when the engine doesn't know, the screen tells you instead of guessing. <b>You keep the decision. We give you the reading.</b>"
+      "eyebrow": "Co nas wyróżnia",
+      "h2": "MIA nigdy nie powie ci, dokąd pójdzie cena",
+      "p1": "Nie dlatego, że nie potrafi — lecz dlatego, że <b>nikt tego nie wie</b>. Rynek narzędzi tradingowych jest pełen produktów sprzedających niesprawdzalne prognozy. MIA robi coś innego: opisuje to, co jest tu, teraz, i na tym poprzestaje.",
+      "p2": "Konkretnie: kontekst niesprzyjający jest wyświetlany na równi z kontekstem sprzyjającym, wyniki nigdy nie są sortowane według „jakości”, a gdy silnik nie wie, ekran ci to komunikuje, zamiast zgadywać. <b>Decyzję zachowujesz ty. My dajemy ci odczyt.</b>"
     },
     "pricing": {
-      "eyebrow": "Pricing",
-      "title": "One subscription, everything included",
-      "subtitle": "No premium tier, no feature held hostage. A permanent free tier to try it out.",
+      "eyebrow": "Cennik",
+      "title": "Jeden abonament, wszystko w komplecie",
+      "subtitle": "Żadnego progu premium, żadnej funkcji trzymanej jako zakładnik. Stały darmowy dostęp na próbę.",
       "free": {
-        "name": "Discovery",
-        "sub": "to get a feel for the tool",
-        "bill": "free, no time limit",
-        "f1": "1 market, 2 timeframes",
-        "f2": "Full reading space",
-        "f3": "M.I.A Agent, limited use",
-        "f4": "Publications calendar",
-        "cta": "Create an account",
-        "note": "no credit card"
+        "name": "Odkrywanie",
+        "sub": "by zaznajomić się z narzędziem",
+        "bill": "za darmo, bez ograniczenia czasu",
+        "f1": "1 rynek, 2 interwały czasowe",
+        "f2": "Pełna przestrzeń do odczytu",
+        "f3": "M.I.A Agent, ograniczone użycie",
+        "f4": "Kalendarz publikacji",
+        "cta": "Załóż konto",
+        "note": "bez karty płatniczej"
       },
       "paid": {
-        "label": "Complete",
-        "name": "Subscription",
-        "sub": "the whole product, all markets",
-        "perMonth": "month",
-        "bill": "or {total} $ US per year, i.e. {perMonth} $ US per month",
-        "f1": "<b>Both markets</b>, 6 timeframes",
-        "f2": "Scanner across the 12 combinations",
-        "f3": "Zones page and full lifecycle",
-        "f4": "Engine measures at publications",
-        "f5": "M.I.A Agent unlimited",
-        "f6": "Unlimited saved readings",
-        "cta": "Get started",
-        "note": "cancel any time"
+        "label": "Pełny",
+        "name": "Abonament",
+        "sub": "cały produkt, wszystkie rynki",
+        "perMonth": "miesiąc",
+        "bill": "lub {total} $ US rocznie, czyli {perMonth} $ US miesięcznie",
+        "f1": "<b>Oba rynki</b>, 6 interwałów czasowych",
+        "f2": "Skaner na wszystkich 12 kombinacjach",
+        "f3": "Strona Strefy i pełny cykl życia",
+        "f4": "Pomiary silnika przy publikacjach",
+        "f5": "M.I.A Agent bez ograniczeń",
+        "f6": "Nieograniczone zapisane odczyty",
+        "cta": "Zacznij",
+        "note": "można anulować w każdej chwili"
       },
-      "legal": "Prices in US dollars. MIA Markets is an information and education tool: it provides no investment advice, no recommendation, and no cue to act on the markets. Trading carries a risk of loss. For persons aged 18 and over only."
+      "legal": "Ceny w dolarach amerykańskich. MIA Markets to narzędzie informacyjne i edukacyjne: nie udziela porad inwestycyjnych, rekomendacji ani wskazań co do działań na rynkach. Trading wiąże się z ryzykiem straty. Przeznaczone dla osób pełnoletnich (18 lat i więcej)."
     },
     "faq": {
-      "eyebrow": "Frequently asked",
-      "title": "What we're asked most",
-      "q1": "Does MIA tell you when to buy or sell?",
-      "a1": "No, and that's a design choice. MIA describes what the market has done and what it's doing now. It doesn't say where price will go and promises no result. <b>The decision to trade stays entirely yours</b> — what the product gives you is a clean, fast reading of the structure.",
-      "q2": "Do you need to know Smart Money Concepts to use it?",
-      "a2": "No. It's even a good way to learn: every detected element is explained on screen, and M.I.A answers any question about the concepts — what an Order Block is, the difference between BOS and CHOCH, why a zone is considered filled. You see the theory applied to a real market.",
-      "q3": "Does it replace TradingView?",
-      "a3": "No, and that's not the point. TradingView stays your charting, drawing and execution platform. MIA does the structural reading work: detect, date, track the lifecycle of zones. <b>The two complement each other.</b>",
-      "q4": "Which markets are covered?",
-      "a4": "Two markets today — gold (XAU/USD) and the euro (EUR/USD) — across 6 timeframes from the minute to the day. The free tier gives access to one market and two timeframes, enough to judge the tool. More markets will follow.",
-      "q5": "How often is the data updated?",
-      "a5": "On every candle close of the timeframe concerned, not on an arbitrary interval. A 15-minute reading refreshes every 15 minutes; a daily reading once a day. <b>Each screen shows the age of its last reading</b>, so you always know what you're looking at.",
-      "q6": "Can I cancel whenever I want?",
-      "a6": "Yes, from your account, without having to write to anyone. Your access stays active until the end of the period already paid for, then you drop back to the free tier — you don't lose your account.",
-      "q7": "Where does the price data come from?",
-      "a7": "From a professional provider under a display licence. The economic calendar comes solely from the issuing bodies — Bureau of Labor Statistics, BEA, Census, Federal Reserve, Eurostat, European Central Bank. <b>No secondary source, no aggregator</b>, and every publication carries its attribution.",
-      "q8": "Does the product work on a phone?",
-      "a8": "Yes, from the browser. The reading space, the scanner, the zones and the calendar are usable on mobile — handy to check a structure without being at your desk."
+      "eyebrow": "Najczęstsze pytania",
+      "title": "O co pytają nas najczęściej",
+      "q1": "Czy MIA mówi, kiedy kupić lub sprzedać?",
+      "a1": "Nie, i jest to świadomy wybór projektowy. MIA opisuje to, co rynek zrobił, oraz to, co robi teraz. Nie mówi, dokąd pójdzie cena, i nie obiecuje żadnego rezultatu. <b>Decyzja o zawarciu transakcji pozostaje wyłącznie twoja</b> — to, co daje ci produkt, to czysty i szybki odczyt struktury.",
+      "q2": "Czy trzeba znać Smart Money Concepts, żeby z tego korzystać?",
+      "a2": "Nie. To wręcz dobry sposób, by się uczyć: każdy wykryty element jest objaśniony na ekranie, a M.I.A odpowiada na każde pytanie dotyczące pojęć — czym jest Order Block, jaka jest różnica między BOS a CHOCH, dlaczego strefę uznano za wypełnioną. Widzisz teorię zastosowaną do prawdziwego rynku.",
+      "q3": "Czy to zastępuje TradingView?",
+      "a3": "Nie, i nie taki jest cel. TradingView pozostaje twoją platformą do wykresów, rysowania i realizacji zleceń. MIA wykonuje pracę odczytu strukturalnego: wykrywanie, datowanie, śledzenie cyklu życia stref. <b>Oba się uzupełniają.</b>",
+      "q4": "Jakie rynki są objęte?",
+      "a4": "Dzisiaj dwa rynki — złoto (XAU/USD) i euro (EUR/USD) — w 6 interwałach czasowych od minuty po dzień. Darmowy poziom daje dostęp do jednego rynku i dwóch interwałów czasowych, wystarczająco, by ocenić narzędzie. Kolejne rynki dołączą później.",
+      "q5": "Jak często dane są aktualizowane?",
+      "a5": "Przy każdym zamknięciu świecy danego interwału czasowego, a nie w dowolnym odstępie. Odczyt na 15 minut odświeża się co 15 minut; odczyt dzienny raz dziennie. <b>Każdy ekran pokazuje wiek swojego ostatniego odczytu</b>, byś zawsze wiedział, na co patrzysz.",
+      "q6": "Czy mogę anulować, kiedy chcę?",
+      "a6": "Tak, z poziomu swojego konta, bez konieczności pisania do kogokolwiek. Twój dostęp pozostaje aktywny do końca już opłaconego okresu, po czym wracasz na darmowy poziom — nie tracisz konta.",
+      "q7": "Skąd pochodzą dane cenowe?",
+      "a7": "Od profesjonalnego dostawcy na licencji wyświetlania. Kalendarz gospodarczy pochodzi natomiast wyłącznie od organów publikujących — Bureau of Labor Statistics, BEA, Census, Rezerwa Federalna (Fed), Eurostat, Europejski Bank Centralny. <b>Żadnego źródła wtórnego, żadnego agregatora</b>, a każda publikacja niesie swoje wskazanie źródła.",
+      "q8": "Czy produkt działa na telefonie?",
+      "a8": "Tak, z poziomu przeglądarki. Przestrzeń do odczytu, skaner, strefy i kalendarz są dostępne na urządzeniach mobilnych — wygodne, by sprawdzić strukturę, nie będąc przy swoim stanowisku."
     },
     "final": {
-      "h2": "Stop drawing. Start reading.",
-      "p": "Create a free account and see what the engine sees on your favourite market. No credit card, no time limit.",
-      "cta1": "Create a free account",
-      "cta2": "Review the tools"
+      "h2": "Przestań rysować. Zacznij czytać.",
+      "p": "Załóż darmowe konto i zobacz, co silnik widzi na twoim ulubionym rynku. Bez karty płatniczej, bez ograniczenia czasu.",
+      "cta1": "Załóż darmowe konto",
+      "cta2": "Zobacz ponownie narzędzia"
     }
   },
   "regimePanel": {
-    "help": "Learn more",
-    "measureHelp": "Explain this measure",
-    "close": "Close",
-    "tabData": "Data",
+    "help": "Dowiedz się więcej",
+    "measureHelp": "Wyjaśnij tę miarę",
+    "close": "Zamknij",
+    "tabData": "Dane",
     "tabConcept": "Concept",
-    "unavailable": "not available",
-    "notSayLabel": "What it doesn't say",
-    "continuous": "Continuous market · 24/7",
-    "headerBadge": "{tf} · last close {time}",
+    "unavailable": "niedostępne",
+    "notSayLabel": "Czego to nie mówi",
+    "continuous": "Rynek ciągły · 24/7",
+    "headerBadge": "{tf} · ostatnie zamknięcie {time}",
     "tiles": {
-      "phase": "Market phase",
+      "phase": "Faza rynku",
       "trend": "Trend",
-      "vol": "Volatility",
-      "pos": "Position in range",
-      "align": "Alignment",
-      "mat": "Maturity",
-      "last": "Last event",
-      "dens": "Density",
+      "vol": "Zmienność",
+      "pos": "Pozycja w range",
+      "align": "Zgodność",
+      "mat": "Dojrzałość",
+      "last": "Ostatnie zdarzenie",
+      "dens": "Gęstość",
       "sess": "Session",
-      "lvl": "Reference levels"
+      "lvl": "Poziomy odniesienia"
     },
     "sub": {
-      "phase": "derived from trend and volatility",
-      "trend": "measured on {tf}",
-      "vol": "{recent} recent vs {baseline} preceding",
+      "phase": "wywiedziona z trendu i zmienności",
+      "trend": "mierzony na {tf}",
+      "vol": "{recent} ostatnich vs {baseline} poprzednich",
       "pos": "{low} – {high}",
-      "mat": "since the {dir} CHOCH of {date}",
-      "dens": "open on {tf}",
-      "lvl": "{count, plural, one {# marker} other {# markers}} · open the detail",
-      "sess": "{label} in {delay}",
-      "trendRef": "since the {dir} {kind} of {date}",
-      "trendNone": "no structural trend established"
+      "mat": "od CHOCH {dir} z {date}",
+      "dens": "otwarte na {tf}",
+      "lvl": "{count, plural, one {# punkt odniesienia} few {# punkty odniesienia} many {# punktów odniesienia} other {# punktu odniesienia}} · otwórz szczegóły",
+      "sess": "{label} za {delay}",
+      "trendRef": "od {kind} {dir} z {date}",
+      "trendNone": "brak ustalonego trendu strukturalnego",
+      "lvlNA": "nie dotyczy na {tf}: dniem poprzednim jest poprzednia świeca",
+      "sessNA": "nie dotyczy na {tf}: świeca obejmuje wszystkie sesje"
     },
     "value": {
       "pos": "{pct} %",
-      "mat": "{approx}{count, plural, one {# candle} other {# candles}}",
+      "mat": "{approx}{count, plural, one {# świeca} few {# świece} many {# świec} other {# świecy}}",
       "dens": "{ob} OB · {fvg} FVG",
       "align": "{count}/{total} TF {arrow}",
-      "dirUp": "bullish",
-      "dirDown": "bearish",
+      "dirUp": "wzrostowy",
+      "dirDown": "spadkowy",
       "kindChoch": "CHOCH",
       "kindBos": "BOS",
-      "alignIndeterminate": "no structural trend established",
-      "alignIndetCount": "{count, plural, one {# indeterminate} other {# indeterminate}}"
+      "alignIndeterminate": "brak ustalonego trendu strukturalnego",
+      "alignIndetCount": "{count, plural, one {# nieokreślony} few {# nieokreślone} many {# nieokreślonych} other {# nieokreślonego}}",
+      "alignNone": "brak wyższego interwału",
+      "notApplicable": "nie dotyczy"
     },
     "data": {
-      "phaseHead": "The two measures it is built from",
+      "phaseHead": "Dwie miary, z których się składa",
       "trendRow": "Trend",
-      "volRow": "Volatility",
-      "ruleRow": "Rule applied",
-      "phaseNote": "The phase is fully recomposed from these two measures: no information is added, only summarised.",
-      "trendHead": "The rule, in plain terms",
-      "resultRow": "Result",
-      "measuredOnRow": "Measured on",
-      "trendNote": "The engine compares the net move (first → last close) to the window’s range, on {tf}. The intermediate values stay engine-side; the rule and its result are shown here.",
-      "volHead": "The calculation, in plain terms",
-      "volRecent": "Average range — last {n}",
-      "volBaseline": "Average range — preceding {n}",
-      "volRatio": "Ratio",
-      "volThresholds": "Thresholds",
-      "volThresholdsValue": "<{low} low · >{high} elevated",
-      "volNote": "The denominator is named: the comparison uses the {n} candles preceding the last 7, on the same timeframe.",
-      "posHead": "Where the price sits between the structural bounds",
-      "currentPrice": "Current price",
-      "distTop": "Distance to upper bound",
-      "distBottom": "Distance to lower bound",
-      "rangeSpan": "Bound span",
-      "barLow": "{v} · low",
-      "barHigh": "{v} · high",
-      "boundLow": "Range lower bound",
-      "boundHigh": "Range upper bound",
-      "posNote": "These bounds are **structural**: the range extremes retained by the engine. Not to be confused with the reference levels, which are **temporal**.",
-      "alignHead": "The per-timeframe detail",
+      "volRow": "Zmienność",
+      "ruleRow": "Zastosowana reguła",
+      "phaseNote": "Faza rekomponuje się w całości z tych dwóch miar: żadna informacja nie jest dodawana, jedynie streszczana.",
+      "trendHead": "Reguła, wprost",
+      "resultRow": "Wynik",
+      "measuredOnRow": "Mierzony na",
+      "trendNote": "Silnik porównuje ruch netto (pierwsze → ostatnie zamknięcie) z rozpiętością okna, na {tf}. Wartości pośrednie pozostają po stronie silnika; reguła i jej wynik są pokazane tutaj.",
+      "volHead": "Obliczenie, wprost",
+      "volRecent": "Średnia rozpiętość — {n} ostatnich",
+      "volBaseline": "Średnia rozpiętość — {n} poprzednich",
+      "volRatio": "Stosunek",
+      "volThresholds": "Progi",
+      "volThresholdsValue": "<{low} niska · >{high} podwyższona",
+      "volNote": "Mianownik jest nazwany: porównanie obejmuje {n} świec poprzedzających 7 ostatnich, na tym samym interwale czasowym.",
+      "posHead": "Gdzie znajduje się cena między granicami struktury",
+      "currentPrice": "Bieżąca cena",
+      "distTop": "Odległość do górnej krawędzi",
+      "distBottom": "Odległość do dolnej krawędzi",
+      "rangeSpan": "Rozpiętość granic",
+      "barLow": "{v} · dół",
+      "barHigh": "{v} · góra",
+      "boundLow": "Dolna granica range",
+      "boundHigh": "Górna granica range",
+      "posNote": "Te granice są **strukturalne**: ekstrema struktury przyjęte przez silnik. Nie mylić z poziomami odniesienia, które są **czasowe**.",
+      "alignHead": "Szczegóły dla każdego interwału czasowego",
       "alignNote": "The available timeframes and their structural direction. When one diverges, its line is highlighted here rather than hidden.",
-      "matHead": "The counter’s anchor",
-      "anchorEvent": "Anchor event",
-      "crossedLevel": "Level crossed",
-      "barsSince": "Candles closed since",
-      "elapsed": "Time elapsed",
-      "eventsSince": "Events since then",
-      "lastHead": "The most recent event",
+      "matHead": "Kotwica licznika",
+      "anchorEvent": "Zdarzenie kotwiczące",
+      "crossedLevel": "Przekroczony poziom",
+      "barsSince": "Świece zamknięte od tego czasu",
+      "elapsed": "Czas, który upłynął",
+      "eventsSince": "Zdarzenia od tego czasu",
+      "lastHead": "Najnowsze zdarzenie",
       "typeRow": "Type",
-      "crossedExtreme": "Extreme crossed",
-      "journal": "Event journal · {tf}",
-      "journalCount": "{count, plural, one {# event} other {# events}} over the analysed window ({bars} candles, ≈ {span})",
-      "seeOnChart": "Show these events on the chart",
-      "densHead": "Zone inventory · {tf}",
-      "obActive": "Order Blocks — active",
-      "obTested": "Order Blocks — tested (unmitigated)",
-      "obMitigated": "Order Blocks — mitigated",
-      "fvgOpen": "FVG open — total",
-      "fvgUntouched": "— of which never touched",
-      "fvgPartial": "— of which partially filled",
-      "densNote": "Partially filled ones are **included** in the total of open FVGs. A fully filled FVG leaves the count (the engine no longer keeps it).",
-      "filterInStructure": "Filter these zones in Market structure",
-      "sessHead": "Hours · New York time",
-      "marketState": "Market state",
-      "marketLocalTime": "Market local time",
-      "weeklyClose": "Weekly close",
-      "weeklyCloseValue": "Fri 17:00",
-      "nextOpen": "Next open",
-      "lvlHead": "Temporal markers · current price {price}",
-      "dayOpen": "Day open",
-      "weekOpen": "Week open",
-      "prevDayHigh": "Previous day high",
-      "prevDayLow": "Previous day low",
-      "prevWeekHigh": "Previous week high",
-      "prevWeekLow": "Previous week low",
-      "lvlNote": "Click a price: the level is traced on the chart and brought into view. Click again to remove it.",
-      "lvlPeriodDay": "the previous day",
-      "lvlPeriodWeek": "the previous week",
-      "lvlInsufficient": "Insufficient data for {periods}: the period is not fully covered by the available history.",
-      "relAbove": "{pct} % above",
-      "relBelow": "{pct} % below",
-      "relAt": "at the current price",
+      "crossedExtreme": "Przekroczone ekstremum",
+      "journal": "Dziennik zdarzeń · {tf}",
+      "journalCount": "{count, plural, one {# zdarzenie} few {# zdarzenia} many {# zdarzeń} other {# zdarzenia}} w analizowanym oknie ({bars} świec, ≈ {span})",
+      "seeOnChart": "Pokaż te zdarzenia na wykresie",
+      "densHead": "Inwentarz stref · {tf}",
+      "obActive": "Order Blocks — aktywne",
+      "obTested": "Order Blocks — testowane (niezmitygowane)",
+      "obMitigated": "Order Blocks — zmitygowane",
+      "fvgOpen": "FVG otwarte — suma",
+      "fvgUntouched": "— w tym nigdy nietknięte",
+      "fvgPartial": "— w tym częściowo wypełnione",
+      "densNote": "Częściowo wypełnione są **wliczone** do sumy otwartych FVG. FVG całkowicie wypełniony wypada z rachunku (silnik już go nie przechowuje).",
+      "filterInStructure": "Filtruj te strefy w Strukturze rynku",
+      "sessHead": "Godziny · czas New York",
+      "marketState": "Stan rynku",
+      "marketLocalTime": "Lokalny czas rynku",
+      "weeklyClose": "Zamknięcie tygodniowe",
+      "weeklyCloseValue": "pt. 17:00",
+      "nextOpen": "Następne otwarcie",
+      "lvlHead": "Punkty odniesienia w czasie · bieżąca cena {price}",
+      "dayOpen": "Otwarcie dnia",
+      "weekOpen": "Otwarcie tygodnia",
+      "prevDayHigh": "Najwyższy z poprzedniego dnia",
+      "prevDayLow": "Najniższy z poprzedniego dnia",
+      "prevWeekHigh": "Najwyższy z tygodnia",
+      "prevWeekLow": "Najniższy z tygodnia",
+      "lvlNote": "Kliknij cenę: poziom zostaje naniesiony na wykres i wprowadzony do widoku. Kliknij ponownie, aby go usunąć.",
+      "lvlPeriodDay": "poprzedni dzień",
+      "lvlPeriodWeek": "poprzedni tydzień",
+      "lvlInsufficient": "Niewystarczające dane dla {periods}: okres nie jest w pełni pokryty przez dostępną historię.",
+      "relAbove": "{pct} % powyżej",
+      "relBelow": "{pct} % poniżej",
+      "relAt": "przy bieżącej cenie",
       "coincidenceMark": "≈ {side}",
-      "coincidence": "Coincides with a liquidity pocket detected at this level (an observed level coincidence).",
-      "sessCurrent": "Current session",
-      "sessNext": "Next transition",
-      "sessOverlap": "London / New York overlap",
+      "coincidence": "Zbiega się z kieszenią płynności wykrytą na tym poziomie (zaobserwowana zbieżność poziomów).",
+      "sessCurrent": "Bieżąca sesja",
+      "sessNext": "Następne przejście",
+      "sessOverlap": "Nakładanie się Londyn / New York",
       "overlap": {
-        "upcoming": "upcoming",
-        "ongoing": "ongoing",
-        "ended": "ended"
+        "upcoming": "nadchodzące",
+        "ongoing": "w toku",
+        "ended": "zakończone"
       },
-      "windowRow": "Analysed window",
-      "windowValue": "last {bars} candles (≈ {span})",
-      "windowSpan_days": "{count, plural, one {# day} other {# days}}",
-      "windowSpan_weeks": "{count, plural, one {# week} other {# weeks}}",
-      "windowSpan_months": "{count, plural, one {# month} other {# months}}",
-      "windowSpan_years": "{count, plural, one {# year} other {# years}}",
-      "windowNote": "The window is a FIXED number of candles, so its calendar span depends on the unit (≈ one month on H1, ≈ two years on D1). The same « bearish trend » does not cover the same duration from one unit to the next.",
-      "trendAnchorRow": "Anchor",
-      "trendAnchorValue": "{dir} {kind}",
-      "trendAnchorNone": "no structural break",
-      "trendNoteStructural": "The trend follows the structure: the direction of the last non-contradicted BOS/CHOCH break. “Indeterminate” when no break exists in the analysed history — never a fallback “neutral”."
+      "windowRow": "Analizowane okno",
+      "windowValue": "{bars} ostatnich świec (≈ {span})",
+      "windowSpan_days": "{count, plural, one {# dzień} few {# dni} many {# dni} other {# dnia}}",
+      "windowSpan_weeks": "{count, plural, one {# tydzień} few {# tygodnie} many {# tygodni} other {# tygodnia}}",
+      "windowSpan_months": "{count, plural, one {# miesiąc} few {# miesiące} many {# miesięcy} other {# miesiąca}}",
+      "windowSpan_years": "{count, plural, one {# rok} few {# lata} many {# lat} other {# roku}}",
+      "windowNote": "Okno to STAŁA liczba świec: jego rozpiętość kalendarzowa zmienia się więc w zależności od interwału (≈ miesiąc na H1, ≈ dwa lata na D1). Ten sam „trend spadkowy” nie obejmuje tego samego czasu na różnych interwałach.",
+      "trendAnchorRow": "Kotwica",
+      "trendAnchorValue": "{kind} {dir}",
+      "trendAnchorNone": "brak przełamania strukturalnego",
+      "trendNoteStructural": "Trend podąża za strukturą: kierunek ostatniego niezaprzeczonego przełamania BOS/CHOCH. „Nieokreślony”, gdy w analizowanej historii nie istnieje żadne przełamanie — nigdy „neutralny” z braku laku.",
+      "alignUnavailable": "niedostępne"
     },
     "state": {
-      "open": "Market open",
-      "closed_weekend": "Closed — weekend",
-      "closed_holiday": "Closed — holiday",
-      "daily_break": "Daily break",
-      "data_lagged": "Data lagging"
+      "open": "Rynek otwarty",
+      "closed_weekend": "Zamknięty — weekend",
+      "closed_holiday": "Zamknięty — dzień wolny",
+      "daily_break": "Przerwa dzienna",
+      "data_lagged": "Dane z opóźnieniem"
     },
     "concept": {
       "regime": {
-        "title": "Why there is no combined score",
-        "body": "Reducing nine measures to a single index would force a choice of which one matters most. That choice is an **opinion**, and a weighted opinion is still an opinion — even shown with two decimals.\n\nMIA therefore shows the nine measures side by side, each verifiable, and leaves the synthesis to whoever takes the risk.",
-        "notSay": "None of these measures, alone or combined, tells you what to do. They describe a present state and past facts."
+        "title": "Dlaczego nie ma łącznej oceny",
+        "body": "Sprowadzenie dziewięciu miar do jednego wskaźnika zmuszałoby do decyzji, która liczy się najbardziej. Ten wybór to **opinia**, a ważona opinia pozostaje opinią — nawet przedstawiona z dwoma miejscami po przecinku.\n\nMIA pokazuje więc dziewięć miar obok siebie, każdą weryfikowalną, i pozostawia syntezę temu, kto podejmuje ryzyko.",
+        "notSay": "Żadna z tych miar, sama ani w połączeniu, nie wskazuje, co robić. Opisują one stan obecny i przeszłe fakty."
       },
       "phase": {
-        "title": "What the phase describes",
-        "body": "The phase summarises **how** the price moves, not **where** it goes. The engine derives it from two measures already shown: the **trend** and the **volatility**. A clear trend in high volatility reads as an **expansion**; a clear trend in contained volatility, as a **trend**; a directionless market, as a **range** or **accumulation**.\n\nIt is a summary, not one more measure: it is fully recomposed from trend and volatility, and the Data tab shows which produced the label.",
-        "notSay": "Neither the duration of the phase, nor its remaining amplitude, nor when it will change. A phase can flip on the next candle."
+        "title": "Co opisuje faza",
+        "body": "Faza streszcza, **jak** cena się porusza, a nie **dokąd** zmierza. Silnik wywodzi ją z dwóch już wyświetlonych miar: **trendu** i **zmienności**. Wyraźny trend przy wysokiej zmienności jest odczytywany jako **ekspansja**; wyraźny trend przy powściągniętej zmienności jako **trend**; rynek bez kierunku jako **range** lub **akumulacja**.\n\nTo więc streszczenie, a nie kolejna miara: rekomponuje się w całości z trendu i zmienności, a zakładka Dane pokazuje, która wytworzyła etykietę.",
+        "notSay": "Ani czasu trwania fazy, ani jej pozostałej rozpiętości, ani momentu, w którym się zmieni. Faza może się odwrócić na następnej świecy."
       },
       "trend": {
-        "title": "How the trend is determined",
-        "body": "The trend **derives from the structure the engine detects**: it is the direction of the **last break** (BOS or CHOCH) not contradicted by an opposite one. As long as no protected level is broken on a close, a bullish trend **stays bullish**. It is anchored on a dated event (“since the bullish CHOCH of Jul 24”), the same one the Maturity tile names.\n\nWhen **no break** exists in the analysed history, the trend is **indeterminate** — never a fallback “neutral”. Consolidation is described by the Phase tile instead.",
-        "notSay": "A trend describes the recent past. It extends nothing and does not say when it will end. It does not measure the “strength” of the move — only its structural direction."
+        "title": "Jak wyznaczany jest trend",
+        "body": "Trend **wywodzi się ze struktury wykrytej przez silnik**: to kierunek **ostatniego przełamania** (BOS lub CHOCH), które nie zostało zaprzeczone przez przełamanie w przeciwnym kierunku. Dopóki żaden chroniony poziom nie zostanie przełamany na zamknięciu, trend wzrostowy **pozostaje wzrostowy**. Jest zakotwiczony na datowanym zdarzeniu („od wzrostowego CHOCH z 24 lip.”), tym samym co kafelek Dojrzałość.\n\nGdy **żadne przełamanie** nie istnieje w analizowanej historii, trend jest **nieokreślony** — nigdy nie jest „neutralny” z braku laku. Konsolidację natomiast opisuje kafelek Faza.",
+        "notSay": "Trend opisuje niedawną przeszłość. Niczego nie przedłuża i nie mówi, kiedy ustanie. Nie mierzy „siły” ruchu — jedynie jego strukturalny kierunek."
       },
       "vol": {
-        "title": "What volatility counts",
-        "body": "The **average range** (high − low) of the **last 7** candles, compared to that of **all the candles preceding them** in the window — never a fixed number. The denominator is therefore always named, and the Data tab shows the full calculation so it can be redone.\n\n**Why it matters in SMC:** volatility sets the **width** of zones. An OB formed in high volatility is wider, and so takes longer to cross. It is a dimension, not a quality.",
-        "notSay": "No direction. Low volatility precedes a rise no more than a fall."
+        "title": "Co liczy zmienność",
+        "body": "**Średnia rozpiętość** (góra − dół) **7 ostatnich** świec, odniesiona do rozpiętości **wszystkich świec je poprzedzających** w oknie — nigdy do stałej liczby. Mianownik jest więc zawsze nazwany, a zakładka Dane pokazuje pełne obliczenie, aby dało się je powtórzyć.\n\n**Dlaczego to liczy się w SMC:** zmienność ustala **szerokość** stref. OB uformowany przy wysokiej zmienności jest szerszy, więc dłużej się go przechodzi. To wymiar, a nie jakość.",
+        "notSay": "Żadnego kierunku. Niska zmienność nie poprzedza wzrostu bardziej niż spadku."
       },
       "pos": {
-        "title": "A measure, nothing more",
-        "body": "The position expresses as a percentage where the price sits between the retained structural low and high. 0 % = lower bound, 100 % = upper bound.\n\nIt is a **coordinate**. It makes two markets of very different scales comparable and immediately locates a zone relative to the bounds.",
-        "notSay": "Being at 43 % makes nothing more likely. Neither “mid-range so it will pick a side” nor the reverse: it is a location."
+        "title": "Miara, nic więcej",
+        "body": "Pozycja wyraża w procentach, gdzie znajduje się cena między przyjętym strukturalnym dołkiem a szczytem. 0 % = dolna krawędź, 100 % = górna krawędź.\n\nTo **współrzędna**. Czyni porównywalnymi dwa rynki o bardzo różnych skalach i natychmiast lokalizuje strefę względem granic.",
+        "notSay": "Bycie na 43 % niczego nie czyni bardziej prawdopodobnym. Ani „w środku, więc wybierze stronę”, ani odwrotnie: to lokalizacja."
       },
       "align": {
-        "title": "Multi-timeframe alignment",
-        "body": "**What it counts:** how many timeframes show **right now** the same structural direction. When they diverge, MIA shows it just as plainly: disagreement is information, not a failure.\n\n**What the SMC convention makes of it:** many traders treat alignment as a **confluence** criterion in their own method.",
-        "notSay": "That an alignment makes an entry safer, more likely or less risky. No one can measure that on your account, your horizon and your risk management. MIA describes the fact — the interpretation is yours."
+        "title": "Zgodność wielu interwałów czasowych",
+        "body": "**Co to liczy:** ile interwałów czasowych pokazuje **w tej chwili** ten sam kierunek struktury. Gdy się rozchodzą, MIA pokazuje to równie wyraźnie: rozbieżność to informacja, a nie porażka.\n\n**Co robi z tym konwencja SMC:** wielu traderów traktuje zgodność jako kryterium **konfluencji** w swojej własnej metodzie.",
+        "notSay": "Że zgodność czyni wejście bezpieczniejszym, pewniejszym czy mniej ryzykownym. Nikt nie zmierzy tego na Twoim rachunku, Twoim horyzoncie i Twoim zarządzaniu ryzykiem. MIA opisuje fakt — interpretacja pozostaje Twoja."
       },
       "mat": {
-        "title": "Structure maturity",
-        "body": "**What it counts:** the number of candles closed on the displayed timeframe since the **last confirmed CHOCH**. The starting point is always named with its date: once a counter exceeds a day, “11:00” alone becomes ambiguous.\n\nThe counter resets at the next CHOCH, never on a BOS — a BOS extends the structure, it does not restart it.",
-        "notSay": "An old structure is neither more nor less likely to continue. No probability is computed, and no comparison with the duration of past structures is made — that would invite a conclusion no one holds."
+        "title": "Dojrzałość struktury",
+        "body": "**Co to liczy:** liczbę świec zamkniętych na wyświetlanym interwale czasowym od **ostatniego potwierdzonego CHOCH**. Punkt startowy jest zawsze nazwany wraz z datą: gdy tylko licznik przekroczy jedną dobę, samo „11:00” staje się niejednoznaczne.\n\nLicznik zaczyna od zera przy następnym CHOCH, nigdy na BOS — BOS przedłuża strukturę, nie uruchamia jej od nowa.",
+        "notSay": "Stara struktura nie jest ani bardziej, ani mniej skłonna do kontynuacji. Żadne prawdopodobieństwo nie jest obliczane i nie jest robione żadne porównanie z czasem trwania przeszłych struktur — zachęcałoby to do wniosku, którego nikt nie zna."
       },
       "last": {
-        "title": "BOS and CHOCH",
-        "body": "**BOS** — a break of an extreme **in the direction** of the current structure: it extends it. **CHOCH** — the first break **in the opposite direction**: the change of character, and the anchor of maturity.\n\nIn both cases MIA requires a **close** beyond the extreme, not a mere wick. That is what separates a level touched from a level given up.",
-        "notSay": "A BOS does not say the move will continue, a CHOCH does not say the trend is over. They are dated facts, not announcements."
+        "title": "BOS i CHOCH",
+        "body": "**BOS** — przełamanie ekstremum **w kierunku** bieżącej struktury: przedłuża ją. **CHOCH** — pierwsze przełamanie **w kierunku przeciwnym**: to zmiana charakteru i stanowi ono kotwicę dla dojrzałości.\n\nW obu przypadkach MIA wymaga **zamknięcia** poza ekstremum, a nie zwykłego knota. To odróżnia poziom tknięty od poziomu, który ustąpił.",
+        "notSay": "BOS nie mówi, że ruch będzie kontynuowany, CHOCH nie mówi, że trend się skończył. To datowane fakty, a nie zapowiedzi."
       },
       "dens": {
-        "title": "Zone density",
-        "body": "**What it counts:** the zones still open detected on this timeframe, split by type and by state. Each zone is counted once, in a single state.\n\n**How to read it:** high density describes a market that has left many imbalances behind; low density, a market that has already filled its own.",
-        "notSay": "More zones does not mean more opportunities, and none is presented as better. Nothing indicates which will be reached, nor whether it will be."
+        "title": "Gęstość stref",
+        "body": "**Co to liczy:** strefy wciąż otwarte wykryte na tym interwale czasowym, rozłożone według typu i stanu. Każda strefa jest liczona tylko raz, w jednym stanie.\n\n**Jak to czytać:** wysoka gęstość opisuje rynek, który zostawił za sobą wiele nierównowag; niska gęstość — rynek, który swoje już wypełnił.",
+        "notSay": "Więcej stref nie oznacza więcej okazji i żadna nie jest przedstawiana jako lepsza. Nic nie wskazuje, która zostanie osiągnięta ani czy w ogóle."
       },
       "sess": {
-        "title": "The sessions",
-        "body": "Published **time windows**, like the volatility calendar: published facts, not market measurements.\n\nMany SMC traders read the market by session rather than treating the day as one block. The tile places the journal’s events within that segmentation.\n\n**On a continuous market** (crypto), the tile shows “Continuous market · 24/7”: there is no weekly open or close. Splitting the day into Asia / Europe / America hours is then a reading convention, not a market property.",
-        "notSay": "No session is presented as better or more reliable. MIA does not say what the New York close will do."
+        "title": "Sesje",
+        "body": "**Przedziały godzinowe**, na tej samej zasadzie co kalendarz zmienności: opublikowane fakty, a nie pomiary rynku.\n\nWielu traderów SMC segmentuje swój odczyt według sesji, zamiast traktować dobę jako jeden blok. Kafelek służy do umiejscowienia zdarzeń dziennika w tym podziale.\n\n**Na rynku ciągłym** (krypto) kafelek pokazuje „Rynek ciągły · 24/7”: nie ma tygodniowego otwarcia ani zamknięcia. Podział doby na godziny Azji / Europy / Ameryki pozostaje wtedy konwencją odczytu, a nie właściwością rynku.",
+        "notSay": "Żadna sesja nie jest przedstawiana jako lepsza czy bardziej wiarygodna. MIA nie mówi, co zrobi zamknięcie New York."
       },
       "lvl": {
-        "title": "Markers, not zones",
-        "body": "These levels are not **detected**: they exist because time passes. The day open is the opening price of the current daily candle; the previous day high is simply the previous day’s extreme.\n\nThat is the difference with the **Position in range** tile, which uses **structural** bounds. Here the bounds are **temporal**: two distinct references, never the same figures.\n\nEach price is clickable: MIA traces the level on the chart and brings it into view. In the ICT approach these markers are often looked at before anything else, because everyone sees them the same way.",
-        "notSay": "Being below the day open foretells nothing about the close. A previous-day extreme is neither a support, nor a resistance, nor a target: it is a price reached yesterday, nothing more."
+        "title": "Punkty odniesienia, a nie strefy",
+        "body": "Te poziomy nie są **wykrywane**: istnieją, ponieważ upływa czas. Otwarcie dnia to cena otwarcia bieżącej świecy dziennej; najwyższy z poprzedniego dnia to po prostu ekstremum poprzedniej sesji.\n\nTo różnica względem kafelka **Pozycja w range**, który używa granic **strukturalnych**. Tutaj granice są **czasowe**: dwa odrębne układy odniesienia, nigdy te same liczby.\n\nKażda cena jest klikalna: MIA nanosi poziom na wykres i przenosi na niego widok. W podejściu ICT te punkty odniesienia są często oglądane przed wszystkim innym, ponieważ wszyscy widzą je tak samo.",
+        "notSay": "Bycie poniżej otwarcia dnia niczego nie zapowiada co do zamknięcia. Ekstremum z wczoraj nie jest ani wsparciem, ani oporem, ani celem: to cena osiągnięta wczoraj, nic więcej."
       }
     },
     "session": {
-      "asia": "Asia",
-      "london": "London",
+      "asia": "Azja",
+      "london": "Londyn",
       "new_york": "New York",
-      "overlap": "London / NY overlap",
-      "outside": "Between sessions",
-      "continuous": "Continuous market · 24/7",
-      "close": "close",
-      "open": "open"
+      "overlap": "Nakładanie się Londyn / NY",
+      "outside": "Poza sesją",
+      "continuous": "Rynek ciągły · 24/7",
+      "close": "zamknięcie",
+      "open": "otwarcie"
     },
     "delay": {
-      "dh": "{d}d {h}h",
-      "hm": "{h}h {mm}",
+      "dh": "{d} d {h} h",
+      "hm": "{h} h {mm}",
       "m": "{m} min"
     }
   },
@@ -861,7 +866,13 @@
       "partialMatches": "Częściowe dopasowania ({count})",
       "nonePresent": "Żaden z Twoich warunków nie jest obecny: {list}.",
       "notGenerated": "Odczyt jeszcze niewygenerowany: {list}.",
-      "scannedFooter": "{count} combo przeanalizowanych w trybie tylko do odczytu na podstawie już wygenerowanych odczytów."
+      "scannedFooter": "{count} combo przeanalizowanych w trybie tylko do odczytu na podstawie już wygenerowanych odczytów.",
+      "isolatedCount": "{count, plural, =0 {0 kombinacji} one {# kombinacja} few {# kombinacje} many {# kombinacji} other {# kombinacji}}",
+      "isolatedIntro": "Kombinacje spełniające każdy warunek OSOBNO:",
+      "isolatedNote": "Te liczby są niezależne: nie sumują się i nic nie mówią o tym, co dałaby częściowa kombinacja.",
+      "noComboBody": "Twoje warunki nie są w tej chwili nigdzie spełnione. Skan, który nic nie zwraca, jest odpowiedzią, a nie awarią — nic nie jest ukrywane, nic nie jest łagodzone.",
+      "noComboTitle": "Żadna kombinacja nie spełnia Twojego odczytu. To nie jest błąd.",
+      "noLoosening": "Skaner nie proponuje „złagodzenia” warunku, aby uzyskać wyniki. Skaner, który sugeruje rozluźnianie, aż coś znajdzie, uczy szukania odpowiedzi zamiast jej odczytywania."
     },
     "combo": {
       "conditionsPresent": "{met} z Twoich {total, plural, one {# warunek obecny} few {# warunki obecne} many {# warunków obecnych} other {# warunku obecnego}}",
@@ -874,7 +885,17 @@
       "importantNews": "{count, plural, one {# ważna wiadomość nadchodzi — miej ją na uwadze.} few {# ważne wiadomości nadchodzą — miej je na uwadze.} many {# ważnych wiadomości nadchodzi — miej je na uwadze.} other {# ważnej wiadomości nadchodzi — miej ją na uwadze.}}",
       "analyse": "Analizuj",
       "disclaimer": "Fakty strukturalne obserwowane w czasie teraźniejszym. Skaner niczego nie przewiduje ani niczego nie rekomenduje — ocena należy do Ciebie.",
-      "unavailable": "niedostępne"
+      "unavailable": "niedostępne",
+      "againstBlock": "Co przemawia przeciw",
+      "againstNone": "Nic nie przemawia przeciw wśród Twoich ocenialnych warunków.",
+      "contextBlock": "Kontekst, o który nie prosiłeś",
+      "freshCandle": "świeca zamknięta {age}",
+      "matchBlock": "Co pasuje",
+      "matchNone": "Żaden warunek nie jest tu spełniony.",
+      "nonEvaluableBlock": "Nieoceniane tutaj (brak danych)",
+      "nonEvaluableCount": "{count, plural, one {# nieocenialny} few {# nieocenialne} many {# nieocenialnych} other {# nieocenialnych}}",
+      "openChart": "Otwórz na wykresie",
+      "range": "zakres {low}–{high}"
     },
     "toggle": {
       "label": "Automatyczne odświeżanie (przy każdym zamknięciu)",
@@ -899,7 +920,15 @@
       "selectAtLeastOne": "Wybierz co najmniej jeden warunek.",
       "proximityWithin": "W odległości mniejszej niż",
       "proximityOfPrice": "% ceny",
-      "side": "Strona"
+      "side": "Strona",
+      "activeInFamily": "{count, plural, =0 {brak aktywnych} one {# aktywna} few {# aktywne} many {# aktywnych} other {# aktywnych}}",
+      "conceptAria": "Pojęcie — {label}",
+      "liveCombos": "{count, plural, one {kombinacja pasuje} few {kombinacje pasują} many {kombinacji pasuje} other {kombinacji pasuje}} do Twojego odczytu · na {scanned} śledzonych rynkach",
+      "liveError": "liczba niedostępna",
+      "liveFreshness": "oceniono {age}",
+      "rescan": "Uruchom ponownie",
+      "selectedCount": "{count, plural, =0 {Brak zaznaczonych warunków} one {# zaznaczony warunek} few {# zaznaczone warunki} many {# zaznaczonych warunków} other {# zaznaczonych warunków}}",
+      "zeroNote": "Zero warunków nie oznacza „wszystkich rynków”: bez warunku nie ma nic do odczytania."
     },
     "bias": {
       "bullish": "Wzrostowy",
@@ -939,13 +968,11 @@
       "sideAny": "Obie (SSL + BSL)",
       "sideBsl": "BSL (płynność powyżej)",
       "sideSsl": "SSL (płynność poniżej)",
-      "trendIndeterminate": "Indeterminate"
+      "trendIndeterminate": "Nieokreślony"
     },
     "palette": {
-      "mtf_aligned_label": "3 TF aligned (structure)",
-      "mtf_aligned_desc": "The 3 timeframes (H4, H1, M15) show the same STRUCTURAL direction right now (last BOS/CHOCH break in the same direction). A timeframe with no structural trend established (indeterminate) prevents alignment.",
-      "trend_is_label": "Current trend (structure)",
-      "trend_is_desc": "The structural trend observed on this timeframe is, right now, the one you selected (bullish, bearish, or indeterminate when no break established it).",
+      "trend_is_label": "Bieżący trend (struktura)",
+      "trend_is_desc": "Trend strukturalny obserwowany na tym interwale czasowym jest w tej chwili tym wybranym (wzrostowy, spadkowy lub nieokreślony, gdy żadne przełamanie go nie ustaliło).",
       "market_phase_is_label": "Faza rynku",
       "market_phase_is_desc": "Obserwowana faza rynku odpowiada w tej chwili tej wybranej.",
       "volatility_is_label": "Obserwowana zmienność",
@@ -969,7 +996,17 @@
       "price_near_liquidity_label": "Cena blisko płynności (SSL/BSL)",
       "price_near_liquidity_desc": "Bieżąca cena jest blisko nienaruszonej kieszeni płynności (BSL powyżej / SSL poniżej).",
       "liquidity_swept_recent_label": "Niedawne zebranie płynności",
-      "liquidity_swept_recent_desc": "Kieszeń płynności (SSL/BSL) została zebrana w ciągu ostatnich świec."
+      "liquidity_swept_recent_desc": "Kieszeń płynności (SSL/BSL) została zebrana w ciągu ostatnich świec.",
+      "higher_tf_agrees_desc": "Trend strukturalny bezpośrednio wyższego interwału czasowego idzie w tej chwili w tym samym kierunku co skanowany interwał lub w przeciwnym. Porównywany interwał jest nazwany w wyniku („1 h idzie w tym samym kierunku”). Nieocenialny w trzech przypadkach: brak interwału powyżej (najwyższy śledzony interwał), wyższy interwał bez ustalonego trendu lub ten interwał bez ustalonego trendu.",
+      "higher_tf_agrees_label": "Wyższy interwał idzie",
+      "price_in_tested_zone_desc": "Bieżąca cena znajduje się wewnątrz aktywnej strefy — Order Block lub Fair Value Gap — której dotknięto już co najmniej raz od jej uformowania.",
+      "price_in_tested_zone_label": "Cena jest w strefie testowanej co najmniej raz",
+      "zone_formed_recent_desc": "Bieżąca cena znajduje się wewnątrz aktywnej strefy (Order Block lub Fair Value Gap) uformowanej najwyżej N świec temu — liczone w świecach.",
+      "zone_formed_recent_label": "Cena jest w strefie uformowanej w ciągu ostatnich N świec",
+      "zone_tested_at_most_desc": "Bieżąca cena znajduje się wewnątrz aktywnej strefy (Order Block lub Fair Value Gap) dotkniętej od 1 do N razy od jej uformowania — jedno dotknięcie = jedno przejście ceny przez strefę. Strefa nigdy niedotknięta należy do „nigdy nietestowanych”.",
+      "zone_tested_at_most_label": "Cena jest w strefie testowanej najwyżej N razy",
+      "zone_untested_desc": "Bieżąca cena znajduje się wewnątrz aktywnej strefy (Order Block lub Fair Value Gap), która nigdy nie została ponownie przetestowana od jej uformowania.",
+      "zone_untested_label": "Cena jest w strefie nigdy nietestowanej"
     },
     "saveStrategy": {
       "prompt": "Zapisz tę kombinację jako nazwaną strategię (tylko na tym urządzeniu — nic nie jest wysyłane na serwer):",
@@ -1001,7 +1038,28 @@
         "limit_reached": "Osiągnięto limit strategii — usuń istniejącą strategię, aby utworzyć nową.",
         "not_found": "Nie znaleziono strategii.",
         "storage_failed": "Nie można zapisać w pamięci lokalnej (limit lub tryb prywatny). Nic nie zostało zapisane."
-      }
+      },
+      "comboCount": "{count, plural, =0 {0 kombinacji} one {# kombinacja} few {# kombinacje} many {# kombinacji} other {# kombinacji}}",
+      "countError": "Liczba niedostępna.",
+      "counting": "Ocenianie…",
+      "evaluatedAgo": "oceniono {age}",
+      "export": "Eksportuj",
+      "exportLabel": "Tekst do skopiowania",
+      "import": "Importuj",
+      "importDo": "Importuj ten tekst",
+      "importErrors": {
+        "empty": "Brak odczytu do zaimportowania w tym tekście.",
+        "malformed": "Tekst nieczytelny — to nie jest prawidłowy eksport.",
+        "storage_failed": "Nie można zapisać w pamięci lokalnej (limit lub tryb prywatny).",
+        "wrong_format": "Ten tekst nie jest eksportem odczytów skanera."
+      },
+      "importPlaceholder": "Wklej tutaj tekst wyeksportowany z innego urządzenia…",
+      "importResult": "{imported} zaimportowano, {skipped} pominięto (osiągnięto limit).",
+      "incompleteBadge": "Niekompletna liczba",
+      "incompleteDetail": "{count, plural, one {# kombinacja czeka na nową świecę na swoim interwale — uruchom ponownie, aby uzyskać aktualną liczbę.} few {# kombinacje czekają na nową świecę na swoim interwale — uruchom ponownie, aby uzyskać aktualną liczbę.} many {# kombinacji czeka na nową świecę na swoim interwale — uruchom ponownie, aby uzyskać aktualną liczbę.} other {# kombinacji czeka na nową świecę na swoim interwale — uruchom ponownie, aby uzyskać aktualną liczbę.}}",
+      "notRankingNote": "Liczba kombinacji jest stwierdzeniem, a nie rankingiem: odczyt zwracający siedem kombinacji nie jest lepszy niż taki, który nie zwraca żadnej — jest szerszy.",
+      "rescan": "Uruchom ponownie",
+      "transferHint": "Przenoś swoje odczyty między urządzeniami w postaci tekstu."
     },
     "page": {
       "title": "Skaner",
@@ -1012,7 +1070,134 @@
     "note": "Zamknięta paleta, czas teraźniejszy. Każdy warunek predykcyjny jest odrzucany — żadnego „odbije się”, bez celu.",
     "resultsMeta": "{count} kombinacji · {when} · bez rankingu",
     "unavailable": "Niedostępne — brak świeżego odczytu dla tej kombinacji. Nic nie jest zmyślane.",
-    "noNewClose": "Brak nowo zamkniętej świecy do analizy od ostatniego skanu."
+    "noNewClose": "Brak nowo zamkniętej świecy do analizy od ostatniego skanu.",
+    "concept": {
+      "notDefault": "Fakt obecny, nigdy prognoza: warunek nie mówi, co cena zrobi później.",
+      "notLabel": "Czego to nie mówi",
+      "price_in_tested_zone": {
+        "not": "Nic o tym, co nastąpi później — ani odbicie, ani odrzucenie, ani kontynuacja. To fakt pozycyjny w teraźniejszości, a nie oczekiwanie.",
+        "smc": "Strefę nazywa się „testowaną”, gdy cena ponownie jej dotknęła po jej uformowaniu; jej przeciwieństwem jest „nigdy nietestowana”.",
+        "what": "Bieżąca cena znajduje się wewnątrz aktywnej strefy — Order Block lub Fair Value Gap — której dotknięto już co najmniej raz od jej uformowania."
+      },
+      "smcLabel": "Konwencja SMC",
+      "whatLabel": "Co to zlicza"
+    },
+    "control": {
+      "age_bucket": "Wiek",
+      "direction": "Kierunek",
+      "eq_kind": "Typ",
+      "event": "Wydarzenie",
+      "max_bars": "Okno (świece)",
+      "max_touches": "Liczba dotknięć",
+      "phase": "Faza",
+      "proximity_pct": "Odległość",
+      "relation": "Wyższy interwał",
+      "session": "Sesja",
+      "side": "Strona",
+      "third": "Tercja",
+      "trend": "Trend",
+      "volatility": "Zmienność",
+      "zone_kind": "Typ strefy"
+    },
+    "family": {
+      "context": {
+        "desc": "faza, zmienność, zakres, sesja",
+        "title": "Kontekst"
+      },
+      "liquidity": {
+        "desc": "kieszenie, zgarnięcia, równe szczyty/dołki",
+        "title": "Płynność"
+      },
+      "structure": {
+        "desc": "trend, wybicia, wydarzenia",
+        "title": "Struktura"
+      },
+      "zones": {
+        "desc": "Order Blocks, Fair Value Gaps",
+        "title": "Strefy"
+      }
+    },
+    "filters": {
+      "almost": "Prawie ({count})",
+      "aria": "Filtry wyświetlania",
+      "matches": "Dopasowania ({count})",
+      "noneval": "Nieocenialne ({count})",
+      "nonmatch": "Niedopasowane ({count})"
+    },
+    "opt": {
+      "bars": "{n} świec",
+      "pct": "{n} %",
+      "relation": {
+        "opposite": "W przeciwnym kierunku",
+        "same": "W tym samym kierunku"
+      },
+      "touches": "{n} razy",
+      "age_bucket": {
+        "10to50": "10 do 50",
+        "gt50": "Ponad 50",
+        "lt10": "Poniżej 10"
+      },
+      "direction": {
+        "any": "Dowolny kierunek",
+        "bearish": "Spadkowy",
+        "bullish": "Wzrostowy"
+      },
+      "eq_kind": {
+        "any": "Dołki lub szczyty",
+        "highs": "Szczyty",
+        "lows": "Dołki"
+      },
+      "event": {
+        "bos_down": "BOS ↓",
+        "bos_up": "BOS ↑",
+        "choch_down": "CHOCH ↓",
+        "choch_up": "CHOCH ↑"
+      },
+      "phase": {
+        "accumulation": "Akumulacja",
+        "expansion": "Ekspansja",
+        "ranging": "Range",
+        "trend": "Trend"
+      },
+      "session": {
+        "asia": "Azja",
+        "london": "Londyn",
+        "new_york": "New York",
+        "overlap": "Nakładanie się"
+      },
+      "side": {
+        "any": "Obie",
+        "bsl": "BSL (powyżej)",
+        "ssl": "SSL (poniżej)"
+      },
+      "third": {
+        "bottom": "Dolna",
+        "middle": "Środkowa",
+        "top": "Górna"
+      },
+      "trend": {
+        "bearish": "Spadkowy",
+        "bullish": "Wzrostowy",
+        "indeterminate": "Nieokreślony"
+      },
+      "volatility": {
+        "elevated": "Rozszerzona",
+        "low": "Skurczona",
+        "normal": "Normalna"
+      },
+      "zone_kind": {
+        "any": "OB lub FVG",
+        "fvg": "Fair Value Gap",
+        "ob": "Order Block"
+      }
+    },
+    "recap": {
+      "and": "i",
+      "copied": "Skopiowano",
+      "copy": "Kopiuj",
+      "or": "lub",
+      "title": "Twój odczyt w jednym zdaniu"
+    }
   },
   "reading": {
     "card": {
@@ -1066,7 +1251,6 @@
       "trend_bullish": "Trend wzrostowy",
       "trend_bearish": "Trend spadkowy",
       "trend_neutral": "Trend neutralny",
-      "trend_ranging": "Rynek w konsolidacji",
       "volatility_low": "Niska zmienność",
       "volatility_normal": "Normalna zmienność",
       "volatility_elevated": "Podwyższona zmienność",
@@ -1099,7 +1283,6 @@
       "trendAdj_bullish": "wzrostowy",
       "trendAdj_bearish": "spadkowy",
       "trendAdj_neutral": "neutralny",
-      "trendAdj_ranging": "w konsolidacji",
       "orient_bullish": "wzrostowo",
       "orient_bearish": "spadkowo",
       "alignedDir_up": "wzrostowe",
@@ -1127,7 +1310,8 @@
       "liquidityStatus_intact": "nienaruszona",
       "liquidityStatus_swept": "zebrana",
       "liquidityStatus_broken": "złamana",
-      "trendAdj_indeterminate": "indeterminate"
+      "trendAdj_indeterminate": "nieokreślony",
+      "trend_indeterminate": "Trend nieokreślony"
     },
     "structure": {
       "title": "Struktura rynku",
@@ -1173,7 +1357,7 @@
       "lastEvent": "{kind} {dir} {val} ({tf})",
       "zoneDensity": "{ob} OB · {fvg} FVG aktywne",
       "mtfAligned": "{count} TF są zgodne ({dir}).",
-      "mtfNeutral": "{count, plural, one {The upper unit has no structural trend established} other {The # upper units have no structural trend established}}.",
+      "mtfNeutral": "{count, plural, one {Wyższy interwał nie ma ustalonego trendu strukturalnego} few {# wyższe interwały nie mają ustalonego trendu strukturalnego} many {# wyższych interwałów nie ma ustalonego trendu strukturalnego} other {# wyższych interwałów nie ma ustalonego trendu strukturalnego}}.",
       "mtfPullback": "M15 cofa się wbrew {fem} trendowi H4.",
       "mtfDivergent": "TF się rozchodzą: {list}."
     },
@@ -1204,7 +1388,6 @@
       "trend_bullish": "Trend wzrostowy",
       "trend_bearish": "Trend spadkowy",
       "trend_neutral": "Trend neutralny",
-      "trend_ranging": "Rynek w konsolidacji",
       "volatility_low": "Niska zmienność",
       "volatility_normal": "Normalna zmienność",
       "volatility_elevated": "Wysoka zmienność",
@@ -1221,40 +1404,40 @@
       "mtf_aligned": "Interwały zgodne",
       "mtf_divergent": "Interwały rozbieżne",
       "mtf_mixed": "Interwały mieszane",
-      "trend_indeterminate": "Indeterminate trend"
+      "trend_indeterminate": "Trend nieokreślony"
     },
     "help": {
       "regime": {
-        "title": "Reading the market regime",
-        "body": "These six measures describe the **current** state of the market, each with its source shown below it. None is a forecast, none is weighted.\n\nThe little **?** on each measure explains exactly what it counts, and what it does not say."
+        "title": "Odczyt reżimu rynkowego",
+        "body": "Te sześć miar opisuje **bieżący** stan rynku, każda ze swoim źródłem pokazanym poniżej. Żadna nie jest prognozą, żadna nie jest ważona.\n\nMały **?** przy każdej mierze wyjaśnia, co dokładnie liczy i czego nie mówi."
       },
       "trend": {
         "title": "Trend",
-        "body": "**What it counts:** the sequence of highs and lows on **the displayed timeframe** (here H1). Falling highs and lows → bearish. This is a reading of past structure, not a projection.\n\n**Classic trap:** the trend is not the same across all timeframes. A bearish M15 inside a bullish H4 is not a contradiction — it's a matter of scale. Change the TF and the answer changes."
+        "body": "**Co to liczy:** następstwo szczytów i dołków na **wyświetlanym interwale czasowym** (tutaj H1). Malejące szczyty i dołki → spadkowy. To odczyt przeszłej struktury, a nie projekcja.\n\n**Klasyczna pułapka:** trend nie jest taki sam na wszystkich interwałach czasowych. Spadkowy M15 wewnątrz wzrostowego H4 to nie sprzeczność — to kwestia skali. Zmień TF, a odpowiedź się zmieni."
       },
       "vol": {
-        "title": "Volatility",
-        "body": "**What it counts:** the average range of the most recent candles compared with that of the candles preceding them. \"Normal\" = within its usual range.\n\n**Why it's useful in SMC:** volatility changes the **size** of zones. An OB formed in high volatility is wider, and therefore takes longer to cross. This isn't a quality, it's a dimension.\n\n**What it does not say:** no direction. Low volatility can precede anything."
+        "title": "Zmienność",
+        "body": "**Co to liczy:** średnią rozpiętość ostatnich świec w porównaniu z rozpiętością świec je poprzedzających. „Normalna” = w swoim zwykłym zakresie.\n\n**Dlaczego to przydatne w SMC:** zmienność zmienia **rozmiar** stref. OB uformowany przy wysokiej zmienności jest szerszy, więc dłużej się go przechodzi. To nie jakość, to wymiar.\n\n**Czego to nie mówi:** żadnego kierunku. Niska zmienność może poprzedzać cokolwiek."
       },
       "mat": {
-        "title": "Structure maturity",
-        "body": "**What it counts:** the number of candles closed on the displayed timeframe **since the last confirmed CHOCH** (here, the one at 14:00). The starting point is always named below the value — a counter without an origin means nothing.\n\n**What it does not say:** an older structure is neither more nor less likely to continue. No probability is computed here."
+        "title": "Dojrzałość struktury",
+        "body": "**Co to liczy:** liczbę świec zamkniętych na wyświetlanym interwale czasowym **od ostatniego potwierdzonego CHOCH** (tutaj tego z 14:00). Punkt startowy jest zawsze nazwany pod wartością — licznik bez punktu odniesienia nic nie znaczy.\n\n**Czego to nie mówi:** starsza struktura nie jest ani bardziej, ani mniej skłonna do kontynuacji. Żadne prawdopodobieństwo nie jest tu obliczane."
       },
       "align": {
-        "title": "Multi-timeframe alignment",
-        "body": "**What it counts:** the three analysed timeframes are **right now** showing the same structural direction. When they diverge, MIA shows that just as plainly (\"Disagreement\") — disagreement is information, not a failure.\n\n**What the SMC convention makes of it:** many traders treat alignment as a **confluence** criterion within their own method, and read disagreement as the sign that two scales are telling two different stories.\n\n**What MIA will never assert:** that an alignment makes an entry safer, more likely or less risky. No one can measure that on your account, your horizon and your risk management. MIA describes the fact; the interpretation stays yours."
+        "title": "Zgodność wielu interwałów czasowych",
+        "body": "**Co to liczy:** trzy analizowane interwały czasowe pokazują **w tej chwili** ten sam kierunek struktury. Gdy się rozchodzą, MIA pokazuje to równie wyraźnie („Rozbieżność”) — rozbieżność to informacja, a nie porażka.\n\n**Co robi z tym konwencja SMC:** wielu traderów traktuje zgodność jako kryterium **konfluencji** w swojej własnej metodzie i odczytuje rozbieżność jako znak, że dwie skale opowiadają dwie różne historie.\n\n**Czego MIA nigdy nie stwierdzi:** że zgodność czyni wejście bezpieczniejszym, pewniejszym czy mniej ryzykownym. Nikt nie zmierzy tego na Twoim rachunku, Twoim horyzoncie i Twoim zarządzaniu ryzykiem. MIA opisuje fakt; interpretacja pozostaje Twoja."
       },
       "dens": {
-        "title": "Zone density",
-        "body": "**What it counts:** the number of still-active zones detected on this timeframe.\n\n**How to read it:** high density describes a market that has left many imbalances behind it; low density, a market that has already filled most of its own. More zones does not mean more opportunities — only more levels to watch."
+        "title": "Gęstość stref",
+        "body": "**Co to liczy:** liczbę wciąż aktywnych stref wykrytych na tym interwale czasowym.\n\n**Jak to czytać:** wysoka gęstość opisuje rynek, który zostawił za sobą wiele nierównowag; niska gęstość — rynek, który większość swoich już wypełnił. Więcej stref nie oznacza więcej okazji — jedynie więcej poziomów do obserwacji."
       },
       "struct": {
-        "title": "The four structure objects",
-        "body": "**OB (Order Block)** — the last candle of opposite direction before the impulsive move that broke the structure.\n\n**FVG (Fair Value Gap)** — the gap left by three candles whose wicks do not overlap. It fills progressively: MIA shows the percentage actually filled.\n\n**BOS** — break of an extreme **in the direction** of the current structure. **CHOCH** — first break **in the opposite direction**: this is the change of character.\n\nMIA detects, describes and dates these objects. It never says which one \"is going to work\"."
+        "title": "Cztery obiekty struktury",
+        "body": "**OB (Order Block)** — ostatnia świeca przeciwnego kierunku przed impulsywnym ruchem, który przełamał strukturę.\n\n**FVG (Fair Value Gap)** — luka pozostawiona przez trzy świece, których knoty się nie pokrywają. Wypełnia się stopniowo: MIA pokazuje faktycznie wypełniony procent.\n\n**BOS** — przełamanie ekstremum **w kierunku** bieżącej struktury. **CHOCH** — pierwsze przełamanie **w kierunku przeciwnym**: to zmiana charakteru.\n\nMIA wykrywa, opisuje i datuje te obiekty. Nigdy nie mówi, który „zadziała”."
       },
       "liq": {
-        "title": "External liquidity: where and in what state",
-        "body": "**BSL** — buy-side liquidity, above highs and equal highs. **SSL** — sell-side liquidity, below lows and equal lows.\n\n**Intact** — never touched. **Swept** — a wick went beyond but the close came back short of it: the level **still holds**. **Broken** — a clean close beyond: it gave way.\n\n**The distinction to remember:** touched does not equal broken. That's the nuance most tools flatten into a single binary state.\n\nMIA will never write that a pocket will be \"taken\": that's a prediction, and no one knows it."
+        "title": "Płynność zewnętrzna: gdzie i w jakim stanie",
+        "body": "**BSL** — płynność po stronie kupna, powyżej szczytów i równych szczytów. **SSL** — płynność po stronie sprzedaży, poniżej dołków i równych dołków.\n\n**Nienaruszona** — nigdy nietknięta. **Zebrana** — knot wyszedł poza, ale zamknięcie wróciło poniżej: poziom **wciąż się trzyma**. **Przełamana** — wyraźne zamknięcie poza: ustąpił.\n\n**Rozróżnienie, które warto zapamiętać:** tknięty nie równa się przełamany. To niuans, który większość narzędzi spłaszcza do jednego binarnego stanu.\n\nMIA nigdy nie napisze, że kieszeń zostanie „zabrana”: to prognoza, a nikt jej nie zna."
       }
     }
   },
@@ -1504,7 +1687,7 @@
       "sessionRow": "Sesja",
       "sessionValue": "Zalogowano na tym urządzeniu",
       "sectionAppearance": "Wygląd",
-      "sectionLanguage": "Language",
+      "sectionLanguage": "Język",
       "appearanceBadge": "Działa natychmiast · zapamiętane",
       "sectionSubscription": "Subskrypcja",
       "planRow": "Bieżący plan",
@@ -1627,119 +1810,120 @@
       }
     },
     "struct": {
-      "title": "Market structure",
+      "title": "Struktura rynku",
       "zonesCount": "{count, plural, one {# zone} other {# zones}}",
       "countFiltered": "{n} of {m} zones",
-      "reset": "Reset",
-      "noneType": "No type selected. Pick at least one type to see results.",
-      "noneState": "No state selected. Pick at least one state to see results.",
-      "noMatch1": "No zone matches these filters.",
-      "noMatch2": "Nothing is invented to fill the list.",
-      "sortAria": "Sort and filter",
-      "helpAria": "Learn more",
+      "reset": "Zresetuj",
+      "noneType": "Nie wybrano żadnego typu. Wybierz co najmniej jeden typ, aby zobaczyć wyniki.",
+      "noneState": "Nie wybrano żadnego stanu. Wybierz co najmniej jeden stan, aby zobaczyć wyniki.",
+      "noMatch1": "Żadna strefa nie odpowiada tym filtrom.",
+      "noMatch2": "Nic nie jest wymyślane, aby zapełnić listę.",
+      "sortAria": "Sortuj i filtruj",
+      "helpAria": "Dowiedz się więcej",
       "filterType": "Type",
-      "filterState": "State",
-      "filterSort": "Sort by",
+      "filterState": "Stan",
+      "filterSort": "Sortuj według",
       "type": {
-        "all": "All",
+        "all": "Wszystkie",
         "ob": "OB",
         "fvg": "FVG"
       },
       "st": {
-        "all": "All",
-        "active": "Active",
-        "tested": "Tested",
-        "mitig": "Mitigated"
+        "all": "Wszystkie",
+        "active": "Aktywne",
+        "tested": "Testowane",
+        "mitig": "Zmitygowane"
       },
       "sort": {
-        "near": "Near price",
-        "recent": "Recent",
-        "big": "Wide"
+        "near": "Blisko ceny",
+        "recent": "Najnowsza",
+        "big": "Szeroka"
       },
       "badge": {
-        "active": "Active",
-        "tested": "Tested",
-        "mitig": "Mitigated"
+        "active": "Aktywna",
+        "tested": "Testowana",
+        "mitig": "Zmitygowana"
       },
       "dist": {
-        "inside": "Price inside the zone",
+        "inside": "Cena wewnątrz strefy",
         "above": "+{pct}% above",
         "below": "−{pct}% below"
       },
       "fact": {
-        "neverTested": "Never tested since it formed.",
-        "tested": "Tested.",
-        "mitigatedAt": "Mitigated at {time}.",
-        "mitigated": "Mitigated.",
-        "filled": "Fully filled.",
-        "partial": "Filled to {pct}%.",
-        "fvgOpen": "Gap open."
+        "neverTested": "Nigdy nietestowana od momentu powstania.",
+        "tested": "Testowana.",
+        "mitigatedAt": "Zmitygowana o {time}.",
+        "mitigated": "Zmitygowana.",
+        "filled": "Całkowicie wypełniona.",
+        "partial": "Wypełniona w {pct} %.",
+        "fvgOpen": "Luka otwarta."
       },
-      "more": "Learn more",
-      "hint": "Click a zone = highlight on the chart.",
-      "empty1": "No zone matches these filters.",
-      "empty2": "Nothing is invented to pad the list.",
-      "evChoch": "Confirmed change of character",
-      "evBosBull": "Bullish break of structure",
-      "evBosBear": "Bearish break of structure",
-      "evSelectAria": "Wykadruj zdarzenie {kind} na wykresie"
+      "more": "Dowiedz się więcej",
+      "hint": "Kliknięcie strefy = podświetlenie na wykresie.",
+      "empty1": "Żadna strefa nie odpowiada tym filtrom.",
+      "empty2": "Nic nie jest wymyślane, aby zapełnić listę.",
+      "evChoch": "Potwierdzona zmiana charakteru",
+      "evBosBull": "Wzrostowe przełamanie struktury",
+      "evBosBear": "Spadkowe przełamanie struktury",
+      "evSelectAria": "Wykadruj zdarzenie {kind} na wykresie",
+      "unitLabel": "Interwał czasowy: {tf}"
     },
     "liq2": {
-      "title": "External liquidity",
-      "pochesCount": "{count, plural, one {# pocket} other {# pockets}}",
-      "countFiltered": "{n} of {m} pockets",
-      "reset": "Reset",
-      "noneSide": "No side selected. Pick at least one side to see results.",
-      "noneState": "No state selected. Pick at least one state to see results.",
-      "noMatch1": "No pocket matches these filters.",
-      "noMatch2": "Nothing is invented to fill the list.",
-      "sortAria": "Sort and filter",
-      "helpAria": "Learn more",
-      "filterSide": "Side",
-      "filterState": "State",
+      "title": "Płynność zewnętrzna",
+      "pochesCount": "{count, plural, one {# kieszeń} few {# kieszenie} many {# kieszeni} other {# kieszeni}}",
+      "countFiltered": "{n} z {m} kieszeni",
+      "reset": "Zresetuj",
+      "noneSide": "Nie wybrano żadnej strony. Wybierz co najmniej jedną stronę, aby zobaczyć wyniki.",
+      "noneState": "Nie wybrano żadnego stanu. Wybierz co najmniej jeden stan, aby zobaczyć wyniki.",
+      "noMatch1": "Żadna kieszeń nie odpowiada tym filtrom.",
+      "noMatch2": "Nic nie jest wymyślane, aby zapełnić listę.",
+      "sortAria": "Sortuj i filtruj",
+      "helpAria": "Dowiedz się więcej",
+      "filterSide": "Strona",
+      "filterState": "Stan",
       "side": {
-        "all": "Both",
-        "bsl": "BSL (buy)",
-        "ssl": "SSL (sell)"
+        "all": "Obie",
+        "bsl": "BSL (kupno)",
+        "ssl": "SSL (sprzedaż)"
       },
       "st": {
-        "all": "All",
-        "intact": "Intact",
-        "swept": "Swept",
-        "broken": "Broken"
+        "all": "Wszystkie",
+        "intact": "Nienaruszone",
+        "swept": "Zebrane",
+        "broken": "Przełamane"
       },
       "badge": {
-        "intact": "Intact",
-        "swept": "Swept",
-        "broken": "Broken"
+        "intact": "Nienaruszona",
+        "swept": "Zebrana",
+        "broken": "Przełamana"
       },
       "src": {
         "eqh": "EQH",
         "eql": "EQL",
-        "high": "High",
-        "low": "Low"
+        "high": "Szczyt",
+        "low": "Dołek"
       },
       "dist": {
         "above": "+{pct}% above",
         "below": "−{pct}% below"
       },
       "fact": {
-        "intact": "Never touched since it formed.",
-        "swept": "Wick beyond, close came back. Still holds.",
-        "broken": "Clean close beyond. Gave way."
+        "intact": "Nigdy nietknięta od momentu powstania.",
+        "swept": "Knot poza, zamknięcie wróciło. Wciąż się trzyma.",
+        "broken": "Wyraźne zamknięcie poza. Ustąpiła."
       },
-      "hint": "Click a pocket = highlight its level.",
-      "empty1": "No pocket matches this filter.",
-      "empty2": "Nothing is invented to pad the list."
+      "hint": "Kliknięcie kieszeni = podświetlenie jej poziomu.",
+      "empty1": "Żadna kieszeń nie odpowiada temu filtrowi.",
+      "empty2": "Nic nie jest wymyślane, aby zapełnić listę."
     },
     "reg2": {
-      "trendSub": "measured on {tf}",
-      "volSub": "7 recent vs preceding",
-      "matSub": "since the CHOCH at {time}",
-      "matValue": "{count, plural, one {# candle} other {# candles}}",
-      "densSub": "active on {tf}",
-      "measureHelpAria": "Help on this measure",
-      "helpAria": "Learn more"
+      "trendSub": "mierzony na {tf}",
+      "volSub": "7 ostatnich vs poprzednie",
+      "matSub": "od CHOCH z {time}",
+      "matValue": "{count, plural, one {# świeca} few {# świece} many {# świec} other {# świecy}}",
+      "densSub": "aktywne na {tf}",
+      "measureHelpAria": "Pomoc dotycząca tej miary",
+      "helpAria": "Dowiedz się więcej"
     }
   },
   "samples": {
@@ -2173,7 +2357,7 @@
       "filledPct": "Wypełniona {pct} %"
     },
     "deeplink": {
-      "staleNotice": "This zone is no longer detected in the current reading."
+      "staleNotice": "Ta strefa nie jest już wykrywana w bieżącym odczycie."
     }
   },
   "appearance": {
@@ -2315,6 +2499,147 @@
     "list": {
       "unfetched": "nieuzyskane",
       "unavailable": "niedostępne"
+    },
+    "month": {
+      "current": "Bieżący miesiąc",
+      "empty": "Brak zaplanowanych publikacji w tym miesiącu dla Twoich rynków.",
+      "filterEmpty": "Żadna publikacja nie pasuje do tych filtrów w tym miesiącu. Zmień filtr lub zresetuj filtry.",
+      "moreCount": "+{count}",
+      "next": "Następny miesiąc",
+      "panel": {
+        "empty": "Brak publikacji tego dnia.",
+        "localTime": "{time} Twojego czasu ({offset})",
+        "organismTime": "{time} {city}"
+      },
+      "prev": "Poprzedni miesiąc",
+      "thisMonth": {
+        "byMarket": "{market}: {count}",
+        "count": "{count, plural, one {# publikacja} few {# publikacje} many {# publikacji} other {# publikacji}}",
+        "emptyDays": "{count, plural, one {# dzień bez publikacji} few {# dni bez publikacji} many {# dni bez publikacji} other {# dni bez publikacji}}",
+        "note": "Te liczby opisują kalendarz, a nie oczekiwaną aktywność.",
+        "title": "W tym miesiącu"
+      },
+      "weekdays": "pon wt śr czw pt sob niedz"
+    },
+    "pub": {
+      "curve": {
+        "badge": "Wartość wskaźnika",
+        "empty": "Opublikowana seria nie jest dostępna dla tego wskaźnika.",
+        "lastValue": "Ostatnia wartość <b>{value}</b> — {period}",
+        "notRevised": "Żadna z wyświetlanych liczb nie została skorygowana po publikacji.",
+        "note": "Każdy punkt to wartość wskaźnika w postaci opublikowanej przez organizację, w jej własnej jednostce — a nie ruch ceny. Nadchodzący punkt pozostaje pusty: jego wartość jeszcze nie istnieje, a MIA jej nie szacuje.",
+        "range": "W wyświetlanej serii od <b>{min}</b> do <b>{max}</b>",
+        "revisedFromTo": "Ostatnia liczba została skorygowana po publikacji: najpierw {initial}, następnie {current} dnia {date}.",
+        "source": "Seria opublikowana przez {organism}, w jednostce organizacji, w postaci opublikowanej — bez przeliczeń i bez ponownego zaokrąglania.",
+        "title": "Dwanaście ostatnich opublikowanych liczb",
+        "upcoming": "nadchodzące"
+      },
+      "mia": {
+        "capability": "M.I.A opisuje zmierzone fakty i wyjaśnia pojęcia. Nie powie, co zrobi cena, jaka wartość zostanie opublikowana ani czy należy działać — i powie o tym, jeśli zapytasz.",
+        "placeholder": "Zadaj pytanie o tę publikację…",
+        "send": "Wyślij",
+        "subtitle": "Wyjaśnia pojęcia i opisuje to, co silnik zmierzył przy tej publikacji.",
+        "suggests": {
+          "default": {
+            "s1": "Wyjaśnij, co mierzy ten wskaźnik",
+            "s2": "Co silnik zmierzył przy poprzednich publikacjach?",
+            "s3": "Pokaż bieżącą strukturę rynku"
+          },
+          "ea_hicp_flash": {
+            "s1": "Czym jest HICP i czym różni się od indeksów krajowych?",
+            "s2": "Dlaczego szybki szacunek jest korygowany kilka tygodni później?",
+            "s3": "Co oznacza „nienaruszona kieszeń płynności”?",
+            "s4": "Pokaż mi bieżącą strukturę złota"
+          },
+          "us_cpi": {
+            "s1": "Jaka jest różnica między CPI a bazowym CPI?",
+            "s2": "Dlaczego liczba bywa korygowana miesiąc po publikacji?",
+            "s3": "Co oznacza „rynek wrócił do spokoju” po publikacji?",
+            "s4": "Pokaż mi bieżącą strukturę złota"
+          }
+        },
+        "suggestsLabel": "Częste pytania o tę publikację",
+        "title": "Zapytaj M.I.A"
+      },
+      "noMeasures": "Dla tego wskaźnika nie jest dostępny żaden pomiar: historia cen dopasowana do jego wcześniejszych publikacji nie została zebrana. Ta karta ogranicza się zatem do opublikowanych liczb.",
+      "pedagogy": {
+        "badge": "Karta objaśniająca",
+        "default": {
+          "body": "Ta publikacja to oficjalny wskaźnik gospodarczy, ogłaszany według harmonogramu znanego z wyprzedzeniem. Jego wartość jest wyrażona w jednostce organizacji, która go wydaje.",
+          "nono": "Ta karta wyjaśnia, co mierzy wskaźnik. Nie mówi, jak zareaguje rynek, a MIA nie modeluje żadnej reakcji."
+        },
+        "ea_hicp_flash": {
+          "body": "Zharmonizowany indeks cen konsumpcyjnych śledzi zmianę ceny koszyka towarów i usług w strefie euro, przy użyciu metody wspólnej dla wszystkich państw członkowskich. Eurostat publikuje szybki szacunek pod koniec każdego miesiąca, wyrażony jako zmiana względem tego samego miesiąca rok wcześniej; liczba jest następnie potwierdzana kilka tygodni później.",
+          "nono": "Ta karta wyjaśnia, co mierzy wskaźnik. Nie mówi, jak rynek zareaguje na daną liczbę: ta zależność nie jest ani stała, ani mechaniczna, a MIA jej nie modeluje."
+        },
+        "nonoTitle": "Czego ta karta nie mówi",
+        "title": "Co mierzy ten wskaźnik",
+        "us_cpi": {
+          "body": "Indeks cen konsumpcyjnych śledzi zmianę ceny koszyka towarów i usług kupowanych przez amerykańskie gospodarstwa domowe. Jest publikowany co miesiąc przez Bureau of Labor Statistics i wyrażony jako zmiana względem tego samego miesiąca rok wcześniej. Tak zwana wersja bazowa wyłącza żywność i energię, uznawane za bardziej zmienne; obie liczby ukazują się jednocześnie.",
+          "nono": "Ta karta wyjaśnia, co mierzy wskaźnik. Nie mówi, jak rynek zareaguje na liczbę wyższą lub niższą od poprzedniej: ta zależność nie jest ani stała, ani mechaniczna, a MIA jej nie modeluje."
+        }
+      },
+      "questions": {
+        "calmBefore": {
+          "a": "Na <b>{sample}</b> publikacjach zmierzonych na {market} godzina poprzedzająca publikację była spokojniejsza niż zwykle <b>{calmer} razy</b> i bardziej ruchliwa <b>{busier} razy</b>.",
+          "detail": "Punkt odniesienia dla zwykłej godziny, poza publikacjami: <b>{reference} {unit}</b> przebytej drogi w ciągu sześćdziesięciu minut. Najspokojniejsza zaobserwowana: {calmest} {unit} dnia {calmestDate}. Najbardziej ruchliwa: {busiest} {unit} dnia {busiestDate}.",
+          "q": "Czy poprzedzająca godzina jest spokojniejsza czy bardziej ruchliwa niż zwykle?",
+          "source": "Przebyta droga = najwyższy minus najniższy poziom w ciągu sześćdziesięciu minut przed publikacją, na {market}. Punkt odniesienia ustalony na podstawie {referenceDays} dni bez publikacji, o tej samej porze dnia. Podstawa: {sample} publikacji, od {periodStart} do {periodEnd}."
+        },
+        "qLabel": "Pytanie {n}",
+        "readGuide": {
+          "body": "Każda odpowiedź to zliczenie minionych dni, z których każdy ma własny kontekst. „10 razy na 12” opisuje to, co zaobserwowano, a nie prawdopodobieństwo na następny raz, i nic tutaj nie odnosi się do nadchodzącej publikacji. Pytania są niezależne: żadne nie wyjaśnia innego.",
+          "title": "Jak czytać te odpowiedzi"
+        },
+        "returnToCalm": {
+          "a": "Na <b>{sample}</b> publikacjach zmierzonych na {market} przebyta droga na minutę wróciła do zwykłego poziomu w <b>mniej niż godzinę {t0} razy</b>, między jedną a trzema godzinami <b>{t1} razy</b>, powyżej trzech godzin <b>{t2} razy</b>.",
+          "detail": "Najszybszy: {fastest} dnia {fastestDate}. Najwolniejszy: {slowest} dnia {slowestDate}.",
+          "neverSettled": "{count, plural, =0 {} one {# publikacja nie wróciła do spokoju w ciągu śledzonych sześciu godzin.} few {# publikacje nie wróciły do spokoju w ciągu śledzonych sześciu godzin.} many {# publikacji nie wróciło do spokoju w ciągu śledzonych sześciu godzin.} other {# publikacji nie wróciło do spokoju w ciągu śledzonych sześciu godzin.}}",
+          "q": "Ile czasu zajęło rynkowi ponowne uspokojenie się?",
+          "source": "Powrót do spokoju = pierwszy moment, w którym przebyta droga na minutę ponownie spada poniżej zwykłego punktu odniesienia dla godziny i się na nim utrzymuje. Czasy trwania w godzinach i minutach. Podstawa: {sample} publikacji na {market}, od {periodStart} do {periodEnd}."
+        },
+        "sectionBadge": "Ruch ceny — {market}",
+        "sectionTitle": "Co silnik zmierzył przy poprzednich publikacjach",
+        "structure": {
+          "a": "Na <b>{sample}</b> publikacjach cena znajdowała się już wewnątrz strefy <b>{insideZone} razy</b>, a nienaruszona kieszeń płynności leżała bliżej niż 0,5% od ceny <b>{intactPocket} razy</b>.",
+          "detail": "Pozycja w bieżącej amplitudzie: <b>{lower}</b> w dolnej tercji, <b>{middle}</b> w środkowej tercji, <b>{upper}</b> w górnej tercji. „Strefa” to blok ceny pozostawiony przez rynek (Order Block lub niezapełniona nierównowaga); „kieszeń płynności” to poziom, na którym gromadzą się zlecenia oczekujące, nazywany „nienaruszonym”, dopóki nie został osiągnięty.",
+          "now": "Teraz, przed następną publikacją: cena {nowInside} wewnątrz strefy; {nowPocket}; jej pozycja w amplitudzie to {nowRange}.",
+          "nowInsideNo": "nie znajduje się",
+          "nowInsideYes": "już znajduje się",
+          "nowPocketNo": "żadna nienaruszona kieszeń nie leży bliżej niż 0,5%",
+          "nowPocketYes": "nienaruszona kieszeń leży bliżej niż 0,5%",
+          "q": "W jakim stanie była struktura rynku w chwili publikacji?",
+          "rangeLower": "niska",
+          "rangeMiddle": "środkowa",
+          "rangeUpper": "wysoka",
+          "source": "Stan uzyskany przez ponowne odtworzenie detekcji na oknie kończącym się w chwili każdej publikacji, bez wglądu w to, co nastąpiło później. Podstawa: {sample} publikacji na {market}, od {periodStart} do {periodEnd}."
+        }
+      },
+      "source": {
+        "docs": {
+          "methodology": {
+            "desc": "Jak wskaźnik jest zdefiniowany, zbudowany i obliczany.",
+            "label": "Metodologia wskaźnika"
+          },
+          "release": {
+            "desc": "Najnowszy tekst publikacji, w szczegółach.",
+            "label": "Ostatni oficjalny komunikat"
+          },
+          "schedule": {
+            "desc": "Daty i godziny publikacji organizacji.",
+            "label": "Oficjalny kalendarz publikacji"
+          },
+          "series": {
+            "desc": "Wszystkie opublikowane wartości, wraz z korektami.",
+            "label": "Pełna seria historyczna"
+          }
+        },
+        "intro": "Te linki prowadzą do organizacji wydającej publikację i wyłącznie do niej:",
+        "noneYet": "Dokładne dokumenty tej organizacji nie są tu jeszcze wskazane. Żaden ogólny link ich nie zastępuje.",
+        "onlyNote": "Te linki prowadzą do oficjalnej organizacji i wyłącznie do niej. MIA nie odsyła do żadnego serwisu z komentarzami ani prognozami: wybranie takiego linku byłoby jego rekomendowaniem.",
+        "organismOnly": "wyłącznie organizacja wydająca",
+        "title": "Przejdź do źródła"
+      }
     }
   }
 }
