@@ -48,6 +48,7 @@ from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable, Optional
+from src.persistence.sqlite_pragmas import apply_wal
 
 logger = logging.getLogger(__name__)
 
@@ -159,7 +160,7 @@ class HashChainLedger:
         )
         # WAL gives us reader concurrency. ":memory:" silently ignores it.
         try:
-            conn.execute("PRAGMA journal_mode=WAL")
+            apply_wal(conn)
         except sqlite3.OperationalError:
             pass
         conn.execute("PRAGMA synchronous=NORMAL")

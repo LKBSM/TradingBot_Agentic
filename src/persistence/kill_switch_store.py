@@ -32,6 +32,7 @@ from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from src.persistence.sqlite_pragmas import apply_wal
 
 # =============================================================================
 # DATA CLASSES
@@ -166,7 +167,7 @@ class KillSwitchStore:
         conn.row_factory = sqlite3.Row
 
         # Enable WAL mode for crash safety and concurrent access
-        conn.execute("PRAGMA journal_mode=WAL")
+        apply_wal(conn)
         conn.execute("PRAGMA synchronous=NORMAL")
         conn.execute("PRAGMA foreign_keys=ON")
 

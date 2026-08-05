@@ -29,6 +29,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from src.persistence.sqlite_pragmas import apply_wal
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +85,7 @@ class StructureStore:
     def _get_connection(self) -> sqlite3.Connection:
         conn = sqlite3.connect(str(self._db_path))
         conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA journal_mode=WAL")
+        apply_wal(conn)
         return conn
 
     def _init_database(self) -> None:

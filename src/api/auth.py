@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from fastapi import Header, HTTPException, Request
+from src.persistence.sqlite_pragmas import apply_wal
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +73,7 @@ class KeyStore:
             str(self._db_path), timeout=30.0, isolation_level=None
         )
         conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA journal_mode=WAL")
+        apply_wal(conn)
         conn.execute("PRAGMA synchronous=NORMAL")
         return conn
 
