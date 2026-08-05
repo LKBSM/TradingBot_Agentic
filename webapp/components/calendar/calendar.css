@@ -500,6 +500,23 @@
   color: var(--faint);
   line-height: 1.5;
 }
+/* Waiting/error status — distinct from an empty result so the dashboard preview
+   never claims "nothing upcoming" before the data has loaded (CAL-1). */
+.calprev-status {
+  font-style: italic;
+}
+.calprev-status[role='status'] {
+  animation: cal-status-pulse 1.4s ease-in-out infinite;
+}
+@keyframes cal-status-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .calprev-status[role='status'] {
+    animation: none;
+  }
+}
 
 /* ===== Détail par événement ===== */
 .cald-back {

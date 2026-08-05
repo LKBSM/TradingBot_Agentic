@@ -8,6 +8,7 @@ import { useLocalizedHref } from '@/lib/i18n/href';
 import { useMultiFilter } from '@/lib/market-reading/use-multi-filter';
 import { FilterChipGroup } from '@/components/app/FilterChipGroup';
 import { useCalendarMonth } from '@/lib/calendar/useCalendar';
+import { OFFICIAL_SOURCES } from '@/lib/calendar/officialSources';
 import { dayKey, filterEvents, hmInZone, latestSuccess } from '@/lib/calendar/grouping';
 import { parseUtc, utcOffsetLabel } from '@/lib/time/localTime';
 import type {
@@ -19,10 +20,9 @@ import '@/components/app/ui2c.css'; // reuse the shared .fchip filter chips
 import './calendar.css';
 import './calendar-month.css';
 
-// The followed official sources (+ the dev prototype so local runs stay usable).
-const SOURCES = [
-  'bls', 'bea', 'census', 'federal_reserve', 'eurostat', 'ecb', 'forexfactory',
-] as const;
+// Official issuing organisms only — the explicit production whitelist (CAL-1).
+// ForexFactory (a private aggregator) is deliberately excluded.
+const SOURCES = OFFICIAL_SOURCES;
 const MARKETS = ['XAUUSD', 'EURUSD'] as const;
 const PERIODICITIES: readonly CalendarPeriodicity[] = [
   'monthly', 'quarterly', 'eight_per_year',
@@ -300,28 +300,49 @@ export function CalendarMonthView({
           <DayPanel
             t={t}
             locale={locale}
+            isLoading={isLoading}
+            error={error}
             selectedDay={selectedDay}
             events={selectedEvents}
             marketName={marketName}
           />
 
+          {/* "This month" box. A count is NEVER rendered before the data has
+              loaded (CAL-1): while loading, the box shows a distinct waiting
+              status, never a fabricated "0 / 31 empty days". Only once loaded
+              does it assert counts — and a genuinely empty month reads as an
+              explicit "no publication scheduled", not a bare zero. */}
           <div className="calm-thismonth" role="note">
             <div className="calm-tm-title">{t('month.thisMonth.title')}</div>
-            <div className="calm-tm-count mono">
-              {t('month.thisMonth.count', { count: totalThisMonth })}
-            </div>
-            <ul className="calm-tm-list">
-              {perMarket.map((pm) => (
-                <li key={pm.market}>
-                  {t('month.thisMonth.byMarket', {
-                    market: marketName(pm.market),
-                    count: pm.count,
-                  })}
-                </li>
-              ))}
-              <li>{t('month.thisMonth.emptyDays', { count: emptyDays })}</li>
-            </ul>
-            <div className="calm-tm-note">{t('month.thisMonth.note')}</div>
+            {isLoading ? (
+              <div className="calm-tm-status" role="status">{t('loading')}</div>
+            ) : error ? (
+              <div className="calm-tm-status">{t('error')}</div>
+            ) : totalThisMonth > 0 ? (
+              <>
+                <div className="calm-tm-count mono">
+                  {t('month.thisMonth.count', { count: totalThisMonth })}
+                </div>
+                <ul className="calm-tm-list">
+                  {perMarket.map((pm) => (
+                    <li key={pm.market}>
+                      {t('month.thisMonth.byMarket', {
+                        market: marketName(pm.market),
+                        count: pm.count,
+                      })}
+                    </li>
+                  ))}
+                  <li>{t('month.thisMonth.emptyDays', { count: emptyDays })}</li>
+                </ul>
+                <div className="calm-tm-note">{t('month.thisMonth.note')}</div>
+              </>
+            ) : noneSelected ? (
+              <div className="calm-tm-status">{t('empty.noSelection')}</div>
+            ) : filtered.length === 0 && (data?.events.length ?? 0) > 0 ? (
+              <div className="calm-tm-status">{t('month.filterEmpty')}</div>
+            ) : (
+              <div className="calm-tm-status">{t('month.empty')}</div>
+            )}
           </div>
 
           {/* Honesty note — visible on the month view as on the list view: this
@@ -463,12 +484,16 @@ function GridArea(props: {
 function DayPanel({
   t,
   locale,
+  isLoading,
+  error,
   selectedDay,
   events,
   marketName,
 }: {
   t: ReturnType<typeof useTranslations>;
   locale: string;
+  isLoading: boolean;
+  error: Error | null;
   selectedDay: string | null;
   events: CalendarEvent[];
   marketName: (m: string) => string;
@@ -488,6 +513,26 @@ function DayPanel({
       month: 'long',
     });
   }, [selectedDay, locale]);
+
+  // Never assert "no publication this day" before the data has loaded (CAL-1):
+  // the waiting and error states are visually distinct from an empty result.
+  // (Placed after all hooks so hook order is stable across renders.)
+  if (isLoading) {
+    return (
+      <div className="calm-panel">
+        <div className="calm-panel-empty calm-panel-status" role="status">
+          {t('loading')}
+        </div>
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <div className="calm-panel">
+        <div className="calm-panel-empty calm-panel-status">{t('error')}</div>
+      </div>
+    );
+  }
 
   if (!selectedDay) {
     return (

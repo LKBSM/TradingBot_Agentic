@@ -599,3 +599,98 @@ for (const vp of [
     await expect(page.locator('.cald').first()).toBeVisible();
   });
 }
+
+// ===========================================================================
+// CAL-1 — no count before load, three distinguishable states, no forever-load.
+//   1. LOADING          — a distinct waiting status; NO fabricated count/zero.
+//   2. LOADED w/ pubs    — the count is asserted (a real result).
+//   3. LOADED truly EMPTY — an explicit "no publication", not a bare zero.
+//   4. SERVER UNREACHABLE — an error state; data already obtained is not erased.
+// All four at BOTH viewports.
+// ===========================================================================
+
+/** Gate the month response behind a manual release so the LOADING state can be
+ *  observed deterministically (no reliance on a race with a fixed delay). */
+async function routeMonthGated(page: Page, body: unknown) {
+  await gate(page);
+  let release!: () => void;
+  const held = new Promise<void>((res) => { release = res; });
+  const handler = async (r: import('@playwright/test').Route) => {
+    await held;
+    await r.fulfill(json(body));
+  };
+  await page.route('**/api/calendar/month*', handler);
+  await page.route('**/api/calendar*', handler);
+  return release;
+}
+
+/** Month endpoint fails at the network layer (server unreachable). */
+async function routeMonthUnreachable(page: Page) {
+  await gate(page);
+  await page.route('**/api/calendar/month*', (r) => r.abort('failed'));
+  await page.route('**/api/calendar*', (r) => r.abort('failed'));
+}
+
+for (const vp of [
+  { w: 1280, h: 800, name: '1280×800' },
+  { w: 390, h: 844, name: '390×844' },
+]) {
+  test(`${vp.name}: CAL-1 loading → distinct waiting status, NO fabricated count`, async ({ page }) => {
+    await page.setViewportSize({ width: vp.w, height: vp.h });
+    const release = await routeMonthGated(page, monthFixture());
+    await page.goto('/actualites');
+    try {
+      await page.getByRole('heading', { name: 'Actualités programmées' })
+        .waitFor({ state: 'visible', timeout: 20000 });
+    } catch { test.skip(true, 'gated'); return; }
+
+    // While loading: a distinct waiting status in the side box, and NO count line.
+    await expect(page.locator('.calm-tm-status[role="status"]')).toBeVisible();
+    await expect(page.locator('.calm-tm-count')).toHaveCount(0);
+    // The grid shows a loading status, not an empty result.
+    await expect(page.locator('.cal-status')).toBeVisible();
+    await expect(page.locator('.calm-grid')).toHaveCount(0);
+    // No fabricated "0 publication / N empty days" leaked into the side panel.
+    const sideText = (await page.locator('.calm-thismonth').textContent()) ?? '';
+    expect(sideText).not.toMatch(/\b0\b/);
+    expect(sideText.toLowerCase()).not.toContain('jour sans publication');
+
+    // Once released, the real counts appear (loading was distinct from a result).
+    release();
+    await expect(page.locator('.calm-tm-count')).toBeVisible();
+  });
+
+  test(`${vp.name}: CAL-1 loaded WITH publications → the count is asserted`, async ({ page }) => {
+    await page.setViewportSize({ width: vp.w, height: vp.h });
+    if (!(await gotoMonth(page, monthFixture()))) { test.skip(true, 'gated'); return; }
+    await expect(page.locator('.calm-tm-count')).toBeVisible();
+    const count = (await page.locator('.calm-tm-count').textContent()) ?? '';
+    expect(count).toMatch(/[1-9]/); // a real, non-zero count of publications
+  });
+
+  test(`${vp.name}: CAL-1 loaded truly EMPTY → explicit empty, no bare zero count`, async ({ page }) => {
+    await page.setViewportSize({ width: vp.w, height: vp.h });
+    if (!(await gotoMonth(page, emptyMonthFixture()))) { test.skip(true, 'gated'); return; }
+    // No fabricated count line; an explicit legitimate empty note instead.
+    await expect(page.locator('.calm-tm-count')).toHaveCount(0);
+    await expect(page.locator('.calm-tm-status')).toBeVisible();
+    await expect(page.locator('.calm-tm-status')).toContainText('Aucune publication');
+  });
+
+  test(`${vp.name}: CAL-1 server unreachable → error state, never forever-loading`, async ({ page }) => {
+    await page.setViewportSize({ width: vp.w, height: vp.h });
+    await routeMonthUnreachable(page);
+    await page.goto('/actualites');
+    try {
+      await page.getByRole('heading', { name: 'Actualités programmées' })
+        .waitFor({ state: 'visible', timeout: 20000 });
+    } catch { test.skip(true, 'gated'); return; }
+    // The fetch fails → an explicit error, not a perpetual "Chargement…".
+    await expect(page.locator('.cal-status')).toContainText(
+      'Le calendrier est momentanément indisponible', { timeout: 20000 },
+    );
+    // No fabricated count is asserted on error either.
+    await expect(page.locator('.calm-tm-count')).toHaveCount(0);
+    await expect(page.locator('.calm-tm-status')).toBeVisible();
+  });
+}

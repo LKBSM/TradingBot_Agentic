@@ -80,9 +80,32 @@ def test_default_provider_is_the_official_aggregator(monkeypatch) -> None:
     assert provider.source_name == "official" != "forexfactory"
 
 
-def test_forexfactory_only_when_explicitly_selected(monkeypatch) -> None:
+def test_forexfactory_only_with_explicit_dev_optin(monkeypatch) -> None:
+    # Dev opt-in required: CALENDAR_SOURCE alone is not enough (CAL-1).
     monkeypatch.setenv("CALENDAR_SOURCE", "forexfactory")
+    monkeypatch.setenv("CALENDAR_ALLOW_DEV_SOURCE", "1")
     assert build_calendar_provider().source_name == "forexfactory"
+
+
+def test_forexfactory_refused_in_production(monkeypatch) -> None:
+    """CAL-1 production guard: CALENDAR_SOURCE=forexfactory WITHOUT the dev opt-in
+    is refused — only official sources may be served in production."""
+    monkeypatch.setenv("CALENDAR_SOURCE", "forexfactory")
+    monkeypatch.delenv("CALENDAR_ALLOW_DEV_SOURCE", raising=False)
+    provider = build_calendar_provider()
+    assert isinstance(provider, OfficialCalendarProvider)
+    assert provider.source_name == "official" != "forexfactory"
+
+
+def test_only_whitelisted_sources_in_production(monkeypatch) -> None:
+    """The production whitelist is explicit in code and excludes any private
+    aggregator (CAL-1)."""
+    from src.intelligence.calendar_providers import OFFICIAL_SOURCES
+
+    assert "forexfactory" not in OFFICIAL_SOURCES
+    assert set(OFFICIAL_SOURCES) == {
+        "bls", "bea", "census", "federal_reserve", "eurostat", "ecb",
+    }
 
 
 def test_unknown_source_falls_back_to_official(monkeypatch) -> None:
