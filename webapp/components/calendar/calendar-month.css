@@ -277,6 +277,38 @@
   line-height: 1.5;
   color: var(--faint);
 }
+/* Waiting/error status in the side panel — deliberately DISTINCT from a result
+   (italic, faint, gently pulsing) so a client never mistakes "still loading" for
+   a settled "0 publication" (CAL-1). */
+.calm-tm-status,
+.calm-panel-status {
+  font-size: 11.5px;
+  font-style: italic;
+  color: var(--faint);
+  line-height: 1.5;
+}
+/* No-data error in the side box: message + retry, stacked (CAL-1). */
+.calm-tm-error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  font-style: normal;
+}
+.calm-tm-status[role='status'],
+.calm-panel-status[role='status'] {
+  animation: cal-status-pulse 1.4s ease-in-out infinite;
+}
+@keyframes cal-status-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .calm-tm-status[role='status'],
+  .calm-panel-status[role='status'] {
+    animation: none;
+  }
+}
 
 @media (max-width: 900px) {
   .calm-body {

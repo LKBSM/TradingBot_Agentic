@@ -2462,6 +2462,9 @@
       "noSource": "Noch keine Veröffentlichung: die offiziellen Quellen haben noch kein Datum gefüllt. Veröffentlichungen erscheinen hier, sobald die offiziellen Termine geladen sind."
     },
     "loading": "Kalender wird geladen…",
+    "errorTimeout": "The calendar is taking too long to respond.",
+    "errorUnreachable": "Server unreachable. Check your connection.",
+    "retry": "Retry",
     "error": "Der Kalender ist vorübergehend nicht verfügbar.",
     "preview": {
       "title": "Nächste Veröffentlichungen",

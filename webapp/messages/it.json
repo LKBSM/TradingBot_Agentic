@@ -2462,6 +2462,9 @@
       "noSource": "Nessuna pubblicazione per ora: le fonti ufficiali non hanno ancora compilato alcuna data. Le pubblicazioni appariranno qui una volta caricati i calendari ufficiali."
     },
     "loading": "Caricamento del calendario…",
+    "errorTimeout": "The calendar is taking too long to respond.",
+    "errorUnreachable": "Server unreachable. Check your connection.",
+    "retry": "Retry",
     "error": "Il calendario è momentaneamente non disponibile.",
     "preview": {
       "title": "Prossime pubblicazioni",

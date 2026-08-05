@@ -2462,6 +2462,9 @@
       "noSource": "لا إصدار حتى الآن: لم تُعبّئ المصادر الرسمية أي تاريخ بعد. ستظهر الإصدارات هنا بمجرّد تحميل التقويمات الرسمية."
     },
     "loading": "جارٍ تحميل التقويم…",
+    "errorTimeout": "The calendar is taking too long to respond.",
+    "errorUnreachable": "Server unreachable. Check your connection.",
+    "retry": "Retry",
     "error": "التقويم غير متاح مؤقّتًا.",
     "preview": {
       "title": "الإصدارات التالية",

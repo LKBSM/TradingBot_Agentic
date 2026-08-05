@@ -8,6 +8,8 @@ import { useLocalizedHref } from '@/lib/i18n/href';
 import { useMultiFilter } from '@/lib/market-reading/use-multi-filter';
 import { FilterChipGroup } from '@/components/app/FilterChipGroup';
 import { useCalendarMonth } from '@/lib/calendar/useCalendar';
+import { OFFICIAL_SOURCES } from '@/lib/calendar/officialSources';
+import { calendarErrorKey } from '@/lib/calendar/api';
 import { dayKey, filterEvents, hmInZone, latestSuccess } from '@/lib/calendar/grouping';
 import { parseUtc, utcOffsetLabel } from '@/lib/time/localTime';
 import type {
@@ -19,10 +21,9 @@ import '@/components/app/ui2c.css'; // reuse the shared .fchip filter chips
 import './calendar.css';
 import './calendar-month.css';
 
-// The followed official sources (+ the dev prototype so local runs stay usable).
-const SOURCES = [
-  'bls', 'bea', 'census', 'federal_reserve', 'eurostat', 'ecb', 'forexfactory',
-] as const;
+// Official issuing organisms only — the explicit production whitelist (CAL-1).
+// ForexFactory (a private aggregator) is deliberately excluded.
+const SOURCES = OFFICIAL_SOURCES;
 const MARKETS = ['XAUUSD', 'EURUSD'] as const;
 const PERIODICITIES: readonly CalendarPeriodicity[] = [
   'monthly', 'quarterly', 'eight_per_year',
@@ -98,6 +99,8 @@ export function CalendarMonthView({
   const data = injectedData !== undefined ? injectedData : hook.data;
   const isLoading = injectedData !== undefined ? false : hook.isLoading;
   const error = injectedData !== undefined ? null : hook.error;
+  const onRetry = React.useCallback(() => hook.refresh(), [hook]);
+  const hasData = !!data;
 
   const sourceFilter = useMultiFilter<(typeof SOURCES)[number]>(SOURCES);
   const marketFilter = useMultiFilter<(typeof MARKETS)[number]>(MARKETS);
@@ -286,6 +289,7 @@ export function CalendarMonthView({
           data={data}
           isLoading={isLoading}
           error={error}
+          onRetry={onRetry}
           noneSelected={noneSelected}
           filteredCount={filtered.length}
           totalRawEvents={data?.events.length ?? 0}
@@ -300,28 +304,57 @@ export function CalendarMonthView({
           <DayPanel
             t={t}
             locale={locale}
+            hasData={hasData}
+            isLoading={isLoading}
+            error={error}
             selectedDay={selectedDay}
             events={selectedEvents}
             marketName={marketName}
           />
 
+          {/* "This month" box. A count is NEVER rendered before the data has
+              loaded (CAL-1): while loading, the box shows a distinct waiting
+              status, never a fabricated "0 / 31 empty days". Only once loaded
+              does it assert counts — and a genuinely empty month reads as an
+              explicit "no publication scheduled", not a bare zero. */}
           <div className="calm-thismonth" role="note">
             <div className="calm-tm-title">{t('month.thisMonth.title')}</div>
-            <div className="calm-tm-count mono">
-              {t('month.thisMonth.count', { count: totalThisMonth })}
-            </div>
-            <ul className="calm-tm-list">
-              {perMarket.map((pm) => (
-                <li key={pm.market}>
-                  {t('month.thisMonth.byMarket', {
-                    market: marketName(pm.market),
-                    count: pm.count,
-                  })}
-                </li>
-              ))}
-              <li>{t('month.thisMonth.emptyDays', { count: emptyDays })}</li>
-            </ul>
-            <div className="calm-tm-note">{t('month.thisMonth.note')}</div>
+            {!hasData ? (
+              isLoading ? (
+                <div className="calm-tm-status" role="status">{t('loading')}</div>
+              ) : (
+                <div className="calm-tm-status calm-tm-error">
+                  <span>{t(calendarErrorKey(error))}</span>
+                  <button type="button" className="cal-retry" onClick={onRetry}>
+                    {t('retry')}
+                  </button>
+                </div>
+              )
+            ) : totalThisMonth > 0 ? (
+              <>
+                <div className="calm-tm-count mono">
+                  {t('month.thisMonth.count', { count: totalThisMonth })}
+                </div>
+                <ul className="calm-tm-list">
+                  {perMarket.map((pm) => (
+                    <li key={pm.market}>
+                      {t('month.thisMonth.byMarket', {
+                        market: marketName(pm.market),
+                        count: pm.count,
+                      })}
+                    </li>
+                  ))}
+                  <li>{t('month.thisMonth.emptyDays', { count: emptyDays })}</li>
+                </ul>
+                <div className="calm-tm-note">{t('month.thisMonth.note')}</div>
+              </>
+            ) : noneSelected ? (
+              <div className="calm-tm-status">{t('empty.noSelection')}</div>
+            ) : filtered.length === 0 && (data?.events.length ?? 0) > 0 ? (
+              <div className="calm-tm-status">{t('month.filterEmpty')}</div>
+            ) : (
+              <div className="calm-tm-status">{t('month.empty')}</div>
+            )}
           </div>
 
           {/* Honesty note — visible on the month view as on the list view: this
@@ -349,6 +382,7 @@ function GridArea(props: {
   data: CalendarResponse | null | undefined;
   isLoading: boolean;
   error: Error | null;
+  onRetry: () => void;
   noneSelected: boolean;
   filteredCount: number;
   totalRawEvents: number;
@@ -359,16 +393,43 @@ function GridArea(props: {
   onSelectDay: (key: string) => void;
 }) {
   const {
-    t, now, data, isLoading, error, noneSelected, filteredCount, totalRawEvents,
-    weekdays, cells, byDay, selectedDay, onSelectDay,
+    t, now, data, isLoading, error, onRetry, noneSelected, filteredCount,
+    totalRawEvents, weekdays, cells, byDay, selectedDay, onSelectDay,
   } = props;
 
-  if (isLoading) return <div className="cal-status">{t('loading')}</div>;
-  if (error) return <div className="cal-status">{t('error')}</div>;
-  if (!data) return <div className="cal-status">{t('error')}</div>;
+  // No data yet: a distinct waiting status, or — past the client timeout — an
+  // error that distinguishes an unreachable server from an exceeded delay and
+  // offers to retry (CAL-1). The interface never stays loading indefinitely.
+  if (!data) {
+    if (isLoading) return <div className="cal-status">{t('loading')}</div>;
+    return (
+      <div className="cal-status cal-status-error" role="alert">
+        <span>{t(calendarErrorKey(error))}</span>
+        <button type="button" className="cal-retry" onClick={onRetry}>
+          {t('retry')}
+        </button>
+      </div>
+    );
+  }
+
+  // Data is present. A later refresh failure NEVER erases it (CAL-1): the grid
+  // stays, and the failure surfaces as a non-blocking, retryable banner above it.
+  const errorBanner = error ? (
+    <div className="cal-errbanner" role="alert">
+      <span>{t(calendarErrorKey(error))}</span>
+      <button type="button" className="cal-retry" onClick={onRetry}>
+        {t('retry')}
+      </button>
+    </div>
+  ) : null;
 
   if (noneSelected) {
-    return <div className="cal-empty">{t('empty.noSelection')}</div>;
+    return (
+      <div className="calm-grid-wrap">
+        {errorBanner}
+        <div className="cal-empty">{t('empty.noSelection')}</div>
+      </div>
+    );
   }
 
   const todayKey = dayKey(now);
@@ -393,6 +454,7 @@ function GridArea(props: {
 
   return (
     <div className="calm-grid-wrap">
+      {errorBanner}
       <div className="calm-weekhdr">
         {weekdays.map((w) => (
           <div key={w} className="calm-wd">
@@ -463,12 +525,18 @@ function GridArea(props: {
 function DayPanel({
   t,
   locale,
+  hasData,
+  isLoading,
+  error,
   selectedDay,
   events,
   marketName,
 }: {
   t: ReturnType<typeof useTranslations>;
   locale: string;
+  hasData: boolean;
+  isLoading: boolean;
+  error: Error | null;
   selectedDay: string | null;
   events: CalendarEvent[];
   marketName: (m: string) => string;
@@ -488,6 +556,29 @@ function DayPanel({
       month: 'long',
     });
   }, [selectedDay, locale]);
+
+  // Never assert "no publication this day" before the data has loaded (CAL-1):
+  // the waiting and error states are visually distinct from an empty result.
+  // Once data exists it is RETAINED even if a later refresh fails (the grid
+  // carries the non-blocking error banner). (After all hooks: stable order.)
+  if (!hasData) {
+    if (isLoading) {
+      return (
+        <div className="calm-panel">
+          <div className="calm-panel-empty calm-panel-status" role="status">
+            {t('loading')}
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div className="calm-panel">
+        <div className="calm-panel-empty calm-panel-status">
+          {t(calendarErrorKey(error))}
+        </div>
+      </div>
+    );
+  }
 
   if (!selectedDay) {
     return (

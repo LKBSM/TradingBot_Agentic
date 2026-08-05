@@ -8,6 +8,7 @@ import { useLocalizedHref } from '@/lib/i18n/href';
 import { useMultiFilter } from '@/lib/market-reading/use-multi-filter';
 import { FilterChipGroup } from '@/components/app/FilterChipGroup';
 import { useCalendar } from '@/lib/calendar/useCalendar';
+import { OFFICIAL_SOURCES } from '@/lib/calendar/officialSources';
 import {
   countdown,
   filterEvents,
@@ -26,10 +27,8 @@ import type {
 import '@/components/app/ui2c.css'; // reuse the shared .fchip filter chips
 import './calendar.css';
 
-// The followed official sources (+ the dev prototype so local runs stay usable).
-const SOURCES = [
-  'bls', 'bea', 'census', 'federal_reserve', 'eurostat', 'ecb', 'forexfactory',
-] as const;
+// Official issuing organisms only — the explicit production whitelist (CAL-1).
+const SOURCES = OFFICIAL_SOURCES;
 const MARKETS = ['XAUUSD', 'EURUSD'] as const;
 const PERIODICITIES: readonly CalendarPeriodicity[] = [
   'monthly', 'quarterly', 'eight_per_year',

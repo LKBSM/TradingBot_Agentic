@@ -115,9 +115,12 @@ describe('NW-3 §2C CalendarPreview', () => {
   });
 
   it('an organism the source does not provide renders as visibly absent', () => {
+    // An official source that simply did not supply organism metadata (the source
+    // is whitelisted; the organism field is null) — CAL-1 keeps only official
+    // sources, so the fixture uses one rather than a private aggregator.
     const bare = ev({
-      event_id: 'forexfactory:adp:2026-07-30',
-      source: 'forexfactory',
+      event_id: 'census:adv:2026-07-30',
+      source: 'census',
       event: 'ADP',
       organism: null,
       scheduled_at: '2026-07-30T12:15:00Z',

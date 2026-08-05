@@ -2462,6 +2462,9 @@
       "noSource": "Nog geen publicatie: de officiële bronnen hebben nog geen datum ingevuld. Publicaties verschijnen hier zodra de officiële agenda's geladen zijn."
     },
     "loading": "Kalender laden…",
+    "errorTimeout": "The calendar is taking too long to respond.",
+    "errorUnreachable": "Server unreachable. Check your connection.",
+    "retry": "Retry",
     "error": "De kalender is tijdelijk niet beschikbaar.",
     "preview": {
       "title": "Volgende publicaties",

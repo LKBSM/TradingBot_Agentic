@@ -178,7 +178,7 @@ describe('NW-3 CalendarMonthView', () => {
     // ECB event carries; instead exclude every source that produced an event so
     // the filter matches nothing while the sets are non-empty.
     const { container } = renderCal();
-    for (const s of ['bls', 'bea', 'census', 'ecb', 'forexfactory'] as const) {
+    for (const s of ['bls', 'bea', 'census', 'ecb'] as const) {
       fireEvent.click(chip(container, fr.calendar.organism[s]));
     }
     // eurostat + federal_reserve remain selected but produced no event.
@@ -186,6 +186,17 @@ describe('NW-3 CalendarMonthView', () => {
     expect(container.querySelector('.cal-empty')?.textContent).toContain(
       fr.calendar.month.filterEmpty,
     );
+  });
+
+  it('CAL-1: the organism filter offers official sources only — no ForexFactory chip', () => {
+    const { container } = renderCal();
+    const chipLabels = Array.from(container.querySelectorAll('.fchip')).map((b) =>
+      (b.textContent ?? '').trim(),
+    );
+    for (const s of ['bls', 'bea', 'census', 'federal_reserve', 'eurostat', 'ecb'] as const) {
+      expect(chipLabels).toContain(fr.calendar.organism[s]);
+    }
+    expect(chipLabels).not.toContain(fr.calendar.organism.forexfactory);
   });
 
   it('a month with no events at all shows month.empty', () => {

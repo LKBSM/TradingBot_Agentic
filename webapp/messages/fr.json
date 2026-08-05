@@ -2462,6 +2462,9 @@
       "noSource": "Aucune publication pour l'instant : les sources officielles n'ont pas encore renseigné de date. Les publications s'afficheront ici une fois les parutions officielles chargées."
     },
     "loading": "Chargement du calendrier…",
+    "errorTimeout": "Le calendrier met trop de temps à répondre.",
+    "errorUnreachable": "Serveur injoignable. Vérifie ta connexion.",
+    "retry": "Réessayer",
     "error": "Le calendrier est momentanément indisponible.",
     "preview": {
       "title": "Prochaines publications",
