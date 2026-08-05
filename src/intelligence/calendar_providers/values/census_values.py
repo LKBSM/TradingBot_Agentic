@@ -86,6 +86,18 @@ class CensusValueFetcher(ValueFetcher):
         text = self._get(url)
         if not text:
             return []
+        if _is_key_error(text):
+            # Census answers a rejected/unactivated key with an HTML "Invalid Key"
+            # page at HTTP 200 — indistinguishable from "no data" unless we say so.
+            # Log it distinctly (once per series) so a misconfigured key surfaces
+            # in the operator's logs instead of a silent, permanently-unfetched event.
+            logger.warning(
+                "Census rejected CENSUS_API_KEY (Invalid/Missing Key) for '%s' — the emailed "
+                "key must be ACTIVATED at https://api.census.gov/data/key_signup.html before it "
+                "works; the event stays honestly unfetched until then.",
+                spec.program,
+            )
+            return []
         return _parse_eits(text)
 
     def fetch(self, series_code: str) -> Optional[ValuePoint]:
@@ -120,6 +132,17 @@ def _http_get(url: str) -> str:
     except (urllib.error.URLError, urllib.error.HTTPError, ValueError, OSError) as exc:
         logger.warning("Census value fetch failed for %s: %s", url, exc)
         return ""
+
+
+def _is_key_error(text: str) -> bool:
+    """True when the body is Census's HTML key-gate page ("Invalid Key" /
+    "Missing Key") rather than a JSON array — so an unactivated/misconfigured key
+    is reported distinctly instead of silently looking like an empty series. Both
+    pages arrive at HTTP 200, so the status code alone cannot tell them apart."""
+    head = text.lstrip()[:600].lower()
+    if "<html" not in head and "<!doctype" not in head:
+        return False
+    return "invalid key" in head or "missing key" in head
 
 
 def _parse_eits(text: str) -> List[Tuple[str, float]]:

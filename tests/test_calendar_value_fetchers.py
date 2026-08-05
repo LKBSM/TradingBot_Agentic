@@ -194,6 +194,33 @@ def test_census_graceful_on_missing_key_html_page():
     assert f.fetch("MARTS-RSAFS") is None
 
 
+_CENSUS_INVALID_KEY = (
+    '<html style="font-size: 14px;"><head><title>Invalid Key</title></head>'
+    "<body>The key you provided is invalid.</body></html>"
+)
+
+
+def test_census_invalid_key_logs_actionable_warning(caplog):
+    # A rejected/unactivated key answers HTML at HTTP 200 — must be logged
+    # distinctly (not silently indistinguishable from "no data"), so a
+    # misconfigured key surfaces in the operator's logs.
+    f = CensusValueFetcher(api_key="BADKEY", http_get=lambda url: _CENSUS_INVALID_KEY)
+    with caplog.at_level("WARNING"):
+        assert f.fetch("MARTS-RSAFS") is None
+    msg = " ".join(r.getMessage() for r in caplog.records)
+    assert "CENSUS_API_KEY" in msg and "ACTIVATED" in msg
+
+
+def test_census_is_key_error_detects_gate_pages():
+    from src.intelligence.calendar_providers.values.census_values import _is_key_error
+
+    assert _is_key_error("<html><title>Invalid Key</title></html>") is True
+    assert _is_key_error("<!doctype html><body>Missing Key</body>") is True
+    # A real JSON array (or any non-gate body) is NOT a key error.
+    assert _is_key_error('[["cell_value","time"],["1","2026-06"]]') is False
+    assert _is_key_error("") is False
+
+
 # --------------------------------------------------------------------------- #
 # Registry wiring
 # --------------------------------------------------------------------------- #
