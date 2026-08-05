@@ -50,6 +50,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable, Optional
+from src.persistence.sqlite_pragmas import apply_wal
 
 logger = logging.getLogger(__name__)
 
@@ -131,7 +132,7 @@ class AdminActionLog:
             isolation_level=None,
         )
         try:
-            conn.execute("PRAGMA journal_mode=WAL")
+            apply_wal(conn)
         except sqlite3.OperationalError:
             pass
         conn.execute("PRAGMA synchronous=NORMAL")

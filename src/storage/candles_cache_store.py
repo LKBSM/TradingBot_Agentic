@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from src.intelligence.data_providers.twelve_data_provider import Candle
+from src.persistence.sqlite_pragmas import apply_wal
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +75,7 @@ class CandlesCacheStore:
             str(self._db_path), timeout=30.0, isolation_level=None
         )
         conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA journal_mode=WAL")
+        apply_wal(conn)
         conn.execute("PRAGMA synchronous=NORMAL")
         return conn
 
