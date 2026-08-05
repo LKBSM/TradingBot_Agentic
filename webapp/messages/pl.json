@@ -2462,6 +2462,9 @@
       "noSource": "Na razie brak publikacji: oficjalne źródła nie wypełniły jeszcze żadnej daty. Publikacje pojawią się tutaj po wczytaniu oficjalnych kalendarzy."
     },
     "loading": "Wczytywanie kalendarza…",
+    "errorTimeout": "The calendar is taking too long to respond.",
+    "errorUnreachable": "Server unreachable. Check your connection.",
+    "retry": "Retry",
     "error": "Kalendarz jest chwilowo niedostępny.",
     "preview": {
       "title": "Następne publikacje",

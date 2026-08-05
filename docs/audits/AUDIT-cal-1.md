@@ -11,7 +11,7 @@ Date : 2026-08-05. Périmètre : `/actualites` (vue mensuelle), aperçu `/app`, 
 | Problème | Verdict | État |
 |---|---|---|
 | **1 — Comptes affirmés avant chargement** | Confirmé. Le panneau latéral de la vue mensuelle rend `totalThisMonth`/`perMarket`/`emptyDays` **sans condition** : `data=null` pendant le chargement ⇒ « 0 publication / Or : 0 / EUR/USD : 0 / 31 jours sans publication ». Idem l'aperçu `/app`. | **CORRIGÉ** |
-| **2 — La grille ne charge jamais** | Cause identifiée : rafraîchissement backend **synchrone et non borné** au premier appel de chaque fenêtre TTL (jusqu'à 6 fetch `.ics` + ~10 fetch de valeurs, 10–12 s chacun). Le client a **déjà** un timeout de 8 s (depuis NW-1) : il ne boucle pas à l'infini, il **bascule en erreur** au-delà de 8 s. Août 2026 n'est **pas** vide (10 parutions curées). | **DIAGNOSTIC — correction racine EN ATTENTE DE TON GO** |
+| **2 — La grille ne charge jamais** | Cause : rafraîchissement backend **synchrone et non borné** au premier appel de chaque fenêtre TTL (jusqu'à 6 fetch `.ics` + ~10 fetch de valeurs, 10–12 s chacun). Le client a **déjà** un timeout de 8 s (depuis NW-1). Août 2026 n'est **pas** vide (10 parutions curées). | **CORRIGÉ (racine)** — refresh en tâche de fond + honnêteté client |
 | **3 — ForexFactory dans les filtres** | Confirmé côté **front uniquement** : la liste des sources codait `forexfactory` en dur. Backend : jamais actif en prod (défaut `official`, `CALENDAR_SOURCE` non posé dans `render.yaml`). Aucune parution réelle n'en dépend. | **CORRIGÉ + garde** |
 
 ---
@@ -50,7 +50,7 @@ Hors périmètre calendrier : les compteurs de combinaisons du **scanner** et le
 
 ---
 
-## PROBLÈME 2 — La grille ne charge jamais (DIAGNOSTIC, correction racine en attente de GO)
+## PROBLÈME 2 — La grille ne charge jamais (DIAGNOSTIC + CORRECTION RACINE)
 
 ### a) Requête émise
 `GET /api/calendar/month?month=YYYY-MM` → FastAPI `get_calendar_month` (sync `def`, threadpoolé)
@@ -104,15 +104,22 @@ non borné au premier appel**, exactement le motif que PERF-1 a traité pour `ma
 subirait la même lenteur au premier appel froid (elle n'a pas de compte affiché avant chargement,
 donc elle ne *trompe* pas, mais elle peut aussi basculer en erreur au bout de 8 s).
 
-### Correction racine proposée (EN ATTENTE DE TON GO)
-1. **Backend — servir le cache immédiatement, rafraîchir en tâche de fond** (ou borner/paralléliser
-   le fan-out réseau et le pré-chauffer via le scheduler), pour qu'un appel froid ne dépasse jamais
-   le budget client. C'est la cause racine, pas le symptôme.
-2. **Client — honnêteté & résilience** (aligné sur PERF-1) :
-   - distinguer **serveur injoignable** vs **délai dépassé**, avec un bouton **Relancer** ;
-   - **ne jamais effacer** les données déjà obtenues sur échec (rétention type SWR : aujourd'hui
-     `useCalendarMonth` conserve `data` en état, mais `GridArea` masque tout dès qu'`error` est
-     posé — à transformer en bannière non bloquante au-dessus des données conservées).
+### Correction racine implémentée
+1. **Backend — le refresh ne bloque plus jamais la requête** (`calendar_service.py`).
+   `_maybe_refresh` sert le cache immédiatement et lance le fan-out réseau
+   (`.ics` + valeurs) dans un **thread de fond single-flight** (verrou non bloquant). Seul un
+   cache **réellement froid** (rien à servir) attend, et uniquement le budget borné
+   `COLD_FILL_BUDGET_S = 3 s` — au-delà il rend (vide honnête) et finit en fond. Les **dates**
+   sont persistées AVANT l'enrichissement (lent) des **valeurs**, donc la grille se peuple dès que
+   le flux répond. Le store SQLite ouvre une connexion par appel (thread-safe). Une requête ne peut
+   donc plus jamais dépasser le budget client → plus de « chargement figé ».
+2. **Client — honnêteté & résilience** (aligné PERF-1) :
+   - `CalendarError.kind` (`timeout` / `network` / `http` / `shape`) → message distinct
+     **serveur injoignable** vs **délai dépassé** + bouton **Relancer** (`api.ts`,
+     `CalendarMonthView`, `CalendarPreview`) ;
+   - **rétention SWR** : une donnée déjà obtenue n'est **jamais effacée** par un échec — la grille
+     et les comptes restent, l'échec s'affiche en **bannière non bloquante** (`.cal-errbanner`) avec
+     Relancer ; l'écran d'erreur plein (avec Relancer) n'apparaît que sans **aucune** donnée.
 
 ---
 
@@ -154,10 +161,13 @@ Cohérent avec l'audit NW-D2 (couverture curée jusque ~octobre-décembre 2026).
 ---
 
 ## Vérifications
-- Backend : `pytest tests/test_calendar_service.py tests/test_calendar_providers.py tests/test_calendar_endpoint.py` → **41 passed**.
-- Front : vitest calendrier + parité → **87 passed** (dont nouveaux tests d'état de chargement fr+en et garde whitelist).
+- Backend : `pytest` calendrier → **43 passed** (dont 2 tests du fix racine : cache périmé servi
+  sans blocage sur un flux lent ; 1er remplissage froid borné).
+- Front : vitest calendrier + parité → **91 passed** (états de chargement fr+en, distinction
+  injoignable/délai + Relancer, rétention SWR, garde whitelist).
 - `tsc --noEmit` → **0 erreur** ; `npm run build` → **succès**.
-- Playwright 1280×800 & 390×844 : chargement / chargé-avec / chargé-vide / serveur injoignable.
+- Playwright 1280×800 & 390×844 : chargement / chargé-avec / chargé-vide / serveur injoignable
+  (message injoignable distinct + Relancer).
 
 ## Discipline
 Worktree dédié, staging explicite (jamais `git add -A`), pas de force push.

@@ -287,6 +287,14 @@
   color: var(--faint);
   line-height: 1.5;
 }
+/* No-data error in the side box: message + retry, stacked (CAL-1). */
+.calm-tm-error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  font-style: normal;
+}
 .calm-tm-status[role='status'],
 .calm-panel-status[role='status'] {
   animation: cal-status-pulse 1.4s ease-in-out infinite;

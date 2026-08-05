@@ -3,6 +3,7 @@ provider-agnosticism, default source, coverage, attribution, freshness."""
 
 from __future__ import annotations
 
+import time
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 
@@ -247,6 +248,71 @@ def test_unavailable_source_keeps_stored_data(tmp_path) -> None:
     r2 = svc.get_calendar(now=NOW + timedelta(minutes=5))
     assert len(r2.events) == 1
     assert r2.events[0].event_id == "bls:cpi"
+
+
+class _SlowProvider(FakeProvider):
+    """A provider whose fetch() blocks — models a slow official .ics/value feed."""
+
+    def __init__(self, events: List[ProviderEvent], delay: float) -> None:
+        super().__init__(events, name="bls")
+        self._delay = delay
+
+    def fetch(self) -> ProviderFetch:
+        time.sleep(self._delay)
+        return super().fetch()
+
+
+def _drain_refresh(svc: CalendarService) -> None:
+    """Block until any in-flight background refresh has finished (test hygiene:
+    the daemon thread must not still be writing the DB at tmp_path teardown)."""
+    svc._refresh_lock.acquire()
+    svc._refresh_lock.release()
+
+
+def test_stale_cache_served_immediately_without_blocking_on_slow_refresh(tmp_path) -> None:
+    """CAL-1 root fix — a due refresh must not block the request on a slow feed:
+    the stale cache is served at once and the refresh runs in the background."""
+    from src.storage.calendar_cache_store import CalendarCacheEvent
+
+    store = CalendarCacheStore(db_path=str(tmp_path / "cal.db"))
+    # A warm-but-stale cache: one stored row, fetched an hour ago (TTL elapsed).
+    store.upsert_events(
+        [CalendarCacheEvent(
+            event_id="bls:a", source="bls", event="A", currency="USD",
+            scheduled_at=NOW + timedelta(hours=2), markets=["XAUUSD"])],
+        fetched_at=NOW - timedelta(hours=1),
+    )
+    slow = _SlowProvider([_pe("USD", ref="new", source="bls")], delay=2.0)
+    svc = CalendarService(provider=slow, store=store, market_map=MAP,
+                          ttl_seconds=0, clock=lambda: NOW, value_fetcher=None)
+
+    t0 = time.monotonic()
+    resp = svc.get_calendar(now=NOW)
+    elapsed = time.monotonic() - t0
+
+    # Served the stale row immediately — did NOT wait ~2s for the slow provider.
+    assert elapsed < 1.0
+    assert [e.event_id for e in resp.events] == ["bls:a"]
+    _drain_refresh(svc)  # let the background refresh finish before teardown
+
+
+def test_cold_cache_first_fill_is_bounded(tmp_path, monkeypatch) -> None:
+    """CAL-1 — a genuinely cold cache waits only the bounded budget for the first
+    fill; a feed slower than the budget returns (empty) rather than hanging."""
+    store = CalendarCacheStore(db_path=str(tmp_path / "cal.db"))
+    slow = _SlowProvider([_pe("USD", ref="new", source="bls")], delay=2.0)
+    svc = CalendarService(provider=slow, store=store, market_map=MAP,
+                          ttl_seconds=0, clock=lambda: NOW, value_fetcher=None)
+    monkeypatch.setattr(svc, "COLD_FILL_BUDGET_S", 0.3)
+
+    t0 = time.monotonic()
+    resp = svc.get_calendar(now=NOW)
+    elapsed = time.monotonic() - t0
+
+    # Bounded: it returned near the budget, never near the 2s feed delay.
+    assert elapsed < 1.5
+    assert resp.events == []  # nothing yet — honest empty, not a hang
+    _drain_refresh(svc)
 
 
 def test_stale_source_flagged_with_last_success(tmp_path) -> None:

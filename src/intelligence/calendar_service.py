@@ -23,6 +23,7 @@ import dataclasses
 import json
 import logging
 import os
+import threading
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple
@@ -90,6 +91,13 @@ class CalendarService:
     # 24h: the .ics/data feeds are polled on the TTL cadence, so a full day of
     # silence is a genuine retrieval delay worth surfacing.
     STALE_AFTER_HOURS = 24
+    # CAL-1 root fix — the refresh does a slow network fan-out (up to 6 .ics
+    # fetches + one value-API call per event, 10-12s each). It must NEVER run in
+    # the request thread when we already have a cache to serve: a stale cache is
+    # refreshed in the BACKGROUND and served immediately. Only a genuinely COLD
+    # cache (nothing to serve) waits for the first fill — and even then, only for
+    # this bounded budget, so a request can never exceed the client's timeout.
+    COLD_FILL_BUDGET_S = 3.0
 
     def __init__(
         self,
@@ -110,6 +118,9 @@ class CalendarService:
             build_value_fetcher() if value_fetcher is _UNSET else value_fetcher
         )
         self._coverage: Tuple[Optional[datetime], Optional[datetime]] = (None, None)
+        # Single-flight guard for the background refresh (CAL-1): at most one
+        # network refresh runs at a time; concurrent requests serve the cache.
+        self._refresh_lock = threading.Lock()
 
     # ------------------------------------------------------------------ #
     # Market attachment (the documented rule)
@@ -313,9 +324,53 @@ class CalendarService:
         return out
 
     def _maybe_refresh(self, now: datetime) -> None:
+        """Refresh the cache if the TTL has elapsed — WITHOUT blocking the request
+        on the network (CAL-1 root fix).
+
+        The refresh (up to 6 ``.ics`` fetches + a value-API call per event, 10-12s
+        each) runs single-flight in a BACKGROUND thread; the request serves the
+        cache we already have. Only a genuinely COLD cache (nothing to serve) waits
+        for the first fill, and only for ``COLD_FILL_BUDGET_S`` — so no request can
+        ever exceed the client's timeout, and a slow official feed can never leave
+        the calendar stuck loading."""
         last = self._store.last_fetch_at()
         if last is not None and (now - last).total_seconds() < self._ttl_seconds:
             return
+        thread = self._start_background_refresh(now)
+        if thread is not None and last is None:
+            # Cold cache: wait a bounded budget so the very first load is not
+            # empty, but never longer — the rest completes in the background.
+            thread.join(self.COLD_FILL_BUDGET_S)
+
+    def _start_background_refresh(self, now: datetime) -> Optional[threading.Thread]:
+        """Kick a single-flight refresh in a daemon thread. Returns the started
+        thread, or None when a refresh is already in flight (its work is shared)."""
+        if not self._refresh_lock.acquire(blocking=False):
+            return None
+
+        def _run() -> None:
+            try:
+                self._do_refresh(now)
+            except Exception as exc:  # a background failure must never escape
+                logger.warning("calendar background refresh failed: %s", exc)
+            finally:
+                self._refresh_lock.release()
+
+        try:
+            thread = threading.Thread(
+                target=_run, name="calendar-refresh", daemon=True
+            )
+            thread.start()
+        except Exception:
+            self._refresh_lock.release()
+            raise
+        return thread
+
+    def _do_refresh(self, now: datetime) -> None:
+        """Fetch from the provider, attach markets, persist. Runs off the request
+        thread. Persists the DATES first (so the grid can render as soon as the
+        feed answers), then enriches published VALUES (the slower per-series pass)
+        and persists again. A provider failure keeps the existing cache."""
         try:
             fetch = self._provider.fetch()
         except Exception as exc:  # defensive — provider failure keeps stale cache
@@ -330,9 +385,13 @@ class CalendarService:
             if not markets:
                 continue  # no followed market → never attached, never displayed
             persisted.append(self._to_cache(ev, markets))
+        if not persisted:
+            return
+        # Dates first — the month grid needs only the schedule, not the values.
+        self._store.upsert_events(persisted, fetched_at=now)
+        # Then the slower published-value pass; re-persist with values attached.
         self._enrich_values(persisted, now)
-        if persisted:
-            self._store.upsert_events(persisted, fetched_at=now)
+        self._store.upsert_events(persisted, fetched_at=now)
 
     def _enrich_values(self, events: List[CalendarCacheEvent], now: datetime) -> None:
         """Fetch published values by stable series code — never by title, never

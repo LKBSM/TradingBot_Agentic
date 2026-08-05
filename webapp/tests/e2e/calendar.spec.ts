@@ -685,10 +685,12 @@ for (const vp of [
       await page.getByRole('heading', { name: 'Actualités programmées' })
         .waitFor({ state: 'visible', timeout: 20000 });
     } catch { test.skip(true, 'gated'); return; }
-    // The fetch fails → an explicit error, not a perpetual "Chargement…".
-    await expect(page.locator('.cal-status')).toContainText(
-      'Le calendrier est momentanément indisponible', { timeout: 20000 },
-    );
+    // The fetch fails → an explicit error with a RETRY, never a perpetual
+    // "Chargement…". The message distinguishes an unreachable server from a
+    // timeout (a network abort ⇒ "unreachable").
+    await expect(page.locator('.cal-status-error')).toBeVisible({ timeout: 20000 });
+    await expect(page.locator('.cal-status-error')).toContainText('injoignable');
+    await expect(page.locator('.cal-retry').first()).toBeVisible();
     // No fabricated count is asserted on error either.
     await expect(page.locator('.calm-tm-count')).toHaveCount(0);
     await expect(page.locator('.calm-tm-status')).toBeVisible();

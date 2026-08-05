@@ -505,6 +505,42 @@
 .calprev-status {
   font-style: italic;
 }
+/* CAL-1 — retryable error surfaces. The no-data error stacks its message and a
+   retry button; a banner is the non-blocking form shown above retained data. */
+.cal-status-error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+.cal-errbanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 10px;
+  margin-bottom: 10px;
+  border-radius: var(--r-s, 8px);
+  border: 1px solid var(--line-2);
+  background: var(--panel-2);
+  color: var(--dim);
+  font-size: 12px;
+}
+.cal-retry {
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 5px 12px;
+  border-radius: var(--r-s, 6px);
+  border: 1px solid var(--line-2);
+  background: var(--panel-2);
+  color: var(--dim);
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+}
+.cal-retry:hover {
+  color: var(--text, inherit);
+}
 .calprev-status[role='status'] {
   animation: cal-status-pulse 1.4s ease-in-out infinite;
 }

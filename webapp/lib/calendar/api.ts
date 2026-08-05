@@ -12,13 +12,31 @@ import type { PublicationMeasures } from '@/types/measures';
 const ENDPOINT = '/api/calendar';
 const DEFAULT_TIMEOUT_MS = 8_000;
 
+/** Why a calendar fetch failed — lets the UI distinguish an unreachable server
+ *  from an exceeded delay, and offer the right recovery (CAL-1). */
+export type CalendarErrorKind = 'timeout' | 'network' | 'http' | 'shape';
+
 export class CalendarError extends Error {
   readonly status: number;
-  constructor(status: number, message: string) {
+  readonly kind: CalendarErrorKind;
+  constructor(status: number, message: string, kind: CalendarErrorKind = 'network') {
     super(message);
     this.status = status;
+    this.kind = kind;
     this.name = 'CalendarError';
   }
+}
+
+/** Map a fetch failure to its calendar-namespace message key — distinguishing an
+ *  exceeded delay from an unreachable server so the recovery hint is honest. */
+export function calendarErrorKey(
+  error: unknown,
+): 'errorTimeout' | 'errorUnreachable' | 'error' {
+  if (error instanceof CalendarError) {
+    if (error.kind === 'timeout') return 'errorTimeout';
+    if (error.kind === 'network') return 'errorUnreachable';
+  }
+  return 'error';
 }
 
 export interface FetchCalendarOptions {
@@ -67,7 +85,11 @@ export async function fetchCalendar(
       : err instanceof Error
         ? err.message
         : 'Erreur réseau';
-    throw new CalendarError(0, `Service de calendrier injoignable : ${message}`);
+    throw new CalendarError(
+      0,
+      `Service de calendrier injoignable : ${message}`,
+      timedOut ? 'timeout' : 'network',
+    );
   } finally {
     clearTimeout(timer);
     signal?.removeEventListener('abort', onCallerAbort);
@@ -77,6 +99,7 @@ export async function fetchCalendar(
     throw new CalendarError(
       res.status,
       'Le calendrier a rencontré une erreur. Réessaie dans un instant.',
+      'http',
     );
   }
 
@@ -84,11 +107,11 @@ export async function fetchCalendar(
   try {
     parsed = await res.json();
   } catch {
-    throw new CalendarError(res.status, 'Réponse du calendrier illisible.');
+    throw new CalendarError(res.status, 'Réponse du calendrier illisible.', 'shape');
   }
 
   if (!isCalendarShape(parsed)) {
-    throw new CalendarError(res.status, 'Réponse du calendrier malformée.');
+    throw new CalendarError(res.status, 'Réponse du calendrier malformée.', 'shape');
   }
   return parsed;
 }
@@ -130,7 +153,11 @@ export async function fetchCalendarEvent(
       : err instanceof Error
         ? err.message
         : 'Erreur réseau';
-    throw new CalendarError(0, `Service de calendrier injoignable : ${message}`);
+    throw new CalendarError(
+      0,
+      `Service de calendrier injoignable : ${message}`,
+      timedOut ? 'timeout' : 'network',
+    );
   } finally {
     clearTimeout(timer);
     signal?.removeEventListener('abort', onCallerAbort);
@@ -140,6 +167,7 @@ export async function fetchCalendarEvent(
     throw new CalendarError(
       res.status,
       'Le calendrier a rencontré une erreur. Réessaie dans un instant.',
+      'http',
     );
   }
 
@@ -147,10 +175,10 @@ export async function fetchCalendarEvent(
   try {
     parsed = await res.json();
   } catch {
-    throw new CalendarError(res.status, 'Réponse du calendrier illisible.');
+    throw new CalendarError(res.status, 'Réponse du calendrier illisible.', 'shape');
   }
   if (!isCalendarShape(parsed)) {
-    throw new CalendarError(res.status, 'Réponse du calendrier malformée.');
+    throw new CalendarError(res.status, 'Réponse du calendrier malformée.', 'shape');
   }
   return parsed;
 }
@@ -192,7 +220,11 @@ export async function fetchCalendarMonth(
       : err instanceof Error
         ? err.message
         : 'Erreur réseau';
-    throw new CalendarError(0, `Service de calendrier injoignable : ${message}`);
+    throw new CalendarError(
+      0,
+      `Service de calendrier injoignable : ${message}`,
+      timedOut ? 'timeout' : 'network',
+    );
   } finally {
     clearTimeout(timer);
     signal?.removeEventListener('abort', onCallerAbort);
@@ -202,16 +234,17 @@ export async function fetchCalendarMonth(
     throw new CalendarError(
       res.status,
       'Le calendrier a rencontré une erreur. Réessaie dans un instant.',
+      'http',
     );
   }
   let parsed: unknown;
   try {
     parsed = await res.json();
   } catch {
-    throw new CalendarError(res.status, 'Réponse du calendrier illisible.');
+    throw new CalendarError(res.status, 'Réponse du calendrier illisible.', 'shape');
   }
   if (!isCalendarShape(parsed)) {
-    throw new CalendarError(res.status, 'Réponse du calendrier malformée.');
+    throw new CalendarError(res.status, 'Réponse du calendrier malformée.', 'shape');
   }
   return parsed;
 }

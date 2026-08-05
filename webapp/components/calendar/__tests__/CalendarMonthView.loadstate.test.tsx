@@ -1,9 +1,10 @@
 import * as React from 'react';
-import { render as rtlRender } from '@testing-library/react';
+import { render as rtlRender, fireEvent } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import fr from '@/messages/fr.json';
 import en from '@/messages/en.json';
+import { CalendarError } from '@/lib/calendar/api';
 import type { CalendarResponse } from '@/types/calendar';
 
 /**
@@ -124,20 +125,58 @@ describe('CAL-1 month view — no count before load', () => {
       expect(status?.textContent).toContain(M.calendar.month.empty);
     });
 
-    it(`[${locale}] server unreachable: distinct error, no count`, () => {
+    it(`[${locale}] server unreachable (network) vs timeout: distinct message + retry, no count`, () => {
+      // Network failure ⇒ "unreachable"; a retry is offered; no fabricated count.
+      const refresh = vi.fn();
       mockHook.mockReturnValue({
         data: null,
         isLoading: false,
-        error: new Error('unreachable'),
-        refresh: () => {},
+        error: new CalendarError(0, 'x', 'network'),
+        refresh,
       });
       const { container } = renderIn(locale);
       expect(container.querySelector('.calm-tm-count')).toBeNull();
-      expect(container.querySelector('.calm-tm-status')?.textContent).toContain(
-        M.calendar.error,
+      expect(container.querySelector('.cal-status-error')?.textContent).toContain(
+        M.calendar.errorUnreachable,
       );
+      // Clicking retry re-fetches.
+      const retry = container.querySelector('.cal-status-error .cal-retry') as HTMLElement;
+      expect(retry?.textContent).toContain(M.calendar.retry);
+      fireEvent.click(retry);
+      expect(refresh).toHaveBeenCalled();
       // The day panel does not claim "no publication this day" on error.
       expect(container.textContent).not.toContain(M.calendar.month.panel.empty);
+    });
+
+    it(`[${locale}] timeout shows the "too long" message, distinct from unreachable`, () => {
+      mockHook.mockReturnValue({
+        data: null,
+        isLoading: false,
+        error: new CalendarError(0, 'x', 'timeout'),
+        refresh: vi.fn(),
+      });
+      const { container } = renderIn(locale);
+      expect(container.querySelector('.cal-status-error')?.textContent).toContain(
+        M.calendar.errorTimeout,
+      );
+    });
+
+    it(`[${locale}] SWR: a refresh failure never erases already-loaded data`, () => {
+      // Data present AND an error → the grid is RETAINED, the count still shown,
+      // and the failure surfaces only as a non-blocking, retryable banner.
+      mockHook.mockReturnValue({
+        data: AUGUST,
+        isLoading: false,
+        error: new CalendarError(0, 'x', 'timeout'),
+        refresh: vi.fn(),
+      });
+      const { container } = renderIn(locale);
+      expect(container.querySelector('.calm-grid')).not.toBeNull();
+      expect(container.querySelector('.calm-tm-count')).not.toBeNull();
+      expect(container.querySelector('.cal-errbanner')?.textContent).toContain(
+        M.calendar.errorTimeout,
+      );
+      expect(container.querySelector('.cal-errbanner .cal-retry')).not.toBeNull();
     });
   }
 });

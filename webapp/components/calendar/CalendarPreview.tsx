@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { ChevronRight } from 'lucide-react';
 import { useLocalizedHref } from '@/lib/i18n/href';
 import { useCalendar } from '@/lib/calendar/useCalendar';
+import { calendarErrorKey } from '@/lib/calendar/api';
 import { OFFICIAL_SOURCES } from '@/lib/calendar/officialSources';
 import {
   countdown,
@@ -53,6 +54,8 @@ export function CalendarPreview({
   // before the data has loaded (CAL-1).
   const isLoading = injectedData !== undefined ? false : hook.isLoading;
   const error = injectedData !== undefined ? null : hook.error;
+  const hasData = data != null;
+  const onRetry = React.useCallback(() => hook.refresh(), [hook]);
   const now = React.useMemo(() => injectedNow ?? new Date(), [injectedNow]);
 
   const marketName = React.useCallback(
@@ -76,13 +79,31 @@ export function CalendarPreview({
           <ChevronRight width={12} height={12} aria-hidden />
         </Link>
       </div>
-      {isLoading ? (
+      {/* No data yet: a distinct waiting status, or — past the client timeout —
+          a retryable error that distinguishes unreachable from timed-out. Once
+          data exists it is RETAINED even if a later refresh fails (CAL-1). */}
+      {!hasData && isLoading ? (
         <p className="calprev-empty calprev-status" role="status">{t('loading')}</p>
-      ) : error ? (
-        <p className="calprev-empty calprev-status">{t('error')}</p>
-      ) : upcoming.length === 0 ? (
-        <p className="calprev-empty">{t('preview.empty')}</p>
+      ) : !hasData ? (
+        <p className="calprev-empty calprev-status" role="alert">
+          {t(calendarErrorKey(error))}{' '}
+          <button type="button" className="cal-retry" onClick={onRetry}>
+            {t('retry')}
+          </button>
+        </p>
       ) : (
+        <>
+          {error && (
+            <p className="calprev-empty calprev-status" role="alert">
+              {t(calendarErrorKey(error))}{' '}
+              <button type="button" className="cal-retry" onClick={onRetry}>
+                {t('retry')}
+              </button>
+            </p>
+          )}
+          {upcoming.length === 0 ? (
+            <p className="calprev-empty">{t('preview.empty')}</p>
+          ) : (
         <ul className="calprev-list">
           {upcoming.map((ev) => {
             const when = parseUtc(ev.scheduled_at);
@@ -135,6 +156,8 @@ export function CalendarPreview({
             );
           })}
         </ul>
+          )}
+        </>
       )}
     </section>
   );
