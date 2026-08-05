@@ -34,7 +34,10 @@ services:
     disk:
       name: mia-data
       mountPath: /app/data
-      sizeGB: 1
+      # 1 GB filled up (deep candle history + market_readings + news/calendar
+      # caches) → `disk I/O error` at boot on 2026-08-05. Grown to 10 GB for
+      # headroom. Render can INCREASE a disk in place (never shrink).
+      sizeGB: 10
     envVars:
       - key: BETA_LOCKDOWN
         value: "1"
