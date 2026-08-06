@@ -74,6 +74,8 @@ L'implémentation actuelle de l'accueil (`messages/fr.json`, `messages/en.json`,
 ### Écart transverse — MOTS INTERDITS vs FAQ
 Le test LP-2 doit interdire *signal, setup, opportunité, gagnant, probabilité, cible, biais* (et équivalents EN) dans les chaînes visibles de l'accueil. Or la FAQ de la maquette pose « Est-ce que MIA donne des **signaux** d'entrée ? ». Il faudra reformuler la question sans le mot interdit tout en gardant le sens (ex. « MIA me dit-elle quand acheter ou vendre ? »). **À trancher en Section 4** (ne rien casser silencieusement).
 
+> **DÉCISION (utilisateur, 2026-08-06) → Reformuler.** Chaque question/réponse de FAQ touchée par un mot interdit (*signal, setup, opportunité, gagnant, probabilité, cible, biais* + équivalents EN) sera reformulée pour garder le sens sans le mot. Chaque reformulation sera listée explicitement dans le rapport final.
+
 ---
 
 ## D) Les chiffres du bandeau — d'où viennent-ils, disent-ils vrai ?
@@ -91,6 +93,8 @@ Source unique actuelle : `webapp/lib/landing/stats.ts` (dérivée de `perimeter.
 Décision à prendre (§C4) : les « types de structure » réels que le produit détecte sont : Order Block, Fair Value Gap, BOS, CHOCH, poche BSL, poche SSL, niveaux égaux (EQH/EQL) → **7** est défendable, mais **il n'existe aucune constante unique** aujourd'hui. Deux options honnêtes :
 1. Créer une source unique `STRUCTURE_TYPES` (7) lue par le bandeau + test de garde.
 2. Remplacer le 4e chiffre par **« 12 combinaisons »** (déjà source unique, déjà testé).
+
+> **DÉCISION (utilisateur, 2026-08-06) → Option 1.** Créer une source unique `STRUCTURE_TYPES` (OB, FVG, BOS, CHOCH, BSL, SSL, niveaux égaux = **7**), lue par le bandeau, + test de garde. Le bandeau conserve les 4 chiffres de la maquette, tous honnêtement sourcés.
 
 **Ligne d'ambition** (sous le bandeau) — la maquette la porte déjà : « Accès anticipé · **2 marchés aujourd'hui, 50 à 80 prévus au lancement** ». À conserver.
 
