@@ -13,16 +13,6 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif;letter-spacing:-.03em;line-he
 .mono{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums}
 .wrap{max-width:1120px;margin:0 auto;padding:0 26px}
 .narrow{max-width:820px;margin:0 auto}
-
-/* NAV */
-nav{position:sticky;top:0;z-index:100;background:rgba(7,11,19,.86);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
-nav .in{max-width:1120px;margin:0 auto;padding:13px 26px;display:flex;align-items:center;gap:26px}
-.brand{display:flex;align-items:center;gap:9px;font-family:'Space Grotesk';font-weight:700;font-size:16px;letter-spacing:-.025em}
-.logo{width:26px;height:26px;border-radius:8px;background:linear-gradient(140deg,#5b9dff,#3060b8);display:grid;place-items:center;flex-shrink:0}
-.logo svg{width:14px;height:14px;stroke:#04101f;fill:none;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round}
-nav a.nl{color:var(--dim);font-size:13.5px;text-decoration:none;transition:.15s}
-nav a.nl:hover{color:var(--tx)}
-nav .sp{margin-left:auto;display:flex;align-items:center;gap:12px}
 .btn{font-family:'Space Grotesk';font-weight:600;border-radius:9px;border:1px solid var(--line2);background:transparent;color:var(--tx);cursor:pointer;transition:.16s;text-decoration:none;display:inline-block;text-align:center}
 .btn:hover{border-color:var(--acc);color:var(--acc)}
 .btn.pri{background:var(--acc);border-color:var(--acc);color:#04101f}
@@ -30,41 +20,62 @@ nav .sp{margin-left:auto;display:flex;align-items:center;gap:12px}
 .btn.sm{font-size:13px;padding:8px 15px}
 .btn.md{font-size:14.5px;padding:12px 24px}
 .btn.lg{font-size:15.5px;padding:14px 30px}
-@media(max-width:800px){nav .hidem{display:none}}
+.btn.ghost{border-color:transparent;color:var(--dim)}
+.btn.ghost:hover{border-color:var(--line2);color:var(--tx)}
 
-/* HERO */
-.hero{position:relative;padding:76px 0 60px;overflow:hidden}
-.hero .aura{position:absolute;width:1000px;height:560px;left:50%;top:-230px;transform:translateX(-50%);
+/* ---------- NAV ---------- */
+nav{position:sticky;top:0;z-index:100;background:rgba(7,11,19,.88);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+nav .in{max-width:1120px;margin:0 auto;padding:12px 26px;display:flex;align-items:center;gap:28px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--tx)}
+.mark{width:32px;height:32px;border-radius:9px;background:linear-gradient(145deg,#5b9dff,#2f5fb8);
+  display:grid;place-items:center;flex-shrink:0;box-shadow:0 2px 10px rgba(91,157,255,.28)}
+.mark svg{width:18px;height:18px}
+.wordmark{font-family:'Space Grotesk';font-weight:700;font-size:17px;letter-spacing:-.035em;line-height:1}
+.wordmark i{font-style:normal;color:var(--acc)}
+nav .links{display:flex;gap:22px;align-items:center}
+nav a.nl{color:var(--dim);font-size:13.5px;text-decoration:none;transition:.15s;position:relative}
+nav a.nl:hover{color:var(--tx)}
+nav .sp{margin-left:auto;display:flex;align-items:center;gap:10px}
+.lang{font-family:'JetBrains Mono';font-size:11px;color:var(--faint);padding:6px 10px;border-radius:7px;
+  border:1px solid transparent;cursor:pointer;transition:.15s}
+.lang:hover{border-color:var(--line2);color:var(--dim)}
+@media(max-width:880px){nav .links{display:none}nav .hidem{display:none}}
+
+/* ---------- HERO ---------- */
+.hero{position:relative;padding:74px 0 54px;overflow:hidden}
+.hero .aura{position:absolute;width:1000px;height:560px;left:50%;top:-240px;transform:translateX(-50%);
   background:radial-gradient(ellipse at center,rgba(91,157,255,.15),transparent 66%);pointer-events:none}
 .hero .in{position:relative;text-align:center}
 .pill{display:inline-flex;align-items:center;gap:8px;font-family:'JetBrains Mono';font-size:11.5px;
-  padding:6px 14px;border-radius:30px;border:1px solid var(--line2);background:var(--card);color:var(--dim);margin-bottom:26px}
-.pill .d{width:6px;height:6px;border-radius:50%;background:var(--pos)}
-h1.big{font-size:56px;font-weight:700;margin-bottom:22px}
+  padding:6px 14px;border-radius:30px;border:1px solid var(--line2);background:var(--card);color:var(--dim);margin-bottom:24px}
+.pill .d{width:6px;height:6px;border-radius:50%;background:var(--amb)}
+h1.big{font-size:55px;font-weight:700;margin-bottom:20px}
 h1.big em{font-style:normal;background:linear-gradient(100deg,#7cb2ff,#a78bfa);-webkit-background-clip:text;background-clip:text;color:transparent}
-.lead{font-size:18.5px;color:var(--dim);max-width:660px;margin:0 auto 32px;line-height:1.62}
-.ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:16px}
+.lead{font-size:18px;color:var(--dim);max-width:660px;margin:0 auto 30px;line-height:1.62}
+.ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:14px}
 .micro{font-family:'JetBrains Mono';font-size:12px;color:var(--faint)}
-@media(max-width:760px){h1.big{font-size:36px}.lead{font-size:16px}}
+@media(max-width:760px){h1.big{font-size:35px}.lead{font-size:16px}}
 
-/* STATS */
+/* ---------- STATS ---------- */
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
-  border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:52px}
-.stat{background:var(--card);padding:20px 18px;text-align:center}
-.stat .n{font-family:'Space Grotesk';font-size:27px;font-weight:700;letter-spacing:-.03em;line-height:1}
+  border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:48px}
+.stat{background:var(--card);padding:19px 16px;text-align:center}
+.stat .n{font-family:'Space Grotesk';font-size:26px;font-weight:700;letter-spacing:-.03em;line-height:1}
 .stat .l{font-size:12.5px;color:var(--faint);margin-top:6px}
+.roadmap{text-align:center;margin-top:13px;font-family:'JetBrains Mono';font-size:11.5px;color:var(--faint)}
+.roadmap b{color:var(--amb);font-weight:500}
 @media(max-width:720px){.stats{grid-template-columns:repeat(2,1fr)}}
 
-/* SECTIONS */
-section{padding:76px 0}
-.sechead{text-align:center;margin-bottom:48px}
+/* ---------- SECTIONS ---------- */
+section{padding:74px 0}
+.sechead{text-align:center;margin-bottom:44px}
 .eyebrow{font-family:'JetBrains Mono';font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--acc);margin-bottom:14px}
-h2{font-size:38px;font-weight:600;margin-bottom:15px}
-.sechead p{font-size:16.5px;color:var(--dim);max-width:620px;margin:0 auto;line-height:1.6}
-@media(max-width:760px){h2{font-size:28px}section{padding:52px 0}}
+h2{font-size:37px;font-weight:600;margin-bottom:14px}
+.sechead p{font-size:16.5px;color:var(--dim);max-width:640px;margin:0 auto;line-height:1.6}
+@media(max-width:760px){h2{font-size:27px}section{padding:50px 0}}
 
-/* FEATURE ROW */
-.feat{display:grid;grid-template-columns:1fr 1fr;gap:52px;align-items:center;margin-bottom:96px}
+/* ---------- FEATURE ---------- */
+.feat{display:grid;grid-template-columns:1fr 1fr;gap:50px;align-items:center;margin-bottom:92px}
 .feat:last-child{margin-bottom:0}
 .feat.rev .txt{order:2}
 .feat .tag{display:inline-flex;align-items:center;gap:8px;font-family:'JetBrains Mono';font-size:11px;
@@ -81,69 +92,184 @@ h2{font-size:38px;font-weight:600;margin-bottom:15px}
 .bu .ck{width:17px;height:17px;border-radius:5px;background:#12294a;display:grid;place-items:center;flex-shrink:0;margin-top:2px}
 .bu .ck svg{width:9px;height:9px;stroke:var(--acc);stroke-width:3.2;fill:none}
 .bu b{color:var(--tx);font-weight:500}
-@media(max-width:900px){.feat{grid-template-columns:1fr;gap:28px;margin-bottom:64px}.feat.rev .txt{order:0}}
+@media(max-width:900px){.feat{grid-template-columns:1fr;gap:26px;margin-bottom:60px}.feat.rev .txt{order:0}}
 
-/* VISUAL BOX */
-.vis{border:1px solid var(--line);border-radius:15px;background:linear-gradient(158deg,#101c2f,#0a1220);overflow:hidden;position:relative}
+/* ---------- VISUAL ---------- */
+.vis{border:1px solid var(--line);border-radius:15px;background:linear-gradient(158deg,#101c2f,#0a1220);overflow:hidden}
 .vish{padding:10px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;background:rgba(9,15,26,.6)}
 .dots{display:flex;gap:5px}
 .dots i{width:8px;height:8px;border-radius:50%;background:#25344f}
 .vish .t{font-family:'JetBrains Mono';font-size:10px;color:var(--faint);margin-left:6px}
 .visb{padding:15px}
-/* mini chart */
-.mc{position:relative;height:158px;border-radius:9px;background:#0a1220;overflow:hidden}
+.illus{font-family:'JetBrains Mono';font-size:10px;color:var(--faint);display:flex;align-items:center;gap:7px;margin-top:11px}
+.illus .d{width:5px;height:5px;border-radius:50%;background:var(--amb)}
+/* ---------- CARROUSEL ---------- */
+.car{position:relative}
+.carv{overflow:hidden;border-radius:15px}
+.cartrack{display:flex;transition:transform .42s cubic-bezier(.4,0,.2,1)}
+.carslide{min-width:100%;flex-shrink:0}
+.carnav{display:flex;align-items:center;gap:12px;margin-top:14px}
+.cardots{display:flex;gap:7px}
+.cardot{width:7px;height:7px;border-radius:50%;background:var(--line2);border:none;cursor:pointer;padding:0;transition:.2s}
+.cardot.on{background:var(--acc);width:22px;border-radius:4px}
+.carbtns{margin-left:auto;display:flex;gap:6px}
+.carb{width:32px;height:32px;border-radius:8px;border:1px solid var(--line2);background:transparent;color:var(--dim);
+  cursor:pointer;display:grid;place-items:center;transition:.15s}
+.carb:hover{border-color:var(--acc);color:var(--acc)}
+.carb svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.2}
+.carlab{font-family:'JetBrains Mono';font-size:10.5px;color:var(--faint)}
+.carlab b{color:var(--dim);font-weight:500}
+/* chart inner */
+.mc{position:relative;height:206px;border-radius:9px;background:#0a1220;overflow:hidden}
 .mc svg{position:absolute;inset:0;width:100%;height:100%}
 .mz{position:absolute;border-radius:2px}
-.ml{position:absolute;font-family:'JetBrains Mono';font-size:8px;padding:1px 5px;border-radius:3px;white-space:nowrap}
-.narr{margin-top:12px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--card2);
-  font-family:'Space Grotesk';font-size:12.5px;line-height:1.68;color:var(--dim)}
+.ml{position:absolute;font-family:'JetBrains Mono';font-size:8.5px;padding:1.5px 6px;border-radius:4px;white-space:nowrap}
+.narr{padding:13px 15px;border:1px solid var(--line);border-radius:11px;background:var(--card2);
+  font-family:'Space Grotesk';font-size:12.5px;line-height:1.72;color:var(--dim)}
 .narr b{color:var(--tx);font-weight:500}
-/* rows */
-.rw{display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:9px;border:1px solid var(--line);
-  background:var(--card2);margin-bottom:7px;font-size:12.5px}
-.rw:last-child{margin-bottom:0}
-.rw.hit{border-color:#2f5f9e;background:#0e1c31}
-.rw .sy{width:26px;height:26px;border-radius:7px;background:#12213a;border:1px solid var(--line2);
-  display:grid;place-items:center;font-family:'JetBrains Mono';font-size:9px;color:var(--acc);flex-shrink:0}
-.rw .nm{font-weight:500}
-.rw .mt{font-family:'JetBrains Mono';font-size:10px;color:var(--faint)}
-.rw .sc{margin-left:auto;font-family:'JetBrains Mono';font-size:11px}
-.rw .sc.ok{color:var(--pos)}
-.chip{font-family:'JetBrains Mono';font-size:9px;padding:2px 7px;border-radius:5px;background:#0b1424;border:1px solid var(--line);color:var(--faint)}
-/* timeline */
+/* regime tiles */
+.rg{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.rgc{background:var(--card2);padding:10px 11px}
+.rgc .k{font-family:'JetBrains Mono';font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-bottom:4px}
+.rgc .v{font-size:12.5px;font-weight:500;line-height:1.25}
+.rgc .n{font-family:'JetBrains Mono';font-size:8.5px;color:var(--faint);margin-top:3px}
+@media(max-width:520px){.rg{grid-template-columns:repeat(2,1fr)}}
+/* journal */
+.jr{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;border:1px solid var(--line);
+  background:var(--card2);margin-bottom:6px;font-size:12.5px;color:var(--dim)}
+.jr:last-child{margin-bottom:0}
+.jb{font-family:'JetBrains Mono';font-size:9px;padding:2.5px 7px;border-radius:5px;flex-shrink:0}
+.jr .tm{margin-left:auto;font-family:'JetBrains Mono';font-size:10px;color:var(--faint)}
+/* tf switch */
+.tfs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:11px}
+.tfb{font-family:'JetBrains Mono';font-size:11px;padding:6px 12px;border-radius:8px;border:1px solid var(--line2);
+  background:var(--card2);color:var(--faint)}
+.tfb.on{background:#12294a;border-color:#2f5f9e;color:var(--acc)}
+.lyr{display:flex;gap:6px;flex-wrap:wrap}
+.lyb{font-size:11px;padding:5px 11px;border-radius:8px;border:1px solid var(--line2);background:var(--card2);
+  color:var(--dim);display:inline-flex;align-items:center;gap:6px}
+.lyb .sq{width:7px;height:7px;border-radius:2px}
+.lyb.off{opacity:.4}
+
+/* ---------- DÉMO ---------- */
+.demo{border:1px solid var(--line2);border-radius:18px;background:linear-gradient(158deg,#101d31,#0a1220);overflow:hidden}
+.dtabs{display:flex;border-bottom:1px solid var(--line);overflow-x:auto;background:rgba(9,15,26,.5)}
+.dtab{font-family:'Space Grotesk';font-size:13.5px;font-weight:600;padding:14px 20px;background:transparent;border:none;
+  border-bottom:2px solid transparent;color:var(--faint);cursor:pointer;transition:.16s;white-space:nowrap}
+.dtab:hover{color:var(--tx)}
+.dtab.on{color:var(--tx);border-bottom-color:var(--acc)}
+.dpane{display:none;padding:22px}
+.dpane.on{display:block}
+.dgrid{display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start}
+@media(max-width:900px){.dgrid{grid-template-columns:1fr}}
+.dside h4{font-size:17px;font-weight:600;margin-bottom:9px}
+.dside p{font-size:14px;color:var(--dim);line-height:1.65;margin-bottom:14px}
+.dside p b{color:var(--tx);font-weight:500}
+.try{font-family:'JetBrains Mono';font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--acc);margin-bottom:9px}
+.opt{display:block;width:100%;text-align:left;font-size:13px;padding:10px 13px;border-radius:9px;border:1px solid var(--line2);
+  background:rgba(10,19,34,.6);color:var(--dim);cursor:pointer;transition:.15s;margin-bottom:7px}
+.opt:hover{border-color:var(--acc);color:var(--tx);background:#12213a}
+.dchart{position:relative;height:250px;border:1px solid var(--line);border-radius:11px;background:#0a1220;overflow:hidden}
+.dchart svg{position:absolute;inset:0;width:100%;height:100%}
+.lay{position:absolute;inset:0;opacity:0;transition:opacity .3s;pointer-events:none}
+.lay.on{opacity:1}
+.dz{position:absolute;border-radius:2px}
+.dl{position:absolute;font-family:'JetBrains Mono';font-size:8.5px;padding:1.5px 6px;border-radius:4px;white-space:nowrap}
+.dnarr{margin-top:12px;padding:13px 15px;border:1px solid var(--line);border-radius:11px;background:var(--card2);
+  font-family:'Space Grotesk';font-size:13px;line-height:1.7;color:var(--dim);min-height:74px}
+.dnarr b{color:var(--tx);font-weight:500}
+.dchips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.dchip{font-size:11.5px;padding:5px 11px;border-radius:8px;border:1px solid var(--line2);background:var(--card2);
+  color:var(--faint);cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:7px}
+.dchip:hover{color:var(--tx)}
+.dchip .sq{width:8px;height:8px;border-radius:2px}
+.dchip.on{color:var(--tx);background:#12213a}
+.dchip.off{opacity:.42}
+.cond{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;border:1px solid var(--line2);
+  background:rgba(10,19,34,.6);cursor:pointer;margin-bottom:7px;transition:.15s;font-size:13px;color:var(--dim)}
+.cond:hover{border-color:var(--acc);color:var(--tx)}
+.cond.on{border-color:#2f5f9e;background:#12294a;color:var(--tx)}
+.cond .bx{width:15px;height:15px;border-radius:4px;border:1.5px solid var(--line2);display:grid;place-items:center;flex-shrink:0}
+.cond.on .bx{background:var(--acc);border-color:var(--acc)}
+.cond .bx svg{width:8px;height:8px;stroke:#04101f;stroke-width:3.4;fill:none;opacity:0}
+.cond.on .bx svg{opacity:1}
+.res{border:1px solid var(--line);border-radius:11px;background:var(--card2);overflow:hidden}
+.resh{padding:11px 14px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:9px}
+.resh .n{font-family:'Space Grotesk';font-size:22px;font-weight:700;letter-spacing:-.03em}
+.resh .l{font-size:12.5px;color:var(--dim)}
+.rrow{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid #141f33;font-size:12.5px}
+.rrow:last-child{border-bottom:none}
+.rrow.miss{opacity:.36}
+.rrow .sy{width:24px;height:24px;border-radius:6px;background:#12213a;border:1px solid var(--line2);
+  display:grid;place-items:center;font-family:'JetBrains Mono';font-size:8.5px;color:var(--acc);flex-shrink:0}
+.rrow .sc{margin-left:auto;font-family:'JetBrains Mono';font-size:11px}
+.zsel{display:flex;gap:7px;margin-bottom:13px;flex-wrap:wrap}
+.zb{font-size:12px;padding:7px 13px;border-radius:8px;border:1px solid var(--line2);background:var(--card2);
+  color:var(--faint);cursor:pointer;transition:.15s}
+.zb:hover{color:var(--tx)}
+.zb.on{border-color:var(--acc);background:#12294a;color:var(--acc)}
+.zpane{display:none}
+.zpane.on{display:block}
+.mchat{border:1px solid var(--line);border-radius:11px;background:var(--card2);padding:15px;min-height:230px;display:flex;flex-direction:column;gap:9px}
+.mb{max-width:88%;padding:10px 13px;border-radius:12px;font-size:13px;line-height:1.55;animation:mfade .3s both}
+@keyframes mfade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.mb.u{align-self:flex-end;background:#12294a;border:1px solid #2f5f9e}
+.mb.a{align-self:flex-start;background:var(--card);border:1px solid var(--line);color:var(--dim)}
+.mb.a b{color:var(--tx);font-weight:500}
+.mb.no{align-self:flex-start;background:#1a1508;border:1px solid #6b5220;border-left:2px solid var(--amb);color:#e8d5a8}
+.mb.no b{color:var(--amb)}
 .tl{display:flex;align-items:center;margin:10px 0 7px}
 .tl i{width:9px;height:9px;border-radius:50%;flex-shrink:0}
 .tl s{flex:1;height:2px;text-decoration:none}
 .tlab{display:flex;justify-content:space-between;font-family:'JetBrains Mono';font-size:9px;color:var(--faint)}
 .fill{height:6px;background:#0d1727;border-radius:3px;overflow:hidden;margin-top:9px}
 .fill i{display:block;height:100%;background:linear-gradient(90deg,#2a4a78,#4d86d4)}
-/* chat */
-.cw{display:flex;flex-direction:column;gap:8px}
-.bub{max-width:90%;padding:9px 12px;border-radius:11px;font-size:12.5px;line-height:1.5}
-.bub.u{align-self:flex-end;background:#12294a;border:1px solid #2f5f9e}
-.bub.a{align-self:flex-start;background:var(--card);border:1px solid var(--line);color:var(--dim)}
-.bub.a b{color:var(--tx);font-weight:500}
-.bub.no{align-self:flex-start;background:#1a1508;border:1px solid #6b5220;border-left:2px solid var(--amb);color:#e8d5a8}
-/* q&a cards */
-.qgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
-.qc{border:1px solid var(--line);border-radius:10px;background:var(--card2);padding:12px 13px}
-.qc .qq{font-family:'Space Grotesk';font-size:12.5px;font-weight:600;margin-bottom:6px;line-height:1.3}
-.qc .qa{font-size:11.5px;color:var(--dim);line-height:1.55}
-.qc .qa b{color:var(--tx);font-size:13px}
-/* STEPS */
+.chip{font-family:'JetBrains Mono';font-size:9px;padding:2px 7px;border-radius:5px;background:#0b1424;border:1px solid var(--line);color:var(--faint)}
+/* ---------- MIA SECTION ---------- */
+.miahero{border:1px solid var(--line2);border-radius:20px;background:linear-gradient(155deg,#13233c,#0a1220 62%);
+  padding:44px 40px;position:relative;overflow:hidden}
+.miahero .aura2{position:absolute;width:640px;height:420px;right:-160px;top:-160px;
+  background:radial-gradient(ellipse at center,rgba(124,178,255,.14),transparent 66%);pointer-events:none}
+.miagrid{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:center;position:relative}
+@media(max-width:940px){.miagrid{grid-template-columns:1fr;gap:30px}.miahero{padding:32px 24px}}
+.miab{display:inline-flex;align-items:center;gap:10px;margin-bottom:18px}
+.miav{width:40px;height:40px;border-radius:12px;background:linear-gradient(140deg,#5b9dff,#3060b8);
+  display:grid;place-items:center;position:relative;flex-shrink:0}
+.miav svg{width:20px;height:20px;stroke:#04101f;fill:none;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round}
+.miav .o{position:absolute;right:-2px;bottom:-2px;width:11px;height:11px;border-radius:50%;background:var(--pos);border:2.5px solid #101f36}
+.miab .nm{font-family:'Space Grotesk';font-size:16px;font-weight:600;line-height:1.15}
+.miab .sb{font-family:'JetBrains Mono';font-size:10px;color:var(--faint)}
+.qlist{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:20px}
+@media(max-width:600px){.qlist{grid-template-columns:1fr}}
+.ql{font-size:12.5px;padding:9px 12px;border-radius:9px;border:1px solid var(--line2);background:rgba(10,19,34,.55);
+  color:var(--dim);display:flex;align-items:center;gap:9px;line-height:1.4}
+.ql .ar{margin-left:auto;color:var(--faint);font-size:11px;flex-shrink:0}
+.capgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:34px}
+@media(max-width:760px){.capgrid{grid-template-columns:1fr}}
+.cap{border:1px solid var(--line);border-radius:13px;background:var(--card);padding:20px}
+.cap .ic{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;margin-bottom:12px}
+.cap .ic svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.9}
+.cap h4{font-size:15.5px;font-weight:600;margin-bottom:7px}
+.cap p{font-size:13.5px;color:var(--dim);line-height:1.62}
+.cap p b{color:var(--tx);font-weight:500}
+
+/* ---------- STEPS / WHO ---------- */
 .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
 .step{border:1px solid var(--line);border-radius:14px;background:var(--card);padding:24px 22px}
 .step .n{font-family:'Space Grotesk';font-size:13px;font-weight:700;color:var(--acc);margin-bottom:12px}
 .step h4{font-size:17px;font-weight:600;margin-bottom:9px}
 .step p{font-size:14px;color:var(--dim);line-height:1.6}
-@media(max-width:820px){.steps{grid-template-columns:1fr}.qgrid{grid-template-columns:1fr}}
-/* WHO */
 .who{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 .wc{border:1px solid var(--line);border-radius:13px;background:var(--card);padding:22px}
+.wc .lb{font-family:'JetBrains Mono';font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--acc);margin-bottom:9px}
 .wc h4{font-size:16px;font-weight:600;margin-bottom:8px}
-.wc p{font-size:13.5px;color:var(--dim);line-height:1.6}
-@media(max-width:820px){.who{grid-template-columns:1fr}}
-/* PRICING */
+.wc p{font-size:13.5px;color:var(--dim);line-height:1.6;margin-bottom:10px}
+.wc ul{list-style:none;display:flex;flex-direction:column;gap:6px}
+.wc li{font-size:13px;color:var(--dim);display:flex;gap:8px;line-height:1.45}
+.wc li::before{content:'—';color:var(--faint);flex-shrink:0}
+@media(max-width:820px){.steps,.who{grid-template-columns:1fr}}
+
+/* ---------- PRICING ---------- */
 .prices{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:760px;margin:0 auto}
 .pc{border:1px solid var(--line);border-radius:16px;background:var(--card);padding:28px 26px;position:relative}
 .pc.hi{border-color:var(--acc);background:linear-gradient(158deg,#101f36,#0b1422)}
@@ -159,9 +285,10 @@ h2{font-size:38px;font-weight:600;margin-bottom:15px}
 .pf{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;color:var(--dim);line-height:1.5}
 .pf .ck{width:16px;height:16px;border-radius:5px;background:#12294a;display:grid;place-items:center;flex-shrink:0;margin-top:1px}
 .pf .ck svg{width:8px;height:8px;stroke:var(--acc);stroke-width:3.4;fill:none}
-.plegal{font-family:'JetBrains Mono';font-size:10.5px;color:var(--faint);line-height:1.65;text-align:center;margin-top:22px;max-width:640px;margin-left:auto;margin-right:auto}
+.plegal{font-family:'JetBrains Mono';font-size:10.5px;color:var(--faint);line-height:1.65;text-align:center;margin:22px auto 0;max-width:640px}
 @media(max-width:760px){.prices{grid-template-columns:1fr}}
-/* FAQ */
+
+/* ---------- FAQ / CTA / FOOTER ---------- */
 .faq{max-width:760px;margin:0 auto}
 .fq{border:1px solid var(--line);border-radius:12px;background:var(--card);margin-bottom:9px;overflow:hidden}
 .fqh{padding:16px 20px;display:flex;align-items:center;gap:14px;cursor:pointer;user-select:none}
@@ -172,384 +299,118 @@ h2{font-size:38px;font-weight:600;margin-bottom:15px}
 .fqb{display:none;padding:0 20px 17px;font-size:14.5px;color:var(--dim);line-height:1.68}
 .fq.open .fqb{display:block}
 .fqb b{color:var(--tx);font-weight:500}
-/* CTA */
-.final{border:1px solid var(--line2);border-radius:18px;background:linear-gradient(158deg,#12213a,#0a1220);padding:52px 40px;text-align:center}
-.final h2{font-size:34px;margin-bottom:14px}
-.final p{font-size:16.5px;color:var(--dim);max-width:520px;margin:0 auto 26px}
-/* FOOTER */
-footer{border-top:1px solid var(--line);padding:34px 0 44px;margin-top:76px}
+.final{border:1px solid var(--line2);border-radius:18px;background:linear-gradient(158deg,#12213a,#0a1220);padding:50px 40px;text-align:center}
+.final h2{font-size:33px;margin-bottom:14px}
+.final p{font-size:16.5px;color:var(--dim);max-width:520px;margin:0 auto 24px}
+footer{border-top:1px solid var(--line);padding:34px 0 44px;margin-top:74px}
 .fgrid{display:flex;gap:36px;flex-wrap:wrap;align-items:flex-start}
 .fl{display:flex;flex-direction:column;gap:8px}
 .fl .h{font-family:'JetBrains Mono';font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);margin-bottom:3px}
 .fl a{color:var(--dim);font-size:13.5px;text-decoration:none}
 .fl a:hover{color:var(--tx)}
 .fdisc{margin-top:30px;padding-top:22px;border-top:1px solid var(--line);font-size:12.5px;color:var(--faint);line-height:1.7}
-/* ---------- DÉMO INTERACTIVE ---------- */
-.demo{border:1px solid var(--line2);border-radius:18px;background:linear-gradient(158deg,#101d31,#0a1220);overflow:hidden}
-.dtabs{display:flex;border-bottom:1px solid var(--line);overflow-x:auto;background:rgba(9,15,26,.5)}
-.dtab{font-family:'Space Grotesk';font-size:13.5px;font-weight:600;padding:14px 20px;background:transparent;border:none;
-  border-bottom:2px solid transparent;color:var(--faint);cursor:pointer;transition:.16s;white-space:nowrap;display:flex;align-items:center;gap:9px}
-.dtab:hover{color:var(--tx)}
-.dtab.on{color:var(--tx);border-bottom-color:var(--acc)}
-.dtab .ic{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;flex-shrink:0}
-.dtab .ic svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:1.9}
-.dpane{display:none;padding:22px}
-.dpane.on{display:block}
-.dgrid{display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start}
-@media(max-width:900px){.dgrid{grid-template-columns:1fr}}
-.dside h4{font-size:17px;font-weight:600;margin-bottom:9px}
-.dside p{font-size:14px;color:var(--dim);line-height:1.65;margin-bottom:14px}
-.dside p b{color:var(--tx);font-weight:500}
-.try{font-family:'JetBrains Mono';font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--acc);margin-bottom:9px}
-.opt{display:block;width:100%;text-align:left;font-size:13px;padding:10px 13px;border-radius:9px;border:1px solid var(--line2);
-  background:rgba(10,19,34,.6);color:var(--dim);cursor:pointer;transition:.15s;margin-bottom:7px}
-.opt:hover{border-color:var(--acc);color:var(--tx);background:#12213a}
-.opt.on{border-color:var(--acc);background:#12294a;color:var(--tx)}
-.dchart{position:relative;height:250px;border:1px solid var(--line);border-radius:11px;background:#0a1220;overflow:hidden}
-.dchart svg{position:absolute;inset:0;width:100%;height:100%}
-.lay{position:absolute;inset:0;opacity:0;transition:opacity .3s;pointer-events:none}
-.lay.on{opacity:1}
-.dz{position:absolute;border-radius:2px}
-.dl{position:absolute;font-family:'JetBrains Mono';font-size:8.5px;padding:1.5px 6px;border-radius:4px;white-space:nowrap}
-.dnarr{margin-top:12px;padding:13px 15px;border:1px solid var(--line);border-radius:11px;background:var(--card2);
-  font-family:'Space Grotesk';font-size:13px;line-height:1.7;color:var(--dim);min-height:74px}
-.dnarr b{color:var(--tx);font-weight:500}
-.dchips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
-.dchip{font-size:11.5px;padding:5px 11px;border-radius:8px;border:1px solid var(--line2);background:var(--card2);
-  color:var(--faint);cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:7px}
-.dchip:hover{color:var(--tx)}
-.dchip .sq{width:8px;height:8px;border-radius:2px}
-.dchip.on{color:var(--tx);border-color:var(--line2);background:#12213a}
-.dchip.off{opacity:.42}
-/* scanner demo */
-.cond{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;border:1px solid var(--line2);
-  background:rgba(10,19,34,.6);cursor:pointer;margin-bottom:7px;transition:.15s;font-size:13px;color:var(--dim)}
-.cond:hover{border-color:var(--acc);color:var(--tx)}
-.cond.on{border-color:#2f5f9e;background:#12294a;color:var(--tx)}
-.cond .bx{width:15px;height:15px;border-radius:4px;border:1.5px solid var(--line2);display:grid;place-items:center;flex-shrink:0}
-.cond.on .bx{background:var(--acc);border-color:var(--acc)}
-.cond .bx svg{width:8px;height:8px;stroke:#04101f;stroke-width:3.4;fill:none;opacity:0}
-.cond.on .bx svg{opacity:1}
-.res{border:1px solid var(--line);border-radius:11px;background:var(--card2);overflow:hidden}
-.resh{padding:11px 14px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:9px}
-.resh .n{font-family:'Space Grotesk';font-size:22px;font-weight:700;letter-spacing:-.03em}
-.resh .l{font-size:12.5px;color:var(--dim)}
-.rrow{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid #141f33;font-size:12.5px;transition:.2s}
-.rrow:last-child{border-bottom:none}
-.rrow.miss{opacity:.36}
-.rrow .sy{width:24px;height:24px;border-radius:6px;background:#12213a;border:1px solid var(--line2);
-  display:grid;place-items:center;font-family:'JetBrains Mono';font-size:8.5px;color:var(--acc);flex-shrink:0}
-.rrow .sc{margin-left:auto;font-family:'JetBrains Mono';font-size:11px}
-/* zone demo */
-.zsel{display:flex;gap:7px;margin-bottom:13px;flex-wrap:wrap}
-.zb{font-size:12px;padding:7px 13px;border-radius:8px;border:1px solid var(--line2);background:var(--card2);
-  color:var(--faint);cursor:pointer;transition:.15s}
-.zb:hover{color:var(--tx)}
-.zb.on{border-color:var(--acc);background:#12294a;color:var(--acc)}
-.zpane{display:none}
-.zpane.on{display:block}
-/* mia demo */
-.mchat{border:1px solid var(--line);border-radius:11px;background:var(--card2);padding:15px;min-height:230px;display:flex;flex-direction:column;gap:9px}
-.mb{max-width:88%;padding:10px 13px;border-radius:12px;font-size:13px;line-height:1.55;animation:mfade .3s both}
-@keyframes mfade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-.mb.u{align-self:flex-end;background:#12294a;border:1px solid #2f5f9e}
-.mb.a{align-self:flex-start;background:var(--card);border:1px solid var(--line);color:var(--dim)}
-.mb.a b{color:var(--tx);font-weight:500}
-.mb.no{align-self:flex-start;background:#1a1508;border:1px solid #6b5220;border-left:2px solid var(--amb);color:#e8d5a8}
-.mb.no b{color:var(--amb)}
 </style></head><body>
-
 <nav><div class="in">
-  <div class="brand"><span class="logo"><svg viewBox="0 0 24 24"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.4L12 15l-1.9-4.6L5.5 9l4.6-1.4z"/><path d="M18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></svg></span>MIA Markets</div>
-  <a class="nl hidem" href="#outils">Outils</a>
-  <a class="nl hidem" href="#comment">Comment ça marche</a>
-  <a class="nl hidem" href="#tarif">Tarif</a>
-  <a class="nl hidem" href="#faq">Questions</a>
-  <span class="sp"><a class="btn sm hidem" href="#">Se connecter</a><a class="btn pri sm" href="#tarif">Essayer gratuitement</a></span>
+  <a class="brand" href="#">
+    <span class="mark"><svg viewBox="0 0 24 24" fill="none">
+      <rect x="3.5" y="9" width="3" height="9" rx="1.4" fill="#04101f"/>
+      <rect x="10.5" y="4" width="3" height="16" rx="1.4" fill="#04101f"/>
+      <rect x="17.5" y="11" width="3" height="7" rx="1.4" fill="#04101f"/>
+      <circle cx="12" cy="12" r="0" fill="#04101f"/></svg></span>
+    <span class="wordmark">MIA<i>.</i>Markets</span></a>
+  <div class="links">
+    <a class="nl" href="#mia">M.I.A</a>
+    <a class="nl" href="#demo">Démo</a>
+    <a class="nl" href="#outils">Outils</a>
+    <a class="nl" href="#tarif">Tarifs</a>
+    <a class="nl" href="#faq">FAQ</a>
+  </div>
+  <span class="sp">
+    <span class="lang hidem">FR</span>
+    <a class="btn ghost sm" href="#">Se connecter</a>
+    <a class="btn pri sm" href="#tarif">Essayer gratuitement</a>
+  </span>
 </div></nav>
+
 <div class="hero"><div class="aura"></div><div class="wrap in">
-  <div class="pill"><span class="d"></span>80 marchés · 6 unités de temps · analysés en continu</div>
+  <div class="pill"><span class="d"></span>Accès anticipé · l'or et l'euro aujourd'hui</div>
   <h1 class="big">Le marché a déjà tout écrit.<br><em>MIA te le lit.</em></h1>
-  <p class="lead">Order Blocks, Fair Value Gaps, cassures de structure, poches de liquidité — détectés sur 480 combinaisons de marchés et d'unités de temps, et décrits en langage clair. Tu arrêtes de tracer à la main et tu passes au travail qui compte.</p>
-  <div class="ctas"><a class="btn pri lg" href="#tarif">Essayer gratuitement</a><a class="btn lg" href="#outils">Voir les outils</a></div>
+  <p class="lead">Order Blocks, Fair Value Gaps, cassures de structure, poches de liquidité — détectés automatiquement et décrits en langage clair. Et un assistant qui répond quand tu ne comprends pas.</p>
+  <div class="ctas"><a class="btn pri lg" href="#tarif">Essayer gratuitement</a><a class="btn lg" href="#demo">Voir la démo</a></div>
   <div class="micro">Sans carte de crédit · Accès gratuit permanent</div>
 
   <div class="stats">
-    <div class="stat"><div class="n">80+</div><div class="l">marchés suivis</div></div>
-    <div class="stat"><div class="n">480</div><div class="l">combinaisons analysées</div></div>
-    <div class="stat"><div class="n">21</div><div class="l">conditions de recherche</div></div>
+    <div class="stat"><div class="n">2</div><div class="l">marchés suivis</div></div>
     <div class="stat"><div class="n">6</div><div class="l">unités de temps</div></div>
+    <div class="stat"><div class="n">22</div><div class="l">conditions de recherche</div></div>
+    <div class="stat"><div class="n">7</div><div class="l">structures détectées</div></div>
   </div>
+  <div class="roadmap">Accès anticipé · <b>2 marchés aujourd'hui, 50 à 80 prévus au lancement</b></div>
 </div></div>
 
-<section id="outils"><div class="wrap">
+<!-- ============ M.I.A ============ -->
+<section id="mia" style="padding-top:34px"><div class="wrap">
   <div class="sechead">
-    <div class="eyebrow">Cinq outils, un même moteur</div>
-    <h2>Tout ce dont tu as besoin pour lire une structure</h2>
-    <p>Chaque outil répond à une question que tu te poses déjà. La différence, c'est le temps que tu mets à obtenir la réponse.</p>
+    <div class="eyebrow">Ce qui n'existe nulle part ailleurs</div>
+    <h2>Un assistant qui t'explique le marché</h2>
+    <p>La plupart des outils de trading affichent. MIA explique. Tu peux lui parler comme à quelqu'un qui aurait le graphique sous les yeux.</p>
   </div>
 
-  <!-- APP -->
-  <div class="feat">
-    <div class="txt">
-      <span class="tag b">L'espace de lecture</span>
-      <h3>Ouvre un graphique, la lecture est déjà faite</h3>
-      <p class="p">Le moteur a marqué les zones, daté les cassures, positionné la liquidité. En dessous, un paragraphe te dit où en est le marché — <b>pas ce qu'il va faire, ce qu'il a fait</b>. Tu comprends la situation en dix secondes au lieu de vingt minutes de traçage.</p>
-      <div class="bul">
-        <div class="bu"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span><b>Order Blocks et Fair Value Gaps</b> bornés, avec leur direction et leur état</span></div>
-        <div class="bu"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span><b>BOS et CHOCH</b> horodatés, avec le niveau exact de la cassure</span></div>
-        <div class="bu"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span><b>Poches de liquidité</b> intactes, balayées ou cassées — trois états distincts</span></div>
-        <div class="bu"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span><b>Panneau de régime</b> : tendance structurelle, phase, volatilité, accord entre unités</span></div>
+  <div class="miahero"><div class="aura2"></div><div class="miagrid">
+    <div>
+      <div class="miab"><span class="miav"><svg viewBox="0 0 24 24"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.4L12 15l-1.9-4.6L5.5 9l4.6-1.4z"/><path d="M18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></svg><span class="o"></span></span>
+        <span><span class="nm">M.I.A Agent</span><br><span class="sb">disponible sur toutes les surfaces</span></span></div>
+      <h3 style="font-family:'Space Grotesk';font-size:25px;font-weight:600;letter-spacing:-.03em;line-height:1.15;margin-bottom:14px">Pose la question que tu n'oses pas poser dans un groupe Discord</h3>
+      <p style="font-size:15.5px;color:var(--dim);line-height:1.68;margin-bottom:6px">Tu ne comprends pas pourquoi cette bougie est un Order Block ? Tu veux savoir ce qui s'est passé sur l'or hier à 14 h ? Tu ne sais pas ce que « mitigation » veut dire ? <b style="color:var(--tx);font-weight:500">Demande-lui.</b> Elle répond avec les niveaux réels et les horodatages réels du marché que tu regardes.</p>
+      <div class="qlist">
+        <span class="ql">Explique-moi ce CHOCH<span class="ar">↗</span></span>
+        <span class="ql">Quelle est la différence BOS / CHOCH ?<span class="ar">↗</span></span>
+        <span class="ql">Cette zone a été testée combien de fois ?<span class="ar">↗</span></span>
+        <span class="ql">Montre-moi seulement les OB non testés<span class="ar">↗</span></span>
+        <span class="ql">Où est la liquidité la plus proche ?<span class="ar">↗</span></span>
+        <span class="ql">C'est quoi un Fair Value Gap ?<span class="ar">↗</span></span>
       </div>
     </div>
-    <div class="vis"><div class="vish"><span class="dots"><i></i><i></i><i></i></span><span class="t">Or · XAU/USD · 15 minutes</span></div>
-      <div class="visb">
-        <div class="mc">
-          <div class="mz" style="left:58%;right:58px;top:52px;height:16px;background:rgba(255,107,129,.10);border:1px dashed rgba(255,107,129,.5)"></div>
-          <div class="ml" style="left:59%;top:54px;background:rgba(255,107,129,.16);color:#ffa5b3">OB · non testé</div>
-          <div class="ml" style="left:10px;top:23px;background:rgba(245,181,68,.15);color:#f5b544">Liquidité intacte</div>
-          <div class="ml" style="left:10px;top:121px;background:rgba(245,181,68,.10);color:#a08048">Balayée</div>
-          <div class="ml" style="left:40%;top:88px;background:rgba(61,220,151,.15);color:#3ddc97">CHOCH ↑</div>
-          <svg viewBox="0 0 420 158" preserveAspectRatio="none">
-<line x1="11.8" y1="101.2" x2="11.8" y2="113.7" stroke="#ff6b81" stroke-width=".9"/>
-<rect x="9.5" y="105.4" width="4.8" height="4.4" fill="#ff6b81" rx="1"/>
-<line x1="19.5" y1="107.8" x2="19.5" y2="114.7" stroke="#ff6b81" stroke-width=".9"/>
-<rect x="17.2" y="109.8" width="4.8" height="1.2" fill="#ff6b81" rx="1"/>
-<line x1="27.2" y1="102.7" x2="27.2" y2="113.4" stroke="#3ddc97" stroke-width=".9"/>
-<rect x="24.9" y="106.0" width="4.8" height="4.1" fill="#3ddc97" rx="1"/>
-<line x1="34.9" y1="105.0" x2="34.9" y2="112.2" stroke="#ff6b81" stroke-width=".9"/>
-<rect x="32.5" y="106.0" width="4.8" height="3.5" fill="#ff6b81" rx="1"/>
-<line x1="42.6" y1="107.0" x2="42.6" y2="114.1" stroke="#3ddc97" stroke-width=".9"/>
-<rect x="40.2" y="108.4" width="4.8" height="1.2" fill="#3ddc97" rx="1"/>
-<line x1="50.3" y1="106.3" x2="50.3" y2="113.1" stroke="#ff6b81" stroke-width=".9"/>
-<rect x="47.9" y="108.4" width="4.8" height="3.5" fill="#ff6b81" rx="1"/>
-<line x1="58.0" y1="101.0" x2="58.0" y2="116.9" stroke="#3ddc97" stroke-width=".9"/>
-<rect x="55.6" y="105.3" width="4.8" height="6.6" fill="#3ddc97" rx="1"/>
-<line x1="65.7" y1="102.6" x2="65.7" y2="107.9" stroke="#3ddc97" stroke-width=".9"/>
-<rect x="63.3" y="103.8" width="4.8" height="1.5" fill="#3ddc97" rx="1"/>
-<line x1="73.4" y1="102.3" x2="73.4" y2="109.2" stroke="#ff6b81" stroke-width=".9"/>
-<rect x="71.0" y="103.8" width="4.8" height="1.2" fill="#ff6b81" rx="1"/>
-<line x1="81.1" y1="102.1" x2="81.1" y2="110.3" stroke="#ff6b81" stroke-width=".9"/>
-<rect x="78.7" y="103.8" width="4.8" height="1.7" fill="#ff6b81" rx="1"/>
-<line x1="88.8" y1="100.3" x2="88.8" y2="113.6" stroke="#ff6b81" stroke-width=".9"/>
-<rect x="86.4" y="105.6" width="4.8" height="5.0" fill="#ff6b81" rx="1"/>
-<line x1="96.5" y1="108.0" x2="96.5" y2="117.6" stroke="#ff6b81" stroke-width=".9"/>
-<rect x="94.1" y="110.5" width="4.8" height="3.9" fill="#ff6b81" rx="1"/>
-<line x1="104.2" y1="113.2" x2="104.2" y2="128.1" stroke="#ff6b81" stroke-width=".9"/>
-<rect x="101.8" y="114.4" width="4.8" height="8.7" fill="#ff6b81" rx="1"/>
-<line x1="111.9" y1="118.5" x2="111.9" y2="133.2" stroke="#ff6b81" stroke-width=".9"/>
-<rect x="109.5" y="123.1" width="4.8" height="8.1" fill="#ff6b81" rx="1"/>
-<line x1="119.6" y1="124.5" x2="119.6" y2="135.7" stroke="#3ddc97" stroke-width=".9"/>
-<rect x="117.2" y="129.6" width="4.8" height="1.6" fill="#3ddc97" rx="1"/>
-<line x1="127.3" y1="125.9" x2="127.3" y2="135.0" stroke="#ff6b81" stroke-width=".9"/>
-<rect x="124.9" y="129.6" width="4.8" height="1.2" fill="#ff6b81" rx="1"/>
-<line x1="135.0" y1="127.5" x2="135.0" y2="143.5" stroke="#ff6b81" stroke-width=".9"/>
-<rect x="132.6" y="130.7" width="4.8" height="9.6" fill="#ff6b81" rx="1"/>
-<line x1="142.7" y1="135.0" x2="142.7" y2="143.5" stroke="#ff6b81" stroke-width=".9"/>
-<rect x="140.3" y="140.2" width="4.8" height="1.2" fill="#ff6b81" rx="1"/>
-<line x1="150.4" y1="138.2" x2="150.4" y2="143.5" stroke="#3ddc97" stroke-width=".9"/>
-<rect x="148.0" y="140.9" width="4.8" height="1.2" fill="#3ddc97" rx="1"/>
-<line x1="158.1" y1="135.4" x2="158.1" y2="143.5" stroke="#3ddc97" stroke-width=".9"/>
-<rect x="155.7" y="140.9" width="4.8" height="1.2" fill="#3ddc97" rx="1"/>
-<line x1="165.8" y1="139.5" x2="165.8" y2="143.5" stroke="#3ddc97" stroke-width=".9"/>
-<rect x="163.4" y="140.9" width="4.8" height="1.2" fill="#3ddc97" rx="1"/>
-<line x1="173.5" y1="131.1" x2="173.5" y2="143.5" stroke="#3ddc97" stroke-width=".9"/>
-<rect x="171.1" y="134.4" width="4.8" height="6.5" fill="#3ddc97" rx="1"/>
-<line x1="181.2" y1="129.3" x2="181.2" y2="136.4" stroke="#3ddc97" stroke-width=".9"/>
-<rect x="178.8" y="133.8" width="4.8" height="1.2" fill="#3ddc97" rx="1"/>
-<line x1="188.8" y1="128.8" x2="188.8" y2="137.6" stroke="#3ddc97" stroke-width=".9"/>
-<rect x="186.5" y="132.3" width="4.8" height="1.4" fill="#3ddc97" rx="1"/>
-<line x1="196.5" y1="130.5" x2="196.5" y2="139.1" stroke="#ff6b81" stroke-width=".9"/>
-<rect x="194.2" y="132.3" width="4.8" height="4.2" fill="#ff6b81" rx="1"/>
-<line x1="204.2" y1="128.3" x2="204.2" y2="140.3" stroke="#3ddc97" stroke-width=".9"/>
-<rect x="201.9" y="130.9" width="4.8" height="5.6" fill="#3ddc97" rx="1"/>
-<line x1="211.9" y1="129.4" x2="211.9" y2="134.8" stroke="#ff6b81" stroke-width=".9"/>
-<rect x="209.5" y="130.9" width="4.8" height="2.6" fill="#ff6b81" rx="1"/>
-<line x1="219.6" y1="124.7" x2="219.6" y2="136.2" stroke="#3ddc97" stroke-width=".9"/>
-<rect x="217.2" y="129.3" width="4.8" height="4.1" fill="#3ddc97" rx="1"/>
-<line x1="227.3" y1="122.8" x2="227.3" y2="134.4" stroke="#3ddc97" stroke-width=".9"/>
-<rect x="224.9" y="126.9" width="4.8" height="2.4" fill="#3ddc97" rx="1"/>
-<line x1="235.0" y1="111.9" x2="235.0" y2="132.4" stroke="#3ddc97" stroke-width=".9"/>
-<rect x="232.6" y="114.7" width="4.8" height="12.1" fill="#3ddc97" rx="1"/>
-<line x1="242.7" y1="98.8" x2="242.7" y2="119.8" stroke="#3ddc97" stroke-width=".9"/>
-<rect x="240.3" y="102.6" width="4.8" height="12.2" fill="#3ddc97" rx="1"/>
-<line x1="250.4" y1="93.9" x2="250.4" y2="104.7" stroke="#3ddc97" stroke-width=".9"/>
-<rect x="248.0" y="96.6" width="4.8" height="6.0" fill="#3ddc97" rx="1"/>
-<line x1="258.1" y1="83.8" x2="258.1" y2="97.9" stroke="#3ddc97" stroke-width=".9"/>
-<rect x="255.7" y="85.5" width="4.8" height="11.1" fill="#3ddc97" rx="1"/>
-<line x1="265.8" y1="70.9" x2="265.8" y2="88.8" stroke="#3ddc97" stroke-width=".9"/>
-<rect x="263.4" y="75.4" width="4.8" height="10.1" fill="#3ddc97" rx="1"/>
-<line x1="273.5" y1="63.6" x2="273.5" y2="77.6" stroke="#3ddc97" stroke-width=".9"/>
-<rect x="271.1" y="64.9" width="4.8" height="10.5" fill="#3ddc97" rx="1"/>
-<line x1="281.2" y1="58.6" x2="281.2" y2="66.7" stroke="#3ddc97" stroke-width=".9"/>
-<rect x="278.8" y="61.5" width="4.8" height="3.3" fill="#3ddc97" rx="1"/>
-<line x1="288.9" y1="58.6" x2="288.9" y2="66.7" stroke="#3ddc97" stroke-width=".9"/>
-<rect x="286.5" y="61.1" width="4.8" height="1.2" fill="#3ddc97" rx="1"/>
-<line x1="296.6" y1="44.2" x2="296.6" y2="64.3" stroke="#3ddc97" stroke-width=".9"/>
-<rect x="294.2" y="48.7" width="4.8" height="12.5" fill="#3ddc97" rx="1"/>
-<line x1="304.3" y1="40.4" x2="304.3" y2="52.1" stroke="#3ddc97" stroke-width=".9"/>
-<rect x="301.9" y="45.8" width="4.8" height="2.8" fill="#3ddc97" rx="1"/>
-<line x1="312.0" y1="35.6" x2="312.0" y2="47.8" stroke="#3ddc97" stroke-width=".9"/>
-<rect x="309.6" y="36.7" width="4.8" height="9.1" fill="#3ddc97" rx="1"/>
-<line x1="319.7" y1="27.6" x2="319.7" y2="41.8" stroke="#3ddc97" stroke-width=".9"/>
-<rect x="317.3" y="32.3" width="4.8" height="4.5" fill="#3ddc97" rx="1"/>
-<line x1="327.4" y1="28.0" x2="327.4" y2="35.9" stroke="#3ddc97" stroke-width=".9"/>
-<rect x="325.0" y="30.9" width="4.8" height="1.3" fill="#3ddc97" rx="1"/>
-<line x1="335.1" y1="23.9" x2="335.1" y2="34.4" stroke="#3ddc97" stroke-width=".9"/>
-<rect x="332.7" y="26.3" width="4.8" height="4.6" fill="#3ddc97" rx="1"/>
-<line x1="342.8" y1="21.8" x2="342.8" y2="30.3" stroke="#ff6b81" stroke-width=".9"/>
-<rect x="340.4" y="26.3" width="4.8" height="3.0" fill="#ff6b81" rx="1"/>
-<line x1="350.5" y1="21.5" x2="350.5" y2="30.4" stroke="#3ddc97" stroke-width=".9"/>
-<rect x="348.1" y="26.8" width="4.8" height="2.4" fill="#3ddc97" rx="1"/>
-<line x1="358.2" y1="21.6" x2="358.2" y2="31.7" stroke="#3ddc97" stroke-width=".9"/>
-<rect x="355.8" y="25.6" width="4.8" height="1.2" fill="#3ddc97" rx="1"/>
-<line x1="8" y1="31.3" x2="362" y2="31.3" stroke="#f5b544" stroke-width="1.1" opacity=".8"/>
-<line x1="8" y1="129.8" x2="362" y2="129.8" stroke="#f5b544" stroke-width="1" stroke-dasharray="3 3" opacity=".45"/>          </svg>
-        </div>
-        <div class="narr">Le prix est <b>actuellement dans un Order Block haussier</b> formé il y a 14 bougies, entre 4 026,80 et 4 028,90, et cette zone <b>n'a jamais été testée</b>. Une poche de liquidité vente <b>a été balayée</b> il y a 17 bougies. Le 1 h va dans le même sens.</div>
-      </div></div>
-  </div>
-
-  <!-- SCANNER -->
-  <div class="feat rev">
-    <div class="txt">
-      <span class="tag g">Le scanner</span>
-      <h3>Tu ne peux pas surveiller 80 marchés. Lui, oui.</h3>
-      <p class="p">Coche les conditions qui t'intéressent — tendance, zone non testée, liquidité récemment prise — et le scanner te dit <b>où elles sont réunies en ce moment</b>, sur les 480 combinaisons. Réévalué à chaque clôture de bougie, sans que tu aies à cliquer.</p>
-      <div class="bul">
-        <div class="bu"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span><b>21 conditions factuelles</b> réparties en structure, zones, liquidité et contexte</span></div>
-        <div class="bu"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span><b>Ce qui va à l'encontre</b> est affiché aussi — désaccord entre unités, zone usée</span></div>
-        <div class="bu"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span><b>Aucun classement</b> : les résultats ne sont jamais triés par « qualité »</span></div>
-        <div class="bu"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span><b>Lectures enregistrées</b> : retrouve tes conditions habituelles en un clic</span></div>
-      </div>
-    </div>
-    <div class="vis"><div class="vish"><span class="dots"><i></i><i></i><i></i></span><span class="t">Scanner · 6 conditions actives</span></div>
-      <div class="visb">
-        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:11px">
-          <span class="chip" style="background:#12294a;border-color:#2f5f9e;color:var(--acc)">tendance haussière</span>
-          <span class="chip" style="background:#12294a;border-color:#2f5f9e;color:var(--acc)">unités alignées</span>
-          <span class="chip" style="background:#12294a;border-color:#2f5f9e;color:var(--acc)">CHOCH ≤ 20</span>
-          <span class="chip" style="background:#1a1630;border-color:#4b3d7a;color:var(--vio)">dans un OB</span>
-          <span class="chip" style="background:#1a1630;border-color:#4b3d7a;color:var(--vio)">jamais testée</span>
-          <span class="chip" style="background:#231b09;border-color:#6b5220;color:var(--amb)">poche prise ≤ 10</span>
-        </div>
-        <div class="rw hit"><span class="sy">Au</span><span><span class="nm">Or · 15 min</span><br><span class="mt">4 027,36</span></span><span class="sc ok">6 / 6</span></div>
-        <div class="rw hit"><span class="sy">Au</span><span><span class="nm">Or · 1 h</span><br><span class="mt">4 027,36</span></span><span class="sc ok">6 / 6</span></div>
-        <div class="rw hit"><span class="sy">€</span><span><span class="nm">Euro · 5 min</span><br><span class="mt">1,0842</span></span><span class="sc ok">6 / 6</span></div>
-        <div class="rw"><span class="sy">₿</span><span><span class="nm">Bitcoin · 1 h</span><br><span class="mt">63 412</span></span><span class="sc" style="color:var(--faint)">4 / 6</span></div>
-        <div class="rw"><span class="sy">£</span><span><span class="nm">Livre · 4 h</span><br><span class="mt">1,2718</span></span><span class="sc" style="color:var(--faint)">3 / 6</span></div>
-        <div style="font-family:'JetBrains Mono';font-size:10px;color:var(--faint);margin-top:10px;text-align:center">réévalué à chaque clôture · il y a 4 min</div>
-      </div></div>
-  </div>
-  <!-- ZONES -->
-  <div class="feat">
-    <div class="txt">
-      <span class="tag v">Les zones</span>
-      <h3>Une zone vierge et une zone usée ne valent pas la même chose</h3>
-      <p class="p">La plupart des outils te montrent qu'un Order Block existe. MIA te raconte <b>sa vie entière</b> : quand il s'est formé, combien de fois le prix l'a touché, à quelle heure, et s'il a fini par être comblé. C'est la différence entre voir un rectangle et savoir ce qu'il vaut.</p>
-      <div class="bul">
-        <div class="bu"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span><b>Chronologie complète</b> : formée → testée ×N → comblée</span></div>
-        <div class="bu"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span><b>Taux de remplissage</b> pour un Fair Value Gap partiellement comblé</span></div>
-        <div class="bu"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span><b>Filtrable dans le scanner</b> : cherche uniquement les zones jamais touchées</span></div>
-        <div class="bu"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span><b>Masquable une par une</b> pour garder un graphique lisible</span></div>
-      </div>
-    </div>
-    <div class="vis"><div class="vish"><span class="dots"><i></i><i></i><i></i></span><span class="t">Zones · Or · 15 minutes</span></div>
-      <div class="visb">
-        <div style="border:1px solid var(--line);border-radius:10px;padding:12px 13px;background:var(--card2);margin-bottom:8px">
-          <div style="display:flex;align-items:center;gap:9px;margin-bottom:4px">
-            <span class="chip" style="background:rgba(255,107,129,.14);border-color:transparent;color:#ffa5b3">ORDER BLOCK ↑</span>
-            <span class="mono" style="font-size:11.5px;font-weight:600">4 026,80 – 4 028,90</span>
-            <span class="chip" style="margin-left:auto;background:#0d2a22;border-color:#1f5c46;color:var(--pos)">jamais testée</span></div>
-          <div class="tl"><i style="background:var(--acc)"></i><s style="background:linear-gradient(90deg,var(--acc),#25344f)"></s><i style="border:1.5px solid var(--line2)"></i></div>
-          <div class="tlab"><span>Formée · il y a 3 h 30</span><span>Maintenant</span></div>
-        </div>
-        <div style="border:1px solid var(--line);border-radius:10px;padding:12px 13px;background:var(--card2);margin-bottom:8px">
-          <div style="display:flex;align-items:center;gap:9px;margin-bottom:4px">
-            <span class="chip" style="background:rgba(167,139,250,.14);border-color:transparent;color:#c4b5fd">FAIR VALUE GAP ↓</span>
-            <span class="mono" style="font-size:11.5px;font-weight:600">4 020,10 – 4 021,85</span>
-            <span class="chip" style="margin-left:auto;background:#231b09;border-color:#6b5220;color:var(--amb)">testée 2 fois</span></div>
-          <div class="tl"><i style="background:var(--acc)"></i><s style="background:var(--acc);opacity:.6"></s><i style="background:var(--amb)"></i><s style="background:var(--acc);opacity:.6"></s><i style="background:var(--amb)"></i><s style="background:linear-gradient(90deg,var(--acc),#25344f)"></s><i style="border:1.5px solid var(--line2)"></i></div>
-          <div class="tlab"><span>Formée</span><span>Touche 1</span><span>Touche 2</span><span>Maintenant</span></div>
-          <div class="fill"><i style="width:60%"></i></div>
-          <div style="font-family:'JetBrains Mono';font-size:9.5px;color:var(--faint);margin-top:5px">comblée à 60 %</div>
-        </div>
-        <div style="border:1px solid var(--line);border-radius:10px;padding:12px 13px;background:var(--card2);opacity:.55">
-          <div style="display:flex;align-items:center;gap:9px">
-            <span class="chip">ORDER BLOCK ↓</span>
-            <span class="mono" style="font-size:11.5px;font-weight:600">4 014,20 – 4 016,05</span>
-            <span class="chip" style="margin-left:auto">comblée · il y a 9 h</span></div>
-        </div>
-      </div></div>
-  </div>
-
-  <!-- NEWS -->
-  <div class="feat rev">
-    <div class="txt">
-      <span class="tag a">Les actualités</span>
-      <h3>Sache quand le marché va bouger — et ce qui s'est passé les fois d'avant</h3>
-      <p class="p">Un calendrier des publications économiques, rattachées aux marchés qu'elles concernent. Et pour chacune, <b>ce que le moteur a réellement mesuré aux parutions précédentes</b> : le calme qui précède, l'agitation qui suit, la durée de vie des zones créées ce jour-là.</p>
-      <div class="bul">
-        <div class="bu"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span><b>Calendrier mensuel</b> avec heure locale et heure de l'organisme</span></div>
-        <div class="bu"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span><b>Les douze derniers chiffres publiés</b> de chaque indicateur, tels que publiés</span></div>
-        <div class="bu"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span><b>Mesures du moteur</b> aux parutions passées — introuvables ailleurs</span></div>
-        <div class="bu"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span><b>Sources officielles uniquement</b> : BLS, BEA, Census, Fed, Eurostat, BCE</span></div>
-      </div>
-    </div>
-    <div class="vis"><div class="vish"><span class="dots"><i></i><i></i><i></i></span><span class="t">Indice des prix à la consommation · 12 août</span></div>
-      <div class="visb">
-        <div class="qgrid">
-          <div class="qc"><div class="qq">Le marché se calme-t-il avant ?</div>
-            <div class="qa">Oui, <b>10 fois sur 12</b>. L'or bouge nettement moins dans l'heure qui précède.</div></div>
-          <div class="qc"><div class="qq">Combien de temps ça dure ?</div>
-            <div class="qa">Le plus souvent <b>1 à 3 h</b>. De 15 min à 4 h 45 selon les parutions.</div></div>
-          <div class="qc"><div class="qq">Les zones créées tiennent-elles ?</div>
-            <div class="qa">Rarement. Sur <b>34 zones</b> créées, 26 traversées en deux heures.</div></div>
-          <div class="qc"><div class="qq">Où en est la structure ?</div>
-            <div class="qa">Tiers haut du range <b>8 fois sur 12</b>, poche intacte proche 9 fois.</div></div>
-        </div>
-        <div style="font-family:'JetBrains Mono';font-size:9.5px;color:var(--faint);margin-top:11px;line-height:1.6">Décomptes de journées passées, pas des probabilités. Rien ne s'applique à la parution à venir.</div>
-      </div></div>
-  </div>
-
-  <!-- MIA -->
-  <div class="feat">
-    <div class="txt">
-      <span class="tag b">M.I.A Agent</span>
-      <h3>Un mentor SMC qui ne dort jamais</h3>
-      <p class="p">Tu ne comprends pas pourquoi cette bougie est un Order Block ? Demande-lui. Tu veux savoir ce qui s'est passé sur l'or le 13 mai ? Demande-lui. Elle <b>enseigne les concepts et décrit ce que le moteur a détecté</b> — et elle peut piloter ton graphique à la voix : masquer une couche, isoler une zone, changer d'unité de temps.</p>
-      <div class="bul">
-        <div class="bu"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span><b>Explique chaque concept SMC</b> avec l'exemple sous les yeux</span></div>
-        <div class="bu"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span><b>Ancrée au moteur</b> : elle ne peut citer que des niveaux réellement détectés</span></div>
-        <div class="bu"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span><b>Contrôle l'affichage</b> : « montre-moi seulement les OB non testés »</span></div>
-        <div class="bu"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span><b>Disponible partout</b> : sur le graphique, le scanner et les publications</span></div>
-      </div>
-    </div>
-    <div class="vis"><div class="vish"><span class="dots"><i></i><i></i><i></i></span><span class="t">M.I.A Agent</span></div>
-      <div class="visb"><div class="cw">
-        <div class="bub u">c'est quoi un order block exactement ?</div>
-        <div class="bub a">C'est la dernière bougie de sens opposé avant le mouvement qui casse la structure. Celui où le prix se trouve s'est formé <b>il y a 14 bougies</b>, juste avant le BOS haussier de 14:15.</div>
-        <div class="bub u">montre-moi seulement les OB non testés</div>
-        <div class="bub a">C'est fait. J'ai masqué les FVG et la liquidité. <b>3 Order Blocks</b> non testés restent affichés.</div>
-        <div class="bub u">tu penses que ça va rebondir ?</div>
-        <div class="bub no">Je ne réponds pas à ça. Je ne prédis pas les mouvements de prix — je peux te décrire l'état de la zone ou t'expliquer le concept.</div>
+    <div class="vis"><div class="vish"><span class="dots"><i></i><i></i><i></i></span><span class="t">M.I.A Agent · Or 15 min</span></div>
+      <div class="visb"><div class="mchat" style="min-height:290px;border:none;background:transparent;padding:0">
+        <div class="mb u">pourquoi cette bougie est un order block ?</div>
+        <div class="mb a">C'est la dernière bougie baissière avant le mouvement qui a cassé la structure. Elle s'est formée <b>à 12:30</b>, juste avant le BOS haussier de 14:15 à 4 025,10. Sa zone couvre <b>4 026,80 à 4 028,90</b>.</div>
+        <div class="mb u">elle a été testée ?</div>
+        <div class="mb a">Non. <b>Jamais depuis sa formation.</b> Le prix y est entré il y a 30 minutes, c'est son premier contact.</div>
+        <div class="mb u">tu penses que ça va rebondir ?</div>
+        <div class="mb no"><b>Je ne réponds pas à ça.</b> Je ne prédis pas les mouvements de prix et je ne donne aucun signal. Je peux te décrire l'état de la zone ou t'expliquer le concept.</div>
       </div></div></div>
+  </div></div>
+
+  <div class="capgrid">
+    <div class="cap"><span class="ic" style="background:#12294a;color:var(--acc)"><svg viewBox="0 0 24 24"><path d="M4 19V5a2 2 0 012-2h12a2 2 0 012 2v14"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span>
+      <h4>Elle enseigne le SMC</h4>
+      <p>Chaque concept — Order Block, Fair Value Gap, BOS, CHOCH, mitigation, liquidité — expliqué <b>avec l'exemple sous les yeux</b>, sur ton marché, pas dans un cours théorique.</p></div>
+    <div class="cap"><span class="ic" style="background:#0d2a22;color:var(--pos)"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></span>
+      <h4>Elle décrit ce qui est là</h4>
+      <p>Niveaux exacts, horodatages, nombre de tests, état de chaque poche de liquidité. <b>Uniquement des faits détectés</b> — une référence inventée est rejetée par le code, pas laissée passer.</p></div>
+    <div class="cap"><span class="ic" style="background:#1a1630;color:var(--vio)"><svg viewBox="0 0 24 24"><path d="M4 20V10M9 20V4M14 20v-7M19 20V8"/></svg></span>
+      <h4>Elle pilote ton affichage</h4>
+      <p>« Masque les FVG », « isole cette zone », « passe en 4 h ». Tu parles, <b>le graphique change</b>. Plus besoin de chercher le bon bouton.</p></div>
+    <div class="cap"><span class="ic" style="background:#231b09;color:var(--amb)"><svg viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L2 18a2 2 0 001.7 3h16.6a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg></span>
+      <h4>Elle refuse de deviner</h4>
+      <p>Aucune prédiction, aucun signal, aucun conseil d'intervention. <b>C'est un outil descriptif</b>, et elle te le dira elle-même si tu lui demandes où va le prix.</p></div>
   </div>
 </div></section>
-<section id="essayer" style="padding-top:0"><div class="wrap">
+<!-- ============ DÉMO ============ -->
+<section id="demo" style="padding-top:20px"><div class="wrap">
   <div class="sechead"><div class="eyebrow">Essaie sans créer de compte</div>
-    <h2>Voilà à quoi ça ressemble</h2>
-    <p>Une vraie lecture, sur un vrai marché. Clique, coche, pose une question — tout est manipulable ici même.</p></div>
+    <h2>Manipule-le tout de suite</h2>
+    <p>Une lecture complète, sur un marché réel. Clique, coche, pose une question — tout fonctionne ici même.</p></div>
 
   <div class="demo">
     <div class="dtabs">
-      <button class="dtab on" onclick="dt(0,this)"><span class="ic" style="background:#12294a;color:var(--acc)"><svg viewBox="0 0 24 24"><path d="M4 20V10M9 20V4M14 20v-7M19 20V8"/></svg></span>Lire une structure</button>
-      <button class="dtab" onclick="dt(1,this)"><span class="ic" style="background:#0d2a22;color:var(--pos)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg></span>Chercher un marché</button>
-      <button class="dtab" onclick="dt(2,this)"><span class="ic" style="background:#1a1630;color:var(--vio)"><svg viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg></span>Suivre une zone</button>
-      <button class="dtab" onclick="dt(3,this)"><span class="ic" style="background:#12294a;color:var(--acc)"><svg viewBox="0 0 24 24"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.4L12 15l-1.9-4.6L5.5 9l4.6-1.4z"/></svg></span>Poser une question</button>
+      <button class="dtab on" onclick="dt(0,this)">Lire une structure</button>
+      <button class="dtab" onclick="dt(1,this)">Définir une stratégie</button>
+      <button class="dtab" onclick="dt(2,this)">Suivre une zone</button>
+      <button class="dtab" onclick="dt(3,this)">Parler à M.I.A</button>
     </div>
 
-    <!-- ===== PANE 0 : STRUCTURE ===== -->
     <div class="dpane on" id="p0"><div class="dgrid">
       <div>
         <div class="dchips">
@@ -560,137 +421,131 @@ footer{border-top:1px solid var(--line);padding:34px 0 44px;margin-top:76px}
         </div>
         <div class="dchart">
           <svg viewBox="0 0 560 250" preserveAspectRatio="none">
-<line x1="14.7" y1="168.4" x2="14.7" y2="184.4" stroke="#3ddc97" stroke-width="1"/>
-<rect x="11.7" y="175.0" width="6.0" height="1.4" fill="#3ddc97" rx="1"/>
-<line x1="24.1" y1="168.3" x2="24.1" y2="188.0" stroke="#ff6b81" stroke-width="1"/>
-<rect x="21.1" y="175.0" width="6.0" height="4.5" fill="#ff6b81" rx="1"/>
-<line x1="33.5" y1="168.0" x2="33.5" y2="186.2" stroke="#3ddc97" stroke-width="1"/>
-<rect x="30.5" y="171.2" width="6.0" height="8.2" fill="#3ddc97" rx="1"/>
-<line x1="42.8" y1="163.3" x2="42.8" y2="180.3" stroke="#3ddc97" stroke-width="1"/>
-<rect x="39.8" y="168.9" width="6.0" height="2.4" fill="#3ddc97" rx="1"/>
-<line x1="52.2" y1="163.1" x2="52.2" y2="177.8" stroke="#3ddc97" stroke-width="1"/>
-<rect x="49.2" y="168.3" width="6.0" height="1.4" fill="#3ddc97" rx="1"/>
-<line x1="61.6" y1="161.5" x2="61.6" y2="172.4" stroke="#3ddc97" stroke-width="1"/>
-<rect x="58.6" y="165.6" width="6.0" height="2.7" fill="#3ddc97" rx="1"/>
-<line x1="71.0" y1="163.4" x2="71.0" y2="172.0" stroke="#ff6b81" stroke-width="1"/>
-<rect x="68.0" y="165.6" width="6.0" height="1.4" fill="#ff6b81" rx="1"/>
-<line x1="80.4" y1="155.9" x2="80.4" y2="173.8" stroke="#3ddc97" stroke-width="1"/>
-<rect x="77.4" y="160.9" width="6.0" height="4.8" fill="#3ddc97" rx="1"/>
-<line x1="89.8" y1="146.3" x2="89.8" y2="167.8" stroke="#3ddc97" stroke-width="1"/>
-<rect x="86.8" y="152.3" width="6.0" height="8.6" fill="#3ddc97" rx="1"/>
-<line x1="99.2" y1="150.0" x2="99.2" y2="169.2" stroke="#ff6b81" stroke-width="1"/>
-<rect x="96.2" y="152.3" width="6.0" height="7.7" fill="#ff6b81" rx="1"/>
-<line x1="108.5" y1="156.6" x2="108.5" y2="172.9" stroke="#ff6b81" stroke-width="1"/>
-<rect x="105.5" y="160.0" width="6.0" height="4.3" fill="#ff6b81" rx="1"/>
-<line x1="117.9" y1="156.6" x2="117.9" y2="168.6" stroke="#3ddc97" stroke-width="1"/>
-<rect x="114.9" y="159.3" width="6.0" height="5.0" fill="#3ddc97" rx="1"/>
-<line x1="127.3" y1="155.4" x2="127.3" y2="166.3" stroke="#ff6b81" stroke-width="1"/>
-<rect x="124.3" y="159.3" width="6.0" height="5.2" fill="#ff6b81" rx="1"/>
-<line x1="136.7" y1="160.4" x2="136.7" y2="176.7" stroke="#ff6b81" stroke-width="1"/>
-<rect x="133.7" y="164.5" width="6.0" height="7.4" fill="#ff6b81" rx="1"/>
-<line x1="146.1" y1="169.3" x2="146.1" y2="188.2" stroke="#ff6b81" stroke-width="1"/>
-<rect x="143.1" y="171.9" width="6.0" height="14.3" fill="#ff6b81" rx="1"/>
-<line x1="155.5" y1="178.7" x2="155.5" y2="192.6" stroke="#ff6b81" stroke-width="1"/>
-<rect x="152.5" y="186.2" width="6.0" height="1.4" fill="#ff6b81" rx="1"/>
-<line x1="164.8" y1="183.6" x2="164.8" y2="204.8" stroke="#ff6b81" stroke-width="1"/>
-<rect x="161.8" y="186.6" width="6.0" height="15.5" fill="#ff6b81" rx="1"/>
-<line x1="174.2" y1="199.8" x2="174.2" y2="217.6" stroke="#ff6b81" stroke-width="1"/>
-<rect x="171.2" y="202.1" width="6.0" height="11.6" fill="#ff6b81" rx="1"/>
-<line x1="183.6" y1="210.4" x2="183.6" y2="229.7" stroke="#ff6b81" stroke-width="1"/>
-<rect x="180.6" y="213.7" width="6.0" height="13.1" fill="#ff6b81" rx="1"/>
-<line x1="193.0" y1="221.4" x2="193.0" y2="229.7" stroke="#3ddc97" stroke-width="1"/>
-<rect x="190.0" y="226.8" width="6.0" height="1.4" fill="#3ddc97" rx="1"/>
-<line x1="202.4" y1="218.3" x2="202.4" y2="229.7" stroke="#3ddc97" stroke-width="1"/>
-<rect x="199.4" y="226.0" width="6.0" height="1.4" fill="#3ddc97" rx="1"/>
-<line x1="211.8" y1="220.6" x2="211.8" y2="229.7" stroke="#ff6b81" stroke-width="1"/>
-<rect x="208.8" y="226.0" width="6.0" height="1.4" fill="#ff6b81" rx="1"/>
-<line x1="221.2" y1="218.5" x2="221.2" y2="229.7" stroke="#3ddc97" stroke-width="1"/>
-<rect x="218.2" y="221.1" width="6.0" height="5.7" fill="#3ddc97" rx="1"/>
-<line x1="230.5" y1="215.2" x2="230.5" y2="229.7" stroke="#ff6b81" stroke-width="1"/>
-<rect x="227.5" y="221.1" width="6.0" height="5.7" fill="#ff6b81" rx="1"/>
-<line x1="239.9" y1="218.3" x2="239.9" y2="229.7" stroke="#3ddc97" stroke-width="1"/>
-<rect x="236.9" y="226.8" width="6.0" height="1.4" fill="#3ddc97" rx="1"/>
-<line x1="249.3" y1="221.3" x2="249.3" y2="229.7" stroke="#3ddc97" stroke-width="1"/>
-<rect x="246.3" y="226.8" width="6.0" height="1.4" fill="#3ddc97" rx="1"/>
-<line x1="258.7" y1="224.3" x2="258.7" y2="229.7" stroke="#3ddc97" stroke-width="1"/>
-<rect x="255.7" y="226.8" width="6.0" height="1.4" fill="#3ddc97" rx="1"/>
-<line x1="268.1" y1="216.9" x2="268.1" y2="229.7" stroke="#3ddc97" stroke-width="1"/>
-<rect x="265.1" y="222.2" width="6.0" height="4.6" fill="#3ddc97" rx="1"/>
-<line x1="277.5" y1="218.3" x2="277.5" y2="229.7" stroke="#3ddc97" stroke-width="1"/>
-<rect x="274.5" y="222.0" width="6.0" height="1.4" fill="#3ddc97" rx="1"/>
-<line x1="286.8" y1="207.3" x2="286.8" y2="224.0" stroke="#3ddc97" stroke-width="1"/>
-<rect x="283.8" y="212.7" width="6.0" height="9.3" fill="#3ddc97" rx="1"/>
-<line x1="296.2" y1="204.9" x2="296.2" y2="219.1" stroke="#ff6b81" stroke-width="1"/>
-<rect x="293.2" y="212.7" width="6.0" height="2.1" fill="#ff6b81" rx="1"/>
-<line x1="305.6" y1="210.5" x2="305.6" y2="222.0" stroke="#3ddc97" stroke-width="1"/>
-<rect x="302.6" y="213.8" width="6.0" height="1.4" fill="#3ddc97" rx="1"/>
-<line x1="315.0" y1="198.3" x2="315.0" y2="220.3" stroke="#3ddc97" stroke-width="1"/>
-<rect x="312.0" y="202.3" width="6.0" height="11.5" fill="#3ddc97" rx="1"/>
-<line x1="324.4" y1="178.9" x2="324.4" y2="210.4" stroke="#3ddc97" stroke-width="1"/>
-<rect x="321.4" y="188.0" width="6.0" height="14.3" fill="#3ddc97" rx="1"/>
-<line x1="333.8" y1="172.4" x2="333.8" y2="196.8" stroke="#3ddc97" stroke-width="1"/>
-<rect x="330.8" y="180.4" width="6.0" height="7.7" fill="#3ddc97" rx="1"/>
-<line x1="343.2" y1="156.5" x2="343.2" y2="186.6" stroke="#3ddc97" stroke-width="1"/>
-<rect x="340.2" y="163.9" width="6.0" height="16.4" fill="#3ddc97" rx="1"/>
-<line x1="352.5" y1="146.5" x2="352.5" y2="170.5" stroke="#3ddc97" stroke-width="1"/>
-<rect x="349.5" y="154.7" width="6.0" height="9.2" fill="#3ddc97" rx="1"/>
-<line x1="361.9" y1="137.7" x2="361.9" y2="157.2" stroke="#3ddc97" stroke-width="1"/>
-<rect x="358.9" y="141.2" width="6.0" height="13.5" fill="#3ddc97" rx="1"/>
-<line x1="371.3" y1="130.7" x2="371.3" y2="147.4" stroke="#3ddc97" stroke-width="1"/>
-<rect x="368.3" y="136.9" width="6.0" height="4.4" fill="#3ddc97" rx="1"/>
-<line x1="380.7" y1="130.7" x2="380.7" y2="145.9" stroke="#3ddc97" stroke-width="1"/>
-<rect x="377.7" y="133.9" width="6.0" height="2.9" fill="#3ddc97" rx="1"/>
-<line x1="390.1" y1="124.8" x2="390.1" y2="141.6" stroke="#3ddc97" stroke-width="1"/>
-<rect x="387.1" y="133.6" width="6.0" height="1.4" fill="#3ddc97" rx="1"/>
-<line x1="399.5" y1="113.8" x2="399.5" y2="140.5" stroke="#3ddc97" stroke-width="1"/>
-<rect x="396.5" y="123.1" width="6.0" height="10.5" fill="#3ddc97" rx="1"/>
-<line x1="408.8" y1="114.2" x2="408.8" y2="129.0" stroke="#ff6b81" stroke-width="1"/>
-<rect x="405.8" y="123.1" width="6.0" height="1.4" fill="#ff6b81" rx="1"/>
-<line x1="418.2" y1="98.7" x2="418.2" y2="126.9" stroke="#3ddc97" stroke-width="1"/>
-<rect x="415.2" y="106.6" width="6.0" height="17.4" fill="#3ddc97" rx="1"/>
-<line x1="427.6" y1="104.7" x2="427.6" y2="123.6" stroke="#ff6b81" stroke-width="1"/>
-<rect x="424.6" y="106.6" width="6.0" height="9.3" fill="#ff6b81" rx="1"/>
-<line x1="437.0" y1="106.5" x2="437.0" y2="118.6" stroke="#3ddc97" stroke-width="1"/>
-<rect x="434.0" y="110.0" width="6.0" height="5.9" fill="#3ddc97" rx="1"/>
-<line x1="446.4" y1="102.2" x2="446.4" y2="120.1" stroke="#ff6b81" stroke-width="1"/>
-<rect x="443.4" y="110.0" width="6.0" height="2.7" fill="#ff6b81" rx="1"/>
-<line x1="455.8" y1="96.2" x2="455.8" y2="120.2" stroke="#3ddc97" stroke-width="1"/>
-<rect x="452.8" y="105.3" width="6.0" height="7.4" fill="#3ddc97" rx="1"/>
-<line x1="465.2" y1="96.6" x2="465.2" y2="107.2" stroke="#3ddc97" stroke-width="1"/>
-<rect x="462.2" y="98.6" width="6.0" height="6.8" fill="#3ddc97" rx="1"/>
-<line x1="474.5" y1="84.8" x2="474.5" y2="102.8" stroke="#3ddc97" stroke-width="1"/>
-<rect x="471.5" y="91.3" width="6.0" height="7.3" fill="#3ddc97" rx="1"/>
-<line x1="483.9" y1="86.9" x2="483.9" y2="103.1" stroke="#ff6b81" stroke-width="1"/>
-<rect x="480.9" y="91.3" width="6.0" height="7.5" fill="#ff6b81" rx="1"/>
-<line x1="493.3" y1="93.6" x2="493.3" y2="102.2" stroke="#ff6b81" stroke-width="1"/>
-<rect x="490.3" y="98.8" width="6.0" height="1.4" fill="#ff6b81" rx="1"/>          </svg>
+<line x1="14.7" y1="169.9" x2="14.7" y2="184.8" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="11.7" y="176.0" width="6.1" height="1.3" fill="#3ddc97" rx="1"/>
+<line x1="24.2" y1="169.7" x2="24.2" y2="188.2" stroke="#ff6b81" stroke-width=".95"/>
+<rect x="21.2" y="176.0" width="6.1" height="4.2" fill="#ff6b81" rx="1"/>
+<line x1="33.7" y1="169.6" x2="33.7" y2="186.5" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="30.6" y="172.4" width="6.1" height="7.8" fill="#3ddc97" rx="1"/>
+<line x1="43.1" y1="165.1" x2="43.1" y2="181.0" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="40.1" y="170.2" width="6.1" height="2.2" fill="#3ddc97" rx="1"/>
+<line x1="52.6" y1="164.9" x2="52.6" y2="178.6" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="49.5" y="169.7" width="6.1" height="1.3" fill="#3ddc97" rx="1"/>
+<line x1="62.0" y1="163.4" x2="62.0" y2="173.4" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="59.0" y="167.1" width="6.1" height="2.6" fill="#3ddc97" rx="1"/>
+<line x1="71.5" y1="165.2" x2="71.5" y2="173.1" stroke="#ff6b81" stroke-width=".95"/>
+<rect x="68.5" y="167.1" width="6.1" height="1.3" fill="#ff6b81" rx="1"/>
+<line x1="81.0" y1="158.1" x2="81.0" y2="174.8" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="77.9" y="162.7" width="6.1" height="4.5" fill="#3ddc97" rx="1"/>
+<line x1="90.4" y1="149.0" x2="90.4" y2="169.1" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="87.4" y="154.5" width="6.1" height="8.2" fill="#3ddc97" rx="1"/>
+<line x1="99.9" y1="152.6" x2="99.9" y2="170.5" stroke="#ff6b81" stroke-width=".95"/>
+<rect x="96.9" y="154.5" width="6.1" height="7.3" fill="#ff6b81" rx="1"/>
+<line x1="109.3" y1="158.8" x2="109.3" y2="174.0" stroke="#ff6b81" stroke-width=".95"/>
+<rect x="106.3" y="161.8" width="6.1" height="4.1" fill="#ff6b81" rx="1"/>
+<line x1="118.8" y1="158.8" x2="118.8" y2="169.7" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="115.8" y="161.1" width="6.1" height="4.8" fill="#3ddc97" rx="1"/>
+<line x1="128.3" y1="157.7" x2="128.3" y2="167.6" stroke="#ff6b81" stroke-width=".95"/>
+<rect x="125.2" y="161.1" width="6.1" height="4.9" fill="#ff6b81" rx="1"/>
+<line x1="137.7" y1="162.4" x2="137.7" y2="178.0" stroke="#ff6b81" stroke-width=".95"/>
+<rect x="134.7" y="166.1" width="6.1" height="7.6" fill="#ff6b81" rx="1"/>
+<line x1="147.2" y1="171.4" x2="147.2" y2="189.4" stroke="#ff6b81" stroke-width=".95"/>
+<rect x="144.2" y="173.6" width="6.1" height="14.1" fill="#ff6b81" rx="1"/>
+<line x1="156.7" y1="180.8" x2="156.7" y2="194.2" stroke="#ff6b81" stroke-width=".95"/>
+<rect x="153.6" y="187.7" width="6.1" height="1.3" fill="#ff6b81" rx="1"/>
+<line x1="166.1" y1="186.1" x2="166.1" y2="206.3" stroke="#ff6b81" stroke-width=".95"/>
+<rect x="163.1" y="188.7" width="6.1" height="15.2" fill="#ff6b81" rx="1"/>
+<line x1="175.6" y1="202.0" x2="175.6" y2="219.0" stroke="#ff6b81" stroke-width=".95"/>
+<rect x="172.5" y="203.9" width="6.1" height="11.6" fill="#ff6b81" rx="1"/>
+<line x1="185.0" y1="212.6" x2="185.0" y2="232.3" stroke="#ff6b81" stroke-width=".95"/>
+<rect x="182.0" y="215.5" width="6.1" height="13.2" fill="#ff6b81" rx="1"/>
+<line x1="194.5" y1="223.7" x2="194.5" y2="232.3" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="191.5" y="228.7" width="6.1" height="1.3" fill="#3ddc97" rx="1"/>
+<line x1="204.0" y1="220.7" x2="204.0" y2="232.3" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="200.9" y="227.9" width="6.1" height="1.3" fill="#3ddc97" rx="1"/>
+<line x1="213.4" y1="222.9" x2="213.4" y2="232.3" stroke="#ff6b81" stroke-width=".95"/>
+<rect x="210.4" y="227.9" width="6.1" height="1.3" fill="#ff6b81" rx="1"/>
+<line x1="222.9" y1="221.0" x2="222.9" y2="232.3" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="219.9" y="223.3" width="6.1" height="5.3" fill="#3ddc97" rx="1"/>
+<line x1="232.3" y1="217.9" x2="232.3" y2="232.3" stroke="#ff6b81" stroke-width=".95"/>
+<rect x="229.3" y="223.3" width="6.1" height="5.3" fill="#ff6b81" rx="1"/>
+<line x1="241.8" y1="220.7" x2="241.8" y2="232.3" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="238.8" y="228.7" width="6.1" height="1.3" fill="#3ddc97" rx="1"/>
+<line x1="251.3" y1="223.6" x2="251.3" y2="232.3" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="248.2" y="228.7" width="6.1" height="1.3" fill="#3ddc97" rx="1"/>
+<line x1="260.7" y1="226.6" x2="260.7" y2="232.3" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="257.7" y="228.7" width="6.1" height="1.3" fill="#3ddc97" rx="1"/>
+<line x1="270.2" y1="219.4" x2="270.2" y2="232.3" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="267.2" y="224.3" width="6.1" height="4.4" fill="#3ddc97" rx="1"/>
+<line x1="279.7" y1="220.8" x2="279.7" y2="232.2" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="276.6" y="224.2" width="6.1" height="1.3" fill="#3ddc97" rx="1"/>
+<line x1="289.1" y1="210.4" x2="289.1" y2="225.8" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="286.1" y="215.4" width="6.1" height="8.8" fill="#3ddc97" rx="1"/>
+<line x1="298.6" y1="208.0" x2="298.6" y2="221.2" stroke="#ff6b81" stroke-width=".95"/>
+<rect x="295.5" y="215.4" width="6.1" height="2.0" fill="#ff6b81" rx="1"/>
+<line x1="308.0" y1="212.8" x2="308.0" y2="224.0" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="305.0" y="215.7" width="6.1" height="1.6" fill="#3ddc97" rx="1"/>
+<line x1="317.5" y1="200.6" x2="317.5" y2="221.7" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="314.5" y="204.2" width="6.1" height="11.5" fill="#3ddc97" rx="1"/>
+<line x1="327.0" y1="181.5" x2="327.0" y2="211.7" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="323.9" y="190.0" width="6.1" height="14.1" fill="#3ddc97" rx="1"/>
+<line x1="336.4" y1="174.7" x2="336.4" y2="198.3" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="333.4" y="182.1" width="6.1" height="7.9" fill="#3ddc97" rx="1"/>
+<line x1="345.9" y1="159.0" x2="345.9" y2="187.9" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="342.9" y="165.9" width="6.1" height="16.2" fill="#3ddc97" rx="1"/>
+<line x1="355.3" y1="148.8" x2="355.3" y2="172.0" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="352.3" y="156.5" width="6.1" height="9.4" fill="#3ddc97" rx="1"/>
+<line x1="364.8" y1="140.0" x2="364.8" y2="158.7" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="361.8" y="143.2" width="6.1" height="13.4" fill="#3ddc97" rx="1"/>
+<line x1="374.3" y1="132.6" x2="374.3" y2="148.8" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="371.2" y="138.4" width="6.1" height="4.8" fill="#3ddc97" rx="1"/>
+<line x1="383.7" y1="132.1" x2="383.7" y2="146.8" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="380.7" y="135.0" width="6.1" height="3.4" fill="#3ddc97" rx="1"/>
+<line x1="393.2" y1="125.7" x2="393.2" y2="142.1" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="390.2" y="134.0" width="6.1" height="1.3" fill="#3ddc97" rx="1"/>
+<line x1="402.7" y1="114.6" x2="402.7" y2="140.4" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="399.6" y="123.4" width="6.1" height="10.6" fill="#3ddc97" rx="1"/>
+<line x1="412.1" y1="115.0" x2="412.1" y2="128.1" stroke="#ff6b81" stroke-width=".95"/>
+<rect x="409.1" y="123.4" width="6.1" height="1.3" fill="#ff6b81" rx="1"/>
+<line x1="421.6" y1="99.1" x2="421.6" y2="126.1" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="418.5" y="106.5" width="6.1" height="17.1" fill="#3ddc97" rx="1"/>
+<line x1="431.0" y1="104.9" x2="431.0" y2="122.5" stroke="#ff6b81" stroke-width=".95"/>
+<rect x="428.0" y="106.5" width="6.1" height="8.8" fill="#ff6b81" rx="1"/>
+<line x1="440.5" y1="106.6" x2="440.5" y2="117.6" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="437.5" y="109.7" width="6.1" height="5.6" fill="#3ddc97" rx="1"/>
+<line x1="450.0" y1="102.4" x2="450.0" y2="119.2" stroke="#ff6b81" stroke-width=".95"/>
+<rect x="446.9" y="109.7" width="6.1" height="2.5" fill="#ff6b81" rx="1"/>
+<line x1="459.4" y1="96.7" x2="459.4" y2="119.3" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="456.4" y="105.3" width="6.1" height="7.0" fill="#3ddc97" rx="1"/>
+<line x1="468.9" y1="97.3" x2="468.9" y2="106.8" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="465.9" y="98.9" width="6.1" height="6.4" fill="#3ddc97" rx="1"/>
+<line x1="478.3" y1="86.0" x2="478.3" y2="102.7" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="475.3" y="92.0" width="6.1" height="6.9" fill="#3ddc97" rx="1"/>
+<line x1="487.8" y1="88.1" x2="487.8" y2="103.0" stroke="#ff6b81" stroke-width=".95"/>
+<rect x="484.8" y="92.0" width="6.1" height="7.1" fill="#ff6b81" rx="1"/>
+<line x1="497.3" y1="94.3" x2="497.3" y2="102.1" stroke="#ff6b81" stroke-width=".95"/>
+<rect x="494.2" y="99.1" width="6.1" height="1.3" fill="#ff6b81" rx="1"/>          </svg>
           <div class="lay on" id="l-ob">
-            <div class="dz" style="left:60%;right:62px;top:72px;height:16px;background:rgba(255,107,129,.11);border:1px dashed rgba(255,107,129,.55)"></div>
-            <div class="dl" style="left:60.6%;top:74px;background:rgba(255,107,129,.17);color:#ffa5b3">OB haussier · jamais testé</div>
-            <div class="dz" style="left:22%;right:62px;top:186px;height:14px;background:rgba(255,107,129,.07);border:1px dashed rgba(255,107,129,.3)"></div>
-          </div>
+            <div class="dz" style="left:60%;right:58px;top:72px;height:16px;background:rgba(255,107,129,.11);border:1px dashed rgba(255,107,129,.55)"></div>
+            <div class="dl" style="left:60.6%;top:54px;background:rgba(255,107,129,.17);color:#ffa5b3">OB haussier · jamais testé</div></div>
           <div class="lay on" id="l-fvg">
-            <div class="dz" style="left:36%;right:62px;top:148px;height:15px;background:rgba(167,139,250,.11);border:1px dashed rgba(167,139,250,.5)"></div>
-            <div class="dl" style="left:36.6%;top:150px;background:rgba(167,139,250,.17);color:#c4b5fd">FVG · comblé à 60 %</div>
-          </div>
+            <div class="dz" style="left:36%;right:58px;top:148px;height:15px;background:rgba(167,139,250,.11);border:1px dashed rgba(167,139,250,.5)"></div>
+            <div class="dl" style="left:36.6%;top:130px;background:rgba(167,139,250,.17);color:#c4b5fd">FVG · comblé à 60 %</div></div>
           <div class="lay on" id="l-liq">
-            <div style="position:absolute;left:10px;right:62px;top:45px;height:1.5px;background:#f5b544;opacity:.85"></div>
-            <div class="dl" style="left:12px;top:32px;background:rgba(245,181,68,.16);color:#f5b544">Liquidité achat · intacte</div>
-            <div style="position:absolute;left:10px;right:62px;top:209px;height:1px;background:repeating-linear-gradient(90deg,#f5b544 0 4px,transparent 4px 8px);opacity:.5"></div>
-            <div class="dl" style="left:12px;top:213px;background:rgba(245,181,68,.10);color:#a08048">Liquidité vente · balayée</div>
-          </div>
+            <div style="position:absolute;left:10px;right:58px;top:45px;height:1.5px;background:#f5b544;opacity:.85"></div>
+            <div class="dl" style="left:12px;top:31px;background:rgba(245,181,68,.16);color:#f5b544">Liquidité achat · intacte</div>
+            <div style="position:absolute;left:10px;right:58px;top:209px;height:1px;background:repeating-linear-gradient(90deg,#f5b544 0 4px,transparent 4px 8px);opacity:.5"></div>
+            <div class="dl" style="left:12px;top:213px;background:rgba(245,181,68,.10);color:#a08048">Liquidité vente · balayée</div></div>
           <div class="lay on" id="l-str">
-            <div class="dl" style="left:38%;top:112px;background:rgba(61,220,151,.16);color:#3ddc97">CHOCH ↑ · 4 021,45</div>
-            <div class="dl" style="left:66%;top:92px;background:rgba(61,220,151,.16);color:#3ddc97">BOS ↑ · 4 025,10</div>
-            <div class="dl" style="left:18%;top:172px;background:rgba(255,107,129,.16);color:#ff6b81">BOS ↓</div>
-          </div>
-          <div style="position:absolute;right:8px;top:92px;font-family:'JetBrains Mono';font-size:10px;background:var(--acc);color:#04101f;padding:2px 7px;border-radius:4px;font-weight:600">4 026,77</div>
+            <div class="dl" style="left:35%;top:186px;background:rgba(61,220,151,.16);color:#3ddc97">↑ CHOCH · 4 021,45</div>
+            <div class="dl" style="left:70%;top:100px;background:rgba(61,220,151,.16);color:#3ddc97">↑ BOS · 4 025,10</div></div>
+          <div style="position:absolute;right:6px;top:92px;font-family:'JetBrains Mono';font-size:10px;background:var(--acc);color:#04101f;padding:2px 7px;border-radius:4px;font-weight:600">4 026,77</div>
         </div>
         <div class="dnarr" id="dn"></div>
       </div>
       <div class="dside">
-        <h4>La lecture se met à jour</h4>
-        <p>Décoche une couche : <b>le paragraphe se réécrit</b> pour ne décrire que ce qui reste affiché. La narration n'est jamais un texte figé — elle est composée à partir de ce que le moteur a réellement détecté.</p>
+        <h4>La lecture suit ce que tu affiches</h4>
+        <p>Décoche une couche : <b>le paragraphe se réécrit</b> pour ne décrire que ce qui reste visible. Rien n'est inventé pour combler un vide.</p>
         <div class="try">Essaie</div>
         <button class="opt" onclick="only('ob')">Ne garder que les Order Blocks</button>
         <button class="opt" onclick="only('liq')">Ne garder que la liquidité</button>
@@ -698,104 +553,391 @@ footer{border-top:1px solid var(--line);padding:34px 0 44px;margin-top:76px}
       </div>
     </div></div>
 
-    <!-- ===== PANE 1 : SCANNER ===== -->
     <div class="dpane" id="p1"><div class="dgrid">
       <div>
-        <div class="try" style="margin-bottom:11px">Coche tes conditions</div>
+        <div class="try" style="margin-bottom:11px">Traduis ta stratégie en conditions</div>
         <div class="cond on" id="k0" onclick="kt(0)"><span class="bx"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span>La tendance structurelle est haussière</div>
         <div class="cond on" id="k1" onclick="kt(1)"><span class="bx"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span>L'unité supérieure va dans le même sens</div>
         <div class="cond" id="k2" onclick="kt(2)"><span class="bx"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span>Le prix est dans un Order Block</div>
         <div class="cond" id="k3" onclick="kt(3)"><span class="bx"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span>La zone n'a jamais été testée</div>
-        <div class="cond" id="k4" onclick="kt(4)"><span class="bx"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span>Une poche a été prise récemment</div>
+        <div class="cond" id="k4" onclick="kt(4)"><span class="bx"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span>Une poche de liquidité a été prise récemment</div>
       </div>
       <div class="dside">
         <div class="res">
           <div class="resh"><span class="n" id="rn">6</span><span class="l">marchés correspondent</span></div>
           <div id="rlist"></div>
         </div>
-        <p style="margin-top:13px">Sur les <b>480 combinaisons</b> analysées, le scanner ne garde que celles où toutes tes conditions sont réunies <b>en ce moment</b>. Ajoute une condition, la liste se resserre.</p>
-      </div>
-    </div></div>
-    <!-- ===== PANE 2 : ZONES ===== -->
-    <div class="dpane" id="p2"><div class="dgrid">
-      <div>
-        <div class="zsel">
-          <span class="zb on" onclick="zs(0,this)">Order Block · jamais testé</span>
-          <span class="zb" onclick="zs(1,this)">Fair Value Gap · testé 2×</span>
-          <span class="zb" onclick="zs(2,this)">Order Block · comblé</span>
-        </div>
-        <div class="zpane on" id="z0">
-          <div style="border:1px solid var(--line);border-radius:12px;padding:17px 18px;background:var(--card2)">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
-              <span class="chip" style="background:rgba(255,107,129,.14);border-color:transparent;color:#ffa5b3">ORDER BLOCK ↑</span>
-              <span class="mono" style="font-size:13px;font-weight:600">4 026,80 – 4 028,90</span>
-              <span class="chip" style="background:#0d2a22;border-color:#1f5c46;color:var(--pos)">active · jamais testée</span></div>
-            <div class="tl"><i style="background:var(--acc)"></i><s style="background:linear-gradient(90deg,var(--acc),#25344f)"></s><i style="border:1.5px solid var(--line2)"></i></div>
-            <div class="tlab"><span>Formée · il y a 3 h 30</span><span>Maintenant</span></div>
-            <div style="font-family:'Space Grotesk';font-size:13px;color:var(--dim);line-height:1.7;margin-top:14px">Cette zone s'est formée juste avant le BOS haussier. Le prix y est entré il y a 30 minutes. <b style="color:var(--tx);font-weight:500">Elle n'a jamais été comblée.</b></div>
-          </div></div>
-        <div class="zpane" id="z1">
-          <div style="border:1px solid var(--line);border-radius:12px;padding:17px 18px;background:var(--card2)">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
-              <span class="chip" style="background:rgba(167,139,250,.14);border-color:transparent;color:#c4b5fd">FAIR VALUE GAP ↓</span>
-              <span class="mono" style="font-size:13px;font-weight:600">4 020,10 – 4 021,85</span>
-              <span class="chip" style="background:#231b09;border-color:#6b5220;color:var(--amb)">testée 2 fois</span></div>
-            <div class="tl"><i style="background:var(--acc)"></i><s style="background:var(--acc);opacity:.6"></s><i style="background:var(--amb)"></i><s style="background:var(--acc);opacity:.6"></s><i style="background:var(--amb)"></i><s style="background:linear-gradient(90deg,var(--acc),#25344f)"></s><i style="border:1.5px solid var(--line2)"></i></div>
-            <div class="tlab"><span>Formée</span><span>Touche 1</span><span>Touche 2</span><span>Maintenant</span></div>
-            <div class="fill"><i style="width:60%"></i></div>
-            <div style="font-family:'JetBrains Mono';font-size:10px;color:var(--faint);margin-top:6px">comblée à 60 %</div>
-            <div style="font-family:'Space Grotesk';font-size:13px;color:var(--dim);line-height:1.7;margin-top:12px">Formée il y a 10 heures. Le prix l'a touchée <b style="color:var(--tx);font-weight:500">deux fois</b>, la dernière il y a 2 heures. Elle reste active.</div>
-          </div></div>
-        <div class="zpane" id="z2">
-          <div style="border:1px solid var(--line);border-radius:12px;padding:17px 18px;background:var(--card2);opacity:.68">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
-              <span class="chip">ORDER BLOCK ↓</span>
-              <span class="mono" style="font-size:13px;font-weight:600">4 014,20 – 4 016,05</span>
-              <span class="chip">comblée</span></div>
-            <div class="tl"><i style="background:var(--faint)"></i><s style="background:var(--line2)"></s><i style="background:var(--faint)"></i><s style="background:var(--line2)"></s><i style="background:var(--neg)"></i></div>
-            <div class="tlab"><span>Formée</span><span>Touche 1</span><span>Comblée</span></div>
-            <div style="font-family:'Space Grotesk';font-size:13px;color:var(--dim);line-height:1.7;margin-top:14px">Le prix l'a traversée entièrement il y a 9 heures. <b style="color:var(--tx);font-weight:500">Elle n'est plus active.</b></div>
-          </div></div>
-      </div>
-      <div class="dside">
-        <h4>Trois zones, trois histoires</h4>
-        <p>Un rectangle sur un graphique ne dit rien. <b>Une zone vierge et une zone touchée trois fois ne se lisent pas pareil</b> — et MIA garde cette histoire pour chacune des zones détectées sur les 80 marchés.</p>
-        <div class="try">Compare</div>
-        <p style="font-size:13px;color:var(--faint)">Clique sur les trois onglets ci-contre pour voir la différence entre une zone neuve, une zone entamée et une zone épuisée.</p>
+        <p style="margin-top:13px">Ta stratégie, décrite une fois, <b>vérifiée sur tous tes marchés</b> à chaque clôture de bougie. Enregistre-la et retrouve-la en un clic.</p>
       </div>
     </div></div>
 
-    <!-- ===== PANE 3 : MIA ===== -->
+    <div class="dpane" id="p2"><div class="dgrid">
+      <div>
+        <div class="zsel">
+          <span class="zb on" onclick="zs(0,this)">Jamais testée</span>
+          <span class="zb" onclick="zs(1,this)">Testée 2 fois</span>
+          <span class="zb" onclick="zs(2,this)">Comblée</span>
+        </div>
+        <div class="zpane on" id="z0"><div style="border:1px solid var(--line);border-radius:12px;padding:17px 18px;background:var(--card2)">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+            <span class="chip" style="background:rgba(255,107,129,.14);border-color:transparent;color:#ffa5b3">ORDER BLOCK ↑</span>
+            <span class="mono" style="font-size:13px;font-weight:600">4 026,80 – 4 028,90</span>
+            <span class="chip" style="background:#0d2a22;border-color:#1f5c46;color:var(--pos)">active · jamais testée</span></div>
+          <div class="tl"><i style="background:var(--acc)"></i><s style="background:linear-gradient(90deg,var(--acc),#25344f)"></s><i style="border:1.5px solid var(--line2)"></i></div>
+          <div class="tlab"><span>Formée · il y a 3 h 30</span><span>Maintenant</span></div>
+          <div style="font-family:'Space Grotesk';font-size:13px;color:var(--dim);line-height:1.7;margin-top:14px">Formée juste avant le BOS haussier. Le prix y est entré il y a 30 minutes. <b style="color:var(--tx);font-weight:500">Jamais comblée.</b></div></div></div>
+        <div class="zpane" id="z1"><div style="border:1px solid var(--line);border-radius:12px;padding:17px 18px;background:var(--card2)">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+            <span class="chip" style="background:rgba(167,139,250,.14);border-color:transparent;color:#c4b5fd">FAIR VALUE GAP ↓</span>
+            <span class="mono" style="font-size:13px;font-weight:600">4 020,10 – 4 021,85</span>
+            <span class="chip" style="background:#231b09;border-color:#6b5220;color:var(--amb)">testée 2 fois</span></div>
+          <div class="tl"><i style="background:var(--acc)"></i><s style="background:var(--acc);opacity:.6"></s><i style="background:var(--amb)"></i><s style="background:var(--acc);opacity:.6"></s><i style="background:var(--amb)"></i><s style="background:linear-gradient(90deg,var(--acc),#25344f)"></s><i style="border:1.5px solid var(--line2)"></i></div>
+          <div class="tlab"><span>Formée</span><span>Touche 1</span><span>Touche 2</span><span>Maintenant</span></div>
+          <div class="fill"><i style="width:60%"></i></div>
+          <div style="font-family:'JetBrains Mono';font-size:10px;color:var(--faint);margin-top:6px">comblée à 60 %</div>
+          <div style="font-family:'Space Grotesk';font-size:13px;color:var(--dim);line-height:1.7;margin-top:12px">Touchée <b style="color:var(--tx);font-weight:500">deux fois</b>, la dernière il y a 2 heures. Reste active.</div></div></div>
+        <div class="zpane" id="z2"><div style="border:1px solid var(--line);border-radius:12px;padding:17px 18px;background:var(--card2);opacity:.68">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+            <span class="chip">ORDER BLOCK ↓</span>
+            <span class="mono" style="font-size:13px;font-weight:600">4 014,20 – 4 016,05</span>
+            <span class="chip">comblée</span></div>
+          <div class="tl"><i style="background:var(--faint)"></i><s style="background:var(--line2)"></s><i style="background:var(--faint)"></i><s style="background:var(--line2)"></s><i style="background:var(--neg)"></i></div>
+          <div class="tlab"><span>Formée</span><span>Touche 1</span><span>Comblée</span></div>
+          <div style="font-family:'Space Grotesk';font-size:13px;color:var(--dim);line-height:1.7;margin-top:14px">Traversée entièrement il y a 9 heures. <b style="color:var(--tx);font-weight:500">Plus active.</b></div></div></div>
+      </div>
+      <div class="dside">
+        <h4>Trois zones, trois histoires</h4>
+        <p>Un rectangle sur un graphique ne dit rien. <b>Une zone vierge et une zone touchée trois fois ne se lisent pas pareil</b> — et MIA garde cette histoire pour chacune.</p>
+        <div class="try">Compare</div>
+        <p style="font-size:13px;color:var(--faint)">Clique les trois onglets pour voir la différence entre une zone neuve, entamée et épuisée.</p>
+      </div>
+    </div></div>
+
     <div class="dpane" id="p3"><div class="dgrid">
       <div><div class="mchat" id="mch"></div></div>
       <div class="dside">
         <h4>Pose-lui une vraie question</h4>
-        <p>M.I.A explique les concepts, décrit ce que le moteur a détecté et pilote l'affichage. <b>Elle refuse tout ce qui relève de la prédiction</b> — clique la dernière option pour voir.</p>
+        <p>Elle explique, décrit, et pilote l'affichage. <b>Elle refuse tout ce qui relève de la prédiction</b> — clique la dernière option pour voir.</p>
         <div class="try">Choisis une question</div>
         <button class="opt" onclick="ask(0)">C'est quoi un Order Block ?</button>
-        <button class="opt" onclick="ask(1)">Pourquoi cette zone est-elle importante ?</button>
+        <button class="opt" onclick="ask(1)">Cette zone a été testée combien de fois ?</button>
         <button class="opt" onclick="ask(2)">Montre-moi seulement les OB non testés</button>
         <button class="opt" onclick="ask(3)">Tu penses que ça va monter ?</button>
       </div>
     </div></div>
   </div>
+  <div class="illus" style="justify-content:center;margin-top:16px"><span class="d"></span>Données d'illustration · le produit affiche les vraies lectures de marché</div>
+</div></section>
+<!-- ============ OUTILS ============ -->
+<section id="outils"><div class="wrap">
+  <div class="sechead"><div class="eyebrow">Cinq outils, un même produit</div>
+    <h2>Cinq surfaces qui se répondent</h2>
+    <p>Un seul abonnement, aucune extension à installer, aucun script à copier. Chaque outil répond à une question que tu te poses déjà.</p></div>
 
-  <div style="text-align:center;margin-top:24px">
-    <a class="btn pri md" href="#tarif">Créer un compte gratuit</a>
-    <div class="micro" style="margin-top:11px">Données d'illustration · le produit affiche les vraies lectures de marché</div>
+  <!-- APP + CARROUSEL -->
+  <div class="feat">
+    <div class="txt">
+      <span class="tag b">L'espace de lecture</span>
+      <h3>Bien plus qu'un graphique annoté</h3>
+      <p class="p">Les zones sont bornées, les cassures datées, la liquidité positionnée. En dessous, un paragraphe décrit la situation. À côté, le régime du marché, le journal des événements, et M.I.A. <b>Tout ce qu'il te faut sur un seul écran.</b></p>
+      <div class="bul">
+        <div class="bu"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span><b>Graphique à couches</b> — chaque famille de structure s'affiche ou se masque</span></div>
+        <div class="bu"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span><b>Lecture narrée</b> composée à partir des faits détectés, jamais d'un texte figé</span></div>
+        <div class="bu"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span><b>Panneau de régime</b> — tendance, phase, volatilité, accord entre unités</span></div>
+        <div class="bu"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span><b>Journal des événements</b> — chaque cassure horodatée, cliquable sur le graphique</span></div>
+        <div class="bu"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span><b>Six unités de temps</b> — de la minute au jour, la lecture suit</span></div>
+      </div>
+      <div class="carlab" style="margin-top:18px">↔ Fais défiler pour voir les autres parties de l'espace</div>
+    </div>
+
+    <div class="car">
+      <div class="carv"><div class="cartrack" id="tr">
+        <!-- 1 -->
+        <div class="carslide"><div class="vis"><div class="vish"><span class="dots"><i></i><i></i><i></i></span><span class="t">Graphique · Or 15 min</span></div>
+          <div class="visb">
+            <div class="lyr" style="margin-bottom:10px">
+              <span class="lyb"><span class="sq" style="background:#ff6b81"></span>OB</span>
+              <span class="lyb"><span class="sq" style="background:#a78bfa"></span>FVG</span>
+              <span class="lyb"><span class="sq" style="background:#f5b544"></span>Liquidité</span>
+              <span class="lyb"><span class="sq" style="background:#93a4bd"></span>BOS/CHOCH</span>
+              <span class="lyb off"><span class="sq" style="background:#3a4a63"></span>Mitigées</span></div>
+            <div class="mc">
+              <svg viewBox="0 0 560 206" preserveAspectRatio="none">
+<line x1="14.9" y1="152.7" x2="14.9" y2="162.8" stroke="#ff6b81" stroke-width=".95"/>
+<rect x="11.8" y="156.8" width="6.3" height="3.9" fill="#ff6b81" rx="1"/>
+<line x1="24.8" y1="153.3" x2="24.8" y2="165.1" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="21.6" y="155.8" width="6.3" height="4.9" fill="#3ddc97" rx="1"/>
+<line x1="34.6" y1="145.8" x2="34.6" y2="162.7" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="31.5" y="149.3" width="6.3" height="6.5" fill="#3ddc97" rx="1"/>
+<line x1="44.4" y1="141.4" x2="44.4" y2="154.2" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="41.3" y="145.8" width="6.3" height="3.5" fill="#3ddc97" rx="1"/>
+<line x1="54.3" y1="141.2" x2="54.3" y2="152.8" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="51.1" y="144.5" width="6.3" height="1.3" fill="#3ddc97" rx="1"/>
+<line x1="64.1" y1="137.5" x2="64.1" y2="152.1" stroke="#ff6b81" stroke-width=".95"/>
+<rect x="61.0" y="144.5" width="6.3" height="1.5" fill="#ff6b81" rx="1"/>
+<line x1="74.0" y1="143.2" x2="74.0" y2="157.1" stroke="#ff6b81" stroke-width=".95"/>
+<rect x="70.8" y="145.9" width="6.3" height="7.2" fill="#ff6b81" rx="1"/>
+<line x1="83.8" y1="146.1" x2="83.8" y2="157.9" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="80.7" y="148.3" width="6.3" height="4.8" fill="#3ddc97" rx="1"/>
+<line x1="93.6" y1="142.5" x2="93.6" y2="157.0" stroke="#ff6b81" stroke-width=".95"/>
+<rect x="90.5" y="148.3" width="6.3" height="2.0" fill="#ff6b81" rx="1"/>
+<line x1="103.5" y1="144.0" x2="103.5" y2="156.0" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="100.3" y="146.4" width="6.3" height="4.0" fill="#3ddc97" rx="1"/>
+<line x1="113.3" y1="140.3" x2="113.3" y2="151.2" stroke="#ff6b81" stroke-width=".95"/>
+<rect x="110.2" y="146.4" width="6.3" height="1.3" fill="#ff6b81" rx="1"/>
+<line x1="123.2" y1="140.0" x2="123.2" y2="153.3" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="120.0" y="147.0" width="6.3" height="1.3" fill="#3ddc97" rx="1"/>
+<line x1="133.0" y1="141.0" x2="133.0" y2="152.5" stroke="#ff6b81" stroke-width=".95"/>
+<rect x="129.9" y="147.0" width="6.3" height="1.3" fill="#ff6b81" rx="1"/>
+<line x1="142.8" y1="140.9" x2="142.8" y2="162.6" stroke="#ff6b81" stroke-width=".95"/>
+<rect x="139.7" y="147.9" width="6.3" height="10.8" fill="#ff6b81" rx="1"/>
+<line x1="152.7" y1="155.0" x2="152.7" y2="175.5" stroke="#ff6b81" stroke-width=".95"/>
+<rect x="149.5" y="158.7" width="6.3" height="13.2" fill="#ff6b81" rx="1"/>
+<line x1="162.5" y1="165.1" x2="162.5" y2="184.2" stroke="#ff6b81" stroke-width=".95"/>
+<rect x="159.4" y="171.9" width="6.3" height="10.4" fill="#ff6b81" rx="1"/>
+<line x1="172.4" y1="177.7" x2="172.4" y2="184.6" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="169.2" y="182.1" width="6.3" height="1.3" fill="#3ddc97" rx="1"/>
+<line x1="182.2" y1="178.2" x2="182.2" y2="188.0" stroke="#ff6b81" stroke-width=".95"/>
+<rect x="179.1" y="182.1" width="6.3" height="4.1" fill="#ff6b81" rx="1"/>
+<line x1="192.0" y1="177.1" x2="192.0" y2="189.1" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="188.9" y="182.1" width="6.3" height="4.0" fill="#3ddc97" rx="1"/>
+<line x1="201.9" y1="171.3" x2="201.9" y2="189.1" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="198.7" y="177.1" width="6.3" height="5.0" fill="#3ddc97" rx="1"/>
+<line x1="211.7" y1="165.6" x2="211.7" y2="181.4" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="208.6" y="170.5" width="6.3" height="6.6" fill="#3ddc97" rx="1"/>
+<line x1="221.6" y1="164.2" x2="221.6" y2="177.1" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="218.4" y="170.1" width="6.3" height="1.3" fill="#3ddc97" rx="1"/>
+<line x1="231.4" y1="159.0" x2="231.4" y2="171.5" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="228.3" y="165.1" width="6.3" height="5.0" fill="#3ddc97" rx="1"/>
+<line x1="241.2" y1="163.4" x2="241.2" y2="170.9" stroke="#ff6b81" stroke-width=".95"/>
+<rect x="238.1" y="165.1" width="6.3" height="1.3" fill="#ff6b81" rx="1"/>
+<line x1="251.1" y1="160.6" x2="251.1" y2="172.5" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="247.9" y="165.1" width="6.3" height="1.3" fill="#3ddc97" rx="1"/>
+<line x1="260.9" y1="159.6" x2="260.9" y2="173.9" stroke="#ff6b81" stroke-width=".95"/>
+<rect x="257.8" y="165.1" width="6.3" height="4.2" fill="#ff6b81" rx="1"/>
+<line x1="270.8" y1="162.4" x2="270.8" y2="175.1" stroke="#ff6b81" stroke-width=".95"/>
+<rect x="267.6" y="169.3" width="6.3" height="4.4" fill="#ff6b81" rx="1"/>
+<line x1="280.6" y1="162.3" x2="280.6" y2="178.3" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="277.5" y="166.6" width="6.3" height="7.1" fill="#3ddc97" rx="1"/>
+<line x1="290.4" y1="147.2" x2="290.4" y2="172.9" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="287.3" y="151.6" width="6.3" height="15.0" fill="#3ddc97" rx="1"/>
+<line x1="300.3" y1="143.1" x2="300.3" y2="153.6" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="297.1" y="147.1" width="6.3" height="4.5" fill="#3ddc97" rx="1"/>
+<line x1="310.1" y1="133.7" x2="310.1" y2="152.9" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="307.0" y="137.3" width="6.3" height="9.8" fill="#3ddc97" rx="1"/>
+<line x1="320.0" y1="131.7" x2="320.0" y2="144.1" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="316.8" y="135.6" width="6.3" height="1.7" fill="#3ddc97" rx="1"/>
+<line x1="329.8" y1="130.4" x2="329.8" y2="140.8" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="326.7" y="135.5" width="6.3" height="1.3" fill="#3ddc97" rx="1"/>
+<line x1="339.6" y1="119.9" x2="339.6" y2="139.6" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="336.5" y="124.4" width="6.3" height="11.1" fill="#3ddc97" rx="1"/>
+<line x1="349.5" y1="106.9" x2="349.5" y2="129.7" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="346.3" y="109.7" width="6.3" height="14.6" fill="#3ddc97" rx="1"/>
+<line x1="359.3" y1="94.1" x2="359.3" y2="113.7" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="356.2" y="99.5" width="6.3" height="10.2" fill="#3ddc97" rx="1"/>
+<line x1="369.2" y1="93.6" x2="369.2" y2="102.4" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="366.0" y="99.3" width="6.3" height="1.3" fill="#3ddc97" rx="1"/>
+<line x1="379.0" y1="80.4" x2="379.0" y2="105.0" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="375.9" y="87.4" width="6.3" height="11.9" fill="#3ddc97" rx="1"/>
+<line x1="388.8" y1="75.0" x2="388.8" y2="90.8" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="385.7" y="81.2" width="6.3" height="6.1" fill="#3ddc97" rx="1"/>
+<line x1="398.7" y1="71.8" x2="398.7" y2="86.2" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="395.5" y="76.3" width="6.3" height="4.9" fill="#3ddc97" rx="1"/>
+<line x1="408.5" y1="61.5" x2="408.5" y2="79.9" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="405.4" y="65.9" width="6.3" height="10.5" fill="#3ddc97" rx="1"/>
+<line x1="418.4" y1="51.5" x2="418.4" y2="70.6" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="415.2" y="54.5" width="6.3" height="11.3" fill="#3ddc97" rx="1"/>
+<line x1="428.2" y1="52.6" x2="428.2" y2="68.4" stroke="#ff6b81" stroke-width=".95"/>
+<rect x="425.1" y="54.5" width="6.3" height="7.5" fill="#ff6b81" rx="1"/>
+<line x1="438.0" y1="58.5" x2="438.0" y2="67.9" stroke="#ff6b81" stroke-width=".95"/>
+<rect x="434.9" y="62.1" width="6.3" height="4.3" fill="#ff6b81" rx="1"/>
+<line x1="447.9" y1="59.3" x2="447.9" y2="67.9" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="444.7" y="62.4" width="6.3" height="4.0" fill="#3ddc97" rx="1"/>
+<line x1="457.7" y1="55.8" x2="457.7" y2="71.4" stroke="#ff6b81" stroke-width=".95"/>
+<rect x="454.6" y="62.4" width="6.3" height="3.4" fill="#ff6b81" rx="1"/>
+<line x1="467.6" y1="59.1" x2="467.6" y2="75.0" stroke="#ff6b81" stroke-width=".95"/>
+<rect x="464.4" y="65.8" width="6.3" height="7.6" fill="#ff6b81" rx="1"/>
+<line x1="477.4" y1="69.1" x2="477.4" y2="79.4" stroke="#ff6b81" stroke-width=".95"/>
+<rect x="474.3" y="73.4" width="6.3" height="1.3" fill="#ff6b81" rx="1"/>
+<line x1="487.2" y1="67.6" x2="487.2" y2="81.9" stroke="#ff6b81" stroke-width=".95"/>
+<rect x="484.1" y="73.7" width="6.3" height="5.5" fill="#ff6b81" rx="1"/>
+<line x1="497.1" y1="68.9" x2="497.1" y2="83.8" stroke="#3ddc97" stroke-width=".95"/>
+<rect x="493.9" y="75.5" width="6.3" height="3.6" fill="#3ddc97" rx="1"/>              </svg>
+              <div class="mz" style="left:74%;right:56px;top:47px;height:14px;background:rgba(255,107,129,.11);border:1px dashed rgba(255,107,129,.55)"></div>
+              <div class="ml" style="left:74.5%;top:30px;background:rgba(255,107,129,.17);color:#ffa5b3">OB · non testé</div>
+              <div style="position:absolute;left:10px;right:56px;top:30px;height:1.4px;background:#f5b544;opacity:.8"></div>
+              <div class="ml" style="left:12px;top:15px;background:rgba(245,181,68,.15);color:#f5b544">Liquidité achat · intacte</div>
+              <div class="ml" style="left:41%;top:143px;background:rgba(61,220,151,.16);color:#3ddc97">↑ CHOCH</div>
+              <div class="ml" style="left:69%;top:47px;background:rgba(61,220,151,.16);color:#3ddc97">↑ BOS · 4 025,10</div>
+              <div style="position:absolute;left:12px;bottom:8px;font-family:'JetBrains Mono';font-size:8.5px;color:var(--faint)">Heure locale · UTC−4</div>
+            </div></div></div></div>
+        <!-- 2 -->
+        <div class="carslide"><div class="vis"><div class="vish"><span class="dots"><i></i><i></i><i></i></span><span class="t">Lecture narrée · Or 15 min</span></div>
+          <div class="visb" style="min-height:283px;display:flex;flex-direction:column;justify-content:center">
+            <div class="mono" style="font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--faint);margin-bottom:12px">Bougie clôturée il y a 4 min</div>
+            <div class="narr" style="font-size:13px">Le prix est <b>actuellement dans un Order Block haussier</b> formé il y a 3 h 30, entre 4 026,80 et 4 028,90, et cette zone <b>n'a jamais été testée</b> depuis sa formation. Un <b>CHOCH haussier s'est confirmé</b> à 4 021,45, suivi d'un <b>BOS haussier</b> à 4 025,10. Une poche de <b>liquidité vente a été balayée</b> sous 4 011,40 : la mèche est passée dessous et la bougie a clôturé au-dessus. Une poche de <b>liquidité achat reste intacte</b> à 4 034,20, soit 0,18 % au-dessus du prix. Le <b>1 h va dans le même sens</b> ; le 4 h est en tendance baissière.</div>
+            <div class="illus"><span class="d"></span>Recomposée à chaque clôture, jamais un texte figé</div>
+          </div></div></div>
+        <!-- 3 -->
+        <div class="carslide"><div class="vis"><div class="vish"><span class="dots"><i></i><i></i><i></i></span><span class="t">Régime de marché · Or 15 min</span></div>
+          <div class="visb" style="min-height:283px;display:flex;flex-direction:column;justify-content:center">
+            <div class="rg">
+              <div class="rgc"><div class="k">Tendance</div><div class="v">Haussière</div><div class="n">depuis 14:15</div></div>
+              <div class="rgc"><div class="k">Phase</div><div class="v">Expansion</div><div class="n">4 phases suivies</div></div>
+              <div class="rgc"><div class="k">Volatilité</div><div class="v">Étendue</div><div class="n">7 vs 20 bougies</div></div>
+              <div class="rgc"><div class="k">Alignement</div><div class="v">1 h d'accord</div><div class="n">4 h opposé</div></div>
+              <div class="rgc"><div class="k">Maturité</div><div class="v">9 bougies</div><div class="n">depuis le BOS</div></div>
+              <div class="rgc"><div class="k">Zones actives</div><div class="v">8 OB · 12 FVG</div><div class="n">sur la fenêtre</div></div>
+              <div class="rgc"><div class="k">Position</div><div class="v">Tiers haut</div><div class="n">4 012 – 4 037</div></div>
+              <div class="rgc"><div class="k">Session</div><div class="v">New York</div><div class="n">ouverte</div></div>
+              <div class="rgc"><div class="k">Dernière lecture</div><div class="v mono" style="font-size:11.5px">15:45</div><div class="n">à jour</div></div>
+            </div>
+            <div class="illus"><span class="d"></span>Chaque tuile explique sa méthode au survol</div>
+          </div></div></div>
+        <!-- 4 -->
+        <div class="carslide"><div class="vis"><div class="vish"><span class="dots"><i></i><i></i><i></i></span><span class="t">Journal des événements · Or 15 min</span></div>
+          <div class="visb" style="min-height:283px;display:flex;flex-direction:column;justify-content:center">
+            <div class="jr"><span class="jb" style="background:rgba(61,220,151,.16);color:#3ddc97">BOS ↑</span>Cassure de structure haussière<span class="tm">14:15</span></div>
+            <div class="jr"><span class="jb" style="background:rgba(245,181,68,.16);color:#f5b544">POCHE</span>Liquidité vente balayée<span class="tm">13:30</span></div>
+            <div class="jr"><span class="jb" style="background:rgba(61,220,151,.16);color:#3ddc97">CHOCH ↑</span>Changement de caractère confirmé<span class="tm">12:45</span></div>
+            <div class="jr"><span class="jb" style="background:rgba(255,107,129,.16);color:#ffa5b3">OB ↑</span>Order Block formé · 4 026,80–4 028,90<span class="tm">12:30</span></div>
+            <div class="jr"><span class="jb" style="background:rgba(167,139,250,.16);color:#c4b5fd">FVG ↓</span>Fair Value Gap comblé à 60 %<span class="tm">11:00</span></div>
+            <div class="illus"><span class="d"></span>Clique un événement, le graphique s'y positionne</div>
+          </div></div></div>
+        <!-- 5 -->
+        <div class="carslide"><div class="vis"><div class="vish"><span class="dots"><i></i><i></i><i></i></span><span class="t">Unités de temps · Or</span></div>
+          <div class="visb" style="min-height:283px;display:flex;flex-direction:column;justify-content:center">
+            <div class="tfs"><span class="tfb">M5</span><span class="tfb on">M15</span><span class="tfb">H1</span><span class="tfb">H4</span><span class="tfb">D1</span></div>
+            <div style="display:flex;flex-direction:column;gap:7px">
+              <div class="jr" style="background:#0e1c31;border-color:#2f5f9e"><span class="jb" style="background:#12294a;color:var(--acc)">M15</span>Haussière · expansion<span class="tm">lecture courante</span></div>
+              <div class="jr"><span class="jb" style="background:#0b1424;color:var(--faint)">H1</span>Haussière · tendance<span class="tm">va dans le même sens</span></div>
+              <div class="jr"><span class="jb" style="background:#0b1424;color:var(--faint)">H4</span>Baissière · range<span class="tm">sens opposé</span></div>
+              <div class="jr"><span class="jb" style="background:#0b1424;color:var(--faint)">D1</span>Indéterminée<span class="tm">aucune structure établie</span></div>
+            </div>
+            <div class="illus"><span class="d"></span>Chaque unité a sa lecture propre, réévaluée à sa clôture</div>
+          </div></div></div>
+      </div></div>
+      <div class="carnav">
+        <div class="cardots" id="dots"></div>
+        <span class="carlab"><b id="cn">1</b> / 5 · <span id="ct">Graphique</span></span>
+        <span class="carbtns">
+          <button class="carb" onclick="cg(-1)" aria-label="Précédent"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+          <button class="carb" onclick="cg(1)" aria-label="Suivant"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button></span>
+      </div>
+      <div class="illus"><span class="d"></span>Données d'illustration</div>
+    </div>
+  </div>
+  <!-- SCANNER -->
+  <div class="feat rev">
+    <div class="txt">
+      <span class="tag g">Le scanner</span>
+      <h3>Décris ta stratégie une fois. Elle est vérifiée en continu.</h3>
+      <p class="p">Tu sais ce que tu cherches — une tendance, une zone vierge, une poche récemment prise. Le problème n'est pas de savoir : c'est de <b>vérifier partout, tout le temps</b>. Traduis ta stratégie en conditions factuelles, enregistre-la, et le scanner la surveille sur tous tes marchés à chaque clôture de bougie.</p>
+      <div class="bul">
+        <div class="bu"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span><b>22 conditions factuelles</b> — structure, zones, liquidité, contexte</span></div>
+        <div class="bu"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span><b>Stratégies enregistrées</b> — retrouve tes conditions habituelles en un clic</span></div>
+        <div class="bu"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span><b>Ce qui va à l'encontre</b> est affiché aussi — désaccord entre unités, zone usée</span></div>
+        <div class="bu"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span><b>Aucun classement</b> : les résultats ne sont jamais triés par « qualité »</span></div>
+      </div>
+    </div>
+    <div class="vis"><div class="vish"><span class="dots"><i></i><i></i><i></i></span><span class="t">Scanner · ma stratégie « OB vierge en tendance »</span></div>
+      <div class="visb">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+          <span class="chip" style="background:#12294a;border-color:#2f5f9e;color:var(--acc)">tendance haussière</span>
+          <span class="chip" style="background:#12294a;border-color:#2f5f9e;color:var(--acc)">unité supérieure d'accord</span>
+          <span class="chip" style="background:#1a1630;border-color:#4b3d7a;color:var(--vio)">prix dans un OB</span>
+          <span class="chip" style="background:#1a1630;border-color:#4b3d7a;color:var(--vio)">jamais testée</span></div>
+        <div class="rrow" style="border:1px solid #2f5f9e;background:#0e1c31;border-radius:9px;margin-bottom:7px"><span class="sy">Au</span><span><b style="color:var(--tx)">Or · 15 min</b><br><span class="mono" style="font-size:10px;color:var(--faint)">4 027,36</span></span><span class="sc" style="color:var(--pos)">4 / 4</span></div>
+        <div class="rrow" style="border:1px solid #2f5f9e;background:#0e1c31;border-radius:9px;margin-bottom:7px"><span class="sy">€</span><span><b style="color:var(--tx)">Euro · 15 min</b><br><span class="mono" style="font-size:10px;color:var(--faint)">1,0842</span></span><span class="sc" style="color:var(--pos)">4 / 4</span></div>
+        <div class="rrow" style="border:1px solid var(--line);border-radius:9px;opacity:.5"><span class="sy">Au</span><span>Or · 4 h<br><span class="mono" style="font-size:10px;color:var(--faint)">4 026,90</span></span><span class="sc" style="color:var(--faint)">2 / 4</span></div>
+        <div style="margin-top:12px;padding:10px 12px;border-left:2px solid var(--neg);background:#1a0d11;border-radius:0 8px 8px 0;font-size:11.5px;color:#e8a8b3;line-height:1.6">
+          <b style="color:var(--neg)">Ce qui va à l'encontre — Or 15 min</b><br>Le 4 h est en tendance baissière. Le D1 n'a aucune structure établie.</div>
+        <div class="illus"><span class="d"></span>Données d'illustration</div>
+      </div></div>
+  </div>
+
+  <!-- ZONES -->
+  <div class="feat">
+    <div class="txt">
+      <span class="tag v">Les zones</span>
+      <h3>Une zone vierge et une zone usée ne valent pas la même chose</h3>
+      <p class="p">La plupart des outils te montrent qu'un Order Block existe. MIA te raconte <b>sa vie entière</b> : quand il s'est formé, combien de fois le prix l'a touché, à quelle heure, et s'il a fini par être comblé. C'est la différence entre voir un rectangle et savoir ce qu'il vaut.</p>
+      <div class="bul">
+        <div class="bu"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span><b>Chronologie complète</b> : formée → testée ×N → comblée</span></div>
+        <div class="bu"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span><b>Taux de remplissage</b> pour un Fair Value Gap partiellement comblé</span></div>
+        <div class="bu"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span><b>Filtrable dans le scanner</b> — cherche uniquement les zones jamais touchées</span></div>
+        <div class="bu"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span><b>Un historique qu'un traçage manuel ne conserve pas</b></span></div>
+      </div>
+    </div>
+    <div class="vis"><div class="vish"><span class="dots"><i></i><i></i><i></i></span><span class="t">Zones · Or 15 min · 20 zones suivies</span></div>
+      <div class="visb">
+        <div style="border:1px solid var(--line);border-radius:11px;padding:13px 14px;background:var(--card2);margin-bottom:8px">
+          <div style="display:flex;align-items:center;gap:9px;margin-bottom:5px;flex-wrap:wrap">
+            <span class="chip" style="background:rgba(255,107,129,.14);border-color:transparent;color:#ffa5b3">OB ↑</span>
+            <span class="mono" style="font-size:12px;font-weight:600">4 026,80 – 4 028,90</span>
+            <span class="chip" style="margin-left:auto;background:#0d2a22;border-color:#1f5c46;color:var(--pos)">jamais testée</span></div>
+          <div class="tl"><i style="background:var(--acc)"></i><s style="background:linear-gradient(90deg,var(--acc),#25344f)"></s><i style="border:1.5px solid var(--line2)"></i></div>
+          <div class="tlab"><span>Formée · il y a 3 h 30</span><span>Maintenant</span></div></div>
+        <div style="border:1px solid var(--line);border-radius:11px;padding:13px 14px;background:var(--card2);margin-bottom:8px">
+          <div style="display:flex;align-items:center;gap:9px;margin-bottom:5px;flex-wrap:wrap">
+            <span class="chip" style="background:rgba(167,139,250,.14);border-color:transparent;color:#c4b5fd">FVG ↓</span>
+            <span class="mono" style="font-size:12px;font-weight:600">4 020,10 – 4 021,85</span>
+            <span class="chip" style="margin-left:auto;background:#231b09;border-color:#6b5220;color:var(--amb)">testée 2 fois</span></div>
+          <div class="tl"><i style="background:var(--acc)"></i><s style="background:var(--acc);opacity:.6"></s><i style="background:var(--amb)"></i><s style="background:var(--acc);opacity:.6"></s><i style="background:var(--amb)"></i><s style="background:linear-gradient(90deg,var(--acc),#25344f)"></s><i style="border:1.5px solid var(--line2)"></i></div>
+          <div class="tlab"><span>Formée</span><span>Touche 1</span><span>Touche 2</span><span>Maintenant</span></div>
+          <div class="fill"><i style="width:60%"></i></div></div>
+        <div style="border:1px solid var(--line);border-radius:11px;padding:13px 14px;background:var(--card2);opacity:.55">
+          <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap">
+            <span class="chip">OB ↓</span><span class="mono" style="font-size:12px;font-weight:600">4 014,20 – 4 016,05</span>
+            <span class="chip" style="margin-left:auto">comblée · il y a 9 h</span></div></div>
+        <div class="illus"><span class="d"></span>Données d'illustration</div>
+      </div></div>
+  </div>
+
+  <!-- ACTUALITÉS -->
+  <div class="feat rev">
+    <div class="txt">
+      <span class="tag a">Les actualités</span>
+      <h3>Sache quand le marché va bouger — et ce qui s'est passé les fois d'avant</h3>
+      <p class="p">Un calendrier des publications économiques, rattachées aux marchés qu'elles concernent, avec l'heure de l'organisme et la tienne. Et pour chacune, <b>ce qui a réellement été mesuré aux parutions précédentes</b>.</p>
+      <div class="bul">
+        <div class="bu"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span><b>Sources officielles uniquement</b> — BLS, BEA, Census, Fed, Eurostat, BCE</span></div>
+        <div class="bu"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span><b>Les douze derniers chiffres publiés</b>, tels que publiés, avec leurs révisions</span></div>
+        <div class="bu"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span><b>Aucun classement d'impact</b>, aucun consensus, aucune prévision d'analyste</span></div>
+        <div class="bu"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><span><b>Liens vers l'organisme émetteur</b> et lui seul</span></div>
+      </div>
+    </div>
+    <div class="vis"><div class="vish"><span class="dots"><i></i><i></i><i></i></span><span class="t">Rapport sur l'emploi · 7 août</span></div>
+      <div class="visb">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <span class="chip" style="background:#12294a;border-color:#2f5f9e;color:var(--acc)">USD</span>
+          <span style="font-size:13px;font-weight:500">Rapport sur l'emploi (NFP)</span>
+          <span class="mono" style="margin-left:auto;font-size:11px;color:var(--amb)">dans 2 j</span></div>
+        <div class="mono" style="font-size:10.5px;color:var(--faint);line-height:1.7;margin-bottom:12px">08:30 New York · 08:30 ton heure<br>Bureau of Labor Statistics · milliers d'emplois<br>rattaché à Or, EUR/USD · mensuel</div>
+        <div style="border:1px solid var(--line);border-radius:10px;padding:12px 13px;background:var(--card2)">
+          <div class="mono" style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-bottom:8px">Douze derniers chiffres publiés</div>
+          <svg viewBox="0 0 300 62" style="width:100%;height:62px">
+            <polyline points="8,40 32,34 56,44 80,28 104,36 128,22 152,30 176,18 200,26 224,14 248,24 272,20" fill="none" stroke="#5b9dff" stroke-width="1.6"/>
+            <circle cx="272" cy="20" r="2.6" fill="#5b9dff"/>
+            <circle cx="292" cy="20" r="2.6" fill="none" stroke="#5f7089" stroke-width="1.2" stroke-dasharray="2 2"/>
+          </svg>
+          <div class="mono" style="font-size:9px;color:var(--faint);margin-top:5px">le point à venir reste vide — aucune valeur estimée</div>
+        </div>
+        <div class="illus"><span class="d"></span>Données d'illustration</div>
+      </div></div>
   </div>
 </div></section>
-<section id="comment" style="background:linear-gradient(180deg,transparent,#0a1220 20%,#0a1220 80%,transparent)"><div class="wrap">
+<section style="background:linear-gradient(180deg,transparent,#0a1220 18%,#0a1220 82%,transparent)"><div class="wrap">
   <div class="sechead"><div class="eyebrow">Comment ça marche</div>
-    <h2>Trois minutes pour comprendre ton marché</h2>
-    <p>Aucune installation, aucun script à copier, aucun réglage d'indicateur. Tu ouvres et c'est prêt.</p></div>
+    <h2>Ouvre, et la lecture est faite</h2>
+    <p>Aucune installation, aucun script à copier, aucun indicateur à régler. Tout tourne dans ton navigateur.</p></div>
   <div class="steps">
     <div class="step"><div class="n">01</div><h4>Choisis ton marché</h4>
-      <p>80 marchés et 6 unités de temps. Le moteur a déjà analysé les 480 combinaisons et gardé le résultat à jour à chaque clôture de bougie.</p></div>
+      <p>L'analyse tourne déjà en continu sur chaque marché et chaque unité de temps. Quand tu ouvres, le résultat est prêt et à jour à la dernière clôture.</p></div>
     <div class="step"><div class="n">02</div><h4>Lis la structure</h4>
-      <p>Zones bornées, cassures datées, liquidité positionnée, et un paragraphe qui décrit la situation. Tu vois en dix secondes ce qui t'aurait pris vingt minutes.</p></div>
-    <div class="step"><div class="n">03</div><h4>Cherche ou approfondis</h4>
-      <p>Lance le scanner pour trouver tes conditions ailleurs, ouvre la page Zones pour l'historique, ou demande à M.I.A ce que tu n'as pas compris.</p></div>
+      <p>Zones bornées, cassures datées, liquidité positionnée, et un paragraphe qui décrit la situation. Ce que tu aurais tracé à la main est déjà là.</p></div>
+    <div class="step"><div class="n">03</div><h4>Cherche, approfondis, demande</h4>
+      <p>Vérifie ta stratégie sur tous tes marchés, remonte l'historique d'une zone, ou demande à M.I.A d'expliquer ce que tu n'as pas compris.</p></div>
   </div>
 </div></section>
 
@@ -804,21 +946,24 @@ footer{border-top:1px solid var(--line);padding:34px 0 44px;margin-top:76px}
     <h2>Fait pour les traders SMC et ICT</h2>
     <p>Si tu traces tes Order Blocks à la main tous les matins, tu es exactement la personne pour qui ce produit existe.</p></div>
   <div class="who">
-    <div class="wc"><h4>Tu apprends le SMC</h4>
-      <p>Voir la structure marquée correctement, avec un agent qui explique chaque élément quand tu le lui demandes, remplace des dizaines d'heures de vidéos.</p></div>
-    <div class="wc"><h4>Tu traces à la main</h4>
-      <p>Tu passes une heure par jour à marquer tes zones sur cinq paires. MIA le fait sur 80 marchés, en continu, avec le cycle de vie en prime.</p></div>
-    <div class="wc"><h4>Tu cherches sur plusieurs marchés</h4>
-      <p>Tu sais ce que tu cherches mais tu ne peux pas surveiller 80 marchés. Le scanner les regarde tous à chaque clôture, sans que tu cliques.</p></div>
+    <div class="wc"><div class="lb">Apprendre</div><h4>Tu apprends le SMC</h4>
+      <p>Voir la structure marquée correctement vaut mieux que dix vidéos. Et quand un élément t'échappe, tu demandes.</p>
+      <ul><li>Chaque concept expliqué sur ton marché, pas en théorie</li><li>Les règles de détection sont publiées, tu peux les vérifier</li><li>Tu apprends en regardant, pas en mémorisant</li></ul></div>
+    <div class="wc"><div class="lb">Constance</div><h4>Tu traces à la main</h4>
+      <p>Le traçage manuel est lent, mais surtout inégal : un matin pressé et la zone est ratée.</p>
+      <ul><li>Les mêmes règles appliquées de la même façon, toujours</li><li>Le cycle de vie complet de chaque zone, conservé</li><li>Rien n'est oublié un jour de fatigue</li></ul></div>
+    <div class="wc"><div class="lb">Étendue</div><h4>Tu suis plusieurs marchés</h4>
+      <p>Tu sais ce que tu cherches, mais tu ne peux pas tout regarder en même temps.</p>
+      <ul><li>Ta stratégie vérifiée partout à chaque clôture</li><li>Le contexte défavorable affiché, pas seulement ce qui confirme</li><li>Un calendrier de sources officielles, vérifiables</li></ul></div>
   </div>
 </div></section>
 
 <section style="padding-top:0"><div class="wrap narrow">
   <div style="border:1px solid var(--line);border-radius:16px;background:var(--card);padding:34px 32px">
     <div class="eyebrow">Ce qui nous distingue</div>
-    <h2 style="font-size:28px;margin-bottom:16px">MIA ne te dira jamais où va le prix</h2>
+    <h2 style="font-size:27px;margin-bottom:16px">MIA ne te dira jamais où va le prix</h2>
     <p style="font-size:15.5px;color:var(--dim);line-height:1.7;margin-bottom:16px">Pas parce qu'elle en est incapable — parce que <b style="color:var(--tx);font-weight:500">personne ne le sait</b>. Le marché des outils de trading est plein de produits qui vendent des signaux avec des taux de réussite invérifiables. MIA fait autre chose : elle décrit ce qui est là, maintenant, et s'arrête là.</p>
-    <p style="font-size:15.5px;color:var(--dim);line-height:1.7">Concrètement, ça veut dire que le contexte défavorable est affiché à égalité du contexte favorable, que les résultats ne sont jamais classés par « qualité », et que quand le moteur ne sait pas, l'écran te le dit au lieu de deviner. <b style="color:var(--tx);font-weight:500">Tu gardes la décision. On te donne la lecture.</b></p>
+    <p style="font-size:15.5px;color:var(--dim);line-height:1.7">Concrètement : le contexte défavorable est affiché à égalité du contexte favorable, les résultats ne sont jamais classés par « qualité », et quand une donnée manque, l'écran te le dit au lieu de deviner. <b style="color:var(--tx);font-weight:500">Tu gardes la décision. On te donne la lecture.</b></p>
   </div>
 </div></section>
 
@@ -831,119 +976,122 @@ footer{border-top:1px solid var(--line);padding:34px 0 44px;margin-top:76px}
       <div class="amt"><span class="v">0 $</span><span class="u">US</span></div>
       <div class="bill">gratuit, sans limite de durée</div>
       <div class="pfeat">
-        <div class="pf"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span>3 marchés, 2 unités de temps</div>
+        <div class="pf"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span>1 marché, 2 unités de temps</div>
         <div class="pf"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span>Espace de lecture complet</div>
         <div class="pf"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span>M.I.A Agent, usage limité</div>
         <div class="pf"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span>Calendrier des publications</div>
       </div>
       <a class="btn md" href="#" style="width:100%">Créer un compte</a>
-      <div style="font-family:'JetBrains Mono';font-size:10.5px;color:var(--faint);margin-top:11px;text-align:center">sans carte de crédit</div>
-    </div>
+      <div class="mono" style="font-size:10.5px;color:var(--faint);margin-top:11px;text-align:center">sans carte de crédit</div></div>
 
     <div class="pc hi"><span class="lbl">Complet</span><h4>Abonnement</h4><div class="sub">tout le produit, tous les marchés</div>
       <div class="amt"><span class="v">39 $</span><span class="u">US / mois</span></div>
       <div class="bill">ou 348 $ US par an, soit 29 $ US par mois</div>
       <div class="pfeat">
-        <div class="pf"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><b style="color:var(--tx);font-weight:500">80 marchés</b>, 6 unités de temps</div>
-        <div class="pf"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span>Scanner sur les 480 combinaisons</div>
+        <div class="pf"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span><b style="color:var(--tx);font-weight:500">Tous les marchés</b>, toutes les unités de temps</div>
+        <div class="pf"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span>Scanner et stratégies enregistrées</div>
         <div class="pf"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span>Page Zones et cycle de vie complet</div>
-        <div class="pf"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span>Mesures du moteur aux publications</div>
+        <div class="pf"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span>Calendrier et mesures des parutions passées</div>
         <div class="pf"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span>M.I.A Agent sans limite</div>
-        <div class="pf"><span class="ck"><svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.2"/></svg></span>Lectures enregistrées illimitées</div>
       </div>
       <a class="btn pri md" href="#" style="width:100%">Commencer</a>
-      <div style="font-family:'JetBrains Mono';font-size:10.5px;color:var(--faint);margin-top:11px;text-align:center">annulable à tout moment</div>
-    </div>
+      <div class="mono" style="font-size:10.5px;color:var(--faint);margin-top:11px;text-align:center">annulable à tout moment</div></div>
   </div>
   <div class="plegal">Prix en dollars américains. MIA Markets est un outil d'information et d'éducation : il ne fournit ni conseil en investissement, ni recommandation, ni signal de trading. Le trading comporte un risque de perte. Réservé aux personnes de 18 ans et plus.</div>
 </div></section>
+
 <section id="faq"><div class="wrap">
   <div class="sechead"><div class="eyebrow">Questions fréquentes</div><h2>Ce qu'on nous demande le plus</h2></div>
   <div class="faq">
     <div class="fq open"><div class="fqh" onclick="fq(this)"><span class="q">Est-ce que MIA donne des signaux d'entrée ?</span><span class="c">+</span></div>
-      <div class="fqb">Non, et c'est un choix de conception. MIA décrit ce que le marché a fait et ce qu'il fait maintenant. Elle ne dit pas où le prix ira, ne propose aucun point d'entrée et n'affiche aucun taux de réussite. <b>La décision de trader reste entièrement la tienne</b> — ce que le produit t'apporte, c'est une lecture propre et rapide de la structure.</div></div>
-
-    <div class="fq"><div class="fqh" onclick="fq(this)"><span class="q">Faut-il connaître le Smart Money Concepts pour s'en servir ?</span><span class="c">+</span></div>
-      <div class="fqb">Non. C'est même un bon moyen d'apprendre : chaque élément détecté est expliqué à l'écran, et M.I.A répond à n'importe quelle question sur les concepts — ce qu'est un Order Block, la différence entre BOS et CHOCH, pourquoi une zone est considérée comme comblée. Tu vois la théorie appliquée à un marché réel, en direct.</div></div>
-
+      <div class="fqb">Non, et c'est un choix de conception. MIA décrit ce que le marché a fait et ce qu'il fait maintenant. Elle ne dit pas où le prix ira, ne propose aucun point d'entrée et n'affiche aucun taux de réussite. <b>La décision reste entièrement la tienne</b> — ce que le produit t'apporte, c'est une lecture propre, complète et constante.</div></div>
+    <div class="fq"><div class="fqh" onclick="fq(this)"><span class="q">À quoi sert M.I.A exactement ?</span><span class="c">+</span></div>
+      <div class="fqb">À comprendre. Elle explique n'importe quel concept SMC avec l'exemple sous les yeux, décrit ce qui a été détecté sur le marché que tu regardes avec les niveaux et horodatages réels, et pilote ton affichage quand tu le lui demandes. <b>Elle ne cite que des éléments réellement détectés</b> — une référence inventée est rejetée par le code.</div></div>
+    <div class="fq"><div class="fqh" onclick="fq(this)"><span class="q">Faut-il connaître le Smart Money Concepts ?</span><span class="c">+</span></div>
+      <div class="fqb">Non. C'est même un bon moyen d'apprendre : chaque élément détecté est expliqué à l'écran, et M.I.A répond à n'importe quelle question sur les concepts. Tu vois la théorie appliquée à un marché réel, en direct.</div></div>
     <div class="fq"><div class="fqh" onclick="fq(this)"><span class="q">Est-ce que ça remplace TradingView ?</span><span class="c">+</span></div>
-      <div class="fqb">Non, et ce n'est pas le but. TradingView reste ta plateforme de graphiques, de dessin et d'exécution. MIA fait le travail de lecture structurelle : détecter, dater, suivre le cycle de vie des zones, et chercher sur 80 marchés à la fois. <b>Les deux se complètent</b>.</div></div>
-
+      <div class="fqb">Non, et ce n'est pas le but. TradingView reste ta plateforme de graphiques, de dessin et d'exécution. MIA fait le travail de lecture structurelle : détecter, dater, suivre le cycle de vie des zones, vérifier ta stratégie sur tous tes marchés. <b>Les deux se complètent.</b></div></div>
     <div class="fq"><div class="fqh" onclick="fq(this)"><span class="q">Quels marchés sont couverts ?</span><span class="c">+</span></div>
-      <div class="fqb">Plus de 80 marchés — paires de devises majeures et mineures, métaux, indices, crypto — sur 6 unités de temps allant de la minute au jour. Le palier gratuit donne accès à 3 marchés et 2 unités de temps, ce qui suffit largement pour juger de l'outil.</div></div>
-
+      <div class="fqb">Le produit est en accès anticipé : <b>l'or et l'euro/dollar</b> aujourd'hui, sur six unités de temps. La couverture s'étendra progressivement à 50 à 80 marchés d'ici le lancement commercial. Le nombre affiché en haut de cette page reflète toujours la réalité du moment.</div></div>
     <div class="fq"><div class="fqh" onclick="fq(this)"><span class="q">À quelle fréquence les données sont-elles mises à jour ?</span><span class="c">+</span></div>
-      <div class="fqb">À chaque clôture de bougie de l'unité de temps concernée, pas à un intervalle arbitraire. Une lecture en 15 minutes se rafraîchit toutes les 15 minutes ; une lecture journalière une fois par jour. <b>Chaque écran affiche l'âge de sa dernière lecture</b>, pour que tu saches toujours ce que tu regardes.</div></div>
-
+      <div class="fqb">À chaque clôture de bougie de l'unité concernée, pas à un intervalle arbitraire. Une lecture en 15 minutes se rafraîchit toutes les 15 minutes, une lecture journalière une fois par jour. <b>Chaque écran affiche l'âge de sa dernière lecture.</b></div></div>
     <div class="fq"><div class="fqh" onclick="fq(this)"><span class="q">Puis-je annuler quand je veux ?</span><span class="c">+</span></div>
-      <div class="fqb">Oui, en un clic depuis ton compte, sans avoir à écrire à qui que ce soit. Ton accès reste actif jusqu'à la fin de la période déjà payée. Et si tu annules, tu retombes sur le palier gratuit — tu ne perds pas ton compte.</div></div>
-
-    <div class="fq"><div class="fqh" onclick="fq(this)"><span class="q">D'où viennent les données de prix ?</span><span class="c">+</span></div>
-      <div class="fqb">D'un fournisseur professionnel sous licence d'affichage. Le calendrier économique, lui, provient uniquement des organismes émetteurs — Bureau of Labor Statistics, BEA, Census, Réserve fédérale, Eurostat, Banque centrale européenne. <b>Aucune source secondaire, aucun agrégateur</b>, et chaque publication porte son attribution.</div></div>
-
-    <div class="fq"><div class="fqh" onclick="fq(this)"><span class="q">Le produit fonctionne-t-il sur téléphone ?</span><span class="c">+</span></div>
-      <div class="fqb">Oui, depuis le navigateur. L'espace de lecture, le scanner, les zones et le calendrier sont utilisables sur mobile — pratique pour vérifier une structure sans être devant ton poste.</div></div>
+      <div class="fqb">Oui, depuis ton compte, sans avoir à écrire à qui que ce soit. Ton accès reste actif jusqu'à la fin de la période déjà payée, et tu retombes ensuite sur le palier gratuit — tu ne perds pas ton compte.</div></div>
+    <div class="fq"><div class="fqh" onclick="fq(this)"><span class="q">D'où viennent les données ?</span><span class="c">+</span></div>
+      <div class="fqb">Les prix proviennent d'un fournisseur professionnel sous licence d'affichage. Le calendrier économique vient uniquement des organismes émetteurs — Bureau of Labor Statistics, BEA, Census, Réserve fédérale, Eurostat, Banque centrale européenne. <b>Aucun agrégateur, aucune source secondaire</b>, et chaque publication porte son attribution.</div></div>
   </div>
 </div></section>
 
 <section><div class="wrap"><div class="final">
   <h2>Arrête de tracer. Commence à lire.</h2>
-  <p>Crée un compte gratuit et regarde ce que le moteur voit sur ton marché préféré. Aucune carte de crédit, aucune limite de durée.</p>
-  <div class="ctas"><a class="btn pri lg" href="#">Créer un compte gratuit</a><a class="btn lg" href="#outils">Revoir les outils</a></div>
+  <p>Crée un compte gratuit et regarde ce que MIA voit sur ton marché. Aucune carte de crédit, aucune limite de durée.</p>
+  <div class="ctas"><a class="btn pri lg" href="#">Créer un compte gratuit</a><a class="btn lg" href="#demo">Revoir la démo</a></div>
 </div></div></section>
 
 <footer><div class="wrap">
   <div class="fgrid">
-    <div style="min-width:200px">
-      <div class="brand" style="margin-bottom:10px"><span class="logo"><svg viewBox="0 0 24 24"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.4L12 15l-1.9-4.6L5.5 9l4.6-1.4z"/><path d="M18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></svg></span>MIA Markets</div>
-      <div style="font-size:13px;color:var(--faint);line-height:1.6;max-width:220px">Lecture de structure de marché en Smart Money Concepts.</div>
+    <div style="min-width:220px">
+      <a class="brand" href="#" style="margin-bottom:11px">
+        <span class="mark"><svg viewBox="0 0 24 24" fill="none">
+          <rect x="3.5" y="9" width="3" height="9" rx="1.4" fill="#04101f"/>
+          <rect x="10.5" y="4" width="3" height="16" rx="1.4" fill="#04101f"/>
+          <rect x="17.5" y="11" width="3" height="7" rx="1.4" fill="#04101f"/></svg></span>
+        <span class="wordmark">MIA<i>.</i>Markets</span></a>
+      <div style="font-size:13px;color:var(--faint);line-height:1.6;max-width:230px">Multi-asset Intelligence Assistant.<br>Lecture de structure en Smart Money Concepts.</div>
     </div>
-    <div class="fl"><span class="h">Produit</span><a href="#outils">Espace de lecture</a><a href="#outils">Scanner</a><a href="#outils">Zones</a><a href="#outils">Actualités</a><a href="#outils">M.I.A Agent</a></div>
-    <div class="fl"><span class="h">Ressources</span><a href="#comment">Comment ça marche</a><a href="#faq">Questions fréquentes</a><a href="#">Concepts SMC</a><a href="#">Règles de détection</a></div>
+    <div class="fl"><span class="h">Produit</span><a href="#mia">M.I.A Agent</a><a href="#outils">Espace de lecture</a><a href="#outils">Scanner</a><a href="#outils">Zones</a><a href="#outils">Actualités</a></div>
+    <div class="fl"><span class="h">Ressources</span><a href="#demo">Démo interactive</a><a href="#faq">Questions fréquentes</a><a href="#">Concepts SMC</a><a href="#">Règles de détection</a></div>
     <div class="fl"><span class="h">Légal</span><a href="#">Conditions d'utilisation</a><a href="#">Politique de confidentialité</a><a href="#">Avis de non-responsabilité</a><a href="#">Nous joindre</a></div>
   </div>
   <div class="fdisc">MIA Markets est un outil d'information et d'éducation. Il ne fournit ni conseil en investissement, ni recommandation, ni signal de trading, et ne constitue pas une sollicitation d'opération sur instruments financiers. Le trading comporte un risque de perte pouvant excéder le capital investi. Les performances passées ne préjugent pas des résultats futurs. Service réservé aux personnes de 18 ans et plus. Prix affichés en dollars américains.<br><br>© 2026 MIA Markets · Québec, Canada</div>
 </div></footer>
-
 <script>
 function fq(el){el.parentElement.classList.toggle('open');}
-/* ---- démo : onglets ---- */
+/* ---- carrousel ---- */
+var CI=0,CN=5,CT=['Graphique','Lecture narrée','Régime de marché','Journal des événements','Unités de temps'];
+function cr(){document.getElementById('tr').style.transform='translateX(-'+(CI*100)+'%)';
+ document.getElementById('cn').textContent=CI+1;document.getElementById('ct').textContent=CT[CI];
+ document.querySelectorAll('.cardot').forEach(function(d,i){d.classList.toggle('on',i===CI);});}
+function cg(d){CI=(CI+d+CN)%CN;cr();}
+function cs(i){CI=i;cr();}
+(function(){var h='';for(var i=0;i<CN;i++){h+='<button class="cardot'+(i===0?' on':'')+'" onclick="cs('+i+')" aria-label="Volet '+(i+1)+'"></button>';}
+ document.getElementById('dots').innerHTML=h;})();
+document.addEventListener('keydown',function(e){
+ var c=document.querySelector('.car');if(!c)return;
+ var r=c.getBoundingClientRect();if(r.top>window.innerHeight||r.bottom<0)return;
+ if(e.key==='ArrowLeft')cg(-1);if(e.key==='ArrowRight')cg(1);});
+(function(){var sx=0,t=document.getElementById('tr');
+ t.addEventListener('touchstart',function(e){sx=e.touches[0].clientX;},{passive:true});
+ t.addEventListener('touchend',function(e){var dx=e.changedTouches[0].clientX-sx;
+  if(Math.abs(dx)>44)cg(dx<0?1:-1);},{passive:true});})();
+/* ---- démo onglets ---- */
 function dt(i,el){document.querySelectorAll('.dtab').forEach(b=>b.classList.remove('on'));el.classList.add('on');
-  document.querySelectorAll('.dpane').forEach(p=>p.classList.remove('on'));document.getElementById('p'+i).classList.add('on');}
-/* ---- pane 0 : couches ---- */
+ document.querySelectorAll('.dpane').forEach(p=>p.classList.remove('on'));document.getElementById('p'+i).classList.add('on');}
+/* ---- couches ---- */
 var L={ob:true,fvg:true,liq:true,str:true};
 var TXT={
  ob:"le prix est <b>dans un Order Block haussier</b> formé il y a 3 h 30, entre 4 026,80 et 4 028,90, <b>jamais testé</b> depuis sa formation",
  fvg:"un <b>Fair Value Gap baissier comblé à 60 %</b> se trouve sous le prix, entre 4 020,10 et 4 021,85",
  liq:"une poche de <b>liquidité achat reste intacte</b> à 4 034,20 ; une poche vente <b>a été balayée</b> sous 4 011,40",
- str:"un <b>CHOCH haussier s'est confirmé</b> à 4 021,45, suivi d'un <b>BOS haussier</b> à 4 025,10"
-};
+ str:"un <b>CHOCH haussier s'est confirmé</b> à 4 021,45, suivi d'un <b>BOS haussier</b> à 4 025,10"};
 function draw(){
  ['ob','fvg','liq','str'].forEach(function(k){
    document.getElementById('l-'+k).classList.toggle('on',L[k]);
    var c=document.getElementById('c-'+k);c.classList.toggle('on',L[k]);c.classList.toggle('off',!L[k]);});
  var parts=[];['str','ob','fvg','liq'].forEach(function(k){if(L[k])parts.push(TXT[k]);});
  var n=document.getElementById('dn');
- if(!parts.length){n.innerHTML='<span style="color:var(--faint)">Aucune couche affichée. La lecture ne décrit que ce qui est visible — elle n\'invente rien pour remplir le vide.</span>';return;}
- var s=parts[0].charAt(0).toUpperCase()+parts[0].slice(1);
- for(var i=1;i<parts.length;i++){s+=(i===parts.length-1?', et ':', ')+parts[i];}
- n.innerHTML='Sur l\'or en 15 minutes, '+s.charAt(0).toLowerCase()+s.slice(1)+'.';
-}
+ if(!parts.length){n.innerHTML='<span style="color:var(--faint)">Aucune couche affichée. La lecture ne décrit que ce qui est visible — elle n\'invente rien pour combler le vide.</span>';return;}
+ var s=parts[0];for(var i=1;i<parts.length;i++){s+=(i===parts.length-1?', et ':', ')+parts[i];}
+ n.innerHTML='Sur l\'or en 15 minutes, '+s+'.';}
 function tg(k){L[k]=!L[k];draw();}
 function only(k){for(var x in L)L[x]=(x===k);draw();}
 function allon(){for(var x in L)L[x]=true;draw();}
-/* ---- pane 1 : scanner ---- */
+/* ---- scanner ---- */
 var K=[true,true,false,false,false];
-var M=[
- {s:'Au',n:'Or · 15 min',c:[1,1,1,1,1]},
- {s:'Au',n:'Or · 1 h',c:[1,1,1,1,0]},
- {s:'€',n:'Euro · 5 min',c:[1,1,1,0,1]},
- {s:'₿',n:'Bitcoin · 1 h',c:[1,1,0,0,1]},
- {s:'£',n:'Livre · 4 h',c:[1,0,1,1,0]},
- {s:'¥',n:'Yen · 15 min',c:[1,1,0,1,0]},
- {s:'Ag',n:'Argent · 1 h',c:[1,0,0,0,1]},
- {s:'US',n:'S&P · 4 h',c:[1,1,1,1,1]}
-];
+var M=[{s:'Au',n:'Or · 15 min',c:[1,1,1,1,1]},{s:'Au',n:'Or · 1 h',c:[1,1,1,1,0]},
+ {s:'€',n:'Euro · 15 min',c:[1,1,1,0,1]},{s:'€',n:'Euro · 1 h',c:[1,1,0,0,1]},
+ {s:'Au',n:'Or · 4 h',c:[1,0,1,1,0]},{s:'€',n:'Euro · 5 min',c:[1,1,0,1,0]},
+ {s:'Au',n:'Or · 5 min',c:[1,0,0,0,1]},{s:'€',n:'Euro · 4 h',c:[1,1,1,1,1]}];
 function kt(i){K[i]=!K[i];document.getElementById('k'+i).classList.toggle('on',K[i]);sc();}
 function sc(){
  var act=[];K.forEach(function(v,i){if(v)act.push(i);});
@@ -951,28 +1099,24 @@ function sc(){
  M.forEach(function(m){var ok=act.every(function(i){return m.c[i]===1;});(ok?hit:miss).push(m);});
  document.getElementById('rn').textContent=act.length?hit.length:'—';
  var h='';
- hit.slice(0,5).forEach(function(m){h+='<div class="rrow"><span class="sy">'+m.s+'</span><span>'+m.n+'</span><span class="sc" style="color:var(--pos)">'+act.length+' / '+act.length+'</span></div>';});
  if(!act.length){h='<div style="padding:18px 14px;font-size:12.5px;color:var(--faint);line-height:1.6">Aucune condition cochée. Le scanner n\'affiche rien — <b style="color:var(--dim)">et surtout pas tous les marchés</b>.</div>';}
  else if(!hit.length){h='<div style="padding:18px 14px;font-size:12.5px;color:var(--faint);line-height:1.6">Aucun marché ne réunit ces conditions en ce moment. <b style="color:var(--dim)">Ce n\'est pas une erreur</b> — et rien ne te propose d\'assouplir.</div>';}
- else{miss.slice(0,2).forEach(function(m){var k=act.filter(function(i){return m.c[i]===1;}).length;
+ else{hit.slice(0,5).forEach(function(m){h+='<div class="rrow"><span class="sy">'+m.s+'</span><span>'+m.n+'</span><span class="sc" style="color:var(--pos)">'+act.length+' / '+act.length+'</span></div>';});
+  miss.slice(0,2).forEach(function(m){var k=act.filter(function(i){return m.c[i]===1;}).length;
    h+='<div class="rrow miss"><span class="sy">'+m.s+'</span><span>'+m.n+'</span><span class="sc" style="color:var(--faint)">'+k+' / '+act.length+'</span></div>';});}
- document.getElementById('rlist').innerHTML=h;
-}
-/* ---- pane 2 : zones ---- */
+ document.getElementById('rlist').innerHTML=h;}
+/* ---- zones ---- */
 function zs(i,el){document.querySelectorAll('.zb').forEach(b=>b.classList.remove('on'));el.classList.add('on');
  document.querySelectorAll('.zpane').forEach(p=>p.classList.remove('on'));document.getElementById('z'+i).classList.add('on');}
-/* ---- pane 3 : MIA ---- */
+/* ---- MIA ---- */
 var Q=[
- ["C'est quoi un Order Block ?","C'est la dernière bougie de sens opposé avant le mouvement qui casse la structure. Celui où le prix se trouve s'est formé <b>il y a 3 h 30</b>, juste avant le BOS haussier de 4 025,10. Il couvre 4 026,80 à 4 028,90.","a"],
- ["Pourquoi cette zone est-elle importante ?","Je ne peux pas te dire si elle est importante — ça dépend de ta lecture. Ce que je peux te dire : elle <b>n'a jamais été testée</b> depuis sa formation, le prix y est entré il y a 30 minutes, et une poche de liquidité intacte se trouve 0,18 % au-dessus.","a"],
+ ["C'est quoi un Order Block ?","C'est la dernière bougie de sens opposé avant le mouvement qui casse la structure. Celui où le prix se trouve s'est formé <b>à 12:30</b>, juste avant le BOS haussier de 4 025,10. Il couvre 4 026,80 à 4 028,90.","a"],
+ ["Cette zone a été testée combien de fois ?","<b>Jamais.</b> Elle s'est formée il y a 3 h 30 et le prix y est entré il y a 30 minutes — c'est son premier contact. Aucune mèche ne l'avait touchée auparavant.","a"],
  ["Montre-moi seulement les OB non testés","C'est fait — j'ai masqué les Fair Value Gaps et la liquidité. <b>3 Order Blocks</b> jamais testés restent affichés sur la fenêtre analysée.","a"],
- ["Tu penses que ça va monter ?","<b>Je ne réponds pas à ça.</b> Je ne prédis pas les mouvements de prix et je ne donne aucun signal — c'est délibéré, pas une limite technique. Je peux te décrire l'état de la zone, son historique, ou t'expliquer le concept.","no"]
-];
-function ask(i){
- var c=document.getElementById('mch');
+ ["Tu penses que ça va monter ?","<b>Je ne réponds pas à ça.</b> Je ne prédis pas les mouvements de prix et je ne donne aucun signal — c'est délibéré, pas une limite technique. Je peux te décrire l'état de la zone, son historique, ou t'expliquer le concept.","no"]];
+function ask(i){var c=document.getElementById('mch');
  var u=document.createElement('div');u.className='mb u';u.textContent=Q[i][0];c.appendChild(u);
  setTimeout(function(){var a=document.createElement('div');a.className='mb '+Q[i][2];a.innerHTML=Q[i][1];c.appendChild(a);c.scrollTop=c.scrollHeight;},420);
- c.scrollTop=c.scrollHeight;
-}
+ c.scrollTop=c.scrollHeight;}
 draw();sc();ask(0);
 </script></body></html>
