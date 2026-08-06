@@ -208,15 +208,38 @@ def enabled_combos() -> Tuple[Tuple[str, str], ...]:
 # still backfilled and viewable; only its per-5-min live refresh waits). Set
 # LB1_WARM_M5=1 to warm it natively once a plan/cadence allows.
 _WARM_M5_ENV = "LB1_WARM_M5"
+# Optional env allow-lists to SHRINK the live-warm perimeter (fewer combos kept
+# fresh by the scheduler ⇒ fewer Twelve Data REST calls/day ⇒ a cheaper plan).
+# Comma-separated, case-insensitive; unset = warm everything enabled. A combo NOT
+# warmed is still fully AVAILABLE — it is simply generated on demand at the first
+# request (a slightly slower first load), never removed. e.g. warm gold only:
+#   LIVE_WARM_INSTRUMENTS=XAUUSD     LIVE_WARM_TIMEFRAMES=M15,H1
+_WARM_INSTRUMENTS_ENV = "LIVE_WARM_INSTRUMENTS"
+_WARM_TIMEFRAMES_ENV = "LIVE_WARM_TIMEFRAMES"
+
+
+def _env_allowset(name: str) -> set:
+    return {x.strip().upper() for x in os.environ.get(name, "").split(",") if x.strip()}
 
 
 def live_warm_combos() -> Tuple[Tuple[str, str], ...]:
-    """Combos safe to keep warm live within the free-plan quota (≈254 req/day)."""
+    """Combos the scheduler keeps warm live. Defaults to every enabled combo
+    (minus M5) within the free-plan quota; ``LIVE_WARM_INSTRUMENTS`` /
+    ``LIVE_WARM_TIMEFRAMES`` shrink it further to cut REST usage. Non-warm combos
+    stay available on demand — this only changes what is PROACTIVELY refreshed."""
     warm_m5 = os.environ.get(_WARM_M5_ENV, "").strip().lower() in ("1", "true", "yes", "on")
-    return tuple(
-        (inst, tf) for (inst, tf) in enabled_combos()
-        if tf.upper() != "M5" or warm_m5
-    )
+    only_inst = _env_allowset(_WARM_INSTRUMENTS_ENV)
+    only_tf = _env_allowset(_WARM_TIMEFRAMES_ENV)
+    out = []
+    for inst, tf in enabled_combos():
+        if tf.upper() == "M5" and not warm_m5:
+            continue
+        if only_inst and inst.upper() not in only_inst:
+            continue
+        if only_tf and tf.upper() not in only_tf:
+            continue
+        out.append((inst, tf))
+    return tuple(out)
 
 
 # --------------------------------------------------------------------------- #
