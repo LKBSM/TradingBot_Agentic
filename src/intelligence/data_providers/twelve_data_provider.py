@@ -159,7 +159,14 @@ class TwelveDataProvider(DataProvider):
             per_minute=per_minute, per_day=per_day, sleep_fn=sleep_fn
         )
         self._cache: Dict[Tuple[str, str, int], Tuple[float, pd.DataFrame]] = {}
-        self._cache_ttl_s = cache_ttl_s
+        # A wider TTL de-duplicates repeated REST fetches of the same combo within
+        # the window (env-tunable). Market data a few minutes stale is fine — the
+        # freshness badge already flags any lag — and it cuts credit usage.
+        try:
+            env_ttl = float(os.environ.get("TWELVE_DATA_CACHE_TTL_S", "300"))
+        except (TypeError, ValueError):
+            env_ttl = 300.0
+        self._cache_ttl_s = env_ttl if cache_ttl_s == 60.0 else cache_ttl_s
         self._cache_lock = threading.Lock()
         self._sleep_fn = sleep_fn
 

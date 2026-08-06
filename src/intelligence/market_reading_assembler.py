@@ -637,6 +637,32 @@ class MarketReadingAssembler:
         never swallowed into a blank reading.
         """
         if not bound_provider:
+            # The WS live tick already advances candles.db for free, so a REST
+            # fetch here is REDUNDANT whenever the cache already holds a full,
+            # up-to-date window (the common case for a warm combo). Reading the
+            # cache then saves a Twelve Data credit — the biggest source of the
+            # over-the-free-quota REST usage. We only skip the provider when the
+            # cache is BOTH deep enough (a full build window) AND current vs the
+            # market-aware close; otherwise (short/lagging cache, or WS down) we
+            # fall back to the provider exactly as before, so nothing regresses.
+            try:
+                expected_close = market_aware_expected_close(
+                    instrument, timeframe, self._clock()
+                )
+                cached_fresh = self._candles_store.get_last_n_candles(
+                    instrument, timeframe, window
+                )
+                if cached_fresh and len(cached_fresh) >= window:
+                    newest = cached_fresh[-1].ts
+                    if newest.tzinfo is None:
+                        newest = newest.replace(tzinfo=timezone.utc)
+                    if newest.astimezone(timezone.utc) >= expected_close:
+                        return cached_fresh  # WS-advanced cache is current → no REST
+            except Exception:  # never let the optimisation break a build
+                logger.exception(
+                    "background read-through check failed for %s/%s — fetching",
+                    instrument, timeframe,
+                )
             return self._data_provider.fetch_candles(instrument, timeframe, window)
 
         provider_error: Optional[BaseException] = None
