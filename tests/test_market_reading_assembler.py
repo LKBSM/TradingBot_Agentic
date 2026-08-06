@@ -241,6 +241,151 @@ def test_lazy_cache_hit_returns_stored_without_fetch(fixed_clock):
 
 
 # ---------------------------------------------------------------------------
+# PERF-2 — a CURRENT-version reading that is a candle behind is SERVED verbatim,
+# never rebuilt on the request path (the fix for "5-7 s on every call": under a
+# lagging/rate-limited feed the stored close never reaches the wall-clock
+# expected_close, so the old code rebuilt — and burned the bounded-provider
+# budget — on EVERY request). The scheduler advances it off the request path.
+# ---------------------------------------------------------------------------
+
+
+def _seed_current_version_reading(fixed_clock) -> dict:
+    """Build a genuine, schema-valid, current-_logic_version reading (last M15
+    close = 14:15 at the fixed clock) and return the payload AS STORED (stamped)."""
+    seed = MarketReadingAssembler(
+        data_provider=_MockDataProvider(_build_candles(57)),
+        readings_store=_MockReadingsStore(),
+        candles_store=_MockCandlesStore(),
+        smc_pipeline=_stub_smc_pipeline,
+        clock=fixed_clock,
+    )
+    seed.get_or_generate("XAUUSD", "M15")
+    payload = seed.readings_store.get_latest_reading("XAUUSD", "M15")
+    assert payload["_logic_version"] == READING_LOGIC_VERSION
+    return payload
+
+
+def _later_clock():
+    # One bar past the seed: expected M15 close is now 14:30, so the seeded
+    # reading (14:15) is a candle BEHIND — the prod "feed lagging" case.
+    return datetime(2026, 5, 28, 14, 38, 0, tzinfo=timezone.utc)
+
+
+def test_current_version_stale_reading_is_served_without_rebuild(fixed_clock):
+    payload = _seed_current_version_reading(fixed_clock)
+    provider = _MockDataProvider(_build_candles(30))
+    candles_store = _MockCandlesStore()
+    readings_store = _MockReadingsStore(prepopulated=payload)
+
+    assembler = MarketReadingAssembler(
+        data_provider=provider,
+        readings_store=readings_store,
+        candles_store=candles_store,
+        smc_pipeline=_stub_smc_pipeline,
+        clock=_later_clock,
+    )
+
+    reading = assembler.get_or_generate("XAUUSD", "M15")
+
+    # Served straight from the store: NO provider call, NO candle upsert, NO save.
+    assert provider.call_count == 0
+    assert candles_store.upsert_calls == []
+    assert readings_store.save_calls == []
+    # Still kept warm so the background scheduler advances it.
+    assert readings_store.mark_active_calls == [("XAUUSD", "M15")]
+    # Detection output is the STORED one, untouched (served verbatim) — the header
+    # is the seed's analysed close (14:15), not the wall-clock expected 14:30.
+    assert reading.header.candle_close_ts == datetime(
+        2026, 5, 28, 14, 15, 0, tzinfo=timezone.utc
+    )
+
+
+def test_interactive_serve_stored_kill_switch_restores_rebuild(fixed_clock, monkeypatch):
+    # The emergency env fall-back forces the old synchronous behaviour: the same
+    # stale current-version reading is rebuilt (provider fetched) instead of served.
+    monkeypatch.setenv("SENTINEL_INTERACTIVE_SERVE_STORED", "0")
+    payload = _seed_current_version_reading(fixed_clock)
+    provider = _MockDataProvider(_build_candles(30))
+    candles_store = _MockCandlesStore()
+    readings_store = _MockReadingsStore(prepopulated=payload)
+
+    assembler = MarketReadingAssembler(
+        data_provider=provider,
+        readings_store=readings_store,
+        candles_store=candles_store,
+        smc_pipeline=_stub_smc_pipeline,
+        clock=_later_clock,
+    )
+
+    assembler.get_or_generate("XAUUSD", "M15")
+
+    # Kill switch off → rebuild path: provider fetched, reading re-saved.
+    assert provider.call_count == 1
+    assert len(readings_store.save_calls) == 1
+
+
+def test_serve_stored_does_not_wait_on_a_slow_provider(fixed_clock):
+    # PERF-2 budget guard: serving must be a SQLite read, NOT a provider round-trip.
+    # A provider that takes 3 s would blow every time budget if it were on the path;
+    # the interactive serve-stored path must return in well under a second and never
+    # call it. This fails loudly if a future change re-introduces a synchronous fetch.
+    import time as _time
+
+    payload = _seed_current_version_reading(fixed_clock)
+
+    class _SlowProvider:
+        def __init__(self):
+            self.call_count = 0
+
+        def fetch_candles(self, instrument, timeframe, count):
+            self.call_count += 1
+            _time.sleep(3.0)
+            return _build_candles(30)[-count:]
+
+    provider = _SlowProvider()
+    readings_store = _MockReadingsStore(prepopulated=payload)
+    assembler = MarketReadingAssembler(
+        data_provider=provider,
+        readings_store=readings_store,
+        candles_store=_MockCandlesStore(),
+        smc_pipeline=_stub_smc_pipeline,
+        clock=_later_clock,
+    )
+
+    start = _time.perf_counter()
+    assembler.get_or_generate("XAUUSD", "M15")
+    elapsed = _time.perf_counter() - start
+
+    assert provider.call_count == 0
+    assert elapsed < 0.5, (
+        f"served in {elapsed:.2f}s — the external provider must never be on the "
+        "interactive request path (PERF-2)"
+    )
+
+
+def test_scheduler_path_still_rebuilds_stale_current_version_reading(fixed_clock):
+    # The background scheduler (bound_provider=False) is the ONLY provider-touching
+    # path now — it must still rebuild a stale reading so candles.db advances.
+    payload = _seed_current_version_reading(fixed_clock)
+    provider = _MockDataProvider(_build_candles(30))
+    candles_store = _MockCandlesStore()
+    readings_store = _MockReadingsStore(prepopulated=payload)
+
+    assembler = MarketReadingAssembler(
+        data_provider=provider,
+        readings_store=readings_store,
+        candles_store=candles_store,
+        smc_pipeline=_stub_smc_pipeline,
+        clock=_later_clock,
+    )
+
+    assembler.get_or_generate("XAUUSD", "M15", bound_provider=False)
+
+    assert provider.call_count == 1
+    assert len(readings_store.save_calls) == 1
+
+
+# ---------------------------------------------------------------------------
 # Stale LOGIC version — regeneration (LQ-D1: a pure logic fix must reach the
 # screen, not stay frozen behind a still-matching cache)
 # ---------------------------------------------------------------------------

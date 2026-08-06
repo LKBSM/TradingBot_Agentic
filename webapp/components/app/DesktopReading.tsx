@@ -13,6 +13,7 @@ import {
 } from './ReadingPlaceholders';
 import { ReadingSkeleton } from './ReadingSkeleton';
 import { READING_DATA_SOURCE } from '@/lib/mockReadings';
+import { CandlesError } from '@/lib/market-reading/api-client';
 import { useRouter } from 'next/navigation';
 import {
   useCandles,
@@ -96,7 +97,7 @@ export function DesktopReading({
 
   // Candle + price feeds — identical wiring to ReadingColumn (mobile), so the
   // desktop layout reads exactly the same honest, candle-close data.
-  const { candles } = useCandles(
+  const { candles, error: candlesError, refresh: refreshCandles } = useCandles(
     active?.instrument ?? null,
     active?.timeframe ?? null,
     { source: dataSource, candleCloseTs: reading?.header.candle_close_ts ?? null },
@@ -232,7 +233,10 @@ export function DesktopReading({
         isolatedZoneIds={chartView.isolatedZoneIds}
       />
     ) : (
-      <ChartUnavailable />
+      <ChartUnavailable
+        onRetry={refreshCandles}
+        reason={candlesError instanceof CandlesError ? candlesError.reason : undefined}
+      />
     );
 
   return (

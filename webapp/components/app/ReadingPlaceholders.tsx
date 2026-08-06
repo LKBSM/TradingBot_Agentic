@@ -10,6 +10,7 @@ import {
   MarketReadingNoDataError,
   MarketReadingNotAvailableError,
   MarketReadingValidationError,
+  type CandlesErrorReason,
 } from '@/lib/market-reading/api-client';
 
 /**
@@ -117,10 +118,26 @@ export function SlowLoadHint({ afterMs = 6000 }: { afterMs?: number }) {
  */
 export function ChartUnavailable({
   onRetry,
+  reason,
 }: {
   onRetry?: () => void;
+  /**
+   * PERF-2 — why the candle feed is unavailable, so the placeholder says WHICH
+   * (délai dépassé / serveur injoignable / aucune donnée) instead of one vague
+   * line. Reuses the reading-error copy (already translated in every locale);
+   * a missing/unknown reason falls back to the generic chart body.
+   */
+  reason?: CandlesErrorReason;
 }) {
   const t = useTranslations('app');
+  const bodyKey =
+    reason === 'timeout'
+      ? 'placeholders.errorTimeout'
+      : reason === 'network'
+        ? 'placeholders.errorUnreachable'
+        : reason === 'nodata'
+          ? 'placeholders.errorNoData'
+          : 'placeholders.chartUnavailableBody';
   return (
     <div
       role="status"
@@ -133,9 +150,7 @@ export function ChartUnavailable({
         <p className="text-sm font-semibold text-foreground">
           {t('placeholders.chartUnavailableTitle')}
         </p>
-        <p className="max-w-xs text-xs text-muted-foreground">
-          {t('placeholders.chartUnavailableBody')}
-        </p>
+        <p className="max-w-xs text-xs text-muted-foreground">{t(bodyKey)}</p>
       </div>
       {onRetry && (
         <Button type="button" variant="outline" size="sm" onClick={onRetry}>
