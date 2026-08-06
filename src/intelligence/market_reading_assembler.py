@@ -637,14 +637,16 @@ class MarketReadingAssembler:
         never swallowed into a blank reading.
         """
         if not bound_provider:
-            # The WS live tick already advances candles.db for free, so a REST
-            # fetch here is REDUNDANT whenever the cache already holds a full,
-            # up-to-date window (the common case for a warm combo). Reading the
-            # cache then saves a Twelve Data credit — the biggest source of the
-            # over-the-free-quota REST usage. We only skip the provider when the
-            # cache is BOTH deep enough (a full build window) AND current vs the
-            # market-aware close; otherwise (short/lagging cache, or WS down) we
-            # fall back to the provider exactly as before, so nothing regresses.
+            # A REST fetch here is REDUNDANT whenever candles.db already holds a
+            # full, up-to-date window for this combo — e.g. an earlier scheduler
+            # tick (or the deep-backfill) already fetched it this period. Reading
+            # the cache then saves a Twelve Data credit. We only skip the provider
+            # when the cache is BOTH deep enough (a full build window) AND current
+            # vs the market-aware close; otherwise (short/lagging cache) we fall
+            # back to the provider exactly as before, so nothing regresses.
+            # NOTE: the live WebSocket feeds only the last PRICE (/api/live-price),
+            # NOT candles.db — wiring it to build M15 bars into candles.db (then
+            # resampling H1/H4/D1 from them) is the path to ~zero steady-state REST.
             try:
                 expected_close = market_aware_expected_close(
                     instrument, timeframe, self._clock()
