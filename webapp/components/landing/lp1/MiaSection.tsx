@@ -42,7 +42,7 @@ export function MiaSection() {
   return (
     <section id="mia">
       <div className={styles.wrap}>
-        <div className={styles.sechead}>
+        <div className={styles.sechead} style={{ marginBottom: 30 }}>
           <div className={styles.eyebrow}>{t('miaSection.eyebrow')}</div>
           <h2>{t('miaSection.title')}</h2>
           <p>{t('miaSection.subtitle')}</p>
@@ -80,7 +80,7 @@ export function MiaSection() {
                 <span className={styles.vt}>{t('miaSection.chatHeader')}</span>
               </div>
               <div className={styles.visb}>
-                <div className={styles.mchat} style={{ minHeight: 250, border: 'none', background: 'transparent', padding: 0 }}>
+                <div className={styles.mchat} style={{ minHeight: 200, border: 'none', background: 'transparent', padding: 0, gap: 7 }}>
                   <div className={styles.mbU} style={{ alignSelf: 'flex-end' }}>{t('miaSection.chat.u1')}</div>
                   <div className={styles.mbA} style={{ alignSelf: 'flex-start' }}>{rich('miaSection.chat.a1')}</div>
                   <div className={styles.mbU} style={{ alignSelf: 'flex-end' }}>{t('miaSection.chat.u2')}</div>
