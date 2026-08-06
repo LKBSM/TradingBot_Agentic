@@ -105,21 +105,14 @@ async function open(page: Page, loc: Loc) {
   // start`, which is faster); the page itself is static once compiled.
   await page.goto(loc.path, { waitUntil: 'domcontentloaded', timeout: 60_000 });
   await dismissCookieBanner(page);
+  // Hard-kill smooth scroll and animations for deterministic scroll-into-view:
+  // on this long page a mid-flight smooth scroll makes click targets "unstable".
+  await page.addStyleTag({
+    content:
+      '*,*::before,*::after{scroll-behavior:auto !important;transition-duration:0s !important;animation-duration:0s !important}',
+  });
 }
 
-// The `mobile-iphone-12` project emulates a touch device; on this long marketing
-// page the site shell's scroll container does not advance under that emulation
-// (a Playwright/site-shell quirk — real mobile scrolls fine and full-page
-// screenshots render every pixel). The 390×844 viewport is already exercised
-// here under `chromium-desktop`, so we skip the redundant device project rather
-// than chase an emulation artifact. This spec runs fr+en at 1280×800 and
-// 390×844 under chromium-desktop.
-test.beforeEach(({}, testInfo) => {
-  test.skip(
-    testInfo.project.name === 'mobile-iphone-12',
-    '390×844 is covered under chromium-desktop; touch-scroll emulation quirk on a long page',
-  );
-});
 
 for (const loc of LOCALES) {
   for (const vp of VIEWPORTS) {

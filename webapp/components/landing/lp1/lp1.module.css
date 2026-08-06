@@ -406,9 +406,13 @@
 @media (max-width: 520px) { .capgrid { grid-template-columns: 1fr; } }
 
 /* ============ §5 READING-SPACE CAROUSEL (LP-2) ============ */
-.car { position: relative; }
+/* min-width:0 lets the carousel shrink below its 500%-wide track inside the
+   feature grid/flex cell; without it the grid item's auto min-width equals the
+   track's max-content and the page overflows horizontally (mobile browsers then
+   zoom out). overflow:hidden on the viewport clips the off-screen slides. */
+.car { position: relative; min-width: 0; }
 .car:focus-visible { outline: 2px solid var(--lp-acc); outline-offset: 4px; border-radius: 16px; }
-.carViewport { overflow: hidden; border-radius: 15px; }
+.carViewport { overflow: hidden; border-radius: 15px; max-width: 100%; }
 .carTrack { display: flex; transition: transform 0.42s cubic-bezier(0.4, 0, 0.2, 1); }
 @media (prefers-reduced-motion: reduce) { .carTrack { transition: none; } }
 /* Track is (SLIDE_COUNT × 100%) wide; each slide is one viewport = 1/SLIDE_COUNT

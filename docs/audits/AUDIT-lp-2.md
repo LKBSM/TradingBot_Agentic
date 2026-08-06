@@ -179,3 +179,13 @@ Décision à prendre (§C4) : les « types de structure » réels que le produit
 ## À poser après validation live
 - Envisager `reducedMotion:'reduce'` global dans `playwright.config` (réduirait le flaky) — hors périmètre page.
 - Le petit défaut tsc pré-existant du calendrier (nw6) mérite un `as unknown as` dans une mission calendrier.
+
+---
+
+# Correctifs des deux points signalés (demandés après revue)
+
+**1. Erreurs tsc pré-existantes (nw6).** `components/calendar/__tests__/CalendarPublication.nw6.test.tsx` : le cast `fr.calendar.pub.pedagogy as Record<string,{body}>` échouait car `pedagogy` porte aussi `title`/`badge` (string). Corrigé en `as unknown as Record<…>` (2 lignes, fichier de test). **tsc désormais 0 erreur sur tout le projet.**
+
+**2. Projet Playwright `mobile-iphone-12` (dé-sauté).** La vraie cause n'était PAS un artefact de harnais : **mon carrousel provoquait un débordement horizontal**. La piste `width:500%` forçait la cellule de grille `.feat` à s'élargir (les éléments de grille ne rétrécissent pas sous leur contenu sans `min-width:0`) → page ~1043 px de large → le navigateur mobile **dézoome** (viewport de mise en page ≠ viewport visuel) → les clics tactiles tombaient à côté. **Correctif page réel** : `.car { min-width: 0 }` + `.carViewport { max-width:100%; overflow:hidden }` → **débordement 390→0**, plus de dézoom (isMobile `innerHeight` repasse à 844). Le projet `mobile-iphone-12` **n'est plus sauté** et **passe** (23 passés + 5 flaky au retry). Défilement instant forcé en test (`addStyleTag scroll-behavior:auto`) pour absorber le `scroll-smooth`.
+
+**Bilan** : tsc **0 erreur**, vitest **851/851**, Playwright **vert sur les 2 projets** (chromium-desktop + mobile-iphone-12) fr+en × 1280+390. Le débordement corrigé est aussi une **vraie amélioration mobile** (plus de zoom arrière parasite).
