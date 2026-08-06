@@ -1,0 +1,447 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MIA Markets — Scanner conversationnel</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#070b13;--card:#0f1928;--card2:#0c1421;--line:#1b2840;--line2:#25344f;
+--tx:#e9eff8;--dim:#94a5be;--faint:#5f7089;--acc:#5b9dff;--acc2:#7cb2ff;--pos:#3ddc97;--neg:#ff6b81;--amb:#f5b544;--vio:#a78bfa}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font-family:'Inter',system-ui,sans-serif;font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:'Space Grotesk';letter-spacing:-.03em;line-height:1.14}
+.mono{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums}
+.nav{position:sticky;top:0;z-index:90;background:rgba(7,11,19,.95);border-bottom:1px solid var(--line);padding:11px 22px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;backdrop-filter:blur(10px)}
+.bd{font-family:'Space Grotesk';font-weight:700;font-size:14px;letter-spacing:-.03em;margin-right:10px}
+.bd span{color:var(--faint);font-weight:500}
+.tb{font-family:'Space Grotesk';font-size:11.5px;font-weight:600;padding:6px 13px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--dim);cursor:pointer;transition:.15s}
+.tb:hover{border-color:var(--line2);color:var(--tx)}
+.tb.on{background:var(--acc);border-color:var(--acc);color:#04101f}
+.wrap{max-width:1080px;margin:0 auto;padding:26px 22px 70px}
+body[data-s="0"] .v0,body[data-s="1"] .v1,body[data-s="2"] .v2,body[data-s="3"] .v3,body[data-s="4"] .v4,body[data-s="5"] .v5{display:block}
+.v0,.v1,.v2,.v3,.v4,.v5{display:none}
+.btn{font-family:'Space Grotesk';font-weight:600;border-radius:9px;border:1px solid var(--line2);background:transparent;color:var(--tx);cursor:pointer;transition:.15s;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn:hover{border-color:var(--acc);color:var(--acc)}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:#04101f}
+.btn.sm{font-size:12px;padding:7px 13px}
+.btn.md{font-size:13.5px;padding:11px 20px}
+.hd{margin-bottom:22px}
+.hd h1{font-size:26px;font-weight:600;margin-bottom:6px}
+.hd p{color:var(--dim);font-size:14.5px}
+
+/* ---- BARRE DE COMMANDE ---- */
+.cmd{border:1px solid var(--line2);border-radius:16px;background:linear-gradient(155deg,#111e33,#0b1322);overflow:hidden;position:relative}
+.cmd .aura{position:absolute;width:520px;height:300px;right:-120px;top:-130px;background:radial-gradient(ellipse at center,rgba(124,178,255,.14),transparent 66%);pointer-events:none}
+.cmdb{padding:22px 24px;position:relative}
+.cmdh{display:flex;align-items:center;gap:11px;margin-bottom:15px}
+.av{width:32px;height:32px;border-radius:10px;background:linear-gradient(140deg,#5b9dff,#3060b8);display:grid;place-items:center;position:relative;flex-shrink:0}
+.av svg{width:16px;height:16px;stroke:#04101f;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.av .o{position:absolute;right:-2px;bottom:-2px;width:9px;height:9px;border-radius:50%;background:var(--pos);border:2.2px solid #101e33}
+.cmdh .nm{font-family:'Space Grotesk';font-size:14px;font-weight:600;line-height:1.2}
+.cmdh .sb{font-family:'JetBrains Mono';font-size:10px;color:var(--faint)}
+.inp{display:flex;align-items:flex-start;gap:12px;background:#0a1220;border:1px solid var(--line2);border-radius:12px;padding:14px 16px;transition:.18s}
+.inp:focus-within{border-color:var(--acc);box-shadow:0 0 0 3px rgba(91,157,255,.11)}
+.inp textarea{flex:1;background:transparent;border:none;outline:none;color:var(--tx);font-family:'Inter';font-size:15px;line-height:1.6;resize:none;min-height:52px}
+.inp textarea::placeholder{color:var(--faint)}
+.mic{width:34px;height:34px;border-radius:9px;border:1px solid var(--line2);background:transparent;color:var(--faint);display:grid;place-items:center;cursor:pointer;flex-shrink:0;transition:.15s}
+.mic:hover{border-color:var(--acc);color:var(--acc)}
+.mic svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.9}
+.cmdf{display:flex;align-items:center;gap:10px;margin-top:13px;flex-wrap:wrap}
+.hint{font-family:'JetBrains Mono';font-size:10.5px;color:var(--faint)}
+.ex{display:flex;gap:7px;flex-wrap:wrap;margin-top:16px}
+.exb{font-size:12.5px;padding:8px 13px;border-radius:9px;border:1px solid var(--line);background:rgba(10,19,34,.55);color:var(--dim);cursor:pointer;transition:.15s;text-align:left}
+.exb:hover{border-color:var(--acc);color:var(--tx);background:#12213a}
+
+/* ---- TRADUCTION ---- */
+.sec{margin-top:22px}
+.slab{font-family:'JetBrains Mono';font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin-bottom:11px;display:flex;align-items:center;gap:9px}
+.slab .r{margin-left:auto;text-transform:none;letter-spacing:0;font-size:11px}
+.tcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(258px,1fr));gap:9px}
+.tc{border:1px solid #2f5f9e;border-radius:12px;background:#0e1c31;padding:13px 15px;position:relative;transition:.18s}
+.tc.off{border-color:var(--line);background:var(--card2);opacity:.5}
+.tc .fam{font-family:'JetBrains Mono';font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
+.tc .lb{font-size:13.5px;font-weight:500;line-height:1.4;margin-bottom:8px}
+.tc .vals{display:flex;gap:5px;flex-wrap:wrap}
+.vb{font-family:'JetBrains Mono';font-size:10px;padding:3px 9px;border-radius:6px;border:1px solid var(--line2);background:#0a1220;color:var(--faint);cursor:pointer}
+.vb.on{background:#12294a;border-color:#2f5f9e;color:var(--acc)}
+.tc .x{position:absolute;top:10px;right:11px;width:19px;height:19px;border-radius:6px;border:1px solid var(--line2);background:transparent;color:var(--faint);cursor:pointer;font-size:11px;line-height:1;display:grid;place-items:center}
+.tc .x:hover{border-color:var(--neg);color:var(--neg)}
+.f-str{color:var(--acc)}.f-zon{color:var(--vio)}.f-liq{color:var(--amb)}.f-ctx{color:var(--pos)}
+
+/* ---- NON TRADUIT ---- */
+.warn{border:1px solid #6b5220;border-left:2px solid var(--amb);border-radius:0 12px 12px 0;background:#150f04;padding:14px 17px}
+.warn h4{font-family:'Space Grotesk';font-size:13.5px;font-weight:600;color:var(--amb);margin-bottom:6px}
+.warn p{font-size:13px;color:#d5c49b;line-height:1.62}
+.warn p b{color:var(--amb);font-weight:500}
+.refus{border:1px solid #6b5220;border-left:2px solid var(--amb);border-radius:0 12px 12px 0;background:#150f04;padding:16px 19px}
+.refus h4{font-family:'Space Grotesk';font-size:15px;font-weight:600;color:var(--amb);margin-bottom:8px}
+.refus p{font-size:13.5px;color:#d5c49b;line-height:1.65;margin-bottom:9px}
+.refus p:last-child{margin-bottom:0}
+
+/* ---- BARRE RÉSULTAT ---- */
+.live{position:sticky;bottom:0;margin-top:22px;border:1px solid var(--line2);border-radius:14px;
+  background:rgba(13,22,38,.96);backdrop-filter:blur(12px);padding:15px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.live .big{font-family:'Space Grotesk';font-size:30px;font-weight:700;letter-spacing:-.035em;line-height:1}
+.live .cap{font-size:13px;color:var(--dim);line-height:1.4}
+.live .cap b{color:var(--tx);font-weight:500}
+.live .sp{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+/* ---- RÉSULTATS ---- */
+.rgrid{display:flex;flex-direction:column;gap:10px}
+.rc{border:1px solid var(--line);border-radius:14px;background:var(--card);overflow:hidden}
+.rc.hit{border-color:#2f5f9e}
+.rch{padding:13px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.sy{width:32px;height:32px;border-radius:9px;background:#12213a;border:1px solid var(--line2);display:grid;place-items:center;font-family:'JetBrains Mono';font-size:10px;color:var(--acc);flex-shrink:0}
+.rch .nm{font-family:'Space Grotesk';font-size:15px;font-weight:600}
+.rch .px{font-family:'JetBrains Mono';font-size:11px;color:var(--faint)}
+.rch .sc{margin-left:auto;font-family:'JetBrains Mono';font-size:13px;font-weight:600}
+.rcb{padding:14px 16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+@media(max-width:820px){.rcb{grid-template-columns:1fr}}
+.blk .bl{font-family:'JetBrains Mono';font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px}
+.blk .li{font-size:12.5px;color:var(--dim);line-height:1.75;display:flex;gap:7px}
+.blk .li i{font-style:normal;flex-shrink:0}
+.b-ok .bl{color:var(--pos)}
+.b-no .bl{color:var(--neg)}
+.b-cx .bl{color:var(--amb)}
+.b-cx .box{background:#1a1508;border-left:2px solid var(--amb);border-radius:0 8px 8px 0;padding:9px 12px}
+.b-cx .box .li{color:#d5c49b}
+.rcf{padding:11px 16px;border-top:1px solid var(--line);display:flex;gap:8px;align-items:center}
+.rcf .ago{font-family:'JetBrains Mono';font-size:10px;color:var(--faint);margin-left:auto}
+
+/* ---- STRATÉGIES ---- */
+.stg{display:grid;grid-template-columns:repeat(auto-fill,minmax(272px,1fr));gap:10px}
+.st{border:1px solid var(--line);border-radius:13px;background:var(--card);padding:16px 18px;cursor:pointer;transition:.16s}
+.st:hover{border-color:var(--acc)}
+.st .nm{font-family:'Space Grotesk';font-size:15px;font-weight:600;margin-bottom:5px}
+.st .ph{font-size:12.5px;color:var(--dim);line-height:1.6;margin-bottom:11px}
+.st .ft{display:flex;align-items:center;gap:9px}
+.st .cnt{font-family:'JetBrains Mono';font-size:11px;padding:3px 9px;border-radius:20px;background:#12294a;border:1px solid #2f5f9e;color:var(--acc)}
+.st .cnt.stale{background:#231b09;border-color:#6b5220;color:var(--amb)}
+.st .dt{font-family:'JetBrains Mono';font-size:9.5px;color:var(--faint);margin-left:auto}
+.nosync{margin-top:14px;font-family:'JetBrains Mono';font-size:10.5px;color:var(--faint);display:flex;align-items:center;gap:8px}
+.nosync .d{width:5px;height:5px;border-radius:50%;background:var(--amb)}
+
+/* ---- VIDE ---- */
+.empty{border:1px solid var(--line);border-radius:14px;background:var(--card2);padding:34px 30px;text-align:center}
+.empty h3{font-size:19px;font-weight:600;margin-bottom:10px}
+.empty p{font-size:14px;color:var(--dim);line-height:1.7;max-width:520px;margin:0 auto 8px}
+.empty p b{color:var(--tx);font-weight:500}
+.brk{margin-top:22px;text-align:left;max-width:560px;margin-left:auto;margin-right:auto}
+.brk .row{display:flex;align-items:center;gap:12px;padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:var(--card);margin-bottom:7px;font-size:12.5px;color:var(--dim)}
+.brk .row .n{margin-left:auto;font-family:'JetBrains Mono';font-size:12px;color:var(--tx)}
+.brk .note{font-family:'JetBrains Mono';font-size:10px;color:var(--faint);margin-top:9px;line-height:1.6}
+.note2{margin-top:16px;font-family:'JetBrains Mono';font-size:10.5px;color:var(--faint);line-height:1.7}
+</style></head><body data-s="0">
+
+<div class="nav">
+  <div class="bd">MIA <span>· scanner conversationnel</span></div>
+  <button class="tb on" onclick="go(0,this)">1 · Décrire</button>
+  <button class="tb" onclick="go(1,this)">2 · Traduction</button>
+  <button class="tb" onclick="go(2,this)">3 · Partielle</button>
+  <button class="tb" onclick="go(3,this)">4 · Refus</button>
+  <button class="tb" onclick="go(4,this)">5 · Résultats</button>
+  <button class="tb" onclick="go(5,this)">6 · Mes stratégies</button>
+</div>
+
+<div class="wrap">
+
+<!-- ============ 0 · DÉCRIRE ============ -->
+<div class="v0">
+  <div class="hd"><h1>Décris ta stratégie. En français.</h1>
+    <p>Pas de formulaire à remplir. Écris ce que tu cherches comme tu le dirais à quelqu'un.</p></div>
+
+  <div class="cmd"><div class="aura"></div><div class="cmdb">
+    <div class="cmdh"><span class="av"><svg viewBox="0 0 24 24"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.4L12 15l-1.9-4.6L5.5 9l4.6-1.4z"/><path d="M18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></svg><span class="o"></span></span>
+      <span><span class="nm">M.I.A traduit ta stratégie</span><br><span class="sb">elle ne choisit rien à ta place · tu valides avant de lancer</span></span></div>
+    <div class="inp">
+      <textarea placeholder="Ex. : je cherche un Order Block jamais testé, en tendance haussière, avec le 1 h qui va dans le même sens et une poche de liquidité prise récemment."></textarea>
+      <button class="mic" title="Dictée vocale (bientôt)"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg></button>
+    </div>
+    <div class="cmdf">
+      <button class="btn pri md" onclick="go(1)">Traduire ma stratégie</button>
+      <button class="btn md" onclick="go(5)">Mes stratégies</button>
+      <span class="hint" style="margin-left:auto">M.I.A traduit vers 22 conditions vérifiables. Rien d'autre.</span>
+    </div>
+  </div></div>
+
+  <div class="sec">
+    <div class="slab">Ou pars d'un exemple</div>
+    <div class="ex" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))">
+      <button class="exb" onclick="go(1)">Un Order Block jamais testé, en tendance haussière, avec l'unité supérieure d'accord</button>
+      <button class="exb" onclick="go(1)">Le prix revient dans un Fair Value Gap déjà testé une fois, après un CHOCH récent</button>
+      <button class="exb" onclick="go(1)">Une poche de liquidité vient d'être prise et le prix est entré dans une zone</button>
+      <button class="exb" onclick="go(2)">Un OB non testé quand le RSI est en survente</button>
+      <button class="exb" onclick="go(3)">Montre-moi les meilleurs setups du moment</button>
+      <button class="exb" onclick="go(1)">Marché en expansion, structure haussière, zone vierge au prix</button>
+    </div>
+  </div>
+
+  <div class="note2">M.I.A ne consulte pas le marché pour te répondre : elle transforme ta phrase en conditions vérifiables, puis c'est l'analyse du produit qui cherche. Elle ne classe rien, ne recommande rien et ne devine aucune condition que tu n'aurais pas exprimée.</div>
+</div>
+<!-- ============ 1 · TRADUCTION ============ -->
+<div class="v1">
+  <div class="hd"><h1>Voici ce que j'ai compris</h1>
+    <p>Vérifie, ajuste, retire ce qui ne va pas. Rien ne se lance avant que tu valides.</p></div>
+
+  <div class="cmd"><div class="cmdb" style="padding:17px 20px">
+    <div style="display:flex;align-items:flex-start;gap:12px">
+      <span class="av" style="width:28px;height:28px;border-radius:9px"><svg viewBox="0 0 24 24"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.4L12 15l-1.9-4.6L5.5 9l4.6-1.4z"/></svg></span>
+      <div style="flex:1">
+        <div class="mono" style="font-size:10px;color:var(--faint);margin-bottom:5px">TA DEMANDE</div>
+        <div style="font-family:'Space Grotesk';font-size:15px;line-height:1.6;color:var(--tx)">« Je cherche un Order Block jamais testé, en tendance haussière, avec le 1 h qui va dans le même sens et une poche de liquidité prise récemment. »</div>
+      </div>
+      <button class="btn sm" onclick="go(0)">Modifier</button>
+    </div>
+  </div></div>
+
+  <div class="sec">
+    <div class="slab">4 conditions traduites <span class="r" style="color:var(--pos)">toutes reconnues</span></div>
+    <div class="tcards">
+      <div class="tc"><button class="x">×</button>
+        <div class="fam f-str">Structure</div>
+        <div class="lb">La tendance structurelle est</div>
+        <div class="vals"><span class="vb on">haussière</span><span class="vb">baissière</span><span class="vb">indéterminée</span></div></div>
+      <div class="tc"><button class="x">×</button>
+        <div class="fam f-str">Structure</div>
+        <div class="lb">L'unité supérieure va</div>
+        <div class="vals"><span class="vb on">dans le même sens</span><span class="vb">en sens opposé</span></div>
+        <div class="mono" style="font-size:9.5px;color:var(--faint);margin-top:7px">sur 15 min, l'unité supérieure est le 1 h</div></div>
+      <div class="tc"><button class="x">×</button>
+        <div class="fam f-zon">Zones</div>
+        <div class="lb">Le prix est dans un Order Block</div>
+        <div class="vals"><span class="vb on">haussier</span><span class="vb">baissier</span><span class="vb">peu importe</span></div></div>
+      <div class="tc"><button class="x">×</button>
+        <div class="fam f-zon">Zones</div>
+        <div class="lb">Cette zone n'a jamais été testée</div>
+        <div class="vals"><span class="vb on">oui</span></div></div>
+      <div class="tc"><button class="x">×</button>
+        <div class="fam f-liq">Liquidité</div>
+        <div class="lb">Une poche a été prise dans les N dernières bougies</div>
+        <div class="vals"><span class="vb">5</span><span class="vb on">10</span><span class="vb">20</span><span class="vb">50</span></div></div>
+      <div class="tc off" style="border-style:dashed;cursor:pointer">
+        <div class="fam" style="color:var(--faint)">Ajouter</div>
+        <div class="lb" style="color:var(--faint)">+ Une condition manquante ?</div>
+        <div class="mono" style="font-size:10px;color:var(--faint)">Parcourir les 22 conditions</div></div>
+    </div>
+  </div>
+
+  <div class="sec"><div class="warn">
+    <h4>Ce que j'ai supposé</h4>
+    <p>Tu as dit « récemment » pour la poche de liquidité — j'ai retenu <b>10 bougies</b>. Ajuste si ce n'est pas ce que tu voulais dire. Je ne devine jamais une condition que tu n'as pas exprimée.</p>
+  </div></div>
+
+  <div class="live">
+    <span class="big">3</span>
+    <span class="cap">combinaisons correspondent<br><b>5 conditions</b> · sur 12 suivies · réévalué à chaque clôture</span>
+    <span class="sp"><button class="btn md" onclick="go(5)">Enregistrer cette stratégie</button><button class="btn pri md" onclick="go(4)">Voir les résultats</button></span>
+  </div>
+</div>
+
+<!-- ============ 2 · PARTIELLE ============ -->
+<div class="v2">
+  <div class="hd"><h1>J'ai traduit une partie</h1>
+    <p>Une de tes conditions n'existe pas dans le produit. Je te le dis plutôt que d'inventer un équivalent.</p></div>
+
+  <div class="cmd"><div class="cmdb" style="padding:17px 20px">
+    <div style="display:flex;align-items:flex-start;gap:12px">
+      <span class="av" style="width:28px;height:28px;border-radius:9px"><svg viewBox="0 0 24 24"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.4L12 15l-1.9-4.6L5.5 9l4.6-1.4z"/></svg></span>
+      <div style="flex:1">
+        <div class="mono" style="font-size:10px;color:var(--faint);margin-bottom:5px">TA DEMANDE</div>
+        <div style="font-family:'Space Grotesk';font-size:15px;line-height:1.6;color:var(--tx)">« Un OB non testé quand le RSI est en survente. »</div>
+      </div>
+      <button class="btn sm" onclick="go(0)">Modifier</button>
+    </div>
+  </div></div>
+
+  <div class="sec">
+    <div class="slab">2 conditions traduites</div>
+    <div class="tcards">
+      <div class="tc"><button class="x">×</button>
+        <div class="fam f-zon">Zones</div>
+        <div class="lb">Le prix est dans un Order Block</div>
+        <div class="vals"><span class="vb">haussier</span><span class="vb">baissier</span><span class="vb on">peu importe</span></div></div>
+      <div class="tc"><button class="x">×</button>
+        <div class="fam f-zon">Zones</div>
+        <div class="lb">Cette zone n'a jamais été testée</div>
+        <div class="vals"><span class="vb on">oui</span></div></div>
+    </div>
+  </div>
+
+  <div class="sec"><div class="warn">
+    <h4>Une chose que je ne peux pas traduire</h4>
+    <p><b>« le RSI est en survente »</b> — le produit ne suit aucun indicateur d'oscillateur. Il décrit la structure de marché : zones, cassures, liquidité, phases. Je n'ai pas de condition approchante, et je préfère te le dire plutôt que d'en choisir une qui ressemblerait vaguement.</p>
+    <p style="margin-top:9px">Tu peux lancer la recherche avec les 2 conditions comprises, ou reformuler.</p>
+  </div></div>
+
+  <div class="live">
+    <span class="big">7</span>
+    <span class="cap">combinaisons correspondent<br><b>2 conditions</b> · 1 condition non traduite · sur 12 suivies</span>
+    <span class="sp"><button class="btn md" onclick="go(0)">Reformuler</button><button class="btn pri md" onclick="go(4)">Lancer avec 2 conditions</button></span>
+  </div>
+</div>
+
+<!-- ============ 3 · REFUS ============ -->
+<div class="v3">
+  <div class="hd"><h1>Cette demande, je ne la traduis pas</h1>
+    <p>Ce n'est pas une limite technique.</p></div>
+
+  <div class="cmd"><div class="cmdb" style="padding:17px 20px">
+    <div style="display:flex;align-items:flex-start;gap:12px">
+      <span class="av" style="width:28px;height:28px;border-radius:9px"><svg viewBox="0 0 24 24"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.4L12 15l-1.9-4.6L5.5 9l4.6-1.4z"/></svg></span>
+      <div style="flex:1">
+        <div class="mono" style="font-size:10px;color:var(--faint);margin-bottom:5px">TA DEMANDE</div>
+        <div style="font-family:'Space Grotesk';font-size:15px;line-height:1.6;color:var(--tx)">« Montre-moi les meilleurs setups du moment. »</div>
+      </div>
+      <button class="btn sm" onclick="go(0)">Modifier</button>
+    </div>
+  </div></div>
+
+  <div class="sec"><div class="refus">
+    <h4>Je ne classe pas les marchés</h4>
+    <p>« Les meilleurs » suppose un classement de qualité. Je n'en fais aucun, et le scanner ne trie jamais les résultats par nombre de conditions remplies ni par quoi que ce soit d'autre. Un marché qui coche cinq conditions n'est pas « meilleur » qu'un marché qui en coche trois — il est différent, et c'est à toi de juger.</p>
+    <p>Je peux en revanche traduire une stratégie précise. Dis-moi ce que tu cherches vraiment : quelle structure, quelle zone, quel état de liquidité.</p>
+    <div class="ex" style="margin-top:14px">
+      <button class="exb" onclick="go(1)">Un OB jamais testé en tendance haussière</button>
+      <button class="exb" onclick="go(1)">Le prix dans une zone après une prise de liquidité</button>
+    </div>
+  </div></div>
+
+  <div class="note2">Le produit décrit l'état actuel des marchés. Il ne les note pas, ne les hiérarchise pas et ne recommande aucune action. C'est une contrainte de conception, pas un manque.</div>
+</div>
+<!-- ============ 4 · RÉSULTATS ============ -->
+<div class="v4">
+  <div class="hd"><h1>3 combinaisons correspondent</h1>
+    <p>Sur 12 suivies. Rien n'est trié : l'ordre est alphabétique, puis par unité de temps.</p></div>
+
+  <div class="cmd" style="margin-bottom:18px"><div class="cmdb" style="padding:15px 19px">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <span class="mono" style="font-size:10px;color:var(--faint)">TA STRATÉGIE</span>
+      <span style="font-family:'Space Grotesk';font-size:13.5px;color:var(--dim);flex:1;min-width:240px">Tendance haussière · unité supérieure d'accord · prix dans un OB haussier · zone jamais testée · poche prise ≤ 10 bougies</span>
+      <button class="btn sm" onclick="go(1)">Ajuster</button>
+      <button class="btn sm" onclick="go(5)">Enregistrer</button>
+    </div>
+  </div></div>
+
+  <div class="rgrid">
+    <div class="rc hit">
+      <div class="rch"><span class="sy">Au</span>
+        <span><span class="nm">Or (XAU/USD)</span> <span class="mono" style="color:var(--faint);font-size:11px">· 15 min</span><br><span class="px">4 027,36</span></span>
+        <span class="sc" style="color:var(--pos)">5 / 5</span></div>
+      <div class="rcb">
+        <div class="blk b-ok"><div class="bl">Ce qui correspond</div>
+          <div class="li"><i>✓</i>Tendance haussière depuis 14:15</div>
+          <div class="li"><i>✓</i>Le 1 h va dans le même sens</div>
+          <div class="li"><i>✓</i>Prix dans un OB haussier</div>
+          <div class="li"><i>✓</i>Zone jamais testée</div>
+          <div class="li"><i>✓</i>Poche prise il y a 4 bougies</div></div>
+        <div class="blk b-no"><div class="bl">Ce qui va à l'encontre</div>
+          <div class="li"><i>✗</i>Le 4 h est en tendance baissière</div>
+          <div class="li"><i>✗</i>Le D1 n'a aucune structure établie</div></div>
+        <div class="blk b-cx"><div class="bl">Contexte non demandé</div>
+          <div class="box"><div class="li"><i>·</i>Poche intacte 0,18 % au-dessus</div>
+            <div class="li"><i>·</i>Rapport sur l'emploi dans 2 jours</div></div></div>
+      </div>
+      <div class="rcf"><button class="btn sm">Ouvrir le graphique</button><button class="btn sm">Demander à M.I.A</button>
+        <span class="ago">lecture à jour · il y a 3 min</span></div>
+    </div>
+
+    <div class="rc hit">
+      <div class="rch"><span class="sy">€</span>
+        <span><span class="nm">Euro / Dollar</span> <span class="mono" style="color:var(--faint);font-size:11px">· 15 min</span><br><span class="px">1,0842</span></span>
+        <span class="sc" style="color:var(--pos)">5 / 5</span></div>
+      <div class="rcb">
+        <div class="blk b-ok"><div class="bl">Ce qui correspond</div>
+          <div class="li"><i>✓</i>Tendance haussière depuis 11:00</div>
+          <div class="li"><i>✓</i>Le 1 h va dans le même sens</div>
+          <div class="li"><i>✓</i>Prix dans un OB haussier</div>
+          <div class="li"><i>✓</i>Zone jamais testée</div>
+          <div class="li"><i>✓</i>Poche prise il y a 8 bougies</div></div>
+        <div class="blk b-no"><div class="bl">Ce qui va à l'encontre</div>
+          <div class="li"><i>✗</i>Le 4 h n'a aucune structure établie</div></div>
+        <div class="blk b-cx"><div class="bl">Contexte non demandé</div>
+          <div class="box"><div class="li"><i>·</i>Prix dans le tiers bas du range</div>
+            <div class="li"><i>·</i>IPCH zone euro dans 5 jours</div></div></div>
+      </div>
+      <div class="rcf"><button class="btn sm">Ouvrir le graphique</button><button class="btn sm">Demander à M.I.A</button>
+        <span class="ago">lecture à jour · il y a 3 min</span></div>
+    </div>
+
+    <div class="rc hit">
+      <div class="rch"><span class="sy">Au</span>
+        <span><span class="nm">Or (XAU/USD)</span> <span class="mono" style="color:var(--faint);font-size:11px">· 1 h</span><br><span class="px">4 027,36</span></span>
+        <span class="sc" style="color:var(--pos)">5 / 5</span></div>
+      <div class="rcb">
+        <div class="blk b-ok"><div class="bl">Ce qui correspond</div>
+          <div class="li"><i>✓</i>Tendance haussière depuis hier 22:00</div>
+          <div class="li"><i>✓</i>Le 4 h va dans le même sens</div>
+          <div class="li"><i>✓</i>Prix dans un OB haussier</div>
+          <div class="li"><i>✓</i>Zone jamais testée</div>
+          <div class="li"><i>✓</i>Poche prise il y a 2 bougies</div></div>
+        <div class="blk b-no"><div class="bl">Ce qui va à l'encontre</div>
+          <div class="li" style="color:var(--faint)">Rien à signaler sur les unités supérieures.</div></div>
+        <div class="blk b-cx"><div class="bl">Contexte non demandé</div>
+          <div class="box"><div class="li"><i>·</i>Zone formée il y a 6 heures</div>
+            <div class="li"><i>·</i>Phase : expansion</div></div></div>
+      </div>
+      <div class="rcf"><button class="btn sm">Ouvrir le graphique</button><button class="btn sm">Demander à M.I.A</button>
+        <span class="ago">lecture à jour · il y a 12 min</span></div>
+    </div>
+  </div>
+
+  <div class="note2">Les trois blocs sont toujours affichés, y compris « ce qui va à l'encontre ». Un scanner qui ne montre que ce qui confirme apprend à ne regarder que ce qui arrange.</div>
+</div>
+
+<!-- ============ 5 · STRATÉGIES ============ -->
+<div class="v5">
+  <div class="hd"><h1>Mes stratégies</h1>
+    <p>Décrites une fois, réévaluées à chaque ouverture.</p></div>
+
+  <div class="cmd" style="margin-bottom:20px"><div class="cmdb" style="padding:16px 20px">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <span class="av" style="width:28px;height:28px;border-radius:9px"><svg viewBox="0 0 24 24"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.4L12 15l-1.9-4.6L5.5 9l4.6-1.4z"/></svg></span>
+      <span style="font-size:13.5px;color:var(--dim);flex:1;min-width:220px">Décris une nouvelle stratégie en une phrase.</span>
+      <button class="btn pri sm" onclick="go(0)">Nouvelle stratégie</button>
+    </div>
+  </div></div>
+
+  <div class="stg">
+    <div class="st">
+      <div class="nm">OB vierge en tendance</div>
+      <div class="ph">Tendance haussière · unité supérieure d'accord · prix dans un OB haussier · zone jamais testée · poche prise ≤ 10 bougies</div>
+      <div class="ft"><span class="cnt">3 combinaisons</span><span class="dt">évaluée il y a 3 min</span></div></div>
+    <div class="st">
+      <div class="nm">Retour dans zone testée</div>
+      <div class="ph">Prix dans une zone déjà testée au moins une fois · CHOCH dans les 20 dernières bougies</div>
+      <div class="ft"><span class="cnt">5 combinaisons</span><span class="dt">évaluée il y a 3 min</span></div></div>
+    <div class="st">
+      <div class="nm">Après la prise de liquidité</div>
+      <div class="ph">Poche prise ≤ 5 bougies · prix dans un Fair Value Gap · phase d'expansion</div>
+      <div class="ft"><span class="cnt stale">compte à réévaluer</span><span class="dt">évaluée il y a 2 j</span></div></div>
+    <div class="st">
+      <div class="nm">Structure propre sur D1</div>
+      <div class="ph">Tendance haussière · BOS dans les 10 dernières bougies · aucune zone traversée</div>
+      <div class="ft"><span class="cnt">0 combinaison</span><span class="dt">évaluée il y a 3 min</span></div></div>
+  </div>
+
+  <div class="nosync"><span class="d"></span>Tes stratégies sont enregistrées sur cet appareil uniquement — elles ne sont pas synchronisées. Tu peux les exporter et les réimporter ailleurs.</div>
+
+  <div class="sec" style="margin-top:26px">
+    <div class="slab">Si aucune combinaison ne correspond</div>
+    <div class="empty">
+      <h3>Aucune combinaison ne réunit ces 5 conditions</h3>
+      <p><b>Ce n'est pas une erreur.</b> Ces conditions ne sont simplement pas réunies en ce moment sur les marchés suivis.</p>
+      <div class="brk">
+        <div class="row">Tendance haussière<span class="n">7 combinaisons</span></div>
+        <div class="row">Unité supérieure d'accord<span class="n">5 combinaisons</span></div>
+        <div class="row">Prix dans un OB haussier<span class="n">4 combinaisons</span></div>
+        <div class="row">Zone jamais testée<span class="n">3 combinaisons</span></div>
+        <div class="row">Poche prise ≤ 10 bougies<span class="n">2 combinaisons</span></div>
+        <div class="note">Ces comptes sont indépendants : ils ne s'additionnent pas et ne se recoupent pas forcément. Aucune suggestion d'assouplir une condition ne te sera proposée — ce serait te pousser vers un résultat que tu n'as pas demandé.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+<script>
+function go(i,el){document.body.dataset.s=i;
+ document.querySelectorAll('.tb').forEach(function(b,k){b.classList.toggle('on',k===i);});
+ window.scrollTo({top:0});}
+</script></body></html>
