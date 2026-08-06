@@ -161,8 +161,36 @@ différent), une même bougie porte **BOS haussier + CHOCH haussier** au niveau
 4052,33 : le prix était en état baissier, sa clôture est repassée au-dessus du
 sommet structurel, ce qui est **simultanément** un changement de caractère (CHOCH)
 et une cassure (BOS_EVENT). Les deux colonnes s'allument donc sur la même barre.
-Ce n'est pas un doublon ni un bug : ce sont deux lectures de la même cassure
-(« la tendance a changé » **et** « un niveau a été cassé »).
+Ce n'est pas un doublon ni un bug **au niveau des colonnes internes** : ce sont
+deux lectures de la même cassure (« la tendance a changé » **et** « un niveau a
+été cassé »). `bos_event` est une colonne **interne** (consommée par le
+`ConfluenceDetector`), pas un second événement destiné à l'utilisateur.
+
+### Règle d'affichage — préséance du CHOCH sur une barre partagée (STR-1)
+
+> **Un événement, une ligne.** Une barre de CHOCH ne produit qu'**un seul**
+> événement de journal, de type **CHOCH**. La colonne `BOS_EVENT` de cette barre
+> n'est **pas** affichée : la matérialiser en une seconde ligne « BOS » de même
+> sens, même horodatage et même niveau serait contradictoire pour un lecteur SMC
+> (un retournement n'est pas une continuation) et rendait le clic de focalisation
+> ambigu (audit `docs/audits/AUDIT-str-1-bos-choch.md`).
+
+Cette règle est appliquée **une seule fois, en amont**, dans
+`collect_structure_events` (`src/intelligence/market_reading_mappers.py`) : toute
+barre portant `CHOCH_SIGNAL ≠ 0` est **retirée** de `bos_events` (elle reste dans
+`choch_events`). Le champ ponctuel `structure.bos` suit la même préséance (non posé
+sur une barre de CHOCH fraîche). Le graphique appliquait déjà la règle jumelle
+(`webapp/lib/chart/structureMarkers.ts`, « CHOCH wins a shared bar ») ; journal et
+graphique partagent désormais la même règle depuis une source unique.
+
+**Ce que la règle ne fait pas** : elle ne supprime aucune détection (les colonnes
+`BOS_EVENT`/`CHOCH_SIGNAL` restent intactes pour le moteur et le
+`ConfluenceDetector`) et ne concerne **que** l'affichage. Un BOS de **continuation**
+(`bos_event` sans `choch_signal`) est inchangé. La **tendance** est inchangée
+(§D `derive_structural_trend` s'ancre d'abord sur `choch_events`, que la règle ne
+touche pas ; le repli sur `bos_events` ne joue que sans aucun CHOCH — donc sans
+barre à retirer). Le cas « sens opposé sur une même barre » n'existe pas
+(impossible par construction : une barre ne prend qu'une branche du `if/elif`).
 
 ---
 

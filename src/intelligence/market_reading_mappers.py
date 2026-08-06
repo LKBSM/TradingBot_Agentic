@@ -635,6 +635,19 @@ def collect_structure_events(
     to ``max_per_type``. Uses the discrete ``BOS_EVENT`` (real break bars,
     ~11-25 / 500 bars), NEVER the propagated ``BOS_SIGNAL`` that the F6 fix proved
     fires on ~100% of bars.
+
+    STR-1 CHOCH precedence: a reversal bar sets BOTH ``CHOCH_SIGNAL`` and
+    ``BOS_EVENT`` on the same bar (a CHOCH *is* a reversal break — see
+    ``strategy_features._calculate_bos_choch_numba`` lines 113-128, where the
+    CHOCH branch also writes ``bos_event[i]``). That is ONE structural event — a
+    change of character — recorded in two columns, NOT two events. Surfacing the
+    ``BOS_EVENT`` twin in ``bos_events`` produced a contradictory same-bar,
+    same-direction "BOS + CHOCH" pair in the journal and an ambiguous focus
+    target (audit ``AUDIT-str-1-bos-choch.md``). We therefore drop, from
+    ``bos_events``, every bar that also carries a ``CHOCH_SIGNAL``: the CHOCH row
+    is the SMC-correct single event. This mirrors the chart-marker dedup already
+    in ``webapp/lib/chart/structureMarkers.ts`` ("CHOCH wins a shared bar"), so
+    the journal and the chart now apply the same rule from a single source.
     """
     import os
     import pandas as pd
@@ -665,7 +678,9 @@ def collect_structure_events(
             return float(closes[k])
         return None
 
-    def _collect(col: str) -> list[dict]:
+    choch_values = enriched["CHOCH_SIGNAL"].values if "CHOCH_SIGNAL" in cols else None
+
+    def _collect(col: str, drop_choch_bars: bool = False) -> list[dict]:
         if col not in cols:
             return []
         values = enriched[col].values
@@ -673,6 +688,16 @@ def collect_structure_events(
         for k in range(pos + 1):
             v = values[k]
             if pd.isna(v) or v == 0:
+                continue
+            # STR-1 CHOCH precedence: skip a BOS_EVENT bar that is also a CHOCH —
+            # the reversal is a single change-of-character event, surfaced once as
+            # a CHOCH (never duplicated as a BOS on the same bar).
+            if (
+                drop_choch_bars
+                and choch_values is not None
+                and not pd.isna(choch_values[k])
+                and choch_values[k] != 0
+            ):
                 continue
             lvl = _level(k)
             if lvl is None:
@@ -691,7 +716,7 @@ def collect_structure_events(
         events.sort(key=lambda e: -e["_k"])  # most recent first
         return events[:max_per_type]
 
-    out["bos_events"] = _collect("BOS_EVENT")
+    out["bos_events"] = _collect("BOS_EVENT", drop_choch_bars=True)
     out["choch_events"] = _collect("CHOCH_SIGNAL")
     return out
 
@@ -1064,7 +1089,14 @@ def confluence_signal_to_structure(
     # assembler-layer mapper, not in the detection engine. The window is bounded
     # (awaiting_timeout=20 + armed_window=5 bars by default), so this is the
     # opposite of the F6 "stale on ~100%" bug.
-    fresh_break = abs(bos_event) > 0
+    # STR-1 CHOCH precedence: a reversal bar carries BOTH BOS_EVENT and
+    # CHOCH_SIGNAL (a CHOCH is a reversal break). It is a change of character, not
+    # a BOS — never surface the point-in-time BOS twin on such a bar (it is
+    # published below from CHOCH_SIGNAL as `choch`). A *persisted* break — the
+    # retest of an EARLIER, non-CHOCH BOS — is deliberately unaffected: it is
+    # legitimately a BOS being retested, not the current reversal.
+    choch_event = float(smc_features.get("CHOCH_SIGNAL", 0.0))
+    fresh_break = abs(bos_event) > 0 and choch_event == 0
     persisted_break = (
         state_direction is not None
         and (bos_direction is None or bos_direction == state_direction)
@@ -1100,7 +1132,7 @@ def confluence_signal_to_structure(
 
     # CHOCH
     choch: Optional[CHOCHRecent] = None
-    choch_signal = float(smc_features.get("CHOCH_SIGNAL", 0.0))
+    choch_signal = choch_event  # same CHOCH_SIGNAL read (STR-1 precedence above)
     choch_direction = _sign_to_direction(choch_signal)
     if choch_direction is not None:
         # F2: there is no dedicated CHOCH level column. In this engine a CHOCH is
