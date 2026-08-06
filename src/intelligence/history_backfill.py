@@ -170,17 +170,26 @@ def deep_backfill_combo(
     end_date: Optional[str] = None
     fetched = upserted = pages = 0
     earliest_seen: Optional[datetime] = None
+    error: Optional[str] = None
     while fetched < target_bars and pages < max_pages:
         want = min(page, target_bars - fetched) or page
         try:
             candles = provider.fetch_candles_until(instrument, timeframe, want, end_date)
-        except Exception:
+        except Exception as exc:  # surface the reason instead of a silent stop
             logger.exception("deep backfill page failed for %s %s", instrument, timeframe)
+            error = f"{type(exc).__name__}: {exc}"[:300]
             break
         pages += 1
         if not candles:
+            if pages == 1:  # empty FIRST page = a real problem, not depth exhaustion
+                error = "provider returned no candles for the first page"
             break
-        upserted += store.upsert_candles(instrument, timeframe, candles)
+        try:
+            upserted += store.upsert_candles(instrument, timeframe, candles)
+        except Exception as exc:
+            logger.exception("deep backfill upsert failed for %s %s", instrument, timeframe)
+            error = f"upsert: {type(exc).__name__}: {exc}"[:300]
+            break
         fetched += len(candles)
         page_earliest = min(_to_utc(c.ts) for c in candles)
         if earliest_seen is not None and page_earliest >= earliest_seen:
@@ -191,6 +200,7 @@ def deep_backfill_combo(
         "instrument": instrument, "timeframe": timeframe, "pages": pages,
         "fetched": fetched, "upserted": upserted,
         "oldest": earliest_seen.isoformat() if earliest_seen else None,
+        "error": error,
     }
     logger.info("deep backfill %s %s: %s", instrument, timeframe, result)
     return result
