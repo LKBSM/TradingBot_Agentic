@@ -17,7 +17,11 @@ import urllib.error
 import urllib.request
 from typing import List, Optional
 
-from src.intelligence.calendar_providers.values.base_value import ValueFetcher, ValuePoint
+from src.intelligence.calendar_providers.values.base_value import (
+    SeriesPoint,
+    ValueFetcher,
+    ValuePoint,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +54,32 @@ class ECBValueFetcher(ValueFetcher):
         actual = obs[-1]
         previous = _last_distinct_before(obs, actual)
         return ValuePoint(actual=actual, previous=previous)
+
+    def fetch_series(self, series_code: str, limit: int = 12) -> List[SeriesPoint]:
+        """The last ``limit`` DISTINCT rate LEVELS (oldest→newest), each labelled by
+        the month its level took effect ("YYYY-MM"). A policy rate is a step series:
+        plotting consecutive identical daily observations would be meaningless, so we
+        collapse each run to its first date — the actual published decisions. Values
+        AS PUBLISHED; [] on any failure/absence. Never raises, never fabricates."""
+        flow, _, key = series_code.partition(".")
+        if not flow or not key or limit < 1:
+            return []
+        url = f"{_BASE}/{flow}/{key}?lastNObservations=250&format=jsondata"
+        text = self._get(url)
+        if not text:
+            return []
+        dated = _parse_observation_points(text)
+        if not dated:
+            return []
+        # Collapse consecutive equal levels to the FIRST date of each run — the
+        # moment the level was decided, not every day it merely persisted.
+        changes: List[SeriesPoint] = []
+        last_value: Optional[float] = None
+        for period, value in dated:
+            if last_value is None or value != last_value:
+                changes.append(SeriesPoint(period=period[:7], value=value))
+                last_value = value
+        return changes[-int(limit):] if len(changes) > limit else changes
 
 
 def _last_distinct_before(obs: List[float], actual: float) -> Optional[float]:
@@ -92,6 +122,45 @@ def _parse_observations(text: str):
         for _, val in ordered:
             if isinstance(val, list) and val and isinstance(val[0], (int, float)):
                 out.append(float(val[0]))
+        return out
+    except (ValueError, TypeError, KeyError, StopIteration):
+        return []
+
+
+def _parse_observation_points(text: str):
+    """Extract (period_label, value) observations in chronological order from an
+    SDMX-JSON (jsondata) message. The period label is read from the observation
+    TIME dimension in ``structure`` (e.g. "2026-08-05"). Returns a list of
+    (str, float), or [] on any shape mismatch — never fabricates a period."""
+    try:
+        data = json.loads(text)
+        datasets = data.get("dataSets") or []
+        if not datasets:
+            return []
+        series = datasets[0].get("series") or {}
+        if not series:
+            return []
+        first = next(iter(series.values()))
+        observations = first.get("observations") or {}
+        if not observations:
+            return []
+        # Time labels: structure.dimensions.observation[0].values[idx].id
+        obs_dims = (
+            ((data.get("structure") or {}).get("dimensions") or {}).get("observation")
+            or []
+        )
+        time_values = obs_dims[0].get("values") if obs_dims else None
+        if not isinstance(time_values, list) or not time_values:
+            return []
+        ordered = sorted(observations.items(), key=lambda kv: int(kv[0]))
+        out = []
+        for idx_str, val in ordered:
+            idx = int(idx_str)
+            if not (0 <= idx < len(time_values)):
+                continue
+            period = str(time_values[idx].get("id", ""))
+            if period and isinstance(val, list) and val and isinstance(val[0], (int, float)):
+                out.append((period, float(val[0])))
         return out
     except (ValueError, TypeError, KeyError, StopIteration):
         return []

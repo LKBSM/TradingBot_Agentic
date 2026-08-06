@@ -16,9 +16,14 @@ import logging
 import os
 import urllib.error
 import urllib.request
+from datetime import datetime, timezone
 from typing import List, Optional
 
-from src.intelligence.calendar_providers.values.base_value import ValueFetcher, ValuePoint
+from src.intelligence.calendar_providers.values.base_value import (
+    SeriesPoint,
+    ValueFetcher,
+    ValuePoint,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +54,35 @@ class BLSValueFetcher(ValueFetcher):
         actual = obs[0]
         previous = obs[1] if len(obs) >= 2 else None
         return ValuePoint(actual=actual, previous=previous)
+
+    def fetch_series(self, series_code: str, limit: int = 12) -> List[SeriesPoint]:
+        """Last ``limit`` published MONTHLY observations (oldest→newest) with their
+        reference-period labels ("YYYY-MM"), each AS PUBLISHED. Returns [] on any
+        failure/absence (→ no curve), and only when a key is present — absent the
+        key the source is not even wired. Never raises, never fabricates.
+
+        Unlike ``fetch`` (``latest``), a series needs a year range: we ask for the
+        span that guarantees ``limit`` monthly points and keep the last ``limit``.
+        The API's "annual average" rows (period ``M13``) and any non-monthly period
+        are skipped — only true reference months form the curve.
+        """
+        if not self._key or limit < 1:
+            return []
+        end_year = datetime.now(timezone.utc).year
+        # A month-span of two full calendar years covers 12 points with margin,
+        # tolerating a publication lag at the year boundary.
+        start_year = end_year - ((limit // 12) + 2)
+        payload = json.dumps({
+            "seriesid": [series_code],
+            "registrationkey": self._key,
+            "startyear": str(start_year),
+            "endyear": str(end_year),
+        })
+        text = self._post(_URL, payload)
+        if not text:
+            return []
+        points = _parse_bls_series(text)
+        return points[-int(limit):] if len(points) > limit else points
 
 
 def _http_post(url: str, body: str) -> str:
@@ -84,6 +118,42 @@ def _parse_bls(text: str, series_code: str) -> List[float]:
                 out.append(float(str(p.get("value")).replace(",", "")))
             except (TypeError, ValueError):
                 continue
+        return out
+    except (ValueError, TypeError, KeyError):
+        return []
+
+
+def _parse_bls_series(text: str) -> List[SeriesPoint]:
+    """Extract MONTHLY (period, value) observations in CHRONOLOGICAL order from a
+    BLS v2 message. Period ``M06`` of year ``2026`` → label ``"2026-06"``. Rows
+    that are not a reference month (``M13`` annual average, quarterly/semi-annual)
+    are dropped. Returns [] on any shape mismatch — never fabricates."""
+    try:
+        data = json.loads(text)
+        if str(data.get("status", "")).upper() not in ("REQUEST_SUCCEEDED", ""):
+            return []
+        series = ((data.get("Results") or {}).get("series") or [])
+        if not series:
+            return []
+        points = series[0].get("data") or []
+        out: List[SeriesPoint] = []
+        for p in points:
+            period = str(p.get("period", ""))
+            if not (period.startswith("M") and period[1:].isdigit()):
+                continue
+            month = int(period[1:])
+            if not (1 <= month <= 12):  # drops M13 (annual average)
+                continue
+            year = str(p.get("year", ""))
+            if not year.isdigit():
+                continue
+            try:
+                value = float(str(p.get("value")).replace(",", ""))
+            except (TypeError, ValueError):
+                continue
+            out.append(SeriesPoint(period=f"{year}-{month:02d}", value=value))
+        # BLS returns most-recent-first; sort chronological by the label itself.
+        out.sort(key=lambda sp: sp.period)
         return out
     except (ValueError, TypeError, KeyError):
         return []

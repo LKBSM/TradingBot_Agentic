@@ -262,6 +262,14 @@
   color: var(--txt);
   margin-bottom: 8px;
 }
+/* Défaut D — makes explicit that the count above describes a FILTERED subset of
+   the calendar, shown only while a filter group is narrowed below its full set. */
+.calm-tm-filtered {
+  font-size: 10px;
+  line-height: 1.5;
+  color: var(--accent, var(--dim));
+  margin: -4px 0 8px;
+}
 .calm-tm-list {
   list-style: none;
   margin: 0 0 8px;

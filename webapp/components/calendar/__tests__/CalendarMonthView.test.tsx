@@ -162,6 +162,23 @@ describe('NW-3 CalendarMonthView', () => {
     expect(withBox.getByText(/Or/)).toBeTruthy();
   });
 
+  it('(Défaut D) the count says when filters are applied, and reflects the subset', () => {
+    const { container } = renderCal();
+    const box = container.querySelector('.calm-thismonth') as HTMLElement;
+    // Default: every filter fully selected → full-month count, NO "filtered" note.
+    expect(box.querySelector('.calm-tm-count')?.textContent).toBe('5 publications');
+    expect(box.querySelector('.calm-tm-filtered')).toBeNull();
+
+    // Narrow the organism filter (drop BLS) → the note appears and the count drops
+    // to the remaining subset (5 − the 2 BLS events on the 10th = 3).
+    fireEvent.click(chip(container, fr.calendar.organism.bls));
+    const box2 = container.querySelector('.calm-thismonth') as HTMLElement;
+    expect(box2.querySelector('.calm-tm-filtered')?.textContent).toBe(
+      fr.calendar.month.thisMonth.filtered,
+    );
+    expect(box2.querySelector('.calm-tm-count')?.textContent).toBe('3 publications');
+  });
+
   it('a filter set emptied → the whole grid area shows noSelection', () => {
     const { container } = renderCal();
     for (const p of ['monthly', 'quarterly', 'eight_per_year'] as const) {

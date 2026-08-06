@@ -2475,6 +2475,7 @@
     "detail": {
       "back": "Retour au calendrier",
       "countdownLabel": "Publication dans",
+      "countdownLabelPast": "Publiée",
       "publishedFiguresTitle": "Chiffres publiés",
       "publishedFiguresBadge": "Valeur de l'indicateur",
       "publishedFiguresNote": "Ces chiffres sont la valeur de l'indicateur lui-même, dans l'unité de l'organisme qui le publie — pas des mouvements de prix. Ils sont affichés tels que publiés, sans conversion ni réarrondi.",
@@ -2514,6 +2515,7 @@
         "count": "{count, plural, one {# publication} other {# publications}}",
         "byMarket": "{market} : {count}",
         "emptyDays": "{count, plural, one {# jour sans publication} other {# jours sans publication}}",
+        "filtered": "Filtres actifs — ce compte ne porte que sur les publications retenues.",
         "note": "Ces comptes décrivent le calendrier, pas l'activité attendue."
       },
       "panel": {
@@ -2628,18 +2630,56 @@
       "pedagogy": {
         "title": "Ce que mesure cet indicateur",
         "badge": "Fiche pédagogique",
-        "nonoTitle": "Ce que cette fiche ne dit pas",
+        "us_employment_situation": {
+          "body": "Le rapport sur l'emploi du Bureau of Labor Statistics recense chaque mois le nombre net d'emplois créés ou détruits dans les secteurs non agricoles américains, à partir d'une enquête auprès des entreprises. Il s'accompagne du taux de chômage, issu d'une enquête distincte auprès des ménages. Les intervenants le suivent parce qu'il paraît tôt dans le mois et couvre une large part de l'activité, ce qui en fait l'une des premières lectures de la conjoncture."
+        },
         "us_cpi": {
-          "body": "L'indice des prix à la consommation suit l'évolution du prix d'un panier de biens et de services achetés par les ménages américains. Il est publié chaque mois par le Bureau of Labor Statistics et exprimé en variation par rapport au même mois de l'année précédente. La version dite sous-jacente exclut l'alimentation et l'énergie, jugées plus instables ; les deux chiffres paraissent en même temps.",
-          "nono": "Cette fiche explique ce que l'indicateur mesure. Elle ne dit pas comment le marché réagira à un chiffre plus haut ou plus bas que le précédent : cette relation n'est ni constante ni mécanique, et MIA ne la modélise pas."
+          "body": "L'indice des prix à la consommation suit l'évolution du prix d'un panier de biens et de services achetés par les ménages américains. Il est publié chaque mois par le Bureau of Labor Statistics et exprimé en variation par rapport au même mois de l'année précédente. La version dite sous-jacente exclut l'alimentation et l'énergie, jugées plus instables ; les deux chiffres paraissent en même temps."
+        },
+        "us_cpi_core": {
+          "body": "L'indice des prix à la consommation sous-jacent reprend le panier de l'IPC en excluant l'alimentation et l'énergie, dont les prix varient fortement d'un mois à l'autre. Le Bureau of Labor Statistics le publie en même temps que l'IPC d'ensemble, exprimé en variation annuelle. Les intervenants le regardent pour distinguer une tendance de fond des à-coups temporaires de ces deux postes très volatils."
+        },
+        "us_ppi": {
+          "body": "L'indice des prix à la production mesure l'évolution des prix de vente perçus par les producteurs américains, avant que les biens n'atteignent le consommateur. Le Bureau of Labor Statistics le construit à partir d'un large échantillon de biens et services à différents stades de production. Les intervenants le suivent car les variations de prix en amont de la chaîne se répercutent parfois plus tard sur les prix à la consommation."
+        },
+        "us_jolts": {
+          "body": "L'enquête JOLTS (Job Openings and Labor Turnover Survey) recense chaque mois le nombre de postes vacants, d'embauches et de départs sur le marché du travail américain, à partir d'un échantillon d'établissements établi par le Bureau of Labor Statistics. Les intervenants la suivent parce que le nombre de postes ouverts renseigne sur la tension entre l'offre et la demande de travail — un angle que le seul taux de chômage ne donne pas."
+        },
+        "us_gdp": {
+          "body": "Le produit intérieur brut mesure la valeur de l'ensemble des biens et services produits aux États-Unis sur un trimestre. Le Bureau of Economic Analysis le publie en variation annualisée par rapport au trimestre précédent, en plusieurs estimations successives affinées à mesure que les données arrivent. Les intervenants le suivent car il résume l'activité économique globale de la période."
+        },
+        "us_pce": {
+          "body": "L'indice des prix des dépenses de consommation personnelle suit l'évolution des prix des biens et services effectivement achetés par les ménages américains. Le Bureau of Economic Analysis le calcule à partir d'un panier qui s'ajuste aux changements de consommation, ce qui le distingue de l'IPC. Les intervenants y prêtent attention car c'est la mesure d'inflation privilégiée par la Réserve fédérale dans ses analyses."
+        },
+        "us_retail_sales": {
+          "body": "Les ventes au détail recensent le chiffre d'affaires mensuel des commerces de détail et de la restauration aux États-Unis. Le Census Bureau les établit à partir d'une enquête auprès des entreprises, exprimées en dollars. Les intervenants les suivent parce que la consommation des ménages représente une large part de l'activité, et que ce chiffre en donne une lecture rapide."
+        },
+        "us_housing_starts": {
+          "body": "Les mises en chantier recensent le nombre de logements dont la construction a démarré au cours du mois, exprimé en rythme annualisé. Le Census Bureau les établit à partir d'enquêtes et de permis de construire. Les intervenants les suivent car l'activité résidentielle est sensible aux conditions de financement et réagit souvent tôt aux changements de conjoncture."
+        },
+        "us_durable_goods": {
+          "body": "Les commandes de biens durables recensent la valeur des nouvelles commandes passées auprès des fabricants pour des biens conçus pour durer au moins trois ans — machines, matériel de transport, équipements. Le Census Bureau les publie en dollars. Les intervenants les suivent car les commandes précèdent la production, ce qui en fait une lecture avancée de l'investissement des entreprises."
+        },
+        "us_fomc_rate": {
+          "body": "À l'issue de ses réunions, le Comité de politique monétaire de la Réserve fédérale (FOMC) annonce la fourchette du taux directeur, qui encadre le coût du crédit à très court terme aux États-Unis. La décision est publiée à date connue, huit fois par an. Les intervenants la suivent parce que le niveau du taux directeur oriente l'ensemble des conditions de financement."
+        },
+        "us_fomc_minutes": {
+          "body": "Le compte rendu de la réunion du FOMC est publié environ trois semaines après la décision de politique monétaire. Il détaille les échanges qui ont conduit à la décision et les vues des participants sur l'économie. Les intervenants le lisent pour comprendre le raisonnement derrière la décision, au-delà du seul communiqué."
+        },
+        "us_fomc_dotplot": {
+          "body": "Le graphique à points (« dot plot ») accompagne certaines réunions du FOMC : chaque participant y indique, de façon anonyme, le niveau du taux directeur qu'il juge approprié pour les années à venir. La Réserve fédérale le publie sous forme de nuage de points. Les intervenants le consultent pour situer l'éventail des vues au sein du comité, sans qu'il constitue un engagement."
         },
         "ea_hicp_flash": {
-          "body": "L'indice des prix à la consommation harmonisé suit l'évolution du prix d'un panier de biens et de services dans la zone euro, selon une méthode commune à tous les pays membres. Eurostat en publie une estimation rapide à la fin de chaque mois, exprimée en variation par rapport au même mois de l'année précédente ; le chiffre est ensuite confirmé quelques semaines plus tard.",
-          "nono": "Cette fiche explique ce que l'indicateur mesure. Elle ne dit pas comment le marché réagira à un chiffre donné : cette relation n'est ni constante ni mécanique, et MIA ne la modélise pas."
+          "body": "L'indice des prix à la consommation harmonisé suit l'évolution du prix d'un panier de biens et de services dans la zone euro, selon une méthode commune à tous les pays membres. Eurostat en publie une estimation rapide à la fin de chaque mois, exprimée en variation par rapport au même mois de l'année précédente ; le chiffre est ensuite confirmé quelques semaines plus tard."
         },
-        "default": {
-          "body": "Cette publication est un indicateur économique officiel, paru selon un calendrier connu à l'avance. Sa valeur est exprimée dans l'unité de l'organisme qui l'émet.",
-          "nono": "Cette fiche explique ce que l'indicateur mesure. Elle ne dit pas comment le marché réagira, et MIA ne modélise aucune réaction."
+        "ea_gdp_flash": {
+          "body": "L'estimation rapide du produit intérieur brut de la zone euro mesure la variation de l'activité économique d'un trimestre à l'autre. Eurostat la publie peu après la fin du trimestre, selon une méthode commune aux pays membres, puis la révise à mesure que les données nationales se complètent. Les intervenants la suivent car elle résume tôt l'évolution de l'activité de la zone."
+        },
+        "ea_unemployment": {
+          "body": "Le taux de chômage de la zone euro rapporte le nombre de personnes sans emploi et à sa recherche à la population active. Eurostat le calcule chaque mois selon une définition harmonisée entre les pays membres, corrigée des variations saisonnières. Les intervenants le suivent comme une lecture du marché du travail à l'échelle de la zone."
+        },
+        "ea_ecb_rate": {
+          "body": "À l'issue de ses réunions de politique monétaire, la Banque centrale européenne annonce ses taux directeurs, qui encadrent le coût du crédit à court terme dans la zone euro. La décision est publiée à date connue, environ huit fois par an. Les intervenants la suivent parce que le niveau de ces taux oriente l'ensemble des conditions de financement de la zone."
         }
       },
       "noMeasures": "Aucune mesure n'est disponible pour cet indicateur : l'historique de prix aligné sur ses parutions passées n'est pas réuni. Cette fiche s'en tient donc aux chiffres publiés."
