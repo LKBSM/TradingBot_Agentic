@@ -86,6 +86,19 @@ function cap(s: string): string {
 }
 
 /**
+ * Publications with a REAL, hand-written pedagogy fiche. A key absent here — a bad
+ * URL, or a future catalog entry not yet written — renders NO pedagogy block at
+ * all, never a generic filler. Kept in sync with the `calendar.pub.pedagogy.<key>`
+ * messages (a guard test asserts every key here has a fr+en body, and vice-versa).
+ */
+const PEDAGOGY_FICHES: ReadonlySet<string> = new Set([
+  'us_employment_situation', 'us_cpi', 'us_cpi_core', 'us_ppi', 'us_jolts',
+  'us_gdp', 'us_pce', 'us_retail_sales', 'us_housing_starts', 'us_durable_goods',
+  'us_fomc_rate', 'us_fomc_minutes', 'us_fomc_dotplot',
+  'ea_hicp_flash', 'ea_gdp_flash', 'ea_unemployment', 'ea_ecb_rate',
+]);
+
+/**
  * Per-publication detail page (NW-3). Honest and layered: the published value
  * series (curve, upcoming point left blank), the four things the engine measured
  * at past releases (never a forecast), a MIA prompt, a link to the issuing
@@ -767,8 +780,11 @@ function Detail({
     t.raw('detail.nono.items') as Record<string, string>,
   );
 
-  // Pedagogy body/nono keyed by the event; only these two have a bespoke fiche.
-  const pedKey =
+  // A pedagogy fiche is shown ONLY when a real, hand-written one exists for this
+  // publication — no generic filler (Défaut B). The M.I.A suggested questions use
+  // their OWN key: bespoke for CPI/HICP, a concept-only default otherwise.
+  const hasFiche = eventKey != null && PEDAGOGY_FICHES.has(eventKey);
+  const miaKey =
     eventKey === 'us_cpi' || eventKey === 'ea_hicp_flash' ? eventKey : 'default';
 
   const showQuestions = hasAnyMeasure(measures);
@@ -822,7 +838,13 @@ function Detail({
         </div>
         {cd && (
           <div className="cald-cd">
-            <div className="k">{t('detail.countdownLabel')}</div>
+            {/* Défaut A — the label matches the tense: "Publiée" once the release
+                moment has passed, "Publication dans" while it is still ahead. The
+                bascule is scheduled_at vs now (cd.past), so a release due later
+                today still reads as upcoming. */}
+            <div className="k">
+              {t(cd.past ? 'detail.countdownLabelPast' : 'detail.countdownLabel')}
+            </div>
             <div className="v mono">{fmtCountdown(cd, t)}</div>
           </div>
         )}
@@ -839,25 +861,27 @@ function Detail({
       )}
 
       {/* 4 — MIA */}
-      <MiaBlock pedKey={pedKey} t={t} />
+      <MiaBlock pedKey={miaKey} t={t} />
 
       {/* 5 — GO TO SOURCE (issuing organism only) */}
       <SourceSection eventKey={eventKey} attribution={attribution} t={t} />
 
-      {/* 6 — PEDAGOGY */}
-      <div className="cald-card">
-        <div className="cald-card-h">
-          <h3>{t('pub.pedagogy.title')}</h3>
-          <span className="cald-badge">{t('pub.pedagogy.badge')}</span>
+      {/* 6 — PEDAGOGY (only when a REAL fiche exists for this publication — no
+          generic filler; Défaut B). The per-fiche disclaimer was folded into the
+          single page-level warning below (Défaut C). */}
+      {hasFiche && eventKey && (
+        <div className="cald-card">
+          <div className="cald-card-h">
+            <h3>{t('pub.pedagogy.title')}</h3>
+            <span className="cald-badge">{t('pub.pedagogy.badge')}</span>
+          </div>
+          <p className="pub-ped-body">{t(`pub.pedagogy.${eventKey}.body`)}</p>
         </div>
-        <p className="pub-ped-body">{t(`pub.pedagogy.${pedKey}.body`)}</p>
-        <div className="pub-ped-nono">
-          <div className="t">{t('pub.pedagogy.nonoTitle')}</div>
-          <div className="b">{t(`pub.pedagogy.${pedKey}.nono`)}</div>
-        </div>
-      </div>
+      )}
 
-      {/* Page-level "what this page does not say" — kept at the very bottom. */}
+      {/* SINGLE page-level warning — "what this page does not say" — placed after
+          the last factual content (Défaut C). The three former disclaimers are
+          consolidated here; the mention under M.I.A stays, as it is about her. */}
       <div className="cal-nono" role="note">
         <div>
           <div className="t">{t('detail.nono.title')}</div>

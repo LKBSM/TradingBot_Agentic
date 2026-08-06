@@ -2497,7 +2497,8 @@
         }
       },
       "actualUnfetched": "Wert nicht abgerufen — letzter Versuch am {date}",
-      "actualUnavailable": "keine einzelne Zahl — {organism} veröffentlicht eine Entscheidung (eine Zinsspanne), keine Datenreihe"
+      "actualUnavailable": "keine einzelne Zahl — {organism} veröffentlicht eine Entscheidung (eine Zinsspanne), keine Datenreihe",
+      "countdownLabelPast": "Released"
     },
     "list": {
       "unfetched": "nicht abgerufen",
@@ -2520,7 +2521,8 @@
         "count": "{count, plural, one {# Veröffentlichung} other {# Veröffentlichungen}}",
         "emptyDays": "{count, plural, one {# Tag ohne Veröffentlichung} other {# Tage ohne Veröffentlichung}}",
         "note": "Diese Zählungen beschreiben den Kalender, nicht die erwartete Aktivität.",
-        "title": "Diesen Monat"
+        "title": "Diesen Monat",
+        "filtered": "Filters applied — this count covers only the publications kept."
       },
       "weekdays": "Mo Di Mi Do Fr Sa So"
     },
@@ -2566,20 +2568,58 @@
       },
       "noMeasures": "Für diesen Indikator ist keine Messung verfügbar: die auf seine früheren Veröffentlichungen ausgerichtete Kurshistorie ist nicht zusammengestellt. Diese Seite bleibt daher bei den veröffentlichten Zahlen.",
       "pedagogy": {
+        "title": "Was dieser Indikator misst",
         "badge": "Erklärung",
-        "default": {
-          "body": "Diese Veröffentlichung ist ein offizieller Wirtschaftsindikator, der nach einem im Voraus bekannten Zeitplan erscheint. Sein Wert wird in der Einheit des Organismus ausgedrückt, der ihn herausgibt.",
-          "nono": "Diese Erklärung sagt, was der Indikator misst. Sie sagt nicht, wie der Markt reagieren wird, und MIA modelliert keine Reaktion."
+        "us_employment_situation": {
+          "body": "The Bureau of Labor Statistics' employment report counts, each month, the net number of jobs added or lost across U.S. non-farm sectors, from a survey of employers. It comes with the unemployment rate, drawn from a separate survey of households. Traders follow it because it appears early in the month and covers a broad share of activity, making it one of the first reads on the economy."
+        },
+        "us_cpi": {
+          "body": "Der Verbraucherpreisindex verfolgt die Preisentwicklung eines Warenkorbs aus Gütern und Dienstleistungen, die von US-Haushalten gekauft werden. Er wird jeden Monat vom Bureau of Labor Statistics veröffentlicht und als Veränderung gegenüber demselben Monat des Vorjahres ausgedrückt. Die sogenannte Kernversion schließt Nahrungsmittel und Energie aus, die als schwankungsanfälliger gelten; beide Zahlen erscheinen gleichzeitig."
+        },
+        "us_cpi_core": {
+          "body": "The core Consumer Price Index takes the CPI basket but excludes food and energy, whose prices swing sharply from month to month. The Bureau of Labor Statistics releases it alongside the headline CPI, expressed as a year-on-year change. Traders watch it to separate an underlying trend from the temporary jolts of those two very volatile components."
+        },
+        "us_ppi": {
+          "body": "The Producer Price Index measures the change in the selling prices received by U.S. producers, before goods reach the consumer. The Bureau of Labor Statistics builds it from a broad sample of goods and services at different stages of production. Traders follow it because price changes upstream in the chain sometimes feed through later to consumer prices."
+        },
+        "us_jolts": {
+          "body": "The JOLTS survey (Job Openings and Labor Turnover Survey) counts, each month, the number of job openings, hires and separations in the U.S. labour market, from a sample of establishments compiled by the Bureau of Labor Statistics. Traders follow it because the number of open positions signals the tension between labour supply and demand — an angle the unemployment rate alone does not give."
+        },
+        "us_gdp": {
+          "body": "Gross Domestic Product measures the value of all goods and services produced in the United States over a quarter. The Bureau of Economic Analysis publishes it as an annualised change from the prior quarter, in several successive estimates refined as data come in. Traders follow it because it sums up overall economic activity for the period."
+        },
+        "us_pce": {
+          "body": "The Personal Consumption Expenditures price index tracks the change in prices of the goods and services households actually buy. The Bureau of Economic Analysis computes it from a basket that adjusts to shifts in consumption, which sets it apart from the CPI. Traders pay attention to it because it is the inflation gauge the Federal Reserve favours in its analysis."
+        },
+        "us_retail_sales": {
+          "body": "Retail sales count the monthly turnover of retail and food-service businesses in the United States. The Census Bureau compiles them from a survey of firms, expressed in dollars. Traders follow them because household consumption is a large share of activity, and this figure gives a quick read on it."
+        },
+        "us_housing_starts": {
+          "body": "Housing starts count the number of homes on which construction began during the month, expressed at an annualised rate. The Census Bureau compiles them from surveys and building permits. Traders follow them because residential activity is sensitive to financing conditions and often reacts early to shifts in the cycle."
+        },
+        "us_durable_goods": {
+          "body": "Durable-goods orders count the value of new orders placed with manufacturers for goods meant to last at least three years — machinery, transport equipment, hardware. The Census Bureau publishes them in dollars. Traders follow them because orders precede production, making them a leading read on business investment."
+        },
+        "us_fomc_rate": {
+          "body": "At the close of its meetings, the Federal Reserve's monetary-policy committee (FOMC) announces the range for the policy rate, which frames the cost of very short-term credit in the United States. The decision is published on a known schedule, eight times a year. Traders follow it because the level of the policy rate steers financing conditions across the board."
+        },
+        "us_fomc_minutes": {
+          "body": "The minutes of the FOMC meeting are published about three weeks after the monetary-policy decision. They detail the discussions that led to the decision and participants' views on the economy. Traders read them to understand the reasoning behind the decision, beyond the statement alone."
+        },
+        "us_fomc_dotplot": {
+          "body": "The dot plot accompanies some FOMC meetings: each participant marks, anonymously, the policy-rate level they see as appropriate for the years ahead. The Federal Reserve publishes it as a scatter of dots. Traders consult it to place the range of views within the committee, without it being a commitment."
         },
         "ea_hicp_flash": {
-          "body": "Der Harmonisierte Verbraucherpreisindex verfolgt die Preisentwicklung eines Warenkorbs aus Gütern und Dienstleistungen im Euroraum, nach einer für alle Mitgliedstaaten gemeinsamen Methode. Eurostat veröffentlicht Ende jedes Monats eine Schnellschätzung, ausgedrückt als Veränderung gegenüber demselben Monat des Vorjahres; die Zahl wird einige Wochen später bestätigt.",
-          "nono": "Diese Erklärung sagt, was der Indikator misst. Sie sagt nicht, wie der Markt auf eine bestimmte Zahl reagieren wird: diese Beziehung ist weder konstant noch mechanisch, und MIA modelliert sie nicht."
+          "body": "Der Harmonisierte Verbraucherpreisindex verfolgt die Preisentwicklung eines Warenkorbs aus Gütern und Dienstleistungen im Euroraum, nach einer für alle Mitgliedstaaten gemeinsamen Methode. Eurostat veröffentlicht Ende jedes Monats eine Schnellschätzung, ausgedrückt als Veränderung gegenüber demselben Monat des Vorjahres; die Zahl wird einige Wochen später bestätigt."
         },
-        "nonoTitle": "Was diese Erklärung nicht sagt",
-        "title": "Was dieser Indikator misst",
-        "us_cpi": {
-          "body": "Der Verbraucherpreisindex verfolgt die Preisentwicklung eines Warenkorbs aus Gütern und Dienstleistungen, die von US-Haushalten gekauft werden. Er wird jeden Monat vom Bureau of Labor Statistics veröffentlicht und als Veränderung gegenüber demselben Monat des Vorjahres ausgedrückt. Die sogenannte Kernversion schließt Nahrungsmittel und Energie aus, die als schwankungsanfälliger gelten; beide Zahlen erscheinen gleichzeitig.",
-          "nono": "Diese Erklärung sagt, was der Indikator misst. Sie sagt nicht, wie der Markt auf eine höhere oder niedrigere Zahl als die vorherige reagieren wird: diese Beziehung ist weder konstant noch mechanisch, und MIA modelliert sie nicht."
+        "ea_gdp_flash": {
+          "body": "The euro-area flash GDP estimate measures the change in economic activity from one quarter to the next. Eurostat publishes it shortly after the quarter ends, using a method common to member states, then revises it as national data fill in. Traders follow it because it sums up the region's activity early."
+        },
+        "ea_unemployment": {
+          "body": "The euro-area unemployment rate relates the number of people without a job and looking for one to the active population. Eurostat computes it each month using a definition harmonised across member states, adjusted for seasonal variation. Traders follow it as a read on the labour market at the regional scale."
+        },
+        "ea_ecb_rate": {
+          "body": "At the close of its monetary-policy meetings, the European Central Bank announces its key rates, which frame the cost of short-term credit in the euro area. The decision is published on a known schedule, about eight times a year. Traders follow it because the level of these rates steers financing conditions across the region."
         }
       },
       "questions": {

@@ -87,6 +87,49 @@ def test_bls_graceful_on_error_payload():
     assert f.fetch("CUUR0000SA0") is None
 
 
+# --- BLS fetch_series (NW-6): monthly curve, chronological, month-only ---------
+_BLS_SERIES_OK = json.dumps({
+    "status": "REQUEST_SUCCEEDED",
+    "Results": {"series": [{"data": [
+        # Most-recent-first, as BLS returns it; plus an annual-average row (M13).
+        {"year": "2026", "period": "M13", "value": "999.9"},
+        {"year": "2026", "period": "M03", "value": "322.9"},
+        {"year": "2026", "period": "M02", "value": "321.5"},
+        {"year": "2026", "period": "M01", "value": "320.0"},
+        {"year": "2025", "period": "M12", "value": "319.1"},
+    ]}]},
+})
+
+
+def test_bls_fetch_series_is_chronological_and_labelled():
+    f = BLSValueFetcher(api_key="KEY", http_post=lambda url, body: _BLS_SERIES_OK)
+    pts = f.fetch_series("CUUR0000SA0")
+    # Oldest→newest, month labels "YYYY-MM", M13 annual-average dropped.
+    assert [(p.period, p.value) for p in pts] == [
+        ("2025-12", 319.1),
+        ("2026-01", 320.0),
+        ("2026-02", 321.5),
+        ("2026-03", 322.9),
+    ]
+
+
+def test_bls_fetch_series_respects_limit_keeping_most_recent():
+    f = BLSValueFetcher(api_key="KEY", http_post=lambda url, body: _BLS_SERIES_OK)
+    pts = f.fetch_series("CUUR0000SA0", limit=2)
+    assert [(p.period, p.value) for p in pts] == [("2026-02", 321.5), ("2026-03", 322.9)]
+
+
+def test_bls_fetch_series_without_key_returns_empty():
+    f = BLSValueFetcher(api_key="", http_post=lambda url, body: _BLS_SERIES_OK)
+    assert f.fetch_series("CUUR0000SA0") == []
+
+
+def test_bls_fetch_series_graceful_on_error_payload():
+    bad = json.dumps({"status": "REQUEST_NOT_PROCESSED", "Results": {}})
+    f = BLSValueFetcher(api_key="KEY", http_post=lambda url, body: bad)
+    assert f.fetch_series("CUUR0000SA0") == []
+
+
 # --------------------------------------------------------------------------- #
 # ECB step-series previous
 # --------------------------------------------------------------------------- #
@@ -109,6 +152,46 @@ def test_ecb_previous_is_last_distinct():
     assert vp is not None
     assert vp.actual == 2.40
     assert vp.previous == 2.15   # the distinct prior level, not the equal-neighbour
+
+
+# --- ECB fetch_series (NW-6): distinct rate-level change points ----------------
+def _ecb_series_payload(pairs):
+    """(date, value) pairs → an SDMX-JSON message with a dated TIME dimension."""
+    obs = {str(i): [v] for i, (_, v) in enumerate(pairs)}
+    time_vals = [{"id": d} for d, _ in pairs]
+    return json.dumps({
+        "dataSets": [{"series": {"0:0": {"observations": obs}}}],
+        "structure": {"dimensions": {"observation": [
+            {"id": "TIME_PERIOD", "values": time_vals}
+        ]}},
+    })
+
+
+def test_ecb_fetch_series_collapses_runs_to_change_dates():
+    # Held 2.15, stepped to 2.40, held, stepped to 2.65: three decisions.
+    payload = _ecb_series_payload([
+        ("2026-04-10", 2.15), ("2026-05-10", 2.15),
+        ("2026-06-06", 2.40), ("2026-07-06", 2.40),
+        ("2026-08-05", 2.65),
+    ])
+    f = ECBValueFetcher(http_get=lambda url: payload)
+    pts = f.fetch_series("FM.D.U2.EUR.4F.KR.MRR_FR.LEV")
+    # One point per DISTINCT level, labelled by the month it took effect (YYYY-MM).
+    assert [(p.period, p.value) for p in pts] == [
+        ("2026-04", 2.15), ("2026-06", 2.40), ("2026-08", 2.65),
+    ]
+
+
+def test_ecb_fetch_series_empty_without_structure():
+    # A message lacking the TIME dimension yields no curve (never fabricated).
+    payload = json.dumps({"dataSets": [{"series": {"0:0": {"observations": {"0": [2.4]}}}}]})
+    f = ECBValueFetcher(http_get=lambda url: payload)
+    assert f.fetch_series("FM.D.U2.EUR.4F.KR.MRR_FR.LEV") == []
+
+
+def test_ecb_fetch_series_empty_on_failure():
+    f = ECBValueFetcher(http_get=lambda url: "")
+    assert f.fetch_series("FM.D.U2.EUR.4F.KR.MRR_FR.LEV") == []
 
 
 # --------------------------------------------------------------------------- #

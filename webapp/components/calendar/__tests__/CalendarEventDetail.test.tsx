@@ -245,7 +245,7 @@ describe('NW-3 CalendarEventDetail', () => {
     expect((container.textContent ?? '')).not.toContain(fr.calendar.pub.questions.sectionTitle);
   });
 
-  it('(d) pedagogy body switches by event key', () => {
+  it('(d) pedagogy renders a REAL fiche per publication — and NOTHING for a key without one', () => {
     const cpi = renderDetail('bls:us_cpi:2026-07-28').container;
     expect(cpi.textContent).toContain(fr.calendar.pub.pedagogy.us_cpi.body);
 
@@ -255,11 +255,44 @@ describe('NW-3 CalendarEventDetail', () => {
     })).container;
     expect(hicp.textContent).toContain(fr.calendar.pub.pedagogy.ea_hicp_flash.body);
 
-    const other = renderDetail('bls:us_ppi:2026-08-01', ev({
+    // us_ppi now has its OWN hand-written fiche (no generic filler).
+    const ppi = renderDetail('bls:us_ppi:2026-08-01', ev({
       event_id: 'bls:us_ppi:2026-08-01', source: 'bls', event: 'PPI',
       organism: 'Bureau of Labor Statistics', actual_state: 'published', value_series: SERIES,
     })).container;
-    expect(other.textContent).toContain(fr.calendar.pub.pedagogy.default.body);
+    expect(ppi.textContent).toContain(fr.calendar.pub.pedagogy.us_ppi.body);
+
+    // An unknown publication key ships NO fiche → the pedagogy card is not rendered
+    // at all (Défaut B: never a generic placeholder occupying the slot).
+    const unknown = render(
+      <CalendarEventDetail
+        eventId="forexfactory:z:1"
+        locale="fr"
+        data={{ ...makeData(ev({ event_id: 'forexfactory:z:1', source: 'forexfactory', event: 'ADP', organism: null, value_series: SERIES })), attribution: [] }}
+        now={NOW}
+        measures={null}
+      />,
+    ).container;
+    expect(unknown.querySelector('.pub-ped-body')).toBeNull();
+    expect(unknown.textContent ?? '').not.toContain(fr.calendar.pub.pedagogy.title);
+  });
+
+  it('(Défaut A) the countdown label matches tense: « Publication dans » ahead, « Publiée » once past', () => {
+    // OFFICIAL is scheduled 2026-07-28T12:30Z; NOW is 06:00Z the same day → still ahead.
+    const ahead = renderDetail('bls:us_cpi:2026-07-28').container;
+    expect(ahead.querySelector('.cald-cd .k')?.textContent).toBe(
+      fr.calendar.detail.countdownLabel,
+    );
+
+    // A release moved a day into the past reads « Publiée », never « Publication dans ».
+    const past = renderDetail('bls:us_cpi:2026-07-26', ev({
+      event_id: 'bls:us_cpi:2026-07-26', source: 'bls', event: 'IPC',
+      organism: 'Bureau of Labor Statistics', scheduled_at: '2026-07-27T12:30:00Z',
+      actual_state: 'published', value_series: SERIES,
+    })).container;
+    expect(past.querySelector('.cald-cd .k')?.textContent).toBe(
+      fr.calendar.detail.countdownLabelPast,
+    );
   });
 
   it('(e) the named go-to-source links point only to the issuing organism domain', () => {

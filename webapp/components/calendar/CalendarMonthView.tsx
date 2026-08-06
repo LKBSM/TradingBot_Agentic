@@ -132,6 +132,13 @@ export function CalendarMonthView({
     marketFilter.noneSelected ||
     periodicityFilter.noneSelected;
 
+  // A filter is "active" once a group is narrowed below its full set — the count
+  // then describes a SUBSET of the calendar, and the screen says so (Défaut D).
+  const filtersActive =
+    sourceFilter.selected.size < SOURCES.length ||
+    marketFilter.selected.size < MARKETS.length ||
+    periodicityFilter.selected.size < PERIODICITIES.length;
+
   // Events that pass the factual filters (organism/market/periodicity).
   const filtered = React.useMemo(
     () =>
@@ -335,6 +342,9 @@ export function CalendarMonthView({
                 <div className="calm-tm-count mono">
                   {t('month.thisMonth.count', { count: totalThisMonth })}
                 </div>
+                {filtersActive && (
+                  <div className="calm-tm-filtered">{t('month.thisMonth.filtered')}</div>
+                )}
                 <ul className="calm-tm-list">
                   {perMarket.map((pm) => (
                     <li key={pm.market}>
