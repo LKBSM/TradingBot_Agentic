@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Iterable, List, Optional, Protocol, Sequence, Tuple
 
 from src.intelligence import lookback_config, market_calendar
@@ -48,6 +48,12 @@ _DEEP_ENOUGH_FRACTION = 0.9
 
 class _Provider(Protocol):
     def fetch_candles(self, symbol: str, timeframe: str, count: int): ...
+
+
+class _PagingProvider(Protocol):
+    def fetch_candles_until(
+        self, symbol: str, timeframe: str, count: int, end_date: Optional[str] = None
+    ): ...
 
 
 class _Store(Protocol):
@@ -140,6 +146,54 @@ def backfill_combo(
         instrument, timeframe, target, requested=request_size, fetched=len(candles),
         upserted=upserted, skipped=False, reason="filled",
     )
+
+
+def deep_backfill_combo(
+    provider: _PagingProvider,
+    store: _Store,
+    instrument: str,
+    timeframe: str,
+    *,
+    target_bars: int,
+    page: int = MAX_OUTPUTSIZE,
+    max_pages: int = 40,
+) -> dict:
+    """Fill one combo DEEP by walking history BACKWARD one ``page`` (≤5000) at a
+    time via ``end_date`` pagination — the single-request cap makes plain
+    ``backfill_combo`` top out at ~52 days of M15, far short of the months the
+    publication measures need. Idempotent (upsert), quota-aware (the provider's
+    rate limiter throttles), and self-terminating: it stops when the target is
+    reached, the provider returns nothing older (depth exhausted), or ``max_pages``.
+
+    Returns a small progress dict; never raises (a failed page ends the walk)."""
+    tf_min = lookback_config._TF_MINUTES.get(timeframe.upper(), 15)
+    end_date: Optional[str] = None
+    fetched = upserted = pages = 0
+    earliest_seen: Optional[datetime] = None
+    while fetched < target_bars and pages < max_pages:
+        want = min(page, target_bars - fetched) or page
+        try:
+            candles = provider.fetch_candles_until(instrument, timeframe, want, end_date)
+        except Exception:
+            logger.exception("deep backfill page failed for %s %s", instrument, timeframe)
+            break
+        pages += 1
+        if not candles:
+            break
+        upserted += store.upsert_candles(instrument, timeframe, candles)
+        fetched += len(candles)
+        page_earliest = min(_to_utc(c.ts) for c in candles)
+        if earliest_seen is not None and page_earliest >= earliest_seen:
+            break  # provider returned no OLDER bar → historical depth exhausted
+        earliest_seen = page_earliest
+        end_date = (page_earliest - timedelta(minutes=tf_min)).strftime("%Y-%m-%d %H:%M:%S")
+    result = {
+        "instrument": instrument, "timeframe": timeframe, "pages": pages,
+        "fetched": fetched, "upserted": upserted,
+        "oldest": earliest_seen.isoformat() if earliest_seen else None,
+    }
+    logger.info("deep backfill %s %s: %s", instrument, timeframe, result)
+    return result
 
 
 def backfill_all(

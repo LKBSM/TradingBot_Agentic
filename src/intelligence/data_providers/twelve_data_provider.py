@@ -215,8 +215,26 @@ class TwelveDataProvider(DataProvider):
     def available_symbols(self) -> List[str]:
         return list(_SYMBOL_MAP.keys())
 
+    def fetch_candles_until(
+        self, symbol: str, timeframe: str, count: int, end_date: Optional[str] = None
+    ) -> List[Candle]:
+        """Up to ``count`` candles ENDING at ``end_date`` (UTC "YYYY-MM-DD HH:MM:SS";
+        most recent when None). Used by the deep (paginated) backfill to walk the
+        history backward one 5000-bar page at a time — bypasses the small live
+        cache. Never uses more than the provider's per-request cap."""
+        df = self._fetch_dataframe(symbol, timeframe, min(int(count), 5000), end_date=end_date)
+        return [
+            Candle(
+                ts=ts.to_pydatetime() if hasattr(ts, "to_pydatetime") else ts,
+                open=float(row["Open"]), high=float(row["High"]),
+                low=float(row["Low"]), close=float(row["Close"]),
+                volume=float(row["Volume"]),
+            )
+            for ts, row in df.iterrows()
+        ]
+
     def _fetch_dataframe(
-        self, symbol: str, timeframe: str, lookback: int
+        self, symbol: str, timeframe: str, lookback: int, end_date: Optional[str] = None
     ) -> pd.DataFrame:
         td_symbol = self._map_symbol(symbol)
         td_interval = self._map_timeframe(timeframe)
@@ -232,6 +250,9 @@ class TwelveDataProvider(DataProvider):
             # mislabel as UTC — audit DETECTION_QUALITY_REVIEW_2026_06_12 §T2.
             "timezone": "UTC",
         }
+        if end_date:
+            # Walk backward: TD returns the ``outputsize`` bars up to end_date.
+            params["end_date"] = end_date
         url = f"{self.BASE_URL}/time_series"
 
         backoff = self.BASE_BACKOFF_S
