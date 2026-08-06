@@ -8,8 +8,9 @@ its wiring through ``get_or_generate``:
   - provider fails → read THROUGH candles.db (real bars, staleness badged);
   - provider slow  → bounded, degrades to the cache within the budget (no 20s hang);
   - provider + cache both empty → the failure is surfaced, never a blank reading;
-  - background scheduler path (``bound_provider=False``) stays patient and does
-    NOT fall back to the cache — it must wait for the feed to advance candles.db;
+  - background scheduler path (``bound_provider=False``): reads a FULL, current
+    WS-advanced cache to save a REST credit (NW-7), but still fetches the provider
+    when the cache is short/stale — never serving a partial window;
   - NON-REGRESSION: the SMC pipeline sees byte-identical candles whether they came
     from the provider or the read-through, across all six timeframes — so detection
     output cannot change as a side effect of the sourcing path.
@@ -206,17 +207,33 @@ def test_provider_and_cache_both_empty_raises_typed_no_data_chaining_cause():
     assert "no key" in str(excinfo.value.__cause__)
 
 
-def test_background_path_is_patient_and_never_reads_cache():
+def test_background_fetches_when_cache_is_short_or_stale():
     provider = _Provider(raise_exc=RuntimeError("feed down"))
-    store = _CandlesStore(cached=_candles(40))
+    store = _CandlesStore(cached=_candles(40))  # 40 < window 500 → not a full window
     asm = _make_assembler(provider, store)
 
-    # bound_provider=False (scheduler): the error must propagate untouched and the
-    # cache must NOT be consulted — the background job's contract is to advance the
-    # real feed, and its caller (scheduler tick) already isolates the failure.
+    # bound_provider=False (scheduler): a SHORT/stale cache cannot satisfy the build
+    # window, so the background path still fetches the provider and its error
+    # propagates — a partial window is NEVER served. (NW-7: it may PEEK the cache to
+    # decide whether the WS already advanced a FULL, current window; here it hasn't.)
     with pytest.raises(RuntimeError, match="feed down"):
         asm._fetch_candles_for_build("XAUUSD", "M15", 500, bound_provider=False)
-    assert store.get_calls == 0
+    assert provider.calls == 1
+
+
+def test_background_uses_full_current_cache_and_skips_provider():
+    # NW-7 credit saving: when the WS live tick has already advanced candles.db to a
+    # FULL, up-to-date window, the background path reads it and makes NO Twelve Data
+    # REST call (the biggest source of over-quota usage). Future-dated cache bars
+    # guarantee "current vs the market-aware close" without depending on the clock.
+    provider = _Provider(raise_exc=RuntimeError("provider must not be called"))
+    future = datetime(2099, 1, 1, tzinfo=timezone.utc)
+    store = _CandlesStore(cached=_candles(500, start=future))
+    asm = _make_assembler(provider, store)
+
+    result = asm._fetch_candles_for_build("XAUUSD", "M15", 500, bound_provider=False)
+    assert len(result) == 500
+    assert provider.calls == 0  # served from the WS-advanced cache — no REST fetch
 
 
 # --------------------------------------------------------------------------- #
