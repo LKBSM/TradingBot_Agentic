@@ -747,17 +747,77 @@ def _gold_m15_from_store(market: str, candles_store=None):
     return df if not df.empty else None
 
 
+def _candidate_data_dirs() -> list:
+    """Directories that may hold the deep XAU M15 CSV, most authoritative first.
+
+    In prod the CSV lives on the MOUNTED disk (``/app/data``), which is where
+    ``CANDLES_DB_PATH`` / the ``DATA_DIR`` env point — but ``config.DATA_DIR`` is a
+    hard-coded ``PROJECT_ROOT/data`` that ignores the env, so the CSV was looked up
+    in the wrong (ephemeral) directory and reported missing (NW-7c). We therefore
+    search the mounted-disk dir too, deduped, preserving order."""
+    import os
+
+    dirs = []
+    cdb = os.environ.get("CANDLES_DB_PATH")
+    if cdb:
+        dirs.append(os.path.dirname(cdb) or ".")
+    if os.environ.get("DATA_DIR"):
+        dirs.append(os.environ["DATA_DIR"])
+    try:
+        import config as _config
+        if getattr(_config, "DATA_DIR", None):
+            dirs.append(_config.DATA_DIR)
+    except Exception:  # pragma: no cover - defensive
+        pass
+    seen, out = set(), []
+    for d in dirs:
+        if d and d not in seen:
+            seen.add(d)
+            out.append(d)
+    return out
+
+
+def _find_gold_csv():
+    """Locate the deep XAU M15 CSV across the candidate data dirs: the configured
+    name first, then a conservative glob (never an archived/corrupt file). Returns
+    the path or None."""
+    import glob
+    import os
+
+    try:
+        import config as _config
+        default_name = os.path.basename(
+            getattr(_config, "HISTORICAL_DATA_FILE", "") or "XAU_15MIN_2019_2026.csv"
+        )
+    except Exception:  # pragma: no cover
+        default_name = "XAU_15MIN_2019_2026.csv"
+
+    dirs = _candidate_data_dirs()
+    for d in dirs:
+        exact = os.path.join(d, default_name)
+        if os.path.isfile(exact):
+            return exact
+    cands = []
+    for d in dirs:
+        for pat in ("XAU*15*.csv", "XAU*M15*.csv"):
+            cands.extend(glob.glob(os.path.join(d, pat)))
+    cands = [
+        c for c in cands
+        if os.path.isfile(c) and "corrupt" not in c.lower() and "archiv" not in c.lower()
+    ]
+    return max(cands, key=os.path.getsize) if cands else None
+
+
 def _gold_m15_from_csv():
-    """Gold M15 from the bundled CSV (local dev only; gitignored in prod)."""
+    """Gold M15 from the deep CSV on disk (mounted disk in prod, repo data locally),
+    or None when it is genuinely absent."""
     import os
 
     try:
         import pandas as pd
-
-        import config as _config
     except Exception:  # pragma: no cover - defensive
         return None
-    gold_path = getattr(_config, "HISTORICAL_DATA_FILE", None)
+    gold_path = _find_gold_csv()
     if not gold_path or not os.path.exists(gold_path):
         return None
     try:
@@ -965,6 +1025,15 @@ def diagnose_default_measures(
                 "name": os.path.basename(cal) if cal else None,
                 "exists": bool(cal and os.path.exists(cal)),
             }
+            # NW-7c: which dirs are searched for the deep CSV, and where it was
+            # actually found (the mounted disk may differ from config.DATA_DIR).
+            out["data_dirs_searched"] = _candidate_data_dirs()
+            found = _find_gold_csv()
+            out["xau_csv_found_at"] = found
+            out["xau_csv_dir_listing"] = sorted(
+                f for f in (os.listdir(_candidate_data_dirs()[0]) if _candidate_data_dirs() else [])
+                if "xau" in f.lower() or "15" in f.lower()
+            )[:20]
         except Exception as exc:  # pragma: no cover
             out["config_error"] = str(exc)
 
