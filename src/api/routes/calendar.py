@@ -213,6 +213,106 @@ def measures_backfill_status(
     }
 
 
+# One-time IMPORT of a deep price-history CSV from a URL onto the mounted disk, so
+# the measures have months of XAU M15 WITHOUT spending Twelve Data credits (the
+# free 800/day quota is over-subscribed). Streams to a temp file, validates it is
+# an OHLC CSV, then atomically swaps it into place under the configured name so
+# ``_find_gold_csv`` picks it up. Background + single-flight + status.
+_IMPORT_STATE: Dict[str, Any] = {"running": False, "last_result": None}
+_IMPORT_MAX_BYTES = 2 * 1024 * 1024 * 1024  # 2 GB safety cap
+
+
+def _measures_data_dir() -> str:
+    """The mounted data directory where candles.db lives (so the CSV lands where
+    ``_find_gold_csv`` looks), env-resolved — NOT config's hard-coded path."""
+    import os
+
+    cdb = os.environ.get("CANDLES_DB_PATH")
+    if cdb and os.path.dirname(cdb):
+        return os.path.dirname(cdb)
+    if os.environ.get("DATA_DIR"):
+        return os.environ["DATA_DIR"]
+    try:
+        import config as _config
+        return getattr(_config, "DATA_DIR", ".")
+    except Exception:  # pragma: no cover
+        return "."
+
+
+@router.get("/publications/{event_key}/measures/import-csv")
+def import_measures_csv(
+    event_key: str = Path(..., description="Recurring event key, e.g. 'us_cpi'"),
+    url: str = Query(..., description="Direct download URL of the XAU M15 OHLC CSV"),
+) -> Dict[str, Any]:
+    if _MEASURABLE_MARKETS.get(event_key) is None:
+        raise HTTPException(status_code=422, detail="event not measurable")
+    if _IMPORT_STATE["running"]:
+        return {"status": "already_running", "last_result": _IMPORT_STATE["last_result"]}
+
+    def _run() -> None:
+        import os
+
+        _IMPORT_STATE["running"] = True
+        try:
+            import requests
+
+            import config as _config
+
+            data_dir = _measures_data_dir()
+            os.makedirs(data_dir, exist_ok=True)
+            name = os.path.basename(
+                getattr(_config, "HISTORICAL_DATA_FILE", "") or "XAU_15MIN_2019_2026.csv"
+            )
+            target = os.path.join(data_dir, name)
+            tmp = target + ".part"
+            total = 0
+            with requests.get(url, stream=True, timeout=60) as resp:
+                resp.raise_for_status()
+                with open(tmp, "wb") as fh:
+                    for chunk in resp.iter_content(chunk_size=1 << 20):
+                        if not chunk:
+                            continue
+                        total += len(chunk)
+                        if total > _IMPORT_MAX_BYTES:
+                            raise ValueError("download exceeds 2 GB cap")
+                        fh.write(chunk)
+            # Validate it is an OHLC CSV BEFORE swapping it into place.
+            with open(tmp, "r", encoding="utf-8", errors="replace") as fh:
+                header = fh.readline().strip().lower()
+            cols = {c.strip().strip('"') for c in re.split(r"[,;\t]", header)}
+            has_time = bool(cols & {"date", "datetime", "time", "timestamp"})
+            has_ohlc = {"open", "high", "low", "close"} <= cols
+            if not (has_time and has_ohlc):
+                os.remove(tmp)
+                raise ValueError(f"not an OHLC CSV (header: {header[:120]})")
+            os.replace(tmp, target)  # atomic — readers never see a partial file
+            _MEASURES_CACHE.pop(event_key, None)  # drop cached None → recompute
+            _IMPORT_STATE["last_result"] = {
+                "ok": True, "path": target, "bytes": total, "header": header[:120],
+            }
+        except Exception as exc:
+            logger.exception("measures CSV import failed for %s", event_key)
+            _IMPORT_STATE["last_result"] = {"error": f"{type(exc).__name__}: {exc}"[:300]}
+        finally:
+            _IMPORT_STATE["running"] = False
+
+    threading.Thread(target=_run, name="import-csv", daemon=True).start()
+    return {
+        "status": "started",
+        "note": "Check .../measures/import-csv/status; then reload the IPC page.",
+    }
+
+
+@router.get("/publications/{event_key}/measures/import-csv/status")
+def import_measures_csv_status(
+    event_key: str = Path(..., description="Recurring event key, e.g. 'us_cpi'"),
+) -> Dict[str, Any]:
+    return {
+        "running": bool(_IMPORT_STATE["running"]),
+        "last_result": _IMPORT_STATE["last_result"],
+    }
+
+
 # REC point 1: the per-event detail must load an event by its STABLE ID from
 # storage, independent of any list window — a deep-linked event exists by
 # definition. Sync `def` so the (possibly refreshing) call is threadpooled and
