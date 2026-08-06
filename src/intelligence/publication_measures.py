@@ -921,4 +921,89 @@ def _pick_gold_m15(market: str, candles_store=None):
     return store_df if _span_days(store_df) >= _span_days(csv_df) else csv_df
 
 
-__all__ = ["compute_publication_measures", "load_default_measures"]
+def diagnose_default_measures(
+    event_key: str = "us_cpi",
+    market: str = "XAUUSD",
+    *,
+    now: Optional[datetime] = None,
+) -> dict:
+    """Read-only diagnosis of WHY load_default_measures does/does not compute, for
+    prod triage (NW-7c). No secrets, no fabrication — just what each input source
+    yields and whether the release dates overlap the candle coverage. Never raises."""
+    import os
+
+    def _span(df):
+        if df is None or len(df) == 0:
+            return {"bars": 0, "span_days": 0.0, "first": None, "last": None}
+        return {
+            "bars": int(len(df)),
+            "span_days": round(_span_days(df), 1),
+            "first": df.index[0].isoformat(),
+            "last": df.index[-1].isoformat(),
+        }
+
+    def _rel(rs):
+        return {
+            "count": len(rs),
+            "min": rs[0].isoformat() if rs else None,
+            "max": rs[-1].isoformat() if rs else None,
+        }
+
+    out: dict = {"event_key": event_key, "market": market}
+    try:
+        now = _as_utc(now) if now is not None else _as_utc(datetime.now(timezone.utc))
+        out["now"] = now.isoformat()
+        try:
+            import config as _config
+            hist = getattr(_config, "HISTORICAL_DATA_FILE", None)
+            cal = _config.NEWS_FILTER_CONFIG.get("calendar_file")
+            out["historical_data_file"] = {
+                "name": os.path.basename(hist) if hist else None,
+                "exists": bool(hist and os.path.exists(hist)),
+            }
+            out["calendar_file"] = {
+                "name": os.path.basename(cal) if cal else None,
+                "exists": bool(cal and os.path.exists(cal)),
+            }
+        except Exception as exc:  # pragma: no cover
+            out["config_error"] = str(exc)
+
+        rel_store = _releases_from_store(event_key, now)
+        rel_csv = _releases_from_csv(event_key)
+        out["releases_store"] = _rel(rel_store)
+        out["releases_csv"] = _rel(rel_csv)
+
+        releases = rel_store if len(rel_store) >= MIN_RELIABLE_RELEASES else (rel_csv or rel_store)
+        releases = sorted(r for r in releases if r <= now)
+        out["releases_used"] = _rel(releases)
+
+        store_df = _gold_m15_from_store(market)
+        csv_df = _gold_m15_from_csv()
+        out["candles_store"] = _span(store_df)
+        out["candles_csv"] = _span(csv_df)
+        picked = _pick_gold_m15(market)
+        out["candles_picked"] = (
+            "store" if picked is store_df else "csv" if picked is csv_df else None
+        )
+
+        if picked is not None and releases:
+            cov_start = picked.index[0].to_pydatetime()
+            cov_end = picked.index[-1].to_pydatetime()
+            in_cov = [r for r in releases if cov_start <= _as_utc(r) <= cov_end]
+            out["releases_in_candle_coverage"] = len(in_cov)
+            out["min_reliable_releases"] = MIN_RELIABLE_RELEASES
+        else:
+            out["releases_in_candle_coverage"] = 0
+
+        m = load_default_measures(event_key, market, now=now)
+        out["measures_has_any"] = bool(m and m.has_any())
+    except Exception as exc:  # pragma: no cover - diagnostic must never raise
+        out["error"] = f"{type(exc).__name__}: {exc}"
+    return out
+
+
+__all__ = [
+    "compute_publication_measures",
+    "load_default_measures",
+    "diagnose_default_measures",
+]

@@ -138,6 +138,19 @@ def get_publication_measures(
     return measures or PublicationMeasures(event_key=event_key, market=market)
 
 
+@router.get("/publications/{event_key}/measures/debug")
+def get_publication_measures_debug(
+    event_key: str = Path(..., description="Recurring event key, e.g. 'us_cpi'"),
+) -> Dict[str, Any]:
+    """Read-only triage (NW-7c): WHY the measures do/don't compute in this env —
+    which release/candle source yields data and whether they overlap. No secrets,
+    no side effects. Returns a plain JSON object; never raises."""
+    from src.intelligence.publication_measures import diagnose_default_measures
+
+    market = _MEASURABLE_MARKETS.get(event_key) or "XAUUSD"
+    return diagnose_default_measures(event_key=event_key, market=market)
+
+
 # REC point 1: the per-event detail must load an event by its STABLE ID from
 # storage, independent of any list window — a deep-linked event exists by
 # definition. Sync `def` so the (possibly refreshing) call is threadpooled and
