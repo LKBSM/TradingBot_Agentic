@@ -132,6 +132,13 @@ class CalendarService:
         # free 500/day key would be exhausted. Keyed by (source, series_code, kind).
         self._series_cache: Dict[Tuple[str, str, str], Tuple[datetime, List[CalendarSeriesPoint]]] = {}
         self._series_cache_ttl = timedelta(seconds=SERIES_CACHE_TTL_SECONDS)
+        # Latest-value (enrichment) cache (NW-7b): _enrich_values ran uncached on
+        # EVERY refresh (TTL 120s) × every key-gated series, which alone exhausted
+        # the BLS free 500/day key — so the curve's own fetch was then always
+        # rejected. Cache the published latest value per (source, series_code) for
+        # the same window; the None (unreachable / quota) result is cached too, so
+        # a spent quota is not re-hammered every two minutes.
+        self._value_point_cache: Dict[Tuple[str, str], Tuple[datetime, object]] = {}
 
     # ------------------------------------------------------------------ #
     # Market attachment (the documented rule)
@@ -443,10 +450,19 @@ class CalendarService:
         fetcher = self._value_fetcher
         if fetcher is None:
             return
+        _MISS = self._value_point_cache  # (source, series_code) → (at, point|None)
         for i, ce in enumerate(events):
             if not ce.series_code or ce.actual is not None:
                 continue
-            point = fetcher.fetch_for(ce.source, ce.series_code)
+            key = (ce.source, ce.series_code)
+            cached = _MISS.get(key)
+            if cached is not None and now - cached[0] < self._series_cache_ttl:
+                point = cached[1]  # may be None (a recent unreachable/quota result)
+            else:
+                point = fetcher.fetch_for(ce.source, ce.series_code)
+                # Cache success AND failure for the window: an exhausted BLS quota
+                # must not be re-hit on every 120s refresh (that kept it exhausted).
+                _MISS[key] = (now, point)
             if point is None:
                 continue  # stays unfetched — the attempt is recorded via fetched_at
             if ce.scheduled_at > now:

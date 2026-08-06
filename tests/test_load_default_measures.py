@@ -79,6 +79,58 @@ def test_load_default_measures_computes_from_injected_stores():
             assert m.provenance.market == "XAUUSD"
 
 
+def test_pick_gold_m15_prefers_deep_csv_over_shallow_store(monkeypatch):
+    """A shallow candles.db (only weeks accumulated since deploy) must NOT be
+    preferred over a CSV holding years — else the measures fail on too few
+    in-coverage releases (NW-7b)."""
+    import pandas as pd
+
+    import src.intelligence.publication_measures as pm
+
+    def _df(days: int, start: datetime):
+        n = days * 96
+        idx = pd.date_range(start, periods=n, freq="15min", tz="UTC")
+        return pd.DataFrame(
+            {"open": 2000.0, "high": 2000.6, "low": 1999.4, "close": 2000.0, "volume": 1.0},
+            index=idx,
+        )
+
+    shallow = _df(20, START)                      # ~20 days in candles.db
+    deep = _df(500, START - timedelta(days=520))  # ~500 days in the CSV
+    monkeypatch.setattr(pm, "_gold_m15_from_store", lambda *a, **k: shallow)
+    monkeypatch.setattr(pm, "_gold_m15_from_csv", lambda *a, **k: deep)
+
+    picked = pm._pick_gold_m15("XAUUSD")
+    assert pm._span_days(picked) == pm._span_days(deep)  # the deep CSV won
+
+
+def test_pick_gold_m15_prefers_store_when_deep_enough(monkeypatch):
+    import pandas as pd
+
+    import src.intelligence.publication_measures as pm
+
+    def _df(days: int):
+        n = days * 96
+        idx = pd.date_range(START, periods=n, freq="15min", tz="UTC")
+        return pd.DataFrame(
+            {"open": 2000.0, "high": 2000.6, "low": 1999.4, "close": 2000.0, "volume": 1.0},
+            index=idx,
+        )
+
+    deep_store = _df(400)
+    called = {"csv": False}
+
+    def _csv(*a, **k):
+        called["csv"] = True
+        return None
+
+    monkeypatch.setattr(pm, "_gold_m15_from_store", lambda *a, **k: deep_store)
+    monkeypatch.setattr(pm, "_gold_m15_from_csv", _csv)
+    picked = pm._pick_gold_m15("XAUUSD")
+    assert pm._span_days(picked) == pm._span_days(deep_store)
+    assert called["csv"] is False  # deep store used without touching the CSV
+
+
 def test_load_default_measures_none_when_stores_empty():
     now = START + timedelta(days=41)
     series = load_catalog()["us_cpi"].series_code

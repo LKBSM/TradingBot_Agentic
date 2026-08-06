@@ -152,6 +152,33 @@ def test_unfetched_never_confused_with_published(tmp_path):
     assert e.actual_state == "unfetched"
 
 
+def test_enricher_caches_value_fetch_within_ttl(tmp_path):
+    """NW-7b — the latest-value enrichment must NOT re-hit the source on every
+    120s refresh: that alone exhausted the BLS free 500/day key. A value fetched
+    for (source, series_code) is reused within the cache window."""
+    calls = {"n": 0}
+
+    class _Counting(ValueFetcher):
+        def fetch(self, series_code: str) -> Optional[ValuePoint]:
+            calls["n"] += 1
+            return ValuePoint(actual=2.0, previous=1.9)
+
+    svc = _svc([_pe("fut", when=NOW + timedelta(days=5))], tmp_path,
+               fetcher=MultiValueFetcher({"bls": _Counting()}))
+    svc.get_calendar(now=NOW, lookahead_minutes=30 * 1440, lookback_minutes=1440)
+    assert calls["n"] == 1                              # one live fetch (cold)
+    assert ("bls", "S1") in svc._value_point_cache
+    # A second enrichment for the SAME (source, series) within the TTL reuses the
+    # cached value — no new call, even for a different upcoming release.
+    ce = CalendarCacheEvent(
+        event_id="bls:fut2", source="bls", event="fut2", currency="USD",
+        scheduled_at=NOW + timedelta(days=6), markets=["XAUUSD"],
+        series_code="S1", value_unit="indice",
+    )
+    svc._enrich_values([ce], NOW)
+    assert calls["n"] == 1                              # served from cache
+
+
 def test_enricher_flags_revision_across_cycles(tmp_path):
     store = CalendarCacheStore(db_path=str(tmp_path / "cal.db"))
     ev = _pe("past_series", when=NOW - timedelta(days=5))

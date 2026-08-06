@@ -708,6 +708,12 @@ _CANDLES_READ_N = 60000
 _RELEASE_LOOKBACK_DAYS = 760
 # Minimum M15 bars a store read must return to be trusted over the CSV fallback.
 _MIN_STORE_CANDLES = 2000
+# A store read is only preferred over the (deep) bundled CSV when it spans at least
+# this many days — enough to hold several monthly releases + their reference days.
+# Otherwise a shallow candles.db (e.g. only weeks accumulated since deploy) would
+# be picked over a CSV holding years, and the measures would fail on too few
+# in-coverage releases. We keep whichever source spans MORE.
+_MIN_STORE_SPAN_DAYS = 200
 
 
 def _gold_m15_from_store(market: str, candles_store=None):
@@ -881,15 +887,38 @@ def load_default_measures(
     if max_releases and len(releases) > max_releases:
         releases = releases[-max_releases:]
 
-    candles = _gold_m15_from_store(market, candles_store)
-    if candles is None:
-        candles = _gold_m15_from_csv()
+    candles = _pick_gold_m15(market, candles_store)
     if candles is None:
         return None
 
     return compute_publication_measures(
         event_key, market, releases, candles, now=now
     )
+
+
+def _span_days(df) -> float:
+    """Calendar days a candle DataFrame covers (0 if empty/degenerate)."""
+    if df is None or len(df) < 2:
+        return 0.0
+    try:
+        return float((df.index[-1] - df.index[0]).total_seconds()) / 86400.0
+    except Exception:  # pragma: no cover - defensive
+        return 0.0
+
+
+def _pick_gold_m15(market: str, candles_store=None):
+    """Choose the gold M15 source with the WIDER coverage: the prod-warm candles.db
+    when it already spans enough for several monthly releases, else the (deep)
+    bundled CSV — never a shallow store over a deep CSV. None if neither exists."""
+    store_df = _gold_m15_from_store(market, candles_store)
+    if store_df is not None and _span_days(store_df) >= _MIN_STORE_SPAN_DAYS:
+        return store_df
+    csv_df = _gold_m15_from_csv()
+    if csv_df is None:
+        return store_df  # may be a shallow store, or None — best available
+    if store_df is None:
+        return csv_df
+    return store_df if _span_days(store_df) >= _span_days(csv_df) else csv_df
 
 
 __all__ = ["compute_publication_measures", "load_default_measures"]
