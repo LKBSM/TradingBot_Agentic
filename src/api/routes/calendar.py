@@ -197,7 +197,19 @@ def trigger_measures_backfill(
     return {
         "status": "started", "market": market, "timeframe": "M15",
         "months": months, "target_bars": target_bars,
-        "note": "Re-check .../measures/debug in ~1-2 min; then the questions render.",
+        "note": "Check .../measures/backfill/status for progress/errors.",
+    }
+
+
+@router.get("/publications/{event_key}/measures/backfill/status")
+def measures_backfill_status(
+    event_key: str = Path(..., description="Recurring event key, e.g. 'us_cpi'"),
+) -> Dict[str, Any]:
+    """Progress/last result of the deep backfill WITHOUT starting a new run — so a
+    failure (auth, provider error, depth) is visible instead of silent."""
+    return {
+        "running": bool(_BACKFILL_STATE["running"]),
+        "last_result": _BACKFILL_STATE["last_result"],
     }
 
 
