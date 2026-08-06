@@ -366,3 +366,118 @@
   font-size: 11px; color: var(--faint); margin-top: 11px;
 }
 .illus::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--lp-amb); }
+
+/* ============ §3 M.I.A SECTION (LP-2) ============ */
+.miaHero {
+  position: relative; border: 1px solid var(--line-2); border-radius: 20px;
+  background: var(--lp-card2); padding: 30px; overflow: hidden; margin-bottom: 30px;
+}
+.miaGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 34px; align-items: center; }
+@media (max-width: 900px) { .miaGrid { grid-template-columns: 1fr; gap: 24px; } .miaHero { padding: 22px; } }
+.miaBadge { display: inline-flex; align-items: center; gap: 11px; margin-bottom: 16px; }
+.miaAvatar {
+  position: relative; width: 36px; height: 36px; border-radius: 11px; flex-shrink: 0;
+  background: var(--acc-dim); color: var(--lp-acc); display: grid; place-items: center;
+}
+.miaOnline {
+  position: absolute; right: -2px; bottom: -2px; width: 10px; height: 10px; border-radius: 50%;
+  background: var(--lp-pos); border: 2px solid var(--lp-card2);
+}
+.miaName { font-weight: 600; font-size: 14.5px; }
+.miaSub { font-size: 11.5px; color: var(--faint); }
+.miaH3 { font-size: 25px; font-weight: 600; letter-spacing: -0.03em; line-height: 1.15; margin-bottom: 14px; }
+.miaP { font-size: 15.5px; color: var(--dim); line-height: 1.68; margin-bottom: 16px; }
+.miaP b { color: var(--txt); font-weight: 600; }
+.qlist { display: flex; flex-wrap: wrap; gap: 8px; }
+.ql {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; padding: 8px 12px;
+  border-radius: 20px; border: 1px solid var(--line-2); background: var(--lp-card); color: var(--dim);
+}
+.qlArrow { color: var(--lp-acc); font-size: 11px; }
+@media (max-width: 900px) { .miaH3 { font-size: 21px; } }
+
+.capgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.cap { border: 1px solid var(--line); border-radius: 14px; background: var(--lp-card); padding: 20px 18px; }
+.capIc { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 9px; margin-bottom: 12px; }
+.cap h4 { font-size: 15px; font-weight: 700; margin-bottom: 7px; }
+.cap p { font-size: 13px; color: var(--dim); line-height: 1.6; }
+.cap p b { color: var(--txt); font-weight: 600; }
+@media (max-width: 900px) { .capgrid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 520px) { .capgrid { grid-template-columns: 1fr; } }
+
+/* ============ §5 READING-SPACE CAROUSEL (LP-2) ============ */
+/* min-width:0 lets the carousel shrink below its 500%-wide track inside the
+   feature grid/flex cell; without it the grid item's auto min-width equals the
+   track's max-content and the page overflows horizontally (mobile browsers then
+   zoom out). overflow:hidden on the viewport clips the off-screen slides. */
+.car { position: relative; min-width: 0; }
+.car:focus-visible { outline: 2px solid var(--lp-acc); outline-offset: 4px; border-radius: 16px; }
+.carViewport { overflow: hidden; border-radius: 15px; max-width: 100%; }
+.carTrack { display: flex; transition: transform 0.42s cubic-bezier(0.4, 0, 0.2, 1); }
+@media (prefers-reduced-motion: reduce) { .carTrack { transition: none; } }
+/* Track is (SLIDE_COUNT × 100%) wide; each slide is one viewport = 1/SLIDE_COUNT
+   of the track (20% for 5 slides). The component advances translateX by
+   100%/SLIDE_COUNT per panel, so the visible slide always matches the counter. */
+.carSlide { width: 20%; flex-shrink: 0; }
+.carNav { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+.carDots { display: flex; gap: 7px; }
+.carDot {
+  width: 9px; height: 9px; border-radius: 50%; padding: 0; border: none; cursor: pointer;
+  background: var(--line-2); transition: 0.15s;
+}
+.carDot:hover { background: var(--faint); }
+.carDotOn { background: var(--lp-acc); }
+.carDot:focus-visible { outline: 2px solid var(--lp-acc); outline-offset: 2px; }
+.carLabel { font-family: var(--font-mono); font-size: 11.5px; color: var(--dim); }
+.carLabel b { color: var(--txt); }
+.carBtns { display: flex; gap: 6px; }
+.carBtn {
+  width: 36px; height: 36px; border-radius: 9px; border: 1px solid var(--line-2); background: transparent;
+  color: var(--dim); display: grid; place-items: center; cursor: pointer; transition: 0.15s;
+}
+.carBtn:hover { border-color: var(--lp-acc); color: var(--lp-acc); }
+.carBtn:focus-visible { outline: 2px solid var(--lp-acc); outline-offset: 2px; }
+.carHint { font-family: var(--font-mono); font-size: 11px; color: var(--faint); margin-top: 16px; }
+
+/* carousel slide primitives */
+.lyr { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.lyb {
+  display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 10px;
+  padding: 3px 8px; border-radius: 6px; border: 1px solid var(--line); color: var(--dim);
+}
+.lybOff { opacity: 0.4; }
+.mz { position: absolute; border-radius: 2px; pointer-events: none; }
+.rg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.rgc { border: 1px solid var(--line); border-radius: 9px; padding: 9px 10px; background: var(--lp-card); }
+.rgk { font-family: var(--font-mono); font-size: 8.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); }
+.rgv { font-size: 13.5px; font-weight: 600; margin-top: 3px; }
+.rgn { font-size: 9.5px; color: var(--faint); margin-top: 2px; }
+@media (max-width: 520px) { .rg { grid-template-columns: repeat(2, 1fr); } }
+.jr {
+  display: flex; align-items: center; gap: 10px; padding: 9px 11px; border: 1px solid var(--line);
+  border-radius: 8px; background: var(--lp-card); font-size: 12px; color: var(--dim);
+}
+.jb { font-family: var(--font-mono); font-size: 9.5px; padding: 2px 7px; border-radius: 5px; flex-shrink: 0; }
+.jr .tm { margin-left: auto; font-family: var(--font-mono); font-size: 9.5px; color: var(--faint); white-space: nowrap; }
+.tfs { display: flex; gap: 6px; margin-bottom: 13px; flex-wrap: wrap; }
+.tfb {
+  font-family: var(--font-mono); font-size: 11px; padding: 6px 12px; border-radius: 7px;
+  border: 1px solid var(--line-2); color: var(--faint);
+}
+.tfbOn { border-color: var(--lp-acc); background: var(--acc-dim); color: var(--lp-acc); }
+
+/* enriched WHO cards (LP-2) */
+.wcLb {
+  display: inline-block; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.13em;
+  text-transform: uppercase; color: var(--lp-acc); margin-bottom: 10px;
+}
+.wcList { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+.wcList li { position: relative; padding-left: 15px; font-size: 12.5px; color: var(--dim); line-height: 1.5; }
+.wcList li::before { content: ''; position: absolute; left: 3px; top: 8px; width: 5px; height: 5px; border-radius: 50%; background: var(--lp-acc); }
+
+/* hero ambition line (LP-2) */
+.roadmap {
+  font-family: var(--font-mono); font-size: 12px; color: var(--faint); margin-top: 20px;
+  line-height: 1.6;
+}
+.roadmap b { color: var(--dim); font-weight: 600; }

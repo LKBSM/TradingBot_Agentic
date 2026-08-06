@@ -48,12 +48,13 @@ afterEach(() => {
 });
 
 describe('Nav — marketing landing', () => {
-  it('shows the marketing section anchors', () => {
+  it('shows the LP-2 marketing section anchors (M.I.A · Démo · Outils · Tarifs · FAQ)', () => {
     hoisted.pathname = '/';
     render(<Nav />);
     const nav = screen.getByRole('navigation', { name: /sections du site/i });
+    expect(within(nav).getByText('M.I.A')).toBeInTheDocument();
     expect(within(nav).getByText('Démo')).toBeInTheDocument();
-    expect(within(nav).getByText('Honnêteté')).toBeInTheDocument();
+    expect(within(nav).getByText('Outils')).toBeInTheDocument();
     expect(within(nav).getByText('Tarifs')).toBeInTheDocument();
     expect(within(nav).getByText('FAQ')).toBeInTheDocument();
   });
@@ -64,6 +65,21 @@ describe('Nav — marketing landing', () => {
     await waitFor(() =>
       expect(screen.getByRole('link', { name: /connexion/i })).toBeInTheDocument(),
     );
+  });
+
+  it('hides App/Zones/Scanner from a logged-out visitor, offers "Essayer gratuitement"', async () => {
+    // LP-2: product links are gated behind auth — a visitor has no access, so
+    // surfacing them is pure frustration. They must be absent; the primary CTA
+    // is "Essayer gratuitement".
+    hoisted.pathname = '/';
+    render(<Nav />);
+    await waitFor(() =>
+      expect(screen.getByRole('link', { name: /connexion/i })).toBeInTheDocument(),
+    );
+    expect(screen.queryByRole('link', { name: /^Zones$/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /^Scanner$/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /^App$/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /essayer gratuitement/i })).toBeInTheDocument();
   });
 });
 

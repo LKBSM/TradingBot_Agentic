@@ -1,37 +1,40 @@
 {
   "home": {
     "hero": {
-      "pill": "2 markets · 6 timeframes · analysed on every candle close",
+      "pill": "Early access · gold and the euro today",
       "h1a": "The market already wrote it all.",
       "h1b": "MIA reads it to you.",
-      "lead": "Order Blocks, Fair Value Gaps, structure breaks, liquidity pockets — detected on gold and the euro, across 6 timeframes, and described in plain language. Stop drawing everything by hand and get to the work that matters.",
+      "lead": "Order Blocks, Fair Value Gaps, structure breaks, liquidity pockets — detected automatically and described in plain language. Plus an assistant that answers when you don't understand.",
       "ctaPrimary": "Try it free",
       "ctaSecondary": "See the tools",
-      "micro": "No credit card · Free tier forever"
+      "micro": "No credit card · Free tier forever",
+      "roadmap": "Early access · <b>2 markets today, 50 to 80 planned at launch</b>"
     },
     "stats": {
       "markets": "markets tracked",
       "combinations": "combinations analysed",
       "conditions": "search conditions",
-      "timeframes": "timeframes"
+      "timeframes": "timeframes",
+      "structures": "structures detected"
     },
     "tools": {
-      "eyebrow": "Five tools, one engine",
+      "eyebrow": "Five tools, one product",
       "title": "Everything you need to read a structure",
       "subtitle": "Each tool answers a question you already ask yourself. The difference is how long it takes you to get the answer.",
       "app": {
         "tag": "The reading space",
-        "h3": "Open a chart — the reading is already done",
-        "p": "The engine has marked the zones, dated the breaks, placed the liquidity. Below it, a paragraph tells you where the market stands — <b>not what it will do, what it has done</b>. You understand the situation in ten seconds instead of twenty minutes of drawing.",
-        "b1": "<b>Order Blocks and Fair Value Gaps</b> bounded, with their direction and state",
-        "b2": "<b>BOS and CHOCH</b> timestamped, with the exact break level",
-        "b3": "<b>Liquidity pockets</b> intact, swept or broken — three distinct states",
-        "b4": "<b>Regime panel</b>: ten tiles — trend, volatility, position, alignment, maturity, density, session…",
+        "h3": "Far more than an annotated chart",
+        "p": "Zones are bounded, breaks are dated, liquidity is positioned. Below, a paragraph describes the situation. Beside it, the market regime, the event journal, and M.I.A. <b>Everything you need on one screen.</b>",
+        "b1": "<b>Layered chart</b> — each structure family shows or hides",
+        "b2": "<b>Narrated reading</b> composed from detected facts, never a fixed text",
+        "b3": "<b>Regime panel</b> — trend, volatility, position, agreement across timeframes",
+        "b4": "<b>Event journal</b> — every break time-stamped, clickable on the chart",
         "visTitle": "Gold · XAU/USD · 15 minutes",
         "lblLiq": "Liquidity intact",
         "lblOb": "OB · untested",
         "lblChoch": "CHOCH ↑",
-        "narr": "Price is <b>currently inside a bullish Order Block</b> formed 14 candles ago, between 4,026.80 and 4,028.90, and this zone <b>has never been tested</b>. A sell-side liquidity pocket <b>was swept</b> 17 candles ago. The 1h agrees."
+        "narr": "Price is <b>currently inside a bullish Order Block</b> formed 14 candles ago, between 4,026.80 and 4,028.90, and this zone <b>has never been tested</b>. A sell-side liquidity pocket <b>was swept</b> 17 candles ago. The 1h agrees.",
+        "b5": "<b>Six timeframes</b> — from the minute to the day, the reading follows"
       },
       "scanner": {
         "tag": "The scanner",
@@ -79,10 +82,10 @@
       "news": {
         "tag": "The news",
         "h3": "Know when the market will move — and what happened the times before",
-        "p": "A calendar of economic releases, attached to the markets they concern. And for each one, <b>what the engine actually measured at previous releases</b>: the calm before, the agitation after, the lifespan of the zones created that day.",
+        "p": "A calendar of economic releases, tied to the markets they affect. And for each one, <b>what was actually measured at previous releases</b>: the calm before, the turbulence after, the lifespan of the zones created that day.",
         "b1": "<b>Monthly calendar</b> with local time and the issuing body's time",
         "b2": "<b>The last twelve published figures</b> of each indicator, as published",
-        "b3": "<b>Engine measures</b> at past releases — counts, not forecasts",
+        "b3": "<b>Measurements recorded</b> at past releases — counts, not forecasts",
         "b4": "<b>Official sources only</b>: BLS, BEA, Census, Federal Reserve, Eurostat, ECB",
         "visTitle": "Consumer Price Index · 12 August",
         "q1": {
@@ -106,9 +109,9 @@
       "mia": {
         "tag": "M.I.A Agent",
         "h3": "An SMC mentor that never sleeps",
-        "p": "Don't get why that candle is an Order Block? Ask her. She <b>teaches the concepts and describes what the engine detected</b> — and she can drive your chart: hide a layer, isolate a zone, change the timeframe.",
+        "p": "Don't understand why this candle is an Order Block? Ask her. She <b>teaches the concepts and describes what was detected</b> — and she can drive your chart: hide a layer, isolate a zone, switch timeframe.",
         "b1": "<b>Explains every SMC concept</b> with the example in front of you",
-        "b2": "<b>Anchored to the engine</b>: she only cites levels that were actually detected",
+        "b2": "<b>Anchored to real data</b>: she only cites levels that were actually detected",
         "b3": "<b>Controls the display</b>: « show me only the untested OBs »",
         "b4": "<b>On the chart and the publications</b> — never a word of prediction",
         "visTitle": "M.I.A Agent",
@@ -133,9 +136,9 @@
       "illus": "Illustration data",
       "tabs": {
         "structure": "Read a structure",
-        "scanner": "Search a market",
+        "scanner": "Define a strategy",
         "zones": "Track a zone",
-        "mia": "Ask a question",
+        "mia": "Talk to M.I.A",
         "calcul": "Open the calculation"
       },
       "structure": {
@@ -157,7 +160,7 @@
         },
         "side": {
           "title": "The reading updates itself",
-          "desc": "Untick a layer: <b>the paragraph rewrites itself</b> to describe only what stays on screen. The narration is never a fixed text — it is composed from what the engine actually detected.",
+          "desc": "Untick a layer: <b>the paragraph rewrites itself</b> to describe only what stays visible. The narration is never a fixed text — it is composed from what was detected.",
           "try": "Try it",
           "onlyOb": "Keep only the Order Blocks",
           "onlyLiq": "Keep only the liquidity",
@@ -240,7 +243,7 @@
         "greeting": "Pick a question on the right to see me answer.",
         "side": {
           "title": "Ask her a real question",
-          "desc": "M.I.A explains the concepts, describes what the engine detected and drives the display. <b>She refuses anything that amounts to prediction</b> — click the last option to see.",
+          "desc": "M.I.A explains concepts, describes what was detected and drives the display. <b>She refuses anything that amounts to a prediction</b> — click the last option to see.",
           "try": "Pick a question"
         },
         "q": {
@@ -279,7 +282,7 @@
         "notSay": "volatility measures the size of moves, not their direction. It does not say whether price will go up or down.",
         "side": {
           "title": "Every figure is verifiable",
-          "desc": "A Regime-panel tile does not stop at a verdict. <b>Open the calculation</b> and you see the numbers that produced it — and what the measure does not say. When the engine doesn't know, the screen tells you.",
+          "desc": "A Regime tile doesn't stop at a verdict. <b>Open the calculation</b> and you see the numbers that produced it — and what the measure does not say. When the analysis doesn't know, the screen tells you.",
           "try": "Try it",
           "toggle": "Open the calculation",
           "hide": "Hide the calculation"
@@ -292,7 +295,7 @@
       "subtitle": "No install, no script to copy, no indicator to tune. You open it and it's ready.",
       "step1": {
         "h": "Choose your market",
-        "p": "Gold or the euro, across 6 timeframes. The engine has already analysed the 12 combinations and keeps the result up to date on every candle close."
+        "p": "Gold or the euro, on 6 timeframes. All 12 combinations are already analysed continuously, and the result stays up to date at every candle close."
       },
       "step2": {
         "h": "Read the structure",
@@ -309,22 +312,40 @@
       "subtitle": "If you draw your Order Blocks by hand every morning, you're exactly the person this product exists for.",
       "w1": {
         "h": "You're learning SMC",
-        "p": "Seeing the structure marked correctly, with an agent that explains each element when you ask, replaces dozens of hours of videos."
+        "p": "Seeing the structure marked correctly, with an agent that explains each element when you ask, replaces dozens of hours of videos.",
+        "lb": "Learn",
+        "items": {
+          "0": "Every concept explained on your market, not in theory",
+          "1": "The detection rules are published — you can check them",
+          "2": "You learn by watching, not by memorising"
+        }
       },
       "w2": {
         "h": "You draw by hand",
-        "p": "You spend time every day marking your zones. MIA does it on gold and the euro, continuously, with the lifecycle as a bonus."
+        "p": "You spend time every day marking your zones. MIA does it on gold and the euro, continuously, with the lifecycle as a bonus.",
+        "lb": "Consistency",
+        "items": {
+          "0": "The same rules applied the same way, always",
+          "1": "The full life cycle of each zone, kept",
+          "2": "Nothing forgotten on a tired morning"
+        }
       },
       "w3": {
         "h": "You follow several timeframes",
-        "p": "You know what you're looking for but you can't watch everything. The scanner watches your 12 combinations on every close, without you clicking."
+        "p": "You know what you're looking for but you can't watch everything. The scanner watches your 12 combinations on every close, without you clicking.",
+        "lb": "Breadth",
+        "items": {
+          "0": "Your conditions checked everywhere at every close",
+          "1": "The unfavourable context shown, not only what confirms",
+          "2": "A calendar of official, verifiable sources"
+        }
       }
     },
     "distinguish": {
       "eyebrow": "What sets us apart",
       "h2": "MIA will never tell you where price is going",
       "p1": "Not because she can't — because <b>nobody knows</b>. The trading-tools market is full of products selling predictions with unverifiable success rates. MIA does something else: it describes what is there, now, and stops there.",
-      "p2": "In practice, the unfavourable context is shown on equal footing with the favourable one, results are never sorted by « quality », and when the engine doesn't know, the screen tells you instead of guessing. <b>You keep the decision. We give you the reading.</b>"
+      "p2": "Concretely, the unfavourable context is shown on equal footing with the favourable, results are never ranked by « quality », and when the analysis doesn't know, the screen tells you instead of guessing. <b>You keep the decision. We give you the reading.</b>"
     },
     "pricing": {
       "eyebrow": "Pricing",
@@ -350,7 +371,7 @@
         "f1": "<b>Both markets</b>, 6 timeframes",
         "f2": "Scanner across the 12 combinations",
         "f3": "Zones page and full lifecycle",
-        "f4": "Engine measures at publications",
+        "f4": "Measurements recorded at releases",
         "f5": "M.I.A Agent unlimited",
         "f6": "Unlimited saved readings",
         "cta": "Get started",
@@ -380,9 +401,210 @@
     },
     "final": {
       "h2": "Stop drawing. Start reading.",
-      "p": "Create a free account and see what the engine sees on your favourite market. No credit card, no time limit.",
+      "p": "Create a free account and see what MIA sees on your favourite market. No credit card, no time limit.",
       "cta1": "Create a free account",
       "cta2": "Review the tools"
+    },
+    "miaSection": {
+      "eyebrow": "What exists nowhere else",
+      "title": "An assistant that explains the market to you",
+      "subtitle": "Most trading tools display. MIA explains. You can talk to her like someone with the chart in front of them.",
+      "badgeName": "M.I.A Agent",
+      "badgeSub": "available on every surface",
+      "chatHeader": "M.I.A Agent · Gold 15 min",
+      "h3": "Ask the question you'd hesitate to ask in a group",
+      "p": "Don't understand why this candle is an Order Block? Want to know what happened on gold yesterday? Don't know what « mitigation » means? <b>Ask her.</b> She answers with the real levels and real timestamps of the market you're looking at.",
+      "questions": {
+        "0": "Explain this CHOCH to me",
+        "1": "What's the difference between BOS and CHOCH?",
+        "2": "How many times has this zone been tested?",
+        "3": "Show me only the untested OBs",
+        "4": "Where is the nearest liquidity?",
+        "5": "What is a Fair Value Gap?"
+      },
+      "chat": {
+        "u1": "why is this candle an order block?",
+        "a1": "It's the last bearish candle before the move that broke structure. It formed <b>at 12:30</b>, just before the bullish BOS at 14:15 at 4,025.10. Its zone spans <b>4,026.80 to 4,028.90</b>.",
+        "u2": "has it been tested?",
+        "a2": "No. <b>Never since it formed.</b> Price entered it 30 minutes ago — that's its first contact.",
+        "u3": "do you think it'll bounce?",
+        "a3": "<b>I won't answer that.</b> I don't predict price moves and I won't tell you when to buy or sell. I can describe the state of the zone or explain the concept."
+      },
+      "caps": {
+        "c1": {
+          "h": "She teaches SMC",
+          "p": "Every concept — Order Block, Fair Value Gap, BOS, CHOCH, mitigation, liquidity — explained <b>with the example in front of you</b>, on your market, not in a theory course."
+        },
+        "c2": {
+          "h": "She describes what's there",
+          "p": "Exact levels, timestamps, number of tests, the state of each liquidity pocket. <b>Only detected facts</b> — an invented reference is rejected by the code, never let through."
+        },
+        "c3": {
+          "h": "She drives your display",
+          "p": "« Hide the FVGs », « isolate this zone », « switch to 4h ». You speak, <b>the chart changes</b>. No more hunting for the right button."
+        },
+        "c4": {
+          "h": "She refuses to guess",
+          "p": "No prediction, no call to act, no advice. <b>It's a descriptive tool</b>, and she'll tell you so herself if you ask where price is going."
+        }
+      }
+    },
+    "carousel": {
+      "hint": "↔ Scroll to see the other parts of the space",
+      "illus": "Illustration data",
+      "regionAria": "Reading space — carousel",
+      "prevAria": "Previous panel",
+      "nextAria": "Next panel",
+      "dotAria": "Go to panel {n}",
+      "names": {
+        "0": "Chart",
+        "1": "Narrated reading",
+        "2": "Market regime",
+        "3": "Event journal",
+        "4": "Timeframes"
+      },
+      "chart": {
+        "title": "Chart · Gold 15 min",
+        "layers": {
+          "0": "OB",
+          "1": "FVG",
+          "2": "Liquidity",
+          "3": "BOS/CHOCH",
+          "4": "Mitigated"
+        },
+        "obLabel": "OB · untested",
+        "liqLabel": "Buy-side liquidity · intact",
+        "chochLabel": "↑ CHOCH",
+        "bosLabel": "↑ BOS · 4,025.10",
+        "localTime": "Local time · UTC−4"
+      },
+      "narrated": {
+        "title": "Narrated reading · Gold 15 min",
+        "freshness": "Candle closed 4 min ago",
+        "body": "Price is <b>currently inside a bullish Order Block</b> formed 3h 30 ago, between 4,026.80 and 4,028.90, and this zone <b>has never been tested</b> since it formed. A <b>bullish CHOCH confirmed</b> at 4,021.45, followed by a <b>bullish BOS</b> at 4,025.10. A <b>sell-side liquidity pocket was swept</b> below 4,011.40: the wick went under and the candle closed above. A <b>buy-side liquidity pocket remains intact</b> at 4,034.20, i.e. 0.18% above price. The <b>1h agrees</b>; the 4h is in a bearish trend.",
+        "foot": "Recomposed at every close, never a fixed text"
+      },
+      "regime": {
+        "title": "Market regime · Gold 15 min",
+        "tiles": {
+          "0": {
+            "k": "Trend",
+            "v": "Bullish",
+            "n": "since 14:15"
+          },
+          "1": {
+            "k": "Volatility",
+            "v": "Expanded",
+            "n": "7 vs 20 candles"
+          },
+          "2": {
+            "k": "Position in range",
+            "v": "Top third",
+            "n": "4,012 – 4,037"
+          },
+          "3": {
+            "k": "Alignment",
+            "v": "1h agrees",
+            "n": "4h opposed"
+          },
+          "4": {
+            "k": "Maturity",
+            "v": "9 candles",
+            "n": "since the BOS"
+          },
+          "5": {
+            "k": "Density",
+            "v": "8 OB · 12 FVG",
+            "n": "over the window"
+          },
+          "6": {
+            "k": "Last event",
+            "v": "BOS ↑",
+            "n": "at 14:15"
+          },
+          "7": {
+            "k": "Session",
+            "v": "New York",
+            "n": "open"
+          },
+          "8": {
+            "k": "Reference levels",
+            "v": "PDH · PDL",
+            "n": "prior day"
+          }
+        },
+        "foot": "Each tile explains its method on click"
+      },
+      "journal": {
+        "title": "Event journal · Gold 15 min",
+        "rows": {
+          "0": {
+            "kind": "bos",
+            "badge": "BOS ↑",
+            "text": "Bullish break of structure",
+            "time": "14:15"
+          },
+          "1": {
+            "kind": "pocket",
+            "badge": "POCKET",
+            "text": "Sell-side liquidity swept",
+            "time": "13:30"
+          },
+          "2": {
+            "kind": "choch",
+            "badge": "CHOCH ↑",
+            "text": "Change of character confirmed",
+            "time": "12:45"
+          },
+          "3": {
+            "kind": "ob",
+            "badge": "OB ↑",
+            "text": "Order Block formed · 4,026.80–4,028.90",
+            "time": "12:30"
+          },
+          "4": {
+            "kind": "fvg",
+            "badge": "FVG ↓",
+            "text": "Fair Value Gap filled 60%",
+            "time": "11:00"
+          }
+        },
+        "foot": "Click an event and the chart moves to it"
+      },
+      "timeframes": {
+        "title": "Timeframes · Gold",
+        "chips": {
+          "0": "M5",
+          "1": "M15",
+          "2": "H1",
+          "3": "H4",
+          "4": "D1"
+        },
+        "activeChip": "M15",
+        "rows": {
+          "0": {
+            "tf": "M15",
+            "text": "Bullish · expansion",
+            "note": "current reading"
+          },
+          "1": {
+            "tf": "H1",
+            "text": "Bullish · trend",
+            "note": "agrees"
+          },
+          "2": {
+            "tf": "H4",
+            "text": "Bearish · range",
+            "note": "opposed"
+          },
+          "3": {
+            "tf": "D1",
+            "text": "Indeterminate",
+            "note": "no established structure"
+          }
+        },
+        "foot": "Each timeframe has its own reading, re-evaluated at its close"
+      }
     }
   },
   "regimePanel": {
@@ -621,7 +843,12 @@
     "account": "Settings",
     "login": "Sign in",
     "language": "Language",
-    "calendar": "News"
+    "calendar": "News",
+    "mia": "M.I.A",
+    "tools": "Tools",
+    "tryFree": "Try for free",
+    "appLink": "App",
+    "methodology": "Methodology & glossary"
   },
   "landing": {
     "hero": {
@@ -938,10 +1165,22 @@
       "rescan": "Rescan"
     },
     "family": {
-      "structure": { "title": "Structure", "desc": "trend, breaks, events" },
-      "zones": { "title": "Zones", "desc": "Order Blocks, Fair Value Gaps" },
-      "liquidity": { "title": "Liquidity", "desc": "pockets, sweeps, equal highs/lows" },
-      "context": { "title": "Context", "desc": "phase, volatility, range, session" }
+      "structure": {
+        "title": "Structure",
+        "desc": "trend, breaks, events"
+      },
+      "zones": {
+        "title": "Zones",
+        "desc": "Order Blocks, Fair Value Gaps"
+      },
+      "liquidity": {
+        "title": "Liquidity",
+        "desc": "pockets, sweeps, equal highs/lows"
+      },
+      "context": {
+        "title": "Context",
+        "desc": "phase, volatility, range, session"
+      }
     },
     "recap": {
       "title": "Your reading, in one sentence",
@@ -986,17 +1225,64 @@
       "bars": "{n} candles",
       "pct": "{n}%",
       "touches": "{n} times",
-      "direction": { "any": "Any direction", "bullish": "Bullish", "bearish": "Bearish" },
-      "trend": { "bullish": "Bullish", "bearish": "Bearish", "indeterminate": "Indeterminate" },
-      "phase": { "accumulation": "Accumulation", "trend": "Trend", "ranging": "Range", "expansion": "Expansion" },
-      "volatility": { "low": "Contracted", "normal": "Normal", "elevated": "Extended" },
-      "side": { "any": "Both", "bsl": "BSL (above)", "ssl": "SSL (below)" },
-      "zone_kind": { "any": "OB or FVG", "ob": "Order Block", "fvg": "Fair Value Gap" },
-      "event": { "bos_up": "BOS ↑", "bos_down": "BOS ↓", "choch_up": "CHOCH ↑", "choch_down": "CHOCH ↓" },
-      "age_bucket": { "lt10": "Under 10", "10to50": "10 to 50", "gt50": "Over 50" },
-      "third": { "bottom": "Lower", "middle": "Middle", "top": "Upper" },
-      "eq_kind": { "any": "Lows or highs", "highs": "Highs", "lows": "Lows" },
-      "session": { "asia": "Asia", "london": "London", "new_york": "New York", "overlap": "Overlap" }
+      "direction": {
+        "any": "Any direction",
+        "bullish": "Bullish",
+        "bearish": "Bearish"
+      },
+      "trend": {
+        "bullish": "Bullish",
+        "bearish": "Bearish",
+        "indeterminate": "Indeterminate"
+      },
+      "phase": {
+        "accumulation": "Accumulation",
+        "trend": "Trend",
+        "ranging": "Range",
+        "expansion": "Expansion"
+      },
+      "volatility": {
+        "low": "Contracted",
+        "normal": "Normal",
+        "elevated": "Extended"
+      },
+      "side": {
+        "any": "Both",
+        "bsl": "BSL (above)",
+        "ssl": "SSL (below)"
+      },
+      "zone_kind": {
+        "any": "OB or FVG",
+        "ob": "Order Block",
+        "fvg": "Fair Value Gap"
+      },
+      "event": {
+        "bos_up": "BOS ↑",
+        "bos_down": "BOS ↓",
+        "choch_up": "CHOCH ↑",
+        "choch_down": "CHOCH ↓"
+      },
+      "age_bucket": {
+        "lt10": "Under 10",
+        "10to50": "10 to 50",
+        "gt50": "Over 50"
+      },
+      "third": {
+        "bottom": "Lower",
+        "middle": "Middle",
+        "top": "Upper"
+      },
+      "eq_kind": {
+        "any": "Lows or highs",
+        "highs": "Highs",
+        "lows": "Lows"
+      },
+      "session": {
+        "asia": "Asia",
+        "london": "London",
+        "new_york": "New York",
+        "overlap": "Overlap"
+      }
     },
     "bias": {
       "bullish": "Bullish",

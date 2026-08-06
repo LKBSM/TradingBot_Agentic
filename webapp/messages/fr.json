@@ -1,37 +1,40 @@
 {
   "home": {
     "hero": {
-      "pill": "2 marchés · 6 unités de temps · analysés à chaque clôture",
+      "pill": "Accès anticipé · l'or et l'euro aujourd'hui",
       "h1a": "Le marché a déjà tout écrit.",
       "h1b": "MIA te le lit.",
-      "lead": "Order Blocks, Fair Value Gaps, cassures de structure, poches de liquidité — détectés sur l'or et l'euro, à travers 6 unités de temps, et décrits en langage clair. Tu arrêtes de tout tracer à la main et tu passes au travail qui compte.",
+      "lead": "Order Blocks, Fair Value Gaps, cassures de structure, poches de liquidité — détectés automatiquement et décrits en langage clair. Et un assistant qui répond quand tu ne comprends pas.",
       "ctaPrimary": "Essayer gratuitement",
       "ctaSecondary": "Voir les outils",
-      "micro": "Sans carte de crédit · Accès gratuit permanent"
+      "micro": "Sans carte de crédit · Accès gratuit permanent",
+      "roadmap": "Accès anticipé · <b>2 marchés aujourd'hui, 50 à 80 prévus au lancement</b>"
     },
     "stats": {
       "markets": "marchés suivis",
       "combinations": "combinaisons analysées",
       "conditions": "conditions de recherche",
-      "timeframes": "unités de temps"
+      "timeframes": "unités de temps",
+      "structures": "structures détectées"
     },
     "tools": {
-      "eyebrow": "Cinq outils, un même moteur",
+      "eyebrow": "Cinq outils, un même produit",
       "title": "Tout ce dont tu as besoin pour lire une structure",
       "subtitle": "Chaque outil répond à une question que tu te poses déjà. La différence, c'est le temps que tu mets à obtenir la réponse.",
       "app": {
         "tag": "L'espace de lecture",
-        "h3": "Ouvre un graphique, la lecture est déjà faite",
-        "p": "Le moteur a marqué les zones, daté les cassures, positionné la liquidité. En dessous, un paragraphe te dit où en est le marché — <b>pas ce qu'il va faire, ce qu'il a fait</b>. Tu comprends la situation en dix secondes au lieu de vingt minutes de traçage.",
-        "b1": "<b>Order Blocks et Fair Value Gaps</b> bornés, avec leur direction et leur état",
-        "b2": "<b>BOS et CHOCH</b> horodatés, avec le niveau exact de la cassure",
-        "b3": "<b>Poches de liquidité</b> intactes, balayées ou cassées — trois états distincts",
-        "b4": "<b>Panneau de régime</b> : dix tuiles — tendance, volatilité, position, alignement, maturité, densité, session…",
+        "h3": "Bien plus qu'un graphique annoté",
+        "p": "Les zones sont bornées, les cassures datées, la liquidité positionnée. En dessous, un paragraphe décrit la situation. À côté, le régime du marché, le journal des événements, et M.I.A. <b>Tout ce qu'il te faut sur un seul écran.</b>",
+        "b1": "<b>Graphique à couches</b> — chaque famille de structure s'affiche ou se masque",
+        "b2": "<b>Lecture narrée</b> composée à partir des faits détectés, jamais d'un texte figé",
+        "b3": "<b>Panneau de régime</b> — tendance, volatilité, position, accord entre unités",
+        "b4": "<b>Journal des événements</b> — chaque cassure horodatée, cliquable sur le graphique",
         "visTitle": "Or · XAU/USD · 15 minutes",
         "lblLiq": "Liquidité intacte",
         "lblOb": "OB · non testé",
         "lblChoch": "CHOCH ↑",
-        "narr": "Le prix est <b>actuellement dans un Order Block haussier</b> formé il y a 14 bougies, entre 4 026,80 et 4 028,90, et cette zone <b>n'a jamais été testée</b>. Une poche de liquidité vente <b>a été balayée</b> il y a 17 bougies. Le 1 h va dans le même sens."
+        "narr": "Le prix est <b>actuellement dans un Order Block haussier</b> formé il y a 14 bougies, entre 4 026,80 et 4 028,90, et cette zone <b>n'a jamais été testée</b>. Une poche de liquidité vente <b>a été balayée</b> il y a 17 bougies. Le 1 h va dans le même sens.",
+        "b5": "<b>Six unités de temps</b> — de la minute au jour, la lecture suit"
       },
       "scanner": {
         "tag": "Le scanner",
@@ -79,10 +82,10 @@
       "news": {
         "tag": "Les actualités",
         "h3": "Sache quand le marché va bouger — et ce qui s'est passé les fois d'avant",
-        "p": "Un calendrier des publications économiques, rattachées aux marchés qu'elles concernent. Et pour chacune, <b>ce que le moteur a réellement mesuré aux parutions précédentes</b> : le calme qui précède, l'agitation qui suit, la durée de vie des zones créées ce jour-là.",
+        "p": "Un calendrier des publications économiques, rattachées aux marchés qu'elles concernent. Et pour chacune, <b>ce qui a réellement été mesuré aux parutions précédentes</b> : le calme qui précède, l'agitation qui suit, la durée de vie des zones créées ce jour-là.",
         "b1": "<b>Calendrier mensuel</b> avec heure locale et heure de l'organisme",
         "b2": "<b>Les douze derniers chiffres publiés</b> de chaque indicateur, tels que publiés",
-        "b3": "<b>Mesures du moteur</b> aux parutions passées — des décomptes, pas des prévisions",
+        "b3": "<b>Mesures relevées</b> aux parutions passées — des décomptes, pas des prévisions",
         "b4": "<b>Sources officielles uniquement</b> : BLS, BEA, Census, Réserve fédérale, Eurostat, BCE",
         "visTitle": "Indice des prix à la consommation · 12 août",
         "q1": {
@@ -106,9 +109,9 @@
       "mia": {
         "tag": "M.I.A Agent",
         "h3": "Un mentor SMC qui ne dort jamais",
-        "p": "Tu ne comprends pas pourquoi cette bougie est un Order Block ? Demande-lui. Elle <b>enseigne les concepts et décrit ce que le moteur a détecté</b> — et elle peut piloter ton graphique : masquer une couche, isoler une zone, changer d'unité de temps.",
+        "p": "Tu ne comprends pas pourquoi cette bougie est un Order Block ? Demande-lui. Elle <b>enseigne les concepts et décrit ce qui a été détecté</b> — et elle peut piloter ton graphique : masquer une couche, isoler une zone, changer d'unité de temps.",
         "b1": "<b>Explique chaque concept SMC</b> avec l'exemple sous les yeux",
-        "b2": "<b>Ancrée au moteur</b> : elle ne cite que des niveaux réellement détectés",
+        "b2": "<b>Ancrée aux données réelles</b> : elle ne cite que des niveaux réellement détectés",
         "b3": "<b>Contrôle l'affichage</b> : « montre-moi seulement les OB non testés »",
         "b4": "<b>Sur le graphique et les publications</b> — jamais un mot de prédiction",
         "visTitle": "M.I.A Agent",
@@ -133,9 +136,9 @@
       "illus": "Données d'illustration",
       "tabs": {
         "structure": "Lire une structure",
-        "scanner": "Chercher un marché",
+        "scanner": "Définir une stratégie",
         "zones": "Suivre une zone",
-        "mia": "Poser une question",
+        "mia": "Parler à M.I.A",
         "calcul": "Ouvrir le calcul"
       },
       "structure": {
@@ -157,7 +160,7 @@
         },
         "side": {
           "title": "La lecture se met à jour",
-          "desc": "Décoche une couche : <b>le paragraphe se réécrit</b> pour ne décrire que ce qui reste affiché. La narration n'est jamais un texte figé — elle est composée à partir de ce que le moteur a détecté.",
+          "desc": "Décoche une couche : <b>le paragraphe se réécrit</b> pour ne décrire que ce qui reste affiché. La narration n'est jamais un texte figé — elle est composée à partir de ce qui a été détecté.",
           "try": "Essaie",
           "onlyOb": "Ne garder que les Order Blocks",
           "onlyLiq": "Ne garder que la liquidité",
@@ -240,7 +243,7 @@
         "greeting": "Choisis une question ci-contre pour me voir répondre.",
         "side": {
           "title": "Pose-lui une vraie question",
-          "desc": "M.I.A explique les concepts, décrit ce que le moteur a détecté et pilote l'affichage. <b>Elle refuse tout ce qui relève de la prédiction</b> — clique la dernière option pour voir.",
+          "desc": "M.I.A explique les concepts, décrit ce qui a été détecté et pilote l'affichage. <b>Elle refuse tout ce qui relève de la prédiction</b> — clique la dernière option pour voir.",
           "try": "Choisis une question"
         },
         "q": {
@@ -279,7 +282,7 @@
         "notSay": "la volatilité mesure l'ampleur des mouvements, pas leur direction. Elle ne dit pas si le prix va monter ou descendre.",
         "side": {
           "title": "Chaque chiffre est vérifiable",
-          "desc": "Une tuile du panneau Régime ne se contente pas d'un verdict. <b>Ouvre le calcul</b> et tu vois les nombres qui l'ont produit — et ce que la mesure ne dit pas. Quand le moteur ne sait pas, l'écran te le dit.",
+          "desc": "Une tuile du panneau Régime ne se contente pas d'un verdict. <b>Ouvre le calcul</b> et tu vois les nombres qui l'ont produit — et ce que la mesure ne dit pas. Quand l'analyse ne sait pas, l'écran te le dit.",
           "try": "Essaie",
           "toggle": "Ouvre le calcul",
           "hide": "Masquer le calcul"
@@ -292,7 +295,7 @@
       "subtitle": "Aucune installation, aucun script à copier, aucun réglage d'indicateur. Tu ouvres et c'est prêt.",
       "step1": {
         "h": "Choisis ton marché",
-        "p": "L'or ou l'euro, sur 6 unités de temps. Le moteur a déjà analysé les 12 combinaisons et garde le résultat à jour à chaque clôture de bougie."
+        "p": "L'or ou l'euro, sur 6 unités de temps. Les 12 combinaisons sont déjà analysées en continu, et le résultat reste à jour à chaque clôture de bougie."
       },
       "step2": {
         "h": "Lis la structure",
@@ -309,22 +312,40 @@
       "subtitle": "Si tu traces tes Order Blocks à la main tous les matins, tu es exactement la personne pour qui ce produit existe.",
       "w1": {
         "h": "Tu apprends le SMC",
-        "p": "Voir la structure marquée correctement, avec un agent qui explique chaque élément quand tu le lui demandes, remplace des dizaines d'heures de vidéos."
+        "p": "Voir la structure marquée correctement, avec un agent qui explique chaque élément quand tu le lui demandes, remplace des dizaines d'heures de vidéos.",
+        "lb": "Apprendre",
+        "items": {
+          "0": "Chaque concept expliqué sur ton marché, pas en théorie",
+          "1": "Les règles de détection sont publiées, tu peux les vérifier",
+          "2": "Tu apprends en regardant, pas en mémorisant"
+        }
       },
       "w2": {
         "h": "Tu traces à la main",
-        "p": "Tu passes du temps chaque jour à marquer tes zones. MIA le fait sur l'or et l'euro, en continu, avec le cycle de vie en prime."
+        "p": "Tu passes du temps chaque jour à marquer tes zones. MIA le fait sur l'or et l'euro, en continu, avec le cycle de vie en prime.",
+        "lb": "Constance",
+        "items": {
+          "0": "Les mêmes règles appliquées de la même façon, toujours",
+          "1": "Le cycle de vie complet de chaque zone, conservé",
+          "2": "Rien n'est oublié un jour de fatigue"
+        }
       },
       "w3": {
         "h": "Tu suis plusieurs unités de temps",
-        "p": "Tu sais ce que tu cherches mais tu ne peux pas tout regarder. Le scanner surveille tes 12 combinaisons à chaque clôture, sans que tu cliques."
+        "p": "Tu sais ce que tu cherches mais tu ne peux pas tout regarder. Le scanner surveille tes 12 combinaisons à chaque clôture, sans que tu cliques.",
+        "lb": "Étendue",
+        "items": {
+          "0": "Tes conditions vérifiées partout à chaque clôture",
+          "1": "Le contexte défavorable affiché, pas seulement ce qui confirme",
+          "2": "Un calendrier de sources officielles, vérifiables"
+        }
       }
     },
     "distinguish": {
       "eyebrow": "Ce qui nous distingue",
       "h2": "MIA ne te dira jamais où va le prix",
       "p1": "Pas parce qu'elle en est incapable — parce que <b>personne ne le sait</b>. Le marché des outils de trading est plein de produits qui vendent des prédictions invérifiables. MIA fait autre chose : elle décrit ce qui est là, maintenant, et s'arrête là.",
-      "p2": "Concrètement, le contexte défavorable est affiché à égalité du contexte favorable, les résultats ne sont jamais classés par « qualité », et quand le moteur ne sait pas, l'écran te le dit au lieu de deviner. <b>Tu gardes la décision. On te donne la lecture.</b>"
+      "p2": "Concrètement, le contexte défavorable est affiché à égalité du contexte favorable, les résultats ne sont jamais classés par « qualité », et quand l'analyse ne sait pas, l'écran te le dit au lieu de deviner. <b>Tu gardes la décision. On te donne la lecture.</b>"
     },
     "pricing": {
       "eyebrow": "Tarif",
@@ -350,7 +371,7 @@
         "f1": "<b>Les 2 marchés</b>, 6 unités de temps",
         "f2": "Scanner sur les 12 combinaisons",
         "f3": "Page Zones et cycle de vie complet",
-        "f4": "Mesures du moteur aux publications",
+        "f4": "Mesures relevées aux publications",
         "f5": "M.I.A Agent sans limite",
         "f6": "Lectures enregistrées illimitées",
         "cta": "Commencer",
@@ -380,9 +401,210 @@
     },
     "final": {
       "h2": "Arrête de tracer. Commence à lire.",
-      "p": "Crée un compte gratuit et regarde ce que le moteur voit sur ton marché préféré. Aucune carte de crédit, aucune limite de durée.",
+      "p": "Crée un compte gratuit et regarde ce que MIA voit sur ton marché préféré. Aucune carte de crédit, aucune limite de durée.",
       "cta1": "Créer un compte gratuit",
       "cta2": "Revoir les outils"
+    },
+    "miaSection": {
+      "eyebrow": "Ce qui n'existe nulle part ailleurs",
+      "title": "Un assistant qui t'explique le marché",
+      "subtitle": "La plupart des outils de trading affichent. MIA explique. Tu peux lui parler comme à quelqu'un qui aurait le graphique sous les yeux.",
+      "badgeName": "M.I.A Agent",
+      "badgeSub": "disponible sur toutes les surfaces",
+      "chatHeader": "M.I.A Agent · Or 15 min",
+      "h3": "Pose la question que tu n'oses pas poser dans un groupe",
+      "p": "Tu ne comprends pas pourquoi cette bougie est un Order Block ? Tu veux savoir ce qui s'est passé sur l'or hier ? Tu ne sais pas ce que « mitigation » veut dire ? <b>Demande-lui.</b> Elle répond avec les niveaux réels et les horodatages réels du marché que tu regardes.",
+      "questions": {
+        "0": "Explique-moi ce CHOCH",
+        "1": "Quelle est la différence BOS / CHOCH ?",
+        "2": "Cette zone a été testée combien de fois ?",
+        "3": "Montre-moi seulement les OB non testés",
+        "4": "Où est la liquidité la plus proche ?",
+        "5": "C'est quoi un Fair Value Gap ?"
+      },
+      "chat": {
+        "u1": "pourquoi cette bougie est un order block ?",
+        "a1": "C'est la dernière bougie baissière avant le mouvement qui a cassé la structure. Elle s'est formée <b>à 12:30</b>, juste avant le BOS haussier de 14:15 à 4 025,10. Sa zone couvre <b>4 026,80 à 4 028,90</b>.",
+        "u2": "elle a été testée ?",
+        "a2": "Non. <b>Jamais depuis sa formation.</b> Le prix y est entré il y a 30 minutes, c'est son premier contact.",
+        "u3": "tu penses que ça va rebondir ?",
+        "a3": "<b>Je ne réponds pas à ça.</b> Je ne prédis pas les mouvements de prix et je ne te dis pas quand acheter ou vendre. Je peux te décrire l'état de la zone ou t'expliquer le concept."
+      },
+      "caps": {
+        "c1": {
+          "h": "Elle enseigne le SMC",
+          "p": "Chaque concept — Order Block, Fair Value Gap, BOS, CHOCH, mitigation, liquidité — expliqué <b>avec l'exemple sous les yeux</b>, sur ton marché, pas dans un cours théorique."
+        },
+        "c2": {
+          "h": "Elle décrit ce qui est là",
+          "p": "Niveaux exacts, horodatages, nombre de tests, état de chaque poche de liquidité. <b>Uniquement des faits détectés</b> — une référence inventée est rejetée par le code, pas laissée passer."
+        },
+        "c3": {
+          "h": "Elle pilote ton affichage",
+          "p": "« Masque les FVG », « isole cette zone », « passe en 4 h ». Tu parles, <b>le graphique change</b>. Plus besoin de chercher le bon bouton."
+        },
+        "c4": {
+          "h": "Elle refuse de deviner",
+          "p": "Aucune prédiction, aucune indication d'intervention, aucun conseil. <b>C'est un outil descriptif</b>, et elle te le dira elle-même si tu lui demandes où va le prix."
+        }
+      }
+    },
+    "carousel": {
+      "hint": "↔ Fais défiler pour voir les autres parties de l'espace",
+      "illus": "Données d'illustration",
+      "regionAria": "Espace de lecture — carrousel",
+      "prevAria": "Volet précédent",
+      "nextAria": "Volet suivant",
+      "dotAria": "Aller au volet {n}",
+      "names": {
+        "0": "Graphique",
+        "1": "Lecture narrée",
+        "2": "Régime de marché",
+        "3": "Journal des événements",
+        "4": "Unités de temps"
+      },
+      "chart": {
+        "title": "Graphique · Or 15 min",
+        "layers": {
+          "0": "OB",
+          "1": "FVG",
+          "2": "Liquidité",
+          "3": "BOS/CHOCH",
+          "4": "Mitigées"
+        },
+        "obLabel": "OB · non testé",
+        "liqLabel": "Liquidité achat · intacte",
+        "chochLabel": "↑ CHOCH",
+        "bosLabel": "↑ BOS · 4 025,10",
+        "localTime": "Heure locale · UTC−4"
+      },
+      "narrated": {
+        "title": "Lecture narrée · Or 15 min",
+        "freshness": "Bougie clôturée il y a 4 min",
+        "body": "Le prix est <b>actuellement dans un Order Block haussier</b> formé il y a 3 h 30, entre 4 026,80 et 4 028,90, et cette zone <b>n'a jamais été testée</b> depuis sa formation. Un <b>CHOCH haussier s'est confirmé</b> à 4 021,45, suivi d'un <b>BOS haussier</b> à 4 025,10. Une poche de <b>liquidité vente a été balayée</b> sous 4 011,40 : la mèche est passée dessous et la bougie a clôturé au-dessus. Une poche de <b>liquidité achat reste intacte</b> à 4 034,20, soit 0,18 % au-dessus du prix. Le <b>1 h va dans le même sens</b> ; le 4 h est en tendance baissière.",
+        "foot": "Recomposée à chaque clôture, jamais un texte figé"
+      },
+      "regime": {
+        "title": "Régime de marché · Or 15 min",
+        "tiles": {
+          "0": {
+            "k": "Tendance",
+            "v": "Haussière",
+            "n": "depuis 14:15"
+          },
+          "1": {
+            "k": "Volatilité",
+            "v": "Étendue",
+            "n": "7 vs 20 bougies"
+          },
+          "2": {
+            "k": "Position dans le range",
+            "v": "Tiers haut",
+            "n": "4 012 – 4 037"
+          },
+          "3": {
+            "k": "Alignement",
+            "v": "1 h d'accord",
+            "n": "4 h opposé"
+          },
+          "4": {
+            "k": "Maturité",
+            "v": "9 bougies",
+            "n": "depuis le BOS"
+          },
+          "5": {
+            "k": "Densité",
+            "v": "8 OB · 12 FVG",
+            "n": "sur la fenêtre"
+          },
+          "6": {
+            "k": "Dernier évén.",
+            "v": "BOS ↑",
+            "n": "à 14:15"
+          },
+          "7": {
+            "k": "Session",
+            "v": "New York",
+            "n": "ouverte"
+          },
+          "8": {
+            "k": "Niveaux de référence",
+            "v": "PDH · PDL",
+            "n": "veille"
+          }
+        },
+        "foot": "Chaque tuile explique sa méthode au clic"
+      },
+      "journal": {
+        "title": "Journal des événements · Or 15 min",
+        "rows": {
+          "0": {
+            "kind": "bos",
+            "badge": "BOS ↑",
+            "text": "Cassure de structure haussière",
+            "time": "14:15"
+          },
+          "1": {
+            "kind": "pocket",
+            "badge": "POCHE",
+            "text": "Liquidité vente balayée",
+            "time": "13:30"
+          },
+          "2": {
+            "kind": "choch",
+            "badge": "CHOCH ↑",
+            "text": "Changement de caractère confirmé",
+            "time": "12:45"
+          },
+          "3": {
+            "kind": "ob",
+            "badge": "OB ↑",
+            "text": "Order Block formé · 4 026,80–4 028,90",
+            "time": "12:30"
+          },
+          "4": {
+            "kind": "fvg",
+            "badge": "FVG ↓",
+            "text": "Fair Value Gap comblé à 60 %",
+            "time": "11:00"
+          }
+        },
+        "foot": "Clique un événement, le graphique s'y positionne"
+      },
+      "timeframes": {
+        "title": "Unités de temps · Or",
+        "chips": {
+          "0": "M5",
+          "1": "M15",
+          "2": "H1",
+          "3": "H4",
+          "4": "D1"
+        },
+        "activeChip": "M15",
+        "rows": {
+          "0": {
+            "tf": "M15",
+            "text": "Haussière · expansion",
+            "note": "lecture courante"
+          },
+          "1": {
+            "tf": "H1",
+            "text": "Haussière · tendance",
+            "note": "va dans le même sens"
+          },
+          "2": {
+            "tf": "H4",
+            "text": "Baissière · range",
+            "note": "sens opposé"
+          },
+          "3": {
+            "tf": "D1",
+            "text": "Indéterminée",
+            "note": "aucune structure établie"
+          }
+        },
+        "foot": "Chaque unité a sa lecture propre, réévaluée à sa clôture"
+      }
     }
   },
   "regimePanel": {
@@ -621,7 +843,12 @@
     "account": "Réglages",
     "login": "Connexion",
     "language": "Langue",
-    "calendar": "Actualités"
+    "calendar": "Actualités",
+    "mia": "M.I.A",
+    "tools": "Outils",
+    "tryFree": "Essayer gratuitement",
+    "appLink": "App",
+    "methodology": "Méthodologie & glossaire"
   },
   "landing": {
     "hero": {

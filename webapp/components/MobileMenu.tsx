@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Menu, User } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import * as React from 'react';
 import {
   Sheet,
@@ -26,24 +27,31 @@ import { BRAND_NAME } from '@/lib/brand';
  */
 
 const PRODUCT_LINKS = [
-  { href: '/app', label: 'App' },
-  { href: '/zones', label: 'Zones' },
-  { href: '/scanner', label: 'Scanner' },
-] as const;
+  { href: '/app', key: 'appLink' as const },
+  { href: '/zones', key: 'zones' as const },
+  { href: '/scanner', key: 'scanner' as const },
+];
 
+// LP-2: marketing anchors match the desktop nav (M.I.A · Démo · Outils ·
+// Tarifs · FAQ). Labels are localized via the `nav` namespace.
 const MARKETING_ANCHORS = [
-  { href: '/#demo', label: 'Démo' },
-  { href: '/#honnetete', label: 'Honnêteté' },
-  { href: '/#tarifs', label: 'Tarifs' },
-  { href: '/#faq', label: 'FAQ' },
-] as const;
+  { href: '/#mia', key: 'mia' as const },
+  { href: '/#demo', key: 'demo' as const },
+  { href: '/#outils', key: 'tools' as const },
+  { href: '/#tarifs', key: 'pricing' as const },
+  { href: '/#faq', key: 'faq' as const },
+];
 
 const ROW =
   'flex min-h-[44px] items-center rounded-md px-3 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
 export function MobileMenu({ variant }: { variant: 'marketing' | 'app' }) {
   const { isAuthenticated } = useAuth();
+  const t = useTranslations('nav');
   const [open, setOpen] = React.useState(false);
+  // Product links are gated to signed-in users on the marketing surface (they
+  // have no access otherwise); the /app burger always shows them.
+  const showProductLinks = variant === 'app' || isAuthenticated;
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -70,7 +78,7 @@ export function MobileMenu({ variant }: { variant: 'marketing' | 'app' }) {
               {MARKETING_ANCHORS.map((a) => (
                 <SheetClose asChild key={a.href}>
                   <Link href={a.href} className={ROW}>
-                    {a.label}
+                    {t(a.key)}
                   </Link>
                 </SheetClose>
               ))}
@@ -78,23 +86,35 @@ export function MobileMenu({ variant }: { variant: 'marketing' | 'app' }) {
             </>
           )}
 
-          {PRODUCT_LINKS.map((l) => (
-            <SheetClose asChild key={l.href}>
-              <Link href={l.href} className={ROW}>
-                {l.label}
-              </Link>
-            </SheetClose>
-          ))}
+          {showProductLinks &&
+            PRODUCT_LINKS.map((l) => (
+              <SheetClose asChild key={l.href}>
+                <Link href={l.href} className={ROW}>
+                  {t(l.key)}
+                </Link>
+              </SheetClose>
+            ))}
 
           {variant === 'app' && (
             <SheetClose asChild>
               <Link href="/methodology" className={ROW}>
-                Méthodologie & glossaire
+                {t('methodology')}
               </Link>
             </SheetClose>
           )}
 
           <hr className="my-2 border-border/60" />
+
+          {variant === 'marketing' && !isAuthenticated && (
+            <SheetClose asChild>
+              <Link
+                href="/inscription"
+                className="flex min-h-[44px] items-center justify-center rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                {t('tryFree')}
+              </Link>
+            </SheetClose>
+          )}
 
           <SheetClose asChild>
             <Link
@@ -102,7 +122,7 @@ export function MobileMenu({ variant }: { variant: 'marketing' | 'app' }) {
               className={ROW}
             >
               <User className="mr-2 h-4 w-4" aria-hidden />
-              {isAuthenticated ? 'Compte' : 'Connexion'}
+              {isAuthenticated ? t('account') : t('login')}
             </Link>
           </SheetClose>
 

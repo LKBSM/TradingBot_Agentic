@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { User } from 'lucide-react';
 import { AppHeader } from '@/components/app/AppHeader';
+import { BrandMark } from '@/components/BrandMark';
 import { LocaleToggle } from '@/components/LocaleToggle';
 import { MobileMenu } from '@/components/MobileMenu';
 import { ThemeMenu } from '@/components/theme/ThemeMenu';
@@ -15,19 +16,19 @@ import { SUPPORTED_LOCALES } from '@/i18n';
 
 // Anchors keep their hrefs in code; the visible label is pulled from the
 // `nav` message namespace by key so every locale renders in its own language.
+// LP-2: the visitor sees ONLY marketing anchors here — the product links
+// (App/Zones/Scanner) are gated behind authentication further down.
 const ANCHORS = [
+  { href: '#mia', key: 'mia' },
   { href: '#demo', key: 'demo' },
-  { href: '#honnetete', key: 'honesty' },
+  { href: '#outils', key: 'tools' },
   { href: '#tarifs', key: 'pricing' },
   { href: '#faq', key: 'faq' },
 ] as const;
 
 /**
- * Is the current route a product surface (the /app workspace or the /scanner
- * page)? Both wear the product header (brand → /app + Scanner button) so the
- * user can move between the reading workspace and the scanner freely.
- * `localePrefix: 'as-needed'` means FR (default) has no prefix (`/app`), but we
- * strip a leading locale segment defensively in case a prefixed locale ships.
+ * Is the current route a product surface (the /app workspace, /scanner or
+ * /zones)? They wear the product header, not the marketing nav.
  */
 function isAppRoute(pathname: string): boolean {
   const segs = pathname.split('/').filter(Boolean);
@@ -36,35 +37,62 @@ function isAppRoute(pathname: string): boolean {
   return rest[0] === 'app' || rest[0] === 'scanner' || rest[0] === 'zones';
 }
 
+const PRODUCT_LINK =
+  'rounded-md px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+
 /**
- * Top navigation. On the marketing landing it shows the section anchors (Démo ·
- * Honnêteté · Tarifs · FAQ). On the /app workspace it swaps to the product
- * header (brand + utility cluster only) — the marketing nav lives ONLY on the
- * landing.
+ * Right-hand cluster of the marketing nav. LP-2 rule: App/Zones/Scanner appear
+ * ONLY when authenticated — a visitor has no access, so surfacing them is pure
+ * frustration. A visitor instead sees a secondary "Se connecter" and a primary
+ * "Essayer gratuitement". During the initial /me probe we treat the session as
+ * logged-out (show the try/login CTAs) to avoid flashing product links.
  */
-/**
- * Session-aware account control for the marketing nav. Logged out → "Connexion";
- * logged in → "Compte" (links to /compte). Stays quiet during the initial /me
- * probe to avoid a flash of the wrong state.
- */
-function NavAccountLink() {
+function NavCluster() {
   const { isAuthenticated, loading } = useAuth();
   const t = useTranslations('nav');
   const lh = useLocalizedHref();
-  if (loading) {
-    return <span className="h-9 w-20" aria-hidden />;
+
+  if (isAuthenticated && !loading) {
+    return (
+      <>
+        <Link href={lh('/app')} className={PRODUCT_LINK}>App</Link>
+        <Link href={lh('/zones')} className={PRODUCT_LINK}>{t('zones')}</Link>
+        <Link href={lh('/scanner')} className={PRODUCT_LINK}>{t('scanner')}</Link>
+        <Link
+          href={lh('/compte')}
+          className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <User className="h-4 w-4" aria-hidden />
+          <span className="hidden sm:inline">{t('account')}</span>
+        </Link>
+        <LocaleToggle />
+      </>
+    );
   }
+
   return (
-    <Link
-      href={lh(isAuthenticated ? '/compte' : '/connexion')}
-      className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-    >
-      <User className="h-4 w-4" aria-hidden />
-      <span className="hidden sm:inline">{isAuthenticated ? t('account') : t('login')}</span>
-    </Link>
+    <>
+      <Link
+        href={lh('/connexion')}
+        className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        {t('login')}
+      </Link>
+      <Link
+        href={lh('/inscription')}
+        className="rounded-md bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        {t('tryFree')}
+      </Link>
+      <LocaleToggle />
+    </>
   );
 }
 
+/**
+ * Top navigation. On the marketing landing it shows the section anchors and the
+ * session-aware cluster. On the /app workspace it swaps to the product header.
+ */
 export function Nav() {
   const pathname = usePathname() ?? '/';
   const t = useTranslations('nav');
@@ -80,19 +108,10 @@ export function Nav() {
           href={lh('/')}
           className="flex items-center gap-2 text-sm font-semibold tracking-tight"
           aria-label={t('brandHomeAria')}
+          title={BRAND_BASELINE}
         >
-          <span
-            aria-hidden
-            className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-amber-400 to-amber-600 text-xs font-bold text-white shadow-sm"
-          >
-            M
-          </span>
-          <span className="flex flex-col leading-none">
-            <span>{BRAND_NAME}</span>
-            <span className="mt-0.5 hidden text-[10px] font-normal tracking-tight text-muted-foreground lg:block">
-              {BRAND_BASELINE}
-            </span>
-          </span>
+          <BrandMark size={28} />
+          <span>{BRAND_NAME}</span>
         </Link>
 
         <nav aria-label={t('sectionsAria')} className="hidden sm:block">
@@ -110,33 +129,11 @@ export function Nav() {
           </ul>
         </nav>
 
-        {/* Sous sm (390px) le cluster débordait : App/Zones/Scanner + compte +
-            langue passent dans le tiroir burger (MobileMenu). Restent toujours
-            visibles : le thème et le burger. */}
+        {/* Sous sm (390px) le cluster passe dans le tiroir burger (MobileMenu).
+            Restent toujours visibles : le thème et le burger. */}
         <div className="flex items-center gap-1 sm:gap-2">
           <div className="hidden items-center gap-1 sm:flex sm:gap-2">
-            <Link
-              href={lh('/app')}
-              className="rounded-md px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              App
-            </Link>
-            <Link
-              href={lh('/zones')}
-              className="rounded-md px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              {t('zones')}
-            </Link>
-            <Link
-              href={lh('/scanner')}
-              className="rounded-md px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              {t('scanner')}
-            </Link>
-            <NavAccountLink />
-            {/* Sélecteur de langue desktop-only (le cluster mobile est déjà dense
-                sur 390px ; les liens localisés ci-dessus couvrent toutes locales). */}
-            <LocaleToggle />
+            <NavCluster />
           </div>
           <ThemeMenu />
           <MobileMenu variant="marketing" />
