@@ -18,6 +18,7 @@ from __future__ import annotations
 import calendar as _calendar
 import logging
 import re
+import threading
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional, Tuple
 
@@ -149,6 +150,55 @@ def get_publication_measures_debug(
 
     market = _MEASURABLE_MARKETS.get(event_key) or "XAUUSD"
     return diagnose_default_measures(event_key=event_key, market=market)
+
+
+# One-time DEEP backfill of the measured market's M15 history into candles.db, so
+# the measures have the months of intraday history they need (NW-7d). The bundled
+# CSV is absent in prod and Twelve Data caps a single request at ~52 days, so we
+# page backward. Runs in the background (paginated + rate-limited ≈ 1–2 min);
+# single-flight; clears the measures cache on completion so they recompute.
+_BACKFILL_STATE: Dict[str, Any] = {"running": False, "last_result": None}
+
+
+@router.get("/publications/{event_key}/measures/backfill")
+def trigger_measures_backfill(
+    event_key: str = Path(..., description="Recurring event key, e.g. 'us_cpi'"),
+    months: int = Query(14, ge=3, le=36, description="Months of M15 history to fill"),
+) -> Dict[str, Any]:
+    market = _MEASURABLE_MARKETS.get(event_key)
+    if market is None:
+        raise HTTPException(status_code=422, detail="event not measurable")
+    if _BACKFILL_STATE["running"]:
+        return {"status": "already_running", "last_result": _BACKFILL_STATE["last_result"]}
+
+    target_bars = int(months) * 2200  # ~M15 bars per trading month (5d/wk)
+
+    def _run() -> None:
+        _BACKFILL_STATE["running"] = True
+        try:
+            from src.intelligence.data_providers import TwelveDataProvider
+            from src.intelligence.history_backfill import deep_backfill_combo
+            from src.storage.candles_cache_store import CandlesCacheStore
+
+            provider = TwelveDataProvider()  # reads TWELVE_DATA_API_KEY from env
+            store = CandlesCacheStore()      # reads CANDLES_DB_PATH (mounted disk)
+            res = deep_backfill_combo(
+                provider, store, market, "M15", target_bars=target_bars
+            )
+            _BACKFILL_STATE["last_result"] = res
+            _MEASURES_CACHE.pop(event_key, None)  # drop cached None → recompute
+        except Exception as exc:  # never crash the worker thread
+            logger.exception("measures backfill failed for %s", event_key)
+            _BACKFILL_STATE["last_result"] = {"error": f"{type(exc).__name__}: {exc}"}
+        finally:
+            _BACKFILL_STATE["running"] = False
+
+    threading.Thread(target=_run, name=f"backfill-{market}-M15", daemon=True).start()
+    return {
+        "status": "started", "market": market, "timeframe": "M15",
+        "months": months, "target_bars": target_bars,
+        "note": "Re-check .../measures/debug in ~1-2 min; then the questions render.",
+    }
 
 
 # REC point 1: the per-event detail must load an event by its STABLE ID from

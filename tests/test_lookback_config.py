@@ -54,16 +54,26 @@ def test_parse_duration_rejects_garbage(bad):
 _TF_MIN = {"M1": 1, "M5": 5, "M15": 15, "H1": 60, "H4": 240, "D1": 1440}
 
 
+# Combos intentionally deeper than one free-plan request (≤5000): they are filled
+# by the PAGINATED deep_backfill_combo (NW-7d), not a single call. XAUUSD M15 was
+# deepened to 24mo so the publication measures have months of intraday history.
+_PAGINATED_DEEP_COMBOS = {("XAUUSD", "M15")}
+
+
 @pytest.mark.parametrize("tf", ["M1", "M5", "M15", "H1", "H4", "D1"])
 def test_target_bars_cover_the_duration_within_one_request(_default_env, tf):
     """The bar count must SPAN at least the configured calendar duration (so the
-    stated depth is never silently under-delivered) AND fit a single free-plan
-    request (≤ 5000), so backfilling a combo costs exactly one call."""
+    stated depth is never silently under-delivered). Every combo fits a single
+    free-plan request (≤ 5000) — EXCEPT the deep paginated combos, which are
+    intentionally larger and filled page-by-page by deep_backfill_combo."""
     depth = lb.depth_for("XAUUSD", tf)
     covered_minutes = depth.target_bars * _TF_MIN[tf]
     duration_minutes = depth.duration.total_seconds() / 60.0
     assert covered_minutes >= duration_minutes, f"{tf}: {covered_minutes} < {duration_minutes}"
-    assert depth.target_bars <= 5000, f"{tf}: {depth.target_bars} exceeds a single request"
+    if ("XAUUSD", tf) in _PAGINATED_DEEP_COMBOS:
+        assert depth.target_bars > 5000, f"{tf}: expected a deep paginated combo"
+    else:
+        assert depth.target_bars <= 5000, f"{tf}: {depth.target_bars} exceeds a single request"
 
 
 def test_depth_is_config_driven_not_constant(monkeypatch, tmp_path):
