@@ -25,6 +25,7 @@ from typing import Any, Dict, Optional, Tuple
 from fastapi import APIRouter, HTTPException, Path, Query, Request
 
 from src.intelligence.calendar_schema import CalendarResponse
+from src.intelligence.publication_measures import MEASURED_MARKETS as _MEASURABLE_MARKETS
 from src.intelligence.publication_measures_schema import PublicationMeasures
 
 logger = logging.getLogger(__name__)
@@ -36,11 +37,10 @@ _MAX_LOOKBACK_DAYS = 30
 
 _MONTH_RE = re.compile(r"^(\d{4})-(\d{2})$")
 
-# Recurring publications for which engine measures are computed, and the SINGLE
-# market each is measured on (the market whose price history we actually hold).
-# US CPI is measured on gold; an event_key absent here has no measures and the
-# page renders none (never a placeholder). See publication_measures.py.
-_MEASURABLE_MARKETS: Dict[str, str] = {"us_cpi": "XAUUSD"}
+# ``_MEASURABLE_MARKETS`` is the single source in publication_measures.py
+# (MEASURED_MARKETS) — imported above so the API gate, the measures computation
+# and the automatic deep-history maintainer all agree. An event_key absent there
+# has no measures and the page renders none (never a placeholder).
 
 # Process-local cache of the heavy measures computation (engine replay over past
 # releases + CSV reads). Keyed by event_key → (computed_at, measures). Refreshed

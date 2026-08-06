@@ -110,6 +110,19 @@ def build_market_reading_assembler(enable_news: Optional[bool] = None) -> Any:
     data_provider = TwelveDataProvider()  # reads TWELVE_DATA_API_KEY from env
     readings_store = MarketReadingsStore()
     candles_store = CandlesCacheStore()
+
+    # Opt-in automatic deep-history maintainer (NW-7): keeps candles.db deep enough
+    # for the publication measures on EVERY measured market, generic and resumable.
+    # OFF by default (quota-safe); enable with MEASURES_DEEP_BACKFILL_ENABLED=1.
+    try:
+        from src.intelligence.measures_backfill_daemon import (
+            start_measures_backfill_daemon,
+        )
+
+        start_measures_backfill_daemon(data_provider, candles_store)
+    except Exception:  # never let a maintainer failure break boot
+        logger.exception("measures deep-backfill daemon failed to start")
+
     haiku_cache_store = HaikuDescriptionCacheStore()
 
     anthropic_client = _build_anthropic_client()  # raises if missing

@@ -161,18 +161,31 @@ def deep_backfill_combo(
     """Fill one combo DEEP by walking history BACKWARD one ``page`` (≤5000) at a
     time via ``end_date`` pagination — the single-request cap makes plain
     ``backfill_combo`` top out at ~52 days of M15, far short of the months the
-    publication measures need. Idempotent (upsert), quota-aware (the provider's
-    rate limiter throttles), and self-terminating: it stops when the target is
-    reached, the provider returns nothing older (depth exhausted), or ``max_pages``.
+    publication measures need.
 
-    Returns a small progress dict; never raises (a failed page ends the walk)."""
+    RESUMABLE and quota-frugal: it resumes from the OLDEST bar already cached and
+    only fetches OLDER history, so re-running (or the periodic maintainer) never
+    re-spends credits on bars it already has and simply extends the tail. Bounded
+    by ``max_pages`` per call, so a maintainer can advance every market a little
+    each cycle without exhausting the daily quota. Idempotent (upsert),
+    self-terminating (target reached / depth exhausted / max_pages), never raises.
+
+    Returns a progress dict incl. ``have`` (already cached), ``fetched`` (new this
+    call), ``total`` and ``error`` (the reason a run stopped early, e.g. a 429)."""
     tf_min = lookback_config._TF_MINUTES.get(timeframe.upper(), 15)
+    cov = store.get_coverage(instrument, timeframe)
+    have = int(getattr(cov, "count", 0) or 0)
+    oldest_cached = _to_utc(getattr(cov, "oldest_ts", None))
+    started_fresh = oldest_cached is None
+
     end_date: Optional[str] = None
+    if oldest_cached is not None:  # resume: page strictly BEFORE what we hold
+        end_date = (oldest_cached - timedelta(minutes=tf_min)).strftime("%Y-%m-%d %H:%M:%S")
     fetched = upserted = pages = 0
-    earliest_seen: Optional[datetime] = None
+    earliest_seen: Optional[datetime] = oldest_cached
     error: Optional[str] = None
-    while fetched < target_bars and pages < max_pages:
-        want = min(page, target_bars - fetched) or page
+    while (have + fetched) < target_bars and pages < max_pages:
+        want = min(page, target_bars - have - fetched) or page
         try:
             candles = provider.fetch_candles_until(instrument, timeframe, want, end_date)
         except Exception as exc:  # surface the reason instead of a silent stop
@@ -181,7 +194,10 @@ def deep_backfill_combo(
             break
         pages += 1
         if not candles:
-            if pages == 1:  # empty FIRST page = a real problem, not depth exhaustion
+            # Empty page = depth exhausted, EXCEPT an empty very-first page on a
+            # cold combo, which means the provider served nothing at all (a real
+            # problem worth surfacing).
+            if pages == 1 and started_fresh:
                 error = "provider returned no candles for the first page"
             break
         try:
@@ -198,12 +214,51 @@ def deep_backfill_combo(
         end_date = (page_earliest - timedelta(minutes=tf_min)).strftime("%Y-%m-%d %H:%M:%S")
     result = {
         "instrument": instrument, "timeframe": timeframe, "pages": pages,
-        "fetched": fetched, "upserted": upserted,
+        "have": have, "fetched": fetched, "total": have + fetched,
+        "target": target_bars, "upserted": upserted,
         "oldest": earliest_seen.isoformat() if earliest_seen else None,
         "error": error,
     }
     logger.info("deep backfill %s %s: %s", instrument, timeframe, result)
     return result
+
+
+def maintain_deep_history(
+    provider: _PagingProvider,
+    store: _Store,
+    markets: Sequence[str],
+    *,
+    timeframe: str = "M15",
+    target_bars_for=None,
+    max_pages_per_market: int = 2,
+) -> List[dict]:
+    """Advance the deep ``timeframe`` history of EVERY given market toward its
+    target depth, a bounded few pages each, resuming from cache — the generic,
+    market-AGNOSTIC driver. Adding a market to the measured set is enough: this
+    fills it over time within the daily quota (a bounded number of pages per run).
+
+    ``target_bars_for(market, timeframe)`` resolves the per-combo depth (defaults
+    to the LB-1 config). Stops the cycle early on an out-of-credits (429) result so
+    the next run simply resumes. Never raises."""
+    if target_bars_for is None:
+        target_bars_for = lambda inst, tf: lookback_config.target_bars(inst, tf)  # noqa: E731
+    results: List[dict] = []
+    for market in markets:
+        try:
+            res = deep_backfill_combo(
+                provider, store, market, timeframe,
+                target_bars=int(target_bars_for(market, timeframe)),
+                max_pages=max_pages_per_market,
+            )
+        except Exception as exc:  # one bad market must not abort the cycle
+            logger.exception("maintain_deep_history failed for %s %s", market, timeframe)
+            res = {"instrument": market, "timeframe": timeframe,
+                   "error": f"{type(exc).__name__}: {exc}"[:300]}
+        results.append(res)
+        if "429" in str(res.get("error") or ""):
+            logger.info("deep history: out of provider credits — pausing cycle")
+            break
+    return results
 
 
 def backfill_all(

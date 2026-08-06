@@ -57,6 +57,19 @@ if TYPE_CHECKING:  # pragma: no cover - typing only
 # reliable. Fewer → the measure is omitted (None), never approximated.
 MIN_RELIABLE_RELEASES = 4
 
+# SINGLE SOURCE of the recurring publications we compute measures for, and the ONE
+# market each is measured on (the market whose price history we hold). Adding a
+# future market at commercialisation = ONE entry here: the API gate, the
+# frontend rendering AND the automatic deep-history maintainer all read this — so
+# a new market is measured and its history is filled without further wiring.
+MEASURED_MARKETS: dict = {"us_cpi": "XAUUSD"}
+
+
+def measured_markets() -> list:
+    """The distinct markets that need deep intraday history for the measures —
+    generic over whatever is declared in ``MEASURED_MARKETS``."""
+    return sorted(set(MEASURED_MARKETS.values()))
+
 # M15 timeframe constants. One bar is 15 minutes; four bars is one hour.
 BAR_MINUTES = 15
 BARS_PER_HOUR = 4
