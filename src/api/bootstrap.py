@@ -111,6 +111,20 @@ def build_market_reading_assembler(enable_news: Optional[bool] = None) -> Any:
     readings_store = MarketReadingsStore()
     candles_store = CandlesCacheStore()
 
+    # One-time deep-history SEED (NW-7): load bundled intraday history into
+    # candles.db so the publication measures have the MONTHS they need WITHOUT any
+    # Twelve Data call. Idempotent (skips a market already deep); generic over
+    # every measured market. Synchronous + one-time (~a couple seconds on first
+    # boot only), wrapped so it can never break boot.
+    try:
+        from src.intelligence.measures_history_seed import seed_measures_history
+
+        seeded = seed_measures_history(candles_store)
+        if any(r.get("seeded") for r in seeded):
+            logger.info("measures history seed: %s", seeded)
+    except Exception:  # never let seeding break boot
+        logger.exception("measures history seed failed")
+
     # Opt-in automatic deep-history maintainer (NW-7): keeps candles.db deep enough
     # for the publication measures on EVERY measured market, generic and resumable.
     # OFF by default (quota-safe); enable with MEASURES_DEEP_BACKFILL_ENABLED=1.
