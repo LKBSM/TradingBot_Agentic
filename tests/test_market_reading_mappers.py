@@ -317,6 +317,26 @@ def test_choch_level_uses_break_level(bar_ts):
     assert s.choch is not None
     assert s.choch.direction == "bullish"
     assert s.choch.level == 2350.75      # NOT current_price (2380.0)
+    # STR-1: this bar carries BOTH BOS_EVENT and CHOCH_SIGNAL (a CHOCH is a
+    # reversal break). CHOCH takes precedence — the point-in-time BOS twin is NOT
+    # surfaced, so the reversal shows as a single change-of-character event.
+    assert s.bos is None
+
+
+def test_choch_bar_does_not_also_surface_point_in_time_bos(bar_ts):
+    """STR-1 precedence: a fresh CHOCH bar (BOS_EVENT and CHOCH_SIGNAL both set,
+    same sign — exactly what the engine produces on a reversal) publishes a CHOCH
+    and NO BOS. A plain continuation break (BOS_EVENT only) still publishes a
+    BOS."""
+    reversal = {"BOS_SIGNAL": -1.0, "BOS_EVENT": 1.0, "CHOCH_SIGNAL": 1.0,
+                "BOS_BREAK_LEVEL": 2350.75, "ATR": 5.0}
+    s = confluence_signal_to_structure(None, reversal, bar_ts, current_price=2380.0)
+    assert s.choch is not None and s.bos is None
+
+    continuation = {"BOS_SIGNAL": 1.0, "BOS_EVENT": 1.0, "CHOCH_SIGNAL": 0.0,
+                    "BOS_BREAK_LEVEL": 2360.0, "ATR": 5.0}
+    s2 = confluence_signal_to_structure(None, continuation, bar_ts, current_price=2380.0)
+    assert s2.bos is not None and s2.choch is None
 
 
 def test_choch_level_falls_back_to_price_when_no_level(bar_ts):
@@ -1069,6 +1089,25 @@ def test_collect_structure_events_surfaces_multiple_breaks_recent_first():
     ev = collect_structure_events(_events_frame(rows), idx=9)
     assert [e["direction"] for e in ev["bos_events"]] == ["bearish", "bullish"]
     assert ev["bos_events"][0]["level"] == 105.0  # real broken level, recent first
+    assert len(ev["choch_events"]) == 1
+    assert ev["choch_events"][0]["level"] == 107.0
+
+
+def test_collect_structure_events_choch_precedence_drops_bos_twin():
+    """STR-1: a reversal bar carries BOTH BOS_EVENT and CHOCH_SIGNAL (this is what
+    the real engine emits — the CHOCH branch also writes bos_event). It is ONE
+    event, a change of character, and must appear ONLY in choch_events — never
+    duplicated as a same-bar, same-direction BOS. Plain continuation breaks
+    (BOS_EVENT only) still surface in bos_events."""
+    rows = [{"close": 100 + i} for i in range(10)]
+    rows[2].update(BOS_EVENT=1.0, BOS_BREAK_LEVEL=102.0)  # continuation BOS (k=2)
+    # k=7 reversal: engine sets BOTH columns, same sign, same broken level.
+    rows[7].update(BOS_EVENT=1.0, CHOCH_SIGNAL=1.0, BOS_BREAK_LEVEL=107.0)
+    ev = collect_structure_events(_events_frame(rows), idx=9)
+    # The shared bar is NOT double-counted: only the k=2 continuation is a BOS.
+    assert [e["level"] for e in ev["bos_events"]] == [102.0]
+    assert all(e["level"] != 107.0 for e in ev["bos_events"])
+    # The reversal surfaces exactly once, as a CHOCH.
     assert len(ev["choch_events"]) == 1
     assert ev["choch_events"][0]["level"] == 107.0
 

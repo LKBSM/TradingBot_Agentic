@@ -48,7 +48,11 @@ from typing import Any, Callable, List, Mapping, Optional, Sequence, Tuple
 # carries the old close-based trend, so it MUST be rebuilt: hence 4, not 3.
 # v5: OB/FVG carry a distinct-touch count + timestamps (touch_count/touch_ats) —
 # an ADDITIVE lifecycle field; a stored v4 payload lacks it, so rebuild.
-READING_LOGIC_VERSION = 5
+# v6 (STR-1): CHOCH precedence — a reversal bar no longer double-surfaces as a
+# BOS. bos_events drops CHOCH bars and the point-in-time `bos` is not set on a
+# fresh CHOCH bar; a stored v5 payload still carries the duplicated BOS twin, so
+# it MUST be rebuilt.
+READING_LOGIC_VERSION = 6
 
 # Env kill switch (LQ-D1): masks ALL external-liquidity pockets at the serve
 # layer — cache-hit AND fresh build — in one reversible value. Data is untouched
