@@ -2634,6 +2634,13 @@
           "body": "Elk antwoord is een telling van voorbije dagen, elk met zijn eigen context. \"10 keer op 12\" beschrijft wat is waargenomen, geen kans voor de volgende keer, en niets hiervan geldt voor de komende publicatie. De vragen staan los van elkaar: geen enkele verklaart een andere.",
           "title": "Hoe je deze antwoorden leest"
         },
+        "zoneLifecycle": {
+          "q": "Houden de zones die net erna ontstaan stand?",
+          "a": "Over <b>{sample}</b> op {market} gemeten publicaties ontstonden <b>{created} zones</b> in het uur na de publicatie. <b>{t0}</b> werden in minder dan een uur doorkruist, <b>{t1}</b> tussen één en twee uur, <b>{t2}</b> vóór het einde van de dag.",
+          "detail": "Levensduur tot de eerste doorkruising — de kortste: {fastest} op {fastestDate}; de langste: {slowest} op {slowestDate}.",
+          "neverMitigated": "{count, plural, =0 {} one {# zone was aan het einde van het waargenomen venster (ongeveer één dag) nog intact.} other {# zones waren aan het einde van het waargenomen venster (ongeveer één dag) nog intact.}}",
+          "source": "Een “zone” is een order block of een niet-opgevulde onbalans die de markt achterlaat; ze heet “doorkruist” wanneer de prijs erin terugkeert en ze opvult — wat het product mitigatie noemt. Telling van de zones die in het uur na elke publicatie ontstaan, verdeeld naar de tijd tot hun eerste doorkruising. Basis: {sample} publicaties op {market}, van {periodStart} tot {periodEnd}."
+        },
         "returnToCalm": {
           "a": "Over <b>{sample}</b> gemeten publicaties op {market} keerde de afstand per minuut <b>in minder dan een uur {t0} keer</b> terug naar zijn gewone niveau, tussen één en drie uur <b>{t1} keer</b>, meer dan drie uur <b>{t2} keer</b>.",
           "detail": "Snelste: {fastest} op {fastestDate}. Traagste: {slowest} op {slowestDate}.",

@@ -47,6 +47,7 @@ from src.intelligence.publication_measures_schema import (
     PublicationMeasures,
     ReturnToCalmMeasure,
     StructureStateMeasure,
+    ZoneLifecycleMeasure,
 )
 
 if TYPE_CHECKING:  # pragma: no cover - typing only
@@ -66,6 +67,16 @@ POCKET_WITHIN_FRACTION = 0.005
 
 # Replay window length for #2 detection (bars ending at the release instant).
 STRUCTURE_REPLAY_BARS = 1200
+
+# Question #3 (zone lifecycle) windows, in whole minutes:
+#  · zones are counted as "born of the publication" if they FORM within the hour
+#    after the release;
+#  · each zone's life is observed for ~a day and a bit afterwards — long enough to
+#    separate "crossed same day" from "still intact next day";
+#  · a life of a full day or more is reported apart (never mitigated same-day).
+ZONE_CREATION_WINDOW_MIN = 60
+ZONE_OBSERVE_WINDOW_MIN = 1560  # 26h — covers the rest of the day + into the next
+ZONE_DAY_MIN = 1440
 
 
 # ---------------------------------------------------------------------------
@@ -483,6 +494,126 @@ def _compute_structure_state(
 
 
 # ---------------------------------------------------------------------------
+# #3 — zone lifecycle (formation → mitigation) around each release
+# ---------------------------------------------------------------------------
+
+
+def _zones_born_after(candles: "pd.DataFrame", t: datetime):
+    """Replay detection over the window following release ``t`` and return the
+    zones BORN within the hour after it, each as ``(created_at, mitigated_at)``.
+
+    ``None`` if the window has too little history OR the candles do not even cover
+    the one-hour creation window after ``t`` (we never count from a window we did
+    not observe). Read-only replay — the detection rules are untouched."""
+    from src.intelligence.market_reading_assembler import build_enriched_frame
+    from src.intelligence.market_reading_mappers import collect_zone_lifecycles
+
+    end_ts = t + timedelta(minutes=ZONE_OBSERVE_WINDOW_MIN)
+    window = candles[candles.index <= end_ts]
+    if len(window) < 60:
+        return None
+    # The creation hour must be observed, else "created in the hour" is not a fact.
+    last_ts = _as_utc(
+        window.index[-1].to_pydatetime()
+        if hasattr(window.index[-1], "to_pydatetime")
+        else window.index[-1]
+    )
+    if last_ts < t + timedelta(minutes=ZONE_CREATION_WINDOW_MIN):
+        return None
+    # Keep enough pre-release context to detect the zones, plus the observed tail.
+    window = window.tail(STRUCTURE_REPLAY_BARS + ZONE_OBSERVE_WINDOW_MIN // BAR_MINUTES)
+
+    candle_objs = [
+        _Candle(
+            _as_utc(ts.to_pydatetime() if hasattr(ts, "to_pydatetime") else ts),
+            float(row.open), float(row.high), float(row.low),
+            float(row.close), float(getattr(row, "volume", 0.0) or 0.0),
+        )
+        for ts, row in zip(window.index, window.itertuples(index=False))
+    ]
+    enriched, _cfg = build_enriched_frame(candle_objs)
+    if len(enriched) == 0:
+        return None
+    return collect_zone_lifecycles(
+        enriched,
+        idx=len(enriched) - 1,
+        since_ts=t,
+        until_ts=t + timedelta(minutes=ZONE_CREATION_WINDOW_MIN),
+    )
+
+
+def _compute_zone_lifecycle(
+    candles: "pd.DataFrame",
+    releases: List[datetime],
+    market: str,
+) -> Optional[ZoneLifecycleMeasure]:
+    """#3 — count zones born in the hour after each release and time each to its
+    first mitigation. FULL lifespan distribution in tranches + dated extremes;
+    zones still untouched at the end of the observed window are counted apart."""
+    created_total = 0
+    never_mitigated = 0
+    # Lifespan buckets (minutes): [0,60), [60,120), [120, ZONE_DAY_MIN).
+    bucket_bounds = [(0, 60), (60, 120), (120, ZONE_DAY_MIN)]
+    bucket_counts = [0, 0, 0]
+    fastest: Optional[tuple] = None  # (minutes, release_ts)
+    slowest: Optional[tuple] = None
+    measured_releases: list[datetime] = []
+
+    for t in releases:
+        zones = _zones_born_after(candles, t)
+        if zones is None:
+            continue
+        measured_releases.append(t)
+        for z in zones:
+            created_total += 1
+            created_at = z.get("created_at")
+            mit = z.get("mitigated_at")
+            if created_at is None or mit is None or mit < created_at:
+                never_mitigated += 1
+                continue
+            life_min = int((mit - created_at).total_seconds() // 60)
+            if life_min >= ZONE_DAY_MIN:
+                never_mitigated += 1
+                continue
+            for i, (lo, hi) in enumerate(bucket_bounds):
+                if lo <= life_min < hi:
+                    bucket_counts[i] += 1
+                    break
+            if fastest is None or life_min < fastest[0]:
+                fastest = (life_min, t)
+            if slowest is None or life_min > slowest[0]:
+                slowest = (life_min, t)
+
+    if len(measured_releases) < MIN_RELIABLE_RELEASES or created_total == 0:
+        return None
+    if fastest is None or slowest is None:
+        # Zones were created but none was mitigated within a day — no timed
+        # distribution to show honestly, so the measure is omitted.
+        return None
+
+    tranches = [
+        DurationTranche(lower_minutes=lo, upper_minutes=hi, count=c)
+        for (lo, hi), c in zip(bucket_bounds, bucket_counts)
+    ]
+    return ZoneLifecycleMeasure(
+        provenance=MeasureProvenance(
+            method_key="measure.zone_lifecycle.replay_after_release",
+            sample_size=len(measured_releases),
+            market=market,
+            period_start=min(measured_releases),
+            period_end=max(measured_releases),
+            reference_days=None,
+            quote_unit=None,
+        ),
+        zones_created_count=created_total,
+        tranches=tranches,
+        fastest=MeasureExtreme(observed_at=fastest[1], minutes=fastest[0]),
+        slowest=MeasureExtreme(observed_at=slowest[1], minutes=slowest[0]),
+        never_mitigated_count=never_mitigated,
+    )
+
+
+# ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
 
@@ -545,40 +676,73 @@ def compute_publication_measures(
         settle_window_minutes,
     )
     structure = _compute_structure_state(candles, releases_utc, market, now)
+    zone_life = _compute_zone_lifecycle(candles, releases_utc, market)
 
     return PublicationMeasures(
         event_key=event_key,
         market=market,
         calm_before=calm,
         structure_state=structure,
+        zone_lifecycle=zone_life,
         return_to_calm=rtc,
     )
 
 
 # ---------------------------------------------------------------------------
-# Runtime loader (NOT used by tests — reads the bundled, gitignored CSVs)
+# Runtime loader
 # ---------------------------------------------------------------------------
+#
+# Data-source order (NW-7): the PROD-warm stores first, the bundled CSVs only as
+# a local-dev fallback. Both bundled CSVs (XAU_15MIN_*.csv and the calendar CSV)
+# are gitignored, so they are NOT present in the deployed container — reading them
+# alone left the page silently empty in prod (NW-5/6). We now read:
+#   · gold M15 candles  ← candles.db  (CandlesCacheStore, warmed by Twelve Data)
+#   · CPI release dates ← calendar_cache.db (CalendarCacheStore, fed by the .ics)
+# and only fall back to the CSVs when a store yields too little. Detection is
+# never altered — this only changes where the read-only inputs come from.
+
+# Bounded read from candles.db: enough M15 bars to span ~2 years of a monthly
+# indicator's releases plus their reference days, capped so the query stays cheap.
+_CANDLES_READ_N = 60000
+# How far back to look for past releases in the calendar store (~2 years + margin).
+_RELEASE_LOOKBACK_DAYS = 760
+# Minimum M15 bars a store read must return to be trusted over the CSV fallback.
+_MIN_STORE_CANDLES = 2000
 
 
-def load_default_measures(
-    event_key: str = "us_cpi",
-    market: str = "XAUUSD",
-    max_releases: int = 24,
-) -> Optional[PublicationMeasures]:
-    """Read US CPI releases + gold M15 candles from the bundled CSVs and compute.
+def _gold_m15_from_store(market: str, candles_store=None):
+    """Gold M15 as a UTC-indexed OHLCV DataFrame from candles.db, or None when the
+    store holds too few bars to measure reliably (→ caller falls back to CSV)."""
+    try:
+        import pandas as pd
 
-    Returns ``None`` when the data is unavailable (so callers render nothing).
+        from src.storage.candles_cache_store import CandlesCacheStore
+    except Exception:  # pragma: no cover - defensive
+        return None
+    store = candles_store or CandlesCacheStore()
+    try:
+        rows = store.get_last_n_candles(market, "M15", _CANDLES_READ_N)
+    except Exception:  # pragma: no cover - defensive
+        return None
+    if not rows or len(rows) < _MIN_STORE_CANDLES:
+        return None
+    df = pd.DataFrame(
+        {
+            "ts": [c.ts for c in rows],
+            "open": [c.open for c in rows],
+            "high": [c.high for c in rows],
+            "low": [c.low for c in rows],
+            "close": [c.close for c in rows],
+            "volume": [getattr(c, "volume", 0.0) or 0.0 for c in rows],
+        }
+    )
+    df["ts"] = pd.to_datetime(df["ts"], errors="coerce", utc=True)
+    df = df.dropna(subset=["ts"]).set_index("ts").sort_index()
+    return df if not df.empty else None
 
-    Only the ``max_releases`` MOST RECENT releases are measured (default 24 ≈ two
-    years of a monthly indicator): it keeps the sample recent and comparable, and
-    caps the per-release engine replay so the first (uncached) request returns in
-    a few seconds rather than tens of seconds. The denominator is shown, so the
-    bound is honest, not silent.
 
-    Timezone: the bundled CSVs store naive "UTC-like" timestamps; we treat them
-    as UTC (localise without shifting the wall-clock value) — consistent with the
-    rest of the pipeline (see MEMORY: "Treat CSV timestamps as UTC").
-    """
+def _gold_m15_from_csv():
+    """Gold M15 from the bundled CSV (local dev only; gitignored in prod)."""
     import os
 
     try:
@@ -587,48 +751,6 @@ def load_default_measures(
         import config as _config
     except Exception:  # pragma: no cover - defensive
         return None
-
-    # --- Calendar releases (USD CPI) --------------------------------------
-    calendar_path = None
-    cfg_path = _config.NEWS_FILTER_CONFIG.get("calendar_file")
-    for candidate in (
-        cfg_path,
-        os.path.join(_config.DATA_DIR, "economic_calendar_HIGH_IMPACT_2019_2025.csv"),
-    ):
-        if candidate and os.path.exists(candidate):
-            calendar_path = candidate
-            break
-    if calendar_path is None:
-        return None
-
-    try:
-        cal = pd.read_csv(calendar_path)
-    except Exception:  # pragma: no cover
-        return None
-    if not {"Date", "Currency", "Event"} <= set(cal.columns):
-        return None
-
-    is_usd = cal["Currency"].astype(str).str.upper() == "USD"
-    is_cpi = cal["Event"].astype(str).str.contains("CPI", case=False, na=False)
-    rows = cal[is_usd & is_cpi]
-    if rows.empty:
-        return None
-
-    releases: list[datetime] = []
-    for raw in rows["Date"]:
-        ts = pd.to_datetime(raw, errors="coerce")
-        if pd.isna(ts):
-            continue
-        dt = ts.to_pydatetime()
-        releases.append(dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt)
-    releases = sorted(set(releases))
-    if not releases:
-        return None
-    # Keep only the most recent window (recent + comparable + bounded latency).
-    if max_releases and len(releases) > max_releases:
-        releases = releases[-max_releases:]
-
-    # --- Gold M15 candles -------------------------------------------------
     gold_path = getattr(_config, "HISTORICAL_DATA_FILE", None)
     if not gold_path or not os.path.exists(gold_path):
         return None
@@ -636,8 +758,6 @@ def load_default_measures(
         candles = pd.read_csv(gold_path)
     except Exception:  # pragma: no cover
         return None
-
-    # Normalise columns → open/high/low/close/volume, UTC DatetimeIndex.
     rename = {}
     for col in candles.columns:
         low = col.lower()
@@ -646,18 +766,130 @@ def load_default_measures(
         elif low in ("open", "high", "low", "close", "volume"):
             rename[col] = low
     candles = candles.rename(columns=rename)
-    if "ts" not in candles.columns or not {
-        "open", "high", "low", "close"
-    } <= set(candles.columns):
+    if "ts" not in candles.columns or not {"open", "high", "low", "close"} <= set(candles.columns):
         return None
     if "volume" not in candles.columns:
         candles["volume"] = 0.0
     candles["ts"] = pd.to_datetime(candles["ts"], errors="coerce")
     candles = candles.dropna(subset=["ts"]).set_index("ts").sort_index()
-    if candles.empty:
+    return candles if not candles.empty else None
+
+
+def _releases_from_store(
+    event_key: str, now: datetime, calendar_store=None
+) -> list:
+    """Past release instants for ``event_key`` from the calendar store, matched by
+    the catalog's stable series code (never by title). Returns [] when the store
+    holds none (→ caller falls back to CSV)."""
+    try:
+        from src.intelligence.calendar_providers.official_sources.base_official import (
+            load_catalog,
+        )
+        from src.storage.calendar_cache_store import CalendarCacheStore
+    except Exception:  # pragma: no cover - defensive
+        return []
+    cat = load_catalog().get(event_key)
+    series = cat.series_code if cat is not None else None
+    if not series:
+        return []
+    store = calendar_store or CalendarCacheStore()
+    start = now - timedelta(days=_RELEASE_LOOKBACK_DAYS)
+    try:
+        events = store.get_events_between(start, now)
+    except Exception:  # pragma: no cover - defensive
+        return []
+    out: list[datetime] = []
+    for e in events:
+        if e.series_code == series and e.scheduled_at is not None:
+            out.append(_as_utc(e.scheduled_at))
+    return sorted(set(out))
+
+
+def _releases_from_csv(event_key: str) -> list:
+    """Past CPI release instants from the bundled calendar CSV (local dev only)."""
+    import os
+
+    try:
+        import pandas as pd
+
+        import config as _config
+    except Exception:  # pragma: no cover - defensive
+        return []
+    calendar_path = None
+    for candidate in (
+        _config.NEWS_FILTER_CONFIG.get("calendar_file"),
+        os.path.join(_config.DATA_DIR, "economic_calendar_HIGH_IMPACT_2019_2025.csv"),
+    ):
+        if candidate and os.path.exists(candidate):
+            calendar_path = candidate
+            break
+    if calendar_path is None:
+        return []
+    try:
+        cal = pd.read_csv(calendar_path)
+    except Exception:  # pragma: no cover
+        return []
+    if not {"Date", "Currency", "Event"} <= set(cal.columns):
+        return []
+    is_usd = cal["Currency"].astype(str).str.upper() == "USD"
+    is_cpi = cal["Event"].astype(str).str.contains("CPI", case=False, na=False)
+    rows = cal[is_usd & is_cpi]
+    if rows.empty:
+        return []
+    releases: list[datetime] = []
+    for raw in rows["Date"]:
+        ts = pd.to_datetime(raw, errors="coerce")
+        if pd.isna(ts):
+            continue
+        dt = ts.to_pydatetime()
+        releases.append(dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt)
+    return sorted(set(releases))
+
+
+def load_default_measures(
+    event_key: str = "us_cpi",
+    market: str = "XAUUSD",
+    max_releases: int = 24,
+    *,
+    now: Optional[datetime] = None,
+    candles_store=None,
+    calendar_store=None,
+) -> Optional[PublicationMeasures]:
+    """Load a publication's past releases + gold M15 candles and compute measures.
+
+    Reads the PROD-warm stores first (candles.db for bars, calendar_cache.db for
+    release dates), falling back to the bundled CSVs for local dev. Returns
+    ``None`` when neither source yields enough (so callers render nothing).
+
+    Only the ``max_releases`` MOST RECENT releases are measured (default 24 ≈ two
+    years of a monthly indicator): it keeps the sample recent and comparable, and
+    caps the per-release engine replay so the first (uncached) request returns in
+    a few seconds. The denominator is shown, so the bound is honest, not silent.
+
+    ``candles_store`` / ``calendar_store`` / ``now`` are injectable for tests.
+    Timezone: store timestamps are UTC; the bundled CSVs store naive "UTC-like"
+    timestamps treated as UTC (localise without shifting the wall-clock value).
+    """
+    now = _as_utc(now) if now is not None else _as_utc(datetime.now(timezone.utc))
+
+    releases = _releases_from_store(event_key, now, calendar_store)
+    if len(releases) < MIN_RELIABLE_RELEASES:
+        releases = _releases_from_csv(event_key) or releases
+    releases = sorted(r for r in releases if r <= now)
+    if not releases:
+        return None
+    if max_releases and len(releases) > max_releases:
+        releases = releases[-max_releases:]
+
+    candles = _gold_m15_from_store(market, candles_store)
+    if candles is None:
+        candles = _gold_m15_from_csv()
+    if candles is None:
         return None
 
-    return compute_publication_measures(event_key, market, releases, candles)
+    return compute_publication_measures(
+        event_key, market, releases, candles, now=now
+    )
 
 
 __all__ = ["compute_publication_measures", "load_default_measures"]

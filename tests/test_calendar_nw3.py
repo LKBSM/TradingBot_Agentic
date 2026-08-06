@@ -68,7 +68,7 @@ class _StubSeriesFetcher(ValueFetcher):
     def fetch(self, series_code):  # not used here
         return ValuePoint(actual=2.0, previous=2.1)
 
-    def fetch_series(self, series_code, limit=12):
+    def fetch_series(self, series_code, limit=12, kind="level"):
         return [SeriesPoint(period="2026-05", value=2.1), SeriesPoint(period="2026-06", value=2.0)]
 
 

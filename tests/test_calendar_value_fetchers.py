@@ -119,6 +119,45 @@ def test_bls_fetch_series_respects_limit_keeping_most_recent():
     assert [(p.period, p.value) for p in pts] == [("2026-02", 321.5), ("2026-03", 322.9)]
 
 
+# --- BLS fetch_series yoy_percent (NW-7): the published 12-month % change ------
+_BLS_SERIES_CALC = json.dumps({
+    "status": "REQUEST_SUCCEEDED",
+    "Results": {"series": [{"data": [
+        {"year": "2026", "period": "M03", "value": "322.9",
+         "calculations": {"pct_changes": {"1": "0.4", "12": "3.1"}}},
+        {"year": "2026", "period": "M02", "value": "321.5",
+         "calculations": {"pct_changes": {"1": "0.5", "12": "3.4"}}},
+        # A month WITHOUT a 12-month calculation (e.g. the 2025 lapse gap) → no point.
+        {"year": "2026", "period": "M01", "value": "320.0",
+         "calculations": {"pct_changes": {"1": "0.3"}}},
+    ]}]},
+})
+
+
+def test_bls_fetch_series_yoy_percent_uses_published_change():
+    sent = {}
+
+    def _post(url, body):
+        sent["body"] = body
+        return _BLS_SERIES_CALC
+
+    f = BLSValueFetcher(api_key="KEY", http_post=_post)
+    pts = f.fetch_series("CUUR0000SA0", kind="yoy_percent")
+    # Only the months BLS published a 12-month change for; AS PUBLISHED, chrono.
+    assert [(p.period, p.value) for p in pts] == [("2026-02", 3.4), ("2026-03", 3.1)]
+    # The request asked BLS to compute the change (never recomputed locally).
+    assert '"calculations": true' in sent["body"]
+
+
+def test_bls_fetch_series_level_ignores_calculations():
+    f = BLSValueFetcher(api_key="KEY", http_post=lambda url, body: _BLS_SERIES_CALC)
+    pts = f.fetch_series("CUUR0000SA0", kind="level")
+    # Level mode keeps the index values, including the month without a % change.
+    assert [(p.period, p.value) for p in pts] == [
+        ("2026-01", 320.0), ("2026-02", 321.5), ("2026-03", 322.9),
+    ]
+
+
 def test_bls_fetch_series_without_key_returns_empty():
     f = BLSValueFetcher(api_key="", http_post=lambda url, body: _BLS_SERIES_OK)
     assert f.fetch_series("CUUR0000SA0") == []

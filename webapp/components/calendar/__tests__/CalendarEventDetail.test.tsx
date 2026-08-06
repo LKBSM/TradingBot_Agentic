@@ -112,6 +112,18 @@ const MEASURES: PublicationMeasures = {
     now_intact_pocket_within: false,
     now_range_position: 'upper',
   },
+  zone_lifecycle: {
+    provenance: prov(),
+    zones_created_count: 34,
+    tranches: [
+      { lower_minutes: 0, upper_minutes: 60, count: 18 },
+      { lower_minutes: 60, upper_minutes: 120, count: 8 },
+      { lower_minutes: 120, upper_minutes: 1440, count: 5 },
+    ],
+    fastest: { observed_at: '2025-03-12T13:30:00Z', minutes: 12, amount: null },
+    slowest: { observed_at: '2025-05-13T13:30:00Z', minutes: 600, amount: null },
+    never_mitigated_count: 3,
+  },
   return_to_calm: {
     provenance: prov(),
     tranches: [
@@ -210,11 +222,11 @@ describe('NW-3 CalendarEventDetail', () => {
     const { container } = renderDetail('bls:us_cpi:2026-07-28', OFFICIAL, MEASURES);
     const text = container.textContent ?? '';
     expect(text).toContain(fr.calendar.pub.questions.sectionTitle);
-    // three measured questions present
-    expect(container.querySelectorAll('.pub-qcard')).toHaveLength(3);
+    // four measured questions present (NW-7 added the zone-lifecycle card)
+    expect(container.querySelectorAll('.pub-qcard')).toHaveLength(4);
     // every source line shows the sample-size denominator (24)
     const sources = Array.from(container.querySelectorAll('.pub-qsource')).map((e) => e.textContent ?? '');
-    expect(sources).toHaveLength(3);
+    expect(sources).toHaveLength(4);
     for (const s of sources) expect(s).toContain('24');
     // durations render as hours/minutes, NEVER candles
     const details = Array.from(container.querySelectorAll('.pub-detail')).map((e) => e.textContent ?? '').join(' ');

@@ -618,6 +618,110 @@ def collect_zones(
     return out
 
 
+def collect_zone_lifecycles(
+    enriched: Any,
+    idx: int = -1,
+    since_ts: Optional[datetime] = None,
+    until_ts: Optional[datetime] = None,
+) -> list[dict]:
+    """Census of EVERY zone whose FORMATION bar falls in ``(since_ts, until_ts]``,
+    with its creation + first-mitigation timestamps, kind and status — INCLUDING
+    zones the display layer drops once consumed (``collect_zones`` deliberately
+    hides mitigated/filled/invalidated zones; a lifecycle census needs exactly
+    those). Read-only: it never mutates the frame and never changes what the live
+    display surfaces — it reuses the SAME engine columns and the SAME lifecycle
+    predicates as ``collect_zones``, only keeping what that function discards.
+
+    Each item: ``{"kind": "ob"|"fvg", "direction", "created_at", "mitigated_at",
+    "status"}`` where ``mitigated_at`` is the first bar price returned into the
+    zone (an OB tap / an FVG entry), or ``None`` if it was never re-touched within
+    the window. Used only by the publication zone-lifecycle measure (NW-7)."""
+    import pandas as pd
+
+    out: list[dict] = []
+    n = len(enriched)
+    if n == 0:
+        return out
+    pos = idx if idx >= 0 else n + idx
+    if pos < 0 or pos >= n:
+        return out
+
+    cols = set(enriched.columns)
+    highs = enriched["high"].values if "high" in cols else None
+    lows = enriched["low"].values if "low" in cols else None
+    closes = enriched["close"].values if "close" in cols else None
+    if highs is None or lows is None or closes is None:
+        return out
+
+    def _in_window(created_at: Optional[datetime]) -> bool:
+        if created_at is None:
+            return False
+        if since_ts is not None and created_at < since_ts:
+            return False
+        if until_ts is not None and created_at > until_ts:
+            return False
+        return True
+
+    # ---- Order blocks (kept regardless of mitigation/invalidation) -------
+    ob_cols = {"BULLISH_OB_HIGH", "BULLISH_OB_LOW", "BEARISH_OB_HIGH", "BEARISH_OB_LOW"}
+    if ob_cols <= cols:
+        bull_hi = enriched["BULLISH_OB_HIGH"].values
+        bull_lo = enriched["BULLISH_OB_LOW"].values
+        bear_hi = enriched["BEARISH_OB_HIGH"].values
+        bear_lo = enriched["BEARISH_OB_LOW"].values
+        for k in range(pos + 1):
+            created_at = _zone_created_at(enriched, k)
+            if not _in_window(created_at):
+                continue
+            for side, hv, lv in (
+                ("bullish", bull_hi[k], bull_lo[k]),
+                ("bearish", bear_hi[k], bear_lo[k]),
+            ):
+                if pd.isna(hv) or pd.isna(lv):
+                    continue
+                zhigh, zlow = float(max(hv, lv)), float(min(hv, lv))
+                status, _tested, tap_idx, _inv, _tc, _tb = _ob_lifecycle(
+                    side, zhigh, zlow, highs, lows, closes, k, pos
+                )
+                out.append({
+                    "kind": "ob",
+                    "direction": side,
+                    "created_at": created_at,
+                    "mitigated_at": _zone_created_at(enriched, tap_idx) if tap_idx is not None else None,
+                    "status": status,
+                })
+
+    # ---- Fair value gaps (kept regardless of fill) -----------------------
+    if "FVG_DIR" in cols and {"high", "low"} <= cols:
+        fvg_dir = enriched["FVG_DIR"].values
+        for k in range(2, pos + 1):
+            d = fvg_dir[k]
+            if pd.isna(d) or d == 0:
+                continue
+            created_at = _zone_created_at(enriched, k)
+            if not _in_window(created_at):
+                continue
+            if d > 0:
+                a, b = float(highs[k - 2]), float(lows[k])
+                side = "bullish"
+            else:
+                a, b = float(highs[k]), float(lows[k - 2])
+                side = "bearish"
+            zhigh, zlow = max(a, b), min(a, b)
+            status, _entered, entry_idx, _fill, _tc, _tb = _fvg_lifecycle(
+                side, zhigh, zlow, highs, lows, k, pos
+            )
+            out.append({
+                "kind": "fvg",
+                "direction": side,
+                "created_at": created_at,
+                "mitigated_at": _zone_created_at(enriched, entry_idx) if entry_idx is not None else None,
+                "status": status,
+            })
+
+    return out
+
+
 def collect_structure_events(
     enriched: Any,
     idx: int = -1,

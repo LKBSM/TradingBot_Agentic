@@ -2634,6 +2634,13 @@
           "body": "Każda odpowiedź to zliczenie minionych dni, z których każdy ma własny kontekst. „10 razy na 12” opisuje to, co zaobserwowano, a nie prawdopodobieństwo na następny raz, i nic tutaj nie odnosi się do nadchodzącej publikacji. Pytania są niezależne: żadne nie wyjaśnia innego.",
           "title": "Jak czytać te odpowiedzi"
         },
+        "zoneLifecycle": {
+          "q": "Czy strefy powstałe tuż po utrzymują się?",
+          "a": "Na <b>{sample}</b> publikacjach zmierzonych na {market} w godzinie po publikacji powstało <b>{created} stref</b>. <b>{t0}</b> zostało przeciętych w mniej niż godzinę, <b>{t1}</b> między jedną a dwiema godzinami, <b>{t2}</b> przed końcem dnia.",
+          "detail": "Czas życia do pierwszego przecięcia — najkrótszy: {fastest} dnia {fastestDate}; najdłuższy: {slowest} dnia {slowestDate}.",
+          "neverMitigated": "{count, plural, =0 {} one {# strefa była wciąż nienaruszona na końcu obserwowanego okna (około jednego dnia).} few {# strefy były wciąż nienaruszone na końcu obserwowanego okna (około jednego dnia).} many {# stref było wciąż nienaruszonych na końcu obserwowanego okna (około jednego dnia).} other {# stref było wciąż nienaruszonych na końcu obserwowanego okna (około jednego dnia).}}",
+          "source": "„Strefa” to blok zleceń lub niewypełniona nierównowaga pozostawiona przez rynek; mówi się, że jest „przecięta”, gdy cena do niej wraca i ją wypełnia — co produkt nazywa mitygacją. Zliczenie stref powstałych w godzinie po każdej publikacji, z podziałem według czasu do ich pierwszego przecięcia. Podstawa: {sample} publikacji na {market}, od {periodStart} do {periodEnd}."
+        },
         "returnToCalm": {
           "a": "Na <b>{sample}</b> publikacjach zmierzonych na {market} przebyta droga na minutę wróciła do zwykłego poziomu w <b>mniej niż godzinę {t0} razy</b>, między jedną a trzema godzinami <b>{t1} razy</b>, powyżej trzech godzin <b>{t2} razy</b>.",
           "detail": "Najszybszy: {fastest} dnia {fastestDate}. Najwolniejszy: {slowest} dnia {slowestDate}.",

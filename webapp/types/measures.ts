@@ -6,7 +6,7 @@
  * i18n templates, never generated. Durations are WHOLE MINUTES (never candle
  * counts); the UI formats hours/minutes. A measure that cannot be computed
  * reliably is `null` (omitted) — the page renders nothing for it, never a
- * placeholder. Zone-lifecycle (question #3) is deferred and absent by design.
+ * placeholder. Zone-lifecycle (question #3) is computed since NW-7.
  */
 
 /** One dated extreme of a distribution — a duration (minutes) OR an amplitude. */
@@ -63,15 +63,28 @@ export interface ReturnToCalmMeasure {
   never_settled_count: number;
 }
 
+export interface ZoneLifecycleMeasure {
+  provenance: MeasureProvenance;
+  zones_created_count: number;
+  tranches: DurationTranche[]; // minutes from a zone's creation to first mitigation
+  fastest: MeasureExtreme;
+  slowest: MeasureExtreme;
+  never_mitigated_count: number;
+}
+
 export interface PublicationMeasures {
   event_key: string;
   market: string;
   calm_before: CalmBeforeMeasure | null;
   structure_state: StructureStateMeasure | null;
+  zone_lifecycle: ZoneLifecycleMeasure | null;
   return_to_calm: ReturnToCalmMeasure | null;
 }
 
 /** True when at least one measure is computed (so the section should render). */
 export function hasAnyMeasure(m: PublicationMeasures | null | undefined): boolean {
-  return !!m && !!(m.calm_before || m.structure_state || m.return_to_calm);
+  return (
+    !!m &&
+    !!(m.calm_before || m.structure_state || m.zone_lifecycle || m.return_to_calm)
+  );
 }

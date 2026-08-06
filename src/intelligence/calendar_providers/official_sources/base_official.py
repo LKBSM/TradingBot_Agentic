@@ -77,6 +77,12 @@ class CatalogEvent:
     time_last_verified: Optional[str]
     organism: Optional[str]
     license_label: Optional[str]
+    # How the published SERIES should read on the curve. "level" (default) shows
+    # the value AS the organism stores it (an index level, a count). "yoy_percent"
+    # shows the organism's OWN 12-month percent change — the headline figure the
+    # organism publishes alongside the index (e.g. CPI inflation), fetched from the
+    # source, never recomputed here. It stays a published value, not a conversion.
+    series_kind: str = "level"
     # Live .ics feed wiring (opt-in): the source's iCalendar URL + the keyword
     # rules that link a VEVENT SUMMARY to this event's key.
     ics_feed: Optional[str] = None
@@ -137,6 +143,7 @@ def load_catalog(path: Optional[Path] = None) -> Dict[str, CatalogEvent]:
                 currency=str(ev.get("currency", "")).upper(),
                 series_code=ev.get("series_code"),
                 value_unit=ev.get("value_unit"),
+                series_kind=str(ev.get("series_kind") or "level"),
                 periodicity=ev.get("periodicity"),
                 source_timezone=ev.get("source_timezone"),
                 release_time_local=ev.get("release_time_local"),
@@ -153,6 +160,19 @@ def load_catalog(path: Optional[Path] = None) -> Dict[str, CatalogEvent]:
     except (OSError, ValueError, TypeError, KeyError) as exc:
         logger.error("failed to load calendar catalog (%s): %s — empty", p, exc)
         return {}
+
+
+def series_kind_for(series_code: Optional[str]) -> str:
+    """Return the catalog's ``series_kind`` for a stable series code ("level" by
+    default). Resolved from the catalog — the single source of truth for how a
+    published series should read on the curve — so the value layer never hard-codes
+    a transform. Unknown code / no catalog ⇒ "level" (the safe, literal default)."""
+    if not series_code:
+        return "level"
+    for ev in load_catalog().values():
+        if ev.series_code == series_code:
+            return ev.series_kind or "level"
+    return "level"
 
 
 def load_schedule(path: Optional[Path] = None) -> List[ReleaseInstance]:

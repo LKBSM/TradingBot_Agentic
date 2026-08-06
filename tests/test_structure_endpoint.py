@@ -59,7 +59,9 @@ def test_coverage_lists_all_enabled_combos(tmp_path):
     xau_m15 = next(c for c in combos if c["instrument"] == "XAUUSD" and c["timeframe"] == "M15")
     assert xau_m15["candle_count"] == 50
     assert xau_m15["history_since"] is not None
-    assert xau_m15["duration"] == "1mo"
+    # NW-7: XAUUSD M15 storage deepened to 24 months so candles.db can hold the
+    # publication-measure replay windows (12–24 monthly releases + reference days).
+    assert xau_m15["duration"] == "24mo"
 
 
 def test_coverage_reports_partial_honestly(tmp_path):

@@ -52,6 +52,11 @@ _ENV_MAP_PATH = "CALENDAR_EVENT_MAP_PATH"
 # default (build the env-configured fetcher).
 _UNSET = object()
 
+# Published-history (curve) cache TTL. A monthly series changes at most monthly,
+# so 6h keeps the live BLS calls to a handful per day — well under the free
+# 500/day key ceiling — while still surfacing a fresh point the same day.
+SERIES_CACHE_TTL_SECONDS = int(os.environ.get("CALENDAR_SERIES_CACHE_TTL_S", "21600"))
+
 
 def _default_map_path() -> Path:
     return Path(__file__).resolve().parents[2] / "config" / "event_market_map.json"
@@ -121,6 +126,12 @@ class CalendarService:
         # Single-flight guard for the background refresh (CAL-1): at most one
         # network refresh runs at a time; concurrent requests serve the cache.
         self._refresh_lock = threading.Lock()
+        # Per-series published-history cache (NW-7): the twelve-figure curve is a
+        # monthly series, so one live fetch per series every few hours is ample —
+        # WITHOUT it, every detail-page view would spend one BLS request and the
+        # free 500/day key would be exhausted. Keyed by (source, series_code, kind).
+        self._series_cache: Dict[Tuple[str, str, str], Tuple[datetime, List[CalendarSeriesPoint]]] = {}
+        self._series_cache_ttl = timedelta(seconds=SERIES_CACHE_TTL_SECONDS)
 
     # ------------------------------------------------------------------ #
     # Market attachment (the documented rule)
@@ -255,10 +266,31 @@ class CalendarService:
             # the per-event detail path — one series call per detail, never per row
             # of the list/month window. Absent series/fetcher ⇒ empty ⇒ no curve.
             if self._value_fetcher is not None and ev.series_code:
-                ev.value_series = [
-                    CalendarSeriesPoint(period=p.period, value=p.value)
-                    for p in self._value_fetcher.series_for(ev.source, ev.series_code)
-                ]
+                from src.intelligence.calendar_providers.official_sources.base_official import (
+                    series_kind_for,
+                )
+
+                kind = series_kind_for(ev.series_code)
+                cache_key = (ev.source, ev.series_code, kind)
+                cached_series = self._series_cache.get(cache_key)
+                if (
+                    cached_series is not None
+                    and now - cached_series[0] < self._series_cache_ttl
+                ):
+                    ev.value_series = cached_series[1]
+                else:
+                    series = [
+                        CalendarSeriesPoint(period=p.period, value=p.value)
+                        for p in self._value_fetcher.series_for(
+                            ev.source, ev.series_code, kind=kind
+                        )
+                    ]
+                    # Only cache a NON-EMPTY series: an empty read (transient
+                    # network failure or exhausted quota) must not be pinned for
+                    # hours — retry on the next view instead.
+                    if series:
+                        self._series_cache[cache_key] = (now, series)
+                    ev.value_series = series
             events.append(ev)
 
         last_success, stale = self._freshness(now)

@@ -2508,6 +2508,13 @@
           "rangeUpper": "high",
           "source": "State obtained by replaying detection on the window ending at each release instant, seeing nothing of what followed. Base: {sample} publications on {market}, from {periodStart} to {periodEnd}."
         },
+        "zoneLifecycle": {
+          "q": "Do the zones born right after it hold?",
+          "a": "Across <b>{sample}</b> publications measured on {market}, <b>{created} zones</b> formed within the hour after the release. <b>{t0}</b> were crossed in under an hour, <b>{t1}</b> between one and two hours, <b>{t2}</b> before the end of the day.",
+          "detail": "Lifespan before the first crossing — shortest: {fastest} on {fastestDate}; longest: {slowest} on {slowestDate}.",
+          "neverMitigated": "{count, plural, =0 {} one {# zone was still intact at the end of the observed window (about one day).} other {# zones were still intact at the end of the observed window (about one day).}}",
+          "source": "A “zone” is an order block or an unfilled imbalance the market left behind; it is “crossed” when price returns into it and fills it — what the product calls mitigation. Count of zones born within the hour after each release, split by the time to their first crossing. Base: {sample} publications on {market}, from {periodStart} to {periodEnd}."
+        },
         "returnToCalm": {
           "q": "How long did the market take to settle back down?",
           "a": "Across <b>{sample}</b> publications measured on {market}, per-minute travel returned to its ordinary level in <b>under one hour {t0} times</b>, between one and three hours <b>{t1} times</b>, beyond three hours <b>{t2} times</b>.",

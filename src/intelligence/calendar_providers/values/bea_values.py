@@ -103,7 +103,9 @@ class BEAValueFetcher(ValueFetcher):
         previous = vals[-2] if len(vals) >= 2 else None
         return ValuePoint(actual=actual, previous=previous)
 
-    def fetch_series(self, series_code: str, limit: int = 12) -> List[SeriesPoint]:
+    def fetch_series(
+        self, series_code: str, limit: int = 12, kind: str = "level"
+    ) -> List[SeriesPoint]:  # ``kind`` unused: BEA series are served as levels.
         spec = _BEA_SERIES.get(series_code)
         if spec is None or limit < 1:
             return []

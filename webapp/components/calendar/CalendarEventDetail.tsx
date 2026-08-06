@@ -24,6 +24,7 @@ import {
   type CalmBeforeMeasure,
   type StructureStateMeasure,
   type ReturnToCalmMeasure,
+  type ZoneLifecycleMeasure,
   type MeasureExtreme,
   type MeasureProvenance,
 } from '@/types/measures';
@@ -527,6 +528,65 @@ function StructureCard({
   );
 }
 
+function ZoneLifecycleCard({
+  n,
+  m,
+  locale,
+  t,
+}: {
+  n: number;
+  m: ZoneLifecycleMeasure;
+  locale: string;
+  t: ReturnType<typeof useTranslations>;
+}) {
+  const market = t(`market.${m.provenance.market}` as 'market.XAUUSD');
+  const t0 = m.tranches[0]?.count ?? 0; // < 1 h
+  const t1 = m.tranches[1]?.count ?? 0; // 1–2 h
+  const t2 = m.tranches[2]?.count ?? 0; // 2 h – 1 day
+  return (
+    <div className="pub-qcard">
+      <div className="pub-qn">{t('pub.questions.qLabel', { n })}</div>
+      <p className="pub-q">{t('pub.questions.zoneLifecycle.q')}</p>
+      <p className="pub-a">
+        {t.rich('pub.questions.zoneLifecycle.a', {
+          ...RICH,
+          sample: m.provenance.sample_size,
+          market,
+          created: m.zones_created_count,
+          t0,
+          t1,
+          t2,
+        })}
+      </p>
+      <p className="pub-detail">
+        {t.rich('pub.questions.zoneLifecycle.detail', {
+          ...RICH,
+          t0,
+          t1,
+          t2,
+          fastest: m.fastest.minutes != null ? formatMinutes(m.fastest.minutes) : '—',
+          fastestDate: fmtExtremeDate(m.fastest, locale),
+          slowest: m.slowest.minutes != null ? formatMinutes(m.slowest.minutes) : '—',
+          slowestDate: fmtExtremeDate(m.slowest, locale),
+        })}
+      </p>
+      {m.never_mitigated_count > 0 && (
+        <p className="pub-nevermit">
+          {t('pub.questions.zoneLifecycle.neverMitigated', {
+            count: m.never_mitigated_count,
+          })}
+        </p>
+      )}
+      <SourceLine
+        prov={m.provenance}
+        msgKey="pub.questions.zoneLifecycle.source"
+        locale={locale}
+        t={t}
+      />
+    </div>
+  );
+}
+
 function ReturnToCalmCard({
   n,
   m,
@@ -609,6 +669,9 @@ function QuestionsSection({
         )}
         {measures.structure_state && (
           <StructureCard n={++n} m={measures.structure_state} locale={locale} t={t} />
+        )}
+        {measures.zone_lifecycle && (
+          <ZoneLifecycleCard n={++n} m={measures.zone_lifecycle} locale={locale} t={t} />
         )}
         {measures.return_to_calm && (
           <ReturnToCalmCard n={++n} m={measures.return_to_calm} locale={locale} t={t} />

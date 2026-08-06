@@ -175,7 +175,8 @@
   padding-top: 7px;
   border-top: 1px solid var(--line);
 }
-.pub-never {
+.pub-never,
+.pub-nevermit {
   font-size: 11px;
   line-height: 1.55;
   color: var(--liq);

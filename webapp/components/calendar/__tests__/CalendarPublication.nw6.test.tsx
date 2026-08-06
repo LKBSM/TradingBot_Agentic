@@ -77,10 +77,10 @@ describe('NW-6 publication page guards', () => {
   it('(Défaut B) every catalog publication has a REAL fiche, and none renders the old filler', () => {
     const FILLER = 'indicateur économique officiel, paru selon un calendrier connu';
     for (const key of PEDAGOGY_KEYS) {
-      const body = (fr.calendar.pub.pedagogy as Record<string, { body: string }>)[key]?.body ?? '';
+      const body = (fr.calendar.pub.pedagogy as unknown as Record<string, { body: string }>)[key]?.body ?? '';
       expect(body.length, `fr fiche ${key} missing`).toBeGreaterThan(80);
       expect(body).not.toContain(FILLER);
-      const enBody = (en.calendar.pub.pedagogy as Record<string, { body: string }>)[key]?.body ?? '';
+      const enBody = (en.calendar.pub.pedagogy as unknown as Record<string, { body: string }>)[key]?.body ?? '';
       expect(enBody.length, `en fiche ${key} missing`).toBeGreaterThan(80);
     }
   });
