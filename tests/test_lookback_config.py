@@ -137,6 +137,22 @@ def test_live_warm_includes_m5_when_flagged(monkeypatch):
     assert ("XAUUSD", "M5") in warm and len(warm) == 10
 
 
+def test_live_warm_instruments_allowlist_shrinks_perimeter(_default_env, monkeypatch):
+    """LIVE_WARM_INSTRUMENTS restricts warming to the listed markets (others stay
+    available on demand) — the config lever to cut Twelve Data REST usage."""
+    monkeypatch.setenv("LIVE_WARM_INSTRUMENTS", "xauusd")  # case-insensitive
+    warm = lb.live_warm_combos()
+    assert warm == (("XAUUSD", "M15"), ("XAUUSD", "H1"), ("XAUUSD", "H4"), ("XAUUSD", "D1"))
+    assert all(inst == "XAUUSD" for (inst, _tf) in warm)
+
+
+def test_live_warm_timeframes_allowlist_shrinks_perimeter(_default_env, monkeypatch):
+    monkeypatch.setenv("LIVE_WARM_INSTRUMENTS", "XAUUSD")
+    monkeypatch.setenv("LIVE_WARM_TIMEFRAMES", "M15,H1")
+    warm = lb.live_warm_combos()
+    assert warm == (("XAUUSD", "M15"), ("XAUUSD", "H1"))
+
+
 def test_enabled_combos_are_instrument_major_and_ordered(_default_env):
     combos = lb.enabled_combos()
     # All XAUUSD combos precede all EURUSD combos; timeframe order preserved.
