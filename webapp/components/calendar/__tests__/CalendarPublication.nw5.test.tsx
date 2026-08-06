@@ -64,6 +64,7 @@ const MEASURES: PublicationMeasures = {
   event_key: 'us_cpi', market: 'XAUUSD',
   calm_before: { provenance: prov(), reference_amount: 9, calmer_count: 10, busier_count: 2, calmest: { observed_at: '2026-02-12T13:30:00Z', minutes: null, amount: 3.4 }, busiest: { observed_at: '2026-04-10T12:30:00Z', minutes: null, amount: 12 } },
   structure_state: { provenance: prov(), inside_zone_count: 5, intact_pocket_count: 9, range_lower_count: 2, range_middle_count: 2, range_upper_count: 8, now_inside_zone: true, now_intact_pocket_within: false, now_range_position: 'upper' },
+  zone_lifecycle: null,
   return_to_calm: { provenance: prov(), tranches: [ { lower_minutes: 0, upper_minutes: 60, count: 4 }, { lower_minutes: 60, upper_minutes: 180, count: 5 }, { lower_minutes: 180, upper_minutes: null, count: 3 } ], fastest: { observed_at: '2026-03-12T12:30:00Z', minutes: 15, amount: null }, slowest: { observed_at: '2026-05-13T13:30:00Z', minutes: 285, amount: null }, never_settled_count: 0 },
 };
 

@@ -2634,6 +2634,13 @@
           "body": "Cada respuesta es un recuento de jornadas pasadas, cada una con su propio contexto. «10 veces de 12» describe lo que se observó, no un pronóstico para la próxima vez, y nada de esto se aplica a la publicación por venir. Las preguntas son independientes: ninguna explica otra.",
           "title": "Cómo leer estas respuestas"
         },
+        "zoneLifecycle": {
+          "q": "¿Aguantan las zonas nacidas justo después?",
+          "a": "En <b>{sample}</b> publicaciones medidas en {market}, se formaron <b>{created} zonas</b> en la hora posterior a la publicación. <b>{t0}</b> fueron atravesadas en menos de una hora, <b>{t1}</b> entre una y dos horas, <b>{t2}</b> antes del final del día.",
+          "detail": "Duración de vida hasta el primer cruce — la más corta: {fastest} el {fastestDate}; la más larga: {slowest} el {slowestDate}.",
+          "neverMitigated": "{count, plural, =0 {} one {# zona seguía intacta al final de la ventana observada (aproximadamente un día).} other {# zonas seguían intactas al final de la ventana observada (aproximadamente un día).}}",
+          "source": "Una «zona» es un bloque de órdenes o un desequilibrio sin rellenar que deja el mercado; se dice «atravesada» cuando el precio vuelve a ella y la rellena — lo que el producto llama mitigación. Recuento de las zonas nacidas en la hora posterior a cada publicación, repartidas según el tiempo hasta su primer cruce. Base: {sample} publicaciones en {market}, del {periodStart} al {periodEnd}."
+        },
         "returnToCalm": {
           "a": "En <b>{sample}</b> publicaciones medidas en {market}, el recorrido por minuto volvió a su nivel ordinario en <b>menos de una hora {t0} veces</b>, entre una y tres horas <b>{t1} veces</b>, más allá de tres horas <b>{t2} veces</b>.",
           "detail": "El más rápido: {fastest} el {fastestDate}. El más lento: {slowest} el {slowestDate}.",

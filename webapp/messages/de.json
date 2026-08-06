@@ -2634,6 +2634,13 @@
           "body": "Jede Antwort ist eine Zählung vergangener Tage, jeder mit seinem eigenen Kontext. „10 von 12 Mal“ beschreibt, was beobachtet wurde, keine Wahrscheinlichkeit für das nächste Mal, und nichts hier gilt für die bevorstehende Veröffentlichung. Die Fragen sind unabhängig: keine erklärt eine andere.",
           "title": "Wie diese Antworten zu lesen sind"
         },
+        "zoneLifecycle": {
+          "q": "Halten die kurz danach entstandenen Zonen?",
+          "a": "Über <b>{sample}</b> auf {market} gemessene Veröffentlichungen entstanden <b>{created} Zonen</b> in der Stunde nach der Veröffentlichung. <b>{t0}</b> wurden in weniger als einer Stunde durchbrochen, <b>{t1}</b> zwischen einer und zwei Stunden, <b>{t2}</b> vor dem Ende des Tages.",
+          "detail": "Lebensdauer bis zur ersten Durchquerung — die kürzeste: {fastest} am {fastestDate}; die längste: {slowest} am {slowestDate}.",
+          "neverMitigated": "{count, plural, =0 {} one {# Zone war am Ende des beobachteten Fensters (etwa ein Tag) noch intakt.} other {# Zonen waren am Ende des beobachteten Fensters (etwa ein Tag) noch intakt.}}",
+          "source": "Eine „Zone“ ist ein Orderblock oder eine ungefüllte Ungleichheit, die der Markt hinterlässt; sie gilt als „durchbrochen“, wenn der Preis in sie zurückkehrt und sie füllt — was das Produkt Mitigation nennt. Zählung der in der Stunde nach jeder Veröffentlichung entstandenen Zonen, aufgeteilt nach der Zeit bis zu ihrer ersten Durchquerung. Basis: {sample} Veröffentlichungen auf {market}, vom {periodStart} bis {periodEnd}."
+        },
         "returnToCalm": {
           "a": "Bei <b>{sample}</b> auf {market} gemessenen Veröffentlichungen kehrte der Weg pro Minute <b>in weniger als einer Stunde {t0} Mal</b> auf sein gewöhnliches Niveau zurück, zwischen einer und drei Stunden <b>{t1} Mal</b>, über drei Stunden hinaus <b>{t2} Mal</b>.",
           "detail": "Am schnellsten: {fastest} am {fastestDate}. Am langsamsten: {slowest} am {slowestDate}.",

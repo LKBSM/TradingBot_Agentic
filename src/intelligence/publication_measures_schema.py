@@ -18,9 +18,9 @@ Discipline baked into the shape (mission NW-3 LIGNE + writing rules):
   · A measure that cannot be computed RELIABLY is OMITTED (``None``) — never
     approximated, never a placeholder promising future content (§2 periscope).
 
-Zone-lifecycle (formation→mitigation, question #3) is DEFERRED this iteration and
-is intentionally ABSENT from the model: no field advertises content that is not
-computed.
+Zone-lifecycle (formation→mitigation, question #3) is computed since NW-7 by
+replaying detection over the hour AFTER each release and timing each new zone to
+its first mitigation — read-only, the detection rules unchanged.
 """
 
 from __future__ import annotations
@@ -115,6 +115,25 @@ class ReturnToCalmMeasure(BaseModel):
     never_settled_count: int = 0
 
 
+class ZoneLifecycleMeasure(BaseModel):
+    """#3 — the zones (order blocks / fair-value gaps) BORN in the hour AFTER each
+    publication, and how long each held before the price returned into it
+    (mitigation). Obtained by REPLAYING detection over the window following each
+    release (no look-ahead within a bar; the engine is causal). Counts and a FULL
+    lifespan distribution in tranches + dated extremes — never a central value.
+
+    ``zones_created_count`` is the total across the sample; ``tranches`` bucket the
+    minutes from a zone's creation to its first mitigation; ``never_mitigated_count``
+    are zones still untouched at the end of the observation window."""
+
+    provenance: MeasureProvenance
+    zones_created_count: int
+    tranches: List[DurationTranche] = Field(default_factory=list)
+    fastest: MeasureExtreme          # shortest-lived zone (dated by its release)
+    slowest: MeasureExtreme          # longest-lived mitigated zone
+    never_mitigated_count: int = 0
+
+
 class PublicationMeasures(BaseModel):
     """Engine-measured facts for ONE recurring publication on ONE attached market.
 
@@ -126,12 +145,18 @@ class PublicationMeasures(BaseModel):
     market: str
     calm_before: Optional[CalmBeforeMeasure] = None
     structure_state: Optional[StructureStateMeasure] = None
+    zone_lifecycle: Optional[ZoneLifecycleMeasure] = None
     return_to_calm: Optional[ReturnToCalmMeasure] = None
 
     def has_any(self) -> bool:
         return any(
             m is not None
-            for m in (self.calm_before, self.structure_state, self.return_to_calm)
+            for m in (
+                self.calm_before,
+                self.structure_state,
+                self.zone_lifecycle,
+                self.return_to_calm,
+            )
         )
 
 
@@ -141,6 +166,7 @@ __all__ = [
     "MeasureProvenance",
     "CalmBeforeMeasure",
     "StructureStateMeasure",
+    "ZoneLifecycleMeasure",
     "ReturnToCalmMeasure",
     "PublicationMeasures",
 ]

@@ -1,5 +1,6 @@
 {
   "_comment": "LB-1 — storage depth per (instrument, timeframe), expressed in DURATION (calendar), NOT in a bar count. Sized by the horizon of usefulness of each timeframe: fast units show NOW with precision, slow units show FAR. Duration grammar: <n><unit>, unit in d (day) | w (week) | mo (month) | y (year). Resolved to a target candle count via a trading-hours-aware conversion in src/intelligence/lookback_config.py. Per-instrument overrides go under instruments.<SYMBOL>; anything omitted there falls back to default. Adjustable without touching code. M1 is gated separately by the LB1_ENABLE_M1 env flag (default off).",
+  "_nw7_note": "XAUUSD.M15 deepened to 24 months so candles.db can hold the ~12–24 monthly release windows + reference days the publication measures replay (NW-7). One-time backfill (~11 Twelve Data requests); the detection window is unchanged. This key is documentation only — the loader reads 'default' and 'instruments' exclusively.",
   "default": {
     "M1": "1d",
     "M5": "1w",
@@ -9,7 +10,9 @@
     "D1": "5y"
   },
   "instruments": {
-    "XAUUSD": {},
+    "XAUUSD": {
+      "M15": "24mo"
+    },
     "EURUSD": {}
   }
 }

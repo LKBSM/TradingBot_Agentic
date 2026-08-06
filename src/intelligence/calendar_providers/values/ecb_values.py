@@ -55,7 +55,9 @@ class ECBValueFetcher(ValueFetcher):
         previous = _last_distinct_before(obs, actual)
         return ValuePoint(actual=actual, previous=previous)
 
-    def fetch_series(self, series_code: str, limit: int = 12) -> List[SeriesPoint]:
+    def fetch_series(
+        self, series_code: str, limit: int = 12, kind: str = "level"
+    ) -> List[SeriesPoint]:  # ``kind`` unused: the policy rate is served as a level.
         """The last ``limit`` DISTINCT rate LEVELS (oldest→newest), each labelled by
         the month its level took effect ("YYYY-MM"). A policy rate is a step series:
         plotting consecutive identical daily observations would be meaningless, so we

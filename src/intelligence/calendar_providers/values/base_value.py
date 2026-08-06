@@ -47,11 +47,16 @@ class ValueFetcher(ABC):
         """Return the latest published value (+ previous) for ``series_code``, or
         ``None`` on any failure/absence (never raises, never fabricates)."""
 
-    def fetch_series(self, series_code: str, limit: int = 12) -> List[SeriesPoint]:
+    def fetch_series(
+        self, series_code: str, limit: int = 12, kind: str = "level"
+    ) -> List[SeriesPoint]:
         """Return the last ``limit`` published observations (oldest→newest) for
-        ``series_code``, each with its reference-period label. Default: empty —
-        a source that cannot serve a series (or has none) returns [] and the page
-        simply shows no curve. Never fabricates, never raises."""
+        ``series_code``, each with its reference-period label. ``kind`` selects how
+        the published series should read: "level" (the value as stored) or
+        "yoy_percent" (the source's own 12-month percent change, when it publishes
+        one). A fetcher that does not honour a ``kind`` may ignore it. Default:
+        empty — a source that cannot serve a series (or has none) returns [] and
+        the page simply shows no curve. Never fabricates, never raises."""
         return []
 
 
@@ -75,18 +80,23 @@ class MultiValueFetcher(ValueFetcher):
             return None
 
     def series_for(
-        self, source: str, series_code: Optional[str], limit: int = 12
+        self,
+        source: str,
+        series_code: Optional[str],
+        limit: int = 12,
+        kind: str = "level",
     ) -> List[SeriesPoint]:
         """Route a series-of-observations request to its source's fetcher. A
         source with no registered fetcher, or one that serves no series, yields
-        [] (→ no curve, honestly). Never raises, never fabricates."""
+        [] (→ no curve, honestly). ``kind`` ("level" | "yoy_percent") selects how
+        the series reads. Never raises, never fabricates."""
         if not series_code:
             return []
         fetcher = self._by_source.get(source)
         if fetcher is None:
             return []
         try:
-            return fetcher.fetch_series(series_code, limit)
+            return fetcher.fetch_series(series_code, limit, kind)
         except Exception as exc:  # defensive — a fetch failure is graceful
             logger.warning("value series fetch failed for %s/%s: %s", source, series_code, exc)
             return []

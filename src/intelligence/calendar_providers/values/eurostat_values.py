@@ -64,7 +64,9 @@ class EurostatValueFetcher(ValueFetcher):
         previous = obs[-2] if len(obs) >= 2 else None
         return ValuePoint(actual=actual, previous=previous)
 
-    def fetch_series(self, series_code: str, limit: int = 12) -> List[SeriesPoint]:
+    def fetch_series(
+        self, series_code: str, limit: int = 12, kind: str = "level"
+    ) -> List[SeriesPoint]:  # ``kind`` unused: Eurostat HICP is already a % change.
         """Last ``limit`` published observations (oldest→newest) with their
         reference-period labels. Values AS PUBLISHED; [] on any failure/absence.
 
