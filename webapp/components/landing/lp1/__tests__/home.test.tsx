@@ -12,7 +12,7 @@ import pl from '@/messages/pl.json';
 import ar from '@/messages/ar.json';
 import { HomeLanding } from '../HomeLanding';
 import { DemoTabs } from '../DemoTabs';
-import { LANDING_STATS } from '@/lib/landing/stats';
+import { LANDING_STATS, STRUCTURE_TYPES } from '@/lib/landing/stats';
 
 function render(ui: React.ReactElement, locale: 'fr' | 'en' = 'fr') {
   const messages = locale === 'fr' ? fr : en;
@@ -55,6 +55,16 @@ describe('LP-1 home — forbidden vocabulary', () => {
     }
   });
 
+  // LP-2: the word "moteur" (fr) / "engine" (en) must never surface in visible
+  // home copy — it leaks the internal machinery. Replacements: "MIA détecte",
+  // "l'analyse", "la détection automatique", "le produit".
+  it('never says "moteur" (fr) or "engine" (en) in the home namespace', () => {
+    const frStrings = collectStrings((fr as Record<string, unknown>).home).join(' ').toLowerCase();
+    const enStrings = collectStrings((en as Record<string, unknown>).home).join(' ').toLowerCase();
+    expect(frStrings, 'fr home must not contain "moteur"').not.toContain('moteur');
+    expect(enStrings, 'en home must not contain "engine"').not.toContain('engine');
+  });
+
   // DETTE-1: the 7 non-fr/en locales were natively translated. Guard every locale
   // against the forbidden concepts in their own language (loanwords + the local
   // words for signal / opportunity / probability). This would have caught the
@@ -79,15 +89,21 @@ describe('LP-1 home — forbidden vocabulary', () => {
 describe('LP-1 home — honest figures', () => {
   it('the stats banner renders the real numbers from the single source', () => {
     render(<HomeLanding />);
-    // labels present
+    // LP-2 banner: markets · timeframes · conditions · structures
     expect(screen.getByText('marchés suivis')).toBeInTheDocument();
-    expect(screen.getByText('combinaisons analysées')).toBeInTheDocument();
+    expect(screen.getByText('unités de temps')).toBeInTheDocument();
     expect(screen.getByText('conditions de recherche')).toBeInTheDocument();
+    expect(screen.getByText('structures détectées')).toBeInTheDocument();
     // the distinctive figures come straight from LANDING_STATS
-    expect(String(LANDING_STATS.combinations)).toBe('12');
     expect(String(LANDING_STATS.conditions)).toBe('22');
-    expect(screen.getByText('12')).toBeInTheDocument();
+    expect(String(LANDING_STATS.structures)).toBe('7');
     expect(screen.getByText('22')).toBeInTheDocument();
+  });
+
+  it('the 4th banner figure is sourced from STRUCTURE_TYPES, never a literal', () => {
+    // §C4: the "structures détectées" tile must equal the single source length.
+    expect(LANDING_STATS.structures).toBe(STRUCTURE_TYPES.length);
+    expect(STRUCTURE_TYPES.length).toBe(7);
   });
 
   it('does not advertise the maquette fictions (80 markets / 480 combinations)', () => {
@@ -154,7 +170,7 @@ describe('LP-1 home — demos run offline', () => {
 
   it('the scanner demo shows the two honest empty states', () => {
     render(<DemoTabs />);
-    fireEvent.click(screen.getByRole('tab', { name: /Chercher un marché/i }));
+    fireEvent.click(screen.getByRole('tab', { name: /Définir une stratégie/i }));
     // untick both default conditions → "no condition" empty state (not all markets)
     fireEvent.click(screen.getByText('La tendance structurelle est haussière'));
     fireEvent.click(screen.getByText("L'unité supérieure va dans le même sens"));
@@ -169,7 +185,7 @@ describe('LP-1 home — demos run offline', () => {
 
   it('a MIA question changes the structure demo layers (grounded action)', () => {
     render(<DemoTabs />);
-    fireEvent.click(screen.getByRole('tab', { name: /Poser une question/i }));
+    fireEvent.click(screen.getByRole('tab', { name: /Parler à M\.I\.A/i }));
     fireEvent.click(screen.getByText('Montre-moi seulement les OB non testés'));
     // the answer confirms only OBs remain, and the action note appears
     expect(screen.getByText(/Seuls les Order Blocks/i)).toBeInTheDocument();

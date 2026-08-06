@@ -123,3 +123,59 @@ Décision à prendre (§C4) : les « types de structure » réels que le produit
 
 ## Tarif (rappel PRIX-1, source unique `config/pricing.json` → `pricing.generated.ts`)
 39 $ US/mois · 348 $ US/an (= 29 $ US/mois) · palier gratuit permanent sans carte · devise explicite partout · mentions : annulable, USD, outil d'information/éducation sans conseil/signal, risque de perte, 18 ans+.
+
+---
+---
+
+# LP-2 — Implémentation (Sections 2→5, après GO)
+
+> Page d'accueil uniquement. Aucun /app, /scanner, /zones, /actualites, ni détection touchés.
+> Captures « après » : `docs/design/captures/NEW-home-*.png`.
+
+## Ce qui a été construit
+- **Ordre v3 (15 sections)** dans `components/landing/lp1/HomeLanding.tsx` : en-tête · hero+bandeau · **M.I.A (§3)** · démos · **Outils** (carrousel espace de lecture + scanner + zones + actualités) · comment ça marche · pour qui · ce qui nous distingue · tarif · FAQ · CTA · pied de page.
+- **`MiaSection.tsx`** (nouveau) : section M.I.A remontée et étoffée — que fait-elle / où / pourquoi, exemple de conversation ancrée finissant sur un **refus explicite**, 4 cartes de capacités (enseigne le SMC · décrit ce qui est là · pilote l'affichage · refuse de deviner) + 6 questions réelles.
+- **`ReadingCarousel.tsx`** (nouveau) : **carrousel 5 volets** de l'espace de lecture — flèches, points de position, **clavier** (←/→), **glissement au doigt**, volet **nommé** dans le compteur « n / 5 · Nom », nombre de volets visible. Volets : Graphique (couches + annotations) · Lecture narrée (entière) · **Régime (9 vraies tuiles, sans « Phase »)** · Journal des événements · Unités de temps. Chaque volet porte « Données d'illustration ».
+- **`BrandMark.tsx`** (nouveau) : logo bougie (3 chandelles), lisible en favicon, réutilisable ; baseline « Multi-asset Intelligence Assistant » en infobulle (jamais empilée dans la barre).
+- **Nav / MobileMenu** : ancres visiteur **M.I.A · Démo · Outils · Tarifs · FAQ** ; **App/Zones/Scanner masqués au visiteur** (visibles seulement connecté) ; zone de connexion soignée (« Se connecter » secondaire, « Essayer gratuitement » principal, sélecteur de langue discret).
+- **Bandeau 4 chiffres sourcés** : `lib/landing/stats.ts` — **2 marchés · 6 unités · 22 conditions · 7 structures** ; le 4e vient de la nouvelle source unique `STRUCTURE_TYPES` (OB, FVG, BOS, CHOCH, BSL, SSL, niveaux égaux). Ligne d'ambition sous le bandeau.
+- **Démos interactives** : `DemoTabs.tsx` conservé (superset v3 — structure/scanner/zones/M.I.A **+ « Ouvre le calcul »** en bonus, qui renforce l'honnêteté). Onglets renommés v3 (« Définir une stratégie », « Parler à M.I.A »).
+
+## Écarts §C corrigés (maquette → réalité)
+| # | Correction livrée |
+|---|---|
+| C1 | Espace de lecture = **carrousel 5 volets** (4 panneaux + M.I.A), plus « un graphique annoté ». |
+| C2 | Volet Régime = **9 vraies tuiles**, **« Phase » retirée** (fidèle à RG-1b). |
+| C3 | Zones : formulé sans nombre figé (plus de « 20 zones »). |
+| C4 | 4e chiffre « 7 structures » **sourcé** via `STRUCTURE_TYPES` + test de garde. |
+| C5 | Nav visiteur **sans App/Zones/Scanner** (+ tests unit & e2e). |
+| C6 | La démo « Lire une structure » **réécrit la narration** au masquage d'une couche (preuve du texte composé). |
+| C7 | Section M.I.A étoffée (capacités réelles, ancrage, refus). |
+| C8 | Scanner : angle « **stratégie** décrite une fois, vérifiée en continu ». |
+| C9/C10 | Comment ça marche sans nombres internes ; vitrine actualités fidèle (7 août réel). |
+
+## Vocabulaire
+- **« moteur »/« engine » : 13 occurrences purgées** du namespace `home` (fr+en) → « MIA a marqué », « la détection », « l'analyse », « le produit », « Ancrée aux données réelles ». Test de garde ajouté (`home.test.tsx`).
+- Mots interdits (setup/signal/opportunité/gagnant/probabilité/… + équivalents EN) absents des valeurs visibles — vérifié sur les **9 locales** (test croisé DETTE-1 conservé).
+
+## FAQ — vérifiée contre le produit
+- La question maquette « MIA donne des **signaux** d'entrée ? » est déjà reformulée sans mot interdit : **« Est-ce que MIA dit quand acheter ou vendre ? »** (décision utilisateur du 2026-08-06). Les 8 réponses restent exactes (voir §FAQ du diagnostic). « D'où viennent les données ? » distingue bien **prix (fournisseur pro sous licence)** et **calendrier (organismes officiels seuls)**.
+
+## i18n
+- **fr + en natifs et complets**, aucune chaîne en repli. Les **7 autres locales** (de, es, it, pt, nl, pl, ar) traduites nativement pour tout le nouveau contenu ; **parité stricte des clés** (196/… identiques à fr) verte. next-intl n'accepte pas les tableaux → toutes les listes (questions, volets, tuiles) stockées en objets indexés.
+
+## Tests
+- **vitest : 851/851** verts (dont `home.test.tsx` mis à jour, garde structures=`STRUCTURE_TYPES.length`, garde moteur/engine, `Nav.test.tsx` gating visiteur, parité 9 locales).
+- **tsc : propre** sur tout le code d'accueil. *Restent 2 erreurs pré-existantes* dans `components/calendar/__tests__/CalendarPublication.nw6.test.tsx` (cast `pedagogy`), **présentes à l'identique sur `main`** — hors périmètre (calendrier). **Signalé, non corrigé** (règle de périmètre strict).
+- **next build : vert** (route `/[locale]` 12,7 kB). Avertissement EPERM `standalone` = artefact du `node_modules` jonctionné sous Windows, pas une erreur de code.
+- **Playwright : vert** — projet `chromium-desktop`, **fr+en × 1280×800 et 390×844** : page complète + stats réelles, **carrousel clavier+points sur 3 volets**, 4 démos en deux états, **nav visiteur vs authentifié**. 22 passés + 6 « flaky » (réussis au retry). Le projet **`mobile-iphone-12` est sauté** pour ce spec (l'émulation tactile n'avance pas le conteneur de défilement de la coquille de site sur une page longue — artefact de harnais, pas un défaut de page ; le 390×844 est déjà couvert sous `chromium-desktop`).
+
+## Pièges rencontrés (pour mémoire)
+- **Carrousel décalé** : `min-width:100%` sur les volets flex faisait bouger `translateX(-i*100%)` de la mauvaise distance (compteur juste, volet faux). Corrigé : piste `width:500%`, volet `width:20%`, `translateX(-i·100%/N)`. Vérifié : les 5 volets correspondent au compteur.
+- **next-intl + tableaux** : arrays rejetés par le type `AbstractIntlMessages` → objets indexés + `Object.values()` au rendu.
+- **Défilement lisse** : `scroll-behavior: smooth` rendait les cibles « instables » pour Playwright → `contextOptions.reducedMotion:'reduce'` + `page.emulateMedia` + 2 retries.
+- **`node_modules` du worktree** : `npm ci` échoue (conflit peer vite/vitest) → **jonction** vers `TradingBOT_Agentic/webapp/node_modules` (mêmes versions).
+
+## À poser après validation live
+- Envisager `reducedMotion:'reduce'` global dans `playwright.config` (réduirait le flaky) — hors périmètre page.
+- Le petit défaut tsc pré-existant du calendrier (nw6) mérite un `as unknown as` dans une mission calendrier.

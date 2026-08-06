@@ -1,37 +1,40 @@
 {
   "home": {
     "hero": {
-      "pill": "2 rynki · 6 interwałów czasowych · analiza przy każdym zamknięciu świecy",
+      "pill": "Wczesny dostęp · złoto i euro dzisiaj",
       "h1a": "Rynek już wszystko zapisał.",
       "h1b": "MIA czyta ci to na głos.",
-      "lead": "Order Blocks, Fair Value Gaps, złamania struktury, poziomy płynności — wykrywane na złocie i euro, w 6 interwałach czasowych, opisane prostym językiem. Przestajesz rysować wszystko ręcznie i zajmujesz się tym, co naprawdę ważne.",
+      "lead": "Order Blocks, Fair Value Gaps, złamania struktury, strefy płynności — wykrywane automatycznie i opisane prostym językiem. Plus asystent, który odpowiada, gdy czegoś nie rozumiesz.",
       "ctaPrimary": "Wypróbuj za darmo",
       "ctaSecondary": "Zobacz narzędzia",
-      "micro": "Bez karty płatniczej · Stały darmowy dostęp"
+      "micro": "Bez karty płatniczej · Stały darmowy dostęp",
+      "roadmap": "Wczesny dostęp · <b>2 rynki dzisiaj, 50 do 80 planowanych na start</b>"
     },
     "stats": {
       "markets": "śledzone rynki",
       "combinations": "przeanalizowane kombinacje",
-      "conditions": "kryteria wyszukiwania",
-      "timeframes": "interwały czasowe"
+      "conditions": "warunki wyszukiwania",
+      "timeframes": "interwały czasowe",
+      "structures": "wykryte struktury"
     },
     "tools": {
-      "eyebrow": "Pięć narzędzi, jeden silnik",
+      "eyebrow": "Pięć narzędzi, jeden produkt",
       "title": "Wszystko, czego potrzebujesz, by odczytać strukturę",
       "subtitle": "Każde narzędzie odpowiada na pytanie, które już sobie zadajesz. Różnica polega na tym, ile czasu zajmuje ci uzyskanie odpowiedzi.",
       "app": {
-        "tag": "Przestrzeń do odczytu",
-        "h3": "Otwierasz wykres, a odczyt jest już gotowy",
-        "p": "Silnik oznaczył strefy, opatrzył datami złamania struktury, wyznaczył płynność. Poniżej akapit mówi ci, w jakim stanie jest rynek — <b>nie co zamierza zrobić, lecz co zrobił</b>. Rozumiesz sytuację w dziesięć sekund zamiast dwudziestu minut rysowania.",
-        "b1": "<b>Order Blocks i Fair Value Gaps</b> wyznaczone, z kierunkiem i stanem",
-        "b2": "<b>BOS i CHOCH</b> z sygnaturą czasową i dokładnym poziomem złamania",
-        "b3": "<b>Poziomy płynności</b> nienaruszone, zdjęte lub złamane — trzy odrębne stany",
-        "b4": "<b>Panel reżimu</b>: dziesięć kafelków — trend, zmienność, położenie, spójność, dojrzałość, gęstość, sesja…",
+        "tag": "Przestrzeń odczytu",
+        "h3": "O wiele więcej niż opisany wykres",
+        "p": "Strefy są ograniczone, złamania datowane, płynność rozmieszczona. Poniżej akapit opisuje sytuację. Obok reżim rynku, dziennik zdarzeń oraz M.I.A. <b>Wszystko, czego potrzebujesz, na jednym ekranie.</b>",
+        "b1": "<b>Warstwowy wykres</b> — każda rodzina struktur wyświetla się lub ukrywa",
+        "b2": "<b>Narracyjny odczyt</b> tworzony na podstawie wykrytych faktów, nigdy ze stałego tekstu",
+        "b3": "<b>Panel reżimu</b> — trend, zmienność, pozycja, zgodność między interwałami",
+        "b4": "<b>Dziennik zdarzeń</b> — każde złamanie z czasowym znacznikiem, klikalne na wykresie",
         "visTitle": "Złoto · XAU/USD · 15 minut",
         "lblLiq": "Płynność nienaruszona",
         "lblOb": "OB · nietestowany",
         "lblChoch": "CHOCH ↑",
-        "narr": "Cena znajduje się <b>obecnie w byczym Order Blocku</b> uformowanym 14 świec temu, między 4 026,80 a 4 028,90, a strefa ta <b>nigdy nie była testowana</b>. Poziom płynności po stronie sprzedaży <b>został zdjęty</b> 17 świec temu. Interwał 1 h idzie w tym samym kierunku."
+        "narr": "Cena znajduje się <b>obecnie w byczym Order Blocku</b> uformowanym 14 świec temu, między 4 026,80 a 4 028,90, a strefa ta <b>nigdy nie była testowana</b>. Poziom płynności po stronie sprzedaży <b>został zdjęty</b> 17 świec temu. Interwał 1 h idzie w tym samym kierunku.",
+        "b5": "<b>Sześć interwałów czasowych</b> — od minuty po dzień, odczyt nadąża"
       },
       "scanner": {
         "tag": "Skaner",
@@ -79,10 +82,10 @@
       "news": {
         "tag": "Aktualności",
         "h3": "Wiedz, kiedy rynek się poruszy — i co działo się poprzednim razem",
-        "p": "Kalendarz publikacji gospodarczych, powiązanych z rynkami, których dotyczą. A dla każdej z nich <b>to, co silnik faktycznie zmierzył przy poprzednich odczytach</b>: spokój, który poprzedza, wzburzenie, które następuje, czas życia stref utworzonych tego dnia.",
+        "p": "Kalendarz publikacji ekonomicznych, powiązanych z rynkami, których dotyczą. A dla każdej z nich <b>to, co faktycznie zmierzono przy poprzednich publikacjach</b>: spokój, który poprzedza, poruszenie, które następuje, długość życia stref utworzonych tego dnia.",
         "b1": "<b>Kalendarz miesięczny</b> z czasem lokalnym i czasem organu publikującego",
         "b2": "<b>Dwanaście ostatnich opublikowanych odczytów</b> każdego wskaźnika, w formie opublikowanej",
-        "b3": "<b>Pomiary silnika</b> przy przeszłych publikacjach — zestawienia, nie prognozy",
+        "b3": "<b>Zebrane pomiary</b> z minionych publikacji — zliczenia, nie prognozy",
         "b4": "<b>Wyłącznie źródła oficjalne</b>: BLS, BEA, Census, Rezerwa Federalna (Fed), Eurostat, EBC",
         "visTitle": "Indeks cen towarów i usług konsumpcyjnych · 12 sierpnia",
         "q1": {
@@ -106,9 +109,9 @@
       "mia": {
         "tag": "M.I.A Agent",
         "h3": "Mentor SMC, który nigdy nie śpi",
-        "p": "Nie rozumiesz, dlaczego ta świeca to Order Block? Zapytaj ją. <b>Uczy pojęć i opisuje to, co silnik wykrył</b> — i potrafi sterować twoim wykresem: ukryć warstwę, wyodrębnić strefę, zmienić interwał czasowy.",
+        "p": "Nie rozumiesz, dlaczego ta świeca to Order Block? Zapytaj ją. Ona <b>uczy pojęć i opisuje to, co zostało wykryte</b> — i może sterować twoim wykresem: ukryć warstwę, wyodrębnić strefę, zmienić interwał czasowy.",
         "b1": "<b>Objaśnia każde pojęcie SMC</b> z przykładem przed oczami",
-        "b2": "<b>Zakotwiczona w silniku</b>: wskazuje wyłącznie poziomy faktycznie wykryte",
+        "b2": "<b>Zakotwiczona w rzeczywistych danych</b>: przywołuje tylko poziomy naprawdę wykryte",
         "b3": "<b>Steruje wyświetlaniem</b>: „pokaż mi tylko nietestowane OB”",
         "b4": "<b>Na wykresie i na publikacjach</b> — nigdy ani słowa prognozy",
         "visTitle": "M.I.A Agent",
@@ -133,9 +136,9 @@
       "illus": "Dane poglądowe",
       "tabs": {
         "structure": "Odczytaj strukturę",
-        "scanner": "Znajdź rynek",
+        "scanner": "Zdefiniuj strategię",
         "zones": "Śledź strefę",
-        "mia": "Zadaj pytanie",
+        "mia": "Porozmawiaj z M.I.A",
         "calcul": "Otwórz obliczenie"
       },
       "structure": {
@@ -157,7 +160,7 @@
         },
         "side": {
           "title": "Odczyt się aktualizuje",
-          "desc": "Odznacz warstwę: <b>akapit napisze się na nowo</b>, by opisać tylko to, co pozostaje wyświetlone. Narracja nigdy nie jest sztywnym tekstem — powstaje z tego, co silnik wykrył.",
+          "desc": "Odznacz warstwę: <b>akapit przepisuje się na nowo</b>, aby opisywać tylko to, co pozostaje widoczne. Narracja nigdy nie jest stałym tekstem — jest komponowana z tego, co zostało wykryte.",
           "try": "Wypróbuj",
           "onlyOb": "Zostaw tylko Order Blocks",
           "onlyLiq": "Zostaw tylko płynność",
@@ -240,7 +243,7 @@
         "greeting": "Wybierz pytanie obok, by zobaczyć moją odpowiedź.",
         "side": {
           "title": "Zadaj jej prawdziwe pytanie",
-          "desc": "M.I.A objaśnia pojęcia, opisuje to, co silnik wykrył, i steruje wyświetlaniem. <b>Odmawia wszystkiego, co dotyczy prognozowania</b> — kliknij ostatnią opcję, by zobaczyć.",
+          "desc": "M.I.A tłumaczy pojęcia, opisuje to, co zostało wykryte, i steruje widokiem. <b>Odmawia wszystkiego, co należy do przewidywania</b> — kliknij ostatnią opcję, aby zobaczyć.",
           "try": "Wybierz pytanie"
         },
         "q": {
@@ -279,7 +282,7 @@
         "notSay": "zmienność mierzy skalę ruchów, a nie ich kierunek. Nie mówi, czy cena wzrośnie, czy spadnie.",
         "side": {
           "title": "Każda liczba jest sprawdzalna",
-          "desc": "Kafelek panelu Reżim nie poprzestaje na werdykcie. <b>Otwórz obliczenie</b>, a zobaczysz liczby, które go utworzyły — oraz to, czego pomiar nie mówi. Gdy silnik nie wie, ekran ci to komunikuje.",
+          "desc": "Kafelek panelu Reżim nie poprzestaje na werdykcie. <b>Otwórz obliczenie</b>, a zobaczysz liczby, które je stworzyły — i to, czego pomiar nie mówi. Gdy analiza nie wie, ekran ci to powie.",
           "try": "Wypróbuj",
           "toggle": "Otwórz obliczenie",
           "hide": "Ukryj obliczenie"
@@ -292,7 +295,7 @@
       "subtitle": "Żadnej instalacji, żadnego skryptu do skopiowania, żadnej konfiguracji wskaźnika. Otwierasz i jest gotowe.",
       "step1": {
         "h": "Wybierz swój rynek",
-        "p": "Złoto lub euro, w 6 interwałach czasowych. Silnik przeanalizował już wszystkie 12 kombinacji i utrzymuje wynik na bieżąco przy każdym zamknięciu świecy."
+        "p": "Złoto lub euro, na 6 interwałach czasowych. Wszystkie 12 kombinacji jest już analizowanych w sposób ciągły, a wynik pozostaje aktualny przy każdym zamknięciu świecy."
       },
       "step2": {
         "h": "Odczytaj strukturę",
@@ -309,22 +312,40 @@
       "subtitle": "Jeśli co rano rysujesz swoje Order Blocks ręcznie, jesteś dokładnie tą osobą, dla której ten produkt powstał.",
       "w1": {
         "h": "Uczysz się SMC",
-        "p": "Zobaczenie poprawnie oznaczonej struktury, z agentem, który wyjaśnia każdy element, gdy o to poprosisz, zastępuje dziesiątki godzin filmów."
+        "p": "Zobaczenie poprawnie oznaczonej struktury, z agentem, który wyjaśnia każdy element, gdy o to poprosisz, zastępuje dziesiątki godzin filmów.",
+        "lb": "Uczyć się",
+        "items": {
+          "0": "Każde pojęcie wyjaśnione na twoim rynku, a nie w teorii",
+          "1": "Reguły wykrywania są opublikowane, możesz je sprawdzić",
+          "2": "Uczysz się, obserwując, a nie zapamiętując"
+        }
       },
       "w2": {
         "h": "Rysujesz ręcznie",
-        "p": "Codziennie tracisz czas na oznaczanie swoich stref. MIA robi to na złocie i euro, bez przerwy, z cyklem życia w bonusie."
+        "p": "Codziennie tracisz czas na oznaczanie swoich stref. MIA robi to na złocie i euro, bez przerwy, z cyklem życia w bonusie.",
+        "lb": "Konsekwencja",
+        "items": {
+          "0": "Te same reguły stosowane w ten sam sposób, zawsze",
+          "1": "Pełny cykl życia każdej strefy, zachowany",
+          "2": "Nic nie zostaje pominięte w dniu zmęczenia"
+        }
       },
       "w3": {
         "h": "Śledzisz kilka interwałów czasowych",
-        "p": "Wiesz, czego szukasz, ale nie możesz wszystkiego obserwować. Skaner pilnuje twoich 12 kombinacji przy każdym zamknięciu, bez jednego kliknięcia z twojej strony."
+        "p": "Wiesz, czego szukasz, ale nie możesz wszystkiego obserwować. Skaner pilnuje twoich 12 kombinacji przy każdym zamknięciu, bez jednego kliknięcia z twojej strony.",
+        "lb": "Zasięg",
+        "items": {
+          "0": "Twoje warunki sprawdzane wszędzie przy każdym zamknięciu",
+          "1": "Wyświetlany kontekst niekorzystny, nie tylko to, co potwierdza",
+          "2": "Kalendarz źródeł oficjalnych, weryfikowalnych"
+        }
       }
     },
     "distinguish": {
       "eyebrow": "Co nas wyróżnia",
       "h2": "MIA nigdy nie powie ci, dokąd pójdzie cena",
       "p1": "Nie dlatego, że nie potrafi — lecz dlatego, że <b>nikt tego nie wie</b>. Rynek narzędzi tradingowych jest pełen produktów sprzedających niesprawdzalne prognozy. MIA robi coś innego: opisuje to, co jest tu, teraz, i na tym poprzestaje.",
-      "p2": "Konkretnie: kontekst niesprzyjający jest wyświetlany na równi z kontekstem sprzyjającym, wyniki nigdy nie są sortowane według „jakości”, a gdy silnik nie wie, ekran ci to komunikuje, zamiast zgadywać. <b>Decyzję zachowujesz ty. My dajemy ci odczyt.</b>"
+      "p2": "Konkretnie, kontekst niekorzystny jest wyświetlany na równi z korzystnym, wyniki nigdy nie są klasyfikowane według « jakości », a gdy analiza nie wie, ekran ci to mówi, zamiast zgadywać. <b>Decyzję zachowujesz ty. My dajemy ci odczyt.</b>"
     },
     "pricing": {
       "eyebrow": "Cennik",
@@ -350,7 +371,7 @@
         "f1": "<b>Oba rynki</b>, 6 interwałów czasowych",
         "f2": "Skaner na wszystkich 12 kombinacjach",
         "f3": "Strona Strefy i pełny cykl życia",
-        "f4": "Pomiary silnika przy publikacjach",
+        "f4": "Pomiary zebrane przy publikacjach",
         "f5": "M.I.A Agent bez ograniczeń",
         "f6": "Nieograniczone zapisane odczyty",
         "cta": "Zacznij",
@@ -380,9 +401,210 @@
     },
     "final": {
       "h2": "Przestań rysować. Zacznij czytać.",
-      "p": "Załóż darmowe konto i zobacz, co silnik widzi na twoim ulubionym rynku. Bez karty płatniczej, bez ograniczenia czasu.",
+      "p": "Załóż darmowe konto i zobacz, co MIA widzi na twoim ulubionym rynku. Bez karty kredytowej, bez ograniczeń czasowych.",
       "cta1": "Załóż darmowe konto",
       "cta2": "Zobacz ponownie narzędzia"
+    },
+    "miaSection": {
+      "eyebrow": "To, czego nie ma nigdzie indziej",
+      "title": "Asystent, który tłumaczy ci rynek",
+      "subtitle": "Większość narzędzi tradingowych tylko wyświetla. MIA tłumaczy. Możesz z nią rozmawiać jak z kimś, kto ma wykres przed oczami.",
+      "badgeName": "M.I.A Agent",
+      "badgeSub": "dostępna na każdej powierzchni",
+      "chatHeader": "M.I.A Agent · Złoto 15 min",
+      "h3": "Zadaj pytanie, którego nie odważysz się zadać w grupie",
+      "p": "Nie rozumiesz, dlaczego ta świeca to Order Block? Chcesz wiedzieć, co działo się wczoraj na złocie? Nie wiesz, co oznacza « mitygacja »? <b>Zapytaj ją.</b> Odpowiada rzeczywistymi poziomami i rzeczywistymi czasowymi znacznikami rynku, na który patrzysz.",
+      "questions": {
+        "0": "Wyjaśnij mi ten CHOCH",
+        "1": "Jaka jest różnica między BOS a CHOCH?",
+        "2": "Ile razy ta strefa była testowana?",
+        "3": "Pokaż mi tylko nieprzetestowane OB",
+        "4": "Gdzie jest najbliższa płynność?",
+        "5": "Czym jest Fair Value Gap?"
+      },
+      "chat": {
+        "u1": "dlaczego ta świeca to order block?",
+        "a1": "To ostatnia świeca spadkowa przed ruchem, który złamał strukturę. Uformowała się <b>o 12:30</b>, tuż przed wzrostowym BOS o 14:15 na 4 025,10. Jej strefa obejmuje <b>4 026,80 do 4 028,90</b>.",
+        "u2": "była testowana?",
+        "a2": "Nie. <b>Nigdy od czasu uformowania.</b> Cena weszła w nią 30 minut temu, to jej pierwszy kontakt.",
+        "u3": "myślisz, że odbije?",
+        "a3": "<b>Na to nie odpowiem.</b> Nie przewiduję ruchów ceny i nie mówię ci, kiedy kupować ani sprzedawać. Mogę opisać stan strefy albo wyjaśnić ci pojęcie."
+      },
+      "caps": {
+        "c1": {
+          "h": "Uczy SMC",
+          "p": "Każde pojęcie — Order Block, Fair Value Gap, BOS, CHOCH, mitygacja, płynność — wyjaśnione <b>z przykładem przed oczami</b>, na twoim rynku, a nie w teoretycznym kursie."
+        },
+        "c2": {
+          "h": "Opisuje to, co jest",
+          "p": "Dokładne poziomy, czasowe znaczniki, liczba testów, stan każdej strefy płynności. <b>Wyłącznie wykryte fakty</b> — zmyślone odwołanie jest odrzucane przez kod, a nie przepuszczane."
+        },
+        "c3": {
+          "h": "Steruje twoim widokiem",
+          "p": "« Ukryj FVG », « wyodrębnij tę strefę », « przełącz na 4 h ». Ty mówisz, <b>wykres się zmienia</b>. Koniec z szukaniem właściwego przycisku."
+        },
+        "c4": {
+          "h": "Odmawia zgadywania",
+          "p": "Żadnych przewidywań, żadnych wskazówek co do działania, żadnych porad. <b>To narzędzie opisowe</b>, i sama ci to powie, jeśli zapytasz, dokąd zmierza cena."
+        }
+      }
+    },
+    "carousel": {
+      "hint": "↔ Przewiń, aby zobaczyć pozostałe części przestrzeni",
+      "illus": "Dane poglądowe",
+      "regionAria": "Przestrzeń odczytu — karuzela",
+      "prevAria": "Poprzedni panel",
+      "nextAria": "Następny panel",
+      "dotAria": "Przejdź do panelu {n}",
+      "names": {
+        "0": "Wykres",
+        "1": "Narracyjny odczyt",
+        "2": "Reżim rynku",
+        "3": "Dziennik zdarzeń",
+        "4": "Interwały czasowe"
+      },
+      "chart": {
+        "title": "Wykres · Złoto 15 min",
+        "layers": {
+          "0": "OB",
+          "1": "FVG",
+          "2": "Płynność",
+          "3": "BOS/CHOCH",
+          "4": "Zmitygowane"
+        },
+        "obLabel": "OB · nieprzetestowany",
+        "liqLabel": "Płynność kupna · nienaruszona",
+        "chochLabel": "↑ CHOCH",
+        "bosLabel": "↑ BOS · 4 025,10",
+        "localTime": "Czas lokalny · UTC−4"
+      },
+      "narrated": {
+        "title": "Narracyjny odczyt · Złoto 15 min",
+        "freshness": "Świeca zamknięta 4 min temu",
+        "body": "Cena jest <b>obecnie wewnątrz wzrostowego Order Block</b> uformowanego 3 h 30 temu, pomiędzy 4 026,80 a 4 028,90, i ta strefa <b>nigdy nie była testowana</b> od czasu uformowania. <b>Wzrostowy CHOCH potwierdził się</b> na 4 021,45, a po nim <b>wzrostowy BOS</b> na 4 025,10. Strefa <b>płynności sprzedaży została zmieciona</b> poniżej 4 011,40: knot zszedł pod spód, a świeca zamknęła się powyżej. Strefa <b>płynności kupna pozostaje nienaruszona</b> na 4 034,20, czyli 0,18 % powyżej ceny. <b>1 h zgadza się co do kierunku</b>; 4 h jest w trendzie spadkowym.",
+        "foot": "Komponowany na nowo przy każdym zamknięciu, nigdy jako stały tekst"
+      },
+      "regime": {
+        "title": "Reżim rynku · Złoto 15 min",
+        "tiles": {
+          "0": {
+            "k": "Trend",
+            "v": "Wzrostowy",
+            "n": "od 14:15"
+          },
+          "1": {
+            "k": "Zmienność",
+            "v": "Rozszerzona",
+            "n": "7 vs 20 świec"
+          },
+          "2": {
+            "k": "Pozycja w zakresie",
+            "v": "Górna trzecia",
+            "n": "4 012 – 4 037"
+          },
+          "3": {
+            "k": "Zgodność",
+            "v": "1 h zgodne",
+            "n": "4 h przeciwne"
+          },
+          "4": {
+            "k": "Dojrzałość",
+            "v": "9 świec",
+            "n": "od BOS"
+          },
+          "5": {
+            "k": "Gęstość",
+            "v": "8 OB · 12 FVG",
+            "n": "w oknie"
+          },
+          "6": {
+            "k": "Ostatnie zdarz.",
+            "v": "BOS ↑",
+            "n": "o 14:15"
+          },
+          "7": {
+            "k": "Sesja",
+            "v": "Nowy Jork",
+            "n": "otwarta"
+          },
+          "8": {
+            "k": "Poziomy odniesienia",
+            "v": "PDH · PDL",
+            "n": "poprzedni dzień"
+          }
+        },
+        "foot": "Każdy kafelek wyjaśnia swoją metodę po kliknięciu"
+      },
+      "journal": {
+        "title": "Dziennik zdarzeń · Złoto 15 min",
+        "rows": {
+          "0": {
+            "kind": "bos",
+            "badge": "BOS ↑",
+            "text": "Wzrostowe złamanie struktury",
+            "time": "14:15"
+          },
+          "1": {
+            "kind": "pocket",
+            "badge": "STREFA",
+            "text": "Płynność sprzedaży zmieciona",
+            "time": "13:30"
+          },
+          "2": {
+            "kind": "choch",
+            "badge": "CHOCH ↑",
+            "text": "Zmiana charakteru potwierdzona",
+            "time": "12:45"
+          },
+          "3": {
+            "kind": "ob",
+            "badge": "OB ↑",
+            "text": "Order Block uformowany · 4 026,80–4 028,90",
+            "time": "12:30"
+          },
+          "4": {
+            "kind": "fvg",
+            "badge": "FVG ↓",
+            "text": "Fair Value Gap wypełniony w 60 %",
+            "time": "11:00"
+          }
+        },
+        "foot": "Kliknij zdarzenie, a wykres do niego przejdzie"
+      },
+      "timeframes": {
+        "title": "Interwały czasowe · Złoto",
+        "chips": {
+          "0": "M5",
+          "1": "M15",
+          "2": "H1",
+          "3": "H4",
+          "4": "D1"
+        },
+        "activeChip": "M15",
+        "rows": {
+          "0": {
+            "tf": "M15",
+            "text": "Wzrostowy · ekspansja",
+            "note": "bieżący odczyt"
+          },
+          "1": {
+            "tf": "H1",
+            "text": "Wzrostowy · trend",
+            "note": "zgodny co do kierunku"
+          },
+          "2": {
+            "tf": "H4",
+            "text": "Spadkowy · zakres",
+            "note": "przeciwny kierunek"
+          },
+          "3": {
+            "tf": "D1",
+            "text": "Nieokreślony",
+            "note": "brak ustalonej struktury"
+          }
+        },
+        "foot": "Każdy interwał ma własny odczyt, przeliczany przy swoim zamknięciu"
+      }
     }
   },
   "regimePanel": {
@@ -621,7 +843,12 @@
     "account": "Ustawienia",
     "login": "Zaloguj się",
     "language": "Język",
-    "calendar": "Wiadomości"
+    "calendar": "Wiadomości",
+    "mia": "M.I.A",
+    "tools": "Narzędzia",
+    "tryFree": "Wypróbuj za darmo",
+    "appLink": "Aplikacja",
+    "methodology": "Metodologia i słowniczek"
   },
   "landing": {
     "hero": {

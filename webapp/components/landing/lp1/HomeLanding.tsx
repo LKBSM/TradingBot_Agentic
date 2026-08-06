@@ -5,6 +5,8 @@ import { useTranslations } from 'next-intl';
 import { useLocalizedHref } from '@/lib/i18n/href';
 import styles from './lp1.module.css';
 import { DemoTabs } from './DemoTabs';
+import { MiaSection } from './MiaSection';
+import { ReadingCarousel } from './ReadingCarousel';
 import { CandleSvg } from './CandleSvg';
 import { LANDING_STATS, LANDING_STAT_ORDER } from '@/lib/landing/stats';
 import { PRICING } from '@/lib/pricing.generated';
@@ -13,10 +15,11 @@ function Check() {
   return <span className={styles.ck} aria-hidden="true">✓</span>;
 }
 
-function Bullets({ t, base }: { t: ReturnType<typeof useTranslations>; base: string }) {
+/** Feature bullet list — `count` items pulled from `${base}.b{n}`. */
+function Bullets({ t, base, count = 4 }: { t: ReturnType<typeof useTranslations>; base: string; count?: number }) {
   return (
     <div className={styles.bul}>
-      {[1, 2, 3, 4].map((i) => (
+      {Array.from({ length: count }, (_, k) => k + 1).map((i) => (
         <div key={i} className={styles.bu}>
           <Check />
           <span>{t.rich(`${base}.b${i}`, { b: (c) => <b>{c}</b> })}</span>
@@ -44,11 +47,9 @@ export function HomeLanding() {
   const rich = (k: string): ReactNode => t.rich(k, { b: (c) => <b>{c}</b> });
   const [openFaq, setOpenFaq] = useState<number>(0);
 
-  const statValue: Record<string, number> = LANDING_STATS;
-
   return (
     <div className={styles.page}>
-      {/* HERO */}
+      {/* HERO + STATS */}
       <div className={styles.hero}>
         <div className={styles.aura} aria-hidden="true" />
         <div className={styles.wrap}>
@@ -58,23 +59,41 @@ export function HomeLanding() {
             <p className={styles.lead}>{t('hero.lead')}</p>
             <div className={styles.ctas}>
               <a className={`${styles.btn} ${styles.btnPri} ${styles.btnLg}`} href={lh('/inscription')}>{t('hero.ctaPrimary')}</a>
-              <a className={`${styles.btn} ${styles.btnLg}`} href="#outils">{t('hero.ctaSecondary')}</a>
+              <a className={`${styles.btn} ${styles.btnLg}`} href="#demo">{t('hero.ctaSecondary')}</a>
             </div>
             <div className={styles.micro}>{t('hero.micro')}</div>
 
             <div className={styles.stats}>
               {LANDING_STAT_ORDER.map((k) => (
                 <div key={k} className={styles.stat}>
-                  <div className={styles.statN}>{statValue[k]}</div>
+                  <div className={styles.statN}>{LANDING_STATS[k]}</div>
                   <div className={styles.statL}>{t(`stats.${k}`)}</div>
                 </div>
               ))}
             </div>
+            <div className={styles.roadmap}>{rich('hero.roadmap')}</div>
           </div>
         </div>
       </div>
 
-      {/* TOOLS */}
+      {/* §3 — M.I.A */}
+      <MiaSection />
+
+      {/* §4 — INTERACTIVE DEMO */}
+      <section id="demo" style={{ paddingTop: 0 }}><div className={styles.wrap}>
+        <div className={styles.sechead}>
+          <div className={styles.eyebrow}>{t('demoSection.eyebrow')}</div>
+          <h2>{t('demoSection.title')}</h2>
+          <p>{t('demoSection.subtitle')}</p>
+        </div>
+        <DemoTabs />
+        <div style={{ textAlign: 'center', marginTop: 24 }}>
+          <a className={`${styles.btn} ${styles.btnPri} ${styles.btnMd}`} href={lh('/inscription')}>{t('demoSection.cta')}</a>
+          <div className={styles.micro} style={{ marginTop: 11 }}>{t('demoSection.illus')}</div>
+        </div>
+      </div></section>
+
+      {/* §5-8 — TOOLS */}
       <section id="outils"><div className={styles.wrap}>
         <div className={styles.sechead}>
           <div className={styles.eyebrow}>{t('tools.eyebrow')}</div>
@@ -82,24 +101,16 @@ export function HomeLanding() {
           <p>{t('tools.subtitle')}</p>
         </div>
 
-        {/* APP */}
+        {/* READING SPACE + CAROUSEL */}
         <div className={styles.feat}>
           <div className="txt">
             <span className={`${styles.tag} ${styles.tagB}`}>{t('tools.app.tag')}</span>
             <h3>{t('tools.app.h3')}</h3>
             <p className={styles.featP}>{rich('tools.app.p')}</p>
-            <Bullets t={t} base="tools.app" />
+            <Bullets t={t} base="tools.app" count={5} />
+            <div className={styles.carHint}>{t('carousel.hint')}</div>
           </div>
-          <VisFrame title={t('tools.app.visTitle')}>
-            <div className={styles.mc} style={{ height: 158 }}>
-              <CandleSvg width={420} height={158} extra={[4034.2, 4011.4]} />
-              <div className={styles.ml} style={{ left: '10px', top: '18px', background: 'rgba(214,162,74,.15)', color: 'var(--liq)' }}>{t('tools.app.lblLiq')}</div>
-              <div className={styles.ml} style={{ left: '58%', top: '30px', background: 'var(--ob)', color: 'var(--bear)' }}>{t('tools.app.lblOb')}</div>
-              <div className={styles.ml} style={{ left: '36%', top: '78px', background: 'rgba(55,185,140,.15)', color: 'var(--bull)' }}>{t('tools.app.lblChoch')}</div>
-            </div>
-            <div className={styles.narr}>{rich('tools.app.narr')}</div>
-            <div className={styles.illus}>{t('demo.illus')}</div>
-          </VisFrame>
+          <ReadingCarousel />
         </div>
 
         {/* SCANNER */}
@@ -176,41 +187,6 @@ export function HomeLanding() {
             <div className={styles.illus}>{t('demo.illus')}</div>
           </VisFrame>
         </div>
-
-        {/* MIA */}
-        <div className={styles.feat}>
-          <div className="txt">
-            <span className={`${styles.tag} ${styles.tagB}`}>{t('tools.mia.tag')}</span>
-            <h3>{t('tools.mia.h3')}</h3>
-            <p className={styles.featP}>{rich('tools.mia.p')}</p>
-            <Bullets t={t} base="tools.mia" />
-          </div>
-          <VisFrame title={t('tools.mia.visTitle')}>
-            <div className={styles.cw}>
-              <div className={`${styles.bub} ${styles.bubU}`}>{t('tools.mia.chat.u1')}</div>
-              <div className={`${styles.bub} ${styles.bubA}`}>{rich('tools.mia.chat.a1')}</div>
-              <div className={`${styles.bub} ${styles.bubU}`}>{t('tools.mia.chat.u2')}</div>
-              <div className={`${styles.bub} ${styles.bubA}`}>{rich('tools.mia.chat.a2')}</div>
-              <div className={`${styles.bub} ${styles.bubU}`}>{t('tools.mia.chat.u3')}</div>
-              <div className={`${styles.bub} ${styles.bubNo}`}>{t('tools.mia.chat.a3')}</div>
-            </div>
-            <div className={styles.illus}>{t('demo.illus')}</div>
-          </VisFrame>
-        </div>
-      </div></section>
-
-      {/* DEMO SECTION */}
-      <section id="demo" style={{ paddingTop: 0 }}><div className={styles.wrap}>
-        <div className={styles.sechead}>
-          <div className={styles.eyebrow}>{t('demoSection.eyebrow')}</div>
-          <h2>{t('demoSection.title')}</h2>
-          <p>{t('demoSection.subtitle')}</p>
-        </div>
-        <DemoTabs />
-        <div style={{ textAlign: 'center', marginTop: 24 }}>
-          <a className={`${styles.btn} ${styles.btnPri} ${styles.btnMd}`} href={lh('/inscription')}>{t('demoSection.cta')}</a>
-          <div className={styles.micro} style={{ marginTop: 11 }}>{t('demoSection.illus')}</div>
-        </div>
       </div></section>
 
       {/* HOW IT WORKS */}
@@ -239,12 +215,19 @@ export function HomeLanding() {
           <p>{t('who.subtitle')}</p>
         </div>
         <div className={styles.who}>
-          {['1', '2', '3'].map((n) => (
-            <div key={n} className={styles.wc}>
-              <h4>{t(`who.w${n}.h`)}</h4>
-              <p>{t(`who.w${n}.p`)}</p>
-            </div>
-          ))}
+          {['1', '2', '3'].map((n) => {
+            const items = Object.values(t.raw(`who.w${n}.items`) as Record<string, string>);
+            return (
+              <div key={n} className={styles.wc}>
+                <span className={styles.wcLb}>{t(`who.w${n}.lb`)}</span>
+                <h4>{t(`who.w${n}.h`)}</h4>
+                <p>{t(`who.w${n}.p`)}</p>
+                <ul className={styles.wcList}>
+                  {items.map((it, idx) => <li key={idx}>{it}</li>)}
+                </ul>
+              </div>
+            );
+          })}
         </div>
       </div></section>
 

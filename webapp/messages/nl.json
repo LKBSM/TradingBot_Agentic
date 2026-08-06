@@ -1,37 +1,40 @@
 {
   "home": {
     "hero": {
-      "pill": "2 markten · 6 tijdframes · geanalyseerd bij elke slotkoers",
+      "pill": "Vroege toegang · goud en de euro vandaag",
       "h1a": "De markt heeft alles al opgeschreven.",
       "h1b": "MIA leest het voor je.",
-      "lead": "Order Blocks, Fair Value Gaps, structuurbreuken, liquiditeitszones — gedetecteerd op goud en de euro, over 6 tijdframes, en beschreven in heldere taal. Je hoeft niet meer alles met de hand in te tekenen en houdt tijd over voor wat er echt toe doet.",
+      "lead": "Order Blocks, Fair Value Gaps, structuurbreuken, liquiditeitszones — automatisch gedetecteerd en beschreven in heldere taal. Plus een assistent die antwoordt wanneer je iets niet begrijpt.",
       "ctaPrimary": "Gratis uitproberen",
       "ctaSecondary": "Bekijk de tools",
-      "micro": "Zonder creditcard · Voor altijd gratis toegang"
+      "micro": "Zonder creditcard · Voor altijd gratis toegang",
+      "roadmap": "Vroege toegang · <b>2 markten vandaag, 50 tot 80 gepland bij de lancering</b>"
     },
     "stats": {
       "markets": "gevolgde markten",
       "combinations": "geanalyseerde combinaties",
       "conditions": "zoekvoorwaarden",
-      "timeframes": "tijdframes"
+      "timeframes": "tijdseenheden",
+      "structures": "gedetecteerde structuren"
     },
     "tools": {
-      "eyebrow": "Vijf tools, één en dezelfde motor",
+      "eyebrow": "Vijf tools, één product",
       "title": "Alles wat je nodig hebt om een structuur te lezen",
       "subtitle": "Elke tool beantwoordt een vraag die je jezelf al stelt. Het verschil zit in de tijd die je nodig hebt om het antwoord te krijgen.",
       "app": {
-        "tag": "De leesomgeving",
-        "h3": "Open een grafiek, de lezing is al klaar",
-        "p": "De motor heeft de zones gemarkeerd, de breuken gedateerd en de liquiditeit geplaatst. Eronder vertelt een alinea je waar de markt staat — <b>niet wat hij gaat doen, wat hij heeft gedaan</b>. Je begrijpt de situatie in tien seconden in plaats van twintig minuten intekenen.",
-        "b1": "<b>Order Blocks en Fair Value Gaps</b> afgebakend, met hun richting en hun status",
-        "b2": "<b>BOS en CHOCH</b> met tijdstempel, met het exacte niveau van de breuk",
-        "b3": "<b>Liquiditeitszones</b> intact, geveegd of gebroken — drie afzonderlijke statussen",
-        "b4": "<b>Regimepaneel</b>: tien tegels — trend, volatiliteit, positie, uitlijning, rijpheid, dichtheid, sessie…",
+        "tag": "De leesruimte",
+        "h3": "Veel meer dan een geannoteerde grafiek",
+        "p": "Zones zijn afgebakend, breuken gedateerd, liquiditeit gepositioneerd. Eronder beschrijft een alinea de situatie. Ernaast het marktregime, het gebeurtenissenjournaal en M.I.A. <b>Alles wat je nodig hebt op één scherm.</b>",
+        "b1": "<b>Grafiek in lagen</b> — elke structuurfamilie wordt getoond of verborgen",
+        "b2": "<b>Verhalende lezing</b> samengesteld uit gedetecteerde feiten, nooit een vaste tekst",
+        "b3": "<b>Regimepaneel</b> — trend, volatiliteit, positie, overeenstemming tussen tijdseenheden",
+        "b4": "<b>Gebeurtenissenjournaal</b> — elke breuk voorzien van een tijdstempel, aanklikbaar op de grafiek",
         "visTitle": "Goud · XAU/USD · 15 minuten",
         "lblLiq": "Liquiditeit intact",
         "lblOb": "OB · niet getest",
         "lblChoch": "CHOCH ↑",
-        "narr": "De koers bevindt zich <b>momenteel in een stijgend Order Block</b> gevormd 14 candles geleden, tussen 4 026,80 en 4 028,90, en deze zone is <b>nog nooit getest</b>. Een verkoop-liquiditeitszone <b>is geveegd</b> 17 candles geleden. Het 1-uursframe wijst dezelfde kant op."
+        "narr": "De koers bevindt zich <b>momenteel in een stijgend Order Block</b> gevormd 14 candles geleden, tussen 4 026,80 en 4 028,90, en deze zone is <b>nog nooit getest</b>. Een verkoop-liquiditeitszone <b>is geveegd</b> 17 candles geleden. Het 1-uursframe wijst dezelfde kant op.",
+        "b5": "<b>Zes tijdseenheden</b> — van de minuut tot de dag, de lezing volgt mee"
       },
       "scanner": {
         "tag": "De scanner",
@@ -79,10 +82,10 @@
       "news": {
         "tag": "Het nieuws",
         "h3": "Weet wanneer de markt gaat bewegen — en wat er de vorige keren is gebeurd",
-        "p": "Een kalender van de economische publicaties, gekoppeld aan de markten die ze aangaan. En voor elk daarvan, <b>wat de motor daadwerkelijk heeft gemeten bij de vorige publicaties</b>: de rust die eraan voorafgaat, de onrust die erop volgt, de levensduur van de die dag gecreëerde zones.",
+        "p": "Een kalender van economische publicaties, gekoppeld aan de markten die ze betreffen. En voor elke publicatie <b>wat er werkelijk is gemeten bij eerdere verschijningen</b>: de rust die eraan voorafgaat, de onrust die erop volgt, de levensduur van de zones die op die dag zijn ontstaan.",
         "b1": "<b>Maandkalender</b> met lokale tijd en tijd van het instituut",
         "b2": "<b>De laatste twaalf gepubliceerde cijfers</b> van elke indicator, zoals gepubliceerd",
-        "b3": "<b>Metingen van de motor</b> bij vorige publicaties — tellingen, geen voorspellingen",
+        "b3": "<b>Gemeten waarden</b> bij eerdere verschijningen — tellingen, geen voorspellingen",
         "b4": "<b>Uitsluitend officiële bronnen</b>: BLS, BEA, Census, Federal Reserve (Fed), Eurostat, ECB",
         "visTitle": "Consumentenprijsindex · 12 augustus",
         "q1": {
@@ -106,9 +109,9 @@
       "mia": {
         "tag": "M.I.A Agent",
         "h3": "Een SMC-mentor die nooit slaapt",
-        "p": "Snap je niet waarom deze candle een Order Block is? Vraag het haar. Ze <b>onderwijst de concepten en beschrijft wat de motor heeft gedetecteerd</b> — en ze kan je grafiek besturen: een laag verbergen, een zone isoleren, van tijdframe wisselen.",
+        "p": "Begrijp je niet waarom deze kaars een Order Block is? Vraag het haar. Ze <b>legt de concepten uit en beschrijft wat er is gedetecteerd</b> — en ze kan je grafiek besturen: een laag verbergen, een zone isoleren, van tijdseenheid wisselen.",
         "b1": "<b>Legt elk SMC-concept uit</b> met het voorbeeld voor ogen",
-        "b2": "<b>Verankerd in de motor</b>: ze noemt alleen niveaus die daadwerkelijk zijn gedetecteerd",
+        "b2": "<b>Verankerd aan echte gegevens</b>: ze noemt alleen niveaus die werkelijk zijn gedetecteerd",
         "b3": "<b>Bestuurt de weergave</b>: « toon me alleen de niet-geteste OB's »",
         "b4": "<b>Op de grafiek en de publicaties</b> — nooit een woord van voorspelling",
         "visTitle": "M.I.A Agent",
@@ -133,9 +136,9 @@
       "illus": "Voorbeeldgegevens",
       "tabs": {
         "structure": "Een structuur lezen",
-        "scanner": "Een markt zoeken",
+        "scanner": "Een strategie bepalen",
         "zones": "Een zone volgen",
-        "mia": "Een vraag stellen",
+        "mia": "Praten met M.I.A",
         "calcul": "De berekening openen"
       },
       "structure": {
@@ -157,7 +160,7 @@
         },
         "side": {
           "title": "De lezing wordt bijgewerkt",
-          "desc": "Vink een laag uit: <b>de alinea wordt herschreven</b> om alleen te beschrijven wat er nog zichtbaar is. De vertelling is nooit een vaste tekst — ze wordt samengesteld op basis van wat de motor heeft gedetecteerd.",
+          "desc": "Vink een laag uit: <b>de alinea schrijft zichzelf opnieuw</b> om alleen te beschrijven wat zichtbaar blijft. De vertelling is nooit een vaste tekst — ze wordt samengesteld uit wat er is gedetecteerd.",
           "try": "Probeer het",
           "onlyOb": "Alleen de Order Blocks behouden",
           "onlyLiq": "Alleen de liquiditeit behouden",
@@ -240,7 +243,7 @@
         "greeting": "Kies hiernaast een vraag om me te zien antwoorden.",
         "side": {
           "title": "Stel haar een echte vraag",
-          "desc": "M.I.A legt de concepten uit, beschrijft wat de motor heeft gedetecteerd en bestuurt de weergave. <b>Ze weigert alles wat met voorspelling te maken heeft</b> — klik op de laatste optie om te zien.",
+          "desc": "M.I.A legt de concepten uit, beschrijft wat er is gedetecteerd en bestuurt de weergave. <b>Ze weigert alles wat neerkomt op een voorspelling</b> — klik op de laatste optie om het te zien.",
           "try": "Kies een vraag"
         },
         "q": {
@@ -279,7 +282,7 @@
         "notSay": "de volatiliteit meet de omvang van de bewegingen, niet hun richting. Ze zegt niet of de koers gaat stijgen of dalen.",
         "side": {
           "title": "Elk cijfer is verifieerbaar",
-          "desc": "Een tegel van het Regime-paneel volstaat niet met een oordeel. <b>Open de berekening</b> en je ziet de getallen die het hebben opgeleverd — en wat de meting niet zegt. Wanneer de motor het niet weet, vertelt het scherm je dat.",
+          "desc": "Een tegel van het Regimepaneel neemt geen genoegen met een oordeel. <b>Open de berekening</b> en je ziet de getallen die het hebben opgeleverd — en wat de meting niet zegt. Wanneer de analyse het niet weet, zegt het scherm je dat.",
           "try": "Probeer het",
           "toggle": "Open de berekening",
           "hide": "Verberg de berekening"
@@ -292,7 +295,7 @@
       "subtitle": "Geen installatie, geen script om te kopiëren, geen indicator om in te stellen. Je opent en het is klaar.",
       "step1": {
         "h": "Kies je markt",
-        "p": "Goud of de euro, op 6 tijdframes. De motor heeft de 12 combinaties al geanalyseerd en houdt het resultaat bij elke slotkoers van een candle actueel."
+        "p": "Goud of de euro, op 6 tijdseenheden. De 12 combinaties worden al continu geanalyseerd, en het resultaat blijft actueel bij elke slotkoers van een kaars."
       },
       "step2": {
         "h": "Lees de structuur",
@@ -309,22 +312,40 @@
       "subtitle": "Als je elke ochtend je Order Blocks met de hand intekent, ben je precies de persoon voor wie dit product bestaat.",
       "w1": {
         "h": "Je leert SMC",
-        "p": "De structuur correct gemarkeerd zien, met een agent die elk element uitlegt wanneer je erom vraagt, vervangt tientallen uren video's."
+        "p": "De structuur correct gemarkeerd zien, met een agent die elk element uitlegt wanneer je erom vraagt, vervangt tientallen uren video's.",
+        "lb": "Leren",
+        "items": {
+          "0": "Elk concept uitgelegd op jouw markt, niet in theorie",
+          "1": "De detectieregels zijn gepubliceerd, je kunt ze nagaan",
+          "2": "Je leert door te kijken, niet door te memoriseren"
+        }
       },
       "w2": {
         "h": "Je tekent met de hand in",
-        "p": "Je besteedt elke dag tijd aan het markeren van je zones. MIA doet dat op goud en de euro, doorlopend, met de levenscyclus als extra."
+        "p": "Je besteedt elke dag tijd aan het markeren van je zones. MIA doet dat op goud en de euro, doorlopend, met de levenscyclus als extra.",
+        "lb": "Bestendigheid",
+        "items": {
+          "0": "Dezelfde regels op dezelfde manier toegepast, altijd",
+          "1": "De volledige levenscyclus van elke zone, bewaard",
+          "2": "Niets wordt vergeten op een vermoeide dag"
+        }
       },
       "w3": {
         "h": "Je volgt meerdere tijdframes",
-        "p": "Je weet wat je zoekt maar je kunt niet alles bekijken. De scanner bewaakt je 12 combinaties bij elke slotkoers, zonder dat je hoeft te klikken."
+        "p": "Je weet wat je zoekt maar je kunt niet alles bekijken. De scanner bewaakt je 12 combinaties bij elke slotkoers, zonder dat je hoeft te klikken.",
+        "lb": "Breedte",
+        "items": {
+          "0": "Je voorwaarden overal gecontroleerd bij elke slotkoers",
+          "1": "De ongunstige context wordt getoond, niet alleen wat bevestigt",
+          "2": "Een kalender van officiële, verifieerbare bronnen"
+        }
       }
     },
     "distinguish": {
       "eyebrow": "Wat ons onderscheidt",
       "h2": "MIA zal je nooit vertellen waar de koers naartoe gaat",
       "p1": "Niet omdat ze het niet kan — omdat <b>niemand het weet</b>. De markt van tradingtools zit vol producten die onverifieerbare voorspellingen verkopen. MIA doet iets anders: ze beschrijft wat er is, nu, en stopt daar.",
-      "p2": "Concreet wordt de ongunstige context gelijkwaardig getoond aan de gunstige context, worden de resultaten nooit gerangschikt op « kwaliteit », en wanneer de motor het niet weet, vertelt het scherm je dat in plaats van te gokken. <b>Jij houdt de beslissing. Wij geven je de lezing.</b>"
+      "p2": "Concreet wordt de ongunstige context op gelijke voet met de gunstige getoond, worden de resultaten nooit gerangschikt op « kwaliteit », en wanneer de analyse het niet weet, zegt het scherm je dat in plaats van te gissen. <b>Jij houdt de beslissing. Wij geven je de lezing.</b>"
     },
     "pricing": {
       "eyebrow": "Tarief",
@@ -350,7 +371,7 @@
         "f1": "<b>Beide markten</b>, 6 tijdframes",
         "f2": "Scanner op de 12 combinaties",
         "f3": "Zones-pagina en volledige levenscyclus",
-        "f4": "Metingen van de motor bij de publicaties",
+        "f4": "Gemeten waarden bij publicaties",
         "f5": "M.I.A Agent zonder limiet",
         "f6": "Onbeperkt opgeslagen lezingen",
         "cta": "Beginnen",
@@ -380,9 +401,210 @@
     },
     "final": {
       "h2": "Stop met intekenen. Begin met lezen.",
-      "p": "Maak een gratis account aan en bekijk wat de motor ziet op jouw favoriete markt. Geen creditcard, geen tijdsbeperking.",
+      "p": "Maak een gratis account aan en zie wat MIA op jouw favoriete markt ziet. Geen creditcard, geen tijdslimiet.",
       "cta1": "Maak een gratis account aan",
       "cta2": "Bekijk de tools opnieuw"
+    },
+    "miaSection": {
+      "eyebrow": "Wat nergens anders bestaat",
+      "title": "Een assistent die je de markt uitlegt",
+      "subtitle": "De meeste trading-tools tonen. MIA legt uit. Je kunt met haar praten alsof ze de grafiek voor zich heeft.",
+      "badgeName": "M.I.A Agent",
+      "badgeSub": "beschikbaar op alle vlakken",
+      "chatHeader": "M.I.A Agent · Goud 15 min",
+      "h3": "Stel de vraag die je in een groep niet durft te stellen",
+      "p": "Begrijp je niet waarom deze kaars een Order Block is? Wil je weten wat er gisteren met goud is gebeurd? Weet je niet wat « mitigation » betekent? <b>Vraag het haar.</b> Ze antwoordt met de echte niveaus en de echte tijdstempels van de markt waar je naar kijkt.",
+      "questions": {
+        "0": "Leg me deze CHOCH uit",
+        "1": "Wat is het verschil tussen BOS en CHOCH?",
+        "2": "Hoe vaak is deze zone getest?",
+        "3": "Toon me alleen de ongeteste OB's",
+        "4": "Waar is de dichtstbijzijnde liquiditeit?",
+        "5": "Wat is een Fair Value Gap?"
+      },
+      "chat": {
+        "u1": "waarom is deze kaars een order block?",
+        "a1": "Het is de laatste dalende kaars vóór de beweging die de structuur brak. Ze vormde zich <b>om 12:30</b>, net vóór de stijgende BOS om 14:15 op 4 025,10. Haar zone loopt van <b>4 026,80 tot 4 028,90</b>.",
+        "u2": "is ze getest?",
+        "a2": "Nee. <b>Nooit sinds ze zich vormde.</b> De prijs kwam er 30 minuten geleden binnen, dat is haar eerste contact.",
+        "u3": "denk je dat het gaat terugkaatsen?",
+        "a3": "<b>Daar antwoord ik niet op.</b> Ik voorspel geen prijsbewegingen en ik zeg je niet wanneer je moet kopen of verkopen. Ik kan de toestand van de zone beschrijven of je het concept uitleggen."
+      },
+      "caps": {
+        "c1": {
+          "h": "Ze onderwijst SMC",
+          "p": "Elk concept — Order Block, Fair Value Gap, BOS, CHOCH, mitigation, liquiditeit — uitgelegd <b>met het voorbeeld voor je ogen</b>, op jouw markt, niet in een theoretische cursus."
+        },
+        "c2": {
+          "h": "Ze beschrijft wat er is",
+          "p": "Exacte niveaus, tijdstempels, aantal tests, de toestand van elke liquiditeitszone. <b>Uitsluitend gedetecteerde feiten</b> — een verzonnen verwijzing wordt door de code afgewezen, niet doorgelaten."
+        },
+        "c3": {
+          "h": "Ze bestuurt je weergave",
+          "p": "« Verberg de FVG's », « isoleer deze zone », « schakel naar 4 u ». Jij spreekt, <b>de grafiek verandert</b>. Geen gezoek meer naar de juiste knop."
+        },
+        "c4": {
+          "h": "Ze weigert te gissen",
+          "p": "Geen voorspelling, geen aansporing om in te grijpen, geen advies. <b>Het is een beschrijvend hulpmiddel</b>, en ze zegt het je zelf als je haar vraagt waar de prijs naartoe gaat."
+        }
+      }
+    },
+    "carousel": {
+      "hint": "↔ Scroll om de andere delen van de ruimte te zien",
+      "illus": "Illustratiegegevens",
+      "regionAria": "Leesruimte — carrousel",
+      "prevAria": "Vorig paneel",
+      "nextAria": "Volgend paneel",
+      "dotAria": "Ga naar paneel {n}",
+      "names": {
+        "0": "Grafiek",
+        "1": "Verhalende lezing",
+        "2": "Marktregime",
+        "3": "Gebeurtenissenjournaal",
+        "4": "Tijdseenheden"
+      },
+      "chart": {
+        "title": "Grafiek · Goud 15 min",
+        "layers": {
+          "0": "OB",
+          "1": "FVG",
+          "2": "Liquiditeit",
+          "3": "BOS/CHOCH",
+          "4": "Gemitigeerd"
+        },
+        "obLabel": "OB · ongetest",
+        "liqLabel": "Koopliquiditeit · intact",
+        "chochLabel": "↑ CHOCH",
+        "bosLabel": "↑ BOS · 4 025,10",
+        "localTime": "Lokale tijd · UTC−4"
+      },
+      "narrated": {
+        "title": "Verhalende lezing · Goud 15 min",
+        "freshness": "Kaars 4 min geleden gesloten",
+        "body": "De prijs bevindt zich <b>momenteel in een stijgende Order Block</b> die 3 u 30 geleden werd gevormd, tussen 4 026,80 en 4 028,90, en deze zone <b>is nooit getest</b> sinds ze werd gevormd. Een <b>stijgende CHOCH is bevestigd</b> op 4 021,45, gevolgd door een <b>stijgende BOS</b> op 4 025,10. Een zone met <b>verkoopliquiditeit is weggeveegd</b> onder 4 011,40: de lont ging eronder en de kaars sloot erboven. Een zone met <b>koopliquiditeit blijft intact</b> op 4 034,20, oftewel 0,18 % boven de prijs. De <b>1 u gaat dezelfde kant op</b>; de 4 u zit in een dalende trend.",
+        "foot": "Opnieuw samengesteld bij elke slotkoers, nooit een vaste tekst"
+      },
+      "regime": {
+        "title": "Marktregime · Goud 15 min",
+        "tiles": {
+          "0": {
+            "k": "Trend",
+            "v": "Stijgend",
+            "n": "sinds 14:15"
+          },
+          "1": {
+            "k": "Volatiliteit",
+            "v": "Verruimd",
+            "n": "7 vs 20 kaarsen"
+          },
+          "2": {
+            "k": "Positie in de range",
+            "v": "Bovenste derde",
+            "n": "4 012 – 4 037"
+          },
+          "3": {
+            "k": "Afstemming",
+            "v": "1 u eens",
+            "n": "4 u tegengesteld"
+          },
+          "4": {
+            "k": "Rijpheid",
+            "v": "9 kaarsen",
+            "n": "sinds de BOS"
+          },
+          "5": {
+            "k": "Dichtheid",
+            "v": "8 OB · 12 FVG",
+            "n": "over het venster"
+          },
+          "6": {
+            "k": "Laatste gebeurt.",
+            "v": "BOS ↑",
+            "n": "om 14:15"
+          },
+          "7": {
+            "k": "Sessie",
+            "v": "New York",
+            "n": "open"
+          },
+          "8": {
+            "k": "Referentieniveaus",
+            "v": "PDH · PDL",
+            "n": "vorige dag"
+          }
+        },
+        "foot": "Elke tegel legt zijn methode uit bij een klik"
+      },
+      "journal": {
+        "title": "Gebeurtenissenjournaal · Goud 15 min",
+        "rows": {
+          "0": {
+            "kind": "bos",
+            "badge": "BOS ↑",
+            "text": "Stijgende structuurbreuk",
+            "time": "14:15"
+          },
+          "1": {
+            "kind": "pocket",
+            "badge": "ZONE",
+            "text": "Verkoopliquiditeit weggeveegd",
+            "time": "13:30"
+          },
+          "2": {
+            "kind": "choch",
+            "badge": "CHOCH ↑",
+            "text": "Karakterverandering bevestigd",
+            "time": "12:45"
+          },
+          "3": {
+            "kind": "ob",
+            "badge": "OB ↑",
+            "text": "Order Block gevormd · 4 026,80–4 028,90",
+            "time": "12:30"
+          },
+          "4": {
+            "kind": "fvg",
+            "badge": "FVG ↓",
+            "text": "Fair Value Gap voor 60 % opgevuld",
+            "time": "11:00"
+          }
+        },
+        "foot": "Klik op een gebeurtenis en de grafiek springt ernaartoe"
+      },
+      "timeframes": {
+        "title": "Tijdseenheden · Goud",
+        "chips": {
+          "0": "M5",
+          "1": "M15",
+          "2": "H1",
+          "3": "H4",
+          "4": "D1"
+        },
+        "activeChip": "M15",
+        "rows": {
+          "0": {
+            "tf": "M15",
+            "text": "Stijgend · expansie",
+            "note": "huidige lezing"
+          },
+          "1": {
+            "tf": "H1",
+            "text": "Stijgend · trend",
+            "note": "gaat dezelfde kant op"
+          },
+          "2": {
+            "tf": "H4",
+            "text": "Dalend · range",
+            "note": "tegengestelde richting"
+          },
+          "3": {
+            "tf": "D1",
+            "text": "Onbepaald",
+            "note": "geen vastgestelde structuur"
+          }
+        },
+        "foot": "Elke eenheid heeft haar eigen lezing, herzien bij haar slotkoers"
+      }
     }
   },
   "regimePanel": {
@@ -621,7 +843,12 @@
     "account": "Instellingen",
     "login": "Inloggen",
     "language": "Taal",
-    "calendar": "Nieuws"
+    "calendar": "Nieuws",
+    "mia": "M.I.A",
+    "tools": "Tools",
+    "tryFree": "Gratis uitproberen",
+    "appLink": "App",
+    "methodology": "Methodologie & woordenlijst"
   },
   "landing": {
     "hero": {

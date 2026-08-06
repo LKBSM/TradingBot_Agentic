@@ -1,37 +1,40 @@
 {
   "home": {
     "hero": {
-      "pill": "2 Märkte · 6 Zeiteinheiten · bei jedem Kerzenschluss analysiert",
+      "pill": "Frühzugang · Gold und Euro heute",
       "h1a": "Der Markt hat längst alles geschrieben.",
       "h1b": "MIA liest es dir vor.",
-      "lead": "Order Blocks, Fair Value Gaps, Strukturbrüche, Liquiditätszonen — erkannt auf Gold und Euro, über 6 Zeiteinheiten hinweg, und in klarer Sprache beschrieben. Du hörst auf, alles von Hand einzuzeichnen, und widmest dich der Arbeit, die wirklich zählt.",
+      "lead": "Order Blocks, Fair Value Gaps, Strukturbrüche, Liquiditätszonen — automatisch erkannt und in klarer Sprache beschrieben. Und ein Assistent, der antwortet, wenn du etwas nicht verstehst.",
       "ctaPrimary": "Kostenlos testen",
       "ctaSecondary": "Werkzeuge ansehen",
-      "micro": "Ohne Kreditkarte · Dauerhaft kostenloser Zugang"
+      "micro": "Ohne Kreditkarte · Dauerhaft kostenloser Zugang",
+      "roadmap": "Frühzugang · <b>2 Märkte heute, 50 bis 80 zum Start geplant</b>"
     },
     "stats": {
-      "markets": "beobachtete Märkte",
+      "markets": "verfolgte Märkte",
       "combinations": "analysierte Kombinationen",
-      "conditions": "Suchkriterien",
-      "timeframes": "Zeiteinheiten"
+      "conditions": "Suchbedingungen",
+      "timeframes": "Zeiteinheiten",
+      "structures": "erkannte Strukturen"
     },
     "tools": {
-      "eyebrow": "Fünf Werkzeuge, eine Engine",
+      "eyebrow": "Fünf Werkzeuge, ein Produkt",
       "title": "Alles, was du brauchst, um eine Struktur zu lesen",
       "subtitle": "Jedes Werkzeug beantwortet eine Frage, die du dir ohnehin stellst. Der Unterschied ist die Zeit, die du bis zur Antwort brauchst.",
       "app": {
         "tag": "Der Leseraum",
-        "h3": "Öffne einen Chart — die Lesung ist schon fertig",
-        "p": "Die Engine hat die Zonen markiert, die Brüche datiert, die Liquidität verortet. Darunter erklärt dir ein Absatz, wo der Markt steht — <b>nicht was er tun wird, sondern was er getan hat</b>. Du erfasst die Lage in zehn Sekunden statt in zwanzig Minuten Einzeichnen.",
-        "b1": "<b>Order Blocks und Fair Value Gaps</b> abgegrenzt, mit Richtung und Zustand",
-        "b2": "<b>BOS und CHOCH</b> mit Zeitstempel und dem exakten Bruchniveau",
-        "b3": "<b>Liquiditätszonen</b> intakt, abgeräumt oder gebrochen — drei klar getrennte Zustände",
-        "b4": "<b>Regime-Panel</b>: zehn Kacheln — Trend, Volatilität, Position, Ausrichtung, Reife, Dichte, Session…",
+        "h3": "Weit mehr als ein annotierter Chart",
+        "p": "Zonen sind abgegrenzt, Brüche datiert, Liquidität verortet. Darunter beschreibt ein Absatz die Lage. Daneben das Marktregime, das Ereignisprotokoll und M.I.A. <b>Alles, was du brauchst, auf einem einzigen Bildschirm.</b>",
+        "b1": "<b>Chart in Schichten</b> — jede Strukturfamilie lässt sich ein- oder ausblenden",
+        "b2": "<b>Erzählte Lesung</b>, aus den erkannten Fakten zusammengesetzt, nie ein starrer Text",
+        "b3": "<b>Regime-Panel</b> — Trend, Volatilität, Position, Übereinstimmung zwischen Zeiteinheiten",
+        "b4": "<b>Ereignisprotokoll</b> — jeder Bruch mit Zeitstempel, anklickbar im Chart",
         "visTitle": "Gold · XAU/USD · 15 Minuten",
         "lblLiq": "Liquidität intakt",
         "lblOb": "OB · ungetestet",
         "lblChoch": "CHOCH ↑",
-        "narr": "Der Kurs befindet sich <b>aktuell in einem bullischen Order Block</b>, der vor 14 Kerzen entstanden ist, zwischen 4 026,80 und 4 028,90, und diese Zone <b>wurde noch nie getestet</b>. Eine Verkaufs-Liquiditätszone <b>wurde vor 17 Kerzen abgeräumt</b>. Die 1-h-Einheit weist in dieselbe Richtung."
+        "narr": "Der Kurs befindet sich <b>aktuell in einem bullischen Order Block</b>, der vor 14 Kerzen entstanden ist, zwischen 4 026,80 und 4 028,90, und diese Zone <b>wurde noch nie getestet</b>. Eine Verkaufs-Liquiditätszone <b>wurde vor 17 Kerzen abgeräumt</b>. Die 1-h-Einheit weist in dieselbe Richtung.",
+        "b5": "<b>Sechs Zeiteinheiten</b> — von der Minute bis zum Tag folgt die Lesung"
       },
       "scanner": {
         "tag": "Der Scanner",
@@ -79,10 +82,10 @@
       "news": {
         "tag": "Die Nachrichten",
         "h3": "Wisse, wann sich der Markt bewegen wird — und was bei den vorherigen Malen geschah",
-        "p": "Ein Kalender der Wirtschaftsveröffentlichungen, verknüpft mit den Märkten, die sie betreffen. Und zu jeder davon <b>das, was die Engine bei den früheren Terminen tatsächlich gemessen hat</b>: die Ruhe davor, die Unruhe danach, die Lebensdauer der an diesem Tag entstandenen Zonen.",
+        "p": "Ein Kalender der Wirtschaftsveröffentlichungen, verknüpft mit den Märkten, die sie betreffen. Und für jede davon <b>das, was bei den vorherigen Veröffentlichungen tatsächlich gemessen wurde</b>: die Ruhe davor, die Unruhe danach, die Lebensdauer der an diesem Tag entstandenen Zonen.",
         "b1": "<b>Monatskalender</b> mit Ortszeit und Uhrzeit der Behörde",
         "b2": "<b>Die letzten zwölf veröffentlichten Zahlen</b> jedes Indikators, so wie veröffentlicht",
-        "b3": "<b>Messungen der Engine</b> bei früheren Terminen — Auszählungen, keine Vorhersagen",
+        "b3": "<b>Erfasste Messungen</b> vergangener Veröffentlichungen — Zählungen, keine Vorhersagen",
         "b4": "<b>Ausschließlich offizielle Quellen</b>: BLS, BEA, Census, US-Notenbank (Fed), Eurostat, EZB",
         "visTitle": "Verbraucherpreisindex · 12. August",
         "q1": {
@@ -106,9 +109,9 @@
       "mia": {
         "tag": "M.I.A Agent",
         "h3": "Ein SMC-Mentor, der nie schläft",
-        "p": "Du verstehst nicht, warum diese Kerze ein Order Block ist? Frag sie. Sie <b>vermittelt die Konzepte und beschreibt, was die Engine erkannt hat</b> — und sie kann deinen Chart steuern: eine Ebene ausblenden, eine Zone isolieren, die Zeiteinheit wechseln.",
+        "p": "Du verstehst nicht, warum diese Kerze ein Order Block ist? Frag sie. Sie <b>vermittelt die Konzepte und beschreibt das Erkannte</b> — und sie kann deinen Chart steuern: eine Schicht ausblenden, eine Zone isolieren, die Zeiteinheit wechseln.",
         "b1": "<b>Erklärt jedes SMC-Konzept</b> mit dem Beispiel direkt vor Augen",
-        "b2": "<b>An die Engine gebunden</b>: Sie nennt nur tatsächlich erkannte Niveaus",
+        "b2": "<b>An echte Daten gebunden</b>: Sie nennt nur Niveaus, die tatsächlich erkannt wurden",
         "b3": "<b>Steuert die Anzeige</b>: „zeig mir nur die ungetesteten OB“",
         "b4": "<b>Auf dem Chart und bei den Veröffentlichungen</b> — kein einziges Wort der Vorhersage",
         "visTitle": "M.I.A Agent",
@@ -133,9 +136,9 @@
       "illus": "Beispieldaten",
       "tabs": {
         "structure": "Eine Struktur lesen",
-        "scanner": "Einen Markt suchen",
+        "scanner": "Eine Strategie festlegen",
         "zones": "Eine Zone verfolgen",
-        "mia": "Eine Frage stellen",
+        "mia": "Mit M.I.A sprechen",
         "calcul": "Die Berechnung öffnen"
       },
       "structure": {
@@ -157,7 +160,7 @@
         },
         "side": {
           "title": "Die Lesung aktualisiert sich",
-          "desc": "Nimm den Haken bei einer Ebene weg: <b>der Absatz schreibt sich neu</b> und beschreibt nur noch, was angezeigt bleibt. Der Text ist nie starr — er wird aus dem zusammengesetzt, was die Engine erkannt hat.",
+          "desc": "Hak eine Schicht ab: <b>der Absatz schreibt sich neu</b>, um nur noch das zu beschreiben, was angezeigt bleibt. Die Erzählung ist nie ein starrer Text — sie wird aus dem Erkannten zusammengesetzt.",
           "try": "Probier es",
           "onlyOb": "Nur die Order Blocks behalten",
           "onlyLiq": "Nur die Liquidität behalten",
@@ -240,7 +243,7 @@
         "greeting": "Wähl nebenan eine Frage, um mich antworten zu sehen.",
         "side": {
           "title": "Stell ihr eine echte Frage",
-          "desc": "M.I.A erklärt die Konzepte, beschreibt, was die Engine erkannt hat, und steuert die Anzeige. <b>Sie verweigert alles, was in den Bereich der Vorhersage fällt</b> — klick auf die letzte Option, um es zu sehen.",
+          "desc": "M.I.A erklärt die Konzepte, beschreibt das Erkannte und steuert die Anzeige. <b>Sie weigert sich bei allem, was in den Bereich der Vorhersage fällt</b> — klick auf die letzte Option, um es zu sehen.",
           "try": "Wähl eine Frage"
         },
         "q": {
@@ -279,7 +282,7 @@
         "notSay": "Die Volatilität misst das Ausmaß der Bewegungen, nicht ihre Richtung. Sie sagt nicht, ob der Kurs steigen oder fallen wird.",
         "side": {
           "title": "Jede Zahl ist nachprüfbar",
-          "desc": "Eine Kachel des Regime-Panels begnügt sich nicht mit einem Urteil. <b>Öffne die Berechnung</b> und du siehst die Zahlen, die es hervorgebracht haben — und was die Messung nicht aussagt. Wenn die Engine es nicht weiß, sagt dir der Bildschirm es.",
+          "desc": "Eine Kachel des Regime-Panels gibt sich nicht mit einem Urteil zufrieden. <b>Öffne die Berechnung</b> und du siehst die Zahlen, die es hervorgebracht haben — und was die Messung nicht sagt. Wenn die Analyse es nicht weiß, sagt der Bildschirm es dir.",
           "try": "Probier es",
           "toggle": "Die Berechnung öffnen",
           "hide": "Die Berechnung ausblenden"
@@ -292,7 +295,7 @@
       "subtitle": "Keine Installation, kein Skript zum Kopieren, keine Indikator-Einstellung. Du öffnest und es ist bereit.",
       "step1": {
         "h": "Wähl deinen Markt",
-        "p": "Gold oder Euro, auf 6 Zeiteinheiten. Die Engine hat die 12 Kombinationen bereits analysiert und hält das Ergebnis bei jedem Kerzenschluss aktuell."
+        "p": "Gold oder Euro, auf 6 Zeiteinheiten. Die 12 Kombinationen werden bereits laufend analysiert, und das Ergebnis bleibt bei jedem Kerzenschluss aktuell."
       },
       "step2": {
         "h": "Lies die Struktur",
@@ -309,22 +312,40 @@
       "subtitle": "Wenn du deine Order Blocks jeden Morgen von Hand einzeichnest, bist du genau die Person, für die es dieses Produkt gibt.",
       "w1": {
         "h": "Du lernst SMC",
-        "p": "Die Struktur korrekt markiert zu sehen, mit einem Agenten, der jedes Element erklärt, wenn du ihn fragst, ersetzt Dutzende Stunden Videos."
+        "p": "Die Struktur korrekt markiert zu sehen, mit einem Agenten, der jedes Element erklärt, wenn du ihn fragst, ersetzt Dutzende Stunden Videos.",
+        "lb": "Lernen",
+        "items": {
+          "0": "Jedes Konzept auf deinem Markt erklärt, nicht in der Theorie",
+          "1": "Die Erkennungsregeln sind veröffentlicht, du kannst sie überprüfen",
+          "2": "Du lernst durch Zusehen, nicht durch Auswendiglernen"
+        }
       },
       "w2": {
         "h": "Du zeichnest von Hand",
-        "p": "Du verbringst jeden Tag Zeit damit, deine Zonen zu markieren. MIA erledigt das auf Gold und Euro, durchgehend, mit dem Lebenszyklus obendrein."
+        "p": "Du verbringst jeden Tag Zeit damit, deine Zonen zu markieren. MIA erledigt das auf Gold und Euro, durchgehend, mit dem Lebenszyklus obendrein.",
+        "lb": "Beständigkeit",
+        "items": {
+          "0": "Dieselben Regeln, immer auf dieselbe Weise angewendet",
+          "1": "Der vollständige Lebenszyklus jeder Zone, bewahrt",
+          "2": "Nichts wird an einem müden Tag vergessen"
+        }
       },
       "w3": {
         "h": "Du verfolgst mehrere Zeiteinheiten",
-        "p": "Du weißt, wonach du suchst, aber du kannst nicht alles im Blick behalten. Der Scanner überwacht deine 12 Kombinationen bei jedem Schluss, ohne dass du klickst."
+        "p": "Du weißt, wonach du suchst, aber du kannst nicht alles im Blick behalten. Der Scanner überwacht deine 12 Kombinationen bei jedem Schluss, ohne dass du klickst.",
+        "lb": "Umfang",
+        "items": {
+          "0": "Deine Bedingungen überall bei jedem Schluss geprüft",
+          "1": "Der ungünstige Kontext angezeigt, nicht nur das, was bestätigt",
+          "2": "Ein Kalender offizieller, überprüfbarer Quellen"
+        }
       }
     },
     "distinguish": {
       "eyebrow": "Was uns unterscheidet",
       "h2": "MIA wird dir nie sagen, wohin der Kurs geht",
       "p1": "Nicht, weil sie es nicht könnte — sondern weil <b>niemand es weiß</b>. Der Markt für Trading-Werkzeuge ist voll von Produkten, die unüberprüfbare Vorhersagen verkaufen. MIA macht etwas anderes: Sie beschreibt, was da ist, jetzt, und hört da auf.",
-      "p2": "Konkret wird der ungünstige Kontext gleichrangig zum günstigen Kontext angezeigt, die Ergebnisse werden nie nach „Qualität“ sortiert, und wenn die Engine es nicht weiß, sagt dir der Bildschirm es, statt zu raten. <b>Du behältst die Entscheidung. Wir geben dir die Lesung.</b>"
+      "p2": "Konkret wird der ungünstige Kontext gleichrangig mit dem günstigen angezeigt, die Ergebnisse werden nie nach « Qualität » sortiert, und wenn die Analyse es nicht weiß, sagt der Bildschirm es dir, statt zu raten. <b>Du behältst die Entscheidung. Wir geben dir die Lesung.</b>"
     },
     "pricing": {
       "eyebrow": "Preis",
@@ -350,7 +371,7 @@
         "f1": "<b>Beide Märkte</b>, 6 Zeiteinheiten",
         "f2": "Scanner über alle 12 Kombinationen",
         "f3": "Zonen-Seite und vollständiger Lebenszyklus",
-        "f4": "Messungen der Engine bei den Veröffentlichungen",
+        "f4": "Bei Veröffentlichungen erfasste Messungen",
         "f5": "M.I.A Agent ohne Begrenzung",
         "f6": "Unbegrenzt gespeicherte Lesungen",
         "cta": "Loslegen",
@@ -380,9 +401,210 @@
     },
     "final": {
       "h2": "Hör auf zu zeichnen. Fang an zu lesen.",
-      "p": "Erstell ein kostenloses Konto und schau, was die Engine auf deinem Lieblingsmarkt sieht. Keine Kreditkarte, keine zeitliche Begrenzung.",
+      "p": "Erstelle ein kostenloses Konto und sieh, was MIA auf deinem Lieblingsmarkt sieht. Keine Kreditkarte, keine zeitliche Begrenzung.",
       "cta1": "Kostenloses Konto erstellen",
       "cta2": "Werkzeuge erneut ansehen"
+    },
+    "miaSection": {
+      "eyebrow": "Was es nirgendwo sonst gibt",
+      "title": "Ein Assistent, der dir den Markt erklärt",
+      "subtitle": "Die meisten Trading-Werkzeuge zeigen nur an. MIA erklärt. Du kannst mit ihr reden wie mit jemandem, der den Chart vor Augen hat.",
+      "badgeName": "M.I.A Agent",
+      "badgeSub": "auf allen Oberflächen verfügbar",
+      "chatHeader": "M.I.A Agent · Gold 15 Min.",
+      "h3": "Stell die Frage, die du dich in einer Gruppe nicht zu fragen traust",
+      "p": "Du verstehst nicht, warum diese Kerze ein Order Block ist? Du willst wissen, was gestern beim Gold passiert ist? Du weißt nicht, was « mitigation » bedeutet? <b>Frag sie.</b> Sie antwortet mit den echten Niveaus und den echten Zeitstempeln des Marktes, den du gerade betrachtest.",
+      "questions": {
+        "0": "Erklär mir diesen CHOCH",
+        "1": "Was ist der Unterschied zwischen BOS und CHOCH?",
+        "2": "Wie oft wurde diese Zone getestet?",
+        "3": "Zeig mir nur die ungetesteten OB",
+        "4": "Wo ist die nächstgelegene Liquidität?",
+        "5": "Was ist ein Fair Value Gap?"
+      },
+      "chat": {
+        "u1": "warum ist diese kerze ein order block?",
+        "a1": "Es ist die letzte bärische Kerze vor der Bewegung, die die Struktur gebrochen hat. Sie hat sich <b>um 12:30</b> gebildet, kurz vor dem bullischen BOS um 14:15 bei 4 025,10. Ihre Zone reicht von <b>4 026,80 bis 4 028,90</b>.",
+        "u2": "wurde sie getestet?",
+        "a2": "Nein. <b>Nie seit ihrer Bildung.</b> Der Preis ist vor 30 Minuten in sie eingetreten, das ist ihr erster Kontakt.",
+        "u3": "glaubst du, dass sie abprallt?",
+        "a3": "<b>Das beantworte ich nicht.</b> Ich sage keine Preisbewegungen voraus und sage dir nicht, wann du kaufen oder verkaufen sollst. Ich kann dir den Zustand der Zone beschreiben oder dir das Konzept erklären."
+      },
+      "caps": {
+        "c1": {
+          "h": "Sie vermittelt SMC",
+          "p": "Jedes Konzept — Order Block, Fair Value Gap, BOS, CHOCH, mitigation, Liquidität — erklärt <b>mit dem Beispiel vor Augen</b>, auf deinem Markt, nicht in einem theoretischen Kurs."
+        },
+        "c2": {
+          "h": "Sie beschreibt, was da ist",
+          "p": "Genaue Niveaus, Zeitstempel, Anzahl der Tests, Zustand jeder Liquiditätszone. <b>Nur erkannte Fakten</b> — eine erfundene Referenz wird vom Code abgewiesen, nicht durchgelassen."
+        },
+        "c3": {
+          "h": "Sie steuert deine Anzeige",
+          "p": "« Blende die FVG aus », « isoliere diese Zone », « wechsle auf 4 Std. ». Du sprichst, <b>der Chart verändert sich</b>. Kein Suchen mehr nach dem richtigen Knopf."
+        },
+        "c4": {
+          "h": "Sie weigert sich zu raten",
+          "p": "Keine Vorhersage, kein Hinweis auf ein Eingreifen, kein Rat. <b>Es ist ein beschreibendes Werkzeug</b>, und sie sagt es dir selbst, wenn du sie fragst, wohin der Preis geht."
+        }
+      }
+    },
+    "carousel": {
+      "hint": "↔ Scrolle, um die anderen Teile des Raums zu sehen",
+      "illus": "Beispieldaten",
+      "regionAria": "Leseraum — Karussell",
+      "prevAria": "Vorheriges Feld",
+      "nextAria": "Nächstes Feld",
+      "dotAria": "Zu Feld {n} springen",
+      "names": {
+        "0": "Chart",
+        "1": "Erzählte Lesung",
+        "2": "Marktregime",
+        "3": "Ereignisprotokoll",
+        "4": "Zeiteinheiten"
+      },
+      "chart": {
+        "title": "Chart · Gold 15 Min.",
+        "layers": {
+          "0": "OB",
+          "1": "FVG",
+          "2": "Liquidität",
+          "3": "BOS/CHOCH",
+          "4": "Mitigiert"
+        },
+        "obLabel": "OB · ungetestet",
+        "liqLabel": "Kaufliquidität · intakt",
+        "chochLabel": "↑ CHOCH",
+        "bosLabel": "↑ BOS · 4 025,10",
+        "localTime": "Ortszeit · UTC−4"
+      },
+      "narrated": {
+        "title": "Erzählte Lesung · Gold 15 Min.",
+        "freshness": "Kerze vor 4 Min. geschlossen",
+        "body": "Der Preis befindet sich <b>derzeit in einem bullischen Order Block</b>, gebildet vor 3 Std. 30, zwischen 4 026,80 und 4 028,90, und diese Zone <b>wurde seit ihrer Bildung nie getestet</b>. Ein <b>bullischer CHOCH bestätigte sich</b> bei 4 021,45, gefolgt von einem <b>bullischen BOS</b> bei 4 025,10. Eine <b>Verkaufsliquiditätszone wurde abgeräumt</b> unter 4 011,40: Der Docht ging darunter und die Kerze schloss darüber. Eine <b>Kaufliquiditätszone bleibt intakt</b> bei 4 034,20, also 0,18 % über dem Preis. Der <b>1 Std. verläuft in dieselbe Richtung</b>; der 4 Std. ist in einem bärischen Trend.",
+        "foot": "Bei jedem Schluss neu zusammengesetzt, nie ein starrer Text"
+      },
+      "regime": {
+        "title": "Marktregime · Gold 15 Min.",
+        "tiles": {
+          "0": {
+            "k": "Trend",
+            "v": "Bullisch",
+            "n": "seit 14:15"
+          },
+          "1": {
+            "k": "Volatilität",
+            "v": "Ausgeweitet",
+            "n": "7 vs. 20 Kerzen"
+          },
+          "2": {
+            "k": "Position in der Range",
+            "v": "Oberes Drittel",
+            "n": "4 012 – 4 037"
+          },
+          "3": {
+            "k": "Ausrichtung",
+            "v": "1 Std. stimmt zu",
+            "n": "4 Std. gegensätzlich"
+          },
+          "4": {
+            "k": "Reife",
+            "v": "9 Kerzen",
+            "n": "seit dem BOS"
+          },
+          "5": {
+            "k": "Dichte",
+            "v": "8 OB · 12 FVG",
+            "n": "über das Fenster"
+          },
+          "6": {
+            "k": "Letztes Ereignis",
+            "v": "BOS ↑",
+            "n": "um 14:15"
+          },
+          "7": {
+            "k": "Session",
+            "v": "New York",
+            "n": "geöffnet"
+          },
+          "8": {
+            "k": "Referenzniveaus",
+            "v": "PDH · PDL",
+            "n": "Vortag"
+          }
+        },
+        "foot": "Jede Kachel erklärt ihre Methode beim Klick"
+      },
+      "journal": {
+        "title": "Ereignisprotokoll · Gold 15 Min.",
+        "rows": {
+          "0": {
+            "kind": "bos",
+            "badge": "BOS ↑",
+            "text": "Bullischer Strukturbruch",
+            "time": "14:15"
+          },
+          "1": {
+            "kind": "pocket",
+            "badge": "ZONE",
+            "text": "Verkaufsliquidität abgeräumt",
+            "time": "13:30"
+          },
+          "2": {
+            "kind": "choch",
+            "badge": "CHOCH ↑",
+            "text": "Charakterwechsel bestätigt",
+            "time": "12:45"
+          },
+          "3": {
+            "kind": "ob",
+            "badge": "OB ↑",
+            "text": "Order Block gebildet · 4 026,80–4 028,90",
+            "time": "12:30"
+          },
+          "4": {
+            "kind": "fvg",
+            "badge": "FVG ↓",
+            "text": "Fair Value Gap zu 60 % gefüllt",
+            "time": "11:00"
+          }
+        },
+        "foot": "Klick ein Ereignis an, der Chart positioniert sich darauf"
+      },
+      "timeframes": {
+        "title": "Zeiteinheiten · Gold",
+        "chips": {
+          "0": "M5",
+          "1": "M15",
+          "2": "H1",
+          "3": "H4",
+          "4": "D1"
+        },
+        "activeChip": "M15",
+        "rows": {
+          "0": {
+            "tf": "M15",
+            "text": "Bullisch · Expansion",
+            "note": "aktuelle Lesung"
+          },
+          "1": {
+            "tf": "H1",
+            "text": "Bullisch · Trend",
+            "note": "verläuft in dieselbe Richtung"
+          },
+          "2": {
+            "tf": "H4",
+            "text": "Bärisch · Range",
+            "note": "gegensätzliche Richtung"
+          },
+          "3": {
+            "tf": "D1",
+            "text": "Unbestimmt",
+            "note": "keine gefestigte Struktur"
+          }
+        },
+        "foot": "Jede Einheit hat ihre eigene Lesung, neu bewertet bei ihrem Schluss"
+      }
     }
   },
   "regimePanel": {
@@ -621,7 +843,12 @@
     "account": "Einstellungen",
     "login": "Anmelden",
     "language": "Sprache",
-    "calendar": "Termine"
+    "calendar": "Termine",
+    "mia": "M.I.A",
+    "tools": "Werkzeuge",
+    "tryFree": "Kostenlos ausprobieren",
+    "appLink": "App",
+    "methodology": "Methodik & Glossar"
   },
   "landing": {
     "hero": {
