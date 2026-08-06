@@ -81,12 +81,12 @@ export function MiaSection() {
               </div>
               <div className={styles.visb}>
                 <div className={styles.mchat} style={{ minHeight: 200, border: 'none', background: 'transparent', padding: 0, gap: 7 }}>
-                  <div className={styles.mbU} style={{ alignSelf: 'flex-end' }}>{t('miaSection.chat.u1')}</div>
-                  <div className={styles.mbA} style={{ alignSelf: 'flex-start' }}>{rich('miaSection.chat.a1')}</div>
-                  <div className={styles.mbU} style={{ alignSelf: 'flex-end' }}>{t('miaSection.chat.u2')}</div>
-                  <div className={styles.mbA} style={{ alignSelf: 'flex-start' }}>{rich('miaSection.chat.a2')}</div>
-                  <div className={styles.mbU} style={{ alignSelf: 'flex-end' }}>{t('miaSection.chat.u3')}</div>
-                  <div className={styles.mbNo} style={{ alignSelf: 'flex-start' }}>{rich('miaSection.chat.a3')}</div>
+                  <div className={`${styles.miaBub} ${styles.mbU}`} style={{ alignSelf: 'flex-end' }}>{t('miaSection.chat.u1')}</div>
+                  <div className={`${styles.miaBub} ${styles.mbA}`} style={{ alignSelf: 'flex-start' }}>{rich('miaSection.chat.a1')}</div>
+                  <div className={`${styles.miaBub} ${styles.mbU}`} style={{ alignSelf: 'flex-end' }}>{t('miaSection.chat.u2')}</div>
+                  <div className={`${styles.miaBub} ${styles.mbA}`} style={{ alignSelf: 'flex-start' }}>{rich('miaSection.chat.a2')}</div>
+                  <div className={`${styles.miaBub} ${styles.mbU}`} style={{ alignSelf: 'flex-end' }}>{t('miaSection.chat.u3')}</div>
+                  <div className={`${styles.miaBub} ${styles.mbNo}`} style={{ alignSelf: 'flex-start' }}>{rich('miaSection.chat.a3')}</div>
                 </div>
               </div>
             </div>
