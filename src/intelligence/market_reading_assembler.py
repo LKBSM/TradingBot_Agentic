@@ -76,6 +76,23 @@ def _liquidity_display_disabled() -> bool:
 # be tuned per deployment; <=0 disables the bound (patient fetch everywhere).
 _PROVIDER_FETCH_TIMEOUT_ENV = "SENTINEL_PROVIDER_FETCH_TIMEOUT_S"
 
+# PERF-2: the interactive (/app) serving path must never WAIT on the external
+# provider — that is the single biggest source of the 5-8 s loads (measured: a
+# rate-limited feed makes every request burn the full bounded-fetch budget). When
+# enabled (default), a client request serves the last stored reading immediately —
+# a SQLite read, honestly age-badged by market_status — and, if nothing is stored
+# yet, builds ONCE from the local candle cache (no provider round-trip). The
+# provider fetch that actually advances the data lives ONLY in the background
+# scheduler (the combo is marked active here so the scheduler picks it up).
+# Reversible via env for an emergency fall-back to the synchronous behaviour.
+_INTERACTIVE_SERVE_STORED_ENV = "SENTINEL_INTERACTIVE_SERVE_STORED"
+
+
+def _interactive_serve_stored() -> bool:
+    return os.environ.get(_INTERACTIVE_SERVE_STORED_ENV, "1").strip().lower() in (
+        "1", "true", "yes", "on",
+    )
+
 
 class MarketReadingDataUnavailable(RuntimeError):
     """No candles could be sourced for a VALID combo — neither the live feed, nor
@@ -358,11 +375,43 @@ class MarketReadingAssembler:
             and existing.get("_logic_version") == READING_LOGIC_VERSION
             and self._payload_matches(existing, expected_close)
         ):
+            # True warm hit: the stored reading is for the current closed candle.
             self._readings_store.mark_combination_active(instrument, timeframe)
             return self._with_status(
                 MarketReading.model_validate(existing), instrument, timeframe
             )
 
+        # PERF-2 — interactive serving path (/app): NEVER rebuild-and-wait on a
+        # cache miss when a CURRENT-logic reading is already stored. This is the
+        # single fix for the measured "5-7 s on every call": under a lagging /
+        # rate-limited feed the stored reading's candle never reaches the
+        # wall-clock expected_close, so the old code rebuilt (and burned the full
+        # bounded-provider budget) on EVERY request. Instead, serve the last stored
+        # reading INSTANTLY (a SQLite read) — it may be a candle behind, which
+        # market_status badges honestly as "en retard" (real data, never silent
+        # staleness, never a hang) — and mark the combo active so the background
+        # scheduler advances it off the request path.
+        #
+        # A stored payload from an OLDER _logic_version (e.g. just after a version
+        # bump) is deliberately NOT served: it falls through to a full rebuild so
+        # today's derivation rules reach the screen (the MT-D1/D4 invariant that the
+        # two definitions never mix). Same for nothing-stored (genuine cold start):
+        # both take the synchronous build below, bounded + read-through as before.
+        if (
+            bound_provider
+            and _interactive_serve_stored()
+            and existing is not None
+            and existing.get("_logic_version") == READING_LOGIC_VERSION
+        ):
+            self._readings_store.mark_combination_active(instrument, timeframe)
+            return self._with_status(
+                MarketReading.model_validate(existing), instrument, timeframe
+            )
+
+        # Synchronous build: the background scheduler (bound_provider=False, patient)
+        # and the genuine cold-start / version-bump interactive rebuild. The provider
+        # is bounded on the interactive path (read-through fallback), patient on the
+        # scheduler path.
         try:
             reading = self._build_fresh(
                 instrument, timeframe, expected_close, bound_provider=bound_provider
@@ -628,13 +677,14 @@ class MarketReadingAssembler:
         — call the provider directly and let it take as long as it needs; this is
         what actually advances ``candles.db``.
 
-        Interactive path (``bound_provider=True``, /app read): the feed must never
-        hang the user. Try the provider within a wall-clock budget; on timeout,
-        failure, or an empty response, read THROUGH the local candle cache. Cached
-        candles are REAL bars — when they lag, the freshness badge already flags
-        the reading as behind (no silent staleness, no synthetic data). Only when
-        BOTH the provider and the cache yield nothing do we surface the failure —
-        never swallowed into a blank reading.
+        Interactive path (``bound_provider=True``): a cache miss reaches here only
+        on a genuine cold start or a logic-version rebuild (PERF-2 serves a stored
+        current-version reading without rebuilding). Try the provider within a
+        wall-clock budget, then read THROUGH the local candle cache. Cached candles
+        are REAL bars — when they lag, the freshness badge already flags the reading
+        as behind (no silent staleness, no synthetic data). Only when BOTH the
+        provider and the cache yield nothing do we surface the failure — never
+        swallowed into a blank reading.
         """
         if not bound_provider:
             # The WS live tick already advances candles.db for free, so a REST

@@ -1,7 +1,13 @@
 'use client';
 
 import * as React from 'react';
-import { fetchCandles, fetchMarketReading, MarketReadingNotAvailableError } from './api-client';
+import {
+  CandlesError,
+  fetchCandles,
+  fetchMarketReading,
+  MarketReadingNotAvailableError,
+  type CandlesErrorReason,
+} from './api-client';
 import { computeDailyChange, type DailyChange } from './price';
 import { getMockCandles, getMockReading, READING_DATA_SOURCE } from '@/lib/mockReadings';
 import { mtfOrderFor, type MtfTrendMap } from './mtf-trend';
@@ -282,7 +288,31 @@ export interface UseCandlesResult {
   isLoading: boolean;
   /** Set when the live feed errored (404/400/503/transport). null in mock mode. */
   error: Error | null;
+  /**
+   * Force an out-of-band re-pull of the candle window WITHOUT reloading the page
+   * (PERF-2). The chart's own recovery handle — the reading's `candleCloseTs` only
+   * advances at a candle close (≤15 min on M15, up to a day on D1), so a transient
+   * candle-feed failure used to leave the chart blank until a manual browser
+   * refresh. `refresh()` (and the bounded auto-retry below) close that gap.
+   */
+  refresh(): void;
 }
+
+/**
+ * PERF-2 — bounded auto-retry for the candle feed. A transient transport failure
+ * (timeout / network / 5xx) schedules up to this many silent re-pulls with linear
+ * backoff, so the chart heals itself without waiting for the next candle close or
+ * a manual page reload. A deterministic 404 ("no candles for this combo") is NOT
+ * retried automatically — it is surfaced honestly with a manual "Réessayer".
+ */
+const CANDLES_MAX_AUTO_RETRIES = 3;
+const CANDLES_RETRY_BASE_MS = 1_500;
+const candlesReasonOf = (err: unknown): CandlesErrorReason | null =>
+  err instanceof CandlesError ? err.reason : null;
+const isTransientCandlesError = (err: unknown): boolean => {
+  const reason = candlesReasonOf(err);
+  return reason === 'timeout' || reason === 'network' || reason === 'server';
+};
 
 export interface UseCandlesOptions {
   /** Data source. Defaults to the module-level READING_DATA_SOURCE flag. */
@@ -328,6 +358,17 @@ export function useCandles(
   const requestSeq = React.useRef(0);
   const loadedKey = React.useRef<string | null>(null);
 
+  // PERF-2 recovery handles: a manual-refresh nonce (bumped by refresh() and by
+  // the bounded auto-retry) re-runs the effect; the attempt counter is reset on
+  // every combo change and every success so each combo gets its own retry budget.
+  const [refreshNonce, setRefreshNonce] = React.useState(0);
+  const retryCountRef = React.useRef(0);
+  const retryTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const refresh = React.useCallback(() => {
+    retryCountRef.current = 0; // a manual retry restores the full auto-retry budget
+    setRefreshNonce((n) => n + 1);
+  }, []);
+
   React.useEffect(() => {
     if (!instrument || !timeframe) {
       loadedKey.current = null;
@@ -342,6 +383,8 @@ export function useCandles(
     const isComboChange = loadedKey.current !== key;
     loadedKey.current = key;
     const ck = comboCacheKey(source, instrument, timeframe);
+    // A combo change starts a fresh retry budget (a new series, new failures).
+    if (isComboChange) retryCountRef.current = 0;
 
     // ── Mock source: resolve locally, no network. TEMPORAIRE (cf. mockReadings). ──
     if (source === 'mock') {
@@ -369,6 +412,7 @@ export function useCandles(
     })
       .then((data) => {
         if (seq !== requestSeq.current) return; // stale
+        retryCountRef.current = 0; // healed — restore the budget for future blips
         if (data.length > 0) candlesCache.set(ck, data);
         setCandles(data.length > 0 ? data : null);
         setError(null);
@@ -379,17 +423,39 @@ export function useCandles(
         // Unavailable feed → no candles → placeholder. Keep the error for callers.
         setCandles(null);
         setError(err instanceof Error ? err : new Error(String(err)));
+        // PERF-2: heal a TRANSIENT failure without waiting for the next candle
+        // close (candleCloseTs) or a page reload. Bounded, linear backoff. A
+        // deterministic 404 is left for the manual "Réessayer" (retry is futile
+        // until the backend actually has candles).
+        if (
+          isTransientCandlesError(err) &&
+          retryCountRef.current < CANDLES_MAX_AUTO_RETRIES
+        ) {
+          retryCountRef.current += 1;
+          const delay = CANDLES_RETRY_BASE_MS * retryCountRef.current;
+          if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+          retryTimerRef.current = setTimeout(() => {
+            if (seq !== requestSeq.current) return; // combo moved on
+            setRefreshNonce((n) => n + 1);
+          }, delay);
+        }
       })
       .finally(() => {
         if (seq !== requestSeq.current) return; // stale
         setIsLoading(false);
       });
 
-    return () => controller.abort();
-    // candleCloseTs is a dependency so a freshly-closed candle re-pulls the feed.
-  }, [instrument, timeframe, source, candleCloseTs]);
+    return () => {
+      controller.abort();
+      if (retryTimerRef.current) {
+        clearTimeout(retryTimerRef.current);
+        retryTimerRef.current = null;
+      }
+    };
+    // candleCloseTs re-pulls on a fresh close; refreshNonce on manual/auto retry.
+  }, [instrument, timeframe, source, candleCloseTs, refreshNonce]);
 
-  return { candles, isLoading, error };
+  return { candles, isLoading, error, refresh };
 }
 
 // ─── Unified last price (header) ─────────────────────────────────────────────

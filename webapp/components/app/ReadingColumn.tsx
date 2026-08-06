@@ -18,6 +18,7 @@ import {
   useLatestPrice,
   type ReadingSource,
 } from '@/lib/market-reading/hooks';
+import { CandlesError } from '@/lib/market-reading/api-client';
 import { useLivePrice } from '@/lib/market-reading/live-price';
 import { useMarketClosed } from '@/lib/market-reading/session';
 import { deriveMarketStatus, type MarketStatusView } from '@/lib/market-reading/status';
@@ -75,7 +76,7 @@ export function ReadingColumn({
   const t = useTranslations('app');
   // Candle feed for the chart hero. Re-pulled when the combo changes or a new
   // candle closes (candle_close_ts) — never faster, to keep the load honest.
-  const { candles } = useCandles(
+  const { candles, error: candlesError, refresh: refreshCandles } = useCandles(
     active?.instrument ?? null,
     active?.timeframe ?? null,
     { source: dataSource, candleCloseTs: reading?.header.candle_close_ts ?? null },
@@ -163,7 +164,7 @@ export function ReadingColumn({
       <MarketReadingCard
         reading={reading}
         onAskChatbot={focusChat}
-        chartSlot={buildChartSlot(reading, candles, livePrice, liveTs, active?.timeframe ?? null, chartView, onClearHighlight, marketClosed, serverStatus?.state ?? null, referenceLevel, selection)}
+        chartSlot={buildChartSlot(reading, candles, livePrice, liveTs, active?.timeframe ?? null, chartView, onClearHighlight, marketClosed, serverStatus?.state ?? null, referenceLevel, selection, candlesError, refreshCandles)}
         live={liveHeader}
         marketClosed={marketClosed}
         status={serverStatus}
@@ -217,9 +218,16 @@ function buildChartSlot(
   marketStatusState: MarketState | null,
   referenceLevel: ReferenceLevel | null,
   selection: ChartSelection | null,
+  candlesError: Error | null = null,
+  onRetryCandles?: () => void,
 ): React.ReactNode {
   if (!candles || candles.length === 0) {
-    return <ChartUnavailable />;
+    return (
+      <ChartUnavailable
+        onRetry={onRetryCandles}
+        reason={candlesError instanceof CandlesError ? candlesError.reason : undefined}
+      />
+    );
   }
   return (
     <ReadingChart

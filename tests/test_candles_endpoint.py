@@ -241,6 +241,27 @@ def test_limit_out_of_range_returns_422(tmp_path):
     assert resp.status_code == 422
 
 
+def test_limit_cannot_exceed_documented_cap(tmp_path):
+    # PERF-2 guard: no request may ask for more than N candles. N is defined and
+    # documented as MAX_LIMIT (1000) in the route; asking for more is rejected, so
+    # a client can never pull unbounded history on the load path.
+    from src.api.routes.candles import MAX_LIMIT
+
+    assert MAX_LIMIT == 1000
+    client = TestClient(_make_app(tmp_path=tmp_path))
+    resp = client.get(
+        "/api/candles",
+        params={"instrument": "XAUUSD", "timeframe": "M15", "limit": MAX_LIMIT + 1},
+    )
+    assert resp.status_code == 422
+    # The documented cap itself is accepted (not off-by-one rejected).
+    ok = client.get(
+        "/api/candles",
+        params={"instrument": "XAUUSD", "timeframe": "M15", "limit": MAX_LIMIT},
+    )
+    assert ok.status_code in (200, 404)  # 404 only if the combo has no cached bars
+
+
 def test_router_wired_into_app_module():
     from src.api import app as app_module
 

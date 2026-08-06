@@ -209,20 +209,34 @@ async function attempt(
 const CANDLES_ENDPOINT = '/api/candles';
 
 /**
- * Raised when the candle feed is unavailable for a combo. `status` distinguishes
- * the cases the chart cares about:
- *   · 404 → valid combo, no candles cached yet  → "graphique indisponible"
- *   · 400 → combo outside the V1 perimeter
- *   · 503 → candles store not wired on this environment
- *   · 0   → transport / parse failure
- * The chart treats all of them the same way (no candles → placeholder); the code
- * is kept for callers that want to differentiate.
+ * Distinguishes the candle-feed failure modes the chart placeholder must NOT
+ * conflate (PERF-2 §6 — loading honesty), mirroring MarketReadingErrorReason:
+ *   · 'timeout'  → our request budget elapsed (service slow / not answering)
+ *   · 'network'  → the connection itself failed (server unreachable / offline)
+ *   · 'nodata'   → 404: valid combo, no candles cached yet for it
+ *   · 'server'   → a 4xx/5xx other than 404 (perimeter / store down / internal)
+ *   · 'parse'    → a 2xx body we couldn't read/validate
+ */
+export type CandlesErrorReason =
+  | 'timeout'
+  | 'network'
+  | 'nodata'
+  | 'server'
+  | 'parse';
+
+/**
+ * Raised when the candle feed is unavailable for a combo. `status` and `reason`
+ * let the chart placeholder say WHY honestly (délai dépassé vs serveur injoignable
+ * vs aucune donnée) and let `useCandles` decide whether an auto-retry is warranted
+ * (transient transport only — never a deterministic 404/400).
  */
 export class CandlesError extends Error {
   readonly status: number;
-  constructor(status: number, message: string) {
+  readonly reason: CandlesErrorReason;
+  constructor(status: number, message: string, reason: CandlesErrorReason = 'server') {
     super(message);
     this.status = status;
+    this.reason = reason;
     this.name = 'CandlesError';
   }
 }
@@ -232,6 +246,8 @@ export interface FetchCandlesOptions {
   /** Max candles to request (backend caps at 500; default 200). */
   limit?: number;
   timeoutMs?: number;
+  /** Retry once on a genuine network transient (default true). Mirrors the reading. */
+  retry?: boolean;
 }
 
 /**
@@ -247,7 +263,29 @@ export async function fetchCandles(
   timeframe: string,
   options: FetchCandlesOptions = {},
 ): Promise<Candle[]> {
-  const { signal, limit = 200, timeoutMs = DEFAULT_TIMEOUT_MS } = options;
+  const { signal, limit = 200, timeoutMs = DEFAULT_TIMEOUT_MS, retry = true } = options;
+  try {
+    return await attemptCandles(instrument, timeframe, signal, limit, timeoutMs);
+  } catch (err) {
+    // Retry once ONLY on a genuine network transient — never on a deterministic
+    // HTTP error (400/404/503) or a TIMEOUT (already spent the full budget), and
+    // never after a caller abort. Same policy as fetchMarketReading.
+    const isRetriable = err instanceof CandlesError && err.reason === 'network';
+    const callerAborted = signal?.aborted ?? false;
+    if (retry && isRetriable && !callerAborted) {
+      return attemptCandles(instrument, timeframe, signal, limit, timeoutMs);
+    }
+    throw err;
+  }
+}
+
+async function attemptCandles(
+  instrument: string,
+  timeframe: string,
+  callerSignal: AbortSignal | undefined,
+  limit: number,
+  timeoutMs: number,
+): Promise<Candle[]> {
   const url =
     `${CANDLES_ENDPOINT}?instrument=${encodeURIComponent(instrument)}` +
     `&timeframe=${encodeURIComponent(timeframe)}&limit=${encodeURIComponent(String(limit))}`;
@@ -259,9 +297,9 @@ export async function fetchCandles(
     controller.abort();
   }, timeoutMs);
   const onCallerAbort = () => controller.abort();
-  if (signal) {
-    if (signal.aborted) controller.abort();
-    else signal.addEventListener('abort', onCallerAbort, { once: true });
+  if (callerSignal) {
+    if (callerSignal.aborted) controller.abort();
+    else callerSignal.addEventListener('abort', onCallerAbort, { once: true });
   }
 
   let res: Response;
@@ -277,10 +315,14 @@ export async function fetchCandles(
       : err instanceof Error
         ? err.message
         : 'Erreur réseau';
-    throw new CandlesError(0, `Service de bougies injoignable : ${message}`);
+    throw new CandlesError(
+      0,
+      `Service de bougies injoignable : ${message}`,
+      timedOut ? 'timeout' : 'network',
+    );
   } finally {
     clearTimeout(timer);
-    signal?.removeEventListener('abort', onCallerAbort);
+    callerSignal?.removeEventListener('abort', onCallerAbort);
   }
 
   // 401/402 — the freemium gate. Surface the clean upsell, not a raw error.
@@ -292,6 +334,7 @@ export async function fetchCandles(
     throw new CandlesError(
       res.status,
       detail ?? 'Le flux de bougies est indisponible pour cette combinaison.',
+      res.status === 404 ? 'nodata' : 'server',
     );
   }
 
@@ -299,11 +342,11 @@ export async function fetchCandles(
   try {
     parsed = await res.json();
   } catch {
-    throw new CandlesError(res.status, 'Réponse du service de bougies illisible.');
+    throw new CandlesError(res.status, 'Réponse du service de bougies illisible.', 'parse');
   }
 
   if (!isCandlesResponseShape(parsed)) {
-    throw new CandlesError(res.status, 'Réponse du service de bougies malformée.');
+    throw new CandlesError(res.status, 'Réponse du service de bougies malformée.', 'parse');
   }
 
   return parsed.candles;
