@@ -125,6 +125,20 @@ def build_market_reading_assembler(enable_news: Optional[bool] = None) -> Any:
     except Exception:  # never let seeding break boot
         logger.exception("measures history seed failed")
 
+    # Pre-warm the (heavy) publication measures in the BACKGROUND so the first page
+    # view is instant — the per-publication engine replay otherwise overruns the
+    # client's fetch timeout on a cold cache. Runs after the seed; never blocks boot.
+    try:
+        import threading
+
+        from src.api.routes.calendar import prewarm_publication_measures
+
+        threading.Thread(
+            target=prewarm_publication_measures, name="prewarm-measures", daemon=True
+        ).start()
+    except Exception:  # never let pre-warm break boot
+        logger.exception("measures pre-warm failed to start")
+
     # Opt-in automatic deep-history maintainer (NW-7): keeps candles.db deep enough
     # for the publication measures on EVERY measured market, generic and resumable.
     # OFF by default (quota-safe); enable with MEASURES_DEEP_BACKFILL_ENABLED=1.
