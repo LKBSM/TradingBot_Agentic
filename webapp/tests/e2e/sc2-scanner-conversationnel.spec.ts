@@ -243,4 +243,23 @@ test.describe('SC-2 — six states + dictation degradation', () => {
     await expect(page.getByTestId('describe-input')).toHaveValue('je tape à la place');
     await noRawKeys(page);
   });
+
+  test('LLM unavailable (0 credits) — honest error, text stays usable, no crash', async ({ page }) => {
+    await mockAccess(page);
+    // What the backend returns when the Anthropic call fails (e.g. 0 credits):
+    // a 200 with outcome "error" — never a 500.
+    await mockTranslate(page, {
+      outcome: 'error', refusal: null, conditions: [], assumptions: [], untranslatable: [],
+    });
+    await page.goto(PAGE);
+    await page.getByTestId('describe-input').fill('un OB jamais testé en tendance haussière');
+    await page.getByTestId('translate-button').click();
+    // Honest inline error, and we stay on the describe step (no dead-end).
+    await expect(page.getByTestId('translate-inline-error')).toBeVisible();
+    // The typed strategy is preserved and the field is still editable.
+    await expect(page.getByTestId('describe-input')).toHaveValue('un OB jamais testé en tendance haussière');
+    await page.getByTestId('describe-input').fill('je peux toujours écrire');
+    await expect(page.getByTestId('describe-input')).toHaveValue('je peux toujours écrire');
+    await noRawKeys(page);
+  });
 });
