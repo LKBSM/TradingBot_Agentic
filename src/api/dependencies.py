@@ -61,6 +61,8 @@ class AppState:
     market_reading_scheduler: Optional[Any] = None   # src.intelligence.scheduler.MarketReadingScheduler
     # MIA Markets V2 — Chantier 4
     chatbot: Optional[Any] = None   # src.intelligence.chatbot.chatbot.Chatbot
+    # MIA Markets V2 — SC-2 (Scanner conversationnel : phrase → palette fermée)
+    scanner_translator: Optional[Any] = None  # src.intelligence.scanner_translator.ScannerTranslator
     # MIA Markets V2 — NW-1 (Actualités programmées / calendrier de volatilité)
     calendar_service: Optional[Any] = None   # src.intelligence.calendar_service.CalendarService
     # Prototype — live-tick zone interaction (LIVE_TICK_ENABLED, dev/free tier).

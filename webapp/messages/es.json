@@ -2918,5 +2918,147 @@
         "title": "Ir a la fuente"
       }
     }
+  },
+  "scannerChat": {
+    "meta": {
+      "title": "Conversational scanner — describe your strategy",
+      "description": "Describe your strategy in French or English; M.I.A translates it into verifiable palette conditions."
+    },
+    "describe": {
+      "title": "Describe your strategy. In your words.",
+      "subtitle": "No form to fill in. Write what you're looking for as you'd say it to someone.",
+      "miaTitle": "M.I.A translates your strategy",
+      "miaSub": "she chooses nothing for you · you validate before anything runs",
+      "placeholder": "E.g.: I'm looking for an untested Order Block, in an uptrend, with the 1 h agreeing and a liquidity pocket taken recently.",
+      "translate": "Translate my strategy",
+      "translating": "Translating…",
+      "myStrategies": "My strategies",
+      "scope": "M.I.A translates toward 22 verifiable conditions. Nothing else.",
+      "examplesLabel": "Or start from an example",
+      "disclaimer": "M.I.A does not look at the market to answer you: she turns your sentence into verifiable conditions, then the product's analysis does the searching. She orders nothing, advises nothing, and never guesses a condition you didn't express.",
+      "examples": {
+        "0": "An Order Block never tested, in an uptrend, with the higher unit agreeing",
+        "1": "Price returns into a Fair Value Gap tested once, after a recent CHOCH",
+        "2": "A liquidity pocket was just taken and price entered a zone",
+        "3": "An untested OB when the RSI is oversold",
+        "4": "Tell me where gold price is heading today",
+        "5": "Market in expansion, bullish structure, fresh zone at price"
+      }
+    },
+    "dictation": {
+      "start": "Dictate by voice",
+      "stop": "Stop dictation",
+      "listening": "Listening…",
+      "privacy": "Transcription is performed by your browser and may transit through its servers. No audio recording is kept.",
+      "errors": {
+        "not-allowed": "Microphone denied. You can allow it in your browser, or keep typing.",
+        "no-speech": "I didn't hear anything. Try again, or type your strategy.",
+        "audio-capture": "No microphone detected. Type your strategy instead.",
+        "network": "Speech recognition is unreachable. Type your strategy instead.",
+        "timeout": "I didn't hear anything. Dictation stopped — try again or type.",
+        "unknown": "Dictation was interrupted. Type your strategy instead."
+      }
+    },
+    "card": {
+      "remove": "Remove this condition",
+      "assumedInline": "assumed value — adjust it if needed"
+    },
+    "add": {
+      "tag": "Add",
+      "cta": "A missing condition?",
+      "hint": "Browse the 22 conditions",
+      "title": "Add a condition from the palette",
+      "close": "Close",
+      "already": "Already in your strategy"
+    },
+    "translation": {
+      "title": "Here's what I understood",
+      "partialTitle": "I translated part of it",
+      "noneTitle": "I couldn't translate anything",
+      "subtitle": "Check it, adjust, remove what's off. Nothing runs before you validate.",
+      "noneSubtitle": "Nothing in your sentence maps to a palette condition. Rephrase, or compose by hand.",
+      "yourRequest": "YOUR REQUEST",
+      "modify": "Edit",
+      "conditionsLabel": "{count, plural, one {# condition translated} other {# conditions translated}}",
+      "comboCaption": "combinations match — {conditions, plural, one {# condition} other {# conditions}}",
+      "comboScanned": "of {scanned} tracked combinations · re-evaluated live",
+      "comboComputing": "computing…",
+      "seeResults": "See results",
+      "scanning": "Scanning…",
+      "reformulate": "Rephrase"
+    },
+    "assumptions": {
+      "title": "What I assumed",
+      "item": "You said “{phrase}” — I took {value} for “{condition}”.",
+      "note": "Adjust if that's not what you meant. I never guess a condition you didn't express.",
+      "aVagueWord": "a vague word"
+    },
+    "untranslatable": {
+      "titlePartial": "One thing I cannot translate",
+      "titleNone": "What I cannot translate",
+      "honesty": "I have no near-equivalent condition, and I'd rather tell you than pick one that only vaguely resembles it. You can run with what's understood, or rephrase.",
+      "categories": {
+        "indicator": "— the product tracks no oscillator indicator (RSI, MACD, moving averages, Bollinger). It describes market structure.",
+        "volume": "— the product does not track volume as a condition.",
+        "fibonacci": "— the product places no Fibonacci levels.",
+        "candle_pattern": "— the product does not detect candlestick patterns (engulfing, doji, hammer).",
+        "classic_support_resistance": "— the product draws no classic horizontal support/resistance; it describes SMC zones (OB, FVG).",
+        "round_number": "— the product does not reason in round numbers.",
+        "sentiment": "— the product does not measure sentiment or positioning.",
+        "fundamental": "— the product does not take macro or news as a scannable condition.",
+        "other": "— this element maps to no palette condition.",
+        "unsupported": "— this element maps to no palette condition."
+      }
+    },
+    "save": {
+      "namePlaceholder": "Strategy name",
+      "cta": "Save",
+      "done": "“{name}” saved on this device.",
+      "errors": {
+        "name_required": "Give your strategy a name to save it.",
+        "limit_reached": "Saved-strategy limit reached on this device.",
+        "not_found": "Strategy not found.",
+        "storage_failed": "Could not save on this device."
+      }
+    },
+    "results": {
+      "back": "Back to the translation"
+    },
+    "strategies": {
+      "back": "Back",
+      "title": "My strategies",
+      "subtitle": "Described once, re-evaluated on every open.",
+      "empty": "You have no saved strategy yet. Describe one, then save it."
+    },
+    "refusal": {
+      "pageTitle": "This request, I don't translate",
+      "pageSubtitle": "It isn't a technical limit.",
+      "invite": "I can translate a precise strategy, though. Tell me what you're looking for: which structure, which zone, which liquidity state.",
+      "reformulate": "Rephrase",
+      "footer": "The product describes the current state of markets. It does not grade them, does not order them, and advises no action. It's a design constraint, not a gap.",
+      "examples": {
+        "0": "An OB never tested in an uptrend",
+        "1": "Price inside a zone after a liquidity grab"
+      },
+      "ranking": {
+        "title": "I don't sort markets",
+        "body": "Asking for “the X” implies an order of preference. The scanner builds none and never sorts its results. A market meeting five conditions is not preferable to one meeting three — it is different, and the call is yours."
+      },
+      "prediction": {
+        "title": "I don't predict prices",
+        "body": "The product describes the current state of markets. It doesn't say where price will go, nor whether it will rise or fall. I can translate a strategy that describes a present structure, not an expectation."
+      },
+      "recommendation": {
+        "title": "I advise no position",
+        "body": "I don't say what to trade, nor when to buy or sell. The scanner shows where conditions YOU described are present; the decision stays yours."
+      }
+    },
+    "errors": {
+      "unavailable": "Translation isn't available in this environment. You can compose by hand.",
+      "failed": "Translation failed. Try again, or compose by hand.",
+      "empty": "Write your strategy first.",
+      "scanUnavailable": "The scan service isn't available in this environment.",
+      "scanFailed": "The scan failed. Try again in a moment."
+    }
   }
 }

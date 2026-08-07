@@ -2918,5 +2918,147 @@
       },
       "noMeasures": "Aucune mesure n'est disponible pour cet indicateur : l'historique de prix aligné sur ses parutions passées n'est pas réuni. Cette fiche s'en tient donc aux chiffres publiés."
     }
+  },
+  "scannerChat": {
+    "meta": {
+      "title": "Scanner conversationnel — décris ta stratégie",
+      "description": "Décris ta stratégie en français ou en anglais ; M.I.A la traduit en conditions vérifiables de la palette."
+    },
+    "describe": {
+      "title": "Décris ta stratégie. En français.",
+      "subtitle": "Pas de formulaire à remplir. Écris ce que tu cherches comme tu le dirais à quelqu'un.",
+      "miaTitle": "M.I.A traduit ta stratégie",
+      "miaSub": "elle ne choisit rien à ta place · tu valides avant de lancer",
+      "placeholder": "Ex. : je cherche un Order Block jamais testé, en tendance haussière, avec le 1 h qui va dans le même sens et une poche de liquidité prise récemment.",
+      "translate": "Traduire ma stratégie",
+      "translating": "Traduction…",
+      "myStrategies": "Mes stratégies",
+      "scope": "M.I.A traduit vers 22 conditions vérifiables. Rien d'autre.",
+      "examplesLabel": "Ou pars d'un exemple",
+      "disclaimer": "M.I.A ne consulte pas le marché pour te répondre : elle transforme ta phrase en conditions vérifiables, puis c'est l'analyse du produit qui cherche. Elle ne classe rien, ne conseille rien et ne devine aucune condition que tu n'aurais pas exprimée.",
+      "examples": {
+        "0": "Un Order Block jamais testé, en tendance haussière, avec l'unité supérieure d'accord",
+        "1": "Le prix revient dans un Fair Value Gap déjà testé une fois, après un CHOCH récent",
+        "2": "Une poche de liquidité vient d'être prise et le prix est entré dans une zone",
+        "3": "Un OB non testé quand le RSI est en survente",
+        "4": "Dis-moi où va le prix de l'or aujourd'hui",
+        "5": "Marché en expansion, structure haussière, zone vierge au prix"
+      }
+    },
+    "dictation": {
+      "start": "Dicter à la voix",
+      "stop": "Arrêter la dictée",
+      "listening": "À l'écoute…",
+      "privacy": "La transcription est effectuée par ton navigateur et peut transiter par ses serveurs. Aucun enregistrement audio n'est conservé.",
+      "errors": {
+        "not-allowed": "Micro refusé. Tu peux l'autoriser dans ton navigateur, ou continuer au clavier.",
+        "no-speech": "Je n'ai rien entendu. Réessaie, ou écris ta stratégie.",
+        "audio-capture": "Aucun micro détecté. Écris ta stratégie au clavier.",
+        "network": "La reconnaissance vocale est injoignable. Écris ta stratégie au clavier.",
+        "timeout": "Je n'ai rien entendu. La dictée s'est arrêtée — réessaie ou écris au clavier.",
+        "unknown": "La dictée s'est interrompue. Écris ta stratégie au clavier."
+      }
+    },
+    "card": {
+      "remove": "Retirer cette condition",
+      "assumedInline": "valeur supposée — ajuste-la si besoin"
+    },
+    "add": {
+      "tag": "Ajouter",
+      "cta": "Une condition manquante ?",
+      "hint": "Parcourir les 22 conditions",
+      "title": "Ajouter une condition de la palette",
+      "close": "Fermer",
+      "already": "Déjà dans ta stratégie"
+    },
+    "translation": {
+      "title": "Voici ce que j'ai compris",
+      "partialTitle": "J'ai traduit une partie",
+      "noneTitle": "Je n'ai rien pu traduire",
+      "subtitle": "Vérifie, ajuste, retire ce qui ne va pas. Rien ne se lance avant que tu valides.",
+      "noneSubtitle": "Aucun élément de ta phrase ne correspond à une condition de la palette. Reformule, ou compose à la main.",
+      "yourRequest": "TA DEMANDE",
+      "modify": "Modifier",
+      "conditionsLabel": "{count, plural, one {# condition traduite} other {# conditions traduites}}",
+      "comboCaption": "combinaisons correspondent — {conditions, plural, one {# condition} other {# conditions}}",
+      "comboScanned": "sur {scanned} combinaisons suivies · réévalué en direct",
+      "comboComputing": "calcul en cours…",
+      "seeResults": "Voir les résultats",
+      "scanning": "Scan…",
+      "reformulate": "Reformuler"
+    },
+    "assumptions": {
+      "title": "Ce que j'ai supposé",
+      "item": "Tu as dit « {phrase} » — j'ai retenu {value} pour « {condition} ».",
+      "note": "Ajuste si ce n'est pas ce que tu voulais dire. Je ne devine jamais une condition que tu n'as pas exprimée.",
+      "aVagueWord": "un mot vague"
+    },
+    "untranslatable": {
+      "titlePartial": "Une chose que je ne peux pas traduire",
+      "titleNone": "Ce que je ne peux pas traduire",
+      "honesty": "Je n'ai pas de condition approchante, et je préfère te le dire plutôt que d'en choisir une qui ressemblerait vaguement. Tu peux lancer avec ce qui est compris, ou reformuler.",
+      "categories": {
+        "indicator": "— le produit ne suit aucun indicateur d'oscillateur (RSI, MACD, moyennes mobiles, Bollinger). Il décrit la structure de marché.",
+        "volume": "— le produit ne suit pas le volume comme condition.",
+        "fibonacci": "— le produit ne place pas de niveaux de Fibonacci.",
+        "candle_pattern": "— le produit ne détecte pas les figures en chandelier (avalement, doji, marteau).",
+        "classic_support_resistance": "— le produit ne trace pas de supports/résistances horizontaux classiques ; il décrit des zones SMC (OB, FVG).",
+        "round_number": "— le produit ne raisonne pas en chiffres ronds.",
+        "sentiment": "— le produit ne mesure pas le sentiment ni le positionnement.",
+        "fundamental": "— le produit ne prend pas la macro ou l'actualité comme condition scannable.",
+        "other": "— cet élément ne correspond à aucune condition de la palette.",
+        "unsupported": "— cet élément ne correspond à aucune condition de la palette."
+      }
+    },
+    "save": {
+      "namePlaceholder": "Nom de la stratégie",
+      "cta": "Enregistrer",
+      "done": "« {name} » enregistrée sur cet appareil.",
+      "errors": {
+        "name_required": "Donne un nom à ta stratégie pour l'enregistrer.",
+        "limit_reached": "Limite d'enregistrements atteinte sur cet appareil.",
+        "not_found": "Stratégie introuvable.",
+        "storage_failed": "Enregistrement impossible sur cet appareil."
+      }
+    },
+    "results": {
+      "back": "Revenir à la traduction"
+    },
+    "strategies": {
+      "back": "Revenir",
+      "title": "Mes stratégies",
+      "subtitle": "Décrites une fois, réévaluées à chaque ouverture.",
+      "empty": "Tu n'as pas encore de stratégie enregistrée. Décris-en une, puis enregistre-la."
+    },
+    "refusal": {
+      "pageTitle": "Cette demande, je ne la traduis pas",
+      "pageSubtitle": "Ce n'est pas une limite technique.",
+      "invite": "Je peux en revanche traduire une stratégie précise. Dis-moi ce que tu cherches : quelle structure, quelle zone, quel état de liquidité.",
+      "reformulate": "Reformuler",
+      "footer": "Le produit décrit l'état actuel des marchés. Il ne les note pas, ne les hiérarchise pas et ne conseille aucune action. C'est une contrainte de conception, pas un manque.",
+      "examples": {
+        "0": "Un OB jamais testé en tendance haussière",
+        "1": "Le prix dans une zone après une prise de liquidité"
+      },
+      "ranking": {
+        "title": "Je ne classe pas les marchés",
+        "body": "Demander « les X » suppose un ordre de préférence. Le scanner n'en établit aucun et ne trie jamais ses résultats. Un marché qui réunit cinq conditions n'est pas préférable à un marché qui en réunit trois — il est différent, et c'est à toi de juger."
+      },
+      "prediction": {
+        "title": "Je ne prédis pas les prix",
+        "body": "Le produit décrit l'état actuel des marchés. Il ne dit pas où ira le prix, ni s'il montera ou descendra. Je peux traduire une stratégie qui décrit une structure présente, pas une anticipation."
+      },
+      "recommendation": {
+        "title": "Je ne conseille aucune position",
+        "body": "Je ne dis pas quoi trader, ni quand acheter ou vendre. Le scanner montre où des conditions que TU as décrites sont présentes ; la décision reste la tienne."
+      }
+    },
+    "errors": {
+      "unavailable": "La traduction n'est pas disponible sur cet environnement. Tu peux composer à la main.",
+      "failed": "La traduction a échoué. Réessaie, ou compose à la main.",
+      "empty": "Écris d'abord ta stratégie.",
+      "scanUnavailable": "Le service de scan n'est pas disponible sur cet environnement.",
+      "scanFailed": "Le scan a échoué. Réessaie dans un instant."
+    }
   }
 }
