@@ -131,6 +131,44 @@ def test_pick_gold_m15_prefers_store_when_deep_enough(monkeypatch):
     assert called["csv"] is False  # deep store used without touching the CSV
 
 
+def test_releases_from_store_matches_by_event_key_for_null_series():
+    """FOMC & co. have no series_code — their past releases must still be found,
+    matched by the event's KEY (its event_id middle segment)."""
+    from src.intelligence.publication_measures import _releases_from_store
+
+    now = datetime(2026, 8, 1, tzinfo=timezone.utc)
+
+    class _Store:
+        def get_events_between(self, a, b):
+            return [
+                SimpleNamespace(
+                    event_id=f"federal_reserve:us_fomc_rate:2026-{m:02d}-01",
+                    series_code=None,
+                    scheduled_at=datetime(2026, m, 1, 18, 0, tzinfo=timezone.utc),
+                )
+                for m in range(1, 6)
+            ]
+
+    rel = _releases_from_store("us_fomc_rate", now, _Store())
+    assert len(rel) == 5  # matched by event_key despite no series code
+
+
+def test_measured_markets_covers_every_catalog_publication():
+    """Every catalog publication is measured (no publication left without the 4
+    questions), and every measured key is a real catalog publication."""
+    from src.intelligence.calendar_providers.official_sources.base_official import (
+        load_catalog,
+    )
+    from src.intelligence.publication_measures import MEASURED_MARKETS
+
+    cat_keys = set(load_catalog().keys())
+    assert set(MEASURED_MARKETS) == cat_keys, (
+        f"absentes des mesures: {cat_keys - set(MEASURED_MARKETS)} ; "
+        f"clés inconnues: {set(MEASURED_MARKETS) - cat_keys}"
+    )
+    assert all(m in ("XAUUSD", "EURUSD") for m in MEASURED_MARKETS.values())
+
+
 def test_load_default_measures_none_when_stores_empty():
     now = START + timedelta(days=41)
     series = load_catalog()["us_cpi"].series_code

@@ -58,11 +58,33 @@ if TYPE_CHECKING:  # pragma: no cover - typing only
 MIN_RELIABLE_RELEASES = 4
 
 # SINGLE SOURCE of the recurring publications we compute measures for, and the ONE
-# market each is measured on (the market whose price history we hold). Adding a
-# future market at commercialisation = ONE entry here: the API gate, the
-# frontend rendering AND the automatic deep-history maintainer all read this — so
-# a new market is measured and its history is filled without further wiring.
-MEASURED_MARKETS: dict = {"us_cpi": "XAUUSD"}
+# market each is measured on (the market whose price history we hold + seed). US
+# macro is measured on GOLD (its dominant reaction market), euro-area macro on
+# EUR/USD. Adding a future publication/market = ONE entry here: the API gate, the
+# frontend rendering AND the deep-history maintainer/seeder all read this. A
+# publication with < 4 usable past releases (or without deep history for its
+# market) simply renders no measures — never a placeholder.
+MEASURED_MARKETS: dict = {
+    # US macro → gold (XAUUSD)
+    "us_employment_situation": "XAUUSD",  # NFP
+    "us_cpi": "XAUUSD",
+    "us_cpi_core": "XAUUSD",
+    "us_ppi": "XAUUSD",
+    "us_gdp": "XAUUSD",
+    "us_pce": "XAUUSD",
+    "us_jolts": "XAUUSD",
+    "us_retail_sales": "XAUUSD",
+    "us_housing_starts": "XAUUSD",
+    "us_durable_goods": "XAUUSD",
+    "us_fomc_rate": "XAUUSD",
+    "us_fomc_minutes": "XAUUSD",
+    "us_fomc_dotplot": "XAUUSD",
+    # Euro-area macro → EUR/USD
+    "ea_hicp_flash": "EURUSD",
+    "ea_gdp_flash": "EURUSD",
+    "ea_unemployment": "EURUSD",
+    "ea_ecb_rate": "EURUSD",
+}
 
 
 def measured_markets() -> list:
@@ -857,9 +879,10 @@ def _gold_m15_from_csv():
 def _releases_from_store(
     event_key: str, now: datetime, calendar_store=None
 ) -> list:
-    """Past release instants for ``event_key`` from the calendar store, matched by
-    the catalog's stable series code (never by title). Returns [] when the store
-    holds none (→ caller falls back to CSV)."""
+    """Past release instants for ``event_key`` from the calendar store. Matched by
+    the event's stable KEY (its ``event_id`` middle segment) OR the catalog series
+    code — never by title. The event-key path also covers publications with no
+    series code (e.g. FOMC). Returns [] when the store holds none (→ CSV fallback)."""
     try:
         from src.intelligence.calendar_providers.official_sources.base_official import (
             load_catalog,
@@ -869,17 +892,20 @@ def _releases_from_store(
         return []
     cat = load_catalog().get(event_key)
     series = cat.series_code if cat is not None else None
-    if not series:
-        return []
     store = calendar_store or CalendarCacheStore()
     start = now - timedelta(days=_RELEASE_LOOKBACK_DAYS)
     try:
         events = store.get_events_between(start, now)
     except Exception:  # pragma: no cover - defensive
         return []
+    key_tag = f":{event_key}:"
     out: list[datetime] = []
     for e in events:
-        if e.series_code == series and e.scheduled_at is not None:
+        if e.scheduled_at is None:
+            continue
+        by_key = key_tag in (getattr(e, "event_id", "") or "")
+        by_series = bool(series) and e.series_code == series
+        if by_key or by_series:
             out.append(_as_utc(e.scheduled_at))
     return sorted(set(out))
 
