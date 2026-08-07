@@ -231,6 +231,24 @@ def build_chatbot(assembler: Any) -> Any:
     return chatbot
 
 
+def build_scanner_translator() -> Any:
+    """Instantiate the SC-2 scanner translator (phrase → palette) from env config.
+
+    Needs only ``ANTHROPIC_API_KEY`` — it consults no market data. Wrapped in a
+    dedicated CircuitBreaker so a flaky LLM degrades the /translate endpoint to a
+    fail-safe outcome (textbox stays usable) instead of hammering the API.
+    Fail-fast on a missing key, consistent with the chatbot.
+    """
+    from src.intelligence.circuit_breaker import CircuitBreaker
+    from src.intelligence.scanner_translator import ScannerTranslator
+
+    anthropic_client = _build_anthropic_client()  # raises if key/package missing
+    breaker = CircuitBreaker(name="scanner_translator", failure_threshold=3, recovery_timeout=60.0)
+    translator = ScannerTranslator(anthropic_client=anthropic_client, breaker=breaker)
+    logger.info("Scanner translator (SC-2) built at startup")
+    return translator
+
+
 def is_live_tick_enabled() -> bool:
     """Return True when the live-tick WS bridge should be built at startup.
 
