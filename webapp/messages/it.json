@@ -2282,6 +2282,10 @@
         "contact": {
           "title": "6. Contatto",
           "body": "Per qualsiasi domanda relativa ai tuoi dati: loukmanebessam@gmail.com."
+        },
+        "dictee": {
+          "title": "7. Dettatura vocale",
+          "body": "Lo scanner conversazionale offre l’inserimento vocale. Il riconoscimento vocale è eseguito dal tuo browser; su alcuni browser (per es. Chrome, Edge) l’audio acquisito può essere inviato ai server del produttore del browser per la trascrizione — un trasferimento a terzi che potrebbero trovarsi al di fuori del Québec. Questa trascrizione produce testo, che rivedi e puoi correggere prima di qualsiasi invio. Non viene conservata alcuna registrazione audio, né sul tuo dispositivo né sui nostri server: riceviamo solo il testo che scegli di inviare. L’inserimento da tastiera resta sempre disponibile; se il tuo browser non supporta la dettatura, il pulsante non compare."
         }
       }
     },

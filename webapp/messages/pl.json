@@ -2282,6 +2282,10 @@
         "contact": {
           "title": "6. Kontakt",
           "body": "W przypadku pytań dotyczących Twoich danych: loukmanebessam@gmail.com."
+        },
+        "dictee": {
+          "title": "7. Dyktowanie głosowe",
+          "body": "Skaner konwersacyjny umożliwia wprowadzanie głosowe. Rozpoznawanie mowy jest wykonywane przez Twoją przeglądarkę; w niektórych przeglądarkach (np. Chrome, Edge) przechwycony dźwięk może być wysyłany na serwery dostawcy przeglądarki w celu transkrypcji — jest to przekazanie stronie trzeciej, która może znajdować się poza Quebekiem. Transkrypcja tworzy tekst, który przeglądasz i możesz poprawić przed wysłaniem. Żadne nagranie dźwiękowe nie jest przechowywane, ani na Twoim urządzeniu, ani na naszych serwerach: otrzymujemy wyłącznie tekst, który zdecydujesz się przesłać. Wprowadzanie z klawiatury pozostaje zawsze dostępne; jeśli Twoja przeglądarka nie obsługuje dyktowania, przycisk się nie pojawia."
         }
       }
     },

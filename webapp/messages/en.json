@@ -2282,6 +2282,10 @@
         "contact": {
           "title": "6. Contact",
           "body": "For any question about your data: loukmanebessam@gmail.com."
+        },
+        "dictee": {
+          "title": "7. Voice dictation",
+          "body": "The conversational scanner offers voice input. Speech recognition is performed by your browser; on some browsers (e.g. Chrome, Edge), the captured audio may be sent to the browser vendor’s servers for transcription — a transfer to a third party that may be located outside Québec. This transcription produces text, which you review and can correct before any submission. No audio recording is kept, neither on your device nor on our servers: we only receive the text you choose to submit. Keyboard input remains available at all times; if your browser does not support dictation, the button does not appear."
         }
       }
     },
