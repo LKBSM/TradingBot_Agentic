@@ -855,6 +855,19 @@ class AccountStore:
             finally:
                 conn.close()
 
+    def mark_email_verified(self, account_id: int) -> None:
+        """Force an account to email-verified (e.g. a Google login where the
+        provider already vouched for the address). Idempotent."""
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                conn.execute(
+                    "UPDATE accounts SET email_verified = 1 WHERE id = ?",
+                    (account_id,),
+                )
+            finally:
+                conn.close()
+
     # --------------------------------------------------------------------- #
     # Password change (authenticated) + account deletion (Loi 25)
     # --------------------------------------------------------------------- #
