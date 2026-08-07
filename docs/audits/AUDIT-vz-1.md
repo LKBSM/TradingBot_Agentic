@@ -159,3 +159,78 @@ liquidité, panneau M.I.A sujet=zone, regroupement) est du travail de lecture/af
 toucher au moteur.
 
 **En attente du GO avant toute écriture de code.**
+
+---
+
+# PARTIE 2 — Réalisation (après GO)
+
+## Réponse aux trois questions du rapport (mission §5)
+
+### a) Informations DISPONIBLES / CALCULÉES / ABSENTES — ce qui a été livré
+- **Disponibles, désormais surfacées** : bords, hauteur (+ % du prix), milieu,
+  horodatage de formation, touches horodatées (le payload les portait ; le front
+  les consomme maintenant via le **ledger de contacts**), poches de liquidité.
+- **Calculées côté lecture (sans toucher au moteur)** :
+  - **Ledger de contacts** par zone (`ZoneContact` : `edge_touch` / `entry_exit` /
+    `traversal` / `inside`, niveau atteint) — helpers `_ob_contacts` /
+    `_fvg_contacts` (Python), additifs, réutilisant les prédicats existants ;
+  - **Zones consommées** (`consumed_order_blocks` / `consumed_fair_value_gaps`)
+    pour le groupe « Comblées » — bornées (`MAX_CONSUMED_ZONES_PER_TYPE=6`) ;
+  - **Origine** (BOS/CHOCH que l'OB précède) via `_ob_origin` sur les colonnes
+    d'événements déjà émises ;
+  - **Proximité** (dedans → distance à chaque bord ; sinon distance au bord le plus
+    proche en pts **et %**, sens, **bord de référence**) — `zoneProximity` ;
+  - **Confluence** (à l'intérieur / englobe / au même niveau + liquidité proche,
+    état d'absence explicite) — `buildConfluence`, données déjà en mémoire ;
+  - **Session de formation** — `formationSession` (miroir client des fenêtres NY du
+    backend) ;
+  - **Comblement FVG par contact** — `fvgContactFills` (extremum cumulé).
+- **Absentes / hors périmètre** : aucune nouvelle détection ; l'imbrication
+  même-unité se calcule localement (0 requête).
+
+### b) Distinction touche de bord / entrée-sortie / traversée
+Avant : **confondues** dans un unique `touch_count`, la traversée **retirée** du
+payload. Après : **trois issues distinctes** dans le ledger — `edge_touch` (kiss <
+`contact_edge_touch_fraction`=0,10 de la hauteur), `entry_exit` (pénétration puis
+sortie par le **même** bord), `traversal` (clôture au-delà du bord opposé / FVG
+comblé). `inside` marque un contact en cours. Le seuil est un **paramètre de
+classification** — il ne change JAMAIS `touch_count`/`tested`/`status`. Tests :
+`test_zone_contacts_vz1.py` (backend) + `lifecycle.test.ts` (front).
+
+### c) Méthode retenue pour la confluence multi-unités + coût
+**On-demand existant conservé** (`useSiblingZones`) : **une** lecture cache-served
+par unité voisine (`DISPLAY_TIMEFRAMES − 1`), **une fois par combo**, réutilisée
+pour toutes les cartes — **jamais une requête par carte**. Imbrication même-unité et
+liquidité : **0 requête** (lecture déjà chargée). `buildConfluence` est de la pure
+géométrie d'intervalles. Coût : (nb d'unités affichées − 1) lectures cachées / combo.
+
+## Écarts avec la maquette
+- **M.I.A** : la maquette montre un fil de conversation ; l'utilisateur est à **0
+  crédit volontaire**, donc les réponses sont **générées localement** à partir des
+  **mêmes données** que la carte (aucun appel Anthropic). Sujet = zone, changement
+  au clic sans rechargement, suggestions contextuelles — conformes.
+- **Session** : calculée côté client (miroir documenté des fenêtres NY du backend)
+  plutôt qu'ajoutée au payload, pour ne pas propager l'instrument dans plusieurs
+  couches. Précédence New York > Londres > Asie (ancre NY).
+- **Origine FVG** : la maquette donne une phrase générique (« déséquilibre de trois
+  bougies ») — rendue depuis l'i18n, pas de donnée d'événement (un FVG n'a pas de
+  cassure fondatrice).
+- **Note d'honnêteté** : reformulée pour **éviter** les mots de jugement (« M.I.A ne
+  porte aucun jugement de valeur… ») tout en expliquant le choix — sinon le garde
+  vocabulaire l'aurait signalée.
+- Tout le reste (proximité, jauge, confluence remontée + état d'absence, ledger,
+  frise par contact, comblement, « Ce qui l'a créée », détails repliés, groupes,
+  filtres/tris factuels, bouton « Analyser » retiré) suit la maquette.
+
+## Vérifications
+- **Backend** : `pytest` mappers/schema/endpoint/lifecycle/diagnostics = 140 + 11
+  (VZ-1) verts, 0 régression. `READING_LOGIC_VERSION 6→7`.
+- **Front** : `tsc` vert ; `vitest` zones + parité + workspace = 75 verts ; suite
+  complète 893 (seule `AccountPanel` timeout = flake d'environnement lent, verte en
+  isolation). `next build` OK (`/[locale]/zones` 9,85 kB).
+- **Playwright** 1280×800 + 390×844 : groupes, proximité dedans, ledger à issues
+  distinctes, absence de confluence, filtre vide explicite, panneau M.I.A (bureau +
+  feuille mobile), garde vocabulaire.
+- **Discipline** : aucune modification des règles de détection ni des autres
+  surfaces ; staging explicite (jamais `git add -A`) ; pas de force push.
+
