@@ -84,7 +84,7 @@ class AccountError(ValueError):
 class AccountStore:
     """Thread-safe account store with SQLite WAL persistence."""
 
-    SCHEMA_VERSION = 3
+    SCHEMA_VERSION = 4
 
     def __init__(self, db_path: str = "./data/accounts.db"):
         self._db_path = Path(db_path)
@@ -208,6 +208,20 @@ class AccountStore:
                     PRIMARY KEY (account_id, day)
                 );
             """)
+        if from_v < 4:
+            # PAY-1 — out-of-order webhook protection. Stripe delivers events at
+            # least once and NOT necessarily in order, so we record the ``created``
+            # timestamp of the newest event applied to a subscription and refuse to
+            # apply an older one on top of it (see ``upsert_subscription``).
+            # ALTER has no IF NOT EXISTS in SQLite — guard so a partial prior
+            # migration (column present, version not yet bumped) is idempotent.
+            cols = {
+                r[1] for r in conn.execute("PRAGMA table_info(subscriptions)").fetchall()
+            }
+            if "last_event_created" not in cols:
+                conn.execute(
+                    "ALTER TABLE subscriptions ADD COLUMN last_event_created REAL"
+                )
         conn.execute(
             "INSERT OR REPLACE INTO schema_version (version) VALUES (?)",
             (self.SCHEMA_VERSION,),
@@ -922,12 +936,20 @@ class AccountStore:
         current_period_end: Optional[float] = None,
         cancel_at_period_end: Optional[bool] = None,
         trial_end: Optional[float] = None,
+        event_created: Optional[float] = None,
     ) -> Dict[str, Any]:
         """Create/update the subscription row from a (verified) Stripe event.
 
         Only non-None fields are written, so a partial event (e.g. an invoice
         carrying just a status change) never wipes the subscription id or period
         already on record. Returns the resulting subscription dict.
+
+        Out-of-order protection (PAY-1): when ``event_created`` is given and an
+        OLDER event has already been applied (``last_event_created`` is newer),
+        the state write is SKIPPED — a stale event can never overwrite newer
+        state. Events with no timestamp, and the first event for an account, are
+        always applied. Runs under the store lock in a single transaction so
+        concurrent deliveries can't race.
         """
         now_iso = time.strftime("%Y-%m-%dT%H:%M:%S")
         fields = {
@@ -946,10 +968,22 @@ class AccountStore:
             try:
                 conn.execute("BEGIN")
                 cur = conn.execute(
-                    "SELECT account_id FROM subscriptions WHERE account_id = ?",
+                    "SELECT last_event_created FROM subscriptions WHERE account_id = ?",
                     (account_id,),
                 )
-                exists = cur.fetchone() is not None
+                row = cur.fetchone()
+                exists = row is not None
+                prior_created = row["last_event_created"] if exists else None
+                # Drop a stale (out-of-order) event: older than what we applied.
+                if (
+                    event_created is not None
+                    and prior_created is not None
+                    and float(event_created) < float(prior_created)
+                ):
+                    conn.execute("COMMIT")
+                    sub = self.get_subscription(account_id)
+                    assert sub is not None
+                    return sub
                 if not exists:
                     conn.execute(
                         "INSERT INTO subscriptions (account_id, cancel_at_period_end, updated_at) "
@@ -957,6 +991,8 @@ class AccountStore:
                         (account_id, now_iso),
                     )
                 set_cols = [(k, v) for k, v in fields.items() if v is not None]
+                if event_created is not None:
+                    set_cols.append(("last_event_created", float(event_created)))
                 if set_cols:
                     assignments = ", ".join(f"{k} = ?" for k, _ in set_cols)
                     params = [v for _, v in set_cols]

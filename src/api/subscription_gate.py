@@ -58,24 +58,56 @@ def _gate_enforced() -> bool:
     return raw in ("1", "true", "yes", "on")
 
 
-def has_active_subscription(store: Any, account_id: int) -> bool:
-    """True if the account has a non-expired active/trialing subscription.
+# Grace window (days) after a FAILED renewal before access is cut. While Stripe
+# runs Smart Retries the subscription sits in ``past_due``; PAY-1 requires a
+# grace period, not immediate suspension. Stripe's own dunning ultimately moves
+# the subscription to ``canceled``/``unpaid`` (removing access); this bound is a
+# safety net so a lingering ``past_due`` can never grant access forever.
+_DEFAULT_GRACE_DAYS = 7
 
-    Reads only persisted state — no Stripe call. ``current_period_end`` is a
-    safety net: even if a ``deleted`` webhook were missed, access lapses once the
-    paid period ends.
+
+def _grace_seconds() -> float:
+    try:
+        days = float(os.environ.get("SUBSCRIPTION_GRACE_DAYS", _DEFAULT_GRACE_DAYS))
+    except ValueError:
+        days = _DEFAULT_GRACE_DAYS
+    return max(0.0, days) * 86400.0
+
+
+def has_active_subscription(store: Any, account_id: int) -> bool:
+    """True if the account's persisted subscription currently grants access.
+
+    Reads only persisted state — no Stripe call. Access maps to the app-facing
+    states (PAY-1):
+
+    * ``active`` / ``trialing`` → access while the paid period has not lapsed
+      (``current_period_end`` is a safety net for a missed ``deleted`` webhook).
+    * ``past_due`` → access during the GRACE window after the period end (a
+      failed renewal is a grace period, not an immediate cut).
+    * anything else (``canceled``, ``unpaid``, ``incomplete``, ``suspended`` for
+      refund/dispute, …) → NO access.
     """
     if store is None:
         return False
     sub = store.get_subscription(account_id)
     if not sub:
         return False
-    if sub.get("status") not in ACTIVE_STATUSES:
-        return False
+    status = sub.get("status")
     period_end = sub.get("current_period_end")
-    if period_end is not None and float(period_end) < time.time():
-        return False
-    return True
+    now = time.time()
+
+    if status in ACTIVE_STATUSES:
+        if period_end is not None and float(period_end) < now:
+            return False
+        return True
+
+    if status == "past_due":
+        # Grace: keep access for a bounded window after the (failed) period end.
+        if period_end is None:
+            return True
+        return now < float(period_end) + _grace_seconds()
+
+    return False
 
 
 def account_has_access(account: Dict[str, Any], store: Any = None) -> bool:

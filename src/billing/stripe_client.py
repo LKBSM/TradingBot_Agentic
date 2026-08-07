@@ -109,6 +109,11 @@ ACCOUNT_SUBSCRIPTION_EVENTS = frozenset({
     "invoice.paid",
     "invoice.payment_succeeded",
     "invoice.payment_failed",
+    # Refund / dispute → suspend access (PAY-1). A charge doesn't carry the
+    # subscription id or account metadata; the webhook route resolves the
+    # account by ``customer`` id and this sets a non-active status.
+    "charge.refunded",
+    "charge.dispute.created",
 })
 
 
@@ -131,6 +136,20 @@ class AccountSubscriptionEvent:
     current_period_end: Optional[float]
     cancel_at_period_end: Optional[bool]
     trial_end: Optional[float]
+    # Stripe event ``created`` (unix ts). Stripe delivers at-least-once and OUT
+    # OF ORDER, so the store applies an event only when this is >= the newest
+    # already applied — a stale event never overwrites newer state.
+    event_created: Optional[float] = None
+
+
+def _coerce_ts(value: Any) -> Optional[float]:
+    """Coerce a Stripe unix timestamp to float, or None if absent/invalid."""
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def _coerce_account_id(meta: Any) -> Optional[int]:
@@ -168,6 +187,7 @@ def parse_account_event(payload: dict) -> Optional[AccountSubscriptionEvent]:
     if event_type not in ACCOUNT_SUBSCRIPTION_EVENTS:
         return None
     event_id = str(payload.get("id", ""))
+    event_created = _coerce_ts(payload.get("created"))
     obj = (payload.get("data", {}) or {}).get("object", {}) or {}
     customer_id = str(obj.get("customer", "") or "")
 
@@ -191,6 +211,7 @@ def parse_account_event(payload: dict) -> Optional[AccountSubscriptionEvent]:
             current_period_end=None,
             cancel_at_period_end=None,
             trial_end=None,
+            event_created=event_created,
         )
 
     if event_type.startswith("customer.subscription."):
@@ -205,13 +226,40 @@ def parse_account_event(payload: dict) -> Optional[AccountSubscriptionEvent]:
             subscription_id=str(obj.get("id") or "") or None,
             status=status,
             price_id=_first_price_id(obj),
-            current_period_end=obj.get("current_period_end"),
+            current_period_end=_coerce_ts(obj.get("current_period_end")),
             cancel_at_period_end=(
                 bool(obj["cancel_at_period_end"])
                 if obj.get("cancel_at_period_end") is not None
                 else None
             ),
-            trial_end=obj.get("trial_end"),
+            trial_end=_coerce_ts(obj.get("trial_end")),
+            event_created=event_created,
+        )
+
+    if event_type in ("charge.refunded", "charge.dispute.created"):
+        # Refund/dispute → suspend. A dispute always suspends; a refund suspends
+        # only when the charge is FULLY refunded (a partial refund is ignored so
+        # a legit partial credit doesn't cut off a paying subscriber).
+        if event_type == "charge.refunded":
+            amount = obj.get("amount")
+            refunded = obj.get("amount_refunded")
+            fully_refunded = (
+                amount is not None and refunded is not None and refunded >= amount
+            )
+            if not fully_refunded:
+                return None  # partial refund → no state change
+        return AccountSubscriptionEvent(
+            event_id=event_id,
+            event_type=event_type,
+            account_id=None,  # charges carry no account metadata → resolve by customer
+            customer_id=customer_id,
+            subscription_id=None,  # not on a charge; upsert preserves the stored id
+            status="suspended",
+            price_id=None,
+            current_period_end=None,
+            cancel_at_period_end=None,
+            trial_end=None,
+            event_created=event_created,
         )
 
     # invoice.* — carries customer + subscription id; status is derived.
@@ -229,6 +277,7 @@ def parse_account_event(payload: dict) -> Optional[AccountSubscriptionEvent]:
         current_period_end=None,
         cancel_at_period_end=None,
         trial_end=None,
+        event_created=event_created,
     )
 
 
