@@ -9,12 +9,32 @@ import type { Account, LoginInput, RegisterInput } from './types';
 
 const BASE = '/api/auth';
 
-/** A failed auth request with a user-safe message + HTTP status (0 = network). */
+/**
+ * Per-attempt timeout for every auth call (AUTH-HARDENING). The login/register/
+ * reset fetches previously had NO timeout: a hung backend left the form stuck on
+ * "Connexion…" forever with no error — the same defect REC-1 fixed for the access
+ * gate, but never for the auth forms. 8 s mirrors the access gate and the
+ * market-reading client.
+ */
+const DEFAULT_TIMEOUT_MS = 8_000;
+
+/**
+ * Why an auth request failed, so the form can say WHICH honestly instead of one
+ * vague line:
+ *   · 'timeout'  → our request budget elapsed (server slow / not answering)
+ *   · 'network'  → the connection itself failed (server unreachable / offline)
+ *   · 'http'     → the backend answered with a 4xx/5xx (message is its `detail`)
+ */
+export type AuthErrorReason = 'timeout' | 'network' | 'http';
+
+/** A failed auth request with a user-safe message + HTTP status (0 = transport). */
 export class AuthError extends Error {
   readonly status: number;
-  constructor(status: number, message: string) {
+  readonly reason: AuthErrorReason;
+  constructor(status: number, message: string, reason: AuthErrorReason = 'http') {
     super(message);
     this.status = status;
+    this.reason = reason;
     this.name = 'AuthError';
   }
 }
@@ -30,6 +50,28 @@ async function readDetail(res: Response): Promise<string | null> {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  try {
+    return await attempt<T>(path, init);
+  } catch (err) {
+    // Retry once ONLY on a genuine network transient — never on a TIMEOUT (the
+    // budget is already spent; retrying doubles the wait) nor a deterministic HTTP
+    // error (a 401/409/429 won't change on a blind retry). Mirrors the reading
+    // client's policy.
+    if (err instanceof AuthError && err.reason === 'network') {
+      return attempt<T>(path, init);
+    }
+    throw err;
+  }
+}
+
+async function attempt<T>(path: string, init?: RequestInit): Promise<T> {
+  const controller = new AbortController();
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, DEFAULT_TIMEOUT_MS);
+
   let res: Response;
   try {
     res = await fetch(`${BASE}${path}`, {
@@ -39,11 +81,24 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       // are ever proxied, and to document the dependency (AUTH-11: the whole
       // session relies on this cookie riding along with every auth request).
       credentials: 'same-origin',
+      signal: controller.signal,
       ...init,
     });
   } catch (err) {
+    // A timed-out request and a genuine network failure both land here (fetch
+    // rejects with an AbortError on timeout). Tag which so the form can say
+    // "trop lent" vs "injoignable" — never a frozen "Connexion…" with no message.
+    if (timedOut) {
+      throw new AuthError(
+        0,
+        'Le serveur met trop de temps à répondre. Réessayez dans un instant.',
+        'timeout',
+      );
+    }
     const message = err instanceof Error ? err.message : 'Erreur réseau';
-    throw new AuthError(0, `Connexion impossible : ${message}`);
+    throw new AuthError(0, `Serveur injoignable : ${message}`, 'network');
+  } finally {
+    clearTimeout(timer);
   }
 
   if (res.status === 204) return undefined as T;

@@ -143,3 +143,53 @@ describe('network failure', () => {
     });
   });
 });
+
+// AUTH-HARDENING — the auth fetch previously had NO timeout: a hung backend left
+// the form stuck on "Connexion…" forever. These pin the timeout + bounded retry.
+describe('timeout & retry', () => {
+  it('times out (reason "timeout") instead of hanging forever, and does NOT retry', async () => {
+    vi.useFakeTimers();
+    try {
+      // A fetch that never settles until its AbortSignal fires (the real hang).
+      fetchMock.mockImplementation(
+        (_url: string, init: RequestInit) =>
+          new Promise((_resolve, reject) => {
+            const sig = init.signal as AbortSignal;
+            sig.addEventListener('abort', () =>
+              reject(new DOMException('Aborted', 'AbortError')),
+            );
+          }),
+      );
+      const p = login({ identifier: 'a', password: 'b' });
+      const expectation = expect(p).rejects.toMatchObject({
+        status: 0,
+        reason: 'timeout',
+      });
+      await vi.advanceTimersByTimeAsync(8_001); // past the 8s budget
+      await expectation;
+      // A timeout is NOT retried (the budget is already spent).
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('retries once on a network transient, then succeeds', async () => {
+    fetchMock
+      .mockRejectedValueOnce(new Error('ECONNRESET'))
+      .mockResolvedValue(jsonResponse(200, ACCOUNT));
+    const acc = await login({ identifier: 'alice', password: 'longpassword1' });
+    expect(acc.id).toBe(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('surfaces a 429 throttle (reason "http") without retrying', async () => {
+    fetchMock.mockResolvedValue(
+      jsonResponse(429, { detail: 'Trop de tentatives. Réessayez dans un instant.' }),
+    );
+    await expect(
+      login({ identifier: 'a', password: 'b' }),
+    ).rejects.toMatchObject({ status: 429, reason: 'http' });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});

@@ -447,6 +447,15 @@ def create_app(
     # Store app_state so routes can access it via request.app.state
     app.state.app_state = app_state
 
+    # ── Auth brute-force / abuse throttle (AUTH-HARDENING) ─────────────────
+    # A per-process sliding-window brake on login / register / password-reset.
+    # Built unconditionally (cheap) and per-app, so tests get a fresh instance.
+    # Limits come from env (AUTH_THROTTLE_MAX_ATTEMPTS / _WINDOW_S); set the max
+    # to 0 to disable. Read by the auth routes via request.app.state.auth_throttle.
+    from src.api.auth_throttle import AuthThrottle
+
+    app.state.auth_throttle = AuthThrottle()
+
     # ── CORS (configurable from env) ──────────────────────────────────────
     cors_origins_str = os.environ.get(
         "CORS_ALLOWED_ORIGINS",
