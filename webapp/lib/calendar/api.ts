@@ -258,7 +258,7 @@ export async function fetchCalendarMonth(
 // The first (uncached) measures request runs an engine replay over the recent
 // releases server-side; allow more headroom than the plain-list timeout. Once
 // warmed (server TTL cache) responses are immediate.
-const MEASURES_TIMEOUT_MS = 20_000;
+const MEASURES_TIMEOUT_MS = 30_000;
 
 export async function fetchPublicationMeasures(
   eventKey: string,

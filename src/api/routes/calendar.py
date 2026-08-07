@@ -139,6 +139,26 @@ def get_publication_measures(
     return measures or PublicationMeasures(event_key=event_key, market=market)
 
 
+def prewarm_publication_measures() -> None:
+    """Compute EVERY measured publication's measures once and fill the cache, so
+    the first interactive request is instant. The compute is a multi-second engine
+    replay per publication (which otherwise overruns the client's fetch timeout on
+    the very first page view). Safe to run in a background thread at boot; runs
+    only after the deep-history seed has populated candles.db. Never raises."""
+    from src.intelligence.publication_measures import load_default_measures
+
+    for event_key, market in list(_MEASURABLE_MARKETS.items()):
+        try:
+            measures = load_default_measures(event_key=event_key, market=market)
+            _MEASURES_CACHE[event_key] = (datetime.now(timezone.utc), measures)
+            logger.info(
+                "prewarmed measures %s: has_any=%s",
+                event_key, bool(measures and measures.has_any()),
+            )
+        except Exception:  # one publication must not abort the warm
+            logger.exception("prewarm measures failed for %s", event_key)
+
+
 @router.get("/publications/{event_key}/measures/debug")
 def get_publication_measures_debug(
     event_key: str = Path(..., description="Recurring event key, e.g. 'us_cpi'"),
