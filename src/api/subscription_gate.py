@@ -142,7 +142,19 @@ def _account_store(request: Request) -> Optional[Any]:
 # =============================================================================
 
 _LOGIN_REQUIRED = "Authentication required for this feature."
+_EMAIL_VERIFICATION_REQUIRED = "Email verification required before access."
 _SUBSCRIPTION_REQUIRED = "An active subscription is required for this feature."
+
+
+def email_verified(account: Dict[str, Any]) -> bool:
+    """Whether the account may pass the mandatory email-verification wall.
+
+    The owner is always allowed (seeded verified). Any other account must have
+    confirmed its email (PAY-1: verification is mandatory before access).
+    """
+    if account.get("role") == "owner":
+        return True
+    return bool(account.get("email_verified", False))
 
 
 def enforce_access(request: Request, account: Optional[Dict[str, Any]]) -> None:
@@ -150,6 +162,7 @@ def enforce_access(request: Request, account: Optional[Dict[str, Any]]) -> None:
 
     * Gate OFF (default, personal-testing) → no-op, route stays open.
     * Gate ON, not authenticated → 401 (the caller must log in).
+    * Gate ON, email not verified → 403 (confirm your email first).
     * Gate ON, authenticated without access → 402 (subscribe to unlock).
     * Owner and active/trialing subscribers pass.
 
@@ -160,6 +173,8 @@ def enforce_access(request: Request, account: Optional[Dict[str, Any]]) -> None:
         return
     if account is None:
         raise HTTPException(status_code=401, detail=_LOGIN_REQUIRED)
+    if not email_verified(account):
+        raise HTTPException(status_code=403, detail=_EMAIL_VERIFICATION_REQUIRED)
     if not account_has_access(account, _account_store(request)):
         raise HTTPException(status_code=402, detail=_SUBSCRIPTION_REQUIRED)
 

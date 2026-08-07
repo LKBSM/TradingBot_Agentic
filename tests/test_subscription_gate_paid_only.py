@@ -69,12 +69,23 @@ def _client(app, username, email):
     return c, r.json()
 
 
-def _unsubscribed(app):
-    return _client(app, "plainuser", "plain@example.com")
+def _verify(account_store, account_id):
+    """Mark an account email-verified via the real token flow (mandatory before
+    access, PAY-1). Owner accounts are already verified."""
+    token = account_store.create_email_verification(account_id)
+    if token is not None:
+        assert account_store.consume_email_verification(token) is True
+
+
+def _unsubscribed(app, account_store):
+    c, acct = _client(app, "plainuser", "plain@example.com")
+    _verify(account_store, acct["id"])
+    return c, acct
 
 
 def _subscriber(app, account_store, *, period_offset_s=3600.0):
     c, acct = _client(app, "subuser", "sub@example.com")
+    _verify(account_store, acct["id"])
     account_store.upsert_subscription(
         acct["id"],
         stripe_customer_id="cus_test_sub",
@@ -167,10 +178,34 @@ class TestVisitorEnforced:
 # Gate ON — UNSUBSCRIBED: authenticated, no subscription → NO data at all
 # =============================================================================
 
-class TestUnsubscribedEnforced:
-    def test_every_data_route_402_including_xau_m15(self, app, monkeypatch):
+class TestUnverifiedEmail:
+    """A registered but UNVERIFIED account is walled off before the subscribe
+    wall — it must confirm its email first (PAY-1: mandatory before access)."""
+
+    def test_data_routes_403_until_verified(self, app, monkeypatch):
         _enforce(monkeypatch)
-        c, _ = _unsubscribed(app)
+        c, _ = _client(app, "newbie", "newbie@example.com")  # not verified
+        assert _reading(c, "XAUUSD", "M15").status_code == 403
+        assert _candles(c, "XAUUSD", "M15").status_code == 403
+        assert _scan(c).status_code == 403
+        assert _chat(c).status_code == 403
+
+    def test_access_me_reports_verification_required(self, app, monkeypatch):
+        _enforce(monkeypatch)
+        c, _ = _client(app, "newbie2", "newbie2@example.com")
+        body = c.get("/api/access/me").json()
+        assert body["authenticated"] is True
+        assert body["email_verified"] is False
+        assert body["email_verification_required"] is True
+        assert body["has_access"] is False
+        # Not yet at the subscribe step — verification comes first.
+        assert body["subscription_required"] is False
+
+
+class TestUnsubscribedEnforced:
+    def test_every_data_route_402_including_xau_m15(self, app, account_store, monkeypatch):
+        _enforce(monkeypatch)
+        c, _ = _unsubscribed(app, account_store)
         # PAY-1: not even one candle of XAU/USD M15 without an active sub.
         assert _reading(c, "XAUUSD", "M15").status_code == 402
         assert _candles(c, "XAUUSD", "M15").status_code == 402
@@ -179,11 +214,12 @@ class TestUnsubscribedEnforced:
         assert _scan(c).status_code == 402
         assert _chat(c).status_code == 402
 
-    def test_access_me_unsubscribed(self, app, monkeypatch):
+    def test_access_me_unsubscribed(self, app, account_store, monkeypatch):
         _enforce(monkeypatch)
-        c, _ = _unsubscribed(app)
+        c, _ = _unsubscribed(app, account_store)
         body = c.get("/api/access/me").json()
         assert body["authenticated"] is True
+        assert body["email_verified"] is True
         assert body["has_access"] is False
         assert body["is_owner"] is False
         # The "account page + subscribe invitation" state.
