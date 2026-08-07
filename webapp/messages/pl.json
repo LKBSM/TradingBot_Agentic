@@ -2925,144 +2925,144 @@
   },
   "scannerChat": {
     "meta": {
-      "title": "Conversational scanner — describe your strategy",
-      "description": "Describe your strategy in French or English; M.I.A translates it into verifiable palette conditions."
+      "title": "Skaner konwersacyjny — opisz swoją strategię",
+      "description": "Opisz swoją strategię po francusku lub angielsku; M.I.A przetłumaczy ją na weryfikowalne warunki palety."
     },
     "describe": {
-      "title": "Describe your strategy. In your words.",
-      "subtitle": "No form to fill in. Write what you're looking for as you'd say it to someone.",
-      "miaTitle": "M.I.A translates your strategy",
-      "miaSub": "she chooses nothing for you · you validate before anything runs",
-      "placeholder": "E.g.: I'm looking for an untested Order Block, in an uptrend, with the 1 h agreeing and a liquidity pocket taken recently.",
-      "translate": "Translate my strategy",
-      "translating": "Translating…",
-      "myStrategies": "My strategies",
-      "scope": "M.I.A translates toward 22 verifiable conditions. Nothing else.",
-      "examplesLabel": "Or start from an example",
-      "disclaimer": "M.I.A does not look at the market to answer you: she turns your sentence into verifiable conditions, then the product's analysis does the searching. She orders nothing, advises nothing, and never guesses a condition you didn't express.",
+      "title": "Opisz swoją strategię. Własnymi słowami.",
+      "subtitle": "Bez formularza do wypełnienia. Napisz, czego szukasz, tak jak powiedziałbyś to komuś.",
+      "miaTitle": "M.I.A tłumaczy twoją strategię",
+      "miaSub": "niczego za ciebie nie wybiera · zatwierdzasz, zanim cokolwiek ruszy",
+      "placeholder": "Np.: szukam nigdy nietestowanego Order Blocku, w trendzie wzrostowym, ze zgodnym interwałem 1 h i niedawno pobraną strefą płynności.",
+      "translate": "Przetłumacz moją strategię",
+      "translating": "Tłumaczenie…",
+      "myStrategies": "Moje strategie",
+      "scope": "M.I.A tłumaczy na 22 weryfikowalne warunki. Nic więcej.",
+      "examplesLabel": "Albo zacznij od przykładu",
+      "disclaimer": "M.I.A nie sprawdza rynku, aby ci odpowiedzieć: zamienia twoje zdanie w weryfikowalne warunki, a następnie analiza produktu wykonuje wyszukiwanie. Niczego nie porządkuje, niczego nie doradza i nigdy nie zgaduje warunku, którego nie wyraziłeś.",
       "examples": {
-        "0": "An Order Block never tested, in an uptrend, with the higher unit agreeing",
-        "1": "Price returns into a Fair Value Gap tested once, after a recent CHOCH",
-        "2": "A liquidity pocket was just taken and price entered a zone",
-        "3": "An untested OB when the RSI is oversold",
-        "4": "Tell me where gold price is heading today",
-        "5": "Market in expansion, bullish structure, fresh zone at price"
+        "0": "Nigdy nietestowany Order Block, w trendzie wzrostowym, ze zgodnym wyższym interwałem",
+        "1": "Cena wraca do raz przetestowanej Fair Value Gap, po niedawnym CHOCH",
+        "2": "Strefa płynności właśnie została pobrana, a cena weszła w strefę",
+        "3": "Nietestowany OB, gdy RSI jest wyprzedane",
+        "4": "Powiedz mi, dokąd zmierza dziś cena złota",
+        "5": "Rynek w ekspansji, struktura wzrostowa, świeża strefa przy cenie"
       }
     },
     "dictation": {
-      "start": "Dictate by voice",
-      "stop": "Stop dictation",
-      "listening": "Listening…",
-      "privacy": "Transcription is performed by your browser and may transit through its servers. No audio recording is kept.",
+      "start": "Dyktuj głosem",
+      "stop": "Zatrzymaj dyktowanie",
+      "listening": "Słucham…",
+      "privacy": "Transkrypcja jest wykonywana przez twoją przeglądarkę i może przechodzić przez jej serwery. Żadne nagranie dźwiękowe nie jest przechowywane.",
       "errors": {
-        "not-allowed": "Microphone denied. You can allow it in your browser, or keep typing.",
-        "no-speech": "I didn't hear anything. Try again, or type your strategy.",
-        "audio-capture": "No microphone detected. Type your strategy instead.",
-        "network": "Speech recognition is unreachable. Type your strategy instead.",
-        "timeout": "I didn't hear anything. Dictation stopped — try again or type.",
-        "unknown": "Dictation was interrupted. Type your strategy instead."
+        "not-allowed": "Odmowa dostępu do mikrofonu. Możesz zezwolić na niego w przeglądarce lub dalej pisać.",
+        "no-speech": "Nic nie usłyszałam. Spróbuj ponownie lub wpisz swoją strategię.",
+        "audio-capture": "Nie wykryto mikrofonu. Wpisz swoją strategię.",
+        "network": "Rozpoznawanie mowy jest nieosiągalne. Wpisz swoją strategię.",
+        "timeout": "Nic nie usłyszałam. Dyktowanie zatrzymane — spróbuj ponownie lub pisz.",
+        "unknown": "Dyktowanie zostało przerwane. Wpisz swoją strategię."
       }
     },
     "card": {
-      "remove": "Remove this condition",
-      "assumedInline": "assumed value — adjust it if needed"
+      "remove": "Usuń ten warunek",
+      "assumedInline": "założona wartość — dostosuj w razie potrzeby"
     },
     "add": {
-      "tag": "Add",
-      "cta": "A missing condition?",
-      "hint": "Browse the 22 conditions",
-      "title": "Add a condition from the palette",
-      "close": "Close",
-      "already": "Already in your strategy"
+      "tag": "Dodaj",
+      "cta": "Brakujący warunek?",
+      "hint": "Przejrzyj 22 warunki",
+      "title": "Dodaj warunek z palety",
+      "close": "Zamknij",
+      "already": "Już w twojej strategii"
     },
     "translation": {
-      "title": "Here's what I understood",
-      "partialTitle": "I translated part of it",
-      "noneTitle": "I couldn't translate anything",
-      "subtitle": "Check it, adjust, remove what's off. Nothing runs before you validate.",
-      "noneSubtitle": "Nothing in your sentence maps to a palette condition. Rephrase, or compose by hand.",
-      "yourRequest": "YOUR REQUEST",
-      "modify": "Edit",
-      "conditionsLabel": "{count, plural, one {# condition translated} other {# conditions translated}}",
-      "comboCaption": "combinations match — {conditions, plural, one {# condition} other {# conditions}}",
-      "comboScanned": "of {scanned} tracked combinations · re-evaluated live",
-      "comboComputing": "computing…",
-      "seeResults": "See results",
-      "scanning": "Scanning…",
-      "reformulate": "Rephrase"
+      "title": "Oto, co zrozumiałam",
+      "partialTitle": "Przetłumaczyłam część",
+      "noneTitle": "Nie udało mi się nic przetłumaczyć",
+      "subtitle": "Sprawdź, dostosuj, usuń to, co nie pasuje. Nic nie ruszy, zanim nie zatwierdzisz.",
+      "noneSubtitle": "Nic w twoim zdaniu nie odpowiada warunkowi palety. Przeformułuj lub ułóż ręcznie.",
+      "yourRequest": "TWOJA PROŚBA",
+      "modify": "Edytuj",
+      "conditionsLabel": "{count, plural, one {# warunek przetłumaczony} other {# warunków przetłumaczonych}}",
+      "comboCaption": "kombinacji pasuje — {conditions, plural, one {# warunek} other {# warunków}}",
+      "comboScanned": "z {scanned} śledzonych kombinacji · ponownie oceniane na żywo",
+      "comboComputing": "obliczanie…",
+      "seeResults": "Zobacz wyniki",
+      "scanning": "Skanowanie…",
+      "reformulate": "Przeformułuj"
     },
     "assumptions": {
-      "title": "What I assumed",
-      "item": "You said “{phrase}” — I took {value} for “{condition}”.",
-      "note": "Adjust if that's not what you meant. I never guess a condition you didn't express.",
-      "aVagueWord": "a vague word"
+      "title": "Co założyłam",
+      "item": "Powiedziałeś „{phrase}” — przyjęłam {value} dla „{condition}”.",
+      "note": "Dostosuj, jeśli nie to miałeś na myśli. Nigdy nie zgaduję warunku, którego nie wyraziłeś.",
+      "aVagueWord": "nieprecyzyjne słowo"
     },
     "untranslatable": {
-      "titlePartial": "One thing I cannot translate",
-      "titleNone": "What I cannot translate",
-      "honesty": "I have no near-equivalent condition, and I'd rather tell you than pick one that only vaguely resembles it. You can run with what's understood, or rephrase.",
+      "titlePartial": "Jedna rzecz, której nie mogę przetłumaczyć",
+      "titleNone": "Czego nie mogę przetłumaczyć",
+      "honesty": "Nie mam zbliżonego warunku i wolę ci to powiedzieć, niż wybrać taki, który tylko z grubsza przypomina. Możesz kontynuować z tym, co zrozumiane, albo przeformułować.",
       "categories": {
-        "indicator": "— the product tracks no oscillator indicator (RSI, MACD, moving averages, Bollinger). It describes market structure.",
-        "volume": "— the product does not track volume as a condition.",
-        "fibonacci": "— the product places no Fibonacci levels.",
-        "candle_pattern": "— the product does not detect candlestick patterns (engulfing, doji, hammer).",
-        "classic_support_resistance": "— the product draws no classic horizontal support/resistance; it describes SMC zones (OB, FVG).",
-        "round_number": "— the product does not reason in round numbers.",
-        "sentiment": "— the product does not measure sentiment or positioning.",
-        "fundamental": "— the product does not take macro or news as a scannable condition.",
-        "other": "— this element maps to no palette condition.",
-        "unsupported": "— this element maps to no palette condition."
+        "indicator": "— produkt nie śledzi żadnego wskaźnika oscylacyjnego (RSI, MACD, średnie kroczące, Bollinger). Opisuje strukturę rynku.",
+        "volume": "— produkt nie śledzi wolumenu jako warunku.",
+        "fibonacci": "— produkt nie umieszcza poziomów Fibonacciego.",
+        "candle_pattern": "— produkt nie wykrywa formacji świecowych (objęcie, doji, młot).",
+        "classic_support_resistance": "— produkt nie rysuje klasycznych poziomych wsparć/oporów; opisuje strefy SMC (OB, FVG).",
+        "round_number": "— produkt nie rozumuje w okrągłych liczbach.",
+        "sentiment": "— produkt nie mierzy nastrojów ani pozycjonowania.",
+        "fundamental": "— produkt nie przyjmuje makro ani wiadomości jako warunku do skanowania.",
+        "other": "— ten element nie odpowiada żadnemu warunkowi palety.",
+        "unsupported": "— ten element nie odpowiada żadnemu warunkowi palety."
       }
     },
     "save": {
-      "namePlaceholder": "Strategy name",
-      "cta": "Save",
-      "done": "“{name}” saved on this device.",
+      "namePlaceholder": "Nazwa strategii",
+      "cta": "Zapisz",
+      "done": "„{name}” zapisana na tym urządzeniu.",
       "errors": {
-        "name_required": "Give your strategy a name to save it.",
-        "limit_reached": "Saved-strategy limit reached on this device.",
-        "not_found": "Strategy not found.",
-        "storage_failed": "Could not save on this device."
+        "name_required": "Nadaj strategii nazwę, aby ją zapisać.",
+        "limit_reached": "Osiągnięto limit zapisanych strategii na tym urządzeniu.",
+        "not_found": "Nie znaleziono strategii.",
+        "storage_failed": "Nie można zapisać na tym urządzeniu."
       }
     },
     "results": {
-      "back": "Back to the translation"
+      "back": "Powrót do tłumaczenia"
     },
     "strategies": {
-      "back": "Back",
-      "title": "My strategies",
-      "subtitle": "Described once, re-evaluated on every open.",
-      "empty": "You have no saved strategy yet. Describe one, then save it."
+      "back": "Powrót",
+      "title": "Moje strategie",
+      "subtitle": "Opisane raz, oceniane ponownie przy każdym otwarciu.",
+      "empty": "Nie masz jeszcze zapisanej strategii. Opisz jedną, a potem ją zapisz."
     },
     "refusal": {
-      "pageTitle": "This request, I don't translate",
-      "pageSubtitle": "It isn't a technical limit.",
-      "invite": "I can translate a precise strategy, though. Tell me what you're looking for: which structure, which zone, which liquidity state.",
-      "reformulate": "Rephrase",
-      "footer": "The product describes the current state of markets. It does not grade them, does not order them, and advises no action. It's a design constraint, not a gap.",
+      "pageTitle": "Tej prośby nie tłumaczę",
+      "pageSubtitle": "To nie jest ograniczenie techniczne.",
+      "invite": "Mogę natomiast przetłumaczyć konkretną strategię. Powiedz mi, czego szukasz: jaka struktura, jaka strefa, jaki stan płynności.",
+      "reformulate": "Przeformułuj",
+      "footer": "Produkt opisuje aktualny stan rynków. Nie ocenia ich, nie porządkuje i nie doradza żadnego działania. To ograniczenie projektowe, nie brak.",
       "examples": {
-        "0": "An OB never tested in an uptrend",
-        "1": "Price inside a zone after a liquidity grab"
+        "0": "OB nigdy nietestowany w trendzie wzrostowym",
+        "1": "Cena w strefie po pobraniu płynności"
       },
       "ranking": {
-        "title": "I don't sort markets",
-        "body": "Asking for “the X” implies an order of preference. The scanner builds none and never sorts its results. A market meeting five conditions is not preferable to one meeting three — it is different, and the call is yours."
+        "title": "Nie porządkuję rynków",
+        "body": "Prośba o „te X” zakłada kolejność preferencji. Skaner żadnej nie ustala i nigdy nie porządkuje swoich wyników. Rynek spełniający pięć warunków nie jest bardziej wart wyboru niż ten spełniający trzy — jest inny, a decyzja należy do ciebie."
       },
       "prediction": {
-        "title": "I don't predict prices",
-        "body": "The product describes the current state of markets. It doesn't say where price will go, nor whether it will rise or fall. I can translate a strategy that describes a present structure, not an expectation."
+        "title": "Nie przewiduję cen",
+        "body": "Produkt opisuje aktualny stan rynków. Nie mówi, dokąd pójdzie cena, ani czy wzrośnie, czy spadnie. Mogę przetłumaczyć strategię opisującą obecną strukturę, a nie oczekiwanie."
       },
       "recommendation": {
-        "title": "I advise no position",
-        "body": "I don't say what to trade, nor when to buy or sell. The scanner shows where conditions YOU described are present; the decision stays yours."
+        "title": "Nie doradzam żadnej pozycji",
+        "body": "Nie mówię, czym handlować ani kiedy kupować lub sprzedawać. Skaner pokazuje, gdzie występują warunki, które TY opisałeś; decyzja pozostaje twoja."
       }
     },
     "errors": {
-      "unavailable": "Translation isn't available in this environment. You can compose by hand.",
-      "failed": "Translation failed. Try again, or compose by hand.",
-      "empty": "Write your strategy first.",
-      "scanUnavailable": "The scan service isn't available in this environment.",
-      "scanFailed": "The scan failed. Try again in a moment."
+      "unavailable": "Tłumaczenie nie jest dostępne w tym środowisku. Możesz ułożyć ręcznie.",
+      "failed": "Tłumaczenie nie powiodło się. Spróbuj ponownie lub ułóż ręcznie.",
+      "empty": "Najpierw napisz swoją strategię.",
+      "scanUnavailable": "Usługa skanowania nie jest dostępna w tym środowisku.",
+      "scanFailed": "Skanowanie nie powiodło się. Spróbuj ponownie za chwilę."
     }
   }
 }
