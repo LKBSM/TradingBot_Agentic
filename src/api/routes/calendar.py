@@ -172,6 +172,36 @@ def get_publication_measures_debug(
     return diagnose_default_measures(event_key=event_key, market=market)
 
 
+@router.get("/publications/{event_key}/values/debug")
+def get_publication_values_debug(
+    event_key: str = Path(..., description="Recurring event key, e.g. 'us_durable_goods'"),
+) -> Dict[str, Any]:
+    """Read-only triage (NW-9): WHY a publication's CURVE is empty in this env.
+
+    Reports whether live values are on, whether each key-gated source's key is
+    present, which value sources actually registered, and a live series fetch
+    attempt for this event's catalog series. For Census it also lists the program's
+    valid (category_code, data_type_code) cells so a wrong series code is fixed
+    against the real API, never guessed. No secrets; never raises."""
+    from src.intelligence.calendar_providers.official_sources.base_official import (
+        load_catalog,
+        series_kind_for,
+    )
+    from src.intelligence.calendar_providers.values import diagnose_value_fetcher
+
+    cat = load_catalog().get(event_key)
+    if cat is None:
+        raise HTTPException(status_code=404, detail="unknown event_key")
+    kind = series_kind_for(cat.series_code)
+    # Computed kinds fetch the raw LEVEL series (the detail path derives the
+    # variation from it); mirror that so the diagnostic reflects the real fetch.
+    fetch_kind = "level" if kind in ("index_computed", "amount_computed") else kind
+    out = diagnose_value_fetcher(cat.source, cat.series_code, kind=fetch_kind)
+    out["event_key"] = event_key
+    out["series_kind"] = kind
+    return out
+
+
 # One-time DEEP backfill of the measured market's M15 history into candles.db, so
 # the measures have the months of intraday history they need (NW-7d). The bundled
 # CSV is absent in prod and Twelve Data caps a single request at ~52 days, so we

@@ -54,7 +54,11 @@ class _Series:
 
 # The single headline cell per catalog series (auditable). MARTS retail is the
 # documented 44X72 / SM (sales, monthly) SA headline. RESCONST / ADVM3 codes are
-# best-known and flagged for live confirmation before merge.
+# best-known and flagged for live confirmation: the read-only diagnostic
+# ``CensusValueFetcher.diagnose`` (exposed at ``GET /api/publications/{key}/values/debug``)
+# lists EVERY valid (category_code, data_type_code) cell of the program with its
+# value, so the correct headline cell is picked by evidence against the real API
+# — never guessed. Correct a code here once the diagnostic confirms it.
 _CENSUS_SERIES: Dict[str, _Series] = {
     # Advance retail & food-services sales, SA, monthly ($ millions).
     "MARTS-RSAFS": _Series("marts", "44X72", "SM", "yes"),
@@ -112,6 +116,84 @@ class CensusValueFetcher(ValueFetcher):
             return []
         points.sort(key=lambda p: p[0])
         return [SeriesPoint(period=per, value=val) for per, val in points][-int(limit):]
+
+    # ------------------------------------------------------------------
+    # Read-only diagnostic (NW-9). WHY a Census curve is empty in prod: is the
+    # key wired, does the CONFIGURED cell return data, and — crucially — what are
+    # the VALID (category_code, data_type_code) cells for the program, so a wrong
+    # "à confirmer" code is fixed against the real API instead of guessed. The API
+    # key is NEVER echoed. Needs the key (Census rejects keyless data queries).
+    # ------------------------------------------------------------------
+    def diagnose(self, series_code: str, probe_month: Optional[str] = None) -> dict:
+        out: dict = {
+            "series_code": series_code,
+            "key_present": bool(self._key),
+            "configured": None,
+            "attempt": None,
+            "program_cells": None,
+        }
+        spec = _CENSUS_SERIES.get(series_code)
+        if spec is None:
+            out["error"] = "unknown series_code"
+            return out
+        out["configured"] = {
+            "program": spec.program,
+            "category_code": spec.category_code,
+            "data_type_code": spec.data_type_code,
+            "seasonally_adj": spec.seasonally_adj,
+        }
+        if not self._key:
+            out["attempt"] = {"skipped": "no CENSUS_API_KEY in env"}
+            return out
+        pts = self._fetch_points(spec)
+        out["attempt"] = {
+            "point_count": len(pts),
+            "sample": [{"period": p, "value": v} for p, v in pts[-3:]],
+        }
+        out["program_cells"] = self._probe_program_cells(spec, probe_month)
+        return out
+
+    def _probe_program_cells(self, spec: "_Series", probe_month: Optional[str]) -> dict:
+        """Every (category_code, data_type_code) cell of the program for ONE recent
+        month, with its value — so the correct headline cell is picked by evidence.
+        Returns {"month", "rows":[{category_code,data_type_code,value}], "error"?}."""
+        since = probe_month or "2025-01"
+        params = [
+            ("get", "cell_value,category_code,data_type_code,time"),
+            ("seasonally_adj", spec.seasonally_adj),
+            ("for", "us"),
+            ("time", f"from {since}"),
+            ("key", self._key),
+        ]
+        url = f"{_BASE}/{spec.program}?{urllib.parse.urlencode(params)}"
+        text = self._get(url)
+        if not text:
+            return {"error": "empty response (key rejected or network)"}
+        try:
+            data = json.loads(text)
+        except (ValueError, TypeError):
+            return {"error": "non-JSON response (likely a 'Missing Key' page)", "head": text[:160]}
+        if not isinstance(data, list) or len(data) < 2 or not isinstance(data[0], list):
+            return {"error": "unexpected shape", "head": str(data)[:160]}
+        header = data[0]
+        try:
+            vi = header.index("cell_value")
+            ci = header.index("category_code")
+            di = header.index("data_type_code")
+            ti = header.index("time")
+        except ValueError:
+            return {"error": "missing expected columns", "header": header}
+        # Keep only the latest month present, and one row per (cat, dtype) cell.
+        latest = max((str(r[ti]) for r in data[1:] if len(r) > ti), default=None)
+        rows: list = []
+        for r in data[1:]:
+            if len(r) <= max(vi, ci, di, ti) or str(r[ti]) != latest:
+                continue
+            rows.append(
+                {"category_code": str(r[ci]), "data_type_code": str(r[di]), "value": str(r[vi])}
+            )
+        rows.sort(key=lambda x: (x["category_code"], x["data_type_code"]))
+        return {"month": latest, "cell_count": len(rows), "rows": rows[:120]}
 
 
 def _http_get(url: str) -> str:

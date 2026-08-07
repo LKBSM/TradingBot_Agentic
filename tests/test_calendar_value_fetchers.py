@@ -365,6 +365,57 @@ def test_census_graceful_on_missing_key_html_page():
     assert f.fetch("MARTS-RSAFS") is None
 
 
+# NW-9 — the read-only diagnostic that reveals a wrong "à confirmer" code against
+# the real program grid (never guessed).
+_CENSUS_GRID = json.dumps([
+    ["cell_value", "category_code", "data_type_code", "time", "us"],
+    ["300000", "DGO", "NO", "2026-06", "1"],   # total durable goods new orders
+    ["280000", "DGO", "VS", "2026-06", "1"],
+    ["50000", "NXA", "VS", "2026-06", "1"],
+    ["295000", "DGO", "NO", "2026-05", "1"],    # older month → excluded from the cells
+])
+
+
+def _census_router(url: str) -> str:
+    # The probe SELECTS category_code+data_type_code in its `get` clause; the
+    # configured fetch selects only cell_value,time (it filters by the codes).
+    return _CENSUS_GRID if "category_code%2Cdata_type_code" in url else _CENSUS_OK
+
+
+def test_census_diagnose_lists_program_cells_for_the_latest_month():
+    f = CensusValueFetcher(api_key="KEY", http_get=_census_router)
+    d = f.diagnose("ADVM3-DGORDER")
+    assert d["key_present"] is True
+    assert d["configured"]["program"] == "advm3"
+    assert d["attempt"]["point_count"] == 2  # configured cell returned data
+    cells = d["program_cells"]
+    assert cells["month"] == "2026-06"
+    combos = {(r["category_code"], r["data_type_code"]): r["value"] for r in cells["rows"]}
+    assert combos[("DGO", "NO")] == "300000"     # the correct headline cell is visible
+    assert ("DGO", "NO") in combos and ("NXA", "VS") in combos
+    assert all(r for r in cells["rows"])          # only the latest month, one row per cell
+
+
+def test_census_diagnose_without_key_skips_the_live_probe():
+    f = CensusValueFetcher(api_key="", http_get=_census_router)
+    d = f.diagnose("ADVM3-DGORDER")
+    assert d["key_present"] is False
+    assert d["attempt"]["skipped"]
+    assert d["program_cells"] is None
+
+
+def test_diagnose_value_fetcher_flags_unregistered_census(monkeypatch):
+    from src.intelligence.calendar_providers.values import diagnose_value_fetcher
+
+    monkeypatch.setenv("CALENDAR_VALUES_LIVE", "1")
+    monkeypatch.delenv("CENSUS_API_KEY", raising=False)
+    out = diagnose_value_fetcher("census", "ADVM3-DGORDER", kind="level")
+    assert out["values_live"] is True
+    assert out["keys_present"]["CENSUS_API_KEY"] is False
+    assert "census" not in out["sources_registered"]
+    assert "not registered" in out["fetch"]["skipped"]
+
+
 # --------------------------------------------------------------------------- #
 # Registry wiring
 # --------------------------------------------------------------------------- #
