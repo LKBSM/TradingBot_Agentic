@@ -28,6 +28,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, Field
 
 from src.api.account_store import AccountError, AccountStore
+from src.api.auth_throttle import AuthThrottle, client_ip
 from src.api.middleware.beta_auth import beta_lockdown_enabled
 from src.api.routes.legal import LAST_UPDATED as LEGAL_VERSION
 from src.api.session_auth import (
@@ -118,6 +119,42 @@ def _store(request: Request) -> AccountStore:
     return store
 
 
+def _throttle(request: Request) -> Optional[AuthThrottle]:
+    """The per-app auth throttle (AUTH-HARDENING). None only if an app was built
+    without one (older test harnesses); callers must no-op gracefully then."""
+    return getattr(request.app.state, "auth_throttle", None)
+
+
+def _enforce_throttle(request: Request, *keys: str) -> None:
+    """429 if ANY key is already at its cap. Read-only (does not record) — callers
+    record failures explicitly so a success can clear the counter."""
+    throttle = _throttle(request)
+    if throttle is None:
+        return
+    for key in keys:
+        blocked, retry_after = throttle.blocked(key)
+        if blocked:
+            raise HTTPException(
+                status_code=429,
+                detail="Trop de tentatives. Réessayez dans un instant.",
+                headers={"Retry-After": str(retry_after)},
+            )
+
+
+def _record_throttle(request: Request, *keys: str) -> None:
+    throttle = _throttle(request)
+    if throttle is not None:
+        for key in keys:
+            throttle.hit(key)
+
+
+def _clear_throttle(request: Request, *keys: str) -> None:
+    throttle = _throttle(request)
+    if throttle is not None:
+        for key in keys:
+            throttle.reset(key)
+
+
 def _account_out(store: AccountStore, account: Dict[str, Any]) -> AccountOut:
     consents = store.get_consents(account["id"])
     return AccountOut(
@@ -146,6 +183,13 @@ def _raise_account_error(exc: AccountError) -> None:
 @router.post("/register", response_model=AccountOut, status_code=201)
 async def register(payload: RegisterRequest, request: Request, response: Response):
     store = _store(request)
+
+    # AUTH-HARDENING — throttle registration per IP (every attempt counts) so the
+    # endpoint cannot be used to spray-probe which emails exist, nor to spam
+    # account creation. Recorded before any work so conflicts count too.
+    ip_key = f"register:ip:{client_ip(request)}"
+    _enforce_throttle(request, ip_key)
+    _record_throttle(request, ip_key)
 
     # Closed beta: public self-registration is disabled. The only accounts that
     # may exist are the owner (seeded from env) and the testers (seeded by
@@ -185,6 +229,23 @@ async def register(payload: RegisterRequest, request: Request, response: Respons
             consents=consents,
         )
     except AccountError as exc:
+        # AUTH-HARDENING — anti-enumeration: a conflict returns ONE generic message
+        # that does not reveal WHICH of username/email is taken (the old messages
+        # "Cette adresse e-mail est déjà utilisée." / "Ce nom d'utilisateur est
+        # déjà pris." confirmed a specific email/username exists). Non-conflict
+        # validation errors (weak password, bad email) stay specific — they leak
+        # nothing about existing accounts. NB: full elimination of email
+        # enumeration needs a verify-by-email registration flow; combined with the
+        # per-IP throttle above, mass probing is blocked in the meantime.
+        conflict_codes = {"username_taken", "email_taken", "account_conflict"}
+        if exc.code in conflict_codes:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "Ces informations ne peuvent pas être utilisées. Si vous avez "
+                    "déjà un compte, connectez-vous ou réinitialisez votre mot de passe."
+                ),
+            )
         _raise_account_error(exc)
 
     # Auto-login on successful registration.
@@ -197,12 +258,23 @@ async def register(payload: RegisterRequest, request: Request, response: Respons
 @router.post("/login", response_model=AccountOut)
 async def login(payload: LoginRequest, request: Request, response: Response):
     store = _store(request)
+
+    # AUTH-HARDENING — brute-force brake. Throttle by IP AND by identifier, so a
+    # spray across many IPs against ONE account is also slowed. Only FAILURES
+    # count and a success clears both counters, so a legit user who mistypes once
+    # is never locked out (the happy path is untouched).
+    ip_key = f"login:ip:{client_ip(request)}"
+    id_key = f"login:id:{payload.identifier.strip().lower()}"
+    _enforce_throttle(request, ip_key, id_key)
+
     account = store.verify_credentials(payload.identifier, payload.password)
     if account is None:
+        _record_throttle(request, ip_key, id_key)
         # Single generic message — never reveal which of id/password was wrong.
         raise HTTPException(
             status_code=401, detail="Identifiant ou mot de passe incorrect."
         )
+    _clear_throttle(request, ip_key, id_key)
     raw_token = store.create_session(account["id"])
     set_session_cookie(response, raw_token)
     return _account_out(store, account)
@@ -248,6 +320,14 @@ async def update_profile(
 @router.post("/password-reset/request", response_model=MessageOut)
 async def password_reset_request(payload: ResetRequestBody, request: Request):
     store = _store(request)
+
+    # AUTH-HARDENING — throttle reset requests per IP (every attempt counts) to
+    # brake reset-email spam and identifier probing. The response is already
+    # enumeration-safe (same message either way); the throttle bounds the volume.
+    ip_key = f"reset:ip:{client_ip(request)}"
+    _enforce_throttle(request, ip_key)
+    _record_throttle(request, ip_key)
+
     raw_token = store.create_reset_token(payload.identifier)
     # Anti-enumeration: ALWAYS return the same response whether or not the
     # identifier matched. When it did, the token is dispatched out-of-band.
