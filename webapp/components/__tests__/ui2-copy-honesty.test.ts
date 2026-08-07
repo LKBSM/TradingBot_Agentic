@@ -28,8 +28,8 @@ const NEW_UI2_KEYS = [
   'app.desktop.news.title', 'app.desktop.news.badge', 'app.desktop.news.empty', 'app.desktop.news.scheduledOn',
   'scanner.page.title', 'scanner.page.subtitle', 'scanner.livebadge', 'scanner.activeStrategy',
   'scanner.note', 'scanner.resultsMeta', 'scanner.unavailable',
-  'zones.badge.count', 'zones.state.active', 'zones.state.mitigated', 'zones.state.filledPct',
-  'zones.timeline.currentStep', 'zones.timeline.priceInside',
+  'zones.badge.count', 'zones.header.untouched', 'zones.header.consumed', 'zones.header.neverFilled',
+  'zones.timeline.now', 'zones.groups.inside',
   'app.account.title', 'app.account.subtitle', 'app.account.sectionAccount', 'app.account.emailRow',
   'app.account.edit', 'app.account.editCancel', 'app.account.passwordRow', 'app.account.passwordMasked',
   'app.account.comingSoon', 'app.account.sessionRow', 'app.account.sessionValue',
@@ -90,8 +90,9 @@ describe('UI-2 copy honesty', () => {
     for (const key of NEW_UI2_KEYS) {
       expect(get(key)).not.toMatch(/\bTrader\b/);
     }
-    // The analyse action (Scanner combo + Zones card) is worded "Analyser".
-    const analyseCtas = ['scanner.combo.analyse', 'zones.actions.analyze'];
+    // The analyse action (Scanner combo) is worded "Analyser". VZ-1 removed the
+    // Zones-card « Analyser » CTA — selecting the card is the gesture now.
+    const analyseCtas = ['scanner.combo.analyse'];
     const found = analyseCtas
       .map((k) => {
         try {
