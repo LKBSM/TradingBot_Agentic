@@ -89,7 +89,11 @@ class CensusValueFetcher(ValueFetcher):
         if not self._key:
             return []
         params = [
-            ("get", "cell_value,time"),
+            # ``time`` is a datetime PREDICATE, not a gettable variable — asking for
+            # it in ``get`` returns HTTP 400 "unknown variable 'time'" (NW-9 prod).
+            # The period is read from ``time_slot_date`` / ``time_slot_name``; the
+            # ``time`` filter below still bounds the range.
+            ("get", "cell_value,time_slot_date,time_slot_name"),
             ("category_code", spec.category_code),
             ("data_type_code", spec.data_type_code),
             ("seasonally_adj", spec.seasonally_adj),
@@ -184,7 +188,7 @@ class CensusValueFetcher(ValueFetcher):
         import urllib.request
 
         params = [
-            ("get", "cell_value,time"),
+            ("get", "cell_value,time_slot_date,time_slot_name"),
             ("category_code", spec.category_code),
             ("data_type_code", spec.data_type_code),
             ("seasonally_adj", spec.seasonally_adj),
@@ -240,7 +244,7 @@ class CensusValueFetcher(ValueFetcher):
         Returns {"month", "rows":[{category_code,data_type_code,value}], "error"?}."""
         since = probe_month or "2025-01"
         params = [
-            ("get", "cell_value,category_code,data_type_code,time"),
+            ("get", "cell_value,category_code,data_type_code,time_slot_date,time_slot_name"),
             ("seasonally_adj", spec.seasonally_adj),
             ("for", "us"),
             ("time", f"from {since}"),
@@ -261,14 +265,14 @@ class CensusValueFetcher(ValueFetcher):
             vi = header.index("cell_value")
             ci = header.index("category_code")
             di = header.index("data_type_code")
-            ti = header.index("time")
         except ValueError:
             return {"error": "missing expected columns", "header": header}
-        # Keep only the latest month present, and one row per (cat, dtype) cell.
-        latest = max((str(r[ti]) for r in data[1:] if len(r) > ti), default=None)
+        # Keep only the latest period present, and one row per (cat, dtype) cell.
+        periods = [p for p in (_period_of(header, r) for r in data[1:]) if p]
+        latest = max(periods, default=None)
         rows: list = []
         for r in data[1:]:
-            if len(r) <= max(vi, ci, di, ti) or str(r[ti]) != latest:
+            if len(r) <= max(vi, ci, di) or _period_of(header, r) != latest:
                 continue
             rows.append(
                 {"category_code": str(r[ci]), "data_type_code": str(r[di]), "value": str(r[vi])}
@@ -287,11 +291,47 @@ def _http_get(url: str) -> str:
         return ""
 
 
+_MON3 = {
+    m: i
+    for i, m in enumerate(
+        ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"], 1
+    )
+}
+
+
+def _to_yyyymm(raw: str) -> Optional[str]:
+    """Normalise a Census time-slot label to ``YYYY-MM``. Handles an ISO date
+    (``2025-06-01`` / ``2025-06``) and a month name (``June 2025``). None if it
+    matches none — never a fabricated period."""
+    s = (raw or "").strip()
+    m = re.search(r"(\d{4})-(\d{1,2})", s)
+    if m and 1 <= int(m.group(2)) <= 12:
+        return f"{m.group(1)}-{int(m.group(2)):02d}"
+    m = re.search(r"([A-Za-z]{3,9})\.?\s+(\d{4})", s)
+    if m and m.group(1)[:3].lower() in _MON3:
+        return f"{m.group(2)}-{_MON3[m.group(1)[:3].lower()]:02d}"
+    return None
+
+
+def _period_of(header: List, row: List) -> Optional[str]:
+    """The observation's ``YYYY-MM`` period, read from the first usable time column
+    (``time_slot_date`` preferred, then the ``time`` predicate echo, then
+    ``time_slot_name``)."""
+    for col in ("time_slot_date", "time", "time_slot_name"):
+        if col in header:
+            i = header.index(col)
+            if i < len(row):
+                p = _to_yyyymm(str(row[i]))
+                if p:
+                    return p
+    return None
+
+
 def _parse_eits(text: str) -> List[Tuple[str, float]]:
     """Extract (period, value) pairs from an EITS 2-D array response. The first
-    row is the header; ``cell_value`` and ``time`` columns give the observation.
-    Returns [] on any shape mismatch or a non-JSON "Missing Key" page — never
-    fabricates a period or a value."""
+    row is the header; ``cell_value`` holds the value and the period is read from a
+    time-slot column (``time`` is predicate-only and not returned). Returns [] on
+    any shape mismatch or a non-JSON "Missing Key" page — never fabricates."""
     try:
         data = json.loads(text)
         if not isinstance(data, list) or len(data) < 2:
@@ -301,20 +341,20 @@ def _parse_eits(text: str) -> List[Tuple[str, float]]:
             return []
         try:
             vi = header.index("cell_value")
-            ti = header.index("time")
         except ValueError:
             return []
         out: List[Tuple[str, float]] = []
         for row in data[1:]:
-            if not isinstance(row, list) or len(row) <= max(vi, ti):
+            if not isinstance(row, list) or len(row) <= vi:
                 continue
-            period = str(row[ti]).strip()
+            period = _period_of(header, row)
+            if not period:
+                continue
             try:
                 value = float(str(row[vi]).replace(",", "").strip())
             except (ValueError, TypeError):
                 continue
-            if period:
-                out.append((period, value))
+            out.append((period, value))
         return out
     except (ValueError, TypeError, KeyError):
         return []
