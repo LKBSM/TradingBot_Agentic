@@ -1842,8 +1842,17 @@
       "trialing": "Essai en cours",
       "pastDue": "Paiement en attente",
       "canceled": "Abonnement annulé",
-      "none": "Aucun abonnement"
-    }
+      "none": "Aucun abonnement",
+      "suspended": "Abonnement suspendu",
+      "expired": "Abonnement expiré"
+    },
+    "nextCharge": "Prochain prélèvement le {date} : {amount} {currency}",
+    "accessUntilNoRenewal": "Accès jusqu'au {date}, sans renouvellement.",
+    "graceNotice": "Paiement échoué. Mets à jour ton moyen de paiement pour ne pas perdre l'accès.",
+    "suspendedNotice": "Accès suspendu à la suite d'un remboursement ou d'un litige. Contacte le support au besoin.",
+    "expiredNotice": "Ton abonnement a expiré. Abonne-toi à nouveau pour retrouver l'accès.",
+    "manageHint": "Changer de formule, mettre à jour ta carte, télécharger tes factures ou résilier — tout se fait dans le portail Stripe.",
+    "reactivate": "Se réabonner"
   },
   "access": {
     "paywall": {

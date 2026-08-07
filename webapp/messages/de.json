@@ -1842,8 +1842,17 @@
       "trialing": "Testphase läuft",
       "pastDue": "Zahlung ausstehend",
       "canceled": "Abonnement gekündigt",
-      "none": "Kein Abonnement"
-    }
+      "none": "Kein Abonnement",
+      "suspended": "Subscription suspended",
+      "expired": "Subscription expired"
+    },
+    "nextCharge": "Next charge on {date}: {amount} {currency}",
+    "accessUntilNoRenewal": "Access until {date}, with no renewal.",
+    "graceNotice": "Payment failed. Update your payment method so you don't lose access.",
+    "suspendedNotice": "Access suspended following a refund or dispute. Contact support if needed.",
+    "expiredNotice": "Your subscription has expired. Subscribe again to regain access.",
+    "manageHint": "Change plan, update your card, download invoices or cancel — all in the Stripe portal.",
+    "reactivate": "Subscribe again"
   },
   "access": {
     "paywall": {
