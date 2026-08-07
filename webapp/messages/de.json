@@ -1071,6 +1071,11 @@
     "save": "Meine Auswahl speichern"
   },
   "scanner": {
+    "mode": {
+      "groupLabel": "Scanner-Modus",
+      "conditions": "Meine Bedingungen wählen",
+      "describe": "Meine Strategie beschreiben"
+    },
     "loading": "Wird geladen…",
     "scanInProgress": "Scan läuft…",
     "errorUnavailable": "Der Scan-Dienst ist in dieser Umgebung nicht verfügbar.",

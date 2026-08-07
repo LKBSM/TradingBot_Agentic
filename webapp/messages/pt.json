@@ -1071,6 +1071,11 @@
     "save": "Guardar a minha escolha"
   },
   "scanner": {
+    "mode": {
+      "groupLabel": "Modo do scanner",
+      "conditions": "Escolher minhas condições",
+      "describe": "Descrever minha estratégia"
+    },
     "loading": "A carregar…",
     "scanInProgress": "Análise em curso…",
     "errorUnavailable": "O serviço de análise não está disponível neste ambiente.",

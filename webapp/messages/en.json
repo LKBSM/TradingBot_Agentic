@@ -1071,6 +1071,11 @@
     "save": "Save my choice"
   },
   "scanner": {
+    "mode": {
+      "groupLabel": "Scanner mode",
+      "conditions": "Choose my conditions",
+      "describe": "Describe my strategy"
+    },
     "loading": "Loading…",
     "scanInProgress": "Scan in progress…",
     "errorUnavailable": "The scan service is not available in this environment.",

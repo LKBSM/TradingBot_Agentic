@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { ScannerWorkspace } from '@/components/scanner/ScannerWorkspace';
+import { ScannerModeToggle } from '@/components/scanner/ScannerModeToggle';
 import { SubscriptionGate } from '@/components/access/SubscriptionGate';
 
 export async function generateMetadata({
@@ -38,7 +39,10 @@ export default async function ScannerPage({
       paywallTitle={t('scanner.paywallTitle')}
       paywallDescription={t('scanner.paywallDescription')}
     >
-      <ScannerWorkspace locale={locale} />
+      <div className="space-y-4">
+        <ScannerModeToggle locale={locale} active="conditions" />
+        <ScannerWorkspace locale={locale} />
+      </div>
     </SubscriptionGate>
   );
 }

@@ -1071,6 +1071,11 @@
     "save": "Mijn keuze opslaan"
   },
   "scanner": {
+    "mode": {
+      "groupLabel": "Scannermodus",
+      "conditions": "Mijn voorwaarden kiezen",
+      "describe": "Mijn strategie beschrijven"
+    },
     "loading": "Laden…",
     "scanInProgress": "Scan bezig…",
     "errorUnavailable": "De scandienst is niet beschikbaar in deze omgeving.",
