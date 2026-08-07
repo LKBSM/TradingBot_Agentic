@@ -149,6 +149,68 @@ class MultiValueFetcher(ValueFetcher):
         raise NotImplementedError("use fetch_for(source, series_code)")
 
 
+def diagnose_value_fetcher(
+    source: str, series_code: Optional[str], kind: str = "level"
+) -> dict:
+    """Read-only triage (NW-9): WHY a publication's curve is empty in this env.
+
+    Reports whether live values are enabled, whether each key-gated source's key
+    is present, which sources actually REGISTERED, and a live series fetch attempt
+    for ``(source, series_code)``. For Census it also asks the fetcher's own
+    ``diagnose`` for the valid program cells, so a wrong series code is fixed
+    against the real API. No secret is ever returned; never raises."""
+    import os
+
+    out: dict = {
+        "source": source,
+        "series_code": series_code,
+        "values_live": os.environ.get(_ENV_VALUES_LIVE, "").strip().lower()
+        in ("1", "true", "yes"),
+        "keys_present": {
+            "BLS_API_KEY": bool(os.environ.get("BLS_API_KEY")),
+            "BEA_API_KEY": bool(os.environ.get("BEA_API_KEY")),
+            "CENSUS_API_KEY": bool(os.environ.get("CENSUS_API_KEY")),
+        },
+    }
+    try:
+        mvf = build_value_fetcher()
+    except Exception as exc:  # pragma: no cover - defensive
+        out["error"] = f"build_value_fetcher: {type(exc).__name__}: {exc}"
+        return out
+    out["fetcher_built"] = mvf is not None
+    registered = sorted(mvf._by_source.keys()) if mvf is not None else []
+    out["sources_registered"] = registered
+    if mvf is None:
+        out["fetch"] = {"skipped": "live values OFF (CALENDAR_VALUES_LIVE not set)"}
+        return out
+    if source not in registered:
+        out["fetch"] = {"skipped": f"source '{source}' not registered (missing key?)"}
+        return out
+    if not series_code:
+        out["fetch"] = {"skipped": "event has no series_code"}
+        return out
+    try:
+        pts = mvf.series_for(source, series_code, limit=6, kind=kind)
+        out["fetch"] = {
+            "kind": kind,
+            "point_count": len(pts),
+            "sample": [
+                {"period": p.period, "value": p.value, "level": p.level}
+                for p in pts[:3]
+            ],
+        }
+    except Exception as exc:  # pragma: no cover - defensive
+        out["fetch"] = {"error": f"{type(exc).__name__}: {exc}"}
+    # Census-specific: surface the valid program cells so a wrong code is fixable.
+    fetcher = mvf._by_source.get(source)
+    if source == "census" and fetcher is not None and hasattr(fetcher, "diagnose"):
+        try:
+            out["census"] = fetcher.diagnose(series_code)
+        except Exception as exc:  # pragma: no cover - defensive
+            out["census"] = {"error": f"{type(exc).__name__}: {exc}"}
+    return out
+
+
 def build_value_fetcher() -> Optional[MultiValueFetcher]:
     """Build the configured value fetcher, or ``None`` when live values are OFF.
 
@@ -194,4 +256,5 @@ __all__ = [
     "ValueFetcher",
     "MultiValueFetcher",
     "build_value_fetcher",
+    "diagnose_value_fetcher",
 ]

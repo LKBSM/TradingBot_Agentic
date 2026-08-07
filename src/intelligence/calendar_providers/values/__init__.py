@@ -16,6 +16,7 @@ from src.intelligence.calendar_providers.values.base_value import (
     ValueFetcher,
     ValuePoint,
     build_value_fetcher,
+    diagnose_value_fetcher,
 )
 
 __all__ = [
@@ -24,4 +25,5 @@ __all__ = [
     "SeriesPoint",
     "MultiValueFetcher",
     "build_value_fetcher",
+    "diagnose_value_fetcher",
 ]

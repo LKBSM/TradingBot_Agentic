@@ -294,7 +294,17 @@ def _default_date_source(source_key: str) -> Callable[[Dict[str, CatalogEvent]],
 
     def _source(catalog: Dict[str, CatalogEvent]) -> List[ReleaseInstance]:
         if os.environ.get(_ENV_ICS_LIVE, "").strip().lower() in ("1", "true", "yes"):
-            live = ics_date_source(source_key)(catalog)
+            # Census has no .ics feed — only an HTML list-view calendar; it uses a
+            # dedicated live source with the identical keyword-matching seam. Every
+            # other official source reads its iCalendar feed.
+            if source_key == "census":
+                from src.intelligence.calendar_providers.official_sources.census_schedule import (
+                    census_date_source,
+                )
+
+                live = census_date_source(source_key)(catalog)
+            else:
+                live = ics_date_source(source_key)(catalog)
             if live:
                 return live
         return _schedule_date_source(source_key)(catalog)
