@@ -16,8 +16,12 @@ const FULL_ACCESS = {
   entitlements: { instruments: null, timeframes: null, scanner: true, chat: { limit: null, used: 0, remaining: null } },
 };
 
+// A value_series point. `change_mom` is the month-over-month variation and is
+// null when it is not published/computed for that point (NW-8 fallback).
+type SeriesPoint = { period: string; value: number; level: number; change_mom: number | null };
+
 // index_change series: value = yoy %, level = raw index, change_mom = mo %.
-const IDX_SERIES = [
+const IDX_SERIES: SeriesPoint[] = [
   { period: '2025-09', value: 2.9, level: 330.1, change_mom: 0.2 },
   { period: '2025-10', value: 3.0, level: 331.0, change_mom: 0.3 },
   { period: '2025-11', value: 2.8, level: 331.4, change_mom: 0.1 },
@@ -30,7 +34,7 @@ const json = (b: unknown) => ({ status: 200, contentType: 'application/json', bo
 
 function makeEvent(o: {
   key: string; source: string; organism: string | null; seriesCode: string | null;
-  valueUnit: string | null; variationKind: string | null; series: typeof IDX_SERIES | [];
+  valueUnit: string | null; variationKind: string | null; series: SeriesPoint[];
   variationPublished?: boolean;
 }) {
   return {
@@ -95,7 +99,7 @@ for (const vp of [{ w: 1280, h: 800, tag: '1280' }, { w: 390, h: 844, tag: '390'
 
   test(`${vp.tag}: COMPUTED variation — monthly % in evidence, CALCULATED attribution`, async ({ page }) => {
     await page.setViewportSize({ width: vp.w, height: vp.h });
-    const AMT_SERIES = [
+    const AMT_SERIES: SeriesPoint[] = [
       { period: '2026-04', value: 0.3, level: 712000, change_mom: null },
       { period: '2026-05', value: 0.4, level: 716000, change_mom: null },
       { period: '2026-06', value: 0.6, level: 720000, change_mom: null },
