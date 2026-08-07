@@ -473,3 +473,28 @@ describe('NW-8 variation-first curve', () => {
     expect(container.querySelector('.pub-var-level')).toBeNull();
   });
 });
+
+describe('NW-8 Batch 2 computed variation', () => {
+  it('amount_change (computed): monthly % in evidence, amount as level, CALCULATED attribution', () => {
+    const retail = ev({
+      event_id: 'census:us_retail_sales:2026-07-28', source: 'census', event: 'Ventes de détail',
+      organism: 'U.S. Census Bureau', series_code: 'MARTS-RSAFS',
+      value_unit: 'millions de dollars', variation_kind: 'amount_change',
+      variation_published: false, actual: 720000, actual_state: 'published',
+      value_series: [
+        { period: '2026-05', value: 0.4, level: 716000 },
+        { period: '2026-06', value: 0.6, level: 720000 },
+      ],
+    });
+    const { container } = renderDetail('census:us_retail_sales:2026-07-28', retail);
+    const head = container.querySelector('.pub-var-headline')?.textContent ?? '';
+    expect(head).toContain('+0,6'); // month-over-month %, signed
+    expect(container.querySelector('.pub-var-level')?.textContent ?? '').toContain('720'); // amount level
+    // attribution is the COMPUTED one — names MIA + organism, marked "calculée"
+    const attrib = container.querySelector('.pub-curve-attrib')?.textContent ?? '';
+    expect(attrib.toLowerCase()).toContain('calculée');
+    expect(attrib).toContain('U.S. Census Bureau');
+    // explanation sentence rendered (us_retail_sales now whitelisted)
+    expect(container.querySelector('.pub-curve-explain')).not.toBeNull();
+  });
+});

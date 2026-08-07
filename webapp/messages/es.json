@@ -2785,8 +2785,17 @@
           "us_jolts": "Number of job openings unfilled on the last day of the month. Read as its month-to-month variation.",
           "us_gdp": "Gross domestic product measures the value of everything produced in the country. The published figure is already its quarter-over-quarter variation, in volume.",
           "ea_hicp_flash": "The harmonised consumer price index tracks price changes across the euro area. The published figure is already its year-over-year variation.",
-          "ea_gdp_flash": "A first estimate of the euro-area gross domestic product's variation from one quarter to the next, in volume."
-        }
+          "ea_gdp_flash": "A first estimate of the euro-area gross domestic product's variation from one quarter to the next, in volume.",
+          "us_pce": "The personal consumption expenditures (PCE) price index tracks the price of what households consume, in a broader basket than the CPI. Read as its month-over-month and year-over-year variation.",
+          "us_retail_sales": "Total sales of retail and food-service businesses in the month. Read as its month-to-month variation.",
+          "us_housing_starts": "Number of homes on which construction began in the month, stated at an annual rate. Read as its month-to-month variation.",
+          "us_durable_goods": "Value of new orders for durable goods (cars, machinery, aircraft…) placed with manufacturers in the month. Read as its month-to-month variation.",
+          "us_fomc_rate": "The federal funds target range set by the Federal Reserve. It is the rate at which banks lend to each other overnight, and it steers the cost of credit in the economy.",
+          "ea_unemployment": "Share of the active population without a job and looking for one, in the euro area.",
+          "ea_ecb_rate": "The policy rate set by the European Central Bank. It is the reference rate for credit in the euro area."
+        },
+        "varAmount": "<b>{value}</b> over the month",
+        "levelAmount": "amount: {level} {unit}"
       },
       "mia": {
         "capability": "M.I.A describe hechos medidos y explica conceptos. No dirá qué hará el precio, ni qué valor se publicará, ni si conviene intervenir — y lo dirá si se lo preguntas.",

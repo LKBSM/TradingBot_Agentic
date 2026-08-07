@@ -162,6 +162,32 @@ def test_bls_fetch_series_index_change_carries_yoy_level_and_mom():
     assert '"calculations": true' in sent["body"]
 
 
+def test_derive_variation_amount_is_monthly_percent_from_levels():
+    from src.intelligence.calendar_providers.values.base_value import (
+        SeriesPoint, derive_variation_series,
+    )
+    levels = [SeriesPoint(period=f"2025-{m:02d}", value=100.0 + m) for m in range(1, 4)]
+    out = derive_variation_series(levels, "amount")
+    # First point dropped (no prior month); value = (level_t/level_{t-1} - 1)*100.
+    assert [p.period for p in out] == ["2025-02", "2025-03"]
+    assert round(out[-1].value, 4) == round((103.0 / 102.0 - 1) * 100, 4)
+    assert out[-1].level == 103.0 and out[-1].change_mom is None
+
+
+def test_derive_variation_index_carries_yoy_level_and_mom():
+    from src.intelligence.calendar_providers.values.base_value import (
+        SeriesPoint, derive_variation_series,
+    )
+    levels = [SeriesPoint(period=str(i), value=100.0 + i) for i in range(14)]
+    out = derive_variation_series(levels, "index")
+    # Points before the 12th are dropped (no year-ago level).
+    assert [p.period for p in out] == ["12", "13"]
+    last = out[-1]  # level 113 vs 101 a year earlier, 112 a month earlier
+    assert round(last.value, 4) == round((113.0 / 101.0 - 1) * 100, 4)  # yoy
+    assert round(last.change_mom, 4) == round((113.0 / 112.0 - 1) * 100, 4)  # mo
+    assert last.level == 113.0
+
+
 def test_bls_fetch_series_count_change_is_absolute_monthly_change():
     f = BLSValueFetcher(api_key="KEY", http_post=lambda url, body: _BLS_SERIES_COUNT)
     pts = f.fetch_series("CES0000000001", kind="count_change")

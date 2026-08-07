@@ -31,6 +31,7 @@ const json = (b: unknown) => ({ status: 200, contentType: 'application/json', bo
 function makeEvent(o: {
   key: string; source: string; organism: string | null; seriesCode: string | null;
   valueUnit: string | null; variationKind: string | null; series: typeof IDX_SERIES | [];
+  variationPublished?: boolean;
 }) {
   return {
     window_start: iso(-40 * D), window_end: iso(40 * D), generated_at: iso(0),
@@ -41,7 +42,7 @@ function makeEvent(o: {
       license_label: 'x', event: o.key.toUpperCase(), currency: 'USD', organism: o.organism,
       periodicity: 'monthly', scheduled_at: iso(12 * D), source_timezone: 'America/New_York',
       time_confirmed: true, markets: ['XAUUSD', 'EURUSD'], value_unit: o.valueUnit,
-      variation_kind: o.variationKind, variation_published: true,
+      variation_kind: o.variationKind, variation_published: o.variationPublished ?? true,
       actual: null, actual_initial: null, previous: null, revised: false, revised_at: null,
       actual_state: 'pending', refreshed_at: iso(0), value_series: o.series,
     }],
@@ -92,6 +93,23 @@ for (const vp of [{ w: 1280, h: 800, tag: '1280' }, { w: 390, h: 844, tag: '390'
     await page.screenshot({ path: `test-results/nw8-published-${vp.tag}.png`, fullPage: true });
   });
 
+  test(`${vp.tag}: COMPUTED variation — monthly % in evidence, CALCULATED attribution`, async ({ page }) => {
+    await page.setViewportSize({ width: vp.w, height: vp.h });
+    const AMT_SERIES = [
+      { period: '2026-04', value: 0.3, level: 712000, change_mom: null },
+      { period: '2026-05', value: 0.4, level: 716000, change_mom: null },
+      { period: '2026-06', value: 0.6, level: 720000, change_mom: null },
+    ];
+    const ev = makeEvent({ key: 'us_retail_sales', source: 'census', organism: 'U.S. Census Bureau', seriesCode: 'MARTS-RSAFS', valueUnit: 'millions de dollars', variationKind: 'amount_change', variationPublished: false, series: AMT_SERIES });
+    if (!(await goto(page, ev, 'census%3Aus_retail_sales%3A2026-08-12'))) { test.skip(true, 'gated'); return; }
+    await expect(page.locator('.pub-var-headline')).toBeVisible();
+    const attrib = ((await page.locator('.pub-curve-attrib').textContent()) ?? '').toLowerCase();
+    expect(attrib).toContain('calculée'); // computed, not "publiée"
+    await expect(page.locator('.pub-curve-explain')).toBeVisible();
+    await assertNoForbiddenVocab(page);
+    await page.screenshot({ path: `test-results/nw8-computed-${vp.tag}.png`, fullPage: true });
+  });
+
   test(`${vp.tag}: NO variation — level only, no attribution/explain block`, async ({ page }) => {
     await page.setViewportSize({ width: vp.w, height: vp.h });
     const ev = makeEvent({ key: 'us_fomc_minutes', source: 'federal_reserve', organism: 'Réserve fédérale', seriesCode: null, valueUnit: null, variationKind: null, series: [] });
@@ -104,9 +122,9 @@ for (const vp of [{ w: 1280, h: 800, tag: '1280' }, { w: 390, h: 844, tag: '390'
 
   test(`${vp.tag}: variation but NO written sentence — no explanation block rendered`, async ({ page }) => {
     await page.setViewportSize({ width: vp.w, height: vp.h });
-    // us_pce has a variation_kind concept but is NOT in CURVE_EXPLAIN yet → no sentence.
-    const ev = makeEvent({ key: 'us_pce', source: 'bea', organism: 'Bureau of Economic Analysis', seriesCode: 'NIPA-T20804', valueUnit: 'indice (2017 = 100)', variationKind: 'index_change', series: IDX_SERIES });
-    if (!(await goto(page, ev, 'bea%3Aus_pce%3A2026-08-12'))) { test.skip(true, 'gated'); return; }
+    // A publication NOT whitelisted in CURVE_EXPLAIN → variation shown, NO sentence.
+    const ev = makeEvent({ key: 'adp', source: 'forexfactory', organism: 'ADP', seriesCode: 'ADP-NEP', valueUnit: 'indice (2017 = 100)', variationKind: 'index_change', series: IDX_SERIES });
+    if (!(await goto(page, ev, 'forexfactory%3Aadp%3A2026-08-12'))) { test.skip(true, 'gated'); return; }
     await expect(page.locator('.pub-curve-explain')).toHaveCount(0); // no generic filler
     await expect(page.locator('.pub-var-headline')).toBeVisible();   // variation still shown
     await assertNoForbiddenVocab(page);

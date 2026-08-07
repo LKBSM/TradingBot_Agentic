@@ -49,6 +49,40 @@ class SeriesPoint:
     change_mom: Optional[float] = None
 
 
+def derive_variation_series(points: "List[SeriesPoint]", mode: str) -> "List[SeriesPoint]":
+    """Compute a VARIATION series from a series of published LEVELS (NW-8 Batch 2).
+
+    The organism publishes only the level (a price index, a dollar amount) and not
+    the change, so the product computes it — EXACTLY, from two published levels of
+    the SAME (seasonally-adjusted) series — and the caller attributes it as
+    "computed", never "published". No value is fabricated: a point without the
+    levels its change needs is dropped.
+
+    ``mode``:
+      · "index"  — an index: ``value`` = the 12-month % change (headline),
+        ``level`` = the index, ``change_mom`` = the 1-month % change. Points before
+        the 12th are dropped (no year-ago level).
+      · "amount" — a dollar amount / count: ``value`` = the 1-month % change
+        (headline), ``level`` = the amount. The first point is dropped.
+
+    ``points`` are the level series oldest→newest (``value`` holding the level)."""
+    levels = [p.value for p in points]
+    out: List[SeriesPoint] = []
+    for i, p in enumerate(points):
+        lvl = levels[i]
+        mom = ((lvl / levels[i - 1] - 1.0) * 100.0) if i >= 1 and levels[i - 1] else None
+        if mode == "index":
+            if i < 12 or not levels[i - 12]:
+                continue  # no year-ago level → no 12-month change → no point
+            yoy = (lvl / levels[i - 12] - 1.0) * 100.0
+            out.append(SeriesPoint(period=p.period, value=yoy, level=lvl, change_mom=mom))
+        else:  # "amount"
+            if mom is None:
+                continue  # no prior month → no 1-month change → no point
+            out.append(SeriesPoint(period=p.period, value=mom, level=lvl))
+    return out
+
+
 class ValueFetcher(ABC):
     """Fetches the published value for one series of one source."""
 
