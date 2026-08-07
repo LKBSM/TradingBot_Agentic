@@ -706,9 +706,50 @@ export function ReadingChart({
     chart.subscribeClick(onClick);
     chart.subscribeCrosshairMove(onMove);
 
+    // ── CHART-1: bound zoom-in, prefetch history on zoom-out, and flip the
+    //    "start of data" / "beyond analysis window" flags. Bound to the LIVE
+    //    `chart` here (like the crosshair sub) so it is never orphaned by a dev
+    //    strict-mode remount. Reads live handles from refs (no re-subscribe).
+    const onVisibleRange = (range: { from: number; to: number } | null) => {
+      if (!range) return;
+      // (1) clamp tightest zoom-in for wheel/pinch too (buttons clamp in zoom()).
+      if (range.to - range.from < MIN_VISIBLE_BARS - 0.5 && !clampingRef.current) {
+        clampingRef.current = true;
+        const center = (range.from + range.to) / 2;
+        chart.timeScale().setVisibleLogicalRange({
+          from: center - MIN_VISIBLE_BARS / 2,
+          to: center + MIN_VISIBLE_BARS / 2,
+        });
+        requestAnimationFrame(() => {
+          clampingRef.current = false;
+        });
+        return;
+      }
+      const n = lastCandlesRef.current?.length ?? 0;
+      // (2) prefetch the previous page as the left edge nears the oldest bar.
+      const h = historyRef.current;
+      if (h && h.hasMore && !h.loadingOlder && !h.olderError && range.from < HISTORY_PREFETCH_BARS) {
+        h.loadOlder();
+      }
+      // (3) flags (only on change): at the history floor / beyond analysis window.
+      const atFloor = (!h || !h.hasMore) && range.from < 0.5;
+      const aw = analysisWindowRef.current;
+      const beyond = aw != null && n > aw && range.from < n - aw;
+      if (atFloor !== atFloorRef.current) {
+        atFloorRef.current = atFloor;
+        setAtHistoryFloor(atFloor);
+      }
+      if (beyond !== beyondRef.current) {
+        beyondRef.current = beyond;
+        setBeyondAnalysis(beyond);
+      }
+    };
+    chart.timeScale().subscribeVisibleLogicalRangeChange(onVisibleRange);
+
     return () => {
       chart.unsubscribeClick(onClick);
       chart.unsubscribeCrosshairMove(onMove);
+      chart.timeScale().unsubscribeVisibleLogicalRangeChange(onVisibleRange);
       // Stop any in-flight camera tween / respiration loop before teardown.
       cancelTweenRef.current?.();
       cancelTweenRef.current = null;
@@ -1450,60 +1491,6 @@ export function ReadingChart({
     }
   }, []);
 
-  // ── CHART-1 timescale subscription: bound zoom-in, prefetch history on
-  // zoom-out, and flip the "start of data" / "beyond analysis window" flags. Set
-  // up once the chart exists; reads live handles from refs (no re-subscribe).
-  React.useEffect(() => {
-    const chart = chartRef.current;
-    if (!chart) return;
-    const ts = chart.timeScale();
-    const onRange = (range: { from: number; to: number } | null) => {
-      if (!range) return;
-      // (1) clamp tightest zoom-in for wheel/pinch too (buttons clamp in zoom()).
-      const spanNow = range.to - range.from;
-      if (spanNow < MIN_VISIBLE_BARS - 0.5 && !clampingRef.current) {
-        clampingRef.current = true;
-        const center = (range.from + range.to) / 2;
-        ts.setVisibleLogicalRange({
-          from: center - MIN_VISIBLE_BARS / 2,
-          to: center + MIN_VISIBLE_BARS / 2,
-        });
-        requestAnimationFrame(() => {
-          clampingRef.current = false;
-        });
-        return;
-      }
-      const n = lastCandlesRef.current?.length ?? 0;
-      // (2) prefetch the previous page when the left edge nears the oldest bar.
-      const h = historyRef.current;
-      if (
-        h &&
-        h.hasMore &&
-        !h.loadingOlder &&
-        !h.olderError &&
-        range.from < HISTORY_PREFETCH_BARS
-      ) {
-        h.loadOlder();
-      }
-      // (3) flags (only on change): at the history floor / beyond analysis window.
-      const atFloor = (!h || !h.hasMore) && range.from < 0.5;
-      const aw = analysisWindowRef.current;
-      const beyond = aw != null && n > aw && range.from < n - aw;
-      if (atFloor !== atFloorRef.current) {
-        atFloorRef.current = atFloor;
-        setAtHistoryFloor(atFloor);
-      }
-      if (beyond !== beyondRef.current) {
-        beyondRef.current = beyond;
-        setBeyondAnalysis(beyond);
-      }
-    };
-    ts.subscribeVisibleLogicalRangeChange(onRange);
-    return () => {
-      ts.unsubscribeVisibleLogicalRangeChange(onRange);
-    };
-    // Re-subscribe if the chart instance is recreated (theme change).
-  }, [resolvedTheme]);
 
   // Timezone indicator — resolved on the client only (the browser's offset), so
   // it never mismatches the server render.

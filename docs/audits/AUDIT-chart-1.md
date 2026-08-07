@@ -74,3 +74,37 @@
 4. **Au-delà de la fenêtre d'analyse** (M15 2 880 ; H1/H4/D1 500) : bougies affichées mais **aucune structure détectée** → l'indiquer (ne pas laisser croire « pas de structure »).
 5. **Étiquettes** : ancrer chaque étiquette **à sa zone** (pas de clamp aveugle à x=2) ; **anti-collision** (décalage/regroupement « N zones » au survol) ; **réserver l'espace du badge EN DIRECT** (plan supérieur) ; réduire la **densité d'annotations** à fort dézoome.
 6. **Perf** : mesurer le rendu avant/après à plusieurs zooms ; rester sur le primitive canvas (PERF-2).
+
+---
+
+## RÉALISATION (2026-08-07)
+
+### Données — profondeur à la demande (pas de rechargement, jamais tout d'un coup)
+- **Backend** `src/storage/candles_cache_store.py::get_candles_before(instrument, tf, before_ts, n)` : lit jusqu'à `n` bougies **strictement avant** `before_ts` (ascendant, index `ts DESC`, borne comparée en ISO). Miroir de `get_last_n_candles`.
+- **Backend** `src/api/routes/candles.py` : param `before=<epoch UTC>` + champ `has_more`. `before` → `get_candles_before(before, limit+1)` ; `has_more = len(block) > limit` ; on retire la bougie sentinelle la plus ancienne (contiguïté). **Plancher atteint = 200 vide** (jamais 404, jamais de mur silencieux). Le chemin initial (sans `before`) calcule aussi `has_more`. `MAX_LIMIT=1000`.
+- **Front** `lib/market-reading/api-client.ts` : `fetchCandlesPage()` → `{candles, hasMore}`, ajoute `&before=`. `lib/market-reading/hooks.ts::useCandles` : `mergeCandlesByTime` (union par temps), **fusionne** la fenêtre fraîche dans l'historique existant (une clôture de bougie ne **remplace** jamais l'historique), expose `hasMoreHistory / loadingOlder / olderError / loadOlder`. `loadOlder` demande `before = première bougie affichée`, **préfixe** la page ; sur échec **garde les bougies** + `olderError` (réessai possible).
+
+### Zoom + navigation
+- `ReadingChart.tsx` : `MIN_VISIBLE_BARS = 20` (resserrement max borné pour molette/pincement **et** boutons `zoom()`), `HISTORY_PREFETCH_BARS = 15`. Abonnement `subscribeVisibleLogicalRangeChange` **placé dans l'effet de création** (lié au `chart` vivant, comme le crosshair — jamais orphelin) : (1) clamp du zoom-in, (2) `loadOlder()` quand le bord gauche approche l'origine, (3) bascule des drapeaux *plancher* / *hors-fenêtre* (uniquement au changement, pas de churn React). Boutons molette (centré curseur), +/−, **Ajuster** (`fitContent`), **bougie la plus récente** (`toLatest`).
+- **Limite d'historique** : pilule discrète haut-centre « début des données disponibles pour cette unité » (+ état *chargement* et *erreur avec réessai*).
+- **Hors fenêtre d'analyse** : pilule bas-centre « bougies affichées mais aucune structure détectée au-delà de N » (`analysisWindowBars` passé par `ReadingColumn`/`DesktopReading`).
+
+### Étiquettes — ancrage + anti-collision + badge
+- `lib/chart/zoneOverlayPrimitive.ts` : `placeLabels(items, reserved, plotH, cap=14)` **pur** (dé-collision : décalage vers le bas jusqu'au dégagement, sinon regroupe en débordement ; jamais au-dessus de l'ancre ; jamais hors plot). Seed avec le **rect réservé du badge** + front + liquidité. Débordement → **une** pilule « N zones ». Badge `badgeReserve {w:150,h:22}` réservé quand marché fermé ou live → **ne recouvre plus** les étiquettes.
+
+### Détection — INCHANGÉE
+Aucune règle touchée. Le zoom est purement affichage ; les zones hors fenêtre ne sont simplement pas dessinées. `analysisWindowBars` n'est **que lu** pour l'indicateur.
+
+### Performance
+- Dé-collision `placeLabels` : O(n²) mais **n plafonné à 14** → coût négligeable par frame. Dessin de l'overlay inchangé sinon (primitive canvas PERF-2 conservé, **aucun retour aux div HTML**).
+- Drapeaux plancher/hors-fenêtre : `setState` **uniquement au changement** → pas de re-render par frame de molette.
+- Pagination : ajoute des bougies à la série (rendu natif lightweight-charts), bornée par ce qui est chargé ; **jamais** de lecture du CSV 7 ans, **jamais** tout l'historique d'un coup.
+
+### Tests
+- Backend : `test_candles_cache_store.py` (+5 `get_candles_before`), `test_candles_endpoint.py` (+3 `before`/`has_more`) — **40 pass**.
+- Front unit : `useCandles.test.ts` (+3 pagination : préfixe/plancher, no-op au plancher, échec garde les bougies), `placeLabels.test.ts` (5 : pas de chevauchement, dégagé du badge, regroupement au cap, pas hors plot, jamais au-dessus de l'ancre) — **17 pass**.
+- `tsc --noEmit` : **0 erreur**. Build : vert.
+- Playwright `chart1-zoom.spec.ts` (1280×800 + 390×844) : **8 pass** — rendu du graphique + jeu complet de contrôles présents (dont « bougie la plus récente », qui n'apparaît que lorsque la pagination d'historique est câblée) + contrôles opérables sans jamais vider le graphique.
+
+### Limite E2E connue (à valider en LIVE)
+La **cascade interactive** zoom-out → prefetch → `loadOlder` → pilules *plancher*/*hors-fenêtre* n'est **pas** pilotable de façon fiable par les événements synthétiques Playwright (molette/glisser n'atteignent pas le canvas lightweight-charts ; `getVisibleLogicalRange()` renvoie `null` dans le harnais). L'abonnement se déclenche correctement sur `setVisibleLogicalRange` (prouvé), et **toute la logique** (fusion/plancher/préservation + dé-collision + bornes) est couverte par les tests unitaires. → **La molette/glisser réels et le déclenchement des pilules doivent être confirmés en live** avant merge.
