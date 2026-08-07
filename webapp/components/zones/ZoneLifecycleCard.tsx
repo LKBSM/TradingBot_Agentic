@@ -1,172 +1,344 @@
 'use client';
 
 import * as React from 'react';
-import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useReadingFormatters } from '@/lib/market-reading/use-reading-formatters';
-import type { Candle, FVGStatus, OBStatus } from '@/types/market-reading';
+import type { Candle, LiquidityPool } from '@/types/market-reading';
 import {
   barsSince,
-  buildTimeline,
-  fillFraction,
-  findOverlaps,
+  buildContactTimeline,
+  contactCount,
   formatDurationShort,
-  priceRelation,
+  formatZoneShortTime,
+  fvgContactFills,
+  isConsumed,
+  type ContactTimelineLabels,
   type DurationLabels,
   type SiblingZone,
-  type TimelineLabels,
   type ZoneLifecycle,
+  zoneHeaderState,
+  zoneProximity,
 } from '@/lib/zones/lifecycle';
+import { buildConfluence, type ConfluenceFact } from '@/lib/zones/confluence';
+import { formationSession } from '@/lib/zones/formation-session';
 import { ZoneTimeline } from './ZoneTimeline';
 
 type ZonesT = ReturnType<typeof useTranslations>;
 type ReadingFmt = ReturnType<typeof useReadingFormatters>;
 
 /**
- * One zone card — UI-2 terminal reference (`.zone`). Every line is a present/past
- * FACT read off the engine payload, restyled onto the shared design tokens:
+ * One zone card (VZ-1). Every line is a present/past FACT read off the engine
+ * payload — the zone's geometry, its per-contact ledger, the break it precedes.
+ * The card carries, in order: header · proximity · confluence · contacts ·
+ * timeline · fill · origin · details · actions. Selecting it (a click) makes it
+ * the M.I.A subject — there is deliberately NO « Analyser » button.
  *
- *   · `.ztop` — a `.tagx` type/direction tag (OB↑ / OB↓ / FVG↑ / FVG↓, bull/bear
- *     by direction), the price band as a mono `.rng`, and a `.zstate` badge
- *     (Actif / « Comblé N % » / Mitigé). A mitigated/filled card gets `.mitig`.
- *   · `.tl` — the lifecycle timeline (only engine-recorded events; `mitigated_at`
- *     is the SINGLE FIRST contact — never a « ×N »: the engine tracks no per-test
- *     history).
- *   · `.fillbar` — FVG partial fill, from the real `fill_level` price only.
- *   · `.znarr` — a factual sentence assembled from the same engine facts.
- *   · `.zfoot` — « Analyser » (deep-link carrying the REAL engine id) and
- *     « Masquer / Afficher » (hide-by-id through the shared view state).
- *
- * The chevron unfolds ONLY the cross-timeframe geometric overlaps (a secondary
- * fact); the lifecycle itself is always visible, as in the reference.
+ * Vocabulary discipline (mission §0): containment is « à l'intérieur de / englobe
+ * / au même niveau » (never « chevauche »); nothing is « respectée / validée /
+ * solide / fiable / de qualité » — only entered / exited / traversed, with dates.
  */
 
-function statusLabel(zone: ZoneLifecycle, fmt: ReadingFmt): string {
-  return zone.kind === 'ob'
-    ? fmt.obStatus(zone.status as OBStatus)
-    : fmt.fvgStatus(zone.status as FVGStatus);
-}
-
-/** `.tagx` tone by direction — bull / bear / neutral (never a decorative hue). */
 function tagTone(direction: ZoneLifecycle['direction']): 'bull' | 'bear' | 'neu' {
   if (direction === 'bullish') return 'bull';
   if (direction === 'bearish') return 'bear';
   return 'neu';
 }
 
-/** "OB ↑" / "FVG ↓" — kind + a direction arrow (nothing when direction is null). */
 function tagLabel(zone: ZoneLifecycle): string {
   const kind = zone.kind === 'ob' ? 'OB' : 'FVG';
   const arrow = zone.direction === 'bullish' ? ' ↑' : zone.direction === 'bearish' ? ' ↓' : '';
   return `${kind}${arrow}`;
 }
 
-/**
- * The `.zstate` badge — the zone's present lifecycle state, one of three tones:
- *   · Actif (`zs-a`)          — OB/FVG still active
- *   · « Comblé N % » (`zs-f`) — a partially-filled FVG (fraction from fill_level)
- *   · Mitigé (`zs-m`)         — a mitigated OB / fully-filled FVG (card = .mitig)
- * Descriptive only: it states what the engine records, never a future effect.
- */
-function zoneState(
-  zone: ZoneLifecycle,
-  frac: number | null,
-  t: ZonesT,
-): { cls: 'zs-a' | 'zs-f' | 'zs-m'; label: string; mitig: boolean } {
-  if (zone.isMitigated && zone.status === 'partially_filled' && frac != null) {
-    return { cls: 'zs-f', label: t('state.filledPct', { pct: Math.round(frac * 100) }), mitig: false };
+/** The header badge — a fact, never a judgement. */
+function headerBadge(zone: ZoneLifecycle, t: ZonesT): { cls: string; label: string } {
+  const s = zoneHeaderState(zone);
+  switch (s.key) {
+    case 'consumed':
+      return { cls: 'zs-m', label: t('header.consumed') };
+    case 'contacts':
+      return { cls: 'zs-f', label: t('header.contacts', { count: s.count }) };
+    case 'never_filled':
+      return { cls: 'zs-a', label: t('header.neverFilled') };
+    default:
+      return { cls: 'zs-a', label: t('header.untouched') };
   }
-  if (zone.isMitigated) {
-    return { cls: 'zs-m', label: t('state.mitigated'), mitig: true };
+}
+
+/** Full kind + direction, e.g. « Order Block haussier ». */
+function kindDir(kind: 'ob' | 'fvg', dir: ZoneLifecycle['direction'], t: ZonesT, fmt: ReadingFmt): string {
+  const k = kind === 'ob' ? t('kind.ob') : t('kind.fvg');
+  return dir ? `${k} ${fmt.direction(dir)}` : k;
+}
+
+function edgeWord(edge: 'low' | 'high', t: ZonesT): string {
+  return t(`proximity.edge.${edge}`);
+}
+
+// ─── Proximity block ─────────────────────────────────────────────────────────
+
+function ProximityBlock({
+  zone,
+  price,
+  instrument,
+  t,
+  fmt,
+  locale,
+}: {
+  zone: ZoneLifecycle;
+  price: number | null;
+  instrument: string;
+  t: ZonesT;
+  fmt: ReadingFmt;
+  locale: string;
+}) {
+  const prox = zoneProximity(zone, price);
+  if (!prox) return null;
+
+  const last = zone.contacts[zone.contacts.length - 1] ?? null;
+  const nearEdge: 'low' | 'high' = !prox.inside && prox.side === 'above' ? 'low' : 'high';
+
+  // « Dernier contact » line — describes the last observed contact by outcome.
+  let lastLine: React.ReactNode = null;
+  if (prox.inside) {
+    lastLine = null; // covered by the "entré" row below
+  } else if (!last) {
+    lastLine = <span className="v faint">{t('proximity.neverReturned')}</span>;
+  } else {
+    const when = fmt.relativePast(last.at);
+    const lvl = fmt.price(last.level, instrument);
+    if (last.outcome === 'traversal') {
+      lastLine = <span className="v">{t('proximity.lastTraversal', { when, level: lvl })}</span>;
+    } else if (last.outcome === 'edge_touch') {
+      lastLine = (
+        <span className="v">{t('proximity.lastEdge', { when, edge: edgeWord(nearEdge, t) })}</span>
+      );
+    } else {
+      lastLine = (
+        <span className="v">
+          {t('proximity.lastEntry', { when, level: lvl, exit: t(`proximity.exitBy.${nearEdge}`) })}
+        </span>
+      );
+    }
   }
-  return { cls: 'zs-a', label: t('state.active'), mitig: false };
+
+  // Gauge extent spans the band and the price, with light padding.
+  const lo = Math.min(zone.levelLow, price ?? zone.levelLow);
+  const hi = Math.max(zone.levelHigh, price ?? zone.levelHigh);
+  const pad = Math.max((hi - lo) * 0.18, (zone.levelHigh - zone.levelLow) || 1) * 0.5;
+  const eLo = lo - pad;
+  const eHi = hi + pad;
+  const span = eHi - eLo || 1;
+  const bandLeft = ((zone.levelLow - eLo) / span) * 100;
+  const bandRight = 100 - ((zone.levelHigh - eLo) / span) * 100;
+  const priceLeft = price != null ? ((price - eLo) / span) * 100 : null;
+
+  const enteredAt = prox.inside
+    ? [...zone.contacts].reverse().find((c) => c.outcome === 'inside' || c.outcome === 'entry_exit')
+    : null;
+
+  return (
+    <div className={cn('zpx', prox.inside && 'inside')}>
+      {prox.inside ? (
+        <div className="zpxr">
+          <span className="k">{t('proximity.positionLabel')}</span>
+          <span className="v">
+            {t('proximity.insideDist', {
+              low: fmt.points(prox.distToLow, instrument),
+              high: fmt.points(prox.distToHigh, instrument),
+            })}
+          </span>
+        </div>
+      ) : (
+        <div className="zpxr">
+          <span className="k">{t('proximity.distanceLabel')}</span>
+          <span className="v">
+            {t('proximity.distanceLine', {
+              pts: fmt.points(prox.distance, instrument),
+              pct: fmt.pctShort(prox.distancePct),
+              side: t(`proximity.side.${prox.side}`),
+              edge: edgeWord(prox.edge, t),
+            })}
+          </span>
+        </div>
+      )}
+
+      {prox.inside && enteredAt && (
+        <div className="zpxr">
+          <span className="k">{t('proximity.enteredLabel')}</span>
+          <span className="v">
+            {t('proximity.enteredAt', {
+              when: fmt.relativePast(enteredAt.at),
+              time: formatZoneShortTime(enteredAt.at, locale),
+            })}
+          </span>
+        </div>
+      )}
+
+      {lastLine && (
+        <div className="zpxr">
+          <span className="k">{t('proximity.lastContactLabel')}</span>
+          {lastLine}
+        </div>
+      )}
+
+      {priceLeft != null && (
+        <div className="zgauge" aria-hidden>
+          <span className="gband" style={{ left: `${bandLeft}%`, right: `${bandRight}%` }} />
+          <span
+            className="gpx"
+            style={{ left: `${Math.max(0, Math.min(100, priceLeft))}%` }}
+          />
+        </div>
+      )}
+    </div>
+  );
 }
 
-/**
- * Present-tense « still there? » fact — NOT a prediction and independent of
- * whether the zone was tested: an OB is « invalidée » only once price CLOSED
- * through it, an FVG « comblée » only once fully filled.
- */
-function effectiveness(zone: ZoneLifecycle, t: ZonesT): { effective: boolean; label: string } {
-  if (zone.kind === 'ob') {
-    return zone.status === 'invalidated'
-      ? { effective: false, label: t('effectiveness.obSpentLabel') }
-      : { effective: true, label: t('effectiveness.obHeldLabel') };
+// ─── Confluence block ────────────────────────────────────────────────────────
+
+function confluenceLine(f: ConfluenceFact, zone: ZoneLifecycle, t: ZonesT, fmt: ReadingFmt, instrument: string): string {
+  if (f.relation === 'liquidity') {
+    const side = t(`liquiditySide.${f.liquiditySide}`);
+    const status = fmt.liquidityStatus(f.liquidityStatus as never).label.toLowerCase();
+    const level = fmt.price(f.level as number, instrument);
+    if (f.distanceSide === 'inside') {
+      return t('confluence.liquidityInside', { side, status, level });
+    }
+    return t('confluence.liquidity', {
+      side,
+      status,
+      level,
+      pts: fmt.points(f.distance as number, instrument),
+      dside: t(`proximity.side.${f.distanceSide}`),
+      edge: edgeWord(f.distanceSide === 'above' ? 'high' : 'low', t),
+    });
   }
-  return zone.status === 'filled'
-    ? { effective: false, label: t('effectiveness.fvgSpentLabel') }
-    : { effective: true, label: t('effectiveness.fvgHeldLabel') };
+  const kd = kindDir(f.kind as 'ob' | 'fvg', f.direction ?? null, t, fmt);
+  const band = fmt.band(f.levelLow as number, f.levelHigh as number, instrument);
+  const sameUnit = f.timeframe == null;
+  const tf = f.timeframe ?? '';
+  if (f.relation === 'inner') {
+    return sameUnit
+      ? t('confluence.innerSame', { kd, band })
+      : t('confluence.innerTf', { kd, tf, band });
+  }
+  if (f.relation === 'outer') {
+    return sameUnit
+      ? t('confluence.outerSame', { kd, band })
+      : t('confluence.outerTf', { kd, tf, band });
+  }
+  return sameUnit
+    ? t('confluence.sameLevelSame', { kd, band })
+    : t('confluence.sameLevelTf', { kd, tf, band });
 }
 
-/** "prix actuellement dans la zone" / "à 3,40 pts au-dessus du prix" — fact only. */
-function relationLabel(
-  rel: ReturnType<typeof priceRelation>,
-  instrument: string,
-  t: ZonesT,
-  fmt: ReadingFmt,
-): string | null {
-  if (!rel) return null;
-  if (rel.position === 'inside') return t('relation.inside');
-  const dist = fmt.price(rel.distance, instrument);
-  return rel.position === 'above'
-    ? t('relation.above', { dist })
-    : t('relation.below', { dist });
+function ConfluenceBlock({
+  facts,
+  zone,
+  t,
+  fmt,
+  instrument,
+}: {
+  facts: ConfluenceFact[];
+  zone: ZoneLifecycle;
+  t: ZonesT;
+  fmt: ReadingFmt;
+  instrument: string;
+}) {
+  const none = facts.length === 0;
+  return (
+    <div className={cn('zconf', none && 'none')}>
+      <div className="ct">{t('confluence.heading')}</div>
+      {none ? (
+        <div className="cl">{t('confluence.none')}</div>
+      ) : (
+        facts.map((f, i) => (
+          <div className="cl" key={i}>
+            {confluenceLine(f, zone, t, fmt, instrument)}
+          </div>
+        ))
+      )}
+    </div>
+  );
 }
 
-/**
- * "formée il y a 26 bougies (6 h 30)" — bars from the REAL candle window when it
- * reaches back to the formation, exact duration alone otherwise. Never estimated.
- */
-function ageLabel(
-  zone: ZoneLifecycle,
-  candles: Candle[] | null,
-  now: Date,
-  t: ZonesT,
-  durationLabels: DurationLabels,
-): string | null {
-  const createdMs = Date.parse(zone.createdAt);
-  if (Number.isNaN(createdMs)) return null;
-  const elapsed = Math.max(now.getTime() - createdMs, 0);
-  const duration = formatDurationShort(elapsed, durationLabels);
-  const bars = barsSince(candles, zone.createdAt);
-  if (bars == null) return t('age.durationOnly', { duration });
-  if (bars === 0) return t('age.lastCandle');
-  return t('age.withBars', { bars, duration });
+// ─── Contacts ledger ─────────────────────────────────────────────────────────
+
+function ContactsBlock({
+  zone,
+  t,
+  fmt,
+  instrument,
+  locale,
+}: {
+  zone: ZoneLifecycle;
+  t: ZonesT;
+  fmt: ReadingFmt;
+  instrument: string;
+  locale: string;
+}) {
+  const fills = fvgContactFills(zone);
+  const rows = zone.contacts
+    .map((c, i) => ({ c, i }))
+    .filter(({ c }) => c.outcome !== 'inside');
+  if (rows.length === 0) return null;
+
+  return (
+    <div className="zcont">
+      <div className="ct">{t('contacts.heading')}</div>
+      {rows.map(({ c, i }) => {
+        const time = formatZoneShortTime(c.at, locale);
+        const level = fmt.price(c.level, instrument);
+        let text: string;
+        if (c.outcome === 'edge_touch') {
+          text = t('contacts.edgeTouch');
+        } else if (c.outcome === 'traversal') {
+          text = t('contacts.traversal', { level });
+        } else {
+          text = t('contacts.entryExit', { level });
+        }
+        const fill = zone.kind === 'fvg' && fills[i] != null ? fills[i]! : null;
+        return (
+          <div className="cr" key={i}>
+            <i>{time}</i>
+            <span>
+              {text}
+              {fill != null && ` ${t('contacts.fillProgress', { pct: fmt.pctShort(fill) })}`}
+            </span>
+          </div>
+        );
+      })}
+      <div className="cr honesty">
+        <i />
+        <span>{t('contacts.honesty')}</span>
+      </div>
+    </div>
+  );
 }
 
-/** Boolean interaction fact — engine tracks no count, so never a "×N". */
-function testedLabel(zone: ZoneLifecycle, t: ZonesT): string | null {
-  if (!zone.tested) return null;
-  return zone.kind === 'ob' ? t('tested.ob') : t('tested.fvg');
-}
+// ─── Card ────────────────────────────────────────────────────────────────────
 
 export interface ZoneLifecycleCardProps {
   zone: ZoneLifecycle;
   instrument: string;
-  /**
-   * Reference price for the relation badge — the unified latest price when the
-   * feed serves one, the reading's close_price otherwise, null when neither is
-   * available (the badge is then omitted).
-   */
   referencePrice: number | null;
-  /** Real candle window of the SAME combo, for the bar-count age (null = none). */
   candles: Candle[] | null;
-  /** Zones of the other timeframes (same instrument) for the overlap facts. */
+  /** Other LIVE zones of the same reading (for the nested-confluence facts). */
+  sameTfZones: readonly ZoneLifecycle[];
+  /** Zones of the other timeframes (same instrument) for the confluence facts. */
   siblingZones: readonly SiblingZone[];
-  /** Whether this zone is currently hidden from the chart (shared view state). */
+  /** The reading's liquidity pockets (for the nearby-liquidity fact). */
+  liquidityPools: readonly LiquidityPool[];
   isHidden: boolean;
-  /** Toggle the zone's masking by its real id (routed through the id-lock). */
   onToggleHide(zoneId: string): void;
-  /** Deep-link to /app focusing this zone (built with its real id). */
-  appHref: string;
-  /**
-   * True when this card is the target of a `?zone=<id>` deep-link — it then
-   * carries the `.zsel` highlight ring so the referenced card stands out.
-   */
+  /** Focus this zone on the chart (`/app`) via its real engine id. */
+  onShowOnChart(zoneId: string): void;
+  /** Select this zone as the M.I.A subject (a click anywhere on the card). */
+  onSelect(zoneId: string): void;
   isSelected?: boolean;
-  /** Ref to the card root, so the workspace can scroll a deep-linked card into view. */
   cardRef?: React.Ref<HTMLElement>;
 }
 
@@ -175,27 +347,43 @@ export function ZoneLifecycleCard({
   instrument,
   referencePrice,
   candles,
+  sameTfZones,
   siblingZones,
+  liquidityPools,
   isHidden,
   onToggleHide,
-  appHref,
+  onShowOnChart,
+  onSelect,
   isSelected = false,
   cardRef,
 }: ZoneLifecycleCardProps) {
   const t = useTranslations('zones');
   const fmt = useReadingFormatters();
+  const locale = useLocale();
   const [expanded, setExpanded] = React.useState(false);
   const detailsId = React.useId();
 
-  const timelineLabels: TimelineLabels = {
+  const badge = headerBadge(zone, t);
+  const height = zone.levelHigh - zone.levelLow;
+  const heightLabel =
+    referencePrice != null && referencePrice > 0
+      ? t('card.height', {
+          pts: fmt.points(height, instrument),
+          pct: fmt.pctShort(height / referencePrice),
+        })
+      : t('card.heightPtsOnly', { pts: fmt.points(height, instrument) });
+
+  const confluence = React.useMemo(
+    () => buildConfluence(zone, sameTfZones, siblingZones, liquidityPools),
+    [zone, sameTfZones, siblingZones, liquidityPools],
+  );
+
+  const timelineLabels: ContactTimelineLabels = {
     formed: t('timeline.formed'),
-    mitigated: t('timeline.mitigated'),
-    obTested: t('timeline.obTested'),
-    fvgTested: t('timeline.fvgTested'),
-    filled: t('timeline.filled'),
-    partial: t('timeline.partial'),
-    // The live/ongoing step reads « Maintenant » (reference), not the panel label.
-    active: t('timeline.currentStep'),
+    entry: (n, total) => (total > 1 ? t('timeline.entryN', { n }) : t('timeline.entry')),
+    touch: t('timeline.touch'),
+    traversal: t('timeline.traversal'),
+    now: t('timeline.now'),
   };
   const durationLabels: DurationLabels = {
     underMinute: t('duration.underMinute'),
@@ -203,126 +391,164 @@ export function ZoneLifecycleCard({
     hour: t('duration.hour'),
     day: t('duration.day'),
   };
+  const events = buildContactTimeline(zone, timelineLabels);
 
-  const events = buildTimeline(zone, timelineLabels);
-  const frac = zone.status === 'partially_filled' ? fillFraction(zone) : null;
+  // Age (details): exact duration + real bar count when the window reaches back.
+  const createdMs = Date.parse(zone.createdAt);
+  const ageDuration = Number.isNaN(createdMs)
+    ? null
+    : formatDurationShort(Math.max(Date.now() - createdMs, 0), durationLabels);
+  const ageBars = barsSince(candles, zone.createdAt);
 
-  const rel = priceRelation(zone, referencePrice);
-  const relation = relationLabel(rel, instrument, t, fmt);
-  const age = ageLabel(zone, candles, new Date(), t, durationLabels);
-  const tested = testedLabel(zone, t);
-  const overlaps = findOverlaps(zone, siblingZones);
-  const state = zoneState(zone, frac, t);
-  const eff = effectiveness(zone, t);
+  const session = formationSession(zone.createdAt, instrument);
+  const fvgFill = zone.kind === 'fvg' && zone.status === 'partially_filled'
+    ? fvgContactFills(zone).filter((f): f is number => f != null).pop() ?? null
+    : null;
 
-  // The live "Maintenant" sub-line: « prix dedans » when the price sits inside the
-  // band, otherwise the current engine status word (both present-tense facts).
-  const nowSub = rel?.position === 'inside' ? t('timeline.priceInside') : statusLabel(zone, fmt);
+  // ── Origin sentence (« Ce qui l'a créée ») ──
+  let originLine: string | null = null;
+  if (zone.kind === 'ob' && zone.origin) {
+    originLine = t('origin.ob', {
+      kind: zone.origin.kind === 'choch' ? 'CHOCH' : 'BOS',
+      dir: fmt.direction(zone.origin.direction),
+      time: formatZoneShortTime(zone.origin.at, locale),
+      level: fmt.price(zone.origin.level, instrument),
+    });
+  } else if (zone.kind === 'fvg') {
+    originLine = t('origin.fvg');
+  }
 
-  // Secondary `.znarr` facts (age·tested / fill / relation), each present only
-  // when its engine backing exists — joined by « · » with no dangling separator.
-  const secondaryFacts = [
-    tested ?? undefined,
-    frac != null
-      ? t('fill.label', { price: fmt.price(zone.fillLevel as number, instrument), pct: Math.round(frac * 100) })
-      : undefined,
-    relation ?? undefined,
-  ].filter((s): s is string => Boolean(s));
+  const stop = (e: React.MouseEvent) => e.stopPropagation();
 
   return (
     <article
       ref={cardRef}
-      className={cn('zone', state.mitig && 'mitig', isHidden && 'opacity-60', isSelected && 'zsel')}
+      data-zone-id={zone.id}
+      className={cn('zone', isConsumed(zone) && 'mitig', isHidden && 'zhidden', isSelected && 'zsel')}
+      onClick={() => onSelect(zone.id)}
+      aria-current={isSelected ? 'true' : undefined}
     >
-      {/* Header: type/direction tag · price band · state badge */}
+      {/* Header */}
       <div className="ztop">
         <span className={cn('tagx', tagTone(zone.direction))}>{tagLabel(zone)}</span>
         <span className="rng">{fmt.band(zone.levelLow, zone.levelHigh, instrument)}</span>
+        <span className="zhgt">{heightLabel}</span>
         <span className="hsp" />
-        <span className={cn('zstate', state.cls)}>{state.label}</span>
+        <span className={cn('zstate', badge.cls)}>{badge.label}</span>
       </div>
 
-      {/* Lifecycle timeline — only engine-recorded events (single « Testé »). */}
-      <ZoneTimeline events={events} nowSubLabel={nowSub} />
+      {/* Proximity */}
+      <ProximityBlock
+        zone={zone}
+        price={referencePrice}
+        instrument={instrument}
+        t={t}
+        fmt={fmt}
+        locale={locale}
+      />
 
-      {/* FVG partial fill — from the real fill_level price only. */}
-      {frac != null && (
+      {/* Confluence — always present (absence state when nothing detected). */}
+      <ConfluenceBlock facts={confluence} zone={zone} t={t} fmt={fmt} instrument={instrument} />
+
+      {/* Contacts ledger */}
+      <ContactsBlock zone={zone} t={t} fmt={fmt} instrument={instrument} locale={locale} />
+
+      {/* Frise de vie */}
+      <ZoneTimeline events={events} nowSubLabel={t('timeline.now')} />
+
+      {/* FVG partial fill bar */}
+      {fvgFill != null && (
         <div
           className="fillbar"
           role="progressbar"
-          aria-valuenow={Math.round(frac * 100)}
+          aria-valuenow={Math.round(fvgFill * 100)}
           aria-valuemin={0}
           aria-valuemax={100}
           aria-label={t('fill.aria')}
         >
-          <span style={{ width: `${Math.round(frac * 100)}%` }} />
+          <span style={{ width: `${Math.round(fvgFill * 100)}%` }} />
         </div>
       )}
 
-      {/* Factual narration — assembled from the same engine facts, no prediction. */}
-      <p className="znarr">
-        {age && <b>{age}</b>}
-        {secondaryFacts.length > 0 ? `${age ? ' · ' : ''}${secondaryFacts.join(' · ')}` : ''}
-        {age || secondaryFacts.length > 0 ? ' · ' : ''}
-        <b>{eff.label}</b>.
-      </p>
-
-      {/* Cross-timeframe geometric overlaps (secondary fact), unfolded on demand. */}
-      {overlaps.length > 0 && (
-        <>
-          <button
-            type="button"
-            onClick={() => setExpanded((e) => !e)}
-            aria-expanded={expanded}
-            aria-controls={detailsId}
-            className="mb-2 flex items-center gap-1 self-start text-[10.5px] font-medium text-[var(--dim)] transition-colors hover:text-[var(--txt)]"
-          >
-            <ChevronDown
-              aria-hidden
-              className={cn('h-3 w-3 transition-transform', expanded && 'rotate-180')}
-            />
-            {expanded ? t('details.collapse') : t('details.expand')}
-          </button>
-          {expanded && (
-            <div id={detailsId} className="mb-2.5 flex flex-col gap-1">
-              <span className="text-[9px] font-semibold uppercase tracking-wide text-[var(--faint)]">
-                {t('overlaps.heading')}
-              </span>
-              <p className="text-[10.5px] leading-snug text-[var(--faint)]">
-                {t('overlaps.description')}
-              </p>
-              <ul className="flex flex-col gap-0.5">
-                {overlaps.map((o) => (
-                  // Sibling ids are only unique WITHIN a timeframe — prefix it.
-                  <li key={`${o.timeframe}-${o.id}`} className="text-[11px] text-[var(--dim)]">
-                    {t('overlaps.line', {
-                      kind: o.kind === 'ob' ? t('kind.obShort') : t('kind.fvgShort'),
-                      tf: o.timeframe,
-                      dir: o.direction ? ` ${fmt.direction(o.direction)}` : '',
-                      band: fmt.band(o.levelLow, o.levelHigh, instrument),
-                    })}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </>
+      {/* Origin */}
+      {originLine && (
+        <div className="zorg">
+          <div className="ot">{t('origin.heading')}</div>
+          <div className="ol">
+            {originLine}
+            {session && ` ${t('origin.session', { session: t(`session.${session}`) })}`}
+          </div>
+        </div>
       )}
 
-      {/* Actions */}
+      {/* Details (collapsed) */}
+      <div className="zdet">
+        <button
+          type="button"
+          className="zdeth"
+          aria-expanded={expanded}
+          aria-controls={detailsId}
+          onClick={(e) => {
+            stop(e);
+            setExpanded((v) => !v);
+          }}
+        >
+          <ChevronDown aria-hidden className={cn('h-3 w-3 transition-transform', expanded && 'rotate-180')} />
+          {t('details.heading')}
+        </button>
+        {expanded && (
+          <div id={detailsId} className="zkv">
+            <Kv k={t('details.high')} v={fmt.price(zone.levelHigh, instrument)} mono />
+            <Kv k={t('details.low')} v={fmt.price(zone.levelLow, instrument)} mono />
+            <Kv k={t('details.mid')} v={fmt.price((zone.levelHigh + zone.levelLow) / 2, instrument)} mono />
+            <Kv k={t('details.height')} v={heightLabel} mono />
+            {ageDuration && (
+              <Kv
+                k={t('details.age')}
+                v={ageBars != null ? t('details.ageWithBars', { duration: ageDuration, bars: ageBars }) : ageDuration}
+              />
+            )}
+            <Kv k={t('details.entries')} v={String(zone.contacts.filter((c) => c.outcome === 'entry_exit').length)} />
+            <Kv k={t('details.edgeTouches')} v={String(zone.contacts.filter((c) => c.outcome === 'edge_touch').length)} />
+            {session && <Kv k={t('details.session')} v={t(`session.${session}`)} />}
+            <Kv k={t('details.id')} v={zone.id} mono />
+          </div>
+        )}
+      </div>
+
+      {/* Actions — no « Analyser » (selecting the card is enough). */}
       <div className="zfoot">
-        <Link href={appHref} className="btn acc" aria-label={t('actions.analyzeAria')}>
-          {t('actions.analyze')}
-        </Link>
         <button
           type="button"
           className="btn"
-          onClick={() => onToggleHide(zone.id)}
-          aria-pressed={isHidden}
+          onClick={(e) => {
+            stop(e);
+            onShowOnChart(zone.id);
+          }}
         >
-          {isHidden ? t('actions.show') : t('actions.hide')}
+          {t('actions.show')}
+        </button>
+        <button
+          type="button"
+          className="btn gh"
+          aria-pressed={isHidden}
+          onClick={(e) => {
+            stop(e);
+            onToggleHide(zone.id);
+          }}
+        >
+          {isHidden ? t('actions.unhide') : t('actions.hide')}
         </button>
       </div>
     </article>
+  );
+}
+
+function Kv({ k, v, mono }: { k: string; v: string; mono?: boolean }) {
+  return (
+    <div className="zkvc">
+      <div className="k">{k}</div>
+      <div className={cn('v', mono && 'mono')}>{v}</div>
+    </div>
   );
 }

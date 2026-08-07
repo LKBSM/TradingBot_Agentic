@@ -575,6 +575,436 @@
   display: flex;
   gap: 8px;
 }
+.app-shell .btn.gh {
+  color: var(--faint);
+  border-color: transparent;
+}
+.app-shell .zone {
+  cursor: pointer;
+}
+.app-shell .zone.zhidden {
+  opacity: 0.55;
+}
+
+/* ── VZ-1: header height, layout, blocks ──────────────────────────────────── */
+.app-shell .ztop .zhgt {
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--faint);
+}
+.app-shell .zlayout {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 18px;
+  align-items: start;
+}
+.app-shell .zmia-col {
+  position: sticky;
+  top: 16px;
+}
+.app-shell .zsep {
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--faint);
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin: 18px 0 10px;
+}
+.app-shell .zsep::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+.app-shell section:first-child .zsep {
+  margin-top: 2px;
+}
+
+/* Proximity */
+.app-shell .zpx {
+  border: 1px solid var(--line-2);
+  border-radius: 9px;
+  background: var(--panel-3);
+  padding: 10px 12px;
+  margin-bottom: 11px;
+}
+.app-shell .zpx.inside {
+  border-color: var(--acc);
+  background: color-mix(in srgb, var(--acc) 8%, var(--panel-3));
+}
+.app-shell .zpxr {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+  align-items: baseline;
+  margin-bottom: 7px;
+}
+.app-shell .zpxr:last-child {
+  margin-bottom: 0;
+}
+.app-shell .zpxr .k {
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 8.5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--faint);
+  min-width: 74px;
+}
+.app-shell .zpxr .v {
+  font-size: 12px;
+  color: var(--dim);
+}
+.app-shell .zpxr .v.faint {
+  color: var(--faint);
+}
+.app-shell .zgauge {
+  position: relative;
+  height: 22px;
+  margin-top: 4px;
+  border-radius: 6px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+.app-shell .zgauge .gband {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: color-mix(in srgb, var(--acc) 16%, transparent);
+  border-left: 1px solid color-mix(in srgb, var(--acc) 55%, transparent);
+  border-right: 1px solid color-mix(in srgb, var(--acc) 55%, transparent);
+}
+.app-shell .zgauge .gpx {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  background: var(--bull);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--bull) 70%, transparent);
+}
+
+/* Confluence */
+.app-shell .zconf {
+  border: 1px solid var(--acc);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--acc) 7%, var(--panel-3));
+  padding: 10px 12px;
+  margin-bottom: 11px;
+}
+.app-shell .zconf.none {
+  border-color: var(--line);
+  background: var(--panel-3);
+}
+.app-shell .zconf .ct {
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 8.5px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--acc);
+  margin-bottom: 7px;
+}
+.app-shell .zconf.none .ct {
+  color: var(--faint);
+}
+.app-shell .zconf .cl {
+  font-size: 12px;
+  color: var(--dim);
+  line-height: 1.5;
+  margin-bottom: 5px;
+}
+.app-shell .zconf .cl:last-child {
+  margin-bottom: 0;
+}
+.app-shell .zconf.none .cl {
+  color: var(--faint);
+}
+
+/* Contacts */
+.app-shell .zcont {
+  border-left: 2px solid var(--line-3);
+  background: var(--panel-3);
+  border-radius: 0 9px 9px 0;
+  padding: 10px 12px;
+  margin-bottom: 11px;
+}
+.app-shell .zcont .ct {
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 8.5px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 7px;
+}
+.app-shell .zcont .cr {
+  display: flex;
+  gap: 9px;
+  font-size: 12px;
+  color: var(--dim);
+  line-height: 1.55;
+  margin-bottom: 5px;
+}
+.app-shell .zcont .cr:last-child {
+  margin-bottom: 0;
+}
+.app-shell .zcont .cr i {
+  font-style: normal;
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--faint);
+  flex-shrink: 0;
+  min-width: 46px;
+}
+.app-shell .zcont .cr.honesty {
+  margin-top: 7px;
+  opacity: 0.8;
+  font-size: 11px;
+}
+
+/* Origin */
+.app-shell .zorg {
+  border-left: 2px solid var(--line-3);
+  background: var(--panel-3);
+  border-radius: 0 9px 9px 0;
+  padding: 9px 12px;
+  margin-bottom: 11px;
+}
+.app-shell .zorg .ot {
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 8.5px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 4px;
+}
+.app-shell .zorg .ol {
+  font-size: 12px;
+  color: var(--dim);
+  line-height: 1.5;
+}
+
+/* Details */
+.app-shell .zdet {
+  border-top: 1px solid var(--line);
+  margin: 4px 0 10px;
+}
+.app-shell .zdeth {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 0;
+  font-size: 11.5px;
+  color: var(--faint);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.app-shell .zdeth:hover {
+  color: var(--dim);
+}
+.app-shell .zkv {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.app-shell .zkvc {
+  background: var(--panel-3);
+  padding: 7px 10px;
+}
+.app-shell .zkvc .k {
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 2px;
+}
+.app-shell .zkvc .v {
+  font-size: 11.5px;
+  color: var(--txt);
+}
+.app-shell .zkvc .v.mono {
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 11px;
+}
+
+/* ── VZ-1: M.I.A panel ────────────────────────────────────────────────────── */
+.app-shell .zmia {
+  border: 1px solid var(--line-2);
+  border-radius: 13px;
+  background: var(--panel);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.app-shell .zmiah {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+}
+.app-shell .zmiah .nm {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--txt);
+  line-height: 1.2;
+}
+.app-shell .zmiah .sb {
+  display: block;
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--faint);
+}
+.app-shell .zmia-subj {
+  padding: 10px 14px;
+  background: color-mix(in srgb, var(--acc) 8%, var(--panel));
+  border-bottom: 1px solid var(--line);
+}
+.app-shell .zmia-subj .k {
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 8.5px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--acc);
+  margin-bottom: 4px;
+}
+.app-shell .zmia-subj .v {
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--txt);
+}
+.app-shell .zmia-subj .m {
+  font-size: 11px;
+  color: var(--dim);
+  margin-top: 2px;
+}
+.app-shell .zmia-body {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  max-height: 46vh;
+  overflow-y: auto;
+}
+.app-shell .zmia-empty {
+  padding: 16px 14px;
+  font-size: 12px;
+  color: var(--faint);
+}
+.app-shell .zmia .bub {
+  max-width: 92%;
+  padding: 8px 11px;
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.app-shell .zmia .bub.a {
+  align-self: flex-start;
+  background: var(--panel-3);
+  border: 1px solid var(--line);
+  color: var(--dim);
+}
+.app-shell .zmia .bub.u {
+  align-self: flex-end;
+  background: color-mix(in srgb, var(--acc) 18%, var(--panel));
+  border: 1px solid var(--acc);
+  color: var(--txt);
+}
+.app-shell .zmia-sugg {
+  padding: 0 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.app-shell .zmia-sugg .sg {
+  text-align: left;
+  font-size: 11.5px;
+  padding: 8px 11px;
+  border-radius: 8px;
+  border: 1px solid var(--line-2);
+  background: var(--panel-3);
+  color: var(--dim);
+  cursor: pointer;
+  line-height: 1.4;
+}
+.app-shell .zmia-sugg .sg:hover {
+  border-color: var(--acc);
+  color: var(--txt);
+}
+.app-shell .zmia-disc {
+  padding: 10px 14px;
+  border-top: 1px solid var(--line);
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--faint);
+  line-height: 1.55;
+}
+
+/* Mobile: the M.I.A panel becomes a bottom sheet (a button opens it). */
+.app-shell .zmia-fab {
+  display: none;
+}
+.app-shell .zmia-sheet {
+  display: none;
+}
+@media (max-width: 1000px) {
+  .app-shell .zlayout {
+    grid-template-columns: 1fr;
+  }
+  .app-shell .zmia-col {
+    display: none;
+  }
+  .app-shell .zmia-fab {
+    display: inline-flex;
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 40;
+    padding: 11px 16px;
+    border-radius: 22px;
+    border: 1px solid var(--acc);
+    background: var(--panel);
+    color: var(--acc);
+    font-size: 12px;
+    font-weight: 600;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  }
+  .app-shell .zmia-sheet {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+  }
+  .app-shell .zmia-sheet-back {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+  }
+  .app-shell .zmia-sheet-body {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    max-height: 88vh;
+    overflow-y: auto;
+    background: var(--panel);
+    border-radius: 16px 16px 0 0;
+    padding: 12px;
+  }
+  .app-shell .zmia-sheet-close {
+    margin-bottom: 10px;
+  }
+}
 
 /* ── Réglages: setting rows + theme tiles + plan badge ─────────────────── */
 .app-shell .setrow {

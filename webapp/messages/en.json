@@ -2490,7 +2490,7 @@
   },
   "zones": {
     "title": "Zones",
-    "intro": "The lifecycle of each detected zone — formation, tests, mitigation, fill — described in the present tense. Descriptive reading: no target, no forecast.",
+    "intro": "The lifecycle of each detected zone — formation, contacts, fill — described in the present tense. No target, no forecast.",
     "refreshing": "refreshing…",
     "filterLabel": "Filter",
     "filterAria": "Filter the zones",
@@ -2500,7 +2500,12 @@
     "errorMessage": "The zones are not available for this combination.",
     "retry": "Try again",
     "emptyNone": "No zone detected on this combination.",
-    "emptyFilter": "No zone matches this filter.",
+    "emptyFilter": {
+      "all": "No zone detected on this combination.",
+      "active": "No active zone right now.",
+      "untouched": "No zone stayed untouched: they have all been contacted.",
+      "consumed": "No filled zone in the recent history."
+    },
     "selector": {
       "instrument": "Instrument",
       "timeframe": "Timeframe"
@@ -2508,12 +2513,19 @@
     "filters": {
       "all": "All",
       "active": "Active",
-      "mitigated": "Mitigated"
+      "untouched": "Untouched",
+      "consumed": "Filled"
     },
     "sorts": {
       "proximity": "Proximity",
-      "recency": "Recency",
-      "state": "State"
+      "formation": "Formation",
+      "contacts": "Contacts"
+    },
+    "groups": {
+      "inside": "The price is inside",
+      "above": "Above the price",
+      "below": "Below the price",
+      "consumed": "Filled"
     },
     "kind": {
       "ob": "Order Block",
@@ -2521,29 +2533,14 @@
       "obShort": "OB",
       "fvgShort": "FVG"
     },
-    "effectiveness": {
-      "obSpentLabel": "invalidated",
-      "obSpentTitle": "Order Block invalidated: the price closed through the zone.",
-      "obHeldLabel": "not invalidated",
-      "obHeldTitle": "Order Block not invalidated: the price did not close through it (the zone holds, even if mitigated or tested).",
-      "fvgSpentLabel": "filled",
-      "fvgSpentTitle": "Fair Value Gap fully filled: the imbalance is closed.",
-      "fvgHeldLabel": "not filled",
-      "fvgHeldTitle": "Fair Value Gap not fully filled: the imbalance is not closed."
+    "session": {
+      "asia": "Asia",
+      "london": "London",
+      "new_york": "New York"
     },
-    "relation": {
-      "inside": "price currently inside the zone",
-      "above": "{dist} pts above the price",
-      "below": "{dist} pts below the price"
-    },
-    "age": {
-      "durationOnly": "formed {duration} ago",
-      "lastCandle": "formed on the last candle",
-      "withBars": "formed {bars, plural, one {# candle} other {# candles}} ago ({duration})"
-    },
-    "tested": {
-      "ob": "tested",
-      "fvg": "penetrated"
+    "liquiditySide": {
+      "bsl": "buy-side",
+      "ssl": "sell-side"
     },
     "duration": {
       "underMinute": "less than a minute",
@@ -2551,49 +2548,146 @@
       "hour": "h",
       "day": "d"
     },
-    "fill": {
-      "aria": "Zone fill",
-      "label": "filled up to {price} (≈ {pct} %)"
+    "card": {
+      "height": "height {pts} pts · {pct} of the price",
+      "heightPtsOnly": "height {pts} pts"
     },
-    "details": {
-      "expand": "Details",
-      "collapse": "Collapse"
+    "header": {
+      "untouched": "Never touched",
+      "neverFilled": "Never filled",
+      "contacts": "{count, plural, one {# contact} other {# contacts}}",
+      "consumed": "Filled"
+    },
+    "proximity": {
+      "positionLabel": "Position",
+      "distanceLabel": "Distance",
+      "enteredLabel": "Entered",
+      "lastContactLabel": "Last contact",
+      "insideDist": "The price is inside, {low} pts from the lower edge and {high} pts from the upper edge",
+      "distanceLine": "{pts} pts {side} the price · i.e. {pct} · measured at the {edge}",
+      "enteredAt": "{when} · {time}",
+      "lastEntry": "{when} · the price entered at {level} then exited {exit}",
+      "lastEdge": "{when} · the price touched the {edge} without penetrating",
+      "lastTraversal": "{when} · the price traversed it at {level}",
+      "neverReturned": "None. The price has never returned since it formed.",
+      "side": {
+        "above": "above",
+        "below": "below"
+      },
+      "edge": {
+        "low": "lower edge",
+        "high": "upper edge"
+      },
+      "exitBy": {
+        "low": "downward",
+        "high": "upward"
+      }
+    },
+    "confluence": {
+      "heading": "What else is at this level",
+      "none": "Nothing else is detected at this level: no other zone on the tracked timeframes, no liquidity pocket nearby.",
+      "innerSame": "A {kd} sits inside this zone, between {band}.",
+      "innerTf": "A {kd} on {tf} sits inside this zone, between {band}.",
+      "outerSame": "A {kd} contains this zone, between {band}.",
+      "outerTf": "A {kd} on {tf} contains it, between {band}.",
+      "sameLevelSame": "A {kd} is at the same level, between {band}.",
+      "sameLevelTf": "A {kd} on {tf} is at the same level, between {band}.",
+      "liquidity": "A {side} liquidity pocket {status} at {level}, {pts} pts {dside} the {edge}.",
+      "liquidityInside": "A {side} liquidity pocket {status} at {level}, inside the zone."
+    },
+    "contacts": {
+      "heading": "Price contacts — observed facts",
+      "entryExit": "The price entered at {level} and exited without traversing it.",
+      "edgeTouch": "The price touched the edge without penetrating.",
+      "traversal": "The price traversed the zone at {level}.",
+      "fillProgress": "Fill brought to {pct}.",
+      "honesty": "M.I.A reports facts — entries, exits, traversals, with their dates and levels — and lets you conclude. It makes no value judgement about a zone: SMC itself has no consensus on that."
     },
     "timeline": {
       "formed": "Formed",
-      "mitigated": "Mitigated",
-      "obTested": "Tested",
-      "fvgTested": "Penetrated",
-      "filled": "Filled",
-      "partial": "Partially filled",
-      "active": "Tracking in progress",
-      "now": "now",
-      "noDate": "—",
-      "firstContact": "first contact",
-      "currentStep": "Now",
-      "priceInside": "price inside"
+      "entry": "Entry",
+      "entryN": "Entry {n}",
+      "touch": "Touch",
+      "traversal": "Traversal",
+      "now": "Now",
+      "noDate": "—"
     },
-    "overlaps": {
-      "heading": "Overlaps with other timeframes",
-      "description": "This zone overlaps with zones detected on other timeframes (matching price levels that overlap) — a marker of convergence, not a signal.",
-      "line": "overlaps a {kind} {tf}{dir} ({band})"
+    "fill": {
+      "aria": "Zone fill"
+    },
+    "origin": {
+      "heading": "What created it",
+      "ob": "Last opposite candle before the {kind} {dir} at {time}, at {level}.",
+      "fvg": "Imbalance left by three consecutive candles during the expansion.",
+      "session": "Formed in the {session} session."
+    },
+    "details": {
+      "heading": "Full details",
+      "high": "Upper edge",
+      "low": "Lower edge",
+      "mid": "Midpoint",
+      "height": "Height",
+      "age": "Age",
+      "ageWithBars": "{duration} · {bars, plural, one {# candle} other {# candles}}",
+      "entries": "Price entries",
+      "edgeTouches": "Edge touches",
+      "session": "Session",
+      "id": "Identifier"
     },
     "actions": {
-      "analyze": "Analyze the zone",
-      "analyzeAria": "Analyze this zone on the chart",
       "show": "Show on the chart",
-      "hide": "Hide from the chart"
+      "hide": "Hide",
+      "unhide": "Show"
     },
     "badge": {
       "count": "{count, plural, one {# zone} other {# zones}}"
     },
-    "state": {
-      "active": "Active",
-      "mitigated": "Mitigated",
-      "filledPct": "Filled {pct} %"
-    },
     "deeplink": {
       "staleNotice": "This zone is no longer detected in the current reading."
+    },
+    "mia": {
+      "title": "M.I.A — selected zone",
+      "name": "M.I.A Agent",
+      "tagline": "describes · explains · does not predict",
+      "empty": "Select a zone for M.I.A to describe it.",
+      "subjectLabel": "Selected zone",
+      "openSheet": "Ask M.I.A",
+      "closeSheet": "Close",
+      "intro": "You are looking at a {kind}. {count, plural, =0 {The price has not contacted it yet.} one {The price has contacted it once.} other {The price has contacted it # times.}} Ask me about it.",
+      "disclaimer": "M.I.A describes detected facts and explains concepts. It does not say where the price will go, whether a zone is good, or whether to act.",
+      "pos": {
+        "inside": "the price is inside",
+        "above": "above the price",
+        "below": "below the price"
+      },
+      "suggest": {
+        "whatElse": "What else is at this level?",
+        "explainKind": "Explain this type of zone",
+        "compareUpper": "Compare it to the upper timeframe",
+        "lastContact": "What happened at the last contact?"
+      },
+      "frag": {
+        "zone": "{kd} {where} {rel}.",
+        "unit": "on {tf}",
+        "sameUnit": "on this timeframe",
+        "liquidity": "a {side} liquidity pocket at {level}.",
+        "rel_inner": "sits inside",
+        "rel_outer": "contains it",
+        "rel_same_level": "is at the same level"
+      },
+      "answer": {
+        "explainOb": "An Order Block is the last opposite candle before a break of structure: the zone its wicks and body outline is where orders were left before the move.",
+        "explainFvg": "A Fair Value Gap is an imbalance left by three consecutive candles: a price range crossed too fast to be traded, which the market often returns to fill.",
+        "whatElse": "At the same level: {list}",
+        "whatElseNone": "Nothing else is detected at this level — no other zone on the tracked timeframes, no liquidity pocket nearby.",
+        "compareUpper": "On {tf}, a {kd} covers the same price, between {band}.",
+        "compareNone": "No zone from an upper timeframe covers this level.",
+        "lastNone": "The price has not contacted this zone yet.",
+        "lastInside": "Last contact {when} ago ({time}): the price is currently inside.",
+        "lastTraversal": "Last contact {when} ago ({time}): the price traversed it at {level}.",
+        "lastEdge": "Last contact {when} ago ({time}): the price touched the edge without penetrating.",
+        "lastEntry": "Last contact {when} ago ({time}): the price entered at {level} then exited without traversing it."
+      }
     }
   },
   "appearance": {
