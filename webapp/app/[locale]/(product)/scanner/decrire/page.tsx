@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { ConversationalScanner } from '@/components/scanner/conversational/ConversationalScanner';
+import { ScannerModeToggle } from '@/components/scanner/ScannerModeToggle';
 import { SubscriptionGate } from '@/components/access/SubscriptionGate';
 
 export async function generateMetadata({
@@ -36,7 +37,10 @@ export default async function ConversationalScannerPage({
       paywallTitle={t('scanner.paywallTitle')}
       paywallDescription={t('scanner.paywallDescription')}
     >
-      <ConversationalScanner locale={locale} />
+      <div className="space-y-4">
+        <ScannerModeToggle locale={locale} active="describe" />
+        <ConversationalScanner locale={locale} />
+      </div>
     </SubscriptionGate>
   );
 }

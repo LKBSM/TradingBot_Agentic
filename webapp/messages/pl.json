@@ -1071,6 +1071,11 @@
     "save": "Zapisz mój wybór"
   },
   "scanner": {
+    "mode": {
+      "groupLabel": "Tryb skanera",
+      "conditions": "Wybierz moje warunki",
+      "describe": "Opisz moją strategię"
+    },
     "loading": "Ładowanie…",
     "scanInProgress": "Skanowanie w toku…",
     "errorUnavailable": "Usługa skanowania jest niedostępna w tym środowisku.",

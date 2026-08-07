@@ -1071,6 +1071,11 @@
     "save": "حفظ اختياري"
   },
   "scanner": {
+    "mode": {
+      "groupLabel": "وضع الماسح",
+      "conditions": "اختيار شروطي",
+      "describe": "وصف استراتيجيتي"
+    },
     "loading": "جارٍ التحميل…",
     "scanInProgress": "الفحص جارٍ…",
     "errorUnavailable": "خدمة الفحص غير متوفّرة في هذه البيئة.",

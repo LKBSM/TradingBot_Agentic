@@ -91,7 +91,10 @@ export function ShellRail({ activeSpace }: { activeSpace: string }) {
 
   const spaces: SpaceLink[] = [
     { key: 'app', href: lh('/app'), label: 'App', Icon: CandlestickChart },
-    { key: 'scanner', href: lh('/scanner'), label: t('nav.scanner'), Icon: Radar },
+    // SC-2e: « Scanner » ouvre le mode « Décrire » par défaut ; la palette de
+    // conditions reste à un clic via la bascule en tête de page. `activeSpace`
+    // reste 'scanner' pour /scanner ET /scanner/decrire (1er segment de route).
+    { key: 'scanner', href: lh('/scanner/decrire'), label: t('nav.scanner'), Icon: Radar },
     { key: 'zones', href: lh('/zones'), label: t('nav.zones'), Icon: Layers },
     { key: 'actualites', href: lh('/actualites'), label: t('nav.calendar'), Icon: CalendarClock },
     { key: 'compte', href: lh('/compte'), label: t('nav.account'), Icon: Settings },

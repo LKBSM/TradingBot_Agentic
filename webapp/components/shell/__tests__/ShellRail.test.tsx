@@ -32,9 +32,11 @@ describe('ShellRail', () => {
   it('wires the ESPACE nav to the real routes', () => {
     render(<ShellRail activeSpace="zones" />);
     expect(screen.getByRole('link', { name: 'App' })).toHaveAttribute('href', '/app');
+    // SC-2e: « Scanner » ouvre le mode conversationnel par défaut (palette à un
+    // clic via la bascule). L'espace actif reste 'scanner' sur les deux routes.
     expect(screen.getByRole('link', { name: 'Scanner' })).toHaveAttribute(
       'href',
-      '/scanner',
+      '/scanner/decrire',
     );
     expect(screen.getByRole('link', { name: 'Zones' })).toHaveAttribute(
       'href',

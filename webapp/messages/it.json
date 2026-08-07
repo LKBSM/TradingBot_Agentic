@@ -1071,6 +1071,11 @@
     "save": "Salva la mia scelta"
   },
   "scanner": {
+    "mode": {
+      "groupLabel": "Modalità dello scanner",
+      "conditions": "Scegliere le mie condizioni",
+      "describe": "Descrivere la mia strategia"
+    },
     "loading": "Caricamento…",
     "scanInProgress": "Scansione in corso…",
     "errorUnavailable": "Il servizio di scansione non è disponibile su questo ambiente.",
