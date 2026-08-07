@@ -1996,7 +1996,12 @@
       "selectionMissing": "Questo elemento non è più rilevato nella lettura corrente.",
       "currentPrice": "Prezzo corrente",
       "priceAbove": "Il prezzo corrente è al di sopra della vista",
-      "priceBelow": "Il prezzo corrente è al di sotto della vista"
+      "priceBelow": "Il prezzo corrente è al di sotto della vista",
+      "toLatest": "Vai alla candela più recente",
+      "loadingHistory": "Caricamento della cronologia…",
+      "historyError": "Caricamento non riuscito — riprova",
+      "historyStart": "Inizio dei dati disponibili per questa unità temporale",
+      "beyondAnalysis": "Oltre la finestra di analisi: nessuna struttura rilevata qui"
     },
     "layers": {
       "ob": "OB",

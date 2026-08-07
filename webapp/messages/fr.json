@@ -2034,7 +2034,12 @@
       "selectionMissing": "Cet élément n'est plus détecté dans la lecture courante.",
       "currentPrice": "Prix courant",
       "priceAbove": "Le prix courant est au-dessus de la vue",
-      "priceBelow": "Le prix courant est en dessous de la vue"
+      "priceBelow": "Le prix courant est en dessous de la vue",
+      "toLatest": "Aller à la bougie la plus récente",
+      "loadingHistory": "Chargement de l'historique…",
+      "historyError": "Échec du chargement — réessayer",
+      "historyStart": "Début des données disponibles pour cette unité",
+      "beyondAnalysis": "Au-delà de la fenêtre d'analyse : aucune structure détectée ici"
     },
     "struct": {
       "title": "Structure de marché",

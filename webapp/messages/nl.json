@@ -1996,7 +1996,12 @@
       "selectionMissing": "Dit element wordt niet meer gedetecteerd in de huidige lezing.",
       "currentPrice": "Huidige prijs",
       "priceAbove": "De huidige prijs staat boven de weergave",
-      "priceBelow": "De huidige prijs staat onder de weergave"
+      "priceBelow": "De huidige prijs staat onder de weergave",
+      "toLatest": "Naar de recentste kaars springen",
+      "loadingHistory": "Geschiedenis laden…",
+      "historyError": "Laden mislukt — opnieuw proberen",
+      "historyStart": "Begin van de beschikbare gegevens voor deze tijdseenheid",
+      "beyondAnalysis": "Voorbij het analysevenster: hier geen structuur gedetecteerd"
     },
     "layers": {
       "ob": "OB",

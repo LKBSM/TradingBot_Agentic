@@ -63,6 +63,10 @@
 
 ---
 
+## DÉCISIONS (utilisateur, 2026-08-07)
+1. **Borne de dézoome = profondeur candles.db** par unité (M15 ~1 mois, H1 ~6 mois, H4 ~2 ans, D1 ~5 ans) — lectures SQLite gratuites, **pas** de réseau, **pas** le CSV 7 ans. Message discret « début des données disponibles » à la limite.
+2. **Chargement = endpoint par intervalle** : `GET /api/candles?…&before=<ts>&limit=N` (lecture candles.db) + **pagination à la demande** côté front quand on dézoome — bougies déjà affichées jamais effacées, état de chargement visible sur la partie non chargée, réessai si échec. **Interdit** : tout charger d'un coup.
+
 ## Pistes retenues pour le GO (à valider — AUCUN code encore)
 1. **Bornes** : resserrement max ≈ **20 bougies** (via `minBarSpacing`/clamp du zoom) ; dézoome max = **profondeur candles.db de l'unité** (borne honnête), pas au-delà.
 2. **Charger plus, à la demande** : (a) relever le plafond front au-delà de 400 **et** (b) ajouter un **paramètre d'intervalle** à `/api/candles` (`before=<ts>&limit=N`, lecture candles.db) pour paginer l'historique quand on dézoome — bougies affichées jamais effacées, état de chargement visible, réessai si échec. **Interdit** : tout charger d'un coup / lire le CSV 7 ans.

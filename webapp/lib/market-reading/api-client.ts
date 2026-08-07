@@ -243,11 +243,22 @@ export class CandlesError extends Error {
 
 export interface FetchCandlesOptions {
   signal?: AbortSignal;
-  /** Max candles to request (backend caps at 500; default 200). */
+  /** Max candles to request (backend caps at 1000; default 200). */
   limit?: number;
   timeoutMs?: number;
   /** Retry once on a genuine network transient (default true). Mirrors the reading. */
   retry?: boolean;
+  /**
+   * CHART-1 history pagination: UTC epoch (seconds). When set, fetch the page of
+   * candles STRICTLY OLDER than this time (for loading history on zoom-out).
+   */
+  before?: number;
+}
+
+/** A candle page plus whether older candles still exist before it (CHART-1). */
+export interface CandlePage {
+  candles: Candle[];
+  hasMore: boolean;
 }
 
 /**
@@ -263,9 +274,21 @@ export async function fetchCandles(
   timeframe: string,
   options: FetchCandlesOptions = {},
 ): Promise<Candle[]> {
-  const { signal, limit = 200, timeoutMs = DEFAULT_TIMEOUT_MS, retry = true } = options;
+  return (await fetchCandlesPage(instrument, timeframe, options)).candles;
+}
+
+/**
+ * Like {@link fetchCandles} but also reports `hasMore` (older candles exist) and
+ * supports `before` for history pagination (CHART-1). Same retry policy.
+ */
+export async function fetchCandlesPage(
+  instrument: string,
+  timeframe: string,
+  options: FetchCandlesOptions = {},
+): Promise<CandlePage> {
+  const { signal, limit = 200, timeoutMs = DEFAULT_TIMEOUT_MS, retry = true, before } = options;
   try {
-    return await attemptCandles(instrument, timeframe, signal, limit, timeoutMs);
+    return await attemptCandles(instrument, timeframe, signal, limit, timeoutMs, before);
   } catch (err) {
     // Retry once ONLY on a genuine network transient — never on a deterministic
     // HTTP error (400/404/503) or a TIMEOUT (already spent the full budget), and
@@ -273,7 +296,7 @@ export async function fetchCandles(
     const isRetriable = err instanceof CandlesError && err.reason === 'network';
     const callerAborted = signal?.aborted ?? false;
     if (retry && isRetriable && !callerAborted) {
-      return attemptCandles(instrument, timeframe, signal, limit, timeoutMs);
+      return attemptCandles(instrument, timeframe, signal, limit, timeoutMs, before);
     }
     throw err;
   }
@@ -285,10 +308,12 @@ async function attemptCandles(
   callerSignal: AbortSignal | undefined,
   limit: number,
   timeoutMs: number,
-): Promise<Candle[]> {
+  before?: number,
+): Promise<CandlePage> {
   const url =
     `${CANDLES_ENDPOINT}?instrument=${encodeURIComponent(instrument)}` +
-    `&timeframe=${encodeURIComponent(timeframe)}&limit=${encodeURIComponent(String(limit))}`;
+    `&timeframe=${encodeURIComponent(timeframe)}&limit=${encodeURIComponent(String(limit))}` +
+    (before != null ? `&before=${encodeURIComponent(String(Math.floor(before)))}` : '');
 
   const controller = new AbortController();
   let timedOut = false;
@@ -349,7 +374,8 @@ async function attemptCandles(
     throw new CandlesError(res.status, 'Réponse du service de bougies malformée.', 'parse');
   }
 
-  return parsed.candles;
+  const hasMore = (parsed as { has_more?: unknown }).has_more === true;
+  return { candles: parsed.candles, hasMore };
 }
 
 /** Structural guard for the candles envelope. */

@@ -1996,7 +1996,12 @@
       "selectionMissing": "Ten element nie jest już wykrywany w bieżącym odczycie.",
       "currentPrice": "Bieżąca cena",
       "priceAbove": "Bieżąca cena znajduje się powyżej widoku",
-      "priceBelow": "Bieżąca cena znajduje się poniżej widoku"
+      "priceBelow": "Bieżąca cena znajduje się poniżej widoku",
+      "toLatest": "Przejdź do najnowszej świecy",
+      "loadingHistory": "Wczytywanie historii…",
+      "historyError": "Wczytywanie nie powiodło się — ponów",
+      "historyStart": "Początek dostępnych danych dla tego interwału",
+      "beyondAnalysis": "Poza oknem analizy: nie wykryto tu żadnej struktury"
     },
     "layers": {
       "ob": "OB",

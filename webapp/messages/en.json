@@ -1996,7 +1996,12 @@
       "selectionMissing": "This element is no longer detected in the current reading.",
       "currentPrice": "Current price",
       "priceAbove": "The current price is above the view",
-      "priceBelow": "The current price is below the view"
+      "priceBelow": "The current price is below the view",
+      "toLatest": "Jump to the most recent candle",
+      "loadingHistory": "Loading history…",
+      "historyError": "Load failed — retry",
+      "historyStart": "Start of available data for this timeframe",
+      "beyondAnalysis": "Beyond the analysis window: no structure detected here"
     },
     "layers": {
       "ob": "OB",

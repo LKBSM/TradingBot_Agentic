@@ -1996,7 +1996,12 @@
       "selectionMissing": "Dieses Element wird in der aktuellen Lesung nicht mehr erkannt.",
       "currentPrice": "Aktueller Preis",
       "priceAbove": "Der aktuelle Preis liegt oberhalb der Ansicht",
-      "priceBelow": "Der aktuelle Preis liegt unterhalb der Ansicht"
+      "priceBelow": "Der aktuelle Preis liegt unterhalb der Ansicht",
+      "toLatest": "Zur neuesten Kerze springen",
+      "loadingHistory": "Verlauf wird geladen…",
+      "historyError": "Laden fehlgeschlagen — erneut versuchen",
+      "historyStart": "Beginn der verfügbaren Daten für diese Zeiteinheit",
+      "beyondAnalysis": "Jenseits des Analysefensters: hier keine Struktur erkannt"
     },
     "layers": {
       "ob": "OB",

@@ -266,3 +266,53 @@ def test_router_wired_into_app_module():
     from src.api import app as app_module
 
     assert hasattr(app_module, "candles") or "candles" in dir(app_module)
+
+
+# ── CHART-1: history pagination (before / has_more) ───────────────────────────
+def _epoch(seconds):
+    return int(datetime(2026, 5, 29, 14, 0, seconds, tzinfo=timezone.utc).timestamp())
+
+
+def test_initial_reports_has_more_when_older_candles_exist(tmp_path):
+    client = TestClient(_make_app(tmp_path=tmp_path))
+    r = client.get(
+        "/api/candles",
+        params={"instrument": "XAUUSD", "timeframe": "M15", "limit": 2},
+    )
+    b = r.json()
+    assert [c["time"] for c in b["candles"]] == [_epoch(3), _epoch(4)]
+    assert b["has_more"] is True  # ts0..ts2 are older than this window
+
+
+def test_before_paginates_the_previous_page_contiguously(tmp_path):
+    client = TestClient(_make_app(tmp_path=tmp_path))
+    # The 2 candles just OLDER than ts3 = ts1, ts2 (ascending); ts0 remains older.
+    r = client.get(
+        "/api/candles",
+        params={"instrument": "XAUUSD", "timeframe": "M15", "limit": 2, "before": _epoch(3)},
+    )
+    assert r.status_code == 200
+    b = r.json()
+    assert [c["time"] for c in b["candles"]] == [_epoch(1), _epoch(2)]
+    assert b["has_more"] is True
+    # Next page before ts1 → only ts0, and now we are at the floor.
+    r2 = client.get(
+        "/api/candles",
+        params={"instrument": "XAUUSD", "timeframe": "M15", "limit": 2, "before": _epoch(1)},
+    )
+    b2 = r2.json()
+    assert [c["time"] for c in b2["candles"]] == [_epoch(0)]
+    assert b2["has_more"] is False
+
+
+def test_before_at_the_floor_is_200_empty_not_404(tmp_path):
+    client = TestClient(_make_app(tmp_path=tmp_path))
+    r = client.get(
+        "/api/candles",
+        params={"instrument": "XAUUSD", "timeframe": "M15", "limit": 5, "before": _epoch(0)},
+    )
+    # Reaching the start of history is a normal empty 200 (so the chart can say
+    # "start of available data"), never an error.
+    assert r.status_code == 200
+    assert r.json()["candles"] == []
+    assert r.json()["has_more"] is False

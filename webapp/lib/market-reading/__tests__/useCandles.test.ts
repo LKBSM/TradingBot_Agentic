@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 // scope (isTransientCandlesError) and for `instanceof` reason checks.
 vi.mock('../api-client', async (importActual) => {
   const actual = await importActual<typeof import('../api-client')>();
-  return { ...actual, fetchCandles: vi.fn() };
+  return { ...actual, fetchCandlesPage: vi.fn() };
 });
 vi.mock('@/lib/mockReadings', () => ({
   READING_DATA_SOURCE: 'live',
@@ -14,10 +14,10 @@ vi.mock('@/lib/mockReadings', () => ({
 }));
 
 import { useCandles, __resetReadingRetention } from '../hooks';
-import { CandlesError, fetchCandles } from '../api-client';
+import { CandlesError, fetchCandlesPage } from '../api-client';
 import { getMockCandles } from '@/lib/mockReadings';
 
-const mockFetchCandles = vi.mocked(fetchCandles);
+const mockFetchCandlesPage = vi.mocked(fetchCandlesPage);
 const mockGetMockCandles = vi.mocked(getMockCandles);
 
 const SERIES = [
@@ -26,7 +26,7 @@ const SERIES = [
 ];
 
 beforeEach(() => {
-  mockFetchCandles.mockReset();
+  mockFetchCandlesPage.mockReset();
   mockGetMockCandles.mockReset();
   // Module-state retention caches — clear so each test starts cold.
   __resetReadingRetention();
@@ -40,7 +40,7 @@ describe('useCandles', () => {
   it('stays idle (no fetch) when the combo is null', () => {
     const { result } = renderHook(() => useCandles(null, null, { source: 'live' }));
     expect(result.current.candles).toBeNull();
-    expect(mockFetchCandles).not.toHaveBeenCalled();
+    expect(mockFetchCandlesPage).not.toHaveBeenCalled();
   });
 
   it('resolves locally in mock mode without any network call', () => {
@@ -49,18 +49,18 @@ describe('useCandles', () => {
       useCandles('XAUUSD', 'M15', { source: 'mock' }),
     );
     expect(result.current.candles).toEqual(SERIES);
-    expect(mockFetchCandles).not.toHaveBeenCalled();
+    expect(mockFetchCandlesPage).not.toHaveBeenCalled();
     expect(mockGetMockCandles).toHaveBeenCalledWith('XAUUSD', 'M15');
   });
 
   it('fetches the live feed and exposes the candles', async () => {
-    mockFetchCandles.mockResolvedValue(SERIES);
+    mockFetchCandlesPage.mockResolvedValue({ candles: SERIES, hasMore: false });
     const { result } = renderHook(() =>
       useCandles('XAUUSD', 'M15', { source: 'live' }),
     );
     await waitFor(() => expect(result.current.candles).toEqual(SERIES));
     expect(result.current.error).toBeNull();
-    expect(mockFetchCandles).toHaveBeenCalledWith(
+    expect(mockFetchCandlesPage).toHaveBeenCalledWith(
       'XAUUSD',
       'M15',
       // Requests a few-hundred-bar window (cache-served, no extra provider call).
@@ -69,7 +69,7 @@ describe('useCandles', () => {
   });
 
   it('collapses an unavailable feed to null candles + an error', async () => {
-    mockFetchCandles.mockRejectedValue(new Error('no candles cached'));
+    mockFetchCandlesPage.mockRejectedValue(new Error('no candles cached'));
     const { result } = renderHook(() =>
       useCandles('EURUSD', 'H4', { source: 'live' }),
     );
@@ -78,7 +78,7 @@ describe('useCandles', () => {
   });
 
   it('treats an empty live window as unavailable (null)', async () => {
-    mockFetchCandles.mockResolvedValue([]);
+    mockFetchCandlesPage.mockResolvedValue({ candles: [], hasMore: false });
     const { result } = renderHook(() =>
       useCandles('XAUUSD', 'H1', { source: 'live' }),
     );
@@ -87,14 +87,78 @@ describe('useCandles', () => {
   });
 
   it('re-fetches when candle_close_ts changes', async () => {
-    mockFetchCandles.mockResolvedValue(SERIES);
+    mockFetchCandlesPage.mockResolvedValue({ candles: SERIES, hasMore: false });
     const { rerender } = renderHook(
       ({ ts }) => useCandles('XAUUSD', 'M15', { source: 'live', candleCloseTs: ts }),
       { initialProps: { ts: '2026-05-26T11:00:00+00:00' } },
     );
-    await waitFor(() => expect(mockFetchCandles).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(mockFetchCandlesPage).toHaveBeenCalledTimes(1));
     rerender({ ts: '2026-05-26T11:15:00+00:00' });
-    await waitFor(() => expect(mockFetchCandles).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(mockFetchCandlesPage).toHaveBeenCalledTimes(2));
+  });
+
+  // ── CHART-1: history pagination on zoom-out ───────────────────────────────────
+  describe('CHART-1 — loads older history without ever dropping shown candles', () => {
+    const RECENT = [
+      { time: 3, open: 1, high: 2, low: 0.5, close: 1.5 },
+      { time: 4, open: 1.5, high: 2.5, low: 1, close: 2 },
+    ];
+    const OLDER = [
+      { time: 1, open: 1, high: 2, low: 0.5, close: 1.5 },
+      { time: 2, open: 1.5, high: 2.5, low: 1, close: 2 },
+    ];
+
+    it('prepends the previous page, keeps existing bars, and updates the floor', async () => {
+      mockFetchCandlesPage.mockImplementation(async (_i, _t, opts) =>
+        opts?.before != null
+          ? { candles: OLDER, hasMore: false }
+          : { candles: RECENT, hasMore: true },
+      );
+      const { result } = renderHook(() => useCandles('XAUUSD', 'M15', { source: 'live' }));
+      await waitFor(() => expect(result.current.candles).toEqual(RECENT));
+      expect(result.current.hasMoreHistory).toBe(true);
+
+      act(() => {
+        result.current.loadOlder();
+      });
+      // The older page is merged BEFORE the shown bars — nothing vanished.
+      await waitFor(() => expect(result.current.candles).toEqual([...OLDER, ...RECENT]));
+      expect(result.current.hasMoreHistory).toBe(false); // reached the floor
+      // loadOlder asked for candles strictly before the oldest shown (time=3).
+      expect(mockFetchCandlesPage).toHaveBeenLastCalledWith(
+        'XAUUSD',
+        'M15',
+        expect.objectContaining({ before: 3, limit: 400 }),
+      );
+    });
+
+    it('is a no-op at the floor (hasMoreHistory false → no fetch)', async () => {
+      mockFetchCandlesPage.mockResolvedValue({ candles: RECENT, hasMore: false });
+      const { result } = renderHook(() => useCandles('XAUUSD', 'M15', { source: 'live' }));
+      await waitFor(() => expect(result.current.candles).toEqual(RECENT));
+      expect(result.current.hasMoreHistory).toBe(false);
+      const callsBefore = mockFetchCandlesPage.mock.calls.length;
+      act(() => {
+        result.current.loadOlder();
+      });
+      expect(mockFetchCandlesPage.mock.calls.length).toBe(callsBefore); // no extra call
+    });
+
+    it('keeps the shown candles when a history load fails, and exposes the error', async () => {
+      mockFetchCandlesPage.mockImplementation(async (_i, _t, opts) => {
+        if (opts?.before != null) throw new CandlesError(0, 'network', 'network');
+        return { candles: RECENT, hasMore: true };
+      });
+      const { result } = renderHook(() => useCandles('XAUUSD', 'M15', { source: 'live' }));
+      await waitFor(() => expect(result.current.candles).toEqual(RECENT));
+      act(() => {
+        result.current.loadOlder();
+      });
+      await waitFor(() => expect(result.current.olderError).not.toBeNull());
+      // The already-shown bars are untouched — a failed page never blanks the chart.
+      expect(result.current.candles).toEqual(RECENT);
+      expect(result.current.hasMoreHistory).toBe(true); // can retry
+    });
   });
 
   // ── PERF-2: the refresh defect ────────────────────────────────────────────────
@@ -107,9 +171,9 @@ describe('useCandles', () => {
     it('auto-retries a TRANSIENT failure and heals itself (no candleCloseTs change)', async () => {
       vi.useFakeTimers();
       try {
-        mockFetchCandles
+        mockFetchCandlesPage
           .mockRejectedValueOnce(new CandlesError(0, 'server unreachable', 'network'))
-          .mockResolvedValue(SERIES);
+          .mockResolvedValue({ candles: SERIES, hasMore: false });
         const { result } = renderHook(() =>
           useCandles('XAUUSD', 'M15', { source: 'live' }),
         );
@@ -117,14 +181,14 @@ describe('useCandles', () => {
         await act(async () => {
           await vi.advanceTimersByTimeAsync(0);
         });
-        expect(mockFetchCandles).toHaveBeenCalledTimes(1);
+        expect(mockFetchCandlesPage).toHaveBeenCalledTimes(1);
         expect(result.current.candles).toBeNull();
         expect(result.current.error).not.toBeNull();
         // The bounded auto-retry fires after the backoff — candleCloseTs never moved.
         await act(async () => {
           await vi.advanceTimersByTimeAsync(1600);
         });
-        expect(mockFetchCandles).toHaveBeenCalledTimes(2);
+        expect(mockFetchCandlesPage).toHaveBeenCalledTimes(2);
         expect(result.current.candles).toEqual(SERIES);
         expect(result.current.error).toBeNull();
       } finally {
@@ -135,37 +199,37 @@ describe('useCandles', () => {
     it('bounds the auto-retry to a finite number of attempts', async () => {
       vi.useFakeTimers();
       try {
-        mockFetchCandles.mockRejectedValue(new CandlesError(0, 'timed out', 'timeout'));
+        mockFetchCandlesPage.mockRejectedValue(new CandlesError(0, 'timed out', 'timeout'));
         renderHook(() => useCandles('XAUUSD', 'M15', { source: 'live' }));
         // Step through each linear backoff (1500·1, 1500·2, 1500·3), flushing the
         // React re-render + effect between each so the next retry is scheduled.
         await act(async () => { await vi.advanceTimersByTimeAsync(0); });
-        expect(mockFetchCandles).toHaveBeenCalledTimes(1); // initial
+        expect(mockFetchCandlesPage).toHaveBeenCalledTimes(1); // initial
         await act(async () => { await vi.advanceTimersByTimeAsync(1600); });
-        expect(mockFetchCandles).toHaveBeenCalledTimes(2); // retry 1
+        expect(mockFetchCandlesPage).toHaveBeenCalledTimes(2); // retry 1
         await act(async () => { await vi.advanceTimersByTimeAsync(3100); });
-        expect(mockFetchCandles).toHaveBeenCalledTimes(3); // retry 2
+        expect(mockFetchCandlesPage).toHaveBeenCalledTimes(3); // retry 2
         await act(async () => { await vi.advanceTimersByTimeAsync(4600); });
-        expect(mockFetchCandles).toHaveBeenCalledTimes(4); // retry 3 (the bound)
+        expect(mockFetchCandlesPage).toHaveBeenCalledTimes(4); // retry 3 (the bound)
         // Past the bound: no further attempts, ever (never an unbounded loop).
         await act(async () => { await vi.advanceTimersByTimeAsync(20_000); });
-        expect(mockFetchCandles).toHaveBeenCalledTimes(4);
+        expect(mockFetchCandlesPage).toHaveBeenCalledTimes(4);
       } finally {
         vi.useRealTimers();
       }
     });
 
     it('does NOT auto-retry a deterministic 404, but refresh() recovers it', async () => {
-      mockFetchCandles
+      mockFetchCandlesPage
         .mockRejectedValueOnce(new CandlesError(404, 'no candles for combo', 'nodata'))
-        .mockResolvedValue(SERIES);
+        .mockResolvedValue({ candles: SERIES, hasMore: false });
       const { result } = renderHook(() =>
         useCandles('XAUUSD', 'M15', { source: 'live' }),
       );
       await waitFor(() => expect(result.current.error).not.toBeNull());
       expect(result.current.candles).toBeNull();
       // 404 is deterministic — retrying blindly is futile, so it is NOT auto-retried.
-      expect(mockFetchCandles).toHaveBeenCalledTimes(1);
+      expect(mockFetchCandlesPage).toHaveBeenCalledTimes(1);
       // The user's manual "Réessayer" re-pulls WITHOUT a page reload.
       act(() => {
         result.current.refresh();

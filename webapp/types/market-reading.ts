@@ -408,6 +408,12 @@ export interface CandlesResponse {
   instrument: string;
   timeframe: string;
   candles: Candle[];
+  /**
+   * CHART-1 — whether older candles exist strictly before the first candle here.
+   * Drives history pagination on zoom-out and the "start of available data"
+   * message. Optional for backward compatibility with older payloads.
+   */
+  has_more?: boolean;
 }
 
 // ─── Convenience helpers ──────────────────────────────────────────────────────

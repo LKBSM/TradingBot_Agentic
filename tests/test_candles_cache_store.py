@@ -162,3 +162,61 @@ class TestSchemaV2WipesPollutedV1Cache:
         )
         store.upsert_candles("XAUUSD", "M15", [c])
         assert store.count_candles("XAUUSD", "M15") == 1
+
+
+# ── CHART-1: history pagination (get_candles_before) ──────────────────────────
+from datetime import timedelta as _timedelta
+
+
+def _series(n, start_min=0):
+    base = datetime(2026, 5, 29, 0, 0, 0, tzinfo=timezone.utc)
+    return [
+        Candle(
+            ts=base + _timedelta(minutes=15 * (start_min + i)),
+            open=1.0, high=2.0, low=0.5, close=1.5 + i, volume=1.0,
+        )
+        for i in range(n)
+    ]
+
+
+class TestGetCandlesBefore:
+    def test_returns_newest_before_boundary_ascending_exclusive(self, store):
+        s = _series(10)
+        store.upsert_candles("XAUUSD", "M15", s)
+        older = store.get_candles_before("XAUUSD", "M15", s[5].ts, 3)
+        # the 3 newest STRICTLY before s[5] = s[2], s[3], s[4], ascending.
+        assert [c.ts for c in older] == [s[2].ts, s[3].ts, s[4].ts]
+        assert all(c.ts < s[5].ts for c in older)
+
+    def test_empty_at_the_floor(self, store):
+        s = _series(3)
+        store.upsert_candles("XAUUSD", "M15", s)
+        assert store.get_candles_before("XAUUSD", "M15", s[0].ts, 5) == []
+
+    def test_zero_or_negative_n_returns_empty(self, store):
+        store.upsert_candles("XAUUSD", "M15", _series(3))
+        assert store.get_candles_before("XAUUSD", "M15", datetime(2027, 1, 1, tzinfo=timezone.utc), 0) == []
+
+    def test_contiguous_pagination_reaches_the_whole_history(self, store):
+        s = _series(25)
+        store.upsert_candles("XAUUSD", "M15", s)
+        seen = store.get_last_n_candles("XAUUSD", "M15", 10)
+        cur = seen[0].ts
+        total = len(seen)
+        guard = 0
+        while guard < 50:
+            guard += 1
+            blk = store.get_candles_before("XAUUSD", "M15", cur, 10)
+            if not blk:
+                break
+            # each page is older than the boundary and contiguous (no gap/overlap).
+            assert blk[-1].ts < cur
+            total += len(blk)
+            cur = blk[0].ts
+        assert total == 25
+
+    def test_isolated_per_combo(self, store):
+        store.upsert_candles("XAUUSD", "M15", _series(5))
+        store.upsert_candles("EURUSD", "M15", _series(5))
+        boundary = datetime(2027, 1, 1, tzinfo=timezone.utc)
+        assert len(store.get_candles_before("XAUUSD", "M15", boundary, 100)) == 5

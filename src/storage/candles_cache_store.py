@@ -230,6 +230,53 @@ class CandlesCacheStore:
         ]
         return candles
 
+    def get_candles_before(
+        self, instrument: str, timeframe: str, before_ts: datetime, n: int
+    ) -> List[Candle]:
+        """Return up to ``n`` candles STRICTLY BEFORE ``before_ts``, ascending.
+
+        Backs the chart's history pagination (CHART-1): when the user zooms out
+        past what is loaded, the front asks for the ``n`` candles just older than
+        its current oldest bar. Pure cache read over ``candles_cache`` — no
+        provider call, no quota. Empty list means there is nothing older (the
+        floor of available data for this combo). Uses the ``ts DESC`` index.
+
+        ``ts`` is stored as ISO-8601 text; the boundary is compared as ISO text.
+        The front sends back the epoch of a candle it received from this same
+        store, so the boundary reproduces the stored format (UTC).
+        """
+        if n <= 0:
+            return []
+        boundary = (
+            before_ts.isoformat() if hasattr(before_ts, "isoformat") else str(before_ts)
+        )
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                cur = conn.execute(
+                    """
+                    SELECT ts, open, high, low, close, volume FROM candles_cache
+                    WHERE instrument = ? AND timeframe = ? AND ts < ?
+                    ORDER BY ts DESC LIMIT ?
+                    """,
+                    (instrument, timeframe, boundary, n),
+                )
+                rows = cur.fetchall()
+            finally:
+                conn.close()
+        # Newest-first from the query; reverse to ascending (chart expects it).
+        return [
+            Candle(
+                ts=datetime.fromisoformat(row["ts"]),
+                open=row["open"],
+                high=row["high"],
+                low=row["low"],
+                close=row["close"],
+                volume=row["volume"] if row["volume"] is not None else 0.0,
+            )
+            for row in reversed(rows)
+        ]
+
     def count_candles(self, instrument: str, timeframe: str) -> int:
         with self._lock:
             conn = self._get_connection()

@@ -165,6 +165,12 @@ export interface ZoneOverlayData {
    * of the four designs. Legibility chrome only — never a zone/pocket colour.
    */
   labelBg: string;
+  /**
+   * CHART-1 — top-left keep-out for the HTML "EN DIRECT" / "Marché fermé" badge,
+   * so canvas zone labels are never drawn under it. `{ w, h }` in CSS px from the
+   * plot's top-left corner; null when no badge is shown.
+   */
+  badgeReserve?: { w: number; h: number } | null;
 }
 
 // ─── Computed pixel geometry (per frame, in phase with the canvas) ─────────────
@@ -241,6 +247,75 @@ function roundRectPath(
 }
 
 /** Draw a tiny text pill (label chrome) and return its total advance width. */
+/** CHART-1 — label collision helpers. */
+export interface LRect {
+  l: number;
+  t: number;
+  r: number;
+  b: number;
+}
+export function rectsOverlap(a: LRect, c: LRect): boolean {
+  return a.l < c.r && c.l < a.r && a.t < c.b && c.t < a.b;
+}
+/** Pixels between two stacked labels, and the density cap before we group. */
+const LABEL_GAP = 2;
+const MAX_ZONE_LABELS = 14;
+
+/** One label's anchor + footprint before de-collision. */
+export interface LabelReq {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/**
+ * CHART-1 — de-collide labels: nudge each DOWN from its anchor until it clears
+ * every already-placed rect (the `reserved` list seeds it with the live-badge /
+ * liquidity / front rects). A label pushed off the plot bottom, or past `cap`,
+ * is dropped (returned as `null`) and counted in `overflow` so the caller can
+ * draw a single "N zones" group pill instead of an illegible stack. Pure — unit
+ * tested in isolation (no canvas). Never nudges upward, so a placed rect stays
+ * anchored at or below its zone.
+ */
+export function placeLabels(
+  items: LabelReq[],
+  reserved: LRect[],
+  plotH: number,
+  cap: number = MAX_ZONE_LABELS,
+): { rects: (LRect | null)[]; overflow: number } {
+  const placed: LRect[] = [...reserved];
+  const rects: (LRect | null)[] = [];
+  let drawn = 0;
+  let overflow = 0;
+  for (const it of items) {
+    let y = it.y;
+    let rect: LRect = { l: it.x, t: y, r: it.x + it.w, b: y + it.h };
+    let tries = 0;
+    while (tries < 60) {
+      const hit = placed.find((p) => rectsOverlap(p, rect));
+      if (!hit) break;
+      y = hit.b + LABEL_GAP;
+      rect = { l: it.x, t: y, r: it.x + it.w, b: y + it.h };
+      tries += 1;
+    }
+    if (rect.b > plotH - 2 || drawn >= cap) {
+      rects.push(null);
+      overflow += 1;
+      continue;
+    }
+    placed.push(rect);
+    rects.push(rect);
+    drawn += 1;
+  }
+  return { rects, overflow };
+}
+/** Text width of a pill (mirror of drawPill's padding) without drawing it. */
+function pillWidth(ctx: CanvasRenderingContext2D, text: string, fontPx: number): number {
+  ctx.font = `${fontPx}px ${MONO}`;
+  return ctx.measureText(text).width + 6; // padX * 2
+}
+
 function drawPill(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -298,7 +373,9 @@ export class ZoneOverlayPrimitive implements ISeriesPrimitive<Time> {
   constructor() {
     const renderer: IPrimitivePaneRenderer = {
       draw: (target) => {
-        target.useMediaCoordinateSpace(({ context }) => this._draw(context));
+        target.useMediaCoordinateSpace(({ context, mediaSize }) =>
+          this._draw(context, mediaSize.height),
+        );
       },
     };
     this._paneView = {
@@ -537,7 +614,7 @@ export class ZoneOverlayPrimitive implements ISeriesPrimitive<Time> {
   }
 
   // ── Painting ──────────────────────────────────────────────────────────────────
-  private _draw(ctx: CanvasRenderingContext2D): void {
+  private _draw(ctx: CanvasRenderingContext2D, plotH: number): void {
     if (!this._data) return;
     const pillBg = this._data.labelBg;
 
@@ -646,8 +723,17 @@ export class ZoneOverlayPrimitive implements ISeriesPrimitive<Time> {
       ctx.restore();
     }
 
-    // 4) Labels on top (so geometry never occludes them).
-    for (const b of this._boxes) this._drawZoneLabel(ctx, b, pillBg);
+    // 4) Labels on top (so geometry never occludes them). CHART-1: placed with
+    //    collision avoidance — anchored near each zone, never piled at the left
+    //    edge, never under the live badge, and grouped into a single "N zones"
+    //    pill past a density threshold so the plot stays legible at any zoom.
+    const placed: LRect[] = [];
+    const reserve = this._data?.badgeReserve;
+    // Reserve the top-left live/closed badge rect: labels are pushed clear of it.
+    if (reserve) placed.push({ l: 0, t: 0, r: reserve.w + 4, b: reserve.h + 4 });
+
+    // Live FVG-fill fronts + liquidity labels sit at their own geometry; draw them
+    // and register their rects so zone labels avoid overlapping them too.
     for (const f of this._fronts) {
       if (f.width < 60) continue;
       ctx.save();
@@ -655,28 +741,60 @@ export class ZoneOverlayPrimitive implements ISeriesPrimitive<Time> {
       ctx.textBaseline = 'top';
       ctx.fillStyle = LIVE_COLOR;
       const tw = ctx.measureText(f.label).width;
-      ctx.fillText(f.label, f.left + f.width - tw - 2, f.top + 1);
+      const fx = f.left + f.width - tw - 2;
+      ctx.fillText(f.label, fx, f.top + 1);
       ctx.restore();
+      placed.push({ l: fx, t: f.top + 1, r: fx + tw, b: f.top + 12 });
     }
-    for (const l of this._liqs) this._drawLiquidityLabel(ctx, l);
+    for (const l of this._liqs) {
+      const r = this._drawLiquidityLabel(ctx, l);
+      if (r) placed.push(r);
+    }
+
+    // Zone labels: measure → anchor → de-collide (pure placeLabels) → draw.
+    const reqs: LabelReq[] = this._boxes.map((b) => {
+      const m = this._measureZoneLabel(ctx, b);
+      const x = Math.max(2, b.left + (m.narrow ? 0 : 4));
+      let y = m.narrow ? b.top - m.h - 2 : b.top + 3;
+      if (y < 0) y = b.top + 3;
+      return { x, y, w: m.w, h: m.h };
+    });
+    const { rects, overflow } = placeLabels(reqs, placed, plotH);
+    for (let i = 0; i < this._boxes.length; i += 1) {
+      const r = rects[i];
+      if (r) this._drawZoneLabelAt(ctx, this._boxes[i]!, r.l, r.t, pillBg);
+    }
+    if (overflow > 0) {
+      // A single grouped pill (below the badge reserve), rather than an illegible
+      // stack. Detail stays available by zooming in (labels reappear per zone).
+      const gy = reserve ? reserve.h + 6 : 4;
+      drawPill(ctx, 2, gy, `${overflow} zones`, 9, ZONE_LABEL.ob, pillBg);
+    }
   }
 
-  private _drawZoneLabel(
+  /** CHART-1: measured label footprint (code pill + optional status pill). */
+  private _measureZoneLabel(
     ctx: CanvasRenderingContext2D,
     b: BoxGeom,
-    pillBg: string,
-  ): void {
+  ): { w: number; h: number; narrow: boolean } {
     const codeSize = b.tested ? 9 : 10;
     const hasStatus = b.inTestLive || b.tested;
     const narrow = b.width < (hasStatus ? 66 : 22);
-    const clusterH = codeSize + 3;
-    // The box's left edge is a pure time coordinate and often sits off-plot (old
-    // formation candle). Slide the cluster to the box's first visible pixel so the
-    // code stays readable — label chrome only, the box geometry is never clamped.
-    let x = Math.max(2, b.left + (narrow ? 0 : 4));
-    let y = narrow ? b.top - clusterH - 2 : b.top + 3;
-    if (y < 0) y = b.top + 3; // above the plot → drop back inside
+    let w = pillWidth(ctx, ZONE_CODE[b.kind], codeSize);
+    if (b.statusText) w += 3 + pillWidth(ctx, b.statusText, 9);
+    const h = Math.max(codeSize, b.statusText ? 9 : 0) + 3;
+    return { w, h, narrow };
+  }
 
+  /** Draw a zone's code (+ status) pill cluster at an explicit, de-collided x/y. */
+  private _drawZoneLabelAt(
+    ctx: CanvasRenderingContext2D,
+    b: BoxGeom,
+    x: number,
+    y: number,
+    pillBg: string,
+  ): void {
+    const codeSize = b.tested ? 9 : 10;
     ctx.save();
     const codeColor = ZONE_LABEL[b.kind];
     const adv = drawPill(
@@ -688,34 +806,41 @@ export class ZoneOverlayPrimitive implements ISeriesPrimitive<Time> {
       b.tested ? hexA(codeColor, 0.7) : codeColor,
       pillBg,
     );
-    x += adv + 3;
     if (b.statusText) {
       const stColor = b.statusLive ? LIVE_COLOR : ZONE_LABEL[b.kind];
       const stBg = b.statusLive
         ? `rgba(${LIVE_RGB}, 0.16)`
         : `rgba(${ZONE_RGB[b.kind]}, 0.18)`;
-      drawPill(ctx, x, y, b.statusText, 9, stColor, stBg);
+      drawPill(ctx, x + adv + 3, y, b.statusText, 9, stColor, stBg);
     }
     ctx.restore();
   }
 
+  /** Draw a liquidity pocket's label; returns its pixel rect (for de-collision). */
   private _drawLiquidityLabel(
     ctx: CanvasRenderingContext2D,
     l: LiqGeom,
-  ): void {
+  ): LRect | null {
     const labelColor = `rgba(${LIQUIDITY_RGB[l.side]}, 0.95)`;
     ctx.save();
     ctx.font = `9px ${MONO}`;
     ctx.textBaseline = 'bottom';
+    let rect: LRect | null = null;
     if (l.status === 'intact') {
       ctx.fillStyle = labelColor;
-      ctx.fillText(l.chartLabel, Math.max(2, l.left) + 2, l.y - 3);
+      const lx = Math.max(2, l.left) + 2;
+      const tw = ctx.measureText(l.chartLabel).width;
+      ctx.fillText(l.chartLabel, lx, l.y - 3);
+      rect = { l: lx, t: l.y - 12, r: lx + tw, b: l.y - 1 };
     } else if (l.stateText) {
       ctx.globalAlpha = l.status === 'broken' ? 0.7 : 0.9;
       ctx.fillStyle = labelColor;
       const tw = ctx.measureText(l.stateText).width;
-      ctx.fillText(l.stateText, l.left + l.width - tw - 4, l.y - 3);
+      const lx = l.left + l.width - tw - 4;
+      ctx.fillText(l.stateText, lx, l.y - 3);
+      rect = { l: lx, t: l.y - 12, r: lx + tw, b: l.y - 1 };
     }
     ctx.restore();
+    return rect;
   }
 }

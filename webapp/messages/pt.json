@@ -1996,7 +1996,12 @@
       "selectionMissing": "Este elemento já não é detetado na leitura atual.",
       "currentPrice": "Preço atual",
       "priceAbove": "O preço atual está acima da vista",
-      "priceBelow": "O preço atual está abaixo da vista"
+      "priceBelow": "O preço atual está abaixo da vista",
+      "toLatest": "Ir para a vela mais recente",
+      "loadingHistory": "A carregar o histórico…",
+      "historyError": "Falha ao carregar — tentar novamente",
+      "historyStart": "Início dos dados disponíveis para esta unidade de tempo",
+      "beyondAnalysis": "Além da janela de análise: nenhuma estrutura detetada aqui"
     },
     "layers": {
       "ob": "OB",

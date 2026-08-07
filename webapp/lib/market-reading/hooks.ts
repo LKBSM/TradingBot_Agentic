@@ -4,6 +4,7 @@ import * as React from 'react';
 import {
   CandlesError,
   fetchCandles,
+  fetchCandlesPage,
   fetchMarketReading,
   MarketReadingNotAvailableError,
   type CandlesErrorReason,
@@ -54,6 +55,10 @@ const MOCK_LATENCY_MS = 220;
  */
 const readingCache = new Map<string, MarketReading>();
 const candlesCache = new Map<string, Candle[]>();
+// CHART-1: per-combo "older candles still exist before the oldest loaded bar".
+// Cached alongside the series so a combo revisit restores the pagination floor
+// (and the "start of available data" message) without a re-probe.
+const candlesHasMoreCache = new Map<string, boolean>();
 const comboCacheKey = (source: string, instrument: string, timeframe: string) =>
   `${source}:${instrument}:${timeframe}`;
 
@@ -65,6 +70,7 @@ const comboCacheKey = (source: string, instrument: string, timeframe: string) =>
 export function __resetReadingRetention(): void {
   readingCache.clear();
   candlesCache.clear();
+  candlesHasMoreCache.clear();
 }
 
 /**
@@ -296,6 +302,32 @@ export interface UseCandlesResult {
    * refresh. `refresh()` (and the bounded auto-retry below) close that gap.
    */
   refresh(): void;
+  // ── CHART-1 history pagination ──────────────────────────────────────────────
+  /** True while older candles still exist before the oldest loaded bar. */
+  hasMoreHistory: boolean;
+  /** True while a history page is being fetched (older bars). */
+  loadingOlder: boolean;
+  /** The last history-load error (for a discreet "réessayer"); null otherwise. */
+  olderError: Error | null;
+  /**
+   * Load the page of candles just OLDER than the current oldest, merging it in
+   * WITHOUT ever dropping the bars already shown (CHART-1). No-op while a page is
+   * in flight, when there is nothing older, or before any candles are loaded.
+   */
+  loadOlder(): void;
+}
+
+/**
+ * Merge two ascending candle arrays by `time` (union, `overlay` wins on a tie so
+ * a refreshed recent bar overwrites a stale one), returning ascending order.
+ * Used both to prepend history and to fold a fresh window into loaded history
+ * without losing what the user scrolled back to.
+ */
+function mergeCandlesByTime(base: Candle[], overlay: Candle[]): Candle[] {
+  const byTime = new Map<number, Candle>();
+  for (const c of base) byTime.set(c.time, c);
+  for (const c of overlay) byTime.set(c.time, c);
+  return Array.from(byTime.values()).sort((a, b) => a.time - b.time);
 }
 
 /**
@@ -358,6 +390,30 @@ export function useCandles(
   const requestSeq = React.useRef(0);
   const loadedKey = React.useRef<string | null>(null);
 
+  // ── CHART-1 history pagination state ────────────────────────────────────────
+  const [hasMoreHistory, setHasMoreHistory] = React.useState(false);
+  const [loadingOlder, setLoadingOlder] = React.useState(false);
+  const [olderError, setOlderError] = React.useState<Error | null>(null);
+  // Refs so the stable `loadOlder` callback always sees the latest values
+  // without re-creating itself (the chart wires it to a zoom-out handler).
+  const candlesRef = React.useRef<Candle[] | null>(null);
+  const hasMoreRef = React.useRef(false);
+  const loadingOlderRef = React.useRef(false);
+  const instrumentRef = React.useRef(instrument);
+  const timeframeRef = React.useRef(timeframe);
+  const olderAbortRef = React.useRef<AbortController | null>(null);
+  React.useEffect(() => {
+    candlesRef.current = candles;
+  }, [candles]);
+  React.useEffect(() => {
+    hasMoreRef.current = hasMoreHistory;
+  }, [hasMoreHistory]);
+  React.useEffect(() => {
+    loadingOlderRef.current = loadingOlder;
+  }, [loadingOlder]);
+  instrumentRef.current = instrument;
+  timeframeRef.current = timeframe;
+
   // PERF-2 recovery handles: a manual-refresh nonce (bumped by refresh() and by
   // the bounded auto-retry) re-runs the effect; the attempt counter is reset on
   // every combo change and every success so each combo gets its own retry budget.
@@ -375,6 +431,9 @@ export function useCandles(
       setCandles(null);
       setIsLoading(false);
       setError(null);
+      setHasMoreHistory(false);
+      setLoadingOlder(false);
+      setOlderError(null);
       return;
     }
 
@@ -391,30 +450,60 @@ export function useCandles(
       setCandles(getMockCandles(instrument, timeframe));
       setIsLoading(false);
       setError(null);
+      setHasMoreHistory(false);
       return;
     }
 
     // PERF-1: on a combo revisit, show THIS combo's cached candles instantly
     // (correct series, no wrong-combo flash) and revalidate below. A same-combo
     // re-pull (a candle just closed) keeps the current series while it refreshes.
+    // CHART-1: a combo change abandons any in-flight history load and restores
+    // THIS combo's pagination floor from cache.
     if (isComboChange) {
+      olderAbortRef.current?.abort();
+      setLoadingOlder(false);
+      setOlderError(null);
       const cached = candlesCache.get(ck) ?? null;
       if (cached) setCandles(cached);
+      setHasMoreHistory(candlesHasMoreCache.get(ck) ?? false);
     }
 
     const controller = new AbortController();
     setIsLoading(true);
     setError(null);
 
-    fetchCandles(instrument, timeframe, {
+    fetchCandlesPage(instrument, timeframe, {
       signal: controller.signal,
       limit: CHART_CANDLE_LIMIT,
     })
-      .then((data) => {
+      .then(({ candles: data, hasMore }) => {
         if (seq !== requestSeq.current) return; // stale
         retryCountRef.current = 0; // healed — restore the budget for future blips
-        if (data.length > 0) candlesCache.set(ck, data);
-        setCandles(data.length > 0 ? data : null);
+        if (data.length === 0) {
+          setCandles(null);
+          setError(null);
+          return;
+        }
+        // CHART-1: fold the fresh latest window into whatever is already loaded
+        // (which may include history the user scrolled back to) rather than
+        // replacing it — loaded bars must never vanish on a candle close. Only a
+        // brand-new combo with no loaded/cached series takes the window verbatim.
+        const existing = isComboChange ? candlesCache.get(ck) ?? null : candlesRef.current;
+        const merged = existing && existing.length > 0 ? mergeCandlesByTime(existing, data) : data;
+        candlesCache.set(ck, merged);
+        setCandles(merged);
+        // `hasMore` from this window is about older-than-the-window; it only
+        // reflects our true floor when nothing older is already loaded. If we
+        // already hold history older than the window, keep the known floor.
+        const oldestLoaded = merged[0]?.time ?? null;
+        const windowOldest = data[0]?.time ?? null;
+        if (oldestLoaded != null && windowOldest != null && oldestLoaded < windowOldest) {
+          // history already extends past the window — floor unchanged.
+          setHasMoreHistory(candlesHasMoreCache.get(ck) ?? hasMoreRef.current);
+        } else {
+          candlesHasMoreCache.set(ck, hasMore);
+          setHasMoreHistory(hasMore);
+        }
         setError(null);
       })
       .catch((err: unknown) => {
@@ -455,7 +544,62 @@ export function useCandles(
     // candleCloseTs re-pulls on a fresh close; refreshNonce on manual/auto retry.
   }, [instrument, timeframe, source, candleCloseTs, refreshNonce]);
 
-  return { candles, isLoading, error, refresh };
+  // ── CHART-1: load the page just OLDER than the current oldest, on demand ──────
+  const loadOlder = React.useCallback(() => {
+    if (source === 'mock') return;
+    const inst = instrumentRef.current;
+    const tf = timeframeRef.current;
+    const loaded = candlesRef.current;
+    if (!inst || !tf || !loaded || loaded.length === 0) return;
+    if (loadingOlderRef.current || !hasMoreRef.current) return;
+
+    const oldest = loaded[0]!.time;
+    const ck = comboCacheKey(source, inst, tf);
+    const controller = new AbortController();
+    olderAbortRef.current?.abort();
+    olderAbortRef.current = controller;
+    setLoadingOlder(true);
+    setOlderError(null);
+
+    fetchCandlesPage(inst, tf, {
+      signal: controller.signal,
+      limit: CHART_CANDLE_LIMIT,
+      before: oldest,
+    })
+      .then(({ candles: older, hasMore }) => {
+        if (controller.signal.aborted) return;
+        // Guard against a combo change mid-flight.
+        if (instrumentRef.current !== inst || timeframeRef.current !== tf) return;
+        const current = candlesRef.current ?? [];
+        // Prepend the older page; merge preserves everything already shown.
+        const merged = older.length > 0 ? mergeCandlesByTime(older, current) : current;
+        candlesCache.set(ck, merged);
+        candlesHasMoreCache.set(ck, hasMore);
+        setCandles(merged);
+        setHasMoreHistory(hasMore);
+      })
+      .catch((err: unknown) => {
+        if (controller.signal.aborted) return;
+        if (instrumentRef.current !== inst || timeframeRef.current !== tf) return;
+        // The already-shown candles stay; surface a discreet retry affordance.
+        setOlderError(err instanceof Error ? err : new Error(String(err)));
+      })
+      .finally(() => {
+        if (controller.signal.aborted) return;
+        setLoadingOlder(false);
+      });
+  }, [source]);
+
+  return {
+    candles,
+    isLoading,
+    error,
+    refresh,
+    hasMoreHistory,
+    loadingOlder,
+    olderError,
+    loadOlder,
+  };
 }
 
 // ─── Unified last price (header) ─────────────────────────────────────────────

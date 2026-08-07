@@ -97,7 +97,15 @@ export function DesktopReading({
 
   // Candle + price feeds — identical wiring to ReadingColumn (mobile), so the
   // desktop layout reads exactly the same honest, candle-close data.
-  const { candles, error: candlesError, refresh: refreshCandles } = useCandles(
+  const {
+    candles,
+    error: candlesError,
+    refresh: refreshCandles,
+    hasMoreHistory,
+    loadingOlder,
+    olderError,
+    loadOlder,
+  } = useCandles(
     active?.instrument ?? null,
     active?.timeframe ?? null,
     { source: dataSource, candleCloseTs: reading?.header.candle_close_ts ?? null },
@@ -231,6 +239,8 @@ export function DesktopReading({
         onClearHighlight={onClearHighlight}
         hiddenZoneIds={chartView.hiddenZoneIds}
         isolatedZoneIds={chartView.isolatedZoneIds}
+        history={{ hasMore: hasMoreHistory, loadingOlder, olderError, loadOlder }}
+        analysisWindowBars={header.analysis_window_bars ?? null}
       />
     ) : (
       <ChartUnavailable

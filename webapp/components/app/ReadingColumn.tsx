@@ -26,6 +26,7 @@ import { useChartViewOptional } from '@/lib/chart/viewState';
 import type { ChartSelection, ChartViewState, ReferenceLevel } from '@/lib/chart/viewActions';
 import type { Combo } from '@/lib/market-reading/store';
 import type { Candle, MarketReading, MarketState } from '@/types/market-reading';
+import type { ChartHistory } from './ReadingChart';
 
 /**
  * The chart is client-only (canvas) and pulls in lightweight-charts — load it
@@ -76,10 +77,22 @@ export function ReadingColumn({
   const t = useTranslations('app');
   // Candle feed for the chart hero. Re-pulled when the combo changes or a new
   // candle closes (candle_close_ts) — never faster, to keep the load honest.
-  const { candles, error: candlesError, refresh: refreshCandles } = useCandles(
-    active?.instrument ?? null,
-    active?.timeframe ?? null,
-    { source: dataSource, candleCloseTs: reading?.header.candle_close_ts ?? null },
+  const {
+    candles,
+    error: candlesError,
+    refresh: refreshCandles,
+    hasMoreHistory,
+    loadingOlder,
+    olderError,
+    loadOlder,
+  } = useCandles(active?.instrument ?? null, active?.timeframe ?? null, {
+    source: dataSource,
+    candleCloseTs: reading?.header.candle_close_ts ?? null,
+  });
+  // CHART-1: history pagination handles for the chart (undefined-safe object).
+  const chartHistory: ChartHistory = React.useMemo(
+    () => ({ hasMore: hasMoreHistory, loadingOlder, olderError, loadOlder }),
+    [hasMoreHistory, loadingOlder, olderError, loadOlder],
   );
 
   // Unified last price for the header — the M15 freshest close, identical
@@ -164,7 +177,7 @@ export function ReadingColumn({
       <MarketReadingCard
         reading={reading}
         onAskChatbot={focusChat}
-        chartSlot={buildChartSlot(reading, candles, livePrice, liveTs, active?.timeframe ?? null, chartView, onClearHighlight, marketClosed, serverStatus?.state ?? null, referenceLevel, selection, candlesError, refreshCandles)}
+        chartSlot={buildChartSlot(reading, candles, livePrice, liveTs, active?.timeframe ?? null, chartView, onClearHighlight, marketClosed, serverStatus?.state ?? null, referenceLevel, selection, candlesError, refreshCandles, chartHistory)}
         live={liveHeader}
         marketClosed={marketClosed}
         status={serverStatus}
@@ -220,6 +233,7 @@ function buildChartSlot(
   selection: ChartSelection | null,
   candlesError: Error | null = null,
   onRetryCandles?: () => void,
+  history?: ChartHistory | null,
 ): React.ReactNode {
   if (!candles || candles.length === 0) {
     return (
@@ -248,6 +262,8 @@ function buildChartSlot(
       onClearHighlight={onClearHighlight}
       hiddenZoneIds={chartView.hiddenZoneIds}
       isolatedZoneIds={chartView.isolatedZoneIds}
+      history={history ?? undefined}
+      analysisWindowBars={reading.header.analysis_window_bars ?? null}
     />
   );
 }

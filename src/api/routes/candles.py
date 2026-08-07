@@ -20,7 +20,7 @@ free-tier budget is untouched by chart fetches.
 from __future__ import annotations
 
 import logging
-from datetime import timezone
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -69,11 +69,18 @@ class CandleOut(BaseModel):
 
 
 class CandlesResponse(BaseModel):
-    """Envelope for the candle window served to the chart."""
+    """Envelope for the candle window served to the chart.
+
+    ``has_more`` — CHART-1: whether older candles exist strictly before the
+    first returned candle. The chart uses it to (a) fetch the previous page when
+    the user zooms out, and (b) show "start of available data for this timeframe"
+    when it turns False. Never implies a network fetch — it reflects the cache.
+    """
 
     instrument: str
     timeframe: str
     candles: List[CandleOut]
+    has_more: bool = False
 
 
 @router.get("/candles", response_model=CandlesResponse)
@@ -82,6 +89,14 @@ async def get_candles(
     instrument: str = Query(..., description="XAUUSD or EURUSD"),
     timeframe: str = Query(..., description="M15, H1, H4 (chart) or D1, W1 (reference levels)"),
     limit: int = Query(DEFAULT_LIMIT, ge=1, le=MAX_LIMIT, description="Max candles"),
+    before: Optional[int] = Query(
+        None,
+        description=(
+            "CHART-1 history pagination: UTC epoch (seconds). When set, return up "
+            "to `limit` candles STRICTLY OLDER than this time (ascending), for "
+            "loading history as the user zooms out. Pure cache read, no provider."
+        ),
+    ),
     account: Optional[Dict[str, Any]] = Depends(optional_account),
 ) -> CandlesResponse:
     if instrument not in SUPPORTED_INSTRUMENTS:
@@ -108,6 +123,32 @@ async def get_candles(
     if store is None:
         raise HTTPException(status_code=503, detail="Candles store not configured")
 
+    # ── History pagination (CHART-1) ──────────────────────────────────────────
+    # `before` set → return the `limit` candles just OLDER than that time. We ask
+    # for one extra to know, in the same indexed read, whether anything older
+    # still exists (`has_more`) without a second query. Reaching the floor is a
+    # normal 200 with an empty list (NOT a 404) so the chart can say "start of
+    # available data" instead of erroring.
+    if before is not None:
+        before_dt = datetime.fromtimestamp(before, tz=timezone.utc)
+        try:
+            block = store.get_candles_before(instrument, timeframe, before_dt, limit + 1)
+        except Exception:
+            logger.exception("candles history read failed for %s/%s", instrument, timeframe)
+            raise HTTPException(status_code=500, detail="Internal server error")
+        has_more = len(block) > limit
+        # Drop the oldest sentinel so the returned page is exactly `limit` and
+        # stays contiguous with what the client already holds; the next page will
+        # re-include it as its own newest bar (no gap, dedup on the client).
+        candles = block[1:] if has_more else block
+        return CandlesResponse(
+            instrument=instrument,
+            timeframe=timeframe,
+            candles=[_to_candle_out(c) for c in candles],
+            has_more=has_more,
+        )
+
+    # ── Initial window: the most recent `limit` candles ───────────────────────
     try:
         candles = store.get_last_n_candles(instrument, timeframe, limit)
     except Exception:
@@ -134,10 +175,18 @@ async def get_candles(
             detail=f"No candles cached yet for {instrument}/{timeframe}",
         )
 
+    # Is there any candle older than this initial window? (indexed 1-row probe)
+    try:
+        older = store.get_candles_before(instrument, timeframe, candles[0].ts, 1)
+        has_more = bool(older)
+    except Exception:
+        has_more = False
+
     return CandlesResponse(
         instrument=instrument,
         timeframe=timeframe,
         candles=[_to_candle_out(c) for c in candles],
+        has_more=has_more,
     )
 
 

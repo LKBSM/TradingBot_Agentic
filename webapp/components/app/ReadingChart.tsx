@@ -18,7 +18,15 @@ import {
   type Time,
   type UTCTimestamp,
 } from 'lightweight-charts';
-import { Droplets, Maximize2, Minus, Plus } from 'lucide-react';
+import {
+  ChevronsRight,
+  Droplets,
+  Loader2,
+  Maximize2,
+  Minus,
+  Plus,
+  RotateCw,
+} from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
@@ -162,6 +170,27 @@ export interface ReadingChartProps {
    * the landing hero passes a fixed height to keep the marketing layout stable.
    */
   heightClassName?: string;
+  /**
+   * CHART-1 — history pagination handles (from `useCandles`). When present the
+   * chart loads OLDER candles on demand as the user zooms/pans left (loaded bars
+   * never vanish), shows a discreet load state, a "start of available data" note
+   * at the floor, and a retry on failure. Omit for a static window (landing hero).
+   */
+  history?: ChartHistory;
+  /**
+   * CHART-1 — bars the engine actually analysed (`header.analysis_window_bars`).
+   * Candles older than this are shown but carry NO detected structure; the chart
+   * flags that region so an un-annotated stretch never reads as "no structure".
+   */
+  analysisWindowBars?: number | null;
+}
+
+/** CHART-1 — history pagination handles surfaced by `useCandles`. */
+export interface ChartHistory {
+  hasMore: boolean;
+  loadingOlder: boolean;
+  olderError: Error | null;
+  loadOlder: () => void;
 }
 
 // Timeframe → bar length in seconds, from the single registry (TF-1). Covers all
@@ -194,6 +223,15 @@ const FOCUS_PRICE_BARS = 40;
  */
 const DEFAULT_VISIBLE_BARS = 90;
 const INITIAL_RIGHT_PAD_BARS = 3;
+
+/**
+ * CHART-1 zoom bounds. `MIN_VISIBLE_BARS` = tightest zoom-in (examine a zone
+ * closely, ~20 bars). `HISTORY_PREFETCH_BARS` = how close the left edge must get
+ * to the oldest loaded bar before we fetch the previous page on zoom-out. Applied
+ * to every input (buttons, wheel, pinch) via the timescale subscription below.
+ */
+const MIN_VISIBLE_BARS = 20;
+const HISTORY_PREFETCH_BARS = 15;
 
 /**
  * Minimum vertical (price) span the auto-scale is allowed to collapse to,
@@ -279,9 +317,25 @@ export function ReadingChart({
   isolatedZoneIds = DEFAULT_CHART_VIEW.isolatedZoneIds,
   className,
   heightClassName = 'h-[clamp(300px,52svh,560px)]',
+  history,
+  analysisWindowBars = null,
 }: ReadingChartProps) {
   const t = useTranslations('app');
   const { resolvedTheme } = useTheme();
+
+  // CHART-1: keep the latest history handles in a ref so the (stable) timescale
+  // subscription reads them without re-subscribing on every render.
+  const historyRef = React.useRef<ChartHistory | undefined>(history);
+  historyRef.current = history;
+  const analysisWindowRef = React.useRef<number | null>(analysisWindowBars);
+  analysisWindowRef.current = analysisWindowBars;
+  // CHART-1 UI flags, set from the timescale subscription ONLY when they flip
+  // (never per pan/zoom frame — keeps the PERF-2 fluidité).
+  const [atHistoryFloor, setAtHistoryFloor] = React.useState(false);
+  const [beyondAnalysis, setBeyondAnalysis] = React.useState(false);
+  const atFloorRef = React.useRef(false);
+  const beyondRef = React.useRef(false);
+  const clampingRef = React.useRef(false);
 
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const chartRef = React.useRef<IChartApi | null>(null);
@@ -1027,6 +1081,10 @@ export function ReadingChart({
         resolvedTheme === 'light'
           ? 'rgba(255, 255, 255, 0.72)'
           : 'rgba(17, 20, 32, 0.65)',
+      // CHART-1: reserve the top-left corner when the "EN DIRECT"/"Marché fermé"
+      // badge is shown, so canvas zone labels never hide under it. Generous box
+      // covers the localized badge widths; labels shift down/right to clear it.
+      badgeReserve: marketClosed || liveActive ? { w: 150, h: 22 } : null,
     };
   }, [
     zones,
@@ -1036,6 +1094,8 @@ export function ReadingChart({
     lastCandle?.time,
     highlightZoneId,
     resolvedTheme,
+    marketClosed,
+    liveActive,
     t,
   ]);
 
@@ -1365,13 +1425,85 @@ export function ReadingChart({
     const range = ts.getVisibleLogicalRange();
     if (!range) return;
     const center = (range.from + range.to) / 2;
-    const half = ((range.to - range.from) / 2) * factor;
-    ts.setVisibleLogicalRange({ from: center - half, to: center + half });
+    // CHART-1: never zoom in below MIN_VISIBLE_BARS (readable detail floor).
+    const span = Math.max(MIN_VISIBLE_BARS, (range.to - range.from) * factor);
+    ts.setVisibleLogicalRange({ from: center - span / 2, to: center + span / 2 });
   }, []);
 
   const fit = React.useCallback(() => {
     chartRef.current?.timeScale().fitContent();
   }, []);
+
+  // CHART-1: jump back to the most recent candle (default zoom) once the user has
+  // scrolled far into the past.
+  const toLatest = React.useCallback(() => {
+    const ts = chartRef.current?.timeScale();
+    if (!ts) return;
+    const n = lastCandlesRef.current?.length ?? 0;
+    if (n > DEFAULT_VISIBLE_BARS) {
+      ts.setVisibleLogicalRange({
+        from: n - DEFAULT_VISIBLE_BARS,
+        to: n - 1 + INITIAL_RIGHT_PAD_BARS,
+      });
+    } else {
+      ts.scrollToRealTime();
+    }
+  }, []);
+
+  // ── CHART-1 timescale subscription: bound zoom-in, prefetch history on
+  // zoom-out, and flip the "start of data" / "beyond analysis window" flags. Set
+  // up once the chart exists; reads live handles from refs (no re-subscribe).
+  React.useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    const ts = chart.timeScale();
+    const onRange = (range: { from: number; to: number } | null) => {
+      if (!range) return;
+      // (1) clamp tightest zoom-in for wheel/pinch too (buttons clamp in zoom()).
+      const spanNow = range.to - range.from;
+      if (spanNow < MIN_VISIBLE_BARS - 0.5 && !clampingRef.current) {
+        clampingRef.current = true;
+        const center = (range.from + range.to) / 2;
+        ts.setVisibleLogicalRange({
+          from: center - MIN_VISIBLE_BARS / 2,
+          to: center + MIN_VISIBLE_BARS / 2,
+        });
+        requestAnimationFrame(() => {
+          clampingRef.current = false;
+        });
+        return;
+      }
+      const n = lastCandlesRef.current?.length ?? 0;
+      // (2) prefetch the previous page when the left edge nears the oldest bar.
+      const h = historyRef.current;
+      if (
+        h &&
+        h.hasMore &&
+        !h.loadingOlder &&
+        !h.olderError &&
+        range.from < HISTORY_PREFETCH_BARS
+      ) {
+        h.loadOlder();
+      }
+      // (3) flags (only on change): at the history floor / beyond analysis window.
+      const atFloor = (!h || !h.hasMore) && range.from < 0.5;
+      const aw = analysisWindowRef.current;
+      const beyond = aw != null && n > aw && range.from < n - aw;
+      if (atFloor !== atFloorRef.current) {
+        atFloorRef.current = atFloor;
+        setAtHistoryFloor(atFloor);
+      }
+      if (beyond !== beyondRef.current) {
+        beyondRef.current = beyond;
+        setBeyondAnalysis(beyond);
+      }
+    };
+    ts.subscribeVisibleLogicalRangeChange(onRange);
+    return () => {
+      ts.unsubscribeVisibleLogicalRangeChange(onRange);
+    };
+    // Re-subscribe if the chart instance is recreated (theme change).
+  }, [resolvedTheme]);
 
   // Timezone indicator — resolved on the client only (the browser's offset), so
   // it never mismatches the server render.
@@ -1491,6 +1623,47 @@ export function ReadingChart({
         )
       )}
 
+      {/* CHART-1 history status — top-CENTER so it never sits under the top-left
+          "EN DIRECT" badge. Loading (older bars) → floor reached → load error. */}
+      {history && (history.loadingOlder || history.olderError || atHistoryFloor) && (
+        <div
+          className="pointer-events-none absolute left-1/2 top-2 z-20 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-border/70 bg-background/85 px-2.5 py-0.5 text-[11px] text-muted-foreground backdrop-blur-sm"
+          role="status"
+          aria-live="polite"
+        >
+          {history.loadingOlder ? (
+            <>
+              <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
+              {t('chart.loadingHistory')}
+            </>
+          ) : history.olderError ? (
+            <button
+              type="button"
+              onClick={() => history.loadOlder()}
+              className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full"
+            >
+              <RotateCw className="h-3 w-3" aria-hidden />
+              {t('chart.historyError')}
+            </button>
+          ) : (
+            t('chart.historyStart')
+          )}
+        </div>
+      )}
+
+      {/* CHART-1: the visible window has scrolled OLDER than the analysis window —
+          bars are shown but no structure is detected there. Bottom-center, above
+          the controls, so it doesn't collide with labels or the live badge. */}
+      {beyondAnalysis && (
+        <div
+          className="pointer-events-none absolute bottom-2 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-border/70 bg-background/85 px-2.5 py-0.5 text-[11px] text-muted-foreground backdrop-blur-sm"
+          role="status"
+          aria-live="polite"
+        >
+          {t('chart.beyondAnalysis')}
+        </div>
+      )}
+
       {/* Sober pan/zoom controls — visually light, ≥44px tap zone on touch.
           z-10 lifts them above the lightweight-charts canvases (which carry
           their own z-index and would otherwise intercept clicks over the
@@ -1505,6 +1678,13 @@ export function ReadingChart({
         <ChartControl label={t('chart.fit')} onClick={fit}>
           <Maximize2 className="h-4 w-4" aria-hidden />
         </ChartControl>
+        {/* CHART-1: jump back to the most recent candle after scrolling into
+            history. Only offered when history pagination is wired. */}
+        {history && (
+          <ChartControl label={t('chart.toLatest')} onClick={toLatest}>
+            <ChevronsRight className="h-4 w-4" aria-hidden />
+          </ChartControl>
+        )}
         {/* "Poches intactes seulement" — reversible DISPLAY filter (hides the
             swept/broken liquidity segments, deletes nothing). Only offered when
             the liquidity layer is on and the engine emitted pockets. */}
