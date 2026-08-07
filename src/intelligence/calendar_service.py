@@ -274,12 +274,21 @@ class CalendarService:
             )
 
             kind = series_kind_for(ev.series_code)
-            # NW-8: tell the frontend HOW the series reads (variation-first). All
-            # current variation kinds are PUBLISHED by the organism; a future
-            # product-computed one would set variation_published=False here.
+            # NW-8: tell the frontend HOW the series reads (variation-first).
+            #  · *_change  = the organism PUBLISHES the variation (BLS calculations,
+            #    BEA/Eurostat % series) → variation_published=True.
+            #  · *_computed = the organism publishes only the LEVEL; the product
+            #    computes the variation from two published levels (Batch 2) →
+            #    variation_published=False, and the DISPLAY kind is the matching
+            #    *_change so the frontend renders it identically, only the
+            #    attribution line differs (published vs computed).
+            computed = kind in ("index_computed", "amount_computed")
             if kind in ("index_change", "count_change", "published_change"):
                 ev.variation_kind = kind
                 ev.variation_published = True
+            elif computed:
+                ev.variation_kind = "index_change" if kind == "index_computed" else "amount_change"
+                ev.variation_published = False
             # The published history (twelve-figure curve) is attached ONLY here, on
             # the per-event detail path — one series call per detail, never per row
             # of the list/month window. Absent series/fetcher ⇒ empty ⇒ no curve.
@@ -292,14 +301,26 @@ class CalendarService:
                 ):
                     ev.value_series = cached_series[1]
                 else:
+                    # Computed kinds fetch the raw LEVEL series, then derive the
+                    # variation from consecutive published levels (exact, attributed
+                    # "computed"); published kinds pass the organism's own values.
+                    fetch_kind = "level" if computed else kind
+                    raw_points = self._value_fetcher.series_for(
+                        ev.source, ev.series_code, kind=fetch_kind
+                    )
+                    if computed:
+                        from src.intelligence.calendar_providers.values.base_value import (
+                            derive_variation_series,
+                        )
+
+                        mode = "index" if kind == "index_computed" else "amount"
+                        raw_points = derive_variation_series(raw_points, mode)
                     series = [
                         CalendarSeriesPoint(
                             period=p.period, value=p.value,
                             level=p.level, change_mom=p.change_mom,
                         )
-                        for p in self._value_fetcher.series_for(
-                            ev.source, ev.series_code, kind=kind
-                        )
+                        for p in raw_points
                     ]
                     # Only cache a NON-EMPTY series: an empty read (transient
                     # network failure or exhausted quota) must not be pinned for

@@ -2785,8 +2785,17 @@
           "us_jolts": "Nombre de postes ouverts et non pourvus le dernier jour du mois. On regarde sa variation d'un mois à l'autre.",
           "us_gdp": "Le produit intérieur brut mesure la valeur de tout ce qui est produit dans le pays. Le chiffre publié est déjà sa variation d'un trimestre à l'autre, en volume.",
           "ea_hicp_flash": "L'indice des prix à la consommation harmonisé suit l'évolution des prix dans la zone euro. Le chiffre publié est déjà sa variation sur un an.",
-          "ea_gdp_flash": "Première estimation de la variation du produit intérieur brut de la zone euro d'un trimestre à l'autre, en volume."
-        }
+          "ea_gdp_flash": "Première estimation de la variation du produit intérieur brut de la zone euro d'un trimestre à l'autre, en volume.",
+          "us_pce": "L'indice des prix des dépenses de consommation (PCE) suit le prix de ce que consomment les ménages, dans un panier plus large que l'IPC. On le lit par sa variation sur un mois et sur un an.",
+          "us_retail_sales": "Montant total des ventes du commerce de détail et de la restauration dans le mois. On le lit par sa variation d'un mois à l'autre.",
+          "us_housing_starts": "Nombre de logements dont la construction a commencé dans le mois, exprimé en rythme annuel. On le lit par sa variation d'un mois à l'autre.",
+          "us_durable_goods": "Montant des nouvelles commandes de biens durables (voitures, machines, avions…) passées aux industriels dans le mois. On le lit par sa variation d'un mois à l'autre.",
+          "us_fomc_rate": "Fourchette du taux directeur fixée par la Réserve fédérale. C'est le taux auquel les banques se prêtent au jour le jour ; il oriente le coût du crédit dans l'économie.",
+          "ea_unemployment": "Part de la population active sans emploi et à la recherche d'un emploi, dans la zone euro.",
+          "ea_ecb_rate": "Taux directeur fixé par la Banque centrale européenne. C'est le taux de référence du crédit dans la zone euro."
+        },
+        "varAmount": "<b>{value}</b> sur le mois",
+        "levelAmount": "montant : {level} {unit}"
       },
       "questions": {
         "sectionTitle": "Ce que le moteur a mesuré aux publications précédentes",

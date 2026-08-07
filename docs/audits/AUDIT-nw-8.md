@@ -181,3 +181,39 @@ d'abord**. Publications couvertes : **IPC, IPC sous-jacent, IPP** (index_change)
 - **Taux** (FOMC, chômage EA, BCE) : valeur = taux, à doter d'une **phrase d'explication** (Batch 2).
 - **FOMC minutes / dot plot** : pas de valeur numérique.
 - 9 phrases d'explication restantes (les 9 publications hors Batch-1).
+
+---
+
+# PARTIE 3 — LIVRÉ (Batch 2 : variations CALCULÉES + phrases restantes)
+
+## Variations calculées depuis deux niveaux publiés (attribuées « calculée »)
+- **PCE** : `series_kind="index_computed"`. La table BEA « % change » ne donne pas proprement
+  mois ET an ensemble ; **calculer les deux depuis l'indice publié (T2.8.4) est EXACT** et les
+  fournit tous les deux → retenu. `value`=variation annuelle, `level`=indice, `change_mom`=mensuelle.
+- **Ventes de détail, biens durables, mises en chantier** : `series_kind="amount_computed"`.
+  `value`=variation mensuelle %, `level`=montant/compte publié.
+- Mécanique : `derive_variation_series(points, "index"|"amount")` (base_value.py) — pur, exact,
+  jamais fabriqué (un point sans le niveau requis est écarté). `calendar_service` fetch les
+  **niveaux** (kind="level") puis dérive ; `variation_kind` d'affichage = `index_change`/`amount_change`,
+  **`variation_published=False`** → ligne d'attribution « **Variation calculée par MIA à partir de deux
+  niveaux publiés par {organisme}** ». **Piège respecté** : séries CVS uniquement, jamais brut/CVS mélangés.
+
+## Rendu & i18n
+- Nouveau profil frontend **`amount_change`** (valeur = % mensuel, niveau = **montant**) : `varAmount`
+  + `levelAmount`. `isPct` inclut `amount_change`. Publications calculées : même rendu variation-first,
+  seule l'attribution diffère (calculée vs publiée).
+- **7 phrases d'explication** rédigées (PCE, ventes détail, mises en chantier, biens durables, taux
+  FOMC, chômage EA, taux BCE) fr+en natives + 7 locales (parité, repli EN). `CURVE_EXPLAIN` : 8+7=15
+  → **toutes les publications à courbe ont désormais leur phrase.**
+- **Taux** (FOMC, chômage EA, BCE) : **pas de variation** (la valeur EST le taux) → courbe = niveau
+  (rendu inchangé) + **phrase d'explication** ajoutée. Conforme à la règle « pour un taux, le niveau
+  est l'info ».
+
+## Vérification (Batch 2)
+- pytest **52** (fetchers) + tests `derive_variation` (index & amount). vitest **874/874** (+ test
+  amount_change/calculée). **tsc** vert · **build** vert · **Playwright nw8 16/16** (publiée /
+  **calculée** / sans variation / sans phrase, 1280×800 & 390×844 ×2 projets). Parité 9 locales.
+
+## Restes après Batch 2
+- **FOMC minutes / dot plot** : pas de valeur numérique → pas de courbe (rien à faire).
+- Toutes les autres publications sont couvertes (variation publiée ou calculée, ou taux + phrase).

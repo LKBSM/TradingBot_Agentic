@@ -107,8 +107,12 @@ const PEDAGOGY_FICHES: ReadonlySet<string> = new Set([
  * Kept in sync with the `calendar.pub.curve.explain.<key>` messages (guard test).
  */
 const CURVE_EXPLAIN: ReadonlySet<string> = new Set([
+  // Batch 1 (published variations)
   'us_cpi', 'us_cpi_core', 'us_ppi', 'us_employment_situation', 'us_jolts',
   'us_gdp', 'ea_hicp_flash', 'ea_gdp_flash',
+  // Batch 2 (computed variations + rates)
+  'us_pce', 'us_retail_sales', 'us_housing_starts', 'us_durable_goods',
+  'us_fomc_rate', 'ea_unemployment', 'ea_ecb_rate',
 ]);
 
 /**
@@ -230,7 +234,7 @@ function CurveCard({
   // NW-8: for the 8 published-variation publications `value` IS the variation
   // (% change, or an absolute monthly change for a count) — the curve plots it.
   const vk = ev.variation_kind ?? null;
-  const isPct = vk === 'index_change' || vk === 'published_change';
+  const isPct = vk === 'index_change' || vk === 'published_change' || vk === 'amount_change';
   const rawMin = Math.min(...values);
   const rawMax = Math.max(...values);
   // A variation can be negative → keep zero in view so the sign is honest.
@@ -418,6 +422,16 @@ function CurveCard({
                 <span className="pub-var-level">
                   {' · '}
                   {t('pub.curve.levelTotal', { level: fmtCount(lastReal.level) })}
+                </span>
+              )}
+            </div>
+          ) : vk === 'amount_change' ? (
+            <div className="pub-var-headline">
+              {t.rich('pub.curve.varAmount', { ...RICH, value: fmtPct(lastReal.value) })}
+              {lastReal.level != null && (
+                <span className="pub-var-level">
+                  {' · '}
+                  {t('pub.curve.levelAmount', { level: fmtLevel(lastReal.level), unit: ev.value_unit ?? '' })}
                 </span>
               )}
             </div>
