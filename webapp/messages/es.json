@@ -2282,6 +2282,10 @@
         "contact": {
           "title": "6. Contacto",
           "body": "Para cualquier pregunta relativa a tus datos: loukmanebessam@gmail.com."
+        },
+        "dictee": {
+          "title": "7. Dictado por voz",
+          "body": "El escáner conversacional ofrece entrada por voz. El reconocimiento de voz lo realiza su navegador; en algunos navegadores (p. ej. Chrome, Edge), el audio capturado puede enviarse a los servidores del proveedor del navegador para su transcripción — una transferencia a un tercero que puede estar ubicado fuera de Quebec. Esta transcripción produce texto, que usted revisa y puede corregir antes de cualquier envío. No se conserva ninguna grabación de audio, ni en su dispositivo ni en nuestros servidores: solo recibimos el texto que usted decide enviar. La entrada por teclado permanece disponible en todo momento; si su navegador no admite el dictado, el botón no aparece."
         }
       }
     },

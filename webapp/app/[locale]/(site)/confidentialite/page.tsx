@@ -34,6 +34,8 @@ const SECTION_KEYS = [
   'droits',
   'conservation',
   'contact',
+  // SC-2 — voice dictation (Web Speech API) / Loi 25 third-party transfer notice.
+  'dictee',
 ] as const;
 
 export default function ConfidentialitePage() {

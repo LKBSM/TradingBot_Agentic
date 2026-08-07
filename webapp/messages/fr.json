@@ -2282,6 +2282,10 @@
         "contact": {
           "title": "6. Contact",
           "body": "Pour toute question relative à vos données : loukmanebessam@gmail.com."
+        },
+        "dictee": {
+          "title": "7. Dictée vocale",
+          "body": "Le scanner conversationnel propose une saisie à la voix. La reconnaissance vocale est effectuée par votre navigateur ; sur certains navigateurs (par ex. Chrome, Edge), l’audio capté peut être transmis aux serveurs de l’éditeur du navigateur pour y être transcrit — il s’agit alors d’un transfert à un tiers susceptible de se situer hors du Québec. Cette transcription produit du texte, que vous relisez et pouvez corriger avant tout envoi. Aucun enregistrement audio n’est conservé, ni sur votre appareil, ni sur nos serveurs : nous ne recevons que le texte que vous choisissez de soumettre. La saisie au clavier reste disponible à tout moment ; si votre navigateur ne prend pas en charge la dictée, le bouton n’apparaît pas."
         }
       }
     },

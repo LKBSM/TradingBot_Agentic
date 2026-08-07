@@ -2282,6 +2282,10 @@
         "contact": {
           "title": "6. Kontakt",
           "body": "Bei allen Fragen zu Ihren Daten: loukmanebessam@gmail.com."
+        },
+        "dictee": {
+          "title": "7. Sprachdiktat",
+          "body": "Der dialogorientierte Scanner bietet eine Spracheingabe. Die Spracherkennung erfolgt durch Ihren Browser; bei einigen Browsern (z. B. Chrome, Edge) kann das erfasste Audio zur Transkription an die Server des Browserherstellers gesendet werden — eine Übermittlung an Dritte, die sich außerhalb von Québec befinden können. Diese Transkription erzeugt Text, den Sie vor dem Absenden prüfen und korrigieren können. Es wird keine Audioaufnahme gespeichert, weder auf Ihrem Gerät noch auf unseren Servern: Wir erhalten nur den Text, den Sie übermitteln möchten. Die Tastatureingabe bleibt jederzeit verfügbar; wenn Ihr Browser das Diktat nicht unterstützt, erscheint die Schaltfläche nicht."
         }
       }
     },

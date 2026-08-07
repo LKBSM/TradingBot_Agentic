@@ -134,7 +134,14 @@ acceptable ici et seulement ici — l'utilisateur voit le texte **avant** de tra
 puis les cartes **avant** de lancer (deux filets). La transcription n'est jamais
 cachée, jamais traduite automatiquement.
 
-### Texte proposé pour la politique de confidentialité (à faire valider)
+### Texte de la politique de confidentialité
+
+> **Intégré** à la page `/confidentialite` comme section **7 · Dictée vocale**
+> (`legal.privacy.sections.dictee`, native dans les 9 locales). La page porte déjà
+> une mention « texte définitif en attente de revue juridique » ; la validation
+> par un juriste reste une étape de gouvernance distincte.
+
+Texte (fr) tel qu'intégré :
 
 > **Dictée vocale.** Le scanner conversationnel propose une saisie à la voix. La
 > reconnaissance vocale est effectuée par **votre navigateur** ; sur certains

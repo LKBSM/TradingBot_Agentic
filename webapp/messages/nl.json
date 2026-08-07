@@ -2282,6 +2282,10 @@
         "contact": {
           "title": "6. Contact",
           "body": "Voor elke vraag over uw gegevens: loukmanebessam@gmail.com."
+        },
+        "dictee": {
+          "title": "7. Spraakdictaat",
+          "body": "De conversationele scanner biedt spraakinvoer. Spraakherkenning wordt uitgevoerd door uw browser; bij sommige browsers (bijv. Chrome, Edge) kan de opgenomen audio naar de servers van de browserleverancier worden gestuurd voor transcriptie — een doorgifte aan een derde die zich buiten Québec kan bevinden. Deze transcriptie levert tekst op, die u nakijkt en kunt corrigeren vóór verzending. Er wordt geen audio-opname bewaard, niet op uw apparaat en niet op onze servers: wij ontvangen alleen de tekst die u kiest te versturen. Invoer via toetsenbord blijft altijd beschikbaar; als uw browser dictaat niet ondersteunt, verschijnt de knop niet."
         }
       }
     },
