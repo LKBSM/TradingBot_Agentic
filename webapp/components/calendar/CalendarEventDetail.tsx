@@ -100,6 +100,17 @@ const PEDAGOGY_FICHES: ReadonlySet<string> = new Set([
 ]);
 
 /**
+ * Publications with a REAL, hand-written "what this unit measures" sentence under
+ * the curve (NW-8 §2.B). A key absent here renders NO sentence (never generic
+ * filler). Batch 1 = the 8 published-variation publications; the rest to follow.
+ * Kept in sync with the `calendar.pub.curve.explain.<key>` messages (guard test).
+ */
+const CURVE_EXPLAIN: ReadonlySet<string> = new Set([
+  'us_cpi', 'us_cpi_core', 'us_ppi', 'us_employment_situation', 'us_jolts',
+  'us_gdp', 'ea_hicp_flash', 'ea_gdp_flash',
+]);
+
+/**
  * Per-publication detail page (NW-3). Honest and layered: the published value
  * series (curve, upcoming point left blank), the four things the engine measured
  * at past releases (never a forecast), a MIA prompt, a link to the issuing
@@ -204,18 +215,49 @@ function fmtCountdown(
 
 function CurveCard({
   ev,
+  eventKey,
   locale,
   t,
 }: {
   ev: CalendarEvent;
+  eventKey: string | null;
   locale: string;
   t: ReturnType<typeof useTranslations>;
 }) {
   const pts = ev.value_series ?? []; // oldest → newest
   const values = pts.map((p) => p.value);
-  const min = Math.min(...values);
-  const max = Math.max(...values);
+  // NW-8: for the 8 published-variation publications `value` IS the variation
+  // (% change, or an absolute monthly change for a count) — the curve plots it.
+  const vk = ev.variation_kind ?? null;
+  const isPct = vk === 'index_change' || vk === 'published_change';
+  const rawMin = Math.min(...values);
+  const rawMax = Math.max(...values);
+  // A variation can be negative → keep zero in view so the sign is honest.
+  const min = vk ? Math.min(rawMin, 0) : rawMin;
+  const max = vk ? Math.max(rawMax, 0) : rawMax;
   const span = max - min || 1; // avoid /0 on a flat series
+
+  // Localised formatters. Percentages: 1 decimal + sign; counts: integers + sign.
+  const nf = (v: number, frac: number, signed: boolean) =>
+    new Intl.NumberFormat(locale, {
+      maximumFractionDigits: frac,
+      signDisplay: signed ? 'exceptZero' : 'auto',
+    }).format(v);
+  const fmtPct = (v: number | null | undefined, signed = true) =>
+    v == null ? '—' : `${nf(v, 1, signed)} %`;
+  const fmtCount = (v: number | null | undefined, signed = false) =>
+    v == null ? '—' : nf(v, 0, signed);
+  const fmtLevel = (v: number | null | undefined) =>
+    v == null ? '—' : nf(v, 3, false); // raw level as published (index/count)
+  const fmtPrimary = (v: number | null | undefined, signed = false) =>
+    vk == null
+      ? String(v) // non-variation publications: unchanged raw rendering
+      : isPct
+        ? fmtPct(v, signed)
+        : vk === 'count_change'
+          ? fmtCount(v, signed)
+          : fmtLevel(v);
+  const fmtAxis = (v: number) => (isPct ? nf(v, 1, false) : vk === 'count_change' ? nf(v, 0, false) : Number(v.toFixed(2)));
 
   // Geometry — evenly-spaced x for the real points plus ONE trailing upcoming.
   const W = 760;
@@ -229,6 +271,7 @@ function CurveCard({
   const stepX = total > 1 ? plotW / (total - 1) : 0;
   const xAt = (i: number) => padX + stepX * i;
   const yAt = (v: number) => padTop + plotH * (1 - (v - min) / span);
+  const showZero = vk != null && min < 0; // draw a visible zero axis
 
   const linePath = pts
     .map((p, i) => `${i === 0 ? 'M' : 'L'}${xAt(i).toFixed(1)},${yAt(p.value).toFixed(1)}`)
@@ -272,10 +315,25 @@ function CurveCard({
                 y2={yAt(v).toFixed(1)}
               />
               <text className="grid-val" x={padX - 6} y={(yAt(v) + 3).toFixed(1)} textAnchor="end">
-                {Number(v.toFixed(2))}
+                {fmtAxis(v)}
               </text>
             </g>
           ))}
+          {/* Visible zero axis when the variation can be negative (honest sign). */}
+          {showZero && (
+            <g>
+              <line
+                className="grid grid-zero"
+                x1={padX}
+                y1={yAt(0).toFixed(1)}
+                x2={W - padX}
+                y2={yAt(0).toFixed(1)}
+              />
+              <text className="grid-val" x={padX - 6} y={(yAt(0) + 3).toFixed(1)} textAnchor="end">
+                0
+              </text>
+            </g>
+          )}
           {/* Dashed connector from the last real point to the hollow upcoming one */}
           {lastReal && (
             <path
@@ -291,10 +349,15 @@ function CurveCard({
                 cx={xAt(i)}
                 cy={yAt(p.value)}
                 r={i === pts.length - 1 ? 4 : 3}
-              />
+              >
+                {/* Raw official level kept consultable on hover (second plan). */}
+                {p.level != null && (
+                  <title>{t('pub.curve.hoverLevel', { level: fmtLevel(p.level) })}</title>
+                )}
+              </circle>
               {i === pts.length - 1 && (
                 <text className="pt-val" x={xAt(i)} y={yAt(p.value) - 9} textAnchor="middle">
-                  {p.value}
+                  {fmtPrimary(p.value, vk != null)}
                 </text>
               )}
               <text className="pt-label" x={xAt(i)} y={H - 12} textAnchor="middle">
@@ -324,24 +387,78 @@ function CurveCard({
         </svg>
       </div>
 
-      {/* Stats row — last value + its period, and the range observed over the series. */}
+      {/* Variation-first headline (NW-8): the VARIATION in evidence, the raw level
+          in a smaller second plan. Falls back to the plain level when the series
+          carries no variation. Plus the range observed over the series. */}
       {lastReal && (
         <div className="pub-curve-stats">
+          {vk === 'index_change' ? (
+            <div className="pub-var-headline">
+              {t.rich('pub.curve.varIndex', {
+                ...RICH,
+                mom: fmtPct(lastReal.change_mom),
+                yoy: fmtPct(lastReal.value),
+              })}
+              {lastReal.level != null && (
+                <span className="pub-var-level">
+                  {' · '}
+                  {t('pub.curve.levelIndex', { level: fmtLevel(lastReal.level) })}
+                </span>
+              )}
+            </div>
+          ) : vk === 'count_change' ? (
+            <div className="pub-var-headline">
+              {t.rich('pub.curve.varCount', {
+                ...RICH,
+                value: fmtCount(lastReal.value, true),
+                unit: ev.value_unit ?? '',
+              })}
+              {lastReal.level != null && (
+                <span className="pub-var-level">
+                  {' · '}
+                  {t('pub.curve.levelTotal', { level: fmtCount(lastReal.level) })}
+                </span>
+              )}
+            </div>
+          ) : vk === 'published_change' ? (
+            <div className="pub-var-headline">
+              {t.rich('pub.curve.varPublished', {
+                ...RICH,
+                value: fmtPct(lastReal.value),
+                unit: (ev.value_unit ?? '').replace(/^%\s*/, ''),
+              })}
+            </div>
+          ) : (
+            <div>
+              {t.rich('pub.curve.lastValue', {
+                ...RICH,
+                value: lastReal.value, // non-variation: unchanged raw rendering
+                period: periodLong(lastReal.period, locale),
+              })}
+            </div>
+          )}
           <div>
-            {t.rich('pub.curve.lastValue', {
-              ...RICH,
-              value: lastReal.value,
-              period: periodLong(lastReal.period, locale),
-            })}
-          </div>
-          <div>
-            {t.rich('pub.curve.range', {
-              ...RICH,
-              min: Number(min.toFixed(2)),
-              max: Number(max.toFixed(2)),
-            })}
+            {t.rich('pub.curve.range', { ...RICH, min: fmtAxis(min), max: fmtAxis(max) })}
           </div>
         </div>
+      )}
+
+      {/* Attribution of the variation — published vs product-computed, never blurred. */}
+      {vk && (
+        <p className="pub-curve-attrib">
+          {ev.variation_published === false
+            ? t('pub.curve.attribCalculated', { organism: ev.organism ?? '—' })
+            : t('pub.curve.attribPublished', {
+                organism: ev.organism ?? '—',
+                series: ev.series_code ?? '—',
+              })}
+        </p>
+      )}
+
+      {/* Plain-language "what this unit measures" — rendered ONLY when a real
+          sentence exists for this publication (NW-8 §2.B); never generic filler. */}
+      {eventKey && CURVE_EXPLAIN.has(eventKey) && (
+        <p className="pub-curve-explain">{t(`pub.curve.explain.${eventKey}`)}</p>
       )}
 
       <p className="cald-note">{t('pub.curve.note')}</p>
@@ -915,7 +1032,7 @@ function Detail({
 
       {/* 2 — CURVE (only when a published series exists) */}
       {(ev.value_series?.length ?? 0) > 0 && (
-        <CurveCard ev={ev} locale={locale} t={t} />
+        <CurveCard ev={ev} eventKey={eventKey} locale={locale} t={t} />
       )}
 
       {/* 3 — FOUR QUESTIONS (only when at least one measure was computed) */}

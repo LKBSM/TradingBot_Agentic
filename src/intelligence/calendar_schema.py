@@ -64,12 +64,21 @@ def compute_value_state(
 
 class CalendarSeriesPoint(BaseModel):
     """One observation in an indicator's published history — the reference PERIOD
-    label (as the organism labels it, e.g. "2026-06") and the value AS PUBLISHED.
+    label (as the organism labels it, e.g. "2026-06") and the values AS PUBLISHED.
     The period is the indicator's own reference month/quarter, never a release
-    date and never converted. Feeds the detail page's twelve-figure curve."""
+    date and never converted. Feeds the detail page's curve.
+
+    ``value`` is the PRIMARY plotted value: the headline VARIATION when the organism
+    publishes one (% change, or an absolute change for a count), else the raw level.
+    ``level`` is the raw official level kept for the second plan / hover (index
+    level, total count) — ``None`` when the value already IS a variation.
+    ``change_mom`` is the SECONDARY month-over-month % shown next to a headline
+    annual % — ``None`` otherwise."""
 
     period: str
     value: float
+    level: Optional[float] = None
+    change_mom: Optional[float] = None
 
 
 class CalendarEvent(BaseModel):
@@ -99,6 +108,15 @@ class CalendarEvent(BaseModel):
     markets: List[str] = Field(default_factory=list)
     # Values — in the indicator's own unit, never a price, never converted.
     value_unit: Optional[str] = None
+    # How the published series READS on the curve (NW-8): "index_change" (an index
+    # level whose headline is a % change), "count_change" (a count whose headline
+    # is an absolute monthly change), "published_change" (the value already IS a
+    # variation). None ⇒ the raw level is shown as-is (no variation). Drives the
+    # frontend's variation-first rendering + its unit labels.
+    variation_kind: Optional[str] = None
+    # True when the displayed variation is PUBLISHED by the organism (vs computed
+    # by the product) — the attribution line must never blur the two.
+    variation_published: bool = True
     actual: Optional[float] = None          # current (possibly revised) value
     actual_initial: Optional[float] = None  # value FIRST published for this release
     previous: Optional[float] = None        # prior period's published value (factual)

@@ -269,15 +269,21 @@ class CalendarService:
             ev.actual_state = compute_value_state(
                 ev.series_code, ev.actual, ev.scheduled_at, now
             )
+            from src.intelligence.calendar_providers.official_sources.base_official import (
+                series_kind_for,
+            )
+
+            kind = series_kind_for(ev.series_code)
+            # NW-8: tell the frontend HOW the series reads (variation-first). All
+            # current variation kinds are PUBLISHED by the organism; a future
+            # product-computed one would set variation_published=False here.
+            if kind in ("index_change", "count_change", "published_change"):
+                ev.variation_kind = kind
+                ev.variation_published = True
             # The published history (twelve-figure curve) is attached ONLY here, on
             # the per-event detail path — one series call per detail, never per row
             # of the list/month window. Absent series/fetcher ⇒ empty ⇒ no curve.
             if self._value_fetcher is not None and ev.series_code:
-                from src.intelligence.calendar_providers.official_sources.base_official import (
-                    series_kind_for,
-                )
-
-                kind = series_kind_for(ev.series_code)
                 cache_key = (ev.source, ev.series_code, kind)
                 cached_series = self._series_cache.get(cache_key)
                 if (
@@ -287,7 +293,10 @@ class CalendarService:
                     ev.value_series = cached_series[1]
                 else:
                     series = [
-                        CalendarSeriesPoint(period=p.period, value=p.value)
+                        CalendarSeriesPoint(
+                            period=p.period, value=p.value,
+                            level=p.level, change_mom=p.change_mom,
+                        )
                         for p in self._value_fetcher.series_for(
                             ev.source, ev.series_code, kind=kind
                         )

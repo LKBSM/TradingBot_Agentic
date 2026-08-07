@@ -2764,7 +2764,25 @@
         "revisedFromTo": "O último número foi corrigido após a sua divulgação: {initial} primeiro, depois {current} em {date}.",
         "source": "Série publicada por {organism}, na unidade do organismo, tal como publicada — sem conversão nem novo arredondamento.",
         "title": "Os doze últimos números publicados",
-        "upcoming": "por vir"
+        "upcoming": "por vir",
+        "varIndex": "<b>{mom}</b> over one month · <b>{yoy}</b> over one year",
+        "varCount": "<b>{value}</b> {unit} over the month",
+        "varPublished": "<b>{value}</b> {unit}",
+        "levelIndex": "index at {level}",
+        "levelTotal": "total: {level}",
+        "hoverLevel": "Published level: {level}",
+        "attribPublished": "Variation published by {organism} (series {series}).",
+        "attribCalculated": "Variation computed by MIA from two levels published by {organism}.",
+        "explain": {
+          "us_cpi": "The consumer price index tracks the price of a basket of goods and services bought by households. What matters is its variation: how much prices moved over one month and over one year.",
+          "us_cpi_core": "The same basket as the CPI, but excluding food and energy — two very volatile items. Read as its month-over-month and year-over-year variation.",
+          "us_ppi": "The producer price index tracks the price of goods as they leave U.S. factories, before the retail sale. Read as its monthly and annual variation.",
+          "us_employment_situation": "Net number of jobs created or lost in the month, excluding farming. A positive figure indicates net hiring, a negative figure net losses.",
+          "us_jolts": "Number of job openings unfilled on the last day of the month. Read as its month-to-month variation.",
+          "us_gdp": "Gross domestic product measures the value of everything produced in the country. The published figure is already its quarter-over-quarter variation, in volume.",
+          "ea_hicp_flash": "The harmonised consumer price index tracks price changes across the euro area. The published figure is already its year-over-year variation.",
+          "ea_gdp_flash": "A first estimate of the euro-area gross domestic product's variation from one quarter to the next, in volume."
+        }
       },
       "mia": {
         "capability": "A M.I.A descreve factos medidos e explica conceitos. Não diz o que o preço fará, nem que valor será publicado, nem se é preciso intervir — e dirá isso se lho pedires.",
