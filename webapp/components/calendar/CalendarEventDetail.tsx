@@ -12,6 +12,7 @@ import {
   CalendarDays,
 } from 'lucide-react';
 import { AgentAvatar } from '@/components/chat/AgentAvatar';
+import { askSentinel, ChatApiError, ChatApiUnavailableError } from '@/lib/chat/api-client';
 import { useLocalizedHref } from '@/lib/i18n/href';
 import { sourceLinksFor, type SourceDocKind } from '@/lib/calendar/sourceLinks';
 import { useCalendarEvent, usePublicationMeasures } from '@/lib/calendar/useCalendar';
@@ -690,18 +691,72 @@ function QuestionsSection({
  * Section 4 — MIA (presentational only)
  * ------------------------------------------------------------------------ */
 
+interface PubTurn {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 function MiaBlock({
   pedKey,
+  title,
   t,
 }: {
   pedKey: string;
+  /** The publication name (ev.event) — anchors M.I.A on this event. */
+  title: string;
   t: ReturnType<typeof useTranslations>;
 }) {
+  // Reused chat strings (thinking / error / aria) — already native in the 9
+  // locales, so wiring this card adds no new i18n keys.
+  const tc = useTranslations('chat');
   // Suggested questions adapted to the publication (bespoke for us_cpi /
   // ea_hicp_flash, a concept-only default otherwise). next-intl rejects arrays,
   // so the set is an object; we keep only the keys present for this publication.
   const suggests = t.raw(`pub.mia.suggests.${pedKey}`) as Record<string, string>;
   const chips = Object.values(suggests);
+
+  const [turns, setTurns] = React.useState<PubTurn[]>([]);
+  const [input, setInput] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const threadRef = React.useRef<HTMLDivElement>(null);
+
+  const send = React.useCallback(
+    async (raw: string) => {
+      const text = raw.trim();
+      if (!text || loading) return;
+      setError(null);
+      setInput('');
+      const history = turns.map((tt) => ({ role: tt.role, content: tt.content }));
+      setTurns((prev) => [...prev, { role: 'user', content: text }]);
+      setLoading(true);
+      try {
+        // The backend chatbot is signal-agnostic free text (3 niveau-1.5 defence
+        // layers server-side). We anchor M.I.A on this publication with a stable
+        // context preamble, exactly as the /app sidebar prepends the active combo.
+        const question = `[Publication : ${title}]\n${text}`;
+        const res = await askSentinel({ question, history });
+        setTurns((prev) => [...prev, { role: 'assistant', content: res.text }]);
+      } catch (err) {
+        if (err instanceof ChatApiUnavailableError) {
+          setError(tc('turnUnavailable'));
+        } else {
+          const message = err instanceof ChatApiError ? err.message : tc('unknownError');
+          setError(tc('turnError', { message }));
+        }
+      } finally {
+        setLoading(false);
+      }
+    },
+    [turns, loading, title, tc],
+  );
+
+  React.useEffect(() => {
+    threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight });
+  }, [turns, loading, error]);
+
+  const hasThread = turns.length > 0 || loading || error !== null;
+
   return (
     <div className="cald-card pub-mia">
       <div className="pub-mia-head">
@@ -715,24 +770,80 @@ function MiaBlock({
       <div className="pub-mia-suggests-label">{t('pub.mia.suggestsLabel')}</div>
       <div className="pub-mia-suggests">
         {chips.map((label, i) => (
-          <button key={i} type="button" className="pub-mia-chip">
+          <button
+            key={i}
+            type="button"
+            className="pub-mia-chip"
+            data-testid="pub-mia-chip"
+            disabled={loading}
+            onClick={() => send(label)}
+          >
             <span>{label}</span>
             <ArrowUpRight className="pub-mia-chip-ar" width={13} height={13} aria-hidden />
           </button>
         ))}
       </div>
       <p className="pub-mia-cap">{t('pub.mia.capability')}</p>
-      <div className="pub-mia-form">
+
+      {hasThread && (
+        <div
+          ref={threadRef}
+          data-testid="pub-mia-thread"
+          className="mt-3 max-h-72 space-y-2 overflow-y-auto rounded-lg border border-border/50 bg-background/40 p-2"
+        >
+          {turns.map((tt, i) => (
+            <div
+              key={i}
+              data-testid={tt.role === 'assistant' ? 'pub-mia-answer' : 'pub-mia-user'}
+              className={
+                tt.role === 'user'
+                  ? 'ml-auto max-w-[85%] rounded-lg bg-primary/10 px-3 py-2 text-sm text-foreground'
+                  : 'mr-auto max-w-[92%] whitespace-pre-wrap rounded-lg bg-card px-3 py-2 text-sm text-muted-foreground'
+              }
+            >
+              {tt.content}
+            </div>
+          ))}
+          {loading && (
+            <div className="mr-auto max-w-[92%] rounded-lg bg-card px-3 py-2 text-sm italic text-muted-foreground">
+              {tc('thinking')}
+            </div>
+          )}
+          {error && (
+            <p role="alert" data-testid="pub-mia-error" className="px-1 text-xs text-destructive">
+              {error}
+            </p>
+          )}
+        </div>
+      )}
+
+      <form
+        className="pub-mia-form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          send(input);
+        }}
+      >
         <input
           className="pub-mia-input"
           type="text"
+          data-testid="pub-mia-input"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          disabled={loading}
           placeholder={t('pub.mia.placeholder')}
           aria-label={t('pub.mia.placeholder')}
         />
-        <button type="button" className="pub-mia-send">
+        <button
+          type="submit"
+          className="pub-mia-send"
+          data-testid="pub-mia-send"
+          disabled={loading || input.trim().length === 0}
+          aria-label={loading ? tc('sendLoadingAria') : tc('sendAria')}
+        >
           {t('pub.mia.send')}
         </button>
-      </div>
+      </form>
     </div>
   );
 }
@@ -924,7 +1035,7 @@ function Detail({
       )}
 
       {/* 4 — MIA */}
-      <MiaBlock pedKey={miaKey} t={t} />
+      <MiaBlock pedKey={miaKey} title={ev.event} t={t} />
 
       {/* 5 — GO TO SOURCE (issuing organism only) */}
       <SourceSection eventKey={eventKey} attribution={attribution} t={t} />
