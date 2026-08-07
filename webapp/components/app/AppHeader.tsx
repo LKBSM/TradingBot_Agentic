@@ -66,7 +66,7 @@ export function AppHeader() {
               <span>Zones</span>
             </Link>
             <Link
-              href={lh('/scanner')}
+              href={lh('/scanner/decrire')}
               aria-label={t('header.navScanner')}
               className="inline-flex h-9 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >

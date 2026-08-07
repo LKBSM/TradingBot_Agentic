@@ -29,7 +29,7 @@ import { BRAND_NAME } from '@/lib/brand';
 const PRODUCT_LINKS = [
   { href: '/app', key: 'appLink' as const },
   { href: '/zones', key: 'zones' as const },
-  { href: '/scanner', key: 'scanner' as const },
+  { href: '/scanner/decrire', key: 'scanner' as const },
 ];
 
 // LP-2: marketing anchors match the desktop nav (M.I.A · Démo · Outils ·
