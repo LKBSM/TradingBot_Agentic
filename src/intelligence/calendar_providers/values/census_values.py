@@ -22,6 +22,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -36,8 +37,14 @@ from src.intelligence.calendar_providers.values.base_value import (
 logger = logging.getLogger(__name__)
 
 _BASE = "https://api.census.gov/data/timeseries/eits"
-_UA = "Mozilla/5.0 (compatible; MIA-Markets-Calendar/1.0; +https://mia-markets)"
-_TIMEOUT_S = 12
+# A plain, current browser UA. The Census API host rejects some non-browser
+# "bot"-style User-Agents with a 403 (which read as an empty curve in prod, NW-9);
+# a standard browser UA reaches the data path. Only used for the Census value API.
+_UA = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+)
+_TIMEOUT_S = 15
 
 
 class _Series:
@@ -71,7 +78,11 @@ _CENSUS_SERIES: Dict[str, _Series] = {
 
 class CensusValueFetcher(ValueFetcher):
     def __init__(self, api_key: Optional[str] = None, http_get=None) -> None:
-        self._key = api_key if api_key is not None else os.environ.get("CENSUS_API_KEY", "")
+        raw = api_key if api_key is not None else os.environ.get("CENSUS_API_KEY", "")
+        # Strip surrounding whitespace/newline — a env-var value pasted with a
+        # trailing newline makes Census reject the key ("Invalid Key") even though
+        # it is set, which read as an empty curve (NW-9 prod diagnosis).
+        self._key = (raw or "").strip()
         self._get = http_get or _http_get
 
     def _fetch_points(self, spec: "_Series") -> List[Tuple[str, float]]:
@@ -142,9 +153,20 @@ class CensusValueFetcher(ValueFetcher):
             "data_type_code": spec.data_type_code,
             "seasonally_adj": spec.seasonally_adj,
         }
+        # Key shape (never the key itself) — a length of 0, or surrounding
+        # whitespace, or a non-hex/non-ascii char, is a common env-var cause.
+        out["key_diag"] = {
+            "length": len(self._key),
+            "is_ascii": self._key.isascii(),
+            "hex_40": len(self._key) == 40 and all(c in "0123456789abcdefABCDEF" for c in self._key),
+        }
         if not self._key:
             out["attempt"] = {"skipped": "no CENSUS_API_KEY in env"}
             return out
+        # Detailed single request that NAMES the failure (status / redirect /
+        # exception) instead of swallowing it — this is what pinpoints a
+        # Render-side 403 / redirect / timeout / rejected key.
+        out["raw_probe"] = self._raw_http_probe(spec)
         pts = self._fetch_points(spec)
         out["attempt"] = {
             "point_count": len(pts),
@@ -152,6 +174,65 @@ class CensusValueFetcher(ValueFetcher):
         }
         out["program_cells"] = self._probe_program_cells(spec, probe_month)
         return out
+
+    def _raw_http_probe(self, spec: "_Series") -> dict:
+        """One detailed request that does NOT swallow the error and does NOT follow
+        redirects, so the exact Census response is named: HTTP 200 + data, a 302 to
+        "Missing Key"/"Invalid Key", a 403 (blocked UA/IP), or a timeout/network
+        exception. The API key is redacted from the echoed URL."""
+        import urllib.error
+        import urllib.request
+
+        params = [
+            ("get", "cell_value,time"),
+            ("category_code", spec.category_code),
+            ("data_type_code", spec.data_type_code),
+            ("seasonally_adj", spec.seasonally_adj),
+            ("for", "us"),
+            ("time", "from 2025-06"),
+            ("key", self._key),
+        ]
+        url = f"{_BASE}/{spec.program}?{urllib.parse.urlencode(params)}"
+        redacted = url.replace(self._key, "<KEY>") if self._key else url
+        result: dict = {"url": redacted}
+
+        class _NoRedirect(urllib.request.HTTPRedirectHandler):
+            def redirect_request(self, *a, **k):  # noqa: ANN001 - stdlib signature
+                return None  # surface the 3xx as an HTTPError instead of following
+
+        opener = urllib.request.build_opener(_NoRedirect)
+        try:
+            req = urllib.request.Request(
+                url, headers={"User-Agent": _UA, "Accept": "application/json"}
+            )
+            with opener.open(req, timeout=_TIMEOUT_S) as resp:  # noqa: S310 (trusted)
+                body = resp.read().decode("utf-8", errors="replace")
+                result.update(status=getattr(resp, "status", 200), body_head=body[:200])
+        except urllib.error.HTTPError as exc:
+            head = ""
+            try:
+                head = exc.read().decode("utf-8", errors="replace")[:200]
+            except Exception:  # pragma: no cover - defensive
+                pass
+            loc = ""
+            try:
+                loc = exc.headers.get("Location", "") if exc.headers else ""
+            except Exception:  # pragma: no cover - defensive
+                pass
+            title = ""
+            m = re.search(r"<title>([^<]+)</title>", head, re.I)
+            if m:
+                title = m.group(1).strip()
+            result.update(
+                status=exc.code,
+                error=f"HTTPError {exc.code} {exc.reason}",
+                redirect_location=loc,
+                page_title=title,
+                body_head=head,
+            )
+        except Exception as exc:  # timeout / URLError / SSL / DNS
+            result.update(error=f"{type(exc).__name__}: {exc}")
+        return result
 
     def _probe_program_cells(self, spec: "_Series", probe_month: Optional[str]) -> dict:
         """Every (category_code, data_type_code) cell of the program for ONE recent

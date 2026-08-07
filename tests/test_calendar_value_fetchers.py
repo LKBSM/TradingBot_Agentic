@@ -404,6 +404,46 @@ def test_census_diagnose_without_key_skips_the_live_probe():
     assert d["program_cells"] is None
 
 
+def test_census_key_is_stripped_of_surrounding_whitespace():
+    # A pasted env-var value with a trailing newline must not be sent verbatim
+    # (Census would reject it as "Invalid Key").
+    f = CensusValueFetcher(api_key="  deadbeef\n")
+    assert f._key == "deadbeef"
+
+
+def test_raw_probe_redacts_key_and_names_http_status(monkeypatch):
+    import urllib.request as u
+
+    class _Resp:
+        status = 200
+        def read(self):
+            return b'[["cell_value","time"],["615000","2026-06"]]'
+        def __enter__(self):
+            return self
+        def __exit__(self, *a):
+            return False
+
+    class _Opener:
+        def open(self, req, timeout=None):
+            # The key must never appear in the URL that leaves the process… but the
+            # REAL request still carries it; we only assert the ECHOED url is clean.
+            _Opener.seen_url = req.full_url
+            return _Resp()
+
+    monkeypatch.setattr(u, "build_opener", lambda *a, **k: _Opener())
+    f = CensusValueFetcher(api_key="SECRETKEY123")
+    probe = f._raw_http_probe(_CENSUS_SERIES_SPEC())
+    assert probe["status"] == 200
+    assert "SECRETKEY123" not in probe["url"]
+    assert "<KEY>" in probe["url"]
+    assert "615000" in probe["body_head"]
+
+
+def _CENSUS_SERIES_SPEC():
+    from src.intelligence.calendar_providers.values.census_values import _CENSUS_SERIES
+    return _CENSUS_SERIES["MARTS-RSAFS"]
+
+
 def test_diagnose_value_fetcher_flags_unregistered_census(monkeypatch):
     from src.intelligence.calendar_providers.values import diagnose_value_fetcher
 
