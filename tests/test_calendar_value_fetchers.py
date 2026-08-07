@@ -119,7 +119,7 @@ def test_bls_fetch_series_respects_limit_keeping_most_recent():
     assert [(p.period, p.value) for p in pts] == [("2026-02", 321.5), ("2026-03", 322.9)]
 
 
-# --- BLS fetch_series yoy_percent (NW-7): the published 12-month % change ------
+# --- BLS fetch_series index_change / count_change (NW-8): published variations ---
 _BLS_SERIES_CALC = json.dumps({
     "status": "REQUEST_SUCCEEDED",
     "Results": {"series": [{"data": [
@@ -133,8 +133,18 @@ _BLS_SERIES_CALC = json.dumps({
     ]}]},
 })
 
+_BLS_SERIES_COUNT = json.dumps({
+    "status": "REQUEST_SUCCEEDED",
+    "Results": {"series": [{"data": [
+        {"year": "2026", "period": "M03", "value": "159000",
+         "calculations": {"net_changes": {"1": "150"}}},
+        {"year": "2026", "period": "M02", "value": "158850",
+         "calculations": {"net_changes": {"1": "-30"}}},
+    ]}]},
+})
 
-def test_bls_fetch_series_yoy_percent_uses_published_change():
+
+def test_bls_fetch_series_index_change_carries_yoy_level_and_mom():
     sent = {}
 
     def _post(url, body):
@@ -142,11 +152,24 @@ def test_bls_fetch_series_yoy_percent_uses_published_change():
         return _BLS_SERIES_CALC
 
     f = BLSValueFetcher(api_key="KEY", http_post=_post)
-    pts = f.fetch_series("CUUR0000SA0", kind="yoy_percent")
-    # Only the months BLS published a 12-month change for; AS PUBLISHED, chrono.
-    assert [(p.period, p.value) for p in pts] == [("2026-02", 3.4), ("2026-03", 3.1)]
-    # The request asked BLS to compute the change (never recomputed locally).
+    pts = f.fetch_series("CUUR0000SA0", kind="index_change")
+    # value = published 12-month %; level = raw index; change_mom = published 1-month %.
+    assert [(p.period, p.value, p.level, p.change_mom) for p in pts] == [
+        ("2026-02", 3.4, 321.5, 0.5),
+        ("2026-03", 3.1, 322.9, 0.4),
+    ]
+    # The request asked BLS to compute the changes (never recomputed locally).
     assert '"calculations": true' in sent["body"]
+
+
+def test_bls_fetch_series_count_change_is_absolute_monthly_change():
+    f = BLSValueFetcher(api_key="KEY", http_post=lambda url, body: _BLS_SERIES_COUNT)
+    pts = f.fetch_series("CES0000000001", kind="count_change")
+    # value = published 1-month absolute change; level = the raw total count.
+    assert [(p.period, p.value, p.level) for p in pts] == [
+        ("2026-02", -30.0, 158850.0),
+        ("2026-03", 150.0, 159000.0),
+    ]
 
 
 def test_bls_fetch_series_level_ignores_calculations():

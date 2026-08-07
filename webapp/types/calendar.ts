@@ -28,7 +28,14 @@ export type ValueState = 'published' | 'pending' | 'unfetched' | 'unavailable';
  */
 export interface CalendarSeriesPoint {
   period: string;
+  /** PRIMARY plotted value: the headline variation when published (% change, or an
+   *  absolute change for a count), else the raw level. */
   value: number;
+  /** Raw official level for the second plan / hover (index level, total count) —
+   *  null when `value` already IS a variation. */
+  level?: number | null;
+  /** Secondary month-over-month % shown next to a headline annual % — null otherwise. */
+  change_mom?: number | null;
 }
 
 export interface CalendarEvent {
@@ -45,6 +52,11 @@ export interface CalendarEvent {
   time_confirmed: boolean;
   markets: string[];
   value_unit: string | null;
+  /** How the series reads on the curve (NW-8): 'index_change' | 'count_change' |
+   *  'published_change'. Null ⇒ raw level shown as-is (no variation). */
+  variation_kind?: string | null;
+  /** True when the displayed variation is PUBLISHED by the organism (vs computed). */
+  variation_published?: boolean;
   actual: number | null;
   actual_initial: number | null;
   previous: number | null;

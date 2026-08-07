@@ -32,11 +32,21 @@ class ValuePoint:
 @dataclass(frozen=True)
 class SeriesPoint:
     """One observation in a published series — the reference PERIOD label (e.g.
-    "2026-06", as the organism labels it) and the value AS PUBLISHED. The period
-    is the indicator's own reference month/quarter, NOT a release date."""
+    "2026-06", as the organism labels it) and the values AS PUBLISHED. The period
+    is the indicator's own reference month/quarter, NOT a release date.
+
+    ``value`` is the PRIMARY value plotted on the curve: the headline VARIATION when
+    the organism publishes one (a % change, or an absolute change for a count),
+    else the raw level. ``level`` is the raw official level kept for the second
+    plan / hover when ``value`` is a variation derived from it (an index level, a
+    total count) — ``None`` when the published value already IS a variation.
+    ``change_mom`` is the SECONDARY month-over-month % shown alongside a headline
+    annual % (index series) — ``None`` otherwise. Everything AS PUBLISHED."""
 
     period: str
     value: float
+    level: Optional[float] = None
+    change_mom: Optional[float] = None
 
 
 class ValueFetcher(ABC):

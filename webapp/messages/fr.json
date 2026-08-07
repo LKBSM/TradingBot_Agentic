@@ -2768,7 +2768,25 @@
         "notRevised": "Aucun des chiffres affichés n'a été corrigé après sa parution.",
         "source": "Série publiée par {organism}, dans l'unité de l'organisme, telle que publiée — sans conversion ni réarrondi.",
         "lastValue": "Dernière valeur <b>{value}</b> — {period}",
-        "range": "Sur la série affichée <b>{min}</b> à <b>{max}</b>"
+        "range": "Sur la série affichée <b>{min}</b> à <b>{max}</b>",
+        "varIndex": "<b>{mom}</b> sur un mois · <b>{yoy}</b> sur un an",
+        "varCount": "<b>{value}</b> {unit} sur le mois",
+        "varPublished": "<b>{value}</b> {unit}",
+        "levelIndex": "indice à {level}",
+        "levelTotal": "total : {level}",
+        "hoverLevel": "Niveau publié : {level}",
+        "attribPublished": "Variation publiée par {organism} (série {series}).",
+        "attribCalculated": "Variation calculée par MIA à partir de deux niveaux publiés par {organism}.",
+        "explain": {
+          "us_cpi": "L'indice des prix à la consommation suit le prix d'un panier de biens et de services achetés par les ménages. Ce qui compte, c'est sa variation : de combien les prix ont bougé sur un mois et sur un an.",
+          "us_cpi_core": "Même panier que l'IPC, mais hors alimentation et énergie — deux postes très instables. On le lit par sa variation sur un mois et sur un an.",
+          "us_ppi": "L'indice des prix à la production suit le prix des biens à la sortie des usines américaines, avant la vente au consommateur. On regarde sa variation mensuelle et annuelle.",
+          "us_employment_situation": "Nombre net d'emplois créés ou perdus dans le mois, hors agriculture. Un chiffre positif correspond à des créations nettes, un chiffre négatif à des destructions nettes.",
+          "us_jolts": "Nombre de postes ouverts et non pourvus le dernier jour du mois. On regarde sa variation d'un mois à l'autre.",
+          "us_gdp": "Le produit intérieur brut mesure la valeur de tout ce qui est produit dans le pays. Le chiffre publié est déjà sa variation d'un trimestre à l'autre, en volume.",
+          "ea_hicp_flash": "L'indice des prix à la consommation harmonisé suit l'évolution des prix dans la zone euro. Le chiffre publié est déjà sa variation sur un an.",
+          "ea_gdp_flash": "Première estimation de la variation du produit intérieur brut de la zone euro d'un trimestre à l'autre, en volume."
+        }
       },
       "questions": {
         "sectionTitle": "Ce que le moteur a mesuré aux publications précédentes",

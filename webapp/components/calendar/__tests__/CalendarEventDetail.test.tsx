@@ -410,3 +410,66 @@ describe('NW-3 CalendarEventDetail', () => {
     }
   });
 });
+
+describe('NW-8 variation-first curve', () => {
+  const idxEvent = ev({
+    event_id: 'bls:us_cpi:2026-07-28', source: 'bls', event: 'IPC',
+    organism: 'Bureau of Labor Statistics', series_code: 'CUUR0000SA0',
+    value_unit: 'indice (1982-84 = 100)', variation_kind: 'index_change',
+    variation_published: true, actual: 322.9, actual_state: 'published',
+    value_series: [
+      { period: '2026-05', value: 3.4, level: 321.5, change_mom: 0.5 },
+      { period: '2026-06', value: 3.1, level: 322.9, change_mom: 0.3 },
+    ],
+  });
+
+  it('index_change: mo + yr % in evidence, level small, published attribution, blank upcoming', () => {
+    const { container } = renderDetail('bls:us_cpi:2026-07-28', idxEvent);
+    const head = container.querySelector('.pub-var-headline')?.textContent ?? '';
+    expect(head).toContain('+0,3'); // month-over-month %, signed (fr)
+    expect(head).toContain('+3,1'); // year-over-year %
+    expect(container.querySelector('.pub-var-level')?.textContent ?? '').toContain('322,9');
+    const attrib = container.querySelector('.pub-curve-attrib')?.textContent ?? '';
+    expect(attrib).toContain('Bureau of Labor Statistics');
+    expect(attrib).toContain('CUUR0000SA0');
+    // the upcoming point still carries NO number (level OR variation)
+    expect(container.querySelector('circle[data-upcoming="1"]')).not.toBeNull();
+    expect(/\d/.test(container.querySelector('.pt-upcoming-label')?.textContent ?? '')).toBe(false);
+    // a real explanation sentence is rendered (us_cpi is whitelisted)
+    expect(container.querySelector('.pub-curve-explain')).not.toBeNull();
+  });
+
+  it('count_change: monthly absolute change in evidence, total kept as the level', () => {
+    const nfp = ev({
+      event_id: 'bls:us_employment_situation:2026-07-28', source: 'bls', event: 'NFP',
+      organism: 'Bureau of Labor Statistics', series_code: 'CES0000000001',
+      value_unit: "milliers d'emplois", variation_kind: 'count_change',
+      variation_published: true, actual: 159000, actual_state: 'published',
+      value_series: [
+        { period: '2026-05', value: -30, level: 158850 },
+        { period: '2026-06', value: 150, level: 159000 },
+      ],
+    });
+    const { container } = renderDetail('bls:us_employment_situation:2026-07-28', nfp);
+    const head = container.querySelector('.pub-var-headline')?.textContent ?? '';
+    expect(head).toContain('+150');
+    expect(head).toContain("milliers d'emplois");
+    expect(container.querySelector('.pub-var-level')?.textContent ?? '').toContain('159');
+  });
+
+  it('published_change: the value IS the variation, no separate level line', () => {
+    const gdp = ev({
+      event_id: 'bea:us_gdp:2026-07-28', source: 'bea', event: 'PIB',
+      organism: 'Bureau of Economic Analysis', series_code: 'NIPA-T10101',
+      value_unit: '% (variation du PIB réel)', variation_kind: 'published_change',
+      variation_published: true, actual: 2.8, actual_state: 'published',
+      value_series: [
+        { period: '2026-Q1', value: 1.4 },
+        { period: '2026-Q2', value: 2.8 },
+      ],
+    });
+    const { container } = renderDetail('bea:us_gdp:2026-07-28', gdp);
+    expect(container.querySelector('.pub-var-headline')?.textContent ?? '').toContain('+2,8');
+    expect(container.querySelector('.pub-var-level')).toBeNull();
+  });
+});

@@ -104,9 +104,9 @@ def test_bls_adapter_joins_catalog_and_schedules_dst_aware():
     assert e.source == "bls"
     assert e.organism == "Bureau of Labor Statistics"
     assert e.periodicity == "monthly"
-    # NW-7: the CPI curve reads as the BLS-published 12-month percent change, so
-    # the catalog value_unit is the percent-change label, not the index level.
-    assert e.value_unit == "% de variation annuelle"
+    # NW-8: value_unit is the LEVEL's unit (the index); the headline VARIATION
+    # (mo+yr %) is carried separately via series_kind=index_change.
+    assert e.value_unit == "indice (1982-84 = 100)"
     # 08:30 America/New_York in August (EDT = UTC-4) → 12:30 UTC.
     assert e.scheduled_at == datetime(2026, 8, 12, 12, 30, tzinfo=timezone.utc)
     assert e.time_confirmed is True

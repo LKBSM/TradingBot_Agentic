@@ -63,14 +63,16 @@ class BLSValueFetcher(ValueFetcher):
         failure/absence (→ no curve), and only when a key is present — absent the
         key the source is not even wired. Never raises, never fabricates.
 
-        ``kind``:
+        ``kind`` (NW-8) — all variations are BLS's OWN ``calculations``, read from
+        the API, NEVER recomputed here, so they stay published values:
           · "level" (default) — the index level / count, as the series stores it.
-          · "yoy_percent" — the series' OWN 12-month percent change, i.e. the
-            headline inflation figure BLS publishes alongside the index. It is read
-            from the API's ``calculations`` block (``pct_changes["12"]``), NOT
-            recomputed here, so it remains a published value. Months without a
-            12-month calculation (e.g. the 2025 appropriations-lapse gap) simply
-            have no point — never fabricated.
+          · "index_change" — an index whose HEADLINE is the 12-month % change:
+            ``value`` = ``pct_changes["12"]`` (plotted), ``level`` = the index,
+            ``change_mom`` = ``pct_changes["1"]``. Months without a 12-month change
+            (e.g. the 2025 appropriations-lapse gap) simply have no point.
+          · "count_change" — a count whose HEADLINE is the monthly ABSOLUTE change:
+            ``value`` = ``net_changes["1"]`` (e.g. jobs created), ``level`` = the
+            total count. Months without a 1-month change have no point.
 
         Unlike ``fetch`` (``latest``), a series needs a year range: we ask for the
         span that guarantees ``limit`` monthly points and keep the last ``limit``.
@@ -79,25 +81,23 @@ class BLSValueFetcher(ValueFetcher):
         """
         if not self._key or limit < 1:
             return []
-        want_yoy = kind == "yoy_percent"
+        want_calc = kind in ("index_change", "count_change")
         end_year = datetime.now(timezone.utc).year
-        # A month-span of two full calendar years covers 12 points with margin,
-        # tolerating a publication lag at the year boundary. For the 12-month
-        # percent change the API needs the prior year in-window to compute it, so
-        # widen by one extra year when yoy is requested.
-        start_year = end_year - ((limit // 12) + (3 if want_yoy else 2))
+        # Two full calendar years cover 12 points with margin. A 12-month change
+        # needs the prior year in-window, so widen when a variation is requested.
+        start_year = end_year - ((limit // 12) + (3 if want_calc else 2))
         payload_obj = {
             "seriesid": [series_code],
             "registrationkey": self._key,
             "startyear": str(start_year),
             "endyear": str(end_year),
         }
-        if want_yoy:
+        if want_calc:
             payload_obj["calculations"] = True
         text = self._post(_URL, json.dumps(payload_obj))
         if not text:
             return []
-        points = _parse_bls_series(text, yoy_percent=want_yoy)
+        points = _parse_bls_series(text, kind=kind)
         return points[-int(limit):] if len(points) > limit else points
 
 
@@ -139,15 +139,20 @@ def _parse_bls(text: str, series_code: str) -> List[float]:
         return []
 
 
-def _parse_bls_series(text: str, yoy_percent: bool = False) -> List[SeriesPoint]:
-    """Extract MONTHLY (period, value) observations in CHRONOLOGICAL order from a
-    BLS v2 message. Period ``M06`` of year ``2026`` → label ``"2026-06"``. Rows
-    that are not a reference month (``M13`` annual average, quarterly/semi-annual)
-    are dropped. Returns [] on any shape mismatch — never fabricates.
+def _to_float(raw) -> Optional[float]:
+    try:
+        return float(str(raw).replace(",", ""))
+    except (TypeError, ValueError):
+        return None
 
-    When ``yoy_percent`` is set, the point value is the API's own 12-month percent
-    change (``calculations.pct_changes["12"]``), not the level; months without that
-    calculation are skipped (no point), never fabricated."""
+
+def _parse_bls_series(text: str, kind: str = "level") -> List[SeriesPoint]:
+    """Extract MONTHLY observations in CHRONOLOGICAL order from a BLS v2 message.
+    Period ``M06`` of year ``2026`` → label ``"2026-06"``. Non-monthly rows
+    (``M13`` annual average, quarterly/semi-annual) are dropped. Returns [] on any
+    shape mismatch — never fabricates. Variations come from the API's own
+    ``calculations`` block (see ``fetch_series`` for the per-kind mapping); a month
+    that lacks the headline calculation is skipped (no point)."""
     try:
         data = json.loads(text)
         if str(data.get("status", "")).upper() not in ("REQUEST_SUCCEEDED", ""):
@@ -167,19 +172,30 @@ def _parse_bls_series(text: str, yoy_percent: bool = False) -> List[SeriesPoint]
             year = str(p.get("year", ""))
             if not year.isdigit():
                 continue
-            if yoy_percent:
-                raw = (
-                    ((p.get("calculations") or {}).get("pct_changes") or {}).get("12")
+            level = _to_float(p.get("value"))
+            calc = p.get("calculations") or {}
+            pct = calc.get("pct_changes") or {}
+            net = calc.get("net_changes") or {}
+            if kind == "index_change":
+                yoy = _to_float(pct.get("12"))
+                if yoy is None:
+                    continue  # no published 12-month change → no point
+                sp = SeriesPoint(
+                    period=f"{year}-{month:02d}", value=yoy,
+                    level=level, change_mom=_to_float(pct.get("1")),
                 )
-                if raw is None:
-                    continue  # no published 12-month change for this month → no point
-            else:
-                raw = p.get("value")
-            try:
-                value = float(str(raw).replace(",", ""))
-            except (TypeError, ValueError):
-                continue
-            out.append(SeriesPoint(period=f"{year}-{month:02d}", value=value))
+            elif kind == "count_change":
+                mom = _to_float(net.get("1"))
+                if mom is None:
+                    continue  # no published 1-month change → no point
+                sp = SeriesPoint(
+                    period=f"{year}-{month:02d}", value=mom, level=level,
+                )
+            else:  # level
+                if level is None:
+                    continue
+                sp = SeriesPoint(period=f"{year}-{month:02d}", value=level)
+            out.append(sp)
         # BLS returns most-recent-first; sort chronological by the label itself.
         out.sort(key=lambda sp: sp.period)
         return out

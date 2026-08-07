@@ -47,6 +47,12 @@
   stroke: var(--line);
   stroke-width: 1;
 }
+/* Visible zero axis when the variation can be negative (NW-8). */
+.pub-curve-svg .grid-zero {
+  stroke: var(--line2, var(--line));
+  stroke-width: 1.2;
+  stroke-dasharray: 4 3;
+}
 .pub-curve-svg .grid-val {
   font-family: 'JetBrains Mono', monospace;
   font-size: 8px;
@@ -89,6 +95,35 @@
   color: var(--faint);
   line-height: 1.5;
   margin-top: 9px;
+}
+/* NW-8 — variation in evidence, raw level in a smaller second plan. */
+.pub-var-headline {
+  font-size: 14px;
+  color: var(--txt);
+  line-height: 1.5;
+}
+.pub-var-headline b {
+  color: var(--txt);
+  font-weight: 700;
+  font-size: 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+.pub-var-level {
+  font-size: 11px;
+  color: var(--faint);
+}
+.pub-curve-attrib {
+  font-size: 10px;
+  color: var(--faint);
+  line-height: 1.5;
+  margin-top: 6px;
+}
+.pub-curve-explain {
+  font-size: 12.5px;
+  color: var(--dim);
+  line-height: 1.6;
+  margin-top: 10px;
 }
 
 /* ---- Quatre questions mesurées ---- */
