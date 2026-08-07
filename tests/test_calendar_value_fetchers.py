@@ -404,6 +404,34 @@ def test_census_diagnose_without_key_skips_the_live_probe():
     assert d["program_cells"] is None
 
 
+def test_census_parses_real_response_without_a_time_column():
+    # PROD shape (NW-9): ``time`` is predicate-only and NOT returned; the period
+    # comes from ``time_slot_date`` (ISO) — the previous parser looked for a
+    # ``time`` column and found none → empty curve.
+    import json as _json
+
+    from src.intelligence.calendar_providers.values.census_values import _parse_eits
+
+    resp = _json.dumps([
+        ["cell_value", "time_slot_date", "time_slot_name", "us"],
+        ["712000", "2025-05-01", "May 2025", "1"],
+        ["716000", "2025-06-01", "June 2025", "1"],
+    ])
+    assert _parse_eits(resp) == [("2025-05", 712000.0), ("2025-06", 716000.0)]
+
+
+def test_census_fetch_series_uses_time_slot_not_time_predicate():
+    # A fetcher over the real (time_slot_date) shape returns the level series.
+    real = json.dumps([
+        ["cell_value", "time_slot_date", "time_slot_name", "us"],
+        ["712000", "2025-05-01", "May 2025", "1"],
+        ["716000", "2025-06-01", "June 2025", "1"],
+    ])
+    f = CensusValueFetcher(api_key="KEY", http_get=lambda url: real)
+    series = f.fetch_series("MARTS-RSAFS", limit=12)
+    assert [(p.period, p.value) for p in series] == [("2025-05", 712000.0), ("2025-06", 716000.0)]
+
+
 def test_census_key_is_stripped_of_surrounding_whitespace():
     # A pasted env-var value with a trailing newline must not be sent verbatim
     # (Census would reject it as "Invalid Key").
