@@ -294,15 +294,22 @@ def _default_date_source(source_key: str) -> Callable[[Dict[str, CatalogEvent]],
 
     def _source(catalog: Dict[str, CatalogEvent]) -> List[ReleaseInstance]:
         if os.environ.get(_ENV_ICS_LIVE, "").strip().lower() in ("1", "true", "yes"):
-            # Census has no .ics feed — only an HTML list-view calendar; it uses a
-            # dedicated live source with the identical keyword-matching seam. Every
-            # other official source reads its iCalendar feed.
+            # Census and the Federal Reserve publish no .ics feed — only HTML
+            # calendars; each uses a dedicated live source with the same
+            # ReleaseInstance seam. Every other official source reads its
+            # iCalendar feed.
             if source_key == "census":
                 from src.intelligence.calendar_providers.official_sources.census_schedule import (
                     census_date_source,
                 )
 
                 live = census_date_source(source_key)(catalog)
+            elif source_key == "federal_reserve":
+                from src.intelligence.calendar_providers.official_sources.fomc_schedule import (
+                    fomc_date_source,
+                )
+
+                live = fomc_date_source(source_key)(catalog)
             else:
                 live = ics_date_source(source_key)(catalog)
             if live:
