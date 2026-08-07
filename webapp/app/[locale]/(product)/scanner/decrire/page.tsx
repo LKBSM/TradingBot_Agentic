@@ -33,7 +33,6 @@ export default async function ConversationalScannerPage({
   const t = await getTranslations({ locale, namespace: 'pages' });
   return (
     <SubscriptionGate
-      requireFullAccess
       paywallTitle={t('scanner.paywallTitle')}
       paywallDescription={t('scanner.paywallDescription')}
     >

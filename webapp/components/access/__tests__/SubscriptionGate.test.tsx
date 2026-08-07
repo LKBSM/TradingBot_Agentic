@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@/components/test-utils';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SubscriptionGate } from '../SubscriptionGate';
-import { comboAllowed, type AccessSummary } from '@/lib/access/api-client';
+import { type AccessSummary } from '@/lib/access/api-client';
 import { accessErrorFromResponse } from '@/lib/access/errors';
 
 const hoisted = vi.hoisted(() => ({
@@ -30,31 +30,20 @@ const FULL: AccessSummary = {
   gate_enforced: true,
   beta_lockdown: false,
   must_login: false,
-  tier: 'subscriber',
   is_owner: false,
-  has_full_access: true,
-  entitlements: {
-    instruments: null,
-    timeframes: null,
-    scanner: true,
-    chat: { limit: null, used: null, remaining: null },
-  },
+  has_access: true,
+  subscription_required: false,
 };
 
-const FREE: AccessSummary = {
+// Authenticated but no active subscription — the paywalled state (PAY-1).
+const UNSUBSCRIBED: AccessSummary = {
   authenticated: true,
   gate_enforced: true,
   beta_lockdown: false,
   must_login: false,
-  tier: 'free',
   is_owner: false,
-  has_full_access: false,
-  entitlements: {
-    instruments: ['XAUUSD'],
-    timeframes: ['M15'],
-    scanner: false,
-    chat: { limit: 5, used: 0, remaining: 5 },
-  },
+  has_access: false,
+  subscription_required: true,
 };
 
 const VISITOR: AccessSummary = {
@@ -62,33 +51,21 @@ const VISITOR: AccessSummary = {
   gate_enforced: true,
   beta_lockdown: false,
   must_login: false,
-  tier: 'visitor',
   is_owner: false,
-  has_full_access: false,
-  entitlements: {
-    instruments: ['XAUUSD'],
-    timeframes: ['M15'],
-    scanner: false,
-    chat: { limit: 5, used: null, remaining: null },
-  },
+  has_access: false,
+  subscription_required: false,
 };
 
-// Closed beta, anonymous caller: gate not enforced (freemium off) but the beta
-// lockdown demands login. must_login drives the redirect independently.
+// Closed beta, anonymous caller: gate not enforced (payment wall off) but the
+// beta lockdown demands login. must_login drives the redirect independently.
 const LOCKDOWN_ANON: AccessSummary = {
   authenticated: false,
   gate_enforced: false,
   beta_lockdown: true,
   must_login: true,
-  tier: 'visitor',
   is_owner: false,
-  has_full_access: false,
-  entitlements: {
-    instruments: null,
-    timeframes: null,
-    scanner: true,
-    chat: { limit: null, used: null, remaining: null },
-  },
+  has_access: false,
+  subscription_required: false,
 };
 
 afterEach(() => {
@@ -99,7 +76,7 @@ afterEach(() => {
 });
 
 describe('SubscriptionGate', () => {
-  it('renders children for a full-access account', async () => {
+  it('renders children for a subscribed account', async () => {
     stubAccess(FULL);
     render(
       <SubscriptionGate>
@@ -137,10 +114,10 @@ describe('SubscriptionGate', () => {
     expect(screen.queryByText('secret content')).not.toBeInTheDocument();
   });
 
-  it('shows a paywall for a free account on a paid-only surface', async () => {
-    stubAccess(FREE);
+  it('shows a paywall for an unsubscribed account on any gated surface', async () => {
+    stubAccess(UNSUBSCRIBED);
     render(
-      <SubscriptionGate requireFullAccess paywallTitle="Réservé">
+      <SubscriptionGate paywallTitle="Réservé">
         <div>scanner content</div>
       </SubscriptionGate>,
     );
@@ -150,14 +127,16 @@ describe('SubscriptionGate', () => {
     expect(screen.getByText('Voir les abonnements')).toBeInTheDocument();
   });
 
-  it('lets a free account into a partial surface (no requireFullAccess)', async () => {
-    stubAccess(FREE);
+  it('lets an unsubscribed account through when requireSubscription is false', async () => {
+    // The account page and the subscription page must never paywall — that is
+    // exactly where an unsubscribed account lands to subscribe (PAY-1).
+    stubAccess(UNSUBSCRIBED);
     render(
-      <SubscriptionGate>
-        <div>reading content</div>
+      <SubscriptionGate requireSubscription={false}>
+        <div>account content</div>
       </SubscriptionGate>,
     );
-    expect(await screen.findByText('reading content')).toBeInTheDocument();
+    expect(await screen.findByText('account content')).toBeInTheDocument();
   });
 
   it('fails open (renders children) when the summary fetch errors', async () => {
@@ -168,17 +147,6 @@ describe('SubscriptionGate', () => {
       </SubscriptionGate>,
     );
     expect(await screen.findByText('fallback content')).toBeInTheDocument();
-  });
-});
-
-describe('comboAllowed', () => {
-  it('allows everything for full access', () => {
-    expect(comboAllowed(FULL, 'EURUSD', 'H4')).toBe(true);
-  });
-  it('restricts a free account to its perimeter', () => {
-    expect(comboAllowed(FREE, 'XAUUSD', 'M15')).toBe(true);
-    expect(comboAllowed(FREE, 'XAUUSD', 'H1')).toBe(false);
-    expect(comboAllowed(FREE, 'EURUSD', 'M15')).toBe(false);
   });
 });
 

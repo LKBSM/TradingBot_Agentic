@@ -40,7 +40,7 @@ function match(over: Record<string, unknown> = {}) {
 
 async function mock(page: Page, scan: unknown) {
   await page.route('**/api/access/me', (r) =>
-    r.fulfill({ json: { has_full_access: true, entitlements: { instruments: [], timeframes: [] } } }),
+    r.fulfill({ json: { authenticated: true, gate_enforced: false, beta_lockdown: false, must_login: false, is_owner: true, has_access: true, subscription_required: false } }),
   );
   await page.route('**/api/conditions-scan', (r) => r.fulfill({ json: scan }));
 }

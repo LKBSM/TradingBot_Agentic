@@ -195,10 +195,10 @@ class AccountStore:
                 );
             """)
         if from_v < 3:
-            # Subscription-gate mission ③ — per-account daily chat counter that
-            # backs the freemium quota (free tier = N messages/day). ONE row per
-            # (account, UTC day); enforcement lives in ``entitlements``. No PII,
-            # just a count — old days can be pruned at will.
+            # Per-account daily chat counter (originally the freemium quota).
+            # PAY-1 is paid-only (chat is unlimited for subscribers), so this
+            # table is no longer read for gating — it is kept for schema
+            # stability. ONE row per (account, UTC day); no PII, just a count.
             conn.executescript("""
                 CREATE TABLE IF NOT EXISTS chat_usage (
                     account_id INTEGER NOT NULL
@@ -1006,10 +1006,11 @@ class AccountStore:
                 conn.close()
 
     # --------------------------------------------------------------------- #
-    # Freemium chat quota (per-account, per-UTC-day counter)
+    # Chat usage counter (per-account, per-UTC-day)
     #
-    # Backs the free-tier "N messages/day" limit (subscription-gate mission ③).
-    # The policy/limit lives in ``entitlements``; the store only counts.
+    # Was the free-tier "N messages/day" quota. PAY-1 is paid-only (unlimited
+    # chat for subscribers), so these are retained but no longer used for
+    # gating; the store only counts.
     # --------------------------------------------------------------------- #
     def get_chat_usage(self, account_id: int, day: str) -> int:
         """Return today's message count for an account (0 if none yet)."""

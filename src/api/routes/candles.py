@@ -26,7 +26,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
 
-from src.api.entitlements import enforce_combo_access
+from src.api.subscription_gate import enforce_access
 from src.api.session_auth import optional_account
 
 logger = logging.getLogger(__name__)
@@ -101,8 +101,9 @@ async def get_candles(
             ),
         )
 
-    # Freemium gate (no-op while the gate is OFF): free tier sees XAU/USD M15.
-    enforce_combo_access(request, account, instrument, timeframe)
+    # Paid-only gate (no-op while the gate is OFF): no candle without an active
+    # subscription (PAY-1). Owner/subscriber pass.
+    enforce_access(request, account)
 
     store = _resolve_candles_store(request)
     if store is None:

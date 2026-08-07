@@ -10,12 +10,14 @@ import { Paywall } from './Paywall';
 
 export interface SubscriptionGateProps {
   /**
-   * When true the WHOLE subtree requires full (paid/owner) access — used for
-   * paid-only surfaces like the scanner. When false (default) an authenticated
-   * free account is let through (it has a partial perimeter, e.g. XAU/USD M15);
-   * locked combos then degrade per-request to a clean upsell.
+   * PAY-1 is paid-only: by default a gated product surface requires an active
+   * subscription — an authenticated account without one gets the <Paywall>
+   * (subscribe invitation), never partial access. Set this to `false` for the
+   * two surfaces an unsubscribed account MUST reach: the account page and the
+   * subscription page itself (there they still need to be logged in, but not
+   * subscribed).
    */
-  requireFullAccess?: boolean;
+  requireSubscription?: boolean;
   /** Copy shown on the paywall when access is insufficient. */
   paywallTitle?: string;
   paywallDescription?: string;
@@ -23,19 +25,20 @@ export interface SubscriptionGateProps {
 }
 
 /**
- * Client route guard for the gated product surfaces (`/app`, `/scanner`).
+ * Client route guard for the gated product surfaces.
  *
- * Behaviour mirrors the server gate exactly:
- *   · gate OFF (testing phase)        → always renders children (open).
- *   · gate ON + not authenticated     → redirect to /connexion?next=…
- *   · gate ON + requireFullAccess + free → render <Paywall> (upsell).
- *   · otherwise                       → render children.
+ * Behaviour mirrors the server gate exactly (paid-only, all-or-nothing):
+ *   · gate OFF (testing phase)                 → always renders children (open).
+ *   · gate ON + not authenticated              → redirect to /connexion?next=…
+ *   · gate ON + authenticated + no access      → render <Paywall> (subscribe),
+ *     unless requireSubscription is false (account / subscription pages).
+ *   · otherwise                                → render children.
  *
  * It reads /api/access/me once; while loading it shows a minimal skeleton so the
  * page never flashes gated content before the decision is made.
  */
 export function SubscriptionGate({
-  requireFullAccess = false,
+  requireSubscription = true,
   paywallTitle,
   paywallDescription,
   children,
@@ -112,7 +115,7 @@ export function SubscriptionGate({
   }
 
   const blocked =
-    requireFullAccess && access.gate_enforced && !access.has_full_access;
+    requireSubscription && access.gate_enforced && !access.has_access;
   if (blocked) {
     return (
       <div className="container-wide py-12">

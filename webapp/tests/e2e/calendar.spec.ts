@@ -27,8 +27,7 @@ const D = 86400_000;
 /** Full access so the SubscriptionGate never withholds the page under test. */
 const FULL_ACCESS = {
   authenticated: true, gate_enforced: false, beta_lockdown: false, must_login: false,
-  tier: 'owner', is_owner: true, has_full_access: true,
-  entitlements: { instruments: null, timeframes: null, scanner: true, chat: { limit: null, used: 0, remaining: null } },
+  is_owner: true, has_access: true, subscription_required: false,
 };
 
 /** Anchor several events inside the CURRENT calendar month, relative to now. */

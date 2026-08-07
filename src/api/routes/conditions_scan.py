@@ -23,7 +23,7 @@ from typing import Any, Dict, List, Literal, Optional, Tuple
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
-from src.api.entitlements import enforce_scanner_access
+from src.api.subscription_gate import enforce_access
 from src.api.session_auth import optional_account
 from src.intelligence.conditions_scanner import (
     ALLOWED_CONDITION_TYPES,
@@ -262,9 +262,10 @@ async def conditions_scan(
     body: ConditionsScanRequest,
     account: Optional[Dict[str, Any]] = Depends(optional_account),
 ) -> ConditionsScanResponse:
-    # Freemium gate (no-op while the gate is OFF): the multi-market scanner is a
-    # paid feature — a free account is invited to subscribe (402), never errored.
-    enforce_scanner_access(request, account)
+    # Paid-only gate (no-op while the gate is OFF): the scanner requires an
+    # active subscription — an unsubscribed account is invited to subscribe
+    # (402), never errored (PAY-1). Owner/subscriber pass.
+    enforce_access(request, account)
 
     assembler = getattr(request.app.state.app_state, "market_reading_assembler", None)
     if assembler is None:

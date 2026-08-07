@@ -98,6 +98,40 @@ def _account_store(request: Request) -> Optional[Any]:
     return getattr(request.app.state.app_state, "account_store", None)
 
 
+# =============================================================================
+# The single inline access guard for gated DATA routes (PAY-1: paid-only).
+#
+# PAY-1 removed the freemium perimeter: there is no partial/free access. A
+# gated route is either fully open (gate OFF, personal-testing) or requires an
+# authenticated account WITH an active subscription (owner always passes). This
+# one function is the ONLY place a data route asks "may this caller see market
+# data?" — the entitlements module and its instrument/timeframe/scanner/chat
+# perimeter are gone, so access is decided in exactly one seam.
+# =============================================================================
+
+_LOGIN_REQUIRED = "Authentication required for this feature."
+_SUBSCRIPTION_REQUIRED = "An active subscription is required for this feature."
+
+
+def enforce_access(request: Request, account: Optional[Dict[str, Any]]) -> None:
+    """Guard a market-data route (paid-only, all-or-nothing).
+
+    * Gate OFF (default, personal-testing) → no-op, route stays open.
+    * Gate ON, not authenticated → 401 (the caller must log in).
+    * Gate ON, authenticated without access → 402 (subscribe to unlock).
+    * Owner and active/trialing subscribers pass.
+
+    No instrument/timeframe/feature distinction: an unsubscribed account sees no
+    market data at all — not even a single candle (PAY-1).
+    """
+    if not _gate_enforced():
+        return
+    if account is None:
+        raise HTTPException(status_code=401, detail=_LOGIN_REQUIRED)
+    if not account_has_access(account, _account_store(request)):
+        raise HTTPException(status_code=402, detail=_SUBSCRIPTION_REQUIRED)
+
+
 async def require_active_subscription(
     request: Request,
     account: Dict[str, Any] = Depends(require_account),

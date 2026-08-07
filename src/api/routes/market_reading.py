@@ -14,7 +14,7 @@ from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
-from src.api.entitlements import enforce_combo_access
+from src.api.subscription_gate import enforce_access
 from src.api.session_auth import optional_account
 from src.intelligence.market_reading_assembler import MarketReadingDataUnavailable
 from src.intelligence.market_reading_schema import MarketReading
@@ -62,8 +62,9 @@ def get_market_reading(
             ),
         )
 
-    # Freemium gate (no-op while the gate is OFF): free tier sees XAU/USD M15.
-    enforce_combo_access(request, account, instrument, timeframe)
+    # Paid-only gate (no-op while the gate is OFF): an unsubscribed account gets
+    # no market data at all — not even one candle (PAY-1). Owner/subscriber pass.
+    enforce_access(request, account)
 
     assembler = getattr(request.app.state.app_state, "market_reading_assembler", None)
     if assembler is None:

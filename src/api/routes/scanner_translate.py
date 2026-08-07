@@ -22,7 +22,7 @@ from typing import Any, Dict, List, Literal, Optional
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field, ValidationError
 
-from src.api.entitlements import enforce_scanner_access
+from src.api.subscription_gate import enforce_access
 from src.api.routes.conditions_scan import ScanCondition
 from src.api.session_auth import optional_account
 
@@ -89,8 +89,8 @@ async def scanner_translate(
     body: TranslateRequest,
     account: Optional[Dict[str, Any]] = Depends(optional_account),
 ) -> ScannerTranslateResponse:
-    # Same freemium gate as the scanner it feeds (no-op while the gate is OFF).
-    enforce_scanner_access(request, account)
+    # Same paid-only gate as the scanner it feeds (no-op while the gate is OFF).
+    enforce_access(request, account)
 
     translator = getattr(request.app.state.app_state, "scanner_translator", None)
     if translator is None:
