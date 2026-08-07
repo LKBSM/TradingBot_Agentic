@@ -31,8 +31,13 @@ from src.intelligence.calendar_providers.values.base_value import (
 logger = logging.getLogger(__name__)
 
 _BASE = "https://apps.bea.gov/api/data"
-_UA = "Mozilla/5.0 (compatible; MIA-Markets-Calendar/1.0; +https://mia-markets)"
-_TIMEOUT_S = 12
+# A plain, current browser UA — some government API hosts reject bot-style
+# User-Agents with a 403, which reads as an empty curve in prod (NW-9).
+_UA = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+)
+_TIMEOUT_S = 15
 
 
 class _Series:
@@ -57,7 +62,9 @@ _BEA_SERIES: Dict[str, _Series] = {
 
 class BEAValueFetcher(ValueFetcher):
     def __init__(self, api_key: Optional[str] = None, http_get=None) -> None:
-        self._key = api_key if api_key is not None else os.environ.get("BEA_API_KEY", "")
+        raw = api_key if api_key is not None else os.environ.get("BEA_API_KEY", "")
+        # Strip surrounding whitespace/newline pasted into the env var (NW-9).
+        self._key = (raw or "").strip()
         self._get = http_get or _http_get
 
     def _years_param(self) -> str:
