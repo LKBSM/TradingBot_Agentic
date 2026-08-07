@@ -52,7 +52,11 @@ from typing import Any, Callable, List, Mapping, Optional, Sequence, Tuple
 # BOS. bos_events drops CHOCH bars and the point-in-time `bos` is not set on a
 # fresh CHOCH bar; a stored v5 payload still carries the duplicated BOS twin, so
 # it MUST be rebuilt.
-READING_LOGIC_VERSION = 6
+# v7 (VZ-1): OB/FVG carry a per-contact ledger (contacts: edge_touch/entry_exit/
+# traversal/inside) + the OB origin break; the structure carries a bounded set of
+# consumed zones (consumed_order_blocks/consumed_fair_value_gaps). All ADDITIVE &
+# read-side — a stored v6 payload lacks them, so rebuild.
+READING_LOGIC_VERSION = 7
 
 # Env kill switch (LQ-D1): masks ALL external-liquidity pockets at the serve
 # layer — cache-hit AND fresh build — in one reversible value. Data is untouched

@@ -126,6 +126,43 @@ class CHOCHRecent(BaseModel):
     bars_ago: Optional[int] = None
 
 
+# VZ-1: outcome of ONE observed price contact with a zone — strictly factual,
+# NEVER a judgement (never "respected"/"held"/"strong"). The three distinct
+# outcomes the product must not conflate (mission question B):
+#   * edge_touch — price reached the near edge but penetrated LESS than
+#     ``MitigationPolicy.contact_edge_touch_fraction`` of the height (a kiss).
+#   * entry_exit — price entered the band then left through the SAME (near) edge
+#     without crossing it (a deeper tap that did not consume the zone).
+#   * traversal  — price CLOSED through the far edge (OB) / fully filled the gap
+#     (FVG): the contact that consumed the zone.
+#   * inside     — price is CURRENTLY within the band (ongoing; no exit yet).
+ContactOutcome = Literal["edge_touch", "entry_exit", "traversal", "inside"]
+
+
+class ZoneContact(BaseModel):
+    """One price contact with a zone, classified read-side over the SAME candle
+    window and predicates the touch counter already uses — additive, no new
+    detection. ``level`` is the DEEPEST price reached into the band on this
+    contact (the "niveau atteint")."""
+
+    at: datetime
+    level: float
+    outcome: ContactOutcome
+
+
+class ZoneOrigin(BaseModel):
+    """The structural break an order block PRECEDES — what makes it an OB (the
+    last opposite candle before the break). Associated read-side from the engine's
+    already-emitted ``BOS_EVENT`` / ``CHOCH_SIGNAL`` / ``BOS_BREAK_LEVEL`` columns
+    — never a new detection. ``kind`` bos|choch, ``direction`` of the break,
+    ``at`` its bar timestamp, ``level`` the broken level."""
+
+    kind: Literal["bos", "choch"]
+    direction: Direction
+    at: datetime
+    level: float
+
+
 class OrderBlock(BaseModel):
     id: str
     direction: Optional[Direction] = None
@@ -144,6 +181,11 @@ class OrderBlock(BaseModel):
     # touch_ats[0] == mitigated_at. Defaults keep older payloads valid.
     touch_count: int = 0
     touch_ats: list[datetime] = Field(default_factory=list)
+    # VZ-1: per-contact ledger (edge_touch / entry_exit / traversal / inside) and
+    # the origin break. Both additive & optional so older payloads stay valid and
+    # the /app surface (which ignores them) is unaffected.
+    contacts: list[ZoneContact] = Field(default_factory=list)
+    origin: Optional[ZoneOrigin] = None
     user_flagged: bool = False
 
 
@@ -170,6 +212,9 @@ class FairValueGap(BaseModel):
     # == mitigated_at. Defaults keep older payloads valid.
     touch_count: int = 0
     touch_ats: list[datetime] = Field(default_factory=list)
+    # VZ-1: per-contact ledger. An FVG has no structural-break origin (it is a
+    # 3-candle imbalance, explained statically), so no ``origin`` field here.
+    contacts: list[ZoneContact] = Field(default_factory=list)
     user_flagged: bool = False
 
 
@@ -228,6 +273,14 @@ class MarketReadingStructure(BaseModel):
     choch_events: list[CHOCHRecent] = Field(default_factory=list)
     order_blocks: list[OrderBlock] = Field(default_factory=list)
     fair_value_gaps: list[FairValueGap] = Field(default_factory=list)
+    # VZ-1: a BOUNDED set of the most recently CONSUMED zones (invalidated OB /
+    # filled FVG) — the ones `order_blocks`/`fair_value_gaps` deliberately drop
+    # once consumed. Read-only/descriptive twin so the /zones page can show a
+    # "Comblées" (traversed) group with each zone's full contact ledger. Additive
+    # & optional: the /app Structure surface never reads them, older payloads stay
+    # valid. Their `contacts` list ends with the `traversal` contact.
+    consumed_order_blocks: list[OrderBlock] = Field(default_factory=list)
+    consumed_fair_value_gaps: list[FairValueGap] = Field(default_factory=list)
     # External liquidity pockets (EQH/EQL + range extremes) with intact/swept/
     # broken state. Read-only/descriptive twin of order_blocks/fair_value_gaps;
     # injected by the SMC pipeline under ``_liquidity`` and built by the structure
