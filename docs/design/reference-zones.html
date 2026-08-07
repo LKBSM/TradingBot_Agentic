@@ -1,0 +1,369 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MIA Markets — Page Zones v2</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#070b13;--card:#0f1928;--card2:#0c1421;--line:#1b2840;--line2:#25344f;
+--tx:#e9eff8;--dim:#94a5be;--faint:#5f7089;--acc:#5b9dff;--pos:#3ddc97;--neg:#ff6b81;--amb:#f5b544;--vio:#a78bfa}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font-family:'Inter',system-ui,sans-serif;font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:'Space Grotesk';letter-spacing:-.03em;line-height:1.15}
+.mono{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums}
+.shell{display:grid;grid-template-columns:1fr 344px;gap:20px;max-width:1240px;margin:0 auto;padding:24px 22px 70px;align-items:start}
+@media(max-width:1080px){.shell{grid-template-columns:1fr}}
+.hd{margin-bottom:18px}
+.hd h1{font-size:26px;font-weight:600;margin-bottom:6px}
+.hd p{color:var(--dim);font-size:13.5px;max-width:600px}
+.ctx{display:inline-flex;align-items:center;gap:9px;font-family:'JetBrains Mono';font-size:11px;color:var(--dim);
+  padding:7px 13px;border:1px solid var(--line);border-radius:10px;background:var(--card);margin-bottom:16px}
+.ctx .d{width:7px;height:7px;border-radius:50%;background:var(--pos)}
+.bar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:9px}
+.grp{display:flex;gap:3px;background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:3px}
+.gb{font-size:12px;padding:6px 12px;border-radius:7px;border:none;background:transparent;color:var(--faint);cursor:pointer;transition:.14s;font-family:'Inter'}
+.gb:hover{color:var(--tx)}
+.gb.on{background:#1a2740;color:var(--tx);font-weight:500}
+.lb{font-family:'JetBrains Mono';font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint)}
+
+/* ---- CARTE ---- */
+.z{border:1px solid var(--line);border-radius:15px;background:var(--card);margin-bottom:11px;overflow:hidden;cursor:pointer;transition:.16s}
+.z:hover{border-color:var(--line2)}
+.z.sel{border-color:#2f5f9e;box-shadow:0 0 0 1px rgba(91,157,255,.16)}
+.z.done{opacity:.6}
+.zh{padding:14px 17px 0;display:flex;align-items:flex-start;gap:11px;flex-wrap:wrap}
+.tp{font-family:'JetBrains Mono';font-size:10px;font-weight:600;padding:4px 9px;border-radius:7px;flex-shrink:0}
+.tp.ob{background:rgba(255,107,129,.15);color:#ffa5b3}
+.tp.fvg{background:rgba(167,139,250,.15);color:#c4b5fd}
+.rng{font-family:'JetBrains Mono';font-size:16.5px;font-weight:600;line-height:1.2}
+.hgt{font-family:'JetBrains Mono';font-size:9.5px;color:var(--faint);margin-top:2px}
+.st{margin-left:auto;font-family:'JetBrains Mono';font-size:9px;font-weight:600;padding:5px 10px;border-radius:20px;letter-spacing:.05em}
+.st.act{background:rgba(61,220,151,.13);color:var(--pos);border:1px solid rgba(61,220,151,.28)}
+.st.tst{background:rgba(245,181,68,.13);color:var(--amb);border:1px solid rgba(245,181,68,.28)}
+.st.mit{background:#141d2c;color:var(--faint);border:1px solid var(--line2)}
+
+/* PROXIMITÉ — bloc dédié */
+.px{margin:12px 17px 0;border:1px solid var(--line2);border-radius:12px;background:var(--card2);padding:11px 14px}
+.px.inside{border-color:#2f5f9e;background:#0e1c31}
+.pxr{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:8px}
+.pxr:last-child{margin-bottom:0}
+.pxr .k{font-family:'JetBrains Mono';font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);min-width:78px}
+.pxr .v{font-size:12.5px;color:var(--dim)}
+.pxr .v b{color:var(--tx);font-weight:600;font-family:'JetBrains Mono'}
+.gauge{margin-top:10px;height:26px;position:relative;border-radius:7px;background:#0a1220;border:1px solid var(--line);overflow:hidden}
+.gband{position:absolute;top:0;bottom:0;background:rgba(91,157,255,.14);border-left:1px solid rgba(91,157,255,.5);border-right:1px solid rgba(91,157,255,.5)}
+.gpx{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--pos);box-shadow:0 0 7px rgba(61,220,151,.8)}
+.glab{position:absolute;font-family:'JetBrains Mono';font-size:8px;color:var(--faint);top:50%;transform:translateY(-50%)}
+
+/* CONFLUENCE */
+.conf{margin:11px 17px 0;border:1px solid #2f5f9e;border-radius:12px;background:#0e1c31;padding:11px 14px}
+.conf .ct{font-family:'JetBrains Mono';font-size:8.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--acc);margin-bottom:8px}
+.cl{display:flex;align-items:flex-start;gap:9px;font-size:12.5px;color:var(--dim);line-height:1.55;margin-bottom:6px}
+.cl:last-child{margin-bottom:0}
+.cl .ic{width:19px;height:19px;border-radius:6px;display:grid;place-items:center;flex-shrink:0;margin-top:1px;font-size:9px}
+.cl b{color:var(--tx);font-weight:500}
+.conf.none{border-color:var(--line);background:var(--card2)}
+.conf.none .ct{color:var(--faint)}
+.conf.none .cl{color:var(--faint)}
+
+/* CONTACTS — faits, sans jugement */
+.cont{margin:11px 17px 0;border-left:2px solid var(--amb);background:#150f04;border-radius:0 11px 11px 0;padding:11px 14px}
+.cont .ct{font-family:'JetBrains Mono';font-size:8.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--amb);margin-bottom:8px}
+.cont .cr{font-size:12.5px;color:#d5c49b;line-height:1.6;margin-bottom:5px;display:flex;gap:9px}
+.cont .cr:last-child{margin-bottom:0}
+.cont .cr b{color:#f0dcb0;font-weight:500}
+.cont .cr i{font-style:normal;font-family:'JetBrains Mono';font-size:10px;opacity:.8;flex-shrink:0;min-width:52px}
+
+/* frise */
+.tl{padding:15px 17px 0}
+.trk{position:relative;height:32px}
+.rail{position:absolute;left:0;right:0;top:6px;height:2px;background:var(--line2);border-radius:2px}
+.rfill{position:absolute;left:0;top:6px;height:2px;background:linear-gradient(90deg,var(--acc),#7cb2ff);border-radius:2px}
+.pt{position:absolute;top:0;transform:translateX(-50%);text-align:center}
+.pt .dt{width:12px;height:12px;border-radius:50%;border:2.5px solid var(--bg);margin:0 auto}
+.pt .lbl{font-family:'JetBrains Mono';font-size:8.5px;color:var(--faint);margin-top:4px;white-space:nowrap}
+.pt .lbl b{color:var(--dim);font-weight:500;display:block}
+.dt.form{background:var(--acc)}.dt.touch{background:var(--amb)}.dt.now{background:var(--pos)}.dt.mit{background:var(--neg)}
+.fillw{padding:13px 17px 0}
+.fillbar{height:7px;background:#0d1727;border-radius:4px;overflow:hidden;border:1px solid var(--line)}
+.fillbar i{display:block;height:100%;background:linear-gradient(90deg,#2a4a78,#5b9dff)}
+.fillx{display:flex;justify-content:space-between;font-family:'JetBrains Mono';font-size:9px;color:var(--faint);margin-top:5px}
+.say{padding:13px 17px 0;font-family:'Space Grotesk';font-size:13px;line-height:1.65;color:var(--dim)}
+.say b{color:var(--tx);font-weight:500}
+.org{margin:11px 17px 0;padding:10px 13px;border-left:2px solid var(--line2);background:var(--card2);border-radius:0 9px 9px 0}
+.org .ot{font-family:'JetBrains Mono';font-size:8.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);margin-bottom:5px}
+.org .ol{font-size:12px;color:var(--dim);line-height:1.6}
+.org .ol b{color:var(--tx);font-weight:500}
+.det{margin-top:13px;border-top:1px solid var(--line)}
+.dth{padding:10px 17px;display:flex;align-items:center;gap:9px;cursor:pointer;font-size:12px;color:var(--faint);transition:.14s}
+.dth:hover{color:var(--dim);background:#111d2f}
+.dth .cv{transition:.2s;font-size:9px}
+.z.open .dth .cv{transform:rotate(90deg)}
+.dtb{display:none;padding:0 17px 14px}
+.z.open .dtb{display:block}
+.kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.kvc{background:var(--card2);padding:8px 11px}
+.kvc .k{font-family:'JetBrains Mono';font-size:8px;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);margin-bottom:3px}
+.kvc .v{font-size:12px;font-weight:500}
+.kvc .v.mono{font-family:'JetBrains Mono';font-size:11.5px}
+.act{padding:11px 17px;display:flex;gap:7px;flex-wrap:wrap;border-top:1px solid var(--line)}
+.btn{font-family:'Space Grotesk';font-size:12px;font-weight:600;padding:8px 14px;border-radius:9px;
+  border:1px solid var(--line2);background:transparent;color:var(--tx);cursor:pointer;transition:.15s}
+.btn:hover{border-color:var(--acc);color:var(--acc)}
+.btn.gh{border-color:transparent;color:var(--faint)}
+.sep{font-family:'JetBrains Mono';font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);margin:22px 0 10px;display:flex;align-items:center;gap:11px}
+.sep::after{content:'';flex:1;height:1px;background:var(--line)}
+.note{font-family:'JetBrains Mono';font-size:10px;color:var(--faint);line-height:1.7;margin-top:18px}
+/* ---- PANNEAU M.I.A ---- */
+.mia{position:sticky;top:20px;border:1px solid var(--line2);border-radius:16px;
+  background:linear-gradient(158deg,#111e33,#0a1220);overflow:hidden;display:flex;flex-direction:column;max-height:calc(100vh - 40px)}
+.miah{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.av{width:31px;height:31px;border-radius:10px;background:linear-gradient(140deg,#5b9dff,#3060b8);display:grid;place-items:center;position:relative;flex-shrink:0}
+.av svg{width:16px;height:16px;stroke:#04101f;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.av .o{position:absolute;right:-2px;bottom:-2px;width:9px;height:9px;border-radius:50%;background:var(--pos);border:2.2px solid #101e33}
+.miah .nm{font-family:'Space Grotesk';font-size:13.5px;font-weight:600;line-height:1.2}
+.miah .sb{font-family:'JetBrains Mono';font-size:9px;color:var(--faint)}
+.subj{padding:11px 16px;background:#0e1c31;border-bottom:1px solid var(--line);flex-shrink:0}
+.subj .k{font-family:'JetBrains Mono';font-size:8.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--acc);margin-bottom:5px}
+.subj .v{font-family:'JetBrains Mono';font-size:12.5px;font-weight:600}
+.subj .m{font-size:11px;color:var(--dim);margin-top:3px}
+.miab{padding:14px 16px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:8px;min-height:190px}
+.bub{max-width:92%;padding:9px 12px;border-radius:11px;font-size:12.5px;line-height:1.55}
+.bub.u{align-self:flex-end;background:#12294a;border:1px solid #2f5f9e}
+.bub.a{align-self:flex-start;background:var(--card);border:1px solid var(--line);color:var(--dim)}
+.bub.a b{color:var(--tx);font-weight:500}
+.sugg{padding:0 16px 12px;display:flex;flex-direction:column;gap:6px;flex-shrink:0}
+.sg{font-size:11.5px;padding:8px 11px;border-radius:9px;border:1px solid var(--line2);background:rgba(10,19,34,.6);
+  color:var(--dim);cursor:pointer;text-align:left;transition:.15s;line-height:1.4}
+.sg:hover{border-color:var(--acc);color:var(--tx);background:#12213a}
+.miaf{padding:11px 14px;border-top:1px solid var(--line);flex-shrink:0}
+.miaf .inp{display:flex;gap:8px;align-items:center;background:#0a1220;border:1px solid var(--line2);border-radius:10px;padding:8px 11px}
+.miaf input{flex:1;background:transparent;border:none;outline:none;color:var(--tx);font-family:'Inter';font-size:12.5px}
+.miaf input::placeholder{color:var(--faint)}
+.snd{width:27px;height:27px;border-radius:8px;background:var(--acc);border:none;color:#04101f;cursor:pointer;display:grid;place-items:center;flex-shrink:0}
+.snd svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2.4}
+.dis{font-family:'JetBrains Mono';font-size:9px;color:var(--faint);margin-top:8px;line-height:1.55}
+</style></head><body>
+<div class="shell">
+<div class="main">
+  <div class="hd"><h1>Zones</h1>
+    <p>Le cycle de vie de chaque zone détectée — formation, contacts, comblement — décrit au présent. Aucun objectif, aucune prévision.</p></div>
+  <div class="ctx"><span class="d"></span>Or (XAU/USD) · 15 minutes · 24 zones · prix 4 330,28 · à jour il y a 2 min</div>
+
+  <div class="bar">
+    <div class="grp"><button class="gb on">Or</button><button class="gb">Euro / Dollar</button></div>
+    <div class="grp"><button class="gb">5 min</button><button class="gb on">15 min</button><button class="gb">1 h</button><button class="gb">4 h</button><button class="gb">1 jour</button></div>
+  </div>
+  <div class="bar" style="margin-bottom:18px">
+    <span class="lb">Filtre</span>
+    <div class="grp"><button class="gb on">Toutes</button><button class="gb">Actives</button><button class="gb">Jamais touchées</button><button class="gb">Comblées</button></div>
+    <span class="lb">Tri</span>
+    <div class="grp"><button class="gb on">Proximité</button><button class="gb">Formation</button><button class="gb">Contacts</button></div>
+  </div>
+
+  <div class="sep">Le prix est dedans</div>
+
+  <div class="z sel open" onclick="sel(this)">
+    <div class="zh"><span class="tp ob">OB ↑</span>
+      <span><span class="rng">4 329,94 – 4 340,74</span><span class="hgt">hauteur 10,80 pts · 0,25 % du prix</span></span>
+      <span class="st act">JAMAIS COMBLÉE</span></div>
+
+    <div class="px inside">
+      <div class="pxr"><span class="k">Position</span><span class="v">Le prix est <b>à l'intérieur</b>, à <b>3,34 pts</b> du bord bas et <b>10,46 pts</b> du bord haut</span></div>
+      <div class="pxr"><span class="k">Entré</span><span class="v">il y a <b>32 min</b> · 16:43</span></div>
+      <div class="gauge">
+        <div class="gband" style="left:26%;right:34%"></div>
+        <div class="gpx" style="left:34%"></div>
+        <div class="glab" style="left:6px">4 310</div>
+        <div class="glab" style="right:6px">4 362</div>
+      </div>
+    </div>
+
+    <div class="conf">
+      <div class="ct">Ce qu'il y a d'autre au même endroit</div>
+      <div class="cl"><span class="ic" style="background:rgba(167,139,250,.16);color:#c4b5fd">◆</span>
+        <span>Un <b>Fair Value Gap haussier à l'intérieur</b> de cette zone, entre 4 332,10 et 4 335,40 — comblé à 0 %.</span></div>
+      <div class="cl"><span class="ic" style="background:rgba(255,107,129,.16);color:#ffa5b3">◈</span>
+        <span>Un <b>Order Block haussier en 1 heure</b> l'englobe, entre 4 327,50 et 4 342,00.</span></div>
+      <div class="cl"><span class="ic" style="background:rgba(245,181,68,.16);color:#f5b544">≈</span>
+        <span>Une <b>poche de liquidité achat intacte</b> à 4 348,60, soit 7,86 pts au-dessus du bord haut.</span></div>
+    </div>
+
+    <div class="tl"><div class="trk">
+      <div class="rail"></div><div class="rfill" style="width:100%"></div>
+      <div class="pt" style="left:0"><div class="dt form"></div><div class="lbl"><b>Formée</b>13:45</div></div>
+      <div class="pt" style="left:76%"><div class="dt touch"></div><div class="lbl"><b>Prix entré</b>16:43</div></div>
+      <div class="pt" style="left:100%"><div class="dt now"></div><div class="lbl"><b>Maintenant</b>17:15</div></div>
+    </div></div>
+
+    <div class="say" style="padding-top:24px">Le prix est <b>actuellement à l'intérieur</b>, entré il y a 32 minutes. La zone <b>n'a jamais été comblée</b> depuis sa formation il y a 3 h 30. C'est son <b>premier contact</b>.</div>
+
+    <div class="org"><div class="ot">Ce qui l'a créée</div>
+      <div class="ol">Dernière bougie baissière avant le <b>BOS haussier de 14:15</b> à 4 325,10. Formée en <b>session de New York</b>.</div></div>
+
+    <div class="det"><div class="dth" onclick="tg(event,this)"><span class="cv">▶</span>Détails complets</div>
+      <div class="dtb"><div class="kv">
+        <div class="kvc"><div class="k">Bord haut</div><div class="v mono">4 340,74</div></div>
+        <div class="kvc"><div class="k">Bord bas</div><div class="v mono">4 329,94</div></div>
+        <div class="kvc"><div class="k">Milieu</div><div class="v mono">4 335,34</div></div>
+        <div class="kvc"><div class="k">Hauteur</div><div class="v mono">10,80 pts · 0,25 %</div></div>
+        <div class="kvc"><div class="k">Formée</div><div class="v mono">6 août · 13:45</div></div>
+        <div class="kvc"><div class="k">Âge</div><div class="v">3 h 30 · 14 bougies</div></div>
+        <div class="kvc"><div class="k">Entrées du prix</div><div class="v">1 · en cours</div></div>
+        <div class="kvc"><div class="k">Sorties sans traversée</div><div class="v">0</div></div>
+        <div class="kvc"><div class="k">Comblement</div><div class="v">0 %</div></div>
+        <div class="kvc"><div class="k">Session</div><div class="v">New York</div></div>
+        <div class="kvc"><div class="k">Publication ce jour</div><div class="v">Aucune</div></div>
+        <div class="kvc"><div class="k">Identifiant</div><div class="v mono" style="font-size:10px">ob_xau_m15_a4f21c</div></div>
+      </div></div></div>
+
+    <div class="act"><button class="btn">Voir sur le graphique</button><button class="btn gh">Masquer</button></div>
+  </div>
+  <div class="sep">Au-dessus du prix</div>
+
+  <div class="z" onclick="sel(this)">
+    <div class="zh"><span class="tp fvg">FVG ↓</span>
+      <span><span class="rng">4 352,10 – 4 361,85</span><span class="hgt">hauteur 9,75 pts · 0,23 % du prix</span></span>
+      <span class="st tst">3 CONTACTS</span></div>
+
+    <div class="px">
+      <div class="pxr"><span class="k">Distance</span><span class="v"><b>21,82 pts</b> au-dessus du prix · soit <b>0,50 %</b> · mesuré au bord bas</span></div>
+      <div class="pxr"><span class="k">Dernier contact</span><span class="v">il y a <b>2 h 15</b> · le prix est entré à 4 356,20 puis <b>en est ressorti</b> par le bas</span></div>
+      <div class="gauge">
+        <div class="gband" style="left:70%;right:8%"></div>
+        <div class="gpx" style="left:34%"></div>
+        <div class="glab" style="left:6px">4 310</div>
+        <div class="glab" style="right:6px">4 372</div>
+      </div>
+    </div>
+
+    <div class="cont">
+      <div class="ct">Contacts du prix — faits observés</div>
+      <div class="cr"><i>10:30</i><span>Le prix est entré à <b>4 353,90</b> et <b>en est ressorti sans la traverser</b>. Comblement porté à 45 %.</span></div>
+      <div class="cr"><i>15:00</i><span>Le prix est entré à <b>4 356,20</b> et <b>en est ressorti sans la traverser</b>. Comblement porté à 60 %.</span></div>
+      <div class="cr"><i>16:10</i><span>Le prix a touché le <b>bord bas</b> sans y pénétrer.</span></div>
+      <div class="cr" style="margin-top:8px;opacity:.75;font-size:11.5px"><i></i><span>MIA compte les entrées et les sorties. Elle ne dit pas si une zone est « respectée » ou « solide » — ce serait un jugement, et le SMC lui-même n'a pas de consensus là-dessus.</span></div>
+    </div>
+
+    <div class="conf">
+      <div class="ct">Ce qu'il y a d'autre au même endroit</div>
+      <div class="cl"><span class="ic" style="background:rgba(255,107,129,.16);color:#ffa5b3">◈</span>
+        <span>Cette zone est <b>à l'intérieur d'un Order Block baissier en 4 heures</b>, entre 4 348,00 et 4 370,20.</span></div>
+      <div class="cl"><span class="ic" style="background:rgba(245,181,68,.16);color:#f5b544">≈</span>
+        <span>Une <b>poche de liquidité achat intacte</b> à 4 348,60, juste sous son bord bas.</span></div>
+    </div>
+
+    <div class="tl"><div class="trk">
+      <div class="rail"></div><div class="rfill" style="width:100%"></div>
+      <div class="pt" style="left:0"><div class="dt form"></div><div class="lbl"><b>Formée</b>07:15</div></div>
+      <div class="pt" style="left:33%"><div class="dt touch"></div><div class="lbl"><b>Entrée 1</b>10:30</div></div>
+      <div class="pt" style="left:64%"><div class="dt touch"></div><div class="lbl"><b>Entrée 2</b>15:00</div></div>
+      <div class="pt" style="left:84%"><div class="dt touch"></div><div class="lbl"><b>Touche</b>16:10</div></div>
+      <div class="pt" style="left:100%"><div class="dt now"></div><div class="lbl"><b>Maintenant</b>17:15</div></div>
+    </div></div>
+
+    <div class="fillw" style="padding-top:24px">
+      <div class="fillbar"><i style="width:60%"></i></div>
+      <div class="fillx"><span>comblée à 60 % · 5,85 pts sur 9,75</span><span>3,90 pts non comblés</span></div></div>
+
+    <div class="say">Le prix y est entré <b>deux fois</b> et en est ressorti sans la traverser. Il a aussi touché son bord bas une fois. Elle est comblée à <b>60 %</b> et reste active.</div>
+
+    <div class="org"><div class="ot">Ce qui l'a créée</div>
+      <div class="ol">Déséquilibre laissé par trois bougies consécutives lors de l'expansion de 07:15. Formée en <b>session de Londres</b>.</div></div>
+
+    <div class="det"><div class="dth" onclick="tg(event,this)"><span class="cv">▶</span>Détails complets</div>
+      <div class="dtb"><div class="kv">
+        <div class="kvc"><div class="k">Bord haut</div><div class="v mono">4 361,85</div></div>
+        <div class="kvc"><div class="k">Bord bas</div><div class="v mono">4 352,10</div></div>
+        <div class="kvc"><div class="k">Comblement actuel</div><div class="v mono">4 356,20</div></div>
+        <div class="kvc"><div class="k">Âge</div><div class="v">10 h · 40 bougies</div></div>
+        <div class="kvc"><div class="k">Entrées du prix</div><div class="v">2</div></div>
+        <div class="kvc"><div class="k">Sorties sans traversée</div><div class="v">2</div></div>
+        <div class="kvc"><div class="k">Touches de bord</div><div class="v">1</div></div>
+        <div class="kvc"><div class="k">Écart entre entrées</div><div class="v">4 h 30</div></div>
+        <div class="kvc"><div class="k">Session</div><div class="v">Londres</div></div>
+      </div></div></div>
+
+    <div class="act"><button class="btn">Voir sur le graphique</button><button class="btn gh">Masquer</button></div>
+  </div>
+
+  <div class="sep">Sous le prix</div>
+
+  <div class="z" onclick="sel(this)">
+    <div class="zh"><span class="tp ob">OB ↑</span>
+      <span><span class="rng">4 310,53 – 4 319,83</span><span class="hgt">hauteur 9,30 pts · 0,21 % du prix</span></span>
+      <span class="st act">JAMAIS TOUCHÉE</span></div>
+    <div class="px">
+      <div class="pxr"><span class="k">Distance</span><span class="v"><b>10,45 pts</b> sous le prix · soit <b>0,24 %</b> · mesuré au bord haut</span></div>
+      <div class="pxr"><span class="k">Dernier contact</span><span class="v" style="color:var(--faint)">Aucun. Le prix n'y est jamais revenu depuis sa formation.</span></div>
+    </div>
+    <div class="conf none"><div class="ct">Ce qu'il y a d'autre au même endroit</div>
+      <div class="cl">Rien d'autre n'est détecté à ce niveau : aucune autre zone sur les unités suivies, aucune poche de liquidité à proximité.</div></div>
+    <div class="tl"><div class="trk">
+      <div class="rail"></div><div class="rfill" style="width:100%"></div>
+      <div class="pt" style="left:0"><div class="dt form"></div><div class="lbl"><b>Formée</b>12:00</div></div>
+      <div class="pt" style="left:100%"><div class="dt now"></div><div class="lbl"><b>Maintenant</b>17:15</div></div>
+    </div></div>
+    <div class="say" style="padding-top:24px">Zone formée il y a 5 h 15. <b>Le prix n'y est jamais revenu.</b></div>
+    <div class="org"><div class="ot">Ce qui l'a créée</div>
+      <div class="ol">Dernière bougie baissière avant le <b>CHOCH haussier de 12:15</b> à 4 321,45. Formée en <b>session de Londres</b>.</div></div>
+    <div class="act"><button class="btn">Voir sur le graphique</button><button class="btn gh">Masquer</button></div>
+  </div>
+
+  <div class="sep">Comblées</div>
+
+  <div class="z done" onclick="sel(this)">
+    <div class="zh"><span class="tp ob">OB ↓</span>
+      <span><span class="rng">4 296,20 – 4 304,80</span><span class="hgt">hauteur 8,60 pts</span></span>
+      <span class="st mit">COMBLÉE</span></div>
+    <div class="px">
+      <div class="pxr"><span class="k">Comblée</span><span class="v">il y a <b>9 h</b> · a vécu <b>6 h 45</b> · <b>3 entrées</b> avant traversée</span></div>
+      <div class="pxr"><span class="k">Distance</span><span class="v"><b>25,48 pts</b> sous le prix · soit <b>0,59 %</b></span></div>
+    </div>
+    <div class="tl"><div class="trk">
+      <div class="rail"></div><div class="rfill" style="width:74%;background:var(--line2)"></div>
+      <div class="pt" style="left:0"><div class="dt form" style="background:var(--faint)"></div><div class="lbl"><b>Formée</b>01:30</div></div>
+      <div class="pt" style="left:26%"><div class="dt touch" style="background:var(--faint)"></div><div class="lbl"><b>Entrée 1</b>03:15</div></div>
+      <div class="pt" style="left:48%"><div class="dt touch" style="background:var(--faint)"></div><div class="lbl"><b>Entrée 2</b>05:00</div></div>
+      <div class="pt" style="left:74%"><div class="dt mit"></div><div class="lbl"><b>Traversée</b>08:15</div></div>
+    </div></div>
+    <div class="say" style="padding-top:24px">Le prix l'a <b>traversée entièrement</b> il y a 9 heures, après y être entré trois fois. <b>Elle n'est plus active.</b></div>
+    <div class="act"><button class="btn">Voir sur le graphique</button><button class="btn gh">Masquer</button></div>
+  </div>
+
+  <div class="note">Les zones sont regroupées par position relative au prix, puis triées selon le critère choisi. Aucun classement de qualité n'est appliqué : une zone jamais touchée n'est ni meilleure ni pire qu'une zone touchée trois fois — elle est différente, et l'interprétation t'appartient.<br><br>« Entrée » : le prix a pénétré la zone. « Sortie sans traversée » : il en est ressorti par le même bord sans la combler entièrement. « Comblée » : il l'a traversée de part en part. Les distances sont mesurées au bord le plus proche.</div>
+</div>
+<aside class="mia">
+  <div class="miah">
+    <span class="av"><svg viewBox="0 0 24 24"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.4L12 15l-1.9-4.6L5.5 9l4.6-1.4z"/><path d="M18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></svg><span class="o"></span></span>
+    <span><span class="nm">M.I.A Agent</span><br><span class="sb">décrit · explique · ne prédit pas</span></span>
+  </div>
+
+  <div class="subj">
+    <div class="k">Zone sélectionnée</div>
+    <div class="v">OB ↑ · 4 329,94 – 4 340,74</div>
+    <div class="m">Or · 15 min · le prix est dedans</div>
+  </div>
+
+  <div class="miab">
+    <div class="bub a">Tu regardes un Order Block haussier formé <b>il y a 3 h 30</b>, jamais comblé. Le prix y est entré il y a 32 minutes — c'est son premier contact. Pose-moi une question dessus.</div>
+    <div class="bub u">pourquoi c'est un order block ?</div>
+    <div class="bub a">C'est la dernière bougie baissière avant le mouvement qui a cassé la structure. Elle a clôturé à <b>13:45</b>, juste avant le BOS haussier de 14:15 à 4 325,10. Sa mèche et son corps délimitent la zone <b>4 329,94 – 4 340,74</b>.</div>
+  </div>
+
+  <div class="sugg">
+    <button class="sg">Qu'est-ce qu'il y a d'autre à ce niveau ?</button>
+    <button class="sg">Explique-moi ce qu'est un Fair Value Gap</button>
+    <button class="sg">Compare-la à la zone en 1 heure</button>
+    <button class="sg">Qu'est-ce qui s'est passé quand le prix y est entré ?</button>
+  </div>
+
+  <div class="miaf">
+    <div class="inp"><input placeholder="Pose ta question sur cette zone…">
+      <button class="snd"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>
+    <div class="dis">M.I.A décrit des faits détectés et explique des concepts. Elle ne dit pas où ira le prix, ni si une zone est bonne, ni s'il faut intervenir.</div>
+  </div>
+</aside>
+</div>
+<script>
+function sel(el){document.querySelectorAll('.z').forEach(z=>z.classList.remove('sel'));el.classList.add('sel');}
+function tg(e,el){e.stopPropagation();el.closest('.z').classList.toggle('open');}
+</script></body></html>
