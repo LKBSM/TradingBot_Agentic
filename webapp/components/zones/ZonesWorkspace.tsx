@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useChartView } from '@/lib/chart/viewState';
 import { coerceViewActions } from '@/lib/chart/viewActions';
-import { resolveComboFromQuery } from '@/lib/conditions/app-link';
+import { resolveComboFromQuery, buildAppHref } from '@/lib/conditions/app-link';
 import {
   useCandles,
   useLatestPrice,
@@ -18,27 +18,33 @@ import {
   DISPLAY_TIMEFRAMES,
   SUPPORTED_INSTRUMENTS,
 } from '@/lib/market-reading/perimeter';
-import { buildAppHref } from '@/lib/conditions/app-link';
 import { useReadingFormatters } from '@/lib/market-reading/use-reading-formatters';
 import {
+  collectConsumedZones,
   collectZones,
+  isConsumed,
   matchesFilter,
   sortZones,
+  zonePositionGroup,
+  type PositionGroup,
   type ZoneFilter,
+  type ZoneLifecycle,
   type ZoneSort,
 } from '@/lib/zones/lifecycle';
 import { cn } from '@/lib/utils';
 import { ZoneLifecycleCard } from './ZoneLifecycleCard';
+import { ZoneMiaPanel } from './ZoneMiaPanel';
 
 const POLL_MS = 60_000;
 
-const FILTER_VALUES: ZoneFilter[] = ['all', 'active', 'mitigated'];
+const FILTER_VALUES: ZoneFilter[] = ['all', 'active', 'untouched', 'consumed'];
+// Factual orders only — deliberately NO importance/quality sort (mission §0).
+const SORT_VALUES: ZoneSort[] = ['proximity', 'formation', 'contacts'];
 
-// Factual orders only — deliberately NO importance/quality sort (a "strength"
-// ranking would be an implicit recommendation, mission §0).
-const SORT_VALUES: ZoneSort[] = ['proximity', 'recency', 'state'];
+// The display groups, in reading order: price inside → above → below → consumed.
+type DisplayGroup = PositionGroup | 'consumed';
+const GROUP_ORDER: DisplayGroup[] = ['inside', 'above', 'below', 'consumed'];
 
-/** Small segmented control (display-only, no detection impact). */
 function Segmented<T extends string>({
   options,
   value,
@@ -77,32 +83,19 @@ function Segmented<T extends string>({
 }
 
 /**
- * /zones — the lifecycle of every detected zone (OB / FVG) for a chosen combo.
- * Read-only over the SAME reading the /app surface uses (`useMarketReading`); it
- * renders the cycle the engine already produced and never recomputes detection.
- * "Masquer" and "Analyser" both act through the shared chart view state so the
- * effect is reflected on the chart (`/app`).
+ * /zones — the lifecycle of every detected zone (OB / FVG) for a chosen combo,
+ * grouped by position relative to the price, with a M.I.A panel whose subject is
+ * the selected zone. Read-only over the SAME reading `/app` uses; it renders the
+ * cycle the engine already produced and never recomputes detection.
  */
 export function ZonesWorkspace({ locale }: { locale: string }) {
   const t = useTranslations('zones');
-  // Reuse the existing shared "dismiss this message" label (same one the /app
-  // stale-focus notice uses) so this deep-link notice needs no new i18n key —
-  // `zones.deeplink.staleNotice` is the only key added by the i18n workstream.
   const tApp = useTranslations('app');
   const fmt = useReadingFormatters();
 
-  const FILTERS = FILTER_VALUES.map((value) => ({
-    value,
-    label: t(`filters.${value}`),
-  }));
-  const SORTS = SORT_VALUES.map((value) => ({
-    value,
-    label: t(`sorts.${value}`),
-  }));
+  const FILTERS = FILTER_VALUES.map((value) => ({ value, label: t(`filters.${value}`) }));
+  const SORTS = SORT_VALUES.map((value) => ({ value, label: t(`sorts.${value}`) }));
 
-  // The combo is URL-driven (NAV-04) so `/zones?instrument=…&timeframe=…` is
-  // shareable/bookmarkable and back/forward restores it — instead of a local
-  // state that always reset to XAU/M15.
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -122,7 +115,6 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
     urlCombo?.timeframe ?? DEFAULT_TIMEFRAME,
   );
 
-  // URL → state: reflect a deep-link / back-forward change into the selection.
   React.useEffect(() => {
     if (!urlCombo) return;
     if (urlCombo.instrument !== instrument) setInstrumentState(urlCombo.instrument);
@@ -155,7 +147,6 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
   );
 
   const [filter, setFilter] = React.useState<ZoneFilter>('all');
-  // Proximity to the price is the default order — the most useful factual one.
   const [sort, setSort] = React.useState<ZoneSort>('proximity');
 
   const { data, isLoading, isRefreshing, error, refresh } = useMarketReading(
@@ -164,64 +155,86 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
     { pollMs: POLL_MS },
   );
 
-  // Freshest unified price (M15 cache read, light poll) for the relation badge
-  // and the proximity sort; the reading's close_price is the fallback. Both are
-  // engine facts — never a projection.
   const { change } = useLatestPrice(instrument, {
     candleCloseTs: data?.header.candle_close_ts ?? null,
   });
-
-  // Real candle window of the combo — the bar-count part of the zone age is
-  // counted on it (never derived by dividing elapsed time by the timeframe).
   const { candles } = useCandles(instrument, timeframe, {
     candleCloseTs: data?.header.candle_close_ts ?? null,
   });
-
-  // Zones of the other timeframes (same instrument) for the overlap facts.
   const { siblings } = useSiblingZones(instrument, timeframe);
 
   const { view, applyActions } = useChartView();
 
-  const allZones = React.useMemo(() => collectZones(data?.structure), [data]);
+  const liveZones = React.useMemo(() => collectZones(data?.structure), [data]);
+  const consumedZones = React.useMemo(() => collectConsumedZones(data?.structure), [data]);
+  const allZones = React.useMemo(
+    () => [...liveZones, ...consumedZones],
+    [liveZones, consumedZones],
+  );
+  const liquidityPools = React.useMemo(
+    () => data?.structure.liquidity_pools ?? [],
+    [data],
+  );
 
-  // The id lock: the ONLY zones a hide/show may reference are the ones the engine
-  // emitted in THIS reading — identical to AppWorkspace's set. An invented id is
-  // rejected by `coerceViewActions`, so it masks nothing.
   const validZoneIds = React.useMemo(
-    () => new Set(allZones.map((z) => z.id)),
-    [allZones],
+    () => new Set(liveZones.map((z) => z.id)),
+    [liveZones],
   );
-
-  const hidden = React.useMemo(
-    () => new Set(view.hiddenZoneIds),
-    [view.hiddenZoneIds],
-  );
-
-  // useLatestPrice first (freshest closed price), close_price as the fallback.
+  const hidden = React.useMemo(() => new Set(view.hiddenZoneIds), [view.hiddenZoneIds]);
   const referencePrice = change?.price ?? data?.header.close_price ?? null;
 
-  const zones = React.useMemo(() => {
-    const filtered = allZones.filter((z) => matchesFilter(z, filter));
-    return sortZones(filtered, sort, referencePrice);
-  }, [allZones, filter, sort, referencePrice]);
-
-  // ── Deep-link `?zone=<id>` → scroll + highlight the referenced card ────────
-  // The App's "En savoir plus" opens /zones?zone=<real engine id>. The id is
-  // validated against the SAME rendered list (`zones`) — an id that isn't on
-  // screen (stale / no longer detected) takes the honest-notice path instead of
-  // fabricating a card. `renderedZoneIds` is the set actually shown, so a zone
-  // filtered out of view is treated as absent (the notice tells the truth).
-  const zoneParam = searchParams.get('zone');
-  const renderedZoneIds = React.useMemo(
-    () => new Set(zones.map((z) => z.id)),
-    [zones],
+  // Filter, then group by position (consumed as its own group), then sort within.
+  const filtered = React.useMemo(
+    () => allZones.filter((z) => matchesFilter(z, filter)),
+    [allZones, filter],
   );
-  const selectedZoneId =
-    zoneParam && renderedZoneIds.has(zoneParam) ? zoneParam : null;
-  // A `?zone=` was requested but no matching card is on screen → stale.
+
+  const groups = React.useMemo(() => {
+    const out: Record<DisplayGroup, ZoneLifecycle[]> = {
+      inside: [],
+      above: [],
+      below: [],
+      consumed: [],
+    };
+    for (const z of filtered) {
+      const g: DisplayGroup = isConsumed(z) ? 'consumed' : zonePositionGroup(z, referencePrice);
+      out[g].push(z);
+    }
+    for (const g of GROUP_ORDER) out[g] = sortZones(out[g], sort, referencePrice);
+    return out;
+  }, [filtered, referencePrice, sort]);
+
+  const renderedZones = React.useMemo(
+    () => GROUP_ORDER.flatMap((g) => groups[g]),
+    [groups],
+  );
+  const renderedZoneIds = React.useMemo(
+    () => new Set(renderedZones.map((z) => z.id)),
+    [renderedZones],
+  );
+
+  // ── M.I.A subject: the selected zone. Deep-link `?zone=` seeds it; otherwise
+  // the first rendered zone. Stays put across polls unless it leaves the list. ──
+  const zoneParam = searchParams.get('zone');
+  const [selectedId, setSelectedId] = React.useState<string | null>(null);
+  React.useEffect(() => {
+    setSelectedId((cur) => {
+      if (zoneParam && renderedZoneIds.has(zoneParam)) return zoneParam;
+      if (cur && renderedZoneIds.has(cur)) return cur;
+      return renderedZones[0]?.id ?? null;
+    });
+  }, [zoneParam, renderedZoneIds, renderedZones]);
+
+  const selectedZone = React.useMemo(
+    () => renderedZones.find((z) => z.id === selectedId) ?? null,
+    [renderedZones, selectedId],
+  );
+
   const isStaleDeepLink = Boolean(
     zoneParam && !renderedZoneIds.has(zoneParam) && !isLoading && !error,
   );
+  const [dismissedStaleId, setDismissedStaleId] = React.useState<string | null>(null);
+  const showStaleNotice = isStaleDeepLink && dismissedStaleId !== zoneParam;
 
   const cardRefs = React.useRef(new Map<string, HTMLElement | null>());
   const setCardRef = React.useCallback(
@@ -232,18 +245,13 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
     [],
   );
 
-  // Dismissible: closing the notice clears it until the next distinct id.
-  const [dismissedStaleId, setDismissedStaleId] = React.useState<string | null>(null);
-  const showStaleNotice = isStaleDeepLink && dismissedStaleId !== zoneParam;
-
-  // Scroll the deep-linked card into view once it (and its ref) are present.
-  // Retries a few frames because the list can still be settling on first paint.
+  // Scroll a deep-linked card into view once present.
   React.useEffect(() => {
-    if (!selectedZoneId) return;
+    if (!zoneParam || !renderedZoneIds.has(zoneParam)) return;
     let raf = 0;
     let tries = 0;
     const tick = () => {
-      const el = cardRefs.current.get(selectedZoneId);
+      const el = cardRefs.current.get(zoneParam);
       if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
@@ -252,24 +260,60 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [selectedZoneId]);
+  }, [zoneParam, renderedZoneIds]);
 
   const toggleHide = React.useCallback(
     (zoneId: string) => {
       const action = hidden.has(zoneId)
         ? { action: 'show_zones', params: { zone_ids: [zoneId] } }
         : { action: 'hide_zones', params: { zone_ids: [zoneId] } };
-      // Routed through the SAME Couche-4 coercion as the chat/chart: a stale or
-      // invented id is dropped before it can reach the shared view state.
-      const coerced = coerceViewActions([action], validZoneIds);
-      applyActions(coerced);
+      applyActions(coerceViewActions([action], validZoneIds));
     },
     [hidden, validZoneIds, applyActions],
   );
 
-  // « Or · H1 · N zones » — the reference live badge summarising the combo and
-  // the (filtered) zone count actually shown.
-  const badgeSummary = `${fmt.instrument(instrument)} · ${fmt.timeframe(timeframe)} · ${t('badge.count', { count: zones.length })}`;
+  const showOnChart = React.useCallback(
+    (zoneId: string) => {
+      router.push(buildAppHref(locale, { instrument, timeframe }, zoneId));
+    },
+    [router, locale, instrument, timeframe],
+  );
+
+  // Mobile: the M.I.A panel is a bottom sheet toggled by a button (never a panel
+  // that crushes the list). Desktop: a sticky column (CSS).
+  const [sheetOpen, setSheetOpen] = React.useState(false);
+
+  const miaCtx = React.useMemo(
+    () => ({
+      instrument,
+      price: referencePrice,
+      sameTf: liveZones,
+      siblings,
+      pools: liquidityPools,
+    }),
+    [instrument, referencePrice, liveZones, siblings, liquidityPools],
+  );
+
+  const badgeSummary = `${fmt.instrument(instrument)} · ${fmt.timeframe(timeframe)} · ${t('badge.count', { count: renderedZones.length })}`;
+
+  const cardFor = (zone: ZoneLifecycle) => (
+    <ZoneLifecycleCard
+      key={zone.id}
+      zone={zone}
+      instrument={instrument}
+      referencePrice={referencePrice}
+      candles={candles}
+      sameTfZones={liveZones}
+      siblingZones={siblings}
+      liquidityPools={liquidityPools}
+      isHidden={hidden.has(zone.id)}
+      onToggleHide={toggleHide}
+      onShowOnChart={showOnChart}
+      onSelect={setSelectedId}
+      isSelected={zone.id === selectedId}
+      cardRef={setCardRef(zone.id)}
+    />
+  );
 
   return (
     <div className="pagewrap">
@@ -317,31 +361,16 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
         </div>
       </div>
 
-      {/* Deep-link stale notice — an honest, dismissible message when the
-          requested `?zone=` id is no longer in the current reading. NEVER a
-          reconstructed card. */}
       {showStaleNotice && (
-        <div
-          role="status"
-          className="zdeeplink-stale mb-4 flex items-center gap-3 rounded-md border px-3 py-2 text-[12px] text-[var(--txt)]"
-        >
+        <div role="status" className="zdeeplink-stale mb-4 flex items-center gap-3 rounded-md border px-3 py-2 text-[12px] text-[var(--txt)]">
           <span className="flex-1">{t('deeplink.staleNotice')}</span>
-          <button
-            type="button"
-            className="btn"
-            onClick={() => setDismissedStaleId(zoneParam)}
-            aria-label={tApp('staleFocus.dismiss')}
-          >
+          <button type="button" className="btn" onClick={() => setDismissedStaleId(zoneParam)} aria-label={tApp('staleFocus.dismiss')}>
             {tApp('staleFocus.dismiss')}
           </button>
         </div>
       )}
 
-      {/* Body */}
       {isLoading || (isRefreshing && allZones.length === 0) ? (
-        // Show the loading state (not "Aucune zone") while a refresh is in flight
-        // with no zones yet, so a combo switch doesn't flash an empty list before
-        // the new reading lands (UI-12).
         <p className="text-[12px] text-[var(--dim)]">{t('loading')}</p>
       ) : error ? (
         <div className="zone flex flex-col gap-3">
@@ -350,27 +379,47 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
             {t('retry')}
           </button>
         </div>
-      ) : zones.length === 0 ? (
-        <p className="text-[12px] text-[var(--dim)]">
-          {allZones.length === 0 ? t('emptyNone') : t('emptyFilter')}
+      ) : renderedZones.length === 0 ? (
+        // A filter with no result → an EXPLICIT message. Never a silent fallback,
+        // never a suggestion to relax the filter (mission §4).
+        <p className="text-[12px] text-[var(--dim)]" data-testid="zones-empty">
+          {allZones.length === 0 ? t('emptyNone') : t(`emptyFilter.${filter}`)}
         </p>
       ) : (
-        <div>
-          {zones.map((zone) => (
-            <ZoneLifecycleCard
-              key={zone.id}
-              zone={zone}
-              instrument={instrument}
-              referencePrice={referencePrice}
-              candles={candles}
-              siblingZones={siblings}
-              isHidden={hidden.has(zone.id)}
-              onToggleHide={toggleHide}
-              appHref={buildAppHref(locale, { instrument, timeframe }, zone.id)}
-              isSelected={zone.id === selectedZoneId}
-              cardRef={setCardRef(zone.id)}
-            />
-          ))}
+        <div className="zlayout">
+          <div className="zlist">
+            {GROUP_ORDER.filter((g) => groups[g].length > 0).map((g) => (
+              <section key={g} aria-label={t(`groups.${g}`)}>
+                <div className="zsep">{t(`groups.${g}`)}</div>
+                {groups[g].map(cardFor)}
+              </section>
+            ))}
+          </div>
+
+          {/* Desktop: sticky panel. Mobile: bottom-sheet toggled by the button. */}
+          <div className="zmia-col">
+            <ZoneMiaPanel zone={selectedZone} ctx={miaCtx} />
+          </div>
+
+          <button
+            type="button"
+            className="zmia-fab"
+            onClick={() => setSheetOpen(true)}
+            aria-label={t('mia.openSheet')}
+          >
+            {t('mia.openSheet')}
+          </button>
+          {sheetOpen && (
+            <div className="zmia-sheet" role="dialog" aria-label={t('mia.title')}>
+              <div className="zmia-sheet-back" onClick={() => setSheetOpen(false)} />
+              <div className="zmia-sheet-body">
+                <button type="button" className="btn zmia-sheet-close" onClick={() => setSheetOpen(false)} aria-label={t('mia.closeSheet')}>
+                  {t('mia.closeSheet')}
+                </button>
+                <ZoneMiaPanel zone={selectedZone} ctx={miaCtx} />
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

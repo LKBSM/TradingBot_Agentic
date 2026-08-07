@@ -43,6 +43,8 @@ from src.intelligence.market_reading_schema import (
     VALID_MTF_KEYS,
     VolatilityDetail,
     VolatilityObserved,
+    ZoneContact,
+    ZoneOrigin,
 )
 
 # Forbidden tokens checked post-generation (Étape 5 enforces too).
@@ -235,6 +237,19 @@ def realized_levels(enriched: Any, idx: int = -1) -> dict[str, float]:
 # and via the MAX_ZONES_PER_TYPE env var (resolved in collect_zones).
 MAX_ZONES_PER_TYPE = 12
 
+# VZ-1: how many most-recently CONSUMED zones (per type) the payload carries for
+# the /zones « Comblées » group. Small on purpose — recent history, not an
+# archive. Overridable via MAX_CONSUMED_ZONES_PER_TYPE.
+MAX_CONSUMED_ZONES_PER_TYPE = 6
+
+
+def _max_consumed() -> int:
+    import os
+    try:
+        return int(os.environ.get("MAX_CONSUMED_ZONES_PER_TYPE", MAX_CONSUMED_ZONES_PER_TYPE))
+    except (TypeError, ValueError):
+        return MAX_CONSUMED_ZONES_PER_TYPE
+
 # Payload guardrail per structure-event type (BOS / CHOCH) — NOT a display top-N.
 # The live surface shows EVERY break the analysis window holds (MT-D1 fix: the old
 # top-8 silently hid real events — 14 BOS detected in a 500-bar H1 window surfaced
@@ -296,6 +311,13 @@ class MitigationPolicy:
     # Founder 2026-06-15: a partially filled FVG stays VISIBLE, tagged
     # 'partially_filled'. Flip to True to DROP a gap on first entry (strictest).
     fvg_drop_when_partial: bool = False
+
+    # --- VZ-1 contact ledger --------------------------------------------- #
+    # Fraction of the zone height a contact must penetrate (from the near edge)
+    # to count as a real ENTRY rather than a mere EDGE TOUCH (a kiss). Used ONLY
+    # to classify the per-contact ledger — it is NOT a detection threshold and
+    # NEVER changes touch_count/tested/status (those keep the depth-0 predicate).
+    contact_edge_touch_fraction: float = 0.10
 
 
 # The active policy. Constructed once; import and pass to the lifecycle helpers.
@@ -452,6 +474,168 @@ def _zone_created_at(enriched: Any, k: int) -> Optional[datetime]:
     return None
 
 
+def _ob_contacts(
+    side: str,
+    zhigh: float,
+    zlow: float,
+    highs: Any,
+    lows: Any,
+    closes: Any,
+    created: int,
+    upto: int,
+    policy: MitigationPolicy = MITIGATION_POLICY,
+) -> list[dict]:
+    """Per-contact ledger for an order block over bars (created, upto].
+
+    READ-ONLY classification that reuses the EXACT tap predicate of
+    ``_ob_lifecycle`` (depth-0: any wick reaching the near edge is in-zone), then
+    labels each maximal in-zone run and records the deepest price reached. It
+    never changes status/touch_count — it only describes what happened.
+
+    Each item: ``{"entry_idx", "level", "outcome"}`` with outcome ∈
+    {edge_touch, entry_exit, traversal, inside}. ``edge_touch`` vs ``entry_exit``
+    splits on ``policy.contact_edge_touch_fraction`` of the height. A close-through
+    bar ends the ledger with a single ``traversal`` contact (the zone is consumed
+    there), mirroring ``_ob_lifecycle``'s invalidation.
+    """
+    height = max(zhigh - zlow, 0.0)
+    edge_frac = policy.contact_edge_touch_fraction
+    contacts: list[dict] = []
+    in_zone = False
+    entry_idx: Optional[int] = None
+    deepest_pen = 0.0
+    for j in range(created + 1, upto + 1):
+        if policy.ob_invalidate_on_close_through and (
+            (side == "bullish" and closes[j] < zlow) or (side != "bullish" and closes[j] > zhigh)
+        ):
+            start = entry_idx if entry_idx is not None else j
+            far = zlow if side == "bullish" else zhigh
+            contacts.append({"entry_idx": start, "level": float(far), "outcome": "traversal"})
+            return contacts
+        if side == "bullish":
+            tap = lows[j] <= zhigh and highs[j] >= zlow
+            pen = min(max(zhigh - float(lows[j]), 0.0), height)
+        else:
+            tap = highs[j] >= zlow and lows[j] <= zhigh
+            pen = min(max(float(highs[j]) - zlow, 0.0), height)
+        if tap:
+            if not in_zone:
+                in_zone = True
+                entry_idx = j
+                deepest_pen = 0.0
+            deepest_pen = max(deepest_pen, pen)
+        elif in_zone:
+            frac = (deepest_pen / height) if height > 0 else 0.0
+            outcome = "entry_exit" if frac >= edge_frac else "edge_touch"
+            level = (zhigh - deepest_pen) if side == "bullish" else (zlow + deepest_pen)
+            contacts.append({"entry_idx": entry_idx, "level": float(level), "outcome": outcome})
+            in_zone = False
+            entry_idx = None
+            deepest_pen = 0.0
+    if in_zone and entry_idx is not None:
+        level = (zhigh - deepest_pen) if side == "bullish" else (zlow + deepest_pen)
+        contacts.append({"entry_idx": entry_idx, "level": float(level), "outcome": "inside"})
+    return contacts
+
+
+def _fvg_contacts(
+    side: str,
+    zhigh: float,
+    zlow: float,
+    highs: Any,
+    lows: Any,
+    created: int,
+    upto: int,
+    policy: MitigationPolicy = MITIGATION_POLICY,
+) -> list[dict]:
+    """Per-contact ledger for a fair-value gap over bars (created, upto].
+
+    Twin of :func:`_ob_contacts` using the FVG entry/fill predicates of
+    ``_fvg_lifecycle`` (entry = a wick past the near edge; ``traversal`` = the
+    wick retraced ``policy.fvg_fill_fraction`` of the height = fully filled).
+    """
+    height = max(zhigh - zlow, 0.0)
+    fill = policy.fvg_fill_fraction * height
+    edge_frac = policy.contact_edge_touch_fraction
+    contacts: list[dict] = []
+    in_band = False
+    entry_idx: Optional[int] = None
+    deepest_pen = 0.0
+    for j in range(created + 1, upto + 1):
+        if side == "bullish":
+            filled_now = lows[j] <= zhigh - fill
+            entry = lows[j] <= zhigh
+            pen = min(max(zhigh - float(lows[j]), 0.0), height)
+        else:
+            filled_now = highs[j] >= zlow + fill
+            entry = highs[j] >= zlow
+            pen = min(max(float(highs[j]) - zlow, 0.0), height)
+        if filled_now:
+            start = entry_idx if entry_idx is not None else j
+            far = zlow if side == "bullish" else zhigh
+            contacts.append({"entry_idx": start, "level": float(far), "outcome": "traversal"})
+            return contacts
+        if entry:
+            if not in_band:
+                in_band = True
+                entry_idx = j
+                deepest_pen = 0.0
+            deepest_pen = max(deepest_pen, pen)
+        elif in_band:
+            frac = (deepest_pen / height) if height > 0 else 0.0
+            outcome = "entry_exit" if frac >= edge_frac else "edge_touch"
+            level = (zhigh - deepest_pen) if side == "bullish" else (zlow + deepest_pen)
+            contacts.append({"entry_idx": entry_idx, "level": float(level), "outcome": outcome})
+            in_band = False
+            entry_idx = None
+            deepest_pen = 0.0
+    if in_band and entry_idx is not None:
+        level = (zhigh - deepest_pen) if side == "bullish" else (zlow + deepest_pen)
+        contacts.append({"entry_idx": entry_idx, "level": float(level), "outcome": "inside"})
+    return contacts
+
+
+def _ob_origin(
+    enriched: Any,
+    side: str,
+    created_k: int,
+    upto: int,
+    max_ahead: int = 12,
+) -> Optional[dict]:
+    """Associate an order block with the structural break it PRECEDES: the first
+    same-direction ``BOS_EVENT`` (a ``CHOCH_SIGNAL`` bar refines the kind label)
+    within ``max_ahead`` bars of the OB's formation. Read from engine event
+    columns only — no detection, no recompute. Returns
+    ``{"kind","direction","at","level"}`` or None (no fabricated origin)."""
+    import pandas as pd
+
+    cols = set(enriched.columns)
+    if "BOS_EVENT" not in cols or "BOS_BREAK_LEVEL" not in cols:
+        return None
+    bos_ev = enriched["BOS_EVENT"].values
+    lvl = enriched["BOS_BREAK_LEVEL"].values
+    choch = enriched["CHOCH_SIGNAL"].values if "CHOCH_SIGNAL" in cols else None
+    want_bull = side == "bullish"
+    end = min(created_k + max_ahead, upto)
+    for j in range(created_k, end + 1):
+        ev = bos_ev[j]
+        if pd.isna(ev) or ev == 0:
+            continue
+        if (ev > 0) != want_bull:
+            continue
+        at = _zone_created_at(enriched, j)
+        if at is None or pd.isna(lvl[j]):
+            continue
+        is_choch = choch is not None and not pd.isna(choch[j]) and choch[j] != 0
+        return {
+            "kind": "choch" if is_choch else "bos",
+            "direction": side,
+            "at": at,
+            "level": float(lvl[j]),
+        }
+    return None
+
+
 def collect_zones(
     enriched: Any,
     idx: int = -1,
@@ -511,6 +695,7 @@ def collect_zones(
         bear_lo = enriched["BEARISH_OB_LOW"].values
         obs: list[dict] = []
         ob_rejects: list[dict] = []
+        ob_consumed: list[dict] = []
         for k in range(pos + 1):
             for side, hv, lv in (
                 ("bullish", bull_hi[k], bull_lo[k]),
@@ -524,6 +709,12 @@ def collect_zones(
                     side, zhigh, zlow, highs, lows, closes, k, pos
                 )
                 created_at = _zone_created_at(enriched, k)
+                # VZ-1: the per-contact ledger + the origin break, both read-side.
+                contacts = [
+                    {"at": _zone_created_at(enriched, c["entry_idx"]), "level": c["level"], "outcome": c["outcome"]}
+                    for c in _ob_contacts(side, zhigh, zlow, highs, lows, closes, k, pos)
+                ]
+                origin = _ob_origin(enriched, side, k, pos)
                 zone = {
                     "direction": side,
                     "level_high": zhigh,
@@ -537,20 +728,27 @@ def collect_zones(
                     ),
                     "touch_count": touch_count,
                     "touch_ats": [_zone_created_at(enriched, b) for b in touch_bars],
+                    "contacts": contacts,
+                    "origin": origin,
                     "_strength": st,
                     "_k": k,
                 }
-                # Honesty guardrail (mission §C): never surface a consumed zone.
-                # With ``with_rejects`` the SAME branch that drops the zone also
-                # records the reason — the reason is a byproduct of the decision.
+                # Honesty guardrail (mission §C): never surface a consumed zone in
+                # the live list. VZ-1: a bounded set of consumed OB is kept SEPARATELY
+                # (consumed_order_blocks) so the /zones page can show a « Comblées »
+                # (traversée) group — never mixed into order_blocks.
                 if status == "invalidated":
+                    zone["invalidated_at"] = (
+                        _zone_created_at(enriched, invalidated_idx)
+                        if invalidated_idx is not None else None
+                    )
+                    ob_consumed.append(zone)
                     if with_rejects:
-                        zone["reject_reason"] = "invalidated_close_through"
-                        zone["invalidated_at"] = (
-                            _zone_created_at(enriched, invalidated_idx)
-                            if invalidated_idx is not None else None
-                        )
-                        ob_rejects.append(zone)
+                        # Shallow copy so the reject stream keeps its own reason key
+                        # without perturbing the consumed-zone twin.
+                        rej = dict(zone)
+                        rej["reject_reason"] = "invalidated_close_through"
+                        ob_rejects.append(rej)
                     continue
                 if status == "mitigated" and MITIGATION_POLICY.ob_drop_when_mitigated:
                     if with_rejects:
@@ -561,6 +759,9 @@ def collect_zones(
         # active first, then by strength, then most recent first.
         obs.sort(key=lambda z: (z["status"] != "active", -z["_strength"], -z["_k"]))
         out["order_blocks"] = obs[:max_per_type]
+        # Most recently CONSUMED first (by formation recency), bounded.
+        ob_consumed.sort(key=lambda z: -z["_k"])
+        out["consumed_order_blocks"] = ob_consumed[:_max_consumed()]
         if with_rejects:
             # Overflow of the SAME sorted list the cap truncates: detected,
             # alive, but ranked beyond max_per_type → not displayed.
@@ -578,6 +779,7 @@ def collect_zones(
             enriched["FVG_SIZE_NORM"].values if "FVG_SIZE_NORM" in cols else None
         )
         fvgs: list[dict] = []
+        fvg_consumed: list[dict] = []
         for k in range(2, pos + 1):
             d = fvg_dir[k]
             if pd.isna(d) or d == 0:
@@ -592,13 +794,12 @@ def collect_zones(
             status, tested, entry_idx, fill_level, touch_count, touch_bars = _fvg_lifecycle(
                 side, zhigh, zlow, highs, lows, k, pos
             )
-            # Honesty guardrail (mission §C): never surface a consumed zone.
-            if status == "filled":
-                continue
-            if status == "partially_filled" and MITIGATION_POLICY.fvg_drop_when_partial:
-                continue
             sz = float(size_norm[k]) if size_norm is not None and not pd.isna(size_norm[k]) else (zhigh - zlow)
-            fvgs.append({
+            contacts = [
+                {"at": _zone_created_at(enriched, c["entry_idx"]), "level": c["level"], "outcome": c["outcome"]}
+                for c in _fvg_contacts(side, zhigh, zlow, highs, lows, k, pos)
+            ]
+            zone = {
                 "direction": side,
                 "level_high": zhigh,
                 "level_low": zlow,
@@ -609,11 +810,22 @@ def collect_zones(
                 "fill_level": fill_level,
                 "touch_count": touch_count,
                 "touch_ats": [_zone_created_at(enriched, b) for b in touch_bars],
+                "contacts": contacts,
                 "_size": sz,
                 "_k": k,
-            })
+            }
+            # Honesty guardrail (mission §C): a filled gap leaves the live list but
+            # is kept in the bounded consumed set for the « Comblées » group (VZ-1).
+            if status == "filled":
+                fvg_consumed.append(zone)
+                continue
+            if status == "partially_filled" and MITIGATION_POLICY.fvg_drop_when_partial:
+                continue
+            fvgs.append(zone)
         fvgs.sort(key=lambda z: (z["status"] != "active", -z["_size"], -z["_k"]))
         out["fair_value_gaps"] = fvgs[:max_per_type]
+        fvg_consumed.sort(key=lambda z: -z["_k"])
+        out["consumed_fair_value_gaps"] = fvg_consumed[:_max_consumed()]
 
     return out
 
@@ -1281,6 +1493,7 @@ def confluence_signal_to_structure(
     zones = smc_features.get("_zones")
     if isinstance(zones, dict):
         order_blocks, fair_value_gaps = _zones_to_models(zones, bar_ts)
+        consumed_obs, consumed_fvgs = _consumed_zones_to_models(zones, bar_ts)
         return MarketReadingStructure(
             bos=bos,
             choch=choch,
@@ -1288,6 +1501,8 @@ def confluence_signal_to_structure(
             choch_events=choch_events,
             order_blocks=order_blocks,
             fair_value_gaps=fair_value_gaps,
+            consumed_order_blocks=consumed_obs,
+            consumed_fair_value_gaps=consumed_fvgs,
             liquidity_pools=liquidity_pools,
             retest_in_progress=_build_retest(
                 smc_features, retest_state, fresh_break, persisted_break, bos,
@@ -1402,41 +1617,79 @@ def _zones_to_models(
     per-zone timestamp (non-datetime frame index). The ``id`` is stable per zone
     (direction + created time) so the same zone keeps its identity across reads.
     """
-    order_blocks: list[OrderBlock] = []
-    for z in zones.get("order_blocks", []):
-        created = z.get("created_at") or bar_ts
-        order_blocks.append(OrderBlock(
-            id=ob_zone_id(z["direction"], created),
-            direction=z["direction"],
-            level_high=z["level_high"],
-            level_low=z["level_low"],
-            importance=z["importance"],
-            status=z["status"],
-            created_at=created,
-            tested=z["tested"],
-            mitigated_at=z.get("mitigated_at"),
-            touch_count=z.get("touch_count", 0),
-            touch_ats=z.get("touch_ats", []),
-            user_flagged=False,
-        ))
-    fair_value_gaps: list[FairValueGap] = []
-    for z in zones.get("fair_value_gaps", []):
-        created = z.get("created_at") or bar_ts
-        fair_value_gaps.append(FairValueGap(
-            id=f"FVG_{z['direction']}_{created.strftime('%Y%m%d%H%M%S')}",
-            direction=z["direction"],
-            level_high=z["level_high"],
-            level_low=z["level_low"],
-            status=z["status"],
-            created_at=created,
-            tested=z["tested"],
-            mitigated_at=z.get("mitigated_at"),
-            fill_level=z.get("fill_level"),
-            touch_count=z.get("touch_count", 0),
-            touch_ats=z.get("touch_ats", []),
-            user_flagged=False,
-        ))
+    order_blocks = [_ob_to_model(z, bar_ts) for z in zones.get("order_blocks", [])]
+    fair_value_gaps = [_fvg_to_model(z, bar_ts) for z in zones.get("fair_value_gaps", [])]
     return order_blocks, fair_value_gaps
+
+
+def _contacts_to_models(z: dict) -> list[ZoneContact]:
+    """Map the read-side contact dicts (VZ-1) to schema models, skipping any
+    contact whose timestamp could not be derived (non-datetime frame index) —
+    never a fabricated date."""
+    out: list[ZoneContact] = []
+    for c in z.get("contacts", []) or []:
+        at = c.get("at")
+        if at is None:
+            continue
+        out.append(ZoneContact(at=at, level=c["level"], outcome=c["outcome"]))
+    return out
+
+
+def _origin_to_model(z: dict) -> Optional[ZoneOrigin]:
+    o = z.get("origin")
+    if not o or o.get("at") is None:
+        return None
+    return ZoneOrigin(kind=o["kind"], direction=o["direction"], at=o["at"], level=o["level"])
+
+
+def _ob_to_model(z: dict, bar_ts: datetime) -> OrderBlock:
+    created = z.get("created_at") or bar_ts
+    return OrderBlock(
+        id=ob_zone_id(z["direction"], created),
+        direction=z["direction"],
+        level_high=z["level_high"],
+        level_low=z["level_low"],
+        importance=z["importance"],
+        status=z["status"],
+        created_at=created,
+        tested=z["tested"],
+        mitigated_at=z.get("mitigated_at"),
+        touch_count=z.get("touch_count", 0),
+        touch_ats=z.get("touch_ats", []),
+        contacts=_contacts_to_models(z),
+        origin=_origin_to_model(z),
+        user_flagged=False,
+    )
+
+
+def _fvg_to_model(z: dict, bar_ts: datetime) -> FairValueGap:
+    created = z.get("created_at") or bar_ts
+    return FairValueGap(
+        id=f"FVG_{z['direction']}_{created.strftime('%Y%m%d%H%M%S')}",
+        direction=z["direction"],
+        level_high=z["level_high"],
+        level_low=z["level_low"],
+        status=z["status"],
+        created_at=created,
+        tested=z["tested"],
+        mitigated_at=z.get("mitigated_at"),
+        fill_level=z.get("fill_level"),
+        touch_count=z.get("touch_count", 0),
+        touch_ats=z.get("touch_ats", []),
+        contacts=_contacts_to_models(z),
+        user_flagged=False,
+    )
+
+
+def _consumed_zones_to_models(
+    zones: dict[str, list[dict]],
+    bar_ts: datetime,
+) -> tuple[list[OrderBlock], list[FairValueGap]]:
+    """Map the bounded consumed-zone dicts (VZ-1) to schema models for the /zones
+    « Comblées » group. Reuses the SAME per-zone mappers as the live lists."""
+    obs = [_ob_to_model(z, bar_ts) for z in zones.get("consumed_order_blocks", [])]
+    fvgs = [_fvg_to_model(z, bar_ts) for z in zones.get("consumed_fair_value_gaps", [])]
+    return obs, fvgs
 
 
 def _liquidity_to_models(

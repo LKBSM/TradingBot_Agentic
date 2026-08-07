@@ -139,6 +139,32 @@ export interface CHOCHRecent {
   bars_ago?: number | null;
 }
 
+/**
+ * VZ-1 — outcome of ONE observed price contact with a zone. Strictly factual,
+ * NEVER a judgement:
+ *   · `edge_touch` — price reached the near edge without really penetrating.
+ *   · `entry_exit` — price entered the band then left through the SAME edge.
+ *   · `traversal`  — price crossed the band / fully filled the gap (consumed it).
+ *   · `inside`     — price is CURRENTLY within the band (ongoing).
+ */
+export type ContactOutcome = 'edge_touch' | 'entry_exit' | 'traversal' | 'inside';
+
+export interface ZoneContact {
+  /** Entry timestamp of this contact. */
+  at: string;
+  /** Deepest price reached into the band on this contact ("niveau atteint"). */
+  level: number;
+  outcome: ContactOutcome;
+}
+
+/** VZ-1 — the structural break an order block precedes (what makes it an OB). */
+export interface ZoneOrigin {
+  kind: 'bos' | 'choch';
+  direction: Direction;
+  at: string;
+  level: number;
+}
+
 export interface OrderBlock {
   id: string;
   /** Optional — populated by the production SMC scanner, omitted in the doc example. */
@@ -155,6 +181,10 @@ export interface OrderBlock {
    * zones extend to the current price. Descriptive, never predictive.
    */
   mitigated_at?: string | null;
+  /** VZ-1 — per-contact ledger (absent on older payloads → treat as empty). */
+  contacts?: ZoneContact[];
+  /** VZ-1 — the BOS/CHOCH break this OB precedes (absent → not associated). */
+  origin?: ZoneOrigin | null;
   user_flagged: boolean;
 }
 
@@ -176,6 +206,8 @@ export interface FairValueGap {
    * this, so the rectangle stops "just under the wicks". Never predictive.
    */
   fill_level?: number | null;
+  /** VZ-1 — per-contact ledger (absent on older payloads → treat as empty). */
+  contacts?: ZoneContact[];
   user_flagged: boolean;
 }
 
@@ -224,6 +256,14 @@ export interface MarketReadingStructure {
   choch_events?: CHOCHRecent[];
   order_blocks: OrderBlock[];
   fair_value_gaps: FairValueGap[];
+  /**
+   * VZ-1 — a bounded set of the most recently CONSUMED zones (invalidated OB /
+   * filled FVG) the live lists drop once consumed, for the /zones « Comblées »
+   * group. Absent on older payloads (treat as empty). The /app surface ignores
+   * these; each carries its full contact ledger ending with a `traversal`.
+   */
+  consumed_order_blocks?: OrderBlock[];
+  consumed_fair_value_gaps?: FairValueGap[];
   /**
    * External liquidity pockets (equal highs/lows + range extremes) with
    * intact/swept/broken state. Read-only/descriptive twin of order_blocks /

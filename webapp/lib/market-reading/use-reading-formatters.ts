@@ -150,6 +150,24 @@ export function useReadingFormatters() {
     });
   }
 
+  /** VZ-1 — a price DISTANCE in points, at the instrument's own precision. */
+  function points(value: number, instrumentCode: string): string {
+    const decimals = PRICE_DECIMALS[instrumentCode] ?? 2;
+    return Math.abs(value).toLocaleString(locale, {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    });
+  }
+
+  /** VZ-1 — a fraction as a short percentage, e.g. 0.0025 → « 0,25 % ». */
+  function pctShort(fraction: number): string {
+    const body = (Math.abs(fraction) * 100).toLocaleString(locale, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    return `${body} %`;
+  }
+
   function changeTone(fraction: number | null | undefined): Tone {
     if (fraction === null || fraction === undefined || fraction === 0) return 'neutral';
     return fraction > 0 ? 'bull' : 'bear';
@@ -319,6 +337,8 @@ export function useReadingFormatters() {
     band,
     triggerType,
     price,
+    points,
+    pctShort,
     changeTone,
     changePercent,
     relativePast,

@@ -19,24 +19,30 @@
 
 import type {
   Candle,
+  ContactOutcome,
   Direction,
   FairValueGap,
   MarketReadingStructure,
   OBImportance,
   OrderBlock,
+  ZoneContact,
+  ZoneOrigin,
 } from '@/types/market-reading';
 
 export type ZoneKind = 'ob' | 'fvg';
 
-/** Lifecycle filter buckets exposed on the page. */
-export type ZoneFilter = 'all' | 'active' | 'mitigated';
+/**
+ * Lifecycle filter buckets exposed on the page (mission §4): all / active /
+ * never-touched / consumed. Deliberately NO quality bucket.
+ */
+export type ZoneFilter = 'all' | 'active' | 'untouched' | 'consumed';
 
 /**
  * Sort order for the zone list. Deliberately NO quality/importance sort: ranking
  * zones by "strength" would be an implicit recommendation (mission §0). The
- * three orders are factual: distance to price, formation recency, engine status.
+ * three orders are factual: distance to price, formation date, contact count.
  */
-export type ZoneSort = 'proximity' | 'recency' | 'state';
+export type ZoneSort = 'proximity' | 'formation' | 'contacts';
 
 /**
  * A unified view of one detected zone (OB or FVG) for the Zones page. Mirrors the
@@ -63,6 +69,14 @@ export interface ZoneLifecycle {
   isActive: boolean;
   /** OB 'mitigated' / FVG 'filled' | 'partially_filled'. */
   isMitigated: boolean;
+  /**
+   * VZ-1 — the per-contact ledger (edge_touch / entry_exit / traversal / inside),
+   * chronological. Empty on older payloads. The SINGLE source of the contact
+   * facts the card and M.I.A both cite (no parallel recompute).
+   */
+  contacts: ZoneContact[];
+  /** VZ-1 — the BOS/CHOCH break an OB precedes (null for FVG / not associated). */
+  origin: ZoneOrigin | null;
 }
 
 function obToLifecycle(ob: OrderBlock): ZoneLifecycle {
@@ -80,6 +94,8 @@ function obToLifecycle(ob: OrderBlock): ZoneLifecycle {
     fillLevel: null,
     isActive: ob.status === 'active',
     isMitigated: ob.status === 'mitigated',
+    contacts: ob.contacts ?? [],
+    origin: ob.origin ?? null,
   };
 }
 
@@ -98,10 +114,12 @@ function fvgToLifecycle(fvg: FairValueGap): ZoneLifecycle {
     fillLevel: fvg.fill_level ?? null,
     isActive: fvg.status === 'active',
     isMitigated: fvg.status === 'filled' || fvg.status === 'partially_filled',
+    contacts: fvg.contacts ?? [],
+    origin: null,
   };
 }
 
-/** Project a structure's OB + FVG lists into a single zone-lifecycle list. */
+/** Project a structure's LIVE OB + FVG lists into a single zone-lifecycle list. */
 export function collectZones(
   structure: MarketReadingStructure | null | undefined,
 ): ZoneLifecycle[] {
@@ -109,6 +127,42 @@ export function collectZones(
   const obs = (structure.order_blocks ?? []).map(obToLifecycle);
   const fvgs = (structure.fair_value_gaps ?? []).map(fvgToLifecycle);
   return [...obs, ...fvgs];
+}
+
+/**
+ * VZ-1 — project the bounded CONSUMED lists (traversed OB / filled FVG) the
+ * backend surfaces for the « Comblées » group. Same mappers as the live list,
+ * so a consumed zone carries its full contact ledger (ending in `traversal`).
+ */
+export function collectConsumedZones(
+  structure: MarketReadingStructure | null | undefined,
+): ZoneLifecycle[] {
+  if (!structure) return [];
+  const obs = (structure.consumed_order_blocks ?? []).map(obToLifecycle);
+  const fvgs = (structure.consumed_fair_value_gaps ?? []).map(fvgToLifecycle);
+  return [...obs, ...fvgs];
+}
+
+/** A consumed (traversed / fully filled) zone — the « Comblées » bucket. */
+export function isConsumed(zone: ZoneLifecycle): boolean {
+  return zone.status === 'invalidated' || zone.status === 'filled';
+}
+
+/**
+ * VZ-1 — the number of COMPLETED contacts (edge touches + entry-exits), i.e. the
+ * ledger minus any ongoing `inside` step and the terminal `traversal`. This is
+ * the count the header badge and the « contacts » sort use — a plain fact.
+ */
+export function contactCount(zone: ZoneLifecycle): number {
+  return zone.contacts.filter(
+    (c) => c.outcome === 'edge_touch' || c.outcome === 'entry_exit',
+  ).length;
+}
+
+/** True when the ledger's last step is an ongoing `inside` (price is in the band now). */
+export function isPriceInsideNow(zone: ZoneLifecycle): boolean {
+  const last = zone.contacts[zone.contacts.length - 1];
+  return last?.outcome === 'inside';
 }
 
 // ─── Timeline ────────────────────────────────────────────────────────────────
@@ -119,10 +173,56 @@ export function collectZones(
  * we then render the step without a date rather than fabricate one.
  */
 export interface TimelineEvent {
-  key: 'formed' | 'tested' | 'partial' | 'mitigated' | 'filled' | 'active';
+  key: string;
   label: string;
   at: string | null;
   variant: 'formed' | 'interaction' | 'terminal' | 'ongoing';
+}
+
+/**
+ * VZ-1 — the FRISE DE VIE: formation, EACH contact (with its real timestamp),
+ * the terminal comblement when consumed, and « Maintenant » while still live.
+ * Labels are injected (hook-free lib). `entry` is numbered when there is more
+ * than one entry; edge touches and the traversal get their own label. An ongoing
+ * `inside` contact is not a discrete node — the live « Maintenant » step covers
+ * it. No node without a real backing fact.
+ */
+export interface ContactTimelineLabels {
+  formed: string;
+  entry: (n: number, total: number) => string;
+  touch: string;
+  traversal: string;
+  now: string;
+}
+
+export function buildContactTimeline(
+  zone: ZoneLifecycle,
+  labels: ContactTimelineLabels,
+): TimelineEvent[] {
+  const events: TimelineEvent[] = [
+    { key: 'formed', label: labels.formed, at: zone.createdAt, variant: 'formed' },
+  ];
+  const entriesTotal = zone.contacts.filter((c) => c.outcome === 'entry_exit').length;
+  let entryN = 0;
+  zone.contacts.forEach((c, i) => {
+    if (c.outcome === 'entry_exit') {
+      entryN += 1;
+      events.push({
+        key: `entry-${i}`,
+        label: labels.entry(entryN, entriesTotal),
+        at: c.at,
+        variant: 'interaction',
+      });
+    } else if (c.outcome === 'edge_touch') {
+      events.push({ key: `touch-${i}`, label: labels.touch, at: c.at, variant: 'interaction' });
+    } else if (c.outcome === 'traversal') {
+      events.push({ key: `trav-${i}`, label: labels.traversal, at: c.at, variant: 'terminal' });
+    }
+  });
+  if (!isConsumed(zone)) {
+    events.push({ key: 'now', label: labels.now, at: null, variant: 'ongoing' });
+  }
+  return events;
 }
 
 /**
@@ -371,21 +471,12 @@ export function formatZoneShortTime(iso: string, locale: string = 'fr-FR'): stri
 
 export function matchesFilter(zone: ZoneLifecycle, filter: ZoneFilter): boolean {
   if (filter === 'all') return true;
+  if (filter === 'consumed') return isConsumed(zone);
+  // 'active' / 'untouched' apply to the still-live zones only.
+  if (isConsumed(zone)) return false;
   if (filter === 'active') return zone.isActive;
-  return zone.isMitigated;
-}
-
-// Engine-status order (factual lifecycle progression, NOT a quality ranking).
-const STATE_RANK: Record<string, number> = {
-  active: 0,
-  partially_filled: 1,
-  mitigated: 2,
-  filled: 3,
-  invalidated: 4,
-};
-
-export function stateRank(zone: ZoneLifecycle): number {
-  return STATE_RANK[zone.status] ?? 5;
+  // 'untouched' — never contacted (no completed contact, not currently inside).
+  return contactCount(zone) === 0 && !isPriceInsideNow(zone);
 }
 
 /**
@@ -399,10 +490,11 @@ function distanceToPrice(zone: ZoneLifecycle, price: number): number {
 
 /**
  * Order the zones for display. `proximity` (the default) uses the distance from
- * the price to the band, closest first; `recency` uses `created_at` (newest
- * first); `state` follows the engine's lifecycle status. Without a usable price,
- * `proximity` degrades to the state order (no invented distance). Every order is
- * a fact — there is deliberately NO importance/quality sort (mission §0).
+ * the price to the band, closest first; `formation` uses `created_at` (newest
+ * first); `contacts` uses the contact count (most-contacted first). Without a
+ * usable price, `proximity` degrades to the formation order (no invented
+ * distance). Every order is a FACT — there is deliberately NO importance/quality
+ * sort (mission §0).
  */
 export function sortZones(
   zones: ZoneLifecycle[],
@@ -410,16 +502,137 @@ export function sortZones(
   price?: number | null,
 ): ZoneLifecycle[] {
   const arr = [...zones];
-  const byRecency = (a: ZoneLifecycle, b: ZoneLifecycle) =>
+  const byFormation = (a: ZoneLifecycle, b: ZoneLifecycle) =>
     new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-  if (sort === 'recency') {
-    arr.sort(byRecency);
+  if (sort === 'formation') {
+    arr.sort(byFormation);
+  } else if (sort === 'contacts') {
+    arr.sort((a, b) => contactCount(b) - contactCount(a) || byFormation(a, b));
   } else if (sort === 'proximity' && price != null) {
     arr.sort(
-      (a, b) => distanceToPrice(a, price) - distanceToPrice(b, price) || byRecency(a, b),
+      (a, b) => distanceToPrice(a, price) - distanceToPrice(b, price) || byFormation(a, b),
     );
   } else {
-    arr.sort((a, b) => stateRank(a) - stateRank(b) || byRecency(a, b));
+    arr.sort(byFormation);
   }
   return arr;
+}
+
+// ─── Proximity to the price (mission §2.B) ───────────────────────────────────
+
+/**
+ * The zone's proximity to the current price, as FACTS — never a forecast:
+ *   · `inside`  → the price sits in the band; `distToLow`/`distToHigh` give the
+ *     gap to each edge (both ≥ 0).
+ *   · otherwise → the zone is `above`/`below` the price; `distance` (price units)
+ *     and `distancePct` (fraction of the price) measure to the NEAREST `edge`
+ *     ('low' = bord bas / 'high' = bord haut) — always with its reference edge,
+ *     never a bare number.
+ * Returns null without a usable price (the block is then omitted, never guessed).
+ */
+export type ZoneProximity =
+  | { inside: true; distToLow: number; distToHigh: number }
+  | {
+      inside: false;
+      side: 'above' | 'below';
+      distance: number;
+      distancePct: number;
+      edge: 'low' | 'high';
+    };
+
+export function zoneProximity(
+  zone: ZoneLifecycle,
+  price: number | null | undefined,
+): ZoneProximity | null {
+  if (price == null || !Number.isFinite(price) || price <= 0) return null;
+  if (price >= zone.levelLow && price <= zone.levelHigh) {
+    return { inside: true, distToLow: price - zone.levelLow, distToHigh: zone.levelHigh - price };
+  }
+  if (zone.levelLow > price) {
+    const distance = zone.levelLow - price;
+    return { inside: false, side: 'above', distance, distancePct: distance / price, edge: 'low' };
+  }
+  const distance = price - zone.levelHigh;
+  return { inside: false, side: 'below', distance, distancePct: distance / price, edge: 'high' };
+}
+
+/** Which position group a LIVE zone belongs to (mission §4 grouping). */
+export type PositionGroup = 'inside' | 'above' | 'below';
+
+export function zonePositionGroup(
+  zone: ZoneLifecycle,
+  price: number | null | undefined,
+): PositionGroup {
+  const prox = zoneProximity(zone, price);
+  if (!prox) return 'above'; // no price → a stable, non-"inside" bucket
+  if (prox.inside) return 'inside';
+  return prox.side;
+}
+
+// ─── Header state (mission §2.A) ─────────────────────────────────────────────
+
+/**
+ * The header badge state — a plain fact, never a judgement:
+ *   · `consumed`     → traversed / fully filled (« Comblée »).
+ *   · `contacts`     → N completed contacts (« N contacts »).
+ *   · `never_filled` → price is in the band now but never consumed it
+ *     (« Jamais comblée »).
+ *   · `untouched`    → the price has never reached it (« Jamais touchée »).
+ */
+export type ZoneHeaderState =
+  | { key: 'consumed' }
+  | { key: 'contacts'; count: number }
+  | { key: 'never_filled' }
+  | { key: 'untouched' };
+
+export function zoneHeaderState(zone: ZoneLifecycle): ZoneHeaderState {
+  if (isConsumed(zone)) return { key: 'consumed' };
+  const count = contactCount(zone);
+  if (count > 0) return { key: 'contacts', count };
+  if (isPriceInsideNow(zone)) return { key: 'never_filled' };
+  return { key: 'untouched' };
+}
+
+// ─── FVG comblement progression per contact (mission §2.D) ───────────────────
+
+/**
+ * Cumulative fill fraction AFTER each contact of an FVG — the « comblement porté
+ * à X % » figure the ledger shows. A gap fills monotonically (deepest wick ever),
+ * so we run the extremum over the contacts' `level` and convert with the same
+ * geometry as {@link fillFraction}. Returns [] for a non-FVG or a degenerate
+ * band. Index-aligned with `zone.contacts`.
+ */
+export function fvgContactFills(zone: ZoneLifecycle): (number | null)[] {
+  if (zone.kind !== 'fvg') return [];
+  const span = zone.levelHigh - zone.levelLow;
+  if (span <= 0) return zone.contacts.map(() => null);
+  let deepest: number | null = null;
+  return zone.contacts.map((c) => {
+    deepest =
+      deepest == null
+        ? c.level
+        : zone.direction === 'bearish'
+          ? Math.max(deepest, c.level)
+          : Math.min(deepest, c.level);
+    const raw =
+      zone.direction === 'bearish'
+        ? (deepest - zone.levelLow) / span
+        : (zone.levelHigh - deepest) / span;
+    return Math.max(0, Math.min(1, raw));
+  });
+}
+
+/**
+ * The single most recent contact whose outcome is a real interaction
+ * (entry_exit / traversal / inside) — the « dernier contact » of the proximity
+ * block. Edge touches are excluded (a kiss is not an entry). null when none.
+ */
+export function lastEntryContact(zone: ZoneLifecycle): ZoneContact | null {
+  for (let i = zone.contacts.length - 1; i >= 0; i -= 1) {
+    const c = zone.contacts[i]!;
+    if (c.outcome === 'entry_exit' || c.outcome === 'traversal' || c.outcome === 'inside') {
+      return c;
+    }
+  }
+  return null;
 }
