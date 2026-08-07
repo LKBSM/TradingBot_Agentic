@@ -2925,144 +2925,144 @@
   },
   "scannerChat": {
     "meta": {
-      "title": "Conversational scanner — describe your strategy",
-      "description": "Describe your strategy in French or English; M.I.A translates it into verifiable palette conditions."
+      "title": "الماسح الحواري — صِف استراتيجيتك",
+      "description": "صِف استراتيجيتك بالفرنسية أو الإنجليزية؛ تترجمها M.I.A إلى شروط قابلة للتحقق من اللوحة."
     },
     "describe": {
-      "title": "Describe your strategy. In your words.",
-      "subtitle": "No form to fill in. Write what you're looking for as you'd say it to someone.",
-      "miaTitle": "M.I.A translates your strategy",
-      "miaSub": "she chooses nothing for you · you validate before anything runs",
-      "placeholder": "E.g.: I'm looking for an untested Order Block, in an uptrend, with the 1 h agreeing and a liquidity pocket taken recently.",
-      "translate": "Translate my strategy",
-      "translating": "Translating…",
-      "myStrategies": "My strategies",
-      "scope": "M.I.A translates toward 22 verifiable conditions. Nothing else.",
-      "examplesLabel": "Or start from an example",
-      "disclaimer": "M.I.A does not look at the market to answer you: she turns your sentence into verifiable conditions, then the product's analysis does the searching. She orders nothing, advises nothing, and never guesses a condition you didn't express.",
+      "title": "صِف استراتيجيتك. بكلماتك.",
+      "subtitle": "لا نموذج لملئه. اكتب ما تبحث عنه كما تقوله لشخص ما.",
+      "miaTitle": "تترجم M.I.A استراتيجيتك",
+      "miaSub": "لا تختار شيئاً بدلاً عنك · أنت تؤكّد قبل أن يبدأ أي شيء",
+      "placeholder": "مثال: أبحث عن Order Block لم يُختبر قط، في اتجاه صاعد، مع توافق إطار الساعة وجيب سيولة أُخذ مؤخراً.",
+      "translate": "ترجمة استراتيجيتي",
+      "translating": "جارٍ الترجمة…",
+      "myStrategies": "استراتيجياتي",
+      "scope": "تترجم M.I.A إلى 22 شرطاً قابلاً للتحقق. لا شيء غير ذلك.",
+      "examplesLabel": "أو ابدأ من مثال",
+      "disclaimer": "لا تطّلع M.I.A على السوق لتجيبك: تحوّل جملتك إلى شروط قابلة للتحقق، ثم يقوم تحليل المنتج بالبحث. لا ترتّب شيئاً ولا تنصح بشيء ولا تخمّن أبداً شرطاً لم تعبّر عنه.",
       "examples": {
-        "0": "An Order Block never tested, in an uptrend, with the higher unit agreeing",
-        "1": "Price returns into a Fair Value Gap tested once, after a recent CHOCH",
-        "2": "A liquidity pocket was just taken and price entered a zone",
-        "3": "An untested OB when the RSI is oversold",
-        "4": "Tell me where gold price is heading today",
-        "5": "Market in expansion, bullish structure, fresh zone at price"
+        "0": "Order Block لم يُختبر قط، في اتجاه صاعد، مع توافق الإطار الأعلى",
+        "1": "يعود السعر إلى Fair Value Gap اختُبر مرة، بعد CHOCH حديث",
+        "2": "أُخذ جيب سيولة للتو ودخل السعر منطقة",
+        "3": "OB غير مختبر عندما يكون RSI في ذروة البيع",
+        "4": "أخبرني إلى أين يتجه سعر الذهب اليوم",
+        "5": "سوق في توسّع، بنية صاعدة، منطقة بكر عند السعر"
       }
     },
     "dictation": {
-      "start": "Dictate by voice",
-      "stop": "Stop dictation",
-      "listening": "Listening…",
-      "privacy": "Transcription is performed by your browser and may transit through its servers. No audio recording is kept.",
+      "start": "الإملاء بالصوت",
+      "stop": "إيقاف الإملاء",
+      "listening": "أستمع…",
+      "privacy": "يجري التحويل إلى نص عبر متصفحك وقد يمرّ عبر خوادمه. لا يُحتفظ بأي تسجيل صوتي.",
       "errors": {
-        "not-allowed": "Microphone denied. You can allow it in your browser, or keep typing.",
-        "no-speech": "I didn't hear anything. Try again, or type your strategy.",
-        "audio-capture": "No microphone detected. Type your strategy instead.",
-        "network": "Speech recognition is unreachable. Type your strategy instead.",
-        "timeout": "I didn't hear anything. Dictation stopped — try again or type.",
-        "unknown": "Dictation was interrupted. Type your strategy instead."
+        "not-allowed": "رُفض الميكروفون. يمكنك السماح به في متصفحك أو متابعة الكتابة.",
+        "no-speech": "لم أسمع شيئاً. حاول مجدداً أو اكتب استراتيجيتك.",
+        "audio-capture": "لم يُكتشف أي ميكروفون. اكتب استراتيجيتك.",
+        "network": "تعذّر الوصول إلى التعرف على الكلام. اكتب استراتيجيتك.",
+        "timeout": "لم أسمع شيئاً. توقّف الإملاء — حاول مجدداً أو اكتب.",
+        "unknown": "توقّف الإملاء. اكتب استراتيجيتك."
       }
     },
     "card": {
-      "remove": "Remove this condition",
-      "assumedInline": "assumed value — adjust it if needed"
+      "remove": "إزالة هذا الشرط",
+      "assumedInline": "قيمة مفترضة — عدّلها إذا لزم"
     },
     "add": {
-      "tag": "Add",
-      "cta": "A missing condition?",
-      "hint": "Browse the 22 conditions",
-      "title": "Add a condition from the palette",
-      "close": "Close",
-      "already": "Already in your strategy"
+      "tag": "إضافة",
+      "cta": "شرط ناقص؟",
+      "hint": "تصفّح الـ 22 شرطاً",
+      "title": "إضافة شرط من اللوحة",
+      "close": "إغلاق",
+      "already": "موجود بالفعل في استراتيجيتك"
     },
     "translation": {
-      "title": "Here's what I understood",
-      "partialTitle": "I translated part of it",
-      "noneTitle": "I couldn't translate anything",
-      "subtitle": "Check it, adjust, remove what's off. Nothing runs before you validate.",
-      "noneSubtitle": "Nothing in your sentence maps to a palette condition. Rephrase, or compose by hand.",
-      "yourRequest": "YOUR REQUEST",
-      "modify": "Edit",
-      "conditionsLabel": "{count, plural, one {# condition translated} other {# conditions translated}}",
-      "comboCaption": "combinations match — {conditions, plural, one {# condition} other {# conditions}}",
-      "comboScanned": "of {scanned} tracked combinations · re-evaluated live",
-      "comboComputing": "computing…",
-      "seeResults": "See results",
-      "scanning": "Scanning…",
-      "reformulate": "Rephrase"
+      "title": "هذا ما فهمته",
+      "partialTitle": "ترجمت جزءاً",
+      "noneTitle": "لم أستطع ترجمة أي شيء",
+      "subtitle": "تحقّق، عدّل، أزل ما لا يناسب. لا شيء يبدأ قبل أن تؤكّد.",
+      "noneSubtitle": "لا شيء في جملتك يطابق شرطاً من اللوحة. أعد الصياغة أو كوّنها يدوياً.",
+      "yourRequest": "طلبك",
+      "modify": "تعديل",
+      "conditionsLabel": "{count, plural, one {تُرجم # شرط} other {تُرجم # شرطاً}}",
+      "comboCaption": "توليفات مطابقة — {conditions, plural, one {# شرط} other {# شروط}}",
+      "comboScanned": "من {scanned} توليفة متابَعة · يُعاد التقييم مباشرةً",
+      "comboComputing": "جارٍ الحساب…",
+      "seeResults": "عرض النتائج",
+      "scanning": "جارٍ المسح…",
+      "reformulate": "أعد الصياغة"
     },
     "assumptions": {
-      "title": "What I assumed",
-      "item": "You said “{phrase}” — I took {value} for “{condition}”.",
-      "note": "Adjust if that's not what you meant. I never guess a condition you didn't express.",
-      "aVagueWord": "a vague word"
+      "title": "ما افترضته",
+      "item": "قلت «{phrase}» — اعتمدت {value} لـ «{condition}».",
+      "note": "عدّل إذا لم يكن هذا ما قصدته. لا أخمّن أبداً شرطاً لم تعبّر عنه.",
+      "aVagueWord": "كلمة غامضة"
     },
     "untranslatable": {
-      "titlePartial": "One thing I cannot translate",
-      "titleNone": "What I cannot translate",
-      "honesty": "I have no near-equivalent condition, and I'd rather tell you than pick one that only vaguely resembles it. You can run with what's understood, or rephrase.",
+      "titlePartial": "شيء لا أستطيع ترجمته",
+      "titleNone": "ما لا أستطيع ترجمته",
+      "honesty": "ليس لديّ شرط قريب، وأفضّل أن أخبرك بدلاً من اختيار شرط يشبهه بشكل غامض فقط. يمكنك المتابعة بما فُهم أو إعادة الصياغة.",
       "categories": {
-        "indicator": "— the product tracks no oscillator indicator (RSI, MACD, moving averages, Bollinger). It describes market structure.",
-        "volume": "— the product does not track volume as a condition.",
-        "fibonacci": "— the product places no Fibonacci levels.",
-        "candle_pattern": "— the product does not detect candlestick patterns (engulfing, doji, hammer).",
-        "classic_support_resistance": "— the product draws no classic horizontal support/resistance; it describes SMC zones (OB, FVG).",
-        "round_number": "— the product does not reason in round numbers.",
-        "sentiment": "— the product does not measure sentiment or positioning.",
-        "fundamental": "— the product does not take macro or news as a scannable condition.",
-        "other": "— this element maps to no palette condition.",
-        "unsupported": "— this element maps to no palette condition."
+        "indicator": "— لا يتابع المنتج أي مؤشر تذبذبي (RSI، MACD، المتوسطات المتحركة، بولنجر). إنه يصف بنية السوق.",
+        "volume": "— لا يتابع المنتج الحجم كشرط.",
+        "fibonacci": "— لا يضع المنتج مستويات فيبوناتشي.",
+        "candle_pattern": "— لا يكتشف المنتج أنماط الشموع (الابتلاع، دوجي، المطرقة).",
+        "classic_support_resistance": "— لا يرسم المنتج دعوماً/مقاومات أفقية تقليدية؛ إنه يصف مناطق SMC (OB، FVG).",
+        "round_number": "— لا يفكّر المنتج بالأرقام الدائرية.",
+        "sentiment": "— لا يقيس المنتج المعنويات ولا التموضع.",
+        "fundamental": "— لا يأخذ المنتج البيانات الكلية أو الأخبار كشرط قابل للمسح.",
+        "other": "— هذا العنصر لا يطابق أي شرط من اللوحة.",
+        "unsupported": "— هذا العنصر لا يطابق أي شرط من اللوحة."
       }
     },
     "save": {
-      "namePlaceholder": "Strategy name",
-      "cta": "Save",
-      "done": "“{name}” saved on this device.",
+      "namePlaceholder": "اسم الاستراتيجية",
+      "cta": "حفظ",
+      "done": "تم حفظ «{name}» على هذا الجهاز.",
       "errors": {
-        "name_required": "Give your strategy a name to save it.",
-        "limit_reached": "Saved-strategy limit reached on this device.",
-        "not_found": "Strategy not found.",
-        "storage_failed": "Could not save on this device."
+        "name_required": "امنح استراتيجيتك اسماً لحفظها.",
+        "limit_reached": "بلغت حدّ الاستراتيجيات المحفوظة على هذا الجهاز.",
+        "not_found": "الاستراتيجية غير موجودة.",
+        "storage_failed": "تعذّر الحفظ على هذا الجهاز."
       }
     },
     "results": {
-      "back": "Back to the translation"
+      "back": "العودة إلى الترجمة"
     },
     "strategies": {
-      "back": "Back",
-      "title": "My strategies",
-      "subtitle": "Described once, re-evaluated on every open.",
-      "empty": "You have no saved strategy yet. Describe one, then save it."
+      "back": "رجوع",
+      "title": "استراتيجياتي",
+      "subtitle": "تُوصف مرة، وتُعاد تقييمها عند كل فتح.",
+      "empty": "ليس لديك استراتيجية محفوظة بعد. صِف واحدة ثم احفظها."
     },
     "refusal": {
-      "pageTitle": "This request, I don't translate",
-      "pageSubtitle": "It isn't a technical limit.",
-      "invite": "I can translate a precise strategy, though. Tell me what you're looking for: which structure, which zone, which liquidity state.",
-      "reformulate": "Rephrase",
-      "footer": "The product describes the current state of markets. It does not grade them, does not order them, and advises no action. It's a design constraint, not a gap.",
+      "pageTitle": "هذا الطلب لا أترجمه",
+      "pageSubtitle": "ليس حدّاً تقنياً.",
+      "invite": "لكن يمكنني ترجمة استراتيجية دقيقة. أخبرني بما تبحث عنه: أي بنية، أي منطقة، أي حالة سيولة.",
+      "reformulate": "أعد الصياغة",
+      "footer": "يصف المنتج الحالة الراهنة للأسواق. لا يقيّمها ولا يرتّبها ولا ينصح بأي إجراء. إنه قيد تصميمي، وليس نقصاً.",
       "examples": {
-        "0": "An OB never tested in an uptrend",
-        "1": "Price inside a zone after a liquidity grab"
+        "0": "OB لم يُختبر قط في اتجاه صاعد",
+        "1": "السعر داخل منطقة بعد أخذ سيولة"
       },
       "ranking": {
-        "title": "I don't sort markets",
-        "body": "Asking for “the X” implies an order of preference. The scanner builds none and never sorts its results. A market meeting five conditions is not preferable to one meeting three — it is different, and the call is yours."
+        "title": "لا أرتّب الأسواق",
+        "body": "طلب «الأكثر» يفترض ترتيب تفضيل. لا ينشئ الماسح أي ترتيب ولا يرتّب نتائجه أبداً. سوق يجمع خمسة شروط ليس مُفضَّلاً على سوق يجمع ثلاثة — إنه مختلف، والقرار قرارك."
       },
       "prediction": {
-        "title": "I don't predict prices",
-        "body": "The product describes the current state of markets. It doesn't say where price will go, nor whether it will rise or fall. I can translate a strategy that describes a present structure, not an expectation."
+        "title": "لا أتنبأ بالأسعار",
+        "body": "يصف المنتج الحالة الراهنة للأسواق. لا يقول إلى أين سيذهب السعر، ولا إن كان سيرتفع أو ينخفض. يمكنني ترجمة استراتيجية تصف بنية حاضرة، لا توقعاً."
       },
       "recommendation": {
-        "title": "I advise no position",
-        "body": "I don't say what to trade, nor when to buy or sell. The scanner shows where conditions YOU described are present; the decision stays yours."
+        "title": "لا أنصح بأي مركز",
+        "body": "لا أقول بماذا تتاجر، ولا متى تشتري أو تبيع. يُظهر الماسح أين تتوفّر الشروط التي وصفتَها أنت؛ ويبقى القرار قرارك."
       }
     },
     "errors": {
-      "unavailable": "Translation isn't available in this environment. You can compose by hand.",
-      "failed": "Translation failed. Try again, or compose by hand.",
-      "empty": "Write your strategy first.",
-      "scanUnavailable": "The scan service isn't available in this environment.",
-      "scanFailed": "The scan failed. Try again in a moment."
+      "unavailable": "الترجمة غير متاحة في هذه البيئة. يمكنك التكوين يدوياً.",
+      "failed": "فشلت الترجمة. حاول مجدداً أو كوّن يدوياً.",
+      "empty": "اكتب استراتيجيتك أولاً.",
+      "scanUnavailable": "خدمة المسح غير متاحة في هذه البيئة.",
+      "scanFailed": "فشل المسح. حاول مجدداً بعد لحظة."
     }
   }
 }
