@@ -222,11 +222,18 @@ des valeurs vides.
 |---|---|---|
 | 1 — Pivot payant seul (point d'autorisation unique) | ✅ commité | vitest 872, gate 14, tsc 0 |
 | 3 — Stripe : grâce / ordre / remboursement / 5 états | ✅ commité | billing 22, i18n/pricing 68 |
-| 2 — Vérif e-mail + mdp + suppression compte | ✅ commité (backend) | +14, suite auth/billing 176 |
-| 2 — Google OAuth (env-gated) | ✅ commité (backend) | 9 (round-trip live à valider) |
-| 2 — Frontend (page vérif, bannière, page compte mdp/suppression, bouton Google) | ⏳ en cours | — |
-| 4 — Textes légaux + job de préavis de renouvellement | ⏳ à faire | — |
-| 5 — Playwright (inscription→vérif→paiement→états→résiliation) + e2e Stripe CLI | ⏳ à faire | — |
+| 2 — Vérif e-mail + mdp + suppression compte (backend) | ✅ commité | +14, suite PAY-1 backend 159 |
+| 2 — Google OAuth (env-gated, backend) | ✅ commité | 9 (round-trip live à valider) |
+| 2 — Frontend (page vérif, bannière, page compte mdp/suppression) | ✅ commité | vitest + tsc 0 + build ✓ |
+| 2 — Frontend Google (bouton + page finalisation) | ⏳ reste (nécessite identifiants Google) | — |
+| 4 — Textes légaux (durée indéterminée, aucune clause US) | ✅ vérifié (mentions PRIX-1 conformes) | — |
+| 4 — Préavis de renouvellement annuel 30 j (job Loi 25) | ✅ commité | +8 |
+| 5 — `tsc` + `next build` | ✅ verts | build ✓ |
+| 5 — Playwright (inscription→vérif→paiement→états→résiliation) + e2e Stripe CLI | ⏳ reste (paiement de test = validation live) | — |
+
+**Job Loi 25 à câbler au déploiement :** appeler
+`src.billing.renewal_notices.send_due_renewal_notices(store)` une fois par jour
+(cron/scheduler Render). Idempotent ; no-op sans `STRIPE_PRICE_ANNUAL`/SMTP.
 
 **À valider en live par toi (nécessite tes accès) :** paiement de test Stripe de
 bout en bout (clés test + `stripe listen`) et connexion Google réelle (identifiants
