@@ -8,6 +8,7 @@ import { AuthError } from '@/lib/auth/api-client';
 import { useAuth } from '@/lib/auth/store';
 import { useLocalizedHref } from '@/lib/i18n/href';
 import { BRAND_NAME } from '@/lib/brand';
+import { GoogleButton } from './GoogleButton';
 
 /** Login form — identifier is a username OR an email (single field). */
 export function LoginForm() {
@@ -129,6 +130,10 @@ export function LoginForm() {
           {submitting ? t('login.submitting') : t('login.submit')}
         </button>
       </form>
+
+      <div style={{ marginTop: 12 }}>
+        <GoogleButton />
+      </div>
 
       <div className="orline">
         <span>{tc('or')}</span>

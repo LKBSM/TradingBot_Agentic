@@ -1822,6 +1822,14 @@
       "success": "Email confirmed. Your access is activated.",
       "error": "Invalid or expired verification link.",
       "cta": "Go to my dashboard"
+    },
+    "google": {
+      "button": "Continue with Google",
+      "finalizeTitle": "Finish signing up",
+      "finalizeIntro": "Google confirmed your address. Pick a username and accept the terms to create your account.",
+      "finalizeSubmit": "Create my account",
+      "missingToken": "Invalid or expired Google link. Try again from the sign-in page.",
+      "orSeparator": "or"
     }
   },
   "billing": {

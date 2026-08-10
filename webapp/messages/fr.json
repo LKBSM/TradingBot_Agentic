@@ -1822,6 +1822,14 @@
       "success": "Adresse e-mail confirmée. Ton accès est activé.",
       "error": "Lien de vérification invalide ou expiré.",
       "cta": "Aller à mon espace"
+    },
+    "google": {
+      "button": "Continuer avec Google",
+      "finalizeTitle": "Finaliser l'inscription",
+      "finalizeIntro": "Google a confirmé ton adresse. Choisis un nom d'utilisateur et accepte les conditions pour créer ton compte.",
+      "finalizeSubmit": "Créer mon compte",
+      "missingToken": "Lien Google invalide ou expiré. Réessaie depuis la page de connexion.",
+      "orSeparator": "ou"
     }
   },
   "billing": {
