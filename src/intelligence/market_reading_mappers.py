@@ -1357,6 +1357,7 @@ def confluence_signal_to_structure(
     smc_features: dict[str, float],
     bar_ts: datetime,
     current_price: float,
+    instrument: Optional[str] = None,
 ) -> MarketReadingStructure:
     """Build MarketReadingStructure from confluence signal + per-bar smc features.
 
@@ -1492,8 +1493,8 @@ def confluence_signal_to_structure(
     # so callers/tests that don't run collect_zones still behave as before.
     zones = smc_features.get("_zones")
     if isinstance(zones, dict):
-        order_blocks, fair_value_gaps = _zones_to_models(zones, bar_ts)
-        consumed_obs, consumed_fvgs = _consumed_zones_to_models(zones, bar_ts)
+        order_blocks, fair_value_gaps = _zones_to_models(zones, bar_ts, instrument)
+        consumed_obs, consumed_fvgs = _consumed_zones_to_models(zones, bar_ts, instrument)
         return MarketReadingStructure(
             bos=bos,
             choch=choch,
@@ -1607,18 +1608,34 @@ def ob_zone_id(direction: str, created_at: datetime) -> str:
     return f"OB_{direction}_{created_at.strftime('%Y%m%d%H%M%S')}"
 
 
+def _session_of(instrument: Optional[str], created: datetime) -> Optional[str]:
+    """VZ-1 formation session, canonical (market_calendar). None when no
+    instrument is threaded (older/legacy callers) — the frontend then falls back
+    to its client mirror. Defensive: a tz lookup failure never breaks a reading."""
+    if not instrument:
+        return None
+    try:
+        from .market_calendar import session_at
+
+        return session_at(instrument, created)
+    except Exception:  # pragma: no cover — session is cosmetic, never fatal
+        return None
+
+
 def _zones_to_models(
     zones: dict[str, list[dict]],
     bar_ts: datetime,
+    instrument: Optional[str] = None,
 ) -> tuple[list[OrderBlock], list[FairValueGap]]:
     """Convert collected zone dicts (from :func:`collect_zones`) to schema models.
 
     ``created_at`` falls back to ``bar_ts`` when the collector could not derive a
     per-zone timestamp (non-datetime frame index). The ``id`` is stable per zone
     (direction + created time) so the same zone keeps its identity across reads.
+    ``instrument`` (optional) enables the canonical formation session.
     """
-    order_blocks = [_ob_to_model(z, bar_ts) for z in zones.get("order_blocks", [])]
-    fair_value_gaps = [_fvg_to_model(z, bar_ts) for z in zones.get("fair_value_gaps", [])]
+    order_blocks = [_ob_to_model(z, bar_ts, instrument) for z in zones.get("order_blocks", [])]
+    fair_value_gaps = [_fvg_to_model(z, bar_ts, instrument) for z in zones.get("fair_value_gaps", [])]
     return order_blocks, fair_value_gaps
 
 
@@ -1642,7 +1659,7 @@ def _origin_to_model(z: dict) -> Optional[ZoneOrigin]:
     return ZoneOrigin(kind=o["kind"], direction=o["direction"], at=o["at"], level=o["level"])
 
 
-def _ob_to_model(z: dict, bar_ts: datetime) -> OrderBlock:
+def _ob_to_model(z: dict, bar_ts: datetime, instrument: Optional[str] = None) -> OrderBlock:
     created = z.get("created_at") or bar_ts
     return OrderBlock(
         id=ob_zone_id(z["direction"], created),
@@ -1658,11 +1675,12 @@ def _ob_to_model(z: dict, bar_ts: datetime) -> OrderBlock:
         touch_ats=z.get("touch_ats", []),
         contacts=_contacts_to_models(z),
         origin=_origin_to_model(z),
+        session=_session_of(instrument, created),
         user_flagged=False,
     )
 
 
-def _fvg_to_model(z: dict, bar_ts: datetime) -> FairValueGap:
+def _fvg_to_model(z: dict, bar_ts: datetime, instrument: Optional[str] = None) -> FairValueGap:
     created = z.get("created_at") or bar_ts
     return FairValueGap(
         id=f"FVG_{z['direction']}_{created.strftime('%Y%m%d%H%M%S')}",
@@ -1677,6 +1695,7 @@ def _fvg_to_model(z: dict, bar_ts: datetime) -> FairValueGap:
         touch_count=z.get("touch_count", 0),
         touch_ats=z.get("touch_ats", []),
         contacts=_contacts_to_models(z),
+        session=_session_of(instrument, created),
         user_flagged=False,
     )
 
@@ -1684,11 +1703,12 @@ def _fvg_to_model(z: dict, bar_ts: datetime) -> FairValueGap:
 def _consumed_zones_to_models(
     zones: dict[str, list[dict]],
     bar_ts: datetime,
+    instrument: Optional[str] = None,
 ) -> tuple[list[OrderBlock], list[FairValueGap]]:
     """Map the bounded consumed-zone dicts (VZ-1) to schema models for the /zones
     « Comblées » group. Reuses the SAME per-zone mappers as the live lists."""
-    obs = [_ob_to_model(z, bar_ts) for z in zones.get("consumed_order_blocks", [])]
-    fvgs = [_fvg_to_model(z, bar_ts) for z in zones.get("consumed_fair_value_gaps", [])]
+    obs = [_ob_to_model(z, bar_ts, instrument) for z in zones.get("consumed_order_blocks", [])]
+    fvgs = [_fvg_to_model(z, bar_ts, instrument) for z in zones.get("consumed_fair_value_gaps", [])]
     return obs, fvgs
 
 

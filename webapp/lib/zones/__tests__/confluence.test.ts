@@ -20,6 +20,7 @@ function zl(over: Partial<ZoneLifecycle> = {}): ZoneLifecycle {
     isMitigated: false,
     contacts: [],
     origin: null,
+    session: null,
     ...over,
   };
 }

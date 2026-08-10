@@ -4,13 +4,17 @@ consumed-zone surfacing and the order-block origin association.
 All read-side and additive: these tests also assert the existing touch_count /
 status semantics are unchanged (no detection change)."""
 
+from datetime import datetime, timezone
+
 import pandas as pd
 
+from src.intelligence.market_calendar import session_at
 from src.intelligence.market_reading_mappers import (
     _ob_contacts,
     _fvg_contacts,
     _ob_origin,
     collect_zones,
+    confluence_signal_to_structure,
 )
 
 
@@ -153,3 +157,71 @@ def test_fvg_contacts_bearish_entry_and_traversal():
     contacts = _fvg_contacts("bearish", zhigh, zlow, highs, lows, created=0, upto=3)
     assert contacts[0]["outcome"] == "entry_exit"
     assert contacts[-1]["outcome"] == "traversal"
+
+
+# --------------------------------------------------------------------------- #
+# Formation session (backend single source)
+# --------------------------------------------------------------------------- #
+def test_session_at_precedence_and_crypto():
+    # 12:00Z in late May = 08:00 New York → new_york (NY wins the London overlap).
+    assert session_at("XAUUSD", datetime(2026, 5, 26, 12, 0, tzinfo=timezone.utc)) == "new_york"
+    # 09:00Z = 05:00 NY → london only.
+    assert session_at("XAUUSD", datetime(2026, 5, 26, 9, 0, tzinfo=timezone.utc)) == "london"
+    # 23:00Z = 19:00 NY → asia (wraps midnight).
+    assert session_at("XAUUSD", datetime(2026, 5, 26, 23, 0, tzinfo=timezone.utc)) == "asia"
+    # Crypto is continuous → no session.
+    assert session_at("BTCUSD", datetime(2026, 5, 26, 12, 0, tzinfo=timezone.utc)) is None
+
+
+# --------------------------------------------------------------------------- #
+# Integration: the new fields survive the FULL structure-build entry point,
+# stamped with the canonical session for a real instrument.
+# --------------------------------------------------------------------------- #
+def test_structure_build_carries_contacts_origin_session_and_consumed():
+    rows = [{"high": 100, "low": 99, "close": 100} for _ in range(12)]
+    # Live OB (bullish 97–98) preceding a bullish BOS, entered then exited.
+    rows[1].update(BULLISH_OB_HIGH=98.0, BULLISH_OB_LOW=97.0, OB_STRENGTH_NORM=0.9)
+    rows[2].update(BOS_EVENT=1.0, BOS_BREAK_LEVEL=100.5)
+    rows[3].update(low=97.4)  # entry
+    rows[4].update(low=99.0)  # exit (no close-through) → entry_exit, OB stays
+    # A second OB (110–111, ABOVE the price) later invalidated by a close-through
+    # → consumed. Its close (109) stays above the live OB, so that one is untouched.
+    rows[8].update(BULLISH_OB_HIGH=111.0, BULLISH_OB_LOW=110.0, OB_STRENGTH_NORM=0.9)
+    rows[9].update(high=111.0, low=108.0, close=109.0)  # closes through 110 → invalidated
+
+    zones = collect_zones(_frame(rows), idx=11)
+    # The production entry point: inject the registry and map to schema models,
+    # threading the instrument so the canonical session is stamped.
+    structure = confluence_signal_to_structure(
+        confluence_signal=None,
+        smc_features={"_zones": zones},
+        bar_ts=datetime(2026, 5, 28, 12, 0, tzinfo=timezone.utc),
+        current_price=100.0,
+        instrument="XAUUSD",
+    )
+
+    live = [ob for ob in structure.order_blocks if ob.contacts]
+    assert live, "the live OB should carry a contact ledger"
+    ob = live[0]
+    assert ob.origin is not None and ob.origin.kind == "bos"
+    assert ob.session in {"asia", "london", "new_york"}
+    assert {c.outcome for c in ob.contacts} <= {"edge_touch", "entry_exit", "inside"}
+
+    assert len(structure.consumed_order_blocks) == 1
+    consumed = structure.consumed_order_blocks[0]
+    assert consumed.status == "invalidated"
+    assert consumed.contacts[-1].outcome == "traversal"
+    assert consumed.session in {"asia", "london", "new_york"}
+
+
+def test_structure_build_without_instrument_leaves_session_none():
+    rows = [{"high": 100, "low": 99, "close": 100} for _ in range(6)]
+    rows[1].update(BULLISH_OB_HIGH=98.0, BULLISH_OB_LOW=97.0, OB_STRENGTH_NORM=0.9)
+    zones = collect_zones(_frame(rows), idx=5)
+    structure = confluence_signal_to_structure(
+        confluence_signal=None,
+        smc_features={"_zones": zones},
+        bar_ts=datetime(2026, 5, 28, 12, 0, tzinfo=timezone.utc),
+        current_price=100.0,
+    )  # no instrument → session omitted (frontend falls back to its mirror)
+    assert structure.order_blocks[0].session is None

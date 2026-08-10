@@ -186,6 +186,9 @@ class OrderBlock(BaseModel):
     # the /app surface (which ignores them) is unaffected.
     contacts: list[ZoneContact] = Field(default_factory=list)
     origin: Optional[ZoneOrigin] = None
+    # VZ-1: formation session (asia|london|new_york), from market_calendar —
+    # canonical source; the frontend only falls back to its mirror when absent.
+    session: Optional[str] = None
     user_flagged: bool = False
 
 
@@ -215,6 +218,7 @@ class FairValueGap(BaseModel):
     # VZ-1: per-contact ledger. An FVG has no structural-break origin (it is a
     # 3-candle imbalance, explained statically), so no ``origin`` field here.
     contacts: list[ZoneContact] = Field(default_factory=list)
+    session: Optional[str] = None
     user_flagged: bool = False
 
 

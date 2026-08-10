@@ -182,6 +182,16 @@ test.describe('VZ-1 /zones @ 1280×800', () => {
     await page.locator('[data-zone-id="ob-untouched"]').click();
     await expect(subject).toContainText('350,00'); // switched, same page
   });
+
+  test('the M.I.A free-text input answers locally (no LLM)', async ({ page }) => {
+    await openZones(page);
+    const input = page.getByPlaceholder('Pose ta question sur cette zone…').first();
+    await input.fill("qu'est-ce qu'il y a d'autre à ce niveau");
+    await input.press('Enter');
+    await expect(
+      page.locator('.zmia-body .bub.a').last(),
+    ).toContainText(/au même niveau|rien d’autre n’est détecté|poche de liquidité|à l’intérieur|englobe/i);
+  });
 });
 
 test.describe('VZ-1 /zones @ 390×844', () => {

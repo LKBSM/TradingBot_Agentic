@@ -2655,6 +2655,10 @@
       "closeSheet": "Fermer",
       "intro": "Tu regardes un {kind}. {count, plural, =0 {Le prix ne l’a pas encore contacté.} one {Le prix l’a contacté une fois.} other {Le prix l’a contacté # fois.}} Pose-moi une question dessus.",
       "disclaimer": "M.I.A décrit des faits détectés et explique des concepts. Elle ne dit pas où ira le prix, ni si une zone est bonne, ni s’il faut intervenir.",
+      "input": {
+        "placeholder": "Pose ta question sur cette zone…",
+        "send": "Envoyer"
+      },
       "pos": {
         "inside": "le prix est dedans",
         "above": "au-dessus du prix",
@@ -2686,7 +2690,8 @@
         "lastInside": "Dernier contact il y a {when} ({time}) : le prix est actuellement à l’intérieur.",
         "lastTraversal": "Dernier contact il y a {when} ({time}) : le prix l’a traversée à {level}.",
         "lastEdge": "Dernier contact il y a {when} ({time}) : le prix a touché le bord sans y pénétrer.",
-        "lastEntry": "Dernier contact il y a {when} ({time}) : le prix est entré à {level} puis en est ressorti sans la traverser."
+        "lastEntry": "Dernier contact il y a {when} ({time}) : le prix est entré à {level} puis en est ressorti sans la traverser.",
+        "fallback": "Je décris cette zone à partir de ses faits : ce qu’il y a d’autre au même niveau, le type de zone, la comparaison à l’unité supérieure, ou ce qui s’est passé au dernier contact. Choisis une de ces questions."
       }
     }
   },

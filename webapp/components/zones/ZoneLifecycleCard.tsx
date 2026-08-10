@@ -400,7 +400,8 @@ export function ZoneLifecycleCard({
     : formatDurationShort(Math.max(Date.now() - createdMs, 0), durationLabels);
   const ageBars = barsSince(candles, zone.createdAt);
 
-  const session = formationSession(zone.createdAt, instrument);
+  // Canonical session from the payload; the client mirror is only a fallback.
+  const session = zone.session ?? formationSession(zone.createdAt, instrument);
   const fvgFill = zone.kind === 'fvg' && zone.status === 'partially_filled'
     ? fvgContactFills(zone).filter((f): f is number => f != null).pop() ?? null
     : null;

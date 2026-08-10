@@ -234,3 +234,29 @@ géométrie d'intervalles. Coût : (nb d'unités affichées − 1) lectures cach
 - **Discipline** : aucune modification des règles de détection ni des autres
   surfaces ; staging explicite (jamais `git add -A`) ; pas de force push.
 
+---
+
+# PARTIE 3 — Suivi VZ-1b (évolutions, branche `feat/vz-1b-mia-input`)
+
+Quatre évolutions demandées après merge de VZ-1 (PR #153) :
+
+1. **M.I.A — input texte libre** : ajouté, **routé localement** (`matchTopic`, mots-clés
+   fr+en → mêmes réponses factuelles) avec repli honnête si aucune correspondance —
+   **aucun appel LLM, 0 crédit**. Les faits cités restent ceux de la carte.
+2. **Session — source unique backend** : `market_calendar.session_at` (précédence
+   NY>Londres>Asie) stampe la session ; threadée via un paramètre **optionnel**
+   `instrument` de `confluence_signal_to_structure` (non-bloquant pour les autres
+   appelants/tests). Le front **lit `zone.session`** et ne retombe sur son miroir
+   client que si absente.
+3. **Données réelles — test d'intégration** : `test_structure_build_carries_contacts_
+   origin_session_and_consumed` prouve que contacts/origine/session/consumed
+   traversent **le vrai point d'entrée** `confluence_signal_to_structure` jusqu'au
+   schéma, avec la session canonique d'un instrument réel. (Le rendu marché-live
+   reste conditionné au **déploiement** — action ops.)
+4. **`AccountPanel`** : dé-flaké (timeout par-test généreux sous la suite complète en
+   env lent).
+
+Vérifs vz-1b : tsc vert · pytest 166 (régression) + 14 VZ-1 · vitest zones/parité 65 +
+composants 17 · `next build` OK (`/[locale]/zones` 10,3 kB) · **Playwright 15/15**.
+`READING_LOGIC_VERSION` reste 7 (session = champ additif du même palier, non déployé).
+

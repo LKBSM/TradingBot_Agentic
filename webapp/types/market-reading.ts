@@ -185,6 +185,8 @@ export interface OrderBlock {
   contacts?: ZoneContact[];
   /** VZ-1 — the BOS/CHOCH break this OB precedes (absent → not associated). */
   origin?: ZoneOrigin | null;
+  /** VZ-1 — formation session (canonical; front falls back to its mirror if absent). */
+  session?: string | null;
   user_flagged: boolean;
 }
 
@@ -208,6 +210,8 @@ export interface FairValueGap {
   fill_level?: number | null;
   /** VZ-1 — per-contact ledger (absent on older payloads → treat as empty). */
   contacts?: ZoneContact[];
+  /** VZ-1 — formation session (canonical; front falls back to its mirror if absent). */
+  session?: string | null;
   user_flagged: boolean;
 }
 

@@ -941,9 +941,48 @@
   border-color: var(--acc);
   color: var(--txt);
 }
+.app-shell .zmia-input {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 14px 0;
+}
+.app-shell .zmia-input input {
+  flex: 1;
+  background: var(--panel-3);
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  padding: 8px 11px;
+  font-size: 12px;
+  color: var(--txt);
+  outline: none;
+}
+.app-shell .zmia-input input::placeholder {
+  color: var(--faint);
+}
+.app-shell .zmia-input input:focus {
+  border-color: var(--acc);
+}
+.app-shell .zmia-input button {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: none;
+  background: var(--acc);
+  color: var(--bg);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+.app-shell .zmia-input button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
 .app-shell .zmia-disc {
   padding: 10px 14px;
   border-top: 1px solid var(--line);
+  margin-top: 10px;
   font-family: var(--font-mono), 'JetBrains Mono', monospace;
   font-size: 9px;
   color: var(--faint);

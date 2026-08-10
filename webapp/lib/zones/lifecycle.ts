@@ -77,6 +77,12 @@ export interface ZoneLifecycle {
   contacts: ZoneContact[];
   /** VZ-1 — the BOS/CHOCH break an OB precedes (null for FVG / not associated). */
   origin: ZoneOrigin | null;
+  /**
+   * VZ-1 — canonical formation session from the payload (asia|london|new_york),
+   * or null when the backend didn't stamp it → the card falls back to its own
+   * client mirror (`formationSession`).
+   */
+  session: string | null;
 }
 
 function obToLifecycle(ob: OrderBlock): ZoneLifecycle {
@@ -96,6 +102,7 @@ function obToLifecycle(ob: OrderBlock): ZoneLifecycle {
     isMitigated: ob.status === 'mitigated',
     contacts: ob.contacts ?? [],
     origin: ob.origin ?? null,
+    session: ob.session ?? null,
   };
 }
 
@@ -116,6 +123,7 @@ function fvgToLifecycle(fvg: FairValueGap): ZoneLifecycle {
     isMitigated: fvg.status === 'filled' || fvg.status === 'partially_filled',
     contacts: fvg.contacts ?? [],
     origin: null,
+    session: fvg.session ?? null,
   };
 }
 
