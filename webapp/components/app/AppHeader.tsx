@@ -8,7 +8,7 @@ import { LocaleToggle } from '@/components/LocaleToggle';
 import { MobileMenu } from '@/components/MobileMenu';
 import { ThemeMenu } from '@/components/theme/ThemeMenu';
 import { Badge } from '@/components/ui/badge';
-import { BRAND_NAME, BRAND_BASELINE } from '@/lib/brand';
+import { BrandLockup } from '@/components/BrandLockup';
 import { AccountMenu } from './AccountMenu';
 
 /**
@@ -30,18 +30,7 @@ export function AppHeader() {
           className="flex items-center gap-2 text-sm font-semibold tracking-tight"
           aria-label={t('header.brandAria')}
         >
-          <span
-            aria-hidden
-            className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-amber-400 to-amber-600 text-xs font-bold text-white shadow-sm"
-          >
-            M
-          </span>
-          <span className="flex flex-col leading-none">
-            <span>{BRAND_NAME}</span>
-            <span className="mt-0.5 hidden text-[10px] font-normal tracking-tight text-muted-foreground lg:block">
-              {BRAND_BASELINE}
-            </span>
-          </span>
+          <BrandLockup size="md" />
         </Link>
 
         {/* Sous sm : App/Zones/Scanner + badge + aide + langue passent dans le

@@ -461,6 +461,13 @@
   gap: 14px;
   overflow-y: auto;
 }
+/* Brand block pinned at the top of the rail (mission BRD-1). A hairline
+   separates it from the market search below; no animation, text + icon only. */
+.app-shell .railbrand {
+  padding: 1px 2px 12px;
+  margin-bottom: -2px;
+  border-bottom: 1px solid var(--line);
+}
 .app-shell .rail-lbl {
   font-size: 9.5px;
   letter-spacing: 0.7px;
