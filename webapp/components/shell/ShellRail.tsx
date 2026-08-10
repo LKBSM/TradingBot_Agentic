@@ -16,6 +16,7 @@ import {
   SUPPORTED_INSTRUMENTS,
   type Combo,
 } from '@/lib/market-reading/store';
+import { BrandLockup } from '@/components/BrandLockup';
 import { SearchField, Freshbox } from './primitives';
 
 const DEFAULT_COMBO: Combo = { instrument: DEFAULT_INSTRUMENT, timeframe: DEFAULT_TIMEFRAME };
@@ -102,6 +103,10 @@ export function ShellRail({ activeSpace }: { activeSpace: string }) {
 
   return (
     <aside className="rail" aria-label={t('app.sidebar.navAria')}>
+      {/* Brand (mission BRD-1) — wordmark + developed acronym, above the market
+          search. Presentational only; the market/route navigation is untouched. */}
+      <BrandLockup size="sm" className="railbrand" />
+
       <SearchField
         value={query}
         onChange={(e) => setQuery(e.target.value)}

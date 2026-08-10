@@ -4,6 +4,7 @@ import { LineChart, ListTree, MessageCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import * as React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { BrandLockup } from '@/components/BrandLockup';
 import { AppChatSidebar } from './AppChatSidebar';
 import { InstrumentSidebar } from './InstrumentSidebar';
 import { ReadingColumn } from './ReadingColumn';
@@ -57,8 +58,13 @@ export function MobileWorkspace({
          keyboard opens, keeping the input visible. */
       className="flex h-[calc(100svh-3.5rem)] flex-col"
     >
-      <header className="shrink-0 border-b border-border/60 bg-background/95 px-4 py-3">
-        <p className="truncate text-sm font-semibold text-foreground">
+      {/* On phones the product rail is hidden, so this header carries the brand
+          (mission BRD-1) — the equivalent top-of-rail placement. The active
+          combo stays as functional context, to the right; the brand is added,
+          it does not replace it. */}
+      <header className="shrink-0 border-b border-border/60 bg-background/95 px-4 py-2.5">
+        <BrandLockup size="sm" />
+        <p className="mt-1 truncate text-xs font-medium text-muted-foreground">
           {headerLabel}
         </p>
       </header>
