@@ -87,7 +87,7 @@ class AccountError(ValueError):
 class AccountStore:
     """Thread-safe account store with SQLite WAL persistence."""
 
-    SCHEMA_VERSION = 5
+    SCHEMA_VERSION = 6
 
     def __init__(self, db_path: str = "./data/accounts.db"):
         self._db_path = Path(db_path)
@@ -249,6 +249,19 @@ class AccountStore:
                 );
                 CREATE INDEX IF NOT EXISTS idx_email_verifications_account
                     ON email_verifications(account_id);
+            """)
+        if from_v < 6:
+            # PAY-1 / Loi 25 — renewal-notice ledger. ONE notice per
+            # (account, period_end, kind) so the 30-day-before-annual-renewal
+            # email is idempotent under a daily job run more than once.
+            conn.executescript("""
+                CREATE TABLE IF NOT EXISTS renewal_notices (
+                    account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+                    period_end REAL    NOT NULL,
+                    kind       TEXT    NOT NULL,
+                    sent_at    REAL    NOT NULL,
+                    PRIMARY KEY (account_id, period_end, kind)
+                );
             """)
         conn.execute(
             "INSERT OR REPLACE INTO schema_version (version) VALUES (?)",
@@ -1079,6 +1092,69 @@ class AccountStore:
                     (account_id,),
                 )
                 return self._row_to_subscription(cur.fetchone())
+            finally:
+                conn.close()
+
+    def renewals_due(
+        self,
+        price_id: str,
+        *,
+        now: float,
+        lead_seconds: float,
+        kind: str = "annual_30d",
+    ) -> List[Dict[str, Any]]:
+        """Active subscriptions of ``price_id`` renewing within (now, now+lead]
+        for which no ``kind`` notice was yet recorded for that exact period end.
+
+        Excludes subscriptions already set to cancel at period end (no renewal to
+        warn about). Returns dicts ``{account_id, email, period_end, price_id}``.
+        """
+        lo, hi = now, now + lead_seconds
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                cur = conn.execute(
+                    "SELECT s.account_id AS account_id, a.email AS email, "
+                    "       s.current_period_end AS period_end, s.price_id AS price_id "
+                    "FROM subscriptions s JOIN accounts a ON a.id = s.account_id "
+                    "WHERE s.price_id = ? "
+                    "  AND s.status IN ('active','trialing') "
+                    "  AND s.current_period_end IS NOT NULL "
+                    "  AND s.current_period_end > ? AND s.current_period_end <= ? "
+                    "  AND s.cancel_at_period_end = 0 "
+                    "  AND a.is_active = 1 "
+                    "  AND NOT EXISTS (SELECT 1 FROM renewal_notices r "
+                    "     WHERE r.account_id = s.account_id "
+                    "       AND r.period_end = s.current_period_end AND r.kind = ?)",
+                    (price_id, lo, hi, kind),
+                )
+                rows = cur.fetchall()
+            finally:
+                conn.close()
+        return [
+            {
+                "account_id": r["account_id"],
+                "email": r["email"],
+                "period_end": r["period_end"],
+                "price_id": r["price_id"],
+            }
+            for r in rows
+        ]
+
+    def record_renewal_notice(
+        self, account_id: int, period_end: float, kind: str, *, now: float
+    ) -> bool:
+        """Record that a renewal notice was sent. Idempotent (INSERT OR IGNORE);
+        returns True if newly recorded, False if it already existed."""
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                cur = conn.execute(
+                    "INSERT OR IGNORE INTO renewal_notices "
+                    "(account_id, period_end, kind, sent_at) VALUES (?, ?, ?, ?)",
+                    (account_id, period_end, kind, now),
+                )
+                return cur.rowcount > 0
             finally:
                 conn.close()
 
