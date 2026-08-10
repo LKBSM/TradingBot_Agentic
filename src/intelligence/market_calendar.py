@@ -157,6 +157,48 @@ def sessions_for(instrument: str) -> tuple[SessionWindow, ...]:
     return hours_for(instrument).sessions
 
 
+def _in_session_window(s: SessionWindow, t: time) -> bool:
+    """Whether wall-clock ``t`` is inside session window ``s`` (which may wrap
+    past midnight, as the Asian session does)."""
+    if s.start <= s.end:
+        return s.start <= t < s.end
+    return t >= s.start or t < s.end
+
+
+# Precedence when windows overlap (the 08:00–11:30 London/NY overlap): New York
+# is the anchor session, then London, then Asia — matching the /zones client
+# mirror (webapp/lib/zones/formation-session.ts).
+_SESSION_PRECEDENCE = {"new_york": 0, "london": 1, "asia": 2}
+
+
+def session_at(instrument: str, when: datetime) -> Optional[str]:
+    """The trading session ``when`` falls in for ``instrument`` — one of
+    ``asia`` / ``london`` / ``new_york`` — or None for a continuous market
+    (crypto) or an off-session moment. VZ-1: the single source of the zone's
+    formation session (the frontend reads this and only falls back to its own
+    mirror on older payloads). Read-only convention, no market data.
+
+    ``when`` is converted to the instrument's wall-clock (``America/New_York`` by
+    default); a naive datetime is assumed UTC."""
+    sessions = sessions_for(instrument)
+    if not sessions:
+        return None
+    if when.tzinfo is None:
+        when = when.replace(tzinfo=timezone.utc)
+    try:
+        from zoneinfo import ZoneInfo
+
+        local = when.astimezone(ZoneInfo(hours_for(instrument).tz))
+    except Exception:  # pragma: no cover — defensive tz lookup
+        return None
+    t = local.time()
+    matched = [s.name for s in sessions if _in_session_window(s, t)]
+    if not matched:
+        return None
+    matched.sort(key=lambda n: _SESSION_PRECEDENCE.get(n, 9))
+    return matched[0]
+
+
 # --------------------------------------------------------------------------- #
 # Holidays (versioned config, age-based fallback beyond coverage)
 # --------------------------------------------------------------------------- #

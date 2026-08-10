@@ -54,5 +54,7 @@ describe('AccountPanel — logout invalidates the Router Cache', () => {
     );
     // A logged-in panel must never trigger the logged-out redirect.
     expect(h.replace).not.toHaveBeenCalled();
-  });
+    // Generous timeout: the default 5s can be exceeded under a loaded full-suite
+    // run in this slow jsdom env (the assertions themselves are fast).
+  }, 20_000);
 });

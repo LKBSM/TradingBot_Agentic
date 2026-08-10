@@ -135,6 +135,29 @@ describe('ZonesWorkspace (VZ-1)', () => {
     );
   }, 20000);
 
+  it('the M.I.A free-text input routes LOCALLY to a factual answer (no LLM)', async () => {
+    renderZones();
+    await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(4));
+    const body = document.querySelector('.zmia-body')!;
+    const input = screen.getByPlaceholderText('Pose ta question sur cette zone…');
+    fireEvent.change(input, { target: { value: 'explique moi cette zone' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Envoyer' }));
+    await waitFor(() => expect(body.querySelectorAll('.bub').length).toBe(3));
+    // Default subject is an OB → the concept explanation, drawn from the card.
+    expect(body.querySelectorAll('.bub.a')[1]!.textContent ?? '').toMatch(/Order Block|Fair Value Gap/);
+  });
+
+  it('an unrecognised question gets the honest fallback, never a fabrication', async () => {
+    renderZones();
+    await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(4));
+    const body = document.querySelector('.zmia-body')!;
+    const input = screen.getByPlaceholderText('Pose ta question sur cette zone…');
+    fireEvent.change(input, { target: { value: 'zzzzqwerty' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Envoyer' }));
+    await waitFor(() => expect(body.querySelectorAll('.bub').length).toBe(3));
+    expect(body.querySelectorAll('.bub.a')[1]!.textContent ?? '').toMatch(/à partir de ses faits/i);
+  });
+
   it('never renders « chevauche » nor any judgement wording', async () => {
     const { container } = renderZones();
     await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(4));

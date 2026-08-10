@@ -103,6 +103,30 @@ function answerFor(
 
 const TOPICS: Topic[] = ['whatElse', 'explainKind', 'compareUpper', 'lastContact'];
 
+/**
+ * Route a free-text question to one of the closed topics by keyword — LOCAL, no
+ * network, no LLM (the user runs at zero credits by choice). Bilingual stems
+ * (fr + en). Returns null when nothing matches → the panel answers with an honest
+ * "here is what I can describe" fallback rather than fabricating an interpretation.
+ * M.I.A stays a describer bound to the card's data; it never judges or predicts.
+ */
+function matchTopic(raw: string): Topic | null {
+  const t = raw
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, ''); // strip accents for robust matching
+  const has = (re: RegExp) => re.test(t);
+  // Order matters: an explicit "explain/what is" wins over a generic "level".
+  if (has(/explique|explain|c ?est quoi|qu ?est-?ce|what ?is|definition|type de zone|kind of/))
+    return 'explainKind';
+  if (has(/superieur|au-?dessus.*unite|upper|higher|compare|comparer|h1|h4|daily|plus grande? unite/))
+    return 'compareUpper';
+  if (has(/dernier|last|contact|touche|entre|entree|passe|happened|penetr/)) return 'lastContact';
+  if (has(/autre|meme (niveau|endroit)|else|around|level|nearby|proximite|liquidit|confluen/))
+    return 'whatElse';
+  return null;
+}
+
 interface Turn {
   q: string;
   a: string;
@@ -121,11 +145,13 @@ export function ZoneMiaPanel({
   const fmt = useReadingFormatters();
   const locale = useLocale();
   const [turns, setTurns] = React.useState<Turn[]>([]);
+  const [draft, setDraft] = React.useState('');
 
   // Switching subject clears the (local) conversation — a new zone, a new topic.
   const zoneId = zone?.id ?? null;
   React.useEffect(() => {
     setTurns([]);
+    setDraft('');
   }, [zoneId]);
 
   if (!zone) {
@@ -147,6 +173,19 @@ export function ZoneMiaPanel({
     const q = t(`mia.suggest.${topic}`);
     const a = answerFor(topic, zone, ctx, t, fmt, locale);
     setTurns((prev) => [...prev, { q, a }]);
+  };
+
+  // Free-text: route LOCALLY to a topic (no network, no LLM). An unrecognised
+  // question gets an honest « here is what I can describe » answer — never an
+  // invented interpretation.
+  const submitDraft = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = draft.trim();
+    if (!q) return;
+    const topic = matchTopic(q);
+    const a = topic ? answerFor(topic, zone, ctx, t, fmt, locale) : t('mia.answer.fallback');
+    setTurns((prev) => [...prev, { q, a }]);
+    setDraft('');
   };
 
   const prox = zoneProximity(zone, ctx.price);
@@ -195,6 +234,19 @@ export function ZoneMiaPanel({
           </button>
         ))}
       </div>
+
+      {/* Free-text — routed locally to the same factual answers (0 credit). */}
+      <form className="zmia-input" onSubmit={submitDraft}>
+        <input
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          placeholder={t('mia.input.placeholder')}
+          aria-label={t('mia.input.placeholder')}
+        />
+        <button type="submit" aria-label={t('mia.input.send')} disabled={!draft.trim()}>
+          →
+        </button>
+      </form>
 
       <div className="zmia-disc">{t('mia.disclaimer')}</div>
     </aside>

@@ -840,6 +840,7 @@ class MarketReadingAssembler:
             smc_features=smc_features,
             bar_ts=actual_close,
             current_price=current_price,
+            instrument=instrument,
         )
 
         mtf_candles: Mapping[str, Sequence[Any]] = {}
