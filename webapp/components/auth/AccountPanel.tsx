@@ -4,7 +4,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import * as React from 'react';
-import { AuthError, updateProfile } from '@/lib/auth/api-client';
+import {
+  AuthError,
+  changePassword,
+  deleteAccount,
+  resendVerification,
+  updateProfile,
+} from '@/lib/auth/api-client';
 import { useAuth } from '@/lib/auth/store';
 import { useLocalizedHref } from '@/lib/i18n/href';
 import { useLocaleSwitch } from '@/lib/i18n/use-locale-switch';
@@ -37,6 +43,11 @@ export function AccountPanel() {
   const [success, setSuccess] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
   const savingRef = React.useRef(false);
+
+  const [changingPassword, setChangingPassword] = React.useState(false);
+  const [confirmingDelete, setConfirmingDelete] = React.useState(false);
+  const [busy, setBusy] = React.useState(false);
+  const [verifyNote, setVerifyNote] = React.useState<string | null>(null);
 
   // Redirect to login ONLY on a confirmed logged-out state (probe returned 401).
   // A network/5xx failure (probeFailed) must NOT eject a possibly-valid user —
@@ -100,6 +111,55 @@ export function AccountPanel() {
     router.push(lh('/'));
   }
 
+  async function onChangePassword(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (busy) return;
+    setError(null);
+    setSuccess(null);
+    const form = new FormData(e.currentTarget);
+    setBusy(true);
+    try {
+      await changePassword(
+        String(form.get('current') ?? ''),
+        String(form.get('next') ?? ''),
+      );
+      await refresh();
+      setSuccess(t('passwordChanged'));
+      setChangingPassword(false);
+    } catch (err) {
+      setError(err instanceof AuthError ? err.message : t('passwordError'));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onResendVerification() {
+    setError(null);
+    setVerifyNote(null);
+    try {
+      await resendVerification();
+      setVerifyNote(t('verifyResent'));
+    } catch (err) {
+      setError(err instanceof AuthError ? err.message : t('verifyError'));
+    }
+  }
+
+  async function onDeleteAccount() {
+    if (busy) return;
+    setError(null);
+    setBusy(true);
+    try {
+      await deleteAccount();
+      // Account + session are gone — leave the product for the public site.
+      router.refresh();
+      router.push(lh('/'));
+    } catch (err) {
+      setError(err instanceof AuthError ? err.message : t('deleteError'));
+      setBusy(false);
+      setConfirmingDelete(false);
+    }
+  }
+
   return (
     <div className="pagewrap" style={{ maxWidth: 760 }}>
       <div className="pghead">
@@ -108,6 +168,25 @@ export function AccountPanel() {
           <div className="sub">{t('subtitle')}</div>
         </div>
       </div>
+
+      {/* ── Vérification e-mail (obligatoire avant accès) ──────────────── */}
+      {!account.email_verified && (
+        <div className="card" role="status">
+          <div className="card-h">
+            <ShieldIcon />
+            <h3>{t('verifyBannerTitle')}</h3>
+          </div>
+          <div className="setrow">
+            <div className="sk">
+              <span>{t('verifyBannerBody')}</span>
+              {verifyNote && <FormSuccess message={verifyNote} />}
+            </div>
+            <button type="button" className="btn" onClick={onResendVerification}>
+              {t('verifyResend')}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Compte ─────────────────────────────────────────────────────── */}
       <div className="card">
@@ -164,14 +243,50 @@ export function AccountPanel() {
         <div className="setrow">
           <div className="sk">
             <b>{t('passwordRow')}</b>
-            <span>
-              {t('passwordMasked')} · {t('comingSoon')}
-            </span>
+            <span>{t('passwordMasked')}</span>
           </div>
-          <button type="button" className="btn" disabled aria-disabled="true">
-            {t('edit')}
+          <button
+            type="button"
+            className="btn"
+            onClick={() => {
+              setError(null);
+              setSuccess(null);
+              setChangingPassword((v) => !v);
+            }}
+          >
+            {changingPassword ? t('editCancel') : t('passwordChange')}
           </button>
         </div>
+
+        {changingPassword && (
+          <form onSubmit={onChangePassword} className="setrow" noValidate>
+            <div className="sk" style={{ display: 'grid', gap: 6 }}>
+              <FormError message={error} />
+              <input
+                className="input"
+                name="current"
+                type="password"
+                autoComplete="current-password"
+                placeholder={t('passwordCurrent')}
+                aria-label={t('passwordCurrent')}
+                required
+              />
+              <input
+                className="input"
+                name="next"
+                type="password"
+                autoComplete="new-password"
+                minLength={10}
+                placeholder={t('passwordNew')}
+                aria-label={t('passwordNew')}
+                required
+              />
+            </div>
+            <button type="submit" className="btn primary" disabled={busy}>
+              {busy ? tAuth('account.saving') : tAuth('account.save')}
+            </button>
+          </form>
+        )}
 
         <div className="setrow">
           <div className="sk">
@@ -250,14 +365,46 @@ export function AccountPanel() {
         <div className="setrow">
           <div className="sk">
             <b>{t('deleteRow')}</b>
-            <span>
-              {t('deleteValue')} · {t('comingSoon')}
-            </span>
+            <span>{t('deleteValue')}</span>
           </div>
-          <button type="button" className="btn danger" disabled aria-disabled="true">
-            {t('delete')}
-          </button>
+          {!confirmingDelete ? (
+            <button
+              type="button"
+              className="btn danger"
+              onClick={() => {
+                setError(null);
+                setConfirmingDelete(true);
+              }}
+            >
+              {t('delete')}
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="btn"
+              onClick={() => setConfirmingDelete(false)}
+            >
+              {t('editCancel')}
+            </button>
+          )}
         </div>
+
+        {confirmingDelete && (
+          <div className="setrow">
+            <div className="sk" style={{ display: 'grid', gap: 6 }}>
+              <FormError message={error} />
+              <span>{t('deleteConfirm')}</span>
+            </div>
+            <button
+              type="button"
+              className="btn danger"
+              onClick={onDeleteAccount}
+              disabled={busy}
+            >
+              {busy ? tAuth('account.saving') : t('deleteConfirmButton')}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

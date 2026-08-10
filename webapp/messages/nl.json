@@ -1815,6 +1815,13 @@
       "consentMeta": "v{version} · {date}",
       "seeDocs": "Bekijk de <terms>Voorwaarden</terms> en het <privacy>Privacybeleid</privacy>.",
       "logout": "Uitloggen"
+    },
+    "verifyEmail": {
+      "title": "Email verification",
+      "verifying": "Verifying…",
+      "success": "Email confirmed. Your access is activated.",
+      "error": "Invalid or expired verification link.",
+      "cta": "Go to my dashboard"
     }
   },
   "billing": {
@@ -1943,7 +1950,20 @@
       "export": "Exporteren",
       "deleteRow": "Account verwijderen",
       "deleteValue": "Verwijder je account en gegevens definitief.",
-      "delete": "Verwijderen"
+      "delete": "Verwijderen",
+      "verifyBannerTitle": "Confirm your email address",
+      "verifyBannerBody": "A confirmation link was sent to you. Confirm your email to unlock access.",
+      "verifyResend": "Resend email",
+      "verifyResent": "If verification is needed, an email has just been sent.",
+      "verifyError": "Could not send the email right now.",
+      "passwordChange": "Change",
+      "passwordCurrent": "Current password",
+      "passwordNew": "New password (min. 10 characters)",
+      "passwordChanged": "Password changed. Your other devices were signed out.",
+      "passwordError": "Could not change the password.",
+      "deleteConfirm": "This is permanent: your account and data will be deleted, and your subscription canceled. Confirm?",
+      "deleteConfirmButton": "Delete permanently",
+      "deleteError": "Could not delete the account right now."
     },
     "chat": {
       "asideAria": "M.I.A Agent-assistent",

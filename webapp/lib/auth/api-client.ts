@@ -185,4 +185,40 @@ export function confirmPasswordReset(
   });
 }
 
+/** Confirm the email-verification token from the emailed link (PAY-1). */
+export function confirmEmailVerification(
+  token: string,
+): Promise<{ ok: boolean; message: string }> {
+  return request('/verify-email/confirm', {
+    method: 'POST',
+    body: JSON.stringify({ token }),
+  });
+}
+
+/** Re-send the verification email to the logged-in account. */
+export function resendVerification(): Promise<{ ok: boolean; message: string }> {
+  return request('/verify-email/resend', { method: 'POST' });
+}
+
+/** Change the password after confirming the current one. Returns the fresh
+ *  account (a new session is minted; other devices are signed out). */
+export function changePassword(
+  currentPassword: string,
+  newPassword: string,
+): Promise<Account> {
+  return request<Account>('/password', {
+    method: 'POST',
+    body: JSON.stringify({
+      current_password: currentPassword,
+      new_password: newPassword,
+    }),
+  });
+}
+
+/** Delete the account and all its data (Loi 25). Cancels any Stripe
+ *  subscription first server-side. The session is cleared on success. */
+export function deleteAccount(): Promise<{ ok: boolean; message: string }> {
+  return request('/account', { method: 'DELETE' });
+}
+
 export { readDetail };
