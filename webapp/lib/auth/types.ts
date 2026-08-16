@@ -19,7 +19,7 @@ export interface Account {
 }
 
 export interface RegisterInput {
-  username: string;
+  // PAY-3: no username — identity is the email; the server derives a username.
   email: string;
   password: string;
   age_confirmed: boolean;

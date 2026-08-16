@@ -223,4 +223,8 @@ class TestNoLocalhostRedirectInProduction:
             assert "localhost" not in u, u
             assert u.startswith("https://"), u
         assert account_billing._success_url() == "https://mia.markets/abonnement?status=success"
-        assert google_auth._redirect_uri() == "https://api.mia.markets/api/auth/google/callback"
+        # PAY-3: the Google callback now defaults to the FRONTEND origin (same
+        # origin as /start, which the browser proxies to the backend) so the CSRF
+        # state cookie — set for the front origin — is presented to the callback.
+        # Routing it to the backend origin was the silent-failure bug.
+        assert google_auth._redirect_uri() == "https://mia.markets/api/auth/google/callback"

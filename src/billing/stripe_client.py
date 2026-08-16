@@ -391,10 +391,19 @@ class StripeClient:
     # ------------------------------------------------------------------
 
     def verify_webhook(self, *, body: bytes, signature: str) -> dict:
-        """Verify the Stripe-Signature header and return the parsed event.
+        """Verify the Stripe-Signature header and return the event as a plain dict.
 
         Raises ``ValueError`` on any failure — controllers should catch
         and respond with 400.
+
+        PAY-3: ``construct_event`` returns a ``stripe.Event`` object whose
+        ``.get()`` raises ``AttributeError`` — but every downstream parser
+        (``parse_account_event`` / ``parse_webhook_event``) treats the result as
+        a plain dict and calls ``.get(...)``. Passing the ``Event`` object through
+        would 500 on EVERY real webhook, so the subscription would never persist
+        and a paying customer would be locked out ("paid but no access"). The
+        fake test client returns ``json.loads(body)``; we now return the SAME
+        pure-dict shape after the signature check so prod and tests agree.
         """
         if not self._webhook_secret:
             raise RuntimeError(
@@ -402,13 +411,17 @@ class StripeClient:
             )
         stripe = self._require()
         try:
-            return stripe.Webhook.construct_event(
+            # Verifies the signature (raises on mismatch); we ignore the returned
+            # Event object and use the raw, already-validated JSON body.
+            stripe.Webhook.construct_event(
                 payload=body,
                 sig_header=signature,
                 secret=self._webhook_secret,
             )
         except Exception as exc:
             raise ValueError(f"webhook verification failed: {exc}") from exc
+        import json as _json
+        return _json.loads(body.decode("utf-8") if isinstance(body, bytes) else body)
 
 
 __all__ = [

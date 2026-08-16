@@ -44,7 +44,6 @@ describe('register', () => {
   it('POSTs to /api/auth/register and returns the account', async () => {
     fetchMock.mockResolvedValue(jsonResponse(201, ACCOUNT));
     const acc = await register({
-      username: 'alice',
       email: 'alice@example.com',
       password: 'longpassword1',
       age_confirmed: true,
@@ -63,7 +62,6 @@ describe('register', () => {
     );
     await expect(
       register({
-        username: 'alice',
         email: 'a@b.co',
         password: 'longpassword1',
         age_confirmed: true,
