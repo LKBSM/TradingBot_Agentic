@@ -1874,7 +1874,21 @@
     "suspendedNotice": "Accès suspendu à la suite d'un remboursement ou d'un litige. Contacte le support au besoin.",
     "expiredNotice": "Ton abonnement a expiré. Abonne-toi à nouveau pour retrouver l'accès.",
     "manageHint": "Changer de formule, mettre à jour ta carte, télécharger tes factures ou résilier — tout se fait dans le portail Stripe.",
-    "reactivate": "Se réabonner"
+    "reactivate": "Se réabonner",
+    "activateTitle": "Active ton compte",
+    "activateIntro": "Choisis ta formule pour ouvrir MIA Markets. Ton accès s'active dès le paiement confirmé.",
+    "reactivateTitle": "Réactive ton accès",
+    "monthlyName": "Mensuel",
+    "annualName": "Annuel",
+    "perMonth": "par mois",
+    "annualBilledNote": "facturé {total} {currency} par an",
+    "bestValue": "Meilleure offre",
+    "savePerYear": "Économise {amount} {currency} par an",
+    "securedByStripe": "Paiement sécurisé par Stripe. Aucune donnée de carte n'est conservée chez nous.",
+    "legalRenew": "Renouvellement automatique, résiliable à tout moment.",
+    "legalTool": "Outil d'information et d'éducation — ni conseil en investissement, ni signal de trading.",
+    "legalRisk": "Le trading comporte un risque de perte.",
+    "legalAge": "Réservé aux personnes de 18 ans et plus."
   },
   "access": {
     "paywall": {
