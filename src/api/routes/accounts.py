@@ -87,6 +87,15 @@ class ResetConfirmBody(BaseModel):
     new_password: str = Field(..., min_length=10, max_length=256)
 
 
+class VerifyEmailConfirmBody(BaseModel):
+    token: str = Field(..., min_length=1, max_length=512)
+
+
+class PasswordChangeBody(BaseModel):
+    current_password: str = Field(..., min_length=1, max_length=256)
+    new_password: str = Field(..., min_length=10, max_length=256)
+
+
 class ConsentOut(BaseModel):
     doc: str
     version: str
@@ -99,6 +108,7 @@ class AccountOut(BaseModel):
     email: str
     role: str
     age_confirmed: bool
+    email_verified: bool = True
     created_at: str
     consents: List[ConsentOut] = Field(default_factory=list)
 
@@ -163,6 +173,7 @@ def _account_out(store: AccountStore, account: Dict[str, Any]) -> AccountOut:
         email=account["email"],
         role=account["role"],
         age_confirmed=account["age_confirmed"],
+        email_verified=account.get("email_verified", True),
         created_at=account["created_at"],
         consents=[ConsentOut(**c) for c in consents],
     )
@@ -248,10 +259,13 @@ async def register(payload: RegisterRequest, request: Request, response: Respons
             )
         _raise_account_error(exc)
 
-    # Auto-login on successful registration.
+    # Auto-login on successful registration. The account is UNVERIFIED — the
+    # access gate blocks market data until the emailed link is confirmed (PAY-1);
+    # the session lets the UI show the "verify your email" state + resend.
     raw_token = store.create_session(account["id"])
     set_session_cookie(response, raw_token)
-    logger.info("registered + logged in account id=%s", account["id"])
+    _dispatch_verification_email(request, account["id"], account["email"])
+    logger.info("registered + logged in account id=%s (unverified)", account["id"])
     return _account_out(store, account)
 
 
@@ -354,6 +368,115 @@ async def password_reset_confirm(payload: ResetConfirmBody, request: Request):
     return MessageOut(message="Mot de passe réinitialisé. Vous pouvez vous connecter.")
 
 
+# =============================================================================
+# Email verification (PAY-1 — mandatory before access)
+# =============================================================================
+
+@router.post("/verify-email/confirm", response_model=MessageOut)
+async def verify_email_confirm(payload: VerifyEmailConfirmBody, request: Request):
+    """Confirm an email-verification token. Single-use; 400 on invalid/expired."""
+    store = _store(request)
+    if not store.consume_email_verification(payload.token):
+        raise HTTPException(status_code=400, detail="Lien de vérification invalide ou expiré.")
+    return MessageOut(message="Adresse e-mail confirmée. Ton accès est activé.")
+
+
+@router.post("/verify-email/resend", response_model=MessageOut)
+async def verify_email_resend(
+    request: Request,
+    account: Dict[str, Any] = Depends(require_account),
+):
+    """Re-send the verification email to the logged-in account (throttled).
+
+    Always answers the same whether or not a token was needed (already verified →
+    no email). Requires a session so it can't be used to spam arbitrary inboxes.
+    """
+    ip_key = f"verify:ip:{client_ip(request)}"
+    _enforce_throttle(request, ip_key)
+    _record_throttle(request, ip_key)
+    if not account.get("email_verified", False):
+        _dispatch_verification_email(request, account["id"], account["email"])
+    return MessageOut(
+        message="Si une vérification est nécessaire, un e-mail vient d'être envoyé."
+    )
+
+
+# =============================================================================
+# Password change (authenticated) + account deletion (Loi 25 erasure)
+# =============================================================================
+
+@router.post("/password", response_model=AccountOut)
+async def change_password(
+    payload: PasswordChangeBody,
+    request: Request,
+    response: Response,
+    account: Dict[str, Any] = Depends(require_account),
+):
+    """Change the password after verifying the current one.
+
+    All sessions are revoked (other devices signed out); a fresh session is
+    minted for the current device so the actor stays logged in.
+    """
+    store = _store(request)
+    # Throttle by IP + account so a hijacked session can't brute-force the
+    # current password. Only failures are recorded (a success clears them).
+    ip_key = f"pwchange:ip:{client_ip(request)}"
+    id_key = f"pwchange:id:{account['id']}"
+    _enforce_throttle(request, ip_key, id_key)
+    try:
+        ok = store.change_password(
+            account["id"], payload.current_password, payload.new_password
+        )
+    except AccountError as exc:
+        _raise_account_error(exc)
+    if not ok:
+        _record_throttle(request, ip_key, id_key)
+        raise HTTPException(status_code=400, detail="Mot de passe actuel incorrect.")
+    _clear_throttle(request, ip_key, id_key)
+    # change_password revoked every session — re-mint one for this device.
+    raw_token = store.create_session(account["id"])
+    set_session_cookie(response, raw_token)
+    fresh = store.get_account(account["id"]) or account
+    return _account_out(store, fresh)
+
+
+@router.delete("/account", response_model=MessageOut)
+async def delete_account(
+    request: Request,
+    response: Response,
+    account: Dict[str, Any] = Depends(require_account),
+):
+    """Delete the account and ALL its data (Loi 25 right to erasure).
+
+    Cancels the Stripe subscription FIRST (so deletion never leaves an active
+    subscription billing a deleted user), then hard-deletes the account (cascade
+    removes sessions, consents, subscription row, tokens). No card data is stored
+    here, so nothing card-related survives. The session cookie is cleared.
+    """
+    store = _store(request)
+    account_id = account["id"]
+
+    # Cancel any live Stripe subscription before erasing the linkage.
+    sub_id = store.stripe_subscription_id_for(account_id)
+    if sub_id:
+        stripe = getattr(request.app.state.app_state, "stripe_client", None)
+        if stripe is not None and getattr(stripe, "is_configured", False):
+            try:
+                stripe.cancel_subscription(sub_id)
+            except Exception as exc:
+                logger.exception("cancel-on-delete failed for account id=%s", account_id)
+                # Do NOT delete while an active subscription may keep billing.
+                raise HTTPException(
+                    status_code=502,
+                    detail="Impossible d'annuler l'abonnement pour le moment. Réessaie.",
+                ) from exc
+
+    store.delete_account(account_id)
+    clear_session_cookie(response)
+    logger.info("account id=%s deleted at user request (Loi 25)", account_id)
+    return MessageOut(message="Ton compte et tes données ont été supprimés.")
+
+
 @router.get("/access", response_model=Dict[str, Any])
 async def access_status(
     request: Request,
@@ -428,6 +551,63 @@ def _send_reset_email(to_email: str, reset_url: str) -> bool:
             server.login(user, password)
         server.send_message(msg)
     return True
+
+
+def _send_verification_email(to_email: str, verify_url: str) -> bool:
+    """Send the email-verification link over SMTP when configured (else no-op).
+
+    Same env-gated, best-effort posture as the reset email — never logs the token.
+    """
+    host = os.environ.get("SMTP_HOST")
+    if not host:
+        return False
+    import smtplib
+    from email.message import EmailMessage
+
+    msg = EmailMessage()
+    msg["Subject"] = "Confirmez votre adresse e-mail — MIA Markets"
+    msg["From"] = os.environ.get(
+        "SMTP_FROM", os.environ.get("SMTP_USER", "no-reply@mia.markets")
+    )
+    msg["To"] = to_email
+    msg.set_content(
+        "Bienvenue sur MIA Markets.\n\n"
+        "Confirmez votre adresse e-mail pour activer l'accès :\n"
+        f"{verify_url}\n\n"
+        "Si vous n'êtes pas à l'origine de cette inscription, ignorez cet e-mail. "
+        "Le lien expire après 24 heures."
+    )
+    port = int(os.environ.get("SMTP_PORT", "587"))
+    user = os.environ.get("SMTP_USER")
+    password = os.environ.get("SMTP_PASSWORD")
+    with smtplib.SMTP(host, port, timeout=10) as server:
+        server.starttls()
+        if user and password:
+            server.login(user, password)
+        server.send_message(msg)
+    return True
+
+
+def _dispatch_verification_email(request: Request, account_id: int, email: str) -> None:
+    """Issue + email an email-verification token (out-of-band). Degrades to a log
+    line when SMTP is not configured (never logs the token)."""
+    store = _store(request)
+    raw_token = store.create_email_verification(account_id)
+    if raw_token is None:
+        return  # already verified or inactive — nothing to send
+    verify_url = f"{_reset_base_url()}/verifier-email?token={raw_token}"
+    if email:
+        try:
+            if _send_verification_email(email, verify_url):
+                logger.info("verification email sent for account id=%s", account_id)
+                return
+        except Exception:
+            logger.exception("verification email send failed for account id=%s", account_id)
+    logger.info(
+        "verification requested for account id=%s — email delivery not configured "
+        "(token not logged)",
+        account_id,
+    )
 
 
 def _dispatch_reset_token(request: Request, identifier: str, raw_token: str) -> None:

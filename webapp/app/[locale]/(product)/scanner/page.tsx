@@ -30,12 +30,11 @@ export default async function ScannerPage({
 }) {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'pages' });
-  // The multi-market scanner is a paid feature: require full access (subscriber
-  // or owner). Visitors → login; free accounts → a clean upsell paywall. Open
-  // while the gate is OFF (testing phase).
+  // The scanner requires an active subscription (PAY-1, the default). Visitors →
+  // login; unsubscribed accounts → a clean upsell paywall. Open while the gate
+  // is OFF (testing phase).
   return (
     <SubscriptionGate
-      requireFullAccess
       paywallTitle={t('scanner.paywallTitle')}
       paywallDescription={t('scanner.paywallDescription')}
     >

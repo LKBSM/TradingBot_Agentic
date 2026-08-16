@@ -21,7 +21,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 async function mockAccess(page: Page) {
   await page.route('**/api/access/me', (r) =>
-    r.fulfill({ json: { has_full_access: true, entitlements: { instruments: [], timeframes: [] } } }),
+    r.fulfill({ json: { authenticated: true, gate_enforced: false, beta_lockdown: false, must_login: false, is_owner: true, has_access: true, subscription_required: false } }),
   );
   await page.route('**/api/auth/me', (r) => r.fulfill({ json: { account: null } }));
   // The classic scanner auto-scans; keep it deterministic and offline.

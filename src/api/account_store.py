@@ -61,6 +61,9 @@ VALID_CONSENT_DOCS = ("terms", "privacy")
 # Default session lifetime (30 days) and reset-token lifetime (1 hour).
 DEFAULT_SESSION_TTL_S = 30 * 86400.0
 DEFAULT_RESET_TTL_S = 3600.0
+# Email-verification links live longer than reset links — a new user may not act
+# immediately. 24 hours.
+DEFAULT_VERIFY_TTL_S = 24 * 3600.0
 
 
 class AccountError(ValueError):
@@ -84,7 +87,7 @@ class AccountError(ValueError):
 class AccountStore:
     """Thread-safe account store with SQLite WAL persistence."""
 
-    SCHEMA_VERSION = 3
+    SCHEMA_VERSION = 6
 
     def __init__(self, db_path: str = "./data/accounts.db"):
         self._db_path = Path(db_path)
@@ -195,10 +198,10 @@ class AccountStore:
                 );
             """)
         if from_v < 3:
-            # Subscription-gate mission ③ — per-account daily chat counter that
-            # backs the freemium quota (free tier = N messages/day). ONE row per
-            # (account, UTC day); enforcement lives in ``entitlements``. No PII,
-            # just a count — old days can be pruned at will.
+            # Per-account daily chat counter (originally the freemium quota).
+            # PAY-1 is paid-only (chat is unlimited for subscribers), so this
+            # table is no longer read for gating — it is kept for schema
+            # stability. ONE row per (account, UTC day); no PII, just a count.
             conn.executescript("""
                 CREATE TABLE IF NOT EXISTS chat_usage (
                     account_id INTEGER NOT NULL
@@ -206,6 +209,58 @@ class AccountStore:
                     day        TEXT    NOT NULL,
                     count      INTEGER NOT NULL DEFAULT 0,
                     PRIMARY KEY (account_id, day)
+                );
+            """)
+        if from_v < 4:
+            # PAY-1 — out-of-order webhook protection. Stripe delivers events at
+            # least once and NOT necessarily in order, so we record the ``created``
+            # timestamp of the newest event applied to a subscription and refuse to
+            # apply an older one on top of it (see ``upsert_subscription``).
+            # ALTER has no IF NOT EXISTS in SQLite — guard so a partial prior
+            # migration (column present, version not yet bumped) is idempotent.
+            cols = {
+                r[1] for r in conn.execute("PRAGMA table_info(subscriptions)").fetchall()
+            }
+            if "last_event_created" not in cols:
+                conn.execute(
+                    "ALTER TABLE subscriptions ADD COLUMN last_event_created REAL"
+                )
+        if from_v < 5:
+            # PAY-1 — mandatory email verification before access. New accounts
+            # start unverified (default 0) and must confirm via an emailed token.
+            # Accounts that already exist at migration time are GRANDFATHERED as
+            # verified so this never retroactively locks out the owner or existing
+            # testers. ALTER has no IF NOT EXISTS — guard for a partial prior run.
+            acols = {
+                r[1] for r in conn.execute("PRAGMA table_info(accounts)").fetchall()
+            }
+            if "email_verified" not in acols:
+                conn.execute(
+                    "ALTER TABLE accounts ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 0"
+                )
+                conn.execute("UPDATE accounts SET email_verified = 1")
+            conn.executescript("""
+                CREATE TABLE IF NOT EXISTS email_verifications (
+                    token_hash TEXT    PRIMARY KEY,
+                    account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+                    created_at REAL    NOT NULL,
+                    expires_at REAL    NOT NULL,
+                    used_at    REAL
+                );
+                CREATE INDEX IF NOT EXISTS idx_email_verifications_account
+                    ON email_verifications(account_id);
+            """)
+        if from_v < 6:
+            # PAY-1 / Loi 25 — renewal-notice ledger. ONE notice per
+            # (account, period_end, kind) so the 30-day-before-annual-renewal
+            # email is idempotent under a daily job run more than once.
+            conn.executescript("""
+                CREATE TABLE IF NOT EXISTS renewal_notices (
+                    account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+                    period_end REAL    NOT NULL,
+                    kind       TEXT    NOT NULL,
+                    sent_at    REAL    NOT NULL,
+                    PRIMARY KEY (account_id, period_end, kind)
                 );
             """)
         conn.execute(
@@ -386,6 +441,7 @@ class AccountStore:
     # Lookup
     # --------------------------------------------------------------------- #
     def _row_to_public(self, row: sqlite3.Row) -> Dict[str, Any]:
+        keys = row.keys()
         return {
             "id": row["id"],
             "username": row["username"],
@@ -393,6 +449,10 @@ class AccountStore:
             "role": row["role"],
             "age_confirmed": bool(row["age_confirmed"]),
             "is_active": bool(row["is_active"]),
+            # email_verified is absent only on a pre-v5 row read mid-migration.
+            "email_verified": (
+                bool(row["email_verified"]) if "email_verified" in keys else True
+            ),
             "created_at": row["created_at"],
         }
 
@@ -738,6 +798,174 @@ class AccountStore:
             finally:
                 conn.close()
 
+    # --------------------------------------------------------------------- #
+    # Email verification (PAY-1 — mandatory before access)
+    # --------------------------------------------------------------------- #
+    def create_email_verification(
+        self, account_id: int, *, ttl_seconds: float = DEFAULT_VERIFY_TTL_S
+    ) -> Optional[str]:
+        """Issue a single-use email-verification token for an account.
+
+        Returns the raw token (emailed out-of-band) or ``None`` when the account
+        is unknown/inactive or already verified (no token needed).
+        """
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                cur = conn.execute(
+                    "SELECT email_verified, is_active FROM accounts WHERE id = ?",
+                    (account_id,),
+                )
+                row = cur.fetchone()
+                if row is None or not row["is_active"] or row["email_verified"]:
+                    return None
+                raw = self._new_token()
+                now = time.time()
+                conn.execute(
+                    "INSERT INTO email_verifications "
+                    "(token_hash, account_id, created_at, expires_at, used_at) "
+                    "VALUES (?, ?, ?, ?, NULL)",
+                    (self._hash_token(raw), account_id, now, now + ttl_seconds),
+                )
+                return raw
+            finally:
+                conn.close()
+
+    def consume_email_verification(self, raw_token: str) -> bool:
+        """Atomically validate + burn a verification token, marking the account
+        verified. Returns True on success, False on invalid/expired/used token."""
+        if not raw_token:
+            return False
+        token_hash = self._hash_token(raw_token)
+        now = time.time()
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                conn.execute("BEGIN")
+                cur = conn.execute(
+                    "SELECT account_id, expires_at, used_at "
+                    "FROM email_verifications WHERE token_hash = ?",
+                    (token_hash,),
+                )
+                row = cur.fetchone()
+                if row is None or row["used_at"] is not None or row["expires_at"] <= now:
+                    conn.execute("ROLLBACK")
+                    return False
+                account_id = row["account_id"]
+                conn.execute(
+                    "UPDATE accounts SET email_verified = 1 WHERE id = ?",
+                    (account_id,),
+                )
+                conn.execute(
+                    "UPDATE email_verifications SET used_at = ? WHERE token_hash = ?",
+                    (now, token_hash),
+                )
+                conn.execute("COMMIT")
+                return True
+            except Exception:
+                conn.rollback()
+                raise
+            finally:
+                conn.close()
+
+    def mark_email_verified(self, account_id: int) -> None:
+        """Force an account to email-verified (e.g. a Google login where the
+        provider already vouched for the address). Idempotent."""
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                conn.execute(
+                    "UPDATE accounts SET email_verified = 1 WHERE id = ?",
+                    (account_id,),
+                )
+            finally:
+                conn.close()
+
+    # --------------------------------------------------------------------- #
+    # Password change (authenticated) + account deletion (Loi 25)
+    # --------------------------------------------------------------------- #
+    def change_password(
+        self, account_id: int, current_password: str, new_password: str
+    ) -> bool:
+        """Change the password after verifying the CURRENT one.
+
+        Returns False when the current password is wrong. Raises AccountError on
+        a weak/too-long new password. On success, revokes ALL sessions (the
+        caller re-mints one for the current device, signing other devices out).
+        """
+        if not current_password or not new_password:
+            return False
+        if len(new_password) < MIN_PASSWORD_LENGTH:
+            raise AccountError(
+                "weak_password",
+                f"Le mot de passe doit faire au moins {MIN_PASSWORD_LENGTH} caractères.",
+            )
+        if len(new_password) > MAX_PASSWORD_LENGTH:
+            raise AccountError(
+                "password_too_long",
+                f"Le mot de passe ne peut pas dépasser {MAX_PASSWORD_LENGTH} caractères.",
+            )
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                cur = conn.execute(
+                    "SELECT password_hash, is_active FROM accounts WHERE id = ?",
+                    (account_id,),
+                )
+                row = cur.fetchone()
+                if row is None or not row["is_active"]:
+                    return False
+                try:
+                    self._hasher.verify(row["password_hash"], current_password)
+                except Exception:
+                    return False
+                new_hash = self._hash_password(new_password)
+                conn.execute("BEGIN")
+                conn.execute(
+                    "UPDATE accounts SET password_hash = ? WHERE id = ?",
+                    (new_hash, account_id),
+                )
+                conn.execute("DELETE FROM sessions WHERE account_id = ?", (account_id,))
+                conn.execute("COMMIT")
+                return True
+            except AccountError:
+                raise
+            except Exception:
+                conn.rollback()
+                raise
+            finally:
+                conn.close()
+
+    def stripe_subscription_id_for(self, account_id: int) -> Optional[str]:
+        """Return the account's Stripe subscription id, if any (for cancel-on-delete)."""
+        sub = self.get_subscription(account_id)
+        return sub.get("stripe_subscription_id") if sub else None
+
+    def delete_account(self, account_id: int) -> bool:
+        """Hard-delete an account and ALL its data (Loi 25 right to erasure).
+
+        Cascades remove sessions, consents, subscriptions, verifications and
+        resets (ON DELETE CASCADE). Returns True if a row was deleted. The caller
+        is responsible for cancelling the Stripe subscription BEFORE calling this
+        (no card data is stored here — only the opaque ids that go away with it).
+        """
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                conn.execute("PRAGMA foreign_keys = ON")
+                conn.execute("BEGIN")
+                cur = conn.execute("DELETE FROM accounts WHERE id = ?", (account_id,))
+                conn.execute("COMMIT")
+                deleted = cur.rowcount > 0
+            except Exception:
+                conn.rollback()
+                raise
+            finally:
+                conn.close()
+        if deleted:
+            logger.info("account deleted id=%s (Loi 25 erasure)", account_id)
+        return deleted
+
     def update_email(self, account_id: int, new_email: str) -> Dict[str, Any]:
         """Update an account's email. Raises AccountError on invalid/conflict.
 
@@ -867,6 +1095,69 @@ class AccountStore:
             finally:
                 conn.close()
 
+    def renewals_due(
+        self,
+        price_id: str,
+        *,
+        now: float,
+        lead_seconds: float,
+        kind: str = "annual_30d",
+    ) -> List[Dict[str, Any]]:
+        """Active subscriptions of ``price_id`` renewing within (now, now+lead]
+        for which no ``kind`` notice was yet recorded for that exact period end.
+
+        Excludes subscriptions already set to cancel at period end (no renewal to
+        warn about). Returns dicts ``{account_id, email, period_end, price_id}``.
+        """
+        lo, hi = now, now + lead_seconds
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                cur = conn.execute(
+                    "SELECT s.account_id AS account_id, a.email AS email, "
+                    "       s.current_period_end AS period_end, s.price_id AS price_id "
+                    "FROM subscriptions s JOIN accounts a ON a.id = s.account_id "
+                    "WHERE s.price_id = ? "
+                    "  AND s.status IN ('active','trialing') "
+                    "  AND s.current_period_end IS NOT NULL "
+                    "  AND s.current_period_end > ? AND s.current_period_end <= ? "
+                    "  AND s.cancel_at_period_end = 0 "
+                    "  AND a.is_active = 1 "
+                    "  AND NOT EXISTS (SELECT 1 FROM renewal_notices r "
+                    "     WHERE r.account_id = s.account_id "
+                    "       AND r.period_end = s.current_period_end AND r.kind = ?)",
+                    (price_id, lo, hi, kind),
+                )
+                rows = cur.fetchall()
+            finally:
+                conn.close()
+        return [
+            {
+                "account_id": r["account_id"],
+                "email": r["email"],
+                "period_end": r["period_end"],
+                "price_id": r["price_id"],
+            }
+            for r in rows
+        ]
+
+    def record_renewal_notice(
+        self, account_id: int, period_end: float, kind: str, *, now: float
+    ) -> bool:
+        """Record that a renewal notice was sent. Idempotent (INSERT OR IGNORE);
+        returns True if newly recorded, False if it already existed."""
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                cur = conn.execute(
+                    "INSERT OR IGNORE INTO renewal_notices "
+                    "(account_id, period_end, kind, sent_at) VALUES (?, ?, ?, ?)",
+                    (account_id, period_end, kind, now),
+                )
+                return cur.rowcount > 0
+            finally:
+                conn.close()
+
     def link_stripe_customer(self, account_id: int, stripe_customer_id: str) -> None:
         """Bind a Stripe customer id to an account (created at checkout time).
 
@@ -922,12 +1213,20 @@ class AccountStore:
         current_period_end: Optional[float] = None,
         cancel_at_period_end: Optional[bool] = None,
         trial_end: Optional[float] = None,
+        event_created: Optional[float] = None,
     ) -> Dict[str, Any]:
         """Create/update the subscription row from a (verified) Stripe event.
 
         Only non-None fields are written, so a partial event (e.g. an invoice
         carrying just a status change) never wipes the subscription id or period
         already on record. Returns the resulting subscription dict.
+
+        Out-of-order protection (PAY-1): when ``event_created`` is given and an
+        OLDER event has already been applied (``last_event_created`` is newer),
+        the state write is SKIPPED — a stale event can never overwrite newer
+        state. Events with no timestamp, and the first event for an account, are
+        always applied. Runs under the store lock in a single transaction so
+        concurrent deliveries can't race.
         """
         now_iso = time.strftime("%Y-%m-%dT%H:%M:%S")
         fields = {
@@ -946,10 +1245,22 @@ class AccountStore:
             try:
                 conn.execute("BEGIN")
                 cur = conn.execute(
-                    "SELECT account_id FROM subscriptions WHERE account_id = ?",
+                    "SELECT last_event_created FROM subscriptions WHERE account_id = ?",
                     (account_id,),
                 )
-                exists = cur.fetchone() is not None
+                row = cur.fetchone()
+                exists = row is not None
+                prior_created = row["last_event_created"] if exists else None
+                # Drop a stale (out-of-order) event: older than what we applied.
+                if (
+                    event_created is not None
+                    and prior_created is not None
+                    and float(event_created) < float(prior_created)
+                ):
+                    conn.execute("COMMIT")
+                    sub = self.get_subscription(account_id)
+                    assert sub is not None
+                    return sub
                 if not exists:
                     conn.execute(
                         "INSERT INTO subscriptions (account_id, cancel_at_period_end, updated_at) "
@@ -957,6 +1268,8 @@ class AccountStore:
                         (account_id, now_iso),
                     )
                 set_cols = [(k, v) for k, v in fields.items() if v is not None]
+                if event_created is not None:
+                    set_cols.append(("last_event_created", float(event_created)))
                 if set_cols:
                     assignments = ", ".join(f"{k} = ?" for k, _ in set_cols)
                     params = [v for _, v in set_cols]
@@ -1006,10 +1319,11 @@ class AccountStore:
                 conn.close()
 
     # --------------------------------------------------------------------- #
-    # Freemium chat quota (per-account, per-UTC-day counter)
+    # Chat usage counter (per-account, per-UTC-day)
     #
-    # Backs the free-tier "N messages/day" limit (subscription-gate mission ③).
-    # The policy/limit lives in ``entitlements``; the store only counts.
+    # Was the free-tier "N messages/day" quota. PAY-1 is paid-only (unlimited
+    # chat for subscribers), so these are retained but no longer used for
+    # gating; the store only counts.
     # --------------------------------------------------------------------- #
     def get_chat_usage(self, account_id: int, day: str) -> int:
         """Return today's message count for an account (0 if none yet)."""
@@ -1093,8 +1407,8 @@ class AccountStore:
                 row = cur.fetchone()
                 if row is not None:
                     conn.execute(
-                        "UPDATE accounts SET role = 'owner', is_active = 1 "
-                        "WHERE id = ?",
+                        "UPDATE accounts SET role = 'owner', is_active = 1, "
+                        "email_verified = 1 WHERE id = ?",
                         (row["id"],),
                     )
                     logger.info(
@@ -1122,8 +1436,9 @@ class AccountStore:
                 cur = conn.execute(
                     "INSERT INTO accounts "
                     "(username, username_lower, email, email_lower, "
-                    " password_hash, role, age_confirmed, is_active, created_at) "
-                    "VALUES (?, ?, ?, ?, ?, 'owner', 1, 1, ?)",
+                    " password_hash, role, age_confirmed, is_active, "
+                    " email_verified, created_at) "
+                    "VALUES (?, ?, ?, ?, ?, 'owner', 1, 1, 1, ?)",
                     (
                         username,
                         username_lower,

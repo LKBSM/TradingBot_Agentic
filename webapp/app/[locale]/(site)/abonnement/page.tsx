@@ -24,7 +24,9 @@ export default function SubscriptionPage() {
   return (
     // Gate the subscription page (AUTH-05): a logged-out visitor under the gate
     // is redirected to login instead of stranded on the panel's own loader.
-    <SubscriptionGate>
+    // requireSubscription=false — this is where an UNSUBSCRIBED account subscribes,
+    // so it must never be paywalled (PAY-1).
+    <SubscriptionGate requireSubscription={false}>
       <div className="container-prose py-12 sm:py-16">
         {/* SubscriptionPanel reads search params (Checkout return status) — wrap
             in Suspense so the static shell can render while it hydrates. */}

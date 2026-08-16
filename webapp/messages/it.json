@@ -1815,6 +1815,21 @@
       "consentMeta": "v{version} · {date}",
       "seeDocs": "Consulta le <terms>Condizioni</terms> e l’<privacy>Informativa sulla privacy</privacy>.",
       "logout": "Disconnetti"
+    },
+    "verifyEmail": {
+      "title": "Email verification",
+      "verifying": "Verifying…",
+      "success": "Email confirmed. Your access is activated.",
+      "error": "Invalid or expired verification link.",
+      "cta": "Go to my dashboard"
+    },
+    "google": {
+      "button": "Continue with Google",
+      "finalizeTitle": "Finish signing up",
+      "finalizeIntro": "Google confirmed your address. Pick a username and accept the terms to create your account.",
+      "finalizeSubmit": "Create my account",
+      "missingToken": "Invalid or expired Google link. Try again from the sign-in page.",
+      "orSeparator": "or"
     }
   },
   "billing": {
@@ -1842,8 +1857,17 @@
       "trialing": "Prova in corso",
       "pastDue": "Pagamento in sospeso",
       "canceled": "Abbonamento annullato",
-      "none": "Nessun abbonamento"
-    }
+      "none": "Nessun abbonamento",
+      "suspended": "Subscription suspended",
+      "expired": "Subscription expired"
+    },
+    "nextCharge": "Next charge on {date}: {amount} {currency}",
+    "accessUntilNoRenewal": "Access until {date}, with no renewal.",
+    "graceNotice": "Payment failed. Update your payment method so you don't lose access.",
+    "suspendedNotice": "Access suspended following a refund or dispute. Contact support if needed.",
+    "expiredNotice": "Your subscription has expired. Subscribe again to regain access.",
+    "manageHint": "Change plan, update your card, download invoices or cancel — all in the Stripe portal.",
+    "reactivate": "Subscribe again"
   },
   "access": {
     "paywall": {
@@ -1934,7 +1958,20 @@
       "export": "Esporta",
       "deleteRow": "Elimina l'account",
       "deleteValue": "Cancella definitivamente il tuo account e i tuoi dati.",
-      "delete": "Elimina"
+      "delete": "Elimina",
+      "verifyBannerTitle": "Confirm your email address",
+      "verifyBannerBody": "A confirmation link was sent to you. Confirm your email to unlock access.",
+      "verifyResend": "Resend email",
+      "verifyResent": "If verification is needed, an email has just been sent.",
+      "verifyError": "Could not send the email right now.",
+      "passwordChange": "Change",
+      "passwordCurrent": "Current password",
+      "passwordNew": "New password (min. 10 characters)",
+      "passwordChanged": "Password changed. Your other devices were signed out.",
+      "passwordError": "Could not change the password.",
+      "deleteConfirm": "This is permanent: your account and data will be deleted, and your subscription canceled. Confirm?",
+      "deleteConfirmButton": "Delete permanently",
+      "deleteError": "Could not delete the account right now."
     },
     "chat": {
       "asideAria": "Assistente M.I.A Agent",

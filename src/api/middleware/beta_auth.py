@@ -20,8 +20,8 @@ forgotten because nothing reaches the router without passing here first.
 
 This wall is intentionally ORTHOGONAL to the subscription gate. It does not care
 about tier or payment — only "is this a valid, active, authorized session?".
-The freemium machinery (``entitlements`` / ``subscription_gate``) stays exactly
-as-is; flipping this on does not touch it.
+The payment wall (``subscription_gate``) stays exactly as-is; flipping this on
+does not touch it.
 
 Posture
 -------

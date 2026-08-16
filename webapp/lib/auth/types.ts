@@ -12,6 +12,8 @@ export interface Account {
   email: string;
   role: 'user' | 'owner';
   age_confirmed: boolean;
+  /** PAY-1: mandatory email verification before access. */
+  email_verified: boolean;
   created_at: string;
   consents: Consent[];
 }

@@ -1,12 +1,14 @@
-"""Access summary endpoint — what the current account is entitled to.
+"""Access summary endpoint — whether the current account may see market data.
 
-  GET /api/access/me   → the caller's tier + freemium entitlements
+  GET /api/access/me   → the caller's authentication + access state
 
-The webapp reads this ONCE to drive the access UI: which instruments/timeframes
-are unlocked, whether the scanner is available, and the remaining daily chat
-quota. It is the display-side companion to the server-side guards in
-``entitlements`` — the guards are the source of truth (non-bypassable); this
-endpoint only tells the UI what to show vs. lock behind an upsell.
+PAY-1 is paid-only: there is no free perimeter. Access is all-or-nothing, so
+this endpoint reports a single boolean ``has_access`` (plus the flags the UI
+needs to route: authenticated / gate_enforced / beta_lockdown / must_login /
+is_owner). The webapp reads this ONCE to decide between the product and the
+"subscribe" invitation — but it is only a DISPLAY hint: the server-side guard
+:func:`src.api.subscription_gate.enforce_access` is the non-bypassable source of
+truth on every data route.
 
 It NEVER raises 401: an anonymous caller simply gets ``authenticated: false`` so
 the frontend can route to login without treating it as an error. While the gate
@@ -20,27 +22,18 @@ from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, Request
 
-from src.api.entitlements import (
-    Tier,
-    chat_daily_limit,
-    free_instruments,
-    free_timeframes,
-    is_full_access,
-    resolve_tier,
-    tier_allows_scanner,
-    today_key,
-)
 from src.api.middleware.beta_auth import beta_lockdown_enabled
 from src.api.session_auth import optional_account
-from src.api.subscription_gate import _gate_enforced
+from src.api.subscription_gate import (
+    _account_store,
+    _gate_enforced,
+    account_has_access,
+    email_verified,
+)
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/access", tags=["access"])
-
-
-def _store(request: Request) -> Any:
-    return getattr(request.app.state.app_state, "account_store", None)
 
 
 @router.get("/me")
@@ -48,38 +41,45 @@ async def access_me(
     request: Request,
     account: Optional[Dict[str, Any]] = Depends(optional_account),
 ) -> Dict[str, Any]:
-    store = _store(request)
+    store = _account_store(request)
     gate_on = _gate_enforced()
     lockdown_on = beta_lockdown_enabled()
-    tier = resolve_tier(account, store)
-    # While the gate is OFF every (even anonymous) caller has the full product,
-    # mirroring the feature routes that short-circuit when not enforced.
-    full = (not gate_on) or is_full_access(tier)
 
-    limit = None if full else chat_daily_limit(tier)
-    used = (
-        store.get_chat_usage(account["id"], today_key())
-        if (account is not None and store is not None and limit is not None)
-        else None
-    )
-    remaining = None if limit is None else max(0, limit - (used or 0))
+    is_owner = bool(account and account.get("role") == "owner")
+    is_verified = account is not None and email_verified(account)
+
+    # Paid-only, all-or-nothing. While the gate is OFF every (even anonymous)
+    # caller has the full product, mirroring the data routes that short-circuit
+    # when not enforced. When ON, only an authenticated, email-verified account
+    # with an active subscription (or the owner) has access.
+    if not gate_on:
+        has_access = True
+    elif account is None or not is_verified:
+        has_access = False
+    else:
+        has_access = account_has_access(account, store)
+
+    # Verification wall comes BEFORE the subscribe wall: an authenticated but
+    # unverified account is told to confirm its email first.
+    verify_required = gate_on and account is not None and not is_verified
 
     return {
         "authenticated": account is not None,
         "gate_enforced": gate_on,
         # Private-beta wall. When on, an anonymous caller MUST be routed to login:
         # the whole product API is 401 for them (see BetaAuthMiddleware). This is
-        # independent of ``gate_enforced`` (the freemium/payment wall).
+        # independent of ``gate_enforced`` (the payment wall).
         "beta_lockdown": lockdown_on,
         "must_login": lockdown_on and account is None,
-        "tier": tier.label,
-        "is_owner": tier == Tier.OWNER,
-        "has_full_access": full,
-        "entitlements": {
-            # None ⇒ unrestricted (full access). A list ⇒ the only allowed values.
-            "instruments": None if full else sorted(free_instruments()),
-            "timeframes": None if full else sorted(free_timeframes()),
-            "scanner": True if full else tier_allows_scanner(tier),
-            "chat": {"limit": limit, "used": used, "remaining": remaining},
-        },
+        "is_owner": is_owner,
+        # Mandatory email verification (PAY-1).
+        "email_verified": is_verified,
+        "email_verification_required": verify_required,
+        # The single access boolean the UI branches on: product vs. subscribe.
+        "has_access": has_access,
+        # An authenticated, VERIFIED account that is logged in but not entitled —
+        # the "account page + subscribe invitation" state (PAY-1).
+        "subscription_required": (
+            gate_on and account is not None and is_verified and not has_access
+        ),
     }

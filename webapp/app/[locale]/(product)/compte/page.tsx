@@ -20,10 +20,12 @@ export async function generateMetadata({
 export default function AccountPage() {
   // Gate the private account page like the other product surfaces (AUTH-05):
   // under the beta/payment gate an anonymous visitor is bounced to login rather
-  // than left on a spinner. requireFullAccess=false — any logged-in account may
-  // view its own account. AccountPanel still guards its own null/probe states.
+  // than left on a spinner. requireSubscription=false — an authenticated but
+  // UNSUBSCRIBED account MUST reach its account page (PAY-1: the account page +
+  // subscribe invitation are exactly what it may see). No paywall here.
+  // AccountPanel still guards its own null/probe states.
   return (
-    <SubscriptionGate>
+    <SubscriptionGate requireSubscription={false}>
       <AccountPanel />
     </SubscriptionGate>
   );

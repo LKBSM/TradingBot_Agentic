@@ -12,8 +12,7 @@ const iso = (ms: number) => new Date(Date.now() + ms).toISOString();
 
 const FULL_ACCESS = {
   authenticated: true, gate_enforced: false, beta_lockdown: false, must_login: false,
-  tier: 'owner', is_owner: true, has_full_access: true,
-  entitlements: { instruments: null, timeframes: null, scanner: true, chat: { limit: null, used: 0, remaining: null } },
+  is_owner: true, has_access: true, subscription_required: false,
 };
 
 // A value_series point. `change_mom` is the month-over-month variation and is

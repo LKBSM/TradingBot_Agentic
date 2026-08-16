@@ -97,8 +97,8 @@ def _register(client, username="alice", email="alice@example.com"):
 
 def _sub_event(event_id, event_type, account_id, *, status="active",
                customer="cus_test_1", price="price_monthly_test",
-               current_period_end=None, cancel_at_period_end=False):
-    return {
+               current_period_end=None, cancel_at_period_end=False, created=None):
+    payload = {
         "id": event_id,
         "type": event_type,
         "data": {"object": {
@@ -112,6 +112,9 @@ def _sub_event(event_id, event_type, account_id, *, status="active",
             "items": {"data": [{"price": {"id": price}}]},
         }},
     }
+    if created is not None:
+        payload["created"] = created
+    return payload
 
 
 def _post_webhook(client, payload, signature="good"):
@@ -287,3 +290,130 @@ class TestWebhookSecurity:
         assert resp.status_code == 200 and resp.json().get("unresolved") is True
         # Not claimed → a later delivery is still treated as new.
         assert account_store.mark_webhook_processed("evt_orphan") is True
+
+
+# =============================================================================
+# PAY-1 — grace period after a failed payment (not immediate suspension)
+# =============================================================================
+
+class TestGracePeriod:
+    def _account(self, account_store):
+        return account_store.create_account(
+            "grace", "grace@example.com", "longpassword1",
+            age_confirmed=True, consents=[("terms", "1"), ("privacy", "1")],
+        )
+
+    def test_past_due_keeps_access_within_grace(self, account_store, monkeypatch):
+        monkeypatch.setenv("SUBSCRIPTION_GATE_ENFORCED", "1")
+        monkeypatch.setenv("SUBSCRIPTION_GRACE_DAYS", "7")
+        acct = self._account(account_store)
+        # Renewal failed 1 day ago → still inside the 7-day grace → access kept.
+        account_store.upsert_subscription(
+            acct["id"], status="past_due", current_period_end=time.time() - 86400,
+        )
+        assert account_has_access(acct, account_store) is True
+
+    def test_past_due_loses_access_after_grace(self, account_store, monkeypatch):
+        monkeypatch.setenv("SUBSCRIPTION_GATE_ENFORCED", "1")
+        monkeypatch.setenv("SUBSCRIPTION_GRACE_DAYS", "7")
+        acct = self._account(account_store)
+        # Failed 10 days ago → past the 7-day grace → suspended.
+        account_store.upsert_subscription(
+            acct["id"], status="past_due", current_period_end=time.time() - 10 * 86400,
+        )
+        assert account_has_access(acct, account_store) is False
+
+    def test_payment_failed_does_not_suspend_immediately(self, client, account_store, monkeypatch):
+        monkeypatch.setenv("SUBSCRIPTION_GATE_ENFORCED", "1")
+        acct = _register(client, "grace2", "grace2@example.com")
+        _post_webhook(client, _sub_event(
+            "evt_ok", "customer.subscription.created", acct["id"], status="active",
+            customer="cus_grace", current_period_end=time.time() - 3600, created=100,
+        ))
+        # A failed renewal moves to past_due — but access is retained (grace),
+        # NOT cut immediately.
+        _post_webhook(client, {
+            "id": "evt_fail", "type": "invoice.payment_failed", "created": 200,
+            "data": {"object": {"customer": "cus_grace", "subscription": "sub_test_1"}},
+        })
+        assert account_store.get_subscription(acct["id"])["status"] == "past_due"
+        # acct (the registered AccountOut) carries id + role — enough for the gate.
+        assert account_has_access(acct, account_store) is True
+
+
+# =============================================================================
+# PAY-1 — out-of-order webhook delivery converges to the newest state
+# =============================================================================
+
+class TestOutOfOrder:
+    def test_stale_event_never_overwrites_newer_state(self, client, account_store):
+        acct = _register(client, "ooo", "ooo@example.com")
+        now = time.time()
+        # The NEWER event (created=200) arrives FIRST: subscription canceled.
+        _post_webhook(client, _sub_event(
+            "evt_new", "customer.subscription.updated", acct["id"],
+            status="canceled", current_period_end=now + 86400, created=200,
+        ))
+        assert account_store.get_subscription(acct["id"])["status"] == "canceled"
+        # A STALE older event (created=100) arrives LATE claiming active — it must
+        # NOT resurrect the subscription (out-of-order guard).
+        _post_webhook(client, _sub_event(
+            "evt_old", "customer.subscription.updated", acct["id"],
+            status="active", current_period_end=now + 86400, created=100,
+        ))
+        assert account_store.get_subscription(acct["id"])["status"] == "canceled"
+
+    def test_newer_event_applies_over_older(self, client, account_store):
+        acct = _register(client, "ooo2", "ooo2@example.com")
+        now = time.time()
+        _post_webhook(client, _sub_event(
+            "evt_1", "customer.subscription.created", acct["id"],
+            status="active", current_period_end=now + 86400, created=100,
+        ))
+        _post_webhook(client, _sub_event(
+            "evt_2", "customer.subscription.updated", acct["id"],
+            status="canceled", current_period_end=now + 86400, created=200,
+        ))
+        assert account_store.get_subscription(acct["id"])["status"] == "canceled"
+
+
+# =============================================================================
+# PAY-1 — refund / dispute suspend access
+# =============================================================================
+
+class TestRefundDispute:
+    def _active(self, client, account_store, customer, email):
+        acct = _register(client, email.split("@")[0], email)
+        _post_webhook(client, _sub_event(
+            "evt_active", "customer.subscription.created", acct["id"], status="active",
+            customer=customer, current_period_end=time.time() + 86400, created=100,
+        ))
+        assert account_store.get_subscription(acct["id"])["status"] == "active"
+        return acct
+
+    def test_full_refund_suspends(self, client, account_store, monkeypatch):
+        monkeypatch.setenv("SUBSCRIPTION_GATE_ENFORCED", "1")
+        acct = self._active(client, account_store, "cus_rf", "refunduser@example.com")
+        _post_webhook(client, {
+            "id": "evt_refund", "type": "charge.refunded", "created": 200,
+            "data": {"object": {"customer": "cus_rf", "amount": 1000, "amount_refunded": 1000}},
+        })
+        assert account_store.get_subscription(acct["id"])["status"] == "suspended"
+        assert account_has_access(acct, account_store) is False
+
+    def test_partial_refund_ignored(self, client, account_store):
+        acct = self._active(client, account_store, "cus_pr", "partialuser@example.com")
+        _post_webhook(client, {
+            "id": "evt_partial", "type": "charge.refunded", "created": 200,
+            "data": {"object": {"customer": "cus_pr", "amount": 1000, "amount_refunded": 400}},
+        })
+        # A partial refund does not cut off a paying subscriber.
+        assert account_store.get_subscription(acct["id"])["status"] == "active"
+
+    def test_dispute_suspends(self, client, account_store):
+        acct = self._active(client, account_store, "cus_dp", "disputeuser@example.com")
+        _post_webhook(client, {
+            "id": "evt_dispute", "type": "charge.dispute.created", "created": 200,
+            "data": {"object": {"customer": "cus_dp"}},
+        })
+        assert account_store.get_subscription(acct["id"])["status"] == "suspended"

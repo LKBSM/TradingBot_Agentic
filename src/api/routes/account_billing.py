@@ -312,6 +312,9 @@ async def webhook(
             current_period_end=event.current_period_end,
             cancel_at_period_end=event.cancel_at_period_end,
             trial_end=event.trial_end,
+            # Out-of-order guard: the store applies this only if it is not older
+            # than the newest event already applied (PAY-1).
+            event_created=event.event_created,
         )
 
     return {"received": True, "event_type": event.event_type, "applied": True}

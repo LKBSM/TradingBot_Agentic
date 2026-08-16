@@ -28,7 +28,7 @@ from typing import Any, Dict, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 
-from src.api.entitlements import enforce_instrument_access
+from src.api.subscription_gate import enforce_access
 from src.api.session_auth import optional_account
 
 logger = logging.getLogger(__name__)
@@ -70,8 +70,9 @@ async def live_price(
             ),
         )
 
-    # Freemium gate (no-op while the gate is OFF): free tier streams XAU/USD.
-    enforce_instrument_access(request, account, instrument)
+    # Paid-only gate (no-op while the gate is OFF): no live stream without an
+    # active subscription (PAY-1). Owner/subscriber pass.
+    enforce_access(request, account)
 
     bridge = _resolve_bridge(request)
     if bridge is None:

@@ -58,24 +58,56 @@ def _gate_enforced() -> bool:
     return raw in ("1", "true", "yes", "on")
 
 
-def has_active_subscription(store: Any, account_id: int) -> bool:
-    """True if the account has a non-expired active/trialing subscription.
+# Grace window (days) after a FAILED renewal before access is cut. While Stripe
+# runs Smart Retries the subscription sits in ``past_due``; PAY-1 requires a
+# grace period, not immediate suspension. Stripe's own dunning ultimately moves
+# the subscription to ``canceled``/``unpaid`` (removing access); this bound is a
+# safety net so a lingering ``past_due`` can never grant access forever.
+_DEFAULT_GRACE_DAYS = 7
 
-    Reads only persisted state — no Stripe call. ``current_period_end`` is a
-    safety net: even if a ``deleted`` webhook were missed, access lapses once the
-    paid period ends.
+
+def _grace_seconds() -> float:
+    try:
+        days = float(os.environ.get("SUBSCRIPTION_GRACE_DAYS", _DEFAULT_GRACE_DAYS))
+    except ValueError:
+        days = _DEFAULT_GRACE_DAYS
+    return max(0.0, days) * 86400.0
+
+
+def has_active_subscription(store: Any, account_id: int) -> bool:
+    """True if the account's persisted subscription currently grants access.
+
+    Reads only persisted state — no Stripe call. Access maps to the app-facing
+    states (PAY-1):
+
+    * ``active`` / ``trialing`` → access while the paid period has not lapsed
+      (``current_period_end`` is a safety net for a missed ``deleted`` webhook).
+    * ``past_due`` → access during the GRACE window after the period end (a
+      failed renewal is a grace period, not an immediate cut).
+    * anything else (``canceled``, ``unpaid``, ``incomplete``, ``suspended`` for
+      refund/dispute, …) → NO access.
     """
     if store is None:
         return False
     sub = store.get_subscription(account_id)
     if not sub:
         return False
-    if sub.get("status") not in ACTIVE_STATUSES:
-        return False
+    status = sub.get("status")
     period_end = sub.get("current_period_end")
-    if period_end is not None and float(period_end) < time.time():
-        return False
-    return True
+    now = time.time()
+
+    if status in ACTIVE_STATUSES:
+        if period_end is not None and float(period_end) < now:
+            return False
+        return True
+
+    if status == "past_due":
+        # Grace: keep access for a bounded window after the (failed) period end.
+        if period_end is None:
+            return True
+        return now < float(period_end) + _grace_seconds()
+
+    return False
 
 
 def account_has_access(account: Dict[str, Any], store: Any = None) -> bool:
@@ -96,6 +128,55 @@ def account_has_access(account: Dict[str, Any], store: Any = None) -> bool:
 
 def _account_store(request: Request) -> Optional[Any]:
     return getattr(request.app.state.app_state, "account_store", None)
+
+
+# =============================================================================
+# The single inline access guard for gated DATA routes (PAY-1: paid-only).
+#
+# PAY-1 removed the freemium perimeter: there is no partial/free access. A
+# gated route is either fully open (gate OFF, personal-testing) or requires an
+# authenticated account WITH an active subscription (owner always passes). This
+# one function is the ONLY place a data route asks "may this caller see market
+# data?" — the entitlements module and its instrument/timeframe/scanner/chat
+# perimeter are gone, so access is decided in exactly one seam.
+# =============================================================================
+
+_LOGIN_REQUIRED = "Authentication required for this feature."
+_EMAIL_VERIFICATION_REQUIRED = "Email verification required before access."
+_SUBSCRIPTION_REQUIRED = "An active subscription is required for this feature."
+
+
+def email_verified(account: Dict[str, Any]) -> bool:
+    """Whether the account may pass the mandatory email-verification wall.
+
+    The owner is always allowed (seeded verified). Any other account must have
+    confirmed its email (PAY-1: verification is mandatory before access).
+    """
+    if account.get("role") == "owner":
+        return True
+    return bool(account.get("email_verified", False))
+
+
+def enforce_access(request: Request, account: Optional[Dict[str, Any]]) -> None:
+    """Guard a market-data route (paid-only, all-or-nothing).
+
+    * Gate OFF (default, personal-testing) → no-op, route stays open.
+    * Gate ON, not authenticated → 401 (the caller must log in).
+    * Gate ON, email not verified → 403 (confirm your email first).
+    * Gate ON, authenticated without access → 402 (subscribe to unlock).
+    * Owner and active/trialing subscribers pass.
+
+    No instrument/timeframe/feature distinction: an unsubscribed account sees no
+    market data at all — not even a single candle (PAY-1).
+    """
+    if not _gate_enforced():
+        return
+    if account is None:
+        raise HTTPException(status_code=401, detail=_LOGIN_REQUIRED)
+    if not email_verified(account):
+        raise HTTPException(status_code=403, detail=_EMAIL_VERIFICATION_REQUIRED)
+    if not account_has_access(account, _account_store(request)):
+        raise HTTPException(status_code=402, detail=_SUBSCRIPTION_REQUIRED)
 
 
 async def require_active_subscription(

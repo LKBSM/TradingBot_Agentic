@@ -5,24 +5,6 @@
  * guards remain the non-bypassable source of truth.
  */
 
-export type AccessTier = 'visitor' | 'free' | 'subscriber' | 'owner';
-
-export interface ChatQuota {
-  /** Messages/day allowed; `null` ⇒ unlimited. */
-  limit: number | null;
-  used: number | null;
-  remaining: number | null;
-}
-
-export interface AccessEntitlements {
-  /** `null` ⇒ all instruments unlocked; otherwise the only allowed codes. */
-  instruments: string[] | null;
-  /** `null` ⇒ all timeframes unlocked; otherwise the only allowed codes. */
-  timeframes: string[] | null;
-  scanner: boolean;
-  chat: ChatQuota;
-}
-
 export interface AccessSummary {
   authenticated: boolean;
   /** False during the personal-testing phase — everything is then open. */
@@ -31,10 +13,17 @@ export interface AccessSummary {
   beta_lockdown: boolean;
   /** Convenience: `beta_lockdown && !authenticated` — the UI must route to login. */
   must_login: boolean;
-  tier: AccessTier;
   is_owner: boolean;
-  has_full_access: boolean;
-  entitlements: AccessEntitlements;
+  /**
+   * PAY-1 is paid-only — access is all-or-nothing. True when the gate is off
+   * (testing) or the account has an active subscription (or is the owner).
+   */
+  has_access: boolean;
+  /**
+   * Authenticated but not entitled — the "account page + subscribe invitation"
+   * state. Drives the paywall/upsell.
+   */
+  subscription_required: boolean;
 }
 
 const ENDPOINT = '/api/access/me';
@@ -78,19 +67,4 @@ export async function fetchAccess(signal?: AbortSignal): Promise<AccessSummary> 
     throw new Error(`access summary unavailable (${res.status})`);
   }
   return (await res.json()) as AccessSummary;
-}
-
-/** Whether a given instrument/timeframe combo is unlocked for this account. */
-export function comboAllowed(
-  access: AccessSummary,
-  instrument: string,
-  timeframe: string,
-): boolean {
-  if (access.has_full_access) return true;
-  const { instruments, timeframes } = access.entitlements;
-  const instrumentOk =
-    instruments === null || instruments.includes(instrument.toUpperCase());
-  const timeframeOk =
-    timeframes === null || timeframes.includes(timeframe.toUpperCase());
-  return instrumentOk && timeframeOk;
 }

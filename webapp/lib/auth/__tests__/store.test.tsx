@@ -12,6 +12,7 @@ const ACCOUNT: Account = {
   email: 'alice@example.com',
   role: 'user',
   age_confirmed: true,
+  email_verified: true,
   created_at: '2026-01-01T00:00:00',
   consents: [],
 };

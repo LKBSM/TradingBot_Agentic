@@ -1815,6 +1815,21 @@
       "consentMeta": "v{version} · {date}",
       "seeDocs": "Voir les <terms>Conditions</terms> et la <privacy>Politique de confidentialité</privacy>.",
       "logout": "Se déconnecter"
+    },
+    "verifyEmail": {
+      "title": "Vérification de l'e-mail",
+      "verifying": "Vérification en cours…",
+      "success": "Adresse e-mail confirmée. Ton accès est activé.",
+      "error": "Lien de vérification invalide ou expiré.",
+      "cta": "Aller à mon espace"
+    },
+    "google": {
+      "button": "Continuer avec Google",
+      "finalizeTitle": "Finaliser l'inscription",
+      "finalizeIntro": "Google a confirmé ton adresse. Choisis un nom d'utilisateur et accepte les conditions pour créer ton compte.",
+      "finalizeSubmit": "Créer mon compte",
+      "missingToken": "Lien Google invalide ou expiré. Réessaie depuis la page de connexion.",
+      "orSeparator": "ou"
     }
   },
   "billing": {
@@ -1842,8 +1857,17 @@
       "trialing": "Essai en cours",
       "pastDue": "Paiement en attente",
       "canceled": "Abonnement annulé",
-      "none": "Aucun abonnement"
-    }
+      "none": "Aucun abonnement",
+      "suspended": "Abonnement suspendu",
+      "expired": "Abonnement expiré"
+    },
+    "nextCharge": "Prochain prélèvement le {date} : {amount} {currency}",
+    "accessUntilNoRenewal": "Accès jusqu'au {date}, sans renouvellement.",
+    "graceNotice": "Paiement échoué. Mets à jour ton moyen de paiement pour ne pas perdre l'accès.",
+    "suspendedNotice": "Accès suspendu à la suite d'un remboursement ou d'un litige. Contacte le support au besoin.",
+    "expiredNotice": "Ton abonnement a expiré. Abonne-toi à nouveau pour retrouver l'accès.",
+    "manageHint": "Changer de formule, mettre à jour ta carte, télécharger tes factures ou résilier — tout se fait dans le portail Stripe.",
+    "reactivate": "Se réabonner"
   },
   "access": {
     "paywall": {
@@ -1972,7 +1996,20 @@
       "export": "Exporter",
       "deleteRow": "Supprimer le compte",
       "deleteValue": "Effacer définitivement ton compte et tes données.",
-      "delete": "Supprimer"
+      "delete": "Supprimer",
+      "verifyBannerTitle": "Confirme ton adresse e-mail",
+      "verifyBannerBody": "Un lien de confirmation t'a été envoyé. Confirme ton e-mail pour activer l'accès.",
+      "verifyResend": "Renvoyer l'e-mail",
+      "verifyResent": "Si une vérification est nécessaire, un e-mail vient d'être envoyé.",
+      "verifyError": "Impossible d'envoyer l'e-mail pour le moment.",
+      "passwordChange": "Changer",
+      "passwordCurrent": "Mot de passe actuel",
+      "passwordNew": "Nouveau mot de passe (10 caractères min.)",
+      "passwordChanged": "Mot de passe modifié. Tes autres appareils ont été déconnectés.",
+      "passwordError": "Impossible de changer le mot de passe.",
+      "deleteConfirm": "Cette action est définitive : ton compte et tes données seront supprimés, et ton abonnement annulé. Confirmer ?",
+      "deleteConfirmButton": "Supprimer définitivement",
+      "deleteError": "Impossible de supprimer le compte pour le moment."
     },
     "chat": {
       "asideAria": "Assistant M.I.A Agent",

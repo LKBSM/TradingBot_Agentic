@@ -18,7 +18,7 @@ from typing import Any, Dict, Literal, Optional
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
-from src.api.entitlements import enforce_chat_access
+from src.api.subscription_gate import enforce_access
 from src.api.session_auth import optional_account
 
 logger = logging.getLogger(__name__)
@@ -57,10 +57,10 @@ async def chatbot_message(
     request: Request,
     account: Optional[Dict[str, Any]] = Depends(optional_account),
 ) -> ChatbotMessageResponse:
-    # Freemium gate (no-op while the gate is OFF): the free tier gets a small
-    # daily message quota; subscribers/owner are unlimited. Counting the turn
-    # BEFORE we run it keeps the quota authoritative server-side. 402 on exhaust.
-    enforce_chat_access(request, account)
+    # Paid-only gate (no-op while the gate is OFF): the chat requires an active
+    # subscription; subscribers/owner are unlimited, an unsubscribed account is
+    # invited to subscribe (402), never errored (PAY-1).
+    enforce_access(request, account)
 
     chatbot = getattr(request.app.state.app_state, "chatbot", None)
     if chatbot is None:
