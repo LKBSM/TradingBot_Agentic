@@ -46,16 +46,16 @@
 .app-shell .pagewrap {
   max-width: 1020px;
   margin: 0 auto;
-  padding: 20px 20px 30px;
+  padding: 14px 20px 30px;
 }
 .app-shell .pghead {
   display: flex;
   align-items: center;
   gap: 14px;
-  margin-bottom: 18px;
+  margin-bottom: 10px;
 }
 .app-shell .pghead h1 {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   letter-spacing: -0.3px;
 }
@@ -370,7 +370,7 @@
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: var(--r);
-  padding: 13px 14px;
+  padding: 12px 13px;
 }
 .app-shell .combo:hover {
   border-color: var(--line-3);
@@ -382,7 +382,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 9px;
+  margin-bottom: 7px;
 }
 .app-shell .combo .t1 .nm {
   font-size: 13px;
@@ -390,15 +390,36 @@
 }
 .app-shell .combo .t1 .tf2 {
   font-family: var(--font-mono), 'JetBrains Mono', monospace;
-  font-size: 10.5px;
+  font-size: 10px;
   color: var(--faint);
+}
+/* Block label — the « Ce qui correspond / à l'encontre / Contexte » heads.
+   These carried NO rule and fell back to the browser default (16px), making
+   them the biggest text on the card and inverting the hierarchy. They are
+   étiquettes: small, uppercase, dim — the market name (.nm) stays primary. */
+.app-shell .combo .blk-lbl {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin: 8px 0 3px;
+}
+.app-shell .combo .blk-lbl:first-of-type {
+  margin-top: 2px;
+}
+.app-shell .combo .blk-empty {
+  font-size: 11.5px;
+  color: var(--faint);
+  font-style: italic;
+  padding: 1px 0 2px;
 }
 .app-shell .cl {
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 12px;
-  padding: 2.5px 0;
+  padding: 1.5px 0;
 }
 .app-shell .cl .mk2 {
   width: 15px;
@@ -428,9 +449,9 @@
   color: var(--dim);
   background: var(--panel-2);
   border-radius: var(--r-s);
-  padding: 8px 10px;
+  padding: 7px 9px;
   line-height: 1.45;
-  margin: 9px 0;
+  margin: 7px 0;
   border-left: 2px solid var(--line-2);
 }
 .app-shell .ctx2 b {
@@ -448,8 +469,8 @@
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: var(--r);
-  padding: 14px 16px;
-  margin-bottom: 11px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
 }
 .app-shell .zone:hover {
   border-color: var(--line-3);
@@ -471,12 +492,14 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
+/* The price band is the card's primary information (mission §3): it alone keeps
+   a larger, heavier size — everything else on the card sits at 12px or below. */
 .app-shell .ztop .rng {
   font-family: var(--font-mono), 'JetBrains Mono', monospace;
-  font-size: 12px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 600;
 }
 .app-shell .zstate {
   font-size: 9px;
@@ -500,7 +523,7 @@
 }
 .app-shell .tl {
   display: flex;
-  margin: 2px 0 11px;
+  margin: 2px 0 8px;
 }
 .app-shell .step {
   display: flex;
@@ -528,7 +551,7 @@
   background: var(--panel-3);
   border: 2px solid var(--line-3);
   z-index: 1;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 .app-shell .step.done .d3 {
   background: var(--acc);
@@ -540,7 +563,7 @@
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--bull) 15%, transparent);
 }
 .app-shell .step .sl {
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 500;
 }
 .app-shell .step .st3 {
@@ -554,7 +577,7 @@
   border-radius: 3px;
   background: var(--panel-3);
   overflow: hidden;
-  margin: 0 0 10px;
+  margin: 0 0 8px;
 }
 .app-shell .fillbar span {
   display: block;
@@ -611,7 +634,7 @@
   display: flex;
   align-items: center;
   gap: 11px;
-  margin: 18px 0 10px;
+  margin: 9px 0 6px;
 }
 .app-shell .zsep::after {
   content: '';
@@ -623,13 +646,15 @@
   margin-top: 2px;
 }
 
-/* Proximity */
+/* Proximity — the three read-side encadrés (proximity/confluence/contacts) share
+   the SAME compact treatment (mission §3): 7px/10px padding, 8px between blocks,
+   9px uppercase étiquette labels, 12px values. */
 .app-shell .zpx {
   border: 1px solid var(--line-2);
   border-radius: 9px;
   background: var(--panel-3);
-  padding: 10px 12px;
-  margin-bottom: 11px;
+  padding: 7px 10px;
+  margin-bottom: 8px;
 }
 .app-shell .zpx.inside {
   border-color: var(--acc);
@@ -640,14 +665,14 @@
   gap: 9px;
   flex-wrap: wrap;
   align-items: baseline;
-  margin-bottom: 7px;
+  margin-bottom: 4px;
 }
 .app-shell .zpxr:last-child {
   margin-bottom: 0;
 }
 .app-shell .zpxr .k {
   font-family: var(--font-mono), 'JetBrains Mono', monospace;
-  font-size: 8.5px;
+  font-size: 9px;
   letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--faint);
@@ -662,7 +687,7 @@
 }
 .app-shell .zgauge {
   position: relative;
-  height: 22px;
+  height: 16px;
   margin-top: 4px;
   border-radius: 6px;
   background: var(--panel);
@@ -691,8 +716,8 @@
   border: 1px solid var(--acc);
   border-radius: 9px;
   background: color-mix(in srgb, var(--acc) 7%, var(--panel-3));
-  padding: 10px 12px;
-  margin-bottom: 11px;
+  padding: 7px 10px;
+  margin-bottom: 8px;
 }
 .app-shell .zconf.none {
   border-color: var(--line);
@@ -700,11 +725,11 @@
 }
 .app-shell .zconf .ct {
   font-family: var(--font-mono), 'JetBrains Mono', monospace;
-  font-size: 8.5px;
+  font-size: 9px;
   letter-spacing: 0.13em;
   text-transform: uppercase;
   color: var(--acc);
-  margin-bottom: 7px;
+  margin-bottom: 5px;
 }
 .app-shell .zconf.none .ct {
   color: var(--faint);
@@ -712,8 +737,8 @@
 .app-shell .zconf .cl {
   font-size: 12px;
   color: var(--dim);
-  line-height: 1.5;
-  margin-bottom: 5px;
+  line-height: 1.4;
+  margin-bottom: 3px;
 }
 .app-shell .zconf .cl:last-child {
   margin-bottom: 0;
@@ -727,24 +752,24 @@
   border-left: 2px solid var(--line-3);
   background: var(--panel-3);
   border-radius: 0 9px 9px 0;
-  padding: 10px 12px;
-  margin-bottom: 11px;
+  padding: 7px 10px;
+  margin-bottom: 8px;
 }
 .app-shell .zcont .ct {
   font-family: var(--font-mono), 'JetBrains Mono', monospace;
-  font-size: 8.5px;
+  font-size: 9px;
   letter-spacing: 0.13em;
   text-transform: uppercase;
   color: var(--faint);
-  margin-bottom: 7px;
+  margin-bottom: 5px;
 }
 .app-shell .zcont .cr {
   display: flex;
   gap: 9px;
   font-size: 12px;
   color: var(--dim);
-  line-height: 1.55;
-  margin-bottom: 5px;
+  line-height: 1.4;
+  margin-bottom: 3px;
 }
 .app-shell .zcont .cr:last-child {
   margin-bottom: 0;
@@ -758,7 +783,7 @@
   min-width: 46px;
 }
 .app-shell .zcont .cr.honesty {
-  margin-top: 7px;
+  margin-top: 5px;
   opacity: 0.8;
   font-size: 11px;
 }
@@ -768,12 +793,12 @@
   border-left: 2px solid var(--line-3);
   background: var(--panel-3);
   border-radius: 0 9px 9px 0;
-  padding: 9px 12px;
-  margin-bottom: 11px;
+  padding: 7px 10px;
+  margin-bottom: 8px;
 }
 .app-shell .zorg .ot {
   font-family: var(--font-mono), 'JetBrains Mono', monospace;
-  font-size: 8.5px;
+  font-size: 9px;
   letter-spacing: 0.13em;
   text-transform: uppercase;
   color: var(--faint);
@@ -782,19 +807,19 @@
 .app-shell .zorg .ol {
   font-size: 12px;
   color: var(--dim);
-  line-height: 1.5;
+  line-height: 1.4;
 }
 
 /* Details */
 .app-shell .zdet {
   border-top: 1px solid var(--line);
-  margin: 4px 0 10px;
+  margin: 4px 0 6px;
 }
 .app-shell .zdeth {
   display: flex;
   align-items: center;
   gap: 7px;
-  padding: 9px 0;
+  padding: 6px 0;
   font-size: 11.5px;
   color: var(--faint);
   background: none;

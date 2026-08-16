@@ -431,10 +431,21 @@
 }
 
 @media (max-width: 767px) {
-  .app-shell:not(.no-chat) {
+  /* Mission UI-1 (Option 1): the fixed 232px rail crushed the `.no-chat`
+     surfaces (/zones, /scanner, /compte, /réglages) into a ~158px content
+     column on phones — truncating the live badge and the results-meta line.
+     Collapse EVERY product surface to a single full-width column below 768px
+     and hide the rail. On /app (`:not(.no-chat)`) this already held and
+     MobileWorkspace supplies the tabs; the `.no-chat` pages gain the same
+     full-width content (a dedicated mobile nav for them is tracked separately).
+     Both selectors carry (0,2,0)/(0,2,1) specificity so they override the base
+     `.app-shell.no-chat` grid and the later `.app-shell .rail` display. */
+  .app-shell:not(.no-chat),
+  .app-shell.no-chat {
     grid-template-columns: minmax(0, 1fr);
   }
-  .app-shell:not(.no-chat) .rail {
+  .app-shell:not(.no-chat) .rail,
+  .app-shell.no-chat .rail {
     display: none;
   }
   .app-shell:not(.no-chat) .chatcol,
