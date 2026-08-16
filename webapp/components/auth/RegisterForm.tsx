@@ -63,7 +63,10 @@ export function RegisterForm() {
       // reliability fix as login: invalidate the Router Cache before navigating
       // so the destination is fetched fresh with the new cookie. See LoginForm.
       router.refresh();
-      router.replace(lh('/compte'));
+      // PAY-2 — paying is the condition of entry: a brand-new account has NO
+      // access, so route straight to the plan choice instead of the account
+      // page. The account exists (checkout needs one) but is inert until paid.
+      router.replace(lh('/abonnement'));
     } catch (err) {
       setError(
         err instanceof AuthError ? err.message : t('register.errorGeneric'),
