@@ -333,8 +333,10 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
         </div>
       </div>
 
-      {/* Combo selector */}
-      <div className="mb-2 flex flex-wrap items-center gap-3">
+      {/* Controls — combo selector + filter + sort on a single wrapping row
+          (UI-1b density: one row instead of two reclaims a full row of chrome
+          above the list, so a second card reaches the fold). */}
+      <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-2">
         <Segmented
           options={SUPPORTED_INSTRUMENTS.map((i) => ({ value: i, label: fmt.instrument(i) }))}
           value={instrument}
@@ -347,10 +349,6 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
           onChange={setTimeframe}
           ariaLabel={t('selector.timeframe')}
         />
-      </div>
-
-      {/* Filters + sort */}
-      <div className="mb-2 flex flex-wrap items-center gap-x-6 gap-y-2">
         <div className="flex items-center gap-2">
           <span className="text-[9px] font-semibold uppercase tracking-wide text-[var(--faint)]">{t('filterLabel')}</span>
           <Segmented<ZoneFilter> options={FILTERS} value={filter} onChange={setFilter} ariaLabel={t('filterAria')} />

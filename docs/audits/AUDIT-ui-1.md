@@ -1,8 +1,30 @@
 # AUDIT — UI-1 · Densité et lisibilité de /zones et /scanner
 
-**Branche :** `fix/ui-1-densite-zones-scanner` (worktree dédié, depuis `origin/main` 771ccc0)
-**Périmètre :** présentation uniquement. Aucune structure, aucun contenu, aucune logique modifiés.
-**Vérifs :** `tsc` 0 · `next build` OK · vitest 893/893 · Playwright UI-1 15/15 (fr + en × 1280×800 / 1440×900 / 390×844).
+**Branche :** `fix/ui-1-densite-zones-scanner` (UI-1, MERGÉ main PR #158) → suivi `feat/ui-1b-zones-density-mobilenav` (UI-1b).
+**Périmètre :** présentation + navigation. UI-1 = présentation stricte ; UI-1b = densité poussée (2 cartes) + nav mobile, sur demande explicite.
+**Vérifs (UI-1b) :** `tsc` 0 · `next build` OK · vitest 904/904 · Playwright UI-1 16/16 (fr + en × 1280×800 / 1440×900 / 390×844 + états).
+
+---
+
+## 0. ADDENDUM UI-1b (2026-08-16) — « fais les 2 »
+
+Deux points laissés ouverts par UI-1 ont été traités à la demande de l'utilisateur :
+
+### A) « 2 cartes zone entièrement visibles au chargement » — **ATTEINT**
+UI-1 laissait 1 carte pleine + ~85 % de la 2ᵉ (chrome ~192 px). Levée du blocage **sans amputer** :
+- **Contrôles sur une seule ligne** : sélecteur combo + filtre + tri fusionnés (une rangée au lieu de deux) → −34 px de chrome.
+- **Intro sur une ligne** : `.pghead .sub` 12→11px (le texte tient sur une ligne au lieu de deux) → −18 px.
+- **Toggle « Détails » dans la rangée d'actions** (plus de rangée dédiée) → −26 px par carte. La grille de détails dépliée s'affiche au-dessus, la bordure de séparation passe sur `.zfoot`.
+- Boutons d'action **32 px en desktop** (souris ; le mobile garde ≥38 px), blocs 7→6 px, jauge 16→13 px, marges resserrées.
+
+Mesuré à 1280×800 : chrome 192→**165 px**, carte typique 328→**284 px**, 2ᵉ carte **338 px** → `165 + 284 + 8 + 338 = 795 ≤ 800` → **2 cartes entières visibles** (garde e2e `fully ≥ 2`). Réserve honnête : une carte cumulant proximité + confluence + contacts + origine peut atteindre ~380 px ; une telle paire peut demander un léger défilement (contenu jamais amputé).
+
+### B) Navigation mobile des pages `.no-chat` — **AJOUTÉE**
+Nouveau `MobileSpaceNav` : barre d'onglets **fixée en bas**, visible **<768 px** sur /zones, /scanner, /actualites, /compte (là où le rail est replié). Cinq espaces (App · Scanner · Zones · Actualités · Compte, **retour /app inclus**), mêmes href/libellés/icônes que le rail, actif surligné. Cibles tactiles ≥52 px, `safe-area-inset-bottom`, le contenu réserve la hauteur de la barre. Cachée ≥768 px via `@media (min-width:768px)` (le rail reprend la nav). Sur /app la barre n'est pas montée (MobileWorkspace y possède déjà ses onglets de contenu).
+
+Captures : `docs/audits/ui-1/ui1b-after-zones-1280x800.png` (2 cartes), `ui1b-after-zones-390x844-mobilenav.png` (barre mobile).
+
+**Piège rencontré (hors code) :** un démontage de worktree externe a suivi la jonction et **vidé le `node_modules` partagé** (packages, pas seulement `.bin`) → réparé par `npm ci --legacy-peer-deps` (ERESOLVE vite sinon). Cf. [[feedback_worktree_junction_teardown]].
 
 ---
 

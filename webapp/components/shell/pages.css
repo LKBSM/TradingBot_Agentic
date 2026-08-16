@@ -46,13 +46,13 @@
 .app-shell .pagewrap {
   max-width: 1020px;
   margin: 0 auto;
-  padding: 14px 20px 30px;
+  padding: 10px 20px 24px;
 }
 .app-shell .pghead {
   display: flex;
   align-items: center;
   gap: 14px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 .app-shell .pghead h1 {
   font-size: 16px;
@@ -60,7 +60,7 @@
   letter-spacing: -0.3px;
 }
 .app-shell .pghead .sub {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--dim);
   margin-top: 2px;
 }
@@ -492,7 +492,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 /* The price band is the card's primary information (mission §3): it alone keeps
    a larger, heavier size — everything else on the card sits at 12px or below. */
@@ -523,7 +523,7 @@
 }
 .app-shell .tl {
   display: flex;
-  margin: 2px 0 8px;
+  margin: 2px 0 6px;
 }
 .app-shell .step {
   display: flex;
@@ -596,7 +596,23 @@
 }
 .app-shell .zfoot {
   display: flex;
+  align-items: center;
   gap: 8px;
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+  margin-top: 2px;
+}
+/* The inline « Détails » toggle sits on the right of the actions row. */
+.app-shell .zfoot .zdeth {
+  margin-left: auto;
+}
+/* Desktop: the two action buttons don't need the full 38px tap height (mouse) —
+   trim them so a second card reaches the fold. Mobile keeps the larger target. */
+@media (min-width: 768px) {
+  .app-shell .zfoot .btn {
+    min-height: 32px;
+    padding: 5px 12px;
+  }
 }
 .app-shell .btn.gh {
   color: var(--faint);
@@ -634,7 +650,7 @@
   display: flex;
   align-items: center;
   gap: 11px;
-  margin: 9px 0 6px;
+  margin: 6px 0 5px;
 }
 .app-shell .zsep::after {
   content: '';
@@ -653,7 +669,7 @@
   border: 1px solid var(--line-2);
   border-radius: 9px;
   background: var(--panel-3);
-  padding: 7px 10px;
+  padding: 6px 10px;
   margin-bottom: 8px;
 }
 .app-shell .zpx.inside {
@@ -687,8 +703,8 @@
 }
 .app-shell .zgauge {
   position: relative;
-  height: 16px;
-  margin-top: 4px;
+  height: 13px;
+  margin-top: 3px;
   border-radius: 6px;
   background: var(--panel);
   border: 1px solid var(--line);
@@ -716,7 +732,7 @@
   border: 1px solid var(--acc);
   border-radius: 9px;
   background: color-mix(in srgb, var(--acc) 7%, var(--panel-3));
-  padding: 7px 10px;
+  padding: 6px 10px;
   margin-bottom: 8px;
 }
 .app-shell .zconf.none {
@@ -752,7 +768,7 @@
   border-left: 2px solid var(--line-3);
   background: var(--panel-3);
   border-radius: 0 9px 9px 0;
-  padding: 7px 10px;
+  padding: 6px 10px;
   margin-bottom: 8px;
 }
 .app-shell .zcont .ct {
@@ -793,7 +809,7 @@
   border-left: 2px solid var(--line-3);
   background: var(--panel-3);
   border-radius: 0 9px 9px 0;
-  padding: 7px 10px;
+  padding: 6px 10px;
   margin-bottom: 8px;
 }
 .app-shell .zorg .ot {
@@ -810,16 +826,13 @@
   line-height: 1.4;
 }
 
-/* Details */
-.app-shell .zdet {
-  border-top: 1px solid var(--line);
-  margin: 4px 0 6px;
-}
+/* Details — the expandable key/value grid renders above the actions row when
+   opened; the toggle itself lives inline in `.zfoot` (UI-1b: no separate row). */
 .app-shell .zdeth {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 6px 0;
+  gap: 6px;
+  padding: 0;
   font-size: 11.5px;
   color: var(--faint);
   background: none;
@@ -837,11 +850,11 @@
   border: 1px solid var(--line);
   border-radius: 8px;
   overflow: hidden;
-  margin-bottom: 8px;
+  margin: 2px 0 8px;
 }
 .app-shell .zkvc {
   background: var(--panel-3);
-  padding: 7px 10px;
+  padding: 6px 10px;
 }
 .app-shell .zkvc .k {
   font-family: var(--font-mono), 'JetBrains Mono', monospace;
