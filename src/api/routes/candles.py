@@ -20,7 +20,7 @@ free-tier budget is untouched by chart fetches.
 from __future__ import annotations
 
 import logging
-from datetime import timezone
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -74,6 +74,12 @@ class CandlesResponse(BaseModel):
     instrument: str
     timeframe: str
     candles: List[CandleOut]
+    # CHART-2 — true when the cache holds candles OLDER than the oldest one
+    # returned here, i.e. a further backward page exists. The chart uses it to
+    # know when it has reached the real START of available history (so it can say
+    # so honestly instead of hitting an invisible wall). Defaults False so older
+    # payloads / callers that ignore paging keep working unchanged.
+    has_more_history: bool = False
 
 
 @router.get("/candles", response_model=CandlesResponse)
@@ -82,6 +88,15 @@ async def get_candles(
     instrument: str = Query(..., description="XAUUSD or EURUSD"),
     timeframe: str = Query(..., description="M15, H1, H4 (chart) or D1, W1 (reference levels)"),
     limit: int = Query(DEFAULT_LIMIT, ge=1, le=MAX_LIMIT, description="Max candles"),
+    before: Optional[int] = Query(
+        None,
+        ge=0,
+        description=(
+            "CHART-2 backward paging: UTC epoch SECONDS. When set, return up to "
+            "`limit` candles strictly OLDER than this timestamp (the chart's "
+            "on-demand history load), instead of the most recent window."
+        ),
+    ),
     account: Optional[Dict[str, Any]] = Depends(optional_account),
 ) -> CandlesResponse:
     if instrument not in SUPPORTED_INSTRUMENTS:
@@ -110,7 +125,11 @@ async def get_candles(
         raise HTTPException(status_code=503, detail="Candles store not configured")
 
     try:
-        candles = store.get_last_n_candles(instrument, timeframe, limit)
+        if before is not None:
+            cutoff = datetime.fromtimestamp(before, tz=timezone.utc)
+            candles = store.get_candles_before(instrument, timeframe, cutoff, limit)
+        else:
+            candles = store.get_last_n_candles(instrument, timeframe, limit)
     except Exception:
         logger.exception("candles read failed for %s/%s", instrument, timeframe)
         raise HTTPException(status_code=500, detail="Internal server error")
@@ -118,7 +137,8 @@ async def get_candles(
     # D1/W1 are REFERENCE series (Régime « Niveaux de référence » tile), not kept
     # warm by the scheduler. Populate them on demand from the feed — one provider
     # call per closed daily/weekly bar (warm_candles is market-aware + idempotent).
-    if not candles and timeframe in REFERENCE_TIMEFRAMES:
+    # Only on the initial (most-recent) read; a backward page never warms.
+    if not candles and before is None and timeframe in REFERENCE_TIMEFRAMES:
         assembler = _resolve_assembler(request)
         if assembler is not None and hasattr(assembler, "warm_candles"):
             if assembler.warm_candles(instrument, timeframe) > 0:
@@ -128,6 +148,17 @@ async def get_candles(
                     logger.exception("candles re-read failed for %s/%s", instrument, timeframe)
 
     if not candles:
+        # A backward page that came back empty is NOT an error: it is the honest
+        # "you have reached the start of available history" answer. Return 200 with
+        # no candles + has_more_history=False so the chart can say so, rather than a
+        # 404 the front would read as "the whole feed broke".
+        if before is not None:
+            return CandlesResponse(
+                instrument=instrument,
+                timeframe=timeframe,
+                candles=[],
+                has_more_history=False,
+            )
         # Valid combo, but the cache has no candles yet (combo not bootstrapped /
         # scheduler hasn't filled it). The front shows "graphique indisponible".
         raise HTTPException(
@@ -135,10 +166,29 @@ async def get_candles(
             detail=f"No candles cached yet for {instrument}/{timeframe}",
         )
 
+    # Does an older page still exist? True when the oldest candle returned here is
+    # NOT the oldest the cache holds for this combo. One cheap indexed MIN(ts) read.
+    has_more = False
+    try:
+        coverage = store.get_coverage(instrument, timeframe)
+        oldest_returned = candles[0].ts
+        if oldest_returned.tzinfo is None:
+            oldest_returned = oldest_returned.replace(tzinfo=timezone.utc)
+        if coverage.oldest_ts is not None:
+            cov_oldest = coverage.oldest_ts
+            if cov_oldest.tzinfo is None:
+                cov_oldest = cov_oldest.replace(tzinfo=timezone.utc)
+            has_more = oldest_returned > cov_oldest
+    except Exception:
+        # Coverage is a nicety for the "start of history" notice — never fail the
+        # candle read over it. Default to False (front simply won't page further).
+        logger.exception("candles coverage read failed for %s/%s", instrument, timeframe)
+
     return CandlesResponse(
         instrument=instrument,
         timeframe=timeframe,
         candles=[_to_candle_out(c) for c in candles],
+        has_more_history=has_more,
     )
 
 

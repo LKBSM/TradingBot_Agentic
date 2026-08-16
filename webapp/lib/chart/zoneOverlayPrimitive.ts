@@ -34,6 +34,7 @@ import type {
   Time,
 } from 'lightweight-charts';
 import type { LiquiditySide, LiquidityStatus } from '@/types/market-reading';
+import { layoutZoneLabels, type LabelCandidate } from './zoneLabelLayout';
 
 // ─── Palette (moved here from ReadingChart; the overlay owns its own colours) ──
 
@@ -53,6 +54,9 @@ const ZONE_CODE = {
   ob: 'OB',
   fvg: 'FVG',
 } as const;
+
+/** Neutral text colour for a « N zones » cluster pill (CHART-2 label declutter). */
+const ZONE_CLUSTER_TEXT = '#AEB6C7';
 
 /** Fill / border alpha by state — active reads, tested recedes. */
 const ZONE_ALPHA = {
@@ -165,6 +169,18 @@ export interface ZoneOverlayData {
    * of the four designs. Legibility chrome only — never a zone/pocket colour.
    */
   labelBg: string;
+  /**
+   * CHART-2 — i18n text for a « N zones » cluster pill (labels that collapse when
+   * too dense). Injected so the canvas stays locale-agnostic. Optional: when
+   * omitted, clustering falls back to a bare count.
+   */
+  clusterLabel?: (count: number) => string;
+  /**
+   * CHART-2 — pixel footprint of the top-left status badge (« Marché fermé » / « EN
+   * DIRECT »), when one is shown. Labels avoid this rectangle so the badge never
+   * covers a zone label. Null / omitted when no badge is present.
+   */
+  badgeReserve?: { w: number; h: number } | null;
 }
 
 // ─── Computed pixel geometry (per frame, in phase with the canvas) ─────────────
@@ -298,7 +314,9 @@ export class ZoneOverlayPrimitive implements ISeriesPrimitive<Time> {
   constructor() {
     const renderer: IPrimitivePaneRenderer = {
       draw: (target) => {
-        target.useMediaCoordinateSpace(({ context }) => this._draw(context));
+        target.useMediaCoordinateSpace((scope) =>
+          this._draw(scope.context, scope.mediaSize),
+        );
       },
     };
     this._paneView = {
@@ -537,7 +555,10 @@ export class ZoneOverlayPrimitive implements ISeriesPrimitive<Time> {
   }
 
   // ── Painting ──────────────────────────────────────────────────────────────────
-  private _draw(ctx: CanvasRenderingContext2D): void {
+  private _draw(
+    ctx: CanvasRenderingContext2D,
+    mediaSize?: { width: number; height: number },
+  ): void {
     if (!this._data) return;
     const pillBg = this._data.labelBg;
 
@@ -646,8 +667,10 @@ export class ZoneOverlayPrimitive implements ISeriesPrimitive<Time> {
       ctx.restore();
     }
 
-    // 4) Labels on top (so geometry never occludes them).
-    for (const b of this._boxes) this._drawZoneLabel(ctx, b, pillBg);
+    // 4) Labels on top (so geometry never occludes them). CHART-2: placed by a
+    // collision/cluster pass so no two labels overlap and dense windows collapse
+    // to « N zones » pills instead of an illegible stack.
+    this._drawZoneLabels(ctx, pillBg, mediaSize);
     for (const f of this._fronts) {
       if (f.width < 60) continue;
       ctx.save();
@@ -661,22 +684,130 @@ export class ZoneOverlayPrimitive implements ISeriesPrimitive<Time> {
     for (const l of this._liqs) this._drawLiquidityLabel(ctx, l);
   }
 
-  private _drawZoneLabel(
-    ctx: CanvasRenderingContext2D,
-    b: BoxGeom,
-    pillBg: string,
-  ): void {
+  /**
+   * The box's desired label anchor (px) — its first visible pixel, above the box
+   * when it is too narrow to hold the pill inside. Pure geometry, no drawing, so
+   * the layout pass can reason about positions before committing them.
+   */
+  private _labelAnchor(b: BoxGeom): { x: number; y: number } {
     const codeSize = b.tested ? 9 : 10;
     const hasStatus = b.inTestLive || b.tested;
     const narrow = b.width < (hasStatus ? 66 : 22);
     const clusterH = codeSize + 3;
     // The box's left edge is a pure time coordinate and often sits off-plot (old
-    // formation candle). Slide the cluster to the box's first visible pixel so the
+    // formation candle). Slide the label to the box's first visible pixel so the
     // code stays readable — label chrome only, the box geometry is never clamped.
-    let x = Math.max(2, b.left + (narrow ? 0 : 4));
+    const x = Math.max(2, b.left + (narrow ? 0 : 4));
     let y = narrow ? b.top - clusterH - 2 : b.top + 3;
     if (y < 0) y = b.top + 3; // above the plot → drop back inside
+    return { x, y };
+  }
 
+  /** Measured pixel width of a box's full label (code pill + optional status pill). */
+  private _labelWidth(ctx: CanvasRenderingContext2D, b: BoxGeom): number {
+    const codeSize = b.tested ? 9 : 10;
+    ctx.font = `${codeSize}px ${MONO}`;
+    let w = ctx.measureText(ZONE_CODE[b.kind]).width + 6; // drawPill padX*2
+    if (b.statusText) {
+      ctx.font = `9px ${MONO}`;
+      w += 3 + ctx.measureText(b.statusText).width + 6;
+    }
+    return w;
+  }
+
+  /** Label height (px) for a box's pill — code font + pill padding + a hair. */
+  private _labelHeight(b: BoxGeom): number {
+    return (b.tested ? 9 : 10) + 3 + 2;
+  }
+
+  /**
+   * CHART-2 — place ALL zone labels through the collision/cluster pass, then draw
+   * the survivors + « N zones » cluster pills. Registers each cluster's tooltip +
+   * hit area so the hover detail works exactly like a single box.
+   */
+  private _drawZoneLabels(
+    ctx: CanvasRenderingContext2D,
+    pillBg: string,
+    mediaSize?: { width: number; height: number },
+  ): void {
+    if (this._boxes.length === 0) return;
+    const plotW = mediaSize?.width ?? this._chart?.timeScale().width() ?? 0;
+    const plotH = mediaSize?.height ?? 0;
+    const byId = new Map(this._boxes.map((b) => [b.id, b]));
+
+    // Without a usable plot box, fall back to the legacy per-box draw (no layout).
+    if (plotW <= 0 || plotH <= 0) {
+      for (const b of this._boxes) {
+        const a = this._labelAnchor(b);
+        this._drawZoneLabel(ctx, b, pillBg, a.x, a.y);
+      }
+      return;
+    }
+
+    const candidates: LabelCandidate[] = this._boxes.map((b) => {
+      const a = this._labelAnchor(b);
+      const recency = Math.max(0, Math.min(1, b.left / plotW));
+      // Active zones outrank tested; within a rank, more-recent (further right)
+      // wins the spot when space is tight.
+      const priority = (b.tested ? 0 : 2) + recency;
+      const status = b.statusText ? ` · ${b.statusText}` : '';
+      return {
+        id: b.id,
+        x: a.x,
+        y: a.y,
+        w: this._labelWidth(ctx, b),
+        h: this._labelHeight(b),
+        priority,
+        tooltip: `${ZONE_CODE[b.kind]}${status}`,
+      };
+    });
+
+    const badge = this._data?.badgeReserve;
+    const reserved = badge ? [{ x: 0, y: 0, w: badge.w, h: badge.h }] : undefined;
+    const clusterText = this._data?.clusterLabel ?? ((n: number) => `${n}`);
+
+    const layout = layoutZoneLabels(
+      candidates,
+      { width: plotW, height: plotH },
+      {
+        measure: (text) => {
+          ctx.font = `10px ${MONO}`;
+          return ctx.measureText(text).width;
+        },
+        clusterText,
+        reserved,
+      },
+    );
+
+    for (const p of layout.placed) {
+      const b = byId.get(p.id);
+      if (b) this._drawZoneLabel(ctx, b, pillBg, p.x, p.y);
+    }
+    for (const c of layout.clusters) {
+      ctx.save();
+      drawPill(ctx, c.x, c.y, clusterText(c.count), 10, ZONE_CLUSTER_TEXT, pillBg);
+      ctx.restore();
+      this._tips.set(c.key, c.tooltip);
+      this._hit.push({
+        externalId: c.key,
+        left: c.x,
+        top: c.y,
+        right: c.x + c.w,
+        bottom: c.y + c.h,
+      });
+    }
+  }
+
+  private _drawZoneLabel(
+    ctx: CanvasRenderingContext2D,
+    b: BoxGeom,
+    pillBg: string,
+    ax: number,
+    ay: number,
+  ): void {
+    const codeSize = b.tested ? 9 : 10;
+    let x = ax;
+    const y = ay;
     ctx.save();
     const codeColor = ZONE_LABEL[b.kind];
     const adv = drawPill(

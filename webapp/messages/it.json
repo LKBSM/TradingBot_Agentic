@@ -2008,6 +2008,16 @@
       "chartUnavailableBody": "Il flusso di candele non è connesso per questa combinazione. La lettura qui sotto resta disponibile."
     },
     "chart": {
+      "recent": "Go to the most recent candle",
+      "defaultView": "Return to the default view",
+      "historyStart": "Start of available data for this timeframe",
+      "outsideAnalysis": "Outside the analysis window — no structure detected here",
+      "loadingHistory": "Loading history…",
+      "historyError": "History unavailable.",
+      "retry": "Retry",
+      "zonesCluster": "{count} zones",
+      "controlsAria": "Chart controls (zoom, pan)",
+      "keyboardRegionAria": "{instrument} chart — press +/− to zoom, arrow keys to pan, Home for the most recent candle, 0 for the default view",
       "canvasAria": "Grafico a candele {instrument} con zone Order Block, Fair Value Gap, livelli di rottura e sacche di liquidità esterna (BSL/SSL)",
       "deselectZoneAria": "Deseleziona questa zona",
       "deselectZoneTitle": "Clicca per deselezionare",

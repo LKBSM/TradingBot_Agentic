@@ -18,7 +18,7 @@ import {
   type Time,
   type UTCTimestamp,
 } from 'lightweight-charts';
-import { Droplets, Maximize2, Minus, Plus } from 'lucide-react';
+import { ChevronsRight, Droplets, Loader2, Maximize2, Minus, Plus, RotateCw } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
@@ -162,6 +162,25 @@ export interface ReadingChartProps {
    * the landing hero passes a fixed height to keep the marketing layout stable.
    */
   heightClassName?: string;
+  /**
+   * CHART-2 — number of bars the engine analysed for THIS reading (header
+   * `analysis_window_bars`). Beyond it (older, loaded on demand) the chart carries
+   * NO detected structure; the chart says so honestly instead of implying a
+   * structure-free zone. Null → the boundary is unknown and no notice is shown.
+   */
+  analysisWindowBars?: number | null;
+  /**
+   * CHART-2 — load the previous page of OLDER candles (dezoom to the left edge).
+   * Wired to `useCandles().loadOlder`. Omitted on surfaces without paging (landing
+   * hero) — the chart then simply stops at the loaded extent.
+   */
+  onLoadOlder?: () => void;
+  /** True while a backward history page is loading (chip on the left edge). */
+  isLoadingOlder?: boolean;
+  /** True once the oldest available candle has been loaded (« début des données »). */
+  reachedStart?: boolean;
+  /** Set when the last backward page failed — surfaces a retry affordance. */
+  olderError?: Error | null;
 }
 
 // Timeframe → bar length in seconds, from the single registry (TF-1). Covers all
@@ -207,6 +226,24 @@ const INITIAL_RIGHT_PAD_BARS = 3;
  * it, so weekday framing is untouched. Display-only — the data is never altered.
  */
 const MIN_VISIBLE_RANGE_FRAC = 0.003;
+
+/**
+ * CHART-2 — RESPONSIVE floor on candle spacing. This is the setting that used to
+ * cap the dezoom: a FIXED `minBarSpacing: 4` meant bars could never compress below
+ * 4 px, so on a ~1000 px plot no more than ~250 bars (≈ 2 trading days on M15)
+ * could ever fit — the "mur invisible" the user hit. We now scale the floor to the
+ * plot width: wide screens get the library's own tiny floor (dense history, real
+ * dezoom), narrow phones keep a larger floor so candles never become illegible
+ * hairlines. Display-only — the data is untouched.
+ */
+function minBarSpacingFor(plotWidth: number): number {
+  if (plotWidth >= 1280) return 0.5; // desktop — full dezoom, hundreds/thousands of bars
+  if (plotWidth >= 768) return 1; // tablet
+  return 2; // phone — avoid sub-pixel hairlines while still allowing a wide view
+}
+
+/** Logical-range distance from the left edge that triggers an on-demand history load. */
+const LOAD_OLDER_THRESHOLD_BARS = 12;
 
 /**
  * Theme-resolved palette. Lightweight-charts paints onto a canvas, so it needs
@@ -279,6 +316,11 @@ export function ReadingChart({
   isolatedZoneIds = DEFAULT_CHART_VIEW.isolatedZoneIds,
   className,
   heightClassName = 'h-[clamp(300px,52svh,560px)]',
+  analysisWindowBars = null,
+  onLoadOlder,
+  isLoadingOlder = false,
+  reachedStart = false,
+  olderError = null,
 }: ReadingChartProps) {
   const t = useTranslations('app');
   const { resolvedTheme } = useTheme();
@@ -295,6 +337,11 @@ export function ReadingChart({
   // skip the (costly) setData + zoom-preserve dance when it re-runs for a
   // selection-only change (VZ-1), rebuilding just the cheap markers / price lines.
   const lastCandlesRef = React.useRef<Candle[] | null>(null);
+  // CHART-2 — time of the FIRST loaded bar last pushed. When a backward page
+  // prepends OLDER candles the logical indices all shift, so the view is restored
+  // by TIME (stable across a prepend) instead of by logical range (which would
+  // jump). Null until the first data push.
+  const lastFirstTimeRef = React.useRef<number | null>(null);
   // Accumulated OHLC of the live FORMING candle (provisional, intra-bar).
   const formingRef = React.useRef<{
     time: number;
@@ -336,6 +383,24 @@ export function ReadingChart({
     x: number;
     y: number;
   } | null>(null);
+
+  // CHART-2 — honest edge notices, driven by the visible-range subscription:
+  //   · atStart         — the left edge shows the OLDEST available candle.
+  //   · outsideAnalysis — the visible window reaches OLDER than the analysed
+  //     window, where no structure is detected (never "no structure here").
+  const [atStart, setAtStart] = React.useState(false);
+  const [outsideAnalysis, setOutsideAnalysis] = React.useState(false);
+
+  // Latest-value refs so the (once-bound) visible-range subscription reads the
+  // CURRENT paging state / handler without being re-bound every render.
+  const onLoadOlderRef = React.useRef(onLoadOlder);
+  onLoadOlderRef.current = onLoadOlder;
+  const reachedStartRef = React.useRef(reachedStart);
+  reachedStartRef.current = reachedStart;
+  const isLoadingOlderRef = React.useRef(isLoadingOlder);
+  isLoadingOlderRef.current = isLoadingOlder;
+  const analysisWindowBarsRef = React.useRef(analysisWindowBars);
+  analysisWindowBarsRef.current = analysisWindowBars;
 
   // "Poches intactes seulement" — a reversible DISPLAY filter over the detected
   // pools (hides swept + broken segments, deletes nothing; the Structure panel
@@ -512,10 +577,11 @@ export function ReadingChart({
         borderColor: p.scaleBorder,
         timeVisible: true,
         secondsVisible: false,
-        // Floor on candle spacing: on a narrow phone plot the default 90-bar fit
-        // would squeeze candles to ~3-4px hairlines. minBarSpacing caps the
-        // density (the chart shows fewer bars rather than illegible slivers).
-        minBarSpacing: 4,
+        // CHART-2: RESPONSIVE spacing floor (see minBarSpacingFor). The old fixed
+        // `4` capped the dezoom to ~2 days; scaling it to the plot width lets wide
+        // screens dezoom across the full loaded history while narrow phones still
+        // avoid hairline candles. Kept in sync by the resize effect below.
+        minBarSpacing: minBarSpacingFor(container.clientWidth),
         tickMarkFormatter: (t: Time, tickMarkType: TickMarkType) => {
           const d = new Date((t as number) * 1000);
           if (tickMarkType === TickMarkType.Year) return String(d.getFullYear());
@@ -729,6 +795,18 @@ export function ReadingChart({
       candlesChanged && didInitialFitRef.current
         ? timeScale.getVisibleLogicalRange()
         : null;
+    // CHART-2: capture the visible TIME range too. When a backward page prepends
+    // older bars, restoring the logical range would jump the view (indices shift);
+    // restoring the time range keeps the exact same candles on screen.
+    const prevTimeRange =
+      candlesChanged && didInitialFitRef.current ? timeScale.getVisibleRange() : null;
+    const newFirstTime = validCandles.length > 0 ? (validCandles[0]!.time as number) : null;
+    const olderPrepended =
+      candlesChanged &&
+      didInitialFitRef.current &&
+      lastFirstTimeRef.current !== null &&
+      newFirstTime !== null &&
+      newFirstTime < lastFirstTimeRef.current;
     if (candlesChanged) {
       lastCandlesRef.current = candles;
       series.setData(
@@ -932,9 +1010,18 @@ export function ReadingChart({
           timeScale.fitContent();
         }
         didInitialFitRef.current = true;
+      } else if (olderPrepended && prevTimeRange) {
+        // A backward page landed: keep the EXACT same candles on screen (restore by
+        // time — the logical indices just shifted by the prepended count).
+        try {
+          timeScale.setVisibleRange(prevTimeRange);
+        } catch {
+          if (prevRange) timeScale.setVisibleLogicalRange(prevRange);
+        }
       } else if (prevRange) {
         timeScale.setVisibleLogicalRange(prevRange);
       }
+      lastFirstTimeRef.current = newFirstTime;
     }
 
     return () => {
@@ -1027,6 +1114,10 @@ export function ReadingChart({
         resolvedTheme === 'light'
           ? 'rgba(255, 255, 255, 0.72)'
           : 'rgba(17, 20, 32, 0.65)',
+      // CHART-2 — i18n « N zones » cluster text + the top-left badge footprint that
+      // labels must avoid (so the status badge never covers a zone label).
+      clusterLabel: (count: number) => t('chart.zonesCluster', { count }),
+      badgeReserve: marketClosed || liveActive ? { w: 172, h: 26 } : null,
     };
   }, [
     zones,
@@ -1036,6 +1127,8 @@ export function ReadingChart({
     lastCandle?.time,
     highlightZoneId,
     resolvedTheme,
+    marketClosed,
+    liveActive,
     t,
   ]);
 
@@ -1358,7 +1451,7 @@ export function ReadingChart({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectionKeyStr]);
 
-  // ── Discreet zoom / fit controls (mouse + ≥44px touch targets). ─────────────
+  // ── Discreet zoom / pan controls (mouse + keyboard + ≥44px touch targets). ──
   const zoom = React.useCallback((factor: number) => {
     const ts = chartRef.current?.timeScale();
     if (!ts) return;
@@ -1369,8 +1462,114 @@ export function ReadingChart({
     ts.setVisibleLogicalRange({ from: center - half, to: center + half });
   }, []);
 
-  const fit = React.useCallback(() => {
-    chartRef.current?.timeScale().fitContent();
+  // Pan the visible window by a fraction of its span (keyboard arrows).
+  const panBy = React.useCallback((fraction: number) => {
+    const ts = chartRef.current?.timeScale();
+    if (!ts) return;
+    const range = ts.getVisibleLogicalRange();
+    if (!range) return;
+    const shift = (range.to - range.from) * fraction;
+    ts.setVisibleLogicalRange({ from: range.from + shift, to: range.to + shift });
+  }, []);
+
+  // Jump back to the most recent candle (mission §2 — « retour rapide à la bougie
+  // la plus récente »).
+  const scrollToRecent = React.useCallback(() => {
+    chartRef.current?.timeScale().scrollToRealTime();
+  }, []);
+
+  // Return to the DEFAULT view — the recent-bars right-anchored window the chart
+  // opens on (not fitContent over the whole deep history).
+  const resetDefaultView = React.useCallback(() => {
+    const ts = chartRef.current?.timeScale();
+    if (!ts) return;
+    const n = candlesRef.current.length;
+    if (n > DEFAULT_VISIBLE_BARS) {
+      ts.setVisibleLogicalRange({
+        from: n - DEFAULT_VISIBLE_BARS,
+        to: n - 1 + INITIAL_RIGHT_PAD_BARS,
+      });
+    } else {
+      ts.fitContent();
+    }
+  }, []);
+
+  // Keyboard access (mission §3 — non-negotiable): every zoom/pan action reachable
+  // without a mouse, on the focusable chart region.
+  const onChartKeyDown = React.useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      switch (e.key) {
+        case '+':
+        case '=':
+          zoom(0.7);
+          break;
+        case '-':
+        case '_':
+          zoom(1.4);
+          break;
+        case 'ArrowLeft':
+          panBy(-0.2);
+          break;
+        case 'ArrowRight':
+          panBy(0.2);
+          break;
+        case 'Home':
+        case 'End':
+          scrollToRecent();
+          break;
+        case '0':
+          resetDefaultView();
+          break;
+        default:
+          return;
+      }
+      e.preventDefault();
+    },
+    [zoom, panBy, scrollToRecent, resetDefaultView],
+  );
+
+  // CHART-2 — keep the spacing floor in sync with the plot width (responsive
+  // dezoom). autoSize handles the canvas; this only re-applies minBarSpacing.
+  React.useEffect(() => {
+    const el = containerRef.current;
+    const chart = chartRef.current;
+    if (!el || !chart || typeof ResizeObserver === 'undefined') return;
+    const apply = () =>
+      chart.timeScale().applyOptions({ minBarSpacing: minBarSpacingFor(el.clientWidth) });
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // CHART-2 — one visible-range subscription drives the honest edge notices and the
+  // on-demand history load, reading the latest paging state from refs (bound once).
+  React.useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    const ts = chart.timeScale();
+    const onRange = (range: { from: number; to: number } | null) => {
+      if (!range) return;
+      const total = candlesRef.current.length;
+      // Load the previous page when the left edge nears the oldest loaded bar.
+      if (
+        range.from < LOAD_OLDER_THRESHOLD_BARS &&
+        !reachedStartRef.current &&
+        !isLoadingOlderRef.current
+      ) {
+        onLoadOlderRef.current?.();
+      }
+      // « Début des données » — the oldest available candle is on screen.
+      const atStartNow = reachedStartRef.current && range.from <= 1;
+      setAtStart((prev) => (prev === atStartNow ? prev : atStartNow));
+      // « Hors fenêtre d'analyse » — visible bars older than the analysed window.
+      const awb = analysisWindowBarsRef.current;
+      const outsideNow =
+        awb != null && awb > 0 && total > awb && range.from < total - awb;
+      setOutsideAnalysis((prev) => (prev === outsideNow ? prev : outsideNow));
+    };
+    ts.subscribeVisibleLogicalRangeChange(onRange);
+    return () => ts.unsubscribeVisibleLogicalRangeChange(onRange);
   }, []);
 
   // Timezone indicator — resolved on the client only (the browser's offset), so
@@ -1379,7 +1578,19 @@ export function ReadingChart({
   React.useEffect(() => setTzLabel(localTimeLabel()), []);
 
   return (
-    <div className={cn('relative w-full', className)}>
+    <div
+      className={cn(
+        'group relative w-full rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        className,
+      )}
+      // CHART-2 — the whole plot is a focusable region so every zoom/pan action is
+      // reachable from the keyboard (mission §3, non-negotiable). Shortcuts: +/−
+      // zoom, ←/→ pan, Home most-recent, 0 default view.
+      tabIndex={0}
+      role="application"
+      aria-label={t('chart.keyboardRegionAria', { instrument })}
+      onKeyDown={onChartKeyDown}
+    >
       <div
         ref={containerRef}
         className={cn(heightClassName, 'w-full')}
@@ -1491,18 +1702,89 @@ export function ReadingChart({
         )
       )}
 
-      {/* Sober pan/zoom controls — visually light, ≥44px tap zone on touch.
-          z-10 lifts them above the lightweight-charts canvases (which carry
-          their own z-index and would otherwise intercept clicks over the
-          time-axis strip). */}
-      <div className="absolute bottom-2 left-2 z-10 flex gap-1">
+      {/* CHART-2 — « hors fenêtre d'analyse » banner: the visible window reaches
+          older than the analysed bars, where NO structure is detected. Says so
+          honestly so an un-annotated stretch never reads as "no structure here"
+          (an absence of data presented as a result). */}
+      {outsideAnalysis && (
+        <div
+          className="pointer-events-none absolute left-1/2 top-3 z-20 -translate-x-1/2 rounded-md border border-border/70 bg-background/95 px-3 py-1.5 text-center text-[11px] font-medium text-muted-foreground shadow-sm backdrop-blur-sm"
+          role="status"
+          aria-live="polite"
+        >
+          {t('chart.outsideAnalysis')}
+        </div>
+      )}
+
+      {/* CHART-2 — left-edge history notices. One at a time: loading a backward
+          page › page failed (retry) › start of available history reached. The
+          already-drawn candles NEVER disappear during a load (they stay on the
+          canvas); this is only the state of the not-yet-loaded left side. */}
+      <div className="absolute left-2 top-1/2 z-20 flex -translate-y-1/2 flex-col gap-1">
+        {isLoadingOlder ? (
+          <span
+            className="pointer-events-none flex items-center gap-1.5 rounded-md border border-border/70 bg-background/90 px-2 py-1 text-[11px] font-medium text-muted-foreground shadow-sm backdrop-blur-sm"
+            role="status"
+            aria-live="polite"
+          >
+            <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+            {t('chart.loadingHistory')}
+          </span>
+        ) : olderError ? (
+          <span
+            className="flex items-center gap-1.5 rounded-md border border-border/70 bg-background/95 px-2 py-1 text-[11px] font-medium text-muted-foreground shadow-sm backdrop-blur-sm"
+            role="status"
+            aria-live="polite"
+          >
+            {t('chart.historyError')}
+            {onLoadOlder && (
+              <button
+                type="button"
+                onClick={onLoadOlder}
+                className="inline-flex items-center gap-1 rounded border border-border/60 px-1.5 py-0.5 text-foreground transition-colors hover:bg-muted/60"
+              >
+                <RotateCw className="h-3 w-3" aria-hidden />
+                {t('chart.retry')}
+              </button>
+            )}
+          </span>
+        ) : atStart ? (
+          <span
+            className="pointer-events-none flex items-center gap-1.5 rounded-md border border-border/70 bg-background/85 px-2 py-1 text-[10px] font-medium text-muted-foreground/90 shadow-sm backdrop-blur-sm"
+            role="status"
+            aria-live="polite"
+          >
+            {t('chart.historyStart')}
+          </span>
+        ) : null}
+      </div>
+
+      {/* CHART-2 — Variante 1: controls appear ON HOVER (or keyboard focus) and
+          fade out otherwise, so they no longer occupy the plot permanently on a
+          large screen. On a coarse pointer (touch/mobile) they stay visible — the
+          pinch gesture isn't enough for everyone. They remain tabbable (opacity,
+          not display), so a keyboard user reaches them; keyboard shortcuts ADD to
+          them, never replace them. z-10 lifts them above the chart canvases. */}
+      <div
+        className={cn(
+          'absolute bottom-2 left-2 z-10 flex gap-1',
+          'opacity-0 transition-opacity duration-200 ease-out',
+          'group-hover:opacity-100 group-focus-within:opacity-100',
+          '[@media(hover:none)]:opacity-100',
+        )}
+        role="group"
+        aria-label={t('chart.controlsAria')}
+      >
         <ChartControl label={t('chart.zoomIn')} onClick={() => zoom(0.7)}>
           <Plus className="h-4 w-4" aria-hidden />
         </ChartControl>
         <ChartControl label={t('chart.zoomOut')} onClick={() => zoom(1.4)}>
           <Minus className="h-4 w-4" aria-hidden />
         </ChartControl>
-        <ChartControl label={t('chart.fit')} onClick={fit}>
+        <ChartControl label={t('chart.recent')} onClick={scrollToRecent}>
+          <ChevronsRight className="h-4 w-4" aria-hidden />
+        </ChartControl>
+        <ChartControl label={t('chart.defaultView')} onClick={resetDefaultView}>
           <Maximize2 className="h-4 w-4" aria-hidden />
         </ChartControl>
         {/* "Poches intactes seulement" — reversible DISPLAY filter (hides the

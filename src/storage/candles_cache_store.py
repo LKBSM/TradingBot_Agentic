@@ -14,7 +14,7 @@ import os
 import sqlite3
 import threading
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional
 
@@ -229,6 +229,55 @@ class CandlesCacheStore:
             for row in reversed(rows)
         ]
         return candles
+
+    def get_candles_before(
+        self, instrument: str, timeframe: str, before_ts: datetime, n: int
+    ) -> List[Candle]:
+        """Return the most recent ``n`` candles STRICTLY OLDER than ``before_ts``,
+        in ascending chronological order.
+
+        The backward-paging read behind the chart's on-demand history load
+        (CHART-2): the front hands the timestamp of its oldest loaded candle and
+        gets the previous page, so it never re-loads what it already holds and
+        never fetches the whole depth at once. Pure cache read (no provider call),
+        same lock + connection-per-call discipline as ``get_last_n_candles``.
+        Empty list when nothing older exists (the true start of coverage) or
+        ``n <= 0``. Timestamps are compared in the SAME ISO-8601 UTC text the rows
+        are stored in, so the ``ts < ?`` comparison is chronological.
+        """
+        if n <= 0:
+            return []
+        cutoff = before_ts
+        if cutoff.tzinfo is None:
+            cutoff = cutoff.replace(tzinfo=timezone.utc)
+        else:
+            cutoff = cutoff.astimezone(timezone.utc)
+        cutoff_iso = cutoff.isoformat()
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                cur = conn.execute(
+                    """
+                    SELECT ts, open, high, low, close, volume FROM candles_cache
+                    WHERE instrument = ? AND timeframe = ? AND ts < ?
+                    ORDER BY ts DESC LIMIT ?
+                    """,
+                    (instrument, timeframe, cutoff_iso, n),
+                )
+                rows = cur.fetchall()
+            finally:
+                conn.close()
+        return [
+            Candle(
+                ts=datetime.fromisoformat(row["ts"]),
+                open=row["open"],
+                high=row["high"],
+                low=row["low"],
+                close=row["close"],
+                volume=row["volume"] if row["volume"] is not None else 0.0,
+            )
+            for row in reversed(rows)
+        ]
 
     def count_candles(self, instrument: str, timeframe: str) -> int:
         with self._lock:
