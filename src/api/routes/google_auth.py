@@ -37,9 +37,10 @@ from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from pydantic import BaseModel, Field
 
 from src.api.account_store import AccountError, AccountStore
-from src.api.public_urls import api_public_url, app_public_url
+from src.api.public_urls import app_public_url
 from src.api.routes.legal import LAST_UPDATED as LEGAL_VERSION
 from src.api.session_auth import set_session_cookie
+from src.api.subscription_gate import account_has_access
 
 logger = logging.getLogger(__name__)
 
@@ -74,8 +75,17 @@ def _redirect_uri() -> str:
     explicit = os.environ.get("GOOGLE_REDIRECT_URI")
     if explicit:
         return explicit
-    # PAY-2: the OAuth callback lands on the BACKEND — single public-URL source.
-    return f"{api_public_url()}/api/auth/google/callback"
+    # PAY-3: the OAuth callback must land on the SAME ORIGIN as ``/start`` — the
+    # FRONTEND (app_public_url). The button navigates the browser to
+    # ``{app}/api/auth/google/start`` (Next.js proxies /api/* to the backend), so
+    # the CSRF ``g_oauth_state`` cookie is set for the FRONT origin. If Google
+    # then redirects to the backend origin directly, the browser never presents
+    # that cookie → the state check fails → a silent ``?error=google`` on EVERY
+    # attempt. Routing the callback through the front origin (also proxied to the
+    # backend) keeps start+callback same-origin, so the state cookie flows AND the
+    # session cookie set on success lands on the front origin the app reads.
+    # NOTE: register EXACTLY this URI in the Google Cloud Console.
+    return f"{app_public_url()}/api/auth/google/callback"
 
 
 def _app_url() -> str:
@@ -158,21 +168,46 @@ async def google_start(response: Response):
     return redirect
 
 
+def _err_redirect(reason: str) -> RedirectResponse:
+    """Bounce back to the login page with a SPECIFIC, screen-renderable reason.
+
+    PAY-3: the failure must never be silent. Instead of a single opaque
+    ``?error=google``, each branch carries a distinct ``reason`` the /connexion
+    page maps to a clear message and a next step. The ``google`` marker is kept so
+    older links still render the generic message. Reasons:
+
+      · ``state``    CSRF state cookie missing/mismatch (often a cross-origin
+                     redirect_uri — the cookie never reached the callback).
+      · ``expired``  the round trip took too long / the signed state expired.
+      · ``exchange`` Google rejected the code exchange (redirect_uri_mismatch,
+                     invalid_client) or the network call failed — a CONFIG issue.
+      · ``email``    Google returned no verified email.
+    """
+    url = f"{_app_url()}/connexion?error=google&reason={urllib.parse.quote(reason)}"
+    return RedirectResponse(url, status_code=302)
+
+
 @router.get("/callback")
 async def google_callback(request: Request):
     """Handle Google's redirect: verify state, exchange the code, resolve email."""
     _require_configured()
-    err_url = f"{_app_url()}/connexion?error=google"
 
     state_q = request.query_params.get("state")
     code = request.query_params.get("code")
     state_cookie = request.cookies.get(_STATE_COOKIE)
     if not code or not state_q or not state_cookie or state_q != state_cookie:
-        return RedirectResponse(err_url, status_code=302)
+        logger.warning(
+            "google oauth: state check failed (code=%s state_q=%s cookie=%s) — "
+            "usually a cross-origin redirect_uri: the g_oauth_state cookie was set "
+            "on the app origin but the callback ran on a different origin.",
+            bool(code), bool(state_q), bool(state_cookie),
+        )
+        return _err_redirect("state")
     try:
         _signer().loads(state_q, max_age=_STATE_MAX_AGE)
     except (BadSignature, SignatureExpired):
-        return RedirectResponse(err_url, status_code=302)
+        logger.warning("google oauth: state signature invalid/expired")
+        return _err_redirect("expired")
 
     try:
         token = _post_form(
@@ -190,14 +225,19 @@ async def google_callback(request: Request):
             raise ValueError("no access_token")
         info = _get_json(_USERINFO_URL, access_token)
     except Exception:
-        logger.exception("google oauth token/userinfo exchange failed")
-        return RedirectResponse(err_url, status_code=302)
+        logger.exception(
+            "google oauth token/userinfo exchange failed — check GOOGLE_CLIENT_ID/"
+            "SECRET and that redirect_uri (%s) is registered EXACTLY in the Google "
+            "Cloud Console.", _redirect_uri(),
+        )
+        return _err_redirect("exchange")
 
     email = (info.get("email") or "").strip()
     google_verified = bool(info.get("email_verified"))
     if not email or not google_verified:
         # We only trust a Google-verified address.
-        return RedirectResponse(err_url, status_code=302)
+        logger.warning("google oauth: no verified email in userinfo")
+        return _err_redirect("email")
 
     store = _store(request)
     existing = store.get_account_by_identifier(email)
@@ -206,7 +246,12 @@ async def google_callback(request: Request):
         # it is marked verified.
         store.mark_email_verified(existing["id"])
         raw_token = store.create_session(existing["id"])
-        redirect = RedirectResponse(f"{_app_url()}/app", status_code=302)
+        # PAY-3 — route by the six states, server-side: an account WITHOUT an
+        # active subscription lands on the plan-choice page, not the product
+        # shell (owner / active subscriber / gate-off all resolve to /app). This
+        # mirrors the email-login post-auth routing so both paths behave alike.
+        dest = "/app" if account_has_access(existing, store) else "/abonnement"
+        redirect = RedirectResponse(f"{_app_url()}{dest}", status_code=302)
         set_session_cookie(redirect, raw_token)
         redirect.delete_cookie(_STATE_COOKIE, path="/api/auth/google")
         return redirect
@@ -224,7 +269,8 @@ async def google_callback(request: Request):
 
 class GoogleFinalizeBody(BaseModel):
     token: str = Field(..., min_length=1, max_length=2048)
-    username: str = Field(..., min_length=3, max_length=32)
+    # PAY-3: no username field — it is derived from the email server-side so the
+    # Google path stays frictionless (one less field, no username collision).
     age_confirmed: bool = False
     accept_terms: bool = False
     accept_privacy: bool = False
@@ -265,12 +311,12 @@ async def google_finalize(
     # set a password later via the reset flow if they ever want password login.
     random_password = secrets.token_urlsafe(24)
     try:
-        account = store.create_account(
-            payload.username, email, random_password,
+        account = store.create_account_auto(
+            email, random_password,
             age_confirmed=True, consents=consents,
         )
     except AccountError as exc:
-        code = 409 if exc.code in {"username_taken", "email_taken", "account_conflict"} else 422
+        code = 409 if exc.code in {"email_taken", "account_conflict"} else 422
         raise HTTPException(status_code=code, detail=str(exc))
     # Google already verified the address.
     store.mark_email_verified(account["id"])

@@ -9,6 +9,7 @@ import { useAuth } from '@/lib/auth/store';
 import { useLocalizedHref } from '@/lib/i18n/href';
 import { Button } from '@/components/ui/button';
 import { CheckField, FormError, TextField } from './fields';
+import { GoogleButton } from './GoogleButton';
 
 /**
  * Registration form. Enforces, client-side, the same gates the backend enforces
@@ -52,7 +53,6 @@ export function RegisterForm() {
     setSubmitting(true);
     try {
       await register({
-        username: String(form.get('username') ?? '').trim(),
         email: String(form.get('email') ?? '').trim(),
         password: String(form.get('password') ?? ''),
         age_confirmed: ageConfirmed,
@@ -63,10 +63,12 @@ export function RegisterForm() {
       // reliability fix as login: invalidate the Router Cache before navigating
       // so the destination is fetched fresh with the new cookie. See LoginForm.
       router.refresh();
-      // PAY-2 — paying is the condition of entry: a brand-new account has NO
-      // access, so route straight to the plan choice instead of the account
-      // page. The account exists (checkout needs one) but is inert until paid.
-      router.replace(lh('/abonnement'));
+      // PAY-3 — parcours A: the brand-new email account is UNVERIFIED. Email
+      // verification comes BEFORE the plan choice (the gate blocks access until
+      // it's confirmed), so route to the "confirm your email" screen; once the
+      // emailed link is clicked, that screen forwards to /abonnement. A Google
+      // signup skips this (email already verified) and goes straight to plans.
+      router.replace(lh('/verifier-email'));
     } catch (err) {
       setError(
         err instanceof AuthError ? err.message : t('register.errorGeneric'),
@@ -98,20 +100,12 @@ export function RegisterForm() {
     <form onSubmit={onSubmit} className="space-y-4" noValidate>
       <FormError message={error} />
       <TextField
-        label={t('register.usernameLabel')}
-        name="username"
-        autoComplete="username"
-        required
-        minLength={3}
-        maxLength={32}
-        hint={t('register.usernameHint')}
-      />
-      <TextField
         label={t('register.emailLabel')}
         name="email"
         type="email"
         autoComplete="email"
         required
+        hint={t('register.emailHint')}
       />
       <TextField
         label={t('register.passwordLabel')}
@@ -156,6 +150,19 @@ export function RegisterForm() {
       <Button type="submit" className="w-full" disabled={submitting}>
         {submitting ? t('register.submitting') : t('register.submit')}
       </Button>
+
+      <p className="text-xs text-muted-foreground">{t('register.nextStep')}</p>
+
+      <div className="flex items-center gap-3 text-xs uppercase tracking-wider text-muted-foreground">
+        <span className="h-px flex-1 bg-border/60" />
+        {t('register.or')}
+        <span className="h-px flex-1 bg-border/60" />
+      </div>
+
+      {/* PAY-3 — the Google door is present at SIGN-UP too, at parity with email:
+          two doors to the same house. It renders nothing when Google is not
+          configured server-side. */}
+      <GoogleButton />
 
       <p className="text-center text-sm text-muted-foreground">
         {t('register.haveAccount')}{' '}

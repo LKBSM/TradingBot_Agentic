@@ -1767,7 +1767,10 @@
       "errorConsents": "Vous devez accepter les Conditions d’utilisation et la Politique de confidentialité.",
       "closedTitle": "Inscriptions fermées",
       "closedBody": "L'accès est réservé aux comptes testeurs invités pendant la beta privée.",
-      "errorGeneric": "Inscription impossible. Réessaie."
+      "errorGeneric": "Inscription impossible. Réessaie.",
+      "or": "ou",
+      "emailHint": "Sert d'identifiant de connexion.",
+      "nextStep": "Après avoir créé ton compte, tu confirmes ton e-mail puis tu choisis ta formule."
     },
     "resetConfirm": {
       "intro": "Choisis un nouveau mot de passe (au moins 10 caractères).",
@@ -1810,15 +1813,30 @@
       "verifying": "Vérification en cours…",
       "success": "Adresse e-mail confirmée. Choisis ta formule pour activer ton accès.",
       "error": "Lien de vérification invalide ou expiré.",
-      "cta": "Choisir ma formule"
+      "cta": "Choisir ma formule",
+      "inboxTitle": "Confirme ton adresse e-mail",
+      "inboxBody": "Nous avons envoyé un lien de confirmation à {email}. Clique dessus pour activer ton compte, puis choisis ta formule.",
+      "inboxBodyNoEmail": "Nous t'avons envoyé un lien de confirmation par e-mail. Clique dessus pour activer ton compte, puis choisis ta formule.",
+      "resend": "Renvoyer l'e-mail",
+      "resending": "Envoi…",
+      "resent": "E-mail renvoyé. Vérifie ta boîte de réception (et les indésirables).",
+      "resendError": "Impossible de renvoyer l'e-mail pour l'instant. Réessaie dans un instant.",
+      "goToPlans": "Continuer vers les formules"
     },
     "google": {
       "button": "Continuer avec Google",
       "finalizeTitle": "Finaliser l'inscription",
-      "finalizeIntro": "Google a confirmé ton adresse. Choisis un nom d'utilisateur et accepte les conditions pour créer ton compte.",
+      "finalizeIntro": "Google a confirmé ton adresse. Accepte les conditions pour créer ton compte, puis choisis ta formule.",
       "finalizeSubmit": "Créer mon compte",
       "missingToken": "Lien Google invalide ou expiré. Réessaie depuis la page de connexion.",
-      "orSeparator": "ou"
+      "orSeparator": "ou",
+      "error": {
+        "state": "La connexion Google n'a pas abouti : ta session a expiré ou des cookies sont bloqués. Réessaie, ou connecte-toi avec ton e-mail et ton mot de passe.",
+        "expired": "Le délai de connexion Google est dépassé. Réessaie.",
+        "exchange": "Google n'a pas pu confirmer ta connexion. Réessaie dans un instant, ou utilise ton e-mail et ton mot de passe.",
+        "email": "Google n'a pas fourni d'adresse e-mail vérifiée. Utilise ton e-mail et ton mot de passe.",
+        "generic": "La connexion Google n'a pas abouti. Réessaie, ou connecte-toi avec ton e-mail et ton mot de passe."
+      }
     }
   },
   "billing": {
@@ -2370,7 +2388,28 @@
         "description": "Créer un compte MIA Markets — accès anticipé, posture éducative."
       },
       "title": "Créer un compte",
-      "intro": "Accès anticipé réservé aux personnes majeures (18 ans ou plus)."
+      "intro": "Accès anticipé réservé aux personnes majeures (18 ans ou plus).",
+      "sell": {
+        "valueTitle": "Ce que ton abonnement débloque",
+        "value1": "Plusieurs marchés (or, indices, changes) lus en continu.",
+        "value2": "Toutes les unités de temps, de la M5 à la journalière.",
+        "value3": "Le scanner de conditions — décris ta stratégie, MIA la traduit.",
+        "value4": "Les zones de prix et leur cycle de vie, expliqués.",
+        "value5": "M.I.A, l'assistant qui commente ta lecture de marché.",
+        "priceTitle": "Tarif",
+        "priceMonthly": "{amount} {currency} / mois",
+        "priceAnnual": "{total} {currency} / an — soit {perMonth} {currency} / mois",
+        "priceNote": "Montants en dollars américains ({currency}).",
+        "stepsTitle": "Comment ça marche",
+        "step1": "Crée ton compte",
+        "step2": "Choisis ta formule",
+        "step3": "Paie et accède",
+        "mentionRenew": "Renouvellement automatique, résiliable à tout moment.",
+        "mentionTool": "Outil d'information et d'éducation — ni conseil en investissement, ni signal de trading.",
+        "mentionRisk": "Le trading comporte un risque de perte.",
+        "mentionAge": "Réservé aux personnes de 18 ans et plus.",
+        "formTitle": "Commence maintenant"
+      }
     },
     "motDePasseOublieConfirmer": {
       "meta": {

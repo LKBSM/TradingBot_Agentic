@@ -1767,7 +1767,10 @@
       "errorConsents": "U moet akkoord gaan met de Gebruiksvoorwaarden en het Privacybeleid.",
       "closedTitle": "Registratie gesloten",
       "closedBody": "Toegang is tijdens de besloten bèta beperkt tot uitgenodigde testeraccounts.",
-      "errorGeneric": "Registreren niet mogelijk. Probeer opnieuw."
+      "errorGeneric": "Registreren niet mogelijk. Probeer opnieuw.",
+      "or": "or",
+      "emailHint": "Used as your sign-in identifier.",
+      "nextStep": "After creating your account, you confirm your email, then choose your plan."
     },
     "resetConfirm": {
       "intro": "Kies een nieuw wachtwoord (minstens 10 tekens).",
@@ -1810,7 +1813,15 @@
       "verifying": "Verifying…",
       "success": "E-mailadres bevestigd. Kies je abonnement om je toegang te activeren.",
       "error": "Invalid or expired verification link.",
-      "cta": "Kies mijn abonnement"
+      "cta": "Kies mijn abonnement",
+      "inboxTitle": "Confirm your email address",
+      "inboxBody": "We sent a confirmation link to {email}. Click it to activate your account, then choose your plan.",
+      "inboxBodyNoEmail": "We sent you a confirmation link by email. Click it to activate your account, then choose your plan.",
+      "resend": "Resend the email",
+      "resending": "Sending…",
+      "resent": "Email resent. Check your inbox (and your spam folder).",
+      "resendError": "Unable to resend the email right now. Try again in a moment.",
+      "goToPlans": "Continue to plans"
     },
     "google": {
       "button": "Continue with Google",
@@ -1818,7 +1829,14 @@
       "finalizeIntro": "Google confirmed your address. Pick a username and accept the terms to create your account.",
       "finalizeSubmit": "Create my account",
       "missingToken": "Invalid or expired Google link. Try again from the sign-in page.",
-      "orSeparator": "or"
+      "orSeparator": "or",
+      "error": {
+        "state": "Google sign-in didn't complete: your session expired or cookies are blocked. Try again, or sign in with your email and password.",
+        "expired": "The Google sign-in timed out. Try again.",
+        "exchange": "Google couldn't confirm your sign-in. Try again in a moment, or use your email and password.",
+        "email": "Google didn't provide a verified email address. Use your email and password.",
+        "generic": "Google sign-in didn't complete. Try again, or sign in with your email and password."
+      }
     }
   },
   "billing": {
@@ -2370,7 +2388,28 @@
         "description": "Een MIA Markets-account aanmaken — vroege toegang, educatieve houding."
       },
       "title": "Een account aanmaken",
-      "intro": "Vroege toegang voorbehouden aan meerderjarigen (18 jaar of ouder)."
+      "intro": "Vroege toegang voorbehouden aan meerderjarigen (18 jaar of ouder).",
+      "sell": {
+        "valueTitle": "What your subscription unlocks",
+        "value1": "Several markets (gold, indices, FX) read continuously.",
+        "value2": "Every timeframe, from M5 up to daily.",
+        "value3": "The conditions scanner — describe your strategy, MIA translates it.",
+        "value4": "Price zones and their lifecycle, explained.",
+        "value5": "M.I.A, the assistant that comments on your market reading.",
+        "priceTitle": "Pricing",
+        "priceMonthly": "{amount} {currency} / month",
+        "priceAnnual": "{total} {currency} / year — i.e. {perMonth} {currency} / month",
+        "priceNote": "Amounts in US dollars ({currency}).",
+        "stepsTitle": "How it works",
+        "step1": "Create your account",
+        "step2": "Choose your plan",
+        "step3": "Pay and get access",
+        "mentionRenew": "Automatic renewal, cancel anytime.",
+        "mentionTool": "An information and education tool — not investment advice, not trading signals.",
+        "mentionRisk": "Trading carries a risk of loss.",
+        "mentionAge": "Restricted to people aged 18 and over.",
+        "formTitle": "Start now"
+      }
     },
     "motDePasseOublieConfirmer": {
       "meta": {

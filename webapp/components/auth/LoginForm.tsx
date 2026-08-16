@@ -5,14 +5,19 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import * as React from 'react';
 import { AuthError } from '@/lib/auth/api-client';
+import { resolvePostAuthDestination } from '@/lib/auth/post-auth';
 import { useAuth } from '@/lib/auth/store';
 import { useLocalizedHref } from '@/lib/i18n/href';
 import { BRAND_NAME } from '@/lib/brand';
 import { GoogleButton } from './GoogleButton';
 
+/** Reasons the Google callback can bounce back with (?error=google&reason=…). */
+const GOOGLE_REASONS = new Set(['state', 'expired', 'exchange', 'email']);
+
 /** Login form — identifier is a username OR an email (single field). */
 export function LoginForm() {
   const t = useTranslations('auth');
+  const tg = useTranslations('auth.google.error');
   const tf = useTranslations('footer');
   const tc = useTranslations('connexion');
   const { login } = useAuth();
@@ -22,21 +27,33 @@ export function LoginForm() {
   const [submitting, setSubmitting] = React.useState(false);
   const submittingRef = React.useRef(false);
 
-  // After login, go straight to the product. Honor a ?next= return path (set by
-  // the login-wall redirect) when it's a safe internal path, else land on /app.
-  // Read from window at submit time (client-only) to avoid the useSearchParams
-  // Suspense-boundary requirement on the /connexion page build.
-  function resolveDestination(): string {
-    // `next` (set by the login wall) already carries the locale prefix; the
-    // fallback is localized so a non-default-locale user lands on /<locale>/app
-    // rather than the default locale (NAV-12).
-    if (typeof window === 'undefined') return lh('/app');
+  // PAY-3 — a Google failure must NEVER be silent. The callback bounces back to
+  // /connexion?error=google&reason=…; surface a clear message on screen (the URL
+  // param was previously received then ignored). Read from window at mount to
+  // avoid the useSearchParams Suspense-boundary requirement on this page.
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('error') !== 'google') return;
+    const reason = params.get('reason') ?? '';
+    setError(GOOGLE_REASONS.has(reason) ? tg(reason) : tg('generic'));
+    // Clean the query so a refresh doesn't re-show the banner.
+    const url = new URL(window.location.href);
+    url.searchParams.delete('error');
+    url.searchParams.delete('reason');
+    window.history.replaceState(null, '', url.toString());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // A safe, same-site ?next= return path (set by the login wall), honored only
+  // once the account has access (post-auth routing owns the six-state decision).
+  function safeNext(): string | null {
+    if (typeof window === 'undefined') return null;
     const next = new URLSearchParams(window.location.search).get('next');
     // Only a same-site absolute path is allowed. `//host` and `/\host` are
     // protocol-relative URLs the browser resolves off-site → open-redirect
     // (AUTH-06). Require a single leading slash not followed by / or \.
-    if (next && /^\/(?![/\\])/.test(next)) return next;
-    return lh('/app');
+    return next && /^\/(?![/\\])/.test(next) ? next : null;
   }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -51,6 +68,15 @@ export function LoginForm() {
         identifier: String(form.get('identifier') ?? '').trim(),
         password: String(form.get('password') ?? ''),
       });
+      // PAY-3 — route by the six states, not straight to /app: a returning
+      // account with no active subscription goes to /abonnement (or the verify
+      // screen), never to the product shell just to hit a paywall a beat later.
+      const dest = await resolvePostAuthDestination({
+        appHref: lh('/app'),
+        subscribeHref: lh('/abonnement'),
+        verifyHref: lh('/verifier-email'),
+        next: safeNext(),
+      });
       // The session cookie is now set. Invalidate the Next.js Router Cache
       // BEFORE navigating: during the cookieless visit the edge middleware
       // (BETA_LOCKDOWN) redirected the protected route to /connexion, and that
@@ -61,7 +87,6 @@ export function LoginForm() {
       // the destination is refetched from the server with the new cookie;
       // `replace` (not `push`) keeps /connexion out of history. This is what
       // makes login reliable on the first attempt.
-      const dest = resolveDestination();
       router.refresh();
       router.replace(dest);
     } catch (err) {

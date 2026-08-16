@@ -57,7 +57,9 @@ PRIVACY_VERSION = LEGAL_VERSION
 # =============================================================================
 
 class RegisterRequest(BaseModel):
-    username: str = Field(..., min_length=3, max_length=32)
+    # PAY-3: no username field — it is derived from the email server-side. The
+    # username carried no product value and its uniqueness could reject a
+    # legitimate sign-up whose email was free. Email is the sole identity.
     # Email format is validated in the store (AccountStore._validate_*) so we
     # don't pull in the optional `email-validator` dependency for EmailStr.
     email: str = Field(..., min_length=3, max_length=320)
@@ -233,8 +235,7 @@ async def register(payload: RegisterRequest, request: Request, response: Respons
     # Record the SERVER's current version (client cannot backdate consent).
     consents = [("terms", TERMS_VERSION), ("privacy", PRIVACY_VERSION)]
     try:
-        account = store.create_account(
-            payload.username,
+        account = store.create_account_auto(
             str(payload.email),
             payload.password,
             age_confirmed=payload.age_confirmed,

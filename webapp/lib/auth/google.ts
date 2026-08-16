@@ -24,7 +24,7 @@ export async function fetchGoogleEnabled(): Promise<boolean> {
 
 export interface GoogleFinalizeInput {
   token: string;
-  username: string;
+  // PAY-3: no username — derived from the Google-verified email server-side.
   age_confirmed: boolean;
   accept_terms: boolean;
   accept_privacy: boolean;

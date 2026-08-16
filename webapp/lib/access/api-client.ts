@@ -24,6 +24,13 @@ export interface AccessSummary {
    * state. Drives the paywall/upsell.
    */
   subscription_required: boolean;
+  /** Whether the current account has confirmed its email (PAY-1). */
+  email_verified?: boolean;
+  /**
+   * Authenticated but email not yet confirmed — the verification wall comes
+   * BEFORE the subscribe wall (PAY-3 routing).
+   */
+  email_verification_required?: boolean;
 }
 
 const ENDPOINT = '/api/access/me';

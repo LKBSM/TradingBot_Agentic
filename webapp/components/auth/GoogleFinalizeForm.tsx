@@ -47,7 +47,6 @@ export function GoogleFinalizeForm() {
     try {
       await googleFinalize({
         token,
-        username: String(form.get('username') ?? '').trim(),
         age_confirmed: ageConfirmed,
         accept_terms: acceptTerms,
         accept_privacy: acceptPrivacy,
@@ -77,15 +76,6 @@ export function GoogleFinalizeForm() {
         <p className="text-sm text-muted-foreground">{t('google.finalizeIntro')}</p>
       </div>
       <FormError message={error} />
-      <TextField
-        label={t('register.usernameLabel')}
-        name="username"
-        autoComplete="username"
-        required
-        minLength={3}
-        maxLength={32}
-        hint={t('register.usernameHint')}
-      />
       <fieldset className="space-y-2.5 rounded-md border border-border/60 bg-muted/20 p-3">
         <legend className="px-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
           {t('register.declarationsLegend')}

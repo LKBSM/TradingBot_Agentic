@@ -92,6 +92,19 @@ async def stripe_webhook(
     if event is None:
         return {"received": True, "ignored": True}
 
+    # PAY-3 — LOUD guard against the most expensive misconfiguration. This is the
+    # LEGACY B2B webhook: it updates ``tier_manager``, a state the account-based
+    # paywall (``subscription_gate`` → ``AccountStore.subscriptions``) NEVER reads.
+    # If Stripe is pointed here instead of ``/api/billing/webhook``, a real
+    # payment would grant NO product access and fail SILENTLY. Make it loud so
+    # ops sees it instead of chasing a mystery conversion drop for weeks.
+    logger.error(
+        "LEGACY /api/v1/billing/webhook received event %s — the account paywall "
+        "does NOT read this state. If this is a real customer payment, Stripe is "
+        "pointed at the WRONG endpoint: it MUST target /api/billing/webhook.",
+        event.event_type,
+    )
+
     tier_manager = getattr(request.app.state.app_state, "tier_manager", None)
     if tier_manager is None:
         logger.warning(

@@ -100,7 +100,10 @@ def _subscriber(app, account_store, *, period_offset_s=3600.0):
 def _owner(app, account_store):
     c, acct = _client(app, "owneruser", "owner@example.com")
     # Promote the just-created account to owner (no subscription on purpose).
-    account_store.seed_owner("owneruser", "owner@example.com", PASSWORD)
+    # PAY-3: the username is now derived from the email server-side, so promote
+    # the account that was ACTUALLY created (by its real username), not the
+    # ignored form value — seed_owner exact-matches on username AND email.
+    account_store.seed_owner(acct["username"], acct["email"], PASSWORD)
     return c, acct
 
 

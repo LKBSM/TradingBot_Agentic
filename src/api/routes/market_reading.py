@@ -96,11 +96,17 @@ async def get_market_status(
     request: Request,
     instrument: str = Query(..., description="XAUUSD or EURUSD"),
     timeframe: str = Query(..., description="M15, H1, or H4"),
+    account: Optional[Dict[str, Any]] = Depends(optional_account),
 ) -> Dict[str, Any]:
     """Server-side market status for (instrument, timeframe) — the single source
     of truth the App badge, Scanner and M.I.A agent all read (never the client
     clock). Fact-first: the last closed candle governs; the calendar names the
-    reason and gives the reopen time. A pure read — never fetches or rebuilds."""
+    reason and gives the reopen time. A pure read — never fetches or rebuilds.
+
+    PAY-3: this IS market data (the live open/closed state + last closed candle),
+    so it sits behind the same paid-only gate as every other data route. It was
+    the one endpoint that served market data to an anonymous caller with no auth
+    at all; the gate closes that hole (no-op while the gate is OFF)."""
     if instrument not in SUPPORTED_INSTRUMENTS:
         raise HTTPException(
             status_code=400,
@@ -111,6 +117,11 @@ async def get_market_status(
             status_code=400,
             detail=f"Unsupported timeframe '{timeframe}'. Supported: {sorted(SUPPORTED_TIMEFRAMES)}",
         )
+
+    # Paid-only gate (no-op while the gate is OFF): the live market status is
+    # market data — an unsubscribed account gets none of it (PAY-3).
+    enforce_access(request, account)
+
     assembler = getattr(request.app.state.app_state, "market_reading_assembler", None)
     if assembler is None:
         raise HTTPException(status_code=503, detail="MarketReading service not configured")

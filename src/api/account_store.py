@@ -438,6 +438,67 @@ class AccountStore:
         return self._public_account(account_id)
 
     # --------------------------------------------------------------------- #
+    # Username derivation (PAY-3)
+    # --------------------------------------------------------------------- #
+    def _derive_username_base(self, email: str) -> str:
+        """A valid username seed derived from the email local-part.
+
+        PAY-3 removed the username field from BOTH sign-up paths: it carried no
+        product value and added a second uniqueness surface that could reject a
+        legitimate Google user whose email was free. The account keeps a username
+        column (no schema change), so we derive one. The result always satisfies
+        :data:`_USERNAME_RE` (3–32 chars, alphanumeric ends, ``._-`` inside) with
+        room left for a numeric/random suffix.
+        """
+        local = email.split("@", 1)[0].lower()
+        cleaned = re.sub(r"[^a-z0-9_.\-]", "", local).strip("._-")
+        if len(cleaned) < 3:
+            cleaned = (cleaned + "user")[:5] or "user"
+        return cleaned[:24]
+
+    def create_account_auto(
+        self,
+        email: str,
+        password: str,
+        *,
+        role: str = "user",
+        consents: Sequence[Tuple[str, str]] = (),
+        age_confirmed: bool = False,
+    ) -> Dict[str, Any]:
+        """Create an account, deriving a UNIQUE username from the email.
+
+        PAY-3: the single entry point both sign-up paths (email + Google) use so
+        neither asks the user for a username. Retries on the rare
+        ``username_taken`` race with an incrementing then random suffix; the email
+        uniqueness check in :meth:`create_account` still guards double sign-up.
+        """
+        base = self._derive_username_base(email)
+        candidates = [base]
+        for n in range(2, 6):
+            candidates.append(f"{base[:22]}{n}")
+        # Final fallbacks: guaranteed-fresh random suffixes.
+        for _ in range(4):
+            candidates.append(f"{base[:18]}{secrets.token_hex(3)}")
+        last_exc: Optional[AccountError] = None
+        for candidate in candidates:
+            try:
+                return self.create_account(
+                    candidate, email, password,
+                    role=role, consents=consents, age_confirmed=age_confirmed,
+                )
+            except AccountError as exc:
+                # Only a username collision is retryable — email_taken, consent,
+                # age, etc. must surface immediately.
+                if exc.code not in {"username_taken", "account_conflict"}:
+                    raise
+                last_exc = exc
+                continue
+        # Exhausted all candidates (astronomically unlikely).
+        raise last_exc or AccountError(
+            "username_taken", "Impossible de générer un nom d'utilisateur unique."
+        )
+
+    # --------------------------------------------------------------------- #
     # Lookup
     # --------------------------------------------------------------------- #
     def _row_to_public(self, row: sqlite3.Row) -> Dict[str, Any]:
