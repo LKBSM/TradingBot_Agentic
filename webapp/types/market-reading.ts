@@ -452,6 +452,13 @@ export interface CandlesResponse {
   instrument: string;
   timeframe: string;
   candles: Candle[];
+  /**
+   * CHART-2 — true when the cache holds candles OLDER than the oldest one in this
+   * response (a further backward page exists). Absent on older payloads → the
+   * chart treats it as "unknown / no more paging". Lets the chart say « début des
+   * données » honestly instead of stopping at an invisible wall.
+   */
+  has_more_history?: boolean;
 }
 
 // ─── Convenience helpers ──────────────────────────────────────────────────────

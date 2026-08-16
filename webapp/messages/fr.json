@@ -2035,6 +2035,16 @@
       "chartUnavailableBody": "Le flux de bougies n’est pas connecté pour cette combinaison. La lecture ci-dessous reste disponible."
     },
     "chart": {
+      "recent": "Aller à la bougie la plus récente",
+      "defaultView": "Revenir à la vue par défaut",
+      "historyStart": "Début des données disponibles pour cette unité de temps",
+      "outsideAnalysis": "Hors de la fenêtre d'analyse — aucune structure détectée ici",
+      "loadingHistory": "Chargement de l'historique…",
+      "historyError": "Historique indisponible.",
+      "retry": "Réessayer",
+      "zonesCluster": "{count} zones",
+      "controlsAria": "Contrôles du graphique (zoom, déplacement)",
+      "keyboardRegionAria": "Graphique {instrument} — utilisez +/− pour zoomer, les flèches pour vous déplacer, Début pour la bougie récente, 0 pour la vue par défaut",
       "canvasAria": "Graphique en chandeliers {instrument} avec zones Order Block, Fair Value Gap, niveaux de cassure et poches de liquidité externe (BSL/SSL)",
       "deselectZoneAria": "Désélectionner cette zone",
       "deselectZoneTitle": "Cliquer pour désélectionner",

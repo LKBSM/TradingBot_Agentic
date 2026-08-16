@@ -243,18 +243,60 @@ export class CandlesError extends Error {
 
 export interface FetchCandlesOptions {
   signal?: AbortSignal;
-  /** Max candles to request (backend caps at 500; default 200). */
+  /** Max candles to request (backend caps at 1000; default 200). */
   limit?: number;
   timeoutMs?: number;
   /** Retry once on a genuine network transient (default true). Mirrors the reading. */
   retry?: boolean;
+  /**
+   * CHART-2 backward paging — UTC epoch SECONDS. When set, the backend returns up
+   * to `limit` candles strictly OLDER than this timestamp (the chart's on-demand
+   * history load) instead of the most recent window.
+   */
+  before?: number;
+}
+
+/**
+ * A candle window plus its paging flag (CHART-2). `hasMoreHistory` is true when
+ * an older backward page still exists in the cache — false means this window
+ * reaches the true start of available history for the combo.
+ */
+export interface CandleWindow {
+  candles: Candle[];
+  hasMoreHistory: boolean;
+}
+
+/**
+ * Fetch the OHLC window for a combo from the descriptive `/api/candles` feed,
+ * WITH its backward-paging flag. Preferred entry point for the chart.
+ *
+ * @throws {CandlesError} on any non-200 / transport / parse failure.
+ */
+export async function fetchCandleWindow(
+  instrument: string,
+  timeframe: string,
+  options: FetchCandlesOptions = {},
+): Promise<CandleWindow> {
+  const { signal, limit = 200, timeoutMs = DEFAULT_TIMEOUT_MS, retry = true, before } = options;
+  try {
+    return await attemptCandles(instrument, timeframe, signal, limit, timeoutMs, before);
+  } catch (err) {
+    const isRetriable = err instanceof CandlesError && err.reason === 'network';
+    const callerAborted = signal?.aborted ?? false;
+    if (retry && isRetriable && !callerAborted) {
+      return attemptCandles(instrument, timeframe, signal, limit, timeoutMs, before);
+    }
+    throw err;
+  }
 }
 
 /**
  * Fetch the OHLC window for a combo from the descriptive `/api/candles` feed.
  *
  * Same-origin: proxied to FastAPI through the `/api/:path*` rewrite — the browser
- * never holds an API key. The response is OHLC only (no predictive fields).
+ * never holds an API key. The response is OHLC only (no predictive fields). Thin
+ * wrapper over `fetchCandleWindow` that drops the paging flag (used by the header
+ * last-price read, which never pages).
  *
  * @throws {CandlesError} on any non-200 / transport / parse failure.
  */
@@ -263,20 +305,7 @@ export async function fetchCandles(
   timeframe: string,
   options: FetchCandlesOptions = {},
 ): Promise<Candle[]> {
-  const { signal, limit = 200, timeoutMs = DEFAULT_TIMEOUT_MS, retry = true } = options;
-  try {
-    return await attemptCandles(instrument, timeframe, signal, limit, timeoutMs);
-  } catch (err) {
-    // Retry once ONLY on a genuine network transient — never on a deterministic
-    // HTTP error (400/404/503) or a TIMEOUT (already spent the full budget), and
-    // never after a caller abort. Same policy as fetchMarketReading.
-    const isRetriable = err instanceof CandlesError && err.reason === 'network';
-    const callerAborted = signal?.aborted ?? false;
-    if (retry && isRetriable && !callerAborted) {
-      return attemptCandles(instrument, timeframe, signal, limit, timeoutMs);
-    }
-    throw err;
-  }
+  return (await fetchCandleWindow(instrument, timeframe, options)).candles;
 }
 
 async function attemptCandles(
@@ -285,10 +314,12 @@ async function attemptCandles(
   callerSignal: AbortSignal | undefined,
   limit: number,
   timeoutMs: number,
-): Promise<Candle[]> {
+  before?: number,
+): Promise<CandleWindow> {
   const url =
     `${CANDLES_ENDPOINT}?instrument=${encodeURIComponent(instrument)}` +
-    `&timeframe=${encodeURIComponent(timeframe)}&limit=${encodeURIComponent(String(limit))}`;
+    `&timeframe=${encodeURIComponent(timeframe)}&limit=${encodeURIComponent(String(limit))}` +
+    (before !== undefined ? `&before=${encodeURIComponent(String(Math.floor(before)))}` : '');
 
   const controller = new AbortController();
   let timedOut = false;
@@ -349,7 +380,7 @@ async function attemptCandles(
     throw new CandlesError(res.status, 'Réponse du service de bougies malformée.', 'parse');
   }
 
-  return parsed.candles;
+  return { candles: parsed.candles, hasMoreHistory: parsed.has_more_history === true };
 }
 
 /** Structural guard for the candles envelope. */

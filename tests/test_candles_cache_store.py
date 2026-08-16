@@ -97,6 +97,37 @@ class TestGetLastNCandles:
         assert [c.close for c in xau] == [1.0]
 
 
+class TestGetCandlesBefore:
+    """CHART-2 backward paging: the previous page of candles older than a cutoff."""
+
+    def test_returns_older_ascending_capped(self, store):
+        candles = [_sample_candle(seconds=i, close=2378.0 + i) for i in range(10)]
+        store.upsert_candles("XAUUSD", "M15", candles)
+        cutoff = datetime(2026, 5, 29, 14, 0, 5, tzinfo=timezone.utc)
+        got = store.get_candles_before("XAUUSD", "M15", cutoff, 3)
+        # Strictly older than sec=5 → sec 0..4; the 3 most recent of those, ascending.
+        assert [c.close for c in got] == [2380.0, 2381.0, 2382.0]
+        assert all(got[i].ts < got[i + 1].ts for i in range(len(got) - 1))
+
+    def test_empty_when_nothing_older(self, store):
+        store.upsert_candles("XAUUSD", "M15", [_sample_candle(seconds=5)])
+        cutoff = datetime(2026, 5, 29, 14, 0, 5, tzinfo=timezone.utc)  # < is strict
+        assert store.get_candles_before("XAUUSD", "M15", cutoff, 10) == []
+
+    def test_zero_or_negative_limit_returns_empty(self, store):
+        store.upsert_candles("XAUUSD", "M15", [_sample_candle(seconds=1)])
+        cutoff = datetime(2026, 5, 29, 14, 0, 9, tzinfo=timezone.utc)
+        assert store.get_candles_before("XAUUSD", "M15", cutoff, 0) == []
+        assert store.get_candles_before("XAUUSD", "M15", cutoff, -2) == []
+
+    def test_naive_cutoff_treated_as_utc(self, store):
+        candles = [_sample_candle(seconds=i) for i in range(4)]
+        store.upsert_candles("XAUUSD", "M15", candles)
+        naive = datetime(2026, 5, 29, 14, 0, 2)  # tz-naive → treated as UTC, never local
+        got = store.get_candles_before("XAUUSD", "M15", naive, 10)
+        assert [c.ts.second for c in got] == [0, 1]
+
+
 class TestEnvAwarePath:
     def test_explicit_path_wins_over_env_var(self, tmp_path, monkeypatch):
         env_path = tmp_path / "from_env.db"

@@ -262,6 +262,81 @@ def test_limit_cannot_exceed_documented_cap(tmp_path):
     assert ok.status_code in (200, 404)  # 404 only if the combo has no cached bars
 
 
+def _epoch(second: int) -> int:
+    return int(datetime(2026, 5, 29, 14, 0, second, tzinfo=timezone.utc).timestamp())
+
+
+def _seed_app(tmp_path, n: int) -> FastAPI:
+    app = FastAPI()
+    signal_store = SignalStore(db_path=str(tmp_path / "signals.db"))
+    store = CandlesCacheStore(db_path=str(tmp_path / "candles.db"))
+    store.upsert_candles("XAUUSD", "M15", [_candle(i, 2378.0 + i) for i in range(n)])
+    app.state.app_state = AppState(
+        signal_store=signal_store, market_reading_assembler=_StubAssembler(store)
+    )
+    app.include_router(candles_router)
+    return app
+
+
+class TestChart2BackwardPaging:
+    """CHART-2 — the /api/candles `before` param + `has_more_history` flag that let
+    the chart load older history on demand and know when it hit the true start."""
+
+    def test_has_more_history_true_on_partial_window(self, tmp_path):
+        client = TestClient(_seed_app(tmp_path, 10))
+        resp = client.get(
+            "/api/candles",
+            params={"instrument": "XAUUSD", "timeframe": "M15", "limit": 3},
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert [c["close"] for c in body["candles"]] == [2385.0, 2386.0, 2387.0]
+        assert body["has_more_history"] is True  # sec 0..6 still older
+
+    def test_has_more_history_false_when_window_reaches_oldest(self, tmp_path):
+        client = TestClient(_seed_app(tmp_path, 10))
+        resp = client.get(
+            "/api/candles",
+            params={"instrument": "XAUUSD", "timeframe": "M15", "limit": 100},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["has_more_history"] is False  # oldest bar included
+
+    def test_before_returns_older_page(self, tmp_path):
+        client = TestClient(_seed_app(tmp_path, 10))
+        resp = client.get(
+            "/api/candles",
+            params={
+                "instrument": "XAUUSD",
+                "timeframe": "M15",
+                "limit": 100,
+                "before": _epoch(5),
+            },
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        # Strictly older than sec=5 → sec 0..4, ascending.
+        assert [c["close"] for c in body["candles"]] == [2378.0, 2379.0, 2380.0, 2381.0, 2382.0]
+        assert body["has_more_history"] is False  # reaches the oldest bar
+
+    def test_before_empty_page_is_200_not_404(self, tmp_path):
+        """Reaching the start is an honest empty answer, never a 'feed broke' 404."""
+        client = TestClient(_seed_app(tmp_path, 10))
+        resp = client.get(
+            "/api/candles",
+            params={
+                "instrument": "XAUUSD",
+                "timeframe": "M15",
+                "limit": 100,
+                "before": _epoch(0),  # nothing strictly older than the first bar
+            },
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["candles"] == []
+        assert body["has_more_history"] is False
+
+
 def test_router_wired_into_app_module():
     from src.api import app as app_module
 

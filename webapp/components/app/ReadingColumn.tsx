@@ -76,11 +76,18 @@ export function ReadingColumn({
   const t = useTranslations('app');
   // Candle feed for the chart hero. Re-pulled when the combo changes or a new
   // candle closes (candle_close_ts) — never faster, to keep the load honest.
-  const { candles, error: candlesError, refresh: refreshCandles } = useCandles(
-    active?.instrument ?? null,
-    active?.timeframe ?? null,
-    { source: dataSource, candleCloseTs: reading?.header.candle_close_ts ?? null },
-  );
+  const {
+    candles,
+    error: candlesError,
+    refresh: refreshCandles,
+    loadOlder,
+    isLoadingOlder,
+    olderError,
+    reachedStart,
+  } = useCandles(active?.instrument ?? null, active?.timeframe ?? null, {
+    source: dataSource,
+    candleCloseTs: reading?.header.candle_close_ts ?? null,
+  });
 
   // Unified last price for the header — the M15 freshest close, identical
   // whatever timeframe is shown (fixes the M15-vs-H1/H4 price divergence). Pure
@@ -164,7 +171,7 @@ export function ReadingColumn({
       <MarketReadingCard
         reading={reading}
         onAskChatbot={focusChat}
-        chartSlot={buildChartSlot(reading, candles, livePrice, liveTs, active?.timeframe ?? null, chartView, onClearHighlight, marketClosed, serverStatus?.state ?? null, referenceLevel, selection, candlesError, refreshCandles)}
+        chartSlot={buildChartSlot(reading, candles, livePrice, liveTs, active?.timeframe ?? null, chartView, onClearHighlight, marketClosed, serverStatus?.state ?? null, referenceLevel, selection, candlesError, refreshCandles, { loadOlder, isLoadingOlder, olderError, reachedStart })}
         live={liveHeader}
         marketClosed={marketClosed}
         status={serverStatus}
@@ -220,6 +227,12 @@ function buildChartSlot(
   selection: ChartSelection | null,
   candlesError: Error | null = null,
   onRetryCandles?: () => void,
+  paging?: {
+    loadOlder: () => void;
+    isLoadingOlder: boolean;
+    olderError: Error | null;
+    reachedStart: boolean;
+  },
 ): React.ReactNode {
   if (!candles || candles.length === 0) {
     return (
@@ -248,6 +261,11 @@ function buildChartSlot(
       onClearHighlight={onClearHighlight}
       hiddenZoneIds={chartView.hiddenZoneIds}
       isolatedZoneIds={chartView.isolatedZoneIds}
+      analysisWindowBars={reading.header.analysis_window_bars ?? null}
+      onLoadOlder={paging?.loadOlder}
+      isLoadingOlder={paging?.isLoadingOlder ?? false}
+      olderError={paging?.olderError ?? null}
+      reachedStart={paging?.reachedStart ?? false}
     />
   );
 }
