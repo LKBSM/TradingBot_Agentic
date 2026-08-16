@@ -67,10 +67,10 @@ describe('Nav — marketing landing', () => {
     );
   });
 
-  it('hides App/Zones/Scanner from a logged-out visitor, offers "Essayer gratuitement"', async () => {
+  it('hides App/Zones/Scanner from a logged-out visitor, offers "S\'abonner"', async () => {
     // LP-2: product links are gated behind auth — a visitor has no access, so
-    // surfacing them is pure frustration. They must be absent; the primary CTA
-    // is "Essayer gratuitement".
+    // surfacing them is pure frustration. They must be absent. PAY-2: the
+    // product is paid-only, so the primary CTA is "S'abonner" (no free trial).
     hoisted.pathname = '/';
     render(<Nav />);
     await waitFor(() =>
@@ -79,7 +79,11 @@ describe('Nav — marketing landing', () => {
     expect(screen.queryByRole('link', { name: /^Zones$/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /^Scanner$/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /^App$/ })).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /essayer gratuitement/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /s'abonner/i })).toBeInTheDocument();
+    // The free-trial CTA is gone for good.
+    expect(
+      screen.queryByRole('link', { name: /essayer gratuitement|gratuit/i }),
+    ).not.toBeInTheDocument();
   });
 });
 

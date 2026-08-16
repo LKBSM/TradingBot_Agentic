@@ -54,7 +54,10 @@ export function GoogleFinalizeForm() {
       });
       await refresh();
       router.refresh();
-      router.replace(lh('/app'));
+      // PAY-2 — a brand-new Google account is email-verified but has no
+      // subscription yet: send it straight to the plan choice (paying is the
+      // condition of entry). A subscriber sees their active state there.
+      router.replace(lh('/abonnement'));
     } catch (err) {
       setError(err instanceof Error ? err.message : t('register.errorGeneric'));
     } finally {

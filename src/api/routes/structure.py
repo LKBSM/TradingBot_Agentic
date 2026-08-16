@@ -34,11 +34,13 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
 
+from src.api.session_auth import optional_account
+from src.api.subscription_gate import enforce_access
 from src.intelligence import lookback_config
 
 logger = logging.getLogger(__name__)
@@ -132,7 +134,12 @@ def _parse_time(value: Optional[str]) -> Optional[datetime]:
 
 
 @router.get("/coverage", response_model=CoverageResponse)
-async def get_coverage(request: Request) -> CoverageResponse:
+async def get_coverage(
+    request: Request,
+    account: Optional[Dict[str, Any]] = Depends(optional_account),
+) -> CoverageResponse:
+    # Paid-only gate (no-op while OFF): market-history metadata is market data.
+    enforce_access(request, account)
     store = _resolve_candles_store(request)
     combos: List[ComboCoverage] = []
     for instrument, timeframe in lookback_config.enabled_combos():
@@ -165,7 +172,10 @@ async def get_structure(
     time_from: Optional[str] = Query(None, description="ISO or epoch-seconds; window start"),
     price_low: Optional[float] = Query(None),
     price_high: Optional[float] = Query(None),
+    account: Optional[Dict[str, Any]] = Depends(optional_account),
 ) -> StructureWindowResponse:
+    # Paid-only gate (no-op while OFF): zones/events are market data.
+    enforce_access(request, account)
     if (instrument, timeframe) not in set(lookback_config.enabled_combos()) and \
             instrument not in lookback_config.supported_instruments():
         raise HTTPException(status_code=400, detail=f"Unsupported combo {instrument}/{timeframe}")

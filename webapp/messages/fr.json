@@ -5,9 +5,9 @@
       "h1a": "Le marché a déjà tout écrit.",
       "h1b": "MIA te le lit.",
       "lead": "Order Blocks, Fair Value Gaps, cassures de structure, poches de liquidité — détectés automatiquement et décrits en langage clair. Et un assistant qui répond quand tu ne comprends pas.",
-      "ctaPrimary": "Essayer gratuitement",
+      "ctaPrimary": "S'abonner",
       "ctaSecondary": "Voir les outils",
-      "micro": "Sans carte de crédit · Accès gratuit permanent",
+      "micro": "Accès complet dès l'abonnement · Résiliable à tout moment",
       "roadmap": "Accès anticipé · <b>2 marchés aujourd'hui, 50 à 80 prévus au lancement</b>"
     },
     "stats": {
@@ -129,7 +129,7 @@
       "eyebrow": "Essaie sans créer de compte",
       "title": "Voilà à quoi ça ressemble",
       "subtitle": "Une lecture d'illustration, manipulable ici même. Clique, coche, pose une question — tout fonctionne sans compte.",
-      "cta": "Créer un compte gratuit",
+      "cta": "S'abonner",
       "illus": "Données d'illustration · le produit affiche les vraies lectures de marché"
     },
     "demo": {
@@ -350,18 +350,7 @@
     "pricing": {
       "eyebrow": "Tarif",
       "title": "Un seul abonnement, tout compris",
-      "subtitle": "Pas de palier premium, pas de fonctionnalité retenue en otage. Un accès gratuit permanent pour essayer.",
-      "free": {
-        "name": "Découverte",
-        "sub": "pour prendre l'outil en main",
-        "bill": "gratuit, sans limite de durée",
-        "f1": "1 marché, 2 unités de temps",
-        "f2": "Espace de lecture complet",
-        "f3": "M.I.A Agent, usage limité",
-        "f4": "Calendrier des publications",
-        "cta": "Créer un compte",
-        "note": "sans carte de crédit"
-      },
+      "subtitle": "Un seul abonnement, tout l'outil : accès complet dès l'abonnement, résiliable à tout moment.",
       "paid": {
         "label": "Complet",
         "name": "Abonnement",
@@ -389,11 +378,11 @@
       "q3": "Est-ce que ça remplace TradingView ?",
       "a3": "Non, et ce n'est pas le but. TradingView reste ta plateforme de graphiques, de dessin et d'exécution. MIA fait le travail de lecture structurelle : détecter, dater, suivre le cycle de vie des zones. <b>Les deux se complètent.</b>",
       "q4": "Quels marchés sont couverts ?",
-      "a4": "Deux marchés aujourd'hui — l'or (XAU/USD) et l'euro (EUR/USD) — sur 6 unités de temps allant de la minute au jour. Le palier gratuit donne accès à un marché et deux unités de temps, de quoi juger de l'outil. D'autres marchés suivront.",
+      "a4": "Deux marchés aujourd'hui — l'or (XAU/USD) et l'euro (EUR/USD) — sur 6 unités de temps allant de la minute au jour. L'abonnement donne accès aux deux marchés et à toutes les unités de temps. D'autres marchés suivront.",
       "q5": "À quelle fréquence les données sont-elles mises à jour ?",
       "a5": "À chaque clôture de bougie de l'unité de temps concernée, pas à un intervalle arbitraire. Une lecture en 15 minutes se rafraîchit toutes les 15 minutes ; une lecture journalière une fois par jour. <b>Chaque écran affiche l'âge de sa dernière lecture</b>, pour que tu saches toujours ce que tu regardes.",
       "q6": "Puis-je annuler quand je veux ?",
-      "a6": "Oui, depuis ton compte, sans avoir à écrire à qui que ce soit. Ton accès reste actif jusqu'à la fin de la période déjà payée, puis tu retombes sur le palier gratuit — tu ne perds pas ton compte.",
+      "a6": "Oui, depuis ton compte, sans avoir à écrire à qui que ce soit. Ton accès reste actif jusqu'à la fin de la période déjà payée, puis il prend fin — tu ne perds pas ton compte pour autant.",
       "q7": "D'où viennent les données de prix ?",
       "a7": "D'un fournisseur professionnel sous licence d'affichage. Le calendrier économique, lui, provient uniquement des organismes émetteurs — Bureau of Labor Statistics, BEA, Census, Réserve fédérale, Eurostat, Banque centrale européenne. <b>Aucune source secondaire, aucun agrégateur</b>, et chaque publication porte son attribution.",
       "q8": "Le produit fonctionne-t-il sur téléphone ?",
@@ -401,8 +390,8 @@
     },
     "final": {
       "h2": "Arrête de tracer. Commence à lire.",
-      "p": "Crée un compte gratuit et regarde ce que MIA voit sur ton marché préféré. Aucune carte de crédit, aucune limite de durée.",
-      "cta1": "Créer un compte gratuit",
+      "p": "Abonne-toi et regarde ce que MIA voit sur ton marché préféré. Accès complet dès l'abonnement, résiliable à tout moment.",
+      "cta1": "S'abonner",
       "cta2": "Revoir les outils"
     },
     "miaSection": {
@@ -846,7 +835,7 @@
     "calendar": "Actualités",
     "mia": "M.I.A",
     "tools": "Outils",
-    "tryFree": "Essayer gratuitement",
+    "tryFree": "S'abonner",
     "appLink": "App",
     "methodology": "Méthodologie & glossaire"
   },
@@ -918,7 +907,7 @@
     "pricing": {
       "earlyAccessBadge": "Accès anticipé",
       "title": "Un seul plan. Tout l'outil, sans demi-mesure.",
-      "intro": "Pas d'essai déguisé, pas de tier qui ampute l'outil : un accès complet, résiliable en un clic. Les démos de cette page sont gratuites — vous voyez exactement ce que vous obtenez. Voir notre posture dans la section <link>Honnêteté</link>.",
+      "intro": "Pas d'essai déguisé, pas de tier qui ampute l'outil : un accès complet, résiliable à tout moment. Les démos de cette page sont ouvertes, sans compte — vous voyez exactement ce que vous obtenez. Voir notre posture dans la section <link>Honnêteté</link>.",
       "cadenceGroupLabel": "Choisir la fréquence de facturation",
       "monthlyToggle": "Mensuel",
       "annualToggle": "Annuel",
@@ -948,7 +937,7 @@
       "reassurance1": "<strong>Aucune carte piégée.</strong> Annulation en un clic depuis votre compte, sans relance ni questionnaire de rétention.",
       "reassurance2": "<strong>Sans engagement de durée.</strong> L'offre mensuelle se résilie à tout moment ; l'annuelle reste active jusqu'à la fin de la période payée.",
       "reassurance3": "<strong>Vos données restent vôtres.</strong> Lectures et conversations privées, jamais revendues, jamais croisées à des fins publicitaires.",
-      "reassurance4": "<strong>Testez avant de payer.</strong> Les démos de cette page sont interactives et gratuites — vous voyez exactement ce que vous achetez.",
+      "reassurance4": "<strong>Testez avant de payer.</strong> Les démos de cette page sont interactives et ouvertes, sans compte — vous voyez exactement ce que vous achetez.",
       "b2bEyebrow": "Pour les équipes pro · API B2B",
       "b2bDescription": "Brokers, fonds, médias : intégration API REST + webhooks signés, SLA et onboarding accompagné — tarif sur demande.",
       "b2bButton": "Réserver une démo",
@@ -1683,8 +1672,8 @@
   },
   "pricing": {
     "title": "Tarification simple, transparente",
-    "subtitle": "Sans carte sur le tier Découverte.",
-    "free_title": "Découverte",
+    "subtitle": "Un seul abonnement, tout l'outil.",
+    "free_title": "Abonnement",
     "approfondie_title": "Approfondie",
     "integrale_title": "Intégrale",
     "billed_monthly": "/mois",
@@ -1819,9 +1808,9 @@
     "verifyEmail": {
       "title": "Vérification de l'e-mail",
       "verifying": "Vérification en cours…",
-      "success": "Adresse e-mail confirmée. Ton accès est activé.",
+      "success": "Adresse e-mail confirmée. Choisis ta formule pour activer ton accès.",
       "error": "Lien de vérification invalide ou expiré.",
-      "cta": "Aller à mon espace"
+      "cta": "Choisir ma formule"
     },
     "google": {
       "button": "Continuer avec Google",
@@ -1930,7 +1919,7 @@
       "navZones": "Zones — cycle de vie des zones détectées",
       "navScanner": "Scanner de conditions",
       "navHelp": "Aide — méthodologie et glossaire",
-      "planBadge": "Accès libre"
+      "planBadge": "Abonné"
     },
     "staleFocus": {
       "message": "Cette zone n’est plus détectée — la lecture actuelle du marché est affichée.",
@@ -2491,7 +2480,7 @@
     },
     "donnees": {
       "title": "Notre source de données",
-      "detail": "Données de marché via l’API Twelve Data (palier gratuit, 800 requêtes par jour en V1).",
+      "detail": "Données de marché via l’API Twelve Data (800 requêtes par jour en V1).",
       "providerLabel": "Fournisseur",
       "coverageLabel": "Couverture V1",
       "coverage": "XAU/USD et EUR/USD, de 5 minutes à journalier.",

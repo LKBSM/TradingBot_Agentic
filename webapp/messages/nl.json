@@ -5,9 +5,9 @@
       "h1a": "De markt heeft alles al opgeschreven.",
       "h1b": "MIA leest het voor je.",
       "lead": "Order Blocks, Fair Value Gaps, structuurbreuken, liquiditeitszones — automatisch gedetecteerd en beschreven in heldere taal. Plus een assistent die antwoordt wanneer je iets niet begrijpt.",
-      "ctaPrimary": "Gratis uitproberen",
+      "ctaPrimary": "Abonneren",
       "ctaSecondary": "Bekijk de tools",
-      "micro": "Zonder creditcard · Voor altijd gratis toegang",
+      "micro": "Volledige toegang zodra je je abonneert · Altijd opzegbaar",
       "roadmap": "Vroege toegang · <b>2 markten vandaag, 50 tot 80 gepland bij de lancering</b>"
     },
     "stats": {
@@ -129,7 +129,7 @@
       "eyebrow": "Probeer het zonder account aan te maken",
       "title": "Zo ziet het eruit",
       "subtitle": "Een voorbeeldlezing, hier direct te bedienen. Klik, vink aan, stel een vraag — alles werkt zonder account.",
-      "cta": "Maak een gratis account aan",
+      "cta": "Abonneren",
       "illus": "Voorbeeldgegevens · het product toont de echte marktlezingen"
     },
     "demo": {
@@ -350,18 +350,7 @@
     "pricing": {
       "eyebrow": "Tarief",
       "title": "Eén abonnement, alles inbegrepen",
-      "subtitle": "Geen premium-niveau, geen functie die wordt achtergehouden. Voor altijd gratis toegang om te proberen.",
-      "free": {
-        "name": "Ontdekking",
-        "sub": "om de tool onder de knie te krijgen",
-        "bill": "gratis, zonder tijdsbeperking",
-        "f1": "1 markt, 2 tijdframes",
-        "f2": "Volledige leesomgeving",
-        "f3": "M.I.A Agent, beperkt gebruik",
-        "f4": "Kalender van de publicaties",
-        "cta": "Maak een account aan",
-        "note": "zonder creditcard"
-      },
+      "subtitle": "Eén abonnement, de hele tool: volledige toegang zodra je je abonneert, altijd opzegbaar.",
       "paid": {
         "label": "Volledig",
         "name": "Abonnement",
@@ -389,11 +378,11 @@
       "q3": "Vervangt het TradingView?",
       "a3": "Nee, en dat is niet het doel. TradingView blijft je platform voor grafieken, tekenen en uitvoeren. MIA doet het werk van de structurele lezing: detecteren, dateren, de levenscyclus van de zones volgen. <b>De twee vullen elkaar aan.</b>",
       "q4": "Welke markten zijn gedekt?",
-      "a4": "Twee markten vandaag — goud (XAU/USD) en de euro (EUR/USD) — op 6 tijdframes van de minuut tot de dag. Het gratis niveau geeft toegang tot één markt en twee tijdframes, genoeg om de tool te beoordelen. Andere markten volgen.",
+      "a4": "Twee markten vandaag — goud (XAU/USD) en de euro (EUR/USD) — op 6 tijdframes van de minuut tot de dag. Het abonnement geeft toegang tot beide markten en alle tijdframes. Andere markten volgen.",
       "q5": "Hoe vaak worden de gegevens bijgewerkt?",
       "a5": "Bij elke slotkoers van een candle van het betreffende tijdframe, niet op een willekeurig interval. Een lezing in 15 minuten wordt elke 15 minuten ververst; een dagelijkse lezing eenmaal per dag. <b>Elk scherm toont de ouderdom van zijn laatste lezing</b>, zodat je altijd weet waar je naar kijkt.",
       "q6": "Kan ik opzeggen wanneer ik wil?",
-      "a6": "Ja, vanuit je account, zonder iemand te hoeven schrijven. Je toegang blijft actief tot het einde van de al betaalde periode, daarna val je terug op het gratis niveau — je verliest je account niet.",
+      "a6": "Ja, vanuit je account, zonder iemand te hoeven schrijven. Je toegang blijft actief tot het einde van de al betaalde periode, daarna eindigt hij — je verliest je account niet.",
       "q7": "Waar komen de koersgegevens vandaan?",
       "a7": "Van een professionele aanbieder met een weergavelicentie. De economische kalender komt uitsluitend van de uitgevende instituten — Bureau of Labor Statistics, BEA, Census, Federal Reserve (Fed), Eurostat, Europese Centrale Bank. <b>Geen enkele secundaire bron, geen enkele aggregator</b>, en elke publicatie draagt haar bronvermelding.",
       "q8": "Werkt het product op de telefoon?",
@@ -401,8 +390,8 @@
     },
     "final": {
       "h2": "Stop met intekenen. Begin met lezen.",
-      "p": "Maak een gratis account aan en zie wat MIA op jouw favoriete markt ziet. Geen creditcard, geen tijdslimiet.",
-      "cta1": "Maak een gratis account aan",
+      "p": "Abonneer je en zie wat MIA op jouw favoriete markt ziet. Volledige toegang zodra je je abonneert, altijd opzegbaar.",
+      "cta1": "Abonneren",
       "cta2": "Bekijk de tools opnieuw"
     },
     "miaSection": {
@@ -846,7 +835,7 @@
     "calendar": "Nieuws",
     "mia": "M.I.A",
     "tools": "Tools",
-    "tryFree": "Gratis uitproberen",
+    "tryFree": "Abonneren",
     "appLink": "App",
     "methodology": "Methodologie & woordenlijst"
   },
@@ -918,7 +907,7 @@
     "pricing": {
       "earlyAccessBadge": "Vroege toegang",
       "title": "Eén enkel plan. Het volledige gereedschap, zonder halve maatregelen.",
-      "intro": "Geen verkapte proefperiode, geen abonnement dat het gereedschap uitkleedt: volledige toegang, met één klik opzegbaar. De demo's op deze pagina zijn gratis — u ziet precies wat u krijgt. Bekijk onze houding in de sectie <link>Eerlijkheid</link>.",
+      "intro": "Geen verkapte proefperiode, geen abonnement dat het gereedschap uitkleedt: volledige toegang, met één klik opzegbaar. De demo's op deze pagina zijn open, zonder account — u ziet precies wat u krijgt. Bekijk onze houding in de sectie <link>Eerlijkheid</link>.",
       "cadenceGroupLabel": "Kies de facturatiefrequentie",
       "monthlyToggle": "Maandelijks",
       "annualToggle": "Jaarlijks",
@@ -948,7 +937,7 @@
       "reassurance1": "<strong>Geen valstrikkaart.</strong> Opzeggen met één klik vanuit uw account, zonder herinneringen of retentievragenlijst.",
       "reassurance2": "<strong>Zonder looptijdverplichting.</strong> Het maandelijkse aanbod is op elk moment opzegbaar; het jaarlijkse blijft actief tot het einde van de betaalde periode.",
       "reassurance3": "<strong>Uw gegevens blijven van u.</strong> Lezingen en gesprekken privé, nooit doorverkocht, nooit gekoppeld voor reclamedoeleinden.",
-      "reassurance4": "<strong>Test voordat u betaalt.</strong> De demo's op deze pagina zijn interactief en gratis — u ziet precies wat u koopt.",
+      "reassurance4": "<strong>Test voordat u betaalt.</strong> De demo's op deze pagina zijn interactief en open, zonder account — u ziet precies wat u koopt.",
       "b2bEyebrow": "Voor professionele teams · B2B-API",
       "b2bDescription": "Brokers, fondsen, media: REST API-integratie + ondertekende webhooks, SLA en begeleide onboarding — tarief op aanvraag.",
       "b2bButton": "Een demo boeken",
@@ -1683,8 +1672,8 @@
   },
   "pricing": {
     "title": "Eenvoudige, transparante prijzen",
-    "subtitle": "Geen kaart voor het Découverte-abonnement.",
-    "free_title": "Découverte",
+    "subtitle": "Eén abonnement, de hele tool.",
+    "free_title": "Abonnement",
     "approfondie_title": "Approfondie",
     "integrale_title": "Intégrale",
     "billed_monthly": "/maand",
@@ -1819,9 +1808,9 @@
     "verifyEmail": {
       "title": "Email verification",
       "verifying": "Verifying…",
-      "success": "Email confirmed. Your access is activated.",
+      "success": "E-mailadres bevestigd. Kies je abonnement om je toegang te activeren.",
       "error": "Invalid or expired verification link.",
-      "cta": "Go to my dashboard"
+      "cta": "Kies mijn abonnement"
     },
     "google": {
       "button": "Continue with Google",
@@ -1892,7 +1881,7 @@
       "navZones": "Zones — levenscyclus van de gedetecteerde zones",
       "navScanner": "Voorwaardenscanner",
       "navHelp": "Hulp — methodologie en woordenlijst",
-      "planBadge": "Vrije toegang"
+      "planBadge": "Abonnee"
     },
     "staleFocus": {
       "message": "Deze zone wordt niet langer gedetecteerd — de huidige marktlezing wordt weergegeven.",
@@ -2491,7 +2480,7 @@
     },
     "donnees": {
       "title": "Onze gegevensbron",
-      "detail": "Marktgegevens via de Twelve Data API (gratis niveau, 800 aanvragen per dag in V1).",
+      "detail": "Marktgegevens via de Twelve Data API (800 aanvragen per dag in V1).",
       "providerLabel": "Leverancier",
       "coverageLabel": "Dekking V1",
       "coverage": "XAU/USD en EUR/USD, van 5 minuten tot dagelijks.",

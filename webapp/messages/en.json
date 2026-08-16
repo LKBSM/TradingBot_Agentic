@@ -5,9 +5,9 @@
       "h1a": "The market already wrote it all.",
       "h1b": "MIA reads it to you.",
       "lead": "Order Blocks, Fair Value Gaps, structure breaks, liquidity pockets — detected automatically and described in plain language. Plus an assistant that answers when you don't understand.",
-      "ctaPrimary": "Try it free",
+      "ctaPrimary": "Subscribe",
       "ctaSecondary": "See the tools",
-      "micro": "No credit card · Free tier forever",
+      "micro": "Full access as soon as you subscribe · Cancel anytime",
       "roadmap": "Early access · <b>2 markets today, 50 to 80 planned at launch</b>"
     },
     "stats": {
@@ -129,7 +129,7 @@
       "eyebrow": "Try it without creating an account",
       "title": "Here's what it looks like",
       "subtitle": "An illustration reading, editable right here. Click, tick, ask a question — everything works with no account.",
-      "cta": "Create a free account",
+      "cta": "Subscribe",
       "illus": "Illustration data · the product shows the real market readings"
     },
     "demo": {
@@ -350,18 +350,7 @@
     "pricing": {
       "eyebrow": "Pricing",
       "title": "One subscription, everything included",
-      "subtitle": "No premium tier, no feature held hostage. A permanent free tier to try it out.",
-      "free": {
-        "name": "Discovery",
-        "sub": "to get a feel for the tool",
-        "bill": "free, no time limit",
-        "f1": "1 market, 2 timeframes",
-        "f2": "Full reading space",
-        "f3": "M.I.A Agent, limited use",
-        "f4": "Publications calendar",
-        "cta": "Create an account",
-        "note": "no credit card"
-      },
+      "subtitle": "One subscription, the whole tool: full access as soon as you subscribe, cancel anytime.",
       "paid": {
         "label": "Complete",
         "name": "Subscription",
@@ -389,11 +378,11 @@
       "q3": "Does it replace TradingView?",
       "a3": "No, and that's not the point. TradingView stays your charting, drawing and execution platform. MIA does the structural reading work: detect, date, track the lifecycle of zones. <b>The two complement each other.</b>",
       "q4": "Which markets are covered?",
-      "a4": "Two markets today — gold (XAU/USD) and the euro (EUR/USD) — across 6 timeframes from the minute to the day. The free tier gives access to one market and two timeframes, enough to judge the tool. More markets will follow.",
+      "a4": "Two markets today — gold (XAU/USD) and the euro (EUR/USD) — across 6 timeframes from the minute to the day. The subscription gives access to both markets and every timeframe. More markets will follow.",
       "q5": "How often is the data updated?",
       "a5": "On every candle close of the timeframe concerned, not on an arbitrary interval. A 15-minute reading refreshes every 15 minutes; a daily reading once a day. <b>Each screen shows the age of its last reading</b>, so you always know what you're looking at.",
       "q6": "Can I cancel whenever I want?",
-      "a6": "Yes, from your account, without having to write to anyone. Your access stays active until the end of the period already paid for, then you drop back to the free tier — you don't lose your account.",
+      "a6": "Yes, from your account, without having to write to anyone. Your access stays active until the end of the period already paid for, then it ends — you don't lose your account.",
       "q7": "Where does the price data come from?",
       "a7": "From a professional provider under a display licence. The economic calendar comes solely from the issuing bodies — Bureau of Labor Statistics, BEA, Census, Federal Reserve, Eurostat, European Central Bank. <b>No secondary source, no aggregator</b>, and every publication carries its attribution.",
       "q8": "Does the product work on a phone?",
@@ -401,8 +390,8 @@
     },
     "final": {
       "h2": "Stop drawing. Start reading.",
-      "p": "Create a free account and see what MIA sees on your favourite market. No credit card, no time limit.",
-      "cta1": "Create a free account",
+      "p": "Subscribe and see what MIA sees on your favourite market. Full access as soon as you subscribe, cancel anytime.",
+      "cta1": "Subscribe",
       "cta2": "Review the tools"
     },
     "miaSection": {
@@ -846,7 +835,7 @@
     "calendar": "News",
     "mia": "M.I.A",
     "tools": "Tools",
-    "tryFree": "Try for free",
+    "tryFree": "Subscribe",
     "appLink": "App",
     "methodology": "Methodology & glossary"
   },
@@ -918,7 +907,7 @@
     "pricing": {
       "earlyAccessBadge": "Early access",
       "title": "One plan. The whole tool, no half-measures.",
-      "intro": "No disguised trial, no tier that cripples the tool: full access, cancelable in one click. The demos on this page are free — you see exactly what you get. See our stance in the <link>Honesty</link> section.",
+      "intro": "No disguised trial, no tier that cripples the tool: full access, cancel anytime. The demos on this page are open, no account needed — you see exactly what you get. See our stance in the <link>Honesty</link> section.",
       "cadenceGroupLabel": "Choose your billing frequency",
       "monthlyToggle": "Monthly",
       "annualToggle": "Annual",
@@ -948,7 +937,7 @@
       "reassurance1": "<strong>No card trap.</strong> Cancel in one click from your account, with no follow-up calls or retention questionnaire.",
       "reassurance2": "<strong>No fixed-term commitment.</strong> The monthly plan can be canceled anytime; the annual plan stays active until the end of the paid period.",
       "reassurance3": "<strong>Your data stays yours.</strong> Readings and conversations are private, never resold, never cross-referenced for advertising.",
-      "reassurance4": "<strong>Try before you pay.</strong> The demos on this page are interactive and free — you see exactly what you're buying.",
+      "reassurance4": "<strong>Try before you pay.</strong> The demos on this page are interactive and open, no account needed — you see exactly what you're buying.",
       "b2bEyebrow": "For pro teams · B2B API",
       "b2bDescription": "Brokers, funds, media: REST API integration + signed webhooks, SLA and guided onboarding — pricing on request.",
       "b2bButton": "Book a demo",
@@ -1683,8 +1672,8 @@
   },
   "pricing": {
     "title": "Simple, transparent pricing",
-    "subtitle": "No card on the Découverte tier.",
-    "free_title": "Découverte",
+    "subtitle": "One subscription, the whole tool.",
+    "free_title": "Subscription",
     "approfondie_title": "Approfondie",
     "integrale_title": "Intégrale",
     "billed_monthly": "/mo",
@@ -1819,9 +1808,9 @@
     "verifyEmail": {
       "title": "Email verification",
       "verifying": "Verifying…",
-      "success": "Email confirmed. Your access is activated.",
+      "success": "Email confirmed. Choose your plan to activate your access.",
       "error": "Invalid or expired verification link.",
-      "cta": "Go to my dashboard"
+      "cta": "Choose your plan"
     },
     "google": {
       "button": "Continue with Google",
@@ -1892,7 +1881,7 @@
       "navZones": "Zones — lifecycle of detected zones",
       "navScanner": "Condition scanner",
       "navHelp": "Help — methodology and glossary",
-      "planBadge": "Free access"
+      "planBadge": "Subscriber"
     },
     "staleFocus": {
       "message": "This zone is no longer detected — the current market reading is shown.",
@@ -2491,7 +2480,7 @@
     },
     "donnees": {
       "title": "Our data source",
-      "detail": "Market data via the Twelve Data API (free tier, 800 requests per day in V1).",
+      "detail": "Market data via the Twelve Data API (800 requests per day in V1).",
       "providerLabel": "Provider",
       "coverageLabel": "V1 coverage",
       "coverage": "XAU/USD and EUR/USD, from 5 minutes to daily.",

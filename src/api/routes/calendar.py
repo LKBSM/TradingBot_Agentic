@@ -22,8 +22,10 @@ import threading
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional, Tuple
 
-from fastapi import APIRouter, HTTPException, Path, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request
 
+from src.api.session_auth import optional_account
+from src.api.subscription_gate import enforce_access
 from src.intelligence.calendar_schema import CalendarResponse
 from src.intelligence.publication_measures import MEASURED_MARKETS as _MEASURABLE_MARKETS
 from src.intelligence.publication_measures_schema import PublicationMeasures
@@ -72,7 +74,9 @@ async def get_calendar(
     request: Request,
     lookahead_days: int = Query(7, ge=1, le=_MAX_LOOKAHEAD_DAYS),
     lookback_days: int = Query(3, ge=0, le=_MAX_LOOKBACK_DAYS),
+    account: Optional[Dict[str, Any]] = Depends(optional_account),
 ) -> CalendarResponse:
+    enforce_access(request, account)
     service = _get_calendar_service(request)
     try:
         return service.get_calendar(
@@ -88,10 +92,12 @@ async def get_calendar(
 def get_calendar_month(
     request: Request,
     month: str = Query(..., description="Target month, 'YYYY-MM'"),
+    account: Optional[Dict[str, Any]] = Depends(optional_account),
 ) -> CalendarResponse:
     """Every attached event within one calendar month — the month grid needs whole
     months forward AND backward, which the now-relative window cannot express.
     Sync `def` so the (possibly refreshing) call is threadpooled (REC-1)."""
+    enforce_access(request, account)
     m = _MONTH_RE.match(month or "")
     if not m:
         raise HTTPException(status_code=422, detail="month must be 'YYYY-MM'")
@@ -111,13 +117,16 @@ def get_calendar_month(
 
 @router.get("/publications/{event_key}/measures", response_model=PublicationMeasures)
 def get_publication_measures(
+    request: Request,
     event_key: str = Path(..., description="Recurring event key, e.g. 'us_cpi'"),
+    account: Optional[Dict[str, Any]] = Depends(optional_account),
 ) -> PublicationMeasures:
     """Engine-measured facts (calm-before / structure-at-T / return-to-calm) for a
     recurring publication. Returns an EMPTY PublicationMeasures (all measures
     None) when the key is not measurable or its data is unavailable — the page
     then renders no measures section, never a placeholder. Cached (heavy compute).
     """
+    enforce_access(request, account)
     market = _MEASURABLE_MARKETS.get(event_key)
     if market is None:
         return PublicationMeasures(event_key=event_key, market="")
@@ -161,11 +170,14 @@ def prewarm_publication_measures() -> None:
 
 @router.get("/publications/{event_key}/measures/debug")
 def get_publication_measures_debug(
+    request: Request,
     event_key: str = Path(..., description="Recurring event key, e.g. 'us_cpi'"),
+    account: Optional[Dict[str, Any]] = Depends(optional_account),
 ) -> Dict[str, Any]:
     """Read-only triage (NW-7c): WHY the measures do/don't compute in this env —
     which release/candle source yields data and whether they overlap. No secrets,
     no side effects. Returns a plain JSON object; never raises."""
+    enforce_access(request, account)
     from src.intelligence.publication_measures import diagnose_default_measures
 
     market = _MEASURABLE_MARKETS.get(event_key) or "XAUUSD"
@@ -174,7 +186,9 @@ def get_publication_measures_debug(
 
 @router.get("/publications/{event_key}/values/debug")
 def get_publication_values_debug(
+    request: Request,
     event_key: str = Path(..., description="Recurring event key, e.g. 'us_durable_goods'"),
+    account: Optional[Dict[str, Any]] = Depends(optional_account),
 ) -> Dict[str, Any]:
     """Read-only triage (NW-9): WHY a publication's CURVE is empty in this env.
 
@@ -183,6 +197,7 @@ def get_publication_values_debug(
     attempt for this event's catalog series. For Census it also lists the program's
     valid (category_code, data_type_code) cells so a wrong series code is fixed
     against the real API, never guessed. No secrets; never raises."""
+    enforce_access(request, account)
     from src.intelligence.calendar_providers.official_sources.base_official import (
         load_catalog,
         series_kind_for,
@@ -212,9 +227,12 @@ _BACKFILL_STATE: Dict[str, Any] = {"running": False, "last_result": None}
 
 @router.get("/publications/{event_key}/measures/backfill")
 def trigger_measures_backfill(
+    request: Request,
     event_key: str = Path(..., description="Recurring event key, e.g. 'us_cpi'"),
     months: int = Query(14, ge=3, le=36, description="Months of M15 history to fill"),
+    account: Optional[Dict[str, Any]] = Depends(optional_account),
 ) -> Dict[str, Any]:
+    enforce_access(request, account)
     market = _MEASURABLE_MARKETS.get(event_key)
     if market is None:
         raise HTTPException(status_code=422, detail="event not measurable")
@@ -253,10 +271,13 @@ def trigger_measures_backfill(
 
 @router.get("/publications/{event_key}/measures/backfill/status")
 def measures_backfill_status(
+    request: Request,
     event_key: str = Path(..., description="Recurring event key, e.g. 'us_cpi'"),
+    account: Optional[Dict[str, Any]] = Depends(optional_account),
 ) -> Dict[str, Any]:
     """Progress/last result of the deep backfill WITHOUT starting a new run — so a
     failure (auth, provider error, depth) is visible instead of silent."""
+    enforce_access(request, account)
     return {
         "running": bool(_BACKFILL_STATE["running"]),
         "last_result": _BACKFILL_STATE["last_result"],
@@ -291,9 +312,12 @@ def _measures_data_dir() -> str:
 
 @router.get("/publications/{event_key}/measures/import-csv")
 def import_measures_csv(
+    request: Request,
     event_key: str = Path(..., description="Recurring event key, e.g. 'us_cpi'"),
     url: str = Query(..., description="Direct download URL of the XAU M15 OHLC CSV"),
+    account: Optional[Dict[str, Any]] = Depends(optional_account),
 ) -> Dict[str, Any]:
+    enforce_access(request, account)
     if _MEASURABLE_MARKETS.get(event_key) is None:
         raise HTTPException(status_code=422, detail="event not measurable")
     if _IMPORT_STATE["running"]:
@@ -355,8 +379,11 @@ def import_measures_csv(
 
 @router.get("/publications/{event_key}/measures/import-csv/status")
 def import_measures_csv_status(
+    request: Request,
     event_key: str = Path(..., description="Recurring event key, e.g. 'us_cpi'"),
+    account: Optional[Dict[str, Any]] = Depends(optional_account),
 ) -> Dict[str, Any]:
+    enforce_access(request, account)
     return {
         "running": bool(_IMPORT_STATE["running"]),
         "last_result": _IMPORT_STATE["last_result"],
@@ -373,7 +400,9 @@ def import_measures_csv_status(
 def get_calendar_event(
     request: Request,
     event_id: str = Path(..., description="Stable event id, e.g. bea:us_gdp:2026-08-26"),
+    account: Optional[Dict[str, Any]] = Depends(optional_account),
 ) -> CalendarResponse:
+    enforce_access(request, account)
     service = _get_calendar_service(request)
     try:
         return service.get_event(event_id)

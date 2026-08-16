@@ -351,6 +351,13 @@ def create_app(
         from src.api.session_auth import assert_stable_secret_configured
 
         assert_stable_secret_configured()
+        # PAY-2 — refuse to boot a production deploy whose outward-facing base
+        # URLs are missing or point at localhost: a customer bounced to localhost
+        # after a Stripe/Google redirect is worse than a failed deploy. No-op in
+        # dev/CI/tests where ENVIRONMENT is unset.
+        from src.api.public_urls import assert_public_urls_configured
+
+        assert_public_urls_configured()
         # Seed the owner account from env (idempotent, no-op without OWNER_*).
         _maybe_seed_owner(app_state)
         # AUTH-19 — purge expired session rows at boot then on a slow timer so

@@ -1,9 +1,10 @@
-"""Pricing — mission PRIX-1.
+"""Pricing — mission PRIX-1, paid-only since PAY-2.
 
 ONE paid plan, two billing cadences, US dollars everywhere (including Canadian
-customers). The FREE tier is kept (the interactive demos are the free surface).
+customers). PAY-2 removed the free tier entirely: paying is the condition of
+entry, so the catalog holds ONLY the two purchasable cadences. The public
+landing demos are the only free surface, and they are not a "plan".
 
-    FREE       $0             public demos + gated read surface
     MONTHLY    $39 / month    the full tool, cancel anytime
     ANNUAL     $348 / year    the full tool, i.e. $29 / month billed yearly
 
@@ -25,9 +26,12 @@ from typing import Optional
 
 
 # Plan keys — used as the Stripe checkout ``plan_key`` and in webhook routing.
-PLAN_FREE = "FREE"
+# PAY-2: there is no free plan. ``PLAN_FREE`` is kept ONLY as a legacy alias so
+# older imports/tests don't break; it is NOT part of the catalog and can never be
+# purchased or granted.
 PLAN_MONTHLY = "MONTHLY"
 PLAN_ANNUAL = "ANNUAL"
+PLAN_FREE = "FREE"  # legacy alias — not in the catalog (PAY-2)
 
 # Repo root: src/billing/pricing.py → parents[2].
 _CONFIG_PATH = Path(__file__).resolve().parents[2] / "config" / "pricing.json"
@@ -74,16 +78,6 @@ def _build_plans() -> "dict[str, PricingPlan]":
     annual_month = annual_year / 12.0
 
     return {
-        PLAN_FREE: PricingPlan(
-            key=PLAN_FREE,
-            display_name="Gratuit",
-            cadence="free",
-            amount_usd=0.0,
-            monthly_equivalent_usd=0.0,
-            currency=currency_code,
-            stripe_price_id=None,
-            is_free=True,
-        ),
         PLAN_MONTHLY: PricingPlan(
             key=PLAN_MONTHLY,
             display_name="Mensuel",
@@ -117,12 +111,14 @@ def get_plan(key: str) -> Optional[PricingPlan]:
 
 
 def list_plans() -> "list[PricingPlan]":
-    """All plans, FREE first."""
+    """All plans (PAY-2: paid-only — MONTHLY, ANNUAL)."""
     return list(_plans().values())
 
 
 def list_paid_plans() -> "list[PricingPlan]":
-    """The purchasable cadences (MONTHLY, ANNUAL) — FREE excluded."""
+    """The purchasable cadences (MONTHLY, ANNUAL). Since PAY-2 removed the free
+    plan this equals :func:`list_plans`; the ``is_free`` filter is kept so a
+    re-introduced non-purchasable plan would still be excluded."""
     return [p for p in _plans().values() if not p.is_free]
 
 

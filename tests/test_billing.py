@@ -68,11 +68,11 @@ def test_annual_monthly_equivalent_is_exact_29():
     assert annual.amount_usd / 12.0 == annual.monthly_equivalent_usd
 
 
-def test_free_tier_kept_and_zero():
-    free = get_plan(PLAN_FREE)
-    assert free is not None
-    assert free.is_free is True
-    assert free.amount_usd == 0.0
+def test_no_free_plan_in_catalog():
+    # PAY-2: paying is the condition of entry — the free plan is gone. The legacy
+    # alias PLAN_FREE still exists as a name, but it is not in the catalog.
+    assert get_plan(PLAN_FREE) is None
+    assert all(not p.is_free for p in list_plans())
 
 
 def test_only_two_paid_plans():
@@ -186,7 +186,9 @@ def test_pricing_endpoint_returns_plans():
     assert resp.status_code == 200
     body = resp.json()
     keys = {p["key"] for p in body["plans"]}
-    assert {PLAN_FREE, PLAN_MONTHLY, PLAN_ANNUAL}.issubset(keys)
+    # PAY-2: paid-only catalog — no free plan is ever advertised.
+    assert keys == {PLAN_MONTHLY, PLAN_ANNUAL}
+    assert PLAN_FREE not in keys
     # Every advertised amount is in USD.
     assert all(p["currency"] == "USD" for p in body["plans"])
 

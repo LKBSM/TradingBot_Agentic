@@ -126,8 +126,6 @@ describe('LP-1 home — mandatory mentions', () => {
     expect(txt).toContain('39 $');
     expect(txt).toContain('348 $ US');
     expect(txt).toContain('29 $ US');
-    // free tier is explicit dollars too
-    expect(txt).toContain('0 $');
   });
 
   it('carries the required legal mentions (fr)', () => {

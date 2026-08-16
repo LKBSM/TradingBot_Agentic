@@ -39,7 +39,7 @@ const BETA_LOCKDOWN =
 const SESSION_COOKIE = 'mia_session';
 // Product routes behind the login wall. FR is prefixless; a leading locale
 // segment (/en/app …) is stripped before the check so all locales are gated.
-const PROTECTED_PREFIXES = ['/app', '/zones', '/scanner', '/compte', '/abonnement'];
+const PROTECTED_PREFIXES = ['/app', '/zones', '/scanner', '/actualites', '/compte', '/abonnement'];
 
 function stripLocale(pathname: string): string {
   const segs = pathname.split('/').filter(Boolean);
