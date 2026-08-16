@@ -334,7 +334,7 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
       </div>
 
       {/* Combo selector */}
-      <div className="mb-3 flex flex-wrap items-center gap-3">
+      <div className="mb-2 flex flex-wrap items-center gap-3">
         <Segmented
           options={SUPPORTED_INSTRUMENTS.map((i) => ({ value: i, label: fmt.instrument(i) }))}
           value={instrument}
@@ -350,7 +350,7 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
       </div>
 
       {/* Filters + sort */}
-      <div className="mb-4 flex flex-wrap items-center gap-x-6 gap-y-2">
+      <div className="mb-2 flex flex-wrap items-center gap-x-6 gap-y-2">
         <div className="flex items-center gap-2">
           <span className="text-[9px] font-semibold uppercase tracking-wide text-[var(--faint)]">{t('filterLabel')}</span>
           <Segmented<ZoneFilter> options={FILTERS} value={filter} onChange={setFilter} ariaLabel={t('filterAria')} />
