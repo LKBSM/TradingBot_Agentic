@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import * as React from 'react';
-import { CreditCard, ShieldCheck } from 'lucide-react';
+import { Check, CreditCard, ShieldCheck } from 'lucide-react';
 import {
   BillingError,
   fetchPricing,
@@ -22,8 +22,8 @@ import { FormError, FormSuccess } from '@/components/auth/fields';
 const ACTIVE_STATUSES = new Set(['active', 'trialing']);
 
 /**
- * The five app-facing subscription states (PAY-1), derived from the Stripe
- * status + ``cancel_at_period_end``. Each maps to a clear account-page display.
+ * The app-facing subscription states (PAY-1), derived from the Stripe status +
+ * ``cancel_at_period_end``.
  */
 type SubState = 'none' | 'active' | 'canceling' | 'grace' | 'suspended' | 'expired';
 
@@ -35,7 +35,6 @@ function deriveState(sub: Subscription | null): SubState {
   }
   if (status === 'past_due') return 'grace';
   if (status === 'suspended') return 'suspended';
-  // canceled / unpaid / incomplete / incomplete_expired
   return 'expired';
 }
 
@@ -44,39 +43,9 @@ function hasAccessState(s: SubState): boolean {
   return s === 'active' || s === 'canceling' || s === 'grace';
 }
 
-/**
- * Human label for a plan key (AUTH-15). The backend /pricing intentionally
- * returns only the key + price_id (no amount hard-coded server-side), so the
- * readable label + price live here — amounts come from `@/lib/pricing.generated`
- * (single source), the currency is always explicit US dollars. Unknown keys
- * fall back to the raw key rather than showing nothing.
- */
-function planLabel(
-  key: string,
-  t: (k: string, values?: Record<string, string | number>) => string,
-): string {
-  const currency = t('currency');
-  switch (key) {
-    case 'MONTHLY':
-      return t('planMonthly', { amount: PRICING.monthly, currency });
-    case 'ANNUAL':
-      return t('planAnnual', {
-        total: PRICING.annualPerYear,
-        perMonth: PRICING.annualPerMonth,
-        currency,
-      });
-    default:
-      return key;
-  }
-}
-
-function stateHeading(
-  state: SubState,
-  t: (key: string) => string,
-): string {
+function stateHeading(state: SubState, t: (key: string) => string): string {
   switch (state) {
     case 'active':
-      return t('status.active');
     case 'canceling':
       return t('status.active');
     case 'grace':
@@ -85,16 +54,12 @@ function stateHeading(
       return t('status.suspended');
     case 'expired':
       return t('status.expired');
-    case 'none':
     default:
       return t('status.none');
   }
 }
 
-function formatDate(
-  epochSeconds: number | null,
-  locale: string,
-): string | null {
+function formatDate(epochSeconds: number | null, locale: string): string | null {
   if (!epochSeconds) return null;
   try {
     return new Date(epochSeconds * 1000).toLocaleDateString(locale, {
@@ -108,10 +73,15 @@ function formatDate(
 }
 
 /**
- * Subscription management panel: shows the current state, lets the user start
- * Checkout for a configured plan, or open the Stripe Customer Portal to manage /
- * cancel. Redirects to /connexion when logged out. All payment UI is hosted by
- * Stripe — this component only redirects to URLs the backend returns.
+ * Subscription panel — the single place an account activates or manages its
+ * subscription. All payment UI is hosted by Stripe; this component only
+ * redirects to URLs the backend returns.
+ *
+ * PAY-3b: for an account WITHOUT an active subscription there is no "no
+ * subscription" resting state — paying is the only door in. The unsubscribed
+ * view is a clean plan-choice ("activate your account") with the annual cadence
+ * highlighted; the "current state" card only appears when there is a real
+ * subscription to show.
  */
 export function SubscriptionPanel() {
   const t = useTranslations('billing');
@@ -124,7 +94,7 @@ export function SubscriptionPanel() {
   const [plans, setPlans] = React.useState<Plan[]>([]);
   const [sub, setSub] = React.useState<Subscription | null>(null);
   const [loading, setLoading] = React.useState(true);
-  const [busy, setBusy] = React.useState(false);
+  const [busy, setBusy] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
 
   const checkoutStatus = searchParams.get('status');
@@ -146,11 +116,7 @@ export function SubscriptionPanel() {
         setSub(subscription);
       } catch (err) {
         if (!cancelled) {
-          setError(
-            err instanceof BillingError
-              ? err.message
-              : t('errorLoad'),
-          );
+          setError(err instanceof BillingError ? err.message : t('errorLoad'));
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -162,11 +128,8 @@ export function SubscriptionPanel() {
     };
   }, [account]);
 
-  // PAY-2 — after returning from Stripe Checkout the payment already succeeded,
-  // but ACCESS is granted by the WEBHOOK, not by this redirect. Poll the
-  // subscription until it turns active, then send the user into the product.
-  // Even if they closed the tab before landing here, the webhook still grants
-  // access server-side — so this wait is reassuring, never an error.
+  // After returning from Stripe Checkout the payment already succeeded, but
+  // ACCESS is granted by the WEBHOOK, not by this redirect. Poll until active.
   const awaitingWebhook =
     checkoutStatus === 'success' && account !== null && !hasAccessState(deriveState(sub));
 
@@ -207,11 +170,11 @@ export function SubscriptionPanel() {
       <div className="space-y-6">
         <h1 className="text-2xl font-semibold tracking-tight">{t('title')}</h1>
         <div
-          className="flex flex-col items-center gap-4 rounded-lg border border-border/60 p-8 text-center"
+          className="flex flex-col items-center gap-4 rounded-2xl border border-border/60 bg-muted/10 p-10 text-center"
           aria-busy="true"
           aria-live="polite"
         >
-          <div className="h-7 w-7 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
           <p className="text-sm text-foreground">{t('checkoutSuccess')}</p>
         </div>
       </div>
@@ -220,33 +183,25 @@ export function SubscriptionPanel() {
 
   async function onSubscribe(planKey: string) {
     setError(null);
-    setBusy(true);
+    setBusy(planKey);
     try {
       const url = await startCheckout(planKey);
       window.location.href = url;
     } catch (err) {
-      setError(
-        err instanceof BillingError
-          ? err.message
-          : t('errorCheckout'),
-      );
-      setBusy(false);
+      setError(err instanceof BillingError ? err.message : t('errorCheckout'));
+      setBusy(null);
     }
   }
 
   async function onManage() {
     setError(null);
-    setBusy(true);
+    setBusy('manage');
     try {
       const url = await openPortal();
       window.location.href = url;
     } catch (err) {
-      setError(
-        err instanceof BillingError
-          ? err.message
-          : t('errorPortal'),
-      );
-      setBusy(false);
+      setError(err instanceof BillingError ? err.message : t('errorPortal'));
+      setBusy(null);
     }
   }
 
@@ -254,108 +209,202 @@ export function SubscriptionPanel() {
   const state = deriveState(sub);
   const periodEnd = formatDate(sub?.current_period_end ?? null, locale);
   const currency = t('currency');
-  // Next charge amount, resolved from the subscription's price id via the
-  // configured plans (amounts come from the single pricing source, never hard
-  // coded, and always carry their currency).
   const planKey = plans.find((p) => p.price_id === sub?.price_id)?.key ?? null;
   const nextAmount =
-    planKey === 'MONTHLY'
-      ? PRICING.monthly
-      : planKey === 'ANNUAL'
-        ? PRICING.annualPerYear
-        : null;
-  // Plans are offered only when there is nothing active to manage.
-  const showPlans = state === 'none' || state === 'expired' || state === 'suspended';
+    planKey === 'MONTHLY' ? PRICING.monthly : planKey === 'ANNUAL' ? PRICING.annualPerYear : null;
 
-  // The one-line detail under the state heading, per state (PAY-1: the user
-  // always knows where they stand and until when).
-  let detail: string | null = null;
-  if (state === 'active' && periodEnd) {
-    detail =
-      nextAmount !== null
-        ? t('nextCharge', { date: periodEnd, amount: nextAmount, currency })
-        : t('renewsOn', { date: periodEnd });
-  } else if (state === 'canceling' && periodEnd) {
-    detail = t('accessUntilNoRenewal', { date: periodEnd });
-  } else if (state === 'grace') {
-    detail = t('graceNotice');
-  } else if (state === 'suspended') {
-    detail = t('suspendedNotice');
-  } else if (state === 'expired') {
-    detail = t('expiredNotice');
-  }
-
-  return (
-    <div className="space-y-8">
-      <div>
+  // Owner has unconditional access — no plans, no paywall.
+  if (isOwner) {
+    return (
+      <div className="space-y-6">
         <h1 className="text-2xl font-semibold tracking-tight">{t('title')}</h1>
-        <p className="text-sm text-muted-foreground">
-          {t('intro')}
-        </p>
-      </div>
-
-      {checkoutStatus === 'success' && (
-        <FormSuccess message={t('checkoutSuccess')} />
-      )}
-      {checkoutStatus === 'cancel' && (
-        <FormError message={t('checkoutCancel')} />
-      )}
-      <FormError message={error} />
-
-      {isOwner && (
-        <div className="inline-flex items-center gap-1 rounded-full border border-sentinel-warn/40 bg-sentinel-warn/10 px-2.5 py-1 text-xs font-medium text-sentinel-warn">
+        <div className="inline-flex items-center gap-1.5 rounded-full border border-sentinel-warn/40 bg-sentinel-warn/10 px-3 py-1 text-xs font-medium text-sentinel-warn">
           <ShieldCheck className="h-3.5 w-3.5" aria-hidden />
           {t('ownerBadge')}
         </div>
-      )}
+      </div>
+    );
+  }
 
-      <section className="space-y-3 rounded-lg border border-border/60 p-5">
-        <h2 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
-          {t('currentStateTitle')}
-        </h2>
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-foreground">{stateHeading(state, t)}</span>
+  // A real subscription to MANAGE (active / canceling / grace).
+  if (state === 'active' || state === 'canceling' || state === 'grace') {
+    let detail: string | null = null;
+    if (state === 'active' && periodEnd) {
+      detail =
+        nextAmount !== null
+          ? t('nextCharge', { date: periodEnd, amount: nextAmount, currency })
+          : t('renewsOn', { date: periodEnd });
+    } else if (state === 'canceling' && periodEnd) {
+      detail = t('accessUntilNoRenewal', { date: periodEnd });
+    } else if (state === 'grace') {
+      detail = t('graceNotice');
+    }
+    return (
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">{t('title')}</h1>
+          <p className="text-sm text-muted-foreground">{t('intro')}</p>
         </div>
-        {detail && <p className="text-xs text-muted-foreground">{detail}</p>}
-        {sub?.status ? (
-          <div className="space-y-2">
-            <Button variant="outline" onClick={onManage} disabled={busy}>
+        <FormError message={error} />
+        <section className="space-y-4 rounded-2xl border border-border/60 p-6">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex h-2 w-2 rounded-full bg-sentinel-bull" aria-hidden />
+            <h2 className="text-base font-medium text-foreground">{stateHeading(state, t)}</h2>
+          </div>
+          {detail && <p className="text-sm text-muted-foreground">{detail}</p>}
+          <div className="space-y-2 pt-1">
+            <Button variant="outline" onClick={onManage} disabled={busy !== null}>
               <CreditCard className="mr-2 h-4 w-4" aria-hidden />
               {t('manage')}
             </Button>
             <p className="text-xs text-muted-foreground">{t('manageHint')}</p>
           </div>
-        ) : null}
-      </section>
-
-      {showPlans && (
-        <section className="space-y-4 rounded-lg border border-border/60 p-5">
-          <h2 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
-            {t('choosePlanTitle')}
-          </h2>
-          {plans.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              {t('noPlans')}
-            </p>
-          ) : (
-            <ul className="space-y-3">
-              {plans.map((plan) => (
-                <li
-                  key={plan.key}
-                  className="flex items-center justify-between gap-3"
-                >
-                  <span className="font-medium text-foreground">{planLabel(plan.key, t)}</span>
-                  <Button onClick={() => onSubscribe(plan.key)} disabled={busy}>
-                    {state === 'expired' || state === 'suspended'
-                      ? t('reactivate')
-                      : t('subscribe')}
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          )}
         </section>
+      </div>
+    );
+  }
+
+  // Unsubscribed: none / expired / suspended → the ACTIVATE (plan-choice) view.
+  // No "no subscription" status card — paying is the only door in.
+  const reactivating = state === 'expired' || state === 'suspended';
+  const ctaLabel = reactivating ? t('reactivate') : t('subscribe');
+  const savePerYear = PRICING.monthly * 12 - PRICING.annualPerYear;
+
+  const mentions = [t('legalRenew'), t('legalTool'), t('legalRisk'), t('legalAge')];
+
+  return (
+    <div className="space-y-8">
+      <header className="space-y-1.5">
+        <h1 className="text-2xl font-semibold tracking-tight">
+          {reactivating ? t('reactivateTitle') : t('activateTitle')}
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          {reactivating
+            ? state === 'suspended'
+              ? t('suspendedNotice')
+              : t('expiredNotice')
+            : t('activateIntro')}
+        </p>
+      </header>
+
+      {checkoutStatus === 'success' && <FormSuccess message={t('checkoutSuccess')} />}
+      {checkoutStatus === 'cancel' && <FormError message={t('checkoutCancel')} />}
+      <FormError message={error} />
+
+      {plans.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{t('noPlans')}</p>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {/* Monthly */}
+          {plans.some((p) => p.key === 'MONTHLY') && (
+            <PlanCard
+              name={t('monthlyName')}
+              amount={PRICING.monthly}
+              currency={currency}
+              perMonth={t('perMonth')}
+              cta={ctaLabel}
+              busy={busy === 'MONTHLY'}
+              disabled={busy !== null}
+              onClick={() => onSubscribe('MONTHLY')}
+            />
+          )}
+          {/* Annual — highlighted */}
+          {plans.some((p) => p.key === 'ANNUAL') && (
+            <PlanCard
+              name={t('annualName')}
+              amount={PRICING.annualPerMonth}
+              currency={currency}
+              perMonth={t('perMonth')}
+              note={t('annualBilledNote', { total: PRICING.annualPerYear, currency })}
+              badge={t('bestValue')}
+              save={savePerYear > 0 ? t('savePerYear', { amount: savePerYear, currency }) : undefined}
+              highlighted
+              cta={ctaLabel}
+              busy={busy === 'ANNUAL'}
+              disabled={busy !== null}
+              onClick={() => onSubscribe('ANNUAL')}
+            />
+          )}
+        </div>
       )}
+
+      <p className="flex items-center gap-2 text-xs text-muted-foreground">
+        <ShieldCheck className="h-4 w-4 shrink-0" aria-hidden />
+        {t('securedByStripe')}
+      </p>
+
+      <ul className="space-y-1.5 border-t border-border/60 pt-4 text-xs text-muted-foreground">
+        {mentions.map((m) => (
+          <li key={m}>{m}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** A single plan card. The highlighted one carries a "best value" badge + ring. */
+function PlanCard({
+  name,
+  amount,
+  currency,
+  perMonth,
+  note,
+  badge,
+  save,
+  highlighted = false,
+  cta,
+  busy,
+  disabled,
+  onClick,
+}: {
+  name: string;
+  amount: number;
+  currency: string;
+  perMonth: string;
+  note?: string;
+  badge?: string;
+  save?: string;
+  highlighted?: boolean;
+  cta: string;
+  busy: boolean;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <div
+      className={[
+        'relative flex flex-col gap-4 rounded-2xl border p-6 transition',
+        highlighted
+          ? 'border-primary/60 bg-primary/[0.04] shadow-sm ring-1 ring-primary/20'
+          : 'border-border/60 bg-muted/10 hover:border-border',
+      ].join(' ')}
+    >
+      {badge && (
+        <span className="absolute -top-2.5 right-5 rounded-full bg-primary px-2.5 py-0.5 text-[11px] font-semibold text-primary-foreground">
+          {badge}
+        </span>
+      )}
+      <div className="space-y-1">
+        <h3 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+          {name}
+        </h3>
+        <p className="flex items-baseline gap-1.5">
+          <span className="text-3xl font-semibold tracking-tight text-foreground">
+            {amount} {currency}
+          </span>
+          <span className="text-sm text-muted-foreground">/ {perMonth}</span>
+        </p>
+        {note && <p className="text-xs text-muted-foreground">{note}</p>}
+        {save && (
+          <p className="inline-flex items-center gap-1 text-xs font-medium text-sentinel-bull">
+            <Check className="h-3.5 w-3.5" aria-hidden />
+            {save}
+          </p>
+        )}
+      </div>
+      <Button className="mt-auto w-full" onClick={onClick} disabled={disabled}>
+        {busy ? '…' : cta}
+      </Button>
     </div>
   );
 }

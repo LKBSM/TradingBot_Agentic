@@ -1874,7 +1874,21 @@
     "suspendedNotice": "Access suspended following a refund or dispute. Contact support if needed.",
     "expiredNotice": "Your subscription has expired. Subscribe again to regain access.",
     "manageHint": "Change plan, update your card, download invoices or cancel — all in the Stripe portal.",
-    "reactivate": "Subscribe again"
+    "reactivate": "Subscribe again",
+    "activateTitle": "Activate your account",
+    "activateIntro": "Choose your plan to open MIA Markets. Your access turns on as soon as the payment is confirmed.",
+    "reactivateTitle": "Reactivate your access",
+    "monthlyName": "Monthly",
+    "annualName": "Annual",
+    "perMonth": "per month",
+    "annualBilledNote": "billed {total} {currency} per year",
+    "bestValue": "Best value",
+    "savePerYear": "Save {amount} {currency} per year",
+    "securedByStripe": "Payment secured by Stripe. No card data is kept on our servers.",
+    "legalRenew": "Automatic renewal, cancel anytime.",
+    "legalTool": "An information and education tool — not investment advice, not trading signals.",
+    "legalRisk": "Trading carries a risk of loss.",
+    "legalAge": "Restricted to people aged 18 and over."
   },
   "access": {
     "paywall": {

@@ -9,7 +9,6 @@ import { useAuth } from '@/lib/auth/store';
 import { useLocalizedHref } from '@/lib/i18n/href';
 import { Button } from '@/components/ui/button';
 import { CheckField, FormError, TextField } from './fields';
-import { GoogleButton } from './GoogleButton';
 
 /**
  * Registration form. Enforces, client-side, the same gates the backend enforces
@@ -152,17 +151,6 @@ export function RegisterForm() {
       </Button>
 
       <p className="text-xs text-muted-foreground">{t('register.nextStep')}</p>
-
-      <div className="flex items-center gap-3 text-xs uppercase tracking-wider text-muted-foreground">
-        <span className="h-px flex-1 bg-border/60" />
-        {t('register.or')}
-        <span className="h-px flex-1 bg-border/60" />
-      </div>
-
-      {/* PAY-3 — the Google door is present at SIGN-UP too, at parity with email:
-          two doors to the same house. It renders nothing when Google is not
-          configured server-side. */}
-      <GoogleButton />
 
       <p className="text-center text-sm text-muted-foreground">
         {t('register.haveAccount')}{' '}
