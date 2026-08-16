@@ -37,6 +37,7 @@ from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from pydantic import BaseModel, Field
 
 from src.api.account_store import AccountError, AccountStore
+from src.api.public_urls import api_public_url, app_public_url
 from src.api.routes.legal import LAST_UPDATED as LEGAL_VERSION
 from src.api.session_auth import set_session_cookie
 
@@ -73,12 +74,13 @@ def _redirect_uri() -> str:
     explicit = os.environ.get("GOOGLE_REDIRECT_URI")
     if explicit:
         return explicit
-    base = os.environ.get("API_PUBLIC_URL", "http://localhost:8000").rstrip("/")
-    return f"{base}/api/auth/google/callback"
+    # PAY-2: the OAuth callback lands on the BACKEND — single public-URL source.
+    return f"{api_public_url()}/api/auth/google/callback"
 
 
 def _app_url() -> str:
-    return os.environ.get("APP_URL", "http://localhost:3000").rstrip("/")
+    # PAY-2: "back to the app" is the FRONTEND — single public-URL source.
+    return app_public_url()
 
 
 def _signer() -> URLSafeTimedSerializer:

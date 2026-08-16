@@ -33,6 +33,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from src.api.account_store import AccountStore
+from src.api.public_urls import app_public_url
 from src.api.session_auth import require_account
 from src.api.subscription_gate import account_has_access
 from src.billing.pricing import list_paid_plans
@@ -71,20 +72,25 @@ def _trial_days() -> int:
 
 
 def _success_url() -> str:
-    return os.environ.get(
-        "STRIPE_SUCCESS_URL", "http://localhost:3000/abonnement?status=success"
+    # PAY-2: default THROUGH the single public-URL source (no hard-coded host).
+    # A per-redirect override still wins if explicitly set.
+    return (
+        os.environ.get("STRIPE_SUCCESS_URL")
+        or f"{app_public_url()}/abonnement?status=success"
     )
 
 
 def _cancel_url() -> str:
-    return os.environ.get(
-        "STRIPE_CANCEL_URL", "http://localhost:3000/abonnement?status=cancel"
+    return (
+        os.environ.get("STRIPE_CANCEL_URL")
+        or f"{app_public_url()}/abonnement?status=cancel"
     )
 
 
 def _portal_return_url() -> str:
-    return os.environ.get(
-        "STRIPE_PORTAL_RETURN_URL", "http://localhost:3000/abonnement"
+    return (
+        os.environ.get("STRIPE_PORTAL_RETURN_URL")
+        or f"{app_public_url()}/abonnement"
     )
 
 

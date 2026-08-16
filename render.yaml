@@ -39,17 +39,56 @@ services:
       # headroom. Render can INCREASE a disk in place (never shrink).
       sizeGB: 10
     envVars:
+      # PAY-2 — COMMERCIAL POSTURE (paying is the condition of entry):
+      #   ENVIRONMENT=production        → activates the fail-fast startup guards
+      #                                   (stable session secret + public URLs).
+      #   SUBSCRIPTION_GATE_ENFORCED=1  → the paywall bites: an account without an
+      #                                   active subscription gets NO market data.
+      #   BETA_LOCKDOWN=0               → registration is OPEN (visitors can sign
+      #                                   up and pay); the subscription gate — not
+      #                                   a closed-beta wall — is now the barrier.
+      #   SENTINEL_TESTING_MODE=0       → no auth/feature bypass in a paid deploy.
+      - key: ENVIRONMENT
+        value: production
       - key: BETA_LOCKDOWN
-        value: "1"
+        value: "0"
       # The host runs in a US region → the geo-block (which denies US) would
-      # 451 the app against itself via the proxy chain. The login wall already
-      # restricts access to invited accounts, so disable geo-blocking here.
+      # 451 the app against itself via the proxy chain.
       - key: GEO_BLOCK_DISABLED
         value: "1"
       - key: SENTINEL_TESTING_MODE
-        value: "1"
-      - key: SUBSCRIPTION_GATE_ENFORCED
         value: "0"
+      - key: SUBSCRIPTION_GATE_ENFORCED
+        value: "1"
+      # Outward-facing base URLs — REQUIRED in production (the app refuses to boot
+      # if missing or localhost). Set the VALUES in the dashboard after the first
+      # deploy: APP_PUBLIC_URL = the frontend origin (https://mia.markets),
+      # API_PUBLIC_URL = this backend's public origin (https://mia-backend-xxxx.onrender.com).
+      - key: APP_PUBLIC_URL
+        sync: false
+      - key: API_PUBLIC_URL
+        sync: false
+      # Stripe — REQUIRED for checkout + webhooks. Values set in the dashboard.
+      #   STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET   from the Stripe dashboard;
+      #   STRIPE_PRICE_MONTHLY / STRIPE_PRICE_ANNUAL  the two price ids (39/348 USD,
+      #     NO trial period on either price).
+      # Success/cancel/portal URLs default THROUGH APP_PUBLIC_URL — only set the
+      # STRIPE_*_URL overrides if you need a non-default path.
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_PRICE_MONTHLY
+        sync: false
+      - key: STRIPE_PRICE_ANNUAL
+        sync: false
+      # Google sign-in — optional. If set, the OAuth callback lands on
+      # API_PUBLIC_URL/api/auth/google/callback (register that exact URI in the
+      # Google console). Leave unset to hide the Google button.
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
       - key: SESSION_COOKIE_SECURE      # Render is HTTPS end-to-end
         value: "1"
       - key: SESSION_SECRET
@@ -123,10 +162,12 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      # PAY-2 — registration is OPEN for the commercial launch. The closed-beta
+      # login wall is off; the subscription gate is the barrier now.
       - key: BETA_LOCKDOWN              # edge middleware login wall
-        value: "1"
+        value: "0"
       - key: NEXT_PUBLIC_BETA_LOCKDOWN  # baked into the client bundle at build
-        value: "1"
+        value: "0"
       - key: NEXT_PUBLIC_LIVE_TICK      # enable the live-price SSE overlay (build-time)
         value: "1"
       # Set to the backend PUBLIC url after first deploy, then redeploy this

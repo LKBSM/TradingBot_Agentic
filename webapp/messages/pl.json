@@ -5,9 +5,9 @@
       "h1a": "Rynek już wszystko zapisał.",
       "h1b": "MIA czyta ci to na głos.",
       "lead": "Order Blocks, Fair Value Gaps, złamania struktury, strefy płynności — wykrywane automatycznie i opisane prostym językiem. Plus asystent, który odpowiada, gdy czegoś nie rozumiesz.",
-      "ctaPrimary": "Wypróbuj za darmo",
+      "ctaPrimary": "Subskrybuj",
       "ctaSecondary": "Zobacz narzędzia",
-      "micro": "Bez karty płatniczej · Stały darmowy dostęp",
+      "micro": "Pełny dostęp od chwili subskrypcji · Anuluj w dowolnym momencie",
       "roadmap": "Wczesny dostęp · <b>2 rynki dzisiaj, 50 do 80 planowanych na start</b>"
     },
     "stats": {
@@ -129,7 +129,7 @@
       "eyebrow": "Wypróbuj bez zakładania konta",
       "title": "Tak to wygląda",
       "subtitle": "Poglądowy odczyt, którym możesz manipulować tu i teraz. Klikaj, zaznaczaj, zadaj pytanie — wszystko działa bez konta.",
-      "cta": "Załóż darmowe konto",
+      "cta": "Subskrybuj",
       "illus": "Dane poglądowe · produkt wyświetla prawdziwe odczyty rynku"
     },
     "demo": {
@@ -350,18 +350,7 @@
     "pricing": {
       "eyebrow": "Cennik",
       "title": "Jeden abonament, wszystko w komplecie",
-      "subtitle": "Żadnego progu premium, żadnej funkcji trzymanej jako zakładnik. Stały darmowy dostęp na próbę.",
-      "free": {
-        "name": "Odkrywanie",
-        "sub": "by zaznajomić się z narzędziem",
-        "bill": "za darmo, bez ograniczenia czasu",
-        "f1": "1 rynek, 2 interwały czasowe",
-        "f2": "Pełna przestrzeń do odczytu",
-        "f3": "M.I.A Agent, ograniczone użycie",
-        "f4": "Kalendarz publikacji",
-        "cta": "Załóż konto",
-        "note": "bez karty płatniczej"
-      },
+      "subtitle": "Jedna subskrypcja, całe narzędzie: pełny dostęp od chwili subskrypcji, anuluj w dowolnym momencie.",
       "paid": {
         "label": "Pełny",
         "name": "Abonament",
@@ -389,11 +378,11 @@
       "q3": "Czy to zastępuje TradingView?",
       "a3": "Nie, i nie taki jest cel. TradingView pozostaje twoją platformą do wykresów, rysowania i realizacji zleceń. MIA wykonuje pracę odczytu strukturalnego: wykrywanie, datowanie, śledzenie cyklu życia stref. <b>Oba się uzupełniają.</b>",
       "q4": "Jakie rynki są objęte?",
-      "a4": "Dzisiaj dwa rynki — złoto (XAU/USD) i euro (EUR/USD) — w 6 interwałach czasowych od minuty po dzień. Darmowy poziom daje dostęp do jednego rynku i dwóch interwałów czasowych, wystarczająco, by ocenić narzędzie. Kolejne rynki dołączą później.",
+      "a4": "Dzisiaj dwa rynki — złoto (XAU/USD) i euro (EUR/USD) — w 6 interwałach czasowych od minuty po dzień. Subskrypcja daje dostęp do obu rynków i wszystkich interwałów czasowych. Kolejne rynki dołączą później.",
       "q5": "Jak często dane są aktualizowane?",
       "a5": "Przy każdym zamknięciu świecy danego interwału czasowego, a nie w dowolnym odstępie. Odczyt na 15 minut odświeża się co 15 minut; odczyt dzienny raz dziennie. <b>Każdy ekran pokazuje wiek swojego ostatniego odczytu</b>, byś zawsze wiedział, na co patrzysz.",
       "q6": "Czy mogę anulować, kiedy chcę?",
-      "a6": "Tak, z poziomu swojego konta, bez konieczności pisania do kogokolwiek. Twój dostęp pozostaje aktywny do końca już opłaconego okresu, po czym wracasz na darmowy poziom — nie tracisz konta.",
+      "a6": "Tak, z poziomu swojego konta, bez konieczności pisania do kogokolwiek. Twój dostęp pozostaje aktywny do końca już opłaconego okresu, po czym się kończy — nie tracisz konta.",
       "q7": "Skąd pochodzą dane cenowe?",
       "a7": "Od profesjonalnego dostawcy na licencji wyświetlania. Kalendarz gospodarczy pochodzi natomiast wyłącznie od organów publikujących — Bureau of Labor Statistics, BEA, Census, Rezerwa Federalna (Fed), Eurostat, Europejski Bank Centralny. <b>Żadnego źródła wtórnego, żadnego agregatora</b>, a każda publikacja niesie swoje wskazanie źródła.",
       "q8": "Czy produkt działa na telefonie?",
@@ -401,8 +390,8 @@
     },
     "final": {
       "h2": "Przestań rysować. Zacznij czytać.",
-      "p": "Załóż darmowe konto i zobacz, co MIA widzi na twoim ulubionym rynku. Bez karty kredytowej, bez ograniczeń czasowych.",
-      "cta1": "Załóż darmowe konto",
+      "p": "Subskrybuj i zobacz, co MIA widzi na twoim ulubionym rynku. Pełny dostęp od chwili subskrypcji, anuluj w dowolnym momencie.",
+      "cta1": "Subskrybuj",
       "cta2": "Zobacz ponownie narzędzia"
     },
     "miaSection": {
@@ -846,7 +835,7 @@
     "calendar": "Wiadomości",
     "mia": "M.I.A",
     "tools": "Narzędzia",
-    "tryFree": "Wypróbuj za darmo",
+    "tryFree": "Subskrybuj",
     "appLink": "Aplikacja",
     "methodology": "Metodologia i słowniczek"
   },
@@ -918,7 +907,7 @@
     "pricing": {
       "earlyAccessBadge": "Wczesny dostęp",
       "title": "Jeden plan. Całe narzędzie, bez półśrodków.",
-      "intro": "Żadnego ukrytego okresu próbnego, żadnego poziomu, który okrawa narzędzie: pełny dostęp, możliwy do anulowania jednym kliknięciem. Demonstracje na tej stronie są bezpłatne — widzisz dokładnie to, co otrzymujesz. Zobacz naszą postawę w sekcji <link>Uczciwość</link>.",
+      "intro": "Żadnego ukrytego okresu próbnego, żadnego poziomu, który okrawa narzędzie: pełny dostęp, możliwy do anulowania jednym kliknięciem. Demonstracje na tej stronie są otwarte, bez konta — widzisz dokładnie to, co otrzymujesz. Zobacz naszą postawę w sekcji <link>Uczciwość</link>.",
       "cadenceGroupLabel": "Wybierz częstotliwość rozliczeń",
       "monthlyToggle": "Miesięcznie",
       "annualToggle": "Rocznie",
@@ -948,7 +937,7 @@
       "reassurance1": "<strong>Żadnej karty w pułapce.</strong> Anulowanie jednym kliknięciem z poziomu konta, bez ponaglania i ankiet retencyjnych.",
       "reassurance2": "<strong>Bez zobowiązania czasowego.</strong> Ofertę miesięczną można anulować w dowolnym momencie; roczna pozostaje aktywna do końca opłaconego okresu.",
       "reassurance3": "<strong>Twoje dane pozostają Twoje.</strong> Odczyty i rozmowy są prywatne, nigdy nieodsprzedawane, nigdy niekrzyżowane w celach reklamowych.",
-      "reassurance4": "<strong>Przetestuj przed zapłatą.</strong> Demonstracje na tej stronie są interaktywne i bezpłatne — widzisz dokładnie to, co kupujesz.",
+      "reassurance4": "<strong>Przetestuj przed zapłatą.</strong> Demonstracje na tej stronie są interaktywne i otwarte, bez konta — widzisz dokładnie to, co kupujesz.",
       "b2bEyebrow": "Dla zespołów profesjonalnych · API B2B",
       "b2bDescription": "Brokerzy, fundusze, media: integracja REST API + podpisane webhooki, SLA i wsparcie przy wdrożeniu — cena na życzenie.",
       "b2bButton": "Zarezerwuj demo",
@@ -1683,8 +1672,8 @@
   },
   "pricing": {
     "title": "Proste, przejrzyste ceny",
-    "subtitle": "Bez karty w planie Découverte.",
-    "free_title": "Découverte",
+    "subtitle": "Jedna subskrypcja, całe narzędzie.",
+    "free_title": "Subskrypcja",
     "approfondie_title": "Approfondie",
     "integrale_title": "Intégrale",
     "billed_monthly": "/mies.",
@@ -1819,9 +1808,9 @@
     "verifyEmail": {
       "title": "Email verification",
       "verifying": "Verifying…",
-      "success": "Email confirmed. Your access is activated.",
+      "success": "Adres e-mail potwierdzony. Wybierz swój plan, aby aktywować dostęp.",
       "error": "Invalid or expired verification link.",
-      "cta": "Go to my dashboard"
+      "cta": "Wybierz mój plan"
     },
     "google": {
       "button": "Continue with Google",
@@ -1892,7 +1881,7 @@
       "navZones": "Strefy — cykl życia wykrytych stref",
       "navScanner": "Skaner warunków",
       "navHelp": "Pomoc — metodologia i słownik",
-      "planBadge": "Dostęp bezpłatny"
+      "planBadge": "Subskrybent"
     },
     "staleFocus": {
       "message": "Ta strefa nie jest już wykrywana — wyświetlany jest bieżący odczyt rynku.",
@@ -2491,7 +2480,7 @@
     },
     "donnees": {
       "title": "Nasze źródło danych",
-      "detail": "Dane rynkowe przez API Twelve Data (poziom bezpłatny, 800 zapytań dziennie w V1).",
+      "detail": "Dane rynkowe przez API Twelve Data (800 zapytań dziennie w V1).",
       "providerLabel": "Dostawca",
       "coverageLabel": "Zasięg V1",
       "coverage": "XAU/USD i EUR/USD, od 5 minut do dziennego.",

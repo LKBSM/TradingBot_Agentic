@@ -249,18 +249,6 @@ export function HomeLanding() {
           <p>{t('pricing.subtitle')}</p>
         </div>
         <div className={styles.prices}>
-          <div className={styles.pc}>
-            <h4>{t('pricing.free.name')}</h4>
-            <div className={styles.pcSub}>{t('pricing.free.sub')}</div>
-            <div className={styles.amt}><span className={styles.amtV}>0 $</span><span className={styles.amtU}>US</span></div>
-            <div className={styles.bill}>{t('pricing.free.bill')}</div>
-            <div className={styles.pfeat}>
-              {['1', '2', '3', '4'].map((i) => (<div key={i} className={styles.pf}><Check />{t(`pricing.free.f${i}`)}</div>))}
-            </div>
-            <a className={`${styles.btn} ${styles.btnMd}`} style={{ width: '100%' }} href={lh('/inscription')}>{t('pricing.free.cta')}</a>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--faint)', marginTop: 11, textAlign: 'center' }}>{t('pricing.free.note')}</div>
-          </div>
-
           <div className={`${styles.pc} ${styles.pcHi}`}>
             <span className={styles.pcLbl}>{t('pricing.paid.label')}</span>
             <h4>{t('pricing.paid.name')}</h4>

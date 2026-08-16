@@ -39,6 +39,11 @@ function deriveState(sub: Subscription | null): SubState {
   return 'expired';
 }
 
+/** Whether a derived state currently grants product access (grace still does). */
+function hasAccessState(s: SubState): boolean {
+  return s === 'active' || s === 'canceling' || s === 'grace';
+}
+
 /**
  * Human label for a plan key (AUTH-15). The backend /pricing intentionally
  * returns only the key + price_id (no amount hard-coded server-side), so the
@@ -157,8 +162,60 @@ export function SubscriptionPanel() {
     };
   }, [account]);
 
+  // PAY-2 — after returning from Stripe Checkout the payment already succeeded,
+  // but ACCESS is granted by the WEBHOOK, not by this redirect. Poll the
+  // subscription until it turns active, then send the user into the product.
+  // Even if they closed the tab before landing here, the webhook still grants
+  // access server-side — so this wait is reassuring, never an error.
+  const awaitingWebhook =
+    checkoutStatus === 'success' && account !== null && !hasAccessState(deriveState(sub));
+
+  React.useEffect(() => {
+    if (!account || !awaitingWebhook) return;
+    let cancelled = false;
+    let tries = 0;
+    let timer: ReturnType<typeof setTimeout>;
+    const tick = async () => {
+      tries += 1;
+      try {
+        const s = await fetchSubscription();
+        if (cancelled) return;
+        setSub(s);
+        if (hasAccessState(deriveState(s))) {
+          router.replace(lh('/app'));
+          return;
+        }
+      } catch {
+        /* transient — keep waiting for the webhook */
+      }
+      if (!cancelled && tries < 24) timer = setTimeout(tick, 2500);
+    };
+    timer = setTimeout(tick, 1500);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [account, awaitingWebhook, router, lh]);
+
   if (authLoading || account === null || loading) {
     return <p className="text-sm text-muted-foreground">{t('loading')}</p>;
+  }
+
+  // Confirming screen while the webhook lands (auto-redirects to /app on success).
+  if (awaitingWebhook) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-semibold tracking-tight">{t('title')}</h1>
+        <div
+          className="flex flex-col items-center gap-4 rounded-lg border border-border/60 p-8 text-center"
+          aria-busy="true"
+          aria-live="polite"
+        >
+          <div className="h-7 w-7 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
+          <p className="text-sm text-foreground">{t('checkoutSuccess')}</p>
+        </div>
+      </div>
+    );
   }
 
   async function onSubscribe(planKey: string) {

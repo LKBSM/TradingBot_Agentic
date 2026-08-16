@@ -30,6 +30,7 @@ from pydantic import BaseModel, Field
 from src.api.account_store import AccountError, AccountStore
 from src.api.auth_throttle import AuthThrottle, client_ip
 from src.api.middleware.beta_auth import beta_lockdown_enabled
+from src.api.public_urls import app_public_url
 from src.api.routes.legal import LAST_UPDATED as LEGAL_VERSION
 from src.api.session_auth import (
     clear_session_cookie,
@@ -513,8 +514,13 @@ async def admin_overview(
 
 
 def _reset_base_url() -> str:
-    """Public base URL of the frontend for building the reset link."""
-    return os.environ.get("FRONTEND_BASE_URL", "https://mia.markets").rstrip("/")
+    """Public base URL of the frontend for building email links (reset + verify).
+
+    PAY-2: routed through the single public-URL source so verification and reset
+    links never hard-code a host. ``FRONTEND_BASE_URL`` still works (it is one of
+    the honoured fallbacks) and in production the startup guard forbids localhost.
+    """
+    return app_public_url()
 
 
 def _send_reset_email(to_email: str, reset_url: str) -> bool:

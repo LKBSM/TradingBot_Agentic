@@ -38,6 +38,16 @@ export function EmailVerifier() {
       .catch(() => setState('error'));
   }, [token, refresh]);
 
+  // PAY-2 — once the email is confirmed, the mandatory next step is choosing a
+  // plan (paying is the condition of entry). Redirect automatically to the
+  // subscription page; a subscriber landing here still sees their active state
+  // there and can move on to the app.
+  React.useEffect(() => {
+    if (state !== 'ok') return;
+    const id = setTimeout(() => router.push(lh('/abonnement')), 1200);
+    return () => clearTimeout(id);
+  }, [state, router, lh]);
+
   return (
     <div className="pagewrap" style={{ maxWidth: 520 }}>
       <div className="card">
@@ -53,7 +63,7 @@ export function EmailVerifier() {
             <button
               type="button"
               className="btn primary"
-              onClick={() => router.push(lh('/app'))}
+              onClick={() => router.push(lh('/abonnement'))}
             >
               {t('cta')}
             </button>
