@@ -482,42 +482,29 @@ export function ZoneLifecycleCard({
         </div>
       )}
 
-      {/* Details (collapsed) */}
-      <div className="zdet">
-        <button
-          type="button"
-          className="zdeth"
-          aria-expanded={expanded}
-          aria-controls={detailsId}
-          onClick={(e) => {
-            stop(e);
-            setExpanded((v) => !v);
-          }}
-        >
-          <ChevronDown aria-hidden className={cn('h-3 w-3 transition-transform', expanded && 'rotate-180')} />
-          {t('details.heading')}
-        </button>
-        {expanded && (
-          <div id={detailsId} className="zkv">
-            <Kv k={t('details.high')} v={fmt.price(zone.levelHigh, instrument)} mono />
-            <Kv k={t('details.low')} v={fmt.price(zone.levelLow, instrument)} mono />
-            <Kv k={t('details.mid')} v={fmt.price((zone.levelHigh + zone.levelLow) / 2, instrument)} mono />
-            <Kv k={t('details.height')} v={heightLabel} mono />
-            {ageDuration && (
-              <Kv
-                k={t('details.age')}
-                v={ageBars != null ? t('details.ageWithBars', { duration: ageDuration, bars: ageBars }) : ageDuration}
-              />
-            )}
-            <Kv k={t('details.entries')} v={String(zone.contacts.filter((c) => c.outcome === 'entry_exit').length)} />
-            <Kv k={t('details.edgeTouches')} v={String(zone.contacts.filter((c) => c.outcome === 'edge_touch').length)} />
-            {session && <Kv k={t('details.session')} v={t(`session.${session}`)} />}
-            <Kv k={t('details.id')} v={zone.id} mono />
-          </div>
-        )}
-      </div>
+      {/* Details grid — only when expanded; the toggle lives in the actions row
+          below (UI-1b: no separate row, so the collapsed card is one row shorter). */}
+      {expanded && (
+        <div id={detailsId} className="zkv">
+          <Kv k={t('details.high')} v={fmt.price(zone.levelHigh, instrument)} mono />
+          <Kv k={t('details.low')} v={fmt.price(zone.levelLow, instrument)} mono />
+          <Kv k={t('details.mid')} v={fmt.price((zone.levelHigh + zone.levelLow) / 2, instrument)} mono />
+          <Kv k={t('details.height')} v={heightLabel} mono />
+          {ageDuration && (
+            <Kv
+              k={t('details.age')}
+              v={ageBars != null ? t('details.ageWithBars', { duration: ageDuration, bars: ageBars }) : ageDuration}
+            />
+          )}
+          <Kv k={t('details.entries')} v={String(zone.contacts.filter((c) => c.outcome === 'entry_exit').length)} />
+          <Kv k={t('details.edgeTouches')} v={String(zone.contacts.filter((c) => c.outcome === 'edge_touch').length)} />
+          {session && <Kv k={t('details.session')} v={t(`session.${session}`)} />}
+          <Kv k={t('details.id')} v={zone.id} mono />
+        </div>
+      )}
 
-      {/* Actions — no « Analyser » (selecting the card is enough). */}
+      {/* Actions — no « Analyser » (selecting the card is enough). The « Détails »
+          toggle shares this row (pushed right) instead of taking its own. */}
       <div className="zfoot">
         <button
           type="button"
@@ -539,6 +526,19 @@ export function ZoneLifecycleCard({
           }}
         >
           {isHidden ? t('actions.unhide') : t('actions.hide')}
+        </button>
+        <button
+          type="button"
+          className="zdeth"
+          aria-expanded={expanded}
+          aria-controls={detailsId}
+          onClick={(e) => {
+            stop(e);
+            setExpanded((v) => !v);
+          }}
+        >
+          <ChevronDown aria-hidden className={cn('h-3 w-3 transition-transform', expanded && 'rotate-180')} />
+          {t('details.heading')}
         </button>
       </div>
     </article>

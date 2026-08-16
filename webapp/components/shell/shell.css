@@ -453,6 +453,59 @@
   .app-shell:not(.no-chat) .chat-backdrop {
     display: none;
   }
+  /* UI-1b — mobile space nav: replaces the hidden rail on `.no-chat` phones so
+     the user can move between spaces (incl. back to /app). Fixed bottom bar;
+     the content clears it with extra bottom padding. */
+  .app-shell .mspace {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 60;
+    background: var(--panel);
+    border-top: 1px solid var(--line);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .app-shell.no-chat .center {
+    padding-bottom: calc(58px + env(safe-area-inset-bottom));
+  }
+}
+
+/* Mobile space nav — hidden at ≥768px (the rail carries navigation there). A
+   `min-width` query rather than a base rule, so it never overrides the
+   `max-width: 767px` `display: grid` above regardless of source order. */
+@media (min-width: 768px) {
+  .app-shell .mspace {
+    display: none;
+  }
+}
+.app-shell .mspace-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: 52px;
+  padding: 6px 2px;
+  color: var(--dim);
+  text-decoration: none;
+  font-size: 9.5px;
+  font-weight: 500;
+}
+.app-shell .mspace-item svg {
+  width: 19px;
+  height: 19px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.7;
+}
+.app-shell .mspace-item.on {
+  color: var(--acc);
+}
+.app-shell .mspace-item:active {
+  background: var(--panel-2);
 }
 
 @media (prefers-reduced-motion: reduce) {

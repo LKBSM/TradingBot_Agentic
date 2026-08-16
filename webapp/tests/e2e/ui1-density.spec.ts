@@ -233,7 +233,20 @@ for (const vp of VIEWPORTS) {
           const h = await page.evaluate(() =>
             Math.round(document.querySelector('.zone')!.getBoundingClientRect().height),
           );
-          expect(h).toBeLessThanOrEqual(360);
+          expect(h).toBeLessThanOrEqual(320);
+        }
+
+        if (vp.name === '1280×800') {
+          // UI-1b density target: at least two zone cards ENTIRELY visible at
+          // load, no scroll (the original complaint was one card per screen).
+          const fully = await page.evaluate(() => {
+            const vh = window.innerHeight;
+            return Array.from(document.querySelectorAll('.zone')).filter((c) => {
+              const r = c.getBoundingClientRect();
+              return r.top >= 0 && r.bottom <= vh + 0.5;
+            }).length;
+          });
+          expect(fully).toBeGreaterThanOrEqual(2);
         }
       });
 
@@ -330,5 +343,34 @@ test.describe('states', () => {
     await page.locator('.combo').first().waitFor({ state: 'visible', timeout: 60_000 });
     await expect(page.locator('.app-shell .rail')).toBeHidden();
     expect(await overflow(page)).toBeLessThanOrEqual(1);
+  });
+
+  test('mobile: the bottom space-nav replaces the rail on .no-chat pages', async ({
+    page,
+  }) => {
+    test.setTimeout(90_000);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await mockZones(page);
+    await page.goto('/zones?instrument=XAUUSD&timeframe=M15', {
+      waitUntil: 'domcontentloaded',
+    });
+    await dismissCookieBanner(page);
+    await page.locator('.zone').first().waitFor({ state: 'visible', timeout: 60_000 });
+
+    // The bar shows on mobile, carries all five space links, and the active one
+    // (zones) is marked — so a phone user can move between spaces without the rail.
+    const nav = page.locator('.mspace');
+    await expect(nav).toBeVisible();
+    await expect(nav.locator('.mspace-item')).toHaveCount(5);
+    await expect(nav.locator('.mspace-item.on')).toHaveCount(1);
+    // Pinned to the very bottom of the viewport.
+    const atBottom = await nav.evaluate(
+      (el) => Math.round(el.getBoundingClientRect().bottom) === window.innerHeight,
+    );
+    expect(atBottom).toBe(true);
+
+    // At desktop width it is hidden (the rail carries navigation there).
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await expect(nav).toBeHidden();
   });
 });

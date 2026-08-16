@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { SkipLink } from '@/components/a11y/SkipLink';
 import { ShellRail } from './ShellRail';
 import { ShellChat } from './ShellChat';
+import { MobileSpaceNav } from './MobileSpaceNav';
 import './shell.css';
 import './pages.css';
 
@@ -43,6 +44,9 @@ export function ProductShell({ children }: { children: React.ReactNode }) {
         {children}
       </div>
       {isApp && <ShellChat />}
+      {/* Mobile space nav (<768px): the `.no-chat` surfaces lose the rail there,
+          so they get a bottom tab bar. /app keeps MobileWorkspace's own tabs. */}
+      {!isApp && <MobileSpaceNav activeSpace={activeSpace} />}
     </div>
   );
 }
