@@ -192,6 +192,31 @@ class TestEmailJourneyGrantsAccess:
         assert served.json()["state"] == "open"
 
 
+class TestStripeResultsAreDicts:
+    """PAY-3d — Stripe SDK results must be converted to plain dicts, or the
+    checkout path 500s on ``.get()`` even with a valid key (the "Internal Server
+    Error" on the first click of Subscribe)."""
+
+    def test_to_dict_neutralises_stripe_object_get(self):
+        stripe = pytest.importorskip(
+            "stripe",
+            reason="LOUD SKIP: the `stripe` SDK is not installed, so the real "
+            "StripeObject conversion cannot be exercised.",
+        )
+        from src.billing.stripe_client import StripeClient
+
+        obj = stripe.Customer.construct_from(
+            {"id": "cus_x", "object": "customer"}, "sk_test"
+        )
+        # The failure mode we are guarding against: .get() on a StripeObject.
+        with pytest.raises(AttributeError):
+            obj.get("id")
+        # After conversion the caller's ``.get("id")`` works.
+        d = StripeClient._to_dict(obj)
+        assert isinstance(d, dict)
+        assert d.get("id") == "cus_x"
+
+
 class TestEmailCodeVerification:
     """PAY-3c — email confirmed by a typed 6-digit CODE (not only the link)."""
 
