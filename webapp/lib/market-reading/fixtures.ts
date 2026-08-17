@@ -19,13 +19,13 @@ export const FIXTURE_XAU_M15: MarketReading = {
     close_price: 2392.35,
   },
   structure: {
-    bos: {
+    current_bos: {
       direction: 'bullish',
       level: 2391.5,
       broken_at: '2026-05-26T11:15:00+00:00',
       validation_status: 'confirmed',
     },
-    choch: {
+    current_choch: {
       direction: 'bullish',
       level: 2384.2,
       broken_at: '2026-05-26T09:30:00+00:00',
@@ -190,8 +190,8 @@ export const FIXTURE_EUR_H1: MarketReading = {
     close_price: 1.08423,
   },
   structure: {
-    bos: null,
-    choch: {
+    current_bos: null,
+    current_choch: {
       direction: 'bearish',
       level: 1.0865,
       broken_at: '2026-05-26T08:00:00+00:00',
@@ -259,8 +259,8 @@ export const FIXTURE_QUIET_XAU_H4: MarketReading = {
     close_price: 2388.1,
   },
   structure: {
-    bos: null,
-    choch: null,
+    current_bos: null,
+    current_choch: null,
     order_blocks: [],
     fair_value_gaps: [],
     retest_in_progress: null,

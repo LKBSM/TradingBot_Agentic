@@ -178,8 +178,8 @@ describe('StructureSection', () => {
     // bars later `bos` is null while a `bos_retest` is armed. The BOS row must
     // not claim "aucune cassure récente" while the retest row shows a BOS retest.
     const structure = {
-      bos: null,
-      choch: null,
+      current_bos: null,
+      current_choch: null,
       order_blocks: [],
       fair_value_gaps: [],
       retest_in_progress: {
@@ -248,8 +248,8 @@ describe('StructureSection', () => {
   });
 
   const structureWithObs = (obs: OrderBlock[]): MarketReadingStructure => ({
-    bos: null,
-    choch: null,
+    current_bos: null,
+    current_choch: null,
     order_blocks: obs,
     fair_value_gaps: [],
     retest_in_progress: null,

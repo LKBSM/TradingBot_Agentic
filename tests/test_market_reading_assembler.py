@@ -175,7 +175,7 @@ def test_lazy_cache_miss_runs_full_pipeline(fixed_clock):
         2026, 5, 28, 14, 15, 0, tzinfo=timezone.utc
     )
     assert reading.header.close_price == candles[-1].close
-    assert reading.structure.bos is not None  # populated from stub_smc_pipeline
+    assert reading.structure.current_bos is not None  # populated from stub_smc_pipeline
     assert reading.conditions.description_source == "template_fallback"
 
     # Provider called exactly once (fetched fresh candles)

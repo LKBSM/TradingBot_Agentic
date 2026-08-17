@@ -117,6 +117,18 @@ def _first_real(smc: dict[str, float], *keys: str) -> Optional[float]:
     return None
 
 
+def _event_id(kind: str, direction: Any, broken_at: Any) -> str:
+    """STR-2 defect C: a STABLE, COLLISION-FREE id for a structural break event.
+
+    ``kind`` (« bos »/« choch ») is part of the id, so a BOS and a CHOCH that
+    land on the SAME bar get DIFFERENT ids — the chart anchors focus by this id
+    instead of by timestamp (which collides on a shared bar). Deterministic
+    (same event → same id across readings): ``<kind>_<broken_at_iso>_<direction>``.
+    """
+    ts = broken_at.isoformat() if hasattr(broken_at, "isoformat") else str(broken_at)
+    return f"{kind}_{ts}_{direction}"
+
+
 def _epoch_to_dt(value: Any) -> Optional[datetime]:
     """Convert epoch SECONDS (float) to a tz-aware UTC datetime, or None.
 
@@ -941,6 +953,19 @@ def collect_structure_events(
 ) -> dict[str, list[dict]]:
     """Collect discrete BOS / CHOCH break EVENTS over the window up to ``idx``.
 
+    >>> THE SINGLE ARBITRATION AUTHORITY (STR-2 defect B) <<<
+    THE RULE, in one sentence a trader understands: « sur une bougie qui casse la
+    structure dans le sens opposé à la tendance en cours, l'événement est un
+    changement de caractère (CHOCH) ; il n'y a jamais, sur cette même bougie, un
+    BOS de même sens en plus. » This function is the ONE place that maps the raw
+    engine columns to structural journal events, so this is where the rule is
+    decided — not scattered across the display. It is EXPLICIT (a ``CHOCH_SIGNAL``
+    bar is dropped from ``bos_events`` below), never an effect of execution order.
+    The point-in-time mapper and the chart markers apply the SAME rule; the engine
+    itself keeps ``BOS_EVENT`` set on a reversal bar only as the retest machine's
+    break trigger (see strategy_features._calculate_bos_choch_*), never as a second
+    BOS structural event.
+
     Reads ONLY engine-produced event columns — ``BOS_EVENT`` (±1 on a true break
     bar), ``CHOCH_SIGNAL`` (±1 on a reversal bar) and ``BOS_BREAK_LEVEL`` (the
     broken level on those bars). No detection, no recompute, no threshold. This
@@ -1441,6 +1466,7 @@ def confluence_signal_to_structure(
                 recovered = None
             broken_at = recovered or bar_ts
         bos = BOSRecent(
+            id=_event_id("bos", event_direction, broken_at),
             direction=event_direction,
             level=bos_level if bos_level is not None else float(current_price),
             broken_at=broken_at,
@@ -1460,6 +1486,7 @@ def confluence_signal_to_structure(
             smc_features, "BOS_BREAK_LEVEL", "BOS_BREAK_LEVEL_LAST"
         )
         choch = CHOCHRecent(
+            id=_event_id("choch", choch_direction, bar_ts),
             direction=choch_direction,
             level=choch_level if choch_level is not None else float(current_price),
             broken_at=bar_ts,
@@ -1496,8 +1523,8 @@ def confluence_signal_to_structure(
         order_blocks, fair_value_gaps = _zones_to_models(zones, bar_ts, instrument)
         consumed_obs, consumed_fvgs = _consumed_zones_to_models(zones, bar_ts, instrument)
         return MarketReadingStructure(
-            bos=bos,
-            choch=choch,
+            current_bos=bos,
+            current_choch=choch,
             bos_events=bos_events,
             choch_events=choch_events,
             order_blocks=order_blocks,
@@ -1561,8 +1588,8 @@ def confluence_signal_to_structure(
         ))
 
     return MarketReadingStructure(
-        bos=bos,
-        choch=choch,
+        current_bos=bos,
+        current_choch=choch,
         bos_events=bos_events,
         choch_events=choch_events,
         order_blocks=order_blocks,
@@ -1753,19 +1780,23 @@ def _structure_events_to_models(
     the break occurred)."""
     bos_events: list[BOSRecent] = []
     for e in events.get("bos_events", []):
+        at = e.get("broken_at") or bar_ts
         bos_events.append(BOSRecent(
+            id=_event_id("bos", e["direction"], at),
             direction=e["direction"],
             level=float(e["level"]),
-            broken_at=e.get("broken_at") or bar_ts,
+            broken_at=at,
             validation_status="confirmed",
             bars_ago=e.get("bars_ago"),
         ))
     choch_events: list[CHOCHRecent] = []
     for e in events.get("choch_events", []):
+        at = e.get("broken_at") or bar_ts
         choch_events.append(CHOCHRecent(
+            id=_event_id("choch", e["direction"], at),
             direction=e["direction"],
             level=float(e["level"]),
-            broken_at=e.get("broken_at") or bar_ts,
+            broken_at=at,
             validation_status="confirmed",
             bars_ago=e.get("bars_ago"),
         ))
@@ -2081,10 +2112,14 @@ def _build_tags(
     tags.append(f"volatility_{regime.volatility_observed}")
     tags.append(f"phase_{regime.market_phase}")
 
-    if structure.bos is not None:
-        tags.append(f"bos_recent_{structure.bos.direction}")
-    if structure.choch is not None:
-        tags.append(f"choch_recent_{structure.choch.direction}")
+    # STR-2 defect A: recency comes from the journal (most-recent-first), NOT the
+    # point-in-time `current_bos`/`current_choch` (null ~76 % / ~99 % of the time).
+    latest_bos = structure.bos_events[0] if structure.bos_events else None
+    latest_choch = structure.choch_events[0] if structure.choch_events else None
+    if latest_bos is not None:
+        tags.append(f"bos_recent_{latest_bos.direction}")
+    if latest_choch is not None:
+        tags.append(f"choch_recent_{latest_choch.direction}")
     if structure.retest_in_progress is not None:
         tags.append("retest_in_progress")
     if any(ob.status == "active" for ob in structure.order_blocks):
@@ -2122,9 +2157,12 @@ def _build_description(
     parts: list[str] = []
     parts.append(f"Tendance {trend_fr}, volatilité {vol_fr}, phase {phase_fr}.")
 
-    if structure.bos is not None:
+    # STR-2 defect A: the last structural break comes from the journal, not the
+    # point-in-time `current_bos` (which is null on the vast majority of readings).
+    latest_bos = structure.bos_events[0] if structure.bos_events else None
+    if latest_bos is not None:
         parts.append(
-            f"BOS {_TREND_FR[structure.bos.direction]} récent ({structure.bos.validation_status})."
+            f"BOS {_TREND_FR[latest_bos.direction]} récent ({latest_bos.validation_status})."
         )
     if structure.retest_in_progress is not None:
         parts.append("Retest de structure en cours.")

@@ -49,8 +49,8 @@ function structureWith(
   fvgs: FairValueGap[] = [],
 ): MarketReadingStructure {
   return {
-    bos: null,
-    choch: null,
+    current_bos: null,
+    current_choch: null,
     order_blocks: obs,
     fair_value_gaps: fvgs,
     retest_in_progress: null,

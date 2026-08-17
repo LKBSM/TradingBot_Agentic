@@ -61,8 +61,8 @@ describe('mockReadings — candles', () => {
     const hi = Math.max(...candles.map((c) => c.high));
     const s = reading.structure;
     const levels = [
-      s.bos?.level,
-      s.choch?.level,
+      s.current_bos?.level,
+      s.current_choch?.level,
       s.retest_in_progress?.level,
       ...s.order_blocks.flatMap((o) => [o.level_high, o.level_low]),
       ...s.fair_value_gaps.flatMap((f) => [f.level_high, f.level_low]),

@@ -122,6 +122,10 @@ export interface MarketReadingHeader {
 // ─── Structure (Smart Money Concepts) ────────────────────────────────────────
 
 export interface BOSRecent {
+  /** STR-2 defect C: stable, collision-free event id (`<kind>_<iso>_<dir>`), so a
+   *  BOS and a CHOCH on the SAME bar have different ids and focus anchors by id,
+   *  not timestamp. Absent on older payloads → the frontend synthesises a key. */
+  id?: string | null;
   direction: Direction;
   level: number;
   broken_at: string;
@@ -132,6 +136,7 @@ export interface BOSRecent {
 }
 
 export interface CHOCHRecent {
+  id?: string | null;
   direction: Direction;
   level: number;
   broken_at: string;
@@ -248,13 +253,23 @@ export interface LiquidityPool {
 }
 
 export interface MarketReadingStructure {
-  bos?: BOSRecent | null;
-  choch?: CHOCHRecent | null;
+  /**
+   * POINT-IN-TIME break state (STR-2): the break in effect AT THE READ BAR — a
+   * break fresh on the last closed candle, or (for BOS only) an earlier break
+   * still vouched for by the retest state machine. NULL most of the time
+   * (`current_bos` ~76 %, `current_choch` ~99 %). It is NOT the recency history:
+   * « a break within the last N candles » is answered by `bos_events` /
+   * `choch_events`. Renamed from `bos`/`choch` so no consumer mistakes the
+   * point-in-time state for the journal again (STR-2 defect A).
+   */
+  current_bos?: BOSRecent | null;
+  current_choch?: CHOCHRecent | null;
   /**
    * Discrete BOS / CHOCH break events over the window, most-recent first
-   * (read-only, descriptive). The engine detects many breaks but only the
-   * last-bar one surfaced via `bos`/`choch`; these lists carry the recent
-   * history so the chart can mark each break. Absent on older payloads.
+   * (read-only, descriptive) and the SINGLE SOURCE OF TRUTH for recency. The
+   * engine detects many breaks but only the last-bar one ever surfaced via the
+   * point-in-time fields; these lists carry the real history + bars_ago so the
+   * chart marks each break and the scanner answers « within N candles ».
    */
   bos_events?: BOSRecent[];
   choch_events?: CHOCHRecent[];

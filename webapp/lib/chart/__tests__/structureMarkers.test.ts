@@ -1,27 +1,27 @@
 import { describe, expect, it } from 'vitest';
-import { buildStructureMarkers } from '../structureMarkers';
+import { buildStructureMarkers, eventId, findEventById } from '../structureMarkers';
 import type {
   BOSRecent,
   CHOCHRecent,
   MarketReadingStructure,
 } from '@/types/market-reading';
 
-const bos = (direction: 'bullish' | 'bearish', broken_at: string): BOSRecent => ({
-  direction,
-  level: 100,
-  broken_at,
-  validation_status: 'confirmed',
-});
+const bos = (
+  direction: 'bullish' | 'bearish',
+  broken_at: string,
+  id?: string,
+): BOSRecent => ({ id, direction, level: 100, broken_at, validation_status: 'confirmed' });
 const choch = (
   direction: 'bullish' | 'bearish',
   broken_at: string,
-): CHOCHRecent => ({ direction, level: 100, broken_at, validation_status: 'confirmed' });
+  id?: string,
+): CHOCHRecent => ({ id, direction, level: 100, broken_at, validation_status: 'confirmed' });
 
 function structure(
   bos_events: BOSRecent[] = [],
   choch_events: CHOCHRecent[] = [],
 ): MarketReadingStructure {
-  return { bos: null, choch: null, bos_events, choch_events, order_blocks: [], fair_value_gaps: [] };
+  return { current_bos: null, current_choch: null, bos_events, choch_events, order_blocks: [], fair_value_gaps: [] };
 }
 
 const T = (iso: string) => Math.floor(Date.parse(iso) / 1000);
@@ -110,10 +110,11 @@ describe('buildStructureMarkers', () => {
   describe('VZ-1 selected-event emphasis', () => {
     const at = '2026-05-28T05:00:00Z';
     it('repaints the selected event marker in the accent colour', () => {
+      const sel = bos('bearish', at);
       const m = buildStructureMarkers(
-        structure([bos('bearish', at), bos('bullish', '2026-05-28T02:00:00Z')]),
+        structure([sel, bos('bullish', '2026-05-28T02:00:00Z')]),
         undefined,
-        { selected: { kind: 'bos', atSec: T(at) } },
+        { selected: { id: eventId('bos', sel) } },
       );
       const selected = m.find((x) => (x.time as number) === T(at));
       const other = m.find((x) => (x.time as number) !== T(at));
@@ -122,13 +123,47 @@ describe('buildStructureMarkers', () => {
     });
 
     it('onlySelected returns just the selected event (breaks layer hidden)', () => {
+      const sel = bos('bearish', at);
       const m = buildStructureMarkers(
-        structure([bos('bearish', at), bos('bullish', '2026-05-28T02:00:00Z')]),
+        structure([sel, bos('bullish', '2026-05-28T02:00:00Z')]),
         undefined,
-        { selected: { kind: 'bos', atSec: T(at) }, onlySelected: true },
+        { selected: { id: eventId('bos', sel) }, onlySelected: true },
       );
       expect(m).toHaveLength(1);
       expect(m[0]!.time as number).toBe(T(at));
+    });
+  });
+
+  // STR-2 defect C: focus anchors by STABLE id, robust to a shared bar, and an
+  // unknown id is rejected — tested WITHOUT relying on the defect-B cascade fix
+  // (we fabricate a BOS and a CHOCH on the very same bar here).
+  describe('STR-2 defect C — id-anchored focus on a shared bar', () => {
+    const ts = '2026-05-28T03:00:00Z';
+    const sharedBos = bos('bullish', ts, `bos_${ts}_bullish`);
+    const sharedChoch = choch('bullish', ts, `choch_${ts}_bullish`);
+
+    it('a BOS and a CHOCH on the same bar have DIFFERENT ids', () => {
+      expect(eventId('bos', sharedBos)).not.toBe(eventId('choch', sharedChoch));
+    });
+
+    it('selecting the shared-bar BOS shows/emphasises the BOS (not the CHOCH)', () => {
+      const m = buildStructureMarkers(
+        structure([sharedBos], [sharedChoch]),
+        undefined,
+        { selected: { id: eventId('bos', sharedBos) }, onlySelected: true },
+      );
+      // Without a selection the CHOCH would win the bar; with the BOS selected it
+      // is the BOS that shows, emphasised — clicking a BOS never focuses a CHOCH.
+      expect(m).toHaveLength(1);
+      expect(m[0]).toMatchObject({ text: 'BOS', color: '#4d9de0', time: T(ts) });
+    });
+
+    it('findEventById resolves a known id and REJECTS an unknown one', () => {
+      const s = structure([sharedBos], [sharedChoch]);
+      expect(findEventById(s, eventId('bos', sharedBos))).toMatchObject({ kind: 'bos' });
+      expect(findEventById(s, eventId('choch', sharedChoch))).toMatchObject({ kind: 'choch' });
+      expect(findEventById(s, 'bos_1999-01-01T00:00:00Z_bullish')).toBeNull();
+      expect(findEventById(s, 'not-an-id')).toBeNull();
     });
   });
 });

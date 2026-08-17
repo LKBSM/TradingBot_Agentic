@@ -293,8 +293,8 @@ export function RegimeCard({
     aligned = down;
   }
 
-  const lc = latestBreak(structure.choch_events, structure.choch);
-  const lb = latestBreak(structure.bos_events, structure.bos);
+  const lc = latestBreak(structure.choch_events, structure.current_choch);
+  const lb = latestBreak(structure.bos_events, structure.current_bos);
   let last: (BOSRecent | CHOCHRecent) | null = null;
   let lastKind: 'CHOCH' | 'BOS' | null = null;
   if (lc && lb) {
@@ -926,7 +926,7 @@ function renderData(k: string, c: DataCtx): React.ReactNode {
     case 'mat': {
       const m = c.maturity;
       if (!m) return null;
-      const anchor = latestBreak(c.structure.choch_events, c.structure.choch);
+      const anchor = latestBreak(c.structure.choch_events, c.structure.current_choch);
       const closeMs = new Date(c.header.candle_close_ts).getTime();
       const breakMs = new Date(m.brokenAt).getTime();
       const mins = Math.max(0, Math.floor((closeMs - breakMs) / 60000));

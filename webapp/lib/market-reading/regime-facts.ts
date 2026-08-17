@@ -27,6 +27,25 @@ export function timeframeMinutes(timeframe: string): number | null {
   return TF_MINUTES[(timeframe ?? '').toUpperCase()] ?? null;
 }
 
+/**
+ * The most recent break from the JOURNAL (`*_events`, most-recent-first), falling
+ * back to the point-in-time field only when the journal is empty (older payloads).
+ * STR-2 defect A: recency reads the journal — never the point-in-time
+ * `current_bos`/`current_choch` alone, which is null on the vast majority of
+ * readings and fabricated « aucune cassure » on live surfaces. Shared so every
+ * « dernier événement » surface (desktop + mobile) tells the same story.
+ */
+export function latestBreak<T extends BOSRecent | CHOCHRecent>(
+  events: T[] | undefined,
+  fallback: T | null | undefined,
+): T | null {
+  let best: T | null = null;
+  for (const e of events ?? []) {
+    if (!best || new Date(e.broken_at).getTime() > new Date(best.broken_at).getTime()) best = e;
+  }
+  return best ?? fallback ?? null;
+}
+
 // ─── Break timestamp (engine UTC → reader's local timezone) ───────────────────
 
 /**
@@ -111,7 +130,7 @@ export interface TrendMaturity {
  * that started it. A BOS is a CONTINUATION break and never starts a trend, so it
  * is deliberately NOT used here.
  *
- * The point-in-time ``structure.choch`` is only set when the CHOCH lands on the
+ * The point-in-time ``structure.current_choch`` is only set when the CHOCH lands on the
  * LAST bar, so a change of character that happened many bars ago would read as
  * « non disponible ». We therefore take the MOST RECENT CHOCH from the break-event
  * HISTORY (``structure.choch_events``, which spans the whole window) — that's the
@@ -136,11 +155,11 @@ export function deriveTrendMaturity(
   }
   // Fall back to the point-in-time CHOCH when no history is present (older
   // payloads / fixtures). Still CHOCH-only — never a BOS.
-  if (anchor === null && structure.choch) {
+  if (anchor === null && structure.current_choch) {
     anchor = {
-      broken_at: structure.choch.broken_at,
-      direction: structure.choch.direction,
-      bars_ago: structure.choch.bars_ago,
+      broken_at: structure.current_choch.broken_at,
+      direction: structure.current_choch.direction,
+      bars_ago: structure.current_choch.bars_ago,
     };
   }
   if (anchor === null) return null;
@@ -204,16 +223,20 @@ const VALIDATION_MASC: Record<ValidationStatus, string> = {
 };
 
 /**
- * The most recent structural break the engine surfaces, phrased as
+ * The point-in-time structural break the engine surfaces, phrased as
  *   « CHOCH baissier confirmé (H1) ».
- * Picks the later of `structure.bos` / `structure.choch` by `broken_at`.
- * Returns null when neither is present (caller → « non disponible »).
+ * Picks the later of `structure.current_bos` / `structure.current_choch` by
+ * `broken_at`. Returns null when neither is present (caller → « non disponible »).
+ * NOTE (STR-2): this helper is not wired to any rendered surface today (only its
+ * own unit test imports it); the live « dernier événement » surfaces read the
+ * JOURNAL (`*_events`). Left point-in-time here to preserve its documented
+ * contract — a cleanup candidate, not one of the five starved surfaces.
  */
 export function formatLastStructuralEvent(
   structure: MarketReadingStructure,
   header: MarketReadingHeader,
 ): string | null {
-  const { bos, choch } = structure;
+  const { current_bos: bos, current_choch: choch } = structure;
 
   let kind: 'BOS' | 'CHOCH' | null = null;
   let event: BOSRecent | CHOCHRecent | null = null;

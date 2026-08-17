@@ -96,10 +96,15 @@ class SignalSummaryProvider:
     def _build_structure_summary(structure: Any) -> str:
         """One-line, niveau 1.5 strict structural digest (no forbidden tokens)."""
         parts: list[str] = []
-        if structure.bos is not None:
-            parts.append(f"BOS {structure.bos.direction} {structure.bos.validation_status}")
-        if structure.choch is not None:
-            parts.append(f"CHOCH {structure.choch.direction}")
+        # STR-2 defect A: the digest reports the last structural break from the
+        # journal (most-recent-first), not the point-in-time `current_bos`/
+        # `current_choch` (null on the vast majority of readings).
+        latest_bos = structure.bos_events[0] if structure.bos_events else None
+        latest_choch = structure.choch_events[0] if structure.choch_events else None
+        if latest_bos is not None:
+            parts.append(f"BOS {latest_bos.direction} {latest_bos.validation_status}")
+        if latest_choch is not None:
+            parts.append(f"CHOCH {latest_choch.direction}")
         active_ob = sum(1 for ob in structure.order_blocks if ob.status == "active")
         if active_ob:
             parts.append(f"{active_ob} OB actif(s)")
