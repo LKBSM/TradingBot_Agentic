@@ -48,11 +48,18 @@
   margin: 0 auto;
   padding: 10px 20px 24px;
 }
+/* /zones packs a tight header so the list gets the height (VZ-2 density). */
+.app-shell .zones-wrap {
+  padding-top: 6px;
+}
 .app-shell .pghead {
   display: flex;
   align-items: center;
   gap: 14px;
   margin-bottom: 8px;
+}
+.app-shell .zones-wrap .pghead {
+  margin-bottom: 5px;
 }
 .app-shell .pghead h1 {
   font-size: 16px;
@@ -469,8 +476,13 @@
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: var(--r);
-  padding: 12px 14px;
+  padding: 11px 13px;
   margin-bottom: 8px;
+}
+/* Inside the 2-up grid the row gap handles spacing — drop the card's own margin
+   so rows pack tight (VZ-2 density: four cards reach the fold). */
+.app-shell .zcards .zone {
+  margin-bottom: 0;
 }
 .app-shell .zone:hover {
   border-color: var(--line-3);
@@ -490,18 +502,30 @@
 }
 .app-shell .ztop {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
 }
-/* The price band is the card's primary information (mission §3): it alone keeps
-   a larger, heavier size — everything else on the card sits at 12px or below. */
+/* Type + price band stack as one unit — the height/% sits directly under the
+   band as its caption, not adrift on its own line (VZ-2 defect 3/4). */
+.app-shell .zttl {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+/* The price band is the ONE thing allowed to be large (mission §3 hierarchy from
+   contrast): it anchors the card; everything else stays at 12px or below. */
 .app-shell .ztop .rng {
   font-family: var(--font-mono), 'JetBrains Mono', monospace;
-  font-size: 13px;
+  font-size: 15.5px;
   font-weight: 600;
+  line-height: 1.15;
 }
 .app-shell .zstate {
+  margin-left: auto;
+  flex-shrink: 0;
   font-size: 9px;
   font-weight: 600;
   letter-spacing: 0.4px;
@@ -621,6 +645,11 @@
 .app-shell .zone {
   cursor: pointer;
 }
+/* Compact the actions row so the collapsed card stays short (VZ-2). */
+.app-shell .zfoot {
+  padding-top: 6px;
+  margin-top: 0;
+}
 .app-shell .zone.zhidden {
   opacity: 0.55;
 }
@@ -631,17 +660,58 @@
   font-size: 9px;
   color: var(--faint);
 }
+/* /zones gets a wider wrap than the other pages (the reference is 1240px and the
+   page carries the M.I.A column beside the list). */
+.app-shell .zones-wrap {
+  max-width: 1240px;
+}
 .app-shell .zlayout {
   display: grid;
-  grid-template-columns: 1fr 340px;
-  gap: 18px;
+  grid-template-columns: 1fr 344px;
+  gap: 20px;
   align-items: start;
+}
+/* The cards column. NO fixed height, NO overflow, NO box — it flows and the page
+   (`.center`) is the single scroll container (VZ-2 defect 1/2/5). It becomes the
+   containment context on wide desktop so the cards can go 2-up per group. */
+.app-shell .zcol {
+  min-width: 0;
+}
+.app-shell .zgroup {
+  min-width: 0;
+}
+.app-shell .zcards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 9px;
+  align-items: start;
+}
+/* Enable the 2-up container query only where the M.I.A column is present
+   (≥1081px). Below that the layout is single-column anyway (VZ-2: « en dessous,
+   une seule »), so a wide phone/tablet list never splits. */
+@media (min-width: 1081px) {
+  .app-shell .zgroup {
+    container-type: inline-size;
+  }
+}
+/* 2 cards per row once a GROUP is wide enough to hold two comfortably. At
+   1280×800 (no chat column) the cards column is ~640px → two cards; between
+   1081px and ~1240px it stays single. */
+@container (min-width: 600px) {
+  .app-shell .zcards {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 .app-shell .zmia-col {
   position: sticky;
   top: 16px;
 }
+/* Group headers stay pinned to the top of the scroll area while their own
+   section is in view; the next group's header then takes over. */
 .app-shell .zsep {
+  position: sticky;
+  top: 0;
+  z-index: 3;
   font-family: var(--font-mono), 'JetBrains Mono', monospace;
   font-size: 9px;
   letter-spacing: 0.13em;
@@ -650,16 +720,19 @@
   display: flex;
   align-items: center;
   gap: 11px;
-  margin: 6px 0 5px;
+  padding: 6px 0 5px;
+  margin: 0;
+  background: var(--bg);
+}
+/* The very first group header hugs the controls above it. */
+.app-shell .zgroup:first-child .zsep {
+  padding-top: 2px;
 }
 .app-shell .zsep::after {
   content: '';
   flex: 1;
   height: 1px;
   background: var(--line);
-}
-.app-shell section:first-child .zsep {
-  margin-top: 2px;
 }
 
 /* Proximity — the three read-side encadrés (proximity/confluence/contacts) share
@@ -703,8 +776,8 @@
 }
 .app-shell .zgauge {
   position: relative;
-  height: 13px;
-  margin-top: 3px;
+  height: 20px;
+  margin-top: 6px;
   border-radius: 6px;
   background: var(--panel);
   border: 1px solid var(--line);
@@ -725,6 +798,23 @@
   width: 2px;
   background: var(--bull);
   box-shadow: 0 0 6px color-mix(in srgb, var(--bull) 70%, transparent);
+}
+/* The scale: the extent prices anchoring each end so the band and the price
+   marker read against real numbers (VZ-2 defect 7). */
+.app-shell .zgauge .glab {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 8px;
+  color: var(--faint);
+  pointer-events: none;
+}
+.app-shell .zgauge .glab.lo {
+  left: 6px;
+}
+.app-shell .zgauge .glab.hi {
+  right: 6px;
 }
 
 /* Confluence */
@@ -826,6 +916,11 @@
   line-height: 1.4;
 }
 
+/* Deferred detail wrapper (VZ-2): holds the contact ledger, the frieze, the fill
+   bar, the origin and the raw key/values — shown only when the card is expanded. */
+.app-shell .zdet {
+  margin-top: 2px;
+}
 /* Details — the expandable key/value grid renders above the actions row when
    opened; the toggle itself lives inline in `.zfoot` (UI-1b: no separate row). */
 .app-shell .zdeth {
@@ -1034,7 +1129,7 @@
 .app-shell .zmia-sheet {
   display: none;
 }
-@media (max-width: 1000px) {
+@media (max-width: 1080px) {
   .app-shell .zlayout {
     grid-template-columns: 1fr;
   }
@@ -1046,7 +1141,8 @@
     position: fixed;
     right: 16px;
     bottom: 16px;
-    z-index: 40;
+    /* Above the mobile space nav (z-index 60), so it stays tappable. */
+    z-index: 61;
     padding: 11px 16px;
     border-radius: 22px;
     border: 1px solid var(--acc);
@@ -1060,7 +1156,8 @@
     display: block;
     position: fixed;
     inset: 0;
-    z-index: 50;
+    /* Above the mobile space nav (z-index 60) so the open sheet covers it. */
+    z-index: 70;
   }
   .app-shell .zmia-sheet-back {
     position: absolute;
@@ -1080,6 +1177,13 @@
   }
   .app-shell .zmia-sheet-close {
     margin-bottom: 10px;
+  }
+}
+/* On phones the mobile space nav (~58px, z-index 60) sits at the bottom — lift the
+   fab clear of it so it is fully tappable (the nav only shows below 768px). */
+@media (max-width: 767px) {
+  .app-shell .zmia-fab {
+    bottom: calc(70px + env(safe-area-inset-bottom));
   }
 }
 

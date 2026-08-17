@@ -133,18 +133,24 @@ function scenarios() {
   test('the above zone shows a contact ledger with distinct outcomes', async ({ page }) => {
     await openZones(page);
     const card = page.locator('[data-zone-id="fvg-above"]');
+    // Compact card: the contact STATE and the distance (with unit + edge) show
+    // up front (VZ-2 hierarchy levels 2/3).
     await expect(card).toContainText('2 contacts');
-    // entry-exit AND edge-touch — two DISTINCT outcomes, never merged.
+    await expect(card).toContainText('mesuré au bord');
+    // The full per-contact ledger is deferred to « Détails » (VZ-2 density) — one
+    // click reveals both distinct outcomes, never merged.
+    await card.locator('.zdeth').click();
     await expect(card).toContainText('est entré à');
     await expect(card).toContainText('touché le bord sans y pénétrer');
-    // distance carries its unit AND its reference edge.
-    await expect(card).toContainText('mesuré au bord');
   });
 
   test('the untouched zone shows the explicit no-confluence absence state', async ({ page }) => {
     await openZones(page);
     const card = page.locator('[data-zone-id="ob-untouched"]');
     await expect(card).toContainText('Jamais touchée');
+    // Confluence (incl. the explicit absence state) is deferred to « Détails »
+    // (VZ-2 density) — one click, never a silent implication of presence.
+    await card.locator('.zdeth').click();
     await expect(card.locator('.zconf.none')).toBeVisible();
     await expect(card).toContainText('Rien d’autre n’est détecté');
   });
