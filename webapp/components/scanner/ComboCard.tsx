@@ -54,7 +54,7 @@ export function ComboCard({
       <div className="t1">
         <span className="nm">{instrumentLabel(match.instrument)}</span>
         <span className="tf2">· {match.timeframe}</span>
-        <span className="mono ml-auto text-[10px] text-[color:var(--faint)]">
+        <span className="mono ml-auto fs-legal text-[color:var(--faint)]">
           {t('conditionsPresent', { met: match.met_count, total: match.total })}
           {nonEvaluableCount > 0 ? ` · ${t('nonEvaluableCount', { count: nonEvaluableCount })}` : ''}
         </span>
@@ -135,7 +135,7 @@ export function ComboCard({
       </div>
 
       {match.close_price != null && (
-        <div className="mono mt-1 text-[10px] text-[color:var(--faint)]">
+        <div className="mono mt-1 fs-legal text-[color:var(--faint)]">
           {t('price', { price: match.close_price })}
           {readingAge ? ` · ${t('freshCandle', { age: readingAge })}` : ''}
         </div>
@@ -150,7 +150,7 @@ export function ComboCard({
         </Link>
       </div>
 
-      <p className="mt-2 text-[10px] leading-snug text-[color:var(--faint)]">{t('disclaimer')}</p>
+      <p className="mt-2 fs-legal leading-snug text-[color:var(--faint)]">{t('disclaimer')}</p>
     </div>
   );
 }

@@ -123,7 +123,7 @@ export function StrategyPanel({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">{t('strategyPanel.title')}</CardTitle>
+        <CardTitle className="fs-section">{t('strategyPanel.title')}</CardTitle>
         {/* Mandatory, non-maskable: on-device only, and the count is a finding
             not a ranking (a reading returning seven combos is not "better" than
             one returning none — it is wider). */}
@@ -230,7 +230,7 @@ export function StrategyPanel({
                         {strategy.name}
                       </span>
                       {invalid && (
-                        <span className="rounded-full border border-destructive/50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-destructive">
+                        <span className="rounded-full border border-destructive/50 px-2 py-0.5 fs-legal font-medium uppercase tracking-wide text-destructive">
                           {t('strategyPanel.invalid')}
                         </span>
                       )}
@@ -273,7 +273,7 @@ export function StrategyPanel({
                       </span>
                       {c.staleCount > 0 ? (
                         <>
-                          <span className="rounded-full border border-amber-500/50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-600">
+                          <span className="rounded-full border border-amber-500/50 px-2 py-0.5 fs-legal font-medium uppercase tracking-wide text-amber-600">
                             {t('strategyPanel.incompleteBadge')}
                           </span>
                           <span className="text-xs text-muted-foreground">

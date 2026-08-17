@@ -3160,7 +3160,7 @@
       "description": "Describe your strategy in French or English; M.I.A translates it into verifiable palette conditions."
     },
     "describe": {
-      "title": "Describe your strategy. In your words.",
+      "title": "Describe your strategy",
       "subtitle": "No form to fill in. Write what you're looking for as you'd say it to someone.",
       "miaTitle": "M.I.A translates your strategy",
       "miaSub": "she chooses nothing for you · you validate before anything runs",
@@ -3168,7 +3168,7 @@
       "translate": "Translate my strategy",
       "translating": "Translating…",
       "myStrategies": "My strategies",
-      "scope": "M.I.A translates toward 22 verifiable conditions. Nothing else.",
+      "scope": "M.I.A translates toward {count} verifiable conditions. Nothing else.",
       "examplesLabel": "Or start from an example",
       "disclaimer": "M.I.A does not look at the market to answer you: she turns your sentence into verifiable conditions, then the product's analysis does the searching. She orders nothing, advises nothing, and never guesses a condition you didn't express.",
       "examples": {
@@ -3201,7 +3201,7 @@
     "add": {
       "tag": "Add",
       "cta": "A missing condition?",
-      "hint": "Browse the 22 conditions",
+      "hint": "Browse the {count} conditions",
       "title": "Add a condition from the palette",
       "close": "Close",
       "already": "Already in your strategy"

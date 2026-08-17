@@ -261,11 +261,11 @@ export function ConversationalScanner({ locale }: { locale: string }) {
       <div className="space-y-4">
         <BackBar label={t('strategies.back')} onBack={() => setMode('describe')} />
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">{t('strategies.title')}</h1>
-          <p className="mt-1 text-muted-foreground">{t('strategies.subtitle')}</p>
+          <h1 className="fs-title font-semibold tracking-tight text-foreground">{t('strategies.title')}</h1>
+          <p className="mt-1 fs-secondary text-muted-foreground">{t('strategies.subtitle')}</p>
         </div>
         {saved.strategies.length === 0 ? (
-          <p className="rounded-xl border border-border/60 bg-card/40 p-4 text-sm text-muted-foreground">
+          <p className="rounded-xl border border-border bg-card p-4 fs-secondary text-muted-foreground">
             {t('strategies.empty')}
           </p>
         ) : (
@@ -293,20 +293,20 @@ export function ConversationalScanner({ locale }: { locale: string }) {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+        <h1 className="fs-title font-semibold tracking-tight text-foreground">
           {hasConditions ? (isPartial ? t('translation.partialTitle') : t('translation.title')) : t('translation.noneTitle')}
         </h1>
-        <p className="mt-1 text-muted-foreground">
+        <p className="mt-1 fs-secondary text-muted-foreground">
           {hasConditions ? t('translation.subtitle') : t('translation.noneSubtitle')}
         </p>
       </div>
 
       {/* The original request — recalled and editable. */}
-      <div className="rounded-2xl border border-border/70 bg-card/50 p-4">
+      <div className="rounded-2xl border border-border bg-card p-4">
         <div className="flex items-start gap-3">
           <div className="flex-1">
-            <div className="mb-1 font-mono text-[10px] text-muted-foreground">{t('translation.yourRequest')}</div>
-            <div className="text-[15px] leading-relaxed text-foreground">“{working.sourceText}”</div>
+            <div className="mb-1 fs-legal text-muted-foreground">{t('translation.yourRequest')}</div>
+            <div className="fs-body leading-relaxed text-foreground">“{working.sourceText}”</div>
           </div>
           <Button
             variant="outline"
@@ -323,7 +323,7 @@ export function ConversationalScanner({ locale }: { locale: string }) {
 
       {hasConditions && (
         <div>
-          <div className="mb-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+          <div className="mb-2 fs-label uppercase tracking-widest text-muted-foreground">
             {t('translation.conditionsLabel', { count: working.conditions.length })}
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
@@ -348,10 +348,10 @@ export function ConversationalScanner({ locale }: { locale: string }) {
           data-testid="assumptions-block"
           className="rounded-r-xl border border-amber-500/40 border-l-2 border-l-amber-500 bg-amber-500/5 p-3.5"
         >
-          <h4 className="mb-1.5 text-sm font-semibold text-amber-600">{t('assumptions.title')}</h4>
+          <h4 className="mb-1.5 fs-secondary font-semibold text-amber-600">{t('assumptions.title')}</h4>
           <ul className="space-y-1">
             {working.assumptions.map((a, i) => (
-              <li key={i} className="text-[13px] leading-relaxed text-amber-700/90 dark:text-amber-200/80">
+              <li key={i} className="fs-secondary leading-relaxed text-amber-700/90 dark:text-amber-200/80">
                 {t('assumptions.item', {
                   phrase: a.source_phrase ?? t('assumptions.aVagueWord'),
                   condition: conditionLabel(a.condition_type),
@@ -360,7 +360,7 @@ export function ConversationalScanner({ locale }: { locale: string }) {
               </li>
             ))}
           </ul>
-          <p className="mt-1.5 text-[12px] text-amber-700/80 dark:text-amber-200/70">{t('assumptions.note')}</p>
+          <p className="mt-1.5 fs-label text-amber-700/80 dark:text-amber-200/70">{t('assumptions.note')}</p>
         </div>
       )}
 
@@ -370,28 +370,28 @@ export function ConversationalScanner({ locale }: { locale: string }) {
           data-testid="untranslatable-block"
           className="rounded-r-xl border border-amber-500/40 border-l-2 border-l-amber-500 bg-amber-500/5 p-3.5"
         >
-          <h4 className="mb-1.5 text-sm font-semibold text-amber-600">
+          <h4 className="mb-1.5 fs-secondary font-semibold text-amber-600">
             {hasConditions ? t('untranslatable.titlePartial') : t('untranslatable.titleNone')}
           </h4>
           <ul className="space-y-1.5">
             {working.untranslatable.map((u, i) => (
-              <li key={i} className="text-[13px] leading-relaxed text-amber-700/90 dark:text-amber-200/80">
+              <li key={i} className="fs-secondary leading-relaxed text-amber-700/90 dark:text-amber-200/80">
                 {u.fragment ? <b className="font-medium text-amber-600">“{u.fragment}”</b> : null}{' '}
                 {categoryMessage(u.category, t)}
               </li>
             ))}
           </ul>
-          <p className="mt-1.5 text-[12px] text-amber-700/80 dark:text-amber-200/70">{t('untranslatable.honesty')}</p>
+          <p className="mt-1.5 fs-label text-amber-700/80 dark:text-amber-200/70">{t('untranslatable.honesty')}</p>
         </div>
       )}
 
       {/* Live count + actions, OR a reformulate path when nothing was understood. */}
       {hasConditions ? (
-        <div className="sticky bottom-0 flex flex-wrap items-center gap-4 rounded-2xl border border-border/70 bg-card/95 p-4 backdrop-blur">
-          <span data-testid="live-count" className="text-3xl font-bold tracking-tight text-foreground">
+        <div className="sticky bottom-0 flex flex-wrap items-center gap-4 rounded-2xl border border-border bg-card/95 p-4 backdrop-blur">
+          <span data-testid="live-count" className="fs-title font-semibold tracking-tight text-foreground">
             {live.status === 'ready' ? live.count : '—'}
           </span>
-          <span className="text-[13px] leading-tight text-muted-foreground">
+          <span className="fs-secondary leading-tight text-muted-foreground">
             {t('translation.comboCaption', { conditions: working.conditions.length })}
             <br />
             {live.status === 'ready'
@@ -417,12 +417,12 @@ export function ConversationalScanner({ locale }: { locale: string }) {
             </Button>
           </div>
           {saveFeedback && (
-            <p data-testid="save-feedback" className="w-full text-[12px] text-muted-foreground">
+            <p data-testid="save-feedback" className="w-full fs-label text-muted-foreground">
               {saveFeedback}
             </p>
           )}
           {inlineError && (
-            <p role="alert" className="w-full text-[12px] text-destructive">
+            <p role="alert" className="w-full fs-label text-destructive">
               {inlineError}
             </p>
           )}
@@ -476,24 +476,24 @@ function RefusalPanel({
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">{t('refusal.pageTitle')}</h1>
-        <p className="mt-1 text-muted-foreground">{t('refusal.pageSubtitle')}</p>
+        <h1 className="fs-title font-semibold tracking-tight text-foreground">{t('refusal.pageTitle')}</h1>
+        <p className="mt-1 fs-secondary text-muted-foreground">{t('refusal.pageSubtitle')}</p>
       </div>
 
-      <div className="rounded-2xl border border-border/70 bg-card/50 p-4">
-        <div className="mb-1 font-mono text-[10px] text-muted-foreground">{t('translation.yourRequest')}</div>
-        <div className="text-[15px] leading-relaxed text-foreground">“{sourceText}”</div>
+      <div className="rounded-2xl border border-border bg-card p-4">
+        <div className="mb-1 fs-legal text-muted-foreground">{t('translation.yourRequest')}</div>
+        <div className="fs-body leading-relaxed text-foreground">“{sourceText}”</div>
       </div>
 
       <div
         data-testid="refusal-block"
         className="rounded-r-xl border border-amber-500/40 border-l-2 border-l-amber-500 bg-amber-500/5 p-4"
       >
-        <h4 className="mb-2 text-[15px] font-semibold text-amber-600">{t(`refusal.${safeKind}.title`)}</h4>
+        <h4 className="mb-2 fs-body font-semibold text-amber-600">{t(`refusal.${safeKind}.title`)}</h4>
         <p className="mb-2 text-[13.5px] leading-relaxed text-amber-700/90 dark:text-amber-200/80">
           {t(`refusal.${safeKind}.body`)}
         </p>
-        <p className="text-[13.5px] leading-relaxed text-amber-700/90 dark:text-amber-200/80">{t('refusal.invite')}</p>
+        <p className="fs-secondary leading-relaxed text-amber-700/90 dark:text-amber-200/80">{t('refusal.invite')}</p>
         <div className="mt-3 flex flex-wrap gap-2">
           {examples.map((example, i) => (
             <button
@@ -501,7 +501,7 @@ function RefusalPanel({
               type="button"
               data-testid="refusal-example"
               onClick={() => onExample(example)}
-              className="rounded-lg border border-border/60 bg-background/50 px-3 py-2 text-left text-[13px] text-muted-foreground transition hover:border-primary/50 hover:text-foreground"
+              className="rounded-lg border border-border bg-muted/50 px-3 py-2 text-left fs-secondary text-muted-foreground transition hover:border-primary/50 hover:text-foreground"
             >
               {example}
             </button>
@@ -514,7 +514,7 @@ function RefusalPanel({
           {t('refusal.reformulate')}
         </Button>
       </div>
-      <p className="text-[12.5px] leading-relaxed text-muted-foreground">{t('refusal.footer')}</p>
+      <p className="fs-legal leading-relaxed text-muted-foreground">{t('refusal.footer')}</p>
     </div>
   );
 }
