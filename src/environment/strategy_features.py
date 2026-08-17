@@ -110,13 +110,25 @@ def _calculate_bos_choch_numba(
         allow_bos_up = last_fractal_high > last_bos_up_level
         allow_bos_down = last_fractal_low < last_bos_down_level
 
+        # STR-2 defect B — ONE structural event per bar per sense, decided by this
+        # explicit if/elif (NOT by execution order): a reversal bar takes a CHOCH
+        # branch; a non-reversal break takes the continuation-BOS branch. A bar is
+        # therefore EITHER a change of character (CHOCH) OR a continuation break
+        # (BOS) — never both. The CHOCH branches ALSO set `bos_event`, but that
+        # column is the *break trigger* the retest state machine consumes
+        # (_calculate_bos_retest_*) — NOT a second BOS structural event. The single
+        # authority that maps these raw columns to journal events is
+        # market_reading_mappers.collect_structure_events ("CHOCH wins a shared
+        # bar"), so a reversal surfaces exactly ONCE, as a CHOCH. Never read
+        # `bos_event` alone as « a BOS occurred » on a bar that also carries
+        # `choch_signal` — check CHOCH first (that is the rule).
         if bos_signal[i - 1] == -1 and current_close > current_high_structure:
             choch_signal[i] = 1
             bos_break_level[i] = current_high_structure       # broken resistance
             current_low_structure = last_fractal_low
             current_high_structure = last_fractal_high
             bos_signal[i] = 1
-            bos_event[i] = 1                     # actual break this bar
+            bos_event[i] = 1                     # break TRIGGER (retest machine), not a 2nd BOS event
             last_bos_up_level = current_close
         elif bos_signal[i - 1] == 1 and current_close < current_low_structure:
             choch_signal[i] = -1
@@ -124,7 +136,7 @@ def _calculate_bos_choch_numba(
             current_high_structure = last_fractal_high
             current_low_structure = last_fractal_low
             bos_signal[i] = -1
-            bos_event[i] = -1
+            bos_event[i] = -1                    # break TRIGGER (retest machine), not a 2nd BOS event
             last_bos_down_level = current_close
         elif choch_signal[i] == 0:
             if bos_signal[i - 1] >= 0 and current_close > current_high_structure and allow_bos_up:
@@ -210,6 +222,9 @@ def _calculate_bos_choch_python(
         allow_bos_up = last_fractal_high > last_bos_up_level
         allow_bos_down = last_fractal_low < last_bos_down_level
 
+        # STR-2 defect B: same rule as the numba path — a reversal bar is a CHOCH
+        # (never also a same-sense BOS event); `bos_event` on it is the retest
+        # trigger. Arbitration authority: collect_structure_events.
         if bos_signal[i - 1] == -1 and closes[i] > current_high_structure:
             choch_signal[i] = 1
             bos_break_level[i] = current_high_structure

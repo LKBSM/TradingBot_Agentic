@@ -715,39 +715,57 @@ def _eval_last_event_age(reading: Dict[str, Any], age_bucket: Optional[str]) -> 
 
 
 def _eval_break_recent_confirmed(
-    reading: Dict[str, Any], cond_type: str, struct_key: str, name: str,
+    reading: Dict[str, Any], cond_type: str, events_key: str, name: str,
     direction: str, max_bars: int,
 ) -> Dict[str, Any]:
-    """Shared evaluator for a confirmed, recent structural break (BOS or CHOCH)."""
-    rec = reading.get("structure", {}).get(struct_key)
-    if not rec:
-        return _result(cond_type, False, f"Aucun {name} récent.")
-    if rec.get("validation_status") != "confirmed":
-        status = rec.get("validation_status", "inconnu")
-        return _result(cond_type, False, f"{name} non confirmé (statut : {status}).")
-    rec_dir = rec.get("direction")
-    if not _direction_matches(rec_dir, direction):
-        return _result(
-            cond_type, False,
-            f"{name} confirmé mais {rec_dir or 'n/d'} (≠ {_direction_word(direction)} demandé).",
-        )
+    """Shared evaluator for a confirmed structural break within N bars (BOS/CHOCH).
+
+    STR-2 defect A: recency is answered from the JOURNAL (``bos_events`` /
+    ``choch_events``, each entry carrying ``bars_ago`` — the analysed-bar distance
+    the engine emitted), NEVER the point-in-time ``current_bos``/``current_choch``
+    (null on ~76 % / ~99 % of readings — reading it fabricated « aucun » while the
+    break sat a few candles back in the journal). BOS and CHOCH are treated with
+    the same rigor: both read their journal, both filter to confirmed breaks of
+    the requested direction, both measure recency in bars.
+    """
+    events = reading.get("structure", {}).get(events_key) or []
+    matching = [
+        e for e in events
+        if e.get("validation_status", "confirmed") == "confirmed"
+        and _direction_matches(e.get("direction"), direction)
+    ]
+    if not matching:
+        suffix = f" {_direction_word(direction)}" if direction != "any" else ""
+        return _result(cond_type, False, f"Aucun {name}{suffix} confirmé dans la fenêtre.")
+    # bars_ago is carried by every journal entry; fall back to a timestamp
+    # estimate only for legacy entries that lack it.
     timeframe = reading.get("header", {}).get("timeframe", "")
     candle_ts = reading.get("header", {}).get("candle_close_ts")
-    bars = _bars_between(rec.get("broken_at"), candle_ts, timeframe)
-    word = _direction_word(rec_dir) or rec_dir or "n/d"
-    if bars is None:
+    best_bars: Optional[float] = None
+    best_dir: Optional[str] = None
+    for e in matching:
+        ba = e.get("bars_ago")
+        if ba is None:
+            ba = _bars_between(e.get("broken_at"), candle_ts, timeframe)
+        if ba is None:
+            continue
+        if best_bars is None or ba < best_bars:
+            best_bars = ba
+            best_dir = e.get("direction")
+    if best_bars is None:
         return _result(
             cond_type, False,
-            f"{name} {word} confirmé mais ancienneté inconnue.", available=False,
+            f"{name} confirmé mais ancienneté inconnue.", available=False,
         )
-    if bars <= max_bars:
+    word = _direction_word(best_dir) or best_dir or "n/d"
+    if best_bars <= max_bars:
         return _result(
             cond_type, True,
-            f"{name} {word} confirmé il y a ~{round(bars)} bougie(s) (≤ {max_bars}).",
+            f"{name} {word} confirmé il y a ~{round(best_bars)} bougie(s) (≤ {max_bars}).",
         )
     return _result(
         cond_type, False,
-        f"{name} {word} confirmé mais trop ancien (~{round(bars)} bougies > {max_bars}).",
+        f"{name} {word} confirmé le plus récent il y a ~{round(best_bars)} bougies (> {max_bars}).",
     )
 
 
@@ -1192,12 +1210,12 @@ def evaluate_condition(
         return _eval_last_event_age(reading, cond.get("age_bucket"))
     if cond_type == "bos_recent_confirmed":
         return _eval_break_recent_confirmed(
-            reading, "bos_recent_confirmed", "bos", "BOS", direction,
+            reading, "bos_recent_confirmed", "bos_events", "BOS", direction,
             int(cond.get("max_bars") or DEFAULT_BOS_MAX_BARS),
         )
     if cond_type == "choch_recent_confirmed":
         return _eval_break_recent_confirmed(
-            reading, "choch_recent_confirmed", "choch", "CHOCH", direction,
+            reading, "choch_recent_confirmed", "choch_events", "CHOCH", direction,
             int(cond.get("max_bars") or DEFAULT_BOS_MAX_BARS),
         )
     if cond_type == "price_in_ob":
@@ -1261,13 +1279,17 @@ def build_context(reading: Dict[str, Any]) -> Dict[str, Any]:
     regime = reading.get("regime", {})
     events = reading.get("events", {})
 
-    def _zone_summary(z: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        if not z:
+    def _break_summary(events: Any) -> Optional[Dict[str, Any]]:
+        # STR-2 defect A: the context's bos/choch summary is the MOST RECENT break
+        # from the journal (most-recent-first), not the point-in-time
+        # current_bos/current_choch (null on the vast majority of readings).
+        if not events:
             return None
+        e = events[0]
         return {
-            "direction": z.get("direction"),
-            "level": z.get("level"),
-            "validation_status": z.get("validation_status"),
+            "direction": e.get("direction"),
+            "level": e.get("level"),
+            "validation_status": e.get("validation_status"),
         }
 
     obs = structure.get("order_blocks", []) or []
@@ -1278,8 +1300,8 @@ def build_context(reading: Dict[str, Any]) -> Dict[str, Any]:
         "market_phase": regime.get("market_phase"),
         "volatility_observed": regime.get("volatility_observed"),
         "mtf_confluence": regime.get("mtf_confluence", {}) or {},
-        "bos": _zone_summary(structure.get("bos")),
-        "choch": _zone_summary(structure.get("choch")),
+        "bos": _break_summary(structure.get("bos_events")),
+        "choch": _break_summary(structure.get("choch_events")),
         "active_order_blocks": sum(1 for o in obs if o.get("status") == "active"),
         "active_fair_value_gaps": sum(
             1 for f in fvgs if f.get("status") in ("active", "partially_filled")

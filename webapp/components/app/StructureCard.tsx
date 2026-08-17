@@ -16,6 +16,7 @@ import { HelpContent } from './HelpContent';
 import { FilterChipGroup } from './FilterChipGroup';
 import { useMultiFilter } from '@/lib/market-reading/use-multi-filter';
 import { useChartViewOptional } from '@/lib/chart/viewState';
+import { eventId } from '@/lib/chart/structureMarkers';
 
 /** ISO-8601 → epoch seconds, or null when unparseable. */
 function isoToSec(iso: string): number | null {
@@ -114,7 +115,9 @@ export function StructureCard({
     (kind: 'bos' | 'choch', ev: BOSRecent | CHOCHRecent) => {
       const atSec = isoToSec(ev.broken_at);
       if (atSec == null) return;
-      const id = `${kind}:${atSec}:${ev.level}`;
+      // STR-2 defect C: anchor by the STABLE id (kind-embedded), never by
+      // timestamp — so a BOS and a CHOCH sharing a bar never collide.
+      const id = eventId(kind, ev);
       if (selectedEventId === id) {
         clearSelection();
         return;
@@ -176,8 +179,8 @@ export function StructureCard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allZones, typeFilter.selected, stateFilter.selected, sort, noneSelected]);
 
-  const choch = latestBreak(structure.choch_events, structure.choch);
-  const bos = latestBreak(structure.bos_events, structure.bos);
+  const choch = latestBreak(structure.choch_events, structure.current_choch);
+  const bos = latestBreak(structure.bos_events, structure.current_bos);
 
   function distNode(z: ZoneLifecycle): React.ReactNode {
     const rel = priceRelation(z, price);
@@ -282,8 +285,8 @@ export function StructureCard({
         <div
           role="button"
           tabIndex={0}
-          className={cn('strow', selectedEventId === `choch:${isoToSec(choch.broken_at)}:${choch.level}` && 'sel')}
-          aria-pressed={selectedEventId === `choch:${isoToSec(choch.broken_at)}:${choch.level}`}
+          className={cn('strow', selectedEventId === eventId('choch', choch) && 'sel')}
+          aria-pressed={selectedEventId === eventId('choch', choch)}
           aria-label={t('evSelectAria', { kind: 'CHOCH' })}
           onClick={() => selectEvent('choch', choch)}
           onKeyDown={(e) => {
@@ -304,8 +307,8 @@ export function StructureCard({
         <div
           role="button"
           tabIndex={0}
-          className={cn('strow', selectedEventId === `bos:${isoToSec(bos.broken_at)}:${bos.level}` && 'sel')}
-          aria-pressed={selectedEventId === `bos:${isoToSec(bos.broken_at)}:${bos.level}`}
+          className={cn('strow', selectedEventId === eventId('bos', bos) && 'sel')}
+          aria-pressed={selectedEventId === eventId('bos', bos)}
           aria-label={t('evSelectAria', { kind: 'BOS' })}
           onClick={() => selectEvent('bos', bos)}
           onKeyDown={(e) => {

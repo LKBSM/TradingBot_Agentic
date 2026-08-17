@@ -64,8 +64,8 @@ function structure(
   fair_value_gaps: ReturnType<typeof fvg>[] = [],
 ): MarketReadingStructure {
   return {
-    bos: null,
-    choch: null,
+    current_bos: null,
+    current_choch: null,
     order_blocks,
     fair_value_gaps,
     retest_in_progress: null,

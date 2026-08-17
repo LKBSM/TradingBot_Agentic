@@ -69,8 +69,8 @@ const fvg = (status: FairValueGap['status'], id: string): FairValueGap => ({
 const structure = (
   overrides: Partial<MarketReadingStructure> = {},
 ): MarketReadingStructure => ({
-  bos: null,
-  choch: null,
+  current_bos: null,
+  current_choch: null,
   order_blocks: [],
   fair_value_gaps: [],
   ...overrides,
@@ -102,7 +102,7 @@ describe('formatBreakTimestamp', () => {
 
 describe('deriveTrendMaturity (b)', () => {
   it('derives the candle count since the point-in-time CHOCH (fallback)', () => {
-    const m = deriveTrendMaturity(structure({ choch: choch() }), header());
+    const m = deriveTrendMaturity(structure({ current_choch: choch() }), header());
     // 14:30 → 19:00 = 270 min / 15 = 18 candles. No bars_ago on the fixture →
     // wall-clock ESTIMATE, so barsApproximate is true.
     expect(m).toEqual({
@@ -116,7 +116,7 @@ describe('deriveTrendMaturity (b)', () => {
     // 14:30→19:00 would ESTIMATE 18 bars, but the event carries bars_ago=11 (real
     // analysed bars, week-end gap excluded) → maturity uses 11, not approximate.
     const m = deriveTrendMaturity(
-      structure({ choch: choch({ bars_ago: 11 }) }),
+      structure({ current_choch: choch({ bars_ago: 11 }) }),
       header(),
     );
     expect(m).toEqual({
@@ -131,8 +131,8 @@ describe('deriveTrendMaturity (b)', () => {
     // back → maturity must use it (not « non disponible », never a BOS).
     const m = deriveTrendMaturity(
       structure({
-        choch: null,
-        bos: bos(), // a BOS present must be IGNORED for maturity
+        current_choch: null,
+        current_bos: bos(), // a BOS present must be IGNORED for maturity
         choch_events: [
           choch({ broken_at: '2026-06-24T10:00:00', direction: 'bearish' }),
           choch({ broken_at: '2026-06-24T14:00:00', direction: 'bearish' }),
@@ -149,18 +149,18 @@ describe('deriveTrendMaturity (b)', () => {
     });
   });
   it('never uses a BOS for maturity — BOS-only → null', () => {
-    expect(deriveTrendMaturity(structure({ bos: bos() }), header())).toBeNull();
+    expect(deriveTrendMaturity(structure({ current_bos: bos() }), header())).toBeNull();
   });
   it('returns null when no CHOCH exists anywhere in the window', () => {
     expect(deriveTrendMaturity(structure(), header())).toBeNull();
   });
   it('leaves bars null for an unknown timeframe (no invented count)', () => {
-    const m = deriveTrendMaturity(structure({ choch: choch() }), header({ timeframe: 'Z9' }));
+    const m = deriveTrendMaturity(structure({ current_choch: choch() }), header({ timeframe: 'Z9' }));
     expect(m?.bars).toBeNull();
   });
   it('guards against a future broken_at (negative diff → bars null)', () => {
     const m = deriveTrendMaturity(
-      structure({ choch: choch({ broken_at: '2026-06-25T00:00:00' }) }),
+      structure({ current_choch: choch({ broken_at: '2026-06-25T00:00:00' }) }),
       header(),
     );
     expect(m?.bars).toBeNull();
@@ -190,30 +190,30 @@ describe('trendWindowSpan (DG-1 point 5)', () => {
 
 describe('formatTrendMaturity (b)', () => {
   it('present-tense line with date + derived candle count', () => {
-    expect(formatTrendMaturity(structure({ choch: choch() }), header(), 'UTC')).toBe(
+    expect(formatTrendMaturity(structure({ current_choch: choch() }), header(), 'UTC')).toBe(
       'Structure orientée haussière depuis le CHOCH du 24/06 à 14:30 (≈ 18 bougies M15).',
     );
   });
   it('bearish orientation', () => {
     expect(
-      formatTrendMaturity(structure({ choch: choch({ direction: 'bearish' }) }), header(), 'UTC'),
+      formatTrendMaturity(structure({ current_choch: choch({ direction: 'bearish' }) }), header(), 'UTC'),
     ).toBe('Structure orientée baissière depuis le CHOCH du 24/06 à 14:30 (≈ 18 bougies M15).');
   });
   it('drops the ≈ when the count is the engine real bars_ago', () => {
     expect(
-      formatTrendMaturity(structure({ choch: choch({ bars_ago: 11 }) }), header(), 'UTC'),
+      formatTrendMaturity(structure({ current_choch: choch({ bars_ago: 11 }) }), header(), 'UTC'),
     ).toBe('Structure orientée haussière depuis le CHOCH du 24/06 à 14:30 (11 bougies M15).');
   });
   it('omits the candle count when the timeframe is unknown', () => {
     expect(
-      formatTrendMaturity(structure({ choch: choch() }), header({ timeframe: 'Z9' }), 'UTC'),
+      formatTrendMaturity(structure({ current_choch: choch() }), header({ timeframe: 'Z9' }), 'UTC'),
     ).toBe('Structure orientée haussière depuis le CHOCH du 24/06 à 14:30.');
   });
   it('uses the most recent CHOCH from the history for the line', () => {
     expect(
       formatTrendMaturity(
         structure({
-          choch: null,
+          current_choch: null,
           choch_events: [choch({ broken_at: '2026-06-24T14:00:00', direction: 'bearish' })],
         }),
         header(),
@@ -222,7 +222,7 @@ describe('formatTrendMaturity (b)', () => {
     ).toBe('Structure orientée baissière depuis le CHOCH du 24/06 à 14:00 (≈ 20 bougies M15).');
   });
   it('returns null when no CHOCH (BOS-only or empty → « non disponible »)', () => {
-    expect(formatTrendMaturity(structure({ bos: bos() }), header())).toBeNull();
+    expect(formatTrendMaturity(structure({ current_bos: bos() }), header())).toBeNull();
     expect(formatTrendMaturity(structure(), header())).toBeNull();
   });
 });
@@ -231,7 +231,7 @@ describe('formatLastStructuralEvent (c)', () => {
   it('phrases the CHOCH event with TF', () => {
     expect(
       formatLastStructuralEvent(
-        structure({ choch: choch({ direction: 'bearish' }) }),
+        structure({ current_choch: choch({ direction: 'bearish' }) }),
         header({ timeframe: 'H1' }),
       ),
     ).toBe('CHOCH baissier confirmé (H1)');
@@ -239,18 +239,18 @@ describe('formatLastStructuralEvent (c)', () => {
   it('picks the most recent of BOS / CHOCH by broken_at', () => {
     // bos at 18:00 is later than choch at 14:30 → BOS surfaces.
     expect(
-      formatLastStructuralEvent(structure({ bos: bos(), choch: choch() }), header()),
+      formatLastStructuralEvent(structure({ current_bos: bos(), current_choch: choch() }), header()),
     ).toBe('BOS baissier confirmé (M15)');
   });
   it('falls back to the only present break', () => {
-    expect(formatLastStructuralEvent(structure({ bos: bos() }), header())).toBe(
+    expect(formatLastStructuralEvent(structure({ current_bos: bos() }), header())).toBe(
       'BOS baissier confirmé (M15)',
     );
   });
   it('renders pending / invalidated validation states', () => {
     expect(
       formatLastStructuralEvent(
-        structure({ choch: choch({ validation_status: 'pending' }) }),
+        structure({ current_choch: choch({ validation_status: 'pending' }) }),
         header(),
       ),
     ).toBe('CHOCH haussier en attente de confirmation (M15)');
@@ -277,8 +277,8 @@ describe('countActiveZones / formatZoneDensity (d)', () => {
 describe('no predictive / probabilistic vocabulary', () => {
   it('every produced line stays strictly descriptive', () => {
     const lines = [
-      formatTrendMaturity(structure({ choch: choch() }), header()),
-      formatLastStructuralEvent(structure({ bos: bos(), choch: choch() }), header()),
+      formatTrendMaturity(structure({ current_choch: choch() }), header()),
+      formatLastStructuralEvent(structure({ current_bos: bos(), current_choch: choch() }), header()),
       formatZoneDensity(
         structure({ order_blocks: [ob('active', 'a')], fair_value_gaps: [fvg('active', 'b')] }),
       ),

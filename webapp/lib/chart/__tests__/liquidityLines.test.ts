@@ -23,8 +23,8 @@ function structure(
   liquidity_pools: LiquidityPool[] = [],
 ): MarketReadingStructure {
   return {
-    bos: null,
-    choch: null,
+    current_bos: null,
+    current_choch: null,
     bos_events: [],
     choch_events: [],
     order_blocks: [],
@@ -40,8 +40,8 @@ describe('buildLiquidityLines', () => {
     expect(buildLiquidityLines(structure())).toEqual([]);
     expect(
       buildLiquidityLines({
-        bos: null,
-        choch: null,
+        current_bos: null,
+        current_choch: null,
         order_blocks: [],
         fair_value_gaps: [],
       } as MarketReadingStructure),

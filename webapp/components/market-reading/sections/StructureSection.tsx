@@ -14,6 +14,8 @@ import type { GlossaryKey } from '@/lib/glossary';
 import { useChartViewOptional } from '@/lib/chart/viewState';
 import { coerceViewActions } from '@/lib/chart/viewActions';
 import { useReadingFormatters } from '@/lib/market-reading/use-reading-formatters';
+import { latestBreak } from '@/lib/market-reading/regime-facts';
+import { eventId } from '@/lib/chart/structureMarkers';
 import type {
   BOSRecent,
   CHOCHRecent,
@@ -72,8 +74,14 @@ export function StructureSection({
 }) {
   const t = useTranslations('reading.structure');
   const fmt = useReadingFormatters();
-  const { bos, choch, order_blocks, fair_value_gaps, retest_in_progress } =
-    structure;
+  const { order_blocks, fair_value_gaps, retest_in_progress } = structure;
+  // STR-2 defect A: the displayed BOS/CHOCH rows read the JOURNAL (most recent
+  // break), matching the desktop StructureCard — never the point-in-time field
+  // alone (null ~76 %/~99 % of the time → mobile said « aucune cassure » while
+  // the desktop showed one). The point-in-time state is kept SEPARATELY for the
+  // retest-coherence heuristic below, which deliberately depends on it.
+  const bos = latestBreak(structure.bos_events, structure.current_bos);
+  const choch = latestBreak(structure.choch_events, structure.current_choch);
   const structure_liquidity_pools = structure.liquidity_pools;
   const liquidity_pools = useMemo(
     () => structure_liquidity_pools ?? [],
@@ -135,7 +143,8 @@ export function StructureSection({
     (kind: 'bos' | 'choch', ev: BOSRecent | CHOCHRecent) => {
       const atSec = isoToSec(ev.broken_at);
       if (atSec == null) return;
-      const id = `${kind}:${atSec}:${ev.level}`;
+      // STR-2 defect C: anchor by the STABLE, kind-embedded id (never timestamp).
+      const id = eventId(kind, ev);
       if (selectedEventId === id) {
         clearSelection();
         return;
@@ -164,13 +173,12 @@ export function StructureSection({
     [selectedLevelId, select, clearSelection, fmtPrice, instrument],
   );
 
-  // Surfacing coherence (founder eval 2026-06-08): the engine emits `bos` only
-  // on a FRESH break at the last close (by design — see market_reading_mappers
-  // F6), while a retest is armed BARS AFTER that break, with `bos` already null.
-  // Without this, the BOS row said "aucune cassure récente" while the retest row
-  // said "retest de cassure (BOS)" — a logical contradiction. When the live
-  // retest references a prior break, we state that instead of denying it. This
-  // is a copy/surfacing fix only — no detection threshold is touched.
+  // Surfacing coherence (founder eval 2026-06-08 + STR-2): `bos`/`choch` above
+  // now read the JOURNAL, so a break that happened many bars ago still shows. The
+  // fallback below only fires when the journal holds NO break of that kind yet a
+  // retest of one is armed — then we state the retest references a prior break
+  // instead of denying it ("aucune cassure" would contradict the retest row).
+  // Copy/surfacing only — no detection threshold is touched.
   const bosUnderRetest =
     !bos && retest_in_progress?.type === 'bos_retest';
   const chochUnderRetest =
@@ -222,10 +230,7 @@ export function StructureSection({
                     : t('bosNone')
               }
               onSelect={bos ? () => selectEvent('bos', bos) : undefined}
-              selected={
-                bos != null &&
-                selectedEventId === `bos:${isoToSec(bos.broken_at)}:${bos.level}`
-              }
+              selected={bos != null && selectedEventId === eventId('bos', bos)}
               selectAria={t('bosLabel')}
             />
             <Row
@@ -239,10 +244,7 @@ export function StructureSection({
                     : t('chochNone')
               }
               onSelect={choch ? () => selectEvent('choch', choch) : undefined}
-              selected={
-                choch != null &&
-                selectedEventId === `choch:${isoToSec(choch.broken_at)}:${choch.level}`
-              }
+              selected={choch != null && selectedEventId === eventId('choch', choch)}
               selectAria={t('chochLabel')}
             />
             <ZoneRow label={t('obLabel')} termKey="order_block">

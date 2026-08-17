@@ -56,11 +56,11 @@ def test_confluence_signal_to_structure_with_long_signal(bar_ts):
     cs = _MockConfluenceSignal("LONG")
     s = confluence_signal_to_structure(cs, smc_features, bar_ts, current_price=2378.45)
 
-    assert s.bos is not None
-    assert s.bos.direction == "bullish"
-    assert s.bos.validation_status == "confirmed"
-    assert s.bos.level == 2375.20  # F1: published BOS_BREAK_LEVEL, not current_price
-    assert s.choch is None  # CHOCH_SIGNAL=0
+    assert s.current_bos is not None
+    assert s.current_bos.direction == "bullish"
+    assert s.current_bos.validation_status == "confirmed"
+    assert s.current_bos.level == 2375.20  # F1: published BOS_BREAK_LEVEL, not current_price
+    assert s.current_choch is None  # CHOCH_SIGNAL=0
     assert len(s.order_blocks) == 1
     assert s.order_blocks[0].direction == "bullish"
     assert s.order_blocks[0].importance == "high"
@@ -83,8 +83,8 @@ def test_confluence_signal_to_structure_with_short_signal(bar_ts):
     cs = _MockConfluenceSignal("SHORT")
     s = confluence_signal_to_structure(cs, smc_features, bar_ts, current_price=1.0820)
 
-    assert s.bos.direction == "bearish"
-    assert s.bos.validation_status == "confirmed"
+    assert s.current_bos.direction == "bearish"
+    assert s.current_bos.validation_status == "confirmed"
     assert s.fair_value_gaps[0].direction == "bearish"
     assert s.order_blocks[0].importance == "medium"
     assert s.order_blocks[0].direction == "bearish"
@@ -101,7 +101,7 @@ def test_propagated_bos_without_event_is_not_shown(bar_ts):
         "ATR": 4.0,
     }
     s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=1.0820)
-    assert s.bos is None
+    assert s.current_bos is None
     assert s.order_blocks[0].direction == "bearish"  # OB still uses trend dir
 
 
@@ -114,7 +114,7 @@ def test_confluence_signal_to_structure_no_signal_but_bos_in_features(bar_ts):
     }
     s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=2380.0)
 
-    assert s.bos is None  # F6: not a fresh break
+    assert s.current_bos is None  # F6: not a fresh break
     assert s.order_blocks == []  # No OB strength
     assert s.fair_value_gaps == []
     assert s.retest_in_progress is None
@@ -135,11 +135,11 @@ def test_persisted_bos_during_active_retest_state(bar_ts):
         "ATR": 5.0,
     }
     s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=2390.0)
-    assert s.bos is not None                       # 1a: persisted while active
-    assert s.bos.direction == "bullish"
-    assert s.bos.level == 2361.10                  # forward-filled real level
-    assert s.bos.validation_status == "confirmed"
-    assert s.bos.broken_at == datetime.fromtimestamp(1748352600.0, tz=timezone.utc)
+    assert s.current_bos is not None                       # 1a: persisted while active
+    assert s.current_bos.direction == "bullish"
+    assert s.current_bos.level == 2361.10                  # forward-filled real level
+    assert s.current_bos.validation_status == "confirmed"
+    assert s.current_bos.broken_at == datetime.fromtimestamp(1748352600.0, tz=timezone.utc)
     assert s.retest_in_progress is not None        # retest still surfaced
     assert s.retest_in_progress.level == 2361.10   # NOT current_price (2390.0)
 
@@ -155,9 +155,9 @@ def test_persisted_bos_awaiting_state_without_armed_retest(bar_ts):
         "ATR": 4.0,
     }
     s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=1.0820)
-    assert s.bos is not None
-    assert s.bos.direction == "bearish"
-    assert s.bos.level == 1.0850
+    assert s.current_bos is not None
+    assert s.current_bos.direction == "bearish"
+    assert s.current_bos.level == 1.0850
     assert s.retest_in_progress is None            # not armed → no retest surfaced
 
 
@@ -175,14 +175,14 @@ def test_retest_flag_only_during_armed_state_not_awaiting(bar_ts):
     awaiting = confluence_signal_to_structure(
         None, {**base, "BOS_RETEST_STATE": 1.0}, bar_ts, current_price=2390.0
     )
-    assert awaiting.bos is not None
+    assert awaiting.current_bos is not None
     assert awaiting.retest_in_progress is None
 
     # Armed (±2): break shown AND retest in progress.
     armed = confluence_signal_to_structure(
         None, {**base, "BOS_RETEST_STATE": 2.0}, bar_ts, current_price=2390.0
     )
-    assert armed.bos is not None
+    assert armed.current_bos is not None
     assert armed.retest_in_progress is not None
     assert armed.retest_in_progress.type == "bos_retest"
 
@@ -199,7 +199,7 @@ def test_retest_not_shown_when_break_dropped_by_inverted_trend(bar_ts):
         "ATR": 5.0,
     }
     s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=2390.0)
-    assert s.bos is None                  # inverted → break dropped
+    assert s.current_bos is None                  # inverted → break dropped
     assert s.retest_in_progress is None   # …and so is its retest
 
 
@@ -214,8 +214,8 @@ def test_persisted_bos_broken_at_falls_back_to_bar_ts_without_break_ts(bar_ts):
         "ATR": 5.0,
     }
     s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=2390.0)
-    assert s.bos is not None
-    assert s.bos.broken_at == bar_ts
+    assert s.current_bos is not None
+    assert s.current_bos.broken_at == bar_ts
 
 
 def test_bos_disappears_on_invalidation(bar_ts):
@@ -229,7 +229,7 @@ def test_bos_disappears_on_invalidation(bar_ts):
         "ATR": 5.0,
     }
     s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=2390.0)
-    assert s.bos is None                  # disappeared on invalidation
+    assert s.current_bos is None                  # disappeared on invalidation
 
 
 def test_bos_not_persisted_when_trend_inverted_against_break(bar_ts):
@@ -243,7 +243,7 @@ def test_bos_not_persisted_when_trend_inverted_against_break(bar_ts):
         "ATR": 5.0,
     }
     s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=2390.0)
-    assert s.bos is None                  # inverted trend → not persisted
+    assert s.current_bos is None                  # inverted trend → not persisted
 
 
 def test_bos_level_falls_back_to_current_price_when_no_break_level(bar_ts):
@@ -252,8 +252,8 @@ def test_bos_level_falls_back_to_current_price_when_no_break_level(bar_ts):
         None, {"BOS_SIGNAL": -1.0, "BOS_EVENT": -1.0, "ATR": 3.0},
         bar_ts, current_price=1.0820,
     )
-    assert s.bos is not None
-    assert s.bos.level == 1.0820
+    assert s.current_bos is not None
+    assert s.current_bos.level == 1.0820
 
 
 def test_realized_levels_forward_fills_bos_break_level():
@@ -314,13 +314,13 @@ def test_choch_level_uses_break_level(bar_ts):
         "ATR": 5.0,
     }
     s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=2380.0)
-    assert s.choch is not None
-    assert s.choch.direction == "bullish"
-    assert s.choch.level == 2350.75      # NOT current_price (2380.0)
+    assert s.current_choch is not None
+    assert s.current_choch.direction == "bullish"
+    assert s.current_choch.level == 2350.75      # NOT current_price (2380.0)
     # STR-1: this bar carries BOTH BOS_EVENT and CHOCH_SIGNAL (a CHOCH is a
     # reversal break). CHOCH takes precedence — the point-in-time BOS twin is NOT
     # surfaced, so the reversal shows as a single change-of-character event.
-    assert s.bos is None
+    assert s.current_bos is None
 
 
 def test_choch_bar_does_not_also_surface_point_in_time_bos(bar_ts):
@@ -331,12 +331,12 @@ def test_choch_bar_does_not_also_surface_point_in_time_bos(bar_ts):
     reversal = {"BOS_SIGNAL": -1.0, "BOS_EVENT": 1.0, "CHOCH_SIGNAL": 1.0,
                 "BOS_BREAK_LEVEL": 2350.75, "ATR": 5.0}
     s = confluence_signal_to_structure(None, reversal, bar_ts, current_price=2380.0)
-    assert s.choch is not None and s.bos is None
+    assert s.current_choch is not None and s.current_bos is None
 
     continuation = {"BOS_SIGNAL": 1.0, "BOS_EVENT": 1.0, "CHOCH_SIGNAL": 0.0,
                     "BOS_BREAK_LEVEL": 2360.0, "ATR": 5.0}
     s2 = confluence_signal_to_structure(None, continuation, bar_ts, current_price=2380.0)
-    assert s2.bos is not None and s2.choch is None
+    assert s2.current_bos is not None and s2.current_choch is None
 
 
 def test_choch_level_falls_back_to_price_when_no_level(bar_ts):
@@ -344,8 +344,8 @@ def test_choch_level_falls_back_to_price_when_no_level(bar_ts):
     s = confluence_signal_to_structure(
         None, {"CHOCH_SIGNAL": -1.0, "ATR": 3.0}, bar_ts, current_price=1.0950
     )
-    assert s.choch is not None
-    assert s.choch.level == 1.0950
+    assert s.current_choch is not None
+    assert s.current_choch.level == 1.0950
 
 
 def test_ob_fvg_use_real_levels(bar_ts):
@@ -406,8 +406,8 @@ def test_realized_levels_ob_and_fvg():
 def test_confluence_signal_to_structure_empty_features(bar_ts):
     """No structural signals at all — all-None structure is still valid."""
     s = confluence_signal_to_structure(None, {}, bar_ts, current_price=2378.45)
-    assert s.bos is None
-    assert s.choch is None
+    assert s.current_bos is None
+    assert s.current_choch is None
     assert s.order_blocks == []
     assert s.fair_value_gaps == []
     assert s.retest_in_progress is None
@@ -597,6 +597,14 @@ def _structure_rich(bar_ts: datetime) -> MarketReadingStructure:
             "OB_STRENGTH_NORM": 0.8,
             "BOS_RETEST_STATE": 2.0,  # armed → retest in progress surfaced
             "ATR": 5.0,
+            # STR-2: the recency tag now derives from the JOURNAL, so a realistic
+            # reading carries the break in bos_events (not just the point-in-time
+            # current_bos). Mirror the live pipeline that always attaches it.
+            "_structure_events": {
+                "bos_events": [{"direction": "bullish", "level": 2375.0,
+                                "broken_at": bar_ts, "bars_ago": 0}],
+                "choch_events": [],
+            },
         },
         bar_ts,
         current_price=2378.45,
@@ -724,9 +732,9 @@ def test_persisted_bos_future_break_ts_falls_back_to_bar_ts(bar_ts):
         "ATR": 5.0,
     }
     s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=2390.0)
-    assert s.bos is not None
-    assert s.bos.broken_at == bar_ts          # clamped, never in the future
-    assert s.bos.broken_at <= bar_ts
+    assert s.current_bos is not None
+    assert s.current_bos.broken_at == bar_ts          # clamped, never in the future
+    assert s.current_bos.broken_at <= bar_ts
 
 
 def test_persisted_bos_past_break_ts_still_honest(bar_ts):
@@ -741,8 +749,8 @@ def test_persisted_bos_past_break_ts_still_honest(bar_ts):
         "ATR": 5.0,
     }
     s = confluence_signal_to_structure(None, smc_features, bar_ts, current_price=2390.0)
-    assert s.bos is not None
-    assert s.bos.broken_at == datetime.fromtimestamp(past_epoch, tz=timezone.utc)
+    assert s.current_bos is not None
+    assert s.current_bos.broken_at == datetime.fromtimestamp(past_epoch, tz=timezone.utc)
 
 
 # ---------------------------------------------------------------------------
@@ -1093,6 +1101,26 @@ def test_collect_structure_events_surfaces_multiple_breaks_recent_first():
     assert ev["choch_events"][0]["level"] == 107.0
 
 
+def test_structure_event_ids_are_stable_and_collision_free(bar_ts):
+    """STR-2 defect C: every journal event carries a stable id that EMBEDS the
+    kind, so a BOS and a CHOCH landing on the SAME bar (same broken_at + same
+    direction) get DIFFERENT ids — the chart can never focus the wrong one."""
+    same = "2026-05-28T13:45:00+00:00"
+    feats = {
+        "ATR": 5.0,
+        "_structure_events": {
+            "bos_events": [{"direction": "bullish", "level": 2375.0, "broken_at": same, "bars_ago": 3}],
+            "choch_events": [{"direction": "bullish", "level": 2375.0, "broken_at": same, "bars_ago": 3}],
+        },
+    }
+    s = confluence_signal_to_structure(None, feats, bar_ts, current_price=2380.0)
+    assert s.bos_events[0].id and s.choch_events[0].id
+    assert s.bos_events[0].id != s.choch_events[0].id  # collision-free on a shared bar
+    # Deterministic: the same event yields the same id on a rebuild.
+    s2 = confluence_signal_to_structure(None, feats, bar_ts, current_price=2380.0)
+    assert s2.bos_events[0].id == s.bos_events[0].id
+
+
 def test_collect_structure_events_choch_precedence_drops_bos_twin():
     """STR-1: a reversal bar carries BOTH BOS_EVENT and CHOCH_SIGNAL (this is what
     the real engine emits — the CHOCH branch also writes bos_event). It is ONE
@@ -1110,6 +1138,23 @@ def test_collect_structure_events_choch_precedence_drops_bos_twin():
     # The reversal surfaces exactly once, as a CHOCH.
     assert len(ev["choch_events"]) == 1
     assert ev["choch_events"][0]["level"] == 107.0
+
+
+def test_no_bar_carries_both_bos_and_choch_of_same_sense():
+    """STR-2 defect B invariant (the arbitration authority): on ANY bar the journal
+    never holds a BOS AND a CHOCH of the same sense — a reversal is one event, a
+    CHOCH. Fabricates several reversal bars (both raw columns set, same sign) and
+    asserts the (broken_at, direction) keys are disjoint between the two journals."""
+    rows = [{"close": 100 + i} for i in range(12)]
+    rows[3].update(BOS_EVENT=1.0, BOS_BREAK_LEVEL=103.0)                     # continuation BOS
+    rows[6].update(BOS_EVENT=1.0, CHOCH_SIGNAL=1.0, BOS_BREAK_LEVEL=106.0)   # reversal → CHOCH up
+    rows[9].update(BOS_EVENT=-1.0, CHOCH_SIGNAL=-1.0, BOS_BREAK_LEVEL=109.0) # reversal → CHOCH down
+    ev = collect_structure_events(_events_frame(rows), idx=11)
+    bos_keys = {(e["broken_at"], e["direction"]) for e in ev["bos_events"]}
+    choch_keys = {(e["broken_at"], e["direction"]) for e in ev["choch_events"]}
+    assert bos_keys.isdisjoint(choch_keys)      # never the same event in both
+    assert len(ev["choch_events"]) == 2          # both reversals surfaced, once each
+    assert [e["level"] for e in ev["bos_events"]] == [103.0]  # only the continuation is a BOS
 
 
 def test_collect_structure_events_caps_to_max_per_type():

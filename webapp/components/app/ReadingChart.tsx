@@ -47,7 +47,7 @@ import {
   frameZone,
   type CameraFrame,
 } from '@/lib/chart/focusController';
-import { buildStructureMarkers } from '@/lib/chart/structureMarkers';
+import { buildStructureMarkers, findEventById } from '@/lib/chart/structureMarkers';
 import { buildLiquidityLines } from '@/lib/chart/liquidityLines';
 import {
   ZoneOverlayPrimitive,
@@ -838,9 +838,8 @@ export function ReadingChart({
     markersRef.current?.setMarkers(
       firstLoadedCandle && (layers.breaks || selectedEvent)
         ? buildStructureMarkers(structure, firstLoadedCandle.time as number, {
-            selected: selectedEvent
-              ? { kind: selectedEvent.kind, atSec: selectedEvent.atSec }
-              : null,
+            // STR-2 defect C: emphasise by STABLE id, never (kind, time).
+            selected: selectedEvent ? { id: selectedEvent.id } : null,
             onlySelected: !layers.breaks,
           })
         : [],
@@ -851,13 +850,13 @@ export function ReadingChart({
     const priceLines = (
       layers.breaks
         ? [
-            structure.bos && {
-              price: structure.bos.level,
+            structure.current_bos && {
+              price: structure.current_bos.level,
               color: LEVEL.bos,
               title: 'BOS',
             },
-            structure.choch && {
-              price: structure.choch.level,
+            structure.current_choch && {
+              price: structure.current_choch.level,
               color: LEVEL.choch,
               title: 'CHOCH',
             },
@@ -1390,12 +1389,18 @@ export function ReadingChart({
         price: cs.length ? cs[cs.length - 1]!.close : null,
       });
     } else if (selection.family === 'event') {
-      const cand = cs.find((c) => Math.abs((c.time as number) - selection.atSec) < barSec);
+      // STR-2 defect C: resolve the selection by its STABLE id and REJECT an
+      // unknown/stale id — never fall back to « the nearest timestamp ». Framing
+      // is anchored to the id's own event, so a BOS is never framed onto a CHOCH.
+      const resolved = findEventById(structure, selection.id);
+      if (!resolved) return;
+      const evSec = Math.floor(Date.parse(resolved.event.broken_at) / 1000);
+      const cand = cs.find((c) => Math.abs((c.time as number) - evSec) < barSec);
       frame = frameEvent({
-        atSec: selection.atSec,
+        atSec: evSec,
         lastSec,
         barSec,
-        level: selection.level,
+        level: resolved.event.level,
         candleLow: cand?.low,
         candleHigh: cand?.high,
       });

@@ -110,7 +110,14 @@ class MarketReadingHeader(BaseModel):
 # Emitted by collect_structure_events (idx − event_idx). Optional so older
 # payloads / fixtures without it still validate; the front counts real bougies
 # from it instead of wall-clock hours ÷ tf (which overcounts week-end gaps).
+# STR-2 defect C: a STABLE, COLLISION-FREE identifier for the break event. Built
+# from kind + broken_at + direction (see market_reading_mappers._event_id), so a
+# BOS and a CHOCH that land on the SAME bar get DIFFERENT ids and the chart can
+# anchor focus by id — never by timestamp (which collides on a shared bar) and
+# never by « nearest ». Optional so older payloads/fixtures still validate; the
+# frontend falls back to a synthesised key only when it is absent.
 class BOSRecent(BaseModel):
+    id: Optional[str] = None
     direction: Direction
     level: float
     broken_at: datetime
@@ -119,6 +126,7 @@ class BOSRecent(BaseModel):
 
 
 class CHOCHRecent(BaseModel):
+    id: Optional[str] = None
     direction: Direction
     level: float
     broken_at: datetime
@@ -264,15 +272,24 @@ class LiquidityPool(BaseModel):
 
 
 class MarketReadingStructure(BaseModel):
-    bos: Optional[BOSRecent] = None
-    choch: Optional[CHOCHRecent] = None
+    # POINT-IN-TIME break state (STR-2): the break in effect AT THE READ BAR —
+    # a break fresh on the last closed candle, or (for BOS only) an earlier break
+    # still vouched for by the retest state machine. It is NULL most of the time
+    # (`current_bos` ~76 %, `current_choch` ~99 % of readings) because the last
+    # bar is rarely itself a break bar. It is NOT the recency history: « a break
+    # occurred within the last N candles » is answered by `bos_events` /
+    # `choch_events` below. The former names (`bos` / `choch`) were renamed so no
+    # consumer can mistake the point-in-time state for the journal again (STR-2
+    # defect A: five surfaces read the singular field and starved).
+    current_bos: Optional[BOSRecent] = None
+    current_choch: Optional[CHOCHRecent] = None
     # Discrete BOS / CHOCH break EVENTS observed over the window, most-recent
-    # first (capped). Read-only/descriptive history: the engine detects many
-    # breaks but only the last-bar one ever surfaced via `bos`/`choch` (audit
-    # 2026-06-16 "sous-surfaçage": 88 BOS / 40 CHOCH detected over 6 combos, ≤1
-    # surfaced). These lists carry the real broken level + honest timestamp of
-    # each break — read from engine event columns, never recomputed. `bos` /
-    # `choch` above stay the single "current" break for backward compatibility.
+    # first (capped). Read-only/descriptive history and the SINGLE SOURCE OF
+    # TRUTH for recency: the engine detects many breaks but only the last-bar one
+    # ever surfaced via the point-in-time fields (audit 2026-06-16
+    # "sous-surfaçage": 88 BOS / 40 CHOCH detected over 6 combos, ≤1 surfaced).
+    # These lists carry the real broken level + honest timestamp + bars_ago of
+    # each break — read from engine event columns, never recomputed.
     bos_events: list[BOSRecent] = Field(default_factory=list)
     choch_events: list[CHOCHRecent] = Field(default_factory=list)
     order_blocks: list[OrderBlock] = Field(default_factory=list)

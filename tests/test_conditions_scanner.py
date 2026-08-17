@@ -29,8 +29,8 @@ def _reading(
     order_blocks=None,
     fair_value_gaps=None,
     liquidity_pools=None,
-    bos=None,
-    choch=None,
+    current_bos=None,
+    current_choch=None,
     bos_events=None,
     choch_events=None,
     candle_close_ts="2026-05-28T14:15:00+00:00",
@@ -48,8 +48,8 @@ def _reading(
             "analysis_window_bars": analysis_window_bars,
         },
         "structure": {
-            "bos": bos,
-            "choch": choch,
+            "current_bos": current_bos,
+            "current_choch": current_choch,
             "bos_events": bos_events or [],
             "choch_events": choch_events or [],
             "order_blocks": order_blocks or [],
@@ -82,8 +82,14 @@ def _fvg(low, high, *, status="active", direction="bullish", tested=False, creat
     }
 
 
-def _bos(direction="bullish", *, validation_status="confirmed", broken_at="2026-05-28T13:45:00+00:00"):
-    return {"direction": direction, "level": 1990.0, "broken_at": broken_at, "validation_status": validation_status}
+def _bos(direction="bullish", *, validation_status="confirmed", broken_at="2026-05-28T13:45:00+00:00", bars_ago=None):
+    return {"direction": direction, "level": 1990.0, "broken_at": broken_at,
+            "validation_status": validation_status, "bars_ago": bars_ago}
+
+
+def _choch(direction="bullish", *, validation_status="confirmed", broken_at="2026-05-28T13:45:00+00:00", bars_ago=None):
+    return {"direction": direction, "level": 2010.0, "broken_at": broken_at,
+            "validation_status": validation_status, "bars_ago": bars_ago}
 
 
 def _liq(side, level, *, kind="range_extreme", status="intact", swept_at=None, broken_at=None, is_external=True):
@@ -182,21 +188,34 @@ def test_last_event_age_buckets():
     assert evaluate_condition(r2, {"type": "last_event_age", "age_bucket": "gt50"})["met"] is True
 
 
+# STR-2 defect A: recency reads the JOURNAL (bos_events/choch_events + bars_ago),
+# never the point-in-time current_bos/current_choch. These tests previously fed
+# the singular field and asserted the buggy behaviour; they now exercise the
+# journal — the single source of truth for « a break within N candles ».
 def test_bos_recent_confirmed_met_when_confirmed_and_recent():
-    r = _reading(bos=_bos("bullish", broken_at="2026-05-28T13:45:00+00:00"))
+    r = _reading(bos_events=[_bos("bullish", bars_ago=3)])
     assert evaluate_condition(r, {"type": "bos_recent_confirmed", "max_bars": 5})["met"] is True
 
 
 def test_bos_recent_confirmed_unmet_when_too_old():
-    r = _reading(bos=_bos("bullish", broken_at="2026-05-28T12:00:00+00:00"))
+    r = _reading(bos_events=[_bos("bullish", bars_ago=20)])
     assert evaluate_condition(r, {"type": "bos_recent_confirmed", "max_bars": 5})["met"] is False
 
 
 def test_choch_recent_confirmed_direction_filter():
-    r = _reading(choch={"direction": "bearish", "level": 2010.0,
-                        "broken_at": "2026-05-28T13:45:00+00:00", "validation_status": "confirmed"})
+    r = _reading(choch_events=[_choch("bearish", bars_ago=3)])
     assert evaluate_condition(r, {"type": "choch_recent_confirmed", "direction": "bearish", "max_bars": 5})["met"] is True
     assert evaluate_condition(r, {"type": "choch_recent_confirmed", "direction": "bullish", "max_bars": 5})["met"] is False
+
+
+def test_choch_recent_confirmed_reads_journal_not_pointintime():
+    """STR-2 regression guard (fails on pre-fix code): a CHOCH exists in the
+    journal a few candles back while the point-in-time current_choch is null —
+    exactly the production shape. The condition must return True. On the old code
+    (reading structure.choch singular) this returned False: the fabricated
+    « aucun CHOCH » that the mission set out to kill."""
+    r = _reading(current_choch=None, choch_events=[_choch("bullish", bars_ago=4)])
+    assert evaluate_condition(r, {"type": "choch_recent_confirmed", "max_bars": 10})["met"] is True
 
 
 # ── zones ────────────────────────────────────────────────────────────────────

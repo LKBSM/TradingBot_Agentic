@@ -9,7 +9,11 @@
  * is unit-testable without a canvas / lightweight-charts instance.
  */
 import type { SeriesMarker, UTCTimestamp } from 'lightweight-charts';
-import type { MarketReadingStructure } from '@/types/market-reading';
+import type {
+  BOSRecent,
+  CHOCHRecent,
+  MarketReadingStructure,
+} from '@/types/market-reading';
 
 /** Marker palette — mirrors the break-level line colours in ReadingChart. */
 const MARKER_COLOR = { bos: '#8B95A7', choch: '#8E84B0' } as const;
@@ -17,11 +21,10 @@ const MARKER_COLOR = { bos: '#8B95A7', choch: '#8E84B0' } as const;
  *  from the descriptive grey/violet history. */
 const SELECTED_MARKER_COLOR = '#4d9de0';
 
-/** Which event (kind + confirmation time) is currently selected, for emphasis. */
+/** Which event is currently selected, for emphasis — anchored by STABLE ID. */
 export interface SelectedEventMarker {
-  kind: 'bos' | 'choch';
-  /** Confirmation candle time, epoch seconds. */
-  atSec: number;
+  /** STR-2 defect C: the selected event's stable id (see {@link eventId}). */
+  id: string;
 }
 
 export interface StructureMarkerOptions {
@@ -36,6 +39,46 @@ function isoToSec(iso: string | null | undefined): number {
   if (!iso) return NaN;
   const ms = Date.parse(iso);
   return Number.isNaN(ms) ? NaN : Math.floor(ms / 1000);
+}
+
+/**
+ * STR-2 defect C: the STABLE id used to anchor focus on a break event. Prefers
+ * the backend-emitted `event.id` (`<kind>_<iso>_<dir>`); only when a legacy
+ * payload omits it do we synthesise a key. Because the id embeds the KIND, a BOS
+ * and a CHOCH that share a bar have DIFFERENT ids — clicking one can never select
+ * the other. The click handler, the marker emphasis and {@link findEventById} all
+ * derive the id here, so they always agree.
+ */
+export function eventId(
+  kind: 'bos' | 'choch',
+  e: { id?: string | null; broken_at: string; level: number },
+): string {
+  return e.id ?? `${kind}:${isoToSec(e.broken_at)}:${e.level}`;
+}
+
+/**
+ * Resolve a focus id back to its event, or `null` when the id matches NOTHING in
+ * the current reading. STR-2 defect C: an unknown/stale id is REJECTED here — the
+ * caller must not fall back to « the nearest timestamp ». Searches the journals
+ * and the point-in-time fields (either can be the displayed break).
+ */
+export function findEventById(
+  structure: MarketReadingStructure,
+  id: string,
+): { kind: 'bos' | 'choch'; event: BOSRecent | CHOCHRecent } | null {
+  for (const e of structure.bos_events ?? []) {
+    if (eventId('bos', e) === id) return { kind: 'bos', event: e };
+  }
+  for (const e of structure.choch_events ?? []) {
+    if (eventId('choch', e) === id) return { kind: 'choch', event: e };
+  }
+  if (structure.current_bos && eventId('bos', structure.current_bos) === id) {
+    return { kind: 'bos', event: structure.current_bos };
+  }
+  if (structure.current_choch && eventId('choch', structure.current_choch) === id) {
+    return { kind: 'choch', event: structure.current_choch };
+  }
+  return null;
 }
 
 /**
@@ -64,8 +107,11 @@ export function buildStructureMarkers(
 ): SeriesMarker<UTCTimestamp>[] {
   const selected = options?.selected ?? null;
   const onlySelected = options?.onlySelected ?? false;
-  const isSelected = (kind: 'bos' | 'choch', t: number) =>
-    selected != null && selected.kind === kind && selected.atSec === t;
+  // STR-2 defect C: emphasis is decided by STABLE ID, never by (kind, time). A
+  // BOS and a CHOCH on the same bar have different ids, so the accent lands on
+  // exactly the event the user clicked.
+  const isSelected = (kind: 'bos' | 'choch', e: BOSRecent | CHOCHRecent) =>
+    selected != null && eventId(kind, e) === selected.id;
 
   const chochTimes = new Set<number>();
   const markers: SeriesMarker<UTCTimestamp>[] = [];
@@ -75,7 +121,7 @@ export function buildStructureMarkers(
     const t = isoToSec(e.broken_at);
     if (!Number.isFinite(t) || !inRange(t)) continue;
     chochTimes.add(t);
-    const sel = isSelected('choch', t);
+    const sel = isSelected('choch', e);
     if (onlySelected && !sel) continue;
     const up = e.direction === 'bullish';
     markers.push({
@@ -90,8 +136,11 @@ export function buildStructureMarkers(
   for (const e of structure.bos_events ?? []) {
     const t = isoToSec(e.broken_at);
     if (!Number.isFinite(t) || !inRange(t)) continue;
-    if (chochTimes.has(t)) continue; // CHOCH already marks this bar
-    const sel = isSelected('bos', t);
+    const sel = isSelected('bos', e);
+    // « CHOCH wins a shared bar » — EXCEPT when this exact BOS is the selected
+    // event: then the user asked for it, so it must show (defect C robustness on
+    // a shared bar, independent of the defect-B cascade fix).
+    if (chochTimes.has(t) && !sel) continue;
     if (onlySelected && !sel) continue;
     const up = e.direction === 'bullish';
     markers.push({

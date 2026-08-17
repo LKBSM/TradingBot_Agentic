@@ -23,7 +23,7 @@ from src.api.routes.conditions_scan import (
 from src.api.signal_store import SignalStore
 
 
-def _reading(instrument, timeframe, *, close_price=2000.0, mtf=None, order_blocks=None, bos=None):
+def _reading(instrument, timeframe, *, close_price=2000.0, mtf=None, order_blocks=None, current_bos=None):
     return {
         "header": {
             "instrument": instrument,
@@ -32,8 +32,10 @@ def _reading(instrument, timeframe, *, close_price=2000.0, mtf=None, order_block
             "close_price": close_price,
         },
         "structure": {
-            "bos": bos,
-            "choch": None,
+            "current_bos": current_bos,
+            "current_choch": None,
+            "bos_events": [],
+            "choch_events": [],
             "order_blocks": order_blocks or [],
             "fair_value_gaps": [],
         },

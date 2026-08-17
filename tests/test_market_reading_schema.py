@@ -31,13 +31,13 @@ DOC_EXAMPLE_JSON = """
     "close_price": 2378.45
   },
   "structure": {
-    "bos": {
+    "current_bos": {
       "direction": "bullish",
       "level": 2375.20,
       "broken_at": "2026-05-28T13:30:00Z",
       "validation_status": "confirmed"
     },
-    "choch": null,
+    "current_choch": null,
     "order_blocks": [
       {
         "id": "OB_001",
@@ -140,8 +140,8 @@ def test_minimal_instantiation():
     assert m.schema_version == "2.0.0"
     assert m.header.instrument == "XAUUSD"
     assert m.header.close_price == 2378.45
-    assert m.structure.bos is None
-    assert m.structure.choch is None
+    assert m.structure.current_bos is None
+    assert m.structure.current_choch is None
     assert m.structure.order_blocks == []
     assert m.structure.fair_value_gaps == []
     assert m.structure.retest_in_progress is None
@@ -157,11 +157,11 @@ def test_roundtrip_doc_example():
     assert m.header.timeframe == "M15"
     assert m.header.close_price == 2378.45
 
-    assert m.structure.bos is not None
-    assert m.structure.bos.direction == "bullish"
-    assert m.structure.bos.level == 2375.20
-    assert m.structure.bos.validation_status == "confirmed"
-    assert m.structure.choch is None
+    assert m.structure.current_bos is not None
+    assert m.structure.current_bos.direction == "bullish"
+    assert m.structure.current_bos.level == 2375.20
+    assert m.structure.current_bos.validation_status == "confirmed"
+    assert m.structure.current_choch is None
 
     assert len(m.structure.order_blocks) == 1
     ob = m.structure.order_blocks[0]

@@ -128,12 +128,12 @@ def test_allowed_levels_collects_every_fact_level():
                 tested=False,
             )
         ],
-        bos=BOSRecent(
+        bos_events=[BOSRecent(
             direction="bullish",
             level=1998.0,
             broken_at="2026-06-20T00:00:00Z",
             validation_status="confirmed",
-        ),
+        )],
         retest_in_progress=RetestInProgress(
             level=1997.0, type="bos_retest", started_at="2026-06-20T00:00:00Z"
         ),
@@ -160,16 +160,16 @@ def test_template_is_factual_and_self_anchored():
 
 def test_template_distinguishes_provisional_from_confirmed():
     confirmed = MarketReadingStructure(
-        bos=BOSRecent(
+        bos_events=[BOSRecent(
             direction="bullish", level=1998.0,
             broken_at="2026-06-20T00:00:00Z", validation_status="confirmed",
-        )
+        )]
     )
     pending = MarketReadingStructure(
-        bos=BOSRecent(
+        bos_events=[BOSRecent(
             direction="bullish", level=1998.0,
             broken_at="2026-06-20T00:00:00Z", validation_status="pending",
-        )
+        )]
     )
     t_conf = render_template(build_reading_facts(confirmed, _regime(), PRICE, INSTRUMENT))
     t_prov = render_template(build_reading_facts(pending, _regime(), PRICE, INSTRUMENT))
@@ -191,10 +191,10 @@ def test_template_never_emits_forbidden_tokens():
                 status="partially_filled", created_at="2026-06-20T00:00:00Z", tested=True,
             )
         ],
-        bos=BOSRecent(
+        bos_events=[BOSRecent(
             direction="bullish", level=1998.0,
             broken_at="2026-06-20T00:00:00Z", validation_status="pending",
-        ),
+        )],
         retest_in_progress=RetestInProgress(
             level=1997.0, type="ob_retest", started_at="2026-06-20T00:00:00Z"
         ),
@@ -339,12 +339,12 @@ def test_template_fallback_is_complete_and_never_truncated_in_practice():
     # A rich reading (trend + MTF + zones + break + retest + contrary) renders a
     # full present-tense paragraph that fits the budget — nothing is cut.
     structure = MarketReadingStructure(
-        bos=BOSRecent(
+        bos_events=[BOSRecent(
             direction="bullish",
             level=2001.0,
             broken_at="2026-06-20T00:00:00Z",
             validation_status="confirmed",
-        ),
+        )],
         order_blocks=[_ob(1998.0, 2002.0, status="active")],
         retest_in_progress=RetestInProgress(
             level=2001.0, type="bos_retest", started_at="2026-06-20T00:00:00Z"

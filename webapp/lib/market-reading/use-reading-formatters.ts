@@ -17,7 +17,7 @@ import type {
   VolatilityObserved,
 } from '@/types/market-reading';
 import type { Tone } from './formatters';
-import { countActiveZones, deriveTrendMaturity } from './regime-facts';
+import { countActiveZones, deriveTrendMaturity, latestBreak } from './regime-facts';
 import { type MtfEntry, type MtfRelation, type MtfTrendMap } from './mtf-trend';
 
 /**
@@ -254,12 +254,16 @@ export function useReadingFormatters() {
     return t('regime.maturity', { orient, when, bars });
   }
 
-  /** « CHOCH haussier confirmé (M15) » — most recent of structure.bos / choch. */
+  /** « CHOCH haussier confirmé (M15) » — most recent break from the JOURNAL.
+   *  STR-2 defect A: reads bos_events/choch_events (fallback to the point-in-time
+   *  current_bos/current_choch only when the journal is empty), so mobile Régime
+   *  matches desktop instead of fabricating « non disponible ». */
   function regimeLastEvent(
     structure: MarketReadingStructure,
     header: MarketReadingHeader,
   ): string | null {
-    const { bos, choch } = structure;
+    const bos = latestBreak(structure.bos_events, structure.current_bos);
+    const choch = latestBreak(structure.choch_events, structure.current_choch);
     let kind: 'BOS' | 'CHOCH';
     let ev: NonNullable<typeof bos> | NonNullable<typeof choch>;
     if (bos && choch) {

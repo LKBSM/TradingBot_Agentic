@@ -32,8 +32,8 @@ const HEADER: MarketReadingHeader = {
 
 // One active OB, one mitigated; two active FVG, one filled → « 1 OB · 2 FVG actifs ».
 const STRUCTURE_FULL: MarketReadingStructure = {
-  bos: null,
-  choch: {
+  current_bos: null,
+  current_choch: {
     direction: 'bullish',
     level: 2380,
     broken_at: '2026-06-24T14:30:00',
@@ -51,8 +51,8 @@ const STRUCTURE_FULL: MarketReadingStructure = {
 };
 
 const STRUCTURE_EMPTY: MarketReadingStructure = {
-  bos: null,
-  choch: null,
+  current_bos: null,
+  current_choch: null,
   order_blocks: [],
   fair_value_gaps: [],
 };

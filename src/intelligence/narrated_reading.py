@@ -308,9 +308,14 @@ def _collect_zones(
 
 
 def _collect_breaks(structure: MarketReadingStructure, decimals: int) -> list[BreakFact]:
+    # STR-2 defect A: the narrated reading cites the last structural break from
+    # the journal (most-recent-first), not the point-in-time `current_choch`/
+    # `current_bos` (null on ~99 % / ~76 % of readings → the narration almost
+    # never mentioned a break even when a fresh CHOCH sat a few candles back).
     out: list[BreakFact] = []
-    if structure.choch is not None:
-        c = structure.choch
+    latest_choch = structure.choch_events[0] if structure.choch_events else None
+    if latest_choch is not None:
+        c = latest_choch
         out.append(
             BreakFact(
                 kind="choch",
@@ -320,8 +325,9 @@ def _collect_breaks(structure: MarketReadingStructure, decimals: int) -> list[Br
                 confirmed=c.validation_status == "confirmed",
             )
         )
-    if structure.bos is not None:
-        b = structure.bos
+    latest_bos = structure.bos_events[0] if structure.bos_events else None
+    if latest_bos is not None:
+        b = latest_bos
         out.append(
             BreakFact(
                 kind="bos",

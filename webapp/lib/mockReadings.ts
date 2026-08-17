@@ -55,13 +55,13 @@ const MOCK_XAU_H1: MarketReading = {
     close_price: 2396.8,
   },
   structure: {
-    bos: {
+    current_bos: {
       direction: 'bullish',
       level: 2390.0,
       broken_at: '2026-05-26T08:00:00+00:00',
       validation_status: 'confirmed',
     },
-    choch: {
+    current_choch: {
       direction: 'bullish',
       level: 2372.5,
       broken_at: '2026-05-25T18:00:00+00:00',
@@ -187,13 +187,13 @@ const MOCK_EUR_M15: MarketReading = {
     close_price: 1.08367,
   },
   structure: {
-    bos: {
+    current_bos: {
       direction: 'bearish',
       level: 1.0832,
       broken_at: '2026-05-26T11:00:00+00:00',
       validation_status: 'pending',
     },
-    choch: null,
+    current_choch: null,
     order_blocks: [
       {
         id: 'ob-eur-m15-1',
@@ -260,8 +260,8 @@ const MOCK_EUR_H4: MarketReading = {
     close_price: 1.0855,
   },
   structure: {
-    bos: null,
-    choch: {
+    current_bos: null,
+    current_choch: {
       direction: 'bearish',
       level: 1.0872,
       broken_at: '2026-05-23T16:00:00+00:00',
@@ -459,8 +459,8 @@ export function getMockCandles(
 function collectLevels(reading: MarketReading): number[] {
   const s = reading.structure;
   const levels: number[] = [];
-  if (s.bos) levels.push(s.bos.level);
-  if (s.choch) levels.push(s.choch.level);
+  if (s.current_bos) levels.push(s.current_bos.level);
+  if (s.current_choch) levels.push(s.current_choch.level);
   if (s.retest_in_progress) levels.push(s.retest_in_progress.level);
   for (const ob of s.order_blocks) levels.push(ob.level_high, ob.level_low);
   for (const fvg of s.fair_value_gaps) levels.push(fvg.level_high, fvg.level_low);
