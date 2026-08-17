@@ -416,6 +416,61 @@ class StripeClient:
         return self._to_dict(stripe.Subscription.delete(subscription_id))
 
     # ------------------------------------------------------------------
+    # Direct reconciliation (PAY-3e — webhook-independent fallback)
+    # ------------------------------------------------------------------
+
+    def find_customer_by_email(self, email: str) -> Optional[str]:
+        """Return the id of the (most recent) Stripe customer for an email, or
+        None. Used to relink an account whose customer id was lost."""
+        stripe = self._require()
+        result = stripe.Customer.list(email=email, limit=1)
+        data = list(getattr(result, "data", []) or [])
+        return getattr(data[0], "id", None) if data else None
+
+    def get_subscription_state_for_customer(
+        self, customer_id: str
+    ) -> Optional[dict]:
+        """Ask Stripe directly for the customer's current subscription and return
+        the fields we persist — the webhook-INDEPENDENT path that grants access
+        even when no webhook is configured (PAY-3e). None if the customer has no
+        subscription.
+
+        Reads via ATTRIBUTES (which work on a StripeObject; only ``.get()``
+        raises), defensively, so a shape change never 500s.
+        """
+        stripe = self._require()
+        result = stripe.Subscription.list(customer=customer_id, status="all", limit=10)
+        subs = list(getattr(result, "data", []) or [])
+        if not subs:
+            return None
+
+        # Prefer an access-granting status, then the most recently created.
+        def _rank(s: Any) -> tuple:
+            status = getattr(s, "status", "") or ""
+            grants = {"active": 0, "trialing": 0, "past_due": 1}.get(status, 2)
+            return (grants, -(getattr(s, "created", 0) or 0))
+
+        subs.sort(key=_rank)
+        s = subs[0]
+
+        price_id = None
+        try:
+            items = getattr(getattr(s, "items", None), "data", None) or []
+            if items:
+                price_id = getattr(getattr(items[0], "price", None), "id", None)
+        except Exception:
+            price_id = None
+
+        return {
+            "subscription_id": getattr(s, "id", None),
+            "status": getattr(s, "status", None),
+            "current_period_end": getattr(s, "current_period_end", None),
+            "cancel_at_period_end": bool(getattr(s, "cancel_at_period_end", False)),
+            "trial_end": getattr(s, "trial_end", None),
+            "price_id": price_id,
+        }
+
+    # ------------------------------------------------------------------
     # Webhook verification
     # ------------------------------------------------------------------
 

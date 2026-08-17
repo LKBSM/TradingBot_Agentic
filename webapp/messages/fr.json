@@ -1895,7 +1895,11 @@
     "legalRenew": "Renouvellement automatique, résiliable à tout moment.",
     "legalTool": "Outil d'information et d'éducation — ni conseil en investissement, ni signal de trading.",
     "legalRisk": "Le trading comporte un risque de perte.",
-    "legalAge": "Réservé aux personnes de 18 ans et plus."
+    "legalAge": "Réservé aux personnes de 18 ans et plus.",
+    "alreadyPaid": "Tu as déjà payé ?",
+    "activateAccess": "Activer mon accès",
+    "activating": "Vérification…",
+    "noPaymentFound": "Aucun paiement actif trouvé pour ce compte. Si tu viens de payer, patiente un instant puis réessaie."
   },
   "access": {
     "paywall": {

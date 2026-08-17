@@ -84,6 +84,21 @@ export async function fetchSubscription(): Promise<Subscription | null> {
   }
 }
 
+/**
+ * Reconcile the subscription straight from Stripe (PAY-3e) — the
+ * webhook-independent path. Ask the backend to check Stripe for this account and
+ * persist the result, then return the fresh state. Used right after Checkout and
+ * behind an "I already paid" button, so access is granted even with no webhook.
+ */
+export async function syncSubscription(): Promise<Subscription | null> {
+  try {
+    return await request<Subscription>('/sync', { method: 'POST' });
+  } catch (err) {
+    if (err instanceof BillingError && err.status === 401) return null;
+    throw err;
+  }
+}
+
 /** Start Checkout for a plan — resolves to the hosted Stripe URL to redirect to. */
 export async function startCheckout(planKey: string): Promise<string> {
   const { url } = await request<{ url: string }>('/checkout', {
