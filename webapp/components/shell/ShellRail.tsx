@@ -180,7 +180,7 @@ export function ShellRail({ activeSpace }: { activeSpace: string }) {
         />
         <p
           style={{
-            fontSize: '8.5px',
+            fontSize: 'var(--fs-legal)',
             color: 'var(--faint)',
             lineHeight: 1.5,
             padding: '8px 3px 0',

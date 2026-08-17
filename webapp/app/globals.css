@@ -38,6 +38,44 @@ html[dir='rtl'] body {
   font-family: var(--font-arabic), var(--font-sans), ui-sans-serif, system-ui,
     sans-serif;
 }
+
+/*
+ * Typographic scale (mission UI-2). Six sizes, no more — a real hierarchy where
+ * size signals importance instead of everything shouting at once. These are the
+ * ONLY font-size values any product surface should reference; new sizes are a
+ * regression. Theme-independent (a theme swaps colour, never type), so defined
+ * once on :root. Two weights only elsewhere: 400 (normal) / 600 (demi-gras).
+ *   --fs-title     page title
+ *   --fs-section   section heading
+ *   --fs-body      running text / primary input (also the shadcn Button text-sm
+ *                  lands on --fs-secondary, so buttons stay on-scale for free)
+ *   --fs-secondary subtitles, examples, buttons, secondary copy
+ *   --fs-label     labels, intertitles, tags
+ *   --fs-legal     legal notices, micro-labels, freshness stamps
+ */
+:root {
+  --fs-title: 26px;
+  --fs-section: 19px;
+  --fs-body: 15px;
+  --fs-secondary: 14px;
+  --fs-label: 12px;
+  --fs-legal: 11px;
+}
+
+/*
+ * The six scale steps as classes. Product surfaces (mission UI-2 = the scanner)
+ * apply THESE instead of ad-hoc `text-[Npx]`, so the rendered size set stays at
+ * six. Declared after `@tailwind utilities` and unlayered, so a `.fs-*` reliably
+ * overrides a stray Tailwind size utility on the same node. shadcn Buttons keep
+ * `text-sm` (14px) = --fs-secondary, so they stay on-scale without an override.
+ */
+.fs-title { font-size: var(--fs-title); }
+.fs-section { font-size: var(--fs-section); }
+.fs-body { font-size: var(--fs-body); }
+.fs-secondary { font-size: var(--fs-secondary); }
+.fs-label { font-size: var(--fs-label); }
+.fs-legal { font-size: var(--fs-legal); }
+
 @layer base {
   /* ── Terminal — cold dark, DEFAULT (pre-hydration fallback = :root) ── */
   :root,

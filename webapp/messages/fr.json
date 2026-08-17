@@ -3160,7 +3160,7 @@
       "description": "Décris ta stratégie en français ou en anglais ; M.I.A la traduit en conditions vérifiables de la palette."
     },
     "describe": {
-      "title": "Décris ta stratégie. En français.",
+      "title": "Décris ta stratégie",
       "subtitle": "Pas de formulaire à remplir. Écris ce que tu cherches comme tu le dirais à quelqu'un.",
       "miaTitle": "M.I.A traduit ta stratégie",
       "miaSub": "elle ne choisit rien à ta place · tu valides avant de lancer",
@@ -3168,7 +3168,7 @@
       "translate": "Traduire ma stratégie",
       "translating": "Traduction…",
       "myStrategies": "Mes stratégies",
-      "scope": "M.I.A traduit vers 22 conditions vérifiables. Rien d'autre.",
+      "scope": "M.I.A traduit vers {count} conditions vérifiables. Rien d'autre.",
       "examplesLabel": "Ou pars d'un exemple",
       "disclaimer": "M.I.A ne consulte pas le marché pour te répondre : elle transforme ta phrase en conditions vérifiables, puis c'est l'analyse du produit qui cherche. Elle ne classe rien, ne conseille rien et ne devine aucune condition que tu n'aurais pas exprimée.",
       "examples": {
@@ -3201,7 +3201,7 @@
     "add": {
       "tag": "Ajouter",
       "cta": "Une condition manquante ?",
-      "hint": "Parcourir les 22 conditions",
+      "hint": "Parcourir les {count} conditions",
       "title": "Ajouter une condition de la palette",
       "close": "Fermer",
       "already": "Déjà dans ta stratégie"

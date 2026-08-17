@@ -70,7 +70,7 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 500;
   padding: 8px 13px;
   border-radius: var(--r-s);
@@ -140,7 +140,7 @@
   outline: none;
   color: var(--txt);
   font-family: inherit;
-  font-size: 12.5px;
+  font-size: var(--fs-secondary);
   min-width: 0;
 }
 .app-shell .search input::placeholder {
@@ -157,7 +157,7 @@
   border-radius: var(--r-s);
   color: var(--txt);
   font-family: inherit;
-  font-size: 13px;
+  font-size: var(--fs-secondary);
   padding: 10px 12px;
   outline: none;
   min-height: 42px;
@@ -168,7 +168,7 @@
 }
 .app-shell .flabel {
   display: block;
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 500;
   color: var(--dim);
   margin: 0 0 6px;
@@ -206,7 +206,7 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 10.5px;
+  font-size: var(--fs-legal);
   color: var(--dim);
   background: var(--panel);
   padding: 6px 10px;
@@ -280,17 +280,22 @@
   text-align: center;
   padding: 6px 0;
   border-radius: 6px;
-  font-size: 11.5px;
+  font-size: var(--fs-label);
   font-weight: 500;
   color: var(--dim);
   cursor: pointer;
-  border: 1px solid transparent;
+  /* A resting border + surface so the row reads as a group of selectable chips
+     (mission UI-2, Défaut 7), not bare text. Timeframe CODES stay monospace —
+     they are values, and this is one of the sanctioned value uses. */
+  border: 1px solid var(--line);
+  background: var(--panel-2);
   font-family: var(--font-mono), 'JetBrains Mono', monospace;
   flex: 1;
-  background: transparent;
 }
 .app-shell .tf:hover {
-  background: var(--panel-2);
+  background: var(--panel-3);
+  border-color: var(--line-3);
+  color: var(--txt);
 }
 .app-shell .tf.on {
   background: var(--acc-dim);
@@ -332,11 +337,11 @@
   border: 1px solid var(--line);
 }
 .app-shell .freshbox .l1 {
-  font-size: 10.5px;
+  font-size: var(--fs-legal);
   font-weight: 500;
 }
 .app-shell .freshbox .l2 {
-  font-size: 9px;
+  font-size: var(--fs-legal);
   color: var(--faint);
 }
 
@@ -491,7 +496,7 @@
   padding: 6px 2px;
   color: var(--dim);
   text-decoration: none;
-  font-size: 9.5px;
+  font-size: var(--fs-legal);
   font-weight: 500;
 }
 .app-shell .mspace-item svg {
@@ -526,7 +531,7 @@
   overflow-y: auto;
 }
 .app-shell .rail-lbl {
-  font-size: 9.5px;
+  font-size: var(--fs-legal);
   letter-spacing: 0.7px;
   text-transform: uppercase;
   color: var(--faint);
@@ -570,7 +575,7 @@
   background: var(--panel-3);
   display: grid;
   place-items: center;
-  font-size: 10px;
+  font-size: var(--fs-legal);
   font-weight: 600;
   color: var(--dim);
   flex-shrink: 0;
@@ -579,12 +584,12 @@
   color: var(--acc);
 }
 .app-shell .mkt .nm {
-  font-size: 12.5px;
+  font-size: var(--fs-secondary);
   font-weight: 500;
   flex: 1;
 }
 .app-shell .mkt .px {
-  font-size: 11px;
+  font-size: var(--fs-legal);
   color: var(--dim);
 }
 .app-shell .nl {
@@ -595,7 +600,7 @@
   border-radius: var(--r-s);
   color: var(--dim);
   cursor: pointer;
-  font-size: 12.5px;
+  font-size: var(--fs-secondary);
   font-weight: 500;
   text-decoration: none;
 }
