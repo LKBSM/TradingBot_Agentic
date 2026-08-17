@@ -185,12 +185,18 @@ function ProximityBlock({
       )}
 
       {priceLeft != null && (
+        // The gauge carries its scale: the two extent prices at the ends, the
+        // zone band highlighted, the price marked by the bright line (VZ-2 §
+        // « la jauge de proximité »). aria-hidden — the distance line above states
+        // the same facts in words for assistive tech.
         <div className="zgauge" aria-hidden>
           <span className="gband" style={{ left: `${bandLeft}%`, right: `${bandRight}%` }} />
           <span
             className="gpx"
             style={{ left: `${Math.max(0, Math.min(100, priceLeft))}%` }}
           />
+          <span className="glab lo">{fmt.price(eLo, instrument)}</span>
+          <span className="glab hi">{fmt.price(eHi, instrument)}</span>
         </div>
       )}
     </div>
@@ -429,12 +435,14 @@ export function ZoneLifecycleCard({
       onClick={() => onSelect(zone.id)}
       aria-current={isSelected ? 'true' : undefined}
     >
-      {/* Header */}
+      {/* Header — level 1 (type + price band) reads first; the height/% is level 3
+          attached directly UNDER the band, never a line adrift (VZ-2 defect 3/4). */}
       <div className="ztop">
         <span className={cn('tagx', tagTone(zone.direction))}>{tagLabel(zone)}</span>
-        <span className="rng">{fmt.band(zone.levelLow, zone.levelHigh, instrument)}</span>
-        <span className="zhgt">{heightLabel}</span>
-        <span className="hsp" />
+        <span className="zttl">
+          <span className="rng">{fmt.band(zone.levelLow, zone.levelHigh, instrument)}</span>
+          <span className="zhgt">{heightLabel}</span>
+        </span>
         <span className={cn('zstate', badge.cls)}>{badge.label}</span>
       </div>
 
@@ -448,58 +456,61 @@ export function ZoneLifecycleCard({
         locale={locale}
       />
 
-      {/* Confluence — always present (absence state when nothing detected). */}
-      <ConfluenceBlock facts={confluence} zone={zone} t={t} fmt={fmt} instrument={instrument} />
-
-      {/* Contacts ledger */}
-      <ContactsBlock zone={zone} t={t} fmt={fmt} instrument={instrument} locale={locale} />
-
-      {/* Frise de vie */}
-      <ZoneTimeline events={events} nowSubLabel={t('timeline.now')} />
-
-      {/* FVG partial fill bar */}
-      {fvgFill != null && (
-        <div
-          className="fillbar"
-          role="progressbar"
-          aria-valuenow={Math.round(fvgFill * 100)}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label={t('fill.aria')}
-        >
-          <span style={{ width: `${Math.round(fvgFill * 100)}%` }} />
-        </div>
-      )}
-
-      {/* Origin */}
-      {originLine && (
-        <div className="zorg">
-          <div className="ot">{t('origin.heading')}</div>
-          <div className="ol">
-            {originLine}
-            {session && ` ${t('origin.session', { session: t(`session.${session}`) })}`}
-          </div>
-        </div>
-      )}
-
-      {/* Details grid — only when expanded; the toggle lives in the actions row
-          below (UI-1b: no separate row, so the collapsed card is one row shorter). */}
+      {/* ── Deferred detail (VZ-2 density: « ce qu'on lit si on s'y intéresse »).
+          The confluence, the full contact ledger, the life frieze, the fill bar,
+          the origin and the raw key/values render only when the card is expanded —
+          so the collapsed card stays compact (four fit the fold) while NOTHING is
+          lost: every fact is one click away and mirrored in the M.I.A panel. The
+          confluence absence state ("rien d'autre détecté") is shown there too —
+          never a silent implication that something is present. ── */}
       {expanded && (
-        <div id={detailsId} className="zkv">
-          <Kv k={t('details.high')} v={fmt.price(zone.levelHigh, instrument)} mono />
-          <Kv k={t('details.low')} v={fmt.price(zone.levelLow, instrument)} mono />
-          <Kv k={t('details.mid')} v={fmt.price((zone.levelHigh + zone.levelLow) / 2, instrument)} mono />
-          <Kv k={t('details.height')} v={heightLabel} mono />
-          {ageDuration && (
-            <Kv
-              k={t('details.age')}
-              v={ageBars != null ? t('details.ageWithBars', { duration: ageDuration, bars: ageBars }) : ageDuration}
-            />
+        <div id={detailsId} className="zdet">
+          {/* Confluence — always present (absence state when nothing detected). */}
+          <ConfluenceBlock facts={confluence} zone={zone} t={t} fmt={fmt} instrument={instrument} />
+
+          <ContactsBlock zone={zone} t={t} fmt={fmt} instrument={instrument} locale={locale} />
+
+          <ZoneTimeline events={events} nowSubLabel={t('timeline.now')} />
+
+          {fvgFill != null && (
+            <div
+              className="fillbar"
+              role="progressbar"
+              aria-valuenow={Math.round(fvgFill * 100)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={t('fill.aria')}
+            >
+              <span style={{ width: `${Math.round(fvgFill * 100)}%` }} />
+            </div>
           )}
-          <Kv k={t('details.entries')} v={String(zone.contacts.filter((c) => c.outcome === 'entry_exit').length)} />
-          <Kv k={t('details.edgeTouches')} v={String(zone.contacts.filter((c) => c.outcome === 'edge_touch').length)} />
-          {session && <Kv k={t('details.session')} v={t(`session.${session}`)} />}
-          <Kv k={t('details.id')} v={zone.id} mono />
+
+          {originLine && (
+            <div className="zorg">
+              <div className="ot">{t('origin.heading')}</div>
+              <div className="ol">
+                {originLine}
+                {session && ` ${t('origin.session', { session: t(`session.${session}`) })}`}
+              </div>
+            </div>
+          )}
+
+          <div className="zkv">
+            <Kv k={t('details.high')} v={fmt.price(zone.levelHigh, instrument)} mono />
+            <Kv k={t('details.low')} v={fmt.price(zone.levelLow, instrument)} mono />
+            <Kv k={t('details.mid')} v={fmt.price((zone.levelHigh + zone.levelLow) / 2, instrument)} mono />
+            <Kv k={t('details.height')} v={heightLabel} mono />
+            {ageDuration && (
+              <Kv
+                k={t('details.age')}
+                v={ageBars != null ? t('details.ageWithBars', { duration: ageDuration, bars: ageBars }) : ageDuration}
+              />
+            )}
+            <Kv k={t('details.entries')} v={String(zone.contacts.filter((c) => c.outcome === 'entry_exit').length)} />
+            <Kv k={t('details.edgeTouches')} v={String(zone.contacts.filter((c) => c.outcome === 'edge_touch').length)} />
+            {session && <Kv k={t('details.session')} v={t(`session.${session}`)} />}
+            <Kv k={t('details.id')} v={zone.id} mono />
+          </div>
         </div>
       )}
 

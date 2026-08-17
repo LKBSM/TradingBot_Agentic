@@ -316,7 +316,7 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
   );
 
   return (
-    <div className="pagewrap">
+    <div className="pagewrap zones-wrap">
       <div className="pghead">
         <div>
           <h1>{t('title')}</h1>
@@ -336,7 +336,7 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
       {/* Controls — combo selector + filter + sort on a single wrapping row
           (UI-1b density: one row instead of two reclaims a full row of chrome
           above the list, so a second card reaches the fold). */}
-      <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-2">
+      <div className="mb-1.5 flex flex-wrap items-center gap-x-4 gap-y-1.5">
         <Segmented
           options={SUPPORTED_INSTRUMENTS.map((i) => ({ value: i, label: fmt.instrument(i) }))}
           value={instrument}
@@ -385,11 +385,15 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
         </p>
       ) : (
         <div className="zlayout">
-          <div className="zlist">
+          {/* The cards column owns the page scroll (via `.center`) — NO inner
+              scroll box (the shared `.zlist` on /app keeps its own 210px box).
+              Each group is its own container so the cards go 2-up when the column
+              is wide enough, while the group header stays sticky within it. */}
+          <div className="zcol">
             {GROUP_ORDER.filter((g) => groups[g].length > 0).map((g) => (
-              <section key={g} aria-label={t(`groups.${g}`)}>
+              <section key={g} className="zgroup" aria-label={t(`groups.${g}`)}>
                 <div className="zsep">{t(`groups.${g}`)}</div>
-                {groups[g].map(cardFor)}
+                <div className="zcards">{groups[g].map(cardFor)}</div>
               </section>
             ))}
           </div>
