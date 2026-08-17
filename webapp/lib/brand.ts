@@ -9,5 +9,5 @@
  * legible everywhere. "Markets" already lives in the wordmark, so the baseline
  * carries only the three source words.
  */
-export const BRAND_NAME = 'MIA Markets';
+export const BRAND_NAME = 'M.I.A Markets';
 export const BRAND_BASELINE = 'Multi-asset Intelligence Assistant';

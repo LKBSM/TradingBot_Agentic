@@ -134,7 +134,7 @@ export async function generateMetadata({
     // hide the browser chrome when launched standalone.
     appleWebApp: {
       capable: true,
-      title: 'MIA',
+      title: 'M.I.A',
       statusBarStyle: 'black-translucent',
     },
     formatDetection: {

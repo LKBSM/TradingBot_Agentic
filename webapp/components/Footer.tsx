@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { ShieldCheck } from 'lucide-react';
 import { localizeHref } from '@/lib/i18n/href';
-import { BRAND_BASELINE } from '@/lib/brand';
+import { MiaLogo } from '@/components/brand/MiaLogo';
+import { BRAND_NAME, BRAND_BASELINE } from '@/lib/brand';
 
 /**
  * Footer partagé (rendu une seule fois dans `[locale]/layout`), internationalisé
@@ -44,7 +45,9 @@ export function Footer() {
           {/* Brand + Early Access badge */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <p className="text-sm font-semibold tracking-tight">MIA Markets</p>
+              {/* Discreet monochrome mark — inherits the muted text colour. */}
+              <MiaLogo variant="mark" tone="mono" decorative height={18} className="text-muted-foreground" />
+              <p className="text-sm font-semibold tracking-tight">{BRAND_NAME}</p>
               <span className="inline-flex items-center gap-1 rounded-full border border-sentinel-bull/40 bg-sentinel-bull/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-sentinel-bull">
                 <ShieldCheck className="h-2.5 w-2.5" aria-hidden />
                 {t('earlyAccessBadge')}

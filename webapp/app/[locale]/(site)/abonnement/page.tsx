@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import { SubscriptionPanel } from '@/components/billing/SubscriptionPanel';
 import { SubscriptionGate } from '@/components/access/SubscriptionGate';
+import { AuthBrandHeader } from '@/components/auth/AuthBrandHeader';
 
 export async function generateMetadata({
   params,
@@ -28,6 +29,7 @@ export default function SubscriptionPage() {
     // so it must never be paywalled (PAY-1).
     <SubscriptionGate requireSubscription={false}>
       <div className="container-prose py-12 sm:py-16">
+        <AuthBrandHeader />
         {/* SubscriptionPanel reads search params (Checkout return status) — wrap
             in Suspense so the static shell can render while it hydrates. */}
         <Suspense

@@ -97,11 +97,21 @@ html[dir='rtl'] body {
     --sentinel-liq: 38 63% 56%;
 
     --font-narrative: var(--font-sans);
+
+    /* Brand logo — auto light/dark. Verbatim tones from the source SVGs:
+       mark #7DA3FF on dark, #2962FF on light; wordmark #FFFFFF on dark,
+       #0F1729 on light. Dark themes (terminal/schema/ardoise) inherit these
+       defaults; only Atelier (light) overrides below. */
+    --brand-mark: #7da3ff;
+    --brand-word: #ffffff;
   }
 
   /* ── Atelier — light, analyst note (narration in serif) ── */
   [data-design='atelier'] {
     color-scheme: light;
+
+    --brand-mark: #2962ff;
+    --brand-word: #0f1729;
 
     /* Reference literal tokens — verbatim (docs/design/reference-desktop.html). */
     --bg: #f6f4ee;

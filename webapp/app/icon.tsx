@@ -1,7 +1,9 @@
 import { ImageResponse } from 'next/og';
+import { COMPACT_RECT, COMPACT_TRIANGLE, COMPACT_BEAM } from '@/lib/brand/prism-geometry';
 
-// Static favicon — gold-gradient "M" mark. Next.js auto-detects this file
-// and wires <link rel="icon"> in the document head.
+// Favicon — the compact single-beam prism (mia-favicon.svg) on a dark tile.
+// The full three-beam mark turns to mush at 16px, which is exactly why the
+// compact variant exists. Next.js auto-wires this as <link rel="icon">.
 export const size = { width: 32, height: 32 };
 export const contentType = 'image/png';
 
@@ -15,15 +17,15 @@ export default function Icon() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'linear-gradient(135deg, #FBBF24 0%, #B45309 100%)',
-          color: '#ffffff',
-          fontSize: 22,
-          fontWeight: 800,
-          fontFamily: 'system-ui',
+          background: '#0a0f1c',
           borderRadius: 6,
         }}
       >
-        M
+        <svg width="22" height="22" viewBox="0 0 100 100" fill="none">
+          <rect {...COMPACT_RECT} fill="#7DA3FF" />
+          <path d={COMPACT_TRIANGLE} fill="#7DA3FF" />
+          <polygon points={COMPACT_BEAM} fill="#7DA3FF" />
+        </svg>
       </div>
     ),
     { ...size },
