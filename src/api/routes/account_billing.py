@@ -187,12 +187,29 @@ async def checkout(
     sub = store.get_subscription(account["id"])
     customer_id = sub.get("stripe_customer_id") if sub else None
     if not customer_id:
-        customer = stripe.create_customer(
-            email=account["email"], account_id=account["id"]
-        )
+        try:
+            customer = stripe.create_customer(
+                email=account["email"], account_id=account["id"]
+            )
+        except Exception as exc:
+            # PAY-3c — a bad/mismatched STRIPE_SECRET_KEY (or blocked egress) used
+            # to bubble up as a raw 500 "Internal Server Error" on the very first
+            # click of "Subscribe". Return a clean, actionable error instead, and
+            # log the real Stripe reason server-side so ops can see it (check that
+            # STRIPE_SECRET_KEY is set and in the SAME mode — test/live — as the
+            # STRIPE_PRICE_* ids).
+            logger.exception(
+                "stripe customer creation failed for account=%s "
+                "(check STRIPE_SECRET_KEY validity + test/live mode)",
+                account["id"],
+            )
+            raise HTTPException(
+                status_code=502,
+                detail="Le paiement est momentanément indisponible. Réessaie dans un instant.",
+            ) from exc
         customer_id = customer.get("id")
         if not customer_id:
-            raise HTTPException(status_code=502, detail="Stripe customer creation failed")
+            raise HTTPException(status_code=502, detail="Le paiement est momentanément indisponible.")
         store.link_stripe_customer(account["id"], customer_id)
 
     try:

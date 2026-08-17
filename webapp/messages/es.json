@@ -1821,7 +1821,14 @@
       "resending": "Sending…",
       "resent": "Email resent. Check your inbox (and your spam folder).",
       "resendError": "Unable to resend the email right now. Try again in a moment.",
-      "goToPlans": "Continue to plans"
+      "goToPlans": "Continue to plans",
+      "codeIntro": "Enter the 6-digit code we sent to {email}.",
+      "codeIntroNoEmail": "Enter the 6-digit code we sent you by email.",
+      "codeLabel": "Confirmation code",
+      "verify": "Verify",
+      "checking": "Checking…",
+      "codeError": "Invalid or expired code. Check it and try again.",
+      "noCodeYet": "Didn't get a code?"
     },
     "google": {
       "button": "Continue with Google",

@@ -1821,7 +1821,14 @@
       "resending": "Envoi…",
       "resent": "E-mail renvoyé. Vérifie ta boîte de réception (et les indésirables).",
       "resendError": "Impossible de renvoyer l'e-mail pour l'instant. Réessaie dans un instant.",
-      "goToPlans": "Continuer vers les formules"
+      "goToPlans": "Continuer vers les formules",
+      "codeIntro": "Saisis le code à 6 chiffres envoyé à {email}.",
+      "codeIntroNoEmail": "Saisis le code à 6 chiffres que nous t'avons envoyé par e-mail.",
+      "codeLabel": "Code de confirmation",
+      "verify": "Vérifier",
+      "checking": "Vérification…",
+      "codeError": "Code invalide ou expiré. Vérifie-le et réessaie.",
+      "noCodeYet": "Tu n'as pas reçu de code ?"
     },
     "google": {
       "button": "Continuer avec Google",

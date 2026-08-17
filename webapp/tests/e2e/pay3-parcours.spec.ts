@@ -45,19 +45,19 @@ const NO_ACCESS = {
 // B — the sign-up page sells, email-only, no Google, no "free/trial"
 // =============================================================================
 
-test.describe('B — sign-up page sells (email-only)', () => {
+test.describe('B — sign-up page sells (with Google door)', () => {
   for (const { locale, path, price } of [
     { locale: 'fr', path: '/inscription', price: /39\s*\$\s*US\s*\/\s*mois/i },
     { locale: 'en', path: '/en/inscription', price: /39\s*USD\s*\/\s*month/i },
   ]) {
-    test(`${locale}: shows price with currency, no Google, no free/trial`, async ({ page }) => {
+    test(`${locale}: shows price with currency, the Google door, no free/trial`, async ({ page }) => {
+      await page.route('**/api/auth/google/config', (r: Route) => r.fulfill(json({ enabled: true })));
       await page.goto(path);
       await dismissCookieBanner(page);
       // Price with an explicit currency is visible (never a naked number).
       await expect(page.getByText(price).first()).toBeVisible({ timeout: 15_000 });
-      // Google door is GONE — email/password only.
-      await expect(page.getByRole('link', { name: /google/i })).toHaveCount(0);
-      await expect(page.getByRole('button', { name: /google/i })).toHaveCount(0);
+      // Google door is present at SIGN-UP (PAY-3c: signup only).
+      await expect(page.getByRole('link', { name: /google/i })).toBeVisible();
       // No forbidden words anywhere on the page (mission §5).
       const body = (await page.locator('body').innerText()).toLowerCase();
       expect(body).not.toMatch(/gratuit|essai|free trial/i);
@@ -65,12 +65,19 @@ test.describe('B — sign-up page sells (email-only)', () => {
   }
 });
 
-test('no Google door on the login page either', async ({ page }) => {
+test('no Google door on the login page (signup only)', async ({ page }) => {
+  await page.route('**/api/auth/google/config', (r: Route) => r.fulfill(json({ enabled: true })));
   await page.goto('/connexion');
   await dismissCookieBanner(page);
-  await expect(page.getByRole('link', { name: /se connecter/i }).or(page.getByRole('button', { name: /se connecter/i })).first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('button', { name: /se connecter/i }).first()).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole('link', { name: /google/i })).toHaveCount(0);
   await expect(page.getByRole('button', { name: /google/i })).toHaveCount(0);
+});
+
+test('a Google failure shows a clear message on /connexion', async ({ page }) => {
+  await page.goto('/connexion?error=google&reason=state');
+  await dismissCookieBanner(page);
+  await expect(page.getByText(/session a expiré|cookies sont bloqués/i)).toBeVisible({ timeout: 15_000 });
 });
 
 // =============================================================================
@@ -92,7 +99,9 @@ test('registration routes to the email-confirmation screen with a resend button'
   await page.getByRole('button', { name: /créer mon compte/i }).click();
 
   await expect(page).toHaveURL(/\/verifier-email(\?|$)/, { timeout: 15_000 });
-  await expect(page.getByText(/confirme ton adresse|boîte de réception/i)).toBeVisible();
+  await expect(page.getByText(/confirme ton adresse/i)).toBeVisible();
+  // The 6-digit code entry (PAY-3c) + resend fallback.
+  await expect(page.getByLabel(/code de confirmation/i)).toBeVisible();
   await expect(page.getByRole('button', { name: /renvoyer l.e-mail/i })).toBeVisible();
 });
 

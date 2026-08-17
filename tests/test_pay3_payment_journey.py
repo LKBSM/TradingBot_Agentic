@@ -192,6 +192,34 @@ class TestEmailJourneyGrantsAccess:
         assert served.json()["state"] == "open"
 
 
+class TestEmailCodeVerification:
+    """PAY-3c — email confirmed by a typed 6-digit CODE (not only the link)."""
+
+    def test_code_confirms_email_and_unblocks(self, client, account_store):
+        acct = _register(client, email="coder@example.com")
+        # Unverified → the verification wall blocks data (403) before the paywall.
+        assert client.get(DATA_ROUTE).status_code == 403
+        # Issue a challenge and read its code (the emailed value).
+        challenge = account_store.create_email_verification_challenge(acct["id"])
+        assert challenge is not None
+        _, code = challenge
+        # A wrong code is refused …
+        assert client.post(
+            "/api/auth/verify-email/confirm-code", json={"code": "000000"}
+        ).status_code == 400
+        # … the right code verifies the account.
+        ok = client.post("/api/auth/verify-email/confirm-code", json={"code": code})
+        assert ok.status_code == 200, ok.text
+        # Now verified → the wall is 402 (subscribe), no longer 403 (verify).
+        assert client.get(DATA_ROUTE).status_code == 402
+
+    def test_code_requires_a_session(self, client):
+        fresh = TestClient(client.app)
+        fresh.cookies.clear()
+        resp = fresh.post("/api/auth/verify-email/confirm-code", json={"code": "123456"})
+        assert resp.status_code == 401
+
+
 class TestGoogleJourneyGrantsAccess:
     """The Google path grants access the same way — email is pre-verified, so
     there is no verification wall, but the paywall still applies until payment."""

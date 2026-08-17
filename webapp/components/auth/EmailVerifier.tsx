@@ -3,22 +3,25 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import * as React from 'react';
+import { MailCheck } from 'lucide-react';
 import {
   confirmEmailVerification,
+  confirmEmailVerificationCode,
   resendVerification,
 } from '@/lib/auth/api-client';
 import { useAuth } from '@/lib/auth/store';
 import { useLocalizedHref } from '@/lib/i18n/href';
+import { Button } from '@/components/ui/button';
 import { FormError, FormSuccess } from './fields';
 
 /**
- * Email-verification screen (PAY-1/PAY-3), two modes on one page:
+ * Email-verification screen (PAY-3c), two modes on one page:
  *
  *  · WITH a ?token= (from the emailed link) → confirm it once, then forward to
- *    the plan-choice page (paying is the condition of entry).
- *  · WITHOUT a token (landed here right after signing up) → the "check your
- *    inbox" state with a RESEND button, so the failure mode "I never got the
- *    email" is never a dead end.
+ *    the plan-choice page.
+ *  · WITHOUT a token (landed here right after signing up) → a clean card where
+ *    the user TYPES the 6-digit code we emailed (primary path, no context
+ *    switch), with a resend fallback.
  */
 export function EmailVerifier() {
   const t = useTranslations('auth.verifyEmail');
@@ -28,19 +31,21 @@ export function EmailVerifier() {
   const router = useRouter();
   const lh = useLocalizedHref();
 
-  // Token-confirmation state (only meaningful when a token is present).
   const [state, setState] = React.useState<'verifying' | 'ok' | 'error'>(
     token ? 'verifying' : 'ok',
   );
   const ranRef = React.useRef(false);
 
-  // Resend state (inbox mode).
+  // Code entry (inbox mode).
+  const [code, setCode] = React.useState('');
+  const [checking, setChecking] = React.useState(false);
+  const [codeError, setCodeError] = React.useState<string | null>(null);
   const [resendState, setResendState] = React.useState<
     'idle' | 'sending' | 'sent' | 'error'
   >('idle');
 
   React.useEffect(() => {
-    if (!token) return; // inbox mode — nothing to confirm
+    if (!token) return;
     if (ranRef.current) return; // confirm exactly once (token is single-use)
     ranRef.current = true;
     confirmEmailVerification(token)
@@ -51,15 +56,30 @@ export function EmailVerifier() {
       .catch(() => setState('error'));
   }, [token, refresh]);
 
-  // Once the email is CONFIRMED via the link, the mandatory next step is
-  // choosing a plan — forward automatically. (Inbox mode, where state starts as
-  // 'ok' with no token, must NOT auto-forward: the user still has to click the
-  // link first.)
   React.useEffect(() => {
     if (!token || state !== 'ok') return;
     const id = setTimeout(() => router.push(lh('/abonnement')), 1200);
     return () => clearTimeout(id);
   }, [token, state, router, lh]);
+
+  async function goToPlans() {
+    await refresh();
+    router.push(lh('/abonnement'));
+  }
+
+  async function onVerifyCode(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (checking) return;
+    setCodeError(null);
+    setChecking(true);
+    try {
+      await confirmEmailVerificationCode(code.trim());
+      await goToPlans();
+    } catch {
+      setCodeError(t('codeError'));
+      setChecking(false);
+    }
+  }
 
   async function onResend() {
     setResendState('sending');
@@ -71,27 +91,23 @@ export function EmailVerifier() {
     }
   }
 
-  // ── Token mode ──────────────────────────────────────────────────────────
+  // ── Token mode (link clicked) ───────────────────────────────────────────
   if (token) {
     return (
-      <div className="pagewrap" style={{ maxWidth: 520 }}>
-        <div className="card">
-          <h1>{t('title')}</h1>
+      <div className="mx-auto max-w-md py-4">
+        <div className="space-y-5 rounded-2xl border border-border/60 p-6 text-center sm:p-8">
+          <h1 className="text-xl font-semibold tracking-tight">{t('title')}</h1>
           {state === 'verifying' && (
             <p className="text-sm text-muted-foreground" aria-live="polite">
               {t('verifying')}
             </p>
           )}
           {state === 'ok' && (
-            <div style={{ display: 'grid', gap: 12 }}>
+            <div className="space-y-4">
               <FormSuccess message={t('success')} />
-              <button
-                type="button"
-                className="btn primary"
-                onClick={() => router.push(lh('/abonnement'))}
-              >
+              <Button className="w-full" onClick={goToPlans}>
                 {t('cta')}
-              </button>
+              </Button>
             </div>
           )}
           {state === 'error' && <FormError message={t('error')} />}
@@ -100,35 +116,61 @@ export function EmailVerifier() {
     );
   }
 
-  // ── Inbox mode (just signed up) ─────────────────────────────────────────
+  // ── Inbox mode (just signed up) — type the 6-digit code ─────────────────
   return (
-    <div className="pagewrap" style={{ maxWidth: 520 }}>
-      <div className="card" style={{ display: 'grid', gap: 14 }}>
-        <h1>{t('inboxTitle')}</h1>
-        <p className="text-sm text-muted-foreground">
-          {account?.email
-            ? t('inboxBody', { email: account.email })
-            : t('inboxBodyNoEmail')}
-        </p>
+    <div className="mx-auto max-w-md py-4">
+      <div className="space-y-6 rounded-2xl border border-border/60 p-6 sm:p-8">
+        <div className="space-y-2 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <MailCheck className="h-6 w-6" aria-hidden />
+          </div>
+          <h1 className="text-xl font-semibold tracking-tight">{t('inboxTitle')}</h1>
+          <p className="text-sm text-muted-foreground">
+            {account?.email
+              ? t('codeIntro', { email: account.email })
+              : t('codeIntroNoEmail')}
+          </p>
+        </div>
+
+        {codeError && <FormError message={codeError} />}
         {resendState === 'sent' && <FormSuccess message={t('resent')} />}
         {resendState === 'error' && <FormError message={t('resendError')} />}
-        <div style={{ display: 'grid', gap: 8 }}>
+
+        <form onSubmit={onVerifyCode} className="space-y-4">
+          <div className="space-y-1.5">
+            <label htmlFor="code" className="block text-sm font-medium text-foreground">
+              {t('codeLabel')}
+            </label>
+            <input
+              id="code"
+              name="code"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              autoFocus
+              maxLength={6}
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              className="w-full rounded-md border border-input bg-background px-3 py-3 text-center text-2xl font-semibold tracking-[0.4em] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              placeholder="••••••"
+              aria-label={t('codeLabel')}
+            />
+          </div>
+          <Button type="submit" className="w-full" disabled={checking || code.length < 6}>
+            {checking ? t('checking') : t('verify')}
+          </Button>
+        </form>
+
+        <p className="text-center text-sm text-muted-foreground">
+          {t('noCodeYet')}{' '}
           <button
             type="button"
-            className="btn"
             onClick={onResend}
             disabled={resendState === 'sending'}
+            className="font-medium text-foreground underline underline-offset-2 hover:text-primary disabled:opacity-50"
           >
             {resendState === 'sending' ? t('resending') : t('resend')}
           </button>
-          <button
-            type="button"
-            className="btn primary"
-            onClick={() => router.push(lh('/abonnement'))}
-          >
-            {t('goToPlans')}
-          </button>
-        </div>
+        </p>
       </div>
     </div>
   );

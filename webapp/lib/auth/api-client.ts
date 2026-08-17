@@ -195,6 +195,16 @@ export function confirmEmailVerification(
   });
 }
 
+/** Confirm the logged-in account's email with a typed 6-digit code (PAY-3c). */
+export function confirmEmailVerificationCode(
+  code: string,
+): Promise<{ ok: boolean; message: string }> {
+  return request('/verify-email/confirm-code', {
+    method: 'POST',
+    body: JSON.stringify({ code }),
+  });
+}
+
 /** Re-send the verification email to the logged-in account. */
 export function resendVerification(): Promise<{ ok: boolean; message: string }> {
   return request('/verify-email/resend', { method: 'POST' });

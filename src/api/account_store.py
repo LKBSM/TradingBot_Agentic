@@ -87,7 +87,7 @@ class AccountError(ValueError):
 class AccountStore:
     """Thread-safe account store with SQLite WAL persistence."""
 
-    SCHEMA_VERSION = 6
+    SCHEMA_VERSION = 7
 
     def __init__(self, db_path: str = "./data/accounts.db"):
         self._db_path = Path(db_path)
@@ -263,6 +263,18 @@ class AccountStore:
                     PRIMARY KEY (account_id, period_end, kind)
                 );
             """)
+        if from_v < 7:
+            # PAY-3c — a 6-digit verification CODE alongside the magic-link token,
+            # so a user can confirm their email by TYPING a code without leaving
+            # the page. ``attempts`` bounds brute force (the code is low-entropy;
+            # only a server-side attempt cap + throttle make it safe).
+            conn.execute(
+                "ALTER TABLE email_verifications ADD COLUMN code_hash TEXT"
+            )
+            conn.execute(
+                "ALTER TABLE email_verifications "
+                "ADD COLUMN attempts INTEGER NOT NULL DEFAULT 0"
+            )
         conn.execute(
             "INSERT OR REPLACE INTO schema_version (version) VALUES (?)",
             (self.SCHEMA_VERSION,),
@@ -862,13 +874,19 @@ class AccountStore:
     # --------------------------------------------------------------------- #
     # Email verification (PAY-1 — mandatory before access)
     # --------------------------------------------------------------------- #
-    def create_email_verification(
-        self, account_id: int, *, ttl_seconds: float = DEFAULT_VERIFY_TTL_S
-    ) -> Optional[str]:
-        """Issue a single-use email-verification token for an account.
+    @staticmethod
+    def _new_code() -> str:
+        """A 6-digit numeric email-verification code (leading zeros kept)."""
+        return f"{secrets.randbelow(1_000_000):06d}"
 
-        Returns the raw token (emailed out-of-band) or ``None`` when the account
-        is unknown/inactive or already verified (no token needed).
+    def create_email_verification_challenge(
+        self, account_id: int, *, ttl_seconds: float = DEFAULT_VERIFY_TTL_S
+    ) -> Optional[Tuple[str, str]]:
+        """Issue a single-use email verification as BOTH a link token AND a
+        6-digit code (PAY-3c), stored in one row.
+
+        Returns ``(raw_token, code)`` (both emailed out-of-band) or ``None`` when
+        the account is unknown/inactive or already verified.
         """
         with self._lock:
             conn = self._get_connection()
@@ -881,14 +899,81 @@ class AccountStore:
                 if row is None or not row["is_active"] or row["email_verified"]:
                     return None
                 raw = self._new_token()
+                code = self._new_code()
                 now = time.time()
                 conn.execute(
                     "INSERT INTO email_verifications "
-                    "(token_hash, account_id, created_at, expires_at, used_at) "
-                    "VALUES (?, ?, ?, ?, NULL)",
-                    (self._hash_token(raw), account_id, now, now + ttl_seconds),
+                    "(token_hash, account_id, created_at, expires_at, used_at, "
+                    " code_hash, attempts) "
+                    "VALUES (?, ?, ?, ?, NULL, ?, 0)",
+                    (
+                        self._hash_token(raw), account_id, now, now + ttl_seconds,
+                        self._hash_token(code),
+                    ),
                 )
-                return raw
+                return raw, code
+            finally:
+                conn.close()
+
+    def create_email_verification(
+        self, account_id: int, *, ttl_seconds: float = DEFAULT_VERIFY_TTL_S
+    ) -> Optional[str]:
+        """Back-compat wrapper: issue a verification and return only the link
+        token (a code is stored alongside it). Callers that also need the code use
+        :meth:`create_email_verification_challenge`."""
+        challenge = self.create_email_verification_challenge(
+            account_id, ttl_seconds=ttl_seconds
+        )
+        return challenge[0] if challenge else None
+
+    def consume_email_verification_code(
+        self, account_id: int, code: str, *, max_attempts: int = 5
+    ) -> bool:
+        """Validate a typed 6-digit code for a logged-in account, marking it
+        verified on success. Returns False on wrong/expired/used code or once the
+        per-challenge attempt cap is reached (the code is low-entropy, so the cap
+        is what makes it safe). The endpoint is throttled on top of this."""
+        if not code or not code.strip():
+            return False
+        code_hash = self._hash_token(code.strip())
+        now = time.time()
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                conn.execute("BEGIN")
+                cur = conn.execute(
+                    "SELECT token_hash, expires_at, used_at, attempts, code_hash "
+                    "FROM email_verifications "
+                    "WHERE account_id = ? AND used_at IS NULL AND code_hash IS NOT NULL "
+                    "AND expires_at > ? "
+                    "ORDER BY created_at DESC LIMIT 1",
+                    (account_id, now),
+                )
+                row = cur.fetchone()
+                if row is None or row["attempts"] >= max_attempts:
+                    conn.execute("ROLLBACK")
+                    return False
+                if row["code_hash"] != code_hash:
+                    conn.execute(
+                        "UPDATE email_verifications SET attempts = attempts + 1 "
+                        "WHERE token_hash = ?",
+                        (row["token_hash"],),
+                    )
+                    conn.execute("COMMIT")
+                    return False
+                conn.execute(
+                    "UPDATE accounts SET email_verified = 1 WHERE id = ?",
+                    (account_id,),
+                )
+                conn.execute(
+                    "UPDATE email_verifications SET used_at = ? WHERE token_hash = ?",
+                    (now, row["token_hash"]),
+                )
+                conn.execute("COMMIT")
+                return True
+            except Exception:
+                conn.rollback()
+                raise
             finally:
                 conn.close()
 

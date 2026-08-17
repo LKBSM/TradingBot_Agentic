@@ -18,8 +18,10 @@ export async function generateMetadata({
 
 export default function VerifyEmailPage() {
   return (
-    <Suspense fallback={null}>
-      <EmailVerifier />
-    </Suspense>
+    <div className="container-prose py-12 sm:py-16">
+      <Suspense fallback={null}>
+        <EmailVerifier />
+      </Suspense>
+    </div>
   );
 }
