@@ -307,6 +307,35 @@ class StripeClient:
     # Customer + checkout session
     # ------------------------------------------------------------------
 
+    @staticmethod
+    def _to_dict(obj: Any) -> dict:
+        """Convert a Stripe SDK result into a PLAIN dict.
+
+        PAY-3d: ``stripe.Customer.create`` / ``checkout.Session.create`` / … all
+        return ``StripeObject`` instances whose ``.get()`` raises
+        ``AttributeError`` (only subscript works). Every caller here treats the
+        result as a plain dict and calls ``.get("id")`` / ``.get("url")`` — which
+        used to 500 ("Internal Server Error") on the very first click of
+        "Subscribe", even with a perfectly valid API key. Convert once, at the
+        boundary, so callers always get a real dict (matching the fake client).
+        """
+        if isinstance(obj, dict):
+            return obj
+        to_dict = getattr(obj, "to_dict", None)
+        if callable(to_dict):
+            try:
+                return dict(to_dict())
+            except Exception:
+                pass
+        try:
+            return dict(obj)
+        except Exception:
+            # Last resort: pull the ids we actually read off the attributes.
+            return {
+                k: getattr(obj, k, None)
+                for k in ("id", "url", "status", "customer")
+            }
+
     def create_customer(self, *, email: str, account_id: int) -> dict:
         """Create a Stripe customer carrying the account id in metadata.
 
@@ -314,10 +343,10 @@ class StripeClient:
         map Stripe events back to a local account (more robust than email).
         """
         stripe = self._require()
-        return stripe.Customer.create(
+        return self._to_dict(stripe.Customer.create(
             email=email,
             metadata={"account_id": str(account_id)},
-        )
+        ))
 
     def create_checkout_session(
         self,
@@ -370,21 +399,21 @@ class StripeClient:
             params["subscription_data"] = sub_data
         if automatic_tax:
             params["automatic_tax"] = {"enabled": True}
-        return stripe.checkout.Session.create(**params)
+        return self._to_dict(stripe.checkout.Session.create(**params))
 
     def create_billing_portal_session(
         self, *, customer_id: str, return_url: str
     ) -> dict:
         """Create a Stripe Customer Portal session (hosted manage/cancel page)."""
         stripe = self._require()
-        return stripe.billing_portal.Session.create(
+        return self._to_dict(stripe.billing_portal.Session.create(
             customer=customer_id,
             return_url=return_url,
-        )
+        ))
 
     def cancel_subscription(self, subscription_id: str) -> dict:
         stripe = self._require()
-        return stripe.Subscription.delete(subscription_id)
+        return self._to_dict(stripe.Subscription.delete(subscription_id))
 
     # ------------------------------------------------------------------
     # Webhook verification
