@@ -1895,7 +1895,11 @@
     "legalRenew": "Automatic renewal, cancel anytime.",
     "legalTool": "An information and education tool — not investment advice, not trading signals.",
     "legalRisk": "Trading carries a risk of loss.",
-    "legalAge": "Restricted to people aged 18 and over."
+    "legalAge": "Restricted to people aged 18 and over.",
+    "alreadyPaid": "Already paid?",
+    "activateAccess": "Activate my access",
+    "activating": "Checking…",
+    "noPaymentFound": "No active payment found for this account. If you just paid, wait a moment and try again."
   },
   "access": {
     "paywall": {

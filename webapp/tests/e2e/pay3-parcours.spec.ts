@@ -85,9 +85,15 @@ test('a Google failure shows a clear message on /connexion', async ({ page }) =>
 // =============================================================================
 
 test('registration routes to the email-confirmation screen with a resend button', async ({ page }) => {
-  await page.route('**/api/auth/register', (r: Route) => r.fulfill(json(ACCOUNT, 201)));
-  await page.route('**/api/auth/me', (r: Route) => r.fulfill(json(ACCOUNT)));
+  await page.route('**/api/auth/register', (r: Route) => r.fulfill(json({ ...ACCOUNT, email_verified: false }, 201)));
+  await page.route('**/api/auth/me', (r: Route) => r.fulfill(json({ ...ACCOUNT, email_verified: false })));
   await page.route('**/api/auth/verify-email/resend', (r: Route) => r.fulfill(json({ ok: true })));
+  // PAY-3e — routing now consults /access/me: email not verified → verify screen.
+  await page.route('**/api/access/me', (r: Route) => r.fulfill(json({
+    authenticated: true, gate_enforced: true, beta_lockdown: false, must_login: false,
+    is_owner: false, has_access: false, email_verified: false,
+    email_verification_required: true, subscription_required: false,
+  })));
 
   await page.goto('/inscription');
   await dismissCookieBanner(page);

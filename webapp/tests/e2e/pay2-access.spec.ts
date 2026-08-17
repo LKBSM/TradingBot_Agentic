@@ -94,7 +94,7 @@ async function setup(
   await page.route('**/api/billing/pricing', (r: Route) => r.fulfill(json(PRICING)));
 
   let seqIdx = 0;
-  await page.route('**/api/billing/subscription', (r: Route) => {
+  const subHandler = (r: Route) => {
     if (opts.subscriptionSeq) {
       const s = opts.subscriptionSeq[Math.min(seqIdx, opts.subscriptionSeq.length - 1)];
       seqIdx += 1;
@@ -102,7 +102,11 @@ async function setup(
     }
     const s = opts.subscription;
     return r.fulfill(s ? json(s) : json({ detail: 'no sub' }, 401));
-  });
+  };
+  await page.route('**/api/billing/subscription', subHandler);
+  // PAY-3e — the confirming screen now reconciles via POST /billing/sync; mirror
+  // the same (sequenced) subscription state so the webhook-wait flow still works.
+  await page.route('**/api/billing/sync', subHandler);
 
   await page.route('**/api/billing/checkout', (r: Route) =>
     r.fulfill(json({ url: opts.checkoutUrl ?? '/abonnement?status=success' })),

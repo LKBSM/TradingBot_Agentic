@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import * as React from 'react';
 import { AuthError } from '@/lib/auth/api-client';
+import { resolvePostAuthDestination } from '@/lib/auth/post-auth';
 import { useAuth } from '@/lib/auth/store';
 import { useLocalizedHref } from '@/lib/i18n/href';
 import { Button } from '@/components/ui/button';
@@ -63,12 +64,16 @@ export function RegisterForm() {
       // reliability fix as login: invalidate the Router Cache before navigating
       // so the destination is fetched fresh with the new cookie. See LoginForm.
       router.refresh();
-      // PAY-3 — parcours A: the brand-new email account is UNVERIFIED. Email
-      // verification comes BEFORE the plan choice (the gate blocks access until
-      // it's confirmed), so route to the "confirm your email" screen; once the
-      // emailed link is clicked, that screen forwards to /abonnement. A Google
-      // signup skips this (email already verified) and goes straight to plans.
-      router.replace(lh('/verifier-email'));
+      // PAY-3e — route by the six states (respecting the email-verification
+      // switch): if verification is enforced → the "confirm your email" screen;
+      // if it's lifted (SMTP not ready) → straight to the plan choice. The
+      // helper reads /api/access/me so the funnel adapts to the server config.
+      const dest = await resolvePostAuthDestination({
+        appHref: lh('/app'),
+        subscribeHref: lh('/abonnement'),
+        verifyHref: lh('/verifier-email'),
+      });
+      router.replace(dest);
     } catch (err) {
       setError(
         err instanceof AuthError ? err.message : t('register.errorGeneric'),

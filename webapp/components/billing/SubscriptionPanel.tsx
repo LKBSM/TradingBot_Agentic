@@ -10,6 +10,7 @@ import {
   fetchSubscription,
   openPortal,
   startCheckout,
+  syncSubscription,
   type Plan,
   type Subscription,
 } from '@/lib/billing/api-client';
@@ -96,6 +97,7 @@ export function SubscriptionPanel() {
   const [loading, setLoading] = React.useState(true);
   const [busy, setBusy] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const [activateMsg, setActivateMsg] = React.useState<string | null>(null);
 
   const checkoutStatus = searchParams.get('status');
 
@@ -141,7 +143,9 @@ export function SubscriptionPanel() {
     const tick = async () => {
       tries += 1;
       try {
-        const s = await fetchSubscription();
+        // PAY-3e — reconcile straight from Stripe instead of only waiting for the
+        // webhook, so access is granted even when no webhook is configured.
+        const s = await syncSubscription();
         if (cancelled) return;
         setSub(s);
         if (hasAccessState(deriveState(s))) {
@@ -149,7 +153,7 @@ export function SubscriptionPanel() {
           return;
         }
       } catch {
-        /* transient — keep waiting for the webhook */
+        /* transient — keep trying */
       }
       if (!cancelled && tries < 24) timer = setTimeout(tick, 2500);
     };
@@ -201,6 +205,27 @@ export function SubscriptionPanel() {
       window.location.href = url;
     } catch (err) {
       setError(err instanceof BillingError ? err.message : t('errorPortal'));
+      setBusy(null);
+    }
+  }
+
+  // PAY-3e — "I already paid": reconcile directly from Stripe (no webhook
+  // needed). If it grants access, enter the app; else say nothing was found yet.
+  async function onActivate() {
+    setError(null);
+    setActivateMsg(null);
+    setBusy('activate');
+    try {
+      const s = await syncSubscription();
+      setSub(s);
+      if (hasAccessState(deriveState(s))) {
+        router.replace(lh('/app'));
+        return;
+      }
+      setActivateMsg(t('noPaymentFound'));
+    } catch (err) {
+      setError(err instanceof BillingError ? err.message : t('errorLoad'));
+    } finally {
       setBusy(null);
     }
   }
@@ -332,6 +357,15 @@ export function SubscriptionPanel() {
         <ShieldCheck className="h-4 w-4 shrink-0" aria-hidden />
         {t('securedByStripe')}
       </p>
+
+      {/* PAY-3e — recover an already-paid subscription without the webhook. */}
+      <div className="space-y-2 rounded-lg border border-border/60 bg-muted/10 p-3 text-center">
+        <p className="text-xs text-muted-foreground">{t('alreadyPaid')}</p>
+        <Button variant="outline" size="sm" onClick={onActivate} disabled={busy !== null}>
+          {busy === 'activate' ? t('activating') : t('activateAccess')}
+        </Button>
+        {activateMsg && <p className="text-xs text-muted-foreground">{activateMsg}</p>}
+      </div>
 
       <ul className="space-y-1.5 border-t border-border/60 pt-4 text-xs text-muted-foreground">
         {mentions.map((m) => (

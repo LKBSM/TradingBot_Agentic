@@ -65,6 +65,16 @@ class FakeStripeClient:
             raise ValueError("bad signature")
         return json.loads(body)
 
+    # PAY-3e — webhook-independent reconciliation. Tests set ``remote_subscription``
+    # to whatever "Stripe reports" for the customer.
+    remote_subscription = None
+
+    def find_customer_by_email(self, email):
+        return None
+
+    def get_subscription_state_for_customer(self, customer_id):
+        return self.remote_subscription
+
 
 class _StatusObj:
     """Minimal market-status object with a ``to_dict`` (what the route serves)."""
@@ -190,6 +200,60 @@ class TestEmailJourneyGrantsAccess:
         served = client.get(DATA_ROUTE)
         assert served.status_code == 200, served.text
         assert served.json()["state"] == "open"
+
+
+class TestStripeSyncFallback:
+    """PAY-3e — access is granted by reconciling straight from Stripe, even when
+    NO webhook is configured (the defence against a missed/misconfigured webhook
+    leaving a paying customer locked out)."""
+
+    def test_sync_grants_access_without_any_webhook(self, client, account_store):
+        acct = _register(client, email="synced@example.com")
+        _verify_email(client, account_store, acct["id"])
+        # Verified but unpaid → refused.
+        assert client.get(DATA_ROUTE).status_code == 402
+
+        # Simulate the post-Checkout world: the customer is linked, Stripe HAS an
+        # active subscription — but no webhook ever fired.
+        account_store.link_stripe_customer(acct["id"], "cus_sync_1")
+        fake = client.app.state.app_state.stripe_client
+        fake.remote_subscription = {
+            "subscription_id": "sub_sync_1",
+            "status": "active",
+            "current_period_end": time.time() + 30 * 86400,
+            "cancel_at_period_end": False,
+            "trial_end": None,
+            "price_id": "price_monthly_test",
+        }
+
+        resp = client.post("/api/billing/sync")
+        assert resp.status_code == 200, resp.text
+        assert resp.json()["has_access"] is True, (
+            "PAID BUT NO ACCESS: reconciling from Stripe did not grant access."
+        )
+        # The gated route now serves data — no webhook was ever involved.
+        assert client.get(DATA_ROUTE).status_code == 200
+
+    def test_sync_is_a_noop_when_stripe_has_nothing(self, client, account_store):
+        acct = _register(client, email="nopay@example.com")
+        _verify_email(client, account_store, acct["id"])
+        account_store.link_stripe_customer(acct["id"], "cus_none")
+        # fake.remote_subscription stays None → sync grants nothing.
+        resp = client.post("/api/billing/sync")
+        assert resp.status_code == 200
+        assert resp.json()["has_access"] is False
+        assert client.get(DATA_ROUTE).status_code == 402
+
+
+class TestEmailVerificationToggle:
+    """PAY-3e — the email wall can be lifted while SMTP isn't ready."""
+
+    def test_flag_off_lets_unverified_account_through(self, client, account_store, monkeypatch):
+        monkeypatch.setenv("EMAIL_VERIFICATION_ENFORCED", "0")
+        _register(client, email="unverified@example.com")  # never verifies email
+        # With the wall lifted, an unverified account is no longer 403'd on the
+        # verification gate (it still hits 402 — it hasn't paid).
+        assert client.get(DATA_ROUTE).status_code == 402
 
 
 class TestStripeResultsAreDicts:

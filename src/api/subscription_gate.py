@@ -146,13 +146,28 @@ _EMAIL_VERIFICATION_REQUIRED = "Email verification required before access."
 _SUBSCRIPTION_REQUIRED = "An active subscription is required for this feature."
 
 
-def email_verified(account: Dict[str, Any]) -> bool:
-    """Whether the account may pass the mandatory email-verification wall.
+def _email_verification_enforced() -> bool:
+    """Whether the email-verification wall is enforced.
 
-    The owner is always allowed (seeded verified). Any other account must have
-    confirmed its email (PAY-1: verification is mandatory before access).
+    Default ON. Set ``EMAIL_VERIFICATION_ENFORCED=0`` to lift it while email
+    delivery (SMTP) isn't wired yet — a paying account then reaches the product
+    without a confirmed email. Mirrors the ``SUBSCRIPTION_GATE_ENFORCED`` switch
+    (machinery fully wired, flip when ready). Turn it back ON once SMTP works.
+    """
+    raw = os.environ.get("EMAIL_VERIFICATION_ENFORCED", "1").strip().lower()
+    return raw in ("1", "true", "yes", "on")
+
+
+def email_verified(account: Dict[str, Any]) -> bool:
+    """Whether the account may pass the email-verification wall.
+
+    The owner is always allowed (seeded verified). The wall can be lifted via
+    ``EMAIL_VERIFICATION_ENFORCED=0`` (SMTP not ready). Otherwise any non-owner
+    account must have confirmed its email (PAY-1).
     """
     if account.get("role") == "owner":
+        return True
+    if not _email_verification_enforced():
         return True
     return bool(account.get("email_verified", False))
 

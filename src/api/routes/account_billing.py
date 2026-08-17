@@ -274,6 +274,63 @@ async def subscription(
     )
 
 
+@router.post("/sync", response_model=SubscriptionOut)
+async def sync_subscription(
+    request: Request,
+    account: Dict[str, Any] = Depends(require_account),
+):
+    """Reconcile this account's subscription straight from Stripe (PAY-3e).
+
+    The webhook is the normal path, but it needs configuring and can be missed.
+    This asks Stripe directly ("has this account paid?") and persists the result,
+    so access is granted even when NO webhook is set up. Safe to call anytime
+    (e.g. right after returning from Checkout, or from an "I already paid" button)
+    — it only ever mirrors Stripe's truth into our DB, never invents state.
+    """
+    store = _store(request)
+    stripe = _stripe(request)
+
+    sub = store.get_subscription(account["id"]) or {}
+    customer_id = sub.get("stripe_customer_id")
+    if not customer_id:
+        # Lost/never-linked customer → find it by the account email and relink.
+        try:
+            customer_id = stripe.find_customer_by_email(account["email"])
+        except Exception:
+            logger.exception("stripe customer lookup failed for account=%s", account["id"])
+            customer_id = None
+        if customer_id:
+            store.link_stripe_customer(account["id"], customer_id)
+
+    if customer_id:
+        try:
+            state = stripe.get_subscription_state_for_customer(customer_id)
+        except Exception:
+            logger.exception("stripe subscription sync failed for account=%s", account["id"])
+            raise HTTPException(status_code=502, detail="La vérification du paiement a échoué. Réessaie dans un instant.")
+        if state and state.get("status"):
+            store.upsert_subscription(
+                account["id"],
+                stripe_customer_id=customer_id,
+                stripe_subscription_id=state.get("subscription_id"),
+                status=state.get("status"),
+                price_id=state.get("price_id"),
+                current_period_end=state.get("current_period_end"),
+                cancel_at_period_end=bool(state.get("cancel_at_period_end")),
+                trial_end=state.get("trial_end"),
+            )
+
+    fresh = store.get_subscription(account["id"]) or {}
+    return SubscriptionOut(
+        status=fresh.get("status"),
+        price_id=fresh.get("price_id"),
+        current_period_end=fresh.get("current_period_end"),
+        cancel_at_period_end=bool(fresh.get("cancel_at_period_end")),
+        trial_end=fresh.get("trial_end"),
+        has_access=account_has_access(account, store),
+    )
+
+
 @router.post("/webhook")
 async def webhook(
     request: Request,
