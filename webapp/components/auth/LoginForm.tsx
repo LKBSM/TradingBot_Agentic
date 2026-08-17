@@ -10,9 +10,13 @@ import { useAuth } from '@/lib/auth/store';
 import { useLocalizedHref } from '@/lib/i18n/href';
 import { BRAND_NAME } from '@/lib/brand';
 
+/** Reasons the Google callback can bounce back with (?error=google&reason=…). */
+const GOOGLE_REASONS = new Set(['state', 'expired', 'exchange', 'email']);
+
 /** Login form — identifier is a username OR an email (single field). */
 export function LoginForm() {
   const t = useTranslations('auth');
+  const tg = useTranslations('auth.google.error');
   const tf = useTranslations('footer');
   const tc = useTranslations('connexion');
   const { login } = useAuth();
@@ -21,6 +25,23 @@ export function LoginForm() {
   const [error, setError] = React.useState<string | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
   const submittingRef = React.useRef(false);
+
+  // A Google sign-up failure (the button lives on /inscription) bounces back to
+  // /connexion?error=google&reason=…; surface it clearly rather than a blank
+  // form. Read from window at mount to avoid the useSearchParams Suspense
+  // requirement on this page.
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('error') !== 'google') return;
+    const reason = params.get('reason') ?? '';
+    setError(GOOGLE_REASONS.has(reason) ? tg(reason) : tg('generic'));
+    const url = new URL(window.location.href);
+    url.searchParams.delete('error');
+    url.searchParams.delete('reason');
+    window.history.replaceState(null, '', url.toString());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // A safe, same-site ?next= return path (set by the login wall), honored only
   // once the account has access (post-auth routing owns the six-state decision).

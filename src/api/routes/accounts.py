@@ -94,6 +94,12 @@ class VerifyEmailConfirmBody(BaseModel):
     token: str = Field(..., min_length=1, max_length=512)
 
 
+class VerifyEmailCodeBody(BaseModel):
+    # A short numeric code typed by the user (PAY-3c). Kept lenient on length so
+    # the format can evolve; the store validates the actual value.
+    code: str = Field(..., min_length=4, max_length=12)
+
+
 class PasswordChangeBody(BaseModel):
     current_password: str = Field(..., min_length=1, max_length=256)
     new_password: str = Field(..., min_length=10, max_length=256)
@@ -383,6 +389,31 @@ async def verify_email_confirm(payload: VerifyEmailConfirmBody, request: Request
     return MessageOut(message="Adresse e-mail confirmée. Ton accès est activé.")
 
 
+@router.post("/verify-email/confirm-code", response_model=MessageOut)
+async def verify_email_confirm_code(
+    payload: VerifyEmailCodeBody,
+    request: Request,
+    account: Dict[str, Any] = Depends(require_account),
+):
+    """Confirm the logged-in account's email with a typed 6-digit code (PAY-3c).
+
+    Requires a session (so the code is scoped to the account, never used to probe
+    arbitrary inboxes) and is throttled per IP + account on top of the store's
+    per-challenge attempt cap — together they make the low-entropy code safe.
+    """
+    store = _store(request)
+    ip_key = f"verifycode:ip:{client_ip(request)}"
+    acct_key = f"verifycode:acct:{account['id']}"
+    _enforce_throttle(request, ip_key, acct_key)
+    if account.get("email_verified", False):
+        return MessageOut(message="Adresse e-mail déjà confirmée.")
+    if not store.consume_email_verification_code(account["id"], payload.code):
+        # Count the failure so repeated wrong codes eventually 429.
+        _record_throttle(request, ip_key, acct_key)
+        raise HTTPException(status_code=400, detail="Code invalide ou expiré.")
+    return MessageOut(message="Adresse e-mail confirmée. Ton accès est activé.")
+
+
 @router.post("/verify-email/resend", response_model=MessageOut)
 async def verify_email_resend(
     request: Request,
@@ -560,10 +591,12 @@ def _send_reset_email(to_email: str, reset_url: str) -> bool:
     return True
 
 
-def _send_verification_email(to_email: str, verify_url: str) -> bool:
-    """Send the email-verification link over SMTP when configured (else no-op).
+def _send_verification_email(to_email: str, verify_url: str, code: str) -> bool:
+    """Send the email-verification code + link over SMTP when configured (else
+    no-op). Same env-gated, best-effort posture as the reset email.
 
-    Same env-gated, best-effort posture as the reset email — never logs the token.
+    PAY-3c: the 6-digit CODE is the primary path (type it on the page, no context
+    switch); the link is kept as a fallback.
     """
     host = os.environ.get("SMTP_HOST")
     if not host:
@@ -572,17 +605,19 @@ def _send_verification_email(to_email: str, verify_url: str) -> bool:
     from email.message import EmailMessage
 
     msg = EmailMessage()
-    msg["Subject"] = "Confirmez votre adresse e-mail — MIA Markets"
+    msg["Subject"] = "Votre code de confirmation — MIA Markets"
     msg["From"] = os.environ.get(
         "SMTP_FROM", os.environ.get("SMTP_USER", "no-reply@mia.markets")
     )
     msg["To"] = to_email
     msg.set_content(
         "Bienvenue sur MIA Markets.\n\n"
-        "Confirmez votre adresse e-mail pour activer l'accès :\n"
+        f"Votre code de confirmation est : {code}\n\n"
+        "Saisissez-le sur la page de confirmation pour activer votre accès.\n\n"
+        "Vous pouvez aussi confirmer directement via ce lien :\n"
         f"{verify_url}\n\n"
         "Si vous n'êtes pas à l'origine de cette inscription, ignorez cet e-mail. "
-        "Le lien expire après 24 heures."
+        "Le code et le lien expirent après 24 heures."
     )
     port = int(os.environ.get("SMTP_PORT", "587"))
     user = os.environ.get("SMTP_USER")
@@ -596,16 +631,17 @@ def _send_verification_email(to_email: str, verify_url: str) -> bool:
 
 
 def _dispatch_verification_email(request: Request, account_id: int, email: str) -> None:
-    """Issue + email an email-verification token (out-of-band). Degrades to a log
-    line when SMTP is not configured (never logs the token)."""
+    """Issue + email an email-verification code + link (out-of-band). Degrades to
+    a log line when SMTP is not configured (never logs the code/token)."""
     store = _store(request)
-    raw_token = store.create_email_verification(account_id)
-    if raw_token is None:
+    challenge = store.create_email_verification_challenge(account_id)
+    if challenge is None:
         return  # already verified or inactive — nothing to send
+    raw_token, code = challenge
     verify_url = f"{_reset_base_url()}/verifier-email?token={raw_token}"
     if email:
         try:
-            if _send_verification_email(email, verify_url):
+            if _send_verification_email(email, verify_url, code):
                 logger.info("verification email sent for account id=%s", account_id)
                 return
         except Exception:
