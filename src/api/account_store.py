@@ -268,15 +268,36 @@ class AccountStore:
             # so a user can confirm their email by TYPING a code without leaving
             # the page. ``attempts`` bounds brute force (the code is low-entropy;
             # only a server-side attempt cap + throttle make it safe).
-            conn.execute(
-                "ALTER TABLE email_verifications ADD COLUMN code_hash TEXT"
-            )
-            conn.execute(
-                "ALTER TABLE email_verifications "
-                "ADD COLUMN attempts INTEGER NOT NULL DEFAULT 0"
-            )
+            #
+            # IDEMPOTENT: check the columns first. ``ALTER TABLE ADD COLUMN`` is
+            # NOT idempotent — it raises "duplicate column" if the column exists.
+            # If a prior migration added the columns but was interrupted before
+            # the schema_version bump (e.g. a disk-lock mid-boot), a plain ALTER
+            # would then crash on EVERY subsequent open — bricking the store. So
+            # add only what's missing, letting the version bump below finish the
+            # job on a half-migrated database.
+            ev_cols = {
+                r[1] for r in conn.execute("PRAGMA table_info(email_verifications)")
+            }
+            if "code_hash" not in ev_cols:
+                conn.execute(
+                    "ALTER TABLE email_verifications ADD COLUMN code_hash TEXT"
+                )
+            if "attempts" not in ev_cols:
+                conn.execute(
+                    "ALTER TABLE email_verifications "
+                    "ADD COLUMN attempts INTEGER NOT NULL DEFAULT 0"
+                )
+        # Keep EXACTLY ONE row. ``version`` is the PRIMARY KEY, so
+        # ``INSERT OR REPLACE VALUES(new)`` does NOT replace the old row (its PK
+        # differs) — it ADDS a row, leaving e.g. [6, 7]. ``SELECT ... LIMIT 1``
+        # then reads the OLD version and re-runs the migration on every boot —
+        # harmless for idempotent CREATE-IF-NOT-EXISTS steps, but it re-ran the
+        # v7 ALTER and crashed with "duplicate column" on the second boot. Replace
+        # the whole row so the stored version is always accurate (single source).
+        conn.execute("DELETE FROM schema_version")
         conn.execute(
-            "INSERT OR REPLACE INTO schema_version (version) VALUES (?)",
+            "INSERT INTO schema_version (version) VALUES (?)",
             (self.SCHEMA_VERSION,),
         )
 
