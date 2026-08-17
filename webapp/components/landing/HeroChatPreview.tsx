@@ -5,7 +5,7 @@ import { MessageCircle } from 'lucide-react';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { MiaAgentLogo } from '@/components/chat/MiaAgentLogo';
+import { MiaLogo } from '@/components/brand/MiaLogo';
 import { useChat } from '@/components/chat/ChatProvider';
 import { useChatbotScriptGetter } from '@/lib/chatbot';
 import { cn } from '@/lib/utils';
@@ -88,7 +88,7 @@ export function HeroChatPreview({
     >
       <div className="flex items-center gap-2">
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
-          <MiaAgentLogo className="h-5 w-5" />
+          <MiaLogo variant="compact" decorative className="h-5 w-5" />
         </div>
         <div>
           <p className="text-sm font-semibold">M.I.A Agent</p>

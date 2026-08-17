@@ -108,11 +108,11 @@ describe('NW-5 publication page guards', () => {
     // The publication page reuses the shared AgentAvatar, never a second glyph.
     const detail = readFileSync(join(WEBAPP, 'components', 'calendar', 'CalendarEventDetail.tsx'), 'utf-8');
     expect(detail).toMatch(/import \{ AgentAvatar \} from '@\/components\/chat\/AgentAvatar'/);
-    expect(detail.includes('MiaAgentLogo')).toBe(false); // no direct re-use of the raw glyph
+    expect(detail.includes('MiaLogo')).toBe(false); // no direct re-use of the raw glyph
     // no duplicated avatar glyph (candlestick rects / sparkle path) in the page
     expect(detail.includes('M12 3l1.9')).toBe(false); // the maquette sparkle path
 
-    // Exactly ONE definition of the candlestick logo across all components.
+    // Exactly ONE definition of the brand logo across all components.
     const files: string[] = [];
     const walk = (dir: string) => {
       for (const e of readdirSync(dir, { withFileTypes: true })) {
@@ -123,7 +123,7 @@ describe('NW-5 publication page guards', () => {
       }
     };
     walk(join(WEBAPP, 'components'));
-    const defs = files.filter((f) => /export function MiaAgentLogo\b/.test(readFileSync(f, 'utf-8')));
+    const defs = files.filter((f) => /export function MiaLogo\b/.test(readFileSync(f, 'utf-8')));
     expect(defs).toHaveLength(1);
   });
 

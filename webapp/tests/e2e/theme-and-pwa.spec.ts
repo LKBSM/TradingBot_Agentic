@@ -32,7 +32,7 @@ test.describe('Theme + PWA — golden paths', () => {
     expect(res.status()).toBe(200);
     expect(res.headers()['content-type']).toMatch(/manifest/);
     const body = await res.json();
-    expect(body.name).toContain('MIA');
+    expect(body.name).toContain('M.I.A');
     expect(body.display).toBe('standalone');
   });
 

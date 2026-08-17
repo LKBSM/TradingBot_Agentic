@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { getTranslations } from 'next-intl/server';
 import { EmailVerifier } from '@/components/auth/EmailVerifier';
+import { AuthBrandHeader } from '@/components/auth/AuthBrandHeader';
 
 export async function generateMetadata({
   params,
@@ -19,6 +20,7 @@ export async function generateMetadata({
 export default function VerifyEmailPage() {
   return (
     <div className="container-prose py-12 sm:py-16">
+      <AuthBrandHeader />
       <Suspense fallback={null}>
         <EmailVerifier />
       </Suspense>

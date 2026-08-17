@@ -366,7 +366,7 @@
         "cta": "Beginnen",
         "note": "op elk moment opzegbaar"
       },
-      "legal": "Prijzen in Amerikaanse dollars. MIA Markets is een informatie- en educatietool: het biedt geen beleggingsadvies, geen aanbeveling en geen aanwijzing om op de markten in te grijpen. Traden brengt een risico op verlies met zich mee. Uitsluitend voor personen van 18 jaar en ouder."
+      "legal": "Prijzen in Amerikaanse dollars. M.I.A Markets is een informatie- en educatietool: het biedt geen beleggingsadvies, geen aanbeveling en geen aanwijzing om op de markten in te grijpen. Traden brengt een risico op verlies met zich mee. Uitsluitend voor personen van 18 jaar en ouder."
     },
     "faq": {
       "eyebrow": "Veelgestelde vragen",
@@ -821,7 +821,7 @@
   },
   "_comment": "MACHINEVERTALING (landing+cookies 2026-07-08), revisie door moedertaalspreker in afwachting",
   "nav": {
-    "brandHomeAria": "MIA Markets — terug naar home",
+    "brandHomeAria": "M.I.A Markets — terug naar home",
     "sectionsAria": "Sitesecties",
     "demo": "Demo",
     "honesty": "Eerlijkheid",
@@ -843,7 +843,7 @@
     "hero": {
       "badgeLive": "Live-lezing",
       "badgeIndicator": "Indicator · geen signaaldienst",
-      "srTitle": "MIA Markets — Begrijp de markt zonder dat iemand u vertelt wat te doen.",
+      "srTitle": "M.I.A Markets — Begrijp de markt zonder dat iemand u vertelt wat te doen.",
       "cta": "Bekijk het aanbod"
     },
     "chatPreview": {
@@ -851,7 +851,7 @@
       "role": "Conversationele assistent",
       "thinking": "M.I.A Agent leest de markt",
       "thinkingAria": "M.I.A Agent denkt na",
-      "greeting": "Hallo, ik ben M.I.A Agent — de assistent van MIA Markets. Ik heb zojuist de markt {instrument} gelezen: de structuur wijst op een {trend} opzet.",
+      "greeting": "Hallo, ik ben M.I.A Agent — de assistent van M.I.A Markets. Ik heb zojuist de markt {instrument} gelezen: de structuur wijst op een {trend} opzet.",
       "trendBullish": "haussière",
       "trendBearish": "baissière",
       "trendNeutral": "neutrale",
@@ -891,7 +891,7 @@
       "title": "Een eerlijke indicator begint met te zeggen wat hij niet doet.",
       "subtitle": "MIA beschrijft de markt — de structuur, het regime, de gebeurtenissen. Ze belooft geen enkele winst en presenteert zich niet als een tradingsysteem. Wij staan hier publiekelijk voor, omdat dit de enige verdedigbare houding is voor een hulpmiddel om te begrijpen.",
       "quote": "Geen enkele marktindicator zou winst mogen beloven. Wij doen dat niet. Wat wij bieden, is een verrijkt begrip van de markt — geen financiële prestatie.",
-      "quoteCaption": "— Publieke verbintenis MIA Markets, 27 mei 2026",
+      "quoteCaption": "— Publieke verbintenis M.I.A Markets, 27 mei 2026",
       "neverTitle": "Wat wij nooit zullen doen",
       "never1": "« 90% win-rate » publiceren.",
       "never2": "Een becijferd rendement beloven.",
@@ -941,18 +941,18 @@
       "b2bEyebrow": "Voor professionele teams · B2B-API",
       "b2bDescription": "Brokers, fondsen, media: REST API-integratie + ondertekende webhooks, SLA en begeleide onboarding — tarief op aanvraag.",
       "b2bButton": "Een demo boeken",
-      "disclaimer": "Demonstratie in vroege toegang. MIA Markets produceert contextuele redactionele analyses en geen gepersonaliseerde aanbevelingen."
+      "disclaimer": "Demonstratie in vroege toegang. M.I.A Markets produceert contextuele redactionele analyses en geen gepersonaliseerde aanbevelingen."
     },
     "faq": {
       "kicker": "Veelgestelde vragen",
       "title": "U vraagt zich waarschijnlijk af…",
       "q1": "Is MIA een dienst voor tradingsignalen?",
-      "a1": "Nee. MIA Markets produceert <strong>beschrijvende marktlezingen</strong> (structuur, regime, gebeurtenissen, verhalende lezing) over een activum en een tijdseenheid. De chatbot weigert expliciet vragen van het type „moet ik kopen?”. Er wordt geen enkele gepersonaliseerde aanbeveling verstrekt.",
+      "a1": "Nee. M.I.A Markets produceert <strong>beschrijvende marktlezingen</strong> (structuur, regime, gebeurtenissen, verhalende lezing) over een activum en een tijdseenheid. De chatbot weigert expliciet vragen van het type „moet ik kopen?”. Er wordt geen enkele gepersonaliseerde aanbeveling verstrekt.",
       "q2": "Belooft MIA een prestatie of een winst?",
       "a2": "Nee. MIA is een <strong>hulpmiddel voor versterkt begrip</strong>, geen prestatiemotor: ze <em>beschrijft</em> de markt (structuur, regime, gebeurtenissen) zonder rendement te beloven of zich voor te doen als een tradingsysteem. Wat wij meten en publiekelijk voor onze rekening nemen, is de <strong>beschrijvende getrouwheid</strong> van onze lezingen — uitgewerkt in de sectie <link>Eerlijkheid</link>.",
       "q3": "Hoe werkt de M.I.A Agent-chatbot?",
-      "a3": "M.I.A Agent is de conversatie-assistent van MIA Markets. Hij gebruikt <strong>Claude (Anthropic)</strong> met de context van de lopende lezing geïnjecteerd als systeem: structuur, regime, aankomende macro-gebeurtenissen, instrument en tijdseenheid. De systeemprompt verbiedt hem elke gepersonaliseerde aanbeveling. Als de API-sleutel ontbreekt, neemt een pedagogische scripted fallback het over — er wordt geen enkel gehallucineerd antwoord geserveerd.",
-      "q4": "Kom ik in aanmerking voor MIA Markets?",
+      "a3": "M.I.A Agent is de conversatie-assistent van M.I.A Markets. Hij gebruikt <strong>Claude (Anthropic)</strong> met de context van de lopende lezing geïnjecteerd als systeem: structuur, regime, aankomende macro-gebeurtenissen, instrument en tijdseenheid. De systeemprompt verbiedt hem elke gepersonaliseerde aanbeveling. Als de API-sleutel ontbreekt, neemt een pedagogische scripted fallback het over — er wordt geen enkel gehallucineerd antwoord geserveerd.",
+      "q4": "Kom ik in aanmerking voor M.I.A Markets?",
       "a4": "U moet <strong>minimaal 18 jaar</strong> oud zijn, de <link>gebruiksvoorwaarden</link> aanvaarden en bevestigen dat u het niet-gepersonaliseerde karakter van de analyse begrijpt. De beperkingen die volgens uw jurisdictie van toepassing zijn, staan uitgewerkt in de voorwaarden.",
       "q5": "Hoe werkt het opzeggen?",
       "a5": "<strong>Opzeggen met één klik</strong> vanuit uw accountruimte — geen commerciële herinnering, geen retentievragenlijst. Het abonnement blijft actief tot het einde van de reeds betaalde periode.",
@@ -1664,7 +1664,7 @@
   },
   "disclaimer": {
     "short": "Educatieve algoritmische analyse. Geen beleggingsadvies.",
-    "long": "MIA Markets produceert redactionele contextuele analyses, geen gepersonaliseerde aanbevelingen."
+    "long": "M.I.A Markets produceert redactionele contextuele analyses, geen gepersonaliseerde aanbevelingen."
   },
   "glossary": {
     "title": "Woordenlijst",
@@ -1705,7 +1705,7 @@
     "viewUpdated": "Weergave bijgewerkt",
     "redirectLabel": "Vraag geherformuleerd",
     "redirectAria": "Waarom dit antwoord is geherformuleerd",
-    "redirectTooltip": "MIA Markets beschrijft de marktomstandigheden. Voor vragen over actie of advies is het aan u om te beslissen op basis van uw eigen criteria.",
+    "redirectTooltip": "M.I.A Markets beschrijft de marktomstandigheden. Voor vragen over actie of advies is het aan u om te beslissen op basis van uw eigen criteria.",
     "copy": "Kopiëren",
     "copied": "Gekopieerd",
     "copyAria": "Antwoord kopiëren",
@@ -1736,7 +1736,7 @@
       "contact": "Contact"
     },
     "disclaimer": "Demonstratie in vroege toegang · Educatieve algoritmische lezing · Geen tradingsignaal, noch gepersonaliseerd beleggingsadvies · Resultaten uit het verleden bieden geen garantie voor de toekomst · Traden met hefboom brengt een hoog risico op verlies met zich mee.",
-    "copyright": "© {year} MIA Markets — alle rechten voorbehouden."
+    "copyright": "© {year} M.I.A Markets — alle rechten voorbehouden."
   },
   "auth": {
     "login": {
@@ -1848,7 +1848,7 @@
   },
   "billing": {
     "title": "Abonnement",
-    "intro": "Beheer uw MIA Markets-abonnement. Betalingen worden veilig verwerkt door Stripe — er worden bij ons geen kaartgegevens opgeslagen.",
+    "intro": "Beheer uw M.I.A Markets-abonnement. Betalingen worden veilig verwerkt door Stripe — er worden bij ons geen kaartgegevens opgeslagen.",
     "loading": "Laden…",
     "checkoutSuccess": "Bedankt! Uw betaling is in behandeling genomen. Het abonnement wordt geactiveerd zodra Stripe bevestigt.",
     "checkoutCancel": "Betaling geannuleerd. U kunt het opnieuw proberen wanneer u wilt.",
@@ -1883,7 +1883,7 @@
     "manageHint": "Change plan, update your card, download invoices or cancel — all in the Stripe portal.",
     "reactivate": "Subscribe again",
     "activateTitle": "Activate your account",
-    "activateIntro": "Choose your plan to open MIA Markets. Your access turns on as soon as the payment is confirmed.",
+    "activateIntro": "Choose your plan to open M.I.A Markets. Your access turns on as soon as the payment is confirmed.",
     "reactivateTitle": "Reactivate your access",
     "monthlyName": "Monthly",
     "annualName": "Annual",
@@ -1919,7 +1919,7 @@
       "space": "Werkruimte"
     },
     "header": {
-      "brandAria": "MIA Markets — leesruimte",
+      "brandAria": "M.I.A Markets — leesruimte",
       "navApp": "App — leesruimte",
       "navZones": "Zones — levenscyclus van de gedetecteerde zones",
       "navScanner": "Voorwaardenscanner",
@@ -2260,11 +2260,11 @@
           },
           "historical-comparison": {
             "text": "Hoe ziet dat er historisch uit?",
-            "reply": "Ik wil eerlijk zijn: onze betrouwbaarheidstests op historische gegevens zijn nog niet afgerond. In plaats van je niet-gevalideerde prestatiecijfers te noemen, geef ik je geen enkel rendement, slaagpercentage of statistiek zolang de validatie niet is afgerond. Wat ik je vandaag kan vertellen: er bestaan 7 jaar schone historische gegevens en een transparante beschrijvingsmethode, uitvoerig beschreven op onze pagina Methodologie. Transparantie vóór belofte — dat is precies wat MIA Markets onderscheidt."
+            "reply": "Ik wil eerlijk zijn: onze betrouwbaarheidstests op historische gegevens zijn nog niet afgerond. In plaats van je niet-gevalideerde prestatiecijfers te noemen, geef ik je geen enkel rendement, slaagpercentage of statistiek zolang de validatie niet is afgerond. Wat ik je vandaag kan vertellen: er bestaan 7 jaar schone historische gegevens en een transparante beschrijvingsmethode, uitvoerig beschreven op onze pagina Methodologie. Transparantie vóór belofte — dat is precies wat M.I.A Markets onderscheidt."
           },
           "buy-or-not": {
             "text": "Dus ik moet kopen?",
-            "reply": "Nee, ik geef geen enkele koop-, verkoop- of timinginstructie. Mijn rol is de marktstructuur te beschrijven en je te helpen ze te begrijpen — niet om in jouw plaats te beslissen. Wat ik kan beschrijven: er is een bevestigde stijgende breuk, een retest die standhoudt rond 2378-2381, een invalidatie van die structuur als de prijs duidelijk onder 2378 terugkeert, en een macro-gebeurtenis over 18 uur die alles kan doen bewegen. Wat alleen jij kunt beslissen: of je risicobeheer, je horizon en je allocatie een positie rechtvaardigen. MIA Markets is een tool om te begrijpen, geen signalendienst."
+            "reply": "Nee, ik geef geen enkele koop-, verkoop- of timinginstructie. Mijn rol is de marktstructuur te beschrijven en je te helpen ze te begrijpen — niet om in jouw plaats te beslissen. Wat ik kan beschrijven: er is een bevestigde stijgende breuk, een retest die standhoudt rond 2378-2381, een invalidatie van die structuur als de prijs duidelijk onder 2378 terugkeert, en een macro-gebeurtenis over 18 uur die alles kan doen bewegen. Wat alleen jij kunt beslissen: of je risicobeheer, je horizon en je allocatie een positie rechtvaardigen. M.I.A Markets is een tool om te begrijpen, geen signalendienst."
           }
         }
       },
@@ -2329,7 +2329,7 @@
     "conditions": {
       "meta": {
         "title": "Gebruiksvoorwaarden",
-        "description": "Algemene Gebruiksvoorwaarden van MIA Markets — informatiedienst, educatieve houding, waarschuwing over de risico's."
+        "description": "Algemene Gebruiksvoorwaarden van M.I.A Markets — informatiedienst, educatieve houding, waarschuwing over de risico's."
       },
       "versionLabel": "Versie {version}",
       "loading": "Document laden…",
@@ -2338,7 +2338,7 @@
     "privacy": {
       "meta": {
         "title": "Privacybeleid",
-        "description": "Privacybeleid van MIA Markets — verwerkte gegevens, rechtsgrondslag, rechten AVG / Wet 25."
+        "description": "Privacybeleid van M.I.A Markets — verwerkte gegevens, rechtsgrondslag, rechten AVG / Wet 25."
       },
       "title": "Privacybeleid",
       "pendingNotice": "Voorlopige gestructureerde versie. De definitieve tekst (juridisch nagelezen) wordt gepubliceerd met de juridische terminal. De onderstaande structuur beschrijft de geldende verwerkingen getrouw.",
@@ -2349,7 +2349,7 @@
         },
         "donnees": {
           "title": "2. Verwerkte gegevens",
-          "body": "Gebruikersnaam, e-mailadres, wachtwoord (gehasht, nooit in klare tekst), toestemmingen (versie + tijdstempel), sessiegegevens. Er worden door MIA Markets geen bankkaartgegevens verzameld."
+          "body": "Gebruikersnaam, e-mailadres, wachtwoord (gehasht, nooit in klare tekst), toestemmingen (versie + tijdstempel), sessiegegevens. Er worden door M.I.A Markets geen bankkaartgegevens verzameld."
         },
         "bases": {
           "title": "3. Rechtsgrondslagen",
@@ -2389,20 +2389,20 @@
     "abonnement": {
       "meta": {
         "title": "Abonnement",
-        "description": "Uw MIA Markets-abonnement beheren."
+        "description": "Uw M.I.A Markets-abonnement beheren."
       },
       "loading": "Laden…"
     },
     "compte": {
       "meta": {
         "title": "Mijn account",
-        "description": "Uw MIA Markets-account beheren."
+        "description": "Uw M.I.A Markets-account beheren."
       }
     },
     "connexion": {
       "meta": {
         "title": "Inloggen",
-        "description": "Inloggen op uw MIA Markets-account."
+        "description": "Inloggen op uw M.I.A Markets-account."
       },
       "title": "Inloggen",
       "intro": "Log in met uw gebruikersnaam of uw e-mail."
@@ -2410,7 +2410,7 @@
     "inscription": {
       "meta": {
         "title": "Registratie",
-        "description": "Een MIA Markets-account aanmaken — vroege toegang, educatieve houding."
+        "description": "Een M.I.A Markets-account aanmaken — vroege toegang, educatieve houding."
       },
       "title": "Een account aanmaken",
       "intro": "Vroege toegang voorbehouden aan meerderjarigen (18 jaar of ouder).",
@@ -2439,14 +2439,14 @@
     "motDePasseOublieConfirmer": {
       "meta": {
         "title": "Wachtwoord opnieuw instellen",
-        "description": "Kies een nieuw wachtwoord voor je MIA Markets-account."
+        "description": "Kies een nieuw wachtwoord voor je M.I.A Markets-account."
       },
       "title": "Wachtwoord opnieuw instellen"
     },
     "motDePasseOublie": {
       "meta": {
         "title": "Wachtwoord vergeten",
-        "description": "Het wachtwoord van uw MIA Markets-account opnieuw instellen."
+        "description": "Het wachtwoord van uw M.I.A Markets-account opnieuw instellen."
       },
       "title": "Wachtwoord vergeten"
     },
@@ -2473,13 +2473,13 @@
   },
   "methodology": {
     "meta": {
-      "title": "Methodologie — Hoe MIA Markets de markt beschrijft",
+      "title": "Methodologie — Hoe M.I.A Markets de markt beschrijft",
       "description": "Transparante technische documentatie: hoe onze indicator de SMC-structuren detecteert (Order Block, Fair Value Gap, breuken), hoe we de weergegeven elementen beschrijven, onze gegevensbron, en wat we niet doen."
     },
     "header": {
       "back": "Terug naar de startpagina",
       "badge": "Methodologie",
-      "title": "Hoe MIA Markets de markt beschrijft",
+      "title": "Hoe M.I.A Markets de markt beschrijft",
       "intro": "Deze pagina legt zonder jargon uit hoe onze indicator marktstructuren opspoort en wat elk weergegeven element betekent. Het is beschrijvende documentatie: we leggen uit wat de engine<em> waarneemt</em>, nooit wat hij zou <em>voorspellen</em>.",
       "tocLabel": "Inhoudsopgave"
     },
@@ -2493,9 +2493,9 @@
     },
     "engagement": {
       "title": "Onze verbintenis",
-      "intro": "MIA Markets is een tool om de markt te begrijpen, geen tradingsysteem. Onze houding is beschrijvend (niveau „versterkte lezing”): we beschrijven een structuur, we bevelen nooit een actie aan.",
+      "intro": "M.I.A Markets is een tool om de markt te begrijpen, geen tradingsysteem. Onze houding is beschrijvend (niveau „versterkte lezing”): we beschrijven een structuur, we bevelen nooit een actie aan.",
       "quote": "Geen enkele marktindicator zou winst mogen beloven. Wij doen dat niet. Wat wij bieden, is een versterkt begrip van de markt — geen financiële prestatie.",
-      "caption": "— Publieke verbintenis MIA Markets, 27 mei 2026"
+      "caption": "— Publieke verbintenis M.I.A Markets, 27 mei 2026"
     },
     "concepts": {
       "title": "Structuurconcepten (SMC)",
@@ -2576,16 +2576,16 @@
       "title": "Vermeldingen",
       "intro": "De candlestickgrafiek van de leesruimte steunt op een opensource-bibliotheek, hier vermeld zoals de licentie ervan vereist.",
       "license": "<name>Lightweight Charts™</name> — © <tv>TradingView, Inc.</tv>, verspreid onder <link>Apache 2.0</link>-licentie. Grafiekweergavebibliotheek gebruikt voor het renderen van de candles en de zones.",
-      "note": "Ter info: het gaat uitsluitend om een <em>weergave</em>bibliotheek. MIA Markets gebruikt geen enkele API en geen enkele marktgegevensstroom van TradingView — de weergegeven koersen komen van onze eigen engine."
+      "note": "Ter info: het gaat uitsluitend om een <em>weergave</em>bibliotheek. M.I.A Markets gebruikt geen enkele API en geen enkele marktgegevensstroom van TradingView — de weergegeven koersen komen van onze eigen engine."
     }
   },
   "seo": {
-    "title": "MIA Markets — Conversationele marktindicator",
-    "titleTemplate": "%s · MIA Markets",
-    "description": "MIA Markets (Multi-asset Intelligence Assistant) — Marktlezing XAU/USD en FX, uitgelegd door een quant. Contextuele gesourcede analyses, educatieve houding.",
-    "ogTitle": "MIA Markets — Conversationele marktindicator",
+    "title": "M.I.A Markets — Conversationele marktindicator",
+    "titleTemplate": "%s · M.I.A Markets",
+    "description": "M.I.A Markets (Multi-asset Intelligence Assistant) — Marktlezing XAU/USD en FX, uitgelegd door een quant. Contextuele gesourcede analyses, educatieve houding.",
+    "ogTitle": "M.I.A Markets — Conversationele marktindicator",
     "ogDescription": "Contextuele algoritmische lezingen voor XAU/USD en de forex, uitgelegd door een chatbot (M.I.A Agent). Educatieve houding.",
-    "twitterTitle": "MIA Markets — Conversationele marktindicator",
+    "twitterTitle": "M.I.A Markets — Conversationele marktindicator",
     "twitterDescription": "Begrijp de markt — zonder dat men u zegt wat u moet doen. Algoritmische lezingen + chatbot M.I.A Agent."
   },
   "zones": {
@@ -2817,7 +2817,7 @@
   },
   "calendar": {
     "meta": {
-      "title": "Geplande publicaties — Volatiliteitskalender | MIA Markets",
+      "title": "Geplande publicaties — Volatiliteitskalender | M.I.A Markets",
       "description": "De kalender van officiële economische publicaties waarvan het tijdstip vooraf bekend is. MIA kondigt momenten aan, nooit richtingen."
     },
     "title": "Geplande publicaties",

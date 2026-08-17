@@ -1,9 +1,12 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
+import { useLocalizedHref } from '@/lib/i18n/href';
+import { MiaLogo } from '@/components/brand/MiaLogo';
 import { SkipLink } from '@/components/a11y/SkipLink';
 import { ShellRail } from './ShellRail';
 import { ShellChat } from './ShellChat';
@@ -23,6 +26,8 @@ import './pages.css';
 export function ProductShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const locale = useLocale();
+  const lh = useLocalizedHref();
+  const t = useTranslations();
 
   // Which product route are we on? Strip a leading `/<locale>` (non-default
   // locales are prefixed) then take the first segment. Product routes are flat
@@ -39,6 +44,11 @@ export function ProductShell({ children }: { children: React.ReactNode }) {
   return (
     <div className={cn('app-shell', !isApp && 'no-chat')}>
       <SkipLink />
+      {/* Mobile-only brand bar (<768px, where the rail is hidden): the mark as a
+          home link, so every product route keeps the brand on phones (BRD-2). */}
+      <Link href={lh('/')} className="shell-mbrand" aria-label={t('nav.brandHomeAria')}>
+        <MiaLogo variant="mark" decorative height={20} />
+      </Link>
       <ShellRail activeSpace={activeSpace} />
       <div id="main" className="center">
         {children}

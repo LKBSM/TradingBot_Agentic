@@ -6,7 +6,7 @@ import * as React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { MiaAgentLogo } from '@/components/chat/MiaAgentLogo';
+import { MiaLogo } from '@/components/brand/MiaLogo';
 import { cn } from '@/lib/utils';
 
 interface ConversationReplayCardProps {
@@ -142,14 +142,14 @@ export function ConversationReplayCard({
 
           {showThinking && (
             <Bubble role="assistant">
-              <MiaAgentLogo className="h-3.5 w-3.5 shrink-0" />
+              <MiaLogo variant="compact" decorative className="h-3.5 w-3.5 shrink-0" />
               <ThinkingDots />
             </Bubble>
           )}
 
           {showAnswer && (
             <Bubble role="assistant">
-              <MiaAgentLogo className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <MiaLogo variant="compact" decorative className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               <span className="whitespace-pre-wrap leading-relaxed">
                 {displayedAnswer}
                 {state === 'answering' && <Caret />}

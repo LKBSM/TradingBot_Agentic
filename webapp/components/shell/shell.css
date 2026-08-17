@@ -525,6 +525,41 @@
   gap: 14px;
   overflow-y: auto;
 }
+/* BRD-2 — connected-surface brand at the rail top (desktop) and a phone-only
+   brand bar (the rail is hidden < 768px). */
+.app-shell .rail-brand {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 2px 4px;
+  border-radius: 8px;
+  text-decoration: none;
+}
+.app-shell .rail-brand:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: 2px;
+}
+.app-shell .shell-mbrand {
+  display: none;
+}
+@media (max-width: 767px) {
+  .app-shell .shell-mbrand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 14px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+    position: sticky;
+    top: 0;
+    z-index: 55;
+    text-decoration: none;
+  }
+  .app-shell .shell-mbrand:focus-visible {
+    outline: 2px solid var(--acc);
+    outline-offset: -2px;
+  }
+}
 .app-shell .rail-lbl {
   font-size: 9.5px;
   letter-spacing: 0.7px;

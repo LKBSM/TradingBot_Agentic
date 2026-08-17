@@ -366,7 +366,7 @@
         "cta": "Inizia",
         "note": "annullabile in qualsiasi momento"
       },
-      "legal": "Prezzi in dollari americani. MIA Markets è uno strumento di informazione ed educazione: non fornisce né consulenza in investimenti, né raccomandazioni, né indicazioni di intervento sui mercati. Il trading comporta un rischio di perdita. Riservato alle persone di 18 anni e oltre."
+      "legal": "Prezzi in dollari americani. M.I.A Markets è uno strumento di informazione ed educazione: non fornisce né consulenza in investimenti, né raccomandazioni, né indicazioni di intervento sui mercati. Il trading comporta un rischio di perdita. Riservato alle persone di 18 anni e oltre."
     },
     "faq": {
       "eyebrow": "Domande frequenti",
@@ -821,7 +821,7 @@
   },
   "_comment": "TRADUZIONE AUTOMATICA (landing+cookies 2026-07-08), revisione madrelingua in sospeso",
   "nav": {
-    "brandHomeAria": "MIA Markets — torna alla home",
+    "brandHomeAria": "M.I.A Markets — torna alla home",
     "sectionsAria": "Sezioni del sito",
     "demo": "Demo",
     "honesty": "Onestà",
@@ -843,7 +843,7 @@
     "hero": {
       "badgeLive": "Lettura in tempo reale",
       "badgeIndicator": "Indicatore · non un servizio di segnali",
-      "srTitle": "MIA Markets — Comprendi il mercato senza che ti venga detto cosa fare.",
+      "srTitle": "M.I.A Markets — Comprendi il mercato senza che ti venga detto cosa fare.",
       "cta": "Scopri l'offerta"
     },
     "chatPreview": {
@@ -851,7 +851,7 @@
       "role": "Assistente conversazionale",
       "thinking": "M.I.A Agent legge il mercato",
       "thinkingAria": "M.I.A Agent sta riflettendo",
-      "greeting": "Ciao, sono M.I.A Agent — l'assistente di MIA Markets. Ho appena letto il mercato {instrument}: la struttura indica una configurazione {trend}.",
+      "greeting": "Ciao, sono M.I.A Agent — l'assistente di M.I.A Markets. Ho appena letto il mercato {instrument}: la struttura indica una configurazione {trend}.",
       "trendBullish": "rialzista",
       "trendBearish": "ribassista",
       "trendNeutral": "neutrale",
@@ -891,7 +891,7 @@
       "title": "Un indicatore onesto comincia col dire ciò che non fa.",
       "subtitle": "MIA descrive il mercato — la struttura, il regime, gli eventi. Non promette alcun guadagno e non si presenta come un sistema di trading. Ce ne assumiamo pubblicamente la responsabilità, perché è l'unica postura difendibile per uno strumento di comprensione.",
       "quote": "Nessun indicatore di mercato dovrebbe promettere guadagni. Noi non lo facciamo. Ciò che offriamo è una comprensione aumentata del mercato — non una performance finanziaria.",
-      "quoteCaption": "— Impegno pubblico MIA Markets, 27 maggio 2026",
+      "quoteCaption": "— Impegno pubblico M.I.A Markets, 27 maggio 2026",
       "neverTitle": "Ciò che non faremo mai",
       "never1": "Pubblicare « win-rate del 90 % ».",
       "never2": "Promettere un rendimento quantificato.",
@@ -941,18 +941,18 @@
       "b2bEyebrow": "Per i team professionali · API B2B",
       "b2bDescription": "Broker, fondi, media: integrazione API REST + webhook firmati, SLA e onboarding assistito — prezzo su richiesta.",
       "b2bButton": "Prenota una demo",
-      "disclaimer": "Dimostrazione in accesso anticipato. MIA Markets produce analisi editoriali contestuali e non raccomandazioni personalizzate."
+      "disclaimer": "Dimostrazione in accesso anticipato. M.I.A Markets produce analisi editoriali contestuali e non raccomandazioni personalizzate."
     },
     "faq": {
       "kicker": "Domande frequenti",
       "title": "Probabilmente ti stai chiedendo…",
       "q1": "MIA è un servizio di segnali di trading?",
-      "a1": "No. MIA Markets produce <strong>letture di mercato descrittive</strong> (struttura, regime, eventi, lettura narrata) su un asset e un'unità di tempo. Il chatbot rifiuta esplicitamente le domande del tipo «devo comprare?». Nessuna raccomandazione personalizzata viene fornita.",
+      "a1": "No. M.I.A Markets produce <strong>letture di mercato descrittive</strong> (struttura, regime, eventi, lettura narrata) su un asset e un'unità di tempo. Il chatbot rifiuta esplicitamente le domande del tipo «devo comprare?». Nessuna raccomandazione personalizzata viene fornita.",
       "q2": "MIA promette una performance o un guadagno?",
       "a2": "No. MIA è uno <strong>strumento di comprensione aumentata</strong>, non un motore di performance: <em>descrive</em> il mercato (struttura, regime, eventi) senza promettere rendimenti né presentarsi come un sistema di trading. Ciò che misuriamo e ci assumiamo pubblicamente è la <strong>fedeltà descrittiva</strong> delle nostre letture — dettagliata nella sezione <link>Onestà</link>.",
       "q3": "Come funziona il chatbot M.I.A Agent?",
-      "a3": "M.I.A Agent è l'assistente conversazionale di MIA Markets. Utilizza <strong>Claude (Anthropic)</strong> con il contesto della lettura in corso iniettato nel sistema: struttura, regime, eventi macro in arrivo, strumento e unità di tempo. Il prompt di sistema gli vieta qualsiasi raccomandazione personalizzata. Se la chiave API è assente, subentra un fallback scriptato didattico — nessuna risposta allucinata verrà fornita.",
-      "q4": "Sono idoneo a MIA Markets?",
+      "a3": "M.I.A Agent è l'assistente conversazionale di M.I.A Markets. Utilizza <strong>Claude (Anthropic)</strong> con il contesto della lettura in corso iniettato nel sistema: struttura, regime, eventi macro in arrivo, strumento e unità di tempo. Il prompt di sistema gli vieta qualsiasi raccomandazione personalizzata. Se la chiave API è assente, subentra un fallback scriptato didattico — nessuna risposta allucinata verrà fornita.",
+      "q4": "Sono idoneo a M.I.A Markets?",
       "a4": "Devi avere <strong>almeno 18 anni</strong>, accettare le <link>condizioni d'uso</link> e confermare di aver compreso la natura non personalizzata dell'analisi. Le restrizioni applicabili in base alla tua giurisdizione sono dettagliate nelle condizioni.",
       "q5": "Come funziona l'annullamento?",
       "a5": "<strong>Annullamento con un clic</strong> dal tuo spazio account — nessun sollecito commerciale, nessun questionario di fidelizzazione. L'abbonamento resta attivo fino alla fine del periodo già pagato.",
@@ -1664,7 +1664,7 @@
   },
   "disclaimer": {
     "short": "Analisi algoritmica educativa. Non è consulenza di investimento.",
-    "long": "MIA Markets produce analisi editoriali contestuali, non raccomandazioni personalizzate."
+    "long": "M.I.A Markets produce analisi editoriali contestuali, non raccomandazioni personalizzate."
   },
   "glossary": {
     "title": "Glossario",
@@ -1705,7 +1705,7 @@
     "viewUpdated": "Vista aggiornata",
     "redirectLabel": "Domanda riformulata",
     "redirectAria": "Perché questa risposta è stata riformulata",
-    "redirectTooltip": "MIA Markets descrive le condizioni di mercato. Per le domande di azione o di consiglio, sta a te decidere secondo i tuoi criteri.",
+    "redirectTooltip": "M.I.A Markets descrive le condizioni di mercato. Per le domande di azione o di consiglio, sta a te decidere secondo i tuoi criteri.",
     "copy": "Copia",
     "copied": "Copiato",
     "copyAria": "Copia la risposta",
@@ -1736,7 +1736,7 @@
       "contact": "Contatto"
     },
     "disclaimer": "Dimostrazione in accesso anticipato · Lettura algoritmica educativa · Non costituisce un segnale di trading né una consulenza di investimento personalizzata · Le performance passate non sono indicative di quelle future · Il trading con leva comporta un elevato rischio di perdita.",
-    "copyright": "© {year} MIA Markets — tutti i diritti riservati."
+    "copyright": "© {year} M.I.A Markets — tutti i diritti riservati."
   },
   "auth": {
     "login": {
@@ -1848,7 +1848,7 @@
   },
   "billing": {
     "title": "Abbonamento",
-    "intro": "Gestisci il tuo abbonamento MIA Markets. I pagamenti sono elaborati in modo sicuro da Stripe — nessun dato della carta è memorizzato presso di noi.",
+    "intro": "Gestisci il tuo abbonamento M.I.A Markets. I pagamenti sono elaborati in modo sicuro da Stripe — nessun dato della carta è memorizzato presso di noi.",
     "loading": "Caricamento…",
     "checkoutSuccess": "Grazie! Il tuo pagamento è stato preso in carico. L’abbonamento si attiva non appena Stripe conferma.",
     "checkoutCancel": "Pagamento annullato. Puoi riprovare quando vuoi.",
@@ -1883,7 +1883,7 @@
     "manageHint": "Change plan, update your card, download invoices or cancel — all in the Stripe portal.",
     "reactivate": "Subscribe again",
     "activateTitle": "Activate your account",
-    "activateIntro": "Choose your plan to open MIA Markets. Your access turns on as soon as the payment is confirmed.",
+    "activateIntro": "Choose your plan to open M.I.A Markets. Your access turns on as soon as the payment is confirmed.",
     "reactivateTitle": "Reactivate your access",
     "monthlyName": "Monthly",
     "annualName": "Annual",
@@ -1919,7 +1919,7 @@
       "space": "Spazio di lavoro"
     },
     "header": {
-      "brandAria": "MIA Markets — spazio di lettura",
+      "brandAria": "M.I.A Markets — spazio di lettura",
       "navApp": "App — spazio di lettura",
       "navZones": "Zone — ciclo di vita delle zone rilevate",
       "navScanner": "Scanner di condizioni",
@@ -2260,11 +2260,11 @@
           },
           "historical-comparison": {
             "text": "A cosa somiglia storicamente?",
-            "reply": "Preferisco essere franco: i nostri test di affidabilità su dati passati non sono ancora terminati. Piuttosto che citarti cifre di performance non validate, non ti do alcun rendimento, tasso di successo né statistica finché la validazione non è conclusa. Ciò che posso dirti oggi: esistono 7 anni di dati storici puliti e un metodo di descrizione trasparente, dettagliato nella nostra pagina Metodologia. La trasparenza prima della promessa — è proprio ciò che distingue MIA Markets."
+            "reply": "Preferisco essere franco: i nostri test di affidabilità su dati passati non sono ancora terminati. Piuttosto che citarti cifre di performance non validate, non ti do alcun rendimento, tasso di successo né statistica finché la validazione non è conclusa. Ciò che posso dirti oggi: esistono 7 anni di dati storici puliti e un metodo di descrizione trasparente, dettagliato nella nostra pagina Metodologia. La trasparenza prima della promessa — è proprio ciò che distingue M.I.A Markets."
           },
           "buy-or-not": {
             "text": "Quindi devo comprare?",
-            "reply": "No, non do alcuna istruzione di acquisto, di vendita o di timing. Il mio ruolo è descrivere la struttura del mercato e aiutarti a comprenderla — non decidere al posto tuo. Ciò che posso descrivere: c’è una rottura rialzista confermata, un retest che tiene attorno a 2378-2381, un’invalidazione di questa struttura se il prezzo ripassa nettamente sotto 2378, e un evento macro tra 18 ore che può far muovere tutto. Ciò che solo tu puoi decidere: se la tua gestione del rischio, il tuo orizzonte e la tua allocazione giustificano una posizione. MIA Markets è uno strumento di comprensione, non un servizio di segnali."
+            "reply": "No, non do alcuna istruzione di acquisto, di vendita o di timing. Il mio ruolo è descrivere la struttura del mercato e aiutarti a comprenderla — non decidere al posto tuo. Ciò che posso descrivere: c’è una rottura rialzista confermata, un retest che tiene attorno a 2378-2381, un’invalidazione di questa struttura se il prezzo ripassa nettamente sotto 2378, e un evento macro tra 18 ore che può far muovere tutto. Ciò che solo tu puoi decidere: se la tua gestione del rischio, il tuo orizzonte e la tua allocazione giustificano una posizione. M.I.A Markets è uno strumento di comprensione, non un servizio di segnali."
           }
         }
       },
@@ -2329,7 +2329,7 @@
     "conditions": {
       "meta": {
         "title": "Condizioni d’uso",
-        "description": "Condizioni Generali d’Uso di MIA Markets — servizio d’informazione, postura educativa, avvertenza sui rischi."
+        "description": "Condizioni Generali d’Uso di M.I.A Markets — servizio d’informazione, postura educativa, avvertenza sui rischi."
       },
       "versionLabel": "Versione {version}",
       "loading": "Caricamento del documento…",
@@ -2338,7 +2338,7 @@
     "privacy": {
       "meta": {
         "title": "Informativa sulla privacy",
-        "description": "Informativa sulla privacy di MIA Markets — dati trattati, base giuridica, diritti GDPR / Legge 25."
+        "description": "Informativa sulla privacy di M.I.A Markets — dati trattati, base giuridica, diritti GDPR / Legge 25."
       },
       "title": "Informativa sulla privacy",
       "pendingNotice": "Versione preliminare strutturata. Il testo definitivo (rivisto legalmente) sarà pubblicato con il terminale legale. La struttura qui sotto descrive fedelmente i trattamenti in vigore.",
@@ -2349,7 +2349,7 @@
         },
         "donnees": {
           "title": "2. Dati trattati",
-          "body": "Nome utente, indirizzo e-mail, password (cifrata con hash, mai in chiaro), consensi (versione + marca temporale), dati di sessione. Nessun dato della carta bancaria è raccolto da MIA Markets."
+          "body": "Nome utente, indirizzo e-mail, password (cifrata con hash, mai in chiaro), consensi (versione + marca temporale), dati di sessione. Nessun dato della carta bancaria è raccolto da M.I.A Markets."
         },
         "bases": {
           "title": "3. Basi giuridiche",
@@ -2389,20 +2389,20 @@
     "abonnement": {
       "meta": {
         "title": "Abbonamento",
-        "description": "Gestisci il tuo abbonamento MIA Markets."
+        "description": "Gestisci il tuo abbonamento M.I.A Markets."
       },
       "loading": "Caricamento…"
     },
     "compte": {
       "meta": {
         "title": "Il mio account",
-        "description": "Gestisci il tuo account MIA Markets."
+        "description": "Gestisci il tuo account M.I.A Markets."
       }
     },
     "connexion": {
       "meta": {
         "title": "Accesso",
-        "description": "Accedi al tuo account MIA Markets."
+        "description": "Accedi al tuo account M.I.A Markets."
       },
       "title": "Accesso",
       "intro": "Accedi con il tuo nome utente o la tua e-mail."
@@ -2410,7 +2410,7 @@
     "inscription": {
       "meta": {
         "title": "Registrazione",
-        "description": "Crea un account MIA Markets — accesso anticipato, postura educativa."
+        "description": "Crea un account M.I.A Markets — accesso anticipato, postura educativa."
       },
       "title": "Crea un account",
       "intro": "Accesso anticipato riservato alle persone maggiorenni (18 anni o più).",
@@ -2439,14 +2439,14 @@
     "motDePasseOublieConfirmer": {
       "meta": {
         "title": "Reimposta password",
-        "description": "Scegli una nuova password per il tuo account MIA Markets."
+        "description": "Scegli una nuova password per il tuo account M.I.A Markets."
       },
       "title": "Reimposta password"
     },
     "motDePasseOublie": {
       "meta": {
         "title": "Password dimenticata",
-        "description": "Reimposta la password del tuo account MIA Markets."
+        "description": "Reimposta la password del tuo account M.I.A Markets."
       },
       "title": "Password dimenticata"
     },
@@ -2473,13 +2473,13 @@
   },
   "methodology": {
     "meta": {
-      "title": "Metodologia — Come MIA Markets descrive il mercato",
+      "title": "Metodologia — Come M.I.A Markets descrive il mercato",
       "description": "Documentazione tecnica trasparente: come il nostro indicatore rileva le strutture SMC (Order Block, Fair Value Gap, rotture), come descriviamo gli elementi mostrati, la nostra fonte di dati, e ciò che non facciamo."
     },
     "header": {
       "back": "Torna alla home",
       "badge": "Metodologia",
-      "title": "Come MIA Markets descrive il mercato",
+      "title": "Come M.I.A Markets descrive il mercato",
       "intro": "Questa pagina spiega, senza gergo, come il nostro indicatore individua le strutture di mercato e cosa significa ogni elemento mostrato. È una documentazione descrittiva: spieghiamo ciò che il motore<em> osserva</em>, mai ciò che <em>prevederebbe</em>.",
       "tocLabel": "Sommario"
     },
@@ -2493,9 +2493,9 @@
     },
     "engagement": {
       "title": "Il nostro impegno",
-      "intro": "MIA Markets è uno strumento di comprensione del mercato, non un sistema di trading. La nostra postura è descrittiva (livello «lettura aumentata»): descriviamo una struttura, non raccomandiamo mai un’azione.",
+      "intro": "M.I.A Markets è uno strumento di comprensione del mercato, non un sistema di trading. La nostra postura è descrittiva (livello «lettura aumentata»): descriviamo una struttura, non raccomandiamo mai un’azione.",
       "quote": "Nessun indicatore di mercato dovrebbe promettere guadagni. Noi non lo facciamo. Ciò che offriamo è una comprensione aumentata del mercato — non una performance finanziaria.",
-      "caption": "— Impegno pubblico MIA Markets, 27 maggio 2026"
+      "caption": "— Impegno pubblico M.I.A Markets, 27 maggio 2026"
     },
     "concepts": {
       "title": "Concetti di struttura (SMC)",
@@ -2576,16 +2576,16 @@
       "title": "Attribuzioni",
       "intro": "Il grafico a candele dello spazio di lettura si basa su una libreria open-source, accreditata qui come richiede la sua licenza.",
       "license": "<name>Lightweight Charts™</name> — © <tv>TradingView, Inc.</tv>, distribuito con licenza <link>Apache 2.0</link>. Libreria di visualizzazione di grafici usata per il rendering delle candele e delle zone.",
-      "note": "Da notare: si tratta di una libreria <em>di visualizzazione</em> soltanto. MIA Markets non utilizza alcuna API né alcun flusso di dati di mercato di TradingView — le quotazioni mostrate provengono dal nostro proprio motore."
+      "note": "Da notare: si tratta di una libreria <em>di visualizzazione</em> soltanto. M.I.A Markets non utilizza alcuna API né alcun flusso di dati di mercato di TradingView — le quotazioni mostrate provengono dal nostro proprio motore."
     }
   },
   "seo": {
-    "title": "MIA Markets — Indicatore di mercato conversazionale",
-    "titleTemplate": "%s · MIA Markets",
-    "description": "MIA Markets (Multi-asset Intelligence Assistant) — Lettura di mercato XAU/USD e FX, spiegata da un quant. Analisi contestuali con fonti, postura educativa.",
-    "ogTitle": "MIA Markets — Indicatore di mercato conversazionale",
+    "title": "M.I.A Markets — Indicatore di mercato conversazionale",
+    "titleTemplate": "%s · M.I.A Markets",
+    "description": "M.I.A Markets (Multi-asset Intelligence Assistant) — Lettura di mercato XAU/USD e FX, spiegata da un quant. Analisi contestuali con fonti, postura educativa.",
+    "ogTitle": "M.I.A Markets — Indicatore di mercato conversazionale",
     "ogDescription": "Letture algoritmiche contestuali per XAU/USD e il forex, spiegate da un chatbot (M.I.A Agent). Postura educativa.",
-    "twitterTitle": "MIA Markets — Indicatore di mercato conversazionale",
+    "twitterTitle": "M.I.A Markets — Indicatore di mercato conversazionale",
     "twitterDescription": "Comprendi il mercato — senza che ti si dica cosa fare. Letture algoritmiche + chatbot M.I.A Agent."
   },
   "zones": {
@@ -2817,7 +2817,7 @@
   },
   "calendar": {
     "meta": {
-      "title": "Pubblicazioni programmate — Calendario di volatilità | MIA Markets",
+      "title": "Pubblicazioni programmate — Calendario di volatilità | M.I.A Markets",
       "description": "Il calendario delle pubblicazioni economiche ufficiali il cui orario è noto in anticipo. MIA annuncia momenti, mai direzioni."
     },
     "title": "Pubblicazioni programmate",

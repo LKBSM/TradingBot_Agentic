@@ -5,13 +5,13 @@ import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { User } from 'lucide-react';
 import { AppHeader } from '@/components/app/AppHeader';
-import { BrandMark } from '@/components/BrandMark';
+import { MiaLogo } from '@/components/brand/MiaLogo';
 import { LocaleToggle } from '@/components/LocaleToggle';
 import { MobileMenu } from '@/components/MobileMenu';
 import { ThemeMenu } from '@/components/theme/ThemeMenu';
 import { useAuth } from '@/lib/auth/store';
 import { useLocalizedHref } from '@/lib/i18n/href';
-import { BRAND_NAME, BRAND_BASELINE } from '@/lib/brand';
+import { BRAND_BASELINE } from '@/lib/brand';
 import { SUPPORTED_LOCALES } from '@/i18n';
 
 // Anchors keep their hrefs in code; the visible label is pulled from the
@@ -110,8 +110,7 @@ export function Nav() {
           aria-label={t('brandHomeAria')}
           title={BRAND_BASELINE}
         >
-          <BrandMark size={28} />
-          <span>{BRAND_NAME}</span>
+          <MiaLogo variant="horizontal" height={26} decorative />
         </Link>
 
         <nav aria-label={t('sectionsAria')} className="hidden sm:block">

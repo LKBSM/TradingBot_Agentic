@@ -51,6 +51,12 @@ def _send_email(to_email: str, subject: str, body: str) -> bool:
     )
     msg["To"] = to_email
     msg.set_content(body)
+    try:
+        from src.api.email_branding import attach_branded_html
+
+        attach_branded_html(msg, body)
+    except Exception:  # pragma: no cover - HTML is a best-effort enhancement
+        logger.debug("branded HTML alternative skipped", exc_info=True)
     port = int(os.environ.get("SMTP_PORT", "587"))
     user = os.environ.get("SMTP_USER")
     password = os.environ.get("SMTP_PASSWORD")
@@ -64,9 +70,9 @@ def _send_email(to_email: str, subject: str, body: str) -> bool:
 
 def _notice_body(period_end: float) -> tuple[str, str]:
     when = time.strftime("%Y-%m-%d", time.gmtime(period_end))
-    subject = "Renouvellement de votre abonnement MIA Markets"
+    subject = "Renouvellement de votre abonnement M.I.A Markets"
     body = (
-        "Votre abonnement annuel MIA Markets se renouvellera automatiquement le "
+        "Votre abonnement annuel M.I.A Markets se renouvellera automatiquement le "
         f"{when}.\n\n"
         "Votre abonnement est sans engagement : vous pouvez le résilier à tout "
         "moment, en un clic, depuis votre page d'abonnement — aucun prélèvement "

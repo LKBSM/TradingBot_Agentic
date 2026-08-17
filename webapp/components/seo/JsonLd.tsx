@@ -36,13 +36,13 @@ const SITE_URL =
 export const softwareApplicationLd = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
-  name: 'MIA Markets',
+  name: 'M.I.A Markets',
   alternateName: 'Multi-asset Intelligence Assistant for Markets',
   url: SITE_URL,
   applicationCategory: 'FinanceApplication',
   operatingSystem: 'Web · iOS · Android (PWA)',
   description:
-    'MIA Markets est un indicateur de marché conversationnel pour XAU/USD et le forex. Lectures algorithmiques contextuelles, posture éducative, chatbot M.I.A Agent.',
+    'M.I.A Markets est un indicateur de marché conversationnel pour XAU/USD et le forex. Lectures algorithmiques contextuelles, posture éducative, chatbot M.I.A Agent.',
   inLanguage: 'fr-FR',
   isAccessibleForFree: false,
   // Amounts come from the single pricing source (config/pricing.json) — never
@@ -66,7 +66,8 @@ export const softwareApplicationLd = {
   ],
   publisher: {
     '@type': 'Organization',
-    name: 'MIA Markets',
+    name: 'M.I.A Markets',
     url: SITE_URL,
+    logo: `${SITE_URL}/icon.svg`,
   },
 };

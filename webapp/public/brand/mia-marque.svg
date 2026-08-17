@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 100" width="120" height="100" role="img" aria-label="M.I.A Markets">
+  <title>M.I.A Markets</title>
+  <rect x="0" y="46" width="29" height="12" fill="#2962FF"/>
+  <path d="M46,14 L78,82 L14,82 Z" fill="#2962FF"/>
+  <polygon points="60,44 62.5,49 118,26 118,12" fill="#2962FF" opacity="0.55"/>
+  <polygon points="63,50 65,55 118,58 118,44" fill="#2962FF"/>
+  <polygon points="66,56 68,61 118,90 118,76" fill="#2962FF" opacity="0.55"/>
+</svg>

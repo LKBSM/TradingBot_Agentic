@@ -1,18 +1,17 @@
 import { cn } from '@/lib/utils';
-import { MiaAgentLogo } from './MiaAgentLogo';
+import { MiaLogo } from '@/components/brand/MiaLogo';
 
 /**
- * M.I.A Agent avatar — the candlestick logo inside a soft gold-ringed disc.
+ * M.I.A Agent avatar — the compact prism logo inside a soft brand-tinted disc.
  * One shared component so the header, the message rows and the empty-state hero
  * all read identically (brand consistency). Purely presentational.
  *
- * The gold tint comes from the `--sentinel-warn` family (the MIA accent); kept
- * as an inline radial gradient because a multi-stop gradient is more legible
- * here than a long arbitrary Tailwind value.
+ * The tint is derived from the brand mark colour (`--brand-mark`) so the disc
+ * follows the active light/dark theme instead of a hard-coded accent.
  */
-const RING = 'hsl(35 92% 55% / 0.35)';
+const RING = 'color-mix(in srgb, var(--brand-mark) 35%, transparent)';
 const FILL =
-  'radial-gradient(circle at 30% 30%, hsl(35 92% 60% / 0.18), hsl(var(--card)))';
+  'radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--brand-mark) 16%, transparent), hsl(var(--card)))';
 
 interface AgentAvatarProps {
   size?: 'sm' | 'md' | 'lg';
@@ -40,7 +39,7 @@ export function AgentAvatar({ size = 'md', className, presence = false }: AgentA
         className={cn('flex items-center justify-center border', box, className)}
         style={{ background: FILL, borderColor: RING }}
       >
-        <MiaAgentLogo className={glyph} />
+        <MiaLogo variant="compact" decorative className={glyph} />
       </div>
       {presence && (
         <span

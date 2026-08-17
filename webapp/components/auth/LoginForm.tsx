@@ -8,6 +8,7 @@ import { AuthError } from '@/lib/auth/api-client';
 import { resolvePostAuthDestination } from '@/lib/auth/post-auth';
 import { useAuth } from '@/lib/auth/store';
 import { useLocalizedHref } from '@/lib/i18n/href';
+import { MiaLogo } from '@/components/brand/MiaLogo';
 import { BRAND_NAME } from '@/lib/brand';
 
 /** Reasons the Google callback can bounce back with (?error=google&reason=…). */
@@ -101,7 +102,7 @@ export function LoginForm() {
     <div className="login-card">
       <div className="brandline">
         <div className="mark" aria-hidden="true">
-          M
+          <MiaLogo variant="compact" decorative height={18} />
         </div>
         <b>{BRAND_NAME}</b>
         <span className="bl-sp" />
