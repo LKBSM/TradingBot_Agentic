@@ -31,17 +31,17 @@ export function AddConditionPicker({
         type="button"
         data-testid="open-palette"
         onClick={() => setOpen(true)}
-        className="flex h-full min-h-[92px] w-full flex-col items-start justify-center rounded-xl border border-dashed border-border/70 bg-background/40 p-3 text-left text-muted-foreground hover:border-primary/50 hover:text-foreground"
+        className="flex h-full min-h-[92px] w-full flex-col items-start justify-center rounded-xl border border-dashed border-border bg-muted/40 p-3 text-left text-muted-foreground hover:border-primary/50 hover:text-foreground"
       >
-        <span className="font-mono text-[9px] uppercase tracking-wider">{t('add.tag')}</span>
+        <span className="fs-legal uppercase tracking-wider">{t('add.tag')}</span>
         <span className="text-sm font-medium">{t('add.cta')}</span>
-        <span className="font-mono text-[10px]">{t('add.hint')}</span>
+        <span className="fs-legal">{t('add.hint', { count: CONDITION_PALETTE.length })}</span>
       </button>
     );
   }
 
   return (
-    <div className="rounded-xl border border-border/70 bg-card/60 p-3">
+    <div className="rounded-xl border border-border bg-card p-3">
       <div className="mb-2 flex items-center justify-between">
         <span className="text-sm font-medium text-foreground">{t('add.title')}</span>
         <button
@@ -55,7 +55,7 @@ export function AddConditionPicker({
       <div className="space-y-3">
         {groups.map(({ family, entries }) => (
           <div key={family}>
-            <div className="mb-1 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
+            <div className="mb-1 fs-legal uppercase tracking-wider text-muted-foreground">
               {familyLabel(family)}
             </div>
             <div className="flex flex-wrap gap-1">

@@ -3,6 +3,7 @@ import { useTranslations } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import { Check } from 'lucide-react';
 import { RegisterForm } from '@/components/auth/RegisterForm';
+import { AuthBrandHeader } from '@/components/auth/AuthBrandHeader';
 import { PRICING } from '@/lib/pricing.generated';
 
 export async function generateMetadata({
@@ -44,6 +45,7 @@ export default function RegisterPage() {
 
   return (
     <div className="container-prose py-12 sm:py-16">
+      <AuthBrandHeader />
       <div className="grid gap-10 lg:grid-cols-[1.1fr_1fr] lg:gap-14">
         {/* Left — what you're buying, how much, and what happens next. */}
         <section className="space-y-8">

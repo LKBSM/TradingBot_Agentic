@@ -31,6 +31,7 @@ from src.api.account_store import AccountError, AccountStore
 from src.api.auth_throttle import AuthThrottle, client_ip
 from src.api.middleware.beta_auth import beta_lockdown_enabled
 from src.api.public_urls import app_public_url
+from src.api.email_branding import attach_branded_html
 from src.api.routes.legal import LAST_UPDATED as LEGAL_VERSION
 from src.api.session_auth import (
     clear_session_cookie,
@@ -569,17 +570,19 @@ def _send_reset_email(to_email: str, reset_url: str) -> bool:
     from email.message import EmailMessage
 
     msg = EmailMessage()
-    msg["Subject"] = "Réinitialisation de votre mot de passe MIA Markets"
+    msg["Subject"] = "Réinitialisation de votre mot de passe M.I.A Markets"
     msg["From"] = os.environ.get(
         "SMTP_FROM", os.environ.get("SMTP_USER", "no-reply@mia.markets")
     )
     msg["To"] = to_email
-    msg.set_content(
-        "Vous avez demandé la réinitialisation de votre mot de passe MIA Markets.\n\n"
+    text_body = (
+        "Vous avez demandé la réinitialisation de votre mot de passe M.I.A Markets.\n\n"
         f"Ouvrez ce lien pour choisir un nouveau mot de passe :\n{reset_url}\n\n"
         "Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail — "
         "votre mot de passe reste inchangé. Le lien expire après un court délai."
     )
+    msg.set_content(text_body)
+    attach_branded_html(msg, text_body)
     port = int(os.environ.get("SMTP_PORT", "587"))
     user = os.environ.get("SMTP_USER")
     password = os.environ.get("SMTP_PASSWORD")
@@ -605,13 +608,13 @@ def _send_verification_email(to_email: str, verify_url: str, code: str) -> bool:
     from email.message import EmailMessage
 
     msg = EmailMessage()
-    msg["Subject"] = "Votre code de confirmation — MIA Markets"
+    msg["Subject"] = "Votre code de confirmation — M.I.A Markets"
     msg["From"] = os.environ.get(
         "SMTP_FROM", os.environ.get("SMTP_USER", "no-reply@mia.markets")
     )
     msg["To"] = to_email
-    msg.set_content(
-        "Bienvenue sur MIA Markets.\n\n"
+    text_body = (
+        "Bienvenue sur M.I.A Markets.\n\n"
         f"Votre code de confirmation est : {code}\n\n"
         "Saisissez-le sur la page de confirmation pour activer votre accès.\n\n"
         "Vous pouvez aussi confirmer directement via ce lien :\n"
@@ -619,6 +622,8 @@ def _send_verification_email(to_email: str, verify_url: str, code: str) -> bool:
         "Si vous n'êtes pas à l'origine de cette inscription, ignorez cet e-mail. "
         "Le code et le lien expirent après 24 heures."
     )
+    msg.set_content(text_body)
+    attach_branded_html(msg, text_body)
     port = int(os.environ.get("SMTP_PORT", "587"))
     user = os.environ.get("SMTP_USER")
     password = os.environ.get("SMTP_PASSWORD")

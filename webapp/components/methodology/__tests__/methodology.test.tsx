@@ -61,7 +61,7 @@ describe('MethodologyPage (intégration)', () => {
     expect(
       screen.getByRole('heading', {
         level: 1,
-        name: /Comment MIA Markets décrit le marché/i,
+        name: /Comment M\.I\.A Markets décrit le marché/i,
       }),
     ).toBeInTheDocument();
     // Section headings (substring match — titles may carry suffixes like "(SMC)").

@@ -100,8 +100,8 @@ describe('Nav — /app product header', () => {
     expect(screen.queryByText('Tarifs')).not.toBeInTheDocument();
     // Brand + utility controls present. Target the brand wordmark by name —
     // both the wordmark and the "App" quick link carry an aria-label ending in
-    // "espace de lecture", so match on "MIA Markets" to stay unambiguous.
-    expect(screen.getByRole('link', { name: /MIA Markets/i })).toBeInTheDocument();
+    // "espace de lecture", so match on "M.I.A Markets" to stay unambiguous.
+    expect(screen.getByRole('link', { name: /M\.I\.A Markets/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /menu du compte/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /aide/i })).toBeInTheDocument();
   });

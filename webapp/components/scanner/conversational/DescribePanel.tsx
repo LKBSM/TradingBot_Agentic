@@ -4,6 +4,7 @@ import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { CONDITION_PALETTE } from '@/lib/conditions/palette';
 import { useSpeechDictation, type DictationError } from '@/lib/scanner-chat/use-speech-dictation';
 
 const MAX_TEXT = 500;
@@ -59,11 +60,11 @@ export function DescribePanel({
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">{t('describe.title')}</h1>
-        <p className="mt-1 text-muted-foreground">{t('describe.subtitle')}</p>
+        <h1 className="fs-title font-semibold tracking-tight text-foreground">{t('describe.title')}</h1>
+        <p className="mt-1 fs-secondary text-muted-foreground">{t('describe.subtitle')}</p>
       </div>
 
-      <div className="rounded-2xl border border-border/70 bg-card/50 p-4 sm:p-5">
+      <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
         <div className="mb-3 flex items-center gap-2">
           <span
             aria-hidden
@@ -72,15 +73,15 @@ export function DescribePanel({
             M
           </span>
           <div className="leading-tight">
-            <div className="text-sm font-semibold text-foreground">{t('describe.miaTitle')}</div>
-            <div className="font-mono text-[10px] text-muted-foreground">{t('describe.miaSub')}</div>
+            <div className="fs-secondary font-semibold text-foreground">{t('describe.miaTitle')}</div>
+            <div data-testid="mia-sub" className="fs-legal text-muted-foreground">{t('describe.miaSub')}</div>
           </div>
         </div>
 
         <div
           className={cn(
-            'flex items-start gap-2 rounded-xl border bg-background/70 p-3 transition',
-            dictation.listening ? 'border-primary ring-2 ring-primary/20' : 'border-border/70',
+            'flex items-start gap-2 rounded-xl border bg-muted p-3 transition',
+            dictation.listening ? 'border-primary ring-2 ring-primary/20' : 'border-border',
           )}
         >
           <textarea
@@ -90,7 +91,7 @@ export function DescribePanel({
             onChange={(e) => onTextChange(e.target.value)}
             placeholder={t('describe.placeholder')}
             aria-label={t('describe.title')}
-            className="min-h-[64px] flex-1 resize-none bg-transparent text-[15px] leading-relaxed text-foreground outline-none placeholder:text-muted-foreground/70"
+            className="min-h-[64px] flex-1 resize-none bg-transparent fs-body leading-relaxed text-foreground outline-none placeholder:text-muted-foreground/70"
           />
           {dictation.supported && (
             <button
@@ -114,22 +115,19 @@ export function DescribePanel({
 
         {/* Live listening + transcript feedback — NEVER hidden. */}
         {dictation.listening && (
-          <p data-testid="dictation-listening" className="mt-2 font-mono text-[11px] text-primary">
+          <p data-testid="dictation-listening" className="mt-2 fs-legal text-primary">
             {t('dictation.listening')}
             {dictation.interim ? <span className="text-muted-foreground"> — “{dictation.interim}”</span> : null}
           </p>
         )}
         {dictation.error && (
-          <p data-testid="dictation-error" role="alert" className="mt-2 text-[12px] text-amber-600">
+          <p data-testid="dictation-error" role="alert" className="mt-2 fs-label text-amber-600">
             {dictationErrorMessage(dictation.error, t)}
           </p>
         )}
-        {dictation.supported && (
-          <p className="mt-2 font-mono text-[10px] leading-relaxed text-muted-foreground/80">
-            {t('dictation.privacy')}
-          </p>
-        )}
 
+        {/* The action is the point of this page — buttons first, then the field's
+            small caption. */}
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <Button data-testid="translate-button" disabled={!canTranslate} onClick={onTranslate}>
             {isTranslating ? t('describe.translating') : t('describe.translate')}
@@ -137,18 +135,30 @@ export function DescribePanel({
           <Button variant="outline" onClick={onOpenStrategies}>
             {t('describe.myStrategies')}
           </Button>
-          <span className="ml-auto font-mono text-[10.5px] text-muted-foreground">{t('describe.scope')}</span>
         </div>
 
+        {/* The palette scope — attached under the action, not floating. Count is
+            derived from the real palette, never written in. */}
+        <p data-testid="scope-note" className="mt-2 fs-legal text-muted-foreground">
+          {t('describe.scope', { count: CONDITION_PALETTE.length })}
+        </p>
+
+        {/* Browser-transcription notice — legal, readable, no longer dominant. */}
+        {dictation.supported && (
+          <p data-testid="transcription-note" className="mt-1 fs-legal leading-relaxed text-muted-foreground/80">
+            {t('dictation.privacy')}
+          </p>
+        )}
+
         {inlineError && (
-          <p data-testid="translate-inline-error" role="alert" className="mt-2 text-[12px] text-destructive">
+          <p data-testid="translate-inline-error" role="alert" className="mt-2 fs-label text-destructive">
             {inlineError}
           </p>
         )}
       </div>
 
       <div>
-        <div className="mb-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+        <div data-testid="examples-label" className="mb-2 fs-label uppercase tracking-widest text-muted-foreground">
           {t('describe.examplesLabel')}
         </div>
         <div className="grid gap-2 sm:grid-cols-2">
@@ -158,7 +168,7 @@ export function DescribePanel({
               type="button"
               data-testid="example-chip"
               onClick={() => onTextChange(example)}
-              className="rounded-lg border border-border/60 bg-background/50 p-2.5 text-left text-[13px] text-muted-foreground transition hover:border-primary/50 hover:text-foreground"
+              className="rounded-lg border border-border bg-muted/50 p-2.5 text-left fs-secondary text-muted-foreground transition hover:border-primary/50 hover:text-foreground"
             >
               {example}
             </button>
@@ -166,7 +176,7 @@ export function DescribePanel({
         </div>
       </div>
 
-      <p className="text-[12.5px] leading-relaxed text-muted-foreground">{t('describe.disclaimer')}</p>
+      <p className="fs-legal leading-relaxed text-muted-foreground">{t('describe.disclaimer')}</p>
     </div>
   );
 }

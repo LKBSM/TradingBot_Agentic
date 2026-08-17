@@ -328,7 +328,7 @@
   margin-bottom: 8px;
 }
 .app-shell .cond {
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 500;
   padding: 8px 13px;
   border-radius: 20px;
@@ -353,7 +353,7 @@
   font-weight: 700;
 }
 .app-shell .scannote {
-  font-size: 11px;
+  font-size: var(--fs-legal);
   color: var(--faint);
   display: flex;
   align-items: center;
@@ -392,12 +392,12 @@
   margin-bottom: 7px;
 }
 .app-shell .combo .t1 .nm {
-  font-size: 13px;
+  font-size: var(--fs-secondary);
   font-weight: 600;
 }
 .app-shell .combo .t1 .tf2 {
   font-family: var(--font-mono), 'JetBrains Mono', monospace;
-  font-size: 10px;
+  font-size: var(--fs-legal);
   color: var(--faint);
 }
 /* Block label — the « Ce qui correspond / à l'encontre / Contexte » heads.
@@ -405,7 +405,7 @@
    them the biggest text on the card and inverting the hierarchy. They are
    étiquettes: small, uppercase, dim — the market name (.nm) stays primary. */
 .app-shell .combo .blk-lbl {
-  font-size: 9px;
+  font-size: var(--fs-legal);
   font-weight: 600;
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -416,7 +416,7 @@
   margin-top: 2px;
 }
 .app-shell .combo .blk-empty {
-  font-size: 11.5px;
+  font-size: var(--fs-legal);
   color: var(--faint);
   font-style: italic;
   padding: 1px 0 2px;
@@ -425,7 +425,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: var(--fs-label);
   padding: 1.5px 0;
 }
 .app-shell .cl .mk2 {
@@ -452,7 +452,7 @@
   color: var(--faint);
 }
 .app-shell .ctx2 {
-  font-size: 11px;
+  font-size: var(--fs-legal);
   color: var(--dim);
   background: var(--panel-2);
   border-radius: var(--r-s);
@@ -465,7 +465,7 @@
   color: var(--txt);
 }
 .app-shell .natag {
-  font-size: 11px;
+  font-size: var(--fs-legal);
   color: var(--faint);
   font-style: italic;
   padding: 4px 0;

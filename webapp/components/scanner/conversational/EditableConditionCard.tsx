@@ -37,18 +37,18 @@ export function EditableConditionCard({
     <div
       data-testid="translated-card"
       data-type={condition.type}
-      className="relative rounded-xl border border-primary/40 bg-card/60 p-3"
+      className="relative rounded-xl border border-primary/40 bg-card p-3"
     >
       <button
         type="button"
         aria-label={t('card.remove')}
         title={t('card.remove')}
         onClick={() => onRemove(index)}
-        className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-md border border-border/60 text-muted-foreground hover:border-destructive hover:text-destructive"
+        className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-md border border-border fs-secondary leading-none text-muted-foreground hover:border-destructive hover:text-destructive"
       >
         ×
       </button>
-      <div className="mb-1 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
+      <div className="mb-1 fs-legal uppercase tracking-wider text-muted-foreground">
         {familyLabel(entry.family)}
       </div>
       <div className="mb-2 pr-6 text-sm font-medium text-foreground">
@@ -72,10 +72,10 @@ export function EditableConditionCard({
                       aria-pressed={active}
                       onClick={() => onChange(index, { ...condition, [name]: value })}
                       className={cn(
-                        'rounded-md border px-2 py-1 font-mono text-[10px] transition',
+                        'rounded-md border px-2 py-1 fs-legal transition',
                         active
                           ? 'border-primary/60 bg-primary/15 text-primary'
-                          : 'border-border/60 bg-background/60 text-muted-foreground hover:border-border',
+                          : 'border-border bg-muted text-muted-foreground hover:border-border',
                       )}
                     >
                       {optionLabel(name, value)}
@@ -84,7 +84,7 @@ export function EditableConditionCard({
                 })}
               </div>
               {assumed && (
-                <p className="mt-1 font-mono text-[9px] text-amber-600">{t('card.assumedInline')}</p>
+                <p className="mt-1 fs-legal text-amber-600">{t('card.assumedInline')}</p>
               )}
             </div>
           );

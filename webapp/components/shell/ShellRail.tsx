@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { CalendarClock, CandlestickChart, Layers, Radar, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { MiaLogo } from '@/components/brand/MiaLogo';
 import { useLocalizedHref } from '@/lib/i18n/href';
 import { resolveComboFromQuery } from '@/lib/conditions/app-link';
 import { formatInstrument, formatTimeframe } from '@/lib/market-reading/formatters';
@@ -102,6 +103,10 @@ export function ShellRail({ activeSpace }: { activeSpace: string }) {
 
   return (
     <aside className="rail" aria-label={t('app.sidebar.navAria')}>
+      {/* Connected-surface brand — the horizontal lockup, home link (BRD-2). */}
+      <Link href={lh('/')} className="rail-brand" aria-label={t('nav.brandHomeAria')}>
+        <MiaLogo variant="horizontal" height={22} decorative />
+      </Link>
       <SearchField
         value={query}
         onChange={(e) => setQuery(e.target.value)}
@@ -180,7 +185,7 @@ export function ShellRail({ activeSpace }: { activeSpace: string }) {
         />
         <p
           style={{
-            fontSize: '8.5px',
+            fontSize: 'var(--fs-legal)',
             color: 'var(--faint)',
             lineHeight: 1.5,
             padding: '8px 3px 0',

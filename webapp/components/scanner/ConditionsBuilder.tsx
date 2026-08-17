@@ -206,7 +206,7 @@ export function ConditionsBuilder({
     <div className="space-y-4 pb-24">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">
+          <CardTitle className="fs-section">
             {mode === 'onboarding' ? t('builder.composeTitle') : t('builder.editTitle')}
           </CardTitle>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -389,7 +389,7 @@ export function ConditionsBuilder({
           ) : (
             <div className="flex flex-wrap items-baseline gap-2">
               <span
-                className="text-2xl font-bold leading-none text-foreground"
+                className="fs-title font-semibold leading-none text-foreground"
                 data-testid="live-combo-count"
               >
                 {live.status === 'ready' ? live.count : '…'}

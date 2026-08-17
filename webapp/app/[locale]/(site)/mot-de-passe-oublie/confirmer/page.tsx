@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { useTranslations } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import { ResetPasswordForm } from '@/components/auth/ResetPasswordForm';
+import { AuthBrandHeader } from '@/components/auth/AuthBrandHeader';
 
 export async function generateMetadata({
   params,
@@ -22,6 +23,7 @@ export default function ResetPasswordPage() {
   return (
     <div className="container-prose flex justify-center py-12 sm:py-16">
       <div className="w-full max-w-md space-y-6">
+        <AuthBrandHeader />
         <header className="space-y-1.5 text-center">
           <h1 className="text-2xl font-semibold tracking-tight">
             {t('motDePasseOublieConfirmer.title')}

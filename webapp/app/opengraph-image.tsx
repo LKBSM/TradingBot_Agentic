@@ -1,4 +1,5 @@
 import { ImageResponse } from 'next/og';
+import { PRISM_RECT, PRISM_TRIANGLE, PRISM_BEAMS } from '@/lib/brand/prism-geometry';
 
 /**
  * Open Graph card — 1200×630 PNG generated at build time via next/og.
@@ -10,7 +11,7 @@ import { ImageResponse } from 'next/og';
  * the wording must be compliance-safe (no "signal", no "gain", no promise).
  */
 export const runtime = 'nodejs';
-export const alt = 'MIA Markets — Indicateur de marché conversationnel';
+export const alt = 'M.I.A Markets — Indicateur de marché conversationnel';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
@@ -30,26 +31,18 @@ export default function OpenGraphImage() {
           fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <div
-            style={{
-              width: 56,
-              height: 56,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: 12,
-              background: 'linear-gradient(135deg, #FBBF24 0%, #B45309 100%)',
-              fontWeight: 800,
-              fontSize: 32,
-              color: '#fff',
-            }}
-          >
-            M
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+          {/* Prism mark (dark-background tone #7DA3FF) + wordmark. */}
+          <svg width="72" height="60" viewBox="0 0 120 100" fill="none">
+            <rect {...PRISM_RECT} fill="#7DA3FF" />
+            <path d={PRISM_TRIANGLE} fill="#7DA3FF" />
+            {PRISM_BEAMS.map((b) => (
+              <polygon key={b.points} points={b.points} fill="#7DA3FF" opacity={b.opacity} />
+            ))}
+          </svg>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: 22, fontWeight: 600, letterSpacing: -0.5 }}>
-              MIA Markets
+            <span style={{ fontSize: 30, fontWeight: 600, letterSpacing: -0.5 }}>
+              M.I.A Markets
             </span>
             <span
               style={{

@@ -13,6 +13,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { LocaleToggle } from '@/components/LocaleToggle';
+import { MiaLogo } from '@/components/brand/MiaLogo';
 import { useAuth } from '@/lib/auth/store';
 import { BRAND_NAME } from '@/lib/brand';
 
@@ -69,7 +70,10 @@ export function MobileMenu({ variant }: { variant: 'marketing' | 'app' }) {
         className="w-72 gap-0 pb-[env(safe-area-inset-bottom)]"
       >
         <SheetHeader className="text-left">
-          <SheetTitle>{BRAND_NAME}</SheetTitle>
+          <SheetTitle className="flex items-center gap-2">
+            <MiaLogo variant="mark" decorative height={20} />
+            {BRAND_NAME}
+          </SheetTitle>
         </SheetHeader>
 
         <nav aria-label="Navigation" className="mt-6 flex flex-col gap-1">
