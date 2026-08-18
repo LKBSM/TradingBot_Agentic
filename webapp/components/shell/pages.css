@@ -774,47 +774,151 @@
 .app-shell .zpxr .v.faint {
   color: var(--faint);
 }
+/* VZ-3 — the proximity gauge, rebuilt for legibility. Five NAMED parts, stacked
+   in three non-overlapping label rows so nothing ever superposes:
+     row 1 (top)    · the price marker's value  (« prix 4 417,99 »)
+     row 2 (middle) · the track/piste + the band « la zone » + the bracket écart
+     row 3 (bottom) · the zone's own edge prices, under the band ends
+   NO direction colour anywhere: the price marker is var(--txt) (main text), the
+   band is the neutral accent. The window is fixed (zone ± half its height). */
 .app-shell .zgauge {
   position: relative;
-  height: 20px;
-  margin-top: 6px;
+  height: 60px;
+  margin-top: 8px;
+  container-type: inline-size;
+}
+/* row 2 — the track: the visible price window */
+.app-shell .zgauge .gtrack {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 13px;
+  height: 16px;
   border-radius: 6px;
   background: var(--panel);
   border: 1px solid var(--line);
-  overflow: hidden;
 }
+/* the band = « la zone » (neutral accent tint, never a direction colour) */
 .app-shell .zgauge .gband {
   position: absolute;
   top: 0;
   bottom: 0;
-  background: color-mix(in srgb, var(--acc) 16%, transparent);
+  background: color-mix(in srgb, var(--acc) 15%, transparent);
   border-left: 1px solid color-mix(in srgb, var(--acc) 55%, transparent);
   border-right: 1px solid color-mix(in srgb, var(--acc) 55%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
 }
+.app-shell .zgauge .gband-lbl {
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dim);
+  white-space: nowrap;
+  pointer-events: none;
+}
+/* the price marker — a neutral vertical line, named « prix » with its value */
 .app-shell .zgauge .gpx {
   position: absolute;
-  top: -2px;
-  bottom: -2px;
-  width: 2px;
-  background: var(--bull);
-  box-shadow: 0 0 6px color-mix(in srgb, var(--bull) 70%, transparent);
+  top: 11px;
+  height: 20px;
+  width: 0;
+  border-left: 2px solid var(--txt);
+  transform: translateX(-1px);
 }
-/* The scale: the extent prices anchoring each end so the band and the price
-   marker read against real numbers (VZ-2 defect 7). */
-.app-shell .zgauge .glab {
+.app-shell .zgauge .gpx.out {
+  border-left-style: dashed;
+  opacity: 0.9;
+}
+.app-shell .zgauge .gpx-lbl {
   position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
+  bottom: calc(100% + 1px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  white-space: nowrap;
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--txt);
+}
+.app-shell .zgauge .gpx-lbl b {
+  font-family: var(--font-sans), 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 8px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.app-shell .zgauge .gpx-lbl .garr {
+  font-style: normal;
+  color: var(--dim);
+}
+/* out-of-window: the marker is pinned to an edge and SAID to be off-scale, so
+   the gauge never lies by squashing the band. Its label hugs the edge. */
+.app-shell .zgauge .gpx-out {
+  position: absolute;
+  top: calc(100% + 1px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-family: var(--font-sans), 'Inter', sans-serif;
+  font-size: 7.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.app-shell .zgauge.gs-outAbove .gpx-lbl,
+.app-shell .zgauge.gs-outAbove .gpx-out {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+.app-shell .zgauge.gs-outBelow .gpx-lbl,
+.app-shell .zgauge.gs-outBelow .gpx-out {
+  left: 0;
+  transform: none;
+}
+/* the measurement bracket — from the reference edge to the price marker, in
+   row 2's lower band, carrying the écart (same string as the distance line) */
+.app-shell .zgauge .gbrk {
+  position: absolute;
+  top: 31px;
+  height: 4px;
+  border: 1px solid var(--line-3);
+  border-top: none;
+}
+.app-shell .zgauge .gbrk-lbl {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 8.5px;
+  color: var(--dim);
+}
+/* row 3 — the zone's own edge prices, centred under the band ends */
+.app-shell .zgauge .gedge {
+  position: absolute;
+  top: 49px;
+  transform: translateX(-50%);
+  white-space: nowrap;
   font-family: var(--font-mono), 'JetBrains Mono', monospace;
   font-size: 8px;
   color: var(--faint);
   pointer-events: none;
 }
-.app-shell .zgauge .glab.lo {
-  left: 6px;
-}
-.app-shell .zgauge .glab.hi {
-  right: 6px;
+/* When the card is very narrow, the zone edges efface FIRST — the price marker
+   and the écart always stay (mission §ÉTROIT). */
+@container (max-width: 250px) {
+  .app-shell .zgauge .gedge {
+    display: none;
+  }
 }
 
 /* Confluence */
