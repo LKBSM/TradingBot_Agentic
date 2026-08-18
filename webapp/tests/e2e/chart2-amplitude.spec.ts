@@ -12,9 +12,9 @@ import { dismissCookieBanner } from './utils';
  * on the pointer type it actually targets.
  *
  * Asserts:
- *   · default view renders + the discreet control toolbar exists;
- *   · controls appear on hover (desktop) / stay visible (mobile), and are
- *     keyboard-reachable (focus-within reveals them);
+ *   · default view renders + the overlay control toolbar has been REMOVED
+ *     (fix/remove-chart-toolbar — no group, no zoom/recent/default/liquidity buttons);
+ *   · the chart stays keyboard-driven (+/− ←/→ Début 0) even without the visible bar;
  *   · dezooming loads older history on demand (a `before=` request) WITHOUT the
  *     candles disappearing, then honestly says « début des données » at the real
  *     limit and « hors fenêtre d'analyse » past the analysed window;
@@ -68,14 +68,6 @@ async function gotoApp(page: Page, w: number, h: number) {
 }
 
 const isMobileProject = (info: TestInfo) => info.project.name.includes('mobile');
-
-/** Hover the plot via raw mouse move (locator.hover() times out on the stacked
- *  lightweight-charts canvases — they "intercept pointer events"). */
-async function hoverChart(page: Page) {
-  const box = await page.locator('canvas').first().boundingBox();
-  if (!box) throw new Error('no chart canvas');
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-}
 
 /** Drive the chart to the oldest edge from the keyboard (deterministic on every
  *  viewport — no canvas wheel/hover). Dezoom a little, then pan left repeatedly:
@@ -131,38 +123,20 @@ for (const vp of VIEWPORTS) {
       );
     });
 
-    const toolbar = (page: Page) => page.getByRole('group', { name: /Contrôles du graphique/i });
-    const zoomOutBtn = (page: Page) => page.getByRole('button', { name: /Zoom arrière/i });
-
-    test('default view renders with the discreet control toolbar', async ({ page }) => {
+    test('default view renders; the overlay control toolbar is gone', async ({ page }) => {
       await gotoApp(page, vp.w, vp.h);
-      await expect(toolbar(page)).toBeAttached();
-      // The four core controls exist (zoom in/out, recent, default view).
-      await expect(page.getByRole('button', { name: /Zoom avant/i })).toBeAttached();
-      await expect(zoomOutBtn(page)).toBeAttached();
-      await expect(page.getByRole('button', { name: /bougie la plus récente/i })).toBeAttached();
-      await expect(page.getByRole('button', { name: /vue par défaut/i })).toBeAttached();
+      // The chart itself is intact…
+      await expect(page.locator('canvas').first()).toBeVisible();
+      // …but the overlay control bar and its five buttons have been removed
+      // entirely (fix/remove-chart-toolbar): no group, no zoom / recent /
+      // default-view / liquidity-filter buttons — on every pointer type.
+      await expect(page.getByRole('group', { name: /Contrôles du graphique/i })).toHaveCount(0);
+      await expect(page.getByRole('button', { name: /Zoom avant/i })).toHaveCount(0);
+      await expect(page.getByRole('button', { name: /Zoom arrière/i })).toHaveCount(0);
+      await expect(page.getByRole('button', { name: /bougie la plus récente/i })).toHaveCount(0);
+      await expect(page.getByRole('button', { name: /vue par défaut/i })).toHaveCount(0);
       // No premature edge notice on the opening (recent) view.
       await expect(page.getByText(/Début des données disponibles/i)).toHaveCount(0);
-    });
-
-    test('controls reveal on hover (desktop) / stay visible (mobile) + keyboard-reachable', async ({ page }, info) => {
-      await gotoApp(page, vp.w, vp.h);
-      const bar = toolbar(page);
-      if (isMobileProject(info)) {
-        // Coarse pointer: controls stay visible (pinch isn't enough for everyone).
-        await expect(bar).toHaveCSS('opacity', '1');
-      } else {
-        // Fine pointer: hidden at rest, revealed on hover.
-        await expect(bar).toHaveCSS('opacity', '0');
-        await hoverChart(page);
-        await expect(bar).toHaveCSS('opacity', '1');
-        // And reachable by keyboard even without hover: focus-within reveals it.
-        await page.mouse.move(0, 0);
-        await expect(bar).toHaveCSS('opacity', '0');
-        await page.getByRole('button', { name: /Zoom avant/i }).focus();
-        await expect(bar).toHaveCSS('opacity', '1');
-      }
     });
 
     test('the chart region is a focusable keyboard target', async ({ page }) => {
