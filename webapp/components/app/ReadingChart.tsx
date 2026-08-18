@@ -18,7 +18,7 @@ import {
   type Time,
   type UTCTimestamp,
 } from 'lightweight-charts';
-import { ChevronsRight, Droplets, Loader2, Maximize2, Minus, Plus, RotateCw } from 'lucide-react';
+import { Loader2, RotateCw } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
@@ -197,9 +197,6 @@ const LEVEL = {
   choch: '#8E84B0',
   retest: '#6E84B0',
 };
-
-/** localStorage key for the "intact pockets only" display toggle. */
-const LIQUIDITY_INTACT_ONLY_KEY = 'mia.chart.liquidityIntactOnly';
 
 /** Number of recent bars framed when centring on the current price. */
 const FOCUS_PRICE_BARS = 40;
@@ -402,29 +399,6 @@ export function ReadingChart({
   const analysisWindowBarsRef = React.useRef(analysisWindowBars);
   analysisWindowBarsRef.current = analysisWindowBars;
 
-  // "Poches intactes seulement" — a reversible DISPLAY filter over the detected
-  // pools (hides swept + broken segments, deletes nothing; the Structure panel
-  // still lists every state). Persisted per browser, default = everything shown.
-  const [liquidityIntactOnly, setLiquidityIntactOnly] = React.useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    try {
-      return window.localStorage.getItem(LIQUIDITY_INTACT_ONLY_KEY) === '1';
-    } catch {
-      return false;
-    }
-  });
-  const toggleLiquidityIntactOnly = React.useCallback(() => {
-    setLiquidityIntactOnly((v) => {
-      const next = !v;
-      try {
-        window.localStorage.setItem(LIQUIDITY_INTACT_ONLY_KEY, next ? '1' : '0');
-      } catch {
-        // Storage unavailable (private mode) — the toggle still works in-session.
-      }
-      return next;
-    });
-  }, []);
-
   // External-liquidity segments (BSL/SSL), read straight from engine-emitted
   // pools — never recomputed, never projected. Hidden entirely when the
   // "liquidity" layer is toggled off, and per-pocket through the SAME id
@@ -435,20 +409,13 @@ export function ReadingChart({
     () =>
       layers.liquidity
         ? applyZoneVisibility(
-            buildLiquidityLines(structure, { intactOnly: liquidityIntactOnly }),
+            buildLiquidityLines(structure, { intactOnly: false }),
             hiddenZoneIds,
             isolatedZoneIds,
           )
         : [],
-    [
-      structure,
-      layers.liquidity,
-      liquidityIntactOnly,
-      hiddenZoneIds,
-      isolatedZoneIds,
-    ],
+    [structure, layers.liquidity, hiddenZoneIds, isolatedZoneIds],
   );
-  const hasLiquidityPools = (structure.liquidity_pools ?? []).length > 0;
 
   // PROTOTYPE — provisional intra-candle interaction overlay derived from the
   // latest tick. Recomputed from the CURRENT price only (never persisted), so a
@@ -1763,87 +1730,6 @@ export function ReadingChart({
           </span>
         ) : null}
       </div>
-
-      {/* CHART-2 — Variante 1: controls appear ON HOVER (or keyboard focus) and
-          fade out otherwise, so they no longer occupy the plot permanently on a
-          large screen. On a coarse pointer (touch/mobile) they stay visible — the
-          pinch gesture isn't enough for everyone. They remain tabbable (opacity,
-          not display), so a keyboard user reaches them; keyboard shortcuts ADD to
-          them, never replace them. z-10 lifts them above the chart canvases. */}
-      <div
-        className={cn(
-          'absolute bottom-2 left-2 z-10 flex gap-1',
-          'opacity-0 transition-opacity duration-200 ease-out',
-          'group-hover:opacity-100 group-focus-within:opacity-100',
-          '[@media(hover:none)]:opacity-100',
-        )}
-        role="group"
-        aria-label={t('chart.controlsAria')}
-      >
-        <ChartControl label={t('chart.zoomIn')} onClick={() => zoom(0.7)}>
-          <Plus className="h-4 w-4" aria-hidden />
-        </ChartControl>
-        <ChartControl label={t('chart.zoomOut')} onClick={() => zoom(1.4)}>
-          <Minus className="h-4 w-4" aria-hidden />
-        </ChartControl>
-        <ChartControl label={t('chart.recent')} onClick={scrollToRecent}>
-          <ChevronsRight className="h-4 w-4" aria-hidden />
-        </ChartControl>
-        <ChartControl label={t('chart.defaultView')} onClick={resetDefaultView}>
-          <Maximize2 className="h-4 w-4" aria-hidden />
-        </ChartControl>
-        {/* "Poches intactes seulement" — reversible DISPLAY filter (hides the
-            swept/broken liquidity segments, deletes nothing). Only offered when
-            the liquidity layer is on and the engine emitted pockets. */}
-        {layers.liquidity && hasLiquidityPools && (
-          <ChartControl
-            label={
-              liquidityIntactOnly
-                ? t('chart.liqShowAll')
-                : t('chart.liqShowIntactOnly')
-            }
-            onClick={toggleLiquidityIntactOnly}
-            pressed={liquidityIntactOnly}
-          >
-            <Droplets className="h-4 w-4" aria-hidden />
-          </ChartControl>
-        )}
-      </div>
     </div>
-  );
-}
-
-/** A single sober chart control: hairline border, ≥44px tap target on touch. */
-function ChartControl({
-  label,
-  onClick,
-  pressed,
-  children,
-}: {
-  label: string;
-  onClick: () => void;
-  /** Toggle state (aria-pressed + emphasised style); omit for plain buttons. */
-  pressed?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={label}
-      title={label}
-      aria-pressed={pressed}
-      className={cn(
-        'flex h-11 w-11 items-center justify-center rounded-md border border-border/60',
-        'bg-background/70 text-muted-foreground backdrop-blur-sm',
-        'transition-colors hover:text-foreground',
-        // 44px on touch (phone + tablet); only shrink to 32px on xl desktop
-        // where a mouse is the pointer. (Was sm: → served 32px to iPad touch.)
-        'xl:h-8 xl:w-8',
-        pressed && 'border-foreground/40 text-foreground',
-      )}
-    >
-      {children}
-    </button>
   );
 }
