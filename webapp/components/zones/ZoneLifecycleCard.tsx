@@ -22,6 +22,7 @@ import {
   zoneProximity,
 } from '@/lib/zones/lifecycle';
 import { buildConfluence, type ConfluenceFact } from '@/lib/zones/confluence';
+import { zoneGaugeLayout } from '@/lib/zones/gauge';
 import { formationSession } from '@/lib/zones/formation-session';
 import { ZoneTimeline } from './ZoneTimeline';
 
@@ -79,7 +80,7 @@ function edgeWord(edge: 'low' | 'high', t: ZonesT): string {
 
 // ─── Proximity block ─────────────────────────────────────────────────────────
 
-function ProximityBlock({
+export function ProximityBlock({
   zone,
   price,
   instrument,
@@ -124,16 +125,25 @@ function ProximityBlock({
     }
   }
 
-  // Gauge extent spans the band and the price, with light padding.
-  const lo = Math.min(zone.levelLow, price ?? zone.levelLow);
-  const hi = Math.max(zone.levelHigh, price ?? zone.levelHigh);
-  const pad = Math.max((hi - lo) * 0.18, (zone.levelHigh - zone.levelLow) || 1) * 0.5;
-  const eLo = lo - pad;
-  const eHi = hi + pad;
-  const span = eHi - eLo || 1;
-  const bandLeft = ((zone.levelLow - eLo) / span) * 100;
-  const bandRight = 100 - ((zone.levelHigh - eLo) / span) * 100;
-  const priceLeft = price != null ? ((price - eLo) / span) * 100 : null;
+  // VZ-3 — the gauge geometry (fixed window = zone ± half its height, band fills
+  // the middle 50 % of the track). `price` is real here (prox is non-null).
+  const gauge = price != null ? zoneGaugeLayout(zone, price) : null;
+
+  // The distance, written ONCE and reused in the visible line and the gauge's
+  // aria-label so the two can never drift. The gauge's bracket écart also draws
+  // from `fmt.points(prox.distance)` — a test guards the char-for-char match.
+  const distanceText = prox.inside
+    ? t('proximity.insideDist', {
+        low: fmt.points(prox.distToLow, instrument),
+        high: fmt.points(prox.distToHigh, instrument),
+      })
+    : t('proximity.distanceLine', {
+        pts: fmt.points(prox.distance, instrument),
+        pct: fmt.pctShort(prox.distancePct),
+        side: t(`proximity.side.${prox.side}`),
+        edge: edgeWord(prox.edge, t),
+      });
+  const gapText = prox.inside ? null : fmt.points(prox.distance, instrument);
 
   const enteredAt = prox.inside
     ? [...zone.contacts].reverse().find((c) => c.outcome === 'inside' || c.outcome === 'entry_exit')
@@ -141,29 +151,14 @@ function ProximityBlock({
 
   return (
     <div className={cn('zpx', prox.inside && 'inside')}>
-      {prox.inside ? (
-        <div className="zpxr">
-          <span className="k">{t('proximity.positionLabel')}</span>
-          <span className="v">
-            {t('proximity.insideDist', {
-              low: fmt.points(prox.distToLow, instrument),
-              high: fmt.points(prox.distToHigh, instrument),
-            })}
-          </span>
-        </div>
-      ) : (
-        <div className="zpxr">
-          <span className="k">{t('proximity.distanceLabel')}</span>
-          <span className="v">
-            {t('proximity.distanceLine', {
-              pts: fmt.points(prox.distance, instrument),
-              pct: fmt.pctShort(prox.distancePct),
-              side: t(`proximity.side.${prox.side}`),
-              edge: edgeWord(prox.edge, t),
-            })}
-          </span>
-        </div>
-      )}
+      <div className="zpxr">
+        <span className="k">
+          {prox.inside ? t('proximity.positionLabel') : t('proximity.distanceLabel')}
+        </span>
+        <span className="v" data-testid="distance-line">
+          {distanceText}
+        </span>
+      </div>
 
       {prox.inside && enteredAt && (
         <div className="zpxr">
@@ -184,19 +179,76 @@ function ProximityBlock({
         </div>
       )}
 
-      {priceLeft != null && (
-        // The gauge carries its scale: the two extent prices at the ends, the
-        // zone band highlighted, the price marked by the bright line (VZ-2 §
-        // « la jauge de proximité »). aria-hidden — the distance line above states
-        // the same facts in words for assistive tech.
-        <div className="zgauge" aria-hidden>
-          <span className="gband" style={{ left: `${bandLeft}%`, right: `${bandRight}%` }} />
+      {gauge && (
+        // VZ-3 — every element is NAMED: a track (the visible window), a band
+        // labelled « la zone », the zone's own edges written under the band, a
+        // NEUTRAL price marker (no direction colour), and a measurement bracket
+        // from the reference edge carrying the écart. role=img + aria-label
+        // carries the full spoken equivalent; the visuals are aria-hidden.
+        <div
+          className={cn('zgauge', `gs-${gauge.state}`)}
+          role="img"
+          aria-label={t('proximity.gauge.aria', {
+            low: fmt.price(zone.levelLow, instrument),
+            high: fmt.price(zone.levelHigh, instrument),
+            price: fmt.price(price!, instrument),
+            detail: distanceText,
+          })}
+        >
+          {/* The track holds ONLY the band; the marker, bracket and edge prices
+              are siblings so their vertical rows are measured against the full
+              gauge height, not the 16 px track. */}
+          <div className="gtrack" aria-hidden>
+            <span
+              className="gband"
+              style={{ left: `${gauge.bandLowPct}%`, right: `${100 - gauge.bandHighPct}%` }}
+            >
+              <span className="gband-lbl">{t('proximity.gauge.zone')}</span>
+            </span>
+          </div>
+
+          {gauge.bracket && gapText && (
+            <span
+              className="gbrk"
+              aria-hidden
+              style={{
+                left: `${gauge.bracket.fromPct}%`,
+                right: `${100 - gauge.bracket.toPct}%`,
+              }}
+            >
+              <span className="gbrk-lbl" data-testid="gauge-gap">
+                {t('proximity.gauge.gap', { pts: gapText })}
+              </span>
+            </span>
+          )}
+
           <span
-            className="gpx"
-            style={{ left: `${Math.max(0, Math.min(100, priceLeft))}%` }}
-          />
-          <span className="glab lo">{fmt.price(eLo, instrument)}</span>
-          <span className="glab hi">{fmt.price(eHi, instrument)}</span>
+            className={cn('gpx', gauge.outOfWindow && 'out')}
+            aria-hidden
+            style={{ left: `${gauge.pricePct}%` }}
+          >
+            <span className="gpx-lbl">
+              {gauge.state === 'outBelow' && (
+                <i className="garr" aria-hidden>
+                  ←
+                </i>
+              )}
+              <b>{t('proximity.gauge.price')}</b> {fmt.price(price!, instrument)}
+              {gauge.state === 'outAbove' && (
+                <i className="garr" aria-hidden>
+                  →
+                </i>
+              )}
+            </span>
+            {gauge.outOfWindow && <span className="gpx-out">{t('proximity.gauge.outMarker')}</span>}
+          </span>
+
+          <span className="gedge lo" aria-hidden style={{ left: `${gauge.bandLowPct}%` }}>
+            {fmt.price(zone.levelLow, instrument)}
+          </span>
+          <span className="gedge hi" aria-hidden style={{ left: `${gauge.bandHighPct}%` }}>
+            {fmt.price(zone.levelHigh, instrument)}
+          </span>
         </div>
       )}
     </div>

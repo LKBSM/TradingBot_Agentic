@@ -2681,6 +2681,13 @@
       "exitBy": {
         "low": "downward",
         "high": "upward"
+      },
+      "gauge": {
+        "zone": "the zone",
+        "price": "price",
+        "gap": "{pts} pts",
+        "outMarker": "off scale",
+        "aria": "Proximity gauge. The zone runs from {low} to {high}. Price: {price}. {detail}"
       }
     },
     "confluence": {

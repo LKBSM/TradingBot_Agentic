@@ -2681,6 +2681,13 @@
       "exitBy": {
         "low": "par le bas",
         "high": "par le haut"
+      },
+      "gauge": {
+        "zone": "la zone",
+        "price": "prix",
+        "gap": "{pts} pts",
+        "outMarker": "hors cadre",
+        "aria": "Jauge de proximité. La zone va de {low} à {high}. Prix : {price}. {detail}"
       }
     },
     "confluence": {
