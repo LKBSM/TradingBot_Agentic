@@ -6,6 +6,7 @@ import {
   History,
   LayoutPanelTop,
   LineChart,
+  PanelRightClose,
   RotateCcw,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -48,6 +49,7 @@ const STARTER_META: ReadonlyArray<{ id: string; icon: React.ReactNode }> = [
 export function AppChatSidebar({
   active,
   onSelectCombo,
+  onHide,
 }: {
   active: Combo | null;
   /**
@@ -56,6 +58,12 @@ export function AppChatSidebar({
    * a combo's conversation. Optional so the sidebar renders standalone.
    */
   onSelectCombo?: (combo: Combo) => void;
+  /**
+   * Collapse the docked column (desktop ≥1280 only). When provided, a "hide"
+   * button appears in the header, shown only at ≥1280 (the tablet drawer closes
+   * via its backdrop). Omitted by the mobile workspace, where the chat is a tab.
+   */
+  onHide?: () => void;
 }) {
   const t = useTranslations('app');
   const {
@@ -117,6 +125,25 @@ export function AppChatSidebar({
           </p>
           <TooltipProvider delayDuration={200}>
             <div className="flex shrink-0 items-center gap-0.5">
+              {onHide && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      aria-label={t('chat.hidePanel')}
+                      onClick={onHide}
+                      // ≥1280 only: the docked column carries the collapse
+                      // affordance; the tablet drawer closes via its backdrop.
+                      className="hidden text-muted-foreground xl:inline-flex xl:h-8 xl:w-8"
+                    >
+                      <PanelRightClose className="h-4 w-4" aria-hidden />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">{t('chat.hidePanel')}</TooltipContent>
+                </Tooltip>
+              )}
               {recentThreads.length > 0 && (
                 <Tooltip>
                   <TooltipTrigger asChild>

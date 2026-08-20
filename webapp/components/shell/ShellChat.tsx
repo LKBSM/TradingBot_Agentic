@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 import { useLocalizedHref } from '@/lib/i18n/href';
 import { resolveComboFromQuery } from '@/lib/conditions/app-link';
 import { AppChatSidebar } from '@/components/app/AppChatSidebar';
+import { useChatColumn } from './ChatColumnContext';
 import { cn } from '@/lib/utils';
 import type { Combo } from '@/lib/market-reading/store';
 
@@ -32,6 +33,7 @@ export function ShellChat() {
   const searchParams = useSearchParams();
   const t = useTranslations('app');
   const [open, setOpen] = React.useState(false);
+  const { hide: hideColumn } = useChatColumn();
 
   const active =
     resolveComboFromQuery(
@@ -76,7 +78,14 @@ export function ShellChat() {
         aria-hidden
       />
       <aside className={cn('chatcol', open && 'open')}>
-        <AppChatSidebar active={active} onSelectCombo={onSelectCombo} />
+        {/* onHide drives the desktop (≥1280) docked-column collapse button. The
+            drawer band (768–1279) closes via the backdrop/Escape, so the button
+            is CSS-hidden there — see AppChatSidebar. */}
+        <AppChatSidebar
+          active={active}
+          onSelectCombo={onSelectCombo}
+          onHide={hideColumn}
+        />
       </aside>
     </>
   );
