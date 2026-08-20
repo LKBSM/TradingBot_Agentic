@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CONDITION_PALETTE, CONDITION_TYPES, FAMILIES, groupByFamily } from '../palette';
+import { CONDITION_PALETTE, CONDITION_TYPES, DEFAULT_OPEN_FAMILIES, FAMILIES, groupByFamily } from '../palette';
 
 const EXPECTED_TYPES = new Set([
   // structure
@@ -41,6 +41,10 @@ describe('conditions palette (SC-1)', () => {
     const groups = groupByFamily(CONDITION_PALETTE);
     expect(groups.map((g) => g.family)).toEqual(['structure', 'zones', 'liquidity', 'context']);
     expect(groups.reduce((n, g) => n + g.entries.length, 0)).toBe(CONDITION_PALETTE.length);
+  });
+
+  it('opens no family by default — every family loads collapsed', () => {
+    expect(DEFAULT_OPEN_FAMILIES).toEqual([]);
   });
 
   it('excludes the unreachable market phase (distribution)', () => {

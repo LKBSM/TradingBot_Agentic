@@ -21,8 +21,9 @@ import type {
 /** Fixed family order (never sorted, never by match count). */
 export const FAMILIES: readonly Family[] = ['structure', 'zones', 'liquidity', 'context'] as const;
 
-/** Families open by default in the builder. */
-export const DEFAULT_OPEN_FAMILIES: readonly Family[] = ['structure', 'zones'] as const;
+/** Families open by default in the builder — none: every family loads collapsed,
+ *  the client expands what they want via the chevron. */
+export const DEFAULT_OPEN_FAMILIES: readonly Family[] = [] as const;
 
 // Segmented value sets (mirror the backend vocabulary).
 const DIRECTION = ['any', 'bullish', 'bearish'] as const;
