@@ -108,6 +108,8 @@ for (const vp of [
       await expect(page.getByText(/tous les marchés/)).toBeVisible();
       expect(await page.evaluate(RAW_KEY_SCAN)).toEqual([]);
       expect(await overflow(page)).toBeLessThanOrEqual(1);
+      // Families load COLLAPSED — expand one before a condition can be ticked.
+      await page.getByRole('button', { name: /Structure/ }).first().click();
       // Ticking a condition makes the sticky bar's LIVE combo count appear.
       await page.getByRole('checkbox').first().check();
       await expect(page.getByTestId('live-combo-count')).toHaveText('1', { timeout: 6000 });
