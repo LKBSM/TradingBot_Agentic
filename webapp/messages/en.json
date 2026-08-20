@@ -1429,7 +1429,10 @@
     },
     "temporal": {
       "candleClosed": "Candle closed {rel}",
-      "dailyChangeAria": "Daily change {pct}"
+      "dailyChangeAria": "Daily change {pct}",
+      "priceAt": "Price at {time}",
+      "priceFreshness": "Price at {time} · {rel}",
+      "priceAtTitle": "Last reference price used (last closed candle). A gap with the chart's live price reflects elapsed time, not an error."
     },
     "events": {
       "title": "Event context",

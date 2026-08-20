@@ -295,6 +295,7 @@ export function DesktopReading({
           structure={reading.structure}
           header={header}
           price={price}
+          priceTs={liveHeader?.priceTs ?? null}
           marketStatus={reading.market_status ?? null}
           referenceLevelsPayload={reading.reference_levels ?? null}
           openHelp={openHelp}
