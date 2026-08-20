@@ -229,6 +229,7 @@ export function DesktopReading({
         liveTs={liveTs}
         marketClosed={marketClosed}
         marketStatusState={serverStatus?.state ?? null}
+        marketReopenTs={serverStatus?.nextOpenTs ?? null}
         layers={chartView.layers}
         filter={chartView.filter}
         focus={chartView.focus}

@@ -20,7 +20,7 @@ import {
 } from 'lightweight-charts';
 import { Loader2, RotateCw } from 'lucide-react';
 import { useTheme } from 'next-themes';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { formatLocalDayHm, formatLocalHm } from '@/lib/time/localTime';
 import { useLocalTimeLabel } from '@/lib/time/useLocalTimeLabel';
@@ -59,7 +59,7 @@ import {
 } from '@/lib/chart/zoneOverlayPrimitive';
 import { isPlausibleTick, isValidBar } from '@/lib/chart/sanitize';
 import { TF_SECONDS } from '@/lib/timeframes';
-import { badgeLabelKey } from '@/lib/market-reading/status';
+import { badgeLabelKey, badgeTitleKey, formatNyTimestamp } from '@/lib/market-reading/status';
 import type { Candle, MarketReadingStructure, MarketState } from '@/types/market-reading';
 
 /**
@@ -118,6 +118,13 @@ export interface ReadingChartProps {
    * pause / data delayed) instead of the generic "Marché fermé".
    */
   marketStatusState?: MarketState | null;
+  /**
+   * MC-1 reopen instant (ISO-8601 UTC) for a closed / paused state. When present
+   * the session badge shows a visible "Réouverture …" sub-line so the reason and
+   * the reopen time are explained inline — never hidden behind the hover tooltip
+   * (the tooltip is invisible on touch devices). Null ⇒ label only, as before.
+   */
+  marketReopenTs?: string | null;
   /**
    * DISPLAY-ONLY view state, driven by the M.I.A Agent chat (or left at the
    * defaults). These change ONLY what the chart renders / how it frames — never
@@ -303,6 +310,7 @@ export function ReadingChart({
   liveTs = null,
   marketClosed = false,
   marketStatusState = null,
+  marketReopenTs = null,
   layers = DEFAULT_CHART_VIEW.layers,
   filter = DEFAULT_CHART_VIEW.filter,
   focus = null,
@@ -321,7 +329,10 @@ export function ReadingChart({
   olderError = null,
 }: ReadingChartProps) {
   const t = useTranslations('app');
+  const locale = useLocale();
   const { resolvedTheme } = useTheme();
+  // Reopen time for the session badge sub-line (see marketReopenTs prop).
+  const marketReopenLabel = formatNyTimestamp(marketReopenTs, locale);
 
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const chartRef = React.useRef<IChartApi | null>(null);
@@ -1640,16 +1651,25 @@ export function ReadingChart({
           predicts anything. */}
       {marketClosed ? (
         <div
-          className="pointer-events-none absolute left-2 top-2 flex items-center gap-1 rounded-full border border-border/70 bg-muted/70 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground backdrop-blur-sm"
-          title={t('chart.marketClosedTitle')}
+          className="pointer-events-none absolute left-2 top-2 flex items-start gap-1.5 rounded-2xl border border-border/70 bg-muted/70 px-2 py-1 text-[10px] font-semibold text-muted-foreground backdrop-blur-sm"
+          title={t((marketStatusState && badgeTitleKey(marketStatusState)) || 'chart.marketClosedTitle')}
           role="status"
           aria-live="polite"
         >
           <span
-            className="inline-block h-1.5 w-1.5 rounded-full bg-muted-foreground/70"
+            className="mt-1 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground/70"
             aria-hidden
           />
-          {t((marketStatusState && badgeLabelKey(marketStatusState)) || 'chart.marketClosed')}
+          <span className="flex flex-col leading-tight">
+            <span>
+              {t((marketStatusState && badgeLabelKey(marketStatusState)) || 'chart.marketClosed')}
+            </span>
+            {marketReopenLabel && (
+              <span className="font-normal text-muted-foreground/80">
+                {t('chart.reopensAt', { when: marketReopenLabel })}
+              </span>
+            )}
+          </span>
         </div>
       ) : (
         liveActive && (
