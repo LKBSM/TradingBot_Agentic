@@ -71,7 +71,7 @@ const READING = {
   },
 };
 
-// Sibling timeframes: overlap the inside/above zones but NOT the untouched one.
+// The H1 sibling: overlaps the inside/above zones but NOT the untouched one.
 const SIBLING = {
   ...READING,
   structure: {
@@ -81,6 +81,37 @@ const SIBLING = {
     consumed_order_blocks: [],
     consumed_fair_value_gaps: [],
     liquidity_pools: [],
+  },
+};
+
+// Other timeframes contribute NO zones — so a confluence item is not artificially
+// duplicated once per sibling unit (the mock reuses one payload; production has
+// distinct zones per TF). Keeps the « même endroit » block to one item per source.
+const SIBLING_EMPTY = {
+  ...SIBLING,
+  structure: {
+    ...SIBLING.structure,
+    order_blocks: [],
+    fair_value_gaps: [],
+  },
+};
+
+// A M15 reading where a SMALL OB nests inside `ob-inside` — a SAME-timeframe
+// confluence item, for the id-lock navigation test (clicking it must open the
+// nested zone, never its near-twin container by price).
+const NESTED = {
+  ...READING,
+  structure: {
+    ...READING.structure,
+    order_blocks: [
+      ob({
+        id: 'ob-inside', level_low: 2388, level_high: 2392, tested: true,
+        contacts: [{ at: iso(16, 40), level: 2390, outcome: 'inside' }],
+        origin: { kind: 'bos', direction: 'bullish', at: iso(9), level: 2386 },
+      }),
+      ob({ id: 'ob-nested', level_low: 2389, level_high: 2391 }),
+      ob({ id: 'ob-untouched', level_low: 2350, level_high: 2352 }),
+    ],
   },
 };
 
@@ -98,7 +129,11 @@ async function mock(page: Page, reading = READING) {
   );
   await page.route('**/api/market-reading**', (route) => {
     const url = route.request().url();
-    const body = /timeframe=M15(\b|&|$)/.test(url) ? reading : SIBLING;
+    const body = /timeframe=M15(\b|&|$)/.test(url)
+      ? reading
+      : /timeframe=H1(\b|&|$)/.test(url)
+        ? SIBLING
+        : SIBLING_EMPTY;
     route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
   });
 }
@@ -174,6 +209,41 @@ function scenarios() {
     const body = await page.locator('.pagewrap').innerText();
     expect(body).not.toMatch(/chevauche/i);
     expect(body).not.toMatch(/respect|valid|solide|fiable|qualité|meilleur/i);
+  });
+
+  // ── « Ce qu'il y a d'autre au même endroit » → navigate to the target zone ──
+
+  test('a « même endroit » item on ANOTHER timeframe switches the TF and opens THAT zone', async ({ page }) => {
+    await openZones(page);
+    const card = page.locator('[data-zone-id="ob-inside"]');
+    // Reveal the confluence block (deferred behind « Détails »).
+    await card.locator('.zdeth').click();
+    // ob-inside (2388–2392) is englobed by the sibling ob-h1-wrap (2387–2393, H1)
+    // → exactly one navigable item, carrying its real engine id.
+    const item = card.locator('.zconf button.clnav');
+    await expect(item).toHaveCount(1);
+    await expect(item).toContainText('H1');
+    await item.click();
+    // Switched to H1 and deep-linked to the sibling's REAL id — never a price id.
+    await expect(page).toHaveURL(/timeframe=H1/);
+    await expect(page).toHaveURL(/zone=ob-h1-wrap/);
+    const target = page.locator('[data-zone-id="ob-h1-wrap"]');
+    await expect(target).toBeVisible({ timeout: 60_000 });
+    await expect(target).toHaveClass(/zsel/);
+  });
+
+  test('a SAME-timeframe item opens ITS OWN zone (id lock), not a price neighbour', async ({ page }) => {
+    await openZones(page, NESTED);
+    const card = page.locator('[data-zone-id="ob-inside"]');
+    await card.locator('.zdeth').click();
+    // Two items: the nested same-TF OB (no « H1 ») and the H1 wrapper. Click the
+    // same-TF one — it must open ob-nested, NOT the near-identical container.
+    const sameTfItem = card.locator('.zconf button.clnav').filter({ hasNotText: 'H1' });
+    await expect(sameTfItem).toHaveCount(1);
+    await sameTfItem.click();
+    await expect(page).toHaveURL(/zone=ob-nested/);
+    await expect(page).toHaveURL(/timeframe=M15/); // same unit — no TF switch
+    await expect(page.locator('[data-zone-id="ob-nested"]')).toHaveClass(/zsel/);
   });
 }
 

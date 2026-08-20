@@ -19,9 +19,10 @@ vi.mock('@/lib/market-reading/api-client', async (importActual) => {
 });
 
 const pushMock = vi.fn();
+const replaceMock = vi.fn();
 let mockSearchParams = new URLSearchParams();
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: pushMock, replace: vi.fn() }),
+  useRouter: () => ({ push: pushMock, replace: replaceMock }),
   usePathname: () => '/zones',
   useSearchParams: () => mockSearchParams,
 }));
@@ -52,6 +53,7 @@ beforeEach(() => {
   fetchMock.mockReset();
   fetchMock.mockResolvedValue(FIXTURE_XAU_M15);
   pushMock.mockReset();
+  replaceMock.mockReset();
   mockSearchParams = new URLSearchParams();
 });
 afterEach(() => vi.restoreAllMocks());
@@ -178,6 +180,31 @@ describe('ZonesWorkspace (VZ-1)', () => {
     await waitFor(() =>
       expect(scrollSpy).toHaveBeenCalledWith(expect.objectContaining({ block: 'center' })),
     );
+  });
+
+  it('clicking a « même endroit » item navigates by REAL zone id (never a fabricated/price id)', async () => {
+    renderZones();
+    await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(4));
+    // Expand a card's « Détails » to reveal its confluence block.
+    const c = card('ob-xau-1');
+    fireEvent.click(c.querySelector('button.zdeth')!);
+    const navBtn = await waitFor(() => {
+      const b = c.querySelector<HTMLButtonElement>('.zconf button.clnav');
+      if (!b) throw new Error('no navigable confluence item');
+      return b;
+    });
+    fireEvent.click(navBtn);
+    // The handler writes a `?zone=<id>` deep-link with a REAL engine id — one of
+    // the ids the engine actually emitted (same-TF live zones or a sibling id),
+    // never a value derived from the displayed price/label.
+    const realIds = new Set(collectZones(FIXTURE_XAU_M15.structure).map((z) => z.id));
+    expect(replaceMock).toHaveBeenCalledTimes(1);
+    const url = String(replaceMock.mock.calls[0]![0]);
+    const zoneId = new URLSearchParams(url.split('?')[1]).get('zone');
+    expect(zoneId).toBeTruthy();
+    expect(realIds.has(zoneId!)).toBe(true);
+    expect(url).toMatch(/instrument=/);
+    expect(url).toMatch(/timeframe=/);
   });
 
   it('a stale `?zone=<id>` shows the honest notice, never a fabricated card', async () => {

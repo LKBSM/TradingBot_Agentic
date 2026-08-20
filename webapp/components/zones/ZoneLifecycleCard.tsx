@@ -299,12 +299,15 @@ function ConfluenceBlock({
   t,
   fmt,
   instrument,
+  onNavigate,
 }: {
   facts: ConfluenceFact[];
   zone: ZoneLifecycle;
   t: ZonesT;
   fmt: ReadingFmt;
   instrument: string;
+  /** Navigate to the related zone's detail via its REAL engine id + timeframe. */
+  onNavigate?: (zoneId: string, timeframe: string | null) => void;
 }) {
   const none = facts.length === 0;
   return (
@@ -313,11 +316,34 @@ function ConfluenceBlock({
       {none ? (
         <div className="cl">{t('confluence.none')}</div>
       ) : (
-        facts.map((f, i) => (
-          <div className="cl" key={i}>
-            {confluenceLine(f, zone, t, fmt, instrument)}
-          </div>
-        ))
+        facts.map((f, i) => {
+          const label = confluenceLine(f, zone, t, fmt, instrument);
+          // Only ZONE facts (inner / outer / same_level) that carry a real engine
+          // id are navigable; a liquidity pocket is not a zone → stays plain text.
+          const navigable = f.relation !== 'liquidity' && !!f.id && !!onNavigate;
+          if (navigable) {
+            return (
+              <button
+                type="button"
+                className="cl clnav"
+                key={i}
+                // Don't let the click bubble to the card's own select handler.
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onNavigate!(f.id!, f.timeframe ?? null);
+                }}
+                aria-label={t('confluence.openZone', { desc: label })}
+              >
+                {label}
+              </button>
+            );
+          }
+          return (
+            <div className="cl" key={i}>
+              {label}
+            </div>
+          );
+        })
       )}
     </div>
   );
@@ -396,6 +422,12 @@ export interface ZoneLifecycleCardProps {
   onShowOnChart(zoneId: string): void;
   /** Select this zone as the M.I.A subject (a click anywhere on the card). */
   onSelect(zoneId: string): void;
+  /**
+   * Navigate to another zone's detail from a « même endroit » item, via its REAL
+   * engine id (and its timeframe when it lives on a sibling unit). Never a lookup
+   * by displayed price/label (mission §4 id lock).
+   */
+  onNavigateToZone(zoneId: string, timeframe: string | null): void;
   isSelected?: boolean;
   cardRef?: React.Ref<HTMLElement>;
 }
@@ -412,6 +444,7 @@ export function ZoneLifecycleCard({
   onToggleHide,
   onShowOnChart,
   onSelect,
+  onNavigateToZone,
   isSelected = false,
   cardRef,
 }: ZoneLifecycleCardProps) {
@@ -518,7 +551,7 @@ export function ZoneLifecycleCard({
       {expanded && (
         <div id={detailsId} className="zdet">
           {/* Confluence — always present (absence state when nothing detected). */}
-          <ConfluenceBlock facts={confluence} zone={zone} t={t} fmt={fmt} instrument={instrument} />
+          <ConfluenceBlock facts={confluence} zone={zone} t={t} fmt={fmt} instrument={instrument} onNavigate={onNavigateToZone} />
 
           <ContactsBlock zone={zone} t={t} fmt={fmt} instrument={instrument} locale={locale} />
 

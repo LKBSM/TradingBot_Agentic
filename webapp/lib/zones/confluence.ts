@@ -27,6 +27,13 @@ export type ConfluenceRelation = 'inner' | 'outer' | 'same_level' | 'liquidity';
 export interface ConfluenceFact {
   relation: ConfluenceRelation;
   // Zone facts (inner / outer / same_level):
+  /**
+   * The REAL engine zone id (`ob.id` / `fvg.id`) of the related zone — carried
+   * straight through from the candidate so the item can navigate to THAT zone's
+   * detail. Never reconstructed from the displayed price/timeframe (mission §4
+   * id lock). Absent on `liquidity` facts (a pool is not a navigable zone).
+   */
+  id?: string;
   kind?: ZoneKind;
   direction?: Direction | null;
   timeframe?: string | null;
@@ -63,6 +70,7 @@ function classifyZone(zone: ZoneLifecycle, c: Candidate): ConfluenceFact | null 
   else return null; // no vertical overlap at all
   return {
     relation,
+    id: c.id,
     kind: c.kind,
     direction: c.direction,
     timeframe: c.timeframe,
@@ -104,7 +112,10 @@ export function buildConfluence(
       levelHigh: s.levelHigh,
       status: 'active',
       timeframe: s.timeframe,
-      id: `${s.timeframe}-${s.id}`,
+      // RAW engine id (`ob.id` / `fvg.id`) on the sibling TF's reading — the
+      // `timeframe` field disambiguates it. Navigation writes `?timeframe=&zone=`
+      // with THIS id; never a composite parsed back apart (mission §4 id lock).
+      id: s.id,
     })),
   ];
 

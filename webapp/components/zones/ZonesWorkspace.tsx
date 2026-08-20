@@ -280,6 +280,27 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
     [router, locale, instrument, timeframe],
   );
 
+  // ── Navigate to another zone's detail from a « même endroit » item. Uses the
+  // REAL engine id (never a price/label lookup) and reuses the exact deep-link
+  // path (`?zone=`): the effects above then seed the M.I.A subject and scroll the
+  // card into view. When the target lives on a SIBLING timeframe, we switch the
+  // active timeframe too (`?timeframe=`) — the reading reloads and the same
+  // deep-link resolves once its card is present. `filter='all'` reveals a target
+  // the current filter would otherwise hide (else `?zone=` hits the stale notice).
+  const navigateToZone = React.useCallback(
+    (zoneId: string, tf: string | null) => {
+      setFilter('all');
+      const targetTf = tf ?? timeframe;
+      if (tf && tf !== timeframe) setTimeframeState(targetTf);
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('instrument', instrument);
+      params.set('timeframe', targetTf);
+      params.set('zone', zoneId);
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [searchParams, instrument, timeframe, pathname, router],
+  );
+
   // Mobile: the M.I.A panel is a bottom sheet toggled by a button (never a panel
   // that crushes the list). Desktop: a sticky column (CSS).
   const [sheetOpen, setSheetOpen] = React.useState(false);
@@ -311,6 +332,7 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
       onToggleHide={toggleHide}
       onShowOnChart={showOnChart}
       onSelect={setSelectedId}
+      onNavigateToZone={navigateToZone}
       isSelected={zone.id === selectedId}
       cardRef={setCardRef(zone.id)}
     />

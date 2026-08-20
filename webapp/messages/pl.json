@@ -2703,7 +2703,8 @@
       "sameLevelSame": "A {kd} is at the same level, between {band}.",
       "sameLevelTf": "A {kd} on {tf} is at the same level, between {band}.",
       "liquidity": "A {side} liquidity pocket {status} at {level}, {pts} pts {dside} the {edge}.",
-      "liquidityInside": "A {side} liquidity pocket {status} at {level}, inside the zone."
+      "liquidityInside": "A {side} liquidity pocket {status} at {level}, inside the zone.",
+      "openZone": "Open this zone: {desc}"
     },
     "contacts": {
       "heading": "Price contacts — observed facts",

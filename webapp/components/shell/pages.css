@@ -956,6 +956,38 @@
 .app-shell .zconf.none .cl {
   color: var(--faint);
 }
+/* A confluence item that navigates to its zone's detail (overlap-nav): a button
+   styled exactly like the text line, with a pointer + hover/focus affordance so
+   it reads as clickable without adding chrome. Liquidity items stay plain text
+   (a resting-liquidity pocket is not a navigable zone). */
+.app-shell .zconf .cl.clnav {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin-bottom: 3px;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--dim);
+  cursor: pointer;
+  transition: color 120ms ease;
+}
+.app-shell .zconf .cl.clnav:last-child {
+  margin-bottom: 0;
+}
+.app-shell .zconf .cl.clnav:hover {
+  color: var(--txt);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.app-shell .zconf .cl.clnav:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
 
 /* Contacts */
 .app-shell .zcont {
