@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="fr" data-design="terminal">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Choisir mes conditions — V3 (aligné sur « Décris ta stratégie »)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+/* ────────────────────────────────────────────────────────────────────────────
+   MAQUETTE STATIQUE — /scanner (« Choisir mes conditions ») aligné sur V3.
+   Valeurs = thème Terminal de webapp/app/globals.css. Contenu = vrais libellés
+   fr du ConditionsBuilder (palette réelle). Aucun backend, statique.
+   ──────────────────────────────────────────────────────────────────────────── */
+:root{
+  --bg:#0a0f1c; --panel:#0e1524; --panel-2:#121a2c; --panel-3:#182238;
+  --line:rgba(255,255,255,.07); --line-2:rgba(255,255,255,.11); --line-3:rgba(255,255,255,.17);
+  --txt:#e7ecf6; --dim:#8b94ab; --faint:#59617a;
+  --acc:#4d9de0; --acc-dim:rgba(77,157,224,.14); --acc-txt:#06131f;
+  --bull:#37b98c; --liq:#d6a24a; --r:10px; --r-s:7px;
+  --sans:'Inter',ui-sans-serif,system-ui,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,'SFMono-Regular',monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--txt);font-family:var(--sans);
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;min-height:100vh;
+  background-image:linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);
+  background-size:44px 44px}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums;font-feature-settings:'tnum'}
+.wrap{max-width:800px;margin:0 auto;padding:40px 24px 128px}
+
+/* Onglets (comme V3) */
+.tabs{display:inline-flex;border:1px solid var(--line-2);border-radius:var(--r-s);overflow:hidden}
+.tab{font-family:var(--mono);font-size:12px;color:var(--dim);padding:9px 16px;text-decoration:none;
+  line-height:1;white-space:nowrap;transition:.15s;border-right:1px solid var(--line-2)}
+.tab:last-child{border-right:0}
+.tab:hover{color:var(--txt);background:rgba(255,255,255,.03)}
+.tab[aria-current]{color:var(--acc-txt);background:var(--acc)}
+
+/* Eyebrow + titre accent (comme V3) */
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--acc);margin:0;display:flex;align-items:center;gap:10px}
+.eyebrow::before{content:"";width:22px;height:1px;background:var(--acc)}
+.head{margin:38px 0 0}
+.head h1{font-size:34px;font-weight:800;letter-spacing:-.02em;line-height:1.05;margin:14px 0 0;color:var(--txt)}
+.head h1 .acc{color:var(--acc)}
+.head p{font-size:15px;line-height:1.6;color:var(--dim);margin:14px 0 0;max-width:64ch}
+.head p b{color:var(--txt);font-weight:600}
+
+/* Console builder */
+.console{margin:26px 0 0;border:1px solid var(--line-3);border-radius:var(--r);
+  background:linear-gradient(180deg,var(--panel),var(--bg));
+  box-shadow:0 0 0 1px rgba(77,157,224,.05),0 24px 60px -30px rgba(0,0,0,.8);overflow:hidden}
+.c-bar{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.c-bar .t{font-family:var(--mono);font-size:12.5px;color:var(--txt);font-weight:500}
+.c-bar .live{margin-left:auto;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--dim);display:inline-flex;align-items:center;gap:7px}
+.c-bar .live .d{width:7px;height:7px;border-radius:50%;background:var(--bull);box-shadow:0 0 8px var(--bull)}
+.c-body{padding:14px 16px 18px;display:flex;flex-direction:column;gap:10px}
+
+/* Section famille */
+.fam{border:1px solid var(--line-2);border-radius:var(--r-s);overflow:hidden;background:var(--panel)}
+.fam-head{display:flex;align-items:center;gap:12px;width:100%;padding:11px 14px;cursor:pointer;
+  background:transparent;border:0;text-align:left}
+.fam-head .idx{font-family:var(--mono);font-size:11px;color:var(--faint)}
+.fam-head .name{font-size:14px;font-weight:600;color:var(--txt)}
+.fam-head .desc{font-size:12px;color:var(--faint)}
+.fam-head .count{margin-left:auto;font-size:11px;padding:3px 9px;border-radius:999px;
+  border:1px solid var(--line);color:var(--dim)}
+.fam-head .count.on{background:var(--acc-dim);border-color:transparent;color:var(--acc)}
+.fam-head .chev{color:var(--dim);transition:transform .15s}
+.fam.closed .chev{transform:rotate(-90deg)}
+.fam.closed .fam-body{display:none}
+.fam-body{padding:8px;display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line)}
+
+/* Ligne condition */
+.cond{border:1px solid var(--line);border-radius:var(--r-s);padding:11px 12px;background:var(--bg)}
+.cond.sel{border-color:var(--acc);background:var(--acc-dim)}
+.cond-top{display:flex;align-items:flex-start;gap:11px}
+.chk{margin-top:1px;width:16px;height:16px;border-radius:4px;border:1.5px solid var(--line-3);
+  display:grid;place-items:center;flex:none;color:var(--acc-txt)}
+.cond.sel .chk{background:var(--acc);border-color:var(--acc)}
+.chk svg{opacity:0}
+.cond.sel .chk svg{opacity:1}
+.cond .lbl{font-size:13.5px;color:var(--txt);line-height:1.4;flex:1}
+.cond .info{color:var(--faint);flex:none}
+.controls{display:flex;flex-wrap:wrap;gap:16px;margin:11px 0 0;padding-left:27px}
+.ctl .ctl-lbl{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--faint);margin:0 0 5px}
+
+/* Segmented */
+.seg{display:inline-flex;border:1px solid var(--line-2);border-radius:var(--r-s);overflow:hidden;background:var(--panel-2)}
+.seg button{font-family:var(--sans);font-size:12.5px;color:var(--dim);padding:6px 12px;border:0;background:transparent;
+  cursor:pointer;border-right:1px solid var(--line-2);line-height:1;white-space:nowrap;transition:.15s}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--panel-3);color:var(--acc)}
+.seg button:not(.on):hover{color:var(--txt)}
+
+/* Combinaison / récap / save */
+.strip{display:flex;align-items:center;gap:12px;flex-wrap:wrap;border:1px solid var(--line-2);
+  border-radius:var(--r-s);padding:11px 14px;background:var(--panel)}
+.strip .k{font-size:13.5px;color:var(--dim)}
+.recap{border:1px solid var(--line-2);border-radius:var(--r-s);padding:12px 14px;background:var(--panel-2)}
+.recap-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 7px}
+.recap-head .k{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+.copy{font-family:var(--mono);font-size:11px;color:var(--dim);display:inline-flex;align-items:center;gap:6px;
+  background:transparent;border:1px solid var(--line-2);border-radius:var(--r-s);padding:5px 9px;cursor:pointer}
+.copy:hover{color:var(--acc);border-color:var(--acc)}
+.recap p{margin:0;font-size:13.5px;color:var(--txt);line-height:1.55}
+.recap p .v{color:var(--acc)}
+.save .p{font-size:12.5px;color:var(--dim);margin:0 0 9px;line-height:1.5}
+.save .row{display:flex;gap:8px;flex-wrap:wrap}
+.save input{flex:1;min-width:180px;background:var(--bg);border:1px solid var(--line-2);border-radius:var(--r-s);
+  padding:9px 11px;color:var(--txt);font-family:var(--sans);font-size:13px}
+.save input::placeholder{color:var(--faint)}
+
+/* Boutons */
+.btn{font-family:var(--sans);font-size:13.5px;font-weight:600;border-radius:var(--r-s);padding:10px 16px;
+  cursor:pointer;border:1px solid transparent;line-height:1;transition:.15s;display:inline-flex;align-items:center;gap:8px}
+.btn-primary{background:var(--acc);color:var(--acc-txt);box-shadow:0 0 20px rgba(77,157,224,.28)}
+.btn-primary:hover{filter:brightness(1.07)}
+.btn-outline{background:var(--panel-2);color:var(--txt);border-color:var(--line-2)}
+.btn-outline:hover{border-color:var(--line-3)}
+.btn-ghost{background:transparent;color:var(--dim)}
+.btn-ghost:hover{color:var(--txt)}
+.btn-sm{font-size:12.5px;padding:8px 13px}
+
+/* Barre live collante */
+.dock{position:fixed;inset-inline:0;bottom:0;z-index:10;border-top:1px solid var(--line-2);
+  background:rgba(10,15,28,.94);backdrop-filter:blur(8px)}
+.dock-in{max-width:800px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:14px;
+  flex-wrap:wrap;padding:12px 24px}
+.count{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.count .n{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--txt);line-height:1}
+.count .cap{font-size:13px;color:var(--dim);line-height:1.35}
+.count .age{font-family:var(--mono);font-size:11px;color:var(--faint)}
+.dock .acts{display:flex;gap:8px;flex-wrap:wrap}
+
+@media(max-width:560px){
+  .wrap{padding:28px 16px 132px}
+  .head h1{font-size:27px}
+  .fam-head .desc{display:none}
+  .controls{padding-left:0}
+  .dock-in{padding:10px 16px}
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <nav class="tabs" role="group" aria-label="Mode du scanner">
+    <a class="tab" href="#" aria-current="page">Choisir mes conditions</a>
+    <a class="tab" href="#">Décrire ma stratégie</a>
+  </nav>
+
+  <header class="head">
+    <p class="eyebrow">Scanner · palette</p>
+    <h1>Compose tes conditions.<br><span class="acc">Vois où elles sont réunies.</span></h1>
+    <p>Choisis les faits structurels <b>présents</b> qui composent ta stratégie. Le scanner te montre sur quels marchés et timeframes ils sont réunis <b>en ce moment</b>.</p>
+  </header>
+
+  <section class="console">
+    <div class="c-bar">
+      <span class="t">Palette de conditions</span>
+      <span class="live"><span class="d"></span>Lecture seule</span>
+    </div>
+    <div class="c-body">
+
+      <!-- 01 Structure -->
+      <div class="fam">
+        <button class="fam-head" type="button" aria-expanded="true">
+          <span class="idx">01</span>
+          <span class="name">Structure</span>
+          <span class="desc">tendance, cassures, événements</span>
+          <span class="count on">2 actives</span>
+          <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="fam-body">
+          <div class="cond sel">
+            <div class="cond-top">
+              <span class="chk"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M5 12l5 5L20 6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              <span class="lbl">La tendance structurelle est</span>
+              <svg class="info" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01" stroke-linecap="round"/></svg>
+            </div>
+            <div class="controls">
+              <div class="ctl">
+                <p class="ctl-lbl">Direction</p>
+                <div class="seg"><button class="on">Haussière</button><button>Baissière</button><button>Indéfinie</button></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cond sel">
+            <div class="cond-top">
+              <span class="chk"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M5 12l5 5L20 6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              <span class="lbl">L'unité supérieure va</span>
+              <svg class="info" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01" stroke-linecap="round"/></svg>
+            </div>
+            <div class="controls">
+              <div class="ctl">
+                <p class="ctl-lbl">Côté</p>
+                <div class="seg"><button class="on">Dans le même sens</button><button>En sens inverse</button></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cond">
+            <div class="cond-top">
+              <span class="chk"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M5 12l5 5L20 6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              <span class="lbl">Un CHOCH est survenu dans les N dernières bougies</span>
+              <svg class="info" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01" stroke-linecap="round"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 02 Zones -->
+      <div class="fam">
+        <button class="fam-head" type="button" aria-expanded="true">
+          <span class="idx">02</span>
+          <span class="name">Zones</span>
+          <span class="desc">Order Blocks, Fair Value Gaps</span>
+          <span class="count on">1 active</span>
+          <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="fam-body">
+          <div class="cond sel">
+            <div class="cond-top">
+              <span class="chk"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M5 12l5 5L20 6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              <span class="lbl">Le prix est dans une zone jamais testée</span>
+              <svg class="info" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01" stroke-linecap="round"/></svg>
+            </div>
+          </div>
+          <div class="cond">
+            <div class="cond-top">
+              <span class="chk"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M5 12l5 5L20 6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              <span class="lbl">Le prix est dans un Order Block</span>
+              <svg class="info" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01" stroke-linecap="round"/></svg>
+            </div>
+          </div>
+          <div class="cond">
+            <div class="cond-top">
+              <span class="chk"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M5 12l5 5L20 6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              <span class="lbl">Le prix est à moins de X % d'un Order Block, sans y être</span>
+              <svg class="info" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01" stroke-linecap="round"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 03 Liquidité (repliée) -->
+      <div class="fam closed">
+        <button class="fam-head" type="button" aria-expanded="false">
+          <span class="idx">03</span>
+          <span class="name">Liquidité</span>
+          <span class="desc">poches, prises, creux/sommets égaux</span>
+          <span class="count">aucune active</span>
+          <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="fam-body"></div>
+      </div>
+
+      <!-- 04 Contexte (repliée) -->
+      <div class="fam closed">
+        <button class="fam-head" type="button" aria-expanded="false">
+          <span class="idx">04</span>
+          <span class="name">Contexte</span>
+          <span class="desc">phase, volatilité, range, session</span>
+          <span class="count">aucune active</span>
+          <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="fam-body"></div>
+      </div>
+
+      <!-- Combinaison -->
+      <div class="strip">
+        <span class="k">Combinaison :</span>
+        <div class="seg"><button class="on">Toutes (ET)</button><button>Au moins une (OU)</button></div>
+      </div>
+
+      <!-- Récap -->
+      <div class="recap">
+        <div class="recap-head">
+          <span class="k">Ta lecture, en une phrase</span>
+          <button class="copy" type="button"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg>Copier</button>
+        </div>
+        <p>La tendance structurelle est <span class="v">(haussière)</span> et L'unité supérieure va <span class="v">(dans le même sens)</span> et Le prix est dans une zone jamais testée.</p>
+      </div>
+
+      <!-- Enregistrement -->
+      <div class="save">
+        <p class="p">Sauvegarder cette combinaison comme stratégie nommée (sur cet appareil uniquement — rien n'est envoyé au serveur) :</p>
+        <div class="row">
+          <input placeholder="ex. London sweep M15" aria-label="Nom de la stratégie" />
+          <button class="btn btn-outline btn-sm" type="button">Sauvegarder la stratégie</button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+</main>
+
+<!-- Barre live collante -->
+<div class="dock">
+  <div class="dock-in">
+    <div class="count">
+      <span class="n">37</span>
+      <span class="cap">combos correspondent à ta lecture · sur 6 marchés suivis</span>
+      <span class="age">évalué il y a 12 s</span>
+    </div>
+    <div class="acts">
+      <button class="btn btn-ghost" type="button">Relancer</button>
+      <button class="btn btn-primary" type="button">
+        Voir les marchés concernés
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+</body>
+</html>

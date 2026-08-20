@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="fr" data-design="terminal">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Décris ta stratégie — V1 Éditorial épuré</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Newsreader:ital,opt@0,7..72;1,7..72&display=swap" rel="stylesheet" />
+<style>
+/* ────────────────────────────────────────────────────────────────────────────
+   MAQUETTE STATIQUE — /scanner/decrire · Direction V1 « Éditorial épuré »
+   Valeurs = thème Terminal (défaut) de webapp/app/globals.css, verbatim.
+   Aucun backend, aucune logique. Seule la mise en forme change entre v1/v2/v3.
+   ──────────────────────────────────────────────────────────────────────────── */
+:root{
+  --bg:#0a0f1c; --panel:#0e1524; --panel-2:#121a2c; --panel-3:#182238;
+  --line:rgba(255,255,255,.07); --line-2:rgba(255,255,255,.11); --line-3:rgba(255,255,255,.17);
+  --txt:#e7ecf6; --dim:#8b94ab; --faint:#59617a;
+  --acc:#4d9de0; --acc-dim:rgba(77,157,224,.14); --acc-txt:#06131f;
+  --bull:#37b98c; --liq:#d6a24a; --r:10px; --r-s:7px;
+  --sans:'Inter',ui-sans-serif,system-ui,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,'SFMono-Regular',monospace;
+  --serif:'Newsreader',Georgia,Cambria,'Times New Roman',serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:var(--bg); color:var(--txt); font-family:var(--sans);
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  /* léger halo éditorial pour poser l'ambiance premium */
+  background-image:radial-gradient(120% 80% at 50% -10%, rgba(77,157,224,.06), transparent 60%);
+  min-height:100vh;
+}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums;font-feature-settings:'tnum'}
+
+/* Colonne unique, centrée, très aérée */
+.wrap{max-width:680px;margin:0 auto;padding:56px 24px 96px}
+
+/* Onglets — discrets, ancrés en pilule sobre */
+.tabs{display:inline-flex;align-items:center;gap:2px;border:1px solid var(--line-2);
+  background:rgba(255,255,255,.02);border-radius:999px;padding:4px}
+.tab{font-size:13.5px;font-weight:500;color:var(--dim);padding:7px 16px;border-radius:999px;
+  text-decoration:none;line-height:1;white-space:nowrap;transition:color .15s}
+.tab:hover{color:var(--txt)}
+.tab[aria-current]{color:var(--txt);background:var(--panel-2);box-shadow:0 1px 0 rgba(255,255,255,.04) inset}
+
+/* En-tête éditorial : titre serif large, sous-titre respiré */
+.head{margin:44px 0 8px}
+.head h1{font-family:var(--serif);font-weight:400;font-size:40px;line-height:1.12;
+  letter-spacing:-.01em;margin:0;color:var(--txt)}
+.head p{font-size:17px;line-height:1.6;color:var(--dim);margin:16px 0 0;max-width:56ch}
+
+/* Signature M.I.A — filet fin, pas de carte, ton confidentiel */
+.mia{display:flex;align-items:center;gap:12px;margin:40px 0 20px;
+  padding:0 0 20px;border-bottom:1px solid var(--line)}
+.mia .m{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;
+  font-weight:700;font-size:13px;color:var(--acc-txt);
+  background:linear-gradient(150deg,var(--acc),#7cc0ee);flex:none}
+.mia .who{line-height:1.35}
+.mia .who .t{font-size:14px;font-weight:600;color:var(--txt)}
+.mia .who .s{font-size:12.5px;color:var(--faint)}
+
+/* Zone de saisie = héros. Grande surface calme, chrome minimal */
+.field{position:relative;margin:8px 0 14px}
+.field textarea{
+  width:100%;min-height:132px;resize:none;border:0;outline:0;background:transparent;
+  color:var(--txt);font-family:var(--serif);font-size:20px;line-height:1.5;padding:6px 0}
+.field textarea::placeholder{color:var(--faint);font-style:italic}
+.field .rule{height:1px;background:linear-gradient(90deg,var(--line-3),var(--line));margin-top:2px}
+.mic{position:absolute;right:0;top:2px;width:40px;height:40px;border-radius:50%;
+  border:1px solid var(--line-2);background:rgba(255,255,255,.02);color:var(--dim);
+  display:grid;place-items:center;cursor:pointer;transition:.15s}
+.mic:hover{color:var(--acc);border-color:var(--acc)}
+.privacy{font-size:11.5px;line-height:1.55;color:var(--faint);margin:12px 0 0;max-width:60ch}
+
+/* Actions — CTA texte fort mais épuré */
+.actions{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin:26px 0 0}
+.btn{font-family:var(--sans);font-size:14.5px;font-weight:600;border-radius:var(--r-s);
+  padding:11px 20px;cursor:pointer;border:1px solid transparent;line-height:1;transition:.15s}
+.btn-primary{background:var(--acc);color:var(--acc-txt)}
+.btn-primary:hover{filter:brightness(1.06)}
+.btn-ghost{background:transparent;color:var(--dim);border-color:transparent;padding:11px 4px}
+.btn-ghost:hover{color:var(--txt)}
+.scope{margin-left:auto;font-size:12px;color:var(--faint);max-width:30ch;text-align:right}
+
+/* Exemples — liste sobre, filet gauche, pas de boîtes */
+.ex{margin:56px 0 0}
+.ex .lbl{font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--faint);margin:0 0 14px}
+.ex ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.ex li a{display:block;text-decoration:none;color:var(--dim);font-size:15.5px;line-height:1.5;
+  padding:13px 16px 13px 18px;border-left:2px solid var(--line);border-radius:0 var(--r-s) var(--r-s) 0;
+  transition:.15s}
+.ex li a:hover{color:var(--txt);border-left-color:var(--acc);background:rgba(255,255,255,.02)}
+
+/* Disclaimer — note de bas de page, italique retenu */
+.disc{margin:48px 0 0;padding:20px 0 0;border-top:1px solid var(--line);
+  font-size:13px;line-height:1.7;color:var(--faint);max-width:64ch}
+
+@media(max-width:480px){
+  .wrap{padding:32px 20px 72px}
+  .head h1{font-size:31px}
+  .head p{font-size:15.5px}
+  .field textarea{font-size:18px}
+  .scope{margin-left:0;text-align:left;width:100%}
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <nav class="tabs" role="group" aria-label="Mode du scanner">
+    <a class="tab" href="#">Choisir mes conditions</a>
+    <a class="tab" href="#" aria-current="page">Décrire ma stratégie</a>
+  </nav>
+
+  <header class="head">
+    <h1>Décris ta stratégie. En français.</h1>
+    <p>Pas de formulaire à remplir. Écris ce que tu cherches comme tu le dirais à quelqu'un.</p>
+  </header>
+
+  <div class="mia">
+    <span class="m" aria-hidden="true">M</span>
+    <span class="who">
+      <span class="t">M.I.A traduit ta stratégie</span><br>
+      <span class="s">elle ne choisit rien à ta place · tu valides avant de lancer</span>
+    </span>
+  </div>
+
+  <div class="field">
+    <button class="mic" type="button" aria-label="Dicter à la voix" title="Dicter à la voix">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+        <rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <textarea placeholder="Ex. : je cherche un Order Block jamais testé, en tendance haussière, avec le 1 h qui va dans le même sens et une poche de liquidité prise récemment."></textarea>
+    <div class="rule"></div>
+  </div>
+  <p class="privacy">La transcription est effectuée par ton navigateur et peut transiter par ses serveurs. Aucun enregistrement audio n'est conservé.</p>
+
+  <div class="actions">
+    <button class="btn btn-primary" type="button">Traduire ma stratégie</button>
+    <button class="btn btn-ghost" type="button">Mes stratégies</button>
+    <span class="scope">M.I.A traduit vers 22 conditions vérifiables. Rien d'autre.</span>
+  </div>
+
+  <section class="ex">
+    <p class="lbl">Ou pars d'un exemple</p>
+    <ul>
+      <li><a href="#">Un Order Block jamais testé, en tendance haussière, avec l'unité supérieure d'accord</a></li>
+      <li><a href="#">Le prix revient dans un Fair Value Gap déjà testé une fois, après un CHOCH récent</a></li>
+      <li><a href="#">Une poche de liquidité vient d'être prise et le prix est entré dans une zone</a></li>
+      <li><a href="#">Un OB non testé quand le RSI est en survente</a></li>
+      <li><a href="#">Marché en expansion, structure haussière, zone vierge au prix</a></li>
+    </ul>
+  </section>
+
+  <p class="disc">M.I.A ne consulte pas le marché pour te répondre : elle transforme ta phrase en conditions vérifiables, puis c'est l'analyse du produit qui cherche. Elle ne classe rien, ne conseille rien et ne devine aucune condition que tu n'aurais pas exprimée.</p>
+</main>
+</body>
+</html>

@@ -1,5 +1,4 @@
 import { expect, test, type Page } from '@playwright/test';
-import { CONDITION_PALETTE } from '@/lib/conditions/palette';
 
 /**
  * UI-2 — enforceable invariants for the scanner's typographic tenue. Runs the two
@@ -8,13 +7,12 @@ import { CONDITION_PALETTE } from '@/lib/conditions/palette';
  *   2. every rendered size belongs to the six-step scale (no stray 16px base);
  *   3. the monospace face is on VALUES only — the language notes are proportional,
  *      while a timeframe CODE stays monospace (a sanctioned value use);
- *   4. the condition count shown is DERIVED (equals the real palette length);
+ *   4. the scope note names what M.I.A can turn words into (V3 copy, no bare number);
  *   5. no raw i18n key leaks (no fr/en fallback hole);
  *   6. the describe content fits the first fold at 1280×800.
  */
 
 const ALLOWED = new Set(['26px', '19px', '15px', '14px', '12px', '11px']);
-const COUNT = CONDITION_PALETTE.length; // derived, mirrors the backend palette
 
 async function mock(page: Page) {
   await page.route('**/api/access/me', (r) =>
@@ -45,6 +43,10 @@ async function textNodes(page: Page) {
     const root = document.querySelector('.app-shell');
     if (!root) return out;
     for (const el of Array.from(root.querySelectorAll<HTMLElement>('*'))) {
+      // The scale governs HTML PROSE, not the glyphs inside a graphic. The brand
+      // wordmark is an <svg><text> (see MiaLogo, BRD-2) whose fontSize is a
+      // drawing coordinate, not a UI type size — skip anything inside an <svg>.
+      if (el.closest('svg')) continue;
       const direct = Array.from(el.childNodes).some(
         (n) => n.nodeType === 3 && (n.textContent ?? '').trim().length > 0,
       );
@@ -104,11 +106,12 @@ for (const loc of ['fr', 'en'] as const) {
   }
 }
 
-test('condition count is derived from the palette (fr)', async ({ page }) => {
+test('the scope note names what M.I.A translates toward (fr)', async ({ page }) => {
   await mock(page);
   await page.goto('/fr/scanner/decrire');
   await page.getByTestId('scope-note').waitFor({ state: 'visible' });
-  await expect(page.getByTestId('scope-note')).toContainText(String(COUNT));
+  // V3 copy replaced the bare count with the concepts a description can name.
+  await expect(page.getByTestId('scope-note')).toContainText('Order Blocks');
 });
 
 test('describe content fits the first fold at 1280×800 (fr)', async ({ page }) => {

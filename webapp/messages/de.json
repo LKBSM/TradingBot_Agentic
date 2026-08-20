@@ -1124,8 +1124,10 @@
     },
     "builder": {
       "composeTitle": "Stellen Sie Ihre Bedingungen zusammen",
+      "eyebrow": "Scanner · Palette",
+      "titleAccent": "Sieh, wo sie zusammenkommen.",
       "editTitle": "Meine Bedingungen bearbeiten",
-      "intro": "Wählen Sie die <b>vorhandenen</b> strukturellen Fakten, aus denen sich Ihre Lesung zusammensetzt. Der Scanner zeigt Ihnen, auf welchen Märkten und Zeitrahmen sie <b>im Moment</b> erfüllt sind. Es ist ein Werkzeug zum Lesen: Die Beurteilung liegt bei Ihnen.",
+      "intro": "Wählen Sie die <b>vorhandenen</b> strukturellen Fakten, aus denen sich Ihre Strategie zusammensetzt. Der Scanner zeigt Ihnen, auf welchen Märkten und Zeitrahmen sie <b>im Moment</b> erfüllt sind.",
       "direction": "Richtung",
       "trend": "Trend",
       "phase": "Phase",
@@ -3171,7 +3173,9 @@
       "description": "Beschreibe deine Strategie auf Französisch oder Englisch; M.I.A übersetzt sie in überprüfbare Bedingungen der Palette."
     },
     "describe": {
-      "title": "Beschreibe deine Strategie. In deinen Worten.",
+      "title": "Beschreibe deine Strategie",
+      "eyebrow": "Konversationeller Scanner",
+      "titleAccent": "M.I.A macht sie überprüfbar.",
       "subtitle": "Kein Formular zum Ausfüllen. Schreib, was du suchst, so wie du es jemandem sagen würdest.",
       "miaTitle": "M.I.A übersetzt deine Strategie",
       "miaSub": "sie entscheidet nichts für dich · du bestätigst, bevor etwas läuft",
@@ -3179,7 +3183,7 @@
       "translate": "Meine Strategie übersetzen",
       "translating": "Übersetzen…",
       "myStrategies": "Meine Strategien",
-      "scope": "M.I.A übersetzt in 22 überprüfbare Bedingungen. Nichts anderes.",
+      "scope": "Order Blocks, Fair Value Gaps, Liquidität, Struktur, Momentum: beschreibe sie mit deinen Worten, sie macht daraus exakte Bedingungen.",
       "examplesLabel": "Oder beginne mit einem Beispiel",
       "disclaimer": "M.I.A sieht sich den Markt nicht an, um dir zu antworten: Sie verwandelt deinen Satz in überprüfbare Bedingungen, dann übernimmt die Analyse des Produkts die Suche. Sie ordnet nichts, rät zu nichts und errät niemals eine Bedingung, die du nicht ausgedrückt hast.",
       "examples": {

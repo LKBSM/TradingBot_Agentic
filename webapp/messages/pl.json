@@ -1124,8 +1124,10 @@
     },
     "builder": {
       "composeTitle": "Skomponuj swoje warunki",
+      "eyebrow": "Skaner · paleta",
+      "titleAccent": "Zobacz, gdzie się spotykają.",
       "editTitle": "Zmień moje warunki",
-      "intro": "Wybierz <b>obecne</b> fakty strukturalne, które składają się na Twój odczyt. Skaner pokaże Ci, na których rynkach i interwałach są one spełnione <b>w tym momencie</b>. To narzędzie do odczytu: ocena należy do Ciebie.",
+      "intro": "Wybierz <b>obecne</b> fakty strukturalne, które składają się na Twoją strategię. Skaner pokaże Ci, na których rynkach i interwałach są one spełnione <b>w tym momencie</b>.",
       "direction": "Kierunek",
       "trend": "Trend",
       "phase": "Faza",
@@ -3171,7 +3173,9 @@
       "description": "Opisz swoją strategię po francusku lub angielsku; M.I.A przetłumaczy ją na weryfikowalne warunki palety."
     },
     "describe": {
-      "title": "Opisz swoją strategię. Własnymi słowami.",
+      "title": "Opisz swoją strategię",
+      "eyebrow": "Skaner konwersacyjny",
+      "titleAccent": "M.I.A czyni ją weryfikowalną.",
       "subtitle": "Bez formularza do wypełnienia. Napisz, czego szukasz, tak jak powiedziałbyś to komuś.",
       "miaTitle": "M.I.A tłumaczy twoją strategię",
       "miaSub": "niczego za ciebie nie wybiera · zatwierdzasz, zanim cokolwiek ruszy",
@@ -3179,7 +3183,7 @@
       "translate": "Przetłumacz moją strategię",
       "translating": "Tłumaczenie…",
       "myStrategies": "Moje strategie",
-      "scope": "M.I.A tłumaczy na 22 weryfikowalne warunki. Nic więcej.",
+      "scope": "Order Blocks, Fair Value Gaps, płynność, struktura, momentum: opisz je własnymi słowami, a ona zamieni je w dokładne warunki.",
       "examplesLabel": "Albo zacznij od przykładu",
       "disclaimer": "M.I.A nie sprawdza rynku, aby ci odpowiedzieć: zamienia twoje zdanie w weryfikowalne warunki, a następnie analiza produktu wykonuje wyszukiwanie. Niczego nie porządkuje, niczego nie doradza i nigdy nie zgaduje warunku, którego nie wyraziłeś.",
       "examples": {

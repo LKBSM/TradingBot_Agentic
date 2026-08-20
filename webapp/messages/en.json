@@ -1131,8 +1131,10 @@
     },
     "builder": {
       "composeTitle": "Compose your conditions",
+      "eyebrow": "Scanner · palette",
+      "titleAccent": "See where they come together.",
       "editTitle": "Edit my conditions",
-      "intro": "Choose the structural facts <b>present</b> that make up your reading. The scanner shows you on which markets and timeframes they come together <b>right now</b>. It is a reading tool: the judgement is yours.",
+      "intro": "Choose the structural facts <b>present</b> that make up your strategy. The scanner shows you on which markets and timeframes they come together <b>right now</b>.",
       "direction": "Direction",
       "trend": "Trend",
       "phase": "Phase",
@@ -3172,6 +3174,8 @@
     },
     "describe": {
       "title": "Describe your strategy",
+      "eyebrow": "Conversational scanner",
+      "titleAccent": "M.I.A makes it verifiable.",
       "subtitle": "No form to fill in. Write what you're looking for as you'd say it to someone.",
       "miaTitle": "M.I.A translates your strategy",
       "miaSub": "she chooses nothing for you · you validate before anything runs",
@@ -3179,7 +3183,7 @@
       "translate": "Translate my strategy",
       "translating": "Translating…",
       "myStrategies": "My strategies",
-      "scope": "M.I.A translates toward {count} verifiable conditions. Nothing else.",
+      "scope": "Order Blocks, Fair Value Gaps, liquidity, structure, momentum: describe them in your own words, she turns them into exact conditions.",
       "examplesLabel": "Or start from an example",
       "disclaimer": "M.I.A does not look at the market to answer you: she turns your sentence into verifiable conditions, then the product's analysis does the searching. She orders nothing, advises nothing, and never guesses a condition you didn't express.",
       "examples": {

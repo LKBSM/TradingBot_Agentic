@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import { ChevronDown, Copy, Check, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import {
   CONDITION_PALETTE,
@@ -204,16 +204,28 @@ export function ConditionsBuilder({
 
   return (
     <div className="space-y-4 pb-24">
+      {/* Page header — V3 tenue: a mono eyebrow, a two-line title whose second
+          line is the accent, then the intro. Aligned with the « Décrire » tab so
+          both scanner entries share one identity. */}
+      <div>
+        <p className="flex items-center gap-2.5 fs-label font-mono uppercase tracking-[0.2em] text-primary">
+          <span aria-hidden className="h-px w-5 bg-primary/70" />
+          {t('builder.eyebrow')}
+        </p>
+        <h1 className="mt-2.5 fs-title font-bold leading-tight tracking-tight text-foreground">
+          {mode === 'onboarding' ? t('builder.composeTitle') : t('builder.editTitle')}
+          <br />
+          <span className="text-primary">{t('builder.titleAccent')}</span>
+        </h1>
+        <p className="mt-2 fs-secondary text-muted-foreground">
+          {t.rich('builder.intro', {
+            b: (chunks) => <strong className="font-semibold text-foreground">{chunks}</strong>,
+          })}
+        </p>
+      </div>
+
       <Card>
-        <CardHeader>
-          <CardTitle className="fs-section">
-            {mode === 'onboarding' ? t('builder.composeTitle') : t('builder.editTitle')}
-          </CardTitle>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {t.rich('builder.intro', { b: (chunks) => <strong>{chunks}</strong> })}
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-3 pt-6">
           {groups.map(({ family, entries }, familyIndex) => {
             const isOpen = open.has(family);
             const count = activeInFamily(family);
@@ -226,7 +238,9 @@ export function ConditionsBuilder({
                   className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left"
                 >
                   <span className="flex items-baseline gap-2">
-                    <span className="text-xs text-muted-foreground">{familyIndex + 1}.</span>
+                    <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                      {String(familyIndex + 1).padStart(2, '0')}
+                    </span>
                     <span className="text-sm font-semibold text-foreground">{t(`family.${family}.title`)}</span>
                     <span className="text-xs text-muted-foreground">{t(`family.${family}.desc`)}</span>
                   </span>
@@ -389,7 +403,7 @@ export function ConditionsBuilder({
           ) : (
             <div className="flex flex-wrap items-baseline gap-2">
               <span
-                className="fs-title font-semibold leading-none text-foreground"
+                className="fs-title font-mono font-semibold tabular-nums leading-none text-foreground"
                 data-testid="live-combo-count"
               >
                 {live.status === 'ready' ? live.count : '…'}

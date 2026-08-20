@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="fr" data-design="terminal">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Décris ta stratégie — V2 Produit fintech mature</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+/* ────────────────────────────────────────────────────────────────────────────
+   MAQUETTE STATIQUE — /scanner/decrire · Direction V2 « Produit fintech mature »
+   Valeurs = thème Terminal (défaut) de webapp/app/globals.css, verbatim.
+   Hiérarchie resserrée, profondeur de surfaces (panel/panel-2/panel-3), rail d'accent.
+   ──────────────────────────────────────────────────────────────────────────── */
+:root{
+  --bg:#0a0f1c; --panel:#0e1524; --panel-2:#121a2c; --panel-3:#182238;
+  --line:rgba(255,255,255,.07); --line-2:rgba(255,255,255,.11); --line-3:rgba(255,255,255,.17);
+  --txt:#e7ecf6; --dim:#8b94ab; --faint:#59617a;
+  --acc:#4d9de0; --acc-dim:rgba(77,157,224,.14); --acc-txt:#06131f;
+  --bull:#37b98c; --liq:#d6a24a; --r:10px; --r-s:7px;
+  --sans:'Inter',ui-sans-serif,system-ui,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,'SFMono-Regular',monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--txt);font-family:var(--sans);
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;min-height:100vh}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums;font-feature-settings:'tnum'}
+
+.wrap{max-width:920px;margin:0 auto;padding:36px 24px 80px}
+
+/* Barre d'en-tête : onglets + portée alignés */
+.topbar{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.tabs{display:inline-flex;align-items:center;gap:2px;border:1px solid var(--line-2);
+  background:var(--panel-2);border-radius:999px;padding:4px}
+.tab{font-size:13px;font-weight:500;color:var(--dim);padding:8px 16px;border-radius:999px;
+  text-decoration:none;line-height:1;white-space:nowrap;transition:.15s;display:inline-flex;
+  align-items:center;gap:7px}
+.tab:hover{color:var(--txt)}
+.tab[aria-current]{color:var(--txt);background:var(--panel-3);box-shadow:0 1px 2px rgba(0,0,0,.3)}
+.tab .dot{width:6px;height:6px;border-radius:50%;background:var(--acc);display:none}
+.tab[aria-current] .dot{display:block}
+.scope-pill{margin-left:auto;font-size:11.5px;color:var(--dim);display:inline-flex;align-items:center;
+  gap:8px;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:7px 14px}
+.scope-pill b{color:var(--txt);font-weight:600}
+
+/* Titre resserré, hiérarchie forte */
+.head{margin:30px 0 22px}
+.head h1{font-size:29px;font-weight:700;letter-spacing:-.02em;line-height:1.15;margin:0;color:var(--txt)}
+.head p{font-size:15px;line-height:1.55;color:var(--dim);margin:9px 0 0;max-width:60ch}
+
+/* Surface assistant — carte avec rail d'accent + dégradé subtil */
+.assistant{border:1px solid var(--line-2);border-radius:var(--r);overflow:hidden;
+  background:linear-gradient(180deg,var(--panel-2),var(--panel));position:relative}
+.assistant::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:linear-gradient(180deg,var(--acc),transparent)}
+.a-head{display:flex;align-items:center;gap:11px;padding:16px 18px;border-bottom:1px solid var(--line)}
+.a-head .m{width:36px;height:36px;border-radius:var(--r-s);display:grid;place-items:center;
+  font-weight:800;font-size:14px;color:var(--acc-txt);
+  background:linear-gradient(150deg,var(--acc),#7cc0ee);flex:none;
+  box-shadow:0 2px 10px rgba(77,157,224,.25)}
+.a-head .who{line-height:1.3;flex:1}
+.a-head .who .t{font-size:14px;font-weight:600;color:var(--txt)}
+.a-head .who .s{font-size:12px;color:var(--faint)}
+.a-head .badge{font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--acc);
+  border:1px solid var(--acc-dim);background:var(--acc-dim);border-radius:999px;padding:4px 9px;text-transform:uppercase}
+
+.a-body{padding:16px 18px 18px}
+.inputrow{display:flex;align-items:flex-start;gap:10px;border:1px solid var(--line-2);
+  background:var(--bg);border-radius:var(--r-s);padding:12px 12px}
+.inputrow textarea{flex:1;min-height:74px;resize:none;border:0;outline:0;background:transparent;
+  color:var(--txt);font-family:var(--sans);font-size:15px;line-height:1.55;padding:2px 2px}
+.inputrow textarea::placeholder{color:var(--faint)}
+.mic{width:38px;height:38px;border-radius:var(--r-s);border:1px solid var(--line-2);
+  background:var(--panel-2);color:var(--dim);display:grid;place-items:center;cursor:pointer;
+  flex:none;transition:.15s}
+.mic:hover{color:var(--acc);border-color:var(--acc)}
+.privacy{font-family:var(--mono);font-size:10.5px;line-height:1.6;color:var(--faint);margin:11px 2px 0}
+
+.a-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:16px 0 0;
+  padding:16px 0 0;border-top:1px solid var(--line)}
+.btn{font-family:var(--sans);font-size:14px;font-weight:600;border-radius:var(--r-s);
+  padding:11px 18px;cursor:pointer;border:1px solid transparent;line-height:1;transition:.15s;
+  display:inline-flex;align-items:center;gap:8px}
+.btn-primary{background:var(--acc);color:var(--acc-txt);box-shadow:0 2px 12px rgba(77,157,224,.22)}
+.btn-primary:hover{filter:brightness(1.06)}
+.btn-outline{background:var(--panel-2);color:var(--txt);border-color:var(--line-2)}
+.btn-outline:hover{border-color:var(--line-3)}
+.hint{margin-left:auto;font-size:11.5px;color:var(--faint)}
+
+/* Exemples — grille 2 colonnes, chips raffinés avec pastille catégorie */
+.ex{margin:30px 0 0}
+.ex .lbl{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--faint);margin:0 0 12px}
+.ex .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.chip{display:flex;align-items:flex-start;gap:10px;text-align:left;cursor:pointer;
+  border:1px solid var(--line);background:var(--panel);border-radius:var(--r-s);padding:13px 14px;
+  color:var(--dim);font-size:13.5px;line-height:1.5;font-family:var(--sans);transition:.15s;width:100%}
+.chip:hover{color:var(--txt);border-color:var(--line-3);background:var(--panel-2);transform:translateY(-1px)}
+.chip .pin{width:7px;height:7px;border-radius:50%;background:var(--acc);opacity:.7;margin-top:6px;flex:none}
+.chip:nth-child(2) .pin{background:var(--bull)}
+.chip:nth-child(3) .pin{background:var(--liq)}
+.chip:nth-child(5) .pin{background:var(--bull)}
+
+/* Disclaimer — encart discret */
+.disc{margin:24px 0 0;border:1px solid var(--line);background:rgba(255,255,255,.015);
+  border-radius:var(--r-s);padding:15px 16px;font-size:12.5px;line-height:1.65;color:var(--faint)}
+.disc b{color:var(--dim);font-weight:600}
+
+@media(max-width:640px){
+  .wrap{padding:24px 18px 64px}
+  .head h1{font-size:24px}
+  .ex .grid{grid-template-columns:1fr}
+  .scope-pill{margin-left:0;order:3}
+  .hint{margin-left:0;width:100%;order:5}
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="topbar">
+    <nav class="tabs" role="group" aria-label="Mode du scanner">
+      <a class="tab" href="#"><span class="dot"></span>Choisir mes conditions</a>
+      <a class="tab" href="#" aria-current="page"><span class="dot"></span>Décrire ma stratégie</a>
+    </nav>
+    <span class="scope-pill"><b>22</b> conditions vérifiables. Rien d'autre.</span>
+  </div>
+
+  <header class="head">
+    <h1>Décris ta stratégie. En français.</h1>
+    <p>Pas de formulaire à remplir. Écris ce que tu cherches comme tu le dirais à quelqu'un.</p>
+  </header>
+
+  <section class="assistant">
+    <div class="a-head">
+      <span class="m" aria-hidden="true">M</span>
+      <span class="who">
+        <span class="t">M.I.A traduit ta stratégie</span><br>
+        <span class="s">elle ne choisit rien à ta place · tu valides avant de lancer</span>
+      </span>
+      <span class="badge">Traducteur</span>
+    </div>
+    <div class="a-body">
+      <div class="inputrow">
+        <textarea placeholder="Ex. : je cherche un Order Block jamais testé, en tendance haussière, avec le 1 h qui va dans le même sens et une poche de liquidité prise récemment."></textarea>
+        <button class="mic" type="button" aria-label="Dicter à la voix" title="Dicter à la voix">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+            <rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+      <p class="privacy">La transcription est effectuée par ton navigateur et peut transiter par ses serveurs. Aucun enregistrement audio n'est conservé.</p>
+      <div class="a-actions">
+        <button class="btn btn-primary" type="button">
+          Traduire ma stratégie
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="btn btn-outline" type="button">Mes stratégies</button>
+        <span class="hint">tu valides chaque condition avant de lancer</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="ex">
+    <p class="lbl">Ou pars d'un exemple</p>
+    <div class="grid">
+      <button class="chip" type="button"><span class="pin"></span>Un Order Block jamais testé, en tendance haussière, avec l'unité supérieure d'accord</button>
+      <button class="chip" type="button"><span class="pin"></span>Le prix revient dans un Fair Value Gap déjà testé une fois, après un CHOCH récent</button>
+      <button class="chip" type="button"><span class="pin"></span>Une poche de liquidité vient d'être prise et le prix est entré dans une zone</button>
+      <button class="chip" type="button"><span class="pin"></span>Un OB non testé quand le RSI est en survente</button>
+      <button class="chip" type="button"><span class="pin"></span>Marché en expansion, structure haussière, zone vierge au prix</button>
+    </div>
+  </section>
+
+  <p class="disc"><b>M.I.A ne consulte pas le marché pour te répondre :</b> elle transforme ta phrase en conditions vérifiables, puis c'est l'analyse du produit qui cherche. Elle ne classe rien, ne conseille rien et ne devine aucune condition que tu n'aurais pas exprimée.</p>
+</main>
+</body>
+</html>

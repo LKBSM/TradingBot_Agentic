@@ -1124,8 +1124,10 @@
     },
     "builder": {
       "composeTitle": "Componha as suas condições",
+      "eyebrow": "Scanner · paleta",
+      "titleAccent": "Vê onde se reúnem.",
       "editTitle": "Modificar as minhas condições",
-      "intro": "Escolha os factos estruturais <b>presentes</b> que compõem a sua leitura. O scanner mostra-lhe em que mercados e timeframes estão reunidos <b>neste momento</b>. É uma ferramenta de leitura: o julgamento é seu.",
+      "intro": "Escolha os factos estruturais <b>presentes</b> que compõem a sua estratégia. O scanner mostra-lhe em que mercados e timeframes estão reunidos <b>neste momento</b>.",
       "direction": "Direção",
       "trend": "Tendência",
       "phase": "Fase",
@@ -3171,7 +3173,9 @@
       "description": "Descreve a tua estratégia em francês ou inglês; a M.I.A traduz para condições verificáveis da paleta."
     },
     "describe": {
-      "title": "Descreve a tua estratégia. Por tuas palavras.",
+      "title": "Descreve a tua estratégia",
+      "eyebrow": "Scanner conversacional",
+      "titleAccent": "A M.I.A torna-a verificável.",
       "subtitle": "Sem formulário para preencher. Escreve o que procuras como o dirias a alguém.",
       "miaTitle": "A M.I.A traduz a tua estratégia",
       "miaSub": "não escolhe nada por ti · validas antes de executar",
@@ -3179,7 +3183,7 @@
       "translate": "Traduzir a minha estratégia",
       "translating": "A traduzir…",
       "myStrategies": "As minhas estratégias",
-      "scope": "A M.I.A traduz para 22 condições verificáveis. Nada mais.",
+      "scope": "Order Blocks, Fair Value Gaps, liquidez, estrutura, momentum: descreve-os com as tuas palavras, ela transforma-os em condições exatas.",
       "examplesLabel": "Ou começa por um exemplo",
       "disclaimer": "A M.I.A não consulta o mercado para te responder: transforma a tua frase em condições verificáveis e, depois, a análise do produto faz a procura. Não ordena nada, não aconselha nada e nunca adivinha uma condição que não tenhas expresso.",
       "examples": {

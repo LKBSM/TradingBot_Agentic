@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="fr" data-design="terminal">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Décris ta stratégie — V3 Signature Terminal contrastée</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+/* ────────────────────────────────────────────────────────────────────────────
+   MAQUETTE STATIQUE — /scanner/decrire · Direction V3 « Signature Terminal contrastée »
+   Valeurs = thème Terminal (défaut) de webapp/app/globals.css, verbatim.
+   Parti pris de marque : titre surdimensionné, eyebrows mono, surface de commande.
+   ──────────────────────────────────────────────────────────────────────────── */
+:root{
+  --bg:#0a0f1c; --panel:#0e1524; --panel-2:#121a2c; --panel-3:#182238;
+  --line:rgba(255,255,255,.07); --line-2:rgba(255,255,255,.11); --line-3:rgba(255,255,255,.17);
+  --txt:#e7ecf6; --dim:#8b94ab; --faint:#59617a;
+  --acc:#4d9de0; --acc-dim:rgba(77,157,224,.14); --acc-txt:#06131f;
+  --bull:#37b98c; --liq:#d6a24a; --r:10px; --r-s:7px;
+  --sans:'Inter',ui-sans-serif,system-ui,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,'SFMono-Regular',monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--txt);font-family:var(--sans);
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;min-height:100vh;
+  /* grille technique très légère, signature "instrument" */
+  background-image:
+    linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);
+  background-size:44px 44px}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums;font-feature-settings:'tnum'}
+
+.wrap{max-width:800px;margin:0 auto;padding:40px 24px 88px}
+
+/* Onglets — cadres carrés, plus techniques */
+.tabs{display:inline-flex;border:1px solid var(--line-2);border-radius:var(--r-s);overflow:hidden}
+.tab{font-family:var(--mono);font-size:12px;letter-spacing:.02em;color:var(--dim);
+  padding:9px 16px;text-decoration:none;line-height:1;white-space:nowrap;transition:.15s;
+  border-right:1px solid var(--line-2)}
+.tab:last-child{border-right:0}
+.tab:hover{color:var(--txt);background:rgba(255,255,255,.03)}
+.tab[aria-current]{color:var(--acc-txt);background:var(--acc)}
+
+/* Eyebrow mono — motif récurrent */
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--acc);margin:0;display:flex;align-items:center;gap:10px}
+.eyebrow::before{content:"";width:22px;height:1px;background:var(--acc)}
+
+/* Titre surdimensionné, contrasté */
+.head{margin:38px 0 10px}
+.head h1{font-size:52px;font-weight:800;letter-spacing:-.03em;line-height:1.02;margin:14px 0 0;color:var(--txt)}
+.head h1 .fr{color:var(--acc)}
+.head p{font-size:17px;line-height:1.5;color:var(--dim);margin:18px 0 0;max-width:54ch}
+
+/* Surface de commande — cadre marqué, invite mono */
+.console{margin:34px 0 0;border:1px solid var(--line-3);border-radius:var(--r);
+  background:linear-gradient(180deg,var(--panel),var(--bg));
+  box-shadow:0 0 0 1px rgba(77,157,224,.05),0 24px 60px -30px rgba(0,0,0,.8)}
+.c-bar{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.c-bar .m{width:28px;height:28px;border-radius:var(--r-s);display:grid;place-items:center;
+  font-weight:800;font-size:12px;color:var(--acc-txt);background:var(--acc);flex:none}
+.c-bar .t{font-family:var(--mono);font-size:12.5px;color:var(--txt);font-weight:500}
+.c-bar .s{font-size:11.5px;color:var(--faint);margin-left:2px}
+.c-bar .live{margin-left:auto;font-family:var(--mono);font-size:10px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--dim);display:inline-flex;align-items:center;gap:7px}
+.c-bar .live .d{width:7px;height:7px;border-radius:50%;background:var(--bull);box-shadow:0 0 8px var(--bull)}
+
+.c-body{display:flex;gap:12px;padding:20px 18px 18px}
+.prompt{font-family:var(--mono);font-size:22px;color:var(--acc);line-height:1.2;flex:none;padding-top:2px}
+.c-body textarea{flex:1;min-height:96px;resize:none;border:0;outline:0;background:transparent;
+  color:var(--txt);font-family:var(--mono);font-size:15px;line-height:1.6;padding:0}
+.c-body textarea::placeholder{color:var(--faint)}
+.mic{width:40px;height:40px;border-radius:var(--r-s);border:1px solid var(--line-2);
+  background:var(--panel-2);color:var(--dim);display:grid;place-items:center;cursor:pointer;
+  flex:none;transition:.15s;align-self:flex-start}
+.mic:hover{color:var(--acc);border-color:var(--acc);box-shadow:0 0 12px rgba(77,157,224,.25)}
+
+.c-foot{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 18px;
+  border-top:1px solid var(--line);background:rgba(255,255,255,.012)}
+.privacy{font-family:var(--mono);font-size:10px;line-height:1.6;color:var(--faint);
+  flex:1;min-width:200px}
+.btn{font-family:var(--mono);font-size:13px;font-weight:600;letter-spacing:.01em;border-radius:var(--r-s);
+  padding:11px 18px;cursor:pointer;border:1px solid transparent;line-height:1;transition:.15s;
+  display:inline-flex;align-items:center;gap:8px}
+.btn-primary{background:var(--acc);color:var(--acc-txt);box-shadow:0 0 20px rgba(77,157,224,.3)}
+.btn-primary:hover{filter:brightness(1.08)}
+.btn-outline{background:transparent;color:var(--txt);border-color:var(--line-3)}
+.btn-outline:hover{border-color:var(--acc);color:var(--acc)}
+
+/* Portée — bandeau mono contrasté */
+.scope{margin:16px 0 0;font-family:var(--mono);font-size:12px;color:var(--dim);
+  display:flex;align-items:center;gap:8px}
+.scope b{color:var(--acc)}
+.scope .sep{color:var(--faint)}
+
+/* Exemples — liste dense numérotée façon terminal */
+.ex{margin:46px 0 0}
+.ex .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--faint);margin:0 0 14px;display:flex;align-items:center;gap:10px}
+.ex .lbl::before{content:"";width:22px;height:1px;background:var(--line-3)}
+.ex ol{list-style:none;margin:0;padding:0;counter-reset:ex;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.ex li{counter-increment:ex;border-bottom:1px solid var(--line)}
+.ex li:last-child{border-bottom:0}
+.ex li button{display:flex;align-items:center;gap:16px;width:100%;text-align:left;cursor:pointer;
+  background:transparent;border:0;color:var(--dim);font-family:var(--sans);font-size:14.5px;line-height:1.45;
+  padding:15px 18px;transition:.15s}
+.ex li button::before{content:counter(ex,decimal-leading-zero);font-family:var(--mono);font-size:12px;
+  color:var(--faint);flex:none;transition:.15s}
+.ex li button:hover{background:rgba(77,157,224,.05);color:var(--txt)}
+.ex li button:hover::before{color:var(--acc)}
+
+/* Disclaimer */
+.disc{margin:40px 0 0;padding-left:16px;border-left:2px solid var(--line-2);
+  font-size:13px;line-height:1.7;color:var(--faint);max-width:66ch}
+
+@media(max-width:560px){
+  .wrap{padding:28px 18px 64px}
+  .head h1{font-size:36px}
+  .head p{font-size:15px}
+  .c-body{padding:16px 14px}
+  .prompt{font-size:18px}
+  .c-foot{gap:10px}
+  .privacy{min-width:100%;order:3}
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <nav class="tabs" role="group" aria-label="Mode du scanner">
+    <a class="tab" href="#">Choisir mes conditions</a>
+    <a class="tab" href="#" aria-current="page">Décrire ma stratégie</a>
+  </nav>
+
+  <header class="head">
+    <p class="eyebrow">Scanner conversationnel</p>
+    <h1>Décris ta stratégie.<br><span class="fr">M.I.A la rend vérifiable.</span></h1>
+    <p>Pas de formulaire à remplir. Écris ce que tu cherches comme tu le dirais à quelqu'un.</p>
+  </header>
+
+  <section class="console">
+    <div class="c-bar">
+      <span class="m" aria-hidden="true">M</span>
+      <span class="t">M.I.A traduit ta stratégie</span>
+      <span class="s">— elle ne choisit rien à ta place · tu valides avant de lancer</span>
+      <span class="live"><span class="d"></span>Traducteur</span>
+    </div>
+    <div class="c-body">
+      <span class="prompt" aria-hidden="true">›</span>
+      <textarea placeholder="Ex. : je cherche un Order Block jamais testé, en tendance haussière, avec le 1 h qui va dans le même sens et une poche de liquidité prise récemment."></textarea>
+      <button class="mic" type="button" aria-label="Dicter à la voix" title="Dicter à la voix">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+          <rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+    <div class="c-foot">
+      <p class="privacy">La transcription est effectuée par ton navigateur et peut transiter par ses serveurs. Aucun enregistrement audio n'est conservé.</p>
+      <button class="btn btn-outline" type="button">Mes stratégies</button>
+      <button class="btn btn-primary" type="button">
+        Traduire ma stratégie
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </section>
+
+  <p class="scope">Order Blocks, Fair Value Gaps, liquidité, structure, momentum <span class="sep">·</span> <b>décris-les avec tes mots</b>, elle en fait des conditions exactes.</p>
+
+  <section class="ex">
+    <p class="lbl">Ou pars d'un exemple</p>
+    <ol>
+      <li><button type="button">Un Order Block jamais testé, en tendance haussière, avec l'unité supérieure d'accord</button></li>
+      <li><button type="button">Le prix revient dans un Fair Value Gap déjà testé une fois, après un CHOCH récent</button></li>
+      <li><button type="button">Une poche de liquidité vient d'être prise et le prix est entré dans une zone</button></li>
+      <li><button type="button">Un OB non testé quand le RSI est en survente</button></li>
+      <li><button type="button">Marché en expansion, structure haussière, zone vierge au prix</button></li>
+    </ol>
+  </section>
+
+  <p class="disc">M.I.A ne consulte pas le marché pour te répondre : elle transforme ta phrase en conditions vérifiables, puis c'est l'analyse du produit qui cherche. Elle ne classe rien, ne conseille rien et ne devine aucune condition que tu n'aurais pas exprimée.</p>
+</main>
+</body>
+</html>
