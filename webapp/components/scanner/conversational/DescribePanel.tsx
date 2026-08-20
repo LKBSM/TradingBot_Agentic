@@ -60,7 +60,7 @@ export function DescribePanel({
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="fs-title font-semibold tracking-tight text-foreground">{t('describe.title')}</h1>
+        <h1 className="fs-section font-semibold tracking-tight text-foreground">{t('describe.title')}</h1>
         <p className="mt-1 fs-secondary text-muted-foreground">{t('describe.subtitle')}</p>
       </div>
 
@@ -91,7 +91,7 @@ export function DescribePanel({
             onChange={(e) => onTextChange(e.target.value)}
             placeholder={t('describe.placeholder')}
             aria-label={t('describe.title')}
-            className="min-h-[64px] flex-1 resize-none bg-transparent fs-body leading-relaxed text-foreground outline-none placeholder:text-muted-foreground/70"
+            className="min-h-[64px] flex-1 resize-none bg-transparent fs-secondary leading-relaxed text-foreground outline-none placeholder:text-muted-foreground/70"
           />
           {dictation.supported && (
             <button
@@ -162,23 +162,61 @@ export function DescribePanel({
           {t('describe.examplesLabel')}
         </div>
         <div className="grid gap-2 sm:grid-cols-2">
-          {examples.map((example, i) => (
-            <button
-              key={i}
-              type="button"
-              data-testid="example-chip"
-              onClick={() => onTextChange(example)}
-              className="rounded-lg border border-border bg-muted/50 p-2.5 text-left fs-secondary text-muted-foreground transition hover:border-primary/50 hover:text-foreground"
-            >
-              {example}
-            </button>
-          ))}
+          {examples.map((example, i) => {
+            const active = text.includes(example);
+            return (
+              <button
+                key={i}
+                type="button"
+                data-testid="example-chip"
+                aria-pressed={active}
+                onClick={() => onTextChange(toggleExample(text, example))}
+                className={cn(
+                  'rounded-lg border p-2.5 text-left fs-label leading-snug transition',
+                  active
+                    ? 'border-primary bg-primary/10 text-foreground ring-1 ring-primary/40'
+                    : 'border-border bg-muted/50 text-muted-foreground hover:border-primary/50 hover:text-foreground',
+                )}
+              >
+                {example}
+              </button>
+            );
+          })}
         </div>
       </div>
 
       <p className="fs-legal leading-relaxed text-muted-foreground">{t('describe.disclaimer')}</p>
     </div>
   );
+}
+
+const EXAMPLE_SEPARATOR = ', ';
+
+/**
+ * Additive composition of the example chips. Clicking an example APPENDS its
+ * text (comma-joined); clicking it again REMOVES exactly that phrase and its
+ * separator. Manual input is never overwritten — examples are added after it.
+ *
+ * The active state is derived from the text itself (`text.includes(example)`),
+ * so the textarea stays the single source of truth: what is sent to « Traduire
+ * ma stratégie » is exactly the visible concatenation, with no hidden transform.
+ * The example sentences are mutually non-substring (verified fr+en), so no
+ * example can falsely read as active because another contains it.
+ */
+function toggleExample(text: string, phrase: string): string {
+  if (text.includes(phrase)) {
+    let next = text;
+    if (next.includes(`${EXAMPLE_SEPARATOR}${phrase}`)) {
+      next = next.replace(`${EXAMPLE_SEPARATOR}${phrase}`, '');
+    } else if (next.includes(`${phrase}${EXAMPLE_SEPARATOR}`)) {
+      next = next.replace(`${phrase}${EXAMPLE_SEPARATOR}`, '');
+    } else {
+      next = next.replace(phrase, '');
+    }
+    return next.trim();
+  }
+  const base = text.replace(/\s+$/, '');
+  return base ? `${base}${EXAMPLE_SEPARATOR}${phrase}` : phrase;
 }
 
 function dictationErrorMessage(error: DictationError, t: ReturnType<typeof useTranslations>): string {
