@@ -135,7 +135,14 @@ export function ScannerWorkspace({ locale }: { locale: string }) {
 
   if (showBuilder) {
     return (
-      <div className="space-y-4">
+      // Reserve room below the whole builder page (builder + saved-readings list)
+      // for the fixed action bar, using its measured height (--scanner-actionbar-h,
+      // set by ConditionsBuilder) so the last reading clears it on every viewport.
+      // The mobile space-nav offset is already handled by `.center`'s padding.
+      <div
+        className="space-y-4"
+        style={{ paddingBottom: 'calc(var(--scanner-actionbar-h, 6rem) + 1rem)' }}
+      >
         <ConditionsBuilder
           key={loaded ? `strategy-${loaded.key}` : 'default'}
           config={loaded?.config ?? config}

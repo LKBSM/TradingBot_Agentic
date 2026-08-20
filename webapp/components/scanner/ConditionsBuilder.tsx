@@ -101,6 +101,25 @@ export function ConditionsBuilder({
   const [strategyFeedback, setStrategyFeedback] = React.useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
   const [copied, setCopied] = React.useState(false);
 
+  // The action bar is fixed at the bottom and its height GROWS when the buttons
+  // wrap on narrow phones. Measure its real height and publish it as a CSS var so
+  // the page can reserve exactly that much room below the last saved reading — no
+  // magic constant. Cleared on unmount so no other view inherits the reservation.
+  const actionBarRef = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => {
+    const el = actionBarRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const root = document.documentElement;
+    const apply = () => root.style.setProperty('--scanner-actionbar-h', `${el.offsetHeight}px`);
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      root.style.removeProperty('--scanner-actionbar-h');
+    };
+  }, []);
+
   const groups = React.useMemo(() => groupByFamily(CONDITION_PALETTE), []);
   const selectedCount = CONDITION_PALETTE.filter((e) => rows[e.type].selected).length;
   const activeInFamily = (family: Family): number =>
@@ -203,7 +222,7 @@ export function ConditionsBuilder({
   }
 
   return (
-    <div className="space-y-4 pb-24">
+    <div className="space-y-4">
       {/* Page header — V3 tenue: a mono eyebrow, a two-line title whose second
           line is the accent, then the intro. Aligned with the « Décrire » tab so
           both scanner entries share one identity. */}
@@ -393,8 +412,13 @@ export function ConditionsBuilder({
         </CardContent>
       </Card>
 
-      {/* Sticky action bar — LIVE combo count while composing + go to results. */}
-      <div className="fixed inset-x-0 bottom-0 z-10 border-t border-border/60 bg-background/95 backdrop-blur">
+      {/* Sticky action bar — LIVE combo count while composing + go to results.
+          `scanner-actionbar` lifts it above the mobile space nav on phones (see
+          pages.css); its measured height reserves room below the list. */}
+      <div
+        ref={actionBarRef}
+        className="scanner-actionbar fixed inset-x-0 bottom-0 z-10 border-t border-border/60 bg-background/95 backdrop-blur"
+      >
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           {selectedCount === 0 ? (
             <span className="text-sm text-muted-foreground">

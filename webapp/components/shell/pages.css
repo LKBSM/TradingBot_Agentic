@@ -1628,3 +1628,19 @@
   fill: none;
   stroke-width: 2.2;
 }
+
+/* ── Scanner builder action bar ───────────────────────────────────────────
+   Fixed at the viewport bottom on desktop. On phones (< 768px, `.no-chat`
+   surfaces) the mobile space nav (`.mspace`, z-60, 58px + safe-area) owns the
+   very bottom, so the action bar must sit ABOVE it — otherwise it hides behind
+   the nav. The page reserves the bar's MEASURED height via
+   `--scanner-actionbar-h` (set by ConditionsBuilder) so the last saved reading
+   always clears it. */
+.scanner-actionbar {
+  bottom: 0;
+}
+@media (max-width: 767px) {
+  .app-shell.no-chat .scanner-actionbar {
+    bottom: calc(58px + env(safe-area-inset-bottom));
+  }
+}
