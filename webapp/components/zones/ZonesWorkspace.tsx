@@ -32,6 +32,7 @@ import {
   type ZoneSort,
 } from '@/lib/zones/lifecycle';
 import { cn } from '@/lib/utils';
+import { PriceFreshnessBadge } from '@/components/market-reading/PriceFreshnessBadge';
 import { ZoneLifecycleCard } from './ZoneLifecycleCard';
 import { ZoneMiaPanel } from './ZoneMiaPanel';
 
@@ -323,13 +324,19 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
           <div className="sub">{t('intro')}</div>
         </div>
         <span className="hsp" />
-        <div className="livebadge">
-          {isRefreshing ? (
-            <span aria-live="polite">{t('refreshing')}</span>
-          ) : (
-            <span className="dot" aria-hidden />
-          )}
-          <span className="mono">{badgeSummary}</span>
+        <div className="flex flex-col items-end gap-1">
+          <div className="livebadge">
+            {isRefreshing ? (
+              <span aria-live="polite">{t('refreshing')}</span>
+            ) : (
+              <span className="dot" aria-hidden />
+            )}
+            <span className="mono">{badgeSummary}</span>
+          </div>
+          {/* Freshness of the REFERENCE price feeding every card's proximity/gauge
+              (the unified last-CLOSED price, not a live tick) — makes an apparent
+              gap with the chart's live line read as elapsed time, not an error. */}
+          <PriceFreshnessBadge tsSec={change?.priceTs ?? null} />
         </div>
       </div>
 

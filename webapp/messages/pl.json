@@ -1429,7 +1429,10 @@
     },
     "temporal": {
       "candleClosed": "Świeca zamknięta {rel}",
-      "dailyChangeAria": "Zmiana dzienna {pct}"
+      "dailyChangeAria": "Zmiana dzienna {pct}",
+      "priceAt": "Cena o {time}",
+      "priceFreshness": "Cena o {time} · {rel}",
+      "priceAtTitle": "Ostatnia użyta cena referencyjna (ostatnia zamknięta świeca). Różnica względem ceny na żywo na wykresie odzwierciedla upływ czasu, a nie błąd."
     },
     "events": {
       "title": "Kontekst wydarzeń",

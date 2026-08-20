@@ -1429,7 +1429,10 @@
     },
     "temporal": {
       "candleClosed": "Vela fechada {rel}",
-      "dailyChangeAria": "Variação do dia {pct}"
+      "dailyChangeAria": "Variação do dia {pct}",
+      "priceAt": "Preço às {time}",
+      "priceFreshness": "Preço às {time} · {rel}",
+      "priceAtTitle": "Último preço de referência utilizado (última vela fechada). Uma diferença com o preço ao vivo do gráfico reflete o tempo decorrido, não um erro."
     },
     "events": {
       "title": "Contexto de eventos",

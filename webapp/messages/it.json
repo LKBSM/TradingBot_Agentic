@@ -1429,7 +1429,10 @@
     },
     "temporal": {
       "candleClosed": "Candela chiusa {rel}",
-      "dailyChangeAria": "Variazione del giorno {pct}"
+      "dailyChangeAria": "Variazione del giorno {pct}",
+      "priceAt": "Prezzo alle {time}",
+      "priceFreshness": "Prezzo alle {time} · {rel}",
+      "priceAtTitle": "Ultimo prezzo di riferimento utilizzato (ultima candela chiusa). Uno scarto con il prezzo in tempo reale del grafico riflette il tempo trascorso, non un errore."
     },
     "events": {
       "title": "Contesto degli eventi",

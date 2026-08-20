@@ -1429,7 +1429,10 @@
     },
     "temporal": {
       "candleClosed": "Kaars gesloten {rel}",
-      "dailyChangeAria": "Dagverandering {pct}"
+      "dailyChangeAria": "Dagverandering {pct}",
+      "priceAt": "Prijs om {time}",
+      "priceFreshness": "Prijs om {time} · {rel}",
+      "priceAtTitle": "Laatst gebruikte referentieprijs (laatste gesloten kaars). Een verschil met de live prijs van de grafiek weerspiegelt de verstreken tijd, geen fout."
     },
     "events": {
       "title": "Gebeurteniscontext",

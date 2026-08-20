@@ -1429,7 +1429,10 @@
     },
     "temporal": {
       "candleClosed": "Kerze geschlossen {rel}",
-      "dailyChangeAria": "Tagesveränderung {pct}"
+      "dailyChangeAria": "Tagesveränderung {pct}",
+      "priceAt": "Preis um {time}",
+      "priceFreshness": "Preis um {time} · {rel}",
+      "priceAtTitle": "Zuletzt verwendeter Referenzpreis (letzte geschlossene Kerze). Eine Abweichung vom Live-Preis des Charts spiegelt die verstrichene Zeit wider, keinen Fehler."
     },
     "events": {
       "title": "Ereigniskontext",

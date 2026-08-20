@@ -12,7 +12,7 @@ import {
   trendWindowSpan,
   TREND_WINDOW_BARS,
 } from '@/lib/market-reading/regime-facts';
-import { formatLocalDayLong, parseUtc } from '@/lib/time/localTime';
+import { formatLocalDayLong, formatLocalHm, parseUtc } from '@/lib/time/localTime';
 import {
   structureRange,
   positionPct,
@@ -184,6 +184,12 @@ interface RegimeCardProps {
   structure: MarketReadingStructure;
   header: MarketReadingHeader;
   price: number;
+  /**
+   * Epoch SECONDS of the candle/tick that produced `price` (liveHeader.priceTs).
+   * Surfaces the « Prix courant » freshness so an apparent gap with the chart's
+   * live line reads as elapsed time, not an error. Optional (null on fixtures).
+   */
+  priceTs?: number | null;
   /** Raw server market status — carries the session windows (single source). */
   marketStatus: MarketStatusPayload | null;
   /** Server-aggregated calendar reference levels (RG-1c) — day/week open + prev
@@ -219,6 +225,7 @@ export function RegimeCard({
   structure,
   header,
   price,
+  priceTs = null,
   marketStatus,
   referenceLevelsPayload,
   openHelp,
@@ -246,6 +253,13 @@ export function RegimeCard({
   const refLevels: ReferenceLevels | null = referenceLevelsFromPayload(referenceLevelsPayload);
 
   const px = (v: number) => fmt.price(v, instrument);
+  // « Prix courant » freshness — the EXACT local time the displayed price was
+  // read (from its epoch `priceTs`). Deterministic given priceTs, so it renders
+  // straight (RegimeCard is client-rendered over client-fetched data).
+  const priceTimeLabel =
+    priceTs != null && Number.isFinite(priceTs)
+      ? tr('temporal.priceAt', { time: formatLocalHm(new Date(priceTs * 1000)) })
+      : null;
   // Long, localized date — « 24 juil. à 09:45 » (fr) / « Jul 24 at 09:45 » (en),
   // never the ambiguous numeric « 24/07 ».
   const dayHm = (iso: string) => {
@@ -678,6 +692,7 @@ export function RegimeCard({
                 structure,
                 header,
                 price,
+                priceTimeLabel,
                 range,
                 pos,
                 vd,
@@ -748,6 +763,8 @@ interface DataCtx {
   structure: MarketReadingStructure;
   header: MarketReadingHeader;
   price: number;
+  /** Preformatted « Prix à HH:MM » label for the current-price row, or null. */
+  priceTimeLabel: string | null;
   range: { low: number; high: number } | null;
   pos: number | null;
   vd: MarketReadingRegime['volatility_detail'];
@@ -887,7 +904,7 @@ function renderData(k: string, c: DataCtx): React.ReactNode {
             </div>
           </div>
           <div className="ev">
-            <EvRow k={t('data.currentPrice')} v={px(c.price)} />
+            <EvRow k={t('data.currentPrice')} v={px(c.price)} t={c.priceTimeLabel ?? undefined} />
             <EvRow k={t('data.distTop')} v={px(c.range.high - c.price)} t={relWord(distTop, t)} />
             <EvRow k={t('data.distBottom')} v={px(c.price - c.range.low)} t={relWord(distBottom, t)} />
             <EvRow k={t('data.rangeSpan')} v={px(c.range.high - c.range.low)} />

@@ -1429,7 +1429,10 @@
     },
     "temporal": {
       "candleClosed": "Bougie clôturée {rel}",
-      "dailyChangeAria": "Variation du jour {pct}"
+      "dailyChangeAria": "Variation du jour {pct}",
+      "priceAt": "Prix à {time}",
+      "priceFreshness": "Prix à {time} · {rel}",
+      "priceAtTitle": "Dernier prix de référence retenu (dernière bougie clôturée). Un écart avec le prix en direct du graphique reflète le temps écoulé, pas une erreur."
     },
     "events": {
       "title": "Contexte événementiel",

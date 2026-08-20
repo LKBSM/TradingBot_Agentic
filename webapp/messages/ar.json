@@ -1505,7 +1505,10 @@
     },
     "temporal": {
       "candleClosed": "أُغلقت الشمعة {rel}",
-      "dailyChangeAria": "تغيّر اليوم {pct}"
+      "dailyChangeAria": "تغيّر اليوم {pct}",
+      "priceAt": "السعر عند {time}",
+      "priceFreshness": "السعر عند {time} · {rel}",
+      "priceAtTitle": "آخر سعر مرجعي مُستخدَم (آخر شمعة مُغلقة). أي فارق مع السعر المباشر في الرسم البياني يعكس الوقت المنقضي، وليس خطأً."
     },
     "events": {
       "title": "سياق الأحداث",
