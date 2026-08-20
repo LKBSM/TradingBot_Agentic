@@ -146,6 +146,44 @@ test.describe('SC-2 — six states + dictation degradation', () => {
     await noHorizontalOverflow(page);
   });
 
+  test('state 1 — example chips compose additively (multi-select, toggle, manual preserved)', async ({ page }) => {
+    await mockAccess(page);
+    await installFakeSpeech(page, 'ok');
+    await page.goto(PAGE);
+
+    const input = page.getByTestId('describe-input');
+    const chips = page.getByTestId('example-chip');
+    const chip0 = chips.nth(0);
+    const chip1 = chips.nth(1);
+    const ex0 = ((await chip0.textContent()) ?? '').trim();
+    const ex1 = ((await chip1.textContent()) ?? '').trim();
+
+    // One click ADDS the example; the selected state is shown.
+    await chip0.click();
+    await expect(input).toHaveValue(ex0);
+    await expect(chip0).toHaveAttribute('aria-pressed', 'true');
+
+    // A second chip APPENDS (comma-joined) — it does not replace the first.
+    await chip1.click();
+    await expect(input).toHaveValue(`${ex0}, ${ex1}`);
+    await expect(chip1).toHaveAttribute('aria-pressed', 'true');
+
+    // Re-clicking the first REMOVES exactly its phrase and separator.
+    await chip0.click();
+    await expect(input).toHaveValue(ex1);
+    await expect(chip0).toHaveAttribute('aria-pressed', 'false');
+
+    // Manual input is preserved: examples are added AFTER it, never overwriting.
+    await chip1.click();
+    await expect(input).toHaveValue('');
+    await input.fill('je tape moi-même');
+    await chip0.click();
+    await expect(input).toHaveValue(`je tape moi-même, ${ex0}`);
+
+    await noRawKeys(page);
+    await noHorizontalOverflow(page);
+  });
+
   test('state 2 — Traduction complète: editable cards + « ce que j’ai supposé »', async ({ page }) => {
     await mockAccess(page);
     await mockTranslate(page, TRANSLATED);
