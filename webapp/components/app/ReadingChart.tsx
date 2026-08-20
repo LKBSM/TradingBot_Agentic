@@ -22,7 +22,8 @@ import { Loader2, RotateCw } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
-import { formatLocalDayHm, formatLocalHm, localTimeLabel } from '@/lib/time/localTime';
+import { formatLocalDayHm, formatLocalHm } from '@/lib/time/localTime';
+import { useLocalTimeLabel } from '@/lib/time/useLocalTimeLabel';
 import {
   applyZoneVisibility,
   buildLiveOverlay,
@@ -1544,10 +1545,9 @@ export function ReadingChart({
     return () => ts.unsubscribeVisibleLogicalRangeChange(onRange);
   }, []);
 
-  // Timezone indicator — resolved on the client only (the browser's offset), so
-  // it never mismatches the server render.
-  const [tzLabel, setTzLabel] = React.useState('');
-  React.useEffect(() => setTzLabel(localTimeLabel()), []);
+  // Timezone indicator — resolved on the client only (the browser's offset) and
+  // kept in sync with mid-session timezone changes. See useLocalTimeLabel.
+  const tzLabel = useLocalTimeLabel();
 
   return (
     <div
