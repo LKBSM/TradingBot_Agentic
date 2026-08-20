@@ -1131,8 +1131,10 @@
     },
     "builder": {
       "composeTitle": "Compose tes conditions",
+      "eyebrow": "Scanner · palette",
+      "titleAccent": "Vois où elles sont réunies.",
       "editTitle": "Modifier mes conditions",
-      "intro": "Choisis les faits structurels <b>présents</b> qui composent ta lecture. Le scanner te montre sur quels marchés et timeframes ils sont réunis <b>en ce moment</b>. C’est un outil de lecture : à toi le jugement.",
+      "intro": "Choisis les faits structurels <b>présents</b> qui composent ta stratégie. Le scanner te montre sur quels marchés et timeframes ils sont réunis <b>en ce moment</b>.",
       "direction": "Direction",
       "trend": "Tendance",
       "phase": "Phase",
@@ -3171,6 +3173,8 @@
     },
     "describe": {
       "title": "Décris ta stratégie",
+      "eyebrow": "Scanner conversationnel",
+      "titleAccent": "M.I.A la rend vérifiable.",
       "subtitle": "Pas de formulaire à remplir. Écris ce que tu cherches comme tu le dirais à quelqu'un.",
       "miaTitle": "M.I.A traduit ta stratégie",
       "miaSub": "elle ne choisit rien à ta place · tu valides avant de lancer",
@@ -3178,7 +3182,7 @@
       "translate": "Traduire ma stratégie",
       "translating": "Traduction…",
       "myStrategies": "Mes stratégies",
-      "scope": "M.I.A traduit vers {count} conditions vérifiables. Rien d'autre.",
+      "scope": "Order Blocks, Fair Value Gaps, liquidité, structure, momentum : décris-les avec tes mots, elle en fait des conditions exactes.",
       "examplesLabel": "Ou pars d'un exemple",
       "disclaimer": "M.I.A ne consulte pas le marché pour te répondre : elle transforme ta phrase en conditions vérifiables, puis c'est l'analyse du produit qui cherche. Elle ne classe rien, ne conseille rien et ne devine aucune condition que tu n'aurais pas exprimée.",
       "examples": {

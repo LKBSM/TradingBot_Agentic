@@ -1124,8 +1124,10 @@
     },
     "builder": {
       "composeTitle": "Compón tus condiciones",
+      "eyebrow": "Escáner · paleta",
+      "titleAccent": "Mira dónde se reúnen.",
       "editTitle": "Modificar mis condiciones",
-      "intro": "Elige los hechos estructurales <b>presentes</b> que componen tu lectura. El escáner te muestra en qué mercados y timeframes están reunidos <b>en este momento</b>. Es una herramienta de lectura: el juicio es tuyo.",
+      "intro": "Elige los hechos estructurales <b>presentes</b> que componen tu estrategia. El escáner te muestra en qué mercados y timeframes están reunidos <b>en este momento</b>.",
       "direction": "Dirección",
       "trend": "Tendencia",
       "phase": "Fase",
@@ -3170,7 +3172,9 @@
       "description": "Describe tu estrategia en francés o inglés; M.I.A la traduce a condiciones verificables de la paleta."
     },
     "describe": {
-      "title": "Describe tu estrategia. Con tus palabras.",
+      "title": "Describe tu estrategia",
+      "eyebrow": "Escáner conversacional",
+      "titleAccent": "M.I.A la hace verificable.",
       "subtitle": "Sin formulario que rellenar. Escribe lo que buscas como se lo dirías a alguien.",
       "miaTitle": "M.I.A traduce tu estrategia",
       "miaSub": "no elige nada por ti · tú validas antes de ejecutar",
@@ -3178,7 +3182,7 @@
       "translate": "Traducir mi estrategia",
       "translating": "Traduciendo…",
       "myStrategies": "Mis estrategias",
-      "scope": "M.I.A traduce a 22 condiciones verificables. Nada más.",
+      "scope": "Order Blocks, Fair Value Gaps, liquidez, estructura, momentum: descríbelos con tus palabras, ella los convierte en condiciones exactas.",
       "examplesLabel": "O empieza con un ejemplo",
       "disclaimer": "M.I.A no consulta el mercado para responderte: convierte tu frase en condiciones verificables, y luego el análisis del producto realiza la búsqueda. No ordena nada, no aconseja nada y nunca adivina una condición que no hayas expresado.",
       "examples": {
