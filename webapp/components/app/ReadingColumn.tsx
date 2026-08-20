@@ -171,7 +171,7 @@ export function ReadingColumn({
       <MarketReadingCard
         reading={reading}
         onAskChatbot={focusChat}
-        chartSlot={buildChartSlot(reading, candles, livePrice, liveTs, active?.timeframe ?? null, chartView, onClearHighlight, marketClosed, serverStatus?.state ?? null, referenceLevel, selection, candlesError, refreshCandles, { loadOlder, isLoadingOlder, olderError, reachedStart })}
+        chartSlot={buildChartSlot(reading, candles, livePrice, liveTs, active?.timeframe ?? null, chartView, onClearHighlight, marketClosed, serverStatus?.state ?? null, serverStatus?.nextOpenTs ?? null, referenceLevel, selection, candlesError, refreshCandles, { loadOlder, isLoadingOlder, olderError, reachedStart })}
         live={liveHeader}
         marketClosed={marketClosed}
         status={serverStatus}
@@ -223,6 +223,7 @@ function buildChartSlot(
   onClearHighlight: () => void,
   marketClosed: boolean,
   marketStatusState: MarketState | null,
+  marketReopenTs: string | null,
   referenceLevel: ReferenceLevel | null,
   selection: ChartSelection | null,
   candlesError: Error | null = null,
@@ -252,6 +253,7 @@ function buildChartSlot(
       liveTs={liveTs}
       marketClosed={marketClosed}
       marketStatusState={marketStatusState}
+      marketReopenTs={marketReopenTs}
       layers={chartView.layers}
       filter={chartView.filter}
       focus={chartView.focus}
