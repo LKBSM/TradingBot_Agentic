@@ -2028,7 +2028,10 @@
       "welcomeSubtitleIdle": "اختر سوقًا على اليسار، ثم اطرح عليّ سؤالاً حول قراءته.",
       "offlineNote": "وضع دون اتصال: تتطلّب الكتابة الحرة مفتاح Anthropic على جانب الخادم.",
       "complianceLine": "يجيب M.I.A Agent عن أسئلة حول القراءة الخوارزمية. إنه لا يقدّم أي إشارة تداول ولا أي توصية شخصية.",
-      "openPanel": "افتح المساعد"
+      "openPanel": "افتح المساعد",
+      "hidePanel": "إخفاء لوحة M.I.A",
+      "showPanel": "إظهار لوحة M.I.A",
+      "showPanelShort": "M.I.A"
     },
     "placeholders": {
       "emptyReading": "اختر تركيبًا على اليسار لعرض قراءة سوقه.",

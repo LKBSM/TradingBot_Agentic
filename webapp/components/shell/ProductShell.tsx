@@ -11,6 +11,7 @@ import { SkipLink } from '@/components/a11y/SkipLink';
 import { ShellRail } from './ShellRail';
 import { ShellChat } from './ShellChat';
 import { MobileSpaceNav } from './MobileSpaceNav';
+import { ChatColumnProvider, useChatColumn } from './ChatColumnContext';
 import './shell.css';
 import './pages.css';
 
@@ -24,10 +25,23 @@ import './pages.css';
  * shell.css, so all four themes are covered. No detection/data lives here.
  */
 export function ProductShell({ children }: { children: React.ReactNode }) {
+  // The chat-column visibility is shared across the shell frame (grid + chat
+  // hide button) AND the page content (DesktopReading's reopen affordance), so
+  // the provider wraps both. A component can't consume the context it provides,
+  // hence the inner ShellFrame consumer.
+  return (
+    <ChatColumnProvider>
+      <ShellFrame>{children}</ShellFrame>
+    </ChatColumnProvider>
+  );
+}
+
+function ShellFrame({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const locale = useLocale();
   const lh = useLocalizedHref();
   const t = useTranslations();
+  const { open: chatOpen } = useChatColumn();
 
   // Which product route are we on? Strip a leading `/<locale>` (non-default
   // locales are prefixed) then take the first segment. Product routes are flat
@@ -42,7 +56,17 @@ export function ProductShell({ children }: { children: React.ReactNode }) {
   const isApp = activeSpace === 'app';
 
   return (
-    <div className={cn('app-shell', !isApp && 'no-chat')}>
+    <div
+      className={cn(
+        'app-shell',
+        !isApp && 'no-chat',
+        // On /app, when the user collapsed M.I.A, drop the docked column and let
+        // the centre reclaim its width. Scoped to ≥1280 in shell.css so the
+        // tablet drawer / phone tab are untouched. A dedicated class (NOT
+        // `no-chat`, whose `:not(.no-chat)` media rules drive the drawer).
+        isApp && !chatOpen && 'chat-collapsed',
+      )}
+    >
       <SkipLink />
       {/* Mobile-only brand bar (<768px, where the rail is hidden): the mark as a
           home link, so every product route keeps the brand on phones (BRD-2). */}

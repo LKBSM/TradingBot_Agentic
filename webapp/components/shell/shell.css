@@ -359,6 +359,22 @@
   grid-template-columns: 232px minmax(0, 1fr);
 }
 
+/* ── Collapsible M.I.A column (/app, desktop ≥1280 only) ────────────────────
+   The user can hide the docked chat column to give the chart more room; the
+   centre reclaims the 338px track (no empty gap). Scoped to ≥1280 on purpose so
+   the 768–1279 drawer and the <768 tab (below) are untouched — `.chat-collapsed`
+   is a dedicated class, NOT `.no-chat` (whose `:not(.no-chat)` media rules drive
+   the tablet drawer, which we must keep). A reopen affordance lives in the
+   centre's apphead (`.chat-reopen`). */
+@media (min-width: 1280px) {
+  .app-shell.chat-collapsed {
+    grid-template-columns: 232px minmax(0, 1fr);
+  }
+  .app-shell.chat-collapsed .chatcol {
+    display: none;
+  }
+}
+
 /* ── Responsive centre (mission UI-2b) ──────────────────────────────────────
    The reference single-column centre must show from 768px up (tabs only on
    phone). But the fixed 232 + 338 side columns would crush it below 1280, so:
@@ -705,6 +721,15 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+/* Reopen affordance in the apphead (shown only when the column is collapsed).
+   Compact `.btn` so it sits inline with the price/live badge without inflating
+   the header row. */
+.app-shell .apphead .chat-reopen {
+  min-height: 32px;
+  padding: 6px 11px;
+  white-space: nowrap;
 }
 
 /* ── Reduced motion: static dot, instant price swap ───────────────────── */

@@ -2028,7 +2028,10 @@
       "welcomeSubtitleIdle": "Seleziona un mercato a sinistra, poi fammi una domanda sulla sua lettura.",
       "offlineNote": "Modalità offline: l’inserimento libero richiede la chiave Anthropic lato server.",
       "complianceLine": "M.I.A Agent risponde a domande sulla lettura algoritmica. Non fornisce né segnali di trading, né raccomandazioni personalizzate.",
-      "openPanel": "Apri l'assistente"
+      "openPanel": "Apri l'assistente",
+      "hidePanel": "Nascondi il pannello M.I.A",
+      "showPanel": "Mostra il pannello M.I.A",
+      "showPanelShort": "M.I.A"
     },
     "placeholders": {
       "emptyReading": "Seleziona una combinazione a sinistra per mostrare la sua lettura di mercato.",
