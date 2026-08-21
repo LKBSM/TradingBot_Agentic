@@ -17,6 +17,7 @@ import type {
   VolatilityObserved,
 } from '@/types/market-reading';
 import type { Tone } from './formatters';
+import { MARKET_PRICE_DECIMALS } from '@/lib/markets';
 import { countActiveZones, deriveTrendMaturity, latestBreak } from './regime-facts';
 import { type MtfEntry, type MtfRelation, type MtfTrendMap } from './mtf-trend';
 
@@ -29,16 +30,10 @@ import { type MtfEntry, type MtfRelation, type MtfTrendMap } from './mtf-trend';
  * `formatters.ts` keeps its pure functions (still used by not-yet-migrated
  * surfaces: RegimeSection/StructureSection prose, zones, chart, /app, chat).
  * All consumers of THIS hook are client components.
+ *
+ * Price precision comes from the single market registry (MKT-1), not a local
+ * copy — see MARKET_PRICE_DECIMALS.
  */
-const PRICE_DECIMALS: Record<string, number> = {
-  XAUUSD: 2,
-  EURUSD: 5,
-  GBPUSD: 5,
-  USDJPY: 3,
-  US500: 1,
-  BTCUSD: 2,
-};
-
 export function useReadingFormatters() {
   const t = useTranslations('reading');
   const locale = useLocale();
@@ -143,7 +138,7 @@ export function useReadingFormatters() {
   // ── Numbers ────────────────────────────────────────────────────────────────
 
   function price(value: number, instrumentCode: string): string {
-    const decimals = PRICE_DECIMALS[instrumentCode] ?? 2;
+    const decimals = MARKET_PRICE_DECIMALS[instrumentCode] ?? 2;
     return value.toLocaleString(locale, {
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals,
@@ -152,7 +147,7 @@ export function useReadingFormatters() {
 
   /** VZ-1 — a price DISTANCE in points, at the instrument's own precision. */
   function points(value: number, instrumentCode: string): string {
-    const decimals = PRICE_DECIMALS[instrumentCode] ?? 2;
+    const decimals = MARKET_PRICE_DECIMALS[instrumentCode] ?? 2;
     return Math.abs(value).toLocaleString(locale, {
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals,

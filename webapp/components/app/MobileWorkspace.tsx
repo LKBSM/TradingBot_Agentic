@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import * as React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AppChatSidebar } from './AppChatSidebar';
-import { InstrumentSidebar } from './InstrumentSidebar';
+import { MarketSelector } from '@/components/market/MarketSelector';
 import { ReadingColumn } from './ReadingColumn';
 import type { WorkspaceViewProps } from './AppWorkspace';
 import {
@@ -25,7 +25,6 @@ type MobileTab = 'markets' | 'reading' | 'chat';
  * home-indicator safe area.
  */
 export function MobileWorkspace({
-  combos,
   active,
   onSelect,
   reading,
@@ -71,12 +70,7 @@ export function MobileWorkspace({
           value="markets"
           className="absolute inset-0 mt-0 overflow-y-auto px-4 py-4"
         >
-          <InstrumentSidebar
-            combos={combos}
-            active={active}
-            onSelect={handleSelect}
-            activeCandleCloseTs={reading?.header.candle_close_ts ?? null}
-          />
+          <MarketSelector variant="panel" active={active} onSelect={handleSelect} />
         </TabsContent>
 
         <TabsContent

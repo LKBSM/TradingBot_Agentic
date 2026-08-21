@@ -1944,7 +1944,8 @@
       "pin": "Fissa",
       "unpin": "Rimuovi dai fissati",
       "pinAria": "Fissa {combo}",
-      "unpinAria": "Rimuovi {combo} dai fissati"
+      "unpinAria": "Rimuovi {combo} dai fissati",
+      "notSynced": "Non sincronizzato"
     },
     "mobile": {
       "workspaceTitle": "Spazio di lettura",

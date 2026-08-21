@@ -1944,7 +1944,8 @@
       "pin": "تثبيت",
       "unpin": "إلغاء التثبيت",
       "pinAria": "تثبيت {combo}",
-      "unpinAria": "إلغاء تثبيت {combo}"
+      "unpinAria": "إلغاء تثبيت {combo}",
+      "notSynced": "غير متزامن"
     },
     "mobile": {
       "workspaceTitle": "فضاء القراءة",

@@ -1944,7 +1944,8 @@
       "pin": "Pin",
       "unpin": "Unpin",
       "pinAria": "Pin {combo}",
-      "unpinAria": "Unpin {combo}"
+      "unpinAria": "Unpin {combo}",
+      "notSynced": "Not synced"
     },
     "mobile": {
       "workspaceTitle": "Reading workspace",

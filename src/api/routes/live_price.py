@@ -35,8 +35,11 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["live-price"])
 
-# V1 perimeter — mirrors candles.py / market_reading.py.
-SUPPORTED_INSTRUMENTS = frozenset({"XAUUSD", "EURUSD"})
+# Supported perimeter — the single source is the market registry (MKT-1), same
+# as candles.py / market_reading.py (via lookback_config.supported_instruments).
+from src.intelligence.lookback_config import supported_instruments as _supported_instruments
+
+SUPPORTED_INSTRUMENTS = frozenset(_supported_instruments())
 
 # How often the generator polls the bridge for a fresh tick, and how often it
 # emits a keepalive comment when the price hasn't moved (keeps proxies from

@@ -1944,7 +1944,8 @@
       "pin": "Fijar",
       "unpin": "Dejar de fijar",
       "pinAria": "Fijar {combo}",
-      "unpinAria": "Dejar de fijar {combo}"
+      "unpinAria": "Dejar de fijar {combo}",
+      "notSynced": "No sincronizado"
     },
     "mobile": {
       "workspaceTitle": "Espacio de lectura",

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { ChevronRight } from 'lucide-react';
 import { useLocalizedHref } from '@/lib/i18n/href';
+import { ALL_MARKET_IDS } from '@/lib/markets';
 import { useCalendar } from '@/lib/calendar/useCalendar';
 import { calendarErrorKey } from '@/lib/calendar/api';
 import { OFFICIAL_SOURCES } from '@/lib/calendar/officialSources';
@@ -20,7 +21,8 @@ import './calendar.css';
 
 // Official issuing organisms only — the explicit production whitelist (CAL-1).
 const ALL_SOURCES = new Set<string>(OFFICIAL_SOURCES);
-const ALL_MARKETS = new Set(['XAUUSD', 'EURUSD']);
+// Every market from the single registry (MKT-1) — the preview shows all.
+const ALL_MARKETS = new Set<string>(ALL_MARKET_IDS);
 const ALL_PERIODICITIES = new Set(['monthly', 'quarterly', 'eight_per_year']);
 
 // No cap by default: the dashboard shows the FULL forward horizon in a scrollable

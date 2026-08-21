@@ -1982,7 +1982,8 @@
       "pin": "Épingler",
       "unpin": "Désépingler",
       "pinAria": "Épingler {combo}",
-      "unpinAria": "Désépingler {combo}"
+      "unpinAria": "Désépingler {combo}",
+      "notSynced": "Non synchronisé"
     },
     "mobile": {
       "workspaceTitle": "Espace de lecture",

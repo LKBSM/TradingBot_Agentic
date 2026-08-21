@@ -1944,7 +1944,8 @@
       "pin": "Vastzetten",
       "unpin": "Losmaken",
       "pinAria": "{combo} vastzetten",
-      "unpinAria": "{combo} losmaken"
+      "unpinAria": "{combo} losmaken",
+      "notSynced": "Niet gesynchroniseerd"
     },
     "mobile": {
       "workspaceTitle": "Leesruimte",

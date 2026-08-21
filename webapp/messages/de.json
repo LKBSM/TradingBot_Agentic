@@ -1944,7 +1944,8 @@
       "pin": "Anheften",
       "unpin": "Lösen",
       "pinAria": "{combo} anheften",
-      "unpinAria": "{combo} lösen"
+      "unpinAria": "{combo} lösen",
+      "notSynced": "Nicht synchronisiert"
     },
     "mobile": {
       "workspaceTitle": "Lesebereich",

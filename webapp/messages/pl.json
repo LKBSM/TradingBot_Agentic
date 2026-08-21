@@ -1944,7 +1944,8 @@
       "pin": "Przypnij",
       "unpin": "Odepnij",
       "pinAria": "Przypnij {combo}",
-      "unpinAria": "Odepnij {combo}"
+      "unpinAria": "Odepnij {combo}",
+      "notSynced": "Niezsynchronizowane"
     },
     "mobile": {
       "workspaceTitle": "Przestrzeń odczytu",
