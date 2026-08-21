@@ -15,9 +15,9 @@ import { useSiblingZones } from '@/lib/zones/use-sibling-zones';
 import {
   DEFAULT_INSTRUMENT,
   DEFAULT_TIMEFRAME,
-  DISPLAY_TIMEFRAMES,
-  SUPPORTED_INSTRUMENTS,
 } from '@/lib/market-reading/perimeter';
+import type { Combo } from '@/lib/market-reading/store';
+import { MarketSelector } from '@/components/market/MarketSelector';
 import { useReadingFormatters } from '@/lib/market-reading/use-reading-formatters';
 import {
   collectConsumedZones,
@@ -132,19 +132,14 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
     [searchParams, pathname, router],
   );
 
-  const setInstrument = React.useCallback(
-    (i: string) => {
-      setInstrumentState(i);
-      writeCombo(i, timeframe);
+  // Single write for a market+timeframe pick from the shared MarketSelector.
+  const selectCombo = React.useCallback(
+    (c: Combo) => {
+      setInstrumentState(c.instrument);
+      setTimeframeState(c.timeframe);
+      writeCombo(c.instrument, c.timeframe);
     },
-    [writeCombo, timeframe],
-  );
-  const setTimeframe = React.useCallback(
-    (tf: string) => {
-      setTimeframeState(tf);
-      writeCombo(instrument, tf);
-    },
-    [writeCombo, instrument],
+    [writeCombo],
   );
 
   const [filter, setFilter] = React.useState<ZoneFilter>('all');
@@ -366,17 +361,10 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
           (UI-1b density: one row instead of two reclaims a full row of chrome
           above the list, so a second card reaches the fold). */}
       <div className="mb-1.5 flex flex-wrap items-center gap-x-4 gap-y-1.5">
-        <Segmented
-          options={SUPPORTED_INSTRUMENTS.map((i) => ({ value: i, label: fmt.instrument(i) }))}
-          value={instrument}
-          onChange={setInstrument}
-          ariaLabel={t('selector.instrument')}
-        />
-        <Segmented
-          options={DISPLAY_TIMEFRAMES.map((tf) => ({ value: tf, label: fmt.timeframe(tf) }))}
-          value={timeframe}
-          onChange={setTimeframe}
-          ariaLabel={t('selector.timeframe')}
+        <MarketSelector
+          variant="bar"
+          active={{ instrument, timeframe }}
+          onSelect={selectCombo}
         />
         <div className="flex items-center gap-2">
           <span className="text-[9px] font-semibold uppercase tracking-wide text-[var(--faint)]">{t('filterLabel')}</span>

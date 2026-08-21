@@ -17,6 +17,7 @@ import type {
   VolatilityObserved,
 } from '@/types/market-reading';
 import { tfLabelLong } from '@/lib/timeframes';
+import { MARKET_LABEL, MARKET_PRICE_DECIMALS } from '@/lib/markets';
 
 /**
  * UI-facing strings derived from the raw MarketReading contract. Kept in a
@@ -34,17 +35,10 @@ export type Tone = 'bull' | 'bear' | 'neutral' | 'warn';
 
 // ─── Instrument / timeframe ──────────────────────────────────────────────────
 
-const INSTRUMENT_LABEL: Record<string, string> = {
-  XAUUSD: 'Or (XAU/USD)',
-  EURUSD: 'Euro / Dollar (EUR/USD)',
-  BTCUSD: 'Bitcoin (BTC/USD)',
-  US500: 'S&P 500 (US500)',
-  GBPUSD: 'Livre / Dollar (GBP/USD)',
-  USDJPY: 'Dollar / Yen (USD/JPY)',
-};
-
 export function formatInstrument(instrument: string): string {
-  return INSTRUMENT_LABEL[instrument] ?? instrument;
+  // FR baseline label from the single market registry (MKT-1). Locale-correct
+  // rendering in i18n-aware components uses the `markets.<id>` messages key.
+  return MARKET_LABEL[instrument] ?? instrument;
 }
 
 export function formatTimeframe(timeframe: string): string {
@@ -55,18 +49,10 @@ export function formatTimeframe(timeframe: string): string {
 
 // ─── Price ────────────────────────────────────────────────────────────────────
 
-const PRICE_DECIMALS: Record<string, number> = {
-  XAUUSD: 2,
-  EURUSD: 5,
-  GBPUSD: 5,
-  USDJPY: 3,
-  US500: 1,
-  BTCUSD: 2,
-};
-
 /** Format a price using the instrument's conventional precision (default 2). */
 export function formatPrice(value: number, instrument: string): string {
-  const decimals = PRICE_DECIMALS[instrument] ?? 2;
+  // Precision from the single market registry (MKT-1).
+  const decimals = MARKET_PRICE_DECIMALS[instrument] ?? 2;
   return value.toLocaleString('fr-FR', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,

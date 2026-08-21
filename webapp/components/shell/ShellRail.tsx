@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { CalendarClock, CandlestickChart, Layers, Radar, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -13,28 +13,12 @@ import { formatInstrument, formatTimeframe } from '@/lib/market-reading/formatte
 import {
   DEFAULT_INSTRUMENT,
   DEFAULT_TIMEFRAME,
-  DISPLAY_TIMEFRAMES,
-  SUPPORTED_INSTRUMENTS,
   type Combo,
 } from '@/lib/market-reading/store';
-import { SearchField, Freshbox } from './primitives';
+import { MarketSelector } from '@/components/market/MarketSelector';
+import { Freshbox } from './primitives';
 
 const DEFAULT_COMBO: Combo = { instrument: DEFAULT_INSTRUMENT, timeframe: DEFAULT_TIMEFRAME };
-
-/** Two-glyph mono badge shown in the market row (reference `.mkt .ic`). */
-const MARKET_GLYPH: Record<string, string> = { XAUUSD: 'Au', EURUSD: '€' };
-function marketGlyph(instrument: string): string {
-  return MARKET_GLYPH[instrument] ?? instrument.slice(0, 2);
-}
-
-/** Accent/case-insensitive match for the market search box. */
-function normalize(value: string): string {
-  return value
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
-    .trim();
-}
 
 interface SpaceLink {
   key: string;
@@ -59,9 +43,7 @@ export function ShellRail({ activeSpace }: { activeSpace: string }) {
   const t = useTranslations();
   const lh = useLocalizedHref();
   const router = useRouter();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [query, setQuery] = React.useState('');
 
   const active =
     resolveComboFromQuery(
@@ -84,12 +66,6 @@ export function ShellRail({ activeSpace }: { activeSpace: string }) {
     [lh, onApp, router],
   );
 
-  const markets = SUPPORTED_INSTRUMENTS.filter((instrument) => {
-    const q = normalize(query);
-    if (!q) return true;
-    return normalize(`${instrument} ${formatInstrument(instrument)}`).includes(q);
-  });
-
   const spaces: SpaceLink[] = [
     { key: 'app', href: lh('/app'), label: 'App', Icon: CandlestickChart },
     // SC-2e: « Scanner » ouvre le mode « Décrire » par défaut ; la palette de
@@ -107,56 +83,16 @@ export function ShellRail({ activeSpace }: { activeSpace: string }) {
       <Link href={lh('/')} className="rail-brand" aria-label={t('nav.brandHomeAria')}>
         <MiaLogo variant="horizontal" height={22} decorative />
       </Link>
-      <SearchField
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder={t('app.sidebar.searchPlaceholder')}
-        aria-label={t('app.sidebar.searchAria')}
+
+      {/* MARCHÉS + UNITÉ DE TEMPS — the shared MarketSelector (MKT-1). The rail is
+          shown on every product route but only /app owns the combo, so `active`
+          only highlights there. */}
+      <MarketSelector
+        variant="rail"
+        active={active}
+        onSelect={goToCombo}
+        reflectActive={onApp}
       />
-
-      {/* MARCHÉS */}
-      <div>
-        <div className="rail-lbl">{t('app.sidebar.markets')}</div>
-        {markets.map((instrument) => {
-          const isActive = onApp && active.instrument === instrument;
-          return (
-            <button
-              key={instrument}
-              type="button"
-              className={cn('mkt', isActive && 'on')}
-              aria-current={isActive ? 'true' : undefined}
-              onClick={() => goToCombo({ instrument, timeframe: active.timeframe })}
-            >
-              <span className="ic mono" aria-hidden>
-                {marketGlyph(instrument)}
-              </span>
-              <span className="nm">{formatInstrument(instrument)}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* UNITÉ DE TEMPS */}
-      <div>
-        <div className="rail-lbl">{t('app.rail.timeframe')}</div>
-        <div style={{ display: 'flex', gap: 5, padding: '0 4px' }}>
-          {DISPLAY_TIMEFRAMES.map((timeframe) => {
-            const isActive = onApp && active.timeframe === timeframe;
-            return (
-              <button
-                key={timeframe}
-                type="button"
-                className={cn('tf', isActive && 'on')}
-                aria-pressed={isActive}
-                aria-label={formatTimeframe(timeframe)}
-                onClick={() => goToCombo({ instrument: active.instrument, timeframe })}
-              >
-                {timeframe}
-              </button>
-            );
-          })}
-        </div>
-      </div>
 
       {/* ESPACE (route nav) */}
       <div>

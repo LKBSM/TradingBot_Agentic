@@ -676,6 +676,60 @@
   font-size: var(--fs-legal);
   color: var(--dim);
 }
+/* MKT-1 — the reusable MarketSelector, 'rail' variant. Reproduces the reference
+   rail sections (search / MARCHÉS / UNITÉ DE TEMPS) as one component, plus a
+   per-market pin affordance (favourites, persisted locally) that only shows on
+   hover/focus so the resting rail stays as clean as the reference. */
+.app-shell .marketsel-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.app-shell .marketsel-railrow {
+  display: flex;
+  align-items: stretch;
+}
+.app-shell .marketsel-railrow .mkt {
+  flex: 1;
+}
+.app-shell .mkt-pin {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: var(--faint);
+  cursor: pointer;
+  border-radius: var(--r-s);
+  opacity: 0;
+  transition: opacity 0.12s ease, color 0.12s ease;
+}
+.app-shell .marketsel-railrow:hover .mkt-pin,
+.app-shell .mkt-pin:focus-visible,
+.app-shell .mkt-pin.on {
+  opacity: 1;
+}
+.app-shell .mkt-pin.on,
+.app-shell .mkt-pin:hover {
+  color: var(--acc);
+}
+.app-shell .mkt-pin svg {
+  width: 14px;
+  height: 14px;
+}
+.app-shell .marketsel-notsynced {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--faint);
+  margin-left: 6px;
+}
+.app-shell .marketsel-empty {
+  font-size: var(--fs-secondary);
+  color: var(--dim);
+  padding: 6px 5px;
+}
 .app-shell .nl {
   display: flex;
   align-items: center;

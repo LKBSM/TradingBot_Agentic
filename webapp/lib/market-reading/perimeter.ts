@@ -8,7 +8,13 @@
  * (`.includes is not a function`). Keep them here, server-safe.
  */
 
-export const SUPPORTED_INSTRUMENTS = ['XAUUSD', 'EURUSD'] as const;
+import { ALL_MARKET_IDS } from '@/lib/markets';
+
+// The supported market perimeter derives from the single market registry
+// (MKT-1) — never a hand-copied list. Adding a market is one entry in
+// config/markets.json (+ `node scripts/gen_markets.mjs`). markets.generated.ts
+// is a plain data module (no 'use client'), so this stays server-safe.
+export const SUPPORTED_INSTRUMENTS: readonly string[] = ALL_MARKET_IDS;
 
 // LB-1 — six timeframes, fast units to see NOW, slow units to see FAR. This is
 // the VALIDATION perimeter (a deep-link to M1 is a valid target when the gate is

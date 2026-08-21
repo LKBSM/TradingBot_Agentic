@@ -37,6 +37,12 @@ logger = logging.getLogger(__name__)
 # keeps this module importable by the API perimeter and the backfill task.
 from src.intelligence import timeframe_registry as _tfreg
 
+# The supported-market perimeter — derived from the single market registry
+# (MKT-1), never a second copy. lookback_depths.json below carries only the
+# per-(market, timeframe) storage DEPTHS (defaults + optional overrides); the
+# ACTIVE market set is the registry, so adding a market is one entry there.
+from src.intelligence import market_registry as _mktreg
+
 _TF_MINUTES: Dict[str, int] = _tfreg.minutes_map()
 
 # A DURATION is turned into a bar count at CONTINUOUS density (1440 min/day, every
@@ -171,7 +177,10 @@ def reset_cache() -> None:
 # Perimeter (single source of truth)
 # --------------------------------------------------------------------------- #
 def supported_instruments() -> Tuple[str, ...]:
-    return _load().instruments
+    """The supported market perimeter — the single source is the market registry
+    (MKT-1). lookback_depths.json only supplies per-market storage-depth
+    overrides; markets it omits fall back to the default depths."""
+    return _mktreg.all_ids()
 
 
 def supported_timeframes() -> Tuple[str, ...]:

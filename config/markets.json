@@ -1,0 +1,34 @@
+{
+  "_comment": "MKT-1 — SINGLE SOURCE OF TRUTH for every tradeable market. Backend reads it via src/intelligence/market_registry.py; the frontend consumes a GENERATED module (webapp/lib/markets.generated.ts via scripts/gen_markets.mjs) — never a hand-copied list. Adding a market = ONE entry here (+ regenerate). Every scattered market enumeration (frontend perimeter, instrument labels, price decimals, calendar market filters, backend supported-instruments) derives from this. Order = display order in the market column/selector.",
+  "_fields": {
+    "id": "stable market identifier used everywhere in code + URLs (e.g. XAUUSD).",
+    "label": "FR baseline human label (i18n rendering uses the markets.<id> messages key when present; this is the fallback).",
+    "symbol": "data-provider symbol (Twelve Data). Equals id today but kept distinct so an id can diverge from a provider symbol as the catalogue grows.",
+    "type": "asset class — one of metal | fx | crypto | index. Used for grouping/iconography.",
+    "priceDecimals": "conventional display precision for a price on this market.",
+    "glyph": "short (1-2 char) mono badge shown in the compact market row.",
+    "timeframes": "the perimeter timeframe ids this market is served on (ids MUST exist in config/timeframes.json). The M1 gate (NEXT_PUBLIC_LB1_ENABLE_M1 / LB1_ENABLE_M1) still applies on top as a global display filter."
+  },
+  "_news_rule": "driver_currencies (which currencies' macro news attach to a market) are NOT duplicated here — they live in config/event_market_map.json, the single consultable news-attachment rule read by src/intelligence/calendar_service.py. market_registry.driver_currencies() references that file. This registry describes market identity/display; event_market_map.json describes the news rule.",
+  "version": 1,
+  "markets": [
+    {
+      "id": "XAUUSD",
+      "label": "Or (XAU/USD)",
+      "symbol": "XAUUSD",
+      "type": "metal",
+      "priceDecimals": 2,
+      "glyph": "Au",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"]
+    },
+    {
+      "id": "EURUSD",
+      "label": "Euro / Dollar (EUR/USD)",
+      "symbol": "EURUSD",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "€",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"]
+    }
+  ]
+}

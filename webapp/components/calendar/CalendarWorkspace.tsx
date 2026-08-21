@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { ChevronRight } from 'lucide-react';
 import { useLocalizedHref } from '@/lib/i18n/href';
 import { useMultiFilter } from '@/lib/market-reading/use-multi-filter';
+import { ALL_MARKET_IDS } from '@/lib/markets';
 import { FilterChipGroup } from '@/components/app/FilterChipGroup';
 import { useCalendar } from '@/lib/calendar/useCalendar';
 import { OFFICIAL_SOURCES } from '@/lib/calendar/officialSources';
@@ -29,7 +30,8 @@ import './calendar.css';
 
 // Official issuing organisms only — the explicit production whitelist (CAL-1).
 const SOURCES = OFFICIAL_SOURCES;
-const MARKETS = ['XAUUSD', 'EURUSD'] as const;
+// Market filter options derive from the single market registry (MKT-1).
+const MARKETS = ALL_MARKET_IDS;
 const PERIODICITIES: readonly CalendarPeriodicity[] = [
   'monthly', 'quarterly', 'eight_per_year',
 ];
