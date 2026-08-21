@@ -1589,8 +1589,7 @@
     },
     "conditions": {
       "title": "Erzählte Lesung",
-      "sourceGenerated": "Generierte Erzählung",
-      "sourceFallback": "Modell-Lesung (Fallback)"
+      "source": "Vom Engine zusammengestellt"
     },
     "tags": {
       "trend": "Etablierter Trend",

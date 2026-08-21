@@ -54,7 +54,10 @@ RetestType = Literal["bos_retest", "choch_retest", "ob_retest", "fvg_retest"]
 LiquiditySide = Literal["bsl", "ssl"]
 LiquidityKind = Literal["equal_highs", "equal_lows", "range_high", "range_low"]
 LiquidityStatus = Literal["intact", "swept", "broken"]
-DescriptionSource = Literal["haiku_generated", "template_fallback"]
+# The narrated reading is composed 100 % by the deterministic engine template
+# (mission « narrated-reading template-engine ») — no LLM path exists, so the
+# source is a single value. Kept as a field for schema stability / provenance.
+DescriptionSource = Literal["engine_template"]
 
 # Valid MTF alignment keys — any perimeter or reference unit can be an alignment
 # TARGET (the tile shows the units above the viewed one, TF-1 decision C).

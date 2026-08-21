@@ -176,7 +176,7 @@ def test_lazy_cache_miss_runs_full_pipeline(fixed_clock):
     )
     assert reading.header.close_price == candles[-1].close
     assert reading.structure.current_bos is not None  # populated from stub_smc_pipeline
-    assert reading.conditions.description_source == "template_fallback"
+    assert reading.conditions.description_source == "engine_template"
 
     # Provider called exactly once (fetched fresh candles)
     assert provider.call_count == 1
@@ -533,7 +533,7 @@ def test_stale_cache_triggers_regeneration(fixed_clock):
             "news_upcoming": [], "news_just_published": [], "technical_triggers_recent": [],
         },
         "conditions": {
-            "tags": ["stale"], "description": "Stale.", "description_source": "template_fallback",
+            "tags": ["stale"], "description": "Stale.", "description_source": "engine_template",
         },
     }
     candles = _build_candles(30)
@@ -618,54 +618,25 @@ def test_assembled_output_validates_against_pydantic_schema(fixed_clock):
 
 
 # ---------------------------------------------------------------------------
-# Description engine injection (Étape 5 wiring contract)
+# Narrated reading is composed 100 % by the deterministic engine template
+# (mission « narrated-reading template-engine » — no LLM, no injection seam).
 # ---------------------------------------------------------------------------
 
 
-class _StubDescriptionEngine:
-    def __init__(self, description: str = "Stub description from engine.", source: str = "haiku_generated"):
-        self._description = description
-        self._source = source
-        self.calls: list[tuple[list[str], Any]] = []
-
-    def generate(self, tags, regime, structure, price, instrument):
-        self.calls.append((list(tags), regime))
-        return self._description, self._source
-
-
-def test_description_engine_used_when_injected(fixed_clock):
-    engine = _StubDescriptionEngine()
+def test_description_is_engine_template_no_llm(fixed_clock):
     assembler = MarketReadingAssembler(
         data_provider=_MockDataProvider(_build_candles(30)),
         readings_store=_MockReadingsStore(),
         candles_store=_MockCandlesStore(),
         smc_pipeline=_stub_smc_pipeline,
-        description_engine=engine,
         clock=fixed_clock,
     )
     reading = assembler.get_or_generate("XAUUSD", "M15")
-    assert reading.conditions.description == "Stub description from engine."
-    assert reading.conditions.description_source == "haiku_generated"
-    assert len(engine.calls) == 1
-
-
-def test_description_engine_failure_falls_back_to_template(fixed_clock):
-    class _FailingEngine:
-        def generate(self, tags, regime, structure, price, instrument):
-            raise RuntimeError("LLM down")
-
-    assembler = MarketReadingAssembler(
-        data_provider=_MockDataProvider(_build_candles(30)),
-        readings_store=_MockReadingsStore(),
-        candles_store=_MockCandlesStore(),
-        smc_pipeline=_stub_smc_pipeline,
-        description_engine=_FailingEngine(),
-        clock=fixed_clock,
-    )
-    reading = assembler.get_or_generate("XAUUSD", "M15")
-    # Falls back: still produces a valid reading via template
-    assert reading.conditions.description_source == "template_fallback"
+    # Deterministic template is the sole producer; source is a single value.
+    assert reading.conditions.description_source == "engine_template"
     assert len(reading.conditions.description) > 0
+    # Present-tense socle sentence is always there (never empty, never speculative).
+    assert reading.conditions.description.startswith("Tendance")
 
 
 # ---------------------------------------------------------------------------

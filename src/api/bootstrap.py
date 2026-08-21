@@ -9,9 +9,10 @@ environment configuration. Kept out of ``create_app`` so that:
     FastAPI lifespan calls these factories at startup.
 
 Failure modes (deliberate fail-fast — no silent degradation):
-  - Missing ``ANTHROPIC_API_KEY``    → :class:`BootstrapConfigurationError`.
-    Silently routing to template fallback would mask the misconfiguration
-    and surface as a "haiku_generated" tier that never actually runs the LLM.
+  - Missing ``ANTHROPIC_API_KEY``    → :class:`BootstrapConfigurationError`,
+    but ONLY for the LLM-backed factories (``build_chatbot`` / M.I.A and
+    ``build_scanner_translator``). The MarketReading assembler no longer needs
+    it: the narrated reading is composed by a deterministic template (no LLM).
   - Missing ``TWELVE_DATA_API_KEY``  → ``TwelveDataProvider`` raises
     ``ValueError`` (same intent — no implicit fallback).
   - ``NEWS_PIPELINE_ENABLED=false``  → assembler emits empty events blocks
@@ -87,11 +88,11 @@ def is_bootstrap_enabled() -> bool:
 def build_market_reading_assembler(enable_news: Optional[bool] = None) -> Any:
     """Instantiate the production MarketReadingAssembler from env config.
 
-    Reads ``TWELVE_DATA_API_KEY`` (data provider), ``ANTHROPIC_API_KEY``
-    (optional — Haiku description engine), and ``NEWS_PIPELINE_ENABLED``.
+    Reads ``TWELVE_DATA_API_KEY`` (data provider) and ``NEWS_PIPELINE_ENABLED``.
+    The narrated reading is composed by a deterministic template (no LLM), so the
+    assembler needs no ``ANTHROPIC_API_KEY``.
     """
     from src.intelligence.data_providers import TwelveDataProvider
-    from src.intelligence.haiku_description_engine import HaikuDescriptionEngine
     from src.intelligence.market_reading_assembler import (
         MarketReadingAssembler,
         build_cache_mtf_provider,
@@ -99,7 +100,6 @@ def build_market_reading_assembler(enable_news: Optional[bool] = None) -> Any:
     from src.intelligence.news_pipeline import NewsPipeline
     from src.storage import (
         CandlesCacheStore,
-        HaikuDescriptionCacheStore,
         MarketReadingsStore,
         NewsCacheStore,
     )
@@ -151,11 +151,10 @@ def build_market_reading_assembler(enable_news: Optional[bool] = None) -> Any:
     except Exception:  # never let a maintainer failure break boot
         logger.exception("measures deep-backfill daemon failed to start")
 
-    haiku_cache_store = HaikuDescriptionCacheStore()
-
-    anthropic_client = _build_anthropic_client()  # raises if missing
-    haiku_engine = HaikuDescriptionEngine(anthropic_client, haiku_cache_store)
-
+    # The « Lecture narrée » is composed 100 % by the deterministic template in
+    # the assembler (mission « narrated-reading template-engine ») — no LLM, no
+    # ANTHROPIC_API_KEY needed here. M.I.A (chatbot) and the scanner translator
+    # each build their OWN Anthropic client where they are wired.
     news_pipeline = NewsPipeline(NewsCacheStore()) if enable_news else None
 
     # Indicator-grade context windows — overridable via env (widened defaults
@@ -165,7 +164,6 @@ def build_market_reading_assembler(enable_news: Optional[bool] = None) -> Any:
         data_provider=data_provider,
         readings_store=readings_store,
         candles_store=candles_store,
-        description_engine=haiku_engine,
         news_pipeline=news_pipeline,
         # Multi-timeframe bias from the candle cache (pure read, no extra Twelve
         # Data call) — populates regime.mtf_confluence, previously always empty

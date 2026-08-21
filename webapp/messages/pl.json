@@ -1589,8 +1589,7 @@
     },
     "conditions": {
       "title": "Odczyt narracyjny",
-      "sourceGenerated": "Wygenerowana narracja",
-      "sourceFallback": "Odczyt modelowy (zapasowy)"
+      "source": "Skomponowane przez silnik"
     },
     "tags": {
       "trend": "Trend ustanowiony",

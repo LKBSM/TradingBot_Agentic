@@ -90,7 +90,7 @@ def make_reading(instrument: str = "XAUUSD", timeframe: str = "H1") -> MarketRea
         conditions=MarketReadingConditions(
             tags=["trend_bullish"],
             description="Tendance haussière, volatilité élevée.",
-            description_source="template_fallback",
+            description_source="engine_template",
         ),
     )
 

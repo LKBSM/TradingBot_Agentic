@@ -177,7 +177,7 @@ export const FIXTURE_XAU_M15: MarketReading = {
     tags: ['trend', 'bos_confirmed', 'retest_active'],
     description:
       'Structure haussière confirmée par une cassure récente, retest en cours sur le niveau cassé. Volatilité normale, alignement M15/H1.',
-    description_source: 'haiku_generated',
+    description_source: 'engine_template',
   },
 };
 
@@ -245,7 +245,7 @@ export const FIXTURE_EUR_H1: MarketReading = {
     tags: ['ranging', 'choch_pending', 'low_vol'],
     description:
       'Marché en range sur H1, volatilité basse. Changement de caractère baissier en attente de confirmation, biais H4 baissier.',
-    description_source: 'template_fallback',
+    description_source: 'engine_template',
   },
 };
 
@@ -279,7 +279,7 @@ export const FIXTURE_QUIET_XAU_H4: MarketReading = {
   conditions: {
     tags: ['quiet'],
     description: 'Pas d’événement structurel notable sur la dernière bougie H4.',
-    description_source: 'template_fallback',
+    description_source: 'engine_template',
   },
 };
 

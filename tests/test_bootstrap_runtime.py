@@ -19,9 +19,10 @@ from src.api.bootstrap import (
 class _FakeAnthropic:
     """Minimal stand-in for the Anthropic SDK client.
 
-    The bootstrap factory only forwards this to ``HaikuDescriptionEngine``,
-    which holds it as ``self._client``. No methods are called by the bootstrap
-    path itself, so an empty object is sufficient.
+    The LLM-backed factories (chatbot / scanner translator) only hold this as a
+    client; no methods are called by the bootstrap path itself, so an empty
+    object is sufficient. The MarketReading assembler needs no client — its
+    narrated reading is composed by a deterministic template.
     """
 
 

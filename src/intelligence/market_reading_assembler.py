@@ -308,7 +308,6 @@ class MarketReadingAssembler:
         readings_store: Any,
         candles_store: Any,
         smc_pipeline: Optional[SmcPipelineFn] = None,
-        description_engine: Optional[Any] = None,
         news_pipeline: Optional[Any] = None,
         lookback: int = DEFAULT_LOOKBACK,
         mtf_provider: Optional[Callable[[str, str], Mapping[str, Sequence[Any]]]] = None,
@@ -321,7 +320,6 @@ class MarketReadingAssembler:
         self._readings_store = readings_store
         self._candles_store = candles_store
         self._smc_pipeline: SmcPipelineFn = smc_pipeline or _default_smc_pipeline
-        self._description_engine = description_engine
         self._news_pipeline = news_pipeline
         self._lookback = lookback
         self._mtf_provider = mtf_provider
@@ -940,25 +938,19 @@ class MarketReadingAssembler:
         price: float,
         instrument: str,
     ) -> tuple[str, str]:
-        """Narrated reading, anchored to the engine facts.
+        """Narrated reading, composed 100 % by the deterministic template.
 
-        Uses the Haiku engine if injected (it validates against the same facts and
-        falls back internally), else the deterministic template — so the panel is
-        always factual and always present. The template is also the safety net
-        when the engine raises before returning.
+        No LLM is involved (mission « narrated-reading template-engine ») : the
+        « Lecture narrée · Ancrée au moteur » text is assembled purely from the
+        structured engine facts by `render_template`, so the « Ancrée au moteur »
+        label is literally true and the surface costs zero tokens. Every segment
+        traces to a real engine field; a null field yields no text. ``tags`` is
+        accepted for a stable signature (it rides the reading elsewhere) but the
+        narration is derived from the facts, not the tags.
         """
+        del tags  # narration derives from the engine facts, not the tag list
         facts = build_reading_facts(structure, regime, price, instrument)
-        fallback = render_template(facts)
-        if self._description_engine is None:
-            return fallback, "template_fallback"
-        try:
-            description, source = self._description_engine.generate(
-                tags, regime, structure, price, instrument
-            )
-            return description, source
-        except Exception as exc:  # pragma: no cover — defensive
-            logger.warning("description_engine.generate failed: %s — using template", exc)
-            return fallback, "template_fallback"
+        return render_template(facts), "engine_template"
 
 
 # ---------------------------------------------------------------------------

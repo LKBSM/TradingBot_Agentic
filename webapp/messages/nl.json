@@ -1589,8 +1589,7 @@
     },
     "conditions": {
       "title": "Verhalende lezing",
-      "sourceGenerated": "Gegenereerde vertelling",
-      "sourceFallback": "Modellezing (terugval)"
+      "source": "Samengesteld door de engine"
     },
     "tags": {
       "trend": "Gevestigde trend",

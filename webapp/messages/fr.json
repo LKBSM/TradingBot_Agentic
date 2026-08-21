@@ -1589,8 +1589,7 @@
     },
     "conditions": {
       "title": "Lecture narrée",
-      "sourceGenerated": "Narration générée",
-      "sourceFallback": "Lecture modèle (repli)"
+      "source": "Composée par le moteur"
     },
     "tags": {
       "trend": "Tendance établie",

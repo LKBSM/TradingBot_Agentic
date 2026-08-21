@@ -10,12 +10,12 @@ import { humaniseTag } from '@/lib/market-reading/tag-labels';
 import type { MarketReadingConditions } from '@/types/market-reading';
 
 /**
- * Section "Lecture narrée" — the present-tense narration synthesised by the
- * engine FACTS (trend, multi-TF alignment, near-price OB/FVG zones, recent
- * BOS/CHOCH, volatility), validated against those facts server-side.
- * `description_source` is surfaced discreetly so the reader knows whether the
- * narration came from the LLM (anchored + level-validated) or the deterministic
- * template fallback. The text is descriptive only — never a forecast or advice.
+ * Section "Lecture narrée" — the present-tense narration composed 100 % by the
+ * deterministic engine template from the FACTS (trend, multi-TF alignment,
+ * near-price OB/FVG zones, recent BOS/CHOCH, volatility), and anchored so every
+ * cited level is a real engine output. No LLM is involved, so the source line
+ * states plainly that the reading is composed by the engine. The text is
+ * descriptive only — never a forecast or advice.
  */
 export function ConditionsSection({
   conditions,
@@ -25,10 +25,7 @@ export function ConditionsSection({
   const t = useTranslations('reading');
   const tagLabel = (tag: string): string =>
     t.has(`tags.${tag}`) ? t(`tags.${tag}`) : humaniseTag(tag);
-  const sourceLabel =
-    conditions.description_source === 'haiku_generated'
-      ? t('conditions.sourceGenerated')
-      : t('conditions.sourceFallback');
+  const sourceLabel = t('conditions.source');
 
   // The narration is a short paragraph; render any sentence-level line breaks the
   // engine produced as separate lines for readability (it never adds markup).

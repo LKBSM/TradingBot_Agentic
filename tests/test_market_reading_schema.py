@@ -104,7 +104,7 @@ DOC_EXAMPLE_JSON = """
       "retest_in_progress"
     ],
     "description": "Le march\\u00e9 XAU sur 15min est en phase de retest d'un Order Block H1, avec volatilit\\u00e9 \\u00e9lev\\u00e9e \\u00e0 l'approche du NFP USD dans 30 minutes. Structure H1 et H4 align\\u00e9e haussi\\u00e8rement.",
-    "description_source": "haiku_generated"
+    "description_source": "engine_template"
   }
 }
 """
@@ -129,7 +129,7 @@ def _minimal_reading() -> MarketReading:
         conditions=MarketReadingConditions(
             tags=["test"],
             description="Test description.",
-            description_source="template_fallback",
+            description_source="engine_template",
         ),
     )
 
@@ -191,7 +191,7 @@ def test_roundtrip_doc_example():
     assert m.events.technical_triggers_recent[0].type == "bos_h1_bullish"
     assert m.events.technical_triggers_recent[0].minutes_ago == 30
 
-    assert m.conditions.description_source == "haiku_generated"
+    assert m.conditions.description_source == "engine_template"
     assert "volatility_elevated" in m.conditions.tags
 
     # Roundtrip preserves all data
@@ -308,13 +308,13 @@ def test_description_capped_at_max_length():
     MarketReadingConditions(
         tags=["t"],
         description=exactly_max,
-        description_source="template_fallback",
+        description_source="engine_template",
     )
     with pytest.raises(ValidationError):
         MarketReadingConditions(
             tags=["t"],
             description="a" * (DESCRIPTION_MAX_LENGTH + 1),
-            description_source="template_fallback",
+            description_source="engine_template",
         )
 
 

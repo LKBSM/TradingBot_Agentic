@@ -13,8 +13,7 @@ Fail-safe: any Anthropic exception, or exceeding the tool-turn budget, returns a
 template (LLM_ERROR_TEMPLATE) instead of crashing or leaking a partial answer.
 
 The Anthropic client is duck-typed (only ``client.messages.create(...)`` is
-used) — consistent with HaikuDescriptionEngine / LLMNarrativeEngine, and trivial
-to stub in tests.
+used) — consistent with LLMNarrativeEngine, and trivial to stub in tests.
 """
 
 from __future__ import annotations
@@ -41,7 +40,6 @@ from src.intelligence.chatbot.view_action_filter import (
 
 logger = logging.getLogger(__name__)
 
-# Aligned with haiku_description_engine.py (Chantier 2) for inter-module coherence.
 DEFAULT_MODEL = "claude-haiku-4-5-20251001"
 DEFAULT_MAX_TOKENS = 1024
 MAX_TOOL_TURNS = 3  # hard cap on tool-use rounds to avoid infinite loops

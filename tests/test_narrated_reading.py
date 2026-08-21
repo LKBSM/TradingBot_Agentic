@@ -214,23 +214,33 @@ def test_template_never_emits_forbidden_tokens():
 # ---------------------------------------------------------------------------
 
 
-def test_contrary_context_pullback_against_higher_tfs():
-    # Reading TF bearish, higher TFs aligned bullish -> pullback contrary.
+def test_pullback_is_carried_by_mtf_sentence_not_a_contrary_clause():
+    # Reading TF bearish, higher TFs aligned bullish -> pullback. The pullback is
+    # stated ONCE, neutrally, by the multi-timeframe sentence; it is NOT duplicated
+    # as a « contrary » clause (that would reintroduce a causal « contre »).
     regime = _regime(trend="bearish", mtf={"h1": "bullish", "h4": "bullish"})
     facts = build_reading_facts(MarketReadingStructure(), regime, PRICE, INSTRUMENT)
-    assert facts.contrary is not None
-    assert "contre-courant" in render_template(facts)
+    assert facts.contrary is None  # pullback no longer yields a contrary clause
+    text = render_template(facts)
+    assert "se replie face aux timeframes supérieurs" in text  # neutral MTF phrase
+    assert "contre" not in text.lower()  # no causal « contre » / « contre-courant »
+    assert "noter" not in text  # no « À noter » clause for a pullback
 
 
-def test_contrary_context_opposite_zone_near_price():
-    # Trend bullish but an ACTIVE bearish OB sits near the price -> contrary.
+def test_contrary_context_opposite_zone_is_co_presence_not_causal():
+    # Trend bullish but an ACTIVE bearish OB sits near the price -> co-presence.
     structure = MarketReadingStructure(
         order_blocks=[_ob(2002.0, 2006.0, direction="bearish", status="active")]
     )
     regime = _regime(trend="bullish")
     facts = build_reading_facts(structure, regime, PRICE, INSTRUMENT)
     assert facts.contrary is not None
-    assert "noter" in render_template(facts)  # "À noter" clause present
+    text = render_template(facts)
+    assert "noter" in text  # "À noter" clause present
+    # Co-presence, never causal opposition.
+    assert "présent malgré la tendance" in text
+    assert "s'oppose" not in text and "oppose" not in text
+    assert "contre" not in text.lower()
 
 
 def test_no_contrary_when_one_directional():

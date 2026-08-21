@@ -173,7 +173,7 @@ const MOCK_XAU_H1: MarketReading = {
     tags: ['trend', 'bos_confirmed', 'expansion'],
     description:
       'Tendance haussière en expansion sur H1, alignement M15/H1/H4. Order Block haussier non testé sous le prix, FVG partiellement comblé. Publication PCE à surveiller.',
-    description_source: 'haiku_generated',
+    description_source: 'engine_template',
   },
 };
 
@@ -246,7 +246,7 @@ const MOCK_EUR_M15: MarketReading = {
     tags: ['distribution', 'bos_pending', 'retest_active'],
     description:
       'Cassure baissière récente en attente de confirmation, retest du niveau cassé en cours. Phase de distribution, biais H4 baissier.',
-    description_source: 'haiku_generated',
+    description_source: 'engine_template',
   },
 };
 
@@ -298,7 +298,7 @@ const MOCK_EUR_H4: MarketReading = {
     tags: ['ranging', 'low_vol'],
     description:
       'Marché en range sur H4, volatilité basse. Order Block baissier en surplomb non encore testé, biais structurel baissier de fond.',
-    description_source: 'template_fallback',
+    description_source: 'engine_template',
   },
 };
 

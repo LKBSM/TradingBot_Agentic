@@ -38,7 +38,7 @@ def _build_reading(instrument: str = "XAUUSD", timeframe: str = "M15") -> Market
         conditions=MarketReadingConditions(
             tags=["trend_bullish", "volatility_elevated"],
             description="Tendance haussière, volatilité élevée.",
-            description_source="template_fallback",
+            description_source="engine_template",
         ),
     )
 
