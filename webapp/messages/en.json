@@ -3203,11 +3203,11 @@
       "privacy": "Transcription is performed by your browser and may transit through its servers. No audio recording is kept.",
       "errors": {
         "not-allowed": "Microphone denied. You can allow it in your browser, or keep typing.",
-        "no-speech": "I didn't hear anything. Try again, or type your strategy.",
-        "audio-capture": "No microphone detected. Type your strategy instead.",
-        "network": "Speech recognition is unreachable. Type your strategy instead.",
+        "no-speech": "I didn't hear anything. Try again, or type instead.",
+        "audio-capture": "No microphone detected. Type instead.",
+        "network": "Speech recognition is unreachable. Type instead.",
         "timeout": "I didn't hear anything. Dictation stopped — try again or type.",
-        "unknown": "Dictation was interrupted. Type your strategy instead."
+        "unknown": "Dictation was interrupted. Type instead."
       }
     },
     "card": {

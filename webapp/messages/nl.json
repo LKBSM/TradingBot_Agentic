@@ -3203,11 +3203,11 @@
       "privacy": "De transcriptie wordt door je browser uitgevoerd en kan via zijn servers lopen. Er wordt geen audio-opname bewaard.",
       "errors": {
         "not-allowed": "Microfoon geweigerd. Je kunt hem in je browser toestaan of blijven typen.",
-        "no-speech": "Ik heb niets gehoord. Probeer opnieuw of typ je strategie.",
-        "audio-capture": "Geen microfoon gedetecteerd. Typ je strategie.",
-        "network": "Spraakherkenning is onbereikbaar. Typ je strategie.",
+        "no-speech": "Ik heb niets gehoord. Probeer opnieuw of typ met het toetsenbord.",
+        "audio-capture": "Geen microfoon gedetecteerd. Typ met het toetsenbord.",
+        "network": "Spraakherkenning is onbereikbaar. Typ met het toetsenbord.",
         "timeout": "Ik heb niets gehoord. Dicteren gestopt — probeer opnieuw of typ.",
-        "unknown": "Dicteren werd onderbroken. Typ je strategie."
+        "unknown": "Dicteren werd onderbroken. Typ met het toetsenbord."
       }
     },
     "card": {

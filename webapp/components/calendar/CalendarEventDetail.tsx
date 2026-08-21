@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import {
   ChevronLeft,
   ArrowUpRight,
@@ -12,6 +12,9 @@ import {
   CalendarDays,
 } from 'lucide-react';
 import { AgentAvatar } from '@/components/chat/AgentAvatar';
+import { MicButton } from '@/components/dictation/MicButton';
+import { useVoiceInput } from '@/lib/scanner-chat/use-voice-input';
+import { useDictationCopy } from '@/lib/scanner-chat/use-dictation-copy';
 import { askSentinel, ChatApiError, ChatApiUnavailableError } from '@/lib/chat/api-client';
 import { useLocalizedHref } from '@/lib/i18n/href';
 import { sourceLinksFor, type SourceDocKind } from '@/lib/calendar/sourceLinks';
@@ -852,6 +855,13 @@ function MiaBlock({
   const [error, setError] = React.useState<string | null>(null);
   const threadRef = React.useRef<HTMLDivElement>(null);
 
+  // Voice dictation — same shared browser hook as the other M.I.A chats. It only
+  // fills the field; the question sent to the backend is exactly the visible
+  // text (still anchored on this publication, as before).
+  const locale = useLocale();
+  const voice = useVoiceInput({ locale, value: input, onValueChange: setInput });
+  const dictationCopy = useDictationCopy();
+
   const send = React.useCallback(
     async (raw: string) => {
       const text = raw.trim();
@@ -965,6 +975,16 @@ function MiaBlock({
           placeholder={t('pub.mia.placeholder')}
           aria-label={t('pub.mia.placeholder')}
         />
+        {voice.supported && !loading && (
+          <MicButton
+            listening={voice.listening}
+            denied={voice.denied}
+            onToggle={voice.toggle}
+            startLabel={dictationCopy.startLabel}
+            stopLabel={dictationCopy.stopLabel}
+            className="pub-mia-mic"
+          />
+        )}
         <button
           type="submit"
           className="pub-mia-send"
@@ -975,6 +995,24 @@ function MiaBlock({
           {t('pub.mia.send')}
         </button>
       </form>
+
+      {/* Dictation feedback — never hidden; the keyboard stays fully usable. */}
+      {voice.supported && voice.listening && (
+        <p data-testid="dictation-listening" className="pub-mia-dict listen">
+          {dictationCopy.listeningLabel}
+          {voice.interim ? ` — “${voice.interim}”` : ''}
+        </p>
+      )}
+      {voice.supported && voice.error && (
+        <p data-testid="dictation-error" role="alert" className="pub-mia-dict err">
+          {dictationCopy.errorText(voice.error)}
+        </p>
+      )}
+      {voice.supported && (
+        <p data-testid="transcription-note" className="pub-mia-dict note">
+          {dictationCopy.privacy}
+        </p>
+      )}
     </div>
   );
 }

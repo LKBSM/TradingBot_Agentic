@@ -4,6 +4,9 @@ import * as React from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { AgentAvatar } from '@/components/chat/AgentAvatar';
+import { MicButton } from '@/components/dictation/MicButton';
+import { useVoiceInput } from '@/lib/scanner-chat/use-voice-input';
+import { useDictationCopy } from '@/lib/scanner-chat/use-dictation-copy';
 import { useReadingFormatters } from '@/lib/market-reading/use-reading-formatters';
 import type { LiquidityPool } from '@/types/market-reading';
 import {
@@ -147,6 +150,12 @@ export function ZoneMiaPanel({
   const [turns, setTurns] = React.useState<Turn[]>([]);
   const [draft, setDraft] = React.useState('');
 
+  // Voice dictation — same shared browser hook as the other M.I.A chats. The
+  // /zones chat answers locally (0 network); the voice input only fills the
+  // field, so nothing about the local, factual answers changes.
+  const voice = useVoiceInput({ locale, value: draft, onValueChange: setDraft });
+  const dictationCopy = useDictationCopy();
+
   // Switching subject clears the (local) conversation — a new zone, a new topic.
   const zoneId = zone?.id ?? null;
   React.useEffect(() => {
@@ -243,10 +252,38 @@ export function ZoneMiaPanel({
           placeholder={t('mia.input.placeholder')}
           aria-label={t('mia.input.placeholder')}
         />
+        {voice.supported && (
+          <MicButton
+            listening={voice.listening}
+            denied={voice.denied}
+            onToggle={voice.toggle}
+            startLabel={dictationCopy.startLabel}
+            stopLabel={dictationCopy.stopLabel}
+            className="zmia-mic"
+          />
+        )}
         <button type="submit" aria-label={t('mia.input.send')} disabled={!draft.trim()}>
           →
         </button>
       </form>
+
+      {/* Dictation feedback — never hidden; the keyboard stays usable. */}
+      {voice.supported && voice.listening && (
+        <p data-testid="dictation-listening" className="zmia-dict listen">
+          {dictationCopy.listeningLabel}
+          {voice.interim ? ` — “${voice.interim}”` : ''}
+        </p>
+      )}
+      {voice.supported && voice.error && (
+        <p data-testid="dictation-error" role="alert" className="zmia-dict err">
+          {dictationCopy.errorText(voice.error)}
+        </p>
+      )}
+      {voice.supported && (
+        <p data-testid="transcription-note" className="zmia-dict note">
+          {dictationCopy.privacy}
+        </p>
+      )}
 
       <div className="zmia-disc">{t('mia.disclaimer')}</div>
     </aside>

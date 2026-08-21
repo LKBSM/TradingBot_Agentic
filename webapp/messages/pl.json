@@ -3203,11 +3203,11 @@
       "privacy": "Transkrypcja jest wykonywana przez twoją przeglądarkę i może przechodzić przez jej serwery. Żadne nagranie dźwiękowe nie jest przechowywane.",
       "errors": {
         "not-allowed": "Odmowa dostępu do mikrofonu. Możesz zezwolić na niego w przeglądarce lub dalej pisać.",
-        "no-speech": "Nic nie usłyszałam. Spróbuj ponownie lub wpisz swoją strategię.",
-        "audio-capture": "Nie wykryto mikrofonu. Wpisz swoją strategię.",
-        "network": "Rozpoznawanie mowy jest nieosiągalne. Wpisz swoją strategię.",
+        "no-speech": "Nic nie usłyszałam. Spróbuj ponownie lub pisz na klawiaturze.",
+        "audio-capture": "Nie wykryto mikrofonu. Pisz na klawiaturze.",
+        "network": "Rozpoznawanie mowy jest nieosiągalne. Pisz na klawiaturze.",
         "timeout": "Nic nie usłyszałam. Dyktowanie zatrzymane — spróbuj ponownie lub pisz.",
-        "unknown": "Dyktowanie zostało przerwane. Wpisz swoją strategię."
+        "unknown": "Dyktowanie zostało przerwane. Pisz na klawiaturze."
       }
     },
     "card": {

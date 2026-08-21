@@ -3203,11 +3203,11 @@
       "privacy": "Die Transkription wird von deinem Browser durchgeführt und kann über dessen Server laufen. Es wird keine Audioaufnahme gespeichert.",
       "errors": {
         "not-allowed": "Mikrofon verweigert. Du kannst es im Browser erlauben oder weiter tippen.",
-        "no-speech": "Ich habe nichts gehört. Versuch es erneut oder tippe deine Strategie.",
-        "audio-capture": "Kein Mikrofon erkannt. Tippe deine Strategie stattdessen.",
-        "network": "Spracherkennung nicht erreichbar. Tippe deine Strategie stattdessen.",
+        "no-speech": "Ich habe nichts gehört. Versuch es erneut oder tippe stattdessen.",
+        "audio-capture": "Kein Mikrofon erkannt. Tippe stattdessen.",
+        "network": "Spracherkennung nicht erreichbar. Tippe stattdessen.",
         "timeout": "Ich habe nichts gehört. Diktat gestoppt — versuch es erneut oder tippe.",
-        "unknown": "Diktat wurde unterbrochen. Tippe deine Strategie stattdessen."
+        "unknown": "Diktat wurde unterbrochen. Tippe stattdessen."
       }
     },
     "card": {

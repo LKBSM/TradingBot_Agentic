@@ -3203,11 +3203,11 @@
       "privacy": "La transcripción la realiza tu navegador y puede transitar por sus servidores. No se conserva ninguna grabación de audio.",
       "errors": {
         "not-allowed": "Micrófono denegado. Puedes permitirlo en tu navegador o seguir escribiendo.",
-        "no-speech": "No he oído nada. Inténtalo de nuevo o escribe tu estrategia.",
-        "audio-capture": "No se detectó ningún micrófono. Escribe tu estrategia.",
-        "network": "El reconocimiento de voz no está disponible. Escribe tu estrategia.",
+        "no-speech": "No he oído nada. Inténtalo de nuevo o escribe con el teclado.",
+        "audio-capture": "No se detectó ningún micrófono. Escribe con el teclado.",
+        "network": "El reconocimiento de voz no está disponible. Escribe con el teclado.",
         "timeout": "No he oído nada. El dictado se detuvo — inténtalo de nuevo o escribe.",
-        "unknown": "El dictado se interrumpió. Escribe tu estrategia."
+        "unknown": "El dictado se interrumpió. Escribe con el teclado."
       }
     },
     "card": {

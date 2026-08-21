@@ -1,10 +1,11 @@
 'use client';
 
-import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useSpeechDictation, type DictationError } from '@/lib/scanner-chat/use-speech-dictation';
+import { MicButton } from '@/components/dictation/MicButton';
+import { useVoiceInput } from '@/lib/scanner-chat/use-voice-input';
+import { useDictationCopy } from '@/lib/scanner-chat/use-dictation-copy';
 
 const MAX_TEXT = 500;
 
@@ -37,18 +38,16 @@ export function DescribePanel({
   locale: string;
 }) {
   const t = useTranslations('scannerChat');
-  const speechLang = locale.toLowerCase().startsWith('en') ? 'en-US' : 'fr-FR';
 
-  const appendFinal = React.useCallback(
-    (chunk: string) => {
-      onTextChange(joinTranscript(text, chunk).slice(0, MAX_TEXT));
-    },
-    // text is read at call time via closure refresh below
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [text],
-  );
-
-  const dictation = useSpeechDictation({ lang: speechLang, onFinal: appendFinal });
+  // Shared voice-input adapter — the exact same hook the /app, /zones and
+  // /actualites M.I.A chats use. It only appends to the field the user controls.
+  const voice = useVoiceInput({
+    locale,
+    value: text,
+    onValueChange: onTextChange,
+    maxLength: MAX_TEXT,
+  });
+  const dictationCopy = useDictationCopy();
 
   const examples = [
     t('describe.examples.0'),
@@ -96,7 +95,7 @@ export function DescribePanel({
           <div
             className={cn(
               'flex items-start gap-2.5 rounded-xl border bg-muted p-3 transition',
-              dictation.listening ? 'border-primary ring-2 ring-primary/20' : 'border-border',
+              voice.listening ? 'border-primary ring-2 ring-primary/20' : 'border-border',
             )}
           >
             <span aria-hidden className="mt-0.5 select-none font-mono fs-section leading-none text-primary">
@@ -111,36 +110,27 @@ export function DescribePanel({
               aria-label={t('describe.title')}
               className="min-h-[64px] flex-1 resize-none bg-transparent font-mono fs-secondary leading-relaxed text-foreground outline-none placeholder:text-muted-foreground/70"
             />
-            {dictation.supported && (
-              <button
-                type="button"
-                data-testid="mic-button"
-                aria-pressed={dictation.listening}
-                aria-label={dictation.listening ? t('dictation.stop') : t('dictation.start')}
-                title={dictation.listening ? t('dictation.stop') : t('dictation.start')}
-                onClick={() => (dictation.listening ? dictation.stop() : dictation.start())}
-                className={cn(
-                  'grid h-9 w-9 shrink-0 place-items-center rounded-lg border transition',
-                  dictation.listening
-                    ? 'border-primary bg-primary/15 text-primary'
-                    : 'border-border/70 text-muted-foreground hover:border-primary hover:text-primary',
-                )}
-              >
-                <MicIcon />
-              </button>
+            {voice.supported && (
+              <MicButton
+                listening={voice.listening}
+                denied={voice.denied}
+                onToggle={voice.toggle}
+                startLabel={dictationCopy.startLabel}
+                stopLabel={dictationCopy.stopLabel}
+              />
             )}
           </div>
 
           {/* Live listening + transcript feedback — NEVER hidden. */}
-          {dictation.listening && (
+          {voice.listening && (
             <p data-testid="dictation-listening" className="mt-2 fs-legal text-primary">
-              {t('dictation.listening')}
-              {dictation.interim ? <span className="text-muted-foreground"> — “{dictation.interim}”</span> : null}
+              {dictationCopy.listeningLabel}
+              {voice.interim ? <span className="text-muted-foreground"> — “{voice.interim}”</span> : null}
             </p>
           )}
-          {dictation.error && (
+          {voice.error && (
             <p data-testid="dictation-error" role="alert" className="mt-2 fs-label text-amber-600">
-              {dictationErrorMessage(dictation.error, t)}
+              {dictationCopy.errorText(voice.error)}
             </p>
           )}
 
@@ -161,9 +151,9 @@ export function DescribePanel({
           </p>
 
           {/* Browser-transcription notice — legal, readable, no longer dominant. */}
-          {dictation.supported && (
+          {voice.supported && (
             <p data-testid="transcription-note" className="mt-1 fs-legal leading-relaxed text-muted-foreground/80">
-              {t('dictation.privacy')}
+              {dictationCopy.privacy}
             </p>
           )}
 
@@ -242,25 +232,4 @@ function toggleExample(text: string, phrase: string): string {
   }
   const base = text.replace(/\s+$/, '');
   return base ? `${base}${EXAMPLE_SEPARATOR}${phrase}` : phrase;
-}
-
-function dictationErrorMessage(error: DictationError, t: ReturnType<typeof useTranslations>): string {
-  const key = `dictation.errors.${error}`;
-  return t.has(key) ? t(key) : t('dictation.errors.unknown');
-}
-
-/** Append a dictated chunk with a single separating space, trimming doubles. */
-function joinTranscript(current: string, chunk: string): string {
-  const base = current.replace(/\s+$/, '');
-  if (!base) return chunk;
-  return `${base} ${chunk}`.replace(/\s{2,}/g, ' ');
-}
-
-function MicIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden>
-      <rect x="9" y="3" width="6" height="11" rx="3" />
-      <path d="M5 11a7 7 0 0014 0M12 18v3" strokeLinecap="round" />
-    </svg>
-  );
 }
