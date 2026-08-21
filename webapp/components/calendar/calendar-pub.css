@@ -330,6 +330,48 @@
   background: var(--acc);
   color: var(--bg);
 }
+/* Dictation mic — outlined, distinct from the filled send button; state
+   (idle / listening / denied) is self-evident. */
+.pub-mia-mic {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--r-s);
+  border: 1px solid var(--line-2);
+  background: var(--panel);
+  color: var(--faint);
+  cursor: pointer;
+}
+.pub-mia-mic:hover {
+  border-color: var(--acc);
+  color: var(--acc);
+}
+.pub-mia-mic[data-state='listening'] {
+  border-color: var(--acc);
+  background: var(--acc-dim);
+  color: var(--acc);
+}
+.pub-mia-mic[data-state='denied'] {
+  border-color: #f59e0b;
+  color: #d97706;
+}
+.pub-mia-dict {
+  font-size: 11px;
+  line-height: 1.5;
+  margin-top: 7px;
+}
+.pub-mia-dict.listen {
+  color: var(--acc);
+}
+.pub-mia-dict.err {
+  color: #d97706;
+}
+.pub-mia-dict.note {
+  font-size: 10px;
+  color: var(--faint);
+}
 .pub-mia-cap {
   font-size: 11px;
   color: var(--dim);

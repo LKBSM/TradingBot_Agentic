@@ -1248,6 +1248,45 @@
   opacity: 0.45;
   cursor: default;
 }
+/* Dictation mic — outlined so it reads as a distinct affordance from the filled
+   send button; its state (idle / listening / denied) is self-evident. */
+.app-shell .zmia-input .zmia-mic {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--line-2);
+  background: var(--panel-3);
+  color: var(--faint);
+  cursor: pointer;
+}
+.app-shell .zmia-input .zmia-mic:hover {
+  border-color: var(--acc);
+  color: var(--acc);
+}
+.app-shell .zmia-input .zmia-mic[data-state='listening'] {
+  border-color: var(--acc);
+  color: var(--acc);
+}
+.app-shell .zmia-input .zmia-mic[data-state='denied'] {
+  border-color: #f59e0b;
+  color: #d97706;
+}
+.app-shell .zmia-dict {
+  padding: 6px 14px 0;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.app-shell .zmia-dict.listen {
+  color: var(--acc);
+}
+.app-shell .zmia-dict.err {
+  color: #d97706;
+}
+.app-shell .zmia-dict.note {
+  font-size: 10px;
+  color: var(--faint);
+}
 .app-shell .zmia-disc {
   padding: 10px 14px;
   border-top: 1px solid var(--line);

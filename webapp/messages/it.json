@@ -3205,11 +3205,11 @@
       "privacy": "La trascrizione è eseguita dal tuo browser e può transitare dai suoi server. Nessuna registrazione audio viene conservata.",
       "errors": {
         "not-allowed": "Microfono negato. Puoi consentirlo nel browser o continuare a digitare.",
-        "no-speech": "Non ho sentito nulla. Riprova o scrivi la tua strategia.",
-        "audio-capture": "Nessun microfono rilevato. Scrivi la tua strategia.",
-        "network": "Il riconoscimento vocale non è raggiungibile. Scrivi la tua strategia.",
+        "no-speech": "Non ho sentito nulla. Riprova o scrivi con la tastiera.",
+        "audio-capture": "Nessun microfono rilevato. Scrivi con la tastiera.",
+        "network": "Il riconoscimento vocale non è raggiungibile. Scrivi con la tastiera.",
         "timeout": "Non ho sentito nulla. Dettatura interrotta — riprova o scrivi.",
-        "unknown": "La dettatura si è interrotta. Scrivi la tua strategia."
+        "unknown": "La dettatura si è interrotta. Scrivi con la tastiera."
       }
     },
     "card": {

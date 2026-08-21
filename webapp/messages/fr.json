@@ -3205,11 +3205,11 @@
       "privacy": "La transcription est effectuée par ton navigateur et peut transiter par ses serveurs. Aucun enregistrement audio n'est conservé.",
       "errors": {
         "not-allowed": "Micro refusé. Tu peux l'autoriser dans ton navigateur, ou continuer au clavier.",
-        "no-speech": "Je n'ai rien entendu. Réessaie, ou écris ta stratégie.",
-        "audio-capture": "Aucun micro détecté. Écris ta stratégie au clavier.",
-        "network": "La reconnaissance vocale est injoignable. Écris ta stratégie au clavier.",
+        "no-speech": "Je n'ai rien entendu. Réessaie, ou écris au clavier.",
+        "audio-capture": "Aucun micro détecté. Écris au clavier.",
+        "network": "La reconnaissance vocale est injoignable. Écris au clavier.",
         "timeout": "Je n'ai rien entendu. La dictée s'est arrêtée — réessaie ou écris au clavier.",
-        "unknown": "La dictée s'est interrompue. Écris ta stratégie au clavier."
+        "unknown": "La dictée s'est interrompue. Écris au clavier."
       }
     },
     "card": {
