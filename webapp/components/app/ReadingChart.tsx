@@ -251,6 +251,15 @@ function minBarSpacingFor(plotWidth: number): number {
 const LOAD_OLDER_THRESHOLD_BARS = 12;
 
 /**
+ * Backstop on the number of backward pages loaded to reach a selected OLD event's
+ * bar before framing it. A structure event lives inside the analysis window
+ * (~500 bars) and the chart already loads 400 recent bars, so one 500-bar page
+ * covers it in practice; this cap only guards against paging forever toward an
+ * event whose candle is genuinely unavailable (never reached `reachedStart`).
+ */
+const MAX_EVENT_HISTORY_PAGES = 6;
+
+/**
  * Theme-resolved palette. Lightweight-charts paints onto a canvas, so it needs
  * concrete colour strings (CSS `var(--token)` does not resolve there). We read
  * the LIVE token values off <html> via getComputedStyle so the chart tracks
@@ -408,6 +417,13 @@ export function ReadingChart({
   reachedStartRef.current = reachedStart;
   const isLoadingOlderRef = React.useRef(isLoadingOlder);
   isLoadingOlderRef.current = isLoadingOlder;
+  // An EVENT selection whose confirmation bar is older than the loaded candle
+  // window: we defer its framing and page history backward (loadOlder) until the
+  // bar is in view, then animate once. Holds the pending event id; a new gesture
+  // clears it. The page counter is a backstop so a genuinely unreachable event
+  // never pages history forever.
+  const pendingEventRef = React.useRef<string | null>(null);
+  const pendingEventPagesRef = React.useRef(0);
   const analysisWindowBarsRef = React.useRef(analysisWindowBars);
   analysisWindowBarsRef.current = analysisWindowBars;
 
@@ -1242,6 +1258,18 @@ export function ReadingChart({
     seriesRef.current?.priceScale().setAutoScale(true);
   }, []);
 
+  // Shared camera X-axis applier — used by BOTH the unified selection tween and the
+  // deferred old-event framing, so the two paths move the camera identically.
+  const setCameraVisibleRange = React.useCallback((r: { from: number; to: number }) => {
+    try {
+      chartRef.current
+        ?.timeScale()
+        .setVisibleRange({ from: r.from as UTCTimestamp, to: r.to as UTCTimestamp });
+    } catch {
+      // Range momentarily outside the data — the next frame recovers.
+    }
+  }, []);
+
   // Selected-zone respiration (§C): a slow, discreet opacity breath (~2.5s), never
   // blinking. Disabled under prefers-reduced-motion.
   const stopPulse = React.useCallback(() => {
@@ -1311,19 +1339,12 @@ export function ReadingChart({
     stopPulse();
     setSelectionMissing(false);
     setEdgeIndicator(null);
+    // A new gesture cancels any old-event history paging still pending.
+    pendingEventRef.current = null;
+    pendingEventPagesRef.current = 0;
 
     const reduced = prefersReducedMotion();
-    const cameraChart = {
-      setVisibleRange: (r: { from: number; to: number }) => {
-        try {
-          chart
-            .timeScale()
-            .setVisibleRange({ from: r.from as UTCTimestamp, to: r.to as UTCTimestamp });
-        } catch {
-          // Range momentarily outside the data — the next frame recovers.
-        }
-      },
-    };
+    const cameraChart = { setVisibleRange: setCameraVisibleRange };
 
     // DESELECT → restore the camera captured before the selection chain, then hand
     // the vertical axis back to the base candle autoscale.
@@ -1374,6 +1395,33 @@ export function ReadingChart({
       const resolved = findEventById(structure, selection.id);
       if (!resolved) return;
       const evSec = Math.floor(Date.parse(resolved.event.broken_at) / 1000);
+      const firstSec = cs.length ? (cs[0]!.time as number) : null;
+      // OLD event OUTSIDE the loaded window: its confirmation bar isn't loaded yet.
+      // Rather than frame onto empty space to the left of the data, DEFER — page
+      // history backward (loadOlder) until the bar is in view, then the pending-
+      // event effect animates once. The « chargement de l'historique » chip
+      // (isLoadingOlder) already gives honest feedback while it pages.
+      if (
+        firstSec !== null &&
+        evSec < firstSec &&
+        onLoadOlderRef.current &&
+        !reachedStartRef.current
+      ) {
+        // Capture the restore point BEFORE any paging, and bring the chart into
+        // view now so the reader sees where the framing will land (§A.1).
+        if (!savedFrameRef.current) savedFrameRef.current = readCurrentFrame();
+        containerRef.current?.scrollIntoView({
+          behavior: reduced ? 'auto' : 'smooth',
+          block: 'nearest',
+        });
+        pendingEventRef.current = selection.id;
+        pendingEventPagesRef.current = 0;
+        if (!isLoadingOlderRef.current) {
+          pendingEventPagesRef.current = 1;
+          onLoadOlderRef.current();
+        }
+        return;
+      }
       const cand = cs.find((c) => Math.abs((c.time as number) - evSec) < barSec);
       frame = frameEvent({
         atSec: evSec,
@@ -1434,6 +1482,72 @@ export function ReadingChart({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectionKeyStr]);
+
+  // ── Deferred OLD-event framing — page history in, THEN animate once. ─────────
+  // Set up by the selection effect when the chosen event's bar is older than the
+  // loaded window. Re-runs on every backward page (candles), on `reachedStart`,
+  // and when a page finishes (isLoadingOlder): it keeps paging one page at a time
+  // until the event's confirmation bar is loaded — or the true start of history /
+  // the page cap is reached — then frames it exactly like an in-window event. It
+  // never animates onto empty space; if the bar is genuinely unavailable it frames
+  // the oldest reachable window (with the broken-level line still drawn). A new
+  // selection, deselect, or Escape clears `pendingEventRef`, so this no-ops.
+  React.useEffect(() => {
+    const pendingId = pendingEventRef.current;
+    if (!pendingId) return;
+    const chart = chartRef.current;
+    const series = seriesRef.current;
+    if (!chart || !series) return;
+    const resolved = findEventById(structureRef.current, pendingId);
+    if (!resolved) {
+      pendingEventRef.current = null;
+      pendingEventPagesRef.current = 0;
+      return;
+    }
+    const evSec = Math.floor(Date.parse(resolved.event.broken_at) / 1000);
+    const cs = candlesRef.current;
+    const firstSec = cs.length ? (cs[0]!.time as number) : null;
+    const covered = firstSec !== null && evSec >= firstSec;
+
+    if (
+      !covered &&
+      !reachedStartRef.current &&
+      pendingEventPagesRef.current < MAX_EVENT_HISTORY_PAGES
+    ) {
+      // Not far enough back yet → load the next page (once the current one lands).
+      if (!isLoadingOlderRef.current && onLoadOlderRef.current) {
+        pendingEventPagesRef.current += 1;
+        onLoadOlderRef.current();
+      }
+      return;
+    }
+
+    // Covered, or no more history / cap reached → frame now (best-effort) & clear.
+    pendingEventRef.current = null;
+    pendingEventPagesRef.current = 0;
+    const lastSec = cs.length ? (cs[cs.length - 1]!.time as number) : null;
+    const barSec = (timeframeRef.current ? TF_SECONDS[timeframeRef.current] : undefined) ?? 0;
+    if (lastSec === null || barSec <= 0) return;
+    const cand = cs.find((c) => Math.abs((c.time as number) - evSec) < barSec);
+    const frame = frameEvent({
+      atSec: evSec,
+      lastSec,
+      barSec,
+      level: resolved.event.level,
+      candleLow: cand?.low,
+      candleHigh: cand?.high,
+    });
+    const reduced = prefersReducedMotion();
+    cancelTweenRef.current?.();
+    cancelTweenRef.current = animateCamera({
+      chart: { setVisibleRange: setCameraVisibleRange },
+      from: readCurrentFrame(),
+      to: frame,
+      setPriceTarget,
+      reducedMotion: reduced,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [candles, reachedStart, isLoadingOlder]);
 
   // ── Discreet zoom / pan controls (mouse + keyboard + ≥44px touch targets). ──
   const zoom = React.useCallback((factor: number) => {
