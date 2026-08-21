@@ -2029,9 +2029,8 @@
       "offlineNote": "Offline modus: vrije invoer vereist de Anthropic-sleutel aan de serverzijde.",
       "complianceLine": "M.I.A Agent beantwoordt vragen over de algoritmische lezing. Hij geeft geen tradingsignaal en geen persoonlijke aanbeveling.",
       "openPanel": "Assistent openen",
-      "hidePanel": "M.I.A-paneel verbergen",
-      "showPanel": "M.I.A-paneel tonen",
-      "showPanelShort": "M.I.A"
+      "collapseToBubble": "Verkleinen tot bel",
+      "dockToColumn": "Vastzetten als kolom"
     },
     "placeholders": {
       "emptyReading": "Selecteer links een combinatie om de marktlezing ervan weer te geven.",

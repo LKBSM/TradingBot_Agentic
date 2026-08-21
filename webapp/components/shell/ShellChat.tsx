@@ -20,12 +20,17 @@ const DEFAULT_COMBO: Combo = { instrument: 'XAUUSD', timeframe: 'M15' };
  *
  * Responsive (mission UI-2b), driven by shell.css media queries — one instance,
  * no width JS:
- *   · ≥1280px      → docked right column (`.chatcol` as a grid cell).
+ *   · ≥1280px      → TWO dispositions the user toggles (persisted): column mode
+ *                    docks `.chatcol` as a grid cell; bubble mode reduces it to
+ *                    the floating `.chat-fab`, which opens the SAME off-canvas
+ *                    drawer so the centre reclaims full width without losing the
+ *                    conversation (the sidebar is never unmounted).
  *   · 768–1279px   → off-canvas drawer; a floating button (`.chat-fab`) slides it
  *                    in over a backdrop, so the reference centre column keeps its
  *                    full width. Closed via the backdrop or Escape.
  *   · <768px       → hidden here (MobileWorkspace owns the Chat tab).
- * `open` only matters in the drawer band; at ≥1280 the column is always visible.
+ * `open` is the drawer state (bubble mode + tablet band); `chatOpen` from the
+ * shared context is the ≥1280 disposition (column vs bubble), persisted.
  */
 export function ShellChat() {
   const router = useRouter();
@@ -33,7 +38,22 @@ export function ShellChat() {
   const searchParams = useSearchParams();
   const t = useTranslations('app');
   const [open, setOpen] = React.useState(false);
-  const { hide: hideColumn } = useChatColumn();
+  const { open: chatOpen, show: showColumn, hide: hideColumn } = useChatColumn();
+
+  // Single display-mode control shared with the sidebar header. Switching to
+  // column mode also closes the drawer (it becomes the docked column); switching
+  // to bubble mode leaves the drawer closed so only the bubble shows.
+  const setDisplayMode = React.useCallback(
+    (mode: 'column' | 'bubble') => {
+      if (mode === 'column') {
+        showColumn();
+        setOpen(false);
+      } else {
+        hideColumn();
+      }
+    },
+    [showColumn, hideColumn],
+  );
 
   const active =
     resolveComboFromQuery(
@@ -78,13 +98,15 @@ export function ShellChat() {
         aria-hidden
       />
       <aside className={cn('chatcol', open && 'open')}>
-        {/* onHide drives the desktop (≥1280) docked-column collapse button. The
-            drawer band (768–1279) closes via the backdrop/Escape, so the button
-            is CSS-hidden there — see AppChatSidebar. */}
+        {/* The header toggle switches disposition on desktop (≥1280): "reduce to
+            bubble" when docked, "dock to column" when in the bubble's drawer. The
+            tablet band (768–1279) has no column mode, so AppChatSidebar CSS-hides
+            the button there; the drawer closes via the backdrop/Escape. */}
         <AppChatSidebar
           active={active}
           onSelectCombo={onSelectCombo}
-          onHide={hideColumn}
+          displayMode={chatOpen ? 'column' : 'bubble'}
+          onSetDisplayMode={setDisplayMode}
         />
       </aside>
     </>

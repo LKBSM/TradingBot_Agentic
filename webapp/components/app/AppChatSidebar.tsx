@@ -6,6 +6,7 @@ import {
   History,
   LayoutPanelTop,
   LineChart,
+  PanelLeftClose,
   PanelRightClose,
   RotateCcw,
 } from 'lucide-react';
@@ -49,7 +50,8 @@ const STARTER_META: ReadonlyArray<{ id: string; icon: React.ReactNode }> = [
 export function AppChatSidebar({
   active,
   onSelectCombo,
-  onHide,
+  displayMode,
+  onSetDisplayMode,
 }: {
   active: Combo | null;
   /**
@@ -59,11 +61,19 @@ export function AppChatSidebar({
    */
   onSelectCombo?: (combo: Combo) => void;
   /**
-   * Collapse the docked column (desktop ≥1280 only). When provided, a "hide"
-   * button appears in the header, shown only at ≥1280 (the tablet drawer closes
-   * via its backdrop). Omitted by the mobile workspace, where the chat is a tab.
+   * Current display disposition on /app (desktop ≥1280 only): `'column'` when
+   * M.I.A is docked as the right column, `'bubble'` when it has been reduced to
+   * the floating bubble + drawer. Drives which toggle button the header shows.
+   * Omitted by the mobile workspace, where the chat is a tab (no toggle).
    */
-  onHide?: () => void;
+  displayMode?: 'column' | 'bubble';
+  /**
+   * Switch between the two dispositions. When provided (with `displayMode`), a
+   * single toggle button appears in the header — "reduce to bubble" in column
+   * mode, "dock to column" in bubble mode — shown only at ≥1280 (the tablet
+   * drawer closes via its backdrop, and there is no column mode below 1280).
+   */
+  onSetDisplayMode?: (mode: 'column' | 'bubble') => void;
 }) {
   const t = useTranslations('app');
   const {
@@ -125,23 +135,37 @@ export function AppChatSidebar({
           </p>
           <TooltipProvider delayDuration={200}>
             <div className="flex shrink-0 items-center gap-0.5">
-              {onHide && (
+              {displayMode && onSetDisplayMode && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
                       type="button"
                       size="icon"
                       variant="ghost"
-                      aria-label={t('chat.hidePanel')}
-                      onClick={onHide}
-                      // ≥1280 only: the docked column carries the collapse
-                      // affordance; the tablet drawer closes via its backdrop.
+                      aria-label={
+                        displayMode === 'column'
+                          ? t('chat.collapseToBubble')
+                          : t('chat.dockToColumn')
+                      }
+                      onClick={() =>
+                        onSetDisplayMode(displayMode === 'column' ? 'bubble' : 'column')
+                      }
+                      // ≥1280 only: below that the drawer closes via its backdrop
+                      // and there is no column disposition to toggle to.
                       className="hidden text-muted-foreground xl:inline-flex xl:h-8 xl:w-8"
                     >
-                      <PanelRightClose className="h-4 w-4" aria-hidden />
+                      {displayMode === 'column' ? (
+                        <PanelRightClose className="h-4 w-4" aria-hidden />
+                      ) : (
+                        <PanelLeftClose className="h-4 w-4" aria-hidden />
+                      )}
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom">{t('chat.hidePanel')}</TooltipContent>
+                  <TooltipContent side="bottom">
+                    {displayMode === 'column'
+                      ? t('chat.collapseToBubble')
+                      : t('chat.dockToColumn')}
+                  </TooltipContent>
                 </Tooltip>
               )}
               {recentThreads.length > 0 && (
