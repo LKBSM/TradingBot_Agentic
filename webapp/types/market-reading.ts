@@ -97,8 +97,11 @@ export type LiquidityKind =
 /** Liquidity pocket lifecycle (descriptive, factual). */
 export type LiquidityStatus = 'intact' | 'swept' | 'broken';
 
-/** Provenance of the synthesised conditions description. */
-export type DescriptionSource = 'haiku_generated' | 'template_fallback';
+/**
+ * Provenance of the narrated reading. It is composed 100 % by the deterministic
+ * engine template (no LLM) — a single value, kept as a field for stability.
+ */
+export type DescriptionSource = 'engine_template';
 
 /** Valid MTF timeframe keys for the confluence map (`VALID_MTF_KEYS`). */
 export type MTFTimeframeKey = 'm15' | 'h1' | 'h4' | 'd1' | 'w1';

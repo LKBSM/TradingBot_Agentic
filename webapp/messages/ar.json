@@ -1665,8 +1665,7 @@
     },
     "conditions": {
       "title": "قراءة مسرودة",
-      "sourceGenerated": "سرد مُولَّد",
-      "sourceFallback": "قراءة نموذجية (احتياطية)"
+      "source": "مُركَّبة بواسطة المحرّك"
     },
     "tags": {
       "trend": "اتجاه راسخ",

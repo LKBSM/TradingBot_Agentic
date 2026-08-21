@@ -75,7 +75,7 @@ def _make_reading() -> MarketReading:
         events=MarketReadingEvents(),
         conditions=MarketReadingConditions(
             tags=["trend_bullish"], description="Tendance haussière.",
-            description_source="template_fallback",
+            description_source="engine_template",
         ),
     )
 

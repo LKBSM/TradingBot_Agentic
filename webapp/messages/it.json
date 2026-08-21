@@ -1589,8 +1589,7 @@
     },
     "conditions": {
       "title": "Lettura narrata",
-      "sourceGenerated": "Narrazione generata",
-      "sourceFallback": "Lettura modello (ripiego)"
+      "source": "Composta dal motore"
     },
     "tags": {
       "trend": "Tendenza consolidata",

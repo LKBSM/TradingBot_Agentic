@@ -46,7 +46,7 @@ def _reading(instrument, timeframe, *, close_price=2000.0, mtf=None, order_block
             "mtf_confluence": mtf or {},
         },
         "events": {"news_upcoming": [], "news_just_published": [], "technical_triggers_recent": []},
-        "conditions": {"tags": [], "description": "", "description_source": "template_fallback"},
+        "conditions": {"tags": [], "description": "", "description_source": "engine_template"},
     }
 
 

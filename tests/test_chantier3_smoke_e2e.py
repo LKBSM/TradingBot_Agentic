@@ -83,11 +83,6 @@ def _stub_smc(candles):
     )
 
 
-class _StubDescriptionEngine:
-    def generate(self, tags, regime, structure, price, instrument):
-        return "Conditions de marché décrites factuellement pour le test.", "haiku_generated"
-
-
 def _ff_event(title, country, dt, impact="high", actual="", forecast=""):
     return {
         "title": title, "country": country, "date": dt.isoformat(),
@@ -115,7 +110,6 @@ def wired(tmp_path):
         candles_store=_MockCandlesStore(),
         smc_pipeline=_stub_smc,
         news_pipeline=news_pipeline,
-        description_engine=_StubDescriptionEngine(),
         clock=clock,
     )
     scheduler = MarketReadingScheduler(
@@ -137,8 +131,8 @@ def test_endpoint_returns_complete_market_reading_with_news_and_structure(wired)
     """Étape 6 #1 — GET /api/market-reading returns a fully-populated MarketReading.
 
     Exercises the wired flow end-to-end: assembler → SMC stub → REAL NewsPipeline
-    (with stub fetch_fn) → description engine stub → persisted payload. Verifies
-    every section of the schema is populated, not just status 200.
+    (with stub fetch_fn) → deterministic engine template → persisted payload.
+    Verifies every section of the schema is populated, not just status 200.
     """
     app, clock, readings_store, scheduler = wired
 
@@ -169,9 +163,9 @@ def test_endpoint_returns_complete_market_reading_with_news_and_structure(wired)
         titles = {e["event"] for e in data["events"]["news_upcoming"]}
         assert "US Non-Farm Payrolls" in titles
 
-        # Conditions — description engine ran; source = haiku_generated.
+        # Conditions — narration composed by the deterministic engine template.
         assert data["conditions"]["description"]
-        assert data["conditions"]["description_source"] == "haiku_generated"
+        assert data["conditions"]["description_source"] == "engine_template"
 
     # Lifespan exit stops the scheduler cleanly.
     assert scheduler.running is False

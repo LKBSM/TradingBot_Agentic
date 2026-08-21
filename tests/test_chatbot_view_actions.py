@@ -326,7 +326,7 @@ def _reading_with_ob(ob_id: str = "ob_1") -> MarketReading:
         conditions=MarketReadingConditions(
             tags=[],
             description="desc",
-            description_source="template_fallback",
+            description_source="engine_template",
         ),
     )
 
@@ -484,7 +484,7 @@ def _reading_with_fvgs(fvgs: list[FairValueGap]) -> MarketReading:
         ),
         events=MarketReadingEvents(),
         conditions=MarketReadingConditions(
-            tags=[], description="desc", description_source="template_fallback"
+            tags=[], description="desc", description_source="engine_template"
         ),
     )
 
@@ -772,7 +772,7 @@ def _reading_with_pools(pools: list[LiquidityPool]) -> MarketReading:
         ),
         events=MarketReadingEvents(),
         conditions=MarketReadingConditions(
-            tags=[], description="desc", description_source="template_fallback"
+            tags=[], description="desc", description_source="engine_template"
         ),
     )
 

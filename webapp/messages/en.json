@@ -1589,8 +1589,7 @@
     },
     "conditions": {
       "title": "Narrated reading",
-      "sourceGenerated": "Generated narration",
-      "sourceFallback": "Template reading (fallback)"
+      "source": "Composed by the engine"
     },
     "tags": {
       "trend": "Established trend",

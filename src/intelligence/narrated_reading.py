@@ -24,10 +24,13 @@ AFFICHAGE vs VALIDATION (deux formats distincts, volontairement) :
 
 Ce module ne touche JAMAIS la détection : il ne fait que LIRE une
 `MarketReadingStructure` + `MarketReadingRegime` déjà produites et un prix, et
-rendre du texte. Il est la source unique partagée par :
-  - le prompt envoyé à Haiku (`build_user_prompt`),
-  - le repli déterministe (`render_template`),
-  - la validation (`references_only_known_levels`).
+rendre du texte. La lecture narrée est composée à 100 % par le GABARIT
+DÉTERMINISTE — aucun modèle IA n'intervient (cf. mission « narrated-reading
+template-engine ») ; le libellé « Ancrée au moteur » est donc littéralement
+vrai. Le module expose :
+  - le gabarit déterministe (`render_template`), seul producteur du texte,
+  - la validation (`references_only_known_levels`), garde-fou d'ancrage réutilisé
+    par les tests d'honnêteté.
 """
 
 from __future__ import annotations
@@ -345,25 +348,32 @@ def _contrary_reason(
     mtf_relation: str,
     zones: list[ZoneFact],
 ) -> Optional[str]:
-    """Return an explicit contrary-context clause when something opposes the trend.
+    """Return a neutral CO-PRESENCE clause when an active near-price zone runs
+    opposite to the observed trend.
 
-    Two honest sources of « contre-courant » :
-      1. the reading TF pulls back against aligned higher timeframes (pullback);
-      2. an ACTIVE near-price zone faces opposite to the observed trend (e.g. a
-         bearish OB overhead while the trend is bullish).
-    Returns None when the picture is one-directional — never manufactured.
+    Formulation rule (mission « narrated-reading », ligne inviolable) : this is a
+    constat de CO-PRÉSENCE, never a causal statement. We never say a zone
+    « s'oppose à » / « agit contre » the trend — that would ascribe an effect the
+    engine does not measure. We state that the zone is *présent malgré* the trend:
+    two facts coexist, nothing more.
+
+    ``mtf_relation`` is accepted for signature stability but the pullback case is
+    intentionally NOT surfaced here: when ``mtf_relation == "pullback"`` the
+    multi-timeframe sentence already states it neutrally (« se replie face aux
+    timeframes supérieurs »), so repeating it would only duplicate the fact — and
+    reintroduce a « contre ». Returns None when the picture is one-directional —
+    never manufactured.
     """
+    del mtf_relation  # documented above — no contrary clause derived from it
     self_dir = _dir_of(trend)
-    if mtf_relation == "pullback":
-        return "le TF courant se replie à contre-courant des timeframes supérieurs"
     if self_dir in ("up", "down"):
         opp = "bearish" if self_dir == "up" else "bullish"
         for z in zones:
             if z.status == "active" and z.direction == opp:
                 noun = "Order Block" if z.kind == "ob" else "FVG"
                 return (
-                    f"un {noun} {_DIR_ADJ[opp]} actif s'oppose à la tendance "
-                    f"{_TREND_FR.get(trend, trend)}"
+                    f"un {noun} {_DIR_ADJ[opp]} actif est présent malgré la "
+                    f"tendance {_TREND_FR.get(trend, trend)}"
                 )
     return None
 
@@ -540,95 +550,14 @@ def render_template(facts: ReadingFacts) -> str:
     return truncate_at_sentence(desc, NARRATION_MAX_LENGTH)
 
 
-# ---------------------------------------------------------------------------
-# Prompt (facts → Haiku)
-# ---------------------------------------------------------------------------
-
-SYSTEM_PROMPT = """Tu rédiges une LECTURE NARRÉE des conditions de marché en français, à partir de FAITS fournis par un moteur d'analyse.
-
-RÈGLES STRICTES :
-- Tu décris UNIQUEMENT ce qui est observé, au PRÉSENT. Jamais de prédiction, de cause, de conseil, de probabilité, ni de score.
-- Tu n'écris QUE ce qui figure dans les FAITS. Tu n'inventes aucun niveau, aucune zone, aucun événement. Tu recopies les NOMBRES EXACTEMENT comme fournis (format français, ex. « 3 358,42 »).
-- Tu n'utilises jamais : conseiller, déconseiller, recommander, éviter, entrer, sortir, acheter, vendre, risqué, sûr, bon, mauvais, dangereux, opportunité.
-- Récit ÉQUILIBRÉ : si un élément va à l'encontre d'un autre (timeframe supérieur opposé, zone proche opposée à la tendance), tu le DIS.
-- Tu distingues le PROVISOIRE (en attente de confirmation) du CONFIRMÉ.
-- 2 à 4 phrases, un seul paragraphe, ≤ %d caractères.""" % NARRATION_MAX_LENGTH
-
-
-def _mtf_prompt_line(facts: ReadingFacts) -> str:
-    if not facts.mtf_biases:
-        return "Multi-timeframe : non disponible."
-    biases = ", ".join(f"{tf.upper()}={b}" for tf, b in facts.mtf_biases.items())
-    rel = {
-        "aligned_up": "alignés haussiers",
-        "aligned_down": "alignés baissiers",
-        "flat": "neutres",
-        "pullback": "le TF courant se replie contre les TF supérieurs",
-        "divergent": "divergents",
-        "mixed": "mixtes",
-        "none": "non disponible",
-    }.get(facts.mtf_relation, facts.mtf_relation)
-    return f"Multi-timeframe (TF supérieurs) : {biases} — {rel}."
-
-
-def build_user_prompt(facts: ReadingFacts) -> str:
-    """Serialize the facts into a compact block the model narrates verbatim.
-
-    Levels are given in fr-FR display form so the model copies them as-is into a
-    French paragraph; the post-generation validator normalises them back to the
-    canonical level set.
-    """
-    lines: list[str] = [
-        f"Prix actuel : {facts.price}",
-        f"Tendance : {facts.trend} ; volatilité : {facts.volatility} ; "
-        f"phase : {facts.phase}",
-        _mtf_prompt_line(facts),
-    ]
-
-    if facts.zones:
-        lines.append("Zones près du prix :")
-        for z in facts.zones:
-            d = z.direction or "—"
-            t = "testé" if z.tested else "non testé"
-            lines.append(
-                f"  - {z.kind.upper()} {d} {z.status} ({t}), bande {z.low}–{z.high}, "
-                f"{z.position} le prix"
-            )
-    else:
-        lines.append("Zones près du prix : aucune.")
-
-    if facts.breaks:
-        lines.append("Cassures récentes :")
-        for b in facts.breaks:
-            state = "confirmé" if b.confirmed else "provisoire (en attente)"
-            lines.append(f"  - {b.kind.upper()} {b.direction} {state}, niveau {b.level}")
-
-    if facts.retest_type is not None:
-        lvl = facts.retest_level or "—"
-        lines.append(f"Retest en cours : {facts.retest_type}, niveau {lvl}")
-
-    if facts.contrary:
-        lines.append(f"Contexte contraire à signaler : {facts.contrary}")
-
-    lines.append("")
-    lines.append(
-        "Rédige la lecture narrée au présent à partir de ces faits uniquement. "
-        "Recopie les nombres exactement (format français). Mentionne le contexte "
-        "contraire s'il existe. Distingue provisoire et confirmé."
-    )
-    return "\n".join(lines)
-
-
 __all__ = [
     "NARRATION_MAX_LENGTH",
     "PROXIMITY_PCT",
     "BreakFact",
     "ReadingFacts",
-    "SYSTEM_PROMPT",
     "ZoneFact",
     "allowed_levels",
     "build_reading_facts",
-    "build_user_prompt",
     "fmt_canonical",
     "fmt_display",
     "price_decimals",

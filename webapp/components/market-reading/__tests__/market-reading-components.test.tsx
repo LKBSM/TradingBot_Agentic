@@ -330,15 +330,17 @@ describe('ConditionsSection', () => {
     // `retest_active` → "Retest en cours" (the snake_case code stays backend-side).
     expect(screen.getByText('Tendance établie')).toBeInTheDocument();
     expect(screen.getByText('Retest en cours')).toBeInTheDocument();
-    expect(screen.getByText('Narration générée')).toBeInTheDocument();
+    // The narration is composed 100 % by the engine template (no LLM), so the
+    // source line states that plainly and identically for every reading.
+    expect(screen.getByText('Composée par le moteur')).toBeInTheDocument();
   });
 
-  it('marks template fallbacks distinctly', () => {
+  it('labels the source as engine-composed for every reading', () => {
     render(
       <Accordion type="multiple" defaultValue={['conditions']}>
         <ConditionsSection conditions={FIXTURE_EUR_H1.conditions} />
       </Accordion>,
     );
-    expect(screen.getByText(/Lecture modèle/)).toBeInTheDocument();
+    expect(screen.getByText('Composée par le moteur')).toBeInTheDocument();
   });
 });
