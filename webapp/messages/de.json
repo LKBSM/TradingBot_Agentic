@@ -2029,9 +2029,8 @@
       "offlineNote": "Offline-Modus: Die freie Eingabe erfordert den Anthropic-Schlüssel serverseitig.",
       "complianceLine": "M.I.A Agent beantwortet Fragen zur algorithmischen Lesart. Er gibt weder Trading-Signale noch persönliche Empfehlungen.",
       "openPanel": "Assistent öffnen",
-      "hidePanel": "M.I.A-Panel ausblenden",
-      "showPanel": "M.I.A-Panel einblenden",
-      "showPanelShort": "M.I.A"
+      "collapseToBubble": "Auf Blase reduzieren",
+      "dockToColumn": "Als Spalte andocken"
     },
     "placeholders": {
       "emptyReading": "Wählen Sie links eine Kombination, um ihre Marktlesart anzuzeigen.",

@@ -2029,9 +2029,8 @@
       "offlineNote": "Modalità offline: l’inserimento libero richiede la chiave Anthropic lato server.",
       "complianceLine": "M.I.A Agent risponde a domande sulla lettura algoritmica. Non fornisce né segnali di trading, né raccomandazioni personalizzate.",
       "openPanel": "Apri l'assistente",
-      "hidePanel": "Nascondi il pannello M.I.A",
-      "showPanel": "Mostra il pannello M.I.A",
-      "showPanelShort": "M.I.A"
+      "collapseToBubble": "Riduci a bolla",
+      "dockToColumn": "Blocca come colonna"
     },
     "placeholders": {
       "emptyReading": "Seleziona una combinazione a sinistra per mostrare la sua lettura di mercato.",

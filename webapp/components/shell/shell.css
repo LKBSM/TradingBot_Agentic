@@ -359,19 +359,52 @@
   grid-template-columns: 232px minmax(0, 1fr);
 }
 
-/* ── Collapsible M.I.A column (/app, desktop ≥1280 only) ────────────────────
-   The user can hide the docked chat column to give the chart more room; the
-   centre reclaims the 338px track (no empty gap). Scoped to ≥1280 on purpose so
-   the 768–1279 drawer and the <768 tab (below) are untouched — `.chat-collapsed`
-   is a dedicated class, NOT `.no-chat` (whose `:not(.no-chat)` media rules drive
-   the tablet drawer, which we must keep). A reopen affordance lives in the
-   centre's apphead (`.chat-reopen`). */
+/* ── M.I.A disposition toggle: column ↔ bubble (/app, desktop ≥1280 only) ─────
+   Two dispositions the user switches from the page (persisted in localStorage):
+     · column mode  → `.chatcol` docked as the 3rd grid track (the base rule).
+     · bubble mode  → `.chat-collapsed`: the centre reclaims the 338px track and
+                      M.I.A becomes the floating `.chat-fab`, which opens the SAME
+                      off-canvas drawer as the tablet band (identical render, so
+                      the conversation is never lost). The drawer slides over the
+                      full-width centre; closed via the backdrop or Escape.
+   Scoped to ≥1280 on purpose so the 768–1279 drawer and the <768 tab (below) are
+   untouched — `.chat-collapsed` is a dedicated class, NOT `.no-chat` (whose
+   `:not(.no-chat)` media rules drive the tablet drawer, which we must keep). */
 @media (min-width: 1280px) {
   .app-shell.chat-collapsed {
     grid-template-columns: 232px minmax(0, 1fr);
   }
   .app-shell.chat-collapsed .chatcol {
-    display: none;
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100dvh;
+    width: min(338px, 88vw);
+    transform: translateX(101%);
+    transition: transform 0.22s ease;
+    z-index: 80;
+    box-shadow: -14px 0 46px rgba(0, 0, 0, 0.42);
+    border-left: 1px solid var(--line-2);
+  }
+  .app-shell.chat-collapsed .chatcol.open {
+    transform: none;
+  }
+  .app-shell.chat-collapsed .chat-fab {
+    display: inline-flex;
+  }
+  .app-shell.chat-collapsed .chat-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.42);
+    z-index: 79;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.22s ease;
+  }
+  .app-shell.chat-collapsed .chat-backdrop.show {
+    opacity: 1;
+    pointer-events: auto;
   }
 }
 
@@ -721,15 +754,6 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-}
-
-/* Reopen affordance in the apphead (shown only when the column is collapsed).
-   Compact `.btn` so it sits inline with the price/live badge without inflating
-   the header row. */
-.app-shell .apphead .chat-reopen {
-  min-height: 32px;
-  padding: 6px 11px;
-  white-space: nowrap;
 }
 
 /* ── Reduced motion: static dot, instant price swap ───────────────────── */

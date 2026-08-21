@@ -2029,9 +2029,8 @@
       "offlineNote": "Offline mode: free-form input requires the Anthropic key on the server side.",
       "complianceLine": "M.I.A Agent answers questions about the algorithmic reading. It provides neither trading signals nor personalized recommendations.",
       "openPanel": "Open the assistant",
-      "hidePanel": "Hide the M.I.A panel",
-      "showPanel": "Show the M.I.A panel",
-      "showPanelShort": "M.I.A"
+      "collapseToBubble": "Reduce to a bubble",
+      "dockToColumn": "Dock as a column"
     },
     "placeholders": {
       "emptyReading": "Select a combination on the left to display its market reading.",

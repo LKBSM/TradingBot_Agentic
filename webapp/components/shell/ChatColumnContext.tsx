@@ -3,19 +3,22 @@
 import * as React from 'react';
 
 /**
- * Visibility of the docked M.I.A column on /app (desktop ≥1280 only).
+ * M.I.A display disposition on /app (desktop ≥1280 only): the single, coherent
+ * state the user toggles between the two layouts from the page itself —
+ *   · `open === true`  → COLUMN mode: M.I.A docked as the right column.
+ *   · `open === false` → BUBBLE mode: M.I.A reduced to the floating bubble
+ *                        (`.chat-fab`), the centre reclaims the full width.
  *
- * The column is shown BY DEFAULT (product decision). The user can collapse it to
- * give the chart more room and reopen it; the choice is persisted in
+ * Column is the DEFAULT (product decision). The choice is persisted in
  * localStorage so it survives visits (like the saved readings). Below 1280px the
  * shell keeps its own responsive behaviour (tablet off-canvas drawer, phone
- * tab) — this state only drives the desktop docked column, so the drawer/tab are
- * never affected by it.
+ * tab) — this state only drives the desktop disposition, so the drawer/tab are
+ * never affected by it. `show()` = go to column, `hide()` = go to bubble.
  */
 const STORAGE_KEY = 'mia.app.chat-column-open';
 
 interface ChatColumnValue {
-  /** Whether the docked column is visible (desktop ≥1280). */
+  /** True in column mode (docked), false in bubble mode. Desktop ≥1280 only. */
   open: boolean;
   /** True once the persisted preference has been read on the client. */
   hydrated: boolean;

@@ -3,7 +3,7 @@
 import * as React from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { Loader2, PanelRightOpen } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import {
   ChartUnavailable,
@@ -36,7 +36,6 @@ import { StructureCard } from './StructureCard';
 import { LiquidityCard } from './LiquidityCard';
 import { RegimeCard } from './RegimeCard';
 import { CalendarPreview } from '@/components/calendar/CalendarPreview';
-import { useChatColumn } from '@/components/shell/ChatColumnContext';
 import './ui2c.css';
 import type { Combo } from '@/lib/market-reading/store';
 import type {
@@ -349,7 +348,6 @@ function AppHead({
   const t = useTranslations('app');
   const locale = useLocale();
   const fmt = useReadingFormatters();
-  const { open: chatOpen, show: showChat } = useChatColumn();
   const tone = fmt.changeTone(changeAbs);
   const sign = changeAbs == null || changeAbs === 0 ? '' : changeAbs > 0 ? '+' : '−';
 
@@ -383,20 +381,9 @@ function AppHead({
         </span>
       )}
       <span className="hsp" />
-      {/* Reopen affordance for the M.I.A column — shown only once the user has
-          collapsed it (desktop ≥1280; this layout doesn't render below that).
-          No floating bubble on desktop: a single coherent column + toggle. */}
-      {!chatOpen && (
-        <button
-          type="button"
-          className="btn chat-reopen"
-          onClick={showChat}
-          aria-label={t('chat.showPanel')}
-        >
-          <PanelRightOpen aria-hidden />
-          <span>{t('chat.showPanelShort')}</span>
-        </button>
-      )}
+      {/* No reopen button here: in bubble mode M.I.A is the floating `.chat-fab`
+          (see ShellChat), which reopens the drawer and carries the "dock to
+          column" toggle. A single coherent disposition control, no duplicate. */}
       {marketClosed ? (
         <div className="livebadge" role="status" title={subline || undefined}>
           <span
