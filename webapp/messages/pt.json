@@ -1715,6 +1715,9 @@
     "copyAria": "Copiar a resposta",
     "copiedAria": "Resposta copiada",
     "thinking": "O M.I.A Agent está a pensar…",
+    "activityReadingMarket": "Leitura de {market} {timeframe}…",
+    "activityReading": "Leitura do mercado…",
+    "activityDiagnostic": "Diagnóstico de Order Block…",
     "turnUnavailable": "O modo chatbot em direto não está disponível neste ambiente de momento. Use as perguntas sugeridas abaixo — devolvem respostas contextualizadas sobre esta leitura.",
     "turnError": "Lamento, um erro impediu a resposta: {message} Tente novamente ou use uma pergunta sugerida.",
     "unknownError": "Erro desconhecido"

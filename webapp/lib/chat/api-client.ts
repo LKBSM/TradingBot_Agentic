@@ -79,6 +79,19 @@ export class ChatApiError extends Error {
 
 /** Backend route, proxied to FastAPI via the `/api/*` rewrite (next.config.js). */
 const CHATBOT_ENDPOINT = '/api/chatbot/message';
+/** MIA-1 — SSE variant: honest activity/tool status, then the validated answer. */
+const CHATBOT_STREAM_ENDPOINT = '/api/chatbot/stream';
+
+/**
+ * An orchestration event streamed from the backend during a turn (MIA-1). The
+ * `activity` and `tool` frames are fixed, structured status — they NEVER carry
+ * model prose; only `answer` does (after Couche-3 validation). The caller uses
+ * `activity`/`tool` to show an honest "working / reading market" signal.
+ */
+export type ChatStreamEvent =
+  | { type: 'activity' }
+  | { type: 'tool'; tool: string; instrument?: string; timeframe?: string }
+  | { type: 'answer'; result: AskResult };
 
 interface ChatbotMessageResponse {
   content: string;
@@ -182,6 +195,141 @@ export async function askSentinel(opts: AskOptions): Promise<AskResult> {
     toolCallsMade: Array.isArray(parsed.tool_calls_made) ? parsed.tool_calls_made : [],
     viewActions: Array.isArray(parsed.view_actions) ? parsed.view_actions : [],
   };
+}
+
+/**
+ * MIA-1 — Ask the backend over Server-Sent Events. Emits honest orchestration
+ * events via `onEvent` (activity < 200 ms, then a tool status when a real market
+ * read starts), and resolves with the SAME `AskResult` shape as {@link askSentinel}
+ * once the terminal, Couche-3-validated `answer` frame arrives.
+ *
+ * The model's text is NEVER streamed token-by-token: the answer arrives whole,
+ * already validated — so nothing shown can ever need to be retracted.
+ *
+ * Error posture is identical to {@link askSentinel} (503 → unavailable, 422 →
+ * validation, 401/402 → access, other → generic), so callers can share fallbacks.
+ *
+ * @throws {ChatApiUnavailableError} on HTTP 503.
+ * @throws {ChatApiError} on 422 / 500 / other HTTP errors and network/parse failures.
+ */
+export async function askSentinelStream(
+  opts: AskOptions,
+  onEvent: (event: ChatStreamEvent) => void,
+): Promise<AskResult> {
+  const body = {
+    user_message: withSignalContext(opts.question, opts.signal),
+    conversation_history: (opts.history ?? []).map((h) => ({
+      role: h.role,
+      content: h.content,
+    })),
+  };
+
+  let res: Response;
+  try {
+    res = await fetch(CHATBOT_STREAM_ENDPOINT, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', accept: 'text/event-stream' },
+      body: JSON.stringify(body),
+      signal: opts.signal_abort,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Erreur réseau';
+    throw new ChatApiError(0, `Connexion au service impossible : ${message}`);
+  }
+
+  if (res.status === 503) {
+    const detail = await readErrorDetail(res);
+    throw new ChatApiUnavailableError(
+      'chatbot_unavailable',
+      detail ?? "Le service de chat n'est pas disponible sur cet environnement.",
+    );
+  }
+  if (res.status === 422) {
+    throw new ChatApiError(
+      422,
+      'La question a été refusée par la validation du service (format ou longueur). Reformule plus court.',
+    );
+  }
+  const accessErr = await accessErrorFromResponse(res);
+  if (accessErr) throw accessErr;
+  if (!res.ok) {
+    throw new ChatApiError(
+      res.status,
+      'Le service a rencontré une erreur interne. Réessaie dans un instant.',
+    );
+  }
+
+  let answer: AskResult | null = null;
+  const handleFrame = (raw: string) => {
+    const payload = parseSseData(raw);
+    if (!payload) return;
+    if (payload.event === 'activity') {
+      onEvent({ type: 'activity' });
+    } else if (payload.event === 'tool') {
+      onEvent({
+        type: 'tool',
+        tool: String(payload.tool ?? ''),
+        instrument: typeof payload.instrument === 'string' ? payload.instrument : undefined,
+        timeframe: typeof payload.timeframe === 'string' ? payload.timeframe : undefined,
+      });
+    } else if (payload.event === 'answer') {
+      if (typeof payload.content !== 'string') {
+        throw new ChatApiError(res.status, 'Réponse du service malformée.');
+      }
+      answer = {
+        text: payload.content,
+        blockedReason: (payload.blocked_reason as string | null) ?? null,
+        toolCallsMade: Array.isArray(payload.tool_calls_made) ? payload.tool_calls_made : [],
+        viewActions: Array.isArray(payload.view_actions) ? payload.view_actions : [],
+      };
+      onEvent({ type: 'answer', result: answer });
+    }
+  };
+
+  const reader = res.body?.getReader?.();
+  if (reader) {
+    const decoder = new TextDecoder();
+    let buf = '';
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      let sep: number;
+      // Frames are separated by a blank line ("\n\n").
+      while ((sep = buf.indexOf('\n\n')) >= 0) {
+        handleFrame(buf.slice(0, sep));
+        buf = buf.slice(sep + 2);
+      }
+    }
+    if (buf.trim()) handleFrame(buf);
+  } else {
+    // Environments without a streaming body (e.g. jsdom): the whole SSE body is
+    // buffered — parse it frame by frame. Same honest events, no live typing.
+    const text = await res.text();
+    for (const frame of text.split('\n\n')) handleFrame(frame);
+  }
+
+  if (!answer) {
+    throw new ChatApiError(res.status, 'Réponse du service illisible.');
+  }
+  return answer;
+}
+
+/** Extract and JSON-parse the `data:` line of an SSE frame; null if none/blank. */
+function parseSseData(frame: string): Record<string, unknown> | null {
+  for (const line of frame.split('\n')) {
+    const trimmed = line.trimEnd();
+    if (trimmed.startsWith('data:')) {
+      const json = trimmed.slice(5).trim();
+      if (!json) return null;
+      try {
+        return JSON.parse(json) as Record<string, unknown>;
+      } catch {
+        return null;
+      }
+    }
+  }
+  return null;
 }
 
 /** Best-effort extraction of a FastAPI `{detail}` body; never throws. */
