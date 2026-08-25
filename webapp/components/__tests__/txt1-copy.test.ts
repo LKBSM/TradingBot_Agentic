@@ -43,6 +43,19 @@ const PROTECTED = [
   'zones.mia.disclaimer', // regulatory notice on /zones
   'zones.proximity.distanceLine', // distance fact (kept; only visually receded)
   'app.desktop.legalInline', // regulatory notice on /app
+  // /actualites/[eventId] — 2nd pass
+  'calendar.detail.nono.title', // regulatory notice on the publication page
+  'calendar.detail.nono.items.0',
+  'calendar.detail.nono.items.1',
+  'calendar.detail.nono.items.2',
+  'calendar.detail.actualPending', // 3 distinct absence states
+  'calendar.detail.actualUnfetched',
+  'calendar.detail.actualUnavailable',
+  'calendar.pub.mia.capability', // M.I.A non-advice honesty (kept)
+  'calendar.pub.questions.readGuide.body', // « décompte, pas une probabilité » honesty
+  'calendar.pub.curve.note', // unit / « MIA ne l'estime pas » honesty
+  'calendar.pub.source.intro', // scoping line (always shown)
+  'calendar.pub.source.onlyNote', // « aucun site de commentaire ni de prévision » honesty
 ] as const;
 
 // The keys TXT-1 trimmed, with their PRE-TXT-1 wording. The current value must be
@@ -59,6 +72,13 @@ const TRIMMED: Record<string, { fr: string; en: string }> = {
   'scanner.builder.intro': {
     fr: 'Choisis les faits structurels <b>présents</b> qui composent ta stratégie. Le scanner te montre sur quels marchés et timeframes ils sont réunis <b>en ce moment</b>.',
     en: 'Choose the structural facts <b>present</b> that make up your strategy. The scanner shows you on which markets and timeframes they come together <b>right now</b>.',
+  },
+  // /actualites/[eventId] — the source note dropped its duplicate lead sentence
+  // (« Ces liens mènent à l'organisme… et à lui seul », already carried by
+  // pub.source.intro) and kept the unique « no forecast site » honesty.
+  'calendar.pub.source.onlyNote': {
+    fr: "Ces liens mènent à l'organisme officiel et à lui seul. MIA ne renvoie vers aucun site de commentaire ni de prévision : choisir un tel lien, ce serait le recommander.",
+    en: 'These links lead to the official organism and to it alone. MIA points to no commentary or forecast site: picking such a link would be recommending it.',
   },
 };
 
@@ -112,5 +132,21 @@ describe('TXT-1 copy honesty', () => {
   it('the scope note still names what a description turns into (Order Blocks)', () => {
     expect(get(fr as Dict, 'scannerChat.describe.scope')).toContain('Order Blocks');
     expect(get(en as Dict, 'scannerChat.describe.scope')).toContain('Order Blocks');
+  });
+
+  it('the three publication absence states stay distinct in both languages', () => {
+    for (const root of [fr, en] as const) {
+      const s = [
+        get(root as Dict, 'calendar.detail.actualPending'),
+        get(root as Dict, 'calendar.detail.actualUnfetched'),
+        get(root as Dict, 'calendar.detail.actualUnavailable'),
+      ];
+      expect(new Set(s).size, `absence states must differ: ${s.join(' | ')}`).toBe(3);
+    }
+  });
+
+  it('the source note keeps its « no forecast site » honesty after the trim', () => {
+    expect(get(fr as Dict, 'calendar.pub.source.onlyNote')).toContain('site de commentaire ni de prévision');
+    expect(get(en as Dict, 'calendar.pub.source.onlyNote')).toContain('commentary or forecast site');
   });
 });

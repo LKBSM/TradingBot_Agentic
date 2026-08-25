@@ -905,7 +905,6 @@ function MiaBlock({
         <AgentAvatar size="md" presence />
         <div className="pub-mia-id">
           <div className="pub-mia-name">{t('pub.mia.title')}</div>
-          <div className="pub-mia-sub">{t('pub.mia.subtitle')}</div>
         </div>
       </div>
       <div className="pub-mia-suggests-label">{t('pub.mia.suggestsLabel')}</div>

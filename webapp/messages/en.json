@@ -3108,7 +3108,7 @@
           }
         },
         "organismOnly": "issuing organism only",
-        "onlyNote": "These links lead to the official organism and to it alone. MIA points to no commentary or forecast site: picking such a link would be recommending it.",
+        "onlyNote": "MIA points to no commentary or forecast site: picking such a link would be recommending it.",
         "noneYet": "The precise documents for this organism are not referenced here yet. No generic link stands in for them."
       },
       "pedagogy": {

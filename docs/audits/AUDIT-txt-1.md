@@ -162,6 +162,41 @@ Aucun chiffre, date, borne, dénominateur, unité ni état d'absence supprimé.
 
 ---
 
+## 9. 2ᵉ passage — /actualites/[eventId] (2026-08-25)
+
+La fiche publication est la plus « document » du produit, mais presque chaque chaîne
+porte un **fait** (dénominateur, unité, valeur, sample, période) ou de l'**honnêteté
+protégée** (3 états d'absence `actualPending/Unfetched/Unavailable`, `nono` réglementaire,
+`readGuide.body` « un décompte, pas une probabilité », `curve.note`). Les 4 longues
+réponses mesurées et les fiches pédagogiques **portent de l'information de marché** → gardées.
+
+Seules coupes sûres = **2 redondances (C5)** sur la même vue, en gardant l'occurrence la
+plus précise :
+
+1. **`pub.mia.subtitle`** (composant `CalendarEventDetail.tsx`, ligne du sous-titre M.I.A)
+   — « Elle explique les concepts et décrit ce que le moteur a mesuré sur cette
+   publication. » **retiré** : redondant avec `pub.mia.capability` (« M.I.A décrit des
+   faits mesurés et explique des concepts. Elle ne dit pas… »), qui reste et **porte
+   l'honnêteté de non-conseil**. Entête « Demander à M.I.A » épurée ; clé i18n conservée
+   (inutilisée, parité intacte).
+2. **`pub.source.onlyNote`** (fr + en) — 1ʳᵉ phrase « Ces liens mènent à l'organisme
+   officiel et à lui seul. » **retirée** : déjà dite par `pub.source.intro` (toujours
+   affichée). L'honnêteté unique **« MIA ne renvoie vers aucun site de commentaire ni de
+   prévision : choisir un tel lien, ce serait le recommander. »** est conservée.
+
+**Aucun fait perdu** : dénominateurs, unités, 3 états d'absence, `nono` (1 avertissement),
+capability, intro source, `readGuide` — tous intacts (garde `txt1-copy` étendue : 8 tests,
+dont distinction stricte des 3 états d'absence et présence de l'honnêteté source après trim).
+
+Tests 2ᵉ passage : `txt1-copy` 8/8 ; `CalendarEventDetail` + `CalendarPublication.nw5/nw6`
+37/37 ; e2e `pub-mia-chat` 3/3 ; tsc 0 erreur nouvelle. Captures avant/après
+`docs/audits/txt1-shots/{before,after}/*-actualites-detail.png`.
+
+**Reste possible (non fait, hors « coupe de mots ») :** replier les fiches pédagogiques
+(C3, riche sur demande) — c'est un changement de hiérarchie, pas une coupe.
+
+---
+
 ## 8. Discipline
 
 - Périmètre présentationnel/rédactionnel : aucune règle métier, aucun calcul, aucun appel modifié.

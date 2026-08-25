@@ -3108,7 +3108,7 @@
           }
         },
         "organismOnly": "organisme émetteur uniquement",
-        "onlyNote": "Ces liens mènent à l'organisme officiel et à lui seul. MIA ne renvoie vers aucun site de commentaire ni de prévision : choisir un tel lien, ce serait le recommander.",
+        "onlyNote": "MIA ne renvoie vers aucun site de commentaire ni de prévision : choisir un tel lien, ce serait le recommander.",
         "noneYet": "Les documents précis de cet organisme ne sont pas encore référencés ici. Aucun lien générique ne les remplace."
       },
       "pedagogy": {
