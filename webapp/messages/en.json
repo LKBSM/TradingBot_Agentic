@@ -1715,6 +1715,9 @@
     "copyAria": "Copy the reply",
     "copiedAria": "Reply copied",
     "thinking": "M.I.A Agent is thinking…",
+    "activityReadingMarket": "Reading {market} {timeframe}…",
+    "activityReading": "Reading the market…",
+    "activityDiagnostic": "Order Block diagnostic…",
     "turnUnavailable": "Live chatbot mode is not available in this environment at the moment. Use the suggested questions below — they return contextualized answers about this reading.",
     "turnError": "Sorry, an error prevented the reply: {message} Try again or use a suggested question.",
     "unknownError": "Unknown error"

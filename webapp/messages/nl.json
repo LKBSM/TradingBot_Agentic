@@ -1715,6 +1715,9 @@
     "copyAria": "Antwoord kopiëren",
     "copiedAria": "Antwoord gekopieerd",
     "thinking": "M.I.A Agent denkt na…",
+    "activityReadingMarket": "{market} {timeframe} wordt gelezen…",
+    "activityReading": "Markt wordt gelezen…",
+    "activityDiagnostic": "Order Block-diagnose…",
     "turnUnavailable": "De live chatbotmodus is momenteel niet beschikbaar in deze omgeving. Gebruik de voorgestelde vragen hieronder — ze geven contextuele antwoorden over deze lezing.",
     "turnError": "Sorry, een fout heeft het antwoord verhinderd: {message} Probeer opnieuw of gebruik een voorgestelde vraag.",
     "unknownError": "Onbekende fout"

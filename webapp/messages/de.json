@@ -1715,6 +1715,9 @@
     "copyAria": "Antwort kopieren",
     "copiedAria": "Antwort kopiert",
     "thinking": "M.I.A Agent denkt nach…",
+    "activityReadingMarket": "{market} {timeframe} wird gelesen…",
+    "activityReading": "Markt wird gelesen…",
+    "activityDiagnostic": "Order-Block-Diagnose…",
     "turnUnavailable": "Der Live-Chatbot-Modus ist in dieser Umgebung derzeit nicht verfügbar. Nutze die vorgeschlagenen Fragen unten — sie liefern kontextbezogene Antworten zu dieser Lesart.",
     "turnError": "Entschuldigung, ein Fehler hat die Antwort verhindert: {message} Versuche es erneut oder nutze eine vorgeschlagene Frage.",
     "unknownError": "Unbekannter Fehler"

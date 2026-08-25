@@ -1471,6 +1471,9 @@
     "copyAria": "نسخ الإجابة",
     "copiedAria": "نُسخت الإجابة",
     "thinking": "M.I.A Agent يفكّر…",
+    "activityReadingMarket": "قراءة {market} {timeframe}…",
+    "activityReading": "قراءة السوق…",
+    "activityDiagnostic": "تشخيص Order Block…",
     "turnUnavailable": "وضع المحادثة المباشر غير متاح في هذه البيئة في الوقت الحالي. استخدم الأسئلة المقترحة أدناه — فهي تُرجِع إجابات موضوعة في سياق هذه القراءة.",
     "turnError": "عذرًا، منع خطأٌ الإجابة: {message} أعد المحاولة أو استخدم سؤالاً مقترحًا.",
     "unknownError": "خطأ غير معروف"
