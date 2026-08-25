@@ -4,8 +4,8 @@ import { dismissCookieBanner } from './utils';
 
 /**
  * Chatbot ↔ backend FastAPI e2e (mocked). Drives the LIVE chat that ships in the
- * product — /app's docked AppChatSidebar — with POST /api/chatbot/message mocked
- * per scenario, so the whole frontend pile (ChatInput → ChatProvider →
+ * product — /app's docked AppChatSidebar — with POST /api/chatbot/stream mocked
+ * per scenario (MIA-1 SSE), so the whole frontend pile (ChatInput → ChatProvider →
  * api-client → render) is exercised without a running backend.
  *
  * DETTE-1 repoint: this previously drove the chat via the landing multi-market
@@ -18,7 +18,25 @@ import { dismissCookieBanner } from './utils';
  *  components/chat/__tests__/chatbot-backend-integration.smoke.test.tsx.)
  */
 
-const CHAT_ENDPOINT = '**/api/chatbot/message';
+const CHAT_ENDPOINT = '**/api/chatbot/stream';
+
+/** Build an SSE body (activity → answer) for the mocked stream endpoint. */
+function sseBody(events: Array<Record<string, unknown>>): string {
+  return events.map((e) => `data: ${JSON.stringify(e)}\n\n`).join('');
+}
+
+function sseAnswer(content: string, blockedReason: string | null = null): string {
+  return sseBody([
+    { event: 'activity' },
+    {
+      event: 'answer',
+      content,
+      blocked_reason: blockedReason,
+      tool_calls_made: [],
+      view_actions: [],
+    },
+  ]);
+}
 
 function makeCandles(n = 150) {
   const base = 2300;
@@ -58,12 +76,8 @@ test.describe('Chatbot ↔ backend (mocked) — on /app', () => {
     await page.route(CHAT_ENDPOINT, (route) =>
       route.fulfill({
         status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          content: 'XAUUSD H1 est en consolidation sous résistance, ATR contenu.',
-          blocked_reason: null,
-          tool_calls_made: [],
-        }),
+        contentType: 'text/event-stream',
+        body: sseAnswer('XAUUSD H1 est en consolidation sous résistance, ATR contenu.'),
       }),
     );
 
@@ -78,12 +92,11 @@ test.describe('Chatbot ↔ backend (mocked) — on /app', () => {
     await page.route(CHAT_ENDPOINT, (route) =>
       route.fulfill({
         status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          content: 'Je décris les conditions du marché. La décision d’agir t’appartient.',
-          blocked_reason: 'trade_request',
-          tool_calls_made: [],
-        }),
+        contentType: 'text/event-stream',
+        body: sseAnswer(
+          'Je décris les conditions du marché. La décision d’agir t’appartient.',
+          'trade_request',
+        ),
       }),
     );
 

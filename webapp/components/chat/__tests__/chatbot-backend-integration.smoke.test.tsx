@@ -23,6 +23,15 @@ function jsonResponse(status: number, body: unknown): Response {
   });
 }
 
+/** MIA-1: the chat now streams SSE — build a buffered event-stream body. */
+function sseResponse(events: Array<Record<string, unknown>>): Response {
+  const body = events.map((e) => `data: ${JSON.stringify(e)}\n\n`).join('');
+  return new Response(body, {
+    status: 200,
+    headers: { 'content-type': 'text/event-stream' },
+  });
+}
+
 /** Renders each turn through the real ChatMessage so the badge path is real. */
 function Harness({ question }: { question: string }) {
   const { turns, openFor, askFreeForm } = useChat();
@@ -65,11 +74,16 @@ afterEach(() => {
 describe('chatbot backend integration — smoke', () => {
   it('Scénario 1: question descriptive → réponse non bloquée + bon endpoint/préfixe', async () => {
     fetchMock.mockResolvedValue(
-      jsonResponse(200, {
-        content: 'XAUUSD H1 est en phase de consolidation sous résistance.',
-        blocked_reason: null,
-        tool_calls_made: [],
-      }),
+      sseResponse([
+        { event: 'activity' },
+        {
+          event: 'answer',
+          content: 'XAUUSD H1 est en phase de consolidation sous résistance.',
+          blocked_reason: null,
+          tool_calls_made: [],
+          view_actions: [],
+        },
+      ]),
     );
 
     drive('Décris la structure XAUUSD H1');
@@ -80,20 +94,25 @@ describe('chatbot backend integration — smoke', () => {
     // No "recadrée" badge on a normal answer.
     expect(screen.queryByText('Question recadrée')).not.toBeInTheDocument();
 
-    // Real api-client hit the backend endpoint with the T1 context preamble.
+    // Real api-client hit the streaming backend endpoint with the T1 preamble.
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe('/api/chatbot/message');
+    expect(url).toBe('/api/chatbot/stream');
     const body = JSON.parse(init.body as string);
     expect(body.user_message).toBe('[Lecture en cours : XAUUSD H1]\nDécris la structure XAUUSD H1');
   });
 
   it('Scénario 2: demande d’action → template de refus + indicateur blocked_reason', async () => {
     fetchMock.mockResolvedValue(
-      jsonResponse(200, {
-        content: 'Je décris les conditions du marché. La décision d’agir t’appartient.',
-        blocked_reason: 'trade_request',
-        tool_calls_made: [],
-      }),
+      sseResponse([
+        { event: 'activity' },
+        {
+          event: 'answer',
+          content: 'Je décris les conditions du marché. La décision d’agir t’appartient.',
+          blocked_reason: 'trade_request',
+          tool_calls_made: [],
+          view_actions: [],
+        },
+      ]),
     );
 
     drive('Dois-je acheter EURUSD ?');

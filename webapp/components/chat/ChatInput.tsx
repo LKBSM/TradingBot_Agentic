@@ -96,6 +96,11 @@ export function ChatInput({ className }: ChatInputProps) {
           maxLength={MAX_CHARS}
           disabled={offline}
           aria-label={t('inputAria')}
+          /* MIA-1: the keyboard hint lives here as a tooltip (title) instead of
+             an always-on footer line — reclaims that line for the conversation
+             WITHOUT a focus-triggered layout shift (which would move the mic
+             between mousedown and mouseup and swallow the click). */
+          title={t('inputHint')}
           /* text-base (16px) on touch prevents iOS from zooming the page on
              focus; shrink to text-sm only on xl desktop. */
           className="flex-1 resize-none bg-transparent py-1.5 text-base leading-relaxed text-foreground placeholder:text-muted-foreground/70 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 xl:text-sm"
@@ -140,11 +145,6 @@ export function ChatInput({ className }: ChatInputProps) {
       {voice.supported && !offline && voice.error && (
         <p data-testid="dictation-error" role="alert" className="mt-2 text-[11px] text-amber-600 dark:text-amber-500">
           {dictationCopy.errorText(voice.error)}
-        </p>
-      )}
-      {!offline && (
-        <p className="mt-2 text-center text-[11px] italic text-muted-foreground/75">
-          {t('inputHint')}
         </p>
       )}
       {/* Browser-transcription notice — kept honest on every surface. */}

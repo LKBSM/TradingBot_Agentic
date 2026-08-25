@@ -1715,6 +1715,9 @@
     "copyAria": "Copia la risposta",
     "copiedAria": "Risposta copiata",
     "thinking": "M.I.A Agent sta riflettendo…",
+    "activityReadingMarket": "Lettura di {market} {timeframe}…",
+    "activityReading": "Lettura del mercato…",
+    "activityDiagnostic": "Diagnostica Order Block…",
     "turnUnavailable": "La modalità chatbot in diretta non è disponibile in questo ambiente al momento. Usa le domande suggerite qui sotto — restituiscono risposte contestualizzate su questa lettura.",
     "turnError": "Spiacenti, un errore ha impedito la risposta: {message} Riprova o usa una domanda suggerita.",
     "unknownError": "Errore sconosciuto"

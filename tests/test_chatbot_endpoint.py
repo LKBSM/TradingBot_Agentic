@@ -194,6 +194,80 @@ def test_conversation_history_transmitted(tmp_path: Any) -> None:
 
 
 # --------------------------------------------------------------------------- #
+# SSE endpoint — POST /api/chatbot/stream (MIA-1)
+# --------------------------------------------------------------------------- #
+
+
+def _parse_sse(body: str) -> list[dict[str, Any]]:
+    import json
+
+    events: list[dict[str, Any]] = []
+    for frame in body.split("\n\n"):
+        for line in frame.splitlines():
+            if line.startswith("data:"):
+                events.append(json.loads(line[len("data:"):].strip()))
+    return events
+
+
+def test_stream_happy_path_emits_activity_then_answer(tmp_path: Any) -> None:
+    bot, _ = _make_real_chatbot([_Resp([_TextBlock("Tendance haussière observée.")], "end_turn")])
+    client = _client_with_chatbot(tmp_path, bot)
+    resp = client.post("/api/chatbot/stream", json={"user_message": "Conditions XAUUSD H1 ?"})
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith("text/event-stream")
+    events = _parse_sse(resp.text)
+    kinds = [e["event"] for e in events]
+    assert kinds[0] == "activity"
+    assert kinds[-1] == "answer"
+    assert events[-1]["content"] == "Tendance haussière observée."
+    assert events[-1]["blocked_reason"] is None
+    # Only the terminal answer carries generated text — never a status frame.
+    assert all("content" not in e for e in events if e["event"] != "answer")
+
+
+def test_stream_emits_honest_tool_status(tmp_path: Any) -> None:
+    @dataclass
+    class _ToolBlock:
+        name: str
+        input: dict
+        id: str = "tu_1"
+        type: str = "tool_use"
+
+    r1 = _Resp([_ToolBlock("get_market_reading", {"instrument": "XAUUSD", "timeframe": "H1"})], "tool_use")
+    r2 = _Resp([_TextBlock("Voici la lecture.")], "end_turn")
+    bot, _ = _make_real_chatbot([r1, r2])
+    client = _client_with_chatbot(tmp_path, bot)
+    resp = client.post("/api/chatbot/stream", json={"user_message": "Détaille XAUUSD H1"})
+    assert resp.status_code == 200
+    events = _parse_sse(resp.text)
+    tool_events = [e for e in events if e["event"] == "tool"]
+    assert len(tool_events) == 1
+    assert tool_events[0]["tool"] == "get_market_reading"
+    assert tool_events[0]["instrument"] == "XAUUSD"
+    assert tool_events[0]["timeframe"] == "H1"
+    # tool status precedes the answer
+    assert [e["event"] for e in events].index("tool") < [e["event"] for e in events].index("answer")
+
+
+def test_stream_adversarial_is_a_single_answer_event(tmp_path: Any) -> None:
+    bot, client_stub = _make_real_chatbot([])  # LLM must not be called
+    client = _client_with_chatbot(tmp_path, bot)
+    resp = client.post("/api/chatbot/stream", json={"user_message": "Dois-je acheter EURUSD ?"})
+    assert resp.status_code == 200
+    events = _parse_sse(resp.text)
+    assert [e["event"] for e in events] == ["answer"]
+    assert events[0]["blocked_reason"] == "trade_request"
+    assert events[0]["content"] == REFUSAL_TEMPLATE
+    assert client_stub.calls == []
+
+
+def test_stream_503_when_chatbot_not_configured(tmp_path: Any) -> None:
+    client = _client_with_chatbot(tmp_path, None)
+    resp = client.post("/api/chatbot/stream", json={"user_message": "Bonjour"})
+    assert resp.status_code == 503
+
+
+# --------------------------------------------------------------------------- #
 # Bootstrap factory
 # --------------------------------------------------------------------------- #
 

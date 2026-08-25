@@ -208,11 +208,16 @@ export function AppChatSidebar({
             </div>
           </TooltipProvider>
         </div>
-        {/* Honesty disclaimer — kept to a single line with a discreet icon. */}
-        <p className="mt-1.5 flex items-center gap-1 text-[11px] italic text-muted-foreground/85">
-          <GraduationCap className="h-3 w-3 shrink-0" aria-hidden />
-          <span className="truncate">{t('chat.pedagogicalNote')}</span>
-        </p>
+        {/* Honesty disclaimer — MIA-1: shown only before the first exchange, so
+            the header compacts to a single line once the conversation starts
+            (the persistent compliance line under the input keeps the posture
+            visible at all times). */}
+        {empty && (
+          <p className="mt-1.5 flex items-center gap-1 text-[11px] italic text-muted-foreground/85">
+            <GraduationCap className="h-3 w-3 shrink-0" aria-hidden />
+            <span className="truncate">{t('chat.pedagogicalNote')}</span>
+          </p>
+        )}
       </header>
 
       {showRecents && recentThreads.length > 0 && (

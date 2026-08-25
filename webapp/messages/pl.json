@@ -1715,6 +1715,9 @@
     "copyAria": "Kopiuj odpowiedź",
     "copiedAria": "Odpowiedź skopiowana",
     "thinking": "M.I.A Agent myśli…",
+    "activityReadingMarket": "Odczyt {market} {timeframe}…",
+    "activityReading": "Odczyt rynku…",
+    "activityDiagnostic": "Diagnostyka Order Block…",
     "turnUnavailable": "Tryb chatbota na żywo nie jest obecnie dostępny w tym środowisku. Użyj poniższych sugerowanych pytań — zwracają odpowiedzi osadzone w kontekście tego odczytu.",
     "turnError": "Przepraszamy, błąd uniemożliwił udzielenie odpowiedzi: {message} Spróbuj ponownie lub użyj sugerowanego pytania.",
     "unknownError": "Nieznany błąd"

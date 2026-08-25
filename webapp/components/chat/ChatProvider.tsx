@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import * as React from 'react';
 import {
-  askSentinel,
+  askSentinelStream,
   ChatApiUnavailableError,
 } from '@/lib/chat/api-client';
 import {
@@ -32,6 +32,16 @@ export interface ViewActionSignal {
   nonce: number;
 }
 
+/**
+ * MIA-1 — honest, non-LLM activity state shown while a turn is in flight.
+ * `thinking` is the immediate generic signal (< 200 ms after send); `tool`
+ * narrates a REAL step in progress (a market read the backend actually started),
+ * with the combo it targets. Never carries model prose. `null` when idle.
+ */
+export type ChatActivity =
+  | { kind: 'thinking' }
+  | { kind: 'tool'; tool: string; instrument?: string; timeframe?: string };
+
 /** Recency-sorted summary of a combo-scoped conversation, for the recents list. */
 export interface ChatThreadSummary {
   id: string;
@@ -50,8 +60,14 @@ interface ChatContextValue {
   turns: ChatTurn[];
   /** Latest display-only chart actions from the chatbot (raw), or null. */
   viewActionSignal: ViewActionSignal | null;
-  /** True while a backend answer is in flight (synchronous JSON, no stream). */
+  /** True while a backend answer is in flight. */
   isLoading: boolean;
+  /**
+   * MIA-1 — the honest activity to narrate while `isLoading` (thinking, or a
+   * real market read in progress). `null` when idle. Fixed status only — never
+   * unvalidated model text.
+   */
+  activity: ChatActivity | null;
   /**
    * Whether the backend chatbot is reachable (`true` = answering, `false` =
    * endpoint returned 503 / not bootstrapped, scripted fallback only,
@@ -170,6 +186,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   }, [state]);
   const [hydrated, setHydrated] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
+  const [activity, setActivity] = React.useState<ChatActivity | null>(null);
   const [apiAvailable, setApiAvailable] = React.useState<boolean | 'unknown'>(
     'unknown',
   );
@@ -330,13 +347,31 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         .filter((m) => m.content.length > 0);
 
       setIsLoading(true);
+      // Immediate honest signal (< 200 ms, no network yet): the question is off.
+      setActivity({ kind: 'thinking' });
 
       try {
-        const { text, blockedReason, viewActions } = await askSentinel({
-          signal: activeSignal,
-          question: trimmed,
-          history: historyForApi,
-        });
+        const { text, blockedReason, viewActions } = await askSentinelStream(
+          {
+            signal: activeSignal,
+            question: trimmed,
+            history: historyForApi,
+          },
+          (event) => {
+            // Narrate the REAL step in progress. `answer` is handled by the
+            // resolved value below — no need to act on it here.
+            if (event.type === 'tool') {
+              setActivity({
+                kind: 'tool',
+                tool: event.tool,
+                instrument: event.instrument,
+                timeframe: event.timeframe,
+              });
+            } else if (event.type === 'activity') {
+              setActivity((cur) => cur ?? { kind: 'thinking' });
+            }
+          },
+        );
         setApiAvailable(true);
         setState((s) =>
           appendToThread(s, threadId, meta, [
@@ -386,6 +421,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         }
       } finally {
         setIsLoading(false);
+        setActivity(null);
       }
     },
     // `turns` intentionally dropped — history is read from stateRef now, so the
@@ -420,6 +456,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       turns,
       viewActionSignal,
       isLoading,
+      activity,
       apiAvailable,
       recentThreads,
       openFor,
@@ -435,6 +472,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       turns,
       viewActionSignal,
       isLoading,
+      activity,
       apiAvailable,
       recentThreads,
       openFor,

@@ -47,15 +47,19 @@ export function ChatWelcome({
       </p>
 
       {suggestions.length > 0 && (
-        <div className="mt-1 flex w-full flex-col gap-2">
+        // MIA-1: compact wrapping chips (1–2 rows), not full-width stacked
+        // blocks — they start a conversation, they don't crowd the panel. They
+        // vanish entirely once the first exchange lands (empty-state only).
+        <div className="mt-1 flex flex-wrap justify-center gap-1.5" data-testid="chat-starters">
           {suggestions.map((s) => (
             <button
               key={s.id}
               type="button"
+              data-testid="chat-starter"
               onClick={() => onPick?.(s)}
               className={cn(
-                'flex items-center gap-2.5 rounded-xl border border-border bg-muted/40 px-3.5 py-2.5 text-left text-[13px] text-foreground',
-                'transition-all hover:-translate-y-0.5 hover:border-[hsl(35_92%_55%/0.4)] hover:bg-muted',
+                'inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-3 py-1.5 text-left text-xs text-foreground',
+                'transition-colors hover:border-[hsl(35_92%_55%/0.4)] hover:bg-muted',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
               )}
             >

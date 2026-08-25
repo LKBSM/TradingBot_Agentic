@@ -4,11 +4,16 @@ import { ChatProvider, useChat } from '../ChatProvider';
 import { STORAGE_KEY } from '@/lib/chat/thread-store';
 import type { ChatSignalContext } from '@/lib/chat/types';
 
-// Keep the real error classes; override only askSentinel.
+// Keep the real error classes; override only the streaming call the provider
+// now uses (MIA-1). The mock's first arg is still the opts object (with
+// `.history`), so the existing call-inspection assertions hold unchanged.
 const askSentinelMock = vi.fn();
 vi.mock('@/lib/chat/api-client', async (importActual) => {
   const actual = await importActual<typeof import('@/lib/chat/api-client')>();
-  return { ...actual, askSentinel: (...args: unknown[]) => askSentinelMock(...args) };
+  return {
+    ...actual,
+    askSentinelStream: (...args: unknown[]) => askSentinelMock(...args),
+  };
 });
 
 const SIGNAL: ChatSignalContext = { id: 'sig-1', instrument: 'XAUUSD', timeframe: 'H1' };

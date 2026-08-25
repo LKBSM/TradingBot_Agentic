@@ -20,8 +20,9 @@ from __future__ import annotations
 
 import json
 import logging
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any, Iterator, Optional
 
 from src.intelligence.chatbot.adversarial_filter import AdversarialFilter
 from src.intelligence.chatbot.constants import (
@@ -297,21 +298,84 @@ class Chatbot:
         user_message: str,
         conversation_history: Optional[list[dict[str, Any]]] = None,
     ) -> ChatResponse:
+        """Blocking one-shot turn — drains :meth:`chat_events` and returns the
+        terminal ``answer`` event as a :class:`ChatResponse`.
+
+        MIA-1: this is a thin wrapper over the SAME generator the SSE endpoint
+        streams, so the two paths can never diverge on validation. Every
+        defence layer (Couche 1/3/4) runs inside ``chat_events``; the wrapper
+        adds nothing and removes nothing.
+        """
+        answer: Optional[dict[str, Any]] = None
+        for event in self.chat_events(user_message, conversation_history):
+            if event.get("event") == "answer":
+                answer = event
+        # chat_events always terminates with exactly one answer event.
+        assert answer is not None, "chat_events did not emit an answer event"
+        return ChatResponse(
+            content=answer["content"],
+            tool_calls_made=answer.get("tool_calls_made", []),
+            view_actions=answer.get("view_actions", []),
+            blocked_reason=answer.get("blocked_reason"),
+        )
+
+    def chat_events(
+        self,
+        user_message: str,
+        conversation_history: Optional[list[dict[str, Any]]] = None,
+    ) -> Iterator[dict[str, Any]]:
+        """MIA-1 — the single source of truth for a chat turn, as a stream of
+        events the SSE endpoint forwards verbatim and :meth:`chat` drains.
+
+        Event contract (each a plain JSON-serialisable dict):
+          - ``{"event": "activity"}`` — emitted ONCE the turn is cleared by
+            Couche 1 and a model call is about to happen. It is a fixed,
+            non-LLM signal ("M.I.A is working") — no validation needed. Lets the
+            client show honest activity < 200 ms without displaying any
+            unvalidated model text.
+          - ``{"event": "tool", "tool": <name>, "instrument"?, "timeframe"?}`` —
+            emitted immediately BEFORE a data-reading tool actually runs (never
+            for a cached/deduped read, never for display-only view actions). The
+            fields are the tool's own arguments, so the client narrates the TRUE
+            step in progress ("Lecture de XAUUSD M15…") — a fixed template, not
+            model prose.
+          - ``{"event": "answer", "content", "blocked_reason",
+            "tool_calls_made", "view_actions"}`` — the terminal event, ALWAYS
+            emitted exactly once. ``content`` is the fully-generated, Couche-3-
+            validated text (or a template). Never streamed token-by-token: the
+            output filter can only inspect complete text, so a partially-shown
+            answer could never be safely retracted (MIA-1 §4/C).
+
+        VALIDATION IS UNCHANGED from the pre-MIA-1 blocking path: Couche 1 still
+        short-circuits before any LLM call, Couche 4 still rejects invented ids
+        on every view action, and Couche 3 still runs on the COMPLETE text
+        before the answer event is emitted. This method only adds streaming of
+        honest status, in-turn tool de-duplication, and parallel independent
+        reads — none of which touch what the layers check.
+        """
         history = list(conversation_history or [])
 
         # --- Couche 1 — adversarial input filter (no LLM call on match) ---
         adv = self._adv_filter.check(user_message)
         if adv.triggered:
-            return ChatResponse(
-                content=REFUSAL_TEMPLATE,
-                tool_calls_made=[],
-                blocked_reason=adv.category,
-            )
+            yield {
+                "event": "answer",
+                "content": REFUSAL_TEMPLATE,
+                "tool_calls_made": [],
+                "view_actions": [],
+                "blocked_reason": adv.category,
+            }
+            return
+
+        # The turn is cleared to hit the model — surface honest activity now.
+        yield {"event": "activity"}
 
         # --- Couche 2 — Haiku + tool use ---
         signal_summary = self._safe_summary()
+        # Compact JSON (no indent) — same data, fewer prefill tokens (MIA-1 §4,
+        # prompt trim). Purely a token-count optimisation; content is identical.
         system = SYSTEM_PROMPT_TEMPLATE.format(
-            signal_summary=json.dumps(signal_summary, ensure_ascii=False, indent=2)
+            signal_summary=json.dumps(signal_summary, ensure_ascii=False)
         )
         messages: list[dict[str, Any]] = history + [
             {"role": "user", "content": user_message}
@@ -325,6 +389,12 @@ class Chatbot:
         # category mask (« masque les SSL ») resolves server-side to real ids.
         known_zone_ids: set[str] = set()
         known_category_ids: dict[str, list[str]] = {}
+        # In-turn de-duplication: a data tool executed with the same arguments is
+        # NEVER run twice within a turn (across rounds), even if the model asks
+        # again — the recorded result is reused (MIA-1 §5/D). The engine's own
+        # candle cache already covers cross-message repeats; this removes the
+        # in-turn waste and the redundant status flash.
+        tool_cache: dict[tuple[str, str], dict[str, Any]] = {}
 
         for _turn in range(self._max_tool_turns):
             try:
@@ -337,71 +407,153 @@ class Chatbot:
                 )
             except Exception as exc:  # timeout / rate limit / network
                 logger.warning("chatbot LLM call failed: %s — fail-safe template", exc)
-                return ChatResponse(
-                    content=LLM_ERROR_TEMPLATE,
-                    tool_calls_made=tool_calls_made,
-                    blocked_reason="llm_error",
-                )
+                yield {
+                    "event": "answer",
+                    "content": LLM_ERROR_TEMPLATE,
+                    "tool_calls_made": tool_calls_made,
+                    "view_actions": view_actions,
+                    "blocked_reason": "llm_error",
+                }
+                return
 
             if getattr(response, "stop_reason", None) != "tool_use":
                 text = self._extract_text(response.content)
-                # --- Couche 3 — output forbidden-tokens filter ---
+                # --- Couche 3 — output forbidden-tokens filter (COMPLETE text) ---
                 output_check = self._output_filter.check(text)
                 if output_check.contaminated:
                     logger.warning(
                         "chatbot output contaminated (%s: %s) — fallback template",
                         output_check.category, output_check.matched_tokens,
                     )
-                    return ChatResponse(
-                        content=OUTPUT_CONTAMINATED_TEMPLATE,
-                        tool_calls_made=tool_calls_made,
-                        view_actions=view_actions,
-                        blocked_reason=f"output_contaminated_{output_check.category}",
-                    )
-                return ChatResponse(
-                    content=text,
-                    tool_calls_made=tool_calls_made,
-                    view_actions=view_actions,
-                    blocked_reason=None,
-                )
+                    yield {
+                        "event": "answer",
+                        "content": OUTPUT_CONTAMINATED_TEMPLATE,
+                        "tool_calls_made": tool_calls_made,
+                        "view_actions": view_actions,
+                        "blocked_reason": f"output_contaminated_{output_check.category}",
+                    }
+                    return
+                yield {
+                    "event": "answer",
+                    "content": text,
+                    "tool_calls_made": tool_calls_made,
+                    "view_actions": view_actions,
+                    "blocked_reason": None,
+                }
+                return
 
             # Tool-use turn: record the assistant message once, then append a
             # single user message bundling every tool_result of this turn.
             messages.append({"role": "assistant", "content": response.content})
-            tool_results: list[dict[str, Any]] = []
-            for block in response.content:
-                if getattr(block, "type", None) != "tool_use":
-                    continue
+            tool_blocks = [
+                b for b in response.content
+                if getattr(b, "type", None) == "tool_use"
+            ]
+            # Record the calls in the model's original block order (unchanged
+            # contract for tool_calls_made).
+            for block in tool_blocks:
+                tool_calls_made.append({"name": block.name, "input": dict(block.input)})
+
+            # Partition: data reads (independent → parallelisable, dedupable) vs
+            # display-only view actions (sequential — they depend on the ids the
+            # reads of THIS round just harvested).
+            data_blocks = [b for b in tool_blocks if b.name != "apply_chart_view"]
+            view_blocks = [b for b in tool_blocks if b.name == "apply_chart_view"]
+            results_by_id: dict[str, dict[str, Any]] = {}
+
+            # Resolve dedup cache hits first; collect the reads we must actually
+            # run (and emit their honest status BEFORE executing them).
+            to_run: list[tuple[Any, tuple[str, str], dict[str, Any]]] = []
+            for block in data_blocks:
                 tool_input = dict(block.input)
-                tool_calls_made.append({"name": block.name, "input": tool_input})
-
-                if block.name == "apply_chart_view":
-                    # --- Couche 4 — view-action whitelist (display-only) ---
-                    result = self._apply_view_action(
-                        tool_input, view_actions, known_zone_ids, known_category_ids
-                    )
+                key = self._tool_key(block.name, tool_input)
+                if key in tool_cache:
+                    results_by_id[block.id] = tool_cache[key]
                 else:
-                    result = self._execute_tool(block.name, tool_input)
-                    # Harvest detected zone/pocket ids so a later focus/highlight/
-                    # mask can only reference a structure the engine actually
-                    # emitted.
-                    self._harvest_zone_ids(result, known_zone_ids, known_category_ids)
+                    to_run.append((block, key, tool_input))
+            for block, _key, tool_input in to_run:
+                status = self._tool_status(block.name, tool_input)
+                if status is not None:
+                    yield status
 
-                tool_results.append({
+            # Execute the fresh reads — in parallel when there is more than one
+            # (MIA-1 §7: independent calls go together, not in a file).
+            if len(to_run) == 1:
+                block, key, tool_input = to_run[0]
+                result = self._execute_tool(block.name, tool_input)
+                tool_cache[key] = result
+                results_by_id[block.id] = result
+            elif to_run:
+                with ThreadPoolExecutor(max_workers=min(4, len(to_run))) as pool:
+                    futures = {
+                        pool.submit(self._execute_tool, b.name, ti): (b, key)
+                        for (b, key, ti) in to_run
+                    }
+                    for future in futures:
+                        block, key = futures[future]
+                        result = future.result()
+                        tool_cache[key] = result
+                        results_by_id[block.id] = result
+
+            # Harvest ids from every data result (deterministic block order) so a
+            # view action in this same round can only reference emitted ids.
+            for block in data_blocks:
+                self._harvest_zone_ids(
+                    results_by_id.get(block.id), known_zone_ids, known_category_ids
+                )
+
+            # --- Couche 4 — view-action whitelist (display-only), sequential ---
+            for block in view_blocks:
+                results_by_id[block.id] = self._apply_view_action(
+                    dict(block.input), view_actions, known_zone_ids, known_category_ids
+                )
+
+            # Bundle every tool_result of the turn (original block order).
+            tool_results = [
+                {
                     "type": "tool_result",
                     "tool_use_id": block.id,
-                    "content": json.dumps(result, ensure_ascii=False, default=str),
-                })
+                    "content": json.dumps(
+                        results_by_id[block.id], ensure_ascii=False, default=str
+                    ),
+                }
+                for block in tool_blocks
+            ]
             messages.append({"role": "user", "content": tool_results})
 
         # Tool-turn budget exhausted without a final text answer.
         logger.warning("chatbot exceeded %d tool turns — fail-safe template", self._max_tool_turns)
-        return ChatResponse(
-            content=LLM_ERROR_TEMPLATE,
-            tool_calls_made=tool_calls_made,
-            view_actions=view_actions,
-            blocked_reason="max_tool_turns_exceeded",
-        )
+        yield {
+            "event": "answer",
+            "content": LLM_ERROR_TEMPLATE,
+            "tool_calls_made": tool_calls_made,
+            "view_actions": view_actions,
+            "blocked_reason": "max_tool_turns_exceeded",
+        }
+
+    @staticmethod
+    def _tool_key(name: str, tool_input: dict[str, Any]) -> tuple[str, str]:
+        """Canonical de-dup key for a data-tool call: name + argument fingerprint
+        (order-independent). Two identical reads in one turn collapse to one."""
+        return (name, json.dumps(tool_input, ensure_ascii=False, sort_keys=True))
+
+    @staticmethod
+    def _tool_status(name: str, tool_input: dict[str, Any]) -> Optional[dict[str, Any]]:
+        """Honest activity event for a data read that is ABOUT TO run, or None
+        for tools with no meaningful wait (get_signal_summary is a cached, near-
+        instant lookup). Structured — the client localises the wording, so no
+        French/English status text is hard-coded server-side, and it can never
+        carry model prose (MIA-1 §2/C)."""
+        if name in ("get_market_reading", "get_ob_diagnostic"):
+            status: dict[str, Any] = {"event": "tool", "tool": name}
+            instrument = tool_input.get("instrument")
+            timeframe = tool_input.get("timeframe")
+            if isinstance(instrument, str):
+                status["instrument"] = instrument
+            if isinstance(timeframe, str):
+                status["timeframe"] = timeframe
+            return status
+        return None
 
     # ------------------------------------------------------------------ #
     # Internals
