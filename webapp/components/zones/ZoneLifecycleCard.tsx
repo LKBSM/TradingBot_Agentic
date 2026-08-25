@@ -155,7 +155,7 @@ export function ProximityBlock({
         <span className="k">
           {prox.inside ? t('proximity.positionLabel') : t('proximity.distanceLabel')}
         </span>
-        <span className="v" data-testid="distance-line">
+        <span className="v faint" data-testid="distance-line">
           {distanceText}
         </span>
       </div>
