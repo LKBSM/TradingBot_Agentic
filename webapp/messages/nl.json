@@ -2033,6 +2033,8 @@
       "complianceLine": "M.I.A Agent beantwoordt vragen over de algoritmische lezing. Hij geeft geen tradingsignaal en geen persoonlijke aanbeveling.",
       "openPanel": "Assistent openen",
       "collapseToBubble": "Verkleinen tot bel",
+      "modeNotSynced": "Je weergavekeuze — niet gesynchroniseerd.",
+      "columnNeedsWidth": "Kolom beschikbaar op een breder scherm.",
       "dockToColumn": "Vastzetten als kolom"
     },
     "placeholders": {

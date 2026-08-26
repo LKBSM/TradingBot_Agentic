@@ -2033,6 +2033,8 @@
       "complianceLine": "يجيب M.I.A Agent عن أسئلة حول القراءة الخوارزمية. إنه لا يقدّم أي إشارة تداول ولا أي توصية شخصية.",
       "openPanel": "افتح المساعد",
       "collapseToBubble": "تصغير إلى فقاعة",
+      "modeNotSynced": "اختيار العرض الخاص بك — غير مُزامَن.",
+      "columnNeedsWidth": "العمود متاح على شاشة أوسع.",
       "dockToColumn": "تثبيت كعمود"
     },
     "placeholders": {
