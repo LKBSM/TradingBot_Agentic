@@ -48,6 +48,13 @@ export default function LocaleError({
           <Link href="/">Retour à l&apos;accueil</Link>
         </Button>
       </div>
+      {/* Regulatory notice — one per page, never zero. Hardcoded FR: this error
+          boundary stays self-contained (the i18n provider may be what threw).
+          Mirrors the canonical `connexion.trust`. */}
+      <p className="max-w-md text-xs text-muted-foreground/70">
+        Outil éducatif de lecture de marché. Ni signal de trading, ni conseil en
+        investissement. 18+.
+      </p>
     </div>
   );
 }
