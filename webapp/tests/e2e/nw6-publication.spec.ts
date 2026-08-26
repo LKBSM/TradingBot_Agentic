@@ -122,7 +122,12 @@ for (const vp of [{ w: 1280, h: 800, tag: '1280' }, { w: 390, h: 844, tag: '390'
     await page.setViewportSize({ width: vp.w, height: vp.h });
     if (!(await goto(page, makeEvent(CPI(12 * D, 'pending', [])), CPI_URL))) { test.skip(true, 'gated'); return; }
     await expect(page.locator('.pub-curve-svg')).toHaveCount(0);
-    // The pedagogy fiche still renders (us_cpi has one), and the page stays honest.
+    // The pedagogy fiche still renders (us_cpi has one) — now COLLAPSED by default
+    // (« riche sur demande »): present but hidden, revealed on opening the summary.
+    const ped = page.locator('.pub-ped');
+    await expect(ped).toHaveCount(1);
+    await expect(page.locator('.pub-ped-body')).not.toBeVisible();
+    await ped.locator('summary').click();
     await expect(page.locator('.pub-ped-body')).toBeVisible();
     await assertCommonInvariants(page);
     await page.screenshot({ path: `test-results/nw6-novalues-${vp.tag}.png`, fullPage: true });

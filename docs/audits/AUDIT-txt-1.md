@@ -193,7 +193,31 @@ Tests 2ᵉ passage : `txt1-copy` 8/8 ; `CalendarEventDetail` + `CalendarPublicat
 `docs/audits/txt1-shots/{before,after}/*-actualites-detail.png`.
 
 **Reste possible (non fait, hors « coupe de mots ») :** replier les fiches pédagogiques
-(C3, riche sur demande) — c'est un changement de hiérarchie, pas une coupe.
+(C3, riche sur demande) — c'est un changement de hiérarchie, pas une coupe. → **fait au 3ᵉ
+passage (§10).**
+
+---
+
+## 10. 3ᵉ passage — repli des fiches pédagogiques (2026-08-25, branche `feat/txt-1b-pedagogy-fold`)
+
+La fiche pédagogique (« Ce que mesure cet indicateur ») **porte de l'information de marché**
+→ on ne la coupe pas, on la **replie** (« calme par défaut, riche sur demande »).
+
+- `CalendarEventDetail.tsx` : la carte pédagogie devient un **`<details>` natif** fermé par
+  défaut. L'entête (titre + badge + chevron rotatif) est le `<summary>` cliquable ; le body
+  reste **dans le DOM** (révélé à l'ouverture). Aucun contenu i18n changé.
+- CSS (`calendar-pub.css`) : marqueur natif masqué, chevron `.pub-ped-chev` qui pivote à
+  l'ouverture, marge d'entête nulle en fermé.
+- Accessibilité native (clavier + lecteur d'écran) via `<details>/<summary>`.
+
+**0 fait perdu** : le body est intégralement conservé, accessible d'un geste. Zéro repli
+sur un fait/dénominateur/avertissement — seulement sur une définition (C3), remède
+explicitement autorisé par la mission.
+
+Tests : `CalendarEventDetail` unit 25/25 (le test `textContent` passe, `<details>` garde le
+body dans le DOM) ; e2e `nw5/nw6/nw7` 26/26 — `nw6 D` mis à jour : la fiche est **présente
+mais fermée** par défaut, puis **visible après clic** sur son `summary` ; `tsc` 0 erreur
+nouvelle. Captures `docs/audits/txt1-shots/pedagogy-fold/{fr-collapsed,fr-expanded}.png`.
 
 ---
 

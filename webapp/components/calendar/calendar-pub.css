@@ -495,6 +495,29 @@
 }
 
 /* ---- Fiche pédagogique ---- */
+/* Collapsed by default (« riche sur demande »): the summary is the whole card
+   header, clickable; the native marker is hidden in favour of a rotating chevron.
+   The body stays in the DOM and is revealed on open. */
+.pub-ped > summary {
+  cursor: pointer;
+  list-style: none;
+  margin-bottom: 0;
+}
+.pub-ped > summary::-webkit-details-marker {
+  display: none;
+}
+.pub-ped[open] > summary {
+  margin-bottom: 12px;
+}
+.pub-ped-chev {
+  margin-left: 6px;
+  color: var(--faint);
+  flex-shrink: 0;
+  transition: transform 0.18s ease;
+}
+.pub-ped[open] .pub-ped-chev {
+  transform: rotate(180deg);
+}
 .pub-ped-body {
   font-size: 12px;
   line-height: 1.65;
