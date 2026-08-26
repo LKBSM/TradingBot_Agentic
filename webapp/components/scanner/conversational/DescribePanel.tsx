@@ -73,7 +73,8 @@ export function DescribePanel({
           <br />
           <span className="text-primary">{t('describe.titleAccent')}</span>
         </h1>
-        <p className="mt-2 fs-secondary text-muted-foreground">{t('describe.subtitle')}</p>
+        {/* UI-3: the subtitle (« Écris ta stratégie en langage clair ») restated
+            the title and the field placeholder — removed on this daily screen. */}
       </div>
 
       {/* Command console. */}

@@ -151,10 +151,10 @@ export function ProximityBlock({
 
   return (
     <div className={cn('zpx', prox.inside && 'inside')}>
+      {/* UI-3: the « Distance » / « Position » label was an ÉTIQUETTE REDONDANTE —
+          the value already reads « 4,46 pts en dessous du prix » / « le prix est à
+          l'intérieur… ». The label is dropped; the (protected) value line stays. */}
       <div className="zpxr">
-        <span className="k">
-          {prox.inside ? t('proximity.positionLabel') : t('proximity.distanceLabel')}
-        </span>
         <span className="v faint" data-testid="distance-line">
           {distanceText}
         </span>

@@ -25,8 +25,9 @@ describe('ShellRail', () => {
     expect(screen.getByText('M15')).toBeInTheDocument();
     expect(screen.getByText('H1')).toBeInTheDocument();
     expect(screen.getByText('H4')).toBeInTheDocument();
-    // Freshbox microcopy.
-    expect(screen.getByText('Lecture en direct')).toBeInTheDocument();
+    // Educational disclaimer stays; the Freshbox live/instrument duplicate of the
+    // AppHead header was removed (UI-3 text-density pass).
+    expect(screen.queryByText('Lecture en direct')).not.toBeInTheDocument();
   });
 
   it('wires the ESPACE nav to the real routes', () => {
