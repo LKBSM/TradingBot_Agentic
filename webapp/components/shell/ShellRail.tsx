@@ -9,14 +9,12 @@ import { cn } from '@/lib/utils';
 import { MiaLogo } from '@/components/brand/MiaLogo';
 import { useLocalizedHref } from '@/lib/i18n/href';
 import { resolveComboFromQuery } from '@/lib/conditions/app-link';
-import { formatInstrument, formatTimeframe } from '@/lib/market-reading/formatters';
 import {
   DEFAULT_INSTRUMENT,
   DEFAULT_TIMEFRAME,
   type Combo,
 } from '@/lib/market-reading/store';
 import { MarketSelector } from '@/components/market/MarketSelector';
-import { Freshbox } from './primitives';
 
 const DEFAULT_COMBO: Combo = { instrument: DEFAULT_INSTRUMENT, timeframe: DEFAULT_TIMEFRAME };
 
@@ -113,12 +111,10 @@ export function ShellRail({ activeSpace }: { activeSpace: string }) {
         })}
       </div>
 
-      {/* Freshbox + educational microcopy */}
+      {/* Educational microcopy. The live badge + instrument·timeframe context
+          that used to sit here (Freshbox) duplicated the AppHead header and the
+          active row of the market selector above — UI-3 removed the duplicate. */}
       <div className="railfoot">
-        <Freshbox
-          line1={t('landing.hero.badgeLive')}
-          line2={`${formatInstrument(active.instrument)} · ${formatTimeframe(active.timeframe)}`}
-        />
         <p
           style={{
             fontSize: 'var(--fs-legal)',
