@@ -60,6 +60,12 @@ export default function GlobalError({
           >
             Réessayer
           </button>
+          {/* Regulatory notice — one per page, never zero. Inline-styled FR, like
+              the rest of this dependency-free last-resort boundary. */}
+          <p style={{ opacity: 0.6, fontSize: '0.7rem', lineHeight: 1.5, marginTop: '1.5rem' }}>
+            Outil éducatif de lecture de marché. Ni signal de trading, ni conseil en
+            investissement. 18+.
+          </p>
         </div>
       </body>
     </html>
