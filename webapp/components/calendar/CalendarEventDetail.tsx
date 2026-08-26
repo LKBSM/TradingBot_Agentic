@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import {
   ChevronLeft,
+  ChevronDown,
   ArrowUpRight,
   BookText,
   FileText,
@@ -1212,13 +1213,18 @@ function Detail({
           generic filler; Défaut B). The per-fiche disclaimer was folded into the
           single page-level warning below (Défaut C). */}
       {hasFiche && eventKey && (
-        <div className="cald-card">
-          <div className="cald-card-h">
+        // Collapsed by default — « calme par défaut, riche sur demande ». The full
+        // fiche stays in the DOM (native <details>); the summary discloses it on
+        // click/keyboard. The body carries market information (what the indicator
+        // measures), so it is FOLDED, never cut.
+        <details className="cald-card pub-ped">
+          <summary className="cald-card-h pub-ped-summary">
             <h3>{t('pub.pedagogy.title')}</h3>
             <span className="cald-badge">{t('pub.pedagogy.badge')}</span>
-          </div>
+            <ChevronDown className="pub-ped-chev" width={16} height={16} aria-hidden />
+          </summary>
           <p className="pub-ped-body">{t(`pub.pedagogy.${eventKey}.body`)}</p>
-        </div>
+        </details>
       )}
 
       {/* SINGLE page-level warning — "what this page does not say" — placed after
