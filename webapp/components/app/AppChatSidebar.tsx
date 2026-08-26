@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  GraduationCap,
   HelpCircle,
   History,
   Info,
@@ -224,16 +223,10 @@ export function AppChatSidebar({
             <span className="min-[1100px]:hidden">{t('chat.columnNeedsWidth')}</span>
           </p>
         )}
-        {/* Honesty disclaimer — MIA-1: shown only before the first exchange, so
-            the header compacts to a single line once the conversation starts
-            (the persistent compliance line under the input keeps the posture
-            visible at all times). */}
-        {empty && (
-          <p className="mt-1.5 flex items-center gap-1 text-[11px] italic text-muted-foreground/85">
-            <GraduationCap className="h-3 w-3 shrink-0" aria-hidden />
-            <span className="truncate">{t('chat.pedagogicalNote')}</span>
-          </p>
-        )}
+        {/* UI-3: the empty-state pedagogical note was removed — the persistent
+            compliance line under the input already carries the same posture at
+            all times, so it duplicated it on the one screen a subscriber sees
+            fifty times a day. */}
       </header>
 
       {showRecents && recentThreads.length > 0 && (

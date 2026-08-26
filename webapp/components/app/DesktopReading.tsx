@@ -495,7 +495,9 @@ function NarratedPanel({ conditions }: { conditions: MarketReadingConditions }) 
           <path d="M4 6h16M4 12h16M4 18h10" />
         </svg>
         <h3>{t('desktop.narratedTitle')}</h3>
-        <span className="badge2">{t('desktop.narratedBadge')}</span>
+        {/* UI-3: « Ancrée au moteur » badge removed — the footer below
+            (« Chaque niveau cité correspond à une sortie réelle du moteur »)
+            already states the provenance. */}
       </div>
       <div className="narr">
         {paragraphs.length > 0 ? (

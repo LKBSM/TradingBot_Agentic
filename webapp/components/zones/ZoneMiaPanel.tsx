@@ -170,7 +170,6 @@ export function ZoneMiaPanel({
           <AgentAvatar size="sm" presence />
           <span>
             <span className="nm">{t('mia.name')}</span>
-            <span className="sb">{t('mia.tagline')}</span>
           </span>
         </div>
         <div className="zmia-empty">{t('mia.empty')}</div>
@@ -209,9 +208,11 @@ export function ZoneMiaPanel({
     <aside className={cn('zmia', className)} aria-label={t('mia.title')}>
       <div className="zmiah">
         <AgentAvatar size="sm" presence />
+        {/* UI-3: « décrit · explique · ne prédit pas » tagline removed — pure
+            positioning, redundant with the honesty disclaimer at the panel foot
+            (« M.I.A décrit des faits… Elle ne dit pas où ira le prix… »). */}
         <span>
           <span className="nm">{t('mia.name')}</span>
-          <span className="sb">{t('mia.tagline')}</span>
         </span>
       </div>
 

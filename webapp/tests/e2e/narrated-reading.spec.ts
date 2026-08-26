@@ -3,11 +3,13 @@ import { FIXTURE_XAU_M15 } from '../../lib/market-reading/fixtures';
 import { dismissCookieBanner } from './utils';
 
 /**
- * « Lecture narrée · Ancrée au moteur » (/app) — the narration is now composed
- * 100 % by the deterministic engine template (no LLM). This spec asserts the
- * block renders on both viewports and carries the honest « Ancrée au moteur »
- * badge (desktop NarratedPanel) / « Composée par le moteur » source line (mobile
- * ConditionsSection), with no raw i18n key and no horizontal overflow.
+ * « Lecture narrée » (/app) — the narration is now composed 100 % by the
+ * deterministic engine template (no LLM). This spec asserts the block renders on
+ * both viewports and carries the honest engine-anchoring footer (« Chaque niveau
+ * cité correspond à une sortie réelle du moteur », desktop NarratedPanel) /
+ * « Composée par le moteur » source line (mobile ConditionsSection), with no raw
+ * i18n key and no horizontal overflow. (UI-3 dropped the redundant « Ancrée au
+ * moteur » badge that duplicated the footer.)
  *
  * The reading endpoints are mocked (the prod build proxies to a backend that is
  * absent under test). Locale is fr-FR (playwright.config).
@@ -46,15 +48,13 @@ test.describe('Lecture narrée — desktop 1280×800', () => {
     await mockReading(page);
   });
 
-  test('NarratedPanel shows title, « Ancrée au moteur » badge and the narration', async ({ page }) => {
+  test('NarratedPanel shows title, engine-anchoring footer and the narration', async ({ page }) => {
     await page.goto('/app?instrument=XAUUSD&timeframe=M15');
     await dismissCookieBanner(page);
 
-    // The badge is unique to the NarratedPanel — anchor on it to disambiguate.
-    const badge = page.getByText('Ancrée au moteur', { exact: true });
-    await expect(badge).toBeVisible();
-
-    // Title + engine-anchoring footer render (label now literally true — 100 % engine).
+    // UI-3 removed the « Ancrée au moteur » badge (redundant with the footer
+    // below). Title + engine-anchoring footer render (label literally true —
+    // 100 % engine) and carry the provenance the badge used to duplicate.
     await expect(page.getByRole('heading', { name: 'Lecture narrée' })).toBeVisible();
     await expect(
       page.getByText(/Chaque niveau cité correspond à une sortie réelle du moteur/),
