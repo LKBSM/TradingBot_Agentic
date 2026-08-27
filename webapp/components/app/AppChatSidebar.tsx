@@ -3,6 +3,7 @@
 import {
   HelpCircle,
   History,
+  Info,
   LayoutPanelTop,
   LineChart,
   PanelLeftClose,
@@ -149,9 +150,10 @@ export function AppChatSidebar({
                       onClick={() =>
                         onSetDisplayMode(displayMode === 'column' ? 'bubble' : 'column')
                       }
-                      // ≥1280 only: below that the drawer closes via its backdrop
-                      // and there is no column disposition to toggle to.
-                      className="hidden text-muted-foreground xl:inline-flex xl:h-8 xl:w-8"
+                      // ≥1100 only (APP-1): below that the centre would be too
+                      // narrow for a legible chart, so no column disposition is
+                      // offered — the status line under the title explains it.
+                      className="hidden text-muted-foreground min-[1100px]:inline-flex min-[1100px]:h-8 min-[1100px]:w-8"
                     >
                       {displayMode === 'column' ? (
                         <PanelRightClose className="h-4 w-4" aria-hidden />
@@ -207,6 +209,20 @@ export function AppChatSidebar({
             </div>
           </TooltipProvider>
         </div>
+        {/* APP-1 — mode status, shown only where the disposition toggle lives
+            (desktop/tablet shell chat, never the mobile tab). ≥1100: the choice is
+            a browser-local preference (« non synchronisé »). <1100: the column
+            would crush the chart, so it is not offered — say why, don't vanish. */}
+        {displayMode && onSetDisplayMode && (
+          <p
+            data-testid="mia-mode-status"
+            className="mt-1.5 flex items-center gap-1 text-[10px] leading-tight text-muted-foreground/80"
+          >
+            <Info className="h-3 w-3 shrink-0" aria-hidden />
+            <span className="hidden min-[1100px]:inline">{t('chat.modeNotSynced')}</span>
+            <span className="min-[1100px]:hidden">{t('chat.columnNeedsWidth')}</span>
+          </p>
+        )}
         {/* UI-3: the empty-state pedagogical note was removed — the persistent
             compliance line under the input already carries the same posture at
             all times, so it duplicated it on the one screen a subscriber sees

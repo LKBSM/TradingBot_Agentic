@@ -2071,6 +2071,8 @@
       "complianceLine": "M.I.A Agent répond à des questions sur la lecture algorithmique. Il ne donne ni signal de trading, ni recommandation personnalisée.",
       "openPanel": "Ouvrir l'assistant",
       "collapseToBubble": "Réduire en bulle",
+      "modeNotSynced": "Ton choix d'affichage — non synchronisé.",
+      "columnNeedsWidth": "Colonne disponible sur un écran plus large.",
       "dockToColumn": "Afficher en colonne"
     },
     "placeholders": {

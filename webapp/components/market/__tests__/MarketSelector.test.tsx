@@ -65,6 +65,20 @@ describe('MarketSelector — registry is the single source (panel)', () => {
     // The "not synced" mention is shown next to the pinned heading.
     expect(screen.getAllByText('Non synchronisé').length).toBeGreaterThan(0);
   });
+
+  it('every market pinned → « Marchés » does not repeat them (APP-1 défaut B)', () => {
+    render(<MarketSelector variant="panel" active={active} onSelect={() => {}} />);
+    // Pin both of the two markets. Once all are pinned, the « Marchés » section
+    // has nothing NEW to show and must not repeat the pinned list.
+    fireEvent.click(screen.getByLabelText(/Épingler Euro/i));
+    fireEvent.click(screen.getByLabelText(/Épingler Or/i));
+    // Each market now appears EXACTLY once (in « Épinglés »), never duplicated.
+    expect(screen.getAllByText('Or (XAU/USD)')).toHaveLength(1);
+    expect(screen.getAllByText('Euro / Dollar (EUR/USD)')).toHaveLength(1);
+    // « Épinglés » stays; the redundant « Marchés » heading is gone.
+    expect(screen.getByText('Épinglés')).toBeTruthy();
+    expect(screen.queryByText('Marchés')).toBeNull();
+  });
 });
 
 describe('MarketSelector — timeframe control', () => {

@@ -128,6 +128,12 @@ function ColumnSelector({
   const allMarkets = MARKET_SPECS.map((s) => s.id).filter((id) => marketMatches(id, query));
   const pinnedMarkets = pinned.filter((id) => marketMatches(id, query));
   const hasResults = allMarkets.length > 0;
+  // APP-1 — the « Marchés » section lists only what « Épinglés » does NOT already
+  // show. With the 2-market product both pinned, it would just repeat the pinned
+  // list, so it is hidden entirely (a section with no NEW content does not show).
+  // The empty-search message still appears when nothing matches at all.
+  const unpinnedMarkets = allMarkets.filter((id) => !isPinned(id));
+  const showAllSection = allMarkets.length === 0 || unpinnedMarkets.length > 0;
 
   const rail = variant === 'rail';
 
@@ -199,40 +205,43 @@ function ColumnSelector({
         </div>
       )}
 
-      {/* All markets */}
-      <div className={rail ? undefined : 'space-y-1.5'}>
-        {rail ? (
-          <div className="rail-lbl">{t('sidebar.markets')}</div>
-        ) : (
-          <p className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {t('sidebar.markets')}
-          </p>
-        )}
-        {hasResults ? (
-          <ul className={rail ? undefined : 'space-y-1'}>
-            {allMarkets.map((id) => (
-              <li key={id}>
-                <MarketRow
-                  variant={variant}
-                  marketId={id}
-                  activeMarket={activeMarket}
-                  pinned={isPinned(id)}
-                  onPick={() => onSelect(comboForMarket(id, active?.timeframe))}
-                  onTogglePin={() => toggle(id)}
-                />
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p
-            className={cn(
-              rail ? 'marketsel-empty' : 'px-1 py-6 text-center text-sm text-muted-foreground',
-            )}
-          >
-            {t('sidebar.noResults', { query })}
-          </p>
-        )}
-      </div>
+      {/* Markets not already pinned (APP-1) — hidden when it would only repeat
+          « Épinglés »; still shows the empty-search message when nothing matches. */}
+      {showAllSection && (
+        <div className={rail ? undefined : 'space-y-1.5'}>
+          {rail ? (
+            <div className="rail-lbl">{t('sidebar.markets')}</div>
+          ) : (
+            <p className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              {t('sidebar.markets')}
+            </p>
+          )}
+          {hasResults ? (
+            <ul className={rail ? undefined : 'space-y-1'}>
+              {unpinnedMarkets.map((id) => (
+                <li key={id}>
+                  <MarketRow
+                    variant={variant}
+                    marketId={id}
+                    activeMarket={activeMarket}
+                    pinned={isPinned(id)}
+                    onPick={() => onSelect(comboForMarket(id, active?.timeframe))}
+                    onTogglePin={() => toggle(id)}
+                  />
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p
+              className={cn(
+                rail ? 'marketsel-empty' : 'px-1 py-6 text-center text-sm text-muted-foreground',
+              )}
+            >
+              {t('sidebar.noResults', { query })}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Timeframe — for the active market (falls back to the first market). */}
       <TimeframeControl

@@ -359,7 +359,7 @@
   grid-template-columns: 232px minmax(0, 1fr);
 }
 
-/* ── M.I.A disposition toggle: column ↔ bubble (/app, desktop ≥1280 only) ─────
+/* ── M.I.A disposition toggle: column ↔ bubble (/app, desktop ≥1100) ──────────
    Two dispositions the user switches from the page (persisted in localStorage):
      · column mode  → `.chatcol` docked as the 3rd grid track (the base rule).
      · bubble mode  → `.chat-collapsed`: the centre reclaims the 338px track and
@@ -367,10 +367,13 @@
                       off-canvas drawer as the tablet band (identical render, so
                       the conversation is never lost). The drawer slides over the
                       full-width centre; closed via the backdrop or Escape.
-   Scoped to ≥1280 on purpose so the 768–1279 drawer and the <768 tab (below) are
+   Scoped to ≥1100 on purpose so the 768–1099 drawer and the <768 tab (below) are
    untouched — `.chat-collapsed` is a dedicated class, NOT `.no-chat` (whose
-   `:not(.no-chat)` media rules drive the tablet drawer, which we must keep). */
-@media (min-width: 1280px) {
+   `:not(.no-chat)` media rules drive the tablet drawer, which we must keep).
+   APP-1: threshold lowered 1280→1100 so laptops keep the column choice; at 1100
+   the centre still holds ~530px for a legible chart. Below 1100 the column would
+   crush the chart, so it is not offered (the control explains this). */
+@media (min-width: 1100px) {
   .app-shell.chat-collapsed {
     grid-template-columns: 232px minmax(0, 1fr);
   }
@@ -410,9 +413,9 @@
 
 /* ── Responsive centre (mission UI-2b) ──────────────────────────────────────
    The reference single-column centre must show from 768px up (tabs only on
-   phone). But the fixed 232 + 338 side columns would crush it below 1280, so:
-     · ≥1280px    rail · centre · chat DOCKÉ (the base rule above).
-     · 768–1279px rail · centre ; the chat becomes an OFF-CANVAS drawer opened
+   phone). But the fixed 232 + 338 side columns would crush it below 1100, so:
+     · ≥1100px    rail · centre · chat DOCKÉ (the base rule above).
+     · 768–1099px rail · centre ; the chat becomes an OFF-CANVAS drawer opened
                   by a floating button (.chat-fab), keeping the centre full width.
      · <768px     centre plein écran ; MobileWorkspace (onglets) prend le relais,
                   le rail et le chat du shell sont masqués.
@@ -446,7 +449,7 @@
   stroke-width: 1.9;
 }
 
-@media (max-width: 1279px) {
+@media (max-width: 1099px) {
   .app-shell:not(.no-chat) {
     grid-template-columns: 232px minmax(0, 1fr);
   }
