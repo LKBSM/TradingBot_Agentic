@@ -1105,7 +1105,6 @@
       "bosSuffix": " · BOS {dir}",
       "importantNews": "{count, plural, one {# ważna wiadomość nadchodzi — miej ją na uwadze.} few {# ważne wiadomości nadchodzą — miej je na uwadze.} many {# ważnych wiadomości nadchodzi — miej je na uwadze.} other {# ważnej wiadomości nadchodzi — miej ją na uwadze.}}",
       "analyse": "Analizuj",
-      "disclaimer": "Fakty strukturalne obserwowane w czasie teraźniejszym. Skaner niczego nie przewiduje ani niczego nie rekomenduje — ocena należy do Ciebie.",
       "unavailable": "niedostępne",
       "againstBlock": "Co przemawia przeciw",
       "againstNone": "Nic nie przemawia przeciw wśród Twoich ocenialnych warunków.",
@@ -2104,7 +2103,6 @@
     "desktop": {
       "live": "Na żywo",
       "earlyAccess": "Wczesny dostęp",
-      "legalInline": "Edukacyjna analiza algorytmiczna · ani sygnał, ani porada.",
       "narratedTitle": "Opis narracyjny",
       "narratedBadge": "Zakotwiczone w silniku",
       "narratedFooter": "Każdy podany poziom odpowiada rzeczywistemu wynikowi silnika.",
@@ -2602,7 +2600,6 @@
   },
   "zones": {
     "title": "Zones",
-    "intro": "The lifecycle of each detected zone — formation, contacts, fill — described in the present tense. No target, no forecast.",
     "refreshing": "refreshing…",
     "filterLabel": "Filter",
     "filterAria": "Filter the zones",
@@ -2774,21 +2771,15 @@
       "openSheet": "Ask M.I.A",
       "closeSheet": "Close",
       "intro": "You are looking at a {kind}. {count, plural, =0 {The price has not contacted it yet.} one {The price has contacted it once.} other {The price has contacted it # times.}} Ask me about it.",
-      "disclaimer": "M.I.A describes detected facts and explains concepts. It does not say where the price will go, whether a zone is good, or whether to act.",
       "input": {
         "placeholder": "Ask your question about this zone…",
-        "send": "Send"
+        "send": "Send",
+        "placeholderIdle": "Zadaj pytanie…"
       },
       "pos": {
         "inside": "the price is inside",
         "above": "above the price",
         "below": "below the price"
-      },
-      "suggest": {
-        "whatElse": "What else is at this level?",
-        "explainKind": "Explain this type of zone",
-        "compareUpper": "Compare it to the upper timeframe",
-        "lastContact": "What happened at the last contact?"
       },
       "frag": {
         "zone": "{kd} {where} {rel}.",
@@ -2811,7 +2802,8 @@
         "lastTraversal": "Last contact {when} ago ({time}): the price traversed it at {level}.",
         "lastEdge": "Last contact {when} ago ({time}): the price touched the edge without penetrating.",
         "lastEntry": "Last contact {when} ago ({time}): the price entered at {level} then exited without traversing it.",
-        "fallback": "I describe this zone from its facts: what else is at the same level, the type of zone, the comparison to the upper timeframe, or what happened at the last contact. Pick one of those questions."
+        "fallback": "I describe this zone from its facts: what else is at the same level, the type of zone, the comparison to the upper timeframe, or what happened at the last contact. Pick one of those questions.",
+        "noZone": "Najpierw wybierz strefę: opiszę tę, którą wskażesz, na podstawie jej faktów."
       }
     }
   },
@@ -2968,18 +2960,12 @@
       "panel": {
         "empty": "Brak publikacji tego dnia.",
         "localTime": "{time} Twojego czasu ({offset})",
-        "organismTime": "{time} {city}"
+        "organismTime": "{time} {city}",
+        "value": "Opublikowano: {value}{unit}"
       },
       "prev": "Poprzedni miesiąc",
-      "thisMonth": {
-        "byMarket": "{market}: {count}",
-        "count": "{count, plural, one {# publikacja} few {# publikacje} many {# publikacji} other {# publikacji}}",
-        "emptyDays": "{count, plural, one {# dzień bez publikacji} few {# dni bez publikacji} many {# dni bez publikacji} other {# dni bez publikacji}}",
-        "note": "Te liczby opisują kalendarz, a nie oczekiwaną aktywność.",
-        "title": "W tym miesiącu",
-        "filtered": "Filters applied — this count covers only the publications kept."
-      },
-      "weekdays": "pon wt śr czw pt sob niedz"
+      "weekdays": "pon wt śr czw pt sob niedz",
+      "scheduledOnly": "Ten kalendarz zawiera wyłącznie zaplanowane publikacje."
     },
     "pub": {
       "curve": {

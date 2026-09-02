@@ -175,6 +175,9 @@ export function ReadingColumn({
         live={liveHeader}
         marketClosed={marketClosed}
         status={serverStatus}
+        // CLN-1 §5 — inside the product shell the single disclaimer lives in the
+        // rail/mobile footer, so the card must not add a second one under the chart.
+        hideChartDisclaimer
         className="w-full border-border/60 shadow-sm"
       />
     );

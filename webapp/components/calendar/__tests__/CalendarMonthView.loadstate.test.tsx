@@ -89,29 +89,33 @@ describe('CAL-1 month view — no count before load', () => {
       mockHook.mockReturnValue({ data: null, isLoading: true, error: null, refresh: () => {} });
       const { container } = renderIn(locale);
 
-      // No count line, no "N empty days" is asserted.
-      expect(container.querySelector('.calm-tm-count')).toBeNull();
+      // CLN-1 §4 — the counts box was removed, so no count can be fabricated at
+      // all; nothing reads « N publications » and no day is claimed empty.
+      expect(container.querySelector('.calm-thismonth')).toBeNull();
+      expect(container.textContent).not.toMatch(/\d+\s+publication/);
       expect(container.textContent).not.toContain(M.calendar.month.panel.empty);
 
-      // A distinct waiting status is shown in the side box AND the grid.
-      const status = container.querySelector('.calm-tm-status[role="status"]');
-      expect(status?.textContent).toContain(M.calendar.loading);
+      // A distinct waiting status is shown in the grid area.
       expect(container.querySelector('.calm-grid')).toBeNull();
       expect(container.querySelector('.cal-status')?.textContent).toContain(
         M.calendar.loading,
       );
     });
 
-    it(`[${locale}] loaded WITH publications: the count is asserted`, () => {
+    it(`[${locale}] loaded WITH publications: the grid is drawn, still no prose recount`, () => {
       mockHook.mockReturnValue({ data: AUGUST, isLoading: false, error: null, refresh: () => {} });
       const { container } = renderIn(locale);
       expect(container.querySelector('.calm-grid')).not.toBeNull();
-      expect(container.querySelector('.calm-tm-count')?.textContent).toBe(
-        `1 ${locale === 'fr' ? 'publication' : 'publication'}`,
+      // CLN-1 §4 — no monthly counts box; the single scheduled-only scope line
+      // is present, and nothing recounts « N publications » in prose.
+      expect(container.querySelector('.calm-thismonth')).toBeNull();
+      expect(container.querySelector('.calm-scope')?.textContent).toBe(
+        M.calendar.month.scheduledOnly,
       );
+      expect(container.textContent).not.toMatch(/\d+\s+publications/);
     });
 
-    it(`[${locale}] loaded but genuinely EMPTY: explicit empty, no bare zero count`, () => {
+    it(`[${locale}] loaded but genuinely EMPTY: empty cells, no bare zero count`, () => {
       mockHook.mockReturnValue({
         data: { ...AUGUST, events: [] },
         isLoading: false,
@@ -119,10 +123,11 @@ describe('CAL-1 month view — no count before load', () => {
         refresh: () => {},
       });
       const { container } = renderIn(locale);
-      // No fabricated "0 publications / N empty days" — an explicit legitimate note.
-      expect(container.querySelector('.calm-tm-count')).toBeNull();
-      const status = container.querySelector('.calm-tm-status');
-      expect(status?.textContent).toContain(M.calendar.month.empty);
+      // No fabricated "0 publications" count anywhere; the grid draws (empty)
+      // day cells — a day without a publication is a visible empty cell.
+      expect(container.querySelector('.calm-thismonth')).toBeNull();
+      expect(container.textContent).not.toMatch(/\d+\s+publications/);
+      expect(container.querySelector('.calm-grid')).not.toBeNull();
     });
 
     it(`[${locale}] server unreachable (network) vs timeout: distinct message + retry, no count`, () => {
@@ -172,7 +177,8 @@ describe('CAL-1 month view — no count before load', () => {
       });
       const { container } = renderIn(locale);
       expect(container.querySelector('.calm-grid')).not.toBeNull();
-      expect(container.querySelector('.calm-tm-count')).not.toBeNull();
+      // CLN-1 §4 — data retained → the scope line still renders (no counts box).
+      expect(container.querySelector('.calm-scope')).not.toBeNull();
       expect(container.querySelector('.cal-errbanner')?.textContent).toContain(
         M.calendar.errorTimeout,
       );

@@ -126,10 +126,13 @@ describe('ZonesWorkspace (VZ-1)', () => {
     const body = document.querySelector('.zmia-body')!;
     // Only the intro bubble so far.
     expect(body.querySelectorAll('.bub').length).toBe(1);
-    // Ask « qu'est-ce qu'il y a d'autre » — the answer is built by buildConfluence
-    // over the SAME data as the card's confluence block (a same-level sibling zone,
-    // or the honest absence state — never a parallel source).
-    fireEvent.click(screen.getByRole('button', { name: /qu’est-ce qu’il y a d’autre/i }));
+    // CLN-1 §2 — the four prefabricated question blocks are gone; the same
+    // factual answers are reached via the shared composer (free text, routed
+    // LOCALLY). Ask « qu'est-ce qu'il y a d'autre à ce niveau » — the answer is
+    // built by buildConfluence over the SAME data as the card's confluence block.
+    const field = screen.getByPlaceholderText('Pose ta question sur cette zone…');
+    fireEvent.change(field, { target: { value: 'qu’est-ce qu’il y a d’autre à ce niveau' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Envoyer' }));
     await waitFor(() => expect(body.querySelectorAll('.bub').length).toBe(3)); // intro + Q + A
     const answer = body.querySelectorAll('.bub.a')[1]!;
     expect(answer.textContent ?? '').toMatch(
@@ -215,5 +218,54 @@ describe('ZonesWorkspace (VZ-1)', () => {
       screen.getByText('Cette zone n\'est plus détectée dans la lecture courante.'),
     ).toBeInTheDocument();
     expect(screen.getAllByRole('article')).toHaveLength(4);
+  });
+
+  // ── CLN-1 ────────────────────────────────────────────────────────────────
+  it('CLN-1 §1 — the product pitch line under the title is no longer rendered', async () => {
+    const { container } = renderZones();
+    await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(4));
+    expect(container.textContent ?? '').not.toContain('cycle de vie de chaque zone');
+    expect(document.querySelector('.pghead .sub')).toBeNull();
+    // The factual context line on the right stays.
+    expect(document.querySelector('.pghead .livebadge')).not.toBeNull();
+  });
+
+  it('CLN-1 §2 — the four prefabricated question blocks are gone', async () => {
+    renderZones();
+    await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(4));
+    expect(document.querySelector('.zmia-sugg')).toBeNull();
+    for (const q of [
+      /Explique-moi ce type de zone/i,
+      /Compare-la à l’unité supérieure/i,
+      /Que s’est-il passé au dernier contact/i,
+      /Qu’est-ce qu’il y a d’autre à ce niveau/i,
+    ]) {
+      expect(screen.queryByRole('button', { name: q })).toBeNull();
+    }
+  });
+
+  it('CLN-1 §3 — re-clicking the selected zone deselects it; the conversation is kept', async () => {
+    renderZones();
+    await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(4));
+    // A zone is selected by default → subject shown, exactly one card highlighted.
+    expect(screen.getByTestId('mia-subject')).toBeInTheDocument();
+    const selected = document.querySelector<HTMLElement>('.zone.zsel');
+    expect(selected).toBeTruthy();
+    // Start a conversation so we can prove « deselect ≠ reset ».
+    const field = screen.getByPlaceholderText('Pose ta question sur cette zone…');
+    fireEvent.change(field, { target: { value: 'explique moi cette zone' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Envoyer' }));
+    const body = document.querySelector('.zmia-body')!;
+    await waitFor(() => expect(body.querySelectorAll('.bub.u').length).toBe(1));
+    // Re-click the SAME (selected) card → deselect.
+    fireEvent.click(selected!);
+    await waitFor(() => expect(screen.queryByTestId('mia-subject')).not.toBeInTheDocument());
+    // No card highlighted, no filler subject block.
+    expect(document.querySelector('.zone.zsel')).toBeNull();
+    // The running conversation is NOT wiped.
+    expect(body.querySelectorAll('.bub.u').length).toBe(1);
+    // The field stays usable, and its idle hint does not claim a zone is chosen.
+    expect(screen.getByPlaceholderText('Pose ta question…')).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText('Pose ta question sur cette zone…')).toBeNull();
   });
 });

@@ -1113,6 +1113,16 @@
   display: flex;
   flex-direction: column;
 }
+/* CLN-1 §2 — mirror the /app chat format: the conversation takes the majority
+   of the height and the composer stays visible without scrolling. On desktop the
+   panel is bounded to the viewport (its column is sticky) so the body flexes; on
+   the mobile bottom-sheet the sheet itself scrolls, so the body keeps a natural
+   height with a sensible cap. */
+@media (min-width: 1081px) {
+  .app-shell .zmia-col .zmia {
+    max-height: calc(100vh - 32px);
+  }
+}
 .app-shell .zmiah {
   display: flex;
   align-items: center;
@@ -1138,6 +1148,14 @@
   background: color-mix(in srgb, var(--acc) 8%, var(--panel));
   border-bottom: 1px solid var(--line);
 }
+/* Compacts once a conversation has started (CLN-1 §2) — the subject shrinks to a
+   single dense line so the conversation keeps the room. */
+.app-shell .zmia-subj.compact {
+  padding: 6px 14px;
+}
+.app-shell .zmia-subj.compact .k {
+  display: none;
+}
 .app-shell .zmia-subj .k {
   font-family: var(--font-mono), 'JetBrains Mono', monospace;
   font-size: 8.5px;
@@ -1162,7 +1180,9 @@
   display: flex;
   flex-direction: column;
   gap: 7px;
-  max-height: 46vh;
+  flex: 1 1 auto;
+  min-height: 140px;
+  max-height: 60vh;
   overflow-y: auto;
 }
 .app-shell .zmia-empty {
@@ -1189,103 +1209,13 @@
   border: 1px solid var(--acc);
   color: var(--txt);
 }
-.app-shell .zmia-sugg {
-  padding: 0 14px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.app-shell .zmia-sugg .sg {
-  text-align: left;
-  font-size: 11.5px;
-  padding: 8px 11px;
-  border-radius: 8px;
-  border: 1px solid var(--line-2);
-  background: var(--panel-3);
-  color: var(--dim);
-  cursor: pointer;
-  line-height: 1.4;
-}
-.app-shell .zmia-sugg .sg:hover {
-  border-color: var(--acc);
-  color: var(--txt);
-}
-.app-shell .zmia-input {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  padding: 10px 14px 0;
-}
-.app-shell .zmia-input input {
-  flex: 1;
-  background: var(--panel-3);
-  border: 1px solid var(--line-2);
-  border-radius: 8px;
-  padding: 8px 11px;
-  font-size: 12px;
-  color: var(--txt);
-  outline: none;
-}
-.app-shell .zmia-input input::placeholder {
-  color: var(--faint);
-}
-.app-shell .zmia-input input:focus {
-  border-color: var(--acc);
-}
-.app-shell .zmia-input button {
-  flex-shrink: 0;
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  border: none;
-  background: var(--acc);
-  color: var(--bg);
-  font-size: 15px;
-  line-height: 1;
-  cursor: pointer;
-}
-.app-shell .zmia-input button:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
-/* Dictation mic — outlined so it reads as a distinct affordance from the filled
-   send button; its state (idle / listening / denied) is self-evident. */
-.app-shell .zmia-input .zmia-mic {
-  flex-shrink: 0;
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  border: 1px solid var(--line-2);
-  background: var(--panel-3);
-  color: var(--faint);
-  cursor: pointer;
-}
-.app-shell .zmia-input .zmia-mic:hover {
-  border-color: var(--acc);
-  color: var(--acc);
-}
-.app-shell .zmia-input .zmia-mic[data-state='listening'] {
-  border-color: var(--acc);
-  color: var(--acc);
-}
-.app-shell .zmia-input .zmia-mic[data-state='denied'] {
-  border-color: #f59e0b;
-  color: #d97706;
-}
-.app-shell .zmia-dict {
-  padding: 6px 14px 0;
-  font-size: 11px;
-  line-height: 1.5;
-}
-.app-shell .zmia-dict.listen {
-  color: var(--acc);
-}
-.app-shell .zmia-dict.err {
-  color: #d97706;
-}
-.app-shell .zmia-dict.note {
-  font-size: 10px;
-  color: var(--faint);
+/* CLN-1 §2 — footer holding the shared <ChatComposer> (input + dictation +
+   discreet transcription note). The four stacked question blocks (.zmia-sugg)
+   and the bespoke .zmia-input / .zmia-dict styles were removed: the composer is
+   the same Tailwind component /app uses, so the format matches. */
+.app-shell .zmia-foot {
+  padding: 10px 14px;
+  border-top: 1px solid var(--line);
 }
 .app-shell .zmia-disc {
   padding: 10px 14px;

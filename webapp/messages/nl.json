@@ -1105,7 +1105,6 @@
       "bosSuffix": " · BOS {dir}",
       "importantNews": "{count, plural, one {# belangrijk nieuwsbericht op komst — om in gedachten te houden.} other {# belangrijke nieuwsberichten op komst — om in gedachten te houden.}}",
       "analyse": "Analyseren",
-      "disclaimer": "Structurele feiten waargenomen in het heden. De scanner voorspelt niets en beveelt niets aan — het oordeel is aan u.",
       "unavailable": "niet beschikbaar",
       "againstBlock": "Wat ertegen ingaat",
       "againstNone": "Niets gaat ertegen in onder je evalueerbare voorwaarden.",
@@ -2104,7 +2103,6 @@
     "desktop": {
       "live": "Live",
       "earlyAccess": "Vroege toegang",
-      "legalInline": "Educatieve algoritmische analyse · geen signaal of advies.",
       "narratedTitle": "Verhaalde analyse",
       "narratedBadge": "Verankerd in de engine",
       "narratedFooter": "Elk genoemd niveau komt overeen met een echte engine-uitvoer.",
@@ -2602,7 +2600,6 @@
   },
   "zones": {
     "title": "Zones",
-    "intro": "The lifecycle of each detected zone — formation, contacts, fill — described in the present tense. No target, no forecast.",
     "refreshing": "refreshing…",
     "filterLabel": "Filter",
     "filterAria": "Filter the zones",
@@ -2774,21 +2771,15 @@
       "openSheet": "Ask M.I.A",
       "closeSheet": "Close",
       "intro": "You are looking at a {kind}. {count, plural, =0 {The price has not contacted it yet.} one {The price has contacted it once.} other {The price has contacted it # times.}} Ask me about it.",
-      "disclaimer": "M.I.A describes detected facts and explains concepts. It does not say where the price will go, whether a zone is good, or whether to act.",
       "input": {
         "placeholder": "Ask your question about this zone…",
-        "send": "Send"
+        "send": "Send",
+        "placeholderIdle": "Stel je vraag…"
       },
       "pos": {
         "inside": "the price is inside",
         "above": "above the price",
         "below": "below the price"
-      },
-      "suggest": {
-        "whatElse": "What else is at this level?",
-        "explainKind": "Explain this type of zone",
-        "compareUpper": "Compare it to the upper timeframe",
-        "lastContact": "What happened at the last contact?"
       },
       "frag": {
         "zone": "{kd} {where} {rel}.",
@@ -2811,7 +2802,8 @@
         "lastTraversal": "Last contact {when} ago ({time}): the price traversed it at {level}.",
         "lastEdge": "Last contact {when} ago ({time}): the price touched the edge without penetrating.",
         "lastEntry": "Last contact {when} ago ({time}): the price entered at {level} then exited without traversing it.",
-        "fallback": "I describe this zone from its facts: what else is at the same level, the type of zone, the comparison to the upper timeframe, or what happened at the last contact. Pick one of those questions."
+        "fallback": "I describe this zone from its facts: what else is at the same level, the type of zone, the comparison to the upper timeframe, or what happened at the last contact. Pick one of those questions.",
+        "noZone": "Selecteer eerst een zone: ik beschrijf de zone die je kiest op basis van de feiten."
       }
     }
   },
@@ -2968,18 +2960,12 @@
       "panel": {
         "empty": "Geen publicatie op deze dag.",
         "localTime": "{time} jouw tijd ({offset})",
-        "organismTime": "{time} {city}"
+        "organismTime": "{time} {city}",
+        "value": "Gepubliceerd: {value}{unit}"
       },
       "prev": "Vorige maand",
-      "thisMonth": {
-        "byMarket": "{market}: {count}",
-        "count": "{count, plural, one {# publicatie} other {# publicaties}}",
-        "emptyDays": "{count, plural, one {# dag zonder publicatie} other {# dagen zonder publicatie}}",
-        "note": "Deze aantallen beschrijven de kalender, niet de verwachte activiteit.",
-        "title": "Deze maand",
-        "filtered": "Filters applied — this count covers only the publications kept."
-      },
-      "weekdays": "ma di wo do vr za zo"
+      "weekdays": "ma di wo do vr za zo",
+      "scheduledOnly": "Deze kalender bevat alleen geplande publicaties."
     },
     "pub": {
       "curve": {

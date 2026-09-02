@@ -1115,7 +1115,6 @@
       "importantNews": "{count, plural, one {# important news event upcoming — keep it in mind.} other {# important news events upcoming — keep them in mind.}}",
       "analyse": "Analyse",
       "openChart": "Open in the chart",
-      "disclaimer": "Structural facts observed in the present. The scanner predicts nothing and recommends nothing — the judgement is yours.",
       "unavailable": "unavailable"
     },
     "filters": {
@@ -2104,7 +2103,6 @@
     "desktop": {
       "live": "Live",
       "earlyAccess": "Early access",
-      "legalInline": "Educational algorithmic reading · neither signal nor advice.",
       "narratedTitle": "Narrated reading",
       "narratedBadge": "Anchored to the engine",
       "narratedFooter": "Every level cited corresponds to a real engine output.",
@@ -2602,7 +2600,6 @@
   },
   "zones": {
     "title": "Zones",
-    "intro": "The lifecycle of each detected zone — formation, contacts, fill — described in the present tense. No target, no forecast.",
     "refreshing": "refreshing…",
     "filterLabel": "Filter",
     "filterAria": "Filter the zones",
@@ -2774,21 +2771,15 @@
       "openSheet": "Ask M.I.A",
       "closeSheet": "Close",
       "intro": "You are looking at a {kind}. {count, plural, =0 {The price has not contacted it yet.} one {The price has contacted it once.} other {The price has contacted it # times.}} Ask me about it.",
-      "disclaimer": "M.I.A describes detected facts and explains concepts. It does not say where the price will go, whether a zone is good, or whether to act.",
       "input": {
         "placeholder": "Ask your question about this zone…",
-        "send": "Send"
+        "send": "Send",
+        "placeholderIdle": "Ask your question…"
       },
       "pos": {
         "inside": "the price is inside",
         "above": "above the price",
         "below": "below the price"
-      },
-      "suggest": {
-        "whatElse": "What else is at this level?",
-        "explainKind": "Explain this type of zone",
-        "compareUpper": "Compare it to the upper timeframe",
-        "lastContact": "What happened at the last contact?"
       },
       "frag": {
         "zone": "{kd} {where} {rel}.",
@@ -2811,7 +2802,8 @@
         "lastTraversal": "Last contact {when} ago ({time}): the price traversed it at {level}.",
         "lastEdge": "Last contact {when} ago ({time}): the price touched the edge without penetrating.",
         "lastEntry": "Last contact {when} ago ({time}): the price entered at {level} then exited without traversing it.",
-        "fallback": "I describe this zone from its facts: what else is at the same level, the type of zone, the comparison to the upper timeframe, or what happened at the last contact. Pick one of those questions."
+        "fallback": "I describe this zone from its facts: what else is at the same level, the type of zone, the comparison to the upper timeframe, or what happened at the last contact. Pick one of those questions.",
+        "noZone": "Select a zone first: I describe the one you pick from its facts."
       }
     }
   },
@@ -2965,21 +2957,15 @@
       "current": "Current month",
       "weekdays": "Mon Tue Wed Thu Fri Sat Sun",
       "moreCount": "+{count}",
-      "thisMonth": {
-        "title": "This month",
-        "count": "{count, plural, one {# publication} other {# publications}}",
-        "byMarket": "{market}: {count}",
-        "emptyDays": "{count, plural, one {# day with no publication} other {# days with no publication}}",
-        "filtered": "Filters applied — this count covers only the publications kept.",
-        "note": "These counts describe the calendar, not expected activity."
-      },
       "panel": {
         "empty": "No publication on this day.",
         "organismTime": "{time} {city}",
-        "localTime": "{time} your time ({offset})"
+        "localTime": "{time} your time ({offset})",
+        "value": "Published: {value}{unit}"
       },
       "filterEmpty": "No publication matches these filters this month. Change a filter or reset them.",
-      "empty": "No publication scheduled this month for your markets."
+      "empty": "No publication scheduled this month for your markets.",
+      "scheduledOnly": "This calendar lists only scheduled publications."
     },
     "pub": {
       "curve": {

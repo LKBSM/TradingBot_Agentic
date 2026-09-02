@@ -1105,7 +1105,6 @@
       "bosSuffix": " · BOS {dir}",
       "importantNews": "{count, plural, one {# wichtige Nachricht bevorstehend — im Blick behalten.} other {# wichtige Nachrichten bevorstehend — im Blick behalten.}}",
       "analyse": "Analysieren",
-      "disclaimer": "Strukturelle Fakten, im Moment beobachtet. Der Scanner sagt nichts voraus und empfiehlt nichts — die Beurteilung liegt bei Ihnen.",
       "unavailable": "nicht verfügbar",
       "againstBlock": "Was dagegen spricht",
       "againstNone": "Nichts spricht dagegen unter deinen auswertbaren Bedingungen.",
@@ -2104,7 +2103,6 @@
     "desktop": {
       "live": "Live",
       "earlyAccess": "Früher Zugang",
-      "legalInline": "Algorithmische Lehranalyse · weder Signal noch Beratung.",
       "narratedTitle": "Erzählte Analyse",
       "narratedBadge": "Im Engine verankert",
       "narratedFooter": "Jedes genannte Niveau entspricht einer echten Engine-Ausgabe.",
@@ -2602,7 +2600,6 @@
   },
   "zones": {
     "title": "Zones",
-    "intro": "The lifecycle of each detected zone — formation, contacts, fill — described in the present tense. No target, no forecast.",
     "refreshing": "refreshing…",
     "filterLabel": "Filter",
     "filterAria": "Filter the zones",
@@ -2774,21 +2771,15 @@
       "openSheet": "Ask M.I.A",
       "closeSheet": "Close",
       "intro": "You are looking at a {kind}. {count, plural, =0 {The price has not contacted it yet.} one {The price has contacted it once.} other {The price has contacted it # times.}} Ask me about it.",
-      "disclaimer": "M.I.A describes detected facts and explains concepts. It does not say where the price will go, whether a zone is good, or whether to act.",
       "input": {
         "placeholder": "Ask your question about this zone…",
-        "send": "Send"
+        "send": "Send",
+        "placeholderIdle": "Stell deine Frage…"
       },
       "pos": {
         "inside": "the price is inside",
         "above": "above the price",
         "below": "below the price"
-      },
-      "suggest": {
-        "whatElse": "What else is at this level?",
-        "explainKind": "Explain this type of zone",
-        "compareUpper": "Compare it to the upper timeframe",
-        "lastContact": "What happened at the last contact?"
       },
       "frag": {
         "zone": "{kd} {where} {rel}.",
@@ -2811,7 +2802,8 @@
         "lastTraversal": "Last contact {when} ago ({time}): the price traversed it at {level}.",
         "lastEdge": "Last contact {when} ago ({time}): the price touched the edge without penetrating.",
         "lastEntry": "Last contact {when} ago ({time}): the price entered at {level} then exited without traversing it.",
-        "fallback": "I describe this zone from its facts: what else is at the same level, the type of zone, the comparison to the upper timeframe, or what happened at the last contact. Pick one of those questions."
+        "fallback": "I describe this zone from its facts: what else is at the same level, the type of zone, the comparison to the upper timeframe, or what happened at the last contact. Pick one of those questions.",
+        "noZone": "Wähle zuerst eine Zone: Ich beschreibe die gewählte anhand ihrer Fakten."
       }
     }
   },
@@ -2968,18 +2960,12 @@
       "panel": {
         "empty": "Keine Veröffentlichung an diesem Tag.",
         "localTime": "{time} deine Zeit ({offset})",
-        "organismTime": "{time} {city}"
+        "organismTime": "{time} {city}",
+        "value": "Veröffentlicht: {value}{unit}"
       },
       "prev": "Vorheriger Monat",
-      "thisMonth": {
-        "byMarket": "{market}: {count}",
-        "count": "{count, plural, one {# Veröffentlichung} other {# Veröffentlichungen}}",
-        "emptyDays": "{count, plural, one {# Tag ohne Veröffentlichung} other {# Tage ohne Veröffentlichung}}",
-        "note": "Diese Zählungen beschreiben den Kalender, nicht die erwartete Aktivität.",
-        "title": "Diesen Monat",
-        "filtered": "Filters applied — this count covers only the publications kept."
-      },
-      "weekdays": "Mo Di Mi Do Fr Sa So"
+      "weekdays": "Mo Di Mi Do Fr Sa So",
+      "scheduledOnly": "Dieser Kalender führt nur geplante Veröffentlichungen auf."
     },
     "pub": {
       "curve": {

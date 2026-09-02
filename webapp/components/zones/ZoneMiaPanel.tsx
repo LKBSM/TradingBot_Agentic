@@ -4,8 +4,7 @@ import * as React from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { AgentAvatar } from '@/components/chat/AgentAvatar';
-import { MicButton } from '@/components/dictation/MicButton';
-import { useVoiceInput } from '@/lib/scanner-chat/use-voice-input';
+import { ChatComposer } from '@/components/chat/ChatComposer';
 import { useDictationCopy } from '@/lib/scanner-chat/use-dictation-copy';
 import { useReadingFormatters } from '@/lib/market-reading/use-reading-formatters';
 import type { LiquidityPool } from '@/types/market-reading';
@@ -23,15 +22,21 @@ type ZonesT = ReturnType<typeof useTranslations>;
 type ReadingFmt = ReturnType<typeof useReadingFormatters>;
 
 /**
- * M.I.A panel for /zones (mission §3). It ALWAYS shows the selected zone as its
- * subject and switches subject on a card click WITHOUT reloading. Its suggested
- * questions are contextual to the zone, and every fact it states is read from the
- * SAME data as the card (`buildConfluence`, the contact ledger, the geometry) —
- * no parallel source, no recompute, no prediction. It describes and explains; it
- * never says where the price will go nor whether a zone is « good ».
+ * M.I.A panel for /zones. It shows the selected zone as its subject and switches
+ * subject on a card click WITHOUT reloading. Every fact it states is read from
+ * the SAME data as the card (`buildConfluence`, the contact ledger, the geometry)
+ * — no parallel source, no recompute, no prediction. It describes and explains;
+ * it never says where the price will go nor whether a zone is « good ».
  *
  * The user runs at zero credits by choice, so answers are generated LOCALLY from
  * that shared data — deterministic, honest, and identical to what the card shows.
+ *
+ * CLN-1 §2 — the panel now mirrors the /app chat format: the shared
+ * `ChatComposer` carries the input + dictation + privacy note, the four
+ * prefabricated question blocks are gone, and the conversation takes the majority
+ * of the height. The subject block compacts once a conversation has started, and
+ * disappears entirely when no zone is selected (CLN-1 §3) — the field stays
+ * usable and the running conversation is preserved.
  */
 
 type Topic = 'whatElse' | 'explainKind' | 'compareUpper' | 'lastContact';
@@ -104,8 +109,6 @@ function answerFor(
   return t('mia.answer.lastEntry', { when, time, level });
 }
 
-const TOPICS: Topic[] = ['whatElse', 'explainKind', 'compareUpper', 'lastContact'];
-
 /**
  * Route a free-text question to one of the closed topics by keyword — LOCAL, no
  * network, no LLM (the user runs at zero credits by choice). Bilingual stems
@@ -148,86 +151,80 @@ export function ZoneMiaPanel({
   const fmt = useReadingFormatters();
   const locale = useLocale();
   const [turns, setTurns] = React.useState<Turn[]>([]);
-  const [draft, setDraft] = React.useState('');
-
-  // Voice dictation — same shared browser hook as the other M.I.A chats. The
-  // /zones chat answers locally (0 network); the voice input only fills the
-  // field, so nothing about the local, factual answers changes.
-  const voice = useVoiceInput({ locale, value: draft, onValueChange: setDraft });
   const dictationCopy = useDictationCopy();
 
-  // Switching subject clears the (local) conversation — a new zone, a new topic.
+  // Clear the (local) conversation only when arriving at a DIFFERENT non-null
+  // zone — a new zone is a new topic. Deselecting (zone → null) or re-selecting
+  // the same zone keeps the running conversation (CLN-1 §3: deselect ≠ reset).
   const zoneId = zone?.id ?? null;
+  const prevZoneIdRef = React.useRef<string | null>(null);
   React.useEffect(() => {
-    setTurns([]);
-    setDraft('');
+    if (zoneId && zoneId !== prevZoneIdRef.current) setTurns([]);
+    if (zoneId) prevZoneIdRef.current = zoneId;
   }, [zoneId]);
 
-  if (!zone) {
-    return (
-      <aside className={cn('zmia', className)} aria-label={t('mia.title')}>
-        <div className="zmiah">
-          <AgentAvatar size="sm" presence />
-          <span>
-            <span className="nm">{t('mia.name')}</span>
-          </span>
-        </div>
-        <div className="zmia-empty">{t('mia.empty')}</div>
-      </aside>
-    );
-  }
+  // Free-text, routed LOCALLY to a topic (no network, no LLM — the user runs at
+  // zero credits by choice). An unrecognised question gets an honest « here is
+  // what I can describe » answer. With no zone selected, the field stays usable
+  // but M.I.A honestly says it needs a zone rather than inventing a subject.
+  const handleSubmit = React.useCallback(
+    (q: string) => {
+      if (!zone) {
+        setTurns((prev) => [...prev, { q, a: t('mia.answer.noZone') }]);
+        return;
+      }
+      const topic = matchTopic(q);
+      const a = topic ? answerFor(topic, zone, ctx, t, fmt, locale) : t('mia.answer.fallback');
+      setTurns((prev) => [...prev, { q, a }]);
+    },
+    [zone, ctx, t, fmt, locale],
+  );
 
-  const ask = (topic: Topic) => {
-    const q = t(`mia.suggest.${topic}`);
-    const a = answerFor(topic, zone, ctx, t, fmt, locale);
-    setTurns((prev) => [...prev, { q, a }]);
-  };
+  const hasConversation = turns.length > 0;
 
-  // Free-text: route LOCALLY to a topic (no network, no LLM). An unrecognised
-  // question gets an honest « here is what I can describe » answer — never an
-  // invented interpretation.
-  const submitDraft = (e: React.FormEvent) => {
-    e.preventDefault();
-    const q = draft.trim();
-    if (!q) return;
-    const topic = matchTopic(q);
-    const a = topic ? answerFor(topic, zone, ctx, t, fmt, locale) : t('mia.answer.fallback');
-    setTurns((prev) => [...prev, { q, a }]);
-    setDraft('');
-  };
-
-  const prox = zoneProximity(zone, ctx.price);
+  const prox = zone ? zoneProximity(zone, ctx.price) : null;
   const position = prox
     ? prox.inside
       ? t('mia.pos.inside')
       : t(`mia.pos.${prox.side}`)
     : '';
-  const tag = `${zone.kind === 'ob' ? 'OB' : 'FVG'}${zone.direction === 'bullish' ? ' ↑' : zone.direction === 'bearish' ? ' ↓' : ''}`;
+  const tag = zone
+    ? `${zone.kind === 'ob' ? 'OB' : 'FVG'}${zone.direction === 'bullish' ? ' ↑' : zone.direction === 'bearish' ? ' ↓' : ''}`
+    : '';
 
   return (
     <aside className={cn('zmia', className)} aria-label={t('mia.title')}>
       <div className="zmiah">
         <AgentAvatar size="sm" presence />
-        {/* UI-3: « décrit · explique · ne prédit pas » tagline removed — pure
-            positioning, redundant with the honesty disclaimer at the panel foot
-            (« M.I.A décrit des faits… Elle ne dit pas où ira le prix… »). */}
         <span>
           <span className="nm">{t('mia.name')}</span>
         </span>
       </div>
 
-      {/* Subject — always the selected zone. */}
-      <div className="zmia-subj" data-testid="mia-subject">
-        <div className="k">{t('mia.subjectLabel')}</div>
-        <div className="v">
-          {tag} · {fmt.band(zone.levelLow, zone.levelHigh, ctx.instrument)}
+      {/* Subject — only when a zone is selected (CLN-1 §3: no zone → no element,
+          never an empty or filler block). Compacts once a conversation started. */}
+      {zone && (
+        <div
+          className={cn('zmia-subj', hasConversation && 'compact')}
+          data-testid="mia-subject"
+        >
+          <div className="k">{t('mia.subjectLabel')}</div>
+          <div className="v">
+            {tag} · {fmt.band(zone.levelLow, zone.levelHigh, ctx.instrument)}
+          </div>
+          {position && !hasConversation && <div className="m">{position}</div>}
         </div>
-        {position && <div className="m">{position}</div>}
-      </div>
+      )}
 
-      {/* Conversation (local, factual). */}
+      {/* Conversation (local, factual) — takes the majority of the height. The
+          intro is M.I.A's opening message for the selected zone. */}
       <div className="zmia-body">
-        <div className="bub a">{t('mia.intro', { kind: kindName(zone, t), count: contactCount(zone) })}</div>
+        {zone && (
+          <div className="bub a">
+            {t('mia.intro', { kind: kindName(zone, t), count: contactCount(zone) })}
+          </div>
+        )}
+        {!zone && !hasConversation && <div className="zmia-empty">{t('mia.empty')}</div>}
         {turns.map((turn, i) => (
           <React.Fragment key={i}>
             <div className="bub u">{turn.q}</div>
@@ -236,57 +233,20 @@ export function ZoneMiaPanel({
         ))}
       </div>
 
-      {/* Contextual suggestions. */}
-      <div className="zmia-sugg">
-        {TOPICS.map((topic) => (
-          <button key={topic} type="button" className="sg" onClick={() => ask(topic)}>
-            {t(`mia.suggest.${topic}`)}
-          </button>
-        ))}
-      </div>
-
-      {/* Free-text — routed locally to the same factual answers (0 credit). */}
-      <form className="zmia-input" onSubmit={submitDraft}>
-        <input
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          placeholder={t('mia.input.placeholder')}
-          aria-label={t('mia.input.placeholder')}
+      {/* Shared composer (CLN-1 §2) — same format/dictation/privacy note as /app.
+          The placeholder never claims a zone is chosen. */}
+      <div className="zmia-foot">
+        <ChatComposer
+          onSubmit={handleSubmit}
+          placeholder={zone ? t('mia.input.placeholder') : t('mia.input.placeholderIdle')}
+          ariaLabel={zone ? t('mia.input.placeholder') : t('mia.input.placeholderIdle')}
+          sendAria={t('mia.input.send')}
+          privacyNote={dictationCopy.privacy}
         />
-        {voice.supported && (
-          <MicButton
-            listening={voice.listening}
-            denied={voice.denied}
-            onToggle={voice.toggle}
-            startLabel={dictationCopy.startLabel}
-            stopLabel={dictationCopy.stopLabel}
-            className="zmia-mic"
-          />
-        )}
-        <button type="submit" aria-label={t('mia.input.send')} disabled={!draft.trim()}>
-          →
-        </button>
-      </form>
-
-      {/* Dictation feedback — never hidden; the keyboard stays usable. */}
-      {voice.supported && voice.listening && (
-        <p data-testid="dictation-listening" className="zmia-dict listen">
-          {dictationCopy.listeningLabel}
-          {voice.interim ? ` — “${voice.interim}”` : ''}
-        </p>
-      )}
-      {voice.supported && voice.error && (
-        <p data-testid="dictation-error" role="alert" className="zmia-dict err">
-          {dictationCopy.errorText(voice.error)}
-        </p>
-      )}
-      {voice.supported && (
-        <p data-testid="transcription-note" className="zmia-dict note">
-          {dictationCopy.privacy}
-        </p>
-      )}
-
-      <div className="zmia-disc">{t('mia.disclaimer')}</div>
+      </div>
+      {/* CLN-1 §5 — the panel's own educational note was removed: the single
+          page disclaimer (rail footer on desktop, mobile footer < 768px) carries
+          it, and two stacked notices on one view neutralise each other. */}
     </aside>
   );
 }

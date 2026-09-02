@@ -36,13 +36,16 @@ function words(s: string): number {
 // Their EXACT wording can be compacted; their PRESENCE cannot vanish.
 const PROTECTED = [
   'scanner.combo.againstBlock', // « Ce qui va à l'encontre » — never hidden
-  'scanner.combo.disclaimer', // regulatory notice on results
   'scanner.builder.zeroNote', // zero condition ≠ all markets
   'scanner.strategyPanel.subtitle', // « non synchronisé »
   'scannerChat.describe.disclaimer', // regulatory notice on /scanner/decrire
-  'zones.mia.disclaimer', // regulatory notice on /zones
   'zones.proximity.distanceLine', // distance fact (kept; only visually receded)
-  'app.desktop.legalInline', // regulatory notice on /app
+  // CLN-1 §5 — the single per-page educational/legal disclaimer. The former
+  // per-surface duplicates (scanner.combo.disclaimer, zones.mia.disclaimer,
+  // app.desktop.legalInline) were retired: one notice per page, carried by the
+  // rail footer (desktop) and the mobile footer (< 768px). Its PRESENCE is what
+  // this guard protects, now at its single home.
+  'legal.disclaimer.chart', // the one educational/legal disclaimer per page
   // /actualites/[eventId] — 2nd pass
   'calendar.detail.nono.title', // regulatory notice on the publication page
   'calendar.detail.nono.items.0',

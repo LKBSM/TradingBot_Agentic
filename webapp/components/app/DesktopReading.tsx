@@ -410,17 +410,16 @@ function AppHead({
 
 function LegalBar() {
   const t = useTranslations('app');
+  // CLN-1 §5 — the educational/legal disclaimer that used to sit here duplicated
+  // the rail footer verbatim (« Lecture algorithmique éducative — ni signal ni
+  // conseil »). Two stacked notices neutralise each other, so the header keeps
+  // only the « Accès anticipé » product-status marker (not a legal notice); the
+  // single disclaimer lives in the rail footer (desktop) / mobile footer.
   return (
     <div className="legalbar">
       <span className="ea">
         <span className="d" aria-hidden />
         {t('desktop.earlyAccess')}
-      </span>
-      <span className="legal-inline">
-        <svg viewBox="0 0 24 24" aria-hidden>
-          <path d="M12 3l8 4v5c0 4-3.4 7.4-8 9-4.6-1.6-8-5-8-9V7l8-4z" />
-        </svg>
-        {t('desktop.legalInline')}
       </span>
     </div>
   );
