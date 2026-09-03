@@ -2029,7 +2029,7 @@
       "welcomeSubtitleActive": "Stel een vraag over de huidige lezing: ontleed de structuur, maak een term begrijpelijk of plaats een aankomende gebeurtenis in context.",
       "welcomeSubtitleIdle": "Selecteer links een markt en stel me dan een vraag over de lezing ervan.",
       "offlineNote": "Offline modus: vrije invoer vereist de Anthropic-sleutel aan de serverzijde.",
-      "complianceLine": "M.I.A Agent beantwoordt vragen over de algoritmische lezing. Hij geeft geen tradingsignaal en geen persoonlijke aanbeveling.",
+      "complianceLine": "M.I.A Agent beantwoordt vragen over de algoritmische lezing.",
       "openPanel": "Assistent openen",
       "collapseToBubble": "Verkleinen tot bel",
       "modeNotSynced": "Je weergavekeuze — niet gesynchroniseerd.",
@@ -3178,7 +3178,7 @@
       "myStrategies": "Mijn strategieën",
       "scope": "Order Blocks, Fair Value Gaps, liquiditeit, structuur, momentum: beschrijf ze in je eigen woorden, zij maakt er exacte voorwaarden van.",
       "examplesLabel": "Of begin met een voorbeeld",
-      "disclaimer": "M.I.A kijkt niet naar de markt om je te antwoorden: ze zet je zin om in verifieerbare voorwaarden, waarna de analyse van het product de zoektocht doet. Ze rangschikt niets, adviseert niets en raadt nooit een voorwaarde die je niet hebt uitgedrukt.",
+      "disclaimer": "M.I.A kijkt niet naar de markt om je te antwoorden: ze zet je zin om in verifieerbare voorwaarden, waarna de analyse van het product de zoektocht doet. Ze rangschikt niets en raadt nooit een voorwaarde die je niet hebt uitgedrukt.",
       "examples": {
         "0": "Een nooit geteste Order Block, in een opwaartse trend, met de hogere eenheid in overeenstemming",
         "1": "De prijs keert terug in een eenmaal geteste Fair Value Gap, na een recente CHOCH",

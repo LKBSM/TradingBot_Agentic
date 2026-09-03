@@ -164,7 +164,7 @@ Captures Playwright avant/après (1280×800 & 390×844, fr+en) : **à produire a
 - Panneau-du-jour enrichi : la **valeur publiée** (`actual`, uniquement si `actual_state==='published'`) est affichée (`month.panel.value`, 9 locales) ; le **placeholder « Organisme : non fourni »** est retiré (règle « champ absent → aucune ligne »). Heure non vérifiée : déjà honnête (`timeUnconfirmed` quand `!time_confirmed`), inchangé.
 - États de journée (décision D = garder l'actuel) : 2 états de cellule (avec/sans pub) + bandeau global de chargement ; **aucun compte affiché avant chargement**. Tests : `CalendarMonthView.test.tsx` (4 tests « CLN-1 §4 »).
 
-> **Point à trancher (D, non résolu unilatéralement) :** la **fiche complète** `/actualites/[eventId]` (`CalendarEventDetail`) affiche encore un placeholder `organismMissing` (« Organisme : non fourni par cette source ») quand l'organisme manque. C'est un texte générique qui contrevient à la règle « champ absent → aucune ligne ». **Non modifié** ici (hors périmètre décision 3, et c'est une honnêteté de provenance volontaire) — dis-moi si tu veux l'aligner aussi.
+> **Point à trancher (D) — TRANCHÉ (2e passe, « aligner ») :** la **fiche complète** `/actualites/[eventId]` (`CalendarEventDetail`) n'affiche plus le placeholder `organismMissing` ni aucun texte générique de champ manquant. Détail dans la section **2e passe** ci-dessous.
 
 ## §5 — Un seul avertissement par page, aux 2 viewports (décision : pied = l'unique)
 - **Pied du rail** (`ShellRail`, `legal.disclaimer.chart`) conservé (desktop ≥768). **Nouveau** pied **mobile** dans `ProductShell` (`.shell-mdisclaimer`, `<768px`, même clé) → exactement **un** avertissement visible à chaque viewport (le rail est masqué <768).
@@ -192,3 +192,32 @@ La « micro-copie » propre aux widgets — la ligne de conformité du chat /app
 
 ## Note environnement (pour reproduire)
 Le worktree n'a pas de `node_modules` (les worktrees git ne le copient pas) ; `npm ci` échoue en ERESOLVE (repo → `--legacy-peer-deps`), et cet install-là **omettait ~180 paquets** (dont des dépendances runtime de vitest) → les workers vitest ne démarraient pas (« Timeout waiting for worker to respond »). Résolu en complétant depuis l'install complet de `wt-ci-infra` (lock **identique**). Le script i18n `webapp/scripts/cln1-i18n.mjs` (édition JSON chirurgicale, **préserve les CRLF**, round-trip byte-identique) est un utilitaire de chantier — **à retirer avant merge**.
+
+---
+
+# 2e passe — « aligner » (décisions 1/2/3 du suivi)
+
+> Demande : (1) fiche détail — supprimer le placeholder « Organisme : non fourni par cette source » et appliquer « champ absent → aucune ligne » à **tous** les champs de la page ; (2) micro-copie — retirer « ni signal » de la ligne du chat /app et de la note M.I.A de `/scanner/decrire`, **le pied unique suffit** (après confirmation que le pied est bien rendu sur ces deux pages) ; (3) avertissements retirés du scanner et de /zones : **choix maintenu**, le pied unique suffit.
+
+## 1) Fiche `/actualites/[eventId]` (`CalendarEventDetail.tsx`) — « champ absent → aucune ligne »
+- **Ligne provenance en-tête (`.cald-prov`)** : n'affiche plus de placeholder. Rendue **seulement si** `organism` **ou** `value_unit` existe, en joignant les parties présentes par ` · ` ; si les deux manquent → **aucune ligne** (plus de `organismMissing`/`unitMissing`, plus de tiret).
+- **Attribution de courbe** : gardée uniquement si `ev.organism` est présent (la série `series_code` reste conditionnelle en plus).
+- **Ligne « valeur indisponible »** (`actual_state === 'unavailable'`) : gardée uniquement si `ev.organism` présent (sinon pas de phrase orpheline citant un organisme absent).
+- **Ligne source** (`pub.curve.source`) : gardée uniquement si `ev.organism` présent.
+- Test : `CalendarEventDetail.test.tsx` — le test « organisme/unité absents » est **inversé** : il asserte l'**absence** des textes `organismMissing`/`unitMissing`, `.cald-prov` nul, `.cald-head .missing` nul. **25/25**.
+
+## 2) Micro-copie widgets — clause de conformité retirée (le pied la porte)
+- **Confirmé d'abord** : le pied unique est rendu sur **/app** et **/scanner/decrire** (pied du rail ≥768 + pied mobile `.shell-mdisclaimer` <768, via `ProductShell` pour toutes les routes `(product)`) — vérifié par `cln-1-disclaimers.spec.ts` (48/48, 2 viewports, fr+en).
+- **`app.chat.complianceLine`** : garde « M.I.A Agent répond à des questions sur la lecture algorithmique. » ; **retirée** la 2ᵉ phrase « Il ne donne ni signal de trading, ni recommandation personnalisée. »
+- **`scannerChat.describe.disclaimer`** : garde l'honnêteté **propre au scanner** (« Elle ne classe rien et ne devine aucune condition que tu n'aurais pas exprimée. ») ; **retirée** la clause de conseil « , ne conseille rien ».
+- Édition **chirurgicale** des 9 locales (préserve les CRLF, round-trip byte-identique).
+- Garde-fou **`cln1-copy.test.ts`** (nouveau) : `app.chat.complianceLine` contient « lecture algorithmique » / « algorithmic reading » mais **pas** « signal »/« recommand » ; `scannerChat.describe.disclaimer` contient « ne classe rien »/« ne devine »/« orders nothing » mais **pas** « conseille »/« advises ». **2/2**.
+
+## 3) Avertissements scanner + /zones — choix maintenu
+Aucun changement : les notes inline retirées en 1re passe restent retirées ; le pied unique reste l'avertissement de page. Cf. tableau §5.
+
+## Validation 2e passe
+- `tsc --noEmit` : **0 erreur** (hors 3 pré-existantes `dictation-copy-honesty`).
+- vitest : `cln1-copy` 2/2, `CalendarEventDetail` 25/25, `locale-parity` 10/10.
+- `next build` : **exit 0** (10/10 pages statiques ; seuls warnings ESLint pré-existants).
+- Playwright `cln-1-disclaimers.spec.ts` : **48/48** (6 pages × 2 viewports × fr/en) → exactement **un** avertissement par page tient après la 2e passe.

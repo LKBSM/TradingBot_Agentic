@@ -2029,7 +2029,7 @@
       "welcomeSubtitleActive": "Faça uma pergunta sobre a leitura em curso: decomponha a estrutura, simplifique um termo ou contextualize um evento futuro.",
       "welcomeSubtitleIdle": "Selecione um mercado à esquerda e depois faça-me uma pergunta sobre a sua leitura.",
       "offlineNote": "Modo offline: a entrada livre requer a chave Anthropic do lado do servidor.",
-      "complianceLine": "O M.I.A Agent responde a perguntas sobre a leitura algorítmica. Não dá sinais de trading nem recomendações personalizadas.",
+      "complianceLine": "O M.I.A Agent responde a perguntas sobre a leitura algorítmica.",
       "openPanel": "Abrir o assistente",
       "collapseToBubble": "Reduzir a bolha",
       "modeNotSynced": "A tua escolha de exibição — não sincronizada.",
@@ -3178,7 +3178,7 @@
       "myStrategies": "As minhas estratégias",
       "scope": "Order Blocks, Fair Value Gaps, liquidez, estrutura, momentum: descreve-os com as tuas palavras, ela transforma-os em condições exatas.",
       "examplesLabel": "Ou começa por um exemplo",
-      "disclaimer": "A M.I.A não consulta o mercado para te responder: transforma a tua frase em condições verificáveis e, depois, a análise do produto faz a procura. Não ordena nada, não aconselha nada e nunca adivinha uma condição que não tenhas expresso.",
+      "disclaimer": "A M.I.A não consulta o mercado para te responder: transforma a tua frase em condições verificáveis e, depois, a análise do produto faz a procura. Não ordena nada e nunca adivinha uma condição que não tenhas expresso.",
       "examples": {
         "0": "Um Order Block nunca testado, em tendência de alta, com a unidade superior de acordo",
         "1": "O preço regressa a um Fair Value Gap testado uma vez, após um CHOCH recente",

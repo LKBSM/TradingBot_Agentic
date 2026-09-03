@@ -462,15 +462,20 @@ function CurveCard({
         </div>
       )}
 
-      {/* Attribution of the variation — published vs product-computed, never blurred. */}
-      {vk && (
+      {/* Attribution of the variation — published vs product-computed, never
+          blurred. CLN-1 §4 — shown only when the organism (and, for a published
+          series, the series id) are known; an absent field renders no line, never
+          a dash. */}
+      {vk && ev.organism && (
         <p className="pub-curve-attrib">
           {ev.variation_published === false
-            ? t('pub.curve.attribCalculated', { organism: ev.organism ?? '—' })
-            : t('pub.curve.attribPublished', {
-                organism: ev.organism ?? '—',
-                series: ev.series_code ?? '—',
-              })}
+            ? t('pub.curve.attribCalculated', { organism: ev.organism })
+            : ev.series_code
+              ? t('pub.curve.attribPublished', {
+                  organism: ev.organism,
+                  series: ev.series_code,
+                })
+              : null}
         </p>
       )}
 
@@ -492,9 +497,9 @@ function CurveCard({
             {t('detail.actualUnfetched', { date: lastAttemptLabel })}
           </p>
         )}
-        {ev.actual_state === 'unavailable' && (
+        {ev.actual_state === 'unavailable' && ev.organism && (
           <p className="cald-rev-line">
-            {t('detail.actualUnavailable', { organism: ev.organism ?? '—' })}
+            {t('detail.actualUnavailable', { organism: ev.organism })}
           </p>
         )}
 
@@ -512,9 +517,13 @@ function CurveCard({
         ) : null}
       </div>
 
-      <p className="pub-source-line">
-        {t('pub.curve.source', { organism: ev.organism ?? '—' })}
-      </p>
+      {/* CLN-1 §4 — the source line names the organism; if it is unknown, no
+          line (never « Source : — »). */}
+      {ev.organism && (
+        <p className="pub-source-line">
+          {t('pub.curve.source', { organism: ev.organism })}
+        </p>
+      )}
     </div>
   );
 }
@@ -1165,19 +1174,20 @@ function Detail({
             {city ? ` ${city}` : ''} ·{' '}
             {t('localTime', { time: localTime, offset: utcOffsetLabel() })}
           </div>
-          <div className="cald-prov">
-            {ev.organism ? (
-              t('provenance.organism', { organism: ev.organism })
-            ) : (
-              <span className="missing">{t('provenance.organismMissing')}</span>
-            )}
-            {' · '}
-            {ev.value_unit ? (
-              ev.value_unit
-            ) : (
-              <span className="missing">{t('detail.unitMissing')}</span>
-            )}
-          </div>
+          {/* CLN-1 §4 — an absent field renders NO line: no « non fourni »
+              filler, no dash. Only the parts actually present are shown, joined
+              by « · »; if neither the organism nor the unit is known, the row is
+              omitted entirely. */}
+          {(ev.organism || ev.value_unit) && (
+            <div className="cald-prov">
+              {[
+                ev.organism ? t('provenance.organism', { organism: ev.organism }) : null,
+                ev.value_unit || null,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+            </div>
+          )}
         </div>
         {cd && (
           <div className="cald-cd">

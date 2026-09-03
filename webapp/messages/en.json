@@ -2029,7 +2029,7 @@
       "welcomeSubtitleActive": "Ask a question about the current reading: break down the structure, explain a term in plain language, or put an upcoming event in context.",
       "welcomeSubtitleIdle": "Select a market on the left, then ask me a question about its reading.",
       "offlineNote": "Offline mode: free-form input requires the Anthropic key on the server side.",
-      "complianceLine": "M.I.A Agent answers questions about the algorithmic reading. It provides neither trading signals nor personalized recommendations.",
+      "complianceLine": "M.I.A Agent answers questions about the algorithmic reading.",
       "openPanel": "Open the assistant",
       "collapseToBubble": "Reduce to a bubble",
       "modeNotSynced": "Your display choice — not synced.",
@@ -3178,7 +3178,7 @@
       "myStrategies": "My strategies",
       "scope": "Order Blocks, Fair Value Gaps, liquidity, structure, momentum.",
       "examplesLabel": "Or start from an example",
-      "disclaimer": "M.I.A does not look at the market to answer you: she turns your sentence into verifiable conditions, then the product's analysis does the searching. She orders nothing, advises nothing, and never guesses a condition you didn't express.",
+      "disclaimer": "M.I.A does not look at the market to answer you: she turns your sentence into verifiable conditions, then the product's analysis does the searching. She orders nothing and never guesses a condition you didn't express.",
       "examples": {
         "0": "An Order Block never tested, in an uptrend, with the higher unit agreeing",
         "1": "Price returns into a Fair Value Gap tested once, after a recent CHOCH",

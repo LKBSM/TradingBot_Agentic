@@ -2029,7 +2029,7 @@
       "welcomeSubtitleActive": "Stell eine Frage zur aktuellen Lesart: schlüssle die Struktur auf, mach einen Begriff verständlich oder ordne ein bevorstehendes Ereignis ein.",
       "welcomeSubtitleIdle": "Wähle links einen Markt und stell mir dann eine Frage zu seiner Lesart.",
       "offlineNote": "Offline-Modus: Die freie Eingabe erfordert den Anthropic-Schlüssel serverseitig.",
-      "complianceLine": "M.I.A Agent beantwortet Fragen zur algorithmischen Lesart. Er gibt weder Trading-Signale noch persönliche Empfehlungen.",
+      "complianceLine": "M.I.A Agent beantwortet Fragen zur algorithmischen Lesart.",
       "openPanel": "Assistent öffnen",
       "collapseToBubble": "Auf Blase reduzieren",
       "modeNotSynced": "Deine Anzeigewahl — nicht synchronisiert.",
@@ -3178,7 +3178,7 @@
       "myStrategies": "Meine Strategien",
       "scope": "Order Blocks, Fair Value Gaps, Liquidität, Struktur, Momentum: beschreibe sie mit deinen Worten, sie macht daraus exakte Bedingungen.",
       "examplesLabel": "Oder beginne mit einem Beispiel",
-      "disclaimer": "M.I.A sieht sich den Markt nicht an, um dir zu antworten: Sie verwandelt deinen Satz in überprüfbare Bedingungen, dann übernimmt die Analyse des Produkts die Suche. Sie ordnet nichts, rät zu nichts und errät niemals eine Bedingung, die du nicht ausgedrückt hast.",
+      "disclaimer": "M.I.A sieht sich den Markt nicht an, um dir zu antworten: Sie verwandelt deinen Satz in überprüfbare Bedingungen, dann übernimmt die Analyse des Produkts die Suche. Sie ordnet nichts und errät niemals eine Bedingung, die du nicht ausgedrückt hast.",
       "examples": {
         "0": "Ein nie getesteter Order Block, in einem Aufwärtstrend, mit übereinstimmender höherer Einheit",
         "1": "Der Preis kehrt in eine einmal getestete Fair Value Gap zurück, nach einem kürzlichen CHOCH",

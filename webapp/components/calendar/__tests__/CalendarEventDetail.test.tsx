@@ -369,14 +369,18 @@ describe('NW-3 CalendarEventDetail', () => {
     expect(atxt).not.toContain('non récupérée');
   });
 
-  it('renders absent organism and unit as visibly absent, never fabricated', () => {
+  it('CLN-1 — an absent organism/unit renders NO line, no filler, no dash', () => {
     const bare = ev({ event_id: 'forexfactory:z:1', source: 'forexfactory', event: 'ADP', organism: null, value_unit: null });
     const { container } = render(
       <CalendarEventDetail eventId="forexfactory:z:1" locale="fr" data={{ ...makeData(bare), attribution: [] }} now={NOW} measures={null} />,
     );
     const text = container.textContent ?? '';
-    expect(text).toContain(fr.calendar.provenance.organismMissing);
-    expect(text).toContain(fr.calendar.detail.unitMissing);
+    // No generic « not provided » filler for the absent identity fields…
+    expect(text).not.toContain(fr.calendar.provenance.organismMissing);
+    expect(text).not.toContain(fr.calendar.detail.unitMissing);
+    // …and the provenance row (organism · unit) is omitted entirely, not a dash.
+    expect(container.querySelector('.cald-prov')).toBeNull();
+    expect(container.querySelector('.cald-head .missing')).toBeNull();
   });
 
   it('renders the page-level « ce que cette page ne dit pas » refusal list (3 items)', () => {
