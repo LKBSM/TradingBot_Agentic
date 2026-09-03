@@ -1105,7 +1105,6 @@
       "bosSuffix": " · BOS {dir}",
       "importantNews": "{count, plural, one {خبر مهمّ واحد قادم — ضعه في الحسبان.} two {خبران مهمّان قادمان — ضعهما في الحسبان.} few {# أخبار مهمّة قادمة — ضعها في الحسبان.} many {# خبرًا مهمًّا قادمًا — ضعها في الحسبان.} other {# خبر مهمّ قادم — ضعه في الحسبان.}}",
       "analyse": "تحليل",
-      "disclaimer": "وقائع بنيوية مرصودة في الحاضر. لا يتنبّأ الماسح بشيء ولا يوصي بشيء — الحكم لك.",
       "unavailable": "غير متوفّر",
       "againstBlock": "ما يخالف",
       "againstNone": "لا شيء يخالف بين شروطك القابلة للتقييم.",
@@ -2030,7 +2029,7 @@
       "welcomeSubtitleActive": "اطرح سؤالاً حول القراءة الجارية: حلّل البنية، أو بسّط مصطلحًا، أو ضع حدثًا مقبلاً في سياقه.",
       "welcomeSubtitleIdle": "اختر سوقًا على اليسار، ثم اطرح عليّ سؤالاً حول قراءته.",
       "offlineNote": "وضع دون اتصال: تتطلّب الكتابة الحرة مفتاح Anthropic على جانب الخادم.",
-      "complianceLine": "يجيب M.I.A Agent عن أسئلة حول القراءة الخوارزمية. إنه لا يقدّم أي إشارة تداول ولا أي توصية شخصية.",
+      "complianceLine": "يجيب M.I.A Agent عن أسئلة حول القراءة الخوارزمية.",
       "openPanel": "افتح المساعد",
       "collapseToBubble": "تصغير إلى فقاعة",
       "modeNotSynced": "اختيار العرض الخاص بك — غير مُزامَن.",
@@ -2104,7 +2103,6 @@
     "desktop": {
       "live": "مباشر",
       "earlyAccess": "وصول مبكر",
-      "legalInline": "قراءة خوارزمية تعليمية · ليست إشارة ولا نصيحة.",
       "narratedTitle": "قراءة سردية",
       "narratedBadge": "مرتبطة بالمحرّك",
       "narratedFooter": "كل مستوى مذكور يقابل مخرجًا حقيقيًا من المحرّك.",
@@ -2602,7 +2600,6 @@
   },
   "zones": {
     "title": "Zones",
-    "intro": "The lifecycle of each detected zone — formation, contacts, fill — described in the present tense. No target, no forecast.",
     "refreshing": "refreshing…",
     "filterLabel": "Filter",
     "filterAria": "Filter the zones",
@@ -2774,21 +2771,15 @@
       "openSheet": "Ask M.I.A",
       "closeSheet": "Close",
       "intro": "You are looking at a {kind}. {count, plural, =0 {The price has not contacted it yet.} one {The price has contacted it once.} other {The price has contacted it # times.}} Ask me about it.",
-      "disclaimer": "M.I.A describes detected facts and explains concepts. It does not say where the price will go, whether a zone is good, or whether to act.",
       "input": {
         "placeholder": "Ask your question about this zone…",
-        "send": "Send"
+        "send": "Send",
+        "placeholderIdle": "اطرح سؤالك…"
       },
       "pos": {
         "inside": "the price is inside",
         "above": "above the price",
         "below": "below the price"
-      },
-      "suggest": {
-        "whatElse": "What else is at this level?",
-        "explainKind": "Explain this type of zone",
-        "compareUpper": "Compare it to the upper timeframe",
-        "lastContact": "What happened at the last contact?"
       },
       "frag": {
         "zone": "{kd} {where} {rel}.",
@@ -2811,7 +2802,8 @@
         "lastTraversal": "Last contact {when} ago ({time}): the price traversed it at {level}.",
         "lastEdge": "Last contact {when} ago ({time}): the price touched the edge without penetrating.",
         "lastEntry": "Last contact {when} ago ({time}): the price entered at {level} then exited without traversing it.",
-        "fallback": "I describe this zone from its facts: what else is at the same level, the type of zone, the comparison to the upper timeframe, or what happened at the last contact. Pick one of those questions."
+        "fallback": "I describe this zone from its facts: what else is at the same level, the type of zone, the comparison to the upper timeframe, or what happened at the last contact. Pick one of those questions.",
+        "noZone": "اختر منطقة أولاً: أصف المنطقة التي تختارها استناداً إلى وقائعها."
       }
     }
   },
@@ -2968,18 +2960,12 @@
       "panel": {
         "empty": "لا يوجد إصدار في هذا اليوم.",
         "localTime": "{time} بتوقيتك ({offset})",
-        "organismTime": "{time} {city}"
+        "organismTime": "{time} {city}",
+        "value": "منشور: {value}{unit}"
       },
       "prev": "الشهر السابق",
-      "thisMonth": {
-        "byMarket": "{market}: {count}",
-        "count": "{count, plural, one {# إصدار} other {# إصدار}}",
-        "emptyDays": "{count, plural, one {# يوم دون إصدار} other {# يوم دون إصدار}}",
-        "note": "هذه الأعداد تصف التقويم، لا النشاط المتوقّع.",
-        "title": "هذا الشهر",
-        "filtered": "Filters applied — this count covers only the publications kept."
-      },
-      "weekdays": "إثن ثلا أرب خمي جمع سبت أحد"
+      "weekdays": "إثن ثلا أرب خمي جمع سبت أحد",
+      "scheduledOnly": "لا يتضمّن هذا التقويم سوى المنشورات المجدوَلة."
     },
     "pub": {
       "curve": {
@@ -3192,7 +3178,7 @@
       "myStrategies": "استراتيجياتي",
       "scope": "أوردر بلوك، فجوات القيمة العادلة، السيولة، البنية، الزخم: صِفها بكلماتك، وتحوّلها إلى شروط دقيقة.",
       "examplesLabel": "أو ابدأ من مثال",
-      "disclaimer": "لا تطّلع M.I.A على السوق لتجيبك: تحوّل جملتك إلى شروط قابلة للتحقق، ثم يقوم تحليل المنتج بالبحث. لا ترتّب شيئاً ولا تنصح بشيء ولا تخمّن أبداً شرطاً لم تعبّر عنه.",
+      "disclaimer": "لا تطّلع M.I.A على السوق لتجيبك: تحوّل جملتك إلى شروط قابلة للتحقق، ثم يقوم تحليل المنتج بالبحث. لا ترتّب شيئاً ولا تخمّن أبداً شرطاً لم تعبّر عنه.",
       "examples": {
         "0": "Order Block لم يُختبر قط، في اتجاه صاعد، مع توافق الإطار الأعلى",
         "1": "يعود السعر إلى Fair Value Gap اختُبر مرة، بعد CHOCH حديث",

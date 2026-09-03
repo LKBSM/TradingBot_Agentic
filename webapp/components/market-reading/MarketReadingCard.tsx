@@ -40,6 +40,14 @@ interface MarketReadingCardProps {
   marketClosed?: boolean;
   /** MC-1 server market status — drives the 3-state badge + factual sub-line. */
   status?: MarketStatusView | null;
+  /**
+   * CLN-1 §5 — suppress the under-chart legal disclaimer when this card is
+   * rendered INSIDE the product shell (/app), where the single page disclaimer
+   * already lives in the rail/mobile footer. Landing samples (no shell) leave it
+   * false so they keep their own disclaimer. The « Accès anticipé » badge is a
+   * product-status marker, not a legal notice, so it is kept regardless.
+   */
+  hideChartDisclaimer?: boolean;
   className?: string;
 }
 
@@ -63,6 +71,7 @@ export function MarketReadingCard({
   live,
   marketClosed,
   status,
+  hideChartDisclaimer = false,
   className,
 }: MarketReadingCardProps) {
   const t = useTranslations('reading.card');
@@ -88,7 +97,7 @@ export function MarketReadingCard({
               <EarlyAccessBadge />
             </div>
             {chartSlot}
-            <DisclaimerStub variant="chart" />
+            {!hideChartDisclaimer && <DisclaimerStub variant="chart" />}
           </div>
         )}
 

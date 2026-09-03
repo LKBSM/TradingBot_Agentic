@@ -768,6 +768,29 @@
 .app-shell .center {
   overflow-y: auto;
 }
+/* CLN-1 §5 — mobile-only single disclaimer. The rail (and its footer) is hidden
+   < 768px, so this keeps exactly one disclaimer visible at that viewport. Hidden
+   at ≥768px, where the rail footer carries the same line. Sits at the end of the
+   scrolling content, clear of the fixed mobile space nav on `.no-chat` pages. */
+.app-shell .shell-mdisclaimer {
+  display: none;
+}
+@media (max-width: 767px) {
+  .app-shell .shell-mdisclaimer {
+    display: block;
+    padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+    font-size: var(--fs-legal);
+    line-height: 1.5;
+    color: var(--faint);
+    text-align: center;
+    border-top: 1px solid var(--line);
+  }
+  /* On `.no-chat` surfaces a fixed bottom space nav (~58px) overlaps the content
+     tail — lift the disclaimer clear of it so it is never hidden underneath. */
+  .app-shell.no-chat .shell-mdisclaimer {
+    margin-bottom: calc(58px + env(safe-area-inset-bottom));
+  }
+}
 .app-shell .apphead {
   display: flex;
   align-items: center;

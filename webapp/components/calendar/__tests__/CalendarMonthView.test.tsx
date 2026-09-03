@@ -1,4 +1,4 @@
-import { render, fireEvent, within } from '@/components/test-utils';
+import { render, fireEvent } from '@/components/test-utils';
 import { describe, expect, it } from 'vitest';
 import fr from '@/messages/fr.json';
 import { CalendarMonthView } from '../CalendarMonthView';
@@ -150,33 +150,53 @@ describe('NW-3 CalendarMonthView', () => {
     expect(panel.textContent).toContain(fr.calendar.month.panel.empty);
   });
 
-  it('the "this month" box counts total publications and empty days', () => {
+  // ── CLN-1 §4 ────────────────────────────────────────────────────────────
+  it('CLN-1 §4 — the monthly counts panel and the « does not say » block are removed', () => {
     const { container } = renderCal();
-    const box = container.querySelector('.calm-thismonth') as HTMLElement;
-    // 5 events total this month → the mono count line reads "5 publications".
-    expect(box.querySelector('.calm-tm-count')?.textContent).toBe('5 publications');
-    // 31 days − 3 with publications (5th, 10th, 20th) = 28 empty days.
-    expect(box.textContent).toContain('28');
-    // per-market split names both markets.
-    const withBox = within(box);
-    expect(withBox.getByText(/Or/)).toBeTruthy();
+    expect(container.querySelector('.calm-thismonth')).toBeNull();
+    expect(container.querySelector('.cal-nono')).toBeNull();
+    const text = container.textContent ?? '';
+    expect(text).not.toContain(fr.calendar.nono.title); // « Ce que ce calendrier ne dit pas »
+    // No prose recount of what the grid already shows.
+    expect(text).not.toMatch(/\d+\s+publications/);
   });
 
-  it('(Défaut D) the count says when filters are applied, and reflects the subset', () => {
+  it('CLN-1 §4 — the unscheduled-events limit stays, condensed to a single line', () => {
     const { container } = renderCal();
-    const box = container.querySelector('.calm-thismonth') as HTMLElement;
-    // Default: every filter fully selected → full-month count, NO "filtered" note.
-    expect(box.querySelector('.calm-tm-count')?.textContent).toBe('5 publications');
-    expect(box.querySelector('.calm-tm-filtered')).toBeNull();
+    const scope = container.querySelector('.calm-scope') as HTMLElement;
+    expect(scope).not.toBeNull();
+    expect(scope.textContent).toBe(fr.calendar.month.scheduledOnly);
+  });
 
-    // Narrow the organism filter (drop BLS) → the note appears and the count drops
-    // to the remaining subset (5 − the 2 BLS events on the 10th = 3).
-    fireEvent.click(chip(container, fr.calendar.organism.bls));
-    const box2 = container.querySelector('.calm-thismonth') as HTMLElement;
-    expect(box2.querySelector('.calm-tm-filtered')?.textContent).toBe(
-      fr.calendar.month.thisMonth.filtered,
-    );
-    expect(box2.querySelector('.calm-tm-count')?.textContent).toBe('3 publications');
+  it('CLN-1 §4 — no count is shown before the data has loaded', () => {
+    // data explicitly null (not yet loaded): the grid area shows a state, and
+    // nowhere fabricates a « N publications » before the data is in.
+    const { container } = render(<CalendarMonthView locale="fr" data={null} now={NOW} />);
+    expect(container.querySelector('.calm-thismonth')).toBeNull();
+    expect(container.textContent ?? '').not.toMatch(/\d+\s+publications/);
+  });
+
+  it('CLN-1 §4 — a published value is shown as a fact; a missing organism renders NO placeholder', () => {
+    const data = makeData([
+      ev({
+        event_id: 'bls:pub:2026-07-08',
+        source: 'bls',
+        event: 'Emploi',
+        scheduled_at: '2026-07-08T12:30:00Z',
+        actual: 3.2,
+        actual_state: 'published',
+        value_unit: '%',
+        organism: null,
+      }),
+    ]);
+    const { container } = render(<CalendarMonthView locale="fr" data={data} now={NOW} />);
+    fireEvent.click(cellForDay(container, 8));
+    const panel = container.querySelector('.calm-panel') as HTMLElement;
+    // Published value rendered from the structured field.
+    expect(panel.querySelector('.calm-panel-value')?.textContent).toContain('3,2');
+    // Organism absent → NO « non fourni » filler line (CLN-1: field absent → no line).
+    expect(panel.textContent ?? '').not.toContain(fr.calendar.provenance.organismMissing);
+    expect(panel.querySelector('.calm-panel-meta .missing')).toBeNull();
   });
 
   it('a filter set emptied → the whole grid area shows noSelection', () => {

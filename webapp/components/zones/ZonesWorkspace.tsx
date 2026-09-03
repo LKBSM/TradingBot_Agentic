@@ -213,13 +213,28 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
   // the first rendered zone. Stays put across polls unless it leaves the list. ──
   const zoneParam = searchParams.get('zone');
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
+  // CLN-1 §3 — once the user has deliberately deselected (clicked the selected
+  // card again → null), we must NOT silently re-pick the first zone on the next
+  // poll. This flag distinguishes « deliberate no-selection » from « initial
+  // load, nothing chosen yet » (where auto-picking the first zone is the wanted
+  // default). A deep-link (`?zone=`) always wins regardless.
+  const [userTouchedSelection, setUserTouchedSelection] = React.useState(false);
   React.useEffect(() => {
     setSelectedId((cur) => {
       if (zoneParam && renderedZoneIds.has(zoneParam)) return zoneParam;
       if (cur && renderedZoneIds.has(cur)) return cur;
+      if (userTouchedSelection) return null; // respect a deliberate deselection
       return renderedZones[0]?.id ?? null;
     });
-  }, [zoneParam, renderedZoneIds, renderedZones]);
+  }, [zoneParam, renderedZoneIds, renderedZones, userTouchedSelection]);
+
+  // Toggle selection: clicking the already-selected card clears the subject
+  // (CLN-1 §3). Selecting is not resetting — the M.I.A conversation is kept
+  // (see ZoneMiaPanel), only the subject block goes away.
+  const selectZone = React.useCallback((zoneId: string) => {
+    setUserTouchedSelection(true);
+    setSelectedId((cur) => (cur === zoneId ? null : zoneId));
+  }, []);
 
   const selectedZone = React.useMemo(
     () => renderedZones.find((z) => z.id === selectedId) ?? null,
@@ -326,7 +341,7 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
       isHidden={hidden.has(zone.id)}
       onToggleHide={toggleHide}
       onShowOnChart={showOnChart}
-      onSelect={setSelectedId}
+      onSelect={selectZone}
       onNavigateToZone={navigateToZone}
       isSelected={zone.id === selectedId}
       cardRef={setCardRef(zone.id)}
@@ -338,7 +353,10 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
       <div className="pghead">
         <div>
           <h1>{t('title')}</h1>
-          <div className="sub">{t('intro')}</div>
+          {/* CLN-1 §1 — the product pitch line under the title was removed: it
+              belongs on the landing page, not on a work screen a subscriber
+              opens every day. The context line on the right (market · timeframe
+              · zone count · price time) stays — it carries facts. */}
         </div>
         <span className="hsp" />
         <div className="flex flex-col items-end gap-1">

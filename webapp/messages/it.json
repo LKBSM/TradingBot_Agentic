@@ -1105,7 +1105,6 @@
       "bosSuffix": " · BOS {dir}",
       "importantNews": "{count, plural, one {# notizia importante in arrivo — da tenere a mente.} other {# notizie importanti in arrivo — da tenere a mente.}}",
       "analyse": "Analizzare",
-      "disclaimer": "Fatti strutturali osservati al presente. Lo scanner non prevede nulla e non raccomanda nulla — a te il giudizio.",
       "unavailable": "non disponibile",
       "againstBlock": "Ciò che va in senso contrario",
       "againstNone": "Nulla va in senso contrario tra le tue condizioni valutabili.",
@@ -2030,7 +2029,7 @@
       "welcomeSubtitleActive": "Fai una domanda sulla lettura in corso: scomponi la struttura, semplifica un termine o contestualizza un evento in arrivo.",
       "welcomeSubtitleIdle": "Seleziona un mercato a sinistra, poi fammi una domanda sulla sua lettura.",
       "offlineNote": "Modalità offline: l’inserimento libero richiede la chiave Anthropic lato server.",
-      "complianceLine": "M.I.A Agent risponde a domande sulla lettura algoritmica. Non fornisce né segnali di trading, né raccomandazioni personalizzate.",
+      "complianceLine": "M.I.A Agent risponde a domande sulla lettura algoritmica.",
       "openPanel": "Apri l'assistente",
       "collapseToBubble": "Riduci a bolla",
       "modeNotSynced": "La tua scelta di visualizzazione — non sincronizzata.",
@@ -2104,7 +2103,6 @@
     "desktop": {
       "live": "In diretta",
       "earlyAccess": "Accesso anticipato",
-      "legalInline": "Lettura algoritmica didattica · né segnale né consiglio.",
       "narratedTitle": "Lettura narrata",
       "narratedBadge": "Ancorata al motore",
       "narratedFooter": "Ogni livello citato corrisponde a un output reale del motore.",
@@ -2602,7 +2600,6 @@
   },
   "zones": {
     "title": "Zones",
-    "intro": "The lifecycle of each detected zone — formation, contacts, fill — described in the present tense. No target, no forecast.",
     "refreshing": "refreshing…",
     "filterLabel": "Filter",
     "filterAria": "Filter the zones",
@@ -2774,21 +2771,15 @@
       "openSheet": "Ask M.I.A",
       "closeSheet": "Close",
       "intro": "You are looking at a {kind}. {count, plural, =0 {The price has not contacted it yet.} one {The price has contacted it once.} other {The price has contacted it # times.}} Ask me about it.",
-      "disclaimer": "M.I.A describes detected facts and explains concepts. It does not say where the price will go, whether a zone is good, or whether to act.",
       "input": {
         "placeholder": "Ask your question about this zone…",
-        "send": "Send"
+        "send": "Send",
+        "placeholderIdle": "Fai la tua domanda…"
       },
       "pos": {
         "inside": "the price is inside",
         "above": "above the price",
         "below": "below the price"
-      },
-      "suggest": {
-        "whatElse": "What else is at this level?",
-        "explainKind": "Explain this type of zone",
-        "compareUpper": "Compare it to the upper timeframe",
-        "lastContact": "What happened at the last contact?"
       },
       "frag": {
         "zone": "{kd} {where} {rel}.",
@@ -2811,7 +2802,8 @@
         "lastTraversal": "Last contact {when} ago ({time}): the price traversed it at {level}.",
         "lastEdge": "Last contact {when} ago ({time}): the price touched the edge without penetrating.",
         "lastEntry": "Last contact {when} ago ({time}): the price entered at {level} then exited without traversing it.",
-        "fallback": "I describe this zone from its facts: what else is at the same level, the type of zone, the comparison to the upper timeframe, or what happened at the last contact. Pick one of those questions."
+        "fallback": "I describe this zone from its facts: what else is at the same level, the type of zone, the comparison to the upper timeframe, or what happened at the last contact. Pick one of those questions.",
+        "noZone": "Seleziona prima una zona: descrivo quella che scegli a partire dai suoi fatti."
       }
     }
   },
@@ -2968,18 +2960,12 @@
       "panel": {
         "empty": "Nessuna pubblicazione in questo giorno.",
         "localTime": "{time} ora tua ({offset})",
-        "organismTime": "{time} {city}"
+        "organismTime": "{time} {city}",
+        "value": "Pubblicato: {value}{unit}"
       },
       "prev": "Mese precedente",
-      "thisMonth": {
-        "byMarket": "{market}: {count}",
-        "count": "{count, plural, one {# pubblicazione} other {# pubblicazioni}}",
-        "emptyDays": "{count, plural, one {# giorno senza pubblicazioni} other {# giorni senza pubblicazioni}}",
-        "note": "Questi conteggi descrivono il calendario, non l'attività attesa.",
-        "title": "Questo mese",
-        "filtered": "Filters applied — this count covers only the publications kept."
-      },
-      "weekdays": "lun mar mer gio ven sab dom"
+      "weekdays": "lun mar mer gio ven sab dom",
+      "scheduledOnly": "Questo calendario elenca solo pubblicazioni programmate."
     },
     "pub": {
       "curve": {
@@ -3192,7 +3178,7 @@
       "myStrategies": "Le mie strategie",
       "scope": "Order Blocks, Fair Value Gaps, liquidità, struttura, momentum: descrivili con parole tue, lei ne ricava condizioni esatte.",
       "examplesLabel": "Oppure parti da un esempio",
-      "disclaimer": "M.I.A non guarda il mercato per risponderti: trasforma la tua frase in condizioni verificabili, poi l’analisi del prodotto esegue la ricerca. Non ordina nulla, non consiglia nulla e non indovina mai una condizione che non hai espresso.",
+      "disclaimer": "M.I.A non guarda il mercato per risponderti: trasforma la tua frase in condizioni verificabili, poi l’analisi del prodotto esegue la ricerca. Non ordina nulla e non indovina mai una condizione che non hai espresso.",
       "examples": {
         "0": "Un Order Block mai testato, in un trend rialzista, con l’unità superiore concorde",
         "1": "Il prezzo rientra in un Fair Value Gap testato una volta, dopo un CHOCH recente",

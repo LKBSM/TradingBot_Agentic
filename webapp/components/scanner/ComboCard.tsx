@@ -149,8 +149,10 @@ export function ComboCard({
           {t('openChart')}
         </Link>
       </div>
-
-      <p className="mt-2 fs-legal leading-snug text-[color:var(--faint)]">{t('disclaimer')}</p>
+      {/* CLN-1 §5 — the per-combo educational note was removed: the single page
+          disclaimer (rail footer on desktop, mobile footer < 768px) already
+          carries the « ne prédit rien, ne recommande rien » posture, and one
+          notice per result card stacked it many times over on one screen. */}
     </div>
   );
 }

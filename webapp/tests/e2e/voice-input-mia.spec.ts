@@ -172,10 +172,11 @@ test.describe('Voice dictation — desktop 1280×800', () => {
   async function openZonePanel(page: Page) {
     await page.goto('/zones?instrument=XAUUSD&timeframe=M15', { waitUntil: 'domcontentloaded' });
     await dismissCookieBanner(page);
-    const card = page.locator('[data-zone-id]').first();
-    await card.waitFor({ state: 'visible', timeout: 60_000 });
-    await card.click();
-    await page.locator('.zmia-input:visible').waitFor({ state: 'visible', timeout: 20_000 });
+    // The desktop panel renders with a default-selected zone; the shared composer
+    // (CLN-1 §2) is always present, so we just wait for it — no card click (a
+    // click on the already-selected card would toggle it off, CLN-1 §3).
+    await page.locator('[data-zone-id]').first().waitFor({ state: 'visible', timeout: 60_000 });
+    await page.locator('.zmia:visible .zmia-foot').waitFor({ state: 'visible', timeout: 20_000 });
   }
 
   test('/zones panel — mic dictates exactly, submit carries the transcript', async ({ page }) => {
@@ -184,8 +185,8 @@ test.describe('Voice dictation — desktop 1280×800', () => {
     await openZonePanel(page);
 
     const panel = page.locator('.zmia:visible');
-    const mic = page.locator('.zmia-input:visible').getByTestId('mic-button');
-    const field = page.locator('.zmia-input:visible input');
+    const mic = panel.getByTestId('mic-button');
+    const field = panel.getByTestId('chat-input');
     await expect(mic).toBeVisible();
 
     await mic.click();
@@ -203,18 +204,19 @@ test.describe('Voice dictation — desktop 1280×800', () => {
     await openZonePanel(page);
 
     const panel = page.locator('.zmia:visible');
-    await page.locator('.zmia-input:visible').getByTestId('mic-button').click();
+    await panel.getByTestId('mic-button').click();
     await expect(panel.getByTestId('dictation-error')).toBeVisible();
-    await page.locator('.zmia-input:visible input').fill('je tape');
-    await expect(page.locator('.zmia-input:visible input')).toHaveValue('je tape');
+    await panel.getByTestId('chat-input').fill('je tape');
+    await expect(panel.getByTestId('chat-input')).toHaveValue('je tape');
   });
 
   test('/zones panel — unsupported browser hides the mic', async ({ page }) => {
     await mockProduct(page);
     await removeSpeech(page);
     await openZonePanel(page);
-    await expect(page.locator('.zmia-input:visible').getByTestId('mic-button')).toHaveCount(0);
-    await expect(page.locator('.zmia-input:visible input')).toBeVisible();
+    const panel = page.locator('.zmia:visible');
+    await expect(panel.getByTestId('mic-button')).toHaveCount(0);
+    await expect(panel.getByTestId('chat-input')).toBeVisible();
   });
 
   // ── /actualites publication M.I.A chat ────────────────────────────────────

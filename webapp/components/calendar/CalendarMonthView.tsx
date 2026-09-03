@@ -135,13 +135,6 @@ export function CalendarMonthView({
     marketFilter.noneSelected ||
     periodicityFilter.noneSelected;
 
-  // A filter is "active" once a group is narrowed below its full set — the count
-  // then describes a SUBSET of the calendar, and the screen says so (Défaut D).
-  const filtersActive =
-    sourceFilter.selected.size < SOURCES.length ||
-    marketFilter.selected.size < MARKETS.length ||
-    periodicityFilter.selected.size < PERIODICITIES.length;
-
   // Events that pass the factual filters (organism/market/periodicity).
   const filtered = React.useMemo(
     () =>
@@ -322,66 +315,14 @@ export function CalendarMonthView({
             marketName={marketName}
           />
 
-          {/* "This month" box. A count is NEVER rendered before the data has
-              loaded (CAL-1): while loading, the box shows a distinct waiting
-              status, never a fabricated "0 / 31 empty days". Only once loaded
-              does it assert counts — and a genuinely empty month reads as an
-              explicit "no publication scheduled", not a bare zero. */}
-          <div className="calm-thismonth" role="note">
-            <div className="calm-tm-title">{t('month.thisMonth.title')}</div>
-            {!hasData ? (
-              isLoading ? (
-                <div className="calm-tm-status" role="status">{t('loading')}</div>
-              ) : (
-                <div className="calm-tm-status calm-tm-error">
-                  <span>{t(calendarErrorKey(error))}</span>
-                  <button type="button" className="cal-retry" onClick={onRetry}>
-                    {t('retry')}
-                  </button>
-                </div>
-              )
-            ) : totalThisMonth > 0 ? (
-              <>
-                <div className="calm-tm-count mono">
-                  {t('month.thisMonth.count', { count: totalThisMonth })}
-                </div>
-                {filtersActive && (
-                  <div className="calm-tm-filtered">{t('month.thisMonth.filtered')}</div>
-                )}
-                <ul className="calm-tm-list">
-                  {perMarket.map((pm) => (
-                    <li key={pm.market}>
-                      {t('month.thisMonth.byMarket', {
-                        market: marketName(pm.market),
-                        count: pm.count,
-                      })}
-                    </li>
-                  ))}
-                  <li>{t('month.thisMonth.emptyDays', { count: emptyDays })}</li>
-                </ul>
-                <div className="calm-tm-note">{t('month.thisMonth.note')}</div>
-              </>
-            ) : noneSelected ? (
-              <div className="calm-tm-status">{t('empty.noSelection')}</div>
-            ) : filtered.length === 0 && (data?.events.length ?? 0) > 0 ? (
-              <div className="calm-tm-status">{t('month.filterEmpty')}</div>
-            ) : (
-              <div className="calm-tm-status">{t('month.empty')}</div>
-            )}
-          </div>
-
-          {/* Honesty note — visible on the month view as on the list view: this
-              calendar covers SCHEDULED moments only, never the unscheduled. */}
-          <div className="cal-nono" role="note">
-            <div>
-              <div className="t">{t('nono.title')}</div>
-              <div className="b">{t('nono.body')}</div>
-              <ul className="cal-nono-list">
-                <li>{t('nono.noForecast')}</li>
-                <li>{t('nono.noRanking')}</li>
-                <li>{t('nono.noUnscheduled')}</li>
-              </ul>
-            </div>
+          {/* CLN-1 §4 — the monthly counts panel and the « what this calendar
+              does not say » block were removed: the grid already shows the days
+              with and without a publication, so recounting them in prose was a
+              redundancy. The one scope limit the grid CANNOT show — unscheduled
+              events — stays, condensed to a single line, as the page's single
+              warning block. */}
+          <div className="calm-scope" role="note">
+            {t('month.scheduledOnly')}
           </div>
         </aside>
       </div>
@@ -635,13 +576,22 @@ function DayPanel({
                   {!ev.time_confirmed && (
                     <div className="calm-panel-unconf">{t('timeUnconfirmed')}</div>
                   )}
+                  {/* CLN-1 §4 — the published value is a real, structured fact:
+                      shown only once actually released (never a fabricated or
+                      pending number). */}
+                  {ev.actual_state === 'published' && ev.actual != null && (
+                    <div className="calm-panel-value mono">
+                      {t('month.panel.value', {
+                        value: ev.actual.toLocaleString(locale),
+                        unit: ev.value_unit ? ` ${ev.value_unit}` : '',
+                      })}
+                    </div>
+                  )}
                   <div className="calm-panel-meta">
-                    {ev.organism ? (
+                    {/* CLN-1 §4 — a missing field renders NO line (no dash, no
+                        generic « not provided » filler). */}
+                    {ev.organism && (
                       <span>{t('provenance.organism', { organism: ev.organism })}</span>
-                    ) : (
-                      <span className="missing">
-                        {t('provenance.organismMissing')}
-                      </span>
                     )}
                     {ev.periodicity && (
                       <span>{t(`periodicity.${ev.periodicity}`)}</span>

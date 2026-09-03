@@ -17,7 +17,9 @@ import fr from '@/messages/fr.json';
 // new surface, never pre-existing copy it doesn't own).
 const NEW_UI2_KEYS = [
   'app.layers.ob', 'app.layers.fvg', 'app.layers.liquidity', 'app.layers.breaks', 'app.layers.mitigated',
-  'app.desktop.live', 'app.desktop.earlyAccess', 'app.desktop.legalInline',
+  // CLN-1 §5 — app.desktop.legalInline was retired (it duplicated the rail
+  // footer disclaimer verbatim on /app); the header keeps only earlyAccess.
+  'app.desktop.live', 'app.desktop.earlyAccess',
   'app.desktop.narratedTitle', 'app.desktop.narratedBadge', 'app.desktop.narratedFooter',
   'app.desktop.structureFooter',
   'app.desktop.reg.trend', 'app.desktop.reg.volatility', 'app.desktop.reg.maturity',

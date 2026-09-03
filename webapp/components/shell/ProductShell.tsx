@@ -76,6 +76,15 @@ function ShellFrame({ children }: { children: React.ReactNode }) {
       <ShellRail activeSpace={activeSpace} />
       <div id="main" className="center">
         {children}
+        {/* CLN-1 §5 — the single educational/legal disclaimer per page. On desktop
+            the rail footer (ShellRail) carries it; the rail is hidden < 768px, so
+            this mobile-only copy keeps EXACTLY ONE disclaimer visible at both
+            viewports (never zero, never two). Every inline per-surface duplicate
+            (the /app header line, the scanner combo note, the /zones M.I.A note)
+            was removed so nothing stacks on top of it. */}
+        <p className="shell-mdisclaimer" role="note">
+          {t('legal.disclaimer.chart')}
+        </p>
       </div>
       {isApp && <ShellChat />}
       {/* Mobile space nav (<768px): the `.no-chat` surfaces lose the rail there,

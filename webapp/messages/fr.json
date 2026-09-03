@@ -1115,7 +1115,6 @@
       "importantNews": "{count, plural, one {# actu importante à venir — à garder en tête.} other {# actus importantes à venir — à garder en tête.}}",
       "analyse": "Analyser",
       "openChart": "Ouvrir dans le graphique",
-      "disclaimer": "Faits structurels observés au présent. Le scanner ne prédit rien et ne recommande rien — à toi le jugement.",
       "unavailable": "indisponible"
     },
     "filters": {
@@ -1931,7 +1930,6 @@
     "desktop": {
       "live": "En direct",
       "earlyAccess": "Accès anticipé",
-      "legalInline": "Lecture algorithmique éducative · ni signal ni conseil.",
       "narratedTitle": "Lecture narrée",
       "narratedBadge": "Ancrée au moteur",
       "narratedFooter": "Chaque niveau cité correspond à une sortie réelle du moteur.",
@@ -2068,7 +2066,7 @@
       "welcomeSubtitleActive": "Pose une question sur la lecture en cours : décompose la structure, vulgarise un terme, ou contextualise un événement à venir.",
       "welcomeSubtitleIdle": "Sélectionne un marché à gauche, puis pose-moi une question sur sa lecture.",
       "offlineNote": "Mode hors-ligne : la saisie libre nécessite la clef Anthropic côté serveur.",
-      "complianceLine": "M.I.A Agent répond à des questions sur la lecture algorithmique. Il ne donne ni signal de trading, ni recommandation personnalisée.",
+      "complianceLine": "M.I.A Agent répond à des questions sur la lecture algorithmique.",
       "openPanel": "Ouvrir l'assistant",
       "collapseToBubble": "Réduire en bulle",
       "modeNotSynced": "Ton choix d'affichage — non synchronisé.",
@@ -2602,7 +2600,6 @@
   },
   "zones": {
     "title": "Zones",
-    "intro": "Le cycle de vie de chaque zone détectée — formation, contacts, comblement — décrit au présent. Aucun objectif, aucune prévision.",
     "refreshing": "actualisation…",
     "filterLabel": "Filtre",
     "filterAria": "Filtrer les zones",
@@ -2774,21 +2771,15 @@
       "openSheet": "Demander à M.I.A",
       "closeSheet": "Fermer",
       "intro": "Tu regardes un {kind}. {count, plural, =0 {Le prix ne l’a pas encore contacté.} one {Le prix l’a contacté une fois.} other {Le prix l’a contacté # fois.}} Pose-moi une question dessus.",
-      "disclaimer": "M.I.A décrit des faits détectés et explique des concepts. Elle ne dit pas où ira le prix, ni si une zone est bonne, ni s’il faut intervenir.",
       "input": {
         "placeholder": "Pose ta question sur cette zone…",
-        "send": "Envoyer"
+        "send": "Envoyer",
+        "placeholderIdle": "Pose ta question…"
       },
       "pos": {
         "inside": "le prix est dedans",
         "above": "au-dessus du prix",
         "below": "sous le prix"
-      },
-      "suggest": {
-        "whatElse": "Qu’est-ce qu’il y a d’autre à ce niveau ?",
-        "explainKind": "Explique-moi ce type de zone",
-        "compareUpper": "Compare-la à l’unité supérieure",
-        "lastContact": "Que s’est-il passé au dernier contact ?"
       },
       "frag": {
         "zone": "{kd} {where} {rel}.",
@@ -2811,7 +2802,8 @@
         "lastTraversal": "Dernier contact il y a {when} ({time}) : le prix l’a traversée à {level}.",
         "lastEdge": "Dernier contact il y a {when} ({time}) : le prix a touché le bord sans y pénétrer.",
         "lastEntry": "Dernier contact il y a {when} ({time}) : le prix est entré à {level} puis en est ressorti sans la traverser.",
-        "fallback": "Je décris cette zone à partir de ses faits : ce qu’il y a d’autre au même niveau, le type de zone, la comparaison à l’unité supérieure, ou ce qui s’est passé au dernier contact. Choisis une de ces questions."
+        "fallback": "Je décris cette zone à partir de ses faits : ce qu’il y a d’autre au même niveau, le type de zone, la comparaison à l’unité supérieure, ou ce qui s’est passé au dernier contact. Choisis une de ces questions.",
+        "noZone": "Sélectionne d’abord une zone : je décris celle que tu choisis à partir de ses faits."
       }
     }
   },
@@ -2965,21 +2957,15 @@
       "current": "Mois courant",
       "weekdays": "lun mar mer jeu ven sam dim",
       "moreCount": "+{count}",
-      "thisMonth": {
-        "title": "Ce mois-ci",
-        "count": "{count, plural, one {# publication} other {# publications}}",
-        "byMarket": "{market} : {count}",
-        "emptyDays": "{count, plural, one {# jour sans publication} other {# jours sans publication}}",
-        "filtered": "Filtres actifs — ce compte ne porte que sur les publications retenues.",
-        "note": "Ces comptes décrivent le calendrier, pas l'activité attendue."
-      },
       "panel": {
         "empty": "Aucune publication ce jour.",
         "organismTime": "{time} {city}",
-        "localTime": "{time} ton heure ({offset})"
+        "localTime": "{time} ton heure ({offset})",
+        "value": "Publié : {value}{unit}"
       },
       "filterEmpty": "Aucune publication ne correspond à ces filtres sur ce mois. Modifie un filtre ou réinitialise-les.",
-      "empty": "Aucune publication programmée sur ce mois pour tes marchés."
+      "empty": "Aucune publication programmée sur ce mois pour tes marchés.",
+      "scheduledOnly": "Ce calendrier ne recense que des publications programmées."
     },
     "pub": {
       "curve": {
@@ -3192,7 +3178,7 @@
       "myStrategies": "Mes stratégies",
       "scope": "Order Blocks, Fair Value Gaps, liquidité, structure, momentum.",
       "examplesLabel": "Ou pars d'un exemple",
-      "disclaimer": "M.I.A ne consulte pas le marché pour te répondre : elle transforme ta phrase en conditions vérifiables, puis c'est l'analyse du produit qui cherche. Elle ne classe rien, ne conseille rien et ne devine aucune condition que tu n'aurais pas exprimée.",
+      "disclaimer": "M.I.A ne consulte pas le marché pour te répondre : elle transforme ta phrase en conditions vérifiables, puis c'est l'analyse du produit qui cherche. Elle ne classe rien et ne devine aucune condition que tu n'aurais pas exprimée.",
       "examples": {
         "0": "Un Order Block jamais testé, en tendance haussière, avec l'unité supérieure d'accord",
         "1": "Le prix revient dans un Fair Value Gap déjà testé une fois, après un CHOCH récent",
