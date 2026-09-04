@@ -827,11 +827,14 @@
     "honesty": "Honesty",
     "pricing": "Pricing",
     "faq": "FAQ",
+    "app": "App",
     "zones": "Zones",
     "scanner": "Scanner",
     "account": "Settings",
     "login": "Sign in",
     "language": "Language",
+    "openMenu": "Open menu",
+    "menuAria": "Navigation",
     "calendar": "News",
     "mia": "M.I.A",
     "tools": "Tools",
@@ -1433,7 +1436,8 @@
       "dailyChangeAria": "Daily change {pct}",
       "priceAt": "Price at {time}",
       "priceFreshness": "Price at {time} · {rel}",
-      "priceAtTitle": "Last reference price used (last closed candle). A gap with the chart's live price reflects elapsed time, not an error."
+      "priceAtTitle": "Last reference price used (last closed candle). A gap with the chart's live price reflects elapsed time, not an error.",
+      "loading": "Loading…"
     },
     "events": {
       "title": "Event context",
@@ -1536,6 +1540,12 @@
       "liquidityStatus_intact": "intact",
       "liquidityStatus_swept": "swept",
       "liquidityStatus_broken": "broken",
+      "liquiditySide_bsl": "buy-side liquidity (above)",
+      "liquiditySide_ssl": "sell-side liquidity (below)",
+      "liquiditySideShort_bsl": "BSL",
+      "liquiditySideShort_ssl": "SSL",
+      "liquiditySideChart_bsl": "Buy liquidity",
+      "liquiditySideChart_ssl": "Sell liquidity",
       "trendAdj_indeterminate": "indeterminate"
     },
     "structure": {
@@ -2087,6 +2097,7 @@
       "dataLaggedTitle": "The calendar shows the market open, but no new candle has been received recently.",
       "lastCandleClosed": "Last candle closed {when} (New York)",
       "reopensAt": "Reopens {when} (New York)",
+      "localTime": "Local time · {offset}",
       "noNewCandleSince": "No new candle received since {when} (New York)",
       "selectionMissing": "This element is no longer detected in the current reading.",
       "currentPrice": "Current price",
@@ -3159,6 +3170,12 @@
       },
       "noMeasures": "No measurement is available for this indicator: the price history aligned to its past releases is not assembled. This page therefore stays with the published figures."
     }
+  },
+  "notFound": {
+    "code": "Error 404",
+    "heading": "This page can’t be found",
+    "body": "The link may be outdated or the address mistyped.",
+    "back": "Back to home"
   },
   "scannerChat": {
     "meta": {

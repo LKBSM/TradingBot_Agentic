@@ -14,14 +14,14 @@ describe('localizeHref', () => {
 
   it('prefixes a non-default locale', () => {
     expect(localizeHref('/app', 'en')).toBe('/en/app');
-    expect(localizeHref('/connexion', 'de')).toBe('/de/connexion');
+    expect(localizeHref('/connexion', 'es')).toBe('/es/connexion');
     expect(localizeHref('/', 'es')).toBe('/es/');
   });
 
   it('prefixes paths that carry a hash', () => {
     expect(localizeHref('/#faq', 'en')).toBe('/en/#faq');
-    expect(localizeHref('/methodology#attributions', 'it')).toBe(
-      '/it/methodology#attributions',
+    expect(localizeHref('/methodology#attributions', 'es')).toBe(
+      '/es/methodology#attributions',
     );
   });
 
@@ -30,6 +30,6 @@ describe('localizeHref', () => {
     expect(localizeHref('mailto:contact@mia.markets', 'en')).toBe(
       'mailto:contact@mia.markets',
     );
-    expect(localizeHref('https://example.com', 'de')).toBe('https://example.com');
+    expect(localizeHref('https://example.com', 'es')).toBe('https://example.com');
   });
 });

@@ -6,8 +6,8 @@ import { optionLabelFallback, paletteEntry } from '@/lib/conditions/palette';
 
 /**
  * Localised labels for the conversational scanner, sourced from the SAME
- * `scanner` i18n namespace the classic builder uses (already translated across
- * the 9 locales). Palette/option vocabulary therefore stays a single source; the
+ * `scanner` i18n namespace the classic builder uses (translated across the 3
+ * shipped locales). Palette/option vocabulary therefore stays a single source; the
  * conversational surface only adds its own chrome under `scannerChat`.
  */
 export function useConditionLabels() {

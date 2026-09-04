@@ -21,38 +21,53 @@ export function parseUtc(iso: string | null | undefined): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-const HM_OPTS: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit' };
-const DAY_OPTS: Intl.DateTimeFormatOptions = { day: '2-digit', month: '2-digit' };
+// 24-hour clock in EVERY locale (`hour12: false`): a trading axis reads « 14:30 »,
+// never « 02:30 PM ». en-US would otherwise default to 12-hour AM/PM, breaking
+// both consistency with fr/es and the compact axis width.
+const HM_OPTS: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit', hour12: false };
+// Day + short MONTH NAME (not a numeric month): the named month is unambiguous
+// across languages, where a numeric « 01/09 » reads as 1 Sep in fr/es but as
+// Jan 9 in en. The locale also drives the day/month ORDER (fr « 31 août », en
+// « Aug 31 »). I18N-1: every axis/annotation date uses this — never day/month
+// digits — so an English reader never mistakes the day for the month.
+const DAY_NAMED_OPTS: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' };
 
-/** « 09:30 » in the local (or given) timezone. */
-export function formatLocalHm(d: Date, timeZone?: string): string {
-  return d.toLocaleTimeString('fr-FR', { ...HM_OPTS, timeZone });
+/** « 09:30 » in the given locale + (optional) timezone. */
+export function formatLocalHm(d: Date, locale: string, timeZone?: string): string {
+  return d.toLocaleTimeString(locale, { ...HM_OPTS, timeZone });
 }
 
-/** « 08/07 à 09:30 » in the local (or given) timezone. */
-export function formatLocalDayHm(d: Date, timeZone?: string): string {
-  const day = d.toLocaleDateString('fr-FR', { ...DAY_OPTS, timeZone });
-  return `${day} à ${formatLocalHm(d, timeZone)}`;
+/**
+ * « 31 août · 23:30 » (fr) / « Aug 31 · 23:30 » (en) / « 31 ago · 23:30 » (es) —
+ * unambiguous day + named month + time in the given locale. The middot join is
+ * locale-neutral punctuation (no « à »/« at » to translate). Used by the chart
+ * crosshair / time-axis, where a numeric day/month would be dangerous in English.
+ */
+export function formatLocalDayHm(d: Date, locale: string, timeZone?: string): string {
+  const day = d.toLocaleDateString(locale, { ...DAY_NAMED_OPTS, timeZone });
+  return `${day} · ${formatLocalHm(d, locale, timeZone)}`;
 }
-
-const DAY_LONG_OPTS: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' };
 
 /**
  * « 24 juil. à 09:45 » — LONG, localized date + time. The month is a localized
  * short name and the day/month order follows the locale (fr « 24 juil. », en
- * « Jul 24 »); the « à » / « at » join is locale-driven. Used by the Régime
- * panel where a numeric « 24/07 » would be ambiguous across languages.
+ * « Jul 24 », es « 24 jul »); the join is locale-driven (fr « à », es « a las »,
+ * en « at »). Used by the Régime panel where a numeric « 24/07 » would be
+ * ambiguous across languages.
  */
 export function formatLocalDayLong(d: Date, locale: string, timeZone?: string): string {
-  const day = d.toLocaleDateString(locale, { ...DAY_LONG_OPTS, timeZone });
-  const sep = locale.toLowerCase().startsWith('fr') ? 'à' : 'at';
-  return `${day} ${sep} ${formatLocalHm(d, timeZone)}`;
+  const day = d.toLocaleDateString(locale, { ...DAY_NAMED_OPTS, timeZone });
+  const lc = locale.toLowerCase();
+  const sep = lc.startsWith('fr') ? 'à' : lc.startsWith('es') ? 'a las' : 'at';
+  return `${day} ${sep} ${formatLocalHm(d, locale, timeZone)}`;
 }
 
 /**
  * A short, stable timezone label built from the UTC offset, e.g. « UTC−4 ».
- * Offset-based (not an abbreviation) so it is unambiguous and locale-independent.
- * `offsetMinutes` is injectable for tests; defaults to the browser's.
+ * Offset-based (not an abbreviation) so it is unambiguous and locale-independent
+ * — the SAME in every language, only the surrounding « Heure locale »/« Local
+ * time »/« Hora local » prefix is translated (by the i18n caller). `offsetMinutes`
+ * is injectable for tests; defaults to the browser's.
  */
 export function utcOffsetLabel(offsetMinutes?: number): string {
   const off = offsetMinutes ?? -new Date().getTimezoneOffset(); // minutes east of UTC
@@ -62,9 +77,4 @@ export function utcOffsetLabel(offsetMinutes?: number): string {
   const h = Math.floor(abs / 60);
   const m = abs % 60;
   return `UTC${sign}${h}${m ? `:${String(m).padStart(2, '0')}` : ''}`;
-}
-
-/** « Heure locale · UTC−4 » — the discreet indicator shown near the chart. */
-export function localTimeLabel(offsetMinutes?: number): string {
-  return `Heure locale · ${utcOffsetLabel(offsetMinutes)}`;
 }

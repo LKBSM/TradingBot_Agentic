@@ -26,7 +26,7 @@ describe('PriceFreshnessBadge', () => {
     render(<PriceFreshnessBadge tsSec={tsSec} />);
     const badge = screen.getByTestId('price-freshness');
     // Exact clock time (same formatter as the component → timezone-agnostic here).
-    expect(badge).toHaveTextContent(formatLocalHm(new Date(tsSec * 1000)));
+    expect(badge).toHaveTextContent(formatLocalHm(new Date(tsSec * 1000), 'fr'));
     expect(badge).toHaveTextContent(/Prix à/); // fr label from reading.temporal.priceAt
   });
 

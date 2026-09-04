@@ -27,13 +27,19 @@ describe('parseUtc', () => {
   });
 });
 
-describe('formatLocalHm / formatLocalDayHm (pinned UTC)', () => {
+describe('formatLocalHm / formatLocalDayHm (pinned UTC, locale-aware)', () => {
   const d = parseUtc('2026-06-24T14:30:00')!;
-  it('formats HH:MM in the given zone', () => {
-    expect(formatLocalHm(d, 'UTC')).toBe('14:30');
+  it('formats HH:MM in the given locale + zone', () => {
+    expect(formatLocalHm(d, 'fr', 'UTC')).toBe('14:30');
+    expect(formatLocalHm(d, 'en', 'UTC')).toBe('14:30');
   });
-  it('formats JJ/MM à HH:MM in the given zone', () => {
-    expect(formatLocalDayHm(d, 'UTC')).toBe('24/06 à 14:30');
+  it('formats an UNAMBIGUOUS named-month date + time per locale (never day/month digits)', () => {
+    // A named month removes the en day/month ambiguity a numeric « 24/06 » carries.
+    expect(formatLocalDayHm(d, 'fr', 'UTC')).toBe('24 juin · 14:30');
+    // en orders month-first with a short name; 24-hour clock (never 02:30 PM).
+    expect(formatLocalDayHm(d, 'en', 'UTC')).toBe('Jun 24 · 14:30');
+    // es keeps day-first with a short Spanish month.
+    expect(formatLocalDayHm(d, 'es', 'UTC')).toBe('24 jun · 14:30');
   });
 });
 

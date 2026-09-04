@@ -69,7 +69,10 @@ function walk(dir: string, hits: string[]): void {
     if (st.isDirectory()) {
       if (name === 'node_modules' || name === '__tests__' || name === '.next') continue;
       walk(p, hits);
-    } else if (/\.(ts|tsx)$/.test(name) && !ALLOW.has(name)) {
+    } else if (/\.(ts|tsx)$/.test(name) && !/\.test\.tsx?$/.test(name) && !ALLOW.has(name)) {
+      // Co-located *.test.ts(x) files are fixtures, exempt like the __tests__
+      // dirs already are — a literal market array as TEST DATA is not a
+      // re-introduced production enumeration (guard intent, I18N-1).
       const text = readFileSync(p, 'utf-8');
       for (const [re, what] of FORBIDDEN) {
         if (re.test(text)) hits.push(`${p.replace(REPO, '')} → ${what}`);

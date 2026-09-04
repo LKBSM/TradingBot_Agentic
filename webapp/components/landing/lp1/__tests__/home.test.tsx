@@ -3,13 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextIntlClientProvider } from 'next-intl';
 import fr from '@/messages/fr.json';
 import en from '@/messages/en.json';
-import de from '@/messages/de.json';
 import es from '@/messages/es.json';
-import itMsg from '@/messages/it.json';
-import pt from '@/messages/pt.json';
-import nl from '@/messages/nl.json';
-import pl from '@/messages/pl.json';
-import ar from '@/messages/ar.json';
 import { HomeLanding } from '../HomeLanding';
 import { DemoTabs } from '../DemoTabs';
 import { LANDING_STATS, STRUCTURE_TYPES } from '@/lib/landing/stats';
@@ -65,18 +59,18 @@ describe('LP-1 home — forbidden vocabulary', () => {
     expect(enStrings, 'en home must not contain "engine"').not.toContain('engine');
   });
 
-  // DETTE-1: the 7 non-fr/en locales were natively translated. Guard every locale
-  // against the forbidden concepts in their own language (loanwords + the local
-  // words for signal / opportunity / probability). This would have caught the
-  // Arabic « إشارة » (signal) that slipped into the first translation pass.
-  const ALL_LOCALES: Record<string, unknown> = { fr, en, de, es, it: itMsg, pt, nl, pl, ar };
+  // I18N-1: guard every shipped locale (fr/en/es) against the forbidden concepts
+  // in its own language — loanwords + the local words for signal / opportunity /
+  // probability. Spanish adds « señal / oportunidad / probabilidad / sesgo ».
+  const ALL_LOCALES: Record<string, unknown> = { fr, en, es };
   const FORBIDDEN_XLANG = [
     'setup',
-    'signal', 'signaal', 'señal', 'segnale', 'sinal', 'sygnał', 'إشارة',
-    'opportun', 'oportun', 'okazja',
-    'probabilit', 'probabilidad', 'probabilidade', 'waarschijn', 'wahrscheinlich', 'prawdopodobie', 'احتمال',
+    'signal', 'señal',
+    'opportun', 'oportun',
+    'probabilit', 'probabilidad',
+    'sesgo',
   ];
-  it('no locale home namespace leaks a signal/opportunity/probability/setup word (9 locales)', () => {
+  it('no locale home namespace leaks a signal/opportunity/probability/setup word (3 locales)', () => {
     for (const [loc, msg] of Object.entries(ALL_LOCALES)) {
       const strings = collectStrings((msg as Record<string, unknown>).home).join(' ').toLowerCase();
       for (const word of FORBIDDEN_XLANG) {

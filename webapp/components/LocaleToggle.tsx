@@ -8,8 +8,8 @@ import { useLocaleSwitch } from '@/lib/i18n/use-locale-switch';
 import { cn } from '@/lib/utils';
 
 /**
- * Language switcher — real dropdown across all 9 active locales
- * (fr/en/de/es/it/pt/nl/pl/ar). Built on a native <details> disclosure so it
+ * Language switcher — real dropdown across the 3 active locales (fr/en/es)
+ * (fr/en/es). Built on a native <details> disclosure so it
  * needs no dropdown dependency, stays keyboard-accessible, and is RTL-safe via
  * logical `start/end` utilities.
  *
@@ -54,7 +54,6 @@ export function LocaleToggle() {
               <button
                 type="button"
                 lang={locale}
-                dir={locale === 'ar' ? 'rtl' : 'ltr'}
                 aria-current={isActive ? 'true' : undefined}
                 onClick={() => selectLocale(locale)}
                 className={cn(

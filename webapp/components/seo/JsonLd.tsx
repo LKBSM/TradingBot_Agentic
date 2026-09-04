@@ -29,11 +29,33 @@ export function JsonLd({ data }: JsonLdProps) {
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? 'https://mia.markets';
 
+// BCP-47 (language_TERRITORY) per shipped locale, for the JSON-LD `inLanguage`.
+// Spanish ships as es-ES (I18N-1). Mirrors the OG_LOCALES map in the root layout.
+const LD_LANG: Record<string, string> = {
+  fr: 'fr-FR',
+  en: 'en-US',
+  es: 'es-ES',
+};
+
 /**
- * SoftwareApplication entity for the landing. Goes inside <head> via the
- * RootLayout. Description stays compliance-safe (no perf promise).
+ * SoftwareApplication entity for the landing, built PER LOCALE so `inLanguage`
+ * and the description match the page the crawler is reading (I18N-1: the former
+ * static object always claimed `fr-FR` + a French description on /en and /es).
+ * The description is the localized `seo.description` string, passed in by the
+ * (locale-aware) site layout. Description stays compliance-safe (no perf promise).
  */
-export const softwareApplicationLd = {
+export function buildSoftwareApplicationLd(
+  locale: string,
+  description: string,
+): Record<string, unknown> {
+  return {
+    ...SOFTWARE_APPLICATION_BASE,
+    description,
+    inLanguage: LD_LANG[locale] ?? LD_LANG.fr,
+  };
+}
+
+const SOFTWARE_APPLICATION_BASE = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
   name: 'M.I.A Markets',
@@ -41,9 +63,6 @@ export const softwareApplicationLd = {
   url: SITE_URL,
   applicationCategory: 'FinanceApplication',
   operatingSystem: 'Web · iOS · Android (PWA)',
-  description:
-    'M.I.A Markets est un indicateur de marché conversationnel pour XAU/USD et le forex. Lectures algorithmiques contextuelles, posture éducative, chatbot M.I.A Agent.',
-  inLanguage: 'fr-FR',
   isAccessibleForFree: false,
   // Amounts come from the single pricing source (config/pricing.json) — never
   // hard-coded. Currency is USD everywhere. The annual offer is the yearly

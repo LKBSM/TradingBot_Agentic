@@ -1,10 +1,8 @@
 import { useTranslations } from 'next-intl';
 import { AgentAvatar } from './AgentAvatar';
 import { useChat } from './ChatProvider';
-import {
-  formatInstrument,
-  formatTimeframe,
-} from '@/lib/market-reading/formatters';
+import { formatTimeframe } from '@/lib/market-reading/formatters';
+import { useInstrumentLabel } from '@/lib/market-reading/useInstrumentLabel';
 
 /**
  * "M.I.A Agent is working" state — three pulsing dots inside an assistant-style
@@ -16,11 +14,12 @@ import {
  */
 export function ThinkingIndicator() {
   const t = useTranslations('chat');
+  const instrumentLabel = useInstrumentLabel();
   const { activity } = useChat();
 
   let caption: string | null = null;
   if (activity?.kind === 'tool') {
-    const market = activity.instrument ? formatInstrument(activity.instrument) : '';
+    const market = activity.instrument ? instrumentLabel(activity.instrument) : '';
     const tf = activity.timeframe ? formatTimeframe(activity.timeframe) : '';
     if (activity.tool === 'get_ob_diagnostic') {
       caption = t('activityDiagnostic');

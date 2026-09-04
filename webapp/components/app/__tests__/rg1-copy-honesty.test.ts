@@ -1,13 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fr from '@/messages/fr.json';
 import en from '@/messages/en.json';
-import de from '@/messages/de.json';
 import es from '@/messages/es.json';
-import itLocale from '@/messages/it.json';
-import pt from '@/messages/pt.json';
-import nl from '@/messages/nl.json';
-import pl from '@/messages/pl.json';
-import ar from '@/messages/ar.json';
 
 /**
  * RG-1 copy-honesty guard for the enriched Régime panel (`regimePanel.*`).
@@ -24,8 +18,7 @@ import ar from '@/messages/ar.json';
  */
 
 const BUNDLES: [string, Record<string, unknown>][] = [
-  ['fr', fr], ['en', en], ['de', de], ['es', es], ['it', itLocale],
-  ['pt', pt], ['nl', nl], ['pl', pl], ['ar', ar],
+  ['fr', fr], ['en', en], ['es', es],
 ];
 
 const CONCEPT_KEYS = [

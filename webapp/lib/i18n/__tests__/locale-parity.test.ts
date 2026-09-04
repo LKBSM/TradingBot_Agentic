@@ -2,33 +2,26 @@ import { describe, expect, it } from 'vitest';
 import { SUPPORTED_LOCALES, DEFAULT_LOCALE } from '@/i18n';
 import fr from '@/messages/fr.json';
 import en from '@/messages/en.json';
-import de from '@/messages/de.json';
 import es from '@/messages/es.json';
-import itIT from '@/messages/it.json';
-import pt from '@/messages/pt.json';
-import nl from '@/messages/nl.json';
-import pl from '@/messages/pl.json';
-import ar from '@/messages/ar.json';
 
 /**
- * DETTE-1 (guard e) — i18n structural parity across every locale.
+ * I18N-1 (guard e) — i18n structural parity across every SHIPPED locale.
  *
- * A missing translation key must fail the build, never be discovered by a
- * client staring at a raw `namespace.key` string. This guard asserts every
- * locale carries EXACTLY the same set of keys as the source locale (fr): no
- * missing key, no orphan key. Adding a string to fr without adding it to the
- * eight other files — or vice-versa — fails here (i.e. at `npm test`, in CI).
+ * The product ships in THREE languages and three only (fr/en/es). A missing
+ * translation key must fail the build, never be discovered by a client staring
+ * at a raw `namespace.key` string. This guard asserts every locale carries
+ * EXACTLY the same set of keys as the source locale (fr): no missing key, no
+ * orphan key. Adding a string to fr without adding it to en/es — or vice-versa —
+ * fails here (i.e. at `npm test`, in CI).
  *
- * NOTE (documented debt, out of this guard's scope): several namespaces
- * (notably `home` and `regimePanel`) still hold ENGLISH text in the non-en
- * locales — the keys exist, so parity holds, but the *values* are untranslated.
- * Value-level fallback detection is deferred to a follow-up (see
- * docs/audits/AUDIT-dette-1.md, DETTE 3) because enabling it before that
- * translation debt is paid would redden the suite for ~3.8k strings.
+ * Value-level leaks (a foreign-language WORD rendered on a page) are guarded
+ * separately by the witness-word test (i18n-no-leak.test.ts): key parity proves
+ * every slot is filled; the leak guard proves each slot is filled in the RIGHT
+ * language.
  */
 
 const MESSAGES: Record<string, Record<string, unknown>> = {
-  fr, en, de, es, it: itIT, pt, nl, pl, ar,
+  fr, en, es,
 };
 
 function flattenKeys(obj: unknown, prefix = '', out: Set<string> = new Set()): Set<string> {

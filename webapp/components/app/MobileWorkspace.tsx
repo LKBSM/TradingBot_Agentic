@@ -8,10 +8,8 @@ import { AppChatSidebar } from './AppChatSidebar';
 import { MarketSelector } from '@/components/market/MarketSelector';
 import { ReadingColumn } from './ReadingColumn';
 import type { WorkspaceViewProps } from './AppWorkspace';
-import {
-  formatInstrument,
-  formatTimeframe,
-} from '@/lib/market-reading/formatters';
+import { formatTimeframe } from '@/lib/market-reading/formatters';
+import { useInstrumentLabel } from '@/lib/market-reading/useInstrumentLabel';
 import type { Combo } from '@/lib/market-reading/store';
 
 type MobileTab = 'markets' | 'reading' | 'chat';
@@ -35,6 +33,7 @@ export function MobileWorkspace({
   dataSource,
 }: WorkspaceViewProps) {
   const t = useTranslations('app');
+  const instrumentLabel = useInstrumentLabel();
   const [tab, setTab] = React.useState<MobileTab>('markets');
 
   function handleSelect(combo: Combo) {
@@ -43,7 +42,7 @@ export function MobileWorkspace({
   }
 
   const headerLabel = active
-    ? `${formatInstrument(active.instrument)} · ${formatTimeframe(active.timeframe)}`
+    ? `${instrumentLabel(active.instrument)} · ${formatTimeframe(active.timeframe)}`
     : t('mobile.workspaceTitle');
 
   return (

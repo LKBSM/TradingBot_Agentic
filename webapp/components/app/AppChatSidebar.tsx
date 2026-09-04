@@ -27,10 +27,10 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import {
-  formatInstrument,
   formatRelativePast,
   formatTimeframe,
 } from '@/lib/market-reading/formatters';
+import { useInstrumentLabel } from '@/lib/market-reading/useInstrumentLabel';
 import type { Combo } from '@/lib/market-reading/store';
 import { useNow } from '@/lib/conditions/use-now';
 
@@ -76,6 +76,7 @@ export function AppChatSidebar({
   onSetDisplayMode?: (mode: 'column' | 'bubble') => void;
 }) {
   const t = useTranslations('app');
+  const instrumentLabel = useInstrumentLabel();
   const {
     turns,
     isLoading,
@@ -129,7 +130,7 @@ export function AppChatSidebar({
             />
             <span className="truncate text-xs font-normal text-muted-foreground">
               {active
-                ? `· ${formatInstrument(active.instrument)} · ${formatTimeframe(active.timeframe)}`
+                ? `· ${instrumentLabel(active.instrument)} · ${formatTimeframe(active.timeframe)}`
                 : `· ${t('chat.pickComboPrompt')}`}
             </span>
           </p>
@@ -259,7 +260,7 @@ export function AppChatSidebar({
                   >
                     <span className="flex items-baseline justify-between gap-2">
                       <span className="text-xs font-medium">
-                        {formatInstrument(t.instrument)} ·{' '}
+                        {instrumentLabel(t.instrument)} ·{' '}
                         {formatTimeframe(t.timeframe)}
                       </span>
                       <span className="shrink-0 text-[10.5px] text-muted-foreground">

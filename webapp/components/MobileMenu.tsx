@@ -59,7 +59,7 @@ export function MobileMenu({ variant }: { variant: 'marketing' | 'app' }) {
       <SheetTrigger asChild>
         <button
           type="button"
-          aria-label="Ouvrir le menu"
+          aria-label={t('openMenu')}
           className="inline-flex h-11 w-11 items-center justify-center rounded-md text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:hidden"
         >
           <Menu className="h-5 w-5" aria-hidden />
@@ -76,7 +76,7 @@ export function MobileMenu({ variant }: { variant: 'marketing' | 'app' }) {
           </SheetTitle>
         </SheetHeader>
 
-        <nav aria-label="Navigation" className="mt-6 flex flex-col gap-1">
+        <nav aria-label={t('menuAria')} className="mt-6 flex flex-col gap-1">
           {variant === 'marketing' && (
             <>
               {MARKETING_ANCHORS.map((a) => (

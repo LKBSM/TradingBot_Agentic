@@ -2,19 +2,13 @@ import { describe, expect, it } from 'vitest';
 import fr from '@/messages/fr.json';
 import en from '@/messages/en.json';
 import es from '@/messages/es.json';
-import de from '@/messages/de.json';
-import itMsg from '@/messages/it.json';
-import nl from '@/messages/nl.json';
-import pl from '@/messages/pl.json';
-import pt from '@/messages/pt.json';
-import ar from '@/messages/ar.json';
 
 /**
  * Voice-dictation copy-honesty guard (mission "Dictée vocale").
  *
  * The dictation block (scannerChat.dictation) is reused verbatim by EVERY M.I.A
  * chat surface — /app, /zones, /actualites and the scanner. Two guarantees must
- * hold in all 9 locales:
+ * hold in all 3 shipped locales (fr/en/es):
  *
  *  1. The privacy note must describe the REAL mechanism. The Web Speech API is
  *     not guaranteed on-device (Chrome/Edge send audio to the browser vendor's
@@ -26,19 +20,13 @@ import ar from '@/messages/ar.json';
  *     (which only made sense on the scanner).
  */
 
-const LOCALES = { fr, en, es, de, it: itMsg, nl, pl, pt, ar } as Record<string, Record<string, any>>;
+const LOCALES = { fr, en, es } as Record<string, Record<string, any>>;
 
 // Per-locale proof-words: the privacy note must mention the browser AND servers.
 const MECHANISM_WORDS: Record<string, [browser: string, server: string]> = {
   fr: ['navigateur', 'serveurs'],
   en: ['browser', 'servers'],
   es: ['navegador', 'servidores'],
-  de: ['Browser', 'Server'],
-  it: ['browser', 'server'],
-  nl: ['browser', 'servers'],
-  pl: ['przeglądarkę', 'serwery'],
-  pt: ['navegador', 'servidores'],
-  ar: ['متصفحك', 'خوادمه'],
 };
 
 // The "strategy" word per locale — must NOT appear in the shared error copy.
@@ -46,12 +34,6 @@ const STRATEGY_WORD: Record<string, string> = {
   fr: 'stratégie',
   en: 'strategy',
   es: 'estrategia',
-  de: 'Strategie',
-  it: 'strategia',
-  nl: 'strategie',
-  pl: 'strategię',
-  pt: 'estratégia',
-  ar: 'استراتيجيتك',
 };
 
 // Phrases that would falsely claim on-device transcription (checked where we can
@@ -83,7 +65,7 @@ describe('dictation copy — present and complete in all 9 locales', () => {
       }
       for (const code of ['not-allowed', 'no-speech', 'audio-capture', 'network', 'timeout', 'unknown']) {
         expect(d.errors[code], `${locale}.errors.${code}`).toBeTypeOf('string');
-        expect(d.errors[code].length, `${locale}.errors.${code}`).toBeGreaterThan(0);
+        expect(d.errors[code]!.length, `${locale}.errors.${code}`).toBeGreaterThan(0);
       }
     });
   }
@@ -93,7 +75,7 @@ describe('dictation privacy note — describes the REAL browser mechanism', () =
   for (const locale of Object.keys(LOCALES)) {
     it(`${locale} names the browser and acknowledges server transit`, () => {
       const note = dictation(locale).privacy;
-      const [browserWord, serverWord] = MECHANISM_WORDS[locale];
+      const [browserWord, serverWord] = MECHANISM_WORDS[locale]!;
       expect(note, `${locale} privacy must mention the browser`).toContain(browserWord);
       expect(note, `${locale} privacy must acknowledge server transit`).toContain(serverWord);
     });
@@ -113,7 +95,7 @@ describe('dictation errors — surface-neutral (no "type your strategy")', () =>
   for (const locale of Object.keys(LOCALES)) {
     it(`${locale} error copy invites the keyboard, not "the strategy"`, () => {
       const { errors } = dictation(locale);
-      const strategyWord = STRATEGY_WORD[locale].toLowerCase();
+      const strategyWord = STRATEGY_WORD[locale]!.toLowerCase();
       for (const [code, text] of Object.entries(errors)) {
         expect(
           text.toLowerCase().includes(strategyWord),

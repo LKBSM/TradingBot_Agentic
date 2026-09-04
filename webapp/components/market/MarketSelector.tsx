@@ -11,7 +11,8 @@ import {
   marketTimeframes,
 } from '@/lib/markets';
 import { M1_ENABLED } from '@/lib/market-reading/perimeter';
-import { formatInstrument, formatTimeframe } from '@/lib/market-reading/formatters';
+import { formatTimeframe } from '@/lib/market-reading/formatters';
+import { useInstrumentLabel } from '@/lib/market-reading/useInstrumentLabel';
 import { usePinnedMarkets } from '@/lib/market-reading/market-pins';
 import { SearchField } from '@/components/shell/primitives';
 import type { Combo } from '@/lib/market-reading/store';
@@ -275,8 +276,9 @@ function MarketRow({
   onTogglePin(): void;
 }) {
   const t = useTranslations('app');
+  const instrumentLabel = useInstrumentLabel();
   const isActive = activeMarket === marketId;
-  const label = formatInstrument(marketId);
+  const label = instrumentLabel(marketId);
   const pinLabel = pinned
     ? t('sidebar.unpinAria', { combo: label })
     : t('sidebar.pinAria', { combo: label });
@@ -434,6 +436,7 @@ function BarSelector({
   className?: string;
 }) {
   const t = useTranslations('app');
+  const instrumentLabel = useInstrumentLabel();
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState('');
   const { pinned, isPinned, toggle } = usePinnedMarkets();
@@ -481,7 +484,7 @@ function BarSelector({
           <span className="grid h-5 w-5 place-items-center rounded bg-muted font-mono text-[10px] font-semibold text-muted-foreground" aria-hidden>
             {marketGlyph(activeMarket)}
           </span>
-          <span>{formatInstrument(activeMarket)}</span>
+          <span>{instrumentLabel(activeMarket)}</span>
           <ChevronDown className="h-4 w-4 text-muted-foreground" aria-hidden />
         </button>
 
@@ -555,7 +558,8 @@ function BarRow({
   onTogglePin(): void;
 }) {
   const t = useTranslations('app');
-  const label = formatInstrument(id);
+  const instrumentLabel = useInstrumentLabel();
+  const label = instrumentLabel(id);
   return (
     <div
       className={cn(

@@ -16,7 +16,6 @@ import type {
   MarketReadingStructure,
   ValidationStatus,
 } from '@/types/market-reading';
-import { formatLocalDayHm, parseUtc } from '@/lib/time/localTime';
 import { TF_MINUTES } from '@/lib/timeframes';
 
 // ─── Timeframe → minutes (for the « X bougies » derivation) ──────────────────
@@ -46,19 +45,6 @@ export function latestBreak<T extends BOSRecent | CHOCHRecent>(
   return best ?? fallback ?? null;
 }
 
-// ─── Break timestamp (engine UTC → reader's local timezone) ───────────────────
-
-/**
- * Render an ISO timestamp (authored by the engine in UTC) as « JJ/MM à HH:MM »
- * in the READER's local timezone, so the displayed clock is never ambiguous. A
- * discreet « Heure locale · UTC±N » indicator sits next to the chart. Returns
- * null on an unparseable string. Pass `timeZone` to pin the zone (tests).
- */
-export function formatBreakTimestamp(iso: string, timeZone?: string): string | null {
-  const d = parseUtc(iso);
-  if (d === null) return null;
-  return formatLocalDayHm(d, timeZone);
-}
 
 // ─── Trend window span (DG-1 point 5) ────────────────────────────────────────
 
@@ -190,29 +176,13 @@ export function deriveTrendMaturity(
   return { direction: anchor.direction, brokenAt: anchor.broken_at, bars, barsApproximate };
 }
 
-/**
- * Present-tense maturity line, e.g.
- *   « Structure orientée haussière depuis le CHOCH du 24/06 à 14:30 (≈ 18 bougies M15). »
- * Returns null only when no CHOCH exists in the window (caller → « non disponible »).
- */
-export function formatTrendMaturity(
-  structure: MarketReadingStructure,
-  header: MarketReadingHeader,
-  timeZone?: string,
-): string | null {
-  const m = deriveTrendMaturity(structure, header);
-  if (!m) return null;
-
-  const orient = m.direction === 'bullish' ? 'haussière' : 'baissière';
-  const when = formatBreakTimestamp(m.brokenAt, timeZone);
-  const whenPart = when ? ` du ${when}` : '';
-  const approx = m.barsApproximate ? '≈ ' : '';
-  const barsPart =
-    m.bars != null
-      ? ` (${approx}${m.bars} bougie${m.bars > 1 ? 's' : ''} ${header.timeframe})`
-      : '';
-  return `Structure orientée ${orient} depuis le CHOCH${whenPart}${barsPart}.`;
-}
+// NOTE (I18N-1): the former `formatTrendMaturity` / `formatBreakTimestamp`
+// helpers produced a HARD-CODED French sentence and a numeric « JJ/MM à HH:MM »
+// timestamp. They were dead in the app (only their own unit tests referenced
+// them) — the rendered maturity line is built by the locale-aware
+// `useReadingFormatters().regimeMaturity`, which consumes `deriveTrendMaturity`
+// below. They were removed rather than half-translated: no French string should
+// linger in a lib. `deriveTrendMaturity` (the pure calculation) is unchanged.
 
 // ─── (c) Last structural event — most recent of BOS / CHOCH ──────────────────
 

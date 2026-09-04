@@ -24,7 +24,7 @@ const FORBIDDEN = [
   'risqué', 'risque de', 'dangereux', 'garanti', 'guaranteed', 'safe bet',
 ];
 
-const LOCALES = ['fr', 'en', 'de', 'es', 'it', 'nl', 'pl', 'pt', 'ar'] as const;
+const LOCALES = ['fr', 'en', 'es'] as const;
 
 /** Keys under the `chat` and `app.chat` namespaces that are shown as
  * suggestions or waiting/activity messages — the surfaces the mission pins. */

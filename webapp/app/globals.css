@@ -29,17 +29,6 @@
  */
 
 /*
- * RTL / Arabic support (i18n Étape 1). The Latin `Inter` variable font ships no
- * Arabic glyphs, so for `html[dir="rtl"]` (currently only the `ar` locale) we
- * prepend the Arabic-capable Noto stack. `dir="rtl"` on <html> already flips
- * the flow; Tailwind logical utilities + flexbox handle the rest of the layout.
- */
-html[dir='rtl'] body {
-  font-family: var(--font-arabic), var(--font-sans), ui-sans-serif, system-ui,
-    sans-serif;
-}
-
-/*
  * Typographic scale (mission UI-2). Six sizes, no more — a real hierarchy where
  * size signals importance instead of everything shouting at once. These are the
  * ONLY font-size values any product surface should reference; new sizes are a

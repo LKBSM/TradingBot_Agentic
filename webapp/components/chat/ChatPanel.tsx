@@ -20,10 +20,8 @@ import { useChatAnchorScroll } from './useChatAnchorScroll';
 import { SuggestedQuestions } from './SuggestedQuestions';
 import { ThinkingIndicator } from './ThinkingIndicator';
 import { useChatbotScriptOrFallback } from '@/lib/chatbot';
-import {
-  formatInstrument,
-  formatTimeframe,
-} from '@/lib/market-reading/formatters';
+import { formatTimeframe } from '@/lib/market-reading/formatters';
+import { useInstrumentLabel } from '@/lib/market-reading/useInstrumentLabel';
 import type { ChatbotQuestion } from '@/types/chatbot';
 
 /**
@@ -39,6 +37,7 @@ import type { ChatbotQuestion } from '@/types/chatbot';
  */
 export function ChatPanel() {
   const t = useTranslations('chat');
+  const instrumentLabel = useInstrumentLabel();
   const {
     isOpen,
     activeSignal,
@@ -99,7 +98,7 @@ export function ChatPanel() {
               >
                 {activeSignal
                   ? t('panelContext', {
-                      instrument: formatInstrument(activeSignal.instrument),
+                      instrument: instrumentLabel(activeSignal.instrument),
                       timeframe: formatTimeframe(activeSignal.timeframe),
                     })
                   : t('panelNoContext')}

@@ -1,9 +1,12 @@
 import * as React from 'react';
-import { localTimeLabel } from './localTime';
+import { useTranslations } from 'next-intl';
+import { utcOffsetLabel } from './localTime';
 
 /**
  * The « Heure locale · UTC−X » indicator for the reader's OWN timezone, kept in
- * sync with the browser.
+ * sync with the browser. The « Heure locale »/« Local time »/« Hora local »
+ * prefix is translated (i18n key `app.chart.localTime`, offset injected); the
+ * offset itself is locale-independent.
  *
  * Resolved on the client only: the initial state is '' so the server render and
  * the first client render match (no hydration mismatch), then the real label is
@@ -16,9 +19,10 @@ import { localTimeLabel } from './localTime';
  * every focus is free.
  */
 export function useLocalTimeLabel(): string {
+  const t = useTranslations('app.chart');
   const [label, setLabel] = React.useState('');
   React.useEffect(() => {
-    const sync = () => setLabel(localTimeLabel());
+    const sync = () => setLabel(t('localTime', { offset: utcOffsetLabel() }));
     sync();
     const onVisibility = () => {
       if (document.visibilityState === 'visible') sync();
@@ -29,6 +33,6 @@ export function useLocalTimeLabel(): string {
       window.removeEventListener('focus', sync);
       document.removeEventListener('visibilitychange', onVisibility);
     };
-  }, []);
+  }, [t]);
   return label;
 }

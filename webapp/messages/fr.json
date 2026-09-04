@@ -827,11 +827,14 @@
     "honesty": "Honnêteté",
     "pricing": "Tarifs",
     "faq": "FAQ",
+    "app": "App",
     "zones": "Zones",
     "scanner": "Scanner",
     "account": "Réglages",
     "login": "Connexion",
     "language": "Langue",
+    "openMenu": "Ouvrir le menu",
+    "menuAria": "Navigation",
     "calendar": "Actualités",
     "mia": "M.I.A",
     "tools": "Outils",
@@ -1433,7 +1436,8 @@
       "dailyChangeAria": "Variation du jour {pct}",
       "priceAt": "Prix à {time}",
       "priceFreshness": "Prix à {time} · {rel}",
-      "priceAtTitle": "Dernier prix de référence retenu (dernière bougie clôturée). Un écart avec le prix en direct du graphique reflète le temps écoulé, pas une erreur."
+      "priceAtTitle": "Dernier prix de référence retenu (dernière bougie clôturée). Un écart avec le prix en direct du graphique reflète le temps écoulé, pas une erreur.",
+      "loading": "Chargement…"
     },
     "events": {
       "title": "Contexte événementiel",
@@ -1536,6 +1540,12 @@
       "liquidityStatus_intact": "intacte",
       "liquidityStatus_swept": "balayée",
       "liquidityStatus_broken": "cassée",
+      "liquiditySide_bsl": "liquidité acheteuse (au-dessus)",
+      "liquiditySide_ssl": "liquidité vendeuse (en-dessous)",
+      "liquiditySideShort_bsl": "BSL",
+      "liquiditySideShort_ssl": "SSL",
+      "liquiditySideChart_bsl": "Liquidité achat",
+      "liquiditySideChart_ssl": "Liquidité vente",
       "trendAdj_indeterminate": "indéterminé"
     },
     "structure": {
@@ -2124,6 +2134,7 @@
       "dataLaggedTitle": "Le calendrier indique un marché ouvert, mais aucune nouvelle bougie n'a été reçue récemment.",
       "lastCandleClosed": "Dernière bougie clôturée {when} (New York)",
       "reopensAt": "Réouverture {when} (New York)",
+      "localTime": "Heure locale · {offset}",
       "noNewCandleSince": "Aucune nouvelle bougie reçue depuis {when} (New York)",
       "selectionMissing": "Cet élément n'est plus détecté dans la lecture courante.",
       "currentPrice": "Prix courant",
@@ -3159,6 +3170,12 @@
       },
       "noMeasures": "Aucune mesure n'est disponible pour cet indicateur : l'historique de prix aligné sur ses parutions passées n'est pas réuni. Cette fiche s'en tient donc aux chiffres publiés."
     }
+  },
+  "notFound": {
+    "code": "Erreur 404",
+    "heading": "Cette page est introuvable",
+    "body": "Le lien est peut-être périmé ou l’adresse mal saisie.",
+    "back": "Retour à l’accueil"
   },
   "scannerChat": {
     "meta": {

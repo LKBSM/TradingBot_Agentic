@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter, JetBrains_Mono, Noto_Sans_Arabic } from 'next/font/google';
+import { Inter, JetBrains_Mono } from 'next/font/google';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
@@ -41,33 +41,16 @@ const jetbrainsMono = JetBrains_Mono({
   variable: '--font-mono',
 });
 
-// Arabic-capable font, exposed as --font-arabic. The Latin `Inter` subset has
-// no Arabic glyphs, so RTL locales fall back to it via a globals.css rule that
-// swaps the body font stack when `html[dir="rtl"]`. Not preloaded — only ar
-// visitors pay for it, and only after the (already-swapped) Inter.
-const notoArabic = Noto_Sans_Arabic({
-  subsets: ['arabic'],
-  display: 'swap',
-  preload: false,
-  variable: '--font-arabic',
-});
-
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://mia.markets';
 
 // BCP-47 / Open Graph locale codes (language_TERRITORY) for each launch locale.
 // hreflang uses the plain language subtag from SUPPORTED_LOCALES; Open Graph
-// wants the territory-qualified form, so we keep an explicit map (no reliable
-// language→country inference exists — pt could be pt_PT or pt_BR).
+// wants the territory-qualified form, so we keep an explicit map. Spanish ships
+// as es-ES (Spain) per the I18N-1 decision.
 const OG_LOCALES: Record<Locale, string> = {
   fr: 'fr_FR',
   en: 'en_US',
-  de: 'de_DE',
   es: 'es_ES',
-  it: 'it_IT',
-  pt: 'pt_PT',
-  nl: 'nl_NL',
-  pl: 'pl_PL',
-  ar: 'ar_AR',
 };
 
 // `localePrefix: 'as-needed'` (see middleware): the default locale (fr) is
@@ -170,12 +153,14 @@ export default async function LocaleLayout({
     notFound();
   }
   const messages = await getMessages();
+  // Launch set is entirely LTR (isRtl reads the authoritative RTL_LOCALES seam,
+  // empty for fr/en/es); kept as the hook for a future RTL locale.
   const dir = isRtl(locale) ? 'rtl' : 'ltr';
   return (
     <html
       lang={locale}
       dir={dir}
-      className={`${inter.variable} ${jetbrainsMono.variable} ${notoArabic.variable}`}
+      className={`${inter.variable} ${jetbrainsMono.variable}`}
       suppressHydrationWarning
     >
       <body className="flex min-h-screen flex-col bg-background font-sans antialiased">

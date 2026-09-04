@@ -454,25 +454,28 @@ export function formatZoneDate(iso: string, locale: string = 'fr-FR'): string {
   return new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(d);
 }
 
-/** "28 juin 2026, 14:30" — date + time for the timeline steps, locale-aware. */
+/** "28 juin 2026, 14:30" — date + time for the timeline steps, locale-aware.
+ * 24-hour clock in every locale (`hour12: false`) so en shows « 14:30 », not
+ * « 2:30 PM » — consistent with the chart axis and the rest of the product. */
 export function formatZoneDateTime(iso: string, locale: string = 'fr-FR'): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
   return new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium',
     timeStyle: 'short',
+    hour12: false,
   }).format(d);
 }
 
 /**
  * "14:30" — compact time-of-day for the horizontal timeline steps (`.st3` in the
- * UI-2 reference), locale-aware. Falls back to the raw string on an unparsable
- * timestamp rather than inventing one.
+ * UI-2 reference), locale-aware, 24-hour in every locale (`hour12: false`). Falls
+ * back to the raw string on an unparsable timestamp rather than inventing one.
  */
 export function formatZoneShortTime(iso: string, locale: string = 'fr-FR'): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
-  return new Intl.DateTimeFormat(locale, { timeStyle: 'short' }).format(d);
+  return new Intl.DateTimeFormat(locale, { timeStyle: 'short', hour12: false }).format(d);
 }
 
 // ─── Filter + sort (display-only) ────────────────────────────────────────────

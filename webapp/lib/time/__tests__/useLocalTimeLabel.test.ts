@@ -1,6 +1,18 @@
+import * as React from 'react';
 import { renderHook, act } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { NextIntlClientProvider } from 'next-intl';
 import { useLocalTimeLabel } from '../useLocalTimeLabel';
+
+// The hook now reads the translated prefix from i18n (`app.chart.localTime`,
+// offset injected), so it must render under a provider. We pin fr so the prefix
+// is « Heure locale » and the assertions stay stable.
+const messages = { app: { chart: { localTime: 'Heure locale · {offset}' } } };
+const wrapper = ({ children }: { children: React.ReactNode }) =>
+  // children in props satisfies next-intl's provider type under createElement;
+  // eslint-disable-next-line react/no-children-prop
+  React.createElement(NextIntlClientProvider, { locale: 'fr', messages, children });
+const renderLabel = () => renderHook(() => useLocalTimeLabel(), { wrapper });
 
 /**
  * The hook must reflect the reader's CURRENT browser offset, and re-resolve it
@@ -22,13 +34,13 @@ afterEach(() => {
 
 describe('useLocalTimeLabel', () => {
   it('resolves the browser offset on mount (client-only, no SSR mismatch)', () => {
-    const { result } = renderHook(() => useLocalTimeLabel());
+    const { result } = renderLabel();
     // After mount effects run, the label reflects the current offset.
     expect(result.current).toBe('Heure locale · UTC−4');
   });
 
   it('re-resolves when the window regains focus (VPN / travel mid-session)', () => {
-    const { result } = renderHook(() => useLocalTimeLabel());
+    const { result } = renderLabel();
     expect(result.current).toBe('Heure locale · UTC−4');
 
     // Reader switches OS timezone to UTC+2 while the tab is open, then returns.
@@ -40,7 +52,7 @@ describe('useLocalTimeLabel', () => {
   });
 
   it('re-resolves when the tab becomes visible again', () => {
-    const { result } = renderHook(() => useLocalTimeLabel());
+    const { result } = renderLabel();
     expect(result.current).toBe('Heure locale · UTC−4');
 
     offsetWestMinutes = 0; // moved to UTC
@@ -55,7 +67,7 @@ describe('useLocalTimeLabel', () => {
   });
 
   it('ignores visibilitychange when the tab is being HIDDEN', () => {
-    const { result } = renderHook(() => useLocalTimeLabel());
+    const { result } = renderLabel();
     expect(result.current).toBe('Heure locale · UTC−4');
 
     offsetWestMinutes = -330; // would be UTC+5:30 if it (wrongly) recomputed
@@ -73,7 +85,7 @@ describe('useLocalTimeLabel', () => {
   it('removes its listeners on unmount (no leak, no post-unmount update)', () => {
     const removeWin = vi.spyOn(window, 'removeEventListener');
     const removeDoc = vi.spyOn(document, 'removeEventListener');
-    const { unmount } = renderHook(() => useLocalTimeLabel());
+    const { unmount } = renderLabel();
     unmount();
     expect(removeWin).toHaveBeenCalledWith('focus', expect.any(Function));
     expect(removeDoc).toHaveBeenCalledWith('visibilitychange', expect.any(Function));

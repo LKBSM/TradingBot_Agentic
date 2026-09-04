@@ -39,7 +39,7 @@ export function TemporalBadge({ candleCloseTs, className }: TemporalBadgeProps) 
         aria-hidden
       >
         <Clock className="h-3.5 w-3.5" />
-        <span className="opacity-0">Chargement…</span>
+        <span className="opacity-0">{t('loading')}</span>
       </div>
     );
   }

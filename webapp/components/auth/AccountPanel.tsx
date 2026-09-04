@@ -429,7 +429,6 @@ function LanguageGrid() {
           key={loc}
           type="button"
           lang={loc}
-          dir={loc === 'ar' ? 'rtl' : 'ltr'}
           className={active === loc ? 'fchip on' : 'fchip'}
           aria-pressed={active === loc}
           onClick={() => switchLocale(loc)}

@@ -258,7 +258,7 @@ export function RegimeCard({
   // straight (RegimeCard is client-rendered over client-fetched data).
   const priceTimeLabel =
     priceTs != null && Number.isFinite(priceTs)
-      ? tr('temporal.priceAt', { time: formatLocalHm(new Date(priceTs * 1000)) })
+      ? tr('temporal.priceAt', { time: formatLocalHm(new Date(priceTs * 1000), locale) })
       : null;
   // Long, localized date — « 24 juil. à 09:45 » (fr) / « Jul 24 at 09:45 » (en),
   // never the ambiguous numeric « 24/07 ».

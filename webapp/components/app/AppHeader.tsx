@@ -22,6 +22,9 @@ import { AccountMenu } from './AccountMenu';
  */
 export function AppHeader() {
   const t = useTranslations('app');
+  // Short section labels reuse the shared `nav` namespace (App / Zones / Scanner
+  // → Zonas / Escáner in es) instead of a hard-coded English string.
+  const tn = useTranslations('nav');
   const lh = useLocalizedHref();
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/85 backdrop-blur">
@@ -52,7 +55,7 @@ export function AppHeader() {
               className="inline-flex h-9 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <CandlestickChart className="h-4 w-4" aria-hidden />
-              <span>App</span>
+              <span>{tn('app')}</span>
             </Link>
             <Link
               href={lh('/zones')}
@@ -60,7 +63,7 @@ export function AppHeader() {
               className="inline-flex h-9 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <Layers className="h-4 w-4" aria-hidden />
-              <span>Zones</span>
+              <span>{tn('zones')}</span>
             </Link>
             <Link
               href={lh('/scanner/decrire')}
@@ -68,7 +71,7 @@ export function AppHeader() {
               className="inline-flex h-9 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <Radar className="h-4 w-4" aria-hidden />
-              <span>Scanner</span>
+              <span>{tn('scanner')}</span>
             </Link>
             <Badge variant="secondary" className="inline-flex">
               {t('header.planBadge')}

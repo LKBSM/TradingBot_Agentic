@@ -36,8 +36,8 @@ describe('useLocaleSwitch — single source of truth for the locale', () => {
   it('handles the root path and a deep app path', () => {
     currentPath = '/';
     let hook = renderHook(() => useLocaleSwitch());
-    hook.result.current('de');
-    expect(push).toHaveBeenCalledWith('/de');
+    hook.result.current('es');
+    expect(push).toHaveBeenCalledWith('/es');
 
     push.mockClear();
     currentPath = '/en/scanner';

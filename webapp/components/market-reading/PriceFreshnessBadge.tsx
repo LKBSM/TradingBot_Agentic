@@ -2,7 +2,7 @@
 
 import { Clock } from 'lucide-react';
 import * as React from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { useReadingFormatters } from '@/lib/market-reading/use-reading-formatters';
 import { formatLocalHm } from '@/lib/time/localTime';
@@ -34,6 +34,7 @@ interface PriceFreshnessBadgeProps {
  */
 export function PriceFreshnessBadge({ tsSec, className }: PriceFreshnessBadgeProps) {
   const t = useTranslations('reading.temporal');
+  const locale = useLocale();
   const fmt = useReadingFormatters();
   const [now, setNow] = React.useState<Date | null>(null);
 
@@ -46,7 +47,7 @@ export function PriceFreshnessBadge({ tsSec, className }: PriceFreshnessBadgePro
   if (tsSec == null || !Number.isFinite(tsSec)) return null;
 
   const at = new Date(tsSec * 1000);
-  const time = formatLocalHm(at);
+  const time = formatLocalHm(at, locale);
   const label =
     now === null
       ? t('priceAt', { time })

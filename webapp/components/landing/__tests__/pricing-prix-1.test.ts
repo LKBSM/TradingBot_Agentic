@@ -85,7 +85,7 @@ describe('PRIX-1 — no stale or hard-coded price in the frontend', () => {
 // ---------------------------------------------------------------------------
 // 3. Message-level invariants (parsed) — every locale
 // ---------------------------------------------------------------------------
-const LOCALES = ['fr', 'en', 'de', 'es', 'it', 'nl', 'pl', 'pt', 'ar'] as const;
+const LOCALES = ['fr', 'en', 'es'] as const;
 
 function loadPricingCopy(locale: string) {
   const d = JSON.parse(readFileSync(resolve(WEBAPP, 'messages', `${locale}.json`), 'utf-8'));

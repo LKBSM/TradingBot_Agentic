@@ -1,9 +1,10 @@
+import { getTranslations } from 'next-intl/server';
 import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
 import { SkipLink } from '@/components/a11y/SkipLink';
 import { ChatPanel } from '@/components/chat/ChatPanel';
 import { CookieBanner } from '@/components/compliance/CookieBanner';
-import { JsonLd, softwareApplicationLd } from '@/components/seo/JsonLd';
+import { JsonLd, buildSoftwareApplicationLd } from '@/components/seo/JsonLd';
 
 /**
  * Marketing / auth / legal chrome (the "site" surface). Sticky Nav on top, a
@@ -12,11 +13,20 @@ import { JsonLd, softwareApplicationLd } from '@/components/seo/JsonLd';
  * group only assembles the presentation. The product routes live in the sibling
  * (product) group and get the terminal shell instead of this chrome.
  */
-export default function SiteLayout({ children }: { children: React.ReactNode }) {
+export default async function SiteLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode;
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'seo' });
+  const appLd = buildSoftwareApplicationLd(locale, t('description'));
   return (
     <>
       <SkipLink />
-      <JsonLd data={softwareApplicationLd} />
+      <JsonLd data={appLd} />
       <Nav />
       {/* flex-1 fills the space between the sticky header and the footer without
           a hard-coded height guess. */}

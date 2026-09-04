@@ -49,7 +49,7 @@ import {
   type CameraFrame,
 } from '@/lib/chart/focusController';
 import { buildStructureMarkers, findEventById } from '@/lib/chart/structureMarkers';
-import { buildLiquidityLines } from '@/lib/chart/liquidityLines';
+import { buildLiquidityLines, type LiquidityLineLabels } from '@/lib/chart/liquidityLines';
 import {
   ZoneOverlayPrimitive,
   liquidityColor,
@@ -60,6 +60,7 @@ import {
 import { isPlausibleTick, isValidBar } from '@/lib/chart/sanitize';
 import { TF_SECONDS } from '@/lib/timeframes';
 import { badgeLabelKey, badgeTitleKey, formatNyTimestamp } from '@/lib/market-reading/status';
+import { useReadingFormatters } from '@/lib/market-reading/use-reading-formatters';
 import type { Candle, MarketReadingStructure, MarketState } from '@/types/market-reading';
 
 /**
@@ -339,7 +340,24 @@ export function ReadingChart({
 }: ReadingChartProps) {
   const t = useTranslations('app');
   const locale = useLocale();
+  const fmt = useReadingFormatters();
   const { resolvedTheme } = useTheme();
+
+  // Localized label producers for the on-chart liquidity segments (I18N-1). The
+  // pure `buildLiquidityLines` builder is hook-free, so the React caller injects
+  // the already-localized strings here — routed through the SAME locale-aware
+  // `useReadingFormatters` the rest of the reading uses, so an annotation drawn
+  // on the chart is in the active language, never the FR built-in fallback.
+  const liquidityLabels = React.useMemo<LiquidityLineLabels>(
+    () => ({
+      side: (s) => fmt.liquiditySide(s),
+      sideShort: (s) => fmt.liquiditySideShort(s),
+      sideChart: (s) => fmt.liquiditySideChart(s),
+      kind: (k) => fmt.liquidityKind(k),
+      status: (st) => fmt.liquidityStatus(st).label,
+    }),
+    [fmt],
+  );
   // Reopen time for the session badge sub-line (see marketReopenTs prop).
   const marketReopenLabel = formatNyTimestamp(marketReopenTs, locale);
 
@@ -437,12 +455,12 @@ export function ReadingChart({
     () =>
       layers.liquidity
         ? applyZoneVisibility(
-            buildLiquidityLines(structure, { intactOnly: false }),
+            buildLiquidityLines(structure, { intactOnly: false, labels: liquidityLabels }),
             hiddenZoneIds,
             isolatedZoneIds,
           )
         : [],
-    [structure, layers.liquidity, hiddenZoneIds, isolatedZoneIds],
+    [structure, layers.liquidity, hiddenZoneIds, isolatedZoneIds, liquidityLabels],
   );
 
   // PROTOTYPE — provisional intra-candle interaction overlay derived from the
@@ -564,9 +582,9 @@ export function ReadingChart({
       // timezone so the clock is never ambiguous (a discreet « Heure locale »
       // chip sits at the bottom-left). Candle times are UTC epoch seconds.
       localization: {
-        locale: 'fr-FR',
+        locale,
         timeFormatter: (t: Time) =>
-          formatLocalDayHm(new Date((t as number) * 1000)),
+          formatLocalDayHm(new Date((t as number) * 1000), locale),
       },
       timeScale: {
         borderColor: p.scaleBorder,
@@ -581,10 +599,12 @@ export function ReadingChart({
           const d = new Date((t as number) * 1000);
           if (tickMarkType === TickMarkType.Year) return String(d.getFullYear());
           if (tickMarkType === TickMarkType.Month)
-            return d.toLocaleDateString('fr-FR', { month: 'short' });
+            return d.toLocaleDateString(locale, { month: 'short' });
+          // Named month (not day/month digits): unambiguous on an English axis
+          // where « 01/09 » would read as Jan 9. Locale drives day/month order.
           if (tickMarkType === TickMarkType.DayOfMonth)
-            return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
-          return formatLocalHm(d);
+            return d.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
+          return formatLocalHm(d, locale);
         },
       },
       // ── Interaction: fluid pan / zoom on mouse AND touch. ──
@@ -973,7 +993,7 @@ export function ReadingChart({
       const arrow = selection.direction === 'bullish' ? '↑' : '↓';
       // VZ-1b — full date + time (« BOS ↓ · 28/07 14:00 ») so the couple reads
       // completely; the broken LEVEL shows on the adjacent price-axis label.
-      const when = formatLocalDayHm(new Date(selection.atSec * 1000));
+      const when = formatLocalDayHm(new Date(selection.atSec * 1000), locale);
       selectionLines.push(
         series.createPriceLine({
           price: selection.level,

@@ -4,6 +4,7 @@ import type {
   FVGStatus,
   ImpactLevel,
   LiquidityKind,
+  LiquiditySide,
   LiquidityStatus,
   MarketPhase,
   MarketReadingHeader,
@@ -111,6 +112,22 @@ export function useReadingFormatters() {
 
   function liquidityStatus(v: LiquidityStatus): { label: string; tone: Tone } {
     return { label: t(`labels.liquidityStatus_${v}`), tone: v === 'swept' ? 'warn' : 'neutral' };
+  }
+
+  /** Full side label, e.g. « liquidité acheteuse (au-dessus) » / "sell-side liquidity (below)". */
+  function liquiditySide(v: LiquiditySide): string {
+    return t(`labels.liquiditySide_${v}`);
+  }
+
+  /** Short axis code — BSL / SSL. These are SMC jargon codes: identical in every
+   * locale (never translated), but sourced from i18n so the seam stays uniform. */
+  function liquiditySideShort(v: LiquiditySide): string {
+    return t(`labels.liquiditySideShort_${v}`);
+  }
+
+  /** Compact on-chart tag, e.g. « Liquidité achat » / "Sell liquidity". */
+  function liquiditySideChart(v: LiquiditySide): string {
+    return t(`labels.liquiditySideChart_${v}`);
   }
 
   /** « 2 380,00 – 2 390,00 » price band, locale-aware. */
@@ -333,6 +350,9 @@ export function useReadingFormatters() {
     retestType,
     liquidityKind,
     liquidityStatus,
+    liquiditySide,
+    liquiditySideShort,
+    liquiditySideChart,
     band,
     triggerType,
     price,

@@ -674,7 +674,7 @@
       "boundHigh": "Límite superior del range",
       "posNote": "Estos límites son **estructurales**: los extremos de estructura retenidos por el motor. No confundir con los niveles de referencia, que son **temporales**.",
       "alignHead": "El detalle por unidad de tiempo",
-      "alignNote": "The available timeframes and their structural direction. When one diverges, its line is highlighted here rather than hidden.",
+      "alignNote": "Las unidades superiores a la que observas y su dirección estructural. Una unidad sin datos se cuenta como no disponible, nunca como una concordancia; cuando una diverge, su línea se resalta aquí en lugar de ocultarse.",
       "matHead": "El anclaje del contador",
       "anchorEvent": "Evento de anclaje",
       "crossedLevel": "Nivel franqueado",
@@ -827,11 +827,14 @@
     "honesty": "Honestidad",
     "pricing": "Precios",
     "faq": "FAQ",
+    "app": "App",
     "zones": "Zonas",
     "scanner": "Escáner",
     "account": "Ajustes",
     "login": "Iniciar sesión",
     "language": "Idioma",
+    "openMenu": "Abrir el menú",
+    "menuAria": "Navegación",
     "calendar": "Noticias",
     "mia": "M.I.A",
     "tools": "Herramientas",
@@ -875,7 +878,7 @@
       "card1Title": "Comprender una lectura",
       "card1Kicker": "Pedagogía",
       "card2Title": "Contextualizar un evento",
-      "card2Kicker": "Macro · blackout",
+      "card2Kicker": "Macro · volatilidad",
       "card3Title": "Rechazar una orden",
       "card3Kicker": "Rechazo pedagógico",
       "footnote": "Las respuestas anteriores están predefinidas para la demo. En producción, M.I.A Agent utiliza Claude (Anthropic) con el contexto InsightSignal v2.1.0 inyectado y un prompt de sistema que prohíbe cualquier recomendación personalizada."
@@ -1433,7 +1436,8 @@
       "dailyChangeAria": "Variación del día {pct}",
       "priceAt": "Precio a las {time}",
       "priceFreshness": "Precio a las {time} · {rel}",
-      "priceAtTitle": "Último precio de referencia utilizado (última vela cerrada). Una diferencia con el precio en vivo del gráfico refleja el tiempo transcurrido, no un error."
+      "priceAtTitle": "Último precio de referencia utilizado (última vela cerrada). Una diferencia con el precio en vivo del gráfico refleja el tiempo transcurrido, no un error.",
+      "loading": "Cargando…"
     },
     "events": {
       "title": "Contexto de eventos",
@@ -1535,6 +1539,12 @@
       "liquidityStatus_intact": "intacta",
       "liquidityStatus_swept": "barrida",
       "liquidityStatus_broken": "rota",
+      "liquiditySide_bsl": "liquidez compradora (por encima)",
+      "liquiditySide_ssl": "liquidez vendedora (por debajo)",
+      "liquiditySideShort_bsl": "BSL",
+      "liquiditySideShort_ssl": "SSL",
+      "liquiditySideChart_bsl": "Liquidez compra",
+      "liquiditySideChart_ssl": "Liquidez venta",
       "trendAdj_indeterminate": "indeterminada",
       "trend_indeterminate": "Tendencia indeterminada"
     },
@@ -1775,8 +1785,8 @@
       "closedBody": "El acceso está reservado a las cuentas de prueba invitadas durante la beta privada.",
       "errorGeneric": "No se pudo registrar. Vuelve a intentarlo.",
       "or": "or",
-      "emailHint": "Used as your sign-in identifier.",
-      "nextStep": "After creating your account, you confirm your email, then choose your plan."
+      "emailHint": "Se usa como identificador de inicio de sesión.",
+      "nextStep": "Después de crear tu cuenta, confirmas tu correo electrónico y luego eliges tu plan."
     },
     "resetConfirm": {
       "intro": "Elige una nueva contraseña (al menos 10 caracteres).",
@@ -1815,40 +1825,40 @@
       "logout": "Cerrar sesión"
     },
     "verifyEmail": {
-      "title": "Email verification",
-      "verifying": "Verifying…",
+      "title": "Verificación del correo electrónico",
+      "verifying": "Verificando…",
       "success": "Correo electrónico confirmado. Elige tu plan para activar tu acceso.",
-      "error": "Invalid or expired verification link.",
+      "error": "Enlace de verificación no válido o caducado.",
       "cta": "Elegir mi plan",
-      "inboxTitle": "Confirm your email address",
-      "inboxBody": "We sent a confirmation link to {email}. Click it to activate your account, then choose your plan.",
-      "inboxBodyNoEmail": "We sent you a confirmation link by email. Click it to activate your account, then choose your plan.",
-      "resend": "Resend the email",
+      "inboxTitle": "Confirma tu dirección de correo electrónico",
+      "inboxBody": "Hemos enviado un enlace de confirmación a {email}. Haz clic en él para activar tu cuenta y luego elige tu plan.",
+      "inboxBodyNoEmail": "Te hemos enviado un enlace de confirmación por correo electrónico. Haz clic en él para activar tu cuenta y luego elige tu plan.",
+      "resend": "Reenviar el correo electrónico",
       "resending": "Sending…",
-      "resent": "Email resent. Check your inbox (and your spam folder).",
-      "resendError": "Unable to resend the email right now. Try again in a moment.",
-      "goToPlans": "Continue to plans",
-      "codeIntro": "Enter the 6-digit code we sent to {email}.",
-      "codeIntroNoEmail": "Enter the 6-digit code we sent you by email.",
-      "codeLabel": "Confirmation code",
+      "resent": "Correo electrónico reenviado. Revisa tu bandeja de entrada (y la carpeta de correo no deseado).",
+      "resendError": "No se puede reenviar el correo electrónico por ahora. Vuelve a intentarlo en un momento.",
+      "goToPlans": "Continuar a los planes",
+      "codeIntro": "Introduce el código de 6 dígitos que enviamos a {email}.",
+      "codeIntroNoEmail": "Introduce el código de 6 dígitos que te enviamos por correo electrónico.",
+      "codeLabel": "Código de confirmación",
       "verify": "Verify",
-      "checking": "Checking…",
-      "codeError": "Invalid or expired code. Check it and try again.",
-      "noCodeYet": "Didn't get a code?"
+      "checking": "Verificando…",
+      "codeError": "Código no válido o caducado. Compruébalo y vuelve a intentarlo.",
+      "noCodeYet": "¿No has recibido ningún código?"
     },
     "google": {
-      "button": "Continue with Google",
-      "finalizeTitle": "Finish signing up",
-      "finalizeIntro": "Google confirmed your address. Pick a username and accept the terms to create your account.",
-      "finalizeSubmit": "Create my account",
-      "missingToken": "Invalid or expired Google link. Try again from the sign-in page.",
+      "button": "Continuar con Google",
+      "finalizeTitle": "Finalizar el registro",
+      "finalizeIntro": "Google confirmó tu dirección. Acepta las condiciones para crear tu cuenta y luego elige tu plan.",
+      "finalizeSubmit": "Crear mi cuenta",
+      "missingToken": "Enlace de Google no válido o caducado. Vuelve a intentarlo desde la página de inicio de sesión.",
       "orSeparator": "or",
       "error": {
-        "state": "Google sign-in didn't complete: your session expired or cookies are blocked. Try again, or sign in with your email and password.",
-        "expired": "The Google sign-in timed out. Try again.",
-        "exchange": "Google couldn't confirm your sign-in. Try again in a moment, or use your email and password.",
-        "email": "Google didn't provide a verified email address. Use your email and password.",
-        "generic": "Google sign-in didn't complete. Try again, or sign in with your email and password."
+        "state": "El inicio de sesión con Google no se ha completado: tu sesión ha caducado o hay cookies bloqueadas. Vuelve a intentarlo, o inicia sesión con tu correo electrónico y contraseña.",
+        "expired": "Se ha agotado el tiempo de inicio de sesión con Google. Vuelve a intentarlo.",
+        "exchange": "Google no ha podido confirmar tu inicio de sesión. Vuelve a intentarlo en un momento, o usa tu correo electrónico y contraseña.",
+        "email": "Google no ha proporcionado una dirección de correo electrónico verificada. Usa tu correo electrónico y contraseña.",
+        "generic": "El inicio de sesión con Google no se ha completado. Vuelve a intentarlo, o inicia sesión con tu correo electrónico y contraseña."
       }
     }
   },
@@ -1878,34 +1888,34 @@
       "pastDue": "Pago pendiente",
       "canceled": "Suscripción cancelada",
       "none": "Ninguna suscripción",
-      "suspended": "Subscription suspended",
-      "expired": "Subscription expired"
+      "suspended": "Suscripción suspendida",
+      "expired": "Suscripción caducada"
     },
-    "nextCharge": "Next charge on {date}: {amount} {currency}",
-    "accessUntilNoRenewal": "Access until {date}, with no renewal.",
-    "graceNotice": "Payment failed. Update your payment method so you don't lose access.",
-    "suspendedNotice": "Access suspended following a refund or dispute. Contact support if needed.",
-    "expiredNotice": "Your subscription has expired. Subscribe again to regain access.",
-    "manageHint": "Change plan, update your card, download invoices or cancel — all in the Stripe portal.",
-    "reactivate": "Subscribe again",
-    "activateTitle": "Activate your account",
-    "activateIntro": "Choose your plan to open M.I.A Markets. Your access turns on as soon as the payment is confirmed.",
-    "reactivateTitle": "Reactivate your access",
+    "nextCharge": "Próximo cobro el {date}: {amount} {currency}",
+    "accessUntilNoRenewal": "Acceso hasta el {date}, sin renovación.",
+    "graceNotice": "El pago ha fallado. Actualiza tu método de pago para no perder el acceso.",
+    "suspendedNotice": "Acceso suspendido tras un reembolso o una disputa. Contacta con el soporte si lo necesitas.",
+    "expiredNotice": "Tu suscripción ha caducado. Vuelve a suscribirte para recuperar el acceso.",
+    "manageHint": "Cambiar de plan, actualizar tu tarjeta, descargar tus facturas o cancelar: todo se hace en el portal de Stripe.",
+    "reactivate": "Volver a suscribirse",
+    "activateTitle": "Activa tu cuenta",
+    "activateIntro": "Elige tu plan para abrir M.I.A Markets. Tu acceso se activa en cuanto se confirma el pago.",
+    "reactivateTitle": "Reactiva tu acceso",
     "monthlyName": "Monthly",
     "annualName": "Annual",
-    "perMonth": "per month",
-    "annualBilledNote": "billed {total} {currency} per year",
-    "bestValue": "Best value",
-    "savePerYear": "Save {amount} {currency} per year",
-    "securedByStripe": "Payment secured by Stripe. No card data is kept on our servers.",
-    "legalRenew": "Automatic renewal, cancel anytime.",
-    "legalTool": "An information and education tool — not investment advice, not trading signals.",
-    "legalRisk": "Trading carries a risk of loss.",
-    "legalAge": "Restricted to people aged 18 and over.",
-    "alreadyPaid": "Already paid?",
-    "activateAccess": "Activate my access",
-    "activating": "Checking…",
-    "noPaymentFound": "No active payment found for this account. If you just paid, wait a moment and try again."
+    "perMonth": "al mes",
+    "annualBilledNote": "facturado {total} {currency} al año",
+    "bestValue": "Mejor oferta",
+    "savePerYear": "Ahorra {amount} {currency} al año",
+    "securedByStripe": "Pago protegido por Stripe. No se conserva ningún dato de tarjeta en nuestros servidores.",
+    "legalRenew": "Renovación automática, cancelable en cualquier momento.",
+    "legalTool": "Una herramienta de información y educación — ni asesoramiento de inversión, ni señales de trading.",
+    "legalRisk": "El trading conlleva un riesgo de pérdida.",
+    "legalAge": "Reservado a personas de 18 años en adelante.",
+    "alreadyPaid": "¿Ya has pagado?",
+    "activateAccess": "Activar mi acceso",
+    "activating": "Verificando…",
+    "noPaymentFound": "No se ha encontrado ningún pago activo para esta cuenta. Si acabas de pagar, espera un momento y vuelve a intentarlo."
   },
   "access": {
     "paywall": {
@@ -1998,19 +2008,19 @@
       "deleteRow": "Eliminar la cuenta",
       "deleteValue": "Borrar definitivamente tu cuenta y tus datos.",
       "delete": "Eliminar",
-      "verifyBannerTitle": "Confirm your email address",
-      "verifyBannerBody": "A confirmation link was sent to you. Confirm your email to unlock access.",
-      "verifyResend": "Resend email",
-      "verifyResent": "If verification is needed, an email has just been sent.",
-      "verifyError": "Could not send the email right now.",
+      "verifyBannerTitle": "Confirma tu dirección de correo electrónico",
+      "verifyBannerBody": "Se te ha enviado un enlace de confirmación. Confirma tu correo electrónico para activar el acceso.",
+      "verifyResend": "Reenviar el correo electrónico",
+      "verifyResent": "Si es necesaria una verificación, se acaba de enviar un correo electrónico.",
+      "verifyError": "No se ha podido enviar el correo electrónico en este momento.",
       "passwordChange": "Change",
-      "passwordCurrent": "Current password",
-      "passwordNew": "New password (min. 10 characters)",
-      "passwordChanged": "Password changed. Your other devices were signed out.",
-      "passwordError": "Could not change the password.",
-      "deleteConfirm": "This is permanent: your account and data will be deleted, and your subscription canceled. Confirm?",
-      "deleteConfirmButton": "Delete permanently",
-      "deleteError": "Could not delete the account right now."
+      "passwordCurrent": "Contraseña actual",
+      "passwordNew": "Nueva contraseña (mín. 10 caracteres)",
+      "passwordChanged": "Contraseña modificada. Tus otros dispositivos se han desconectado.",
+      "passwordError": "No se ha podido cambiar la contraseña.",
+      "deleteConfirm": "Esta acción es definitiva: tu cuenta y tus datos se eliminarán, y tu suscripción se cancelará. ¿Confirmar?",
+      "deleteConfirmButton": "Eliminar definitivamente",
+      "deleteError": "No se ha podido eliminar la cuenta en este momento."
     },
     "chat": {
       "asideAria": "Asistente M.I.A Agent",
@@ -2051,16 +2061,16 @@
       "chartUnavailableBody": "El flujo de velas no está conectado para esta combinación. La lectura de abajo sigue disponible."
     },
     "chart": {
-      "recent": "Go to the most recent candle",
-      "defaultView": "Return to the default view",
-      "historyStart": "Start of available data for this timeframe",
-      "outsideAnalysis": "Outside the analysis window — no structure detected here",
-      "loadingHistory": "Loading history…",
-      "historyError": "History unavailable.",
+      "recent": "Ir a la vela más reciente",
+      "defaultView": "Volver a la vista predeterminada",
+      "historyStart": "Inicio de los datos disponibles para esta unidad de tiempo",
+      "outsideAnalysis": "Fuera de la ventana de análisis — ninguna estructura detectada aquí",
+      "loadingHistory": "Cargando el historial…",
+      "historyError": "Historial no disponible.",
       "retry": "Retry",
       "zonesCluster": "{count} zones",
-      "controlsAria": "Chart controls (zoom, pan)",
-      "keyboardRegionAria": "{instrument} chart — press +/− to zoom, arrow keys to pan, Home for the most recent candle, 0 for the default view",
+      "controlsAria": "Controles del gráfico (zoom, desplazamiento)",
+      "keyboardRegionAria": "Gráfico {instrument} — usa +/− para ampliar, las flechas para desplazarte, Inicio para la vela más reciente, 0 para la vista predeterminada",
       "canvasAria": "Gráfico de velas {instrument} con zonas Order Block, Fair Value Gap, niveles de ruptura y bolsas de liquidez externa (BSL/SSL)",
       "deselectZoneAria": "Deseleccionar esta zona",
       "deselectZoneTitle": "Haz clic para deseleccionar",
@@ -2087,6 +2097,7 @@
       "dataLaggedTitle": "El calendario indica el mercado abierto, pero no se ha recibido ninguna vela nueva recientemente.",
       "lastCandleClosed": "Última vela cerrada {when} (Nueva York)",
       "reopensAt": "Reapertura {when} (Nueva York)",
+      "localTime": "Hora local · {offset}",
       "noNewCandleSince": "Sin nuevas velas recibidas desde {when} (Nueva York)",
       "selectionMissing": "Este elemento ya no se detecta en la lectura actual.",
       "currentPrice": "Precio actual",
@@ -2425,25 +2436,25 @@
       "title": "Crear una cuenta",
       "intro": "Acceso anticipado reservado a personas mayores de edad (18 años o más).",
       "sell": {
-        "valueTitle": "What your subscription unlocks",
-        "value1": "Several markets (gold, indices, FX) read continuously.",
-        "value2": "Every timeframe, from M5 up to daily.",
-        "value3": "The conditions scanner — describe your strategy, MIA translates it.",
-        "value4": "Price zones and their lifecycle, explained.",
-        "value5": "M.I.A, the assistant that comments on your market reading.",
+        "valueTitle": "Lo que desbloquea tu suscripción",
+        "value1": "Varios mercados (oro, índices, divisas) leídos de forma continua.",
+        "value2": "Todas las unidades de tiempo, desde M5 hasta la diaria.",
+        "value3": "El escáner de condiciones — describe tu estrategia, MIA la traduce.",
+        "value4": "Las zonas de precio y su ciclo de vida, explicados.",
+        "value5": "M.I.A, el asistente que comenta tu lectura de mercado.",
         "priceTitle": "Pricing",
-        "priceMonthly": "{amount} {currency} / month",
-        "priceAnnual": "{total} {currency} / year — i.e. {perMonth} {currency} / month",
-        "priceNote": "Amounts in US dollars ({currency}).",
-        "stepsTitle": "How it works",
-        "step1": "Create your account",
-        "step2": "Choose your plan",
-        "step3": "Pay and get access",
-        "mentionRenew": "Automatic renewal, cancel anytime.",
-        "mentionTool": "An information and education tool — not investment advice, not trading signals.",
-        "mentionRisk": "Trading carries a risk of loss.",
-        "mentionAge": "Restricted to people aged 18 and over.",
-        "formTitle": "Start now"
+        "priceMonthly": "{amount} {currency} / mes",
+        "priceAnnual": "{total} {currency} / año — es decir {perMonth} {currency} / mes",
+        "priceNote": "Importes en dólares estadounidenses ({currency}).",
+        "stepsTitle": "Cómo funciona",
+        "step1": "Crea tu cuenta",
+        "step2": "Elige tu plan",
+        "step3": "Paga y accede",
+        "mentionRenew": "Renovación automática, cancelable en cualquier momento.",
+        "mentionTool": "Una herramienta de información y educación — ni asesoramiento de inversión, ni señales de trading.",
+        "mentionRisk": "El trading conlleva un riesgo de pérdida.",
+        "mentionAge": "Reservado a personas de 18 años en adelante.",
+        "formTitle": "Empieza ahora"
       }
     },
     "motDePasseOublieConfirmer": {
@@ -2600,40 +2611,40 @@
   },
   "zones": {
     "title": "Zones",
-    "refreshing": "refreshing…",
+    "refreshing": "actualizando…",
     "filterLabel": "Filter",
-    "filterAria": "Filter the zones",
+    "filterAria": "Filtrar las zonas",
     "sortLabel": "Sort",
-    "sortAria": "Sort the zones",
-    "loading": "Loading the zones…",
-    "errorMessage": "The zones are not available for this combination.",
-    "retry": "Try again",
-    "emptyNone": "No zone detected on this combination.",
+    "sortAria": "Ordenar las zonas",
+    "loading": "Cargando las zonas…",
+    "errorMessage": "Las zonas no están disponibles para esta combinación.",
+    "retry": "Reintentar",
+    "emptyNone": "Ninguna zona detectada en esta combinación.",
     "emptyFilter": {
-      "all": "No zone detected on this combination.",
-      "active": "No active zone right now.",
-      "untouched": "No zone stayed untouched: they have all been contacted.",
-      "consumed": "No filled zone in the recent history."
+      "all": "Ninguna zona detectada en esta combinación.",
+      "active": "Ninguna zona activa por el momento.",
+      "untouched": "Ninguna zona ha quedado virgen: todas ya han sido contactadas.",
+      "consumed": "Ninguna zona rellenada en el historial reciente."
     },
     "selector": {
       "instrument": "Instrument",
-      "timeframe": "Timeframe"
+      "timeframe": "Unidad de tiempo"
     },
     "filters": {
       "all": "All",
       "active": "Active",
-      "untouched": "Untouched",
+      "untouched": "Nunca tocadas",
       "consumed": "Filled"
     },
     "sorts": {
-      "proximity": "Proximity",
+      "proximity": "Proximidad",
       "formation": "Formation",
       "contacts": "Contacts"
     },
     "groups": {
-      "inside": "The price is inside",
-      "above": "Above the price",
-      "below": "Below the price",
+      "inside": "El precio está dentro",
+      "above": "Por encima del precio",
+      "below": "Por debajo del precio",
       "consumed": "Filled"
     },
     "kind": {
@@ -2649,21 +2660,21 @@
     },
     "liquiditySide": {
       "bsl": "buy-side",
-      "ssl": "sell-side"
+      "ssl": "venta"
     },
     "duration": {
-      "underMinute": "less than a minute",
+      "underMinute": "menos de un minuto",
       "min": "min",
       "hour": "h",
       "day": "d"
     },
     "card": {
-      "height": "height {pts} pts · {pct} of the price",
-      "heightPtsOnly": "height {pts} pts"
+      "height": "altura {pts} pts · {pct} del precio",
+      "heightPtsOnly": "altura {pts} pts"
     },
     "header": {
-      "untouched": "Never touched",
-      "neverFilled": "Never filled",
+      "untouched": "Nunca tocada",
+      "neverFilled": "Nunca rellenada",
       "contacts": "{count, plural, one {# contact} other {# contacts}}",
       "consumed": "Filled"
     },
@@ -2671,88 +2682,88 @@
       "positionLabel": "Position",
       "distanceLabel": "Distance",
       "enteredLabel": "Entered",
-      "lastContactLabel": "Last contact",
-      "insideDist": "The price is inside, {low} pts from the lower edge and {high} pts from the upper edge",
-      "distanceLine": "{pts} pts {side} the price · i.e. {pct} · measured at the {edge}",
-      "enteredAt": "{when} · {time}",
-      "lastEntry": "{when} · the price entered at {level} then exited {exit}",
-      "lastEdge": "{when} · the price touched the {edge} without penetrating",
-      "lastTraversal": "{when} · the price traversed it at {level}",
-      "neverReturned": "None. The price has never returned since it formed.",
+      "lastContactLabel": "Último contacto",
+      "insideDist": "El precio está dentro, a {low} pts del borde inferior y a {high} pts del borde superior",
+      "distanceLine": "{pts} pts {side} del precio · es decir {pct} · medido en el {edge}",
+      "enteredAt": "hace {when} · {time}",
+      "lastEntry": "hace {when} · el precio entró a {level} y luego salió de ella {exit}",
+      "lastEdge": "hace {when} · el precio tocó el {edge} sin penetrar",
+      "lastTraversal": "hace {when} · el precio la atravesó a {level}",
+      "neverReturned": "Ninguno. El precio nunca ha regresado a ella desde su formación.",
       "side": {
         "above": "above",
         "below": "below"
       },
       "edge": {
-        "low": "lower edge",
-        "high": "upper edge"
+        "low": "borde inferior",
+        "high": "borde superior"
       },
       "exitBy": {
         "low": "downward",
         "high": "upward"
       },
       "gauge": {
-        "zone": "the zone",
+        "zone": "la zona",
         "price": "price",
         "gap": "{pts} pts",
-        "outMarker": "off scale",
-        "aria": "Proximity gauge. The zone runs from {low} to {high}. Price: {price}. {detail}"
+        "outMarker": "fuera de escala",
+        "aria": "Indicador de proximidad. La zona va de {low} a {high}. Precio: {price}. {detail}"
       }
     },
     "confluence": {
-      "heading": "What else is at this level",
-      "none": "Nothing else is detected at this level: no other zone on the tracked timeframes, no liquidity pocket nearby.",
-      "innerSame": "A {kd} sits inside this zone, between {band}.",
-      "innerTf": "A {kd} on {tf} sits inside this zone, between {band}.",
-      "outerSame": "A {kd} contains this zone, between {band}.",
-      "outerTf": "A {kd} on {tf} contains it, between {band}.",
-      "sameLevelSame": "A {kd} is at the same level, between {band}.",
-      "sameLevelTf": "A {kd} on {tf} is at the same level, between {band}.",
-      "liquidity": "A {side} liquidity pocket {status} at {level}, {pts} pts {dside} the {edge}.",
-      "liquidityInside": "A {side} liquidity pocket {status} at {level}, inside the zone.",
-      "openZone": "Open this zone: {desc}"
+      "heading": "Qué más hay en este nivel",
+      "none": "No se detecta nada más en este nivel: ninguna otra zona en las unidades de tiempo seguidas, ninguna bolsa de liquidez cercana.",
+      "innerSame": "Un {kd} se sitúa dentro de esta zona, entre {band}.",
+      "innerTf": "Un {kd} en {tf} se sitúa dentro de esta zona, entre {band}.",
+      "outerSame": "Un {kd} engloba esta zona, entre {band}.",
+      "outerTf": "Un {kd} en {tf} la engloba, entre {band}.",
+      "sameLevelSame": "Un {kd} está al mismo nivel, entre {band}.",
+      "sameLevelTf": "Un {kd} en {tf} está al mismo nivel, entre {band}.",
+      "liquidity": "Una bolsa de liquidez {side} {status} a {level}, {pts} pts {dside} del {edge}.",
+      "liquidityInside": "Una bolsa de liquidez {side} {status} a {level}, dentro de la zona.",
+      "openZone": "Abrir esta zona: {desc}"
     },
     "contacts": {
-      "heading": "Price contacts — observed facts",
-      "entryExit": "The price entered at {level} and exited without traversing it.",
-      "edgeTouch": "The price touched the edge without penetrating.",
-      "traversal": "The price traversed the zone at {level}.",
-      "fillProgress": "Fill brought to {pct}.",
+      "heading": "Contactos del precio — hechos observados",
+      "entryExit": "El precio entró a {level} y salió de ella sin atravesarla.",
+      "edgeTouch": "El precio tocó el borde sin penetrar.",
+      "traversal": "El precio atravesó la zona a {level}.",
+      "fillProgress": "Relleno llevado al {pct}.",
       "honesty": "M.I.A reports facts — entries, exits, traversals, with their dates and levels — and lets you conclude. It makes no value judgement about a zone: SMC itself has no consensus on that."
     },
     "timeline": {
       "formed": "Formed",
       "entry": "Entry",
-      "entryN": "Entry {n}",
+      "entryN": "Entrada {n}",
       "touch": "Touch",
-      "traversal": "Traversal",
+      "traversal": "Travesía",
       "now": "Now",
       "noDate": "—"
     },
     "fill": {
-      "aria": "Zone fill"
+      "aria": "Relleno de la zona"
     },
     "origin": {
-      "heading": "What created it",
-      "ob": "Last opposite candle before the {kind} {dir} at {time}, at {level}.",
-      "fvg": "Imbalance left by three consecutive candles during the expansion.",
-      "session": "Formed in the {session} session."
+      "heading": "Lo que la creó",
+      "ob": "Última vela opuesta antes del {kind} {dir} de las {time}, a {level}.",
+      "fvg": "Desequilibrio dejado por tres velas consecutivas durante la expansión.",
+      "session": "Formada en la sesión de {session}."
     },
     "details": {
-      "heading": "Full details",
-      "high": "Upper edge",
-      "low": "Lower edge",
+      "heading": "Detalles completos",
+      "high": "Borde superior",
+      "low": "Borde inferior",
       "mid": "Midpoint",
       "height": "Height",
       "age": "Age",
-      "ageWithBars": "{duration} · {bars, plural, one {# candle} other {# candles}}",
-      "entries": "Price entries",
-      "edgeTouches": "Edge touches",
+      "ageWithBars": "{duration} · {bars, plural, one {# vela} other {# velas}}",
+      "entries": "Entradas del precio",
+      "edgeTouches": "Toques de borde",
       "session": "Session",
-      "id": "Identifier"
+      "id": "Identificador"
     },
     "actions": {
-      "show": "Show on the chart",
+      "show": "Ver en el gráfico",
       "hide": "Hide",
       "unhide": "Show"
     },
@@ -2760,49 +2771,49 @@
       "count": "{count, plural, one {# zone} other {# zones}}"
     },
     "deeplink": {
-      "staleNotice": "This zone is no longer detected in the current reading."
+      "staleNotice": "Esta zona ya no se detecta en la lectura actual."
     },
     "mia": {
       "title": "M.I.A — selected zone",
       "name": "M.I.A Agent",
-      "tagline": "describes · explains · does not predict",
+      "tagline": "describe · explica · no predice",
       "empty": "Select a zone for M.I.A to describe it.",
-      "subjectLabel": "Selected zone",
+      "subjectLabel": "Zona seleccionada",
       "openSheet": "Ask M.I.A",
       "closeSheet": "Close",
-      "intro": "You are looking at a {kind}. {count, plural, =0 {The price has not contacted it yet.} one {The price has contacted it once.} other {The price has contacted it # times.}} Ask me about it.",
+      "intro": "Estás viendo un {kind}. {count, plural, =0 {El precio aún no lo ha contactado.} one {El precio lo ha contactado una vez.} other {El precio lo ha contactado # veces.}} Pregúntame sobre ello.",
       "input": {
-        "placeholder": "Ask your question about this zone…",
+        "placeholder": "Haz tu pregunta sobre esta zona…",
         "send": "Send",
         "placeholderIdle": "Haz tu pregunta…"
       },
       "pos": {
-        "inside": "the price is inside",
-        "above": "above the price",
-        "below": "below the price"
+        "inside": "el precio está dentro",
+        "above": "por encima del precio",
+        "below": "por debajo del precio"
       },
       "frag": {
         "zone": "{kd} {where} {rel}.",
         "unit": "on {tf}",
-        "sameUnit": "on this timeframe",
-        "liquidity": "a {side} liquidity pocket at {level}.",
-        "rel_inner": "sits inside",
-        "rel_outer": "contains it",
-        "rel_same_level": "is at the same level"
+        "sameUnit": "en esta unidad",
+        "liquidity": "una bolsa de liquidez {side} a {level}.",
+        "rel_inner": "se sitúa dentro",
+        "rel_outer": "la engloba",
+        "rel_same_level": "está al mismo nivel"
       },
       "answer": {
-        "explainOb": "An Order Block is the last opposite candle before a break of structure: the zone its wicks and body outline is where orders were left before the move.",
-        "explainFvg": "A Fair Value Gap is an imbalance left by three consecutive candles: a price range crossed too fast to be traded, which the market often returns to fill.",
-        "whatElse": "At the same level: {list}",
-        "whatElseNone": "Nothing else is detected at this level — no other zone on the tracked timeframes, no liquidity pocket nearby.",
-        "compareUpper": "On {tf}, a {kd} covers the same price, between {band}.",
-        "compareNone": "No zone from an upper timeframe covers this level.",
-        "lastNone": "The price has not contacted this zone yet.",
-        "lastInside": "Last contact {when} ago ({time}): the price is currently inside.",
-        "lastTraversal": "Last contact {when} ago ({time}): the price traversed it at {level}.",
-        "lastEdge": "Last contact {when} ago ({time}): the price touched the edge without penetrating.",
-        "lastEntry": "Last contact {when} ago ({time}): the price entered at {level} then exited without traversing it.",
-        "fallback": "I describe this zone from its facts: what else is at the same level, the type of zone, the comparison to the upper timeframe, or what happened at the last contact. Pick one of those questions.",
+        "explainOb": "Un Order Block es la última vela opuesta antes de una ruptura de estructura: la zona que delimitan sus mechas y su cuerpo es donde se dejaron órdenes antes del movimiento.",
+        "explainFvg": "Un Fair Value Gap es un desequilibrio dejado por tres velas consecutivas: un rango de precio atravesado demasiado rápido para negociarse, que el mercado suele volver a rellenar.",
+        "whatElse": "Al mismo nivel: {list}",
+        "whatElseNone": "No se detecta nada más en este nivel — ni otra zona en las unidades de tiempo seguidas, ni bolsa de liquidez cercana.",
+        "compareUpper": "En {tf}, un {kd} cubre el mismo precio, entre {band}.",
+        "compareNone": "Ninguna zona de una unidad de tiempo superior cubre este nivel.",
+        "lastNone": "El precio aún no ha contactado esta zona.",
+        "lastInside": "Último contacto hace {when} ({time}): el precio está actualmente dentro.",
+        "lastTraversal": "Último contacto hace {when} ({time}): el precio la atravesó a {level}.",
+        "lastEdge": "Último contacto hace {when} ({time}): el precio tocó el borde sin penetrar.",
+        "lastEntry": "Último contacto hace {when} ({time}): el precio entró a {level} y luego salió sin atravesarla.",
+        "fallback": "Describo esta zona a partir de sus hechos: qué más hay al mismo nivel, el tipo de zona, la comparación con la unidad de tiempo superior, o lo que ocurrió en el último contacto. Elige una de esas preguntas.",
         "noZone": "Selecciona primero una zona: describo la que elijas a partir de sus hechos."
       }
     }
@@ -2909,8 +2920,8 @@
       "noSource": "Ninguna publicación por ahora: las fuentes oficiales aún no han completado ninguna fecha. Las publicaciones aparecerán aquí una vez cargados los calendarios oficiales."
     },
     "loading": "Cargando el calendario…",
-    "errorTimeout": "The calendar is taking too long to respond.",
-    "errorUnreachable": "Server unreachable. Check your connection.",
+    "errorTimeout": "El calendario tarda demasiado en responder.",
+    "errorUnreachable": "Servidor inaccesible. Comprueba tu conexión.",
     "retry": "Retry",
     "error": "El calendario no está disponible momentáneamente.",
     "preview": {
@@ -2979,33 +2990,33 @@
         "source": "Serie publicada por {organism}, en la unidad del organismo, tal como se publica — sin conversión ni reredondeo.",
         "title": "Las últimas doce cifras publicadas",
         "upcoming": "por venir",
-        "varIndex": "<b>{mom}</b> over one month · <b>{yoy}</b> over one year",
-        "varCount": "<b>{value}</b> {unit} over the month",
+        "varIndex": "<b>{mom}</b> en un mes · <b>{yoy}</b> en un año",
+        "varCount": "<b>{value}</b> {unit} en el mes",
         "varPublished": "<b>{value}</b> {unit}",
-        "levelIndex": "index at {level}",
+        "levelIndex": "índice en {level}",
         "levelTotal": "total: {level}",
-        "hoverLevel": "Published level: {level}",
-        "attribPublished": "Variation published by {organism} (series {series}).",
-        "attribCalculated": "Variation computed by MIA from two levels published by {organism}.",
+        "hoverLevel": "Nivel publicado: {level}",
+        "attribPublished": "Variación publicada por {organism} (serie {series}).",
+        "attribCalculated": "Variación calculada por MIA a partir de dos niveles publicados por {organism}.",
         "explain": {
-          "us_cpi": "The consumer price index tracks the price of a basket of goods and services bought by households. What matters is its variation: how much prices moved over one month and over one year.",
-          "us_cpi_core": "The same basket as the CPI, but excluding food and energy — two very volatile items. Read as its month-over-month and year-over-year variation.",
-          "us_ppi": "The producer price index tracks the price of goods as they leave U.S. factories, before the retail sale. Read as its monthly and annual variation.",
-          "us_employment_situation": "Net number of jobs created or lost in the month, excluding farming. A positive figure indicates net hiring, a negative figure net losses.",
-          "us_jolts": "Number of job openings unfilled on the last day of the month. Read as its month-to-month variation.",
-          "us_gdp": "Gross domestic product measures the value of everything produced in the country. The published figure is already its quarter-over-quarter variation, in volume.",
-          "ea_hicp_flash": "The harmonised consumer price index tracks price changes across the euro area. The published figure is already its year-over-year variation.",
-          "ea_gdp_flash": "A first estimate of the euro-area gross domestic product's variation from one quarter to the next, in volume.",
-          "us_pce": "The personal consumption expenditures (PCE) price index tracks the price of what households consume, in a broader basket than the CPI. Read as its month-over-month and year-over-year variation.",
-          "us_retail_sales": "Total sales of retail and food-service businesses in the month. Read as its month-to-month variation.",
-          "us_housing_starts": "Number of homes on which construction began in the month, stated at an annual rate. Read as its month-to-month variation.",
-          "us_durable_goods": "Value of new orders for durable goods (cars, machinery, aircraft…) placed with manufacturers in the month. Read as its month-to-month variation.",
-          "us_fomc_rate": "The federal funds target range set by the Federal Reserve. It is the rate at which banks lend to each other overnight, and it steers the cost of credit in the economy.",
-          "ea_unemployment": "Share of the active population without a job and looking for one, in the euro area.",
-          "ea_ecb_rate": "The policy rate set by the European Central Bank. It is the reference rate for credit in the euro area."
+          "us_cpi": "El índice de precios al consumo sigue el precio de una cesta de bienes y servicios comprados por los hogares. Lo que cuenta es su variación: cuánto han cambiado los precios en un mes y en un año.",
+          "us_cpi_core": "La misma cesta que el IPC, pero excluyendo alimentación y energía — dos partidas muy inestables. Se lee por su variación en un mes y en un año.",
+          "us_ppi": "El índice de precios a la producción sigue el precio de los bienes a la salida de las fábricas estadounidenses, antes de la venta al consumidor. Se observa su variación mensual y anual.",
+          "us_employment_situation": "Número neto de empleos creados o perdidos en el mes, excluyendo la agricultura. Una cifra positiva corresponde a creaciones netas, una cifra negativa a destrucciones netas.",
+          "us_jolts": "Número de puestos abiertos y sin cubrir el último día del mes. Se observa su variación de un mes a otro.",
+          "us_gdp": "El producto interior bruto mide el valor de todo lo que se produce en el país. La cifra publicada ya es su variación de un trimestre a otro, en volumen.",
+          "ea_hicp_flash": "El índice de precios al consumo armonizado sigue la evolución de los precios en la zona euro. La cifra publicada ya es su variación en un año.",
+          "ea_gdp_flash": "Primera estimación de la variación del producto interior bruto de la zona euro de un trimestre a otro, en volumen.",
+          "us_pce": "El índice de precios de los gastos de consumo (PCE) sigue el precio de lo que consumen los hogares, en una cesta más amplia que el IPC. Se lee por su variación en un mes y en un año.",
+          "us_retail_sales": "Importe total de las ventas del comercio minorista y la restauración en el mes. Se lee por su variación de un mes a otro.",
+          "us_housing_starts": "Número de viviendas cuya construcción comenzó en el mes, expresado en ritmo anual. Se lee por su variación de un mes a otro.",
+          "us_durable_goods": "Importe de los nuevos pedidos de bienes duraderos (coches, máquinas, aviones…) realizados a los industriales en el mes. Se lee por su variación de un mes a otro.",
+          "us_fomc_rate": "Horquilla del tipo de referencia fijada por la Reserva Federal. Es el tipo al que los bancos se prestan de un día para otro; orienta el coste del crédito en la economía.",
+          "ea_unemployment": "Parte de la población activa sin empleo y en busca de uno, en la zona euro.",
+          "ea_ecb_rate": "Tipo de referencia fijado por el Banco Central Europeo. Es el tipo de referencia del crédito en la zona euro."
         },
-        "varAmount": "<b>{value}</b> over the month",
-        "levelAmount": "amount: {level} {unit}"
+        "varAmount": "<b>{value}</b> en el mes",
+        "levelAmount": "importe: {level} {unit}"
       },
       "mia": {
         "capability": "M.I.A describe hechos medidos y explica conceptos. No dirá qué hará el precio, ni qué valor se publicará, ni si conviene intervenir — y lo dirá si se lo preguntas.",
@@ -3039,55 +3050,55 @@
         "title": "Lo que mide este indicador",
         "badge": "Ficha pedagógica",
         "us_employment_situation": {
-          "body": "The Bureau of Labor Statistics' employment report counts, each month, the net number of jobs added or lost across U.S. non-farm sectors, from a survey of employers. It comes with the unemployment rate, drawn from a separate survey of households. Traders follow it because it appears early in the month and covers a broad share of activity, making it one of the first reads on the economy."
+          "body": "El informe de empleo del Bureau of Labor Statistics recuenta cada mes el número neto de empleos creados o destruidos en los sectores no agrícolas estadounidenses, a partir de una encuesta a las empresas. Se acompaña de la tasa de paro, procedente de una encuesta distinta a los hogares. Los intervinientes lo siguen porque aparece pronto en el mes y cubre una amplia parte de la actividad, lo que lo convierte en una de las primeras lecturas de la coyuntura."
         },
         "us_cpi": {
           "body": "El índice de precios de consumo sigue la evolución del precio de una cesta de bienes y servicios comprados por los hogares estadounidenses. Lo publica cada mes el Bureau of Labor Statistics y se expresa como variación respecto al mismo mes del año anterior. La versión llamada subyacente excluye los alimentos y la energía, considerados más inestables; ambas cifras se publican a la vez."
         },
         "us_cpi_core": {
-          "body": "The core Consumer Price Index takes the CPI basket but excludes food and energy, whose prices swing sharply from month to month. The Bureau of Labor Statistics releases it alongside the headline CPI, expressed as a year-on-year change. Traders watch it to separate an underlying trend from the temporary jolts of those two very volatile components."
+          "body": "El índice de precios al consumo subyacente retoma la cesta del IPC excluyendo la alimentación y la energía, cuyos precios varían fuertemente de un mes a otro. El Bureau of Labor Statistics lo publica al mismo tiempo que el IPC general, expresado en variación anual. Los intervinientes lo observan para distinguir una tendencia de fondo de las sacudidas temporales de esas dos partidas muy volátiles."
         },
         "us_ppi": {
-          "body": "The Producer Price Index measures the change in the selling prices received by U.S. producers, before goods reach the consumer. The Bureau of Labor Statistics builds it from a broad sample of goods and services at different stages of production. Traders follow it because price changes upstream in the chain sometimes feed through later to consumer prices."
+          "body": "El índice de precios a la producción mide la evolución de los precios de venta percibidos por los productores estadounidenses, antes de que los bienes lleguen al consumidor. El Bureau of Labor Statistics lo construye a partir de una amplia muestra de bienes y servicios en diferentes etapas de producción. Los intervinientes lo siguen porque las variaciones de precio en las fases previas de la cadena se repercuten a veces más tarde en los precios al consumo."
         },
         "us_jolts": {
-          "body": "The JOLTS survey (Job Openings and Labor Turnover Survey) counts, each month, the number of job openings, hires and separations in the U.S. labour market, from a sample of establishments compiled by the Bureau of Labor Statistics. Traders follow it because the number of open positions signals the tension between labour supply and demand — an angle the unemployment rate alone does not give."
+          "body": "La encuesta JOLTS (Job Openings and Labor Turnover Survey) recuenta cada mes el número de puestos vacantes, contrataciones y salidas en el mercado laboral estadounidense, a partir de una muestra de establecimientos elaborada por el Bureau of Labor Statistics. Los intervinientes la siguen porque el número de puestos abiertos informa sobre la tensión entre la oferta y la demanda de trabajo — un ángulo que la sola tasa de paro no ofrece."
         },
         "us_gdp": {
-          "body": "Gross Domestic Product measures the value of all goods and services produced in the United States over a quarter. The Bureau of Economic Analysis publishes it as an annualised change from the prior quarter, in several successive estimates refined as data come in. Traders follow it because it sums up overall economic activity for the period."
+          "body": "El producto interior bruto mide el valor del conjunto de bienes y servicios producidos en los Estados Unidos en un trimestre. El Bureau of Economic Analysis lo publica en variación anualizada respecto al trimestre anterior, en varias estimaciones sucesivas afinadas a medida que llegan los datos. Los intervinientes lo siguen porque resume la actividad económica global del periodo."
         },
         "us_pce": {
-          "body": "The Personal Consumption Expenditures price index tracks the change in prices of the goods and services households actually buy. The Bureau of Economic Analysis computes it from a basket that adjusts to shifts in consumption, which sets it apart from the CPI. Traders pay attention to it because it is the inflation gauge the Federal Reserve favours in its analysis."
+          "body": "El índice de precios de los gastos de consumo personal sigue la evolución de los precios de los bienes y servicios efectivamente comprados por los hogares estadounidenses. El Bureau of Economic Analysis lo calcula a partir de una cesta que se ajusta a los cambios de consumo, lo que lo distingue del IPC. Los intervinientes le prestan atención porque es la medida de inflación preferida por la Reserva Federal en sus análisis."
         },
         "us_retail_sales": {
-          "body": "Retail sales count the monthly turnover of retail and food-service businesses in the United States. The Census Bureau compiles them from a survey of firms, expressed in dollars. Traders follow them because household consumption is a large share of activity, and this figure gives a quick read on it."
+          "body": "Las ventas minoristas recuentan la facturación mensual de los comercios minoristas y de la restauración en los Estados Unidos. El Census Bureau las elabora a partir de una encuesta a las empresas, expresadas en dólares. Los intervinientes las siguen porque el consumo de los hogares representa una amplia parte de la actividad, y esta cifra ofrece una lectura rápida de él."
         },
         "us_housing_starts": {
-          "body": "Housing starts count the number of homes on which construction began during the month, expressed at an annualised rate. The Census Bureau compiles them from surveys and building permits. Traders follow them because residential activity is sensitive to financing conditions and often reacts early to shifts in the cycle."
+          "body": "Los inicios de construcción recuentan el número de viviendas cuya construcción comenzó durante el mes, expresado en ritmo anualizado. El Census Bureau los elabora a partir de encuestas y permisos de construcción. Los intervinientes los siguen porque la actividad residencial es sensible a las condiciones de financiación y a menudo reacciona pronto a los cambios de coyuntura."
         },
         "us_durable_goods": {
-          "body": "Durable-goods orders count the value of new orders placed with manufacturers for goods meant to last at least three years — machinery, transport equipment, hardware. The Census Bureau publishes them in dollars. Traders follow them because orders precede production, making them a leading read on business investment."
+          "body": "Los pedidos de bienes duraderos recuentan el valor de los nuevos pedidos realizados a los fabricantes de bienes concebidos para durar al menos tres años — máquinas, material de transporte, equipos. El Census Bureau los publica en dólares. Los intervinientes los siguen porque los pedidos preceden a la producción, lo que los convierte en una lectura adelantada de la inversión de las empresas."
         },
         "us_fomc_rate": {
-          "body": "At the close of its meetings, the Federal Reserve's monetary-policy committee (FOMC) announces the range for the policy rate, which frames the cost of very short-term credit in the United States. The decision is published on a known schedule, eight times a year. Traders follow it because the level of the policy rate steers financing conditions across the board."
+          "body": "Al término de sus reuniones, el Comité de política monetaria de la Reserva Federal (FOMC) anuncia la horquilla del tipo de referencia, que enmarca el coste del crédito a muy corto plazo en los Estados Unidos. La decisión se publica en fecha conocida, ocho veces al año. Los intervinientes la siguen porque el nivel del tipo de referencia orienta el conjunto de las condiciones de financiación."
         },
         "us_fomc_minutes": {
-          "body": "The minutes of the FOMC meeting are published about three weeks after the monetary-policy decision. They detail the discussions that led to the decision and participants' views on the economy. Traders read them to understand the reasoning behind the decision, beyond the statement alone."
+          "body": "El acta de la reunión del FOMC se publica unas tres semanas después de la decisión de política monetaria. Detalla los intercambios que condujeron a la decisión y las opiniones de los participantes sobre la economía. Los intervinientes la leen para comprender el razonamiento detrás de la decisión, más allá del solo comunicado."
         },
         "us_fomc_dotplot": {
-          "body": "The dot plot accompanies some FOMC meetings: each participant marks, anonymously, the policy-rate level they see as appropriate for the years ahead. The Federal Reserve publishes it as a scatter of dots. Traders consult it to place the range of views within the committee, without it being a commitment."
+          "body": "El gráfico de puntos («dot plot») acompaña a algunas reuniones del FOMC: cada participante indica en él, de forma anónima, el nivel del tipo de referencia que considera apropiado para los años venideros. La Reserva Federal lo publica en forma de nube de puntos. Los intervinientes lo consultan para situar el abanico de opiniones dentro del comité, sin que constituya un compromiso."
         },
         "ea_hicp_flash": {
           "body": "El índice de precios de consumo armonizado sigue la evolución del precio de una cesta de bienes y servicios en la zona euro, según un método común a todos los países miembros. Eurostat publica una estimación rápida al final de cada mes, expresada como variación respecto al mismo mes del año anterior; la cifra se confirma unas semanas después."
         },
         "ea_gdp_flash": {
-          "body": "The euro-area flash GDP estimate measures the change in economic activity from one quarter to the next. Eurostat publishes it shortly after the quarter ends, using a method common to member states, then revises it as national data fill in. Traders follow it because it sums up the region's activity early."
+          "body": "La estimación rápida del producto interior bruto de la zona euro mide la variación de la actividad económica de un trimestre a otro. Eurostat la publica poco después del fin del trimestre, según un método común a los países miembros, y luego la revisa a medida que se completan los datos nacionales. Los intervinientes la siguen porque resume pronto la evolución de la actividad de la zona."
         },
         "ea_unemployment": {
-          "body": "The euro-area unemployment rate relates the number of people without a job and looking for one to the active population. Eurostat computes it each month using a definition harmonised across member states, adjusted for seasonal variation. Traders follow it as a read on the labour market at the regional scale."
+          "body": "La tasa de paro de la zona euro relaciona el número de personas sin empleo y en busca de uno con la población activa. Eurostat la calcula cada mes según una definición armonizada entre los países miembros, corregida de las variaciones estacionales. Los intervinientes la siguen como una lectura del mercado laboral a escala de la zona."
         },
         "ea_ecb_rate": {
-          "body": "At the close of its monetary-policy meetings, the European Central Bank announces its key rates, which frame the cost of short-term credit in the euro area. The decision is published on a known schedule, about eight times a year. Traders follow it because the level of these rates steers financing conditions across the region."
+          "body": "Al término de sus reuniones de política monetaria, el Banco Central Europeo anuncia sus tipos de referencia, que enmarcan el coste del crédito a corto plazo en la zona euro. La decisión se publica en fecha conocida, unas ocho veces al año. Los intervinientes la siguen porque el nivel de estos tipos orienta el conjunto de las condiciones de financiación de la zona."
         }
       },
       "questions": {
@@ -3159,6 +3170,12 @@
         "title": "Ir a la fuente"
       }
     }
+  },
+  "notFound": {
+    "code": "Error 404",
+    "heading": "No se encuentra esta página",
+    "body": "El enlace puede estar caducado o la dirección mal escrita.",
+    "back": "Volver al inicio"
   },
   "scannerChat": {
     "meta": {

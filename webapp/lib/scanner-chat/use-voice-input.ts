@@ -45,7 +45,14 @@ export function useVoiceInput({
   onValueChange,
   maxLength,
 }: UseVoiceInputOptions): VoiceInput {
-  const speechLang = locale.toLowerCase().startsWith('en') ? 'en-US' : 'fr-FR';
+  // Web Speech recognition language, per active locale — es speakers get Spanish
+  // recognition, not the FR fallback that mis-transcribed them (I18N-1).
+  const lc = locale.toLowerCase();
+  const speechLang = lc.startsWith('en')
+    ? 'en-US'
+    : lc.startsWith('es')
+      ? 'es-ES'
+      : 'fr-FR';
 
   // Read the freshest value / setter / cap at transcription time, so the
   // callback never appends onto a stale snapshot (the field stays the source

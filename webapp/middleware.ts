@@ -2,15 +2,16 @@ import createMiddleware from 'next-intl/middleware';
 import { NextRequest, NextResponse } from 'next/server';
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from './i18n';
 
-// All locales in SUPPORTED_LOCALES are now ACTIVE (fr/en/de/es/it/pt/nl/pl/ar).
-// The former en/de/es → fr redirect guard is gone: every locale serves real,
-// translated content, so there is nothing to redirect away from and no
-// SEO-duplication risk.
+// The product ships in THREE locales (fr/en/es), all ACTIVE in SUPPORTED_LOCALES
+// and each serving real, fully-translated content — so there is nothing to
+// redirect away from and no SEO-duplication risk. A locale that was retired
+// (de/it/pt/nl/pl/ar) is no longer in SUPPORTED_LOCALES: next-intl 404s an
+// attempt to reach it by a manual URL, so no half-translated locale is exposed.
 //
 // `localeDetection: true` — an incoming request with no locale prefix and no
-// NEXT_LOCALE cookie is matched against `Accept-Language`. A browser set to
-// Arabic lands on /ar, a German browser on /de, everyone else on the default
-// (FR) served prefix-less thanks to `localePrefix: 'as-needed'`. The language
+// NEXT_LOCALE cookie is matched against `Accept-Language`: a Spanish browser
+// lands on /es, an English browser on /en, everyone else on the default (FR)
+// served prefix-less thanks to `localePrefix: 'as-needed'`. The language
 // switcher writes the NEXT_LOCALE cookie, so an explicit choice always wins
 // over the browser header on subsequent visits.
 const intlMiddleware = createMiddleware({

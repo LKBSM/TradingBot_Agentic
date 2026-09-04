@@ -1,13 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import fr from '@/messages/fr.json';
 import en from '@/messages/en.json';
+import es from '@/messages/es.json';
 
 /**
- * SC-1 section 0: NO scanner-surface string, in EITHER language, may use the
- * forbidden score/quality/prediction vocabulary. Whole-word checks so legitimate
- * terms are not tripped (« range » must not match « rang », a « London » session
- * must not match anything). This scans the entire `scanner` namespace of both
- * locale bundles.
+ * SC-1 section 0 (+ I18N-1): NO scanner-surface string, in ANY of the three
+ * shipped languages (fr/en/es), may use the forbidden score/quality/prediction
+ * vocabulary. Whole-word checks so legitimate terms are not tripped (« range »
+ * must not match « rang », a « London » session must not match anything). Scans
+ * the entire `scanner` namespace of every locale bundle.
+ *
+ * Scope note (I18N-1): the guard is deliberately scoped to the ASSERTIVE scanner
+ * surface, NOT the whole bundle. Elsewhere the product legitimately NAMES these
+ * concepts to REFUSE them (legal disclaimers « ni signal de trading », the
+ * `limites` list, the before/after foil that quotes a bad indicator call) —
+ * scanning those namespaces would flag correct copy. Those surfaces have their
+ * own denial-aware guards (home.test, rg1-copy-honesty), each now covering es.
  */
 
 function collectStrings(node: unknown, out: string[]): void {
@@ -24,10 +32,15 @@ const FORBIDDEN_EN = [
   'setup', 'signal', 'opportunity', 'best', 'safer', 'recommended',
   'probability', 'strong', 'ideal', 'quality', 'score', 'rank', 'top',
 ];
+const FORBIDDEN_ES = [
+  'setup', 'señal', 'oportunidad', 'mejor', 'recomendado',
+  'probabilidad', 'sesgo', 'objetivo', 'calidad', 'puntuación', 'clasificación',
+];
 
 // A denial of the forbidden thing is not a use of it: « sans score », « no
-// ranking », « pas de classement » are exactly the promises the product makes.
-const NEG = '(?:sans|aucun|aucune|no|without|never|pas de|ni)';
+// ranking », « pas de classement », « sin clasificación » are exactly the
+// promises the product makes.
+const NEG = '(?:sans|aucun|aucune|no|without|never|pas de|ni|sin|nunca|ninguna)';
 
 function assertClean(bundle: { scanner?: unknown }, forbidden: string[], locale: string) {
   const strings: string[] = [];
@@ -45,11 +58,14 @@ function assertClean(bundle: { scanner?: unknown }, forbidden: string[], locale:
   }
 }
 
-describe('scanner i18n — no forbidden vocabulary (both languages)', () => {
+describe('scanner i18n — no forbidden vocabulary (three languages)', () => {
   it('French scanner strings are clean', () => {
     assertClean(fr as { scanner?: unknown }, FORBIDDEN_FR, 'fr');
   });
   it('English scanner strings are clean', () => {
     assertClean(en as { scanner?: unknown }, FORBIDDEN_EN, 'en');
+  });
+  it('Spanish scanner strings are clean', () => {
+    assertClean(es as { scanner?: unknown }, FORBIDDEN_ES, 'es');
   });
 });

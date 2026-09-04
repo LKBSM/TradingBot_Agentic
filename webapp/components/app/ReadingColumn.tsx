@@ -154,8 +154,11 @@ export function ReadingColumn({
     : clientClosed;
 
   function focusChat() {
+    // Locale-stable selector: the chat textarea carries a fixed `data-testid`,
+    // so focusing it works in every language. The old aria-label selector was
+    // the FR string, so this silently broke on /en and /es (I18N-1).
     const input = document.querySelector<HTMLTextAreaElement>(
-      'textarea[aria-label="Question libre pour M.I.A Agent"]',
+      'textarea[data-testid="chat-input"]',
     );
     input?.focus();
     input?.scrollIntoView({ behavior: 'smooth', block: 'center' });

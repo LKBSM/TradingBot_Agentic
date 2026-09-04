@@ -2,9 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   countActiveZones,
   deriveTrendMaturity,
-  formatBreakTimestamp,
   formatLastStructuralEvent,
-  formatTrendMaturity,
   formatZoneDensity,
   timeframeMinutes,
   trendWindowSpan,
@@ -85,18 +83,6 @@ describe('timeframeMinutes', () => {
   });
   it('returns null for an unknown code', () => {
     expect(timeframeMinutes('Z9')).toBeNull();
-  });
-});
-
-describe('formatBreakTimestamp', () => {
-  it('converts the engine UTC instant to the reader timezone (pinned UTC here)', () => {
-    // Naive engine timestamps are UTC → shown as-is in the UTC zone.
-    expect(formatBreakTimestamp('2026-06-24T14:30:00', 'UTC')).toBe('24/06 à 14:30');
-    // A +02:00 instant is 07:05 UTC.
-    expect(formatBreakTimestamp('2026-01-02T09:05:00+02:00', 'UTC')).toBe('02/01 à 07:05');
-  });
-  it('returns null on an unparseable string', () => {
-    expect(formatBreakTimestamp('not-a-date')).toBeNull();
   });
 });
 
@@ -188,45 +174,6 @@ describe('trendWindowSpan (DG-1 point 5)', () => {
   });
 });
 
-describe('formatTrendMaturity (b)', () => {
-  it('present-tense line with date + derived candle count', () => {
-    expect(formatTrendMaturity(structure({ current_choch: choch() }), header(), 'UTC')).toBe(
-      'Structure orientée haussière depuis le CHOCH du 24/06 à 14:30 (≈ 18 bougies M15).',
-    );
-  });
-  it('bearish orientation', () => {
-    expect(
-      formatTrendMaturity(structure({ current_choch: choch({ direction: 'bearish' }) }), header(), 'UTC'),
-    ).toBe('Structure orientée baissière depuis le CHOCH du 24/06 à 14:30 (≈ 18 bougies M15).');
-  });
-  it('drops the ≈ when the count is the engine real bars_ago', () => {
-    expect(
-      formatTrendMaturity(structure({ current_choch: choch({ bars_ago: 11 }) }), header(), 'UTC'),
-    ).toBe('Structure orientée haussière depuis le CHOCH du 24/06 à 14:30 (11 bougies M15).');
-  });
-  it('omits the candle count when the timeframe is unknown', () => {
-    expect(
-      formatTrendMaturity(structure({ current_choch: choch() }), header({ timeframe: 'Z9' }), 'UTC'),
-    ).toBe('Structure orientée haussière depuis le CHOCH du 24/06 à 14:30.');
-  });
-  it('uses the most recent CHOCH from the history for the line', () => {
-    expect(
-      formatTrendMaturity(
-        structure({
-          current_choch: null,
-          choch_events: [choch({ broken_at: '2026-06-24T14:00:00', direction: 'bearish' })],
-        }),
-        header(),
-        'UTC',
-      ),
-    ).toBe('Structure orientée baissière depuis le CHOCH du 24/06 à 14:00 (≈ 20 bougies M15).');
-  });
-  it('returns null when no CHOCH (BOS-only or empty → « non disponible »)', () => {
-    expect(formatTrendMaturity(structure({ current_bos: bos() }), header())).toBeNull();
-    expect(formatTrendMaturity(structure(), header())).toBeNull();
-  });
-});
-
 describe('formatLastStructuralEvent (c)', () => {
   it('phrases the CHOCH event with TF', () => {
     expect(
@@ -277,7 +224,6 @@ describe('countActiveZones / formatZoneDensity (d)', () => {
 describe('no predictive / probabilistic vocabulary', () => {
   it('every produced line stays strictly descriptive', () => {
     const lines = [
-      formatTrendMaturity(structure({ current_choch: choch() }), header()),
       formatLastStructuralEvent(structure({ current_bos: bos(), current_choch: choch() }), header()),
       formatZoneDensity(
         structure({ order_blocks: [ob('active', 'a')], fair_value_gaps: [fvg('active', 'b')] }),
