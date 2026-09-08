@@ -72,6 +72,13 @@ const FULL_ACCESS = {
   is_owner: true,
   has_access: true,
   subscription_required: false,
+  // account fields so /compte (AccountPanel) renders an authed account instead of
+  // redirecting to /connexion.
+  email: 'apercu@mia.markets',
+  email_verified: true,
+  plan: 'institutional',
+  tier: 'INSTITUTIONAL',
+  account: { email: 'apercu@mia.markets', email_verified: true, plan: 'institutional' },
 };
 
 export async function mockAllApis(page: Page): Promise<void> {
@@ -122,6 +129,8 @@ export async function mockAllApis(page: Page): Promise<void> {
   await page.route('**/api/live-price**', (r) => r.abort());
   await page.route('**/api/chatbot/**', (r) => r.abort());
 
-  // 5 — the access gate (most specific; wins over the catch-all).
+  // 5 — the access gate + auth probe (most specific; win over the catch-all).
   await page.route('**/api/access/me', (r) => r.fulfill(json(FULL_ACCESS)));
+  await page.route('**/api/auth/me', (r) => r.fulfill(json(FULL_ACCESS)));
+  await page.route('**/api/auth/profile', (r) => r.fulfill(json(FULL_ACCESS)));
 }

@@ -190,11 +190,29 @@ réelles** — **0 ligne des pages modifiée**, aucun backend.
   que l'app lit comme périmées → « marché fermé », graphique/mois vides. Le mock décale **chaque
   horodatage** d'un même delta pour placer la dernière bougie ~maintenant. **Seules les dates
   absolues bougent ; toutes les valeurs (OHLC, niveaux, zones, événements) sont les données réelles.**
-- **`tests/e2e/ds-1-pages.spec.ts`** — capture les 7 pages produit aux 2 viewports
-  (1280×800 + 390×844) : `/`, `/app`, `/zones`, `/scanner`, `/scanner/decrire`, `/actualites`,
-  `/actualites/[eventId]`. **14/14 verts, sans backend.** Sorties : `docs/audits/ds-1/pages/`.
+- **`tests/e2e/ds-1-pages.spec.ts`** — 1er jet : 7 pages produit × 2 viewports (validation).
 
-Rendu vérifié page par page (capture à l'appui) :
+### Couverture COMPLÈTE (« recopier l'UI actuel ») — `docs/audits/ds-1/coverage/`
+
+Le but final n'est pas 7 pages mais **tout l'UI actuel**, pour que Claude Design le recopie comme
+point de départ. `tests/e2e/ds-1-coverage.spec.ts` capture **les 18 routes × les 4 thèmes
+(terminal / atelier / schéma / ardoise) × 2 viewports = 144 captures**, plus
+`tests/e2e/ds-1-states.spec.ts` = **6 états clés** (scanner RÉSULTATS + onglets mobiles
+« Lecture »/« Chat » du /app, en terminal + atelier) → **150 captures, toutes vertes**.
+
+- **Routes couvertes** : `/`, `/abonnement`, `/methodology`, `/conditions`, `/confidentialite`,
+  `/connexion`, `/inscription`, `/inscription/google`, `/mot-de-passe-oublie` (+`/confirmer`),
+  `/verifier-email`, `/app`, `/zones`, `/scanner`, `/scanner/decrire`, `/actualites`,
+  `/actualites/[eventId]`, `/compte`.
+- **Thèmes** forcés via la clé `localStorage` de next-themes (`theme`) en `addInitScript`
+  pré-paint : terminal (sombre défaut), atelier (clair), schéma (monochrome), ardoise (sombre chaud).
+- **Perf** : lancé contre le **build de production** (`next start`, port dédié, `reuseExistingServer`) —
+  ~3 min pour 144 vs ~19 min en dev (compilation par route). La prod n'a pas le souci StrictMode
+  (§8bis) et sert toutes les routes pré-compilées.
+- **Auth** : `/compte` rendu authentifié (mock `access/me`+`auth/me`+`auth/profile` = compte complet).
+- Nommage : `<route>--<thème>--<viewport>.png` (le set 7-pages `pages/` a été retiré, superflu).
+
+Rendu vérifié (capture à l'appui) :
 - **/app** — shell complet (rail, en-tête prix réel « En direct », colonne M.I.A), toolbar de calques,
   **graphique peint (bougies réelles + surcouches de zones SMC)**, lecture narrée réelle, cartes
   Régime + Structure. Voir §8bis pour le correctif graphique.
