@@ -85,15 +85,21 @@ Note : les SVG fournis embarquent une métadonnée C2PA (~8 Ko) de provenance �
 | `:root` (terminal + schema + ardoise, sombres) | `#7da3ff` | **`#c9a14a`** | `#ffffff` | `#ffffff` |
 | `[data-design=atelier]` (clair) | `#2962ff` | **`#c9a14a`** | `#0f1729` | **`#1a1917`** |
 
-⚠️ **Coordination THM-1 — CONFLIT À TRANCHER** : THM-1 (commit `f23b458`) existe en local mais
-n'est **ni mergé ni sur origin** — BRD-3 est donc posé contre `origin/main` propre, mes jetons
-sont corrects aujourd'hui. MAIS THM-1 rendait le logo **neutre** (`--brand-mark = --txt`,
-suivant la couleur du texte) et **réécrivait `MiaLogo.tsx`** (police via `style`). BRD-3, plus
-récent et explicite, **supersède** cette décision : le logo est en laiton fixe. Au moment où
-THM-1 sera rebasé/mergé, il y aura conflit sur `MiaLogo.tsx` et `globals.css` (`--brand-mark`) :
-**garder la version BRD-3** (bougies laiton `#c9a14a` sur les 4 fonds, nom blanc/`#1a1917`).
-THM-1 renomme aussi les thèmes (Graphite/Parchemin/Encre/Acier) : les jetons laiton devront
-être portés sur les blocs renommés. Une marque garde sa couleur ; l'accent d'UI, non.
+✅ **Coordination THM-1 — CONFLIT RÉSOLU (intégré)** : THM-1 a été mergé sur main (PR #195,
+`5c7740a`) pendant que BRD-3 était en revue. J'ai donc intégré `origin/main` dans la branche
+et résolu le conflit **en faveur de BRD-3** :
+- `MiaLogo.tsx` : gardé la version bougies+laiton, en **conservant l'apport THM-1**
+  (`fontFamily: var(--font-sans)` via `style` pour le nom — source de police unique).
+- `globals.css` : THM-1 avait neutralisé le logo (`--brand-mark = --txt` par thème). Repositionné
+  **laiton `#c9a14a`** sur les **quatre** thèmes (chacun déclare désormais explicitement ses
+  jetons, plus d'héritage neutre) ; nom blanc `#ffffff` (terminal/schema/ardoise) et `#1a1917`
+  (atelier/Parchemin). Les libellés renommés THM-1 (Graphite/Parchemin/Encre/Ardoise-et-acier)
+  gardent les ids internes `data-design` inchangés → mes overrides tombent au bon endroit.
+- L'accent d'UI Ardoise est **acier/bleu** (THM-1) tandis que le logo reste **laiton** :
+  vérifié en capture (`accueil-ardoise-desktop.png`). Une marque garde sa couleur ; l'accent, non.
+- `#c9a14a` en dur ailleurs (`global-error.tsx`, `ReadingChart.tsx`) = accent THM-1, PAS le logo :
+  le garde-fou « couleur du logo » est scopé aux fichiers source du logo. Tests re-verts après
+  intégration (unitaires 17 + non-régression, e2e brd3 28 + theme-and-pwa, tsc/build).
 
 ---
 
