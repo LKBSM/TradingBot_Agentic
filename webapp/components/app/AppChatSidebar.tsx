@@ -2,7 +2,6 @@
 
 import {
   HelpCircle,
-  History,
   Info,
   LayoutPanelTop,
   LineChart,
@@ -12,13 +11,9 @@ import {
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import * as React from 'react';
-import { AgentAvatar } from '@/components/chat/AgentAvatar';
-import { ChatInput } from '@/components/chat/ChatInput';
-import { ChatMessage } from '@/components/chat/ChatMessage';
-import { ChatWelcome, type WelcomeSuggestion } from '@/components/chat/ChatWelcome';
-import { ThinkingIndicator } from '@/components/chat/ThinkingIndicator';
+import { MiaPanel } from '@/components/chat/MiaPanel';
+import { type WelcomeSuggestion } from '@/components/chat/ChatWelcome';
 import { useChat } from '@/components/chat/ChatProvider';
-import { useChatAnchorScroll } from '@/components/chat/useChatAnchorScroll';
 import { Button } from '@/components/ui/button';
 import {
   Tooltip,
@@ -26,13 +21,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import {
-  formatInstrument,
-  formatRelativePast,
-  formatTimeframe,
-} from '@/lib/market-reading/formatters';
+import { formatInstrument, formatTimeframe } from '@/lib/market-reading/formatters';
 import type { Combo } from '@/lib/market-reading/store';
-import { useNow } from '@/lib/conditions/use-now';
 
 /** Icons for the on-brand starter questions (text is localized in-component). */
 const STARTER_META: ReadonlyArray<{ id: string; icon: React.ReactNode }> = [
@@ -42,290 +32,123 @@ const STARTER_META: ReadonlyArray<{ id: string; icon: React.ReactNode }> = [
 ];
 
 /**
- * Right column — the permanently docked Sentinel chat. Unlike the layout's
- * slide-over Sheet (used on the landing), this renders inline and is always
- * visible on /app. It shares the same ChatProvider context; the active combo's
- * context is bound via `openForCombo` upstream (no Sheet, no modal).
+ * /app disposition of the SINGLE M.I.A panel (MIA-3). This is not a second panel:
+ * it wraps the shared {@link MiaPanel} and only supplies the /app-specific chrome
+ * — the live combo context label, the bubble↔column display-mode toggle, the
+ * reset action, and the mode-preference status line. The conversation itself (one
+ * product-wide thread) lives entirely in MiaPanel via the shared ChatProvider.
  */
 export function AppChatSidebar({
   active,
-  onSelectCombo,
   displayMode,
   onSetDisplayMode,
 }: {
   active: Combo | null;
   /**
-   * Switch the workspace to another combo (wired to the same `onSelect` as the
-   * instruments column) — used by the recent-discussions list to jump back to
-   * a combo's conversation. Optional so the sidebar renders standalone.
-   */
-  onSelectCombo?: (combo: Combo) => void;
-  /**
-   * Current display disposition on /app (desktop ≥1280 only): `'column'` when
-   * M.I.A is docked as the right column, `'bubble'` when it has been reduced to
-   * the floating bubble + drawer. Drives which toggle button the header shows.
-   * Omitted by the mobile workspace, where the chat is a tab (no toggle).
+   * Current display disposition on /app (desktop ≥1100): `'column'` docked or
+   * `'bubble'` reduced. Drives the toggle button. Omitted by the mobile
+   * workspace (chat is a tab there, no toggle).
    */
   displayMode?: 'column' | 'bubble';
-  /**
-   * Switch between the two dispositions. When provided (with `displayMode`), a
-   * single toggle button appears in the header — "reduce to bubble" in column
-   * mode, "dock to column" in bubble mode — shown only at ≥1280 (the tablet
-   * drawer closes via its backdrop, and there is no column mode below 1280).
-   */
+  /** Switch disposition; with `displayMode`, renders the header toggle (≥1100). */
   onSetDisplayMode?: (mode: 'column' | 'bubble') => void;
 }) {
   const t = useTranslations('app');
-  const {
-    turns,
-    isLoading,
-    apiAvailable,
-    askFreeForm,
-    resetTurns,
-    recentThreads,
-  } = useChat();
+  const { turns, resetTurns } = useChat();
+  const empty = turns.length === 0;
+
   const STARTERS: ReadonlyArray<WelcomeSuggestion> = STARTER_META.map((s) => ({
     id: s.id,
     text: t(`chat.starter_${s.id}`),
     icon: s.icon,
   }));
-  const [showRecents, setShowRecents] = React.useState(false);
-  // Tick every 60s so the recents' "il y a X" ages stay honest while the panel
-  // sits open, instead of freezing at their first render (UI-03).
-  const now = useNow(60_000);
-  // Docked sidebar: anchor the *first word of M.I.A's reply* to the top after
-  // sending (not the bottom of a long answer, not the question). Falls back to
-  // the question until the reply mounts, then re-pins to the reply — streaming
-  // stays pinned to the start. See useChatAnchorScroll.
-  const scrollRef = useChatAnchorScroll(turns, isLoading, { anchor: 'assistant' });
 
-  const empty = turns.length === 0;
-  const offline = apiAvailable === false;
-  const activeThreadId = active
-    ? `app:${active.instrument}:${active.timeframe}`
-    : null;
+  const contextLabel = active
+    ? `· ${formatInstrument(active.instrument)} · ${formatTimeframe(active.timeframe)}`
+    : `· ${t('chat.pickComboPrompt')}`;
 
-  function handleStarter(s: WelcomeSuggestion) {
-    if (!active || offline) return;
-    void askFreeForm(s.text);
-  }
+  const headerActions = (
+    <TooltipProvider delayDuration={200}>
+      {displayMode && onSetDisplayMode && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              aria-label={
+                displayMode === 'column'
+                  ? t('chat.collapseToBubble')
+                  : t('chat.dockToColumn')
+              }
+              onClick={() =>
+                onSetDisplayMode(displayMode === 'column' ? 'bubble' : 'column')
+              }
+              // ≥1100 only (APP-1): below that the centre would be too narrow for
+              // a legible chart, so no column disposition is offered.
+              className="hidden text-muted-foreground min-[1100px]:inline-flex min-[1100px]:h-8 min-[1100px]:w-8"
+            >
+              {displayMode === 'column' ? (
+                <PanelRightClose className="h-4 w-4" aria-hidden />
+              ) : (
+                <PanelLeftClose className="h-4 w-4" aria-hidden />
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">
+            {displayMode === 'column'
+              ? t('chat.collapseToBubble')
+              : t('chat.dockToColumn')}
+          </TooltipContent>
+        </Tooltip>
+      )}
+      {!empty && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              aria-label={t('chat.reset')}
+              onClick={resetTurns}
+              className="h-11 w-11 text-muted-foreground xl:h-8 xl:w-8"
+            >
+              <RotateCcw className="h-4 w-4" aria-hidden />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">{t('chat.reset')}</TooltipContent>
+        </Tooltip>
+      )}
+    </TooltipProvider>
+  );
+
+  // APP-1 — mode status, only where the disposition toggle lives (never mobile).
+  const statusLine =
+    displayMode && onSetDisplayMode ? (
+      <p
+        data-testid="mia-mode-status"
+        className="mt-1.5 flex items-center gap-1 text-[10px] leading-tight text-muted-foreground/80"
+      >
+        <Info className="h-3 w-3 shrink-0" aria-hidden />
+        <span className="hidden min-[1100px]:inline">{t('chat.modeNotSynced')}</span>
+        <span className="min-[1100px]:hidden">{t('chat.columnNeedsWidth')}</span>
+      </p>
+    ) : undefined;
 
   return (
-    <aside
-      aria-label={t('chat.asideAria')}
-      className="flex h-full min-h-0 flex-col rounded-xl border border-border/60 bg-card"
-    >
-      <header className="border-b border-border/60 px-4 py-3">
-        <div className="flex items-center gap-3">
-          <AgentAvatar size="md" />
-          {/* Title + live context on a single line — truncates before it can
-              wrap. Icon actions stay pinned to the right. */}
-          <p className="flex min-w-0 flex-1 items-center gap-1.5 text-sm font-semibold leading-tight">
-            <span className="shrink-0">M.I.A Agent</span>
-            <span
-              className="h-1.5 w-1.5 shrink-0 rounded-full bg-[hsl(var(--sentinel-bull))]"
-              title={offline ? t('chat.statusOffline') : t('chat.statusOnline')}
-              aria-hidden
-            />
-            <span className="truncate text-xs font-normal text-muted-foreground">
-              {active
-                ? `· ${formatInstrument(active.instrument)} · ${formatTimeframe(active.timeframe)}`
-                : `· ${t('chat.pickComboPrompt')}`}
-            </span>
-          </p>
-          <TooltipProvider delayDuration={200}>
-            <div className="flex shrink-0 items-center gap-0.5">
-              {displayMode && onSetDisplayMode && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="ghost"
-                      aria-label={
-                        displayMode === 'column'
-                          ? t('chat.collapseToBubble')
-                          : t('chat.dockToColumn')
-                      }
-                      onClick={() =>
-                        onSetDisplayMode(displayMode === 'column' ? 'bubble' : 'column')
-                      }
-                      // ≥1100 only (APP-1): below that the centre would be too
-                      // narrow for a legible chart, so no column disposition is
-                      // offered — the status line under the title explains it.
-                      className="hidden text-muted-foreground min-[1100px]:inline-flex min-[1100px]:h-8 min-[1100px]:w-8"
-                    >
-                      {displayMode === 'column' ? (
-                        <PanelRightClose className="h-4 w-4" aria-hidden />
-                      ) : (
-                        <PanelLeftClose className="h-4 w-4" aria-hidden />
-                      )}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    {displayMode === 'column'
-                      ? t('chat.collapseToBubble')
-                      : t('chat.dockToColumn')}
-                  </TooltipContent>
-                </Tooltip>
-              )}
-              {recentThreads.length > 0 && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="ghost"
-                      aria-expanded={showRecents}
-                      aria-label={t('chat.discussions')}
-                      onClick={() => setShowRecents((v) => !v)}
-                      className="h-11 w-11 text-muted-foreground xl:h-8 xl:w-8"
-                    >
-                      <History className="h-4 w-4" aria-hidden />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    {t('chat.discussions')}
-                  </TooltipContent>
-                </Tooltip>
-              )}
-              {!empty && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="ghost"
-                      aria-label={t('chat.reset')}
-                      onClick={resetTurns}
-                      className="h-11 w-11 text-muted-foreground xl:h-8 xl:w-8"
-                    >
-                      <RotateCcw className="h-4 w-4" aria-hidden />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">{t('chat.reset')}</TooltipContent>
-                </Tooltip>
-              )}
-            </div>
-          </TooltipProvider>
-        </div>
-        {/* APP-1 — mode status, shown only where the disposition toggle lives
-            (desktop/tablet shell chat, never the mobile tab). ≥1100: the choice is
-            a browser-local preference (« non synchronisé »). <1100: the column
-            would crush the chart, so it is not offered — say why, don't vanish. */}
-        {displayMode && onSetDisplayMode && (
-          <p
-            data-testid="mia-mode-status"
-            className="mt-1.5 flex items-center gap-1 text-[10px] leading-tight text-muted-foreground/80"
-          >
-            <Info className="h-3 w-3 shrink-0" aria-hidden />
-            <span className="hidden min-[1100px]:inline">{t('chat.modeNotSynced')}</span>
-            <span className="min-[1100px]:hidden">{t('chat.columnNeedsWidth')}</span>
-          </p>
-        )}
-        {/* UI-3: the empty-state pedagogical note was removed — the persistent
-            compliance line under the input already carries the same posture at
-            all times, so it duplicated it on the one screen a subscriber sees
-            fifty times a day. */}
-      </header>
-
-      {showRecents && recentThreads.length > 0 && (
-        <nav
-          aria-label={t('chat.recentDiscussions')}
-          className="border-b border-border/60 px-2 py-2"
-        >
-          <p className="px-2 pb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-            {t('chat.recentDiscussions')}
-          </p>
-          <ul className="space-y-0.5">
-            {recentThreads.map((t) => {
-              const isActive = t.id === activeThreadId;
-              return (
-                <li key={t.id}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!isActive) {
-                        onSelectCombo?.({
-                          instrument: t.instrument,
-                          timeframe: t.timeframe,
-                        });
-                      }
-                      setShowRecents(false);
-                    }}
-                    className={`w-full rounded-md px-2 py-1.5 text-left transition-colors hover:bg-muted ${
-                      isActive ? 'bg-muted/70' : ''
-                    }`}
-                  >
-                    <span className="flex items-baseline justify-between gap-2">
-                      <span className="text-xs font-medium">
-                        {formatInstrument(t.instrument)} ·{' '}
-                        {formatTimeframe(t.timeframe)}
-                      </span>
-                      <span className="shrink-0 text-[10.5px] text-muted-foreground">
-                        {formatRelativePast(
-                          new Date(t.updatedAt).toISOString(),
-                          new Date(now),
-                        )}
-                      </span>
-                    </span>
-                    {t.lastText && (
-                      <span className="block truncate text-[11px] text-muted-foreground">
-                        {t.lastText}
-                      </span>
-                    )}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
-      )}
-
-      <div
-        ref={scrollRef}
-        className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-4"
-        // One live region for the whole transcript (UI-08) — announces each new
-        // message once, instead of every persistent bubble being its own status
-        // region (which flooded screen readers on every re-render).
-        role="log"
-        aria-live="polite"
-        aria-relevant="additions"
-      >
-        {empty ? (
-          <ChatWelcome
-            title={active ? t('chat.welcomeTitleActive') : t('chat.welcomeTitleIdle')}
-            subtitle={
-              active ? t('chat.welcomeSubtitleActive') : t('chat.welcomeSubtitleIdle')
-            }
-            suggestions={active && !offline ? STARTERS : []}
-            onPick={handleStarter}
-            note={offline ? t('chat.offlineNote') : undefined}
-          />
-        ) : (
-          <>
-            {turns.map((t) => (
-              <ChatMessage
-                key={t.id}
-                role={t.role}
-                text={t.text}
-                blockedReason={t.blockedReason}
-                viewUpdated={t.viewUpdated}
-              />
-            ))}
-            {isLoading && <ThinkingIndicator />}
-          </>
-        )}
-      </div>
-
-      <div className="space-y-2 border-t border-border/60 bg-background/60 px-4 py-3">
-        <ChatInput />
-        {/* LEGAL-PENDING: chat compliance line — aligned with the legal terminal
-            wording on educational-use posture. */}
-        <p className="text-center text-[11px] italic text-muted-foreground/70">
-          {t('chat.complianceLine')}
-        </p>
-      </div>
-    </aside>
+    <MiaPanel
+      ariaLabel={t('chat.asideAria')}
+      title="M.I.A Agent"
+      contextLabel={contextLabel}
+      headerActions={headerActions}
+      statusLine={statusLine}
+      welcomeTitle={active ? t('chat.welcomeTitleActive') : t('chat.welcomeTitleIdle')}
+      welcomeSubtitle={
+        active ? t('chat.welcomeSubtitleActive') : t('chat.welcomeSubtitleIdle')
+      }
+      starters={active ? STARTERS : []}
+      offlineNote={t('chat.offlineNote')}
+      complianceLine={t('chat.complianceLine')}
+    />
   );
 }

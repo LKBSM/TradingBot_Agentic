@@ -89,10 +89,10 @@ export function MobileWorkspace({
         </TabsContent>
 
         <TabsContent value="chat" className="absolute inset-0 mt-0 p-2">
-          {/* onSelect (not handleSelect): picking a recent discussion swaps
-              the combo while staying on the Chat tab. AppChatSidebar is h-full
-              → its messages scroll and the input docks at the bottom. */}
-          <AppChatSidebar active={active} onSelectCombo={onSelect} />
+          {/* The single M.I.A conversation (MIA-3). AppChatSidebar is h-full →
+              its messages scroll and the input docks at the bottom. No display-
+              mode toggle on the phone tab (no column disposition there). */}
+          <AppChatSidebar active={active} />
         </TabsContent>
       </div>
 

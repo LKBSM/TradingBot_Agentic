@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextIntlClientProvider } from 'next-intl';
 import { ZonesWorkspace } from '../ZonesWorkspace';
 import { ChartViewProvider, useChartViewOptional } from '@/lib/chart/viewState';
+import { ChatProvider } from '@/components/chat/ChatProvider';
 import { coerceViewActions } from '@/lib/chart/viewActions';
 import { collectZones } from '@/lib/zones/lifecycle';
 import { FIXTURE_XAU_M15 } from '@/lib/market-reading/fixtures';
@@ -15,6 +16,17 @@ vi.mock('@/lib/market-reading/api-client', async (importActual) => {
     ...actual,
     fetchMarketReading: (...args: unknown[]) => fetchMock(...args),
     fetchCandles: () => Promise.resolve([]),
+  };
+});
+
+// The /zones panel is now the shared backend-agent MiaPanel — stub the streaming
+// chat call so a sent question resolves deterministically (no network in jsdom).
+const askStreamMock = vi.fn();
+vi.mock('@/lib/chat/api-client', async (importActual) => {
+  const actual = await importActual<typeof import('@/lib/chat/api-client')>();
+  return {
+    ...actual,
+    askSentinelStream: (...args: unknown[]) => askStreamMock(...args),
   };
 });
 
@@ -35,10 +47,12 @@ function HiddenProbe() {
 function renderZones() {
   return rtlRender(
     <NextIntlClientProvider locale="fr" messages={messages}>
-      <ChartViewProvider>
-        <ZonesWorkspace locale="fr" />
-        <HiddenProbe />
-      </ChartViewProvider>
+      <ChatProvider>
+        <ChartViewProvider>
+          <ZonesWorkspace locale="fr" />
+          <HiddenProbe />
+        </ChartViewProvider>
+      </ChatProvider>
     </NextIntlClientProvider>,
   );
 }
@@ -55,6 +69,16 @@ beforeEach(() => {
   pushMock.mockReset();
   replaceMock.mockReset();
   mockSearchParams = new URLSearchParams();
+  askStreamMock.mockReset();
+  askStreamMock.mockResolvedValue({
+    text: 'Réponse de M.I.A.',
+    blockedReason: null,
+    toolCallsMade: [],
+    viewActions: [],
+  });
+  // The single product conversation persists in localStorage — clear it so each
+  // test starts empty.
+  window.localStorage.clear();
 });
 afterEach(() => vi.restoreAllMocks());
 
@@ -120,47 +144,36 @@ describe('ZonesWorkspace (VZ-1)', () => {
     expect(pushMock).not.toHaveBeenCalled();
   });
 
-  it('the M.I.A panel answers with facts drawn from the SAME data as the card', async () => {
+  it('MIA-3 — a zone question is routed to the SHARED backend agent with the selected-zone orientation', async () => {
     renderZones();
     await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(4));
-    const body = document.querySelector('.zmia-body')!;
-    // Only the intro bubble so far.
-    expect(body.querySelectorAll('.bub').length).toBe(1);
-    // CLN-1 §2 — the four prefabricated question blocks are gone; the same
-    // factual answers are reached via the shared composer (free text, routed
-    // LOCALLY). Ask « qu'est-ce qu'il y a d'autre à ce niveau » — the answer is
-    // built by buildConfluence over the SAME data as the card's confluence block.
-    const field = screen.getByPlaceholderText('Pose ta question sur cette zone…');
+    // Ask through the shared panel (no local answering engine anymore).
+    const field = screen.getAllByPlaceholderText(/Pose une question à M\.I\.A/i)[0]!;
     fireEvent.change(field, { target: { value: 'qu’est-ce qu’il y a d’autre à ce niveau' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Envoyer' }));
-    await waitFor(() => expect(body.querySelectorAll('.bub').length).toBe(3)); // intro + Q + A
-    const answer = body.querySelectorAll('.bub.a')[1]!;
-    expect(answer.textContent ?? '').toMatch(
-      /au même niveau|rien d’autre n’est détecté|à l’intérieur|englobe|poche de liquidité/i,
-    );
-  }, 20000);
-
-  it('the M.I.A free-text input routes LOCALLY to a factual answer (no LLM)', async () => {
-    renderZones();
-    await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(4));
-    const body = document.querySelector('.zmia-body')!;
-    const input = screen.getByPlaceholderText('Pose ta question sur cette zone…');
-    fireEvent.change(input, { target: { value: 'explique moi cette zone' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Envoyer' }));
-    await waitFor(() => expect(body.querySelectorAll('.bub').length).toBe(3));
-    // Default subject is an OB → the concept explanation, drawn from the card.
-    expect(body.querySelectorAll('.bub.a')[1]!.textContent ?? '').toMatch(/Order Block|Fair Value Gap/);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Envoyer la question' })[0]!);
+    await waitFor(() => expect(askStreamMock).toHaveBeenCalledTimes(1));
+    const opts = askStreamMock.mock.calls[0]![0] as {
+      focus?: string | null;
+      signal?: { instrument: string; timeframe: string } | null;
+    };
+    // Orientation = the selected zone; combo = the page market. The answer comes
+    // from the agent (tool-grounded), never a locally fabricated string.
+    expect(opts.focus).toMatch(/^\[Zone sélectionnée : /);
+    expect(opts.signal?.instrument).toBe('XAUUSD');
+    expect(await screen.findByText('Réponse de M.I.A.')).toBeInTheDocument();
   });
 
-  it('an unrecognised question gets the honest fallback, never a fabrication', async () => {
+  it('MIA-3 — a question OUTSIDE the zone is still answered (orientation, not prison)', async () => {
     renderZones();
     await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(4));
-    const body = document.querySelector('.zmia-body')!;
-    const input = screen.getByPlaceholderText('Pose ta question sur cette zone…');
-    fireEvent.change(input, { target: { value: 'zzzzqwerty' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Envoyer' }));
-    await waitFor(() => expect(body.querySelectorAll('.bub').length).toBe(3));
-    expect(body.querySelectorAll('.bub.a')[1]!.textContent ?? '').toMatch(/à partir de ses faits/i);
+    const field = screen.getAllByPlaceholderText(/Pose une question à M\.I\.A/i)[0]!;
+    fireEvent.change(field, {
+      target: { value: 'et sur l’EURUSD, quelles publications macro sont à venir ?' },
+    });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Envoyer la question' })[0]!);
+    // Sent to the agent — never refused with « je ne peux parler que de cette zone ».
+    await waitFor(() => expect(askStreamMock).toHaveBeenCalledTimes(1));
+    expect(await screen.findByText('Réponse de M.I.A.')).toBeInTheDocument();
   });
 
   it('never renders « chevauche » nor any judgement wording', async () => {
@@ -244,28 +257,39 @@ describe('ZonesWorkspace (VZ-1)', () => {
     }
   });
 
-  it('CLN-1 §3 — re-clicking the selected zone deselects it; the conversation is kept', async () => {
+  it('MIA-3/CLN-1 §3 — re-clicking the selected zone deselects it; the shared conversation is kept', async () => {
     renderZones();
     await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(4));
-    // A zone is selected by default → subject shown, exactly one card highlighted.
+    // A zone is selected by default → the orientation subject block is shown, and
+    // exactly one card is highlighted.
     expect(screen.getByTestId('mia-subject')).toBeInTheDocument();
     const selected = document.querySelector<HTMLElement>('.zone.zsel');
     expect(selected).toBeTruthy();
-    // Start a conversation so we can prove « deselect ≠ reset ».
-    const field = screen.getByPlaceholderText('Pose ta question sur cette zone…');
-    fireEvent.change(field, { target: { value: 'explique moi cette zone' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Envoyer' }));
-    const body = document.querySelector('.zmia-body')!;
-    await waitFor(() => expect(body.querySelectorAll('.bub.u').length).toBe(1));
+
+    // Start a conversation through the SHARED panel so we can prove deselect ≠ reset.
+    // The desktop column and the mobile sheet both mount the panel; target the
+    // first input (the visible desktop column in jsdom).
+    const fields = screen.getAllByPlaceholderText(/Pose une question à M\.I\.A/i);
+    fireEvent.change(fields[0]!, { target: { value: 'explique moi cette zone' } });
+    const sendButtons = screen.getAllByRole('button', { name: 'Envoyer la question' });
+    fireEvent.click(sendButtons[0]!);
+    // The user turn appears in the shared transcript, and the backend was asked
+    // with the selected-zone orientation preamble.
+    expect(await screen.findByText('explique moi cette zone')).toBeInTheDocument();
+    await waitFor(() => expect(askStreamMock).toHaveBeenCalledTimes(1));
+    const focus = (askStreamMock.mock.calls[0]![0] as { focus?: string | null }).focus;
+    expect(focus).toMatch(/^\[Zone sélectionnée : /);
+
     // Re-click the SAME (selected) card → deselect.
     fireEvent.click(selected!);
-    await waitFor(() => expect(screen.queryByTestId('mia-subject')).not.toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.queryByTestId('mia-subject')).not.toBeInTheDocument(),
+    );
     // No card highlighted, no filler subject block.
     expect(document.querySelector('.zone.zsel')).toBeNull();
-    // The running conversation is NOT wiped.
-    expect(body.querySelectorAll('.bub.u').length).toBe(1);
-    // The field stays usable, and its idle hint does not claim a zone is chosen.
-    expect(screen.getByPlaceholderText('Pose ta question…')).toBeInTheDocument();
-    expect(screen.queryByPlaceholderText('Pose ta question sur cette zone…')).toBeNull();
+    // The running conversation is NOT wiped — the earlier question is still shown.
+    expect(screen.getByText('explique moi cette zone')).toBeInTheDocument();
+    // The field stays usable; its placeholder never claimed a zone was chosen.
+    expect(screen.getAllByPlaceholderText(/Pose une question à M\.I\.A/i)[0]).toBeInTheDocument();
   });
 });

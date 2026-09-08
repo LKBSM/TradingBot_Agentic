@@ -1,10 +1,9 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { MessageCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useLocalizedHref } from '@/lib/i18n/href';
 import { resolveComboFromQuery } from '@/lib/conditions/app-link';
 import { AppChatSidebar } from '@/components/app/AppChatSidebar';
 import { useChatColumn } from './ChatColumnContext';
@@ -33,8 +32,6 @@ const DEFAULT_COMBO: Combo = { instrument: 'XAUUSD', timeframe: 'M15' };
  * shared context is the ≥1280 disposition (column vs bubble), persisted.
  */
 export function ShellChat() {
-  const router = useRouter();
-  const lh = useLocalizedHref();
   const searchParams = useSearchParams();
   const t = useTranslations('app');
   const [open, setOpen] = React.useState(false);
@@ -60,16 +57,6 @@ export function ShellChat() {
       searchParams.get('instrument') ?? undefined,
       searchParams.get('timeframe') ?? undefined,
     ) ?? DEFAULT_COMBO;
-
-  const onSelectCombo = React.useCallback(
-    (combo: Combo) => {
-      router.replace(
-        lh(`/app?instrument=${combo.instrument}&timeframe=${combo.timeframe}`),
-        { scroll: false },
-      );
-    },
-    [lh, router],
-  );
 
   // Escape closes the drawer (no-op when docked, since it's never "open" there).
   React.useEffect(() => {
@@ -104,7 +91,6 @@ export function ShellChat() {
             the button there; the drawer closes via the backdrop/Escape. */}
         <AppChatSidebar
           active={active}
-          onSelectCombo={onSelectCombo}
           displayMode={chatOpen ? 'column' : 'bubble'}
           onSetDisplayMode={setDisplayMode}
         />
