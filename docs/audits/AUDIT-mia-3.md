@@ -191,3 +191,18 @@ Constat structurant : `ProductShell` ne monte le chat docké que sur /app (`{isA
 6. **Tests** : composant unique (échec si 2 panneaux), persistance mode au reload + résistance resize, survie conversation/zone à la bascule, reclic désélectionne, aucune zone→pas de bloc, désélection≠effacement, question calendrier depuis /zones fondée sur l'outil, marché/unité non lu → aveu, id inventé rejeté, vocabulaire interdit 3 langues. + Playwright 1280/1440/390 × fr/en × /zones+/app × bulle+colonne × avec/sans zone × conv. 4 messages.
 
 **Merge sur main : seulement après ta confirmation visuelle live** (exigence mission). tsc+build+vitest à la fin de Phase 2.
+
+### Phase 2a — AVANCEMENT (décision E=conversation unique, sequence « cerveau unique d'abord »)
+
+LIVRÉ ET TESTÉ (poussé) :
+- **Conversation unique** (`ChatProvider` + `thread-store`) : un seul fil produit qui suit l'utilisateur ; combo/zone/publication = orientation. thread-store 10/10, ChatProvider 10/10.
+- **Orientation** (`api-client.focus` + `ChatProvider.setFocus`) : préambule `[Zone sélectionnée : <id>]` / `[Publication : <event_id>]` ; désélection n'efface pas la conversation.
+- **Panneau unique `MiaPanel`** : transcript+welcome+thinking+input+conformité, source unique `useChat`. `AppChatSidebar` = simple chrome /app autour de `MiaPanel`.
+- **/zones bascule au VRAI agent** : `ZoneMiaPanel` (stub local, 4 réponses figées, 0 outil) **SUPPRIMÉ** ; orientation zone (reclic désélectionne, bloc sujet retiré sans effacer la conversation, question hors-zone répondue). ZonesWorkspace 15/15. tsc : 0 nouvelle erreur.
+
+RESTE (Phase 2a) :
+- **/actualites `MiaBlock` → `MiaPanel`** (focus publication `event_id`). ⚠️ remplace la présentation compacte à puces (`pub-mia-chip/thread/answer`, CSS `pub-mia`, specs vitest + Playwright sc2) → churn de tests + résultat visuel à confirmer. C'est le DERNIER moteur de conversation séparé ; le garde-fou « un seul panneau » sera ajouté une fois `MiaBlock` plié.
+
+RESTE (Phase 2b — refactor coquille) :
+- Grille `chatcol`/`ChatColumnContext` étendue à /zones + /actualites (bulle/colonne partout, seuil 1100px, contrôle dans les 2 modes, « non synchronisé »).
+- Playwright 1280/1440/390 × fr/en × /zones+/app × bulle+colonne × avec/sans zone × conv. 4 messages ; build ; puis confirmation visuelle live avant merge.
