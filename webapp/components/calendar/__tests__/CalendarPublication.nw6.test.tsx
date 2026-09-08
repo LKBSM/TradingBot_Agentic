@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import fr from '@/messages/fr.json';
 import en from '@/messages/en.json';
 import { CalendarEventDetail } from '../CalendarEventDetail';
+import { ChatProvider } from '@/components/chat/ChatProvider';
 import type { CalendarEvent, CalendarResponse } from '@/types/calendar';
 
 /**
@@ -53,7 +54,9 @@ function makeData(event: CalendarEvent): CalendarResponse {
 
 function renderPub(eventId: string, event: CalendarEvent, locale = 'fr') {
   return render(
-    <CalendarEventDetail eventId={eventId} locale={locale} data={makeData(event)} now={NOW} measures={null} />,
+    <ChatProvider>
+      <CalendarEventDetail eventId={eventId} locale={locale} data={makeData(event)} now={NOW} measures={null} />
+    </ChatProvider>,
   );
 }
 

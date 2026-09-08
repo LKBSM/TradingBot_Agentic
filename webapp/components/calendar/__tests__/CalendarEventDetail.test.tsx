@@ -2,6 +2,7 @@ import { render } from '@/components/test-utils';
 import { describe, expect, it } from 'vitest';
 import fr from '@/messages/fr.json';
 import { CalendarEventDetail } from '../CalendarEventDetail';
+import { ChatProvider } from '@/components/chat/ChatProvider';
 import type {
   CalendarAttribution,
   CalendarEvent,
@@ -143,13 +144,15 @@ function renderDetail(
   measures: PublicationMeasures | null = null,
 ) {
   return render(
-    <CalendarEventDetail
-      eventId={eventId}
-      locale="fr"
-      data={makeData(event)}
-      now={NOW}
-      measures={measures}
-    />,
+    <ChatProvider>
+      <CalendarEventDetail
+        eventId={eventId}
+        locale="fr"
+        data={makeData(event)}
+        now={NOW}
+        measures={measures}
+      />
+    </ChatProvider>,
   );
 }
 
@@ -277,13 +280,15 @@ describe('NW-3 CalendarEventDetail', () => {
     // An unknown publication key ships NO fiche → the pedagogy card is not rendered
     // at all (Défaut B: never a generic placeholder occupying the slot).
     const unknown = render(
-      <CalendarEventDetail
-        eventId="forexfactory:z:1"
-        locale="fr"
-        data={{ ...makeData(ev({ event_id: 'forexfactory:z:1', source: 'forexfactory', event: 'ADP', organism: null, value_series: SERIES })), attribution: [] }}
-        now={NOW}
-        measures={null}
-      />,
+      <ChatProvider>
+        <CalendarEventDetail
+          eventId="forexfactory:z:1"
+          locale="fr"
+          data={{ ...makeData(ev({ event_id: 'forexfactory:z:1', source: 'forexfactory', event: 'ADP', organism: null, value_series: SERIES })), attribution: [] }}
+          now={NOW}
+          measures={null}
+        />
+      </ChatProvider>,
     ).container;
     expect(unknown.querySelector('.pub-ped-body')).toBeNull();
     expect(unknown.textContent ?? '').not.toContain(fr.calendar.pub.pedagogy.title);
@@ -328,7 +333,9 @@ describe('NW-3 CalendarEventDetail', () => {
   it('(e) shows no named links and no license for an unknown organism/event, never a generic link', () => {
     const bare = ev({ event_id: 'forexfactory:z:1', source: 'forexfactory', event: 'ADP', organism: null, value_unit: null, value_series: SERIES });
     const { container } = render(
-      <CalendarEventDetail eventId="forexfactory:z:1" locale="fr" data={{ ...makeData(bare), attribution: [] }} now={NOW} measures={null} />,
+      <ChatProvider>
+        <CalendarEventDetail eventId="forexfactory:z:1" locale="fr" data={{ ...makeData(bare), attribution: [] }} now={NOW} measures={null} />
+      </ChatProvider>,
     );
     // the section header is still present, but no named link and no license
     expect(container.textContent ?? '').toContain(fr.calendar.pub.source.title);
@@ -337,17 +344,18 @@ describe('NW-3 CalendarEventDetail', () => {
     expect(container.textContent ?? '').toContain(fr.calendar.pub.source.noneYet);
   });
 
-  it('(d) the MIA block reuses the shared avatar (presence dot) and offers publication-specific suggestions', () => {
+  it('(d) MIA-3 — the MIA block is a suggestions façade: shared avatar + bespoke chips, no local engine', () => {
     const { container } = renderDetail('bls:us_cpi:2026-07-28');
     // shared AgentAvatar: the candlestick logo SVG + the presence pastille
     expect(container.querySelector('.pub-mia-head svg')).not.toBeNull();
     expect(container.querySelector('.pub-mia-head [data-presence="1"]')).not.toBeNull();
-    // us_cpi has four bespoke suggestions
+    // us_cpi has four bespoke suggestion chips
     expect(container.querySelectorAll('.pub-mia-chip')).toHaveLength(4);
-    expect(container.querySelector('.pub-mia-send')?.textContent).toBe(fr.calendar.pub.mia.send);
-    expect(container.querySelector('.pub-mia-input')?.getAttribute('placeholder')).toBe(
-      fr.calendar.pub.mia.placeholder,
-    );
+    // The old inline engine (its own input, send button and thread) is gone — the
+    // chips feed the ONE shared conversation shown in the M.I.A column instead.
+    expect(container.querySelector('.pub-mia-input')).toBeNull();
+    expect(container.querySelector('.pub-mia-send')).toBeNull();
+    expect(container.querySelector('[data-testid="pub-mia-thread"]')).toBeNull();
   });
 
   it('the three value absences are distinct on the curve card (pending / unfetched / unavailable)', () => {
@@ -372,7 +380,9 @@ describe('NW-3 CalendarEventDetail', () => {
   it('CLN-1 — an absent organism/unit renders NO line, no filler, no dash', () => {
     const bare = ev({ event_id: 'forexfactory:z:1', source: 'forexfactory', event: 'ADP', organism: null, value_unit: null });
     const { container } = render(
-      <CalendarEventDetail eventId="forexfactory:z:1" locale="fr" data={{ ...makeData(bare), attribution: [] }} now={NOW} measures={null} />,
+      <ChatProvider>
+        <CalendarEventDetail eventId="forexfactory:z:1" locale="fr" data={{ ...makeData(bare), attribution: [] }} now={NOW} measures={null} />
+      </ChatProvider>,
     );
     const text = container.textContent ?? '';
     // No generic « not provided » filler for the absent identity fields…

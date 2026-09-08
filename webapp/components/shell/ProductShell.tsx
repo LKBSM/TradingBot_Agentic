@@ -28,7 +28,7 @@ import './pages.css';
  * Product spaces that dock the shared M.I.A chat column (MIA-3). /app and /zones
  * both get the exact same shell chat column; other spaces stay two-column.
  */
-const CHAT_SPACES = new Set(['app', 'zones']);
+const CHAT_SPACES = new Set(['app', 'zones', 'actualites']);
 
 export function ProductShell({ children }: { children: React.ReactNode }) {
   // The chat-column visibility is shared across the shell frame (grid + chat
