@@ -163,7 +163,10 @@ est copié tel quel.**
 
 ## 7. Non négociables — conformité
 
-- ✅ Aucun changement visuel dans l'app (aucun fichier existant modifié).
+- ✅ Aucun changement visuel en PRODUCTION. Un seul fichier produit modifié :
+  `ReadingChart.tsx` — correctif de justesse StrictMode au teardown (§8bis), sans effet sur le
+  mono-montage prod (le nettoyage ne tourne qu'au démontage) ; corrige l'affichage du graphique en
+  dev. 18 tests graphiques verts. Tout le reste est purement additif.
 - ✅ Aucune logique métier / calcul / détection touchés.
 - ✅ Aucun appel fournisseur ajouté — les données d'exemple sont des fichiers.
 - ✅ Aucun secret / clé / donnée personnelle.
@@ -193,10 +196,8 @@ réelles** — **0 ligne des pages modifiée**, aucun backend.
 
 Rendu vérifié page par page (capture à l'appui) :
 - **/app** — shell complet (rail, en-tête prix réel « En direct », colonne M.I.A), toolbar de calques,
-  lecture narrée réelle, cartes Régime + Structure. ⚠️ **Le tracé des bougies ne peint pas dans la
-  capture headless** (limitation de `lightweight-charts` sous capture automatisée : données/couleurs/
-  chart créés, axes tracés, mais la série ne rend pas ; le graphique peint normalement dans l'app
-  live). Le CADRE du graphique (toolbar, badges, axes) est bien capturé.
+  **graphique peint (bougies réelles + surcouches de zones SMC)**, lecture narrée réelle, cartes
+  Régime + Structure. Voir §8bis pour le correctif graphique.
 - **/zones** — complet : cartes de zones réelles dont le **cas « prix dans la bande »**, jauges de
   proximité, panneau M.I.A sur la zone sélectionnée.
 - **/scanner** — constructeur de conditions V3 (4 familles, combinaison, sauvegarde).
@@ -211,8 +212,31 @@ Périmètre des données calendrier : le store calendrier est **vide** dans cet 
 récupéré en live) ; source réelle la plus proche = `news_cache.db` (événements économiques réels).
 Filtrés aux sources officielles US/EU (USD→bls, EUR→eurostat) pour passer les filtres organisme.
 
+## 8bis. Graphique — cause racine trouvée + correctif (1 seul fichier produit modifié)
+
+Le tracé des bougies ne peignait pas dans la capture (ni dans la galerie, ni sur /app). Diagnostic
+par élimination (données valides via `isValidBar`, couleurs avec fallback, chart créé, `setData`
+appelé, axes tracés mais **panneau vide et aucune étiquette de prix** → la série n'a pas de données
+côté lightweight-charts) puis preuve directe :
+
+- **Cause racine = React StrictMode** (activé par défaut en dev Next, `reactStrictMode: true`). En
+  dev, React double-invoque *montage → nettoyage → remontage*. Le nettoyage du chart fait
+  `chart.remove()`, mais le garde `candlesChanged = candles !== lastCandlesRef.current` du push de
+  données lit `lastCandlesRef` qui **survit au remontage** → `candlesChanged` faux → `setData` sauté
+  sur le SECOND chart (le vivant) → panneau vide. Avec des données mockées **statiques** (pas de
+  poll qui change la référence), il restait vide. Preuve : `reactStrictMode:false` → la série peint
+  (72 364 px non vides vs 606). En **production** (StrictMode off) le graphique a toujours peint.
+- **Correctif** (`components/app/ReadingChart.tsx`, teardown du chart) : réinitialiser les gardes de
+  push (`lastCandlesRef`, `lastFirstTimeRef`, `didInitialFitRef`) au nettoyage, pour qu'un remontage
+  re-pousse la série + refit. **Sûr en production** : le nettoyage ne tourne qu'au démontage réel
+  (mono-montage prod → comportement inchangé) ; en dev il corrige aussi l'affichage du graphique au
+  premier chargement (avant, vide jusqu'au 1ᵉʳ poll). Vérifié : StrictMode ON + correctif → la série
+  peint ; 18 tests graphiques existants (dont AppWorkspace « skeleton », NON touché) verts.
+
+C'est le **seul fichier produit modifié** de tout DS-1 — un correctif de justesse StrictMode ciblé,
+pas une refonte. Le graphique de /app et de la galerie peint désormais bougies + zones dans les
+captures comme en live.
+
 ## 9. Suite proposée (après confirmation)
 Palier 1 (`CalendarMonthView`, `ShellRail`) puis Palier 2 (`ChatPanel`, `CalendarEventDetail`) —
-extraction vue/conteneur, à traiter avec le soin dû au risque de régression signalé au §3. Le seul
-point ouvert côté rendu = le tracé du graphique en capture headless (§8) — sans impact sur l'app
-live ; à approfondir si des captures de graphique peuplé sont nécessaires pour Claude Design.
+extraction vue/conteneur, à traiter avec le soin dû au risque de régression signalé au §3.

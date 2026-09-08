@@ -733,6 +733,15 @@ export function ReadingChart({
       chartRef.current = null;
       seriesRef.current = null;
       markersRef.current = null;
+      // The chart instance is gone — reset the data-push guards so a REMOUNT
+      // (React 18 StrictMode double-invokes mount/cleanup/mount in dev) pushes the
+      // series data + refits onto the fresh chart. Without this, `lastCandlesRef`
+      // survives the remount, `candlesChanged` reads false, setData is skipped and
+      // the second (live) chart stays empty. Cleanup only runs on teardown, so this
+      // never changes single-mount (production) behaviour.
+      lastCandlesRef.current = null;
+      lastFirstTimeRef.current = null;
+      didInitialFitRef.current = false;
     };
     // Created once — theme changes are applied in place below (UI-19), so the
     // chart is NOT torn down and rebuilt on every light/dark toggle (which lost
