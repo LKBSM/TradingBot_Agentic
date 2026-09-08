@@ -1,11 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="M.I.A Markets">
   <title>M.I.A Markets</title>
   <rect width="512" height="512" rx="96" fill="#0a0f1c"/>
-  <!-- Compact single-beam prism (mia-favicon.svg), scaled and centred inside
-       the maskable safe zone. -->
-  <g transform="translate(136,136) scale(2.4)">
-    <rect x="0" y="46" width="26" height="12" fill="#7DA3FF"/>
-    <path d="M48,16 L78,84 L18,84 Z" fill="#7DA3FF"/>
-    <polygon points="62,48 64,54 100,60 100,42" fill="#7DA3FF"/>
+  <!-- Compact three-candle mark (mia-favicon.svg), scaled and centred inside the
+       maskable safe zone. Brass on the dark tile. Symmetric — never increasing. -->
+  <g transform="translate(134,134) scale(3.4)" fill="#C9A14A" stroke="#C9A14A">
+    <line x1="13" y1="22" x2="13" y2="50" stroke-width="4"/>
+    <rect x="6" y="28" width="14" height="16" rx="1" stroke="none"/>
+    <line x1="36" y1="6" x2="36" y2="66" stroke-width="5"/>
+    <rect x="28" y="16" width="16" height="40" rx="1" stroke="none"/>
+    <line x1="59" y1="22" x2="59" y2="50" stroke-width="4"/>
+    <rect x="52" y="28" width="14" height="16" rx="1" stroke="none"/>
   </g>
 </svg>

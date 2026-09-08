@@ -1,5 +1,5 @@
 import { ImageResponse } from 'next/og';
-import { PRISM_RECT, PRISM_TRIANGLE, PRISM_BEAMS } from '@/lib/brand/prism-geometry';
+import { CANDLES } from '@/lib/brand/candle-geometry';
 
 /**
  * Stable hosted PNG of the horizontal M.I.A Markets lockup, for transactional
@@ -27,15 +27,19 @@ export function GET() {
           background: '#ffffff',
         }}
       >
-        <svg width="86" height="72" viewBox="0 0 120 100" fill="none">
-          <rect {...PRISM_RECT} fill="#2962FF" />
-          <path d={PRISM_TRIANGLE} fill="#2962FF" />
-          {PRISM_BEAMS.map((b) => (
-            <polygon key={b.points} points={b.points} fill="#2962FF" opacity={b.opacity} />
-          ))}
+        {/* Brass candle mark + near-black wordmark on the white email tile. */}
+        <svg width="90" height="72" viewBox="0 0 90 72" fill="none">
+          <g fill="#C9A14A" stroke="#C9A14A">
+            {CANDLES.map((c) => (
+              <g key={c.wick.x1}>
+                <line x1={c.wick.x1} y1={c.wick.y1} x2={c.wick.x2} y2={c.wick.y2} strokeWidth={c.wick.width} opacity={c.opacity} />
+                <rect x={c.body.x} y={c.body.y} width={c.body.width} height={c.body.height} rx={1} stroke="none" opacity={c.opacity} />
+              </g>
+            ))}
+          </g>
         </svg>
-        <span style={{ fontSize: 40, fontWeight: 600, letterSpacing: -1, color: '#0F1729' }}>
-          M.I.A Markets
+        <span style={{ fontSize: 38, fontWeight: 500, letterSpacing: 3, color: '#1A1917' }}>
+          M.I.A MARKETS
         </span>
       </div>
     ),

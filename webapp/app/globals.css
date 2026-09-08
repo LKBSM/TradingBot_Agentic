@@ -138,14 +138,14 @@ html[dir='rtl'] body {
 
     --font-narrative: var(--font-sans);
 
-    /* Brand logo — NEUTRAL identity (THM-1 decision C). The prism is the
-       identity, not a specific blue: rendering the mark in the theme's own text
-       tone gives it the same weight across all four themes and never competes
-       with the single accent (Règle 2). Each theme sets these = its --txt; the
-       fixed FIXED_FILL tones in MiaLogo (color/dark/mono) still serve the known
-       backgrounds (OG card, favicon). Graphite default = its neutral text. */
-    --brand-mark: #e8e8e9;
-    --brand-word: #e8e8e9;
+    /* Brand logo — TWO tokens, on purpose (BRD-3, supersedes THM-1's neutral
+       mark). The candles stay brass on ALL four themes (a brand keeps its colour;
+       the single UI accent does not — e.g. Ardoise's steel accent is NOT applied
+       to the mark). The wordmark is white on the three dark themes, near-black on
+       the light Parchemin theme. Every theme sets both tokens explicitly (never
+       neutralised to --txt). Never merge the two tokens. */
+    --brand-mark: #c9a14a;
+    --brand-word: #ffffff;
   }
 
   /* ── Parchemin — light, analyst note (narration in serif). Internal id stays
@@ -153,8 +153,8 @@ html[dir='rtl'] body {
   [data-design='atelier'] {
     color-scheme: light;
 
-    /* Neutral brand (THM-1 decision C) = this theme's text tone. */
-    --brand-mark: #1a1917;
+    /* Brass candles (BRD-3), near-black wordmark on the light paper. */
+    --brand-mark: #c9a14a;
     --brand-word: #1a1917;
 
     /* THM-1 « Parchemin » — near-neutral paper, tight surfaces, single bronze accent. */
@@ -214,9 +214,9 @@ html[dir='rtl'] body {
   [data-design='schema'] {
     color-scheme: dark;
 
-    /* Neutral brand (THM-1 decision C) = this theme's text tone. */
-    --brand-mark: #e9e9ea;
-    --brand-word: #e9e9ea;
+    /* Brass candles (BRD-3), white wordmark — brass even where the accent is neutral. */
+    --brand-mark: #c9a14a;
+    --brand-word: #ffffff;
 
     /* THM-1 « Encre » — pure ink, tight surfaces, accent IS the neutral (no hue). */
     --bg: #0a0a0b;
@@ -275,9 +275,9 @@ html[dir='rtl'] body {
   [data-design='ardoise'] {
     color-scheme: dark;
 
-    /* Neutral brand (THM-1 decision C) = this theme's text tone. */
-    --brand-mark: #e4e6e9;
-    --brand-word: #e4e6e9;
+    /* Brass candles (BRD-3), white wordmark — brass, NOT the steel-blue accent. */
+    --brand-mark: #c9a14a;
+    --brand-word: #ffffff;
 
     /* THM-1 « Ardoise et acier » — slate, tight surfaces, single steel-blue accent. */
     --bg: #101215;

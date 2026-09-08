@@ -31,7 +31,7 @@ export function AppHeader() {
           className="flex items-center gap-2 text-sm font-semibold tracking-tight"
           aria-label={t('header.brandAria')}
         >
-          <MiaLogo variant="mark" height={24} decorative />
+          <MiaLogo variant="compact" height={24} decorative />
           {/* Mobile shows the mark only; the name appears from sm up. */}
           <span className="hidden flex-col leading-none sm:flex">
             <span>{BRAND_NAME}</span>

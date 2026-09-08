@@ -2,7 +2,7 @@ import { cn } from '@/lib/utils';
 import { MiaLogo } from '@/components/brand/MiaLogo';
 
 /**
- * M.I.A Agent avatar — the compact prism logo inside a soft brand-tinted disc.
+ * M.I.A Agent avatar — the compact candle mark inside a soft brand-tinted disc.
  * One shared component so the header, the message rows and the empty-state hero
  * all read identically (brand consistency). Purely presentational.
  *
@@ -36,6 +36,7 @@ export function AgentAvatar({ size = 'md', className, presence = false }: AgentA
     <div className="relative shrink-0">
       <div
         aria-hidden
+        data-testid="mia-avatar"
         className={cn('flex items-center justify-center border', box, className)}
         style={{ background: FILL, borderColor: RING }}
       >

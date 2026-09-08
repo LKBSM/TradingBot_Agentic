@@ -71,7 +71,7 @@ export function MobileMenu({ variant }: { variant: 'marketing' | 'app' }) {
       >
         <SheetHeader className="text-left">
           <SheetTitle className="flex items-center gap-2">
-            <MiaLogo variant="mark" decorative height={20} />
+            <MiaLogo variant="compact" decorative height={20} />
             {BRAND_NAME}
           </SheetTitle>
         </SheetHeader>
