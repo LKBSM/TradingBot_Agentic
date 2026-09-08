@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import {
   ChevronLeft,
   ChevronDown,
@@ -13,10 +13,7 @@ import {
   CalendarDays,
 } from 'lucide-react';
 import { AgentAvatar } from '@/components/chat/AgentAvatar';
-import { MicButton } from '@/components/dictation/MicButton';
-import { useVoiceInput } from '@/lib/scanner-chat/use-voice-input';
-import { useDictationCopy } from '@/lib/scanner-chat/use-dictation-copy';
-import { askSentinel, ChatApiError, ChatApiUnavailableError } from '@/lib/chat/api-client';
+import { useChat } from '@/components/chat/ChatProvider';
 import { useLocalizedHref } from '@/lib/i18n/href';
 import { sourceLinksFor, type SourceDocKind } from '@/lib/calendar/sourceLinks';
 import { useCalendarEvent, usePublicationMeasures } from '@/lib/calendar/useCalendar';
@@ -835,78 +832,42 @@ function QuestionsSection({
  * Section 4 — MIA (presentational only)
  * ------------------------------------------------------------------------ */
 
-interface PubTurn {
-  role: 'user' | 'assistant';
-  content: string;
-}
-
 function MiaBlock({
   pedKey,
   title,
+  eventId,
+  markets,
   t,
 }: {
   pedKey: string;
-  /** The publication name (ev.event) — anchors M.I.A on this event. */
+  /** The publication name (ev.event) — shown as the shared panel's subject. */
   title: string;
+  /** Stable, engine-emitted event id — the identifier-locked orientation. */
+  eventId: string;
+  /** Markets this publication attaches to; the first is the combo context. */
+  markets: readonly string[];
   t: ReturnType<typeof useTranslations>;
 }) {
-  // Reused chat strings (thinking / error / aria) — already native in the 9
-  // locales, so wiring this card adds no new i18n keys.
-  const tc = useTranslations('chat');
+  // MIA-3 — this block is a SUGGESTIONS FAÇADE, not a chat engine. The chips feed
+  // the ONE shared conversation (the shell M.I.A column); there is no local
+  // turns/askSentinel state anymore. While the fiche is open it ORIENTS that
+  // conversation on THIS publication: it binds a market combo (so market
+  // follow-ups resolve) and sets the publication focus — the `eventId` is the
+  // lock (get_publication rejects an unknown id), `title` is only the on-screen
+  // subject label. The focus is cleared on unmount so nothing lingers elsewhere.
+  const { openForCombo, setFocus, askFreeForm } = useChat();
   // Suggested questions adapted to the publication (bespoke for us_cpi /
   // ea_hicp_flash, a concept-only default otherwise). next-intl rejects arrays,
   // so the set is an object; we keep only the keys present for this publication.
   const suggests = t.raw(`pub.mia.suggests.${pedKey}`) as Record<string, string>;
   const chips = Object.values(suggests);
-
-  const [turns, setTurns] = React.useState<PubTurn[]>([]);
-  const [input, setInput] = React.useState('');
-  const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-  const threadRef = React.useRef<HTMLDivElement>(null);
-
-  // Voice dictation — same shared browser hook as the other M.I.A chats. It only
-  // fills the field; the question sent to the backend is exactly the visible
-  // text (still anchored on this publication, as before).
-  const locale = useLocale();
-  const voice = useVoiceInput({ locale, value: input, onValueChange: setInput });
-  const dictationCopy = useDictationCopy();
-
-  const send = React.useCallback(
-    async (raw: string) => {
-      const text = raw.trim();
-      if (!text || loading) return;
-      setError(null);
-      setInput('');
-      const history = turns.map((tt) => ({ role: tt.role, content: tt.content }));
-      setTurns((prev) => [...prev, { role: 'user', content: text }]);
-      setLoading(true);
-      try {
-        // The backend chatbot is signal-agnostic free text (3 niveau-1.5 defence
-        // layers server-side). We anchor M.I.A on this publication with a stable
-        // context preamble, exactly as the /app sidebar prepends the active combo.
-        const question = `[Publication : ${title}]\n${text}`;
-        const res = await askSentinel({ question, history });
-        setTurns((prev) => [...prev, { role: 'assistant', content: res.text }]);
-      } catch (err) {
-        if (err instanceof ChatApiUnavailableError) {
-          setError(tc('turnUnavailable'));
-        } else {
-          const message = err instanceof ChatApiError ? err.message : tc('unknownError');
-          setError(tc('turnError', { message }));
-        }
-      } finally {
-        setLoading(false);
-      }
-    },
-    [turns, loading, title, tc],
-  );
+  const market = markets[0] ?? 'XAUUSD';
 
   React.useEffect(() => {
-    threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight });
-  }, [turns, loading, error]);
-
-  const hasThread = turns.length > 0 || loading || error !== null;
+    openForCombo({ instrument: market, timeframe: 'M15' });
+    setFocus({ kind: 'publication', eventId, label: title });
+    return () => setFocus(null);
+  }, [openForCombo, setFocus, eventId, title, market]);
 
   return (
     <div className="cald-card pub-mia">
@@ -925,8 +886,9 @@ function MiaBlock({
             type="button"
             className="pub-mia-chip"
             data-testid="pub-mia-chip"
-            disabled={loading}
-            onClick={() => send(label)}
+            // Feeds the ONE shared conversation (answer shows in the M.I.A column),
+            // oriented on this publication by the effect above.
+            onClick={() => void askFreeForm(label)}
           >
             <span>{label}</span>
             <ArrowUpRight className="pub-mia-chip-ar" width={13} height={13} aria-hidden />
@@ -934,94 +896,6 @@ function MiaBlock({
         ))}
       </div>
       <p className="pub-mia-cap">{t('pub.mia.capability')}</p>
-
-      {hasThread && (
-        <div
-          ref={threadRef}
-          data-testid="pub-mia-thread"
-          className="mt-3 max-h-72 space-y-2 overflow-y-auto rounded-lg border border-border/50 bg-background/40 p-2"
-        >
-          {turns.map((tt, i) => (
-            <div
-              key={i}
-              data-testid={tt.role === 'assistant' ? 'pub-mia-answer' : 'pub-mia-user'}
-              className={
-                tt.role === 'user'
-                  ? 'ml-auto max-w-[85%] rounded-lg bg-primary/10 px-3 py-2 text-sm text-foreground'
-                  : 'mr-auto max-w-[92%] whitespace-pre-wrap rounded-lg bg-card px-3 py-2 text-sm text-muted-foreground'
-              }
-            >
-              {tt.content}
-            </div>
-          ))}
-          {loading && (
-            <div className="mr-auto max-w-[92%] rounded-lg bg-card px-3 py-2 text-sm italic text-muted-foreground">
-              {tc('thinking')}
-            </div>
-          )}
-          {error && (
-            <p role="alert" data-testid="pub-mia-error" className="px-1 text-xs text-destructive">
-              {error}
-            </p>
-          )}
-        </div>
-      )}
-
-      <form
-        className="pub-mia-form"
-        onSubmit={(e) => {
-          e.preventDefault();
-          send(input);
-        }}
-      >
-        <input
-          className="pub-mia-input"
-          type="text"
-          data-testid="pub-mia-input"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          disabled={loading}
-          placeholder={t('pub.mia.placeholder')}
-          aria-label={t('pub.mia.placeholder')}
-        />
-        {voice.supported && !loading && (
-          <MicButton
-            listening={voice.listening}
-            denied={voice.denied}
-            onToggle={voice.toggle}
-            startLabel={dictationCopy.startLabel}
-            stopLabel={dictationCopy.stopLabel}
-            className="pub-mia-mic"
-          />
-        )}
-        <button
-          type="submit"
-          className="pub-mia-send"
-          data-testid="pub-mia-send"
-          disabled={loading || input.trim().length === 0}
-          aria-label={loading ? tc('sendLoadingAria') : tc('sendAria')}
-        >
-          {t('pub.mia.send')}
-        </button>
-      </form>
-
-      {/* Dictation feedback — never hidden; the keyboard stays fully usable. */}
-      {voice.supported && voice.listening && (
-        <p data-testid="dictation-listening" className="pub-mia-dict listen">
-          {dictationCopy.listeningLabel}
-          {voice.interim ? ` — “${voice.interim}”` : ''}
-        </p>
-      )}
-      {voice.supported && voice.error && (
-        <p data-testid="dictation-error" role="alert" className="pub-mia-dict err">
-          {dictationCopy.errorText(voice.error)}
-        </p>
-      )}
-      {voice.supported && (
-        <p data-testid="transcription-note" className="pub-mia-dict note">
-          {dictationCopy.privacy}
-        </p>
-      )}
     </div>
   );
 }
@@ -1214,7 +1088,13 @@ function Detail({
       )}
 
       {/* 4 — MIA */}
-      <MiaBlock pedKey={miaKey} title={ev.event} t={t} />
+      <MiaBlock
+        pedKey={miaKey}
+        title={ev.event}
+        eventId={ev.event_id}
+        markets={ev.markets}
+        t={t}
+      />
 
       {/* 5 — GO TO SOURCE (issuing organism only) */}
       <SourceSection eventKey={eventKey} attribution={attribution} t={t} />

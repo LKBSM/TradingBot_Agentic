@@ -24,6 +24,12 @@ import './pages.css';
  * Structure (grid) and colours come entirely from the literal design tokens via
  * shell.css, so all four themes are covered. No detection/data lives here.
  */
+/**
+ * Product spaces that dock the shared M.I.A chat column (MIA-3). /app and /zones
+ * both get the exact same shell chat column; other spaces stay two-column.
+ */
+const CHAT_SPACES = new Set(['app', 'zones', 'actualites']);
+
 export function ProductShell({ children }: { children: React.ReactNode }) {
   // The chat-column visibility is shared across the shell frame (grid + chat
   // hide button) AND the page content (DesktopReading's reopen affordance), so
@@ -54,17 +60,25 @@ function ShellFrame({ children }: { children: React.ReactNode }) {
   }, [pathname, locale]);
 
   const isApp = activeSpace === 'app';
+  // MIA-3 — M.I.A is one panel docked by the SHELL on every chat space, so /zones
+  // gets the exact same column as /app (same component, full height). /app keeps
+  // its MobileWorkspace tab on phones; the other chat spaces are "standalone"
+  // (no tab system) and get the floating drawer on phones instead.
+  const hasChat = CHAT_SPACES.has(activeSpace);
+  const isStandaloneChat = hasChat && !isApp;
 
   return (
     <div
       className={cn(
         'app-shell',
-        !isApp && 'no-chat',
-        // On /app, when the user collapsed M.I.A, drop the docked column and let
-        // the centre reclaim its width. Scoped to ≥1280 in shell.css so the
-        // tablet drawer / phone tab are untouched. A dedicated class (NOT
-        // `no-chat`, whose `:not(.no-chat)` media rules drive the drawer).
-        isApp && !chatOpen && 'chat-collapsed',
+        !hasChat && 'no-chat',
+        // Phone chat spaces without a tab system (e.g. /zones) — a marker class so
+        // the CSS keeps the floating chat drawer reachable below 768px.
+        isStandaloneChat && 'chat-standalone',
+        // Bubble mode: drop the docked column and let the centre reclaim its
+        // width; M.I.A becomes the floating drawer (never `no-chat`, whose
+        // `:not(.no-chat)` media rules drive the tablet drawer we keep).
+        hasChat && !chatOpen && 'chat-collapsed',
       )}
     >
       <SkipLink />
@@ -86,9 +100,10 @@ function ShellFrame({ children }: { children: React.ReactNode }) {
           {t('legal.disclaimer.chart')}
         </p>
       </div>
-      {isApp && <ShellChat />}
-      {/* Mobile space nav (<768px): the `.no-chat` surfaces lose the rail there,
-          so they get a bottom tab bar. /app keeps MobileWorkspace's own tabs. */}
+      {hasChat && <ShellChat />}
+      {/* Mobile space nav (<768px): every non-/app surface loses the rail there,
+          so it gets a bottom tab bar (chat spaces like /zones keep it too — the
+          floating chat drawer sits above it). /app keeps MobileWorkspace's tabs. */}
       {!isApp && <MobileSpaceNav activeSpace={activeSpace} />}
     </div>
   );

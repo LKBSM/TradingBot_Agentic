@@ -206,13 +206,11 @@ function ComboHarness() {
   );
 }
 
-describe('ChatProvider thread scoping & persistence (client-only)', () => {
-  it("keeps each combo's conversation and restores it when coming back", async () => {
-    askSentinelMock.mockResolvedValue({
-      text: 'Réponse H1.',
-      blockedReason: null,
-      toolCallsMade: [],
-    });
+describe('ChatProvider single conversation (MIA-3 — follows the user)', () => {
+  it('keeps ONE conversation across combo switches (orientation ≠ thread)', async () => {
+    askSentinelMock
+      .mockResolvedValueOnce({ text: 'Réponse H1.', blockedReason: null, toolCallsMade: [] })
+      .mockResolvedValueOnce({ text: 'Réponse H4.', blockedReason: null, toolCallsMade: [] });
     render(
       <ChatProvider>
         <ComboHarness />
@@ -223,21 +221,22 @@ describe('ChatProvider thread scoping & persistence (client-only)', () => {
     fireEvent.click(screen.getByText('ask-combo'));
     expect(await screen.findByText('Réponse H1.')).toBeInTheDocument();
 
-    // Switch to H4 → its own fresh thread, H1's turns are NOT shown (no mixing).
+    // Switch combo → the SAME conversation stays (decision E): the earlier turn
+    // is still shown, nothing is reset, no per-combo split.
     fireEvent.click(screen.getByText('combo-h4'));
-    await waitFor(() =>
-      expect(screen.getByTestId('turn-count').textContent).toBe('0'),
-    );
-    expect(screen.queryByText('Réponse H1.')).not.toBeInTheDocument();
-
-    // Back to H1 → the conversation is restored intact.
-    fireEvent.click(screen.getByText('combo-h1'));
-    expect(await screen.findByText('Réponse H1.')).toBeInTheDocument();
+    expect(screen.getByText('Réponse H1.')).toBeInTheDocument();
     expect(screen.getByTestId('turn-count').textContent).toBe('2');
-    expect(screen.getByTestId('recents').textContent).toBe('app:XAUUSD:H1');
+
+    // Ask again after switching → appended to the one conversation (4 turns).
+    fireEvent.click(screen.getByText('ask-combo'));
+    expect(await screen.findByText('Réponse H4.')).toBeInTheDocument();
+    expect(screen.getByText('Réponse H1.')).toBeInTheDocument();
+    expect(screen.getByTestId('turn-count').textContent).toBe('4');
+    // No per-combo "recents" entries anymore — one continuous conversation.
+    expect(screen.getByTestId('recents').textContent).toBe('');
   });
 
-  it('persists combo threads to localStorage and rehydrates a fresh provider', async () => {
+  it('persists the single conversation and rehydrates a fresh provider', async () => {
     askSentinelMock.mockResolvedValue({
       text: 'Réponse persistée.',
       blockedReason: null,
@@ -258,22 +257,23 @@ describe('ChatProvider thread scoping & persistence (client-only)', () => {
     );
     first.unmount();
 
-    // Fresh provider (simulates a page refresh): the thread comes back from
-    // localStorage — no server involved.
+    // Fresh provider (simulates a page refresh): the one conversation comes back
+    // from localStorage — no server involved, and no combo needed to restore it.
     render(
       <ChatProvider>
         <ComboHarness />
       </ChatProvider>,
     );
-    fireEvent.click(screen.getByText('combo-h1'));
     expect(await screen.findByText('Réponse persistée.')).toBeInTheDocument();
     expect(await screen.findByText('Ma question ?')).toBeInTheDocument();
   });
 
-  it('resetTurns clears ONLY the active thread, in memory and in storage', async () => {
-    askSentinelMock
-      .mockResolvedValueOnce({ text: 'Réponse H1.', blockedReason: null, toolCallsMade: [] })
-      .mockResolvedValueOnce({ text: 'Réponse H4.', blockedReason: null, toolCallsMade: [] });
+  it('resetTurns clears the whole conversation, in memory and in storage', async () => {
+    askSentinelMock.mockResolvedValue({
+      text: 'Réponse à effacer.',
+      blockedReason: null,
+      toolCallsMade: [],
+    });
     render(
       <ChatProvider>
         <ComboHarness />
@@ -282,38 +282,92 @@ describe('ChatProvider thread scoping & persistence (client-only)', () => {
 
     fireEvent.click(screen.getByText('combo-h1'));
     fireEvent.click(screen.getByText('ask-combo'));
-    expect(await screen.findByText('Réponse H1.')).toBeInTheDocument();
-    fireEvent.click(screen.getByText('combo-h4'));
-    fireEvent.click(screen.getByText('ask-combo'));
-    expect(await screen.findByText('Réponse H4.')).toBeInTheDocument();
+    expect(await screen.findByText('Réponse à effacer.')).toBeInTheDocument();
 
-    // Reset while H4 is active: H4 gone everywhere, H1 untouched.
     fireEvent.click(screen.getByText('reset-combo'));
     await waitFor(() =>
       expect(screen.getByTestId('turn-count').textContent).toBe('0'),
     );
     await waitFor(() => {
       const raw = window.localStorage.getItem(STORAGE_KEY) ?? '';
-      expect(raw).not.toContain('Réponse H4.');
-      expect(raw).toContain('Réponse H1.');
+      expect(raw).not.toContain('Réponse à effacer.');
     });
-    fireEvent.click(screen.getByText('combo-h1'));
-    expect(await screen.findByText('Réponse H1.')).toBeInTheDocument();
   });
 
-  it('never persists landing signal threads (only app:* combo threads)', async () => {
+  it('sends the selected-zone orientation as a preamble focus, cleared without touching the conversation', async () => {
+    askSentinelMock.mockResolvedValue({
+      text: 'Réponse orientée.',
+      blockedReason: null,
+      toolCallsMade: [],
+    });
+
+    function FocusHarness() {
+      const { openForCombo, setFocus, askFreeForm, turns } = useChat();
+      return (
+        <div>
+          <button type="button" onClick={() => openForCombo({ instrument: 'XAUUSD', timeframe: 'M15' })}>
+            combo
+          </button>
+          <button
+            type="button"
+            onClick={() => setFocus({ kind: 'zone', zoneId: 'OB_xau_m15_7', label: 'OB ↑ · 4100–4110' })}
+          >
+            focus-zone
+          </button>
+          <button type="button" onClick={() => setFocus(null)}>
+            deselect
+          </button>
+          <button type="button" onClick={() => void askFreeForm('Décris cette zone ?')}>
+            ask
+          </button>
+          <span data-testid="count">{turns.length}</span>
+          <ul>
+            {turns.map((t) => (
+              <li key={t.id}>{t.text}</li>
+            ))}
+          </ul>
+        </div>
+      );
+    }
+
+    render(
+      <ChatProvider>
+        <FocusHarness />
+      </ChatProvider>,
+    );
+    fireEvent.click(screen.getByText('combo'));
+    fireEvent.click(screen.getByText('focus-zone'));
+    fireEvent.click(screen.getByText('ask'));
+    await waitFor(() => expect(askSentinelMock).toHaveBeenCalledTimes(1));
+    const firstArgs = askSentinelMock.mock.calls[0]![0] as { focus?: string | null };
+    expect(firstArgs.focus).toBe('[Zone sélectionnée : OB_xau_m15_7]');
+    await screen.findByText('Réponse orientée.');
+
+    // Deselect → the conversation is NOT cleared, and the next question carries
+    // no zone focus (an off-zone question is still answered).
+    fireEvent.click(screen.getByText('deselect'));
+    expect(screen.getByTestId('count').textContent).toBe('2');
+    fireEvent.click(screen.getByText('ask'));
+    await waitFor(() => expect(askSentinelMock).toHaveBeenCalledTimes(2));
+    const secondArgs = askSentinelMock.mock.calls[1]![0] as { focus?: string | null };
+    expect(secondArgs.focus).toBeNull();
+  });
+
+  it('persists the conversation even when opened for a non-combo signal', async () => {
+    // Under the single-conversation model every turn lives in the one product
+    // thread, so a chat opened for a landing signal now persists too (it is the
+    // same conversation the user continues on /app or /zones).
     askSentinelMock.mockResolvedValue({
       text: 'Réponse signal.',
       blockedReason: null,
       toolCallsMade: [],
     });
-    renderHarness(); // opens for SIGNAL (id 'sig-1')
+    renderHarness(); // opens for SIGNAL
     fireEvent.click(screen.getByText('ask'));
     expect(await screen.findByText('Réponse signal.')).toBeInTheDocument();
 
-    await waitFor(() => {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      expect(raw === null || !raw.includes('sig-1')).toBe(true);
-    });
+    await waitFor(() =>
+      expect(window.localStorage.getItem(STORAGE_KEY)).toContain('Réponse signal.'),
+    );
   });
 });

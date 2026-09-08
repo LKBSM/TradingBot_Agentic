@@ -33,8 +33,8 @@ import {
 } from '@/lib/zones/lifecycle';
 import { cn } from '@/lib/utils';
 import { PriceFreshnessBadge } from '@/components/market-reading/PriceFreshnessBadge';
+import { useChat } from '@/components/chat/ChatProvider';
 import { ZoneLifecycleCard } from './ZoneLifecycleCard';
-import { ZoneMiaPanel } from './ZoneMiaPanel';
 
 const POLL_MS = 60_000;
 
@@ -93,6 +93,10 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
   const t = useTranslations('zones');
   const tApp = useTranslations('app');
   const fmt = useReadingFormatters();
+  // MIA-3 — the SINGLE M.I.A conversation (shared ChatProvider). /zones only
+  // ORIENTS it: it binds the page combo (so get_market_reading targets it) and
+  // sets/clears the selected-zone focus. It never owns a separate chat engine.
+  const { openForCombo, setFocus } = useChat();
 
   const FILTERS = FILTER_VALUES.map((value) => ({ value, label: t(`filters.${value}`) }));
   const SORTS = SORT_VALUES.map((value) => ({ value, label: t(`sorts.${value}`) }));
@@ -230,7 +234,7 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
 
   // Toggle selection: clicking the already-selected card clears the subject
   // (CLN-1 §3). Selecting is not resetting — the M.I.A conversation is kept
-  // (see ZoneMiaPanel), only the subject block goes away.
+  // (the shared conversation is untouched), only the subject block goes away.
   const selectZone = React.useCallback((zoneId: string) => {
     setUserTouchedSelection(true);
     setSelectedId((cur) => (cur === zoneId ? null : zoneId));
@@ -240,6 +244,54 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
     () => renderedZones.find((z) => z.id === selectedId) ?? null,
     [renderedZones, selectedId],
   );
+
+  // Bind the page combo so the input is usable and M.I.A reads the right market
+  // even with no zone selected (an off-zone question is answered).
+  React.useEffect(() => {
+    openForCombo({ instrument, timeframe });
+  }, [openForCombo, instrument, timeframe]);
+
+  // Orient by the selected zone (a REAL, clicked zone id) — or clear it. Clearing
+  // the focus removes the subject block WITHOUT touching the conversation
+  // (deselect ≠ reset). A question outside the zone is still answered. The label
+  // is display-only (the preamble/lock uses the id); it reuses the SAME band/tag
+  // as the card, no recompute.
+  //
+  // Idempotent by a key ref: `useReadingFormatters()` returns a fresh object each
+  // render, so we must NOT let it (or any per-render value) drive setFocus — that
+  // would set a new focus object every render and spin. We compute the target and
+  // only push it when the (id + label) actually changes.
+  const lastFocusKeyRef = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    if (!selectedZone) {
+      if (lastFocusKeyRef.current !== null) {
+        lastFocusKeyRef.current = null;
+        setFocus(null);
+      }
+      return;
+    }
+    const tag = `${selectedZone.kind === 'ob' ? 'OB' : 'FVG'}${
+      selectedZone.direction === 'bullish'
+        ? ' ↑'
+        : selectedZone.direction === 'bearish'
+          ? ' ↓'
+          : ''
+    }`;
+    const label = `${tag} · ${fmt.band(selectedZone.levelLow, selectedZone.levelHigh, instrument)}`;
+    const key = `${selectedZone.id}|${label}`;
+    if (lastFocusKeyRef.current === key) return;
+    lastFocusKeyRef.current = key;
+    setFocus({ kind: 'zone', zoneId: selectedZone.id, label });
+    // `fmt` intentionally excluded: it is recreated each render (unstable) and is
+    // only read to format the label above; the key guard makes re-runs no-ops.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setFocus, selectedZone, instrument]);
+
+  // The M.I.A panel is no longer rendered inside the page — it is the shared shell
+  // chat column (same component, same design as /app), fed by the focus above.
+  // On unmount (leaving /zones) clear the zone focus so no stale zone subject
+  // lingers in the panel on the next page.
+  React.useEffect(() => () => setFocus(null), [setFocus]);
 
   const isStaleDeepLink = Boolean(
     zoneParam && !renderedZoneIds.has(zoneParam) && !isLoading && !error,
@@ -311,20 +363,6 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
     [searchParams, instrument, timeframe, pathname, router],
   );
 
-  // Mobile: the M.I.A panel is a bottom sheet toggled by a button (never a panel
-  // that crushes the list). Desktop: a sticky column (CSS).
-  const [sheetOpen, setSheetOpen] = React.useState(false);
-
-  const miaCtx = React.useMemo(
-    () => ({
-      instrument,
-      price: referencePrice,
-      sameTf: liveZones,
-      siblings,
-      pools: liquidityPools,
-    }),
-    [instrument, referencePrice, liveZones, siblings, liquidityPools],
-  );
 
   const badgeSummary = `${fmt.instrument(instrument)} · ${fmt.timeframe(timeframe)} · ${t('badge.count', { count: renderedZones.length })}`;
 
@@ -433,30 +471,6 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
             ))}
           </div>
 
-          {/* Desktop: sticky panel. Mobile: bottom-sheet toggled by the button. */}
-          <div className="zmia-col">
-            <ZoneMiaPanel zone={selectedZone} ctx={miaCtx} />
-          </div>
-
-          <button
-            type="button"
-            className="zmia-fab"
-            onClick={() => setSheetOpen(true)}
-            aria-label={t('mia.openSheet')}
-          >
-            {t('mia.openSheet')}
-          </button>
-          {sheetOpen && (
-            <div className="zmia-sheet" role="dialog" aria-label={t('mia.title')}>
-              <div className="zmia-sheet-back" onClick={() => setSheetOpen(false)} />
-              <div className="zmia-sheet-body">
-                <button type="button" className="btn zmia-sheet-close" onClick={() => setSheetOpen(false)} aria-label={t('mia.closeSheet')}>
-                  {t('mia.closeSheet')}
-                </button>
-                <ZoneMiaPanel zone={selectedZone} ctx={miaCtx} />
-              </div>
-            </div>
-          )}
         </div>
       )}
     </div>

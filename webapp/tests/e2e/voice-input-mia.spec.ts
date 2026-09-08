@@ -58,12 +58,11 @@ const EVENT = {
 };
 const MEAS = { event_key: 'us_cpi', market: '', calm_before: null, structure_state: null, zone_lifecycle: null, return_to_calm: null };
 
-async function mockPublication(page: Page, chat?: (r: import('@playwright/test').Route) => void) {
+async function mockPublication(page: Page) {
   await page.route('**/api/access/me', (r) => r.fulfill({ json: FULL_ACCESS }));
   await page.route('**/api/publications/*/measures', (r) => r.fulfill({ json: MEAS }));
   await page.route('**/api/calendar/event/*', (r) => r.fulfill({ json: EVENT }));
   await page.route('**/api/calendar*', (r) => r.fulfill({ json: EVENT }));
-  if (chat) await page.route('**/api/chatbot/message', chat);
 }
 
 // ── Scripted browser dictation ─────────────────────────────────────────────
@@ -168,137 +167,46 @@ test.describe('Voice dictation — desktop 1280×800', () => {
     await expect(form.getByTestId('mic-button')).toHaveCount(0);
   });
 
-  // ── /zones M.I.A panel ────────────────────────────────────────────────────
-  async function openZonePanel(page: Page) {
+  // ── /zones — MIA-3: the mic now lives in the SHARED shell column ──────────
+  async function openZones(page: Page) {
     await page.goto('/zones?instrument=XAUUSD&timeframe=M15', { waitUntil: 'domcontentloaded' });
     await dismissCookieBanner(page);
-    // The desktop panel renders with a default-selected zone; the shared composer
-    // (CLN-1 §2) is always present, so we just wait for it — no card click (a
-    // click on the already-selected card would toggle it off, CLN-1 §3).
-    await page.locator('[data-zone-id]').first().waitFor({ state: 'visible', timeout: 60_000 });
-    await page.locator('.zmia:visible .zmia-foot').waitFor({ state: 'visible', timeout: 20_000 });
+    await page
+      .locator('form:has([data-testid="chat-input"])')
+      .first()
+      .waitFor({ state: 'visible', timeout: 60_000 });
   }
 
-  test('/zones panel — mic dictates exactly, submit carries the transcript', async ({ page }) => {
+  test('/zones — the shared column mic dictates exactly and submits the transcript', async ({ page }) => {
     await mockProduct(page);
     await installFakeSpeech(page, 'ok');
-    await openZonePanel(page);
+    await openZones(page);
 
-    const panel = page.locator('.zmia:visible');
-    const mic = panel.getByTestId('mic-button');
-    const field = panel.getByTestId('chat-input');
-    await expect(mic).toBeVisible();
+    const form = page.locator('form:has([data-testid="chat-input"])').first();
+    const field = page.getByTestId('chat-input').first();
+    await expect(form.getByTestId('mic-button')).toBeVisible();
 
-    await mic.click();
+    await form.getByTestId('mic-button').click();
     await speak(page, 'quelle est la proximité');
     await expect(field).toHaveValue('quelle est la proximité');
 
     // Submitting routes the exact transcript through as a user turn (0 network).
     await field.press('Enter');
-    await expect(panel.locator('.bub.u').last()).toHaveText('quelle est la proximité');
+    await expect(page.getByText('quelle est la proximité')).toBeVisible({ timeout: 10_000 });
   });
 
-  test('/zones panel — permission denied shows a message, field stays usable', async ({ page }) => {
+  // ── /actualites — MIA-3: the mic lives in the SHARED column (chips are a façade)
+  test('/actualites — the shared column mic dictates exactly', async ({ page }) => {
     await mockProduct(page);
-    await installFakeSpeech(page, 'denied');
-    await openZonePanel(page);
-
-    const panel = page.locator('.zmia:visible');
-    await panel.getByTestId('mic-button').click();
-    await expect(panel.getByTestId('dictation-error')).toBeVisible();
-    await panel.getByTestId('chat-input').fill('je tape');
-    await expect(panel.getByTestId('chat-input')).toHaveValue('je tape');
-  });
-
-  test('/zones panel — unsupported browser hides the mic', async ({ page }) => {
-    await mockProduct(page);
-    await removeSpeech(page);
-    await openZonePanel(page);
-    const panel = page.locator('.zmia:visible');
-    await expect(panel.getByTestId('mic-button')).toHaveCount(0);
-    await expect(panel.getByTestId('chat-input')).toBeVisible();
-  });
-
-  // ── /actualites publication M.I.A chat ────────────────────────────────────
-  test('/actualites chat — dictation reaches the backend verbatim', async ({ page }) => {
-    let sent: any = null;
-    await mockPublication(page, (r) => {
-      sent = JSON.parse(r.request().postData() || '{}');
-      return r.fulfill({ json: { content: 'Réponse.', blocked_reason: null, tool_calls_made: [] } });
-    });
+    await mockPublication(page);
     await installFakeSpeech(page, 'ok');
-    await page.goto(`/actualites/${CPI_URL}`);
+    await page.goto(`/actualites/${CPI_URL}`, { waitUntil: 'domcontentloaded' });
     await dismissCookieBanner(page);
-    const form = page.locator('.pub-mia-form');
-    await form.waitFor({ state: 'visible', timeout: 20_000 });
+    const form = page.locator('form:has([data-testid="chat-input"])').first();
+    await form.waitFor({ state: 'visible', timeout: 60_000 });
 
     await form.getByTestId('mic-button').click();
     await speak(page, 'que dit la structure');
-    await expect(page.getByTestId('pub-mia-input')).toHaveValue('que dit la structure');
-
-    await page.getByTestId('pub-mia-send').click();
-    await expect(page.getByTestId('pub-mia-answer')).toContainText('Réponse.');
-    // What M.I.A received is exactly the dictated text (plus the publication anchor).
-    expect(String(sent?.user_message)).toContain('que dit la structure');
-  });
-
-  test('/actualites chat — permission denied shows a message, field stays usable', async ({ page }) => {
-    await mockPublication(page);
-    await installFakeSpeech(page, 'denied');
-    await page.goto(`/actualites/${CPI_URL}`);
-    await dismissCookieBanner(page);
-    const form = page.locator('.pub-mia-form');
-    await form.waitFor({ state: 'visible', timeout: 20_000 });
-
-    await form.getByTestId('mic-button').click();
-    await expect(page.locator('.pub-mia').getByTestId('dictation-error')).toBeVisible();
-    await page.getByTestId('pub-mia-input').fill('je tape');
-    await expect(page.getByTestId('pub-mia-input')).toHaveValue('je tape');
-  });
-
-  test('/actualites chat — unsupported browser hides the mic', async ({ page }) => {
-    await mockPublication(page);
-    await removeSpeech(page);
-    await page.goto(`/actualites/${CPI_URL}`);
-    await dismissCookieBanner(page);
-    const form = page.locator('.pub-mia-form');
-    await form.waitFor({ state: 'visible', timeout: 20_000 });
-    await expect(form.getByTestId('mic-button')).toHaveCount(0);
-    await expect(page.getByTestId('pub-mia-input')).toBeVisible();
-  });
-});
-
-// ════════════════════════════════════════════════════════════════════════════
-// Mobile 390×844 — the publication chat (a normal card, present on phones).
-// The scanner surface is covered at 390×844 by sc2-scanner-conversationnel.
-// ════════════════════════════════════════════════════════════════════════════
-test.describe('Voice dictation — mobile 390×844', () => {
-  test.use({ viewport: { width: 390, height: 844 } });
-  test.setTimeout(90_000);
-
-  test('/actualites chat — mic present and dictates exactly on phone', async ({ page }) => {
-    await mockPublication(page, (r) =>
-      r.fulfill({ json: { content: 'Réponse.', blocked_reason: null, tool_calls_made: [] } }),
-    );
-    await installFakeSpeech(page, 'ok');
-    await page.goto(`/actualites/${CPI_URL}`);
-    await dismissCookieBanner(page);
-    const form = page.locator('.pub-mia-form');
-    await form.waitFor({ state: 'visible', timeout: 20_000 });
-
-    await expect(form.getByTestId('mic-button')).toBeVisible();
-    await form.getByTestId('mic-button').click();
-    await speak(page, 'quel est le consensus');
-    await expect(page.getByTestId('pub-mia-input')).toHaveValue('quel est le consensus');
-  });
-
-  test('/actualites chat — unsupported browser hides the mic on phone', async ({ page }) => {
-    await mockPublication(page);
-    await removeSpeech(page);
-    await page.goto(`/actualites/${CPI_URL}`);
-    await dismissCookieBanner(page);
-    const form = page.locator('.pub-mia-form');
-    await form.waitFor({ state: 'visible', timeout: 20_000 });
-    await expect(form.getByTestId('mic-button')).toHaveCount(0);
+    await expect(page.getByTestId('chat-input').first()).toHaveValue('que dit la structure');
   });
 });

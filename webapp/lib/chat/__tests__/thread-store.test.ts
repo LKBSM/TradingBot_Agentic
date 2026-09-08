@@ -3,12 +3,17 @@ import {
   MAX_SERIALIZED_CHARS,
   MAX_THREADS,
   MAX_TURNS_PER_THREAD,
+  PRODUCT_THREAD_ID,
   readThreads,
   STORAGE_KEY,
   writeThreads,
   type StoredThread,
   type StoredTurn,
 } from '../thread-store';
+
+// MIA-3 — a single product-wide conversation is persisted (id === PRODUCT_THREAD_ID).
+// The combo is orientation only, no longer a thread key, so instrument/timeframe
+// are free-form display fields (not gated against the perimeter).
 
 function makeTurns(count: number, textLen = 10): StoredTurn[] {
   return Array.from({ length: count }, (_, i) => ({
@@ -19,17 +24,17 @@ function makeTurns(count: number, textLen = 10): StoredTurn[] {
 }
 
 function makeThread(
-  instrument: string,
-  timeframe: string,
   updatedAt: number,
   turns: StoredTurn[] = makeTurns(2),
+  overrides: Partial<StoredThread> = {},
 ): StoredThread {
   return {
-    id: `app:${instrument}:${timeframe}`,
-    instrument,
-    timeframe,
+    id: PRODUCT_THREAD_ID,
+    instrument: 'XAUUSD',
+    timeframe: 'H1',
     updatedAt,
     turns,
+    ...overrides,
   };
 }
 
@@ -38,8 +43,8 @@ beforeEach(() => {
 });
 
 describe('thread-store round-trip', () => {
-  it('writes then reads back a thread unchanged', () => {
-    const thread = makeThread('XAUUSD', 'H1', 1000, [
+  it('writes then reads back the product conversation unchanged', () => {
+    const thread = makeThread(1000, [
       { id: 'user-0', role: 'user', text: 'Question ?' },
       {
         id: 'asst-1',
@@ -64,29 +69,40 @@ describe('thread-store round-trip', () => {
 });
 
 describe('thread-store sanitisation (never trusts storage)', () => {
-  it('drops threads outside the supported perimeter or with a mismatched id', () => {
+  it('keeps only the product thread, dropping any other id', () => {
     window.localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify([
-        makeThread('XAUUSD', 'H1', 1),
-        makeThread('BTCUSD', 'H1', 2), // unsupported instrument
-        makeThread('XAUUSD', 'W1', 3), // unsupported timeframe (not in perimeter)
-        { ...makeThread('EURUSD', 'H4', 4), id: 'app:XAUUSD:H4' }, // id mismatch
+        makeThread(1),
+        { ...makeThread(2), id: 'app:XAUUSD:H1' }, // legacy per-combo id
+        { ...makeThread(3), id: 'sig-1' }, // landing signal id
       ]),
     );
-    expect(readThreads().map((t) => t.id)).toEqual(['app:XAUUSD:H1']);
+    expect(readThreads().map((t) => t.id)).toEqual([PRODUCT_THREAD_ID]);
   });
 
-  it('drops invalid turns and threads left with no turn', () => {
+  it('keeps the product thread whatever the orientation combo (not perimeter-gated)', () => {
+    // The orientation combo may be anything (or even nothing) — it is display
+    // metadata now, not a validated key. A conversation must never be dropped
+    // because the last focused market was exotic.
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify([makeThread(1, makeTurns(2), { instrument: 'BTCUSD', timeframe: 'W1' })]),
+    );
+    const threads = readThreads();
+    expect(threads).toHaveLength(1);
+    expect(threads[0]!.instrument).toBe('BTCUSD');
+  });
+
+  it('drops invalid turns and a thread left with no turn', () => {
     const good = { id: 'u-0', role: 'user', text: 'ok' };
     window.localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify([
         {
-          ...makeThread('XAUUSD', 'H1', 1),
+          ...makeThread(1),
           turns: [good, { role: 'system', text: 'nope' }, { role: 'user' }, 42],
         },
-        { ...makeThread('EURUSD', 'H1', 2), turns: ['garbage'] },
       ]),
     );
     const threads = readThreads();
@@ -94,13 +110,10 @@ describe('thread-store sanitisation (never trusts storage)', () => {
     expect(threads[0]!.turns).toEqual([good]);
   });
 
-  it('de-duplicates thread ids, keeping the first occurrence', () => {
+  it('de-duplicates the product id, keeping the first occurrence', () => {
     window.localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify([
-        makeThread('XAUUSD', 'H1', 1, makeTurns(2)),
-        makeThread('XAUUSD', 'H1', 9, makeTurns(4)),
-      ]),
+      JSON.stringify([makeThread(1, makeTurns(2)), makeThread(9, makeTurns(4))]),
     );
     const threads = readThreads();
     expect(threads).toHaveLength(1);
@@ -109,69 +122,40 @@ describe('thread-store sanitisation (never trusts storage)', () => {
 });
 
 describe('thread-store caps & purge', () => {
-  it('skips empty and non-app threads on write', () => {
+  it('skips empty and non-product threads on write', () => {
     writeThreads([
-      makeThread('XAUUSD', 'H1', 1, []),
+      makeThread(1, []), // empty product thread — skipped
       {
         id: 'sig-1',
         instrument: 'XAUUSD',
         timeframe: 'H1',
         updatedAt: 2,
         turns: makeTurns(2),
-      },
-      makeThread('EURUSD', 'H4', 3),
+      }, // non-product — skipped
+      makeThread(3, makeTurns(2)), // the real conversation — kept
     ]);
-    expect(readThreads().map((t) => t.id)).toEqual(['app:EURUSD:H4']);
+    expect(readThreads().map((t) => t.id)).toEqual([PRODUCT_THREAD_ID]);
   });
 
-  it('trims each thread to MAX_TURNS_PER_THREAD, never starting mid-exchange', () => {
-    writeThreads([
-      makeThread('XAUUSD', 'H1', 1, makeTurns(MAX_TURNS_PER_THREAD + 5)),
-    ]);
+  it('trims the conversation to MAX_TURNS_PER_THREAD, never starting mid-exchange', () => {
+    writeThreads([makeThread(1, makeTurns(MAX_TURNS_PER_THREAD + 5))]);
     const [thread] = readThreads();
     expect(thread!.turns.length).toBeLessThanOrEqual(MAX_TURNS_PER_THREAD);
     expect(thread!.turns[0]!.role).toBe('user');
   });
 
-  it('keeps only the MAX_THREADS most recent threads', () => {
-    // Perimeter is 6 combos; MAX_THREADS ≥ 6 so all fit — assert via ordering
-    // by writing the full perimeter and checking recency sort instead.
-    const all = [
-      makeThread('XAUUSD', 'M15', 10),
-      makeThread('XAUUSD', 'H1', 60),
-      makeThread('XAUUSD', 'H4', 20),
-      makeThread('EURUSD', 'M15', 50),
-      makeThread('EURUSD', 'H1', 30),
-      makeThread('EURUSD', 'H4', 40),
-    ];
-    writeThreads(all);
+  it('persists at most MAX_THREADS thread (one conversation)', () => {
+    writeThreads([
+      makeThread(10, makeTurns(2)),
+      { ...makeThread(60, makeTurns(2)), id: 'app:EURUSD:H4' }, // non-product, dropped
+    ]);
     const stored = readThreads();
-    expect(stored).toHaveLength(Math.min(all.length, MAX_THREADS));
-    expect(stored.map((t) => t.updatedAt)).toEqual([60, 50, 40, 30, 20, 10]);
+    expect(stored.length).toBeLessThanOrEqual(MAX_THREADS);
+    expect(stored.map((t) => t.id)).toEqual([PRODUCT_THREAD_ID]);
   });
 
-  it('drops the oldest threads until the payload fits the size budget', () => {
-    // Each thread ~40 turns × 2000 chars ≈ 80k chars serialized — three of
-    // them exceed the 200k budget, so at least the oldest must be purged.
-    const fat = (i: number, instrument: string, tf: string) =>
-      makeThread(instrument, tf, i, makeTurns(MAX_TURNS_PER_THREAD, 2000));
-    writeThreads([
-      fat(1, 'XAUUSD', 'M15'),
-      fat(2, 'XAUUSD', 'H1'),
-      fat(3, 'XAUUSD', 'H4'),
-    ]);
-    const raw = window.localStorage.getItem(STORAGE_KEY)!;
-    expect(raw.length).toBeLessThanOrEqual(MAX_SERIALIZED_CHARS);
-    const stored = readThreads();
-    expect(stored.length).toBeLessThan(3);
-    // Newest survives, oldest is the purge victim.
-    expect(stored[0]!.updatedAt).toBe(3);
-  });
-
-  it('halves a single oversized thread instead of dropping everything', () => {
-    writeThreads([
-      makeThread('XAUUSD', 'H1', 1, makeTurns(MAX_TURNS_PER_THREAD, 20_000)),
-    ]);
+  it('halves an oversized conversation instead of dropping everything', () => {
+    writeThreads([makeThread(1, makeTurns(MAX_TURNS_PER_THREAD, 20_000))]);
     const raw = window.localStorage.getItem(STORAGE_KEY)!;
     expect(raw.length).toBeLessThanOrEqual(MAX_SERIALIZED_CHARS);
     const stored = readThreads();

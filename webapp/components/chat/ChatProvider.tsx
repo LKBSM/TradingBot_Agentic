@@ -7,6 +7,7 @@ import {
   ChatApiUnavailableError,
 } from '@/lib/chat/api-client';
 import {
+  PRODUCT_THREAD_ID,
   readThreads,
   writeThreads,
   type StoredThread,
@@ -41,6 +42,26 @@ export interface ViewActionSignal {
 export type ChatActivity =
   | { kind: 'thinking' }
   | { kind: 'tool'; tool: string; instrument?: string; timeframe?: string };
+
+/**
+ * MIA-3 — the extra orientation the user is currently looking at, beyond the
+ * combo: a selected zone (/zones) or an open publication (/actualites). It only
+ * ORIENTS the next question (a preamble line) — it never widens what M.I.A may
+ * affirm, and the id is always one the engine emitted (a clicked zone / a real
+ * event_id), never fabricated. `null` = no extra focus (combo only).
+ */
+export type ChatFocus =
+  | { kind: 'zone'; zoneId: string; label: string }
+  | { kind: 'publication'; eventId: string; label: string };
+
+/** The preamble line for a focus, or null. Kept next to the type it mirrors.
+ * The preamble carries the ID (the lock); `label` is only for the on-screen
+ * subject block, never sent as an affirmable fact. */
+function focusPreamble(focus: ChatFocus | null): string | null {
+  if (!focus) return null;
+  if (focus.kind === 'zone') return `[Zone sélectionnée : ${focus.zoneId}]`;
+  return `[Publication : ${focus.eventId}]`;
+}
 
 /** Recency-sorted summary of a combo-scoped conversation, for the recents list. */
 export interface ChatThreadSummary {
@@ -90,6 +111,13 @@ interface ChatContextValue {
    * combo's conversation is kept and restored when the user comes back.
    */
   openForCombo(combo: { instrument: string; timeframe: string }): void;
+  /**
+   * MIA-3 — the current extra orientation (selected zone / open publication), or
+   * null. It orients the NEXT question via a preamble line; it never restricts
+   * what M.I.A answers, and clearing it never touches the conversation.
+   */
+  focus: ChatFocus | null;
+  setFocus(focus: ChatFocus | null): void;
   close(): void;
   appendExchange(args: {
     questionId: string;
@@ -129,15 +157,19 @@ function ensureThread(
   threads: Record<string, StoredThread>,
   signal: ChatSignalContext,
 ): Record<string, StoredThread> {
-  if (threads[signal.id]) return threads;
+  // MIA-3 — one product-wide conversation. The signal is only orientation; the
+  // thread is always PRODUCT_THREAD_ID, so opening a new combo/zone/publication
+  // NEVER starts a fresh conversation (decision E). We only stamp the latest
+  // orientation combo for display/rehydration.
+  const existing = threads[PRODUCT_THREAD_ID];
   return {
     ...threads,
-    [signal.id]: {
-      id: signal.id,
+    [PRODUCT_THREAD_ID]: {
+      id: PRODUCT_THREAD_ID,
       instrument: signal.instrument,
       timeframe: signal.timeframe,
-      updatedAt: 0,
-      turns: [],
+      updatedAt: existing?.updatedAt ?? 0,
+      turns: existing?.turns ?? [],
     },
   };
 }
@@ -168,8 +200,6 @@ function appendToThread(
   };
 }
 
-const MAX_RECENT_THREADS = 6;
-
 export function ChatProvider({ children }: { children: React.ReactNode }) {
   const t = useTranslations('chat');
   const [isOpen, setIsOpen] = React.useState(false);
@@ -190,6 +220,17 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [apiAvailable, setApiAvailable] = React.useState<boolean | 'unknown'>(
     'unknown',
   );
+  // MIA-3 — the extra orientation (zone/publication) for the NEXT question. A
+  // ref mirrors it so askFreeForm reads the current value without churning its
+  // identity (same pattern as stateRef for history).
+  const [focus, setFocusState] = React.useState<ChatFocus | null>(null);
+  const focusRef = React.useRef<ChatFocus | null>(null);
+  React.useEffect(() => {
+    focusRef.current = focus;
+  }, [focus]);
+  const setFocus = React.useCallback((next: ChatFocus | null) => {
+    setFocusState(next);
+  }, []);
   const [viewActionSignal, setViewActionSignal] =
     React.useState<ViewActionSignal | null>(null);
   const seqRef = React.useRef(0);
@@ -280,7 +321,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     }) => {
       setState((s) => {
         if (!s.active) return s;
-        return appendToThread(s, s.active.id, s.active, [
+        return appendToThread(s, PRODUCT_THREAD_ID, s.active, [
           { id: `${questionId}-q-${seqRef.current++}`, role: 'user', text },
           {
             id: `${questionId}-a-${seqRef.current++}`,
@@ -296,17 +337,18 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
   const resetTurns = React.useCallback(() => {
     setState((s) => {
-      if (!s.active || !s.threads[s.active.id]) return s;
+      if (!s.threads[PRODUCT_THREAD_ID]) return s;
       const threads = { ...s.threads };
-      delete threads[s.active.id];
+      delete threads[PRODUCT_THREAD_ID];
       return { ...s, threads };
     });
   }, []);
 
   const activeSignal = state.active;
-  const turns = activeSignal
-    ? (state.threads[activeSignal.id]?.turns ?? EMPTY_TURNS)
-    : EMPTY_TURNS;
+  // MIA-3 — the transcript is the single product conversation, independent of
+  // which combo/zone is currently in focus. `activeSignal` only orients the next
+  // question (preamble + subject block); it never selects which turns show.
+  const turns = state.threads[PRODUCT_THREAD_ID]?.turns ?? EMPTY_TURNS;
 
   const askFreeForm = React.useCallback(
     async (question: string) => {
@@ -316,9 +358,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       const trimmed = question.trim();
       if (!trimmed) return;
 
-      // Pin the destination thread NOW: if the user switches combo while the
-      // answer is in flight, the reply still lands in the thread it belongs to.
-      const threadId = activeSignal.id;
+      // MIA-3 — single product thread: the reply always lands in the one
+      // conversation, whatever the user navigates to while it is in flight. The
+      // orientation meta (combo) is stamped for display only.
+      const threadId = PRODUCT_THREAD_ID;
       const meta = {
         instrument: activeSignal.instrument,
         timeframe: activeSignal.timeframe,
@@ -355,6 +398,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           {
             signal: activeSignal,
             question: trimmed,
+            // MIA-3 — orient by the current zone/publication (read from the ref so
+            // the callback identity stays stable). Pure orientation preamble.
+            focus: focusPreamble(focusRef.current),
             history: historyForApi,
           },
           (event) => {
@@ -429,25 +475,11 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     [activeSignal, nextId, t],
   );
 
-  const recentThreads = React.useMemo<ChatThreadSummary[]>(() => {
-    return Object.values(state.threads)
-      .filter((t) => t.id.startsWith('app:') && t.turns.length > 0)
-      .sort((a, b) => b.updatedAt - a.updatedAt)
-      .slice(0, MAX_RECENT_THREADS)
-      .map((t) => {
-        const last = [...t.turns]
-          .reverse()
-          .find((turn) => turn.text.trim().length > 0);
-        return {
-          id: t.id,
-          instrument: t.instrument,
-          timeframe: t.timeframe,
-          updatedAt: t.updatedAt,
-          turnCount: t.turns.length,
-          lastText: last?.text ?? '',
-        };
-      });
-  }, [state.threads]);
+  // MIA-3 — there is a single product-wide conversation now, so the per-combo
+  // "recent discussions" list no longer has distinct entries to offer. Kept as
+  // an empty array for API compatibility; the sidebar hides the affordance when
+  // empty. (The old combo-jump UX is superseded by the continuous conversation.)
+  const recentThreads = React.useMemo<ChatThreadSummary[]>(() => [], []);
 
   const value = React.useMemo<ChatContextValue>(
     () => ({
@@ -461,6 +493,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       recentThreads,
       openFor,
       openForCombo,
+      focus,
+      setFocus,
       close,
       appendExchange,
       askFreeForm,
@@ -477,6 +511,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       recentThreads,
       openFor,
       openForCombo,
+      focus,
+      setFocus,
       close,
       appendExchange,
       askFreeForm,

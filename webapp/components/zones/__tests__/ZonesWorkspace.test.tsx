@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextIntlClientProvider } from 'next-intl';
 import { ZonesWorkspace } from '../ZonesWorkspace';
 import { ChartViewProvider, useChartViewOptional } from '@/lib/chart/viewState';
+import { ChatProvider, useChat } from '@/components/chat/ChatProvider';
 import { coerceViewActions } from '@/lib/chart/viewActions';
 import { collectZones } from '@/lib/zones/lifecycle';
 import { FIXTURE_XAU_M15 } from '@/lib/market-reading/fixtures';
@@ -15,6 +16,17 @@ vi.mock('@/lib/market-reading/api-client', async (importActual) => {
     ...actual,
     fetchMarketReading: (...args: unknown[]) => fetchMock(...args),
     fetchCandles: () => Promise.resolve([]),
+  };
+});
+
+// The /zones panel is now the shared backend-agent MiaPanel — stub the streaming
+// chat call so a sent question resolves deterministically (no network in jsdom).
+const askStreamMock = vi.fn();
+vi.mock('@/lib/chat/api-client', async (importActual) => {
+  const actual = await importActual<typeof import('@/lib/chat/api-client')>();
+  return {
+    ...actual,
+    askSentinelStream: (...args: unknown[]) => askStreamMock(...args),
   };
 });
 
@@ -32,13 +44,24 @@ function HiddenProbe() {
   return <div data-testid="hidden-ids">{view.hiddenZoneIds.join(',')}</div>;
 }
 
+// The M.I.A panel is now the shared shell column (not rendered inside the page).
+// This probe surfaces the shared orientation (`focus`) so the /zones unit tests
+// can assert the selected-zone subject WITHOUT mounting the whole shell.
+function FocusProbe() {
+  const { focus } = useChat();
+  return <div data-testid="mia-focus">{focus ? focus.label : ''}</div>;
+}
+
 function renderZones() {
   return rtlRender(
     <NextIntlClientProvider locale="fr" messages={messages}>
-      <ChartViewProvider>
-        <ZonesWorkspace locale="fr" />
-        <HiddenProbe />
-      </ChartViewProvider>
+      <ChatProvider>
+        <ChartViewProvider>
+          <ZonesWorkspace locale="fr" />
+          <HiddenProbe />
+          <FocusProbe />
+        </ChartViewProvider>
+      </ChatProvider>
     </NextIntlClientProvider>,
   );
 }
@@ -55,6 +78,16 @@ beforeEach(() => {
   pushMock.mockReset();
   replaceMock.mockReset();
   mockSearchParams = new URLSearchParams();
+  askStreamMock.mockReset();
+  askStreamMock.mockResolvedValue({
+    text: 'Réponse de M.I.A.',
+    blockedReason: null,
+    toolCallsMade: [],
+    viewActions: [],
+  });
+  // The single product conversation persists in localStorage — clear it so each
+  // test starts empty.
+  window.localStorage.clear();
 });
 afterEach(() => vi.restoreAllMocks());
 
@@ -108,59 +141,16 @@ describe('ZonesWorkspace (VZ-1)', () => {
     ).toEqual([]);
   });
 
-  it('the M.I.A panel shows the selected zone and SWITCHES subject on a card click (no reload)', async () => {
+  it('MIA-3 — selecting a zone sets the shared orientation and SWITCHES it on a card click (no reload)', async () => {
     renderZones();
     await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(4));
-    const subject = screen.getByTestId('mia-subject');
-    // Default subject = the nearest zone (ob-xau-2-mitigated, 2384–2386).
-    expect(subject.textContent).toContain('384,00');
-    // Click a different card → the subject changes, without any navigation.
+    // The shared panel (shell column) reads this orientation; the probe surfaces
+    // its label. Default subject = the nearest zone (ob-xau-2-mitigated, 2384–2386).
+    await waitFor(() => expect(screen.getByTestId('mia-focus').textContent).toContain('384,00'));
+    // Click a different card → the orientation changes, without any navigation.
     fireEvent.click(card('ob-xau-1'));
-    await waitFor(() => expect(screen.getByTestId('mia-subject').textContent).toContain('375,00'));
+    await waitFor(() => expect(screen.getByTestId('mia-focus').textContent).toContain('375,00'));
     expect(pushMock).not.toHaveBeenCalled();
-  });
-
-  it('the M.I.A panel answers with facts drawn from the SAME data as the card', async () => {
-    renderZones();
-    await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(4));
-    const body = document.querySelector('.zmia-body')!;
-    // Only the intro bubble so far.
-    expect(body.querySelectorAll('.bub').length).toBe(1);
-    // CLN-1 §2 — the four prefabricated question blocks are gone; the same
-    // factual answers are reached via the shared composer (free text, routed
-    // LOCALLY). Ask « qu'est-ce qu'il y a d'autre à ce niveau » — the answer is
-    // built by buildConfluence over the SAME data as the card's confluence block.
-    const field = screen.getByPlaceholderText('Pose ta question sur cette zone…');
-    fireEvent.change(field, { target: { value: 'qu’est-ce qu’il y a d’autre à ce niveau' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Envoyer' }));
-    await waitFor(() => expect(body.querySelectorAll('.bub').length).toBe(3)); // intro + Q + A
-    const answer = body.querySelectorAll('.bub.a')[1]!;
-    expect(answer.textContent ?? '').toMatch(
-      /au même niveau|rien d’autre n’est détecté|à l’intérieur|englobe|poche de liquidité/i,
-    );
-  }, 20000);
-
-  it('the M.I.A free-text input routes LOCALLY to a factual answer (no LLM)', async () => {
-    renderZones();
-    await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(4));
-    const body = document.querySelector('.zmia-body')!;
-    const input = screen.getByPlaceholderText('Pose ta question sur cette zone…');
-    fireEvent.change(input, { target: { value: 'explique moi cette zone' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Envoyer' }));
-    await waitFor(() => expect(body.querySelectorAll('.bub').length).toBe(3));
-    // Default subject is an OB → the concept explanation, drawn from the card.
-    expect(body.querySelectorAll('.bub.a')[1]!.textContent ?? '').toMatch(/Order Block|Fair Value Gap/);
-  });
-
-  it('an unrecognised question gets the honest fallback, never a fabrication', async () => {
-    renderZones();
-    await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(4));
-    const body = document.querySelector('.zmia-body')!;
-    const input = screen.getByPlaceholderText('Pose ta question sur cette zone…');
-    fireEvent.change(input, { target: { value: 'zzzzqwerty' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Envoyer' }));
-    await waitFor(() => expect(body.querySelectorAll('.bub').length).toBe(3));
-    expect(body.querySelectorAll('.bub.a')[1]!.textContent ?? '').toMatch(/à partir de ses faits/i);
   });
 
   it('never renders « chevauche » nor any judgement wording', async () => {
@@ -179,7 +169,7 @@ describe('ZonesWorkspace (VZ-1)', () => {
     renderZones();
     await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(4));
     await waitFor(() => expect(card('fvg-xau-1')).toHaveClass('zsel'));
-    expect(screen.getByTestId('mia-subject').textContent).toContain('381,00');
+    await waitFor(() => expect(screen.getByTestId('mia-focus').textContent).toContain('381,00'));
     await waitFor(() =>
       expect(scrollSpy).toHaveBeenCalledWith(expect.objectContaining({ block: 'center' })),
     );
@@ -244,28 +234,24 @@ describe('ZonesWorkspace (VZ-1)', () => {
     }
   });
 
-  it('CLN-1 §3 — re-clicking the selected zone deselects it; the conversation is kept', async () => {
+  it('MIA-3/CLN-1 §3 — re-clicking the selected zone clears the orientation (deselect), no navigation', async () => {
     renderZones();
     await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(4));
-    // A zone is selected by default → subject shown, exactly one card highlighted.
-    expect(screen.getByTestId('mia-subject')).toBeInTheDocument();
+    // A zone is selected by default → the shared orientation carries its label,
+    // and exactly one card is highlighted.
+    await waitFor(() =>
+      expect(screen.getByTestId('mia-focus').textContent!.length).toBeGreaterThan(0),
+    );
     const selected = document.querySelector<HTMLElement>('.zone.zsel');
     expect(selected).toBeTruthy();
-    // Start a conversation so we can prove « deselect ≠ reset ».
-    const field = screen.getByPlaceholderText('Pose ta question sur cette zone…');
-    fireEvent.change(field, { target: { value: 'explique moi cette zone' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Envoyer' }));
-    const body = document.querySelector('.zmia-body')!;
-    await waitFor(() => expect(body.querySelectorAll('.bub.u').length).toBe(1));
-    // Re-click the SAME (selected) card → deselect.
+
+    // Re-click the SAME (selected) card → deselect: the orientation is cleared
+    // (the shared panel's subject block then disappears — tested at the MiaPanel
+    // level), no card highlighted, and NO navigation. The conversation itself is
+    // untouched by clearing focus (proven in ChatProvider.test).
     fireEvent.click(selected!);
-    await waitFor(() => expect(screen.queryByTestId('mia-subject')).not.toBeInTheDocument());
-    // No card highlighted, no filler subject block.
+    await waitFor(() => expect(screen.getByTestId('mia-focus').textContent).toBe(''));
     expect(document.querySelector('.zone.zsel')).toBeNull();
-    // The running conversation is NOT wiped.
-    expect(body.querySelectorAll('.bub.u').length).toBe(1);
-    // The field stays usable, and its idle hint does not claim a zone is chosen.
-    expect(screen.getByPlaceholderText('Pose ta question…')).toBeInTheDocument();
-    expect(screen.queryByPlaceholderText('Pose ta question sur cette zone…')).toBeNull();
+    expect(pushMock).not.toHaveBeenCalled();
   });
 });

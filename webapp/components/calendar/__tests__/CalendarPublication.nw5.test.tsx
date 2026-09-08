@@ -10,6 +10,7 @@ import {
   sourceLinksFor,
 } from '@/lib/calendar/sourceLinks';
 import { CalendarEventDetail } from '../CalendarEventDetail';
+import { ChatProvider } from '@/components/chat/ChatProvider';
 import type { CalendarEvent, CalendarResponse } from '@/types/calendar';
 import type { PublicationMeasures, MeasureProvenance } from '@/types/measures';
 
@@ -76,7 +77,11 @@ const OFFICIAL = ev({
 });
 
 function renderDetail(measures: PublicationMeasures | null = MEASURES) {
-  return render(<CalendarEventDetail eventId="bls:us_cpi:2026-08-12" locale="fr" data={makeData(OFFICIAL)} now={NOW} measures={measures} />);
+  return render(
+    <ChatProvider>
+      <CalendarEventDetail eventId="bls:us_cpi:2026-08-12" locale="fr" data={makeData(OFFICIAL)} now={NOW} measures={measures} />
+    </ChatProvider>,
+  );
 }
 
 describe('NW-5 publication page guards', () => {
