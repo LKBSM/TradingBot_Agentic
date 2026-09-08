@@ -244,11 +244,19 @@ def test_tool_execution_failure_is_recoverable() -> None:
     assert "error" in tool_result_msg["content"][0]["content"]
 
 
+def _system_text(system: Any) -> str:
+    """Join the text of a system prompt whether it is a plain string or the
+    MIA-2 list of cache_control content blocks."""
+    if isinstance(system, str):
+        return system
+    return "\n".join(block.get("text", "") for block in system)
+
+
 def test_signal_summary_is_injected_in_system_prompt() -> None:
     resp = StubResponse([TextBlock("ok")], "end_turn")
     bot, client, _ = make_chatbot([resp])
     bot.chat("Bonjour")
-    system = client.calls[0]["system"]
+    system = _system_text(client.calls[0]["system"])
     assert "instruments_tracked" in system
     assert "XAUUSD" in system
     assert "EURUSD" in system
