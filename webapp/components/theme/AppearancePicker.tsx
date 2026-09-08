@@ -30,6 +30,7 @@ export function AppearancePicker() {
         <ThemeCard
           key={theme.id}
           theme={theme}
+          name={t(`names.${theme.id}`)}
           description={t(`descriptions.${theme.id}`)}
           activeLabel={t('active')}
           selected={active === theme.id}
@@ -42,12 +43,14 @@ export function AppearancePicker() {
 
 function ThemeCard({
   theme,
+  name,
   description,
   activeLabel,
   selected,
   onSelect,
 }: {
   theme: ThemeMeta;
+  name: string;
   description: string;
   activeLabel: string;
   selected: boolean;
@@ -71,7 +74,7 @@ function ThemeCard({
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
-            <span className="text-sm font-medium text-foreground">{theme.name}</span>
+            <span className="text-sm font-medium text-foreground">{name}</span>
             {selected && (
               <span className="inline-flex items-center gap-0.5 text-xs font-medium text-primary">
                 <Check className="h-3.5 w-3.5" aria-hidden />
@@ -87,26 +90,32 @@ function ThemeCard({
 }
 
 /**
- * A miniature mock of the app in the theme's colours: a panel with an accent
- * bar, a couple of text lines, and the reserved bull/bear state chips.
+ * A miniature mock of the app in the theme's colours, DERIVED from the live design
+ * tokens (THM-1): the wrapper carries `data-design={id}` so every `var(--…)` below
+ * resolves to THAT theme's palette regardless of the active one — the vignette can
+ * never drift from the real tokens. Accent bar (--acc), a muted text line (--txt),
+ * and the reserved bull/bear data chips (--bull / --bear).
  */
 function ThemeSwatch({ theme }: { theme: ThemeMeta }) {
-  const { bg, panel, accent, bull, bear } = theme.swatch;
   return (
     <div
-      className="flex h-16 w-full items-center gap-2 rounded-md border border-black/10 p-2"
-      style={{ background: bg }}
+      data-design={theme.id}
+      className="flex h-16 w-full items-center gap-2 rounded-md border p-2"
+      style={{ background: 'var(--bg)', borderColor: 'var(--line-2)' }}
       aria-hidden
     >
       <div
         className="flex h-full flex-1 flex-col justify-between rounded p-1.5"
-        style={{ background: panel }}
+        style={{ background: 'var(--panel)' }}
       >
-        <span className="h-1.5 w-2/3 rounded-full" style={{ background: accent }} />
-        <span className="h-1 w-1/2 rounded-full opacity-40" style={{ background: '#fff' }} />
+        <span className="h-1.5 w-2/3 rounded-full" style={{ background: 'var(--acc)' }} />
+        <span
+          className="h-1 w-1/2 rounded-full"
+          style={{ background: 'var(--txt)', opacity: 0.4 }}
+        />
         <div className="flex gap-1">
-          <span className="h-1.5 w-4 rounded-full" style={{ background: bull }} />
-          <span className="h-1.5 w-4 rounded-full" style={{ background: bear }} />
+          <span className="h-1.5 w-4 rounded-full" style={{ background: 'var(--bull)' }} />
+          <span className="h-1.5 w-4 rounded-full" style={{ background: 'var(--bear)' }} />
         </div>
       </div>
     </div>

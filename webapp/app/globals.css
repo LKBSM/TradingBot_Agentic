@@ -7,9 +7,11 @@
  * same role-named tokens below — never a new token. Tokens are named by ROLE
  * (surface / text / accent / state) so switching themes is a pure value swap.
  *
- * Four themes ship: Terminal (default, cold dark), Atelier (light analyst note),
- * Schéma (technical monochrome), Ardoise (warm dark). next-themes sets
- * `data-design="<id>"` on <html> (see layout.tsx); the token VALUES live under
+ * Four themes ship (internal ids in parentheses, kept stable for saved prefs):
+ * Graphite et laiton (terminal, default, graphite dark + brass accent),
+ * Parchemin (atelier, light paper, serif narration), Encre (schema, monochrome,
+ * accent = neutral), Ardoise et acier (ardoise, slate dark + steel accent).
+ * next-themes sets `data-design="<id>"` on <html> (see layout.tsx); the VALUES live under
  * `[data-design='…']` below. The three dark themes drive Tailwind's `dark:`
  * variant via the darkMode config in tailwind.config.ts.
  *
@@ -82,21 +84,21 @@ html[dir='rtl'] body {
   [data-design='terminal'] {
     color-scheme: dark;
 
-    /* Reference literal tokens — verbatim from docs/design/reference-desktop.html.
-       --r / --r-s are defined once here; the other themes inherit them. */
-    --bg: #0a0f1c;
-    --panel: #0e1524;
-    --panel-2: #121a2c;
-    --panel-3: #182238;
-    --line: rgba(255, 255, 255, 0.07);
-    --line-2: rgba(255, 255, 255, 0.11);
-    --line-3: rgba(255, 255, 255, 0.17);
-    --txt: #e7ecf6;
-    --dim: #8b94ab;
-    --faint: #59617a;
-    --acc: #4d9de0;
-    --acc-dim: rgba(77, 157, 224, 0.14);
-    --acc-txt: #06131f;
+    /* THM-1 « Graphite et laiton » — near-neutral graphite, tight surfaces, single
+       brass accent. --r / --r-s are defined once here; other themes inherit them. */
+    --bg: #0c0d0f;
+    --panel: #141518;
+    --panel-2: #1c1e22;
+    --panel-3: #26282d;
+    --line: rgba(255, 255, 255, 0.06);
+    --line-2: rgba(255, 255, 255, 0.1);
+    --line-3: rgba(255, 255, 255, 0.14);
+    --txt: #e8e8e9;
+    --dim: #97999e;
+    --faint: #5f6167;
+    --acc: #c9a14a;
+    --acc-dim: rgba(201, 161, 74, 0.14);
+    --acc-txt: #14100a;
     --bull: #37b98c;
     --bear: #dd6b7a;
     --liq: #d6a24a;
@@ -107,25 +109,25 @@ html[dir='rtl'] body {
     --r: 10px;
     --r-s: 7px;
 
-    --background: 223 47% 7%;
-    --foreground: 220 45% 94%;
-    --card: 220 44% 12%;
-    --card-foreground: 220 45% 94%;
-    --popover: 220 44% 12%;
-    --popover-foreground: 220 45% 94%;
-    --primary: 207 70% 59%;
-    --primary-foreground: 223 47% 9%;
-    --secondary: 220 40% 16%;
-    --secondary-foreground: 220 45% 94%;
-    --muted: 220 40% 16%;
-    --muted-foreground: 223 16% 61%;
-    --accent: 220 40% 18%;
-    --accent-foreground: 220 45% 94%;
+    --background: 220 11% 5%;
+    --foreground: 240 2% 91%;
+    --card: 225 9% 9%;
+    --card-foreground: 240 2% 91%;
+    --popover: 225 9% 9%;
+    --popover-foreground: 240 2% 91%;
+    --primary: 41 54% 54%;
+    --primary-foreground: 36 33% 6%;
+    --secondary: 220 10% 12%;
+    --secondary-foreground: 240 2% 91%;
+    --muted: 220 10% 12%;
+    --muted-foreground: 223 3% 61%;
+    --accent: 223 8% 16%;
+    --accent-foreground: 240 2% 91%;
     --destructive: 352 60% 52%;
     --destructive-foreground: 220 45% 96%;
-    --border: 218 33% 20%;
-    --input: 218 33% 20%;
-    --ring: 207 70% 59%;
+    --border: 223 8% 19%;
+    --input: 223 8% 19%;
+    --ring: 41 54% 54%;
     --radius: 0.75rem;
 
     --sentinel-bull: 159 54% 47%;
@@ -136,39 +138,39 @@ html[dir='rtl'] body {
 
     --font-narrative: var(--font-sans);
 
-    /* Brand logo — TWO tokens, on purpose. The candles stay brass (#C9A14A) on
-       all four themes (a brand keeps its colour; the UI accent does not — the
-       Ardoise theme's blue/gold accent is deliberately NOT applied to the mark).
-       The wordmark is white on the dark themes, near-black on the light one.
-       Dark themes (terminal/schema/ardoise) inherit these defaults; only the
-       light Atelier theme overrides --brand-word below.
-       NB: THM-1 owns these tokens — if it lands after this, it must keep the
-       candles brass everywhere and the word white(dark)/near-black(light). */
+    /* Brand logo — TWO tokens, on purpose (BRD-3, supersedes THM-1's neutral
+       mark). The candles stay brass on ALL four themes (a brand keeps its colour;
+       the single UI accent does not — e.g. Ardoise's steel accent is NOT applied
+       to the mark). The wordmark is white on the three dark themes, near-black on
+       the light Parchemin theme. Every theme sets both tokens explicitly (never
+       neutralised to --txt). Never merge the two tokens. */
     --brand-mark: #c9a14a;
     --brand-word: #ffffff;
   }
 
-  /* ── Atelier — light, analyst note (narration in serif) ── */
+  /* ── Parchemin — light, analyst note (narration in serif). Internal id stays
+     'atelier' so saved preferences survive; only the displayed label changes. ── */
   [data-design='atelier'] {
     color-scheme: light;
 
+    /* Brass candles (BRD-3), near-black wordmark on the light paper. */
     --brand-mark: #c9a14a;
     --brand-word: #1a1917;
 
-    /* Reference literal tokens — verbatim (docs/design/reference-desktop.html). */
-    --bg: #f6f4ee;
-    --panel: #fbfaf6;
-    --panel-2: #efece3;
-    --panel-3: #e6e1d4;
-    --line: rgba(38, 40, 44, 0.1);
-    --line-2: rgba(38, 40, 44, 0.16);
-    --line-3: rgba(38, 40, 44, 0.24);
-    --txt: #26282c;
-    --dim: #6a6b66;
-    --faint: #9b9a91;
-    --acc: #1d6f6a;
-    --acc-dim: rgba(29, 111, 106, 0.12);
-    --acc-txt: #f6f4ee;
+    /* THM-1 « Parchemin » — near-neutral paper, tight surfaces, single bronze accent. */
+    --bg: #fbfaf8;
+    --panel: #ffffff;
+    --panel-2: #f4f2ee;
+    --panel-3: #eae7e1;
+    --line: rgba(26, 25, 23, 0.08);
+    --line-2: rgba(26, 25, 23, 0.12);
+    --line-3: rgba(26, 25, 23, 0.18);
+    --txt: #1a1917;
+    --dim: #6b6862;
+    --faint: #97938c;
+    --acc: #8a6d2f;
+    --acc-dim: rgba(138, 109, 47, 0.12);
+    --acc-txt: #fbfaf8;
     --bull: #2f8f6b;
     --bear: #b4564f;
     --liq: #b07d1c;
@@ -177,25 +179,25 @@ html[dir='rtl'] body {
     --fvg: rgba(120, 110, 180, 0.12);
     --fvg-l: rgba(120, 110, 180, 0.45);
 
-    --background: 45 31% 95%;
-    --foreground: 220 7% 16%;
-    --card: 45 27% 91%;
-    --card-foreground: 220 7% 16%;
-    --popover: 45 27% 91%;
-    --popover-foreground: 220 7% 16%;
-    --primary: 176 59% 27%;
-    --primary-foreground: 45 31% 96%;
-    --secondary: 45 22% 86%;
-    --secondary-foreground: 220 7% 16%;
-    --muted: 45 22% 86%;
-    --muted-foreground: 60 3% 38%;
-    --accent: 45 24% 84%;
-    --accent-foreground: 220 7% 16%;
+    --background: 40 27% 98%;
+    --foreground: 40 6% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 40 6% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 40 6% 10%;
+    --primary: 41 49% 36%;
+    --primary-foreground: 40 27% 98%;
+    --secondary: 40 21% 95%;
+    --secondary-foreground: 40 6% 10%;
+    --muted: 40 21% 95%;
+    --muted-foreground: 40 4% 40%;
+    --accent: 40 18% 90%;
+    --accent-foreground: 40 6% 10%;
     --destructive: 4 55% 48%;
     --destructive-foreground: 45 31% 96%;
-    --border: 45 16% 80%;
-    --input: 45 16% 80%;
-    --ring: 176 59% 27%;
+    --border: 40 18% 86%;
+    --input: 40 18% 86%;
+    --ring: 41 49% 36%;
     --radius: 0.75rem;
 
     --sentinel-bull: 158 51% 37%;
@@ -207,24 +209,29 @@ html[dir='rtl'] body {
     --font-narrative: Georgia, Cambria, 'Times New Roman', serif;
   }
 
-  /* ── Schéma — technical monochrome (states in grey, almost no colour) ── */
+  /* ── Encre — monochrome (accent = absence of colour: a light button on dark).
+     Internal id stays 'schema' so saved preferences survive. ── */
   [data-design='schema'] {
     color-scheme: dark;
 
-    /* Reference literal tokens — verbatim (docs/design/reference-desktop.html). */
-    --bg: #14161a;
-    --panel: #181b20;
-    --panel-2: #1e2228;
-    --panel-3: #262b33;
-    --line: rgba(255, 255, 255, 0.09);
-    --line-2: rgba(255, 255, 255, 0.14);
-    --line-3: rgba(255, 255, 255, 0.22);
-    --txt: #dfe3e8;
-    --dim: #8b9099;
-    --faint: #565b64;
-    --acc: #5fb3c4;
-    --acc-dim: rgba(95, 179, 196, 0.13);
-    --acc-txt: #0c1418;
+    /* Brass candles (BRD-3), white wordmark — brass even where the accent is neutral. */
+    --brand-mark: #c9a14a;
+    --brand-word: #ffffff;
+
+    /* THM-1 « Encre » — pure ink, tight surfaces, accent IS the neutral (no hue). */
+    --bg: #0a0a0b;
+    --panel: #131314;
+    --panel-2: #1b1b1d;
+    --panel-3: #252527;
+    --line: rgba(255, 255, 255, 0.06);
+    --line-2: rgba(255, 255, 255, 0.1);
+    --line-3: rgba(255, 255, 255, 0.14);
+    --txt: #e9e9ea;
+    --dim: #96969a;
+    --faint: #5d5d61;
+    --acc: #e9e9ea;
+    --acc-dim: rgba(233, 233, 234, 0.1);
+    --acc-txt: #0a0a0b;
     --bull: #c3c8cf;
     --bear: #7c828b;
     --liq: #5fb3c4;
@@ -233,25 +240,25 @@ html[dir='rtl'] body {
     --fvg: rgba(255, 255, 255, 0.04);
     --fvg-l: rgba(255, 255, 255, 0.22);
 
-    --background: 220 13% 9%;
-    --foreground: 213 16% 89%;
-    --card: 220 14% 12%;
-    --card-foreground: 213 16% 89%;
-    --popover: 220 14% 12%;
-    --popover-foreground: 213 16% 89%;
-    --primary: 190 46% 57%;
-    --primary-foreground: 220 13% 10%;
-    --secondary: 220 12% 16%;
-    --secondary-foreground: 213 16% 89%;
-    --muted: 220 12% 16%;
-    --muted-foreground: 219 6% 57%;
-    --accent: 220 12% 18%;
-    --accent-foreground: 213 16% 89%;
+    --background: 240 5% 4%;
+    --foreground: 240 2% 92%;
+    --card: 240 3% 8%;
+    --card-foreground: 240 2% 92%;
+    --popover: 240 3% 8%;
+    --popover-foreground: 240 2% 92%;
+    --primary: 240 2% 92%;
+    --primary-foreground: 240 5% 4%;
+    --secondary: 240 4% 11%;
+    --secondary-foreground: 240 2% 92%;
+    --muted: 240 4% 11%;
+    --muted-foreground: 240 2% 60%;
+    --accent: 240 3% 15%;
+    --accent-foreground: 240 2% 92%;
     --destructive: 0 50% 52%;
     --destructive-foreground: 213 16% 92%;
-    --border: 220 10% 20%;
-    --input: 220 10% 20%;
-    --ring: 190 46% 57%;
+    --border: 240 3% 18%;
+    --input: 240 3% 18%;
+    --ring: 240 2% 92%;
     --radius: 0.5rem;
 
     --sentinel-bull: 215 11% 79%;
@@ -263,24 +270,29 @@ html[dir='rtl'] body {
     --font-narrative: var(--font-sans);
   }
 
-  /* ── Ardoise — warm dark, calmed (softer corners) ── */
+  /* ── Ardoise et acier — cool dark, steel-blue accent (softer corners).
+     Internal id stays 'ardoise' so saved preferences survive. ── */
   [data-design='ardoise'] {
     color-scheme: dark;
 
-    /* Reference literal tokens — verbatim (docs/design/reference-desktop.html). */
-    --bg: #1a1613;
-    --panel: #211c17;
-    --panel-2: #28221c;
-    --panel-3: #322a22;
-    --line: rgba(255, 248, 238, 0.08);
-    --line-2: rgba(255, 248, 238, 0.13);
-    --line-3: rgba(255, 248, 238, 0.2);
-    --txt: #efe9e0;
-    --dim: #a99f92;
-    --faint: #736b60;
-    --acc: #d8b878;
-    --acc-dim: rgba(216, 184, 120, 0.14);
-    --acc-txt: #1a1613;
+    /* Brass candles (BRD-3), white wordmark — brass, NOT the steel-blue accent. */
+    --brand-mark: #c9a14a;
+    --brand-word: #ffffff;
+
+    /* THM-1 « Ardoise et acier » — slate, tight surfaces, single steel-blue accent. */
+    --bg: #101215;
+    --panel: #171a1f;
+    --panel-2: #1f2329;
+    --panel-3: #2a2f36;
+    --line: rgba(255, 255, 255, 0.06);
+    --line-2: rgba(255, 255, 255, 0.1);
+    --line-3: rgba(255, 255, 255, 0.14);
+    --txt: #e4e6e9;
+    --dim: #949aa3;
+    --faint: #5e656e;
+    --acc: #4c82d9;
+    --acc-dim: rgba(76, 130, 217, 0.14);
+    --acc-txt: #0b0e13;
     --bull: #6bbf9a;
     --bear: #d98b7a;
     --liq: #d8b878;
@@ -289,25 +301,25 @@ html[dir='rtl'] body {
     --fvg: rgba(160, 140, 200, 0.13);
     --fvg-l: rgba(160, 140, 200, 0.5);
 
-    --background: 26 16% 9%;
-    --foreground: 36 32% 91%;
-    --card: 30 16% 12%;
-    --card-foreground: 36 32% 91%;
-    --popover: 30 16% 12%;
-    --popover-foreground: 36 32% 91%;
-    --primary: 40 55% 66%;
-    --primary-foreground: 26 16% 10%;
-    --secondary: 30 14% 16%;
-    --secondary-foreground: 36 32% 91%;
-    --muted: 30 14% 16%;
-    --muted-foreground: 34 12% 62%;
-    --accent: 30 14% 18%;
-    --accent-foreground: 36 32% 91%;
+    --background: 216 14% 7%;
+    --foreground: 216 10% 90%;
+    --card: 218 15% 11%;
+    --card-foreground: 216 10% 90%;
+    --popover: 218 15% 11%;
+    --popover-foreground: 216 10% 90%;
+    --primary: 217 65% 57%;
+    --primary-foreground: 218 27% 6%;
+    --secondary: 216 14% 14%;
+    --secondary-foreground: 216 10% 90%;
+    --muted: 216 14% 14%;
+    --muted-foreground: 216 8% 61%;
+    --accent: 215 12% 19%;
+    --accent-foreground: 216 10% 90%;
     --destructive: 11 56% 58%;
     --destructive-foreground: 36 32% 94%;
-    --border: 28 14% 20%;
-    --input: 28 14% 20%;
-    --ring: 40 55% 66%;
+    --border: 215 12% 22%;
+    --input: 215 12% 22%;
+    --ring: 217 65% 57%;
     --radius: 1rem;
 
     --sentinel-bull: 154 40% 58%;

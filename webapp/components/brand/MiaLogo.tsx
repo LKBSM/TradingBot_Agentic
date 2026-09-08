@@ -25,7 +25,10 @@ import { CANDLES, COMPACT_CANDLES, type Candle } from '@/lib/brand/candle-geomet
 
 type Variant = 'mark' | 'horizontal' | 'stacked' | 'compact';
 
-const FONT = "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+// The wordmark rides the app's own sans stack (THM-1) rather than a hardcoded
+// pile — a single source of truth. Passed via `style` (not the SVG presentation
+// attribute) so the CSS custom property resolves on the inline <text>.
+const FONT = 'var(--font-sans)';
 
 /** Draws a candle set in brass (`--brand-mark`). Symmetry lives in the data. */
 function Candles({ candles }: { candles: readonly Candle[] }) {
@@ -97,7 +100,7 @@ export function MiaLogo({
         <text
           x="94"
           y="45"
-          fontFamily={FONT}
+          style={{ fontFamily: FONT }}
           fontSize="27"
           fontWeight="500"
           letterSpacing="3.5"
@@ -120,7 +123,7 @@ export function MiaLogo({
           x="150"
           y="125"
           textAnchor="middle"
-          fontFamily={FONT}
+          style={{ fontFamily: FONT }}
           fontSize="25"
           fontWeight="500"
           letterSpacing="3.2"

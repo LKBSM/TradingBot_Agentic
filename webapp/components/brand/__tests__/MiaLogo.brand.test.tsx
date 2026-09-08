@@ -163,13 +163,23 @@ describe('BRD-3 — no old prism logo survives', () => {
   });
 });
 
-describe('BRD-3 — brass colour is hard-coded only in the server images', () => {
-  it('no component / lib file hard-codes the brand mark colour', () => {
-    for (const f of CODE) {
-      if (GENERATORS.includes(f.replace(/\\/g, '/'))) continue;
-      const src = readFileSync(f, 'utf-8').toLowerCase();
-      expect(src.includes('#c9a14a'), `hard-coded brass in ${f} (use --brand-mark)`).toBe(false);
-    }
+describe('BRD-3 — the logo colour comes from the var, never a literal', () => {
+  // Brass (#C9A14A) doubles as the THM-1 UI accent and is legitimately hard-coded
+  // across surfaces that cannot read CSS vars (pre-hydration error page, chart
+  // overlays…). That is NOT the logo. This guard is scoped to the logo itself:
+  // MiaLogo paints from --brand-mark, and neither logo-source file writes the
+  // brass literal. The build-time images hard-code it on purpose (no theme then).
+  it('MiaLogo paints from --brand-mark and hard-codes no colour', () => {
+    const src = readFileSync(join(WEBAPP, 'components/brand/MiaLogo.tsx'), 'utf-8').toLowerCase();
+    expect(src).toContain('var(--brand-mark)');
+    expect(src).toContain('var(--brand-word)');
+    expect(src.includes('#c9a14a'), 'MiaLogo must not hard-code brass').toBe(false);
+  });
+
+  it('the candle geometry is pure data — no colour literal', () => {
+    const src = readFileSync(join(WEBAPP, 'lib/brand/candle-geometry.ts'), 'utf-8').toLowerCase();
+    expect(src.includes('#c9a14a'), 'geometry must not carry a colour').toBe(false);
+    expect(/#[0-9a-f]{6}/.test(src), 'geometry must hold coordinates, not colours').toBe(false);
   });
 });
 

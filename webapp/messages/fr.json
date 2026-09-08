@@ -2814,11 +2814,17 @@
     "sectionDescription": "Choisissez le thème de l’interface. Le choix s’applique aussitôt et reste mémorisé sur cet appareil.",
     "groupLabel": "Choix du thème",
     "active": "Actif",
+    "names": {
+      "terminal": "Graphite et laiton",
+      "atelier": "Parchemin",
+      "schema": "Encre",
+      "ardoise": "Ardoise et acier"
+    },
     "descriptions": {
-      "terminal": "Sombre froid, lecture au calme — le thème par défaut.",
-      "atelier": "Clair, comme une note d’analyste sur papier.",
-      "schema": "Monochrome technique, presque sans couleur.",
-      "ardoise": "Sombre chaud, apaisé, aux coins plus doux."
+      "terminal": "Graphite sombre, accent laiton — le thème par défaut.",
+      "atelier": "Parchemin clair, narration en serif — une note d’analyste.",
+      "schema": "Encre monochrome, presque sans couleur : tout est typographie.",
+      "ardoise": "Ardoise sombre, accent acier bleu."
     }
   },
   "connexion": {
