@@ -32,8 +32,8 @@ export default function GlobalError({
           justifyContent: 'center',
           fontFamily:
             'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
-          background: '#0a0f1c',
-          color: '#e8edf7',
+          background: '#0c0d0f',
+          color: '#e8e8e9',
           padding: '2rem',
         }}
       >
@@ -54,8 +54,11 @@ export default function GlobalError({
               padding: '0.6rem 1.25rem',
               fontSize: '0.95rem',
               fontWeight: 600,
-              background: '#c9a227',
-              color: '#0a0f1c',
+              // Neutral light-on-dark button: this crash boundary renders outside
+              // the theme (no CSS vars), and the brand brass is reserved for the
+              // logo mark (BRD-3), never UI chrome — so we use the neutral text tone.
+              background: '#e8e8e9',
+              color: '#0c0d0f',
             }}
           >
             Réessayer

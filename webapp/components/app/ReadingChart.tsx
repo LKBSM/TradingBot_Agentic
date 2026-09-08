@@ -195,9 +195,10 @@ export interface ReadingChartProps {
 // six units — the previous local {M15,H1,H4} map left barSec=0 on M5/D1, which
 // early-returned before framing (the reported click-to-frame failure).
 
-/** Candle bodies — muted bull / bear fallbacks (live values come from the
- *  `--bull` / `--bear` design tokens read in palette()). */
-const CANDLE = { bull: '#2F9E78', bear: '#C2693E' };
+/** Candle bodies — bull / bear fallbacks, aligned to the `--bull` / `--bear`
+ *  data tokens (THM-1 §F: the live values are read in palette(); these are only
+ *  used if getComputedStyle can't resolve the token). */
+const CANDLE = { bull: '#37b98c', bear: '#dd6b7a' };
 
 /** Break-level line colours — sober, distinguishable, hairline. */
 const LEVEL = {
@@ -268,7 +269,7 @@ const MAX_EVENT_HISTORY_PAGES = 6;
  * `--sentinel-*` state tokens (colour = meaning). Called inside a client effect,
  * re-keyed on the resolved theme, so switching between two dark themes repaints.
  */
-// The reference literal tokens (--bull #37b98c, --line rgba(…), --acc #4d9de0)
+// The reference literal tokens (--bull, --line rgba(…), --acc — per active theme)
 // store ready-to-use CSS colour strings, so we read them verbatim (unlike the
 // `--sentinel-*` HSL triplets that need wrapping). Called inside a client
 // effect, re-keyed on the resolved theme, so switching themes repaints.
@@ -283,14 +284,16 @@ function palette() {
   // candles = --bull/--bear, current-price line = --acc. Fond = --panel via the
   // `.chartbox` container (the canvas layout stays transparent).
   return {
-    axisText: readVar(el, '--faint', '#59617a'),
-    grid: readVar(el, '--line', 'rgba(255, 255, 255, 0.07)'),
-    scaleBorder: readVar(el, '--line-2', 'rgba(255, 255, 255, 0.11)'),
-    crosshair: readVar(el, '--faint', '#59617a'),
-    crosshairLabel: readVar(el, '--panel-3', '#182238'),
+    axisText: readVar(el, '--faint', '#5f6167'),
+    grid: readVar(el, '--line', 'rgba(255, 255, 255, 0.06)'),
+    scaleBorder: readVar(el, '--line-2', 'rgba(255, 255, 255, 0.1)'),
+    crosshair: readVar(el, '--faint', '#5f6167'),
+    crosshairLabel: readVar(el, '--panel-3', '#26282d'),
     candleBull: readVar(el, '--bull', CANDLE.bull),
     candleBear: readVar(el, '--bear', CANDLE.bear),
-    priceLine: readVar(el, '--acc', '#4d9de0'),
+    // Fallback is a neutral grey (never the brand brass, which is reserved for the
+    // logo mark — BRD-3); the live price line still follows the theme accent --acc.
+    priceLine: readVar(el, '--acc', '#8a8a8a'),
   };
 }
 
@@ -1107,7 +1110,7 @@ export function ReadingChart({
       labelBg:
         resolvedTheme === 'light'
           ? 'rgba(255, 255, 255, 0.72)'
-          : 'rgba(17, 20, 32, 0.65)',
+          : 'rgba(20, 21, 24, 0.66)',
       // CHART-2 — i18n « N zones » cluster text + the top-left badge footprint that
       // labels must avoid (so the status badge never covers a zone label).
       clusterLabel: (count: number) => t('chart.zonesCluster', { count }),

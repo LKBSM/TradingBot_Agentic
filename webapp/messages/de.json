@@ -2814,11 +2814,17 @@
     "sectionDescription": "Wählen Sie das Design der Oberfläche. Die Auswahl wird sofort übernommen und auf diesem Gerät gespeichert.",
     "groupLabel": "Themenauswahl",
     "active": "Aktiv",
+    "names": {
+      "terminal": "Graphit & Messing",
+      "atelier": "Pergament",
+      "schema": "Tinte",
+      "ardoise": "Schiefer & Stahl"
+    },
     "descriptions": {
-      "terminal": "Kühles Dunkel, ruhiges Lesen – das Standardthema.",
-      "atelier": "Hell, wie eine Analystennotiz auf Papier.",
-      "schema": "Technisches Monochrom, fast ohne Farbe.",
-      "ardoise": "Warmes Dunkel, beruhigend, mit weicheren Ecken."
+      "terminal": "Dunkler Graphit mit Messing-Akzent – das Standardthema.",
+      "atelier": "Helles Pergament, Erzählung in Serif – eine Analystennotiz.",
+      "schema": "Monochrome Tinte, fast ohne Farbe: alles Typografie.",
+      "ardoise": "Dunkler Schiefer mit stahlblauem Akzent."
     }
   },
   "connexion": {
