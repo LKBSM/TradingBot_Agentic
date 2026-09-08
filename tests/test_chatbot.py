@@ -244,16 +244,12 @@ def test_tool_execution_failure_is_recoverable() -> None:
     assert "error" in tool_result_msg["content"][0]["content"]
 
 
-def _system_text(system: object) -> str:
-    """The system prompt is sent as a cached content-block list (MIA-3 prompt
-    caching); flatten it back to text for assertions (accepts a bare str too)."""
+def _system_text(system: Any) -> str:
+    """Join the text of a system prompt whether it is a plain string or the
+    MIA-2 list of cache_control content blocks."""
     if isinstance(system, str):
         return system
-    if isinstance(system, list):
-        return "".join(
-            block.get("text", "") for block in system if isinstance(block, dict)
-        )
-    return str(system)
+    return "\n".join(block.get("text", "") for block in system)
 
 
 def test_signal_summary_is_injected_in_system_prompt() -> None:
@@ -267,14 +263,16 @@ def test_signal_summary_is_injected_in_system_prompt() -> None:
 
 
 def test_system_prompt_marks_a_cache_breakpoint() -> None:
-    """MIA-3 §F — the stable tools+system prefix is cached: the system is sent as
-    a content-block list whose last block carries an ephemeral cache_control."""
+    """MIA-3 §F / MIA-2 — the stable static prefix (identity + rules + the 7 tool
+    descriptions) is sent as the FIRST content block with an ephemeral
+    cache_control, so the extra calendar/markets tool definitions are cached and
+    cost ~0 on repeat turns. The variable signal_summary follows in its own block."""
     resp = StubResponse([TextBlock("ok")], "end_turn")
     bot, client, _ = make_chatbot([resp])
     bot.chat("Bonjour")
     system = client.calls[0]["system"]
     assert isinstance(system, list) and system
-    assert system[-1].get("cache_control") == {"type": "ephemeral"}
+    assert system[0].get("cache_control") == {"type": "ephemeral"}
 
 
 # --------------------------------------------------------------------------- #

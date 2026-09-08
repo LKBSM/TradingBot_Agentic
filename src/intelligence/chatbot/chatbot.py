@@ -34,6 +34,7 @@ from src.intelligence.chatbot.constants import (
 )
 from src.intelligence.chatbot.output_filter import OutputFilter
 from src.intelligence.chatbot.signal_summary_provider import SignalSummaryProvider
+from src.intelligence.llm_cost_policy import cache_block_for
 from src.intelligence.chatbot.view_action_filter import (
     ALLOWED_ACTIONS,
     ViewActionValidator,
@@ -42,7 +43,20 @@ from src.intelligence.chatbot.view_action_filter import (
 logger = logging.getLogger(__name__)
 
 DEFAULT_MODEL = "claude-haiku-4-5-20251001"
-DEFAULT_MAX_TOKENS = 1024
+# MIA-2 lever 6 — response-length safety cap. A niveau-1.5 answer is 2-4 phrases
+# (~120-180 tokens); 768 leaves ample room for an explicit "détaille" request
+# while capping pathological runaway generations (a longer answer is a slower
+# answer). Purely a ceiling — it never lengthens a normal reply.
+DEFAULT_MAX_TOKENS = 768
+# MIA-2 lever G — explicit per-call timeout (the scanner_translator already sets
+# one; the chatbot did not, so a hung call fell back to the SDK default ~600s).
+# On timeout the existing except-branch returns LLM_ERROR_TEMPLATE unchanged.
+DEFAULT_TIMEOUT_S = 20.0
+# MIA-2 lever 5a — server-side history depth cap. The client may send up to 20
+# messages; the model only needs a recent window for a market-analysis chat.
+# Kept as an EVEN number and applied user-first so the slice stays a valid
+# alternating transcript (see _truncate_history). Bounds per-turn context.
+MAX_MODEL_HISTORY = 12
 MAX_TOOL_TURNS = 3  # hard cap on tool-use rounds to avoid infinite loops
 
 # Perimeter derived from the single sources (TF-1): the chat covers every
@@ -276,7 +290,15 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
 ]
 
 
-SYSTEM_PROMPT_TEMPLATE = """Tu es MIA Markets, un outil de compréhension des conditions de marché.
+# MIA-2 lever 1 — the STABLE part of the system prompt (identity, rules, chart
+# control, OB diagnostic, market-state rules, tool access). It is byte-identical
+# on every turn, so it is sent as a cache_control:ephemeral block: Anthropic
+# reprocesses it once, then reads it from cache (~90% cheaper/faster prefill) on
+# every following turn. The VARIABLE signal_summary is deliberately NOT here —
+# it lives in a separate trailing block (SIGNAL_CONTEXT_TEMPLATE) so a 60s-TTL
+# change never invalidates this cached prefix. Nothing was removed from the
+# prompt: the signal context simply moved to the end.
+SYSTEM_PROMPT_STATIC = """Tu es MIA Markets, un outil de compréhension des conditions de marché.
 
 RÈGLES STRICTES :
 - Tu décris les conditions observées, jamais ne recommandes une action.
@@ -327,9 +349,6 @@ CATALOGUE DES MARCHÉS (list_markets) :
 RÈGLE D'ABSENCE (vaut pour TOUS les outils) :
 - Tu peux parler de tout ce que le produit SAIT, c'est-à-dire de ce qu'un outil te renvoie réellement. Si l'outil ne renvoie rien (marché non couvert, unité non calculée, publication introuvable, mesure None), tu LE DIS. Tu ne combles pas, tu ne raisonnes pas « par analogie », tu ne produis pas une lecture plausible. Un texte qui sonne juste sur une donnée que tu n'as pas est un mensonge.
 
-CONTEXTE INITIAL (signal_summary) :
-{signal_summary}
-
 Tu as accès à 7 tools :
 - get_market_reading(instrument, timeframe) : lecture complète d'une combinaison.
 - get_signal_summary() : résumé des 6 combinaisons (XAUUSD/EURUSD × M15/H1/H4).
@@ -339,7 +358,20 @@ Tu as accès à 7 tools :
 - get_economic_calendar(market?, horizon?) : publications économiques réelles (à venir/récentes).
 - get_publication(event_id) : détail chiffré + mesures d'une publication précise.
 
-Si l'utilisateur pose une question contextuelle nécessitant des détails absents du signal_summary, appelle get_market_reading."""
+Le CONTEXTE INITIAL (signal_summary) des combinaisons suivies est fourni en fin de ce message système. Si l'utilisateur pose une question contextuelle nécessitant des détails absents de ce signal_summary, appelle get_market_reading."""
+
+
+# MIA-2 lever 1 — the VARIABLE trailing block. Injected AFTER the cached static
+# prefix, so its 60s-TTL refresh never busts the cache. Same data as before,
+# same wording — only its position in the prompt changed (middle → end).
+SIGNAL_CONTEXT_TEMPLATE = """CONTEXTE INITIAL (signal_summary) :
+{signal_summary}"""
+
+
+# Backward-compatible single-string view (the two parts concatenated). Retained
+# for callers/tests that inspect the full prompt text; the runtime uses the two
+# blocks above so the stable prefix can be cached independently of the summary.
+SYSTEM_PROMPT_TEMPLATE = SYSTEM_PROMPT_STATIC + "\n\n" + SIGNAL_CONTEXT_TEMPLATE
 
 
 @dataclass
@@ -377,6 +409,8 @@ class Chatbot:
         model: str = DEFAULT_MODEL,
         max_tokens: int = DEFAULT_MAX_TOKENS,
         max_tool_turns: int = MAX_TOOL_TURNS,
+        timeout_s: float = DEFAULT_TIMEOUT_S,
+        max_model_history: int = MAX_MODEL_HISTORY,
     ) -> None:
         self._client = anthropic_client
         self._summary_provider = summary_provider
@@ -393,6 +427,8 @@ class Chatbot:
         self._model = model
         self._max_tokens = max_tokens
         self._max_tool_turns = max_tool_turns
+        self._timeout_s = timeout_s
+        self._max_model_history = max_model_history
 
     # ------------------------------------------------------------------ #
     # Public API
@@ -457,7 +493,11 @@ class Chatbot:
         honest status, in-turn tool de-duplication, and parallel independent
         reads — none of which touch what the layers check.
         """
-        history = list(conversation_history or [])
+        # MIA-2 lever 5a — cap the history depth sent to the model (user-first,
+        # valid alternating slice). Bounds per-turn context without touching what
+        # any layer checks: the current user_message and the full defence chain
+        # are unaffected.
+        history = self._truncate_history(conversation_history, self._max_model_history)
 
         # --- Couche 1 — adversarial input filter (no LLM call on match) ---
         adv = self._adv_filter.check(user_message)
@@ -478,21 +518,13 @@ class Chatbot:
         signal_summary = self._safe_summary()
         # Compact JSON (no indent) — same data, fewer prefill tokens (MIA-1 §4,
         # prompt trim). Purely a token-count optimisation; content is identical.
-        system_text = SYSTEM_PROMPT_TEMPLATE.format(
-            signal_summary=json.dumps(signal_summary, ensure_ascii=False)
-        )
-        # MIA-3 — prompt caching: the tools + system prefix is stable across every
-        # turn (only the tail signal_summary varies, and it is tiny), so mark the
-        # end of the system block as a cache breakpoint. Anthropic then caches the
-        # whole [tools + system] prefix (5-min TTL); repeat turns pay ~0 for it,
-        # which offsets the extra tool definitions this mission adds (MIA-3 §F).
-        system = [
-            {
-                "type": "text",
-                "text": system_text,
-                "cache_control": {"type": "ephemeral"},
-            }
-        ]
+        # MIA-2 lever 1 — two system blocks: a cached, byte-stable prefix
+        # (identity/rules/tools access, incl. the MIA-3 calendar/markets tools) +
+        # the variable signal_summary AFTER it. Anthropic reads the cached prefix
+        # (~90% cheaper/faster prefill) on every turn; the 60s-TTL summary refresh
+        # only re-processes its own small block. (This supersedes MIA-3's inline
+        # cache_control — same intent, MIA-2's split is cache-stable.)
+        system = self._build_system(signal_summary)
         messages: list[dict[str, Any]] = history + [
             {"role": "user", "content": user_message}
         ]
@@ -520,6 +552,7 @@ class Chatbot:
                     system=system,
                     messages=messages,
                     tools=TOOL_SCHEMAS,
+                    timeout=self._timeout_s,
                 )
             except Exception as exc:  # timeout / rate limit / network
                 logger.warning("chatbot LLM call failed: %s — fail-safe template", exc)
@@ -685,6 +718,47 @@ class Chatbot:
         except Exception as exc:  # never let summary failure abort the turn
             logger.warning("signal_summary provider failed: %s", exc)
             return {"instruments_tracked": []}
+
+    def _build_system(self, signal_summary: dict[str, Any]) -> Any:
+        """MIA-2 lever 1 — assemble the system prompt as [cached static prefix,
+        variable signal block]. The static prefix carries cache_control:ephemeral
+        so Anthropic caches it (tools + this block) once and reads it back on
+        every subsequent turn; the signal_summary block sits AFTER the breakpoint
+        so its 60s-TTL refresh never invalidates the cache. Content is identical
+        to the old single-string prompt — only the summary's position changed.
+
+        Falls back to a single plain string if the static prefix is somehow below
+        the cache threshold (it is ~2k tokens, so this never triggers in practice)
+        — same text, just uncached.
+        """
+        signal_text = SIGNAL_CONTEXT_TEMPLATE.format(
+            signal_summary=json.dumps(signal_summary, ensure_ascii=False)
+        )
+        static_block = cache_block_for(SYSTEM_PROMPT_STATIC)
+        if static_block is None:
+            return SYSTEM_PROMPT_STATIC + "\n\n" + signal_text
+        return [static_block, {"type": "text", "text": signal_text}]
+
+    @staticmethod
+    def _truncate_history(
+        conversation_history: Optional[list[dict[str, Any]]], max_len: int
+    ) -> list[dict[str, Any]]:
+        """MIA-2 lever 5a — keep at most ``max_len`` most-recent history messages,
+        trimmed to start on a 'user' turn so the slice handed to the model stays a
+        valid alternating transcript (Anthropic requires the first message to be
+        'user'). Never touches the current user_message (appended by the caller)
+        nor any validation — purely a context-size bound.
+        """
+        history = list(conversation_history or [])
+        if max_len is None or max_len <= 0 or len(history) <= max_len:
+            return history
+        trimmed = history[-max_len:]
+        # Drop leading non-'user' messages so the window opens on a user turn.
+        while trimmed and (
+            trimmed[0].get("role") if isinstance(trimmed[0], dict) else None
+        ) != "user":
+            trimmed = trimmed[1:]
+        return trimmed
 
     def _apply_view_action(
         self,
@@ -959,7 +1033,11 @@ __all__ = [
     "ChatResponse",
     "DEFAULT_MAX_TOKENS",
     "DEFAULT_MODEL",
+    "DEFAULT_TIMEOUT_S",
+    "MAX_MODEL_HISTORY",
     "MAX_TOOL_TURNS",
+    "SIGNAL_CONTEXT_TEMPLATE",
+    "SYSTEM_PROMPT_STATIC",
     "SYSTEM_PROMPT_TEMPLATE",
     "TOOL_SCHEMAS",
 ]
