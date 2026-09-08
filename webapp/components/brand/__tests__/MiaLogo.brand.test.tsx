@@ -77,7 +77,7 @@ describe('BRD-2 — variant + tone', () => {
   it('auto tone follows the theme variable; fixed tones use the source colours', () => {
     const fill = (ui: React.ReactElement) =>
       render(ui).container.querySelector('path')?.getAttribute('fill');
-    // Auto → CSS var that resolves to #2962FF (light) / #7DA3FF (dark).
+    // Auto → CSS var (--brand-mark), now each theme's NEUTRAL text tone (THM-1).
     expect(fill(<MiaLogo tone="auto" />)).toContain('--brand-mark');
     expect(fill(<MiaLogo tone="color" />)).toBe('#2962FF');
     expect(fill(<MiaLogo tone="dark" />)).toBe('#7DA3FF');

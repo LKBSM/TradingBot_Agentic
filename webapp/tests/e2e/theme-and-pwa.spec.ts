@@ -4,13 +4,14 @@ test.describe('Theme + PWA — golden paths', () => {
   test('theme menu switches the active data-design on <html>', async ({ page }) => {
     await page.goto('/');
     const html = page.locator('html');
-    // Pick Atelier (light) from the theme menu.
+    // Pick Parchemin (light, id 'atelier') from the theme menu. THM-1 renamed the
+    // displayed labels (localised); the internal id is unchanged.
     await page.getByRole('button', { name: /Choisir le thème/i }).click();
-    await page.getByRole('menuitemradio', { name: /Atelier/i }).click();
+    await page.getByRole('menuitemradio', { name: /Parchemin/i }).click();
     await expect(html).toHaveAttribute('data-design', 'atelier');
-    // Switch to Terminal (dark) and confirm the attribute flips.
+    // Switch to Graphite et laiton (dark, id 'terminal') and confirm the flip.
     await page.getByRole('button', { name: /Choisir le thème/i }).click();
-    await page.getByRole('menuitemradio', { name: /Terminal/i }).click();
+    await page.getByRole('menuitemradio', { name: /Graphite et laiton/i }).click();
     await expect(html).toHaveAttribute('data-design', 'terminal');
   });
 
@@ -20,7 +21,7 @@ test.describe('Theme + PWA — golden paths', () => {
     await page.goto('/');
     const html = page.locator('html');
     await page.getByRole('button', { name: /Choisir le thème/i }).click();
-    await page.getByRole('menuitemradio', { name: /Atelier/i }).click();
+    await page.getByRole('menuitemradio', { name: /Parchemin/i }).click();
     await expect(html).toHaveAttribute('data-design', 'atelier');
     // Reload: the pre-paint inline script must restore the persisted design.
     await page.reload();

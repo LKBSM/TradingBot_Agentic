@@ -6,14 +6,14 @@ import { dismissCookieBanner } from './utils';
  * both viewports (the two Playwright projects run each test on desktop 1280×800
  * and mobile iPhone-12 390×844) and both themes.
  *
- * The prism fill is theme-driven via the `--brand-mark` CSS variable, so the
- * same test asserts the correct light/dark variant by reading the resolved
- * colour: #2962FF (rgb 41,98,255) on the light Atelier theme, #7DA3FF
- * (rgb 125,163,255) on the dark themes.
+ * The prism fill is theme-driven via the `--brand-mark` CSS variable. Since THM-1
+ * the mark is NEUTRAL (each theme's own text tone, not a brand blue), so the same
+ * test asserts the resolved colour per theme: #1A1917 (rgb 26,25,23) on the light
+ * Parchemin theme, #E8E8E9 (rgb 232,232,233) on the default Graphite dark theme.
  */
 
-const LIGHT = 'rgb(41, 98, 255)'; // #2962FF
-const DARK = 'rgb(125, 163, 255)'; // #7DA3FF
+const LIGHT = 'rgb(26, 25, 23)'; // #1A1917 — Parchemin text tone
+const DARK = 'rgb(232, 232, 233)'; // #E8E8E9 — Graphite text tone
 
 async function forceTheme(page: Page, id: string): Promise<void> {
   // next-themes persists the chosen design under localStorage["theme"] and its

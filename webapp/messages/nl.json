@@ -2814,11 +2814,17 @@
     "sectionDescription": "Kies het thema van de interface. Je keuze wordt meteen toegepast en op dit apparaat onthouden.",
     "groupLabel": "Themakeuze",
     "active": "Actief",
+    "names": {
+      "terminal": "Grafiet & messing",
+      "atelier": "Perkament",
+      "schema": "Inkt",
+      "ardoise": "Leisteen & staal"
+    },
     "descriptions": {
-      "terminal": "Koel donker, rustig lezen — het standaardthema.",
-      "atelier": "Licht, als een analistennotitie op papier.",
-      "schema": "Technisch monochroom, bijna zonder kleur.",
-      "ardoise": "Warm donker, rustgevend, met zachtere hoeken."
+      "terminal": "Donker grafiet met messing accent — het standaardthema.",
+      "atelier": "Licht perkament, verhaal in serif — een analistennotitie.",
+      "schema": "Monochrome inkt, bijna zonder kleur: puur typografie.",
+      "ardoise": "Donker leisteen met staalblauw accent."
     }
   },
   "connexion": {
