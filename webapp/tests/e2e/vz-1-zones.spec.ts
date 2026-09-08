@@ -251,34 +251,20 @@ test.describe('VZ-1 /zones @ 1280×800', () => {
   test.use({ viewport: { width: 1280, height: 800 } });
   scenarios();
 
-  test('the M.I.A panel switches subject on a card click (no reload)', async ({ page }) => {
+  test('the shared M.I.A column reflects the selected zone and switches subject on a card click (no reload)', async ({ page }) => {
+    // MIA-3 — the /zones panel is now the shared shell column; the selected-zone
+    // orientation subject rides on the shared focus (same behaviour, one panel).
     await openZones(page);
     const subject = page.getByTestId('mia-subject').first();
     await expect(subject).toContainText('388,00'); // default = the inside zone
     await page.locator('[data-zone-id="ob-untouched"]').click();
     await expect(subject).toContainText('350,00'); // switched, same page
   });
-
-  test('the M.I.A free-text input answers locally (no LLM)', async ({ page }) => {
-    await openZones(page);
-    const input = page.getByPlaceholder('Pose ta question sur cette zone…').first();
-    await input.fill("qu'est-ce qu'il y a d'autre à ce niveau");
-    await input.press('Enter');
-    await expect(
-      page.locator('.zmia-body .bub.a').last(),
-    ).toContainText(/au même niveau|rien d’autre n’est détecté|poche de liquidité|à l’intérieur|englobe/i);
-  });
 });
 
 test.describe('VZ-1 /zones @ 390×844', () => {
   test.use({ viewport: { width: 390, height: 844 } });
   scenarios();
-
-  test('the M.I.A panel is a bottom sheet opened by a button', async ({ page }) => {
-    await openZones(page);
-    await page.getByRole('button', { name: 'Demander à M.I.A' }).click();
-    const sheet = page.locator('.zmia-sheet');
-    await expect(sheet).toBeVisible();
-    await expect(sheet.getByTestId('mia-subject')).toContainText('388,00');
-  });
+  // MIA-3 — the mobile M.I.A panel is the shell floating drawer (`.chat-fab`),
+  // covered by mia-3-agent-unifie.spec; the old in-page bottom sheet is gone.
 });
