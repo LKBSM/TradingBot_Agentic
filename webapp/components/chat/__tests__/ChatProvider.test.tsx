@@ -273,6 +273,62 @@ describe('ChatProvider single conversation (MIA-3 — follows the user)', () => 
     });
   });
 
+  it('sends the selected-zone orientation as a preamble focus, cleared without touching the conversation', async () => {
+    askSentinelMock.mockResolvedValue({
+      text: 'Réponse orientée.',
+      blockedReason: null,
+      toolCallsMade: [],
+    });
+
+    function FocusHarness() {
+      const { openForCombo, setFocus, askFreeForm, turns } = useChat();
+      return (
+        <div>
+          <button type="button" onClick={() => openForCombo({ instrument: 'XAUUSD', timeframe: 'M15' })}>
+            combo
+          </button>
+          <button type="button" onClick={() => setFocus({ kind: 'zone', zoneId: 'OB_xau_m15_7' })}>
+            focus-zone
+          </button>
+          <button type="button" onClick={() => setFocus(null)}>
+            deselect
+          </button>
+          <button type="button" onClick={() => void askFreeForm('Décris cette zone ?')}>
+            ask
+          </button>
+          <span data-testid="count">{turns.length}</span>
+          <ul>
+            {turns.map((t) => (
+              <li key={t.id}>{t.text}</li>
+            ))}
+          </ul>
+        </div>
+      );
+    }
+
+    render(
+      <ChatProvider>
+        <FocusHarness />
+      </ChatProvider>,
+    );
+    fireEvent.click(screen.getByText('combo'));
+    fireEvent.click(screen.getByText('focus-zone'));
+    fireEvent.click(screen.getByText('ask'));
+    await waitFor(() => expect(askSentinelMock).toHaveBeenCalledTimes(1));
+    const firstArgs = askSentinelMock.mock.calls[0]![0] as { focus?: string | null };
+    expect(firstArgs.focus).toBe('[Zone sélectionnée : OB_xau_m15_7]');
+    await screen.findByText('Réponse orientée.');
+
+    // Deselect → the conversation is NOT cleared, and the next question carries
+    // no zone focus (an off-zone question is still answered).
+    fireEvent.click(screen.getByText('deselect'));
+    expect(screen.getByTestId('count').textContent).toBe('2');
+    fireEvent.click(screen.getByText('ask'));
+    await waitFor(() => expect(askSentinelMock).toHaveBeenCalledTimes(2));
+    const secondArgs = askSentinelMock.mock.calls[1]![0] as { focus?: string | null };
+    expect(secondArgs.focus).toBeNull();
+  });
+
   it('persists the conversation even when opened for a non-combo signal', async () => {
     // Under the single-conversation model every turn lives in the one product
     // thread, so a chat opened for a landing signal now persists too (it is the

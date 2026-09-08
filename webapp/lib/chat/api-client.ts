@@ -24,6 +24,14 @@ export interface AskOptions {
    * timeframe)` for the right combo. See docs Chantier 5.A — Tension T1.
    */
   signal?: SignalContext | null;
+  /**
+   * MIA-3 — extra ORIENTATION line appended to the preamble (after the combo
+   * line), e.g. a selected zone or an open publication. Pure orientation: it
+   * tells M.I.A what the user is looking at, it does NOT widen what M.I.A may
+   * affirm — every fact still comes from a tool result. Never fabricated: the
+   * caller only ever passes an id the engine actually emitted (a clicked zone).
+   */
+  focus?: string | null;
   /** Prior turns (already trimmed by the caller; backend caps at 20). */
   history?: ReadonlyArray<ConversationMessage>;
   /** Abort handle wired to the request lifecycle. */
@@ -112,9 +120,16 @@ interface ChatbotMessageResponse {
  * Format is fixed (brackets + `Lecture en cours :` + space-separated codes)
  * precisely so it can be detected/stripped later if the architecture evolves.
  */
-function withSignalContext(question: string, signal?: SignalContext | null): string {
-  if (!signal) return question;
-  return `[Lecture en cours : ${signal.instrument} ${signal.timeframe}]\n${question}`;
+function withSignalContext(
+  question: string,
+  signal?: SignalContext | null,
+  focus?: string | null,
+): string {
+  const lines: string[] = [];
+  if (signal) lines.push(`[Lecture en cours : ${signal.instrument} ${signal.timeframe}]`);
+  if (focus) lines.push(focus);
+  if (lines.length === 0) return question;
+  return `${lines.join('\n')}\n${question}`;
 }
 
 /**
@@ -130,7 +145,7 @@ function withSignalContext(question: string, signal?: SignalContext | null): str
  */
 export async function askSentinel(opts: AskOptions): Promise<AskResult> {
   const body = {
-    user_message: withSignalContext(opts.question, opts.signal),
+    user_message: withSignalContext(opts.question, opts.signal, opts.focus),
     conversation_history: (opts.history ?? []).map((h) => ({
       role: h.role,
       content: h.content,
@@ -217,7 +232,7 @@ export async function askSentinelStream(
   onEvent: (event: ChatStreamEvent) => void,
 ): Promise<AskResult> {
   const body = {
-    user_message: withSignalContext(opts.question, opts.signal),
+    user_message: withSignalContext(opts.question, opts.signal, opts.focus),
     conversation_history: (opts.history ?? []).map((h) => ({
       role: h.role,
       content: h.content,

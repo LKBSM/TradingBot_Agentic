@@ -43,6 +43,24 @@ export type ChatActivity =
   | { kind: 'thinking' }
   | { kind: 'tool'; tool: string; instrument?: string; timeframe?: string };
 
+/**
+ * MIA-3 — the extra orientation the user is currently looking at, beyond the
+ * combo: a selected zone (/zones) or an open publication (/actualites). It only
+ * ORIENTS the next question (a preamble line) — it never widens what M.I.A may
+ * affirm, and the id is always one the engine emitted (a clicked zone / a real
+ * event_id), never fabricated. `null` = no extra focus (combo only).
+ */
+export type ChatFocus =
+  | { kind: 'zone'; zoneId: string }
+  | { kind: 'publication'; eventId: string };
+
+/** The preamble line for a focus, or null. Kept next to the type it mirrors. */
+function focusPreamble(focus: ChatFocus | null): string | null {
+  if (!focus) return null;
+  if (focus.kind === 'zone') return `[Zone sélectionnée : ${focus.zoneId}]`;
+  return `[Publication : ${focus.eventId}]`;
+}
+
 /** Recency-sorted summary of a combo-scoped conversation, for the recents list. */
 export interface ChatThreadSummary {
   id: string;
@@ -91,6 +109,13 @@ interface ChatContextValue {
    * combo's conversation is kept and restored when the user comes back.
    */
   openForCombo(combo: { instrument: string; timeframe: string }): void;
+  /**
+   * MIA-3 — the current extra orientation (selected zone / open publication), or
+   * null. It orients the NEXT question via a preamble line; it never restricts
+   * what M.I.A answers, and clearing it never touches the conversation.
+   */
+  focus: ChatFocus | null;
+  setFocus(focus: ChatFocus | null): void;
   close(): void;
   appendExchange(args: {
     questionId: string;
@@ -193,6 +218,17 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [apiAvailable, setApiAvailable] = React.useState<boolean | 'unknown'>(
     'unknown',
   );
+  // MIA-3 — the extra orientation (zone/publication) for the NEXT question. A
+  // ref mirrors it so askFreeForm reads the current value without churning its
+  // identity (same pattern as stateRef for history).
+  const [focus, setFocusState] = React.useState<ChatFocus | null>(null);
+  const focusRef = React.useRef<ChatFocus | null>(null);
+  React.useEffect(() => {
+    focusRef.current = focus;
+  }, [focus]);
+  const setFocus = React.useCallback((next: ChatFocus | null) => {
+    setFocusState(next);
+  }, []);
   const [viewActionSignal, setViewActionSignal] =
     React.useState<ViewActionSignal | null>(null);
   const seqRef = React.useRef(0);
@@ -360,6 +396,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           {
             signal: activeSignal,
             question: trimmed,
+            // MIA-3 — orient by the current zone/publication (read from the ref so
+            // the callback identity stays stable). Pure orientation preamble.
+            focus: focusPreamble(focusRef.current),
             history: historyForApi,
           },
           (event) => {
@@ -452,6 +491,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       recentThreads,
       openFor,
       openForCombo,
+      focus,
+      setFocus,
       close,
       appendExchange,
       askFreeForm,
@@ -468,6 +509,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       recentThreads,
       openFor,
       openForCombo,
+      focus,
+      setFocus,
       close,
       appendExchange,
       askFreeForm,
