@@ -203,6 +203,16 @@ LIVRÉ ET TESTÉ (poussé) :
 RESTE (Phase 2a) :
 - **/actualites `MiaBlock` → `MiaPanel`** (focus publication `event_id`). ⚠️ remplace la présentation compacte à puces (`pub-mia-chip/thread/answer`, CSS `pub-mia`, specs vitest + Playwright sc2) → churn de tests + résultat visuel à confirmer. C'est le DERNIER moteur de conversation séparé ; le garde-fou « un seul panneau » sera ajouté une fois `MiaBlock` plié.
 
-RESTE (Phase 2b — refactor coquille) :
-- Grille `chatcol`/`ChatColumnContext` étendue à /zones + /actualites (bulle/colonne partout, seuil 1100px, contrôle dans les 2 modes, « non synchronisé »).
-- Playwright 1280/1440/390 × fr/en × /zones+/app × bulle+colonne × avec/sans zone × conv. 4 messages ; build ; puis confirmation visuelle live avant merge.
+Phase 2b — refactor coquille — LIVRÉ :
+- /zones ET /actualites rejoignent `CHAT_SPACES` → **colonne M.I.A du shell** identique à /app (grille 3 colonnes ≥1100, bulle/colonne persistée, seuil 1100, tiroir flottant `chat-standalone` < 768 au-dessus de la nav mobile). Panneau /zones bricolé + sheet/fab retirés ; `.zlayout` en colonne unique. Sujet zone/publication piloté par le `focus` partagé.
+- /actualites `MiaBlock` = **façade de puces** (choix fondateur) : plus de moteur local, les puces alimentent la conversation unique + orientation publication (event_id verrouillé) ; imports morts retirés.
+- 🔴 FIX BOUCLE : `useReadingFormatters()` (objet neuf/rendu) sortait l'effet setFocus en boucle → garde par clé.
+
+Phase 3 — VÉRIF :
+- **Build prod** : vert (exit 0), table de routes complète (/zones, /actualites, /actualites/[eventId], /app).
+- **tsc** : 0 nouvelle erreur (3 pré-existantes dictation-copy).
+- **vitest** (surfaces MIA-3) : ChatProvider 10/10, thread-store 10/10, ZonesWorkspace 13/13, CalendarEventDetail+nw5+nw6 37/37, garde-fou « un seul panneau » 3/3, chatbot backend 305.
+- **Playwright** : `mia-3-agent-unifie.spec` (matrice mission 1280/1440/390 × fr/en × /zones+/app × bulle+colonne × avec/sans zone × conv 4 msg) **8/8** ; specs legacy recalées (vz-1-zones, pub-mia-chat, voice-input-mia) vertes ; `cln-1-disclaimers` vert sur /app+/zones+/scanner+/actualites (les 2 viewports) — **seul `/compte` (page NON touchée, `no-chat`, `app-shell` présent en SSR) est instable en dev local** (passe en lot, flanche isolé) → environnemental/pré-existant, hors périmètre MIA-3.
+- ⚠️ La suite Playwright COMPLÈTE (~45 specs) n'a pas été jouée intégralement en local (temps + serveur dev unique) → **à confirmer en CI** (build+start, plus stable).
+
+⚠️ **`origin/main` a avancé depuis le point de branche (271443a)** : il contient désormais DS-1 (galerie/ds-samples) et MIA-2 (spec latence) que cette branche n'a pas. **Rebase/merge d'`origin/main` requis avant l'intégration finale.**
