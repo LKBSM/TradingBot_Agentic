@@ -530,6 +530,38 @@
   }
 }
 
+/* MIA-3 — standalone chat spaces (e.g. /zones): no MobileWorkspace tab, so keep
+   the floating chat drawer reachable on phones. Un-hide the drawer + fab that the
+   generic <768 rule hides, and lift the fab above the mobile space nav. Same
+   source-order-wins specificity as the rule above, so this block must follow it. */
+@media (max-width: 767px) {
+  .app-shell.chat-standalone .chatcol {
+    display: flex;
+  }
+  .app-shell.chat-standalone .chat-fab {
+    display: inline-flex;
+    bottom: calc(58px + 18px + env(safe-area-inset-bottom));
+  }
+  .app-shell.chat-standalone .chat-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.42);
+    z-index: 79;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.22s ease;
+  }
+  .app-shell.chat-standalone .chat-backdrop.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  /* The centre clears the mobile space nav (same as the no-chat surfaces). */
+  .app-shell.chat-standalone .center {
+    padding-bottom: calc(58px + env(safe-area-inset-bottom));
+  }
+}
+
 /* Mobile space nav — hidden at ≥768px (the rail carries navigation there). A
    `min-width` query rather than a base rule, so it never overrides the
    `max-width: 767px` `display: grid` above regardless of source order. */

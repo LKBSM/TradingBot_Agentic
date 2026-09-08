@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextIntlClientProvider } from 'next-intl';
 import { ZonesWorkspace } from '../ZonesWorkspace';
 import { ChartViewProvider, useChartViewOptional } from '@/lib/chart/viewState';
-import { ChatProvider } from '@/components/chat/ChatProvider';
+import { ChatProvider, useChat } from '@/components/chat/ChatProvider';
 import { coerceViewActions } from '@/lib/chart/viewActions';
 import { collectZones } from '@/lib/zones/lifecycle';
 import { FIXTURE_XAU_M15 } from '@/lib/market-reading/fixtures';
@@ -44,6 +44,14 @@ function HiddenProbe() {
   return <div data-testid="hidden-ids">{view.hiddenZoneIds.join(',')}</div>;
 }
 
+// The M.I.A panel is now the shared shell column (not rendered inside the page).
+// This probe surfaces the shared orientation (`focus`) so the /zones unit tests
+// can assert the selected-zone subject WITHOUT mounting the whole shell.
+function FocusProbe() {
+  const { focus } = useChat();
+  return <div data-testid="mia-focus">{focus ? focus.label : ''}</div>;
+}
+
 function renderZones() {
   return rtlRender(
     <NextIntlClientProvider locale="fr" messages={messages}>
@@ -51,6 +59,7 @@ function renderZones() {
         <ChartViewProvider>
           <ZonesWorkspace locale="fr" />
           <HiddenProbe />
+          <FocusProbe />
         </ChartViewProvider>
       </ChatProvider>
     </NextIntlClientProvider>,
@@ -132,48 +141,16 @@ describe('ZonesWorkspace (VZ-1)', () => {
     ).toEqual([]);
   });
 
-  it('the M.I.A panel shows the selected zone and SWITCHES subject on a card click (no reload)', async () => {
+  it('MIA-3 — selecting a zone sets the shared orientation and SWITCHES it on a card click (no reload)', async () => {
     renderZones();
     await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(4));
-    const subject = screen.getByTestId('mia-subject');
-    // Default subject = the nearest zone (ob-xau-2-mitigated, 2384–2386).
-    expect(subject.textContent).toContain('384,00');
-    // Click a different card → the subject changes, without any navigation.
+    // The shared panel (shell column) reads this orientation; the probe surfaces
+    // its label. Default subject = the nearest zone (ob-xau-2-mitigated, 2384–2386).
+    await waitFor(() => expect(screen.getByTestId('mia-focus').textContent).toContain('384,00'));
+    // Click a different card → the orientation changes, without any navigation.
     fireEvent.click(card('ob-xau-1'));
-    await waitFor(() => expect(screen.getByTestId('mia-subject').textContent).toContain('375,00'));
+    await waitFor(() => expect(screen.getByTestId('mia-focus').textContent).toContain('375,00'));
     expect(pushMock).not.toHaveBeenCalled();
-  });
-
-  it('MIA-3 — a zone question is routed to the SHARED backend agent with the selected-zone orientation', async () => {
-    renderZones();
-    await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(4));
-    // Ask through the shared panel (no local answering engine anymore).
-    const field = screen.getAllByPlaceholderText(/Pose une question à M\.I\.A/i)[0]!;
-    fireEvent.change(field, { target: { value: 'qu’est-ce qu’il y a d’autre à ce niveau' } });
-    fireEvent.click(screen.getAllByRole('button', { name: 'Envoyer la question' })[0]!);
-    await waitFor(() => expect(askStreamMock).toHaveBeenCalledTimes(1));
-    const opts = askStreamMock.mock.calls[0]![0] as {
-      focus?: string | null;
-      signal?: { instrument: string; timeframe: string } | null;
-    };
-    // Orientation = the selected zone; combo = the page market. The answer comes
-    // from the agent (tool-grounded), never a locally fabricated string.
-    expect(opts.focus).toMatch(/^\[Zone sélectionnée : /);
-    expect(opts.signal?.instrument).toBe('XAUUSD');
-    expect(await screen.findByText('Réponse de M.I.A.')).toBeInTheDocument();
-  });
-
-  it('MIA-3 — a question OUTSIDE the zone is still answered (orientation, not prison)', async () => {
-    renderZones();
-    await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(4));
-    const field = screen.getAllByPlaceholderText(/Pose une question à M\.I\.A/i)[0]!;
-    fireEvent.change(field, {
-      target: { value: 'et sur l’EURUSD, quelles publications macro sont à venir ?' },
-    });
-    fireEvent.click(screen.getAllByRole('button', { name: 'Envoyer la question' })[0]!);
-    // Sent to the agent — never refused with « je ne peux parler que de cette zone ».
-    await waitFor(() => expect(askStreamMock).toHaveBeenCalledTimes(1));
-    expect(await screen.findByText('Réponse de M.I.A.')).toBeInTheDocument();
   });
 
   it('never renders « chevauche » nor any judgement wording', async () => {
@@ -192,7 +169,7 @@ describe('ZonesWorkspace (VZ-1)', () => {
     renderZones();
     await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(4));
     await waitFor(() => expect(card('fvg-xau-1')).toHaveClass('zsel'));
-    expect(screen.getByTestId('mia-subject').textContent).toContain('381,00');
+    await waitFor(() => expect(screen.getByTestId('mia-focus').textContent).toContain('381,00'));
     await waitFor(() =>
       expect(scrollSpy).toHaveBeenCalledWith(expect.objectContaining({ block: 'center' })),
     );
@@ -257,39 +234,24 @@ describe('ZonesWorkspace (VZ-1)', () => {
     }
   });
 
-  it('MIA-3/CLN-1 §3 — re-clicking the selected zone deselects it; the shared conversation is kept', async () => {
+  it('MIA-3/CLN-1 §3 — re-clicking the selected zone clears the orientation (deselect), no navigation', async () => {
     renderZones();
     await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(4));
-    // A zone is selected by default → the orientation subject block is shown, and
-    // exactly one card is highlighted.
-    expect(screen.getByTestId('mia-subject')).toBeInTheDocument();
+    // A zone is selected by default → the shared orientation carries its label,
+    // and exactly one card is highlighted.
+    await waitFor(() =>
+      expect(screen.getByTestId('mia-focus').textContent!.length).toBeGreaterThan(0),
+    );
     const selected = document.querySelector<HTMLElement>('.zone.zsel');
     expect(selected).toBeTruthy();
 
-    // Start a conversation through the SHARED panel so we can prove deselect ≠ reset.
-    // The desktop column and the mobile sheet both mount the panel; target the
-    // first input (the visible desktop column in jsdom).
-    const fields = screen.getAllByPlaceholderText(/Pose une question à M\.I\.A/i);
-    fireEvent.change(fields[0]!, { target: { value: 'explique moi cette zone' } });
-    const sendButtons = screen.getAllByRole('button', { name: 'Envoyer la question' });
-    fireEvent.click(sendButtons[0]!);
-    // The user turn appears in the shared transcript, and the backend was asked
-    // with the selected-zone orientation preamble.
-    expect(await screen.findByText('explique moi cette zone')).toBeInTheDocument();
-    await waitFor(() => expect(askStreamMock).toHaveBeenCalledTimes(1));
-    const focus = (askStreamMock.mock.calls[0]![0] as { focus?: string | null }).focus;
-    expect(focus).toMatch(/^\[Zone sélectionnée : /);
-
-    // Re-click the SAME (selected) card → deselect.
+    // Re-click the SAME (selected) card → deselect: the orientation is cleared
+    // (the shared panel's subject block then disappears — tested at the MiaPanel
+    // level), no card highlighted, and NO navigation. The conversation itself is
+    // untouched by clearing focus (proven in ChatProvider.test).
     fireEvent.click(selected!);
-    await waitFor(() =>
-      expect(screen.queryByTestId('mia-subject')).not.toBeInTheDocument(),
-    );
-    // No card highlighted, no filler subject block.
+    await waitFor(() => expect(screen.getByTestId('mia-focus').textContent).toBe(''));
     expect(document.querySelector('.zone.zsel')).toBeNull();
-    // The running conversation is NOT wiped — the earlier question is still shown.
-    expect(screen.getByText('explique moi cette zone')).toBeInTheDocument();
-    // The field stays usable; its placeholder never claimed a zone was chosen.
-    expect(screen.getAllByPlaceholderText(/Pose une question à M\.I\.A/i)[0]).toBeInTheDocument();
+    expect(pushMock).not.toHaveBeenCalled();
   });
 });

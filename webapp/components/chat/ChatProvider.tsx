@@ -51,10 +51,12 @@ export type ChatActivity =
  * event_id), never fabricated. `null` = no extra focus (combo only).
  */
 export type ChatFocus =
-  | { kind: 'zone'; zoneId: string }
-  | { kind: 'publication'; eventId: string };
+  | { kind: 'zone'; zoneId: string; label: string }
+  | { kind: 'publication'; eventId: string; label: string };
 
-/** The preamble line for a focus, or null. Kept next to the type it mirrors. */
+/** The preamble line for a focus, or null. Kept next to the type it mirrors.
+ * The preamble carries the ID (the lock); `label` is only for the on-screen
+ * subject block, never sent as an affirmable fact. */
 function focusPreamble(focus: ChatFocus | null): string | null {
   if (!focus) return null;
   if (focus.kind === 'zone') return `[Zone sélectionnée : ${focus.zoneId}]`;

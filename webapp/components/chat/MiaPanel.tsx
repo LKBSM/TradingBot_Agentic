@@ -36,11 +36,6 @@ export interface MiaPanelProps {
   headerActions?: React.ReactNode;
   /** A status line under the header (e.g. the /app mode-preference note). */
   statusLine?: React.ReactNode;
-  /**
-   * Orientation subject block (e.g. the selected zone). Rendered ONLY when
-   * provided — no zone / no publication → no block at all (mission §3/§4).
-   */
-  subject?: React.ReactNode;
   /** Empty-state welcome heading. */
   welcomeTitle: string;
   /** Empty-state welcome subheading. */
@@ -64,7 +59,6 @@ export function MiaPanel({
   contextLabel,
   headerActions,
   statusLine,
-  subject,
   welcomeTitle,
   welcomeSubtitle,
   starters,
@@ -72,7 +66,24 @@ export function MiaPanel({
   complianceLine,
   className,
 }: MiaPanelProps) {
-  const { turns, isLoading, apiAvailable, askFreeForm, activeSignal } = useChat();
+  const { turns, isLoading, apiAvailable, askFreeForm, activeSignal, focus } =
+    useChat();
+  // Orientation subject — driven by the SHARED focus (selected zone / open
+  // publication), so it shows in the one panel wherever it is docked. Rendered
+  // ONLY when a focus is set: no zone / no publication → no block at all, never
+  // an empty box or filler (mission §3/§4). `label` is display-only.
+  const subject = focus ? (
+    <div
+      className="flex items-center gap-1.5 border-b border-border/60 px-4 py-2 text-xs font-medium"
+      data-testid="mia-subject"
+    >
+      <span
+        className="h-1.5 w-1.5 shrink-0 rounded-full bg-[hsl(var(--sentinel-accent,var(--primary)))]"
+        aria-hidden
+      />
+      <span className="truncate">{focus.label}</span>
+    </div>
+  ) : null;
   const empty = turns.length === 0;
   const offline = apiAvailable === false;
   // Anchor the first word of M.I.A's reply to the top after sending (MIA-1).

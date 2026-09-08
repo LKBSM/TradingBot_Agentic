@@ -33,7 +33,6 @@ import {
 } from '@/lib/zones/lifecycle';
 import { cn } from '@/lib/utils';
 import { PriceFreshnessBadge } from '@/components/market-reading/PriceFreshnessBadge';
-import { MiaPanel } from '@/components/chat/MiaPanel';
 import { useChat } from '@/components/chat/ChatProvider';
 import { ZoneLifecycleCard } from './ZoneLifecycleCard';
 
@@ -254,10 +253,45 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
 
   // Orient by the selected zone (a REAL, clicked zone id) — or clear it. Clearing
   // the focus removes the subject block WITHOUT touching the conversation
-  // (deselect ≠ reset). A question outside the zone is still answered.
+  // (deselect ≠ reset). A question outside the zone is still answered. The label
+  // is display-only (the preamble/lock uses the id); it reuses the SAME band/tag
+  // as the card, no recompute.
+  //
+  // Idempotent by a key ref: `useReadingFormatters()` returns a fresh object each
+  // render, so we must NOT let it (or any per-render value) drive setFocus — that
+  // would set a new focus object every render and spin. We compute the target and
+  // only push it when the (id + label) actually changes.
+  const lastFocusKeyRef = React.useRef<string | null>(null);
   React.useEffect(() => {
-    setFocus(selectedZone ? { kind: 'zone', zoneId: selectedZone.id } : null);
-  }, [setFocus, selectedZone]);
+    if (!selectedZone) {
+      if (lastFocusKeyRef.current !== null) {
+        lastFocusKeyRef.current = null;
+        setFocus(null);
+      }
+      return;
+    }
+    const tag = `${selectedZone.kind === 'ob' ? 'OB' : 'FVG'}${
+      selectedZone.direction === 'bullish'
+        ? ' ↑'
+        : selectedZone.direction === 'bearish'
+          ? ' ↓'
+          : ''
+    }`;
+    const label = `${tag} · ${fmt.band(selectedZone.levelLow, selectedZone.levelHigh, instrument)}`;
+    const key = `${selectedZone.id}|${label}`;
+    if (lastFocusKeyRef.current === key) return;
+    lastFocusKeyRef.current = key;
+    setFocus({ kind: 'zone', zoneId: selectedZone.id, label });
+    // `fmt` intentionally excluded: it is recreated each render (unstable) and is
+    // only read to format the label above; the key guard makes re-runs no-ops.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setFocus, selectedZone, instrument]);
+
+  // The M.I.A panel is no longer rendered inside the page — it is the shared shell
+  // chat column (same component, same design as /app), fed by the focus above.
+  // On unmount (leaving /zones) clear the zone focus so no stale zone subject
+  // lingers in the panel on the next page.
+  React.useEffect(() => () => setFocus(null), [setFocus]);
 
   const isStaleDeepLink = Boolean(
     zoneParam && !renderedZoneIds.has(zoneParam) && !isLoading && !error,
@@ -329,44 +363,6 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
     [searchParams, instrument, timeframe, pathname, router],
   );
 
-  // Mobile: the M.I.A panel is a bottom sheet toggled by a button (never a panel
-  // that crushes the list). Desktop: a sticky column (CSS).
-  const [sheetOpen, setSheetOpen] = React.useState(false);
-
-  // Orientation subject block — the selected zone, shown in the panel. Rendered
-  // ONLY when a zone is selected (no zone → no block at all). Pure orientation:
-  // the tag + band come straight from the same lifecycle data as the card.
-  const miaSubject = selectedZone ? (
-    <div
-      className="border-b border-border/60 px-4 py-2 text-xs"
-      data-testid="mia-subject"
-    >
-      <span className="text-muted-foreground">{t('mia.subjectLabel')}</span>{' '}
-      <span className="font-medium">
-        {`${selectedZone.kind === 'ob' ? 'OB' : 'FVG'}${
-          selectedZone.direction === 'bullish'
-            ? ' ↑'
-            : selectedZone.direction === 'bearish'
-              ? ' ↓'
-              : ''
-        }`}{' '}
-        · {fmt.band(selectedZone.levelLow, selectedZone.levelHigh, instrument)}
-      </span>
-    </div>
-  ) : undefined;
-
-  // The one M.I.A panel (shared component). Same node in the desktop column and
-  // the mobile sheet — both read the single shared conversation.
-  const miaPanel = (
-    <MiaPanel
-      ariaLabel={t('mia.title')}
-      title={t('mia.name')}
-      subject={miaSubject}
-      welcomeTitle={tApp('chat.welcomeTitleIdle')}
-      welcomeSubtitle={tApp('chat.welcomeSubtitleIdle')}
-      offlineNote={tApp('chat.offlineNote')}
-    />
-  );
 
   const badgeSummary = `${fmt.instrument(instrument)} · ${fmt.timeframe(timeframe)} · ${t('badge.count', { count: renderedZones.length })}`;
 
@@ -475,28 +471,6 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
             ))}
           </div>
 
-          {/* Desktop: sticky panel. Mobile: bottom-sheet toggled by the button. */}
-          <div className="zmia-col">{miaPanel}</div>
-
-          <button
-            type="button"
-            className="zmia-fab"
-            onClick={() => setSheetOpen(true)}
-            aria-label={t('mia.openSheet')}
-          >
-            {t('mia.openSheet')}
-          </button>
-          {sheetOpen && (
-            <div className="zmia-sheet" role="dialog" aria-label={t('mia.title')}>
-              <div className="zmia-sheet-back" onClick={() => setSheetOpen(false)} />
-              <div className="zmia-sheet-body">
-                <button type="button" className="btn zmia-sheet-close" onClick={() => setSheetOpen(false)} aria-label={t('mia.closeSheet')}>
-                  {t('mia.closeSheet')}
-                </button>
-                {miaPanel}
-              </div>
-            </div>
-          )}
         </div>
       )}
     </div>

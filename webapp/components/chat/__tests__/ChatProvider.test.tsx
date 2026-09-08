@@ -287,7 +287,10 @@ describe('ChatProvider single conversation (MIA-3 — follows the user)', () => 
           <button type="button" onClick={() => openForCombo({ instrument: 'XAUUSD', timeframe: 'M15' })}>
             combo
           </button>
-          <button type="button" onClick={() => setFocus({ kind: 'zone', zoneId: 'OB_xau_m15_7' })}>
+          <button
+            type="button"
+            onClick={() => setFocus({ kind: 'zone', zoneId: 'OB_xau_m15_7', label: 'OB ↑ · 4100–4110' })}
+          >
             focus-zone
           </button>
           <button type="button" onClick={() => setFocus(null)}>

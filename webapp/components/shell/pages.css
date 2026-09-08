@@ -665,9 +665,12 @@
 .app-shell .zones-wrap {
   max-width: 1240px;
 }
+/* MIA-3 — the M.I.A panel is now the shared shell chat column (like /app), no
+   longer an in-page 344px column. The zones layout is a single cards column that
+   flows in the centre track. */
 .app-shell .zlayout {
   display: grid;
-  grid-template-columns: 1fr 344px;
+  grid-template-columns: minmax(0, 1fr);
   gap: 20px;
   align-items: start;
 }
