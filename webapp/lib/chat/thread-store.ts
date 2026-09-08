@@ -10,21 +10,23 @@
  * persistence degrades to in-memory only.
  */
 
-import {
-  SUPPORTED_INSTRUMENTS,
-  SUPPORTED_TIMEFRAMES,
-} from '@/lib/market-reading/perimeter';
-
 export const STORAGE_KEY = 'mia.chatThreads.v1';
 
-/** Hard caps so the stored payload stays small and old threads self-purge. */
-export const MAX_TURNS_PER_THREAD = 40;
-export const MAX_THREADS = 12;
+/**
+ * MIA-3 — single product-wide conversation. M.I.A follows the user across every
+ * page (decision E): one persisted thread, not one per combo. The current
+ * combo / zone / publication is ORIENTATION (preamble + subject block), never a
+ * thread key — so navigating /app ↔ /zones ↔ /actualites keeps one conversation.
+ */
+export const PRODUCT_THREAD_ID = 'product:main';
+
+/** Hard caps so the stored payload stays small. One thread now, but the turn
+ * cap still bounds a long single conversation. */
+export const MAX_TURNS_PER_THREAD = 60;
+export const MAX_THREADS = 1;
 export const MAX_SERIALIZED_CHARS = 200_000;
 
 const VALID_SOURCES = new Set(['llm', 'scripted', 'fallback', 'error']);
-const VALID_INSTRUMENTS = new Set<string>(SUPPORTED_INSTRUMENTS);
-const VALID_TIMEFRAMES = new Set<string>(SUPPORTED_TIMEFRAMES);
 
 export interface StoredTurn {
   id: string;
@@ -39,8 +41,9 @@ export interface StoredTurn {
 }
 
 export interface StoredThread {
-  /** Thread key — always `app:{instrument}:{timeframe}` for persisted threads. */
+  /** Thread key — always `PRODUCT_THREAD_ID` for the single product conversation. */
   id: string;
+  /** Last orientation combo (for display/rehydration); may be '' before any. */
   instrument: string;
   timeframe: string;
   /** Epoch ms of the last appended turn — drives recency sort + purge order. */
@@ -48,13 +51,14 @@ export interface StoredThread {
   turns: StoredTurn[];
 }
 
-/** Only combo-scoped /app threads are persisted (landing signal chats are not). */
+/**
+ * Only the single product conversation is persisted (landing signal chats are
+ * not). MIA-3: the thread is keyed by `PRODUCT_THREAD_ID`, no longer per combo —
+ * the orientation `instrument`/`timeframe` are free-form display fields (they may
+ * be '' before the first combo), so they are NOT gated against the perimeter.
+ */
 function isPersistableThread(t: StoredThread): boolean {
-  return (
-    t.id === `app:${t.instrument}:${t.timeframe}` &&
-    VALID_INSTRUMENTS.has(t.instrument) &&
-    VALID_TIMEFRAMES.has(t.timeframe)
-  );
+  return t.id === PRODUCT_THREAD_ID;
 }
 
 /**
