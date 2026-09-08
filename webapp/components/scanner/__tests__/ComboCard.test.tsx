@@ -1,7 +1,7 @@
 import { render as rtlRender, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { NextIntlClientProvider } from 'next-intl';
-import { ComboCard } from '../ComboCard';
+import { ComboCard, isValueOnlyDetail } from '../ComboCard';
 import type { ComboMatch } from '@/lib/conditions/types';
 import messages from '@/messages/fr.json';
 
@@ -56,6 +56,68 @@ describe('ComboCard', () => {
     expect(screen.getByText('Prix dans un Fair Value Gap')).toBeInTheDocument();
     // transparency count
     expect(screen.getByText(/2 de tes 3 conditions/)).toBeInTheDocument();
+  });
+
+  // ── SC-3: the two composition forms ────────────────────────────────────────
+  // A value-only condition reads « label value » (no separator); every other one
+  // keeps « label — detail », because its detail is a standalone sentence.
+  it('composes a VALUE-ONLY condition as « label value », with no em-dash', () => {
+    const match = makeMatch({
+      met_count: 1,
+      total: 1,
+      conditions_met: [
+        {
+          type: 'trend_is',
+          label: 'La tendance structurelle est',
+          met: true,
+          detail: 'haussier.',
+        },
+      ],
+      conditions_unmet: [],
+    });
+    const { container } = render(<ComboCard match={match} locale="fr" />);
+    const line = container.querySelector('.cl.yes');
+    expect(line?.textContent).toContain('La tendance structurelle est haussier.');
+    expect(line?.textContent).not.toContain('—');
+    // The forbidden word never reaches the card, in any composition.
+    expect(container.textContent?.toLowerCase()).not.toMatch(/\bcible\b/);
+  });
+
+  it('keeps « label — detail » for a condition whose detail is a sentence', () => {
+    const { container } = render(<ComboCard match={makeMatch()} locale="fr" />);
+    const met = Array.from(container.querySelectorAll('.cl.yes')).map((n) => n.textContent);
+    expect(met).toContain('✓Prix dans un Order Block — Prix dans 1 OB.');
+  });
+
+  it('never composes a context-against item as value-only (it is label — explanation)', () => {
+    const match = makeMatch({
+      context_against: [
+        { label: 'Le 4 h est en tendance baissière', detail: 'désaccord multi-unités' },
+      ],
+    });
+    const { container } = render(<ComboCard match={match} locale="fr" />);
+    const against = Array.from(container.querySelectorAll('.cl.no')).map((n) => n.textContent);
+    expect(against).toContain('✗Le 4 h est en tendance baissière — désaccord multi-unités');
+  });
+
+  it('exposes the exact set of value-only types (the seven reworked entries)', () => {
+    // Locked list: adding a type here means its backend detail became a bare
+    // value. `price_in_range_third` is excluded on purpose — its label carries an
+    // inline placeholder (« le tiers … du range ») and cannot take a suffix.
+    for (const t of [
+      'trend_is',
+      'higher_tf_agrees',
+      'last_event_is',
+      'last_event_age',
+      'market_phase_is',
+      'volatility_is',
+      'session_is',
+    ]) {
+      expect(isValueOnlyDetail(t)).toBe(true);
+    }
+    for (const t of ['price_in_range_third', 'price_in_ob', 'price_in_fvg', 'zone_untested']) {
+      expect(isValueOnlyDetail(t)).toBe(false);
+    }
   });
 
   it('"Analyser" links to the same market/timeframe in /app', () => {

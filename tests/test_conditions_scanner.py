@@ -480,19 +480,137 @@ def test_market_phase_palette_excludes_unreachable_distribution():
     assert "distribution" not in values
 
 
-def test_palette_has_no_predictive_vocabulary():
+#: Predictive / judgemental vocabulary no scanner-visible string may use.
+#: Whole-word matching everywhere: "range" (a real trading term) must NOT trip
+#: "rang"/rank, and "rehacible" must NOT trip "cible".
+FORBIDDEN_VOCABULARY = [
+    "rebond", "cassera", "va casser", "va rebondir", "prédi", "predict", "probab",
+    "cible", "target", "gagnant", "prévision", "meilleur", "score", "rang", "continuera",
+    "renvers", "idéal", "recommand", "opportun", "setup", "fort", "plus sûr", "qualité",
+    "signal", "opportunité", "top",
+]
+
+
+def _assert_clean(haystack: str, where: str) -> None:
     import re
 
-    # Whole-word checks: "range" (a real trading term) must NOT trip "rang"/rank.
-    forbidden = [
-        "rebond", "cassera", "va casser", "va rebondir", "prédi", "predict", "probab",
-        "cible", "target", "gagnant", "prévision", "meilleur", "score", "rang", "continuera",
-        "renvers", "idéal", "recommand", "opportun", "setup", "fort", "plus sûr", "qualité",
-        "signal", "opportunité", "top",
-    ]
+    hay = haystack.lower()
+    for word in FORBIDDEN_VOCABULARY:
+        assert re.search(rf"\b{re.escape(word)}\b", hay) is None, (
+            f"forbidden word '{word}' in {where}: {haystack}"
+        )
+
+
+def test_palette_has_no_predictive_vocabulary():
     for entry in PALETTE:
-        haystack = f"{entry['type']} {entry['label']} {entry['description']}".lower()
-        for word in forbidden:
-            assert re.search(rf"\b{re.escape(word)}\b", haystack) is None, (
-                f"forbidden word '{word}' in palette entry {entry['type']}"
-            )
+        _assert_clean(
+            f"{entry['type']} {entry['label']} {entry['description']}",
+            f"palette entry {entry['type']}",
+        )
+
+
+# ── SC-3: the same guard, applied to the `detail` strings ────────────────────
+# The palette guard above only ever scanned type/label/description. Every
+# on-screen sentence a scan result carries is a `detail` produced by an
+# `_eval_*` function, and NONE of them were scanned — which is how « (cible : …) »
+# lived in eight of them, on screen, for the whole life of the scanner. This
+# closes the hole: it drives every palette entry through every value of every one
+# of its controls, against readings rich enough and poor enough to reach the
+# met / unmet / non-evaluable branches, and scans everything that comes back.
+
+
+def _detail_corpus():
+    """Every `detail` the evaluator can emit, as (condition type, detail)."""
+    import itertools
+
+    # Readings chosen to reach opposite branches of each evaluator: one rich
+    # (zones, pockets, breaks, a price inside them) and one empty (nothing to
+    # judge → the non-evaluable / "aucun …" messages).
+    rich = _reading(
+        close_price=2000.0,
+        order_blocks=[_ob(1995.0, 2005.0), _ob(1900.0, 1910.0, status="mitigated", tested=True)],
+        fair_value_gaps=[_fvg(1998.0, 2002.0), _fvg(2100.0, 2110.0)],
+        liquidity_pools=[
+            _liq("bsl", 2004.0),
+            _liq("ssl", 1996.0, status="swept", swept_at="2026-05-28T14:00:00+00:00"),
+            _liq("bsl", 2050.0, kind="equal_highs"),
+        ],
+        bos_events=[_bos("bullish", bars_ago=3)],
+        choch_events=[_choch("bearish", bars_ago=40)],
+    )
+    empty = _reading(
+        close_price=None, trend=None, market_phase=None, volatility=None,
+        analysis_window_bars=None, candle_close_ts=None,
+    )
+    readings = (rich, empty, _reading(trend="indeterminate"))
+    trend_maps = (
+        _ALIGNED_BULL,
+        _ALIGNED_BEAR,
+        {"M15": "bullish", "H1": "indeterminate"},
+        {"M15": "bullish"},
+    )
+
+    out = []
+    for entry in PALETTE:
+        controls = entry.get("controls", [])
+        # Cartesian product of every control's every offered value, PLUS the
+        # empty combination — the one that reaches the « non précisé » fallbacks.
+        combos = [{}]
+        if controls:
+            names = [c["name"] for c in controls]
+            for values in itertools.product(*[c["values"] for c in controls]):
+                combos.append(dict(zip(names, values)))
+        for combo in combos:
+            cond = {"type": entry["type"], **combo}
+            for reading in readings:
+                for trends in trend_maps:
+                    res = evaluate_condition(reading, cond, trends)
+                    out.append((entry["type"], res["detail"]))
+    return out
+
+
+def test_condition_details_have_no_predictive_vocabulary():
+    corpus = _detail_corpus()
+    # Coverage: no palette entry may silently contribute nothing to the scan.
+    assert {t for t, _ in corpus} == {e["type"] for e in PALETTE}
+    for cond_type, detail in corpus:
+        assert detail, f"{cond_type} emitted an empty detail"
+        _assert_clean(detail, f"detail of {cond_type}")
+
+
+def test_context_against_details_have_no_predictive_vocabulary():
+    # The « ce qui va à l'encontre » items are rendered by the same card and are
+    # just as visible as a condition detail.
+    for reading, trends in (
+        (_reading(trend="bullish"), {"M15": "bullish", "H1": "bearish", "H4": "bearish"}),
+        (_reading(trend="bearish", volatility="low"), _ALIGNED_BEAR),
+        (_reading(order_blocks=[_ob(1995.0, 2005.0, tested=True)]), _ALIGNED_BULL),
+    ):
+        for item in build_context_against(reading, trends):
+            _assert_clean(f"{item['label']} {item['detail']}", "context_against item")
+
+
+def test_trend_is_detail_is_the_observed_value_alone():
+    # SC-3: the card renders « La tendance structurelle est » + this detail, so
+    # the detail must be the VALUE alone — no repeated label, no requested value.
+    res = evaluate_condition(_reading(trend="bullish"), {"type": "trend_is", "trend": "bullish"})
+    assert res["detail"] == "haussier."
+    entry = next(e for e in PALETTE if e["type"] == "trend_is")
+    assert f"{entry['label']} {res['detail']}" == "La tendance structurelle est haussier."
+    # An unmet condition still states the OBSERVED value, never the asked-for one.
+    unmet = evaluate_condition(_reading(trend="bearish"), {"type": "trend_is", "trend": "bullish"})
+    assert unmet["met"] is False and unmet["detail"] == "baissier."
+
+
+def test_higher_tf_agrees_detail_completes_its_label_and_names_the_unit():
+    res = evaluate_condition(
+        _reading(trend="bullish"), {"type": "higher_tf_agrees", "relation": "same"}, _ALIGNED_BULL
+    )
+    assert res["detail"].startswith("dans le même sens")
+    assert "1 h" in res["detail"] or "4 h" in res["detail"]  # the unit stays named
+    opp = evaluate_condition(
+        _reading(trend="bullish"),
+        {"type": "higher_tf_agrees", "relation": "same"},
+        {"M15": "bullish", "H1": "bearish"},
+    )
+    assert opp["met"] is False and opp["detail"].startswith("en sens opposé")
