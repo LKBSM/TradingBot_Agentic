@@ -85,10 +85,15 @@ Note : les SVG fournis embarquent une métadonnée C2PA (~8 Ko) de provenance �
 | `:root` (terminal + schema + ardoise, sombres) | `#7da3ff` | **`#c9a14a`** | `#ffffff` | `#ffffff` |
 | `[data-design=atelier]` (clair) | `#2962ff` | **`#c9a14a`** | `#0f1729` | **`#1a1917`** |
 
-⚠️ **Coordination THM-1** : THM-1 n'a pas encore tourné (branche = main, 0 commit). J'ai posé
-ces jetons moi-même. Si THM-1 merge après, il **doit** garder les bougies laiton `#c9a14a`
-sur les quatre fonds, le nom blanc (sombre) / `#1a1917` (clair). L'accent d'interface du thème
-Ardoise reste indépendant du logo (une marque garde sa couleur ; l'accent, non).
+⚠️ **Coordination THM-1 — CONFLIT À TRANCHER** : THM-1 (commit `f23b458`) existe en local mais
+n'est **ni mergé ni sur origin** — BRD-3 est donc posé contre `origin/main` propre, mes jetons
+sont corrects aujourd'hui. MAIS THM-1 rendait le logo **neutre** (`--brand-mark = --txt`,
+suivant la couleur du texte) et **réécrivait `MiaLogo.tsx`** (police via `style`). BRD-3, plus
+récent et explicite, **supersède** cette décision : le logo est en laiton fixe. Au moment où
+THM-1 sera rebasé/mergé, il y aura conflit sur `MiaLogo.tsx` et `globals.css` (`--brand-mark`) :
+**garder la version BRD-3** (bougies laiton `#c9a14a` sur les 4 fonds, nom blanc/`#1a1917`).
+THM-1 renomme aussi les thèmes (Graphite/Parchemin/Encre/Acier) : les jetons laiton devront
+être portés sur les blocs renommés. Une marque garde sa couleur ; l'accent d'UI, non.
 
 ---
 
