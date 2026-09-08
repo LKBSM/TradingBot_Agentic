@@ -73,6 +73,27 @@ describe('ChatProvider.askFreeForm', () => {
     ).toBeInTheDocument();
   });
 
+  it('renders the user message before the network round-trip resolves (MIA-2)', async () => {
+    // A stream that never resolves: the provider must surface the user's message
+    // and the loading state WITHOUT waiting on the network. This pins the
+    // perceived-latency budget — the message is echoed on send, not on reply.
+    let release: (() => void) | undefined;
+    askSentinelMock.mockImplementation(
+      () => new Promise<void>((resolve) => (release = () => resolve())),
+    );
+    renderHarness();
+
+    fireEvent.click(screen.getByText('ask'));
+
+    // User turn is visible while the request is still in flight…
+    expect(await screen.findByText('Quelle conviction ?')).toBeInTheDocument();
+    // …in the loading state, and the network was actually invoked (after the echo).
+    await waitFor(() => expect(screen.getByTestId('loading').textContent).toBe('true'));
+    expect(askSentinelMock).toHaveBeenCalledTimes(1);
+
+    release?.();
+  });
+
   it('carries blockedReason through to the assistant turn', async () => {
     askSentinelMock.mockResolvedValue({
       text: 'Je décris les conditions du marché. La décision t’appartient.',
