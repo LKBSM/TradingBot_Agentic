@@ -47,11 +47,16 @@ MAX_TOOL_TURNS = 3  # hard cap on tool-use rounds to avoid infinite loops
 
 # Perimeter derived from the single sources (TF-1): the chat covers every
 # displayed instrument/timeframe, never a hand-listed subset.
+from src.intelligence import market_registry
 from src.intelligence.lookback_config import enabled_timeframes as _enabled_tfs
 from src.intelligence.lookback_config import supported_instruments as _supported_instruments
 
 SUPPORTED_INSTRUMENTS = tuple(_supported_instruments())
 SUPPORTED_TIMEFRAMES = tuple(_enabled_tfs())
+
+# Windows for the calendar tool, in minutes. A week each way is the product's
+# calendar horizon (matches the /api/calendar defaults order of magnitude).
+_CAL_WEEK_MIN = 7 * 24 * 60
 
 
 TOOL_SCHEMAS: list[dict[str, Any]] = [
@@ -191,6 +196,83 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
             "required": ["action"],
         },
     },
+    {
+        "name": "list_markets",
+        "description": (
+            "Catalogue FACTUEL des marchés couverts par le produit (source unique "
+            "du registre) et des unités de temps disponibles. À utiliser quand "
+            "l'utilisateur demande quels marchés/quelles unités existent, ou avant "
+            "d'affirmer qu'un marché est ou n'est pas suivi. Renvoie pour chaque "
+            "marché : id, libellé, type, décimales de prix, unités de temps "
+            "servies. N'invente jamais un marché absent de cette liste."
+        ),
+        "input_schema": {"type": "object", "properties": {}, "required": []},
+    },
+    {
+        "name": "get_economic_calendar",
+        "description": (
+            "Publications économiques RÉELLES du calendrier (source officielle), à "
+            "venir et/ou récentes, éventuellement filtrées par marché. À utiliser "
+            "dès qu'une question porte sur une annonce macro (NFP, CPI, décision de "
+            "taux, GDP…). Renvoie une liste d'événements avec leur identifiant "
+            "STABLE `event_id`, le nom, la devise, l'organisme, l'horodatage, "
+            "l'état de la valeur (published/pending/unfetched/unavailable) et, si "
+            "publiée, la valeur `actual`/`previous`. Si aucune publication ne "
+            "correspond, renvoie une liste vide — dis-le, n'invente aucun chiffre. "
+            "Pour le détail chiffré d'une publication précise, enchaîne avec "
+            "get_publication en passant son `event_id`."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "market": {
+                    "type": "string",
+                    "description": (
+                        "Filtre optionnel : un id de marché du registre (ex. "
+                        "XAUUSD, EURUSD). Un marché absent du registre est rejeté."
+                    ),
+                },
+                "horizon": {
+                    "type": "string",
+                    "enum": ["upcoming", "recent", "both"],
+                    "description": (
+                        "upcoming = à venir (7 j), recent = récentes (7 j), both = "
+                        "les deux. Défaut : upcoming."
+                    ),
+                },
+            },
+            "required": [],
+        },
+    },
+    {
+        "name": "get_publication",
+        "description": (
+            "Détail FACTUEL d'UNE publication du calendrier par son `event_id` "
+            "STABLE (celui renvoyé par get_economic_calendar — jamais un id "
+            "inventé). Renvoie la valeur publiée et sa révision éventuelle, la "
+            "valeur précédente, l'unité, l'organisme et sa licence, l'historique "
+            "publié (`value_series`), et — quand elles sont calculables — les "
+            "mesures du moteur autour des publications passées de cette série "
+            "(calme avant, état de structure, cycle de vie des zones, retour au "
+            "calme), chacune avec sa provenance (taille d'échantillon, période, "
+            "marché mesuré). Si l'`event_id` n'existe pas, renvoie found=false : "
+            "dis-le honnêtement, n'invente rien. Une mesure absente (None) signifie "
+            "qu'elle n'est pas calculable de façon fiable — restitue cette absence."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "event_id": {
+                    "type": "string",
+                    "description": (
+                        "Identifiant stable renvoyé par get_economic_calendar, ex. "
+                        "'official:us_cpi:2026-09-14'."
+                    ),
+                },
+            },
+            "required": ["event_id"],
+        },
+    },
 ]
 
 
@@ -233,14 +315,29 @@ DIAGNOSTIC ORDER BLOCK (get_ob_diagnostic) :
 - Si on te demande si le marché est ouvert, réponds simplement d'après cet état : « Marché fermé (week-end), dernière bougie clôturée le … ; réouverture … » (closed_weekend/closed_holiday), « Pause quotidienne, reprise à … » (daily_break), ou « Aucune nouvelle bougie reçue depuis … » (data_lagged). Faits seulement — jamais de pronostic sur ce que fera le prix à la réouverture.
 - data_lagged = le calendrier dit ouvert mais plus aucune bougie n'arrive : dis-le franchement, ne le présente pas comme une panne honteuse ni comme de l'activité.
 
+CALENDRIER & PUBLICATIONS (get_economic_calendar / get_publication) :
+- Dès qu'une question porte sur une annonce macro (NFP, CPI, taux, GDP, chômage…), appelle get_economic_calendar (filtre par marché si pertinent), puis get_publication avec l'`event_id` renvoyé pour le détail chiffré. Tu ne cites JAMAIS un chiffre de publication sans l'avoir obtenu par ces outils.
+- Tu n'utilises QUE des `event_id` renvoyés par get_economic_calendar — jamais un id inventé. Si get_publication renvoie found=false, dis simplement que cette publication n'est pas dans le calendrier ; tu n'inventes ni valeur ni date.
+- Une valeur `actual` avec actual_state != "published" n'est PAS un chiffre publié : pending = pas encore sortie, unfetched/unavailable = non récupérée. Restitue l'état, n'invente pas la valeur.
+- Les mesures (calme avant, cycle de vie des zones…) décrivent le comportement PASSÉ du marché autour de cette série ; tu les rapportes avec leur provenance (échantillon, période) et tu n'en tires jamais une anticipation. Une mesure à None n'est pas calculable de façon fiable : dis-le.
+
+CATALOGUE DES MARCHÉS (list_markets) :
+- Avant d'affirmer qu'un marché ou une unité est suivi ou non, appelle list_markets. Tu ne prétends jamais suivre un marché absent de ce catalogue, et tu ne refuses jamais un marché qui y figure.
+
+RÈGLE D'ABSENCE (vaut pour TOUS les outils) :
+- Tu peux parler de tout ce que le produit SAIT, c'est-à-dire de ce qu'un outil te renvoie réellement. Si l'outil ne renvoie rien (marché non couvert, unité non calculée, publication introuvable, mesure None), tu LE DIS. Tu ne combles pas, tu ne raisonnes pas « par analogie », tu ne produis pas une lecture plausible. Un texte qui sonne juste sur une donnée que tu n'as pas est un mensonge.
+
 CONTEXTE INITIAL (signal_summary) :
 {signal_summary}
 
-Tu as accès à 4 tools :
+Tu as accès à 7 tools :
 - get_market_reading(instrument, timeframe) : lecture complète d'une combinaison.
 - get_signal_summary() : résumé des 6 combinaisons (XAUUSD/EURUSD × M15/H1/H4).
 - get_ob_diagnostic(instrument, timeframe, price|ts) : pourquoi une bougie précise est ou n'est pas un Order Block (raisons réelles du moteur).
 - apply_chart_view(action, params) : changer l'AFFICHAGE du graphique (liste blanche, vue seule).
+- list_markets() : catalogue des marchés et unités de temps couverts.
+- get_economic_calendar(market?, horizon?) : publications économiques réelles (à venir/récentes).
+- get_publication(event_id) : détail chiffré + mesures d'une publication précise.
 
 Si l'utilisateur pose une question contextuelle nécessitant des détails absents du signal_summary, appelle get_market_reading."""
 
@@ -276,6 +373,7 @@ class Chatbot:
         adversarial_filter: Optional[AdversarialFilter] = None,
         output_filter: Optional[OutputFilter] = None,
         view_action_validator: Optional[ViewActionValidator] = None,
+        calendar_service: Optional[Any] = None,
         model: str = DEFAULT_MODEL,
         max_tokens: int = DEFAULT_MAX_TOKENS,
         max_tool_turns: int = MAX_TOOL_TURNS,
@@ -286,6 +384,12 @@ class Chatbot:
         self._adv_filter = adversarial_filter or AdversarialFilter()
         self._output_filter = output_filter or OutputFilter()
         self._view_validator = view_action_validator or ViewActionValidator()
+        # Calendar source for the calendar/publication tools. Injected in tests;
+        # in production it is built lazily on first calendar read (same pattern as
+        # the /api/calendar route). ``_calendar_failed`` latches a build failure so
+        # a broken calendar degrades to an honest absence, never a per-turn crash.
+        self._calendar_service = calendar_service
+        self._calendar_failed = False
         self._model = model
         self._max_tokens = max_tokens
         self._max_tool_turns = max_tool_turns
@@ -374,9 +478,21 @@ class Chatbot:
         signal_summary = self._safe_summary()
         # Compact JSON (no indent) — same data, fewer prefill tokens (MIA-1 §4,
         # prompt trim). Purely a token-count optimisation; content is identical.
-        system = SYSTEM_PROMPT_TEMPLATE.format(
+        system_text = SYSTEM_PROMPT_TEMPLATE.format(
             signal_summary=json.dumps(signal_summary, ensure_ascii=False)
         )
+        # MIA-3 — prompt caching: the tools + system prefix is stable across every
+        # turn (only the tail signal_summary varies, and it is tiny), so mark the
+        # end of the system block as a cache breakpoint. Anthropic then caches the
+        # whole [tools + system] prefix (5-min TTL); repeat turns pay ~0 for it,
+        # which offsets the extra tool definitions this mission adds (MIA-3 §F).
+        system = [
+            {
+                "type": "text",
+                "text": system_text,
+                "cache_control": {"type": "ephemeral"},
+            }
+        ]
         messages: list[dict[str, Any]] = history + [
             {"role": "user", "content": user_message}
         ]
@@ -553,6 +669,11 @@ class Chatbot:
             if isinstance(timeframe, str):
                 status["timeframe"] = timeframe
             return status
+        if name in ("get_economic_calendar", "get_publication"):
+            # Calendar reads can replay engine measures (a real wait). Narrate an
+            # honest, structured status; the client localises the wording. No
+            # market/event field is needed for the label — the tool name suffices.
+            return {"event": "tool", "tool": name}
         return None
 
     # ------------------------------------------------------------------ #
@@ -663,10 +784,134 @@ class Chatbot:
                     ts=tool_input.get("ts"),
                     price=tool_input.get("price"),
                 )
+            if name == "list_markets":
+                return self._tool_list_markets()
+            if name == "get_economic_calendar":
+                return self._tool_economic_calendar(tool_input)
+            if name == "get_publication":
+                return self._tool_publication(tool_input)
             return {"error": f"unknown tool: {name}"}
         except Exception as exc:
             logger.warning("tool %s failed: %s", name, exc)
             return {"error": f"tool execution failed: {exc}"}
+
+    # ------------------------------------------------------------------ #
+    # MIA-3 — read-only product-knowledge tools (markets, calendar).
+    # The identifier lock is INTRINSIC: an unknown market / event_id makes the
+    # tool return an explicit absence (found=false) — the model never receives
+    # fabricated data to relay. Absence is data, not an error.
+    # ------------------------------------------------------------------ #
+    @staticmethod
+    def _tool_list_markets() -> dict[str, Any]:
+        specs = market_registry.all_specs()
+        markets = [
+            {
+                "id": s.id,
+                "label": s.label,
+                "type": s.type,
+                "price_decimals": s.price_decimals,
+                "timeframes": list(s.timeframes),
+            }
+            for s in specs
+        ]
+        return {"markets": markets, "timeframes": list(SUPPORTED_TIMEFRAMES)}
+
+    def _tool_economic_calendar(self, tool_input: dict[str, Any]) -> dict[str, Any]:
+        svc = self._calendar()
+        if svc is None:
+            return {"error": "calendar service unavailable"}
+        market = tool_input.get("market")
+        if isinstance(market, str) and market:
+            # Identifier lock: reject a market the registry never emitted rather
+            # than silently returning the unfiltered feed as if it matched.
+            if not market_registry.has(market):
+                return {"found": False, "reason": "unknown_market", "market": market}
+        else:
+            market = None
+        horizon = tool_input.get("horizon")
+        if horizon not in ("upcoming", "recent", "both"):
+            horizon = "upcoming"
+        lookahead = _CAL_WEEK_MIN if horizon in ("upcoming", "both") else 0
+        lookback = _CAL_WEEK_MIN if horizon in ("recent", "both") else 0
+        resp = svc.get_calendar(lookahead_minutes=lookahead, lookback_minutes=lookback)
+        events = [
+            _slim_event(e)
+            for e in resp.events
+            if market is None or market in (getattr(e, "markets", None) or [])
+        ]
+        return {"market": market, "horizon": horizon, "count": len(events), "events": events}
+
+    def _tool_publication(self, tool_input: dict[str, Any]) -> dict[str, Any]:
+        svc = self._calendar()
+        if svc is None:
+            return {"error": "calendar service unavailable"}
+        event_id = tool_input.get("event_id")
+        if not isinstance(event_id, str) or not event_id.strip():
+            return {"found": False, "reason": "bad_event_id"}
+        resp = svc.get_event(event_id)
+        if not resp.events:
+            # Intrinsic id lock — an event_id the engine never emitted resolves to
+            # nothing. Report the absence; do NOT fabricate a value or date.
+            return {"found": False, "reason": "unknown_event_id", "event_id": event_id}
+        ev = resp.events[0]
+        detail = _slim_event(ev)
+        detail["actual_initial"] = getattr(ev, "actual_initial", None)
+        detail["revised"] = getattr(ev, "revised", False)
+        detail["value_unit"] = getattr(ev, "value_unit", None)
+        detail["license_label"] = getattr(ev, "license_label", None)
+        series = getattr(ev, "value_series", None) or []
+        detail["value_series"] = [
+            {"period": getattr(p, "period", None), "value": getattr(p, "value", None)}
+            for p in series
+        ]
+        detail["measures"] = self._publication_measures(event_id)
+        return {"found": True, "event": detail}
+
+    @staticmethod
+    def _publication_measures(event_id: str) -> Optional[dict[str, Any]]:
+        """Engine measures for a publication's recurring series, or None when not
+        measurable (fewer than the minimum sample, or the series is not measured).
+        None is an HONEST absence the model must restitute, never fill in."""
+        parts = event_id.split(":")
+        event_key = parts[1] if len(parts) >= 2 else None
+        if not event_key:
+            return None
+        try:
+            from src.intelligence.publication_measures import (
+                MEASURED_MARKETS,
+                load_default_measures,
+            )
+        except Exception:
+            return None
+        market = MEASURED_MARKETS.get(event_key)
+        if market is None:
+            return None
+        try:
+            measures = load_default_measures(event_key, market)
+        except Exception as exc:
+            logger.warning("publication measures failed for %s: %s", event_key, exc)
+            return None
+        if measures is None or not measures.has_any():
+            return None
+        return measures.model_dump(mode="json")
+
+    def _calendar(self) -> Optional[Any]:
+        """Return the calendar service, building it lazily once (same pattern as
+        the /api/calendar route). A build failure latches so a broken calendar
+        degrades every calendar turn to an honest absence, not a crash."""
+        if self._calendar_service is not None:
+            return self._calendar_service
+        if self._calendar_failed:
+            return None
+        try:
+            from src.intelligence.calendar_service import CalendarService
+
+            self._calendar_service = CalendarService()
+            return self._calendar_service
+        except Exception as exc:  # never let a calendar build abort a turn
+            logger.warning("calendar service build failed: %s", exc)
+            self._calendar_failed = True
+            return None
 
     @staticmethod
     def _extract_text(content: Any) -> str:
@@ -678,6 +923,35 @@ class Chatbot:
             if getattr(block, "type", None) == "text":
                 parts.append(getattr(block, "text", ""))
         return "\n".join(p for p in parts if p).strip()
+
+
+def _iso(value: Any) -> Optional[str]:
+    """ISO-8601 string for a datetime, passthrough for a str, None otherwise."""
+    if value is None:
+        return None
+    if isinstance(value, str):
+        return value
+    isoformat = getattr(value, "isoformat", None)
+    return isoformat() if callable(isoformat) else str(value)
+
+
+def _slim_event(ev: Any) -> dict[str, Any]:
+    """Compact, JSON-safe view of a CalendarEvent for a tool result — the core
+    facts M.I.A needs, without the full model (keeps the tool payload small).
+    `actual`/`previous` are echoed VERBATIM (no rounding, no reinterpretation);
+    `actual_state` says whether `actual` is actually a published figure."""
+    return {
+        "event_id": getattr(ev, "event_id", None),
+        "event": getattr(ev, "event", None),
+        "currency": getattr(ev, "currency", None),
+        "organism": getattr(ev, "organism", None),
+        "scheduled_at": _iso(getattr(ev, "scheduled_at", None)),
+        "actual_state": getattr(ev, "actual_state", None),
+        "actual": getattr(ev, "actual", None),
+        "previous": getattr(ev, "previous", None),
+        "value_unit": getattr(ev, "value_unit", None),
+        "markets": list(getattr(ev, "markets", None) or []),
+    }
 
 
 __all__ = [

@@ -244,14 +244,183 @@ def test_tool_execution_failure_is_recoverable() -> None:
     assert "error" in tool_result_msg["content"][0]["content"]
 
 
+def _system_text(system: object) -> str:
+    """The system prompt is sent as a cached content-block list (MIA-3 prompt
+    caching); flatten it back to text for assertions (accepts a bare str too)."""
+    if isinstance(system, str):
+        return system
+    if isinstance(system, list):
+        return "".join(
+            block.get("text", "") for block in system if isinstance(block, dict)
+        )
+    return str(system)
+
+
 def test_signal_summary_is_injected_in_system_prompt() -> None:
     resp = StubResponse([TextBlock("ok")], "end_turn")
     bot, client, _ = make_chatbot([resp])
     bot.chat("Bonjour")
-    system = client.calls[0]["system"]
+    system = _system_text(client.calls[0]["system"])
     assert "instruments_tracked" in system
     assert "XAUUSD" in system
     assert "EURUSD" in system
+
+
+def test_system_prompt_marks_a_cache_breakpoint() -> None:
+    """MIA-3 §F — the stable tools+system prefix is cached: the system is sent as
+    a content-block list whose last block carries an ephemeral cache_control."""
+    resp = StubResponse([TextBlock("ok")], "end_turn")
+    bot, client, _ = make_chatbot([resp])
+    bot.chat("Bonjour")
+    system = client.calls[0]["system"]
+    assert isinstance(system, list) and system
+    assert system[-1].get("cache_control") == {"type": "ephemeral"}
+
+
+# --------------------------------------------------------------------------- #
+# MIA-3 — product-knowledge tools (markets catalog, calendar, publication).
+# The identifier lock is exercised here: an invented market / event_id must be
+# rejected BY THE CODE (found=false), never answered with a fabricated payload.
+# --------------------------------------------------------------------------- #
+
+
+class _StubEvent:
+    def __init__(
+        self,
+        event_id: str,
+        event: str,
+        markets: list[str],
+        actual: Optional[float] = None,
+        actual_state: str = "pending",
+        previous: Optional[float] = None,
+    ) -> None:
+        self.event_id = event_id
+        self.event = event
+        self.markets = markets
+        self.actual = actual
+        self.actual_state = actual_state
+        self.previous = previous
+        self.currency = "USD"
+        self.organism = "Bureau of Labor Statistics"
+        self.value_unit = "Thousand Persons"
+        self.scheduled_at = datetime(2026, 9, 14, 12, 30, tzinfo=timezone.utc)
+        self.actual_initial = None
+        self.revised = False
+        self.license_label = "Data provided by BLS"
+        self.value_series: list = []
+
+
+class _StubCalResponse:
+    def __init__(self, events: list) -> None:
+        self.events = events
+
+
+class _StubCalendarService:
+    def __init__(self, events: list) -> None:
+        self._events = events
+
+    def get_calendar(self, lookahead_minutes: int = 0, lookback_minutes: int = 0, now=None):
+        return _StubCalResponse(list(self._events))
+
+    def get_event(self, event_id: str, now=None):
+        return _StubCalResponse([e for e in self._events if e.event_id == event_id])
+
+
+def _make_chatbot_calendar(responses: list, events: list):
+    assembler = StubAssembler()
+    provider = SignalSummaryProvider(assembler)
+    client = StubClient(responses)
+    bot = Chatbot(
+        anthropic_client=client,
+        summary_provider=provider,
+        assembler=assembler,
+        calendar_service=_StubCalendarService(events),
+    )
+    return bot, client
+
+
+def _last_tool_result(client: StubClient, call_index: int = 1) -> dict:
+    """Decode the JSON tool_result the chatbot injected back to the model."""
+    import json as _json
+
+    msg = client.calls[call_index]["messages"][-1]
+    return _json.loads(msg["content"][0]["content"])
+
+
+def test_list_markets_tool_returns_registry() -> None:
+    r1 = StubResponse([ToolUseBlock("list_markets", {})], "tool_use")
+    r2 = StubResponse([TextBlock("Voici les marchés couverts.")], "end_turn")
+    bot, client = _make_chatbot_calendar([r1, r2], [])
+    out = bot.chat("Quels marchés sont couverts ?")
+    assert out.blocked_reason is None
+    payload = _last_tool_result(client)
+    ids = {m["id"] for m in payload["markets"]}
+    assert {"XAUUSD", "EURUSD"} <= ids
+    assert payload["timeframes"]  # non-empty perimeter
+
+
+def test_economic_calendar_filters_by_market() -> None:
+    events = [
+        _StubEvent("official:us_employment_situation:2026-09-05", "NFP", ["XAUUSD", "EURUSD"]),
+        _StubEvent("official:ea_hicp_flash:2026-09-06", "HICP", ["EURUSD"]),
+    ]
+    r1 = StubResponse([ToolUseBlock("get_economic_calendar", {"market": "XAUUSD"})], "tool_use")
+    r2 = StubResponse([TextBlock("Publications à venir sur l'or.")], "end_turn")
+    bot, client = _make_chatbot_calendar([r1, r2], events)
+    bot.chat("Quelles publications macro pour l'or ?")
+    payload = _last_tool_result(client)
+    assert payload["count"] == 1
+    assert payload["events"][0]["event_id"] == "official:us_employment_situation:2026-09-05"
+
+
+def test_economic_calendar_unknown_market_is_rejected_by_code() -> None:
+    r1 = StubResponse(
+        [ToolUseBlock("get_economic_calendar", {"market": "FAKECOIN"})], "tool_use"
+    )
+    r2 = StubResponse([TextBlock("Ce marché n'est pas au catalogue.")], "end_turn")
+    bot, client = _make_chatbot_calendar([r1, r2], [])
+    bot.chat("Publications sur FAKECOIN ?")
+    payload = _last_tool_result(client)
+    assert payload["found"] is False
+    assert payload["reason"] == "unknown_market"
+
+
+def test_get_publication_unknown_event_id_is_rejected_by_code() -> None:
+    r1 = StubResponse(
+        [ToolUseBlock("get_publication", {"event_id": "official:invented:2026-01-01"})],
+        "tool_use",
+    )
+    r2 = StubResponse([TextBlock("Cette publication n'est pas au calendrier.")], "end_turn")
+    bot, client = _make_chatbot_calendar([r1, r2], [])
+    bot.chat("Donne-moi le chiffre de cette publication.")
+    payload = _last_tool_result(client)
+    assert payload["found"] is False
+    assert payload["reason"] == "unknown_event_id"
+
+
+def test_get_publication_found_echoes_value_and_absent_measures() -> None:
+    # event_key 'demo_series' is NOT in MEASURED_MARKETS → measures is an honest
+    # None (no engine replay), and the published value is echoed verbatim.
+    ev = _StubEvent(
+        "official:demo_series:2026-09-14",
+        "Demo Release",
+        ["XAUUSD"],
+        actual=3.1,
+        actual_state="published",
+        previous=2.9,
+    )
+    r1 = StubResponse(
+        [ToolUseBlock("get_publication", {"event_id": "official:demo_series:2026-09-14"})],
+        "tool_use",
+    )
+    r2 = StubResponse([TextBlock("La valeur publiée est 3.1.")], "end_turn")
+    bot, client = _make_chatbot_calendar([r1, r2], [ev])
+    bot.chat("Quelle est la valeur publiée ?")
+    payload = _last_tool_result(client)
+    assert payload["found"] is True
+    assert payload["event"]["actual"] == 3.1
+    assert payload["event"]["actual_state"] == "published"
+    assert payload["event"]["measures"] is None
 
 
 # --------------------------------------------------------------------------- #
