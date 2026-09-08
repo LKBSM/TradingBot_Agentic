@@ -1,15 +1,20 @@
 /**
- * BRD-2 brand guards. Four properties the logo rollout must keep true:
- *  1. the prism geometry lives in exactly ONE code file (single source);
- *  2. MiaLogo renders the right variant + tone in light and dark;
- *  3. no old logo/name string survives on a user-facing surface;
- *  4. the logo never appears in a loading / empty / error state.
+ * BRD-3 brand guards. The properties the "candle" logo rollout must keep true:
+ *  1. the candle geometry lives in exactly ONE code file (single source);
+ *  2. the five candle heights are SYMMETRIC around the centre — never an
+ *     ascending / descending run (that would read as a prediction);
+ *  3. two tokens, never merged: candles = --brand-mark, wordmark = --brand-word;
+ *  4. no old "prism" logo string / colour / geometry survives anywhere;
+ *  5. no hard-coded logo colour outside the server-generated images;
+ *  6. the compact variant is used at small sizes; the full mark never < 40px;
+ *  7. the logo never appears in a loading / empty / error state.
  */
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { render } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { MiaLogo } from '../MiaLogo';
+import { CANDLES, COMPACT_CANDLES } from '../../../lib/brand/candle-geometry';
 
 const WEBAPP = join(__dirname, '..', '..', '..');
 
@@ -29,12 +34,21 @@ const CODE = walk(join(WEBAPP, 'app'))
   .concat(walk(join(WEBAPP, 'components')))
   .concat(walk(join(WEBAPP, 'lib')));
 
-describe('BRD-2 — single logo source', () => {
-  it('each prism path literal exists in exactly one code file', () => {
-    for (const trace of ['M46,14 L78,82 L14,82 Z', 'M48,16 L78,84 L18,84 Z']) {
-      const hits = CODE.filter((f) => readFileSync(f, 'utf-8').includes(trace));
-      expect(hits, `trace ${trace} duplicated in: ${hits.join(', ')}`).toHaveLength(1);
-      expect((hits[0] ?? '').replace(/\\/g, '/')).toContain('lib/brand/prism-geometry');
+// The four server-generated images legitimately hard-code the brass colour
+// (there is no CSS theme at build time). Everything else must go through the vars.
+const GENERATORS = [
+  'app/icon.tsx',
+  'app/apple-icon.tsx',
+  'app/opengraph-image.tsx',
+  'app/brand/email-logo.png/route.tsx',
+].map((p) => join(WEBAPP, p).replace(/\\/g, '/'));
+
+describe('BRD-3 — single candle source', () => {
+  it('the candle geometry arrays are declared in exactly one code file', () => {
+    for (const decl of ['export const CANDLES', 'export const COMPACT_CANDLES']) {
+      const hits = CODE.filter((f) => readFileSync(f, 'utf-8').includes(decl));
+      expect(hits, `"${decl}" duplicated in: ${hits.join(', ')}`).toHaveLength(1);
+      expect((hits[0] ?? '').replace(/\\/g, '/')).toContain('lib/brand/candle-geometry');
     }
   });
 
@@ -43,22 +57,65 @@ describe('BRD-2 — single logo source', () => {
     expect(defs).toHaveLength(1);
   });
 
-  it('no component redraws the old candlestick / gold-M marks', () => {
-    for (const f of CODE) {
-      const src = readFileSync(f, 'utf-8');
-      // Old BrandMark candlestick rects + old gold-"M" favicon path.
-      expect(src.includes('M120 384'), `old M path in ${f}`).toBe(false);
-      expect(src.includes('BrandMark'), `BrandMark ref in ${f}`).toBe(false);
-      expect(src.includes('MiaAgentLogo'), `MiaAgentLogo ref in ${f}`).toBe(false);
+  it('the generators import the shared geometry (no copied coordinates)', () => {
+    for (const f of GENERATORS) {
+      expect(readFileSync(f, 'utf-8'), `${f} should import candle-geometry`).toContain(
+        'candle-geometry',
+      );
     }
   });
 });
 
-describe('BRD-2 — variant + tone', () => {
-  it('renders the labelled prism by default (role img)', () => {
+describe('BRD-3 — symmetry is structural (never an ascending curve)', () => {
+  function assertSymmetric(candles: readonly { body: { height: number }; wick: { y1: number }; opacity: number }[]) {
+    const heights = candles.map((c) => c.body.height);
+    const tops = candles.map((c) => c.wick.y1);
+    const opacities = candles.map((c) => c.opacity);
+    // Mirror image around the centre — reversing changes nothing.
+    expect(heights).toEqual([...heights].reverse());
+    expect(tops).toEqual([...tops].reverse());
+    expect(opacities).toEqual([...opacities].reverse());
+    // The centre candle is the UNIQUE tallest; strictly rising to it, then falling.
+    const mid = Math.floor(heights.length / 2);
+    for (let i = 1; i <= mid; i++) expect(heights[i]!).toBeGreaterThan(heights[i - 1]!);
+    for (let i = mid + 1; i < heights.length; i++) expect(heights[i]!).toBeLessThan(heights[i - 1]!);
+    // A strictly increasing (or decreasing) run would fail the mirror assertion.
+  }
+
+  it('the five candles mirror around the centre', () => {
+    expect(CANDLES).toHaveLength(5);
+    assertSymmetric(CANDLES);
+  });
+
+  it('the compact three candles mirror around the centre', () => {
+    expect(COMPACT_CANDLES).toHaveLength(3);
+    assertSymmetric(COMPACT_CANDLES);
+  });
+});
+
+describe('BRD-3 — two tokens, candles brass and word its own colour', () => {
+  it('candles are painted from --brand-mark', () => {
+    const { container } = render(<MiaLogo variant="mark" />);
+    const g = container.querySelector('g');
+    expect(g?.getAttribute('fill')).toBe('var(--brand-mark)');
+    expect(container.querySelector('line')?.getAttribute('opacity')).toBeTruthy();
+  });
+
+  it('the wordmark is painted from --brand-word, never from the candle token', () => {
+    for (const variant of ['horizontal', 'stacked'] as const) {
+      const { container } = render(<MiaLogo variant={variant} />);
+      const text = container.querySelector('text');
+      expect(text?.getAttribute('fill')).toBe('var(--brand-word)');
+      // The two tokens are distinct — the name must not take the candle colour.
+      expect(text?.getAttribute('fill')).not.toBe('var(--brand-mark)');
+    }
+  });
+});
+
+describe('BRD-3 — variant + accessibility', () => {
+  it('renders the labelled mark by default (role img)', () => {
     const { getByRole } = render(<MiaLogo />);
-    const svg = getByRole('img');
-    expect(svg.getAttribute('aria-label')).toBe('M.I.A Markets');
+    expect(getByRole('img').getAttribute('aria-label')).toBe('M.I.A Markets');
   });
 
   it('is hidden from screen readers when decorative', () => {
@@ -67,46 +124,83 @@ describe('BRD-2 — variant + tone', () => {
     expect(container.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
   });
 
-  it('the horizontal + stacked lockups spell the company name with dots', () => {
+  it('the horizontal + stacked lockups spell the company name', () => {
     for (const variant of ['horizontal', 'stacked'] as const) {
       const { container } = render(<MiaLogo variant={variant} />);
-      expect(container.textContent).toContain('M.I.A Markets');
+      expect(container.textContent).toContain('M.I.A MARKETS'); // visible wordmark
+      expect(container.querySelector('svg')?.getAttribute('aria-label')).toBe('M.I.A Markets');
     }
-  });
-
-  it('auto tone follows the theme variable; fixed tones use the source colours', () => {
-    const fill = (ui: React.ReactElement) =>
-      render(ui).container.querySelector('path')?.getAttribute('fill');
-    // Auto → CSS var that resolves to #2962FF (light) / #7DA3FF (dark).
-    expect(fill(<MiaLogo tone="auto" />)).toContain('--brand-mark');
-    expect(fill(<MiaLogo tone="color" />)).toBe('#2962FF');
-    expect(fill(<MiaLogo tone="dark" />)).toBe('#7DA3FF');
-    expect(fill(<MiaLogo tone="mono" />)).toBe('currentColor');
   });
 });
 
-describe('BRD-2 — no old brand string on user-facing surfaces', () => {
-  const SURFACES = walk(join(WEBAPP, 'components'))
-    .concat(walk(join(WEBAPP, 'app')))
-    .concat(walk(join(WEBAPP, 'messages'), ['.json']));
+describe('BRD-3 — no old prism logo survives', () => {
+  const SURFACES = CODE.concat(walk(join(WEBAPP, 'messages'), ['.json']));
+
+  it('the old prism geometry, colours and names are gone from code', () => {
+    for (const f of CODE) {
+      const src = readFileSync(f, 'utf-8');
+      expect(src.includes('prism-geometry'), `prism-geometry ref in ${f}`).toBe(false);
+      for (const trace of ['M46,14 L78,82 L14,82 Z', 'M48,16 L78,84 L18,84 Z']) {
+        expect(src.includes(trace), `old prism path in ${f}`).toBe(false);
+      }
+      expect(src.includes('BrandMark'), `BrandMark ref in ${f}`).toBe(false);
+      expect(src.includes('MiaAgentLogo'), `MiaAgentLogo ref in ${f}`).toBe(false);
+    }
+  });
+
+  it('the old prism blues (#2962FF / #7DA3FF) and ink (#0F1729) are gone', () => {
+    for (const f of SURFACES) {
+      const src = readFileSync(f, 'utf-8').toLowerCase();
+      for (const c of ['#2962ff', '#7da3ff', '#0f1729']) {
+        expect(src.includes(c), `${c} still in ${f}`).toBe(false);
+      }
+    }
+  });
 
   it('the bare "MIA Markets" spelling (no dots) is gone', () => {
-    // "M.I.A Markets" does not contain the substring "MIA Markets", so a plain
-    // includes() flags only the old spelling.
     const offenders = SURFACES.filter((f) => readFileSync(f, 'utf-8').includes('MIA Markets'));
     expect(offenders, offenders.join(', ')).toHaveLength(0);
   });
+});
 
-  it('the old gold-gradient favicon colours are gone from the icon generators', () => {
-    for (const f of ['app/icon.tsx', 'app/apple-icon.tsx', 'app/opengraph-image.tsx']) {
-      const src = readFileSync(join(WEBAPP, f), 'utf-8');
-      expect(src.includes('#FBBF24'), `gold gradient still in ${f}`).toBe(false);
-      expect(src.includes('#B45309'), `gold gradient still in ${f}`).toBe(false);
+describe('BRD-3 — brass colour is hard-coded only in the server images', () => {
+  it('no component / lib file hard-codes the brand mark colour', () => {
+    for (const f of CODE) {
+      if (GENERATORS.includes(f.replace(/\\/g, '/'))) continue;
+      const src = readFileSync(f, 'utf-8').toLowerCase();
+      expect(src.includes('#c9a14a'), `hard-coded brass in ${f} (use --brand-mark)`).toBe(false);
     }
   });
 });
 
-describe('BRD-2 — logo never in loading / empty / error', () => {
+describe('BRD-3 — compact variant at small sizes, full mark never < 40px', () => {
+  it('the bare five-candle mark is never rendered below 40px', () => {
+    // The rule targets the standalone mark (variant="mark" or the default). The
+    // horizontal / stacked lockups carry the wordmark and are legible small, so
+    // the public header / rail place them at their own sizes — those are exempt.
+    const COMPONENTS = walk(join(WEBAPP, 'components')).concat(walk(join(WEBAPP, 'app')));
+    for (const f of COMPONENTS) {
+      const src = readFileSync(f, 'utf-8');
+      const tags = src.match(/<MiaLogo\b[^>]*\/>/g) ?? [];
+      for (const tag of tags) {
+        const isLockupOrCompact =
+          tag.includes('variant="horizontal"') ||
+          tag.includes('variant="stacked"') ||
+          tag.includes('variant="compact"');
+        if (isLockupOrCompact) continue; // remaining = the bare five-candle mark
+        const m = tag.match(/height=\{(\d+)\}/);
+        if (m) {
+          expect(
+            Number(m[1]),
+            `bare mark below 40px (use variant="compact") in ${f}: ${tag}`,
+          ).toBeGreaterThanOrEqual(40);
+        }
+      }
+    }
+  });
+});
+
+describe('BRD-3 — logo never in loading / empty / error', () => {
   const FORBIDDEN = [
     'app/[locale]/not-found.tsx',
     'app/[locale]/error.tsx',
@@ -118,7 +212,7 @@ describe('BRD-2 — logo never in loading / empty / error', () => {
     for (const rel of FORBIDDEN) {
       const src = readFileSync(join(WEBAPP, rel), 'utf-8');
       expect(src.includes('MiaLogo'), `${rel} references MiaLogo`).toBe(false);
-      expect(src.includes('prism-geometry'), `${rel} draws the prism`).toBe(false);
+      expect(src.includes('candle-geometry'), `${rel} draws the mark`).toBe(false);
     }
   });
 });

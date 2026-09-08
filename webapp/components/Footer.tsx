@@ -45,8 +45,9 @@ export function Footer() {
           {/* Brand + Early Access badge */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              {/* Discreet monochrome mark — inherits the muted text colour. */}
-              <MiaLogo variant="mark" tone="mono" decorative height={18} className="text-muted-foreground" />
+              {/* Discreet brass mark (--brand-mark) — compact at this small size
+                  (the full five-candle mark is reserved for ≥40px). */}
+              <MiaLogo variant="compact" decorative height={18} />
               <p className="text-sm font-semibold tracking-tight">{BRAND_NAME}</p>
               <span className="inline-flex items-center gap-1 rounded-full border border-sentinel-bull/40 bg-sentinel-bull/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-sentinel-bull">
                 <ShieldCheck className="h-2.5 w-2.5" aria-hidden />

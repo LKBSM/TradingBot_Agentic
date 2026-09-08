@@ -136,11 +136,15 @@ html[dir='rtl'] body {
 
     --font-narrative: var(--font-sans);
 
-    /* Brand logo — auto light/dark. Verbatim tones from the source SVGs:
-       mark #7DA3FF on dark, #2962FF on light; wordmark #FFFFFF on dark,
-       #0F1729 on light. Dark themes (terminal/schema/ardoise) inherit these
-       defaults; only Atelier (light) overrides below. */
-    --brand-mark: #7da3ff;
+    /* Brand logo — TWO tokens, on purpose. The candles stay brass (#C9A14A) on
+       all four themes (a brand keeps its colour; the UI accent does not — the
+       Ardoise theme's blue/gold accent is deliberately NOT applied to the mark).
+       The wordmark is white on the dark themes, near-black on the light one.
+       Dark themes (terminal/schema/ardoise) inherit these defaults; only the
+       light Atelier theme overrides --brand-word below.
+       NB: THM-1 owns these tokens — if it lands after this, it must keep the
+       candles brass everywhere and the word white(dark)/near-black(light). */
+    --brand-mark: #c9a14a;
     --brand-word: #ffffff;
   }
 
@@ -148,8 +152,8 @@ html[dir='rtl'] body {
   [data-design='atelier'] {
     color-scheme: light;
 
-    --brand-mark: #2962ff;
-    --brand-word: #0f1729;
+    --brand-mark: #c9a14a;
+    --brand-word: #1a1917;
 
     /* Reference literal tokens — verbatim (docs/design/reference-desktop.html). */
     --bg: #f6f4ee;

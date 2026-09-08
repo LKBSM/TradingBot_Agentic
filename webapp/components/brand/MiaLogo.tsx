@@ -1,65 +1,56 @@
 /**
  * MiaLogo — the SINGLE source of truth for the M.I.A Markets logo.
  *
- * The mark is a prism: a beam enters from the left, crosses a solid triangle,
- * and exits as three stepped beams on the right. Every coordinate and colour
- * below is verbatim from the brand source files in `public/brand/*.svg`
- * (mia-marque / -fond-sombre / -mono, mia-favicon, mia-verrouillage-*). Do not
- * redraw or recolour — surfaces that need a new shape add a variant here, they
- * never copy the path.
+ * The mark is five candlesticks, tallest at the centre and stepping down on both
+ * sides. Every coordinate lives once, in `lib/brand/candle-geometry.ts`; the
+ * build-time image generators import the same data. Do not redraw or recolour —
+ * surfaces that need a new shape add a variant here, they never copy the path.
  *
- * Tones
- *  · "auto" (default) — picks the brand blue per active theme via CSS vars
- *    (--brand-mark / --brand-word, defined in globals.css). SSR-safe, no JS,
- *    no layout shift: light themes render #2962FF, dark themes #7DA3FF.
- *  · "color" / "dark" / "mono" — force a fixed tone (for a known background:
- *    the dark social card, the monochrome footer, the fixed-colour favicon).
+ * TWO COLOURS, on purpose:
+ *  · the candles take `var(--brand-mark)` — brass on all four themes, light
+ *    theme included;
+ *  · the wordmark takes `var(--brand-word)` — white on the three dark themes,
+ *    near-black on the light Parchemin theme.
+ * Never merge the two tokens, and never render the wordmark in brass.
  *
- * Accessibility: `role="img"` with the "M.I.A Markets" label by default. When
- * the logo sits next to text that already says the name, pass `decorative` so
- * it is hidden from screen readers instead of read twice.
+ * SSR-safe, no JS, no layout shift: the colour is a CSS variable resolved by the
+ * active theme; the aspect ratio is fixed by the viewBox.
+ *
+ * Accessibility: `role="img"` with the "M.I.A Markets" label by default. When the
+ * logo sits next to text that already says the name, pass `decorative` so it is
+ * hidden from screen readers instead of read twice.
  */
 import * as React from 'react';
-import {
-  PRISM_RECT,
-  PRISM_TRIANGLE,
-  PRISM_BEAMS,
-  COMPACT_RECT,
-  COMPACT_TRIANGLE,
-  COMPACT_BEAM,
-} from '@/lib/brand/prism-geometry';
+import { CANDLES, COMPACT_CANDLES, type Candle } from '@/lib/brand/candle-geometry';
 
-type Tone = 'auto' | 'color' | 'dark' | 'mono';
 type Variant = 'mark' | 'horizontal' | 'stacked' | 'compact';
 
-const FIXED_FILL: Record<Exclude<Tone, 'auto'>, string> = {
-  color: '#2962FF',
-  dark: '#7DA3FF',
-  mono: 'currentColor',
-};
+const FONT = "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 
-function markFill(tone: Tone): string {
-  return tone === 'auto' ? 'var(--brand-mark, #2962FF)' : FIXED_FILL[tone];
-}
-
-function wordFill(tone: Tone): string {
-  if (tone === 'auto') return 'var(--brand-word, #0F1729)';
-  if (tone === 'dark') return '#FFFFFF';
-  if (tone === 'mono') return 'currentColor';
-  return '#0F1729';
-}
-
-const FONT =
-  "Inter, Manrope, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
-
-/** The prism at its native 120×100 coordinate space. */
-function Prism({ fill }: { fill: string }) {
+/** Draws a candle set in brass (`--brand-mark`). Symmetry lives in the data. */
+function Candles({ candles }: { candles: readonly Candle[] }) {
   return (
-    <g>
-      <rect {...PRISM_RECT} fill={fill} />
-      <path d={PRISM_TRIANGLE} fill={fill} />
-      {PRISM_BEAMS.map((b) => (
-        <polygon key={b.points} points={b.points} fill={fill} opacity={b.opacity} />
+    <g fill="var(--brand-mark)" stroke="var(--brand-mark)">
+      {candles.map((c) => (
+        <React.Fragment key={c.wick.x1}>
+          <line
+            x1={c.wick.x1}
+            y1={c.wick.y1}
+            x2={c.wick.x2}
+            y2={c.wick.y2}
+            strokeWidth={c.wick.width}
+            opacity={c.opacity}
+          />
+          <rect
+            x={c.body.x}
+            y={c.body.y}
+            width={c.body.width}
+            height={c.body.height}
+            rx={1}
+            stroke="none"
+            opacity={c.opacity}
+          />
+        </React.Fragment>
       ))}
     </g>
   );
@@ -67,7 +58,6 @@ function Prism({ fill }: { fill: string }) {
 
 export interface MiaLogoProps {
   variant?: Variant;
-  tone?: Tone;
   /** Rendered height in px; width follows the fixed aspect ratio. */
   height?: number;
   title?: string;
@@ -78,15 +68,11 @@ export interface MiaLogoProps {
 
 export function MiaLogo({
   variant = 'mark',
-  tone = 'auto',
   height = 32,
   title = 'M.I.A Markets',
   className,
   decorative = false,
 }: MiaLogoProps) {
-  const fill = markFill(tone);
-  const textFill = wordFill(tone);
-
   // A11y: either a labelled image, or hidden decoration next to real text.
   const a11y = decorative
     ? ({ 'aria-hidden': true } as const)
@@ -94,32 +80,30 @@ export function MiaLogo({
 
   if (variant === 'compact') {
     return (
-      <svg viewBox="0 0 100 100" height={height} className={className} {...a11y}>
+      <svg viewBox="0 0 72 72" height={height} className={className} {...a11y}>
         {!decorative && <title>{title}</title>}
-        <rect {...COMPACT_RECT} fill={fill} />
-        <path d={COMPACT_TRIANGLE} fill={fill} />
-        <polygon points={COMPACT_BEAM} fill={fill} />
+        <Candles candles={COMPACT_CANDLES} />
       </svg>
     );
   }
 
   if (variant === 'horizontal') {
     return (
-      <svg viewBox="0 0 400 100" height={height} className={className} {...a11y}>
+      <svg viewBox="0 0 420 72" height={height} className={className} {...a11y}>
         {!decorative && <title>{title}</title>}
-        <g transform="translate(8,20) scale(0.6)">
-          <Prism fill={fill} />
+        <g transform="translate(0,8) scale(0.78)">
+          <Candles candles={CANDLES} />
         </g>
         <text
-          x="102"
-          y="62"
+          x="94"
+          y="45"
           fontFamily={FONT}
-          fontSize="34"
+          fontSize="27"
           fontWeight="500"
-          letterSpacing="-0.8"
-          fill={textFill}
+          letterSpacing="3.5"
+          fill="var(--brand-word)"
         >
-          M.I.A Markets
+          M.I.A MARKETS
         </text>
       </svg>
     );
@@ -127,31 +111,31 @@ export function MiaLogo({
 
   if (variant === 'stacked') {
     return (
-      <svg viewBox="0 0 260 190" height={height} className={className} {...a11y}>
+      <svg viewBox="0 0 300 150" height={height} className={className} {...a11y}>
         {!decorative && <title>{title}</title>}
-        <g transform="translate(70,10)">
-          <Prism fill={fill} />
+        <g transform="translate(105,14)">
+          <Candles candles={CANDLES} />
         </g>
         <text
-          x="130"
-          y="160"
+          x="150"
+          y="125"
           textAnchor="middle"
           fontFamily={FONT}
-          fontSize="34"
+          fontSize="25"
           fontWeight="500"
-          letterSpacing="-0.8"
-          fill={textFill}
+          letterSpacing="3.2"
+          fill="var(--brand-word)"
         >
-          M.I.A Markets
+          M.I.A MARKETS
         </text>
       </svg>
     );
   }
 
   return (
-    <svg viewBox="0 0 120 100" height={height} className={className} {...a11y}>
+    <svg viewBox="0 0 90 72" height={height} className={className} {...a11y}>
       {!decorative && <title>{title}</title>}
-      <Prism fill={fill} />
+      <Candles candles={CANDLES} />
     </svg>
   );
 }

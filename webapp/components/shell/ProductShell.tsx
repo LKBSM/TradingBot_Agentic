@@ -71,7 +71,7 @@ function ShellFrame({ children }: { children: React.ReactNode }) {
       {/* Mobile-only brand bar (<768px, where the rail is hidden): the mark as a
           home link, so every product route keeps the brand on phones (BRD-2). */}
       <Link href={lh('/')} className="shell-mbrand" aria-label={t('nav.brandHomeAria')}>
-        <MiaLogo variant="mark" decorative height={20} />
+        <MiaLogo variant="compact" decorative height={20} />
       </Link>
       <ShellRail activeSpace={activeSpace} />
       <div id="main" className="center">

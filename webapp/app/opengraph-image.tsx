@@ -1,5 +1,5 @@
 import { ImageResponse } from 'next/og';
-import { PRISM_RECT, PRISM_TRIANGLE, PRISM_BEAMS } from '@/lib/brand/prism-geometry';
+import { CANDLES } from '@/lib/brand/candle-geometry';
 
 /**
  * Open Graph card — 1200×630 PNG generated at build time via next/og.
@@ -32,13 +32,16 @@ export default function OpenGraphImage() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-          {/* Prism mark (dark-background tone #7DA3FF) + wordmark. */}
-          <svg width="72" height="60" viewBox="0 0 120 100" fill="none">
-            <rect {...PRISM_RECT} fill="#7DA3FF" />
-            <path d={PRISM_TRIANGLE} fill="#7DA3FF" />
-            {PRISM_BEAMS.map((b) => (
-              <polygon key={b.points} points={b.points} fill="#7DA3FF" opacity={b.opacity} />
-            ))}
+          {/* Brass candle mark (#C9A14A on the dark card) + white wordmark. */}
+          <svg width="90" height="72" viewBox="0 0 90 72" fill="none">
+            <g fill="#C9A14A" stroke="#C9A14A">
+              {CANDLES.map((c) => (
+                <g key={c.wick.x1}>
+                  <line x1={c.wick.x1} y1={c.wick.y1} x2={c.wick.x2} y2={c.wick.y2} strokeWidth={c.wick.width} opacity={c.opacity} />
+                  <rect x={c.body.x} y={c.body.y} width={c.body.width} height={c.body.height} rx={1} stroke="none" opacity={c.opacity} />
+                </g>
+              ))}
+            </g>
           </svg>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <span style={{ fontSize: 30, fontWeight: 600, letterSpacing: -0.5 }}>
