@@ -172,6 +172,47 @@ est copié tel quel.**
   indisponible, visibles dans la galerie et verrouillés par test.
 - ✅ Staging explicite, pas de `git add -A`, pas de force push.
 
-## 8. Suite proposée (après confirmation)
+## 8. Extension — PAGES COMPLÈTES via API mock (pour Claude Design)
+
+La galerie (§5) montre des composants isolés ; pour que Claude Design recopie les PAGES à
+l'identique, il faut les vraies pages **assemblées** (shell, mise en page, chrome). Approche
+retenue : faire tourner les VRAIES pages sur `next dev` et **intercepter `/api/*` avec les fixtures
+réelles** — **0 ligne des pages modifiée**, aucun backend.
+
+- **`tests/e2e/ds-mock.ts`** — `mockAllApis(page)` sert chaque endpoint produit depuis les fixtures :
+  `access/me` (accès complet), `market-reading`, `candles`, `market-status`, `conditions-scan`
+  (+`/palette`), `scanner/translate`, `calendar` (+`/month`, +`/event`), `publications/*/measures`.
+  Ordre de routes géré (le plus spécifique gagne).
+- **Recalage des horodatages** : les fixtures sont datées dans le passé (leur vraie date de capture),
+  que l'app lit comme périmées → « marché fermé », graphique/mois vides. Le mock décale **chaque
+  horodatage** d'un même delta pour placer la dernière bougie ~maintenant. **Seules les dates
+  absolues bougent ; toutes les valeurs (OHLC, niveaux, zones, événements) sont les données réelles.**
+- **`tests/e2e/ds-1-pages.spec.ts`** — capture les 7 pages produit aux 2 viewports
+  (1280×800 + 390×844) : `/`, `/app`, `/zones`, `/scanner`, `/scanner/decrire`, `/actualites`,
+  `/actualites/[eventId]`. **14/14 verts, sans backend.** Sorties : `docs/audits/ds-1/pages/`.
+
+Rendu vérifié page par page (capture à l'appui) :
+- **/app** — shell complet (rail, en-tête prix réel « En direct », colonne M.I.A), toolbar de calques,
+  lecture narrée réelle, cartes Régime + Structure. ⚠️ **Le tracé des bougies ne peint pas dans la
+  capture headless** (limitation de `lightweight-charts` sous capture automatisée : données/couleurs/
+  chart créés, axes tracés, mais la série ne rend pas ; le graphique peint normalement dans l'app
+  live). Le CADRE du graphique (toolbar, badges, axes) est bien capturé.
+- **/zones** — complet : cartes de zones réelles dont le **cas « prix dans la bande »**, jauges de
+  proximité, panneau M.I.A sur la zone sélectionnée.
+- **/scanner** — constructeur de conditions V3 (4 familles, combinaison, sauvegarde).
+- **/scanner/decrire** — scanner conversationnel (saisie + exemples).
+- **/actualites** — grille mensuelle **peuplée d'événements réels** (Core CPI, FOMC, German CPI…),
+  filtres organisme/marché/périodicité.
+- **/actualites/[eventId]** — fiche complète (en-tête événement réel, bloc M.I.A, « aller à la
+  source » avec absence propre, avertissement) ; mesures absentes → aucune section (règle d'absence).
+- **/** — page d'accueil (déjà statique).
+
+Périmètre des données calendrier : le store calendrier est **vide** dans cet environnement (flux
+récupéré en live) ; source réelle la plus proche = `news_cache.db` (événements économiques réels).
+Filtrés aux sources officielles US/EU (USD→bls, EUR→eurostat) pour passer les filtres organisme.
+
+## 9. Suite proposée (après confirmation)
 Palier 1 (`CalendarMonthView`, `ShellRail`) puis Palier 2 (`ChatPanel`, `CalendarEventDetail`) —
-extraction vue/conteneur, à traiter avec le soin dû au risque de régression signalé au §3.
+extraction vue/conteneur, à traiter avec le soin dû au risque de régression signalé au §3. Le seul
+point ouvert côté rendu = le tracé du graphique en capture headless (§8) — sans impact sur l'app
+live ; à approfondir si des captures de graphique peuplé sont nécessaires pour Claude Design.

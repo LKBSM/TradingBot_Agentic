@@ -171,6 +171,99 @@ def iso_to_epoch(ts: str) -> int:
     return int(datetime.fromisoformat(ts.replace("Z", "+00:00")).astimezone(timezone.utc).timestamp())
 
 
+# ── Calendar (/actualites) — real economic events from news_cache.db ──────────
+# The calendar store is empty in this environment (the feed is fetched live), so
+# the closest REAL source is news_cache.db: actual scheduled economic releases
+# (event, currency, times, previous values). They map onto CalendarEvent with the
+# richer official fields (organism, series, value_unit) left null — which is
+# faithful (these stub-feed events carry no official attribution) AND exercises
+# the "champ absent → aucun élément" rule on the calendar surface too.
+CUR_TO_MARKETS = {"USD": ["XAUUSD"], "EUR": ["EURUSD"]}
+# The product calendar covers the OFFICIAL US / EU sources only (OFFICIAL_SOURCES:
+# bls/bea/census/federal_reserve/eurostat/ecb). Map each currency to its issuing
+# source so the events pass the (all-checked-by-default) organism filter.
+CUR_TO_SOURCE = {"USD": "bls", "EUR": "eurostat"}
+
+
+def map_calendar_event(row: dict) -> dict:
+    actual = row.get("actual")
+    return {
+        "event_id": row["event_id"],
+        "source": CUR_TO_SOURCE.get(row["currency"], "bls"),
+        "series_code": None,
+        "license_label": None,
+        "event": row["event"],
+        "currency": row["currency"],
+        "organism": None,
+        "periodicity": None,
+        "scheduled_at": row["scheduled_at"],
+        "source_timezone": None,
+        "time_confirmed": True,
+        "markets": CUR_TO_MARKETS.get(row["currency"], []),
+        "value_unit": None,
+        "actual": actual,
+        "actual_initial": None,
+        "previous": row.get("previous"),
+        "revised": False,
+        "revised_at": None,
+        "actual_state": "published" if actual is not None else "unfetched",
+        "refreshed_at": row.get("fetched_at"),
+    }
+
+
+def emit_calendar(news_db: str, out_dir: str) -> None:
+    nc = sqlite3.connect(news_db)
+    nc.row_factory = sqlite3.Row
+    rows = [dict(r) for r in nc.execute(
+        "SELECT event_id,event,currency,impact,scheduled_at,actual,forecast,previous,fetched_at "
+        "FROM news_cache WHERE scheduled_at LIKE '2026-07%' AND currency IN ('USD','EUR') "
+        "ORDER BY scheduled_at")]
+    events = [map_calendar_event(r) for r in rows if REPL not in r["event"]]
+    month = {
+        "events": events,
+        "window_start": "2026-07-01T00:00:00Z",
+        "window_end": "2026-07-31T23:59:59Z",
+        "coverage": {
+            "source": "forexfactory",
+            "feed_start": "2026-07-01T00:00:00Z",
+            "feed_end": "2026-07-31T23:59:59Z",
+            "partial": False,
+            "last_success": {"forexfactory": "2026-07-31T18:00:00Z"},
+            "stale_sources": [],
+        },
+        "attribution": [{
+            "source": "forexfactory",
+            "organism": "ForexFactory",
+            "license_label": "Agenda économique public",
+            "policy_url": "https://www.forexfactory.com/calendar",
+        }],
+        "generated_at": "2026-07-31T18:00:00Z",
+    }
+    # a detail event with a published-previous value (richer fiche)
+    detail_row = next((r for r in rows if r.get("previous") is not None), rows[0])
+    detail = map_calendar_event(detail_row)
+    measures = {
+        "event_key": detail["event_id"],
+        "market": (detail["markets"][0] if detail["markets"] else ""),
+        "calm_before": None,
+        "structure_state": None,
+        "zone_lifecycle": None,
+        "return_to_calm": None,
+    }
+    buf = io.StringIO()
+    buf.write(HEADER)
+    buf.write("import type { CalendarResponse, CalendarEvent } from '@/types/calendar';\n")
+    buf.write("import type { PublicationMeasures } from '@/types/measures';\n\n")
+    buf.write(f"export const SAMPLE_CALENDAR_MONTH: CalendarResponse = {json.dumps(month, ensure_ascii=False, indent=2)};\n\n")
+    buf.write(f"/** Deep-link target for /actualites/[eventId]. */\nexport const SAMPLE_CALENDAR_EVENT_ID = {json.dumps(detail['event_id'])};\n\n")
+    buf.write(f"export const SAMPLE_CALENDAR_EVENT: CalendarEvent = {json.dumps(detail, ensure_ascii=False, indent=2)};\n\n")
+    buf.write("/** No measure computed for a stub-feed event → the fiche renders no measure section (absence). */\n")
+    buf.write(f"export const SAMPLE_CALENDAR_MEASURES: PublicationMeasures = {json.dumps(measures, ensure_ascii=False, indent=2)};\n")
+    with open(os.path.join(out_dir, "calendar.ts"), "w", encoding="utf-8", newline="\n") as f:
+        f.write(buf.getvalue())
+    print(f"wrote calendar.ts ({len(events)} events, detail={detail['event_id']})")
+
+
 def main() -> None:
     here = os.path.dirname(os.path.abspath(__file__))
     repo_root = os.path.abspath(os.path.join(here, "..", ".."))
@@ -178,6 +271,7 @@ def main() -> None:
     ap.add_argument("--data-dir", default=os.path.join(repo_root, "data"))
     ap.add_argument("--out-dir", default=os.path.join(here, "..", "lib", "ds-samples"))
     args = ap.parse_args()
+    out_dir_abs = os.path.abspath(args.out_dir)
 
     mr = sqlite3.connect(os.path.join(args.data_dir, "market_readings.db"))
     cc = sqlite3.connect(os.path.join(args.data_dir, "candles.db"))
@@ -220,9 +314,12 @@ def main() -> None:
             buf.write(f"  {{ time: {iso_to_epoch(ts)}, open: {o}, high: {h}, low: {l}, close: {cl}{v} }},\n")
         buf.write("];\n\n")
         print(f"wrote {var} ({len(rows)} candles)")
-    with open(os.path.join(args.out_dir, "candles.ts"), "w", encoding="utf-8", newline="\n") as f:
+    with open(os.path.join(out_dir_abs, "candles.ts"), "w", encoding="utf-8", newline="\n") as f:
         f.write(buf.getvalue())
     print("wrote candles.ts")
+
+    # calendar.ts (real economic events from news_cache.db)
+    emit_calendar(os.path.join(args.data_dir, "news_cache.db"), out_dir_abs)
 
 
 if __name__ == "__main__":

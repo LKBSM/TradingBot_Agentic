@@ -11,3 +11,5 @@ export * from './candles';
 export * from './zones';
 export * from './scanner';
 export * from './chat';
+export * from './calendar';
+export * from './palette';
