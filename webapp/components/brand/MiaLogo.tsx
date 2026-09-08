@@ -9,9 +9,10 @@
  * never copy the path.
  *
  * Tones
- *  · "auto" (default) — picks the brand blue per active theme via CSS vars
- *    (--brand-mark / --brand-word, defined in globals.css). SSR-safe, no JS,
- *    no layout shift: light themes render #2962FF, dark themes #7DA3FF.
+ *  · "auto" (default) — NEUTRAL identity per active theme via CSS vars
+ *    (--brand-mark / --brand-word, defined in globals.css = each theme's text
+ *    tone since THM-1). SSR-safe, no JS, no layout shift. The prism is the
+ *    identity, not a blue; a neutral mark never competes with the single accent.
  *  · "color" / "dark" / "mono" — force a fixed tone (for a known background:
  *    the dark social card, the monochrome footer, the fixed-colour favicon).
  *
@@ -49,8 +50,10 @@ function wordFill(tone: Tone): string {
   return '#0F1729';
 }
 
-const FONT =
-  "Inter, Manrope, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+// The wordmark rides the app's own sans stack (THM-1) rather than a hardcoded
+// pile — a single source of truth. Passed via `style` (not the SVG presentation
+// attribute) so the CSS custom property resolves on the inline <text>.
+const FONT = 'var(--font-sans)';
 
 /** The prism at its native 120×100 coordinate space. */
 function Prism({ fill }: { fill: string }) {
@@ -113,7 +116,7 @@ export function MiaLogo({
         <text
           x="102"
           y="62"
-          fontFamily={FONT}
+          style={{ fontFamily: FONT }}
           fontSize="34"
           fontWeight="500"
           letterSpacing="-0.8"
@@ -136,7 +139,7 @@ export function MiaLogo({
           x="130"
           y="160"
           textAnchor="middle"
-          fontFamily={FONT}
+          style={{ fontFamily: FONT }}
           fontSize="34"
           fontWeight="500"
           letterSpacing="-0.8"

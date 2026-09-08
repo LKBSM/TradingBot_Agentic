@@ -2814,11 +2814,17 @@
     "sectionDescription": "Escolha o tema da interface. A escolha é aplicada de imediato e fica memorizada neste dispositivo.",
     "groupLabel": "Seleção de tema",
     "active": "Ativo",
+    "names": {
+      "terminal": "Grafite e latão",
+      "atelier": "Pergaminho",
+      "schema": "Tinta",
+      "ardoise": "Ardósia e aço"
+    },
     "descriptions": {
-      "terminal": "Escuro frio, leitura tranquila — o tema padrão.",
-      "atelier": "Claro, como a nota de um analista no papel.",
-      "schema": "Monocromático técnico, quase sem cor.",
-      "ardoise": "Escuro quente, sereno, com cantos mais suaves."
+      "terminal": "Grafite escuro com acento latão — o tema padrão.",
+      "atelier": "Pergaminho claro, narração em serifa — a nota de um analista.",
+      "schema": "Tinta monocromática, quase sem cor: tudo é tipografia.",
+      "ardoise": "Ardósia escura com acento aço azul."
     }
   },
   "connexion": {

@@ -2814,11 +2814,17 @@
     "sectionDescription": "Choose the interface theme. Your choice applies instantly and is remembered on this device.",
     "groupLabel": "Theme selection",
     "active": "Active",
+    "names": {
+      "terminal": "Graphite & Brass",
+      "atelier": "Parchment",
+      "schema": "Ink",
+      "ardoise": "Slate & Steel"
+    },
     "descriptions": {
-      "terminal": "Cool dark, calm reading — the default theme.",
-      "atelier": "Light, like an analyst’s note on paper.",
-      "schema": "Technical monochrome, almost colourless.",
-      "ardoise": "Warm dark, soothing, with softer corners."
+      "terminal": "Dark graphite with a brass accent — the default theme.",
+      "atelier": "Light parchment, narration in serif — an analyst’s note.",
+      "schema": "Monochrome ink, almost colourless: all typography.",
+      "ardoise": "Dark slate with a steel-blue accent."
     }
   },
   "connexion": {

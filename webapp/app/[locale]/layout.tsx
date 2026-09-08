@@ -152,9 +152,10 @@ export const viewport: Viewport = {
   // visual one) so `svh`/percentage heights shrink and a bottom-pinned input
   // (mobile chat) stays visible above the keyboard instead of being covered.
   interactiveWidget: 'resizes-content',
+  // Browser-chrome hint. Dark = the Graphite default bg (--bg); light = Parchemin bg.
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#0a0f1c' },
+    { media: '(prefers-color-scheme: light)', color: '#fbfaf8' },
+    { media: '(prefers-color-scheme: dark)', color: '#0c0d0f' },
   ],
 };
 

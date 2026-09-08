@@ -61,16 +61,16 @@ export function ThemeMenu() {
           aria-label={t('menuHeading')}
           className="absolute right-0 z-50 mt-2 w-60 overflow-hidden rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-md"
         >
-          {THEMES.map((t) => {
-            const selected = active === t.id;
+          {THEMES.map((design) => {
+            const selected = active === design.id;
             return (
               <button
-                key={t.id}
+                key={design.id}
                 type="button"
                 role="menuitemradio"
                 aria-checked={selected}
                 onClick={() => {
-                  setTheme(t.id);
+                  setTheme(design.id);
                   setOpen(false);
                 }}
                 className={cn(
@@ -78,18 +78,24 @@ export function ThemeMenu() {
                   'focus:outline-none focus-visible:bg-accent hover:bg-accent',
                 )}
               >
+                {/* Vignette DERIVED from the live tokens: the wrapper carries
+                    data-design, so var(--bg)/var(--acc) resolve to THIS theme's
+                    palette regardless of the active one — never hand-maintained. */}
                 <span
-                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded border border-black/10"
-                  style={{ background: t.swatch.bg }}
+                  data-design={design.id}
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded border"
+                  style={{ background: 'var(--bg)', borderColor: 'var(--line-2)' }}
                   aria-hidden
                 >
                   <span
                     className="h-2.5 w-2.5 rounded-full"
-                    style={{ background: t.swatch.accent }}
+                    style={{ background: 'var(--acc)' }}
                   />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block font-medium text-foreground">{t.name}</span>
+                  <span className="block font-medium text-foreground">
+                    {t(`names.${design.id}`)}
+                  </span>
                 </span>
                 {selected && <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden />}
               </button>

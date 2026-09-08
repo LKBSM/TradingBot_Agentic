@@ -460,6 +460,7 @@ function ThemeGrid() {
         <ThemeTile
           key={theme.id}
           theme={theme}
+          name={t(`names.${theme.id}`)}
           description={t(`descriptions.${theme.id}`)}
           activeLabel={t('active')}
           selected={active === theme.id}
@@ -472,18 +473,19 @@ function ThemeGrid() {
 
 function ThemeTile({
   theme,
+  name,
   description,
   activeLabel,
   selected,
   onSelect,
 }: {
   theme: ThemeMeta;
+  name: string;
   description: string;
   activeLabel: string;
   selected: boolean;
   onSelect: () => void;
 }) {
-  const { bg, panel, accent } = theme.swatch;
   return (
     <button
       type="button"
@@ -494,13 +496,15 @@ function ThemeTile({
       className={selected ? 'themetile on' : 'themetile'}
     >
       <span className="chk">{activeLabel}</span>
-      <div className="sw3" aria-hidden>
-        <i style={{ background: bg }} />
-        <i style={{ background: panel }} />
-        <i style={{ background: accent }} />
+      {/* Swatch DERIVED from the live tokens (THM-1): data-design makes var(--…)
+          resolve to THIS theme regardless of the active one — never hand-kept. */}
+      <div className="sw3" data-design={theme.id} aria-hidden>
+        <i style={{ background: 'var(--bg)' }} />
+        <i style={{ background: 'var(--panel)' }} />
+        <i style={{ background: 'var(--acc)' }} />
       </div>
       <div className="tt">
-        <b>{theme.name}</b>
+        <b>{name}</b>
         <span>{description}</span>
       </div>
     </button>

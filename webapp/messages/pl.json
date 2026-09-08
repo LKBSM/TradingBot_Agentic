@@ -2814,11 +2814,17 @@
     "sectionDescription": "Wybierz motyw interfejsu. Wybór jest stosowany natychmiast i zapamiętywany na tym urządzeniu.",
     "groupLabel": "Wybór motywu",
     "active": "Aktywny",
+    "names": {
+      "terminal": "Grafit i mosiądz",
+      "atelier": "Pergamin",
+      "schema": "Atrament",
+      "ardoise": "Łupek i stal"
+    },
     "descriptions": {
-      "terminal": "Chłodna ciemność, spokojne czytanie — motyw domyślny.",
-      "atelier": "Jasny, jak notatka analityka na papierze.",
-      "schema": "Techniczna monochromia, niemal bez koloru.",
-      "ardoise": "Ciepła ciemność, kojąca, z łagodniejszymi rogami."
+      "terminal": "Ciemny grafit z mosiężnym akcentem — motyw domyślny.",
+      "atelier": "Jasny pergamin, narracja szeryfowa — notatka analityka.",
+      "schema": "Monochromatyczny atrament, niemal bez koloru: sama typografia.",
+      "ardoise": "Ciemny łupek ze stalowoniebieskim akcentem."
     }
   },
   "connexion": {
