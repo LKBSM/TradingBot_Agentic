@@ -1117,10 +1117,6 @@
       "openChart": "Im Chart öffnen",
       "range": "Spanne {low}–{high}"
     },
-    "toggle": {
-      "label": "Automatische Aktualisierung (bei jeder Schließung)",
-      "aria": "Automatische Aktualisierung bei jeder Kerzenschließung"
-    },
     "builder": {
       "composeTitle": "Stellen Sie Ihre Bedingungen zusammen",
       "eyebrow": "Scanner · Palette",

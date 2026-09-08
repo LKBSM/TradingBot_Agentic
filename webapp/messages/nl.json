@@ -1117,10 +1117,6 @@
       "openChart": "Openen in de grafiek",
       "range": "range {low}–{high}"
     },
-    "toggle": {
-      "label": "Automatische verversing (bij elke sluiting)",
-      "aria": "Automatische verversing bij elke candlesluiting"
-    },
     "builder": {
       "composeTitle": "Stel uw voorwaarden samen",
       "eyebrow": "Scanner · palet",

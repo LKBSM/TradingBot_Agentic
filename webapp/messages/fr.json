@@ -1124,10 +1124,6 @@
       "nonmatch": "Non correspondants ({count})",
       "noneval": "Non évaluables ({count})"
     },
-    "toggle": {
-      "label": "Actualisation auto (à chaque clôture)",
-      "aria": "Actualisation automatique à chaque clôture de bougie"
-    },
     "builder": {
       "composeTitle": "Compose tes conditions",
       "eyebrow": "Scanner · palette",

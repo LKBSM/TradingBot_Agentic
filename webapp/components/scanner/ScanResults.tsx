@@ -7,7 +7,6 @@ import { paletteEntry } from '@/lib/conditions/palette';
 import { useNow } from '@/lib/conditions/use-now';
 import { cn } from '@/lib/utils';
 import { ComboCard } from './ComboCard';
-import { AutoRefreshToggle } from './AutoRefreshToggle';
 import { instrumentLabel } from './labels';
 import { useScannerLabels } from './use-scanner-labels';
 
@@ -33,8 +32,6 @@ export function ScanResults({
   onEdit,
   onRefresh,
   isRefreshing,
-  autoRefreshEnabled,
-  onToggleAutoRefresh,
 }: {
   response: ConditionsScanResponse;
   config: ConditionsConfig;
@@ -42,8 +39,6 @@ export function ScanResults({
   onEdit(): void;
   onRefresh(): void;
   isRefreshing: boolean;
-  autoRefreshEnabled: boolean;
-  onToggleAutoRefresh(next: boolean): void;
 }) {
   const t = useTranslations('scanner');
   const { age } = useScannerLabels();
@@ -120,7 +115,6 @@ export function ScanResults({
           {isRefreshing ? t('results.scanning') : t('results.rescan')}
         </button>
         <button className="btn" onClick={onEdit}>{t('editConditions')}</button>
-        <AutoRefreshToggle enabled={autoRefreshEnabled} onChange={onToggleAutoRefresh} />
       </div>
 
       {allStale && (

@@ -4,8 +4,6 @@ import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import { useConditionsConfig } from '@/lib/conditions/config-store';
 import { useSavedStrategies, type SavedStrategy } from '@/lib/conditions/strategy-store';
-import { useAutoRefreshPref } from '@/lib/conditions/auto-refresh-store';
-import { useCandleCloseRefresh } from '@/lib/conditions/use-candle-close-refresh';
 import {
   fetchConditionsScan,
   ScanNotAvailableError,
@@ -26,7 +24,6 @@ export function ScannerWorkspace({ locale }: { locale: string }) {
   const t = useTranslations('scanner');
   const { config, ready, save } = useConditionsConfig();
   const saved = useSavedStrategies();
-  const { enabled: autoRefresh, setEnabled: setAutoRefresh } = useAutoRefreshPref();
   const [editing, setEditing] = React.useState(false);
   // Strategy loaded into the builder ("recharger" = repopulate the palette,
   // then the existing "Enregistrer & relancer" runs the scan). The key forces
@@ -96,25 +93,10 @@ export function ScannerWorkspace({ locale }: { locale: string }) {
     }
   }, [ready, config, showBuilder, runScan]);
 
-  // Timeframes actually scanned (from the latest response) drive the auto-refresh
-  // cadence. The scan covers fixed combos (M15/H1/H4) — we read them off the
-  // response so the cadence stays correct if that set ever changes.
-  const timeframes = React.useMemo(
-    () => Array.from(new Set((response?.matches ?? []).map((m) => m.timeframe))),
-    [response],
-  );
-
-  // Auto-refresh aligned on candle closes (not a per-second poll). Only active
-  // once we have a config, results, and are not editing.
-  const canAutoRefresh = ready && !!config && !showBuilder && !!response;
-  useCandleCloseRefresh({
-    timeframes,
-    enabled: autoRefresh && canAutoRefresh,
-    isScanning,
-    onRefresh: React.useCallback(() => {
-      if (config) void runScan(config);
-    }, [config, runScan]),
-  });
+  // SC-3 — no background refresh. The scan used to re-run on its own at every
+  // candle close (useCandleCloseRefresh, driven by a stored preference and its
+  // toolbar switch); that whole path is gone. Results change only when the user
+  // asks for it: « Relancer le scan », or saving edited conditions.
 
   if (!ready) {
     return <p className="text-sm text-muted-foreground">{t('loading')}</p>;
@@ -198,8 +180,6 @@ export function ScannerWorkspace({ locale }: { locale: string }) {
         isRefreshing={isScanning}
         onRefresh={() => runScan(config)}
         onEdit={() => setEditing(true)}
-        autoRefreshEnabled={autoRefresh}
-        onToggleAutoRefresh={setAutoRefresh}
       />
       {strategyPanel}
     </div>

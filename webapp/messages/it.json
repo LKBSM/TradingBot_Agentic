@@ -1117,10 +1117,6 @@
       "openChart": "Apri nel grafico",
       "range": "range {low}–{high}"
     },
-    "toggle": {
-      "label": "Aggiornamento automatico (ad ogni chiusura)",
-      "aria": "Aggiornamento automatico ad ogni chiusura di candela"
-    },
     "builder": {
       "composeTitle": "Componi le tue condizioni",
       "eyebrow": "Scanner · palette",

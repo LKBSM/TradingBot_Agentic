@@ -97,8 +97,6 @@ describe('DS-1 presentation components — no network', () => {
         onEdit={noop}
         onRefresh={noop}
         isRefreshing={false}
-        autoRefreshEnabled={false}
-        onToggleAutoRefresh={noop}
       />,
     );
     // the full-match combo card is present

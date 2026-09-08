@@ -1124,10 +1124,6 @@
       "nonmatch": "Non-matching ({count})",
       "noneval": "Non-evaluable ({count})"
     },
-    "toggle": {
-      "label": "Auto-refresh (at every close)",
-      "aria": "Automatic refresh at every candle close"
-    },
     "builder": {
       "composeTitle": "Compose your conditions",
       "eyebrow": "Scanner · palette",

@@ -1117,10 +1117,6 @@
       "openChart": "Otwórz na wykresie",
       "range": "zakres {low}–{high}"
     },
-    "toggle": {
-      "label": "Automatyczne odświeżanie (przy każdym zamknięciu)",
-      "aria": "Automatyczne odświeżanie przy każdym zamknięciu świecy"
-    },
     "builder": {
       "composeTitle": "Skomponuj swoje warunki",
       "eyebrow": "Skaner · paleta",

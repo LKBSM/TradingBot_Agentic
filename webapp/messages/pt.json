@@ -1117,10 +1117,6 @@
       "openChart": "Abrir no gráfico",
       "range": "range {low}–{high}"
     },
-    "toggle": {
-      "label": "Atualização automática (a cada fecho)",
-      "aria": "Atualização automática a cada fecho de vela"
-    },
     "builder": {
       "composeTitle": "Componha as suas condições",
       "eyebrow": "Scanner · paleta",
