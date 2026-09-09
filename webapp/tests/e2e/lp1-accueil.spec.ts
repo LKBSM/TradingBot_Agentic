@@ -1,5 +1,17 @@
 import { expect, test, type Page } from '@playwright/test';
 import { dismissCookieBanner } from './utils';
+import frMessages from '@/messages/fr.json';
+import enMessages from '@/messages/en.json';
+
+/**
+ * The visitor CTA label is READ from the messages, never hardcoded: PAY-2
+ * renamed it « Essayer gratuitement » → « S'abonner » and this spec silently
+ * rotted for a whole release. What the test guards is the RULE — a logged-out
+ * visitor gets the sign-up CTA and no App/Zones/Scanner — not the wording.
+ */
+function ctaLabel(messages: { nav: { tryFree: string } }): RegExp {
+  return new RegExp(messages.nav.tryFree.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+}
 
 /**
  * LP-1 — home page. Runs fr (/) and en (/en) at desktop 1280×800 and mobile
@@ -82,7 +94,7 @@ const LOCALES: Loc[] = [
     calcRow: 'Parcours moyen récent',
     illus: /Données d'illustration/i,
     statStructures: /structures détectées/i,
-    tryFree: /Essayer gratuitement/i,
+    tryFree: ctaLabel(frMessages),
     dot5: /Aller au volet 5/i,
   },
   {
@@ -120,7 +132,7 @@ const LOCALES: Loc[] = [
     calcRow: 'Recent average range',
     illus: /Illustration data/i,
     statStructures: /structures detected/i,
-    tryFree: /Try for free/i,
+    tryFree: ctaLabel(enMessages),
     dot5: /Go to panel 5/i,
   },
 ];
@@ -300,7 +312,7 @@ for (const loc of LOCALES) {
       });
 
       if (vp.name === 'desktop') {
-        test('nav bar: a visitor gets no App/Zones/Scanner, sees the free-trial CTA', async ({ page }) => {
+        test('nav bar: a visitor gets no App/Zones/Scanner, sees the sign-up CTA', async ({ page }) => {
           await open(page, loc);
           const header = page.locator('header').first();
           // gate the assertions on the resolved logged-out state

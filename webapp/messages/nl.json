@@ -426,19 +426,19 @@
       "caps": {
         "c1": {
           "h": "Ze onderwijst SMC",
-          "p": "Elk concept — Order Block, Fair Value Gap, BOS, CHOCH, mitigation, liquiditeit — uitgelegd <b>met het voorbeeld voor je ogen</b>, op jouw markt, niet in een theoretische cursus."
+          "p": "Order Block, Fair Value Gap, BOS, CHOCH, mitigation, liquiditeit — <b>elk concept uitgelegd op jouw eigen markt</b>."
         },
         "c2": {
           "h": "Ze beschrijft wat er is",
-          "p": "Exacte niveaus, tijdstempels, aantal tests, de toestand van elke liquiditeitszone. <b>Uitsluitend gedetecteerde feiten</b> — een verzonnen verwijzing wordt door de code afgewezen, niet doorgelaten."
+          "p": "Ze noemt alleen werkelijk gedetecteerde niveaus: <b>een verzonnen verwijzing wordt door de code afgewezen</b>."
         },
         "c3": {
           "h": "Ze bestuurt je weergave",
-          "p": "« Verberg de FVG's », « isoleer deze zone », « schakel naar 4 u ». Jij spreekt, <b>de grafiek verandert</b>. Geen gezoek meer naar de juiste knop."
+          "p": "« Verberg de FVG’s », « isoleer deze zone », « schakel naar 4 u »: jij spreekt, <b>de grafiek verandert</b>."
         },
         "c4": {
           "h": "Ze weigert te gissen",
-          "p": "Geen voorspelling, geen aansporing om in te grijpen, geen advies. <b>Het is een beschrijvend hulpmiddel</b>, en ze zegt het je zelf als je haar vraagt waar de prijs naartoe gaat."
+          "p": "Geen voorspelling, geen aansporing om in te grijpen, geen advies: <b>het is een beschrijvend hulpmiddel</b>."
         }
       }
     },
