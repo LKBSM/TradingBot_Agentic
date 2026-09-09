@@ -374,6 +374,10 @@ def build_demo_chatbot(
             build_scope_block(scenario, locale),
             load_product_knowledge(locale),
         ],
+        # The verbatim safety templates (Couches 1-4) answer in the visitor's
+        # language too. A hard refusal short-circuits the model, so without this
+        # an English visitor asking for a forecast got French.
+        locale=locale,
     )
     logger.info(
         "Demo chatbot (MIA-4S, simulation) built — locale=%s, %d tools, scenario '%s'",
