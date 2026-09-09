@@ -62,14 +62,30 @@ const FORBIDDEN: [RegExp, string][] = [
 ];
 const ALLOW = new Set(['markets.ts', 'markets.generated.ts']);
 
-function walk(dir: string, hits: string[]): void {
+/**
+ * What the guard scans: PRODUCT source only. A test may legitimately pin a
+ * fixed list of symbols as a fixture — `lib/market-reading/session.test.ts`
+ * checks that `isTwentyFourSevenMarket` (a regex over the symbol, NOT a
+ * registry lookup) answers "no" for gold, FX and indices. That is not the
+ * enumeration MKT-1 abolishes.
+ *
+ * The guard already expressed that intent, but by DIRECTORY only
+ * (`__tests__`). Four test files sit next to their module in
+ * `lib/market-reading/`, so the guard shipped red on 2026-08-21 against a test
+ * written on 2026-07-19. Excluding test files by NAME as well as by directory
+ * is the same rule, applied consistently.
+ */
+const IS_TEST_FILE = /\.(test|spec)\.tsx?$/;
+
+function walk(dir: string, hits: string[], seen: { files: number }): void {
   for (const name of readdirSync(dir)) {
     const p = resolve(dir, name);
     const st = statSync(p);
     if (st.isDirectory()) {
       if (name === 'node_modules' || name === '__tests__' || name === '.next') continue;
-      walk(p, hits);
-    } else if (/\.(ts|tsx)$/.test(name) && !ALLOW.has(name)) {
+      walk(p, hits, seen);
+    } else if (/\.(ts|tsx)$/.test(name) && !ALLOW.has(name) && !IS_TEST_FILE.test(name)) {
+      seen.files += 1;
       const text = readFileSync(p, 'utf-8');
       for (const [re, what] of FORBIDDEN) {
         if (re.test(text)) hits.push(`${p.replace(REPO, '')} → ${what}`);
@@ -81,8 +97,12 @@ function walk(dir: string, hits: string[]): void {
 describe('MKT-1 GUARD — no hardcoded market list in the webapp', () => {
   it('every enumeration derives from lib/markets', () => {
     const hits: string[] = [];
-    walk(resolve(process.cwd(), 'lib'), hits);
-    walk(resolve(process.cwd(), 'components'), hits);
+    const seen = { files: 0 };
+    walk(resolve(process.cwd(), 'lib'), hits, seen);
+    walk(resolve(process.cwd(), 'components'), hits, seen);
+    // A broken exclusion could empty the perimeter and make the guard pass on
+    // nothing at all. Assert it really read the product source.
+    expect(seen.files, 'the guard must scan a non-empty perimeter').toBeGreaterThan(100);
     expect(hits, `derive from @/lib/markets instead:\n${hits.join('\n')}`).toEqual([]);
   });
 });
