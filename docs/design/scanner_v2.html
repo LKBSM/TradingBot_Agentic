@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scanner — maquette v2</title>
+<style>
+  :root{
+    --bg:#0C0D0F; --panel:#141518; --panel-2:#1C1E22; --panel-3:#26282D;
+    --txt:#E8E8E9; --dim:#97999E; --faint:#5F6167;
+    --acc:#C9A14A; --acc-dim:rgba(201,161,74,.14); --acc-txt:#14100A;
+
+    --bull:#37b98c; --bear:#dd6b7a; --ob:#d98aa3; --fvg:#8b7fd9; --liq:#d6a24a;
+
+    --fs-title:26px; --fs-section:19px; --fs-body:15px; --fs-secondary:14px; --fs-label:12px; --fs-legal:11px;
+
+    --sans: -apple-system, "Inter", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--txt);
+    font-family:var(--sans); font-size:var(--fs-body); line-height:1.5;
+  }
+  .num{ font-family:var(--mono); font-variant-numeric:tabular-nums; }
+
+  .shell{ max-width:1180px; margin:0 auto; padding:32px 24px 64px; }
+
+  .page-head{ display:flex; align-items:baseline; justify-content:space-between; gap:24px; margin-bottom:6px; }
+  .page-head h1{ font-size:var(--fs-title); font-weight:600; margin:0; }
+  .page-head p{ margin:4px 0 0; color:var(--dim); font-size:var(--fs-secondary); max-width:46ch; }
+
+  .toolbar{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:20px 0; }
+  .pill-btn{
+    background:var(--panel-2); border:1px solid var(--panel-3); color:var(--txt);
+    border-radius:8px; padding:9px 14px; font-size:var(--fs-secondary); font-weight:600;
+    cursor:pointer;
+  }
+  .pill-btn.ghost{ background:transparent; }
+  .status-dot{ width:6px; height:6px; border-radius:50%; background:var(--bull); display:inline-block; margin-right:7px; }
+  .spacer{ flex:1; }
+  .toggle-line{ display:flex; align-items:center; gap:8px; color:var(--dim); font-size:var(--fs-secondary); }
+  .switch{ width:34px; height:19px; background:var(--panel-3); border-radius:999px; position:relative; }
+  .switch::after{ content:""; position:absolute; top:2px; left:2px; width:15px; height:15px; border-radius:50%; background:var(--faint); }
+
+  .strategy{
+    background:var(--panel); border:1px solid var(--panel-3); border-radius:12px;
+    padding:16px 18px; margin-bottom:18px;
+  }
+  .strategy-label{ font-size:var(--fs-label); color:var(--dim); font-weight:600; margin-bottom:10px; }
+  .cond-row{ display:flex; gap:8px; flex-wrap:wrap; }
+  .cond-chip{
+    background:var(--acc-dim); border:1px solid rgba(201,161,74,.35); color:var(--acc);
+    border-radius:999px; padding:6px 12px; font-size:var(--fs-secondary); font-weight:600;
+    display:flex; align-items:center; gap:6px;
+  }
+  .cond-chip svg{ width:13px; height:13px; }
+  .strategy-note{ margin-top:10px; color:var(--faint); font-size:var(--fs-legal); }
+
+  .results-head{ display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; margin:26px 0 14px; }
+  .results-head h2{ font-size:var(--fs-section); font-weight:600; margin:0; }
+  .results-meta{ color:var(--dim); font-size:var(--fs-secondary); }
+  .results-meta .num{ color:var(--txt); }
+
+  .tabs{ display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap; }
+  .tab{
+    background:var(--panel-2); border:1px solid var(--panel-3); color:var(--dim);
+    border-radius:8px; padding:8px 14px; font-size:var(--fs-secondary); font-weight:600; cursor:pointer;
+  }
+  .tab.active{ background:var(--panel-3); color:var(--txt); border-color:var(--faint); }
+
+  .grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:860px){ .grid{ grid-template-columns:1fr; } }
+
+  .card{
+    background:var(--panel); border:1px solid var(--panel-3); border-radius:12px;
+    padding:18px 20px; display:flex; flex-direction:column; gap:14px;
+  }
+  .card-top{ display:flex; align-items:center; justify-content:space-between; }
+  .card-title{ display:flex; align-items:center; gap:10px; }
+  .card-title .mkt{ font-weight:600; font-size:var(--fs-secondary); }
+  .card-title .tf{
+    font-size:var(--fs-label); color:var(--dim); background:var(--panel-2);
+    border:1px solid var(--panel-3); border-radius:6px; padding:2px 7px;
+  }
+  .match-badge{ font-size:var(--fs-label); color:var(--acc); font-weight:600; }
+
+  .primary-fact{ display:flex; align-items:flex-start; gap:10px; }
+  .check{
+    width:16px; height:16px; border-radius:50%; background:var(--acc-dim); color:var(--acc);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:2px;
+  }
+  .check svg{ width:9px; height:9px; }
+  .primary-fact p{ margin:0; font-size:var(--fs-body); }
+
+  .chips{ display:flex; flex-wrap:wrap; gap:8px; }
+  .chip{
+    display:flex; align-items:center; gap:6px; background:var(--panel-2); border:1px solid var(--panel-3);
+    border-radius:7px; padding:5px 10px; font-size:var(--fs-label); color:var(--dim);
+  }
+  .chip .dot{ width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+  .chip .num{ color:var(--txt); font-weight:600; }
+  .dot.bull{ background:var(--bull); } .dot.bear{ background:var(--bear); }
+  .dot.ob{ background:var(--ob); } .dot.fvg{ background:var(--fvg); } .dot.liq{ background:var(--liq); }
+
+  details{ border-top:1px solid var(--panel-2); padding-top:10px; }
+  details + details{ border-top:none; padding-top:0; }
+  summary{
+    cursor:pointer; list-style:none; display:flex; align-items:center; gap:8px;
+    font-size:var(--fs-secondary); color:var(--dim); font-weight:600;
+  }
+  summary::-webkit-details-marker{ display:none; }
+  summary::before{ content:"›"; display:inline-block; transition:transform .15s; color:var(--faint); }
+  details[open] summary::before{ transform:rotate(90deg); }
+  .detail-body{ padding:10px 0 0 18px; font-size:var(--fs-secondary); color:var(--dim); }
+  .detail-body .against-line{ display:flex; gap:8px; align-items:flex-start; margin-bottom:6px; }
+  .detail-body .against-line .x{ color:var(--faint); flex-shrink:0; }
+
+  .card-foot{ display:flex; align-items:center; justify-content:space-between; padding-top:2px; }
+  .price-line{ font-size:var(--fs-secondary); color:var(--dim); }
+  .price-line .num{ color:var(--txt); font-weight:600; }
+  .actions{ display:flex; gap:8px; }
+  .btn{
+    border-radius:7px; padding:8px 14px; font-size:var(--fs-secondary); font-weight:600; cursor:pointer; border:1px solid transparent;
+  }
+  .btn.primary{ background:var(--acc); color:var(--acc-txt); }
+  .btn.secondary{ background:transparent; border-color:var(--panel-3); color:var(--txt); }
+
+  .legal{ margin-top:40px; color:var(--faint); font-size:var(--fs-legal); max-width:60ch; }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <div class="page-head">
+    <div>
+      <h1>Scanner</h1>
+      <p>Tes conditions, présentes et factuelles — résultats transparents, sans score.</p>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <span class="pill-btn ghost"><span class="status-dot"></span>Aligné sur les clôtures</span>
+    <span class="spacer"></span>
+    <button class="pill-btn">Relancer le scan</button>
+    <button class="pill-btn">Modifier mes conditions</button>
+  </div>
+
+  <div class="strategy">
+    <div class="strategy-label">Ma stratégie — conditions actives</div>
+    <div class="cond-row">
+      <span class="cond-chip">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Tes conditions (toutes)
+      </span>
+      <span class="cond-chip">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Tendance actuelle (structure)
+      </span>
+    </div>
+    <div class="strategy-note">Palette fermée, au présent. Toute condition prédictive est refusée — pas de « va rebondir », pas de cible.</div>
+  </div>
+
+  <div class="results-head">
+    <h2>Conditions présentes maintenant</h2>
+    <span class="results-meta"><span class="num">10</span> combos · il y a <span class="num">9</span> min · aucun classement</span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active">Correspondances (6)</div>
+    <div class="tab">Presque (0)</div>
+    <div class="tab">Non correspondants (4)</div>
+    <div class="tab">Non évaluables (0)</div>
+  </div>
+
+  <div class="grid">
+
+    <!-- Card 1 -->
+    <div class="card">
+      <div class="card-top">
+        <div class="card-title"><span class="mkt">XAU/USD</span><span class="tf">H4</span></div>
+        <span class="match-badge">1 / 1</span>
+      </div>
+
+      <div class="primary-fact">
+        <span class="check"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 4.5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <p>La tendance structurelle est haussier.</p>
+      </div>
+
+      <div class="chips">
+        <span class="chip"><span class="dot bull"></span>Expansion</span>
+        <span class="chip"><span class="dot ob"></span><span class="num">4</span> OB</span>
+        <span class="chip"><span class="dot fvg"></span><span class="num">10</span> FVG actifs</span>
+        <span class="chip"><span class="dot bear"></span>BOS baissier</span>
+        <span class="chip"><span class="dot liq"></span><span class="num">4224.23</span>–<span class="num">4695.94</span></span>
+      </div>
+
+      <details>
+        <summary>Ce qui va à l'encontre (1)</summary>
+        <div class="detail-body">
+          <div class="against-line"><span class="x">✕</span>Le 5 min, 15 min, 1 h sont en tendance baissière — désaccord multi-unités.</div>
+        </div>
+      </details>
+      <details>
+        <summary>Contexte que tu n'as pas demandé</summary>
+        <div class="detail-body">9 actus importantes à venir — à garder en tête.</div>
+      </details>
+
+      <div class="card-foot">
+        <span class="price-line">Prix <span class="num">4408.91702</span> · clôturée il y a <span class="num">5</span> h</span>
+      </div>
+      <div class="actions">
+        <button class="btn primary">Analyser →</button>
+        <button class="btn secondary">Ouvrir dans le graphique</button>
+      </div>
+    </div>
+
+    <!-- Card 2 -->
+    <div class="card">
+      <div class="card-top">
+        <div class="card-title"><span class="mkt">XAU/USD</span><span class="tf">D1</span></div>
+        <span class="match-badge">1 / 1</span>
+      </div>
+
+      <div class="primary-fact">
+        <span class="check"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 4.5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <p>La tendance structurelle est haussier.</p>
+      </div>
+
+      <div class="chips">
+        <span class="chip"><span class="dot bull"></span>Tendance</span>
+        <span class="chip"><span class="dot ob"></span><span class="num">5</span> OB</span>
+        <span class="chip"><span class="dot fvg"></span><span class="num">11</span> FVG actifs</span>
+        <span class="chip"><span class="dot bull"></span>BOS haussier</span>
+        <span class="chip"><span class="dot liq"></span><span class="num">3949.44</span>–<span class="num">5417.76</span></span>
+      </div>
+
+      <details>
+        <summary>Ce qui va à l'encontre (1)</summary>
+        <div class="detail-body">
+          <div class="against-line"><span class="x">✕</span>Le 5 min, 15 min, 1 h sont en tendance baissière — désaccord multi-unités.</div>
+        </div>
+      </details>
+      <details>
+        <summary>Contexte que tu n'as pas demandé</summary>
+        <div class="detail-body">5 actus importantes à venir — à garder en tête.</div>
+      </details>
+
+      <div class="card-foot">
+        <span class="price-line">Prix <span class="num">4405.18434</span> · clôturée il y a <span class="num">18</span> h</span>
+      </div>
+      <div class="actions">
+        <button class="btn primary">Analyser →</button>
+        <button class="btn secondary">Ouvrir dans le graphique</button>
+      </div>
+    </div>
+
+  </div>
+
+  <p class="legal">Lecture algorithmique éducative — ne constitue ni un signal de trading, ni un conseil en investissement.</p>
+
+</div>
+</body>
+</html>

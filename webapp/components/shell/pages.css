@@ -373,6 +373,15 @@
   grid-template-columns: 1fr 1fr;
   gap: 11px;
 }
+/* SC-3 — the results grid had NO breakpoint: at 390px it still cut two columns,
+   measured at 181px and 158px, which is not a readable card and leaves the chip
+   row nothing to wrap into. One column below the shell's own mobile breakpoint,
+   as the scanner_v2 mock prescribes. */
+@media (max-width: 767px) {
+  .app-shell .resgrid {
+    grid-template-columns: 1fr;
+  }
+}
 .app-shell .combo {
   background: var(--panel);
   border: 1px solid var(--line);
@@ -450,6 +459,106 @@
 }
 .app-shell .cl.no {
   color: var(--faint);
+}
+/* SC-3 — block 1 leads with ONE full-weight fact. The met conditions after it
+   stay in the same family but recede (dimmer, no repeated marker), so a card
+   matching four conditions reads as one fact plus its companions instead of
+   four equal paragraphs. Nothing is hidden: every line is still rendered. */
+.app-shell .cl.yes.sub {
+  color: var(--dim);
+}
+.app-shell .cl.yes.sub .mk2-void {
+  background: none;
+  border: none;
+}
+
+/* ── SC-3: structure chips ─────────────────────────────────────────────────
+   A coloured, factual summary of the reading. Each chip is emitted only when
+   its source field exists (see ComboCard), so the row never carries a dash or
+   a default zero. */
+.app-shell .combo .chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 7px 0 2px;
+}
+.app-shell .combo .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  padding: 2px 7px;
+  font-size: var(--fs-legal);
+  color: var(--dim);
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.app-shell .combo .chip .mono {
+  color: var(--txt);
+  font-weight: 600;
+}
+.app-shell .combo .chip .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.app-shell .combo .chip .dot.d-bull {
+  background: var(--bull);
+}
+.app-shell .combo .chip .dot.d-bear {
+  background: var(--bear);
+}
+.app-shell .combo .chip .dot.d-neutral {
+  background: var(--faint);
+}
+.app-shell .combo .chip .dot.d-acc {
+  background: var(--acc);
+}
+/* --ob / --fvg are translucent ZONE FILLS (4–13 % alpha): painted straight onto
+   a 7px dot they are invisible. We take their `-l` line variants and composite
+   them over an opaque --panel-2 INSIDE the dot, so the swatch is solid whatever
+   sits behind it. And on the « schema » theme BOTH tokens are the same white —
+   so the FVG dot is also SQUARE. The two are then told apart by shape on every
+   theme, without inventing a token. */
+.app-shell .combo .chip .dot.d-ob {
+  background: linear-gradient(var(--ob-l), var(--ob-l)), var(--panel-2);
+}
+.app-shell .combo .chip .dot.d-fvg {
+  background: linear-gradient(var(--fvg-l), var(--fvg-l)), var(--panel-2);
+  border-radius: 1px;
+}
+
+/* ── SC-3: block 3 folded by default ───────────────────────────────────────
+   ONLY « Contexte que tu n'as pas demandé » folds. Block 2 (« ce qui va à
+   l'encontre ») is never a <details> — see the comment in ComboCard.tsx. */
+.app-shell .combo .ctxd > summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.app-shell .combo .ctxd > summary::-webkit-details-marker {
+  display: none;
+}
+.app-shell .combo .ctxd > summary::before {
+  content: '›';
+  display: inline-block;
+  transition: transform 0.15s;
+  color: var(--faint);
+  font-size: 12px;
+  line-height: 1;
+}
+.app-shell .combo .ctxd[open] > summary::before {
+  transform: rotate(90deg);
+}
+.app-shell .combo .ctxd > summary:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: 2px;
+  border-radius: 3px;
 }
 .app-shell .ctx2 {
   font-size: var(--fs-legal);

@@ -85,8 +85,10 @@ describe('ComboCard', () => {
 
   it('keeps « label — detail » for a condition whose detail is a sentence', () => {
     const { container } = render(<ComboCard match={makeMatch()} locale="fr" />);
+    // Marker-agnostic: SC-3 gives the leading met condition the ✓ and recedes the
+    // following ones, so what matters here is the label/detail composition.
     const met = Array.from(container.querySelectorAll('.cl.yes')).map((n) => n.textContent);
-    expect(met).toContain('✓Prix dans un Order Block — Prix dans 1 OB.');
+    expect(met.some((s) => s?.includes('Prix dans un Order Block — Prix dans 1 OB.'))).toBe(true);
   });
 
   it('never composes a context-against item as value-only (it is label — explanation)', () => {

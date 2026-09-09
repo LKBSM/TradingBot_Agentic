@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { buildAppHref } from '@/lib/conditions/app-link';
 import { mtfOrderFor } from '@/lib/market-reading/mtf-trend';
 import type { ComboMatch, ConditionOutcome, ConditionType } from '@/lib/conditions/types';
-import { biasGlyph, instrumentLabel } from './labels';
+import { biasGlyph, biasTone, instrumentLabel } from './labels';
 import { useScannerLabels } from './use-scanner-labels';
 
 /**
@@ -60,6 +60,9 @@ function ConditionText({ label, detail, type }: { label: string; detail: string;
   );
 }
 
+/** One structure chip: a coloured dot and a short factual label. */
+type Chip = { key: string; tone: string; label: React.ReactNode };
+
 /**
  * One scan result, rendered as a `.combo` card with THREE blocks ALWAYS in the
  * same order (SC-1):
@@ -72,6 +75,20 @@ function ConditionText({ label, detail, type }: { label: string; detail: string;
  * A NON-EVALUABLE condition is shown apart (it adjusts the denominator, counted
  * neither as met nor as against). No score, no ranking. "Analyser" / "Ouvrir
  * dans le graphique" send the user to look for themselves — never "Trader".
+ *
+ * SC-3 reworked the DENSITY of that same material, never its content:
+ *   · Block 1 leads with ONE full-weight fact; the other met conditions follow
+ *     in the same family at reduced weight. Nothing is dropped or truncated —
+ *     a card matching four conditions still shows all four.
+ *   · A row of coloured chips summarises the structure. Every chip is backed by
+ *     a real field of `match.context`; a field that is null (or a count of zero)
+ *     produces NO chip — never a dash, never a default zero. Nothing is invented
+ *     and nothing extra is fetched: the whole row reads the scan response the
+ *     card already received.
+ *   · Block 3 folds into a <details>, closed by default, with the high-impact
+ *     news count kept in the <summary> so that warning stays readable folded.
+ *   · Block 2 does NOT fold. It is never wrapped in a <details>, not even one
+ *     open by default (see the block comment on it below).
  */
 export function ComboCard({
   match,
@@ -101,6 +118,60 @@ export function ComboCard({
     })
     .join(' · ');
 
+  /*
+   * SC-3 — the structure chips. Each entry is pushed ONLY when its source field
+   * is really there. A null `structural_range` / `bos` / `choch`, an absent
+   * trend or phase, a zone count of zero: no chip at all. A count of zero is a
+   * true reading, not a missing one — but a « 0 OB » chip would say nothing, so
+   * the row keeps only what IS present and the exact counts stay in block 3
+   * below, which still lists them whatever their value.
+   */
+  const chips: Chip[] = [];
+  if (ctx.trend) {
+    chips.push({ key: 'trend', tone: biasTone(ctx.trend), label: bias(ctx.trend) });
+  }
+  if (ctx.market_phase) {
+    chips.push({ key: 'phase', tone: 'neutral', label: phase(ctx.market_phase) });
+  }
+  if (ctx.active_order_blocks > 0) {
+    chips.push({
+      key: 'ob',
+      tone: 'ob',
+      label: t.rich('chipOb', {
+        count: ctx.active_order_blocks,
+        n: (c) => <span className="mono">{c}</span>,
+      }),
+    });
+  }
+  if (ctx.active_fair_value_gaps > 0) {
+    chips.push({
+      key: 'fvg',
+      tone: 'fvg',
+      label: t.rich('chipFvg', {
+        count: ctx.active_fair_value_gaps,
+        n: (c) => <span className="mono">{c}</span>,
+      }),
+    });
+  }
+  if (ctx.bos?.direction) {
+    chips.push({
+      key: 'bos',
+      tone: biasTone(ctx.bos.direction),
+      label: t('chipBos', { dir: bias(ctx.bos.direction) }),
+    });
+  }
+  if (ctx.structural_range) {
+    chips.push({
+      key: 'range',
+      tone: 'acc',
+      label: (
+        <span className="mono">
+          {ctx.structural_range.low}–{ctx.structural_range.high}
+        </span>
+      ),
+    });
+  }
+
   return (
     <div className="combo">
       <div className="t1">
@@ -112,23 +183,52 @@ export function ComboCard({
         </span>
       </div>
 
-      {/* Block 1 — Ce qui correspond */}
+      {/* Block 1 — Ce qui correspond. The FIRST met condition carries the full
+          weight (its own marker, readable text); the following ones stay in the
+          same family, receded. All of them are rendered: a card matching four
+          conditions shows four lines, none truncated. */}
       <div className="blk-lbl">{t('matchBlock')}</div>
       {match.conditions_met.length === 0 ? (
         <p className="blk-empty">{t('matchNone')}</p>
       ) : (
-        match.conditions_met.map((c) => (
-          <div key={`met-${c.type}`} className="cl yes">
-            <span className="mk2" aria-hidden>✓</span>
+        match.conditions_met.map((c, i) => (
+          <div key={`met-${c.type}`} className={i === 0 ? 'cl yes lead' : 'cl yes sub'}>
+            {i === 0 ? (
+              <span className="mk2" aria-hidden>✓</span>
+            ) : (
+              <span className="mk2 mk2-void" aria-hidden />
+            )}
             <ConditionText label={c.label} detail={c.detail} type={c.type} />
           </div>
         ))
       )}
 
+      {/* Structure chips — a coloured summary of what this reading holds. Each
+          one is backed by a real field of the scan response (see `chips` above);
+          an absent field yields no chip. Purely additive: everything summarised
+          here is also written out in the context block further down. */}
+      {chips.length > 0 && (
+        <div className="chips" data-testid="combo-chips" aria-label={t('chipsAria')}>
+          {chips.map((c) => (
+            <span className="chip" key={c.key} data-chip={c.key}>
+              <span className={`dot d-${c.tone}`} aria-hidden />
+              {c.label}
+            </span>
+          ))}
+        </div>
+      )}
+
       {/* Block 2 — Ce qui va à l'encontre (NEVER hidden nor collapsible).
           Holds the UNMET selected conditions AND the factual against-signals
           (multi-unit disagreement, contracted volatility, tested zone) that the
-          engine surfaces even on a full match. */}
+          engine surfaces even on a full match.
+          SC-3: block 3 below folds into a <details>; THIS ONE MUST NOT, not even
+          inside a <details open>. « A reading you only half-read is a reading you
+          misread » is a promise made on the landing page and in two audits
+          (AUDIT-lp-1-accueil, AUDIT-lp-2); the SC-3 design mock did fold it, and
+          we deliberately departed from the mock on this single point. Guarded by
+          `sc1-results.test.tsx`, `sc3-against-block.test.tsx` and
+          `sc1-scanner.spec.ts`. */}
       <div className="blk-lbl" data-testid="against-block">{t('againstBlock')}</div>
       {match.conditions_unmet.length === 0 && againstItems.length === 0 ? (
         <p className="blk-empty">{t('againstNone')}</p>
@@ -162,17 +262,27 @@ export function ComboCard({
         </>
       )}
 
-      {/* Block 3 — Contexte que tu n'as pas demandé */}
-      <div className="blk-lbl">{t('contextBlock')}</div>
-      <div className="ctx2">
-        {t('trend', { label: bias(ctx.trend) })} · {phase(ctx.market_phase)} · MTF {mtf} ·{' '}
-        {t('obFvg', { ob: ctx.active_order_blocks, fvg: ctx.active_fair_value_gaps })}
-        {ctx.bos ? t('bosSuffix', { dir: bias(ctx.bos.direction) }) : ''}
-        {ctx.structural_range
-          ? ` · ${t('range', { low: ctx.structural_range.low, high: ctx.structural_range.high })}`
-          : ''}
-        {importantNewsCount > 0 ? ` · ${t('importantNews', { count: importantNewsCount })}` : ''}
-      </div>
+      {/* Block 3 — Contexte que tu n'as pas demandé. Folded by default (SC-3):
+          it is, by definition, what the user did NOT ask for. Its body is
+          unchanged — every fact stays one click away, none is dropped. The
+          high-impact news count rides in the SUMMARY, so the one warning in
+          there stays readable while the block is closed. */}
+      <details className="ctxd" data-testid="context-block">
+        <summary className="blk-lbl">
+          {importantNewsCount > 0
+            ? t('contextBlockWithNews', { count: importantNewsCount })
+            : t('contextBlock')}
+        </summary>
+        <div className="ctx2">
+          {t('trend', { label: bias(ctx.trend) })} · {phase(ctx.market_phase)} · MTF {mtf} ·{' '}
+          {t('obFvg', { ob: ctx.active_order_blocks, fvg: ctx.active_fair_value_gaps })}
+          {ctx.bos ? t('bosSuffix', { dir: bias(ctx.bos.direction) }) : ''}
+          {ctx.structural_range
+            ? ` · ${t('range', { low: ctx.structural_range.low, high: ctx.structural_range.high })}`
+            : ''}
+          {importantNewsCount > 0 ? ` · ${t('importantNews', { count: importantNewsCount })}` : ''}
+        </div>
+      </details>
 
       {match.close_price != null && (
         <div className="mono mt-1 fs-legal text-[color:var(--faint)]">
