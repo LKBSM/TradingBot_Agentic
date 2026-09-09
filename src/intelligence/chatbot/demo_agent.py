@@ -193,7 +193,12 @@ def load_product_knowledge(locale: str = DEFAULT_LOCALE) -> str:
             parts.append(f"- Abonnement mensuel : {amount} {plan.currency} par mois.")
     parts += [
         "- Un seul abonnement, tout le produit. Résiliable à tout moment depuis le compte.",
-        f"- Mention légale du prix : {pricing_copy.get('legal', '')}",
+        # The price's legal mention is deliberately NOT quoted here. It is
+        # rendered next to the price by the page itself, and it contains
+        # vocabulary the agent's own rules forbid it from writing — feeding it
+        # in would only tempt the model into an answer Couche 3 then destroys.
+        "- Les mentions légales du prix sont affichées à côté du prix sur la page "
+        "de tarif : renvoie le visiteur vers la page, ne les récite pas.",
     ]
 
     paid = pricing_copy.get("paid", {})
@@ -260,6 +265,11 @@ def build_scope_block(
             "chiffre de publication ou un autre marché : tu réponds que la démonstration "
             "ne porte que sur ce scénario figé, et que le produit, lui, lit les marchés "
             "réels. Tu ne donnes AUCUN chiffre qui ne soit pas dans le scénario ci-dessous.",
+            "- AVANT TOUTE ACTION D'AFFICHAGE, appelle get_illustration_reading DANS LE "
+            "MÊME TOUR, même si le scénario t'a déjà été montré plus haut dans la "
+            "conversation : les identifiants de zones ne sont reconnus que s'ils viennent "
+            "d'une lecture faite CE tour-ci. Sans cela ton action est rejetée et tu "
+            "annoncerais à tort qu'aucune zone n'existe — ce qui serait faux et visible.",
             "- Actions d'affichage disponibles ici, et AUCUNE autre : "
             + ", ".join(sorted(DEMO_VIEW_ACTIONS))
             + ". Le graphique de la démonstration est figé : il n'a ni caméra ni "
@@ -271,6 +281,15 @@ def build_scope_block(
             "ci-dessous, repris tel quel du site. Si la réponse n'y est pas, tu le dis et "
             "tu renvoies vers la page concernée : tu n'inventes ni prix, ni "
             "fonctionnalité, ni engagement, ni date de disponibilité.",
+            "- ATTENTION — ce bloc contient des CITATIONS (FAQ, conditions d'utilisation) "
+            "qui emploient des mots que TES PROPRES RÈGLES t'interdisent d'écrire "
+            "(acheter, vendre, trader, risqué, garantie…). Tu ne les recopies donc JAMAIS "
+            "mot pour mot : tu en donnes le sens avec tes mots à toi, sans ce vocabulaire, "
+            "et tu renvoies vers la page pour le texte exact (/abonnement, /conditions). "
+            "C'est la page qui affiche ces textes, pas toi. Exemple : à « est-ce que MIA "
+            "dit quand acheter ou vendre ? », tu réponds « non — M.I.A ne dit jamais quand "
+            "intervenir sur le marché ; elle décrit ce qui a été détecté, la décision "
+            "t'appartient », sans reprendre les verbes de la question.",
             "- Tu réponds à n'importe quelle question sur le produit ou sur ce scénario. "
             "Les questions proposées à l'écran ne sont que des amorces, pas une liste fermée.",
             "- LANGUE — CECI REMPLACE la règle « Tu réponds en français » ci-dessus : ce "

@@ -179,6 +179,43 @@ def test_product_knowledge_quotes_the_real_price_and_faq() -> None:
     assert "Order Block" in knowledge
 
 
+def test_knowledge_block_quotes_are_covered_by_an_anti_recitation_rule() -> None:
+    """Anything in the knowledge block is text the agent may quote BACK — and if
+    it carries a Couche-3 forbidden token, quoting it destroys its own answer.
+
+    Found by a real boot: asked for the price, the agent recited the legal
+    mention (« … risque de perte ») and Couche 3 replaced the whole reply with
+    the fallback. The price mention is no longer fed in (the PAGE renders it),
+    and the passages that must stay — the FAQ's « acheter ou vendre » answer,
+    the terms' risk warning — are covered by an explicit no-verbatim rule.
+    """
+    import re
+
+    from src.intelligence.chatbot.constants import (
+        FORBIDDEN_TOKENS_BY_CATEGORY,
+        normalize_text,
+    )
+
+    knowledge = normalize_text(load_product_knowledge("fr"))
+    tokens = {t for bucket in FORBIDDEN_TOKENS_BY_CATEGORY.values() for t in bucket}
+    present = {
+        t for t in tokens
+        if re.search(rf"\b{re.escape(normalize_text(t))}\b", knowledge)
+    }
+    # The price's legal mention is no longer recited into the block.
+    assert "Mention légale du prix" not in load_product_knowledge("fr")
+    # Whatever forbidden vocabulary remains comes from quoted product content we
+    # deliberately keep; the scope block must tell the agent not to repeat it.
+    scope = build_scope_block(load_illustration())
+    assert "tu ne les recopies donc JAMAIS" in scope.lower() or "JAMAIS" in scope
+    assert "mot pour mot" in scope
+    for token in ("acheter", "vendre", "trader"):
+        assert token in scope, "the rule must name the vocabulary it forbids repeating"
+    # And the set stays bounded — a new source dragging in more triggers is a
+    # decision, not an accident.
+    assert present <= {"acheter", "vendre", "trader", "risqué", "garantie"}, sorted(present)
+
+
 def test_scope_block_names_the_illustration_and_denies_live_data() -> None:
     block = build_scope_block(load_illustration())
     assert "SCÉNARIO" in block and "FIGÉ" in block
@@ -207,6 +244,23 @@ def test_unknown_locale_falls_back_to_french_instead_of_failing() -> None:
     registry = DemoAgentRegistry(_Client())
     assert registry.for_locale("klingon") is registry.for_locale("fr")
     assert registry.for_locale(None) is registry.for_locale("fr")
+
+
+def test_the_factory_hands_back_a_registry_not_a_bare_chatbot(monkeypatch) -> None:
+    """The route calls ``for_locale`` on whatever the factory returns.
+
+    Every other test here injects its own registry stub into app_state, so the
+    FACTORY's return type was never exercised — and it shipped returning a bare
+    Chatbot, which only a real boot revealed (AttributeError: no 'for_locale').
+    This closes that gap: the seam between the factory and the route is asserted.
+    """
+    import src.api.bootstrap as bootstrap
+
+    monkeypatch.setattr(bootstrap, "_build_anthropic_client", lambda: _Client())
+    built = bootstrap.build_demo_chat_agent()
+    assert isinstance(built, DemoAgentRegistry)
+    assert hasattr(built, "for_locale")
+    assert isinstance(built.for_locale("fr"), Chatbot)
 
 
 # --------------------------------------------------------------------------- #
@@ -434,6 +488,29 @@ def test_oversized_message_is_refused_before_any_cost(tmp_path: Any) -> None:
     resp = _http(tmp_path, bot).post("/api/demo/chat", json={"user_message": "x" * 5000})
     assert resp.status_code == 422
     assert stub.calls == []
+
+
+def test_a_real_length_agent_answer_is_accepted_back_as_history(tmp_path: Any) -> None:
+    """The SECOND turn of a conversation must work.
+
+    The history cap was the question's cap (600), while the agent's own answers
+    run to ~3 000 characters — so every conversation 422'd on its second turn.
+    A real boot found it; the tests had only ever replayed short history.
+    """
+    bot, _ = _demo_bot(_answer())
+    long_answer = "L'abonnement donne accès à tout le produit. " * 30  # ~1 300 chars
+    assert len(long_answer) > 600
+    resp = _http(tmp_path, bot).post(
+        "/api/demo/chat",
+        json={
+            "user_message": "Et sur le graphique ?",
+            "conversation_history": [
+                {"role": "user", "content": "Combien coûte l'abonnement ?"},
+                {"role": "assistant", "content": long_answer},
+            ],
+        },
+    )
+    assert resp.status_code == 200, resp.text
 
 
 def test_logging_carries_no_question_text_and_no_raw_ip(
