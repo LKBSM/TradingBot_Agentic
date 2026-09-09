@@ -140,8 +140,6 @@ describe('ScanResults — no-combo state & filters (SC-1)', () => {
         onEdit={() => {}}
         onRefresh={() => {}}
         isRefreshing={false}
-        autoRefreshEnabled={false}
-        onToggleAutoRefresh={() => {}}
       />,
     );
   }

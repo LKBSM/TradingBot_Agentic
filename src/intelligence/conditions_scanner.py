@@ -589,7 +589,7 @@ def _eval_higher_tf_agrees(
       3. THIS unit has no structural trend established (indeterminate).
     """
     if relation not in RELATION_VALUES:
-        return _result("higher_tf_agrees", False, "Relation cible non précisée.")
+        return _result("higher_tf_agrees", False, "Relation non précisée.")
     trends = instrument_trends or {}
     current_tf = reading.get("header", {}).get("timeframe") or ""
     if not _tfreg.has(current_tf):
@@ -625,14 +625,14 @@ def _eval_higher_tf_agrees(
             available=False,
         )
     observed = "same" if current_trend == higher_trend else "opposite"
-    phrases = {
-        "same": f"Le {_tf_label(higher_tf)} va dans le même sens",
-        "opposite": f"Le {_tf_label(higher_tf)} va en sens opposé",
-    }
-    want = {"same": "même sens", "opposite": "sens opposé"}[relation]
+    # VALUE-ONLY detail: the card renders « L'unité supérieure va » + this, so the
+    # string starts mid-sentence and states the OBSERVED relation (never the
+    # requested one — the ✓/✗ marker already says whether it matches).
+    phrases = {"same": "dans le même sens", "opposite": "en sens opposé"}
     return _result(
         "higher_tf_agrees", observed == relation,
-        f"{phrases[observed]} ({_TREND_ADJ.get(higher_trend, higher_trend)}) — cible : {want}.",
+        f"{phrases[observed]} : le {_tf_label(higher_tf)} est "
+        f"{_TREND_ADJ.get(higher_trend, higher_trend)}.",
     )
 
 
@@ -641,13 +641,12 @@ def _eval_higher_tf_agrees(
 
 def _eval_trend_is(reading: Dict[str, Any], trend: Optional[str]) -> Dict[str, Any]:
     if not trend:
-        return _result("trend_is", False, "Tendance cible non précisée.")
+        return _result("trend_is", False, "Tendance non précisée.")
     observed = reading.get("regime", {}).get("trend")
     if not observed:
         return _result("trend_is", False, "Tendance observée indisponible.", available=False)
-    adj = _TREND_ADJ.get(observed, observed)
-    tgt = _TREND_ADJ.get(trend, trend)
-    return _result("trend_is", observed == trend, f"Tendance structurelle observée : {adj} (cible : {tgt}).")
+    # VALUE-ONLY detail: « La tendance structurelle est » + « haussier. »
+    return _result("trend_is", observed == trend, f"{_TREND_ADJ.get(observed, observed)}.")
 
 
 def _all_events(reading: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -676,7 +675,7 @@ def _event_label(kind: str, direction: Optional[str]) -> str:
 
 def _eval_last_event_is(reading: Dict[str, Any], event: Optional[str]) -> Dict[str, Any]:
     if event not in EVENT_VALUES:
-        return _result("last_event_is", False, "Événement cible non précisé.")
+        return _result("last_event_is", False, "Événement non précisé.")
     events = _all_events(reading)
     if not events:
         return _result("last_event_is", False, "Aucun événement de structure daté.", available=False)
@@ -685,10 +684,10 @@ def _eval_last_event_is(reading: Dict[str, Any], event: Optional[str]) -> Dict[s
     want_dir = "bullish" if want_dir == "up" else "bearish"
     observed = _event_label(last["kind"], last["direction"])
     met = last["kind"] == want_kind and last["direction"] == want_dir
+    # VALUE-ONLY detail: « Le dernier événement détecté est » + « BOS ↑, il y a … ».
     return _result(
         "last_event_is", met,
-        f"Dernier événement : {observed} il y a {last['bars_ago']} bougie(s) "
-        f"(cible : {_event_label(want_kind, want_dir)}).",
+        f"{observed}, il y a {last['bars_ago']} bougie(s).",
     )
 
 
@@ -707,10 +706,10 @@ def _eval_last_event_age(reading: Dict[str, Any], age_bucket: Optional[str]) -> 
     else:
         bucket = "gt50"
     labels = {"lt10": "moins de 10", "10to50": "10 à 50", "gt50": "plus de 50"}
+    # VALUE-ONLY detail: « Le dernier événement remonte à » + « 12 bougie(s) — … ».
     return _result(
         "last_event_age", bucket == age_bucket,
-        f"Dernier événement ({observed}) il y a {bars} bougie(s) — tranche « {labels[bucket]} » "
-        f"(cible : « {labels[age_bucket]} »).",
+        f"{bars} bougie(s) — tranche « {labels[bucket]} » ({observed}).",
     )
 
 
@@ -1071,23 +1070,25 @@ def _eval_equal_levels_present(reading: Dict[str, Any], eq_kind: str) -> Dict[st
 
 def _eval_market_phase_is(reading: Dict[str, Any], phase: Optional[str]) -> Dict[str, Any]:
     if not phase:
-        return _result("market_phase_is", False, "Phase cible non précisée.")
+        return _result("market_phase_is", False, "Phase non précisée.")
     observed = reading.get("regime", {}).get("market_phase")
     if not observed:
         return _result("market_phase_is", False, "Phase observée indisponible.", available=False)
-    return _result("market_phase_is", observed == phase, f"Phase observée : {observed} (cible : {phase}).")
+    # VALUE-ONLY detail: « La phase de marché est » + « expansion. »
+    return _result("market_phase_is", observed == phase, f"{observed}.")
 
 
 def _eval_volatility_is(reading: Dict[str, Any], volatility: Optional[str]) -> Dict[str, Any]:
     if not volatility:
-        return _result("volatility_is", False, "Niveau de volatilité cible non précisé.")
+        return _result("volatility_is", False, "Niveau de volatilité non précisé.")
     observed = reading.get("regime", {}).get("volatility_observed")
     if not observed:
         return _result("volatility_is", False, "Volatilité observée indisponible.", available=False)
     words = {"low": "contractée", "normal": "normale", "elevated": "étendue"}
+    # VALUE-ONLY detail: « La volatilité est » + « normale. »
     return _result(
         "volatility_is", observed == volatility,
-        f"Volatilité observée : {words.get(observed, observed)} (cible : {words.get(volatility, volatility)}).",
+        f"{words.get(observed, observed)}.",
     )
 
 
@@ -1124,7 +1125,7 @@ def _structural_range(reading: Dict[str, Any]) -> Optional[Tuple[float, float]]:
 
 def _eval_price_in_range_third(reading: Dict[str, Any], third: Optional[str]) -> Dict[str, Any]:
     if third not in RANGE_THIRD_VALUES:
-        return _result("price_in_range_third", False, "Tiers cible non précisé.")
+        return _result("price_in_range_third", False, "Tiers non précisé.")
     price = reading.get("header", {}).get("close_price")
     if price is None:
         return _result("price_in_range_third", False, "Prix courant indisponible.", available=False)
@@ -1140,16 +1141,19 @@ def _eval_price_in_range_third(reading: Dict[str, Any], third: Optional[str]) ->
     words = {"bottom": "bas", "middle": "milieu", "top": "haut"}
     window = reading.get("header", {}).get("analysis_window_bars")
     window_txt = f" sur {window} bougies" if window else ""
+    # NOT value-only: this entry's label carries an inline placeholder (« Le prix
+    # est dans le tiers … du range »), so a value appended after it would not read
+    # as French. The detail stays a standalone sentence, minus the forbidden word.
     return _result(
         "price_in_range_third", observed == third,
         f"Prix à {pos * 100:.0f} % du range structurel [{low:g} – {high:g}]{window_txt} "
-        f"— tiers {words[observed]} (cible : tiers {words[third]}).",
+        f"— tiers {words[observed]}.",
     )
 
 
 def _eval_session_is(reading: Dict[str, Any], session: Optional[str]) -> Dict[str, Any]:
     if session not in SESSION_VALUES:
-        return _result("session_is", False, "Session cible non précisée.")
+        return _result("session_is", False, "Session non précisée.")
     from src.intelligence import market_calendar as _mc
 
     instrument = reading.get("header", {}).get("instrument") or ""
@@ -1174,9 +1178,10 @@ def _eval_session_is(reading: Dict[str, Any], session: Optional[str]) -> Dict[st
     observed = "overlap" if len(active) >= 2 else (active[0] if active else "none")
     names = {"asia": "Asie", "london": "Londres", "new_york": "New York", "overlap": "chevauchement", "none": "hors session"}
     met = observed == session
+    # VALUE-ONLY detail: « La session en cours est » + « Londres, à la clôture… ».
     return _result(
         "session_is", met,
-        f"Session à la clôture : {names.get(observed, observed)} (cible : {names.get(session, session)}).",
+        f"{names.get(observed, observed)}, à la clôture de la bougie.",
     )
 
 

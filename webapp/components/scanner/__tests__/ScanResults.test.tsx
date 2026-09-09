@@ -58,7 +58,6 @@ function makeResponse(overrides: Partial<ConditionsScanResponse> = {}): Conditio
 
 function renderResults(props: Partial<React.ComponentProps<typeof ScanResults>> = {}) {
   const onRefresh = vi.fn();
-  const onToggleAutoRefresh = vi.fn();
   const onEdit = vi.fn();
   render(
     <ScanResults
@@ -68,12 +67,10 @@ function renderResults(props: Partial<React.ComponentProps<typeof ScanResults>> 
       onEdit={onEdit}
       onRefresh={onRefresh}
       isRefreshing={false}
-      autoRefreshEnabled
-      onToggleAutoRefresh={onToggleAutoRefresh}
       {...props}
     />,
   );
-  return { onRefresh, onToggleAutoRefresh, onEdit };
+  return { onRefresh, onEdit };
 }
 
 describe('ScanResults — freshness & refresh', () => {
@@ -101,16 +98,13 @@ describe('ScanResults — freshness & refresh', () => {
     expect(screen.getByRole('button', { name: /Scan…/ })).toBeDisabled();
   });
 
-  it('exposes the auto-refresh switch reflecting the current preference', () => {
-    renderResults({ autoRefreshEnabled: true });
-    const sw = screen.getByRole('switch');
-    expect(sw).toHaveAttribute('aria-checked', 'true');
-  });
-
-  it('toggling the switch flips the preference', () => {
-    const { onToggleAutoRefresh } = renderResults({ autoRefreshEnabled: true });
-    fireEvent.click(screen.getByRole('switch'));
-    expect(onToggleAutoRefresh).toHaveBeenCalledWith(false);
+  // SC-3 — the auto-refresh feature was removed entirely (control, preference
+  // store and candle-close scheduler). A scan now updates only on an explicit
+  // « Relancer le scan », so the toolbar must carry no switch at all.
+  it('offers no auto-refresh switch: a scan only updates on an explicit rescan', () => {
+    renderResults();
+    expect(screen.queryByRole('switch')).toBeNull();
+    expect(screen.queryByText(/Actualisation auto/i)).toBeNull();
   });
 });
 

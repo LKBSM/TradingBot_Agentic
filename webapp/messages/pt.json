@@ -1109,6 +1109,11 @@
       "againstBlock": "O que vai contra",
       "againstNone": "Nada vai contra entre as tuas condições avaliáveis.",
       "contextBlock": "Contexto que não pediste",
+      "chipsAria": "Resumo da estrutura",
+      "chipOb": "<n>{count}</n> OB",
+      "chipFvg": "<n>{count}</n> FVG",
+      "chipBos": "BOS {dir}",
+      "contextBlockWithNews": "Contexto que não pediste · {count, plural, one {# publicação importante} other {# publicações importantes}}",
       "freshCandle": "vela fechada {age}",
       "matchBlock": "O que corresponde",
       "matchNone": "Nenhuma condição cumprida aqui.",
@@ -1116,10 +1121,6 @@
       "nonEvaluableCount": "{count, plural, one {# não avaliável} other {# não avaliáveis}}",
       "openChart": "Abrir no gráfico",
       "range": "range {low}–{high}"
-    },
-    "toggle": {
-      "label": "Atualização automática (a cada fecho)",
-      "aria": "Atualização automática a cada fecho de vela"
     },
     "builder": {
       "composeTitle": "Componha as suas condições",

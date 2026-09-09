@@ -1109,6 +1109,11 @@
       "againstBlock": "Was dagegen spricht",
       "againstNone": "Nichts spricht dagegen unter deinen auswertbaren Bedingungen.",
       "contextBlock": "Kontext, den du nicht verlangt hast",
+      "chipsAria": "Strukturübersicht",
+      "chipOb": "<n>{count}</n> OB",
+      "chipFvg": "<n>{count}</n> FVG",
+      "chipBos": "BOS {dir}",
+      "contextBlockWithNews": "Kontext, den du nicht verlangt hast · {count, plural, one {# wichtige Veröffentlichung} other {# wichtige Veröffentlichungen}}",
       "freshCandle": "Kerze geschlossen {age}",
       "matchBlock": "Was entspricht",
       "matchNone": "Hier ist keine Bedingung erfüllt.",
@@ -1116,10 +1121,6 @@
       "nonEvaluableCount": "{count, plural, one {# nicht auswertbar} other {# nicht auswertbar}}",
       "openChart": "Im Chart öffnen",
       "range": "Spanne {low}–{high}"
-    },
-    "toggle": {
-      "label": "Automatische Aktualisierung (bei jeder Schließung)",
-      "aria": "Automatische Aktualisierung bei jeder Kerzenschließung"
     },
     "builder": {
       "composeTitle": "Stellen Sie Ihre Bedingungen zusammen",

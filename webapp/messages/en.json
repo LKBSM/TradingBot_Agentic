@@ -1108,6 +1108,11 @@
       "againstNone": "Nothing goes against among your evaluable conditions.",
       "nonEvaluableBlock": "Non-evaluable here (data absent)",
       "contextBlock": "Context you did not ask for",
+      "chipsAria": "Structure summary",
+      "chipOb": "<n>{count}</n> OB",
+      "chipFvg": "<n>{count}</n> FVG",
+      "chipBos": "BOS {dir}",
+      "contextBlockWithNews": "Context you did not ask for · {count, plural, one {# major release} other {# major releases}}",
       "trend": "Trend: {label}",
       "obFvg": "{ob} OB · {fvg} FVG active",
       "bosSuffix": " · BOS {dir}",
@@ -1123,10 +1128,6 @@
       "almost": "Almost ({count})",
       "nonmatch": "Non-matching ({count})",
       "noneval": "Non-evaluable ({count})"
-    },
-    "toggle": {
-      "label": "Auto-refresh (at every close)",
-      "aria": "Automatic refresh at every candle close"
     },
     "builder": {
       "composeTitle": "Compose your conditions",

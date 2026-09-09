@@ -174,8 +174,6 @@ export function DesignGallery() {
             onEdit={noop}
             onRefresh={noop}
             isRefreshing={false}
-            autoRefreshEnabled={false}
-            onToggleAutoRefresh={noop}
           />
         </State>
         <State
@@ -190,8 +188,6 @@ export function DesignGallery() {
             onEdit={noop}
             onRefresh={noop}
             isRefreshing={false}
-            autoRefreshEnabled={false}
-            onToggleAutoRefresh={noop}
           />
         </State>
       </Surface>

@@ -1109,6 +1109,11 @@
       "againstBlock": "Wat ertegen ingaat",
       "againstNone": "Niets gaat ertegen in onder je evalueerbare voorwaarden.",
       "contextBlock": "Context waar je niet om vroeg",
+      "chipsAria": "Structuuroverzicht",
+      "chipOb": "<n>{count}</n> OB",
+      "chipFvg": "<n>{count}</n> FVG",
+      "chipBos": "BOS {dir}",
+      "contextBlockWithNews": "Context waar je niet om vroeg · {count, plural, one {# belangrijke publicatie} other {# belangrijke publicaties}}",
       "freshCandle": "kaars gesloten {age}",
       "matchBlock": "Wat overeenkomt",
       "matchNone": "Geen voorwaarde vervuld hier.",
@@ -1116,10 +1121,6 @@
       "nonEvaluableCount": "{count, plural, one {# niet evalueerbaar} other {# niet evalueerbaar}}",
       "openChart": "Openen in de grafiek",
       "range": "range {low}–{high}"
-    },
-    "toggle": {
-      "label": "Automatische verversing (bij elke sluiting)",
-      "aria": "Automatische verversing bij elke candlesluiting"
     },
     "builder": {
       "composeTitle": "Stel uw voorwaarden samen",

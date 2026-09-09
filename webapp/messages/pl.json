@@ -1109,6 +1109,11 @@
       "againstBlock": "Co przemawia przeciw",
       "againstNone": "Nic nie przemawia przeciw wśród Twoich ocenialnych warunków.",
       "contextBlock": "Kontekst, o który nie prosiłeś",
+      "chipsAria": "Podsumowanie struktury",
+      "chipOb": "<n>{count}</n> OB",
+      "chipFvg": "<n>{count}</n> FVG",
+      "chipBos": "BOS {dir}",
+      "contextBlockWithNews": "Kontekst, o który nie prosiłeś · {count, plural, one {# ważna publikacja} few {# ważne publikacje} many {# ważnych publikacji} other {# ważnej publikacji}}",
       "freshCandle": "świeca zamknięta {age}",
       "matchBlock": "Co pasuje",
       "matchNone": "Żaden warunek nie jest tu spełniony.",
@@ -1116,10 +1121,6 @@
       "nonEvaluableCount": "{count, plural, one {# nieocenialny} few {# nieocenialne} many {# nieocenialnych} other {# nieocenialnych}}",
       "openChart": "Otwórz na wykresie",
       "range": "zakres {low}–{high}"
-    },
-    "toggle": {
-      "label": "Automatyczne odświeżanie (przy każdym zamknięciu)",
-      "aria": "Automatyczne odświeżanie przy każdym zamknięciu świecy"
     },
     "builder": {
       "composeTitle": "Skomponuj swoje warunki",

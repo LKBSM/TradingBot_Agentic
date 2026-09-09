@@ -1108,6 +1108,11 @@
       "againstNone": "Rien ne va à l’encontre parmi tes conditions évaluables.",
       "nonEvaluableBlock": "Non évaluable ici (donnée absente)",
       "contextBlock": "Contexte que tu n’as pas demandé",
+      "chipsAria": "Résumé de structure",
+      "chipOb": "<n>{count}</n> OB",
+      "chipFvg": "<n>{count}</n> FVG",
+      "chipBos": "BOS {dir}",
+      "contextBlockWithNews": "Contexte que tu n’as pas demandé · {count, plural, one {# actu importante} other {# actus importantes}}",
       "trend": "Tendance : {label}",
       "obFvg": "{ob} OB · {fvg} FVG actifs",
       "bosSuffix": " · BOS {dir}",
@@ -1123,10 +1128,6 @@
       "almost": "Presque ({count})",
       "nonmatch": "Non correspondants ({count})",
       "noneval": "Non évaluables ({count})"
-    },
-    "toggle": {
-      "label": "Actualisation auto (à chaque clôture)",
-      "aria": "Actualisation automatique à chaque clôture de bougie"
     },
     "builder": {
       "composeTitle": "Compose tes conditions",

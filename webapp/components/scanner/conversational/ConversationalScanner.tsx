@@ -14,7 +14,6 @@ import type {
 import { fetchConditionsScan, ScanNotAvailableError } from '@/lib/conditions/api-client';
 import { useLiveComboCount } from '@/lib/conditions/use-live-combo-count';
 import { useSavedStrategies, type SavedStrategy } from '@/lib/conditions/strategy-store';
-import { useAutoRefreshPref } from '@/lib/conditions/auto-refresh-store';
 import {
   translateStrategy,
   TranslateUnavailableError,
@@ -50,7 +49,6 @@ export function ConversationalScanner({ locale }: { locale: string }) {
   const t = useTranslations('scannerChat');
   const { conditionLabel, optionLabel } = useConditionLabels();
   const saved = useSavedStrategies();
-  const { enabled: autoRefresh, setEnabled: setAutoRefresh } = useAutoRefreshPref();
 
   const [mode, setMode] = React.useState<Mode>('describe');
   const [text, setText] = React.useState('');
@@ -249,8 +247,6 @@ export function ConversationalScanner({ locale }: { locale: string }) {
           onEdit={() => setMode('translation')}
           onRefresh={refreshScan}
           isRefreshing={scanning}
-          autoRefreshEnabled={autoRefresh}
-          onToggleAutoRefresh={setAutoRefresh}
         />
       </div>
     );

@@ -1109,6 +1109,11 @@
       "againstBlock": "ما يخالف",
       "againstNone": "لا شيء يخالف بين شروطك القابلة للتقييم.",
       "contextBlock": "سياق لم تطلبه",
+      "chipsAria": "ملخص البنية",
+      "chipOb": "<n>{count}</n> OB",
+      "chipFvg": "<n>{count}</n> FVG",
+      "chipBos": "BOS {dir}",
+      "contextBlockWithNews": "سياق لم تطلبه · {count, plural, zero {# إصدار مهم} one {# إصدار مهم} two {# إصداران مهمان} few {# إصدارات مهمة} many {# إصدارًا مهمًا} other {# إصدار مهم}}",
       "freshCandle": "شمعة أُغلقت {age}",
       "matchBlock": "ما يطابق",
       "matchNone": "لا شرط مستوفى هنا.",
@@ -1116,10 +1121,6 @@
       "nonEvaluableCount": "{count, plural, one {# غير قابل للتقييم} other {# غير قابلة للتقييم}}",
       "openChart": "الفتح في الرسم البياني",
       "range": "range {low}–{high}"
-    },
-    "toggle": {
-      "label": "تحديث تلقائي (عند كل إغلاق)",
-      "aria": "تحديث تلقائي عند كل إغلاق شمعة"
     },
     "builder": {
       "composeTitle": "كوّن شروطك",
