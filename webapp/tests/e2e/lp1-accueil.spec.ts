@@ -11,9 +11,13 @@ type Loc = {
   code: string;
   path: string;
   h1: RegExp;
-  onlyLiq: string;
+  chipStr: string;
+  chipOb: string;
+  chipFvg: string;
+  chipLiq: string;
   chochFrag: RegExp;
   liqFrag: RegExp;
+  emptyLayers: RegExp;
   scannerTab: RegExp;
   trend: string;
   higher: string;
@@ -40,9 +44,13 @@ const LOCALES: Loc[] = [
     code: 'fr',
     path: '/',
     h1: /MIA te le lit/i,
-    onlyLiq: 'Ne garder que la liquidité',
+    chipStr: 'BOS / CHOCH',
+    chipOb: 'Order Blocks',
+    chipFvg: 'Fair Value Gaps',
+    chipLiq: 'Liquidité',
     chochFrag: /CHOCH haussier/i,
     liqFrag: /liquidité achat reste intacte/i,
+    emptyLayers: /n'invente rien pour remplir le vide/i,
     scannerTab: /Définir une stratégie/i,
     trend: 'La tendance structurelle est haussière',
     higher: "L'unité supérieure va dans le même sens",
@@ -67,9 +75,13 @@ const LOCALES: Loc[] = [
     code: 'en',
     path: '/en',
     h1: /MIA reads it to you/i,
-    onlyLiq: 'Keep only the liquidity',
+    chipStr: 'BOS / CHOCH',
+    chipOb: 'Order Blocks',
+    chipFvg: 'Fair Value Gaps',
+    chipLiq: 'Liquidity',
     chochFrag: /bullish CHOCH confirmed/i,
     liqFrag: /buy-side liquidity pocket stays intact/i,
+    emptyLayers: /invents nothing to fill the void/i,
     scannerTab: /Define a strategy/i,
     trend: 'The structural trend is bullish',
     higher: 'The higher timeframe agrees',
@@ -164,10 +176,16 @@ for (const loc of LOCALES) {
         const demo = page.locator('#demo');
         // state A: all layers → CHOCH in narration
         await expect(demo.getByText(loc.chochFrag).first()).toBeVisible();
-        // state B: keep only liquidity → CHOCH gone, liquidity present
-        await demo.getByRole('button', { name: loc.onlyLiq }).click();
+        // state B: untick the LAYER CHIPS down to liquidity alone — the chips
+        // are the control the side paragraph points at ("untick a layer").
+        await demo.getByRole('button', { name: loc.chipStr }).click();
         await expect(demo.getByText(loc.chochFrag)).toHaveCount(0);
+        await demo.getByRole('button', { name: loc.chipOb }).click();
+        await demo.getByRole('button', { name: loc.chipFvg }).click();
         await expect(demo.getByText(loc.liqFrag).first()).toBeVisible();
+        // state C: nothing left → the honest empty state, not an invented filler
+        await demo.getByRole('button', { name: loc.chipLiq }).click();
+        await expect(demo.getByText(loc.emptyLayers).first()).toBeVisible();
       });
 
       test('demo 2 — scanner honest empty states (two states)', async ({ page }) => {

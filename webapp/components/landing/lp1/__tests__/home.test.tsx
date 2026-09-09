@@ -159,10 +159,19 @@ describe('LP-1 home — demos run offline', () => {
     render(<DemoTabs />);
     // default: all layers on → narration mentions the CHOCH
     expect(screen.getByText(/CHOCH haussier/i)).toBeInTheDocument();
-    // "keep only the liquidity" → narration drops the CHOCH, keeps liquidity
-    fireEvent.click(screen.getByText('Ne garder que la liquidité'));
+    // Unticking the LAYER CHIPS is the promise the side paragraph makes
+    // ("Décoche une couche : le paragraphe se réécrit") — assert it on the
+    // chips themselves, not on a shortcut button.
+    fireEvent.click(screen.getByRole('button', { name: 'BOS / CHOCH' }));
     expect(screen.queryByText(/CHOCH haussier/i)).not.toBeInTheDocument();
+    // down to liquidity alone → only the liquidity fragment is left
+    fireEvent.click(screen.getByRole('button', { name: 'Order Blocks' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Fair Value Gaps' }));
+    expect(screen.queryByText(/Order Block haussier/i)).not.toBeInTheDocument();
     expect(screen.getByText(/liquidité achat reste intacte/i)).toBeInTheDocument();
+    // and the honest empty state when nothing is left to describe
+    fireEvent.click(screen.getByRole('button', { name: 'Liquidité' }));
+    expect(screen.getByText(/n'invente rien pour remplir le vide/i)).toBeInTheDocument();
     expect(global.fetch).not.toHaveBeenCalled();
   });
 

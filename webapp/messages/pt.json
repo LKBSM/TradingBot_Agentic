@@ -160,11 +160,7 @@
         },
         "side": {
           "title": "A leitura atualiza-se",
-          "desc": "Desmarca uma camada: <b>o parágrafo reescreve-se</b> para descrever apenas o que permanece visível. A narração nunca é um texto fixo — é composta a partir do que foi detetado.",
-          "try": "Experimenta",
-          "onlyOb": "Manter apenas os Order Blocks",
-          "onlyLiq": "Manter apenas a liquidez",
-          "all": "Voltar a mostrar tudo"
+          "desc": "Desmarca uma camada: <b>o parágrafo reescreve-se</b> para descrever apenas o que permanece visível. A narração nunca é um texto fixo — é composta a partir do que foi detetado."
         },
         "chips": {
           "ob": "Order Blocks",

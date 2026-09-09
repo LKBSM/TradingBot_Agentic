@@ -160,11 +160,7 @@
         },
         "side": {
           "title": "The reading updates itself",
-          "desc": "Untick a layer: <b>the paragraph rewrites itself</b> to describe only what stays visible. The narration is never a fixed text — it is composed from what was detected.",
-          "try": "Try it",
-          "onlyOb": "Keep only the Order Blocks",
-          "onlyLiq": "Keep only the liquidity",
-          "all": "Show everything again"
+          "desc": "Untick a layer: <b>the paragraph rewrites itself</b> to describe only what stays visible. The narration is never a fixed text — it is composed from what was detected."
         },
         "chips": {
           "ob": "Order Blocks",

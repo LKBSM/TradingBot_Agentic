@@ -160,11 +160,7 @@
         },
         "side": {
           "title": "Die Lesung aktualisiert sich",
-          "desc": "Hak eine Schicht ab: <b>der Absatz schreibt sich neu</b>, um nur noch das zu beschreiben, was angezeigt bleibt. Die Erzählung ist nie ein starrer Text — sie wird aus dem Erkannten zusammengesetzt.",
-          "try": "Probier es",
-          "onlyOb": "Nur die Order Blocks behalten",
-          "onlyLiq": "Nur die Liquidität behalten",
-          "all": "Alles wieder anzeigen"
+          "desc": "Hak eine Schicht ab: <b>der Absatz schreibt sich neu</b>, um nur noch das zu beschreiben, was angezeigt bleibt. Die Erzählung ist nie ein starrer Text — sie wird aus dem Erkannten zusammengesetzt."
         },
         "chips": {
           "ob": "Order Blocks",

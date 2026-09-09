@@ -160,11 +160,7 @@
         },
         "side": {
           "title": "De lezing wordt bijgewerkt",
-          "desc": "Vink een laag uit: <b>de alinea schrijft zichzelf opnieuw</b> om alleen te beschrijven wat zichtbaar blijft. De vertelling is nooit een vaste tekst — ze wordt samengesteld uit wat er is gedetecteerd.",
-          "try": "Probeer het",
-          "onlyOb": "Alleen de Order Blocks behouden",
-          "onlyLiq": "Alleen de liquiditeit behouden",
-          "all": "Alles weer weergeven"
+          "desc": "Vink een laag uit: <b>de alinea schrijft zichzelf opnieuw</b> om alleen te beschrijven wat zichtbaar blijft. De vertelling is nooit een vaste tekst — ze wordt samengesteld uit wat er is gedetecteerd."
         },
         "chips": {
           "ob": "Order Blocks",

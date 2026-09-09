@@ -160,11 +160,7 @@
         },
         "side": {
           "title": "La lecture se met à jour",
-          "desc": "Décoche une couche : <b>le paragraphe se réécrit</b> pour ne décrire que ce qui reste affiché. La narration n'est jamais un texte figé — elle est composée à partir de ce qui a été détecté.",
-          "try": "Essaie",
-          "onlyOb": "Ne garder que les Order Blocks",
-          "onlyLiq": "Ne garder que la liquidité",
-          "all": "Tout réafficher"
+          "desc": "Décoche une couche : <b>le paragraphe se réécrit</b> pour ne décrire que ce qui reste affiché. La narration n'est jamais un texte figé — elle est composée à partir de ce qui a été détecté."
         },
         "chips": {
           "ob": "Order Blocks",

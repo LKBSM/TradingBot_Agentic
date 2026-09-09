@@ -137,13 +137,13 @@ function StructurePane({ layers, setLayers }: { layers: Layers; setLayers: (l: L
         <StructureNarration layers={layers} />
         <div className={styles.illus}>{t('demo.illus')}</div>
       </div>
+      {/* The side column states the promise; the LAYER CHIPS above the chart are
+       * what delivers it — each chip toggles `layers`, and StructureNarration
+       * recomposes the paragraph from what stays on. No duplicate shortcut
+       * buttons here: a promise of interactivity must point at the real control. */}
       <div className={styles.dside}>
         <h4>{t('demo.structure.side.title')}</h4>
         <p>{t.rich('demo.structure.side.desc', { b: (c) => <b>{c}</b> })}</p>
-        <div className={styles.try}>{t('demo.structure.side.try')}</div>
-        <button type="button" className={styles.opt} onClick={() => setLayers({ ob: true, fvg: false, liq: false, str: false })}>{t('demo.structure.side.onlyOb')}</button>
-        <button type="button" className={styles.opt} onClick={() => setLayers({ ob: false, fvg: false, liq: true, str: false })}>{t('demo.structure.side.onlyLiq')}</button>
-        <button type="button" className={styles.opt} onClick={() => setLayers({ ...ALL_ON })}>{t('demo.structure.side.all')}</button>
       </div>
     </div>
   );

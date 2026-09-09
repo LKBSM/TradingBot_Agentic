@@ -160,11 +160,7 @@
         },
         "side": {
           "title": "La lettura si aggiorna",
-          "desc": "Deseleziona un livello: <b>il paragrafo si riscrive</b> per descrivere solo ciò che resta visibile. La narrazione non è mai un testo fisso — è composta a partire da ciò che è stato rilevato.",
-          "try": "Prova",
-          "onlyOb": "Mantieni solo gli Order Blocks",
-          "onlyLiq": "Mantieni solo la liquidità",
-          "all": "Mostra tutto di nuovo"
+          "desc": "Deseleziona un livello: <b>il paragrafo si riscrive</b> per descrivere solo ciò che resta visibile. La narrazione non è mai un testo fisso — è composta a partire da ciò che è stato rilevato."
         },
         "chips": {
           "ob": "Order Blocks",

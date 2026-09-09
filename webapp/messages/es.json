@@ -160,11 +160,7 @@
         },
         "side": {
           "title": "La lectura se actualiza",
-          "desc": "Desmarca una capa: <b>el párrafo se reescribe</b> para describir solo lo que queda visible. La narración nunca es un texto fijo — se compone a partir de lo que se ha detectado.",
-          "try": "Pruébalo",
-          "onlyOb": "Dejar solo los Order Blocks",
-          "onlyLiq": "Dejar solo la liquidez",
-          "all": "Volver a mostrar todo"
+          "desc": "Desmarca una capa: <b>el párrafo se reescribe</b> para describir solo lo que queda visible. La narración nunca es un texto fijo — se compone a partir de lo que se ha detectado."
         },
         "chips": {
           "ob": "Order Blocks",

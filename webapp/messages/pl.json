@@ -160,11 +160,7 @@
         },
         "side": {
           "title": "Odczyt się aktualizuje",
-          "desc": "Odznacz warstwę: <b>akapit przepisuje się na nowo</b>, aby opisywać tylko to, co pozostaje widoczne. Narracja nigdy nie jest stałym tekstem — jest komponowana z tego, co zostało wykryte.",
-          "try": "Wypróbuj",
-          "onlyOb": "Zostaw tylko Order Blocks",
-          "onlyLiq": "Zostaw tylko płynność",
-          "all": "Pokaż wszystko ponownie"
+          "desc": "Odznacz warstwę: <b>akapit przepisuje się na nowo</b>, aby opisywać tylko to, co pozostaje widoczne. Narracja nigdy nie jest stałym tekstem — jest komponowana z tego, co zostało wykryte."
         },
         "chips": {
           "ob": "Order Blocks",
