@@ -1,0 +1,80 @@
+{
+  "_comment": "MIA-4S — LE scénario figé de la vitrine. Source unique partagée par l'agent simulé de la page d'accueil (src/intelligence/chatbot/demo_agent.py) et par les démos du front (webapp/components/landing/lp1/data.ts, gardé identique par webapp/lib/__tests__/demo-illustration-parity.test.ts). Ce fichier ne contient AUCUNE donnée de marché réelle : ni prix live, ni lecture de candles.db, ni marché de production. C'est une illustration, elle doit le rester.",
+  "scenario": "gold_m15_illustration",
+  "instrument": "XAUUSD",
+  "instrument_label": "Or (XAU/USD)",
+  "timeframe": "M15",
+  "price_decimals": 2,
+  "is_illustration": true,
+  "current_price": 4026.77,
+  "as_of": "scénario d'illustration figé — aucune date réelle, aucune donnée de marché en direct",
+  "market_status": {
+    "state": "illustration",
+    "note": "Ce scénario ne décrit pas l'état réel du marché. Il n'a ni ouverture, ni fermeture, ni dernière bougie réelle."
+  },
+  "structure": {
+    "choch": { "direction": "up", "level": 4021.45 },
+    "bos": { "direction": "up", "level": 4025.1 },
+    "order_blocks": [
+      {
+        "id": "demo-ob-1",
+        "direction": "up",
+        "low": 4026.8,
+        "high": 4028.9,
+        "status": "active",
+        "tested": false,
+        "formed_candles_ago": 14,
+        "note": "Formé juste avant le BOS haussier de 4 025,10. Le prix y est entré il y a 30 minutes. Jamais comblé."
+      },
+      {
+        "id": "demo-ob-2",
+        "direction": "down",
+        "low": 4014.2,
+        "high": 4016.05,
+        "status": "filled",
+        "tested": true,
+        "fill_pct": 100,
+        "formed_hours_ago": 9,
+        "note": "Le prix l'a traversé entièrement il y a 9 heures. N'est plus actif."
+      }
+    ],
+    "fair_value_gaps": [
+      {
+        "id": "demo-fvg-1",
+        "direction": "down",
+        "low": 4020.1,
+        "high": 4021.85,
+        "status": "partially_filled",
+        "fill_pct": 60,
+        "formed_hours_ago": 10,
+        "note": "Formé il y a 10 heures. Le prix l'a pénétré puis y est revenu. Comblé à 60 %, toujours actif."
+      }
+    ],
+    "liquidity_pools": [
+      {
+        "id": "demo-bsl-1",
+        "side": "bsl",
+        "level": 4034.2,
+        "state": "intact",
+        "note": "Poche de liquidité achat au-dessus du prix, jamais atteinte."
+      },
+      {
+        "id": "demo-ssl-1",
+        "side": "ssl",
+        "level": 4011.4,
+        "state": "swept",
+        "note": "Poche de liquidité vente sous le prix, balayée."
+      }
+    ]
+  },
+  "regime": {
+    "recent_atr": 2.1,
+    "baseline_atr": 1.95,
+    "ratio": 1.08,
+    "low_threshold": 0.8,
+    "high_threshold": 1.25,
+    "verdict": "normale",
+    "note": "Le rapport 1,08 se situe entre les seuils 0,80 et 1,25 : amplitude récente comparable à l'habitude. Ne dit rien de la direction."
+  },
+  "layers": ["ob", "fvg", "liq", "str"]
+}

@@ -101,18 +101,41 @@ class TestBootstrapFactories:
         assert scheduler is not None
         assert scheduler.running is False  # built, not started
 
-    def test_missing_anthropic_key_raises_clear_error(self, tmp_path, monkeypatch):
-        """Brief: 'sans ANTHROPIC_API_KEY set, build échoue avec erreur claire'."""
+    def test_assembler_builds_without_an_anthropic_key(self, tmp_path, monkeypatch):
+        """The MarketReading assembler needs NO ``ANTHROPIC_API_KEY`` — deliberate.
+
+        This test used to assert the opposite. The narrated reading became a
+        deterministic template (the LLM description engine was removed), so the
+        assembler stopped needing a key and the assertion rotted into a permanent
+        red. What is worth guarding is the CURRENT contract, in both directions:
+        the assembler builds keyless (here), and every LLM-backed factory still
+        fails fast and names the variable (next test).
+        """
         monkeypatch.setenv("TWELVE_DATA_API_KEY", "test-key")
         monkeypatch.setenv("MARKET_READINGS_DB_PATH", str(tmp_path / "mr.db"))
         monkeypatch.setenv("CANDLES_DB_PATH", str(tmp_path / "candles.db"))
         monkeypatch.setenv("NEWS_CACHE_DB_PATH", str(tmp_path / "news.db"))
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
 
-        with pytest.raises(BootstrapConfigurationError) as exc_info:
-            build_market_reading_assembler(enable_news=False)
-        # Error message must name the env var so the operator knows the fix.
-        assert "ANTHROPIC_API_KEY" in str(exc_info.value)
+        assembler = build_market_reading_assembler(enable_news=False)
+        assert assembler is not None
+
+    def test_llm_factories_fail_fast_and_name_the_missing_key(self, monkeypatch):
+        """Every factory that DOES need the key errors clearly without it.
+
+        Covers the scanner translator and the MIA-4S landing demo agent — both
+        reach the Anthropic client directly, so a missing key must surface as an
+        explicit misconfiguration, never as a half-wired service.
+        """
+        from src.api.bootstrap import build_demo_chat_agent, build_scanner_translator
+
+        monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+
+        for factory in (build_scanner_translator, build_demo_chat_agent):
+            with pytest.raises(BootstrapConfigurationError) as exc_info:
+                factory()
+            # The message must name the env var so the operator knows the fix.
+            assert "ANTHROPIC_API_KEY" in str(exc_info.value), factory.__name__
 
     def test_store_paths_read_from_env_vars(self, isolated_env, tmp_path):
         """Each store honours its *_DB_PATH env var (shared Fly.io volume in prod)."""

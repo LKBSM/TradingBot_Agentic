@@ -411,6 +411,9 @@ class Chatbot:
         max_tool_turns: int = MAX_TOOL_TURNS,
         timeout_s: float = DEFAULT_TIMEOUT_S,
         max_model_history: int = MAX_MODEL_HISTORY,
+        tool_schemas: Optional[list[dict[str, Any]]] = None,
+        tool_handlers: Optional[dict[str, Any]] = None,
+        extra_system_blocks: Optional[list[str]] = None,
     ) -> None:
         self._client = anthropic_client
         self._summary_provider = summary_provider
@@ -429,6 +432,26 @@ class Chatbot:
         self._max_tool_turns = max_tool_turns
         self._timeout_s = timeout_s
         self._max_model_history = max_model_history
+        # MIA-4S — restricted-surface hooks. All three default to the production
+        # behaviour, so an unset caller is byte-for-byte the chatbot of before.
+        # They exist so a DIFFERENT data surface (the landing's frozen
+        # illustration) can be served by THIS orchestrator instead of a second,
+        # divergent one: Couche 1 (adversarial input), Couche 3 (forbidden-token
+        # output) and Couche 4 (view-action whitelist) are shared code, never
+        # re-implemented. What a caller may narrow is the TOOL SURFACE and the
+        # system prompt's tail — never a defence layer.
+        #   tool_schemas        — the tools declared to the model. A tool absent
+        #                         here cannot be called, whatever the prompt says
+        #                         (the lock is the code, not the instruction).
+        #   tool_handlers       — {name: callable(input) -> dict} consulted BEFORE
+        #                         the built-in dispatch, so a restricted build
+        #                         serves frozen data without touching the engine.
+        #   extra_system_blocks — appended AFTER the cached static prefix and
+        #                         BEFORE the variable trailing block, so the
+        #                         MIA-2 cache breakpoint keeps working.
+        self._tool_schemas = tool_schemas if tool_schemas is not None else TOOL_SCHEMAS
+        self._tool_handlers = dict(tool_handlers or {})
+        self._extra_system_blocks = list(extra_system_blocks or [])
 
     # ------------------------------------------------------------------ #
     # Public API
@@ -551,7 +574,7 @@ class Chatbot:
                     max_tokens=self._max_tokens,
                     system=system,
                     messages=messages,
-                    tools=TOOL_SCHEMAS,
+                    tools=self._tool_schemas,
                     timeout=self._timeout_s,
                 )
             except Exception as exc:  # timeout / rate limit / network
@@ -734,10 +757,23 @@ class Chatbot:
         signal_text = SIGNAL_CONTEXT_TEMPLATE.format(
             signal_summary=json.dumps(signal_summary, ensure_ascii=False)
         )
+        # MIA-4S — a restricted build appends its own stable blocks (scope of the
+        # simulation, product knowledge). They sit AFTER the cached prefix and
+        # BEFORE the variable signal block: byte-stable themselves, so they cache
+        # too, and they can never edit or weaken the rules above them.
+        extra = self._extra_system_blocks
         static_block = cache_block_for(SYSTEM_PROMPT_STATIC)
         if static_block is None:
-            return SYSTEM_PROMPT_STATIC + "\n\n" + signal_text
-        return [static_block, {"type": "text", "text": signal_text}]
+            return "\n\n".join([SYSTEM_PROMPT_STATIC, *extra, signal_text])
+        blocks: list[dict[str, Any]] = [static_block]
+        for text in extra:
+            blocks.append({"type": "text", "text": text})
+        if blocks[-1] is not static_block:
+            cached_tail = cache_block_for(blocks[-1]["text"])
+            if cached_tail is not None:
+                blocks[-1] = cached_tail
+        blocks.append({"type": "text", "text": signal_text})
+        return blocks
 
     @staticmethod
     def _truncate_history(
@@ -842,6 +878,21 @@ class Chatbot:
         """Run a tool; on failure return an ``{"error": ...}`` dict so the LLM
         can recover gracefully rather than the whole turn crashing."""
         try:
+            # MIA-4S — an injected handler wins over the built-in dispatch, so a
+            # restricted build (the landing's frozen illustration) serves its own
+            # data through the SAME orchestrator and the SAME defence layers.
+            handler = self._tool_handlers.get(name)
+            if handler is not None:
+                return handler(tool_input)
+            # Defence in depth: a build may only EXECUTE what it DECLARES. The
+            # model can already only call declared tools, but the built-in
+            # dispatch below reaches live sources (engine, calendar) that a
+            # restricted build must never touch — so an undeclared name stops
+            # here instead of falling through. Production declares all seven, so
+            # this changes nothing there.
+            if not any(schema.get("name") == name for schema in self._tool_schemas):
+                logger.warning("tool %s is not declared on this build — refused", name)
+                return {"error": f"tool not available on this build: {name}"}
             if name == "get_market_reading":
                 instrument = tool_input.get("instrument")
                 timeframe = tool_input.get("timeframe")

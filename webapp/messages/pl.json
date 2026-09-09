@@ -160,11 +160,7 @@
         },
         "side": {
           "title": "Odczyt się aktualizuje",
-          "desc": "Odznacz warstwę: <b>akapit przepisuje się na nowo</b>, aby opisywać tylko to, co pozostaje widoczne. Narracja nigdy nie jest stałym tekstem — jest komponowana z tego, co zostało wykryte.",
-          "try": "Wypróbuj",
-          "onlyOb": "Zostaw tylko Order Blocks",
-          "onlyLiq": "Zostaw tylko płynność",
-          "all": "Pokaż wszystko ponownie"
+          "desc": "Odznacz warstwę: <b>akapit przepisuje się na nowo</b>, aby opisywać tylko to, co pozostaje widoczne. Narracja nigdy nie jest stałym tekstem — jest komponowana z tego, co zostało wykryte."
         },
         "chips": {
           "ob": "Order Blocks",
@@ -240,11 +236,19 @@
         "hiddenNote": "Ukryta — wykres pozostaje czytelny. Strefa nadal istnieje, po prostu nie jest już rysowana."
       },
       "mia": {
-        "greeting": "Wybierz pytanie obok, by zobaczyć moją odpowiedź.",
+        "greeting": "Wybierz pytanie po prawej albo od razu zadaj własne.",
+        "live": {
+          "placeholder": "Zadaj pytanie…",
+          "send": "Wyślij",
+          "thinking": "M.I.A myśli…",
+          "left": "Pozostało {n} pytań w tym pokazie",
+          "offline": "Pokaz na żywo nie jest tu dostępny — to zapisane rozmowy.",
+          "note": "To prawdziwa M.I.A, na danych poglądowych. Odpowiada na każde pytanie o ten scenariusz lub o produkt."
+        },
         "side": {
           "title": "Zadaj jej prawdziwe pytanie",
           "desc": "M.I.A tłumaczy pojęcia, opisuje to, co zostało wykryte, i steruje widokiem. <b>Odmawia wszystkiego, co należy do przewidywania</b> — kliknij ostatnią opcję, aby zobaczyć.",
-          "try": "Wybierz pytanie"
+          "try": "Na początek"
         },
         "q": {
           "concept": {
