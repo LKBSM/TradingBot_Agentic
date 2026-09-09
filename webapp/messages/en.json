@@ -422,19 +422,19 @@
       "caps": {
         "c1": {
           "h": "She teaches SMC",
-          "p": "Every concept — Order Block, Fair Value Gap, BOS, CHOCH, mitigation, liquidity — explained <b>with the example in front of you</b>, on your market, not in a theory course."
+          "p": "Order Block, Fair Value Gap, BOS, CHOCH, mitigation, liquidity — <b>every concept explained on your own market</b>."
         },
         "c2": {
           "h": "She describes what's there",
-          "p": "Exact levels, timestamps, number of tests, the state of each liquidity pocket. <b>Only detected facts</b> — an invented reference is rejected by the code, never let through."
+          "p": "She quotes only levels that were actually detected: <b>an invented reference is rejected by the code</b>."
         },
         "c3": {
           "h": "She drives your display",
-          "p": "« Hide the FVGs », « isolate this zone », « switch to 4h ». You speak, <b>the chart changes</b>. No more hunting for the right button."
+          "p": "« Hide the FVGs », « isolate this zone », « switch to 4h »: you speak, <b>the chart changes</b>."
         },
         "c4": {
           "h": "She refuses to guess",
-          "p": "No prediction, no call to act, no advice. <b>It's a descriptive tool</b>, and she'll tell you so herself if you ask where price is going."
+          "p": "No prediction, no call to act, no advice: <b>it's a descriptive tool</b>."
         }
       }
     },
