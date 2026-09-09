@@ -95,7 +95,7 @@ non une vocalisation particulière.
 | `app/[locale]/(site)/page.tsx` | commentaire de tête mis à jour (il pointait le module supprimé) |
 | `messages/*.json` × 9 | `home.stats` (5 clés) retiré ; `home.hero.roadmap` réécrit |
 | `components/landing/lp1/__tests__/home.test.tsx` | garde-fou « jamais un nombre nu » + auto-test du garde |
-| `tests/e2e/lp1-accueil.spec.ts` | `statStructures` → `marketsLine` + `marketsTickers` (fr, en) |
+| `tests/e2e/lp1-accueil.spec.ts` | `statStructures` → `marketsLine` + `marketsTickers` (fr, en) ; `tryFree` → `subscribeCta` (§7) |
 | `tests/e2e/lp2s-shots.spec.ts` | **nouveau** — captures de preuve aux 2 viewports |
 
 `home.stats.combinations` était déjà orpheline au rendu avant cette mission
@@ -110,22 +110,32 @@ non une vocalisation particulière.
 | `next build` (CI=1) | **vert** |
 | vitest `home.test.tsx` | **18/18** |
 | vitest `claims-cleanup` + `ui2b-i18n-keys` + `ui2-copy-honesty` | **25/25** |
-| Playwright `lp1-accueil.spec.ts` (1280×800 + 390×844, fr + en) | **52 passés, 4 échecs pré-existants** (voir §7) |
+| Playwright `lp1-accueil.spec.ts` (1280×800 + 390×844, fr + en) | **56/56** (après le correctif du §7) |
 | Playwright `lp2s-shots.spec.ts` | **4/4**, captures dans `shots/` |
 
-## 7. Un échec pré-existant, signalé et NON corrigé
+## 7. Un échec pré-existant, corrigé sur demande
 
-Les 4 échecs Playwright portent tous sur `nav bar: a visitor gets no
+Les 4 échecs de la première passe portaient tous sur `nav bar: a visitor gets no
 App/Zones/Scanner, sees the free-trial CTA` — un test du **header**, sans lien
-avec le hero.
+avec le hero, rouge avant cette mission.
 
-Cause : le spec attend `/Essayer gratuitement/i` (fr) et `/Try for free/i` (en),
-alors que `nav.tryFree` vaut aujourd'hui **« S'abonner » / « Subscribe »** — le
-CTA a été renommé au passage à l'abonnement. Le test n'a pas suivi.
+Cause : le spec attendait `/Essayer gratuitement/i` (fr) et `/Try for free/i`
+(en), alors que `nav.tryFree` vaut aujourd'hui **« S'abonner » / « Subscribe »**.
+Le CTA a été renommé au passage à l'abonnement ; le test n'a pas suivi.
 
-**Non corrigé : hors périmètre LP-2S.** Le correctif est de deux lignes
-(`lp1-accueil.spec.ts` l. 65 et 93), mais faire suivre un test à un libellé
-commercial est une décision qui n'appartient pas à cette mission. À traiter à part.
+Corrigé (le fondateur l'a demandé après la première livraison) :
+
+- `tryFree` → **`subscribeCta`**, nommé pour ce que le bouton fait. Le produit ne
+  propose pas d'essai gratuit — garder « tryFree » dans le spec aurait reconduit
+  la description fausse que le renommage du CTA venait justement de corriger.
+- regex **ancrées** `/^S'abonner$/` et `/^Subscribe$/`, sur le libellé exact.
+  Apostrophe **droite** (U+0027) : c'est ce que porte le fichier de messages.
+- titre du test : « sees the subscribe CTA ».
+
+**Laissé en l'état** : la clé i18n s'appelle toujours `nav.tryFree` alors qu'elle
+rend « S'abonner ». La renommer touche les 9 locales et tous ses appelants —
+c'est un changement à part entière, pas un à-côté de LP-2S. Un commentaire dans
+le spec le signale à qui passera par là.
 
 ## 8. Captures — `shots/`
 

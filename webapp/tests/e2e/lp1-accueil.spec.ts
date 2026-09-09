@@ -32,7 +32,13 @@ type Loc = {
   illus: RegExp;
   marketsLine: RegExp;
   marketsTickers: RegExp;
-  tryFree: RegExp;
+  // The logged-out header CTA. It used to read « Essayer gratuitement » / « Try
+  // for free »; the product now sells a subscription with no free trial, and
+  // nav.tryFree was recopied to « S'abonner » / « Subscribe » without this spec
+  // following. Named for what the button DOES, so the next rename is visible
+  // here rather than silently red. (The i18n key itself is still `nav.tryFree`
+  // — renaming it across 9 locales is its own change.)
+  subscribeCta: RegExp;
   dot5: RegExp;
 };
 
@@ -62,7 +68,8 @@ const LOCALES: Loc[] = [
     illus: /Données d'illustration/i,
     marketsLine: /80 marchés au programme/i,
     marketsTickers: /XAUUSD et EURUSD/i,
-    tryFree: /Essayer gratuitement/i,
+    // straight apostrophe (U+0027) — that is what the message file carries
+    subscribeCta: /^S'abonner$/,
     dot5: /Aller au volet 5/i,
   },
   {
@@ -90,7 +97,7 @@ const LOCALES: Loc[] = [
     illus: /Illustration data/i,
     marketsLine: /80 markets planned/i,
     marketsTickers: /XAUUSD and EURUSD/i,
-    tryFree: /Try for free/i,
+    subscribeCta: /^Subscribe$/,
     dot5: /Go to panel 5/i,
   },
 ];
@@ -211,11 +218,11 @@ for (const loc of LOCALES) {
       });
 
       if (vp.name === 'desktop') {
-        test('nav bar: a visitor gets no App/Zones/Scanner, sees the free-trial CTA', async ({ page }) => {
+        test('nav bar: a visitor gets no App/Zones/Scanner, sees the subscribe CTA', async ({ page }) => {
           await open(page, loc);
           const header = page.locator('header').first();
           // gate the assertions on the resolved logged-out state
-          await expect(header.getByRole('link', { name: loc.tryFree })).toBeVisible();
+          await expect(header.getByRole('link', { name: loc.subscribeCta })).toBeVisible();
           await expect(header.getByRole('link', { name: /^Zones$/ })).toHaveCount(0);
           await expect(header.getByRole('link', { name: /^Scanner$/ })).toHaveCount(0);
           await expect(header.getByRole('link', { name: /^App$/ })).toHaveCount(0);
