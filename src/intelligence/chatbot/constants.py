@@ -53,6 +53,8 @@ import re
 import unicodedata
 from typing import Optional
 
+from src.intelligence.chatbot import templates_i18n as _i18n
+
 # --------------------------------------------------------------------------- #
 # Text normalisation (shared by Couche 1 and Couche 3)
 # --------------------------------------------------------------------------- #
@@ -338,77 +340,69 @@ ALL_ADVERSARIAL_PATTERNS: list[re.Pattern[str]] = [
 # strong invariant "the chatbot never returns a forbidden token" holds even for
 # its own safety nets. (Earlier wording "recommandations de trade" / "tolérance
 # au risque" tripped the output filter on "trade" / "risque" — reworded.)
-REFUSAL_TEMPLATE: str = (
-    "Je suis un outil de description des conditions de marché. Je ne donne pas "
-    "de recommandations d'action ni d'évaluations personnalisées. C'est à vous "
-    "d'évaluer si les conditions actuelles correspondent à votre méthode et à "
-    "vos propres critères.\n\n"
-    "Si vous voulez approfondir un élément précis (BOS, FVG, OB, news, régime), "
-    "n'hésitez pas à me poser une question descriptive."
-)
+#
+# The TEXT lives in ``templates_i18n`` — one string per template per locale, so
+# the nine locales cannot drift from each other and the French cannot be edited
+# in two places. These names stay the French view of it, unchanged for callers.
+REFUSAL_TEMPLATE: str = _i18n.REFUSAL[_i18n.DEFAULT_LOCALE]
 
-# Couche 3 — replacement when the LLM output contains a forbidden token.
 # Couche 1 — refus dédié au seau ``prediction``. Le refus générique parle de
 # recommandations ; ici la question porte sur l'AVENIR du prix, et la réponse
-# honnête doit le dire. Comme les autres gabarits, il est volontairement exempt
-# de token interdit : il n'est jamais repassé dans le filtre de sortie.
-PREDICTION_REFUSAL_TEMPLATE: str = (
-    "Je ne prédis pas les mouvements de prix. C'est un choix de conception, pas "
-    "une limite technique : personne ne sait ce que le prix fera ensuite, et un "
-    "outil qui prétendrait le savoir vous mentirait.\n\n"
-    "Ce que je peux faire : décrire l'état d'une zone et son historique, "
-    "expliquer un concept (BOS, CHOCH, Order Block, Fair Value Gap), ou vous "
-    "montrer ce que le moteur a détecté."
-)
+# honnête doit le dire.
+PREDICTION_REFUSAL_TEMPLATE: str = _i18n.PREDICTION_REFUSAL[_i18n.DEFAULT_LOCALE]
 
-
-OUTPUT_CONTAMINATED_TEMPLATE: str = (
-    "Je ne peux pas formuler cette réponse de cette manière. Je peux te décrire "
-    "les conditions actuelles du marché si tu veux."
-)
+# Couche 3 — replacement when the LLM output contains a forbidden token.
+OUTPUT_CONTAMINATED_TEMPLATE: str = _i18n.OUTPUT_CONTAMINATED[_i18n.DEFAULT_LOCALE]
 
 # Couche 2 — fail-safe when the Anthropic API errors (timeout / rate limit / network).
-LLM_ERROR_TEMPLATE: str = (
-    "Je ne peux pas répondre pour le moment, le service de description est "
-    "temporairement indisponible. Tu peux consulter directement les conditions "
-    "du marché sur le dashboard."
-)
+LLM_ERROR_TEMPLATE: str = _i18n.LLM_ERROR[_i18n.DEFAULT_LOCALE]
 
-# Firm redirection used when the user insists on a recommendation (niveau 1.5 rule).
+# Firm redirection used when the user insists on a recommendation (niveau 1.5
+# rule). NOT localised on purpose: it is quoted INSIDE the system prompt as an
+# example for the model, never returned verbatim, so the model already renders
+# it in the visitor's language.
 INSIST_REDIRECT_TEMPLATE: str = (
     "Je décris les conditions du marché. La décision d'agir t'appartient."
 )
 
-# Couche 1 — which refusal a given bucket answers with. Absent from the map =
-# the generic REFUSAL_TEMPLATE, so adding a bucket never silently changes what
-# the existing ones say.
+# Couche 1 — which refusal family a given bucket answers with. Absent from the
+# map = the generic refusal, so adding a bucket never silently changes what the
+# existing ones say.
+REFUSAL_FAMILY_BY_CATEGORY: dict[str, str] = {
+    "prediction": "PREDICTION_REFUSAL_TEMPLATE",
+}
+
+# Kept for callers that want the French mapping directly.
 REFUSAL_TEMPLATE_BY_CATEGORY: dict[str, str] = {
     "prediction": PREDICTION_REFUSAL_TEMPLATE,
 }
 
 
-def refusal_for(category: Optional[str]) -> str:
-    """The refusal text Couche 1 returns for a matched bucket."""
-    return REFUSAL_TEMPLATE_BY_CATEGORY.get(category or "", REFUSAL_TEMPLATE)
+def refusal_for(category: Optional[str], locale: Optional[str] = None) -> str:
+    """The refusal text Couche 1 returns for a matched bucket, in ``locale``.
+
+    An unknown bucket falls back to the generic refusal; an unknown locale falls
+    back to French. A defence layer must always have something to say.
+    """
+    family = REFUSAL_FAMILY_BY_CATEGORY.get(category or "", "REFUSAL_TEMPLATE")
+    return _i18n.template_for(family, locale)
+
+
+def localized(name: str, locale: Optional[str] = None) -> str:
+    """Any verbatim template, in ``locale`` (French fallback)."""
+    return _i18n.template_for(name, locale)
 
 
 # Couche 4 — on-brand refusal when a chart-view action falls outside the
-# display-only whitelist (e.g. inventing / moving / resizing a structure). Kept
-# free of forbidden tokens so it never trips Couche 3.
-VIEW_ACTION_REFUSAL_TEMPLATE: str = (
-    "Je n'invente pas de structure — je n'affiche que ce que le marché montre. "
-    "Je peux masquer, filtrer, ou me centrer sur les zones détectées."
-)
+# display-only whitelist (e.g. inventing / moving / resizing a structure).
+VIEW_ACTION_REFUSAL_TEMPLATE: str = _i18n.VIEW_ACTION_REFUSAL[_i18n.DEFAULT_LOCALE]
 
 # Couche 4 — honest report when a category-targeted mask (« masque les SSL »)
 # resolves to ZERO engine-emitted structures on the current reading. Nothing is
-# hidden and nothing is invented; the model relays this factually. Kept free of
-# forbidden tokens so it never trips Couche 3.
-VIEW_ACTION_EMPTY_CATEGORY_TEMPLATE: str = (
-    "Le moteur n'émet aucune structure de cette catégorie sur la lecture "
-    "actuelle — il n'y a rien à masquer ni à ré-afficher. Je n'affiche que ce "
-    "que le marché montre."
-)
+# hidden and nothing is invented; the model relays this factually.
+VIEW_ACTION_EMPTY_CATEGORY_TEMPLATE: str = _i18n.VIEW_ACTION_EMPTY_CATEGORY[
+    _i18n.DEFAULT_LOCALE
+]
 
 
 __all__ = [
@@ -430,9 +424,11 @@ __all__ = [
     "OUTPUT_CONTAMINATED_TEMPLATE",
     "PREDICTION_REFUSAL_TEMPLATE",
     "REFUSAL_TEMPLATE",
+    "REFUSAL_FAMILY_BY_CATEGORY",
     "REFUSAL_TEMPLATE_BY_CATEGORY",
     "VIEW_ACTION_EMPTY_CATEGORY_TEMPLATE",
     "VIEW_ACTION_REFUSAL_TEMPLATE",
     "normalize_text",
+    "localized",
     "refusal_for",
 ]

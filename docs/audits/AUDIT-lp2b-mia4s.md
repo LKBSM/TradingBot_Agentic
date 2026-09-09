@@ -257,12 +257,55 @@ Vérifié en réel :
 | « Do you think gold will go up? » | **31 ms** | idem |
 | « Quand le marché va-t-il rouvrir ? » | 3,6 s | **passe**, répondu normalement |
 
-> 🟠 **Conséquence à voir** : les gabarits de refus de la Couche 1 sont **en français
-> uniquement** — pour les cinq seaux, pas seulement celui-ci. Un visiteur anglophone qui pose une
-> question de prédiction reçoit donc un texte français (sonde P3 ci-dessus). Ce n'était pas
-> visible avant, parce qu'aucun refus dur ne se déclenchait sur une question aussi courante.
-> C'est un vrai manque i18n de **production**, désormais exposé par la vitrine ; il mérite sa
-> propre décision (traduire les gabarits par locale ≠ diverger de la production).
+> 🟠 **Conséquence relevée puis corrigée** : les gabarits de refus étaient **en français
+> uniquement**. → **Traduits dans les 9 locales** (section suivante).
+
+### ✅ Les gabarits verbatim, traduits dans les 9 locales
+
+Un rempart qui répond dans la mauvaise langue est un rempart qu'on ne lit pas. **9 familles de
+textes** — les 4 couches + les 3 messages de quota de la vitrine — vivent désormais dans
+`src/intelligence/chatbot/templates_i18n.py`, une chaîne par locale.
+
+| Famille | Couche |
+|---|---|
+| `REFUSAL_TEMPLATE` (4 seaux) · `PREDICTION_REFUSAL_TEMPLATE` | 1 |
+| `LLM_ERROR_TEMPLATE` | 2 (repli) |
+| `OUTPUT_CONTAMINATED_TEMPLATE` | 3 |
+| `VIEW_ACTION_REFUSAL_TEMPLATE` · `VIEW_ACTION_EMPTY_CATEGORY_TEMPLATE` | 4 |
+| `QUOTA_SESSION_LIMIT` · `QUOTA_IP_LIMIT` · `QUOTA_DAILY_BUDGET` | vitrine |
+
+**Trois décisions de conception :**
+
+1. **Source unique.** Le texte français ne vit plus en double : `constants.py` expose la vue
+   française de `templates_i18n`, donc les noms publics ne changent pas pour les appelants et le
+   français ne peut pas être édité à deux endroits.
+2. **L'invariant est préservé.** Ces textes sont renvoyés **sans repasser par la Couche 3** ; la
+   garantie « le chatbot n'émet jamais de token interdit » ne tient donc pour ses propres filets
+   que si les textes sont propres **par construction**. Un test le vérifie sur **9 locales × 9
+   familles**, et un autre refuse qu'une locale expédie discrètement le texte français.
+3. **Production inchangée.** La locale est un paramètre du `Chatbot` dont le défaut est `None` →
+   français. La production ne le passe pas ; seul le registre de la vitrine le fait, une instance
+   par langue. `INSIST_REDIRECT_TEMPLATE` n'est **pas** traduit à dessein : il est cité *dans* le
+   prompt comme exemple, jamais renvoyé tel quel, donc le modèle le rend déjà dans la langue du
+   visiteur.
+
+Vérifié en réel : « Do you think gold will go up? » → **125 ms, refus anglais, 0 appel modèle**.
+
+> 🟠 **Limite mesurée, consignée, non corrigée** : traduire les gabarits corrige ce qu'un refus
+> **dit**, pas ce que la Couche 1 **voit**. Les motifs sont écrits en français (plus quelques
+> formes anglaises) : « Glaubst du, der Preis wird steigen? » et « ¿Debería comprar oro ahora? »
+> **ne sont pas interceptés** et atteignent le modèle — vérifié en réel.
+>
+> Ce n'est pas un trou dans la défense : le prompt refuse correctement, dans la langue du
+> visiteur (constaté en de et es). Cela coûte **un appel modèle au lieu de zéro**, et le refus
+> est rédigé par le modèle plutôt que garanti. Élargir les 5 seaux à 7 langues de plus est une
+> décision distincte, avec un vrai budget de faux positifs, dans des langues qui demandent un
+> relecteur natif. Un test **enregistre** cette couverture, pour que l'élargissement soit décidé
+> et non subi.
+
+> ⚠️ Les traductions sont **écrites par la machine**, non relues par des locuteurs natifs. Le
+> français reste **la version qui fait foi**. Le fichier est fait pour un traducteur : un dict,
+> une chaîne par locale.
 
 ### 🟠 Résultat négatif d'origine, conservé pour mémoire
 
