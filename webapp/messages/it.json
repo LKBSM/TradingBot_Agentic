@@ -415,19 +415,19 @@
       "caps": {
         "c1": {
           "h": "Insegna il SMC",
-          "p": "Ogni concetto — Order Block, Fair Value Gap, BOS, CHOCH, mitigazione, liquidità — spiegato <b>con l'esempio davanti agli occhi</b>, sul tuo mercato, non in un corso teorico."
+          "p": "Order Block, Fair Value Gap, BOS, CHOCH, mitigazione, liquidità — <b>ogni concetto spiegato sul tuo mercato</b>."
         },
         "c2": {
           "h": "Descrive ciò che c'è",
-          "p": "Livelli esatti, orari, numero di test, stato di ogni sacca di liquidità. <b>Soltanto fatti rilevati</b> — un riferimento inventato viene rifiutato dal codice, non lasciato passare."
+          "p": "Cita solo livelli davvero rilevati: <b>un riferimento inventato viene rifiutato dal codice</b>."
         },
         "c3": {
           "h": "Pilota la tua visualizzazione",
-          "p": "« Nascondi gli FVG », « isola questa zona », « passa a 4 h ». Tu parli, <b>il grafico cambia</b>. Non devi più cercare il pulsante giusto."
+          "p": "« Nascondi gli FVG », « isola questa zona », « passa a 4 h »: tu parli, <b>il grafico cambia</b>."
         },
         "c4": {
           "h": "Si rifiuta di indovinare",
-          "p": "Nessuna previsione, nessuna indicazione di intervento, nessun consiglio. <b>È uno strumento descrittivo</b>, e te lo dirà lei stessa se le chiedi dove va il prezzo."
+          "p": "Nessuna previsione, nessuna indicazione di intervento, nessun consiglio: <b>è uno strumento descrittivo</b>."
         }
       }
     },

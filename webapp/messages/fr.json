@@ -415,19 +415,19 @@
       "caps": {
         "c1": {
           "h": "Elle enseigne le SMC",
-          "p": "Chaque concept — Order Block, Fair Value Gap, BOS, CHOCH, mitigation, liquidité — expliqué <b>avec l'exemple sous les yeux</b>, sur ton marché, pas dans un cours théorique."
+          "p": "Order Block, Fair Value Gap, BOS, CHOCH, mitigation, liquidité — <b>chaque concept expliqué sur ton propre marché</b>."
         },
         "c2": {
           "h": "Elle décrit ce qui est là",
-          "p": "Niveaux exacts, horodatages, nombre de tests, état de chaque poche de liquidité. <b>Uniquement des faits détectés</b> — une référence inventée est rejetée par le code, pas laissée passer."
+          "p": "Elle ne cite que des niveaux réellement détectés : <b>une référence inventée est rejetée par le code</b>."
         },
         "c3": {
           "h": "Elle pilote ton affichage",
-          "p": "« Masque les FVG », « isole cette zone », « passe en 4 h ». Tu parles, <b>le graphique change</b>. Plus besoin de chercher le bon bouton."
+          "p": "« Masque les FVG », « isole cette zone », « passe en 4 h » : tu parles, <b>le graphique change</b>."
         },
         "c4": {
           "h": "Elle refuse de deviner",
-          "p": "Aucune prédiction, aucune indication d'intervention, aucun conseil. <b>C'est un outil descriptif</b>, et elle te le dira elle-même si tu lui demandes où va le prix."
+          "p": "Aucune prédiction, aucune indication d'intervention, aucun conseil : <b>c'est un outil descriptif</b>."
         }
       }
     },

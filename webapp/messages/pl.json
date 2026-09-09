@@ -415,19 +415,19 @@
       "caps": {
         "c1": {
           "h": "Uczy SMC",
-          "p": "Każde pojęcie — Order Block, Fair Value Gap, BOS, CHOCH, mitygacja, płynność — wyjaśnione <b>z przykładem przed oczami</b>, na twoim rynku, a nie w teoretycznym kursie."
+          "p": "Order Block, Fair Value Gap, BOS, CHOCH, mitygacja, płynność — <b>każde pojęcie wyjaśnione na twoim własnym rynku</b>."
         },
         "c2": {
           "h": "Opisuje to, co jest",
-          "p": "Dokładne poziomy, czasowe znaczniki, liczba testów, stan każdej strefy płynności. <b>Wyłącznie wykryte fakty</b> — zmyślone odwołanie jest odrzucane przez kod, a nie przepuszczane."
+          "p": "Przywołuje wyłącznie faktycznie wykryte poziomy: <b>zmyślone odwołanie jest odrzucane przez kod</b>."
         },
         "c3": {
           "h": "Steruje twoim widokiem",
-          "p": "« Ukryj FVG », « wyodrębnij tę strefę », « przełącz na 4 h ». Ty mówisz, <b>wykres się zmienia</b>. Koniec z szukaniem właściwego przycisku."
+          "p": "« Ukryj FVG », « wyodrębnij tę strefę », « przełącz na 4 h »: ty mówisz, <b>wykres się zmienia</b>."
         },
         "c4": {
           "h": "Odmawia zgadywania",
-          "p": "Żadnych przewidywań, żadnych wskazówek co do działania, żadnych porad. <b>To narzędzie opisowe</b>, i sama ci to powie, jeśli zapytasz, dokąd zmierza cena."
+          "p": "Żadnych przewidywań, żadnych wskazówek co do działania, żadnych porad: <b>to narzędzie opisowe</b>."
         }
       }
     },
