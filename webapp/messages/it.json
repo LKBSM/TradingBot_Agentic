@@ -236,11 +236,19 @@
         "hiddenNote": "Nascosta — il grafico resta leggibile. La zona esiste ancora, semplicemente non è più disegnata."
       },
       "mia": {
-        "greeting": "Scegli una domanda qui accanto per vedermi rispondere.",
+        "greeting": "Scegli uno spunto a destra, oppure fai direttamente la tua domanda.",
+        "live": {
+          "placeholder": "Fai la tua domanda…",
+          "send": "Invia",
+          "thinking": "M.I.A sta pensando…",
+          "left": "{n} domande rimaste in questa demo",
+          "offline": "La demo dal vivo non è disponibile qui: questi sono scambi registrati.",
+          "note": "È la vera M.I.A, su dati illustrativi. Risponde a qualsiasi domanda su questo scenario o sul prodotto."
+        },
         "side": {
           "title": "Poni una vera domanda",
           "desc": "M.I.A spiega i concetti, descrive ciò che è stato rilevato e pilota la visualizzazione. <b>Rifiuta tutto ciò che rientra nella previsione</b> — clicca l'ultima opzione per vedere.",
-          "try": "Scegli una domanda"
+          "try": "Per iniziare"
         },
         "q": {
           "concept": {

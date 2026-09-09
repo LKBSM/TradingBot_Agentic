@@ -26,9 +26,16 @@ type Loc = {
   swept: string;
   noCond: RegExp;
   noMatch: RegExp;
+  structureTab: RegExp;
+  fvgFrag: RegExp;
   miaTab: RegExp;
   miaAction: string;
   miaChanged: RegExp;
+  miaLiveAnswer: string;
+  miaOffline: RegExp;
+  miaPlaceholder: string;
+  miaSend: string;
+  miaTyped: string;
   calcTab: RegExp;
   calcVerdict: string;
   calcOpen: string;
@@ -59,9 +66,16 @@ const LOCALES: Loc[] = [
     swept: 'Une poche a été prise récemment',
     noCond: /et surtout pas tous les marchés/i,
     noMatch: /Ce n'est pas une erreur/i,
+    structureTab: /Lire une structure/i,
+    fvgFrag: /Fair Value Gap baissier comblé/i,
     miaTab: /Parler à M\.I\.A/i,
     miaAction: 'Montre-moi seulement les OB non testés',
     miaChanged: /Les couches du graphique ont changé/i,
+    miaLiveAnswer: 'Réponse en direct de la démonstration.',
+    miaOffline: /La démonstration en direct n'est pas disponible ici/i,
+    miaPlaceholder: 'Pose ta question…',
+    miaSend: 'Envoyer',
+    miaTyped: "Combien coûte l'abonnement ?",
     calcTab: /Ouvrir le calcul/i,
     calcVerdict: 'Normale',
     calcOpen: 'Ouvre le calcul',
@@ -90,9 +104,16 @@ const LOCALES: Loc[] = [
     swept: 'A pocket was taken recently',
     noCond: /and above all not every market/i,
     noMatch: /This is not an error/i,
+    structureTab: /Read a structure/i,
+    fvgFrag: /bearish Fair Value Gap, 60 % filled/i,
     miaTab: /Talk to M\.I\.A/i,
     miaAction: 'Show me only the untested OBs',
     miaChanged: /The chart layers changed/i,
+    miaLiveAnswer: 'Live answer from the demo.',
+    miaOffline: /The live demo isn't available here/i,
+    miaPlaceholder: 'Ask your question…',
+    miaSend: 'Send',
+    miaTyped: 'How much is the subscription?',
     calcTab: /Open the calculation/i,
     calcVerdict: 'Normal',
     calcOpen: 'Open the calculation',
@@ -204,12 +225,67 @@ for (const loc of LOCALES) {
         await expect(demo.getByText(loc.noMatch).first()).toBeVisible();
       });
 
-      test('demo 4 — a MIA question changes the chart layers', async ({ page }) => {
+      // MIA-4S — the M.I.A tab is the one demo that calls a backend (the real
+      // agent, on the frozen scenario). Both halves are pinned: the live answer
+      // when the endpoint replies, and the honest degradation when it does not.
+      test('demo 4 — M.I.A answers live and can move the chart layers', async ({ page }) => {
+        await page.route('**/api/demo/chat/stream', (route) =>
+          route.fulfill({
+            status: 200,
+            contentType: 'text/event-stream',
+            body:
+              `data: ${JSON.stringify({ event: 'activity' })}\n\n` +
+              `data: ${JSON.stringify({
+                event: 'answer',
+                content: loc.miaLiveAnswer,
+                blocked_reason: null,
+                tool_calls_made: [],
+                view_actions: [
+                  { action: 'set_layer_visibility', params: { layer: 'fvg', visible: false } },
+                ],
+                messages_left: 5,
+              })}\n\n`,
+          }),
+        );
         await open(page, loc);
         const demo = page.locator('#demo');
         await demo.getByRole('tab', { name: loc.miaTab }).click();
         await demo.getByRole('button', { name: loc.miaAction }).click();
+        await expect(demo.getByText(loc.miaLiveAnswer).first()).toBeVisible();
         await expect(demo.getByText(loc.miaChanged).first()).toBeVisible();
+        // the validated action really reached the structure narration
+        await demo.getByRole('tab', { name: loc.structureTab }).click();
+        await expect(demo.getByText(loc.fvgFrag)).toHaveCount(0);
+      });
+
+      test('demo 4 — with no backend, M.I.A degrades to recorded exchanges and says so', async ({ page }) => {
+        await page.route('**/api/demo/chat/stream', (route) => route.abort());
+        await open(page, loc);
+        const demo = page.locator('#demo');
+        await demo.getByRole('tab', { name: loc.miaTab }).click();
+        await demo.getByRole('button', { name: loc.miaAction }).click();
+        await expect(demo.getByText(loc.miaOffline).first()).toBeVisible();
+      });
+
+      test('demo 4 — any question can be typed, the starters are not a menu', async ({ page }) => {
+        await page.route('**/api/demo/chat/stream', (route) =>
+          route.fulfill({
+            status: 200,
+            contentType: 'text/event-stream',
+            body: `data: ${JSON.stringify({
+              event: 'answer',
+              content: loc.miaLiveAnswer,
+              messages_left: 4,
+              view_actions: [],
+            })}\n\n`,
+          }),
+        );
+        await open(page, loc);
+        const demo = page.locator('#demo');
+        await demo.getByRole('tab', { name: loc.miaTab }).click();
+        await demo.getByLabel(loc.miaPlaceholder).fill(loc.miaTyped);
+        await demo.getByRole('button', { name: loc.miaSend }).click();
+        await expect(demo.getByText(loc.miaLiveAnswer).first()).toBeVisible();
       });
 
       test('demo 5 — régime tile reveals the raw calculation', async ({ page }) => {

@@ -236,11 +236,19 @@
         "hiddenNote": "Masquée — le graphique reste lisible. La zone existe toujours, elle n'est simplement plus dessinée."
       },
       "mia": {
-        "greeting": "Choisis une question ci-contre pour me voir répondre.",
+        "greeting": "Choisis une amorce ci-contre, ou pose directement ta question.",
+        "live": {
+          "placeholder": "Pose ta question…",
+          "send": "Envoyer",
+          "thinking": "M.I.A réfléchit…",
+          "left": "{n} questions restantes dans cette démonstration",
+          "offline": "La démonstration en direct n'est pas disponible ici — voici des échanges enregistrés.",
+          "note": "C'est la vraie M.I.A, sur des données d'illustration. Elle répond à n'importe quelle question sur ce scénario ou sur le produit."
+        },
         "side": {
           "title": "Pose-lui une vraie question",
           "desc": "M.I.A explique les concepts, décrit ce qui a été détecté et pilote l'affichage. <b>Elle refuse tout ce qui relève de la prédiction</b> — clique la dernière option pour voir.",
-          "try": "Choisis une question"
+          "try": "Pour commencer"
         },
         "q": {
           "concept": {

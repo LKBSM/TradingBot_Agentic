@@ -218,6 +218,22 @@
 .dchartSm { height: 170px; }
 /* The eaten share of a zone, filled from its lower edge (price came through). */
 .dzfill { position: absolute; left: 0; right: 0; bottom: 0; opacity: 0.3; border-radius: 0 0 2px 2px; }
+/* M.I.A demo composer — a visitor can ask ANY question, not only the starters. */
+.mform { display: flex; gap: 8px; margin-top: 10px; }
+.minput {
+  flex: 1; min-width: 0; min-height: 44px; padding: 10px 13px; font-size: 14px;
+  border-radius: 9px; border: 1px solid var(--line-2); background: var(--lp-card);
+  color: var(--txt);
+}
+.minput::placeholder { color: var(--faint); }
+.minput:focus-visible { outline: 2px solid var(--lp-acc); outline-offset: 2px; }
+.msend {
+  min-height: 44px; padding: 10px 18px; font-size: 14px; font-weight: 600;
+  border-radius: 9px; border: 1px solid var(--lp-acc); background: var(--lp-acc);
+  color: var(--acc-txt); cursor: pointer; transition: 0.16s;
+}
+.msend:disabled { opacity: 0.45; cursor: default; }
+.msend:focus-visible { outline: 2px solid var(--lp-acc); outline-offset: 2px; }
 .dnarr {
   margin-top: 12px; padding: 13px 15px; border: 1px solid var(--line); border-radius: 11px;
   background: var(--lp-card); font-size: 13px; line-height: 1.7; color: var(--dim); min-height: 74px;

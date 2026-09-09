@@ -236,11 +236,19 @@
         "hiddenNote": "Oculta — el gráfico sigue legible. La zona sigue existiendo, simplemente ya no se dibuja."
       },
       "mia": {
-        "greeting": "Elige una pregunta al lado para verme responder.",
+        "greeting": "Elige una pregunta de inicio a la derecha, o haz directamente la tuya.",
+        "live": {
+          "placeholder": "Haz tu pregunta…",
+          "send": "Enviar",
+          "thinking": "M.I.A está pensando…",
+          "left": "Quedan {n} preguntas en esta demostración",
+          "offline": "La demostración en directo no está disponible aquí: estos son intercambios grabados.",
+          "note": "Es la M.I.A real, con datos de ilustración. Responde a cualquier pregunta sobre este escenario o sobre el producto."
+        },
         "side": {
           "title": "Hazle una pregunta de verdad",
           "desc": "M.I.A explica los conceptos, describe lo que se ha detectado y pilota la visualización. <b>Rechaza todo lo que sea del ámbito de la predicción</b> — haz clic en la última opción para verlo.",
-          "try": "Elige una pregunta"
+          "try": "Para empezar"
         },
         "q": {
           "concept": {
