@@ -237,13 +237,17 @@ def build_demo_chat_agent() -> Any:
     is the frozen illustration scenario, and that is enforced by what it is
     given, not by what it is told. Needs only ``ANTHROPIC_API_KEY``; fail-fast
     on a missing key, consistent with the chatbot.
+
+    Returns the per-locale REGISTRY (the landing ships in nine languages), whose
+    ``for_locale`` builds and keeps one agent per language on first use — never a
+    bare Chatbot: the route calls ``for_locale`` on whatever this hands back.
     """
-    from src.intelligence.chatbot.demo_agent import build_demo_chatbot
+    from src.intelligence.chatbot.demo_agent import DemoAgentRegistry
 
     anthropic_client = _build_anthropic_client()  # raises if key/package missing
-    agent = build_demo_chatbot(anthropic_client)
-    logger.info("Demo chat agent (MIA-4S, simulation) built at startup")
-    return agent
+    registry = DemoAgentRegistry(anthropic_client)
+    logger.info("Demo chat agent registry (MIA-4S, simulation) built at startup")
+    return registry
 
 
 def build_scanner_translator() -> Any:

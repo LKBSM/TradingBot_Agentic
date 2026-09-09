@@ -341,6 +341,79 @@ Le test couvre donc désormais aussi la nouvelle fabrique de l'agent de démonst
 
 ---
 
+## 6bis. TEST RÉEL — `DEMO_CHAT_ENABLED=1`, vrais appels Anthropic
+
+Lancé sur la clé du fondateur, à sa demande, contre l'API réelle
+(`setup_logging()` + uvicorn, le chemin de l'entrypoint de production).
+**~14 appels modèle au total, soit moins de 0,10 $.**
+
+### 🔴 Trois bugs que SEUL le test réel a révélés
+
+Les 36 tests unitaires passaient. Aucun ne couvrait ces trois chemins.
+
+**1. `build_demo_chat_agent` renvoyait un `Chatbot`, pas le registre par locale.**
+→ `AttributeError: 'Chatbot' object has no attribute 'for_locale'`, **500 sur le tout premier
+appel**. Cause : un remplacement de texte fait par script sur un fichier CRLF n'avait
+silencieusement pas pris. Tous les tests injectaient leur propre stub de registre dans
+`app_state`, donc **le type de retour de la fabrique n'était jamais exercé**.
+*Garde ajoutée* : `test_the_factory_hands_back_a_registry_not_a_bare_chatbot`.
+
+**2. La Couche 3 détruisait la réponse de l'agent sur la question la plus probable.**
+Interrogé sur le prix, l'agent récitait la mention légale « … le trading comporte un **risque**
+de perte » — et le filtre de sortie, qui sur-bloque « risque » délibérément, remplaçait toute la
+réponse par le gabarit de repli. **C'était un défaut de mon bloc de connaissance, pas de la
+Couche 3** : je servais à l'agent un texte que ses propres règles lui interdisent de répéter.
+*Correctif* : la mention légale du prix n'est plus injectée (**la page l'affiche déjà**), et une
+règle explicite interdit de recopier mot pour mot les citations FAQ/CGU qui portent ce
+vocabulaire — l'agent en donne le sens et renvoie vers la page.
+*Garde ajoutée* : `test_knowledge_block_quotes_are_covered_by_an_anti_recitation_rule`, qui borne
+aussi l'ensemble des tokens interdits présents dans le bloc.
+
+**3. Le plafond de 600 caractères s'appliquait à l'HISTORIQUE.**
+Les réponses de l'agent dépassent régulièrement 600 caractères (`max_tokens` 768 ≈ 3 000) → **le
+2ᵉ tour de toute conversation renvoyait 422**. Les tests ne rejouaient que des historiques courts.
+*Correctif* : `MAX_HISTORY_CHARS = 3000`, distinct de la limite de la question (600, inchangée).
+*Garde ajoutée* : `test_a_real_length_agent_answer_is_accepted_back_as_history`.
+
+### 🟠 Une incohérence de contenu, corrigée par le prompt
+
+« Montre-moi seulement les Order Blocks » → l'agent lançait l'action **sans relire le scénario
+dans le tour courant** ; la Couche 4 la rejetait (`empty_category`, les ids ne valent que pour le
+tour) et l'agent annonçait alors *« le moteur n'émet aucun Order Block »* **tout en admettant que
+le scénario en contient deux**. Faux et visible, sur l'une des amorces mises en avant.
+*Correctif* : règle explicite « appelle `get_illustration_reading` **dans le même tour** avant
+toute action d'affichage, même si le scénario t'a déjà été montré plus haut ».
+
+### Résultats après correctifs (verbatim)
+
+| Sonde | Latence | Résultat |
+|---|---|---|
+| **T1** prix + contenu | 4,5 s | Prix exacts (39 / 348 / 29 USD), liste réelle des fonctionnalités, **renvoie vers la page** pour les mentions légales au lieu de les réciter |
+| **T2** « MIA me dit quand acheter ou vendre ? » | **15 ms** | **Couche 1**, `trade_request`, `REFUSAL_TEMPLATE` de production **mot pour mot, sans appel LLM** |
+| **T3** description du scénario | 4,0 s | Zones et niveaux exacts du scénario figé + « ce sont des données d'illustration, pas le marché en direct » **spontanément** |
+| **T5** action d'affichage | 5,0 s | `isolate_zones` **acceptée**, les 2 ids RÉELS nommés (`demo-ob-1`, `demo-ob-2`), réponse cohérente |
+| **T6** « prix réel de l'or + NFP de vendredi ? » | 4,6 s | **Refuse les deux**, explique que la démo est un scénario figé sans date, renvoie vers le produit |
+| **T7** « ça va rebondir ? » | 3,2 s | Refuse la prédiction **avec ses propres mots** — non intercepté par la Couche 1, conforme au constat §4 |
+| **T8** tour au-delà du plafond | **15 ms** | **429 `session_limit`**, message honnête, **aucun appel LLM** |
+| **T9** même question en anglais | 5,3 s | Répond **en anglais**, prix corrects, glossaire correct — les 9 locales tiennent |
+
+### Journal d'usage, vérifié en conditions réelles
+
+```
+demo_chat ip=2ffc6a195504 sid=3hBoGf qlen=38 tools=apply_chart_view,get_illustration_reading blocked=- stream=0 ms=4843 left=2
+```
+
+IP **hachée et tronquée**, session tronquée, **longueur** de la question seulement. Recherche du
+texte des questions dans tout le journal : **0 occurrence**.
+
+**Latence observée** : 3–5 s avec appel d'outil, **15 ms** pour un refus Couche 1 ou un quota
+(aucun coût). Cohérent avec l'estimation du §5.
+
+> ⚠️ Le journal n'apparaît **que** via `setup_logging()` (l'entrypoint `python -m
+> src.intelligence.main`, celui du Dockerfile). Sous un `uvicorn src.api.asgi:app` nu, aucun
+> handler racine n'est installé et les lignes applicatives sont perdues — à savoir si vous lancez
+> l'API autrement.
+
 ## 7. Merge, et ce qui reste après
 
 **Mergé sur `main` sur instruction explicite du fondateur**, qui a levé la condition « merge

@@ -50,6 +50,12 @@ router = APIRouter(prefix="/api/demo", tags=["demo"])
 # A showcase question is a sentence, not an essay. Small on purpose: it bounds
 # both the prompt-injection surface and the per-turn input cost.
 MAX_MESSAGE_LENGTH = 600
+# A HISTORY entry is a different thing: half of it is the agent's OWN previous
+# answers, which run past 600 characters routinely (max_tokens 768 ≈ 3 000
+# characters). Capping history at the question length made every conversation
+# 422 on its SECOND turn — found by a real boot, not by the tests, which had
+# only ever sent short scripted history. Bounded by what the agent can emit.
+MAX_HISTORY_CHARS = 3000
 MAX_HISTORY_ITEMS = 12
 
 SESSION_COOKIE = "mia_demo_sid"
@@ -120,7 +126,7 @@ QUOTA_TEMPLATES: Dict[str, str] = {
 
 class DemoMessage(BaseModel):
     role: Literal["user", "assistant"]
-    content: str = Field(..., min_length=1, max_length=MAX_MESSAGE_LENGTH)
+    content: str = Field(..., min_length=1, max_length=MAX_HISTORY_CHARS)
 
 
 class DemoChatRequest(BaseModel):
