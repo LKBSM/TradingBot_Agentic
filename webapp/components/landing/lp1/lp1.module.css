@@ -65,16 +65,6 @@
 .micro { font-family: var(--font-mono); font-size: 12px; color: var(--faint); }
 @media (max-width: 760px) { .h1 { font-size: 34px; } .lead { font-size: 16px; } }
 
-/* STATS */
-.stats {
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--line);
-  border: 1px solid var(--line); border-radius: 14px; overflow: hidden; margin-top: 48px;
-}
-.stat { background: var(--lp-card); padding: 20px 16px; text-align: center; }
-.statN { font-size: 26px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
-.statL { font-size: 12.5px; color: var(--faint); margin-top: 6px; }
-@media (max-width: 720px) { .stats { grid-template-columns: repeat(2, 1fr); } }
-
 /* FEATURE ROW */
 .feat { display: grid; grid-template-columns: 1fr 1fr; gap: 50px; align-items: center; margin-bottom: 88px; }
 .feat:last-child { margin-bottom: 0; }
@@ -482,7 +472,7 @@
 
 /* hero ambition line (LP-2) */
 .roadmap {
-  font-family: var(--font-mono); font-size: 12px; color: var(--faint); margin-top: 20px;
+  font-family: var(--font-mono); font-size: 12px; color: var(--faint); margin-top: 28px;
   line-height: 1.6;
 }
 .roadmap b { color: var(--dim); font-weight: 600; }

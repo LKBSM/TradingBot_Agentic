@@ -8,7 +8,6 @@ import { DemoTabs } from './DemoTabs';
 import { MiaSection } from './MiaSection';
 import { ReadingCarousel } from './ReadingCarousel';
 import { CandleSvg } from './CandleSvg';
-import { LANDING_STATS, LANDING_STAT_ORDER } from '@/lib/landing/stats';
 import { PRICING } from '@/lib/pricing.generated';
 
 function Check() {
@@ -63,14 +62,11 @@ export function HomeLanding() {
             </div>
             <div className={styles.micro}>{t('hero.micro')}</div>
 
-            <div className={styles.stats}>
-              {LANDING_STAT_ORDER.map((k) => (
-                <div key={k} className={styles.stat}>
-                  <div className={styles.statN}>{LANDING_STATS[k]}</div>
-                  <div className={styles.statL}>{t(`stats.${k}`)}</div>
-                </div>
-              ))}
-            </div>
+            {/* LP-2S — the four-stat banner is gone (no use to a first-time
+                visitor). One honest line replaces it: the 80 figure is an
+                AMBITION and never appears without its scope word, and the two
+                markets actually in production are named. A test asserts both
+                across the 9 locales. */}
             <div className={styles.roadmap}>{rich('hero.roadmap')}</div>
           </div>
         </div>
