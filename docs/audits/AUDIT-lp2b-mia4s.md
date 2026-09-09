@@ -293,7 +293,7 @@ posent déjà les deux (quota restant + outils appelés par tour).
 
 | Vérification | Résultat |
 |---|---|
-| `tsc --noEmit` | **3 erreurs pré-existantes** (`dictation-copy-honesty`), **aucune nouvelle** |
+| `tsc --noEmit` | **0 erreur** (les 3 dettes pré-existantes corrigées, voir plus bas) |
 | `npm run build` | ✔ |
 | vitest `home.test.tsx` | **20/20** |
 | vitest `demo-illustration-parity` | **4/4** |
@@ -319,26 +319,44 @@ aux deux viewports demandés :
 > périmée** (voir §0) — corrigés par le merge de `origin/main`, pas par une modification de ma
 > part. Après merge : **80/80**.
 
-### 🟠 Échec pré-existant, non corrigé (hors périmètre)
+### ✅ Les deux dettes pré-existantes, corrigées sur demande du fondateur
 
-`tests/test_bootstrap_runtime.py::test_missing_anthropic_key_raises_clear_error` échoue **avant
-mes changements** : il exige que `build_market_reading_assembler` lève sans `ANTHROPIC_API_KEY`,
-alors que l'assembler n'en a plus besoin depuis la mission « lecture narrée = gabarit
-déterministe » (le commentaire de `bootstrap.py` le dit : « assembler needs no
-ANTHROPIC_API_KEY »). Le corriger revient à décider ce que ce test doit désormais affirmer —
-c'est une décision, pas un correctif mécanique.
+**1. `tsc` : les 3 erreurs de `dictation-copy-honesty.test.ts`.** Trois accès indexés non gardés
+(`noUncheckedIndexedAccess`). Corrigés par un accès **bruyant** : `proofWords()` lève quand une
+locale n'a pas ses mots-témoins, au lieu de la laisser passer sans être testée — le correctif
+renforce la garde au lieu de la museler. **`tsc` est maintenant à 0 erreur sur tout le dépôt.**
+
+**2. `pytest` : `test_missing_anthropic_key_raises_clear_error`.** Il exigeait que
+`build_market_reading_assembler` lève sans `ANTHROPIC_API_KEY`, alors que l'assembler n'en a plus
+besoin depuis la mission « lecture narrée = gabarit déterministe » — l'assertion avait pourri en
+rouge permanent. Elle est remplacée par une garde du contrat RÉEL, dans les deux sens :
+
+- `test_assembler_builds_without_an_anthropic_key` — l'assembler se construit **sans clé**
+  (c'est la décision, pas un accident) ;
+- `test_llm_factories_fail_fast_and_name_the_missing_key` — les fabriques qui ont **vraiment**
+  besoin de la clé (`build_scanner_translator`, `build_demo_chat_agent`) lèvent une erreur qui
+  **nomme la variable d'environnement**.
+
+Le test couvre donc désormais aussi la nouvelle fabrique de l'agent de démonstration.
 
 ---
 
-## 7. Ce qui reste à faire avant merge
+## 7. Merge, et ce qui reste après
 
-1. **Confirmation visuelle live du fondateur** sur les 3 parties (aux 2 viewports).
+**Mergé sur `main` sur instruction explicite du fondateur**, qui a levé la condition « merge
+seulement après confirmation visuelle live » posée au cahier des charges. La garantie qui reste
+en place est le drapeau : **`DEMO_CHAT_ENABLED` est OFF par défaut**, donc `main` porte le code
+sans exposer l'endpoint public — activer l'agent reste un geste délibéré.
+
+Ce qui reste à faire, désormais **après** le merge :
+
+1. **Confirmation visuelle** sur les 3 parties (aux 2 viewports).
 2. **`DEMO_CHAT_ENABLED=1`** + `ANTHROPIC_API_KEY` sur l'environnement de test, puis **période de
-   mesure du coût réel** avant diffusion large. Par défaut le drapeau est **OFF** : l'onglet
-   fonctionne en mode enregistré tant qu'il n'est pas activé.
+   mesure du coût réel** avant diffusion large.
 3. Vérifier que les middlewares `geo_block` / `beta_auth` n'assomment pas `/api/demo/*`.
 4. Décider si le seau « prédiction » en Couche 1 mérite sa mission (§4, résultat négatif 17).
-5. Décider du sort du test `test_missing_anthropic_key_raises_clear_error` (§6).
+   **Non fait ici volontairement** : cela change le comportement du chat PAYANT, ce n'est pas une
+   correction de défaut mais une décision produit.
 
 ## 8. Variables d'environnement introduites
 
