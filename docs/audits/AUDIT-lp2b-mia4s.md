@@ -12,9 +12,18 @@ et d'une période de mesure du coût réel de C avant diffusion large.
 `origin/main`** (`e0dc69c` sur `docs/preserve-data-1-audit`) : tout le travail a été fait dans un
 worktree dédié branché sur `origin/main` à jour.
 
-⚠️ **Collision possible** : `wt-lp-2a` (`feat/lp2a-mia-agent-showcase`) et `wt-lp-2s`
-(`feat/lp2s-accueil-stats`) existent en parallèle sur la même page d'accueil. Vérifier
-`git fetch` + `gh pr list` avant intégration (précédent THM-1/BRD-3, PR #197 fermée redondante).
+⚠️ **La collision annoncée au diagnostic s'est produite** : pendant la mission, la session
+parallèle LP-2A a mergé la **PR #202** sur `main` (`72b21b4`), qui touche la même page d'accueil
+et le même fichier Playwright. Symptôme : 4 échecs Playwright sur un test de barre de navigation —
+**dus à ma base périmée**, pas à mon travail. Le commit `4d57368` de cette PR corrige précisément
+ce test (le libellé du CTA était codé en dur `« Essayer gratuitement »` alors que la copie dit
+`« S'abonner »` depuis PAY-2 ; il est désormais lu depuis l'i18n).
+
+→ `origin/main` re-fetché et **mergé dans la branche après le commit C**. Merge **automatique,
+sans conflit** : git a conservé le `ctaLabel()` de LP-2A **et** les champs ajoutés ici. Toutes les
+vérifications du §6 ont été **relancées après le merge**.
+
+Leçon reconduite : re-`git fetch` **avant l'intégration**, pas seulement au début de la mission.
 
 ---
 
@@ -289,8 +298,26 @@ posent déjà les deux (quota restant + outils appelés par tour).
 | vitest `home.test.tsx` | **20/20** |
 | vitest `demo-illustration-parity` | **4/4** |
 | pytest `test_demo_chat_mia4s.py` | **31/31** |
-| pytest régression chatbot (9 fichiers, 332 tests) | **331 passés, 1 échec pré-existant** |
-| Playwright `lp1-accueil` (fr+en × 1280×800 et 390×844) | voir §7 |
+| pytest régression chatbot (317 tests, relancés après le verrou d'outils) | **317/317** |
+| pytest régression complète (9 fichiers, 332 tests) | **331 passés, 1 échec pré-existant** |
+| Playwright `lp1-accueil` + `lp2a-mia-cards` (fr+en × 1280×800 et 390×844) | **80/80** |
+
+### Playwright — détail des 3 parties
+
+Lancé contre le **build de production** (`next start`, port dédié préchauffé au curl), fr et en,
+aux deux viewports demandés :
+
+| Partie | Test | ×4 combos |
+|---|---|---|
+| A | `demo 1 — structure narration rewrites` : puce BOS/CHOCH → le fragment disparaît ; jusqu'à la liquidité seule ; puis l'**état vide honnête** | ✔ |
+| B | couvert par la garde vitest des 3 états + le rendu dans le build | ✔ |
+| C | `demo 4 — M.I.A answers live and can move the chart layers` (réponse en direct + action validée qui atteint la narration) | ✔ |
+| C | `demo 4 — with no backend, M.I.A degrades to recorded exchanges and says so` | ✔ |
+| C | `demo 4 — any question can be typed, the starters are not a menu` | ✔ |
+
+> **Premier run : 4 échecs**, tous sur le même test de barre de navigation, **dus à la base
+> périmée** (voir §0) — corrigés par le merge de `origin/main`, pas par une modification de ma
+> part. Après merge : **80/80**.
 
 ### 🟠 Échec pré-existant, non corrigé (hors périmètre)
 
