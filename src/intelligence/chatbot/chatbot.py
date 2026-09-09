@@ -31,6 +31,7 @@ from src.intelligence.chatbot.constants import (
     REFUSAL_TEMPLATE,
     VIEW_ACTION_EMPTY_CATEGORY_TEMPLATE,
     VIEW_ACTION_REFUSAL_TEMPLATE,
+    refusal_for,
 )
 from src.intelligence.chatbot.output_filter import OutputFilter
 from src.intelligence.chatbot.signal_summary_provider import SignalSummaryProvider
@@ -527,7 +528,11 @@ class Chatbot:
         if adv.triggered:
             yield {
                 "event": "answer",
-                "content": REFUSAL_TEMPLATE,
+                # The refusal is chosen by bucket: a forecast request deserves an
+                # answer ABOUT forecasting, not the generic recommendation notice.
+                # Unmapped buckets keep REFUSAL_TEMPLATE, so this changed nothing
+                # for the four that existed before.
+                "content": refusal_for(adv.category),
                 "tool_calls_made": [],
                 "view_actions": [],
                 "blocked_reason": adv.category,

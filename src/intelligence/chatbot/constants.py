@@ -51,6 +51,7 @@ from __future__ import annotations
 
 import re
 import unicodedata
+from typing import Optional
 
 # --------------------------------------------------------------------------- #
 # Text normalisation (shared by Couche 1 and Couche 3)
@@ -251,6 +252,52 @@ _FINANCIAL_ADVICE_RAW: list[str] = [
 ]
 
 
+# Catégorie PREDICTION — demander à l'outil ce que le prix VA FAIRE.
+#
+# Ce seau intercepte la demande de pronostic, PAS le futur grammatical : « quand
+# le marché va-t-il rouvrir ? » ou « y a-t-il une news bientôt ? » sont des
+# questions FACTUELLES et doivent atteindre le modèle. Chaque motif exige donc
+# deux choses — un cadre de pronostic ET un mot de direction de prix — ou une
+# formule de prévision sans ambiguïté.
+#
+# Doctrine (même arbitrage que les homonymes plus haut) : sur l'ENTRÉE on préfère
+# laisser passer un cas limite, que le prompt traite déjà, plutôt que de refuser
+# une question descriptive. Le sur-blocage est réservé à la SORTIE (Couche 3).
+_PREDICTION_RAW: list[str] = [
+    # "ca / le prix / le marche va (-t-il) monter|baisser|rebondir…"
+    r"\b(ca|cela|il|elle|le\s+prix|le\s+cours|le\s+marche|l'or|l'euro|le\s+niveau|"
+    r"la\s+zone)\s+(va|vont|ira|iront)\s*-?\s*t?\s*-?\s*(il|elle|ils|elles)?\s+"
+    r"(monter|baisser|descendre|remonter|redescendre|rebondir|chuter|grimper|"
+    r"repartir|continuer|tenir|exploser|plonger|corriger|casser)",
+    # forme inversée nue : "va-t-il monter ?"
+    r"\bva\s*-?\s*t\s*-?\s*(il|elle)\s+(monter|baisser|descendre|remonter|rebondir|"
+    r"chuter|grimper|repartir|continuer|tenir|casser)\b",
+    # "tu penses / a ton avis / selon toi …" + un mot de DIRECTION. Jamais "va"
+    # seul, qui attraperait « tu penses que ça va rouvrir quand ? ».
+    r"\b(tu\s+penses?|penses?\s*-?\s*tu|tu\s+crois|crois\s*-?\s*tu|a\s+ton\s+avis|"
+    r"selon\s+toi)\b[^?.!]{0,60}\b(monter|baisser|descendre|remonter|rebondir|chuter|"
+    r"grimper|hausse|baisse|direction)\b",
+    # verbes et noms de prévision adressés à l'outil. Le nom porte une exclusion :
+    # le produit PRÉVOIT la volatilité (une amplitude), jamais une direction —
+    # « quelle est la prévision de volatilité ? » est une question produit
+    # légitime et doit atteindre le modèle.
+    r"\b(predis|predit|predire|prevois|prevoir|anticipes?|anticiper|pronostique)\b"
+    r"|\b(prediction|predictions|prevision|previsions|pronostic|anticipation)\b"
+    r"(?!\s+(de\s+|d'|sur\s+)?(la\s+)?volatilite)",
+    # "quel est ton objectif / ta cible" · "objectif de prix" · "price target"
+    r"\b(ton|ta|votre|vos)\s+(objectif|cible|prevision|pronostic|anticipation)\b|"
+    r"\bobjectif\s+de\s+prix\b|\bprice\s+target\b",
+    # "ou va le prix" / "jusqu'ou ca monte"
+    r"\b(ou|jusqu'?\s*ou)\s+(va|ira|monte|montera|descend|descendra)\b",
+    # anglais
+    r"\bwill\s+(it|price|gold|the\s+market|eurusd|xauusd)\s+(go|rise|fall|drop|bounce|"
+    r"break|continue|hold)\b|\bdo\s+you\s+think\s+[^?.!]{0,60}\b(will|going\s+to)\b|"
+    r"\bwhat'?s?\s+your\s+(target|forecast|prediction)\b",
+    # "hausse ou baisse ?" / "up or down ?"
+    r"\b(hausse\s+ou\s+baisse|baisse\s+ou\s+hausse|up\s+or\s+down|down\s+or\s+up)\b",
+]
+
+
 def _compile(raw_patterns: list[str]) -> list[re.Pattern[str]]:
     return [re.compile(p, re.IGNORECASE) for p in raw_patterns]
 
@@ -259,13 +306,19 @@ ADVERSARIAL_PATTERNS_JAILBREAK: list[re.Pattern[str]] = _compile(_JAILBREAK_RAW)
 ADVERSARIAL_PATTERNS_TRADE_REQUEST: list[re.Pattern[str]] = _compile(_TRADE_REQUEST_RAW)
 ADVERSARIAL_PATTERNS_PERSONA_HIJACK: list[re.Pattern[str]] = _compile(_PERSONA_HIJACK_RAW)
 ADVERSARIAL_PATTERNS_FINANCIAL_ADVICE: list[re.Pattern[str]] = _compile(_FINANCIAL_ADVICE_RAW)
+ADVERSARIAL_PATTERNS_PREDICTION: list[re.Pattern[str]] = _compile(_PREDICTION_RAW)
 
-# Ordered so the most security-critical bucket (jailbreak) is checked first.
+# Ordered so the most security-critical bucket (jailbreak) is checked first, and
+# the FIRST match wins. ``prediction`` is deliberately LAST: a message that is
+# both a forecast request and a trade request ("tu penses que je devrais
+# acheter ?") must keep reporting the graver category, and no existing message
+# may see its reported category change because a bucket was added.
 ADVERSARIAL_PATTERNS_BY_CATEGORY: dict[str, list[re.Pattern[str]]] = {
     "jailbreak": ADVERSARIAL_PATTERNS_JAILBREAK,
     "trade_request": ADVERSARIAL_PATTERNS_TRADE_REQUEST,
     "persona_hijack": ADVERSARIAL_PATTERNS_PERSONA_HIJACK,
     "financial_advice": ADVERSARIAL_PATTERNS_FINANCIAL_ADVICE,
+    "prediction": ADVERSARIAL_PATTERNS_PREDICTION,
 }
 
 ALL_ADVERSARIAL_PATTERNS: list[re.Pattern[str]] = [
@@ -295,6 +348,20 @@ REFUSAL_TEMPLATE: str = (
 )
 
 # Couche 3 — replacement when the LLM output contains a forbidden token.
+# Couche 1 — refus dédié au seau ``prediction``. Le refus générique parle de
+# recommandations ; ici la question porte sur l'AVENIR du prix, et la réponse
+# honnête doit le dire. Comme les autres gabarits, il est volontairement exempt
+# de token interdit : il n'est jamais repassé dans le filtre de sortie.
+PREDICTION_REFUSAL_TEMPLATE: str = (
+    "Je ne prédis pas les mouvements de prix. C'est un choix de conception, pas "
+    "une limite technique : personne ne sait ce que le prix fera ensuite, et un "
+    "outil qui prétendrait le savoir vous mentirait.\n\n"
+    "Ce que je peux faire : décrire l'état d'une zone et son historique, "
+    "expliquer un concept (BOS, CHOCH, Order Block, Fair Value Gap), ou vous "
+    "montrer ce que le moteur a détecté."
+)
+
+
 OUTPUT_CONTAMINATED_TEMPLATE: str = (
     "Je ne peux pas formuler cette réponse de cette manière. Je peux te décrire "
     "les conditions actuelles du marché si tu veux."
@@ -311,6 +378,19 @@ LLM_ERROR_TEMPLATE: str = (
 INSIST_REDIRECT_TEMPLATE: str = (
     "Je décris les conditions du marché. La décision d'agir t'appartient."
 )
+
+# Couche 1 — which refusal a given bucket answers with. Absent from the map =
+# the generic REFUSAL_TEMPLATE, so adding a bucket never silently changes what
+# the existing ones say.
+REFUSAL_TEMPLATE_BY_CATEGORY: dict[str, str] = {
+    "prediction": PREDICTION_REFUSAL_TEMPLATE,
+}
+
+
+def refusal_for(category: Optional[str]) -> str:
+    """The refusal text Couche 1 returns for a matched bucket."""
+    return REFUSAL_TEMPLATE_BY_CATEGORY.get(category or "", REFUSAL_TEMPLATE)
+
 
 # Couche 4 — on-brand refusal when a chart-view action falls outside the
 # display-only whitelist (e.g. inventing / moving / resizing a structure). Kept
@@ -336,6 +416,7 @@ __all__ = [
     "ADVERSARIAL_PATTERNS_FINANCIAL_ADVICE",
     "ADVERSARIAL_PATTERNS_JAILBREAK",
     "ADVERSARIAL_PATTERNS_PERSONA_HIJACK",
+    "ADVERSARIAL_PATTERNS_PREDICTION",
     "ADVERSARIAL_PATTERNS_TRADE_REQUEST",
     "ALL_ADVERSARIAL_PATTERNS",
     "ALL_FORBIDDEN_TOKENS",
@@ -347,8 +428,11 @@ __all__ = [
     "INSIST_REDIRECT_TEMPLATE",
     "LLM_ERROR_TEMPLATE",
     "OUTPUT_CONTAMINATED_TEMPLATE",
+    "PREDICTION_REFUSAL_TEMPLATE",
     "REFUSAL_TEMPLATE",
+    "REFUSAL_TEMPLATE_BY_CATEGORY",
     "VIEW_ACTION_EMPTY_CATEGORY_TEMPLATE",
     "VIEW_ACTION_REFUSAL_TEMPLATE",
     "normalize_text",
+    "refusal_for",
 ]

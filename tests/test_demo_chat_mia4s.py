@@ -31,6 +31,7 @@ from src.api.signal_store import SignalStore
 from src.intelligence.chatbot.chatbot import TOOL_SCHEMAS, Chatbot
 from src.intelligence.chatbot.constants import (
     OUTPUT_CONTAMINATED_TEMPLATE,
+    PREDICTION_REFUSAL_TEMPLATE,
     REFUSAL_TEMPLATE,
 )
 from src.intelligence.chatbot.demo_agent import (
@@ -300,8 +301,45 @@ def test_couche1_refuses_before_any_llm_call(message: str, category: str) -> Non
     bot, stub = _demo_bot([])  # no scripted response: the LLM must NOT be called
     result = bot.chat(user_message=message)
     assert result.blocked_reason == category
+    # The four original buckets keep the generic refusal, unchanged.
     assert result.content == REFUSAL_TEMPLATE
     assert stub.calls == [], "an adversarial turn reached the model"
+
+
+@pytest.mark.parametrize(
+    "message",
+    [
+        "Le prix va-t-il monter après ce BOS ?",
+        "Quel est ton objectif de prix sur l'or ?",
+        "Tu prévois une baisse cette semaine ?",
+        "Do you think gold will go up?",
+    ],
+)
+def test_prediction_bucket_refuses_about_forecasting_not_about_advice(message: str) -> None:
+    bot, stub = _demo_bot([])
+    result = bot.chat(user_message=message)
+    assert result.blocked_reason == "prediction"
+    assert result.content == PREDICTION_REFUSAL_TEMPLATE
+    assert stub.calls == []
+
+
+@pytest.mark.parametrize(
+    "message",
+    [
+        "Quand le marché va-t-il rouvrir ?",
+        "Y a-t-il une publication qui va sortir cette semaine ?",
+        "Quelle est la prévision de volatilité sur XAUUSD ?",
+        "Qu'est-ce qui s'est passé après le BOS ?",
+    ],
+)
+def test_descriptive_questions_still_reach_the_model(message: str) -> None:
+    """The cost of a prediction bucket is false positives. These must not be one:
+    factual future tense, and the volatility forecast the product really does
+    compute (an amplitude, never a direction)."""
+    bot, stub = _demo_bot([_Resp([_TextBlock("Voici ce que montre le scénario.")], "end_turn")])
+    result = bot.chat(user_message=message)
+    assert result.blocked_reason is None, f"{message!r} was wrongly refused"
+    assert stub.calls, "the question never reached the model"
 
 
 def test_couche3_replaces_a_contaminated_answer() -> None:
@@ -349,22 +387,35 @@ def test_couche4_accepts_a_real_illustration_zone_id() -> None:
 # --------------------------------------------------------------------------- #
 
 
-def test_adversarial_predictive_question_is_not_caught_by_couche1() -> None:
-    """RECORDED, NOT FIXED: « tu penses que ça va rebondir ? » matches no
-    adversarial bucket — in production either. The refusal is the model applying
-    the prompt, and Couche 3 only fires if the wording is contaminated. The
-    landing must therefore not promise one exact refusal sentence."""
-    bot, stub = _demo_bot([_Resp([_TextBlock("Je ne prédis pas les mouvements de prix.")], "end_turn")])
+def test_adversarial_predictive_question_is_now_caught_by_couche1() -> None:
+    """DECIDED AND FIXED (founder call): a forecast request is now a hard refusal.
+
+    This test used to assert the OPPOSITE, on purpose — it was written to fail
+    the day someone added a prediction bucket, so the change could not happen by
+    accident. The bucket now exists, so the assertion is inverted: no LLM call,
+    and a refusal ABOUT forecasting rather than the generic recommendation one.
+    """
+    bot, stub = _demo_bot([])  # no scripted response: the model must NOT be called
     result = bot.chat(user_message="Tu penses que ça va rebondir ?")
-    assert result.blocked_reason is None  # Couche 1 did NOT intercept
-    assert stub.calls, "the model was called — the refusal comes from the prompt"
+    assert result.blocked_reason == "prediction"
+    assert result.content == PREDICTION_REFUSAL_TEMPLATE
+    assert result.content != REFUSAL_TEMPLATE
+    assert stub.calls == [], "a forecast request reached the model"
 
 
-def test_adversarial_predictive_answer_is_still_caught_when_contaminated() -> None:
-    bot, _ = _demo_bot(
+def test_couche3_still_catches_a_drift_couche1_could_never_see() -> None:
+    """The layers remain independent: a BENIGN question (Couche 1 lets it pass)
+    whose ANSWER drifts into judgement is still replaced by Couche 3.
+
+    The input used to be « Ça va rebondir ? », which the prediction bucket now
+    intercepts before the model — so the probe moved to a question that must
+    reach it, or this test would silently stop exercising Couche 3 at all.
+    """
+    bot, stub = _demo_bot(
         [_Resp([_TextBlock("C'est le bon moment pour entrer, ça va rebondir.")], "end_turn")]
     )
-    result = bot.chat(user_message="Ça va rebondir ?")
+    result = bot.chat(user_message="Décris-moi l'état de la zone au-dessus du prix.")
+    assert stub.calls, "the benign question must reach the model"
     assert result.content == OUTPUT_CONTAMINATED_TEMPLATE
 
 

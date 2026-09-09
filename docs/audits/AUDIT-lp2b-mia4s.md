@@ -229,7 +229,42 @@ dégradation honnête.
 | 15 | Contournement session + IP | 429 `daily_budget` | disjoncteur global |
 | 16 | Message de 5 000 caractères | 422, aucun coût | validation |
 
-### 🟠 Résultat négatif, enregistré et non maquillé
+### ✅ Le seau « prédiction » a été ajouté (décision fondateur, après coup)
+
+Le résultat négatif ci-dessous **a été tranché** : un 5ᵉ seau `prediction` existe désormais en
+Couche 1, en **production comme en démo**.
+
+| | |
+|---|---|
+| Motifs | 8, exigeant **un cadre de pronostic ET un mot de direction** — jamais le futur grammatical seul |
+| Position | **dernière** du mapping ordonné, donc aucun message ne change de catégorie rapportée |
+| Refus | `PREDICTION_REFUSAL_TEMPLATE`, dédié : il parle de **prévision**, pas de recommandation |
+| Coût | **nul** — comme tout refus Couche 1, aucun appel modèle |
+
+**Le vrai risque d'un tel seau, ce sont les faux positifs.** 9 questions au futur *factuel* ont été
+ajoutées aux négatifs testés contre **tous** les seaux : « quand le marché va-t-il rouvrir ? »,
+« y a-t-il une publication qui va sortir cette semaine ? », « qu'est-ce qui s'est passé après le
+BOS ? »… Cas particulier traité explicitement : **le produit prévoit la volatilité** (une
+amplitude), jamais une direction — « quelle est la prévision de volatilité ? » doit atteindre le
+modèle, donc le nom « prévision » porte une exclusion.
+
+Vérifié en réel :
+
+| Sonde | Latence | Résultat |
+|---|---|---|
+| « Tu penses que ça va monter ? » (l'amorce de la vitrine) | **170 ms** | `prediction`, refus dédié, **0 appel modèle** |
+| « Quel est ton objectif de prix sur l'or ? » | **32 ms** | idem |
+| « Do you think gold will go up? » | **31 ms** | idem |
+| « Quand le marché va-t-il rouvrir ? » | 3,6 s | **passe**, répondu normalement |
+
+> 🟠 **Conséquence à voir** : les gabarits de refus de la Couche 1 sont **en français
+> uniquement** — pour les cinq seaux, pas seulement celui-ci. Un visiteur anglophone qui pose une
+> question de prédiction reçoit donc un texte français (sonde P3 ci-dessus). Ce n'était pas
+> visible avant, parce qu'aucun refus dur ne se déclenchait sur une question aussi courante.
+> C'est un vrai manque i18n de **production**, désormais exposé par la vitrine ; il mérite sa
+> propre décision (traduire les gabarits par locale ≠ diverger de la production).
+
+### 🟠 Résultat négatif d'origine, conservé pour mémoire
 
 **Tentative 17 — « Tu penses que ça va rebondir ? »** : **aucune** des 4 familles de motifs de la
 Couche 1 ne matche, ni ici ni **en production**, et « rebondir » n'est pas un token interdit de la
@@ -244,6 +279,10 @@ Conséquences retenues :
    et force une décision explicite — c'est voulu.
 3. **Mission séparée suggérée** : ajouter un seau « prédiction » à la Couche 1 en production. Cela
    change le comportement du produit payant ; ce n'était pas le périmètre ici.
+   → **Fait depuis, sur décision du fondateur** (voir la section précédente). Le test cité au
+   point 2 a donc été **inversé** : il asserte maintenant que la Couche 1 intercepte, avec le
+   refus dédié et sans appel modèle. Le garde-fou a joué exactement son rôle — la bascule ne
+   pouvait pas se produire en silence.
 
 ---
 
@@ -427,9 +466,9 @@ Ce qui reste à faire, désormais **après** le merge :
 2. **`DEMO_CHAT_ENABLED=1`** + `ANTHROPIC_API_KEY` sur l'environnement de test, puis **période de
    mesure du coût réel** avant diffusion large.
 3. Vérifier que les middlewares `geo_block` / `beta_auth` n'assomment pas `/api/demo/*`.
-4. Décider si le seau « prédiction » en Couche 1 mérite sa mission (§4, résultat négatif 17).
-   **Non fait ici volontairement** : cela change le comportement du chat PAYANT, ce n'est pas une
-   correction de défaut mais une décision produit.
+4. ~~Décider si le seau « prédiction » en Couche 1 mérite sa mission~~ → **décidé et livré**
+   (§4). Reste ouvert : **traduire les gabarits de refus de la Couche 1** (les cinq), aujourd'hui
+   en français uniquement, ce que ce seau rend visible sur les 8 autres locales.
 
 ## 8. Variables d'environnement introduites
 
