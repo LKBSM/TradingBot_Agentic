@@ -213,6 +213,11 @@
 .layOn { opacity: 1; }
 .dz { position: absolute; border-radius: 2px; }
 .dl { position: absolute; font-family: var(--font-mono); font-size: 8.5px; padding: 1.5px 6px; border-radius: 4px; white-space: nowrap; }
+/* Compact candle box — the Zones tab draws the selected zone in the SAME visual
+   language as the Structure tab, on a shorter chart. */
+.dchartSm { height: 170px; }
+/* The eaten share of a zone, filled from its lower edge (price came through). */
+.dzfill { position: absolute; left: 0; right: 0; bottom: 0; opacity: 0.3; border-radius: 0 0 2px 2px; }
 .dnarr {
   margin-top: 12px; padding: 13px 15px; border: 1px solid var(--line); border-radius: 11px;
   background: var(--lp-card); font-size: 13px; line-height: 1.7; color: var(--dim); min-height: 74px;

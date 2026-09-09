@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import styles from './lp1.module.css';
 import { CandleSvg } from './CandleSvg';
+import { ZoneRect } from './ZoneRect';
 import { buildCandles, priceBounds, yPct } from './chart';
 import {
   DEMO_CLOSES,
@@ -12,6 +13,7 @@ import {
   DEMO_ZONES,
   DEMO_MIA,
   DEMO_REGIME,
+  type DemoZone,
   type LayerKey,
 } from './data';
 
@@ -39,31 +41,27 @@ function StructureChart({ layers }: { layers: Layers }) {
       <CandleSvg width={560} height={250} extra={LEVEL_KEYS.map((k) => L[k])} />
 
       <div className={lay(layers.ob)} aria-hidden={!layers.ob}>
-        <div
-          className={styles.dz}
+        <ZoneRect
+          kind="ob"
           style={{
             left: '60%', right: '64px', top: `${yPct(L.obHigh, b)}%`,
             height: `${yPct(L.obLow, b) - yPct(L.obHigh, b)}%`,
-            background: 'var(--ob)', border: '1px dashed var(--ob-l)',
           }}
+          labelStyle={{ left: '60.5%', top: `${yPct(L.obHigh, b) - 8}%` }}
+          label={t('demo.structure.labels.ob')}
         />
-        <div className={styles.dl} style={{ left: '60.5%', top: `${yPct(L.obHigh, b) - 8}%`, background: 'var(--ob)', color: 'var(--bear)' }}>
-          {t('demo.structure.labels.ob')}
-        </div>
       </div>
 
       <div className={lay(layers.fvg)} aria-hidden={!layers.fvg}>
-        <div
-          className={styles.dz}
+        <ZoneRect
+          kind="fvg"
           style={{
             left: '36%', right: '64px', top: `${yPct(L.fvgHigh, b)}%`,
             height: `${yPct(L.fvgLow, b) - yPct(L.fvgHigh, b)}%`,
-            background: 'var(--fvg)', border: '1px dashed var(--fvg-l)',
           }}
+          labelStyle={{ left: '36.5%', top: `${yPct(L.fvgHigh, b) - 8}%` }}
+          label={t('demo.structure.labels.fvg')}
         />
-        <div className={styles.dl} style={{ left: '36.5%', top: `${yPct(L.fvgHigh, b) - 8}%`, background: 'var(--fvg)', color: 'var(--fvg-l)' }}>
-          {t('demo.structure.labels.fvg')}
-        </div>
       </div>
 
       <div className={lay(layers.liq)} aria-hidden={!layers.liq}>
@@ -216,6 +214,35 @@ function ScannerPane() {
   );
 }
 
+/** The selected zone drawn on the SAME candle series and the SAME bounds as the
+ * Structure tab, with the SAME <ZoneRect>. A zone is a rectangle on a chart
+ * before it is a paragraph — the card below tells its story, this shows it.
+ * `hidden` really removes the drawing (the chart stays), which is exactly what
+ * the "Masquer du graphique" button claims to do. */
+function ZoneMiniChart({ zone, hidden }: { zone: DemoZone; hidden: boolean }) {
+  const t = useTranslations('home');
+  const b = useBounds();
+  const top = yPct(zone.high, b);
+  // A spent zone has been traversed end to end: 100 % eaten.
+  const fill = zone.state === 'filled' ? 100 : zone.fill;
+  const label = `${t(`demo.zones.kind.${zone.kind}`)} ${zone.dir === 'up' ? '↑' : '↓'} · ${t(`demo.zones.z.${zone.key}.state`)}`;
+  return (
+    <div className={`${styles.dchart} ${styles.dchartSm}`}>
+      <CandleSvg width={560} height={170} extra={LEVEL_KEYS.map((k) => DEMO_LEVELS[k])} />
+      {!hidden && (
+        <ZoneRect
+          kind={zone.kind}
+          style={{ left: '10px', right: '64px', top: `${top}%`, height: `${yPct(zone.low, b) - top}%` }}
+          labelStyle={{ left: '12px', top: `${top - 9}%` }}
+          label={label}
+          {...(fill != null ? { fillPct: fill } : null)}
+          {...(zone.state === 'filled' ? { spent: true } : null)}
+        />
+      )}
+    </div>
+  );
+}
+
 function ZonesPane() {
   const t = useTranslations('home');
   const [sel, setSel] = useState(0);
@@ -255,7 +282,10 @@ function ZonesPane() {
             </button>
           ))}
         </div>
-        <div className={styles.zcard} style={{ opacity: hidden ? 0.4 : 1 }}>
+        <ZoneMiniChart zone={zone} hidden={hidden} />
+        {/* The card is NOT dimmed when the zone is hidden: what disappears is the
+         * drawing, not the facts — exactly what `zones.hiddenNote` says. */}
+        <div className={styles.zcard} style={{ marginTop: '12px' }}>
           <div className={styles.zhead}>
             <span className={styles.chip} style={{ background: badgeColor.bg, borderColor: 'transparent', color: badgeColor.fg }}>
               {t(`demo.zones.kind.${zone.kind}`)} {zone.dir === 'up' ? '↑' : '↓'}

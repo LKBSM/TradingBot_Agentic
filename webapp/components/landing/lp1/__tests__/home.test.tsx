@@ -190,6 +190,24 @@ describe('LP-1 home — demos run offline', () => {
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
+  it('the zones demo draws each zone in the structure tab visual language', () => {
+    render(<DemoTabs />);
+    fireEvent.click(screen.getByRole('tab', { name: /Suivre une zone/i }));
+    // zone 1 — an untested Order Block, drawn untouched
+    expect(screen.getByText(/ORDER BLOCK ↑ · active · jamais testée/)).toBeInTheDocument();
+    // zone 2 — a Fair Value Gap eaten at 60 %
+    fireEvent.click(screen.getByRole('tab', { name: 'Fair Value Gap · comblé à 60 %' }));
+    expect(screen.getByText(/FAIR VALUE GAP ↓ · pénétrée/)).toBeInTheDocument();
+    // zone 3 — a spent Order Block
+    fireEvent.click(screen.getByRole('tab', { name: 'Order Block · comblé' }));
+    expect(screen.getByText(/ORDER BLOCK ↓ · comblée/)).toBeInTheDocument();
+    // "hide from the chart" removes the DRAWING; the facts stay readable
+    fireEvent.click(screen.getByRole('button', { name: 'Masquer du graphique' }));
+    expect(screen.queryByText(/ORDER BLOCK ↓ · comblée/)).not.toBeInTheDocument();
+    expect(screen.getByText(/Elle n'est plus active/i)).toBeInTheDocument();
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
   it('a MIA question changes the structure demo layers (grounded action)', () => {
     render(<DemoTabs />);
     fireEvent.click(screen.getByRole('tab', { name: /Parler à M\.I\.A/i }));

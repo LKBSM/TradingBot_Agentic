@@ -78,14 +78,22 @@ export interface DemoZone {
   kind: 'ob' | 'fvg';
   dir: 'up' | 'down';
   band: string;
+  /** Numeric band, same scale as DEMO_LEVELS — lets the Zones tab draw the zone
+   * on the SAME candle series as the Structure tab. Must match `band`. */
+  low: number;
+  high: number;
   /** fill % for partially filled FVG (0..100) */
   fill?: number;
 }
 
+/** The first two zones are literally the Structure tab's own (same numbers as
+ * the obLow/obHigh and fvgLow/fvgHigh levels); the third is an older Order Block
+ * of the same scenario, fully traversed. One story told twice — never two
+ * contradictory samples. */
 export const DEMO_ZONES: readonly DemoZone[] = [
-  { key: 'untested', state: 'untested', kind: 'ob', dir: 'up', band: '4 026,80 – 4 028,90' },
-  { key: 'tested', state: 'tested', kind: 'fvg', dir: 'down', band: '4 020,10 – 4 021,85', fill: 60 },
-  { key: 'filled', state: 'filled', kind: 'ob', dir: 'down', band: '4 014,20 – 4 016,05' },
+  { key: 'untested', state: 'untested', kind: 'ob', dir: 'up', band: '4 026,80 – 4 028,90', low: 4026.8, high: 4028.9 },
+  { key: 'tested', state: 'tested', kind: 'fvg', dir: 'down', band: '4 020,10 – 4 021,85', low: 4020.1, high: 4021.85, fill: 60 },
+  { key: 'filled', state: 'filled', kind: 'ob', dir: 'down', band: '4 014,20 – 4 016,05', low: 4014.2, high: 4016.05 },
 ];
 
 export type MiaKind = 'answer' | 'refusal' | 'action';
