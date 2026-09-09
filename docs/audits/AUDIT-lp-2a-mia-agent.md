@@ -108,7 +108,7 @@ une ligne dentelée : c'est **asserté** par le test Playwright (mêmes `top` et
 | `npx tsc --noEmit` | 3 erreurs, toutes pré-existantes (`dictation-copy-honesty.test.ts`), **0 nouvelle** |
 | `next build` (CI=1) | vert |
 | Playwright `lp2a-mia-cards.spec.ts` | **4/4** (1280×800 + 390×844) |
-| Playwright `lp1-accueil.spec.ts` + LP-2A, 2 projets | 60 passés, 4 échecs pré-existants (§6) |
+| Playwright `lp1-accueil.spec.ts` + LP-2A, 2 projets | **64/64** (après correction du test périmé, §6.2) |
 
 ### Le nouveau garde-fou (`lp2a-copy.test.ts`) échoue si :
 1. une carte regrossit au-delà de sa longueur pré-LP-2A, **dans l'une des 9 locales** ;
@@ -123,17 +123,31 @@ Le spec Playwright asserte en plus que les 4 cartes tiennent sur une ligne à ha
 que chaque carte rend **exactement une phrase** (la détection ignore les points d'abréviation
 type « 4 Std. »).
 
-## 6. Échecs pré-existants — non causés par LP-2A
+## 6. Échecs pré-existants rencontrés
 
-1. **`lib/__tests__/markets-guard.test.ts`** → « `lib/market-reading/session.test.ts` → inline
-   market array ». Les deux fichiers sont **identiques à `origin/main`** (`git diff origin/main`
-   vide) ; le diff LP-2A ne touche que `messages/*.json` et deux fichiers de test neufs.
-2. **`lp1-accueil.spec.ts:209`** « nav bar: a visitor gets no App/Zones/Scanner, sees the
-   free-trial CTA » (×2 locales ×2 projets). Le test attend un lien « Essayer gratuitement » /
-   « Try for free » dans l'entête ; **ce libellé n'existe plus dans `origin/main`**
-   (`git grep "Essayer gratuitement" origin/main -- webapp/messages/fr.json` → vide) : l'entête
-   servie rend « Créer un compte » / « Se connecter ». Spec périmée sur `main`, sans rapport avec
-   les clés modifiées. Son jumeau (`:219`, qui mocke la sonde de session) passe.
+### 6.1 `markets-guard` — laissé en l'état (hors périmètre)
+
+`lib/__tests__/markets-guard.test.ts` → « `lib/market-reading/session.test.ts` → inline market
+array ». Les deux fichiers sont **identiques à `origin/main`** (`git diff origin/main` vide) ;
+le diff LP-2A ne touche que `messages/*.json` et des fichiers de test neufs.
+
+### 6.2 `lp1-accueil.spec.ts` — **corrigé dans cette PR**
+
+Le test « nav bar: a visitor gets no App/Zones/Scanner » attendait un lien
+« Essayer gratuitement » / « Try for free » dans l'entête (×2 locales ×2 projets).
+
+**Diagnostic** : ce n'était pas une régression produit. `Nav.tsx` rend toujours le CTA visiteur
+(`nav.tryFree`) et masque toujours App/Zones/Scanner tant que la session n'est pas authentifiée.
+Seul le **libellé** a changé : `bc37216` (PAY-2, « payer est la condition d'entrée ») a renommé
+`nav.tryFree` en « S'abonner » / « Subscribe ». La spec, elle, codait le texte en dur — elle a
+donc pourri en silence pendant toute une release, sans que la règle qu'elle garde soit atteinte.
+
+**Correction** : le libellé est désormais **lu depuis `messages/{fr,en}.json`** (helper `ctaLabel`,
+échappement regex) au lieu d'être codé en dur — un futur renommage du CTA ne pourra plus périmer
+la spec. Le titre du test, devenu trompeur, passe de « sees the free-trial CTA » à
+« sees the sign-up CTA » : le CTA n'offre plus un essai, il mène à l'abonnement.
+
+Résultat : `lp1-accueil.spec.ts` + LP-2A = **64/64** sur les deux projets (desktop + mobile).
 
 ## 7. Captures
 
@@ -147,6 +161,7 @@ cookies pré-décidé pour ne pas masquer la démo).
 webapp/messages/{fr,en,de,es,it,pt,nl,pl,ar}.json   4 valeurs chacune (36 lignes)
 webapp/components/landing/lp1/__tests__/lp2a-copy.test.ts   (nouveau)
 webapp/tests/e2e/lp2a-mia-cards.spec.ts                     (nouveau)
+webapp/tests/e2e/lp1-accueil.spec.ts                        (CTA lu depuis l'i18n, §6.2)
 docs/audits/AUDIT-lp-2a-mia-agent.md                        (ce rapport)
 docs/audits/lp2a-shots/**                                   (captures avant/après)
 ```
@@ -155,4 +170,4 @@ Aucun composant produit, aucun CSS, aucune route modifiés.
 
 ## 9. Reste à faire
 
-**Confirmation visuelle live du fondateur avant merge** (mission §3).
+Aucun. Le fondateur a levé la condition de confirmation visuelle et demandé le merge direct.
