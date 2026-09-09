@@ -422,19 +422,19 @@
       "caps": {
         "c1": {
           "h": "Sie vermittelt SMC",
-          "p": "Jedes Konzept — Order Block, Fair Value Gap, BOS, CHOCH, mitigation, Liquidität — erklärt <b>mit dem Beispiel vor Augen</b>, auf deinem Markt, nicht in einem theoretischen Kurs."
+          "p": "Order Block, Fair Value Gap, BOS, CHOCH, mitigation, Liquidität — <b>jedes Konzept auf deinem eigenen Markt erklärt</b>."
         },
         "c2": {
           "h": "Sie beschreibt, was da ist",
-          "p": "Genaue Niveaus, Zeitstempel, Anzahl der Tests, Zustand jeder Liquiditätszone. <b>Nur erkannte Fakten</b> — eine erfundene Referenz wird vom Code abgewiesen, nicht durchgelassen."
+          "p": "Sie nennt nur tatsächlich erkannte Niveaus: <b>eine erfundene Referenz wird vom Code abgewiesen</b>."
         },
         "c3": {
           "h": "Sie steuert deine Anzeige",
-          "p": "« Blende die FVG aus », « isoliere diese Zone », « wechsle auf 4 Std. ». Du sprichst, <b>der Chart verändert sich</b>. Kein Suchen mehr nach dem richtigen Knopf."
+          "p": "« Blende die FVG aus », « isoliere diese Zone », « wechsle auf 4 Std. »: du sprichst, <b>der Chart verändert sich</b>."
         },
         "c4": {
           "h": "Sie weigert sich zu raten",
-          "p": "Keine Vorhersage, kein Hinweis auf ein Eingreifen, kein Rat. <b>Es ist ein beschreibendes Werkzeug</b>, und sie sagt es dir selbst, wenn du sie fragst, wohin der Preis geht."
+          "p": "Keine Vorhersage, kein Hinweis auf ein Eingreifen, kein Rat: <b>es ist ein beschreibendes Werkzeug</b>."
         }
       }
     },
