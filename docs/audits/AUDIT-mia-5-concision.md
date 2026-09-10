@@ -445,7 +445,23 @@ Les trois résidus du diagnostic sont levés, vérifiés sur ce run :
 
 ---
 
-## 9. Ce qui reste ouvert
+## 9. Effet de bord : la CI voyait rouge sans rien exécuter
+
+`algo-tests` échoue sur **`main`** à chaque run récent (#206 à #211) — et en **2 minutes**, parce qu'elle s'arrête à la COLLECTE sur l'`ImportError` de `_eval_mtf_aligned`. Depuis SC-1, la CI de ce dépôt ne testait donc plus rien.
+
+Cette PR répare la collecte : la suite s'exécute pour la première fois (**12 min 45, 4214 tests**) et fait apparaître **3 échecs pré-existants** que personne ne pouvait voir :
+
+| Test | Diagnostic | État |
+|---|---|---|
+| `test_mc1_market_closed_wiring::test_get_or_generate_makes_no_call_and_no_save_when_closed` | la graine du test écrivait le payload à la main, **sans son `_logic_version`** ; les deux branches qui servent une lecture stockée l'exigent, donc la lecture repartait en reconstruction et le verrou d'émission du week-end était mesuré à côté. Vérifié pré-existant par contrôle (l'échec persiste avec l'assembleur d'`origin/main`). | **corrigé** — la graine passe par `_persist_reading`, le même chemin que le produit |
+| `test_sprint2_performance::test_correlation_matrix` | égalité stricte entre deux cellules symétriques sommées dans un ordre différent : un ULP d'écart sur le runner (`…4973` contre `…4972`), vert en local | **corrigé** — comparaison `pytest.approx` |
+| `test_calendar_values::test_enricher_flags_revision_across_cycles` | l'événement revient `actual_state='unfetched'`, `value_series=[]` : la valeur n'est pas enrichie du tout. Reproductible en local. Piste : le cache de points + le rafraîchissement de fond introduits par NW-7b (`597c8f7`, « stop BLS quota drain »). | **NON corrigé** — diagnostiquer le comportement voulu (une révision doit-elle être vue dans la fenêtre de cache ?) est une décision produit, pas un ajustement de test |
+
+Le troisième reste rouge : la PR **améliore** donc strictement l'état de la CI (de « rien ne s'exécute » à « un échec connu, documenté »), sans le maquiller.
+
+---
+
+## 10. Ce qui reste ouvert
 
 - **Discipline de schéma** : la cause racine du bug n° 2 est un schéma restreint **sans bump de `READING_LOGIC_VERSION`**. Le parseur tolérant absorbe la conséquence ; la règle (« restreindre un champ = bumper la version ») reste à tenir à la main.
 - **`il faut`** est un jeton interdit (catégorie recommandation) qui peut légitimement apparaître dans une explication (« il faut une clôture au-delà du niveau »). Aucun cas n'a été capturé sur les runs de cette mission : pas de carve-out sans preuve — la discipline suivie ici est de ne toucher au filtre que sur une sortie réellement observée.

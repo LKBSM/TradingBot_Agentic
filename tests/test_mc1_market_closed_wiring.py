@@ -88,11 +88,19 @@ def _stub_pipeline(candles):
 
 def _seed_friday_reading(assembler: MarketReadingAssembler, store: _ReadingsStore) -> None:
     """Generate the Friday reading once (market open at generation time), then
-    freeze the clock into the weekend for the assertions."""
-    reading = assembler._build_fresh(
-        "EURUSD", "M15", mc.market_aware_expected_close("EURUSD", "M15", SATURDAY)
-    )
-    store._latest = reading.model_dump(mode="json")
+    freeze the clock into the weekend for the assertions.
+
+    La graine passe par ``_persist_reading`` — le MÊME chemin que le produit —
+    pour que le payload porte son ``_logic_version``. Écrit à la main
+    (``store._latest = reading.model_dump(...)``), il n'avait pas ce tampon :
+    les deux branches qui servent une lecture stockée l'exigent, la lecture
+    tombait donc en reconstruction et le verrou d'émission MC-1 était mesuré
+    à côté de la plaque (un appel sortant partait le week-end, dans le test).
+    """
+    expected_close = mc.market_aware_expected_close("EURUSD", "M15", SATURDAY)
+    reading = assembler._build_fresh("EURUSD", "M15", expected_close)
+    assembler._persist_reading("EURUSD", "M15", expected_close, reading)
+    store.save_calls.clear()  # la graine n'est pas une écriture « du week-end »
 
 
 def _make(clock_dt, provider):
