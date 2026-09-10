@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 from src.api.app import create_app
 from src.api.bootstrap import (
     BootstrapConfigurationError,
+    build_chatbot,
     build_market_reading_assembler,
     build_market_reading_scheduler,
     env_flag,
@@ -101,18 +102,37 @@ class TestBootstrapFactories:
         assert scheduler is not None
         assert scheduler.running is False  # built, not started
 
-    def test_missing_anthropic_key_raises_clear_error(self, tmp_path, monkeypatch):
-        """Brief: 'sans ANTHROPIC_API_KEY set, build échoue avec erreur claire'."""
-        monkeypatch.setenv("TWELVE_DATA_API_KEY", "test-key")
-        monkeypatch.setenv("MARKET_READINGS_DB_PATH", str(tmp_path / "mr.db"))
-        monkeypatch.setenv("CANDLES_DB_PATH", str(tmp_path / "candles.db"))
-        monkeypatch.setenv("NEWS_CACHE_DB_PATH", str(tmp_path / "news.db"))
+    def test_missing_anthropic_key_raises_clear_error(self, monkeypatch):
+        """Brief : « sans ANTHROPIC_API_KEY, le build échoue avec une erreur claire ».
+
+        Le périmètre de cette exigence a changé : depuis la mission « lecture
+        narrée », la lecture est composée par un gabarit déterministe et
+        l'assembleur n'a PLUS besoin de la clé — seules les fabriques adossées au
+        LLM (M.I.A, traducteur du scanner) la réclament. Le garde-fou visait
+        encore ``build_market_reading_assembler`` : il n'y levait donc plus rien
+        et construisait à la place un assembleur RÉEL (provider + graine
+        d'historique), qui pendait plusieurs minutes avant de faire échouer le
+        test. Porté sur la fabrique qui porte réellement l'exigence — sans
+        réseau, sans base.
+        """
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
 
         with pytest.raises(BootstrapConfigurationError) as exc_info:
-            build_market_reading_assembler(enable_news=False)
-        # Error message must name the env var so the operator knows the fix.
+            build_chatbot(assembler=object())  # assembleur factice : jamais touché
+        # Le message doit NOMMER la variable d'environnement, pour que
+        # l'exploitant sache quoi corriger.
         assert "ANTHROPIC_API_KEY" in str(exc_info.value)
+
+    def test_assembler_no_longer_needs_the_anthropic_key(self) -> None:
+        """L'assembleur ne réclame plus la clé : la lecture narrée est un gabarit
+        déterministe. Vérifié sur le code de la fabrique (aucun réseau, aucune
+        base) — c'est le pendant du test ci-dessus."""
+        import inspect
+
+        from src.api import bootstrap
+
+        source = inspect.getsource(bootstrap.build_market_reading_assembler)
+        assert "_build_anthropic_client" not in source
 
     def test_store_paths_read_from_env_vars(self, isolated_env, tmp_path):
         """Each store honours its *_DB_PATH env var (shared Fly.io volume in prod)."""
