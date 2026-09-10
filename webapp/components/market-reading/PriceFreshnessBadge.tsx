@@ -14,6 +14,12 @@ interface PriceFreshnessBadgeProps {
    * the badge then renders nothing (honest: no freshness to claim).
    */
   tsSec: number | null | undefined;
+  /**
+   * Whether to prefix the line with the clock glyph. False where the line already
+   * reads as a discreet caption under a control bar (/zones, VZ-5) and the icon
+   * would only add weight to something deliberately secondary.
+   */
+  showIcon?: boolean;
   className?: string;
 }
 
@@ -32,7 +38,7 @@ interface PriceFreshnessBadgeProps {
  * before mount (Date/timezone are not deterministic during SSR), then fills in
  * the relative age — same guard as TemporalBadge, no hydration mismatch.
  */
-export function PriceFreshnessBadge({ tsSec, className }: PriceFreshnessBadgeProps) {
+export function PriceFreshnessBadge({ tsSec, showIcon = true, className }: PriceFreshnessBadgeProps) {
   const t = useTranslations('reading.temporal');
   const fmt = useReadingFormatters();
   const [now, setNow] = React.useState<Date | null>(null);
@@ -62,7 +68,7 @@ export function PriceFreshnessBadge({ tsSec, className }: PriceFreshnessBadgePro
       role="status"
       data-testid="price-freshness"
     >
-      <Clock className="h-3.5 w-3.5" aria-hidden />
+      {showIcon && <Clock className="h-3.5 w-3.5" aria-hidden />}
       {label}
     </span>
   );

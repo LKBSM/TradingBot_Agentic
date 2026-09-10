@@ -2607,7 +2607,7 @@
     "refreshing": "actualisation…",
     "filterLabel": "Filtre",
     "filterAria": "Filtrer les zones",
-    "sortLabel": "Tri",
+    "sortLabel": "Trié par",
     "sortAria": "Trier les zones",
     "loading": "Chargement des zones…",
     "errorMessage": "Les zones ne sont pas disponibles pour cette combinaison.",
@@ -2761,7 +2761,7 @@
       "unhide": "Afficher"
     },
     "badge": {
-      "count": "{count, plural, one {# zone} other {# zones}}"
+      "count": "{count, plural, one {<n>#</n> zone suivie} other {<n>#</n> zones suivies}}"
     },
     "deeplink": {
       "staleNotice": "Cette zone n'est plus détectée dans la lecture courante."

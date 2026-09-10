@@ -103,11 +103,12 @@ describe('ZonesWorkspace (VZ-1)', () => {
   it('exposes the factual filters and sorts — NO importance/quality control', async () => {
     renderZones();
     await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(4));
-    const sortGroup = screen.getByRole('group', { name: 'Trier les zones' });
-    expect(within(sortGroup).getByRole('button', { name: 'Proximité' })).toBeInTheDocument();
-    expect(within(sortGroup).getByRole('button', { name: 'Formation' })).toBeInTheDocument();
-    expect(within(sortGroup).getByRole('button', { name: 'Contacts' })).toBeInTheDocument();
-    expect(within(sortGroup).queryByRole('button', { name: /importance|qualité|score/i })).not.toBeInTheDocument();
+    // VZ-5 turned the sort into a dropdown; what this guard owns is unchanged —
+    // the criteria are FACTUAL only, never importance / quality / score.
+    const sortSelect = screen.getByLabelText('Trié par') as HTMLSelectElement;
+    const criteria = Array.from(sortSelect.options).map((o) => o.textContent ?? '');
+    expect(criteria).toEqual(['Proximité', 'Formation', 'Contacts']);
+    expect(criteria.some((c) => /importance|qualité|score/i.test(c))).toBe(false);
     const filterGroup = screen.getByRole('group', { name: 'Filtrer les zones' });
     for (const label of ['Toutes', 'Actives', 'Jamais touchées', 'Comblées']) {
       expect(within(filterGroup).getByRole('button', { name: label })).toBeInTheDocument();
@@ -216,8 +217,10 @@ describe('ZonesWorkspace (VZ-1)', () => {
     await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(4));
     expect(container.textContent ?? '').not.toContain('cycle de vie de chaque zone');
     expect(document.querySelector('.pghead .sub')).toBeNull();
-    // The factual context line on the right stays.
-    expect(document.querySelector('.pghead .livebadge')).not.toBeNull();
+    // The factual context line on the right stays. VZ-5 unframed it and dropped
+    // the market/timeframe it repeated from the selector — what this guard owns
+    // is that the FACTS survive, not the pill they used to sit in.
+    expect(document.querySelector('.pghead .zstatus')).not.toBeNull();
   });
 
   it('CLN-1 §2 — the four prefabricated question blocks are gone', async () => {
@@ -253,5 +256,76 @@ describe('ZonesWorkspace (VZ-1)', () => {
     await waitFor(() => expect(screen.getByTestId('mia-focus').textContent).toBe(''));
     expect(document.querySelector('.zone.zsel')).toBeNull();
     expect(pushMock).not.toHaveBeenCalled();
+  });
+
+  // ── VZ-5 — filter bar ─────────────────────────────────────────────────────
+  it('VZ-5 — the status line keeps ONLY the zone count, unframed', async () => {
+    renderZones();
+    await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(4));
+
+    const status = screen.getByTestId('zones-status');
+    // The count is the one thing the left side does not already say.
+    expect(status.textContent).toMatch(/\d+\s+zones? suivies?/);
+    // The market and the timeframe left with the pill — the selector states them.
+    expect(status.textContent).not.toContain('XAU');
+    expect(status.textContent).not.toContain('M15');
+    // No framed pill any more.
+    expect(document.querySelector('.pghead .livebadge')).toBeNull();
+  });
+
+  it('VZ-5 — no uppercase étiquette above the filters, and the sort is a dropdown', async () => {
+    renderZones();
+    await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(4));
+
+    const bar = document.querySelector('.zbar');
+    expect(bar).not.toBeNull();
+    // The two 9px uppercase labels that sat above the pill rows are gone.
+    expect(bar!.querySelector('.uppercase')).toBeNull();
+    // The filters stay a segmented control, named for assistive tech.
+    expect(within(bar as HTMLElement).getByRole('group', { name: 'Filtrer les zones' })).toBeTruthy();
+    // The sort is a discreet dropdown, not a third row of equal-weight pills.
+    const sort = screen.getByLabelText('Trié par') as HTMLSelectElement;
+    expect(sort.tagName).toBe('SELECT');
+    expect(Array.from(sort.options).map((o) => o.textContent)).toEqual([
+      'Proximité',
+      'Formation',
+      'Contacts',
+    ]);
+  });
+
+  it('VZ-5 — the sort dropdown still drives the sort (logic untouched)', async () => {
+    renderZones();
+    await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(4));
+
+    const sort = screen.getByLabelText('Trié par') as HTMLSelectElement;
+    expect(sort.value).toBe('proximity');
+    fireEvent.change(sort, { target: { value: 'formation' } });
+    await waitFor(() => expect(sort.value).toBe('formation'));
+    // Re-sorting reorders, it never filters anything out.
+    expect(screen.getAllByRole('article')).toHaveLength(4);
+  });
+
+  it('VZ-5 — the price-freshness line sits under the bar, not in the header', async () => {
+    renderZones();
+    await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(4));
+
+    const fresh = document.querySelector('[data-testid="price-freshness"]');
+    if (fresh) {
+      expect(fresh.closest('.pghead')).toBeNull();
+      expect(fresh.classList.contains('zfresh')).toBe(true);
+    }
+  });
+
+  it('VZ-5 — the group heading is plain sentence case, not an uppercased label', async () => {
+    renderZones();
+    await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(4));
+
+    const seps = Array.from(document.querySelectorAll('.zsep'));
+    expect(seps.length).toBeGreaterThan(0);
+    for (const s of seps) {
+      // The string itself was already sentence case — the shouting came from the
+      // CSS. Guard the copy so nobody re-uppercases it in the markup instead.
+      expect(s.textContent).not.toBe(s.textContent!.toUpperCase());
+    }
   });
 });
