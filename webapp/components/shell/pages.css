@@ -52,6 +52,94 @@
 .app-shell .zones-wrap {
   padding-top: 6px;
 }
+
+/* ── VZ-5 — /zones status line + filter bar ────────────────────────────────
+   Cible : docs/design/zones_bar_v2.html. The mockup is drawn on this very
+   palette (--bull/--dim/--faint/--acc are its literal values) but at a ~1.6×
+   larger type scale (its h1 is 26px, ours is 16px) — so the HIERARCHY is what
+   is reproduced here, in the shell's own sizes, not the mockup's px.          */
+
+/* Header right — plain text, no frame. The market and the timeframe left with
+   the pill: the selector one row below already states them. */
+.app-shell .zstatus {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--dim);
+  white-space: nowrap;
+}
+.app-shell .zstatus .num {
+  color: var(--txt);
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The single controls row: market + timeframe | filters ......... sort. */
+.app-shell .zbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.app-shell .zbar-div {
+  width: 1px;
+  height: 20px;
+  background: var(--line);
+  flex: none;
+}
+/* The sort is deliberately NOT a third row of pills at equal weight: a quiet
+   dropdown, pushed to the far end of the row. */
+.app-shell .zbar-sort {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--dim);
+}
+.app-shell .zbar-sort select {
+  background: none;
+  border: none;
+  color: var(--txt);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px;
+  cursor: pointer;
+}
+/* Native option lists are painted by the OS — give them the panel colours so a
+   dark theme does not render dark-on-dark. */
+.app-shell .zbar-sort select option {
+  background: var(--panel);
+  color: var(--txt);
+}
+.app-shell .zbar-sort select:focus-visible {
+  outline: 1px solid var(--acc);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+/* Below 640px the row already wraps; the sort must not keep hugging the right
+   edge on its own line. */
+@media (max-width: 640px) {
+  .app-shell .zbar {
+    gap: 10px;
+  }
+  .app-shell .zbar-div {
+    display: none;
+  }
+  .app-shell .zbar-sort {
+    margin-left: 0;
+  }
+}
+
+/* Price freshness — a caption under the bar, secondary by weight. */
+.app-shell .zfresh {
+  font-size: 11px;
+  color: var(--faint);
+  margin: 0 0 10px;
+}
 .app-shell .pghead {
   display: flex;
   align-items: center;
@@ -710,32 +798,29 @@
   top: 16px;
 }
 /* Group headers stay pinned to the top of the scroll area while their own
-   section is in view; the next group's header then takes over. */
+   section is in view; the next group's header then takes over.
+   VZ-5 — « Le prix est dedans » reads as a real section title now: normal case,
+   in the text colour, a notch above the controls' 12px. It used to be a 9px
+   letter-spaced uppercase mono label closed by a rule — the generic-dashboard
+   tell the mission calls out. The sticky behaviour is functional and stays. */
 .app-shell .zsep {
   position: sticky;
   top: 0;
   z-index: 3;
-  font-family: var(--font-mono), 'JetBrains Mono', monospace;
-  font-size: 9px;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
-  color: var(--faint);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.1px;
+  color: var(--txt);
   display: flex;
   align-items: center;
   gap: 11px;
-  padding: 6px 0 5px;
+  padding: 8px 0 6px;
   margin: 0;
   background: var(--bg);
 }
 /* The very first group header hugs the controls above it. */
 .app-shell .zgroup:first-child .zsep {
   padding-top: 2px;
-}
-.app-shell .zsep::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--line);
 }
 
 /* Proximity — the three read-side encadrés (proximity/confluence/contacts) share
