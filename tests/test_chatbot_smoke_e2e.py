@@ -121,6 +121,16 @@ def _booted_client(
     return TestClient(app)
 
 
+def _system_text(system: Any) -> str:
+    """Texte du prompt système, que celui-ci soit une chaîne simple ou la LISTE
+    de blocs `cache_control` introduite par la scission de cache MIA-2 (préfixe
+    statique caché + signal_summary variable en fin). Sans cela, un `in` sur une
+    liste ne teste rien de ce qu'on croit tester."""
+    if isinstance(system, str):
+        return system
+    return "\n".join(block.get("text", "") for block in system)
+
+
 # --------------------------------------------------------------------------- #
 # Smoke tests
 # --------------------------------------------------------------------------- #
@@ -154,7 +164,7 @@ def test_endpoint_happy_path_with_market_reading_tool_call(
     assert first_call["messages"][0] == {
         "role": "user", "content": "Décris-moi les conditions sur XAUUSD H1"
     }
-    assert "instruments_tracked" in first_call["system"]
+    assert "instruments_tracked" in _system_text(first_call["system"])
 
 
 def test_endpoint_blocks_adversarial_before_llm(

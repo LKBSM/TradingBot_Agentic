@@ -113,6 +113,20 @@ def test_being_short_never_drops_a_fact() -> None:
         assert must_stay in SYSTEM_PROMPT_STATIC
 
 
+def test_a_qualified_state_must_carry_its_measured_value() -> None:
+    """La concision ne doit pas transformer un chiffre en adjectif : « volatilité
+    normale » sans le ratio est plus court ET moins vrai."""
+    assert "Un adjectif seul n'est pas un fait" in SYSTEM_PROMPT_STATIC
+    assert "ratio, distance, niveau, horodatage" in SYSTEM_PROMPT_STATIC
+
+
+def test_current_price_comes_from_the_engine_not_from_an_outside_site() -> None:
+    """M.I.A a le prix (clôture de la dernière bougie) : elle le donne, et ne
+    renvoie jamais le client vers une plateforme tierce."""
+    assert "Le prix courant EST dans la lecture" in SYSTEM_PROMPT_STATIC
+    assert "JAMAIS de renvoi vers une plateforme ou un site extérieur" in SYSTEM_PROMPT_STATIC
+
+
 def test_anchoring_rules_are_intact() -> None:
     """Les règles qui ancrent la réponse au moteur — jamais coupées au nom de la
     brièveté."""
