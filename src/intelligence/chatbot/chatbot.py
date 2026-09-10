@@ -61,6 +61,23 @@ DEFAULT_TIMEOUT_S = 20.0
 MAX_MODEL_HISTORY = 12
 MAX_TOOL_TURNS = 3  # hard cap on tool-use rounds to avoid infinite loops
 
+
+def _schemas_chars(schemas: Any) -> int:
+    """Serialised size of the tool definitions, for the cached-prefix estimate.
+
+    An approximation of what the API renders for ``tools`` — close enough to
+    decide whether a prefix clears a token minimum, and the only measure
+    available without calling ``count_tokens``. Never raises: a build with
+    non-serialisable schemas simply contributes 0 to the estimate.
+    """
+    if not schemas:
+        return 0
+    try:
+        return len(json.dumps(schemas, ensure_ascii=False))
+    except (TypeError, ValueError):
+        return 0
+
+
 # Perimeter derived from the single sources (TF-1): the chat covers every
 # displayed instrument/timeframe, never a hand-listed subset.
 from src.intelligence import market_registry
@@ -453,6 +470,12 @@ class Chatbot:
         #                         BEFORE the variable trailing block, so the
         #                         MIA-2 cache breakpoint keeps working.
         self._tool_schemas = tool_schemas if tool_schemas is not None else TOOL_SCHEMAS
+        # PERF-3 — size of the tool definitions. They render BEFORE the system
+        # blocks (order: tools -> system -> messages), so a breakpoint on a system
+        # block caches them too: they belong to the SAME cached prefix and must be
+        # counted when deciding whether that prefix reaches the model's minimum.
+        # Serialised once here — the schemas never change after construction.
+        self._tool_schemas_chars = _schemas_chars(self._tool_schemas)
         self._tool_handlers = dict(tool_handlers or {})
         self._extra_system_blocks = list(extra_system_blocks or [])
         # Language of the VERBATIM safety templates (Couches 1-4). None = French,
@@ -761,9 +784,16 @@ class Chatbot:
         so its 60s-TTL refresh never invalidates the cache. Content is identical
         to the old single-string prompt — only the summary's position changed.
 
-        Falls back to a single plain string if the static prefix is somehow below
-        the cache threshold (it is ~2k tokens, so this never triggers in practice)
-        — same text, just uncached.
+        PERF-3 — the breakpoint decision now reasons on the REAL cached prefix.
+        A request renders as ``tools -> system -> messages``, so a breakpoint on a
+        system block caches the tool definitions with it; measuring the system text
+        alone under-counted the prefix by ~44% on the production build. Both
+        breakpoints are therefore given the size of what precedes them, and the
+        running model, so ``cache_block_for`` can flag a prefix too short to cache
+        on this model instead of failing silently.
+
+        Falls back to a single plain string only when nothing here is long enough
+        to be worth a breakpoint at all — same text, just uncached.
         """
         signal_text = SIGNAL_CONTEXT_TEMPLATE.format(
             signal_summary=json.dumps(signal_summary, ensure_ascii=False)
@@ -773,16 +803,36 @@ class Chatbot:
         # BEFORE the variable signal block: byte-stable themselves, so they cache
         # too, and they can never edit or weaken the rules above them.
         extra = self._extra_system_blocks
-        static_block = cache_block_for(SYSTEM_PROMPT_STATIC)
-        if static_block is None:
-            return "\n\n".join([SYSTEM_PROMPT_STATIC, *extra, signal_text])
-        blocks: list[dict[str, Any]] = [static_block]
+        tools_chars = self._tool_schemas_chars
+
+        blocks: list[dict[str, Any]] = [{"type": "text", "text": SYSTEM_PROMPT_STATIC}]
         for text in extra:
             blocks.append({"type": "text", "text": text})
-        if blocks[-1] is not static_block:
-            cached_tail = cache_block_for(blocks[-1]["text"])
+
+        # Breakpoint 1 — the byte-stable prefix: tool definitions + identity/rules.
+        static_block = cache_block_for(
+            SYSTEM_PROMPT_STATIC, model=self._model, prefix_chars=tools_chars
+        )
+        if static_block is not None:
+            blocks[0] = static_block
+
+        # Breakpoint 2 — a restricted build's own stable tail (MIA-4S). Everything
+        # above it is in its prefix: tools + static + the earlier extra blocks.
+        if extra:
+            prefix_chars = (
+                tools_chars
+                + len(SYSTEM_PROMPT_STATIC)
+                + sum(len(t) for t in extra[:-1])
+            )
+            cached_tail = cache_block_for(
+                blocks[-1]["text"], model=self._model, prefix_chars=prefix_chars
+            )
             if cached_tail is not None:
                 blocks[-1] = cached_tail
+
+        if not any("cache_control" in b for b in blocks):
+            return "\n\n".join([SYSTEM_PROMPT_STATIC, *extra, signal_text])
+
         blocks.append({"type": "text", "text": signal_text})
         return blocks
 
