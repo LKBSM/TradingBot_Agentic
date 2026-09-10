@@ -83,9 +83,17 @@ class TwelveDataRateLimiter:
         self._now_fn = now_fn
 
     def acquire(self) -> None:
-        """Block until both per-minute and per-day windows have a free slot."""
-        with self._lock:
-            while True:
+        """Block until both per-minute and per-day windows have a free slot.
+
+        PERF-3: the wait happens OUTSIDE the lock. This used to sleep while
+        holding it, so a thread waiting on the DAILY cap — where ``sleep_s`` can
+        reach ~86 400 s — froze every other caller in the process, including ones
+        whose own window had capacity. The lock now only guards the two deques;
+        state is re-checked after each wake, so the accounting is unchanged and
+        two threads can never claim the same slot.
+        """
+        while True:
+            with self._lock:
                 now = self._now_fn()
                 while self._minute_window and now - self._minute_window[0] >= 60.0:
                     self._minute_window.popleft()
@@ -105,15 +113,32 @@ class TwelveDataRateLimiter:
                 else:
                     sleep_s = max(0.0, 86400.0 - (now - self._day_window[0])) + 0.05
 
-                logger.info(
-                    "TwelveDataRateLimiter: sleeping %.2fs (minute=%d/%d, day=%d/%d)",
-                    sleep_s,
-                    len(self._minute_window),
-                    self._per_minute,
-                    len(self._day_window),
-                    self._per_day,
-                )
-                self._sleep_fn(sleep_s)
+                minute_used, day_used = len(self._minute_window), len(self._day_window)
+
+            logger.info(
+                "TwelveDataRateLimiter: sleeping %.2fs (minute=%d/%d, day=%d/%d)",
+                sleep_s, minute_used, self._per_minute, day_used, self._per_day,
+            )
+            self._sleep_fn(sleep_s)
+
+    def snapshot(self) -> dict:
+        """Current window usage — the credit counter the audit found missing.
+
+        A pure read (it prunes expired entries first, like ``acquire``) so a
+        health probe can report Twelve Data consumption without spending one.
+        """
+        with self._lock:
+            now = self._now_fn()
+            while self._minute_window and now - self._minute_window[0] >= 60.0:
+                self._minute_window.popleft()
+            while self._day_window and now - self._day_window[0] >= 86400.0:
+                self._day_window.popleft()
+            return {
+                "minute_used": len(self._minute_window),
+                "minute_limit": self._per_minute,
+                "day_used": len(self._day_window),
+                "day_limit": self._per_day,
+            }
 
 
 class TwelveDataProvider(DataProvider):
@@ -221,6 +246,16 @@ class TwelveDataProvider(DataProvider):
 
     def available_symbols(self) -> List[str]:
         return list(_SYMBOL_MAP.keys())
+
+    def credit_snapshot(self) -> dict:
+        """Requests consumed in the current sliding windows (PERF-3, A-9).
+
+        The audit found no way at all to see Twelve Data consumption: no counter,
+        no per-call log — the only signal was the limiter announcing a sleep, i.e.
+        once the quota was already gone. This is a pure read of the limiter it
+        already keeps, so /health can surface the budget before it runs out.
+        """
+        return self._rate_limiter.snapshot()
 
     def fetch_candles_until(
         self, symbol: str, timeframe: str, count: int, end_date: Optional[str] = None

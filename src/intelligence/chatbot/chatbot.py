@@ -36,7 +36,7 @@ from src.intelligence.chatbot.constants import (
 )
 from src.intelligence.chatbot.output_filter import OutputFilter
 from src.intelligence.chatbot.signal_summary_provider import SignalSummaryProvider
-from src.intelligence.llm_cost_policy import cache_block_for
+from src.intelligence.llm_cost_policy import cache_block_for, log_usage
 from src.intelligence.chatbot.view_action_filter import (
     ALLOWED_ACTIONS,
     ViewActionValidator,
@@ -611,6 +611,11 @@ class Chatbot:
                     tools=self._tool_schemas,
                     timeout=self._timeout_s,
                 )
+                # PERF-3 (B-2) — the only production evidence that the prompt
+                # cache is actually being served. cache_read_input_tokens staying
+                # at 0 across turns means the breakpoint is not taking, which
+                # Anthropic reports no other way.
+                log_usage(logger, "chatbot", response, model=self._model)
             except Exception as exc:  # timeout / rate limit / network
                 logger.warning("chatbot LLM call failed: %s — fail-safe template", exc)
                 yield {

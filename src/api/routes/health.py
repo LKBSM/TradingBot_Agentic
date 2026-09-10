@@ -96,6 +96,20 @@ async def _build_health(request: Request) -> HealthResponse:
         except Exception:
             pass
 
+    # PERF-3 (A-9) — Twelve Data budget. Nothing anywhere reported provider
+    # consumption: no counter, no per-call log, so the first visible sign of an
+    # exhausted quota was the feed going quiet. Read straight off the limiter the
+    # provider already maintains — it costs no request. Stays None when the live
+    # provider is not wired (CSV/MT5 deployments, tests).
+    data_provider_credits = None
+    assembler = getattr(app_state, "market_reading_assembler", None)
+    provider = getattr(assembler, "_data_provider", None) if assembler is not None else None
+    if provider is not None and hasattr(provider, "credit_snapshot"):
+        try:
+            data_provider_credits = provider.credit_snapshot()
+        except Exception:
+            pass
+
     return HealthResponse(
         status=status,
         uptime_seconds=round(time.time() - _BOOT_TIME, 2),
@@ -110,6 +124,7 @@ async def _build_health(request: Request) -> HealthResponse:
         cache_hit_rate=cache_hit_rate,
         cache_size=cache_size,
         operational_kill_switch=operational_kill_switch,
+        data_provider_credits=data_provider_credits,
     )
 
 

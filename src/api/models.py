@@ -111,6 +111,11 @@ class HealthResponse(BaseModel):
     # Operational kill-switch (src/risk/kill_switch.py): status snapshot
     # from KillSwitch.status(). Absent (None) when not configured.
     operational_kill_switch: Optional[Dict[str, Any]] = None
+    # PERF-3 (A-9) — market-data provider budget:
+    # {minute_used, minute_limit, day_used, day_limit}. Absent (None) when no
+    # live provider is wired. The daily figure is the one that matters: the free
+    # plan caps at 800/day and the steady state already spends ~254.
+    data_provider_credits: Optional[Dict[str, Any]] = None
 
 
 # =============================================================================
