@@ -1,8 +1,8 @@
 # AUDIT — MIA-5 · Concision des réponses de l'agent M.I.A
 
-- **Branche** : `feat/mia-5-concision` (worktree dédié `wt-mia-5`), depuis **origin/main `adcc475`**.
-- **Mesure** : 15 questions réelles, vrai `Chatbot`, vrai Haiku, vraies lectures de marché — **1129 → 647 mots (−43 %)**, médiane **66 → 26 mots (−61 %)**.
-- **Asymétrie tenue** : « Explique-moi ce qu'est un CHOCH » reste développée (226 → 255 mots).
+- **Branche** : `feat/mia-5-concision` (worktree dédié `wt-mia-5`), partie de **origin/main `adcc475`**, `main` re-mergée avant intégration (**`af0c4cf`**, qui apporte LP-2B / MIA-4S et le seau `prediction` de la Couche 1).
+- **Mesure** : 15 questions réelles, vrai `Chatbot`, vrai Haiku, vraies lectures de marché — **1129 → 778 mots (−31 %)** sur le run de référence, médiane par réponse **66 → 40 mots**. Sur trois runs après correctif : **540 à 778 mots** contre **1129** avant, soit **−31 % à −52 %** (le modèle n'est pas déterministe ; les trois runs sont conservés dans le scratchpad de la mission).
+- **Asymétrie tenue** : « Explique-moi ce qu'est un CHOCH » reste développée (226 → 240 mots).
 - **Deux bugs produit corrigés au passage** (demande explicite du fondateur après le diagnostic) : la Couche 3 qui détruisait des réponses légitimes, et les lectures stockées illisibles qui rendaient XAUUSD H1/H4 et EURUSD H1 muets.
 
 ---
@@ -38,7 +38,7 @@ Cinq causes mesurées au diagnostic (lecture seule, avant toute modification) :
 
 ### (b) Une section `FORMAT DE RÉPONSE` **à la toute fin** du bloc statique
 
-Position volontaire : récence maximale, donc **après** toutes les règles d'ancrage. C'est ce qui porte l'effet ; une première version placée avant la liste des outils ne donnait que −19 %, contre −43 % en fin de prompt. Un garde-fou (`tests/test_chatbot_concision.py`) interdit de la remonter.
+Position volontaire : récence maximale, donc **après** toutes les règles d'ancrage. C'est ce qui porte l'effet — mesuré sur le même couple de runs, la même section placée **avant** la liste des outils ne donnait que **−19 %**, contre **−43 %** en fin de prompt. Un garde-fou (`tests/test_chatbot_concision.py`) interdit de la remonter.
 
 ```
 FORMAT DE RÉPONSE (vaut pour toutes tes réponses) :
@@ -123,25 +123,27 @@ Aucun transcript de référence n'existait dans le dépôt (`webapp/mocks/chatbo
 
 | Question | avant | après | Δ |
 |---|---:|---:|---:|
-| XAUUSD en H1, c'est quoi la tendance ? | 45 | 21 | -53% |
-| Le dernier order block haussier sur XAUUSD H1, il est à quel niveau ? | 59 | 29 | -51% |
-| Combien de FVG actifs sur XAUUSD M15 ? | 45 | 21 | -53% |
-| La zone la plus proche du prix sur XAUUSD H1, elle a été testée combien de fois ? | 72 | 44 | -39% |
-| Pourquoi la dernière bougie de XAUUSD H1 n'est pas un order block ? | 91 | 60 | -34% |
-| Tu penses que ça va rebondir sur l'or ? | 105 | 10 | -90% |
-| Explique-moi ce qu'est un CHOCH. | 226 | 255 | 13% |
-| Le marché est ouvert là ? | 85 | 17 | -80% |
-| Il y a des publications économiques importantes cette semaine sur l'or ? | 113 | 51 | -55% |
-| Le prix actuel de l'or, il est à combien ? | 66 | 28 | -58% |
-| Masque les FVG sur le graphique. | 16 | 18 | 12% |
-| Tu suis quels marchés ? | 43 | 26 | -40% |
-| La volatilité est haute ou basse sur EURUSD H1 ? | 57 | 32 | -44% |
+| XAUUSD en H1, c'est quoi la tendance ? | 45 | 48 | 7% |
+| Le dernier order block haussier sur XAUUSD H1, il est à quel niveau ? | 59 | 40 | -32% |
+| Combien de FVG actifs sur XAUUSD M15 ? | 45 | 19 | -58% |
+| La zone la plus proche du prix sur XAUUSD H1, elle a été testée combien de fois ? | 72 | 31 | -57% |
+| Pourquoi la dernière bougie de XAUUSD H1 n'est pas un order block ? | 91 | 53 | -42% |
+| Tu penses que ça va rebondir sur l'or ? | 105 | 68 | -35% |
+| Explique-moi ce qu'est un CHOCH. | 226 | 240 | 6% |
+| Le marché est ouvert là ? | 85 | 19 | -78% |
+| Il y a des publications économiques importantes cette semaine sur l'or ? | 113 | 66 | -42% |
+| Le prix actuel de l'or, il est à combien ? | 66 | 30 | -55% |
+| Masque les FVG sur le graphique. | 16 | 7 | -56% |
+| Tu suis quels marchés ? | 43 | 22 | -49% |
+| La volatilité est haute ou basse sur EURUSD H1 ? | 57 | 54 | -5% |
 | Franchement, à ma place tu ferais quoi ? | 22 | 10 | -55% |
-| Il y a eu un BOS récemment sur XAUUSD H1 ? | 84 | 25 | -70% |
-| **TOTAL** | **1129** | **647** | **-43%** |
-| **Médiane** | **66** | **26** | **-61%** |
+| Il y a eu un BOS récemment sur XAUUSD H1 ? | 84 | 71 | -15% |
+| **TOTAL** | **1129** | **778** | **-31%** |
+| **Médiane** | **66** | **40** | **-39%** |
 
-Effet secondaire mesuré : la latence baisse aussi (moins de jetons de sortie à produire) — « le marché est ouvert ? » 7 118 → 2 365 ms, « pourquoi cette bougie n'est pas un OB » 5 561 → 4 047 ms.
+**Lire la ligne « Tu penses que ça va rebondir ? » correctement** : elle n'est plus produite par le modèle. `main` a introduit entre-temps un seau `prediction` en Couche 1 (PR #207), qui intercepte la question AVANT tout appel LLM et renvoie son gabarit dédié (68 mots, 0 ms). Ce n'est donc ni du remplissage ni un gain MIA-5 : c'est un choix de produit, mesuré ici tel qu'il ship.
+
+Effet secondaire mesuré : la latence baisse aussi (moins de jetons de sortie à produire) — « le marché est ouvert ? » 7 118 → 2 634 ms, « pourquoi cette bougie n'est pas un OB » 5 561 → 4 467 ms.
 
 Les trois résidus du diagnostic sont levés, vérifiés sur ce run :
 
@@ -174,9 +176,11 @@ Les trois résidus du diagnostic sont levés, vérifiés sur ce run :
 
 > Selon le contexte initial, la tendance XAUUSD en H1 est **haussière (bullish)**, avec une volatilité faible et une phase de tendance en cours. La structure montre un BOS bullish confirmé, un CHOCH bullish, 3 OB actifs et 5 FVG actifs, avec un retest en cours.
 
-**APRÈS — 21 mots**
+**APRÈS — 48 mots**
 
-> La tendance est **haussière** (aucune nouvelle bougie n'arrive depuis 2026-07-03T19:00:00Z ; les données affichent un retard sur cette unité de temps).
+> La tendance sur XAUUSD H1 est **haussière**. Le moteur détecte un CHOCH haussier confirmé à 4 115,77 et un BOS haussier confirmé à 4 142,40 ; un retest de cette cassure est actuellement en cours.
+> 
+> Aucune nouvelle bougie n'est reçue depuis plus de 27 heures (données en retard).
 
 ---
 
@@ -188,9 +192,9 @@ Les trois résidus du diagnostic sont levés, vérifiés sur ce run :
 > 
 > Si tu inclus les OB haussiers qui ont été mitigés mais non invalidés, il y en a deux autres plus anciens : l'un entre 4 108,08–4 124,05 et l'autre entre 4 034,04–4 044,82.
 
-**APRÈS — 29 mots**
+**APRÈS — 40 mots**
 
-> Le dernier Order Block haussier actif sur XAUUSD H1 est situé entre **4164,24 et 4174,32**, créé à 16h00 le 3 juillet 2026, sans test ni mitigation pour le moment.
+> Le dernier Order Block haussier actif sur XAUUSD H1 se situe entre **4 164,24 et 4 174,32**, créé à 2026-07-03T16:00:00Z. Il n'a jamais été testé. Les données sont en retard d'environ 1 654 bougies (dernière lecture du 3 juillet 19h00).
 
 ---
 
@@ -202,9 +206,9 @@ Les trois résidus du diagnostic sont levés, vérifiés sur ce run :
 > 
 > Note : l'état du marché est `data_lagged` — aucune bougie nouvelle n'arrive depuis 105 barres, dernière fermeture 16h00 UTC le 8 sep. Ces FVG datent de ce moment et n'ont pas changé depuis.
 
-**APRÈS — 21 mots**
+**APRÈS — 19 mots**
 
-> **9 FVG actifs** sur XAUUSD M15 — marché en retard de données, dernière bougie clôturée à 16h00 UTC le 8 septembre.
+> **9 FVG actifs** sur XAUUSD M15, aucun jamais testé. Données en retard (dernière bougie clôturée le 08 sept. 16h00).
 
 ---
 
@@ -218,9 +222,9 @@ Les trois résidus du diagnostic sont levés, vérifiés sur ce run :
 > 
 > Ces deux structures actives encadrent le prix, avec un retest de cassure (BOS) en cours à 4 142,40.
 
-**APRÈS — 44 mots**
+**APRÈS — 31 mots**
 
-> La zone la plus proche du prix sur XAUUSD H1 est l'**Order Block haussier actif entre 4164,24 et 4174,32** (créé le 2026-07-03 à 16:00). Cet OB **n'a jamais été testé** (touch_count = 0). Le prix clôture à 4174,97 en ce moment, données en retard.
+> L'Order Block bullish créé à **16h00 le 3 juillet** (zone **4164,24–4174,32**) est la structure la plus proche du prix actuel à **4174,97**. Cette zone **n'a jamais été testée** (touch_count = 0).
 
 ---
 
@@ -232,9 +236,9 @@ Les trois résidus du diagnostic sont levés, vérifiés sur ce run :
 > 
 > En SMC, un Order Block ne devient un OB valide que si la bougie qui le suit **dépasse le plus haut** (ou le plus bas, selon la direction). Comme la bougie suivante n'existe pas encore, le statut reste **awaiting_next_candle** — l'évaluation est en suspens, pas rejetée. Dès que la prochaine bougie sera clôturée, le moteur pourra déterminer si ce pattern se valide en OB ou non.
 
-**APRÈS — 60 mots**
+**APRÈS — 53 mots**
 
-> La dernière bougie H1 (clôture à 4174.97) est en attente d'évaluation : le moteur détecte un candidat Order Block mais l'évalue sur la bougie SUIVANTE, qui n'existe pas encore. Un Order Block n'est confirmé que lorsque la bougie qui suit dépasse le plus haut ou le plus bas de la bougie candidate — cette validation n'est pas encore possible ici.
+> Le moteur évalue un Order Block sur la bougie SUIVANTE (celle après le 3 juillet 19h), qui n'existe pas encore dans les données. C'est la dernière bougie de la fenêtre analysée, donc le diagnostic ne peut pas être complété : il manque la bougie de confirmation pour trancher si elle est un OB.
 
 ---
 
@@ -252,9 +256,11 @@ Les trois résidus du diagnostic sont levés, vérifiés sur ce run :
 > 
 > Veux-tu une lecture complète d'un timeframe précis pour voir les structures en détail ?
 
-**APRÈS — 10 mots**
+**APRÈS — 68 mots**
 
-> Je décris les conditions du marché. La décision d'agir t'appartient.
+> Je ne prédis pas les mouvements de prix. C'est un choix de conception, pas une limite technique : personne ne sait ce que le prix fera ensuite, et un outil qui prétendrait le savoir vous mentirait.
+> 
+> Ce que je peux faire : décrire l'état d'une zone et son historique, expliquer un concept (BOS, CHOCH, Order Block, Fair Value Gap), ou vous montrer ce que le moteur a détecté.
 
 ---
 
@@ -282,25 +288,23 @@ Les trois résidus du diagnostic sont levés, vérifiés sur ce run :
 > 
 > Dans le contexte actuel : tu as plusieurs CHOCH en cours sur les timeframes que tu suis (XAUUSD M5/M15 bearish, XAUUSD H1/H4/D1 bullish, etc.) — ce sont des marqueurs de structure qui reflètent les retournements locaux en place.
 
-**APRÈS — 255 mots**
+**APRÈS — 240 mots**
 
-> Un **CHOCH** (Change Of Character) est une cassure de structure qui marque un changement de caractère du marché.
+> Un CHOCH (Change Of Character) est une rupture structurelle du marché qui marque un changement de direction et de dynamique.
 > 
-> Précisément : c'est le moment où le prix dépasse — et clôture au-delà de — un **niveau de liquidité clé** établi pendant la phase précédente. Ce niveau représente généralement un extrême (un plus haut ou un plus bas) qui délimitait la direction précédente.
+> Concrètement, un CHOCH se forme quand le prix casse et clôture au-delà d'un niveau pivot important (généralement le plus haut ou le plus bas d'une structure précédente), invalidant ainsi la direction précédente et signalant un renversement de tendance ou une accélération dans la nouvelle direction.
 > 
-> **Exemple concret :**
-> - Le marché monte, puis redescend et établit un plus bas local. Ce niveau devient une limite inférieure.
-> - Si le prix enfonce ensuite ce plus bas **avec une clôture au-delà**, il y a un CHOCH baissier : le caractère change de haussier à baissier.
-> - Inversement, si le marché baisse puis remonte et défononce un plus haut antérieur par la clôture, c'est un CHOCH haussier.
+> Voici comment il fonctionne :
 > 
-> **Différence avec le BOS :**
-> - Un **BOS** (Break Of Structure) est la première cassure d'un niveau de support ou de résistance établi.
-> - Un **CHOCH** est une cassure plus large : elle brise non seulement la structure immédiate, mais invalide le pattern de base (les plus hauts/bas) qui définissaient le mouvement précédent.
+> **La structure avant le CHOCH** : le marché évolue dans une direction donnée, établissant des sommets et des creux qui structurent ce mouvement.
 > 
-> **Rôle en structure de marché :**
-> Le CHOCH est un indicateur clé d'un renversement ou d'une accélération. Une fois qu'il se produit, le marché a basculé sur une nouvelle logique directionnelle ; les zones et niveaux de l'ancienne phase perdent leur validité, et de nouvelles zones se forment autour de cette nouvelle direction.
+> **Le moment du CHOCH** : une bougie casse et clôture au-delà du niveau pivot (par exemple, au-delà du plus haut précédent si la tendance était baissière) — c'est l'invalidation.
 > 
-> C'est un événement structurel confirmé — il ne se remet pas en question une fois clôturé au-delà du niveau.
+> **Ce qu'il signifie** : ce franchissement indique que les acteurs du marché qui contrôlaient la direction précédente ont perdu le contrôle. Le CHOCH est donc un signal que les détenteurs de liquidité se sont retirés, souvent pour permettre un mouvement plus agressif dans la nouvelle direction.
+> 
+> **Différence avec un BOS** : un BOS (Break Of Structure) casse aussi un niveau pivot, mais un CHOCH va plus loin — il marque non seulement une cassure, mais un véritable changement de la nature du marché (volatilité, formation des structures, direction dominante).
+> 
+> Dans le contexte du SMC (Smart Money Concepts), le CHOCH est souvent suivi d'une phase d'accumulation ou de distribution des liquidités avant le mouvement principal dans la nouvelle direction.
 
 ---
 
@@ -314,9 +318,9 @@ Les trois résidus du diagnostic sont levés, vérifiés sur ce run :
 > 
 > C'est une pause naturelle de transmission de données, pas un dysfonctionnement. Vous pouvez toujours consulter les structures et conditions détectées à la dernière clôture, mais aucune évolution récente n'est reflétée.
 
-**APRÈS — 17 mots**
+**APRÈS — 19 mots**
 
-> Je dois vérifier l'état exact pour toi. Quel marché t'intéresse — XAUUSD, EURUSD, ou les deux ?
+> Aucune nouvelle bougie n'a été reçue depuis **09-08 à 16h00 UTC** (XAUUSD M15) ; les données sont en retard.
 
 ---
 
@@ -337,9 +341,17 @@ Les trois résidus du diagnostic sont levés, vérifiés sur ce run :
 > 
 > La **décision de taux et le dot plot de la Fed** sont les événements les plus susceptibles d'affecter l'or, car ils influent directement sur les rendements du dollar et les anticipations de politique monétaire. Aucun chiffre n'est encore publié (tous en attente).
 
-**APRÈS — 51 mots**
+**APRÈS — 66 mots**
 
-> Trois publications importantes arrivent cette semaine sur l'or : les **ventes au détail américaines avancées** (16 septembre à 12h30 UTC), la **décision de taux de la Réserve fédérale** (16 septembre à 18h00 UTC) et les **projections économiques et dot plot du FOMC** (même horaire). Aucune de ces valeurs n'est encore publiée.
+> Oui, 4 publications importantes figurent au calendrier pour l'or cette semaine :
+> 
+> **16 septembre à 12h30 UTC** — Ventes au détail (estimation avancée) du Census Bureau.
+> 
+> **16 septembre à 18h00 UTC** — Décision de taux de la Federal Reserve (FOMC) et projections économiques associées.
+> 
+> **17 septembre à 12h30 UTC** — Mises en chantier du Census Bureau.
+> 
+> Aucune valeur n'est encore publiée — toutes sont en attente.
 
 ---
 
@@ -351,9 +363,9 @@ Les trois résidus du diagnostic sont levés, vérifiés sur ce run :
 > 
 > Quel timeframe t'intéresse ? M15, H1, H4 ou D1 ? Je vais te donner le prix de clôture de la dernière bougie et te dire si le marché est actuellement ouvert ou fermé.
 
-**APRÈS — 28 mots**
+**APRÈS — 30 mots**
 
-> Le prix clôture de la dernière bougie (XAUUSD M5) est **4433,14** le **8 septembre 2026 à 03:45 UTC**. Aucune nouvelle bougie n'arrive depuis (marché en retard de données).
+> Le prix de l'or (XAUUSD) clôturait à **4 433,14 USD** le 8 septembre 2026 à 03:45 UTC ; aucune nouvelle bougie depuis ce moment (données en retard, marché en attente).
 
 ---
 
@@ -363,9 +375,9 @@ Les trois résidus du diagnostic sont levés, vérifiés sur ce run :
 
 > FVG masqués. Le graphique affiche uniquement les Order Blocks, les BOS/CHOCH et les poches de liquidité.
 
-**APRÈS — 18 mots**
+**APRÈS — 7 mots**
 
-> J'ai masqué les FVG. Le graphique n'affiche à présent que les OB, les breaks (BOS/CHOCH) et la liquidité.
+> Les FVG sont masqués sur le graphique.
 
 ---
 
@@ -380,11 +392,9 @@ Les trois résidus du diagnostic sont levés, vérifiés sur ce run :
 > 
 > Pour chacun, les unités de temps analysées sont : **M5, M15, H1, H4, D1** (5 min, 15 min, 1h, 4h, 1 jour).
 
-**APRÈS — 26 mots**
+**APRÈS — 22 mots**
 
-> Je suis deux marchés : **l'Or (XAUUSD)** et l'**Euro / Dollar (EURUSD)**.
-> 
-> Sur chacun sont analysées les unités de temps **M5, M15, H1, H4 et D1**.
+> Je suis **2 marchés** : l'or (XAUUSD) et l'euro/dollar (EURUSD). Les unités de temps couvertes sont M5, M15, H1, H4 et D1.
 
 ---
 
@@ -396,9 +406,11 @@ Les trois résidus du diagnostic sont levés, vérifiés sur ce run :
 > 
 > Le moteur mesure une volatilité récente à 0,069 % en moyenne, soit 74 % de la volatilité de base (0,094 %), ce qui place le marché sous le seuil bas (0,7). Bien qu'elle soit techniquement réduite par rapport à la volatilité historique, elle reste classée **normale** dans le contexte courant de tendance.
 
-**APRÈS — 32 mots**
+**APRÈS — 54 mots**
 
-> La volatilité est **normale** sur EURUSD H1 — ratio observé de **0,74** (volatilité récente moyenne 0,000691 contre baseline 0,000936). Les données sont en retard (dernière bougie clôturée le 2026-07-03 à 19:00 UTC).
+> La volatilité est **normale** sur EURUSD H1 : le ratio mesuré est de **0,74** (volatilité récente moyenne de 0,0007 contre baseline de 0,0009), sous le seuil de 1,3 et au-dessus du seuil bas de 0,7.
+> 
+> Note : les données sont en retard (1654 bougies manquantes depuis 2026-07-03T19:00:00Z), la dernière lecture date de cette fermeture.
 
 ---
 
@@ -422,9 +434,11 @@ Les trois résidus du diagnostic sont levés, vérifiés sur ce run :
 > 
 > Il est aussi important de noter que le marché est en **data_lagged** : aucune nouvelle bougie n'a été reçue depuis le 3 juillet 19:00. La dernière structure que tu vois date donc de cette dernière clôture.
 
-**APRÈS — 25 mots**
+**APRÈS — 71 mots**
 
-> Oui, un **BOS bullish confirmé** le **3 juillet à 00:00 UTC** au niveau **4 142,40** (données en retard, dernière bougie le 3 juillet à 19:00).
+> Oui, un **BOS haussier a été confirmé le 3 juillet à 00:00 UTC au niveau 4 142,40**. C'était la cassure la plus récente sur cet H1 ; elle remonte à 18 bougies (données du 3 juillet 19h). Un retest de cette cassure est actuellement en cours au même niveau (4 142,40). 
+> 
+> Les données sont en retard (dernière bougie clôturée le 3 juillet 19h) — le marché en direct affiche d'autres mouvements.
 
 ---
 

@@ -61,6 +61,10 @@ class AppState:
     market_reading_scheduler: Optional[Any] = None   # src.intelligence.scheduler.MarketReadingScheduler
     # MIA Markets V2 — Chantier 4
     chatbot: Optional[Any] = None   # src.intelligence.chatbot.chatbot.Chatbot
+    # MIA-4S — landing showcase agent (SIMULATION). Same orchestrator and same
+    # defence layers as `chatbot`, but a frozen illustration scenario instead of
+    # the engine: it must never be handed the assembler.
+    demo_chatbot: Optional[Any] = None  # src.intelligence.chatbot.demo_agent
     # MIA Markets V2 — SC-2 (Scanner conversationnel : phrase → palette fermée)
     scanner_translator: Optional[Any] = None  # src.intelligence.scanner_translator.ScannerTranslator
     # MIA Markets V2 — NW-1 (Actualités programmées / calendrier de volatilité)

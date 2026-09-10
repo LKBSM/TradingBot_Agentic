@@ -160,11 +160,7 @@
         },
         "side": {
           "title": "Die Lesung aktualisiert sich",
-          "desc": "Hak eine Schicht ab: <b>der Absatz schreibt sich neu</b>, um nur noch das zu beschreiben, was angezeigt bleibt. Die Erzählung ist nie ein starrer Text — sie wird aus dem Erkannten zusammengesetzt.",
-          "try": "Probier es",
-          "onlyOb": "Nur die Order Blocks behalten",
-          "onlyLiq": "Nur die Liquidität behalten",
-          "all": "Alles wieder anzeigen"
+          "desc": "Hak eine Schicht ab: <b>der Absatz schreibt sich neu</b>, um nur noch das zu beschreiben, was angezeigt bleibt. Die Erzählung ist nie ein starrer Text — sie wird aus dem Erkannten zusammengesetzt."
         },
         "chips": {
           "ob": "Order Blocks",
@@ -240,11 +236,19 @@
         "hiddenNote": "Ausgeblendet — der Chart bleibt übersichtlich. Die Zone existiert weiterhin, sie wird nur nicht mehr gezeichnet."
       },
       "mia": {
-        "greeting": "Wähl nebenan eine Frage, um mich antworten zu sehen.",
+        "greeting": "Wähle rechts einen Einstieg oder stell direkt deine eigene Frage.",
+        "live": {
+          "placeholder": "Stell deine Frage…",
+          "send": "Senden",
+          "thinking": "M.I.A denkt nach…",
+          "left": "Noch {n} Fragen in dieser Demo",
+          "offline": "Die Live-Demo ist hier nicht verfügbar — dies sind aufgezeichnete Dialoge.",
+          "note": "Das ist die echte M.I.A, mit Illustrationsdaten. Sie beantwortet jede Frage zu diesem Szenario oder zum Produkt."
+        },
         "side": {
           "title": "Stell ihr eine echte Frage",
           "desc": "M.I.A erklärt die Konzepte, beschreibt das Erkannte und steuert die Anzeige. <b>Sie weigert sich bei allem, was in den Bereich der Vorhersage fällt</b> — klick auf die letzte Option, um es zu sehen.",
-          "try": "Wähl eine Frage"
+          "try": "Zum Einstieg"
         },
         "q": {
           "concept": {

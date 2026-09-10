@@ -31,6 +31,8 @@ from src.intelligence.chatbot.constants import (
     REFUSAL_TEMPLATE,
     VIEW_ACTION_EMPTY_CATEGORY_TEMPLATE,
     VIEW_ACTION_REFUSAL_TEMPLATE,
+    localized,
+    refusal_for,
 )
 from src.intelligence.chatbot.output_filter import OutputFilter
 from src.intelligence.chatbot.signal_summary_provider import SignalSummaryProvider
@@ -424,6 +426,10 @@ class Chatbot:
         max_tool_turns: int = MAX_TOOL_TURNS,
         timeout_s: float = DEFAULT_TIMEOUT_S,
         max_model_history: int = MAX_MODEL_HISTORY,
+        tool_schemas: Optional[list[dict[str, Any]]] = None,
+        tool_handlers: Optional[dict[str, Any]] = None,
+        extra_system_blocks: Optional[list[str]] = None,
+        locale: Optional[str] = None,
     ) -> None:
         self._client = anthropic_client
         self._summary_provider = summary_provider
@@ -442,6 +448,30 @@ class Chatbot:
         self._max_tool_turns = max_tool_turns
         self._timeout_s = timeout_s
         self._max_model_history = max_model_history
+        # MIA-4S — restricted-surface hooks. All three default to the production
+        # behaviour, so an unset caller is byte-for-byte the chatbot of before.
+        # They exist so a DIFFERENT data surface (the landing's frozen
+        # illustration) can be served by THIS orchestrator instead of a second,
+        # divergent one: Couche 1 (adversarial input), Couche 3 (forbidden-token
+        # output) and Couche 4 (view-action whitelist) are shared code, never
+        # re-implemented. What a caller may narrow is the TOOL SURFACE and the
+        # system prompt's tail — never a defence layer.
+        #   tool_schemas        — the tools declared to the model. A tool absent
+        #                         here cannot be called, whatever the prompt says
+        #                         (the lock is the code, not the instruction).
+        #   tool_handlers       — {name: callable(input) -> dict} consulted BEFORE
+        #                         the built-in dispatch, so a restricted build
+        #                         serves frozen data without touching the engine.
+        #   extra_system_blocks — appended AFTER the cached static prefix and
+        #                         BEFORE the variable trailing block, so the
+        #                         MIA-2 cache breakpoint keeps working.
+        self._tool_schemas = tool_schemas if tool_schemas is not None else TOOL_SCHEMAS
+        self._tool_handlers = dict(tool_handlers or {})
+        self._extra_system_blocks = list(extra_system_blocks or [])
+        # Language of the VERBATIM safety templates (Couches 1-4). None = French,
+        # which is what production builds — the paid chat answers in French.
+        # Only the templates are localised: the prompt decides the prose.
+        self._locale = locale
 
     # ------------------------------------------------------------------ #
     # Public API
@@ -517,7 +547,11 @@ class Chatbot:
         if adv.triggered:
             yield {
                 "event": "answer",
-                "content": REFUSAL_TEMPLATE,
+                # The refusal is chosen by bucket: a forecast request deserves an
+                # answer ABOUT forecasting, not the generic recommendation notice.
+                # Unmapped buckets keep REFUSAL_TEMPLATE, so this changed nothing
+                # for the four that existed before.
+                "content": refusal_for(adv.category, self._locale),
                 "tool_calls_made": [],
                 "view_actions": [],
                 "blocked_reason": adv.category,
@@ -564,14 +598,14 @@ class Chatbot:
                     max_tokens=self._max_tokens,
                     system=system,
                     messages=messages,
-                    tools=TOOL_SCHEMAS,
+                    tools=self._tool_schemas,
                     timeout=self._timeout_s,
                 )
             except Exception as exc:  # timeout / rate limit / network
                 logger.warning("chatbot LLM call failed: %s — fail-safe template", exc)
                 yield {
                     "event": "answer",
-                    "content": LLM_ERROR_TEMPLATE,
+                    "content": localized("LLM_ERROR_TEMPLATE", self._locale),
                     "tool_calls_made": tool_calls_made,
                     "view_actions": view_actions,
                     "blocked_reason": "llm_error",
@@ -589,7 +623,7 @@ class Chatbot:
                     )
                     yield {
                         "event": "answer",
-                        "content": OUTPUT_CONTAMINATED_TEMPLATE,
+                        "content": localized("OUTPUT_CONTAMINATED_TEMPLATE", self._locale),
                         "tool_calls_made": tool_calls_made,
                         "view_actions": view_actions,
                         "blocked_reason": f"output_contaminated_{output_check.category}",
@@ -687,7 +721,7 @@ class Chatbot:
         logger.warning("chatbot exceeded %d tool turns — fail-safe template", self._max_tool_turns)
         yield {
             "event": "answer",
-            "content": LLM_ERROR_TEMPLATE,
+            "content": localized("LLM_ERROR_TEMPLATE", self._locale),
             "tool_calls_made": tool_calls_made,
             "view_actions": view_actions,
             "blocked_reason": "max_tool_turns_exceeded",
@@ -747,10 +781,23 @@ class Chatbot:
         signal_text = SIGNAL_CONTEXT_TEMPLATE.format(
             signal_summary=json.dumps(signal_summary, ensure_ascii=False)
         )
+        # MIA-4S — a restricted build appends its own stable blocks (scope of the
+        # simulation, product knowledge). They sit AFTER the cached prefix and
+        # BEFORE the variable signal block: byte-stable themselves, so they cache
+        # too, and they can never edit or weaken the rules above them.
+        extra = self._extra_system_blocks
         static_block = cache_block_for(SYSTEM_PROMPT_STATIC)
         if static_block is None:
-            return SYSTEM_PROMPT_STATIC + "\n\n" + signal_text
-        return [static_block, {"type": "text", "text": signal_text}]
+            return "\n\n".join([SYSTEM_PROMPT_STATIC, *extra, signal_text])
+        blocks: list[dict[str, Any]] = [static_block]
+        for text in extra:
+            blocks.append({"type": "text", "text": text})
+        if blocks[-1] is not static_block:
+            cached_tail = cache_block_for(blocks[-1]["text"])
+            if cached_tail is not None:
+                blocks[-1] = cached_tail
+        blocks.append({"type": "text", "text": signal_text})
+        return blocks
 
     @staticmethod
     def _truncate_history(
@@ -798,9 +845,9 @@ class Chatbot:
             # invented-structure attempt — hand back the honest "nothing of that
             # kind on this reading" wording instead of the generic refusal.
             message = (
-                VIEW_ACTION_EMPTY_CATEGORY_TEMPLATE
+                localized("VIEW_ACTION_EMPTY_CATEGORY_TEMPLATE", self._locale)
                 if check.reason == "empty_category"
-                else VIEW_ACTION_REFUSAL_TEMPLATE
+                else localized("VIEW_ACTION_REFUSAL_TEMPLATE", self._locale)
             )
             return {
                 "status": "rejected",
@@ -855,6 +902,21 @@ class Chatbot:
         """Run a tool; on failure return an ``{"error": ...}`` dict so the LLM
         can recover gracefully rather than the whole turn crashing."""
         try:
+            # MIA-4S — an injected handler wins over the built-in dispatch, so a
+            # restricted build (the landing's frozen illustration) serves its own
+            # data through the SAME orchestrator and the SAME defence layers.
+            handler = self._tool_handlers.get(name)
+            if handler is not None:
+                return handler(tool_input)
+            # Defence in depth: a build may only EXECUTE what it DECLARES. The
+            # model can already only call declared tools, but the built-in
+            # dispatch below reaches live sources (engine, calendar) that a
+            # restricted build must never touch — so an undeclared name stops
+            # here instead of falling through. Production declares all seven, so
+            # this changes nothing there.
+            if not any(schema.get("name") == name for schema in self._tool_schemas):
+                logger.warning("tool %s is not declared on this build — refused", name)
+                return {"error": f"tool not available on this build: {name}"}
             if name == "get_market_reading":
                 instrument = tool_input.get("instrument")
                 timeframe = tool_input.get("timeframe")

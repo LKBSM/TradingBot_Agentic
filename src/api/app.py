@@ -22,7 +22,7 @@ from src.api.middleware.geo_block import GeoBlockMiddleware
 from src.api.middleware.rate_limit_headers import RateLimitHeadersMiddleware
 from src.api.models import ErrorResponse
 from src.api.openapi_enrichment import install_openapi_enrichment
-from src.api.routes import access, account_billing, accounts, admin, admin_audit, audit, billing, calendar, candles, chatbot, conditions_scan, dashboard, enrich, google_auth, health, health_deep, insight_history, legal, live_price, market_reading, metrics_latency, narratives, operator, prometheus, qa, scanner_translate, signals, state, structure, webapp, webhook_ack
+from src.api.routes import access, account_billing, accounts, admin, admin_audit, audit, billing, calendar, candles, chatbot, conditions_scan, dashboard, demo_chat, enrich, google_auth, health, health_deep, insight_history, legal, live_price, market_reading, metrics_latency, narratives, operator, prometheus, qa, scanner_translate, signals, state, structure, webapp, webhook_ack
 from src.api.shutdown import GracefulShutdownCoordinator
 from src.api.signal_store import SignalStore
 
@@ -131,6 +131,25 @@ def _maybe_bootstrap_chatbot(app_state: AppState) -> None:
     if not env_flag("CHATBOT_ENABLED", default=False):
         return
     app_state.chatbot = build_chatbot(app_state.market_reading_assembler)
+
+
+def _maybe_bootstrap_demo_chat(app_state: AppState) -> None:
+    """Env-gated build of the MIA-4S landing demo agent (DEMO_CHAT_ENABLED).
+
+    A no-op unless the flag is set (default OFF, so tests and any deployment
+    that does not want a public LLM endpoint stay untouched). Needs only
+    ANTHROPIC_API_KEY — never the assembler: the showcase agent answers from a
+    frozen illustration scenario, never from the engine. Wrapped by the caller
+    so a misconfig degrades POST /api/demo/chat to 503 (and the landing falls
+    back to its scripted starters) rather than aborting startup.
+    """
+    from src.api.bootstrap import build_demo_chat_agent, env_flag
+
+    if app_state.demo_chatbot is not None:
+        return
+    if not env_flag("DEMO_CHAT_ENABLED", default=False):
+        return
+    app_state.demo_chatbot = build_demo_chat_agent()
 
 
 def _maybe_bootstrap_scanner_translator(app_state: AppState) -> None:
@@ -401,6 +420,12 @@ def create_app(
             _maybe_bootstrap_scanner_translator(app_state)
         except Exception:
             logger.exception("Scanner translator bootstrap failed — endpoint will return 503")
+        # MIA-4S — build the landing demo agent (DEMO_CHAT_ENABLED, default OFF).
+        # Degrades to 503, and the landing falls back to its scripted starters.
+        try:
+            _maybe_bootstrap_demo_chat(app_state)
+        except Exception:
+            logger.exception("Demo chat bootstrap failed — endpoint will return 503")
         # Prototype — build the live-tick bridge (LIVE_TICK_ENABLED) BEFORE the
         # shutdown handlers are registered so its stop() is wired below.
         _maybe_bootstrap_live_tick(app_state)
@@ -678,6 +703,7 @@ def create_app(
     app.include_router(live_price.router)
     app.include_router(conditions_scan.router)
     app.include_router(chatbot.router)
+    app.include_router(demo_chat.router)
     app.include_router(scanner_translate.router)
 
     # API-2B.7 — enrich the OpenAPI spec with stable operationIds,

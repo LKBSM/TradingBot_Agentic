@@ -8,7 +8,6 @@ from fastapi.testclient import TestClient
 from src.api.app import create_app
 from src.api.bootstrap import (
     BootstrapConfigurationError,
-    build_chatbot,
     build_market_reading_assembler,
     build_market_reading_scheduler,
     env_flag,
@@ -102,37 +101,41 @@ class TestBootstrapFactories:
         assert scheduler is not None
         assert scheduler.running is False  # built, not started
 
-    def test_missing_anthropic_key_raises_clear_error(self, monkeypatch):
-        """Brief : « sans ANTHROPIC_API_KEY, le build échoue avec une erreur claire ».
+    def test_assembler_builds_without_an_anthropic_key(self, tmp_path, monkeypatch):
+        """The MarketReading assembler needs NO ``ANTHROPIC_API_KEY`` — deliberate.
 
-        Le périmètre de cette exigence a changé : depuis la mission « lecture
-        narrée », la lecture est composée par un gabarit déterministe et
-        l'assembleur n'a PLUS besoin de la clé — seules les fabriques adossées au
-        LLM (M.I.A, traducteur du scanner) la réclament. Le garde-fou visait
-        encore ``build_market_reading_assembler`` : il n'y levait donc plus rien
-        et construisait à la place un assembleur RÉEL (provider + graine
-        d'historique), qui pendait plusieurs minutes avant de faire échouer le
-        test. Porté sur la fabrique qui porte réellement l'exigence — sans
-        réseau, sans base.
+        This test used to assert the opposite. The narrated reading became a
+        deterministic template (the LLM description engine was removed), so the
+        assembler stopped needing a key and the assertion rotted into a permanent
+        red. What is worth guarding is the CURRENT contract, in both directions:
+        the assembler builds keyless (here), and every LLM-backed factory still
+        fails fast and names the variable (next test).
         """
+        monkeypatch.setenv("TWELVE_DATA_API_KEY", "test-key")
+        monkeypatch.setenv("MARKET_READINGS_DB_PATH", str(tmp_path / "mr.db"))
+        monkeypatch.setenv("CANDLES_DB_PATH", str(tmp_path / "candles.db"))
+        monkeypatch.setenv("NEWS_CACHE_DB_PATH", str(tmp_path / "news.db"))
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
 
-        with pytest.raises(BootstrapConfigurationError) as exc_info:
-            build_chatbot(assembler=object())  # assembleur factice : jamais touché
-        # Le message doit NOMMER la variable d'environnement, pour que
-        # l'exploitant sache quoi corriger.
-        assert "ANTHROPIC_API_KEY" in str(exc_info.value)
+        assembler = build_market_reading_assembler(enable_news=False)
+        assert assembler is not None
 
-    def test_assembler_no_longer_needs_the_anthropic_key(self) -> None:
-        """L'assembleur ne réclame plus la clé : la lecture narrée est un gabarit
-        déterministe. Vérifié sur le code de la fabrique (aucun réseau, aucune
-        base) — c'est le pendant du test ci-dessus."""
-        import inspect
+    def test_llm_factories_fail_fast_and_name_the_missing_key(self, monkeypatch):
+        """Every factory that DOES need the key errors clearly without it.
 
-        from src.api import bootstrap
+        Covers the scanner translator and the MIA-4S landing demo agent — both
+        reach the Anthropic client directly, so a missing key must surface as an
+        explicit misconfiguration, never as a half-wired service.
+        """
+        from src.api.bootstrap import build_demo_chat_agent, build_scanner_translator
 
-        source = inspect.getsource(bootstrap.build_market_reading_assembler)
-        assert "_build_anthropic_client" not in source
+        monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+
+        for factory in (build_scanner_translator, build_demo_chat_agent):
+            with pytest.raises(BootstrapConfigurationError) as exc_info:
+                factory()
+            # The message must name the env var so the operator knows the fix.
+            assert "ANTHROPIC_API_KEY" in str(exc_info.value), factory.__name__
 
     def test_store_paths_read_from_env_vars(self, isolated_env, tmp_path):
         """Each store honours its *_DB_PATH env var (shared Fly.io volume in prod)."""
