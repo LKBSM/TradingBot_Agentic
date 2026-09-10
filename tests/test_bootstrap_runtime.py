@@ -26,6 +26,25 @@ class _FakeAnthropic:
     """
 
 
+@pytest.fixture(autouse=True)
+def _no_deep_history_seed(monkeypatch):
+    """Disable the NW-7 deep-history seed for every test in this module.
+
+    ``build_market_reading_assembler`` imports the bundled seed (~180k M15 bars
+    PER measured market) into candles.db. On production that is a one-time boot
+    cost against a persistent disk. Here each test points candles.db at a fresh
+    ``tmp_path``, so every call re-imported ~360k rows — minutes per test, which
+    read as a hang rather than a slow suite.
+
+    Autouse (not folded into ``isolated_env``) because the tests that build the
+    assembler with their own hand-rolled env — e.g.
+    ``test_assembler_builds_without_an_anthropic_key`` — do not take that fixture,
+    and they are the ones that stalled. The seed module ships this opt-out for
+    exactly this case; nothing asserted here depends on the seeded history.
+    """
+    monkeypatch.setenv("SENTINEL_SEED_MEASURES", "0")
+
+
 @pytest.fixture
 def isolated_env(tmp_path, monkeypatch):
     """Point every store at tmp + provide fake API keys + fake Anthropic client.
