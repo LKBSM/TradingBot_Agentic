@@ -398,3 +398,123 @@ class TestLifecycle:
         sched.start()
         sched.stop()
         assert sched.running is False
+
+
+# =========================================================================== #
+# PERF-3 — on-demand throttle (the M5 quota leak)
+#
+# live_warm_combos() excludes M5 on purpose: polling it natively costs ~288
+# provider requests/market/day, and 2 markets alone (576) on top of the warm
+# baseline (254) put the day at 830 — over the 800/day free cap. But a combo a
+# user opens ONCE is marked active and stays active for auto_stop_hours, so the
+# tick used to pick M5 straight back up at full cadence and re-open the very
+# hole the warm perimeter was closing.
+#
+# The fix throttles combos that are present through ACCESS ONLY. Warm combos
+# keep their native cadence, and an access-only combo still advances — just at
+# a floor, with the lag surfaced by the freshness badge, never silently.
+# =========================================================================== #
+class TestOnDemandThrottle:
+    def _sched(self, assembler, store, *, now, warm=(), interval=900):
+        return MarketReadingScheduler(
+            assembler,
+            store,
+            always_warm=list(warm),
+            clock=lambda: now[0],
+            on_demand_min_interval_seconds=interval,
+        )
+
+    def test_access_only_combo_is_not_regenerated_at_native_cadence(self):
+        """The leak itself: M5 closes every 5 min, so without the throttle every
+        tick regenerated it. Second tick, five minutes on, must be skipped."""
+        now = [CLOCK]
+        assembler = _MockAssembler()
+        store = _MockReadingsStore(active=[("XAUUSD", "M5")], readings={})
+        sched = self._sched(assembler, store, now=now)
+
+        sched.tick()
+        assert assembler.calls == [("XAUUSD", "M5")]
+
+        now[0] = CLOCK + timedelta(minutes=5)
+        sched.tick()
+        assert assembler.calls == [("XAUUSD", "M5")], (
+            "an access-only combo must not be refreshed at every closed candle"
+        )
+
+    def test_access_only_combo_resumes_after_the_interval(self):
+        """Throttled, not frozen — the reading keeps advancing."""
+        now = [CLOCK]
+        assembler = _MockAssembler()
+        store = _MockReadingsStore(active=[("XAUUSD", "M5")], readings={})
+        sched = self._sched(assembler, store, now=now)
+
+        sched.tick()
+        now[0] = CLOCK + timedelta(seconds=900)
+        sched.tick()
+        assert assembler.calls == [("XAUUSD", "M5"), ("XAUUSD", "M5")]
+
+    def test_warm_combos_are_never_throttled(self):
+        """The scanner perimeter must keep its native cadence — the throttle
+        targets only what the warm set deliberately left out."""
+        now = [CLOCK]
+        assembler = _MockAssembler()
+        store = _MockReadingsStore(active=[], readings={})
+        sched = self._sched(
+            assembler, store, now=now, warm=[("XAUUSD", "M15")]
+        )
+
+        sched.tick()
+        now[0] = CLOCK + timedelta(minutes=1)
+        sched.tick()
+        assert assembler.calls == [("XAUUSD", "M15"), ("XAUUSD", "M15")]
+
+    def test_combo_in_both_active_and_warm_keeps_native_cadence(self):
+        """Warm wins: being *also* user-accessed must not downgrade a combo the
+        perimeter promises to keep fresh."""
+        now = [CLOCK]
+        assembler = _MockAssembler()
+        store = _MockReadingsStore(active=[("XAUUSD", "M15")], readings={})
+        sched = self._sched(
+            assembler, store, now=now, warm=[("XAUUSD", "M15")]
+        )
+
+        sched.tick()
+        now[0] = CLOCK + timedelta(minutes=1)
+        sched.tick()
+        assert assembler.calls == [("XAUUSD", "M15"), ("XAUUSD", "M15")]
+
+    def test_cold_start_is_never_delayed(self):
+        """A combo never regenerated is due immediately — the throttle bounds the
+        refresh rate, it must not defer the first build."""
+        now = [CLOCK]
+        assembler = _MockAssembler()
+        store = _MockReadingsStore(active=[("EURUSD", "M5")], readings={})
+        sched = self._sched(assembler, store, now=now)
+
+        assert sched.tick() == 1
+        assert assembler.calls == [("EURUSD", "M5")]
+
+    def test_a_failed_regeneration_is_retried_on_the_next_tick(self):
+        """The interval is stamped only after a regeneration actually happened,
+        so a provider failure is not punished with a full interval of silence."""
+        now = [CLOCK]
+        assembler = _MockAssembler(raise_for={("XAUUSD", "M5")})
+        store = _MockReadingsStore(active=[("XAUUSD", "M5")], readings={})
+        sched = self._sched(assembler, store, now=now)
+
+        sched.tick()
+        now[0] = CLOCK + timedelta(minutes=1)
+        sched.tick()
+        assert assembler.calls == [("XAUUSD", "M5"), ("XAUUSD", "M5")]
+
+    def test_zero_interval_restores_the_previous_behaviour(self):
+        """The env escape hatch (SCHEDULER_ON_DEMAND_MIN_INTERVAL_S=0)."""
+        now = [CLOCK]
+        assembler = _MockAssembler()
+        store = _MockReadingsStore(active=[("XAUUSD", "M5")], readings={})
+        sched = self._sched(assembler, store, now=now, interval=0)
+
+        sched.tick()
+        now[0] = CLOCK + timedelta(minutes=1)
+        sched.tick()
+        assert assembler.calls == [("XAUUSD", "M5"), ("XAUUSD", "M5")]

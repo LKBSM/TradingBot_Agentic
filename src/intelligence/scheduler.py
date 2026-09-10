@@ -72,6 +72,30 @@ class MarketReadingScheduler:
     #: says so. Weekends/daily breaks are deterministic and never probed, so a
     #: normal weekend makes zero outbound Twelve Data calls. 0 disables it.
     DEFAULT_SAFETY_POLL_SECONDS = 1800
+    #: PERF-3 — minimum delay between two regenerations of a combo that reached
+    #: this tick through the ACCESS-driven active set only, i.e. one a user opened
+    #: that ``live_warm_combos()`` deliberately leaves OUT of the warm perimeter.
+    #:
+    #: Why this exists: M5 is excluded from the warm set precisely because polling
+    #: it natively costs ~288 provider requests/market/day, which alone breaks the
+    #: 800/day free cap (see ``lookback_config.live_warm_combos``). But a combo a
+    #: user opens ONCE is marked active and stays active for ``auto_stop_hours``,
+    #: so the tick picked M5 back up at its full native cadence and re-opened the
+    #: very hole the warm perimeter was closing:
+    #:
+    #:   warm baseline (2 markets x M15/H1/H4/D1) ......... 254 req/day
+    #:   + M5 at native cadence (2 x 288) ................. 576 req/day
+    #:   = 830 req/day  ->  OVER the 800/day cap
+    #:
+    #:   + M5 throttled to one refresh per 900 s (2 x 96) .. 192 req/day
+    #:   = 446 req/day  ->  inside the cap
+    #:
+    #: The combo stays fully AVAILABLE and keeps advancing — just at a floor
+    #: cadence instead of at every closed candle. The lag is never silent: the
+    #: freshness badge is derived from ``market_status`` vs the stored
+    #: ``candle_close_ts``, so a reading a few minutes behind says so on screen.
+    #: 0 disables the throttle (every active combo polled at native cadence).
+    DEFAULT_ON_DEMAND_MIN_INTERVAL_SECONDS = 900
 
     def __init__(
         self,
@@ -83,6 +107,7 @@ class MarketReadingScheduler:
         always_warm: Optional[Iterable[Tuple[str, str]]] = None,
         clock: Callable[[], datetime] = lambda: datetime.now(timezone.utc),
         safety_poll_seconds: int = DEFAULT_SAFETY_POLL_SECONDS,
+        on_demand_min_interval_seconds: int = DEFAULT_ON_DEMAND_MIN_INTERVAL_SECONDS,
     ) -> None:
         from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -93,6 +118,8 @@ class MarketReadingScheduler:
         self._auto_stop_hours = auto_stop_hours
         self._safety_poll_seconds = safety_poll_seconds
         self._last_safety_probe: dict[Tuple[str, str], datetime] = {}
+        self._on_demand_min_interval_seconds = on_demand_min_interval_seconds
+        self._last_on_demand_regen: dict[Tuple[str, str], datetime] = {}
         # Combinations kept warm regardless of recent user access — e.g. the
         # fixed perimeter the Conditions Scanner reads. Without this, a combo
         # nobody opened in the last ``auto_stop_hours`` falls out of the active
@@ -181,9 +208,19 @@ class MarketReadingScheduler:
                 seen.add(key)
                 combos.append(key)
 
+        warm_keys = set(self._always_warm)
+
         for instrument, timeframe in combos:
             try:
+                key = (instrument, timeframe)
                 if self._needs_regeneration(instrument, timeframe, now):
+                    # PERF-3: a combo present ONLY through the access-driven active
+                    # set (not in the warm perimeter) is refreshed at a floor
+                    # cadence, not at every closed candle — otherwise one user
+                    # opening M5 puts the daily provider quota over its cap for the
+                    # next ``auto_stop_hours``. Warm combos are never throttled.
+                    if key not in warm_keys and not self._on_demand_due(key, now):
+                        continue
                     # market-aware: while the market is closed this is False, so
                     # no Twelve Data call and no re-emitted reading (MC-1 lock).
                     # PERF-1: background regen is PATIENT (bound_provider=False) —
@@ -192,6 +229,8 @@ class MarketReadingScheduler:
                     self._assembler.get_or_generate(
                         instrument, timeframe, bound_provider=False
                     )
+                    if key not in warm_keys:
+                        self._last_on_demand_regen[key] = now
                     regenerated += 1
                 elif self._should_safety_probe(instrument, timeframe, now):
                     # Holiday-only, low-frequency probe for an early reopen.
@@ -204,6 +243,22 @@ class MarketReadingScheduler:
                     instrument, timeframe,
                 )
         return regenerated
+
+    def _on_demand_due(self, key: Tuple[str, str], now: datetime) -> bool:
+        """True when an access-only (non-warm) combo may be regenerated again.
+
+        Pure predicate — it records nothing, so a combo whose regeneration is
+        skipped or fails is retried on the next tick instead of being silently
+        pushed a full interval away. The caller stamps ``_last_on_demand_regen``
+        only after a regeneration actually happened. A combo never regenerated
+        (nothing stamped) is always due, so a cold start is never delayed.
+        """
+        if self._on_demand_min_interval_seconds <= 0:
+            return True
+        last = self._last_on_demand_regen.get(key)
+        if last is None:
+            return True
+        return (now - last).total_seconds() >= self._on_demand_min_interval_seconds
 
     def _should_safety_probe(
         self, instrument: str, timeframe: str, now: datetime
