@@ -31,6 +31,7 @@ from src.api.signal_store import SignalStore
 from src.intelligence.chatbot.chatbot import TOOL_SCHEMAS, Chatbot
 from src.intelligence.chatbot.constants import (
     OUTPUT_CONTAMINATED_TEMPLATE,
+    PREDICTION_REFUSAL_TEMPLATE,
     REFUSAL_TEMPLATE,
 )
 from src.intelligence.chatbot.demo_agent import (
@@ -179,6 +180,43 @@ def test_product_knowledge_quotes_the_real_price_and_faq() -> None:
     assert "Order Block" in knowledge
 
 
+def test_knowledge_block_quotes_are_covered_by_an_anti_recitation_rule() -> None:
+    """Anything in the knowledge block is text the agent may quote BACK — and if
+    it carries a Couche-3 forbidden token, quoting it destroys its own answer.
+
+    Found by a real boot: asked for the price, the agent recited the legal
+    mention (« … risque de perte ») and Couche 3 replaced the whole reply with
+    the fallback. The price mention is no longer fed in (the PAGE renders it),
+    and the passages that must stay — the FAQ's « acheter ou vendre » answer,
+    the terms' risk warning — are covered by an explicit no-verbatim rule.
+    """
+    import re
+
+    from src.intelligence.chatbot.constants import (
+        FORBIDDEN_TOKENS_BY_CATEGORY,
+        normalize_text,
+    )
+
+    knowledge = normalize_text(load_product_knowledge("fr"))
+    tokens = {t for bucket in FORBIDDEN_TOKENS_BY_CATEGORY.values() for t in bucket}
+    present = {
+        t for t in tokens
+        if re.search(rf"\b{re.escape(normalize_text(t))}\b", knowledge)
+    }
+    # The price's legal mention is no longer recited into the block.
+    assert "Mention légale du prix" not in load_product_knowledge("fr")
+    # Whatever forbidden vocabulary remains comes from quoted product content we
+    # deliberately keep; the scope block must tell the agent not to repeat it.
+    scope = build_scope_block(load_illustration())
+    assert "tu ne les recopies donc JAMAIS" in scope.lower() or "JAMAIS" in scope
+    assert "mot pour mot" in scope
+    for token in ("acheter", "vendre", "trader"):
+        assert token in scope, "the rule must name the vocabulary it forbids repeating"
+    # And the set stays bounded — a new source dragging in more triggers is a
+    # decision, not an accident.
+    assert present <= {"acheter", "vendre", "trader", "risqué", "garantie"}, sorted(present)
+
+
 def test_scope_block_names_the_illustration_and_denies_live_data() -> None:
     block = build_scope_block(load_illustration())
     assert "SCÉNARIO" in block and "FIGÉ" in block
@@ -207,6 +245,23 @@ def test_unknown_locale_falls_back_to_french_instead_of_failing() -> None:
     registry = DemoAgentRegistry(_Client())
     assert registry.for_locale("klingon") is registry.for_locale("fr")
     assert registry.for_locale(None) is registry.for_locale("fr")
+
+
+def test_the_factory_hands_back_a_registry_not_a_bare_chatbot(monkeypatch) -> None:
+    """The route calls ``for_locale`` on whatever the factory returns.
+
+    Every other test here injects its own registry stub into app_state, so the
+    FACTORY's return type was never exercised — and it shipped returning a bare
+    Chatbot, which only a real boot revealed (AttributeError: no 'for_locale').
+    This closes that gap: the seam between the factory and the route is asserted.
+    """
+    import src.api.bootstrap as bootstrap
+
+    monkeypatch.setattr(bootstrap, "_build_anthropic_client", lambda: _Client())
+    built = bootstrap.build_demo_chat_agent()
+    assert isinstance(built, DemoAgentRegistry)
+    assert hasattr(built, "for_locale")
+    assert isinstance(built.for_locale("fr"), Chatbot)
 
 
 # --------------------------------------------------------------------------- #
@@ -246,8 +301,45 @@ def test_couche1_refuses_before_any_llm_call(message: str, category: str) -> Non
     bot, stub = _demo_bot([])  # no scripted response: the LLM must NOT be called
     result = bot.chat(user_message=message)
     assert result.blocked_reason == category
+    # The four original buckets keep the generic refusal, unchanged.
     assert result.content == REFUSAL_TEMPLATE
     assert stub.calls == [], "an adversarial turn reached the model"
+
+
+@pytest.mark.parametrize(
+    "message",
+    [
+        "Le prix va-t-il monter après ce BOS ?",
+        "Quel est ton objectif de prix sur l'or ?",
+        "Tu prévois une baisse cette semaine ?",
+        "Do you think gold will go up?",
+    ],
+)
+def test_prediction_bucket_refuses_about_forecasting_not_about_advice(message: str) -> None:
+    bot, stub = _demo_bot([])
+    result = bot.chat(user_message=message)
+    assert result.blocked_reason == "prediction"
+    assert result.content == PREDICTION_REFUSAL_TEMPLATE
+    assert stub.calls == []
+
+
+@pytest.mark.parametrize(
+    "message",
+    [
+        "Quand le marché va-t-il rouvrir ?",
+        "Y a-t-il une publication qui va sortir cette semaine ?",
+        "Quelle est la prévision de volatilité sur XAUUSD ?",
+        "Qu'est-ce qui s'est passé après le BOS ?",
+    ],
+)
+def test_descriptive_questions_still_reach_the_model(message: str) -> None:
+    """The cost of a prediction bucket is false positives. These must not be one:
+    factual future tense, and the volatility forecast the product really does
+    compute (an amplitude, never a direction)."""
+    bot, stub = _demo_bot([_Resp([_TextBlock("Voici ce que montre le scénario.")], "end_turn")])
+    result = bot.chat(user_message=message)
+    assert result.blocked_reason is None, f"{message!r} was wrongly refused"
+    assert stub.calls, "the question never reached the model"
 
 
 def test_couche3_replaces_a_contaminated_answer() -> None:
@@ -295,22 +387,35 @@ def test_couche4_accepts_a_real_illustration_zone_id() -> None:
 # --------------------------------------------------------------------------- #
 
 
-def test_adversarial_predictive_question_is_not_caught_by_couche1() -> None:
-    """RECORDED, NOT FIXED: « tu penses que ça va rebondir ? » matches no
-    adversarial bucket — in production either. The refusal is the model applying
-    the prompt, and Couche 3 only fires if the wording is contaminated. The
-    landing must therefore not promise one exact refusal sentence."""
-    bot, stub = _demo_bot([_Resp([_TextBlock("Je ne prédis pas les mouvements de prix.")], "end_turn")])
+def test_adversarial_predictive_question_is_now_caught_by_couche1() -> None:
+    """DECIDED AND FIXED (founder call): a forecast request is now a hard refusal.
+
+    This test used to assert the OPPOSITE, on purpose — it was written to fail
+    the day someone added a prediction bucket, so the change could not happen by
+    accident. The bucket now exists, so the assertion is inverted: no LLM call,
+    and a refusal ABOUT forecasting rather than the generic recommendation one.
+    """
+    bot, stub = _demo_bot([])  # no scripted response: the model must NOT be called
     result = bot.chat(user_message="Tu penses que ça va rebondir ?")
-    assert result.blocked_reason is None  # Couche 1 did NOT intercept
-    assert stub.calls, "the model was called — the refusal comes from the prompt"
+    assert result.blocked_reason == "prediction"
+    assert result.content == PREDICTION_REFUSAL_TEMPLATE
+    assert result.content != REFUSAL_TEMPLATE
+    assert stub.calls == [], "a forecast request reached the model"
 
 
-def test_adversarial_predictive_answer_is_still_caught_when_contaminated() -> None:
-    bot, _ = _demo_bot(
+def test_couche3_still_catches_a_drift_couche1_could_never_see() -> None:
+    """The layers remain independent: a BENIGN question (Couche 1 lets it pass)
+    whose ANSWER drifts into judgement is still replaced by Couche 3.
+
+    The input used to be « Ça va rebondir ? », which the prediction bucket now
+    intercepts before the model — so the probe moved to a question that must
+    reach it, or this test would silently stop exercising Couche 3 at all.
+    """
+    bot, stub = _demo_bot(
         [_Resp([_TextBlock("C'est le bon moment pour entrer, ça va rebondir.")], "end_turn")]
     )
-    result = bot.chat(user_message="Ça va rebondir ?")
+    result = bot.chat(user_message="Décris-moi l'état de la zone au-dessus du prix.")
+    assert stub.calls, "the benign question must reach the model"
     assert result.content == OUTPUT_CONTAMINATED_TEMPLATE
 
 
@@ -434,6 +539,29 @@ def test_oversized_message_is_refused_before_any_cost(tmp_path: Any) -> None:
     resp = _http(tmp_path, bot).post("/api/demo/chat", json={"user_message": "x" * 5000})
     assert resp.status_code == 422
     assert stub.calls == []
+
+
+def test_a_real_length_agent_answer_is_accepted_back_as_history(tmp_path: Any) -> None:
+    """The SECOND turn of a conversation must work.
+
+    The history cap was the question's cap (600), while the agent's own answers
+    run to ~3 000 characters — so every conversation 422'd on its second turn.
+    A real boot found it; the tests had only ever replayed short history.
+    """
+    bot, _ = _demo_bot(_answer())
+    long_answer = "L'abonnement donne accès à tout le produit. " * 30  # ~1 300 chars
+    assert len(long_answer) > 600
+    resp = _http(tmp_path, bot).post(
+        "/api/demo/chat",
+        json={
+            "user_message": "Et sur le graphique ?",
+            "conversation_history": [
+                {"role": "user", "content": "Combien coûte l'abonnement ?"},
+                {"role": "assistant", "content": long_answer},
+            ],
+        },
+    )
+    assert resp.status_code == 200, resp.text
 
 
 def test_logging_carries_no_question_text_and_no_raw_ip(

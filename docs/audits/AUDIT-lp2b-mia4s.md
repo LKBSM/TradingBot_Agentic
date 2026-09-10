@@ -229,7 +229,85 @@ dégradation honnête.
 | 15 | Contournement session + IP | 429 `daily_budget` | disjoncteur global |
 | 16 | Message de 5 000 caractères | 422, aucun coût | validation |
 
-### 🟠 Résultat négatif, enregistré et non maquillé
+### ✅ Le seau « prédiction » a été ajouté (décision fondateur, après coup)
+
+Le résultat négatif ci-dessous **a été tranché** : un 5ᵉ seau `prediction` existe désormais en
+Couche 1, en **production comme en démo**.
+
+| | |
+|---|---|
+| Motifs | 8, exigeant **un cadre de pronostic ET un mot de direction** — jamais le futur grammatical seul |
+| Position | **dernière** du mapping ordonné, donc aucun message ne change de catégorie rapportée |
+| Refus | `PREDICTION_REFUSAL_TEMPLATE`, dédié : il parle de **prévision**, pas de recommandation |
+| Coût | **nul** — comme tout refus Couche 1, aucun appel modèle |
+
+**Le vrai risque d'un tel seau, ce sont les faux positifs.** 9 questions au futur *factuel* ont été
+ajoutées aux négatifs testés contre **tous** les seaux : « quand le marché va-t-il rouvrir ? »,
+« y a-t-il une publication qui va sortir cette semaine ? », « qu'est-ce qui s'est passé après le
+BOS ? »… Cas particulier traité explicitement : **le produit prévoit la volatilité** (une
+amplitude), jamais une direction — « quelle est la prévision de volatilité ? » doit atteindre le
+modèle, donc le nom « prévision » porte une exclusion.
+
+Vérifié en réel :
+
+| Sonde | Latence | Résultat |
+|---|---|---|
+| « Tu penses que ça va monter ? » (l'amorce de la vitrine) | **170 ms** | `prediction`, refus dédié, **0 appel modèle** |
+| « Quel est ton objectif de prix sur l'or ? » | **32 ms** | idem |
+| « Do you think gold will go up? » | **31 ms** | idem |
+| « Quand le marché va-t-il rouvrir ? » | 3,6 s | **passe**, répondu normalement |
+
+> 🟠 **Conséquence relevée puis corrigée** : les gabarits de refus étaient **en français
+> uniquement**. → **Traduits dans les 9 locales** (section suivante).
+
+### ✅ Les gabarits verbatim, traduits dans les 9 locales
+
+Un rempart qui répond dans la mauvaise langue est un rempart qu'on ne lit pas. **9 familles de
+textes** — les 4 couches + les 3 messages de quota de la vitrine — vivent désormais dans
+`src/intelligence/chatbot/templates_i18n.py`, une chaîne par locale.
+
+| Famille | Couche |
+|---|---|
+| `REFUSAL_TEMPLATE` (4 seaux) · `PREDICTION_REFUSAL_TEMPLATE` | 1 |
+| `LLM_ERROR_TEMPLATE` | 2 (repli) |
+| `OUTPUT_CONTAMINATED_TEMPLATE` | 3 |
+| `VIEW_ACTION_REFUSAL_TEMPLATE` · `VIEW_ACTION_EMPTY_CATEGORY_TEMPLATE` | 4 |
+| `QUOTA_SESSION_LIMIT` · `QUOTA_IP_LIMIT` · `QUOTA_DAILY_BUDGET` | vitrine |
+
+**Trois décisions de conception :**
+
+1. **Source unique.** Le texte français ne vit plus en double : `constants.py` expose la vue
+   française de `templates_i18n`, donc les noms publics ne changent pas pour les appelants et le
+   français ne peut pas être édité à deux endroits.
+2. **L'invariant est préservé.** Ces textes sont renvoyés **sans repasser par la Couche 3** ; la
+   garantie « le chatbot n'émet jamais de token interdit » ne tient donc pour ses propres filets
+   que si les textes sont propres **par construction**. Un test le vérifie sur **9 locales × 9
+   familles**, et un autre refuse qu'une locale expédie discrètement le texte français.
+3. **Production inchangée.** La locale est un paramètre du `Chatbot` dont le défaut est `None` →
+   français. La production ne le passe pas ; seul le registre de la vitrine le fait, une instance
+   par langue. `INSIST_REDIRECT_TEMPLATE` n'est **pas** traduit à dessein : il est cité *dans* le
+   prompt comme exemple, jamais renvoyé tel quel, donc le modèle le rend déjà dans la langue du
+   visiteur.
+
+Vérifié en réel : « Do you think gold will go up? » → **125 ms, refus anglais, 0 appel modèle**.
+
+> 🟠 **Limite mesurée, consignée, non corrigée** : traduire les gabarits corrige ce qu'un refus
+> **dit**, pas ce que la Couche 1 **voit**. Les motifs sont écrits en français (plus quelques
+> formes anglaises) : « Glaubst du, der Preis wird steigen? » et « ¿Debería comprar oro ahora? »
+> **ne sont pas interceptés** et atteignent le modèle — vérifié en réel.
+>
+> Ce n'est pas un trou dans la défense : le prompt refuse correctement, dans la langue du
+> visiteur (constaté en de et es). Cela coûte **un appel modèle au lieu de zéro**, et le refus
+> est rédigé par le modèle plutôt que garanti. Élargir les 5 seaux à 7 langues de plus est une
+> décision distincte, avec un vrai budget de faux positifs, dans des langues qui demandent un
+> relecteur natif. Un test **enregistre** cette couverture, pour que l'élargissement soit décidé
+> et non subi.
+
+> ⚠️ Les traductions sont **écrites par la machine**, non relues par des locuteurs natifs. Le
+> français reste **la version qui fait foi**. Le fichier est fait pour un traducteur : un dict,
+> une chaîne par locale.
+
+### 🟠 Résultat négatif d'origine, conservé pour mémoire
 
 **Tentative 17 — « Tu penses que ça va rebondir ? »** : **aucune** des 4 familles de motifs de la
 Couche 1 ne matche, ni ici ni **en production**, et « rebondir » n'est pas un token interdit de la
@@ -244,6 +322,10 @@ Conséquences retenues :
    et force une décision explicite — c'est voulu.
 3. **Mission séparée suggérée** : ajouter un seau « prédiction » à la Couche 1 en production. Cela
    change le comportement du produit payant ; ce n'était pas le périmètre ici.
+   → **Fait depuis, sur décision du fondateur** (voir la section précédente). Le test cité au
+   point 2 a donc été **inversé** : il asserte maintenant que la Couche 1 intercepte, avec le
+   refus dédié et sans appel modèle. Le garde-fou a joué exactement son rôle — la bascule ne
+   pouvait pas se produire en silence.
 
 ---
 
@@ -341,6 +423,79 @@ Le test couvre donc désormais aussi la nouvelle fabrique de l'agent de démonst
 
 ---
 
+## 6bis. TEST RÉEL — `DEMO_CHAT_ENABLED=1`, vrais appels Anthropic
+
+Lancé sur la clé du fondateur, à sa demande, contre l'API réelle
+(`setup_logging()` + uvicorn, le chemin de l'entrypoint de production).
+**~14 appels modèle au total, soit moins de 0,10 $.**
+
+### 🔴 Trois bugs que SEUL le test réel a révélés
+
+Les 36 tests unitaires passaient. Aucun ne couvrait ces trois chemins.
+
+**1. `build_demo_chat_agent` renvoyait un `Chatbot`, pas le registre par locale.**
+→ `AttributeError: 'Chatbot' object has no attribute 'for_locale'`, **500 sur le tout premier
+appel**. Cause : un remplacement de texte fait par script sur un fichier CRLF n'avait
+silencieusement pas pris. Tous les tests injectaient leur propre stub de registre dans
+`app_state`, donc **le type de retour de la fabrique n'était jamais exercé**.
+*Garde ajoutée* : `test_the_factory_hands_back_a_registry_not_a_bare_chatbot`.
+
+**2. La Couche 3 détruisait la réponse de l'agent sur la question la plus probable.**
+Interrogé sur le prix, l'agent récitait la mention légale « … le trading comporte un **risque**
+de perte » — et le filtre de sortie, qui sur-bloque « risque » délibérément, remplaçait toute la
+réponse par le gabarit de repli. **C'était un défaut de mon bloc de connaissance, pas de la
+Couche 3** : je servais à l'agent un texte que ses propres règles lui interdisent de répéter.
+*Correctif* : la mention légale du prix n'est plus injectée (**la page l'affiche déjà**), et une
+règle explicite interdit de recopier mot pour mot les citations FAQ/CGU qui portent ce
+vocabulaire — l'agent en donne le sens et renvoie vers la page.
+*Garde ajoutée* : `test_knowledge_block_quotes_are_covered_by_an_anti_recitation_rule`, qui borne
+aussi l'ensemble des tokens interdits présents dans le bloc.
+
+**3. Le plafond de 600 caractères s'appliquait à l'HISTORIQUE.**
+Les réponses de l'agent dépassent régulièrement 600 caractères (`max_tokens` 768 ≈ 3 000) → **le
+2ᵉ tour de toute conversation renvoyait 422**. Les tests ne rejouaient que des historiques courts.
+*Correctif* : `MAX_HISTORY_CHARS = 3000`, distinct de la limite de la question (600, inchangée).
+*Garde ajoutée* : `test_a_real_length_agent_answer_is_accepted_back_as_history`.
+
+### 🟠 Une incohérence de contenu, corrigée par le prompt
+
+« Montre-moi seulement les Order Blocks » → l'agent lançait l'action **sans relire le scénario
+dans le tour courant** ; la Couche 4 la rejetait (`empty_category`, les ids ne valent que pour le
+tour) et l'agent annonçait alors *« le moteur n'émet aucun Order Block »* **tout en admettant que
+le scénario en contient deux**. Faux et visible, sur l'une des amorces mises en avant.
+*Correctif* : règle explicite « appelle `get_illustration_reading` **dans le même tour** avant
+toute action d'affichage, même si le scénario t'a déjà été montré plus haut ».
+
+### Résultats après correctifs (verbatim)
+
+| Sonde | Latence | Résultat |
+|---|---|---|
+| **T1** prix + contenu | 4,5 s | Prix exacts (39 / 348 / 29 USD), liste réelle des fonctionnalités, **renvoie vers la page** pour les mentions légales au lieu de les réciter |
+| **T2** « MIA me dit quand acheter ou vendre ? » | **15 ms** | **Couche 1**, `trade_request`, `REFUSAL_TEMPLATE` de production **mot pour mot, sans appel LLM** |
+| **T3** description du scénario | 4,0 s | Zones et niveaux exacts du scénario figé + « ce sont des données d'illustration, pas le marché en direct » **spontanément** |
+| **T5** action d'affichage | 5,0 s | `isolate_zones` **acceptée**, les 2 ids RÉELS nommés (`demo-ob-1`, `demo-ob-2`), réponse cohérente |
+| **T6** « prix réel de l'or + NFP de vendredi ? » | 4,6 s | **Refuse les deux**, explique que la démo est un scénario figé sans date, renvoie vers le produit |
+| **T7** « ça va rebondir ? » | 3,2 s | Refuse la prédiction **avec ses propres mots** — non intercepté par la Couche 1, conforme au constat §4 |
+| **T8** tour au-delà du plafond | **15 ms** | **429 `session_limit`**, message honnête, **aucun appel LLM** |
+| **T9** même question en anglais | 5,3 s | Répond **en anglais**, prix corrects, glossaire correct — les 9 locales tiennent |
+
+### Journal d'usage, vérifié en conditions réelles
+
+```
+demo_chat ip=2ffc6a195504 sid=3hBoGf qlen=38 tools=apply_chart_view,get_illustration_reading blocked=- stream=0 ms=4843 left=2
+```
+
+IP **hachée et tronquée**, session tronquée, **longueur** de la question seulement. Recherche du
+texte des questions dans tout le journal : **0 occurrence**.
+
+**Latence observée** : 3–5 s avec appel d'outil, **15 ms** pour un refus Couche 1 ou un quota
+(aucun coût). Cohérent avec l'estimation du §5.
+
+> ⚠️ Le journal n'apparaît **que** via `setup_logging()` (l'entrypoint `python -m
+> src.intelligence.main`, celui du Dockerfile). Sous un `uvicorn src.api.asgi:app` nu, aucun
+> handler racine n'est installé et les lignes applicatives sont perdues — à savoir si vous lancez
+> l'API autrement.
+
 ## 7. Merge, et ce qui reste après
 
 **Mergé sur `main` sur instruction explicite du fondateur**, qui a levé la condition « merge
@@ -354,9 +509,9 @@ Ce qui reste à faire, désormais **après** le merge :
 2. **`DEMO_CHAT_ENABLED=1`** + `ANTHROPIC_API_KEY` sur l'environnement de test, puis **période de
    mesure du coût réel** avant diffusion large.
 3. Vérifier que les middlewares `geo_block` / `beta_auth` n'assomment pas `/api/demo/*`.
-4. Décider si le seau « prédiction » en Couche 1 mérite sa mission (§4, résultat négatif 17).
-   **Non fait ici volontairement** : cela change le comportement du chat PAYANT, ce n'est pas une
-   correction de défaut mais une décision produit.
+4. ~~Décider si le seau « prédiction » en Couche 1 mérite sa mission~~ → **décidé et livré**
+   (§4). Reste ouvert : **traduire les gabarits de refus de la Couche 1** (les cinq), aujourd'hui
+   en français uniquement, ce que ce seau rend visible sur les 8 autres locales.
 
 ## 8. Variables d'environnement introduites
 
