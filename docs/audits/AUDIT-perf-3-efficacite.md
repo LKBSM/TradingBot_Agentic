@@ -545,3 +545,70 @@ rien et ne dupliquent rien.
 
 **Aucune de ces recommandations n'est appliquée dans cette mission.** Chacune devient, ou non, une
 mission séparée — un changement par mission.
+
+---
+
+## Suites données à cet audit (mise à jour 2026-09-10)
+
+Les correctifs ci-dessous ont été livrés sur `fix/perf-3-quota-m5-cache-haiku`.
+Le reste de ce document est le diagnostic d'origine, laissé tel quel.
+
+| Reco | État | Commit | Gain constaté |
+|---|---|---|---|
+| **A-1** fuite de quota M5 | ✅ livré | `ef4c9d8` | 830 → 446 req/j : retour sous le plafond gratuit |
+| **A-4** fenêtres alignées | ✅ livré | `1446591` | 1 requête économisée par sonde/warm sur M15 et H1 |
+| **A-5** fournisseur unique | ✅ livré | `1446591` | un seul limiteur, compteur global rétabli |
+| **A-8** verrou du limiteur | ✅ livré | `1446591` | plus de gel du processus sur le plafond journalier |
+| **A-9** compteur de crédits | ✅ livré | `1446591` | `data_provider_credits` sur `/health` |
+| **B-1** condensation du résultat d'outil | ✅ livré | `2fbd2b2` | **−34,2 %** (jusqu'à −51,7 %) sur les 10 lectures stockées |
+| **B-2** instrumentation `usage` | ✅ livré | `1446591` | `cache_read_input_tokens` désormais journalisé |
+| **B-3** seuil de cache par modèle | ✅ livré | `97cae0c` | marge de 4,1 % désormais tenue par un test |
+| **B-6** table de prix | ✅ livré | `1446591` | erreurs ×2 et ×3 corrigées |
+| — blocage `test_bootstrap_runtime` | ✅ livré | `8254081` | suite débloquée (16/16 en 6,5 s) |
+
+### Recommandations NON appliquées, et pourquoi
+
+**A-2 (dériver H1/H4/D1 depuis M15) et A-3 (agrégateur WebSocket).** Décision
+fondateur assumée. A-3 exige en plus le plan Business, et les deux exigent la
+passe de réconciliation décrite au §A.5 : sans elle on remplace une facture par
+une dette de justesse, inacceptable sur un produit qui affiche du BOS/CHOCH.
+La frontière D1 (minuit UTC vs convention de place) reste à trancher **sur
+données réelles**.
+
+**A-6 (ne pas reprendre un créneau de limitation à chaque retry).** *Je retire
+cette recommandation.* À l'examen du code, le comportement actuel est le bon
+côté de l'erreur : sur-compter localement nous fait nous auto-freiner, ce qui
+est sûr ; sous-compter nous ferait dépasser le plan et récolter des 429. La
+« correction » aurait rendu le client plus agressif pendant un incident.
+
+**A-7 (jitter).** L'audit lui-même conclut à un gain nul à 2 marchés, et il
+n'aurait de toute façon jamais réduit le volume — seulement le pic. L'implanter
+aujourd'hui échangerait de la fraîcheur réelle contre un bénéfice théorique.
+À rouvrir au-delà de ~8 marchés.
+
+**A-10 (tendances des unités supérieures dans la charge utile).** Gain serveur
+uniquement (0 crédit fournisseur), mais la moitié du changement est du frontend
+et sa vérification demande la chaîne Playwright/vitest. Tout le reste de ce lot
+est couvert par des tests exécutés ; je n'ai pas voulu livrer non vérifié la
+seule partie qui ne l'aurait pas été.
+
+**B-4 (modèle du traducteur).** Ma propre analyse §B.3 conclut « ne rien changer
+maintenant » : à faible trafic Haiku sans cache est le choix le moins cher. À
+rouvrir sur les mesures que B-2 produit désormais.
+
+**B-5 (point de rupture incrémental sur l'historique) — neutralisé par
+l'architecture actuelle.** Vérification faite : le cache est un préfixe, et
+« toute différence d'un octet en position N invalide le cache pour tous les
+points de rupture à partir de N ». L'ordre de rendu est `tools → system →
+messages` : le bloc `signal_summary`, qui vit dans `system` et se rafraîchit
+toutes les 60 s, se trouve **avant** les messages et invalide donc leur cache à
+chaque rafraîchissement. Poser un point de rupture sur l'historique ne
+rapporterait quasi rien tant que ce bloc reste où il est.
+
+Le vrai préalable est de sortir le bloc volatil de `system` pour l'injecter dans
+`messages` — c'est d'ailleurs la règle générale (« keep the system prompt
+frozen ; inject dynamic context later in messages »). Mais Haiku 4.5 n'accepte
+pas les messages `role: "system"` en cours de conversation, il faudrait donc le
+porter dans le tour utilisateur, ce qui change la forme de la conversation et
+peut peser sur la qualité des réponses. C'est une décision d'architecture, à
+prendre **sur mesures** — que l'instrumentation B-2 rend enfin possibles.
