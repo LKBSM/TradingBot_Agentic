@@ -4,6 +4,12 @@ import { expect, test, type Page } from '@playwright/test';
  * SC-2 — Scanner conversationnel, the SIX states at both viewports, plus the two
  * dictation degradations (unsupported browser, permission denied).
  *
+ * SC-4 note: « states » are no longer separate screens — the field, the reading
+ * and the results now share one surface, and a reading also starts on its own
+ * from a typing pause. These tests still drive it with an explicit
+ * « translate-button » click, which remains supported and keeps them
+ * deterministic; the live trigger has its own spec (sc4-live-translate).
+ *
  * Following this repo's e2e convention (cf. sc1-scanner): we mock the access gate,
  * the translate endpoint and the scan endpoint so every state renders
  * deterministically WITHOUT the LLM/data backend, and assert the load-bearing
@@ -243,7 +249,9 @@ test.describe('SC-2 — six states + dictation degradation', () => {
     await page.goto(PAGE);
     await page.getByTestId('describe-input').fill('OB vierge en tendance haussière');
     await page.getByTestId('translate-button').click();
-    await page.getByTestId('see-results').click();
+    // SC-4 removed the « Voir les résultats » click: the results follow the
+    // reading directly. The three blocks below are unchanged.
+    await expect(page.getByTestId('see-results')).toHaveCount(0);
     // ScanResults (SC-1): the three non-maskable blocks (labels from `combo.*`).
     await expect(page.getByText('Ce qui correspond').first()).toBeVisible();
     await expect(page.getByText(/va à l.encontre/).first()).toBeVisible();
