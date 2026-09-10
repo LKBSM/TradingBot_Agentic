@@ -156,6 +156,28 @@ def _glossary_entries() -> list[tuple[str, str]]:
     return [(t.strip(), s.strip()) for t, s in pairs]
 
 
+# Anything that looks like an e-mail address, so the demo cannot hand one out.
+_EMAIL_RE = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
+
+_CONTACT_POINTER = "(coordonnées de l'exploitant : voir la page /conditions)"
+
+
+def _redact_contacts(text: str) -> str:
+    """Strip contact addresses from quoted legal text.
+
+    The terms of use carry the operator's personal e-mail — legally required on
+    the PAGE, and public there. But this block feeds a PUBLIC, unauthenticated
+    LLM endpoint, and a live probe showed the agent volunteering that address to
+    an anonymous visitor who had merely asked how volatility is computed. That
+    turns the showcase into an address-harvesting endpoint.
+
+    Redacting at the SOURCE rather than adding a prompt rule: a rule can be
+    talked around, and the surest way not to repeat something is not to be told
+    it. The information stays one click away, on the page that must display it.
+    """
+    return _EMAIL_RE.sub(_CONTACT_POINTER, text)
+
+
 def load_product_knowledge(locale: str = DEFAULT_LOCALE) -> str:
     """Assemble the product-knowledge block from the canonical sources.
 
@@ -225,9 +247,11 @@ def load_product_knowledge(locale: str = DEFAULT_LOCALE) -> str:
         "(source : docs/legal/conditions-utilisation.md, le document rendu tel quel",
         "par la page /conditions ; il n'existe pas d'autre version faisant foi)",
         "",
-        _read_text(TERMS_PATH).strip(),
+        _redact_contacts(_read_text(TERMS_PATH).strip()),
     ]
-    return "\n".join(parts)
+    # Belt and braces: the whole block, not just the terms, is swept — a future
+    # source could bring an address in through another door.
+    return _redact_contacts("\n".join(parts))
 
 
 def build_scope_block(
@@ -374,6 +398,10 @@ def build_demo_chatbot(
             build_scope_block(scenario, locale),
             load_product_knowledge(locale),
         ],
+        # The verbatim safety templates (Couches 1-4) answer in the visitor's
+        # language too. A hard refusal short-circuits the model, so without this
+        # an English visitor asking for a forecast got French.
+        locale=locale,
     )
     logger.info(
         "Demo chatbot (MIA-4S, simulation) built — locale=%s, %d tools, scenario '%s'",
