@@ -53,6 +53,7 @@ import re
 import unicodedata
 from typing import Optional
 
+from src.intelligence.chatbot import adversarial_i18n as _adv_i18n
 from src.intelligence.chatbot import templates_i18n as _i18n
 
 # --------------------------------------------------------------------------- #
@@ -285,7 +286,7 @@ _PREDICTION_RAW: list[str] = [
     # légitime et doit atteindre le modèle.
     r"\b(predis|predit|predire|prevois|prevoir|anticipes?|anticiper|pronostique)\b"
     r"|\b(prediction|predictions|prevision|previsions|pronostic|anticipation)\b"
-    r"(?!\s+(de\s+|d'|sur\s+)?(la\s+)?volatilite)",
+    + _adv_i18n.NO_VOLATILITY,
     # "quel est ton objectif / ta cible" · "objectif de prix" · "price target"
     r"\b(ton|ta|votre|vos)\s+(objectif|cible|prevision|pronostic|anticipation)\b|"
     r"\bobjectif\s+de\s+prix\b|\bprice\s+target\b",
@@ -304,11 +305,35 @@ def _compile(raw_patterns: list[str]) -> list[re.Pattern[str]]:
     return [re.compile(p, re.IGNORECASE) for p in raw_patterns]
 
 
-ADVERSARIAL_PATTERNS_JAILBREAK: list[re.Pattern[str]] = _compile(_JAILBREAK_RAW)
-ADVERSARIAL_PATTERNS_TRADE_REQUEST: list[re.Pattern[str]] = _compile(_TRADE_REQUEST_RAW)
-ADVERSARIAL_PATTERNS_PERSONA_HIJACK: list[re.Pattern[str]] = _compile(_PERSONA_HIJACK_RAW)
-ADVERSARIAL_PATTERNS_FINANCIAL_ADVICE: list[re.Pattern[str]] = _compile(_FINANCIAL_ADVICE_RAW)
-ADVERSARIAL_PATTERNS_PREDICTION: list[re.Pattern[str]] = _compile(_PREDICTION_RAW)
+# The FRENCH core, kept as its own object: it is the founder-validated set, it
+# is what the "5-10 patterns per bucket" review rule applies to, and it must
+# stay readable without scrolling past a hundred lines of other languages.
+FRENCH_PATTERNS_BY_CATEGORY: dict[str, list[re.Pattern[str]]] = {
+    "jailbreak": _compile(_JAILBREAK_RAW),
+    "trade_request": _compile(_TRADE_REQUEST_RAW),
+    "persona_hijack": _compile(_PERSONA_HIJACK_RAW),
+    "financial_advice": _compile(_FINANCIAL_ADVICE_RAW),
+    "prediction": _compile(_PREDICTION_RAW),
+}
+
+
+def _bucket(category: str) -> list[re.Pattern[str]]:
+    """French core first, then the seven other locales (stable order).
+
+    Every pattern runs against EVERY message: Couche 1 sees the text before
+    anything identifies a locale, and a French user may type English. The
+    extension is therefore written for precision — see adversarial_i18n.
+    """
+    return FRENCH_PATTERNS_BY_CATEGORY[category] + _compile(
+        _adv_i18n.raw_patterns_for(category)
+    )
+
+
+ADVERSARIAL_PATTERNS_JAILBREAK: list[re.Pattern[str]] = _bucket("jailbreak")
+ADVERSARIAL_PATTERNS_TRADE_REQUEST: list[re.Pattern[str]] = _bucket("trade_request")
+ADVERSARIAL_PATTERNS_PERSONA_HIJACK: list[re.Pattern[str]] = _bucket("persona_hijack")
+ADVERSARIAL_PATTERNS_FINANCIAL_ADVICE: list[re.Pattern[str]] = _bucket("financial_advice")
+ADVERSARIAL_PATTERNS_PREDICTION: list[re.Pattern[str]] = _bucket("prediction")
 
 # Ordered so the most security-critical bucket (jailbreak) is checked first, and
 # the FIRST match wins. ``prediction`` is deliberately LAST: a message that is
@@ -414,6 +439,7 @@ __all__ = [
     "ADVERSARIAL_PATTERNS_TRADE_REQUEST",
     "ALL_ADVERSARIAL_PATTERNS",
     "ALL_FORBIDDEN_TOKENS",
+    "FRENCH_PATTERNS_BY_CATEGORY",
     "FORBIDDEN_TOKENS_ACTION_TRADING",
     "FORBIDDEN_TOKENS_BY_CATEGORY",
     "FORBIDDEN_TOKENS_JUGEMENT_MOMENT",

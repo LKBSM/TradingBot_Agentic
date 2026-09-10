@@ -111,8 +111,15 @@ def test_five_buckets_present() -> None:
         "financial_advice",
         "prediction",
     ]
-    for patterns in C.ADVERSARIAL_PATTERNS_BY_CATEGORY.values():
-        assert 5 <= len(patterns) <= 10, "each bucket must hold 5-10 patterns (brief)"
+    # The "5-10 patterns" review rule now applies to the FRENCH core: the buckets
+    # themselves also carry the seven other locales (adversarial_i18n), which
+    # would make a count over the merged list meaningless.
+    for bucket, patterns in C.FRENCH_PATTERNS_BY_CATEGORY.items():
+        assert 5 <= len(patterns) <= 10, f"{bucket}: {len(patterns)} French patterns"
+        assert patterns == C.ADVERSARIAL_PATTERNS_BY_CATEGORY[bucket][: len(patterns)], (
+            f"{bucket}: the French core must stay FIRST in the merged bucket, so a "
+            "French message keeps reporting the category it always did"
+        )
 
 
 # --------------------------------------------------------------------------- #

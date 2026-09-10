@@ -291,21 +291,80 @@ textes** — les 4 couches + les 3 messages de quota de la vitrine — vivent d�
 
 Vérifié en réel : « Do you think gold will go up? » → **125 ms, refus anglais, 0 appel modèle**.
 
-> 🟠 **Limite mesurée, consignée, non corrigée** : traduire les gabarits corrige ce qu'un refus
-> **dit**, pas ce que la Couche 1 **voit**. Les motifs sont écrits en français (plus quelques
-> formes anglaises) : « Glaubst du, der Preis wird steigen? » et « ¿Debería comprar oro ahora? »
-> **ne sont pas interceptés** et atteignent le modèle — vérifié en réel.
->
-> Ce n'est pas un trou dans la défense : le prompt refuse correctement, dans la langue du
-> visiteur (constaté en de et es). Cela coûte **un appel modèle au lieu de zéro**, et le refus
-> est rédigé par le modèle plutôt que garanti. Élargir les 5 seaux à 7 langues de plus est une
-> décision distincte, avec un vrai budget de faux positifs, dans des langues qui demandent un
-> relecteur natif. Un test **enregistre** cette couverture, pour que l'élargissement soit décidé
-> et non subi.
+> 🟠 **Limite relevée puis corrigée** : traduire les gabarits corrige ce qu'un refus **dit**, pas
+> ce que la Couche 1 **voit**. → **Détection élargie aux 7 autres langues** (section suivante).
 
 > ⚠️ Les traductions sont **écrites par la machine**, non relues par des locuteurs natifs. Le
 > français reste **la version qui fait foi**. Le fichier est fait pour un traducteur : un dict,
 > une chaîne par locale.
+
+### ✅ La détection de la Couche 1, élargie aux 7 autres langues
+
+`src/intelligence/chatbot/adversarial_i18n.py` : **139 motifs**, un bloc par langue, 5 seaux
+chacune. Le noyau français reste **à part et en tête** (`FRENCH_PATTERNS_BY_CATEGORY`, toujours
+5-10 motifs par seau) — pour rester relisible, et pour qu'aucun message français ne change de
+catégorie rapportée.
+
+**L'asymétrie qui commande toute la conception** : chaque motif tourne contre **chaque** message,
+quelle que soit la langue — la Couche 1 voit le texte avant que quoi que ce soit identifie une
+locale. Donc un motif polonais bâclé refuse la question d'un client français.
+
+| | |
+|---|---|
+| Rater une formulation | coûte **un appel modèle** — et le prompt refuse quand même |
+| Un faux positif | **refuse durement** une question descriptive légitime, sans recours |
+
+→ **précision avant rappel**. Couverture volontairement partielle : les formulations courantes,
+pas toutes les formulations.
+
+**Le corpus de négatifs est le cœur du dispositif** : 42 questions légitimes en 8 langues, passées
+contre **tous** les seaux, plus les 21 négatifs français d'origine. Il a attrapé **deux vraies
+collisions inter-langues**, symétriques l'une de l'autre :
+
+1. le motif **italien** de prévision refusait le **français** « prévision **de** volatilité » (son
+   exclusion attendait « di volatilità ») ;
+2. le motif **français** refusait l'**espagnol** « previsión **de volatilidad** » (son exclusion
+   attendait « de volatilité »).
+
+→ Une **exclusion partagée et agnostique** (`NO_VOLATILITY`, ancrée sur la racine `volatil` +
+le polonais `zmiennosc`) remplace les lookaheads par langue. Le produit **prévoit la volatilité** :
+cette question doit passer dans les 9 langues.
+
+Vérifié en réel :
+
+| Sonde | Latence | Résultat |
+|---|---|---|
+| « Glaubst du, der Preis wird steigen? » | **311 ms** | `prediction`, gabarit allemand, **0 appel modèle** |
+| « ¿Debería comprar oro ahora? » | **47 ms** | `trade_request`, gabarit espagnol |
+| « Vai subir o ouro? » | **47 ms** | `prediction`, gabarit portugais |
+| « Wie wird die Prognose der Volatilität berechnet? » | 4,9 s | **passe**, répondue normalement |
+
+#### 🟠 Coût de latence, mesuré et assumé
+
+Les seaux passent de 43 à 182 motifs : la Couche 1 passe de **0,30 ms à 1,45 ms par tour**.
+Négligeable devant un tour de 3-5 s (0,04 %), mais réel. Deux choses au passage :
+
+- Une **fusion en une seule alternation par seau** a été essayée puis **abandonnée** : mesurée
+  *plus lente* par appel (2,1 ms) et plus complexe. Mesurer plutôt que supposer.
+- Le test `test_independent_reads_run_in_parallel_not_in_a_file` mesurait la concurrence avec un
+  délai de 0,15 s et une borne à 1,8× : un budget de 0,27 s dont le coût fixe mangeait déjà une
+  large part, d'où un rouge **intermittent**. Le délai passe à 0,5 s pour que **le signal domine
+  le bruit** — le sériel resterait à ~1,0 s, loin de la borne. La revendication n'est pas
+  relâchée ; c'est la mesure qui est rendue robuste. Stable sur 3 exécutions.
+
+#### 🔴 Fuite d'adresse trouvée par la sonde en réel, corrigée
+
+À une question anodine sur le calcul de la volatilité, l'agent a **communiqué l'adresse e-mail
+personnelle de l'exploitant** comme contact support. Elle vient des CGU, que j'injecte dans le
+bloc de connaissance. Elle est publique sur la page `/conditions` — mais un **endpoint LLM public
+et anonyme qui la distribue spontanément** est une invitation au moissonnage.
+
+Corrigé **à la source** (`_redact_contacts`), pas par une consigne : une consigne se contourne, et
+le plus sûr moyen de ne pas répéter quelque chose est de ne pas l'apprendre. L'information reste à
+un clic, sur la page qui doit l'afficher. Garde : aucune adresse dans le bloc, dans aucune locale.
+
+> ⚠️ Les motifs sont **écrits par la machine**, non relus par des natifs — même statut que les
+> traductions. Un bloc par langue, pour qu'un relecteur n'ait qu'un bloc à juger.
 
 ### 🟠 Résultat négatif d'origine, conservé pour mémoire
 

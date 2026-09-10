@@ -164,27 +164,24 @@ def test_couche2_failsafe_speaks_the_visitors_language(locale: str) -> None:
         ("Pensi che il prezzo salirà?", "it"),
     ],
 )
-def test_couche1_detection_is_french_and_english_only(message: str, locale: str) -> None:
-    """RECORDED, NOT FIXED — measured on a real boot.
+def test_detection_and_wording_now_agree_in_every_locale(message: str, locale: str) -> None:
+    """DECIDED AND DONE: detection was widened to the seven other locales.
 
-    Translating the templates fixes what a refusal SAYS. It does not widen what
-    Couche 1 SEES: the patterns are written against French (plus a few English
-    forms), so the same question asked in German, Spanish, Italian, Dutch,
-    Polish, Portuguese or Arabic is not intercepted and reaches the model.
+    This test used to assert the opposite — that these phrasings reached the
+    model — and said so explicitly, so the day someone widened the buckets it
+    would fail and force the audit to be updated. That is exactly what happened.
 
-    That is not a hole in the defence — the prompt refuses correctly in the
-    visitor's language (verified live in de/es). It costs one model call instead
-    of zero, and the wording is model-authored rather than the guaranteed
-    template. Widening the buckets to seven more languages is a separate
-    decision with a real false-positive budget, in languages that need a native
-    reviewer. This test exists so that decision is taken, not drifted into.
+    Translating the templates fixed what a refusal SAYS; ``adversarial_i18n``
+    fixed what Couche 1 SEES. They only pay off together: a refusal the visitor
+    can read, without a model call. The false-positive budget that comes with it
+    is guarded by the multilingual benign corpus in test_adversarial_i18n.
     """
     from src.intelligence.chatbot.adversarial_filter import AdversarialFilter
 
-    assert not AdversarialFilter().check(message).triggered, (
-        f"{message!r} is now intercepted — the buckets gained {locale} coverage. "
-        "Good, but deliberate: update this test and the audit."
-    )
+    result = AdversarialFilter().check(message)
+    assert result.triggered, f"[{locale}] {message!r} still reaches the model"
+    # …and the refusal it triggers is readable by that visitor.
+    assert localized("REFUSAL_TEMPLATE", locale) != I18N.REFUSAL["fr"]
 
 
 def test_production_default_stays_french() -> None:
