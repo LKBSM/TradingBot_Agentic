@@ -30,6 +30,21 @@ def _disable_provider_snapshots(monkeypatch):
     monkeypatch.setenv("PROVIDER_SNAPSHOT_ENABLED", "0")
 
 
+@pytest.fixture(autouse=True)
+def _fresh_translate_throttle(monkeypatch):
+    """SC-4: /api/scanner/translate is capped by a MODULE-LEVEL throttle.
+
+    A counter shared across tests is a flake waiting to happen — the 40th
+    translate call of a session would 429 a test that has nothing to do with
+    throttling. Each test gets a fresh instance; tests that exercise the cap
+    install their own (which takes precedence over this autouse default).
+    """
+    from src.api.auth_throttle import AuthThrottle
+    from src.api.routes import scanner_translate
+
+    monkeypatch.setattr(scanner_translate, "_TRANSLATE_THROTTLE", AuthThrottle())
+
+
 # =============================================================================
 # DATABASE FIXTURES
 # =============================================================================
