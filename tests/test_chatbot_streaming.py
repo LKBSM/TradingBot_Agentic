@@ -158,7 +158,16 @@ class _SlowAssembler(StubAssembler):
 
 
 def test_independent_reads_run_in_parallel_not_in_a_file() -> None:
-    delay = 0.15
+    # The delay must DOMINATE the turn's fixed overhead, or this measures
+    # constants rather than concurrency. It was 0.15 s against a 1.8× bound — a
+    # 0.27 s budget, of which the fixed cost already ate a large share — so the
+    # test went intermittently red when Couche 1 grew from 43 patterns to 182
+    # (eight-language detection: +1.15 ms per turn, measured). That overhead is
+    # nothing against a 3-5 s turn; it was not nothing against 0.27 s.
+    #
+    # Raising the delay restores the signal-to-noise ratio instead of loosening
+    # the claim: serial would still be ~1.0 s, nowhere near the bound.
+    delay = 0.5
     # Two DIFFERENT reads requested in the SAME round → must run concurrently.
     r1 = StubResponse(
         [
