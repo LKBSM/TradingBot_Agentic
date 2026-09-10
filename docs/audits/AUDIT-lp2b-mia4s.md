@@ -346,6 +346,13 @@ Négligeable devant un tour de 3-5 s (0,04 %), mais réel. Deux choses au passag
 
 - Une **fusion en une seule alternation par seau** a été essayée puis **abandonnée** : mesurée
   *plus lente* par appel (2,1 ms) et plus complexe. Mesurer plutôt que supposer.
+- Un **prefiltre par mots d'ancrage** (sauter un seau dont aucun mot littéral n'apparaît dans le
+  message) a été prototypé et **rejeté** : gain de 15 % seulement (0,85 → 0,72 ms), parce que les
+  seaux comptent 100 à 200 mots d'ancrage — dont des mots courants comme « sur » — qu'une phrase
+  ordinaire recoupe presque toujours. **Résultat négatif consigné pour qu'il ne soit pas
+  réexploré** : un prefiltre plus agressif serait sans marge de sécurité (mal calibré, il
+  désactiverait silencieusement un rempart), pour gagner une milliseconde sur un tour de 3-5 s.
+  **Conclusion : on garde 1,45 ms.**
 - Le test `test_independent_reads_run_in_parallel_not_in_a_file` mesurait la concurrence avec un
   délai de 0,15 s et une borne à 1,8× : un budget de 0,27 s dont le coût fixe mangeait déjà une
   large part, d'où un rouge **intermittent**. Le délai passe à 0,5 s pour que **le signal domine
@@ -363,8 +370,25 @@ Corrigé **à la source** (`_redact_contacts`), pas par une consigne : une consi
 le plus sûr moyen de ne pas répéter quelque chose est de ne pas l'apprendre. L'information reste à
 un clic, sur la page qui doit l'afficher. Garde : aucune adresse dans le bloc, dans aucune locale.
 
-> ⚠️ Les motifs sont **écrits par la machine**, non relus par des natifs — même statut que les
-> traductions. Un bloc par langue, pour qu'un relecteur n'ait qu'un bloc à juger.
+#### ⚠️ La seule limite qui reste — et ce qui a été fait pour la lever
+
+Motifs **et** traductions sont **écrits par la machine**, non relus par des locuteurs natifs.
+Aucune quantité de travail machine supplémentaire ne corrige cela : il faut un humain par langue.
+
+Ce qui a été fait, c'est de rendre cette relecture **courte** :
+`scripts/gen_adversarial_review.py` → **`docs/audits/couche1-revue-linguistique.md`**, une fiche
+par langue où le relecteur **n'a aucun code à lire**. Il juge des phrases :
+
+1. celles qu'on **intercepte**, 2. celles qu'on **laisse passer**, 3. le **texte du refus** dans sa
+langue. Et la question qui compte : *quelles formulations manquent ?*
+
+La fiche est **générée depuis les corpus de test**, donc elle ne peut pas diverger du code. Et les
+phrases qu'un relecteur ajoute ou conteste retournent dans ces mêmes corpus : les tests échouent
+tant que les motifs ne s'y conforment pas. **La relecture devient la garantie, pas une promesse.**
+
+La hiérarchie est écrite en tête de fiche, parce qu'elle n'est pas intuitive : *rater* une
+formulation est bénin (le prompt refuse quand même), *refuser à tort* est grave. En cas de doute,
+on laisse passer.
 
 ### 🟠 Résultat négatif d'origine, conservé pour mémoire
 
