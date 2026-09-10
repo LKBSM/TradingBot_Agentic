@@ -160,3 +160,103 @@ class TestProductionChatbotPrefixStillCaches:
         assert "cache_control" not in blocks[-1], (
             "the variable signal_summary must stay AFTER the breakpoint"
         )
+
+
+# =========================================================================== #
+# PERF-3 (B-1) — condensation of the get_market_reading tool result
+#
+# `structure` is 95.9% of a MarketReading payload, and the whole thing used to
+# travel into the conversation at full price on every tool call (a tool result
+# sits after the cache breakpoint and changes every turn, so it can never be
+# cached). Measured on the real stored readings: 11k chars on average, 38 913 at
+# the worst — one tool call could cost more than the entire cached system prompt.
+#
+# Capping is only acceptable because the true counts travel with it. These tests
+# pin that honesty contract, not just the size win.
+# =========================================================================== #
+class TestToolResultCondensation:
+    def _reading(self, n_bos=48, n_ob=12):
+        return {
+            "schema_version": "2.0.0",
+            "header": {"instrument": "XAUUSD", "timeframe": "M15"},
+            "regime": {"trend": "bullish"},
+            "conditions": {"x": 1},
+            "events": {"news_upcoming": []},
+            "structure": {
+                "current_bos": None,
+                "bos_events": [{"direction": "bullish", "i": i} for i in range(n_bos)],
+                "order_blocks": [
+                    {"id": f"OB{i}", "status": "active" if i % 4 == 0 else "consumed"}
+                    for i in range(n_ob)
+                ],
+                "liquidity_pools": [],
+            },
+        }
+
+    def test_long_lists_are_capped(self):
+        from src.intelligence.chatbot.chatbot import (
+            _TOOL_STRUCTURE_LIMITS,
+            _condense_reading_for_tool,
+        )
+
+        out = _condense_reading_for_tool(self._reading())
+        assert len(out["structure"]["bos_events"]) == _TOOL_STRUCTURE_LIMITS["bos_events"]
+        assert len(out["structure"]["order_blocks"]) == _TOOL_STRUCTURE_LIMITS["order_blocks"]
+
+    def test_true_counts_travel_with_the_capped_lists(self):
+        """The honesty contract: a capped list is never silently short. Without
+        this the model would miscount when asked 'how many order blocks?'."""
+        from src.intelligence.chatbot.chatbot import _condense_reading_for_tool
+
+        out = _condense_reading_for_tool(self._reading(n_bos=48, n_ob=12))
+        assert out["structure_totals"]["bos_events"] == 48
+        assert out["structure_totals"]["order_blocks"] == 12
+        assert "bos_events" in out["_truncated"]["fields"]
+        assert "structure_totals" in out["_truncated"]["note"]
+
+    def test_active_zones_are_never_dropped_for_stale_ones(self):
+        """A cap must remove history, never a live level."""
+        from src.intelligence.chatbot.chatbot import _condense_reading_for_tool
+
+        out = _condense_reading_for_tool(self._reading(n_ob=40))
+        kept = out["structure"]["order_blocks"]
+        assert all(ob["status"] == "active" for ob in kept), (
+            "active order blocks must sort ahead of consumed ones before capping"
+        )
+
+    def test_short_lists_are_untouched_and_no_truncation_claimed(self):
+        from src.intelligence.chatbot.chatbot import _condense_reading_for_tool
+
+        out = _condense_reading_for_tool(self._reading(n_bos=3, n_ob=2))
+        assert len(out["structure"]["bos_events"]) == 3
+        assert "_truncated" not in out
+
+    def test_non_structure_blocks_pass_through_untouched(self):
+        """Header/regime/conditions/events are ~4% of the payload — nothing to
+        win, plenty of fidelity to lose."""
+        from src.intelligence.chatbot.chatbot import _condense_reading_for_tool
+
+        src = self._reading()
+        out = _condense_reading_for_tool(src)
+        for key in ("header", "regime", "conditions", "events", "schema_version"):
+            assert out[key] == src[key]
+
+    def test_scalar_structure_fields_survive(self):
+        from src.intelligence.chatbot.chatbot import _condense_reading_for_tool
+
+        out = _condense_reading_for_tool(self._reading())
+        assert "current_bos" in out["structure"]
+
+    def test_a_payload_without_structure_is_returned_as_is(self):
+        from src.intelligence.chatbot.chatbot import _condense_reading_for_tool
+
+        assert _condense_reading_for_tool({"header": {}}) == {"header": {}}
+
+    def test_the_source_payload_is_not_mutated(self):
+        """The API and the chart get the FULL reading — only what travels into
+        the conversation is capped."""
+        from src.intelligence.chatbot.chatbot import _condense_reading_for_tool
+
+        src = self._reading()
+        _condense_reading_for_tool(src)
+        assert len(src["structure"]["bos_events"]) == 48

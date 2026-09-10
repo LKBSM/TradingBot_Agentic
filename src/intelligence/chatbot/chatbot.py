@@ -62,6 +62,90 @@ MAX_MODEL_HISTORY = 12
 MAX_TOOL_TURNS = 3  # hard cap on tool-use rounds to avoid infinite loops
 
 
+# PERF-3 (B-1) — how many entries of each structure list the get_market_reading
+# tool hands the model.
+#
+# Measured on real stored readings: `structure` is 95.9% of a MarketReading
+# payload, and the payload went to the model WHOLE — 11 000 chars on average,
+# 38 913 at the worst, at full price on every tool call (a tool result sits after
+# the cache breakpoint and changes every turn, so it can never be cached). One
+# call could cost more than the entire cached system prompt.
+#
+# The engine's own journals are far deeper than any answer needs: 48 BOS events
+# on the reading measured here. Capping is safe for FIDELITY only because the
+# counts are declared alongside (see _condense_reading_for_tool) — the model is
+# told how many exist, so "how many order blocks are there?" stays answerable and
+# truthful. Zones are ordered active-first so a cap never hides a live level.
+_TOOL_STRUCTURE_LIMITS: dict[str, int] = {
+    "order_blocks": 8,
+    "fair_value_gaps": 8,
+    "liquidity_pools": 8,
+    "bos_events": 8,
+    "choch_events": 6,
+    # Historical residue — least useful per token.
+    "consumed_order_blocks": 3,
+    "consumed_fair_value_gaps": 3,
+}
+
+
+def _condense_reading_for_tool(payload: dict[str, Any]) -> dict[str, Any]:
+    """Trim a MarketReading payload to what a chat answer actually consumes.
+
+    Only the ``structure`` lists are capped; every OTHER block (header, regime,
+    conditions, events, market_status, reference_levels) is passed through
+    untouched — together they are ~4% of the payload, so there is nothing to win
+    there and plenty of fidelity to lose.
+
+    Honesty rule: a capped list is never silently short. ``structure_totals``
+    reports the true length of every list, and ``_truncated`` names the ones that
+    were cut, so the model can answer counting questions correctly and say what
+    it is not seeing. Active zones sort first, so a cap drops stale history, not
+    a live level.
+    """
+    structure = payload.get("structure")
+    if not isinstance(structure, dict):
+        return payload
+
+    def _active_first(items: list) -> list:
+        # Stable: preserves engine order within each group (journals stay
+        # most-recent-first, which is what the digest relies on).
+        return [i for i in items if _is_active(i)] + [i for i in items if not _is_active(i)]
+
+    def _is_active(item: Any) -> bool:
+        return isinstance(item, dict) and item.get("status") == "active"
+
+    trimmed: dict[str, Any] = {}
+    totals: dict[str, int] = {}
+    truncated: list[str] = []
+    for key, value in structure.items():
+        if not isinstance(value, list):
+            trimmed[key] = value
+            continue
+        totals[key] = len(value)
+        limit = _TOOL_STRUCTURE_LIMITS.get(key)
+        if limit is None or len(value) <= limit:
+            trimmed[key] = value
+            continue
+        trimmed[key] = _active_first(value)[:limit]
+        truncated.append(key)
+
+    out = dict(payload)
+    out["structure"] = trimmed
+    out["structure_totals"] = totals
+    if truncated:
+        out["_truncated"] = {
+            "fields": sorted(truncated),
+            "note": (
+                "Listes raccourcies pour la conversation : seules les entrées les "
+                "plus pertinentes (actives d'abord) sont fournies. Les effectifs "
+                "réels de CHAQUE liste sont dans structure_totals — utilise-les "
+                "pour toute question de dénombrement, et dis que tu n'as pas le "
+                "détail complet plutôt que de compter ce qui est affiché ici."
+            ),
+        }
+    return out
+
+
 def _schemas_chars(schemas: Any) -> int:
     """Serialised size of the tool definitions, for the cached-prefix estimate.
 
@@ -963,7 +1047,9 @@ class Chatbot:
                 instrument = tool_input.get("instrument")
                 timeframe = tool_input.get("timeframe")
                 reading = self._assembler.get_or_generate(instrument, timeframe)
-                return reading.model_dump(mode="json")
+                # PERF-3 (B-1): the API and the chart still receive the FULL
+                # reading — only what travels into the conversation is capped.
+                return _condense_reading_for_tool(reading.model_dump(mode="json"))
             if name == "get_signal_summary":
                 return self._summary_provider.get()
             if name == "get_ob_diagnostic":
