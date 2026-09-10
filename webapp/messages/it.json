@@ -1951,7 +1951,16 @@
       "unpin": "Rimuovi dai fissati",
       "pinAria": "Fissa {combo}",
       "unpinAria": "Rimuovi {combo} dai fissati",
-      "notSynced": "Non sincronizzato"
+      "notSynced": "Non sincronizzato",
+      "followedByEngine": "Seguiti dal motore",
+      "uxTestBadge": "Modalità test UX",
+      "uxTestNote": "{count} mercati elencati solo per la visualizzazione. Il motore ne segue soltanto {real}.",
+      "groupFxMajor": "Valute maggiori",
+      "groupFxMinor": "Valute minori",
+      "groupFxExotic": "Valute esotiche",
+      "groupMetal": "Metalli",
+      "groupIndex": "Indici",
+      "groupCrypto": "Cripto"
     },
     "mobile": {
       "workspaceTitle": "Spazio di lettura",
@@ -2052,7 +2061,10 @@
       "errorNoData": "Nessun dato disponibile per questa combinazione al momento.",
       "slowLoading": "Il caricamento richiede più tempo del previsto — recupero dei dati in corso.",
       "chartUnavailableTitle": "Grafico non disponibile",
-      "chartUnavailableBody": "Il flusso di candele non è connesso per questa combinazione. La lettura qui sotto resta disponibile."
+      "chartUnavailableBody": "Il flusso di candele non è connesso per questa combinazione. La lettura qui sotto resta disponibile.",
+      "marketNotCoveredTitle": "Non ancora disponibile su questo mercato",
+      "marketNotCoveredBody": "Il motore non segue ancora {market}. Non esiste alcuna lettura, alcun grafico né alcun prezzo per esso: nulla viene simulato nel frattempo.",
+      "marketNotCoveredChart": "Non esiste alcuna candela per {market}: il motore non segue questo mercato. Nulla viene disegnato al suo posto."
     },
     "chart": {
       "recent": "Go to the most recent candle",

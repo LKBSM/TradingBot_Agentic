@@ -1951,7 +1951,16 @@
       "unpin": "Dejar de fijar",
       "pinAria": "Fijar {combo}",
       "unpinAria": "Dejar de fijar {combo}",
-      "notSynced": "No sincronizado"
+      "notSynced": "No sincronizado",
+      "followedByEngine": "Seguidos por el motor",
+      "uxTestBadge": "Modo prueba UX",
+      "uxTestNote": "{count} mercados listados solo para visualización. El motor sigue únicamente {real}.",
+      "groupFxMajor": "Divisas mayores",
+      "groupFxMinor": "Divisas menores",
+      "groupFxExotic": "Divisas exóticas",
+      "groupMetal": "Metales",
+      "groupIndex": "Índices",
+      "groupCrypto": "Cripto"
     },
     "mobile": {
       "workspaceTitle": "Espacio de lectura",
@@ -2052,7 +2061,10 @@
       "errorNoData": "Aún no hay datos disponibles para esta combinación.",
       "slowLoading": "La carga está tardando más de lo previsto: seguimos obteniendo los datos.",
       "chartUnavailableTitle": "Gráfico no disponible",
-      "chartUnavailableBody": "El flujo de velas no está conectado para esta combinación. La lectura de abajo sigue disponible."
+      "chartUnavailableBody": "El flujo de velas no está conectado para esta combinación. La lectura de abajo sigue disponible.",
+      "marketNotCoveredTitle": "Aún no disponible en este mercado",
+      "marketNotCoveredBody": "El motor todavía no sigue {market}. No existe ninguna lectura, ningún gráfico ni ningún precio para él: no se simula nada mientras tanto.",
+      "marketNotCoveredChart": "No existe ninguna vela para {market}: el motor no sigue este mercado. No se dibuja nada en su lugar."
     },
     "chart": {
       "recent": "Go to the most recent candle",
