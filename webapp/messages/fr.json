@@ -2603,6 +2603,44 @@
     "twitterDescription": "Comprenez le marché — sans qu’on vous dise quoi faire. Lectures algorithmiques + chatbot M.I.A Agent."
   },
   "zones": {
+    "detail": {
+      "meta": {
+        "title": "Fiche de zone",
+        "description": "Le détail d'une zone détectée : bornes, comblement, historique des contacts et ce qui l'a créée."
+      },
+      "loading": "Lecture en cours…",
+      "crumbRoot": "Zones",
+      "crumbAria": "Fil d'Ariane",
+      "range": "Haut {high} · Bas {low} · Milieu {mid}",
+      "chartCaption": "{instrument} · {tf} — bougies réelles ; la zone est tracée en pointillés.",
+      "seeMore": "En savoir plus",
+      "seeMoreAria": "En savoir plus sur cette zone : {desc}",
+      "state": {
+        "heading": "État actuel",
+        "lastContact": "Dernier contact il y a {ago}.",
+        "noContact": "Aucun contact du prix enregistré depuis la formation."
+      },
+      "nested": {
+        "heading": "Zones à l'intérieur",
+        "status": "État : {status}."
+      },
+      "contacts": {
+        "heading": "Historique des contacts",
+        "more": "{count, plural, one {# contact précédent} other {# contacts précédents}}",
+        "less": "Replier les contacts précédents"
+      },
+      "missing": {
+        "title": "Zone introuvable",
+        "body": "Cette zone n'est plus présente dans la lecture en cours : le moteur ne la détecte plus sur ce marché et cette unité de temps.",
+        "error": "La lecture n'a pas pu être chargée, cette zone ne peut donc pas être affichée.",
+        "back": "Revenir aux zones"
+      },
+      "starters": {
+        "formed": "Pourquoi cette zone a-t-elle été formée ?",
+        "nested": "Montre-moi les zones à l'intérieur",
+        "tested": "Cette zone a été testée combien de fois ?"
+      }
+    },
     "title": "Zones",
     "refreshing": "actualisation…",
     "filterLabel": "Filtre",
@@ -2721,7 +2759,6 @@
       "entryExit": "Le prix est entré à {level} et en est ressorti sans la traverser.",
       "edgeTouch": "Le prix a touché le bord sans y pénétrer.",
       "traversal": "Le prix a traversé la zone à {level}.",
-      "fillProgress": "Comblement porté à {pct}.",
       "honesty": "M.I.A rapporte des faits — entrées, sorties, traversées, avec leurs dates et leurs niveaux — et te laisse conclure. Elle ne porte aucun jugement de valeur sur une zone : le SMC lui-même n’a pas de consensus là-dessus."
     },
     "timeline": {

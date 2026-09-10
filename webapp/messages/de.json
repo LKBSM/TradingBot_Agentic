@@ -2603,6 +2603,44 @@
     "twitterDescription": "Verstehen Sie den Markt — ohne dass man Ihnen sagt, was Sie tun sollen. Algorithmische Lesarten + Chatbot M.I.A Agent."
   },
   "zones": {
+    "detail": {
+      "meta": {
+        "title": "Zone sheet",
+        "description": "The detail of one detected zone: bounds, fill, contact history and what created it."
+      },
+      "loading": "Loading the reading…",
+      "crumbRoot": "Zones",
+      "crumbAria": "Breadcrumb",
+      "range": "High {high} · Low {low} · Mid {mid}",
+      "chartCaption": "{instrument} · {tf} — real candles; the zone is drawn dashed.",
+      "seeMore": "Learn more",
+      "seeMoreAria": "Learn more about this zone: {desc}",
+      "state": {
+        "heading": "Current state",
+        "lastContact": "Last contact {ago} ago.",
+        "noContact": "No price contact recorded since it formed."
+      },
+      "nested": {
+        "heading": "Zones inside",
+        "status": "Status: {status}."
+      },
+      "contacts": {
+        "heading": "Contact history",
+        "more": "{count, plural, one {# earlier contact} other {# earlier contacts}}",
+        "less": "Collapse earlier contacts"
+      },
+      "missing": {
+        "title": "Zone not found",
+        "body": "This zone is no longer in the current reading: the engine does not detect it on this market and timeframe any more.",
+        "error": "The reading could not be loaded, so this zone cannot be shown.",
+        "back": "Back to zones"
+      },
+      "starters": {
+        "formed": "Why was this zone formed?",
+        "nested": "Show me the zones inside it",
+        "tested": "How many times has this zone been tested?"
+      }
+    },
     "title": "Zones",
     "refreshing": "refreshing…",
     "filterLabel": "Filter",
@@ -2721,7 +2759,6 @@
       "entryExit": "The price entered at {level} and exited without traversing it.",
       "edgeTouch": "The price touched the edge without penetrating.",
       "traversal": "The price traversed the zone at {level}.",
-      "fillProgress": "Fill brought to {pct}.",
       "honesty": "M.I.A reports facts — entries, exits, traversals, with their dates and levels — and lets you conclude. It makes no value judgement about a zone: SMC itself has no consensus on that."
     },
     "timeline": {

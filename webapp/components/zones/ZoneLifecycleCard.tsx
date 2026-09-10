@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -364,7 +365,14 @@ function ContactsBlock({
   instrument: string;
   locale: string;
 }) {
-  const fills = fvgContactFills(zone);
+  // VZ-4 — the comblement is NOT printed per row. `fvgContactFills()` runs a
+  // cumulative extremum, so it is monotone by construction: every contact
+  // shallower than the deepest one seen so far repeats the previous figure
+  // verbatim (a real zone showed « 71,65 % » on twelve consecutive lines), and
+  // it was even appended to `edge_touch` rows — a kiss that filled nothing. The
+  // figure now appears ONCE, as the zone's CURRENT state (the fill bar below /
+  // the « État actuel » section of the detail page), never re-attributed to a
+  // past contact that did not produce it.
   const rows = zone.contacts
     .map((c, i) => ({ c, i }))
     .filter(({ c }) => c.outcome !== 'inside');
@@ -384,14 +392,10 @@ function ContactsBlock({
         } else {
           text = t('contacts.entryExit', { level });
         }
-        const fill = zone.kind === 'fvg' && fills[i] != null ? fills[i]! : null;
         return (
           <div className="cr" key={i}>
             <i>{time}</i>
-            <span>
-              {text}
-              {fill != null && ` ${t('contacts.fillProgress', { pct: fmt.pctShort(fill) })}`}
-            </span>
+            <span>{text}</span>
           </div>
         );
       })}
@@ -428,6 +432,12 @@ export interface ZoneLifecycleCardProps {
    * by displayed price/label (mission §4 id lock).
    */
   onNavigateToZone(zoneId: string, timeframe: string | null): void;
+  /**
+   * VZ-4 — href of this zone's detail page (`/zones/<engine id>`), already
+   * localized and carrying the combo. Given by the workspace, which is the one
+   * that knows the timeframe; the card never builds a route itself.
+   */
+  detailHref: string;
   isSelected?: boolean;
   cardRef?: React.Ref<HTMLElement>;
 }
@@ -445,6 +455,7 @@ export function ZoneLifecycleCard({
   onShowOnChart,
   onSelect,
   onNavigateToZone,
+  detailHref,
   isSelected = false,
   cardRef,
 }: ZoneLifecycleCardProps) {
@@ -623,6 +634,18 @@ export function ZoneLifecycleCard({
         >
           {isHidden ? t('actions.unhide') : t('actions.hide')}
         </button>
+        {/* VZ-4 — the full sheet. Same destination as the /app structure list:
+            both « En savoir plus » paths land on /zones/<id>. */}
+        <Link
+          className="btn zmore"
+          href={detailHref}
+          onClick={stop}
+          aria-label={t('detail.seeMoreAria', {
+            desc: `${tagLabel(zone)} ${fmt.band(zone.levelLow, zone.levelHigh, instrument)}`,
+          })}
+        >
+          {t('detail.seeMore')}
+        </Link>
         <button
           type="button"
           className="zdeth"

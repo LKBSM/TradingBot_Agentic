@@ -53,6 +53,7 @@ function renderCard(
         onToggleHide={noop}
         onShowOnChart={noop}
         onSelect={noop}
+        detailHref="/zones/z1"
         onNavigateToZone={onNavigateToZone}
       />
     </NextIntlClientProvider>,

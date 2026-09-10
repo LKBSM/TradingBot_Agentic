@@ -1616,3 +1616,202 @@
     bottom: calc(58px + env(safe-area-inset-bottom));
   }
 }
+
+/* ── VZ-4 · Fiche de zone (/zones/<id>) ──────────────────────────────────────
+   A document, not a stack of cards: headings and prose flow directly on the
+   page background. The ONLY framed things are the chart figure and the sweep
+   note (a real notice). Deliberately no card chrome anywhere else — that is the
+   whole point of the page (mission §0). */
+.app-shell .zdt {
+  max-width: 760px;
+  margin: 0 auto;
+  /* Same gutter as .pagewrap — the sheet must never sit flush against the
+     viewport edge on a phone. */
+  padding: 10px 20px 40px;
+  color: var(--txt);
+}
+.app-shell .zdt-crumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-label);
+  color: var(--dim);
+  margin-bottom: 14px;
+}
+.app-shell .zdt-crumb a {
+  color: var(--dim);
+  text-decoration: none;
+}
+.app-shell .zdt-crumb a:hover {
+  color: var(--txt);
+  text-decoration: underline;
+}
+.app-shell .zdt-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.app-shell .zdt-h1 {
+  font-size: 23px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+.app-shell .zdt-dir,
+.app-shell .zdt-state {
+  font-size: var(--fs-label);
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line-2);
+  color: var(--dim);
+  white-space: nowrap;
+}
+.app-shell .zdt-dir.bull {
+  color: var(--bull);
+  border-color: color-mix(in srgb, var(--bull) 40%, transparent);
+}
+.app-shell .zdt-dir.bear {
+  color: var(--bear, var(--dim));
+  border-color: color-mix(in srgb, var(--bear, var(--dim)) 40%, transparent);
+}
+.app-shell .zdt-range {
+  font-family: var(--font-mono);
+  font-size: var(--fs-secondary);
+  color: var(--txt);
+  margin: 8px 0 18px;
+}
+.app-shell .zdt-faint {
+  color: var(--faint);
+  font-family: var(--font-sans);
+}
+.app-shell .zdt-chart {
+  margin: 0 0 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  overflow: hidden;
+  background: var(--panel);
+}
+.app-shell .zdt-cap {
+  font-size: var(--fs-legal);
+  color: var(--faint);
+  padding: 6px 10px 8px;
+  margin: 0;
+}
+.app-shell .zdt-sweep {
+  border: 1px solid color-mix(in srgb, var(--liq) 45%, transparent);
+  background: color-mix(in srgb, var(--liq) 8%, transparent);
+  border-radius: var(--r-s);
+  padding: 10px 12px;
+  margin: 0 0 20px;
+  font-size: var(--fs-secondary);
+  line-height: 1.55;
+}
+.app-shell .zdt-sweep p {
+  margin: 0;
+}
+.app-shell .zdt-sweep p + p {
+  margin-top: 6px;
+}
+.app-shell .zdt-h2 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 24px 0 8px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--line);
+}
+.app-shell .zdt-fill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0 6px;
+}
+.app-shell .zdt-fillbar {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--panel-3);
+  overflow: hidden;
+}
+.app-shell .zdt-fillbar span {
+  display: block;
+  height: 100%;
+  background: var(--fvg-l);
+  border-radius: 3px;
+}
+.app-shell .zdt-fillval {
+  font-family: var(--font-mono);
+  font-size: var(--fs-secondary);
+  color: var(--txt);
+  white-space: nowrap;
+}
+.app-shell .zdt-muted,
+.app-shell .zdt-lead {
+  font-size: var(--fs-secondary);
+  color: var(--dim);
+  line-height: 1.55;
+  margin: 0 0 4px;
+}
+.app-shell .zdt-nested,
+.app-shell .zdt p {
+  font-size: var(--fs-secondary);
+  line-height: 1.6;
+  margin: 0 0 6px;
+}
+.app-shell .zdt-row {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  font-size: var(--fs-secondary);
+  line-height: 1.55;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--line-3);
+  margin: 0;
+}
+.app-shell .zdt-when {
+  flex: 0 0 auto;
+  min-width: 132px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  color: var(--faint);
+}
+.app-shell .zdt-more,
+.app-shell .zdt-back {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: var(--fs-label);
+  color: var(--dim);
+  background: none;
+  border: 0;
+  padding: 4px 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.app-shell .zdt-more:hover,
+.app-shell .zdt-back:hover {
+  color: var(--txt);
+}
+.app-shell .zdt-rule {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 26px 0 12px;
+}
+.app-shell .zdt-legal {
+  font-size: var(--fs-legal);
+  color: var(--faint);
+  line-height: 1.55;
+  margin: 0;
+}
+@media (max-width: 640px) {
+  .app-shell .zdt-row {
+    flex-direction: column;
+    gap: 2px;
+  }
+  .app-shell .zdt-when {
+    min-width: 0;
+  }
+  .app-shell .zdt-h1 {
+    font-size: 20px;
+  }
+}
