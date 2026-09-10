@@ -229,6 +229,27 @@ def build_chatbot(assembler: Any) -> Any:
     return chatbot
 
 
+def build_demo_chat_agent() -> Any:
+    """Instantiate the MIA-4S landing demo agent (simulation).
+
+    Takes NO assembler, deliberately: the showcase agent must not be able to
+    reach the engine, the live provider or the calendar — its only market data
+    is the frozen illustration scenario, and that is enforced by what it is
+    given, not by what it is told. Needs only ``ANTHROPIC_API_KEY``; fail-fast
+    on a missing key, consistent with the chatbot.
+
+    Returns the per-locale REGISTRY (the landing ships in nine languages), whose
+    ``for_locale`` builds and keeps one agent per language on first use — never a
+    bare Chatbot: the route calls ``for_locale`` on whatever this hands back.
+    """
+    from src.intelligence.chatbot.demo_agent import DemoAgentRegistry
+
+    anthropic_client = _build_anthropic_client()  # raises if key/package missing
+    registry = DemoAgentRegistry(anthropic_client)
+    logger.info("Demo chat agent registry (MIA-4S, simulation) built at startup")
+    return registry
+
+
 def build_scanner_translator() -> Any:
     """Instantiate the SC-2 scanner translator (phrase → palette) from env config.
 

@@ -153,11 +153,7 @@
         },
         "side": {
           "title": "The reading updates itself",
-          "desc": "Untick a layer: <b>the paragraph rewrites itself</b> to describe only what stays visible. The narration is never a fixed text — it is composed from what was detected.",
-          "try": "Try it",
-          "onlyOb": "Keep only the Order Blocks",
-          "onlyLiq": "Keep only the liquidity",
-          "all": "Show everything again"
+          "desc": "Untick a layer: <b>the paragraph rewrites itself</b> to describe only what stays visible. The narration is never a fixed text — it is composed from what was detected."
         },
         "chips": {
           "ob": "Order Blocks",
@@ -233,11 +229,19 @@
         "hiddenNote": "Hidden — the chart stays readable. The zone still exists, it is simply no longer drawn."
       },
       "mia": {
-        "greeting": "Pick a question on the right to see me answer.",
+        "greeting": "Pick a starter on the right, or just ask your own question.",
+        "live": {
+          "placeholder": "Ask your question…",
+          "send": "Send",
+          "thinking": "M.I.A is thinking…",
+          "left": "{n} questions left in this demo",
+          "offline": "The live demo isn't available here — these are recorded exchanges.",
+          "note": "This is the real M.I.A, on illustration data. She answers any question about this scenario or about the product."
+        },
         "side": {
           "title": "Ask her a real question",
           "desc": "M.I.A explains concepts, describes what was detected and drives the display. <b>She refuses anything that amounts to a prediction</b> — click the last option to see.",
-          "try": "Pick a question"
+          "try": "To get started"
         },
         "q": {
           "concept": {

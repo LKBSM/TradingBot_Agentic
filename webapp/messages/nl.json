@@ -153,11 +153,7 @@
         },
         "side": {
           "title": "De lezing wordt bijgewerkt",
-          "desc": "Vink een laag uit: <b>de alinea schrijft zichzelf opnieuw</b> om alleen te beschrijven wat zichtbaar blijft. De vertelling is nooit een vaste tekst — ze wordt samengesteld uit wat er is gedetecteerd.",
-          "try": "Probeer het",
-          "onlyOb": "Alleen de Order Blocks behouden",
-          "onlyLiq": "Alleen de liquiditeit behouden",
-          "all": "Alles weer weergeven"
+          "desc": "Vink een laag uit: <b>de alinea schrijft zichzelf opnieuw</b> om alleen te beschrijven wat zichtbaar blijft. De vertelling is nooit een vaste tekst — ze wordt samengesteld uit wat er is gedetecteerd."
         },
         "chips": {
           "ob": "Order Blocks",
@@ -233,11 +229,19 @@
         "hiddenNote": "Verborgen — de grafiek blijft leesbaar. De zone bestaat nog steeds, ze wordt alleen niet meer getekend."
       },
       "mia": {
-        "greeting": "Kies hiernaast een vraag om me te zien antwoorden.",
+        "greeting": "Kies rechts een startvraag, of stel meteen je eigen vraag.",
+        "live": {
+          "placeholder": "Stel je vraag…",
+          "send": "Versturen",
+          "thinking": "M.I.A denkt na…",
+          "left": "Nog {n} vragen in deze demo",
+          "offline": "De live demo is hier niet beschikbaar — dit zijn opgenomen gesprekken.",
+          "note": "Dit is de echte M.I.A, op illustratiegegevens. Ze beantwoordt elke vraag over dit scenario of over het product."
+        },
         "side": {
           "title": "Stel haar een echte vraag",
           "desc": "M.I.A legt de concepten uit, beschrijft wat er is gedetecteerd en bestuurt de weergave. <b>Ze weigert alles wat neerkomt op een voorspelling</b> — klik op de laatste optie om het te zien.",
-          "try": "Kies een vraag"
+          "try": "Om te beginnen"
         },
         "q": {
           "concept": {

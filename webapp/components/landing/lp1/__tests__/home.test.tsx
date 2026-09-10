@@ -285,10 +285,16 @@ describe('LP-1 home — mandatory mentions', () => {
   });
 });
 
-describe('LP-1 home — demos run offline', () => {
+/**
+ * The offline invariant, re-ported (MIA-4S). It used to cover all five demos;
+ * the M.I.A tab now talks to the real agent, so the rule is narrowed to where
+ * it still holds — and enforced there just as hard. The M.I.A tab has its own
+ * describe block below, which asserts what it does with and without a backend.
+ */
+describe('LP-1 home — the non-M.I.A demos run offline', () => {
   beforeEach(() => {
     vi.spyOn(global, 'fetch').mockImplementation(() => {
-      throw new Error('the landing must never hit the network');
+      throw new Error('these demos must never hit the network');
     });
   });
   afterEach(() => vi.restoreAllMocks());
@@ -297,10 +303,19 @@ describe('LP-1 home — demos run offline', () => {
     render(<DemoTabs />);
     // default: all layers on → narration mentions the CHOCH
     expect(screen.getByText(/CHOCH haussier/i)).toBeInTheDocument();
-    // "keep only the liquidity" → narration drops the CHOCH, keeps liquidity
-    fireEvent.click(screen.getByText('Ne garder que la liquidité'));
+    // Unticking the LAYER CHIPS is the promise the side paragraph makes
+    // ("Décoche une couche : le paragraphe se réécrit") — assert it on the
+    // chips themselves, not on a shortcut button.
+    fireEvent.click(screen.getByRole('button', { name: 'BOS / CHOCH' }));
     expect(screen.queryByText(/CHOCH haussier/i)).not.toBeInTheDocument();
+    // down to liquidity alone → only the liquidity fragment is left
+    fireEvent.click(screen.getByRole('button', { name: 'Order Blocks' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Fair Value Gaps' }));
+    expect(screen.queryByText(/Order Block haussier/i)).not.toBeInTheDocument();
     expect(screen.getByText(/liquidité achat reste intacte/i)).toBeInTheDocument();
+    // and the honest empty state when nothing is left to describe
+    fireEvent.click(screen.getByRole('button', { name: 'Liquidité' }));
+    expect(screen.getByText(/n'invente rien pour remplir le vide/i)).toBeInTheDocument();
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
@@ -319,13 +334,21 @@ describe('LP-1 home — demos run offline', () => {
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
-  it('a MIA question changes the structure demo layers (grounded action)', () => {
+  it('the zones demo draws each zone in the structure tab visual language', () => {
     render(<DemoTabs />);
-    fireEvent.click(screen.getByRole('tab', { name: /Parler à M\.I\.A/i }));
-    fireEvent.click(screen.getByText('Montre-moi seulement les OB non testés'));
-    // the answer confirms only OBs remain, and the action note appears
-    expect(screen.getByText(/Seuls les Order Blocks/i)).toBeInTheDocument();
-    expect(screen.getByText(/Les couches du graphique ont changé/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: /Suivre une zone/i }));
+    // zone 1 — an untested Order Block, drawn untouched
+    expect(screen.getByText(/ORDER BLOCK ↑ · active · jamais testée/)).toBeInTheDocument();
+    // zone 2 — a Fair Value Gap eaten at 60 %
+    fireEvent.click(screen.getByRole('tab', { name: 'Fair Value Gap · comblé à 60 %' }));
+    expect(screen.getByText(/FAIR VALUE GAP ↓ · pénétrée/)).toBeInTheDocument();
+    // zone 3 — a spent Order Block
+    fireEvent.click(screen.getByRole('tab', { name: 'Order Block · comblé' }));
+    expect(screen.getByText(/ORDER BLOCK ↓ · comblée/)).toBeInTheDocument();
+    // "hide from the chart" removes the DRAWING; the facts stay readable
+    fireEvent.click(screen.getByRole('button', { name: 'Masquer du graphique' }));
+    expect(screen.queryByText(/ORDER BLOCK ↓ · comblée/)).not.toBeInTheDocument();
+    expect(screen.getByText(/Elle n'est plus active/i)).toBeInTheDocument();
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
@@ -337,5 +360,95 @@ describe('LP-1 home — demos run offline', () => {
     const panel = screen.getByText('Parcours moyen récent');
     expect(panel).toBeInTheDocument();
     expect(screen.getByText(/Ce que ça ne dit pas/i)).toBeInTheDocument();
+  });
+});
+
+/**
+ * MIA-4S — the M.I.A tab is the one demo that DOES call the network, because it
+ * is the real agent. These tests pin both halves of that: what it shows when the
+ * backend answers, and what it shows when there is none.
+ */
+describe('LP-1 home — the M.I.A tab talks to the real agent', () => {
+  const sse = (payload: Record<string, unknown>) =>
+    `data: ${JSON.stringify({ event: 'activity' })}\n\ndata: ${JSON.stringify({ event: 'answer', ...payload })}\n\n`;
+
+  const mockAnswer = (payload: Record<string, unknown>) =>
+    vi.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 200,
+      body: undefined,
+      text: async () => sse(payload),
+    } as unknown as Response);
+
+  afterEach(() => vi.restoreAllMocks());
+
+  const openMia = () => {
+    render(<DemoTabs />);
+    fireEvent.click(screen.getByRole('tab', { name: /Parler à M\.I\.A/i }));
+  };
+
+  it('a starter is sent to the agent and its real answer is shown', async () => {
+    mockAnswer({ content: 'Le scénario montre un Order Block jamais testé.', messages_left: 5 });
+    openMia();
+    fireEvent.click(screen.getByRole('button', { name: 'Montre-moi seulement les OB non testés' }));
+    expect(
+      await screen.findByText('Le scénario montre un Order Block jamais testé.'),
+    ).toBeInTheDocument();
+    // the starter is a PROMPT, not a canned reply: it was posted to the agent
+    const call = (global.fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0]!;
+    expect(call[0]).toBe('/api/demo/chat/stream');
+    expect(JSON.parse(String((call[1] as RequestInit).body)).user_message).toBe(
+      'Montre-moi seulement les OB non testés',
+    );
+    expect(await screen.findByText(/5 questions restantes/)).toBeInTheDocument();
+  });
+
+  it('a freely typed question reaches the agent (the starters are not a menu)', async () => {
+    mockAnswer({ content: 'L’abonnement est à 39 USD par mois.', messages_left: 4 });
+    openMia();
+    fireEvent.change(screen.getByLabelText('Pose ta question…'), {
+      target: { value: 'Combien coûte l’abonnement ?' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Envoyer' }));
+    expect(await screen.findByText('L’abonnement est à 39 USD par mois.')).toBeInTheDocument();
+  });
+
+  it('a validated view action really moves the chart layers', async () => {
+    mockAnswer({
+      content: 'J’ai masqué les Fair Value Gaps.',
+      messages_left: 4,
+      view_actions: [{ action: 'set_layer_visibility', params: { layer: 'fvg', visible: false } }],
+    });
+    openMia();
+    fireEvent.click(screen.getByRole('button', { name: 'Montre-moi seulement les OB non testés' }));
+    expect(await screen.findByText('J’ai masqué les Fair Value Gaps.')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: /Lire une structure/i }));
+    // the FVG fragment is gone from the narration, the OB one stays
+    expect(screen.queryByText(/Fair Value Gap baissier comblé/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/Order Block haussier/i)).toBeInTheDocument();
+  });
+
+  it('a reached quota is stated plainly and closes the composer', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValue({
+      ok: false,
+      status: 429,
+      json: async () => ({ detail: { reason: 'session_limit', message: 'On s’arrête ici.' } }),
+    } as unknown as Response);
+    openMia();
+    // NB: the i18n copy uses a STRAIGHT apostrophe here — matching a curly one fails.
+    fireEvent.click(screen.getByRole('button', { name: "C'est quoi un Order Block ?" }));
+    expect(await screen.findByText('On s’arrête ici.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Envoyer' })).toBeDisabled();
+  });
+
+  it('with no backend it degrades to the recorded exchanges, and says so', async () => {
+    vi.spyOn(global, 'fetch').mockRejectedValue(new Error('offline'));
+    openMia();
+    fireEvent.click(screen.getByRole('button', { name: 'Montre-moi seulement les OB non testés' }));
+    // the recorded answer is shown — and labelled as recorded, not passed off
+    expect(await screen.findByText(/Seuls les Order Blocks/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/La démonstration en direct n'est pas disponible ici/i),
+    ).toBeInTheDocument();
   });
 });

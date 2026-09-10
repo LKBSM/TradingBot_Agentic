@@ -153,11 +153,7 @@
         },
         "side": {
           "title": "A leitura atualiza-se",
-          "desc": "Desmarca uma camada: <b>o parágrafo reescreve-se</b> para descrever apenas o que permanece visível. A narração nunca é um texto fixo — é composta a partir do que foi detetado.",
-          "try": "Experimenta",
-          "onlyOb": "Manter apenas os Order Blocks",
-          "onlyLiq": "Manter apenas a liquidez",
-          "all": "Voltar a mostrar tudo"
+          "desc": "Desmarca uma camada: <b>o parágrafo reescreve-se</b> para descrever apenas o que permanece visível. A narração nunca é um texto fixo — é composta a partir do que foi detetado."
         },
         "chips": {
           "ob": "Order Blocks",
@@ -233,11 +229,19 @@
         "hiddenNote": "Ocultada — o gráfico continua legível. A zona continua a existir, apenas deixou de ser desenhada."
       },
       "mia": {
-        "greeting": "Escolhe uma pergunta ao lado para me veres responder.",
+        "greeting": "Escolhe uma pergunta à direita, ou faz diretamente a tua.",
+        "live": {
+          "placeholder": "Faz a tua pergunta…",
+          "send": "Enviar",
+          "thinking": "A M.I.A está a pensar…",
+          "left": "Faltam {n} perguntas nesta demonstração",
+          "offline": "A demonstração ao vivo não está disponível aqui — estes são diálogos gravados.",
+          "note": "É a verdadeira M.I.A, com dados de ilustração. Responde a qualquer pergunta sobre este cenário ou sobre o produto."
+        },
         "side": {
           "title": "Faz-lhe uma verdadeira pergunta",
           "desc": "A M.I.A explica os conceitos, descreve o que foi detetado e pilota o ecrã. <b>Ela recusa tudo o que seja da ordem da previsão</b> — clica na última opção para ver.",
-          "try": "Escolhe uma pergunta"
+          "try": "Para começar"
         },
         "q": {
           "concept": {

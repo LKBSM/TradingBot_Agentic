@@ -61,6 +61,14 @@ const PURELY_LOCAL_LIES: Record<string, string[]> = {
   en: ['purely local', 'on-device', 'on your device', 'never leaves your device'],
 };
 
+/** Look a locale up in a proof-word table, LOUDLY. A locale added to the app
+ * without its proof-words must fail this guard, never slip through untested. */
+function proofWords<T>(table: Record<string, T>, locale: string, what: string): T {
+  const value = table[locale];
+  if (value === undefined) throw new Error(`no ${what} declared for locale "${locale}"`);
+  return value;
+}
+
 function dictation(locale: string) {
   const d = LOCALES[locale]?.scannerChat?.dictation;
   if (!d) throw new Error(`missing scannerChat.dictation for ${locale}`);
@@ -82,8 +90,9 @@ describe('dictation copy — present and complete in all 9 locales', () => {
         expect(d[k].length, `${locale}.${k}`).toBeGreaterThan(0);
       }
       for (const code of ['not-allowed', 'no-speech', 'audio-capture', 'network', 'timeout', 'unknown']) {
-        expect(d.errors[code], `${locale}.errors.${code}`).toBeTypeOf('string');
-        expect(d.errors[code].length, `${locale}.errors.${code}`).toBeGreaterThan(0);
+        const text = d.errors[code];
+        expect(text, `${locale}.errors.${code}`).toBeTypeOf('string');
+        expect(String(text).length, `${locale}.errors.${code}`).toBeGreaterThan(0);
       }
     });
   }
@@ -93,7 +102,7 @@ describe('dictation privacy note — describes the REAL browser mechanism', () =
   for (const locale of Object.keys(LOCALES)) {
     it(`${locale} names the browser and acknowledges server transit`, () => {
       const note = dictation(locale).privacy;
-      const [browserWord, serverWord] = MECHANISM_WORDS[locale];
+      const [browserWord, serverWord] = proofWords(MECHANISM_WORDS, locale, 'mechanism words');
       expect(note, `${locale} privacy must mention the browser`).toContain(browserWord);
       expect(note, `${locale} privacy must acknowledge server transit`).toContain(serverWord);
     });
@@ -113,11 +122,12 @@ describe('dictation errors — surface-neutral (no "type your strategy")', () =>
   for (const locale of Object.keys(LOCALES)) {
     it(`${locale} error copy invites the keyboard, not "the strategy"`, () => {
       const { errors } = dictation(locale);
-      const strategyWord = STRATEGY_WORD[locale].toLowerCase();
+      const word = proofWords(STRATEGY_WORD, locale, 'strategy word');
+      const strategyWord = word.toLowerCase();
       for (const [code, text] of Object.entries(errors)) {
         expect(
           text.toLowerCase().includes(strategyWord),
-          `${locale}.errors.${code} must be surface-neutral (no « ${STRATEGY_WORD[locale]} »)`,
+          `${locale}.errors.${code} must be surface-neutral (no « ${word} »)`,
         ).toBe(false);
       }
     });
