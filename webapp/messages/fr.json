@@ -3306,11 +3306,19 @@
         "body": "Je ne dis pas quoi trader, ni quand acheter ou vendre. Le scanner montre où des conditions que TU as décrites sont présentes ; la décision reste la tienne."
       }
     },
+    "live": {
+      "reading": "Je lis ta phrase…",
+      "read": "Lecture à jour.",
+      "capped": "Lecture automatique en pause sur cet onglet. Utilise le bouton pour lire maintenant.",
+      "proposalNote": "Proposé d’après ton texte — retire ou ajuste ce que tu veux.",
+      "honestyPending": "Je finis de lire ta phrase. Ce que j’ai supposé et ce que je n’ai pas pu traduire s’affichent dès que tu t’arrêtes d’écrire."
+    },
     "errors": {
       "unavailable": "La traduction n'est pas disponible sur cet environnement. Tu peux composer à la main.",
       "failed": "La traduction a échoué. Réessaie, ou compose à la main.",
       "empty": "Écris d'abord ta stratégie.",
       "scanUnavailable": "Le service de scan n'est pas disponible sur cet environnement.",
+      "rateLimited": "Trop de traductions en peu de temps. Réessaie dans un instant.",
       "scanFailed": "Le scan a échoué. Réessaie dans un instant."
     }
   }

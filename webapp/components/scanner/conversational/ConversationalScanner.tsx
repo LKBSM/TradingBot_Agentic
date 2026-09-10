@@ -3,25 +3,24 @@
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import type {
   ConditionsConfig,
-  ConditionsScanResponse,
   ConditionType,
   ControlName,
   ScanCondition,
 } from '@/lib/conditions/types';
-import { fetchConditionsScan, ScanNotAvailableError } from '@/lib/conditions/api-client';
-import { useLiveComboCount } from '@/lib/conditions/use-live-combo-count';
-import { useSavedStrategies, type SavedStrategy } from '@/lib/conditions/strategy-store';
+import { useLiveScan } from '@/lib/conditions/use-live-scan';
 import { useAutoRefreshPref } from '@/lib/conditions/auto-refresh-store';
+import { useCandleCloseRefresh } from '@/lib/conditions/use-candle-close-refresh';
+import { useSavedStrategies, type SavedStrategy } from '@/lib/conditions/strategy-store';
+import { useLiveTranslation } from '@/lib/scanner-chat/use-live-translation';
 import {
-  translateStrategy,
-  TranslateUnavailableError,
-  type TranslateAssumption,
-  type TranslateResult,
-  type TranslateUntranslatable,
-} from '@/lib/scanner-chat/translate-client';
+  EMPTY_MANUAL_STATE,
+  conditionKey,
+  purgeRemovals,
+  reconcile,
+  type ManualState,
+} from '@/lib/scanner-chat/reconciliation';
 import { ScanResults } from '../ScanResults';
 import { StrategyPanel } from '../StrategyPanel';
 import { DescribePanel } from './DescribePanel';
@@ -29,22 +28,34 @@ import { EditableConditionCard } from './EditableConditionCard';
 import { AddConditionPicker } from './AddConditionPicker';
 import { useConditionLabels } from './labels';
 
-type Mode = 'describe' | 'translation' | 'refusal' | 'results' | 'strategies';
-
-interface Working {
-  sourceText: string;
-  conditions: ScanCondition[];
-  assumptions: TranslateAssumption[];
-  untranslatable: TranslateUntranslatable[];
-}
+type Mode = 'compose' | 'strategies';
 
 /**
- * SC-2 — the conversational scanner. An ADDITIONAL entry to the scanner, never a
- * replacement: it translates a sentence into conditions of the CLOSED palette,
- * always shows what it understood / assumed / could not translate, and lets the
- * user edit everything before anything runs. Results reuse the SC-1 ScanResults
- * (three non-maskable blocks, no sort) and strategies reuse the SC-1 StrategyPanel
- * (device-local, counts re-evaluated on open, stale counts flagged).
+ * SC-2/SC-4 — the conversational scanner. An ADDITIONAL entry to the scanner,
+ * never a replacement: it translates a sentence into conditions of the CLOSED
+ * palette, always shows what it understood / assumed / could not translate, and
+ * lets the user edit everything. Results reuse the SC-1 `ScanResults` (three
+ * non-maskable blocks, no sort) and strategies reuse the SC-1 `StrategyPanel`.
+ *
+ * SC-4 replaced the click-through (describe → verify → results, three screens
+ * that each REPLACED the previous one) with a single composition surface: the
+ * field, the reading and the results are on screen together, and the reading
+ * advances as the sentence is written. Two consequences drive everything below.
+ *
+ *   · The field is never unmounted. That is why a refusal now renders INLINE
+ *     (`RefusalNotice`) instead of taking over the page: refusing mid-sentence
+ *     by unmounting the textarea would destroy text the user was still writing.
+ *     The refusal is no softer for being smaller — it still translates nothing.
+ *
+ *   · The automatic reading is a PROPOSAL, never an authority. Removals, edits
+ *     and additions made by hand survive every re-translation, and a removal is
+ *     released only when the words behind it leave the text. That logic lives in
+ *     `reconciliation.ts`, deliberately pure and tested on its own.
+ *
+ * The results are unchanged and un-special: the same `ScanResults` the manual
+ * palette renders, so « ce qui va à l'encontre » is exactly as visible and
+ * exactly as non-collapsible here as it is there. No second results pipeline,
+ * and no click between a reading and its results.
  */
 export function ConversationalScanner({ locale }: { locale: string }) {
   const t = useTranslations('scannerChat');
@@ -52,123 +63,132 @@ export function ConversationalScanner({ locale }: { locale: string }) {
   const saved = useSavedStrategies();
   const { enabled: autoRefresh, setEnabled: setAutoRefresh } = useAutoRefreshPref();
 
-  const [mode, setMode] = React.useState<Mode>('describe');
+  const [mode, setMode] = React.useState<Mode>('compose');
   const [text, setText] = React.useState('');
-  const [translating, setTranslating] = React.useState(false);
-  const [inlineError, setInlineError] = React.useState<string | null>(null);
-  const [working, setWorking] = React.useState<Working | null>(null);
-  const [refusalKind, setRefusalKind] = React.useState<string | null>(null);
-
-  const [response, setResponse] = React.useState<ConditionsScanResponse | null>(null);
-  const [scanning, setScanning] = React.useState(false);
+  const [manual, setManual] = React.useState<ManualState>(EMPTY_MANUAL_STATE);
   const [saveName, setSaveName] = React.useState('');
   const [saveFeedback, setSaveFeedback] = React.useState<string | null>(null);
+  const inputRef = React.useRef<HTMLTextAreaElement | null>(null);
 
-  const workingConfig: ConditionsConfig | null = working
-    ? { logic: 'AND', conditions: working.conditions }
-    : null;
-  const { live } = useLiveComboCount(mode === 'translation' ? workingConfig : null);
+  const { live, translateNow, reset: resetLive } = useLiveTranslation(text, locale);
 
-  // ── Translate ──────────────────────────────────────────────────────────────
-  const runTranslate = React.useCallback(
-    async (source: string) => {
-      const trimmed = source.trim();
-      if (!trimmed) return;
-      setTranslating(true);
-      setInlineError(null);
-      let result: TranslateResult;
-      try {
-        result = await translateStrategy(trimmed, locale);
-      } catch (err) {
-        setTranslating(false);
-        if (err instanceof TranslateUnavailableError) {
-          setInlineError(t('errors.unavailable'));
-        } else {
-          setInlineError(t('errors.failed'));
-        }
-        return;
-      }
-      setTranslating(false);
-
-      if (result.outcome === 'refused' && result.refusal) {
-        setRefusalKind(result.refusal.kind);
-        setMode('refusal');
-        return;
-      }
-      if (result.outcome === 'error') {
-        setInlineError(t('errors.failed'));
-        return;
-      }
-      if (result.outcome === 'empty') {
-        setInlineError(t('errors.empty'));
-        return;
-      }
-      setWorking({
-        sourceText: trimmed,
-        conditions: result.conditions,
-        assumptions: result.assumptions,
-        untranslatable: result.untranslatable,
-      });
-      setSaveName('');
-      setSaveFeedback(null);
-      setMode('translation');
-    },
-    [locale, t],
+  // A removal lives only as long as the words that produced it. Derived at
+  // render from the CURRENT text (not the translated one) so the release is
+  // immediate: the instant the fragment is edited away, the condition is free
+  // to come back on the next reading.
+  const activeRemovals = React.useMemo(
+    () => purgeRemovals(manual.removed, text),
+    [manual.removed, text],
   );
 
-  // ── Edit working conditions ─────────────────────────────────────────────────
-  const updateCondition = React.useCallback((index: number, next: ScanCondition) => {
-    setWorking((prev) => {
-      if (!prev) return prev;
-      const conditions = prev.conditions.slice();
-      conditions[index] = next;
-      return { ...prev, conditions };
-    });
-  }, []);
+  // Emptying the field is a fresh start for everything DERIVED from text:
+  // removals and edits are filed under proposals that no longer exist. Additions
+  // are NOT cleared — they belong to the user and to no sentence, which is also
+  // what makes `loadStrategy` (empty text + `added`) survive this effect.
+  const textIsEmpty = text.trim().length === 0;
+  React.useEffect(() => {
+    if (!textIsEmpty) return;
+    setManual((prev) =>
+      prev.removed.length === 0 && Object.keys(prev.edited).length === 0
+        ? prev
+        : { ...prev, removed: [], edited: {} },
+    );
+  }, [textIsEmpty]);
 
-  const removeCondition = React.useCallback((index: number) => {
-    setWorking((prev) => {
-      if (!prev) return prev;
-      const conditions = prev.conditions.filter((_, i) => i !== index);
-      return { ...prev, conditions };
-    });
-  }, []);
+  const reconciled = React.useMemo(
+    () => reconcile(live.conditions, live.sources, { ...manual, removed: activeRemovals }),
+    [live.conditions, live.sources, manual, activeRemovals],
+  );
+
+  const conditions = React.useMemo(() => reconciled.map((r) => r.condition), [reconciled]);
+  const workingConfig: ConditionsConfig | null =
+    conditions.length > 0 ? { logic: 'AND', conditions } : null;
+
+  const { scan, refresh: refreshScan } = useLiveScan(workingConfig);
+
+  // Auto-refresh on candle close, aligned with the manual palette. Before SC-4
+  // this page passed the preference to `ScanResults` (which renders the toggle)
+  // but never armed the timer, so the control was decorative here. The live flow
+  // re-scans on every change to the reading, but NOT when a candle closes under
+  // an unchanged reading — which is exactly what this covers.
+  const scannedTimeframes = React.useMemo(
+    () => Array.from(new Set((scan.response?.matches ?? []).map((m) => m.timeframe))),
+    [scan.response],
+  );
+  useCandleCloseRefresh({
+    timeframes: scannedTimeframes,
+    enabled: autoRefresh && !!scan.response,
+    isScanning: scan.status === 'loading',
+    onRefresh: refreshScan,
+  });
+
+  // ── Manual interventions ────────────────────────────────────────────────────
+  const removeCondition = React.useCallback(
+    (index: number) => {
+      const target = reconciled[index];
+      if (!target) return;
+      setManual((prev) => {
+        if (target.userAdded) {
+          return {
+            ...prev,
+            added: prev.added.filter((c) => conditionKey(c) !== target.proposalKey),
+          };
+        }
+        // File the removal under M.I.A's own proposal, with the fragment that
+        // produced it, and drop any edit of it — an edited-then-removed chip
+        // must not resurface wearing its old edit.
+        const { [target.proposalKey]: _dropped, ...edited } = prev.edited;
+        return {
+          ...prev,
+          edited,
+          removed: [...prev.removed, { key: target.proposalKey, phrase: target.phrase }],
+        };
+      });
+    },
+    [reconciled],
+  );
+
+  const updateCondition = React.useCallback(
+    (index: number, next: ScanCondition) => {
+      const target = reconciled[index];
+      if (!target) return;
+      setManual((prev) => {
+        if (target.userAdded) {
+          return {
+            ...prev,
+            added: prev.added.map((c) => (conditionKey(c) === target.proposalKey ? next : c)),
+          };
+        }
+        // Keyed on the PROPOSAL, so the next reading re-applies the same edit
+        // instead of silently resetting the value the user just corrected.
+        return { ...prev, edited: { ...prev.edited, [target.proposalKey]: next } };
+      });
+    },
+    [reconciled],
+  );
 
   const addCondition = React.useCallback((condition: ScanCondition) => {
-    setWorking((prev) => (prev ? { ...prev, conditions: [...prev.conditions, condition] } : prev));
+    setManual((prev) => {
+      const key = conditionKey(condition);
+      if (prev.added.some((c) => conditionKey(c) === key)) return prev;
+      // Adding back something previously removed must actually add it back.
+      return {
+        ...prev,
+        removed: prev.removed.filter((r) => r.key !== key),
+        added: [...prev.added, condition],
+      };
+    });
   }, []);
 
-  // ── Run the scan (state 5) ──────────────────────────────────────────────────
-  const runScan = React.useCallback(async () => {
-    if (!workingConfig || workingConfig.conditions.length === 0) return;
-    setScanning(true);
-    setInlineError(null);
-    try {
-      const res = await fetchConditionsScan(workingConfig);
-      setResponse(res);
-      setMode('results');
-    } catch (err) {
-      const message =
-        err instanceof ScanNotAvailableError ? t('errors.scanUnavailable') : t('errors.scanFailed');
-      setInlineError(message);
-    } finally {
-      setScanning(false);
-    }
-  }, [workingConfig, t]);
+  const clearAll = React.useCallback(() => {
+    setText('');
+    setManual(EMPTY_MANUAL_STATE);
+    setSaveFeedback(null);
+    resetLive();
+    inputRef.current?.focus();
+  }, [resetLive]);
 
-  const refreshScan = React.useCallback(async () => {
-    if (!workingConfig) return;
-    setScanning(true);
-    try {
-      const res = await fetchConditionsScan(workingConfig);
-      setResponse(res);
-    } catch {
-      /* keep the last good results; the meta line signals staleness */
-    } finally {
-      setScanning(false);
-    }
-  }, [workingConfig]);
-
+  // ── Strategies ──────────────────────────────────────────────────────────────
   const saveStrategy = React.useCallback(() => {
     if (!workingConfig) return;
     const result = saved.saveStrategy(saveName, workingConfig);
@@ -183,85 +203,36 @@ export function ConversationalScanner({ locale }: { locale: string }) {
   const loadStrategy = React.useCallback(
     (strategy: SavedStrategy) => {
       saved.markUsed(strategy.id);
-      setWorking({
-        sourceText: strategy.name,
-        conditions: strategy.config.conditions,
-        assumptions: [],
-        untranslatable: [],
-      });
+      // A loaded strategy belongs to the user, not to any sentence — it lands in
+      // `added`, where no re-translation can touch it.
       setText('');
+      resetLive();
+      setManual({ removed: [], edited: {}, added: strategy.config.conditions });
       setSaveName(strategy.name);
-      setMode('translation');
+      setMode('compose');
     },
-    [saved],
+    [saved, resetLive],
   );
 
-  // Map condition type → set of controls M.I.A assumed (inline card flag).
+  // Map condition type → controls M.I.A assumed a value for (inline card flag).
   const assumedByType = React.useMemo(() => {
     const map = new Map<ConditionType, Set<ControlName>>();
-    for (const a of working?.assumptions ?? []) {
+    for (const a of live.assumptions ?? []) {
       const set = map.get(a.condition_type) ?? new Set<ControlName>();
       set.add(a.control);
       map.set(a.condition_type, set);
     }
     return map;
-  }, [working]);
-
-  // ── Render per mode ──────────────────────────────────────────────────────────
-  if (mode === 'describe') {
-    return (
-      <DescribePanel
-        text={text}
-        onTextChange={setText}
-        onTranslate={() => runTranslate(text)}
-        onOpenStrategies={() => setMode('strategies')}
-        isTranslating={translating}
-        inlineError={inlineError}
-        locale={locale}
-      />
-    );
-  }
-
-  if (mode === 'refusal') {
-    return (
-      <RefusalPanel
-        kind={refusalKind}
-        sourceText={working?.sourceText ?? text}
-        onReformulate={() => {
-          setMode('describe');
-        }}
-        onExample={(example) => {
-          setText(example);
-          setMode('describe');
-        }}
-      />
-    );
-  }
-
-  if (mode === 'results' && response && workingConfig) {
-    return (
-      <div className="space-y-4">
-        <BackBar label={t('results.back')} onBack={() => setMode('translation')} />
-        <ScanResults
-          response={response}
-          config={workingConfig}
-          locale={locale}
-          onEdit={() => setMode('translation')}
-          onRefresh={refreshScan}
-          isRefreshing={scanning}
-          autoRefreshEnabled={autoRefresh}
-          onToggleAutoRefresh={setAutoRefresh}
-        />
-      </div>
-    );
-  }
+  }, [live.assumptions]);
 
   if (mode === 'strategies') {
     return (
       <div className="space-y-4">
-        <BackBar label={t('strategies.back')} onBack={() => setMode('describe')} />
+        <BackBar label={t('strategies.back')} onBack={() => setMode('compose')} />
         <div>
-          <h1 className="fs-title font-semibold tracking-tight text-foreground">{t('strategies.title')}</h1>
+          <h1 className="fs-title font-semibold tracking-tight text-foreground">
+            {t('strategies.title')}
+          </h1>
           <p className="mt-1 fs-secondary text-muted-foreground">{t('strategies.subtitle')}</p>
         </div>
         {saved.strategies.length === 0 ? (
@@ -284,154 +255,282 @@ export function ConversationalScanner({ locale }: { locale: string }) {
     );
   }
 
-  // mode === 'translation'
-  if (!working) return null;
-  const hasConditions = working.conditions.length > 0;
-  const isPartial = working.untranslatable.length > 0;
-  const presentTypes = new Set<ConditionType>(working.conditions.map((c) => c.type));
+  const hasConditions = conditions.length > 0;
+  const presentTypes = new Set<ConditionType>(conditions.map((c) => c.type));
+  const untranslatable = live.untranslatable ?? [];
+  const assumptions = live.assumptions ?? [];
+  // Withheld, not absent: the sentence is still moving, so the honesty blocks
+  // have not been read through yet. Saying so beats showing them about a
+  // half-written clause, and beats showing a stale copy of the previous read.
+  const honestyPending = live.status !== 'idle' && live.assumptions === null && !live.refusal;
 
   return (
-    <div className="space-y-5">
-      <div>
-        <h1 className="fs-title font-semibold tracking-tight text-foreground">
-          {hasConditions ? (isPartial ? t('translation.partialTitle') : t('translation.title')) : t('translation.noneTitle')}
-        </h1>
-        <p className="mt-1 fs-secondary text-muted-foreground">
-          {hasConditions ? t('translation.subtitle') : t('translation.noneSubtitle')}
-        </p>
+    <div className="lg:grid lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] lg:items-start lg:gap-5">
+      {/* Compose — never unmounted, so nothing being written can be lost. */}
+      <div className="lg:sticky lg:top-4">
+        <DescribePanel
+          text={text}
+          onTextChange={setText}
+          onTranslate={translateNow}
+          onOpenStrategies={() => setMode('strategies')}
+          isTranslating={live.status === 'reading'}
+          inlineError={live.error ? t(`errors.${live.error}`) : null}
+          locale={locale}
+          textareaRef={inputRef}
+          statusSlot={<LiveStatusLine status={live.status} />}
+        />
       </div>
 
-      {/* The original request — recalled and editable. */}
-      <div className="rounded-2xl border border-border bg-card p-4">
-        <div className="flex items-start gap-3">
-          <div className="flex-1">
-            <div className="mb-1 fs-legal text-muted-foreground">{t('translation.yourRequest')}</div>
-            <div className="fs-body leading-relaxed text-foreground">“{working.sourceText}”</div>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setText(working.sourceText);
-              setMode('describe');
+      {/* Live reading + results. */}
+      <div className="mt-4 space-y-4 lg:mt-0">
+        {live.refusal && (
+          <RefusalNotice
+            kind={live.refusal.kind}
+            onClear={clearAll}
+            onExample={(example) => {
+              setManual(EMPTY_MANUAL_STATE);
+              setText(example);
+              inputRef.current?.focus();
             }}
+          />
+        )}
+
+        {hasConditions && (
+          <div>
+            <div className="mb-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <span className="fs-label uppercase tracking-widest text-muted-foreground">
+                {t('translation.conditionsLabel', { count: conditions.length })}
+              </span>
+              <span className="fs-legal text-muted-foreground">{t('live.proposalNote')}</span>
+            </div>
+            <div className="grid gap-2 xl:grid-cols-2">
+              {reconciled.map((item, index) => (
+                <EditableConditionCard
+                  key={`${item.proposalKey}-${item.userAdded ? 'user' : 'mia'}`}
+                  condition={item.condition}
+                  index={index}
+                  assumedControls={
+                    item.userEdited || item.userAdded
+                      ? undefined
+                      : assumedByType.get(item.condition.type)
+                  }
+                  onChange={updateCondition}
+                  onRemove={removeCondition}
+                />
+              ))}
+              <AddConditionPicker present={presentTypes} onAdd={addCondition} />
+            </div>
+          </div>
+        )}
+
+        {/* « Ce que j'ai supposé » — mandatory, never invisible. */}
+        {assumptions.length > 0 && (
+          <div
+            data-testid="assumptions-block"
+            className="rounded-r-xl border border-amber-500/40 border-l-2 border-l-amber-500 bg-amber-500/5 p-3.5"
           >
-            {t('translation.modify')}
-          </Button>
-        </div>
-      </div>
-
-      {hasConditions && (
-        <div>
-          <div className="mb-2 fs-label uppercase tracking-widest text-muted-foreground">
-            {t('translation.conditionsLabel', { count: working.conditions.length })}
+            <h4 className="mb-1.5 fs-secondary font-semibold text-amber-600">
+              {t('assumptions.title')}
+            </h4>
+            <ul className="space-y-1">
+              {assumptions.map((a, i) => (
+                <li
+                  key={i}
+                  className="fs-secondary leading-relaxed text-amber-700/90 dark:text-amber-200/80"
+                >
+                  {t('assumptions.item', {
+                    phrase: a.source_phrase ?? t('assumptions.aVagueWord'),
+                    condition: conditionLabel(a.condition_type),
+                    value: a.value ? optionLabel(a.control, a.value) : '—',
+                  })}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-1.5 fs-label text-amber-700/80 dark:text-amber-200/70">
+              {t('assumptions.note')}
+            </p>
           </div>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {working.conditions.map((condition, index) => (
-              <EditableConditionCard
-                key={`${condition.type}-${index}`}
-                condition={condition}
-                index={index}
-                assumedControls={assumedByType.get(condition.type)}
-                onChange={updateCondition}
-                onRemove={removeCondition}
-              />
-            ))}
-            <AddConditionPicker present={presentTypes} onAdd={addCondition} />
+        )}
+
+        {/* « Ce que je n'ai pas pu traduire » — named precisely, never substituted. */}
+        {untranslatable.length > 0 && (
+          <div
+            data-testid="untranslatable-block"
+            className="rounded-r-xl border border-amber-500/40 border-l-2 border-l-amber-500 bg-amber-500/5 p-3.5"
+          >
+            <h4 className="mb-1.5 fs-secondary font-semibold text-amber-600">
+              {hasConditions ? t('untranslatable.titlePartial') : t('untranslatable.titleNone')}
+            </h4>
+            <ul className="space-y-1.5">
+              {untranslatable.map((u, i) => (
+                <li
+                  key={i}
+                  className="fs-secondary leading-relaxed text-amber-700/90 dark:text-amber-200/80"
+                >
+                  {u.fragment ? (
+                    <b className="font-medium text-amber-600">“{u.fragment}”</b>
+                  ) : null}{' '}
+                  {categoryMessage(u.category, t)}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-1.5 fs-label text-amber-700/80 dark:text-amber-200/70">
+              {t('untranslatable.honesty')}
+            </p>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* « Ce que j'ai supposé » — mandatory, never invisible. */}
-      {working.assumptions.length > 0 && (
-        <div
-          data-testid="assumptions-block"
-          className="rounded-r-xl border border-amber-500/40 border-l-2 border-l-amber-500 bg-amber-500/5 p-3.5"
-        >
-          <h4 className="mb-1.5 fs-secondary font-semibold text-amber-600">{t('assumptions.title')}</h4>
-          <ul className="space-y-1">
-            {working.assumptions.map((a, i) => (
-              <li key={i} className="fs-secondary leading-relaxed text-amber-700/90 dark:text-amber-200/80">
-                {t('assumptions.item', {
-                  phrase: a.source_phrase ?? t('assumptions.aVagueWord'),
-                  condition: conditionLabel(a.condition_type),
-                  value: a.value ? optionLabel(a.control, a.value) : '—',
-                })}
-              </li>
-            ))}
-          </ul>
-          <p className="mt-1.5 fs-label text-amber-700/80 dark:text-amber-200/70">{t('assumptions.note')}</p>
-        </div>
-      )}
+        {honestyPending && (
+          <p
+            data-testid="honesty-pending"
+            className="fs-legal leading-relaxed text-muted-foreground"
+          >
+            {t('live.honestyPending')}
+          </p>
+        )}
 
-      {/* « Ce que je n'ai pas pu traduire » — named precisely, never substituted. */}
-      {isPartial && (
-        <div
-          data-testid="untranslatable-block"
-          className="rounded-r-xl border border-amber-500/40 border-l-2 border-l-amber-500 bg-amber-500/5 p-3.5"
-        >
-          <h4 className="mb-1.5 fs-secondary font-semibold text-amber-600">
-            {hasConditions ? t('untranslatable.titlePartial') : t('untranslatable.titleNone')}
-          </h4>
-          <ul className="space-y-1.5">
-            {working.untranslatable.map((u, i) => (
-              <li key={i} className="fs-secondary leading-relaxed text-amber-700/90 dark:text-amber-200/80">
-                {u.fragment ? <b className="font-medium text-amber-600">“{u.fragment}”</b> : null}{' '}
-                {categoryMessage(u.category, t)}
-              </li>
-            ))}
-          </ul>
-          <p className="mt-1.5 fs-label text-amber-700/80 dark:text-amber-200/70">{t('untranslatable.honesty')}</p>
-        </div>
-      )}
-
-      {/* Live count + actions, OR a reformulate path when nothing was understood. */}
-      {hasConditions ? (
-        <div className="sticky bottom-0 flex flex-wrap items-center gap-4 rounded-2xl border border-border bg-card/95 p-4 backdrop-blur">
-          <span data-testid="live-count" className="fs-title font-semibold tracking-tight text-foreground">
-            {live.status === 'ready' ? live.count : '—'}
-          </span>
-          <span className="fs-secondary leading-tight text-muted-foreground">
-            {t('translation.comboCaption', { conditions: working.conditions.length })}
-            <br />
-            {live.status === 'ready'
-              ? t('translation.comboScanned', { scanned: live.scanned })
-              : t('translation.comboComputing')}
-          </span>
-          <div className="ml-auto flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-1">
+        {/* Save + the live count. No « Voir les résultats »: they are below. */}
+        {hasConditions && (
+          <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-card p-4">
+            <span
+              data-testid="live-count"
+              className="fs-title font-semibold tracking-tight text-foreground"
+            >
+              {scan.status === 'ready' ? scan.count : '—'}
+            </span>
+            <span className="fs-secondary leading-tight text-muted-foreground">
+              {t('translation.comboCaption', { conditions: conditions.length })}
+              <br />
+              {scan.status === 'ready'
+                ? t('translation.comboScanned', { scanned: scan.scanned })
+                : t('translation.comboComputing')}
+            </span>
+            <div className="ml-auto flex flex-wrap items-center gap-1">
               <input
                 data-testid="save-name"
                 value={saveName}
                 onChange={(e) => setSaveName(e.target.value)}
                 placeholder={t('save.namePlaceholder')}
                 aria-label={t('save.namePlaceholder')}
-                className="w-40 rounded-md border border-input bg-background px-2 py-1.5 text-sm text-foreground"
+                className="w-40 rounded-md border border-input bg-background px-2 py-1.5 fs-secondary text-foreground"
               />
               <Button variant="outline" onClick={saveStrategy}>
                 {t('save.cta')}
               </Button>
             </div>
-            <Button data-testid="see-results" onClick={runScan} disabled={scanning}>
-              {scanning ? t('translation.scanning') : t('translation.seeResults')}
-            </Button>
+            {saveFeedback && (
+              <p data-testid="save-feedback" className="w-full fs-label text-muted-foreground">
+                {saveFeedback}
+              </p>
+            )}
           </div>
-          {saveFeedback && (
-            <p data-testid="save-feedback" className="w-full fs-label text-muted-foreground">
-              {saveFeedback}
-            </p>
-          )}
-          {inlineError && (
-            <p role="alert" className="w-full fs-label text-destructive">
-              {inlineError}
-            </p>
-          )}
-        </div>
-      ) : (
-        <div className="flex flex-wrap gap-2">
-          <Button onClick={() => setMode('describe')}>{t('translation.reformulate')}</Button>
-        </div>
-      )}
+        )}
+
+        {/* The SAME results component the manual palette renders — three blocks,
+            fixed order, « ce qui va à l'encontre » never hidden nor collapsible. */}
+        {hasConditions && scan.response && workingConfig && (
+          <ScanResults
+            response={scan.response}
+            config={workingConfig}
+            locale={locale}
+            onEdit={() => inputRef.current?.focus()}
+            onRefresh={refreshScan}
+            isRefreshing={scan.status === 'loading'}
+            autoRefreshEnabled={autoRefresh}
+            onToggleAutoRefresh={setAutoRefresh}
+          />
+        )}
+
+        {hasConditions && !scan.response && (
+          <p data-testid="results-pending" className="fs-secondary text-muted-foreground">
+            {scan.unavailable ? t('errors.scanUnavailable') : t('translation.comboComputing')}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The reading indicator. Its height is RESERVED at every status — a line that
+ * grows when it appears would shift the console under the pointer, and that is
+ * exactly how the dictation button lost its clicks in MIA-1 (the press landed on
+ * a moved target between mousedown and mouseup). Content changes, size never.
+ */
+function LiveStatusLine({ status }: { status: 'idle' | 'reading' | 'read' | 'capped' }) {
+  const t = useTranslations('scannerChat');
+  const label =
+    status === 'reading'
+      ? t('live.reading')
+      : status === 'read'
+        ? t('live.read')
+        : status === 'capped'
+          ? t('live.capped')
+          : ' ';
+  return (
+    <p
+      data-testid="live-status"
+      data-status={status}
+      aria-live="polite"
+      className="mt-2 min-h-[1.25rem] fs-legal leading-relaxed text-muted-foreground"
+    >
+      {label}
+    </p>
+  );
+}
+
+/**
+ * A refusal, rendered in place. Firm and non-culpabilising: the product ranks
+ * nothing, predicts nothing and advises nothing — a design constraint, not a
+ * gap. It occupies the reading column and leaves the field alone, because in a
+ * live flow the refusal fires mid-sentence and must not take the user's own text
+ * down with it.
+ */
+function RefusalNotice({
+  kind,
+  onClear,
+  onExample,
+}: {
+  kind: string;
+  onClear(): void;
+  onExample(example: string): void;
+}) {
+  const t = useTranslations('scannerChat');
+  const safeKind = ['ranking', 'prediction', 'recommendation'].includes(kind) ? kind : 'ranking';
+  const examples = [t('refusal.examples.0'), t('refusal.examples.1')];
+  return (
+    <div
+      data-testid="refusal-block"
+      className="rounded-r-xl border border-amber-500/40 border-l-2 border-l-amber-500 bg-amber-500/5 p-4"
+    >
+      <h4 className="mb-2 fs-body font-semibold text-amber-600">{t(`refusal.${safeKind}.title`)}</h4>
+      <p className="mb-2 fs-secondary leading-relaxed text-amber-700/90 dark:text-amber-200/80">
+        {t(`refusal.${safeKind}.body`)}
+      </p>
+      <p className="fs-secondary leading-relaxed text-amber-700/90 dark:text-amber-200/80">
+        {t('refusal.invite')}
+      </p>
+      {/* Two things the scanner CAN do, one click away — a refusal that only
+          says no teaches nothing. Clicking replaces the field verbatim. */}
+      <div className="mt-3 flex flex-wrap gap-2">
+        {examples.map((example, i) => (
+          <button
+            key={i}
+            type="button"
+            data-testid="refusal-example"
+            onClick={() => onExample(example)}
+            className="rounded-lg border border-border bg-muted/50 px-3 py-2 text-left fs-secondary text-muted-foreground transition hover:border-primary/50 hover:text-foreground"
+          >
+            {example}
+          </button>
+        ))}
+      </div>
+      <div className="mt-3">
+        <Button variant="outline" onClick={onClear}>
+          {t('refusal.reformulate')}
+        </Button>
+      </div>
+      <p className="mt-3 fs-legal leading-relaxed text-muted-foreground">{t('refusal.footer')}</p>
     </div>
   );
 }
@@ -446,75 +545,9 @@ function BackBar({ label, onBack }: { label: string; onBack(): void }) {
     <button
       type="button"
       onClick={onBack}
-      className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+      className="inline-flex items-center gap-1 fs-secondary text-muted-foreground hover:text-foreground"
     >
       ← {label}
     </button>
-  );
-}
-
-/**
- * State 4 — refusal. Firm and non-culpabilising: it is a design constraint, not
- * a gap. Explains that the product ranks nothing and offers to reformulate with
- * two clickable examples.
- */
-function RefusalPanel({
-  kind,
-  sourceText,
-  onReformulate,
-  onExample,
-}: {
-  kind: string | null;
-  sourceText: string;
-  onReformulate(): void;
-  onExample(example: string): void;
-}) {
-  const t = useTranslations('scannerChat');
-  const safeKind = kind && ['ranking', 'prediction', 'recommendation'].includes(kind) ? kind : 'ranking';
-  const examples = [t('refusal.examples.0'), t('refusal.examples.1')];
-
-  return (
-    <div className="space-y-5">
-      <div>
-        <h1 className="fs-title font-semibold tracking-tight text-foreground">{t('refusal.pageTitle')}</h1>
-        <p className="mt-1 fs-secondary text-muted-foreground">{t('refusal.pageSubtitle')}</p>
-      </div>
-
-      <div className="rounded-2xl border border-border bg-card p-4">
-        <div className="mb-1 fs-legal text-muted-foreground">{t('translation.yourRequest')}</div>
-        <div className="fs-body leading-relaxed text-foreground">“{sourceText}”</div>
-      </div>
-
-      <div
-        data-testid="refusal-block"
-        className="rounded-r-xl border border-amber-500/40 border-l-2 border-l-amber-500 bg-amber-500/5 p-4"
-      >
-        <h4 className="mb-2 fs-body font-semibold text-amber-600">{t(`refusal.${safeKind}.title`)}</h4>
-        <p className="mb-2 text-[13.5px] leading-relaxed text-amber-700/90 dark:text-amber-200/80">
-          {t(`refusal.${safeKind}.body`)}
-        </p>
-        <p className="fs-secondary leading-relaxed text-amber-700/90 dark:text-amber-200/80">{t('refusal.invite')}</p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {examples.map((example, i) => (
-            <button
-              key={i}
-              type="button"
-              data-testid="refusal-example"
-              onClick={() => onExample(example)}
-              className="rounded-lg border border-border bg-muted/50 px-3 py-2 text-left fs-secondary text-muted-foreground transition hover:border-primary/50 hover:text-foreground"
-            >
-              {example}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="flex gap-2">
-        <Button variant="outline" onClick={onReformulate}>
-          {t('refusal.reformulate')}
-        </Button>
-      </div>
-      <p className="fs-legal leading-relaxed text-muted-foreground">{t('refusal.footer')}</p>
-    </div>
   );
 }

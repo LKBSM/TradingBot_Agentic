@@ -1,5 +1,6 @@
 'use client';
 
+import type * as React from 'react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -28,6 +29,8 @@ export function DescribePanel({
   isTranslating,
   inlineError,
   locale,
+  textareaRef,
+  statusSlot,
 }: {
   text: string;
   onTextChange(value: string): void;
@@ -36,6 +39,15 @@ export function DescribePanel({
   isTranslating: boolean;
   inlineError: string | null;
   locale: string;
+  /** SC-4 — the parent focuses the field from the results ("modifier"). */
+  textareaRef?: React.Ref<HTMLTextAreaElement>;
+  /**
+   * SC-4 — the live reading indicator, rendered under the console. It is passed
+   * in rather than owned here so this panel stays a plain input surface, and so
+   * the slot ALWAYS occupies its line: a status that appears out of nothing
+   * would shift the console mid-click (the MIA-1 dictation regression).
+   */
+  statusSlot?: React.ReactNode;
 }) {
   const t = useTranslations('scannerChat');
 
@@ -103,6 +115,7 @@ export function DescribePanel({
               ›
             </span>
             <textarea
+              ref={textareaRef}
               data-testid="describe-input"
               value={text}
               maxLength={MAX_TEXT}
@@ -121,6 +134,8 @@ export function DescribePanel({
               />
             )}
           </div>
+
+          {statusSlot}
 
           {/* Live listening + transcript feedback — NEVER hidden. */}
           {voice.listening && (

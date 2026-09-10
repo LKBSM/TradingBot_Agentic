@@ -3306,11 +3306,19 @@
         "body": "No digo qué operar, ni cuándo comprar o vender. El escáner muestra dónde están presentes las condiciones que TÚ describiste; la decisión sigue siendo tuya."
       }
     },
+    "live": {
+      "reading": "Estoy leyendo tu frase…",
+      "read": "Lectura al día.",
+      "capped": "Lectura automática en pausa en esta pestaña. Usa el botón para leer ahora.",
+      "proposalNote": "Propuesto a partir de tu texto: quita o ajusta lo que quieras.",
+      "honestyPending": "Sigo leyendo tu frase. Lo que he supuesto y lo que no he podido traducir aparecen en cuanto dejas de escribir."
+    },
     "errors": {
       "unavailable": "La traducción no está disponible en este entorno. Puedes componer a mano.",
       "failed": "La traducción falló. Inténtalo de nuevo o compón a mano.",
       "empty": "Escribe primero tu estrategia.",
       "scanUnavailable": "El servicio de escaneo no está disponible en este entorno.",
+      "rateLimited": "Demasiadas traducciones en poco tiempo. Inténtalo de nuevo en un momento.",
       "scanFailed": "El escaneo falló. Inténtalo de nuevo en un momento."
     }
   }

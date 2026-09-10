@@ -3306,11 +3306,19 @@
         "body": "Ich sage nicht, was zu handeln ist, noch wann zu kaufen oder zu verkaufen. Der Scanner zeigt, wo von DIR beschriebene Bedingungen vorliegen; die Entscheidung bleibt bei dir."
       }
     },
+    "live": {
+      "reading": "Ich lese deinen Satz…",
+      "read": "Lesung aktuell.",
+      "capped": "Automatisches Lesen in diesem Tab pausiert. Nutze die Schaltfläche, um jetzt zu lesen.",
+      "proposalNote": "Aus deinem Text vorgeschlagen — entferne oder ändere, was du willst.",
+      "honestyPending": "Ich lese deinen Satz noch. Was ich angenommen habe und was ich nicht übersetzen konnte, erscheint, sobald du aufhörst zu tippen."
+    },
     "errors": {
       "unavailable": "Die Übersetzung ist in dieser Umgebung nicht verfügbar. Du kannst von Hand zusammenstellen.",
       "failed": "Übersetzung fehlgeschlagen. Versuch es erneut oder stelle von Hand zusammen.",
       "empty": "Schreib zuerst deine Strategie.",
       "scanUnavailable": "Der Scan-Dienst ist in dieser Umgebung nicht verfügbar.",
+      "rateLimited": "Zu viele Übersetzungen in kurzer Zeit. Versuche es gleich noch einmal.",
       "scanFailed": "Der Scan ist fehlgeschlagen. Versuch es gleich erneut."
     }
   }
