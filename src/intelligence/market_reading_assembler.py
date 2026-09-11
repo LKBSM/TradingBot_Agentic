@@ -520,7 +520,16 @@ class MarketReadingAssembler:
         if clock_expected <= frozen:
             return False
 
-        raw = self._data_provider.fetch_candles(instrument, timeframe, self._lookback)
+        # PERF-3: ask for the SAME window a build would (``_window_bars``), not the
+        # flat configured lookback. The provider's TTL cache is keyed on
+        # (symbol, timeframe, lookback), so a different size here could never share
+        # an entry with the build path — this probe was guaranteed to spend a fresh
+        # request. Same window ⇒ same key ⇒ the probe and the rebuild it triggers
+        # cost one request between them instead of two. It is also the more correct
+        # window: ``_build_fresh`` below is handed exactly these candles.
+        raw = self._data_provider.fetch_candles(
+            instrument, timeframe, self._window_bars(timeframe)
+        )
         candles = drop_unclosed_candles(raw, timeframe, clock_expected)
         if not candles:
             return False
@@ -583,7 +592,13 @@ class MarketReadingAssembler:
                     newest = newest.replace(tzinfo=timezone.utc)
                 if newest >= expected_close:
                     return 1  # cache already has the last traded bar — no fetch
-            raw = self._data_provider.fetch_candles(instrument, timeframe, self._lookback)
+            # PERF-3: same window as a build (see refresh_if_reopened) so this warm
+            # shares the provider's TTL cache entry instead of forcing its own.
+            # ``_window_bars`` falls back to the configured lookback on a unit it
+            # does not know (W1), so the reference series keep their current size.
+            raw = self._data_provider.fetch_candles(
+                instrument, timeframe, self._window_bars(timeframe)
+            )
             candles = drop_unclosed_candles(raw, timeframe, expected_close)
             if candles:
                 self._candles_store.upsert_candles(instrument, timeframe, candles)

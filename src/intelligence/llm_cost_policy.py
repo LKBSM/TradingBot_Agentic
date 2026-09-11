@@ -8,44 +8,115 @@ LLM callers must apply:
    explicit user opt-in. The pricing-aware ``pick_model(...)``
    returns ``{model, in_price, out_price, justification}``.
 
-2. **Prompt caching metadata** — Anthropic offers a 90% discount on
-   cached system-prompt reads if the system prompt is ≥ 1024 tokens
-   and marked with ``cache_control: {type: "ephemeral"}``. ``cache_
-   block_for(system_prompt)`` returns the right Anthropic message
-   block or ``None`` if the prompt is too short to benefit.
+2. **Prompt caching metadata** — Anthropic offers a ~90% discount on
+   cached reads of a prefix marked with ``cache_control: {type:
+   "ephemeral"}``. ``cache_block_for(...)`` returns the right Anthropic
+   message block. Two things it now gets right (PERF-3):
+
+   - The **minimum cacheable prefix is per-model**, not a flat 1024.
+     Haiku 4.5 — what the chatbot and the scanner translator both run
+     on — needs **4096** tokens, the highest of the whole range. Below
+     the minimum the marker is *silently ignored*: no error, just
+     ``cache_creation_input_tokens: 0``.
+   - The prefix is **tools + system**, not the system text alone. A
+     request renders as ``tools -> system -> messages``, so a breakpoint
+     on a system block caches the tool definitions with it. Callers pass
+     what precedes the block via ``prefix_chars``.
 
 3. **Batch API flag** — for offline eval runs Anthropic's batch
    endpoint is 50% off. ``should_batch(context)`` returns True for
    eval/CI/backfill workloads, False for live user requests.
 
-Pricing as of 2026-01 (USD per 1M tokens, refresh manually):
-    Haiku 3.5  : in $0.25  out $1.25
-    Sonnet 4.6 : in $3     out $15
-    Opus 4.7   : in $15    out $75
+Pricing as of 2026-06 (USD per 1M tokens, refresh manually):
+    Haiku 4.5  : in $1     out $5
+    Sonnet 5   : in $2     out $10
+    Opus 5     : in $5     out $25
 """
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional
+
+logger = logging.getLogger(__name__)
 
 
 # Token cost table — USD per 1M tokens. Updated manually when Anthropic
-# changes pricing; CI lints the constant against the docs URL.
+# changes pricing.
+#
+# PERF-3 (B-6) corrected two wrong rows that would have skewed any cost decision
+# taken from this file by a factor of 2 to 3:
+#   claude-haiku-4-5  was 0.50 / 2.50  -> really 1.00 / 5.00  (understated x2)
+#   claude-opus-4-7   was 15.0 / 75.0  -> really 5.00 / 25.0  (overstated x3)
+# and added the current generation, which was missing entirely.
+#
+# NOTE: ``pick_model`` / ``should_batch`` below are NOT called by any production
+# path — only ``cache_block_for`` is (from the chatbot). They are kept because
+# tests pin their routing contract; treat their model choices as a legacy policy
+# sketch, not as what the product runs. What production actually uses is
+# ``chatbot.DEFAULT_MODEL`` and ``scanner_translator.DEFAULT_MODEL``.
 MODEL_PRICING: dict[str, dict] = {
     "claude-haiku-3-5":  {"in":  0.25, "out":  1.25},
-    "claude-haiku-4-5":  {"in":  0.50, "out":  2.50},
-    "claude-sonnet-4-6": {"in":  3.0,  "out": 15.0},
-    "claude-opus-4-7":   {"in": 15.0,  "out": 75.0},
+    "claude-haiku-4-5":  {"in":  1.00, "out":  5.00},
+    "claude-sonnet-4-6": {"in":  3.00, "out": 15.00},
+    "claude-sonnet-5":   {"in":  2.00, "out": 10.00},
+    "claude-opus-4-7":   {"in":  5.00, "out": 25.00},
+    "claude-opus-4-8":   {"in":  5.00, "out": 25.00},
+    "claude-opus-5":     {"in":  5.00, "out": 25.00},
 }
 
-# Prompt caching threshold — Anthropic only caches blocks ≥ 1024 tokens.
-# Below that, the cache_control header is rejected.
-CACHE_MIN_TOKENS = 1024
+# Prompt caching — the minimum cacheable PREFIX, per model.
+#
+# Anthropic creates a cache entry only when the prefix reaching the
+# breakpoint is at least this long. Below it the ``cache_control`` marker
+# is SILENTLY ignored — no error is raised, the request simply comes back
+# with ``cache_creation_input_tokens: 0``. The minimum is NOT monotonic
+# across generations: the newest models have the lowest, and Haiku 4.5 has
+# the highest of the entire range.
+CACHE_MIN_TOKENS_BY_MODEL: dict[str, int] = {
+    "claude-opus-5":     512,
+    "claude-fable-5":    512,
+    "claude-fable-5-1":  512,
+    "claude-mythos-5":   512,
+    "claude-mythos-5-1": 512,
+    "claude-opus-4-8":   1024,
+    "claude-sonnet-5":   1024,
+    "claude-sonnet-4-6": 1024,
+    "claude-sonnet-4-5": 1024,
+    "claude-opus-4-7":   2048,
+    "claude-haiku-3-5":  2048,
+    "claude-opus-4-6":   4096,
+    "claude-opus-4-5":   4096,
+    "claude-haiku-4-5":  4096,
+}
+
+# What to require when the model is unknown or unnamed: the STRICTEST known
+# minimum, so a guard/report never claims a prefix caches when it may not.
+CACHE_MIN_TOKENS_STRICTEST = 4096
+
+# The floor below which a breakpoint is pointless on EVERY current model.
+#
+# Why the emit decision uses this floor rather than the model's own minimum:
+# the two failure modes are not symmetric. Marking a prefix that turns out to
+# be too short costs nothing — Anthropic ignores the marker. NOT marking a
+# prefix that would have cached costs ~90% of that prefix on every single
+# turn. Since ``CHARS_PER_TOKEN`` is an estimate (and one that under-counts
+# real French, ~3.3 chars/token), gating emission on the strict per-model
+# minimum would suppress markers on prefixes that do in fact cache. So we
+# emit whenever caching is possible at all, and *log* when the prefix is
+# below the running model's own minimum — turning a silent miss into a
+# visible one. ``usage.cache_read_input_tokens`` remains the ground truth.
+CACHE_MIN_TOKENS_FLOOR = 512
+
+# Backwards-compatible alias. Prefer ``cache_min_tokens_for(model)``.
+CACHE_MIN_TOKENS = CACHE_MIN_TOKENS_STRICTEST
 
 # Rough char-per-token heuristic (English/French). We don't ship the
 # real tokenizer in this package — 4 chars/token is the documented
-# Anthropic rule-of-thumb for prompt-size estimates.
+# Anthropic rule-of-thumb for prompt-size estimates. It UNDER-counts dense
+# French (~3.3 chars/token), which is the safe direction for a guard: it
+# warns early. ``client.messages.count_tokens`` is the exact answer.
 CHARS_PER_TOKEN = 4
 
 
@@ -132,20 +203,130 @@ def _pick(model: str, justification: str) -> ModelPick:
     )
 
 
-def cache_block_for(system_prompt: str) -> Optional[dict]:
-    """Return an Anthropic ``content`` block with ``cache_control`` set,
-    or ``None`` if the prompt is too short to benefit from caching.
+def cache_min_tokens_for(model: Optional[str]) -> int:
+    """Minimum cacheable prefix, in tokens, for ``model``.
+
+    Accepts a dated snapshot id (``claude-haiku-4-5-20251001``) as well as the
+    bare family id. An unknown or missing model yields the strictest known
+    minimum, so nothing ever *claims* to cache on an unverified assumption.
+    """
+    if not model:
+        return CACHE_MIN_TOKENS_STRICTEST
+    name = str(model).strip().lower()
+    best: Optional[str] = None
+    for key in CACHE_MIN_TOKENS_BY_MODEL:
+        if name == key or name.startswith(key + "-"):
+            # Longest match wins so "claude-fable-5-1" never resolves via
+            # "claude-fable-5".
+            if best is None or len(key) > len(best):
+                best = key
+    return CACHE_MIN_TOKENS_BY_MODEL[best] if best else CACHE_MIN_TOKENS_STRICTEST
+
+
+#: Models already reported as too short to cache, so the warning below is
+#: emitted once per (model, required) instead of on every single turn.
+_CACHE_SHORTFALL_REPORTED: set = set()
+
+
+def cache_block_for(
+    system_prompt: str,
+    *,
+    model: Optional[str] = None,
+    prefix_chars: int = 0,
+) -> Optional[dict]:
+    """Return an Anthropic ``content`` block carrying ``cache_control``.
+
+    ``prefix_chars`` is the size of everything rendered BEFORE this block that
+    belongs to the same cached prefix — in practice the serialised tool
+    definitions, because a request renders as ``tools -> system -> messages``.
+    Leaving them out under-measures the prefix (PERF-3): the chatbot's tool
+    schemas alone are ~7.5 kB, roughly 44% of its cached prefix.
+
+    Returns ``None`` only when the prefix cannot cache on ANY current model.
+    When it clears that floor but falls short of ``model``'s own minimum, the
+    block is still returned and the shortfall is logged once — see
+    ``CACHE_MIN_TOKENS_FLOOR`` for why emitting is the safe side of that call.
     """
     if not system_prompt:
         return None
-    est_tokens = len(system_prompt) // CHARS_PER_TOKEN
-    if est_tokens < CACHE_MIN_TOKENS:
+    est_tokens = (len(system_prompt) + max(0, int(prefix_chars))) // CHARS_PER_TOKEN
+    if est_tokens < CACHE_MIN_TOKENS_FLOOR:
         return None
+
+    required = cache_min_tokens_for(model)
+    if est_tokens < required:
+        marker = (model or "<unknown>", required)
+        if marker not in _CACHE_SHORTFALL_REPORTED:
+            _CACHE_SHORTFALL_REPORTED.add(marker)
+            logger.warning(
+                "prompt cache prefix looks too short for %s: ~%d tokens estimated "
+                "(%d chars incl. %d of prefix) vs a %d-token minimum — the "
+                "cache_control marker may be silently ignored. Confirm with "
+                "usage.cache_read_input_tokens; count exactly with "
+                "client.messages.count_tokens.",
+                model or "<unknown model>", est_tokens,
+                len(system_prompt) + max(0, int(prefix_chars)),
+                max(0, int(prefix_chars)), required,
+            )
     return {
         "type": "text",
         "text": system_prompt,
         "cache_control": {"type": "ephemeral"},
     }
+
+
+def usage_snapshot(response: Any, *, model: Optional[str] = None) -> dict:
+    """Extract the billing counters from an Anthropic response (PERF-3, B-2).
+
+    The audit found NOTHING reading ``response.usage`` on either production
+    caller, which left two questions unanswerable from production: is the prompt
+    cache actually being served, and what does a turn really cost. Duck-typed and
+    total — a stub response in tests yields zeros rather than raising.
+
+    ``cache_read_input_tokens > 0`` is the ground truth that the cache works;
+    a persistent 0 across turns means the prefix is not being cached at all.
+    """
+    usage = getattr(response, "usage", None)
+
+    def _n(name: str) -> int:
+        try:
+            return int(getattr(usage, name, 0) or 0)
+        except (TypeError, ValueError):
+            return 0
+
+    cache_read = _n("cache_read_input_tokens")
+    cache_write = _n("cache_creation_input_tokens")
+    uncached = _n("input_tokens")
+    total_in = uncached + cache_read
+    return {
+        "model": model,
+        "input_tokens": uncached,
+        "cache_read_input_tokens": cache_read,
+        "cache_creation_input_tokens": cache_write,
+        "output_tokens": _n("output_tokens"),
+        # Share of the input served from cache. 0.0 with a non-trivial prompt is
+        # the signal that the breakpoint is not taking.
+        "cache_hit_ratio": round(cache_read / total_in, 3) if total_in else 0.0,
+    }
+
+
+def log_usage(log: Any, label: str, response: Any, *, model: Optional[str] = None) -> dict:
+    """Log one call's token usage as structured fields, and return the snapshot.
+
+    Never raises and never alters the response — instrumentation must not be able
+    to break a user-facing turn.
+    """
+    try:
+        snap = usage_snapshot(response, model=model)
+        log.info(
+            "llm usage %s: model=%s in=%d cache_read=%d cache_write=%d out=%d hit=%.0f%%",
+            label, snap["model"], snap["input_tokens"],
+            snap["cache_read_input_tokens"], snap["cache_creation_input_tokens"],
+            snap["output_tokens"], snap["cache_hit_ratio"] * 100,
+        )
+        return snap
+    except Exception:  # pragma: no cover — instrumentation is never load-bearing
+        return {}
 
 
 def should_batch(context: str) -> bool:
@@ -157,10 +338,16 @@ def should_batch(context: str) -> bool:
 
 __all__ = [
     "CACHE_MIN_TOKENS",
+    "CACHE_MIN_TOKENS_BY_MODEL",
+    "CACHE_MIN_TOKENS_FLOOR",
+    "CACHE_MIN_TOKENS_STRICTEST",
+    "cache_min_tokens_for",
     "CHARS_PER_TOKEN",
     "MODEL_PRICING",
     "ModelPick",
     "cache_block_for",
+    "log_usage",
+    "usage_snapshot",
     "pick_model",
     "should_batch",
 ]
